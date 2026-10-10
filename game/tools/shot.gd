@@ -107,7 +107,7 @@ func _ready() -> void:
 		SPOTS[spot] = [mid + side * 3.6 + Vector3(0.6, 0, 0), mid]
 	var foe_u := -1.0
 	var foe_state := HollowSoldier.WINDUP
-	if spot == "soldier" or spot == "soldierface":
+	if spot == "soldier" or spot == "soldierface" or spot == "lockon":
 		# soldier [u=0.7] [strike|stagger|dead]: the Hollow Soldier 3.4 m from the hero (who
 		# has the staff drawn), frozen at u of the chosen state; side-on from the sun side.
 		# soldierface: a 3/4 front portrait of the soldier over the hero's shoulder.
@@ -123,7 +123,7 @@ func _ready() -> void:
 			foe_state = HollowSoldier.DEAD
 		var pp := player.global_position
 		var foe: HollowSoldier = world.soldier
-		var fp := pp + Vector3(-3.4, 0, 0.6)
+		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
 		foe.face(pp)
@@ -136,6 +136,8 @@ func _ready() -> void:
 		var mid := pp.lerp(fp, 0.5)
 		if spot == "soldier":
 			SPOTS[spot] = [mid + side * 3.6 - line * 0.4, mid]
+		elif spot == "lockon":
+			pass                                  # the follow camera, swung by the lock
 		else:
 			SPOTS[spot] = [fp - line * 2.4 + side * 1.0, fp]
 	if spot != "player" and SPOTS.has(spot):
@@ -255,6 +257,15 @@ func _ready() -> void:
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
 		player.set_physics_process(false)
+		if spot == "lockon":
+			# lock on from a camera looking well off to the side, let the lock swing it round
+			player.set_look(player.body.rotation.y + PI + 0.9, -0.15)
+			player.cam_pivot.rotation = Vector3(player._pitch, player._yaw, 0.0)
+			player.toggle_lock()
+			for i in 240:
+				player._update_lock(dt)
+			player.cam_pivot.rotation = Vector3(player._pitch, player._yaw, 0.0)
+			print("SHOT lockon target %s yaw %.2f pitch %.2f" % [player.lock_target, player._yaw, player._pitch])
 		print("SHOT soldier state %d t %.3f ember %.2f" % [foe.state, foe.t, foe.max_ember])
 	for i in frames:
 		await get_tree().process_frame

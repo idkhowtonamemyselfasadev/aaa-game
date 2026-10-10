@@ -172,5 +172,11 @@
   "time": "2026-10-10T19:40:00Z",
   "caption": "Side-on as the soldier's lunging thrust lands on the hero at the practice post; the thrust reads as a body lunge but the spear is hidden along the view line, and both models are placeholder sci-fi soldiers.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-2038-lockon.jpg",
+  "time": "2026-10-10T20:38:24Z",
+  "caption": "Lock-on: the follow camera slides over the right shoulder to frame the hero and the Hollow Soldier mid wind-up, with the bone-white reticle on its chest; still wrong: sci-fi placeholder bodies, over-bright foreground grass, steep framing shows too much ground.",
+  "verdict": "fail"
  }
 ]

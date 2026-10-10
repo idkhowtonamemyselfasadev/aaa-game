@@ -1,8 +1,8 @@
 # Progress
 
-Content hours playable: 0.1
+Content hours playable: 0.12
 (walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
-who can draw the staff, land a four-hit string on a practice post, and fight one Hollow Soldier down the meadow
+who can draw the staff, land a four-hit string on a practice post, and lock on to and fight one Hollow Soldier down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
@@ -23,6 +23,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 20:00 UTC:
+  - **Lock-on (Next 8, fifth part).** `lock_on` (middle mouse / pad R3) toggles. The pick takes
+    the hittable nearest the camera's line of sight within 16 m (score = angle·6 + dist·0.35);
+    enemies always beat practice targets. Pressing with nothing to lock recentres the camera
+    behind the hero. While locked: the camera yaw/pitch ease (rate 10) to put the target's upper
+    chest ahead and a little below centre (steeper when close so both fighters fit), the spring
+    arm draws back to 5 m, the mouse no longer orbits — a sharp sideways flick (> 90 px within
+    0.25 s) switches to the nearest target on that side; every swing opens toward the target
+    regardless of the stick; standing still, the hero squares up to it. Lock breaks past 24 m;
+    when the target dies it hands over to the next enemy in range or releases.
+  - HUD reticle: bone-white dot in a thin pale-gold ring with a dark halo at the target's chest;
+    a new lock pops the ring in from wide; fades on release (`Hud.reticle_visible()`).
+  - Bot bug fixed: scripted routes (combat/dodge/soldier) also ran the walk-waypoint follower,
+    which fed stick input underneath the test. Scripted routes now get an empty route.
+  - Bots: new `lockon` route — far press doesn't lock the 20 m soldier; near press from 34° off
+    locks it; camera error 0.16 → 0.000 rad in 1 s; circle-strafe at run speed worst 0.17 rad;
+    square-up 0.000 rad; reticle on screen; kill → lock releases, reticle gone. All six PASS.
+  - Over-the-shoulder framing: while locked the camera slides from 0.5 to 1.05 m right and the
+    aim is solved from the camera's real position, so the hero stands left of frame and no
+    longer hides the target (`lock2` had the soldier completely behind the hero).
+  - Shot spot `lockon [u=]`: soldier 4.7 m ahead in its wind-up, follow camera swung by the lock.
+  - Verdicts: `lock1` — locked the post (shot tool's camera pivot was stale), camera at -0.6
+    pitch staring at grass: fixed (pivot updated, pitch floor -0.45). `lock3` 10h — both
+    fighters framed, reticle on the soldier's chest reads; fail: placeholder sci-fi bodies,
+    foreground grass glare, framing a bit steep.
 - Session 2026-10-10 19:00 UTC:
   - **First enemy: the Hollow Soldier, spear variant (Next 8, fourth part).**
     `enemies/hollow_soldier.gd` (`HollowSoldier`, CharacterBody3D, layer 4; the hero now
@@ -350,7 +375,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
    stamina cost, practice post; 18:00: dodge, perfect dodge slow-mo, HUD bars.) Still to do:
    (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
-   soft lock.) Next: lock-on (camera framing both fighters), heavy with parry window, a
+   soft lock; 20:00: lock-on + reticle.) Next: heavy with parry window, a
    second soldier move (sweeping cut so a backstep isn't always right), a rag/cloth tabard and
    hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
    patrol/camp near the start road.
@@ -358,6 +383,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Lock-on has no strafe clips: moving while locked the hero turns to run in the stick
+  direction (only standing still squares up). Needs Mixamo strafe/walk-back clips.
+- Lock-on target switching is mouse-flick only; no right-stick binding yet (no camera stick
+  action exists for pads at all).
+- `pkill -f <pattern>` in a session shell kills the shell itself when the pattern appears in
+  the command line; kill stray godot processes by pid instead.
 - Hollow Soldier reuses the Vanguard mesh under the ash shader: the sci-fi armour silhouette
   still shows. Needs its own model or cloth/rag overlays. Its spear grip hands are IK-placed
   but wrists don't wrap the shaft (same as the hero).

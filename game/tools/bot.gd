@@ -35,7 +35,8 @@ func _ready() -> void:
 	var name := args[0] if args.size() > 0 else "walk"
 	if args.size() > 1:
 		_max = float(args[1])
-	_route = ROUTES.get(name, ROUTES["walk"])
+	# scripted tests drive the hero themselves; only waypoint routes use the follower
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -52,6 +53,9 @@ func _ready() -> void:
 		return
 	if name == "soldier":
 		_soldier_test()
+		return
+	if name == "lockon":
+		_lockon_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -393,3 +397,105 @@ func _soldier_test() -> void:
 	if not gone:
 		return _combat_done(false, "dead soldier was never removed")
 	_combat_done(true, "noticed, stalked, telegraphed thrust hit, dodged on the glint, killed, crumbled")
+
+## Camera-relative stick input that walks the hero toward a world point.
+func _input_toward(at: Vector3) -> Vector2:
+	var to := at - _player.global_position
+	to.y = 0.0
+	var f := -_player.cam_pivot.global_basis.z
+	f.y = 0.0
+	var r := _player.cam_pivot.global_basis.x
+	r.y = 0.0
+	return Vector2(to.dot(r.normalized()), -to.dot(f.normalized())).normalized()
+
+## Angle between the camera's flat view direction and the flat line from it to the lock point.
+func _cam_error(t: Node3D) -> float:
+	var cam := _player.camera
+	var f := -cam.global_basis.z
+	var to := Player.lock_point(t) - cam.global_position
+	return Vector2(f.x, f.z).angle_to(Vector2(to.x, to.z))
+
+func _lockon_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	var hud: Hud = null
+	for ch in p.get_children():
+		if ch is Hud:
+			hud = ch
+	await _ticks(10)
+	# 1) the soldier is out of range (~20 m) and the post is behind the camera: no lock, the
+	#    camera recentres behind the hero instead
+	p.body.rotation.y = 0.0
+	p.set_look(1.2, -0.3)
+	p.bot_lock = true
+	await _ticks(2)
+	print("BOT lockon: far press -> target %s, yaw %.2f" % [p.lock_target, p._yaw])
+	if p.lock_target != null and p.lock_target.is_in_group("enemy"):
+		return _combat_done(false, "locked an enemy beyond LOCK_RANGE")
+	if p.lock_target == null and absf(angle_difference(p._yaw, PI)) > 0.05:
+		return _combat_done(false, "empty lock press did not recentre the camera")
+	if p.lock_target != null:
+		p.bot_lock = true
+		await _ticks(2)
+	# 2) walk until the soldier is in range, look away, lock: it must be the soldier
+	#    (side-step the practice post first, it stands between the start and the soldier)
+	p.set_look(PI, -0.3)                  # camera looks +Z, so input x = -world x, input y = -world z
+	p.bot_input = Vector2(-1, 0)
+	await _ticks(20)
+	var walked := 0.0
+	while (s.global_position - p.global_position).length() > 12.0 and walked < 15.0:
+		p.bot_input = _input_toward(s.global_position)
+		await get_tree().physics_frame
+		walked += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	if (s.global_position - p.global_position).length() > 12.5:
+		return _combat_done(false, "bot could not walk up to the soldier")
+	var to0 := s.global_position - p.global_position
+	p.set_look(atan2(-to0.x, -to0.z) + 0.6, -0.3)    # soldier 34 deg off the camera's centre
+	p.bot_lock = true
+	await _ticks(2)
+	if p.lock_target != s:
+		return _combat_done(false, "lock press near the soldier picked %s" % p.lock_target)
+	var e0 := _cam_error(s)
+	var w := 0.0
+	while w < 1.0:
+		await get_tree().physics_frame
+		w += get_physics_process_delta_time()
+	var e1 := absf(_cam_error(s))
+	print("BOT lockon: locked soldier, camera error %.2f -> %.3f rad, pitch %.2f, reticle %s at %s" % [e0, e1, p._pitch, hud.reticle_visible() if hud else false, hud.reticle_screen if hud else Vector2()])
+	if e1 > 0.08:
+		return _combat_done(false, "camera did not swing to the target")
+	if hud == null or not hud.reticle_visible():
+		return _combat_done(false, "no lock-on reticle on screen")
+	# 3) circle-strafe for 2 s: the camera keeps the soldier centred
+	var worst := 0.0
+	w = 0.0
+	while w < 2.0:
+		p.bot_input = Vector2(1, 0)
+		await get_tree().physics_frame
+		w += get_physics_process_delta_time()
+		if w > 0.3:
+			worst = maxf(worst, absf(_cam_error(s)))
+	p.bot_input = Vector2.ZERO
+	print("BOT lockon: strafe worst camera error %.3f rad" % worst)
+	if worst > 0.25:
+		return _combat_done(false, "camera lost the target while strafing")
+	# 4) standing still the hero squares up to the target
+	await _ticks(60)
+	var lt := s.global_position - p.global_position
+	var face_err := absf(angle_difference(p.body.rotation.y, atan2(lt.x, lt.z)))
+	print("BOT lockon: facing error %.3f rad" % face_err)
+	if face_err > 0.15:
+		return _combat_done(false, "hero did not square up to the locked target")
+	# 5) kill it: no other enemy in range -> the lock releases, the reticle fades
+	s.health = 1.0
+	s.take_hit(s.global_position + Vector3.UP, (s.global_position - p.global_position).normalized(), 1.0, 0.0)
+	await _ticks(30)
+	print("BOT lockon: soldier dead %s, lock %s, reticle %s" % [s.is_dead(), p.lock_target, hud.reticle_visible()])
+	if not s.is_dead():
+		return _combat_done(false, "test kill failed")
+	if p.lock_target == s or (p.lock_target != null and p.lock_target.is_in_group("enemy")):
+		return _combat_done(false, "lock did not release on the target's death")
+	if hud.reticle_visible():
+		return _combat_done(false, "reticle still shown after release")
+	_combat_done(true, "range-gated pick, camera framing, strafe tracking, square-up, release on death")

@@ -30,6 +30,19 @@ const PERFECT_REFUND := 25.0
 
 signal dodged(perfect: bool)
 signal hurt(amount: float)
+signal lock_changed(target: Node3D)
+
+# Lock-on: the camera swings to frame the hero and the target, swings open toward it, and the
+# hero squares up to it when standing. Enemies win over practice targets; a target that dies
+# hands the lock to the next enemy in range, or releases it. A sharp mouse flick switches.
+const LOCK_RANGE := 16.0
+const LOCK_BREAK := 24.0
+const LOCK_FLICK_PX := 90.0
+const CAM_SIDE := 0.5                 # camera's shoulder offset, free and locked
+const CAM_SIDE_LOCKED := 1.05
+var lock_target: Node3D = null
+var _flick := 0.0
+var _flick_t := 0.0
 
 var stamina := STAMINA_MAX
 var health := HEALTH_MAX
@@ -48,6 +61,7 @@ var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
 var bot_jump := false
 var bot_attack := false
+var bot_lock := false
 var use_bot_input := false
 
 @onready var cam_pivot: Node3D = $CamPivot
@@ -172,8 +186,120 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		if lock_target != null:
+			# locked: the mouse no longer steers the camera; a sharp sideways flick switches target
+			_flick = _flick + event.relative.x if signf(event.relative.x) == signf(_flick) else event.relative.x
+			_flick_t = 0.25
+			if absf(_flick) > LOCK_FLICK_PX:
+				switch_lock(signf(_flick))
+				_flick = 0.0
+			return
 		_yaw -= event.relative.x * 0.0025
 		_pitch = clampf(_pitch - event.relative.y * 0.0025, -1.2, 0.6)
+
+# --- lock-on ---
+
+## The point the camera and reticle aim at: upper chest of the target's hurt capsule.
+static func lock_point(t: Node3D) -> Vector3:
+	var cap: Array = t.hurt_capsule()
+	return (cap[0] as Vector3).lerp(cap[1], 0.72)
+
+func _lockable(t: Node) -> bool:
+	return is_instance_valid(t) and t.is_inside_tree() and t.is_in_group("hittable") and t.has_method("hurt_capsule")
+
+## Best target for a fresh lock: in range, nearest the camera's line of sight. Enemies are
+## preferred; practice targets only when no enemy is in range. `exclude` is skipped;
+## `side` != 0 limits the pick to targets on that side of the screen (switching).
+func pick_lock_target(exclude: Node = null, side := 0.0) -> Node3D:
+	var fwd := -cam_pivot.global_basis.z
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var right := Vector3(-fwd.z, 0.0, fwd.x)
+	var best: Node3D = null
+	var best_score := INF
+	for t in get_tree().get_nodes_in_group("hittable"):
+		if t == exclude or not _lockable(t):
+			continue
+		var to: Vector3 = lock_point(t) - global_position
+		to.y = 0.0
+		var d := to.length()
+		if d > LOCK_RANGE or d < 0.05:
+			continue
+		var ang := fwd.angle_to(to)
+		if side != 0.0 and signf(to.dot(right)) != signf(side):
+			continue
+		if side == 0.0 and ang > 1.4 and d > 4.0:
+			continue                          # behind the camera and not close: not what was meant
+		var score := ang * 6.0 + d * 0.35 + (0.0 if t.is_in_group("enemy") else 100.0)
+		if side != 0.0:
+			score = absf(to.dot(right)) / d   # nearest neighbour on that side of the screen
+		if score < best_score:
+			best_score = score
+			best = t
+	return best
+
+func toggle_lock() -> void:
+	if lock_target != null:
+		_set_lock(null)
+		return
+	var t := pick_lock_target()
+	if t == null:
+		# nothing to lock: recentre the camera behind the hero (a souls-like convention)
+		_yaw = body.rotation.y + PI
+		_pitch = -0.25
+	_set_lock(t)
+
+func switch_lock(side: float) -> void:
+	if lock_target == null:
+		return
+	var t := pick_lock_target(lock_target, side)
+	if t != null:
+		_set_lock(t)
+
+func _set_lock(t: Node3D) -> void:
+	if t == lock_target:
+		return
+	lock_target = t
+	lock_changed.emit(t)
+
+## Called each physics tick: drops a dead or distant target (handing over to the next enemy in
+## range), then swings the camera so the target sits ahead and a little below centre.
+func _update_lock(delta: float) -> void:
+	_flick_t -= delta
+	if _flick_t <= 0.0:
+		_flick = 0.0
+	if lock_target == null:
+		spring.spring_length = move_toward(spring.spring_length, 4.5, delta * 2.0)
+		camera.position.x = move_toward(camera.position.x, CAM_SIDE, delta * 1.5)
+		return
+	if not _lockable(lock_target) or global_position.distance_to(lock_target.global_position) > LOCK_BREAK:
+		var lost := lock_target
+		lock_target = null
+		var next := pick_lock_target(lost)
+		if next != null and not next.is_in_group("enemy"):
+			next = null
+		lock_target = next
+		lock_changed.emit(next)
+		if next == null:
+			return
+	# over-the-shoulder: the camera slides further right so the hero stands left of frame and
+	# the target is not hidden behind them; aim is solved from the camera's real position
+	spring.spring_length = move_toward(spring.spring_length, 5.0, delta * 2.0)
+	camera.position.x = move_toward(camera.position.x, CAM_SIDE_LOCKED, delta * 1.5)
+	var aim := lock_point(lock_target)
+	var pivot := global_position + cam_pivot.position
+	var reach := spring.get_hit_length()
+	if reach < 0.05:
+		reach = spring.spring_length              # arm not yet resolved this frame
+	var arm := Basis.from_euler(Vector3(_pitch, _yaw, 0.0)) * Vector3(camera.position.x, camera.position.y, reach)
+	var to := aim - (pivot + arm)
+	var flat := Vector2(to.x, to.z).length()
+	var want_yaw := atan2(-to.x, -to.z)
+	# look down past the hero at the target; closer targets need a steeper angle to fit both
+	var want_pitch := clampf(atan2(to.y, maxf(flat, 0.5)) - 0.1 - 0.25 / maxf(flat, 1.0), -0.45, 0.12)
+	var k := 1.0 - exp(-10.0 * delta)
+	_yaw = lerp_angle(_yaw, want_yaw, k)
+	_pitch = lerpf(_pitch, want_pitch, k)
 
 func _physics_process(delta: float) -> void:
 	var dir2 := bot_input if use_bot_input else Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -184,6 +310,11 @@ func _physics_process(delta: float) -> void:
 	bot_attack = false
 	var want_dodge := bot_dodge if use_bot_input else Input.is_action_just_pressed("dodge")
 	bot_dodge = false
+	var want_lock := bot_lock if use_bot_input else Input.is_action_just_pressed("lock_on")
+	bot_lock = false
+	if want_lock:
+		toggle_lock()
+	_update_lock(delta)
 	_update_slowmo(delta)
 	if want_dodge:
 		_try_dodge(dir2)
@@ -262,7 +393,11 @@ func _physics_process(delta: float) -> void:
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(_dodge_dir.x, _dodge_dir.z), 1.0 - exp(-35.0 * delta))
 	elif attacking:
 		body.rotation.y += combat.spin_delta
-		if combat.t < 0.08 and dir2.length() > 0.1:
+		if lock_target != null and combat.t < 0.12 and combat.spin_delta == 0.0:
+			# locked: every swing opens toward the target, whatever the stick says
+			var lt := lock_target.global_position - global_position
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-30.0 * delta))
+		elif combat.t < 0.08 and dir2.length() > 0.1:
 			# a hit snaps toward the stick direction at its very start
 			var cw := (right * dir2.x + fwd * -dir2.y)
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(cw.x, cw.z), 0.5)
@@ -275,6 +410,10 @@ func _physics_process(delta: float) -> void:
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
+	elif lock_target != null:
+		# standing while locked: square up to the target
+		var lt := lock_target.global_position - global_position
+		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta))
 
 	move_and_slide()
 	_update_animation(delta)

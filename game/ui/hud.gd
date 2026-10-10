@@ -12,6 +12,12 @@ var _calm := 0.0
 var _hp_lag := 1.0
 var _st_lag := 1.0
 var _last := Vector2(-1, -1)
+var _reticle: Control
+var _lock_a := 0.0              # reticle fade
+var _lock_pop := 0.0            # 1 -> 0 after a new lock: the ring closes in
+var _lock_seen: Node3D = null
+var _lock_t := 0.0
+var reticle_screen := Vector2(-1, -1)   # last drawn position (bots/shots read it)
 
 func _ready() -> void:
 	layer = 5
@@ -22,6 +28,12 @@ func _ready() -> void:
 	_bars.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bars.draw.connect(_draw_bars)
 	add_child(_bars)
+	_reticle = Control.new()
+	_reticle.name = "Reticle"
+	_reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reticle.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_reticle.draw.connect(_draw_reticle)
+	add_child(_reticle)
 
 func _process(delta: float) -> void:
 	if player == null:
@@ -40,6 +52,43 @@ func _process(delta: float) -> void:
 	_hp_lag = hp if hp > _hp_lag else move_toward(_hp_lag, hp, delta * 0.35)
 	_st_lag = st if st > _st_lag else move_toward(_st_lag, st, delta * 0.9)
 	_bars.queue_redraw()
+	var lt := player.lock_target
+	if lt != _lock_seen:
+		_lock_seen = lt
+		if lt != null:
+			_lock_pop = 1.0
+	_lock_pop = move_toward(_lock_pop, 0.0, delta * 5.0)
+	_lock_t += delta
+	_lock_a = move_toward(_lock_a, 1.0 if lt != null else 0.0, delta * 8.0)
+	_reticle.queue_redraw()
+
+func reticle_visible() -> bool:
+	return _lock_a > 0.5 and reticle_screen.x >= 0.0
+
+## Lock-on marker: a small bone-white point in a thin ring at the target's chest, with a dark
+## halo so it reads on bright grass and night alike. A fresh lock pops the ring in from wide.
+func _draw_reticle() -> void:
+	reticle_screen = Vector2(-1, -1)
+	var lt := player.lock_target
+	if _lock_a <= 0.01 or lt == null or not is_instance_valid(lt) or not lt.has_method("hurt_capsule"):
+		return
+	var cam := player.camera
+	var p := Player.lock_point(lt)
+	if cam.is_position_behind(p):
+		return
+	var c := cam.unproject_position(p)
+	var vs := _reticle.get_viewport_rect().size
+	if not Rect2(Vector2.ZERO, vs).has_point(c):
+		return
+	reticle_screen = c
+	var s := vs.y / 1080.0
+	var a := _lock_a
+	var e := _lock_pop * _lock_pop
+	var ring := (9.0 + 22.0 * e + 0.8 * sin(_lock_t * 4.0)) * s
+	_reticle.draw_circle(c, 5.0 * s, Color(0, 0, 0, 0.35 * a))
+	_reticle.draw_circle(c, 3.2 * s, Color(0.96, 0.92, 0.82, 0.95 * a))
+	_reticle.draw_arc(c, ring, 0.0, TAU, 40, Color(0, 0, 0, 0.3 * a), maxf(3.0 * s, 2.0), true)
+	_reticle.draw_arc(c, ring, 0.0, TAU, 40, Color(0.93, 0.80, 0.50, (0.75 - 0.4 * e) * a), maxf(1.4 * s, 1.0), true)
 
 func visible_alpha() -> float:
 	return _alpha
