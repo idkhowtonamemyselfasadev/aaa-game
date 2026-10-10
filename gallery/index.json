@@ -190,5 +190,17 @@
   "time": "2026-10-10T21:34:58Z",
   "caption": "Tier-2 heavy smash driving the staff into the meadow; still wrong: the slam dust is a grey sphere, a stray glint cloud hangs in the sky, the staggered soldier is missing from the frame (shot tool), placeholder hero body.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-2200-sweep.jpg",
+  "time": "2026-10-10T22:40:00Z",
+  "caption": "First light sweep connecting with the practice post: the staff now travels flat at shoulder height as authored instead of lying sideways; still wrong: placeholder sci-fi hero body, the post blocks the hero in this camera, bare red soil between grass clumps.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-2200-overhead.jpg",
+  "time": "2026-10-10T22:48:00Z",
+  "caption": "Overhead strike coming down on the centre line with a long grip (vertical trail behind the post); still wrong: camera puts the post in front of the hero, placeholder body, flat foreground grass.",
+  "verdict": "fail"
  }
 ]

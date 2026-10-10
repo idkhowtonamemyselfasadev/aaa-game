@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.14
+Content hours playable: 0.15
 (walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 22:00 UTC:
+  - **Staff poses re-authored (Next 8, seventh part).** Every light-string key, the guard,
+    the raised hold and the heavy smash were re-solved so the staff points where it was
+    authored (axis error 0–4 deg everywhere; was up to 65 deg, staff lying sideways) and the
+    shaft never passes through the chest or head, including mid-blend between keys (checked
+    at 5–7 points per segment). Done with an offline optimizer over the same grip-reach model
+    the game uses; grip error in the combat bot dropped 0.063 m -> 0.000 m.
+  - New optional 6th key element **grip slide** (metres, negative = hands toward the butt):
+    the heavy smash and the overhead (step 3) come down on the centre line 1.3–1.37 m ahead
+    with a long grip; the spin finisher lets the staff run out 0.3 m through the hands after
+    the wind-up (tip radius 1.25 -> 1.55 m) and draws it back before the recovery.
+  - Guard is now a chest-high diagonal (tip forward-left, a little low) instead of a belly
+    guard that solved sideways.
+  - Bug fixed: hit detection sub-steps interpolated the staff pose but not the body's spin,
+    so the spin finisher tunnelled past targets (28 deg of body yaw per tick at bot speed,
+    ~15 deg at 30 fps). Sub-steps now turn the body back by the yaw applied this tick.
+  - `tools/pose_check.py` now parses `combat.gd` directly (every key + halfway blends,
+    torso/head clearance, grip slide) and exits 1 on a failure — run it after touching poses.
+  - Bots: all 7 routes pass (combat now hits on all four steps, punish smash lands).
+  - Verdicts (Forward+ on lavapipe, ~4 min/shot; the spin shot fell back to opengl3 once):
+    sweep (`swing0`) — staff flat at shoulder height through the post with chaff: reads as a
+    sweep; overhead (`swing2`) — vertical trail on the centre line; spin (`swing3`) — staff out
+    to the side. All fail: placeholder sci-fi body, and the swing camera puts the post in front
+    of the hero (shot-tool framing should orbit to the side). Note: in `tools/shots.sh` args
+    the 2nd token is the output name, so `swing0 u=0.45` names the file `u=0.45.png`.
 - Session 2026-10-10 21:00 UTC:
   - **Ward heavy + parry (Next 8, sixth part).** `attack_heavy` (right mouse / pad) is now
     live. Press raises the staff overhead (0.18 s ease from wherever the arms were, chest
@@ -411,8 +436,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
    stamina cost, practice post; 18:00: dodge, perfect dodge slow-mo, HUD bars.) Still to do:
    (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
-   soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry.) Next: re-author the
-   light-string poses so `tools/pose_check.py` is under ~15 deg for every key, a
+   soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry; 22:00: all staff
+   poses reachable + clear of the body, grip slide.) Next: a
    second soldier move (sweeping cut so a backstep isn't always right), a rag/cloth tabard and
    hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
    patrol/camp near the start road.
@@ -424,9 +449,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   sphere, and the tier glints ("metal" at the tip) leave a brown cloud high up. Needs a
   proper debris/dust-ring effect and a small sharp glint sprite.
 - `soldier ... stagger smash` shot: the soldier is missing from the frame (not investigated).
-- Light-string poses are partly unreachable (`python3 tools/pose_check.py`): guard 55, the
-  opening sweep 56, the overhead's follow-through 65 deg off — the staff lies more sideways than
-  authored. The combat bot still passes (it hits the post), but it reads wrong in motion.
+- Spin finisher's recovery (last key -> guard) grazes the chest surface for ~0.05 s
+  (`pose_check -v` mid14 clearance 1.05 torso radii, the pass mark). An extra key would fix it.
+- Arm IK still clamps to a 0.43 m shoulder reach with no elbow/clavicle motion, so every pose
+  is built around reachable grips; a real staff-form mocap clip set would read better.
 - The hero has no hit reaction: a thrust that lands during a heavy charge does not interrupt
   it (no flinch/hyper-armour rule yet).
 - No gold "parryable" flash on the soldier's tell yet (DESIGN.md colour code); the blade glint

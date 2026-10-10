@@ -38,41 +38,43 @@ const HEAVY_COST := [16.0, 22.0, 28.0]
 const HEAVY_POWER := [1.8, 2.4, 3.2]
 const SLAM_AT := 0.40        # normalised time the smash meets the ground
 # Raised overhead, tip back over the shoulders, chest turned a little away.
-const RAISED := [0.0, 140.0, Vector3(0.0, 1.95, -0.12), -18.0]
+const RAISED := [3.0, 137.0, Vector3(-0.20, 1.70, -0.04), -15.0]
 const HEAVY := { "dur": 0.84, "hit": [0.22, 0.54], "lunge": 4.0, "lunge_at": 0.0, "spin": 0.0, "keys": [
-	[0.00, 0.0, 140.0, Vector3(0.00, 1.95, -0.12), -18.0],
-	[0.12, 0.0, 150.0, Vector3(0.00, 2.05, -0.18), -22.0],
-	[0.40, 0.0, -40.0, Vector3(0.08, 1.19, 0.38), 8.0],
-	[0.70, 2.0, -38.0, Vector3(0.08, 1.18, 0.37), 6.0],
-	[1.00, 28.0, -14.0, Vector3(0.02, 1.00, 0.55), 0.0]]}
+	[0.00, 3.0, 137.0, Vector3(-0.20, 1.70, -0.04), -15.0],
+	[0.12, 3.0, 143.0, Vector3(-0.15, 1.70, 0.03), 9.0],
+	[0.40, 4.0, -40.0, Vector3(-0.21, 1.23, 0.61), -55.0, -0.26],
+	[0.70, 2.0, -38.0, Vector3(-0.14, 1.35, 0.30), -3.0],
+	[1.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]]}
 
-# Guard: staff low across the body, tip forward-left.  [yaw°, pitch°, P, twist°]
-const GUARD := [28.0, -14.0, Vector3(0.02, 1.0, 0.55), 0.0]
+# Guard: staff across the chest, tip forward-left and a little low.  [yaw°, pitch°, P, twist°]
+const GUARD := [35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]
 
 # Each attack: duration (s), strike window (t0, t1 normalised), lunge m/s during the strike,
-# body spin (rad over the clip), keys [t, yaw°, pitch°, P, twist°].
+# body spin (rad over the clip), keys [t, yaw°, pitch°, P, twist°, grip slide m (optional)].
 # Body space: +Z forward, +X is the hero's left, so yaw -90 points out to the right.
 const STRING := [
 	{ "dur": 0.62, "hit": [0.30, 0.55], "lunge": 2.5, "spin": 0.0, "keys": [
-		[0.00, 28.0, -14.0, Vector3(0.02, 1.00, 0.55), 0.0],
-		[0.28, -125.0, 4.0, Vector3(-0.30, 1.22, 0.22), -38.0],
-		[0.52, 95.0, -6.0, Vector3(0.28, 1.12, 0.40), 34.0],
-		[1.00, 40.0, -12.0, Vector3(0.08, 1.05, 0.52), 8.0]]},
+		[0.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
+		[0.28, -131.0, 10.0, Vector3(-0.13, 1.57, 0.08), 24.0, 0.11],
+		[0.52, 95.0, -6.0, Vector3(0.31, 1.47, 0.24), 37.0],
+		[1.00, 41.0, -12.0, Vector3(0.07, 1.28, 0.35), 4.0, -0.03]]},
 	{ "dur": 0.58, "hit": [0.25, 0.52], "lunge": 2.0, "spin": 0.0, "keys": [
-		[0.00, 40.0, -12.0, Vector3(0.08, 1.05, 0.52), 8.0],
-		[0.24, 118.0, 8.0, Vector3(0.30, 1.25, 0.25), 36.0],
-		[0.50, -100.0, 2.0, Vector3(-0.28, 1.18, 0.42), -34.0],
-		[1.00, -20.0, -10.0, Vector3(-0.05, 1.05, 0.55), -6.0]]},
+		[0.00, 41.0, -12.0, Vector3(0.07, 1.28, 0.35), 4.0, -0.03],
+		[0.24, 118.0, 8.0, Vector3(0.13, 1.52, 0.14), 37.0],
+		[0.50, -100.0, 0.0, Vector3(-0.34, 1.51, 0.07), -46.0],
+		[1.00, -16.0, -12.0, Vector3(0.08, 1.34, 0.50), -13.0, -0.03]]},
 	{ "dur": 0.80, "hit": [0.42, 0.62], "lunge": 3.5, "spin": 0.0, "keys": [
-		[0.00, -20.0, -10.0, Vector3(-0.05, 1.05, 0.55), -6.0],
-		[0.38, 0.0, 128.0, Vector3(0.00, 2.00, 0.00), -12.0],
-		[0.60, 0.0, -28.0, Vector3(0.00, 1.05, 0.62), 6.0],
-		[1.00, 10.0, -22.0, Vector3(0.00, 1.02, 0.58), 0.0]]},
+		[0.00, -16.0, -12.0, Vector3(0.08, 1.34, 0.50), -13.0, -0.03],
+		[0.38, -20.0, 106.0, Vector3(0.15, 1.98, 0.09), -14.0],
+		[0.60, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],
+		[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]},
 	{ "dur": 0.85, "hit": [0.25, 0.75], "lunge": 2.0, "spin": TAU, "keys": [
-		[0.00, 10.0, -22.0, Vector3(0.00, 1.02, 0.58), 0.0],
-		[0.20, -95.0, 2.0, Vector3(-0.28, 1.18, 0.30), -30.0],
-		[0.75, -95.0, 0.0, Vector3(-0.28, 1.15, 0.32), -30.0],
-		[1.00, 28.0, -14.0, Vector3(0.02, 1.00, 0.55), 0.0]]},
+		[0.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06],
+		[0.20, -95.0, 2.0, Vector3(-0.32, 1.42, 0.12), -38.0],
+		[0.30, -95.0, 2.0, Vector3(-0.62, 1.43, 0.09), -38.0, -0.30],    # staff runs out through the hands
+		[0.75, -98.0, 4.0, Vector3(-0.64, 1.57, 0.13), -34.0, -0.30],
+		[0.86, -98.0, 4.0, Vector3(-0.30, 1.55, 0.18), -34.0, 0.04],
+		[1.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]]},
 ]
 
 var player: Player
@@ -85,6 +87,7 @@ var idle_t := 0.0
 var queued := false
 var hit_active := false
 var spin_delta := 0.0        # body yaw the current attack added this frame
+var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
 var swings := 0              # attacks started (bots read this)
 var last_grip_error := 0.0   # metres, hand bone to IK target after the last IK pass
 var hitstop := 0.0           # remaining freeze after a connecting hit
@@ -355,7 +358,9 @@ func _pose_at(keys: Array, u: float) -> Array:
 	var b: Array = keys[k + 1]
 	var f := clampf((u - float(a[0])) / maxf(float(b[0]) - float(a[0]), 1e-4), 0.0, 1.0)
 	f = f * f * (3.0 - 2.0 * f)
-	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f)]
+	var sa: float = a[5] if a.size() > 5 else 0.0
+	var sb: float = b[5] if b.size() > 5 else 0.0
+	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f)]
 
 static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 	var y := deg_to_rad(yaw_deg)
@@ -363,6 +368,7 @@ static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 	return Vector3(sin(y) * cos(p), sin(p), cos(y) * cos(p))
 
 func physics_step(delta: float) -> void:
+	_spin_applied = spin_delta
 	spin_delta = 0.0
 	if hitstop > 0.0:
 		# frozen in the contact: pose, IK and twist hold; only the trail keeps fading
@@ -463,12 +469,18 @@ func _detect_hits(u: float) -> void:
 	var u0 := _prev_u if _prev_u >= 0.0 else u
 	_prev_u = u
 	# re-evaluate the authored arc at ~4 ms sub-steps: at low frame rates one tick can sweep
-	# the staff through 90°+, and a straight line between the two poses would cut inside it
+	# the staff through 90°+, and a straight line between the two poses would cut inside it.
+	# A spinning attack also turns the body (by last frame's spin_delta, applied before this
+	# step), so the sub-steps turn it back too, or the shaft tunnels past a target.
 	var n := clampi(int(ceil((u - u0) * float(atk["dur"]) / 0.004)), 1, 24)
+	if _spin_applied != 0.0:
+		n = maxi(n, clampi(int(ceil(absf(_spin_applied) / 0.05)), 1, 24))
 	var segs: Array = []
 	var bx := player.body.global_transform
 	for k in n + 1:
-		var xf := bx * _staff_xform(_pose_at(atk["keys"], lerpf(u0, u, float(k) / n)))
+		var f := float(k) / n
+		var bk := Transform3D(bx.basis.rotated(Vector3.UP, -_spin_applied * (1.0 - f)), bx.origin)
+		var xf := bk * _staff_xform(_pose_at(atk["keys"], lerpf(u0, u, f)))
 		segs.append([xf * Vector3(0, -Staff.LENGTH * 0.5, 0), xf * Vector3(0, Staff.LENGTH * 0.5, 0)])
 	for target in player.get_tree().get_nodes_in_group("hittable"):
 		if target in _hit_this_swing or not target.has_method("hurt_capsule"):
@@ -568,14 +580,17 @@ func _solve(pose: Array) -> Array:
 	var tw := deg_to_rad(pose[3])
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
-	var hr := _clamp_reach(p + d * HAND_R, sr)
-	var hl := _clamp_reach(p + d * HAND_L, sl)
+	# optional 5th element slides both grips along the shaft (negative = toward the butt,
+	# the long grip of an overhead strike; P stays the staff's centre)
+	var slide: float = pose[4] if pose.size() > 4 else 0.0
+	var hr := _clamp_reach(p + d * (HAND_R + slide), sr)
+	var hl := _clamp_reach(p + d * (HAND_L + slide), sl)
 	var axis := hl - hr
 	if axis.length() < 0.12:
 		axis = d * 0.12
 	var d2 := axis.normalized()
 	var b := Basis(Quaternion(Vector3.UP, d2)) if d2.y > -0.99 else Basis(Vector3.RIGHT, PI)
-	return [Transform3D(b, hr - d2 * HAND_R), hr, hl]
+	return [Transform3D(b, hr - d2 * (HAND_R + slide)), hr, hl]
 
 static func _clamp_reach(h: Vector3, shoulder: Vector3) -> Vector3:
 	var v := h - shoulder
