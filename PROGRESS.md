@@ -22,6 +22,35 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 16:00 UTC:
+  - **Ward-stance light string: the staff comes off the back and swings (Next 8, first part).**
+    Left mouse / RB (`attack_light`): the staff is drawn into both hands (0.22 s blend), then a
+    chained 4-hit string — right-to-left sweep, backhand, overhead slam, spinning sweep (the
+    body turns a full 360°). Press during the back 65 % of a hit to queue the next; idle 5 s
+    and it is slung back. New `player/combat.gd` (`StaffCombat`): swings are authored as body-
+    space keys (staff yaw/pitch, grip centre, spine twist) with smoothstep easing; both hands
+    are solved onto the shaft by a `TwoBoneIK3D` (arm/forearm/hand, elbow poles down-out); the
+    grips are clamped into each shoulder's 0.43 m reach (shoulders turn with the twist) and the
+    staff is laid through the two grips, so hands never leave the shaft. New
+    `player/spine_twist.gd` (`SpineTwist`, a GDScript `SkeletonModifier3D`) winds the chest
+    into each swing over Spine/Spine1/Spine2. Lunge during the strike window, steering is a
+    snap at the start of each hit, no sprint while the staff is out. Swing trail:
+    `shaders/swing_trail.gdshader` ribbon from the tip down the shaft, 0.14 s life, strike
+    window only. (DESIGN.md lists thrust/sweep/overhead/spin; the thrust is reserved for the
+    heavy follow-up.)
+  - Bots: new `combat` route (`tools/bots.sh combat`): chains all 4 hits, asserts tip path
+    > 8 m and strike speed > 8 m/s (got 32 m, 29 m/s), IK grip error < 12 cm (0.000 — read in
+    the IK's `modification_processed`, the modified pose is gone after rendering), spin ≈ 2π,
+    and the staff is back on the back after idling. `walk` and `ridge` PASS.
+  - Shot spots `swing<step> [u=0..1]`: freezes the string at that hit/phase (simulates with
+    the render loop off, one physics tick per step, then pauses the tree), camera on the
+    sun's side with the hero turned 3/4 to it.
+  - Verdicts: `sw2b` 10h overhead wind-up — hands raised over the head on the shaft, chest
+    wound back; the pose reads as a staff strike. Fail: sci-fi soldier, legs stay in idle,
+    red bare ground under grass. `sw0b` 10h mid-sweep — trail visible as a faint pale wedge;
+    fail: two-handed grip reads like a rifle hold from this angle, trail too faint. (First
+    attempt `sw2` had the hands stuck at the chest with the staff vertical: the wind-up key
+    was out of arm reach — raised to 2.0 m.)
 - Session 2026-10-10 15:00 UTC:
   - **The hero carries a staff (was Next 7, staff part).** `player/staff.gd` builds a 1.86 m
     lathe mesh in code: worn-bronze end caps with machined ridges, a red-brown lacquered
@@ -226,12 +255,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    place, cloth/hair sway; the staff.
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
-8. Combat (Ward stance): L×4 string, heavy with parry window, dodge + perfect dodge
+8. (done 16:00: draw + L×4 string + trail.) Still to do: hit detection + hit-stop + impact
+   VFX/camera shake against a target, stamina cost per swing, heavy with parry window, dodge + perfect dodge
    time-dilation, hit-stop, lock-on, stamina; Hollow Soldier enemy with telegraphs.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Light string: hands are IK-placed but the wrists are not rotated around the shaft (palms
+  don't wrap it); the legs keep playing idle/walk during swings (no lower-body attack stance);
+  swings hit nothing yet. Swing poses are hand-keyed in code — a real Mixamo staff clip set
+  would read better.
 - The staff floats against the back (no strap/frog) and can clip the arms in extreme poses;
   it has no collision (cosmetic only).
 - Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip

@@ -118,5 +118,17 @@
   "time": "2026-10-10T15:21:08Z",
   "caption": "The hero seen from behind against a low sun, staff diagonal across the back at body scale; still wrong: placeholder Mixamo soldier model, flat cartoonish far mountains.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1623-overhead.jpg",
+  "time": "2026-10-10T16:24:01Z",
+  "caption": "Overhead-slam wind-up: both hands IK-locked on the staff raised over the head, chest twisted into the swing; still wrong: sci-fi soldier model, legs stay in idle, harsh red ground under the grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1623-sweep.jpg",
+  "time": "2026-10-10T16:24:01Z",
+  "caption": "Mid-sweep of the light string with a faint pale swing trail; still wrong: the two-handed grip reads like holding a rifle at this angle, trail too faint, placeholder soldier model.",
+  "verdict": "fail"
  }
 ]

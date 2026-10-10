@@ -61,12 +61,26 @@ func _ready() -> void:
 		player.bot_input = Vector2(1, 0)
 		player.set_look(0.0, -0.12)
 		player.spring.spring_length = 3.2
+	var swing_step := -1
+	var swing_u := 0.5
+	if spot.begins_with("swing"):
+		# freeze the light string mid-swing: swing<step> [u=0.5]; 3/4 front, 3.8 m
+		swing_step = int(spot.substr(5))
+		for a in args:
+			if a.begins_with("u="):
+				swing_u = float(a.substr(2))
+		# camera on the sun's side so the hero is front-lit; hero turned 3/4 toward it
+		var pp := player.global_position
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var to_cam := Vector3(-light.x, 0, -light.z).normalized()
+		player.body.rotation.y = atan2(to_cam.x, to_cam.z) - 0.75
+		SPOTS[spot] = [pp + to_cam * 3.8, pp]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] else 1.5)
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
@@ -101,6 +115,20 @@ func _ready() -> void:
 		world.env.environment.sky.process_mode = Sky.PROCESS_MODE_REALTIME
 	if "noupd" in args:
 		world.set_process(false)
+	if swing_step >= 0:
+		Engine.max_physics_steps_per_frame = 1     # one physics tick per frame: exact pose
+		player.use_bot_input = true
+		var c: StaffCombat = player.combat
+		RenderingServer.render_loop_enabled = false   # simulate the string without drawing
+		for i in 3000:
+			if c.swings < swing_step + 1:
+				player.bot_attack = true
+			await get_tree().physics_frame
+			if c.step == swing_step and c.t / float(c.STRING[swing_step]["dur"]) >= swing_u:
+				break
+		get_tree().paused = true
+		RenderingServer.render_loop_enabled = true
+		print("SHOT swing step %d u %.2f" % [c.step, c.t / float(c.STRING[maxi(c.step, 0)]["dur"])])
 	for i in frames:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

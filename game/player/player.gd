@@ -16,6 +16,7 @@ var stamina := STAMINA_MAX
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
 var bot_jump := false
+var bot_attack := false
 var use_bot_input := false
 
 @onready var cam_pivot: Node3D = $CamPivot
@@ -43,6 +44,7 @@ func _ready() -> void:
 ## bound to the upper spine so it follows the torso's sway in every clip.
 const STAFF_ON_BACK := Vector3(0.0, 1.28, -0.19)   # body space; body faces +Z
 var staff: Staff
+var combat: StaffCombat
 
 func _attach_staff() -> void:
 	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -66,6 +68,10 @@ func _attach_staff() -> void:
 	# solve the attachment-local offset at the rest pose (skeleton may carry a 0.01 scale)
 	var bone_rest := skel.global_transform * skel.get_bone_global_rest(bone)
 	staff.transform = bone_rest.affine_inverse() * want
+	combat = StaffCombat.new()
+	combat.name = "Combat"
+	add_child(combat)
+	combat.setup(self, staff, skel)
 
 func _setup_animation() -> void:
 	var ap := model.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -119,6 +125,11 @@ func _physics_process(delta: float) -> void:
 	var sprinting := (bot_sprint if use_bot_input else Input.is_action_pressed("sprint")) and stamina > 0.0
 	var want_jump := bot_jump if use_bot_input else Input.is_action_just_pressed("jump")
 	bot_jump = false
+	var want_attack := bot_attack if use_bot_input else Input.is_action_just_pressed("attack_light")
+	bot_attack = false
+	if combat != null and want_attack:
+		combat.light()
+	var attacking := combat != null and combat.is_attacking()
 
 	cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
 	var fwd := -cam_pivot.global_transform.basis.z
@@ -132,6 +143,19 @@ func _physics_process(delta: float) -> void:
 		wish = wish.normalized()
 
 	var speed := SPRINT_SPEED if sprinting else (RUN_SPEED if dir2.length() > 0.6 else WALK_SPEED)
+	if attacking:
+		# committed to the swing: lunge along the facing, steering is only a nudge
+		var face := body.global_transform.basis.z
+		speed = 0.0
+		var atk: Dictionary = combat.STRING[combat.step]
+		var u: float = combat.t / float(atk["dur"])
+		var hw: Array = atk["hit"]
+		if u > float(hw[0]) - 0.1 and u < float(hw[1]):
+			wish = face
+			speed = atk["lunge"]
+		sprinting = false
+	elif combat != null and combat.is_drawn():
+		speed = minf(speed, RUN_SPEED)   # weapon out: no sprint
 	var target := wish * speed
 	velocity.x = move_toward(velocity.x, target.x, ACCEL * delta)
 	velocity.z = move_toward(velocity.z, target.z, ACCEL * delta)
@@ -148,12 +172,20 @@ func _physics_process(delta: float) -> void:
 	else:
 		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
 
-	if wish.length() > 0.1:
+	if attacking:
+		body.rotation.y += combat.spin_delta
+		if combat.t < 0.08 and dir2.length() > 0.1:
+			# a hit snaps toward the stick direction at its very start
+			var cw := (right * dir2.x + fwd * -dir2.y)
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(cw.x, cw.z), 0.5)
+	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
 
 	move_and_slide()
 	_update_animation(delta)
+	if combat != null:
+		combat.physics_step(delta)
 
 func set_look(yaw: float, pitch: float) -> void:
 	_yaw = yaw
