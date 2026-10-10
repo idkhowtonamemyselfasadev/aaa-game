@@ -13,6 +13,8 @@ var SPOTS := {
 	"player":   [],
 }
 
+var _action := Callable()
+
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	var spot := args[0] if args.size() > 0 else "player"
@@ -257,6 +259,8 @@ func _ready() -> void:
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
 		player.set_physics_process(false)
+		if "parry" in args or "smash" in args:
+			_action = func(): await _heavy_action(player, foe, args)
 		if spot == "lockon":
 			# lock on from a camera looking well off to the side, let the lock swing it round
 			player.set_look(player.body.rotation.y + PI + 0.9, -0.15)
@@ -269,9 +273,41 @@ func _ready() -> void:
 		print("SHOT soldier state %d t %.3f ember %.2f" % [foe.state, foe.t, foe.max_ember])
 	for i in frames:
 		await get_tree().process_frame
+	if _action.is_valid():
+		await _action.call()
+		for i in 2:
+			await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
 	var err := img.save_png(abs)
 	print("SHOT %s -> %s (%s) err=%d" % [spot, abs, img.get_size(), err])
 	get_tree().quit(0 if err == OK else 1)
+
+## Runs after the warm-up frames so the world keeps updating (pausing the tree froze the
+## sky/terrain uniforms and grass streaming); the FX then get only a couple of frames to age.
+func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) -> void:
+	var c: StaffCombat = player.combat
+	var dt := 1.0 / 60.0
+	if "parry" in args:
+		# the heavy raised just as the thrust lands: deflect sparks, soldier knocked back
+		c._start_charge()
+		c.heavy_held = true
+		for i in 7:
+			c.physics_step(dt)
+		c.try_parry(foe)
+		for i in 3:
+			foe._physics_process(dt)
+		print("SHOT parry parries %d tier %d" % [c.parries, c.tier])
+	elif "smash" in args:
+		# a full-charge heavy meeting the ground in front of the hero
+		c._start_charge()
+		c.heavy_held = true
+		for i in 75:
+			c.physics_step(dt)
+		c.heavy_held = false
+		for i in 200:
+			c.physics_step(dt)
+			if c.is_attacking() and c.t / float(StaffCombat.HEAVY["dur"]) >= 0.43:
+				break
+		print("SHOT smash tier %d u %.2f" % [c.tier, c.t / float(StaffCombat.HEAVY["dur"])])

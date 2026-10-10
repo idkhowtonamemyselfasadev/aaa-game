@@ -5,6 +5,7 @@ extends CharacterBody3D
 
 const WALK_SPEED := 4.2
 const RUN_SPEED := 6.5
+const CHARGE_SPEED := 1.1       # shuffle while the heavy is raised
 const SPRINT_SPEED := 9.0
 const ACCEL := 14.0
 const JUMP_VEL := 7.5
@@ -62,6 +63,8 @@ var bot_sprint := false
 var bot_jump := false
 var bot_attack := false
 var bot_lock := false
+var bot_heavy := false                  # heavy button held (bots)
+var _heavy_was := false
 var use_bot_input := false
 
 @onready var cam_pivot: Node3D = $CamPivot
@@ -310,6 +313,9 @@ func _physics_process(delta: float) -> void:
 	bot_attack = false
 	var want_dodge := bot_dodge if use_bot_input else Input.is_action_just_pressed("dodge")
 	bot_dodge = false
+	var heavy_down := bot_heavy if use_bot_input else Input.is_action_pressed("attack_heavy")
+	var want_heavy := heavy_down and not _heavy_was
+	_heavy_was = heavy_down
 	var want_lock := bot_lock if use_bot_input else Input.is_action_just_pressed("lock_on")
 	bot_lock = false
 	if want_lock:
@@ -320,7 +326,12 @@ func _physics_process(delta: float) -> void:
 		_try_dodge(dir2)
 	if combat != null and want_attack and dodge_t < 0.0:
 		combat.light()
+	if combat != null:
+		combat.heavy_held = heavy_down
+		if want_heavy and dodge_t < 0.0:
+			combat.heavy()
 	var attacking := combat != null and combat.is_attacking()
+	var charging := combat != null and combat.is_charging()
 
 	cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
 	var fwd := -cam_pivot.global_transform.basis.z
@@ -356,19 +367,26 @@ func _physics_process(delta: float) -> void:
 		# committed to the swing: lunge along the facing, steering is only a nudge
 		var face := body.global_transform.basis.z
 		speed = 0.0
-		var atk: Dictionary = combat.STRING[combat.step]
+		var atk: Dictionary = combat.current_attack()
 		var u: float = combat.t / float(atk["dur"])
 		var hw: Array = atk["hit"]
-		if u > float(hw[0]) - 0.1 and u < float(hw[1]) and not combat.target_in_reach(0.95):
+		if u > float(atk.get("lunge_at", float(hw[0]) - 0.1)) and u < float(hw[1]) and not combat.target_in_reach(0.95):
 			wish = face
 			speed = atk["lunge"]
+		sprinting = false
+	elif charging:
+		# planted under the raised staff: a slow shuffle to line it up
+		speed = minf(speed, CHARGE_SPEED)
 		sprinting = false
 	elif combat != null and combat.is_drawn():
 		speed = minf(speed, RUN_SPEED)   # weapon out: no sprint
 	var target := wish * speed
+	var accel := ACCEL
+	if attacking and combat.current_attack().has("lunge_at"):
+		accel = ACCEL * 4.0                    # the heavy's step-in is one decisive stride
 	if not dodging:
-		velocity.x = move_toward(velocity.x, target.x, ACCEL * delta)
-		velocity.z = move_toward(velocity.z, target.z, ACCEL * delta)
+		velocity.x = move_toward(velocity.x, target.x, accel * delta)
+		velocity.z = move_toward(velocity.z, target.z, accel * delta)
 
 	if combat != null and combat.hitstop > 0.0:
 		velocity.x = 0.0
@@ -383,8 +401,8 @@ func _physics_process(delta: float) -> void:
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
-	elif attacking or dodging:
-		pass                                   # no recovery mid-swing or mid-dodge
+	elif attacking or dodging or charging:
+		pass                                   # no recovery mid-swing, mid-dodge or charging
 	else:
 		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
 
@@ -407,6 +425,14 @@ func _physics_process(delta: float) -> void:
 			if tgt != Vector3.INF:
 				var to := tgt - global_position
 				body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.z), 1.0 - exp(-30.0 * delta))
+	elif charging and lock_target != null:
+		var lt := lock_target.global_position - global_position
+		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-10.0 * delta))
+	elif charging and wish.length() < 0.1:
+		var tgt := combat.magnet_target(4.0, 1.3)
+		if tgt != Vector3.INF:
+			var to := tgt - global_position
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.z), 1.0 - exp(-6.0 * delta))
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
@@ -458,8 +484,10 @@ func _pose_dodge(u: float) -> void:
 	t = Transform3D(Basis(), hip) * t * Transform3D(Basis(), -hip)
 	model.transform = Transform3D(Basis(), Vector3(0, -0.17 * env, 0)) * t * _model_rest
 
-## Enemies call this when a strike would connect. Returns "perfect", "dodged" or "hit".
+## Enemies call this when a strike would connect. Returns "parried", "perfect", "dodged" or "hit".
 func receive_attack(attacker: Node, damage: float) -> String:
+	if combat != null and combat.try_parry(attacker):
+		return "parried"
 	if is_invulnerable() or (dodge_t >= 0.0 and dodge_t <= PERFECT_WINDOW):
 		if dodge_t <= PERFECT_WINDOW and not _dodge_rewarded:
 			_dodge_rewarded = true

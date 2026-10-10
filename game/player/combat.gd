@@ -5,11 +5,15 @@ extends Node
 ## shaft with two-bone IK and the torso twists into each swing, so the arms, chest and staff
 ## move as one over whatever the legs are doing in the locomotion blend.
 ## Attack: sweep -> backhand -> overhead slam -> spinning sweep. Idle 5 s -> staff slung back.
+## Heavy (hold): the staff rises overhead and charges through three tiers; release brings it
+## down in a planted smash. The first PARRY_WINDOW of the raise deflects an incoming blow.
 
 signal swing_started(step: int)
 signal hit_landed(target: Node, point: Vector3, power: float)
+signal parried(attacker: Node)
+signal charge_tier(tier: int)
 
-enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING }
+enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING }
 
 const DRAW_TIME := 0.22
 const SHEATHE_AFTER := 5.0
@@ -22,6 +26,25 @@ const TRAIL_LIFE := 0.14
 const COST := [9.0, 9.0, 14.0, 12.0]
 const POWER := [1.0, 1.0, 1.6, 1.25]
 const HITSTOP := 0.065       # seconds of freeze per unit of power
+
+# Heavy: hold time at which each tier is reached, stamina cost and power per tier.
+const PARRY_WINDOW := 0.25
+const PARRY_HITSTOP := 0.13
+const RAISE_TIME := 0.18     # guard -> overhead
+const MIN_CHARGE := 0.16     # a tap still raises the staff before it comes down
+const CHARGE_TIERS := [0.0, 0.5, 1.1]
+const CHARGE_MAX := 2.6      # held this long, it comes down by itself
+const HEAVY_COST := [16.0, 22.0, 28.0]
+const HEAVY_POWER := [1.8, 2.4, 3.2]
+const SLAM_AT := 0.40        # normalised time the smash meets the ground
+# Raised overhead, tip back over the shoulders, chest turned a little away.
+const RAISED := [0.0, 140.0, Vector3(0.0, 1.95, -0.12), -18.0]
+const HEAVY := { "dur": 0.84, "hit": [0.22, 0.54], "lunge": 4.0, "lunge_at": 0.0, "spin": 0.0, "keys": [
+	[0.00, 0.0, 140.0, Vector3(0.00, 1.95, -0.12), -18.0],
+	[0.12, 0.0, 150.0, Vector3(0.00, 2.05, -0.18), -22.0],
+	[0.40, 0.0, -40.0, Vector3(0.08, 1.19, 0.38), 8.0],
+	[0.70, 2.0, -38.0, Vector3(0.08, 1.18, 0.37), 6.0],
+	[1.00, 28.0, -14.0, Vector3(0.02, 1.00, 0.55), 0.0]]}
 
 # Guard: staff low across the body, tip forward-left.  [yaw°, pitch°, P, twist°]
 const GUARD := [28.0, -14.0, Vector3(0.02, 1.0, 0.55), 0.0]
@@ -67,6 +90,17 @@ var last_grip_error := 0.0   # metres, hand bone to IK target after the last IK 
 var hitstop := 0.0           # remaining freeze after a connecting hit
 var hits := 0                # hits landed (bots read this)
 var _hit_this_swing: Array = []
+var _atk: Dictionary = {}    # the attack in progress (a STRING entry or HEAVY)
+var _power := 1.0
+var heavy_held := false      # the player sets this every tick from the heavy button
+var _heavy_queued := false
+var charge_t := 0.0          # seconds into the current charge
+var tier := 0                # charge tier reached (0..2)
+var heavies := 0             # heavy smashes released (bots read this)
+var parries := 0             # blows deflected (bots read this)
+var last_power := 0.0        # power of the last hit that landed (bots read this)
+var _slammed := false
+var _raise_from: Array = GUARD
 var _prev_u := -1.0          # normalised swing time at the last contact test
 const RECOVER_TIME := 0.16
 var _recover := 0.0          # remaining blend from a cancelled swing back to guard
@@ -153,6 +187,105 @@ func is_drawn() -> bool:
 func is_attacking() -> bool:
 	return state == ATTACKING
 
+func is_charging() -> bool:
+	return state == CHARGING
+
+func current_attack() -> Dictionary:
+	return _atk
+
+## Heavy pressed: start raising the staff (drawing it first if slung). During a light swing
+## it cuts in once the strike has passed, otherwise it waits for the swing to finish.
+func heavy() -> void:
+	match state:
+		SHEATHED, SHEATHING:
+			_begin_draw()
+			_heavy_queued = true
+			queued = false
+		DRAWING:
+			_heavy_queued = true
+			queued = false
+		READY:
+			_start_charge()
+		ATTACKING:
+			if _atk == HEAVY:
+				return
+			var u := t / float(_atk["dur"])
+			if u > float(_atk["hit"][1]):
+				_from_pose = _pose_at(_atk["keys"], clampf(u, 0.0, 1.0))
+				_start_charge(_from_pose)
+			else:
+				_heavy_queued = true
+				queued = false
+
+func _start_charge(from: Array = []) -> void:
+	if player.stamina <= 0.0:
+		return
+	_raise_from = from if from.size() > 0 else (_from_pose if _recover > 0.0 else GUARD)
+	_recover = 0.0
+	state = CHARGING
+	step = -1
+	charge_t = 0.0
+	tier = 0
+	t = 0.0
+	queued = false
+	_heavy_queued = false
+	hit_active = false
+	idle_t = 0.0
+
+## True while a blow landing now would be deflected: the opening of the heavy's raise.
+func can_parry() -> bool:
+	return state == CHARGING and charge_t <= PARRY_WINDOW and hitstop <= 0.0
+
+## Enemies' blows ask this first. A deflect freezes both fighters, throws sparks off the
+## shaft, staggers the attacker and banks a free charge tier.
+func try_parry(attacker: Node) -> bool:
+	if not can_parry():
+		return false
+	parries += 1
+	hitstop = PARRY_HITSTOP
+	var to := player.body.global_basis.z
+	if attacker is Node3D:
+		to = (attacker as Node3D).global_position - player.global_position
+	to.y = 0.0
+	to = to.normalized() if to.length() > 1e-3 else player.body.global_basis.z
+	var spark := staff.global_transform * Vector3(0, Staff.LENGTH * 0.18, 0)
+	spark = spark.lerp(player.global_position + Vector3.UP * 1.5 + to * 0.45, 0.5)
+	ImpactFX.spawn(player.get_parent(), spark, to.cross(Vector3.UP), "metal", 1.6)
+	player.add_shake(0.42)
+	charge_t = maxf(charge_t, float(CHARGE_TIERS[1]))
+	_set_tier(1)
+	if attacker.has_method("parried"):
+		attacker.parried(to, PARRY_HITSTOP)
+	parried.emit(attacker)
+	return true
+
+func _set_tier(n: int) -> void:
+	if n <= tier:
+		return
+	tier = n
+	# a cold glint off the ferrule marks each tier
+	ImpactFX.spawn(player.get_parent(), tip_position(), Vector3.UP, "metal", 0.35 + 0.2 * n)
+	player.add_shake(0.06 * n)
+	charge_tier.emit(n)
+
+func _release() -> void:
+	var cost: float = HEAVY_COST[tier]
+	player.stamina = maxf(player.stamina - cost, 0.0)
+	_atk = HEAVY
+	_power = HEAVY_POWER[tier]
+	_hit_this_swing.clear()
+	_prev_u = -1.0
+	_slammed = false
+	step = -1
+	t = 0.0
+	_spun = 0.0
+	queued = false
+	idle_t = 0.0
+	state = ATTACKING
+	swings += 1
+	heavies += 1
+	swing_started.emit(-1)
+
 ## Light attack pressed: draw if needed, start or queue the next hit of the string.
 func light() -> void:
 	match state:
@@ -164,15 +297,19 @@ func light() -> void:
 		READY:
 			_start(0)
 		ATTACKING:
-			if t / float(STRING[step]["dur"]) > 0.35:
+			if t / float(_atk["dur"]) > 0.35 and not _heavy_queued:
 				queued = true
 
 ## A dodge breaks off whatever swing is in progress; the arms ease back to guard from the
 ## pose they were in instead of snapping.
 func cancel_to_guard() -> void:
-	if state != ATTACKING:
+	_heavy_queued = false
+	if state == CHARGING:
+		_from_pose = _charge_pose()
+	elif state == ATTACKING:
+		_from_pose = _pose_at(_atk["keys"], clampf(t / float(_atk["dur"]), 0.0, 1.0))
+	else:
 		return
-	_from_pose = _pose_at(STRING[step]["keys"], clampf(t / float(STRING[step]["dur"]), 0.0, 1.0))
 	_recover = RECOVER_TIME
 	state = READY
 	step = -1
@@ -196,6 +333,8 @@ func _start(i: int) -> void:
 		idle_t = 0.0
 		return
 	player.stamina = maxf(player.stamina - float(COST[i]), 0.0)
+	_atk = STRING[i]
+	_power = POWER[i]
 	_hit_this_swing.clear()
 	_prev_u = -1.0
 	step = i
@@ -244,7 +383,9 @@ func physics_step(delta: float) -> void:
 			if f >= 1.0:
 				state = READY
 				idle_t = 0.0
-				if queued:
+				if _heavy_queued:
+					_start_charge()
+				elif queued:
 					_start(0)
 			_age_trail(delta)
 			return
@@ -259,8 +400,19 @@ func physics_step(delta: float) -> void:
 				_from_xform = staff.transform
 				state = SHEATHING
 				t = 0.0
+		CHARGING:
+			charge_t += delta
+			idle_t = 0.0
+			pose = _charge_pose()
+			for n in range(CHARGE_TIERS.size() - 1, 0, -1):
+				if charge_t >= float(CHARGE_TIERS[n]):
+					_set_tier(n)
+					break
+			if (not heavy_held and charge_t >= MIN_CHARGE) or charge_t >= CHARGE_MAX:
+				_release()
+				pose = _pose_at(_atk["keys"], 0.0)
 		ATTACKING:
-			var atk: Dictionary = STRING[step]
+			var atk: Dictionary = _atk
 			var dur: float = atk["dur"]
 			t += delta
 			var u := clampf(t / dur, 0.0, 1.0)
@@ -272,8 +424,13 @@ func physics_step(delta: float) -> void:
 				var target := spin * smoothstep(0.15, 0.8, u)
 				spin_delta = target - _spun
 				_spun = target
+			if atk == HEAVY and not _slammed and u >= SLAM_AT:
+				_slammed = true
+				_ground_slam()
 			if u >= 1.0:
-				if queued:
+				if _heavy_queued:
+					_start_charge(pose)
+				elif queued:
 					_start((step + 1) % STRING.size())
 				else:
 					state = READY
@@ -294,7 +451,7 @@ func physics_step(delta: float) -> void:
 	staff.transform = _place_hands(pose)
 	_twist.twist = deg_to_rad(pose[3])
 	if hit_active:
-		_detect_hits(t / float(STRING[step]["dur"]))
+		_detect_hits(t / float(_atk["dur"]))
 	else:
 		_prev_u = -1.0
 	_update_trail(delta)
@@ -302,7 +459,7 @@ func physics_step(delta: float) -> void:
 # --- contact: the whole shaft is swept between ticks against each hittable's capsule ---
 
 func _detect_hits(u: float) -> void:
-	var atk: Dictionary = STRING[step]
+	var atk: Dictionary = _atk
 	var u0 := _prev_u if _prev_u >= 0.0 else u
 	_prev_u = u
 	# re-evaluate the authored arc at ~4 ms sub-steps: at low frame rates one tick can sweep
@@ -364,15 +521,33 @@ func target_in_reach(dist: float) -> bool:
 	return false
 
 func _land_hit(target: Node, point: Vector3, swing: Vector3) -> void:
-	var power: float = POWER[step]
+	var power: float = _power
 	_hit_this_swing.append(target)
 	hits += 1
+	last_power = power
 	hitstop = HITSTOP * power
 	target.take_hit(point, swing, power, hitstop)
 	var kind: String = target.get("impact_kind") if target.get("impact_kind") != null else "wood"
 	ImpactFX.spawn(player.get_parent(), point, swing, kind, power)
 	player.add_shake(0.32 * power)
 	hit_landed.emit(target, point, power)
+
+## Staff overhead, easing up from wherever the arms were; a tremble grows with the charge.
+func _charge_pose() -> Array:
+	var f := clampf(charge_t / RAISE_TIME, 0.0, 1.0)
+	var k: Array = [[0.0] + _raise_from, [1.0] + RAISED]
+	var pose := _pose_at(k, f)
+	var shake := 0.6 + 1.2 * float(tier)
+	pose[0] += sin(charge_t * 47.0) * shake * f
+	pose[1] += sin(charge_t * 39.0 + 1.3) * shake * 0.6 * f + 4.0 * float(tier) * f
+	return pose
+
+## The smash meets the ground ahead: a burst of soil and grit, and the camera feels it.
+func _ground_slam() -> void:
+	var tip := tip_position()
+	var at := Vector3(tip.x, player.global_position.y + 0.05, tip.z)
+	ImpactFX.spawn(player.get_parent(), at, Vector3.DOWN, "stone", 0.8 + 0.35 * float(tier))
+	player.add_shake(0.18 + 0.1 * float(tier))
 
 ## Puts both grips on the authored staff line, pulls each into its shoulder's reach (the
 ## shoulders turn with the spine twist), then lays the staff through the two grips.

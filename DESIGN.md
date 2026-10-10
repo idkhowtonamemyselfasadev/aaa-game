@@ -112,8 +112,8 @@ colour flash (white = dodge, red = unblockable, gold = parryable).
 
 | Stance | Fantasy | Light string (L×4) | Heavy (hold) | Special |
 |--------|---------|--------------------|--------------|---------|
-| **Ward** (default) | Balanced, mobile | thrust, sweep, overhead, spin | Planted thrust; **parry** window on heavy start (0.25 s) | Perfect dodge → 1.5 s time-dilation |
-| **Pillar** | Heavy, grounded | slow arcs, each with hyper-armour | Ground slam, AoE knockdown; chargeable 3 tiers | Charging while being hit builds Focus faster |
+| **Ward** (default) | Balanced, mobile | thrust, sweep, overhead, spin | Rising overhead smash, hold to charge 3 tiers (stamina 16/22/28, power 1.8/2.4/3.2); **parry** window on the raise (0.25 s): a deflect staggers the attacker 1.3 s and banks tier 1 | Perfect dodge → 1.5 s time-dilation |
+| **Pillar** | Heavy, grounded | slow arcs, each with hyper-armour | Ground slam, AoE knockdown; charges through hits (hyper-armour while charging) | Charging while being hit builds Focus faster |
 | **Crane** | Fast, aerial | quick 2-hit flurries, launches | Dive strike from mid-air, long reach | Air-dodge; light attacks keep you airborne |
 
 Focus (builds on hits/perfect dodges, 4 pips) spends on **Varied Combos**: a heavy inserted

@@ -178,5 +178,17 @@
   "time": "2026-10-10T20:38:24Z",
   "caption": "Lock-on: the follow camera slides over the right shoulder to frame the hero and the Hollow Soldier mid wind-up, with the bone-white reticle on its chest; still wrong: sci-fi placeholder bodies, over-bright foreground grass, steep framing shows too much ground.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-2134-parry.jpg",
+  "time": "2026-10-10T21:34:58Z",
+  "caption": "Parry: the hero raises the staff into the heavy just as the Hollow Soldier's thrust lands, a spark burst throws the spear aside; still wrong: sci-fi placeholder bodies, the spark reads as a soft orange blob, foreground grass blades are flat and glaring.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-2134-smash.jpg",
+  "time": "2026-10-10T21:34:58Z",
+  "caption": "Tier-2 heavy smash driving the staff into the meadow; still wrong: the slam dust is a grey sphere, a stray glint cloud hangs in the sky, the staggered soldier is missing from the frame (shot tool), placeholder hero body.",
+  "verdict": "fail"
  }
 ]

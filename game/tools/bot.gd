@@ -15,6 +15,9 @@ const ROUTES := {
 	# Hollow Soldier: notices, stalks, telegraphs and thrusts (hit), a perfect dodge on the
 	# glint, then the hero beats it down with the string until it crumbles
 	"soldier": [],
+	# Ward heavy: tap and full-charge smashes on the post, a parry on the soldier's thrust
+	# (stagger + free tier + punish), and a raise started too early that does not parry
+	"heavy": [],
 }
 
 var _world: Node3D
@@ -36,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -56,6 +59,9 @@ func _ready() -> void:
 		return
 	if name == "lockon":
 		_lockon_test()
+		return
+	if name == "heavy":
+		_heavy_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -499,3 +505,118 @@ func _lockon_test() -> void:
 	if hud.reticle_visible():
 		return _combat_done(false, "reticle still shown after release")
 	_combat_done(true, "range-gated pick, camera framing, strafe tracking, square-up, release on death")
+
+func _wait_heavy_done(c: StaffCombat) -> void:
+	while c.is_charging() or (c.is_attacking() and c.current_attack() == StaffCombat.HEAVY):
+		await get_tree().physics_frame
+
+## Heavy: a tap smashes at tier 0, a long hold climbs to tier 2 and hits harder for more
+## stamina; raising it just before the soldier's thrust lands deflects it.
+func _heavy_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	var post: TrainingPost = _world.training_post
+	await _ticks(10)
+	# 1) tap: draws, raises, comes down at tier 0 on the post
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	while c.heavies < 1:
+		await get_tree().physics_frame
+	var saw_slam := false
+	while c.is_attacking():
+		if _world.get_node_or_null("Impact") != null:
+			saw_slam = true
+		await get_tree().physics_frame
+	print("BOT heavy: tap -> heavies %d, tier %d, post hits %d, power %.1f, slam fx %s" % [c.heavies, c.tier, post.hits, c.last_power, saw_slam])
+	if post.hits < 1 or absf(c.last_power - StaffCombat.HEAVY_POWER[0]) > 0.01:
+		return _combat_done(false, "tapped heavy did not smash the post at tier 0")
+	# 2) hold to full charge, release
+	p.stamina = Player.STAMINA_MAX
+	var hits0 := post.hits
+	p.bot_heavy = true
+	var held := 0.0
+	var max_tier := 0
+	while held < 1.35:
+		await get_tree().physics_frame
+		held += get_physics_process_delta_time()
+		max_tier = maxi(max_tier, c.tier)
+	var st := p.stamina
+	p.bot_heavy = false
+	await _wait_heavy_done(c)
+	print("BOT heavy: held %.2f s -> tier %d, post hits %d -> %d, power %.1f, stamina %.0f -> %.0f, max hitstop %.3f" % [held, max_tier, hits0, post.hits, c.last_power, st, p.stamina, StaffCombat.HITSTOP * c.last_power])
+	if max_tier != 2 or post.hits <= hits0 or absf(c.last_power - StaffCombat.HEAVY_POWER[2]) > 0.01:
+		return _combat_done(false, "full charge did not reach tier 2 and smash at full power")
+	if st - p.stamina < StaffCombat.HEAVY_COST[2] - 1.0 and p.stamina > 0.5:
+		return _combat_done(false, "full-charge smash did not cost its stamina")
+	# 3) the soldier: walk in until it winds up, raise the heavy just before the thrust lands
+	var s: HollowSoldier = _world.soldier
+	var waited := 0.0
+	while s.windups < 1 and waited < 25.0:
+		var to := s.global_position - p.global_position
+		p.bot_input = _input_toward(s.global_position) if Vector2(to.x, to.z).length() > 6.0 else Vector2.ZERO
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	if s.windups < 1:
+		return _combat_done(false, "soldier never wound up")
+	p.stamina = Player.STAMINA_MAX
+	while s.state == HollowSoldier.WINDUP and s.t < HollowSoldier.WINDUP_T - 0.1:
+		await get_tree().physics_frame
+	var h0 := p.health
+	var sh0 := s.health
+	p.bot_heavy = true
+	var n := s.strikes
+	while s.strikes == n or (s.state == HollowSoldier.STRIKE and s.last_result == ""):
+		await get_tree().physics_frame
+	while s.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	print("BOT heavy: parry -> %s, parries %d, tier %d, hero health %.0f -> %.0f, soldier state %d (stagger %d)" % [s.last_result, c.parries, c.tier, h0, p.health, s.state, HollowSoldier.STAGGER])
+	if s.last_result != "parried" or c.parries != 1 or p.health < h0:
+		return _combat_done(false, "heavy raised on the thrust did not parry it")
+	if s.state != HollowSoldier.STAGGER or c.tier < 1:
+		return _combat_done(false, "parry did not stagger the soldier and bank a tier")
+	# punish: keep the charge to tier 2, shuffle in, release while it reels
+	while c.charge_t < StaffCombat.CHARGE_TIERS[2] + 0.02:
+		var to := s.global_position - p.global_position
+		p.bot_input = _input_toward(s.global_position) if Vector2(to.x, to.z).length() > 2.3 else Vector2.ZERO
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	var reeling := s.state == HollowSoldier.STAGGER
+	var gap := s.global_position - p.global_position
+	print("BOT heavy: release gap %.2f m, facing err %.2f rad" % [Vector2(gap.x, gap.z).length(), p.body.global_basis.z.angle_to(Vector3(gap.x, 0, gap.z))])
+	var taken := s.hits_taken
+	p.bot_heavy = false
+	await _wait_heavy_done(c)
+	print("BOT heavy: punish released while reeling %s -> soldier hits %d -> %d, health %.0f -> %.1f, power %.1f" % [reeling, taken, s.hits_taken, sh0, s.health, c.last_power])
+	if not reeling or s.hits_taken <= taken:
+		return _combat_done(false, "charged punish did not land on the staggered soldier")
+	# 4) raised too early: the window is over when the thrust lands -> it hits
+	if s.is_dead():
+		return _combat_done(false, "soldier died before the late-parry check")
+	s.health = HollowSoldier.HEALTH_MAX
+	n = s.windups
+	while s.windups == n:
+		var to := s.global_position - p.global_position
+		p.bot_input = _input_toward(s.global_position) if Vector2(to.x, to.z).length() > 3.5 else Vector2.ZERO
+		if not p.combat.is_attacking() and not p.combat.is_charging():
+			p.body.rotation.y = atan2(to.x, to.z)
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	while s.t < 0.1:
+		await get_tree().physics_frame
+	p.stamina = Player.STAMINA_MAX
+	h0 = p.health
+	var parries0 := c.parries
+	p.bot_heavy = true
+	n = s.strikes
+	while s.strikes == n or s.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	p.bot_heavy = false
+	await _wait_heavy_done(c)
+	print("BOT heavy: early raise -> %s, parries %d, hero health %.0f -> %.0f" % [s.last_result, c.parries, h0, p.health])
+	if c.parries != parries0 or s.last_result == "parried":
+		return _combat_done(false, "a raise started 0.7 s early still parried")
+	if s.last_result == "hit" and p.health >= h0:
+		return _combat_done(false, "unparried thrust did no damage")
+	_combat_done(true, "tap and tier-2 smashes, parry on the thrust staggered it, charged punish landed, early raise did not parry")

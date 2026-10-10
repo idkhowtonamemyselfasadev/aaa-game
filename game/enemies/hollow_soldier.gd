@@ -21,6 +21,7 @@ const STRIKE_T := 0.24
 const STRIKE_AT := 0.35        # normalised strike time the blow resolves
 const RECOVER_T := 0.95
 const STAGGER_T := 0.5
+const PARRIED_T := 1.3         # knocked off balance by a deflect: the big punish window
 const LUNGE := 1.1             # metres the thrust carries the body
 const DAMAGE := 22.0
 const POISE := 30.0
@@ -43,6 +44,9 @@ var state := IDLE
 var t := 0.0
 var health := HEALTH_MAX
 var poise := 0.0
+var parried_count := 0
+var _stagger_len := STAGGER_T
+var _recoil := 1.0
 var impact_kind := "stone"
 var windups := 0
 var strikes := 0
@@ -260,8 +264,29 @@ func take_hit(_point: Vector3, dir: Vector3, power: float, hitstop: float) -> vo
 		staggers += 1
 		_knock = d.normalized() * (1.6 + 1.4 * power)
 		_from = _pose
+		_stagger_len = STAGGER_T
+		_recoil = 1.0
 		state = STAGGER
 		t = 0.0
+
+## The hero's heavy deflected the thrust: the spear is batted aside, the soldier reels back
+## and stays open for PARRIED_T, whatever its poise.
+func parried(dir: Vector3, hitstop: float) -> void:
+	if state == DEAD:
+		return
+	parried_count += 1
+	staggers += 1
+	poise = 0.0
+	_freeze = hitstop
+	_flash = 0.6
+	_set_skin("hit_flash", _flash)
+	_update_glint(0.0)
+	_knock = Vector3(dir.x, 0, dir.z).normalized() * 1.5
+	_from = _pose
+	_stagger_len = PARRIED_T
+	_recoil = 1.8
+	state = STAGGER
+	t = 0.0
 
 # --- brain ---
 
@@ -349,10 +374,10 @@ func _physics_process(delta: float) -> void:
 			if u >= 1.0:
 				_enter(STALK)
 		STAGGER:
-			var u := clampf(t / STAGGER_T, 0.0, 1.0)
+			var u := clampf(t / _stagger_len, 0.0, 1.0)
 			_update_glint(0.0)
 			_pose = _lerp_pose(_from, [30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], minf(u * 3.0, 1.0)) if u < 0.5 else _lerp_pose([30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], GUARD, (u - 0.5) * 2.0)
-			lean = -0.22 * sin(PI * minf(u * 1.4, 1.0))
+			lean = -0.22 * _recoil * sin(PI * minf(u * 1.4, 1.0))
 			sink = 0.05
 			move = _knock * (1.0 - u) * (1.0 - u) * 2.2
 			ember = 1.6

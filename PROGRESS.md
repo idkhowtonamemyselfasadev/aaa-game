@@ -1,8 +1,8 @@
 # Progress
 
-Content hours playable: 0.12
+Content hours playable: 0.14
 (walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
-who can draw the staff, land a four-hit string on a practice post, and lock on to and fight one Hollow Soldier down the meadow
+who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
@@ -23,6 +23,42 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 21:00 UTC:
+  - **Ward heavy + parry (Next 8, sixth part).** `attack_heavy` (right mouse / pad) is now
+    live. Press raises the staff overhead (0.18 s ease from wherever the arms were, chest
+    turned away, a tremble that grows per tier); hold climbs tiers at 0.5 s / 1.1 s (a cold
+    metal glint at the ferrule + small shake per tier); release (or 2.6 s held) brings it
+    down: a hitch at the top, then the smash into the ground ahead with a soil/grit burst and
+    shake. Tier stamina 16/22/28, power 1.8/2.4/3.2 (hit-stop up to 0.21 s; tier 2 breaks the
+    soldier's poise even mid-thrust). A tap still raises for 0.16 s then smashes at tier 0.
+    While charging the hero shuffles at 1.1 m/s, tracks the lock / nearest foe, no stamina
+    regen. The smash steps in with one decisive stride (4 m/s from release, 4x accel) and
+    stops at reach. From a light swing the heavy cuts in once the strike is past, otherwise
+    it queues; a dodge cancels the charge back to guard.
+  - **Parry:** the first 0.25 s of the raise deflects a blow (`Player.receive_attack` asks
+    `StaffCombat.try_parry` first -> "parried"): 0.13 s freeze on both fighters, a big metal
+    spark burst between them, shake, the charge jumps to tier 1. `HollowSoldier.parried()`
+    bats the spear aside: 1.3 s stagger with a 1.8x recoil lean, poise reset, short
+    knock-back — the window for the charged punish.
+  - Found + fixed: the authored low smash pose was unreachable (grips clamp to shoulder
+    reach and the solved staff came out ~96 deg off, lying sideways at chest height).
+    `tools/pose_check.py` replays `_solve()` offline and prints each pose's axis error —
+    it also shows the *light string* guard/sweep/overhead-end poses are 30–65 deg off (bug below).
+  - DESIGN.md: Ward heavy is now the chargeable rising smash with the parry on the raise;
+    Pillar's heavy keeps the AoE slam and gains hyper-armour charging.
+  - Bots: new `heavy` route — tap -> post hit at power 1.8 with slam FX; hold 1.4 s -> tier 2,
+    power 3.2, stamina -28; raise 0.1 s before the thrust lands -> "parried", no damage,
+    soldier STAGGER, tier 1; keep charging to tier 2, shuffle in, release while it reels ->
+    hit (90 -> 48); raise 0.7 s early -> window gone, thrust hits (100 -> 78).
+  - Shot spot flags `soldier ... strike parry` (deflect moment) and `soldier ... stagger smash`.
+    The action runs after the warm-up frames: pausing the tree (as `impact` does) froze the
+    world's sky/terrain update and grass streaming — the first parry shot had bare red ground.
+  - Verdicts: `parry2` 10h — the deflect reads (spark burst between staff and spear, soldier
+    recoiling); fail: placeholder sci-fi bodies, spark is a soft orange blob without streaks,
+    flat glaring foreground grass. `smash2` 10h — staff driven down low ahead of the hero;
+    fail: slam dust renders as a grey sphere, a tier-glint cloud hangs in the sky, the
+    staggered soldier is not in frame (shot tool), placeholder body. Renderer unchanged:
+    Forward+ on lavapipe under xvfb, ~3 min per shot.
 - Session 2026-10-10 20:00 UTC:
   - **Lock-on (Next 8, fifth part).** `lock_on` (middle mouse / pad R3) toggles. The pick takes
     the hittable nearest the camera's line of sight within 16 m (score = angle·6 + dist·0.35);
@@ -375,7 +411,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
    stamina cost, practice post; 18:00: dodge, perfect dodge slow-mo, HUD bars.) Still to do:
    (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
-   soft lock; 20:00: lock-on + reticle.) Next: heavy with parry window, a
+   soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry.) Next: re-author the
+   light-string poses so `tools/pose_check.py` is under ~15 deg for every key, a
    second soldier move (sweeping cut so a backstep isn't always right), a rag/cloth tabard and
    hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
    patrol/camp near the start road.
@@ -383,6 +420,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Heavy FX: the ground-slam burst (ImpactFX "stone" at the tip) renders as a soft grey
+  sphere, and the tier glints ("metal" at the tip) leave a brown cloud high up. Needs a
+  proper debris/dust-ring effect and a small sharp glint sprite.
+- `soldier ... stagger smash` shot: the soldier is missing from the frame (not investigated).
+- Light-string poses are partly unreachable (`python3 tools/pose_check.py`): guard 55, the
+  opening sweep 56, the overhead's follow-through 65 deg off — the staff lies more sideways than
+  authored. The combat bot still passes (it hits the post), but it reads wrong in motion.
+- The hero has no hit reaction: a thrust that lands during a heavy charge does not interrupt
+  it (no flinch/hyper-armour rule yet).
+- No gold "parryable" flash on the soldier's tell yet (DESIGN.md colour code); the blade glint
+  doubles for it.
 - Lock-on has no strafe clips: moving while locked the hero turns to run in the stick
   direction (only standing still squares up). Needs Mixamo strafe/walk-back clips.
 - Lock-on target switching is mouse-flick only; no right-stick binding yet (no camera stick
