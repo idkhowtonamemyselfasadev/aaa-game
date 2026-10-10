@@ -97,5 +97,19 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and (at == null or not at.active or _max_blend < _player.ANIM_RUN_SPEED * 0.8):
 		ok = false
 		why = "player locomotion animation did not blend into the run"
+	# the staff must be slung on the back: behind the torso, at shoulder-to-hip height, ~1.86 m long
+	var staff: Staff = _player.staff
+	if staff != null:
+		var local := _player.body.global_transform.affine_inverse() * staff.global_position
+		var aabb := staff.get_aabb()
+		var tip := staff.global_transform * Vector3(0, aabb.end.y, 0)
+		var butt := staff.global_transform * Vector3(0, aabb.position.y, 0)
+		print("BOT staff: centre body-local %s, length %.2f m" % [local, tip.distance_to(butt)])
+		if ok and (local.z > -0.05 or local.y < 0.9 or local.y > 1.6 or absf(tip.distance_to(butt) - Staff.LENGTH) > 0.05):
+			ok = false
+			why = "staff is not slung across the player's back at body scale"
+	elif ok:
+		ok = false
+		why = "player has no staff"
 	print("BOT %s: %s (t=%.1fs, y range %.1f..%.1f, stamina %.0f)" % ["PASS" if ok else "FAIL", why, _t, _min_y, _max_y, _player.stamina])
 	get_tree().quit(0 if ok else 1)

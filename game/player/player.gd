@@ -37,6 +37,35 @@ func _ready() -> void:
 	if not use_bot_input and DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_setup_animation()
+	_attach_staff()
+
+## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
+## bound to the upper spine so it follows the torso's sway in every clip.
+const STAFF_ON_BACK := Vector3(0.0, 1.28, -0.19)   # body space; body faces +Z
+var staff: Staff
+
+func _attach_staff() -> void:
+	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skel == null:
+		return
+	var bone := skel.find_bone("mixamorig_Spine2")
+	if bone < 0:
+		return
+	var att := BoneAttachment3D.new()
+	att.name = "BackSlot"
+	skel.add_child(att)
+	att.bone_name = "mixamorig_Spine2"
+	staff = Staff.new()
+	staff.name = "Staff"
+	att.add_child(staff)
+	# desired pose in body space: axis tilted ~38° off vertical toward the right shoulder,
+	# twisted so the cloth grip sits mid-back
+	var axis := Vector3(-0.62, 1.0, 0.0).normalized()
+	var b := Basis(Quaternion(Vector3.UP, axis))
+	var want := body.global_transform * Transform3D(b, STAFF_ON_BACK)
+	# solve the attachment-local offset at the rest pose (skeleton may carry a 0.01 scale)
+	var bone_rest := skel.global_transform * skel.get_bone_global_rest(bone)
+	staff.transform = bone_rest.affine_inverse() * want
 
 func _setup_animation() -> void:
 	var ap := model.find_child("AnimationPlayer", true, false) as AnimationPlayer

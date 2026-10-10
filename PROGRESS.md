@@ -22,6 +22,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 15:00 UTC:
+  - **The hero carries a staff (was Next 7, staff part).** `player/staff.gd` builds a 1.86 m
+    lathe mesh in code: worn-bronze end caps with machined ridges, a red-brown lacquered
+    shaft, a cloth-wrapped grip at the balance point. `shaders/staff.gdshader` adds all detail
+    procedurally (wood grain, lacquer worn through to wood, tarnish in pits/polished highs,
+    diagonal wrap bands with weave and dirt) plus derivative bump. Out of combat it is slung
+    diagonally across the back (right shoulder to left hip) on a BoneAttachment3D on
+    `mixamorig_Spine2`; the attachment offset is solved at the rest pose so it is body-scaled
+    whatever the skeleton's import scale. It sways with the torso in every clip.
+  - Bots: both routes assert the staff sits behind the torso at 0.9–1.6 m and measures 1.86 m
+    in world space (PASS; centre moves with the run lean).
+  - Shot spots `heroback` (rear 3/4, 3 m) and `staff` (rear close-up, 1.6 m).
+  - Verdicts: `staff2` 10h — the staff itself would pass: bronze caps catch the light, red
+    lacquer and hemp wrap read at 1.6 m. Fail overall: sci-fi soldier model, no strap holds it.
+    `heroback` 15.5h backlit — staff silhouette at the right scale across the back. Fail: model.
+    `hero` 10h — staff visible over the shoulder from the front. Fail: model, harsh rim light.
+  - First-pass staff colours were too dark under backlight (caps read black); brightened.
 - Session 2026-10-10 14:00 UTC:
   - **The capsule is gone: the player is a rigged, animated humanoid (was Next 7, first half).**
     `game/player/models/vanguard.glb` (Mixamo "Vanguard", 1.83 m, skinned, PBR body + visor,
@@ -206,14 +223,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    "Vanguard" with a mythic hero (robes, hair, face) — look for CC0/CC-BY realistic humanoids in
    GitHub repos (github/raw.githubusercontent work; the clip names Idle/Walk/Run + mixamorig bones
    let a Mixamo-rigged model drop in and retarget); jump/fall clips, foot IK on slopes, turn-in-
-   place, cloth/hair sway; the staff (procedural PBR: worn iron caps, lacquered wood, cloth wrap)
-   held via BoneAttachment3D on mixamorig_RightHand.
+   place, cloth/hair sway; the staff.
+   (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
+   starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
 8. Combat (Ward stance): L×4 string, heavy with parry window, dodge + perfect dodge
    time-dilation, hit-stop, lock-on, stamina; Hollow Soldier enemy with telegraphs.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- The staff floats against the back (no strap/frog) and can clip the arms in extreme poses;
+  it has no collision (cosmetic only).
 - Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip
   (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
 - Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m).

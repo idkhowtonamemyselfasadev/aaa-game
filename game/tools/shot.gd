@@ -49,6 +49,12 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.6) * 3.2, pp]
+	if spot == "heroback" or spot == "staff":
+		# rear three-quarter of the idle player: the staff slung across the back
+		var pp := player.global_position
+		var back := -player.body.global_transform.basis.z
+		var d := 3.0 if spot == "heroback" else 1.6
+		SPOTS[spot] = [pp + back.rotated(Vector3.UP, -0.5) * d, pp + Vector3.UP * (0.0 if spot == "heroback" else 0.25)]
 	if spot == "herorun":
 		# player runs to the camera's right: side view of the run cycle from the follow camera
 		player.use_bot_input = true
@@ -59,8 +65,8 @@ func _ready() -> void:
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot == "hero" else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.1 if spot == "hero" else 1.5)
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
