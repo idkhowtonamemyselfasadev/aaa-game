@@ -6,7 +6,7 @@ extends Node3D
 @export var time_of_day: float = 17.25           # hours, 0..24; starts in the evening
 @export var run_clock: bool = true
 @export var sun_peak_deg: float = 28.0           # Long Dusk: low amber days, noon sun ~28 degrees
-@export var sky_energy_scale: float = 1.0
+@export var sky_energy_scale: float = 2.6        # PhysicalSky is calibrated for a ~1.0 sun; ours is 3.0
 @export var ambient_scale: float = 1.0
 @export var sdfgi_allowed: bool = true            # quality setting; auto-off on software GPUs
 
@@ -148,9 +148,15 @@ func _apply_time() -> void:
 	if env.environment:
 		var sky := env.environment.sky.sky_material as PhysicalSkyMaterial
 		if sky:
-			sky.energy_multiplier = lerpf(0.35, 1.0, day) * sky_energy_scale
+			# Only write the sky material when a value really changes: every write marks the
+			# sky dirty and restarts its incremental radiance bake.
+			var ener := snappedf(lerpf(0.35, 1.0, day) * sky_energy_scale, 0.02)
+			if not is_equal_approx(sky.energy_multiplier, ener):
+				sky.energy_multiplier = ener
 			# PhysicalSky adds night_sky unattenuated, so only bind the stars after dusk
-			sky.night_sky = _stars if day < 0.08 else null
+			var want_stars: Texture2D = _stars if day < 0.08 else null
+			if sky.night_sky != want_stars:
+				sky.night_sky = want_stars
 		# Ambient is a time-of-day colour, not the sky radiance: sky-sourced ambient measured
 		# ~0 in shadow (x4 energy changed nothing), so every shadowed surface went black.
 		# Day: blue-grey skylight that warms toward dusk; night: cool moonlit blue.

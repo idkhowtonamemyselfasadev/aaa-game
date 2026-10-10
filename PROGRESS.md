@@ -21,6 +21,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 11:00 UTC (ran in parallel with the 10:00 one; rebased onto it):
+  - **Afternoon sky no longer navy (was Next 1).** The PhysicalSky is calibrated for a
+    ~1.0 sun and ours is 3.0, so the sky (and its reflections) rendered far too dark.
+    `sky_energy_scale` default 1.0 -> 2.6: clear blue at noon and 16:30.
+  - Sky material is written only when energy/stars actually change (each write restarts
+    the incremental radiance bake).
+  - `tools/shots.sh` forwards extra words to shot.gd, so the diagnostic flags work:
+    `tools/shots.sh "village v 30 16.5 nosdfgi"` (before, only the hour got through).
 - Session 2026-10-10 10:00 UTC:
   - **Fixed "everything in shadow renders pure black"** (top visual bug). Diagnosed with
     480x270 test shots (`--resolution 480x270`, 20 frames, ~2 min each — use these for
@@ -130,8 +138,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-1. Afternoon sky too dark/navy (16–17 h): tune PhysicalSky rayleigh/exposure so late
-   afternoon reads bright and warm; verify SDFGI on a real GPU some day (cloud box can't).
+1. (done 11:00: sky_energy_scale 2.6.) Still to do: dusk (17.5–18.5 h) sky colour check, and
+   verify SDFGI on a real GPU some day (cloud box can't).
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
@@ -148,6 +156,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- `village` shot spot: a dark wedge fills the left edge — the camera at (-30, 40) sits against a
+  tree trunk; move the spot or keep flora clear of fixed camera spots.
 - (fixed: shadowed surfaces pure black.) SDFGI is off on the cloud box (software GPU);
   whether SDFGI + sky ambient light shadows correctly on a real GPU is unverified.
 - Late-afternoon sky renders dark navy.

@@ -58,5 +58,17 @@
   "time": "2026-10-10T11:05:07Z",
   "caption": "Village edge at 16:30, previously half black: the shadowed meadow is now visible, but the sky is too dark navy for late afternoon and the horizon is empty.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1116-afternoon-sky-blue.jpg",
+  "time": "2026-10-10T11:16:48Z",
+  "caption": "16:30 over the village meadow: the sky is now a deep clear blue instead of navy and the shaded meadow reads; a tree trunk still blocks the left edge and the hills are bare procedural orange.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1116-noon-meadow-sky.jpg",
+  "time": "2026-10-10T11:16:48Z",
+  "caption": "Noon oak slope under a bright blue sky with readable shadow sides; leaf cards are blobby up close and the valley floor is bare brown.",
+  "verdict": "fail"
  }
 ]
