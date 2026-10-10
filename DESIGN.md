@@ -2,7 +2,8 @@
 
 Working title: **Emberfall**. Third-person open-world action-adventure. Exploration and
 physics-ability puzzles in the spirit of *Tears of the Kingdom*; heavy, readable stance-based
-melee in the spirit of *Black Myth: Wukong*. Target length ~100 h. Engine: Godot 4.7 (Forward+).
+melee in the spirit of *Black Myth: Wukong*. Target length ~30 h (owner's direction, 2026-10-10: quality over quantity). Engine: Godot 4.7
+(Forward+). Look: realistic, Black Myth: Wukong-grade; the world must feel alive (§8).
 
 ---
 
@@ -41,15 +42,15 @@ life as the new chain. She is right about the stakes and wrong about the price.
   learns to come down.
 
 **Structure.**
-- *Act I (Surface, ~10 h):* Harrowmere burns. Wren takes the lantern, meets Pell, learns the
+- *Act I (~3 h):* Harrowmere burns. Wren takes the lantern, meets Pell, learns the
   four abilities across the Greywold and Harrowmere Vale, lights the first tower, defeats the
   Ashen Knight (first dungeon). Learns the Ember is in the Depths and Ashka is hunting it.
-- *Act II (Breadth, ~17 h):* Four regions, four dungeons, four Ember-keys. Each region's
-  dungeon boss is one of Ashka's former guardians. Wren gains the sky (Caelum's gliders) and the
-  Depths (Oru's route). Pell starts forgetting. Idris's betrayal / redemption. Midpoint:
+- *Act II (~6 h):* Two regions, two dungeons, two Ember-keys. Each region's
+  dungeon boss is one of Ashka's former guardians. Wren gains the glider (Caelum's envoy) and the
+  Depths route (Oru's). Pell starts forgetting. Idris's betrayal / redemption. Midpoint:
   Ashka takes the lantern and Wren falls into the Depths without it — a 90-minute segment
   with no abilities, learning the Depths' own light-rules.
-- *Act III (Convergence, ~8 h):* Wren reclaims the lantern from Ashka's citadel in the sky,
+- *Act III (~3 h):* Wren reclaims the lantern from Ashka's citadel in the capital,
   descends the shaft under the capital with every ally, fights Ashka (5 phases) at the Ember,
   then chooses: re-chain it (the sun returns, the sky islands fall, the Hollow — Pell included —
   die) or let it burn free (dusk remains but the world learns to live in it; Pell stays).
@@ -62,30 +63,25 @@ story: every region's architecture is from a different century of the chained-su
 
 ## 2. World
 
-One seamless map, ~64 km² surface (8 × 8 km), plus a sky layer and a Depths layer streamed
-with the surface. Travel: on foot, climbing, gliding, the mount (an elk-like **Stag**),
-fast travel between lit towers and completed shrines.
+One seamless map, ~16 km² surface (4 × 4 km), four regions with distinct biomes, plus a small
+Depths layer (caverns under the capital, streamed with the surface) for the midpoint. Travel: on
+foot, climbing, gliding, the mount (an elk-like **Stag**), fast travel between lit towers and
+completed shrines. Real places first: every region has a reason people live (or lived) there.
 
-| # | Region | Size | Visual identity | Century / ruin style | Weather bias | Dungeon |
-|---|--------|------|-----------------|----------------------|--------------|---------|
-| 1 | **Harrowmere Vale** (start) | 6 km² | Temperate dusk pastoral: amber grass, black-oak hedgerows, slate-roofed villages, lantern posts everywhere, long shadows | Late era: timber + whitewash, lamplighter cult shrines | Clear, mist at dawn | — (tutorial cave "Lanternroot") |
-| 2 | **The Greywold** | 8 km² | Old-growth forest, moss, grey-green palette, canopy light shafts, giant fallen trunks as bridges | Early era: moss-swallowed stone circles | Rain, fog | **D1: The Ashen Priory** |
-| 3 | **Vellmarsh** | 7 km² | Flooded delta: reed seas, stilt villages, bioluminescent water at dusk, teal/ochre | Middle era: brick aqueducts | Rain, lightning storms | **D2: The Drowned Cistern** |
-| 4 | **Shale Barrens** | 9 km² | Red badlands, hoodoos, crashed sky-fleet hulls as settlements, dust and sodium-orange light | Sky-fleet wrecks (iron, canvas) | Sandstorms, clear nights | **D3: The Fallen Dreadnought** |
-| 5 | **Frostmere Reach** | 8 km² | Glacial fjords, blue ice, black rock, aurora, snow with wind-driven drifts | Chained-sun era watchtowers in ice | Blizzard, aurora | **D4: The Glass Monastery** |
-| 6 | **The Ember Capital (Aurel)** | 6 km² | Vast ruined white-stone city, half sunk, the broken chain-pylons as landmarks, gold/ivory/soot | First era: colossal | Ash-fall | **D6: The Chain Shaft** (final) |
-| 7 | **Thornhollow** | 6 km² | Cursed heath; black briar, red skies, Hollow concentration; the "hard" region | Mixed, corrupted | Red fog | World bosses only |
-| 8 | **Sunward Coast** | 6 km² | Cliffs, sea-stacks, the only place the sun is nearly up: warm light, wildflowers | Fishing villages | Clear | Side content hub |
-| S | **The Shelf (sky layer)** | ~40 islands | Floating temple islands, pale stone, chains trailing into cloud, extreme vertical, god-rays | Chained-sun era | Wind, cloud layer | **D5: Caelum's Orrery** |
-| U | **The Depths** | mirrors surface | Lightless caverns, giant fungus, Emberglow veins (orange) as the only light, inverted ruins | None (natural) | Dark; spore storms | Act II midpoint segment |
+| # | Region | Size | Biome / visual identity | Ruin style | Weather bias | Dungeon |
+|---|--------|------|-------------------------|------------|--------------|---------|
+| 1 | **Harrowmere Vale** (start) | 3.5 km² | Temperate pastoral at low sun: dry amber grass, black oaks, hedgerows, slate-roofed stone-and-timber village, lantern posts, sheep and deer | Late era: timber + whitewash, lamplighter shrines | Clear, dawn mist, passing showers | — (tutorial cave "Lanternroot") |
+| 2 | **The Greywold** | 4.5 km² | Old-growth mountain forest: moss, ferns, wet rock, mist, canopy light shafts, fallen giant trunks, temple steps in the cliffs (Wukong's Black Wind Mountain is the mood reference) | Early era: moss-swallowed stone temples | Rain, fog, storms | **D1: The Ashen Priory** |
+| 3 | **Vellmarsh** | 4 km² | Flooded delta: reed seas, stilt villages, mangrove-like roots, herons, teal/ochre | Middle era: brick aqueducts | Rain, lightning storms | **D2: The Drowned Cistern** |
+| 4 | **Aurel, the Ember Capital** | 4 km² | Vast ruined white-stone city half sunk into a gorge, broken chain-pylons, ash-fall, gold/ivory/soot; the Depths open beneath it | First era: colossal | Ash-fall, wind | **D3: The Chain Shaft** (final) |
+| U | **The Depths** (under Aurel) | ~1 km² | Lightless caverns, giant fungus, Emberglow veins as the only light | Natural | Dark; spore drifts | Midpoint segment |
 
-**Landmarks per region:** 1 tower (Sefi's cartography towers, 8 surface + 1 sky = 9), 12–14
-shrines, 1 stable, 2–3 settlements, 1 world boss, caves with Depths entrances (chasms). Main
-road network connects all stables; side roads are deliberately broken by ruins to force
-traversal.
+**Landmarks per region:** 1 tower (Sefi's cartography towers, 4), 6–9 shrines (30 total), 1
+stable, 1–2 settlements with daily life, 1 world boss, 2–3 caves. Main road network connects
+the settlements; side roads are broken by ruins to force traversal.
 
-**Streaming:** 512 m chunks, 3 LOD rings; sky and Depths as separate chunk sets at ±400 m.
-No loading screens except initial load and fast travel.
+**Streaming:** 512 m chunks, 3 LOD rings; the Depths as a separate chunk set. No loading
+screens except initial load and fast travel.
 
 ---
 
@@ -101,7 +97,7 @@ Each ability is taught by Act I and used in every subsequent shrine/dungeon.
 | **Kindle** | Light/extinguish lanterns and braziers at range; heats metal. | Light-path puzzles; melt ice; power machines | Set oil pools alight | Harrowmere Vale |
 | *Fuse (Bind variant)* | Attach object to weapon/shield/arrow | Element arrows | Core to combat variety | with Bind |
 
-Traversal: climb any surface (stamina-limited, rain slows), glide (Caelum's paraglider, Act II
+Traversal: climb any surface (stamina-limited, rain slows), glide (Caelum's glider, Act II
 start; stamina), swim, Stag mount (whistle; fast on roads).
 
 ---
@@ -126,14 +122,15 @@ mid-string that changes animation by stance. Spells (cooldown + mana):
 | Spell | Effect | Source |
 |-------|--------|--------|
 | **Still** | Immobilise one target 4 s (bosses 1.5 s) | Act I |
-| **Many** | 3 lantern-clones, 8 s, each does 30 % dmg | D2 |
-| **Become** | Transform into last-defeated elite's form, own moveset, 20 s | D3 |
-| **Cloak of Embers** | 6 s damage shield that detonates | D4 |
+| **Many** | 3 lantern-clones, 8 s, each does 30 % dmg | D1 |
+| **Become** | Transform into last-defeated elite's form, own moveset, 20 s | D2 |
+| **Cloak of Embers** | 6 s damage shield that detonates | Greywold world boss |
 
 ### Enemy roster (surface)
 Hollow Wisps (fodder), Hollow Soldiers (shield/spear/axe variants), Briar Hounds, Ashen
-Archers, Stone Sentinels (shrine guards), Sky Automatons, Marsh Drowned, Ice Hewers, Elites
-(one per archetype, grant **Become** forms), 8 world bosses.
+Archers, Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archetype, grant
+**Become** forms), 4 world bosses. Wildlife (§8) is not an enemy class but predators will
+fight anything nearby, including Hollow.
 
 ### Bosses (3–5 phases, mechanic change per phase)
 
@@ -141,95 +138,75 @@ Archers, Stone Sentinels (shrine guards), Sky Automatons, Marsh Drowned, Ice Hew
 |------|-------|----|----|----|----|----|
 | **Ashen Knight** (D1) | Ashen Priory | Shield + sword, parryable | Drops shield, two-hander, unblockables | Sets arena alight; Kindle to clear safe lanes | — | — |
 | **The Drowned Choir** (D2) | Cistern | 3 singers, each a shield for the others | Arena floods; fight on Bind-rafts | One giant singer; Recall its tidal waves | — | — |
-| **Commodore Idris's Engine** (D3) | Dreadnought | Automaton boarding | Engine core, heat vents (Kindle off) | Ship tilts — climbing fight | Idris himself, duel | — |
-| **Abbess of Glass** (D4) | Glass Monastery | Mirror clones (Many counters) | Freezes floor, Crane only | Shatters; Rise through ceilings to chase | Glass storm, parry rhythm | — |
-| **Caelum's Guardian** (D5) | Orrery | Orbit platforms | Gravity flips | Open sky, glide combat | — | — |
 | **Warden Ashka** (final) | Ember | Duel, Ward stance tutorial-mirror | Takes lantern; no abilities | Pell returns it; all abilities | Ember itself fights; arena collapses | Chain-ascent chase, QTE-free climb duel |
-| World bosses ×8 | one per region | 3 phases each; Thornhollow's has 4 | | | | |
+| **Warden Ashka** fights at the end of **D3 Chain Shaft**. | | | | | | |
+| World bosses ×4 | one per region | 3 phases each | | | | |
 
 ---
 
-## 5. Content budget (~100 h)
+## 5. Content budget (~30 h)
 
-| Bucket | Items | h each | Hours |
-|--------|-------|--------|-------|
-| Main story quests | 24 quests, 6 dungeons (1.5 h each), cutscenes | — | **35** |
-| Major side quests (5 arcs × 4–6 quests) | 26 quests | ~1 | **25** |
-| Shrines | 110 shrines (12–14 per region + 10 sky) | 0.18 | **20** |
-| Mini-dungeons / caves with a goal | 20 | 0.25 | **5** |
-| World bosses | 8 | 0.4 | **3** |
-| Collectibles (lanterns 120, Pell's memories 60, armour sets 12) | — | — | **6** |
-| Towers (9), stables (8), settlements (18 with jobs/cooking) | — | — | **4** |
-| Secrets / hidden endings / Depths exploration | — | — | **2** |
-| **Total** | | | **100** |
+| Bucket | Items | Hours |
+|--------|-------|-------|
+| Main story | 12 quests incl. 3 dungeons and cutscenes | **12** |
+| Side quests | 4 arcs, 14 quests | **8** |
+| Dungeons' optional wings + shrines | 30 shrines × ~10 min, + 1 h dungeon side wings | **6** |
+| Exploration / secrets / world bosses | 4 world bosses (0.4 h), 4 towers, caves, Pell's memories (40), hidden ruins | **4** |
+| **Total** | | **30** |
 
-### Main quest list (35 h)
+### Main quest list (12 h)
 | # | Quest | Hours | Objective → Reward | Why it exists |
 |---|-------|-------|-------------------|---------------|
 | M1 | The Last Lamp | 0.5 | Escape Harrowmere's burning → Lantern | Hook, establishes stakes |
-| M2 | Lanternroot | 1.0 | Tutorial cave; learn Bind, Kindle → Pell joins | Teach abilities |
-| M3 | A Light on the Hill | 1.0 | First tower; learn Recall → map | Open the world |
-| M4 | The Greywold Road | 1.5 | Reach Priory; learn Rise, Ward stance | First combat gate |
-| M5 | **D1 Ashen Priory** | 1.5 | Boss: Ashen Knight → Still spell, Ember-key 1 | Act I climax |
-| M6 | What Ashka Wants | 1.0 | Cutscene + chase through Vale | Reveal antagonist |
-| M7 | River Mother | 1.5 | Vellmarsh: earn Oru's trust (3 tasks) | Introduce Oru |
-| M8 | **D2 Drowned Cistern** | 1.5 | Boss: Drowned Choir → Many, key 2 | |
-| M9 | Dust and Iron | 1.5 | Barrens: Idris's camp, prove yourself | Introduce Idris |
-| M10 | **D3 Fallen Dreadnought** | 1.5 | Boss: Idris's Engine → Become, key 3, Pillar stance | |
-| M11 | Up | 1.0 | Caelum's envoy; first flight → glider, sky access | Opens sky |
-| M12 | The Court of Gears | 1.5 | Sky politics; 3 island trials | Caelum's arc |
-| M13 | **D5 Caelum's Orrery** | 1.5 | Boss: Guardian → key 5 (out of order on purpose), Crane stance | |
-| M14 | Cold Vigil | 1.5 | Frostmere: find the monastery through blizzard | |
-| M15 | **D4 Glass Monastery** | 1.5 | Boss: Abbess → Cloak of Embers, key 4 | |
-| M16 | The Taking | 1.0 | Ashka ambush; lantern lost; fall | Midpoint |
-| M17 | Lightless | 1.5 | Depths with no abilities; Oru's daughter | Low point |
-| M18 | Pell's Light | 1.0 | Pell finds you; partial lantern returns | Companion payoff |
-| M19 | Gathering | 2.0 | Recruit allies (Idris, Oru, Caelum, Sefi) — 4 short quests | Convergence |
-| M20 | The Citadel in the Sky | 2.0 | Assault Ashka's citadel, reclaim lantern | Act III opening |
-| M21 | Aurel | 1.5 | Cross the ruined capital with allies | Spectacle |
-| M22 | **D6 Chain Shaft** | 2.0 | Descent dungeon, all abilities tested | |
-| M23 | The Ember | 1.5 | Boss: Ashka, 5 phases | Climax |
-| M24 | Dusk or Dawn | 0.5 | Choice + epilogue | Ending |
-| | cutscenes/travel/dialogue overhead | 2.5 | | |
-| | **Total** | **35** | | |
+| M2 | Lanternroot | 0.75 | Tutorial cave; learn Bind, Kindle → Pell joins | Teach abilities |
+| M3 | A Light on the Hill | 0.75 | First tower; learn Recall → map | Open the world |
+| M4 | The Greywold Road | 1.0 | Reach the Priory through the forest; learn Rise, Ward stance | First combat gate |
+| M5 | **D1 Ashen Priory** | 1.5 | Boss: Ashen Knight → Still + Many, Ember-key 1 | Act I climax |
+| M6 | What Ashka Wants | 0.75 | Cutscene + chase back through the Vale; Caelum's envoy → glider | Reveal antagonist |
+| M7 | River Mother | 1.0 | Vellmarsh: earn Oru's trust (3 tasks); Idris's raiders | Introduce Oru, Idris |
+| M8 | **D2 Drowned Cistern** | 1.5 | Boss: Drowned Choir → Become, Pillar stance, key 2 | |
+| M9 | The Taking | 0.75 | Ashka ambush at Aurel's gate; lantern lost; fall into the Depths | Midpoint |
+| M10 | Lightless | 1.0 | Depths with no abilities; Oru's daughter; Pell returns the lantern | Low point, companion payoff |
+| M11 | **D3 Chain Shaft** | 1.5 | Gathered allies; descent dungeon, Crane stance; boss: Ashka, 5 phases | Climax |
+| M12 | Dusk or Dawn | 0.25 | Choice + epilogue | Ending |
+| | **Total** | **12** | | |
 
-### Side arcs (25 h)
-- **Idris's Fleet** (6 quests, 6 h): salvage the sky-fleet; ends with trust/betrayal choice.
-- **Oru's Daughter** (5 quests, 5 h): track the Hollow daughter through the marsh and Depths.
-- **Sefi's Towers** (5 quests, 4 h): one memory per restored tower cluster; ending choice.
-- **Pell Remembers** (6 quests, 5 h): recover memory-shards; determines epilogue line.
-- **The Sunward Guild** (4 quests, 5 h): Sunward Coast's lighthouse network; unlocks the
-  Stag's armour and the Coast world boss.
+### Side arcs (8 h)
+- **Idris's Debt** (4 quests, 2.5 h): the bandit general's raiders in Vellmarsh; trust/betrayal choice.
+- **Oru's Daughter** (3 quests, 2 h): track the Hollow daughter through the marsh and Depths.
+- **Sefi's Towers** (4 quests, 1.5 h): one memory per tower; ending choice.
+- **Pell Remembers** (3 quests, 2 h): recover memory-shards; determines epilogue line.
+(Caelum appears in M6/M11 only; his court is cut with the sky layer.)
 
 ### Shrine design rules
 Each shrine: one ability focus, one twist, 8–15 min. Four families: Bind-construction,
 Recall-timing, Rise-vertical, Kindle-light-path; plus combat trials (Stone Sentinel duels)
-and "blessing" shrines found by solving an overworld riddle. Reward: Ember shard (4 = +heart
-or +stamina wheel). No two shrines share a layout.
+and "blessing" shrines found by solving an overworld riddle. Reward: Ember shard (3 = +heart
+or +stamina wheel). 30 shrines: Vale 6, Greywold 9, Vellmarsh 8, Aurel 7. No two shrines share a layout.
 
 ---
 
 ## 6. Style guide
 
-**Overall:** painterly realism. Real PBR surfaces, physically plausible light, but colour-graded
-toward a warm, low sun — think a 2024 console open world at golden hour that never ends. Long
-soft shadows everywhere; the sun sits at 8–15° above the horizon in all surface regions
-except the Sunward Coast (25°). Sky: pale apricot near the sun, deep teal overhead, visible
-cracked-sky islands as silhouettes. Volumetric fog in valleys, god-rays through canopy.
+**Overall: realistic, Black Myth: Wukong is the visual reference** (Zelda only for
+exploration). Photoreal PBR surfaces (2K+ Poly Haven / ambientCG), physically plausible light,
+dense foliage, rocks, moss, ruins. Colour-graded toward a warm low sun with desaturated,
+slightly green-gold shadows and film grain, like Wukong. No cartoon, no cel shading, no
+low-poly, no flat colours, never a capsule, cube or blocky stand-in on screen. The sun sits
+low in the Long Dusk (8–25° over the day/night cycle; nights are real and dark-blue).
+Volumetric fog in valleys, god-rays through canopy, DOF only in cinematic moments.
 
 **Reference images in words.**
-1. *Harrowmere at dusk:* a slate-roofed village on a hill, every window lit, lantern posts
-   along a dirt road, amber grass bending in wind, the broken sky-chain pylon a kilometre away
-   catching the last light.
-2. *Greywold interior:* trunks 6 m wide, moss carpets, light shafts through fog, a stone circle
-   half swallowed by roots, a Hollow Soldier standing still with an ember-glow in its chest.
-3. *Vellmarsh storm:* reed sea flattened by wind, lightning lighting stilt-huts, teal
-   bioluminescence under the water line, rain streaks on the camera.
-4. *Shale Barrens:* red hoodoos, a dreadnought hull canted in dust, sodium-orange light,
-   sandstorm wall on the horizon.
-5. *The Shelf:* standing on a floating island edge; cloud sea below; chains trailing off into
-   nothing; god-rays; the surface far below in haze.
-6. *Combat frame:* Wren in Pillar stance mid-slam, dust ring, hit-stop freeze, camera shake,
+1. *Harrowmere at dusk:* a slate-roofed stone village on a hill, windows lit, smoke from
+   chimneys, lantern posts along a rutted dirt road, amber grass bending in wind, sheep
+   drifting across a slope, the broken sky-chain pylon a kilometre away catching the light.
+2. *Greywold interior:* trunks 3 m wide, moss carpets, wet rock, temple steps climbing into
+   fog, light shafts, a Hollow Soldier standing still with an ember-glow in its chest.
+3. *Vellmarsh storm:* reed sea flattened by wind, lightning lighting stilt-huts, herons
+   lifting off, rain streaks on the camera.
+4. *Aurel:* white-stone colossi half buried in a gorge, ash falling like snow, the chain
+   pylons rising out of haze.
+5. *Combat frame:* Wren mid-slam with the staff, dust ring, hit-stop freeze, camera shake,
    sparks from the staff head, enemy stagger with ember particles.
 
 **Materials:** everything PBR (albedo/normal/roughness/AO; height for terrain). Terrain uses
@@ -239,12 +216,15 @@ multimesh with distance fade. Water: planar reflection + screen-space refraction
 foam at edges, shoreline waves. Weather: rain/snow particles in camera-follow volume, wet-ness
 (roughness drop) on surfaces, lightning flashes drive directional light.
 
-**Post:** ACES tonemap, bloom (soft, threshold 1.0), SSAO, SSIL, SDFGI (or baked VoxelGI per
-region if SDFGI costs too much), glow, slight vignette, colour grade LUT per region, DOF only
-in cutscenes, film grain very low.
+**Post:** ACES tonemap, bloom (soft, threshold 1.0), SSAO, SSIL, SSR, SDFGI (or baked VoxelGI
+per region), slight vignette, colour grade per region, DOF in cinematic moments, film grain
+like Wukong. Performance: Forward+ at max presets; 60 fps on RTX 4070-class at 1440p, 30+ fps
+on RTX 4050 at 1080p with FSR 2; a quality slider instead of cutting visuals.
 
-**Characters:** stylised-realistic proportions (7.5 heads), cloth with secondary motion,
-Mixamo-licensed humanoid rig + custom blend trees; root-motion attacks; foot IK; look-at IK.
+**Characters:** realistic human proportions, a detailed rigged humanoid with a face and eyes,
+subsurface skin, moving cloth and hair, real blended animations (Mixamo is the floor; prefer
+better CC0/CC-BY realistic models); root-motion attacks; foot IK; look-at IK. Weapon: a staff
+with real geometry and PBR (worn metal, lacquered wood, cloth wrap), swing trails, impact VFX.
 Hollow: grey, cracked, ember-glow in chest; silhouettes readable at 50 m.
 
 **UI:** minimal. Health bar top-left (segmented hearts → bar on wheel), stamina wheel near the
@@ -260,10 +240,32 @@ region themes, combat layers that add a percussion stem per boss phase.
 
 1. **Vertical slice = Harrowmere Vale** (2 km² sub-area around the village and the first
    tower): Ward stance full, Ashen Knight brought forward as a slice boss in a Priory
-   antechamber, one Bind shrine, climb + glide, day/night, final visuals.
+   antechamber, one Bind shrine, climb + glide, day/night, weather, wildlife and villagers,
+   final visuals.
 2. Core systems (all §3, §4, inventory, cooking, Pell, Stag, save, map, UI, options, input).
-3. World blockout for all §2 regions + Shelf + Depths, streaming, weather, towers, roads.
-4. Content per §5 in player order: M1→M24, side arcs, shrines region by region.
+3. World blockout for all §2 regions + Depths, streaming, weather, towers, roads.
+4. Content per §5 in player order: M1→M12, side arcs, shrines region by region.
 5. Polish.
 
 Hour budget changes require editing §5 and the matching PROGRESS.md counter.
+
+---
+
+## 8. The living world (as important as the look)
+
+- **Time and weather:** full day/night cycle with changing light; weather fronts that roll in
+  (rain, fog, storms) with wind that drives grass and tree sway; wet surfaces in rain.
+- **Wildlife:** herds (sheep, deer) that graze, drift and flee as a group; predators (wolves)
+  that hunt them at dusk; birds that scatter when the player approaches; insects and moths
+  in lamplight; campfires draw wildlife at night.
+- **People:** NPCs with daily schedules (wake, work, eat, sleep), who shelter from rain, react
+  to the player and to the time of day; villages with sound and movement (smoke, laundry,
+  doors, animals in pens).
+- **Roads:** ambient events — travellers, merchants with carts, Hollow ambushes, animals
+  crossing.
+- **Reactive world:** grass flattens under feet, footprints in mud/snow, water ripples,
+  foliage brushes aside, ember particles from fires.
+- **Soundscape:** region ambience, weather, wildlife, distance-attenuated village noise.
+
+Screenshot gate asks two questions every session: could this be a Wukong screenshot, and
+does a 10-second clip here look like a living place?

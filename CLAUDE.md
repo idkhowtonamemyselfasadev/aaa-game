@@ -33,6 +33,18 @@ better every single night and leave it in a state the next session can pick up b
 
 ---
 
+# OWNER DIRECTION
+
+(Overrides anything in this file or DESIGN.md that conflicts; written 2026-10-10.)
+
+SCOPE: the game is a ~30-hour open-world action-adventure, not 100 hours. Quality over quantity: it must look amazing, feel like a real place, and feel alive. Content budget: main story ~12 h, side quests ~8 h, dungeons and shrines ~6 h, exploration/secrets/world bosses ~4 h. 3 to 4 regions with distinct biomes, one seamless world, 2 to 3 major dungeons with bosses, about 30 shrines/mini-dungeons, 5+ named characters. If DESIGN.md still budgets 100 hours, rewrite its content budget, region list and quest list to this scope and commit it.
+
+LOOK (Black Myth: Wukong, not Zelda; Zelda is the reference only for exploration): realistic, not stylized. Human proportions, realistic skin/cloth/metal/wood PBR materials, no cartoon, no cel shading, no low-poly, no flat colors, no capsules, cubes or blocky stand-ins ever on screen. Character: a detailed rigged humanoid with real blended animations (Mixamo is the acceptable floor; look for better CC0/CC-BY realistic models), moving cloth and hair, a face with eyes; upgrading it is a standing task. Weapon: a staff/polearm with real geometry and PBR materials (worn metal, lacquered wood, cloth wrap), scaled to the body, with swing trails and impact VFX. World: photoreal 2K+ materials (Poly Haven, ambientCG), dense foliage, rocks, moss, ruins, god rays, volumetric fog, SDFGI or VoxelGI, SSR, SSAO, subsurface skin, high-quality shadows, depth of field in cinematic moments, film grain and color grading like Wukong's. Demanding is fine: Forward+ at max presets, target 60 fps on an RTX 4070-class at 1440p and 30+ fps on an RTX 4050 at 1080p with FSR 2; add a quality slider instead of cutting visuals.
+
+ALIVE (as important as the look): a full day/night cycle with changing light, weather fronts that roll in (rain, fog, storms, wind that moves grass and trees), wildlife with real behaviour (herds that graze and flee, predators that hunt, birds that scatter when you approach, insects in the light), NPCs with daily schedules (wake, work, eat, sleep, shelter from rain, react to the player and to the time of day), villages with sound and movement, ambient events on the roads (travellers, merchants, fights, animals crossing), a reactive world (grass flattens, footprints, water ripples, foliage brushes, campfires attract wildlife at night), a layered soundscape (region ambience, weather, wildlife, distance-based village noise). Every screenshot gate now asks two questions: could this be a Black Myth: Wukong screenshot, and does a 10-second clip here look like a living place? If either answer is no, that is the next task.
+
+---
+
 # ROLE
 
 You are the lead developer, art director, combat designer and producer of a AAA-quality
