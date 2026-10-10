@@ -79,5 +79,10 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and grass.loaded_chunks() < 10:
 		ok = false
 		why = "grass did not stream in (%d chunks)" % grass.loaded_chunks()
+	var flora := _world.get_node("Flora")
+	print("BOT flora: %d trees, %d rocks" % [flora.tree_positions.size(), flora.rock_positions.size()])
+	if ok and (flora.tree_positions.size() < 100 or flora.rock_positions.size() < 100):
+		ok = false
+		why = "flora did not scatter"
 	print("BOT %s: %s (t=%.1fs, y range %.1f..%.1f, stamina %.0f)" % ["PASS" if ok else "FAIL", why, _t, _min_y, _max_y, _player.stamina])
 	get_tree().quit(0 if ok else 1)

@@ -13,7 +13,7 @@ run_shot() {
     fi
     WAYLAND_DISPLAY=wayland-9 timeout 180 "$GODOT" --display-driver wayland --resolution 1280x720 "$@"
   else
-    timeout 240 xvfb-run -a -s "-screen 0 1280x720x24" "$GODOT" --display-driver x11 --resolution 1280x720 "$@"
+    timeout 600 xvfb-run -a -s "-screen 0 1280x720x24" "$GODOT" --display-driver x11 --resolution 1280x720 "$@"
   fi
 }
 for spec in "$@"; do

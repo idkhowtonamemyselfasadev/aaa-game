@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b1world0000001"]
+[gd_scene load_steps=17 format=3 uid="uid://b1world0000001"]
 
 [ext_resource type="Script" path="res://world/world.gd" id="1"]
 [ext_resource type="Script" path="res://world/terrain.gd" id="2"]
@@ -6,6 +6,20 @@
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="4"]
 [ext_resource type="Script" path="res://world/grass.gd" id="5"]
 [ext_resource type="Shader" path="res://shaders/grass.gdshader" id="6"]
+
+[ext_resource type="Script" path="res://world/flora.gd" id="7"]
+[ext_resource type="Shader" path="res://shaders/bark.gdshader" id="8"]
+[ext_resource type="Shader" path="res://shaders/leaves.gdshader" id="9"]
+[ext_resource type="Shader" path="res://shaders/rock.gdshader" id="10"]
+
+[sub_resource type="ShaderMaterial" id="barkmat"]
+shader = ExtResource("8")
+
+[sub_resource type="ShaderMaterial" id="leafmat"]
+shader = ExtResource("9")
+
+[sub_resource type="ShaderMaterial" id="rockmat"]
+shader = ExtResource("10")
 
 [sub_resource type="ShaderMaterial" id="terrmat"]
 shader = ExtResource("3")
@@ -37,6 +51,13 @@ material = SubResource("terrmat")
 script = ExtResource("5")
 terrain_path = NodePath("../Terrain")
 material = SubResource("grassmat")
+
+[node name="Flora" type="Node3D" parent="."]
+script = ExtResource("7")
+terrain_path = NodePath("../Terrain")
+bark_material = SubResource("barkmat")
+leaf_material = SubResource("leafmat")
+rock_material = SubResource("rockmat")
 
 [node name="Player" parent="." instance=ExtResource("4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 60, 0)

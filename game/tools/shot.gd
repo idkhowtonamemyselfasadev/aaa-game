@@ -2,7 +2,7 @@ extends Node
 ## Screenshot tool. Usage (after `--`): <spot> <out.png> [frames] [hour]
 ## Loads world.tscn, puts the camera at a named spot, waits N frames, saves, quits.
 
-const SPOTS := {
+var SPOTS := {
 	"village":  [Vector3(-30, 0, 40), Vector3(90, 0, -120)],
 	"hill":     [Vector3(-150, 0, 110), Vector3(0, 0, 0)],
 	"side":     [Vector3(-120, 0, -40), Vector3(60, 0, 100)],
@@ -27,6 +27,18 @@ func _ready() -> void:
 	var player: Player = world.get_node("Player")
 	var terrain: Terrain = world.get_node("Terrain")
 	var cam: Camera3D = player.camera
+	if spot == "tree" or spot == "rocks":
+		# frame the nearest tree / boulder to the village edge, from the village side
+		var flora: Flora = world.get_node("Flora")
+		var list: Array[Vector3] = flora.tree_positions if spot == "tree" else flora.rock_positions
+		var best := list[0]
+		for q in list:
+			if Vector2(q.x + 20, q.z - 50).length() < Vector2(best.x + 20, best.z - 50).length():
+				best = q
+		var back := (Vector3(0, 0, 0) - best)
+		back.y = 0
+		back = back.normalized() * (16.0 if spot == "tree" else 6.0)
+		SPOTS[spot] = [best + back, best + Vector3.UP * (3.0 if spot == "tree" else -1.0)]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]

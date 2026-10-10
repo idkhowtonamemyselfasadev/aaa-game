@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0
-(walkable test valley with streamed grass only; no quests, combat or shrines yet. Game scope is
+(walkable test valley with grass, oak groves and boulders; no quests, combat or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
@@ -21,6 +21,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 09:00 UTC:
+  - **Black-oak groves and mossy boulders** (`world/flora.gd`, all procedural): 4 oak
+    variants (gnarled forking trunk → limbs → twigs as tapered knobbly tubes with root flare
+    and bark UVs; ~1000 leaf-sprig cards per tree from a painted 1024² oak-leaf atlas,
+    crown-shaped normals, back-light), 260 trees scattered in noise groves, 9 m spacing;
+    6 boulder variants (noise-displaced, plane-cut, flattened icospheres), 420 rocks in
+    slope outcrops + lone stones. MultiMesh, shadows on, trunk/boulder collision.
+    Shaders: `bark` (seamless furrow noise + normal, moss on top/roots), `leaves` (alpha
+    test, flutter), `rock` (strata/cracks/lichen/moss, damp foot), shared
+    `tree_wind.gdshaderinc` so trees sway with the grass gusts.
+  - Village floor (r < 38 m) and the diagonal road to the east ridge are kept clear.
+  - `tools/bots.sh` runs each bot once (it ran twice) and FAILs on any SCRIPT ERROR (it
+    used to PASS with a broken script); bots now also assert flora scattered.
+  - `tools/shots.sh` timeout 240→600 s: with trees a Vulkan shot takes ~170 s at 30 frames
+    and the old timeout silently fell back to opengl3. Use 30 frames. New spots `tree`,
+    `rocks` (frame the nearest tree/boulder to the village edge).
 - Session 2026-10-10 08:40 UTC (ran in parallel with the 08:00 one; merged onto it):
   - **Fixed the "hills float as ribbons" bug at its root: the terrain mesh had inverted
     triangle winding and was back-face culled, so it was invisible from above.** The ribbons
@@ -84,29 +100,42 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (e.g. godot-demo-projects ships Poly Haven 1k ship textures), or keep going procedural.
   Recheck each session with `curl -sI https://ambientcg.com`.
 
+## Screenshot verdicts (2026-10-10 09:00 session)
+- `tree` 15.5h: backlit oak grove, sun glare through crowns, trunk shadows across grass —
+  atmospheric. Wukong? No: shadowed foreground crushed to pure black; leaf cards read as
+  dark blobs up close. Alive? Wind only.
+- `rocks` 12h: oak woodland on the hill crests over the meadow; reads as a real place for
+  the first time. Boulders too small to notice; hill ground bare brown; sky flat. Fail.
+- `village` 16.5h: oak line on the hills good; camera stands in a tree's shadow and the
+  whole lower half is black. Fail -> Next 1.
+
 ## Next (milestone 1 — vertical slice, in order)
-1. Trees + rocks: procedural black oaks (trunk/branch mesh + leaf cards with wind sway, shared
-   wind uniforms with grass), mossy boulders (noise-displaced icosphere with triplanar rock
-   shader), hedgerows; scatter them through the vale. (Grass: done.)
-2. Horizon: far mountain ring beyond the 512 m tile so the world does not end at 256 m.
-3. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
+1. **Shadow-side ambient is ~0 (top visual bug)**: anything in shadow renders black. Test
+   `nosdfgi` vs default at 30 frames to see if SDFGI is unconverged or killing sky ambient;
+   fix (ambient floor, SDFGI energy, or more warm-up frames in shot.gd).
+2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
+   shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
+   range, tree LOD/impostors beyond 150 m.
+3. Horizon: far mountain ring beyond the 512 m tile so the world does not end at 256 m.
+4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
-4. Living world first pass: birds that scatter, a grazing sheep herd that flees (§8 DESIGN).
-5. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
-6. Character: realistic rig (Mixamo floor) + locomotion blend tree (idle/walk/run/sprint, jump, foot IK) to
+5. Living world first pass: birds that scatter, a grazing sheep herd that flees (§8 DESIGN).
+6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
+7. Character: realistic rig (Mixamo floor) + locomotion blend tree (idle/walk/run/sprint, jump, foot IK) to
    replace the capsule.
-7. Combat (Ward stance): L×4 string, heavy with parry window, dodge + perfect dodge
+8. Combat (Ward stance): L×4 string, heavy with parry window, dodge + perfect dodge
    time-dilation, hit-stop, lock-on, stamina; Hollow Soldier enemy with telegraphs.
-8. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
-9. Every step: shots + bots, then update this file.
+9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
+10. Every step: shots + bots, then update this file.
 
 ## Known bugs
 - Golden-hour shadow sides go near-black (ambient too low in shadow); sky flat grey at dusk.
 - (fixed: hills floating as ribbons = inverted terrain winding.) World edge at 256 m is still
-  visible from slopes; needs the far mountain ring (Next 2).
+  visible from slopes; needs the far mountain ring (Next 3).
 - Grass streaming builds chunks on the main thread (6/frame); fine at walking speed, may
   hitch when gliding/fast travel arrives — move to WorkerThreadPool then.
-- `tools/bots.sh` hangs until its timeout if bot.gd has a parse error (no early exit).
+- Shots: a Vulkan screenshot now takes ~3 min on lavapipe (trees + shadows); budget 3–4.
+- Tree collision is a 4 m trunk cylinder only; the player can walk through low limbs.
 - A new `class_name` needs `godot --headless --import` before scripts can use it as a type.
 - Player capsule starts 0.5 m above ground and drops (cosmetic).
 - Audio driver errors on the cloud box (no ALSA device); harmless, run with

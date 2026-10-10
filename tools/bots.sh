@@ -5,9 +5,9 @@ GODOT=${GODOT:-$(command -v godot || echo ../.tools/godot)}
 [ $# -eq 0 ] && set -- walk ridge
 rc=0
 for r in "$@"; do
-  timeout 300 "$GODOT" --headless res://tools/bot.tscn -- "$r" 2>&1 | grep -E "^BOT|SCRIPT ERROR|ERROR" 
-  st=$?
-  # grep's status masks godot's; re-check via the PASS line
-  "$GODOT" --headless res://tools/bot.tscn -- "$r" >/dev/null 2>&1 || rc=1
+  out=$(timeout 300 "$GODOT" --headless --audio-driver Dummy res://tools/bot.tscn -- "$r" 2>&1)
+  echo "$out" | grep -E "^BOT|SCRIPT ERROR|Parse Error|ERROR" | grep -v "shader_rd"
+  echo "$out" | grep -q "^BOT PASS" || rc=1
+  echo "$out" | grep -q "SCRIPT ERROR" && { echo "BOT FAIL: script errors"; rc=1; }
 done
 exit $rc
