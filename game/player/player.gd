@@ -22,6 +22,13 @@ var use_bot_input := false
 @onready var spring: SpringArm3D = $CamPivot/SpringArm3D
 @onready var camera: Camera3D = $CamPivot/SpringArm3D/Camera3D
 @onready var body: Node3D = $Body
+@onready var model: Node3D = $Body/Model
+
+# Locomotion: 1D blend idle -> walk -> run on horizontal speed, played faster when sprinting.
+const ANIM_WALK_SPEED := 1.9            # m/s the Walk clip's stride covers at 1x
+const ANIM_RUN_SPEED := 6.0             # m/s the Run clip's stride covers at 1x
+var anim_tree: AnimationTree
+var _blend := 0.0
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -29,6 +36,49 @@ var _pitch := -0.25
 func _ready() -> void:
 	if not use_bot_input and DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_setup_animation()
+
+func _setup_animation() -> void:
+	var ap := model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if ap == null:
+		return
+	for a in ["Idle", "Walk", "Run"]:
+		ap.get_animation(a).loop_mode = Animation.LOOP_LINEAR
+	var space := AnimationNodeBlendSpace1D.new()
+	space.min_space = 0.0
+	space.max_space = ANIM_RUN_SPEED
+	for pt in [["Idle", 0.0], ["Walk", ANIM_WALK_SPEED], ["Run", ANIM_RUN_SPEED]]:
+		var clip := AnimationNodeAnimation.new()
+		clip.animation = pt[0]
+		space.add_blend_point(clip, pt[1])
+	var root := AnimationNodeBlendTree.new()
+	root.add_node("move", space, Vector2(0, 0))
+	root.add_node("speed", AnimationNodeTimeScale.new(), Vector2(200, 0))
+	root.connect_node("speed", 0, "move")
+	root.connect_node("output", 0, "speed")
+	anim_tree = AnimationTree.new()
+	anim_tree.name = "AnimationTree"
+	model.add_child(anim_tree)
+	anim_tree.anim_player = anim_tree.get_path_to(ap)
+	anim_tree.tree_root = root
+	anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
+	anim_tree.active = true
+
+func _update_animation(delta: float) -> void:
+	if anim_tree == null:
+		return
+	var hspeed := Vector2(velocity.x, velocity.z).length()
+	if not is_on_floor():
+		hspeed = minf(hspeed, ANIM_WALK_SPEED)   # no jump clip yet: hold a stride
+	_blend = lerpf(_blend, minf(hspeed, ANIM_RUN_SPEED), 1.0 - exp(-10.0 * delta))
+	anim_tree.set("parameters/move/blend_position", _blend)
+	# Between blend points cadence follows speed/blend, so feet don't skate.
+	var ts := 1.0
+	if hspeed > ANIM_RUN_SPEED:
+		ts = hspeed / ANIM_RUN_SPEED
+	elif hspeed > 0.2 and hspeed < ANIM_WALK_SPEED:
+		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
+	anim_tree.set("parameters/speed/scale", ts)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -74,6 +124,7 @@ func _physics_process(delta: float) -> void:
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
 
 	move_and_slide()
+	_update_animation(delta)
 
 func set_look(yaw: float, pitch: float) -> void:
 	_yaw = yaw

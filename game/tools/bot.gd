@@ -20,6 +20,7 @@ var _stuck_t := 0.0
 var _last_pos := Vector3.ZERO
 var _min_y := INF
 var _max_y := -INF
+var _max_blend := 0.0
 
 func _ready() -> void:
 	Engine.time_scale = 4.0   # headless: simulate faster, same fixed physics delta
@@ -45,6 +46,7 @@ func _physics_process(delta: float) -> void:
 	var p := _player.global_position
 	_min_y = minf(_min_y, p.y)
 	_max_y = maxf(_max_y, p.y)
+	_max_blend = maxf(_max_blend, _player._blend)
 	var target: Vector2 = _route[_i]
 	var to := target - Vector2(p.x, p.z)
 	if to.length() < 1.5:
@@ -89,5 +91,11 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and _route == ROUTES["walk"] and birds.scatter_events < 1:
 		ok = false
 		why = "rooks did not scatter when the player walked through their feeding site"
+	# the character must be a skinned, animated model, blending into the run cycle
+	var at: AnimationTree = _player.anim_tree
+	print("BOT anim: tree=%s active=%s max blend %.2f" % [at != null, at != null and at.active, _max_blend])
+	if ok and (at == null or not at.active or _max_blend < _player.ANIM_RUN_SPEED * 0.8):
+		ok = false
+		why = "player locomotion animation did not blend into the run"
 	print("BOT %s: %s (t=%.1fs, y range %.1f..%.1f, stamina %.0f)" % ["PASS" if ok else "FAIL", why, _t, _min_y, _max_y, _player.stamina])
 	get_tree().quit(0 if ok else 1)

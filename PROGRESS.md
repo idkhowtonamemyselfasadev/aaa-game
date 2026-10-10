@@ -1,7 +1,8 @@
 # Progress
 
 Content hours playable: 0
-(walkable test valley with grass, oak groves, boulders and rook flocks; no quests, combat or shrines yet. Game scope is
+(walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid; no
+quests, combat or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
@@ -21,6 +22,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 14:00 UTC:
+  - **The capsule is gone: the player is a rigged, animated humanoid (was Next 7, first half).**
+    `game/player/models/vanguard.glb` (Mixamo "Vanguard", 1.83 m, skinned, PBR body + visor,
+    fetched from the three.js repo on GitHub; see ASSETS.md). `player.gd` builds an
+    AnimationTree in code: BlendSpace1D Idle(0) -> Walk(1.9 m/s) -> Run(6.0 m/s) on smoothed
+    horizontal speed, plus a TimeScale node so sprint (9 m/s) plays the run faster and slow
+    walking slows the walk cadence (less foot skate). Model rotated 180° (it faces -Z). The
+    lantern sphere is gone; its warm light stays at the hip.
+  - Bots: both routes assert the AnimationTree is active and blends fully into the run (PASS).
+  - Shot spots `hero` (3/4 front portrait of the idle player) and `herorun` (follow camera,
+    player running sideways).
+  - Verdicts: `hero` 15.5h — a real human silhouette standing in the meadow, PBR armour reads.
+    Fail for Wukong: it is a sci-fi armoured soldier with a visor (wrong for a mythic setting,
+    no visible face/hair/cloth), lit flat by the hip light, no weapon. `herorun` — mid-stride
+    run cycle with proper arm/leg motion. Fail: same model problem, feet partly hidden in grass.
 - Session 2026-10-10 13:00 UTC:
   - **Living world first pass: rook flocks and soaring kites (was Next 5, birds half).**
     New `world/birds.gd` + `shaders/bird.gdshader`, all procedural: one rook mesh (~0.45 m,
@@ -186,14 +202,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
    there is audio, birds roosting in trees at night, insects/fireflies in the light.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
-7. Character: realistic rig (Mixamo floor) + locomotion blend tree (idle/walk/run/sprint, jump, foot IK) to
-   replace the capsule.
+7. (done 14:00: rigged Mixamo humanoid + idle/walk/run blend.) Still to do: replace the sci-fi
+   "Vanguard" with a mythic hero (robes, hair, face) — look for CC0/CC-BY realistic humanoids in
+   GitHub repos (github/raw.githubusercontent work; the clip names Idle/Walk/Run + mixamorig bones
+   let a Mixamo-rigged model drop in and retarget); jump/fall clips, foot IK on slopes, turn-in-
+   place, cloth/hair sway; the staff (procedural PBR: worn iron caps, lacquered wood, cloth wrap)
+   held via BoneAttachment3D on mixamorig_RightHand.
 8. Combat (Ward stance): L×4 string, heavy with parry window, dodge + perfect dodge
    time-dilation, hit-stop, lock-on, stamina; Hollow Soldier enemy with telegraphs.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip
+  (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
 - Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m).
 - Cropped turf at rook sites shows the flat brown bare-ground colour (same root cause as the
   bare-ground bug: terrain shader needs a short-turf/soil layer).

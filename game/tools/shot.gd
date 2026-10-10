@@ -44,12 +44,23 @@ func _ready() -> void:
 		var site: Vector3 = world.get_node("Birds").site_positions()[0]
 		var d := 9.0 if spot == "birds" else 15.5
 		SPOTS[spot] = [site + Vector3(-d * 0.8, 0, d * 0.6), site + Vector3(0, -0.5 if spot == "rooks" else 3.5, 0)]
+	if spot == "hero":
+		# close three-quarter portrait of the idle player character
+		var pp := player.global_position
+		var fwd := player.body.global_transform.basis.z
+		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.6) * 3.2, pp]
+	if spot == "herorun":
+		# player runs to the camera's right: side view of the run cycle from the follow camera
+		player.use_bot_input = true
+		player.bot_input = Vector2(1, 0)
+		player.set_look(0.0, -0.12)
+		player.spring.spring_length = 3.2
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + 2.5
-		look.y = terrain.height_at(look.x, look.z) + 1.5
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot == "hero" else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.1 if spot == "hero" else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0

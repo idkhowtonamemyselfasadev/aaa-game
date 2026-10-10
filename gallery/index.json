@@ -94,5 +94,17 @@
   "time": "2026-10-10T13:26:08Z",
   "caption": "Rooks bursting up out of the meadow as the camera comes within 10 m; motion reads in a clip, but the still is small dark specks and the shaded hillside is muddy.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1427-hero.jpg",
+  "time": "2026-10-10T14:27:23Z",
+  "caption": "The player is now a rigged, animated human instead of a capsule, standing in the afternoon meadow; still wrong: sci-fi armour and visor instead of a mythic hero, no face, hair or staff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1427-herorun.jpg",
+  "time": "2026-10-10T14:27:23Z",
+  "caption": "Follow camera on the player mid-stride in the idle/walk/run blend at dusk, lantern glow on the grass; still wrong: placeholder Mixamo soldier model and no foot IK.",
+  "verdict": "fail"
  }
 ]

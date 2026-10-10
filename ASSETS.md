@@ -5,7 +5,7 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 
 | Path | What | Source | License |
 |------|------|--------|---------|
-| (none yet) | | | |
+| `game/player/models/vanguard.glb` | Rigged humanoid "Vanguard" (Mixamo character) with Idle/Walk/Run/TPose clips, 2.1 MB | Mixamo, via the three.js repo (`examples/models/gltf/Soldier.glb`) | Mixamo license (royalty-free use in games) |
 
 ## Procedural (no license needed)
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.
