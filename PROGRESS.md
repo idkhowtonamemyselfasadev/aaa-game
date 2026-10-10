@@ -21,6 +21,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 12:00 UTC:
+  - **Far mountain ring: the world no longer ends at 256 m (was Next 3).** New
+    `world/horizon.gd` + `shaders/horizon.gdshader`: one ArrayMesh on a non-uniform grid
+    from the tile edge out to 2.8 km (2 m cells on the seam, sharing the terrain's edge
+    vertices exactly; growing to 40 m cells), cells inside the tile skipped. Height follows
+    `Terrain.height_at` at the seam, blends into rolling foothills, then a ridged mountain
+    wall up to ~520 m with a lower notch to the south-east (the Greywold road). Shader:
+    meadow at the seam, forest patches on foothills, strata rock on steep faces, snow above
+    ~380 m. Visual only (no collision). ~246k tris, builds in ~1.5 s on the cloud CPU.
+  - Verdicts: `village` 12h — hazy blue-grey ranges with snowy peaks close the horizon;
+    first shot with real depth. Ridges look faceted at distance, peaks a uniform sawtooth.
+    Fail (close). `hill` 16.5h — layered ranges good; foreground grass in deep shadow.
+    `east` 17.5h — mountains lit beige under a navy dusk sky (dusk sky still too dark).
 - Session 2026-10-10 11:00 UTC (ran in parallel with the 10:00 one; rebased onto it):
   - **Afternoon sky no longer navy (was Next 1).** The PhysicalSky is calibrated for a
     ~1.0 sun and ours is 3.0, so the sky (and its reflections) rendered far too dark.
@@ -143,7 +156,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
-3. Horizon: far mountain ring beyond the 512 m tile so the world does not end at 256 m.
+3. (done 12:00: far mountain ring.) Polish: per-pixel normals / more ridge detail so far
+   ridges are not faceted, vary peak shapes (domain warp), forest impostor speckle on
+   foothills, playable-edge border (cliffs) with collision.
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
 5. Living world first pass: birds that scatter, a grazing sheep herd that flees (§8 DESIGN).
@@ -161,8 +176,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (fixed: shadowed surfaces pure black.) SDFGI is off on the cloud box (software GPU);
   whether SDFGI + sky ambient light shadows correctly on a real GPU is unverified.
 - Late-afternoon sky renders dark navy.
-- (fixed: hills floating as ribbons = inverted terrain winding.) World edge at 256 m is still
-  visible from slopes; needs the far mountain ring (Next 3).
+- (fixed 12:00: world edge at 256 m — far mountain ring.) The ring has no collision; the
+  player can walk off the tile edge onto nothing (needs a border in the streaming milestone).
+- Far ridges look faceted (vertex normals on 40 m cells); dusk lights them beige under a navy sky.
 - Grass streaming builds chunks on the main thread (6/frame); fine at walking speed, may
   hitch when gliding/fast travel arrives — move to WorkerThreadPool then.
 - Shots: a Vulkan screenshot now takes ~3 min on lavapipe (trees + shadows); budget 3–4.

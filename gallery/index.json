@@ -70,5 +70,17 @@
   "time": "2026-10-10T11:16:48Z",
   "caption": "Noon oak slope under a bright blue sky with readable shadow sides; leaf cards are blobby up close and the valley floor is bare brown.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1215-noon-mountain-ring.jpg",
+  "time": "2026-10-10T12:15:57Z",
+  "caption": "Noon meadow with oak groves and, new, a hazy snow-capped mountain ring closing the horizon; ridgelines are still faceted at distance and the hills are bare brown.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1215-afternoon-peaks.jpg",
+  "time": "2026-10-10T12:15:57Z",
+  "caption": "Late-afternoon view across the vale to layered ranges and snowy peaks; the foreground grass sits in deep shadow and the peaks form a uniform sawtooth.",
+  "verdict": "fail"
  }
 ]

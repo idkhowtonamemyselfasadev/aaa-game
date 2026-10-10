@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://b1world0000001"]
+[gd_scene load_steps=19 format=3 uid="uid://b1world0000001"]
 
 [ext_resource type="Script" path="res://world/world.gd" id="1"]
 [ext_resource type="Script" path="res://world/terrain.gd" id="2"]
@@ -11,6 +11,8 @@
 [ext_resource type="Shader" path="res://shaders/bark.gdshader" id="8"]
 [ext_resource type="Shader" path="res://shaders/leaves.gdshader" id="9"]
 [ext_resource type="Shader" path="res://shaders/rock.gdshader" id="10"]
+[ext_resource type="Script" path="res://world/horizon.gd" id="11"]
+[ext_resource type="Shader" path="res://shaders/horizon.gdshader" id="12"]
 
 [sub_resource type="ShaderMaterial" id="barkmat"]
 shader = ExtResource("8")
@@ -20,6 +22,9 @@ shader = ExtResource("9")
 
 [sub_resource type="ShaderMaterial" id="rockmat"]
 shader = ExtResource("10")
+
+[sub_resource type="ShaderMaterial" id="horizonmat"]
+shader = ExtResource("12")
 
 [sub_resource type="ShaderMaterial" id="terrmat"]
 shader = ExtResource("3")
@@ -46,6 +51,11 @@ directional_shadow_max_distance = 400.0
 [node name="Terrain" type="StaticBody3D" parent="."]
 script = ExtResource("2")
 material = SubResource("terrmat")
+
+[node name="Horizon" type="Node3D" parent="."]
+script = ExtResource("11")
+terrain_path = NodePath("../Terrain")
+material = SubResource("horizonmat")
 
 [node name="Grass" type="Node3D" parent="."]
 script = ExtResource("5")
