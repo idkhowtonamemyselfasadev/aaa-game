@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0
-(walkable test valley with grass, oak groves and boulders; no quests, combat or shrines yet. Game scope is
+(walkable test valley with grass, oak groves, boulders and rook flocks; no quests, combat or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
@@ -21,6 +21,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 13:00 UTC:
+  - **Living world first pass: rook flocks and soaring kites (was Next 5, birds half).**
+    New `world/birds.gd` + `shaders/bird.gdshader`, all procedural: one rook mesh (~0.45 m,
+    0.85 m span: lofted body, head, pale beak, eye beads, fanned tail, wings with five
+    fingered primaries, legs and toes), posed per instance through INSTANCE_CUSTOM (wing
+    flap angle, leg tuck, head peck, wing fold). 3 flocks x 14 rooks feed on open meadow
+    sites (sites rejected near trees/slopes): they hop, turn and peck. When the player or
+    camera comes within 11 m (+1.4 m per m/s of horizontal speed) the flock bursts up, the
+    nearest birds first, climbs on fast beats, wheels overhead with flap/glide bursts and
+    banking for 8–13 s, then picks a clear site away from the threat and glides in with a
+    flare (fast beats, legs down). Flocks also lift off unprompted every 70–160 s. Two red
+    kites soar high circles by day (hidden at night). Bird sim clamps dt to 1/30 so slow
+    screenshot frames don't teleport them.
+  - Grass: `GrassField.cropped_spots` — turf is cropped short (22 %) around feeding sites
+    so the rooks are visible instead of buried in 50 cm grass.
+  - Bots: `walk` asserts the rooks scatter when the route crosses their site (PASS,
+    4 scatters, 1 landing); `ridge` PASS. Shot spots `birds` (camera 9 m: take-off) and
+    `rooks` (15.5 m: feeding).
+  - Verdicts: `rooks` 14h — black rooks hopping on a cropped patch under the oak line;
+    reads like a real field. Fail: birds tiny, crop patch shows the bare brown ground.
+    `birds` 11h — rooks lifting out of the meadow; alive in motion, specks in a still. Fail.
 - Session 2026-10-10 12:00 UTC:
   - **Far mountain ring: the world no longer ends at 256 m (was Next 3).** New
     `world/horizon.gd` + `shaders/horizon.gdshader`: one ArrayMesh on a non-uniform grid
@@ -161,7 +182,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    foothills, playable-edge border (cliffs) with collision.
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
-5. Living world first pass: birds that scatter, a grazing sheep herd that flees (§8 DESIGN).
+5. (done 13:00: rook flocks + kites.) Still to do: a grazing sheep/deer herd that flees
+   (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
+   there is audio, birds roosting in trees at night, insects/fireflies in the light.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
 7. Character: realistic rig (Mixamo floor) + locomotion blend tree (idle/walk/run/sprint, jump, foot IK) to
    replace the capsule.
@@ -171,6 +194,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m).
+- Cropped turf at rook sites shows the flat brown bare-ground colour (same root cause as the
+  bare-ground bug: terrain shader needs a short-turf/soil layer).
+- Rooks stay on the ground at night (should roost in trees).
 - `village` shot spot: a dark wedge fills the left edge — the camera at (-30, 40) sits against a
   tree trunk; move the spot or keep flora clear of fixed camera spots.
 - (fixed: shadowed surfaces pure black.) SDFGI is off on the cloud box (software GPU);

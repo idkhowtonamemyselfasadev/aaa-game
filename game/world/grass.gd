@@ -12,6 +12,10 @@ extends Node3D
 @export var material: ShaderMaterial
 
 var _terrain: Terrain
+## Short-cropped turf (x, z) where grazers/rooks feed: grass there is a few cm tall so the
+## animals are visible. Set by Birds before the first chunks stream in.
+var cropped_spots: Array[Vector3] = []
+const CROP_R := 6.5
 var _mesh: ArrayMesh
 var _chunks := {}            # Vector2i -> MultiMeshInstance3D
 var _patch := FastNoiseLite.new()
@@ -83,10 +87,13 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 			continue
 		var y := _terrain.height_at(x, z)
 		var s := lerpf(0.55, 1.2, rng.randf()) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
+		var crop := 1.0
+		for c in cropped_spots:
+			crop = minf(crop, smoothstep(CROP_R * 0.45, CROP_R, Vector2(x - c.x, z - c.z).length()))
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		# lean with the slope a little so clumps don't look stuck on like pins
 		basis = Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.6).normalized())) * basis
-		basis = basis.scaled(Vector3(s, s * lerpf(0.8, 1.3, rng.randf()), s))
+		basis = basis.scaled(Vector3(s, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s))
 		xf.append(Transform3D(basis, Vector3(x, y - 0.03, z)))
 		var_.append(clampf(patch * 0.7 + rng.randf() * 0.4, 0.0, 1.0))
 	var mm := MultiMesh.new()

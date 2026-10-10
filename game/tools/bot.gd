@@ -84,5 +84,10 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and (flora.tree_positions.size() < 100 or flora.rock_positions.size() < 100):
 		ok = false
 		why = "flora did not scatter"
+	var birds := _world.get_node("Birds")
+	print("BOT birds: %d sites, %d scatters, %d landings" % [birds.site_positions().size(), birds.scatter_events, birds.landings])
+	if ok and _route == ROUTES["walk"] and birds.scatter_events < 1:
+		ok = false
+		why = "rooks did not scatter when the player walked through their feeding site"
 	print("BOT %s: %s (t=%.1fs, y range %.1f..%.1f, stamina %.0f)" % ["PASS" if ok else "FAIL", why, _t, _min_y, _max_y, _player.stamina])
 	get_tree().quit(0 if ok else 1)

@@ -82,5 +82,17 @@
   "time": "2026-10-10T12:15:57Z",
   "caption": "Late-afternoon view across the vale to layered ranges and snowy peaks; the foreground grass sits in deep shadow and the peaks form a uniform sawtooth.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1326-rooks.jpg",
+  "time": "2026-10-10T13:26:08Z",
+  "caption": "A rook flock feeding on cropped turf in the vale at 14:00; reads as a real field, but the crop patch shows bare brown ground and the birds are tiny at 15 m.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1326-birds.jpg",
+  "time": "2026-10-10T13:26:08Z",
+  "caption": "Rooks bursting up out of the meadow as the camera comes within 10 m; motion reads in a clip, but the still is small dark specks and the shaded hillside is muddy.",
+  "verdict": "fail"
  }
 ]

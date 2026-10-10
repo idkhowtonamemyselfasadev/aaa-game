@@ -39,6 +39,11 @@ func _ready() -> void:
 		back.y = 0
 		back = back.normalized() * (16.0 if spot == "tree" else 6.0)
 		SPOTS[spot] = [best + back, best + Vector3.UP * (3.0 if spot == "tree" else -1.0)]
+	if spot == "birds" or spot == "rooks":
+		# "birds": camera close enough that the flock bursts up; "rooks": they keep feeding
+		var site: Vector3 = world.get_node("Birds").site_positions()[0]
+		var d := 9.0 if spot == "birds" else 15.5
+		SPOTS[spot] = [site + Vector3(-d * 0.8, 0, d * 0.6), site + Vector3(0, -0.5 if spot == "rooks" else 3.5, 0)]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
