@@ -56,6 +56,8 @@ func _ready() -> void:
 	if "nofog" in args:
 		world.env.environment.fog_enabled = false
 		world.env.environment.volumetric_fog_enabled = false
+	if "novol" in args:
+		world.env.environment.volumetric_fog_enabled = false
 	if "nosdfgi" in args:
 		world.env.environment.sdfgi_enabled = false
 	if "noshadow" in args:
@@ -66,6 +68,17 @@ func _ready() -> void:
 		world.env.environment.ssil_enabled = false
 	if "noglow" in args:
 		world.env.environment.glow_enabled = false
+	for a in args:
+		if a.begins_with("skyx="):
+			world.sky_energy_scale = float(a.substr(5))
+		if a.begins_with("ambx="):
+			world.ambient_scale = float(a.substr(5))
+	if "norefl" in args:
+		world.env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+	if "skyrt" in args:
+		world.env.environment.sky.process_mode = Sky.PROCESS_MODE_REALTIME
+	if "noupd" in args:
+		world.set_process(false)
 	for i in frames:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

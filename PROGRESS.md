@@ -21,6 +21,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 10:00 UTC:
+  - **Fixed "everything in shadow renders pure black"** (top visual bug). Diagnosed with
+    480x270 test shots (`--resolution 480x270`, 20 frames, ~2 min each — use these for
+    A/B diagnostics, not full shots). Two independent zeros stacked: (1) sky-radiance
+    ambient contributed ~0 in shadow (x4 ambient energy changed nothing); (2) SDFGI, which
+    replaces the ambient term, also gave ~0 indirect light on lavapipe. Either alone kept
+    shadows black. Fix in `world/world.gd`: ambient is now a time-of-day colour (blue-grey
+    skylight warming toward dusk, moonlit blue at night); SDFGI auto-disables when the
+    adapter is llvmpipe/lavapipe (`sdfgi_allowed` export for a future quality slider).
+    SSAO/SSIL still on. Fog no longer washes the whole sky grey (`fog_sky_affect` 0.4→0.12,
+    volumetric 0.3→0.1).
+  - `shot.gd` diagnostics: `novol`, `norefl`, `skyrt`, `noupd`, `skyx=N`, `ambx=N`.
+    Note: `noupd` freezes the clock at world's default 17.25 h, not the requested hour.
 - Session 2026-10-10 09:00 UTC:
   - **Black-oak groves and mossy boulders** (`world/flora.gd`, all procedural): 4 oak
     variants (gnarled forking trunk → limbs → twigs as tapered knobbly tubes with root flare
@@ -109,10 +122,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `village` 16.5h: oak line on the hills good; camera stands in a tree's shadow and the
   whole lower half is black. Fail -> Next 1.
 
+## Screenshot verdicts (2026-10-10 10:00 session, after the shadow fix)
+- `village` 16.5h: the formerly black lower half is now a readable shaded meadow. Sky is
+  too dark navy for late afternoon; horizon empty. Wukong? No. Alive? Wind only.
+- `tree` 15.5h: backlit grove with god-ray haze, trunks and shaded grass all readable —
+  best shot so far. Leaf cards read as flat blobs up close. Fail (close).
+- `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
+
 ## Next (milestone 1 — vertical slice, in order)
-1. **Shadow-side ambient is ~0 (top visual bug)**: anything in shadow renders black. Test
-   `nosdfgi` vs default at 30 frames to see if SDFGI is unconverged or killing sky ambient;
-   fix (ambient floor, SDFGI energy, or more warm-up frames in shot.gd).
+1. Afternoon sky too dark/navy (16–17 h): tune PhysicalSky rayleigh/exposure so late
+   afternoon reads bright and warm; verify SDFGI on a real GPU some day (cloud box can't).
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
@@ -129,7 +148,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Golden-hour shadow sides go near-black (ambient too low in shadow); sky flat grey at dusk.
+- (fixed: shadowed surfaces pure black.) SDFGI is off on the cloud box (software GPU);
+  whether SDFGI + sky ambient light shadows correctly on a real GPU is unverified.
+- Late-afternoon sky renders dark navy.
 - (fixed: hills floating as ribbons = inverted terrain winding.) World edge at 256 m is still
   visible from slopes; needs the far mountain ring (Next 3).
 - Grass streaming builds chunks on the main thread (6/frame); fine at walking speed, may

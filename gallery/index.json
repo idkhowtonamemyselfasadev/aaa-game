@@ -40,5 +40,23 @@
   "time": "2026-10-10T09:28:55Z",
   "caption": "Oak woodland now crowns the vale's hills above the wind-blown meadow at noon; boulders are too small to read, sky is flat and the hill ground is still bare procedural brown.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1105-shade-tree.jpg",
+  "time": "2026-10-10T11:05:07Z",
+  "caption": "Backlit oak grove at 15:30: the shadowed grass and trunks now read with cool skylight instead of crushing to black; leaf cards still look like flat blobs up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1105-shade-rocks.jpg",
+  "time": "2026-10-10T11:05:07Z",
+  "caption": "Noon meadow and oak-crowned hills: shade under the grass is readable now; boulders are too small, hill ground is bare procedural brown.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1105-shade-village.jpg",
+  "time": "2026-10-10T11:05:07Z",
+  "caption": "Village edge at 16:30, previously half black: the shadowed meadow is now visible, but the sky is too dark navy for late afternoon and the horizon is empty.",
+  "verdict": "fail"
  }
 ]

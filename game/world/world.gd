@@ -6,6 +6,9 @@ extends Node3D
 @export var time_of_day: float = 17.25           # hours, 0..24; starts in the evening
 @export var run_clock: bool = true
 @export var sun_peak_deg: float = 28.0           # Long Dusk: low amber days, noon sun ~28 degrees
+@export var sky_energy_scale: float = 1.0
+@export var ambient_scale: float = 1.0
+@export var sdfgi_allowed: bool = true            # quality setting; auto-off on software GPUs
 
 @onready var sun: DirectionalLight3D = $Sun
 @onready var env: WorldEnvironment = $WorldEnvironment
@@ -45,15 +48,18 @@ func _build_environment() -> void:
 	sky.process_mode = Sky.PROCESS_MODE_INCREMENTAL
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
 	e.sky = sky
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	e.ambient_light_sky_contribution = 1.0
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	# tonemap + exposure
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
 	e.tonemap_exposure = 0.85
 	e.tonemap_white = 6.0
 	# GI
-	e.sdfgi_enabled = true
+	# SDFGI replaces the ambient term. On software Vulkan (lavapipe/llvmpipe, the cloud
+	# screenshot box) its indirect light measures ~0 in shadow and every shadowed surface
+	# renders pure black, so it stays off there; real GPUs keep it.
+	var adapter := RenderingServer.get_video_adapter_name().to_lower()
+	e.sdfgi_enabled = sdfgi_allowed and not (adapter.contains("llvmpipe") or adapter.contains("lavapipe"))
 	e.sdfgi_use_occlusion = true
 	e.sdfgi_cascades = 4
 	e.sdfgi_min_cell_size = 0.3
@@ -78,7 +84,7 @@ func _build_environment() -> void:
 	e.fog_sun_scatter = 0.15
 	e.fog_density = 0.0012
 	e.fog_aerial_perspective = 0.5
-	e.fog_sky_affect = 0.4
+	e.fog_sky_affect = 0.12
 	e.fog_height = -10.0
 	e.fog_height_density = 0.0
 	e.volumetric_fog_enabled = true
@@ -87,7 +93,7 @@ func _build_environment() -> void:
 	e.volumetric_fog_emission = Color(0.03, 0.02, 0.015)
 	e.volumetric_fog_length = 128.0
 	e.volumetric_fog_anisotropy = 0.6
-	e.volumetric_fog_sky_affect = 0.3
+	e.volumetric_fog_sky_affect = 0.1
 	# grading
 	e.adjustment_enabled = true
 	e.adjustment_contrast = 1.06
@@ -142,13 +148,15 @@ func _apply_time() -> void:
 	if env.environment:
 		var sky := env.environment.sky.sky_material as PhysicalSkyMaterial
 		if sky:
-			sky.energy_multiplier = lerpf(0.35, 1.0, day)
+			sky.energy_multiplier = lerpf(0.35, 1.0, day) * sky_energy_scale
 			# PhysicalSky adds night_sky unattenuated, so only bind the stars after dusk
 			sky.night_sky = _stars if day < 0.08 else null
-		# at night the physical sky is near-black, so blend in a cool moonlit ambient colour
-		env.environment.ambient_light_color = Color(0.15, 0.19, 0.3)
-		env.environment.ambient_light_sky_contribution = lerpf(0.0, 1.0, day)
-		env.environment.ambient_light_energy = lerpf(1.0, 1.0, day)
+		# Ambient is a time-of-day colour, not the sky radiance: sky-sourced ambient measured
+		# ~0 in shadow (x4 energy changed nothing), so every shadowed surface went black.
+		# Day: blue-grey skylight that warms toward dusk; night: cool moonlit blue.
+		var sky_amb := Color(0.46, 0.53, 0.66).lerp(Color(0.56, 0.46, 0.42), low)
+		env.environment.ambient_light_color = Color(0.13, 0.17, 0.27).lerp(sky_amb, day)
+		env.environment.ambient_light_energy = lerpf(1.0, 1.15, day) * ambient_scale
 		# volumetrics only for local ground haze; distance haze is the depth fog (a dense
 		# volume ends at volumetric_fog_length and leaves a visible band on far ridges)
 		env.environment.volumetric_fog_density = lerpf(0.0025, 0.0007, day)
