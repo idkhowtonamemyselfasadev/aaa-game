@@ -2,3 +2,4 @@ logs/
 shots/
 game/.godot/
 game/export/
+.tools/

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1bottool000001"]
+
+[ext_resource type="Script" path="res://tools/bot.gd" id="1"]
+
+[node name="Bot" type="Node"]
+script = ExtResource("1")
