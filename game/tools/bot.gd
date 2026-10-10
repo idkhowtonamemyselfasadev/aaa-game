@@ -73,5 +73,11 @@ func _physics_process(delta: float) -> void:
 
 func _finish(ok: bool, why: String) -> void:
 	_i = _route.size() + 1
+	# grass must have streamed in around wherever the bot ended up
+	var grass := _world.get_node("Grass")
+	print("BOT grass chunks loaded: %d" % grass.loaded_chunks())
+	if ok and grass.loaded_chunks() < 10:
+		ok = false
+		why = "grass did not stream in (%d chunks)" % grass.loaded_chunks()
 	print("BOT %s: %s (t=%.1fs, y range %.1f..%.1f, stamina %.0f)" % ["PASS" if ok else "FAIL", why, _t, _min_y, _max_y, _player.stamina])
 	get_tree().quit(0 if ok else 1)

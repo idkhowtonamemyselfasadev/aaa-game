@@ -89,10 +89,12 @@ func _process(delta: float) -> void:
 	_apply_time()
 
 func _apply_time() -> void:
-	# The sun in Emberfall never climbs high: "Long Dusk" arc, max ~18 degrees elevation.
+	# The sun in Emberfall never climbs high: "Long Dusk" arc, ~28 degrees at noon (enough to
+	# clear the Vale's rim so the floor gets direct light), golden from 16h, set by ~20h,
+	# real dark-blue night.
 	var t := time_of_day / 24.0
 	var az := t * TAU - PI * 0.5
-	var elev := deg_to_rad(lerpf(-12.0, 18.0, 0.5 - 0.5 * cos(t * TAU)))
+	var elev := deg_to_rad(lerpf(-24.0, 28.0, 0.5 - 0.5 * cos(t * TAU)))
 	sun.rotation = Vector3(-elev, az, 0.0)
 	var day := clampf(sin(elev) * 6.0 + 0.5, 0.0, 1.0)
 	sun.light_energy = lerpf(0.05, 3.2, day)

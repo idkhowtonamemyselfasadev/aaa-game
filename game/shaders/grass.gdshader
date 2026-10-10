@@ -1,0 +1,66 @@
+shader_type spatial;
+render_mode cull_disabled, depth_draw_opaque;
+// Grass clumps for the Vale. Blades are real geometry (procedural mesh from grass.gd); this
+// shader bends them with layered wind (gusts travel across the field), tints them per clump
+// from dry amber to late-summer green, shades them with root occlusion and back-light
+// translucency, and shrinks them into the ground at the edge of the draw distance so there
+// is no pop.
+
+uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
+uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
+uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
+uniform vec2 wind_dir = vec2(0.8, 0.6);
+uniform float wind_strength = 0.35;
+uniform float gust_strength = 0.55;
+uniform float fade_start = 48.0;
+uniform float fade_end = 64.0;
+
+varying float v_h;        // 0 root .. 1 tip
+varying float v_var;      // per-instance variation
+varying float v_ao;
+
+float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float n2(vec2 p) {
+	vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y);
+}
+
+void vertex() {
+	v_h = UV.y;
+	vec3 origin = MODEL_MATRIX[3].xyz;
+	vec3 iw = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	// per-instance data: INSTANCE_CUSTOM.x variation, .y height scale (baked into transform)
+	v_var = INSTANCE_CUSTOM.x;
+	// distance fade: sink and thin the blade as it reaches the draw distance
+	float d = distance(iw, CAMERA_POSITION_WORLD);
+	float fade = 1.0 - smoothstep(fade_start, fade_end, d);
+	// wind: a slow large swell + travelling gusts + per-blade flutter
+	vec2 wd = normalize(wind_dir);
+	float t = TIME;
+	float swell = sin(dot(iw.xz, wd) * 0.05 - t * 0.9) * 0.5 + 0.5;
+	float gust = n2(iw.xz * 0.04 - wd * t * 1.6);
+	gust = smoothstep(0.35, 0.95, gust);
+	float flutter = sin(t * 7.0 + v_var * 40.0 + iw.x * 0.7) * 0.06;
+	float bend = (wind_strength * swell + gust_strength * gust) * v_h * v_h;
+	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h);
+	// bend in world space, convert back to local (instances are rotated/scaled)
+	vec3 lw = (inverse(mat3(MODEL_MATRIX)) * wv);
+	VERTEX += lw;
+	VERTEX.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
+	VERTEX *= vec3(1.0, fade, 1.0);
+	v_ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, v_h));
+	// lean normals up so clumps light like a canopy, not like flat cards
+	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
+}
+
+void fragment() {
+	vec3 tip = mix(tip_green, tip_dry, smoothstep(0.25, 0.85, v_var));
+	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
+	vec3 col = mix(root_col, tip, smoothstep(0.0, 0.9, v_h));
+	ALBEDO = col * v_ao;
+	ROUGHNESS = 0.82;
+	SPECULAR = 0.35;
+	BACKLIGHT = col * 0.6 * v_h;
+	AO = v_ao;
+	AO_LIGHT_AFFECT = 0.4;
+}

@@ -1,0 +1,14 @@
+[
+ {
+  "file": "20261010-0816-meadow-noon.jpg",
+  "time": "2026-10-10T08:16:26Z",
+  "caption": "New wind-combed procedural grass meadow at noon in Harrowmere Vale; bare ground between clumps is still flat grey-brown and the distant hills float as disconnected ribbons in the fog.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-0816-vale-slope-dusk.jpg",
+  "time": "2026-10-10T08:16:26Z",
+  "caption": "Grass on a Vale slope at 16:30 golden hour reads well up close, but past the 64 m grass radius the valley is an empty brown plane under grey sky with no trees, rocks or village.",
+  "verdict": "fail"
+ }
+]

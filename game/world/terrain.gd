@@ -43,6 +43,14 @@ func height_at(x: float, z: float) -> float:
 	h += _detail.get_noise_2d(x, z) * lerpf(0.5, 1.6, flat)
 	return h
 
+## World-space surface normal at (x, z) by central differences.
+func normal_at(x: float, z: float, e: float = 1.0) -> Vector3:
+	var hl := height_at(x - e, z)
+	var hr := height_at(x + e, z)
+	var hd := height_at(x, z - e)
+	var hu := height_at(x, z + e)
+	return Vector3(hl - hr, 2.0 * e, hd - hu).normalized()
+
 func build() -> void:
 	for c in get_children():
 		c.queue_free()
