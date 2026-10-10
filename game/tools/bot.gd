@@ -10,6 +10,8 @@ const ROUTES := {
 	"ridge": [Vector2(0, 0), Vector2(120, 120), Vector2(200, 200)],
 	# stand in the meadow and chain the Ward light string, then wait for the staff to be slung
 	"combat": [],
+	# dash-step, swing-cancel, perfect dodge (slow-mo + refund), late dodge, unguarded hit
+	"dodge": [],
 }
 
 var _world: Node3D
@@ -41,6 +43,9 @@ func _ready() -> void:
 	_last_pos = _player.global_position
 	if name == "combat":
 		_combat_test()
+		return
+	if name == "dodge":
+		_dodge_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -206,3 +211,101 @@ func _combat_test() -> void:
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])
 	get_tree().quit(0 if ok else 1)
+
+func _ticks(n: int) -> void:
+	for i in n:
+		await get_tree().physics_frame
+
+## Dodge: distance + stamina + i-frames, cancels a swing, perfect window triggers slow motion
+## and a stamina refund, a late attack is merely dodged, an unguarded one hurts.
+func _dodge_test() -> void:
+	var p := _player
+	var base := Engine.time_scale
+	await _ticks(20)
+	# 1) dash to the right (camera yaw 0: input x=+1 is world +X)
+	var start := p.global_position
+	var st0 := p.stamina
+	p.bot_input = Vector2(1, 0)
+	p.bot_dodge = true
+	var saw_iframes := false
+	var max_lean := 0.0
+	var min_st := st0
+	for i in 400:
+		await get_tree().physics_frame
+		p.bot_input = Vector2.ZERO
+		saw_iframes = saw_iframes or p.is_invulnerable()
+		max_lean = maxf(max_lean, absf(p.model.transform.basis.get_euler().x))
+		min_st = minf(min_st, p.stamina)
+		if p.dodges >= 1 and p.dodge_t < 0.0:
+			break
+	var moved := Vector2(p.global_position.x - start.x, p.global_position.z - start.z)
+	print("BOT dodge: moved %s (%.2f m), stamina %.0f -> min %.0f, iframes %s, lean %.2f rad, dodging %s" % [moved, moved.length(), st0, min_st, saw_iframes, max_lean, p.dodge_t >= 0.0])
+	if moved.length() < 2.8 or moved.x < 2.5:
+		return _combat_done(false, "dodge did not carry the hero ~3.6 m to the right")
+	if min_st > st0 - 10.0 or not saw_iframes or max_lean < 0.2 or p.dodge_t >= 0.0:
+		return _combat_done(false, "dodge had no cost / i-frames / lean, or never ended")
+	if p.model.transform.origin.distance_to(p._model_rest.origin) > 0.001:
+		return _combat_done(false, "model not restored after the dodge")
+	# 2) dodge cancels a swing in progress
+	await _ticks(60)
+	var c: StaffCombat = p.combat
+	p.bot_attack = true
+	for i in 60:
+		await get_tree().physics_frame
+		if c.is_attacking() and c.t > 0.1:
+			break
+	if not c.is_attacking():
+		return _combat_done(false, "could not start a swing to cancel")
+	p.bot_dodge = true
+	await _ticks(2)
+	print("BOT dodge: swing cancelled -> attacking %s, dodging %s" % [c.is_attacking(), p.dodge_t >= 0.0])
+	if c.is_attacking() or p.dodge_t < 0.0:
+		return _combat_done(false, "dodge did not cancel the swing")
+	await _ticks(40)
+	# 3) perfect dodge: the blow lands 0.08 s into the dodge
+	p.stamina = 50.0
+	p.bot_input = Vector2(0, 1)
+	p.bot_dodge = true
+	while p.dodge_t < 0.06:
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	var st_before := p.stamina
+	print("BOT dodge: blow lands %.3f s into the dodge" % p.dodge_t)
+	var r := p.receive_attack(self, 20.0)
+	var min_scale := Engine.time_scale
+	var slow_ticks := 0
+	while p.is_slowmo() and slow_ticks < 600:
+		await get_tree().physics_frame
+		min_scale = minf(min_scale, Engine.time_scale)
+		slow_ticks += 1
+	var fx := _world.get_node_or_null("DodgeFX") != null
+	print("BOT dodge: perfect -> %s, time scale %.2f -> min %.2f -> %.2f after %d ticks, stamina %.0f -> %.0f, fx %s, health %.0f" % [r, base, min_scale, Engine.time_scale, slow_ticks, st_before, p.stamina, fx, p.health])
+	if r != "perfect" or min_scale > base * 0.3 or absf(Engine.time_scale - base) > 0.001:
+		return _combat_done(false, "perfect dodge did not slow time and restore it")
+	if p.stamina < st_before + 20.0 or p.health < Player.HEALTH_MAX or p.perfect_dodges != 1:
+		return _combat_done(false, "perfect dodge gave no refund or still hurt")
+	await _ticks(40)
+	# 4) late: the blow lands 0.25 s in -> dodged through i-frames, no slow motion
+	p.bot_dodge = true
+	await _ticks(1)
+	while p.dodge_t < 0.22:
+		await get_tree().physics_frame
+	var r2 := p.receive_attack(self, 20.0)
+	print("BOT dodge: late -> %s, slowmo %s, health %.0f" % [r2, p.is_slowmo(), p.health])
+	if r2 != "dodged" or p.is_slowmo() or p.health < Player.HEALTH_MAX:
+		return _combat_done(false, "late dodge should avoid damage without slow motion")
+	await _ticks(40)
+	# 5) standing still: the blow hurts
+	var r3 := p.receive_attack(self, 20.0)
+	await _ticks(2)
+	var hud: Hud = p.get_node_or_null("Hud") as Hud
+	if hud == null:
+		for ch in p.get_children():
+			if ch is Hud:
+				hud = ch
+	print("BOT dodge: unguarded -> %s, health %.0f, dodges %d, hud alpha %.2f" % [r3, p.health, p.dodges, hud.visible_alpha() if hud else -1.0])
+	if r3 != "hit" or p.health > Player.HEALTH_MAX - 19.0:
+		return _combat_done(false, "unguarded attack did no damage")
+	if hud == null or hud.visible_alpha() < 0.1:
+		return _combat_done(false, "HUD bars not shown after taking damage")
+	_combat_done(true, "dash-step, swing cancel, perfect dodge slow-mo + refund, late dodge, hit")

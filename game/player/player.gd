@@ -11,8 +11,39 @@ const JUMP_VEL := 7.5
 const GRAVITY := 22.0
 const TURN_SPEED := 12.0
 const STAMINA_MAX := 100.0
+const HEALTH_MAX := 100.0
+
+# Dodge: a low, leaning dash-step. Input direction (camera-relative) or, with no input, a
+# hop back. I-frames cover most of it; an attack that lands in the first PERFECT_WINDOW
+# seconds is a perfect dodge: the world drops into slow motion and stamina flows back.
+const DODGE_TIME := 0.42
+const DODGE_DIST := 3.6
+const BACKSTEP_DIST := 2.4
+const DODGE_COST := 16.0
+const DODGE_IFRAMES := Vector2(0.02, 0.32)
+const PERFECT_WINDOW := 0.17
+const DODGE_CHAIN := 0.34            # a second dodge may start this far into the first
+const SLOWMO_SCALE := 0.25
+const SLOWMO_HOLD := 0.45           # unscaled seconds at full slow-down
+const SLOWMO_EASE := 0.25           # unscaled seconds back to normal speed
+const PERFECT_REFUND := 25.0
+
+signal dodged(perfect: bool)
+signal hurt(amount: float)
 
 var stamina := STAMINA_MAX
+var health := HEALTH_MAX
+var dodge_t := -1.0                   # seconds into the current dodge, -1 when not dodging
+var dodges := 0
+var perfect_dodges := 0
+var _dodge_dir := Vector3.ZERO
+var _dodge_back := false
+var _dodge_dist := DODGE_DIST
+var _dodge_rewarded := false
+var _slow_t := -1.0                   # unscaled seconds into a perfect-dodge slow-down
+var _slow_base := 1.0
+var _model_rest: Transform3D
+var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
 var bot_jump := false
@@ -37,8 +68,10 @@ var _pitch := -0.25
 func _ready() -> void:
 	if not use_bot_input and DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_model_rest = model.transform
 	_setup_animation()
 	_attach_staff()
+	add_child(Hud.new())
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.
@@ -102,6 +135,12 @@ func _setup_animation() -> void:
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:
 		return
+	if dodge_t >= 0.0:
+		# dash-step: the run stride at a high cadence; the hop back plays the walk in reverse
+		_blend = lerpf(_blend, ANIM_WALK_SPEED if _dodge_back else ANIM_RUN_SPEED, 1.0 - exp(-30.0 * delta))
+		anim_tree.set("parameters/move/blend_position", _blend)
+		anim_tree.set("parameters/speed/scale", -1.7 if _dodge_back else 1.9)
+		return
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	if not is_on_floor():
 		hspeed = minf(hspeed, ANIM_WALK_SPEED)   # no jump clip yet: hold a stride
@@ -143,7 +182,12 @@ func _physics_process(delta: float) -> void:
 	bot_jump = false
 	var want_attack := bot_attack if use_bot_input else Input.is_action_just_pressed("attack_light")
 	bot_attack = false
-	if combat != null and want_attack:
+	var want_dodge := bot_dodge if use_bot_input else Input.is_action_just_pressed("dodge")
+	bot_dodge = false
+	_update_slowmo(delta)
+	if want_dodge:
+		_try_dodge(dir2)
+	if combat != null and want_attack and dodge_t < 0.0:
 		combat.light()
 	var attacking := combat != null and combat.is_attacking()
 
@@ -159,7 +203,25 @@ func _physics_process(delta: float) -> void:
 		wish = wish.normalized()
 
 	var speed := SPRINT_SPEED if sprinting else (RUN_SPEED if dir2.length() > 0.6 else WALK_SPEED)
-	if attacking:
+	var dodging := dodge_t >= 0.0
+	if dodging:
+		dodge_t += delta
+		var u := dodge_t / DODGE_TIME
+		if u >= 1.0:
+			dodge_t = -1.0
+			dodging = false
+			model.transform = _model_rest
+		else:
+			# speed falls off as 1-u^2 so the dash bites hard and settles into the next step;
+			# the distance integrates to exactly _dodge_dist
+			var peak := _dodge_dist / (DODGE_TIME * 2.0 / 3.0)
+			var v := _dodge_dir * peak * (1.0 - u * u)
+			velocity.x = v.x
+			velocity.z = v.z
+			_pose_dodge(u)
+	if dodging:
+		sprinting = false
+	elif attacking:
 		# committed to the swing: lunge along the facing, steering is only a nudge
 		var face := body.global_transform.basis.z
 		speed = 0.0
@@ -173,8 +235,9 @@ func _physics_process(delta: float) -> void:
 	elif combat != null and combat.is_drawn():
 		speed = minf(speed, RUN_SPEED)   # weapon out: no sprint
 	var target := wish * speed
-	velocity.x = move_toward(velocity.x, target.x, ACCEL * delta)
-	velocity.z = move_toward(velocity.z, target.z, ACCEL * delta)
+	if not dodging:
+		velocity.x = move_toward(velocity.x, target.x, ACCEL * delta)
+		velocity.z = move_toward(velocity.z, target.z, ACCEL * delta)
 
 	if combat != null and combat.hitstop > 0.0:
 		velocity.x = 0.0
@@ -189,12 +252,15 @@ func _physics_process(delta: float) -> void:
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
-	elif attacking:
-		pass                                   # no recovery mid-swing
+	elif attacking or dodging:
+		pass                                   # no recovery mid-swing or mid-dodge
 	else:
 		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
 
-	if attacking:
+	if dodging:
+		if not _dodge_back:
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(_dodge_dir.x, _dodge_dir.z), 1.0 - exp(-35.0 * delta))
+	elif attacking:
 		body.rotation.y += combat.spin_delta
 		if combat.t < 0.08 and dir2.length() > 0.1:
 			# a hit snaps toward the stick direction at its very start
@@ -208,6 +274,89 @@ func _physics_process(delta: float) -> void:
 	_update_animation(delta)
 	if combat != null:
 		combat.physics_step(delta)
+
+func is_invulnerable() -> bool:
+	return dodge_t >= DODGE_IFRAMES.x and dodge_t <= DODGE_IFRAMES.y
+
+func _try_dodge(dir2: Vector2) -> void:
+	if stamina <= 0.0 or not is_on_floor():
+		return
+	if dodge_t >= 0.0 and dodge_t < DODGE_CHAIN:
+		return
+	if combat != null:
+		if combat.hitstop > 0.0:
+			return
+		combat.cancel_to_guard()
+	stamina = maxf(stamina - DODGE_COST, 0.0)
+	_dodge_back = dir2.length() < 0.2
+	if _dodge_back:
+		_dodge_dir = -body.global_transform.basis.z
+		_dodge_dist = BACKSTEP_DIST
+	else:
+		var fwd := -cam_pivot.global_transform.basis.z
+		var right := cam_pivot.global_transform.basis.x
+		_dodge_dir = right * dir2.x + fwd * -dir2.y
+		_dodge_dist = DODGE_DIST
+	_dodge_dir.y = 0.0
+	_dodge_dir = _dodge_dir.normalized()
+	dodge_t = 0.0
+	_dodge_rewarded = false
+	dodges += 1
+
+## Lean into the dash from the hips and sink low; the hop back leans away. Pivot at the hip
+## so the feet stay planted under the body instead of swinging out.
+func _pose_dodge(u: float) -> void:
+	var env := sin(PI * clampf(u * 1.15, 0.0, 1.0))
+	var lean := deg_to_rad(-12.0 if _dodge_back else 24.0) * env
+	var hip := Vector3(0, 0.95, 0)
+	var t := Transform3D(Basis(Vector3.RIGHT, lean), Vector3.ZERO)
+	t = Transform3D(Basis(), hip) * t * Transform3D(Basis(), -hip)
+	model.transform = Transform3D(Basis(), Vector3(0, -0.17 * env, 0)) * t * _model_rest
+
+## Enemies call this when a strike would connect. Returns "perfect", "dodged" or "hit".
+func receive_attack(attacker: Node, damage: float) -> String:
+	if is_invulnerable() or (dodge_t >= 0.0 and dodge_t <= PERFECT_WINDOW):
+		if dodge_t <= PERFECT_WINDOW and not _dodge_rewarded:
+			_dodge_rewarded = true
+			perfect_dodges += 1
+			stamina = minf(stamina + PERFECT_REFUND, STAMINA_MAX)
+			_start_slowmo()
+			DodgeFX.spawn(get_parent(), global_position + Vector3.UP * 1.0, _dodge_dir)
+			dodged.emit(true)
+			return "perfect"
+		dodged.emit(false)
+		return "dodged"
+	health = maxf(health - damage, 0.0)
+	add_shake(0.55)
+	hurt.emit(damage)
+	return "hit"
+
+func _start_slowmo() -> void:
+	if _slow_t < 0.0:
+		_slow_base = Engine.time_scale
+	_slow_t = 0.0
+	Engine.time_scale = _slow_base * SLOWMO_SCALE
+
+## Advances in unscaled time (physics delta divided back out by the current slow-down).
+func _update_slowmo(delta: float) -> void:
+	if _slow_t < 0.0:
+		return
+	_slow_t += delta * _slow_base / maxf(Engine.time_scale, 1e-4)
+	var k := SLOWMO_SCALE
+	if _slow_t > SLOWMO_HOLD:
+		var f := clampf((_slow_t - SLOWMO_HOLD) / SLOWMO_EASE, 0.0, 1.0)
+		k = lerpf(SLOWMO_SCALE, 1.0, f * f * (3.0 - 2.0 * f))
+	Engine.time_scale = _slow_base * k
+	if _slow_t >= SLOWMO_HOLD + SLOWMO_EASE:
+		Engine.time_scale = _slow_base
+		_slow_t = -1.0
+
+func is_slowmo() -> bool:
+	return _slow_t >= 0.0
+
+func _exit_tree() -> void:
+	if _slow_t >= 0.0:
+		Engine.time_scale = _slow_base
 
 func set_look(yaw: float, pitch: float) -> void:
 	_yaw = yaw

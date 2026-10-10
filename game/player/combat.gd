@@ -68,6 +68,9 @@ var hitstop := 0.0           # remaining freeze after a connecting hit
 var hits := 0                # hits landed (bots read this)
 var _hit_this_swing: Array = []
 var _prev_u := -1.0          # normalised swing time at the last contact test
+const RECOVER_TIME := 0.16
+var _recover := 0.0          # remaining blend from a cancelled swing back to guard
+var _from_pose: Array = GUARD
 
 var _back_slot: Node3D
 var _back_xform: Transform3D
@@ -164,6 +167,20 @@ func light() -> void:
 			if t / float(STRING[step]["dur"]) > 0.35:
 				queued = true
 
+## A dodge breaks off whatever swing is in progress; the arms ease back to guard from the
+## pose they were in instead of snapping.
+func cancel_to_guard() -> void:
+	if state != ATTACKING:
+		return
+	_from_pose = _pose_at(STRING[step]["keys"], clampf(t / float(STRING[step]["dur"]), 0.0, 1.0))
+	_recover = RECOVER_TIME
+	state = READY
+	step = -1
+	queued = false
+	idle_t = 0.0
+	hit_active = false
+	_prev_u = -1.0
+
 func _begin_draw() -> void:
 	staff.reparent(_wield, true)
 	_from_xform = staff.transform
@@ -232,6 +249,10 @@ func physics_step(delta: float) -> void:
 			_age_trail(delta)
 			return
 		READY:
+			if _recover > 0.0:
+				_recover = maxf(_recover - delta, 0.0)
+				var k: Array = [[0.0] + _from_pose, [1.0] + GUARD]
+				pose = _pose_at(k, 1.0 - _recover / RECOVER_TIME)
 			idle_t += delta
 			if idle_t > SHEATHE_AFTER:
 				staff.reparent(_back_slot, true)

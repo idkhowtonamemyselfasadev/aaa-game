@@ -22,6 +22,32 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 18:00 UTC:
+  - **Dodge, perfect dodge and a vitality/stamina HUD (Next 8, third part).** `dodge` (Ctrl /
+    pad B): a low dash-step 3.6 m toward the stick (camera-relative), or a 2.4 m hop back with
+    no input. Speed falls off as 1-u² over 0.42 s; the hero turns into the dash, leans 24° from
+    the hips and sinks 17 cm, the run stride plays at 1.9x (the hop back plays the walk in
+    reverse, leaning away). Costs 16 stamina, no regen during it; i-frames 0.02–0.32 s; a second
+    dodge can chain from 0.34 s. A dodge cancels a swing in progress (not during hit-stop) and
+    the arms ease back to guard over 0.16 s from wherever the swing was (`cancel_to_guard`).
+  - Enemy hook: `Player.receive_attack(attacker, damage) -> "perfect" | "dodged" | "hit"`.
+    A blow arriving in the first 0.17 s of a dodge is a **perfect dodge**: the world drops to
+    0.25x for 0.45 s (unscaled) and eases back over 0.25 s, +25 stamina, and a burst of pale-gold
+    motes with a warm flash sheds where the blow passed (`fx/dodge_fx.gd`). Later in the
+    i-frames it is just dodged; otherwise it costs health and shakes the camera. Health 100.
+  - `ui/hud.gd` (`Hud`): bottom-left, 1080p-scaled thin vitality bar (deep red) over a thinner
+    stamina bar (pale gold) with a brass rim, a faint top highlight and a pale "lost" segment
+    that holds and drains after damage/spend. Fades out 2.5 s after both are full.
+  - Bots: new `dodge` route — dash ≥ 2.8 m right (got 3.2 m), stamina 100→84, i-frames, lean
+    0.41 rad, model restored; swing cancelled by a dodge; perfect dodge at 0.067 s → slow-mo
+    (time scale 4→1→4 in the bot's 4x), stamina 34→59, FX spawned, no damage; late (0.22 s) →
+    dodged, no slow-mo; unguarded → 20 damage, HUD shown. `tools/bots.sh` now runs all four
+    routes by default (walk, ridge, combat, dodge): all PASS.
+  - Shot spot `dodge [u=0.35]`: dash to +X frozen at u, side-on from the sun side, HUD up.
+  - Verdicts: `dodge1` 10h u=0.35 — low committed lean past the post reads as a dash; vitality
+    bar visible, stamina bar was lost against the bright grass (fixed: thicker, darker backing,
+    min pixel heights). `dg2` 10h u=0.6 — both bars readable; pose reads as a running lean, not
+    a Wukong dodge. Both fail on the placeholder model. A 16.5 h shot timed out on lavapipe.
 - Session 2026-10-10 17:00 UTC:
   - **The light string now connects (Next 8, second part): hit detection, hit-stop, camera
     shake, impact VFX, stamina cost.** New `world/training_post.gd` (`TrainingPost`): a
@@ -285,13 +311,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
-   stamina cost, practice post.) Still to do: heavy with parry window, dodge + perfect dodge
-   time-dilation, lock-on, stamina HUD bar, hit sounds once audio exists; Hollow Soldier enemy
-   with telegraphs (implement `hurt_capsule`/`take_hit`).
+   stamina cost, practice post; 18:00: dodge, perfect dodge slow-mo, HUD bars.) Still to do:
+   Hollow Soldier enemy with telegraphs (implement `hurt_capsule`/`take_hit`, call
+   `Player.receive_attack` on its strikes) — next; then lock-on, heavy with parry window,
+   hit sounds once audio exists.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Dodge is procedural (lean + sink + fast run stride), not a real roll/dash clip; the feet
+  slide a little at the dash's peak speed (13 m/s vs a 6 m/s stride). Wants a Mixamo dodge clip.
+- Dash covers 3.2 m instead of the designed 3.6 m (first tick lost to discrete integration).
+- Perfect-dodge slow-mo is global `Engine.time_scale` (the hero slows too); fine as a reward
+  beat, but a per-actor "witch time" would let the hero act at full speed.
+- `await physics_frame` in bots resumes once per frame while 4 physics steps run at 4x: write
+  bot waits as state conditions, never tick counts.
 - Practice post sits 1.45 m in front of the spawn and now crowds the `hero` shot spot; move it
   (and the player spawn) into a proper training yard when the village goes in.
 - Opening sweep only reaches ~1.6 m; at the bot's 4x time scale it connected only once the post

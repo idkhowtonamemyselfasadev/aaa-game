@@ -93,12 +93,24 @@ func _ready() -> void:
 			side = -side
 		var mid := pp.lerp(post, 0.5)
 		SPOTS[spot] = [mid + side * 2.7 - to_post * 0.7, mid]
+	var dodge_u := -1.0
+	if spot == "dodge":
+		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
+		dodge_u = 0.35
+		for a in args:
+			if a.begins_with("u="):
+				dodge_u = float(a.substr(2))
+		var pp := player.global_position
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var side := Vector3(0, 0, 1) if -light.z > 0.0 else Vector3(0, 0, -1)
+		var mid := pp + Vector3(1.3, 0, 0)
+		SPOTS[spot] = [mid + side * 3.6 + Vector3(0.6, 0, 0), mid]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 else 1.5)
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
@@ -168,6 +180,23 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT impact hits %d step %d" % [c.hits, c.step])
+	if dodge_u >= 0.0:
+		Engine.max_physics_steps_per_frame = 1
+		player.use_bot_input = true
+		player.set_look(0.0, -0.3)
+		RenderingServer.render_loop_enabled = false
+		player.receive_attack(self, 12.0)      # bring the HUD up with a dent in the vitality bar
+		for i in 60:
+			await get_tree().physics_frame
+		player.bot_input = Vector2(1, 0)
+		player.bot_dodge = true
+		for i in 600:
+			await get_tree().physics_frame
+			if player.dodge_t >= dodge_u * Player.DODGE_TIME:
+				break
+		get_tree().paused = true
+		RenderingServer.render_loop_enabled = true
+		print("SHOT dodge t %.3f" % player.dodge_t)
 	for i in frames:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
