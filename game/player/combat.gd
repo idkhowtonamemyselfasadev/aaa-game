@@ -334,6 +334,23 @@ func _detect_hits(u: float) -> void:
 				_land_hit(target, point, swing.normalized())
 				break
 
+## Nearest hittable's centre within `dist` and `half_angle` (rad) of the facing, or INF.
+func magnet_target(dist: float, half_angle: float) -> Vector3:
+	var face := player.body.global_basis.z
+	var best := Vector3.INF
+	var best_d := dist
+	for target in player.get_tree().get_nodes_in_group("hittable"):
+		if not target.has_method("hurt_capsule"):
+			continue
+		var c: Vector3 = target.hurt_capsule()[0]
+		var to := c - player.global_position
+		to.y = 0.0
+		var d := to.length()
+		if d < best_d and d > 0.05 and face.angle_to(to) < half_angle:
+			best = c
+			best_d = d
+	return best
+
 ## True when a hittable stands within lunge-stopping range ahead of the hero.
 func target_in_reach(dist: float) -> bool:
 	var bx := player.body.global_transform

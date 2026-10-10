@@ -105,12 +105,45 @@ func _ready() -> void:
 		var side := Vector3(0, 0, 1) if -light.z > 0.0 else Vector3(0, 0, -1)
 		var mid := pp + Vector3(1.3, 0, 0)
 		SPOTS[spot] = [mid + side * 3.6 + Vector3(0.6, 0, 0), mid]
+	var foe_u := -1.0
+	var foe_state := HollowSoldier.WINDUP
+	if spot == "soldier" or spot == "soldierface":
+		# soldier [u=0.7] [strike|stagger|dead]: the Hollow Soldier 3.4 m from the hero (who
+		# has the staff drawn), frozen at u of the chosen state; side-on from the sun side.
+		# soldierface: a 3/4 front portrait of the soldier over the hero's shoulder.
+		foe_u = 0.7
+		for a in args:
+			if a.begins_with("u="):
+				foe_u = float(a.substr(2))
+		if "strike" in args:
+			foe_state = HollowSoldier.STRIKE
+		elif "stagger" in args:
+			foe_state = HollowSoldier.STAGGER
+		elif "dead" in args:
+			foe_state = HollowSoldier.DEAD
+		var pp := player.global_position
+		var foe: HollowSoldier = world.soldier
+		var fp := pp + Vector3(-3.4, 0, 0.6)
+		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
+		foe._home = foe.global_position
+		foe.face(pp)
+		player.body.rotation.y = atan2(fp.x - pp.x, fp.z - pp.z)
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var line := Vector3(fp.x - pp.x, 0, fp.z - pp.z).normalized()
+		var side := line.cross(Vector3.UP)
+		if side.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
+			side = -side
+		var mid := pp.lerp(fp, 0.5)
+		if spot == "soldier":
+			SPOTS[spot] = [mid + side * 3.6 - line * 0.4, mid]
+		else:
+			SPOTS[spot] = [fp - line * 2.4 + side * 1.0, fp]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.5)
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
@@ -197,6 +230,32 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT dodge t %.3f" % player.dodge_t)
+	if foe_u >= 0.0:
+		# step the soldier and the hero's draw by hand (awaiting physics frames with the
+		# render loop off stalls under Vulkan here), then hold everything still for the shot
+		player.use_bot_input = true
+		var foe: HollowSoldier = world.soldier
+		var dt := 1.0 / 60.0
+		foe.set_physics_process(false)
+		player.combat._begin_draw()
+		for i in 30:
+			player.combat.physics_step(dt)
+		var dur := {HollowSoldier.WINDUP: HollowSoldier.WINDUP_T, HollowSoldier.STRIKE: HollowSoldier.STRIKE_T, HollowSoldier.STAGGER: HollowSoldier.STAGGER_T, HollowSoldier.DEAD: 2.4}
+		if foe_state == HollowSoldier.STAGGER:
+			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
+		elif foe_state == HollowSoldier.DEAD:
+			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 20.0, 0.0)
+		else:
+			foe.windups += 1
+			foe._enter(HollowSoldier.WINDUP)
+			if foe_state == HollowSoldier.STRIKE:
+				foe.t = HollowSoldier.WINDUP_T
+		for i in 600:
+			foe._physics_process(dt)
+			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
+				break
+		player.set_physics_process(false)
+		print("SHOT soldier state %d t %.3f ember %.2f" % [foe.state, foe.t, foe.max_ember])
 	for i in frames:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

@@ -12,4 +12,5 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 - `game/shaders/terrain.gdshader` — slope-blended grass/dirt/rock using a NoiseTexture2D.
 - Oak trees, leaf atlas, boulders, bark/leaf/rock shaders: generated procedurally in `game/world/flora.gd` and `game/shaders/` (original, no third-party assets).
 - Hero staff: `game/player/staff.gd` (lathe mesh: bronze caps with machined ridges, lacquered shaft, cloth grip) and `game/shaders/staff.gdshader` (procedural wood grain, lacquer wear, tarnish, weave) — original.
+- Hollow Soldier: `game/enemies/hollow_soldier.gd` reuses `vanguard.glb` (above) with `game/shaders/hollow.gdshader` (ash-stone, Voronoi fissures, ember glow, dissolve); spear `game/enemies/spear.gd` + `game/shaders/spear.gdshader` (lathe + leaf blade, wood/iron/cord) — original.
 - Practice post: `game/world/training_post.gd` + `game/shaders/training_post.gdshader` (oak, straw, rope, iron, all procedural); impact chaff/dust in `game/fx/impact.gd` (code-generated particles, gradient texture) — original.

@@ -12,6 +12,9 @@ const ROUTES := {
 	"combat": [],
 	# dash-step, swing-cancel, perfect dodge (slow-mo + refund), late dodge, unguarded hit
 	"dodge": [],
+	# Hollow Soldier: notices, stalks, telegraphs and thrusts (hit), a perfect dodge on the
+	# glint, then the hero beats it down with the string until it crumbles
+	"soldier": [],
 }
 
 var _world: Node3D
@@ -46,6 +49,9 @@ func _ready() -> void:
 		return
 	if name == "dodge":
 		_dodge_test()
+		return
+	if name == "soldier":
+		_soldier_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -309,3 +315,81 @@ func _dodge_test() -> void:
 	if hud == null or hud.visible_alpha() < 0.1:
 		return _combat_done(false, "HUD bars not shown after taking damage")
 	_combat_done(true, "dash-step, swing cancel, perfect dodge slow-mo + refund, late dodge, hit")
+
+func _soldier_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	await _ticks(10)
+	var start_d := Vector2(s.global_position.x - p.global_position.x, s.global_position.z - p.global_position.z).length()
+	print("BOT soldier: %.1f m away, state %d" % [start_d, s.state])
+	if s.state != HollowSoldier.IDLE:
+		return _combat_done(false, "soldier should be idle while the hero is far away")
+	# 1) walk toward it until it notices and stalks in, then stand and take the first thrust
+	var waited := 0.0
+	while s.windups < 1 and waited < 20.0:
+		var to := s.global_position - p.global_position
+		p.bot_input = Vector2(to.x, to.z).normalized() if Vector2(to.x, to.z).length() > 6.0 else Vector2.ZERO
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT soldier: noticed + closed in, windups %d after %.1f s, gap %.1f m" % [s.windups, waited, (s.global_position - p.global_position).length()])
+	if s.windups < 1:
+		return _combat_done(false, "soldier never closed in and wound up a thrust")
+	var h0 := p.health
+	while s.strikes < 1 or s.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	print("BOT soldier: thrust 1 -> %s, max ember %.1f, health %.0f -> %.0f" % [s.last_result, s.max_ember, h0, p.health])
+	if s.last_result != "hit" or p.health >= h0:
+		return _combat_done(false, "unguarded thrust did not hurt the hero")
+	if s.max_ember < 3.0:
+		return _combat_done(false, "wind-up had no ember tell")
+	# 2) next wind-up: dodge sideways just as the thrust starts -> perfect
+	var n := s.strikes
+	while s.state != HollowSoldier.WINDUP:
+		await get_tree().physics_frame
+	while s.state == HollowSoldier.WINDUP and s.t < HollowSoldier.WINDUP_T - 0.02:
+		await get_tree().physics_frame
+	p.bot_input = Vector2(1, 0)
+	p.bot_dodge = true
+	await _ticks(1)
+	p.bot_input = Vector2.ZERO
+	while s.strikes == n or s.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	print("BOT soldier: thrust 2 -> %s, perfect dodges %d" % [s.last_result, p.perfect_dodges])
+	if s.last_result != "perfect" and s.last_result != "dodged":
+		return _combat_done(false, "a dodge on the glint did not avoid the thrust")
+	while p.is_slowmo():
+		await get_tree().physics_frame
+	# 3) fight: face it and keep the string going; punish its recovery
+	p.health = Player.HEALTH_MAX
+	var t := 0.0
+	var hp0 := s.health
+	while not s.is_dead() and t < 40.0:
+		var to := s.global_position - p.global_position
+		var flat := Vector2(to.x, to.z)
+		if flat.length() > 2.0:
+			p.bot_input = flat.normalized()
+		else:
+			p.bot_input = Vector2.ZERO
+			if not p.combat.is_attacking():
+				p.body.rotation.y = atan2(to.x, to.z)
+			p.bot_attack = true
+		if p.health < 30.0:
+			p.health = Player.HEALTH_MAX      # the bot tests the soldier, not survival
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT soldier: fight %.1f s, hits taken %d, staggers %d, health %.0f -> %.0f, dead %s, thrusts %d" % [t, s.hits_taken, s.staggers, hp0, s.health, s.is_dead(), s.strikes])
+	if not s.is_dead():
+		return _combat_done(false, "the hero could not kill the soldier")
+	if s.staggers < 1:
+		return _combat_done(false, "soldier never staggered")
+	if s.is_in_group("hittable"):
+		return _combat_done(false, "dead soldier is still hittable")
+	var spear := s.spear
+	await _ticks(400)
+	var gone := not is_instance_valid(s)
+	print("BOT soldier: crumbled and freed %s, spear on ground y %.2f" % [gone, spear.global_position.y - _world.terrain.height_at(spear.global_position.x, spear.global_position.z) if is_instance_valid(spear) else -1.0])
+	if not gone:
+		return _combat_done(false, "dead soldier was never removed")
+	_combat_done(true, "noticed, stalked, telegraphed thrust hit, dodged on the glint, killed, crumbled")

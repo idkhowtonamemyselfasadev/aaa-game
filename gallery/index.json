@@ -160,5 +160,17 @@
   "time": "2026-10-10T18:25:00Z",
   "caption": "Later in the dodge with the reworked HUD: thin red vitality bar over a pale-gold stamina bar, both readable over bright grass; the pose reads as a running lean rather than a Wukong dodge, and the model is a placeholder.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1900-soldier-glint.jpg",
+  "time": "2026-10-10T19:40:00Z",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1900-soldier-thrust.jpg",
+  "time": "2026-10-10T19:40:00Z",
+  "caption": "Side-on as the soldier's lunging thrust lands on the hero at the practice post; the thrust reads as a body lunge but the spear is hidden along the view line, and both models are placeholder sci-fi soldiers.",
+  "verdict": "fail"
  }
 ]

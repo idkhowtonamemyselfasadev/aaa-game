@@ -1,8 +1,9 @@
 # Progress
 
-Content hours playable: 0
+Content hours playable: 0.1
 (walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
-who can draw the staff and land a four-hit string on a practice post; no quests, enemies or shrines yet. Game scope is
+who can draw the staff, land a four-hit string on a practice post, and fight one Hollow Soldier down the meadow
+(a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
@@ -22,6 +23,42 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 19:00 UTC:
+  - **First enemy: the Hollow Soldier, spear variant (Next 8, fourth part).**
+    `enemies/hollow_soldier.gd` (`HollowSoldier`, CharacterBody3D, layer 4; the hero now
+    collides with it). Body = the rigged humanoid at 1.06–1.08x scale with
+    `shaders/hollow.gdshader`: its own albedo/normal detail turned to grey ash-stone, warped
+    Voronoi fissures + soot, ember glow concentrated in a chest band (feet-relative world
+    height, front-facing), `ember` / `hit_flash` / `dissolve` uniforms. A chest OmniLight
+    (cull-masked off its own visual layer 2) throws ember light on the ground and the hero.
+    `enemies/spear.gd` (`HollowSpear`): 2.25 m lathe — iron butt spike, grey checked ash-wood,
+    two tarred cord bindings, forged socket, leaf blade with a diamond section;
+    `shaders/spear.gdshader` (wood / pitted rusted iron / cord). Held two-handed with
+    TwoBoneIK3D + SpineTwist like the staff.
+  - AI: IDLE (holds its post, notices at 12 m) → STALK (closes in, eases off near 2.7 m)
+    → WINDUP 0.78 s (tracks early, commits late; draws the spear back, leans away, chest ember
+    flares to ~4x, a star glint runs up the blade at 55–92%) → STRIKE 0.24 s (1.1 m lunging
+    thrust; resolves at 35% via `Player.receive_attack` — a hero who was in the line when the
+    thrust launched is still "caught", so a dash out of it scores the perfect dodge) →
+    RECOVER 0.95 s (punish window) → STALK. Health 90, 13 per unit of staff power; poise 30:
+    hits during the later wind-up/thrust don't interrupt unless poise breaks; otherwise
+    STAGGER 0.5 s with knockback. Death: leaves the hittable group, folds forward along the
+    killing blow, the ember gutters, the body dissolves into ash flakes (burning edges), the
+    spear topples flat onto the ground; freed after 5 s. Hit-stop freezes it with the hero.
+  - Soft lock: with no stick input, a swing's opening turns the hero toward the nearest
+    hittable within 3.4 m / ±75° (`StaffCombat.magnet_target`). Fixes the "opening sweep
+    misses" known bug.
+  - Bug found by the combat bot: a CharacterBody added at the origin and moved afterwards
+    shoves the hero on the first physics step — set `position` before `add_child`.
+  - Bots: new `soldier` route — idle at 20 m, notices + closes in (3.6 s), thrust 1 hits
+    (100→78), max ember 4.2, a dodge on the thrust's launch → perfect, then the string kills
+    it (6–9 s, 5 staggers), removed from hittable, freed. All five routes PASS.
+  - Shot spots `soldier [u=] [strike|stagger|dead]` (side-on, both fighters) and
+    `soldierface` (close 3/4 portrait). They step the soldier by hand: awaiting physics
+    frames with the render loop off stalled under Vulkan on this spot.
+  - Verdicts: `sol1` (first shader) — reads as a lava golem, fissures everywhere: fixed.
+    `sol3` portrait at the glint — grey ash body, ember chest, glint on the blade reads as a
+    tell; fail: sci-fi Vanguard silhouette under the ash, backlit, foreground grass blown out.
 - Session 2026-10-10 18:00 UTC:
   - **Dodge, perfect dodge and a vitality/stamina HUD (Next 8, third part).** `dodge` (Ctrl /
     pad B): a low dash-step 3.6 m toward the stick (camera-relative), or a 2.4 m hop back with
@@ -312,13 +349,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
    stamina cost, practice post; 18:00: dodge, perfect dodge slow-mo, HUD bars.) Still to do:
-   Hollow Soldier enemy with telegraphs (implement `hurt_capsule`/`take_hit`, call
-   `Player.receive_attack` on its strikes) — next; then lock-on, heavy with parry window,
-   hit sounds once audio exists.
+   (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
+   soft lock.) Next: lock-on (camera framing both fighters), heavy with parry window, a
+   second soldier move (sweeping cut so a backstep isn't always right), a rag/cloth tabard and
+   hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
+   patrol/camp near the start road.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Hollow Soldier reuses the Vanguard mesh under the ash shader: the sci-fi armour silhouette
+  still shows. Needs its own model or cloth/rag overlays. Its spear grip hands are IK-placed
+  but wrists don't wrap the shaft (same as the hero).
+- Soldier has no avoidance/pathing (walks straight at the hero; can snag on trees) and no
+  "lost the hero" search; it returns home past 22 m.
+- The hero has no death yet: health can reach 0 and nothing happens.
+- Shots: awaiting physics_frame with `render_loop_enabled = false` stalled in the soldier spot
+  under Vulkan (headless it runs) — soldier spot steps by hand; root cause unknown.
 - Dodge is procedural (lean + sink + fast run stride), not a real roll/dash clip; the feet
   slide a little at the dash's peak speed (13 m/s vs a 6 m/s stride). Wants a Mixamo dodge clip.
 - Dash covers 3.2 m instead of the designed 3.6 m (first tick lost to discrete integration).
@@ -328,8 +375,6 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   bot waits as state conditions, never tick counts.
 - Practice post sits 1.45 m in front of the spawn and now crowds the `hero` shot spot; move it
   (and the player spawn) into a proper training yard when the village goes in.
-- Opening sweep only reaches ~1.6 m; at the bot's 4x time scale it connected only once the post
-  was moved to 1.45 m. Needs lock-on/target magnetism so the first hit tracks the target.
 - Hits always use the "straw" impact kind on the post, even when the slam lands on the oak/iron
   top (no per-height material lookup).
 - Light string: hands are IK-placed but the wrists are not rotated around the shaft (palms

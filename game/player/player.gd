@@ -266,6 +266,12 @@ func _physics_process(delta: float) -> void:
 			# a hit snaps toward the stick direction at its very start
 			var cw := (right * dir2.x + fwd * -dir2.y)
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(cw.x, cw.z), 0.5)
+		elif combat.t < 0.12 and combat.spin_delta == 0.0:
+			# no stick: the swing's opening tracks the nearest target ahead (soft lock)
+			var tgt := combat.magnet_target(3.4, 1.3)
+			if tgt != Vector3.INF:
+				var to := tgt - global_position
+				body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.z), 1.0 - exp(-30.0 * delta))
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)

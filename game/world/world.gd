@@ -16,6 +16,7 @@ extends Node3D
 @onready var player: Player = $Player
 var moon: DirectionalLight3D
 var training_post: TrainingPost
+var soldier: HollowSoldier
 var _stars: ImageTexture
 
 func _ready() -> void:
@@ -36,6 +37,13 @@ func _ready() -> void:
 	add_child(training_post)
 	training_post.global_position = Vector3(p.x + 0.15, 0.0, p.z + 1.45)
 	training_post.plant(terrain)
+	# the first Hollow: a spear soldier keeping watch down the meadow, out of the start's way
+	soldier = HollowSoldier.new()
+	soldier.name = "HollowSoldier"
+	soldier.position = Vector3(p.x + 6.0, 0.0, p.z + 19.0)   # world sits at the origin
+	add_child(soldier)
+	soldier.plant(terrain)
+	soldier.face(p)
 
 func _build_environment() -> void:
 	var e := Environment.new()
