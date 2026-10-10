@@ -15,6 +15,7 @@ extends Node3D
 @onready var terrain: Terrain = $Terrain
 @onready var player: Player = $Player
 var moon: DirectionalLight3D
+var training_post: TrainingPost
 var _stars: ImageTexture
 
 func _ready() -> void:
@@ -29,6 +30,12 @@ func _ready() -> void:
 	_apply_time()
 	var p := player.global_position
 	player.global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.5, p.z)
+	# a practice post planted just ahead of the start: the first thing to hit with the staff
+	training_post = TrainingPost.new()
+	training_post.name = "TrainingPost"
+	add_child(training_post)
+	training_post.global_position = Vector3(p.x + 0.15, 0.0, p.z + 1.45)
+	training_post.plant(terrain)
 
 func _build_environment() -> void:
 	var e := Environment.new()

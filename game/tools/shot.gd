@@ -75,12 +75,30 @@ func _ready() -> void:
 		var to_cam := Vector3(-light.x, 0, -light.z).normalized()
 		player.body.rotation.y = atan2(to_cam.x, to_cam.z) - 0.75
 		SPOTS[spot] = [pp + to_cam * 3.8, pp]
+	var impact_step := -1
+	var impact_after := 6
+	if spot.begins_with("impact"):
+		# impact<step> [after=N]: hero faces the practice post, string runs until hit <step>
+		# connects, then N more ticks so chaff and dust are mid-flight; side-on, sun side
+		impact_step = int(spot.substr(6))
+		for a in args:
+			if a.begins_with("after="):
+				impact_after = int(a.substr(6))
+		var pp := player.global_position
+		var post: Vector3 = world.training_post.global_position
+		var to_post := Vector3(post.x - pp.x, 0, post.z - pp.z).normalized()
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var side := to_post.cross(Vector3.UP)
+		if side.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
+			side = -side
+		var mid := pp.lerp(post, 0.5)
+		SPOTS[spot] = [mid + side * 2.7 - to_post * 0.7, mid]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 else 1.5)
+		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 else 2.5)
+		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
@@ -129,6 +147,27 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT swing step %d u %.2f" % [c.step, c.t / float(c.STRING[maxi(c.step, 0)]["dur"])])
+	if impact_step >= 0:
+		Engine.max_physics_steps_per_frame = 1
+		player.use_bot_input = true
+		var c: StaffCombat = player.combat
+		RenderingServer.render_loop_enabled = false
+		var after := -1
+		var hit_step := [-1]
+		c.hit_landed.connect(func(_t, _p, _w): hit_step[0] = c.step)
+		for i in 3000:
+			if c.swings < impact_step + 1:
+				player.bot_attack = true
+			await get_tree().physics_frame
+			if after < 0 and hit_step[0] == impact_step:
+				after = 0
+			elif after >= 0:
+				after += 1
+				if after >= impact_after:
+					break
+		get_tree().paused = true
+		RenderingServer.render_loop_enabled = true
+		print("SHOT impact hits %d step %d" % [c.hits, c.step])
 	for i in frames:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

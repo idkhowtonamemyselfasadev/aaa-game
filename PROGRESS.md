@@ -1,8 +1,8 @@
 # Progress
 
 Content hours playable: 0
-(walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid; no
-quests, combat or shrines yet. Game scope is
+(walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
+who can draw the staff and land a four-hit string on a practice post; no quests, enemies or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
@@ -22,6 +22,35 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 17:00 UTC:
+  - **The light string now connects (Next 8, second part): hit detection, hit-stop, camera
+    shake, impact VFX, stamina cost.** New `world/training_post.gd` (`TrainingPost`): a
+    weathered oak practice post planted 1.45 m ahead of the start, its middle bound in a straw
+    bundle with three hemp rope rings and a rusted iron band under the chamfered top; lathe mesh
+    with per-vertex irregularity + `shaders/training_post.gdshader` (oak grain/checking cracks/
+    damp moss foot, straw stalks with nodes, twisted rope plies, rust flakes). It rocks in its
+    socket on each hit (damped spring) and freezes during the hit-stop.
+  - Contact (`combat.gd`): anything in group `hittable` exposing `hurt_capsule()` /
+    `take_hit(point, dir, power, hitstop)` is tested against the whole shaft. The authored arc is
+    re-evaluated at ~4 ms sub-steps between ticks (a straight lerp between two tick poses cut
+    inside the arc and missed at low frame rates — the 4x-time-scale bot found it). One hit per
+    target per swing. Hit-stop 0.065 s × power (slam 1.6 → 0.10 s): combat time, lunge and the
+    AnimationTree all freeze. Camera shake: trauma² on two sines per axis via Camera3D h/v
+    offset. `fx/impact.gd` (`ImpactFX`): chaff thrown along the swing + soft dust puffs
+    (CPUParticles3D, kinds straw/wood/stone/metal; metal adds a flash light). The lunge stops
+    0.95 m from a target so the hero no longer walks into the post. These hooks are what the
+    Hollow Soldier will implement.
+  - Stamina: 9/9/14/12 per hit of the string, no regen mid-swing; at 0 the string breaks off.
+  - Bots: `combat` now asserts all 4 hits connect with the post, hit-stop ≥ 0.05 s, the post
+    tilts, impact FX spawn and stamina drops (got 4/4 hits on steps 0–3, hit-stop 0.104 s, stamina
+    100→56). `walk`, `ridge` PASS.
+  - Shot spot `impact<step> [after=N]`: runs the string until hit <step> lands, N more ticks,
+    then freezes; side-on from the sun side.
+  - Verdicts: `imp2` 10h slam — dust burst + chaff + trail at the post's top read as a real
+    hit. Fail: soldier model, dust a bit bright. `imp0` sweep — contact visible but chaff too
+    small at 3 m, staff hidden behind the body; fail. `hero` 10h — the post close-up: straw and
+    rope read well, shaded oak top near-black and smooth; fail (model, and the post now crowds
+    the hero portrait spot).
 - Session 2026-10-10 16:00 UTC:
   - **Ward-stance light string: the staff comes off the back and swings (Next 8, first part).**
     Left mouse / RB (`attack_light`): the staff is drawn into both hands (0.22 s blend), then a
@@ -255,13 +284,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    place, cloth/hair sway; the staff.
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
-8. (done 16:00: draw + L×4 string + trail.) Still to do: hit detection + hit-stop + impact
-   VFX/camera shake against a target, stamina cost per swing, heavy with parry window, dodge + perfect dodge
-   time-dilation, hit-stop, lock-on, stamina; Hollow Soldier enemy with telegraphs.
+8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
+   stamina cost, practice post.) Still to do: heavy with parry window, dodge + perfect dodge
+   time-dilation, lock-on, stamina HUD bar, hit sounds once audio exists; Hollow Soldier enemy
+   with telegraphs (implement `hurt_capsule`/`take_hit`).
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Practice post sits 1.45 m in front of the spawn and now crowds the `hero` shot spot; move it
+  (and the player spawn) into a proper training yard when the village goes in.
+- Opening sweep only reaches ~1.6 m; at the bot's 4x time scale it connected only once the post
+  was moved to 1.45 m. Needs lock-on/target magnetism so the first hit tracks the target.
+- Hits always use the "straw" impact kind on the post, even when the slam lands on the oak/iron
+  top (no per-height material lookup).
 - Light string: hands are IK-placed but the wrists are not rotated around the shaft (palms
   don't wrap it); the legs keep playing idle/walk during swings (no lower-body attack stance);
   swings hit nothing yet. Swing poses are hand-keyed in code — a real Mixamo staff clip set

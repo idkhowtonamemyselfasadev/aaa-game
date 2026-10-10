@@ -134,6 +134,11 @@ func _combat_test() -> void:
 	var spin_total := 0.0
 	var last_tip := c.tip_position()
 	var frames := 0
+	var max_tilt := 0.0
+	var max_stop := 0.0
+	var min_stamina := INF
+	var saw_fx := false
+	var hit_steps: Array = []
 	var press_t := 0.0
 	var t := 0.0
 	while t < 4.5:
@@ -156,6 +161,15 @@ func _combat_test() -> void:
 		if c.is_drawn() and c.state != StaffCombat.DRAWING and c.state != StaffCombat.SHEATHING:
 			max_grip = maxf(max_grip, c.grip_error())
 		frames += 1
+		max_tilt = maxf(max_tilt, _world.training_post.tilt())
+		max_stop = maxf(max_stop, c.hitstop)
+		min_stamina = minf(min_stamina, _player.stamina)
+		if _world.get_node_or_null("Impact") != null:
+			saw_fx = true
+		if c.hits > hit_steps.size():
+			hit_steps.append(c.step)
+	var post: TrainingPost = _world.training_post
+	print("BOT combat: hits %d, post hits %d, max post tilt %.3f rad, max hitstop %.3f s, stamina %.0f -> min %.0f, hit on steps %s" % [c.hits, post.hits, max_tilt, max_stop, Player.STAMINA_MAX, min_stamina, hit_steps])
 	print("BOT combat: swings %d, steps %s, tip path %.1f m, max tip speed %.1f m/s, max grip err %.3f m, spin %.2f rad" % [c.swings, steps_seen.keys(), tip_path, max_hit_speed, max_grip, spin_total])
 	if c.swings < 4 or steps_seen.size() < 4:
 		_combat_done(false, "light string did not chain all four hits")
@@ -165,6 +179,15 @@ func _combat_test() -> void:
 		return
 	if max_grip > 0.12:
 		_combat_done(false, "hands came off the staff (IK grip error %.2f m)" % max_grip)
+		return
+	if c.hits < 4 or post.hits < 4:
+		_combat_done(false, "the string did not connect with the practice post (%d hits)" % c.hits)
+		return
+	if max_stop < 0.05 or max_tilt < 0.01 or not saw_fx:
+		_combat_done(false, "hits had no weight (hitstop %.3f, tilt %.3f, fx %s)" % [max_stop, max_tilt, saw_fx])
+		return
+	if min_stamina > Player.STAMINA_MAX - 30.0:
+		_combat_done(false, "swings cost no stamina")
 		return
 	if absf(spin_total) < 5.5:
 		_combat_done(false, "spinning sweep did not turn the hero around")

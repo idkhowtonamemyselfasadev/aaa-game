@@ -7,6 +7,7 @@ extends Node
 ## Attack: sweep -> backhand -> overhead slam -> spinning sweep. Idle 5 s -> staff slung back.
 
 signal swing_started(step: int)
+signal hit_landed(target: Node, point: Vector3, power: float)
 
 enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING }
 
@@ -17,6 +18,10 @@ const HAND_L := -0.10
 const SHOULDER := Vector3(0.21, 1.48, -0.06)   # body space, left shoulder (mirror for right)
 const REACH := 0.43          # shoulder-to-wrist reach used for the grips (arm is 0.47 m)
 const TRAIL_LIFE := 0.14
+# per hit of the string: stamina cost, impact power (scales hit-stop, shake, knockback, VFX)
+const COST := [9.0, 9.0, 14.0, 12.0]
+const POWER := [1.0, 1.0, 1.6, 1.25]
+const HITSTOP := 0.065       # seconds of freeze per unit of power
 
 # Guard: staff low across the body, tip forward-left.  [yaw°, pitch°, P, twist°]
 const GUARD := [28.0, -14.0, Vector3(0.02, 1.0, 0.55), 0.0]
@@ -59,6 +64,10 @@ var hit_active := false
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var swings := 0              # attacks started (bots read this)
 var last_grip_error := 0.0   # metres, hand bone to IK target after the last IK pass
+var hitstop := 0.0           # remaining freeze after a connecting hit
+var hits := 0                # hits landed (bots read this)
+var _hit_this_swing: Array = []
+var _prev_u := -1.0          # normalised swing time at the last contact test
 
 var _back_slot: Node3D
 var _back_xform: Transform3D
@@ -162,6 +171,16 @@ func _begin_draw() -> void:
 	t = 0.0
 
 func _start(i: int) -> void:
+	if player.stamina <= 0.0:
+		# winded: the string breaks off, back to guard
+		state = READY
+		step = -1
+		queued = false
+		idle_t = 0.0
+		return
+	player.stamina = maxf(player.stamina - float(COST[i]), 0.0)
+	_hit_this_swing.clear()
+	_prev_u = -1.0
 	step = i
 	t = 0.0
 	_spun = 0.0
@@ -189,6 +208,11 @@ static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 
 func physics_step(delta: float) -> void:
 	spin_delta = 0.0
+	if hitstop > 0.0:
+		# frozen in the contact: pose, IK and twist hold; only the trail keeps fading
+		hitstop -= delta
+		_age_trail(delta)
+		return
 	hit_active = false
 	var pose: Array = GUARD
 	match state:
@@ -248,12 +272,84 @@ func physics_step(delta: float) -> void:
 			return
 	staff.transform = _place_hands(pose)
 	_twist.twist = deg_to_rad(pose[3])
+	if hit_active:
+		_detect_hits(t / float(STRING[step]["dur"]))
+	else:
+		_prev_u = -1.0
 	_update_trail(delta)
+
+# --- contact: the whole shaft is swept between ticks against each hittable's capsule ---
+
+func _detect_hits(u: float) -> void:
+	var atk: Dictionary = STRING[step]
+	var u0 := _prev_u if _prev_u >= 0.0 else u
+	_prev_u = u
+	# re-evaluate the authored arc at ~4 ms sub-steps: at low frame rates one tick can sweep
+	# the staff through 90°+, and a straight line between the two poses would cut inside it
+	var n := clampi(int(ceil((u - u0) * float(atk["dur"]) / 0.004)), 1, 24)
+	var segs: Array = []
+	var bx := player.body.global_transform
+	for k in n + 1:
+		var xf := bx * _staff_xform(_pose_at(atk["keys"], lerpf(u0, u, float(k) / n)))
+		segs.append([xf * Vector3(0, -Staff.LENGTH * 0.5, 0), xf * Vector3(0, Staff.LENGTH * 0.5, 0)])
+	for target in player.get_tree().get_nodes_in_group("hittable"):
+		if target in _hit_this_swing or not target.has_method("hurt_capsule"):
+			continue
+		var cap: Array = target.hurt_capsule()
+		if (cap[0] as Vector3).distance_to(player.global_position) > 4.0:
+			continue
+		for k in segs.size():
+			var a: Vector3 = segs[k][0]
+			var b: Vector3 = segs[k][1]
+			var pts := Geometry3D.get_closest_points_between_segments(a, b, cap[0], cap[1])
+			if pts[0].distance_to(pts[1]) <= float(cap[2]) + 0.03:
+				var prev_tip: Vector3 = segs[maxi(k - 1, 0)][1]
+				var swing := b - prev_tip
+				if swing.length() < 1e-4:
+					swing = (b - a).cross(Vector3.UP)
+				var out := pts[0] - pts[1]
+				out.y = 0.0
+				var point := pts[1] + (out.normalized() * float(cap[2]) if out.length() > 1e-4 else Vector3.ZERO)
+				_land_hit(target, point, swing.normalized())
+				break
+
+## True when a hittable stands within lunge-stopping range ahead of the hero.
+func target_in_reach(dist: float) -> bool:
+	var bx := player.body.global_transform
+	for target in player.get_tree().get_nodes_in_group("hittable"):
+		if not target.has_method("hurt_capsule"):
+			continue
+		var c: Vector3 = target.hurt_capsule()[0]
+		var l := bx.affine_inverse() * c
+		if l.z > 0.0 and Vector2(l.x, l.z).length() < dist + float(target.hurt_capsule()[2]):
+			return true
+	return false
+
+func _land_hit(target: Node, point: Vector3, swing: Vector3) -> void:
+	var power: float = POWER[step]
+	_hit_this_swing.append(target)
+	hits += 1
+	hitstop = HITSTOP * power
+	target.take_hit(point, swing, power, hitstop)
+	var kind: String = target.get("impact_kind") if target.get("impact_kind") != null else "wood"
+	ImpactFX.spawn(player.get_parent(), point, swing, kind, power)
+	player.add_shake(0.32 * power)
+	hit_landed.emit(target, point, power)
 
 ## Puts both grips on the authored staff line, pulls each into its shoulder's reach (the
 ## shoulders turn with the spine twist), then lays the staff through the two grips.
 ## Returns the staff's body-space transform.
 func _place_hands(pose: Array) -> Transform3D:
+	var r := _solve(pose)
+	_target_r.position = r[1]
+	_target_l.position = r[2]
+	return r[0]
+
+func _staff_xform(pose: Array) -> Transform3D:
+	return _solve(pose)[0]
+
+## [staff body-space transform, right grip, left grip] for a pose.
+func _solve(pose: Array) -> Array:
 	var d := dir_of(pose[0], pose[1])
 	var p: Vector3 = pose[2]
 	var tw := deg_to_rad(pose[3])
@@ -265,10 +361,8 @@ func _place_hands(pose: Array) -> Transform3D:
 	if axis.length() < 0.12:
 		axis = d * 0.12
 	var d2 := axis.normalized()
-	_target_r.position = hr
-	_target_l.position = hl
 	var b := Basis(Quaternion(Vector3.UP, d2)) if d2.y > -0.99 else Basis(Vector3.RIGHT, PI)
-	return Transform3D(b, hr - d2 * HAND_R)
+	return [Transform3D(b, hr - d2 * HAND_R), hr, hl]
 
 static func _clamp_reach(h: Vector3, shoulder: Vector3) -> Vector3:
 	var v := h - shoulder

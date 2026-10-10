@@ -130,5 +130,23 @@
   "time": "2026-10-10T16:24:01Z",
   "caption": "Mid-sweep of the light string with a faint pale swing trail; still wrong: the two-handed grip reads like holding a rifle at this angle, trail too faint, placeholder soldier model.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-1700-slam-impact.jpg",
+  "time": "2026-10-10T17:20:00Z",
+  "caption": "Overhead slam frozen 5 ticks after it lands on the practice post's iron-capped top: dust burst, flying chaff and the swing arc read as a hit; still wrong: placeholder sci-fi soldier, dust a little too bright, tall grass hides the feet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1700-sweep-post.jpg",
+  "time": "2026-10-10T17:20:00Z",
+  "caption": "Opening sweep connecting with the straw-bound oak practice post; still wrong: the chaff is too small to read at this distance and the staff is hidden behind the body, placeholder model.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-1700-post-closeup.jpg",
+  "time": "2026-10-10T17:20:00Z",
+  "caption": "Close look at the new practice post (weathered oak, straw bundle, hemp lashings, rusted iron band) backlit at 10 h; straw and rope read well, the shaded oak top goes near-black and looks too smooth.",
+  "verdict": "fail"
  }
 ]

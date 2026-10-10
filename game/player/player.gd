@@ -113,7 +113,23 @@ func _update_animation(delta: float) -> void:
 		ts = hspeed / ANIM_RUN_SPEED
 	elif hspeed > 0.2 and hspeed < ANIM_WALK_SPEED:
 		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
+	if combat != null and combat.hitstop > 0.0:
+		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
+
+# --- camera shake: trauma decays; offset ~ trauma^2 on two incommensurate sines per axis ---
+var _trauma := 0.0
+var _shake_t := 0.0
+
+func add_shake(amount: float) -> void:
+	_trauma = clampf(_trauma + amount, 0.0, 1.0)
+
+func _process(delta: float) -> void:
+	_trauma = maxf(_trauma - 2.2 * delta, 0.0)
+	_shake_t += delta
+	var s := _trauma * _trauma * 0.11
+	camera.h_offset = s * (sin(_shake_t * 61.0) * 0.6 + sin(_shake_t * 97.0 + 1.7) * 0.4)
+	camera.v_offset = s * (sin(_shake_t * 73.0 + 0.6) * 0.6 + sin(_shake_t * 113.0 + 2.9) * 0.4)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -150,7 +166,7 @@ func _physics_process(delta: float) -> void:
 		var atk: Dictionary = combat.STRING[combat.step]
 		var u: float = combat.t / float(atk["dur"])
 		var hw: Array = atk["hit"]
-		if u > float(hw[0]) - 0.1 and u < float(hw[1]):
+		if u > float(hw[0]) - 0.1 and u < float(hw[1]) and not combat.target_in_reach(0.95):
 			wish = face
 			speed = atk["lunge"]
 		sprinting = false
@@ -159,6 +175,10 @@ func _physics_process(delta: float) -> void:
 	var target := wish * speed
 	velocity.x = move_toward(velocity.x, target.x, ACCEL * delta)
 	velocity.z = move_toward(velocity.z, target.z, ACCEL * delta)
+
+	if combat != null and combat.hitstop > 0.0:
+		velocity.x = 0.0
+		velocity.z = 0.0
 
 	if is_on_floor():
 		if want_jump and stamina >= 8.0:
@@ -169,6 +189,8 @@ func _physics_process(delta: float) -> void:
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
+	elif attacking:
+		pass                                   # no recovery mid-swing
 	else:
 		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
 
