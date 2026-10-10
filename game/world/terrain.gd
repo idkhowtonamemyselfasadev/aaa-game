@@ -91,7 +91,7 @@ func build() -> void:
 			var b := a + 1
 			var c := a + resolution + 1
 			var d := c + 1
-			idx.append_array([a, c, b, b, c, d])
+			idx.append_array([a, b, c, b, d, c])   # clockwise seen from above = front face in Godot
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts

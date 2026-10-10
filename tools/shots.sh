@@ -19,10 +19,10 @@ run_shot() {
 for spec in "$@"; do
   set -- $spec
   out="../shots/$2.png"
-  run_shot --rendering-driver vulkan res://tools/shot.tscn -- "$1" "$out" "${3:-90}" $4 2>&1 | grep -E "SHOT|SCRIPT ERROR|ERROR" | grep -v "shader_rd\|XKB\|xkbcommon"
+  run_shot --rendering-driver vulkan res://tools/shot.tscn -- "$1" "$out" "${3:-90}" $4 2>&1 | grep -E "SHOT|GRASS|SCRIPT ERROR|ERROR" | grep -v "shader_rd\|XKB\|xkbcommon"
   if [ ! -s "$out" ]; then
     echo "vulkan failed for $2, retrying opengl3"
-    run_shot --rendering-driver opengl3 --rendering-method gl_compatibility res://tools/shot.tscn -- "$1" "$out" "${3:-90}" $4 2>&1 | grep -E "SHOT|SCRIPT ERROR|ERROR"
+    run_shot --rendering-driver opengl3 --rendering-method gl_compatibility res://tools/shot.tscn -- "$1" "$out" "${3:-90}" $4 2>&1 | grep -E "SHOT|GRASS|SCRIPT ERROR|ERROR"
   fi
   echo "shot $2"
 done

@@ -46,6 +46,12 @@ func _ready() -> void:
 		world.env.environment.volumetric_fog_enabled = false
 	if "nosdfgi" in args:
 		world.env.environment.sdfgi_enabled = false
+	if "noshadow" in args:
+		world.sun.shadow_enabled = false
+	if "nogi" in args:
+		world.env.environment.sdfgi_enabled = false
+		world.env.environment.ssao_enabled = false
+		world.env.environment.ssil_enabled = false
 	if "noglow" in args:
 		world.env.environment.glow_enabled = false
 	for i in frames:

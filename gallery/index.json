@@ -10,5 +10,23 @@
   "time": "2026-10-10T08:16:26Z",
   "caption": "Grass on a Vale slope at 16:30 golden hour reads well up close, but past the 64 m grass radius the valley is an empty brown plane under grey sky with no trees, rocks or village.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261010-0857-vale-noon-hills.jpg",
+  "time": "2026-10-10T08:57:12Z",
+  "caption": "Noon in Harrowmere Vale: the hill bowl finally renders solid behind the wind-combed meadow (terrain winding fix); still no trees, rocks, village or textures, and the capsule player is a speck.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-0857-vale-dusk-shadows.jpg",
+  "time": "2026-10-10T08:57:12Z",
+  "caption": "16:30: long hill shadows sweep across the valley, but the shadowed foreground is crushed to black and the sky is flat grey.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261010-0857-vale-moonlit-grass.jpg",
+  "time": "2026-10-10T08:57:12Z",
+  "caption": "22:30: new moonlight and star field make the night readable on wind-bent grass; no moon disc, fireflies or night life yet.",
+  "verdict": "fail"
  }
 ]

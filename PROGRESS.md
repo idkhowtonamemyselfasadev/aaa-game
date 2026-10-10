@@ -21,6 +21,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-10 08:40 UTC (ran in parallel with the 08:00 one; merged onto it):
+  - **Fixed the "hills float as ribbons" bug at its root: the terrain mesh had inverted
+    triangle winding and was back-face culled, so it was invisible from above.** The ribbons
+    were the far sides of hills seen from below; everything else was the sky's ground colour.
+    Every M0 verdict about a "flat brown valley" was looking at the sky. Hills now render
+    with real long shadows.
+  - Day/night: proper sun arc (sunrise 06:00, noon `sun_peak_deg` 28, sunset 18:00), a cool
+    moon DirectionalLight opposite the sun at night, procedural star field (bound to the
+    PhysicalSky only after dusk, since it is added unattenuated), fog colour/albedo/emission,
+    exposure and a moonlit ambient colour all follow the time of day. Volumetric fog cut to
+    local haze (a dense volume ends at its length and leaves a band on far ridges).
+  - `tools/shots.sh` diagnostics: `noshadow`, `nogi` (plus `nofog`, `nosdfgi`, `noglow`).
 - Session 2026-10-10 08:00 UTC:
   - CLAUDE.md gained `# OWNER DIRECTION` (30 h scope, realistic Wukong look, living world).
   - DESIGN.md rescoped to 30 h: 4 regions (Vale, Greywold, Vellmarsh, Aurel) + small Depths,
@@ -57,6 +69,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (2) far terrain/horizon: hills float in fog, world ends at 256 m — needs far mountains /
   horizon ring and fog height tuning; (3) bare-ground colour under grass.
 
+## Screenshot verdicts (2026-10-10 08:40 session, after the winding fix)
+- `village` 12h: solid hill bowl behind a dense amber meadow; first shot that reads as a real
+  landscape. Wukong? No (no trees/rocks/ruins/village, procedural terrain colour). Alive? Only wind.
+- `side` 16.5h: long hill shadows sweep the valley; shadowed foreground crushed to black
+  (raise shadow-side ambient / SDFGI warm-up), sky flat grey. Fail.
+- `hill` 22.5h: moonlit grass and stars, readable. No moon disc, fireflies, sounds. Fail.
+
 ## Asset download situation (cloud box)
 - **ambientcg.com, polyhaven.com/dl.polyhaven.org, huggingface.co and cdn.jsdelivr.net are
   blocked** by the egress proxy (403 on CONNECT). github.com, raw.githubusercontent.com,
@@ -69,7 +88,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 1. Trees + rocks: procedural black oaks (trunk/branch mesh + leaf cards with wind sway, shared
    wind uniforms with grass), mossy boulders (noise-displaced icosphere with triplanar rock
    shader), hedgerows; scatter them through the vale. (Grass: done.)
-2. Horizon: far mountain ring beyond the 512 m tile + fog height tuning so hills don't float.
+2. Horizon: far mountain ring beyond the 512 m tile so the world does not end at 256 m.
 3. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
 4. Living world first pass: birds that scatter, a grazing sheep herd that flees (§8 DESIGN).
@@ -82,7 +101,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 9. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Distant terrain hills float as ribbons above the fog; world edge visible from slopes.
+- Golden-hour shadow sides go near-black (ambient too low in shadow); sky flat grey at dusk.
+- (fixed: hills floating as ribbons = inverted terrain winding.) World edge at 256 m is still
+  visible from slopes; needs the far mountain ring (Next 2).
 - Grass streaming builds chunks on the main thread (6/frame); fine at walking speed, may
   hitch when gliding/fast travel arrives — move to WorkerThreadPool then.
 - `tools/bots.sh` hangs until its timeout if bot.gd has a parse error (no early exit).
