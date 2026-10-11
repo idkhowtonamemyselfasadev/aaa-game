@@ -734,6 +734,9 @@ func _death_test() -> void:
 	p.bot_input = Vector2(0.3, -1.0)             # wander a few metres off the rest point
 	await _ticks(60)
 	p.bot_input = Vector2.ZERO
+	p.bot_attack = true                          # staff in hand, so the fall has to drop it
+	while p.combat.swings < 1 or p.combat.state != StaffCombat.READY:
+		await get_tree().physics_frame
 	await _ticks(20)
 	var fell_at := p.global_position
 	p.health = 10.0
@@ -761,6 +764,13 @@ func _death_test() -> void:
 		if c is Hud:
 			hud = c
 	var black := 0.0
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var hips_bone := skel.find_bone("mixamorig_Hips")
+	var knee_bone := skel.find_bone("mixamorig_LeftLeg")
+	var hips_kneel := INF
+	var knee_low := INF
+	var staff_y := INF
+	var dropped := p.combat.state == StaffCombat.DROPPED
 	while p.is_dead():
 		p.bot_attack = true
 		p.bot_dodge = true
@@ -771,6 +781,13 @@ func _death_test() -> void:
 			min_y = minf(min_y, head.y - _world.terrain.height_at(head.x, head.z))
 		if hud != null:
 			black = maxf(black, hud.veil_alpha)
+		if p.dead_t > 0.5 and hips_kneel == INF:
+			# knelt: the hips have dropped and the knees are on the grass, not sunk through it
+			var gy: float = _world.terrain.height_at(p.global_position.x, p.global_position.z)
+			hips_kneel = (skel.global_transform * skel.get_bone_global_pose(hips_bone).origin).y - gy
+			knee_low = (skel.global_transform * skel.get_bone_global_pose(knee_bone).origin).y - gy
+		if p.dead_t > 1.6:
+			staff_y = minf(staff_y, p.combat.staff.global_position.y - _world.terrain.height_at(p.combat.staff.global_position.x, p.combat.staff.global_position.z))
 		await get_tree().physics_frame
 	p.bot_input = Vector2.ZERO
 	var r := "n/a"
@@ -781,6 +798,13 @@ func _death_test() -> void:
 		return _combat_done(false, "the body did not fall to the ground")
 	if s.strikes != strikes_dead:
 		return _combat_done(false, "the soldier kept attacking the body")
+	print("BOT death: staff dropped %s, %.2f m above the grass once down; knelt hips %.2f m, knee %.2f m; staff state after waking %d" % [dropped, staff_y, hips_kneel, knee_low, p.combat.state])
+	if not dropped or staff_y > 0.25:
+		return _combat_done(false, "the staff did not fall from the hands")
+	if hips_kneel > 0.75 or knee_low < -0.05 or knee_low > 0.3:
+		return _combat_done(false, "the knees did not fold (legs sunk or still standing)")
+	if p.combat.state != StaffCombat.SHEATHED:
+		return _combat_done(false, "the staff is not back on the back after waking")
 	if black < 0.99:
 		return _combat_done(false, "the screen never went black")
 	# woke at the rest point

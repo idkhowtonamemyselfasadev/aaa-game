@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.3
+Content hours playable: 0.35
 (the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 08:00 UTC (ran in parallel with 07:00, which landed hero death first; this
+  session's version was folded into it):
+  - **Death fall bends at the joints, the staff drops (known bug: legs sank into the ground,
+    plank pose, staff stayed gripped).** A new `Crumple` SkeletonModifier3D
+    (`player/crumple.gd`, last on the skeleton, after the arm IK) folds the knees 95 deg,
+    flexes the hips 18 deg, curls the spine 22 deg, swings the arms forward and bends the
+    elbows, and turns the head 70 deg aside as the body lands. The model now sinks only by the
+    shin's swing (capped so the knee rests on the grass, measured from the skeleton) and tips
+    80 deg forward about the knees while the knee bend unwinds, so the shins swing back flat and
+    the body lies face-down with the legs extended. A drawn staff falls out of the hands and
+    topples flat into the grass (`StaffCombat.drop`, new DROPPED state, gravity fall); on waking
+    `StaffCombat.restore` puts it back on the back (replaces the `_wield` follow).
+  - Bot `death` extended (staff drawn first): staff dropped, 0.06 m above the grass once down;
+    knelt hips 0.47 m, knee 0.06 m (on the grass, not through it); staff on the back after
+    waking. Bots: all 11 routes pass.
+  - Shots: `soldier kneel2 60 15.5 strike u=0.5 fallen fallen=0.55` — hunched on folded knees,
+    one arm out. `... fallen=1.6` — face-down, legs extended, head turned. Both read as a body
+    going down; fail Wukong on the Vanguard armour and coarse grass, which does not flatten
+    under the body.
 - Session 2026-10-11 07:00 UTC:
   - **Hero death (known bug: health 0 did nothing).** The killing blow now rocks the hero back,
     the knees buckle (hips sink 0.46 m, chest folds 22 deg), then the body pitches forward from
@@ -645,9 +664,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   but wrists don't wrap the shaft (same as the hero).
 - Soldier has no avoidance/pathing (walks straight at the hero; can snag on trees) and no
   "lost the hero" search; it returns home past 22 m.
-- Death is a procedural rigid collapse of the whole model (legs sink into the ground while
-  kneeling, the body lies as a straight plank, no ragdoll/foot contact on slopes); wants a
-  Mixamo death clip or a physical-bone ragdoll. The staff stays gripped in the fallen hands.
+- Death is procedural (Crumple bone bends + model tilt about the knees), not a ragdoll or a
+  death clip: no foot/body contact on slopes (the body tips in the body frame), the prone head
+  sits ~0.3 m up, grass does not flatten under the body, no get-up animation on waking.
   No rest points exist yet besides the start; no lamplighter shrine to light.
 - Shots: awaiting physics_frame with `render_loop_enabled = false` stalled in the soldier spot
   under Vulkan (headless it runs) — soldier spot steps by hand; root cause unknown.

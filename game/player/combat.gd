@@ -13,7 +13,7 @@ signal hit_landed(target: Node, point: Vector3, power: float)
 signal parried(attacker: Node)
 signal charge_tier(tier: int)
 
-enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING }
+enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED }
 
 const DRAW_TIME := 0.22
 const SHEATHE_AFTER := 5.0
@@ -326,6 +326,43 @@ func cancel_to_guard() -> void:
 	hit_active = false
 	_prev_u = -1.0
 
+## The hero has fallen: the arms let go and a drawn staff drops and topples flat into the
+## grass beside the body (a slung one stays on the back).
+var _drop_rest := Basis()
+var _drop_v := 0.0
+
+func drop() -> void:
+	cancel_to_guard()
+	_heavy_queued = false
+	queued = false
+	hitstop = 0.0
+	_set_influence(0.0)
+	_twist.twist = 0.0
+	if staff.get_parent() == _back_slot:
+		staff.transform = _back_xform
+		state = SHEATHED
+		return
+	staff.reparent(player.get_parent(), true)
+	var flat := Vector3(staff.global_basis.y.x, 0.0, staff.global_basis.y.z)
+	if flat.length() < 0.1:
+		flat = player.body.global_basis.x
+	_drop_rest = Basis(Quaternion(Vector3.UP, flat.normalized()))
+	_drop_v = 0.0
+	state = DROPPED
+
+## Back on the hero's back after a rest.
+func restore() -> void:
+	staff.reparent(_back_slot, false)
+	staff.transform = _back_xform
+	_set_influence(0.0)
+	_twist.twist = 0.0
+	state = SHEATHED
+	step = -1
+	queued = false
+	_heavy_queued = false
+	hitstop = 0.0
+	_recover = 0.0
+
 func _begin_draw() -> void:
 	staff.reparent(_wield, true)
 	_from_xform = staff.transform
@@ -384,6 +421,14 @@ func physics_step(delta: float) -> void:
 	var pose: Array = GUARD
 	match state:
 		SHEATHED:
+			_age_trail(delta)
+			return
+		DROPPED:
+			# falls under gravity to rest on the ground, tipping flat as it goes
+			var ground := player.global_position.y + 0.03
+			_drop_v += 9.8 * delta
+			staff.global_position.y = maxf(staff.global_position.y - _drop_v * delta, ground)
+			staff.global_basis = staff.global_basis.slerp(_drop_rest, minf(delta * 4.0, 1.0))
 			_age_trail(delta)
 			return
 		DRAWING:

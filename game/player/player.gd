@@ -85,6 +85,8 @@ var deaths := 0
 var woke_t := -1.0                    # seconds since the last respawn (the black lifting)
 var respawn_point := Vector3.ZERO     # set by the world: the last rest point
 var respawn_yaw := 0.0
+var crumple: Crumple                  # bone-level bends of the death fall (knees, spine, arms)
+var _shin := 0.45                     # knee height at rest, measured from the skeleton
 var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
@@ -116,6 +118,7 @@ func _ready() -> void:
 	_model_rest = model.transform
 	_setup_animation()
 	_attach_staff()
+	_setup_crumple()
 	add_child(Hud.new())
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
@@ -150,6 +153,20 @@ func _attach_staff() -> void:
 	combat.name = "Combat"
 	add_child(combat)
 	combat.setup(self, staff, skel)
+
+func _setup_crumple() -> void:
+	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skel == null:
+		return
+	crumple = Crumple.new()
+	crumple.name = "Crumple"
+	skel.add_child(crumple)                    # last modifier: runs after the arm IK
+	crumple.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
+	crumple.active = false
+	var knee := skel.find_bone("mixamorig_LeftLeg")
+	if knee >= 0:
+		var kp := skel.global_transform * skel.get_bone_global_rest(knee).origin
+		_shin = clampf(kp.y - global_position.y, 0.3, 0.7)
 
 func _setup_animation() -> void:
 	var ap := model.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -608,6 +625,10 @@ func _die(attacker: Node) -> void:
 	flinches -= 1
 	flinch_t = -1.0
 	_set_lock(null)
+	if combat != null:
+		combat.drop()                          # the hands let go: a drawn staff falls
+	if crumple != null:
+		crumple.active = true
 	dead_t = 0.0
 	deaths += 1
 	add_shake(0.8)
@@ -633,6 +654,8 @@ func _dead_tick(delta: float) -> void:
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
 	_pose_death(dead_t)
+	if combat != null:
+		combat.physics_step(delta)             # the dropped staff falls into the grass
 	if anim_tree != null:
 		# the stance runs down as the body gives out and is still once it hits the ground
 		anim_tree.set("parameters/move/blend_position", 0.0)
@@ -640,29 +663,37 @@ func _dead_tick(delta: float) -> void:
 	if dead_t >= DEATH_RESPAWN_AT:
 		_respawn()
 
-## Reel back from the blow, buckle at the knees (hips sink, chest folds), then pitch forward
-## from the knees, accelerating like a falling weight, and settle face-down.
+## Reel back from the blow, then the knees fold (Crumple bends the legs, so the hips drop by
+## the shin's swing instead of the legs sinking into the ground) and the chest curls; then the
+## body pitches forward about the knees, accelerating like a falling weight, the shins swinging
+## back flat as it goes, the head turning aside, and it settles face-down with one small bounce.
 func _pose_death(t: float) -> void:
 	var reel := sin(minf(t / 0.1, 1.0) * PI * 0.5) * (1.0 - smoothstep(0.1, 0.45, t))
 	var kneel := smoothstep(0.12, 0.55, t)
 	var x := clampf((t - 0.5) / 0.5, 0.0, 1.0)
 	var fall := x * x
-	# the body bounces once off the ground, a few degrees, and lies still
 	if t > 1.0:
 		fall = 1.0 - 0.06 * sin(clampf((t - 1.0) / 0.25, 0.0, 1.0) * PI)
+	var pitch := deg_to_rad(80.0) * fall
+	var knee_bend := deg_to_rad(95.0) * kneel
+	if crumple != null:
+		crumple.knee = maxf(knee_bend - pitch, deg_to_rad(10.0) * kneel)
+		crumple.hip = deg_to_rad(18.0) * kneel * (1.0 - 0.7 * fall)
+		crumple.spine = deg_to_rad(22.0) * kneel * (1.0 - 0.6 * fall)
+		crumple.arm = deg_to_rad(25.0) * kneel * (1.0 - fall) - deg_to_rad(8.0) * fall
+		crumple.elbow = deg_to_rad(30.0) * kneel
+		crumple.head_turn = deg_to_rad(70.0) * smoothstep(0.6, 1.0, fall)
 	var hip := Vector3(0, 0.95, 0)
 	var push := body.global_basis.inverse() * _flinch_dir
 	var axis := Vector3.UP.cross(push)
 	if axis.length() < 1e-3:
 		axis = Vector3.RIGHT
-	var rb := Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN * 1.3) * reel) * Basis(Vector3.RIGHT, deg_to_rad(22.0) * kneel)
-	var upper := Transform3D(Basis(), hip) * Transform3D(rb, Vector3.ZERO) * Transform3D(Basis(), -hip)
-	var sunk := Transform3D(Basis(), Vector3(0, -0.46 * kneel, 0.04 * kneel))
-	var knee := Vector3(0, 0.06, 0.2)
-	var tip := Transform3D(Basis(), knee) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(66.0) * fall), Vector3.ZERO) * Transform3D(Basis(), -knee)
-	model.transform = tip * sunk * upper * _model_rest
-	if combat != null:
-		combat._wield.transform = tip * sunk * upper   # staff and grips go down with the body
+	var upper := Transform3D(Basis(), hip) * Transform3D(Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN * 1.3) * reel), Vector3.ZERO) * Transform3D(Basis(), -hip)
+	# the hips drop by the shin's swing, until the knee cap rests on the grass
+	var sink := minf(_shin * (1.0 - cos(knee_bend)), _shin - 0.07)
+	var knee := Vector3(0.0, _shin - sink, 0.06)
+	var tip := Transform3D(Basis(), knee) * Transform3D(Basis(Vector3.RIGHT, pitch), Vector3.ZERO) * Transform3D(Basis(), -knee)
+	model.transform = tip * Transform3D(Basis(), Vector3(0, -sink, 0)) * upper * _model_rest
 
 func _respawn() -> void:
 	dead_t = -1.0
@@ -675,9 +706,10 @@ func _respawn() -> void:
 	body.rotation.y = respawn_yaw
 	_yaw = respawn_yaw + PI                # camera behind the hero (body faces +Z)
 	_trauma = 0.0
+	if crumple != null:
+		crumple.active = false
 	if combat != null:
-		combat.cancel_to_guard()
-		combat._wield.transform = Transform3D.IDENTITY
+		combat.restore()                       # the staff is back on the back
 	respawned.emit()
 
 func _start_slowmo() -> void:

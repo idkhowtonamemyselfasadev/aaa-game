@@ -292,5 +292,17 @@
   "time": "2026-10-11T08:07:21Z",
   "caption": "The fallen hero lying face-down in the amber grass before the screen fades to black; reads as a body, but the pose is a rigid plank and the sci-fi armour is still the model.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-0849-kneel.jpg",
+  "time": "2026-10-11T08:49:03Z",
+  "caption": "Half a second after a killing blow the hero's knees fold onto the grass (bone-level bend, legs no longer sink into the ground), chest curled, one arm out; still the sci-fi Vanguard armour, coarse near grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0849-prone.jpg",
+  "time": "2026-10-11T08:49:03Z",
+  "caption": "The hero lying face-down with legs extended and head turned, staff dropped in the grass; reads as a fallen body, but the grass does not flatten under it and the armour is not mythic.",
+  "verdict": "fail"
  }
 ]
