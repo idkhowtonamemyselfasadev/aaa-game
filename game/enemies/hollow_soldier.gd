@@ -145,6 +145,19 @@ func plant(terrain: Terrain) -> void:
 	global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.05, p.z)
 	_home = global_position
 
+## The hero died and woke at a rest point: a living soldier is back at its post at full
+## health, at ease, as if the fight never happened.
+func return_to_post() -> void:
+	if state == DEAD:
+		return
+	global_position = _home
+	velocity = Vector3.ZERO
+	health = HEALTH_MAX
+	poise = 0.0
+	_pose = GUARD
+	_update_glint(0.0)
+	_enter(IDLE)
+
 func face(point: Vector3) -> void:
 	var d := point - global_position
 	body.rotation.y = atan2(d.x, d.z)
@@ -345,6 +358,8 @@ func _physics_process(delta: float) -> void:
 		to = _player.global_position - global_position
 		to.y = 0.0
 		dist = to.length()
+		if _player.is_dead():
+			dist = INF                         # a fallen hero is no longer a threat: back to its post
 	var move := Vector3.ZERO
 	var ember := 1.0
 	var lean := 0.0

@@ -108,6 +108,9 @@ Stamina-gated, lock-on, hit-stop on every connected hit (60 ms light / 120 ms he
 shake scaled to damage, impact VFX + layered foley. Enemies telegraph: wind-up ≥ 0.5 s with a
 colour flash (white = dodge, red = unblockable, gold = parryable). A blow that gets through
 staggers the hero 0.5 s (shoved back, attacks locked out, dodge-cancellable after 0.24 s).
+Death: the hero collapses face-down, the screen sinks to black ("Fallen"), and they wake at the
+last rest point (lamplighter shrines; the start until the first is lit) at full vitality; the
+Hollows still standing return to their posts at full health. No currency or XP is lost.
 
 ### Stances (the staff — a lamplighter's hooked pole)
 

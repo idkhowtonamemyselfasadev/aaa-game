@@ -38,6 +38,16 @@ const FLINCH_PUSH := 0.65             # metres the blow shoves the hero
 const FLINCH_DODGE_AT := 0.24         # a dodge may break the stagger this far in
 const FLINCH_LEAN := 17.0             # degrees the upper body rocks away from the blow
 
+# Death: the last blow rocks the hero back, the knees go and the body pitches face-down into
+# the grass. The screen sinks to black over the still body, then the hero wakes at the last
+# rest point at full vitality; the Hollows they were fighting return to their posts.
+const DEATH_FADE_AT := 1.9            # seconds after the blow the screen starts to darken
+const DEATH_FADE := 1.0               # seconds to full black
+const DEATH_RESPAWN_AT := 3.4         # wake at the rest point (under full black)
+const RESPAWN_FADE := 1.2             # seconds the black lifts over after waking
+
+signal died
+signal respawned
 signal dodged(perfect: bool)
 signal hurt(amount: float)
 signal lock_changed(target: Node3D)
@@ -70,6 +80,11 @@ var flinch_t := -1.0                  # seconds into the current stagger, -1 whe
 var flinches := 0                     # blows that staggered the hero (bots read this)
 var armoured_hits := 0                # blows taken through the heavy's armour (bots read this)
 var _flinch_dir := Vector3.ZERO       # world direction the blow shoves the hero
+var dead_t := -1.0                    # seconds since the killing blow, -1 while alive
+var deaths := 0
+var woke_t := -1.0                    # seconds since the last respawn (the black lifting)
+var respawn_point := Vector3.ZERO     # set by the world: the last rest point
+var respawn_yaw := 0.0
 var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
@@ -318,6 +333,13 @@ func _update_lock(delta: float) -> void:
 	_pitch = lerpf(_pitch, want_pitch, k)
 
 func _physics_process(delta: float) -> void:
+	if woke_t >= 0.0:
+		woke_t += delta
+		if woke_t > RESPAWN_FADE:
+			woke_t = -1.0
+	if dead_t >= 0.0:
+		_dead_tick(delta)
+		return
 	var dir2 := bot_input if use_bot_input else Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var sprinting := (bot_sprint if use_bot_input else Input.is_action_pressed("sprint")) and stamina > 0.0
 	var want_jump := bot_jump if use_bot_input else Input.is_action_just_pressed("jump")
@@ -521,6 +543,8 @@ func _pose_dodge(u: float) -> void:
 
 ## Enemies call this when a strike would connect. Returns "parried", "perfect", "dodged" or "hit".
 func receive_attack(attacker: Node, damage: float) -> String:
+	if dead_t >= 0.0:
+		return "miss"
 	if combat != null and combat.try_parry(attacker):
 		return "parried"
 	if is_invulnerable() or (dodge_t >= 0.0 and dodge_t <= PERFECT_WINDOW):
@@ -536,6 +560,9 @@ func receive_attack(attacker: Node, damage: float) -> String:
 		return "dodged"
 	health = maxf(health - damage, 0.0)
 	hurt.emit(damage)
+	if health <= 0.0:
+		_die(attacker)
+		return "hit"
 	if combat != null and combat.has_hyper_armour():
 		armoured_hits += 1
 		add_shake(0.35)
@@ -572,6 +599,86 @@ func _pose_flinch(u: float) -> void:
 	var b := Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN) * env) * Basis(Vector3.UP, twist)
 	var t := Transform3D(Basis(), hip) * Transform3D(b, Vector3.ZERO) * Transform3D(Basis(), -hip)
 	model.transform = Transform3D(Basis(), Vector3(0, -0.09 * env, 0)) * t * _model_rest
+
+func is_dead() -> bool:
+	return dead_t >= 0.0
+
+func _die(attacker: Node) -> void:
+	_flinch(attacker)                      # the blow's direction and the broken-off swing
+	flinches -= 1
+	flinch_t = -1.0
+	_set_lock(null)
+	dead_t = 0.0
+	deaths += 1
+	add_shake(0.8)
+	died.emit()
+
+## Black over the screen: 0 alive, 1 at the bottom of a death; lifts again after waking.
+func screen_black() -> float:
+	if dead_t >= 0.0:
+		return clampf((dead_t - DEATH_FADE_AT) / DEATH_FADE, 0.0, 1.0)
+	if woke_t >= 0.0:
+		var u := clampf(woke_t / RESPAWN_FADE, 0.0, 1.0)
+		return 1.0 - u * u * (3.0 - 2.0 * u)
+	return 0.0
+
+func _dead_tick(delta: float) -> void:
+	dead_t += delta
+	_update_slowmo(delta)
+	# the last shove carries the body a little, then friction holds it where it fell
+	var shove := _flinch_dir * (FLINCH_PUSH * 3.0 / FLINCH_TIME) * maxf(1.0 - dead_t / FLINCH_TIME, 0.0) ** 2
+	velocity.x = shove.x
+	velocity.z = shove.z
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	move_and_slide()
+	_pose_death(dead_t)
+	if anim_tree != null:
+		# the stance runs down as the body gives out and is still once it hits the ground
+		anim_tree.set("parameters/move/blend_position", 0.0)
+		anim_tree.set("parameters/speed/scale", 1.0 - smoothstep(0.2, 1.0, dead_t))
+	if dead_t >= DEATH_RESPAWN_AT:
+		_respawn()
+
+## Reel back from the blow, buckle at the knees (hips sink, chest folds), then pitch forward
+## from the knees, accelerating like a falling weight, and settle face-down.
+func _pose_death(t: float) -> void:
+	var reel := sin(minf(t / 0.1, 1.0) * PI * 0.5) * (1.0 - smoothstep(0.1, 0.45, t))
+	var kneel := smoothstep(0.12, 0.55, t)
+	var x := clampf((t - 0.5) / 0.5, 0.0, 1.0)
+	var fall := x * x
+	# the body bounces once off the ground, a few degrees, and lies still
+	if t > 1.0:
+		fall = 1.0 - 0.06 * sin(clampf((t - 1.0) / 0.25, 0.0, 1.0) * PI)
+	var hip := Vector3(0, 0.95, 0)
+	var push := body.global_basis.inverse() * _flinch_dir
+	var axis := Vector3.UP.cross(push)
+	if axis.length() < 1e-3:
+		axis = Vector3.RIGHT
+	var rb := Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN * 1.3) * reel) * Basis(Vector3.RIGHT, deg_to_rad(22.0) * kneel)
+	var upper := Transform3D(Basis(), hip) * Transform3D(rb, Vector3.ZERO) * Transform3D(Basis(), -hip)
+	var sunk := Transform3D(Basis(), Vector3(0, -0.46 * kneel, 0.04 * kneel))
+	var knee := Vector3(0, 0.06, 0.2)
+	var tip := Transform3D(Basis(), knee) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(66.0) * fall), Vector3.ZERO) * Transform3D(Basis(), -knee)
+	model.transform = tip * sunk * upper * _model_rest
+	if combat != null:
+		combat._wield.transform = tip * sunk * upper   # staff and grips go down with the body
+
+func _respawn() -> void:
+	dead_t = -1.0
+	woke_t = 0.0
+	global_position = respawn_point
+	velocity = Vector3.ZERO
+	health = HEALTH_MAX
+	stamina = STAMINA_MAX
+	model.transform = _model_rest
+	body.rotation.y = respawn_yaw
+	_yaw = respawn_yaw + PI                # camera behind the hero (body faces +Z)
+	_trauma = 0.0
+	if combat != null:
+		combat.cancel_to_guard()
+		combat._wield.transform = Transform3D.IDENTITY
+	respawned.emit()
 
 func _start_slowmo() -> void:
 	if _slow_t < 0.0:

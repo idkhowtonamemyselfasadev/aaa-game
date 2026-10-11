@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.25
-(walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.3
+(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 07:00 UTC:
+  - **Hero death (known bug: health 0 did nothing).** The killing blow now rocks the hero back,
+    the knees buckle (hips sink 0.46 m, chest folds 22 deg), then the body pitches forward from
+    the knees like a falling weight, bounces a few degrees and lies face-down (88 deg). The
+    staff and grip targets go down with the body (`combat._wield` follows the death transform).
+    The idle clip runs down to a stop as the body hits the ground. All input is dead; further
+    blows miss. At 1.9 s the screen sinks to a warm black over 1 s, "F A L L E N" surfaces in
+    pale bone with a thin rule, and at 3.4 s the hero wakes at the rest point (the start until
+    lamplighter shrines exist; `Player.respawn_point/respawn_yaw`, set by `world.gd`) at full
+    vitality and stamina, camera behind, and the black lifts over 1.2 s. Hollow Soldiers stop
+    treating a fallen hero as a target (walk back to their post), and on waking every living
+    enemy `return_to_post()`s at full health, at ease. DESIGN.md combat section has the rule.
+  - New bot route `death` (in `tools/bots.sh` defaults): thrust kills a hero at 10 hp, 0 swings
+    and 0 dodges while down, body tips 88 deg, soldier strikes 0 times on the body, veil reaches
+    1.0, hero wakes 0.00 m from the rest point at 100/100 after falling 26 m away, soldier back
+    at its post at 90/90, veil gone, hero can be hit, walk and swing again.
+  - New shot option `soldier ... fallen fallen=<s>` (the hero `s` seconds after a killing blow,
+    framed on the body).
+  - Bots: all 11 routes pass.
+  - Shots (Forward+ lavapipe): `soldier fallen 60 15.5 strike u=0.5 fallen fallen=0.6` — the hero
+    on buckled knees, arms down with the staff (before the `_wield` fix the hands stayed up in
+    the air). Fails Wukong: hero at the frame edge, soldier missing, Vanguard armour.
+    `... fallen=1.6` (camera looking down on the body) — face-down in the grass, reads as a
+    fallen body; fails on the rigid plank pose and the sci-fi armour.
 - Session 2026-10-11 06:00 UTC:
   - **Hero hit reaction (known bug).** A blow that gets through now staggers the hero for
     0.5 s: the upper body snaps back 17 deg from the hip away from the attacker (with a small
@@ -606,7 +630,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - Arm IK still clamps to a 0.43 m shoulder reach with no elbow/clavicle motion, so every pose
   is built around reachable grips; a real staff-form mocap clip set would read better.
 - The hero's flinch is a procedural whole-body rock from the hip (no arm/head reaction, no
-  Mixamo hit-reaction clip); a heavy blow has no knockdown yet, and health 0 has no death.
+  Mixamo hit-reaction clip); a heavy blow has no knockdown yet. During flinch/dodge leans the
+  grip targets stay put (only death moves `_wield` with the body).
 - No gold "parryable" flash on the soldier's tell yet (DESIGN.md colour code); the blade glint
   doubles for it.
 - Lock-on has no strafe clips: moving while locked the hero turns to run in the stick
@@ -620,7 +645,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   but wrists don't wrap the shaft (same as the hero).
 - Soldier has no avoidance/pathing (walks straight at the hero; can snag on trees) and no
   "lost the hero" search; it returns home past 22 m.
-- The hero has no death yet: health can reach 0 and nothing happens.
+- Death is a procedural rigid collapse of the whole model (legs sink into the ground while
+  kneeling, the body lies as a straight plank, no ragdoll/foot contact on slopes); wants a
+  Mixamo death clip or a physical-bone ragdoll. The staff stays gripped in the fallen hands.
+  No rest points exist yet besides the start; no lamplighter shrine to light.
 - Shots: awaiting physics_frame with `render_loop_enabled = false` stalled in the soldier spot
   under Vulkan (headless it runs) — soldier spot steps by hand; root cause unknown.
 - Dodge is procedural (lean + sink + fast run stride), not a real roll/dash clip; the feet

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "flinch"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "flinch", "death"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -71,6 +71,9 @@ func _ready() -> void:
 		return
 	if name == "flinch":
 		_flinch_test()
+		return
+	if name == "death":
+		_death_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -718,6 +721,91 @@ func _flinch_test() -> void:
 	if p.armoured_hits != 1 or p.flinches != f0 or not kept:
 		return _combat_done(false, "the heavy's downswing was not armoured")
 	_combat_done(true, "late charge broken by the thrust, hero shoved and locked out, dodge breaks the stagger, heavy downswing armoured")
+
+## Death: the soldier's thrust on a hero at 10 vitality kills them; the body falls, the soldier
+## stands down, the screen goes black, the hero wakes at the rest point whole and can fight,
+## and the soldier is back at its post at full health.
+func _death_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	var post := s._home
+	var rest := p.respawn_point
+	await _ticks(10)
+	p.bot_input = Vector2(0.3, -1.0)             # wander a few metres off the rest point
+	await _ticks(60)
+	p.bot_input = Vector2.ZERO
+	await _ticks(20)
+	var fell_at := p.global_position
+	p.health = 10.0
+	s.health = 30.0                              # wounded in the fight: must come back whole
+	_soldier_at(s, 2.4, HollowSoldier.THRUST_MOVE)
+	var n := s.strikes
+	var waited := 0
+	while s.strikes == n or (s.state == HollowSoldier.STRIKE and s.last_result == ""):
+		await get_tree().physics_frame
+		waited += 1
+		if waited % 120 == 0:
+			print("BOT death: waiting, soldier state %d dist %.2f" % [s.state, (s.global_position - p.global_position).length()])
+	print("BOT death: thrust -> %s, health %.0f, dead %s, deaths %d" % [s.last_result, p.health, p.is_dead(), p.deaths])
+	if s.last_result != "hit" or not p.is_dead() or p.deaths != 1:
+		return _combat_done(false, "the killing blow did not kill")
+	s._home = post                               # its real post, ~20 m off: it walks back
+	# input is dead: attacks, dodges and the stick do nothing; further blows miss
+	var sw := p.combat.swings
+	var d0 := p.dodges
+	var max_tip := 0.0
+	var min_y := INF
+	var strikes_dead := s.strikes
+	var hud: Hud = null
+	for c in p.get_children():
+		if c is Hud:
+			hud = c
+	var black := 0.0
+	while p.is_dead():
+		p.bot_attack = true
+		p.bot_dodge = true
+		p.bot_input = Vector2(0, -1)
+		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if p.dead_t > 1.3:
+			var head := p.model.global_transform * Vector3(0, 1.6, 0)
+			min_y = minf(min_y, head.y - _world.terrain.height_at(head.x, head.z))
+		if hud != null:
+			black = maxf(black, hud.veil_alpha)
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	var r := "n/a"
+	print("BOT death: swings %d, dodges %d, max tip %.0f deg, head %.2f m above ground once down, soldier strikes while down %d, state %d, black %.2f" % [p.combat.swings - sw, p.dodges - d0, rad_to_deg(max_tip), min_y, s.strikes - strikes_dead, s.state, black])
+	if p.combat.swings != sw or p.dodges != d0:
+		return _combat_done(false, "the dead hero acted")
+	if max_tip < deg_to_rad(70.0) or min_y > 0.7:
+		return _combat_done(false, "the body did not fall to the ground")
+	if s.strikes != strikes_dead:
+		return _combat_done(false, "the soldier kept attacking the body")
+	if black < 0.99:
+		return _combat_done(false, "the screen never went black")
+	# woke at the rest point
+	var off := Vector2(p.global_position.x - rest.x, p.global_position.z - rest.z).length()
+	var sd := Vector2(s.global_position.x - post.x, s.global_position.z - post.z).length()
+	print("BOT death: woke %.2f m from rest (fell %.1f m away), health %.0f, stamina %.0f, soldier %.2f m from post, health %.0f, state %d" % [off, Vector2(fell_at.x - rest.x, fell_at.z - rest.z).length(), p.health, p.stamina, sd, s.health, s.state])
+	if off > 0.6 or p.health < Player.HEALTH_MAX or p.stamina < Player.STAMINA_MAX:
+		return _combat_done(false, "did not wake whole at the rest point")
+	if sd > 0.6 or s.health < HollowSoldier.HEALTH_MAX or s.state != HollowSoldier.IDLE:
+		return _combat_done(false, "the soldier did not return to its post whole")
+	await _ticks(int(Player.RESPAWN_FADE * 60.0) + 10)
+	var veil: float = hud.veil_alpha if hud != null else 0.0
+	r = p.receive_attack(s, 0.0)
+	var start := p.global_position
+	p.bot_input = Vector2(0, -1)
+	await _ticks(40)
+	p.bot_input = Vector2.ZERO
+	sw = p.combat.swings
+	p.bot_attack = true
+	await _ticks(5)
+	var moved := Vector2(p.global_position.x - start.x, p.global_position.z - start.z).length()
+	print("BOT death: after waking veil %.2f, hit -> %s, walked %.2f m, swing %d" % [veil, r, moved, p.combat.swings - sw])
+	if veil > 0.01 or r != "hit" or moved < 1.0 or p.combat.swings == sw:
+		return _combat_done(false, "the hero is not back in play after waking")
+	_combat_done(true, "killing blow fells the hero, the soldier stands down, black, wakes whole at the rest point, soldier back at its post")
 
 ## Puts the soldier `d` metres in front of the hero, facing them, already stalking.
 func _soldier_at(s: HollowSoldier, d: float, kind: int) -> void:

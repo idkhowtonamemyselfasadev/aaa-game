@@ -280,5 +280,17 @@
   "time": "2026-10-11T06:20:25Z",
   "caption": "Pre-dawn at 5.6 h: mauve glow behind the eastern ridges, mist in the oak valley, blue sky to the west; a dark rock edge clips the left of frame and ridges are faceted.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-0807-collapse.jpg",
+  "time": "2026-10-11T08:07:21Z",
+  "caption": "The hero 0.6 s after a killing blow, knees buckled with the staff still gripped low; framed far left, soldier missing from the frame (shot bug), Vanguard armour and faceted ridges.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0807-fallen.jpg",
+  "time": "2026-10-11T08:07:21Z",
+  "caption": "The fallen hero lying face-down in the amber grass before the screen fades to black; reads as a body, but the pose is a rigid plank and the sci-fi armour is still the model.",
+  "verdict": "fail"
  }
 ]

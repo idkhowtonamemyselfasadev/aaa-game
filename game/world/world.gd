@@ -44,6 +44,10 @@ func _ready() -> void:
 	_apply_time()
 	var p := player.global_position
 	player.global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.5, p.z)
+	# the start is the first rest point: a fallen hero wakes here
+	player.respawn_point = player.global_position
+	player.respawn_yaw = player.body.rotation.y
+	player.respawned.connect(_on_player_respawned)
 	# a practice post planted just ahead of the start: the first thing to hit with the staff
 	training_post = TrainingPost.new()
 	training_post.name = "TrainingPost"
@@ -238,3 +242,9 @@ func _apply_time() -> void:
 		# Keyed to twilight depth, not `day`: day is ~0.1 right at sunset, which buried the
 		# afterglow under the dark haze; the haze takes the sky over only late in twilight.
 		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, smoothstep(deg_to_rad(-9.0), deg_to_rad(-3.0), elev))
+
+## The hero woke at the rest point: the Hollows still standing return to their posts, whole.
+func _on_player_respawned() -> void:
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e.has_method("return_to_post"):
+			e.return_to_post()

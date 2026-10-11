@@ -18,6 +18,8 @@ var _lock_pop := 0.0            # 1 -> 0 after a new lock: the ring closes in
 var _lock_seen: Node3D = null
 var _lock_t := 0.0
 var reticle_screen := Vector2(-1, -1)   # last drawn position (bots/shots read it)
+var _veil: Control
+var veil_alpha := 0.0                   # black over the screen (bots read it)
 
 func _ready() -> void:
 	layer = 5
@@ -34,6 +36,12 @@ func _ready() -> void:
 	_reticle.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_reticle.draw.connect(_draw_reticle)
 	add_child(_reticle)
+	_veil = Control.new()
+	_veil.name = "Veil"
+	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_veil.draw.connect(_draw_veil)
+	add_child(_veil)
 
 func _process(delta: float) -> void:
 	if player == null:
@@ -61,6 +69,35 @@ func _process(delta: float) -> void:
 	_lock_t += delta
 	_lock_a = move_toward(_lock_a, 1.0 if lt != null else 0.0, delta * 8.0)
 	_reticle.queue_redraw()
+	var va := player.screen_black()
+	if va != veil_alpha or va > 0.0:
+		veil_alpha = va
+		_veil.queue_redraw()
+
+## Death: the screen sinks to black, and a single pale word surfaces in it before the hero
+## wakes at the rest point. The black is drawn warm, not pure, so it reads as a fade of the
+## dusk world, not a cut.
+func _draw_veil() -> void:
+	if veil_alpha <= 0.001:
+		return
+	var vs := _veil.get_viewport_rect().size
+	_veil.draw_rect(Rect2(Vector2.ZERO, vs), Color(0.018, 0.012, 0.01, veil_alpha))
+	if not player.is_dead():
+		return
+	var t := player.dead_t - Player.DEATH_FADE_AT - 0.35
+	var a := clampf(t / 0.6, 0.0, 1.0) * clampf((Player.DEATH_RESPAWN_AT - 0.15 - player.dead_t) / 0.35, 0.0, 1.0)
+	if a <= 0.0:
+		return
+	var s := vs.y / 1080.0
+	var font := ThemeDB.fallback_font
+	var size := int(46.0 * s)
+	var word := "F A L L E N"
+	var w := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var at := Vector2((vs.x - w) * 0.5, vs.y * 0.5 + size * 0.35)
+	_veil.draw_string(font, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.78, 0.66, 0.52, 0.85 * a))
+	# a thin rule under the word, widening as it surfaces
+	var rw := w * (0.6 + 0.4 * a)
+	_veil.draw_line(Vector2((vs.x - rw) * 0.5, at.y + 18.0 * s), Vector2((vs.x + rw) * 0.5, at.y + 18.0 * s), Color(0.55, 0.42, 0.28, 0.5 * a), maxf(1.0, s))
 
 func reticle_visible() -> bool:
 	return _lock_a > 0.5 and reticle_screen.x >= 0.0
