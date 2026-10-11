@@ -352,5 +352,23 @@
   "time": "2026-10-11T12:20:00Z",
   "caption": "A peacock butterfly settled over the 14 h meadow from half a metre; too small to read its eyes at this range, and the clumped grass over bare brown ground looks like a prototype.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1300-buttercup-drift.jpg",
+  "time": "2026-10-11T13:00:00Z",
+  "caption": "A buttercup drift speckles the 10:30 meadow with yellow heads above the wind-bent grass; the black soil under the grass and flat blade ribbons still look like a prototype.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1300-mixed-meadow.jpg",
+  "time": "2026-10-11T13:00:00Z",
+  "caption": "Knapweed, ox-eye daisies and yarrow mixed through the 15 h meadow beside the hero and the Hollow Soldier; flowers read, but bare brown soil between grass clumps dominates.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1300-butterfly-yarrow.jpg",
+  "time": "2026-10-11T13:00:00Z",
+  "caption": "A small tortoiseshell settled on a yarrow umbel (perching on real flowers now, not air); the umbel was too sparse here and was densified after, and the ground is black.",
+  "verdict": "fail"
  }
 ]

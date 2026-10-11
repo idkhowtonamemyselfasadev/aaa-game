@@ -24,6 +24,7 @@ var _threat_prev := Vector3.INF
 var _t := 0.0
 var day := 0.0
 var flee_events := 0          # bots read this: butterflies the hero has put up
+var grass: GrassField         # wildflower heads to perch on (set by Insects)
 
 class Fly:
 	var pos := Vector3.ZERO
@@ -200,5 +201,10 @@ func _spot(centre: Vector3, r: float, toward := Vector3.ZERO) -> Vector3:
 		p.z = clampf(p.z, -half, half)
 		if terrain.normal_at(p.x, p.z).y >= 0.88 or tries == 7:
 			break
+	# land on a real flower head near there when there is one (most of the time)
+	if grass != null and _rng.randf() < 0.85:
+		var f := grass.flower_near(p, 3.0, _rng)
+		if f != Vector3.INF:
+			return f + Vector3(0, 0.004, 0)
 	p.y = terrain.height_at(p.x, p.z) + _rng.randf_range(0.42, 0.72)
 	return p

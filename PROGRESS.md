@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.39
-(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.40
+(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 13:00 UTC:
+  - **Meadow wildflowers + butterflies perch on them (next item 5 / bug "butterflies hover on
+    nothing").** New `MeadowFlowers` (`world/flowers.gd`): four procedural species with real
+    geometry — ox-eye daisy (21 rays round a yellow disc, lobed basal leaves, 514 tris),
+    meadow buttercup (two glossy 5-petal cups on a branched stem, 282), common knapweed (scaly
+    bract bulb + purple floret brush, 536), yarrow (flat umbel of 64 five-lobed florets,
+    feathery leaves, 816). `GrassField` scatters them per grass chunk within 56 m in drifts
+    (drift noise; a slow species field so each drift is mostly one flower), dense near the
+    camera and sparse farther (~6600 heads, ~3.6 M tris at the start), heads 0.5-0.9 m just
+    over the grass tops, and keeps each chunk's head positions: `flower_near(p, r, rng,
+    species)`, `flower_count()`.
+  - `shaders/flower.gdshader`: per-part colour (stem/leaf, petal, disc, bract), glossy
+    buttercups, petal backlight. New `meadow_wind.gdshaderinc`: the grass wind field
+    evaluated at the plant root, so a flower sways as one; `butterfly.gdshader` adds the same
+    offset scaled by `rest`, so a settled butterfly rides its flower head.
+  - `Butterflies._spot` lands on a real flower head 85 % of the time (within 3 m of the
+    chosen spot). Bot `butterflies` now also checks >= 500 heads loaded and >= half the
+    settled butterflies on a head (6606 heads, 16/20). All 12 routes pass.
+  - Shot spot `flowers [species=0..3]`: knee height in a drift near the hero with soft far DOF.
+    `tools/flower_tris.gd` prints each flower mesh's triangle count.
+  - Shots: `butterflies fl1 60 11 species=0` — a tortoiseshell settled on a yarrow umbel
+    (first version, umbel too sparse; densified after). `flowers fl4 60 10.5` — a buttercup
+    drift speckles the meadow with yellow heads above the grass: reads as a living meadow;
+    still fails Wukong because of the black under-grass soil and flat grass ribbons.
 - Session 2026-10-11 12:20 UTC:
   - **Butterflies by day (next item 5, owner's "alive" list).** New `Butterflies`
     (`world/butterflies.gd`, created by `Insects` as its child) streams 40 butterflies in a 30 m
@@ -677,8 +701,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
 5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms; 12:20 (10-11):
-   butterflies.) Still to do: perch butterflies on real grass-blade tips / flowers (needs
-   meadow flowers: clover, knapweed, yarrow cards), two butterflies spiralling up together, a grazing sheep/deer herd that flees
+   butterflies; 13:00 (10-11): wildflower drifts, butterflies perch on flower heads.) Still to
+   do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
+   flowers, two butterflies spiralling up together, a grazing sheep/deer herd that flees
    (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
    there is audio, birds roosting in trees at night, moths around lanterns/campfires once
    they exist, butterflies by day.
@@ -704,8 +729,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Butterflies perch at a random height over the grass, not on a blade tip or flower, so a
-  close-up shows one hovering on nothing; their patterns read pale under the warm grade; no
+- 15 % of butterflies (and all of them where no drift is loaded) still perch at a random
+  height over the grass; perched ones follow the flower's wind sway but not the flutter
+  exactly (few mm). Flowers have no LOD (full mesh to 56 m) and no shadow; they are not
+  flattened by the hero walking through. Their patterns read pale under the warm grade; no
   shadow (casting off); they do not avoid trees or the hero's body in flight. Rain does not
   ground them (no weather yet).
 - Close-up grass (< 1 m) is flat untextured ribbons over bare brown soil: the meadow needs a

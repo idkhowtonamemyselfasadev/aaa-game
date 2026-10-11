@@ -18,6 +18,8 @@ var cropped_spots: Array[Vector3] = []
 const CROP_R := 6.5
 var _mesh: ArrayMesh
 var _chunks := {}            # Vector2i -> MultiMeshInstance3D
+var _heads := {}             # Vector2i -> [PackedVector3Array heads, PackedInt32Array species]
+@export var flowers_m: float = 56.0   # wildflowers (flowers.gd) only on chunks this close
 var _patch := FastNoiseLite.new()
 
 func _ready() -> void:
@@ -59,6 +61,7 @@ func update_around(p: Vector3, budget: int) -> void:
 		if centre.distance_to(Vector2(p.x, p.z)) > drop_r:
 			_chunks[k].queue_free()
 			_chunks.erase(k)
+			_heads.erase(k)
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var rng := RandomNumberGenerator.new()
@@ -110,7 +113,36 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	mmi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
 	mmi.name = "Grass_%d_%d" % [k.x, k.y]
 	add_child(mmi)
+	if d < flowers_m:
+		var fl := MeadowFlowers.build_chunk(k, chunk_m, _terrain, far)
+		mmi.add_child(fl[0])
+		_heads[k] = [fl[1], fl[2]]
 	return mmi
+
+## Total wildflower heads in the loaded chunks (bots read this).
+func flower_count() -> int:
+	var n := 0
+	for k in _heads:
+		n += (_heads[k][0] as PackedVector3Array).size()
+	return n
+
+## A random wildflower head within `r` of `p` (world), or Vector3.INF if none is loaded there.
+## `species` >= 0 restricts it to one flower (0 daisy, 1 buttercup, 2 knapweed, 3 yarrow).
+func flower_near(p: Vector3, r: float, rng: RandomNumberGenerator, species := -1) -> Vector3:
+	var picks: Array[Vector3] = []
+	var c0 := Vector2i(floori((p.x - r) / chunk_m), floori((p.z - r) / chunk_m))
+	var c1 := Vector2i(floori((p.x + r) / chunk_m), floori((p.z + r) / chunk_m))
+	for j in range(c0.y, c1.y + 1):
+		for i in range(c0.x, c1.x + 1):
+			var e = _heads.get(Vector2i(i, j))
+			if e == null:
+				continue
+			var hs: PackedVector3Array = e[0]
+			var ks: PackedInt32Array = e[1]
+			for n in hs.size():
+				if (species < 0 or ks[n] == species) and Vector2(hs[n].x - p.x, hs[n].z - p.z).length() <= r:
+					picks.append(hs[n])
+	return Vector3.INF if picks.is_empty() else picks[rng.randi() % picks.size()]
 
 ## One clump: 12 curved, tapered blades fanning out from a shared root, 3 segments each.
 ## UV.y carries 0 (root) .. 1 (tip) for the shader's wind and shading.

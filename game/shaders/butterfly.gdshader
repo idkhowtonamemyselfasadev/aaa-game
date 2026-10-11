@@ -8,6 +8,8 @@ render_mode cull_disabled;
 //                  b = species + 0.5 * bask (wings held open in the sun), a = half span (m).
 //   species 0 small tortoiseshell, 1 cabbage white, 2 common blue, 3 peacock
 
+#include "res://shaders/meadow_wind.gdshaderinc"
+
 varying float v_species;
 varying float v_bask;
 
@@ -34,6 +36,9 @@ void vertex() {
 	float aa = a - lag;
 	VERTEX = vec3(side * u * cos(aa), u * sin(aa), VERTEX.z) * INSTANCE_CUSTOM.a;
 	NORMAL = normalize(vec3(-side * sin(aa), cos(aa), 0.0));
+	// settled on a flower head: ride its sway (same wind field as flower.gdshader)
+	vec3 root = MODEL_MATRIX[3].xyz;
+	VERTEX += inverse(mat3(MODEL_MATRIX)) * meadow_wind(root, 1.0, TIME) * rest;
 }
 
 float ell(vec2 p, vec2 c, vec2 r, float ang) {

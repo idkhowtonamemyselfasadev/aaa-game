@@ -1055,6 +1055,26 @@ func _butterflies_test() -> void:
 		return _combat_done(false, "too few butterflies out at noon, or none settled/flying")
 	if lo < 0.25 or hi > 4.6:
 		return _combat_done(false, "butterflies outside their height band")
+	# wildflowers stream with the grass, and most settled butterflies sit on a flower head
+	var grass: GrassField = _world.get_node("Grass")
+	var on_flower := 0
+	var resting := 0
+	for b in bf._bs:
+		if b.state != Butterflies.REST:
+			continue
+		resting += 1
+		for k in grass._heads:
+			var hit := false
+			for hpos: Vector3 in grass._heads[k][0]:
+				if hpos.distance_to(b.pos) < 0.01:
+					hit = true
+					break
+			if hit:
+				on_flower += 1
+				break
+	print("BOT butterflies: %d flower heads loaded, %d of %d settled on a flower" % [grass.flower_count(), on_flower, resting])
+	if grass.flower_count() < 500 or on_flower * 2 < resting:
+		return _combat_done(false, "too few wildflowers, or butterflies not perching on them")
 	# walk at the nearest settled one
 	var f0 := bf.flee_events
 	var t := 0.0

@@ -105,6 +105,7 @@ func _ready() -> void:
 	butterflies = Butterflies.new()
 	butterflies.name = "Butterflies"
 	butterflies.terrain = _terrain
+	butterflies.grass = get_node_or_null("../Grass")
 	add_child(butterflies)
 
 func _make_mm(mesh: Mesh, mat: Material, n: int, nm: String) -> MultiMesh:
