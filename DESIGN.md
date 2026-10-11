@@ -106,13 +106,14 @@ start; stamina), swim, Stag mount (whistle; fast on roads).
 
 Stamina-gated, lock-on, hit-stop on every connected hit (60 ms light / 120 ms heavy), camera
 shake scaled to damage, impact VFX + layered foley. Enemies telegraph: wind-up ≥ 0.5 s with a
-colour flash (white = dodge, red = unblockable, gold = parryable).
+colour flash (white = dodge, red = unblockable, gold = parryable). A blow that gets through
+staggers the hero 0.5 s (shoved back, attacks locked out, dodge-cancellable after 0.24 s).
 
 ### Stances (the staff — a lamplighter's hooked pole)
 
 | Stance | Fantasy | Light string (L×4) | Heavy (hold) | Special |
 |--------|---------|--------------------|--------------|---------|
-| **Ward** (default) | Balanced, mobile | thrust, sweep, overhead, spin | Rising overhead smash, hold to charge 3 tiers (stamina 16/22/28, power 1.8/2.4/3.2); **parry** window on the raise (0.25 s): a deflect staggers the attacker 1.3 s and banks tier 1 | Perfect dodge → 1.5 s time-dilation |
+| **Ward** (default) | Balanced, mobile | thrust, sweep, overhead, spin | Rising overhead smash, hold to charge 3 tiers (stamina 16/22/28, power 1.8/2.4/3.2); **parry** window on the raise (0.25 s): a deflect staggers the attacker 1.3 s and banks tier 1; a blow on the charge breaks it, only the released downswing is armoured | Perfect dodge → 1.5 s time-dilation |
 | **Pillar** | Heavy, grounded | slow arcs, each with hyper-armour | Ground slam, AoE knockdown; charges through hits (hyper-armour while charging) | Charging while being hit builds Focus faster |
 | **Crane** | Fast, aerial | quick 2-hit flurries, launches | Dive strike from mid-air, long reach | Air-dodge; light attacks keep you airborne |
 

@@ -29,6 +29,15 @@ const SLOWMO_HOLD := 0.45           # unscaled seconds at full slow-down
 const SLOWMO_EASE := 0.25           # unscaled seconds back to normal speed
 const PERFECT_REFUND := 25.0
 
+# Hit reaction: a blow that gets through rocks the hero back from the hip, shoves them away
+# from the attacker and breaks off any swing or charge. Attacks are locked out for the whole
+# stagger; a dodge can break it once the worst of the blow has passed. The released heavy's
+# downswing is the one armoured moment: it takes the damage and keeps coming.
+const FLINCH_TIME := 0.5
+const FLINCH_PUSH := 0.65             # metres the blow shoves the hero
+const FLINCH_DODGE_AT := 0.24         # a dodge may break the stagger this far in
+const FLINCH_LEAN := 17.0             # degrees the upper body rocks away from the blow
+
 signal dodged(perfect: bool)
 signal hurt(amount: float)
 signal lock_changed(target: Node3D)
@@ -57,6 +66,10 @@ var _dodge_rewarded := false
 var _slow_t := -1.0                   # unscaled seconds into a perfect-dodge slow-down
 var _slow_base := 1.0
 var _model_rest: Transform3D
+var flinch_t := -1.0                  # seconds into the current stagger, -1 when not reeling
+var flinches := 0                     # blows that staggered the hero (bots read this)
+var armoured_hits := 0                # blows taken through the heavy's armour (bots read this)
+var _flinch_dir := Vector3.ZERO       # world direction the blow shoves the hero
 var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
@@ -322,13 +335,15 @@ func _physics_process(delta: float) -> void:
 		toggle_lock()
 	_update_lock(delta)
 	_update_slowmo(delta)
-	if want_dodge:
+	var reeling := flinch_t >= 0.0
+	if want_dodge and (not reeling or flinch_t >= FLINCH_DODGE_AT):
 		_try_dodge(dir2)
-	if combat != null and want_attack and dodge_t < 0.0:
+		reeling = flinch_t >= 0.0
+	if combat != null and want_attack and dodge_t < 0.0 and not reeling:
 		combat.light()
 	if combat != null:
-		combat.heavy_held = heavy_down
-		if want_heavy and dodge_t < 0.0:
+		combat.heavy_held = heavy_down and not reeling
+		if want_heavy and dodge_t < 0.0 and not reeling:
 			combat.heavy()
 	var attacking := combat != null and combat.is_attacking()
 	var charging := combat != null and combat.is_charging()
@@ -361,7 +376,22 @@ func _physics_process(delta: float) -> void:
 			velocity.x = v.x
 			velocity.z = v.z
 			_pose_dodge(u)
+	if reeling:
+		flinch_t += delta
+		var fu := flinch_t / FLINCH_TIME
+		if fu >= 1.0:
+			flinch_t = -1.0
+			reeling = false
+			model.transform = _model_rest
+		else:
+			# the shove decays as (1-u)^2 so it integrates to exactly FLINCH_PUSH
+			var v := _flinch_dir * (FLINCH_PUSH * 3.0 / FLINCH_TIME) * (1.0 - fu) * (1.0 - fu)
+			velocity.x = v.x
+			velocity.z = v.z
+			_pose_flinch(fu)
 	if dodging:
+		sprinting = false
+	elif reeling:
 		sprinting = false
 	elif attacking:
 		# committed to the swing: lunge along the facing, steering is only a nudge
@@ -384,7 +414,7 @@ func _physics_process(delta: float) -> void:
 	var accel := ACCEL
 	if attacking and combat.current_attack().has("lunge_at"):
 		accel = ACCEL * 4.0                    # the heavy's step-in is one decisive stride
-	if not dodging:
+	if not dodging and not reeling:
 		velocity.x = move_toward(velocity.x, target.x, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
 
@@ -401,12 +431,14 @@ func _physics_process(delta: float) -> void:
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
-	elif attacking or dodging or charging:
-		pass                                   # no recovery mid-swing, mid-dodge or charging
+	elif attacking or dodging or charging or reeling:
+		pass                                   # no recovery mid-swing, mid-dodge, charging or reeling
 	else:
 		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
 
-	if dodging:
+	if reeling:
+		pass                                   # rocked back: the facing holds
+	elif dodging:
 		if not _dodge_back:
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(_dodge_dir.x, _dodge_dir.z), 1.0 - exp(-35.0 * delta))
 	elif attacking:
@@ -458,6 +490,9 @@ func _try_dodge(dir2: Vector2) -> void:
 		if combat.hitstop > 0.0:
 			return
 		combat.cancel_to_guard()
+	if flinch_t >= 0.0:
+		flinch_t = -1.0
+		model.transform = _model_rest
 	stamina = maxf(stamina - DODGE_COST, 0.0)
 	_dodge_back = dir2.length() < 0.2
 	if _dodge_back:
@@ -500,9 +535,43 @@ func receive_attack(attacker: Node, damage: float) -> String:
 		dodged.emit(false)
 		return "dodged"
 	health = maxf(health - damage, 0.0)
-	add_shake(0.55)
 	hurt.emit(damage)
+	if combat != null and combat.has_hyper_armour():
+		armoured_hits += 1
+		add_shake(0.35)
+		return "hit"
+	add_shake(0.55)
+	_flinch(attacker)
 	return "hit"
+
+func _flinch(attacker: Node) -> void:
+	if combat != null:
+		combat.cancel_to_guard()
+	if dodge_t >= 0.0:
+		dodge_t = -1.0                         # caught late in a dodge: the dash is lost
+	var away := -body.global_basis.z
+	if attacker is Node3D:
+		away = global_position - (attacker as Node3D).global_position
+	away.y = 0.0
+	_flinch_dir = away.normalized() if away.length() > 1e-3 else -body.global_basis.z
+	flinch_t = 0.0
+	flinches += 1
+
+## Snap the upper body away from the blow in ~0.06 s, then let it settle back over the rest
+## of the stagger; pivot at the hip and sink a little so the feet stay under the body.
+func _pose_flinch(u: float) -> void:
+	var env := u / 0.12 if u < 0.12 else 1.0 - smoothstep(0.12, 1.0, u)
+	env = sin(env * PI * 0.5)
+	var push := body.global_basis.inverse() * _flinch_dir
+	var axis := Vector3.UP.cross(push)
+	if axis.length() < 1e-3:
+		axis = Vector3.RIGHT
+	# a little twist off the blow's side, so it does not read as a stiff bow
+	var twist := deg_to_rad(9.0) * env * signf(push.x if absf(push.x) > 0.05 else 1.0)
+	var hip := Vector3(0, 0.95, 0)
+	var b := Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN) * env) * Basis(Vector3.UP, twist)
+	var t := Transform3D(Basis(), hip) * Transform3D(b, Vector3.ZERO) * Transform3D(Basis(), -hip)
+	model.transform = Transform3D(Basis(), Vector3(0, -0.09 * env, 0)) * t * _model_rest
 
 func _start_slowmo() -> void:
 	if _slow_t < 0.0:

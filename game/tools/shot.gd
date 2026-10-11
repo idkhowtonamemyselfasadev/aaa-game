@@ -137,6 +137,10 @@ func _ready() -> void:
 			foe_state = HollowSoldier.STAGGER
 		elif "dead" in args:
 			foe_state = HollowSoldier.DEAD
+		if "flinch" in args:
+			# clear of the practice post, which stands at the start
+			var at := player.global_position + Vector3(3.0, 0, -6.0)
+			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
 		var pp := player.global_position
 		var foe: HollowSoldier = world.soldier
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
@@ -151,7 +155,8 @@ func _ready() -> void:
 			side = -side
 		var mid := pp.lerp(fp, 0.5)
 		if spot == "soldier":
-			SPOTS[spot] = [mid + side * 3.6 - line * 0.4, mid]
+			var back := 4.8 if "flinch" in args else 3.6
+			SPOTS[spot] = [mid + side * back - line * 0.4, mid]
 		elif spot == "lockon":
 			pass                                  # the follow camera, swung by the lock
 		else:
@@ -276,7 +281,7 @@ func _ready() -> void:
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
 		player.set_physics_process(false)
-		if "parry" in args or "smash" in args:
+		if "parry" in args or "smash" in args or "flinch" in args:
 			_action = func(): await _heavy_action(player, foe, args)
 		if spot == "lockon":
 			# lock on from a camera looking well off to the side, let the lock swing it round
@@ -316,6 +321,13 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		for i in 3:
 			foe._physics_process(dt)
 		print("SHOT parry parries %d tier %d" % [c.parries, c.tier])
+	elif "flinch" in args:
+		# the thrust gets through: the hero rocks back from it at the peak of the stagger
+		player.receive_attack(foe, HollowSoldier.DAMAGE)
+		ImpactFX.spawn(player.get_parent(), player.global_position + Vector3.UP * 1.15, foe.body.global_basis.z, "stone", 0.7)
+		for i in 6:
+			player._physics_process(dt)
+		print("SHOT flinch t %.3f flinches %d" % [player.flinch_t, player.flinches])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero
 		c._start_charge()

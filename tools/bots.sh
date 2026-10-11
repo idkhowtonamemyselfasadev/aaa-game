@@ -2,7 +2,7 @@
 # usage: tools/bots.sh [route...]   (default: all routes). Headless; exit 1 if any bot fails.
 cd "$(dirname "$0")/../game" || exit 2
 GODOT=${GODOT:-$(command -v godot || echo ../.tools/godot)}
-[ $# -eq 0 ] && set -- walk ridge combat dodge soldier lockon heavy sweep insects
+[ $# -eq 0 ] && set -- walk ridge combat dodge soldier lockon heavy sweep insects flinch
 rc=0
 for r in "$@"; do
   out=$(timeout 300 "$GODOT" --headless --audio-driver Dummy res://tools/bot.tscn -- "$r" 2>&1)

@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.2
+Content hours playable: 0.25
 (walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 06:00 UTC:
+  - **Hero hit reaction (known bug).** A blow that gets through now staggers the hero for
+    0.5 s: the upper body snaps back 17 deg from the hip away from the attacker (with a small
+    twist and sink) and settles, a 0.65 m shove decays out, any swing or heavy charge is
+    broken off to guard, attacks are locked out, stamina does not recover, and a dodge can
+    break it after 0.24 s. A hit late in a dodge (past the i-frames) loses the dash. The
+    released heavy's downswing (release .. end of its hit window) is armoured: it takes the
+    damage with a lighter shake and keeps coming (`StaffCombat.has_hyper_armour`). DESIGN.md
+    Ward row and the telegraph paragraph updated.
+  - New bot route `flinch` (in `tools/bots.sh` defaults): thrust on an early-raised charge
+    breaks it, 0 swings while mashing light in the stagger, 17 deg lean, 0.53 m shove away
+    from the soldier, dodge refused at once and taken after 0.24 s, heavy downswing armoured.
+  - New shot option `soldier ... strike u=0.5 flinch` (the hero at the stagger's peak).
+  - Bots: all 10 routes pass.
+  - Shots (Forward+ lavapipe): `soldier flinch 60 15.5 strike u=0.5 flinch` — the hero rocked
+    back with the staff thrown wide and a dust burst: the reaction reads. Fails Wukong: the
+    soldier is again missing from the frame (same bug as the stagger shot), hero small,
+    faceted ridges. `village dawn 60 5.6` — first dawn check: mauve glow behind the east
+    ridges, valley mist, blue west sky; reads as a real pre-dawn. Fails on the faceted ridges
+    and a dark near-camera rock clipping the left edge.
 - Session 2026-10-11 05:00 UTC:
   - **Last sunlight and twilight desaturated (known bugs).** The low-sun colour went from
     (1.0, 0.62, 0.36) to a warmer gold (1.0, 0.76, 0.56), and the rose grazing light under the
@@ -568,8 +588,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   a 19.0 shot with `night_sky = null` to split the two. At the same hour the moon (held at
   >= 8 deg, 0.5 energy) lights the far ridges a bright blue against that dark sky. Ramp the
   moon in later or lower its floor.
-- Dawn twilight is symmetric to dusk by construction but not yet screenshot-checked
-  (`sunset` faces west; the dawn sun is at -Z).
+- Dawn checked once (`village` 5.6 h, looks right); `village` spot has a dark rock right at
+  the camera on the left edge.
 - Midge glints are only a few px at 3 m: right for a still, may need a touch more size in
   motion; fireflies have no wing/body mesh (glow dots only, fine at night distance).
 - Soldier sweep: the arms reach 0.6 m (thrust poses 0.45) and the spear axis is up to ~11 deg
@@ -585,8 +605,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (`pose_check -v` mid14 clearance 1.05 torso radii, the pass mark). An extra key would fix it.
 - Arm IK still clamps to a 0.43 m shoulder reach with no elbow/clavicle motion, so every pose
   is built around reachable grips; a real staff-form mocap clip set would read better.
-- The hero has no hit reaction: a thrust that lands during a heavy charge does not interrupt
-  it (no flinch/hyper-armour rule yet).
+- The hero's flinch is a procedural whole-body rock from the hip (no arm/head reaction, no
+  Mixamo hit-reaction clip); a heavy blow has no knockdown yet, and health 0 has no death.
 - No gold "parryable" flash on the soldier's tell yet (DESIGN.md colour code); the blade glint
   doubles for it.
 - Lock-on has no strafe clips: moving while locked the hero turns to run in the stick

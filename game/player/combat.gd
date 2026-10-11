@@ -196,6 +196,11 @@ func is_charging() -> bool:
 func current_attack() -> Dictionary:
 	return _atk
 
+## The released heavy is committed from the moment it starts down until the strike has passed:
+## a blow landing then is taken without breaking the swing.
+func has_hyper_armour() -> bool:
+	return state == ATTACKING and _atk == HEAVY and t / float(_atk["dur"]) < float(_atk["hit"][1])
+
 ## Heavy pressed: start raising the staff (drawing it first if slung). During a light swing
 ## it cuts in once the strike has passed, otherwise it waits for the swing to finish.
 func heavy() -> void:

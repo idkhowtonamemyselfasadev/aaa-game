@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "flinch"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -68,6 +68,9 @@ func _ready() -> void:
 		return
 	if name == "insects":
 		_insects_test()
+		return
+	if name == "flinch":
+		_flinch_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -629,6 +632,92 @@ func _heavy_test() -> void:
 	if s.last_result == "hit" and p.health >= h0:
 		return _combat_done(false, "unparried thrust did no damage")
 	_combat_done(true, "tap and tier-2 smashes, parry on the thrust staggered it, charged punish landed, early raise did not parry")
+
+## Flinch: a thrust that lands on a heavy raised too early breaks the charge, shoves the hero
+## back and locks out attacks; a dodge breaks the stagger once the blow has passed; the
+## released heavy's downswing takes a blow without breaking.
+func _flinch_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	var c: StaffCombat = p.combat
+	await _ticks(10)
+	# draw first so the raise starts on time
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	await _wait_heavy_done(c)
+	await _ticks(30)
+	p.stamina = Player.STAMINA_MAX
+	_soldier_at(s, 2.4, HollowSoldier.THRUST_MOVE)
+	while s.state != HollowSoldier.WINDUP:
+		await get_tree().physics_frame
+	while s.t < 0.1:
+		await get_tree().physics_frame
+	p.bot_heavy = true
+	var n := s.strikes
+	var start := p.global_position
+	var h0 := p.health
+	while s.strikes == n or (s.state == HollowSoldier.STRIKE and s.last_result == ""):
+		await get_tree().physics_frame
+	var charging_after := c.is_charging()
+	print("BOT flinch: early raise -> %s, health %.0f -> %.0f, flinch_t %.2f, flinches %d, still charging %s" % [s.last_result, h0, p.health, p.flinch_t, p.flinches, charging_after])
+	if s.last_result != "hit" or p.flinches != 1 or p.flinch_t < 0.0:
+		p.bot_heavy = false
+		return _combat_done(false, "thrust through a late charge did not stagger the hero")
+	if charging_after:
+		p.bot_heavy = false
+		return _combat_done(false, "the charge survived the hit")
+	# still holding heavy and mashing light: nothing may start while reeling
+	var sw := c.swings
+	var max_lean := 0.0
+	while p.flinch_t >= 0.0 and p.flinch_t < Player.FLINCH_TIME * 0.9:
+		p.bot_attack = true
+		max_lean = maxf(max_lean, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		await get_tree().physics_frame
+	p.bot_heavy = false
+	await _ticks(20)
+	var pushed := (p.global_position - start)
+	var away := (p.global_position - s.global_position)
+	print("BOT flinch: swings during stagger %d, max lean %.1f deg, pushed %.2f m (away %.2f), charging %s" % [c.swings - sw, rad_to_deg(max_lean), Vector2(pushed.x, pushed.z).length(), Vector2(pushed.x, pushed.z).normalized().dot(Vector2(away.x, away.z).normalized()), c.is_charging()])
+	if c.swings != sw or c.is_charging():
+		return _combat_done(false, "an attack started while reeling")
+	if Vector2(pushed.x, pushed.z).length() < 0.4:
+		return _combat_done(false, "the blow did not shove the hero back")
+	if max_lean < deg_to_rad(10.0):
+		return _combat_done(false, "no visible hit reaction")
+	# 2) dodge out of a stagger once FLINCH_DODGE_AT has passed (direct hit, no soldier timing)
+	await _ticks(10)
+	p.stamina = Player.STAMINA_MAX
+	p.receive_attack(s, 1.0)
+	var d0 := p.dodges
+	p.bot_dodge = true
+	await _ticks(2)
+	var early := p.dodges - d0
+	while p.flinch_t >= 0.0 and p.flinch_t < Player.FLINCH_DODGE_AT + 0.02:
+		await get_tree().physics_frame
+	p.bot_dodge = true
+	await _ticks(2)
+	print("BOT flinch: dodge at once %d, dodge after %.2f s %d, flinch_t %.2f" % [early, Player.FLINCH_DODGE_AT, p.dodges - d0 - early, p.flinch_t])
+	if early != 0 or p.dodges - d0 != 1 or p.flinch_t >= 0.0:
+		return _combat_done(false, "dodge-out of the stagger is wrong")
+	while p.dodge_t >= 0.0:
+		await get_tree().physics_frame
+	# 3) the released heavy's downswing is armoured
+	await _ticks(20)
+	p.stamina = Player.STAMINA_MAX
+	var f0 := p.flinches
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	while not (c.is_attacking() and c.current_attack() == StaffCombat.HEAVY):
+		await get_tree().physics_frame
+	await _ticks(3)
+	var r := p.receive_attack(s, 1.0)
+	var kept := c.is_attacking() and c.current_attack() == StaffCombat.HEAVY
+	print("BOT flinch: hit on the downswing -> %s, armoured %d, flinches %d -> %d, swing kept %s" % [r, p.armoured_hits, f0, p.flinches, kept])
+	if p.armoured_hits != 1 or p.flinches != f0 or not kept:
+		return _combat_done(false, "the heavy's downswing was not armoured")
+	_combat_done(true, "late charge broken by the thrust, hero shoved and locked out, dodge breaks the stagger, heavy downswing armoured")
 
 ## Puts the soldier `d` metres in front of the hero, facing them, already stalking.
 func _soldier_at(s: HollowSoldier, d: float, kind: int) -> void:

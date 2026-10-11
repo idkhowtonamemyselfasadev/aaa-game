@@ -268,5 +268,17 @@
   "time": "2026-10-11T05:23:31Z",
   "caption": "18:24 twilight: the valley floor now sits in a dusty mauve afterglow instead of saturated rose-red, ridges layered in haze; fails on faceted ridges, near-black canopies and coarse foreground grass.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-0620-flinch.jpg",
+  "time": "2026-10-11T06:20:25Z",
+  "caption": "Hero rocks back from a spear thrust that broke the heavy charge, staff thrown wide, impact dust; the soldier is missing from the frame (known shot bug), hero small in frame, ridges still faceted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0620-dawn.jpg",
+  "time": "2026-10-11T06:20:25Z",
+  "caption": "Pre-dawn at 5.6 h: mauve glow behind the eastern ridges, mist in the oak valley, blue sky to the west; a dark rock edge clips the left of frame and ridges are faceted.",
+  "verdict": "fail"
  }
 ]
