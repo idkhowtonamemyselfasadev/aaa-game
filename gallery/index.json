@@ -442,5 +442,17 @@
   "time": "2026-10-11T19:33:43Z",
   "caption": "Looking down the valley at 14 h with sunlit and cloud-shaded patches across the meadow and mountains; the leaf cards facing the sun blow out to white like blossom, and the haze toward the sun washes out the right half.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-2049-oak-crowns-valley.jpg",
+  "time": "2026-10-11T20:49:59Z",
+  "caption": "Looking down the valley toward the sun at 14 h: the oak crowns now read olive-green with sunlit tops instead of white blossom; the haze toward the sun still washes out the right half and the far peaks are faceted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-2049-oak-crowns-ridge.jpg",
+  "time": "2026-10-11T20:49:59Z",
+  "caption": "An oak at 15 h above the sunlit Vale, leaves now deep olive with a rare brown dead leaf instead of apple-like rust blobs; the leaf cards are still oversized at close range and the crowns lack fine silhouette detail.",
+  "verdict": "fail"
  }
 ]

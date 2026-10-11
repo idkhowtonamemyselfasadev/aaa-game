@@ -245,13 +245,14 @@ func _leaf_atlas() -> ImageTexture:
 			var ang := stem_dir.angle() + side * r.randf_range(0.5, 1.2)
 			var ln := r.randf_range(0.2, 0.3) * T * (1.15 - t * 0.35)
 			var dir := Vector2.from_angle(ang)
-			# late-summer oak: deep olive, some yellowing, a few rust-brown
+			# late-summer oak: deep olive, some yellowing, a rare dull-brown dead leaf (saturated
+			# rust at 12 % read as apples on a fruit tree at close range)
 			var hue := r.randf()
 			var col := Color(0.16, 0.22, 0.07)
-			if hue > 0.6:
-				col = Color(0.32, 0.3, 0.09)
-			if hue > 0.88:
-				col = Color(0.36, 0.2, 0.08)
+			if hue > 0.65:
+				col = Color(0.26, 0.27, 0.09)
+			if hue > 0.96:
+				col = Color(0.27, 0.19, 0.1)
 			col = col * r.randf_range(0.8, 1.15)
 			_leaf(img, at, dir, ln, ln * 0.36, col, Rect2i(ox, oy, T, T))
 	img.generate_mipmaps()

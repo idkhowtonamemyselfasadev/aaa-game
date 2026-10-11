@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.45
+Content hours playable: 0.46
 (the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 20:00 UTC:
+  - **Oak crowns no longer blow out to white toward the sun (bug, next item 9 pick).** Cause:
+    leaf `SPECULAR = 0.4` gives f0 = 0.16 * 0.4^2 = 0.026, and Godot's Fresnel peak
+    f90 = clamp(f0 * 50) clamps to 1.0, so every sun-facing card hit full grazing sheen
+    looking toward the sun. Now SPECULAR 0.2 (f90 ~0.3), roughness 0.72, backlight
+    `col * (0.5, 0.6, 0.3)` (yellow-green transmission, weaker than the lit face).
+  - Leaf atlas: the saturated rust leaves (12 %) read as apples at close range; now 4 % dull
+    brown, the yellowing share more olive.
+  - Shots: `lf_valley` (14 h toward the sun, same view as `cs_valley`: crowns olive with lit
+    tops, no blossom), `lf_ridge`/`lf_ridge2` (15 h near oak: apple look gone after the atlas
+    tweak). 13/13 bots pass. Note: the first Vulkan shot on a fresh box needs ~8 min (shader
+    cache) and the `timeout 600` in shots.sh can let it fall back to opengl3; run the import
+    first and allow time.
 - Session 2026-10-11 19:00 UTC:
   - **Cloud shadows on the land (next item 9 / bug "clouds cast no shadows").** New
     `shaders/cloud_shadow.gdshaderinc` holds the deck's density function, shared by the sky
@@ -845,7 +858,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
 9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck; 18:00: puddles in the
    hollows + raindrop ripples, SSR on; 19:00: cloud shadows on the land.)
-   Next session pick: the white-blowout oak leaves (see bugs), then rain splashes on solid
+   (done 20:00: oak leaf blowout fixed.) Next session pick: rain splashes on solid
    ground / the hero splashing through pools. Still to do: splash particles on solid ground and the
    hero's feet splashing through pools, ripples when the hero wades, rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
@@ -858,10 +871,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Oak leaf cards facing the sun (and their backlit edges) blow out to near-white in mid-day
-  shots looking toward the sun (`cs_valley`, `cs_ridge2`): the crowns read like white blossom.
-  Likely the leaf SPECULAR 0.4 + BACKLIGHT 0.7 under sun energy 3; tone them down / add a
-  leaf albedo texture. High priority next to flora item 2 (it spoils every wide shot).
+- (fixed 20:00: white blowout.) Oak leaf cards are oversized at close range (each sprig
+  card reads as a few big leaves) and the crowns are dark and flat inside with no fine
+  silhouette detail; needs smaller sprigs / more cards near the camera (flora item 2).
 - Clouds: the overcast deck is too uniform (no rolling bellies); far ridges stay a darker
   grey silhouette against it in rain; clouds overhead at dusk are a touch too pink; cloud
   shadows darken albedo (so ambient too) rather than the sun term only, skip the hero,

@@ -32,12 +32,16 @@ void fragment() {
 	ALPHA = t.a;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 	ALPHA_ANTIALIASING_EDGE = 0.3;
-	float rough = 0.6;
+	float rough = 0.72;
 	weather_wetten(col, rough, 0.3);
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.4;
-	BACKLIGHT = col * 0.7;
+	// Godot's Fresnel peak (f90) scales with f0 = 0.16 * SPECULAR^2: at 0.4 it clamps to 1, so
+	// every sun-facing card went white at grazing angles looking toward the sun. 0.2 caps the
+	// grazing sheen at ~0.3 (a waxy oak leaf, not a mirror).
+	SPECULAR = 0.2;
+	// thin leaf transmission: yellow-green, weaker than the lit face
+	BACKLIGHT = col * vec3(0.5, 0.6, 0.3);
 	if (!FRONT_FACING) NORMAL = -NORMAL;
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
