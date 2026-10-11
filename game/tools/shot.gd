@@ -97,6 +97,18 @@ func _ready() -> void:
 		var back2 := Vector3(sd2.x, 0, sd2.z).normalized().rotated(Vector3.UP, 1.2)
 		SPOTS[spot] = [fh + back2 * 0.9 + Vector3.UP * 0.12, fh - back2 * 3.0 - Vector3.UP * 0.2]
 		print("SHOT flower at %s" % fh)
+	if spot == "turf":
+		# looking down at the meadow floor between the clumps a few metres from the hero:
+		# the ground layer (turf, clover, moss, litter) close up. turf [dx] [dz] moves it.
+		var pp := player.global_position
+		var off := Vector3(4.0, 0, 3.0)
+		for a in args:
+			if a.begins_with("dx="):
+				off.x = float(a.substr(3))
+			if a.begins_with("dz="):
+				off.z = float(a.substr(3))
+		var g := pp + off
+		SPOTS[spot] = [g + Vector3(-1.0, 1.5, -0.6), g + Vector3(0.6, -1.6, 0.4)]
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -217,6 +229,9 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "turf":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.4
+			look.y = terrain.height_at(look.x, look.z)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0

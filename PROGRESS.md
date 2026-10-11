@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.40
+Content hours playable: 0.41
 (the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 14:00 UTC:
+  - **Meadow floor ground layer (bug "close-up grass over bare brown soil", next item 4).**
+    `shaders/terrain.gdshader` rewritten: the flat ground is now a short sward of lying blades
+    (two crossing stroke layers, combed by a noise wind direction, live green blades over dead
+    thatch), white-clover patches (trefoil leaflets with the pale chevron), moss cushions on
+    the cool north-east banks and hollows, trodden-earth patches with lobed dead leaves, twigs
+    and small pebbles, and rock with lichen speckle on steep slopes. Each layer has a height;
+    the shading normal is bumped per pixel from screen-space derivatives (replaces the old
+    NORMAL_MAP that was not tangent-correct). Fine detail fades to its average by pixel
+    footprint, so nothing shimmers far out. Rook feeding sites get the same turf.
+  - Shot spot `turf [dx=] [dz=]`: 1.4 m up looking down at the floor a few metres from the hero.
+  - Shots: `turf1` (first pass: litter blobs like coffee beans, white pebbles, red-brown soil:
+    fail), `turf4 60 10.5 dx=-20 dz=12` — the gaps between clumps read as a straw-strewn
+    meadow floor; still darker than a real one in clump shadow, and the clumps themselves are
+    the weak point (flat ribbons, too regular). `flowers fl_new 60 10.5` vs the old `base_fl`:
+    the black void under the drift is gone, the far meadow floor reads golden-green; at
+    grazing angles the stroke pattern repeats like tread plate (vary blade length/curve).
+    All 12 bot routes pass (shader-only change).
 - Session 2026-10-11 13:00 UTC:
   - **Meadow wildflowers + butterflies perch on them (next item 5 / bug "butterflies hover on
     nothing").** New `MeadowFlowers` (`world/flowers.gd`): four procedural species with real
@@ -698,8 +716,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 3. (done 12:00: far mountain ring.) Polish: per-pixel normals / more ridge detail so far
    ridges are not faceted, vary peak shapes (domain warp), forest impostor speckle on
    foothills, playable-edge border (cliffs) with collision.
-4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
-   procedural layers.
+4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
+   procedural turf/clover/moss/litter/rock floor with per-pixel bump.) Still to do: moss at
+   tree bases and round boulders (pass tree/rock positions in a mask texture), a path/road
+   layer, grass blade albedo detail + softer clump shadows.
 5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms; 12:20 (10-11):
    butterflies; 13:00 (10-11): wildflower drifts, butterflies perch on flower heads.) Still to
    do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
@@ -735,8 +755,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   flattened by the hero walking through. Their patterns read pale under the warm grade; no
   shadow (casting off); they do not avoid trees or the hero's body in flight. Rain does not
   ground them (no weather yet).
-- Close-up grass (< 1 m) is flat untextured ribbons over bare brown soil: the meadow needs a
-  ground layer (moss/litter/short turf) and blade albedo/translucency detail for macro shots.
+- (fixed 14:00: ground layer.) Close-up grass blades are still flat untextured ribbons (no
+  albedo/vein/translucency detail) and the clumps read regular; ground in clump shadow is
+  near-black in low-angle macro shots (`flowers` spot), partly the harsh grass shadows.
+  Moss/clover are noise-placed, not tied to trees/rocks (no moss at tree bases yet).
 - At 19.0 h (sun -7 deg) the sky behind the first stars is a dark brown/amber, not blue, and
   the stars still look slightly gold. Cause not found yet: candidates are the PhysicalSky
   extinction on `night_sky`, or the amber sky-sun scattering under the volumetric haze. Try
@@ -812,8 +834,6 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip
   (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
 - Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m).
-- Cropped turf at rook sites shows the flat brown bare-ground colour (same root cause as the
-  bare-ground bug: terrain shader needs a short-turf/soil layer).
 - Rooks stay on the ground at night (should roost in trees).
 - `village` shot spot: a dark wedge fills the left edge — the camera at (-30, 40) sits against a
   tree trunk; move the spot or keep flora clear of fixed camera spots.

@@ -370,5 +370,23 @@
   "time": "2026-10-11T13:00:00Z",
   "caption": "A small tortoiseshell settled on a yarrow umbel (perching on real flowers now, not air); the umbel was too sparse here and was densified after, and the ground is black.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1447-meadow-floor.jpg",
+  "time": "2026-10-11T14:47:03Z",
+  "caption": "Knee-height across a buttercup drift: the ground between the clumps is now lit turf with lying blades instead of a black void; the blade stroke pattern repeats like tread plate at grazing angles and the grass ribbons are still flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1447-turf-closeup.jpg",
+  "time": "2026-10-11T14:47:03Z",
+  "caption": "Looking down at the meadow floor: straw-strewn sward, moss and clover between the clumps reads as real ground; clump shadows are still very dark and the clumps too regular.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1447-valley.jpg",
+  "time": "2026-10-11T14:47:03Z",
+  "caption": "Afternoon valley from a hillside: the turf floor holds up at distance with no shimmer; the backlit tree crowns blow out white and the far peaks are faceted.",
+  "verdict": "fail"
  }
 ]
