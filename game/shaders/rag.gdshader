@@ -22,6 +22,7 @@ uniform float hit_flash = 0.0;
 uniform float dissolve = 0.0;
 uniform vec3 sway = vec3(0.0);
 uniform float time_offset = 0.0;
+uniform float wrap_turns = 0.0;     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 varying float hem_w;
 
@@ -60,7 +61,7 @@ float weave(vec2 wv) {
 }
 
 void vertex() {
-	float w = UV.y * UV.y;
+	float w = UV.y * UV.y * step(wrap_turns, 0.0);
 	hem_w = w;
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
@@ -88,6 +89,13 @@ void fragment() {
 	float thread = mix(0.5, weave(wv), fine);
 	float tx = (weave(wv + vec2(0.15, 0.0)) - weave(wv)) * fine;
 	float ty = (weave(wv + vec2(0.0, 0.15)) - weave(wv)) * fine;
+	// bandage: each turn's edge laps over the last, with a shadowed crease under the lap
+	float band = 1.0;
+	if (wrap_turns > 0.0) {
+		float b = fract(UV.y * wrap_turns + UV.x + vnoise(vec2(UV.x * 5.0, UV.y * 3.0) + seed) * 0.08);
+		band = smoothstep(0.0, 0.08, b) * (0.85 + 0.15 * smoothstep(0.98, 0.9, b));
+		ty += (smoothstep(0.92, 1.0, b) - smoothstep(0.0, 0.06, b)) * 0.6;
+	}
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
@@ -98,6 +106,7 @@ void fragment() {
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
 	alb = mix(alb, alb * vec3(0.78, 0.62, 0.5), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
+	alb *= mix(0.45, 1.0, band);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
 	float singe = (1.0 - smoothstep(0.0, 0.012, to_hem)) * step(0.5, fbm(vec2(UV.x * 23.0, seed)));
@@ -115,7 +124,7 @@ void fragment() {
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 0.8;
-	AO = mix(0.7, 1.0, thread);
+	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band);
 	AO_LIGHT_AFFECT = 0.3;
 	BACKLIGHT = vec3(0.12, 0.10, 0.08);
 	EMISSION = ember_col * glow * 3.0;

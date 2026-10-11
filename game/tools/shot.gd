@@ -184,6 +184,14 @@ func _ready() -> void:
 		free.look_at(look)
 		free.current = true
 		cam = free
+	if "legs" in args and foe_u >= 0.0 and cam != null:
+		# a low close look at the soldier's shins and forearms (wraps over the old armour)
+		var fp2: Vector3 = world.soldier.global_position
+		var d2 := (cam.global_position - fp2) * Vector3(1, 0, 1)
+		cam.global_position = fp2 + d2.normalized() * 1.7 + Vector3.UP * 0.75
+		cam.look_at(fp2 + Vector3.UP * 0.6)
+	if "nograss" in args and world.has_node("Grass"):
+		world.get_node("Grass").visible = false
 	if "nofog" in args:
 		world.env.environment.fog_enabled = false
 		world.env.environment.volumetric_fog_enabled = false

@@ -413,6 +413,9 @@ func _soldier_test() -> void:
 	var spear := s.spear
 	var rags := s.rags
 	print("BOT soldier: rags %d pieces, tabard swung up to %.0f deg in the fight" % [rags.mats.size(), rad_to_deg(rags.peak_swing)])
+	print("BOT soldier: %d bandage wraps on shins and forearms" % rags.wraps)
+	if rags.wraps < 4:
+		return _combat_done(false, "soldier shin/forearm wraps missing")
 	if rags.mats.size() < 5 or rags.peak_swing < deg_to_rad(8.0):
 		return _combat_done(false, "soldier rags missing or the tabard never swung with the legs")
 	var cloth: ShaderMaterial = rags.mats[0]

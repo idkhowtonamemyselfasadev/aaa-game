@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.36
+Content hours playable: 0.37
 (the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 10:00 UTC:
+  - **Soldier shin and forearm wraps (next item 8: leg wraps/greave cloth).** `HollowRags._wrap`
+    winds a hemp bandage tube round each shin (LeftLeg/RightLeg -> Foot, 14..93 % of the bone)
+    and forearm (ForeArm -> Hand, 22..97 %). The tube's radius is fitted to the armour
+    underneath: every skinned vertex weighted >= 0.25 to the bone is taken to body space via the
+    skin's bind pose and the bone rest, binned by height (10) and angle (16), the max radius per
+    cell kept, empty cells filled/smoothed (neighbour max x0.9/0.94, floor 0.42 x max), +1 cm /
+    0.8 cm pad. So nothing pokes through; measured greave is 6-8 cm in front, 16 cm at the calf.
+    Each turn steps out 4 mm at its leading edge. Rides the bone rigidly (BoneAttachment3D).
+  - `rag.gdshader`: new `wrap_turns` uniform: spiral bandage strips with a shadowed crease under
+    each lap (albedo, AO and normal), no sway/flutter on wraps; the frayed end is at the
+    ankle/wrist. The wraps share ember/hit_flash/dissolve so they burn away with the body.
+  - Shot options `legs` (low close camera on the soldier's shins, with `soldierface ... lit`) and
+    `nograss`. Bot `soldier` checks 4 wraps. All 11 routes pass.
+  - Shots: `soldierface legs2 60 11 u=0.2 lit legs nograss` — bandaged shins, strips visible;
+    still bulky (the greave itself flares 16 cm at the calf). `soldierface wraps2 ... lit` — side:
+    the silhouette is now cloth over most of the body. Fails Wukong: Vanguard thighs/boots,
+    padded look.
 - Session 2026-10-11 09:00 UTC:
   - **Hollow Soldier rags (known bug: the sci-fi Vanguard armour silhouette showed).** New
     `HollowRags` (`enemies/rags.gd`) builds five procedural cloth pieces in body space and
@@ -642,8 +660,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry; 22:00: all staff
    poses reachable + clear of the body, grip slide.) Next: a
    (done 00:00: sweep; 09:00 (10-11): hood, mantle, sash, swinging tabards on the soldier.)
-   Still to do: leg wraps/greave cloth for the soldier's shins and forearms, hit sounds once
-   audio exists; a soldier patrol/camp near the start road.
+   (done 10:00: fitted bandage wraps on shins + forearms.) Still to do: thigh cloth (trousers/
+   loincloth over the Vanguard thighs) and boot wraps; ideally a real CC0 humanoid for the
+   soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
@@ -667,6 +686,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   sphere, and the tier glints ("metal" at the tip) leave a brown cloud high up. Needs a
   proper debris/dust-ring effect and a small sharp glint sprite.
 - `soldier ... stagger smash` shot: the soldier is missing from the frame (not investigated).
+  Same for `soldierface ... u=0.5 strike` (10:00).
+- Soldier wraps follow the bone rigidly; the shin wrap reads barrel-shaped because it hugs the
+  greave's calf flare. Forearm wraps not yet checked in a close shot.
 - Spin finisher's recovery (last key -> guard) grazes the chest surface for ~0.05 s
   (`pose_check -v` mid14 clearance 1.05 torso radii, the pass mark). An extra key would fix it.
 - Arm IK still clamps to a 0.43 m shoulder reach with no elbow/clavicle motion, so every pose
