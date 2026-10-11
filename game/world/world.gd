@@ -8,6 +8,8 @@ extends Node3D
 @export var sun_peak_deg: float = 28.0           # Long Dusk: low amber days, noon sun ~28 degrees
 @export var sky_energy_scale: float = 2.6        # PhysicalSky is calibrated for a ~1.0 sun; ours is 3.0
 @export var ambient_scale: float = 1.0
+@export var cloud_light: float = 0.6             # cloud deck brightness under the light
+@export var cloud_shade: float = 0.7             # cloud underside brightness from the skylight
 @export var sdfgi_allowed: bool = true            # quality setting; auto-off on software GPUs
 
 @onready var sun: DirectionalLight3D = $Sun
@@ -19,6 +21,7 @@ var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the 
 var training_post: TrainingPost
 var soldier: HollowSoldier
 var weather: Weather
+var clouds: CloudLayer
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
 
@@ -27,6 +30,9 @@ func _ready() -> void:
 	weather = Weather.new()
 	weather.name = "Weather"
 	add_child(weather)
+	clouds = CloudLayer.new()
+	clouds.name = "Clouds"
+	add_child(clouds)
 	moon = DirectionalLight3D.new()
 	moon.name = "Moon"
 	moon.light_color = Color(0.62, 0.72, 1.0)
@@ -166,6 +172,29 @@ func _process(delta: float) -> void:
 	if run_clock:
 		time_of_day = fposmod(time_of_day + delta * 24.0 / day_length_s, 24.0)
 	_apply_time()
+	_apply_clouds(delta)
+
+## Feed the cloud deck this frame's light: the sky sun by day (it is held up through the
+## afterglow, so sunset clouds glow rose), the moon by night; shadowed undersides take the
+## ambient skylight, the far deck fades into the fog colour.
+func _apply_clouds(delta: float) -> void:
+	if clouds == null or env.environment == null:
+		return
+	var e := env.environment
+	var sw := sky_sun.light_energy if sky_sun and sky_sun.visible else 0.0
+	var mw := moon.light_energy if moon and moon.visible else 0.0
+	var ldir := Vector3.UP
+	var lcol := Color(0, 0, 0)
+	if sw > 0.0:
+		ldir = sky_sun.global_transform.basis.z
+		lcol += sky_sun.light_color * sw * cloud_light
+	if mw > 0.0:
+		ldir = ldir.lerp(moon.global_transform.basis.z, mw / (mw + sw * 4.0 + 1e-4)).normalized()
+		lcol += moon.light_color * mw * 0.35 * cloud_light
+	var shade := e.ambient_light_color * e.ambient_light_energy * cloud_shade
+	var haze := e.fog_light_color * e.fog_light_energy   # what the depth fog paints far ridges
+	clouds.update(delta, weather.cloud if weather else 0.0, weather.wind if weather else 0.0,
+			ldir, lcol, shade, haze)
 
 func _apply_time() -> void:
 	# Full day: sunrise 06:00, noon peak sun_peak_deg, sunset 18:00; the moon opposes the sun.
@@ -276,6 +305,13 @@ func _apply_weather(day: float) -> void:
 	e.fog_density = lerpf(0.0012, 0.008, c)
 	e.fog_light_color = e.fog_light_color.lerp(Color(0.5, 0.53, 0.57) * lerpf(0.12, 1.0, day), c)
 	e.fog_sun_scatter = lerpf(0.15, 0.0, c)
+	# under the deck the distance haze is lit by the cloud, not by the PhysicalSky behind it
+	# (its overcast radiance is dark away from the sun and bakes in incrementally, so ridges
+	# went black on one side): the aerial-perspective share goes and the fog light rises
+	e.fog_aerial_perspective = lerpf(0.5, 0.05, c)
+	e.fog_light_energy = lerpf(0.6, 1.0, c)
+	# no sun behind the deck to scatter toward: the haze glows evenly all round
+	e.volumetric_fog_anisotropy = lerpf(0.6, 0.1, c)
 	e.volumetric_fog_density += 0.006 * c
 	e.volumetric_fog_albedo = e.volumetric_fog_albedo.lerp(Color(0.75, 0.78, 0.82), c)
 	e.volumetric_fog_emission *= 1.0 - c

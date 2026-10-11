@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.42
-(the soldier fight can now be lost and retried from the rest point; walkable test valley with weather fronts that roll in (wind, grey light, rain, wet ground), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.43
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 16:00 UTC:
+  - **Cloud sky (next item 9 / bug "the overcast sky has no cloud forms").** New `CloudLayer`
+    (`world/clouds.gd` + `shaders/clouds.gdshader`, created by `world.gd` as `$Clouds`): an
+    inside-out hemisphere (r 3.4 km, beyond the mountain ring, inside the 4 km camera far)
+    riding on the camera. Each pixel projects its view ray onto a flat deck 1.5 km up, so
+    the clouds foreshorten toward the horizon; domain-warped fbm cells with billow erosion
+    give cumulus with cauliflower edges. 3-sample light march toward the light (sky sun by
+    day, so sunset clouds glow rose; the moon at night) gives grey bellies and bright tops,
+    plus a forward-scatter silver lining. Fair-weather cover 0.4 on clear days; a front
+    raises cover to 1.0 and thickness (darker bellies); the deck drifts with the wind (4x
+    faster in a front). Fog disabled on the dome; the far deck fades into the fog colour,
+    and under a front it sinks fully into the rain haze toward the horizon.
+  - `world._apply_clouds()` feeds light dir/colour, ambient-derived shade colour and the fog
+    colour each frame (`cloud_light`, `cloud_shade` exports).
+  - Fixed the dark/patchy overcast haze: under cloud the depth fog no longer takes half its
+    colour from the PhysicalSky radiance (overcast radiance is dark away from the sun and
+    bakes incrementally, so repeated shots disagreed): `fog_aerial_perspective` 0.5 -> 0.05,
+    `fog_light_energy` 0.6 -> 1.0, volumetric anisotropy 0.6 -> 0.1 with cloud.
+  - Shot tool: `tilt=<deg>` pitches the view up (sky shots); free camera far 3000 -> 4000 to
+    match the player camera; prints weather/fog state after each shot.
+  - Bot `weather` now also checks the deck: cover 0.40 -> 0.91 under the front, drift 24 m
+    vs 80 m per 60 ticks, dome on the camera. All 13 routes pass.
+  - Shots: `valley cl_noon2 60 12.5 tilt=12` (cumulus with shaded bellies over the ridges:
+    the sky finally has shapes), `valley cl_rain6 60 12.5 tilt=12 rain=1.0` (one grey ceiling
+    into the rain haze; first passes showed the fogged ridges as a bright cut-out, then
+    black on the anti-sun side — fixed above), `sunset cl_dusk 60 17.4 tilt=10` (rose-lit
+    clouds over the low sun). Fresh box note: run the headless `--import` before the first
+    shot or every class_name fails to parse.
 - Session 2026-10-11 15:00 UTC:
   - **Weather fronts (owner's "alive" list: rain, fog, storms, wind).** New `Weather`
     (`world/weather.gd`, created by `world.gd` as `$Weather`): long dry spells (6-15 min),
@@ -773,8 +801,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    slim the leg wraps (shrink the Vanguard leg mesh under them, or hide it), a shaped boot
    wrap; ideally a real CC0 humanoid for the
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
-9. Weather follow-ups: a cloud layer for the sky (procedural cloud dome / sky shader so a
-   front has visible cloud forms rolling in, not a flat grey), rain splashes + ripples on the
+9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck.) Still to do: rolling
+   structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
+   under far cells), cloud shadows on the land, clouds in the sky radiance/reflections
+   (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
    ground, puddles in hollows, rain occlusion under tree crowns, lightning + thunder for
    strong fronts, fog banks in the morning, rain on the hero (wet cloth darkening), NPCs and
    rooks shelter. Then climbing + glide.
@@ -782,9 +812,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Weather: overcast late afternoon (16.5 h, cloud 0.7) renders the sky dark navy instead of
-  grey (same root as the "late-afternoon sky renders dark navy" bug; PhysicalSky with high
-  Mie/low energy). The overcast sky has no cloud forms at all. Rain falls through tree
+- Clouds: the overcast deck is too uniform (no rolling bellies); far ridges stay a darker
+  grey silhouette against it in rain; clouds overhead at dusk are a touch too pink; clouds
+  cast no shadows and are not in the sky radiance (reflections show the bare sky). The
+  PhysicalSky behind a partial deck (cloud ~0.7, late afternoon) may still go navy in the
+  gaps. Rain falls through tree
   crowns and roofs (no occlusion); no splashes, ripples, puddles; the hero does not get wet.
   `RenderingServer.global_shader_parameter_get` returns null headless (bot falls back to
   Weather's values). Wind does not yet move the rain particles' spawn upwind beyond a fixed

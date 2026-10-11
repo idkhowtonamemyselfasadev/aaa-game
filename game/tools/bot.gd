@@ -1133,6 +1133,11 @@ func _weather_test() -> void:
 	wx.force(0.0)
 	await _ticks(120)
 	var sun0: float = _world.sun.light_energy
+	var cl: CloudLayer = _world.clouds
+	var cov0: float = cl.mat.get_shader_parameter("coverage")
+	var d0: Vector2 = cl.mat.get_shader_parameter("drift")
+	await _ticks(60)
+	var drift_clear: float = ((cl.mat.get_shader_parameter("drift") as Vector2) - d0).length()
 	var c0 := bf.census()
 	print("BOT weather clear: sun %.2f, butterflies out %d, rain %.2f" % [sun0, c0[0] + c0[1] + c0[2], wx.rain])
 	if c0[0] + c0[1] + c0[2] < 10 or wx.rain > 0.0:
@@ -1156,6 +1161,18 @@ func _weather_test() -> void:
 	print("BOT weather front after %.0f s: cloud %.2f rain %.2f wind %.2f wet %.2f (globals %.2f/%.2f), sun %.2f, fog %.4f, drops %s x%.2f, butterflies out %d, midges %.2f" % [t, wx.cloud, wx.rain, wx.wind, wx.wet, gw, gwet, _world.sun.light_energy, e.fog_density, rp.emitting, rp.amount_ratio, c1[0] + c1[1] + c1[2], _world.get_node("Insects").day])
 	if wx.rain < 0.85:
 		return _combat_done(false, "the front never brought rain")
+	var cov1: float = cl.mat.get_shader_parameter("coverage")
+	var d1: Vector2 = cl.mat.get_shader_parameter("drift")
+	await _ticks(60)
+	var drift_front: float = ((cl.mat.get_shader_parameter("drift") as Vector2) - d1).length()
+	var cam := get_viewport().get_camera_3d()
+	print("BOT weather clouds: cover %.2f -> %.2f, drift per 60 ticks %.1f m clear / %.1f m front, deck %.1f m from camera" % [cov0, cov1, drift_clear, drift_front, cl.global_position.distance_to(cam.global_position)])
+	if cov0 < 0.15 or cov0 > 0.5 or cov1 < 0.9:
+		return _combat_done(false, "cloud deck did not go from scattered cumulus to overcast")
+	if drift_clear <= 0.0 or drift_front < drift_clear * 2.0:
+		return _combat_done(false, "cloud deck did not drift faster in the front's wind")
+	if cl.global_position.distance_to(cam.global_position) > 0.5:
+		return _combat_done(false, "cloud dome does not ride on the camera")
 	if t < 40.0:
 		return _combat_done(false, "the front arrived too fast to read as rolling in")
 	if not rp.emitting or rp.amount_ratio < 0.8 or gw < 0.4 or gwet < 0.1:

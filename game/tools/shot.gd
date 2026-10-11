@@ -234,9 +234,13 @@ func _ready() -> void:
 			look.y = terrain.height_at(look.x, look.z)
 		var free := Camera3D.new()
 		free.fov = 65.0
-		free.far = 3000.0
+		free.far = 4000.0                       # same as the player camera (cloud deck at 3.4 km)
 		world.add_child(free)
 		free.global_position = pos
+		for a in args:
+			if a.begins_with("tilt="):          # pitch the view up by N degrees (sky shots)
+				var hd := Vector2(look.x - pos.x, look.z - pos.z).length()
+				look.y = pos.y + hd * tan(deg_to_rad(float(a.substr(5))))
 		free.look_at(look)
 		free.current = true
 		cam = free
@@ -397,6 +401,8 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
 	var err := img.save_png(abs)
 	print("SHOT %s -> %s (%s) err=%d" % [spot, abs, img.get_size(), err])
+	var we: Weather = world.weather
+	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color])
 	get_tree().quit(0 if err == OK else 1)
 
 ## Runs after the warm-up frames so the world keeps updating (pausing the tree froze the

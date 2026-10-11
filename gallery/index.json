@@ -400,5 +400,23 @@
   "time": "2026-10-11T15:28:50Z",
   "caption": "The hero in the meadow in the rain: soaked, darkened grass bent by gusts and streaks falling; the hero is still the sci-fi placeholder and no splashes or puddles show on the ground.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1711-clouds-noon.jpg",
+  "time": "2026-10-11T17:11:15Z",
+  "caption": "Clear noon over the Vale with the new cloud deck: cumulus with sunlit tops and grey shadowed bellies drift over the ridges instead of an empty sky; the oak crowns are still blobby cards and the ridges faceted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1711-clouds-rain.jpg",
+  "time": "2026-10-11T17:11:15Z",
+  "caption": "A rain front from the valley: one grey ceiling meeting the ridges in rain haze, wind-combed grass, streaks; the deck is too uniform (no rolling bellies or scud) and the far ridges still read as a dark cut-out.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1711-clouds-dusk.jpg",
+  "time": "2026-10-11T17:11:15Z",
+  "caption": "Late afternoon toward the sun: rose-lit cumulus and streaks over the low sun, long tree shadows on the meadow; the trees are still blobby silhouettes and the cloud colour is a little too pink overhead.",
+  "verdict": "fail"
  }
 ]
