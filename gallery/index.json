@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -225,6 +225,18 @@
   "file": "20261011-0143-midges.jpg",
   "time": "2026-10-11T01:43:53Z",
   "caption": "Low evening sun through the oak grove with a midge swarm glinting beside the trunk; the glints are subtle (a few px), canopy leaf cards are still large and flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0241-night-ridges.jpg",
+  "time": "2026-10-11T02:41:21Z",
+  "caption": "Night meadow at 22:00 with fireflies: the moonlit haze now continues into the sky so the far ridges sit as soft layered silhouettes under the stars instead of a glowing blue cut-out; ridges are still faceted and the grass blades read coarse up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0241-moonlit-hero.jpg",
+  "time": "2026-10-11T02:41:21Z",
+  "caption": "Hero by the practice post at 21:30, lit only by the moon and fireflies now that the sourceless orange 'lantern' pool is gone; the hero is still the sci-fi placeholder and the tree canopies blow out under the moon haze.",
   "verdict": "fail"
  }
 ]

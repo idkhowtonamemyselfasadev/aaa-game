@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.18
+Content hours playable: 0.19
 (walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 02:00 UTC:
+  - **Night sky / ridge cut-out fixed (known bug).** Root cause: the blue "glowing ridges" were
+    the moonlit *volumetric* fog in front of the far ring; `volumetric_fog_sky_affect` was 0.1,
+    so the same fog covered the mountains fully but the sky only 10%, and the ridges read as a
+    cut-out on black. `world.gd` now sets `volumetric_fog_sky_affect = lerp(1.0, 0.1, day)` and
+    `fog_sky_affect = lerp(0.6, 0.12, day)`: at night the haze continues into the sky (deep
+    moonlit blue, stars still visible), ridges are soft layered silhouettes; daytime unchanged.
+    (Tried first: an airglow band in the star texture. No effect, because PhysicalSky scales
+    `night_sky` by extinction, which is ~0 near the horizon. Reverted.)
+  - **Orange light pool fixed (known bug).** It was `Body/Lantern/LanternLight` in
+    `player.tscn`: a 2.5-energy, 7 m shadowed OmniLight with no lantern mesh, on day and
+    night. Removed; at night the hero is lit by the moon and fireflies only.
+  - Bots: all 9 routes pass. Shots: `hill` 22:00 before/after, `player` 21:30 before/after,
+    `day` 10:00 (no regression), `ridge` 18.4 (dusk, see bugs).
+  - Verdicts: night meadow: sky and ridges now read as one moonlit place, but fail Wukong
+    (faceted ridges, coarse close grass). Moonlit hero: correct light now, but fails on the
+    sci-fi placeholder hero and tree canopies blowing out in the haze.
 - Session 2026-10-11 01:00 UTC:
   - **Insects in the light (Next 5, owner's "alive" list).** New `world/insects.gd` +
     `shaders/insect.gdshader` (additive camera-facing glow dots on two MultiMeshes, CPU motion).
@@ -500,10 +517,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Night: the far mountain ring glows blue (fog light) brighter than the black starry sky, so the
-  ridge line reads as a cut-out; the sky needs a faint night glow/moonlit haze near the horizon.
-- A warm orange light pool sits on the grass around the hero/practice post at night (seen in
-  the `player`/`fireflies` 21:00 shots); not from the insects, source not tracked down yet.
+- Dusk (18.4 h, `ridge` spot): the sky is pure black while the far ridges on the moon side
+  are lit purple-blue and the meadow goes deep red. PhysicalSky gives no afterglow once the
+  sun is below the horizon. Needs a twilight term (keep the sun light just under the horizon
+  for longer, or a custom sky shader with an afterglow band). This is Next 1's dusk check.
 - Midge glints are only a few px at 3 m: right for a still, may need a touch more size in
   motion; fireflies have no wing/body mesh (glow dots only, fine at night distance).
 - Soldier sweep: the arms reach 0.6 m (thrust poses 0.45) and the spear axis is up to ~11 deg

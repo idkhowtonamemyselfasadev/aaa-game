@@ -186,3 +186,7 @@ func _apply_time() -> void:
 		env.environment.fog_light_color = Color(0.05, 0.07, 0.11).lerp(Color(0.73, 0.6, 0.5), day)
 		env.environment.volumetric_fog_albedo = Color(0.6, 0.7, 0.9).lerp(Color(0.9, 0.8, 0.7), day)
 		env.environment.volumetric_fog_emission = Color(0.03, 0.02, 0.015) * day
+		# The moonlit volumetric haze is local (128 m), so it lies in front of the sky exactly
+		# as it lies in front of the far ridges: at the default 0.1 sky affect the fogged ridges
+		# glowed blue as a cut-out against a black sky. Full sky affect at night, light by day.
+		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, day)
