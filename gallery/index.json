@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -213,6 +213,18 @@
   "file": "20261011-0024-sweep-cut.jpg",
   "time": "2026-10-11T00:24:33Z",
   "caption": "The sweep mid-arc cutting flat through the hero at waist height; no spear swing trail yet, bodies are still the sci-fi placeholder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0143-fireflies.jpg",
+  "time": "2026-10-11T01:43:53Z",
+  "caption": "Night meadow at 21:30: fireflies drift and blink over the grass, the brightest few lighting the blades green around them; the hero is still the sci-fi placeholder and the far ridges glow brighter than the night sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0143-midges.jpg",
+  "time": "2026-10-11T01:43:53Z",
+  "caption": "Low evening sun through the oak grove with a midge swarm glinting beside the trunk; the glints are subtle (a few px), canopy leaf cards are still large and flat.",
   "verdict": "fail"
  }
 ]

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -65,6 +65,9 @@ func _ready() -> void:
 		return
 	if name == "sweep":
 		_sweep_test()
+		return
+	if name == "insects":
+		_insects_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -743,3 +746,74 @@ func _sweep_test() -> void:
 	if s.last_result != "parried" or p.health < h1 or s.state != HollowSoldier.STAGGER:
 		return _combat_done(false, "heavy raised on the sweep did not parry it")
 	_combat_done(true, "crowded -> sweep chosen and lands, strafe can't escape it, dodge on the glint and parry beat it")
+
+## Insects: midge swarms by day that drift off when the hero walks into them, fireflies
+## only after dusk, hovering over the ground, scattering when the hero runs through them,
+## and streaming along with the camera.
+func _insects_test() -> void:
+	var p := _player
+	var ins: Insects = _world.get_node("Insects")
+	var terrain: Terrain = _world.get_node("Terrain")
+	_world.time_of_day = 13.0
+	await _ticks(30)
+	print("BOT insects noon: night %.2f day %.2f, fireflies lit %d, swarms %d" % [ins.night, ins.day, ins.visible_fireflies(), ins.swarm_centres().size()])
+	if ins.visible_fireflies() > 0 or ins.day < 0.9:
+		return _combat_done(false, "fireflies lit at noon or no midges by day")
+	# walk into the nearest swarm
+	var best := Vector3.INF
+	for c in ins.swarm_centres():
+		if best == Vector3.INF or c.distance_to(p.global_position) < best.distance_to(p.global_position):
+			best = c
+	print("BOT insects: nearest swarm %.1f m away, %.1f m above ground" % [best.distance_to(p.global_position), best.y - terrain.height_at(best.x, best.z)])
+	var t := 0.0
+	while ins.swarm_flees < 1 and t < 30.0:
+		var to := Vector2(best.x - p.global_position.x, best.z - p.global_position.z)
+		p.bot_input = to.normalized() if to.length() > 0.3 else Vector2.ZERO
+		p.bot_sprint = true
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT insects: swarm flees %d after %.1f s" % [ins.swarm_flees, t])
+	if ins.swarm_flees < 1:
+		return _combat_done(false, "midge swarm did not drift off when the hero walked into it")
+	# night: fireflies light up over the meadow
+	_world.time_of_day = 22.0
+	await _ticks(90)
+	var lit := ins.visible_fireflies()
+	var lo := 99.0
+	var hi := -99.0
+	var far := 0.0
+	var cam := get_viewport().get_camera_3d()
+	for f in ins.firefly_positions():
+		var hgt := f.y - terrain.height_at(f.x, f.z)
+		lo = minf(lo, hgt)
+		hi = maxf(hi, hgt)
+		far = maxf(far, Vector2(f.x - cam.global_position.x, f.z - cam.global_position.z).length())
+	print("BOT insects night: night %.2f, lit %d/%d, height %.2f..%.2f m, farthest %.1f m" % [ins.night, lit, ins.firefly_count, lo, hi, far])
+	if ins.night < 0.99 or lit < 12:
+		return _combat_done(false, "too few fireflies lit at night")
+	if lo < 0.1 or hi > 5.0:
+		return _combat_done(false, "fireflies outside their height band over the ground")
+	# run straight through them
+	var s0 := ins.startled_total
+	var start := p.global_position
+	for i in 240:
+		p.bot_input = Vector2(0.3, -1.0).normalized()
+		p.bot_sprint = true
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	await _ticks(60)
+	far = 0.0
+	for f in ins.firefly_positions():
+		far = maxf(far, Vector2(f.x - cam.global_position.x, f.z - cam.global_position.z).length())
+	print("BOT insects: ran %.1f m, startled %d, farthest fly from camera %.1f m" % [start.distance_to(p.global_position), ins.startled_total - s0, far])
+	if ins.startled_total - s0 < 5:
+		return _combat_done(false, "fireflies did not scatter from the running hero")
+	if far > ins.firefly_radius + 6.0:
+		return _combat_done(false, "fireflies did not stream with the camera")
+	_world.time_of_day = 7.0
+	await _ticks(30)
+	print("BOT insects dawn: lit %d" % ins.visible_fireflies())
+	if ins.visible_fireflies() > 0:
+		return _combat_done(false, "fireflies still lit after dawn")
+	_combat_done(true, "midges by day, fireflies by night, both react to the hero")

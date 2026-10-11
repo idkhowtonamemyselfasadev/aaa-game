@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://b1world0000001"]
+[gd_scene load_steps=21 format=3 uid="uid://b1world0000001"]
 
 [ext_resource type="Script" path="res://world/world.gd" id="1"]
 [ext_resource type="Script" path="res://world/terrain.gd" id="2"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://world/horizon.gd" id="11"]
 [ext_resource type="Shader" path="res://shaders/horizon.gdshader" id="12"]
 [ext_resource type="Script" path="res://world/birds.gd" id="13"]
+[ext_resource type="Script" path="res://world/insects.gd" id="14"]
 
 [sub_resource type="ShaderMaterial" id="barkmat"]
 shader = ExtResource("8")
@@ -72,6 +73,10 @@ rock_material = SubResource("rockmat")
 
 [node name="Birds" type="Node3D" parent="."]
 script = ExtResource("13")
+terrain_path = NodePath("../Terrain")
+
+[node name="Insects" type="Node3D" parent="."]
+script = ExtResource("14")
 terrain_path = NodePath("../Terrain")
 
 [node name="Player" parent="." instance=ExtResource("4")]

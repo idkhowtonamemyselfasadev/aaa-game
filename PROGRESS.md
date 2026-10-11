@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.17
-(walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
+Content hours playable: 0.18
+(walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,32 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 01:00 UTC:
+  - **Insects in the light (Next 5, owner's "alive" list).** New `world/insects.gd` +
+    `shaders/insect.gdshader` (additive camera-facing glow dots on two MultiMeshes, CPU motion).
+    - Fireflies after dusk (fade in 18.3–19.3 h, out 4.3–5.4 h, the active share ramps with
+      the night): 420 in a 34 m bubble that streams with the camera (re-enter ahead of travel,
+      full refill on a teleport), meadow only (no rock slopes), hover 0.35–2.8 m with a slow
+      wandering flight and bob, each blinks on its own 2.4–5.5 s rhythm (0.6–1.4 s swell).
+      The hero walking or running through them scatters them away and upward, all flickering
+      bright for 1.4–2.4 s. The 6 brightest near the camera carry a small OmniLight (2.4 m,
+      no shadow) so the grass glows green around them.
+    - Midge swarms by day (7–9 h in, gone by 19 h): 6 swarms x 40 beside tree trunks near the
+      camera, head high, a dancing 0.6 m cloud; brightness is a CPU backlight term (camera ->
+      swarm vs. the sun), so they glint against the low sun and almost vanish with it behind
+      you. Crowd one and it drifts off, then settles back by its trunk.
+  - Bots: new `insects` route (noon: none lit, midges on; walk into a swarm -> it flees;
+    22:00: 100/420 lit, 0.14–2.87 m over the ground; sprint 136 m through them -> 152 startled,
+    bubble kept within 38 m of the camera; dawn: none lit). All 9 routes pass.
+  - Shot spots `fireflies` (low over the night meadow beside the hero) and `midges` (a swarm
+    framed against the sun).
+  - Verdicts (Forward+ lavapipe): `fireflies` 21:30 — ~15 lit specks with soft halos and green
+    pools of light on the grass: it finally reads as a living night meadow, but fails Wukong on
+    the sci-fi hero and the far ridges glowing brighter than the black sky. `midges` 17:36 —
+    tiny glints by the trunk in the golden backlight: right scale, subtle in a still; canopy
+    leaf cards still flat/large. Both fail the Wukong bar for those reasons.
+  - Note: a per-instance "backlight weight" through INSTANCE_CUSTOM.b + a sun_dir uniform made
+    the midges invisible in renders (never root-caused); the CPU-side per-swarm term replaced it.
 - Session 2026-10-11 00:00 UTC:
   - **Hollow Soldier sweep (Next 8, eighth part).** A second spear move so the fight can't be
     read by distance alone: when the hero crowds inside 2.1 m (or after two thrusts in a row)
@@ -450,9 +476,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    foothills, playable-edge border (cliffs) with collision.
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
-5. (done 13:00: rook flocks + kites.) Still to do: a grazing sheep/deer herd that flees
+5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms.) Still to do: a grazing sheep/deer herd that flees
    (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
-   there is audio, birds roosting in trees at night, insects/fireflies in the light.
+   there is audio, birds roosting in trees at night, moths around lanterns/campfires once
+   they exist, butterflies by day.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
 7. (done 14:00: rigged Mixamo humanoid + idle/walk/run blend.) Still to do: replace the sci-fi
    "Vanguard" with a mythic hero (robes, hair, face) — look for CC0/CC-BY realistic humanoids in
@@ -473,6 +500,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Night: the far mountain ring glows blue (fog light) brighter than the black starry sky, so the
+  ridge line reads as a cut-out; the sky needs a faint night glow/moonlit haze near the horizon.
+- A warm orange light pool sits on the grass around the hero/practice post at night (seen in
+  the `player`/`fireflies` 21:00 shots); not from the insects, source not tracked down yet.
+- Midge glints are only a few px at 3 m: right for a still, may need a touch more size in
+  motion; fireflies have no wing/body mesh (glow dots only, fine at night distance).
 - Soldier sweep: the arms reach 0.6 m (thrust poses 0.45) and the spear axis is up to ~11 deg
   off the authored arc mid-swing; no swing trail on the spear; contact uses the hero's centre
   only (no low/high: can't be jumped, there is no jump yet). A backstep dodge started early

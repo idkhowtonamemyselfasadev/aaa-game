@@ -46,6 +46,19 @@ func _ready() -> void:
 		var site: Vector3 = world.get_node("Birds").site_positions()[0]
 		var d := 9.0 if spot == "birds" else 15.5
 		SPOTS[spot] = [site + Vector3(-d * 0.8, 0, d * 0.6), site + Vector3(0, -0.5 if spot == "rooks" else 3.5, 0)]
+	if spot == "midges":
+		# a midge swarm against the low sun: camera on the far side, sun behind the cloud
+		await get_tree().process_frame
+		var c: Vector3 = world.get_node("Insects").swarm_centres()[0]
+		var sd: Vector3 = world.sun.global_transform.basis.z
+		sd.y = 0.0
+		sd = sd.normalized()
+		SPOTS[spot] = [c - sd * 3.2 + sd.cross(Vector3.UP) * 0.6, c + sd * 2.0]
+		print("SHOT midge swarm at %s, sun dir %s" % [c, sd])
+	if spot == "fireflies":
+		# low over the night meadow just beside the hero, looking out across the grass
+		var pp := player.global_position
+		SPOTS[spot] = [pp + Vector3(-1.5, 0, 2.5), pp + Vector3(6, 0, -14)]
 	if spot == "hero":
 		# close three-quarter portrait of the idle player character
 		var pp := player.global_position
@@ -146,8 +159,8 @@ func _ready() -> void:
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
-		look.y = terrain.height_at(look.x, look.z) + (1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		pos.y = look.y - 0.35 if spot == "midges" else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
+		look.y = (s[1] as Vector3).y if spot == "midges" else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
