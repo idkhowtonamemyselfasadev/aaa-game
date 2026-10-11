@@ -23,6 +23,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 05:00 UTC:
+  - **Last sunlight and twilight desaturated (known bugs).** The low-sun colour went from
+    (1.0, 0.62, 0.36) to a warmer gold (1.0, 0.76, 0.56), and the rose grazing light under the
+    horizon from (0.95, 0.5, 0.45) to a dusty mauve (0.84, 0.7, 0.72). The red-brown ground
+    had been saturating both into an orange/rose wash.
+  - **Stars fade in (known bug).** PhysicalSky has no night-sky energy, so `world.gd` builds
+    the star field at 4 brightness levels (0.12/0.3/0.55/1.0) and steps through them from 3 deg
+    below the horizon (first stars, ~18.4 h) to 10 deg (full field, ~19.4 h). Dawn is the
+    same in reverse. Only 4 sky rebinds per dusk. Star tint is now cooler, to offset the
+    gold extinction tint.
+  - Bots: all 9 routes pass. Shots (Forward+ lavapipe, ~5 min each on this box): `sunset`
+    17.75 before/after: an orange-red meadow before, gold after. Now reads as golden hour,
+    but fails Wukong on the faceted ridges and the leaf-card canopies. `sunset` 18.4: mauve
+    afterglow, no rose wash. Fails on near-black canopies and coarse grass. `hill` 19.0:
+    sparse first stars over fireflies. Fails, because the sky there is a brown/amber colour
+    (see bugs).
 - Session 2026-10-11 04:40 UTC (a parallel session; its own sky-only-light fix collided with
   04:00's, which was kept, and these follow-ups were ported on top):
   - **Twilight land no longer goes black.** The ambient now follows the afterglow
@@ -511,9 +527,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-1. (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun.)
-   Still to do: star fade-in, desaturate the last sunlight, dawn check, and verify SDFGI on
-   a real GPU some day (cloud box can't).
+1. (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun;
+   05:00: star fade-in, desaturated low sun/twilight.) Still to do: the brown 19 h sky (see
+   bugs), dawn check, and verify SDFGI on a real GPU some day (cloud box can't).
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
@@ -546,15 +562,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Stars snap on at once when `day < 0.08` (~18.5 h) at full density, gold-tinted by the
-  PhysicalSky extinction term; they want a fade-in (e.g. two textures or a custom sky
-  shader) and a cooler tint. Same at dawn.
-- Last sunlight (17.5–18 h) paints the meadow a very saturated orange-red: the low-sun
-  colour (1.0, 0.62, 0.36) at 2 deg elevation needs desaturating / more skylight balance.
-- Twilight (18.2–18.6 h) valley floor reads over-saturated rose/red: the rose grazing light
-  (0.95, 0.5, 0.45) on the red-brown terrain albedo; desaturate it together with the 17.5 h
-  orange-red fix above. Looking away from the sunset the moonlit far ridges are still brighter
-  blue than the navy sky.
+- At 19.0 h (sun -7 deg) the sky behind the first stars is a dark brown/amber, not blue, and
+  the stars still look slightly gold. Cause not found yet: candidates are the PhysicalSky
+  extinction on `night_sky`, or the amber sky-sun scattering under the volumetric haze. Try
+  a 19.0 shot with `night_sky = null` to split the two. At the same hour the moon (held at
+  >= 8 deg, 0.5 energy) lights the far ridges a bright blue against that dark sky. Ramp the
+  moon in later or lower its floor.
 - Dawn twilight is symmetric to dusk by construction but not yet screenshot-checked
   (`sunset` faces west; the dawn sun is at -Z).
 - Midge glints are only a few px at 3 m: right for a still, may need a touch more size in

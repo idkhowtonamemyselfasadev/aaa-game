@@ -18,7 +18,8 @@ var moon: DirectionalLight3D
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
 var soldier: HollowSoldier
-var _stars: ImageTexture
+var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
+const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
 
 func _ready() -> void:
 	_build_environment()
@@ -70,7 +71,8 @@ func _build_environment() -> void:
 	sm.turbidity = 7.0
 	sm.sun_disk_scale = 3.0
 	sm.ground_color = Color(0.1, 0.07, 0.034)
-	_stars = _star_texture()
+	for lv in STAR_LEVELS:
+		_stars.append(_star_texture(lv))
 	sky.sky_material = sm
 	sky.process_mode = Sky.PROCESS_MODE_INCREMENTAL
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
@@ -127,8 +129,9 @@ func _build_environment() -> void:
 	e.adjustment_saturation = 1.08
 	env.environment = e
 
-## Procedural star field for the PhysicalSky's night_sky (equirectangular, 2048x1024).
-func _star_texture() -> ImageTexture:
+## Procedural star field for the PhysicalSky's night_sky (equirectangular, 2048x1024), scaled
+## by `level`: PhysicalSky has no night-sky energy, so the fade-in swaps between a few copies.
+func _star_texture(level: float) -> ImageTexture:
 	var w := 2048
 	var h := 1024
 	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
@@ -139,15 +142,16 @@ func _star_texture() -> ImageTexture:
 		var x := rng.randi_range(0, w - 1)
 		var y := rng.randi_range(0, h / 2 + 40)     # upper hemisphere (+ a bit below horizon)
 		var b := pow(rng.randf(), 6.0) * 0.9 + 0.05
-		var tint := Color(0.8, 0.85, 1.0).lerp(Color(1.0, 0.85, 0.7), rng.randf())
-		img.set_pixel(x, y, tint * b)
+		# cool-leaning: PhysicalSky's extinction term already tints the field gold
+		var tint := Color(0.7, 0.8, 1.0).lerp(Color(1.0, 0.9, 0.8), rng.randf() * 0.6)
+		img.set_pixel(x, y, tint * b * level)
 	# a faint band for the galaxy
 	for i in 26000:
 		var x := rng.randi_range(0, w - 1)
 		var y := int(h * 0.28 + sin(float(x) / w * TAU) * h * 0.12 + rng.randfn(0.0, 22.0))
 		if y >= 0 and y < h:
 			var c := img.get_pixel(x, y)
-			img.set_pixel(x, y, c + Color(0.02, 0.022, 0.03) * rng.randf())
+			img.set_pixel(x, y, c + Color(0.017, 0.021, 0.032) * rng.randf() * level)
 	return ImageTexture.create_from_image(img)
 
 func _process(delta: float) -> void:
@@ -172,8 +176,10 @@ func _apply_time() -> void:
 	sun.light_energy = lerpf(0.0, 3.0, day) * lerpf(1.0, 0.7, low) * above \
 			+ 0.4 * afterglow * afterglow * (1.0 - above)
 	sun.visible = sun.light_energy > 0.005
-	sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.62, 0.36), low) \
-			.lerp(Color(0.95, 0.5, 0.45), 1.0 - above)
+	# low sun: a warm gold, not a red wash (the red-brown ground saturates it further);
+	# the rose grazing light under the horizon is a dusty mauve for the same reason
+	sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.76, 0.56), low) \
+			.lerp(Color(0.84, 0.7, 0.72), 1.0 - above)
 	if sky_sun:
 		# twilight: 0 at 9 degrees below the horizon, 1 once the sun is up
 		var tw := smoothstep(deg_to_rad(-9.0), deg_to_rad(0.5), elev)
@@ -204,8 +210,11 @@ func _apply_time() -> void:
 			var ener := snappedf(lerpf(0.35, 1.0, day) * sky_energy_scale, 0.02)
 			if not is_equal_approx(sky.energy_multiplier, ener):
 				sky.energy_multiplier = ener
-			# PhysicalSky adds night_sky unattenuated, so only bind the stars after dusk
-			var want_stars: Texture2D = _stars if day < 0.08 else null
+			# PhysicalSky adds night_sky unattenuated, so the stars come out step by step from
+			# 3 deg below the horizon (first stars) to 10 deg (full field), same at dawn
+			var star_t := smoothstep(deg_to_rad(-3.0), deg_to_rad(-10.0), elev)
+			var lvl := int(floor(star_t * STAR_LEVELS.size() + 0.25))
+			var want_stars: Texture2D = _stars[lvl - 1] if lvl > 0 and not _stars.is_empty() else null
 			if sky.night_sky != want_stars:
 				sky.night_sky = want_stars
 		# Ambient is a time-of-day colour, not the sky radiance: sky-sourced ambient measured
