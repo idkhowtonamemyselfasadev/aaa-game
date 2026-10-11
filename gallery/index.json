@@ -202,5 +202,17 @@
   "time": "2026-10-10T22:48:00Z",
   "caption": "Overhead strike coming down on the centre line with a long grip (vertical trail behind the post); still wrong: camera puts the post in front of the hero, placeholder body, flat foreground grass.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-0024-sweep-windup.jpg",
+  "time": "2026-10-11T00:24:33Z",
+  "caption": "Hollow Soldier coiling its new sweep: spear wound flat behind its right side, chest ember flaring; still placeholder sci-fi bodies and faceted far ridges.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-0024-sweep-cut.jpg",
+  "time": "2026-10-11T00:24:33Z",
+  "caption": "The sweep mid-arc cutting flat through the hero at waist height; no spear swing trail yet, bodies are still the sci-fi placeholder.",
+  "verdict": "fail"
  }
 ]

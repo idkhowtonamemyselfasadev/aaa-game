@@ -5,10 +5,15 @@ extends CharacterBody3D
 ## and thrusts. Every thrust is telegraphed: the soldier draws the spear back and leans away,
 ## the chest ember flares and a glint runs to the blade point; then a fast lunging thrust
 ## (perfect-dodge it on the glint), then a long recovery — the punish window.
+## Second move, the sweep: when the hero crowds inside the spear point (or after two thrusts in
+## a row) it slides its grip back, winds the spear low round to its right with the chest turned
+## away, then cuts a wide flat arc right-to-left with a long stride. Strafing does not escape
+## it; a dodge on the glint, a parry or an early backstep does.
 ## Implements the staff's hittable contract (hurt_capsule / take_hit) and strikes through
 ## Player.receive_attack. Poise: during the wind-up and thrust only a poise break staggers it.
 
 enum { IDLE, STALK, WINDUP, STRIKE, RECOVER, STAGGER, DEAD }
+enum { THRUST_MOVE, SWEEP_MOVE }
 
 const HEALTH_MAX := 90.0
 const NOTICE := 12.0
@@ -27,6 +32,17 @@ const DAMAGE := 22.0
 const POISE := 30.0
 const DMG_PER_POWER := 13.0
 const GRAVITY := 22.0
+const SWEEP_CLOSE := 2.1      # closer than this the point is useless: sweep instead
+const SWEEP_WINDUP_T := 0.95
+const SWEEP_T := 0.36
+const SWEEP_RECOVER_T := 1.15
+const SWEEP_FROM := -115.0     # arc start (soldier's right, behind) and end (left), degrees
+const SWEEP_TO := 95.0
+const SWEEP_REACH := 2.6       # hero centre within this of the soldier when the blade passes
+const SWEEP_STEP := 1.3        # metres the cut's stride carries the body
+const SWEEP_DAMAGE := 26.0
+const SWEEP_SLIDE := -0.22     # grip slid toward the butt for the long cut
+const SWEEP_ARM := 0.6
 const HAND_R := -0.78          # metres from the spear centre toward the butt
 const HAND_L := -0.36
 const SHOULDER := Vector3(0.21, 1.48, -0.06)
@@ -41,6 +57,11 @@ signal struck(result: String)
 signal died
 
 var state := IDLE
+var move_kind := THRUST_MOVE
+var force_move := -1           # bots/shots: pin the next attack (-1 = choose)
+var sweeps := 0
+var _thrusts_in_row := 0
+var _arc_prev := 0.0
 var t := 0.0
 var health := HEALTH_MAX
 var poise := 0.0
@@ -215,13 +236,15 @@ func _place(pose: Array) -> void:
 	var tw := deg_to_rad(pose[3])
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
-	var hr := sr + (c + d * HAND_R - sr).limit_length(ARM_REACH)
-	var hl := sl + (c + d * HAND_L - sl).limit_length(ARM_REACH)
+	var slide: float = pose[4] if pose.size() > 4 else 0.0
+	var reach: float = pose[5] if pose.size() > 5 else ARM_REACH
+	var hr := sr + (c + d * (HAND_R + slide) - sr).limit_length(reach)
+	var hl := sl + (c + d * (HAND_L + slide) - sl).limit_length(reach)
 	var axis := hl - hr
 	if axis.length() < 0.15:
 		axis = d * 0.15
 	var d2 := axis.normalized()
-	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * HAND_R)
+	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
 	_grip_r.position = hr
 	_grip_l.position = hl
 	if _twist != null:
@@ -229,7 +252,20 @@ func _place(pose: Array) -> void:
 
 static func _lerp_pose(a: Array, b: Array, f: float) -> Array:
 	f = f * f * (3.0 - 2.0 * f)
-	return [lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), (a[2] as Vector3).lerp(b[2], f), lerpf(a[3], b[3], f)]
+	var sa: float = a[4] if a.size() > 4 else 0.0
+	var sb: float = b[4] if b.size() > 4 else 0.0
+	var ra: float = a[5] if a.size() > 5 else ARM_REACH
+	var rb: float = b[5] if b.size() > 5 else ARM_REACH
+	return [lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), (a[2] as Vector3).lerp(b[2], f), lerpf(a[3], b[3], f), lerpf(sa, sb, f), lerpf(ra, rb, f)]
+
+## The sweep's spear pose for blade bearing a (degrees, + = soldier's left): the butt hand
+## stays planted at the belly as the pivot, the front hand swings out with the blade, the
+## chest turns a third of the way with it. Tuned offline for <11 deg axis error at 0.6 m reach.
+static func sweep_pose(a: float) -> Array:
+	var mid := Vector3(0, 1.25, 0.2) + StaffCombat.dir_of(a, 0.0) * 0.2
+	var d := StaffCombat.dir_of(a, -4.0)
+	var c := mid - d * ((HAND_R + HAND_L) * 0.5 + SWEEP_SLIDE)
+	return [a, -4.0, c, a * 0.3, SWEEP_SLIDE, SWEEP_ARM]
 
 ## Lean the whole model from the hips (back = negative), pivoting so the feet stay put.
 func _lean(rad: float, sink: float) -> void:
@@ -336,7 +372,52 @@ func _physics_process(delta: float) -> void:
 			elif t > 0.25 and _facing(to) > 0.85:
 				windups += 1
 				_from = _pose
+				move_kind = _choose(dist)
 				_enter(WINDUP)
+		WINDUP when move_kind == SWEEP_MOVE:
+			var u := clampf(t / SWEEP_WINDUP_T, 0.0, 1.0)
+			# the coiled sweep keeps tracking almost to the release: it is built to catch a strafe
+			_turn_to(to, delta, 6.0 * (1.0 - u * u * u))
+			# swing round low to the right, chest turned away, then a held, trembling coil
+			var a := lerpf(GUARD[0], SWEEP_FROM, smoothstep(0.0, 0.62, u)) + sin(t * 47.0) * 1.5 * smoothstep(0.6, 0.9, u)
+			_pose = _lerp_pose(_from, sweep_pose(a), minf(u * 4.0, 1.0))
+			lean = -0.06 * smoothstep(0.0, 0.6, u)
+			sink = 0.14 * smoothstep(0.0, 0.6, u)
+			ember = 1.0 + 3.2 * smoothstep(0.15, 0.85, u)
+			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
+			if u >= 1.0:
+				_resolved = false
+				_aimed = _in_arc()
+				_arc_prev = _blade_bearing()
+				sweeps += 1
+				strikes += 1
+				_enter(STRIKE)
+		STRIKE when move_kind == SWEEP_MOVE:
+			var u := clampf(t / SWEEP_T, 0.0, 1.0)
+			_update_glint(0.0)
+			var a := lerpf(SWEEP_FROM, SWEEP_TO, 1.0 - (1.0 - u) * (1.0 - u))
+			_pose = sweep_pose(a)
+			lean = 0.1 * smoothstep(0.0, 0.5, u)
+			sink = 0.14
+			ember = 4.2 - 1.5 * u
+			# the stride closes the gap but stops short of walking into the hero
+			move = body.global_basis.z * (SWEEP_STEP / SWEEP_T) * 2.0 * (1.0 - u) * clampf((dist - 1.15) / 0.5, 0.0, 1.0)
+			if u >= 1.0:
+				if not _resolved:
+					_resolved = true
+					last_result = "miss"
+					struck.emit("miss")
+				_from = _pose
+				_enter(RECOVER)
+		RECOVER when move_kind == SWEEP_MOVE:
+			var u := clampf(t / SWEEP_RECOVER_T, 0.0, 1.0)
+			var f := smoothstep(0.35, 1.0, u)
+			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, GUARD[0], f)), GUARD, f)
+			lean = 0.1 * (1.0 - smoothstep(0.2, 0.9, u))
+			sink = 0.14 * (1.0 - u)
+			ember = 1.4 - 0.4 * u
+			if u >= 1.0:
+				_enter(STALK)
 		WINDUP:
 			var u := clampf(t / WINDUP_T, 0.0, 1.0)
 			_turn_to(to, delta, 3.0 * (1.0 - u))   # tracks early, commits late
@@ -349,6 +430,7 @@ func _physics_process(delta: float) -> void:
 				_resolved = false
 				_aimed = _in_cone()
 				strikes += 1
+				_thrusts_in_row += 1
 				_enter(STRIKE)
 		STRIKE:
 			var u := clampf(t / STRIKE_T, 0.0, 1.0)
@@ -387,6 +469,8 @@ func _physics_process(delta: float) -> void:
 			_die_tick(delta)
 			return
 	_place(_pose)
+	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
+		_sweep_contact()
 	_lean(lean, sink)
 	max_ember = maxf(max_ember, ember)
 	_set_skin("ember", ember)
@@ -427,6 +511,56 @@ func _in_cone() -> bool:
 		return false
 	var l := body.global_transform.affine_inverse() * _player.global_position
 	return l.z > 0.0 and l.z < REACH + 0.4 and absf(l.x) < 0.75 and absf(l.y) < 1.2
+
+## Thrust when the hero stands off at spear length; sweep when they crowd inside the point
+## or after two thrusts in a row (so the soldier can't be read by distance alone).
+func _choose(dist: float) -> int:
+	var k := force_move
+	if k < 0:
+		k = SWEEP_MOVE if dist < SWEEP_CLOSE or _thrusts_in_row >= 2 else THRUST_MOVE
+	if k == SWEEP_MOVE:
+		_thrusts_in_row = 0
+	return k
+
+func _hero_local() -> Vector3:
+	return body.global_transform.affine_inverse() * _player.global_position
+
+## Bearing (degrees, + = soldier's left) of the blade, from the spear as actually placed.
+func _blade_bearing() -> float:
+	var tip := body.global_transform.affine_inverse() * spear.to_global(spear.tip_local())
+	return rad_to_deg(atan2(tip.x, tip.z))
+
+func _in_arc() -> bool:
+	if _player == null:
+		return false
+	var l := _hero_local()
+	var b := rad_to_deg(atan2(l.x, l.z))
+	return Vector2(l.x, l.z).length() < SWEEP_REACH + 0.4 and b > SWEEP_FROM and b < SWEEP_TO and absf(l.y) < 1.2
+
+## The cut lands when the blade's bearing passes the hero's and the hero is inside its reach;
+## a hero who was in the arc as it launched and is mid-dodge gets the dodge verdict instead.
+func _sweep_contact() -> void:
+	if _player == null:
+		return
+	var now := _blade_bearing()
+	var l := _hero_local()
+	var b := rad_to_deg(atan2(l.x, l.z))
+	# the blade has reached or swept past the hero's bearing (the hero may move against it)
+	var passed := b > SWEEP_FROM - 10.0 and b <= now
+	_arc_prev = now
+	if not passed:
+		return
+	var in_reach := Vector2(l.x, l.z).length() < SWEEP_REACH and absf(l.y) < 1.2
+	var dodging := _player.dodge_t >= 0.0 and _player.dodge_t <= Player.DODGE_TIME
+	if not in_reach and not (_aimed and dodging):
+		return
+	_resolved = true
+	var r := _player.receive_attack(self, SWEEP_DAMAGE)
+	if r == "hit":
+		var side := body.global_basis.x
+		ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 1.0, side, "stone", 0.8)
+	last_result = r
+	struck.emit(r)
 
 ## The thrust lands on anything standing in a narrow cone ahead within reach.
 func _resolve_strike() -> void:

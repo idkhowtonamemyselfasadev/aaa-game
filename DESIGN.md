@@ -132,6 +132,13 @@ Archers, Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archety
 **Become** forms), 4 world bosses. Wildlife (§8) is not an enemy class but predators will
 fight anything nearby, including Hollow.
 
+Spear Soldier moveset (each move has one right answer that the others punish): **thrust**
+(at spear length; narrow line — strafe, sidestep, dodge on the glint or parry) and **sweep**
+(when crowded inside the point or after two thrusts; low wide right-to-left arc with a long
+stride, tracks until the release — strafing does not escape it; dodge on the glint, parry, or
+leave early). Both share the ember + blade-glint tell; the sweep's tell is a low coil with the
+spear wound back to the right.
+
 ### Bosses (3–5 phases, mechanic change per phase)
 
 | Boss | Where | P1 | P2 | P3 | P4 | P5 |

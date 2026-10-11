@@ -244,7 +244,10 @@ func _ready() -> void:
 		player.combat._begin_draw()
 		for i in 30:
 			player.combat.physics_step(dt)
-		var dur := {HollowSoldier.WINDUP: HollowSoldier.WINDUP_T, HollowSoldier.STRIKE: HollowSoldier.STRIKE_T, HollowSoldier.STAGGER: HollowSoldier.STAGGER_T, HollowSoldier.DEAD: 2.4}
+		var sw := "sweep" in args
+		if sw:
+			foe.move_kind = HollowSoldier.SWEEP_MOVE
+		var dur := {HollowSoldier.WINDUP: HollowSoldier.SWEEP_WINDUP_T if sw else HollowSoldier.WINDUP_T, HollowSoldier.STRIKE: HollowSoldier.SWEEP_T if sw else HollowSoldier.STRIKE_T, HollowSoldier.STAGGER: HollowSoldier.STAGGER_T, HollowSoldier.DEAD: 2.4}
 		if foe_state == HollowSoldier.STAGGER:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:
@@ -253,7 +256,7 @@ func _ready() -> void:
 			foe.windups += 1
 			foe._enter(HollowSoldier.WINDUP)
 			if foe_state == HollowSoldier.STRIKE:
-				foe.t = HollowSoldier.WINDUP_T
+				foe.t = float(dur[HollowSoldier.WINDUP])
 		for i in 600:
 			foe._physics_process(dt)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):

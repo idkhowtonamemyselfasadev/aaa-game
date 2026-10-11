@@ -1,8 +1,8 @@
 # Progress
 
-Content hours playable: 0.15
+Content hours playable: 0.17
 (walkable test valley with grass, oak groves, boulders and rook flocks, played as a rigged animated humanoid
-who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier down the meadow
+who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
@@ -23,6 +23,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 00:00 UTC:
+  - **Hollow Soldier sweep (Next 8, eighth part).** A second spear move so the fight can't be
+    read by distance alone: when the hero crowds inside 2.1 m (or after two thrusts in a row)
+    the soldier slides its grip 0.22 m toward the butt, winds the spear low round to its
+    right (blade behind it, chest turned away, crouched 0.14 m, a trembling coil at the end),
+    same ember flare + blade glint, then cuts a flat right-to-left arc (-111..88 deg measured
+    from the placed spear) in 0.36 s with up to a 1.3 m stride that stops 1.15 m short of the hero (the first cut
+    shot showed it walking into the hero's body), 26 damage, long 1.15 s recovery.
+    It tracks the hero until the release (turn rate 6*(1-u^3)), so a strafe that beats the
+    thrust gets caught. Contact is the blade's real bearing passing the hero's (inside 2.6 m),
+    so it lands on the side the blade actually is. Parry and dodge rules are the same as the
+    thrust's (shared `receive_attack`).
+  - Sweep poses: the butt hand stays planted at the belly as the pivot, the front hand swings
+    out with the blade, chest turns 0.3x the blade angle; tuned with an offline grid search
+    over the same reach model (`_place`) for <11 deg axis error, hands outside the torso,
+    0.6 m arm reach (the thrust poses keep 0.45). `_place` and `_lerp_pose` accept optional
+    5th/6th elements (grip slide, reach).
+  - Bots: new `sweep` route — crowded at 1.7 m it picks the sweep, stood -> hit (100 -> 74);
+    strafing through the last 0.45 s of the wind-up: thrust **miss**, sweep **hit**; dodge back
+    on the glint -> dodged, no damage; heavy raised 0.06 s before release -> parried, soldier
+    staggers. The `soldier` and `heavy` routes pin thrusts for their scripted steps
+    (`force_move`); the soldier fight now mixes in sweeps. All 8 routes pass.
+  - Shot flag `sweep` on the `soldier` spot (wind-up or `strike` u=...).
+  - Verdicts (Forward+ on lavapipe): `sweep_wind` — spear coiled flat behind the soldier's
+    right side, ember flaring, clearly a different tell from the thrust's draw-back;
+    `sweep_mid` — spear cutting flat through the hero at waist height. Both fail the Wukong
+    bar: sci-fi placeholder bodies, no spear trail, faceted far ridges. Not a living-place
+    clip either (empty meadow, no wildlife in frame).
 - Session 2026-10-10 22:00 UTC:
   - **Staff poses re-authored (Next 8, seventh part).** Every light-string key, the guard,
     the raised hold and the heavy smash were re-solved so the staff points where it was
@@ -438,13 +466,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
    soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry; 22:00: all staff
    poses reachable + clear of the body, grip slide.) Next: a
-   second soldier move (sweeping cut so a backstep isn't always right), a rag/cloth tabard and
+   (done 00:00: sweep.) a rag/cloth tabard and
    hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
    patrol/camp near the start road.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Soldier sweep: the arms reach 0.6 m (thrust poses 0.45) and the spear axis is up to ~11 deg
+  off the authored arc mid-swing; no swing trail on the spear; contact uses the hero's centre
+  only (no low/high: can't be jumped, there is no jump yet). A backstep dodge started early
+  still escapes it — the honest counter, but a follow-up thrust for a hero who backs off would
+  make reading it matter more.
 - Heavy FX: the ground-slam burst (ImpactFX "stone" at the tip) renders as a soft grey
   sphere, and the tier glints ("metal" at the tip) leave a brown cloud high up. Needs a
   proper debris/dust-ring effect and a small sharp glint sprite.

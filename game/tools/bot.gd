@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -62,6 +62,9 @@ func _ready() -> void:
 		return
 	if name == "heavy":
 		_heavy_test()
+		return
+	if name == "sweep":
+		_sweep_test()
 		return
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
@@ -329,6 +332,7 @@ func _dodge_test() -> void:
 func _soldier_test() -> void:
 	var p := _player
 	var s: HollowSoldier = _world.soldier
+	s.force_move = HollowSoldier.THRUST_MOVE      # steps 1-2 test the thrust; the fight mixes
 	await _ticks(10)
 	var start_d := Vector2(s.global_position.x - p.global_position.x, s.global_position.z - p.global_position.z).length()
 	print("BOT soldier: %.1f m away, state %d" % [start_d, s.state])
@@ -371,6 +375,7 @@ func _soldier_test() -> void:
 	while p.is_slowmo():
 		await get_tree().physics_frame
 	# 3) fight: face it and keep the string going; punish its recovery
+	s.force_move = -1
 	p.health = Player.HEALTH_MAX
 	var t := 0.0
 	var hp0 := s.health
@@ -389,7 +394,7 @@ func _soldier_test() -> void:
 		await get_tree().physics_frame
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
-	print("BOT soldier: fight %.1f s, hits taken %d, staggers %d, health %.0f -> %.0f, dead %s, thrusts %d" % [t, s.hits_taken, s.staggers, hp0, s.health, s.is_dead(), s.strikes])
+	print("BOT soldier: fight %.1f s, hits taken %d, staggers %d, health %.0f -> %.0f, dead %s, strikes %d (sweeps %d)" % [t, s.hits_taken, s.staggers, hp0, s.health, s.is_dead(), s.strikes, s.sweeps])
 	if not s.is_dead():
 		return _combat_done(false, "the hero could not kill the soldier")
 	if s.staggers < 1:
@@ -551,6 +556,7 @@ func _heavy_test() -> void:
 		return _combat_done(false, "full-charge smash did not cost its stamina")
 	# 3) the soldier: walk in until it winds up, raise the heavy just before the thrust lands
 	var s: HollowSoldier = _world.soldier
+	s.force_move = HollowSoldier.THRUST_MOVE
 	var waited := 0.0
 	while s.windups < 1 and waited < 25.0:
 		var to := s.global_position - p.global_position
@@ -620,3 +626,120 @@ func _heavy_test() -> void:
 	if s.last_result == "hit" and p.health >= h0:
 		return _combat_done(false, "unparried thrust did no damage")
 	_combat_done(true, "tap and tier-2 smashes, parry on the thrust staggered it, charged punish landed, early raise did not parry")
+
+## Puts the soldier `d` metres in front of the hero, facing them, already stalking.
+func _soldier_at(s: HollowSoldier, d: float, kind: int) -> void:
+	var p := _player
+	var fwd := p.body.global_basis.z
+	fwd.y = 0.0
+	var at := p.global_position + fwd.normalized() * d
+	s.global_position = Vector3(at.x, _world.terrain.height_at(at.x, at.z) + 0.05, at.z)
+	s._home = s.global_position
+	s.face(p.global_position)
+	s.force_move = kind
+	s._from = s._pose
+	s._enter(HollowSoldier.STALK)
+
+func _wait_strike_done(s: HollowSoldier, n: int) -> void:
+	while s.strikes == n or s.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+
+## Sweep: chosen when the hero crowds in; it catches a hero who stands or strafes (where a
+## strafe beats the thrust), and is beaten by a dodge on the glint or a parry.
+func _sweep_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	var c: StaffCombat = p.combat
+	await _ticks(10)
+	# 1) crowd it at 1.7 m: it picks the sweep by itself; stand still and take it
+	_soldier_at(s, 1.7, -1)
+	while s.state != HollowSoldier.WINDUP:
+		await get_tree().physics_frame
+	print("BOT sweep: crowded at 1.7 m -> move %d (sweep %d)" % [s.move_kind, HollowSoldier.SWEEP_MOVE])
+	if s.move_kind != HollowSoldier.SWEEP_MOVE:
+		return _combat_done(false, "soldier did not choose the sweep when crowded")
+	var h0 := p.health
+	var n := s.strikes
+	var lo := 9.0
+	var hi := -9.0
+	while s.strikes == n or s.state == HollowSoldier.STRIKE:
+		if s.state == HollowSoldier.STRIKE:
+			var b := s._blade_bearing()
+			lo = minf(lo, b)
+			hi = maxf(hi, b)
+		await get_tree().physics_frame
+	print("BOT sweep: stood -> %s, health %.0f -> %.0f, blade arc %.0f..%.0f deg, max ember %.1f" % [s.last_result, h0, p.health, lo, hi, s.max_ember])
+	if s.last_result != "hit" or h0 - p.health < HollowSoldier.SWEEP_DAMAGE - 0.5:
+		return _combat_done(false, "standing hero was not cut by the sweep")
+	if hi - lo < 150.0:
+		return _combat_done(false, "sweep arc too narrow")
+	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not
+	var results := {}
+	for kind in [HollowSoldier.THRUST_MOVE, HollowSoldier.SWEEP_MOVE]:
+		while s.state != HollowSoldier.STALK and s.state != HollowSoldier.IDLE:
+			await get_tree().physics_frame
+		p.health = Player.HEALTH_MAX
+		_soldier_at(s, 2.4 if kind == HollowSoldier.THRUST_MOVE else 1.9, kind)
+		while s.state != HollowSoldier.WINDUP:
+			await get_tree().physics_frame
+		n = s.strikes
+		var side := p.body.global_basis.x
+		var start := p.global_position
+		while s.strikes == n or s.state == HollowSoldier.STRIKE:
+			# walk sideways for the last 0.45 s of the wind-up and through the strike
+			var wt := HollowSoldier.WINDUP_T if kind == HollowSoldier.THRUST_MOVE else HollowSoldier.SWEEP_WINDUP_T
+			if s.state != HollowSoldier.WINDUP or s.t > wt - 0.45:
+				p.bot_input = Vector2(side.x, side.z).normalized() * 0.6
+			await get_tree().physics_frame
+		p.bot_input = Vector2.ZERO
+		results[kind] = s.last_result
+		print("BOT sweep: strafe vs %s: moved %.1f m sideways" % ["thrust" if kind == 0 else "sweep", (p.global_position - start).dot(side)])
+	print("BOT sweep: strafed -> thrust %s, sweep %s" % [results[HollowSoldier.THRUST_MOVE], results[HollowSoldier.SWEEP_MOVE]])
+	if results[HollowSoldier.SWEEP_MOVE] != "hit":
+		return _combat_done(false, "a strafe escaped the sweep")
+	# 3) dodge back on the glint -> the dodge verdict, no damage
+	await _ticks(90)
+	p.health = Player.HEALTH_MAX
+	p.stamina = Player.STAMINA_MAX
+	_soldier_at(s, 1.8, HollowSoldier.SWEEP_MOVE)
+	while s.state != HollowSoldier.WINDUP:
+		await get_tree().physics_frame
+	while s.state == HollowSoldier.WINDUP and s.t < HollowSoldier.SWEEP_WINDUP_T - 0.02:
+		await get_tree().physics_frame
+	n = s.strikes
+	var back := -p.body.global_basis.z
+	p.bot_input = Vector2(back.x, back.z).normalized()
+	p.bot_dodge = true
+	await _ticks(1)
+	p.bot_input = Vector2.ZERO
+	await _wait_strike_done(s, n)
+	print("BOT sweep: dodged on the glint -> %s, health %.0f, perfect dodges %d" % [s.last_result, p.health, p.perfect_dodges])
+	if not s.last_result in ["perfect", "dodged", "miss"] or p.health < Player.HEALTH_MAX:
+		return _combat_done(false, "a dodge on the glint did not avoid the sweep")
+	while p.is_slowmo():
+		await get_tree().physics_frame
+	# 4) parry: raise the heavy just before the blade arrives
+	while s.state != HollowSoldier.STALK and s.state != HollowSoldier.IDLE:
+		await get_tree().physics_frame
+	await _ticks(30)
+	if not c.is_drawn():
+		c._begin_draw()
+	while not c.is_drawn():
+		await get_tree().physics_frame
+	p.stamina = Player.STAMINA_MAX
+	_soldier_at(s, 1.8, HollowSoldier.SWEEP_MOVE)
+	while s.state != HollowSoldier.WINDUP:
+		await get_tree().physics_frame
+	while s.state == HollowSoldier.WINDUP and s.t < HollowSoldier.SWEEP_WINDUP_T - 0.06:
+		await get_tree().physics_frame
+	var h1 := p.health
+	n = s.strikes
+	p.bot_heavy = true
+	while s.strikes == n or (s.state == HollowSoldier.STRIKE and s.last_result == ""):
+		await get_tree().physics_frame
+	await _ticks(2)
+	p.bot_heavy = false
+	print("BOT sweep: parry -> %s, parries %d, health %.0f -> %.0f, soldier state %d" % [s.last_result, c.parries, h1, p.health, s.state])
+	if s.last_result != "parried" or p.health < h1 or s.state != HollowSoldier.STAGGER:
+		return _combat_done(false, "heavy raised on the sweep did not parry it")
+	_combat_done(true, "crowded -> sweep chosen and lands, strafe can't escape it, dodge on the glint and parry beat it")
