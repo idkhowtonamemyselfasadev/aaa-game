@@ -101,6 +101,7 @@ var _twist: SpineTwist
 var _ember_light: OmniLight3D
 var _glint: MeshInstance3D
 var _ash: CPUParticles3D
+var rags: HollowRags
 
 func _ready() -> void:
 	add_to_group("hittable")
@@ -128,6 +129,12 @@ func _ready() -> void:
 	_skin()
 	_setup_animation()
 	_setup_spear()
+	# grey hemp rags over the old armour; they flare and burn away with the skin
+	rags = HollowRags.new()
+	rags.name = "Rags"
+	add_child(rags)
+	rags.build(skel, body)
+	_mats.append_array(rags.mats)
 	_ember_light = OmniLight3D.new()
 	_ember_light.light_color = Color(1.0, 0.45, 0.15)
 	_ember_light.omni_range = 2.6

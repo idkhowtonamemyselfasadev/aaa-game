@@ -162,6 +162,12 @@ func _ready() -> void:
 				SPOTS[spot] = [pp + side * 3.0 + line * 0.2, pp + line * 0.8]
 		elif spot == "lockon":
 			pass                                  # the follow camera, swung by the lock
+		elif "lit" in args:
+			# soldierface lit: swing the camera round toward the light-travel side (lit side at
+			# midday; at a low evening sun the frame can still come out backlit)
+			var sunward := Vector3(light.x, 0, light.z).normalized()
+			var d := (sunward * 2.0 - line).normalized()
+			SPOTS[spot] = [fp + d * 2.3, fp]
 		else:
 			SPOTS[spot] = [fp - line * 2.4 + side * 1.0, fp]
 	if spot != "player" and SPOTS.has(spot):

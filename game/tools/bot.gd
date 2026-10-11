@@ -411,7 +411,17 @@ func _soldier_test() -> void:
 	if s.is_in_group("hittable"):
 		return _combat_done(false, "dead soldier is still hittable")
 	var spear := s.spear
-	await _ticks(400)
+	var rags := s.rags
+	print("BOT soldier: rags %d pieces, tabard swung up to %.0f deg in the fight" % [rags.mats.size(), rad_to_deg(rags.peak_swing)])
+	if rags.mats.size() < 5 or rags.peak_swing < deg_to_rad(8.0):
+		return _combat_done(false, "soldier rags missing or the tabard never swung with the legs")
+	var cloth: ShaderMaterial = rags.mats[0]
+	await _ticks(60)
+	var burn: float = cloth.get_shader_parameter("dissolve")
+	print("BOT soldier: rags burning away with the body, dissolve %.2f" % burn)
+	if burn < 0.3:
+		return _combat_done(false, "the rags did not burn away with the body")
+	await _ticks(340)
 	var gone := not is_instance_valid(s)
 	print("BOT soldier: crumbled and freed %s, spear on ground y %.2f" % [gone, spear.global_position.y - _world.terrain.height_at(spear.global_position.x, spear.global_position.z) if is_instance_valid(spear) else -1.0])
 	if not gone:

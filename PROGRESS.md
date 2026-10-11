@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.35
+Content hours playable: 0.36
 (the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,29 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 09:00 UTC:
+  - **Hollow Soldier rags (known bug: the sci-fi Vanguard armour silhouette showed).** New
+    `HollowRags` (`enemies/rags.gd`) builds five procedural cloth pieces in body space and
+    hangs them on skeleton bones via BoneAttachment3D (an offset node makes the children's
+    local space the body space at rest): a deep hood on the head, open at the face so the
+    face sits in a dark void and closing at the throat; a shoulder mantle on Spine2, open at
+    the front so the ember chest shows, longer at the back, 9 soft folds; a sash round the
+    hips; and a front and back tabard on pivots at the waist. The tabards swing about the
+    waist with whichever thigh goes forward/back (read from the bone poses, x1.1, capped
+    40 deg, smoothed), and every hem trails the body's motion through a damped spring
+    (`sway` uniform) plus a slow flutter.
+  - New `shaders/rag.gdshader`: woven hemp (over-under weave that fades to its average below
+    a pixel, thread relief in the normal map), grime streaks, dye/rust stains, soot climbing
+    from the hem, torn hems and moth holes by discard, singed hem edges that glow faintly with
+    `ember`; shares `ember`/`hit_flash`/`dissolve` with the hollow skin so the rags flare and
+    burn away with the body (the soldier's `_mats` include them).
+  - Bot `soldier` extended: 5 rag pieces, tabard swung up to 40 deg in the fight, rags
+    dissolve 1.02 after the death. All 11 routes pass.
+  - New shot option `soldierface ... lit` (camera swung toward the light-travel side).
+  - Shots: `soldierface rags5 60 11 u=0.2` — front: hooded, mantled, tabarded revenant with the
+    ember glowing through the open chest; reads as a cloaked Hollow, not sci-fi. Fails Wukong:
+    backlit, greaves still the Vanguard's, tabards boxy. `soldierface rags4 60 11 u=0.2 lit` —
+    side: hood/mantle/sash read as cloth; tabards hang stiff as boards.
 - Session 2026-10-11 08:00 UTC (ran in parallel with 07:00, which landed hero death first; this
   session's version was folded into it):
   - **Death fall bends at the joints, the staff drops (known bug: legs sank into the ground,
@@ -618,9 +641,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 19:00: Hollow Soldier spear variant, telegraphed thrust, poise/stagger, ash death,
    soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry; 22:00: all staff
    poses reachable + clear of the body, grip slide.) Next: a
-   (done 00:00: sweep.) a rag/cloth tabard and
-   hood to hide the sci-fi armour on the soldier, hit sounds once audio exists; a soldier
-   patrol/camp near the start road.
+   (done 00:00: sweep; 09:00 (10-11): hood, mantle, sash, swinging tabards on the soldier.)
+   Still to do: leg wraps/greave cloth for the soldier's shins and forearms, hit sounds once
+   audio exists; a soldier patrol/camp near the start road.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
 
@@ -659,8 +682,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   action exists for pads at all).
 - `pkill -f <pattern>` in a session shell kills the shell itself when the pattern appears in
   the command line; kill stray godot processes by pid instead.
-- Hollow Soldier reuses the Vanguard mesh under the ash shader: the sci-fi armour silhouette
-  still shows. Needs its own model or cloth/rag overlays. Its spear grip hands are IK-placed
+- Hollow Soldier reuses the Vanguard mesh under the ash shader: the rags (hood, mantle, sash,
+  tabards) now hide head, shoulders and hips, but the shins, forearms and the upper arms
+  between mantle and elbow still show the sci-fi armour. Rags are rigid per bone (no cloth
+  sim): tabards are flat boards that swing as one piece, the mantle can be pierced by a
+  raised upper arm, the hood does not deform with the neck. The `lit` shot framing is
+  backlit at low evening sun. Its spear grip hands are IK-placed
   but wrists don't wrap the shaft (same as the hero).
 - Soldier has no avoidance/pathing (walks straight at the hero; can snag on trees) and no
   "lost the hero" search; it returns home past 22 m.
