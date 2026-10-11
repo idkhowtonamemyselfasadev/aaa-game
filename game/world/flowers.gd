@@ -63,7 +63,7 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		if rng.randf() > smoothstep(0.30, 0.72, drift) * 0.92 + 0.08:
 			continue
 		var nrm := terrain.normal_at(x, z)
-		if nrm.y < 0.86:
+		if nrm.y < 0.86 or terrain.pond_at(x, z) > 0.2:
 			continue
 		# which species: a slow field picks the drift's flower, with some mixing at the seams
 		var kn := _kind.get_noise_2d(x, z) * 0.5 + 0.5 + rng.randfn(0.0, 0.08)

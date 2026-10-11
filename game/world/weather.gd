@@ -123,6 +123,7 @@ func _update_rain(_delta: float) -> void:
 func _push_globals() -> void:
 	RenderingServer.global_shader_parameter_set("weather_wind", wind)
 	RenderingServer.global_shader_parameter_set("weather_wet", wet)
+	RenderingServer.global_shader_parameter_set("weather_rain", rain)
 
 func raining() -> bool:
 	return rain > 0.15

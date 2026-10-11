@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.43
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.44
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,28 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 18:00 UTC:
+  - **Puddles + raindrop ripples (next item 9).** `Terrain.hollow_at(x, z)` (ring mean of 16
+    heights at 3 m and 7 m minus the height) is baked into the terrain mesh's vertex colour;
+    `Terrain.pond_at()` reads it back (bilinear) for placement. The terrain shader floods flat
+    hollows (slope < 0.025) as the ground soaks: deepest dips first (0.85 m), down to
+    0.27 m when soaked (~8 % of the ground), with a noise-wandering shoreline and a
+    saturated mud ring. Water: level normal, roughness 0.03, murky albedo, plus a Fresnel
+    sky-sheen emission fed the live haze colour by `world._apply_clouds` (`puddle_sky`),
+    since the engine's sky reflection only sees the dim bare PhysicalSky, not the cloud mesh.
+  - New shader global `weather_rain` (Weather pushes it); `rain_ripples()` in
+    `weather.gdshaderinc`: 2 layers x 3x3 cells of drops (0.3 m cells, 0.9-1.4 s life), each a
+    damped ring wave spreading 0.28 m; the drop rate follows the rain.
+  - **SSR switched on** (was never enabled): 64 steps, pools mirror tufts and trees.
+  - Grass clumps (rng only consumed where a pool can form, so the meadow layout elsewhere is
+    unchanged) and flowers keep out of the pools; a few tufts stand in the water.
+  - Shot spot `puddles` (nearest sure pool to the hero, looking toward the sun from 4.5 m).
+    Bot `weather` checks the pool coverage (0.3-12 % of the ground; 8.0 %). 13/13 bots pass.
+  - Shots: `pud1-3` (no pool / a black hole: the camera picked shallow dips, and the overcast
+    sky radiance is too dim to reflect), `pud5` (flooded meadow pool with tufts mirrored at
+    the far edge: reads as water), `pud6` (rain rings dance across the pool: good), `pud_eve` (17.6 h, rain 0.7 -> wet 0.31:
+    no water yet, correct, but the dry hollow read as a bald dark patch where the grass was
+    thinned -> thinning cut from 90 % to 75 %).
 - Session 2026-10-11 16:00 UTC:
   - **Cloud sky (next item 9 / bug "the overcast sky has no cloud forms").** New `CloudLayer`
     (`world/clouds.gd` + `shaders/clouds.gdshader`, created by `world.gd` as `$Clouds`): an
@@ -801,7 +823,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    slim the leg wraps (shrink the Vanguard leg mesh under them, or hide it), a shaped boot
    wrap; ideally a real CC0 humanoid for the
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
-9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck.) Still to do: rolling
+9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck; 18:00: puddles in the
+   hollows + raindrop ripples, SSR on.) Still to do: splash particles on solid ground and the
+   hero's feet splashing through pools, ripples when the hero wades, rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the land, clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
@@ -817,7 +841,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   cast no shadows and are not in the sky radiance (reflections show the bare sky). The
   PhysicalSky behind a partial deck (cloud ~0.7, late afternoon) may still go navy in the
   gaps. Rain falls through tree
-  crowns and roofs (no occlusion); no splashes, ripples, puddles; the hero does not get wet.
+  crowns and roofs (no occlusion); no splashes on solid ground; the hero does not get wet.
+  Puddles: the water is a shaded terrain layer, not a level plane (it follows the hollow's
+  curve, so a pool's far side can tilt a few cm); the near half of a pool is very dark at
+  steep view angles (physically right, but reads as a hole in dim light); pools stay after
+  the ground dries only as long as `weather_wet` > 0.35 (no separate slow evaporation);
+  the hero's feet don't ripple or splash them; the shoreline is hard at close range. Dry
+  hollows still carry thinner grass (sparse sedge) whether or not they hold water; the
+  ripple rings are evenly dense across a pool (no gusty patches of heavier drops).
+  SSR cost on a real GPU is unmeasured.
   `RenderingServer.global_shader_parameter_get` returns null headless (bot falls back to
   Weather's values). Wind does not yet move the rain particles' spawn upwind beyond a fixed
   6 m offset.

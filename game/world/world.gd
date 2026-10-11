@@ -112,6 +112,12 @@ func _build_environment() -> void:
 	e.ssao_radius = 1.5
 	e.ssao_intensity = 2.5
 	e.ssil_enabled = true
+	# screen-space reflections: rain pools mirror the trees, tufts and the hero
+	e.ssr_enabled = true
+	e.ssr_max_steps = 64
+	e.ssr_fade_in = 0.15
+	e.ssr_fade_out = 2.0
+	e.ssr_depth_tolerance = 0.3
 	# bloom
 	e.glow_enabled = true
 	e.glow_intensity = 0.35
@@ -195,6 +201,11 @@ func _apply_clouds(delta: float) -> void:
 	var haze := e.fog_light_color * e.fog_light_energy   # what the depth fog paints far ridges
 	clouds.update(delta, weather.cloud if weather else 0.0, weather.wind if weather else 0.0,
 			ldir, lcol, shade, haze)
+	# puddles mirror the sky: the haze colour stands in for the (mesh) cloud deck the sky
+	# radiance cannot see
+	var tm := terrain.material as ShaderMaterial
+	if tm:
+		tm.set_shader_parameter("puddle_sky", haze)
 
 func _apply_time() -> void:
 	# Full day: sunrise 06:00, noon peak sun_peak_deg, sunset 18:00; the moon opposes the sun.

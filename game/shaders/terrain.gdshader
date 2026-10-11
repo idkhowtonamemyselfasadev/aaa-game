@@ -27,13 +27,26 @@ uniform vec3 rock_b   : source_color = vec3(0.17, 0.17, 0.19);
 uniform float rock_slope_start = 0.55;
 uniform float rock_slope_end = 0.78;
 uniform float bump_strength = 1.0;
+// Puddles: rain pools where the ground lies below its surroundings (vertex colour red =
+// metres below the 3-7 m ring mean, from Terrain.hollow_at). As the ground soaks, water
+// first stands in the deepest dips and spreads out until every hollow deeper than
+// `puddle_soaked` holds a pool.
+uniform float puddle_first = 0.55;     // hollow depth that holds water first
+uniform float puddle_soaked = 0.27;    // shallowest hollow that holds water when soaked
+uniform float puddle_max_slope = 0.025; // 1 - normal.y; water does not stand on banks
+uniform vec3 puddle_mud : source_color = vec3(0.10, 0.08, 0.05);
+// the sky seen in the water (world.gd feeds the live haze colour: the cloud deck is a mesh,
+// so the engine's sky reflection shows only the bare, dim PhysicalSky)
+uniform vec3 puddle_sky = vec3(0.5, 0.53, 0.57);
 
 varying vec3 wpos;
 varying vec3 wnrm;
+varying float hollow;
 
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wnrm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	hollow = COLOR.r;
 }
 
 float hash3(vec3 p) {
@@ -223,11 +236,33 @@ void fragment() {
 	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * fade_b);
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
 	weather_wetten(col, rough, 1.0 - 0.6 * rockw);
+
+	// ---- puddles: standing rain in the hollows ----
+	// the shoreline wanders with noise so pools are not contour rings; the fine height
+	// (blades, leaves) pokes through at the very edge
+	float fill = smoothstep(0.35, 1.0, weather_wet);
+	float level = hollow + (meso - 0.5) * 0.22 + (micro - 0.5) * 0.06 + h * 6.0;
+	float thr = mix(puddle_first + 0.3, puddle_soaked, fill);
+	float flat_w = 1.0 - smoothstep(puddle_max_slope * 0.5, puddle_max_slope, slope);
+	float pud = smoothstep(thr, thr + 0.025, level) * flat_w * (1.0 - rockw) * step(0.01, fill);
+	// saturated mud ring round each pool
+	float shore = smoothstep(thr - 0.12, thr, level) * flat_w * step(0.01, fill) * (1.0 - pud);
+	col = mix(col, col * 0.7, shore);
+	rough = mix(rough, 0.2, shore * 0.8);
+	// water: dark, murky over mud, shallow edges show the floor
+	float depth = clamp((level - thr) / 0.12, 0.0, 1.0);
+	col = mix(col, mix(col * 0.6, puddle_mud, depth) * 0.8, pud);
+	rough = mix(rough, 0.03, pud);
+	vec2 rip = rain_ripples(xz, TIME, clamp(weather_rain * 1.2, 0.0, 1.0))
+			* (1.0 - smoothstep(0.004, 0.03, fp));
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = mix(0.25, 0.3, rockw);
-	AO = mix(0.85 + 0.15 * cav, 1.0, rockw);
+	SPECULAR = mix(mix(0.25, 0.3, rockw), 0.25, pud);
+	AO = mix(mix(0.85 + 0.15 * cav, 1.0, rockw), 1.0, pud);
 	AO_LIGHT_AFFECT = 0.3;
+	// the water surface is level: drop the slope and the fine bump under it
+	n = normalize(mix(n, vec3(0.0, 1.0, 0.0), pud));
+	h *= 1.0 - pud;
 
 	// ---- bump: surface gradient from screen-space derivatives of the height ----
 	vec3 dpdx = dFdx(wpos);
@@ -239,5 +274,10 @@ void fragment() {
 	float det = dot(dpdx, r1);
 	vec3 grad = sign(det) * (hx * r1 + hy * r2);
 	vec3 nb = normalize(abs(det) * n - grad * bump_strength);
+	nb = normalize(nb + vec3(-rip.x, 0.0, -rip.y) * 0.8 * pud);
 	NORMAL = normalize((VIEW_MATRIX * vec4(nb, 0.0)).xyz);
+	// sky sheen on the water (Schlick, water F0 0.02), on top of the engine's reflection
+	vec3 vdir = normalize(CAMERA_POSITION_WORLD - wpos);
+	float fres = 0.02 + 0.98 * pow(1.0 - clamp(dot(nb, vdir), 0.0, 1.0), 5.0);
+	EMISSION = puddle_sky * min(fres * 3.0, 0.6) * pud;
 }

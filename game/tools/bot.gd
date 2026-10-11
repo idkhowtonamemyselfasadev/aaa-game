@@ -1124,6 +1124,15 @@ func _butterflies_test() -> void:
 		return _combat_done(false, "butterflies still out after dusk")
 	_combat_done(true, "butterflies settle, fly, flee the hero, stream with the camera, gone at dusk")
 
+## A float uniform's value on `mat`, else its default as written in the shader source.
+func _shader_default(mat: ShaderMaterial, uname: String) -> float:
+	var v = mat.get_shader_parameter(uname)
+	if v != null:
+		return v
+	var rx := RegEx.create_from_string("uniform\\s+float\\s+" + uname + "\\s*=\\s*([-0-9.]+)")
+	var m := rx.search(mat.shader.code)
+	return float(m.get_string(1)) if m else NAN
+
 ## A weather front: cloud builds, the light drops, wind rises, rain falls and soaks the ground,
 ## butterflies and midges shelter; then it clears, they come back and the land dries.
 func _weather_test() -> void:
@@ -1161,6 +1170,27 @@ func _weather_test() -> void:
 	print("BOT weather front after %.0f s: cloud %.2f rain %.2f wind %.2f wet %.2f (globals %.2f/%.2f), sun %.2f, fog %.4f, drops %s x%.2f, butterflies out %d, midges %.2f" % [t, wx.cloud, wx.rain, wx.wind, wx.wet, gw, gwet, _world.sun.light_energy, e.fog_density, rp.emitting, rp.amount_ratio, c1[0] + c1[1] + c1[2], _world.get_node("Insects").day])
 	if wx.rain < 0.85:
 		return _combat_done(false, "the front never brought rain")
+	# puddles: the terrain carries its hollows in vertex colour; a soaked Vale floods only the
+	# flat dips (a few percent of the ground), not the meadow
+	if not ProjectSettings.has_setting("shader_globals/weather_rain"):
+		return _combat_done(false, "weather_rain shader global not declared")
+	var tmesh: ArrayMesh = (_world.terrain.get_node("Mesh") as MeshInstance3D).mesh
+	var tarr := tmesh.surface_get_arrays(0)
+	var tcols: PackedColorArray = tarr[Mesh.ARRAY_COLOR]
+	var tnrm: PackedVector3Array = tarr[Mesh.ARRAY_NORMAL]
+	var tmat: ShaderMaterial = tmesh.surface_get_material(0)
+	# uniform defaults live in the shader source (the headless renderer keeps no defaults)
+	var soak_thr := _shader_default(tmat, "puddle_soaked")
+	var max_slope := _shader_default(tmat, "puddle_max_slope")
+	var pooled := 0
+	for k in tcols.size():
+		if tcols[k].r > soak_thr and 1.0 - tnrm[k].y < max_slope:
+			pooled += 1
+	var pool_frac := float(pooled) / float(tcols.size())
+	var spawn_hollow: float = _world.terrain.hollow_at(_player.global_position.x, _player.global_position.z)
+	print("BOT weather puddles: %.1f %% of the ground pools when soaked (hollow > %.2f m, slope < %.3f); spawn hollow %.2f m" % [pool_frac * 100.0, soak_thr, max_slope, spawn_hollow])
+	if pool_frac < 0.003 or pool_frac > 0.12:
+		return _combat_done(false, "puddle coverage out of range")
 	var cov1: float = cl.mat.get_shader_parameter("coverage")
 	var d1: Vector2 = cl.mat.get_shader_parameter("drift")
 	await _ticks(60)

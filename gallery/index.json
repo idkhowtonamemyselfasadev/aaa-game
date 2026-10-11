@@ -418,5 +418,17 @@
   "time": "2026-10-11T17:11:15Z",
   "caption": "Late afternoon toward the sun: rose-lit cumulus and streaks over the low sun, long tree shadows on the meadow; the trees are still blobby silhouettes and the cloud colour is a little too pink overhead.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1855-puddles-rain.jpg",
+  "time": "2026-10-11T18:55:42Z",
+  "caption": "A rain pool in a meadow hollow: raindrop rings across the water, tufts standing in it and mirrored by SSR at the far shore; the near water is very dark, the shoreline is hard and the grass cards still read flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1855-puddles-mirror.jpg",
+  "time": "2026-10-11T18:55:42Z",
+  "caption": "The same pool before the ripple pass: SSR mirrors the far tufts and the sky sheen brightens toward the far bank under a grey rain haze; the meadow beyond is dim and flat.",
+  "verdict": "fail"
  }
 ]

@@ -88,6 +88,10 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		# bare patches and thinning toward rock, matched loosely to the terrain shader
 		if rng.randf() > smoothstep(0.05, 0.35, patch) * (1.0 - smoothstep(0.1, 0.22, slope)):
 			continue
+		# rain pools in the flat hollows: only a few tufts stand in the water
+		var pond := _terrain.pond_at(x, z)
+		if pond > 0.0 and rng.randf() < pond * 0.75:
+			continue
 		var y := _terrain.height_at(x, z)
 		var s := lerpf(0.55, 1.2, rng.randf()) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
 		var crop := 1.0

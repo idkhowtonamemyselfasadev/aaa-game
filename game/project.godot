@@ -121,3 +121,7 @@ weather_wet={
 "type": "float",
 "value": 0.0
 }
+weather_rain={
+"type": "float",
+"value": 0.0
+}

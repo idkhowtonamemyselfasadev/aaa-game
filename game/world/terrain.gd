@@ -13,6 +13,7 @@ extends StaticBody3D
 
 var _noise := FastNoiseLite.new()
 var _detail := FastNoiseLite.new()
+var _hollow := PackedFloat32Array()   # hollow_at per mesh vertex (pond_at reads it)
 
 func _ready() -> void:
 	_setup_noise()
@@ -51,6 +52,37 @@ func normal_at(x: float, z: float, e: float = 1.0) -> Vector3:
 	var hu := height_at(x, z + e)
 	return Vector3(hl - hr, 2.0 * e, hd - hu).normalized()
 
+## How far (m) the ground at (x, z) lies below its surroundings: the mean of two rings
+## (3 m and 7 m out) minus the height there. Positive in hollows, where rain pools.
+## Written into the terrain's vertex colour (red) for the shader's puddles.
+func hollow_at(x: float, z: float, y: float = NAN) -> float:
+	if is_nan(y):
+		y = height_at(x, z)
+	var acc := 0.0
+	for r: float in [3.0, 7.0]:
+		for a in 8:
+			var ang: float = a * TAU / 8.0 + r
+			acc += height_at(x + cos(ang) * r, z + sin(ang) * r)
+	return acc / 16.0 - y
+
+## 0..1: how surely rain stands at (x, z) once the ground is soaked (a flat hollow deeper
+## than the terrain shader's `puddle_soaked`). Grass and flowers keep out of the pools.
+func pond_at(x: float, z: float) -> float:
+	if _hollow.is_empty():
+		return 0.0
+	var step := size_m / float(resolution)
+	var fx := clampf((x + size_m * 0.5) / step, 0.0, resolution - 0.001)
+	var fz := clampf((z + size_m * 0.5) / step, 0.0, resolution - 0.001)
+	var i := int(fx)
+	var j := int(fz)
+	var tx := fx - i
+	var tz := fz - j
+	var w := resolution + 1
+	var hv := lerpf(lerpf(_hollow[j * w + i], _hollow[j * w + i + 1], tx),
+			lerpf(_hollow[(j + 1) * w + i], _hollow[(j + 1) * w + i + 1], tx), tz)
+	var flat := 1.0 - smoothstep(0.012, 0.025, 1.0 - normal_at(x, z, 2.0).y)
+	return smoothstep(0.25, 0.37, hv) * flat
+
 func build() -> void:
 	for c in get_children():
 		c.queue_free()
@@ -61,10 +93,12 @@ func build() -> void:
 	var uvs := PackedVector2Array()
 	var idx := PackedInt32Array()
 	var heights := PackedFloat32Array()
+	var cols := PackedColorArray()
 	verts.resize((resolution + 1) * (resolution + 1))
 	norms.resize(verts.size())
 	uvs.resize(verts.size())
 	heights.resize(verts.size())
+	cols.resize(verts.size())
 	for j in resolution + 1:
 		for i in resolution + 1:
 			var x := -half + i * step
@@ -85,6 +119,7 @@ func build() -> void:
 			var hd := height_at(x, z - step)
 			var hu := height_at(x, z + step)
 			norms[k] = Vector3(hl - hr, 2.0 * step, hd - hu).normalized()
+			cols[k] = Color(hollow_at(x, z, heights[k]), 0.0, 0.0)
 	for j in resolution:
 		for i in resolution:
 			var a := j * (resolution + 1) + i
@@ -97,6 +132,10 @@ func build() -> void:
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = norms
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = cols
+	_hollow.resize(cols.size())
+	for k in cols.size():
+		_hollow[k] = cols[k].r
 	arrays[Mesh.ARRAY_INDEX] = idx
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

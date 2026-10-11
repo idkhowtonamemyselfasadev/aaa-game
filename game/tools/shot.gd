@@ -109,6 +109,22 @@ func _ready() -> void:
 				off.z = float(a.substr(3))
 		var g := pp + off
 		SPOTS[spot] = [g + Vector3(-1.0, 1.5, -0.6), g + Vector3(0.6, -1.6, 0.4)]
+	if spot == "puddles":
+		# the nearest sure pool (Terrain.pond_at) to the hero, seen low from 7 m
+		var pp2 := player.global_position
+		var best := pp2
+		var best_h := -1e9
+		for j in 49:
+			for i in 49:
+				var q := pp2 + Vector3(i * 5.0 - 120.0, 0, j * 5.0 - 120.0)
+				var hv: float = terrain.pond_at(q.x, q.z) - q.distance_to(pp2) * 0.002
+				if hv > best_h:
+					best_h = hv
+					best = q
+		var sdp: Vector3 = world.sun.global_transform.basis.z
+		var tow := Vector3(sdp.x, 0, sdp.z).normalized()   # look into the sun: glint on water
+		SPOTS[spot] = [best - tow * 4.5, best + tow * 1.5]
+		print("SHOT puddle hollow %.2f m at %s" % [terrain.hollow_at(best.x, best.z), best])
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -229,6 +245,9 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "puddles":
+			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
+			look.y = terrain.height_at(look.x, look.z)
 		if spot == "turf":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.4
 			look.y = terrain.height_at(look.x, look.z)
