@@ -340,5 +340,17 @@
   "time": "2026-10-11T11:20:00Z",
   "caption": "Side view of the Hollow Soldier in the meadow: hood, mantle, tabards and bandaged limbs read as one revenant, but the silhouette is padded and bulky.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1220-butterfly-macro.jpg",
+  "time": "2026-10-11T12:20:00Z",
+  "caption": "Macro shot with depth of field of a small tortoiseshell basking on the meadow at 11 h; reads as a butterfly, but it hovers on no grass stem, its pattern washes out in the warm grade, and the near grass blades are flat ribbons over bare brown soil.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1220-butterfly-meadow.jpg",
+  "time": "2026-10-11T12:20:00Z",
+  "caption": "A peacock butterfly settled over the 14 h meadow from half a metre; too small to read its eyes at this range, and the clumped grass over bare brown ground looks like a prototype.",
+  "verdict": "fail"
  }
 ]

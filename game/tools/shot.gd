@@ -56,6 +56,30 @@ func _ready() -> void:
 		sd = sd.normalized()
 		SPOTS[spot] = [c - sd * 3.2 + sd.cross(Vector3.UP) * 0.6, c + sd * 2.0]
 		print("SHOT midge swarm at %s, sun dir %s" % [c, sd])
+	if spot == "butterflies":
+		# butterflies [species=0..3]: close and low on a settled one basking on the grass
+		# heads, 4+ m from the hero; it is held settled for the shot
+		var want_sp := 0
+		for a in args:
+			if a.begins_with("species="):
+				want_sp = int(a.substr(8))
+		for i in 20:
+			await get_tree().process_frame
+		var bf: Butterflies = world.get_node("Insects").butterflies
+		var pick: Variant = null
+		var pp := player.global_position
+		for b in bf._bs:
+			if b.state != Butterflies.REST or b.pos.distance_to(pp) < 4.0:
+				continue
+			var score: float = b.pos.distance_to(pp) + (0.0 if b.species == want_sp else 40.0) + (0.0 if b.bask > 0.0 or want_sp == 1 else 20.0)
+			if pick == null or score < pick[0]:
+				pick = [score, b]
+		var bb = pick[1]
+		bb.timer = 1.0e6
+		var sd: Vector3 = world.sun.global_transform.basis.z
+		var side := Vector3(sd.x, 0, sd.z).normalized().rotated(Vector3.UP, 0.7)
+		SPOTS[spot] = [bb.pos + side * 0.17 + Vector3.UP * 0.11, bb.pos]
+		print("SHOT butterfly species %d bask %.0f at %s" % [bb.species, bb.bask, bb.pos])
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -174,8 +198,8 @@ func _ready() -> void:
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = look.y - 0.35 if spot == "midges" else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
-		look.y = (s[1] as Vector3).y if spot == "midges" else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot == "butterflies" else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
+		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		var free := Camera3D.new()
 		free.fov = 65.0
 		free.far = 3000.0
@@ -184,6 +208,15 @@ func _ready() -> void:
 		free.look_at(look)
 		free.current = true
 		cam = free
+		if spot == "butterflies":
+			# macro lens: the meadow behind melts away
+			free.near = 0.01
+			var ca := CameraAttributesPractical.new()
+			ca.dof_blur_far_enabled = true
+			ca.dof_blur_far_distance = 0.35
+			ca.dof_blur_far_transition = 1.2
+			ca.dof_blur_amount = 0.18
+			free.attributes = ca
 	if "legs" in args and foe_u >= 0.0 and cam != null:
 		# a low close look at the soldier's shins and forearms (wraps over the old armour)
 		var fp2: Vector3 = world.soldier.global_position

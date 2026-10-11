@@ -35,6 +35,7 @@ var night := 0.0             # 0 day .. 1 full firefly night
 var day := 0.0
 var startled_total := 0      # bots read this: fireflies the hero has scattered
 var swarm_flees := 0         # bots read this: swarms that drifted off from the hero
+var butterflies: Butterflies   # the day layer that settles and flies (butterflies.gd)
 
 class Fly:
 	var pos := Vector3.ZERO
@@ -101,6 +102,10 @@ func _ready() -> void:
 			w.phases.append(Vector3(_rng.randf() * TAU, _rng.randf() * TAU, _rng.randf_range(2.5, 6.0)))
 		w.home = Vector3.INF
 		_swarms.append(w)
+	butterflies = Butterflies.new()
+	butterflies.name = "Butterflies"
+	butterflies.terrain = _terrain
+	add_child(butterflies)
 
 func _make_mm(mesh: Mesh, mat: Material, n: int, nm: String) -> MultiMesh:
 	var mm := MultiMesh.new()

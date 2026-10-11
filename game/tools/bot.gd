@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "flinch", "death"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -68,6 +68,9 @@ func _ready() -> void:
 		return
 	if name == "insects":
 		_insects_test()
+		return
+	if name == "butterflies":
+		_butterflies_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1031,3 +1034,69 @@ func _insects_test() -> void:
 	if ins.visible_fireflies() > 0:
 		return _combat_done(false, "fireflies still lit after dawn")
 	_combat_done(true, "midges by day, fireflies by night, both react to the hero")
+
+## Butterflies: out by day, a mix settled on the grass heads and flying, put up when the
+## hero walks at a settled one, streaming with the camera, and gone after dusk.
+func _butterflies_test() -> void:
+	var p := _player
+	var bf: Butterflies = _world.get_node("Insects").butterflies
+	var terrain: Terrain = _world.get_node("Terrain")
+	_world.time_of_day = 13.0
+	await _ticks(240)
+	var c := bf.census()
+	var lo := 99.0
+	var hi := -99.0
+	for q in bf.positions():
+		var hgt := q.y - terrain.height_at(q.x, q.z)
+		lo = minf(lo, hgt)
+		hi = maxf(hi, hgt)
+	print("BOT butterflies noon: day %.2f rest %d fly %d flee %d, height %.2f..%.2f m" % [bf.day, c[0], c[1], c[2], lo, hi])
+	if c[0] + c[1] + c[2] < bf.count * 0.8 or c[0] < 5 or c[1] < 1:
+		return _combat_done(false, "too few butterflies out at noon, or none settled/flying")
+	if lo < 0.25 or hi > 4.6:
+		return _combat_done(false, "butterflies outside their height band")
+	# walk at the nearest settled one
+	var f0 := bf.flee_events
+	var t := 0.0
+	while bf.flee_events == f0 and t < 40.0:
+		var best := Vector3.INF
+		var bi := -1
+		var ps := bf.positions()
+		for i in ps.size():
+			if bf._bs[i].state == Butterflies.REST and (best == Vector3.INF or ps[i].distance_to(p.global_position) < best.distance_to(p.global_position)):
+				best = ps[i]
+				bi = i
+		if bi < 0:
+			break
+		var to := Vector2(best.x - p.global_position.x, best.z - p.global_position.z)
+		p.bot_input = to.normalized()
+		p.bot_sprint = false
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	await _ticks(60)
+	var c2 := bf.census()
+	print("BOT butterflies: put up %d after %.1f s, now rest %d fly %d flee %d" % [bf.flee_events - f0, t, c2[0], c2[1], c2[2]])
+	if bf.flee_events == f0:
+		return _combat_done(false, "no butterfly took flight from the approaching hero")
+	# run a long way: they stream with the camera
+	for i in 300:
+		p.bot_input = Vector2(-0.4, -1.0).normalized()
+		p.bot_sprint = true
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	await _ticks(30)
+	var cam := get_viewport().get_camera_3d()
+	var far := 0.0
+	for q in bf.positions():
+		far = maxf(far, Vector2(q.x - cam.global_position.x, q.z - cam.global_position.z).length())
+	print("BOT butterflies: farthest from camera %.1f m, put up %d in total" % [far, bf.flee_events - f0])
+	if far > bf.radius + 6.0:
+		return _combat_done(false, "butterflies did not stream with the camera")
+	_world.time_of_day = 20.0
+	await _ticks(60)
+	var c3 := bf.census()
+	print("BOT butterflies dusk: day %.2f out %d" % [bf.day, c3[0] + c3[1] + c3[2]])
+	if c3[0] + c3[1] + c3[2] > 0:
+		return _combat_done(false, "butterflies still out after dusk")
+	_combat_done(true, "butterflies settle, fly, flee the hero, stream with the camera, gone at dusk")

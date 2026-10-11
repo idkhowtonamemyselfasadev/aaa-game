@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.38
-(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.39
+(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,28 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 12:20 UTC:
+  - **Butterflies by day (next item 5, owner's "alive" list).** New `Butterflies`
+    (`world/butterflies.gd`, created by `Insects` as its child) streams 40 butterflies in a 30 m
+    bubble round the camera from 8.5-10 h to 17.6-18.6 h. Four species: small tortoiseshell,
+    cabbage white, common blue, peacock (weighted, sized per species, 3.4-6.2 cm span). Each
+    settles over the grass heads (0.42-0.72 m) for 4-14 s, wings shut overhead and slowly
+    working, or (non-whites, 60 %) held open to bask with an occasional close; takes off on a
+    jinking, bobbing flight to a perch 3-12 m away; bursts up and away when the hero comes within
+    2.2 m (+0.3 m per m/s of run speed), then drifts off to settle away from them.
+  - New `shaders/butterfly.gdshader`: one PlaneMesh per insect hinged at x = 0; ~9 Hz beat
+    with a fast downstroke and a lagging hindwing in the vertex shader; wing outline (forewing
+    + hindwing ellipses), body, head, antennae, radial veins, dark margin, pale scale fringe;
+    per-species upper side (front face) and duller underside (back face), backlight
+    translucency (whites most).
+  - Bot route `butterflies` (added to the default list): noon census 22 settled/18 flying,
+    height band, a settled one put up by the walking hero, streaming after a 300-tick run,
+    none out at 20 h. All 12 routes pass.
+  - Shot spot `butterflies [species=0..3]`: macro camera 20 cm from a settled one with
+    far depth of field (`CameraAttributesPractical`).
+  - Shots: `butterflies bf3 60 11 species=0` — macro with DOF, reads as a basking butterfly,
+    pattern washed out by the grade, hovers on no stem; `bf2` (old 0.5 m framing) peacock is
+    too small to read. Fails Wukong (flat grass ribbons over bare soil dominate the close-up).
 - Session 2026-10-11 11:00 UTC:
   - **Soldier thigh and boot wraps (next item 8).** `HollowRags` now also winds fitted hemp
     bandages round each thigh (UpLeg -> Leg, 16..90 %, 9 turns) and each boot (Foot -> ToeBase,
@@ -654,7 +676,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    foothills, playable-edge border (cliffs) with collision.
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above); else improve the
    procedural layers.
-5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms.) Still to do: a grazing sheep/deer herd that flees
+5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms; 12:20 (10-11):
+   butterflies.) Still to do: perch butterflies on real grass-blade tips / flowers (needs
+   meadow flowers: clover, knapweed, yarrow cards), two butterflies spiralling up together, a grazing sheep/deer herd that flees
    (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
    there is audio, birds roosting in trees at night, moths around lanterns/campfires once
    they exist, butterflies by day.
@@ -680,6 +704,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 10. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Butterflies perch at a random height over the grass, not on a blade tip or flower, so a
+  close-up shows one hovering on nothing; their patterns read pale under the warm grade; no
+  shadow (casting off); they do not avoid trees or the hero's body in flight. Rain does not
+  ground them (no weather yet).
+- Close-up grass (< 1 m) is flat untextured ribbons over bare brown soil: the meadow needs a
+  ground layer (moss/litter/short turf) and blade albedo/translucency detail for macro shots.
 - At 19.0 h (sun -7 deg) the sky behind the first stars is a dark brown/amber, not blue, and
   the stars still look slightly gold. Cause not found yet: candidates are the PhysicalSky
   extinction on `night_sky`, or the amber sky-sun scattering under the volumetric haze. Try
