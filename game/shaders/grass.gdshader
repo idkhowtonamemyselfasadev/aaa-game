@@ -26,6 +26,8 @@ float n2(vec2 p) {
 	return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y);
 }
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	v_h = UV.y;
 	vec3 origin = MODEL_MATRIX[3].xyz;
@@ -54,6 +56,7 @@ void vertex() {
 	v_ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, v_h));
 	// lean normals up so clumps light like a canopy, not like flat cards
 	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 void fragment() {
@@ -69,4 +72,7 @@ void fragment() {
 	BACKLIGHT = col * 0.6 * v_h;
 	AO = v_ao;
 	AO_LIGHT_AFFECT = 0.4;
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
+	BACKLIGHT *= v_cloud;
 }

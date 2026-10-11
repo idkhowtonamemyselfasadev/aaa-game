@@ -15,6 +15,8 @@ uniform vec3 snow     : source_color = vec3(0.86, 0.88, 0.92);
 uniform float tile_half = 256.0;
 uniform float snow_line = 380.0;
 
+#include "res://shaders/cloud_shadow.gdshaderinc"
+
 varying vec3 wpos;
 varying vec3 wnrm;
 
@@ -71,4 +73,6 @@ void fragment() {
 	vec3 dn = vec3(fine - 0.5, 1.0, meso - 0.5);
 	NORMAL_MAP = normalize(dn * vec3(0.8, 1.0, 0.8)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = mix(1.0, 1.6, forest);
+	// cloud shadows sweep the far ridges (per pixel: the ridge mesh is coarse)
+	ALBEDO *= cloud_shade_at(wpos);
 }

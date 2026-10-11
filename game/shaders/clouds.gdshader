@@ -1,7 +1,7 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, cull_front, depth_draw_never, shadows_disabled, fog_disabled;
 // Cloud layer for the Vale sky (world/clouds.gd). A dome riding on the camera; each pixel
-// casts its view ray onto a flat deck `layer_h` metres up, so the clouds foreshorten and
+// casts its view ray onto a flat deck `CLOUD_DECK_H` metres up, so the clouds foreshorten and
 // crowd toward the horizon like a real cloud base. Fair-weather cumulus on a clear day; as a
 // front arrives `coverage` climbs and the gaps close into a thick grey deck with darker
 // rain-bellies. Lit by one light (sun by day, moon by night): a march of a few samples toward
@@ -14,8 +14,9 @@ uniform vec3 light_col : source_color = vec3(1.0);
 uniform vec3 shade_col : source_color = vec3(0.4, 0.45, 0.55);
 uniform vec3 haze_col : source_color = vec3(0.7, 0.72, 0.75);
 uniform vec2 drift = vec2(0.0);      // metres the deck has blown (world.gd integrates wind)
-uniform float layer_h = 1500.0;
 uniform float haze_height = 0.1;    // sin(elevation) below which the deck sinks into the fog
+
+#include "res://shaders/cloud_shadow.gdshaderinc"
 
 varying vec3 wpos;
 
@@ -23,40 +24,9 @@ void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
-float hash2(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
-}
-float vnoise(vec2 x) {
-	vec2 i = floor(x);
-	vec2 f = fract(x);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), u.x),
-			mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-float fbm(vec2 p, int oct) {
-	float s = 0.0;
-	float a = 0.5;
-	mat2 r = mat2(vec2(0.8, -0.6), vec2(0.6, 0.8));
-	for (int i = 0; i < oct; i++) {
-		s += a * vnoise(p);
-		p = r * p * 2.03 + vec2(17.1, 9.2);
-		a *= 0.5;
-	}
-	return s;
-}
-
-// cloud density at deck point p (metres)
+// the deck's density (shared with the cloud shadows on the land)
 float density(vec2 p, int oct) {
-	// big weather cells, domain-warped so the cumulus groups in streets and clumps
-	vec2 q = p / 1700.0;
-	vec2 w = vec2(fbm(q * 0.5 + vec2(3.1, 1.7), 3), fbm(q * 0.5 + vec2(8.3, 2.8), 3));
-	float n = fbm(q + 0.7 * w, oct);
-	// fine billows eat into the edges (cauliflower outline instead of a blurred blob)
-	n -= 0.2 * (1.0 - fbm(p / 300.0 + w * 2.0, 3)) * (1.0 - 0.6 * thickness);
-	float lo = mix(0.5, 0.0, coverage);
-	return smoothstep(lo, lo + mix(0.1, 0.38, coverage), n);
+	return cloud_deck_density(p, oct, 3, false, coverage, thickness);
 }
 
 void fragment() {
@@ -65,7 +35,7 @@ void fragment() {
 	if (dir.y < 0.004) {
 		discard;
 	}
-	float t = (layer_h - ro.y) / dir.y;
+	float t = (CLOUD_DECK_H - ro.y) / dir.y;
 	vec2 p = ro.xz + dir.xz * t + drift;
 	float d = density(p, 5);
 	if (d < 0.003) {

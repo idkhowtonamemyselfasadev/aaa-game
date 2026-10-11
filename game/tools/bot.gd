@@ -1147,6 +1147,20 @@ func _weather_test() -> void:
 	var d0: Vector2 = cl.mat.get_shader_parameter("drift")
 	await _ticks(60)
 	var drift_clear: float = ((cl.mat.get_shader_parameter("drift") as Vector2) - d0).length()
+	# cloud shadows: the fair-weather cumulus dapple the Vale with sun and shade
+	var shaded := 0
+	for gx in 40:
+		for gz in 40:
+			var wp := Vector3(-6000.0 + gx * 300.0, 0.0, -6000.0 + gz * 300.0)
+			wp.y = 40.0   # a 12 km window: many weather cells, not the one over the Vale
+			if cl.shade_at(wp) < 0.85:
+				shaded += 1
+	var shade_frac := shaded / 1600.0
+	print("BOT weather cloud shadows: strength %.2f, %.0f %% of a 12 km window in cloud shade" % [cl.shadow_strength, shade_frac * 100.0])
+	if not ProjectSettings.has_setting("shader_globals/cloud_shadow") or not ProjectSettings.has_setting("shader_globals/cloud_drift"):
+		return _combat_done(false, "cloud shadow globals not declared in project.godot")
+	if cl.shadow_strength < 0.5 or shade_frac < 0.08 or shade_frac > 0.6:
+		return _combat_done(false, "no believable cloud shadows on a fair noon")
 	var c0 := bf.census()
 	print("BOT weather clear: sun %.2f, butterflies out %d, rain %.2f" % [sun0, c0[0] + c0[1] + c0[2], wx.rain])
 	if c0[0] + c0[1] + c0[2] < 10 or wx.rain > 0.0:
@@ -1203,6 +1217,8 @@ func _weather_test() -> void:
 		return _combat_done(false, "cloud deck did not drift faster in the front's wind")
 	if cl.global_position.distance_to(cam.global_position) > 0.5:
 		return _combat_done(false, "cloud dome does not ride on the camera")
+	if cl.shadow_strength > 0.05:
+		return _combat_done(false, "cloud shadows still cast under the full rain deck (%.2f)" % cl.shadow_strength)
 	if t < 40.0:
 		return _combat_done(false, "the front arrived too fast to read as rolling in")
 	if not rp.emitting or rp.amount_ratio < 0.8 or gw < 0.4 or gwet < 0.1:

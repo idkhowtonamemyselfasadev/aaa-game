@@ -16,6 +16,8 @@ varying float v_var;
 varying float v_h;
 varying vec3 v_local;
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	v_part = COLOR.r;
 	v_along = COLOR.g;
@@ -29,6 +31,7 @@ void vertex() {
 	vec3 wv = meadow_wind(root, clamp(UV.y, 0.0, 1.0), TIME);
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 float h1(float x) { return fract(sin(x * 91.7) * 4375.85); }
@@ -84,4 +87,7 @@ void fragment() {
 	BACKLIGHT = col * back;
 	AO = mix(0.4, 1.0, smoothstep(0.0, 0.6, v_h));
 	AO_LIGHT_AFFECT = 0.3;
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
+	BACKLIGHT *= v_cloud;
 }

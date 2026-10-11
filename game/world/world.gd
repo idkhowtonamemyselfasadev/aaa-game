@@ -201,6 +201,12 @@ func _apply_clouds(delta: float) -> void:
 	var haze := e.fog_light_color * e.fog_light_energy   # what the depth fog paints far ridges
 	clouds.update(delta, weather.cloud if weather else 0.0, weather.wind if weather else 0.0,
 			ldir, lcol, shade, haze)
+	# cloud shadows sweep the land while the sun is strong; under a closing deck the whole
+	# Vale is in shade already (the sun is dimmed in _apply_weather), so they fade out
+	var c := weather.cloud if weather else 0.0
+	var sun_e := sun.light_energy if sun.visible else 0.0
+	clouds.set_shadow(sun.global_transform.basis.z,
+			clampf(sun_e / 2.4, 0.0, 1.0) * (1.0 - smoothstep(0.45, 0.9, c)))
 	# puddles mirror the sky: the haze colour stands in for the (mesh) cloud deck the sky
 	# radiance cannot see
 	var tm := terrain.material as ShaderMaterial

@@ -43,10 +43,13 @@ varying vec3 wpos;
 varying vec3 wnrm;
 varying float hollow;
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wnrm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	hollow = COLOR.r;
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 float hash3(vec3 p) {
@@ -280,4 +283,6 @@ void fragment() {
 	vec3 vdir = normalize(CAMERA_POSITION_WORLD - wpos);
 	float fres = 0.02 + 0.98 * pow(1.0 - clamp(dot(nb, vdir), 0.0, 1.0), 5.0);
 	EMISSION = puddle_sky * min(fres * 3.0, 0.6) * pud;
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
 }

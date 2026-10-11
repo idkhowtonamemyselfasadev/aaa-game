@@ -125,3 +125,23 @@ weather_rain={
 "type": "float",
 "value": 0.0
 }
+cloud_drift={
+"type": "vec2",
+"value": Vector2(0, 0)
+}
+cloud_cover={
+"type": "float",
+"value": 0.4
+}
+cloud_thick={
+"type": "float",
+"value": 0.0
+}
+cloud_sun={
+"type": "vec3",
+"value": Vector3(0, 1, 0)
+}
+cloud_shadow={
+"type": "float",
+"value": 0.0
+}

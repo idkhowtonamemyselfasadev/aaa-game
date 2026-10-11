@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.44
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.45
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 19:00 UTC:
+  - **Cloud shadows on the land (next item 9 / bug "clouds cast no shadows").** New
+    `shaders/cloud_shadow.gdshaderinc` holds the deck's density function, shared by the sky
+    dome (`clouds.gdshader` now includes it, so the deck drawn in the sky and the shadows on
+    the ground are the same clouds) and `cloud_shade_at(world_pos)`: projects the point
+    along the sun onto the 1.5 km deck (+ the wind drift) and darkens by up to 55 %. It is
+    included through `weather.gdshaderinc`, computed per vertex in terrain, grass, leaves,
+    bark, rocks and flowers (shadows are ~km-scale, so vertex rate is plenty and cheap) and
+    per pixel on the coarse far mountain ring; multiplies ALBEDO and BACKLIGHT (Godot has
+    no directional-light cookie, so it also dims the ambient share a bit).
+  - Cheap 3/2-octave calls are levelled to the sky's 5/3 by padding the missing octaves'
+    mean (agrees with the full deck on 96 % of points). New shader globals `cloud_drift`,
+    `cloud_cover`, `cloud_thick`, `cloud_sun`, `cloud_shadow` (CloudLayer pushes them);
+    strength = sun energy / 2.4, faded out as a front closes the deck (cloud 0.45 -> 0.9)
+    and at night. `CloudLayer.shade_at()` is a CPU mirror for bots (later: audio/AI).
+  - Bot `weather` checks the shadows: strength 1.0 at clear noon, 43 % of a 12 km window in
+    cloud shade, strength 0 under the rain deck. 13/13 bots pass.
+  - Shots: `cs_ridge` (15 h: sunlit golden valley on the left, foothills in cloud shade on
+    the right, dappled midground: gives the Vale depth), `cs_hill` (11 h, low meadow view,
+    no shadow edge in frame: reads unchanged), `cs_ridge2`/`cs_valley` (see gallery).
 - Session 2026-10-11 18:00 UTC:
   - **Puddles + raindrop ripples (next item 9).** `Terrain.hollow_at(x, z)` (ring mean of 16
     heights at 3 m and 7 m minus the height) is baked into the terrain mesh's vertex colour;
@@ -824,10 +844,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    wrap; ideally a real CC0 humanoid for the
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
 9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck; 18:00: puddles in the
-   hollows + raindrop ripples, SSR on.) Still to do: splash particles on solid ground and the
+   hollows + raindrop ripples, SSR on; 19:00: cloud shadows on the land.)
+   Next session pick: the white-blowout oak leaves (see bugs), then rain splashes on solid
+   ground / the hero splashing through pools. Still to do: splash particles on solid ground and the
    hero's feet splashing through pools, ripples when the hero wades, rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
-   under far cells), cloud shadows on the land, clouds in the sky radiance/reflections
+   under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
    ground, puddles in hollows, rain occlusion under tree crowns, lightning + thunder for
    strong fronts, fog banks in the morning, rain on the hero (wet cloth darkening), NPCs and
@@ -836,9 +858,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Oak leaf cards facing the sun (and their backlit edges) blow out to near-white in mid-day
+  shots looking toward the sun (`cs_valley`, `cs_ridge2`): the crowns read like white blossom.
+  Likely the leaf SPECULAR 0.4 + BACKLIGHT 0.7 under sun energy 3; tone them down / add a
+  leaf albedo texture. High priority next to flora item 2 (it spoils every wide shot).
 - Clouds: the overcast deck is too uniform (no rolling bellies); far ridges stay a darker
-  grey silhouette against it in rain; clouds overhead at dusk are a touch too pink; clouds
-  cast no shadows and are not in the sky radiance (reflections show the bare sky). The
+  grey silhouette against it in rain; clouds overhead at dusk are a touch too pink; cloud
+  shadows darken albedo (so ambient too) rather than the sun term only, skip the hero,
+  soldier and staff (imported/standard materials), and are vertex-rate on grass and trees
+  (soft edges; fine at km scale). Clouds are not in the sky radiance (reflections show the bare sky). The
   PhysicalSky behind a partial deck (cloud ~0.7, late afternoon) may still go navy in the
   gaps. Rain falls through tree
   crowns and roofs (no occlusion); no splashes on solid ground; the hero does not get wet.

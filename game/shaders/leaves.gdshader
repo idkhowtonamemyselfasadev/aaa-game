@@ -12,12 +12,15 @@ uniform float fade_dist = 380.0;
 varying float v_phase;
 varying vec3 v_inst;
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	float fl = sin(TIME * 6.0 + COLOR.g * 60.0 + MODEL_MATRIX[3].x) * 0.035;
 	VERTEX += vec3(fl, fl * 0.6, -fl) * COLOR.r;
 	v_phase = COLOR.g;
 	v_inst = MODEL_MATRIX[3].xyz;
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 void fragment() {
@@ -36,4 +39,7 @@ void fragment() {
 	SPECULAR = 0.4;
 	BACKLIGHT = col * 0.7;
 	if (!FRONT_FACING) NORMAL = -NORMAL;
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
+	BACKLIGHT *= v_cloud;
 }

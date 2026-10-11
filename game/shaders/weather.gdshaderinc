@@ -2,6 +2,8 @@
 //   weather_wind: 0 the Vale's usual breeze .. 1 a storm front (each shader scales its own bend)
 //   weather_wet : 0 dry .. 1 soaked (porous surfaces darken, everything turns glossier)
 //   weather_rain: 0 dry .. 1 downpour (raindrop ripples on standing water)
+#include "res://shaders/cloud_shadow.gdshaderinc"
+
 global uniform float weather_wind;
 global uniform float weather_wet;
 global uniform float weather_rain;

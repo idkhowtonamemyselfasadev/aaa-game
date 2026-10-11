@@ -27,10 +27,13 @@ float vn(vec3 x) {
 }
 float fbm(vec3 p) { float a = 0.5, r = 0.0; for (int k = 0; k < 4; k++) { r += a * vn(p); p = p * 2.07 + 5.3; a *= 0.5; } return r; }
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	ly = VERTEX.y;
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 float surf(vec3 p) {
@@ -60,4 +63,6 @@ void fragment() {
 	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.05, 0.015, mossw));
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = clamp(0.6 + s * 0.6, 0.0, 1.0);
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
 }

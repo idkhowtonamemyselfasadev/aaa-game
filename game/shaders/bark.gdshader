@@ -24,10 +24,13 @@ float n2w(vec2 p, float per) {
 	return mix(mix(h21(i0), h21(i1), f.x), mix(h21(i0 + vec2(0, 1)), h21(i1 + vec2(0, 1)), f.x), f.y);
 }
 
+varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+
 void vertex() {
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vy = VERTEX.y;
+	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
 float furrow(vec2 uv) {
@@ -57,4 +60,6 @@ void fragment() {
 	NORMAL_MAP = normalize(vec3((f - fx) * 18.0, (f - fy) * 6.0, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.6;
 	AO = mix(0.45, 1.0, f);
+	// a passing cloud takes the sun off the land
+	ALBEDO *= v_cloud;
 }
