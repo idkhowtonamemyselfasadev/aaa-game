@@ -29,7 +29,10 @@ void fragment() {
 	ALPHA = t.a;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 	ALPHA_ANTIALIASING_EDGE = 0.3;
-	ROUGHNESS = 0.6;
+	float rough = 0.6;
+	weather_wetten(col, rough, 0.3);
+	ALBEDO = col;
+	ROUGHNESS = rough;
 	SPECULAR = 0.4;
 	BACKLIGHT = col * 0.7;
 	if (!FRONT_FACING) NORMAL = -NORMAL;

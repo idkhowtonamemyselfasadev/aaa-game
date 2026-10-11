@@ -11,6 +11,7 @@ render_mode cull_back, depth_draw_opaque;
 // Every layer carries a height so the shading normal is bumped per pixel (screen-space
 // surface gradient), and small detail fades to its average with distance so nothing shimmers.
 
+#include "res://shaders/weather.gdshaderinc"
 uniform vec3 turf_a   : source_color = vec3(0.20, 0.22, 0.08);   // shaded live sward
 uniform vec3 turf_b   : source_color = vec3(0.46, 0.47, 0.18);   // sunlit live blade
 uniform vec3 thatch_a : source_color = vec3(0.30, 0.24, 0.10);   // matted dead grass
@@ -220,8 +221,10 @@ void fragment() {
 	// cavity darkening from the fine height
 	float cav = clamp(h / 0.004, 0.0, 1.0);
 	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * fade_b);
+	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
+	weather_wetten(col, rough, 1.0 - 0.6 * rockw);
 	ALBEDO = col;
-	ROUGHNESS = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
+	ROUGHNESS = rough;
 	SPECULAR = mix(0.25, 0.3, rockw);
 	AO = mix(0.85 + 0.15 * cav, 1.0, rockw);
 	AO_LIGHT_AFFECT = 0.3;

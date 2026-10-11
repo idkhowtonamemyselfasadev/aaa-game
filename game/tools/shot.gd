@@ -285,6 +285,9 @@ func _ready() -> void:
 			world.sky_energy_scale = float(a.substr(5))
 		if a.begins_with("ambx="):
 			world.ambient_scale = float(a.substr(5))
+	for a in args:
+		if a.begins_with("rain="):
+			world.weather.force(float(a.substr(5)))
 	if "norefl" in args:
 		world.env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	if "skyrt" in args:

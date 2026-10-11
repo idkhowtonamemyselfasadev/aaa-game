@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.41
-(the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.42
+(the soldier fight can now be lost and retried from the rest point; walkable test valley with weather fronts that roll in (wind, grey light, rain, wet ground), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 15:00 UTC:
+  - **Weather fronts (owner's "alive" list: rain, fog, storms, wind).** New `Weather`
+    (`world/weather.gd`, created by `world.gd` as `$Weather`): long dry spells (6-15 min),
+    then a front builds over ~70 s (cloud leads, rain sets in once the sky is mostly
+    covered), rains for 2.5-6 min and clears; `cloud`, `rain`, `wind` (gusting with the
+    front), `wet` (soaks in ~40 s of rain, dries over ~4 min). `force(strength, instant)` for
+    bots/shots.
+  - Shader globals `weather_wind` / `weather_wet` declared in `project.godot`
+    `[shader_globals]`, shared via `shaders/weather.gdshaderinc` (`weather_wetten()` darkens
+    porous surfaces and glosses them). Grass bends further with much stronger gusts and
+    flutter; flowers (and perched butterflies) through `meadow_wind`; tree limbs lean and
+    thrash via `tree_wind`; terrain, grass, bark, leaves and rocks get wet.
+  - `world._apply_weather()`: cloud dims sun/moon/sky-sun, PhysicalSky goes Mie-hazy grey
+    (less Rayleigh, flattened forward peak, lower energy; writes only on change), ambient goes
+    flat grey, depth fog 0.0012 -> 0.008, more volumetric haze, colour drains (sat 0.82).
+  - Rain: 9000 GPU particles in a 44 m box riding above the camera, velocity-aligned
+    streaks turned to face the camera (`shaders/rain.gdshader`), slanted by the wind, faded
+    near the lens and into the distance, darker at night.
+  - Butterflies shelter as the cloud builds; midges and fireflies stop in the rain.
+  - Bot route `weather`: clear noon -> forced front (arrives over 60 s, rain 0.85, light
+    0.3x, fog up, drops emitting, insects gone) -> clears (sun and 40 butterflies back, ground
+    drying) -> an automatic front is scheduled. All 13 routes pass.
+  - Shot arg `rain=<0..1>` forces a front. Shots: `valley rain_valley 60 13 rain=1.0`
+    (first pass: the wet slope went chrome white -> wet gloss floor raised to 0.3-0.55),
+    `rain_valley2` (grey rain veil, wind-combed grass, ridges in haze: reads as weather; the sky
+    is a flat grey with no cloud forms: fail), `player rain_hero` (soaked dark meadow with
+    streaks; placeholder hero, no splashes: fail), `village rain_village 60 16.5 rain=0.7`
+    (sky goes dark navy, not grey — see bugs).
 - Session 2026-10-11 14:00 UTC:
   - **Meadow floor ground layer (bug "close-up grass over bare brown soil", next item 4).**
     `shaders/terrain.gdshader` rewritten: the flat ground is now a short sward of lying blades
@@ -745,10 +773,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    slim the leg wraps (shrink the Vanguard leg mesh under them, or hide it), a shaped boot
    wrap; ideally a real CC0 humanoid for the
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
-9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
-10. Every step: shots + bots, then update this file.
+9. Weather follow-ups: a cloud layer for the sky (procedural cloud dome / sky shader so a
+   front has visible cloud forms rolling in, not a flat grey), rain splashes + ripples on the
+   ground, puddles in hollows, rain occlusion under tree crowns, lightning + thunder for
+   strong fronts, fog banks in the morning, rain on the hero (wet cloth darkening), NPCs and
+   rooks shelter. Then climbing + glide.
+10. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
+11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Weather: overcast late afternoon (16.5 h, cloud 0.7) renders the sky dark navy instead of
+  grey (same root as the "late-afternoon sky renders dark navy" bug; PhysicalSky with high
+  Mie/low energy). The overcast sky has no cloud forms at all. Rain falls through tree
+  crowns and roofs (no occlusion); no splashes, ripples, puddles; the hero does not get wet.
+  `RenderingServer.global_shader_parameter_get` returns null headless (bot falls back to
+  Weather's values). Wind does not yet move the rain particles' spawn upwind beyond a fixed
+  6 m offset.
 - 15 % of butterflies (and all of them where no drift is loaded) still perch at a random
   height over the grass; perched ones follow the flower's wind sway but not the flutter
   exactly (few mm). Flowers have no LOD (full mesh to 56 m) and no shadow; they are not

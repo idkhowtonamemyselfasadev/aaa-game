@@ -4,6 +4,7 @@ render_mode cull_back;
 // pitting in the normal, lichen spots, and moss on up-facing surfaces whose edge breaks
 // up with noise; a dark damp band where the stone meets the ground.
 
+#include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.36, 0.35, 0.33);
 uniform vec3 stone_b : source_color = vec3(0.19, 0.19, 0.2);
 uniform vec3 moss_a : source_color = vec3(0.16, 0.2, 0.05);
@@ -50,8 +51,10 @@ void fragment() {
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 6.0));
 	col = mix(col, mc, mossw);
 	col *= mix(0.55, 1.0, smoothstep(-0.35, 0.0, ly));    // damp foot
+	float rough = mix(0.78, 0.95, mossw);
+	weather_wetten(col, rough, mix(0.3, 1.0, mossw));
 	ALBEDO = col;
-	ROUGHNESS = mix(0.78, 0.95, mossw);
+	ROUGHNESS = rough;
 	SPECULAR = 0.35;
 	// perturb the world normal with the detail gradient (less under the moss)
 	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.05, 0.015, mossw));

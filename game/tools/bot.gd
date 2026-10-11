@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -71,6 +71,9 @@ func _ready() -> void:
 		return
 	if name == "butterflies":
 		_butterflies_test()
+		return
+	if name == "weather":
+		_weather_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1120,3 +1123,65 @@ func _butterflies_test() -> void:
 	if c3[0] + c3[1] + c3[2] > 0:
 		return _combat_done(false, "butterflies still out after dusk")
 	_combat_done(true, "butterflies settle, fly, flee the hero, stream with the camera, gone at dusk")
+
+## A weather front: cloud builds, the light drops, wind rises, rain falls and soaks the ground,
+## butterflies and midges shelter; then it clears, they come back and the land dries.
+func _weather_test() -> void:
+	var wx: Weather = _world.weather
+	var bf: Butterflies = _world.get_node("Insects").butterflies
+	_world.time_of_day = 13.0
+	wx.force(0.0)
+	await _ticks(120)
+	var sun0: float = _world.sun.light_energy
+	var c0 := bf.census()
+	print("BOT weather clear: sun %.2f, butterflies out %d, rain %.2f" % [sun0, c0[0] + c0[1] + c0[2], wx.rain])
+	if c0[0] + c0[1] + c0[2] < 10 or wx.rain > 0.0:
+		return _combat_done(false, "clear noon should have butterflies and no rain")
+	wx.force(1.0, false)
+	var t := 0.0
+	while wx.rain < 0.85 and t < 240.0:
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	var rp: GPUParticles3D = wx.get_node("Rain")
+	var c1 := bf.census()
+	# the headless dummy renderer keeps no global values: read back where it can, else the
+	# values Weather pushes (the globals must at least be declared in project.godot)
+	if not ProjectSettings.has_setting("shader_globals/weather_wind") or not ProjectSettings.has_setting("shader_globals/weather_wet"):
+		return _combat_done(false, "weather shader globals not declared in project.godot")
+	var gwv = RenderingServer.global_shader_parameter_get("weather_wind")
+	var gwetv = RenderingServer.global_shader_parameter_get("weather_wet")
+	var gw: float = gwv if gwv != null else wx.wind
+	var gwet: float = gwetv if gwetv != null else wx.wet
+	var e: Environment = _world.env.environment
+	print("BOT weather front after %.0f s: cloud %.2f rain %.2f wind %.2f wet %.2f (globals %.2f/%.2f), sun %.2f, fog %.4f, drops %s x%.2f, butterflies out %d, midges %.2f" % [t, wx.cloud, wx.rain, wx.wind, wx.wet, gw, gwet, _world.sun.light_energy, e.fog_density, rp.emitting, rp.amount_ratio, c1[0] + c1[1] + c1[2], _world.get_node("Insects").day])
+	if wx.rain < 0.85:
+		return _combat_done(false, "the front never brought rain")
+	if t < 40.0:
+		return _combat_done(false, "the front arrived too fast to read as rolling in")
+	if not rp.emitting or rp.amount_ratio < 0.8 or gw < 0.4 or gwet < 0.1:
+		return _combat_done(false, "rain/wind/wetness not applied")
+	if _world.sun.light_energy > sun0 * 0.35 or e.fog_density < 0.005:
+		return _combat_done(false, "the light did not go grey under the front")
+	if c1[0] + c1[1] + c1[2] > 0 or _world.get_node("Insects").day > 0.01:
+		return _combat_done(false, "butterflies/midges still out in the rain")
+	var wet_peak := wx.wet
+	wx.force(0.0, false)
+	t = 0.0
+	while (wx.cloud > 0.02 or wx.rain > 0.0) and t < 300.0:
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	await _ticks(240)
+	var c2 := bf.census()
+	print("BOT weather cleared after %.0f s: cloud %.2f rain %.2f wet %.2f (peak %.2f), sun %.2f, drops %s, butterflies out %d" % [t, wx.cloud, wx.rain, wx.wet, wet_peak, _world.sun.light_energy, rp.emitting, c2[0] + c2[1] + c2[2]])
+	if wx.cloud > 0.02 or rp.emitting or wx.wet >= wet_peak:
+		return _combat_done(false, "the front did not clear / the ground did not start drying")
+	if c2[0] + c2[1] + c2[2] < 10 or _world.sun.light_energy < sun0 * 0.95:
+		return _combat_done(false, "sun and butterflies did not return after the front")
+	# fronts also come on their own
+	wx.auto_fronts = true
+	wx._timer = 0.0
+	var f0 := wx.fronts
+	await _ticks(10)
+	if wx.fronts != f0 + 1 or wx._target < 0.6:
+		return _combat_done(false, "no front scheduled on its own")
+	_combat_done(true, "a front rolls in, greys the light, rains, soaks the ground, shelters the insects, then clears")

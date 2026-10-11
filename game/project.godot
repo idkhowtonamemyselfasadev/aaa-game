@@ -110,3 +110,14 @@ anti_aliasing/quality/use_taa=true
 environment/ssao/quality=2
 environment/glow/upscale_mode=1
 scaling_3d/mode=0
+
+[shader_globals]
+
+weather_wind={
+"type": "float",
+"value": 0.0
+}
+weather_wet={
+"type": "float",
+"value": 0.0
+}

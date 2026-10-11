@@ -49,8 +49,10 @@ void fragment() {
 	float m = smoothstep(0.35, 0.8, wn.y + n2(UV * vec2(8.0, 3.0)) * 0.4 - 0.1);
 	m = max(m, smoothstep(1.2, 0.0, vy) * 0.8 * n2(UV * 6.0));
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
+	float rough = mix(0.92, 0.8, m);
+	weather_wetten(col, rough, 1.0);
 	ALBEDO = col;
-	ROUGHNESS = mix(0.92, 0.8, m);
+	ROUGHNESS = rough;
 	SPECULAR = 0.25;
 	NORMAL_MAP = normalize(vec3((f - fx) * 18.0, (f - fy) * 6.0, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.6;

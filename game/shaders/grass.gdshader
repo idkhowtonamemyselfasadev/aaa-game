@@ -6,6 +6,7 @@ render_mode cull_disabled, depth_draw_opaque;
 // translucency, and shrinks them into the ground at the edge of the draw distance so there
 // is no pop.
 
+#include "res://shaders/weather.gdshaderinc"
 uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
 uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
 uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
@@ -40,8 +41,10 @@ void vertex() {
 	float swell = sin(dot(iw.xz, wd) * 0.05 - t * 0.9) * 0.5 + 0.5;
 	float gust = n2(iw.xz * 0.04 - wd * t * 1.6);
 	gust = smoothstep(0.35, 0.95, gust);
-	float flutter = sin(t * 7.0 + v_var * 40.0 + iw.x * 0.7) * 0.06;
-	float bend = (wind_strength * swell + gust_strength * gust) * v_h * v_h;
+	float storm = clamp(weather_wind, 0.0, 1.0);
+	float flutter = sin(t * 7.0 + v_var * 40.0 + iw.x * 0.7) * 0.06 * (1.0 + 1.8 * storm);
+	// a storm front combs the sward over: stronger swell, much stronger gusts
+	float bend = (wind_strength * (1.0 + 0.6 * storm) * swell + gust_strength * (1.0 + 0.9 * storm) * gust) * v_h * v_h;
 	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h);
 	// bend in world space, convert back to local (instances are rotated/scaled)
 	vec3 lw = (inverse(mat3(MODEL_MATRIX)) * wv);
@@ -57,8 +60,11 @@ void fragment() {
 	vec3 tip = mix(tip_green, tip_dry, smoothstep(0.25, 0.85, v_var));
 	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
 	vec3 col = mix(root_col, tip, smoothstep(0.0, 0.9, v_h));
-	ALBEDO = col * v_ao;
-	ROUGHNESS = 0.82;
+	float rough = 0.82;
+	col *= v_ao;
+	weather_wetten(col, rough, 0.85);
+	ALBEDO = col;
+	ROUGHNESS = rough;
 	SPECULAR = 0.35;
 	BACKLIGHT = col * 0.6 * v_h;
 	AO = v_ao;

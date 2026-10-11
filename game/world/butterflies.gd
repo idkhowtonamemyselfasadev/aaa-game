@@ -97,6 +97,10 @@ func _process(delta: float) -> void:
 	_t += delta
 	var h := _hour()
 	day = smoothstep(8.5, 10.0, h) * (1.0 - smoothstep(17.6, 18.6, h))
+	# they shelter in the grass under a front: gone before the first drops, back after
+	var wx = _world.get("weather")
+	if wx:
+		day *= 1.0 - smoothstep(0.35, 0.6, wx.cloud)
 	var cam := get_viewport().get_camera_3d()
 	var player: Node3D = _world.get_node_or_null("Player")
 	var anchor := cam.global_position if cam else (player.global_position if player else Vector3.ZERO)

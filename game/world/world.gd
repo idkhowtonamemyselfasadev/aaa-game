@@ -18,11 +18,15 @@ var moon: DirectionalLight3D
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
 var soldier: HollowSoldier
+var weather: Weather
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
 
 func _ready() -> void:
 	_build_environment()
+	weather = Weather.new()
+	weather.name = "Weather"
+	add_child(weather)
 	moon = DirectionalLight3D.new()
 	moon.name = "Moon"
 	moon.light_color = Color(0.62, 0.72, 1.0)
@@ -211,7 +215,8 @@ func _apply_time() -> void:
 		if sky:
 			# Only write the sky material when a value really changes: every write marks the
 			# sky dirty and restarts its incremental radiance bake.
-			var ener := snappedf(lerpf(0.35, 1.0, day) * sky_energy_scale, 0.02)
+			var overcast := snappedf(weather.cloud, 0.02) if weather else 0.0
+			var ener := snappedf(lerpf(0.35, 1.0, day) * sky_energy_scale * lerpf(1.0, 0.6, overcast), 0.02)
 			if not is_equal_approx(sky.energy_multiplier, ener):
 				sky.energy_multiplier = ener
 			# PhysicalSky adds night_sky unattenuated, so the stars come out step by step from
@@ -242,6 +247,49 @@ func _apply_time() -> void:
 		# Keyed to twilight depth, not `day`: day is ~0.1 right at sunset, which buried the
 		# afterglow under the dark haze; the haze takes the sky over only late in twilight.
 		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, smoothstep(deg_to_rad(-9.0), deg_to_rad(-3.0), elev))
+		_apply_weather(day)
+
+## A weather front over the time-of-day light: cloud swallows the sun and the sky's blue,
+## the light goes flat and grey, rain haze closes the distance, colour drains.
+func _apply_weather(day: float) -> void:
+	var c := weather.cloud if weather else 0.0
+	var e := env.environment
+	sun.light_energy *= 1.0 - 0.82 * c
+	sun.visible = sun.light_energy > 0.005
+	if moon:
+		moon.light_energy *= 1.0 - 0.85 * c
+	if sky_sun:
+		sky_sun.light_energy *= 1.0 - 0.55 * c
+	var sky := e.sky.sky_material as PhysicalSkyMaterial
+	if sky:
+		# overcast: Mie haze everywhere (forward peak flattened), less Rayleigh blue, darker
+		var cs := snappedf(c, 0.02)
+		_set_sky(sky, "mie_coefficient", lerpf(0.012, 0.09, cs))
+		_set_sky(sky, "mie_eccentricity", lerpf(0.84, 0.35, cs))
+		_set_sky(sky, "rayleigh_coefficient", lerpf(2.4, 0.9, cs))
+		_set_sky(sky, "turbidity", lerpf(7.0, 18.0, cs))
+		_set_sky(sky, "mie_color", Color(0.86, 0.72, 0.55).lerp(Color(0.62, 0.64, 0.66), cs))
+	# flat grey skylight replaces the sun's warmth: more ambient by day, cooler and greyer
+	var grey := Color(0.46, 0.49, 0.54) * lerpf(0.3, 1.0, day)
+	e.ambient_light_color = e.ambient_light_color.lerp(grey, 0.75 * c)
+	e.ambient_light_energy *= 1.0 + 0.35 * c * day
+	e.fog_density = lerpf(0.0012, 0.008, c)
+	e.fog_light_color = e.fog_light_color.lerp(Color(0.5, 0.53, 0.57) * lerpf(0.12, 1.0, day), c)
+	e.fog_sun_scatter = lerpf(0.15, 0.0, c)
+	e.volumetric_fog_density += 0.006 * c
+	e.volumetric_fog_albedo = e.volumetric_fog_albedo.lerp(Color(0.75, 0.78, 0.82), c)
+	e.volumetric_fog_emission *= 1.0 - c
+	e.adjustment_saturation = lerpf(1.08, 0.82, c)
+	e.adjustment_contrast = lerpf(1.06, 1.1, c)
+
+## Sky material writes restart its radiance bake: only write a value that really changed.
+func _set_sky(sky: PhysicalSkyMaterial, prop: String, v: Variant) -> void:
+	var old = sky.get(prop)
+	if v is float and is_equal_approx(old, v):
+		return
+	if v is Color and (old as Color).is_equal_approx(v):
+		return
+	sky.set(prop, v)
 
 ## The hero woke at the rest point: the Hollows still standing return to their posts, whole.
 func _on_player_respawned() -> void:

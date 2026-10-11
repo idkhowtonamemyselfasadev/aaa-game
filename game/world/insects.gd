@@ -157,6 +157,11 @@ func _process(delta: float) -> void:
 	night = smoothstep(18.3, 19.3, h) if h > 12.0 else 1.0 - smoothstep(4.3, 5.4, h)
 	# midges: from mid-morning, thickest in the long evening light, gone at dusk
 	day = smoothstep(7.0, 9.0, h) * (1.0 - smoothstep(18.4, 19.1, h))
+	# no swarms or glow in the rain
+	var wx = _world.get("weather")
+	if wx:
+		day *= 1.0 - smoothstep(0.05, 0.3, wx.rain)
+		night *= 1.0 - smoothstep(0.05, 0.3, wx.rain)
 	var cam := get_viewport().get_camera_3d()
 	var player: Node3D = _world.get_node_or_null("Player")
 	var anchor := cam.global_position if cam else (player.global_position if player else Vector3.ZERO)
