@@ -10,6 +10,7 @@ var SPOTS := {
 	"ridge":    [Vector3(190, 0, 190), Vector3(0, 0, 0)],
 	"ground":   [Vector3(-30, 0, 40), Vector3(-20, 0, 25)],
 	"east":     [Vector3(170, 0, 20), Vector3(-80, 0, -30)],
+	"sunset":   [Vector3(-20, 0, -110), Vector3(10, 0, 150)],   # looks +Z: the evening sun's side
 	"player":   [],
 }
 

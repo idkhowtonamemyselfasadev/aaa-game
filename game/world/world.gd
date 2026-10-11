@@ -15,6 +15,7 @@ extends Node3D
 @onready var terrain: Terrain = $Terrain
 @onready var player: Player = $Player
 var moon: DirectionalLight3D
+var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
 var soldier: HollowSoldier
 var _stars: ImageTexture
@@ -28,6 +29,17 @@ func _ready() -> void:
 	moon.directional_shadow_max_distance = 150.0
 	moon.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY
 	add_child(moon)
+	# PhysicalSky scatters only a sun above the horizon (its energy term is 1-exp(-elevation)),
+	# so the sky went pure black the moment the sun set while the ground was still lit. The
+	# real sun now lights the world only; this sky-only light paints the sky, and through
+	# twilight it stays just above the horizon (no disc) and fades out as the sun sinks.
+	sun.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY
+	sky_sun = DirectionalLight3D.new()
+	sky_sun.name = "SkySun"
+	sky_sun.sky_mode = DirectionalLight3D.SKY_MODE_SKY_ONLY
+	sky_sun.shadow_enabled = false
+	sky_sun.light_cull_mask = 0
+	add_child(sky_sun)
 	_apply_time()
 	var p := player.global_position
 	player.global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.5, p.z)
@@ -151,9 +163,27 @@ func _apply_time() -> void:
 	sun.rotation = Vector3(-elev, az, 0.0)
 	var day := clampf(sin(elev) * 5.0 + 0.35, 0.0, 1.0)       # 0 night .. 1 full day
 	var low := 1.0 - clampf(sin(elev) / sin(deg_to_rad(25.0)), 0.0, 1.0)   # 1 near horizon
-	sun.visible = elev > deg_to_rad(-6.0)
-	sun.light_energy = lerpf(0.0, 3.0, day) * lerpf(1.0, 0.7, low)
+	# a sun under the horizon lights nothing directly (it used to wash the dusk meadow red)
+	var above := smoothstep(deg_to_rad(-1.0), deg_to_rad(1.5), elev)
+	sun.visible = above > 0.0
+	sun.light_energy = lerpf(0.0, 3.0, day) * lerpf(1.0, 0.7, low) * above
 	sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.62, 0.36), low)
+	if sky_sun:
+		# twilight: 0 at 9 degrees below the horizon, 1 once the sun is up
+		var tw := smoothstep(deg_to_rad(-9.0), deg_to_rad(0.5), elev)
+		var floor_elev := deg_to_rad(2.5)
+		var sky_elev := maxf(elev, floor_elev)
+		sky_sun.rotation = Vector3(-sky_elev, az, 0.0)
+		# PhysicalSky's sun energy is ~(1-exp(-elev)): hold the afterglow up while the light
+		# sits on its floor, then let it die away into the blue hour
+		var under := clampf((floor_elev - elev) / deg_to_rad(9.0), 0.0, 1.0)
+		sky_sun.light_energy = 3.0 * tw * lerpf(1.0, 1.6, under)
+		# the afterglow cools from amber to the blue hour as the sun sinks (ozone blue)
+		sky_sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.55, 0.42), low) \
+				.lerp(Color(0.62, 0.64, 1.0), smoothstep(0.25, 0.9, under))
+		# the disc goes when the real sun is gone; only its glow stays
+		sky_sun.light_angular_distance = sun.light_angular_distance * above
+		sky_sun.visible = tw > 0.0
 	if moon:
 		var melev := -elev * 0.8
 		moon.rotation = Vector3(-maxf(melev, deg_to_rad(8.0)), az + PI, 0.0)
