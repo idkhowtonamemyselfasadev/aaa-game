@@ -1238,12 +1238,23 @@ func _weather_test() -> void:
 		if wx.pool_at(_player.global_position.x, _player.global_position.z):
 			break
 	var w_dry := wx.wade_splashes - w0
-	await _ticks(50)
+	var rings := 0
+	for i in 50:
+		await get_tree().physics_frame
+		rings = maxi(rings, wx.wake_rings())
 	_player.bot_input = Vector2.ZERO
 	var w_pool := wx.wade_splashes - w0 - w_dry
 	print("BOT weather wade: pool at %s, %d splashes on the dry run-up, %d through the pool" % [pool, w_dry, w_pool])
 	if w_pool < 2 or w_dry > 1:
 		return _combat_done(false, "hero does not splash through the pool (or splashes on dry ground)")
+	var waited := 0
+	while wx.wake_rings() > 0 and waited < 2000:
+		await get_tree().physics_frame
+		waited += 1
+	var rings_left: int = wx.wake_rings()
+	print("BOT weather wake: up to %d footfall rings spreading at once, %d once they ran out" % [rings, rings_left])
+	if rings < 1 or rings_left > 0:
+		return _combat_done(false, "footfalls leave no ring on the pool (or the rings never fade)")
 	var cov1: float = cl.mat.get_shader_parameter("coverage")
 	var d1: Vector2 = cl.mat.get_shader_parameter("drift")
 	await _ticks(60)

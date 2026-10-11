@@ -37,6 +37,10 @@ var rain_splashes := 0    # drop splashes emitted (bots)
 var _wade_dist := 0.0
 var _wade_foot := 1.0
 var wade_splashes := 0    # footfalls that splashed through a pool (bots)
+const WAKE_RINGS := 8     # wade_ring_0..7 shader globals (terrain.gdshader)
+const WAKE_LIFE := 1.8    # seconds a footfall's ring train runs
+var _wake: Array[Vector4] = []   # (x, z, age, strength) per slot
+var _wake_next := 0
 
 const FX_LAYER := 1 << 9  # rain + splashes
 
@@ -73,8 +77,13 @@ func _ready() -> void:
 	add_child(_rain)
 	_splash = _make_splash("Splashes", 2400, 0.32, 0.3, Vector2(0.6, 1.25))
 	_splash.emitting = false    # fed by _update_splashes()
-	_wade = _make_splash("WadeSplashes", 96, 0.45, 0.5, Vector2(0.75, 1.2))
+	_wade = _make_splash("WadeSplashes", 96, 0.5, 0.75, Vector2(0.8, 1.2))
 	_wade.emitting = false      # fed by wade_splash()
+	var wm := (_wade.draw_pass_1 as QuadMesh).material as ShaderMaterial
+	wm.set_shader_parameter("opacity", 0.9)
+	wm.set_shader_parameter("tint", Color(0.86, 0.88, 0.9))
+	for i in WAKE_RINGS:
+		_wake.append(Vector4.ZERO)
 	_push_globals()
 
 ## Bots/shots: set a front strength now (instant) or let it build (instant = false).
@@ -150,6 +159,7 @@ func _process(delta: float) -> void:
 		wet = move_toward(wet, 0.0, delta / 240.0)
 	_update_rain(delta)
 	_update_wade(delta)
+	_update_wake(delta)
 	_update_splashes(delta)
 	_push_globals()
 
@@ -166,9 +176,12 @@ func pool_at(x: float, z: float) -> bool:
 	var flat: float = 1.0 - smoothstep(0.0125, 0.025, 1.0 - terrain.normal_at(x, z, 2.0).y)
 	return flat > 0.5 and terrain.baked_hollow(x, z) > thr + 0.03
 
-## A footfall in water: a big crown at the foot and a couple of smaller throws round it.
-func wade_splash(at: Vector3) -> void:
+## A footfall in water: a big crown at the foot, a smaller throw beside it, and a ring
+## train that spreads across the pool from the foot.
+func wade_splash(at: Vector3, strength := 1.0) -> void:
 	wade_splashes += 1
+	_wake[_wake_next] = Vector4(at.x, at.z, 0.0, strength)
+	_wake_next = (_wake_next + 1) % WAKE_RINGS
 	_wade.emit_particle(Transform3D(Basis(), at), Vector3.ZERO, Color.WHITE, Color.WHITE,
 			GPUParticles3D.EMIT_FLAG_POSITION)
 	var off := Vector3(_rng.randf_range(-0.15, 0.15), 0.0, _rng.randf_range(-0.15, 0.15))
@@ -220,6 +233,26 @@ func _update_wade(delta: float) -> void:
 		var terrain = get_parent().get("terrain")
 		at.y = terrain.height_at(at.x, at.z) + 0.01
 		wade_splash(at)
+
+## Age the footfall rings and hand them to the terrain shader.
+func _update_wake(delta: float) -> void:
+	for i in WAKE_RINGS:
+		var r := _wake[i]
+		if r.w <= 0.0:
+			continue
+		r.z += delta
+		if r.z > WAKE_LIFE:
+			r = Vector4.ZERO
+		_wake[i] = r
+		RenderingServer.global_shader_parameter_set("wade_ring_%d" % i, r)
+
+## Footfall rings still spreading (bots).
+func wake_rings() -> int:
+	var n := 0
+	for r in _wake:
+		if r.w > 0.0:
+			n += 1
+	return n
 
 func _update_rain(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()

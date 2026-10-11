@@ -329,6 +329,9 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("rain="):
 			world.weather.force(float(a.substr(5)))
+	for a in args:
+		if a.begins_with("wet="):    # soak the ground after a passing shower (pools, light rain)
+			world.weather.wet = float(a.substr(4))
 	if "norefl" in args:
 		world.env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	if "skyrt" in args:

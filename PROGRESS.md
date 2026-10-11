@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.47
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.48
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through, leaving rings spreading behind each step), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 22:00 UTC:
+  - **Wake rings + a bigger foot splash where the hero wades (next item 9 pick).** Each
+    footfall in a pool now starts a ring train in the water itself: `Weather.wade_splash()`
+    writes (x, z, age, strength) into one of 8 new shader globals `wade_ring_0..7`
+    (round-robin), `_update_wake()` ages them and clears them after `WAKE_LIFE` 1.8 s, and
+    `terrain.gdshader`'s `wade_ripples()` adds a packet of ~3 crests (~9 cm apart) running
+    out from the foot (front ~0.06 + 0.55 t^0.6 m, amplitude falling with age and 1/sqrt(r))
+    to the puddle's normal, only inside pools (branch on `pud`), so the rings bend the
+    SSR/sky reflection on the real water surface and never float or clip. Foot crown
+    0.5 -> 0.75 m, opacity 0.9, a whiter tint, life 0.5 s.
+  - Bot `weather`: rings spread while the hero runs through the pool and all fade after
+    (up to 6 at once, 0 after). 13/13 bots pass.
+  - Shot arg `wet=<0..1>` soaks the ground independent of the rain (pools under a light
+    shower). Shots (rendered with `--fixed-fps 60`, run by hand, not via shots.sh):
+    `wade wk_wade 72 13 rain=1.0` (downpour: the bigger foot crown reads, rings drowned by
+    rain rings), `wade wk_wade3 58 13 rain=0.7 wet=1.0` (light rain: wake rings trail the
+    hero's path across the pool). Verdict: fail as Wukong shots (Vanguard hero, ribbon
+    grass); the foot crown's cup sheet reads as a white sickle at the foot (tune or drop it).
 - Session 2026-10-11 21:00 UTC:
   - **Rain splashes + the hero splashing through pools (next item 9 pick).** New
     `shaders/splash.gdshader`: an upright camera-turned quad per particle drawing a crown of
@@ -886,8 +904,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck; 18:00: puddles in the
    hollows + raindrop ripples, SSR on; 19:00: cloud shadows on the land.)
    (done 20:00: oak leaf blowout fixed; 21:00: drop splashes + hero splashing through pools.)
-   Next session pick: bigger/brighter foot splashes with a spreading ring where the hero
-   wades, then lightning + thunder for strong fronts. Still to do: ripples when the hero wades, rolling
+   (done 22:00: wake rings on the pools + bigger foot splash.)
+   Next session pick: lightning + thunder-light for strong fronts (a sky flash lighting the
+   clouds + a branching bolt mesh in the far deck), then rain on the hero (wet cloth
+   darkening). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
@@ -911,13 +931,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   crowns and roofs (no occlusion; drop splashes also land under crowns); the hero does not
   get wet. Drop splashes are CPU-placed on the terrain height only (they ignore rocks, the
   hero, the soldier), all the same white-grey (no muddy tint on soil), and are faint at a
-  distance; the hero's foot splash (0.5 m) still reads small at 3-4 m and leaves no
-  spreading ring on the pool; footfalls are timed by distance, not by the run clip's feet.
+  distance; footfalls are timed by distance, not by the run clip's feet.
   Puddles: the water is a shaded terrain layer, not a level plane (it follows the hollow's
   curve, so a pool's far side can tilt a few cm); the near half of a pool is very dark at
   steep view angles (physically right, but reads as a hole in dim light); pools stay after
   the ground dries only as long as `weather_wet` > 0.35 (no separate slow evaporation);
-  the hero's feet don't ripple or splash them; the shoreline is hard at close range. Dry
+  wake rings are 8 slots (at a full run the oldest is recycled after ~1.5 s, when it is
+  nearly gone) and only the hero makes them (not the soldier or wildlife); the shoreline is hard at close range. Dry
   hollows still carry thinner grass (sparse sedge) whether or not they hold water; the
   ripple rings are evenly dense across a pool (no gusty patches of heavier drops).
   SSR cost on a real GPU is unmeasured.

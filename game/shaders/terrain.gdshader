@@ -39,6 +39,38 @@ uniform vec3 puddle_mud : source_color = vec3(0.10, 0.08, 0.05);
 // so the engine's sky reflection shows only the bare, dim PhysicalSky)
 uniform vec3 puddle_sky = vec3(0.5, 0.53, 0.57);
 
+// Wake rings where the hero's feet strike a pool: (x, z, age s, strength), pushed by
+// weather.gd per footfall; strength 0 = unused slot.
+global uniform vec4 wade_ring_0;
+global uniform vec4 wade_ring_1;
+global uniform vec4 wade_ring_2;
+global uniform vec4 wade_ring_3;
+global uniform vec4 wade_ring_4;
+global uniform vec4 wade_ring_5;
+global uniform vec4 wade_ring_6;
+global uniform vec4 wade_ring_7;
+
+// One footfall's ring train: a packet of ~3 crests running out from the foot, slowing and
+// spreading as it goes, amplitude falling with age and (cylindrical spreading) with radius.
+vec2 wade_ring(vec2 xz, vec4 r) {
+	if (r.w <= 0.0) return vec2(0.0);
+	vec2 d = xz - r.xy;
+	float dist = length(d);
+	float t = r.z;
+	float front = 0.06 + 0.55 * pow(t, 0.6);           // ~1 m across after a second
+	if (dist > front + 0.05) return vec2(0.0);
+	float x = (front - dist) * 70.0;                    // ~9 cm crests behind the front
+	float env = smoothstep(0.0, 1.0, x) * exp(-max(x - 1.0, 0.0) * 0.28);
+	float amp = r.w * exp(-t * 1.6) * inversesqrt(max(dist, 0.08) * 6.0);
+	return normalize(d + 1e-5) * sin(x) * env * amp;
+}
+
+vec2 wade_ripples(vec2 xz) {
+	return wade_ring(xz, wade_ring_0) + wade_ring(xz, wade_ring_1) + wade_ring(xz, wade_ring_2)
+			+ wade_ring(xz, wade_ring_3) + wade_ring(xz, wade_ring_4) + wade_ring(xz, wade_ring_5)
+			+ wade_ring(xz, wade_ring_6) + wade_ring(xz, wade_ring_7);
+}
+
 varying vec3 wpos;
 varying vec3 wnrm;
 varying float hollow;
@@ -258,6 +290,9 @@ void fragment() {
 	rough = mix(rough, 0.03, pud);
 	vec2 rip = rain_ripples(xz, TIME, clamp(weather_rain * 1.2, 0.0, 1.0))
 			* (1.0 - smoothstep(0.004, 0.03, fp));
+	if (pud > 0.0) {
+		rip += wade_ripples(xz) * (1.0 - smoothstep(0.012, 0.06, fp));
+	}
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = mix(mix(0.25, 0.3, rockw), 0.25, pud);

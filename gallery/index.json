@@ -466,5 +466,17 @@
   "time": "2026-10-11T21:35:58Z",
   "caption": "Low view over a wind-combed pool in a downpour (before the drop splashes were fixed): rain rings, streaks and grey haze read as real weather; grass blades are still flat ribbons up close.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-2215-wade-wake.jpg",
+  "time": "2026-10-11T22:15:00Z",
+  "caption": "After a shower the hero runs through a pool: ring trains spread across the water behind each footfall and a white crown bursts at the foot; the hero is still the sci-fi Vanguard, the splash sheet reads as a white sickle and the grass is flat ribbons.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-2215-wade-downpour.jpg",
+  "time": "2026-10-11T22:15:00Z",
+  "caption": "Downpour over a meadow pool: bigger foot splash at the hero's stride, rain rings everywhere; placeholder hero and low-detail grass keep it short of Wukong.",
+  "verdict": "fail"
  }
 ]
