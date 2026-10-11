@@ -1205,6 +1205,45 @@ func _weather_test() -> void:
 	print("BOT weather puddles: %.1f %% of the ground pools when soaked (hollow > %.2f m, slope < %.3f); spawn hollow %.2f m" % [pool_frac * 100.0, soak_thr, max_slope, spawn_hollow])
 	if pool_frac < 0.003 or pool_frac > 0.12:
 		return _combat_done(false, "puddle coverage out of range")
+	# drops land: splashes burst on the ground in front of the camera while it rains
+	var rs0 := wx.rain_splashes
+	await _ticks(30)
+	var rs := wx.rain_splashes - rs0
+	print("BOT weather splashes: %d drop splashes in 0.5 s at rain %.2f" % [rs, wx.rain])
+	if rs < 100:
+		return _combat_done(false, "rain drops do not splash on the ground")
+	# the hero splashes through a soaked pool, and not across the dry meadow beside it
+	wx.wet = 1.0
+	var pool := Vector3.INF
+	var pp0 := _player.global_position
+	for j in 81:
+		for i in 81:
+			var q := pp0 + Vector3(i * 3.0 - 120.0, 0, j * 3.0 - 120.0)
+			if wx.pool_at(q.x, q.z) and wx.pool_at(q.x + 0.8, q.z) and wx.pool_at(q.x - 0.8, q.z) \
+					and (pool == Vector3.INF or q.distance_to(pp0) < pool.distance_to(pp0)):
+				pool = q
+	if pool == Vector3.INF:
+		return _combat_done(false, "no pool to wade through near the start")
+	_player.use_bot_input = true
+	_player.set_look(-PI * 0.5, -0.1)    # camera looks +X: forward input runs +X
+	var dry := pool + Vector3(-9.0, 0, 0)
+	_player.global_position = Vector3(dry.x, _world.terrain.height_at(dry.x, dry.z) + 0.1, dry.z)
+	await _ticks(10)
+	var w0 := wx.wade_splashes
+	var dry_steps := 0
+	_player.bot_input = Vector2(0, -1)
+	while _player.global_position.x < pool.x - 1.2 and dry_steps < 600:
+		await get_tree().physics_frame
+		dry_steps += 1
+		if wx.pool_at(_player.global_position.x, _player.global_position.z):
+			break
+	var w_dry := wx.wade_splashes - w0
+	await _ticks(50)
+	_player.bot_input = Vector2.ZERO
+	var w_pool := wx.wade_splashes - w0 - w_dry
+	print("BOT weather wade: pool at %s, %d splashes on the dry run-up, %d through the pool" % [pool, w_dry, w_pool])
+	if w_pool < 2 or w_dry > 1:
+		return _combat_done(false, "hero does not splash through the pool (or splashes on dry ground)")
 	var cov1: float = cl.mat.get_shader_parameter("coverage")
 	var d1: Vector2 = cl.mat.get_shader_parameter("drift")
 	await _ticks(60)

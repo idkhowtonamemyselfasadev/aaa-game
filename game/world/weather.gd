@@ -5,6 +5,9 @@ extends Node3D
 ## Writes the shader globals `weather_wind` / `weather_wet` (grass, flowers, trees, terrain,
 ## rocks read them), runs the rain streaks around the camera, and exposes `cloud`, `rain`,
 ## `wind` and `wet` for the world (sky, light, fog) and wildlife (butterflies, midges shelter).
+## Drops burst into splashes on the ground in view of the camera (placed on the terrain
+## height on the CPU: the GPU height-field collision + sub-emitter path does not fire under
+## the software renderer, so it could not be verified); the hero splashes through pools.
 
 @export var auto_fronts := true
 @export var clear_hold := Vector2(360.0, 900.0)   # seconds between fronts
@@ -25,6 +28,17 @@ var _rng := RandomNumberGenerator.new()
 var _rain: GPUParticles3D
 var _rain_mat: ShaderMaterial
 var _pm: ParticleProcessMaterial
+var _splash: GPUParticles3D
+var _wade: GPUParticles3D
+var _splash_acc := 0.0
+var rain_splashes := 0    # drop splashes emitted (bots)
+@export var splash_rate := 1500.0   # splashes per second at full rain, within splash_radius
+@export var splash_radius := 14.0
+var _wade_dist := 0.0
+var _wade_foot := 1.0
+var wade_splashes := 0    # footfalls that splashed through a pool (bots)
+
+const FX_LAYER := 1 << 9  # rain + splashes
 
 func _ready() -> void:
 	_rng.seed = 7071
@@ -55,7 +69,12 @@ func _ready() -> void:
 	_rain.visibility_aabb = AABB(Vector3(-30, -25, -30), Vector3(60, 32, 60))
 	_rain.emitting = false
 	_rain.amount_ratio = 0.0
+	_rain.layers = FX_LAYER
 	add_child(_rain)
+	_splash = _make_splash("Splashes", 2400, 0.32, 0.3, Vector2(0.6, 1.25))
+	_splash.emitting = false    # fed by _update_splashes()
+	_wade = _make_splash("WadeSplashes", 96, 0.45, 0.5, Vector2(0.75, 1.2))
+	_wade.emitting = false      # fed by wade_splash()
 	_push_globals()
 
 ## Bots/shots: set a front strength now (instant) or let it build (instant = false).
@@ -71,6 +90,36 @@ func force(strength: float, instant := true) -> void:
 		wind = cloud
 		_update_rain(0.0)
 		_push_globals()
+
+## Splash bursts drawn by splash.gdshader. The process material resets each particle's
+## scale every step, so the burst size is the shader's `size`, not the emit transform.
+func _make_splash(nm: String, n: int, life: float, size: float, scale: Vector2) -> GPUParticles3D:
+	var spm := ParticleProcessMaterial.new()
+	spm.direction = Vector3.UP
+	spm.spread = 0.0
+	spm.initial_velocity_min = 0.0
+	spm.initial_velocity_max = 0.0
+	spm.gravity = Vector3.ZERO
+	spm.scale_min = scale.x
+	spm.scale_max = scale.y
+	var sq := QuadMesh.new()
+	sq.size = Vector2(1, 1)
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shaders/splash.gdshader")
+	m.set_shader_parameter("size", size)
+	sq.material = m
+	var ps := GPUParticles3D.new()
+	ps.name = nm
+	ps.amount = n
+	ps.lifetime = life
+	ps.local_coords = false
+	ps.process_material = spm
+	ps.draw_pass_1 = sq
+	ps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ps.layers = FX_LAYER
+	ps.visibility_aabb = AABB(Vector3(-40, -40, -40), Vector3(80, 80, 80))
+	add_child(ps)
+	return ps
 
 func _rain_level(c: float) -> float:
 	# rain only sets in once the sky is mostly covered
@@ -100,7 +149,77 @@ func _process(delta: float) -> void:
 	else:
 		wet = move_toward(wet, 0.0, delta / 240.0)
 	_update_rain(delta)
+	_update_wade(delta)
+	_update_splashes(delta)
 	_push_globals()
+
+## True where rain stands in a pool right now (mirrors the terrain shader's puddles: the
+## water climbs from the deepest hollows to every one deeper than `puddle_soaked`).
+func pool_at(x: float, z: float) -> bool:
+	var terrain = get_parent().get("terrain")
+	if terrain == null:
+		return false
+	var fill := smoothstep(0.35, 1.0, wet)
+	if fill < 0.01:
+		return false
+	var thr := lerpf(0.85, 0.27, fill)
+	var flat: float = 1.0 - smoothstep(0.0125, 0.025, 1.0 - terrain.normal_at(x, z, 2.0).y)
+	return flat > 0.5 and terrain.baked_hollow(x, z) > thr + 0.03
+
+## A footfall in water: a big crown at the foot and a couple of smaller throws round it.
+func wade_splash(at: Vector3) -> void:
+	wade_splashes += 1
+	_wade.emit_particle(Transform3D(Basis(), at), Vector3.ZERO, Color.WHITE, Color.WHITE,
+			GPUParticles3D.EMIT_FLAG_POSITION)
+	var off := Vector3(_rng.randf_range(-0.15, 0.15), 0.0, _rng.randf_range(-0.15, 0.15))
+	_splash.emit_particle(Transform3D(Basis(), at + off), Vector3.ZERO, Color.WHITE, Color.WHITE,
+			GPUParticles3D.EMIT_FLAG_POSITION)
+
+## Drops landing in front of the camera: crowns on the ground (and on the pools), mostly
+## within the view cone, denser close in where they resolve.
+func _update_splashes(delta: float) -> void:
+	var cam := get_viewport().get_camera_3d()
+	var terrain = get_parent().get("terrain")
+	if cam == null or terrain == null or rain < 0.05:
+		_splash_acc = 0.0
+		return
+	_splash_acc += splash_rate * rain * delta
+	var n := mini(int(_splash_acc), 60)
+	_splash_acc -= float(int(_splash_acc))
+	var c := cam.global_position
+	var f := -cam.global_basis.z
+	var yaw := atan2(f.x, f.z)
+	for k in n:
+		var ang := yaw + _rng.randf_range(-1.1, 1.1)
+		var r := splash_radius * sqrt(_rng.randf_range(0.004, 1.0))
+		var x := c.x + sin(ang) * r
+		var z := c.z + cos(ang) * r
+		_splash.emit_particle(Transform3D(Basis(), Vector3(x, terrain.height_at(x, z) + 0.01, z)),
+				Vector3.ZERO, Color.WHITE, Color.WHITE, GPUParticles3D.EMIT_FLAG_POSITION)
+		rain_splashes += 1
+
+func _update_wade(delta: float) -> void:
+	var p = get_parent().get("player")
+	if p == null or not (p is CharacterBody3D) or not p.is_on_floor():
+		return
+	var v := Vector2(p.velocity.x, p.velocity.z)
+	var sp := v.length()
+	if sp < 0.6:
+		_wade_dist = 0.0
+		return
+	_wade_dist += sp * delta
+	# a footfall every half stride: ~0.7 m walking, ~1.1 m running
+	var half := lerpf(0.7, 1.1, clampf((sp - 1.5) / 4.5, 0.0, 1.0))
+	if _wade_dist < half:
+		return
+	_wade_dist -= half
+	_wade_foot = -_wade_foot
+	var dir := Vector3(v.x, 0.0, v.y) / sp
+	var at: Vector3 = p.global_position + dir.cross(Vector3.UP) * 0.11 * _wade_foot + dir * 0.25
+	if pool_at(at.x, at.z):
+		var terrain = get_parent().get("terrain")
+		at.y = terrain.height_at(at.x, at.z) + 0.01
+		wade_splash(at)
 
 func _update_rain(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
@@ -119,6 +238,8 @@ func _update_rain(_delta: float) -> void:
 		var h: float = w.time_of_day
 		day = smoothstep(5.0, 7.5, h) * (1.0 - smoothstep(18.0, 20.0, h))
 	_rain_mat.set_shader_parameter("brightness", lerpf(0.08, 0.9, day))
+	for ps: GPUParticles3D in [_splash, _wade]:
+		((ps.draw_pass_1 as QuadMesh).material as ShaderMaterial).set_shader_parameter("brightness", lerpf(0.08, 0.95, day))
 
 func _push_globals() -> void:
 	RenderingServer.global_shader_parameter_set("weather_wind", wind)

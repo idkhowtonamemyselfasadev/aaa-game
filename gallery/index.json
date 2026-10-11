@@ -454,5 +454,17 @@
   "time": "2026-10-11T20:49:59Z",
   "caption": "An oak at 15 h above the sunlit Vale, leaves now deep olive with a rare brown dead leaf instead of apple-like rust blobs; the leaf cards are still oversized at close range and the crowns lack fine silhouette detail.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-2135-wade-rain.jpg",
+  "time": "2026-10-11T21:35:58Z",
+  "caption": "The hero runs through a rain-filled meadow pool: raindrop rings on the water and small splash crowns speckling the grass and pool; the foot splash at the hero's stride is too small to read and the hero is still the sci-fi Vanguard stand-in.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-2135-pool-downpour.jpg",
+  "time": "2026-10-11T21:35:58Z",
+  "caption": "Low view over a wind-combed pool in a downpour (before the drop splashes were fixed): rain rings, streaks and grey haze read as real weather; grass blades are still flat ribbons up close.",
+  "verdict": "fail"
  }
 ]

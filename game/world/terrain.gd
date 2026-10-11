@@ -70,6 +70,13 @@ func hollow_at(x: float, z: float, y: float = NAN) -> float:
 func pond_at(x: float, z: float) -> float:
 	if _hollow.is_empty():
 		return 0.0
+	var flat := 1.0 - smoothstep(0.012, 0.025, 1.0 - normal_at(x, z, 2.0).y)
+	return smoothstep(0.25, 0.37, baked_hollow(x, z)) * flat
+
+## hollow_at as baked into the mesh (bilinear between vertices), what the shader sees.
+func baked_hollow(x: float, z: float) -> float:
+	if _hollow.is_empty():
+		return 0.0
 	var step := size_m / float(resolution)
 	var fx := clampf((x + size_m * 0.5) / step, 0.0, resolution - 0.001)
 	var fz := clampf((z + size_m * 0.5) / step, 0.0, resolution - 0.001)
@@ -78,10 +85,8 @@ func pond_at(x: float, z: float) -> float:
 	var tx := fx - i
 	var tz := fz - j
 	var w := resolution + 1
-	var hv := lerpf(lerpf(_hollow[j * w + i], _hollow[j * w + i + 1], tx),
+	return lerpf(lerpf(_hollow[j * w + i], _hollow[j * w + i + 1], tx),
 			lerpf(_hollow[(j + 1) * w + i], _hollow[(j + 1) * w + i + 1], tx), tz)
-	var flat := 1.0 - smoothstep(0.012, 0.025, 1.0 - normal_at(x, z, 2.0).y)
-	return smoothstep(0.25, 0.37, hv) * flat
 
 func build() -> void:
 	for c in get_children():

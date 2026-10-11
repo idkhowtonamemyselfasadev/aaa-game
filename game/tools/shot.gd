@@ -125,6 +125,24 @@ func _ready() -> void:
 		var tow := Vector3(sdp.x, 0, sdp.z).normalized()   # look into the sun: glint on water
 		SPOTS[spot] = [best - tow * 4.5, best + tow * 1.5]
 		print("SHOT puddle hollow %.2f m at %s" % [terrain.hollow_at(best.x, best.z), best])
+	if spot == "wade":
+		# the hero runs (+X) across the nearest sure pool, seen side-on (pass rain= to soak it)
+		var pw := player.global_position
+		var bw := pw
+		var bh := -1e9
+		for j in 49:
+			for i in 49:
+				var q := pw + Vector3(i * 5.0 - 120.0, 0, j * 5.0 - 120.0)
+				var hv: float = terrain.pond_at(q.x, q.z) - q.distance_to(pw) * 0.002
+				if hv > bh:
+					bh = hv
+					bw = q
+		player.global_position = Vector3(bw.x - 3.2, terrain.height_at(bw.x - 3.2, bw.z) + 0.05, bw.z)
+		player.use_bot_input = true
+		player.set_look(-PI * 0.5, -0.1)
+		player.bot_input = Vector2(0, -1)
+		SPOTS[spot] = [bw + Vector3(0.4, 0, 3.4), bw + Vector3(0.4, 0, 0)]
+		print("SHOT wade pool %.2f at %s" % [bh, bw])
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -243,7 +261,7 @@ func _ready() -> void:
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
+		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		if spot == "puddles":
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
@@ -421,6 +439,7 @@ func _ready() -> void:
 	var err := img.save_png(abs)
 	print("SHOT %s -> %s (%s) err=%d" % [spot, abs, img.get_size(), err])
 	var we: Weather = world.weather
+	print("SHOT wade splashes %d" % we.wade_splashes)
 	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color])
 	get_tree().quit(0 if err == OK else 1)
 
