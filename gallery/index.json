@@ -328,5 +328,17 @@
   "time": "2026-10-11T10:27:00Z",
   "caption": "Side view in daylight: hood, mantle, sash and the new shin wraps hide most of the sci-fi armour; the shins look padded rather than bound and the ember cracks on the thighs still read as armour plates.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-1120-soldier-legs.jpg",
+  "time": "2026-10-11T11:20:00Z",
+  "caption": "Hollow Soldier legs now bound in hemp: thigh, shin and boot wraps hide the old armour; the wraps are too thick and the boot wrap is a lump.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-1120-soldier-side.jpg",
+  "time": "2026-10-11T11:20:00Z",
+  "caption": "Side view of the Hollow Soldier in the meadow: hood, mantle, tabards and bandaged limbs read as one revenant, but the silhouette is padded and bulky.",
+  "verdict": "fail"
  }
 ]

@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.37
+Content hours playable: 0.38
 (the soldier fight can now be lost and retried from the rest point; walkable test valley with grass, oak groves, boulders, rook flocks, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 11:00 UTC:
+  - **Soldier thigh and boot wraps (next item 8).** `HollowRags` now also winds fitted hemp
+    bandages round each thigh (UpLeg -> Leg, 16..90 %, 9 turns) and each boot (Foot -> ToeBase,
+    0..92 %, 4 turns, like puttees), with the same armour-fitted radius as the shin/forearm
+    wraps, so no Vanguard plate shows on the legs any more. 8 wraps per soldier; they burn away
+    with the body. Bot `soldier` checks 8. All 11 routes pass.
+  - Shots: `soldierface legs3 60 11 u=0.2 lit legs nograss` — thighs and shins read as bound
+    cloth; the boot wrap is a shapeless lump at the ankle and the thigh wrap is very thick (it
+    hugs the plated thigh). `soldierface wraps3 60 11 u=0.2 lit` — side: the whole silhouette
+    is now hood, mantle, tabards and bandages; coherent revenant, but padded/bulky. Fails Wukong.
+  - Fresh-box gotcha: run `.tools/godot --headless --path game --import` BEFORE the first shot
+    or bot, or the class cache is missing ("HollowSoldier not declared") and shots fall back.
 - Session 2026-10-11 10:00 UTC:
   - **Soldier shin and forearm wraps (next item 8: leg wraps/greave cloth).** `HollowRags._wrap`
     winds a hemp bandage tube round each shin (LeftLeg/RightLeg -> Foot, 14..93 % of the bone)
@@ -660,8 +672,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    soft lock; 20:00: lock-on + reticle; 21:00: chargeable heavy + parry; 22:00: all staff
    poses reachable + clear of the body, grip slide.) Next: a
    (done 00:00: sweep; 09:00 (10-11): hood, mantle, sash, swinging tabards on the soldier.)
-   (done 10:00: fitted bandage wraps on shins + forearms.) Still to do: thigh cloth (trousers/
-   loincloth over the Vanguard thighs) and boot wraps; ideally a real CC0 humanoid for the
+   (done 10:00: fitted bandage wraps on shins + forearms; 11:00: thighs + boots.) Still to do:
+   slim the leg wraps (shrink the Vanguard leg mesh under them, or hide it), a shaped boot
+   wrap; ideally a real CC0 humanoid for the
    soldier; hit sounds once audio exists; a soldier patrol/camp near the start road.
 9. Climbing + glide. Then the first shrine (Bind) and the Ashen Knight 3-phase boss.
 10. Every step: shots + bots, then update this file.
@@ -687,6 +700,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   proper debris/dust-ring effect and a small sharp glint sprite.
 - `soldier ... stagger smash` shot: the soldier is missing from the frame (not investigated).
   Same for `soldierface ... u=0.5 strike` (10:00).
+- Soldier boot wrap (11:00) is a shapeless lump at the ankle; thigh wraps are ~1.5x a real
+  thigh because they hug the plated Vanguard thigh. Fix by shrinking the skinned leg verts
+  under the wraps (a vertex pass at build) and fitting the wrap to the slimmer leg.
 - Soldier wraps follow the bone rigidly; the shin wrap reads barrel-shaped because it hugs the
   greave's calf flare. Forearm wraps not yet checked in a close shot.
 - Spin finisher's recovery (last key -> guard) grazes the chest surface for ~0.05 s

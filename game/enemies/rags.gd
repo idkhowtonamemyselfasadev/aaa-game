@@ -4,6 +4,7 @@ extends Node
 ## back tabard of grey, ash-stiff hemp over the old armour. Every piece is built in body space
 ## (metres, +Z forward, feet at 0) and hung on a skeleton bone, so it rides the animation.
 ## The tabards swing out of the way of the thighs; the hems trail the body's motion.
+## Hemp bandages bind the thighs, shins, feet and forearms over the old armour.
 
 const BONE_HEAD := "mixamorig_Head"
 const BONE_CHEST := "mixamorig_Spine2"
@@ -19,7 +20,7 @@ var _legs: Array[PackedInt32Array] = []
 var _hips := -1
 var _swing_f := 0.0
 var _swing_b := 0.0
-var wraps := 0          # bandage wraps on shins and forearms, for the bots
+var wraps := 0          # bandage wraps on thighs, shins, feet and forearms, for the bots
 var peak_swing := 0.0   # largest tabard swing so far (rad), for the bots
 var _last_pos := Vector3.ZERO
 var _vel := Vector3.ZERO
@@ -45,6 +46,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	for side in ["Left", "Right"]:
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.14, 0.93, 0.01, 8.0)
 		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
+		# thigh bindings hide the Vanguard's plated thighs; foot wraps bind the boots like
+		# old field puttees, ankle to the ball of the foot
+		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.90, 0.012, 9.0)
+		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
 	_last_pos = body.global_position
 
 func _attach(bone: String) -> Node3D:
