@@ -23,6 +23,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 04:40 UTC (a parallel session; its own sky-only-light fix collided with
+  04:00's, which was kept, and these follow-ups were ported on top):
+  - **Twilight land no longer goes black.** The ambient now follows the afterglow
+    (`max(day, 0.8*afterglow)`, afterglow = 1 with the sun up .. 0 at -9 deg), and as the sun
+    fades out a faint rose light (0.4 * afterglow^2) stays, grazing from 1 deg up on the sunset
+    side, so near grass, trunks and valley haze read under the glow.
+  - **Volumetric haze no longer buries the afterglow.** `volumetric_fog_sky_affect` was keyed to
+    `day`, which is ~0.1 right at sunset, so the dark haze covered 90% of the glowing sky. It now
+    stays 0.1 until -3 deg and reaches 1.0 (the full-night value) at -9 deg.
+  - Bots: all 9 routes pass. Shot: `sunset` 18.4 — warm glow behind the peaks under a violet sky,
+    backlit oaks, the meadow and grass lit: reads as a real evening; fails Wukong on the
+    over-saturated rose/red valley floor, leaf-card canopies and faceted ridges.
 - Session 2026-10-11 04:00 UTC:
   - **Dusk afterglow (known bug / Next 1 dusk check).** Root cause: PhysicalSky's sun energy
     term is ~(1-exp(-elevation)), so the sky went black the moment the sun set, while the sun
@@ -539,6 +551,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   shader) and a cooler tint. Same at dawn.
 - Last sunlight (17.5–18 h) paints the meadow a very saturated orange-red: the low-sun
   colour (1.0, 0.62, 0.36) at 2 deg elevation needs desaturating / more skylight balance.
+- Twilight (18.2–18.6 h) valley floor reads over-saturated rose/red: the rose grazing light
+  (0.95, 0.5, 0.45) on the red-brown terrain albedo; desaturate it together with the 17.5 h
+  orange-red fix above. Looking away from the sunset the moonlit far ridges are still brighter
+  blue than the navy sky.
 - Dawn twilight is symmetric to dusk by construction but not yet screenshot-checked
   (`sunset` faces west; the dawn sun is at -Z).
 - Midge glints are only a few px at 3 m: right for a still, may need a touch more size in

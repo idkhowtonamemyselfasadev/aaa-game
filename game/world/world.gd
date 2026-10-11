@@ -160,14 +160,20 @@ func _apply_time() -> void:
 	var t := time_of_day / 24.0
 	var az := t * TAU + PI * 0.5
 	var elev := deg_to_rad(sun_peak_deg) * sin((time_of_day - 6.0) / 12.0 * PI)
-	sun.rotation = Vector3(-elev, az, 0.0)
 	var day := clampf(sin(elev) * 5.0 + 0.35, 0.0, 1.0)       # 0 night .. 1 full day
 	var low := 1.0 - clampf(sin(elev) / sin(deg_to_rad(25.0)), 0.0, 1.0)   # 1 near horizon
-	# a sun under the horizon lights nothing directly (it used to wash the dusk meadow red)
+	# afterglow: 1 while the sun is up .. 0 at 9 degrees below the horizon
+	var afterglow := smoothstep(deg_to_rad(-9.0), deg_to_rad(0.5), elev)
+	# a sun under the horizon lights nothing directly (it used to wash the dusk meadow red);
+	# what stays is a faint rose glow from the sunset side, grazing from 1 deg up, dying with
+	# the afterglow (without it the land under the sunset went black)
 	var above := smoothstep(deg_to_rad(-1.0), deg_to_rad(1.5), elev)
-	sun.visible = above > 0.0
-	sun.light_energy = lerpf(0.0, 3.0, day) * lerpf(1.0, 0.7, low) * above
-	sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.62, 0.36), low)
+	sun.rotation = Vector3(-maxf(elev, deg_to_rad(1.0)) if above < 1.0 else -elev, az, 0.0)
+	sun.light_energy = lerpf(0.0, 3.0, day) * lerpf(1.0, 0.7, low) * above \
+			+ 0.4 * afterglow * afterglow * (1.0 - above)
+	sun.visible = sun.light_energy > 0.005
+	sun.light_color = Color(1.0, 0.93, 0.84).lerp(Color(1.0, 0.62, 0.36), low) \
+			.lerp(Color(0.95, 0.5, 0.45), 1.0 - above)
 	if sky_sun:
 		# twilight: 0 at 9 degrees below the horizon, 1 once the sun is up
 		var tw := smoothstep(deg_to_rad(-9.0), deg_to_rad(0.5), elev)
@@ -206,7 +212,8 @@ func _apply_time() -> void:
 		# ~0 in shadow (x4 energy changed nothing), so every shadowed surface went black.
 		# Day: blue-grey skylight that warms toward dusk; night: cool moonlit blue.
 		var sky_amb := Color(0.46, 0.53, 0.66).lerp(Color(0.56, 0.46, 0.42), low)
-		env.environment.ambient_light_color = Color(0.13, 0.17, 0.27).lerp(sky_amb, day)
+		# the afterglow sky still lights the land through twilight
+		env.environment.ambient_light_color = Color(0.13, 0.17, 0.27).lerp(sky_amb, maxf(day, 0.8 * afterglow))
 		env.environment.ambient_light_energy = lerpf(1.0, 1.15, day) * ambient_scale
 		# volumetrics only for local ground haze; distance haze is the depth fog (a dense
 		# volume ends at volumetric_fog_length and leaves a visible band on far ridges)
@@ -219,4 +226,6 @@ func _apply_time() -> void:
 		# The moonlit volumetric haze is local (128 m), so it lies in front of the sky exactly
 		# as it lies in front of the far ridges: at the default 0.1 sky affect the fogged ridges
 		# glowed blue as a cut-out against a black sky. Full sky affect at night, light by day.
-		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, day)
+		# Keyed to twilight depth, not `day`: day is ~0.1 right at sunset, which buried the
+		# afterglow under the dark haze; the haze takes the sky over only late in twilight.
+		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, smoothstep(deg_to_rad(-9.0), deg_to_rad(-3.0), elev))
