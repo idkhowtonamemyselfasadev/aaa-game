@@ -1,4 +1,5 @@
 shader_type spatial;
+#include "res://shaders/wet.gdshaderinc"
 // Hollow soldier's spear: COLOR.r picks the layer (0 grey weathered ash-wood, 0.5 pitted,
 // rusted iron, 1 tarred cord binding). UV.x = around (0..1), UV.y = metres along.
 
@@ -73,6 +74,9 @@ void fragment() {
 		metal = 0.0;
 		bump = ridge;
 	}
+	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
+	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	wet_apply(alb, rough, wet_amount(wet_n, wet_p, vnoise(vec2(around * 9.0, along * 5.0))), 1.0 - metal);
 	ALBEDO = alb;
 	ROUGHNESS = clamp(rough, 0.05, 1.0);
 	METALLIC = metal;

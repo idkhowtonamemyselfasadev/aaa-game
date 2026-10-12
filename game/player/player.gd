@@ -119,7 +119,32 @@ func _ready() -> void:
 	_setup_animation()
 	_attach_staff()
 	_setup_crumple()
+	_skin()
+	soak = Soak.new()
+	soak.name = "Soak"
+	add_child(soak)
 	add_child(Hud.new())
+
+## The model's imported materials become hero.gdshader (same maps), which can take the rain.
+var soak: Soak
+
+func _skin() -> void:
+	var shader := preload("res://shaders/hero.gdshader")
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		for s in m.mesh.get_surface_count():
+			var src := m.mesh.surface_get_material(s) as BaseMaterial3D
+			if src == null:
+				continue
+			var mat := ShaderMaterial.new()
+			mat.shader = shader
+			mat.set_shader_parameter("albedo_tex", src.albedo_texture)
+			mat.set_shader_parameter("albedo_col", src.albedo_color)
+			mat.set_shader_parameter("roughness", src.roughness)
+			if src.normal_enabled and src.normal_texture != null:
+				mat.set_shader_parameter("normal_tex", src.normal_texture)
+				mat.set_shader_parameter("normal_depth", src.normal_scale)
+			m.set_surface_override_material(s, mat)
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.

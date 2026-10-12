@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode cull_disabled;
+#include "res://shaders/wet.gdshaderinc"
 // Hollow rags: coarse undyed hemp gone grey with ash, stiff with soot near the torn hems,
 // singed at the edges where the Ember's heat leaks out. UV.x runs around/across the piece,
 // UV.y from where it is fastened (0) to the hem (1). The hem is torn by discard; a few moth
@@ -117,8 +118,12 @@ void fragment() {
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve * 1.1)) * 2.5;
 	}
 	if (!FRONT_FACING) alb *= 0.55;
+	float rough = 0.93 - 0.06 * thread;
+	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
+	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb;
-	ROUGHNESS = 0.93 - 0.06 * thread;
+	ROUGHNESS = rough;
 	SPECULAR = 0.3;
 	METALLIC = 0.0;
 	// thread relief: the weave catches the light at grazing angles

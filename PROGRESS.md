@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0.5
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -48,6 +48,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     `0.85 / tonemap_exposure` if night flashes look clipped; the Vale `Terrain.height_at`
     climbs outside the tile (r^2 bowl), use `Horizon.height_at` out there. No new shots
     this session (the lightning is unchanged visually; the duplicate's shots were dropped).
+- Session 2026-10-12 01:00 UTC:
+  - **Rain soaks the hero and the soldier (next item 9 pick).** New `shaders/wet.gdshaderinc`
+    (`soak`, `wade_soak`, `wade_line` uniforms; `wet_amount()` wets up-facing parts first
+    and breaks the spread into blotches from a caller noise, `wet_apply()` darkens porous
+    surfaces by ~40-55 % (light cloth more), metal ~10 %, and tightens roughness to a water
+    film, never mirror-like on cloth). Included by `staff` (grip + wood soak, bronze only a
+    film), `spear`, `rag` (soldier hood/mantle/wraps) and `hollow` (ash skin). The hero's
+    imported StandardMaterial3Ds are now `shaders/hero.gdshader` (same albedo/normal maps)
+    so the suit can take it too. New `world/soak.gd` (`Soak` node on Player and
+    HollowSoldier): `level` rises to drenched in ~35 s of downpour (scaled by rain), dries
+    over ~200 s; standing in a pool soaks the legs at once up to ground + 0.32 m (lowest
+    ground of the pool, since the water is level) and that dries slower. It pushes the
+    uniforms to every ShaderMaterial on the actor that declares `soak` (rescans each second
+    so the staff/rags added later are picked up).
+  - Bot `weather`: wading soaks the legs to a line just above the pool floor, a full storm
+    drenches the hero (3 materials) and the soldier (16), the hero dries after the front.
+    13/13 bots pass.
+  - Shot arg `soak=<0..1>` sets hero + soldier soak. Shots `sk_dry`/`sk_wet` (rain=0.5 is
+    below the rain threshold: no drops; sk_dry fell back to opengl3 under CPU contention
+    with the bots), `sk_dry2`/`sk_wet2` (rain 0.85, Vulkan) — see verdicts in the gallery.
 - Session 2026-10-11 23:00 UTC:
   - **Lightning for strong fronts (next item 9 pick).** New `world/lightning.gd` (child of
     Weather, `Weather.lightning`): once rain passes `min_rain` 0.7, a bolt strikes every
@@ -958,9 +978,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 20:00: oak leaf blowout fixed; 21:00: drop splashes + hero splashing through pools.)
    (done 22:00: wake rings on the pools + bigger foot splash; 23:00: lightning bolts +
    flashes.)
-   (done 00:00 (10-12): thunder timing signal.)
-   Next session pick: rain on the hero (wet cloth darkening), then the thunder sound once
-   audio exists (hook: `Lightning.thunder`), (done 01:35: sheet flashes with no channel.) Still to do: rolling
+   (done 00:00 (10-12): thunder timing signal; 01:00: rain soaks hero + soldier, wading
+   soaks the legs; 01:35: sheet flashes with no channel.)
+   Next session pick: drips running off the soaked hero (rivulet streaks + drip particles
+   from the hem/staff), rain occlusion under tree crowns, then the thunder sound once
+   audio exists (hook: `Lightning.thunder`). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
@@ -988,8 +1010,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (soft edges; fine at km scale). Clouds are not in the sky radiance (reflections show the bare sky). The
   PhysicalSky behind a partial deck (cloud ~0.7, late afternoon) may still go navy in the
   gaps. Rain falls through tree
-  crowns and roofs (no occlusion; drop splashes also land under crowns); the hero does not
-  get wet. Drop splashes are CPU-placed on the terrain height only (they ignore rocks, the
+  crowns and roofs (no occlusion; drop splashes also land under crowns, and the hero gets
+  soaked under a tree too). Soaking has no drips/rivulets yet and no shelter. Drop splashes are CPU-placed on the terrain height only (they ignore rocks, the
   hero, the soldier), all the same white-grey (no muddy tint on soil), and are faint at a
   distance; footfalls are timed by distance, not by the run clip's feet.
   Puddles: the water is a shaded terrain layer, not a level plane (it follows the hollow's

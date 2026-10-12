@@ -1,4 +1,5 @@
 shader_type spatial;
+#include "res://shaders/wet.gdshaderinc"
 // Hollow skin: the body's own albedo/normal detail turned to grey, cracked ash-stone, with
 // ember light leaking from the fissures — brightest in the chest, where the Ember's grief
 // burns. `ember` flares during a wind-up (the tell), `hit_flash` pulses on a hit, and
@@ -109,8 +110,12 @@ void fragment() {
 		if (d < dissolve) discard;
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve)) * 2.5;
 	}
+	float rough = mix(0.82, 0.95, n) - crack * 0.1;
+	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
+	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb * (1.0 - clamp(glow, 0.0, 1.0) * 0.6);
-	ROUGHNESS = mix(0.82, 0.95, n) - crack * 0.1;
+	ROUGHNESS = rough;
 	METALLIC = 0.0;
 	SPECULAR = 0.35;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;

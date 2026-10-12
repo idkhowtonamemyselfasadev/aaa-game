@@ -1247,6 +1247,11 @@ func _weather_test() -> void:
 	print("BOT weather wade: pool at %s, %d splashes on the dry run-up, %d through the pool" % [pool, w_dry, w_pool])
 	if w_pool < 2 or w_dry > 1:
 		return _combat_done(false, "hero does not splash through the pool (or splashes on dry ground)")
+	var ps: Soak = _player.soak
+	var gy: float = _world.terrain.height_at(pool.x, pool.z)
+	print("BOT weather wade soak: legs %.2f up to %.2f m above the ground" % [ps.wade, ps.wade_line - gy])
+	if ps.wade < 0.5 or ps.wade_line - gy < 0.05 or ps.wade_line - gy > 0.6:
+		return _combat_done(false, "wading did not soak the hero's legs to the water line")
 	var waited := 0
 	while wx.wake_rings() > 0 and waited < 2000:
 		await get_tree().physics_frame
@@ -1349,6 +1354,17 @@ func _weather_test() -> void:
 	await _ticks(90)
 	if bd < lt.distance.x - 1.0 or bd > lt.distance.y + 1.0:
 		return _combat_done(false, "bolt struck at %.0f m, outside the far deck" % bd)
+	# the hero and the soldier are drenched by now, and every soak-aware material knows it
+	var hs: Soak = _player.soak
+	var ss: Soak = _world.soldier.soak if _world.soldier != null else null
+	var hmats := hs._mats.size()
+	var hm_soak: float = hs._mats[0].get_shader_parameter("soak") if hmats > 0 else 0.0
+	print("BOT weather soak: hero %.2f (%d materials, shader %.2f), soldier %.2f (%d materials)" % [hs.level, hmats, hm_soak, ss.level if ss else -1.0, ss._mats.size() if ss else 0])
+	if hs.level < 0.5 or hmats < 3 or absf(hm_soak - hs.level) > 0.05:
+		return _combat_done(false, "the rain did not soak the hero (body + staff)")
+	if ss == null or ss.level < 0.5 or ss._mats.size() < 4:
+		return _combat_done(false, "the rain did not soak the soldier (skin, rags, spear)")
+	var soak_peak := hs.level
 	var wet_peak := wx.wet
 	wx.force(0.0, false)
 	t = 0.0
@@ -1360,6 +1376,9 @@ func _weather_test() -> void:
 	print("BOT weather cleared after %.0f s: cloud %.2f rain %.2f wet %.2f (peak %.2f), sun %.2f, drops %s, butterflies out %d" % [t, wx.cloud, wx.rain, wx.wet, wet_peak, _world.sun.light_energy, rp.emitting, c2[0] + c2[1] + c2[2]])
 	if wx.cloud > 0.02 or rp.emitting or wx.wet >= wet_peak:
 		return _combat_done(false, "the front did not clear / the ground did not start drying")
+	print("BOT weather soak drying: hero %.2f (peak %.2f)" % [hs.level, soak_peak])
+	if hs.level >= soak_peak:
+		return _combat_done(false, "the hero does not dry after the rain")
 	if c2[0] + c2[1] + c2[2] < 10 or _world.sun.light_energy < sun0 * 0.95:
 		return _combat_done(false, "sun and butterflies did not return after the front")
 	var s1 := wx.lightning.strikes + wx.lightning.sheets

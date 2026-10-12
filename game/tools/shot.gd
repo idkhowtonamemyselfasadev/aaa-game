@@ -332,6 +332,10 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("wet="):    # soak the ground after a passing shower (pools, light rain)
 			world.weather.wet = float(a.substr(4))
+		if a.begins_with("soak="):   # drench (or dry) the hero and the soldier
+			player.soak.level = float(a.substr(5))
+			if world.soldier != null:
+				world.soldier.soak.level = float(a.substr(5))
 	if "norefl" in args:
 		world.env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	if "skyrt" in args:

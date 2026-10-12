@@ -1,4 +1,5 @@
 shader_type spatial;
+#include "res://shaders/wet.gdshaderinc"
 // Hero staff: COLOR.r picks the layer (0 lacquered wood, 0.5 worn bronze, 1 cloth wrap).
 // UV.x = around the shaft (0..1), UV.y = metres along it. All detail is procedural.
 
@@ -79,6 +80,11 @@ void fragment() {
 		metal = 0.0;
 		bump = edge * 0.6 + weave * 0.25;
 	}
+	// rain: the cloth grip and bare wood soak, the lacquer and bronze only bead a film
+	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
+	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	float porous = layer > 0.75 ? 1.0 : (layer < 0.25 ? 0.6 : 0.0);
+	wet_apply(alb, rough, wet_amount(wet_n, wet_p, vnoise(vec2(around * 9.0, along * 5.0))), porous);
 	ALBEDO = alb;
 	ROUGHNESS = clamp(rough, 0.05, 1.0);
 	METALLIC = metal;

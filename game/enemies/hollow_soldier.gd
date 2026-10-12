@@ -93,6 +93,7 @@ var anim_tree: AnimationTree
 var skel: Skeleton3D
 var _model_rest: Transform3D
 var _mats: Array[ShaderMaterial] = []
+var soak: Soak
 var _wield: Node3D
 var _grip_r: Node3D
 var _grip_l: Node3D
@@ -135,6 +136,9 @@ func _ready() -> void:
 	add_child(rags)
 	rags.build(skel, body)
 	_mats.append_array(rags.mats)
+	soak = Soak.new()          # the rain darkens the ash skin, rags and spear shaft
+	soak.name = "Soak"
+	add_child(soak)
 	_ember_light = OmniLight3D.new()
 	_ember_light.light_color = Color(1.0, 0.45, 0.15)
 	_ember_light.omni_range = 2.6
