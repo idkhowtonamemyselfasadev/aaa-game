@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.73
-(the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.74
+(the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 22:00 UTC:
+  - **Hero travelling garb (Next item 7; "hero still the sci-fi Vanguard" was the top
+    recurring fail in every verdict).** New `game/player/garb.gd` (`HeroGarb extends
+    HollowRags`), built by `Player._dress()`: an indigo wool hood, a conical woven straw hat
+    (douli, 0.7 m brim with a soft downturn, rigid), a dark mantle widened to cover the
+    Vanguard shoulder plates, madder-red robe panels front (0.90 m) and back (0.96 m) to the
+    shins, an ochre sash, and undyed linen bindings on thighs, shins, feet and forearms
+    (fitted to the mesh like the Hollow's). Same bones/physics as the Hollow rags (thighs
+    push the panels, hems trail motion), clean dyed cloth: no ash, burns or ember. Pieces
+    are shaped for the Hollow's 1.06/1.08 model scale, so they hang under a 1/scale node.
+  - `rags.gd`: `tint` (per-piece cloth colours + soot), `layer` (hero on layer 1),
+    `swing_slack` (hero 0.45 rad: the relaxed idle stance had the front leg ~0.45 rad
+    forward, which held the long front panel swung out 29 deg like a plank).
+    `rag.gdshader`: `soot_amt`, `rigid` (no flutter/sway, for the hat).
+  - Bots: `walk` now checks the garb (14 pieces, 8 wraps, panels swing 40 deg on the run,
+    hat 0.82 m wide over the head); PASS. `soldier` PASS (rags unchanged: 13 pieces, 40 deg).
+  - Verdict: `hero garb_hero2 60 11` fail: the silhouette is now a hatted, cloaked wanderer
+    instead of a sci-fi trooper (big step), but the Vanguard visor still shows under the
+    hat, the robe panels read dark when backlit and the practice post crowds the frame.
+    The `herorun` shot was cut for time (shots take ~12 min each here); take it next session.
 - Session 2026-10-12 20:00 UTC:
   - **Mixed tall-grass clumps (Next item 4 follow-up, flagged as "spiky, evenly spaced
     fans" in the last verdicts).** `GrassField` now builds three tall clump meshes and each
@@ -1372,7 +1392,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    there is audio, (done 06:00 (10-12): rooks roost in a rookery at night), moths around lanterns/campfires once
    they exist, butterflies by day.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
-7. (done 14:00: rigged Mixamo humanoid + idle/walk/run blend.) Still to do: replace the sci-fi
+7. (done 14:00: rigged Mixamo humanoid + idle/walk/run blend; 22:00 (10-12): travelling garb --
+   straw hat, hood, mantle, robe panels, sash, bindings -- over the Vanguard.) Still to do: replace the sci-fi
    "Vanguard" with a mythic hero (robes, hair, face) — look for CC0/CC-BY realistic humanoids in
    GitHub repos (github/raw.githubusercontent work; the clip names Idle/Walk/Run + mixamorig bones
    let a Mixamo-rigged model drop in and retarget); jump/fall clips, foot IK on slopes, turn-in-
@@ -1574,7 +1595,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   would read better.
 - The staff floats against the back (no strap/frog) and can clip the arms in extreme poses;
   it has no collision (cosmetic only).
-- Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip
+- Hero garb (22:00 10-12): the Vanguard visor still shows as a dark face with a blue strip
+  under the hat (no face/eyes yet: the real fix is a new model); the panels are rigid
+  sheets hinged at the hip (no cloth sim), so a wide stride can push a thigh through; the
+  hat does not tilt back when the hero looks up; garb is not torn/singed by hits; the
+  shoulder plates can still peek out at the mantle edge in some poses.
+- Player model is a sci-fi armoured soldier (Mixamo Vanguard) under the garb — placeholder-floor; no jump clip
   (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
 - Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m);
   roosting rooks land straight through the leaf cards onto their twig tips.

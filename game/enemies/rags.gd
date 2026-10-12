@@ -25,6 +25,9 @@ var peak_swing := 0.0   # largest tabard swing so far (rad), for the bots
 var _last_pos := Vector3.ZERO
 var _vel := Vector3.ZERO
 var _trail := Vector3.ZERO
+var layer := 2           # render layer of the pieces (the soldier's ember light skips layer 2)
+var tint: Array = []
+var swing_slack := 0.0   # leg angle (rad) the panels clear before the thigh pushes them     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -75,11 +78,16 @@ func _piece(mesh: ArrayMesh, holes: float, tear: float, sd: float, aspect: float
 	mat.set_shader_parameter("aspect", aspect)
 	mat.set_shader_parameter("tongues", 6.0 + 10.0 * tear / 0.2)
 	mat.set_shader_parameter("time_offset", randf() * 10.0)
+	if not tint.is_empty():
+		mat.set_shader_parameter("cloth_dark", tint[0])
+		mat.set_shader_parameter("cloth_light", tint[1])
+		mat.set_shader_parameter("soot_amt", tint[2])
+		mat.set_shader_parameter("ember", 0.0)
 	mats.append(mat)
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
-	mi.layers = 2
+	mi.layers = layer
 	return mi
 
 ## A tabard panel hung from a pivot at its top edge; the pivot swings about body X.
@@ -262,6 +270,8 @@ func _physics_process(delta: float) -> void:
 		var ang := atan2(rd.z, -rd.y)
 		fwd = maxf(fwd, ang)
 		bwd = maxf(bwd, -ang)
+	fwd = maxf(fwd - swing_slack, 0.0)
+	bwd = maxf(bwd - swing_slack, 0.0)
 	_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), minf(delta * 14.0, 1.0))
 	_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), minf(delta * 14.0, 1.0))
 	peak_swing = maxf(peak_swing, maxf(_swing_f, _swing_b))

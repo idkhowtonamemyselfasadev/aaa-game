@@ -23,6 +23,8 @@ uniform float hit_flash = 0.0;
 uniform float dissolve = 0.0;
 uniform vec3 sway = vec3(0.0);
 uniform float time_offset = 0.0;
+uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = Hollow rags)
+uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 varying float hem_w;
@@ -62,7 +64,7 @@ float weave(vec2 wv) {
 }
 
 void vertex() {
-	float w = UV.y * UV.y * step(wrap_turns, 0.0);
+	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
@@ -100,7 +102,7 @@ void fragment() {
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
-	float soot = smoothstep(0.18, 0.0, to_hem) * 0.65 + burn_rim * 0.8;
+	float soot = (smoothstep(0.18, 0.0, to_hem) * 0.65 + burn_rim * 0.8) * soot_amt;
 	float tone = clamp(0.35 + 0.45 * grime + 0.2 * slub, 0.0, 1.0);
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
 	// old dye and rust stains in blotches

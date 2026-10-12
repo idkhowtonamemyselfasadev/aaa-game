@@ -168,6 +168,21 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and _route.size() > 0 and (at == null or not at.active or _max_blend < _player.ANIM_RUN_SPEED * 0.8):
 		ok = false
 		why = "player locomotion animation did not blend into the run"
+	# the hero wears the travelling garb: hood + straw hat over the head, robe panels that swing
+	var garb: HeroGarb = _player.garb
+	if garb != null:
+		var skel := _player.model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var head := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_Head")).origin
+		var hat_box := garb.hat.global_transform * garb.hat.get_aabb()
+		print("BOT garb: %d pieces, %d wraps, panel swing %.0f deg, hat %.2f m wide, %.2f m above the head bone" % [
+				garb.mats.size(), garb.wraps, rad_to_deg(garb.peak_swing), hat_box.size.x, hat_box.end.y - head.y])
+		if ok and _route.size() > 0 and (garb.mats.size() < 14 or garb.peak_swing < deg_to_rad(8.0)
+				or hat_box.size.x < 0.55 or hat_box.end.y < head.y + 0.1):
+			ok = false
+			why = "hero garb missing, hat off the head or robe panels not swinging"
+	elif ok:
+		ok = false
+		why = "hero has no garb"
 	# the staff must be slung on the back: behind the torso, at shoulder-to-hip height, ~1.86 m long
 	var staff: Staff = _player.staff
 	if staff != null:

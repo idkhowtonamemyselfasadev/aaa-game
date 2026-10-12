@@ -120,6 +120,7 @@ func _ready() -> void:
 	_attach_staff()
 	_setup_crumple()
 	_skin()
+	_dress()
 	soak = Soak.new()
 	soak.name = "Soak"
 	add_child(soak)
@@ -145,6 +146,18 @@ func _skin() -> void:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
 			m.set_surface_override_material(s, mat)
+
+## Travelling garb over the old armour: hood + straw hat, mantle, robe panels, sash, bindings.
+var garb: HeroGarb
+
+func _dress() -> void:
+	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skel == null:
+		return
+	garb = HeroGarb.new()
+	garb.name = "Garb"
+	add_child(garb)
+	garb.build(skel, body)
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.
