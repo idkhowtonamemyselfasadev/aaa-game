@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.67
-(the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.68
+(the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,40 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 16:00 UTC:
+  - **Boot prints + a readable trodden lane (owner ALIVE: "footprints", follow-up of the
+    14:00 trample fail verdict).** `world/trample.gd` now tracks any number of walkers
+    (`walkers`: the Hollow soldier is added in world.gd; the hero stays the only live
+    leg-push body) and keeps a second ring of 64 boot prints (`foot_prints` 64x2 float
+    texture + `foot_box` live bounds, both new globals in project.godot): left/right
+    alternating 0.11 m off the walk line every 0.72 m (1.08 m at a run, deeper toe),
+    lasting `PRINT_LIFE` 180 s. terrain.gdshader `boot_prints()`/`sole_sdf()`: heel + ball
+    sole shape with cross-bar tread and a pushed-up rim, pressed ~1.2-1.8 cm (bump +
+    cavity), darker matted soil, full strength in litter/moss, ~half in turf, none on rock;
+    old prints slump (softer edge, no tread) and fade; in rain they fill with water (dark,
+    glossy, take the pool ripples). Early-out outside `foot_box` and beyond ~3 cm pixel
+    footprint. Trodden lane: the terrain under the trail now paints a matted layer of
+    straw/bruised-green blades combed along the walk (`blades()` got a `spread` param);
+    grass lane wider (reach 0.85 m), folded to ~83 deg, stays laid for the first third of
+    its life (spring-back curve 0.3..1.0), paler backs stronger.
+  - Fixed while doing it: a trail/print point could be laid with a zero direction on
+    frames with no physics step (now skipped); a walker's speed comes from its
+    `velocity`, not the per-frame move.
+  - Bot `trample` extended: >= 8 prints along a 14 m run, alternating feet, one near the
+    mark, none 2 m beside, prints outlive the grass spring-back, the soldier leaves prints.
+    17/17 bots pass.
+  - Verdicts (all `trample ... 15.5 close`, a new low camera 9 m back along the track):
+    prints1 (fold 83 deg, before the matted layer) fail but the best: the track finally
+    reads as a lane through the meadow, but the ground in it is near black and the laid
+    blades all but vanish into it. prints3 (fold 77 deg + matted straw layer) fail: the lane
+    is less clear and the straw layer does not show, because the ground under the meadow
+    sits in the standing grass's own shadow. prints4 (same, wet=1) fail: only one or two
+    glints of water in prints; boot prints are not readable in turf at this light. The fold
+    was put back to 83 deg (prints1); the 83 deg + matted layer combination is unshot.
+    Next for this: brighten the lane ground (laid blades should not cast/receive the
+    standing sward's contact shadow: lift the terrain's AO/bounce under `laid`, or tint the
+    laid grass blades themselves pale straw), and shoot the prints where they show best:
+    on bare/litter ground (grove floor, the ruin floor, a future path) and in a puddle.
 - Session 2026-10-12 14:00 UTC:
   - **Grass, flowers and ferns react to the hero (owner ALIVE: "grass flattens, foliage
     brushes").** New `world/trample.gd` (child of World) drops a footfall every 0.6 m while
@@ -1206,7 +1240,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    bigger hero boulders/outcrops (3–6 m), hedgerows,
    (done 12:00 (10-12): ferns + shrubs under/around the groves; 13:00: leaf-litter carpet +
    canopy fill under the crowns; follow-ups: break the leaf-bed grid, fern close-up moire, (done 14:00: grass/flowers/ferns
-   trampled by the hero; follow-ups: the soldier and wildlife trample too, mud footprints), fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
+   trampled by the hero; 16:00: boot prints, soldier tramples, readable lane; follow-ups: wildlife trample, prints from the animation's foot plants), fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
 3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
    peaks.) Polish: more rock colour/contrast on the far range (it reads hazy grey; maybe
@@ -1267,7 +1301,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Trample (14:00 10-12): only the hero tramples (not the soldier, wildlife once it exists);
+- Boot prints (16:00 10-12): placed by distance along the walk, not by the animation's
+  foot plants (can sit a little off the visible foot); same print on every surface (no
+  splash/mud lip in puddles, no snow); prints on steep slopes are not oriented to the
+  slope; 64 kept (~45 m of walking, then the oldest vanish).
+- Trample (14:00 10-12): only the hero and the soldier trample (wildlife once it exists);
   the trail is 32 footfalls, so a long run only keeps the last ~19 m laid; the fold is a
   rigid tilt at the root (no crushed/kinked blades, no bent stems lying on top of each
   other); no footprints in mud/wet soil yet; plants laid over by the live push also

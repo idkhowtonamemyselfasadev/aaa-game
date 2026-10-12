@@ -40,9 +40,9 @@ vec3 trample_lay(vec3 root, float reach) {
 		}
 		vec2 dir = texelFetch(trample_trail, ivec2(i, 1), 0).xy;
 		// fully laid within a fraction of a second, lying a few seconds, then springing
-		// back up (the last tilt lingers)
+		// back up over the last two thirds (the last tilt lingers)
 		float t = a.z / TRAMPLE_LIFE;
-		float rec = smoothstep(0.0, 0.08, a.z) * (1.0 - smoothstep(0.1, 1.0, t));
+		float rec = smoothstep(0.0, 0.08, a.z) * (1.0 - smoothstep(0.3, 1.0, t));
 		float k = (1.0 - smoothstep(reach * 0.35, reach, sqrt(r2))) * rec * a.w;
 		// laid along the walk, a little outward from the footprint's centre line
 		vec2 side = d - dot(d, dir) * dir;

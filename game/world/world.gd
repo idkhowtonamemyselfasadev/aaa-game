@@ -78,6 +78,7 @@ func _ready() -> void:
 	add_child(soldier)
 	soldier.plant(terrain)
 	soldier.face(p)
+	trample.walkers.append(soldier)   # the Hollow tramples the sward and leaves prints too
 
 func _build_environment() -> void:
 	var e := Environment.new()

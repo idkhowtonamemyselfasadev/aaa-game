@@ -15,6 +15,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // surface gradient), and small detail fades to its average with distance so nothing shimmers.
 
 #include "res://shaders/weather.gdshaderinc"
+#include "res://shaders/trample.gdshaderinc"
 uniform vec3 turf_a   : source_color = vec3(0.20, 0.22, 0.08);   // shaded live sward
 uniform vec3 turf_b   : source_color = vec3(0.46, 0.47, 0.18);   // sunlit live blade
 uniform vec3 thatch_a : source_color = vec3(0.30, 0.24, 0.10);   // matted dead grass
@@ -75,6 +76,58 @@ vec2 wade_ripples(vec2 xz) {
 			+ wade_ring(xz, wade_ring_6) + wade_ring(xz, wade_ring_7);
 }
 
+// boot prints pressed by the hero and the Hollows (world/trample.gd): 64x2 RGBA float,
+// row 0 (x, z, age s, depth 0..1), row 1 (heel-to-toe dir x, z); foot_box = live bounds
+global uniform sampler2D foot_prints : filter_nearest, repeat_disable;
+global uniform vec4 foot_box;
+const int FOOT_N = 64;
+const float FOOT_LIFE = 180.0;
+
+// Signed distance (m) to a boot sole: heel pad and ball joined by a narrow waist.
+// p: x along the foot (toe +), y across.
+float sole_sdf(vec2 p) {
+	float heel = (length((p - vec2(-0.085, 0.0)) / vec2(0.048, 0.042)) - 1.0) * 0.042;
+	float ball = (length((p - vec2(0.045, 0.004)) / vec2(0.078, 0.050)) - 1.0) * 0.050;
+	float k = 0.035;
+	float hh = clamp(0.5 + 0.5 * (ball - heel) / k, 0.0, 1.0);
+	return mix(ball, heel, hh) - k * hh * (1.0 - hh);
+}
+
+// x: how deep the ground is pressed here (0..1), y: the pushed-up rim, z: toe weight
+vec3 boot_prints(vec2 xz) {
+	vec3 r = vec3(0.0);
+	if (xz.x < foot_box.x || xz.y < foot_box.y || xz.x > foot_box.z || xz.y > foot_box.w) {
+		return r;
+	}
+	for (int i = 0; i < FOOT_N; i++) {
+		vec4 a = texelFetch(foot_prints, ivec2(i, 0), 0);
+		if (a.w <= 0.0) {
+			continue;
+		}
+		vec2 d = xz - a.xy;
+		if (dot(d, d) > 0.04) {
+			continue;
+		}
+		vec2 f = texelFetch(foot_prints, ivec2(i, 1), 0).xy;
+		vec2 lp = vec2(dot(d, f), dot(d, vec2(-f.y, f.x)));
+		float sd = sole_sdf(lp);
+		// fresh prints are crisp and deep; old ones slump and fade back into the ground
+		float age = a.z / FOOT_LIFE;
+		float keep = a.w * (1.0 - smoothstep(0.25, 1.0, age));
+		float soft = 0.006 + 0.012 * age;
+		float dent = (1.0 - smoothstep(-soft, soft * 0.5, sd));
+		// cross-bar tread pressed into the sole (fades as the print slumps)
+		float tread = smoothstep(0.3, 0.7, abs(fract(lp.x * 42.0) - 0.5) * 2.0) * (1.0 - age) * 0.25;
+		dent *= 1.0 - tread * step(sd, -0.008);
+		float rim = smoothstep(0.035, 0.008, sd) * step(-0.002, sd);
+		float toe = smoothstep(-0.02, 0.09, lp.x);
+		r.x = max(r.x, dent * keep);
+		r.y = max(r.y, rim * keep * (1.0 - r.x));
+		r.z = max(r.z, toe * dent * keep);
+	}
+	return r;
+}
+
 varying vec3 wpos;
 varying vec3 wnrm;
 varying float hollow;
@@ -115,14 +168,14 @@ float fbm(vec3 p) {
 
 // Fallen blades: one short stroke per cell at a random angle (combed loosely along `comb`).
 // Returns (coverage, height, tone). Two jittered cells overlap so strokes cross.
-vec3 blades(vec2 p, float scale, vec2 comb, float seed) {
+vec3 blades(vec2 p, float scale, vec2 comb, float seed, float spread) {
 	vec3 acc = vec3(0.0);
 	for (int k = 0; k < 2; k++) {
 		vec2 q = p * scale + vec2(float(k) * 0.5, float(k) * 0.37) + seed;
 		vec2 cell = floor(q);
 		vec2 f = fract(q) - 0.5;
 		vec3 r = hash23(cell + seed * 13.0);
-		float ang = atan(comb.y, comb.x) + (r.x - 0.5) * 2.2;
+		float ang = atan(comb.y, comb.x) + (r.x - 0.5) * spread;
 		vec2 dir = vec2(cos(ang), sin(ang));
 		f -= (r.yz - 0.5) * 0.3;
 		float along = dot(f, dir);
@@ -237,8 +290,8 @@ void fragment() {
 	// ---- turf: live blades over combed thatch ----
 	vec2 comb = normalize(vec2(0.8, 0.6) + (vec2(meso, micro) - 0.5) * 1.5);
 	float fade_b = 1.0 - smoothstep(0.01, 0.05, fp);   // blades are ~2 cm wide
-	vec3 b1 = blades(xz, 12.0, comb, 0.0);
-	vec3 b2 = blades(xz, 17.0, comb.yx * vec2(1.0, -1.0), 5.3);
+	vec3 b1 = blades(xz, 12.0, comb, 0.0, 2.2);
+	vec3 b2 = blades(xz, 17.0, comb.yx * vec2(1.0, -1.0), 5.3, 2.2);
 	vec3 thatch = mix(thatch_a, thatch_b, clamp(meso * 0.5 + micro * 0.4 + b2.z * 0.3 - 0.1, 0.0, 1.0));
 	vec3 live = mix(turf_a, turf_b, 0.35 + 0.5 * b1.z * micro + 0.2 * micro);
 	// the sward far away: a mix of live and dead
@@ -248,6 +301,24 @@ void fragment() {
 	turf_near = mix(turf_near, mix(live, thatch, thatchw * 0.6), b1.x);
 	vec3 turf = mix(turf_far, turf_near, fade_b);
 	float turf_h = mix(0.5, max(b1.y, b2.y * 0.7), fade_b) * 0.004;
+
+	// ---- trodden lane: the hero's track lays the sward flat along the walk ----
+	// (the grass blades above fold over too; this is the matted layer under them, pale
+	// straw and bruised green blades all combed one way, so the lane reads lighter)
+	float laid = 0.0;
+	if (fp < 0.05) {
+		vec3 tl = trample_lay(wpos, 0.85);
+		laid = tl.z * (1.0 - rockw) * (1.0 - smoothstep(0.025, 0.05, fp));
+		if (laid > 0.001) {
+			vec3 lb = blades(xz, 9.0, tl.xy, 2.7, 0.5);
+			vec3 lb2 = blades(xz, 13.0, tl.xy, 7.1, 0.7);
+			vec3 straw = mix(thatch_b, turf_b, 0.35 + 0.4 * lb.z) * (0.85 + 0.3 * micro);
+			vec3 mat = mix(mix(turf_a, thatch_a, 0.5), straw * 0.8, lb2.x);
+			mat = mix(mat, straw * 1.12, lb.x);
+			turf = mix(turf, mat, laid * 0.9);
+			turf_h = mix(turf_h, max(lb.y, lb2.y * 0.7) * 0.004, laid);
+		}
+	}
 
 	// ---- clover patches ----
 	float fade_c = 1.0 - smoothstep(0.008, 0.04, fp);
@@ -307,6 +378,13 @@ void fragment() {
 	col = mix(col, litcol, litw);      h = mix(h, lit_h, litw);
 	col = mix(col, moss, mossw);       h = mix(h, moss_h, mossw);
 	col = mix(col, rock, rockw);       h = mix(h, rock_h, rockw);
+	// ---- boot prints: pressed, matted and darker; deepest in soft litter, faint in turf ----
+	vec3 bp = fp < 0.03 ? boot_prints(xz) : vec3(0.0);
+	float soft_g = (1.0 - rockw) * mix(0.55, 1.0, max(litw, mossw * 0.7));
+	float pr = bp.x * soft_g * (1.0 - smoothstep(0.015, 0.03, fp));
+	col = mix(col, mix(col, mix(earth, thatch_a, 0.35) * 0.8, 0.55) * 0.78, pr);
+	col *= 1.0 + 0.1 * bp.y * soft_g;
+	h += (-0.012 - 0.006 * bp.z) * pr + 0.003 * bp.y * soft_g;
 	// broad tonal variation so the field is not one flat colour from afar
 	col *= 0.82 + 0.3 * macro + 0.12 * (meso - 0.5);
 
@@ -334,6 +412,11 @@ void fragment() {
 	float depth = clamp((level - thr) / 0.12, 0.0, 1.0);
 	col = mix(col, mix(col * 0.6, puddle_mud, depth) * 0.8, pud);
 	rough = mix(rough, 0.03, pud);
+	// rain gathers in the boot prints: little dark mirrors along the track
+	float hold = pr * smoothstep(0.25, 0.7, wet_here) * flat_w;
+	col = mix(col, col * 0.55, hold * 0.8);
+	rough = mix(rough, 0.05, hold);
+	pud = max(pud, hold * 0.85);
 	vec2 rip = rain_ripples(xz, TIME, clamp(weather_rain * 1.2 * (1.0 - shel), 0.0, 1.0))
 			* (1.0 - smoothstep(0.004, 0.03, fp));
 	if (pud > 0.0) {

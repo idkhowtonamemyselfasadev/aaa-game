@@ -2,18 +2,30 @@ class_name Trample
 extends Node
 ## Tracks the hero's footfalls and hands them to the plant shaders (trample.gdshaderinc):
 ## grass, wildflowers and ferns part round the legs and stay laid over along the trail,
-## springing back over TRAMPLE_LIFE seconds.
+## springing back over TRAMPLE_LIFE seconds. Every walker (the hero, the Hollows) also
+## presses boot prints into the ground (terrain.gdshader): left, right, left along the walk,
+## darker pressed soil that fills with water in the rain and fades over PRINT_LIFE seconds.
 
 const N := 32             # footfalls kept (oldest recycled): ~19 m of trail
 const LIFE := 9.0         # s for a laid plant to stand up again (shader TRAMPLE_LIFE)
 const STEP := 0.6        # m between trail points
 
+const PN := 64            # boot prints kept (oldest recycled)
+const PRINT_LIFE := 180.0 # s for a print to weather away
+const STRIDE := 0.72      # m between prints (alternating feet)
+const GAIT := 0.11        # m each foot sits off the walk line
+
 var player: Node3D
+var walkers: Array[Node3D] = []   # besides the hero: soldiers etc. (trail + prints)
+var _wstate := {}                 # walker -> [last pos, trail dist, print dist, foot parity]
+var _prints: Array[Vector4] = []  # x, z, age, depth 0..1
+var _pdirs: Array[Vector2] = []
+var _pnext := 0
+var _pimg: Image
+var _ptex: ImageTexture
 var _pts: Array[Vector4] = []    # x, z, age, strength
 var _dirs: Array[Vector2] = []
 var _next := 0
-var _dist := 0.0
-var _last := Vector3.INF
 var frozen := false      # shots: keep a seeded trail as it is (no ageing, no new points)
 var _img: Image
 var _tex: ImageTexture
@@ -25,6 +37,12 @@ func _ready() -> void:
 	_img = Image.create_empty(N, 2, false, Image.FORMAT_RGBAF)
 	_tex = ImageTexture.create_from_image(_img)
 	RenderingServer.global_shader_parameter_set("trample_trail", _tex)
+	for i in PN:
+		_prints.append(Vector4.ZERO)
+		_pdirs.append(Vector2.ZERO)
+	_pimg = Image.create_empty(PN, 2, false, Image.FORMAT_RGBAF)
+	_ptex = ImageTexture.create_from_image(_pimg)
+	RenderingServer.global_shader_parameter_set("foot_prints", _ptex)
 
 func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -38,10 +56,6 @@ func _process(delta: float) -> void:
 	if frozen:
 		_upload()
 		return
-	if _last == Vector3.INF:
-		_last = p
-	var mv := Vector2(p.x - _last.x, p.z - _last.z)
-	_last = p
 	for i in N:
 		var r := _pts[i]
 		if r.w > 0.0:
@@ -49,16 +63,55 @@ func _process(delta: float) -> void:
 			if r.z > LIFE:
 				r = Vector4.ZERO
 			_pts[i] = r
-	if grounded and mv.length() < 2.0:   # ignore teleports (respawn)
-		_dist += mv.length()
-		if _dist >= STEP:
-			_dist = 0.0
-			# a run tramples harder than a walk
-			var sp := mv.length() / maxf(delta, 1e-4)
-			_pts[_next] = Vector4(p.x, p.z, 0.0, lerpf(0.75, 1.0, clampf(sp / 6.0, 0.0, 1.0)))
-			_dirs[_next] = mv.normalized()
-			_next = (_next + 1) % N
+	for i in PN:
+		var q := _prints[i]
+		if q.w > 0.0:
+			q.z += delta
+			if q.z > PRINT_LIFE:
+				q = Vector4.ZERO
+			_prints[i] = q
+	_walk(player, delta, grounded)
+	for w in walkers:
+		if is_instance_valid(w) and w.is_inside_tree():
+			_walk(w, delta, (w as CharacterBody3D).is_on_floor() if w is CharacterBody3D else true)
 	_upload()
+
+## Lay trail points and boot prints behind one walker.
+func _walk(w: Node3D, delta: float, grounded: bool) -> void:
+	var p := w.global_position
+	if not _wstate.has(w):
+		_wstate[w] = [p, 0.0, 0.0, 0]
+	var st: Array = _wstate[w]
+	var last: Vector3 = st[0]
+	var mv := Vector2(p.x - last.x, p.z - last.z)
+	st[0] = p
+	if not grounded or mv.length() >= 2.0 or mv.length() < 1e-5:   # airborne, teleport, or no physics step this frame
+		return
+	st[1] += mv.length()
+	st[2] += mv.length()
+	var sp := mv.length() / maxf(delta, 1e-4)
+	if w is CharacterBody3D:   # physics steps and frames do not line up: use the body's speed
+		var v := (w as CharacterBody3D).velocity
+		sp = Vector2(v.x, v.z).length()
+	if st[1] >= STEP:
+		st[1] = 0.0
+		# a run tramples harder than a walk
+		_pts[_next] = Vector4(p.x, p.z, 0.0, lerpf(0.75, 1.0, clampf(sp / 6.0, 0.0, 1.0)))
+		_dirs[_next] = mv.normalized()
+		_next = (_next + 1) % N
+	# a run lengthens the stride and digs the toe in deeper
+	if st[2] >= STRIDE * lerpf(1.0, 1.5, clampf((sp - 2.0) / 4.0, 0.0, 1.0)):
+		st[2] = 0.0
+		st[3] = 1 - int(st[3])
+		var d := mv.normalized()
+		var side := Vector2(-d.y, d.x) * (GAIT if st[3] == 0 else -GAIT)
+		add_print(Vector2(p.x, p.z) + side, d, lerpf(0.7, 1.0, clampf(sp / 6.0, 0.0, 1.0)), 0.0)
+
+## Press one boot print at `at` (heel to toe along `dir`).
+func add_print(at: Vector2, dir: Vector2, depth: float, age: float) -> void:
+	_prints[_pnext] = Vector4(at.x, at.y, age, depth)
+	_pdirs[_pnext] = dir.normalized()
+	_pnext = (_pnext + 1) % PN
 
 func _upload() -> void:
 	for i in N:
@@ -66,6 +119,21 @@ func _upload() -> void:
 		_img.set_pixel(i, 0, Color(r.x, r.y, r.z, r.w))
 		_img.set_pixel(i, 1, Color(_dirs[i].x, _dirs[i].y, 0.0, 0.0))
 	_tex.update(_img)
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for i in PN:
+		var q := _prints[i]
+		_pimg.set_pixel(i, 0, Color(q.x, q.y, q.z, q.w))
+		_pimg.set_pixel(i, 1, Color(_pdirs[i].x, _pdirs[i].y, 0.0, 0.0))
+		if q.w > 0.0:
+			lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+			hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+	_ptex.update(_pimg)
+	# bounds of the live prints (+ a boot length): the terrain skips the loop outside
+	if lo.x == INF:
+		RenderingServer.global_shader_parameter_set("foot_box", Vector4(1e9, 1e9, -1e9, -1e9))
+	else:
+		RenderingServer.global_shader_parameter_set("foot_box", Vector4(lo.x - 0.3, lo.y - 0.3, hi.x + 0.3, hi.y + 0.3))
 
 ## Lay a trail along `path` (oldest first) whose footfalls are `age_old`..`age_new` s old
 ## (shots: a trodden track through the grass without having to walk it in real time).
@@ -86,6 +154,18 @@ func seed_trail(path: PackedVector3Array, age_old: float, age_new: float) -> voi
 		_pts[_next] = Vector4(q.x, q.z, lerpf(age_old, age_new, u), 1.0)
 		_dirs[_next] = Vector2(nxt.x, nxt.z).normalized()
 		_next = (_next + 1) % N
+	# boot prints along the same track, alternating feet
+	var foot := 0
+	var acc := 0.0
+	for j in range(1, pts.size()):
+		acc += (pts[j] - pts[j - 1]).length()
+		if acc < STRIDE:
+			continue
+		acc = 0.0
+		foot = 1 - foot
+		var dd := Vector2(pts[j].x - pts[j - 1].x, pts[j].z - pts[j - 1].z).normalized()
+		var u := float(j) / (pts.size() - 1)
+		add_print(Vector2(pts[j].x, pts[j].z) + Vector2(-dd.y, dd.x) * (GAIT if foot == 0 else -GAIT), dd, 0.9, lerpf(age_old, age_new, u))
 	frozen = true
 	_upload()
 
@@ -96,6 +176,26 @@ func active_points() -> int:
 		if r.w > 0.0:
 			n += 1
 	return n
+
+## Boot prints still pressed in the ground (bots).
+func active_prints() -> int:
+	var n := 0
+	for q in _prints:
+		if q.w > 0.0:
+			n += 1
+	return n
+
+## Nearest live print to `at` (bots): Vector4(x, z, age, depth), w 0 if none within `r`.
+func print_near(at: Vector3, r := 1.0) -> Vector4:
+	var best := Vector4.ZERO
+	var bd := r
+	for q in _prints:
+		if q.w > 0.0:
+			var d := Vector2(at.x - q.x, at.z - q.y).length()
+			if d < bd:
+				bd = d
+				best = q
+	return best
 
 ## How far (0..1) a plant rooted at `at` is laid over right now: CPU mirror of
 ## trample_lay() in the shader (bots).
@@ -111,6 +211,6 @@ func lay_at(at: Vector3, reach := 0.7) -> float:
 		var d := Vector2(at.x - a.x, at.z - a.y).length()
 		if d > reach:
 			continue
-		var rec := smoothstep(0.0, 0.08, a.z) * (1.0 - smoothstep(0.1, 1.0, a.z / LIFE))
+		var rec := smoothstep(0.0, 0.08, a.z) * (1.0 - smoothstep(0.3, 1.0, a.z / LIFE))
 		amt = maxf(amt, (1.0 - smoothstep(reach * 0.35, reach, d)) * rec * a.w)
 	return clampf(amt, 0.0, 1.0)

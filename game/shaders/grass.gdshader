@@ -56,15 +56,16 @@ void vertex() {
 	// a storm front combs the sward over: stronger swell, much stronger gusts
 	float bend = (wind_strength * (1.0 + 0.6 * storm) * swell + gust_strength * (1.0 + 0.9 * storm) * gust) * v_h * v_h;
 	// the hero: blades part round the legs and lie laid over along the trail
-	vec3 tl = trample_lay(origin, 0.7);
+	vec3 tl = trample_lay(origin, 0.85);
 	v_laid = tl.z;
 	float stand = 1.0 - 0.8 * tl.z;   // laid blades barely catch the wind
 	bend *= stand;
 	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h) * stand;
 	wv.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
 	if (tl.z > 0.001) {
-		// trodden blades fold over at the root (up to ~70 deg), the clump's own lean kept
-		wv += trample_fold(iw - origin, tl.xy, tl.z * 1.2);
+		// trodden blades fold over at the root (fresh ones nearly flat, ~83 deg), the
+		// clump's own lean kept
+		wv += trample_fold(iw - origin, tl.xy, tl.z * 1.45);
 	}
 	// bend in world space, convert back to local (instances are rotated/scaled)
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
@@ -82,7 +83,7 @@ void fragment() {
 	float rough = 0.82;
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
-	col = mix(col, col * vec3(1.18, 1.16, 1.0) + vec3(0.02, 0.02, 0.0), v_laid * 0.6);
+	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
 	weather_wetten_sheltered(col, rough, 0.85, v_shelter);
 	ALBEDO = col;
 	ROUGHNESS = rough;

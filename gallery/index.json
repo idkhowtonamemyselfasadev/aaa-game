@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -651,6 +651,18 @@
   "file": "20261012-1546-trodden-meadow.jpg",
   "time": "2026-10-12T15:46:35Z",
   "caption": "The afternoon meadow behind the hero: grass along the 18 m track the hero walked is combed over toward him and springs back at the far end; the track is still subtle (no clear lane or blade backs) and the grass near the camera is dark at the roots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1628-trodden-lane.jpg",
+  "time": "2026-10-12T16:28:00Z",
+  "caption": "The hero's track through the afternoon meadow now reads as a laid-flat lane with boot prints pressed along it; the ground in the lane is still near black (the standing grass shadows it) and the prints barely show in turf.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1628-wet-prints.jpg",
+  "time": "2026-10-12T16:28:00Z",
+  "caption": "The same track after rain: boot prints should hold water, but only a glint or two shows through the grass and the lane is less clear than in the dry shot.",
   "verdict": "fail"
  }
 ]

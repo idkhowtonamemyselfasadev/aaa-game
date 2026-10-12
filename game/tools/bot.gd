@@ -1609,12 +1609,50 @@ func _trample_test() -> void:
 	print("BOT trample: %d trail points, laid %.2f on the trail, %.2f 2 m beside it, texel %s" % [n, laid, beside, px])
 	if n < 10 or laid < 0.35 or beside > 0.05 or px.a <= 0.0:
 		return _combat_done(false, "the hero leaves no trodden trail in the grass")
+	# boot prints: alternating feet along the run, one near the mark, none 2 m beside it
+	var np := tr.active_prints()
+	var pm := tr.print_near(mark, 1.0)
+	var pb := tr.print_near(off, 0.8)
+	var sides := 0
+	var prev := 0.0
+	var lastq := Vector4.ZERO
+	for i in Trample.PN:
+		var q: Vector4 = tr._prints[i]
+		if q.w <= 0.0:
+			continue
+		if lastq.w > 0.0:
+			# each step crosses the walk line: left, right, left
+			var d2: Vector2 = tr._pdirs[i]
+			var sd := (q.x - lastq.x) * -d2.y + (q.y - lastq.y) * d2.x
+			if prev != 0.0 and signf(sd) != signf(prev):
+				sides += 1
+			prev = sd
+		lastq = q
+	print("BOT trample: %d boot prints, near the mark %s, beside %s, %d foot changes" % [np, pm, pb, sides])
+	if np < 8 or pm.w <= 0.0 or pb.w > 0.0 or sides < np / 2:
+		return _combat_done(false, "the hero leaves no alternating boot prints")
 	# stand still: the sward springs back
 	await _ticks(int((Trample.LIFE + 1.0) * 60.0))
 	var after := tr.lay_at(mark)
 	print("BOT trample: after %.0f s laid %.2f, %d points" % [Trample.LIFE + 1.0, after, tr.active_points()])
 	if after > 0.05 or tr.active_points() > 0:
 		return _combat_done(false, "trodden grass never springs back")
+	if tr.active_prints() < np:
+		return _combat_done(false, "boot prints vanished with the grass (they should last minutes)")
+	# the Hollow soldier is a walker too: shove it 3 m along the ground, it leaves prints
+	var foe: Node3D = _world.soldier
+	if not foe in tr.walkers:
+		return _combat_done(false, "the soldier does not trample")
+	var before := tr.active_prints()
+	var fp0 := foe.global_position
+	for k in 30:
+		foe.global_position = fp0 + Vector3(0.1 * (k + 1), 0, 0)
+		foe.global_position.y = terrain.height_at(foe.global_position.x, foe.global_position.z) + 0.02
+		await _ticks(2)
+	foe.global_position = fp0
+	print("BOT trample: soldier walked 3 m, prints %d -> %d" % [before, tr.active_prints()])
+	if tr.active_prints() < before + 3:
+		return _combat_done(false, "the soldier leaves no prints")
 	# a jump leaves no footfall in mid-air: teleport-free, nothing laid far from the hero
 	_combat_done(true, "grass, flowers and ferns part round the hero and spring back behind")
 

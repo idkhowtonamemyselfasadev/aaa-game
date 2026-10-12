@@ -362,6 +362,8 @@ func _ready() -> void:
 		world.trample.seed_trail(path, 8.0, 0.2)
 		player.body.rotation.y = atan2(fwd.x, fwd.z)
 		SPOTS[spot] = [pp - fwd * 15.0 + side * 1.3, pp - fwd * 5.0 + side * 1.0]
+		if "close" in args:   # down at the boot prints, a few metres along the track
+			SPOTS[spot] = [pp - fwd * 9.0 + side * 1.6, pp - fwd * 5.5 + side * 1.3]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -377,7 +379,7 @@ func _ready() -> void:
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z)
 		if spot == "trample":
-			pos.y = terrain.height_at(pos.x, pos.z) + 1.75
+			pos.y = terrain.height_at(pos.x, pos.z) + (1.45 if "close" in args else 1.75)
 			look.y = terrain.height_at(look.x, look.z)
 		if spot == "turf":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.4
