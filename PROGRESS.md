@@ -47,7 +47,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   - Verdict: `hero garb_hero2 60 11` fail: the silhouette is now a hatted, cloaked wanderer
     instead of a sci-fi trooper (big step), but the Vanguard visor still shows under the
     hat, the robe panels read dark when backlit and the practice post crowds the frame.
-    The `herorun` shot was cut for time (shots take ~12 min each here); take it next session.
+    `herorun garb_run 60 11` fail: the hat, hood, sash and the swinging madder panel read
+    well in motion, but white Vanguard chest/back plates show below the mantle on the torso
+    -- next garb step: a wrapped cloth jacket/tunic over the torso (chest + upper back), or
+    a longer mantle.
 - Session 2026-10-12 20:00 UTC:
   - **Mixed tall-grass clumps (Next item 4 follow-up, flagged as "spiky, evenly spaced
     fans" in the last verdicts).** `GrassField` now builds three tall clump meshes and each
@@ -1599,7 +1602,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   under the hat (no face/eyes yet: the real fix is a new model); the panels are rigid
   sheets hinged at the hip (no cloth sim), so a wide stride can push a thigh through; the
   hat does not tilt back when the hero looks up; garb is not torn/singed by hits; the
-  shoulder plates can still peek out at the mantle edge in some poses.
+  shoulder plates can still peek out at the mantle edge in some poses; in the run the
+  white Vanguard chest/back plates show between the mantle and the sash.
 - Player model is a sci-fi armoured soldier (Mixamo Vanguard) under the garb — placeholder-floor; no jump clip
   (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
 - Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m);
