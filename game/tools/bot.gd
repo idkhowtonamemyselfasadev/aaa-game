@@ -140,6 +140,11 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and grass.loaded_chunks() < 10:
 		ok = false
 		why = "grass did not stream in (%d chunks)" % grass.loaded_chunks()
+	# the short sward fills the soil round wherever the camera is
+	print("BOT sward: %d chunks, %d clumps, slowest frame slice %.1f ms" % [grass.sward_chunks(), grass.sward_clumps(), grass.sward_build_ms])
+	if ok and (grass.sward_chunks() < 4 or grass.sward_clumps() < 4000):
+		ok = false
+		why = "short sward did not stream in (%d chunks, %d clumps)" % [grass.sward_chunks(), grass.sward_clumps()]
 	var flora := _world.get_node("Flora")
 	print("BOT flora: %d trees, %d rocks" % [flora.tree_positions.size(), flora.rock_positions.size()])
 	if ok and (flora.tree_positions.size() < 100 or flora.rock_positions.size() < 100):

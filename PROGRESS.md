@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.71
-(a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.72
+(a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 19:00 UTC:
+  - **Short sward under the meadow grass (bug "foreground grass is tufts over bare dark
+    soil", flagged in nearly every verdict; Next item 4).** `GrassField` streams a second,
+    tighter ring of chunks (`sward_m` 26 m, `sward_per_chunk` 2600 candidates per 16 m chunk)
+    of a new low clump mesh (`_build_clump_mesh(true)`: 22 fine blades 9-24 cm, spread over
+    ~0.5 m, 2 segments). It follows the same growth mask as the tall clumps (refactored into
+    `_site()`: slope, bare patches, pools, the keep, oak shade; `_crop_at()` for grazed
+    turf). `grass.gdshader` reads `INSTANCE_CUSTOM.y` = 1 for sward: its own close fade
+    (17-26 m), a quarter of the wind sway, greener live-leaf tint drying to straw, lighter
+    roots and less root AO. Sward chunks build in slices (`SWARD_SLICE` 520 candidates per
+    frame, an empty placeholder holds the slot), one chunk at a time and only on a frame the
+    tall grass left free: the first version built a chunk in one go (~53 ms on the cloud
+    CPU), which slowed the herd (it clamps delta) and broke the trample trail at 4x. Now the
+    slowest frame slice is ~14 ms on the cloud box.
+  - `trample.gd`: the per-frame "teleport" test is now `maxf(2 m, 20 m/s * delta)` instead of
+    a flat 2 m, so a slow frame no longer drops the trail and boot prints (the trample bot
+    was flaky at 4x under load).
+  - Bots: `walk` now also checks the sward streams in (26 chunks, ~59k clumps); `walk`,
+    `herd`, `trample` (x3), `understory`, `ruin` PASS; full suite (18 routes) PASS.
+  - Verdicts: `herd herd_far 60 10` fail (much better): the meadow under the deer is a
+    continuous green-gold sward where it used to be dark soil between tufts; the tall clumps
+    are still spiky, evenly spaced fans and the oaks stylized. `player player_sward 60 11`
+    fail: meadow floor reads as real grass to ~25 m; hero still the sci-fi Vanguard, the
+    practice post crowds the frame.
 - Session 2026-10-12 18:00 UTC:
   - **Red deer look pass (follow-up of the 17:00 herd fail verdict).** `deer.gdshader` now
     takes the Vale's light like the rest of the meadow: `bounce_light` fill (more on the
@@ -1298,7 +1322,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    less fog density on it or warmer lit faces), silhouette detail (the mesh still draws the
    skyline in 40 m segments: a finer outer ring band near the crest), forest impostor speckle on
    foothills, playable-edge border (cliffs) with collision.
-4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
+4. (done 19:00 (10-12): short sward under the tall grass near the camera; follow-ups: make
+   the tall clumps less spiky/regular (mixed clump shapes, seed heads, wider spread), a mid-
+   range sward impostor so the 26 m edge never shows bare ground on a low camera.)
+   Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
    procedural turf/clover/moss/litter/rock floor with per-pixel bump.) Still to do: moss at
    tree bases and round boulders (pass tree/rock positions in a mask texture), a path/road
    layer, grass blade albedo detail + softer clump shadows.
@@ -1355,6 +1382,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Sward (19:00 10-12): only within ~26 m (fades 17-26 m), so a low camera looking over a
+  flat meadow sees the tall clumps thin back to soil-coloured ground past it (the terrain's
+  turf layer hides most of it); a chunk takes ~5 frames to fill in, so a fast sprint can
+  briefly outrun it at the ring edge; it does not shelter/shade the tall clumps' roots
+  differently; sward is not drawn into the `nograss` shot option's removal check (it is a
+  child of Grass, so it goes too).
 - Deer (17:00 10-12): head reads a little long and thin in side view; upper legs join the
   body as separate columns (no blended shoulder/haunch muscle); hooves can sink a few cm on
   slopes and into the grass while grazing (intended to hide in the sward); the neck bend can

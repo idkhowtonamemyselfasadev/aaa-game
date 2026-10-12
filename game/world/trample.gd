@@ -85,7 +85,9 @@ func _walk(w: Node3D, delta: float, grounded: bool) -> void:
 	var last: Vector3 = st[0]
 	var mv := Vector2(p.x - last.x, p.z - last.z)
 	st[0] = p
-	if not grounded or mv.length() >= 2.0 or mv.length() < 1e-5:   # airborne, teleport, or no physics step this frame
+	# airborne, teleport, or no physics step this frame; a slow frame (long delta) can carry
+	# a runner well past 2 m, so the teleport test is a speed no walker reaches (20 m/s)
+	if not grounded or mv.length() >= maxf(2.0, 20.0 * delta) or mv.length() < 1e-5:
 		return
 	st[1] += mv.length()
 	st[2] += mv.length()

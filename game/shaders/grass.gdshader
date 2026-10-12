@@ -20,10 +20,15 @@ uniform float wind_strength = 0.35;
 uniform float gust_strength = 0.55;
 uniform float fade_start = 48.0;
 uniform float fade_end = 64.0;
+// short sward under-layer (INSTANCE_CUSTOM.y = 1, grass.gd _build_sward): own close fade
+uniform float sward_fade_start = 17.0;
+uniform float sward_fade_end = 26.0;
+uniform vec3 sward_green : source_color = vec3(0.36, 0.42, 0.14);
 
 varying float v_h;        // 0 root .. 1 tip
 varying float v_var;      // per-instance variation
 varying float v_ao;
+varying float v_sward;    // 1 = short sward blade
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n2(vec2 p) {
@@ -42,9 +47,11 @@ void vertex() {
 	vec3 iw = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	// per-instance data: INSTANCE_CUSTOM.x variation, .y height scale (baked into transform)
 	v_var = INSTANCE_CUSTOM.x;
+	v_sward = INSTANCE_CUSTOM.y;
 	// distance fade: sink and thin the blade as it reaches the draw distance
 	float d = distance(iw, CAMERA_POSITION_WORLD);
-	float fade = 1.0 - smoothstep(fade_start, fade_end, d);
+	float fade = 1.0 - mix(smoothstep(fade_start, fade_end, d),
+		smoothstep(sward_fade_start, sward_fade_end, d), v_sward);
 	// wind: a slow large swell + travelling gusts + per-blade flutter
 	vec2 wd = normalize(wind_dir);
 	float t = TIME;
@@ -62,6 +69,7 @@ void vertex() {
 	bend *= stand;
 	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h) * stand;
 	wv.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
+	wv *= mix(1.0, 0.28, v_sward);   // a 0.2 m blade sways a fraction of a 0.6 m one
 	if (tl.z > 0.001) {
 		// trodden blades fold over at the root (fresh ones nearly flat, ~83 deg), the
 		// clump's own lean kept
@@ -70,7 +78,8 @@ void vertex() {
 	// bend in world space, convert back to local (instances are rotated/scaled)
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
-	v_ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, v_h));
+	// the sward is short and open to the sky: its roots are far less occluded
+	v_ao = mix(mix(0.35, 0.6, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
 	// lean normals up so clumps light like a canopy, not like flat cards
 	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
@@ -78,8 +87,10 @@ void vertex() {
 
 void fragment() {
 	vec3 tip = mix(tip_green, tip_dry, smoothstep(0.25, 0.85, v_var));
+	// live sward: greener leaf under the dry seed heads, drying to straw where v_var is high
+	tip = mix(tip, mix(sward_green, tip_dry * 0.9, smoothstep(0.45, 0.95, v_var)), v_sward);
 	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
-	vec3 col = mix(root_col, tip, smoothstep(0.0, 0.9, v_h));
+	vec3 col = mix(mix(root_col, tip * 0.45, v_sward), tip, smoothstep(0.0, 0.9, v_h));
 	float rough = 0.82;
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
