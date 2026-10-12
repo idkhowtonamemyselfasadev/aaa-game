@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -86,6 +86,9 @@ func _ready() -> void:
 		return
 	if name == "trample":
 		_trample_test()
+		return
+	if name == "herd":
+		_herd_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1699,3 +1702,82 @@ func _ruin_test() -> void:
 	if far > 3.4:
 		return _combat_done(false, "walked through the tower wall")
 	_combat_done(true, "walked in through the breach and the walls hold")
+
+## Red deer: the herd grazes calm on the open meadow (heads down, now and then one comes
+## up), keeps together and clear of trees; a hero 35 m off puts their heads up; running at
+## them makes them bolt as one, gallop well away, then settle to graze again.
+func _herd_test() -> void:
+	var p := _player
+	var herd: Herd = _world.get_node("Herd")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var c := herd.centre()
+	var away := Vector3(c.x, 0, c.z).normalized()
+	if away.length() < 0.5:
+		away = Vector3(1, 0, 0)
+	var far := c - away * 110.0
+	p.global_position = Vector3(far.x, terrain.height_at(far.x, far.z) + 1.0, far.z)
+	var n := herd.deer_positions().size()
+	print("BOT herd: %d deer at (%.0f, %.0f)" % [n, c.x, c.z])
+	if n < 6:
+		return _combat_done(false, "no herd")
+	var up_seen := 0
+	var down_min := 99
+	for i in 40:
+		await _ticks(30)
+		up_seen = maxi(up_seen, herd.heads_up())
+		down_min = mini(down_min, n - herd.heads_up())
+	var c1 := herd.centre()
+	var spread := 0.0
+	var off_ground := 0.0
+	for q in herd.deer_positions():
+		spread = maxf(spread, Vector2(q.x - c1.x, q.z - c1.z).length())
+		off_ground = maxf(off_ground, absf(q.y - terrain.height_at(q.x, q.z)))
+	print("BOT herd calm: state %d, drift %.1f m in 20 s, spread %.1f m, heads up max %d, grazing min %d" % [herd.state, c1.distance_to(c), spread, up_seen, down_min])
+	if herd.state != Herd.CALM or spread > 16.0 or off_ground > 0.05 or up_seen < 1 or down_min < 3 or c1.distance_to(c) > 8.0:
+		return _combat_done(false, "the herd did not graze calmly together")
+	# step into view at 35 m: heads up, no bolt
+	var at := c1 - away * 35.0
+	p.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 1.0, at.z)
+	await _ticks(120)
+	print("BOT herd watched at 35 m: state %d, heads up %d/%d" % [herd.state, herd.heads_up(), n])
+	if herd.state != Herd.ALERT or herd.heads_up() < n - 1:
+		return _combat_done(false, "a hero in plain sight at 35 m did not put the heads up")
+	# run at them
+	var t := 0.0
+	var top := 0.0
+	while herd.state != Herd.FLEE and t < 8.0:
+		p.bot_input = _input_toward(herd.centre())
+		p.bot_sprint = true
+		await _ticks(6)
+		t += 0.1
+	print("BOT herd charged: bolted after %.1f s at %.1f m" % [t, Vector2(p.global_position.x - herd.centre().x, p.global_position.z - herd.centre().z).length()])
+	if herd.state != Herd.FLEE:
+		return _combat_done(false, "the herd did not bolt from a running hero")
+	for i in 60:
+		p.bot_input = _input_toward(herd.centre())
+		await _ticks(6)
+		for d in herd._deer:
+			top = maxf(top, d.speed)
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	var gap := Vector2(p.global_position.x - herd.centre().x, p.global_position.z - herd.centre().z).length()
+	print("BOT herd fleeing: %.1f m ahead of the hero after 6 s, top speed %.1f m/s" % [gap, top])
+	if gap < 45.0 or top < 7.0:
+		return _combat_done(false, "the herd did not gallop away from the hero")
+	t = 0.0
+	while herd.state != Herd.CALM and t < 60.0:
+		await _ticks(30)
+		t += 0.5
+	await _ticks(240)
+	var c2 := herd.centre()
+	gap = Vector2(p.global_position.x - c2.x, p.global_position.z - c2.z).length()
+	spread = 0.0
+	var clear := 99.0
+	for q in herd.deer_positions():
+		spread = maxf(spread, Vector2(q.x - c2.x, q.z - c2.z).length())
+		for o in herd._obstacles:
+			clear = minf(clear, Vector2(q.x - o.x, q.z - o.z).length())
+	print("BOT herd settled: state %d after %.1f s, %.0f m from the hero, spread %.1f m, nearest tree/rock %.1f m, edge %.0f m" % [herd.state, t, gap, spread, clear, Vector2(c2.x, c2.z).length()])
+	if herd.state != Herd.CALM or gap < herd.safe_radius or spread > 18.0 or clear < 0.8 or Vector2(c2.x, c2.z).length() > 215.0:
+		return _combat_done(false, "the herd did not settle again, together, far off and in the open")
+	_combat_done(true, "deer graze, look up at a hero in sight, bolt from a charge, settle far off")

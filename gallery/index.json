@@ -664,5 +664,17 @@
   "time": "2026-10-12T16:28:00Z",
   "caption": "The same track after rain: boot prints should hold water, but only a glint or two shows through the grass and the lane is less clear than in the dry shot.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-1720-herd.jpg",
+  "time": "2026-10-12T17:20:48Z",
+  "caption": "A herd of procedural red deer hinds and calves grazing the amber meadow at 16.5 h; they read as deer and the scene feels alive, but at 19 m they are small dark silhouettes with little coat detail and the foreground grass is dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1720-deer-model.jpg",
+  "time": "2026-10-12T17:20:48Z",
+  "caption": "Model check of the new procedural red deer: standing, walking, grazing and galloping poses; good silhouette and coat markings, but the head is long and thin and the upper legs join the body as plain columns.",
+  "verdict": "fail"
  }
 ]

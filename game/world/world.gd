@@ -23,6 +23,7 @@ var soldier: HollowSoldier
 var weather: Weather
 var clouds: CloudLayer
 var trample: Trample
+var herd: Herd
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
@@ -79,6 +80,10 @@ func _ready() -> void:
 	soldier.plant(terrain)
 	soldier.face(p)
 	trample.walkers.append(soldier)   # the Hollow tramples the sward and leaves prints too
+	# red deer grazing the open meadow out from the start
+	herd = Herd.new()
+	herd.name = "Herd"
+	add_child(herd)
 
 func _build_environment() -> void:
 	var e := Environment.new()

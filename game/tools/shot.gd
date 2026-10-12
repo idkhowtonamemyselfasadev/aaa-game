@@ -364,6 +364,18 @@ func _ready() -> void:
 		SPOTS[spot] = [pp - fwd * 15.0 + side * 1.3, pp - fwd * 5.0 + side * 1.0]
 		if "close" in args:   # down at the boot prints, a few metres along the track
 			SPOTS[spot] = [pp - fwd * 9.0 + side * 1.6, pp - fwd * 5.5 + side * 1.3]
+	if spot == "herd":
+		# the red deer grazing on the open meadow, seen low from ~20 m with the sun behind the
+		# camera; "alert" lets them notice the hero (heads up), otherwise they keep grazing
+		var herd: Herd = world.herd
+		if not "alert" in args:
+			herd.alert_radius = 0.0
+			herd.flee_radius = 0.0
+		var hc := herd.centre()
+		var sdh: Vector3 = world.sun.global_transform.basis.z
+		sdh = Vector3(sdh.x, 0, sdh.z).normalized().rotated(Vector3.UP, 0.5)
+		SPOTS[spot] = [hc + sdh * 19.0, hc]
+		print("SHOT herd at %s, %d deer" % [hc, herd.deer_positions().size()])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -381,6 +393,9 @@ func _ready() -> void:
 		if spot == "trample":
 			pos.y = terrain.height_at(pos.x, pos.z) + (1.45 if "close" in args else 1.75)
 			look.y = terrain.height_at(look.x, look.z)
+		if spot == "herd":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.6
+			look.y = terrain.height_at(look.x, look.z) + 0.7
 		if spot == "turf":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.4
 			look.y = terrain.height_at(look.x, look.z)

@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.68
-(the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.7
+(a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,35 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 17:00 UTC:
+  - **Red deer herd (owner ALIVE: "herds that graze and flee"; Next item 5).** New
+    `world/herd.gd` (node `Herd`, added in world.gd): 7 hinds + 2 calves, one procedural
+    mesh (`Herd.build_mesh()`: cubic-resampled elliptical lofts for body+neck, head, ears,
+    tail and four jointed legs, glossy eyes; ~5.8k tris) drawn as a MultiMesh and posed in
+    `shaders/deer.gdshader` via INSTANCE_CUSTOM (gait phase, speed, head-down, head yaw):
+    lateral-sequence walk and rotary gallop blended by speed (upper-leg swing + knee/hock
+    fold through the swing, body rock in the gallop), grazing bend of the neck from its base
+    with a head pitch at the poll, head turn. Coat: summer red body, greyer neck and dorsal
+    line, buff belly and inner legs, cream rump patch, dark tail top, grey-brown lower legs,
+    black hooves and nose, pale chin, hair strands + clump noise, fuzz rim, ear backlight.
+    Behaviour: CALM (feeding ground creeps across the meadow, turning from trees/rocks and the
+    edge; each deer steps between grazing spots, lifts its head to chew and look round every
+    5-16 s), ALERT (hero within 42 m + 2 m per m/s: all heads up, staring and turning toward
+    him), FLEE (within 24 m + 2 m per m/s, or running at them inside 42 m: bolt together away
+    from him at 10.5-12.5 m/s, veer along the edge, slow past 85 m and settle into CALM).
+    Movement is along the heading (no sideslip), with separation and tree/rock avoidance,
+    bodies pitched to the slope. A teleport/respawn is not read as a charge.
+  - New bot `herd` (calm grazing together, heads lift, 35 m watch -> all heads up, charge ->
+    bolt, >45 m gap in 6 s at gallop speed, settle again far off and clear of trees); new
+    shot spot `herd` (`alert` arg lets them notice the hero); model check tool
+    `tools/deer_view.gd` (four poses side by side, ~20 s render: `xvfb-run ... godot -s
+    res://tools/deer_view.gd -- out.png [yaw_deg]`).
+  - Verdicts: `herd herd1 60 16.5` fail (close): nine deer grazing across the meadow below
+    the oak line read as a living place for the first time, but at 19 m they are small dark
+    silhouettes with no coat read (lift their ambient: add bounce/cloud-shadow includes to
+    deer.gdshader, brighten the coat a touch) and the camera's foreground grass is dark.
+    `deer_view` model check fail: good silhouette/markings, head too long and thin, upper legs
+    are columns. Next for this: a closer `herd` shot (8-10 m), head/shoulder shaping, a stag.
 - Session 2026-10-12 16:00 UTC:
   - **Boot prints + a readable trodden lane (owner ALIVE: "footprints", follow-up of the
     14:00 trample fail verdict).** `world/trample.gd` now tracks any number of walkers
@@ -1254,8 +1283,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms; 12:20 (10-11):
    butterflies; 13:00 (10-11): wildflower drifts, butterflies perch on flower heads.) Still to
    do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
-   flowers, two butterflies spiralling up together, a grazing sheep/deer herd that flees
-   (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
+   flowers, two butterflies spiralling up together, (done 17:00 (10-12): red deer herd that
+   grazes, watches and flees; follow-ups: a stag with antlers, deer trample/prints, bedding
+   down at night, ear flicks/tail flags, hoof sounds, a predator), bird calls once
    there is audio, (done 06:00 (10-12): rooks roost in a rookery at night), moths around lanterns/campfires once
    they exist, butterflies by day.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
@@ -1301,6 +1331,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Deer (17:00 10-12): head reads a little long and thin in side view; upper legs join the
+  body as separate columns (no blended shoulder/haunch muscle); hooves can sink a few cm on
+  slopes and into the grass while grazing (intended to hide in the sward); the neck bend can
+  crumple at the throat when grazing; no cloud-shadow/wet/bounce includes on the deer
+  shader yet; no LOD (full mesh at any range, 9 instances so cheap); legs are animated by
+  phase, not planted (slight foot slide on turns); deer do not trample grass or leave prints.
 - Boot prints (16:00 10-12): placed by distance along the walk, not by the animation's
   foot plants (can sit a little off the visible foot); same print on every surface (no
   splash/mud lip in puddles, no snow); prints on steep slopes are not oriented to the
