@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.48
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through, leaving rings spreading behind each step), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.49
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,33 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-11 23:00 UTC:
+  - **Lightning for strong fronts (next item 9 pick).** New `world/lightning.gd` (child of
+    Weather, `Weather.lightning`): once rain passes `min_rain` 0.7, a bolt strikes every
+    7–26 s (slower in a weaker storm) 700–2400 m out, 70 % within the camera's forward
+    arc. Each strike: 2–4 return strokes (spikes decaying in 50 ms, 60–160 ms apart); a
+    branching channel (`_jag` midpoint displacement from the 1500 m cloud base to the
+    Horizon/terrain ground, 4–7 branches + twigs) drawn as camera-facing ribbons with
+    `shaders/bolt.gdshader` (white core in a violet glow, veiled by distant rain); a
+    `Flash` DirectionalLight (blue-white, from the bolt's side, high) lights the land; the
+    cloud shader gets `flash`/`flash_at`/`flash_col` and glows hot over the strike with a
+    dimmer sheet across the deck; ambient, depth-fog and volumetric-fog light jump with the
+    flash (added after world.gd rebuilds them each frame). Far strikes flash weaker (`_near`).
+  - Gotcha: the bolt first drew as dark dashes. Not the glow (same with `noglow`) and not
+    the bolt itself (bright in an isolated scene): TAA together with volumetric fog rejects
+    a ~1 px line that only lives a few frames. Fix: ribbon ~8 px / core ~2 px wide at any
+    range, additive at moderate HDR (also: keep blooming pixels moderate under the
+    softlight glow, c + g * (sqrt(c) - c) goes negative for big g), render_priority 10 so
+    it draws after the cloud dome (which sorted nearer and covered the bolt's top).
+  - Bot `weather`: >= 2 strikes on their own in a full storm (3 in 22 s), a held strike
+    flashes the deck/land (cloud flash, light > 0.5, ~800-tri bolt within the strike
+    ring), all dark after, and no strikes once the sky clears. 13/13 bots pass.
+  - Shot arg `bolt=<m>[,<yaw deg>]`: a strike ahead of the camera, frozen just after its
+    first stroke. Shots `lt_night`..`lt_night4` (dark-bolt bug hunts), `lt_dbg` (red
+    debug bolt: geometry right), `lt_ng` (no glow: still dark), `lt_night5`/`lt_day5`
+    (fixed: a white jagged bolt under the lit deck, land flashed blue-white at night).
+    Verdict: fail as Wukong shots (flat faceted mountain ring, ribbon grass), but the storm
+    finally has a moment.
 - Session 2026-10-11 22:00 UTC:
   - **Wake rings + a bigger foot splash where the hero wades (next item 9 pick).** Each
     footfall in a pool now starts a ring train in the water itself: `Weather.wade_splash()`
@@ -904,10 +931,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 9. Weather follow-ups: (done 16:00 (10-11): procedural cloud deck; 18:00: puddles in the
    hollows + raindrop ripples, SSR on; 19:00: cloud shadows on the land.)
    (done 20:00: oak leaf blowout fixed; 21:00: drop splashes + hero splashing through pools.)
-   (done 22:00: wake rings on the pools + bigger foot splash.)
-   Next session pick: lightning + thunder-light for strong fronts (a sky flash lighting the
-   clouds + a branching bolt mesh in the far deck), then rain on the hero (wet cloth
-   darkening). Still to do: rolling
+   (done 22:00: wake rings on the pools + bigger foot splash; 23:00: lightning bolts +
+   flashes.)
+   Next session pick: rain on the hero (wet cloth darkening), then thunder once audio
+   exists (delay by distance / 343 m/s), cloud-to-cloud sheet flashes with no channel. Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
@@ -918,6 +945,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Lightning: no thunder (no audio in the game yet); the flash light casts no shadows (a
+  second shadowed directional would split the sun's shadow atlas; try on a real GPU); the
+  segment of a bolt seen against the mountains (not the sky) still gets a dark outline
+  around its white core under TAA + volumetric fog; the
+  bolt is a fixed ribbon (no per-stroke channel flicker/re-branching, no ground glow at
+  the foot); bolts above the deck base can be hidden behind the cloud dome where it is
+  hazed; strikes are visual only (do not hit trees or the hero).
 - (fixed 20:00: white blowout.) Oak leaf cards are oversized at close range (each sprig
   card reads as a few big leaves) and the crowns are dark and flat inside with no fine
   silhouette detail; needs smaller sprigs / more cards near the camera (flora item 2).

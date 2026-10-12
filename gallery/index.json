@@ -478,5 +478,17 @@
   "time": "2026-10-11T22:15:00Z",
   "caption": "Downpour over a meadow pool: bigger foot splash at the hero's stride, rain rings everywhere; placeholder hero and low-detail grass keep it short of Wukong.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261011-2300-lightning-night.jpg",
+  "time": "2026-10-11T23:00:00Z",
+  "caption": "Night storm over the Vale: a jagged bolt drops from the flash-lit deck and the meadow flares blue-white; the bolt's foot gets a dark outline against the mountains, and the faceted mountain ring and ribbon grass still read as prototype.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261011-2300-lightning-day.jpg",
+  "time": "2026-10-11T23:00:00Z",
+  "caption": "Afternoon downpour with a bolt striking past the oak groves through the rain haze; atmosphere works, but the hills and grass lack Wukong-level detail.",
+  "verdict": "fail"
  }
 ]

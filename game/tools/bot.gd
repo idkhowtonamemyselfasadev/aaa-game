@@ -1277,6 +1277,41 @@ func _weather_test() -> void:
 		return _combat_done(false, "the light did not go grey under the front")
 	if c1[0] + c1[1] + c1[2] > 0 or _world.get_node("Insects").day > 0.01:
 		return _combat_done(false, "butterflies/midges still out in the rain")
+	# lightning: a full front throws bolts on its own; each flashes 2-4 times and goes dark
+	var lt: Lightning = wx.lightning
+	var s0 := lt.strikes
+	var tl := 0.0
+	var fpeak := 0.0
+	var lpeak := 0.0
+	var bolt_seen := false
+	while lt.strikes < s0 + 2 and tl < 90.0:
+		await get_tree().physics_frame
+		tl += get_physics_process_delta_time()
+	# a strike held at its first stroke (bots run at 4x, too coarse to sample a 50 ms spike)
+	lt.strike()
+	lt.hold_age = 0.0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	fpeak = lt.flash
+	lpeak = lt.light.light_energy if lt.light.visible else 0.0
+	bolt_seen = lt.bolt.visible
+	var cf: float = cl.mat.get_shader_parameter("flash")
+	var amb_flash: float = _world.env.environment.ambient_light_energy
+	lt.hold_age = -1.0
+	var flashes := lt._strokes.size()
+	var b := lt.strike_pos
+	var bd := Vector2(b.x - cam.global_position.x, b.z - cam.global_position.z).length()
+	var tris := (lt.bolt.mesh as ArrayMesh).surface_get_array_len(0) / 3 if lt.bolt.mesh else 0
+	await _ticks(90)
+	print("BOT weather lightning: %d strikes in %.0f s of storm (storm %.2f), flash peak %.2f (cloud %.2f), flash light %.2f, ambient %.2f, %d return strokes, bolt %d tris %.0f m out, dark after: flash %.2f bolt %s light %s" % [lt.strikes - s0, tl, lt.storm(), fpeak, cf, lpeak, amb_flash, flashes, tris, bd, lt.flash, lt.bolt.visible, lt.light.visible])
+	if lt.strikes < s0 + 2:
+		return _combat_done(false, "no lightning in a full storm")
+	if fpeak < 0.3 or lpeak < 0.5 or not bolt_seen or cf <= 0.0 or tris < 100:
+		return _combat_done(false, "a strike did not flash the deck / light the land / draw a bolt")
+	if lt.flash > 0.01 or lt.bolt.visible or lt.light.visible:
+		return _combat_done(false, "the flash did not go dark after the strike")
+	if bd < lt.distance.x - 1.0 or bd > lt.distance.y + 1.0:
+		return _combat_done(false, "bolt struck at %.0f m, outside the far deck" % bd)
 	var wet_peak := wx.wet
 	wx.force(0.0, false)
 	t = 0.0
@@ -1290,6 +1325,10 @@ func _weather_test() -> void:
 		return _combat_done(false, "the front did not clear / the ground did not start drying")
 	if c2[0] + c2[1] + c2[2] < 10 or _world.sun.light_energy < sun0 * 0.95:
 		return _combat_done(false, "sun and butterflies did not return after the front")
+	var s1 := wx.lightning.strikes
+	await _ticks(600)
+	if wx.lightning.strikes != s1:
+		return _combat_done(false, "lightning struck from a clear sky")
 	# fronts also come on their own
 	wx.auto_fronts = true
 	wx._timer = 0.0

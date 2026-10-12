@@ -15,6 +15,9 @@ uniform vec3 shade_col : source_color = vec3(0.4, 0.45, 0.55);
 uniform vec3 haze_col : source_color = vec3(0.7, 0.72, 0.75);
 uniform vec2 drift = vec2(0.0);      // metres the deck has blown (world.gd integrates wind)
 uniform float haze_height = 0.1;    // sin(elevation) below which the deck sinks into the fog
+uniform float flash = 0.0;           // lightning (world/lightning.gd): 0 .. 1 at a stroke's peak
+uniform vec2 flash_at = vec2(0.0);   // the strike in deck coordinates (drift included)
+uniform vec3 flash_col : source_color = vec3(0.74, 0.8, 1.0);
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -66,6 +69,13 @@ void fragment() {
 	float hz = 1.0 - smoothstep(0.0, haze_height, dir.y);
 	col = mix(col, haze_col, hz * thickness);
 	a = mix(a, 1.0, hz * thickness);
+	// lightning lights the deck from inside: a hot glow over the strike, dense cores
+	// scattering it the most, and a dimmer sheet across the whole sky
+	if (flash > 0.0) {
+		float fd = length(p - flash_at);
+		float near = exp(-fd / 700.0) * 2.0 + exp(-fd / 2500.0) * 0.7 + 0.25;
+		col += flash_col * flash * near * mix(0.5, 1.2, d);
+	}
 	ALBEDO = col;
 	ALPHA = clamp(a, 0.0, 1.0);
 }

@@ -430,8 +430,27 @@ func _ready() -> void:
 			player.cam_pivot.rotation = Vector3(player._pitch, player._yaw, 0.0)
 			print("SHOT lockon target %s yaw %.2f pitch %.2f" % [player.lock_target, player._yaw, player._pitch])
 		print("SHOT soldier state %d t %.3f ember %.2f" % [foe.state, foe.t, foe.max_ember])
+	for a in args:
+		if a.begins_with("bolt="):
+			# bolt=<metres>[,<yaw offset deg>]: lightning ahead of the camera, frozen at its peak
+			world.weather.lightning.auto_strikes = false
 	for i in frames:
 		await get_tree().process_frame
+	for a in args:
+		if a.begins_with("bolt="):
+			var bp := a.substr(5).split(",")
+			var bc := get_viewport().get_camera_3d()
+			var bf := -bc.global_basis.z
+			var byaw := atan2(bf.x, bf.z) + deg_to_rad(float(bp[1]) if bp.size() > 1 else 0.0)
+			var bd := float(bp[0])
+			var lt: Lightning = world.weather.lightning
+			var at := Vector3(bc.global_position.x + sin(byaw) * bd, 0.0, bc.global_position.z + cos(byaw) * bd)
+			at.y = lt._ground(at.x, at.z)
+			lt.strike(at)
+			lt.hold_age = 0.01
+			for i in 3:
+				await get_tree().process_frame
+			print("SHOT bolt at %s flash %.2f strikes %d" % [at, lt.flash, lt.strikes])
 	if _action.is_valid():
 		await _action.call()
 		for i in 2:

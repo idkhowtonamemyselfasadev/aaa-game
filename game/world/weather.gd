@@ -41,6 +41,7 @@ const WAKE_RINGS := 8     # wade_ring_0..7 shader globals (terrain.gdshader)
 const WAKE_LIFE := 1.8    # seconds a footfall's ring train runs
 var _wake: Array[Vector4] = []   # (x, z, age, strength) per slot
 var _wake_next := 0
+var lightning: Lightning   # bolts + flashes once the rain is heavy
 
 const FX_LAYER := 1 << 9  # rain + splashes
 
@@ -84,6 +85,9 @@ func _ready() -> void:
 	wm.set_shader_parameter("tint", Color(0.86, 0.88, 0.9))
 	for i in WAKE_RINGS:
 		_wake.append(Vector4.ZERO)
+	lightning = Lightning.new()
+	lightning.name = "Lightning"
+	add_child(lightning)
 	_push_globals()
 
 ## Bots/shots: set a front strength now (instant) or let it build (instant = false).
