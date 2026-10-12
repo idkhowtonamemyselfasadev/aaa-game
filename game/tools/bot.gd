@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -77,6 +77,9 @@ func _ready() -> void:
 		return
 	if name == "roost":
 		_roost_test()
+		return
+	if name == "ruin":
+		_ruin_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1532,3 +1535,49 @@ func _roost_test() -> void:
 	if birds.census()["ground"] < birds.flock_count * birds.birds_per_flock:
 		return _combat_done(false, "rooks did not leave the roost for the meadow at dawn")
 	_combat_done(true, "rooks roost at dusk, flush and resettle, leave at dawn")
+
+## The watchtower ruin: built on a knoll clear of trees and boulders, the hero walks in
+## through the curtain gateway and the breach to the tower floor, and its walls stop him.
+func _ruin_test() -> void:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var flora: Flora = _world.get_node("Flora")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var rs := ruins.site
+	var near := 99.0
+	for q in flora.tree_positions + flora.rock_positions:
+		near = minf(near, Vector2(q.x - rs.x, q.z - rs.z).length())
+	print("BOT ruin: site %s, %d stones, %d colliders, nearest tree/rock %.1f m" % [rs, ruins.block_count, ruins.get_node("RuinCollision").get_child_count(), near])
+	if ruins.block_count < 400 or near < 15.0:
+		return _combat_done(false, "ruin not built or overgrown by flora")
+	var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
+	var start := rs + to_v * 26.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	# walk in: gateway, breach, floor centre
+	for wp in [rs + to_v * 12.5, rs + to_v * 4.0, rs]:
+		var t := 0.0
+		while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.z).length() > 1.0 and t < 25.0:
+			var d := Vector2(wp.x - p.global_position.x, wp.z - p.global_position.z).normalized()
+			p.bot_input = d
+			await _ticks(6)
+			t += 0.1
+		print("BOT ruin reached %s in %.1f s, at %s" % [wp, t, p.global_position])
+		if t >= 25.0:
+			p.bot_input = Vector2.ZERO
+			return _combat_done(false, "could not walk into the tower (stuck at %s)" % p.global_position)
+	# now run at the back wall: it must stop him inside
+	var far := 0.0
+	var t2 := 0.0
+	while t2 < 5.0:
+		p.bot_input = Vector2(-to_v.x, -to_v.z)
+		p.bot_sprint = true
+		await _ticks(6)
+		t2 += 0.1
+		far = maxf(far, Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length())
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	print("BOT ruin: ran at the back wall, got %.2f m from the centre" % far)
+	if far > 3.4:
+		return _combat_done(false, "walked through the tower wall")
+	_combat_done(true, "walked in through the breach and the walls hold")

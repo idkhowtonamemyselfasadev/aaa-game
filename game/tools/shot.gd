@@ -197,6 +197,18 @@ func _ready() -> void:
 					bb.delay = 0.0
 					bb.vel = (rk - bb.pos).normalized() * 8.0
 		print("SHOT rookery at %s" % rk)
+	if spot == "ruin" or spot == "ruinin":
+		# the watchtower ruin on its knoll: "ruin" from the approach below the breach,
+		# "ruinin" standing in the breach looking across the floor at the inner face
+		var rs: Vector3 = world.get_node("Ruins").site
+		var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
+		if spot == "ruin":
+			SPOTS[spot] = [rs + to_v * 24.0 + to_v.cross(Vector3.UP) * 7.0, rs + Vector3.UP * 1.5]
+		else:
+			SPOTS[spot] = [rs + to_v * 2.2 + to_v.cross(Vector3.UP) * 0.8, rs - to_v * 4.0]
+		var pp := rs + to_v * 40.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT ruin at %s" % rs)
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position

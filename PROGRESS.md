@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.5
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.6
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 08:00 UTC:
+  - **A ruined watchtower on the western spur (next item 2 pick: ruins on hilltops).** New
+    `world/ruins.gd` (`Ruins` node after Flora) + `shaders/masonry.gdshader`. Flora picks the
+    site (`Flora.pick_ruin_site`: most prominent spot 90-190 m out, off the east road; lands
+    on the spur at (-150, -22), 30 m up) and keeps trees/boulders 17 m clear. Stones are
+    rounded boxes with noise-chipped arrises and hand-dressed (bulged) faces, 12 size variants
+    in MultiMeshes with per-block custom data (height above ground, tint). The keep is a
+    round three-leaf wall (outer face r 4.3, core, inner face r 3.2) on rough courses, crown
+    height = local ground + broad/fine noise up to 7.4 m, breached to the ground toward the
+    village; crest stones slump, some are gone; flagstones and rubble inside. A curtain wall
+    ring at 12.5 m is robbed to stepped stubs with gaps and a gateway; 60 fallen blocks lie
+    half-sunk round the keep, mostly downslope of the breach (a 2.6 m path stays clear).
+    ~1100 stones, ~1000 box colliders. Masonry shader: buff sandstone, bedding laminae,
+    weathering crust patches, pale worn arrises, rain streaks, yellow and grey lichen,
+    moss on tops and the lower courses, damp foot, wets in rain, takes cloud shadows.
+  - Bot `ruin` (15th route): site clear of flora, hero walks from the vale through the
+    gateway and the breach to the keep floor, then runs at the back wall and is stopped
+    (2.57 m from centre). 15/15 bots pass.
+  - Shot spots `ruin` (approach from below the breach) and `ruinin` (in the breach).
+  - Verdicts: ruin_b (13.5 h) fail: a believable broken keep + curtain stub on the skyline,
+    but the low camera puts it half against the light and the stone reads dark. ruin_in2
+    (13.5 h) fail: coursed stone and the vale beyond, but the shaded inner face is near
+    black. (First pass, ruin_a: a crown noise with ~8 cycles round the ring made the walls
+    read as stacked cairns; fixed with a 2-cycle broad profile.)
 - Session 2026-10-12 07:00 UTC:
   - **Film grade + grain; night now reads as moonlight (next item 1 pick: LOOK).** New
     `shaders/grade.gdshader`, a canvas pass on a `Grade` CanvasLayer (layer -1, under the
@@ -1053,7 +1077,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun;
    05:00: star fade-in, desaturated low sun/twilight.) Still to do: the brown 19 h sky (see
    bugs), dawn check, and verify SDFGI on a real GPU some day (cloud box can't).
-2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
+2. (done 08:00 (10-12): watchtower ruin on the western spur.) Ruin follow-ups: shaded stone
+   goes near black (needs bounce light: check SDFGI on the ruin, or raise ambient in shade),
+   ivy/vines and grass tufts in the joints, a doorway arch and a stair stub in the keep, a
+   shrine/quest hook there (milestone-1 shrine could start in its cellar), a better camera
+   for the `ruin` shot (from higher up the slope, sun behind the camera). Flora polish:
+   bigger hero boulders/outcrops (3–6 m), hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
 3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
@@ -1115,6 +1144,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Ruin: stones in shadow (inner face of the keep) are near black; blocks in a ring are
+  straight boxes, so the keep is a 22-sided polygon up close; grass grows through the floor
+  flagstones (grass does not know about the ruin); colliders are per block (fine for
+  ~1000 static boxes, but merge them if physics shows up in a profile).
 - Sunset spot (18.5 h): dark parallel shadow bands across the mid-ground meadow (seen 10-12 04:30; maybe shadow-cascade striping from the low sun on lavapipe, check on a GPU).
 - Lightning: thunder is only a timed signal (no audio in the game yet); the flash light casts no shadows (a
   second shadowed directional would split the sun's shadow atlas; try on a real GPU); the

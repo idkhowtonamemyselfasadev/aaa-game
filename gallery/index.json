@@ -574,5 +574,17 @@
   "time": "2026-10-12T07:31:27Z",
   "caption": "The valley at 10.5 h with the new film grade (warm highlights, cool shadows, grain, vignette): a convincing amber late-morning mood; oak crowns are still blobby and the near grass carpet reads noisy.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0836-ruin-knoll.jpg",
+  "time": "2026-10-12T08:36:00Z",
+  "caption": "New ruined watchtower on the spur west of the village: a broken round keep and a robbed-out curtain wall of chipped cut stone stand on the skyline; half backlit from the low camera, the stone reads dark and the left grass blows out white.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0836-ruin-inside.jpg",
+  "time": "2026-10-12T08:36:00Z",
+  "caption": "Standing in the breach of the watchtower at 13.5 h: coursed ashlar with worn arrises and the vale beyond, but the shaded inner face is near black (no bounce light reaches it) so the stonework barely reads.",
+  "verdict": "fail"
  }
 ]

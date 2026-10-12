@@ -15,3 +15,4 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 - Hollow Soldier: `game/enemies/hollow_soldier.gd` reuses `vanguard.glb` (above) with `game/shaders/hollow.gdshader` (ash-stone, Voronoi fissures, ember glow, dissolve); spear `game/enemies/spear.gd` + `game/shaders/spear.gdshader` (lathe + leaf blade, wood/iron/cord) — original.
 - Practice post: `game/world/training_post.gd` + `game/shaders/training_post.gdshader` (oak, straw, rope, iron, all procedural); impact chaff/dust in `game/fx/impact.gd` (code-generated particles, gradient texture) — original.
 - Meadow wildflowers (ox-eye daisy, buttercup, knapweed, yarrow): `game/world/flowers.gd` (procedural stem/leaf/petal meshes) + `game/shaders/flower.gdshader`, `game/shaders/meadow_wind.gdshaderinc` — original.
+- Watchtower ruin (chipped cut-stone blocks, keep, curtain wall, fallen stones): `game/world/ruins.gd` + `game/shaders/masonry.gdshader` — original, procedural.

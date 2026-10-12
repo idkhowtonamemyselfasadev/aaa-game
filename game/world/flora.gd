@@ -22,6 +22,9 @@ var _terrain: Terrain
 var _grove := FastNoiseLite.new()
 var _rng := RandomNumberGenerator.new()
 var tree_positions: Array[Vector3] = []
+## Hilltop where the ruined watchtower stands (see ruins.gd); trees and boulders keep clear.
+var ruin_site := Vector3.ZERO
+const RUIN_CLEAR := 17.0
 var rock_positions: Array[Vector3] = []
 
 # per-variant scratch while building a tree
@@ -51,6 +54,7 @@ func _ready() -> void:
 	_grove.fractal_octaves = 2
 	if leaf_material:
 		leaf_material.set_shader_parameter("leaf_tex", _leaf_atlas())
+	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
 	_scatter_rocks()
 
@@ -59,11 +63,36 @@ func _blocked(x: float, z: float, margin: float) -> bool:
 	var r := Vector2(x, z).length()
 	if r < 38.0 + margin:
 		return true
+	if Vector2(x - ruin_site.x, z - ruin_site.z).length() < RUIN_CLEAR + margin:
+		return true
 	# the diagonal road (0,0) -> (200,200): distance to the line x == z
 	if absf(x - z) / sqrt(2.0) < 5.0 + margin and x > -10.0:
 		return true
 	var half := _terrain.size_m * 0.5 - 6.0
 	return absf(x) > half or absf(z) > half
+
+## The most prominent knoll 90-190 m out from the village (height above the ring 25 m
+## around it, minus slope), off the east road: where the watchtower ruin stands.
+static func pick_ruin_site(t: Terrain) -> Vector3:
+	var best := Vector3.ZERO
+	var best_s := -INF
+	for gx in range(-190, 191, 8):
+		for gz in range(-190, 191, 8):
+			var x := float(gx)
+			var z := float(gz)
+			var r := Vector2(x, z).length()
+			if r < 90.0 or r > 190.0 or absf(x - z) / sqrt(2.0) < 30.0:
+				continue
+			var h := t.height_at(x, z)
+			var ring := 0.0
+			for k in 8:
+				var a := TAU * k / 8.0
+				ring += t.height_at(x + cos(a) * 25.0, z + sin(a) * 25.0)
+			var sc := h - ring / 8.0 - (1.0 - t.normal_at(x, z, 4.0).y) * 40.0
+			if sc > best_s:
+				best_s = sc
+				best = Vector3(x, h, z)
+	return best
 
 # ---------------------------------------------------------------- trees
 
