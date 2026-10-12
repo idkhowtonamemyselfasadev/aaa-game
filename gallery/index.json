@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -627,6 +627,18 @@
   "file": "20261012-1157-hill.jpg",
   "time": "2026-10-12T11:57:37Z",
   "caption": "16 h front-lit hill: oaks lit and readable, but the low camera sees mostly the dark lower blades of the near grass, so the foreground is still too dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1231-ferns.jpg",
+  "time": "2026-10-12T12:31:57Z",
+  "caption": "Fern drift under the oaks at 13 h: shuttlecock ferns with arching pinnate fronds now fill the grove floor and the meadow grass thins under the crowns; the woodland shade is still near black and the ferns lack fine silhouette detail up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1231-grove.jpg",
+  "time": "2026-10-12T12:31:57Z",
+  "caption": "Grove edge at 10.5 h with the new understory: sunlit fern clumps and thinned shade grass on the right; ferns in the deep shade on the left vanish into a near-black floor.",
   "verdict": "fail"
  }
 ]

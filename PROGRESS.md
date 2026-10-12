@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.6
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.65
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 12:00 UTC:
+  - **The oak groves have an understory (next item 2: flora polish, shrubs/ferns under
+    trees).** `Flora._scatter_understory()`: 2200 shuttlecock ferns (5 procedural variants,
+    9-15 arching V-folded fronds each, a painted pinnate-frond atlas with pinnules, ~1 in 5
+    outer fronds browning) in noise drifts, densest under the crowns (mean shelter 0.72)
+    and between outcrop boulders; 320 hazel/thorn shrubs (4-7 thin stems with small oak-atlas
+    sprigs, fresher tint) on the grove fringe. Leaf shader reused (wind, wetting, cloud
+    shade, bounce). Chunked into 64 m MultiMesh cells with visibility ranges (ferns 110 m,
+    shrubs 220 m). Grass thins (up to 80 %) and shortens under the crowns so the woodland
+    floor reads as ferns and litter, not meadow.
+  - New shot spot `ferns` (densest drift, its oak behind), new bot `understory` (counts, none
+    on village/road/keep, shade-loving, hero walks through a drift).
+  - Verdicts: fern3 (13 h) fail: real fern clumps with arching pinnate fronds on the grove
+    floor, grass thinned under the crowns; but the woodland shade itself is near black (the
+    terrain/grass shade problem again) and the fronds have no fine silhouette up close.
+    fern2 (10.5 h, before brightening) fail: sunlit clumps read, shaded ones vanish.
+    16/16 bots pass. Shots take ~7-9 min each on this box now (was ~75 s): budget 3.
 - Session 2026-10-12 11:00 UTC:
   - **The afternoon vale is in sun again and backlit oaks glow (known bug: "backlit oaks
     are black silhouettes").** Root cause was not leaf transmission: the 520 m far mountain
@@ -1139,7 +1156,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    shrine/quest hook there (milestone-1 shrine could start in its cellar), a better camera
    for the `ruin` shot (from higher up the slope, sun behind the camera). Flora polish:
    bigger hero boulders/outcrops (3–6 m), hedgerows,
-   shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
+   (done 12:00 (10-12): ferns + shrubs under/around the groves; follow-ups: a
+   brighter woodland floor in shade (leaf litter albedo + more bounce under crowns), ferns
+   flattened/brushed by the hero, fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
 3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
    peaks.) Polish: more rock colour/contrast on the far range (it reads hazy grey; maybe
@@ -1200,6 +1219,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Understory (12:00 10-12): ferns and shrubs have no collision or brush response (the hero
+  walks through them without parting them); shrubs reuse the oak leaf atlas (no hazel leaf
+  shape); fern fronds are single strips so they read flat when seen exactly edge-on; the
+  grove floor in crown shade is near black, so shaded ferns lose their shape.
 - (fixed 11:00 (10-12): backlit oaks were mountain-ring shadow, now off.) A camera low in
   the grass (hill spot) still sees mostly dark root/lower blades: lift root_col/AO for
   blades near the camera or raise the hill camera. The mountain ring now never shadows the

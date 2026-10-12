@@ -65,8 +65,8 @@ func update_around(p: Vector3, budget: int) -> void:
 			_heads.erase(k)
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
+	var flora := get_node_or_null("../Flora")
 	if _ruin == Vector3.INF:
-		var flora := get_node_or_null("../Flora")
 		if flora and flora.ruin_site != Vector3.ZERO:
 			_ruin = flora.ruin_site
 	var rng := RandomNumberGenerator.new()
@@ -102,8 +102,13 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var keep := Vector2(x - _ruin.x, z - _ruin.z).length() if _ruin != Vector3.INF else 99.0
 		if keep < 4.6 and (keep > 3.1 or rng.randf() > 0.12):
 			continue
+		# woodland floor: deep under the oak crowns the meadow gives way to ferns and litter,
+		# with only thin, shorter shade grass
+		var shade: float = flora.shelter_at(x, z) if flora else 0.0
+		if rng.randf() < shade * 0.8:
+			continue
 		var y := _terrain.height_at(x, z)
-		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
+		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
 		var crop := 1.0
 		for c in cropped_spots:
 			crop = minf(crop, smoothstep(CROP_R * 0.45, CROP_R, Vector2(x - c.x, z - c.z).length()))

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -80,6 +80,9 @@ func _ready() -> void:
 		return
 	if name == "ruin":
 		_ruin_test()
+		return
+	if name == "understory":
+		_understory_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1538,6 +1541,45 @@ func _roost_test() -> void:
 
 ## The watchtower ruin: built on a knoll clear of trees and boulders, the hero walks in
 ## through the curtain gateway and the breach to the tower floor, and its walls stop him.
+## Ferns and shrubs fill the groves: enough of them, none on the village floor, the road or
+## the keep, mostly in the shade of the crowns, and the hero walks straight through a drift.
+func _understory_test() -> void:
+	var p := _player
+	var flora: Flora = _world.get_node("Flora")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var bad := 0
+	var shade := 0.0
+	for q in flora.fern_positions + flora.shrub_positions:
+		if flora._blocked(q.x, q.z, 0.0):
+			bad += 1
+	for q in flora.fern_positions:
+		shade += flora.shelter_at(q.x, q.z)
+	shade /= maxf(1.0, flora.fern_positions.size())
+	print("BOT understory: %d ferns, %d shrubs, %d on blocked ground, mean fern shade %.2f" % [flora.fern_positions.size(), flora.shrub_positions.size(), bad, shade])
+	if flora.fern_positions.size() < 1200 or flora.shrub_positions.size() < 150 or bad > 0 or shade < 0.25:
+		return _combat_done(false, "understory missing, misplaced or out in the open meadow")
+	# walk through the fern drift nearest the village
+	var f := flora.fern_positions[0]
+	for q in flora.fern_positions:
+		if Vector2(q.x, q.z).length() < Vector2(f.x, f.z).length():
+			f = q
+	var dir := Vector3(f.x, 0, f.z).normalized()
+	var start := f - dir * 10.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	var goal := f + dir * 6.0
+	var t := 0.0
+	while Vector2(p.global_position.x - goal.x, p.global_position.z - goal.z).length() > 1.0 and t < 20.0:
+		var d := Vector2(goal.x - p.global_position.x, goal.z - p.global_position.z).normalized()
+		p.bot_input = d
+		await _ticks(6)
+		t += 0.1
+	p.bot_input = Vector2.ZERO
+	print("BOT understory: walked through the drift at %s in %.1f s" % [f, t])
+	if t >= 20.0:
+		return _combat_done(false, "stuck in the ferns at %s" % p.global_position)
+	_combat_done(true, "groves have a fern and shrub understory the hero can walk through")
+
 func _ruin_test() -> void:
 	var p := _player
 	var ruins: Ruins = _world.get_node("Ruins")

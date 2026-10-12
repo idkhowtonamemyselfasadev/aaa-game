@@ -34,6 +34,7 @@ var _canopy_c := Vector3.ZERO
 var _crown := Vector2(0.0, 1000.0)   # (max horizontal reach, lowest leaf y) of the tree being built
 var _variant_crown: Array[Vector2] = []
 var _perch: Array[Vector3] = []              # twig tips of the tree being built
+var _card_scale := 1.0                       # leaf card size/spread (1 oak, smaller on shrubs)
 var _variant_perches: Array = []             # per variant: upper-crown twig tips (local)
 var tree_xforms: Array[Transform3D] = []     # per tree, same order as tree_positions
 var tree_variant: Array[int] = []
@@ -57,6 +58,7 @@ func _ready() -> void:
 	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
 	_scatter_rocks()
+	_scatter_understory()
 
 ## Places that must stay walkable: village floor and the road toward the east ridge.
 func _blocked(x: float, z: float, margin: float) -> bool:
@@ -312,9 +314,9 @@ func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1:
 ## lights as a soft volume. UV picks one of 4 atlas tiles.
 func _leaf_cluster(r: RandomNumberGenerator, c: Vector3, d: Vector3, sway: float, count: int) -> void:
 	for i in count:
-		var off := Vector3(r.randfn(0, 0.9), r.randfn(0.25, 0.55), r.randfn(0, 0.9))
-		var centre := c + off + d * 0.3
-		var size := r.randf_range(1.3, 2.0)
+		var off := Vector3(r.randfn(0, 0.9), r.randfn(0.25, 0.55), r.randfn(0, 0.9)) * _card_scale
+		var centre := c + off + d * 0.3 * _card_scale
+		var size := r.randf_range(1.3, 2.0) * _card_scale
 		var yaw := r.randf() * TAU
 		var tilt := r.randf_range(-0.6, 0.6)
 		var bx := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, tilt)
@@ -524,9 +526,278 @@ func _icosphere(sub: int) -> Array:
 		idx.append_array([f[0], f[2], f[1]])
 	return [verts, idx]
 
+# ---------------------------------------------------------------- understory
+
+## Ferns and hazel/thorn shrubs under and around the oak groves, so the woods are not
+## bare lawn between trunks:
+##  - shuttlecock ferns (male fern / lady fern): 9-15 arching fronds from a crown, each a
+##    curved strip textured with a painted pinnate frond (pinnae with pinnules) from a
+##    4-tile atlas; some outer fronds are browning. Thickest in the shade under crowns,
+##    on the grove edges and between outcrop boulders.
+##  - shrubs: 4-7 thin stems from the ground with small leaf sprigs (the oak atlas, smaller
+##    cards, a fresher tint) on the grove fringe where the crowns open to the meadow.
+## Both share the leaf shader (wind, rain wetting, cloud shade, bounce fill) and are chunked
+## into 64 m MultiMesh cells with a visibility range so far cells are not drawn.
+@export var fern_count: int = 2200
+@export var shrub_count: int = 320
+const UNDER_CELL := 64.0
+var fern_positions: Array[Vector3] = []
+var shrub_positions: Array[Vector3] = []
+
+func _scatter_understory() -> void:
+	if leaf_material == null:
+		return
+	var fern_mat := leaf_material.duplicate() as ShaderMaterial
+	fern_mat.set_shader_parameter("leaf_tex", _fern_atlas())
+	fern_mat.set_shader_parameter("tint", Color(1.0, 1.0, 1.0))
+	var shrub_leaf := leaf_material.duplicate() as ShaderMaterial
+	shrub_leaf.set_shader_parameter("tint", Color(1.15, 1.18, 0.95))
+	var ferns: Array[ArrayMesh] = []
+	for v in 5:
+		ferns.append(_build_fern(v, fern_mat))
+	var shrubs: Array[ArrayMesh] = []
+	for v in 3:
+		shrubs.append(_build_shrub(v, shrub_leaf))
+	var fern_cells := {}
+	var shrub_cells := {}
+	var r := RandomNumberGenerator.new()
+	r.seed = seed + 900
+	# ferns: around trunks (shade), clumped by a patch noise, and among boulders
+	var patch := FastNoiseLite.new()
+	patch.seed = seed + 17
+	patch.frequency = 1.0 / 9.0
+	var tries := 0
+	while fern_positions.size() < fern_count and tries < fern_count * 12:
+		tries += 1
+		var anchor: Vector3
+		var reach: float
+		if r.randf() < 0.82 and not tree_positions.is_empty():
+			anchor = tree_positions[r.randi() % tree_positions.size()]
+			reach = 11.0
+		elif not rock_positions.is_empty():
+			anchor = rock_positions[r.randi() % rock_positions.size()]
+			reach = 3.5
+		else:
+			break
+		var a := r.randf() * TAU
+		var d := sqrt(r.randf()) * reach
+		var x := anchor.x + cos(a) * d
+		var z := anchor.z + sin(a) * d
+		if _blocked(x, z, 0.5):
+			continue
+		if 1.0 - _terrain.normal_at(x, z).y > 0.35:
+			continue
+		# patchy: ferns grow in drifts, densest under the crown, thinning at the edge
+		var pn := patch.get_noise_2d(x, z) * 0.5 + 0.5
+		var shade := shelter_at(x, z)
+		if r.randf() > smoothstep(0.35, 0.7, pn) * (0.35 + shade):
+			continue
+		var p := Vector3(x, _terrain.height_at(x, z) - 0.03, z)
+		fern_positions.append(p)
+		var s := r.randf_range(0.9, 1.5) * lerpf(0.85, 1.2, shade)
+		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s, s * r.randf_range(0.85, 1.15), s))
+		var key := Vector2i(floori(x / UNDER_CELL), floori(z / UNDER_CELL))
+		if not fern_cells.has(key):
+			fern_cells[key] = []
+			for v in ferns.size():
+				fern_cells[key].append([])
+		fern_cells[key][r.randi() % ferns.size()].append(Transform3D(b, p))
+	# shrubs: the grove fringe, 5-13 m from a trunk, where the crowns open up
+	tries = 0
+	while shrub_positions.size() < shrub_count and tries < shrub_count * 20 and not tree_positions.is_empty():
+		tries += 1
+		var t := tree_positions[r.randi() % tree_positions.size()]
+		var a := r.randf() * TAU
+		var d := r.randf_range(5.0, 13.0)
+		var x := t.x + cos(a) * d
+		var z := t.z + sin(a) * d
+		if _blocked(x, z, 1.5) or 1.0 - _terrain.normal_at(x, z).y > 0.3:
+			continue
+		var sh := shelter_at(x, z)
+		if sh > 0.6 or r.randf() > 0.25 + sh:
+			continue
+		var ok := true
+		for q in shrub_positions:
+			if Vector2(q.x - x, q.z - z).length_squared() < 9.0:
+				ok = false
+				break
+		if not ok:
+			continue
+		var p := Vector3(x, _terrain.height_at(x, z) - 0.1, z)
+		shrub_positions.append(p)
+		var s := r.randf_range(0.75, 1.3)
+		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s * r.randf_range(0.9, 1.25), s, s * r.randf_range(0.9, 1.25)))
+		var key := Vector2i(floori(x / UNDER_CELL), floori(z / UNDER_CELL))
+		if not shrub_cells.has(key):
+			shrub_cells[key] = []
+			for v in shrubs.size():
+				shrub_cells[key].append([])
+		shrub_cells[key][r.randi() % shrubs.size()].append(Transform3D(b, p))
+	for key: Vector2i in fern_cells:
+		for v in ferns.size():
+			_multimesh(ferns[v], fern_cells[key][v], "Ferns_%d_%d_%d" % [key.x, key.y, v], 110.0)
+	for key: Vector2i in shrub_cells:
+		for v in shrubs.size():
+			_multimesh(shrubs[v], shrub_cells[key][v], "Shrubs_%d_%d_%d" % [key.x, key.y, v], 220.0)
+
+## One shuttlecock fern: fronds rise from the crown, arch out and droop at the tip. Each
+## frond is a strip along its curved rachis, slightly V-folded (the pinnae angle up from
+## the rachis), with the frond tile of the atlas mapped along it.
+func _build_fern(v: int, mat: Material) -> ArrayMesh:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed * 7 + 300 + v
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var fronds := r.randi_range(9, 15)
+	var phase0 := r.randf() * TAU
+	const SEG := 8
+	for f in fronds:
+		var a := phase0 + f * TAU / fronds + r.randf_range(-0.25, 0.25)
+		var out := Vector3(cos(a), 0, sin(a))
+		var inner := f % 3 == 0          # younger, more upright fronds in the middle
+		var ln := r.randf_range(0.9, 1.4) * (0.8 if inner else 1.0)
+		var rise := r.randf_range(0.95, 1.35) if inner else r.randf_range(0.55, 0.95)   # initial elevation (rad from horizontal)
+		var droop := r.randf_range(1.2, 1.9)                      # how much the arch bends down
+		var wd := ln * r.randf_range(0.28, 0.36)                  # blade width at its widest
+		var tile := r.randi() % 3
+		if not inner and r.randf() < 0.22:
+			tile = 3                                               # an outer frond going brown
+		var u0 := tile * 0.25
+		var side := out.cross(Vector3.UP).normalized()
+		var twist := r.randf_range(-0.25, 0.25)
+		var fold := 0.35                                           # V-fold: edges lifted
+		var pts: Array = []
+		var p := Vector3(cos(a), 0, sin(a)) * 0.04
+		for i in SEG + 1:
+			var t := float(i) / SEG
+			pts.append(p)
+			var el := rise - droop * t * t
+			var dir := out * cos(el) + Vector3.UP * sin(el)
+			p += dir * ln / SEG
+		for i in SEG:
+			var rows: Array = []
+			for k in 2:
+				var j := i + k
+				var t := float(j) / SEG
+				var c: Vector3 = pts[j]
+				var fwd: Vector3 = (pts[mini(j + 1, SEG)] - pts[maxi(j - 1, 0)]).normalized()
+				var sd := side.rotated(fwd, twist * t)
+				var up := sd.cross(fwd).normalized()
+				if up.y < 0.0:
+					up = -up
+				# frond outline: a short bare stipe, widest at 35 %, tapering to the tip
+				var w := wd * (0.0 if t < 0.08 else pow(sin(PI * clampf((t - 0.08) / 0.92 * 0.9 + 0.1, 0.0, 1.0)), 0.8))
+				var sway := 0.15 + 0.75 * t
+				var nrm := up.lerp(Vector3.UP, 0.45).normalized()
+				var l := c - sd * w * 0.5 + up * w * fold * 0.5
+				var rr := c + sd * w * 0.5 + up * w * fold * 0.5
+				rows.append([l, rr, c, t, sway, nrm])
+			var ph := r.randf()
+			var r0: Array = rows[0]
+			var r1: Array = rows[1]
+			# two quads per segment (left half, right half) so the V-fold is real geometry
+			var quads := [[r0[0], r0[2], r1[2], r1[0], 0.0, 0.5], [r0[2], r0[1], r1[1], r1[2], 0.5, 1.0]]
+			for q in quads:
+				var vs := [[q[0], Vector2(u0 + q[4] * 0.25, 1.0 - r0[3]), r0[4], r0[5]],
+					[q[1], Vector2(u0 + q[5] * 0.25, 1.0 - r0[3]), r0[4], r0[5]],
+					[q[2], Vector2(u0 + q[5] * 0.25, 1.0 - r1[3]), r1[4], r1[5]],
+					[q[3], Vector2(u0 + q[4] * 0.25, 1.0 - r1[3]), r1[4], r1[5]]]
+				for idx in [0, 1, 2, 0, 2, 3]:
+					var vv: Array = vs[idx]
+					st.set_color(Color(vv[2], ph, 0))
+					st.set_normal(vv[3])
+					st.set_uv(vv[1])
+					st.add_vertex(vv[0])
+	var mesh := st.commit()
+	mesh.surface_set_material(0, mat)
+	return mesh
+
+## A hazel/thorn shrub: a handful of thin stems fanning out of one root, each ending in a
+## few small leaf sprigs, with extra sprigs along the stems so it reads as a dense bush.
+func _build_shrub(v: int, leaf_mat: Material) -> ArrayMesh:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed * 11 + 500 + v
+	_bark = SurfaceTool.new()
+	_bark.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_leaves = SurfaceTool.new()
+	_leaves.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var keep_crown := _crown
+	_card_scale = 0.42
+	_canopy_c = Vector3(0, 0.9, 0)
+	var stems := r.randi_range(4, 7)
+	for k in stems:
+		var a := r.randf() * TAU
+		var dir := Vector3(cos(a) * r.randf_range(0.25, 0.6), 1.0, sin(a) * r.randf_range(0.25, 0.6)).normalized()
+		var ln := r.randf_range(1.1, 1.9)
+		var pts: Array[Vector3] = []
+		var p := Vector3(cos(a), 0, sin(a)) * 0.08
+		var d := dir
+		for i in 6:
+			pts.append(p)
+			d = (d + Vector3(r.randf_range(-0.12, 0.12), -0.04, r.randf_range(-0.12, 0.12))).normalized()
+			p += d * ln / 5.0
+		_tube(pts, 0.035, 0.012, 5, 0.1, 0.7, false)
+		var tip := pts[pts.size() - 1]
+		_leaf_cluster(r, tip, d, 0.75, 9)
+		_leaf_cluster(r, pts[3], d, 0.55, 6)
+		_leaf_cluster(r, pts[2] + Vector3(r.randfn(0, 0.2), 0, r.randfn(0, 0.2)), d, 0.45, 4)
+	_card_scale = 1.0
+	_crown = keep_crown
+	var mesh := ArrayMesh.new()
+	_bark.generate_tangents()
+	_bark.commit(mesh)
+	_leaves.commit(mesh)
+	if bark_material:
+		mesh.surface_set_material(0, bark_material)
+	mesh.surface_set_material(1, leaf_mat)
+	return mesh
+
+## 1024x1024 atlas of 4 frond tiles (256 x 1024, base at the bottom): a rachis with
+## alternate pinnae that shorten toward the tip, each pinna a row of rounded pinnules.
+## Tiles 0-2 are green (varied), tile 3 is a frond turning russet at the end of summer.
+func _fern_atlas() -> ImageTexture:
+	const W := 256
+	const H := 1024
+	var img := Image.create(W * 4, H, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.14, 0.2, 0.06, 0.0))
+	var r := RandomNumberGenerator.new()
+	r.seed = 91
+	for tile in 4:
+		var ox := tile * W
+		var clip := Rect2i(ox, 0, W, H)
+		var base_col: Color = [Color(0.2, 0.33, 0.08), Color(0.24, 0.36, 0.09), Color(0.18, 0.3, 0.07), Color(0.42, 0.28, 0.11)][tile]
+		var cx := ox + W * 0.5
+		# rachis
+		_line(img, Vector2(cx, H - 1), Vector2(cx, 8), 2.0, base_col.darkened(0.35).lerp(Color(0.3, 0.26, 0.12), 0.4))
+		var y := float(H) * 0.93
+		while y > 20.0:
+			for side in [-1.0, 1.0]:
+				var t := 1.0 - y / H                          # 0 base .. 1 tip (pinnae nearly opposite)
+				var env := pow(sin(PI * clampf((t - 0.04) / 0.96 * 0.9 + 0.1, 0.0, 1.0)), 0.8)
+				var pl := (W * 0.48) * env                     # pinna length to the tile edge
+				if pl > 6.0:
+					var ang := -0.32 - 0.25 * t                # pinnae angle toward the tip
+					var dir := Vector2(side * cos(ang), sin(ang))
+					var at := Vector2(cx, y + side * 5.0)
+					var col := base_col * r.randf_range(0.85, 1.15)
+					if tile == 3:
+						col = col.lerp(Color(0.2, 0.22, 0.07), clampf(0.7 - t, 0.0, 1.0) * 0.6)
+					_line(img, at, at + dir * pl, 1.0, col.darkened(0.2))
+					var nr := maxi(2, int(pl / 9.0))
+					for k in nr:
+						var u := (k + 0.6) / nr
+						var pp := at + dir * pl * u
+						var sz := (1.0 - u * 0.6) * minf(pl * 0.22, 11.0) + 2.0
+						var nrm := Vector2(-dir.y, dir.x)
+						for sgn in [-1.0, 1.0]:
+							_leaf(img, pp, (dir * 0.45 + nrm * sgn).normalized(), sz * 1.25, sz * 0.5, col * r.randf_range(0.9, 1.1), clip)
+			y -= maxf(10.0, 30.0 * (1.0 - (1.0 - y / H) * 0.6))
+	img.generate_mipmaps()
+	return ImageTexture.create_from_image(img)
+
 # ---------------------------------------------------------------- shared
 
-func _multimesh(mesh: Mesh, xfs: Array, nm: String) -> void:
+func _multimesh(mesh: Mesh, xfs: Array, nm: String, vis_end := 0.0) -> void:
 	if xfs.is_empty():
 		return
 	var mm := MultiMesh.new()
@@ -539,4 +810,8 @@ func _multimesh(mesh: Mesh, xfs: Array, nm: String) -> void:
 	mmi.name = nm
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	if vis_end > 0.0:
+		mmi.visibility_range_end = vis_end
+		mmi.visibility_range_end_margin = 15.0
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	add_child(mmi)

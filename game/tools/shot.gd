@@ -328,6 +328,27 @@ func _ready() -> void:
 			SPOTS[spot] = [fp + d * 2.3, fp]
 		else:
 			SPOTS[spot] = [fp - line * 2.4 + side * 1.0, fp]
+	if spot == "ferns":
+		# the densest fern drift (most ferns within 5 m), framed with its oak behind it
+		var flora: Flora = world.get_node("Flora")
+		var fl := flora.fern_positions
+		var bestf := fl[0]
+		var bestn := -1
+		for i in range(0, fl.size(), 3):
+			var n := 0
+			for q in fl:
+				if (q - fl[i]).length_squared() < 25.0:
+					n += 1
+			if n > bestn:
+				bestn = n
+				bestf = fl[i]
+		var tr := flora.tree_positions[0]
+		for q in flora.tree_positions:
+			if Vector2(q.x - bestf.x, q.z - bestf.z).length() < Vector2(tr.x - bestf.x, tr.z - bestf.z).length():
+				tr = q
+		var away := Vector3(bestf.x - tr.x, 0, bestf.z - tr.z).normalized()
+		SPOTS[spot] = [bestf + away * 7.5 + away.cross(Vector3.UP) * 1.5, bestf - away * 3.0]
+		print("SHOT ferns: drift of %d at %s, %d ferns, %d shrubs" % [bestn, bestf, fl.size(), flora.shrub_positions.size()])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -336,6 +357,9 @@ func _ready() -> void:
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		if spot == "ruin":
 			pos.y += 2.5
+		if spot == "ferns":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
+			look.y = terrain.height_at(look.x, look.z) + 0.3
 		if spot == "puddles":
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z)
