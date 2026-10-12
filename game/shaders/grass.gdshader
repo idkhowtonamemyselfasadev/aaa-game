@@ -11,6 +11,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 
 #include "res://shaders/weather.gdshaderinc"
 #include "res://shaders/foliage_light.gdshaderinc"
+#include "res://shaders/trample.gdshaderinc"
 uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
 uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
 uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
@@ -32,6 +33,7 @@ float n2(vec2 p) {
 
 varying float v_shelter; // rain the oak crowns catch above this clump
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+varying float v_laid;    // 0 standing .. 1 laid flat by the hero (trample.gdshaderinc)
 
 void vertex() {
 	v_h = UV.y;
@@ -53,11 +55,19 @@ void vertex() {
 	float flutter = sin(t * 7.0 + v_var * 40.0 + iw.x * 0.7) * 0.06 * (1.0 + 1.8 * storm);
 	// a storm front combs the sward over: stronger swell, much stronger gusts
 	float bend = (wind_strength * (1.0 + 0.6 * storm) * swell + gust_strength * (1.0 + 0.9 * storm) * gust) * v_h * v_h;
-	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h);
+	// the hero: blades part round the legs and lie laid over along the trail
+	vec3 tl = trample_lay(origin, 0.7);
+	v_laid = tl.z;
+	float stand = 1.0 - 0.8 * tl.z;   // laid blades barely catch the wind
+	bend *= stand;
+	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h) * stand;
+	wv.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
+	if (tl.z > 0.001) {
+		// trodden blades fold over at the root (up to ~70 deg), the clump's own lean kept
+		wv += trample_fold(iw - origin, tl.xy, tl.z * 1.2);
+	}
 	// bend in world space, convert back to local (instances are rotated/scaled)
-	vec3 lw = (inverse(mat3(MODEL_MATRIX)) * wv);
-	VERTEX += lw;
-	VERTEX.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
+	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
 	v_ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, v_h));
 	// lean normals up so clumps light like a canopy, not like flat cards
@@ -70,7 +80,9 @@ void fragment() {
 	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
 	vec3 col = mix(root_col, tip, smoothstep(0.0, 0.9, v_h));
 	float rough = 0.82;
-	col *= v_ao;
+	col *= mix(v_ao, 1.0, v_laid * 0.5);
+	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
+	col = mix(col, col * vec3(1.18, 1.16, 1.0) + vec3(0.02, 0.02, 0.0), v_laid * 0.6);
 	weather_wetten_sheltered(col, rough, 0.85, v_shelter);
 	ALBEDO = col;
 	ROUGHNESS = rough;

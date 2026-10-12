@@ -113,6 +113,14 @@ scaling_3d/mode=0
 
 [shader_globals]
 
+trample_body={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+trample_trail={
+"type": "sampler2D",
+"value": ""
+}
 shelter_map={
 "type": "sampler2D",
 "value": ""

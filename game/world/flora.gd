@@ -551,6 +551,7 @@ func _scatter_understory() -> void:
 	fern_mat.set_shader_parameter("leaf_tex", _fern_atlas())
 	fern_mat.set_shader_parameter("tint", Color(1.0, 1.0, 1.0))
 	fern_mat.set_shader_parameter("fill", 2.0)
+	fern_mat.set_shader_parameter("trample_gain", 1.0)
 	var shrub_leaf := leaf_material.duplicate() as ShaderMaterial
 	shrub_leaf.set_shader_parameter("tint", Color(1.15, 1.18, 0.95))
 	var ferns: Array[ArrayMesh] = []

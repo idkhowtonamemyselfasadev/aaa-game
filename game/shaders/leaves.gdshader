@@ -7,6 +7,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // shared branch sway.
 #include "res://shaders/tree_wind.gdshaderinc"
 #include "res://shaders/foliage_light.gdshaderinc"
+#include "res://shaders/trample.gdshaderinc"
 
 uniform sampler2D leaf_tex : source_color, filter_linear_mipmap_anisotropic;
 uniform vec3 tint : source_color = vec3(1.0, 1.0, 1.0);
@@ -14,6 +15,9 @@ uniform float fade_dist = 380.0;
 // shade fill gain: oak crowns 0.45 (inner crown); ferns on the woodland floor more (they
 // catch the green light through the canopy as well as the bounce off the litter)
 uniform float fill = 0.45;
+// ferns (flora.gd sets 1): fronds are pushed aside by the hero's legs and spring back;
+// 0 on the oak crowns
+uniform float trample_gain = 0.0;
 
 varying float v_phase;
 varying vec3 v_inst;
@@ -24,6 +28,21 @@ void vertex() {
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	float fl = sin(TIME * 6.0 + COLOR.g * 60.0 + MODEL_MATRIX[3].x) * 0.035;
 	VERTEX += vec3(fl, fl * 0.6, -fl) * COLOR.r;
+	if (trample_gain > 0.0) {
+		// a fern crown is ~1.4 m across: the legs brush the fronds aside (no full flattening;
+		// fronds spring back quicker than grass, so only the live push + the freshest trail)
+		vec3 root = MODEL_MATRIX[3].xyz;
+		vec3 tl = trample_lay(root, 1.1);
+		if (tl.z > 0.001) {
+			vec3 rel = mat3(MODEL_MATRIX) * VERTEX;
+			// fronds on the hero's side bend away most: weight by how much the frond
+			// points toward the push origin
+			vec2 rh = normalize(rel.xz + vec2(1e-4));
+			float facing = clamp(0.5 - 0.5 * dot(rh, tl.xy), 0.0, 1.0);
+			vec3 off = trample_fold(rel, tl.xy, tl.z * trample_gain * mix(0.35, 0.9, facing));
+			VERTEX += inverse(mat3(MODEL_MATRIX)) * off;
+		}
+	}
 	v_phase = COLOR.g;
 	v_inst = MODEL_MATRIX[3].xyz;
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);

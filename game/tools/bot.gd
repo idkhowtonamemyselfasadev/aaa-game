@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -83,6 +83,9 @@ func _ready() -> void:
 		return
 	if name == "understory":
 		_understory_test()
+		return
+	if name == "trample":
+		_trample_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1579,6 +1582,41 @@ func _understory_test() -> void:
 	if t >= 20.0:
 		return _combat_done(false, "stuck in the ferns at %s" % p.global_position)
 	_combat_done(true, "groves have a fern and shrub understory the hero can walk through")
+
+func _trample_test() -> void:
+	var p := _player
+	var tr: Trample = _world.trample
+	var terrain: Terrain = _world.get_node("Terrain")
+	var start := p.global_position
+	await _ticks(20)
+	# run 14 m across the meadow, noting where the hero was a second before stopping
+	var dir := Vector2(1, 0.3).normalized()
+	var mark := Vector3.INF
+	var t := 0.0
+	while Vector2(p.global_position.x - start.x, p.global_position.z - start.z).length() < 14.0 and t < 12.0:
+		p.bot_input = dir
+		await _ticks(6)
+		t += 0.1
+		if mark == Vector3.INF and Vector2(p.global_position.x - start.x, p.global_position.z - start.z).length() > 8.0:
+			mark = p.global_position
+	p.bot_input = Vector2.ZERO
+	await _ticks(30)
+	var n := tr.active_points()
+	var laid := tr.lay_at(mark)
+	var off := mark + Vector3(-dir.y, 0, dir.x) * 2.0   # 2 m beside the trail
+	var beside := tr.lay_at(off)
+	var px := tr._img.get_pixel(0, 0)
+	print("BOT trample: %d trail points, laid %.2f on the trail, %.2f 2 m beside it, texel %s" % [n, laid, beside, px])
+	if n < 10 or laid < 0.35 or beside > 0.05 or px.a <= 0.0:
+		return _combat_done(false, "the hero leaves no trodden trail in the grass")
+	# stand still: the sward springs back
+	await _ticks(int((Trample.LIFE + 1.0) * 60.0))
+	var after := tr.lay_at(mark)
+	print("BOT trample: after %.0f s laid %.2f, %d points" % [Trample.LIFE + 1.0, after, tr.active_points()])
+	if after > 0.05 or tr.active_points() > 0:
+		return _combat_done(false, "trodden grass never springs back")
+	# a jump leaves no footfall in mid-air: teleport-free, nothing laid far from the hero
+	_combat_done(true, "grass, flowers and ferns part round the hero and spring back behind")
 
 func _ruin_test() -> void:
 	var p := _player

@@ -349,6 +349,19 @@ func _ready() -> void:
 		var away := Vector3(bestf.x - tr.x, 0, bestf.z - tr.z).normalized()
 		SPOTS[spot] = [bestf + away * 7.5 + away.cross(Vector3.UP) * 1.5, bestf - away * 3.0]
 		print("SHOT ferns: drift of %d at %s, %d ferns, %d shrubs" % [bestn, bestf, fl.size(), flora.shrub_positions.size()])
+	if spot == "trample":
+		# a trodden track through the meadow: 18 m of trail curving in to where the hero
+		# stands, oldest end nearly sprung back; seen from beside the start, looking along it
+		var pp := player.global_position
+		var fwd := Vector3(0.8, 0, 0.6)
+		var side := fwd.cross(Vector3.UP)
+		var path := PackedVector3Array()
+		for k in 7:
+			var u := k / 6.0
+			path.append(pp - fwd * (18.0 * (1.0 - u)) + side * sin(u * PI) * 2.2)
+		world.trample.seed_trail(path, 8.0, 0.2)
+		player.body.rotation.y = atan2(fwd.x, fwd.z)
+		SPOTS[spot] = [pp - fwd * 15.0 + side * 1.3, pp - fwd * 5.0 + side * 1.0]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -362,6 +375,9 @@ func _ready() -> void:
 			look.y = terrain.height_at(look.x, look.z) + 0.3
 		if spot == "puddles":
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
+			look.y = terrain.height_at(look.x, look.z)
+		if spot == "trample":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.75
 			look.y = terrain.height_at(look.x, look.z)
 		if spot == "turf":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.4

@@ -5,6 +5,7 @@ render_mode cull_disabled, depth_draw_opaque;
 // UV.y = wind weight 0 root .. 1 head. INSTANCE_CUSTOM.r = variation, .g = species
 // (0 ox-eye daisy, 1 buttercup, 2 knapweed, 3 yarrow).
 #include "res://shaders/meadow_wind.gdshaderinc"
+#include "res://shaders/trample.gdshaderinc"
 
 uniform float fade_start = 44.0;
 uniform float fade_end = 58.0;
@@ -28,7 +29,11 @@ void vertex() {
 	vec3 root = MODEL_MATRIX[3].xyz;
 	vec3 iw = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	float fade = 1.0 - smoothstep(fade_start, fade_end, distance(iw, CAMERA_POSITION_WORLD));
-	vec3 wv = meadow_wind(root, clamp(UV.y, 0.0, 1.0), TIME);
+	vec3 tl = trample_lay(root, 0.6);
+	vec3 wv = meadow_wind(root, clamp(UV.y, 0.0, 1.0), TIME) * (1.0 - 0.8 * tl.z);
+	if (tl.z > 0.001) {
+		wv += trample_fold(iw - root, tl.xy, tl.z * 1.1);   // trodden flowers lie over
+	}
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);

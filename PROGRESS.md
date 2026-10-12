@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.66
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.67
+(the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 14:00 UTC:
+  - **Grass, flowers and ferns react to the hero (owner ALIVE: "grass flattens, foliage
+    brushes").** New `world/trample.gd` (child of World) drops a footfall every 0.6 m while
+    the hero is on the ground (32 kept, ~19 m of trail; a run lays harder than a walk) and
+    uploads them as a 32x2 float texture `trample_trail` + `trample_body` (feet position).
+    `shaders/trample.gdshaderinc`: `trample_lay()` = the legs part plants within ~0.7 m,
+    footfalls lay them over along the walk direction and a little outward, fully laid in
+    0.08 s, lying a few seconds, standing back up by 9 s; `trample_fold()` tips the blade over
+    at the root (rigid, keeps length). Grass folds up to ~70 deg, loses most wind sway when
+    laid, and shows paler blade backs (a trodden track reads lighter); flowers lie over;
+    ferns (leaves shader `trample_gain` 1, oaks 0) have fronds brushed aside, the ones
+    facing the hero most. Early-out beyond 22 m of the hero.
+  - New bot `trample` (trail points, laid on the trail / not 2 m beside it, sprung back
+    after 10 s), new shot spot `trample` (seeds an 18 m curved trail via
+    `Trample.seed_trail()`, frozen for the slow renderer).
+  - Verdicts: trample2 (15.5 h, along an 18 m seeded track) fail: the blades along the
+    track are visibly combed over toward the hero, but it reads as wind-combed grass rather
+    than a trodden lane (fold too gentle at mid-age, paler backs not visible at this light);
+    roots near the camera still dark. Next for this: fold fresh footfalls ~85 deg, widen the
+    lane to ~0.9 m, maybe darken/crush laid blades instead of lightening, and a low camera
+    shot right at the hero's feet. (trample1 was useless: the trail was gated off when the
+    hero was not `is_on_floor()`, fixed so only the live leg push needs ground.)
+    17/17 bots pass. A Vulkan shot took ~12 min at 40 frames; an earlier one hit the
+    timeout and fell back to GL (discarded).
 - Session 2026-10-12 13:00 UTC (second, parallel session): built the same grove-floor fix
   (leaf carpet + canopy fill) at the same time as the session above; theirs landed first
   and is more complete, so it was kept and this one dropped. Only kept: the
@@ -1181,8 +1205,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    for the `ruin` shot (from higher up the slope, sun behind the camera). Flora polish:
    bigger hero boulders/outcrops (3–6 m), hedgerows,
    (done 12:00 (10-12): ferns + shrubs under/around the groves; 13:00: leaf-litter carpet +
-   canopy fill under the crowns; follow-ups: break the leaf-bed grid, fern close-up moire, ferns
-   flattened/brushed by the hero, fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
+   canopy fill under the crowns; follow-ups: break the leaf-bed grid, fern close-up moire, (done 14:00: grass/flowers/ferns
+   trampled by the hero; follow-ups: the soldier and wildlife trample too, mud footprints), fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
 3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
    peaks.) Polish: more rock colour/contrast on the far range (it reads hazy grey; maybe
@@ -1243,12 +1267,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Trample (14:00 10-12): only the hero tramples (not the soldier, wildlife once it exists);
+  the trail is 32 footfalls, so a long run only keeps the last ~19 m laid; the fold is a
+  rigid tilt at the root (no crushed/kinked blades, no bent stems lying on top of each
+  other); no footprints in mud/wet soil yet; plants laid over by the live push also
+  press down while the hero jumps over them until the feet leave the ground.
 - Leaf bed (13:00 10-12): the 4 leafbed layers are one leaf per grid cell, so at 2-4 m the
   carpet reads slightly like cobbles (jitter more / rotate the grids); small cream specks
   from the old litter layer pop under the crowns; the leaf bed has no seasonal change yet.
 - Close fern fronds show a moire/checker pattern (fern atlas mip/alpha at <1 m).
-- Understory (12:00 10-12): ferns and shrubs have no collision or brush response (the hero
-  walks through them without parting them); shrubs reuse the oak leaf atlas (no hazel leaf
+- Understory (12:00 10-12): (14:00: ferns are now brushed aside by the hero.) Shrubs do
+  not part; shrubs reuse the oak leaf atlas (no hazel leaf
   shape); fern fronds are single strips so they read flat when seen exactly edge-on; the
   grove floor in crown shade is near black, so shaded ferns lose their shape.
 - (fixed 11:00 (10-12): backlit oaks were mountain-ring shadow, now off.) A camera low in
@@ -1298,8 +1327,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   6 m offset.
 - 15 % of butterflies (and all of them where no drift is loaded) still perch at a random
   height over the grass; perched ones follow the flower's wind sway but not the flutter
-  exactly (few mm). Flowers have no LOD (full mesh to 56 m) and no shadow; they are not
-  flattened by the hero walking through. Their patterns read pale under the warm grade; no
+  exactly (few mm). Flowers have no LOD (full mesh to 56 m) and no shadow; (14:00: they are
+  now laid over by the hero walking through.) Their patterns read pale under the warm grade; no
   shadow (casting off); they do not avoid trees or the hero's body in flight. Rain does not
   ground them (no weather yet).
 - (fixed 14:00: ground layer.) Close-up grass blades are still flat untextured ribbons (no

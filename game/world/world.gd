@@ -22,6 +22,7 @@ var training_post: TrainingPost
 var soldier: HollowSoldier
 var weather: Weather
 var clouds: CloudLayer
+var trample: Trample
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
@@ -34,6 +35,10 @@ func _ready() -> void:
 	clouds = CloudLayer.new()
 	clouds.name = "Clouds"
 	add_child(clouds)
+	trample = Trample.new()
+	trample.name = "Trample"
+	trample.player = player
+	add_child(trample)
 	moon = DirectionalLight3D.new()
 	moon.name = "Moon"
 	moon.light_color = Color(0.62, 0.72, 1.0)
