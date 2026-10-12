@@ -374,7 +374,16 @@ func _ready() -> void:
 		var hc := herd.centre()
 		var sdh: Vector3 = world.sun.global_transform.basis.z
 		sdh = Vector3(sdh.x, 0, sdh.z).normalized().rotated(Vector3.UP, 0.5)
-		SPOTS[spot] = [hc + sdh * 19.0, hc]
+		# "near": ~10 m from the closest deer, to judge the coat and shape
+		var dist := 19.0
+		if "near" in args:
+			var best := hc
+			for dp in herd.deer_positions():
+				if (dp - (hc + sdh * 19.0)).length() < (best - (hc + sdh * 19.0)).length():
+					best = dp
+			hc = best
+			dist = 10.0
+		SPOTS[spot] = [hc + sdh * dist, hc]
 		print("SHOT herd at %s, %d deer" % [hc, herd.deer_positions().size()])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]

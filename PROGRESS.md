@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.7
+Content hours playable: 0.71
 (a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -28,6 +28,28 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 18:00 UTC:
+  - **Red deer look pass (follow-up of the 17:00 herd fail verdict).** `deer.gdshader` now
+    takes the Vale's light like the rest of the meadow: `bounce_light` fill (more on the
+    belly/chest and shaded flank, `bounce_gain` in the keep), cloud shadows
+    (`cloud_shade_at`), and rain soaks the coat dark and glossy from `weather_wet`, less
+    under the oak crowns (the old `wet` uniform was never driven); coat a touch brighter
+    and redder. Mesh (`Herd.build_mesh()`): shorter, deeper wedge head (broad cheek/jaw,
+    blunter muzzle, eye and nose moved to match), thicker neck, withers and a deeper chest;
+    legs now grow out of the body (tops inside the flank, no more slab "columns" pasted on
+    the side), elbow and forearm taper to the knee, haunch-to-gaskin with a calf behind the
+    hock. Grazing pose: the neck swings down nearly straight from its base (was a swan
+    curl) and the muzzle reaches the grass. New `near` arg on the `herd` shot (camera ~10 m
+    from the nearest deer).
+  - Bots: `herd` PASS (graze, 9/9 heads up at 35 m, bolt in 0.1 s, 61 m ahead after 6 s,
+    settle 110 m off), `walk` PASS.
+  - Verdicts: `deer_view` model check: much closer to a hind (legs blend into the body,
+    straight grazing neck, wedge head); still a smooth sausage barrel with no shoulder
+    blade/hip bone landmarks, ears thin from the side. `herd herd_far 60 10` fail: the herd
+    now reads as red deer with cream rumps in the morning light at ~25 m, but the near grass
+    is tufts over bare dark soil and the oaks look stylized. `herd herd_near 60 16.5 near`
+    fail: coat reads, but the deer are still small in frame (they drift during warm-up; the
+    `near` pick is ~16 m in practice) and the foreground grass is dark.
 - Session 2026-10-12 17:00 UTC:
   - **Red deer herd (owner ALIVE: "herds that graze and flee"; Next item 5).** New
     `world/herd.gd` (node `Herd`, added in world.gd): 7 hinds + 2 calves, one procedural
@@ -1284,7 +1306,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    butterflies; 13:00 (10-11): wildflower drifts, butterflies perch on flower heads.) Still to
    do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
    flowers, two butterflies spiralling up together, (done 17:00 (10-12): red deer herd that
-   grazes, watches and flees; follow-ups: a stag with antlers, deer trample/prints, bedding
+   grazes, watches and flees; 18:00: look pass -- lit coat, head/neck/leg shaping, straight
+   grazing neck; follow-ups: shoulder-blade/hip landmarks on the barrel, a `near` shot that
+   freezes the herd during warm-up, a stag with antlers, deer trample/prints, bedding
    down at night, ear flicks/tail flags, hoof sounds, a predator), bird calls once
    there is audio, (done 06:00 (10-12): rooks roost in a rookery at night), moths around lanterns/campfires once
    they exist, butterflies by day.

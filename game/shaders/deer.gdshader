@@ -5,15 +5,20 @@ shader_type spatial;
 // (0..1), b = neck/head bend weight (0 body .. 1 head), a = part (0 coat, 0.5 eye, 1 ear).
 // Rest pose faces -Z, hooves at y = 0.
 
-uniform vec3 coat : source_color = vec3(0.30, 0.150, 0.072);      // summer red
-uniform vec3 coat_dark : source_color = vec3(0.17, 0.110, 0.072);  // neck, dorsal, lower legs
-uniform vec3 belly : source_color = vec3(0.50, 0.40, 0.28);
-uniform vec3 rump : source_color = vec3(0.66, 0.56, 0.40);
-uniform float wet = 0.0;
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
+#include "res://shaders/weather.gdshaderinc"
+#include "res://shaders/bounce.gdshaderinc"
+
+uniform vec3 coat : source_color = vec3(0.36, 0.180, 0.088);      // summer red
+uniform vec3 coat_dark : source_color = vec3(0.20, 0.130, 0.086);  // neck, dorsal, lower legs
+uniform vec3 belly : source_color = vec3(0.52, 0.42, 0.30);
+uniform vec3 rump : source_color = vec3(0.68, 0.58, 0.42);
 
 varying vec3 v_rest;
 varying vec4 v_col;
 varying vec3 v_rest_n;
+varying vec3 v_world;
+varying float v_cloud;   // cloud shadow on this deer (1 = full sun)
 
 const vec3 HIP[4] = vec3[4](vec3(0.13, 0.96, -0.40), vec3(-0.13, 0.96, -0.40), vec3(0.14, 0.98, 0.40), vec3(-0.14, 0.98, 0.40));
 const vec3 KNEE[4] = vec3[4](vec3(0.11, 0.45, -0.42), vec3(-0.11, 0.45, -0.42), vec3(0.115, 0.46, 0.54), vec3(-0.115, 0.46, 0.54));
@@ -62,15 +67,16 @@ void vertex() {
 	float b = COLOR.b;
 	if (b > 0.0) {
 		float down = ic.z;
-		// head pitch at the poll (rest space) first, then the neck bends from its base
+		// head pitch at the poll (rest space) first, then the neck swings down from its base
+		// nearly rigid (a deer's grazing neck is straight, not a swan's curl)
 		if (b > 0.97) {
-			vec3 poll = vec3(0.0, 1.59, -1.10);
+			vec3 poll = vec3(0.0, 1.62, -1.04);
 			float hb = down * 0.75;
 			v = poll + rot_x(v - poll, hb);
 			n = rot_x(n, hb);
 		}
 		vec3 nb = vec3(0.0, 0.98, -0.60);
-		float a = -down * 1.55 * pow(b, 0.55);
+		float a = -down * 1.75 * smoothstep(0.0, 0.6, b);
 		v = nb + rot_x(v - nb, a);
 		n = rot_x(n, a);
 		float yw = ic.w * pow(b, 0.7);
@@ -85,6 +91,8 @@ void vertex() {
 	n = rot_x(n, rock);
 	VERTEX = v;
 	NORMAL = normalize(n);
+	v_world = (MODEL_MATRIX * vec4(v, 1.0)).xyz;
+	v_cloud = cloud_shade_at(v_world);
 }
 
 void fragment() {
@@ -110,7 +118,7 @@ void fragment() {
 	float head = step(0.97, v_col.b);
 	col = mix(col, coat_dark * 1.05, head * smoothstep(0.02, 0.06, rn.y + 0.1) * smoothstep(-1.17, -1.32, p.z) * 0.6);
 	col = mix(col, belly * 1.05, head * smoothstep(-0.2, -0.7, rn.y) * smoothstep(-1.22, -1.37, p.z));
-	col = mix(col, vec3(0.025, 0.02, 0.02), head * smoothstep(-1.39, -1.42, p.z) * smoothstep(1.33, 1.37, p.y));
+	col = mix(col, vec3(0.025, 0.02, 0.02), head * smoothstep(-1.37, -1.395, p.z) * smoothstep(1.44, 1.47, p.y));
 	// ears: pale furry insides, dark rims
 	if (v_col.a > 0.75) {
 		col = mix(coat_dark * 1.2, belly, smoothstep(0.2, 0.7, abs(rn.z)) * 0.5);
@@ -126,6 +134,8 @@ void fragment() {
 		rough = 0.08;
 		spec = 0.6;
 	}
+	// rain soaks the coat dark and glossy, less under the oak crowns
+	float wet = weather_wet * (1.0 - 0.8 * shelter_at(v_world.xz));
 	col *= 1.0 - 0.45 * wet;
 	ALBEDO = col;
 	ROUGHNESS = mix(rough, 0.35, wet);
@@ -133,6 +143,10 @@ void fragment() {
 	// hair fuzz: a soft lit rim along the silhouette
 	float rim = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.5);
 	ALBEDO += coat * rim * 0.22 * (1.0 - wet);
+	ALBEDO *= v_cloud;
+	// light the meadow throws up into the belly, chest and the shaded flank
+	float ao = mix(0.55, 1.0, smoothstep(0.1, 0.9, p.y)) * mix(1.0, 0.7, under);
+	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);
 	BACKLIGHT = col * (0.15 + 0.6 * step(0.75, v_col.a));
 	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25, 0.5 + (clump - 0.5) * 0.15, 1.0));
 }
