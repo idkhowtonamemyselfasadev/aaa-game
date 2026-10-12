@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -543,6 +543,12 @@
   "file": "20261012-0459-dusk-peaks.jpg",
   "time": "2026-10-12T04:59:45Z",
   "caption": "Dusk toward the evening sun: snow lies in the new erosion gullies of the far peaks; foreground is too dark and the meadow shows banded shadow stripes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0516-shed-hero.jpg",
+  "time": "2026-10-12T05:16:00Z",
+  "caption": "After a shower the drenched hero sheds drops off hands, knees and the staff end (bright beads by the feet); the dull grey dusk, plastic sci-fi suit and hazy grey backdrop still fail the Wukong bar.",
   "verdict": "fail"
  }
 ]

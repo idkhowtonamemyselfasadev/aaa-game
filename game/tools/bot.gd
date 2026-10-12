@@ -1260,6 +1260,14 @@ func _weather_test() -> void:
 	print("BOT weather wake: up to %d footfall rings spreading at once, %d once they ran out" % [rings, rings_left])
 	if rings < 1 or rings_left > 0:
 		return _combat_done(false, "footfalls leave no ring on the pool (or the rings never fade)")
+	# a drop falling into the pool (off a soaked sleeve or a crown) sets a faint ring running
+	var dr_r0 := wx.drip_rings
+	wx.shed_drop(Vector3(pool.x + 0.4, gy + 1.2, pool.z + 0.4), gy)
+	for i in 40:
+		await get_tree().physics_frame
+	print("BOT weather drip ring: %d ring(s) from a drop into the pool" % (wx.drip_rings - dr_r0))
+	if wx.drip_rings == dr_r0:
+		return _combat_done(false, "a drop landing in a pool leaves no ring")
 	var cov1: float = cl.mat.get_shader_parameter("coverage")
 	var d1: Vector2 = cl.mat.get_shader_parameter("drift")
 	await _ticks(60)
@@ -1421,6 +1429,24 @@ func _weather_test() -> void:
 	print("BOT weather drips after the rain: %d drops in the %.0f s after it stopped (canopy %.2f)" % [drips_after, t - dry_t, wx.canopy_water])
 	if drips_after < 20:
 		return _combat_done(false, "the crowns stop dripping the moment the rain stops")
+	# the drenched hero runs with water after the rain: drops shed off hands, hem and staff
+	_player.global_position = Vector3(under.x + 25.0, _world.terrain.height_at(under.x + 25.0, under.z) + 0.1, under.z)
+	hs.level = 1.0
+	var shd0 := wx.shed_drops
+	await _ticks(60)
+	var shed_wet := wx.shed_drops - shd0
+	hs.level = 0.0
+	hs.wade = 0.0
+	if _world.soldier != null:
+		_world.soldier.soak.level = 0.0
+		_world.soldier.soak.wade = 0.0
+	shd0 = wx.shed_drops
+	await _ticks(60)
+	var shed_dry := wx.shed_drops - shd0
+	print("BOT weather shed: drenched hero sheds %d drops in 60 ticks, dry hero %d" % [shed_wet, shed_dry])
+	if shed_wet < 5 or shed_dry > 0:
+		return _combat_done(false, "a drenched hero does not drip (or a dry one does)")
+	hs.level = soak_peak
 	await _ticks(240)
 	var c2 := bf.census()
 	print("BOT weather cleared after %.0f s: cloud %.2f rain %.2f wet %.2f (peak %.2f), sun %.2f, drops %s, butterflies out %d" % [t, wx.cloud, wx.rain, wx.wet, wet_peak, _world.sun.light_energy, rp.emitting, c2[0] + c2[1] + c2[2]])

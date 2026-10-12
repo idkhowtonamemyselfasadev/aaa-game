@@ -56,6 +56,8 @@ var _drips: GPUParticles3D
 var _drip_mat: ShaderMaterial
 var _drip_acc := 0.0
 var _drip_land: Array[Vector4] = []   # (x, ground y, z, seconds until it lands)
+var drip_rings := 0       # drips that landed in a pool and set a small ring running (bots)
+var shed_drops := 0       # drops shed off soaked actors (hero, Hollows) (bots)
 
 const FX_LAYER := 1 << 9  # rain + splashes
 
@@ -200,6 +202,8 @@ func _update_drips(delta: float) -> void:
 			_splash.emit_particle(Transform3D(Basis(), Vector3(d.x, d.y + 0.01, d.z)), Vector3.ZERO,
 					Color.WHITE, Color.WHITE, GPUParticles3D.EMIT_FLAG_POSITION)
 			drip_splashes += 1
+			if pool_at(d.x, d.z):
+				_drip_ring(d.x, d.z)
 			_drip_land.remove_at(i)
 		else:
 			_drip_land[i] = d
@@ -243,6 +247,33 @@ func _update_drips(delta: float) -> void:
 			if _drip_land.size() < 256:
 				_drip_land.append(Vector4(x, gy, z, fall))
 			break
+
+## A drop falling free from `at` (a soaked sleeve, hem, chin or staff) to `ground_y`: the
+## same fat drip streak as the crowns shed, landing in a splash (and a ring on a pool).
+func shed_drop(at: Vector3, ground_y: float, v := Vector3.ZERO) -> void:
+	var h := at.y - ground_y
+	if h <= 0.05:
+		return
+	var v0 := maxf(-v.y, 0.0)
+	var fall := (-v0 + sqrt(v0 * v0 + 2.0 * DRIP_G * h)) / DRIP_G
+	_drips.emit_particle(Transform3D(Basis(), at), v, Color.WHITE, Color.WHITE,
+			GPUParticles3D.EMIT_FLAG_POSITION | GPUParticles3D.EMIT_FLAG_VELOCITY)
+	shed_drops += 1
+	if _drip_land.size() < 256:
+		_drip_land.append(Vector4(at.x + v.x * fall, ground_y, at.z + v.z * fall, fall))
+
+## A single drop striking a pool: a faint, small ring train. It takes a free ring slot or
+## one whose ring has nearly died out, never a footfall's ring still running strong.
+func _drip_ring(x: float, z: float) -> void:
+	for k in WAKE_RINGS:
+		var i := (_wake_next + k) % WAKE_RINGS
+		var r := _wake[i]
+		if r.w <= 0.0 or r.z > WAKE_LIFE * 0.55 or (r.w < 0.5 and r.z > 0.5):
+			_wake[i] = Vector4(x, z, 0.0, DRIP_RING)
+			drip_rings += 1
+			return
+
+const DRIP_RING := 0.3   # a drop's ring strength next to a footfall's 1.0
 
 func _rain_level(c: float) -> float:
 	# rain only sets in once the sky is mostly covered
@@ -374,11 +405,11 @@ func _update_wake(delta: float) -> void:
 		_wake[i] = r
 		RenderingServer.global_shader_parameter_set("wade_ring_%d" % i, r)
 
-## Footfall rings still spreading (bots).
-func wake_rings() -> int:
+## Footfall rings still spreading (bots); min_strength 0 counts the drops' faint rings too.
+func wake_rings(min_strength := 0.5) -> int:
 	var n := 0
 	for r in _wake:
-		if r.w > 0.0:
+		if r.w > 0.0 and r.w >= min_strength:
 			n += 1
 	return n
 

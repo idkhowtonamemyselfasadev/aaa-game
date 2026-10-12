@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0.5
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -39,6 +39,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     gullied snow peaks read well; the foreground is near black and the meadow shows dark
     shadow bands. east (9 h) fail: far crags visible, near trees/grass fine but sun blowout.
     13/13 bots pass.
+- Session 2026-10-12 04:40 UTC:
+  - **A soaked hero runs with water (next item 9 pick).** `Soak` now sheds drops off its
+    actor: rate `shed_rate` (14/s) x smoothstep(0.12, 1, level)^2, so a drenched hero drips
+    steadily after the rain and a damp one barely at all; wading legs (wade) add drops off the
+    knees. Points (mixamorig bones): coat hem ring round the hips 40 %, fingertips 28 %, the
+    low end of the staff (or the Hollow's spear) 17 %, elbows 9 %, chin/hair the rest. Drops
+    leave with the body's speed (no beads hanging behind a running hero), only within 30 m of
+    the camera. They go through the new `Weather.shed_drop(at, ground_y, v)`, the same drip
+    streak + landing splash as the canopy drips (counted in `shed_drops`).
+  - **Drip rings on the pools.** Any drip (crown or body) that lands where `pool_at` holds
+    sets a faint ring train (strength 0.3) in a wake-ring slot that is free or nearly spent,
+    never one a footfall is still running in (`drip_rings`). `wake_rings(min_strength=0.5)`
+    now counts footfall rings only by default.
+  - Bot `weather`: a drop into the pool leaves a ring; a drenched hero sheds ~56 drops per 60
+    ticks (4 game-s), a dry one none. 13/13 bots pass.
+  - Shot `shed_hero` (hero spot, 16 h, rain=0.5 wet=0.8 soak=1 fixfps; ~10 min on lavapipe):
+    a few bright drops fall by the hero's legs and off the staff end. Fail as a Wukong shot:
+    grey flat dusk light, the plastic sci-fi suit (shot before the 04:30 ridge relief landed), framing too wide to sell
+    the drips.
 - Session 2026-10-12 03:30 UTC:
   - **Canopy drips (next item 9 pick).** The oak crowns now gather rain and shed it as fat
     drops along their drip line. `Weather.canopy_water` (0..1) fills in ~25 s of downpour
@@ -1040,9 +1059,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    soaks the legs; 01:35: sheet flashes with no channel.)
    (done 02:30: rain shelter under the oak crowns.)
    (done 03:30: canopy drips from the crown edges, during and for minutes after rain.)
-   Next session pick: drips running off the soaked hero (rivulet streaks + drip particles
-   from the hem/staff), drip rings on the pools under the crowns, then the thunder sound once
-   audio exists (hook: `Lightning.thunder`). Still to do: rolling
+   (done 04:40: soaked hero/Hollow shed drops off hem, hands, staff end, knees; drip rings
+   on the pools.) Still to do here: rivulet streaks running down the wet cloth (shader), a
+   shake-off when the hero draws the staff wet. Weather has had ~12 sessions; the next pick
+   should move to the ALIVE gaps (item 5: a grazing herd that flees, birds roosting at
+   night) or item 7 (a mythic hero model), then the thunder sound once audio exists (hook:
+   `Lightning.thunder`). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
