@@ -203,7 +203,12 @@ func _ready() -> void:
 		var rs: Vector3 = world.get_node("Ruins").site
 		var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
 		if spot == "ruin":
-			SPOTS[spot] = [rs + to_v * 24.0 + to_v.cross(Vector3.UP) * 7.0, rs + Vector3.UP * 1.5]
+			# from up the slope with the sun over the shoulder: between the breach side and
+			# the sunward side, so the keep is lit and the breach still shows
+			var sd: Vector3 = world.sun.global_transform.basis.z
+			var sunward := Vector3(sd.x, 0, sd.z).normalized()
+			var dir := (to_v + sunward * 1.3).normalized()
+			SPOTS[spot] = [rs + dir * 22.0, rs + Vector3.UP * 1.5]
 		else:
 			SPOTS[spot] = [rs + to_v * 2.2 + to_v.cross(Vector3.UP) * 0.8, rs - to_v * 4.0]
 		var pp := rs + to_v * 40.0
@@ -329,6 +334,8 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "ruin":
+			pos.y += 2.5
 		if spot == "puddles":
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z)

@@ -21,6 +21,7 @@ var _chunks := {}            # Vector2i -> MultiMeshInstance3D
 var _heads := {}             # Vector2i -> [PackedVector3Array heads, PackedInt32Array species]
 @export var flowers_m: float = 56.0   # wildflowers (flowers.gd) only on chunks this close
 var _patch := FastNoiseLite.new()
+var _ruin := Vector3.INF      # watchtower keep centre (Flora.ruin_site), grass keeps off its floor
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -64,6 +65,10 @@ func update_around(p: Vector3, budget: int) -> void:
 			_heads.erase(k)
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
+	if _ruin == Vector3.INF:
+		var flora := get_node_or_null("../Flora")
+		if flora and flora.ruin_site != Vector3.ZERO:
+			_ruin = flora.ruin_site
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(k)
 	var xf: Array[Transform3D] = []
@@ -92,8 +97,13 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var pond := _terrain.pond_at(x, z)
 		if pond > 0.0 and rng.randf() < pond * 0.75:
 			continue
+		# the watchtower keep: no meadow inside its walls or through them, only a few short
+		# tufts in the floor joints
+		var keep := Vector2(x - _ruin.x, z - _ruin.z).length() if _ruin != Vector3.INF else 99.0
+		if keep < 4.6 and (keep > 3.1 or rng.randf() > 0.12):
+			continue
 		var y := _terrain.height_at(x, z)
-		var s := lerpf(0.55, 1.2, rng.randf()) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
+		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
 		var crop := 1.0
 		for c in cropped_spots:
 			crop = minf(crop, smoothstep(CROP_R * 0.45, CROP_R, Vector2(x - c.x, z - c.z).length()))

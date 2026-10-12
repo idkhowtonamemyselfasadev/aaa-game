@@ -173,6 +173,10 @@ cloud_thick={
 "type": "float",
 "value": 0.0
 }
+bounce_light={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
 cloud_sun={
 "type": "vec3",
 "value": Vector3(0, 1, 0)

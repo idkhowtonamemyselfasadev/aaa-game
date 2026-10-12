@@ -23,6 +23,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 09:00 UTC:
+  - **The ruin's shaded stone is no longer black (next item 2 follow-up: LOOK).** Root cause:
+    SDFGI is off on software Vulkan, so shade only gets the flat ambient, and dark stone
+    albedo (~0.1 linear) under SSAO 2.5 in the enclosed keep crushed to black. New global
+    shader uniform `bounce_light` set each frame by `World._apply_bounce()`: the light the
+    sunlit meadow/walls throw back (sun colour x energy x 0.13, scaled by sun height, + moon,
+    + a share of ambient); zero whenever SDFGI runs, so real GPUs keep true GI. Masonry adds
+    it as emission (albedo x bounce x AO, full on side/down faces, half on tops). Stone albedo
+    raised to a real buff sandstone (stone_a 0.66/0.6/0.5, crust and damp darkening milder),
+    worn arrises toned down (rubble read as hollow boxes), moss lighter.
+  - Grass no longer grows through the keep: `GrassField` reads `Flora.ruin_site`, keeps the
+    wall ring clear and leaves only ~12% short tufts on the floor.
+  - `ruin` shot camera moved up the slope with the sun over the shoulder.
+  - Verdicts: fix_out (13.5 h) fail but much better: a lit, readable broken keep on its
+    knoll with the vale and mountains behind; the courses are too regular (brick-like
+    same-size blocks) and the stone is a clean grey, no colour variation from afar. fix_in2
+    (13.5 h) fail: the inner face reads as coursed stone now, the floor rubble shows, but the
+    terrain floor in the keep's shade is still black and rubble tops are dark. fix_in3 (paler
+    arrises, lighter moss): marginal; fallen blocks still read as hollow boxes (dark tops,
+    pale rims): check SSAO on the small blocks and the moss/damp darkening on low tops.
+    15/15 bots pass.
 - Session 2026-10-12 08:00 UTC:
   - **A ruined watchtower on the western spur (next item 2 pick: ruins on hilltops).** New
     `world/ruins.gd` (`Ruins` node after Flora) + `shaders/masonry.gdshader`. Flora picks the
@@ -1077,8 +1098,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun;
    05:00: star fade-in, desaturated low sun/twilight.) Still to do: the brown 19 h sky (see
    bugs), dawn check, and verify SDFGI on a real GPU some day (cloud box can't).
-2. (done 08:00 (10-12): watchtower ruin on the western spur.) Ruin follow-ups: shaded stone
-   goes near black (needs bounce light: check SDFGI on the ruin, or raise ambient in shade),
+2. (done 08:00 (10-12): watchtower ruin on the western spur; 09:00: bounce fill, shade no
+   longer black, grass off the keep floor.) Ruin follow-ups: the terrain/grass/hero in deep
+   shade still go black (extend `bounce_light` to the terrain, grass and tree shaders), vary
+   block sizes and courses (brick-like now), warmer/varied stone colour at range,
    ivy/vines and grass tufts in the joints, a doorway arch and a stair stub in the keep, a
    shrine/quest hook there (milestone-1 shrine could start in its cellar), a better camera
    for the `ruin` shot (from higher up the slope, sun behind the camera). Flora polish:
@@ -1144,9 +1167,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Ruin: stones in shadow (inner face of the keep) are near black; blocks in a ring are
-  straight boxes, so the keep is a 22-sided polygon up close; grass grows through the floor
-  flagstones (grass does not know about the ruin); colliders are per block (fine for
+- Ruin: (fixed 09:00: inner face no longer black.) The keep floor (terrain) in shade is
+  still black: only masonry takes `bounce_light` so far; blocks in a ring are
+  straight boxes, so the keep is a 22-sided polygon up close; colliders are per block (fine for
   ~1000 static boxes, but merge them if physics shows up in a profile).
 - Sunset spot (18.5 h): dark parallel shadow bands across the mid-ground meadow (seen 10-12 04:30; maybe shadow-cascade striping from the low sun on lavapipe, check on a GPU).
 - Lightning: thunder is only a timed signal (no audio in the game yet); the flash light casts no shadows (a

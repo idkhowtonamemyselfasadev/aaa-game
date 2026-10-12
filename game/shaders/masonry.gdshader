@@ -7,9 +7,12 @@ render_mode cull_back;
 // INSTANCE_CUSTOM: r = block's height above the ground / 8 m, g = per-block random.
 
 #include "res://shaders/weather.gdshaderinc"
-uniform vec3 stone_a : source_color = vec3(0.5, 0.46, 0.39);
-uniform vec3 stone_b : source_color = vec3(0.33, 0.31, 0.28);
-uniform vec3 moss_a : source_color = vec3(0.14, 0.18, 0.05);
+uniform vec3 stone_a : source_color = vec3(0.66, 0.6, 0.5);
+uniform vec3 stone_b : source_color = vec3(0.48, 0.45, 0.4);
+// sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
+// zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
+global uniform vec3 bounce_light;
+uniform vec3 moss_a : source_color = vec3(0.2, 0.24, 0.08);
 uniform vec3 moss_b : source_color = vec3(0.28, 0.29, 0.1);
 uniform vec3 lichen_y : source_color = vec3(0.62, 0.56, 0.32);
 uniform vec3 lichen_g : source_color = vec3(0.55, 0.57, 0.5);
@@ -58,12 +61,12 @@ void fragment() {
 	vec3 base = mix(stone_b, stone_a, 0.15 + tint * 0.8);
 	// weathering crust: broad darker/greyer patches across a face, pale where it flaked off
 	float crust = fbm(wp * 2.3 + tint * 13.0);
-	base *= 0.7 + 0.55 * smoothstep(0.25, 0.75, crust);
+	base *= 0.8 + 0.35 * smoothstep(0.25, 0.75, crust);
 	base = mix(base, vec3(dot(base, vec3(0.33))) * 0.8, smoothstep(0.55, 0.8, fbm(wp * 1.1 + 31.0)) * 0.5);
 	base *= vec3(1.0, 0.98, 0.95) + vec3(0.04, 0.0, -0.04) * (tint - 0.5);
 	vec3 col = base * (0.9 + s * 0.2);
 	// worn arrises: paler, rubbed smooth
-	col = mix(col, base * 1.22 + 0.03, edge * 0.55);
+	col = mix(col, base * 1.12 + 0.02, edge * 0.35);
 	// rain streaks down the vertical faces (long in y, narrow across)
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(n.y));
 	float streak = smoothstep(0.55, 0.85, fbm(vec3(wp.x * 7.0, wp.y * 0.35, wp.z * 7.0) + 3.0));
@@ -80,7 +83,7 @@ void fragment() {
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
 	col = mix(col, mc, mossw);
-	col *= mix(0.62, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
+	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
 	float rough = mix(0.82, 0.95, mossw) - edge * 0.08;
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
 	ALBEDO = col;
@@ -90,4 +93,8 @@ void fragment() {
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = clamp(0.65 + s * 0.5, 0.0, 1.0);
 	ALBEDO *= v_cloud;
+	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops
+	// (they see the sky, which the ambient already covers); joints and pits get less
+	float facing = mix(1.0, 0.5, clamp(n.y, 0.0, 1.0));
+	EMISSION = ALBEDO * bounce_light * facing * AO;
 }

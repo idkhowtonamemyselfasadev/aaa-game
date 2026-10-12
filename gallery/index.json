@@ -586,5 +586,17 @@
   "time": "2026-10-12T08:36:00Z",
   "caption": "Standing in the breach of the watchtower at 13.5 h: coursed ashlar with worn arrises and the vale beyond, but the shaded inner face is near black (no bounce light reaches it) so the stonework barely reads.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0917-ruin-lit.jpg",
+  "time": "2026-10-12T09:20:00Z",
+  "caption": "The watchtower ruin from up the slope with the sun behind: lit, readable sandstone keep over the vale; the courses are still too regular and brick-like.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0917-ruin-inner-face.jpg",
+  "time": "2026-10-12T09:20:00Z",
+  "caption": "Inside the keep: the shaded inner face now reads as coursed stone thanks to bounce fill and grass is off the floor; the floor and rubble tops are still near black.",
+  "verdict": "fail"
  }
 ]

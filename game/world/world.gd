@@ -356,6 +356,22 @@ func _apply_weather(day: float) -> void:
 	e.volumetric_fog_emission *= 1.0 - c
 	e.adjustment_saturation = lerpf(1.08, 0.82, c)
 	e.adjustment_contrast = lerpf(1.06, 1.1, c)
+	_apply_bounce(e)
+
+## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
+## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat
+## ambient, crushed by SSAO, and went black. Shaders that opt in (masonry) add albedo x this.
+func _apply_bounce(e: Environment) -> void:
+	var b := Color(0, 0, 0)
+	if not e.sdfgi_enabled:
+		var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
+		if sun.visible:
+			# a ~0.25 albedo meadow under the sun, half of it reaching a vertical face
+			b += sun.light_color * sun.light_energy * (0.25 + 0.75 * sun_h) * 0.13
+		if moon and moon.visible:
+			b += moon.light_color * moon.light_energy * 0.1
+		b += e.ambient_light_color * e.ambient_light_energy * 0.12
+	RenderingServer.global_shader_parameter_set("bounce_light", Vector3(b.r, b.g, b.b))
 
 ## Sky material writes restart its radiance bake: only write a value that really changed.
 func _set_sky(sky: PhysicalSkyMaterial, prop: String, v: Variant) -> void:
