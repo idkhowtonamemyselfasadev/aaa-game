@@ -508,5 +508,17 @@
   "time": "2026-10-12T01:47:47Z",
   "caption": "Same moment with the hero soaked: suit and staff grip darker and glossier, clearly wet; no drips or rivulets yet and the hero model is still the stand-in.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0232-shelter.jpg",
+  "time": "2026-10-12T02:32:33Z",
+  "caption": "The hero sheltering under an oak in a downpour: rain stops under the crown and the ground beneath stays drier; still fails because the leaf cards read as big flat blobs and the grass as yellow spikes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0232-pools.jpg",
+  "time": "2026-10-12T02:32:33Z",
+  "caption": "Open meadow in the same storm: pools, raindrop rings and wet soil unchanged outside the crowns; the wet bank top right is close to blown out and the far valley is a flat grey veil.",
+  "verdict": "fail"
  }
 ]

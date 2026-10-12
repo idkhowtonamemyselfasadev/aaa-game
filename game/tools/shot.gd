@@ -143,6 +143,22 @@ func _ready() -> void:
 		player.bot_input = Vector2(0, -1)
 		SPOTS[spot] = [bw + Vector3(0.4, 0, 3.4), bw + Vector3(0.4, 0, 0)]
 		print("SHOT wade pool %.2f at %s" % [bh, bw])
+	if spot == "shelter":
+		# the hero sheltering under the oak nearest the start in a downpour, seen from the
+		# open meadow: dry ground and no drops under the crown, rain all round it
+		var flora: Flora = world.get_node("Flora")
+		var p0 := player.global_position
+		var best := Vector3.INF
+		for q in flora.tree_positions:
+			if flora.shelter_at(q.x + 1.6, q.z) > 0.7 and (best == Vector3.INF or q.distance_to(p0) < best.distance_to(p0)):
+				best = q
+		var hp := best + Vector3(1.6, 0, 0.4)
+		player.global_position = Vector3(hp.x, terrain.height_at(hp.x, hp.z) + 0.05, hp.z)
+		var out_dir := Vector3(1.0, 0, 0.55).normalized()
+		var cp := best + out_dir * 11.0
+		cp.y = terrain.height_at(cp.x, cp.z)
+		SPOTS[spot] = [cp, best + Vector3.UP * 0.6 - out_dir * 0.5]
+		print("SHOT shelter oak at %s, shelter %.2f under it" % [best, flora.shelter_at(hp.x, hp.z)])
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position

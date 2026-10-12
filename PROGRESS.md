@@ -23,6 +23,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 02:30 UTC:
+  - **Shelter under the oak crowns (next item 9 pick).** `Flora` now records each oak
+    variant's crown reach + lowest leaf height and bakes a 256² `shelter` map (2 m texels,
+    512 m round the origin, RGF: R = rain the crowns catch, 0.85 at a lone trunk fading to 0
+    at the drip line, overlapping crowns add up to 0.9; G = lowest leaf height). It is pushed
+    as the new global `shelter_map` (declared in project.godot). `Flora.shelter_at(x, z)`,
+    `Weather.shelter_at` / `Weather.wet_at` (wet x (1 - 0.8 shelter)) for scripts.
+  - Effects: rain streaks below the leaves fade out under a crown (rain.gdshader), the
+    terrain under it stays drier (no pools, no shore mud, ripples thinned) and so does the
+    grass (`weather_wetten_sheltered`), drop splashes are skipped there, `pool_at` follows
+    the local wetness (no wading splashes under trees), and `Soak` soaks the hero/soldier
+    only by the rain that leaks through (a hero sheltering under an oak stays nearly dry).
+  - Bot `weather`: shelter 0.90 under the best oak, ground wet 0.28 there vs 1.00 open,
+    hero soaks 0.011 under it vs 0.114 in the open in the same time. Shot spot `shelter`
+    (hero under the oak nearest the start, seen from the meadow; use with rain=0.9 wet=1).
 - Session 2026-10-12 01:35 UTC (continued from 00:00):
   - **Sheet lightning.** `Lightning.strike(at, bolt_on)`: 40 % of auto strikes
     (`sheet_share`) stay inside the deck: no channel, strokes decay over 0.12 s instead of
@@ -980,8 +995,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    flashes.)
    (done 00:00 (10-12): thunder timing signal; 01:00: rain soaks hero + soldier, wading
    soaks the legs; 01:35: sheet flashes with no channel.)
+   (done 02:30: rain shelter under the oak crowns.)
    Next session pick: drips running off the soaked hero (rivulet streaks + drip particles
-   from the hem/staff), rain occlusion under tree crowns, then the thunder sound once
+   from the hem/staff), heavy drips falling from the crown edges after/through rain, then the thunder sound once
    audio exists (hook: `Lightning.thunder`). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
@@ -1009,9 +1025,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   soldier and staff (imported/standard materials), and are vertex-rate on grass and trees
   (soft edges; fine at km scale). Clouds are not in the sky radiance (reflections show the bare sky). The
   PhysicalSky behind a partial deck (cloud ~0.7, late afternoon) may still go navy in the
-  gaps. Rain falls through tree
-  crowns and roofs (no occlusion; drop splashes also land under crowns, and the hero gets
-  soaked under a tree too). Soaking has no drips/rivulets yet and no shelter. Drop splashes are CPU-placed on the terrain height only (they ignore rocks, the
+  gaps. (fixed 02:30: tree crowns shelter rain, ground, splashes and the hero.) Shelter is
+  a 2 m map of oak crowns only (rocks, roofs once they exist, and the soldier's own body do
+  not shelter); bark and leaves still wet uniformly; drops above the lowest leaves still
+  draw inside the crown (hidden by the leaves mostly); no heavier drips at the drip line. Soaking has no drips/rivulets yet and no shelter. Drop splashes are CPU-placed on the terrain height only (they ignore rocks, the
   hero, the soldier), all the same white-grey (no muddy tint on soil), and are faint at a
   distance; footfalls are timed by distance, not by the run clip's feet.
   Puddles: the water is a shaded terrain layer, not a level plane (it follows the hollow's

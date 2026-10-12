@@ -26,11 +26,13 @@ float n2(vec2 p) {
 	return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y);
 }
 
+varying float v_shelter; // rain the oak crowns catch above this clump
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 
 void vertex() {
 	v_h = UV.y;
 	vec3 origin = MODEL_MATRIX[3].xyz;
+	v_shelter = shelter_at(origin.xz);
 	vec3 iw = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	// per-instance data: INSTANCE_CUSTOM.x variation, .y height scale (baked into transform)
 	v_var = INSTANCE_CUSTOM.x;
@@ -65,7 +67,7 @@ void fragment() {
 	vec3 col = mix(root_col, tip, smoothstep(0.0, 0.9, v_h));
 	float rough = 0.82;
 	col *= v_ao;
-	weather_wetten(col, rough, 0.85);
+	weather_wetten_sheltered(col, rough, 0.85, v_shelter);
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;

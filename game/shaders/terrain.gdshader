@@ -270,12 +270,15 @@ void fragment() {
 	float cav = clamp(h / 0.004, 0.0, 1.0);
 	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * fade_b);
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
-	weather_wetten(col, rough, 1.0 - 0.6 * rockw);
+	// the oak crowns keep the ground beneath them drier: no pools, few drops
+	float shel = shelter_at(xz);
+	float wet_here = weather_wet * (1.0 - SHELTER_DRY * shel);
+	wetten_by(col, rough, 1.0 - 0.6 * rockw, wet_here);
 
 	// ---- puddles: standing rain in the hollows ----
 	// the shoreline wanders with noise so pools are not contour rings; the fine height
 	// (blades, leaves) pokes through at the very edge
-	float fill = smoothstep(0.35, 1.0, weather_wet);
+	float fill = smoothstep(0.35, 1.0, wet_here);
 	float level = hollow + (meso - 0.5) * 0.22 + (micro - 0.5) * 0.06 + h * 6.0;
 	float thr = mix(puddle_first + 0.3, puddle_soaked, fill);
 	float flat_w = 1.0 - smoothstep(puddle_max_slope * 0.5, puddle_max_slope, slope);
@@ -288,7 +291,7 @@ void fragment() {
 	float depth = clamp((level - thr) / 0.12, 0.0, 1.0);
 	col = mix(col, mix(col * 0.6, puddle_mud, depth) * 0.8, pud);
 	rough = mix(rough, 0.03, pud);
-	vec2 rip = rain_ripples(xz, TIME, clamp(weather_rain * 1.2, 0.0, 1.0))
+	vec2 rip = rain_ripples(xz, TIME, clamp(weather_rain * 1.2 * (1.0 - shel), 0.0, 1.0))
 			* (1.0 - smoothstep(0.004, 0.03, fp));
 	if (pud > 0.0) {
 		rip += wade_ripples(xz) * (1.0 - smoothstep(0.012, 0.06, fp));

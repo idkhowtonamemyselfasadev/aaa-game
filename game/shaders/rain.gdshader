@@ -10,6 +10,7 @@ uniform float streak_len = 0.55;
 uniform vec3 tint : source_color = vec3(0.62, 0.66, 0.72);
 uniform float brightness = 1.0;     // set by weather.gd from the light level
 uniform float opacity = 0.42;
+#include "res://shaders/weather.gdshaderinc"
 
 varying float v_fade;
 
@@ -24,6 +25,9 @@ void vertex() {
 	float w = width * (1.0 + d * 0.05);
 	VERTEX = c + side * q.x * w * 2.0 + up * q.y * streak_len;
 	v_fade = smoothstep(0.6, 2.5, d) * (1.0 - smoothstep(18.0, 30.0, d));
+	// below an oak's leaves the crown has caught most drops: only the leak falls through
+	vec2 sh = shelter_sample(c.xz);
+	v_fade *= 1.0 - sh.x * smoothstep(sh.y + 0.5, sh.y - 0.5, c.y);
 }
 
 void fragment() {

@@ -7,12 +7,40 @@
 global uniform float weather_wind;
 global uniform float weather_wet;
 global uniform float weather_rain;
+//   shelter_map: rain caught by the oak crowns, baked by world/flora.gd over 512 m round
+//   the origin (R 0 open .. ~0.9 at a trunk, G world height of the lowest leaves)
+global uniform sampler2D shelter_map : filter_linear, repeat_disable;
 
-// darken + gloss a surface by wetness; `porous` 0 (rock, metal) .. 1 (soil, bark, dry grass)
-void weather_wetten(inout vec3 albedo, inout float roughness, float porous) {
-	float w = clamp(weather_wet, 0.0, 1.0);
+const float SHELTER_SIZE = 512.0;
+const float SHELTER_DRY = 0.8;   // share of the wetting a full crown keeps off (weather.gd)
+
+// (shelter 0..1, lowest leaf height) above world position `xz`
+vec2 shelter_sample(vec2 xz) {
+	vec2 uv = xz / SHELTER_SIZE + 0.5;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+		return vec2(0.0, -1000.0);
+	}
+	return textureLod(shelter_map, uv, 0.0).rg;
+}
+
+float shelter_at(vec2 xz) {
+	return shelter_sample(xz).x;
+}
+
+// darken + gloss a surface by wetness `w`; `porous` 0 (rock, metal) .. 1 (soil, bark, dry grass)
+void wetten_by(inout vec3 albedo, inout float roughness, float porous, float w) {
+	w = clamp(w, 0.0, 1.0);
 	albedo *= mix(1.0, mix(0.82, 0.58, porous), w);
 	roughness = mix(roughness, mix(0.3, 0.55, porous), w * 0.8);
+}
+
+void weather_wetten(inout vec3 albedo, inout float roughness, float porous) {
+	wetten_by(albedo, roughness, porous, weather_wet);
+}
+
+// the same under the crowns: a sheltered surface stays drier (`shelter` from shelter_at)
+void weather_wetten_sheltered(inout vec3 albedo, inout float roughness, float porous, float shelter) {
+	wetten_by(albedo, roughness, porous, weather_wet * (1.0 - SHELTER_DRY * shelter));
 }
 
 float _drop_hash(vec2 p) {

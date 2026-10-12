@@ -25,6 +25,9 @@ func _process(delta: float) -> void:
 		return
 	var wx = actor.get_parent().get("weather") if actor.get_parent() != null else null
 	var rain: float = wx.rain if wx != null else 0.0
+	# under an oak the crown catches most of it (a few drips still get through)
+	if wx != null:
+		rain *= 1.0 - wx.shelter_at(actor.global_position.x, actor.global_position.z)
 	if rain > 0.02:
 		level = move_toward(level, 1.0, delta * rain / soak_time)
 	else:

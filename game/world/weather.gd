@@ -173,12 +173,23 @@ func pool_at(x: float, z: float) -> bool:
 	var terrain = get_parent().get("terrain")
 	if terrain == null:
 		return false
-	var fill := smoothstep(0.35, 1.0, wet)
+	var fill := smoothstep(0.35, 1.0, wet_at(x, z))
 	if fill < 0.01:
 		return false
 	var thr := lerpf(0.85, 0.27, fill)
 	var flat: float = 1.0 - smoothstep(0.0125, 0.025, 1.0 - terrain.normal_at(x, z, 2.0).y)
 	return flat > 0.5 and terrain.baked_hollow(x, z) > thr + 0.03
+
+## How much rain the oak crowns overhead catch at (x, z): 0 open sky .. ~0.9 at a trunk.
+func shelter_at(x: float, z: float) -> float:
+	var flora := get_parent().get_node_or_null("Flora") as Flora
+	return flora.shelter_at(x, z) if flora else 0.0
+
+## Ground wetness at (x, z): under a crown the soil stays drier (mirrors weather.gdshaderinc).
+func wet_at(x: float, z: float) -> float:
+	return wet * (1.0 - SHELTER_DRY * shelter_at(x, z))
+
+const SHELTER_DRY := 0.8   # share of the wetting a full crown keeps off the ground
 
 ## A footfall in water: a big crown at the foot, a smaller throw beside it, and a ring
 ## train that spreads across the pool from the foot.
@@ -211,6 +222,8 @@ func _update_splashes(delta: float) -> void:
 		var r := splash_radius * sqrt(_rng.randf_range(0.004, 1.0))
 		var x := c.x + sin(ang) * r
 		var z := c.z + cos(ang) * r
+		if _rng.randf() < shelter_at(x, z):
+			continue      # the crown caught this one
 		_splash.emit_particle(Transform3D(Basis(), Vector3(x, terrain.height_at(x, z) + 0.01, z)),
 				Vector3.ZERO, Color.WHITE, Color.WHITE, GPUParticles3D.EMIT_FLAG_POSITION)
 		rain_splashes += 1

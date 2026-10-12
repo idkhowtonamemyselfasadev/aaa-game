@@ -1366,6 +1366,36 @@ func _weather_test() -> void:
 		return _combat_done(false, "the rain did not soak the soldier (skin, rags, spear)")
 	var soak_peak := hs.level
 	var wet_peak := wx.wet
+	# shelter: under an oak's crown the hero barely soaks and the ground stays drier
+	var flora: Flora = _world.get_node("Flora")
+	var tree := Vector3.INF
+	for tp in flora.tree_positions:
+		if tree == Vector3.INF or flora.shelter_at(tp.x + 1.5, tp.z) > flora.shelter_at(tree.x + 1.5, tree.z):
+			tree = tp
+	var under := tree + Vector3(1.5, 0, 0)
+	var open_sky := Vector3.INF
+	for j in 41:
+		for i in 41:
+			var q := _player.global_position + Vector3(i * 4.0 - 80.0, 0, j * 4.0 - 80.0)
+			if flora.shelter_at(q.x, q.z) == 0.0 and not wx.pool_at(q.x, q.z) \
+					and (open_sky == Vector3.INF or q.distance_to(under) < open_sky.distance_to(under)):
+				open_sky = q
+	var soaked := []
+	for spot: Vector3 in [under, open_sky]:
+		_player.global_position = Vector3(spot.x, _world.terrain.height_at(spot.x, spot.z) + 0.1, spot.z)
+		_player.velocity = Vector3.ZERO
+		hs.level = 0.0
+		await _ticks(60)
+		soaked.append(hs.level)
+	var sh_under := flora.shelter_at(under.x, under.z)
+	print("BOT weather shelter: %.2f under an oak at %s (ground wet %.2f vs %.2f open), hero soaked %.3f there vs %.3f in the open in the same time" % [sh_under, under, wx.wet_at(under.x, under.z), wx.wet, soaked[0], soaked[1]])
+	if sh_under < 0.6 or open_sky == Vector3.INF:
+		return _combat_done(false, "no shelter baked under the oak crowns")
+	if soaked[1] <= 0.0 or soaked[0] > soaked[1] * 0.35:
+		return _combat_done(false, "the hero soaks as fast under an oak as in the open")
+	if wx.wet_at(under.x, under.z) > wx.wet * 0.6 or wx.pool_at(under.x, under.z):
+		return _combat_done(false, "the ground under an oak is as wet as the open meadow")
+	hs.level = soak_peak
 	wx.force(0.0, false)
 	t = 0.0
 	while (wx.cloud > 0.02 or wx.rain > 0.0) and t < 300.0:

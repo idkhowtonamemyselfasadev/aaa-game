@@ -28,6 +28,16 @@ var rock_positions: Array[Vector3] = []
 var _bark: SurfaceTool
 var _leaves: SurfaceTool
 var _canopy_c := Vector3.ZERO
+var _crown := Vector2(0.0, 1000.0)   # (max horizontal reach, lowest leaf y) of the tree being built
+var _variant_crown: Array[Vector2] = []
+
+## Rain shelter under the oak crowns, for rain/drops/splashes/soak/wet ground:
+## a SHELTER_RES^2 map over SHELTER_SIZE m centred on the origin, R = how much rain the
+## crowns above catch (0 open sky .. ~0.85 under the trunk; crowns always leak a little),
+## G = world height of the lowest leaves there. Pushed as global `shelter_map`.
+const SHELTER_SIZE := 512.0
+const SHELTER_RES := 256
+var shelter: Image
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -95,6 +105,7 @@ func _scatter_trees() -> void:
 		body.add_child(cs)
 	for v in tree_variants:
 		_multimesh(meshes[v], per[v], "Oaks_%d" % v)
+	_bake_shelter(per)
 
 func _build_tree(v: int) -> ArrayMesh:
 	var r := RandomNumberGenerator.new()
@@ -105,6 +116,7 @@ func _build_tree(v: int) -> ArrayMesh:
 	_leaves.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var trunk_h := r.randf_range(3.2, 4.6)
 	_canopy_c = Vector3(0, trunk_h + 3.2, 0)
+	_crown = Vector2(0.0, 1000.0)
 	var lean := Vector3(r.randf_range(-0.15, 0.15), 1.0, r.randf_range(-0.15, 0.15)).normalized()
 	_branch(r, Vector3.ZERO, lean, trunk_h, r.randf_range(0.42, 0.55), 0, 0.0)
 	var mesh := ArrayMesh.new()
@@ -115,7 +127,45 @@ func _build_tree(v: int) -> ArrayMesh:
 		mesh.surface_set_material(0, bark_material)
 	if leaf_material:
 		mesh.surface_set_material(1, leaf_material)
+	_variant_crown.append(_crown)
 	return mesh
+
+## Paint each oak's crown into the shelter map: dense at the trunk, thinning to nothing at
+## the drip line (the crown's reach); where crowns overlap the cover adds up toward 0.9.
+func _bake_shelter(per: Array) -> void:
+	shelter = Image.create(SHELTER_RES, SHELTER_RES, false, Image.FORMAT_RGF)
+	shelter.fill(Color(0, -1000.0, 0))
+	var cell := SHELTER_SIZE / SHELTER_RES
+	for v in per.size():
+		var cr: Vector2 = _variant_crown[v]
+		for xf: Transform3D in per[v]:
+			var s := xf.basis.get_scale().x
+			var reach := cr.x * s * 0.92
+			var lo := xf.origin.y + cr.y * xf.basis.get_scale().y
+			var c := Vector2(xf.origin.x, xf.origin.z)
+			var i0 := Vector2i(((c - Vector2.ONE * reach) / cell + Vector2.ONE * SHELTER_RES * 0.5).floor())
+			var i1 := Vector2i(((c + Vector2.ONE * reach) / cell + Vector2.ONE * SHELTER_RES * 0.5).ceil())
+			for j in range(maxi(i0.y, 0), mini(i1.y + 1, SHELTER_RES)):
+				for i in range(maxi(i0.x, 0), mini(i1.x + 1, SHELTER_RES)):
+					var w := (Vector2(i + 0.5, j + 0.5) - Vector2.ONE * SHELTER_RES * 0.5) * cell
+					var d := w.distance_to(c) / reach
+					if d >= 1.0:
+						continue
+					var a := (1.0 - smoothstep(0.45, 1.0, d)) * 0.85
+					var old := shelter.get_pixel(i, j)
+					var r := 1.0 - (1.0 - old.r) * (1.0 - a)
+					shelter.set_pixel(i, j, Color(minf(r, 0.9), maxf(old.g, lo) if old.r > 0.0 else lo, 0))
+	RenderingServer.global_shader_parameter_set("shelter_map", ImageTexture.create_from_image(shelter))
+
+## How much rain the crowns overhead catch at (x, z): 0 open .. ~0.9 deep under an oak.
+func shelter_at(x: float, z: float) -> float:
+	if shelter == null:
+		return 0.0
+	var i := int(floor(x / (SHELTER_SIZE / SHELTER_RES) + SHELTER_RES * 0.5))
+	var j := int(floor(z / (SHELTER_SIZE / SHELTER_RES) + SHELTER_RES * 0.5))
+	if i < 0 or j < 0 or i >= SHELTER_RES or j >= SHELTER_RES:
+		return 0.0
+	return shelter.get_pixel(i, j).r
 
 ## Recursive limb: a bent, tapered tube from `from` along `dir`, then 2-3 children.
 ## `sway` (0 trunk .. 1 twig) goes into COLOR.r for the wind shader.
@@ -206,6 +256,7 @@ func _leaf_cluster(r: RandomNumberGenerator, c: Vector3, d: Vector3, sway: float
 		var right := bx.x * size
 		var upv := bx.y * size
 		var crown_n := (centre - _canopy_c).normalized().lerp(Vector3.UP, 0.3).normalized()
+		_crown = Vector2(maxf(_crown.x, Vector2(centre.x, centre.z).length() + size * 0.4), minf(_crown.y, centre.y))
 		var tile := r.randi() % 4
 		var uo := Vector2((tile % 2) * 0.5, (tile / 2) * 0.5)
 		var phase := r.randf()
