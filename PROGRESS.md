@@ -23,6 +23,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 06:00 UTC:
+  - **Rooks roost at night (next item 5 / 9 pick: ALIVE).** `Birds` picks a rookery: the
+    oak with the most neighbours within 22 m, 60-180 m out from the village, plus its 4
+    nearest oaks; each of the 42 rooks gets its own perch on an upper-crown twig tip
+    (new `Flora.perch_points(i)`: depth-3 twig tips within 2.6 m of the crown top, per
+    variant, through the new `tree_xforms`/`tree_variant`). From `roost_hour` 17.8 h (sunset is 18 h)
+    (+0..0.6 h per flock) each feeding flock lifts off in ones and twos over ~3.5 s, flies to
+    the rookery, wheels over it and lands bird by bird on its perch (new PERCH state:
+    wings folded, a shuffle round on the twig and a preen dip every 3-12 s). The hero coming
+    within ~15 m of the rookery at night flushes them (they wheel and settle again once he
+    has gone); from `leave_hour` 5.6 h (+0..0.5 h) they leave for the least disturbed
+    feeding site. A world loaded at night starts with them already in the trees.
+  - Bot `roost` (14th route): afternoon none perched; at 19.9 h all 42 settle >= 4 m up in
+    the crowns; hero under the rookery puts all 42 up; they resettle after he leaves; at
+    6.6 h all 42 are back on the meadow. 14/14 bots pass.
+  - Shot spot `rookery` (+ arg `roostin`: the flocks stream in and wheel over the grove, `roosted`: already settled at an early hour).
+  - Verdicts: rook_in (17.9 h) fail: a fine sunset over the peaks and the flock is a string of
+    specks heading in, but the auto-picked camera (50 m out, fewest oaks) sits below a hill
+    crest that hides the grove. rook_set (18.1 h, inside the grove) fail: good warm backlight,
+    but perched rooks are invisible against black crowns. Shots at 19.5 h+ are pure black
+    (sun is down at 18 h, night is too dark to read anything: see item 1).
 - Session 2026-10-12 04:30 UTC:
   - **Far ridges no longer faceted (next item 3 pick).** `horizon.gdshader` now bends the
     coarse 10-40 m mesh normal per pixel with an erosion relief field (finite differences of
@@ -1030,7 +1051,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
    flowers, two butterflies spiralling up together, a grazing sheep/deer herd that flees
    (needs a believable quadruped — procedural or CC0 from a GitHub mirror), bird calls once
-   there is audio, birds roosting in trees at night, moths around lanterns/campfires once
+   there is audio, (done 06:00 (10-12): rooks roost in a rookery at night), moths around lanterns/campfires once
    they exist, butterflies by day.
 6. Harrowmere village blockout → final: slate roofs, timber, lantern posts (Kindle targets).
 7. (done 14:00: rigged Mixamo humanoid + idle/walk/run blend.) Still to do: replace the sci-fi
@@ -1062,8 +1083,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 04:40: soaked hero/Hollow shed drops off hem, hands, staff end, knees; drip rings
    on the pools.) Still to do here: rivulet streaks running down the wet cloth (shader), a
    shake-off when the hero draws the staff wet. Weather has had ~12 sessions; the next pick
-   should move to the ALIVE gaps (item 5: a grazing herd that flees, birds roosting at
-   night) or item 7 (a mythic hero model), then the thunder sound once audio exists (hook:
+   should move to the ALIVE gaps (item 5: a grazing herd that flees -- rook roosting done 06:00
+   ) or item 7 (a mythic hero model), then the thunder sound once audio exists (hook:
    `Lightning.thunder`). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
@@ -1194,8 +1215,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   it has no collision (cosmetic only).
 - Player model is a sci-fi armoured soldier (Mixamo Vanguard) — placeholder-floor; no jump clip
   (airborne holds the walk stride), no foot IK, so feet float/clip on slopes.
-- Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m).
-- Rooks stay on the ground at night (should roost in trees).
+- Rooks fly through tree crowns (no avoidance; the wheel anchor is 14 m up, crowns ~10 m);
+  roosting rooks land straight through the leaf cards onto their twig tips.
+- `rookery` shot spot: camera choice ignores terrain line of sight (hill crest hides the grove);
+  perched rooks need a framing against the sky to read.
+- Night (19.5 h+) renders near-black on the cloud box: moonlight/sky ambient too low to see the
+  roost or anything else.
 - `village` shot spot: a dark wedge fills the left edge — the camera at (-30, 40) sits against a
   tree trunk; move the spot or keep flora clear of fixed camera spots.
 - (fixed: shadowed surfaces pure black.) SDFGI is off on the cloud box (software GPU);

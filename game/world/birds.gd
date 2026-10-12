@@ -5,6 +5,10 @@ extends Node3D
 ## overhead for a while, then glide down onto another clear patch. A pair of red kites
 ## soars high over the vale by day. All geometry is procedural (one bird mesh, posed per
 ## instance in bird.gdshader through INSTANCE_CUSTOM).
+## Rooks roost together: at dusk each flock lifts off the meadow in ones and twos, streams to
+## the rookery (a few oaks in the densest grove), wheels over it and settles into the upper
+## crowns for the night; a player walking under the rookery puts them up, they circle and
+## settle again. At dawn they leave for the feeding grounds.
 
 @export var terrain_path: NodePath
 @export var flock_count: int = 3
@@ -12,8 +16,11 @@ extends Node3D
 @export var kite_count: int = 2
 @export var scare_radius: float = 11.0       # +1.4 m per m/s the threat moves
 @export var seed: int = 777
+@export var roost_hour: float = 17.8         # flocks head for the rookery from here (+0..0.6 h)
+@export var leave_hour: float = 5.6          # and leave it from here (+0..0.5 h)
+@export var roost_scare_radius: float = 9.0  # a player this close under the rookery puts them up
 
-enum { GROUND, AIR, LANDING }
+enum { GROUND, AIR, LANDING, PERCH }
 
 var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
@@ -26,6 +33,10 @@ var _kite_mmi: MultiMeshInstance3D
 var _threat_prev := {}
 var scatter_events := 0      # bots read this
 var landings := 0
+var roost_landings := 0
+var rookery := Vector3.ZERO  # centre of the roost trees (ground level)
+var rookery_trees: Array[int] = []
+var _first := true
 var _t := 0.0
 
 class Bird:
@@ -45,6 +56,8 @@ class Bird:
 	var off := Vector3.ZERO   # slot in the wheeling flock
 	var ground_off := Vector2.ZERO
 	var roll := 0.0
+	var perch := Vector3.ZERO # roost spot in a crown
+	var shuffle_t := 0.0
 
 class Flock:
 	var site := 0
@@ -53,6 +66,8 @@ class Flock:
 	var air_t := 0.0
 	var anchor := Vector3.ZERO
 	var idle_t := 0.0
+	var roost := false        # heading for / sitting in the rookery
+	var jit := 0.0            # per-flock lag on the roost/leave hours
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -76,6 +91,7 @@ func _ready() -> void:
 		var fl := Flock.new()
 		fl.site = f % _sites.size()
 		fl.idle_t = _rng.randf_range(60.0, 150.0)
+		fl.jit = _rng.randf()
 		for i in birds_per_flock:
 			var b := Bird.new()
 			b.ground_off = Vector2(_rng.randfn(0.0, 2.2), _rng.randfn(0.0, 2.2))
@@ -95,7 +111,97 @@ func _ready() -> void:
 		b.fold = 0.0
 		b.legs = 0.0
 		_kites.append(b)
+	_pick_rookery()
 	_write_instances()
+
+## The rookery: the oak with the most neighbours inside 22 m (a proper grove, out of the
+## village), plus its nearest trees; each rook gets its own perch in their upper crowns.
+func _pick_rookery() -> void:
+	var flora: Flora = get_node_or_null("../Flora")
+	if flora == null or flora.tree_positions.is_empty():
+		return
+	var tp := flora.tree_positions
+	var best := 0
+	var best_s := -INF
+	for i in tp.size():
+		var q := tp[i]
+		var n := 0
+		for o in tp:
+			if Vector2(o.x - q.x, o.z - q.z).length() < 22.0:
+				n += 1
+		var d := Vector2(q.x, q.z).length()
+		var s := float(n) - (0.0 if d > 60.0 and d < 180.0 else 100.0)
+		if s > best_s:
+			best_s = s
+			best = i
+	var order := range(tp.size())
+	var c := tp[best]
+	order.sort_custom(func(a, b): return tp[a].distance_squared_to(c) < tp[b].distance_squared_to(c))
+	var perches: Array[Vector3] = []
+	for k in mini(5, order.size()):
+		rookery_trees.append(order[k])
+		rookery += tp[order[k]]
+		for q in flora.perch_points(order[k]):
+			perches.append(q + Vector3.UP * 0.32)   # on top of the sprig, not inside it
+	rookery /= rookery_trees.size()
+	# spread the birds over the perches; double up (a neighbour's twig) if there are too few
+	var bag := perches.duplicate()
+	var k2 := 0
+	for fl: Flock in _flocks:
+		for b: Bird in fl.birds:
+			if bag.is_empty():
+				bag = perches.duplicate()
+			var j := _rng.randi() % bag.size()
+			b.perch = bag[j] + (Vector3(_rng.randf_range(-0.3, 0.3), 0, _rng.randf_range(-0.3, 0.3)) if k2 >= perches.size() else Vector3.ZERO)
+			bag.remove_at(j)
+			k2 += 1
+
+func is_night_for(fl: Flock) -> bool:
+	var tod = get_parent().get("time_of_day")
+	if tod == null or rookery_trees.is_empty():
+		return false
+	return tod >= roost_hour + fl.jit * 0.6 or tod < leave_hour + fl.jit * 0.5
+
+## Snap a flock onto its perches (night at load time, tests).
+func settle_roost(fl: Flock) -> void:
+	fl.roost = true
+	fl.state = PERCH
+	for b: Bird in fl.birds:
+		b.state = PERCH
+		b.pos = b.perch
+		b.vel = Vector3.ZERO
+		b.fold = 1.0
+		b.legs = 1.0
+		b.flap = 0.0
+		b.roll = 0.0
+		b.yaw = _rng.randf() * TAU
+
+## Lift a flock off gently (not a scare): birds go up in ones and twos over a few seconds
+## and fly to `anchor`, where the flock wheels before it lands.
+func _lift(fl: Flock, anchor: Vector3, roost: bool) -> void:
+	fl.roost = roost
+	fl.state = AIR
+	fl.air_t = _rng.randf_range(5.0, 8.0)
+	fl.anchor = anchor
+	for b: Bird in fl.birds:
+		b.state = AIR
+		b.delay = _rng.randf() * 3.5
+		var dir := Vector3(anchor.x - b.pos.x, 0, anchor.z - b.pos.z).normalized()
+		b.vel = dir * _rng.randf_range(1.5, 3.0) + Vector3.UP * _rng.randf_range(2.5, 4.0)
+
+func census() -> Dictionary:
+	var c := {"ground": 0, "air": 0, "landing": 0, "perch": 0}
+	for fl: Flock in _flocks:
+		for b: Bird in fl.birds:
+			c[["ground", "air", "landing", "perch"][b.state]] += 1
+	return c
+
+func bird_positions() -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for fl: Flock in _flocks:
+		for b: Bird in fl.birds:
+			out.append(b.pos)
+	return out
 
 ## Open meadow patches away from trees and rocks where a flock can feed.
 func _pick_sites() -> void:
@@ -163,6 +269,11 @@ func _process(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 30.0)
 	_t += dt
 	var threats := _threats(dt)
+	if _first:
+		_first = false
+		for fl: Flock in _flocks:
+			if is_night_for(fl):
+				settle_roost(fl)
 	for fl: Flock in _flocks:
 		_update_flock(fl, dt, threats)
 	var tod = get_parent().get("time_of_day")
@@ -179,9 +290,10 @@ func scatter(fl: Flock, from: Vector3) -> void:
 	if away.length() < 0.1:
 		away = Vector3(1, 0, 0)
 	away = away.normalized()
+	var base := rookery + Vector3.UP * 12.0 if fl.state == PERCH else _sites[fl.site]
 	fl.state = AIR
 	fl.air_t = _rng.randf_range(8.0, 13.0)
-	fl.anchor = _sites[fl.site] + away * 22.0 + Vector3.UP * 14.0
+	fl.anchor = base + away * 22.0 + Vector3.UP * 14.0
 	scatter_events += 1
 	for b: Bird in fl.birds:
 		var d := b.pos.distance_to(from)
@@ -192,7 +304,20 @@ func scatter(fl: Flock, from: Vector3) -> void:
 
 func _update_flock(fl: Flock, dt: float, threats: Array) -> void:
 	var site := _sites[fl.site]
-	if fl.state == GROUND:
+	var night := is_night_for(fl)
+	if fl.state == GROUND and night:
+		_lift(fl, rookery + Vector3.UP * 20.0, true)
+	elif fl.state == PERCH:
+		if not night:
+			fl.site = _landing_site(fl, threats)
+			_lift(fl, _sites[fl.site] + Vector3.UP * 16.0, false)
+		else:
+			for th: Array in threats:
+				var tp: Vector3 = th[0]
+				if Vector2(tp.x - rookery.x, tp.z - rookery.z).length() < roost_scare_radius + 1.4 * float(th[1]) + 6.0:
+					scatter(fl, tp)
+					break
+	elif fl.state == GROUND:
 		fl.idle_t -= dt
 		for th: Array in threats:
 			var tp: Vector3 = th[0]
@@ -206,13 +331,17 @@ func _update_flock(fl: Flock, dt: float, threats: Array) -> void:
 	elif fl.state == AIR:
 		fl.air_t -= dt
 		if fl.air_t < 0.0:
-			fl.site = _landing_site(fl, threats)
+			fl.roost = night
+			if not night:
+				fl.site = _landing_site(fl, threats)
 			fl.state = LANDING
 	var all_down := true
 	for b: Bird in fl.birds:
 		match b.state:
 			GROUND:
 				_ground_bird(b, dt)
+			PERCH:
+				_perch_bird(b, dt)
 			AIR:
 				all_down = false
 				_air_bird(b, fl, dt)
@@ -222,9 +351,11 @@ func _update_flock(fl: Flock, dt: float, threats: Array) -> void:
 		if fl.state == LANDING and b.state == AIR:
 			b.state = LANDING
 	if fl.state == LANDING and all_down:
-		fl.state = GROUND
+		fl.state = PERCH if fl.roost else GROUND
 		fl.idle_t = _rng.randf_range(70.0, 160.0)
 		landings += 1
+		if fl.roost:
+			roost_landings += 1
 
 func _landing_site(fl: Flock, threats: Array) -> int:
 	var best := fl.site
@@ -269,6 +400,23 @@ func _ground_bird(b: Bird, dt: float) -> void:
 	var pk := clampf(1.0 - absf(b.peck_t - 0.2) * 5.0, 0.0, 1.0)
 	b.peck = pk * 0.9 - (0.15 if moving else 0.0)
 
+## Sitting in the crown: wings folded, now and then a shuffle round on the twig or a preen.
+func _perch_bird(b: Bird, dt: float) -> void:
+	b.fold = move_toward(b.fold, 1.0, dt * 4.0)
+	b.legs = move_toward(b.legs, 1.0, dt * 5.0)
+	b.flap = move_toward(b.flap, 0.0, dt * 6.0)
+	b.roll = 0.0
+	b.vel = Vector3.ZERO
+	b.shuffle_t -= dt
+	if b.shuffle_t < 0.0:
+		b.shuffle_t = _rng.randf_range(3.0, 12.0)
+		b.hop_t = b.yaw + _rng.randf_range(-1.2, 1.2)
+	b.yaw = lerp_angle(b.yaw, b.hop_t, dt * 3.0)
+	# head tucked down a little; a short preen dip after each shuffle
+	var pr := clampf(1.0 - absf(b.shuffle_t - 1.0) * 2.0, 0.0, 1.0)
+	b.peck = -0.15 + pr * 0.5
+	b.pos = b.perch + Vector3.UP * absf(sin(_t * 1.3 + b.phase)) * 0.01
+
 func _air_bird(b: Bird, fl: Flock, dt: float) -> void:
 	if b.delay > 0.0:
 		b.delay -= dt
@@ -286,9 +434,15 @@ func _air_bird(b: Bird, fl: Flock, dt: float) -> void:
 	_wings(b, beat, 0.95 if climbing else 0.75, dt)
 
 func _land_bird(b: Bird, fl: Flock, dt: float) -> void:
-	var tgt := _ground(_sites[fl.site] + Vector3(b.ground_off.x, 0, b.ground_off.y))
+	var tgt := b.perch if fl.roost else _ground(_sites[fl.site] + Vector3(b.ground_off.x, 0, b.ground_off.y))
 	var d := b.pos.distance_to(tgt)
 	if d < 0.35:
+		if fl.roost:
+			b.state = PERCH
+			b.pos = tgt
+			b.hop_t = b.yaw
+			b.shuffle_t = _rng.randf_range(1.0, 8.0)
+			return
 		b.state = GROUND
 		b.pos = tgt
 		b.hop_to = tgt
@@ -357,7 +511,7 @@ func _write_instances() -> void:
 
 func _write(mm: MultiMesh, i: int, b: Bird, s: float) -> void:
 	var pitch := 0.0
-	if b.state != GROUND and b.vel.length() > 0.5:
+	if (b.state == AIR or b.state == LANDING) and b.vel.length() > 0.5:
 		pitch = clampf(atan2(b.vel.y, Vector2(b.vel.x, b.vel.z).length()), -0.7, 0.9) * 0.6
 	var basis := Basis(Vector3.UP, b.yaw) * Basis(Vector3.RIGHT, pitch) * Basis(Vector3.FORWARD, b.roll)
 	mm.set_instance_transform(i, Transform3D(basis.scaled(Vector3.ONE * s), b.pos))

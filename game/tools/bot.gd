@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -74,6 +74,9 @@ func _ready() -> void:
 		return
 	if name == "weather":
 		_weather_test()
+		return
+	if name == "roost":
+		_roost_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1473,3 +1476,59 @@ func _weather_test() -> void:
 	if wx.fronts != f0 + 1 or wx._target < 0.6:
 		return _combat_done(false, "no front scheduled on its own")
 	_combat_done(true, "a front rolls in, greys the light, rains, soaks the ground, shelters the insects, then clears")
+
+## Rooks roost: at dusk every flock flies to the rookery and settles in the upper crowns;
+## the hero walking under the roost puts them up and they settle again once he has gone;
+## at dawn they leave the trees for the meadow.
+func _roost_test() -> void:
+	var p := _player
+	var birds: Birds = _world.get_node("Birds")
+	var terrain: Terrain = _world.get_node("Terrain")
+	print("BOT roost: rookery at (%.0f, %.0f), %d trees" % [birds.rookery.x, birds.rookery.z, birds.rookery_trees.size()])
+	if birds.rookery_trees.size() < 3:
+		return _combat_done(false, "no rookery grove found")
+	_world.time_of_day = 16.0
+	await _ticks(60)
+	var c0 := birds.census()
+	print("BOT roost afternoon: %s" % [c0])
+	if c0["perch"] > 0:
+		return _combat_done(false, "rooks in the roost in the afternoon")
+	_world.time_of_day = 19.9
+	var t := 0.0
+	while birds.census()["perch"] < birds.flock_count * birds.birds_per_flock and t < 120.0:
+		await _ticks(30)
+		t += 0.5
+	var c1 := birds.census()
+	var lo := 99.0
+	for q in birds.bird_positions():
+		lo = minf(lo, q.y - terrain.height_at(q.x, q.z))
+	print("BOT roost dusk: %s after %.1f s, %d roost landings, lowest bird %.1f m up" % [c1, t, birds.roost_landings, lo])
+	if c1["perch"] < birds.flock_count * birds.birds_per_flock or lo < 4.0:
+		return _combat_done(false, "flocks did not all settle into the crowns at dusk")
+	# walk in under the rookery: they go up
+	var s0 := birds.scatter_events
+	var under := birds.rookery
+	under.y = terrain.height_at(under.x, under.z) + 1.0
+	p.global_position = under + Vector3(5, 0, 0)
+	await _ticks(60)
+	var c2 := birds.census()
+	print("BOT roost disturbed: %s, %d scatters" % [c2, birds.scatter_events - s0])
+	if birds.scatter_events - s0 < 1 or c2["air"] < 10:
+		return _combat_done(false, "a hero under the roost did not put the rooks up")
+	p.global_position = Vector3(0, terrain.height_at(0, 0) + 1.0, 0)
+	t = 0.0
+	while birds.census()["perch"] < birds.flock_count * birds.birds_per_flock and t < 120.0:
+		await _ticks(30)
+		t += 0.5
+	print("BOT roost resettled: %s after %.1f s" % [birds.census(), t])
+	if birds.census()["perch"] < birds.flock_count * birds.birds_per_flock:
+		return _combat_done(false, "rooks did not settle back into the roost")
+	_world.time_of_day = 6.6
+	t = 0.0
+	while birds.census()["ground"] < birds.flock_count * birds.birds_per_flock and t < 120.0:
+		await _ticks(30)
+		t += 0.5
+	print("BOT roost dawn: %s after %.1f s" % [birds.census(), t])
+	if birds.census()["ground"] < birds.flock_count * birds.birds_per_flock:
+		return _combat_done(false, "rooks did not leave the roost for the meadow at dawn")
+	_combat_done(true, "rooks roost at dusk, flush and resettle, leave at dawn")

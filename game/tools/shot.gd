@@ -160,6 +160,43 @@ func _ready() -> void:
 		cp.y = terrain.height_at(cp.x, cp.z)
 		SPOTS[spot] = [cp, best + Vector3.UP * (0.6 if spot == "shelter" else 1.2) - out_dir * 0.5]
 		print("SHOT shelter oak at %s, shelter %.2f under it" % [best, flora.shelter_at(hp.x, hp.z)])
+	if spot == "rookery":
+		# the roost oaks at dusk from the meadow below, looking up at the crowns against the
+		# afterglow; "roostin": the flocks are still streaming in and wheeling over the grove
+		var birds: Birds = world.get_node("Birds")
+		var rk := birds.rookery
+		# stand ~50 m out on the side with the fewest oaks between the camera and the grove
+		var flora: Flora = world.get_node("Flora")
+		var cp := rk
+		var best_n := 1 << 30
+		for k in 12:
+			var dir := Vector3(cos(k * TAU / 12.0), 0, sin(k * TAU / 12.0))
+			var n := 0
+			for q in flora.tree_positions:
+				for f in [0.45, 0.7, 1.0]:
+					if Vector2(q.x - (rk.x + dir.x * 50.0 * f), q.z - (rk.z + dir.z * 50.0 * f)).length() < 9.0:
+						n += 1
+			if n < best_n:
+				best_n = n
+				cp = rk + dir * 50.0
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.7
+		player.global_position = Vector3(cp.x, terrain.height_at(cp.x, cp.z) + 0.05, cp.z) + (rk - cp).normalized() * 4.0
+		SPOTS[spot] = [cp, rk + Vector3.UP * 14.0]
+		if "roosted" in args:   # already settled in the evening light (roost hour pulled early)
+			birds.roost_hour = 17.0
+			for fl in birds._flocks:
+				birds.settle_roost(fl)
+		if "roostin" in args:
+			for fl in birds._flocks:
+				var from := rk + Vector3(_rr(-40, 40), 16, _rr(30, 55))
+				for bb in fl.birds:
+					bb.pos = from + Vector3(_rr(-5, 5), _rr(-2, 2), _rr(-5, 5))
+				birds._lift(fl, rk + Vector3.UP * 20.0, true)
+				fl.air_t = 3.0
+				for bb in fl.birds:
+					bb.delay = 0.0
+					bb.vel = (rk - bb.pos).normalized() * 8.0
+		print("SHOT rookery at %s" % rk)
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -542,3 +579,6 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			if c.is_attacking() and c.t / float(StaffCombat.HEAVY["dur"]) >= 0.43:
 				break
 		print("SHOT smash tier %d u %.2f" % [c.tier, c.t / float(StaffCombat.HEAVY["dur"])])
+
+func _rr(a: float, b: float) -> float:
+	return randf_range(a, b)

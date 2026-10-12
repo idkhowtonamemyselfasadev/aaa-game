@@ -30,6 +30,10 @@ var _leaves: SurfaceTool
 var _canopy_c := Vector3.ZERO
 var _crown := Vector2(0.0, 1000.0)   # (max horizontal reach, lowest leaf y) of the tree being built
 var _variant_crown: Array[Vector2] = []
+var _perch: Array[Vector3] = []              # twig tips of the tree being built
+var _variant_perches: Array = []             # per variant: upper-crown twig tips (local)
+var tree_xforms: Array[Transform3D] = []     # per tree, same order as tree_positions
+var tree_variant: Array[int] = []
 
 ## Rain shelter under the oak crowns, for rain/drops/splashes/soak/wet ground:
 ## a SHELTER_RES^2 map over SHELTER_SIZE m centred on the origin, R = how much rain the
@@ -95,7 +99,10 @@ func _scatter_trees() -> void:
 		tree_positions.append(p)
 		var s := _rng.randf_range(1.05, 1.55)
 		var b := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s * _rng.randf_range(0.9, 1.1), s))
-		per[_rng.randi() % tree_variants].append(Transform3D(b, p))
+		var tv := _rng.randi() % tree_variants
+		per[tv].append(Transform3D(b, p))
+		tree_xforms.append(Transform3D(b, p))
+		tree_variant.append(tv)
 		var cs := CollisionShape3D.new()
 		var cyl := CylinderShape3D.new()
 		cyl.radius = 0.45 * s
@@ -117,6 +124,7 @@ func _build_tree(v: int) -> ArrayMesh:
 	var trunk_h := r.randf_range(3.2, 4.6)
 	_canopy_c = Vector3(0, trunk_h + 3.2, 0)
 	_crown = Vector2(0.0, 1000.0)
+	_perch.clear()
 	var lean := Vector3(r.randf_range(-0.15, 0.15), 1.0, r.randf_range(-0.15, 0.15)).normalized()
 	_branch(r, Vector3.ZERO, lean, trunk_h, r.randf_range(0.42, 0.55), 0, 0.0)
 	var mesh := ArrayMesh.new()
@@ -128,7 +136,24 @@ func _build_tree(v: int) -> ArrayMesh:
 	if leaf_material:
 		mesh.surface_set_material(1, leaf_material)
 	_variant_crown.append(_crown)
+	# roost perches: the twig tips in the upper part of the crown, where rooks sit at night
+	var top := -INF
+	for q in _perch:
+		top = maxf(top, q.y)
+	var ups: Array[Vector3] = []
+	for q in _perch:
+		if q.y > top - 2.6:
+			ups.append(q)
+	_variant_perches.append(ups)
 	return mesh
+
+## World-space perch points (upper twig tips) in the crown of tree `i`.
+func perch_points(i: int) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	var xf := tree_xforms[i]
+	for q: Vector3 in _variant_perches[tree_variant[i]]:
+		out.append(xf * q)
+	return out
 
 ## Paint each oak's crown into the shelter map: dense at the trunk, thinning to nothing at
 ## the drip line (the crown's reach); where crowns overlap the cover adds up toward 0.9.
@@ -196,6 +221,7 @@ func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: floa
 	_tube(pts, radius, end_r, sides, sway, sway_end, depth == 0)
 	var tip := pts[pts.size() - 1]
 	if depth >= 3:
+		_perch.append(tip)
 		_leaf_cluster(r, tip, d, sway_end, 16)
 		return
 	var kids := r.randi_range(2, 3) if depth > 0 else r.randi_range(3, 4)

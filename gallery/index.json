@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -549,6 +549,18 @@
   "file": "20261012-0516-shed-hero.jpg",
   "time": "2026-10-12T05:16:00Z",
   "caption": "After a shower the drenched hero sheds drops off hands, knees and the staff end (bright beads by the feet); the dull grey dusk, plastic sci-fi suit and hazy grey backdrop still fail the Wukong bar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0639-rookery-flyin.jpg",
+  "time": "2026-10-12T06:39:46Z",
+  "caption": "Sunset over the snow peaks as the rook flocks stream toward their roost (the dark specks upper left); the camera sits below the hill crest so the rookery itself is hidden, and the grass and oaks read dark and blobby.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0639-rookery-grove.jpg",
+  "time": "2026-10-12T06:39:46Z",
+  "caption": "Inside the rookery grove just after sunset with the rooks settled in the crowns; the warm sky and backlit grass have mood, but the perched birds are lost in the black crowns and the oaks are blobby silhouettes.",
   "verdict": "fail"
  }
 ]
