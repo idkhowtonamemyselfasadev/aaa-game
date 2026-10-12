@@ -14,6 +14,7 @@ const LINEN := [Color(0.17, 0.15, 0.12), Color(0.60, 0.55, 0.46), 0.3]
 const STRAW := [Color(0.20, 0.15, 0.075), Color(0.66, 0.53, 0.31), 0.15]
 
 var hat: MeshInstance3D
+var veil: MeshInstance3D
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -32,6 +33,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 				skel.find_bone("mixamorig_%sLeg" % side)]))
 	tint = INDIGO
 	head.add_child(_piece(_hood(), 0.0, 0.03, 0.0, 1.2))
+	veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
+	head.add_child(veil)
 	tint = STRAW
 	hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
 	var hm := hat.material_override as ShaderMaterial
@@ -79,3 +82,15 @@ func _hat() -> ArrayMesh:
 		# the plaited rim is a touch uneven
 		r *= 1.0 + 0.006 * sin(a * 11.0) * v
 		return Vector3(sin(a) * r, y, -0.03 + cos(a) * r), 48, 12)
+
+## A face cloth of the same indigo wool wound across the face from the bridge of the nose to
+## under the chin, hanging a little slack at the front; with the hat's shade only the eye line
+## shows between it and the hood.
+func _veil() -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var a := lerpf(-1.35, 1.35, u)
+		var front := cos(a)
+		# the lower edge sags into a soft point under the chin
+		var y := 1.935 - v * (0.14 + 0.05 * front * front)
+		var r := 1.0 + 0.06 * v * front + 0.015 * sin(a * 8.0 + v * 2.0) * v
+		return Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r), 24, 6)

@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.74
-(the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.75
+(the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 23:00 UTC:
+  - **Lacquered lamellar + face cloth (Next item 7 follow-up; the last verdict: "the
+    Vanguard visor still shows under the hat").** `hero.gdshader` gains `restyle` (set by
+    `Player._skin()`): the Vanguard's tan plastic plates become near-black lacquered leather
+    (mottled, a little rubbed through, roughness ~0.4-0.6), its painted scratches brown hide,
+    the red stripes dull cinnabar lacquer, the blue-grey fittings and helmet mask blackened
+    iron (metallic 0.7), and the visor glass UV island a matte banded indigo face cloth.
+    All by colour masks on the existing albedo, so it follows the rig, rain and soak for free.
+  - `garb.gd`: `_veil()`, an indigo wool face cloth wound from the bridge of the nose to under
+    the chin, sagging to a soft point at the front (`HeroGarb.veil`).
+  - `shot.gd`: new `face` spot (head-and-shoulders from the front-left at 1.5 m).
+  - Bots: `walk` now checks the veil sits in front of the head below the hat and that the
+    armour surfaces are restyled. `walk` PASS (15 pieces, veil 0.15 m in front of the head
+    bone, 2 restyled surfaces), `soldier` PASS.
+  - Verdicts: `hero lacquer_hero 60 11` fail: the blue visor glow is gone and the plates read
+    as dark lacquer under the garb (big step from the tan trooper), but the face is a dark
+    void with no eyes and the practice post still crowds the frame. `face lacquer_face2 60
+    11` fail: the new `face` spot framed the hero's back both ways round (`pp + fwd` and
+    `pp - fwd`), so the hero is probably turned after the spot is computed; from behind the
+    hat, hood and staff read well but the mantle is a flat brown slab with a hard hem.
 - Session 2026-10-12 22:00 UTC:
   - **Hero travelling garb (Next item 7; "hero still the sci-fi Vanguard" was the top
     recurring fail in every verdict).** New `game/player/garb.gd` (`HeroGarb extends
@@ -1401,6 +1421,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    GitHub repos (github/raw.githubusercontent work; the clip names Idle/Walk/Run + mixamorig bones
    let a Mixamo-rigged model drop in and retarget); jump/fall clips, foot IK on slopes, turn-in-
    place, cloth/hair sway; the staff.
+   (done 23:00 (10-12): Vanguard plates restyled as black lacquered lamellar, visor ->
+   face cloth; follow-ups: fix the `face` shot framing, give the mantle folds/drape and a
+   softer hem, eyes visible in the hood gap once there is a real head.)
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
@@ -1438,6 +1461,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Lamellar restyle (23:00 10-12): colour-mask based, so a few tan texels at plate seams
+  can stay brownish and the thigh plates still read lighter grey under rim light; the face
+  is a dark cloth void (no eyes) -- needs a real head model; the `face` shot spot frames the
+  hero's back (orientation read before the hero turns?).
 - Tall grass kinds (20:00 10-12): panicles are only visible within ~15 m (thin spikelets);
   seeding clumps are the heaviest mesh (~400 verts) and do not thin with distance any
   differently; each chunk is now 3 MultiMesh draws (~260 draws for the tall grass); the

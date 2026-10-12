@@ -8,6 +8,15 @@ uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic, re
 uniform vec4 albedo_col : source_color = vec4(1.0);
 uniform float roughness = 1.0;
 uniform float normal_depth = 1.0;
+// 1: the Vanguard's sci-fi look is re-dressed as old lamellar: the tan plastic plates become
+// worn black lacquered leather (scratches through to brown hide), the red stripes a dull
+// cinnabar lacquer, the blue-grey fittings and helmet mask blackened iron, and the glossy visor
+// glass a matte indigo face cloth.
+uniform float restyle = 1.0;
+uniform vec3 lacquer : source_color = vec3(0.034, 0.024, 0.020);
+uniform vec3 hide : source_color = vec3(0.26, 0.16, 0.085);
+uniform vec3 cinnabar : source_color = vec3(0.30, 0.055, 0.035);
+uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -26,13 +35,52 @@ float h_noise(vec2 p) {
 void fragment() {
 	vec3 alb = texture(albedo_tex, UV).rgb * albedo_col.rgb;
 	float rough = roughness;
+	float metal = 0.0;
 	float patch_n = h_noise(UV * 22.0) * 0.6 + h_noise(UV * 61.0) * 0.4;
+	if (restyle > 0.0) {
+		vec3 src = alb;
+		float lum = dot(src, vec3(0.3, 0.59, 0.11));
+		float warm = src.r - src.b;
+		// tan plates: bright and warm; their painted scratches are mid brown
+		float tan_m = smoothstep(0.18, 0.3, warm) * smoothstep(0.32, 0.5, lum)
+				* (1.0 - smoothstep(0.35, 0.5, src.r - src.g));
+		float scratch = smoothstep(0.08, 0.16, warm) * smoothstep(0.1, 0.2, lum) * (1.0 - tan_m)
+				* (1.0 - smoothstep(0.3, 0.45, src.r - src.g));
+		float red_m = smoothstep(0.3, 0.45, src.r - src.g) * smoothstep(0.25, 0.4, src.r);
+		float iron_m = smoothstep(0.02, 0.07, src.b - src.r) * smoothstep(0.15, 0.3, lum);
+		// lacquer: near black, faintly mottled, a little rubbed through on raised wear
+		float mott = h_noise(UV * 140.0) * 0.5 + h_noise(UV * 37.0) * 0.5;
+		vec3 lac = lacquer * (0.8 + 0.45 * mott);
+		lac = mix(lac, hide * 0.6, smoothstep(0.72, 0.9, h_noise(UV * 90.0 + 7.0)) * 0.5);
+		vec3 o = src;
+		float r_o = roughness;
+		o = mix(o, lac, tan_m);
+		r_o = mix(r_o, 0.38 + 0.2 * mott, tan_m);
+		o = mix(o, hide * (0.7 + 0.6 * mott), scratch);
+		r_o = mix(r_o, 0.85, scratch);
+		o = mix(o, cinnabar * (0.75 + 0.4 * mott), red_m);
+		r_o = mix(r_o, 0.45, red_m);
+		vec3 iron = vec3(0.075, 0.072, 0.07) * (0.7 + 0.6 * mott) + vec3(0.06, 0.035, 0.02) * smoothstep(0.6, 0.85, mott);
+		o = mix(o, iron, iron_m);
+		r_o = mix(r_o, 0.55 + 0.25 * mott, iron_m);
+		metal = 0.7 * iron_m;
+		// the visor glass (its own UV island, top left): a matte wound face cloth
+		vec2 vq = (UV - vec2(0.093, 0.215)) / vec2(0.085, 0.07);
+		float visor = 1.0 - smoothstep(0.85, 1.05, length(vq));
+		float bands = 0.5 + 0.5 * sin((UV.y * 0.6 + UV.x * 0.15) * 900.0);
+		vec3 fc = face_cloth * (0.75 + 0.35 * bands + 0.3 * h_noise(UV * 400.0));
+		o = mix(o, fc, visor);
+		r_o = mix(r_o, 0.95, visor);
+		metal *= 1.0 - visor;
+		alb = mix(src, o, restyle);
+		rough = mix(roughness, r_o, restyle);
+	}
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, patch_n), 0.85);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
-	METALLIC = 0.0;
+	METALLIC = metal;
 	SPECULAR = 0.5;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth;

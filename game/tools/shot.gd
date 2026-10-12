@@ -223,6 +223,11 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.6) * 3.2, pp]
+	if spot == "face":
+		# head-and-shoulders of the idle player from the front-left: hat, hood, face cloth
+		var pp := player.global_position
+		var fwd := player.body.global_transform.basis.z
+		SPOTS[spot] = [pp - fwd.rotated(Vector3.UP, 0.45) * 1.5, pp]
 	if spot == "heroback" or spot == "staff":
 		# rear three-quarter of the idle player: the staff slung across the back
 		var pp := player.global_position
@@ -391,6 +396,9 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "face":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.8
+			look.y = terrain.height_at(look.x, look.z) + 1.75
 		if spot == "ruin":
 			pos.y += 2.5
 		if spot == "ferns":

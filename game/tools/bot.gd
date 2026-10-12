@@ -180,9 +180,29 @@ func _finish(ok: bool, why: String) -> void:
 				or hat_box.size.x < 0.55 or hat_box.end.y < head.y + 0.1):
 			ok = false
 			why = "hero garb missing, hat off the head or robe panels not swinging"
+		# the face cloth hangs in front of the face, below the hat brim
+		var veil := garb.veil.global_transform * garb.veil.get_aabb()
+		var fwd := _player.body.global_transform.basis.z
+		var veil_front := (veil.get_center() - head).dot(fwd)
+		print("BOT veil: %.2f m in front of the head bone, %.2f..%.2f m about it" % [
+				veil_front, veil.position.y - head.y, veil.end.y - head.y])
+		if ok and _route.size() > 0 and (veil_front < 0.03 or veil.end.y > hat_box.end.y):
+			ok = false
+			why = "hero face cloth not over the face"
 	elif ok:
 		ok = false
 		why = "hero has no garb"
+	# the Vanguard's sci-fi plates are restyled as black lacquered lamellar
+	var restyled := 0
+	for mi in _player.model.find_children("*", "MeshInstance3D", true, false):
+		for si in (mi as MeshInstance3D).mesh.get_surface_count():
+			var sm := (mi as MeshInstance3D).get_surface_override_material(si) as ShaderMaterial
+			if sm != null and sm.get_shader_parameter("restyle") != null and float(sm.get_shader_parameter("restyle")) > 0.5:
+				restyled += 1
+	print("BOT armour restyled surfaces: %d" % restyled)
+	if ok and _route.size() > 0 and restyled == 0:
+		ok = false
+		why = "hero armour not restyled"
 	# the staff must be slung on the back: behind the torso, at shoulder-to-hip height, ~1.86 m long
 	var staff: Staff = _player.staff
 	if staff != null:

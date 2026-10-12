@@ -142,6 +142,7 @@ func _skin() -> void:
 			mat.set_shader_parameter("albedo_tex", src.albedo_texture)
 			mat.set_shader_parameter("albedo_col", src.albedo_color)
 			mat.set_shader_parameter("roughness", src.roughness)
+			mat.set_shader_parameter("restyle", 1.0)
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
