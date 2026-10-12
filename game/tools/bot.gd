@@ -1395,12 +1395,32 @@ func _weather_test() -> void:
 		return _combat_done(false, "the hero soaks as fast under an oak as in the open")
 	if wx.wet_at(under.x, under.z) > wx.wet * 0.6 or wx.pool_at(under.x, under.z):
 		return _combat_done(false, "the ground under an oak is as wet as the open meadow")
+	# canopy drips: under the oak the crowns shed fat drops along their drip line
+	_player.global_position = Vector3(under.x, _world.terrain.height_at(under.x, under.z) + 0.1, under.z)
+	_player.velocity = Vector3.ZERO
+	var dr0 := wx.canopy_drips
+	var ds0 := wx.drip_splashes
+	await _ticks(60)
+	var drips_rain := wx.canopy_drips - dr0
+	print("BOT weather drips: %d drops shed from the crowns in 1 s of rain (canopy %.2f), %d landed" % [drips_rain, wx.canopy_water, wx.drip_splashes - ds0])
+	if drips_rain < 20 or wx.drip_splashes - ds0 < 5:
+		return _combat_done(false, "the oak crowns do not drip in the rain")
 	hs.level = soak_peak
 	wx.force(0.0, false)
 	t = 0.0
+	var drips_after := 0
+	var dry_t := -1.0
 	while (wx.cloud > 0.02 or wx.rain > 0.0) and t < 300.0:
+		var dc := wx.canopy_drips
 		await get_tree().physics_frame
 		t += get_physics_process_delta_time()
+		if wx.rain <= 0.0:
+			drips_after += wx.canopy_drips - dc
+			if dry_t < 0.0:
+				dry_t = t
+	print("BOT weather drips after the rain: %d drops in the %.0f s after it stopped (canopy %.2f)" % [drips_after, t - dry_t, wx.canopy_water])
+	if drips_after < 20:
+		return _combat_done(false, "the crowns stop dripping the moment the rain stops")
 	await _ticks(240)
 	var c2 := bf.census()
 	print("BOT weather cleared after %.0f s: cloud %.2f rain %.2f wet %.2f (peak %.2f), sun %.2f, drops %s, butterflies out %d" % [t, wx.cloud, wx.rain, wx.wet, wet_peak, _world.sun.light_energy, rp.emitting, c2[0] + c2[1] + c2[2]])
@@ -1412,7 +1432,11 @@ func _weather_test() -> void:
 	if c2[0] + c2[1] + c2[2] < 10 or _world.sun.light_energy < sun0 * 0.95:
 		return _combat_done(false, "sun and butterflies did not return after the front")
 	var s1 := wx.lightning.strikes + wx.lightning.sheets
+	wx.canopy_water = 0.0005
+	var dc1 := wx.canopy_drips
 	await _ticks(600)
+	if wx.canopy_drips != dc1 or wx.canopy_water > 0.0:
+		return _combat_done(false, "the crowns never drain dry")
 	if wx.lightning.strikes + wx.lightning.sheets != s1:
 		return _combat_done(false, "lightning struck from a clear sky")
 	# fronts also come on their own

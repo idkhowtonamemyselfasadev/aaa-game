@@ -143,7 +143,8 @@ func _ready() -> void:
 		player.bot_input = Vector2(0, -1)
 		SPOTS[spot] = [bw + Vector3(0.4, 0, 3.4), bw + Vector3(0.4, 0, 0)]
 		print("SHOT wade pool %.2f at %s" % [bh, bw])
-	if spot == "shelter":
+	if spot == "shelter" or spot == "drip":
+		# (drip: close in at the crown edge, where the leaves shed their water)
 		# the hero sheltering under the oak nearest the start in a downpour, seen from the
 		# open meadow: dry ground and no drops under the crown, rain all round it
 		var flora: Flora = world.get_node("Flora")
@@ -155,9 +156,9 @@ func _ready() -> void:
 		var hp := best + Vector3(1.6, 0, 0.4)
 		player.global_position = Vector3(hp.x, terrain.height_at(hp.x, hp.z) + 0.05, hp.z)
 		var out_dir := Vector3(1.0, 0, 0.55).normalized()
-		var cp := best + out_dir * 11.0
+		var cp := best + out_dir * (11.0 if spot == "shelter" else 7.0)
 		cp.y = terrain.height_at(cp.x, cp.z)
-		SPOTS[spot] = [cp, best + Vector3.UP * 0.6 - out_dir * 0.5]
+		SPOTS[spot] = [cp, best + Vector3.UP * (0.6 if spot == "shelter" else 1.2) - out_dir * 0.5]
 		print("SHOT shelter oak at %s, shelter %.2f under it" % [best, flora.shelter_at(hp.x, hp.z)])
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
@@ -348,6 +349,8 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("wet="):    # soak the ground after a passing shower (pools, light rain)
 			world.weather.wet = float(a.substr(4))
+		if a.begins_with("drip="):   # crowns still running with water (after a shower)
+			world.weather.canopy_water = float(a.substr(5))
 		if a.begins_with("soak="):   # drench (or dry) the hero and the soldier
 			player.soak.level = float(a.substr(5))
 			if world.soldier != null:
@@ -483,7 +486,9 @@ func _ready() -> void:
 	print("SHOT %s -> %s (%s) err=%d" % [spot, abs, img.get_size(), err])
 	var we: Weather = world.weather
 	print("SHOT wade splashes %d" % we.wade_splashes)
-	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color])
+	if "dripdbg" in args:
+		print("SHOT drips aabb %s cam %s land %s" % [we._drips.capture_aabb(), get_viewport().get_camera_3d().global_position, we._drip_land.slice(0, 3)])
+	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s canopy %.2f drips %d" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color, we.canopy_water, we.canopy_drips])
 	get_tree().quit(0 if err == OK else 1)
 
 ## Runs after the warm-up frames so the world keeps updating (pausing the tree froze the

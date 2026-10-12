@@ -23,6 +23,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 03:30 UTC:
+  - **Canopy drips (next item 9 pick).** The oak crowns now gather rain and shed it as fat
+    drops along their drip line. `Weather.canopy_water` (0..1) fills in ~25 s of downpour
+    and, once the rain eases, drains over ~150 s, so the oaks keep dripping for minutes
+    after a shower (the shed rate is drip_rate x canopy^2: a thinning tail). Drops start at
+    the lowest leaves over the spot (new `Flora.leaf_height_at`, the shelter map's G), most
+    where the crown cover thins at its edge (weight 4s(1-s)), within 16 m of the camera and
+    mostly in view; a `CanopyDrips` GPUParticles3D draws them with the rain streak shader
+    (new `sheltered_fade` uniform off; shorter, brighter streaks), and each one
+    lands in a splash when its free-fall time is up (CPU queue, as the GPU collision path
+    does not fire under the software renderer). Counted in `canopy_drips`/`drip_splashes`.
+  - Shot spot `drip` (close in at the crown edge of the shelter oak) and shot arg
+    `drip=<0..1>` (crowns still running with water, e.g. `rain=0 wet=0.8 drip=1`).
+  - Bot `weather`: hundreds of drops shed under the oak in 1 s of rain (most land in a
+    splash), thousands in the ~53 s after the rain stopped (canopy still 0.35), none once
+    the crowns drain. 13/13 bots pass.
+  - **Shots: new `fixfps` arg** (tools/shots.sh passes `--fixed-fps 30`). Lavapipe takes
+    ~1 s per frame, so without it the game ages ~1 s per rendered frame and short-lived
+    particles (drips 1.3 s, splashes 0.3 s) are dead before the capture. Use it for any FX
+    shot. (Earlier splash shots probably suffered from this too.)
+  - Verdicts: drip_rain (no fixfps) fail: drips invisible, hero/ridges not Wukong-grade.
+    drip_after (16 h, drip=0.6, fixfps) fail as a Wukong shot: drops read as sparse beads
+    (right for the tail), but the hero in the crown shade is near black and the ground
+    under the tree is flat. A drip=1 test frame showed the drops too dense/long (read as
+    rain from a clear sky); tuned to 200/s, 1.2 cm x 22 cm streaks.
 - Session 2026-10-12 02:30 UTC:
   - **Shelter under the oak crowns (next item 9 pick).** `Flora` now records each oak
     variant's crown reach + lowest leaf height and bakes a 256² `shelter` map (2 m texels,
@@ -996,8 +1021,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 00:00 (10-12): thunder timing signal; 01:00: rain soaks hero + soldier, wading
    soaks the legs; 01:35: sheet flashes with no channel.)
    (done 02:30: rain shelter under the oak crowns.)
+   (done 03:30: canopy drips from the crown edges, during and for minutes after rain.)
    Next session pick: drips running off the soaked hero (rivulet streaks + drip particles
-   from the hem/staff), heavy drips falling from the crown edges after/through rain, then the thunder sound once
+   from the hem/staff), drip rings on the pools under the crowns, then the thunder sound once
    audio exists (hook: `Lightning.thunder`). Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections

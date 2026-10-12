@@ -167,6 +167,16 @@ func shelter_at(x: float, z: float) -> float:
 		return 0.0
 	return shelter.get_pixel(i, j).r
 
+## World height of the lowest leaves over (x, z) (-1000 where no crown is overhead).
+func leaf_height_at(x: float, z: float) -> float:
+	if shelter == null:
+		return -1000.0
+	var i := int(floor(x / (SHELTER_SIZE / SHELTER_RES) + SHELTER_RES * 0.5))
+	var j := int(floor(z / (SHELTER_SIZE / SHELTER_RES) + SHELTER_RES * 0.5))
+	if i < 0 or j < 0 or i >= SHELTER_RES or j >= SHELTER_RES:
+		return -1000.0
+	return shelter.get_pixel(i, j).g
+
 ## Recursive limb: a bent, tapered tube from `from` along `dir`, then 2-3 children.
 ## `sway` (0 trunk .. 1 twig) goes into COLOR.r for the wind shader.
 func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: float, radius: float, depth: int, sway: float) -> void:

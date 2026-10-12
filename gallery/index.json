@@ -520,5 +520,17 @@
   "time": "2026-10-12T02:32:33Z",
   "caption": "Open meadow in the same storm: pools, raindrop rings and wet soil unchanged outside the crowns; the wet bank top right is close to blown out and the far valley is a flat grey veil.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0348-shelter-drips-rain.jpg",
+  "time": "2026-10-12T03:48:00Z",
+  "caption": "Hero under an oak in a downpour, fog over the far groves; the canopy drips do not read in a still frame here, ridges and the hero model are still not Wukong-grade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0348-shelter-drips-after.jpg",
+  "time": "2026-10-12T03:48:00Z",
+  "caption": "After the shower the oak crown still sheds sparse drops in a low warm sun; the drops read only as tiny beads, the shaded hero is near black and the ground under the tree is flat.",
+  "verdict": "fail"
  }
 ]

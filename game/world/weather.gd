@@ -42,6 +42,20 @@ const WAKE_LIFE := 1.8    # seconds a footfall's ring train runs
 var _wake: Array[Vector4] = []   # (x, z, age, strength) per slot
 var _wake_next := 0
 var lightning: Lightning   # bolts + flashes once the rain is heavy
+## Canopy drips: the oak crowns gather rain and shed it as fat drops along their drip line,
+## heaviest in a downpour, and keep dripping for a few minutes after the shower has passed.
+var canopy_water := 0.0   # 0 dry leaves .. 1 crowns running with water
+var canopy_drips := 0     # drops shed from the crowns (bots)
+var drip_splashes := 0    # of those, landed in a splash (bots)
+@export var drip_rate := 200.0    # drops per second at full canopy, within drip_radius
+@export var drip_radius := 16.0
+const CANOPY_FILL := 25.0    # seconds of downpour to wet the leaves through
+const CANOPY_DRAIN := 150.0  # seconds the crowns keep dripping after the rain
+const DRIP_G := 9.8
+var _drips: GPUParticles3D
+var _drip_mat: ShaderMaterial
+var _drip_acc := 0.0
+var _drip_land: Array[Vector4] = []   # (x, ground y, z, seconds until it lands)
 
 const FX_LAYER := 1 << 9  # rain + splashes
 
@@ -85,6 +99,7 @@ func _ready() -> void:
 	wm.set_shader_parameter("tint", Color(0.86, 0.88, 0.9))
 	for i in WAKE_RINGS:
 		_wake.append(Vector4.ZERO)
+	_make_drips()
 	lightning = Lightning.new()
 	lightning.name = "Lightning"
 	add_child(lightning)
@@ -101,6 +116,7 @@ func force(strength: float, instant := true) -> void:
 		rain = _rain_level(cloud)
 		wet = minf(1.0, rain * 1.2)
 		wind = cloud
+		canopy_water = minf(1.0, rain * 1.1)
 		_update_rain(0.0)
 		_push_globals()
 
@@ -134,6 +150,100 @@ func _make_splash(nm: String, n: int, life: float, size: float, scale: Vector2) 
 	add_child(ps)
 	return ps
 
+## Fat drops falling free from the leaves: the rain streak shader, shorter and brighter,
+## not faded under the crowns (they ARE the water under the crowns).
+func _make_drips() -> void:
+	var dpm := ParticleProcessMaterial.new()
+	dpm.direction = Vector3.DOWN
+	dpm.spread = 0.0
+	dpm.initial_velocity_min = 0.0
+	dpm.initial_velocity_max = 0.0
+	dpm.gravity = Vector3(0, -DRIP_G, 0)
+	dpm.particle_flag_align_y = true
+	var q := QuadMesh.new()
+	q.size = Vector2(1, 1)
+	_drip_mat = ShaderMaterial.new()
+	_drip_mat.shader = load("res://shaders/rain.gdshader")
+	_drip_mat.set_shader_parameter("sheltered_fade", false)
+	_drip_mat.set_shader_parameter("width", 0.012)
+	_drip_mat.set_shader_parameter("streak_len", 0.22)
+	_drip_mat.set_shader_parameter("opacity", 0.75)
+	_drip_mat.set_shader_parameter("tint", Color(0.8, 0.84, 0.88))
+	q.material = _drip_mat
+	_drips = GPUParticles3D.new()
+	_drips.name = "CanopyDrips"
+	_drips.amount = 800
+	_drips.lifetime = 1.3
+	_drips.local_coords = false
+	_drips.process_material = dpm
+	_drips.draw_pass_1 = q
+	_drips.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_drips.layers = FX_LAYER
+	_drips.visibility_aabb = AABB(Vector3(-40, -40, -40), Vector3(80, 80, 80))
+	_drips.emitting = false     # fed by _update_drips()
+	add_child(_drips)
+
+## Crowns in view shed drops along their drip line (where the cover thins out), from the
+## lowest leaves; each lands in a splash when its fall time is up.
+func _update_drips(delta: float) -> void:
+	# leaves wet through in a downpour; as the rain eases they drain slowly, not with it
+	var hold := minf(1.0, rain * 1.1) if rain > 0.05 else 0.0
+	if canopy_water < hold:
+		canopy_water = move_toward(canopy_water, hold, delta / CANOPY_FILL)
+	else:
+		canopy_water = move_toward(canopy_water, hold, delta / CANOPY_DRAIN)
+	var i := _drip_land.size() - 1
+	while i >= 0:
+		var d := _drip_land[i]
+		d.w -= delta
+		if d.w <= 0.0:
+			_splash.emit_particle(Transform3D(Basis(), Vector3(d.x, d.y + 0.01, d.z)), Vector3.ZERO,
+					Color.WHITE, Color.WHITE, GPUParticles3D.EMIT_FLAG_POSITION)
+			drip_splashes += 1
+			_drip_land.remove_at(i)
+		else:
+			_drip_land[i] = d
+		i -= 1
+	var cam := get_viewport().get_camera_3d()
+	var terrain = get_parent().get("terrain")
+	var flora := get_parent().get_node_or_null("Flora") as Flora
+	if cam == null or terrain == null or flora == null or canopy_water < 0.01:
+		_drip_acc = 0.0
+		return
+	# the shed slows to a slow tick as the leaves drain (squared: a long, thinning tail)
+	_drip_acc += drip_rate * canopy_water * canopy_water * delta
+	var n := mini(int(_drip_acc), 24)
+	_drip_acc -= float(int(_drip_acc))
+	var c := cam.global_position
+	var f := -cam.global_basis.z
+	var yaw := atan2(f.x, f.z)
+	for k in n:
+		# a few tries to land on a crown's drip line; most of the view is open meadow
+		for tries in 8:
+			var ang := yaw + (_rng.randf_range(-1.2, 1.2) if _rng.randf() < 0.8 else _rng.randf_range(-PI, PI))
+			var r := drip_radius * sqrt(_rng.randf_range(0.004, 1.0))
+			var x := c.x + sin(ang) * r
+			var z := c.z + cos(ang) * r
+			var sh := flora.shelter_at(x, z)
+			# drip line: thin cover at the crown's edge sheds most, the dense middle little
+			if sh < 0.03 or _rng.randf() > 4.0 * sh * (1.0 - sh) + 0.1:
+				continue
+			var top := flora.leaf_height_at(x, z)
+			var gy: float = terrain.height_at(x, z)
+			if top < gy + 0.5:
+				continue
+			var y0 := top + _rng.randf_range(-0.3, 0.4)
+			var v0 := 0.6
+			var h := y0 - gy
+			var fall := (-v0 + sqrt(v0 * v0 + 2.0 * DRIP_G * h)) / DRIP_G
+			_drips.emit_particle(Transform3D(Basis(), Vector3(x, y0, z)), Vector3(0, -v0, 0),
+					Color.WHITE, Color.WHITE,
+					GPUParticles3D.EMIT_FLAG_POSITION | GPUParticles3D.EMIT_FLAG_VELOCITY)
+			canopy_drips += 1
+			if _drip_land.size() < 256:
+				_drip_land.append(Vector4(x, gy, z, fall))
+			break
+
 func _rain_level(c: float) -> float:
 	# rain only sets in once the sky is mostly covered
 	return smoothstep(0.55, 0.95, c) * maxf(_target, c * 0.8)
@@ -165,6 +275,7 @@ func _process(delta: float) -> void:
 	_update_wade(delta)
 	_update_wake(delta)
 	_update_splashes(delta)
+	_update_drips(delta)
 	_push_globals()
 
 ## True where rain stands in a pool right now (mirrors the terrain shader's puddles: the
@@ -288,6 +399,7 @@ func _update_rain(_delta: float) -> void:
 		var h: float = w.time_of_day
 		day = smoothstep(5.0, 7.5, h) * (1.0 - smoothstep(18.0, 20.0, h))
 	_rain_mat.set_shader_parameter("brightness", lerpf(0.08, 0.9, day))
+	_drip_mat.set_shader_parameter("brightness", lerpf(0.08, 1.0, day))
 	for ps: GPUParticles3D in [_splash, _wade]:
 		((ps.draw_pass_1 as QuadMesh).material as ShaderMaterial).set_shader_parameter("brightness", lerpf(0.08, 0.95, day))
 
