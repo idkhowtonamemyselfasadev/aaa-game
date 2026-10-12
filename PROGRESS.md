@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.65
-(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.66
+(the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -23,6 +23,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 13:00 UTC:
+  - **The woodland floor under the oak crowns is a carpet of fallen leaves, lit, not black
+    (follow-up of the 12:00 understory).** terrain.gdshader: a `canopy` weight from the
+    baked `shelter_map` turns the ground under each crown into leaf litter (moss halved,
+    sward mostly gone); new `leafbed()` lays 4 offset layers of lobed oak leaves with a
+    midrib (one per cell, ~10-20 cm) in pale tan / russet / a few yellow, over dark mould
+    in the gaps, with height for the bump and cavity darkening; fades to an average tone
+    with distance. Canopy fill: under the crowns the terrain takes 2.6x `bounce_light`
+    tinted green (light through the leaves + bounce off trunks and litter), grass
+    0.6 + 1.1 x shelter, and the fern material a `fill` of 2.0 (leaves shader uniform,
+    oaks keep 0.45).
+  - Verdicts: floor6 (ferns spot, 13 h) fail but much better: the grove floor reads as a
+    dim, leaf-strewn woodland floor and the ferns are green, not black; but the leaf bed
+    is a touch regular (cell grid shows as a cobble pattern at 2-4 m), small cream specks
+    pop, and close fern fronds show a moire/checker texture. 16/16 bots pass.
 - Session 2026-10-12 12:00 UTC:
   - **The oak groves have an understory (next item 2: flora polish, shrubs/ferns under
     trees).** `Flora._scatter_understory()`: 2200 shuttlecock ferns (5 procedural variants,
@@ -1156,8 +1171,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    shrine/quest hook there (milestone-1 shrine could start in its cellar), a better camera
    for the `ruin` shot (from higher up the slope, sun behind the camera). Flora polish:
    bigger hero boulders/outcrops (3–6 m), hedgerows,
-   (done 12:00 (10-12): ferns + shrubs under/around the groves; follow-ups: a
-   brighter woodland floor in shade (leaf litter albedo + more bounce under crowns), ferns
+   (done 12:00 (10-12): ferns + shrubs under/around the groves; 13:00: leaf-litter carpet +
+   canopy fill under the crowns; follow-ups: break the leaf-bed grid, fern close-up moire, ferns
    flattened/brushed by the hero, fern frond LOD, ferns wilting brown into autumn), leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
 3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
@@ -1219,6 +1234,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Leaf bed (13:00 10-12): the 4 leafbed layers are one leaf per grid cell, so at 2-4 m the
+  carpet reads slightly like cobbles (jitter more / rotate the grids); small cream specks
+  from the old litter layer pop under the crowns; the leaf bed has no seasonal change yet.
+- Close fern fronds show a moire/checker pattern (fern atlas mip/alpha at <1 m).
 - Understory (12:00 10-12): ferns and shrubs have no collision or brush response (the hero
   walks through them without parting them); shrubs reuse the oak leaf atlas (no hazel leaf
   shape); fern fronds are single strips so they read flat when seen exactly edge-on; the

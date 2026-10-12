@@ -11,6 +11,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 uniform sampler2D leaf_tex : source_color, filter_linear_mipmap_anisotropic;
 uniform vec3 tint : source_color = vec3(1.0, 1.0, 1.0);
 uniform float fade_dist = 380.0;
+// shade fill gain: oak crowns 0.45 (inner crown); ferns on the woodland floor more (they
+// catch the green light through the canopy as well as the bounce off the litter)
+uniform float fill = 0.45;
 
 varying float v_phase;
 varying vec3 v_inst;
@@ -49,7 +52,7 @@ void fragment() {
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)
 	// inner crown: light scattered off the lit leaves and ground around it
-	EMISSION = ALBEDO * bounce_light * 0.45;
+	EMISSION = ALBEDO * bounce_light * fill;
 }
 
 void light() {

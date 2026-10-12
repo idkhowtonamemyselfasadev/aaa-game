@@ -25,6 +25,7 @@ uniform vec3 moss_b   : source_color = vec3(0.33, 0.38, 0.08);
 uniform vec3 soil     : source_color = vec3(0.19, 0.15, 0.11);
 uniform vec3 leaf_a   : source_color = vec3(0.42, 0.24, 0.10);   // dead oak leaves
 uniform vec3 leaf_b   : source_color = vec3(0.30, 0.20, 0.10);
+uniform vec3 leaf_drift : source_color = vec3(0.50, 0.39, 0.25); // dry tan oak leaves under the crowns
 uniform vec3 rock_a   : source_color = vec3(0.30, 0.30, 0.31);
 uniform vec3 rock_b   : source_color = vec3(0.17, 0.17, 0.19);
 uniform float rock_slope_start = 0.55;
@@ -189,6 +190,24 @@ vec4 litter(vec2 p, float scale) {
 	return vec4(cov, h, kind, r.z);
 }
 
+// Leaf bed under the crowns: every cell holds one oak leaf (lobed, midrib), so a few
+// offset layers lie over each other into a full carpet. Returns (cover, height, tone).
+vec3 leafbed(vec2 p, float scale) {
+	vec2 q = p * scale;
+	vec2 cell = floor(q);
+	vec2 f = fract(q) - 0.5;
+	vec3 r = hash23(cell + 57.0);
+	float ang = r.x * 6.2832;
+	vec2 dir = vec2(cos(ang), sin(ang));
+	f -= (r.yz - 0.5) * 0.3;
+	vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x)));
+	float lob = 1.0 + 0.16 * sin(l.x * 30.0 + r.z * 6.0);
+	float e = length(l / (vec2(0.40, 0.21) * lob));
+	float cov = 1.0 - smoothstep(0.85, 1.0, e);
+	float rib = smoothstep(0.025, 0.0, abs(l.y)) * cov;
+	return vec3(cov - rib * 0.3, cov * (0.4 + 0.6 * (1.0 - e)) - rib * 0.2, r.z);
+}
+
 void fragment() {
 	vec3 n = normalize(wnrm);
 	vec2 xz = wpos.xz;
@@ -207,6 +226,11 @@ void fragment() {
 	float mossw = smoothstep(0.52, 0.66, meso * 0.7 + aspect * smoothstep(0.08, 0.3, slope) * 0.5
 			+ (1.0 - macro) * 0.25) * (1.0 - rockw * 0.6);
 	float litw = smoothstep(0.58, 0.72, macro + (micro - 0.5) * 0.35) * (1.0 - rockw) * (1.0 - mossw);
+	// the oak crowns drop a carpet of last year's leaves over the ground beneath them
+	float shel = shelter_at(xz);
+	float canopy = smoothstep(0.12, 0.55, shel + (meso - 0.5) * 0.25);
+	litw = max(litw, canopy * 0.9 * (1.0 - rockw));
+	mossw *= 1.0 - canopy * 0.5;
 	float thatchw = smoothstep(0.3, 0.75, meso * 0.8 + vnoise(wpos * 0.35) * 0.4);
 	float cloverw = smoothstep(0.62, 0.7, fbm(wpos * 0.22 + 31.0)) * (1.0 - litw) * (1.0 - mossw);
 
@@ -249,10 +273,27 @@ void fragment() {
 	if (lt.z >= 0.42) { leafc = vec3(0.27, 0.26, 0.24) * (0.75 + 0.4 * lt.w); }
 	litcol = mix(litcol, leafc, lt.x * fade_l);
 	litcol = mix(litcol, mix(leaf_a, thatch_a, lt2.w) * 0.9, lt2.x * fade_l * step(lt2.z, 0.34));
-	// some sward survives in the litter
-	litcol = mix(litcol, turf, smoothstep(0.55, 0.8, micro) * 0.7);
+	// under the crowns the leaves lie thick: a third, denser layer of dry tan oak leaves
+	// (pale and sun-bleached on top, the earth barely shows between them)
+	// bottom to top: each layer covers part of the one below, the gaps show dark mould
+	vec3 bed = mix(earth * 0.8, mix(leaf_drift * 0.7, leaf_b, micro * 0.6), 0.85 - 0.3 * fade_l);
+	float bed_h = 0.0;
+	for (int k = 0; k < 4; k++) {
+		float fk = float(k);
+		vec3 lb = leafbed(xz + vec2(fk * 3.17, fk * 1.71), 4.2 + fk * 1.3);
+		// leaf by leaf the tone wanders: pale sun-bleached, tan, russet, a few still yellow
+		vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.35, 0.95, lb.z)),
+				vec3(0.52, 0.43, 0.20), step(0.92, fract(lb.z * 7.3)) * 0.7);
+		tone *= 0.8 + 0.05 * fk + 0.15 * lb.y;   // upper leaves catch more light
+		float c = lb.x * fade_l * (0.8 + 0.2 * step(0.2, lb.z));
+		bed = mix(bed, tone, c);
+		bed_h = mix(bed_h, 0.3 + 0.2 * fk + lb.y, c);
+	}
+	litcol = mix(litcol, bed, canopy);
+	// some sward survives in the litter (little under the crowns)
+	litcol = mix(litcol, turf, smoothstep(0.55, 0.8, micro) * 0.7 * (1.0 - canopy * 0.8));
 	litcol = mix(litcol, mix(earth, leaf_a * 0.8, 0.4), 1.0 - fade_l);
-	float lit_h = max(lt.y, lt2.y * 0.6) * fade_l * 0.006 + micro * 0.004;
+	float lit_h = max(max(lt.y, lt2.y * 0.6), bed_h * 0.35 * canopy) * fade_l * 0.006 + micro * 0.004;
 
 	// ---- rock ----
 	vec3 rock = mix(rock_b, rock_a, micro * 0.6 + meso * 0.4);
@@ -271,10 +312,9 @@ void fragment() {
 
 	// cavity darkening from the fine height
 	float cav = clamp(h / 0.004, 0.0, 1.0);
-	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * fade_b);
+	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * max(fade_b, canopy * litw * fade_l));
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
 	// the oak crowns keep the ground beneath them drier: no pools, few drops
-	float shel = shelter_at(xz);
 	float wet_here = weather_wet * (1.0 - SHELTER_DRY * shel);
 	wetten_by(col, rough, 1.0 - 0.6 * rockw, wet_here);
 
@@ -328,6 +368,9 @@ void fragment() {
 	ALBEDO *= v_cloud;
 	// bounce from the lit land around: walls, banks and hollows get most, open flat ground
 	// little (the sky ambient covers it); skips the water skin
-	EMISSION += ALBEDO * bounce_light * mix(1.0, 0.35, clamp(n.y, 0.0, 1.0)) * AO * (1.0 - pud)
-		* bounce_gain(wpos);
+	// little (the sky ambient covers it); skips the water skin. Under the oak crowns the
+	// floor also gets the green light through the leaves and the bounce off the trunks and
+	// the litter around, so the woodland floor reads as dim, not black.
+	EMISSION += ALBEDO * bounce_light * (mix(1.0, 0.35, clamp(n.y, 0.0, 1.0))
+		+ canopy * 2.6 * vec3(0.85, 1.0, 0.7)) * AO * (1.0 - pud) * bounce_gain(wpos);
 }

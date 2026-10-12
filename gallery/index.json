@@ -164,7 +164,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -639,6 +639,12 @@
   "file": "20261012-1231-grove.jpg",
   "time": "2026-10-12T12:31:57Z",
   "caption": "Grove edge at 10.5 h with the new understory: sunlit fern clumps and thinned shade grass on the right; ferns in the deep shade on the left vanish into a near-black floor.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1415-grove-floor.jpg",
+  "time": "2026-10-12T14:15:11Z",
+  "caption": "The oak grove floor at 13 h: a lit carpet of fallen tan and russet oak leaves under the crowns with green ferns, no longer black; the leaf bed is still a bit grid-regular and close fern fronds show moire.",
   "verdict": "fail"
  }
 ]

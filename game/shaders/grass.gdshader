@@ -81,7 +81,8 @@ void fragment() {
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)
 	// blades stand upright: they catch the bounce off the meadow around them
-	EMISSION = ALBEDO * bounce_light * 0.6
+	// under the oak crowns: green light through the canopy and off the leaf litter
+	EMISSION = ALBEDO * bounce_light * (0.6 + 1.1 * v_shelter)
 		* bounce_gain((INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
