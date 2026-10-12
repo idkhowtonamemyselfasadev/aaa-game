@@ -5,7 +5,13 @@ extends Node3D
 ## flickering flash (2–4 return strokes) that lights the deck around the strike, the haze
 ## and the land from the bolt's side. Child of Weather; the world's light/fog values are
 ## rebuilt each frame by world.gd before this runs (parents process first), so the flash
-## is added on top. No thunder yet: the game has no audio.
+## is added on top. Thunder follows each strike at the speed of sound (`thunder` signal:
+## the hook for the soundscape; the game has no audio yet).
+
+## A clap reaching the camera: `strength` 0..~1.5 (near and loud .. far rumble), `dist` m.
+signal thunder(strength: float, dist: float)
+
+const SOUND := 343.0        # m/s
 
 @export var min_rain := 0.7                    # rain level a front must reach to strike
 @export var interval := Vector2(7.0, 26.0)     # seconds between strikes in a full storm
@@ -18,6 +24,8 @@ const BOLT_LIFE := 0.75     # seconds the channel can stay lit (last stroke + af
 
 var flash := 0.0            # 0..1 the sky flash right now (bots, world)
 var strikes := 0            # bolts so far (bots)
+var thunders := 0           # thunder claps heard so far (bots)
+var _claps: Array[Vector3] = []   # (seconds left, strength, distance) per clap on its way
 var auto_strikes := true    # false: only strike() makes bolts (shots)
 var hold_age := -1.0        # shots: >= 0 freezes the flash this many seconds into a strike
 var strike_pos := Vector3.ZERO   # where the last bolt met the ground
@@ -72,6 +80,28 @@ func _process(delta: float) -> void:
 			_next = _rng.randf_range(interval.x, interval.y)
 	_age = hold_age if hold_age >= 0.0 else _age + delta
 	_update_flash()
+	_update_thunder(delta)
+
+## Claps still travelling: count down and sound the ones that arrive this frame.
+func _update_thunder(delta: float) -> void:
+	var i := 0
+	while i < _claps.size():
+		var cp := _claps[i]
+		cp.x -= delta
+		if cp.x <= 0.0:
+			_claps.remove_at(i)
+			thunders += 1
+			thunder.emit(cp.y, cp.z)
+			continue
+		_claps[i] = cp
+		i += 1
+
+## Seconds until the next clap arrives (INF if none is on its way).
+func next_thunder() -> float:
+	var t := INF
+	for cp in _claps:
+		t = minf(t, cp.x)
+	return t
 
 ## A bolt now, at `at` on the ground (default: a random spot 700–2400 m out, mostly ahead).
 func strike(at := Vector3.INF) -> void:
@@ -98,6 +128,8 @@ func strike(at := Vector3.INF) -> void:
 		t += _rng.randf_range(0.06, 0.16)
 	var d := Vector2(at.x - c.x, at.z - c.z).length()
 	_near = lerpf(1.0, 0.35, smoothstep(distance.x * 0.5, distance.y, d))
+	# ~2 s per 700 m: a near strike cracks, a far one rolls in a few seconds later
+	_claps.append(Vector3(c.distance_to(at) / SOUND, clampf(900.0 / maxf(d, 1.0), 0.15, 1.5), c.distance_to(at)))
 	_build_bolt(at, c)
 	# the flash lights the land from the bolt's side, from high in the deck
 	var to_bolt := Vector3(at.x - c.x, 0.0, at.z - c.z).normalized()

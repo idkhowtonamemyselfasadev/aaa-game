@@ -1,6 +1,6 @@
 # Progress
 
-Content hours playable: 0.49
+Content hours playable: 0.5
 (the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves, boulders, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
@@ -23,6 +23,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 00:00 UTC:
+  - **Thunder timing for the lightning.** This session built a second lightning system in
+    parallel with the 23:00 session (same design: bolt ribbons, deck flash, flash light);
+    upstream's landed first and its bolts are more jagged, so mine was dropped and only the
+    part upstream lacked was ported: `Lightning.thunder(strength, dist)` signal, emitted
+    distance / 343 m/s after each strike (strength ~900 / distance m, 0.15..1.5),
+    `thunders` count and `next_thunder()`. It is the hook for the thunder sound once the
+    soundscape exists (a near crack vs. a far rumble from `strength`/`dist`).
+  - Bot `weather`: a strike 1029 m out claps 3.00 s later (heard at 3.07 s at the bots' 4x
+    time scale), and the signal fires. 13/13 bots pass.
+  - Lessons from the duplicate build (for later): the night exposure (~1.6 vs 0.85 by day)
+    can blow a flash to a white frame, so scale flash brightness by
+    `0.85 / tonemap_exposure` if night flashes look clipped; the Vale `Terrain.height_at`
+    climbs outside the tile (r^2 bowl), use `Horizon.height_at` out there. No new shots
+    this session (the lightning is unchanged visually; the duplicate's shots were dropped).
 - Session 2026-10-11 23:00 UTC:
   - **Lightning for strong fronts (next item 9 pick).** New `world/lightning.gd` (child of
     Weather, `Weather.lightning`): once rain passes `min_rain` 0.7, a bolt strikes every
@@ -933,8 +948,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (done 20:00: oak leaf blowout fixed; 21:00: drop splashes + hero splashing through pools.)
    (done 22:00: wake rings on the pools + bigger foot splash; 23:00: lightning bolts +
    flashes.)
-   Next session pick: rain on the hero (wet cloth darkening), then thunder once audio
-   exists (delay by distance / 343 m/s), cloud-to-cloud sheet flashes with no channel. Still to do: rolling
+   (done 00:00 (10-12): thunder timing signal.)
+   Next session pick: rain on the hero (wet cloth darkening), then the thunder sound once
+   audio exists (hook: `Lightning.thunder`), cloud-to-cloud sheet flashes with no channel. Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the
@@ -945,7 +961,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Lightning: no thunder (no audio in the game yet); the flash light casts no shadows (a
+- Lightning: thunder is only a timed signal (no audio in the game yet); the flash light casts no shadows (a
   second shadowed directional would split the sun's shadow atlas; try on a real GPU); the
   segment of a bolt seen against the mountains (not the sky) still gets a dark outline
   around its white core under TAA + volumetric fog; the

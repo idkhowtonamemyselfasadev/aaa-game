@@ -1310,6 +1310,21 @@ func _weather_test() -> void:
 		return _combat_done(false, "a strike did not flash the deck / light the land / draw a bolt")
 	if lt.flash > 0.01 or lt.bolt.visible or lt.light.visible:
 		return _combat_done(false, "the flash did not go dark after the strike")
+	# thunder: each strike's clap arrives after distance / 343 m/s
+	var th0 := lt.thunders
+	lt.strike(cam.global_position + Vector3(1029.0, 0.0, 0.0))   # ~3 s away
+	var due := lt.next_thunder()
+	var claps := [0]
+	lt.thunder.connect(func(_s: float, _d: float): claps[0] += 1)
+	var heard := -1.0
+	var tw := 0.0
+	while lt.thunders < th0 + 1 and tw < 30.0:
+		await get_tree().physics_frame
+		tw += get_physics_process_delta_time()
+	heard = tw
+	print("BOT weather thunder: clap due %.2f s after a strike %.0f m out, heard after %.2f s (%d signalled)" % [due, Vector2(lt.strike_pos.x - cam.global_position.x, lt.strike_pos.z - cam.global_position.z).length(), heard, claps[0]])
+	if lt.thunders < th0 + 1 or claps[0] < 1 or absf(heard - due) > 0.25 or due < 2.5:
+		return _combat_done(false, "thunder does not follow the strike at the speed of sound")
 	if bd < lt.distance.x - 1.0 or bd > lt.distance.y + 1.0:
 		return _combat_done(false, "bolt struck at %.0f m, outside the far deck" % bd)
 	var wet_peak := wx.wet
