@@ -24,11 +24,16 @@ uniform float fade_end = 64.0;
 uniform float sward_fade_start = 17.0;
 uniform float sward_fade_end = 26.0;
 uniform vec3 sward_green : source_color = vec3(0.36, 0.42, 0.14);
+// seed stems and panicles (UV.x = 1, grass.gd _build_seeding_mesh): ripe straw, some
+// heads still flushed purple-brown
+uniform vec3 seed_straw : source_color = vec3(0.80, 0.68, 0.42);
+uniform vec3 seed_flush : source_color = vec3(0.46, 0.33, 0.30);
 
 varying float v_h;        // 0 root .. 1 tip
 varying float v_var;      // per-instance variation
 varying float v_ao;
 varying float v_sward;    // 1 = short sward blade
+varying float v_seed;     // 1 = seed stem / spikelet
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n2(vec2 p) {
@@ -48,6 +53,7 @@ void vertex() {
 	// per-instance data: INSTANCE_CUSTOM.x variation, .y height scale (baked into transform)
 	v_var = INSTANCE_CUSTOM.x;
 	v_sward = INSTANCE_CUSTOM.y;
+	v_seed = UV.x;
 	// distance fade: sink and thin the blade as it reaches the draw distance
 	float d = distance(iw, CAMERA_POSITION_WORLD);
 	float fade = 1.0 - mix(smoothstep(fade_start, fade_end, d),
@@ -60,6 +66,8 @@ void vertex() {
 	gust = smoothstep(0.35, 0.95, gust);
 	float storm = clamp(weather_wind, 0.0, 1.0);
 	float flutter = sin(t * 7.0 + v_var * 40.0 + iw.x * 0.7) * 0.06 * (1.0 + 1.8 * storm);
+	// thin seed stems nod on their own, slower and wider than the leaves
+	flutter += v_seed * sin(t * 2.3 + v_var * 23.0 + iw.z * 0.9) * 0.05 * (1.0 + storm);
 	// a storm front combs the sward over: stronger swell, much stronger gusts
 	float bend = (wind_strength * (1.0 + 0.6 * storm) * swell + gust_strength * (1.0 + 0.9 * storm) * gust) * v_h * v_h;
 	// the hero: blades part round the legs and lie laid over along the trail
@@ -80,6 +88,7 @@ void vertex() {
 	VERTEX *= vec3(1.0, fade, 1.0);
 	// the sward is short and open to the sky: its roots are far less occluded
 	v_ao = mix(mix(0.35, 0.6, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
+	v_ao = mix(v_ao, 1.0, v_seed * 0.5);   // thin stems stand clear of the clump's shade
 	// lean normals up so clumps light like a canopy, not like flat cards
 	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
@@ -91,6 +100,10 @@ void fragment() {
 	tip = mix(tip, mix(sward_green, tip_dry * 0.9, smoothstep(0.45, 0.95, v_var)), v_sward);
 	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
 	vec3 col = mix(mix(root_col, tip * 0.45, v_sward), tip, smoothstep(0.0, 0.9, v_h));
+	// seed stems: green-gold low on the stem, ripening up into a straw or purple-brown head
+	vec3 head = mix(seed_straw, seed_flush, smoothstep(0.55, 0.15, fract(v_var * 7.3)));
+	head *= 0.85 + 0.3 * fract(v_var * 29.1);
+	col = mix(col, mix(tip * 0.9, head, smoothstep(0.45, 0.8, v_h)), v_seed);
 	float rough = 0.82;
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter

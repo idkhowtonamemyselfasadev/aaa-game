@@ -157,8 +157,15 @@ func _threat(dt: float) -> Array:
 	return [p, 0.0 if spd > 25.0 else minf(spd, 12.0)]
 
 func _process(delta: float) -> void:
-	var dt := minf(delta, 1.0 / 30.0)
-	var th := _threat(dt)
+	# a slow frame (or the bots' 4x time scale) is split into <= 1/30 s steps instead of
+	# clamped, so the herd keeps real time; only a hitch over 0.2 s loses time
+	var th := _threat(maxf(delta, 0.001))
+	var steps := clampi(ceili(delta * 30.0), 1, 6)
+	var dt := minf(delta / steps, 1.0 / 30.0)
+	for i in steps:
+		_tick(dt, th)
+
+func _tick(dt: float, th: Array) -> void:
 	var tp: Vector3 = th[0]
 	var tspd: float = th[1]
 	threat_pos = tp

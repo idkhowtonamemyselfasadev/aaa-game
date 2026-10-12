@@ -140,6 +140,13 @@ func _finish(ok: bool, why: String) -> void:
 	if ok and grass.loaded_chunks() < 10:
 		ok = false
 		why = "grass did not stream in (%d chunks)" % grass.loaded_chunks()
+	# the tall meadow is a mix of clump shapes, not one clump stamped everywhere
+	var kinds: PackedInt32Array = grass.clump_kinds()
+	print("BOT clump kinds: upright %d, tussock %d, seeding %d" % [kinds[0], kinds[1], kinds[2]])
+	var total := kinds[0] + kinds[1] + kinds[2]
+	if ok and (kinds[1] * 8 < total or kinds[2] * 25 < total or kinds[0] * 4 < total):
+		ok = false
+		why = "tall grass is not a mix of clump kinds (%d/%d/%d)" % [kinds[0], kinds[1], kinds[2]]
 	# the short sward fills the soil round wherever the camera is
 	print("BOT sward: %d chunks, %d clumps, slowest frame slice %.1f ms" % [grass.sward_chunks(), grass.sward_clumps(), grass.sward_build_ms])
 	if ok and (grass.sward_chunks() < 4 or grass.sward_clumps() < 4000):

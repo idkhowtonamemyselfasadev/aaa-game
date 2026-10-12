@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.72
-(a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.73
+(the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,37 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 20:00 UTC:
+  - **Mixed tall-grass clumps (Next item 4 follow-up, flagged as "spiky, evenly spaced
+    fans" in the last verdicts).** `GrassField` now builds three tall clump meshes and each
+    chunk holds one MultiMesh per kind (root `Grass_x_z` = upright, children `Tussock`,
+    `Seeding`): upright leafy clumps (12 blades at random headings instead of an even fan,
+    a third arching over with a drooping tip), tussocks (18 narrow blades arching out on
+    every side, low and wide, more in lush/shaded ground) and seeding clumps (7 leaf blades
+    round 4 thin 0.6-1.05 m stems with a 7-spikelet panicle, on dry open turf, never on
+    grazed turf or the keep floor). New `_blade()`/`_spikelet()` helpers. Placement now
+    clusters (60 % of clumps step 0.14-0.55 m from the previous one), so the meadow has
+    knots and open runs; clumps get a random tilt and are squashed 0.75-1.3 sideways.
+    `grass.gdshader`: UV.x = 1 marks seed stems/heads, coloured green-gold up into a straw
+    or purple-brown head, less AO, and a slow extra nod in the wind.
+  - Bots: `walk` now checks the clump mix (`clump_kinds()`: ~22k upright / ~29k tussock /
+    ~10k seeding before the tussock share was cut to ~30 %); PASS.
+  - `herd.gd`: a slow frame is now split into <= 1/30 s sub-steps instead of clamped to
+    1/30 s, so the herd keeps real time at the bots' 4x scale (the `herd` bot was failing
+    on this box with the old clamp even before today's change: 15.6 m ahead after 6 s; now
+    67 m). `_process` -> `_tick(dt, threat)`.
+  - `trample.gd` `_walk()`: a frame that carries the walker several 0.6 m steps now lays
+    every trail point and boot print along the way (it laid one per frame, so on the cloud
+    box's ~0.3 s game-time frames at 4x the trail had gaps and the `trample` bot failed
+    3/3; now 26 points, PASS 2/2). Also helps a sprint at a low real frame rate.
+  - Full suite (18 routes) run: all PASS except `trample` before the fix above; `walk`,
+    `herd`, `trample`, `soldier`, `death` re-run PASS after it.
+  - Verdicts: `player grass_player 60 11` fail: the meadow round the hero now reads as
+    natural mixed grass (arching, drooping blades, low tussocks, knots and gaps) instead of
+    one stamped fan; hero still the sci-fi Vanguard, the practice post crowds the frame.
+    `valley grass_valley 60 17` fail: seeding stems with straw panicles catch the low sun
+    on the slope in front, very nice; the far mountain ring is a pale, smooth, blobby
+    silhouette and the oaks stylized.
 - Session 2026-10-12 19:00 UTC:
   - **Short sward under the meadow grass (bug "foreground grass is tufts over bare dark
     soil", flagged in nearly every verdict; Next item 4).** `GrassField` streams a second,
@@ -1322,8 +1353,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    less fog density on it or warmer lit faces), silhouette detail (the mesh still draws the
    skyline in 40 m segments: a finer outer ring band near the crest), forest impostor speckle on
    foothills, playable-edge border (cliffs) with collision.
-4. (done 19:00 (10-12): short sward under the tall grass near the camera; follow-ups: make
-   the tall clumps less spiky/regular (mixed clump shapes, seed heads, wider spread), a mid-
+4. (done 19:00 (10-12): short sward under the tall grass near the camera; 20:00: mixed
+   upright/tussock/seeding clumps in clustered stands; follow-ups: bigger, more visible
+   panicles at range, a mid-
    range sward impostor so the 26 m edge never shows bare ground on a low camera.)
    Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
    procedural turf/clover/moss/litter/rock floor with per-pixel bump.) Still to do: moss at
@@ -1382,6 +1414,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Tall grass kinds (20:00 10-12): panicles are only visible within ~15 m (thin spikelets);
+  seeding clumps are the heaviest mesh (~400 verts) and do not thin with distance any
+  differently; each chunk is now 3 MultiMesh draws (~260 draws for the tall grass); the
+  clustered placement uses the same random stream as before, so each chunk's look changed.
 - Sward (19:00 10-12): only within ~26 m (fades 17-26 m), so a low camera looking over a
   flat meadow sees the tall clumps thin back to soil-coloured ground past it (the terrain's
   turf layer hides most of it); a chunk takes ~5 frames to fill in, so a fast sprint can

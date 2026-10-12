@@ -20,7 +20,7 @@ var _terrain: Terrain
 ## animals are visible. Set by Birds before the first chunks stream in.
 var cropped_spots: Array[Vector3] = []
 const CROP_R := 6.5
-var _mesh: ArrayMesh
+var _meshes: Array[ArrayMesh] = []   # tall clump shapes: 0 upright, 1 tussock, 2 seeding
 var _sward_mesh: ArrayMesh
 var _chunks := {}            # Vector2i -> MultiMeshInstance3D
 var sward_build_ms := 0.0    # slowest sward build slice (one frame's work) so far (bots print it)
@@ -35,10 +35,11 @@ func _ready() -> void:
 	_patch.seed = 91
 	_patch.frequency = 1.0 / 22.0
 	_patch.fractal_octaves = 2
-	_mesh = _build_clump_mesh()
+	_meshes = [_build_clump_mesh(), _build_tussock_mesh(), _build_seeding_mesh()]
 	_sward_mesh = _build_clump_mesh(true)
 	if material:
-		_mesh.surface_set_material(0, material)
+		for m in _meshes:
+			m.surface_set_material(0, material)
 		_sward_mesh.surface_set_material(0, material)
 
 ## Number of chunks currently loaded (bots/tests read this).
@@ -215,8 +216,8 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var flora := _find_ruin()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(k)
-	var xf: Array[Transform3D] = []
-	var var_ := PackedFloat32Array()
+	var xfs: Array = [[] as Array[Transform3D], [] as Array[Transform3D], [] as Array[Transform3D]]
+	var vars: Array = [[], [], []]   # plain Arrays: packed arrays inside an Array copy on append
 	var half := _terrain.size_m * 0.5 - 2.0
 	# distance LOD: chunks far from the camera get fewer, bigger clumps
 	var cam := get_viewport().get_camera_3d()
@@ -224,46 +225,100 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var d := 0.0 if cam == null else centre.distance_to(Vector2(cam.global_position.x, cam.global_position.z))
 	var far := smoothstep(20.0, radius_m, d)
 	var count := int(clumps_per_chunk * lerpf(1.0, 0.35, far))
+	# clumps grow in stands: most sit a short step from the last one, the rest seed a new
+	# stand somewhere else, so the meadow has knots and open runs (the sward fills between)
+	var px := 0.0
+	var pz := 0.0
+	var have_prev := false
 	for n in count:
-		var x := (k.x + rng.randf()) * chunk_m
-		var z := (k.y + rng.randf()) * chunk_m
+		var x: float
+		var z: float
+		if have_prev and rng.randf() < 0.6:
+			var a := rng.randf() * TAU
+			var r := rng.randf_range(0.14, 0.55)
+			x = px + cos(a) * r
+			z = pz + sin(a) * r
+		else:
+			x = (k.x + rng.randf()) * chunk_m
+			z = (k.y + rng.randf()) * chunk_m
 		if absf(x) > half or absf(z) > half:
+			have_prev = false
 			continue
 		var site := _site(x, z, rng, flora)
 		if site.x < 0.0:
+			have_prev = false
 			continue
+		px = x
+		pz = z
+		have_prev = true
 		var patch := site.x
 		var shade := site.y
 		var keep := site.z
 		var nrm := _terrain.normal_at(x, z)
 		var y := _terrain.height_at(x, z)
-		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
 		var crop := _crop_at(x, z)
+		var dry := clampf(patch * 0.7 + rng.randf() * 0.4, 0.0, 1.0)
+		# which clump: seeding stems on the drier, open turf; low tussocks in the lush and
+		# shaded ground; upright leafy clumps elsewhere. Grazed turf and the keep floor only
+		# keep the leafy kinds.
+		var kind := 0
+		var roll := rng.randf()
+		if crop > 0.9 and keep > 3.1 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
+			kind = 2
+		elif roll > 0.74 - 0.2 * shade - 0.12 * (1.0 - patch):
+			kind = 1
+		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
-		# lean with the slope a little so clumps don't look stuck on like pins
-		basis = Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.6).normalized())) * basis
-		basis = basis.scaled(Vector3(s, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s))
-		xf.append(Transform3D(basis, Vector3(x, y - 0.03, z)))
-		var_.append(clampf(patch * 0.7 + rng.randf() * 0.4, 0.0, 1.0))
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_custom_data = true
-	mm.mesh = _mesh
-	mm.instance_count = xf.size()
-	for n in xf.size():
-		mm.set_instance_transform(n, xf[n])
-		mm.set_instance_custom_data(n, Color(var_[n], 0, 0, 0))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mmi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
-	mmi.name = "Grass_%d_%d" % [k.x, k.y]
-	add_child(mmi)
+		# lean with the slope a little so clumps don't look stuck on like pins, plus a
+		# random tilt so neighbours never stand quite parallel
+		var tilt := Vector3(rng.randf_range(-0.12, 0.12), 1.0, rng.randf_range(-0.12, 0.12))
+		basis = Basis(Quaternion(Vector3.UP, (nrm.lerp(Vector3.UP, 0.6) + tilt - Vector3.UP).normalized())) * basis
+		# squash some clumps sideways: a fan, not a perfect ring
+		var wide := rng.randf_range(0.75, 1.3)
+		basis = basis.scaled(Vector3(s * wide, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s / wide))
+		(xfs[kind] as Array[Transform3D]).append(Transform3D(basis, Vector3(x, y - 0.03, z)))
+		(vars[kind] as Array).append(dry)
+	var root: MultiMeshInstance3D = null
+	for kind in 3:
+		var xf: Array[Transform3D] = xfs[kind]
+		var var_: Array = vars[kind]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_custom_data = true
+		mm.mesh = _meshes[kind]
+		mm.instance_count = xf.size()
+		for n in xf.size():
+			mm.set_instance_transform(n, xf[n])
+			mm.set_instance_custom_data(n, Color(var_[n], 0, 0, 0))
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+		if root == null:
+			mmi.name = "Grass_%d_%d" % [k.x, k.y]
+			add_child(mmi)
+			root = mmi
+		else:
+			mmi.name = ["Upright", "Tussock", "Seeding"][kind]
+			root.add_child(mmi)
 	if d < flowers_m:
 		var fl := MeadowFlowers.build_chunk(k, chunk_m, _terrain, far)
-		mmi.add_child(fl[0])
+		root.add_child(fl[0])
 		_heads[k] = [fl[1], fl[2]]
-	return mmi
+	return root
+
+## Tall clumps by kind (0 upright, 1 tussock, 2 seeding) in the loaded chunks (bots read it).
+func clump_kinds() -> PackedInt32Array:
+	var out := PackedInt32Array([0, 0, 0])
+	for k in _chunks:
+		var root: MultiMeshInstance3D = _chunks[k]
+		out[0] += root.multimesh.instance_count
+		for c in root.get_children():
+			if c is MultiMeshInstance3D and c.name == "Tussock":
+				out[1] += c.multimesh.instance_count
+			elif c is MultiMeshInstance3D and c.name == "Seeding":
+				out[2] += c.multimesh.instance_count
+	return out
 
 ## Total wildflower heads in the loaded chunks (bots read this).
 func flower_count() -> int:
@@ -290,9 +345,11 @@ func flower_near(p: Vector3, r: float, rng: RandomNumberGenerator, species := -1
 					picks.append(hs[n])
 	return Vector3.INF if picks.is_empty() else picks[rng.randi() % picks.size()]
 
-## One clump: 12 curved, tapered blades fanning out from a shared root, 3 segments each.
+## One clump: 12 curved, tapered blades from a shared root, 3 segments each, aimed at
+## random headings (no even fan) with some blades arching over.
 ## `sward`: a low mat of 22 fine blades spread over ~0.5 m, 2 segments each.
-## UV.y carries 0 (root) .. 1 (tip) for the shader's wind and shading.
+## UV.y carries 0 (root) .. 1 (tip) for the shader's wind and shading; UV.x is 1 on seed
+## stems and heads (grass.gdshader colours them as ripe straw).
 func _build_clump_mesh(sward := false) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -301,28 +358,103 @@ func _build_clump_mesh(sward := false) -> ArrayMesh:
 	var seg := 2 if sward else 3
 	var blades := 22 if sward else 12
 	for b in blades:
-		var yaw := b * TAU / blades + rng.randf_range(-0.3, 0.3)
+		var yaw := b * TAU / blades + rng.randf_range(-0.3, 0.3) if sward else rng.randf() * TAU
+		var dir := Vector3(cos(yaw), 0.0, sin(yaw))
+		var root := dir * (rng.randf_range(0.0, 0.26) if sward else rng.randf_range(0.0, 0.2))
+		if sward:
+			_blade(st, root, dir, rng.randf_range(0.09, 0.24), rng.randf_range(0.04, 0.14), 0.0,
+				rng.randf_range(0.008, 0.015), seg)
+		else:
+			var h := rng.randf_range(0.3, 0.8)
+			# a third of the blades arch over and droop at the tip
+			var arch := rng.randf_range(0.15, 0.4) if rng.randf() < 0.33 else 0.0
+			_blade(st, root, dir, h, rng.randf_range(0.1, 0.35) + arch, arch * h * 0.6,
+				rng.randf_range(0.02, 0.035), seg)
+	return st.commit()
+
+## Tussock: a dense, low, wide mound of 18 narrow blades that arch out and over on every
+## side, like tufted hair-grass in damp ground.
+func _build_tussock_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23
+	for b in 18:
+		var yaw := rng.randf() * TAU
+		var dir := Vector3(cos(yaw), 0.0, sin(yaw))
+		var root := dir * rng.randf_range(0.0, 0.12)
+		var h := rng.randf_range(0.2, 0.5)
+		var out := rng.randf_range(0.18, 0.5)
+		_blade(st, root, dir, h, out, h * rng.randf_range(0.2, 0.55), rng.randf_range(0.014, 0.024), 3)
+	return st.commit()
+
+## Seeding clump: 7 leaf blades round 4 thin flowering stems (0.6-1.05 m) that each carry a
+## loose panicle of spikelets, ripening to straw (UV.x = 1 on stem and head).
+func _build_seeding_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 41
+	for b in 7:
+		var yaw := rng.randf() * TAU
+		var dir := Vector3(cos(yaw), 0.0, sin(yaw))
+		var h := rng.randf_range(0.22, 0.5)
+		_blade(st, dir * rng.randf_range(0.0, 0.12), dir, h, rng.randf_range(0.15, 0.4),
+			h * rng.randf_range(0.0, 0.4), rng.randf_range(0.018, 0.03), 3)
+	for b in 4:
+		var yaw := rng.randf() * TAU
 		var dir := Vector3(cos(yaw), 0.0, sin(yaw))
 		var side := Vector3(-dir.z, 0.0, dir.x)
-		var root := dir * (rng.randf_range(0.0, 0.26) if sward else rng.randf_range(0.0, 0.16))
-		var height := rng.randf_range(0.09, 0.24) if sward else rng.randf_range(0.3, 0.75)
-		var lean := rng.randf_range(0.04, 0.14) if sward else rng.randf_range(0.12, 0.35)
-		var width := rng.randf_range(0.008, 0.015) if sward else rng.randf_range(0.022, 0.035)
-		var prev_l := Vector3.ZERO
-		var prev_r := Vector3.ZERO
-		for s in seg + 1:
-			var t := float(s) / seg
-			var centre := root + dir * lean * t * t + Vector3.UP * height * t
-			var w := width * (1.0 - t * 0.92)
-			var l := centre - side * w
-			var r := centre + side * w
-			if s > 0:
-				var t0 := float(s - 1) / seg
-				var n := (dir * -0.4 + Vector3.UP).normalized()
-				for v in [[prev_l, t0], [l, t], [prev_r, t0], [prev_r, t0], [l, t], [r, t]]:
-					st.set_normal(n)
-					st.set_uv(Vector2(0.0, v[1]))
-					st.add_vertex(v[0])
-			prev_l = l
-			prev_r = r
+		var h := rng.randf_range(0.6, 1.05)
+		var lean := rng.randf_range(0.05, 0.22)
+		var root := dir * rng.randf_range(0.0, 0.08)
+		_blade(st, root, dir, h, lean, 0.0, 0.006, 4, 1.0)
+		# panicle: spikelets on short branches up the top 28 % of the stem, drooping a
+		# little and leaning off the stem on alternating sides
+		var head_n := 7
+		for i in head_n:
+			var t := lerpf(0.72, 0.98, float(i) / (head_n - 1))
+			var at := root + dir * lean * t * t + Vector3.UP * h * t
+			var ang := i * 2.4 + rng.randf_range(-0.4, 0.4)
+			var out := (side * cos(ang) + dir * sin(ang)).normalized()
+			var ln := rng.randf_range(0.05, 0.09) * (1.15 - 0.6 * float(i) / head_n)
+			_spikelet(st, at, out, ln, t)
 	return st.commit()
+
+## One spikelet: a narrow lanceolate quad pair (crossed so it reads from any side) from
+## `at` along `out`, angled up and drooping, UV.x = 1 and UV.y = `v` (its height on the stem).
+func _spikelet(st: SurfaceTool, at: Vector3, out: Vector3, ln: float, v: float) -> void:
+	var tip := at + (out * 0.75 + Vector3.UP * 0.55).normalized() * ln - Vector3.UP * ln * 0.25
+	var mid := at.lerp(tip, 0.45)
+	var axis := (tip - at).normalized()
+	for side in [out.cross(Vector3.UP).normalized(), axis.cross(out.cross(Vector3.UP)).normalized()]:
+		var w: Vector3 = side * ln * 0.13
+		var n := (Vector3.UP + out * 0.3).normalized()
+		for p in [at, mid - w, mid + w, mid - w, tip, mid + w]:
+			st.set_normal(n)
+			st.set_uv(Vector2(1.0, v))
+			st.add_vertex(p)
+
+## A tapered blade from `root` heading `dir`: rises `height`, leans `lean` out (quadratic)
+## and droops `droop` at the tip (cubic), `width` half-width at the root. UV.x = `seed`.
+func _blade(st: SurfaceTool, root: Vector3, dir: Vector3, height: float, lean: float,
+		droop: float, width: float, seg: int, seed := 0.0) -> void:
+	var side := Vector3(-dir.z, 0.0, dir.x)
+	var prev_l := Vector3.ZERO
+	var prev_r := Vector3.ZERO
+	var taper := 0.5 if seed > 0.5 else 0.92
+	for s in seg + 1:
+		var t := float(s) / seg
+		var centre := root + dir * lean * t * t + Vector3.UP * (height * t - droop * t * t * t)
+		var w := width * (1.0 - t * taper)
+		var l := centre - side * w
+		var r := centre + side * w
+		if s > 0:
+			var t0 := float(s - 1) / seg
+			var n := (dir * -0.4 + Vector3.UP).normalized()
+			for v in [[prev_l, t0], [l, t], [prev_r, t0], [prev_r, t0], [l, t], [r, t]]:
+				st.set_normal(n)
+				st.set_uv(Vector2(seed, v[1]))
+				st.add_vertex(v[0])
+		prev_l = l
+		prev_r = r

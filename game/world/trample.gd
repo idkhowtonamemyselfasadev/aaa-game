@@ -89,25 +89,41 @@ func _walk(w: Node3D, delta: float, grounded: bool) -> void:
 	# a runner well past 2 m, so the teleport test is a speed no walker reaches (20 m/s)
 	if not grounded or mv.length() >= maxf(2.0, 20.0 * delta) or mv.length() < 1e-5:
 		return
-	st[1] += mv.length()
-	st[2] += mv.length()
 	var sp := mv.length() / maxf(delta, 1e-4)
 	if w is CharacterBody3D:   # physics steps and frames do not line up: use the body's speed
 		var v := (w as CharacterBody3D).velocity
 		sp = Vector2(v.x, v.z).length()
-	if st[1] >= STEP:
-		st[1] = 0.0
-		# a run tramples harder than a walk
-		_pts[_next] = Vector4(p.x, p.z, 0.0, lerpf(0.75, 1.0, clampf(sp / 6.0, 0.0, 1.0)))
-		_dirs[_next] = mv.normalized()
-		_next = (_next + 1) % N
-	# a run lengthens the stride and digs the toe in deeper
-	if st[2] >= STRIDE * lerpf(1.0, 1.5, clampf((sp - 2.0) / 4.0, 0.0, 1.0)):
-		st[2] = 0.0
-		st[3] = 1 - int(st[3])
-		var d := mv.normalized()
-		var side := Vector2(-d.y, d.x) * (GAIT if st[3] == 0 else -GAIT)
-		add_print(Vector2(p.x, p.z) + side, d, lerpf(0.7, 1.0, clampf(sp / 6.0, 0.0, 1.0)), 0.0)
+	var d := mv.normalized()
+	var from := Vector2(last.x, last.z)
+	var len := mv.length()
+	# a slow frame can carry the walker several steps: lay every trail point and print
+	# along the way, not one per frame
+	var stride := STRIDE * lerpf(1.0, 1.5, clampf((sp - 2.0) / 4.0, 0.0, 1.0))
+	var at := 0.0
+	while true:
+		var to_pt: float = STEP - st[1]
+		var to_print: float = stride - st[2]
+		var step := minf(to_pt, to_print)
+		if at + step > len:
+			break
+		at += step
+		st[1] += step
+		st[2] += step
+		var q := from + d * at
+		if st[1] >= STEP - 1e-4:
+			st[1] = 0.0
+			# a run tramples harder than a walk
+			_pts[_next] = Vector4(q.x, q.y, 0.0, lerpf(0.75, 1.0, clampf(sp / 6.0, 0.0, 1.0)))
+			_dirs[_next] = d
+			_next = (_next + 1) % N
+		# a run lengthens the stride and digs the toe in deeper
+		if st[2] >= stride - 1e-4:
+			st[2] = 0.0
+			st[3] = 1 - int(st[3])
+			var side := Vector2(-d.y, d.x) * (GAIT if st[3] == 0 else -GAIT)
+			add_print(q + side, d, lerpf(0.7, 1.0, clampf(sp / 6.0, 0.0, 1.0)), 0.0)
+	st[1] += len - at
+	st[2] += len - at
 
 ## Press one boot print at `at` (heel to toe along `dir`).
 func add_print(at: Vector2, dir: Vector2, depth: float, age: float) -> void:
