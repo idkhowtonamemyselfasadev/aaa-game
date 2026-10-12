@@ -490,5 +490,11 @@
   "time": "2026-10-11T23:00:00Z",
   "caption": "Afternoon downpour with a bolt striking past the oak groves through the rain haze; atmosphere works, but the hills and grass lack Wukong-level detail.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0145-sheet-lightning.jpg",
+  "time": "2026-10-12T01:45:01Z",
+  "caption": "Night storm, sheet lightning: the rain deck glows from inside behind the ridge with no channel, the meadow faintly lit; the ridges are faceted cut-outs and the rain streaks barely show.",
+  "verdict": "fail"
  }
 ]

@@ -1325,6 +1325,28 @@ func _weather_test() -> void:
 	print("BOT weather thunder: clap due %.2f s after a strike %.0f m out, heard after %.2f s (%d signalled)" % [due, Vector2(lt.strike_pos.x - cam.global_position.x, lt.strike_pos.z - cam.global_position.z).length(), heard, claps[0]])
 	if lt.thunders < th0 + 1 or claps[0] < 1 or absf(heard - due) > 0.25 or due < 2.5:
 		return _combat_done(false, "thunder does not follow the strike at the speed of sound")
+	# sheet lightning: a flash inside the deck, no channel; the clouds take more of it than
+	# the land, and its rumble comes down from the cloud base
+	var sh0 := lt.sheets
+	var st0 := lt.strikes
+	lt.strike(cam.global_position + Vector3(0.0, 0.0, 1500.0), false)
+	lt.hold_age = 0.0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var sh_flash := lt.flash
+	var sh_cloud: float = cl.mat.get_shader_parameter("flash")
+	var sh_light := lt.light.light_energy if lt.light.visible else 0.0
+	var sh_bolt := lt.bolt.visible
+	var sh_due := lt.next_thunder()
+	lt.hold_age = -1.0
+	print("BOT weather sheet: flash %.2f cloud %.2f land light %.2f (bolt strike: %.2f / %.2f / %.2f), channel %s, rumble due %.2f s, sheets %d strikes %d" % [sh_flash, sh_cloud, sh_light, fpeak, cf, lpeak, sh_bolt, sh_due, lt.sheets - sh0, lt.strikes - st0])
+	if lt.sheets != sh0 + 1 or lt.strikes != st0 or sh_bolt:
+		return _combat_done(false, "sheet lightning drew a channel or counted as a strike")
+	if sh_flash <= 0.05 or sh_cloud < sh_flash * 1.3 or sh_light >= lpeak * 0.6:
+		return _combat_done(false, "sheet lightning does not light the deck more than the land")
+	if sh_due < 2.0 * 1500.0 / 343.0 * 0.5 or sh_due > 2500.0 / 343.0:
+		return _combat_done(false, "sheet lightning rumble not timed from the cloud")
+	await _ticks(90)
 	if bd < lt.distance.x - 1.0 or bd > lt.distance.y + 1.0:
 		return _combat_done(false, "bolt struck at %.0f m, outside the far deck" % bd)
 	var wet_peak := wx.wet
@@ -1340,9 +1362,9 @@ func _weather_test() -> void:
 		return _combat_done(false, "the front did not clear / the ground did not start drying")
 	if c2[0] + c2[1] + c2[2] < 10 or _world.sun.light_energy < sun0 * 0.95:
 		return _combat_done(false, "sun and butterflies did not return after the front")
-	var s1 := wx.lightning.strikes
+	var s1 := wx.lightning.strikes + wx.lightning.sheets
 	await _ticks(600)
-	if wx.lightning.strikes != s1:
+	if wx.lightning.strikes + wx.lightning.sheets != s1:
 		return _combat_done(false, "lightning struck from a clear sky")
 	# fronts also come on their own
 	wx.auto_fronts = true

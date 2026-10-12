@@ -23,6 +23,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 01:35 UTC (continued from 00:00):
+  - **Sheet lightning.** `Lightning.strike(at, bolt_on)`: 40 % of auto strikes
+    (`sheet_share`) stay inside the deck: no channel, strokes decay over 0.12 s instead of
+    0.05 s (a softer, slower flicker), flash x0.55, the cloud deck takes 1.5x of it while
+    the land light gets 0.6x and the ambient 0.7x, and the rumble is timed from the cloud
+    base above the strike (strength <= 0.6). Counted in `sheets`, not `strikes`.
+  - Shot arg `sheet=<metres>[,deg]` (same as `bolt=`). Shot `sh_night` (22 h): the deck
+    glows behind the ridge, no channel. Fail as a Wukong shot (faceted ridges).
+  - Bot `weather`: a sheet flash lights the deck more than the land, draws no channel,
+    rumbles ~6 s later from 1.5 km; no sheet flashes from a clear sky. 13/13 bots pass.
 - Session 2026-10-12 00:00 UTC:
   - **Thunder timing for the lightning.** This session built a second lightning system in
     parallel with the 23:00 session (same design: bolt ribbons, deck flash, flash light);
@@ -950,7 +960,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    flashes.)
    (done 00:00 (10-12): thunder timing signal.)
    Next session pick: rain on the hero (wet cloth darkening), then the thunder sound once
-   audio exists (hook: `Lightning.thunder`), cloud-to-cloud sheet flashes with no channel. Still to do: rolling
+   audio exists (hook: `Lightning.thunder`), (done 01:35: sheet flashes with no channel.) Still to do: rolling
    structure in the overcast deck (dark rain bellies, low scud below the deck, rain shafts
    under far cells), cloud shadows on the hero/soldier (their imported materials do not take them yet), clouds in the sky radiance/reflections
    (they are a mesh, so SSR/water won't see them), rain splashes + ripples on the

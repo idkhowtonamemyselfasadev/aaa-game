@@ -24,6 +24,10 @@ const BOLT_LIFE := 0.75     # seconds the channel can stay lit (last stroke + af
 
 var flash := 0.0            # 0..1 the sky flash right now (bots, world)
 var strikes := 0            # bolts so far (bots)
+var sheets := 0             # sheet flashes so far: lightning inside the deck, no channel (bots)
+var sheet_share := 0.4      # share of auto strikes that stay in the cloud
+var has_bolt := true        # the last strike drew a channel
+var _decay := 0.05          # seconds a stroke's flash takes to fall to 1/e (longer in-cloud)
 var thunders := 0           # thunder claps heard so far (bots)
 var _claps: Array[Vector3] = []   # (seconds left, strength, distance) per clap on its way
 var auto_strikes := true    # false: only strike() makes bolts (shots)
@@ -76,7 +80,7 @@ func _process(delta: float) -> void:
 	if s > 0.0 and auto_strikes:
 		_next -= delta * lerpf(0.4, 1.0, s)
 		if _next <= 0.0:
-			strike()
+			strike(Vector3.INF, _rng.randf() >= sheet_share)
 			_next = _rng.randf_range(interval.x, interval.y)
 	_age = hold_age if hold_age >= 0.0 else _age + delta
 	_update_flash()
@@ -104,7 +108,9 @@ func next_thunder() -> float:
 	return t
 
 ## A bolt now, at `at` on the ground (default: a random spot 700–2400 m out, mostly ahead).
-func strike(at := Vector3.INF) -> void:
+## `bolt` false: sheet lightning, the discharge stays inside the deck (no channel, a softer
+## flash that lights the clouds more than the land, a longer low rumble).
+func strike(at := Vector3.INF, bolt_on := true) -> void:
 	var cam := get_viewport().get_camera_3d()
 	var c := cam.global_position if cam else Vector3.ZERO
 	if at == Vector3.INF:
@@ -118,7 +124,11 @@ func strike(at := Vector3.INF) -> void:
 		at = Vector3(c.x + sin(ang) * r, 0.0, c.z + cos(ang) * r)
 		at.y = _ground(at.x, at.z)
 	strike_pos = at
-	strikes += 1
+	has_bolt = bolt_on
+	if bolt_on:
+		strikes += 1
+	else:
+		sheets += 1
 	_age = 0.0
 	_strokes.clear()
 	var t := 0.0
@@ -129,8 +139,16 @@ func strike(at := Vector3.INF) -> void:
 	var d := Vector2(at.x - c.x, at.z - c.z).length()
 	_near = lerpf(1.0, 0.35, smoothstep(distance.x * 0.5, distance.y, d))
 	# ~2 s per 700 m: a near strike cracks, a far one rolls in a few seconds later
-	_claps.append(Vector3(c.distance_to(at) / SOUND, clampf(900.0 / maxf(d, 1.0), 0.15, 1.5), c.distance_to(at)))
-	_build_bolt(at, c)
+	_decay = 0.05 if bolt_on else 0.12
+	if not bolt_on:
+		# in-cloud: the flash is diffused through the deck (softer, never a near crack); the
+		# sound comes from up in the cloud
+		_near *= 0.55
+		var up := Vector3(at.x, DECK_H, at.z)
+		_claps.append(Vector3(c.distance_to(up) / SOUND, clampf(600.0 / maxf(d, 1.0), 0.1, 0.6), c.distance_to(up)))
+	else:
+		_claps.append(Vector3(c.distance_to(at) / SOUND, clampf(900.0 / maxf(d, 1.0), 0.15, 1.5), c.distance_to(at)))
+		_build_bolt(at, c)
 	# the flash lights the land from the bolt's side, from high in the deck
 	var to_bolt := Vector3(at.x - c.x, 0.0, at.z - c.z).normalized()
 	var dir := (to_bolt + Vector3.UP * 0.9).normalized()   # toward the light
@@ -148,7 +166,7 @@ func _envelope(t: float) -> float:
 	for st in _strokes:
 		var u := t - st.x
 		if u >= 0.0:
-			f = maxf(f, st.y * exp(-u / 0.05))
+			f = maxf(f, st.y * exp(-u / _decay))
 	return f
 
 func _update_flash() -> void:
@@ -158,27 +176,28 @@ func _update_flash() -> void:
 	# the channel holds a faint glow between strokes and dies after the last one
 	var last := _strokes[-1].x if not _strokes.is_empty() else 0.0
 	var glow := 0.12 * (1.0 - smoothstep(last, last + 0.3, _age)) if _age < BOLT_LIFE else 0.0
-	bolt.visible = _age < BOLT_LIFE
+	bolt.visible = has_bolt and _age < BOLT_LIFE
 	if bolt.visible:
 		var cam := get_viewport().get_camera_3d()
 		var d := strike_pos.distance_to(cam.global_position) if cam else 1000.0
 		_bolt_mat.set_shader_parameter("brightness", maxf(_envelope(_age), glow))
 		_bolt_mat.set_shader_parameter("veil", lerpf(1.0, 0.3, (w.rain if w else 0.0) * smoothstep(500.0, 3000.0, d)))
 	light.visible = flash > 0.01
-	light.light_energy = flash_energy * flash
+	# sheet lightning lights the deck from inside; the land gets less of it
+	light.light_energy = flash_energy * flash * (1.0 if has_bolt else 0.6)
 	if world == null:
 		return
 	var cl = world.get("clouds")
 	if cl:
 		var drift: Vector2 = cl.mat.get_shader_parameter("drift")
-		cl.mat.set_shader_parameter("flash", flash)
+		cl.mat.set_shader_parameter("flash", flash * (1.0 if has_bolt else 1.5))
 		cl.mat.set_shader_parameter("flash_at", Vector2(strike_pos.x, strike_pos.z) + drift)
 		cl.mat.set_shader_parameter("flash_col", flash_col)
 	var env: WorldEnvironment = world.get("env")
 	if env and env.environment and flash > 0.0:
 		var e := env.environment
 		# the whole deck glows: skylight and haze jump with it
-		e.ambient_light_energy += 1.6 * flash
+		e.ambient_light_energy += 1.6 * flash * (1.0 if has_bolt else 0.7)
 		e.ambient_light_color = e.ambient_light_color.lerp(flash_col, 0.5 * flash)
 		e.fog_light_color += flash_col * 0.45 * flash
 		e.volumetric_fog_emission += flash_col * 0.04 * flash
