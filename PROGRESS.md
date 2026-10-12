@@ -23,6 +23,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 04:30 UTC:
+  - **Far ridges no longer faceted (next item 3 pick).** `horizon.gdshader` now bends the
+    coarse 10-40 m mesh normal per pixel with an erosion relief field (finite differences of
+    `relief()`): gullies running straight down the fall line on steep faces (narrow across,
+    long along it, ridged noise), crags at ~60 m and a rubble grain; step size follows the
+    pixel footprint and the detail fades out past 2.2-3.4 km before it aliases. Gully floors
+    darken the rock, snow lies longer in the gullies than on the ribs. The shader now writes
+    a world-space `NORMAL` (the old `NORMAL_MAP` had no mesh tangents to work with).
+  - `horizon.gd`: the ridged mountain noise is domain-warped (simplex, 200 m amplitude,
+    1/2200 m, 2 progressive octaves), so peaks come in uneven groups with hooked spurs and
+    saddles instead of evenly spaced pyramids. (320 m / 3 octaves made a saw-tooth comb.)
+  - Verdicts: ridge (15 h) fail: peaks now have shape and relief, but the range is hazy
+    grey-white with little rock colour and the oaks are blobby. sunset (18.5 h) fail: the
+    gullied snow peaks read well; the foreground is near black and the meadow shows dark
+    shadow bands. east (9 h) fail: far crags visible, near trees/grass fine but sun blowout.
+    13/13 bots pass.
 - Session 2026-10-12 03:30 UTC:
   - **Canopy drips (next item 9 pick).** The oak crowns now gather rain and shed it as fat
     drops along their drip line. `Weather.canopy_water` (0..1) fills in ~25 s of downpour
@@ -981,8 +997,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,
    shrubs/ferns under trees, leaf atlas with normals and more leaf shape per card at close
    range, tree LOD/impostors beyond 150 m.
-3. (done 12:00: far mountain ring.) Polish: per-pixel normals / more ridge detail so far
-   ridges are not faceted, vary peak shapes (domain warp), forest impostor speckle on
+3. (done 12:00: far mountain ring; 04:30 (10-12): per-pixel erosion relief, domain-warped
+   peaks.) Polish: more rock colour/contrast on the far range (it reads hazy grey; maybe
+   less fog density on it or warmer lit faces), silhouette detail (the mesh still draws the
+   skyline in 40 m segments: a finer outer ring band near the crest), forest impostor speckle on
    foothills, playable-edge border (cliffs) with collision.
 4. Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
    procedural turf/clover/moss/litter/rock floor with per-pixel bump.) Still to do: moss at
@@ -1035,6 +1053,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Sunset spot (18.5 h): dark parallel shadow bands across the mid-ground meadow (seen 10-12 04:30; maybe shadow-cascade striping from the low sun on lavapipe, check on a GPU).
 - Lightning: thunder is only a timed signal (no audio in the game yet); the flash light casts no shadows (a
   second shadowed directional would split the sun's shadow atlas; try on a real GPU); the
   segment of a bolt seen against the mountains (not the sky) still gets a dark outline

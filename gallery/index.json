@@ -532,5 +532,17 @@
   "time": "2026-10-12T03:48:00Z",
   "caption": "After the shower the oak crown still sheds sparse drops in a low warm sun; the drops read only as tiny beads, the shaded hero is near black and the ground under the tree is flat.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-0459-ridges.jpg",
+  "time": "2026-10-12T04:59:45Z",
+  "caption": "Far mountain ring from the south-east ridge: domain-warped peaks with per-pixel gullies and crags instead of flat facets; still hazy grey and the near oaks are blobby.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-0459-dusk-peaks.jpg",
+  "time": "2026-10-12T04:59:45Z",
+  "caption": "Dusk toward the evening sun: snow lies in the new erosion gullies of the far peaks; foreground is too dark and the meadow shows banded shadow stripes.",
+  "verdict": "fail"
  }
 ]

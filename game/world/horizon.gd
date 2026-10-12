@@ -32,6 +32,14 @@ func _ready() -> void:
 	_ridge.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	_ridge.fractal_octaves = 5
 	_ridge.fractal_gain = 0.5
+	# domain warp: bends the ridge lines into hooked spurs, saddles and uneven peak groups
+	# instead of the evenly spaced pyramids plain ridged noise gives
+	_ridge.domain_warp_enabled = true
+	_ridge.domain_warp_type = FastNoiseLite.DOMAIN_WARP_SIMPLEX
+	_ridge.domain_warp_amplitude = 200.0
+	_ridge.domain_warp_frequency = 1.0 / 2200.0
+	_ridge.domain_warp_fractal_type = FastNoiseLite.DOMAIN_WARP_FRACTAL_PROGRESSIVE
+	_ridge.domain_warp_fractal_octaves = 2
 	_hills.seed = 4243
 	_hills.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_hills.frequency = 1.0 / 260.0

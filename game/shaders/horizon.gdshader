@@ -41,8 +41,39 @@ float fbm(vec2 p) {
 	return r;
 }
 
+// ridged value noise (sharp crests where the noise crosses 0.5)
+float rnoise(vec2 x) {
+	return 1.0 - abs(vnoise(x) * 2.0 - 1.0);
+}
+// Erosion relief the 10-40 m mesh cells cannot carry, in metres: gullies running straight
+// down the fall line (narrow across it, long along it), crags at ~60 m and a rubble grain.
+// `down` is the unit horizontal fall direction at the pixel, `steep` 0..1 how much bare face.
+float relief(vec2 p, vec2 down, float steep) {
+	vec2 across = vec2(-down.y, down.x);
+	vec2 q = vec2(dot(p, across), dot(p, down));
+	float gul = rnoise(q * vec2(1.0 / 26.0, 1.0 / 140.0)) * 0.65
+	          + rnoise(q * vec2(1.0 / 11.0, 1.0 / 60.0) + 7.1) * 0.35;
+	float crag = fbm(p * (1.0 / 60.0) + 11.0);
+	float grain = vnoise(p * 0.3);
+	return steep * (gul * gul * 14.0 + crag * 10.0) + crag * 4.0 + grain * 0.6;
+}
+
 void fragment() {
 	vec3 n = normalize(wnrm);
+	// per-pixel erosion relief: finite differences of `relief` bend the coarse mesh normal,
+	// so far faces break into gullies and crags instead of reading as flat facets
+	float hl = length(n.xz);
+	vec2 down = hl > 1e-4 ? n.xz / hl : vec2(1.0, 0.0);
+	float steep0 = smoothstep(0.15, 0.45, 1.0 - n.y);
+	float dist = length(wpos - CAMERA_POSITION_WORLD);
+	float e = clamp(dist * 0.0015, 0.8, 4.0);                 // ~ a pixel's footprint
+	float detail = 1.0 - smoothstep(2200.0, 3400.0, dist);   // fade before it aliases
+	float r0 = relief(wpos.xz, down, steep0);
+	float rx = relief(wpos.xz + vec2(e, 0.0), down, steep0);
+	float rz = relief(wpos.xz + vec2(0.0, e), down, steep0);
+	vec2 grad = vec2(rx - r0, rz - r0) / e * detail;
+	n = normalize(n - vec3(grad.x, 0.0, grad.y) * 0.9);
+	float crease = clamp(r0 / (2.0 + steep0 * 22.0), 0.0, 1.0);   // 0 in a gully floor
 	float d = max(abs(wpos.x), abs(wpos.z)) - tile_half;     // metres outside the Vale tile
 	float slope = 1.0 - n.y;
 	float macro = fbm(wpos.xz * 0.004);
@@ -59,9 +90,12 @@ void fragment() {
 	float strata = vnoise(vec2(wpos.y * 0.15 + meso * 3.0, macro * 4.0));
 	float rockw = smoothstep(0.22, 0.45, slope + (meso - 0.5) * 0.3);
 	vec3 rock = mix(rock_b, rock_a, strata * 0.6 + fine * 0.4);
-	// snow: above the line, only where it can settle (flatter), streaky down gullies
-	float snoww = smoothstep(snow_line - 30.0, snow_line + 40.0, wpos.y + (meso - 0.5) * 90.0)
-	            * (1.0 - smoothstep(0.45, 0.75, slope - fine * 0.2));
+	rock *= mix(0.45, 1.1, crease);                           // shadowed gully floors
+	// snow: above the line, only where it can settle (flatter), streaky down gullies; it lies
+	// in the gullies longer than on the ribs between them
+	float snoww = smoothstep(snow_line - 30.0, snow_line + 40.0,
+	                         wpos.y + (meso - 0.5) * 90.0 + (1.0 - crease) * 60.0 * steep0)
+	            * (1.0 - smoothstep(0.5, 0.8, slope - fine * 0.2 - (1.0 - crease) * 0.25));
 	vec3 col = mix(meadow, trees, forest);
 	col = mix(col, rock, rockw);
 	col = mix(col, snow, snoww);
@@ -70,9 +104,8 @@ void fragment() {
 	ROUGHNESS = mix(mix(0.95, 0.85, rockw), 0.6, snoww);
 	SPECULAR = mix(0.1, 0.35, snoww);
 	// forest canopy reads lumpy under low sun
-	vec3 dn = vec3(fine - 0.5, 1.0, meso - 0.5);
-	NORMAL_MAP = normalize(dn * vec3(0.8, 1.0, 0.8)) * 0.5 + 0.5;
-	NORMAL_MAP_DEPTH = mix(1.0, 1.6, forest);
+	n = normalize(n + vec3(fine - 0.5, 0.0, meso - 0.5) * 0.35 * forest);
+	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	// cloud shadows sweep the far ridges (per pixel: the ridge mesh is coarse)
 	ALBEDO *= cloud_shade_at(wpos);
 }
