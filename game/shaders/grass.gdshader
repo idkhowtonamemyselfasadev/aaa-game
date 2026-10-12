@@ -10,6 +10,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // is no pop.
 
 #include "res://shaders/weather.gdshaderinc"
+#include "res://shaders/foliage_light.gdshaderinc"
 uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
 uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
 uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
@@ -74,13 +75,17 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;
-	BACKLIGHT = col * 0.6 * v_h;
+	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h;   // transmission tint (foliage_light)
 	AO = v_ao;
 	AO_LIGHT_AFFECT = 0.4;
 	// a passing cloud takes the sun off the land
-	ALBEDO *= v_cloud;
-	BACKLIGHT *= v_cloud;
+	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)
 	// blades stand upright: they catch the bounce off the meadow around them
 	EMISSION = ALBEDO * bounce_light * 0.6
 		* bounce_gain((INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz);
+}
+
+void light() {
+	foliage_light(NORMAL, LIGHT, VIEW, LIGHT_COLOR, ATTENUATION, LIGHT_IS_DIRECTIONAL,
+		BACKLIGHT, ROUGHNESS, SPECULAR_AMOUNT, 0.1, DIFFUSE_LIGHT, SPECULAR_LIGHT);
 }

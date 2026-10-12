@@ -146,7 +146,10 @@ func build() -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Mesh"
 	mi.mesh = mesh
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	# no shadow: the ring is 300 m+ out and up to 520 m tall, so under the low Long-Dusk sun
+	# (14 deg at 16 h) it shadowed the whole vale inside the sun's 400 m shadow range while
+	# land beyond it stayed lit; the afternoon meadow and oaks read as black silhouettes
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# huge bounds: keep it out of the per-object culling's way and the GI probes
 	mi.extra_cull_margin = 64.0
 	mi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED

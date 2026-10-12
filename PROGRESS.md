@@ -23,6 +23,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 11:00 UTC:
+  - **The afternoon vale is in sun again and backlit oaks glow (known bug: "backlit oaks
+    are black silhouettes").** Root cause was not leaf transmission: the 520 m far mountain
+    ring cast shadows, and under the low Long-Dusk sun (14 deg at 16 h) it shadowed the whole
+    vale inside the sun's 400 m shadow range while land beyond stayed lit. `horizon.gd` mesh
+    no longer casts shadows (probably also the 18.5 h "dark parallel bands" bug; recheck).
+  - Foliage lighting: Godot multiplies stock BACKLIGHT by albedo twice (leaf albedo ~0.1 ->
+    ~1% transmission). New `shaders/foliage_light.gdshaderinc` (a `light()` used by leaves
+    and grass): Lambert + diffuse transmission + a forward-scatter lobe when looking toward
+    the light, transmission leaking 30% (leaves) / 10% (grass) through shadow for multi-layer
+    crowns, normalised Blinn-Phong with a capped Fresnel. BACKLIGHT is now a tint.
+  - Verdicts: fix_back (16 h, toward the sun) fail but much better: oak crowns glow
+    yellow-green, sunlit meadow, haze toward the sun; leaf cards still oversized up close.
+    fix_ruin (16 h) fail: lit keep on its knoll, courses brick-regular. fix_hill (16 h) fail:
+    oaks lit, but the low camera in the grass sees mostly dark lower blades. 15/15 bots pass.
 - Session 2026-10-12 10:00 UTC:
   - **Shade fill now reaches the land, trees and the keep floor (next item 2 follow-up:
     LOOK).** `bounce_light` (World._apply_bounce, zero when SDFGI runs) is now added as
@@ -1185,8 +1200,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Backlit oaks (camera facing the sun, ~16 h) are black silhouettes; foreground shaded grass
-  near black. Needs stronger leaf transmission / view-toward-sun scatter.
+- (fixed 11:00 (10-12): backlit oaks were mountain-ring shadow, now off.) A camera low in
+  the grass (hill spot) still sees mostly dark root/lower blades: lift root_col/AO for
+  blades near the camera or raise the hill camera. The mountain ring now never shadows the
+  vale (no "sun sets behind the peaks" darkening; could fake it with a sun-occlusion term
+  from Horizon.height_at along the sun direction later).
 - Ruin: (fixed 09:00: inner face no longer black; 10:00: floor takes the bounce fill.)
   `bounce_zone` is a single zone (fine while there is one ruin; make it an array/texture
   when more enclosures exist); blocks in a ring are

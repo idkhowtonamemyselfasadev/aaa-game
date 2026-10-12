@@ -6,6 +6,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // (set by the mesh) for a soft canopy, back-light translucency, flutter on top of the
 // shared branch sway.
 #include "res://shaders/tree_wind.gdshaderinc"
+#include "res://shaders/foliage_light.gdshaderinc"
 
 uniform sampler2D leaf_tex : source_color, filter_linear_mipmap_anisotropic;
 uniform vec3 tint : source_color = vec3(1.0, 1.0, 1.0);
@@ -42,12 +43,16 @@ void fragment() {
 	// every sun-facing card went white at grazing angles looking toward the sun. 0.2 caps the
 	// grazing sheen at ~0.3 (a waxy oak leaf, not a mirror).
 	SPECULAR = 0.2;
-	// thin leaf transmission: yellow-green, weaker than the lit face
-	BACKLIGHT = col * vec3(0.5, 0.6, 0.3);
+	// thin leaf transmission tint (foliage_light: a gain on the albedo): yellow-green
+	BACKLIGHT = vec3(0.95, 1.1, 0.42);
 	if (!FRONT_FACING) NORMAL = -NORMAL;
 	// a passing cloud takes the sun off the land
-	ALBEDO *= v_cloud;
-	BACKLIGHT *= v_cloud;
+	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)
 	// inner crown: light scattered off the lit leaves and ground around it
 	EMISSION = ALBEDO * bounce_light * 0.45;
+}
+
+void light() {
+	foliage_light(NORMAL, LIGHT, VIEW, LIGHT_COLOR, ATTENUATION, LIGHT_IS_DIRECTIONAL,
+		BACKLIGHT, ROUGHNESS, SPECULAR_AMOUNT, 0.3, DIFFUSE_LIGHT, SPECULAR_LIGHT);
 }

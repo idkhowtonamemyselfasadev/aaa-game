@@ -610,5 +610,23 @@
   "time": "2026-10-12T10:40:00Z",
   "caption": "The watchtower ruin on its knoll under a cumulus sky with the vale and mountains behind; believable, but the block courses are brick-regular and the far range reads hazy grey.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-1157-backlit.jpg",
+  "time": "2026-10-12T11:57:37Z",
+  "caption": "16 h looking toward the low sun: oak crowns now glow yellow-green with transmitted light over a sunlit meadow instead of black silhouettes; leaf cards still read as a few oversized leaves up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1157-ruin.jpg",
+  "time": "2026-10-12T11:57:37Z",
+  "caption": "16 h: the watchtower knoll is in sun now that the mountain ring no longer shadows the vale; the keep's courses are still brick-regular same-size blocks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1157-hill.jpg",
+  "time": "2026-10-12T11:57:37Z",
+  "caption": "16 h front-lit hill: oaks lit and readable, but the low camera sees mostly the dark lower blades of the near grass, so the foreground is still too dark.",
+  "verdict": "fail"
  }
 ]
