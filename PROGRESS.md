@@ -23,6 +23,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 07:00 UTC:
+  - **Film grade + grain; night now reads as moonlight (next item 1 pick: LOOK).** New
+    `shaders/grade.gdshader`, a canvas pass on a `Grade` CanvasLayer (layer -1, under the
+    HUD, after tonemap and TAA so the grain is not smeared) built by `World._build_grade()`.
+    Day: split tone (cool teal-grey shadows, warm amber highlights, mids slightly muted, more
+    so overcast). Night (`night` = smoothstep of sun elevation -2..-12 deg): scotopic vision,
+    dim pixels lose colour and shift blue, bright ones (fireflies, future lanterns/fire) keep
+    theirs, gentle lift + midnight-blue floor. Then a soft vignette and 24 fps two-scale film
+    grain, strongest in the mids and heavier at night. `strength` uniform for a future
+    quality/accessibility toggle.
+  - Baseline night (21.5 h) was not pure black as noted last session, but the meadow read
+    as a gold-lit field under the blue moon (grass albedo). After: blue-grey moonlit grass.
+  - Verdicts: night_after (21.5 h) fail: believable moonlit night now, but flat and a bit
+    too grey; the sky lost its blue (desaturated with the land) and the left rock is a black
+    wedge. day_after (valley 10.5 h) fail: good amber mood and filmic texture; oak crowns
+    still blobby, near grass carpet noisy. 14/14 bots pass.
 - Session 2026-10-12 06:00 UTC:
   - **Rooks roost at night (next item 5 / 9 pick: ALIVE).** `Birds` picks a rookery: the
     oak with the most neighbours within 22 m, 60-180 m out from the village, plus its 4
@@ -1031,7 +1047,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-1. (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun;
+1. (done 07:00 (10-12): film grade pass with night scotopic shift + grain.) Grade follow-up:
+   keep the night sky blue (exempt pixels above the horizon or with low luminance gradient from
+   the rod desaturation, or push the scot tint bluer), dusk/dawn check under the grade.
+   (done 11:00: sky_energy_scale 2.6; 04:00: dusk afterglow via a sky-only twilight sun;
    05:00: star fade-in, desaturated low sun/twilight.) Still to do: the brown 19 h sky (see
    bugs), dawn check, and verify SDFGI on a real GPU some day (cloud box can't).
 2. Flora polish: bigger hero boulders/outcrops (3–6 m) and ruins on hilltops, hedgerows,

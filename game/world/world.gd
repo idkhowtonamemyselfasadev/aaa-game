@@ -22,6 +22,7 @@ var training_post: TrainingPost
 var soldier: HollowSoldier
 var weather: Weather
 var clouds: CloudLayer
+var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
 
@@ -51,6 +52,7 @@ func _ready() -> void:
 	sky_sun.shadow_enabled = false
 	sky_sun.light_cull_mask = 0
 	add_child(sky_sun)
+	_build_grade()
 	_apply_time()
 	var p := player.global_position
 	player.global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.5, p.z)
@@ -174,6 +176,21 @@ func _star_texture(level: float) -> ImageTexture:
 			img.set_pixel(x, y, c + Color(0.017, 0.021, 0.032) * rng.randf() * level)
 	return ImageTexture.create_from_image(img)
 
+## Film grade over the finished frame: split tone by day, scotopic blue-grey by night, vignette
+## and grain. A canvas pass (after tonemap and TAA, so the grain is not smeared), under the HUD.
+func _build_grade() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "Grade"
+	layer.layer = -1
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grade = ShaderMaterial.new()
+	grade.shader = preload("res://shaders/grade.gdshader")
+	rect.material = grade
+	layer.add_child(rect)
+	add_child(layer)
+
 func _process(delta: float) -> void:
 	if run_clock:
 		time_of_day = fposmod(time_of_day + delta * 24.0 / day_length_s, 24.0)
@@ -293,6 +310,9 @@ func _apply_time() -> void:
 		# Keyed to twilight depth, not `day`: day is ~0.1 right at sunset, which buried the
 		# afterglow under the dark haze; the haze takes the sky over only late in twilight.
 		env.environment.volumetric_fog_sky_affect = lerpf(1.0, 0.1, smoothstep(deg_to_rad(-9.0), deg_to_rad(-3.0), elev))
+		if grade:
+			# rods take over as the sky darkens: none at sunset, full by nautical dusk
+			grade.set_shader_parameter("night", smoothstep(deg_to_rad(-2.0), deg_to_rad(-12.0), elev))
 		_apply_weather(day)
 
 ## A weather front over the time-of-day light: cloud swallows the sun and the sky's blue,
@@ -300,6 +320,8 @@ func _apply_time() -> void:
 func _apply_weather(day: float) -> void:
 	var c := weather.cloud if weather else 0.0
 	var e := env.environment
+	if grade:
+		grade.set_shader_parameter("overcast", c)
 	sun.light_energy *= 1.0 - 0.82 * c
 	sun.visible = sun.light_energy > 0.005
 	if moon:
