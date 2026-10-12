@@ -598,5 +598,17 @@
   "time": "2026-10-12T09:20:00Z",
   "caption": "Inside the keep: the shaded inner face now reads as coursed stone thanks to bounce fill and grass is off the floor; the floor and rubble tops are still near black.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261012-1000-ruin-floor.jpg",
+  "time": "2026-10-12T10:40:00Z",
+  "caption": "Inside the ruined keep at 13:30: rubble now reads as pale sandstone with moss on its tops and the inner wall is lit by the bounce fill, but the earth floor between the stones is still near black and the courses are too regular.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261012-1000-ruin-knoll.jpg",
+  "time": "2026-10-12T10:40:00Z",
+  "caption": "The watchtower ruin on its knoll under a cumulus sky with the vale and mountains behind; believable, but the block courses are brick-regular and the far range reads hazy grey.",
+  "verdict": "fail"
  }
 ]

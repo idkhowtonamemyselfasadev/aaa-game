@@ -1,5 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled, depth_draw_opaque;
+
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 // Oak leaf sprig cards: atlas painted by flora.gd, alpha-tested; crown-shaped normals
 // (set by the mesh) for a soft canopy, back-light translucency, flutter on top of the
 // shared branch sway.
@@ -46,4 +48,6 @@ void fragment() {
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	BACKLIGHT *= v_cloud;
+	// inner crown: light scattered off the lit leaves and ground around it
+	EMISSION = ALBEDO * bounce_light * 0.45;
 }

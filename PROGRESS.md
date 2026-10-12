@@ -23,6 +23,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 10:00 UTC:
+  - **Shade fill now reaches the land, trees and the keep floor (next item 2 follow-up:
+    LOOK).** `bounce_light` (World._apply_bounce, zero when SDFGI runs) is now added as
+    emission by terrain (full on banks/walls, 0.35 on flat ground, not on the water skin),
+    grass (0.6), bark (0.85 x furrow AO), leaves (0.45, inner crown) and rock (like masonry),
+    not just masonry. New `shaders/bounce.gdshaderinc`: a global `bounce_zone` (centre x/z,
+    radius, gain) that Ruins sets on the keep (r 3.4 m, gain 5): inside it the sunlit inner
+    face lights the floor, flagstones and rubble tops (terrain, grass and masonry tops
+    scale their fill by `bounce_gain`). Masonry moss lighter (moss_a/b sRGB ~0.3-0.4) and
+    patchier on tops so rubble no longer reads as dark-topped hollow boxes.
+  - Verdicts: bnc_in3 (13.5 h) fail: rubble now reads as pale stone with mossy tops, the
+    inner face is lit, but the earth floor between the stones is still near black (the
+    terrain litter albedo there is very dark: give the keep floor a paler trodden-dirt/gravel
+    mix). bnc_out3 (13.5 h) fail: believable ruin on its knoll, courses brick-regular.
+    bnc_hill (16 h, backlit, before the moss change) fail: oak crowns read as black
+    silhouettes against the sun and the foreground grass is near black: leaf/grass
+    BACKLIGHT transmission is too weak against the light. 15/15 bots pass.
 - Session 2026-10-12 09:00 UTC:
   - **The ruin's shaded stone is no longer black (next item 2 follow-up: LOOK).** Root cause:
     SDFGI is off on software Vulkan, so shade only gets the flat ambient, and dark stone
@@ -1100,7 +1117,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    bugs), dawn check, and verify SDFGI on a real GPU some day (cloud box can't).
 2. (done 08:00 (10-12): watchtower ruin on the western spur; 09:00: bounce fill, shade no
    longer black, grass off the keep floor.) Ruin follow-ups: the terrain/grass/hero in deep
-   shade still go black (extend `bounce_light` to the terrain, grass and tree shaders), vary
+   shade still go black (done 10:00: `bounce_light` on terrain/grass/trees/rock + keep
+   `bounce_zone`; the hero/soldier imported materials still lack it), vary
    block sizes and courses (brick-like now), warmer/varied stone colour at range,
    ivy/vines and grass tufts in the joints, a doorway arch and a stair stub in the keep, a
    shrine/quest hook there (milestone-1 shrine could start in its cellar), a better camera
@@ -1167,8 +1185,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- Ruin: (fixed 09:00: inner face no longer black.) The keep floor (terrain) in shade is
-  still black: only masonry takes `bounce_light` so far; blocks in a ring are
+- Backlit oaks (camera facing the sun, ~16 h) are black silhouettes; foreground shaded grass
+  near black. Needs stronger leaf transmission / view-toward-sun scatter.
+- Ruin: (fixed 09:00: inner face no longer black; 10:00: floor takes the bounce fill.)
+  `bounce_zone` is a single zone (fine while there is one ruin; make it an array/texture
+  when more enclosures exist); blocks in a ring are
   straight boxes, so the keep is a 22-sided polygon up close; colliders are per block (fine for
   ~1000 static boxes, but merge them if physics shows up in a profile).
 - Sunset spot (18.5 h): dark parallel shadow bands across the mid-ground meadow (seen 10-12 04:30; maybe shadow-cascade striping from the low sun on lavapipe, check on a GPU).

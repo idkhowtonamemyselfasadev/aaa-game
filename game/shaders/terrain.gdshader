@@ -1,5 +1,8 @@
 shader_type spatial;
 render_mode cull_back, depth_draw_opaque;
+
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
+#include "res://shaders/bounce.gdshaderinc"
 // Procedural PBR terrain for the Vale. Layers, all generated from noise (no texture yet):
 //   turf    - live short sward: thousands of tiny blades lying in the sward, mixed through
 //             with combed dead thatch, so the ground between the grass clumps reads as a meadow
@@ -323,4 +326,8 @@ void fragment() {
 	EMISSION = puddle_sky * min(fres * 3.0, 0.6) * pud;
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
+	// bounce from the lit land around: walls, banks and hollows get most, open flat ground
+	// little (the sky ambient covers it); skips the water skin
+	EMISSION += ALBEDO * bounce_light * mix(1.0, 0.35, clamp(n.y, 0.0, 1.0)) * AO * (1.0 - pud)
+		* bounce_gain(wpos);
 }

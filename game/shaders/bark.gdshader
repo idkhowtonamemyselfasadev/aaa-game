@@ -1,5 +1,7 @@
 shader_type spatial;
 render_mode cull_back;
+
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 // Procedural oak bark: deep vertical furrows (stretched ridged noise along the limb),
 // plated ridges, lichen/moss on the upward side and near the roots.
 #include "res://shaders/tree_wind.gdshaderinc"
@@ -62,4 +64,6 @@ void fragment() {
 	AO = mix(0.45, 1.0, f);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
+	// trunks are vertical: bounce off the ground below, less in the furrows
+	EMISSION = ALBEDO * bounce_light * 0.85 * AO;
 }

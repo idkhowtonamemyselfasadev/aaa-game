@@ -12,8 +12,9 @@ uniform vec3 stone_b : source_color = vec3(0.48, 0.45, 0.4);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
 global uniform vec3 bounce_light;
-uniform vec3 moss_a : source_color = vec3(0.2, 0.24, 0.08);
-uniform vec3 moss_b : source_color = vec3(0.28, 0.29, 0.1);
+#include "res://shaders/bounce.gdshaderinc"
+uniform vec3 moss_a : source_color = vec3(0.3, 0.34, 0.12);
+uniform vec3 moss_b : source_color = vec3(0.4, 0.41, 0.16);
 uniform vec3 lichen_y : source_color = vec3(0.62, 0.56, 0.32);
 uniform vec3 lichen_g : source_color = vec3(0.55, 0.57, 0.5);
 
@@ -78,7 +79,7 @@ void fragment() {
 	col = mix(col, lichen_g * (0.8 + 0.4 * vn(wp * 35.0)), l2 * 0.6);
 	// moss: on the tops, creeping down the lower courses and the shady joints
 	float low = 1.0 - smoothstep(0.0, 2.5, above);
-	float mossw = smoothstep(0.45, 0.8, n.y + (fbm(wp * 1.6) - 0.5) * 1.0)
+	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5) * 0.9
 	            + low * smoothstep(0.55, 0.75, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5);
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
@@ -96,5 +97,7 @@ void fragment() {
 	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops
 	// (they see the sky, which the ambient already covers); joints and pits get less
 	float facing = mix(1.0, 0.5, clamp(n.y, 0.0, 1.0));
+	// inside the keep the floor stones and rubble tops face the lit inner wall
+	facing *= mix(1.0, bounce_gain(wp), clamp(n.y, 0.0, 1.0));
 	EMISSION = ALBEDO * bounce_light * facing * AO;
 }

@@ -29,6 +29,8 @@ func _ready() -> void:
 	_terrain = get_node(terrain_path)
 	var flora: Flora = get_node(flora_path)
 	site = flora.ruin_site
+	# the keep's sunlit inner face lights its floor and rubble (see bounce.gdshaderinc)
+	RenderingServer.global_shader_parameter_set("bounce_zone", Vector4(site.x, site.z, 3.4, 5.0))
 	_rng.seed = seed
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:

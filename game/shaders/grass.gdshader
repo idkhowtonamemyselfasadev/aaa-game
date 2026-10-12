@@ -1,5 +1,8 @@
 shader_type spatial;
 render_mode cull_disabled, depth_draw_opaque;
+
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
+#include "res://shaders/bounce.gdshaderinc"
 // Grass clumps for the Vale. Blades are real geometry (procedural mesh from grass.gd); this
 // shader bends them with layered wind (gusts travel across the field), tints them per clump
 // from dry amber to late-summer green, shades them with root occlusion and back-light
@@ -77,4 +80,7 @@ void fragment() {
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	BACKLIGHT *= v_cloud;
+	// blades stand upright: they catch the bounce off the meadow around them
+	EMISSION = ALBEDO * bounce_light * 0.6
+		* bounce_gain((INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }

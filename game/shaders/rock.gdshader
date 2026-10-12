@@ -1,5 +1,7 @@
 shader_type spatial;
 render_mode cull_back;
+
+global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 // Mossy boulders. World-space 3D noise (no triplanar seams): strata bands, cracks and
 // pitting in the normal, lichen spots, and moss on up-facing surfaces whose edge breaks
 // up with noise; a dark damp band where the stone meets the ground.
@@ -65,4 +67,5 @@ void fragment() {
 	AO = clamp(0.6 + s * 0.6, 0.0, 1.0);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
+	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * AO;
 }
