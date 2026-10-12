@@ -10,6 +10,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Environment / renderer (cloud box)
 - Godot 4.7.2 is fetched by `tools/cloud-setup.sh` into `.tools/godot` (gitignored).
   Run it first thing every session.
+- Shots now take ~10 min each on the cloud box (more if bots run at the same time). The
+  xvfb timeout is `SHOT_TIMEOUT` (default 1500 s, was 600 s): a Vulkan shot that timed out
+  used to fall back to GL compatibility silently, giving a non-representative image (dark,
+  no fog). If a shot log says "retrying opengl3", the frame is not a Forward+ frame. Do not
+  run bots alongside a shot.
 - **Forward+ (Vulkan) renders headless** under `xvfb-run` with Mesa lavapipe/llvmpipe
   (verified: "Vulkan 1.4 - Forward+ - llvmpipe"). SDFGI, SSAO, SSIL, volumetric fog, glow all
   run. A 1280x720 screenshot with 60 warm-up frames takes ~75 s of CPU; budget shots
@@ -23,6 +28,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-12 13:00 UTC (second, parallel session): built the same grove-floor fix
+  (leaf carpet + canopy fill) at the same time as the session above; theirs landed first
+  and is more complete, so it was kept and this one dropped. Only kept: the
+  `tools/shots.sh` timeout fix (see Environment). 16/16 bots pass on the base.
 - Session 2026-10-12 13:00 UTC:
   - **The woodland floor under the oak crowns is a carpet of fallen leaves, lit, not black
     (follow-up of the 12:00 understory).** terrain.gdshader: a `canopy` weight from the
