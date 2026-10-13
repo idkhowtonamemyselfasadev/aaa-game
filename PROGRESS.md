@@ -28,6 +28,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 08:00 UTC: built deer bedding in parallel with the 07:00 session
+  and found it already pushed at rebase time; dropped the duplicate (07:00's version is the
+  more complete one). Lessons for the next session: `git pull --rebase origin main` FIRST,
+  before picking the item, since sessions overlap; run `deer_view.gd` with `-s` (as a
+  positional script arg Godot also loads the whole world and a render runs past 20 min);
+  drawing extra values from `Herd._rng` at spawn shifts every deer's slot and drops the
+  `herd` lane check to 3/8. No game change this session.
 - Session 2026-10-13 07:00 UTC:
   - **Deer bed down at night (Next item 5 follow-up "bedding down at night"; owner ALIVE).**
     `Herd`: each deer rests from ~21.8 h to ~4.8 h (+-0.6 h per deer, so the herd settles
