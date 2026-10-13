@@ -1732,6 +1732,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+Claimed by session 2026-10-13 22:58 UTC: item 0 (bark plate-top fine relief, rounded crack lips, displacement from bark_h).
 0. (done 16:30 10-13: bark albedo lift; 17:58: displaced bole relief; 18:55: blocky
    cross cracks; 20:35: warm darker tone, varied cracks, soft moss cushions.) Bark close-up:
    the cross cracks still read as short dark dashes painted on a smooth plate -- give the
