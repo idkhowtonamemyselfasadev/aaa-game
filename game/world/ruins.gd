@@ -6,7 +6,9 @@ extends Node3D
 ##  - the tower: a round keep of three-leaf ashlar walls (outer face, rubble core, inner
 ##    face) on rough courses, broken down to a jagged crown with a breach toward the
 ##    village, slumped top stones, fallen blocks downslope and flagstones/rubble inside;
-##  - a curtain wall ring 12.5 m out, mostly robbed down to stepped stubs with gaps.
+##  - a curtain wall ring 12.5 m out, mostly robbed down to stepped stubs with gaps;
+##  - in the middle of the keep floor a worn two-step plinth carrying the carved lid over the
+##    Shrine of Binding (ShrineSeal).
 ## Every block that stands above ground gets a box collider.
 
 @export var terrain_path: NodePath
@@ -24,6 +26,7 @@ var _rng := RandomNumberGenerator.new()
 var _dims: Array[Vector3] = []          # per variant: full size of the block mesh
 var _per: Array = []                    # per variant: [Transform3D, Color]
 var _body: StaticBody3D
+var seal: ShrineSeal
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -44,6 +47,7 @@ func _ready() -> void:
 	_tower()
 	_curtain()
 	_fallen()
+	_plinth()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
 
@@ -103,7 +107,7 @@ func _tower() -> void:
 	# flagstones and rubble on the floor inside
 	for i in 70:
 		var a := _rng.randf() * TAU
-		var rr := sqrt(_rng.randf()) * 2.8
+		var rr := lerpf(1.85, 2.85, sqrt(_rng.randf()))   # the plinth holds the middle
 		var p := site + Vector3(cos(a) * rr, 0, sin(a) * rr)
 		p.y = _terrain.height_at(p.x, p.z)
 		if i < 26:
@@ -162,17 +166,74 @@ func _fallen() -> void:
 		p.y = g + s.y * 0.15
 		_place(p, b, s, 0.0, true, v)
 
+## Two worn courses of curved step stones round the shrine lid. The stones are instanced like
+## the walls but do not collide; one low frustum collider ramps over both steps so the hero
+## walks up onto the lid (the controller has no step-up).
+func _plinth() -> void:
+	var lo := INF
+	var hi := -INF
+	for k in 16:
+		var a := TAU * k / 16.0
+		for rr in [0.0, 0.9, 1.75]:
+			var g := _terrain.height_at(site.x + cos(a) * rr, site.z + sin(a) * rr)
+			lo = minf(lo, g)
+			hi = maxf(hi, g)
+	var base := lo - 0.15
+	var gc := _terrain.height_at(site.x, site.z)
+	# set into the slope of the floor: the uphill side of the lower tread sinks flush
+	var t1 := gc + 0.2                   # lower step top
+	var t2 := t1 + 0.2                  # upper step top = lid seat
+	var tiers := [[1.47, 0.5, t1, 0.55], [1.03, 0.42, t2, 0.5]]
+	for tr in tiers:
+		var r: float = tr[0]
+		var count := int(round(TAU * r / float(tr[3])))
+		var y := base
+		var c := 0
+		while y < float(tr[2]) - 0.02:
+			var ch := minf(0.24, float(tr[2]) - y)
+			var crest := y + ch >= float(tr[2]) - 0.02
+			for i in count:
+				var a := TAU * (i + (0.5 if c % 2 == 1 else 0.0)) / count + 0.2
+				var p := Vector3(site.x + cos(a) * r, y + ch * 0.5, site.z + sin(a) * r)
+				var tilt := Vector3(_rng.randfn() * 0.03, _rng.randfn() * 0.03, _rng.randfn() * 0.03) if crest else Vector3.ZERO
+				if crest:
+					p.y -= absf(_rng.randfn()) * 0.025       # worn, settled treads
+				_place_ring(p, a, Vector3(TAU * r / count - 0.025, ch - 0.015, float(tr[1])), tilt, 0.0, false)
+			y += ch
+			c += 1
+	var lid_top := t2 + 0.12
+	# collider: a frustum from the lower step's outer edge up onto the lid
+	var pts := PackedVector3Array()
+	for k in 24:
+		var a := TAU * k / 24.0
+		var dv := Vector3(cos(a), 0, sin(a))
+		var go := _terrain.height_at(site.x + dv.x * 3.0, site.z + dv.z * 3.0)
+		var gm := _terrain.height_at(site.x + dv.x * 1.5, site.z + dv.z * 1.5)
+		pts.append(site + dv * 3.0 + Vector3.UP * (go - 0.4 - site.y))
+		pts.append(site + dv * 1.5 + Vector3.UP * (maxf(t1, gm + 0.03) - site.y))
+		pts.append(site + dv * 0.75 + Vector3.UP * (lid_top - site.y))
+	var shape := ConvexPolygonShape3D.new()
+	shape.points = pts
+	var cs := CollisionShape3D.new()
+	cs.name = "Plinth"
+	cs.shape = shape
+	_body.add_child(cs)                  # points are world space (Ruins sits at the origin)
+	seal = ShrineSeal.new()
+	seal.name = "ShrineSeal"
+	add_child(seal)
+	seal.build(site, lid_top)
+
 func _rubble(p: Vector3, s: float) -> void:
 	var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randf_range(-0.9, 0.9)) * Basis(Vector3(0, 0, 1), _rng.randf_range(-0.6, 0.6))
 	p.y = _terrain.height_at(p.x, p.z)
 	_place(p, b, Vector3(s, s * 0.55, s * 0.7), 0.0, false)
 
 ## A block in a ring wall at angle a: long axis along the circle.
-func _place_ring(p: Vector3, a: float, size: Vector3, tilt: Vector3, above: float) -> void:
+func _place_ring(p: Vector3, a: float, size: Vector3, tilt: Vector3, above: float, collide := true) -> void:
 	var t := Vector3(-sin(a), 0, cos(a))
 	var rad := Vector3(cos(a), 0, sin(a))
 	var b := Basis(t, Vector3.UP, -rad) * Basis.from_euler(tilt)
-	_place(p, b, size, above, true)
+	_place(p, b, size, above, collide)
 
 func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v: int = -1) -> void:
 	if v < 0:

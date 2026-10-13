@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -95,6 +95,9 @@ func _ready() -> void:
 		return
 	if name == "moss":
 		_moss_test()
+		return
+	if name == "shrine":
+		_shrine_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1860,6 +1863,55 @@ func _ruin_test() -> void:
 	if far > 3.4:
 		return _combat_done(false, "walked through the tower wall")
 	_combat_done(true, "walked in through the breach and the walls hold")
+
+## Shrine seal in the keep: the lid sleeps dim from the gateway, the hero walks in through
+## the breach and up the plinth onto the lid, the sigil wakes and the place names itself;
+## walking back out lets the caption fade and the glow sink again.
+func _shrine_test() -> void:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var seal := ruins.seal
+	if seal == null:
+		return _combat_done(false, "no shrine seal")
+	var hud: Hud = p.get_node("Hud")
+	var rs := ruins.site
+	var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
+	var start := rs + to_v * 14.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(60)
+	var g0 := seal.glow
+	print("BOT shrine: lid top %.2f (floor %.2f), glow at 14 m %.2f, caption a %.2f" % [seal.top_y, rs.y, g0, hud.caption_alpha])
+	if g0 > 0.05 or hud.caption_alpha > 0.01:
+		return _combat_done(false, "seal awake from the gateway")
+	for wp in [rs + to_v * 4.0, rs]:
+		var t := 0.0
+		while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.z).length() > 0.5 and t < 25.0:
+			var d := Vector2(wp.x - p.global_position.x, wp.z - p.global_position.z).normalized()
+			p.bot_input = d
+			await _ticks(6)
+			t += 0.1
+		if t >= 25.0:
+			p.bot_input = Vector2.ZERO
+			return _combat_done(false, "could not reach %s (stuck at %s)" % [wp, p.global_position])
+	p.bot_input = Vector2.ZERO
+	await _ticks(240)
+	print("BOT shrine: on the lid at %s, glow %.2f, caption '%s' a %.2f" % [p.global_position, seal.glow, hud.caption_title, hud.caption_alpha])
+	if p.global_position.y < seal.top_y - 0.3:   # on the plinth (he coasts a little past the lid)
+		return _combat_done(false, "hero not up on the plinth (y %.2f, lid %.2f)" % [p.global_position.y, seal.top_y])
+	if seal.glow < 0.8 or hud.caption_alpha < 0.9 or hud.caption_title != "Shrine of Binding":
+		return _combat_done(false, "seal did not wake / name itself")
+	var t2 := 0.0
+	while t2 < 4.0:
+		p.bot_input = Vector2(to_v.x, to_v.z)
+		await _ticks(6)
+		t2 += 0.1
+	p.bot_input = Vector2.ZERO
+	await _ticks(300)
+	print("BOT shrine: walked out to %.1f m, glow %.2f, caption a %.2f" % [Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length(), seal.glow, hud.caption_alpha])
+	if hud.caption_alpha > 0.05 or seal.glow > 0.6:
+		return _combat_done(false, "caption/glow did not settle after leaving")
+	_combat_done(true, "walked up onto the shrine seal, it woke and named itself, then slept again")
 
 ## Red deer: the herd grazes calm on the open meadow (heads down, now and then one comes
 ## up), keeps together and clear of trees; a hero 35 m off puts their heads up; running at

@@ -20,6 +20,11 @@ var _lock_t := 0.0
 var reticle_screen := Vector2(-1, -1)   # last drawn position (bots/shots read it)
 var _veil: Control
 var veil_alpha := 0.0                   # black over the screen (bots read it)
+var _cap: Control
+var caption_title := ""                 # place caption (bots read it)
+var caption_line := ""
+var caption_alpha := 0.0
+var _cap_hold := 0.0
 
 func _ready() -> void:
 	layer = 5
@@ -42,6 +47,21 @@ func _ready() -> void:
 	_veil.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_veil.draw.connect(_draw_veil)
 	add_child(_veil)
+	_cap = Control.new()
+	_cap.name = "Caption"
+	_cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cap.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cap.draw.connect(_draw_caption)
+	add_child(_cap)
+
+## A place names itself while the hero stands at it: call every frame he is there; it fades in,
+## and out again shortly after the calls stop.
+func caption(title: String, line: String) -> void:
+	if title != caption_title:
+		caption_alpha = 0.0
+	caption_title = title
+	caption_line = line
+	_cap_hold = 0.4
 
 func _process(delta: float) -> void:
 	if player == null:
@@ -69,6 +89,11 @@ func _process(delta: float) -> void:
 	_lock_t += delta
 	_lock_a = move_toward(_lock_a, 1.0 if lt != null else 0.0, delta * 8.0)
 	_reticle.queue_redraw()
+	_cap_hold -= delta
+	var ca := move_toward(caption_alpha, 1.0 if _cap_hold > 0.0 else 0.0, delta * (0.8 if _cap_hold > 0.0 else 0.6))
+	if ca != caption_alpha:
+		caption_alpha = ca
+		_cap.queue_redraw()
 	var va := player.screen_black()
 	if va != veil_alpha or va > 0.0:
 		veil_alpha = va
@@ -98,6 +123,33 @@ func _draw_veil() -> void:
 	# a thin rule under the word, widening as it surfaces
 	var rw := w * (0.6 + 0.4 * a)
 	_veil.draw_line(Vector2((vs.x - rw) * 0.5, at.y + 18.0 * s), Vector2((vs.x + rw) * 0.5, at.y + 18.0 * s), Color(0.55, 0.42, 0.28, 0.5 * a), maxf(1.0, s))
+
+## Place caption: the name in spaced bone-white capitals over a thin brass rule, one line of
+## italic-weight remark under it, in the lower third; a soft dark band behind keeps it legible
+## on bright sky or grass.
+func _draw_caption() -> void:
+	if caption_alpha <= 0.001 or caption_title == "":
+		return
+	var vs := _cap.get_viewport_rect().size
+	var s := vs.y / 1080.0
+	var a := caption_alpha * caption_alpha * (3.0 - 2.0 * caption_alpha)
+	var font := ThemeDB.fallback_font
+	var tsize := int(34.0 * s)
+	var lsize := int(21.0 * s)
+	var title := " ".join(caption_title.to_upper().split(""))
+	var tw := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
+	var lw := font.get_string_size(caption_line, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize).x
+	var cy := vs.y * 0.74
+	var bw := maxf(tw, lw) + 160.0 * s
+	var band := Rect2((vs.x - bw) * 0.5, cy - tsize * 1.3, bw, tsize * 1.3 + lsize * 2.2)
+	for i in 6:   # feathered dark band
+		var g := band.grow_individual(-i * bw * 0.06, 0, -i * bw * 0.06, 0)
+		_cap.draw_rect(g, Color(0.01, 0.01, 0.008, 0.07 * a))
+	_cap.draw_string(font, Vector2((vs.x - tw) * 0.5, cy), title, HORIZONTAL_ALIGNMENT_LEFT, -1, tsize, Color(0.9, 0.85, 0.74, 0.95 * a))
+	var rw := tw * (0.55 + 0.35 * a)
+	var ry := cy + 12.0 * s
+	_cap.draw_line(Vector2((vs.x - rw) * 0.5, ry), Vector2((vs.x + rw) * 0.5, ry), Color(0.62, 0.48, 0.3, 0.6 * a), maxf(1.0, s))
+	_cap.draw_string(font, Vector2((vs.x - lw) * 0.5, ry + lsize * 1.45), caption_line, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0.78, 0.72, 0.62, 0.85 * a))
 
 func reticle_visible() -> bool:
 	return _lock_a > 0.5 and reticle_screen.x >= 0.0

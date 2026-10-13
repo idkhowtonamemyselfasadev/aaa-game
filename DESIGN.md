@@ -251,7 +251,9 @@ region themes, combat layers that add a percussion stem per boss phase.
 
 1. **Vertical slice = Harrowmere Vale** (2 km² sub-area around the village and the first
    tower): Ward stance full, Ashen Knight brought forward as a slice boss in a Priory
-   antechamber, one Bind shrine, climb + glide, day/night, weather, wildlife and villagers,
+   antechamber, one Bind shrine (the *Shrine of Binding*, sealed under a carved lid in the
+   floor of the watchtower keep on the western spur; it opens once Bind is learned in
+   Lanternroot), climb + glide, day/night, weather, wildlife and villagers,
    final visuals.
 2. Core systems (all §3, §4, inventory, cooking, Pell, Stag, save, map, UI, options, input).
 3. World blockout for all §2 regions + Depths, streaming, weather, towers, roads.

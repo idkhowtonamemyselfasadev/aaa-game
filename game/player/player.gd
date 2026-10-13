@@ -124,7 +124,9 @@ func _ready() -> void:
 	soak = Soak.new()
 	soak.name = "Soak"
 	add_child(soak)
-	add_child(Hud.new())
+	var hud := Hud.new()
+	hud.name = "Hud"
+	add_child(hud)
 
 ## The model's imported materials become hero.gdshader (same maps), which can take the rain.
 var soak: Soak

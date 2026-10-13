@@ -238,6 +238,15 @@ func _ready() -> void:
 		var pp := rs + to_v * 40.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT ruin at %s" % rs)
+	if spot == "seal":
+		# the carved shrine lid in the keep floor, the hero standing at its edge so it wakes
+		var rs: Vector3 = world.get_node("Ruins").site
+		var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
+		var side := to_v.cross(Vector3.UP)
+		SPOTS[spot] = [rs + to_v * 2.0 + side * 0.9, rs - to_v * 0.2]
+		var pp := rs + to_v * 1.2 - side * 1.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.6, pp.z)
+		print("SHOT seal at %s" % rs)
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
 		var pp := player.global_position
@@ -468,6 +477,10 @@ func _ready() -> void:
 			look.y = terrain.height_at(look.x, look.z) + 1.75
 		if spot == "ruin":
 			pos.y += 2.5
+		if spot == "seal":
+			var st: float = world.get_node("Ruins").seal.top_y
+			pos.y = st + 2.0
+			look.y = st - 0.1
 		if spot == "ferns":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 0.3
