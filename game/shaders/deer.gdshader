@@ -2,7 +2,8 @@ shader_type spatial;
 // Red deer built by herd.gd. Legs, neck and head are posed here per instance:
 // INSTANCE_CUSTOM = (gait phase 0..1, speed m/s / 10, head down 0..1, head yaw rad).
 // Mesh COLOR: r = leg (0 none, 0.25 LF, 0.5 RF, 0.75 LH, 1 RH), g = below the knee/hock
-// (0..1), b = neck/head bend weight (0 body .. 1 head), a = part (0 coat, 0.5 eye, 1 ear).
+// (0..1), b = neck/head bend weight (0 body .. 1 head), a = part (0 coat, 0.25 antler,
+// 0.5 eye, 1 ear). `stag` = 1 on the stag's material: dark shaggy rut mane on the neck.
 // Rest pose faces -Z, hooves at y = 0.
 
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
@@ -13,6 +14,10 @@ uniform vec3 coat : source_color = vec3(0.36, 0.180, 0.088);      // summer red
 uniform vec3 coat_dark : source_color = vec3(0.20, 0.130, 0.086);  // neck, dorsal, lower legs
 uniform vec3 belly : source_color = vec3(0.52, 0.42, 0.30);
 uniform vec3 rump : source_color = vec3(0.68, 0.58, 0.42);
+uniform float stag = 0.0;
+uniform vec3 antler_col : source_color = vec3(0.34, 0.25, 0.16);
+uniform vec3 tine_tip : source_color = vec3(0.80, 0.74, 0.62);
+varying float v_along;   // 0 base .. 1 tip along an antler tube (UV.y)
 
 varying vec3 v_rest;
 varying vec4 v_col;
@@ -43,6 +48,13 @@ void vertex() {
 	v_rest = VERTEX;
 	v_rest_n = NORMAL;
 	v_col = COLOR;
+	v_along = UV.y;
+	// stag: the rut mane stands out shaggy under the throat and down the neck
+	if (stag > 0.5 && COLOR.r < 0.01 && COLOR.a < 0.1) {
+		float nm = smoothstep(-0.5, -0.75, v.z) * smoothstep(-1.02, -0.92, v.z);
+		float shag = vnoise(vec3(v.x * 40.0, v.y * 9.0, v.z * 9.0));
+		v += n * nm * (0.012 + 0.05 * shag * smoothstep(0.2, -0.6, n.y));
+	}
 	float spd = ic.y * 10.0;
 	float gal = smoothstep(2.6, 5.0, spd);
 	int leg = int(round(COLOR.r * 4.0)) - 1;
@@ -129,6 +141,18 @@ void fragment() {
 	col *= mix(0.78, 1.12, strand) * mix(0.9, 1.08, clump);
 	float rough = 0.78;
 	float spec = 0.35;
+	// stag: darker, coarser rut mane over the neck and throat
+	float stm = stag * neckm * (1.0 - head);
+	col = mix(col, coat_dark * 0.75 * mix(0.75, 1.2, vnoise(vec3(p.x * 50.0, p.y * 12.0, p.z * 12.0))), stm * 0.8);
+	if (v_col.a > 0.15 && v_col.a < 0.35) {
+		// antler: dark ridged bone (grooved lengthwise, pearled near the base), ivory polished tips
+		float groove = vnoise(vec3(atan(rn.x, rn.z) * 6.0, v_along * 3.0, 0.0));
+		float pearl = vnoise(p * 140.0) * smoothstep(0.5, 0.0, v_along);
+		col = antler_col * mix(0.7, 1.15, groove) * mix(1.0, 0.7, pearl);
+		col = mix(col, tine_tip, smoothstep(0.72, 0.97, v_along));
+		rough = mix(0.62, 0.32, smoothstep(0.72, 0.97, v_along));
+		spec = 0.45;
+	}
 	if (v_col.a > 0.4 && v_col.a < 0.6) {
 		col = vec3(0.012, 0.01, 0.01);   // eye: dark and wet
 		rough = 0.08;

@@ -1827,6 +1827,16 @@ func _herd_test() -> void:
 	print("BOT herd fleeing: %.1f m ahead of the hero after 6 s, top speed %.1f m/s" % [gap, top])
 	if gap < 45.0 or top < 7.0:
 		return _combat_done(false, "the herd did not gallop away from the hero")
+	# the stag runs with his hinds, not left behind
+	var sc := herd.centre()
+	var stag_gap := -1.0
+	for k in herd.deer_positions().size():
+		if herd.is_stag(k):
+			var sp: Vector3 = herd.deer_positions()[k]
+			stag_gap = Vector2(sp.x - sc.x, sp.z - sc.z).length()
+	print("BOT herd stag: %d stag(s), %.1f m from the fleeing herd's centre" % [herd.stag_count(), stag_gap])
+	if herd.stag_count() < 1 or stag_gap < 0.0 or stag_gap > 20.0:
+		return _combat_done(false, "the stag did not flee with the herd")
 	# the galloping herd left a track of splayed hoof prints behind it
 	var tr: Trample = _world.trample
 	var hp := tr.hoof_near(herd.centre() - herd._flee_dir * 6.0, 8.0)

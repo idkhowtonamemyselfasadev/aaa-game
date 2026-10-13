@@ -388,6 +388,20 @@ func _ready() -> void:
 					best = dp
 			hc = best
 			dist = 10.0
+		if "stag" in args:   # ~8 m from the stag, broadside, head up, aimed at his antlers
+			for d: Herd.Deer in herd._deer:
+				if d.stag:
+					var fw := sdh.cross(Vector3.UP)
+					d.yaw = atan2(-fw.x, -fw.z)
+					d.head = 0.0
+					d.head_target = 0.0
+					d.head_yaw = 0.5   # glancing toward the camera
+					d.look_t = 1e6
+					d.step_t = 1e6
+					d.goal = d.pos
+					d.speed = 0.0
+					hc = d.pos + Vector3.UP * 1.4
+			dist = 8.0
 		SPOTS[spot] = [hc + sdh * dist, hc]
 		print("SHOT herd at %s, %d deer" % [hc, herd.deer_positions().size()])
 	if spot == "hooves":

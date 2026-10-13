@@ -10,6 +10,7 @@ extends Node3D
 @export var terrain_path: NodePath = ^"../Terrain"
 @export var hinds: int = 7
 @export var calves: int = 2
+@export var stags: int = 1                 # a royal stag that keeps company with the hinds
 @export var alert_radius: float = 42.0     # heads up (+2 m per m/s the threat moves)
 @export var flee_radius: float = 24.0      # bolt (+2 m per m/s)
 @export var safe_radius: float = 85.0      # stop running this far from the threat
@@ -22,6 +23,7 @@ var _trample: Trample
 var hoof_prints := 0             # bots read this: prints pressed since start
 var _rng := RandomNumberGenerator.new()
 var _mm: MultiMesh
+var _mm_stag: MultiMesh
 var _deer: Array = []
 var _obstacles: Array[Vector3] = []
 var state := CALM
@@ -54,6 +56,7 @@ class Deer:
 	var hoof_side := 0
 	var bound := 0
 	var trail_d := 0.0       # m run since the last herd trail point
+	var stag := false
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -78,11 +81,30 @@ func _ready() -> void:
 	mmi.material_override = mat
 	mmi.custom_aabb = AABB(Vector3(-300, -50, -300), Vector3(600, 200, 600))
 	add_child(mmi)
-	for i in hinds + calves:
+	if stags > 0:
+		var smat := mat.duplicate() as ShaderMaterial
+		smat.set_shader_parameter("stag", 1.0)
+		_mm_stag = MultiMesh.new()
+		_mm_stag.transform_format = MultiMesh.TRANSFORM_3D
+		_mm_stag.use_custom_data = true
+		_mm_stag.mesh = build_mesh(true)
+		_mm_stag.instance_count = stags
+		var smi := MultiMeshInstance3D.new()
+		smi.name = "Stags"
+		smi.multimesh = _mm_stag
+		smi.material_override = smat
+		smi.custom_aabb = mmi.custom_aabb
+		add_child(smi)
+	for i in hinds + calves + stags:
 		var d := Deer.new()
-		var calf := i >= hinds
+		var calf := i >= hinds and i < hinds + calves
+		d.stag = i >= hinds + calves
 		d.scale = _rng.randf_range(0.6, 0.68) if calf else _rng.randf_range(0.92, 1.04)
 		d.slot = Vector2(_rng.randfn(0.0, 4.5), _rng.randfn(0.0, 4.5))
+		if d.stag:   # a big stag, keeping a little apart at the edge of his hinds
+			d.scale = _rng.randf_range(1.12, 1.18)
+			var a := _rng.randf() * TAU
+			d.slot = Vector2(cos(a), sin(a)) * _rng.randf_range(7.0, 9.0)
 		if calf:   # a calf keeps to its mother's flank
 			var m: Deer = _deer[i - hinds]
 			d.slot = m.slot + Vector2(_rng.randf_range(-1.6, 1.6), _rng.randf_range(-1.6, 1.6))
@@ -120,6 +142,16 @@ func _clear_at(c: Vector3) -> float:
 
 func _ground(p: Vector3) -> Vector3:
 	return Vector3(p.x, _terrain.height_at(p.x, p.z), p.z)
+
+func stag_count() -> int:
+	var n := 0
+	for d: Deer in _deer:
+		if d.stag:
+			n += 1
+	return n
+
+func is_stag(k: int) -> bool:
+	return (_deer[k] as Deer).stag
 
 func deer_positions() -> Array[Vector3]:
 	var out: Array[Vector3] = []
@@ -270,7 +302,8 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 		FLEE:
 			d.head_target = 0.0
 			d.head_yaw = 0.0
-			target = anchor + Vector3(d.slot.x, 0, d.slot.y) * 0.8 + _flee_dir * 4.0
+			# in flight the stag closes in and runs in his hinds' tracks (one shared lane)
+			target = anchor + Vector3(d.slot.x, 0, d.slot.y) * (0.3 if d.stag else 0.8) + _flee_dir * 4.0
 			var dist := Vector2(tp.x - d.pos.x, tp.z - d.pos.z).length()
 			want_speed = d.gait if dist < safe_radius else lerpf(d.gait, 2.2, clampf((dist - safe_radius) / 15.0, 0.0, 1.0))
 	# steer along the heading (no sideways sliding): turn toward the target, keep apart,
@@ -320,7 +353,7 @@ func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
 	# the grass along the run is combed over: hard at a gallop, a faint path at a walk
 	if d.speed > 0.6:
 		d.trail_d += moved
-		var gap := lerpf(2.2, 1.1, smoothstep(1.0, 5.0, d.speed)) * d.scale
+		var gap := lerpf(2.2, 1.5, smoothstep(1.0, 5.0, d.speed)) * d.scale
 		if d.trail_d >= gap:
 			d.trail_d = 0.0
 			_trample.add_herd_point(Vector2(d.pos.x, d.pos.z), Vector2(fwd.x, fwd.z), lerpf(0.35, 1.0, smoothstep(1.0, 6.0, d.speed)))
@@ -354,16 +387,24 @@ func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
 			hoof_prints += 1
 
 func _write_instances() -> void:
-	for i in _deer.size():
-		var d: Deer = _deer[i]
+	var hi := 0
+	var si := 0
+	for d: Deer in _deer:
 		var b := Basis(Vector3.UP, d.yaw) * Basis(Vector3.RIGHT, d.pitch)
-		_mm.set_instance_transform(i, Transform3D(b.scaled(Vector3.ONE * d.scale), d.pos - Vector3.UP * 0.03))
-		_mm.set_instance_custom_data(i, Color(d.phase, d.speed / 10.0, d.head, d.head_yaw))
+		var mm := _mm_stag if d.stag else _mm
+		var i := si if d.stag else hi
+		if d.stag:
+			si += 1
+		else:
+			hi += 1
+		mm.set_instance_transform(i, Transform3D(b.scaled(Vector3.ONE * d.scale), d.pos - Vector3.UP * 0.03))
+		mm.set_instance_custom_data(i, Color(d.phase, d.speed / 10.0, d.head, d.head_yaw))
 
 # ---------------------------------------------------------------- mesh
 
-## One red deer hind, about 1.15 m at the shoulder, 2 m nose to tail, facing -Z.
-static func build_mesh() -> ArrayMesh:
+## One red deer hind, about 1.15 m at the shoulder, 2 m nose to tail, facing -Z. `stag`:
+## a thick rutting neck and a royal head of antlers (brow, bez, trez and a crown cup).
+static func build_mesh(stag := false) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	# body + neck: one loft from the rump round to the throat (z, y, half-width, half-height
@@ -383,7 +424,16 @@ static func build_mesh() -> ArrayMesh:
 		[-1.01, 1.54, 0.08, 0.085, 0.115, 0.9],
 		[-1.05, 1.61, 0.06, 0.06, 0.07, 1.0],
 	]
+	if stag:   # rut neck: swollen, deep-chested, the throat heavy with mane
+		for i in range(6, body.size()):
+			var w := 1.0 + 0.32 * smoothstep(5.0, 9.0, float(i)) * (1.0 - 0.6 * smoothstep(10.0, 12.0, float(i)))
+			body[i][2] *= w
+			body[i][3] *= lerpf(1.0, w, 0.6)
+			body[i][4] *= w * 1.05
 	_loft(st, body, 0.0, 24, 3, 0.0, 0.0)
+	if stag:
+		for s in [-1.0, 1.0]:
+			_antler(st, s)
 	var head := [
 		[-0.990, 1.665, 0.01, 0.01, 0.01, 1.0],
 		[-1.030, 1.660, 0.076, 0.07, 0.10, 1.0],
@@ -444,6 +494,40 @@ static func build_mesh() -> ArrayMesh:
 	_loft(st, tail, 0.0, 10, 3, 0.0, 0.0)
 	st.generate_tangents()
 	return st.commit()
+
+## One antler (side s): a main beam rising up, out and back from the pedicle and curving
+## forward into a crown cup, with brow, bez and trez tines reaching forward over the face.
+## Tagged part 0.25 and bend 1.0 so it rides the head through grazing and staring.
+static func _antler(st: SurfaceTool, s: float) -> void:
+	var beam := [Vector3(0.042, 1.665, -1.075), Vector3(0.085, 1.73, -1.05), Vector3(0.15, 1.84, -0.99),
+		Vector3(0.23, 1.99, -0.94), Vector3(0.29, 2.15, -0.95), Vector3(0.31, 2.29, -1.0),
+		Vector3(0.30, 2.38, -1.05)]
+	_branch(st, beam, 0.03, 0.016, s)
+	_branch(st, [Vector3(0.08, 1.72, -1.05), Vector3(0.10, 1.73, -1.15), Vector3(0.12, 1.78, -1.25), Vector3(0.13, 1.85, -1.31)], 0.019, 0.004, s)
+	_branch(st, [Vector3(0.12, 1.79, -1.01), Vector3(0.15, 1.81, -1.10), Vector3(0.17, 1.86, -1.19), Vector3(0.18, 1.92, -1.23)], 0.016, 0.004, s)
+	_branch(st, [Vector3(0.255, 2.05, -0.94), Vector3(0.28, 2.08, -1.03), Vector3(0.31, 2.13, -1.12), Vector3(0.32, 2.19, -1.16)], 0.016, 0.004, s)
+	# crown: the beam splits into a cup of three points
+	_branch(st, [Vector3(0.30, 2.36, -1.04), Vector3(0.34, 2.43, -1.10), Vector3(0.37, 2.50, -1.13)], 0.015, 0.003, s)
+	_branch(st, [Vector3(0.30, 2.36, -1.04), Vector3(0.28, 2.45, -1.07), Vector3(0.27, 2.54, -1.06)], 0.015, 0.003, s)
+	_branch(st, [Vector3(0.30, 2.33, -1.01), Vector3(0.31, 2.41, -0.95), Vector3(0.32, 2.48, -0.92)], 0.013, 0.003, s)
+
+static func _branch(st: SurfaceTool, keys: Array, r0: float, r1: float, s: float) -> void:
+	var pts: Array = []
+	var rings: Array = []
+	var n := keys.size()
+	var sub := 4
+	for i in n - 1:
+		for j in sub:
+			var t := float(j) / sub
+			var q: Vector3 = keys[i].cubic_interpolate(keys[i + 1], keys[maxi(i - 1, 0)], keys[mini(i + 2, n - 1)], t)
+			pts.append(q)
+	pts.append(keys[n - 1])
+	for i in pts.size():
+		var f := float(i) / (pts.size() - 1)
+		var r := lerpf(r0, r1, pow(f, 0.8)) * 1.35 * (1.0 + 0.25 * smoothstep(0.08, 0.0, f))   # burr at the base
+		pts[i] = Vector3(pts[i].x * s, pts[i].y, pts[i].z)
+		rings.append([0, 0, r, r * 0.92, r * 0.92, 1.0])
+	_tube(st, pts, rings, 8, s, 0.0, -1.0, 0.25, false)
 
 ## Loft rings through `keys` (z, y, hw, hu, hd, bend[, x]) in the YZ plane; each ring is a
 ## half-ellipse above (hu) and below (hd) the path, hw wide. Keys are resampled with cubic

@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.75
-(a fleeing deer herd now combs a lane of laid-over grass through the meadow where it ran, standing up again over ~30 s, and hoof and boot prints show a rim of paler torn-up sod round a darker pressed floor; red deer now press cloven hoof prints into the meadow: paired slots where they walk, splayed four-hoof groups with dew claws where they galloped, fading over ~2.5 min; the hero now has a face: sun-browned skin, brows and two wet eyes looking out between the hood and the face cloth under the hat brim, lit by a soft face fill; the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.76
+(a red deer stag with a royal head of antlers and a dark shaggy rut mane now grazes at the edge of the hinds and gallops with them when they flee; a fleeing deer herd now combs a lane of laid-over grass through the meadow where it ran, standing up again over ~30 s, and hoof and boot prints show a rim of paler torn-up sod round a darker pressed floor; red deer now press cloven hoof prints into the meadow: paired slots where they walk, splayed four-hoof groups with dew claws where they galloped, fading over ~2.5 min; the hero now has a face: sun-browned skin, brows and two wet eyes looking out between the hood and the face cloth under the hat brim, lit by a soft face fill; the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 05:00 UTC:
+  - **A red deer stag (Next item 5 follow-up "a stag with antlers"; owner ALIVE).** `Herd`
+    gains `stags` (1): a separate MultiMesh from `build_mesh(true)`: a swollen rutting neck
+    (body loft widened/deepened toward the throat) and two antlers (`_antler`/`_branch`:
+    a main beam rising out and back and curving forward into a three-point crown cup, with
+    brow, bez and trez tines over the face, burr at the base), tagged part 0.25 + bend 1.0
+    so they ride the head through grazing and staring. `deer.gdshader`: `stag` uniform
+    (stag material only): shaggy displaced mane under the throat, darker coarse neck hair;
+    antlers are ridged/pearled brown bone with polished ivory tips (`v_along` = UV.y).
+    The stag is 1.12-1.18x a hind, grazes 7-9 m out at the herd's edge, closes in to run
+    in the hinds' lane in flight. Gallop trail points now every 1.5 m (was 1.1) so ten deer
+    still fit a ~25 m lane in the 64-point herd trail buffer.
+  - Shot spot `herd ... stag`: the stag broadside, head up, ~8 m. Bot `herd` checks the
+    stag flees with the herd (within 20 m of its centre): PASS (3/3 runs); all 18 routes PASS.
+  - Verdicts: `herd stag1 60 10 stag` fail: the stag stood rump-on with his head down in
+    the grass (shot now poses him broadside, head up). `herd stag3 60 10 stag` fail
+    (close): a clear royal stag -- crown, brow/bez/trez tines, heavy dark neck -- but the
+    body is a smooth loft without shoulder/haunch muscle, and the oaks still read stylized.
+    `herd stagherd 60 16.5` fail: at 25 m in evening light the herd is small dark shapes
+    behind a dark wall of grass. Next: barrel/shoulder/haunch landmarks on the deer mesh
+    (shared with the hinds), or the rut (stag roars at dusk, herds hinds).
 - Session 2026-10-13 04:00 UTC:
   - **The herd lays its own trail through the grass (Next item 5 follow-up).** New
     `herd_trail` buffer in `Trample` (64 points, `HERD_TRAIL_LIFE` 30 s, global
@@ -1514,7 +1535,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    flowers, two butterflies spiralling up together, (done 17:00 (10-12): red deer herd that
    grazes, watches and flees; 18:00: look pass -- lit coat, head/neck/leg shaping, straight
    grazing neck; follow-ups: shoulder-blade/hip landmarks on the barrel, a `near` shot that
-   freezes the herd during warm-up, a stag with antlers, deer trample/prints, bedding
+   freezes the herd during warm-up, (done 05:00 10-13: a stag with antlers; follow-ups: rut roars at dusk, stag herding his hinds, velvet/bark antler texture), deer trample/prints, bedding
    down at night, ear flicks/tail flags, hoof sounds, a predator), bird calls once
    there is audio, (done 06:00 (10-12): rooks roost in a rookery at night), moths around lanterns/campfires once
    they exist, butterflies by day.
@@ -1568,6 +1589,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Stag (05:00 10-13): antlers are smooth tubes (no velvet/rough bark texture at close
+  range, tines join the beam without a web); the mane is a vertex push (no hair cards);
+  no rut behaviour yet (roaring, herding hinds, wallowing, sparring); one stag only; the
+  herd lane bot is marginal (5-6/8 spots) since ten deer share 64 trail points.
 - Hoof prints (02:00 10-13): not visible in normal play views (too small/dark under the
   grass); deer do not lay the grass along their path in-game (only the shot seeds it);
   prints are placed by distance, not by the leg animation's hoof plants; a long gallop
