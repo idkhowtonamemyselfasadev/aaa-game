@@ -28,6 +28,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 16:30 UTC:
+  - **Bark lift (Next item 0, "bark reads near-black in grove shade").** bark.gdshader:
+    bark_dark 0.07 -> 0.15, bark_light 0.30 -> 0.46 (grey oak), grey-weathered plate tops,
+    pale crustose lichen blotches on the ridges only, AO floor 0.45 -> 0.6, shade bounce
+    0.85 -> 1.25, roots darken less at the soil line.
+  - Verdict `roots barkA 90 15` fail: the bole now shows form and a grey tone instead of a
+    black silhouette, but it reads as smooth charcoal with a sheen, the furrows and lichen
+    do not read at 5 m. See Next item 0.
+  - Fresh-box gotcha: run `.tools/godot --headless --path game --import` before the first
+    shot, otherwise shot.gd fails to parse (class cache missing) and the run wastes 30 min
+    retrying in opengl3. Also never `pkill -f godot` from the Bash tool: it kills the
+    tool's own shell. PIL is not installed; gallery JPEGs via ImageMagick `convert` or a
+    Godot `-s` script.
+  - Bots: moss, walk PASS.
 - Session 2026-10-13 15:30 UTC:
   - **Surface roots on every oak (item 4 follow-up "exposed roots radiating from the
     bole").** flora.gd `_build_roots()`: 4-7 roots per oak (+ a forked side root on most
@@ -1677,9 +1691,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. Claimed by session 16:30 UTC 10-13: bark lift.
-   Bark reads near-black in grove shade (15:30 10-13 roots shot): lift bark albedo / shade
-   fill so the boles and the new surface roots show form, then re-judge the roots.
+0. (done 16:30 10-13: bark albedo lift, partial.) Bark still reads as smooth dark charcoal
+   with a sheen at 5 m: make the furrows real relief (deeper normal / parallax or
+   vertex-displaced ridges on the bole), kill the sheen (specular 0.25 -> ~0.1, rougher),
+   warmer brown in the furrows, make the lichen blotches bigger so they read at range; then
+   re-judge the roots from a side-lit camera.
 1. (done 07:00 (10-12): film grade pass with night scotopic shift + grain.) Grade follow-up:
    keep the night sky blue (exempt pixels above the horizon or with low luminance gradient from
    the rod desaturation, or push the scot tint bluer), dusk/dawn check under the grade.

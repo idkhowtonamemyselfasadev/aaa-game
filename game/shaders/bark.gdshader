@@ -6,8 +6,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // plated ridges, lichen/moss on the upward side and near the roots.
 #include "res://shaders/tree_wind.gdshaderinc"
 
-uniform vec3 bark_dark : source_color = vec3(0.07, 0.06, 0.05);
-uniform vec3 bark_light : source_color = vec3(0.30, 0.27, 0.23);
+uniform vec3 bark_dark : source_color = vec3(0.15, 0.13, 0.11);
+uniform vec3 bark_light : source_color = vec3(0.46, 0.43, 0.38);
+uniform vec3 lichen : source_color = vec3(0.56, 0.58, 0.50);
 uniform vec3 moss : source_color = vec3(0.17, 0.2, 0.06);
 
 varying vec3 wn;
@@ -55,6 +56,12 @@ void fragment() {
 	float fy = furrow(UV + vec2(0.0, e * 4.0));
 	vec3 col = mix(bark_dark, bark_light, smoothstep(0.25, 0.85, f));
 	col *= 0.85 + 0.3 * n2(UV * vec2(40.0, 10.0));
+	// old oak bark is grey-weathered on the plate tops, with pale crustose lichen blotches
+	// on the ridges (never in the furrows); the furrows stay dark brown
+	float plate = smoothstep(0.55, 0.9, f);
+	col = mix(col, col * vec3(1.08, 1.1, 1.12) + vec3(0.03), plate * 0.6);
+	float lb = smoothstep(0.62, 0.78, n2w(UV * vec2(9.0, 2.5), 18.0) * 0.7 + n2(UV * vec2(30.0, 9.0)) * 0.3);
+	col = mix(col, lichen * (0.85 + 0.2 * f), lb * plate * 0.7);
 	float m = smoothstep(0.35, 0.8, wn.y + n2(UV * vec2(8.0, 3.0)) * 0.4 - 0.1);
 	m = max(m, smoothstep(1.2, 0.0, vy) * 0.8 * n2(UV * 6.0));
 	// the shaded side of the bole stays damp: moss climbs it from the foot collar in
@@ -71,7 +78,7 @@ void fragment() {
 		col = mix(col, bark_light * vec3(1.45, 1.4, 1.35), 0.45 + top * 0.4 * f);
 		float lowm = 1.0 - smoothstep(0.02, 0.14, v_soil);
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
-		col *= mix(0.7, 1.0, smoothstep(0.0, 0.07, v_soil));
+		col *= mix(0.8, 1.0, smoothstep(0.0, 0.07, v_soil));
 	}
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
 	float rough = mix(0.92, 0.8, m);
@@ -81,9 +88,9 @@ void fragment() {
 	SPECULAR = 0.25;
 	NORMAL_MAP = normalize(vec3((f - fx) * 18.0, (f - fy) * 6.0, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.6;
-	AO = mix(0.45, 1.0, f);
+	AO = mix(0.6, 1.0, f);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	// trunks are vertical: bounce off the ground below, less in the furrows
-	EMISSION = ALBEDO * bounce_light * 0.85 * AO;
+	EMISSION = ALBEDO * bounce_light * 1.25 * AO;
 }
