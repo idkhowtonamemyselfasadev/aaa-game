@@ -1683,10 +1683,36 @@ func _moss_test() -> void:
 	for k in 64:
 		var a := k * TAU / 64.0
 		open_moss = maxf(open_moss, flora.moss_at(cos(a) * 30.0, sin(a) * 30.0))
+	# the meadow gives way to the moss: grass sites on full cushions are rare next to the
+	# same terrain a few metres out in the open
+	var grass := _world.get_node("Grass")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var on_moss := 0
+	var on_tries := 0
+	for xf in flora.tree_xforms:
+		var c := Vector2(xf.origin.x, xf.origin.z)
+		for k in 6:
+			var a := k * TAU / 6.0
+			var q := c + Vector2(cos(a), sin(a)) * (0.5 * xf.basis.get_scale().x + 0.6)
+			if flora.moss_at(q.x, q.y) < 0.6:
+				continue
+			on_tries += 1
+			if grass._site(q.x, q.y, rng, flora).x >= 0.0:
+				on_moss += 1
+	var open_ok := 0
+	for k in 400:
+		var a := k * TAU / 400.0
+		if grass._site(cos(a) * (20.0 + k % 20), sin(a) * (20.0 + k % 20), rng, flora).x >= 0.0:
+			open_ok += 1
+	var moss_rate := float(on_moss) / maxf(on_tries, 1)
+	var open_rate := open_ok / 400.0
+	print("BOT moss grass: %d/%d sites on full moss grow grass (%.2f), open meadow %.2f" % [on_moss, on_tries, moss_rate, open_rate])
 	var n := flora.tree_xforms.size()
 	print("BOT moss: %d/%d oaks collared, %d shaded side mossier, %d/%d big boulders ringed, open meadow max %.2f" % [collared, n, shaded_more, rocks, big, open_moss])
-	_combat_done(collared >= n * 0.95 and shaded_more >= n * 0.9 and rocks >= big * 0.9 and big > 0 and open_moss < 0.05,
-		"moss collars at the oak boles and boulder feet, none in the open meadow")
+	_combat_done(collared >= n * 0.95 and shaded_more >= n * 0.9 and rocks >= big * 0.9 and big > 0 and open_moss < 0.05
+		and on_tries > 100 and moss_rate < 0.08 and open_rate > 0.3,
+		"moss collars at the oak boles and boulder feet, none in the open meadow, no tall grass on the cushions")
 
 func _trample_test() -> void:
 	var p := _player

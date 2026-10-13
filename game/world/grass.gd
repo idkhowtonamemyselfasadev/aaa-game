@@ -125,6 +125,11 @@ func _site(x: float, z: float, rng: RandomNumberGenerator, flora: Node) -> Vecto
 	var shade: float = flora.shelter_at(x, z) if flora else 0.0
 	if rng.randf() < shade * 0.8:
 		return Vector3(-1, 0, 0)
+	# moss collars at the oak boles and boulder feet (Flora._bake_moss): a full cushion
+	# smothers the meadow, its ragged outer edge keeps a few tufts poking through
+	var moss: float = flora.moss_at(x, z) if flora else 0.0
+	if rng.randf() < smoothstep(0.12, 0.6, moss) * 0.95:
+		return Vector3(-1, 0, 0)
 	return Vector3(patch, shade, keep)
 
 func _crop_at(x: float, z: float) -> float:
