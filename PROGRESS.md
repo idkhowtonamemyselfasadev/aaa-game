@@ -1691,6 +1691,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+Claimed by session 17:58 UTC 10-13: item 0 (bark relief + sheen + lichen).
 0. (done 16:30 10-13: bark albedo lift, partial.) Bark still reads as smooth dark charcoal
    with a sheen at 5 m: make the furrows real relief (deeper normal / parallax or
    vertex-displaced ridges on the bole), kill the sheen (specular 0.25 -> ~0.1, rougher),
