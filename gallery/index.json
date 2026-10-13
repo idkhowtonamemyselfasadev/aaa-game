@@ -742,5 +742,17 @@
   "time": "2026-10-13T00:56:52Z",
   "caption": "The face shot now frames the hero from the front-left under the straw hat, but the face is still a black void of hood and face cloth in the brim's shade with no eyes or skin.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-0200-hero-eyes.jpg",
+  "time": "2026-10-13T02:13:42Z",
+  "caption": "The hero now has a face: skin, brows and two dark eyes look out between the hood and the indigo face cloth under the straw hat; still a smooth doll-like shell with no nose or cheek shape, and the eyes never blink.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-0200-hero-face-fill.jpg",
+  "time": "2026-10-13T02:13:42Z",
+  "caption": "A soft face fill now lifts the hood and face cloth out of the brim's black shade, but from a camera at eye height the brim and down-pitched head still hide the eyes.",
+  "verdict": "fail"
  }
 ]

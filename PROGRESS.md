@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0.75
-(the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+(the hero now has a face: sun-browned skin, brows and two wet eyes looking out between the hood and the face cloth under the hat brim, lit by a soft face fill; the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,29 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 01:00 UTC:
+  - **A face with eyes (Next item 7 follow-up; last verdict: "the face is a black void").**
+    `garb.gd` `_add_face()`: a band of skin from the brow to the nose bridge (40x14 grid in
+    garb space, `_face_point_xy`: rounded front, brow ridge, nose bridge, shallow sockets,
+    cheekbones; sides tuck under the hood, lower edge under the face cloth), two eyeballs
+    (`SphereMesh` r 1.25 cm, pitched a touch down). New `skin.gdshader`: pores/blotches, SSS +
+    backlight, darker lids, lash line, brows, socket AO, almond lid openings cut by discard
+    (inner corner lower, upper lid arched), takes the rain soak. New `eye.gdshader`: sclera
+    with faint vessels, fibrous brown iris with a limbal ring, pupil, clear-coated tear film.
+  - `HeroGarb.fill`: a small warm OmniLight under the brim (0.55 m range, energy 0.26, no
+    shadow, cull mask = hero layer 1 only) -- the hat + hood put the face in shade that the
+    ambient barely reaches, so without it the face is a black hole (seen in the 01:00 shots).
+  - `shot.gd` `face`: aims from head bone -> eye midpoint (the eye/veil boxes gave the back),
+    camera 0.85 m out and 14 cm below the eyes (the idle head pitches ~20 deg down, so from
+    eye height the brim hides the eyes).
+  - Bots: `walk` now checks two eyes 4-8 cm apart in front of the head bone, between the
+    face cloth and the hat. `walk` PASS (eyes 0.058 m apart, 0.22 m in front of the head
+    bone), `soldier` PASS.
+  - Verdicts: `face eyes_face4` fail: fill light lifts the hood out of the black, but from
+    eye height the brim hides the eyes. `face eyes_face6` fail (big step): skin, brows and
+    two dark-irised eyes now look out from under the brim; still a smooth doll-like shell
+    with no nose/cheek shape and no blinks. Screenshots: Forward+ under xvfb/lavapipe,
+    ~10 min each.
 - Session 2026-10-13 00:00 UTC:
   - **Mantle drape (Next item 7 follow-up; last verdict: "the mantle is a flat brown slab
     with a hard hem").** `garb.gd` `_drape()`: the hero's own mantle mesh (84x18) with ~8
@@ -1441,6 +1464,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    place, cloth/hair sway; the staff.
    (done 23:00 (10-12): Vanguard plates restyled as black lacquered lamellar, visor ->
    face cloth; 00:00 (10-13): mantle folds + stitched scalloped hem, `face` shot re-aimed;
+   (done 01:00 (10-13): skin band + eyes in the hood gap, face fill light; follow-ups: a real
+   sculpted head (nose/cheeks under the cloth, eyelid blinks, eye look-at), skin detail maps;)
    follow-ups: deeper/lighter mantle folds that read at 3 m, eyes and skin visible in the
    hood gap (real head), move the practice post out of the hero shots.)
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
@@ -1480,6 +1505,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Face (01:00 10-13): the face band is a procedural shell (no real nose/cheek shape under
+  the cloth), eyes never blink or track; from the usual high third-person camera the brim
+  hides the eyes (by design, like a real douli); the fill light also brightens the hood and
+  mantle front a little; the band could clip the Vanguard helmet under it in extreme head
+  poses (not seen in idle/walk).
 - Lamellar restyle (23:00 10-12): colour-mask based, so a few tan texels at plate seams
   can stay brownish and the thigh plates still read lighter grey under rim light; the face
   is a dark cloth void (no eyes) -- needs a real head model. (00:00 10-13: `face` shot

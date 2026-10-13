@@ -15,6 +15,14 @@ const STRAW := [Color(0.20, 0.15, 0.075), Color(0.66, 0.53, 0.31), 0.15]
 
 var hat: MeshInstance3D
 var veil: MeshInstance3D
+var face: MeshInstance3D
+var eyes: Array[MeshInstance3D] = []
+var fill: OmniLight3D
+
+## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
+const EYE_X := 0.031
+const EYE_Y := 1.968
+const EYE_R := 0.0125
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -35,6 +43,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	head.add_child(_piece(_hood(), 0.0, 0.03, 0.0, 1.2))
 	veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
 	head.add_child(veil)
+	_add_face(head)
 	tint = STRAW
 	hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
 	var hm := hat.material_override as ShaderMaterial
@@ -98,6 +107,80 @@ func _veil() -> ArrayMesh:
 		var y := 1.935 - v * (0.14 + 0.05 * front * front)
 		var r := 1.0 + 0.06 * v * front + 0.015 * sin(a * 8.0 + v * 2.0) * v
 		return Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r), 24, 6)
+
+## The face in the gap between the hood and the face cloth: a band of sun-browned skin from
+## the brow to the bridge of the nose, with the brow ridge, the nose bridge and two shallow eye
+## sockets shaped in, almond lid openings cut by skin.gdshader, and two wet eyeballs behind
+## them. The band's sides tuck back under the hood and its lower edge under the face cloth.
+func _add_face(head: Node3D) -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://shaders/skin.gdshader")
+	mat.set_shader_parameter("eyes", Vector4(-EYE_X, EYE_Y, EYE_X, EYE_Y))
+	face = MeshInstance3D.new()
+	face.name = "Face"
+	face.mesh = _grid(_face_point, 40, 14)
+	face.material_override = mat
+	face.layers = layer
+	head.add_child(face)
+	var emat := ShaderMaterial.new()
+	emat.shader = preload("res://shaders/eye.gdshader")
+	var sphere := SphereMesh.new()
+	sphere.radius = EYE_R
+	sphere.height = EYE_R * 2.0
+	sphere.radial_segments = 24
+	sphere.rings = 12
+	for side in [-1.0, 1.0]:
+		var eye := MeshInstance3D.new()
+		eye.name = "Eye"
+		eye.mesh = sphere
+		eye.material_override = emat
+		eye.layers = layer
+		# the cornea sits just behind the lid line; both eyes look a touch down the road
+		var front := _face_point_xy(side * EYE_X, EYE_Y, false).z
+		eye.transform = Transform3D(Basis.from_euler(Vector3(0.08, -side * 0.04, 0.0)),
+				Vector3(side * EYE_X, EYE_Y, front - EYE_R + 0.004))
+		head.add_child(eye)
+		eyes.append(eye)
+	# a soft character fill under the brim, like a game's face light: the hat and hood put the
+	# face in deep shade that the scene's ambient barely reaches, so without it the face reads
+	# as a black hole at any range. Lights only the hero's layer, casts no shadow.
+	fill = OmniLight3D.new()
+	fill.name = "FaceFill"
+	fill.light_color = Color(1.0, 0.86, 0.72)
+	fill.light_energy = 0.26
+	fill.omni_range = 0.55
+	fill.omni_attenuation = 1.6
+	fill.shadow_enabled = false
+	fill.light_cull_mask = layer
+	fill.light_specular = 0.6
+	fill.position = Vector3(0.05, 1.93, 0.42)
+	head.add_child(fill)
+
+## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
+func _face_point(u: float, v: float) -> Vector3:
+	var a := lerpf(-1.0, 1.0, u)
+	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, 1.926, v), true)
+
+## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
+## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
+## eyeballs sit under (no socket dip).
+func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
+	var s := clampf(x / 0.09, -1.0, 1.0)
+	var a := asin(s)
+	var z := -0.035 + cos(a) * 0.19
+	# brow ridge over the eyes, the bridge of the nose running down the middle
+	z += 0.006 * exp(-pow((y - 1.992) / 0.008, 2.0)) * (1.0 - smoothstep(0.05, 0.075, absf(x)))
+	z += 0.007 * exp(-pow(x / 0.009, 2.0)) * smoothstep(1.995, 1.95, y)
+	if sockets:
+		for c in [-EYE_X, EYE_X]:
+			var d := pow((x - c) / 0.019, 2.0) + pow((y - EYE_Y) / 0.011, 2.0)
+			z -= 0.004 * exp(-d)
+	# cheekbones forward under the outer eye corners, then the lower edge tucks back under the
+	# face cloth and the sides under the hood
+	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
+	z -= 0.02 * smoothstep(1.942, 1.926, y)
+	z -= 0.03 * smoothstep(0.06, 0.09, absf(x))
+	return Vector3(x, y, z)
 
 ## The shoulder mantle: a cape of heavy wool gathered at the neck that falls into deep,
 ## irregular folds over the shoulders and back. The folds start at the collar and deepen

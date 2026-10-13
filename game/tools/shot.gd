@@ -591,14 +591,18 @@ func _ready() -> void:
 	for i in frames:
 		await get_tree().process_frame
 	if spot == "face" and cam != null:
-		# aim from where the face actually is after the warm-up (the body's basis read at
-		# set-up time framed the hero's back): out along head -> face cloth, 3/4 from the left
-		var vb := player.garb.veil.global_transform * player.garb.veil.get_aabb()
-		var hd := (player.garb.hat.global_transform * player.garb.hat.get_aabb()).get_center()
-		var fc := vb.get_center()
-		var fdir := Vector3(fc.x - hd.x, 0, fc.z - hd.z).normalized().rotated(Vector3.UP, 0.45)
-		cam.global_position = fc + fdir * 1.4 + Vector3.UP * 0.05
-		cam.look_at(fc + Vector3.DOWN * 0.08)
+		# aim from where the face actually is after the warm-up: out along head bone -> eyes,
+		# 3/4 from the left, from a little below eye level (the idle head pitches down, so
+		# from eye height the hat brim hides the eyes)
+		var e0 := player.garb.eyes[0].global_position
+		var e1 := player.garb.eyes[1].global_position
+		var fc := (e0 + e1) * 0.5
+		var hsk := player.model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var hb := hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_Head")).origin
+		var ef := fc - hb
+		var fdir := Vector3(ef.x, 0, ef.z).normalized().rotated(Vector3.UP, 0.4)
+		cam.global_position = fc + fdir * 0.85 + Vector3.DOWN * 0.14
+		cam.look_at(fc + Vector3.DOWN * 0.04)
 		print("SHOT face at %s, camera %s" % [fc, cam.global_position])
 		for i in 3:
 			await get_tree().process_frame

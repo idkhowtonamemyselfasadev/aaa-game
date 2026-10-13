@@ -189,6 +189,22 @@ func _finish(ok: bool, why: String) -> void:
 		if ok and _route.size() > 0 and (veil_front < 0.03 or veil.end.y > hat_box.end.y):
 			ok = false
 			why = "hero face cloth not over the face"
+		# a face with two eyes shows in the gap between the hood and the face cloth
+		if garb.face == null or garb.eyes.size() != 2:
+			if ok:
+				ok = false
+				why = "hero has no face or eyes"
+		else:
+			var e0 := garb.eyes[0].global_position
+			var e1 := garb.eyes[1].global_position
+			var mid := (e0 + e1) * 0.5
+			var eye_front := (mid - head).dot(fwd)
+			print("BOT face: eyes %.3f m apart, %.2f m in front of the head bone, %.2f m above the cloth top, %.2f m below the hat top" % [
+					e0.distance_to(e1), eye_front, mid.y - veil.end.y, hat_box.end.y - mid.y])
+			if ok and _route.size() > 0 and (e0.distance_to(e1) < 0.04 or e0.distance_to(e1) > 0.08
+					or eye_front < 0.03 or mid.y < veil.end.y - 0.01 or mid.y > hat_box.end.y):
+				ok = false
+				why = "hero eyes not in the face gap"
 	elif ok:
 		ok = false
 		why = "hero has no garb"
