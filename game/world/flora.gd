@@ -253,9 +253,9 @@ func _root(st: SurfaceTool, r: RandomNumberGenerator, c: Vector3, a: float, ln: 
 		var g := _terrain.height_at(p.x, p.y)
 		var rad := lerpf(r0, r0 * 0.3, pow(t, 0.8))
 		# buttress: high on the bole at the start, then just the top of the root shows
-		var y := g + lerpf(0.55 * s if depth == 0 else rad * 0.2, rad * 0.25 - 0.03, smoothstep(0.0, 0.4, t)) - 0.2 * t * t * t
+		var y := g + lerpf(0.3 * s if depth == 0 else rad * 0.2, rad * 0.25 - 0.03, smoothstep(0.0, 0.4, t)) - 0.2 * t * t * t
 		pts.append(Vector3(p.x, y, p.y))
-		var flare := 1.0 + 0.6 * (1.0 - smoothstep(0.0, 0.3, t)) if depth == 0 else 1.0
+		var flare := 1.0 + 0.25 * (1.0 - smoothstep(0.0, 0.3, t)) if depth == 0 else 1.0
 		rads.append(rad * flare)
 		hs.append(y - g)
 		heading += wob + r.randf_range(-0.22, 0.22)

@@ -68,7 +68,7 @@ void fragment() {
 		// crotches and the line where the root goes into the soil
 		// roots weather paler and greyer than the bole (scuffed, sun-bleached on top)
 		float top = smoothstep(0.2, 0.8, wn.y);
-		col = mix(col, bark_light * vec3(1.15, 1.12, 1.1), 0.3 + top * 0.35 * f);
+		col = mix(col, bark_light * vec3(1.45, 1.4, 1.35), 0.45 + top * 0.4 * f);
 		float lowm = 1.0 - smoothstep(0.02, 0.14, v_soil);
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
 		col *= mix(0.7, 1.0, smoothstep(0.0, 0.07, v_soil));
