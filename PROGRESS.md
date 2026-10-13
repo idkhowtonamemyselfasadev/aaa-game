@@ -61,6 +61,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     keeps a ~60 m flight track.
   - Bots: `herd` now checks the fleeing herd left >= 20 live prints and a deep gallop print
     within 8 m behind it (1297 pressed, 256 live, one 6.8 m behind, depth 1.00): PASS.
+  - New shot spot `hooves` (seeds a walking deer track, laid as a trodden deer path, crossing
+    a galloping one next to the hero; trample frozen). Verdicts: `hooves hooves1 40 11` fail:
+    tall grass hides the prints completely. `hooves hooves2 40 11` fail: the trodden deer
+    lane reads through the meadow, but the hoof slots are invisible in the dark soil at
+    ~3 m. Next: make prints read (lighter scuffed soil/bruised green rim, larger wet
+    sheen in rain, the camera closer/lower or on leaf litter / mud by a pool), and let the
+    herd lay its own trail through the grass (needs a separate trail buffer so it does not
+    evict the hero's 32 points). Screenshots: Forward+ under xvfb/lavapipe, ~10 min each.
 - Session 2026-10-13 01:00 UTC:
   - **A face with eyes (Next item 7 follow-up; last verdict: "the face is a black void").**
     `garb.gd` `_add_face()`: a band of skin from the brow to the nose bridge (40x14 grid in
@@ -1538,6 +1546,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Hoof prints (02:00 10-13): not visible in normal play views (too small/dark under the
+  grass); deer do not lay the grass along their path in-game (only the shot seeds it);
+  prints are placed by distance, not by the leg animation's hoof plants; a long gallop
+  churns the 256-print buffer, so the flight track keeps only its last ~60 m.
 - Face (01:00 10-13): the face band is a procedural shell (no real nose/cheek shape under
   the cloth), eyes never blink or track; from the usual high third-person camera the brim
   hides the eyes (by design, like a real douli); the fill light also brightens the hood and
