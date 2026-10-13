@@ -1,7 +1,7 @@
 # Progress
 
 Content hours playable: 0.75
-(the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+(the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 00:00 UTC:
+  - **Mantle drape (Next item 7 follow-up; last verdict: "the mantle is a flat brown slab
+    with a hard hem").** `garb.gd` `_drape()`: the hero's own mantle mesh (84x18) with ~8
+    unevenly spaced folds (sharpened sine ridges + a finer fold near the hem) that start at
+    a rolled collar and deepen to ~3 cm at the hem; ridges hang lower than valleys, so the
+    hem scallops softly. COLOR.r carries the fold cavity. `rag.gdshader`: `fold_ao` (cavity
+    -> AO + a little albedo darkening) and `hem_band` (turned hem: doubled band, stitch shadow
+    line, rounded lip); the mantle's torn-hem depth dropped from 0.06 to 0.012.
+  - `shot.gd` `face`: after the warm-up the camera is re-aimed from the hat centre out
+    through the face cloth (3/4 from the left, 1.4 m), so it no longer depends on the body
+    basis read at set-up.
+  - Bots: `walk` PASS (15 pieces, veil 0.15 m in front), `soldier` PASS.
+  - Verdicts: `heroback drape_back 60 11` fail: the mantle now reads as cloth with folds
+    and a scalloped hem (step up from the slab), but the folds are faint at 3 m in this
+    light and the practice post crowds the frame. `face drape_face 60 11` fail: front-left
+    framing now, but the face is a black void (dark hood + dark face cloth in the brim's
+    shade) -- needs a real head with skin/eyes, or at least a lighter face cloth and a
+    visible eye line.
 - Session 2026-10-12 23:00 UTC:
   - **Lacquered lamellar + face cloth (Next item 7 follow-up; the last verdict: "the
     Vanguard visor still shows under the hat").** `hero.gdshader` gains `restyle` (set by
@@ -1422,8 +1440,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    let a Mixamo-rigged model drop in and retarget); jump/fall clips, foot IK on slopes, turn-in-
    place, cloth/hair sway; the staff.
    (done 23:00 (10-12): Vanguard plates restyled as black lacquered lamellar, visor ->
-   face cloth; follow-ups: fix the `face` shot framing, give the mantle folds/drape and a
-   softer hem, eyes visible in the hood gap once there is a real head.)
+   face cloth; 00:00 (10-13): mantle folds + stitched scalloped hem, `face` shot re-aimed;
+   follow-ups: deeper/lighter mantle folds that read at 3 m, eyes and skin visible in the
+   hood gap (real head), move the practice post out of the hero shots.)
    (done 15:00: staff slung on the back.) Still to do: draw it into the right hand when combat
    starts (needs a staff-grip/attack clip set), swing trails, impact VFX.
 8. (done 16:00: draw + L×4 string + trail; 17:00: contact, hit-stop, shake, impact VFX,
@@ -1463,8 +1482,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Known bugs
 - Lamellar restyle (23:00 10-12): colour-mask based, so a few tan texels at plate seams
   can stay brownish and the thigh plates still read lighter grey under rim light; the face
-  is a dark cloth void (no eyes) -- needs a real head model; the `face` shot spot frames the
-  hero's back (orientation read before the hero turns?).
+  is a dark cloth void (no eyes) -- needs a real head model. (00:00 10-13: `face` shot
+  re-aimed after warm-up; the shot log printed no SHOT lines that run, so confirm the
+  "SHOT face at" line next time.)
+- Mantle drape (00:00 10-13): folds are static geometry (only the shared flutter/sway
+  moves them); the back fold can pass through the slung staff; folds read faintly in
+  flat or back light.
 - Tall grass kinds (20:00 10-12): panicles are only visible within ~15 m (thin spikelets);
   seeding clumps are the heaviest mesh (~400 verts) and do not thin with distance any
   differently; each chunk is now 3 MultiMesh draws (~260 draws for the tall grass); the

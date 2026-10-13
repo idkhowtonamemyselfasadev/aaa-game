@@ -25,7 +25,9 @@ uniform vec3 sway = vec3(0.0);
 uniform float time_offset = 0.0;
 uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = Hollow rags)
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
-uniform float wrap_turns = 0.0;     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
+uniform float wrap_turns = 0.0;
+uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
+uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 varying float hem_w;
 
@@ -99,6 +101,16 @@ void fragment() {
 		band = smoothstep(0.0, 0.08, b) * (0.85 + 0.15 * smoothstep(0.98, 0.9, b));
 		ty += (smoothstep(0.92, 1.0, b) - smoothstep(0.0, 0.06, b)) * 0.6;
 	}
+	// turned hem: a doubled band above the edge, a shadow line where the fold-over is sewn
+	// and a soft rounded lip at the very edge
+	float hem_shade = 1.0;
+	if (hem_band > 0.0) {
+		float hb = 0.055;
+		float seam = 1.0 - smoothstep(0.0, 0.006, abs(to_hem - hb));
+		float lip = smoothstep(0.0, 0.02, to_hem);
+		hem_shade = mix(1.0, (1.0 - 0.35 * seam) * mix(0.75, 1.0, lip), hem_band);
+		ty += (seam * 0.8 - (1.0 - lip) * 0.6) * hem_band;
+	}
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
@@ -109,7 +121,7 @@ void fragment() {
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
 	alb = mix(alb, alb * vec3(0.78, 0.62, 0.5), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
-	alb *= mix(0.45, 1.0, band);
+	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, 0.7 + 0.3 * COLOR.r, fold_ao);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
 	float singe = (1.0 - smoothstep(0.0, 0.012, to_hem)) * step(0.5, fbm(vec2(UV.x * 23.0, seed)));
@@ -131,7 +143,7 @@ void fragment() {
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 0.8;
-	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band);
+	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band) * mix(1.0, COLOR.r, fold_ao);
 	AO_LIGHT_AFFECT = 0.3;
 	BACKLIGHT = vec3(0.12, 0.10, 0.08);
 	EMISSION = ember_col * glow * 3.0;

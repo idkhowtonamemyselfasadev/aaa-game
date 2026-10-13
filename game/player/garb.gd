@@ -43,7 +43,11 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	hm.set_shader_parameter("aspect", 0.35)
 	head.add_child(hat)
 	tint = MANTLE
-	var mantle := _piece(_mantle(), 0.0, 0.06, 0.35, 1.0)
+	var mantle := _piece(_drape(), 0.0, 0.012, 0.35, 1.0)
+	var mm := mantle.material_override as ShaderMaterial
+	mm.set_shader_parameter("fold_ao", 1.0)
+	mm.set_shader_parameter("hem_band", 1.0)
+	mm.set_shader_parameter("tongues", 3.0)
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
@@ -94,3 +98,55 @@ func _veil() -> ArrayMesh:
 		var y := 1.935 - v * (0.14 + 0.05 * front * front)
 		var r := 1.0 + 0.06 * v * front + 0.015 * sin(a * 8.0 + v * 2.0) * v
 		return Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r), 24, 6)
+
+## The shoulder mantle: a cape of heavy wool gathered at the neck that falls into deep,
+## irregular folds over the shoulders and back. The folds start at the collar and deepen
+## toward the hem; ridges hang a little lower than the valleys, so the hem scallops softly
+## instead of ending on a straight cut. COLOR.r carries the fold cavity (1 on a ridge, dark in
+## the valleys), read by rag.gdshader as AO when `fold_ao` is on.
+func _drape() -> ArrayMesh:
+	var nu := 84
+	var nv := 18
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in nv + 1:
+		for i in nu + 1:
+			var u := float(i) / nu
+			var v := float(j) / nv
+			var gap := 0.42
+			var a := lerpf(gap, TAU - gap, u)
+			var k := pow(v, 0.42)
+			var rx := lerpf(0.135, 0.38, k)
+			var rz := lerpf(0.135, 0.315, k)
+			# fold phase: ~8 folds round the cape, unevenly spaced, a few splitting near the hem
+			var phi := a * 8.0 + 0.9 * sin(a * 2.3 + 0.7) + 0.5 * sin(a * 5.1 + 2.0)
+			var ridge := sin(phi)
+			ridge = signf(ridge) * pow(absf(ridge), 0.65)
+			var fine := sin(a * 19.0 + 1.3 + v * 2.0) * smoothstep(0.5, 1.0, v)
+			var depth := smoothstep(0.05, 1.0, v)
+			var fold := 1.0 + depth * (0.085 * ridge + 0.022 * fine)
+			# the hem hangs lower at the back; ridges carry it a little lower than the valleys
+			var hem := lerpf(1.44, 1.29, (1.0 - cos(a)) * 0.5) - 0.022 * ridge - 0.008 * fine
+			# a slight roll at the collar where the cloth gathers round the neck
+			var collar := 1.0 + 0.10 * (1.0 - smoothstep(0.0, 0.12, v))
+			var y := lerpf(1.72, hem, v)
+			var cav := mix_cav(ridge, fine, depth)
+			st.set_color(Color(cav, cav, cav))
+			st.set_uv(Vector2(u, v))
+			st.add_vertex(Vector3(sin(a) * rx * fold * collar, y, -0.045 + cos(a) * rz * fold * collar))
+	for j in nv:
+		for i in nu:
+			var p0 := j * (nu + 1) + i
+			var p1 := p0 + 1
+			var p2 := p0 + nu + 1
+			var p3 := p2 + 1
+			st.add_index(p0); st.add_index(p1); st.add_index(p2)
+			st.add_index(p1); st.add_index(p3); st.add_index(p2)
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
+
+static func mix_cav(ridge: float, fine: float, depth: float) -> float:
+	var c := 0.5 + 0.5 * ridge
+	c = lerpf(1.0, 0.45 + 0.55 * c, depth) * (1.0 - 0.08 * maxf(-fine, 0.0) * depth)
+	return c

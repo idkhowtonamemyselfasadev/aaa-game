@@ -590,6 +590,18 @@ func _ready() -> void:
 			world.weather.lightning.auto_strikes = false
 	for i in frames:
 		await get_tree().process_frame
+	if spot == "face" and cam != null:
+		# aim from where the face actually is after the warm-up (the body's basis read at
+		# set-up time framed the hero's back): out along head -> face cloth, 3/4 from the left
+		var vb := player.garb.veil.global_transform * player.garb.veil.get_aabb()
+		var hd := (player.garb.hat.global_transform * player.garb.hat.get_aabb()).get_center()
+		var fc := vb.get_center()
+		var fdir := Vector3(fc.x - hd.x, 0, fc.z - hd.z).normalized().rotated(Vector3.UP, 0.45)
+		cam.global_position = fc + fdir * 1.4 + Vector3.UP * 0.05
+		cam.look_at(fc + Vector3.DOWN * 0.08)
+		print("SHOT face at %s, camera %s" % [fc, cam.global_position])
+		for i in 3:
+			await get_tree().process_frame
 	for a in args:
 		if a.begins_with("bolt=") or a.begins_with("sheet="):
 			var bp := a.substr(a.find("=") + 1).split(",")
