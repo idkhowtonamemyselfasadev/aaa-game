@@ -310,6 +310,26 @@ vec4 litter(vec2 p, float scale) {
 
 // Leaf bed under the crowns: every cell holds one oak leaf (lobed, midrib), so a few
 // offset layers lie over each other into a full carpet. Returns (cover, height, tone).
+// moss cushions: a 3x3 Worley search gives each cell a rounded dome (x = dome height 0..1,
+// y = crevice 0..1 where two cushions meet, z = per-cushion random tone)
+vec3 cushions(vec2 p, float scale) {
+	vec2 q = p * scale;
+	vec2 cell = floor(q);
+	float d1 = 9.0; float d2 = 9.0; float tone = 0.0;
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			vec2 c = cell + vec2(float(i), float(j));
+			vec3 r = hash23(c + 113.0);
+			float d = length(q - c - r.xy) * (0.8 + 0.4 * r.z);
+			if (d < d1) { d2 = d1; d1 = d; tone = r.z; }
+			else if (d < d2) { d2 = d; }
+		}
+	}
+	float dome = sqrt(max(0.0, 1.0 - d1 * d1 * 1.1));
+	float crev = 1.0 - smoothstep(0.0, 0.18, d2 - d1);
+	return vec3(dome * (1.0 - crev * 0.7), crev, tone);
+}
+
 float fade_l_early(float fp) { return 1.0 - smoothstep(0.01, 0.05, fp); }
 
 vec3 leafbed(vec2 p, float scale) {
@@ -403,8 +423,17 @@ void fragment() {
 	// touch brighter than the bank moss, with a few fallen oak leaves lying on it
 	float fm = foot_moss(xz);
 	float footw = smoothstep(0.15, 0.42, fm + (mcush - 0.5) * 0.55 + (vnoise(wpos * 2.3) - 0.5) * 0.3) * (1.0 - rockw * 0.5);
-	vec3 moss_f = mix(moss_a * 1.25, moss_b * 1.3 + vec3(0.02, 0.05, 0.0), clamp(mcush * 1.4 - 0.25 + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
-	float fh = (mcush * 0.6 + vnoise(wpos * 16.0) * 0.3 + mfine * 0.1 * fade_m) * 0.012;
+	// olive, not lime: cushion tops a dull yellow-olive (desaturated toward the dead thatch),
+	// flanks a deeper green, crevices between cushions dark peaty brown, and a few cushions
+	// dried brown on top; the domes give the collar real relief in the bump
+	float fade_cu = 1.0 - smoothstep(0.01, 0.06, fp);
+	vec3 cu = cushions(xz, 5.5);
+	vec3 olive_hi = mix(moss_b, thatch_a, 0.38) * 0.95;
+	vec3 olive_lo = mix(moss_a, soil, 0.25) * 0.9;
+	vec3 moss_f = mix(olive_lo, olive_hi, clamp(mix(mcush * 1.2 - 0.1, cu.x, 0.6 * fade_cu) + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
+	moss_f = mix(moss_f, mix(thatch_a, leaf_b, 0.4) * 0.8, step(0.86, cu.z) * smoothstep(0.4, 0.9, cu.x) * 0.6 * fade_cu);
+	moss_f = mix(moss_f, soil * 0.45, cu.y * 0.75 * fade_cu);
+	float fh = (mix(mcush * 0.6, cu.x * 0.85, fade_cu) + vnoise(wpos * 16.0) * 0.25 + mfine * 0.1 * fade_m) * 0.018;
 	if (footw > 0.001) {
 		vec3 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);
 		float on = fl.x * fade_l_early(fp) * step(0.45, fl.z) * (1.0 - smoothstep(0.3, 0.9, fm)) * canopy;
@@ -442,10 +471,16 @@ void fragment() {
 		bed = mix(bed, tone, c);
 		bed_h = mix(bed_h, 0.3 + 0.2 * fk + lb.y, c);
 	}
+	// between the collars the grove floor is not bare leaves: low moss patches spread in the
+	// damp shade and the leaf bed thins over them
+	float gpatch = smoothstep(0.42, 0.62, fbm(wpos * 0.35 + 17.0) * 0.8 + meso * 0.35) * canopy;
+	vec3 gmoss = mix(mix(moss_a, soil, 0.2), mix(moss_b, thatch_a, 0.45) * 0.85, clamp(mcush * 1.1 + (mfine - 0.5) * 0.3 * fade_m, 0.0, 1.0));
 	litcol = mix(litcol, bed, canopy);
 	// some sward survives in the litter (little under the crowns)
 	litcol = mix(litcol, turf, smoothstep(0.55, 0.8, micro) * 0.7 * (1.0 - canopy * 0.8));
-	litcol = mix(litcol, mix(earth, leaf_a * 0.8, 0.4), 1.0 - fade_l);
+	// at range the leaves average out: tan drift under the crowns, not red-brown earth
+	litcol = mix(litcol, mix(mix(earth, leaf_a * 0.8, 0.4), mix(leaf_drift * 0.7, leaf_b, 0.4), canopy), 1.0 - fade_l);
+	litcol = mix(litcol, gmoss, gpatch * (1.0 - 0.5 * smoothstep(0.55, 0.85, micro) * fade_l));
 	float lit_h = max(max(lt.y, lt2.y * 0.6), bed_h * 0.35 * canopy) * fade_l * 0.006 + micro * 0.004;
 
 	// ---- rock ----

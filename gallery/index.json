@@ -856,5 +856,17 @@
   "time": "2026-10-13T13:35:29Z",
   "caption": "Oak grove at 13 h: the moss collars at the boles now lie open with no tall grass through them, but read as a flat over-saturated green patch and the grove floor between is bare red-brown soil.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-1518-grove.jpg",
+  "time": "2026-10-13T15:18:14Z",
+  "caption": "Oak grove at 13 h: the floor between the boles now greens with olive moss patches and leaf drift instead of red-brown soil; mid-range floor still uniform, collars no longer stand out, no roots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-1518-boulder.jpg",
+  "time": "2026-10-13T15:18:14Z",
+  "caption": "Shaded boulder at 15 h: softer stone tone without marble-like crack veining, moss tongues on the flank; still a lone smooth blob, not an outcrop.",
+  "verdict": "fail"
  }
 ]

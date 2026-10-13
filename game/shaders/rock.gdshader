@@ -55,9 +55,14 @@ void fragment() {
 	float s = surf(wp);
 	float e = 0.02;
 	vec3 g = vec3(surf(wp + vec3(e, 0, 0)) - s, surf(wp + vec3(0, e, 0)) - s, surf(wp + vec3(0, 0, e)) - s) / e;
-	vec3 col = mix(stone_b, stone_a, smoothstep(0.15, 0.75, s + fbm(wp * 0.7) * 0.3));
-	float li = smoothstep(0.72, 0.8, fbm(wp * 3.0 + 11.0));
-	col = mix(col, lichen, li * 0.6);
+	// tone: a wide ramp so cracks and strata shade the stone instead of drawing lines on it
+	// (the crack term stays in the bump only; in the colour it read as marble veining)
+	float crk = 1.0 - smoothstep(0.0, 0.05, abs(fbm(wp * 2.2) - 0.5));
+	vec3 col = mix(stone_b, stone_a, smoothstep(0.0, 0.95, s + crk * 0.4 + fbm(wp * 0.7) * 0.3));
+	col *= 1.0 - crk * 0.15;
+	// lichen: soft-edged rosettes broken by a fine speckle, not hard map-like blots
+	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
+	col = mix(col, lichen, li * 0.4);
 	float mossw = smoothstep(0.35, 0.75, n.y + (fbm(wp * 1.3) - 0.5) * 0.9);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 6.0));
 	// moss creeping up the flanks from the foot collar: higher on the shaded side, in
