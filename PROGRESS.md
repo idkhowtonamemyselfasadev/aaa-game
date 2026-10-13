@@ -1677,7 +1677,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. Bark reads near-black in grove shade (15:30 10-13 roots shot): lift bark albedo / shade
+0. Claimed by session 16:30 UTC 10-13: bark lift.
+   Bark reads near-black in grove shade (15:30 10-13 roots shot): lift bark albedo / shade
    fill so the boles and the new surface roots show form, then re-judge the roots.
 1. (done 07:00 (10-12): film grade pass with night scotopic shift + grain.) Grade follow-up:
    keep the night sky blue (exempt pixels above the horizon or with low luminance gradient from
