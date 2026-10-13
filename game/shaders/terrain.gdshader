@@ -78,6 +78,15 @@ vec2 wade_ripples(vec2 xz) {
 
 // boot prints pressed by the hero and the Hollows (world/trample.gd): 64x2 RGBA float,
 // row 0 (x, z, age s, depth 0..1), row 1 (heel-to-toe dir x, z); foot_box = live bounds
+// moss collars round the oak boles and boulder feet, baked by world/flora.gd (_bake_moss)
+global uniform sampler2D moss_map : filter_linear, repeat_disable;
+
+float foot_moss(vec2 xz) {
+	vec2 uv = xz / SHELTER_SIZE + 0.5;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return 0.0;
+	return textureLod(moss_map, uv, 0.0).r;
+}
+
 global uniform sampler2D foot_prints : filter_nearest, repeat_disable;
 global uniform vec4 foot_box;
 const int FOOT_N = 64;
@@ -308,6 +317,8 @@ vec4 litter(vec2 p, float scale) {
 
 // Leaf bed under the crowns: every cell holds one oak leaf (lobed, midrib), so a few
 // offset layers lie over each other into a full carpet. Returns (cover, height, tone).
+float fade_l_early(float fp) { return 1.0 - smoothstep(0.01, 0.05, fp); }
+
 vec3 leafbed(vec2 p, float scale) {
 	vec2 q = p * scale;
 	vec2 cell = floor(q);
@@ -395,6 +406,21 @@ void fragment() {
 	float mcush = fbm(wpos * 7.0);
 	vec3 moss = mix(moss_a, moss_b, clamp(mcush * 1.2 - 0.15 + (mfine - 0.5) * 0.4 * fade_m, 0.0, 1.0));
 	float moss_h = (mcush * 0.8 + mfine * 0.2 * fade_m) * 0.006;
+	// collars round the boles and boulder feet: a ragged-edged cushion, lumpier and a
+	// touch brighter than the bank moss, with a few fallen oak leaves lying on it
+	float fm = foot_moss(xz);
+	float footw = smoothstep(0.15, 0.42, fm + (mcush - 0.5) * 0.55 + (vnoise(wpos * 2.3) - 0.5) * 0.3) * (1.0 - rockw * 0.5);
+	vec3 moss_f = mix(moss_a * 1.25, moss_b * 1.3 + vec3(0.02, 0.05, 0.0), clamp(mcush * 1.4 - 0.25 + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
+	float fh = (mcush * 0.6 + vnoise(wpos * 16.0) * 0.3 + mfine * 0.1 * fade_m) * 0.012;
+	if (footw > 0.001) {
+		vec3 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);
+		float on = fl.x * fade_l_early(fp) * step(0.45, fl.z) * (1.0 - smoothstep(0.3, 0.9, fm)) * canopy;
+		moss_f = mix(moss_f, mix(leaf_drift, leaf_a * 0.85, fl.z) * 0.85, on);
+		fh = mix(fh, 0.004 + fl.y * 0.003, on);
+	}
+	moss = mix(moss, moss_f, footw);
+	moss_h = mix(moss_h, fh, footw);
+	mossw = max(mossw, footw);
 
 	// ---- litter on trodden earth ----
 	float fade_l = 1.0 - smoothstep(0.01, 0.05, fp);

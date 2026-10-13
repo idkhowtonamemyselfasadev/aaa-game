@@ -26,6 +26,7 @@ var tree_positions: Array[Vector3] = []
 var ruin_site := Vector3.ZERO
 const RUIN_CLEAR := 17.0
 var rock_positions: Array[Vector3] = []
+var _rock_feet: Array[Vector3] = []   # (x, size, z) per boulder, for the moss rings
 
 # per-variant scratch while building a tree
 var _bark: SurfaceTool
@@ -48,6 +49,13 @@ const SHELTER_SIZE := 512.0
 const SHELTER_RES := 256
 var shelter: Image
 
+## Moss collars round the oak boles and the boulder feet: a MOSS_RES^2 L8 map over the
+## same SHELTER_SIZE square (0.5 m cells), 0 none .. 1 a full velvet cushion. The terrain
+## shader breaks its edge up with noise. Pushed as global `moss_map`.
+const MOSS_RES := 1024
+const MOSS_SHADE := Vector2(-0.6, -0.8)   # away from the afternoon sun (terrain.gdshader)
+var moss: Image
+
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
 	_rng.seed = seed
@@ -62,6 +70,7 @@ func _ready() -> void:
 	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
 	_scatter_rocks()
+	_bake_moss()
 	_scatter_understory()
 
 ## Places that must stay walkable: village floor and the road toward the east ridge.
@@ -219,6 +228,49 @@ func _bake_shelter(per: Array) -> void:
 					var r := 1.0 - (1.0 - old.r) * (1.0 - a)
 					shelter.set_pixel(i, j, Color(minf(r, 0.9), maxf(old.g, lo) if old.r > 0.0 else lo, 0))
 	RenderingServer.global_shader_parameter_set("shelter_map", ImageTexture.create_from_image(shelter))
+
+## Paint a moss collar round every trunk (wider on the shaded side, out over the root
+## flare) and a ring round every boulder's foot, where the stone keeps the ground damp.
+func _bake_moss() -> void:
+	moss = Image.create(MOSS_RES, MOSS_RES, false, Image.FORMAT_L8)
+	moss.fill(Color.BLACK)
+	for xf in tree_xforms:
+		var s := xf.basis.get_scale().x
+		var tr := 0.5 * s
+		_moss_ring(Vector2(xf.origin.x, xf.origin.z), tr + 0.4 * s, tr + 2.8 * s, 1.0)
+	for k in _rock_feet.size():
+		var f: Vector3 = _rock_feet[k]
+		_moss_ring(Vector2(f.x, f.z), f.y * 0.55, f.y * 1.05 + 0.5, 0.85 if f.y > 0.8 else 0.6)
+	RenderingServer.global_shader_parameter_set("moss_map", ImageTexture.create_from_image(moss))
+
+## Max-blend a ring centred on `c`: full `peak` from r0 out to a shade-skewed falloff
+## reaching `r1` (x1.35 on the shaded side, x0.7 on the sunny side).
+func _moss_ring(c: Vector2, r0: float, r1: float, peak: float) -> void:
+	var cell := SHELTER_SIZE / MOSS_RES
+	var reach := r1 * 1.35
+	var i0 := Vector2i(((c - Vector2.ONE * reach) / cell + Vector2.ONE * MOSS_RES * 0.5).floor())
+	var i1 := Vector2i(((c + Vector2.ONE * reach) / cell + Vector2.ONE * MOSS_RES * 0.5).ceil())
+	for j in range(maxi(i0.y, 0), mini(i1.y + 1, MOSS_RES)):
+		for i in range(maxi(i0.x, 0), mini(i1.x + 1, MOSS_RES)):
+			var w := (Vector2(i + 0.5, j + 0.5) - Vector2.ONE * MOSS_RES * 0.5) * cell - c
+			var d := w.length()
+			var shade := w.normalized().dot(MOSS_SHADE) * 0.5 + 0.5 if d > 0.01 else 0.5
+			var edge := r1 * lerpf(0.7, 1.35, shade)
+			if d >= edge:
+				continue
+			var a := peak * (1.0 - smoothstep(r0, edge, d))
+			if a > moss.get_pixel(i, j).r:
+				moss.set_pixel(i, j, Color(a, a, a))
+
+## How much moss lies on the ground at (x, z) (bots).
+func moss_at(x: float, z: float) -> float:
+	if moss == null:
+		return 0.0
+	var i := int(floor(x / (SHELTER_SIZE / MOSS_RES) + MOSS_RES * 0.5))
+	var j := int(floor(z / (SHELTER_SIZE / MOSS_RES) + MOSS_RES * 0.5))
+	if i < 0 or j < 0 or i >= MOSS_RES or j >= MOSS_RES:
+		return 0.0
+	return moss.get_pixel(i, j).r
 
 ## How much rain the crowns overhead catch at (x, z): 0 open .. ~0.9 deep under an oak.
 func shelter_at(x: float, z: float) -> float:
@@ -509,6 +561,7 @@ func _scatter_rocks() -> void:
 		var s := (_rng.randf_range(1.4, 3.2) if big else _rng.randf_range(0.25, 1.0))
 		var p := Vector3(x, _terrain.height_at(x, z) - s * 0.3, z)
 		rock_positions.append(p)
+		_rock_feet.append(Vector3(x, s, z))
 		var b := Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.4).normalized())) * Basis(Vector3.UP, _rng.randf() * TAU)
 		b = b.scaled(Vector3(s, s * _rng.randf_range(0.55, 0.9), s * _rng.randf_range(0.8, 1.2)))
 		per[_rng.randi() % rock_variants].append(Transform3D(b, p))

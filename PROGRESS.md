@@ -1,7 +1,7 @@
 # Progress
 
-Content hours playable: 0.79
-(the oak crowns are now masses of small lobed oak leaves in sprays, each leaf catching the sun at its own angle, with a darker, shaded inner crown, instead of a few hundred plate-sized painted leaves; the red deer herd now beds down in the meadow at night -- kneeling on the forelegs, then sinking onto the haunches, each deer in its own patch of pressed grass, chewing the cud or dozing -- springs up haunches-first to stare at a hero who comes into sight, lies down again once he has gone and is up grazing again before dawn; red deer now have a deep chest, a flank that tucks up into a hanging thigh and a shoulder blade and haunch that show under the coat; a red deer stag with a royal head of antlers and a dark shaggy rut mane now grazes at the edge of the hinds and gallops with them when they flee; a fleeing deer herd now combs a lane of laid-over grass through the meadow where it ran, standing up again over ~30 s, and hoof and boot prints show a rim of paler torn-up sod round a darker pressed floor; red deer now press cloven hoof prints into the meadow: paired slots where they walk, splayed four-hoof groups with dew claws where they galloped, fading over ~2.5 min; the hero now has a face: sun-browned skin, brows and two wet eyes looking out between the hood and the face cloth under the hat brim, lit by a soft face fill; the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
+Content hours playable: 0.8
+(every oak bole and boulder foot now sits in a ragged collar of velvet moss, wider on the shaded north side, with a few fallen oak leaves lying on it; the oak crowns are now masses of small lobed oak leaves in sprays, each leaf catching the sun at its own angle, with a darker, shaded inner crown, instead of a few hundred plate-sized painted leaves; the red deer herd now beds down in the meadow at night -- kneeling on the forelegs, then sinking onto the haunches, each deer in its own patch of pressed grass, chewing the cud or dozing -- springs up haunches-first to stare at a hero who comes into sight, lies down again once he has gone and is up grazing again before dawn; red deer now have a deep chest, a flank that tucks up into a hanging thigh and a shoulder blade and haunch that show under the coat; a red deer stag with a royal head of antlers and a dark shaggy rut mane now grazes at the edge of the hinds and gallops with them when they flee; a fleeing deer herd now combs a lane of laid-over grass through the meadow where it ran, standing up again over ~30 s, and hoof and boot prints show a rim of paler torn-up sod round a darker pressed floor; red deer now press cloven hoof prints into the meadow: paired slots where they walk, splayed four-hoof groups with dew claws where they galloped, fading over ~2.5 min; the hero now has a face: sun-browned skin, brows and two wet eyes looking out between the hood and the face cloth under the hat brim, lit by a soft face fill; the hero's mantle now falls in deep uneven folds to a soft scalloped, stitched hem instead of a flat slab; the hero's old sci-fi plates now read as worn black lacquered lamellar with iron fittings and a dark indigo face cloth instead of a blue visor; the hero now travels in a wide woven straw hat over an indigo hood, a dark shoulder mantle, long madder-red robe panels front and back that swing with his stride, an ochre sash and linen leg and forearm bindings over the old armour; the tall meadow is now a mix of leafy clumps, low arching tussocks and seeding stems with straw panicles growing in knots and open runs; a dense short sward now carpets the meadow floor round the hero between the tall grass clumps, so the near ground reads as grass, not tufts over bare soil; a herd of red deer hinds and calves grazes the open meadow, heads up to stare at a hero who comes into sight and bolting together in a gallop when he runs at them, settling to graze far off; the hero and the Hollow soldier press boot prints into the ground that fill with rain and fade over ~3 min, and the trodden track through the meadow reads as a lane of laid, paler straw; the meadow grass, wildflowers and ferns part round the hero and stay trodden down along the trail, springing back over ~9 s; the soldier fight can now be lost and retried from the rest point; walkable test valley under a drifting cloud sky whose cumulus throw moving shadows across the meadow and the far ridges, with weather fronts that roll in (cumulus thicken into a grey deck, wind, grey light, rain, wet ground, puddles that fill the hollows and dance with raindrop rings, drops that splash on the ground, a hero and soldier who get soaked, drip and dry off again, and pools the hero splashes through, leaving rings spreading behind each step; heavy fronts throw lightning in the far deck that flashes the clouds and the land), grass, oak groves with a fern and shrub understory over a carpet of fallen oak leaves, boulders, a ruined watchtower to climb up to and explore on the western spur, rook flocks, wildflower drifts, butterflies by day, fireflies at night and midges in the evening light, played as a rigged animated humanoid
 who can draw the staff, land a four-hit string and a chargeable heavy smash on a practice post, parry, and lock on to and fight one Hollow Soldier (thrust + sweep) down the meadow
 (a few minutes of real combat); no quests or shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
@@ -28,6 +28,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 10:00 UTC:
+  - **Moss collars at tree bases and boulder feet (Next item 4 "moss at tree bases and
+    round boulders"; 09:00 verdict "the grove floor under them is flat red-brown soil").**
+    `Flora._bake_moss()` paints a 1024^2 L8 `moss_map` (0.5 m cells, same 512 m square as
+    the shelter map, global `moss_map`): a ring round each oak bole (trunk + 0.4..2.8 m x
+    scale) and each boulder foot (0.55..1.05 x size + 0.5 m), skewed x1.35 wider on the
+    shaded side (`MOSS_SHADE`, away from the afternoon sun) and x0.7 on the sunny side.
+    `terrain.gdshader` breaks the edge up with the cushion fbm + a 2.3/m noise, lays a
+    lumpier, slightly brighter moss there (height 0.012 so the bump reads as cushions) and
+    scatters fallen oak leaves on the outer part of collars under a crown. `Flora.moss_at()`.
+  - New bot route `moss`: 260/260 oaks collared, 259 mossier on the shaded side, 94/94 big
+    boulders ringed, none in the open meadow round the village. PASS.
+  - Fresh box gotcha: run `.tools/godot --headless --path game --import` BEFORE the first
+    shot; without the class cache shot.gd fails to parse (the 09:00 notes say bots do it
+    implicitly; shots do not). Do not `pkill -f godot` from the tool shell (it kills the
+    shell itself: match `\.tools/godot`).
+  - Bots: moss, walk, understory, trample PASS (only flora/terrain changed).
+  - Verdicts: `tree treeM` (17 h, dusk back light) fail: collar only a thin faint green at
+    the bole foot (widened + brightened after it). `tree treeN 90 13` fail: clear moss
+    collars at the boles now, slightly too saturated green; the grove floor between them
+    is flat red-brown soil and the far mountain ring is still low-poly in the haze.
 - Session 2026-10-13 09:00 UTC:
   - **Oak crown pass (07:00 session's pick: "the oaks fail every shot"; owner LOOK).**
     `Flora._leaf_atlas` repainted: each of the 4 tiles is now a spray of 3-5 shoots with
@@ -1605,7 +1626,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    Terrain textures: CC0 grass/dirt/rock/moss (blocked here — see above). (done 14:00 (10-11):
    procedural turf/clover/moss/litter/rock floor with per-pixel bump.) Still to do: moss at
    tree bases and round boulders (pass tree/rock positions in a mask texture), a path/road
-   layer, grass blade albedo detail + softer clump shadows.
+   layer, grass blade albedo detail + softer clump shadows. (done 10:00 10-13: moss collars
+   at oak boles and boulder feet; follow-ups: moss creeping up the boulder flanks from the
+   collar (rock shader reads `moss_map`), exposed roots radiating from the bole, the grove
+   floor between collars still reads as flat soil at 15+ m.)
 5. (done 13:00: rook flocks + kites; 01:00: fireflies + midge swarms; 12:20 (10-11):
    butterflies; 13:00 (10-11): wildflower drifts, butterflies perch on flower heads.) Still to
    do: flower LOD (a cross-card impostor past ~20 m), red clover/poppies, bees on the
@@ -1666,6 +1690,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Moss collars (10:00 10-13): at 16 m in dusk back light they read only faintly (thin
+  green at the bole foot); the tall grass and sward still grow through them (no grass
+  thinning on moss); collars are flat terrain colour (no 3D cushion geometry); 0.5 m map
+  cells can show as soft blobs on very small stones.
 - Oak crowns (09:00 10-13): ~30 % more leaf cards per tree (overdraw; check the frame
   time on a real GPU); outer twigs can still read airy against the sky; the inner-crown
   darkening is per card (from an ellipsoid fit), not true self-shadowing; back faces flip

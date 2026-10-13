@@ -149,6 +149,10 @@ shelter_map={
 "type": "sampler2D",
 "value": ""
 }
+moss_map={
+"type": "sampler2D",
+"value": ""
+}
 wade_ring_0={
 "type": "vec4",
 "value": Vector4(0, 0, 0, 0)

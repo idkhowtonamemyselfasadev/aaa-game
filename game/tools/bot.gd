@@ -93,6 +93,9 @@ func _ready() -> void:
 	if name == "bed":
 		_bed_test()
 		return
+	if name == "moss":
+		_moss_test()
+		return
 	if name == "flinch":
 		_flinch_test()
 		return
@@ -1651,6 +1654,39 @@ func _understory_test() -> void:
 	if t >= 20.0:
 		return _combat_done(false, "stuck in the ferns at %s" % p.global_position)
 	_combat_done(true, "groves have a fern and shrub understory the hero can walk through")
+
+## Moss collars: every oak bole has moss at its foot, more on the shaded side than the
+## sunny side; the big boulders have moss round their feet; the open meadow has none.
+func _moss_test() -> void:
+	var flora: Flora = _world.get_node("Flora")
+	var collared := 0
+	var shaded_more := 0
+	for xf in flora.tree_xforms:
+		var c := Vector2(xf.origin.x, xf.origin.z)
+		var r := 0.5 * xf.basis.get_scale().x + 1.0
+		var sh := c + Flora.MOSS_SHADE * r
+		var su := c - Flora.MOSS_SHADE * r
+		if flora.moss_at(sh.x, sh.y) > 0.3:
+			collared += 1
+		if flora.moss_at(sh.x, sh.y) > flora.moss_at(su.x, su.y):
+			shaded_more += 1
+	var rocks := 0
+	var big := 0
+	for f in flora._rock_feet:
+		if f.y < 1.4:
+			continue
+		big += 1
+		if flora.moss_at(f.x + f.y * 0.9, f.z) > 0.2 or flora.moss_at(f.x - f.y * 0.9, f.z) > 0.2:
+			rocks += 1
+	# the open meadow round the village has no collars
+	var open_moss := 0.0
+	for k in 64:
+		var a := k * TAU / 64.0
+		open_moss = maxf(open_moss, flora.moss_at(cos(a) * 30.0, sin(a) * 30.0))
+	var n := flora.tree_xforms.size()
+	print("BOT moss: %d/%d oaks collared, %d shaded side mossier, %d/%d big boulders ringed, open meadow max %.2f" % [collared, n, shaded_more, rocks, big, open_moss])
+	_combat_done(collared >= n * 0.95 and shaded_more >= n * 0.9 and rocks >= big * 0.9 and big > 0 and open_moss < 0.05,
+		"moss collars at the oak boles and boulder feet, none in the open meadow")
 
 func _trample_test() -> void:
 	var p := _player
