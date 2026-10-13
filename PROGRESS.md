@@ -41,7 +41,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   - Prints read better: hoof/boot slot floors darker and deeper (bump), a paler rim of
     torn-up sod/crumbs round each slot (hoof rim 3 cm), prints in turf at 75 % (was 55 %).
   - Bots: `herd` now also checks the lane: 64 herd points live, grass laid at 6/8 spots
-    6-27 m behind the fled herd: PASS. `trample` PASS.
+    6-27 m behind the fled herd: PASS. All 18 bot routes PASS.
+  - Verdict: `hooves hooves3 40 11` fail: a slightly more open, combed band shows where the
+    galloping deer ran, but the hoof slots still vanish: the soil under the tall grass is
+    near-black in the clump shadows, so a slot (and its paler rim) has no contrast. Next:
+    show tracks where they read in life -- a muddy margin by a pool, a bare deer path worn
+    into the turf where the herd's lane is refreshed day after day (persistent wear map),
+    or a lower/closer camera in the laid lane at low sun; lift the shaded soil under the
+    grass a touch (bounce) so the ground is not a black void between clumps.
 - Session 2026-10-13 03:00 UTC:
   - **Deer hoof prints (Next item 5 follow-up "deer trample/prints"; reactive world).**
     `Trample` gains a second print buffer for the herd: `add_hoof(at, dir, depth, splay,
