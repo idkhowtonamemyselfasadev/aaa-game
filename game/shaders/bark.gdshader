@@ -6,9 +6,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // plated ridges, lichen/moss on the upward side and near the roots.
 #include "res://shaders/tree_wind.gdshaderinc"
 
-uniform vec3 bark_dark : source_color = vec3(0.17, 0.12, 0.08);
-uniform vec3 bark_light : source_color = vec3(0.5, 0.47, 0.42);
-uniform vec3 lichen : source_color = vec3(0.66, 0.68, 0.58);
+uniform vec3 bark_dark : source_color = vec3(0.14, 0.1, 0.07);
+uniform vec3 bark_light : source_color = vec3(0.29, 0.25, 0.2);
+uniform vec3 lichen : source_color = vec3(0.5, 0.52, 0.44);
 uniform vec3 moss : source_color = vec3(0.21, 0.26, 0.08);
 
 varying vec3 wn;
@@ -46,19 +46,25 @@ float furrow(vec2 uv) {
 // Each plate column gets its own crack offset and tilt, and some cracks are missing
 // so the blocks have uneven lengths. Returns 1 in a cross crack.
 float cracks(vec2 uv) {
+	// row spacing is jittered along the limb (a slow warp of y), and cracks group
+	// columns in runs of 2-3 (shared offset) so a crack crosses several plates
 	vec2 q = vec2(uv.x * 12.0, uv.y * 7.0);
 	float c = mod(floor(q.x), 24.0);
-	float y = q.y + h21(vec2(c, 3.7)) + (fract(q.x) - 0.5) * (h21(vec2(c, 9.1)) - 0.5) * 0.7
-		+ (n2w(q * vec2(1.0, 0.5), 24.0) - 0.5) * 0.35;
-	float keep = step(0.3, h21(vec2(c, floor(y))));
-	return smoothstep(0.6, 0.9, abs(fract(y) - 0.5) * 2.0) * keep;
+	float g = mod(floor((c + floor(h21(vec2(floor(q.y * 0.5), 1.3)) * 3.0)) / 2.5), 10.0);
+	float y = q.y + (n2(vec2(q.y * 0.35, g * 7.0)) - 0.5) * 1.6
+		+ h21(vec2(g, 3.7)) + (fract(q.x) - 0.5) * (h21(vec2(c, 9.1)) - 0.5) * 0.5
+		+ (n2w(q * vec2(1.0, 0.5), 24.0) - 0.5) * 0.45;
+	float keep = step(0.35, h21(vec2(c, floor(y))));
+	// width varies per crack (hairline to a thumb-wide split)
+	float w = mix(0.82, 0.62, h21(vec2(c + 31.0, floor(y))));
+	return smoothstep(w, w + 0.18, abs(fract(y) - 0.5) * 2.0) * keep;
 }
 
 // the full bark height field: furrows with flat plate tops (narrow furrows), cut into
 // blocks by the cross cracks
 float bark_h(vec2 uv) {
 	float f = smoothstep(0.12, 0.62, furrow(uv));
-	return f * (1.0 - 0.8 * cracks(uv) * smoothstep(0.3, 0.7, f));
+	return f * (1.0 - 0.55 * cracks(uv) * smoothstep(0.3, 0.7, f));
 }
 
 void vertex() {
@@ -92,7 +98,7 @@ void fragment() {
 	// old oak bark is grey-weathered on the plate tops, with pale crustose lichen blotches
 	// on the ridges (never in the furrows); the furrows stay dark brown
 	float plate = smoothstep(0.55, 0.9, f);
-	col = mix(col, col * vec3(1.08, 1.1, 1.12) + vec3(0.03), plate * 0.6);
+	col = mix(col, col * vec3(1.04, 1.05, 1.06) + vec3(0.012), plate * 0.45);
 	// blotches the size of a hand to a dinner plate, so they read from 5-10 m; they sit
 	// on the plates and only feather into the furrow lips
 	float lb = smoothstep(0.56, 0.7, n2w(UV * vec2(5.0, 1.4), 10.0) * 0.65 + n2(UV * vec2(18.0, 5.0)) * 0.35);
@@ -110,14 +116,14 @@ void fragment() {
 		// crotches and the line where the root goes into the soil
 		// roots weather paler and greyer than the bole (scuffed, sun-bleached on top)
 		float top = smoothstep(0.2, 0.8, wn.y);
-		col = mix(col, bark_light * vec3(1.45, 1.4, 1.35), 0.45 + top * 0.4 * f);
+		col = mix(col, bark_light * vec3(1.3, 1.26, 1.22), 0.35 + top * 0.35 * f);
 		float lowm = 1.0 - smoothstep(0.02, 0.14, v_soil);
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
 		col *= mix(0.8, 1.0, smoothstep(0.0, 0.07, v_soil));
 	}
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.75);
 	// lichen grows where the moss does not (the drier bark), so it shows on every side
-	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.25, 1.0, plate) * 0.9 * (1.0 - m));
+	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.2, 1.0, plate) * 0.6 * (1.0 - m));
 	float rough = mix(0.97, 0.85, m);
 	weather_wetten(col, rough, 1.0);
 	ALBEDO = col;
@@ -127,9 +133,9 @@ void fragment() {
 	NORMAL_MAP_DEPTH = 1.6;
 	// cavity: the furrow floors and the cross cracks stay dark even in the bounce fill
 	AO = mix(0.4, 1.0, smoothstep(0.05, 0.55, h));
-	ALBEDO *= mix(0.75, 1.0, smoothstep(0.0, 0.35, h));
+	ALBEDO *= mix(0.82, 1.0, smoothstep(0.0, 0.3, h));
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	// trunks are vertical: bounce off the ground below, less in the furrows
-	EMISSION = ALBEDO * bounce_light * 1.25 * AO;
+	EMISSION = ALBEDO * bounce_light * 1.7 * AO;   // darker albedo since 10-13 20:00: more fill
 }

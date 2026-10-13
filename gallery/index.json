@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261010-0816-vale-slope-dusk.jpg",
-  "time": "2026-10-10T08:16:26Z",
-  "caption": "Grass on a Vale slope at 16:30 golden hour reads well up close, but past the 64 m grass radius the valley is an empty brown plane under grey sky with no trees, rocks or village.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-0857-vale-noon-hills.jpg",
   "time": "2026-10-10T08:57:12Z",
   "caption": "Noon in Harrowmere Vale: the hill bowl finally renders solid behind the wind-combed meadow (terrain winding fix); still no trees, rocks, village or textures, and the capsule player is a speck.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-0857-vale-dusk-shadows.jpg",
-  "time": "2026-10-10T08:57:12Z",
-  "caption": "16:30: long hill shadows sweep across the valley, but the shadowed foreground is crushed to black and the sky is flat grey.",
   "verdict": "fail"
  },
  {
@@ -891,6 +879,18 @@
   "file": "20261013-1931-bark-blocks.jpg",
   "time": "2026-10-13T19:31:04Z",
   "caption": "Oak bole foot at 10 h: plates now cut across into blocks by cracks, but in front sun the bark reads pale birch-grey, the crack ladder is too regular and the moss cushions still show a crackled-mud net.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-2141-bark-sun.jpg",
+  "time": "2026-10-13T21:41:00Z",
+  "caption": "Oak bole foot at 10 h front sun: bark now warm grey-brown instead of birch-white and the moss collar reads as soft olive cushions instead of a crackled-mud net; the cross cracks still look like short painted dashes and the bole is too smooth between them.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-2141-bark-backlit.jpg",
+  "time": "2026-10-13T21:41:00Z",
+  "caption": "Same oak at 15 h against the light: the bole keeps a brown form in the shade with more bounce fill and the moss underfoot only shows a faint cushion pattern; bark detail is lost in the shade and the crown is still dark.",
   "verdict": "fail"
  }
 ]

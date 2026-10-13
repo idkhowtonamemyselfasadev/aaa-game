@@ -326,8 +326,10 @@ vec3 cushions(vec2 p, float scale) {
 		}
 	}
 	float dome = sqrt(max(0.0, 1.0 - d1 * d1 * 1.1));
-	float crev = 1.0 - smoothstep(0.0, 0.1, d2 - d1);
-	return vec3(dome * (1.0 - crev * 0.7), crev, tone);
+	// soft, wide crevices: a thin dark line between cells read as cracked mud
+	float crev = 1.0 - smoothstep(0.0, 0.32, d2 - d1);
+	crev *= crev;
+	return vec3(dome * (1.0 - crev * 0.5), crev, tone);
 }
 
 float fade_l_early(float fp) { return 1.0 - smoothstep(0.01, 0.05, fp); }
@@ -436,10 +438,12 @@ void fragment() {
 	cu.x = mix(0.55 + cu.x * 0.45, cu.x, cmask);
 	vec3 olive_hi = mix(moss_b, thatch_a, 0.38) * 0.95;
 	vec3 olive_lo = mix(moss_a, soil, 0.25) * 0.9;
-	vec3 moss_f = mix(olive_lo, olive_hi, clamp(mix(mcush * 1.2 - 0.1, cu.x, 0.6 * fade_cu) + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
+	vec3 moss_f = mix(olive_lo, olive_hi, clamp(mix(mcush * 1.2 - 0.1, cu.x, 0.35 * fade_cu) + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
 	moss_f = mix(moss_f, mix(thatch_a, leaf_b, 0.4) * 0.8, step(0.86, cu.z) * smoothstep(0.4, 0.9, cu.x) * 0.6 * fade_cu);
-	moss_f = mix(moss_f, olive_lo * 0.55, cu.y * 0.55 * fade_cu);
-	float fh = (mix(mcush * 0.6, cu.x * 0.85, fade_cu) + vnoise(wpos * 16.0) * 0.25 + mfine * 0.1 * fade_m) * 0.018;
+	// each cushion its own shade of olive, crevices only a soft peaty shadow
+	moss_f *= mix(1.0, 0.86 + 0.28 * cu.z, fade_cu);
+	moss_f = mix(moss_f, olive_lo * 0.6, cu.y * 0.35 * fade_cu);
+	float fh = (mix(mcush * 0.6, mcush * 0.45 + cu.x * 0.3, fade_cu) + vnoise(wpos * 16.0) * 0.25 + mfine * 0.1 * fade_m) * 0.018;
 	if (footw > 0.001) {
 		vec3 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);
 		float on = fl.x * fade_l_early(fp) * step(0.45, fl.z) * (1.0 - smoothstep(0.3, 0.9, fm)) * canopy;
