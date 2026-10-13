@@ -28,6 +28,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 15:30 UTC:
+  - **Surface roots on every oak (item 4 follow-up "exposed roots radiating from the
+    bole").** flora.gd `_build_roots()`: 4-7 roots per oak (+ a forked side root on most
+    big ones), polylines that leave the root flare, arch just proud of the soil and sink in
+    at the tip, sampled on `Terrain.height_at` so they hug slopes; built in world space into
+    62 chunk meshes (indexed, ~142k verts, visibility range 110 m), bark material with
+    COLOR.g = root flag, COLOR.b = height above soil. bark.gdshader: roots are paler/greyer,
+    moss and peat at the soil line. New `roots` shot spot (bole foot from 5.5 m).
+  - **Moss cushions up close no longer tile like cracked mud** (seen in the roots shot):
+    terrain.gdshader warps the cushion Worley domain, thins the crevices and opens them only
+    in patches, crevice colour is dark olive instead of soil.
+  - Bot `moss` extended: 2220 roots on 260 oaks, all tips buried, none floating > 0.45 m
+    away from a bole. Bots: moss, walk PASS.
+  - Verdicts: `roots rootsA 90 15` fail: roots read as thin black claws, moss cushions as
+    crazed mud tiles. `roots rootsC 90 15` fail: cushions now wander and merge (better, a
+    faint crack net remains), but the bole and roots read near-black in grove shade, so the
+    roots barely separate from the bole; the shapes at the bole foot look like dark fins.
+    Next: lift the bark albedo/shade fill (the whole trunk is black in shade), then re-judge
+    the root shapes from a side-lit camera; the B and C shots looked identical despite a
+    lower buttress, so check the roots are what is seen there.
 - Session 2026-10-13 14:50 UTC: built the same olive-collar / green-grove-floor pass as the
   14:20 session in parallel (my version: desaturated collar, mcush crevice darkening, dry
   patches, an fbm(0.3) floor-moss mask that thins the leaf layers, a canopy-aware far
@@ -1657,6 +1677,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. Bark reads near-black in grove shade (15:30 10-13 roots shot): lift bark albedo / shade
+   fill so the boles and the new surface roots show form, then re-judge the roots.
 1. (done 07:00 (10-12): film grade pass with night scotopic shift + grain.) Grade follow-up:
    keep the night sky blue (exempt pixels above the horizon or with low luminance gradient from
    the rod desaturation, or push the scot tint bluer), dusk/dawn check under the grade.
