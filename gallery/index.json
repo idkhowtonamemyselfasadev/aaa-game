@@ -844,5 +844,17 @@
   "time": "2026-10-13T12:02:31Z",
   "caption": "Oak grove at 13 h with moss collars at the boles; the moss climbing the shaded side of the trunks faces away from this camera and the grove floor is still flat red-brown soil.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-1335-boulder.jpg",
+  "time": "2026-10-13T13:35:29Z",
+  "caption": "A mossy boulder sitting in the meadow with open moss at its foot; the lichen/crack pattern on top is still too map-like and the boulder is a lone blob, not an outcrop.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-1335-grove.jpg",
+  "time": "2026-10-13T13:35:29Z",
+  "caption": "Oak grove at 13 h: the moss collars at the boles now lie open with no tall grass through them, but read as a flat over-saturated green patch and the grove floor between is bare red-brown soil.",
+  "verdict": "fail"
  }
 ]
