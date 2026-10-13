@@ -57,14 +57,31 @@ float cracks(vec2 uv) {
 	float keep = step(0.35, h21(vec2(c, floor(y))));
 	// width varies per crack (hairline to a thumb-wide split)
 	float w = mix(0.82, 0.62, h21(vec2(c + 31.0, floor(y))));
-	return smoothstep(w, w + 0.18, abs(fract(y) - 0.5) * 2.0) * keep;
+	// rounded lips: the plate edge rolls over into the split (soft shoulder) and the
+	// split closes in a V, instead of a flat-bottomed dark band with hard edges
+	float x = smoothstep(w - 0.1, 0.98, abs(fract(y) - 0.5) * 2.0);
+	return x * x * (3.0 - 2.0 * x) * keep;
+}
+
+// fine relief on the plate tops: long fibres along the limb (~1 cm wide, 10-15 cm
+// long) and raised, stepped flakes a few cm across, so a plate is never smooth.
+// Both wrap at u = 2.
+float bark_fine(vec2 uv) {
+	float fib = n2w(uv * vec2(110.0, 8.0), 220.0) * 0.6 + n2w(uv * vec2(230.0, 20.0), 460.0) * 0.4;
+	vec2 fp = uv * vec2(36.0, 20.0);
+	fp.x += n2w(uv * vec2(14.0, 6.0), 28.0) * 1.5;
+	float flake = smoothstep(0.45, 0.62, n2w(fp, 72.0));
+	return fib * 0.45 + flake * 0.55;
 }
 
 // the full bark height field: furrows with flat plate tops (narrow furrows), cut into
 // blocks by the cross cracks
-float bark_h(vec2 uv) {
+// `fine` fades the plate-top texture out where it would alias (far away)
+float bark_h(vec2 uv, float fine) {
 	float f = smoothstep(0.12, 0.62, furrow(uv));
-	return f * (1.0 - 0.55 * cracks(uv) * smoothstep(0.3, 0.7, f));
+	float top = smoothstep(0.45, 0.9, f);
+	return f * (1.0 - 0.55 * cracks(uv) * smoothstep(0.3, 0.7, f))
+		+ top * (bark_fine(uv) - 0.5) * 0.24 * fine;
 }
 
 void vertex() {
@@ -73,7 +90,9 @@ void vertex() {
 	// in the normal map; 1 - COLOR.a is the relief depth in metres
 	float relief = 1.0 - COLOR.a;
 	if (relief > 0.0) {
-		VERTEX += NORMAL * (smoothstep(0.15, 0.9, furrow(UV)) - 0.6) * relief;
+		// flat plate tops and narrow furrows (the bark_h profile without the cross
+		// cracks: the bole rings are 0.2 m apart, too coarse for 18 cm crack rows)
+		VERTEX += NORMAL * (smoothstep(0.12, 0.62, furrow(UV)) - 0.62) * relief;
 	}
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -87,12 +106,16 @@ void fragment() {
 	// colour follows the coarse furrows; the blocky height field (cross cracks, flat
 	// plate tops) only drives the normal map and the cavity shading
 	float f = furrow(UV);
-	float h = bark_h(UV);
-	float e = 0.004;
-	float hx = bark_h(UV + vec2(e, 0.0));
-	float hy = bark_h(UV + vec2(0.0, e));
+	float fine = 1.0 - smoothstep(0.003, 0.012, length(fwidth(UV)));
+	float h = bark_h(UV, fine);
+	float e = 0.003;
+	float hx = bark_h(UV + vec2(e, 0.0), fine);
+	float hy = bark_h(UV + vec2(0.0, e), fine);
 	vec3 col = mix(bark_dark, bark_light, smoothstep(0.25, 0.85, f));
 	col *= 0.85 + 0.3 * n2(UV * vec2(40.0, 10.0));
+	// the raised flakes and fibres on the plates weather a little paler than the
+	// grooves between them
+	col *= mix(1.0, 0.8 + 0.4 * bark_fine(UV), smoothstep(0.45, 0.9, f) * fine);
 	// deep in the furrows the bark is warm red-brown (fresh inner layers, no weathering)
 	col = mix(col, vec3(0.2, 0.12, 0.07), (1.0 - smoothstep(0.1, 0.4, f)) * 0.6);
 	// old oak bark is grey-weathered on the plate tops, with pale crustose lichen blotches
