@@ -28,6 +28,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 14:50 UTC: built the same olive-collar / green-grove-floor pass as the
+  14:20 session in parallel (my version: desaturated collar, mcush crevice darkening, dry
+  patches, an fbm(0.3) floor-moss mask that thins the leaf layers, a canopy-aware far
+  average) and found 304605b already pushed at rebase time; dropped mine, since 304605b
+  also gives the cushions real relief. Third overlap today: a session that starts while
+  another is still running picks the same Next item. Proposal for the next session: commit
+  and push a one-line "Claimed by session <time>: <item>" under Next before building, and
+  skip any item already claimed in the last 90 min. Shots now take ~18 min on the box.
+  No game change this session; bots moss, walk PASS.
 - Session 2026-10-13 14:20 UTC:
   - **Olive moss cushions + green grove floor (12:40 verdict "flat, too-saturated green
     disc ... green the grove floor between the collars").** terrain.gdshader: new
