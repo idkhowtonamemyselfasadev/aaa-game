@@ -1833,6 +1833,20 @@ func _herd_test() -> void:
 	print("BOT herd hoofs: %d pressed, %d live, one %.1f m behind the herd (depth %.2f)" % [herd.hoof_prints, tr.active_hoofs(), Vector2(hp.x, hp.y).distance_to(Vector2(herd.centre().x, herd.centre().z)) if hp.w > 0.0 else -1.0, hp.w])
 	if herd.hoof_prints < 20 or tr.active_hoofs() < 20 or hp.w < 0.9:
 		return _combat_done(false, "the fleeing deer left no hoof prints behind them")
+	# ... and combed a lane through the grass where it ran (its own trail buffer)
+	var lane := 0
+	var lay_max := 0.0
+	for k in 8:
+		var q := herd.centre() - herd._flee_dir * (6.0 + k * 3.0)
+		var best := 0.0
+		for dx in range(-6, 7):
+			best = maxf(best, tr.herd_lay_at(q + herd._flee_dir.cross(Vector3.UP).normalized() * dx * 0.7))
+		lay_max = maxf(lay_max, best)
+		if best > 0.5:
+			lane += 1
+	print("BOT herd lane: %d herd trail points live, grass laid at %d/8 spots 6-27 m behind the herd (max %.2f)" % [tr.active_herd_points(), lane, lay_max])
+	if tr.active_herd_points() < 15 or lane < 5:
+		return _combat_done(false, "the fleeing herd left no trodden lane in the grass")
 	t = 0.0
 	while herd.state != Herd.CALM and t < 60.0:
 		await _ticks(30)

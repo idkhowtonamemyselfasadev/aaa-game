@@ -181,7 +181,7 @@ vec3 hoof_prints_at(vec2 xz) {
 		float keep = a.w * (1.0 - smoothstep(0.3, 1.0, age));
 		float soft = 0.003 + 0.008 * age;
 		float dent = 1.0 - smoothstep(-soft, soft * 0.5, sd);
-		float rim = smoothstep(0.02, 0.004, sd) * step(-0.001, sd);
+		float rim = smoothstep(0.03, 0.004, sd) * step(-0.001, sd);
 		// the toe digs in deepest, more so at a gallop
 		float toe = smoothstep(-0.3 * L, 0.45 * L, lp.x) * (0.6 + 0.4 * splay);
 		r.x = max(r.x, dent * keep);
@@ -443,11 +443,15 @@ void fragment() {
 	col = mix(col, rock, rockw);       h = mix(h, rock_h, rockw);
 	// ---- boot prints: pressed, matted and darker; deepest in soft litter, faint in turf ----
 	vec3 bp = fp < 0.03 ? max(boot_prints(xz), hoof_prints_at(xz)) : vec3(0.0);
-	float soft_g = (1.0 - rockw) * mix(0.55, 1.0, max(litw, mossw * 0.7));
+	float soft_g = (1.0 - rockw) * mix(0.75, 1.0, max(litw, mossw * 0.7));
 	float pr = bp.x * soft_g * (1.0 - smoothstep(0.015, 0.03, fp));
-	col = mix(col, mix(col, mix(earth, thatch_a, 0.35) * 0.8, 0.55) * 0.78, pr);
-	col *= 1.0 + 0.1 * bp.y * soft_g;
-	h += (-0.012 - 0.006 * bp.z) * pr + 0.003 * bp.y * soft_g;
+	// the slot floor is bare pressed loam, darker and damp; the sod torn up round its lip is
+	// paler, drier crumbs and bruised blades, which is what makes a track read from a few
+	// metres in dark ground
+	col = mix(col, mix(col, mix(earth, thatch_a, 0.35) * 0.8, 0.7) * 0.7, pr);
+	vec3 crumbs = mix(earth * 1.9, thatch_a, 0.45) * (0.85 + 0.3 * micro);
+	col = mix(col, max(col, crumbs), bp.y * soft_g * 0.75 * (1.0 - smoothstep(0.015, 0.03, fp)));
+	h += (-0.016 - 0.008 * bp.z) * pr + 0.004 * bp.y * soft_g;
 	// broad tonal variation so the field is not one flat colour from afar
 	col *= 0.82 + 0.3 * macro + 0.12 * (meso - 0.5);
 

@@ -6,7 +6,9 @@ extends Node
 ## presses boot prints into the ground (terrain.gdshader): left, right, left along the walk,
 ## darker pressed soil that fills with water in the rain and fades over PRINT_LIFE seconds.
 ## The red deer (world/herd.gd) press cloven hoof slots into a buffer of their own
-## (hoof_prints): paired walking slots, splayed and deeper where they galloped.
+## (hoof_prints): paired walking slots, splayed and deeper where they galloped, and lay a
+## trail of their own through the grass (herd_trail): a lane of combed-over stems where the
+## herd ran, standing up again over HERD_TRAIL_LIFE seconds.
 
 const N := 32             # footfalls kept (oldest recycled): ~19 m of trail
 const LIFE := 9.0         # s for a laid plant to stand up again (shader TRAMPLE_LIFE)
@@ -19,6 +21,10 @@ const GAIT := 0.11        # m each foot sits off the walk line
 
 const HN := 256           # hoof prints kept (the whole herd shares them)
 const HOOF_LIFE := 150.0  # s for a hoof print to weather away (shader HOOF_LIFE)
+
+const HTN := 64                 # herd trail points (shader HERD_TRAIL_N)
+const HERD_TRAIL_LIFE := 30.0   # s for grass laid by the herd to stand up (shader)
+const HERD_MERGE := 0.7         # m: a deer passing an existing point refreshes it instead
 
 var player: Node3D
 var walkers: Array[Node3D] = []   # besides the hero: soldiers etc. (trail + prints)
@@ -33,6 +39,11 @@ var _hdirs: Array[Vector4] = []  # toe dir x, z, splay 0..1, size (m, hoof lengt
 var _hnext := 0
 var _himg: Image
 var _htex: ImageTexture
+var _hts: Array[Vector4] = []    # herd trail: x, z, age, strength
+var _htd: Array[Vector2] = []
+var _htnext := 0
+var _htimg: Image
+var _httex: ImageTexture
 var _pts: Array[Vector4] = []    # x, z, age, strength
 var _dirs: Array[Vector2] = []
 var _next := 0
@@ -59,6 +70,12 @@ func _ready() -> void:
 	_himg = Image.create_empty(HN, 2, false, Image.FORMAT_RGBAF)
 	_htex = ImageTexture.create_from_image(_himg)
 	RenderingServer.global_shader_parameter_set("hoof_prints", _htex)
+	for i in HTN:
+		_hts.append(Vector4.ZERO)
+		_htd.append(Vector2.ZERO)
+	_htimg = Image.create_empty(HTN, 2, false, Image.FORMAT_RGBAF)
+	_httex = ImageTexture.create_from_image(_htimg)
+	RenderingServer.global_shader_parameter_set("herd_trail", _httex)
 
 func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -93,6 +110,13 @@ func _process(delta: float) -> void:
 			if h.z > HOOF_LIFE:
 				h = Vector4.ZERO
 			_hoofs[i] = h
+	for i in HTN:
+		var t := _hts[i]
+		if t.w > 0.0:
+			t.z += delta
+			if t.z > HERD_TRAIL_LIFE:
+				t = Vector4.ZERO
+			_hts[i] = t
 	_walk(player, delta, grounded)
 	for w in walkers:
 		if is_instance_valid(w) and w.is_inside_tree():
@@ -162,6 +186,44 @@ func add_hoof(at: Vector2, dir: Vector2, depth: float, splay: float, size: float
 	_hdirs[_hnext] = Vector4(d.x, d.y, splay, size)
 	_hnext = (_hnext + 1) % HN
 
+## A deer runs through the grass at `at` heading `dir`: lay the stems over there. Deer of
+## one herd run in each other's tracks, so a point near an existing one refreshes it (and
+## keeps the stronger push) rather than spending a new slot: the 64 points then cover a
+## whole fled herd's lane instead of a few metres per animal.
+func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0) -> void:
+	for i in HTN:
+		var t := _hts[i]
+		if t.w > 0.0 and Vector2(t.x - at.x, t.y - at.y).length() < HERD_MERGE:
+			_hts[i] = Vector4(t.x, t.y, minf(t.z, age), maxf(t.w, strength))
+			if t.z > age:
+				_htd[i] = dir.normalized()
+			return
+	_hts[_htnext] = Vector4(at.x, at.y, age, strength)
+	_htd[_htnext] = dir.normalized()
+	_htnext = (_htnext + 1) % HTN
+
+## Live herd trail points (bots).
+func active_herd_points() -> int:
+	var n := 0
+	for t in _hts:
+		if t.w > 0.0:
+			n += 1
+	return n
+
+## How far (0..1) the herd's run lays a plant rooted at `at` over: CPU mirror of
+## herd_lay() in the shader (bots).
+func herd_lay_at(at: Vector3, reach := 0.85) -> float:
+	var amt := 0.0
+	for t in _hts:
+		if t.w <= 0.0:
+			continue
+		var d := Vector2(at.x - t.x, at.z - t.y).length()
+		if d > reach:
+			continue
+		var rec := smoothstep(0.0, 0.15, t.z) * (1.0 - smoothstep(0.35, 1.0, t.z / HERD_TRAIL_LIFE))
+		amt = maxf(amt, (1.0 - smoothstep(reach * 0.3, reach, d)) * rec * t.w)
+	return clampf(amt, 0.0, 1.0)
+
 func active_hoofs() -> int:
 	var n := 0
 	for h in _hoofs:
@@ -218,6 +280,21 @@ func _upload() -> void:
 		RenderingServer.global_shader_parameter_set("hoof_box", Vector4(1e9, 1e9, -1e9, -1e9))
 	else:
 		RenderingServer.global_shader_parameter_set("hoof_box", Vector4(lo.x - 0.2, lo.y - 0.2, hi.x + 0.2, hi.y + 0.2))
+	lo = Vector2(INF, INF)
+	hi = Vector2(-INF, -INF)
+	for i in HTN:
+		var t := _hts[i]
+		_htimg.set_pixel(i, 0, Color(t.x, t.y, t.z, t.w))
+		_htimg.set_pixel(i, 1, Color(_htd[i].x, _htd[i].y, 0.0, 0.0))
+		if t.w > 0.0:
+			lo = Vector2(minf(lo.x, t.x), minf(lo.y, t.y))
+			hi = Vector2(maxf(hi.x, t.x), maxf(hi.y, t.y))
+	_httex.update(_htimg)
+	# + the widest plant reach (ferns 1.1 m)
+	if lo.x == INF:
+		RenderingServer.global_shader_parameter_set("herd_trail_box", Vector4(1e9, 1e9, -1e9, -1e9))
+	else:
+		RenderingServer.global_shader_parameter_set("herd_trail_box", Vector4(lo.x - 1.2, lo.y - 1.2, hi.x + 1.2, hi.y + 1.2))
 
 ## Lay a trail along `path` (oldest first) whose footfalls are `age_old`..`age_new` s old
 ## (shots: a trodden track through the grass without having to walk it in real time).

@@ -53,6 +53,7 @@ class Deer:
 	var hoof_d := 0.0        # m walked since the last hoof print
 	var hoof_side := 0
 	var bound := 0
+	var trail_d := 0.0       # m run since the last herd trail point
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -316,6 +317,13 @@ func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
 	if _trample == null or moved <= 0.0:
 		return
 	d.hoof_d += moved
+	# the grass along the run is combed over: hard at a gallop, a faint path at a walk
+	if d.speed > 0.6:
+		d.trail_d += moved
+		var gap := lerpf(2.2, 1.1, smoothstep(1.0, 5.0, d.speed)) * d.scale
+		if d.trail_d >= gap:
+			d.trail_d = 0.0
+			_trample.add_herd_point(Vector2(d.pos.x, d.pos.z), Vector2(fwd.x, fwd.z), lerpf(0.35, 1.0, smoothstep(1.0, 6.0, d.speed)))
 	var f2 := Vector2(fwd.x, fwd.z)
 	var side := Vector2(-fwd.z, fwd.x)
 	var L := 0.08 * d.scale

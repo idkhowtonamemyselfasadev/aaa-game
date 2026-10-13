@@ -137,6 +137,14 @@ hoof_box={
 "type": "vec4",
 "value": Vector4(1e+09, 1e+09, -1e+09, -1e+09)
 }
+herd_trail={
+"type": "sampler2D",
+"value": ""
+}
+herd_trail_box={
+"type": "vec4",
+"value": Vector4(1e+09, 1e+09, -1e+09, -1e+09)
+}
 shelter_map={
 "type": "sampler2D",
 "value": ""

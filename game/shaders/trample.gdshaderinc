@@ -10,24 +10,65 @@ global uniform sampler2D trample_trail : filter_nearest, repeat_disable;
 const int TRAMPLE_N = 32;
 const float TRAMPLE_LIFE = 9.0;
 
+// The red deer's runs through the grass (world/trample.gd add_herd_point): same layout as
+// trample_trail, 64 points shared by the herd, laid longer (a fled herd leaves a lane of
+// combed-over grass that stands up again over HERD_TRAIL_LIFE s). herd_trail_box bounds
+// the live points (+ reach) so plants away from the herd skip the loop.
+global uniform sampler2D herd_trail : filter_nearest, repeat_disable;
+global uniform vec4 herd_trail_box;
+const int HERD_TRAIL_N = 64;
+const float HERD_TRAIL_LIFE = 30.0;
+
 // Lay-over for a plant rooted at `root`: xy direction (unit-ish) * amount, z = 0..1 how
 // far it is pushed over. `reach` is the radius a footfall flattens (m).
-vec3 trample_lay(vec3 root, float reach) {
-	if (trample_body.w < 0.5) {
+vec3 herd_lay(vec3 root, float reach, inout vec2 lay) {
+	float amt = 0.0;
+	if (root.x < herd_trail_box.x || root.z < herd_trail_box.y || root.x > herd_trail_box.z || root.z > herd_trail_box.w) {
 		return vec3(0.0);
+	}
+	for (int i = 0; i < HERD_TRAIL_N; i++) {
+		vec4 a = texelFetch(herd_trail, ivec2(i, 0), 0);
+		if (a.w <= 0.0) {
+			continue;
+		}
+		vec2 d = root.xz - a.xy;
+		float r2 = dot(d, d);
+		if (r2 > reach * reach) {
+			continue;
+		}
+		vec2 dir = texelFetch(herd_trail, ivec2(i, 1), 0).xy;
+		float t = a.z / HERD_TRAIL_LIFE;
+		float rec = smoothstep(0.0, 0.15, a.z) * (1.0 - smoothstep(0.35, 1.0, t));
+		float k = (1.0 - smoothstep(reach * 0.3, reach, sqrt(r2))) * rec * a.w;
+		vec2 side = d - dot(d, dir) * dir;
+		float sl = length(side);
+		vec2 out_dir = sl > 1e-3 ? side / sl : vec2(0.0);
+		lay += (dir * 0.9 + out_dir * 0.35) * k;
+		amt = max(amt, k);
+	}
+	return vec3(0.0, 0.0, amt);
+}
+
+vec3 trample_lay(vec3 root, float reach) {
+	vec2 hlay = vec2(0.0);
+	float hamt = herd_lay(root, reach, hlay).z;
+	if (trample_body.w < 0.5) {
+		float hl = length(hlay);
+		return hamt > 0.0 && hl > 1e-3 ? vec3(hlay / hl, clamp(hamt, 0.0, 1.0)) : vec3(0.0);
 	}
 	float grounded = step(1.5, trample_body.w);
 	vec2 dh = root.xz - trample_body.xz;
 	float d2 = dot(dh, dh);
 	if (d2 > 484.0) {   // the trail reaches ~19 m behind the hero
-		return vec3(0.0);
+		float hl = length(hlay);
+		return hamt > 0.0 && hl > 1e-3 ? vec3(hlay / hl, clamp(hamt, 0.0, 1.0)) : vec3(0.0);
 	}
 	// the legs part the plants round the hero (only when the feet are near the ground)
 	float dl = sqrt(d2);
 	float near = (1.0 - smoothstep(0.5, 1.6, abs(root.y - trample_body.y))) * grounded;
 	float live = (1.0 - smoothstep(0.2, reach + 0.25, dl)) * near;
-	vec2 lay = (dl > 1e-3 ? dh / dl : vec2(1.0, 0.0)) * live;
-	float amt = live;
+	vec2 lay = (dl > 1e-3 ? dh / dl : vec2(1.0, 0.0)) * live + hlay;
+	float amt = max(live, hamt);
 	for (int i = 0; i < TRAMPLE_N; i++) {
 		vec4 a = texelFetch(trample_trail, ivec2(i, 0), 0);
 		if (a.w <= 0.0) {
