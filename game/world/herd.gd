@@ -412,12 +412,12 @@ static func build_mesh(stag := false) -> ArrayMesh:
 	var body := [
 		[0.76, 1.03, 0.01, 0.01, 0.01, 0.0],
 		[0.71, 1.04, 0.11, 0.09, 0.14, 0.0],
-		[0.60, 1.04, 0.18, 0.12, 0.24, 0.0],
-		[0.42, 1.01, 0.21, 0.13, 0.29, 0.0],
-		[0.18, 0.98, 0.225, 0.14, 0.30, 0.0],
-		[-0.10, 0.98, 0.225, 0.155, 0.31, 0.0],
-		[-0.34, 1.01, 0.195, 0.195, 0.34, 0.0],
-		[-0.52, 1.04, 0.155, 0.20, 0.31, 0.0],
+		[0.60, 1.04, 0.18, 0.12, 0.215, 0.0],
+		[0.42, 1.01, 0.21, 0.13, 0.225, 0.0],
+		[0.18, 0.98, 0.225, 0.14, 0.285, 0.0],
+		[-0.10, 0.98, 0.225, 0.155, 0.32, 0.0],
+		[-0.34, 1.01, 0.195, 0.20, 0.36, 0.0],
+		[-0.52, 1.04, 0.16, 0.215, 0.35, 0.0],
 		[-0.66, 1.14, 0.135, 0.15, 0.24, 0.15],
 		[-0.81, 1.29, 0.11, 0.12, 0.185, 0.4],
 		[-0.93, 1.43, 0.092, 0.10, 0.145, 0.65],
@@ -430,7 +430,7 @@ static func build_mesh(stag := false) -> ArrayMesh:
 			body[i][2] *= w
 			body[i][3] *= lerpf(1.0, w, 0.6)
 			body[i][4] *= w * 1.05
-	_loft(st, body, 0.0, 24, 3, 0.0, 0.0)
+	_loft(st, body, 0.0, 32, 3, 0.0, 0.0, true)
 	if stag:
 		for s in [-1.0, 1.0]:
 			_antler(st, s)
@@ -460,8 +460,8 @@ static func build_mesh(stag := false) -> ArrayMesh:
 		var fore := [
 			[0.07, 1.00, -0.40, 0.09, 0.12, 0.11],
 			[0.10, 0.84, -0.38, 0.065, 0.085, 0.115],
-			[0.12, 0.70, -0.40, 0.05, 0.06, 0.062],
-			[0.115, 0.56, -0.41, 0.035, 0.042, 0.04],
+			[0.12, 0.70, -0.40, 0.056, 0.072, 0.07],
+			[0.115, 0.56, -0.41, 0.038, 0.048, 0.044],
 			[0.11, 0.45, -0.42, 0.036, 0.04, 0.038],
 			[0.11, 0.30, -0.42, 0.021, 0.024, 0.024],
 			[0.11, 0.13, -0.42, 0.023, 0.028, 0.026],
@@ -471,9 +471,9 @@ static func build_mesh(stag := false) -> ArrayMesh:
 		]
 		var hind := [
 			[0.08, 1.00, 0.40, 0.11, 0.18, 0.15],
-			[0.12, 0.86, 0.38, 0.088, 0.15, 0.14],
-			[0.135, 0.70, 0.42, 0.06, 0.06, 0.09],
-			[0.125, 0.58, 0.48, 0.042, 0.04, 0.06],
+			[0.12, 0.84, 0.39, 0.095, 0.16, 0.15],
+			[0.135, 0.70, 0.43, 0.068, 0.085, 0.105],
+			[0.125, 0.58, 0.48, 0.045, 0.045, 0.068],
 			[0.12, 0.51, 0.53, 0.036, 0.032, 0.05],
 			[0.115, 0.46, 0.54, 0.03, 0.03, 0.04],
 			[0.11, 0.30, 0.52, 0.021, 0.024, 0.025],
@@ -532,7 +532,7 @@ static func _branch(st: SurfaceTool, keys: Array, r0: float, r1: float, s: float
 ## Loft rings through `keys` (z, y, hw, hu, hd, bend[, x]) in the YZ plane; each ring is a
 ## half-ellipse above (hu) and below (hd) the path, hw wide. Keys are resampled with cubic
 ## interpolation, `sub` rings per span.
-static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int, leg: float, part: float) -> void:
+static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int, leg: float, part: float, muscle := false) -> void:
 	var rings: Array = []
 	for i in keys.size() - 1:
 		var k0: Array = keys[maxi(i - 1, 0)]
@@ -550,7 +550,7 @@ static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int,
 	for r: Array in rings:
 		var x: float = r[6] if r.size() > 6 else 0.0
 		pts.append(Vector3(x * side, r[1], r[0]))
-	_tube(st, pts, rings, seg, side, leg, -1.0, part, true)
+	_tube(st, pts, rings, seg, side, leg, -1.0, part, true, muscle)
 
 static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: float) -> void:
 	var pts: Array = []
@@ -575,7 +575,7 @@ static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: 
 
 ## Sweep ellipse rings along `pts`. Ring frame: X across, u = perpendicular to the path in YZ
 ## (up for a forward path, forward for a downward one).
-static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: float, leg: float, knee_y: float, part: float, mirror_x: bool) -> void:
+static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: float, leg: float, knee_y: float, part: float, mirror_x: bool, muscle := false) -> void:
 	var n := pts.size()
 	var verts: Array = []
 	for i in n:
@@ -599,6 +599,8 @@ static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: flo
 			var col := Color(leg, low, float(r[5]), part)
 			row.append([q, nn, col, Vector2(float(k) / seg, float(i) / (n - 1))])
 		verts.append(row)
+	if muscle:
+		_sculpt(verts, n, seg)
 	for i in n - 1:
 		for k in seg:
 			var a: Array = verts[i][k]
@@ -612,6 +614,40 @@ static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: flo
 				st.set_color(v[2])
 				st.set_uv(v[3])
 				st.add_vertex(v[0])
+
+## Body landmarks on the barrel loft: shoulder blade and the triceps mass over the foreleg,
+## the rounded haunch and stifle over the hind leg, a hollow in the flank between them and
+## a faint rib swell. Pushes the sides out along X, then rebuilds normals from the grid.
+static func _sculpt(verts: Array, n: int, seg: int) -> void:
+	for i in n:
+		for k in seg + 1:
+			var v: Array = verts[i][k]
+			var q: Vector3 = v[0]
+			var nn: Vector3 = v[1]
+			var d := 0.05 * _bump(q.z + 0.37 - (q.y - 1.1) * 0.35, q.y - 1.10, 0.11, 0.16)   # scapula, sloping forward-down
+			d += 0.035 * _bump(q.z + 0.29, q.y - 0.84, 0.09, 0.08)   # triceps over the elbow
+			d += 0.06 * _bump(q.z - 0.47, q.y - 0.99, 0.17, 0.15)   # haunch
+			d += 0.03 * _bump(q.z - 0.32, q.y - 0.79, 0.08, 0.08)    # stifle / thigh front
+			d -= 0.04 * _bump(q.z - 0.13, q.y - 0.88, 0.10, 0.09)   # flank hollow
+			d += 0.012 * _bump(q.z + 0.06, q.y - 0.92, 0.17, 0.12)   # rib barrel
+			d -= 0.022 * _bump(q.z + 0.19 - (q.y - 1.1) * 0.35, q.y - 1.0, 0.045, 0.13)   # groove behind the blade
+			var lat := smoothstep(0.0, 0.75, absf(nn.x))
+			v[0] = q + Vector3(signf(nn.x) * d * lat * 2.0, 0, 0)
+	for i in n:
+		for k in seg + 1:
+			var v: Array = verts[i][k]
+			var a: Vector3 = verts[mini(i + 1, n - 1)][k][0] - verts[maxi(i - 1, 0)][k][0]
+			var b: Vector3 = verts[i][(k + 1) % seg][0] - verts[i][(k - 1 + seg) % seg][0]
+			var nn := a.cross(b)
+			if nn.length() < 1e-6:
+				continue
+			nn = nn.normalized()
+			if nn.dot(v[1]) < 0.0:
+				nn = -nn
+			v[1] = nn
+
+static func _bump(dz: float, dy: float, sz: float, sy: float) -> float:
+	return exp(-(dz * dz) / (sz * sz) - (dy * dy) / (sy * sy))
 
 static func _sphere(st: SurfaceTool, c: Vector3, r: float, bend: float, part: float) -> void:
 	var seg := 10

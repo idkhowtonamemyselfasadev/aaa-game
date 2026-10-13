@@ -31,6 +31,7 @@ const vec3 KNEE[4] = vec3[4](vec3(0.11, 0.45, -0.42), vec3(-0.11, 0.45, -0.42), 
 const float WALK_OFF[4] = float[4](0.25, 0.75, 0.0, 0.5);
 const float GALLOP_OFF[4] = float[4](0.58, 0.46, 0.0, 0.12);
 
+float bump2(float dz, float dy, float sz, float sy) { return exp(-dz * dz / (sz * sz) - dy * dy / (sy * sy)); }
 vec3 rot_x(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c); }
 vec3 rot_y(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c); }
 
@@ -135,6 +136,12 @@ void fragment() {
 	if (v_col.a > 0.75) {
 		col = mix(coat_dark * 1.2, belly, smoothstep(0.2, 0.7, abs(rn.z)) * 0.5);
 	}
+	// body landmarks (match Herd._sculpt): a soft shade in the flank hollow and the groove
+	// behind the shoulder blade, a lift on the blade and haunch, so they read at range
+	float bodym = (1.0 - legm) * (1.0 - neckm) * smoothstep(0.2, 0.7, abs(rn.x));
+	float hollow = bump2(p.z - 0.13, p.y - 0.88, 0.12, 0.10) + bump2(p.z + 0.19 - (p.y - 1.1) * 0.35, p.y - 1.0, 0.05, 0.14);
+	float crest = bump2(p.z + 0.37 - (p.y - 1.1) * 0.35, p.y - 1.10, 0.10, 0.14) + bump2(p.z - 0.47, p.y - 0.99, 0.15, 0.13);
+	col *= 1.0 + bodym * (0.08 * crest - 0.06 * hollow);
 	// hair: fine strands along the body, a little coarser on the neck
 	float strand = vnoise(vec3(p.x * 160.0, p.y * 38.0, p.z * 38.0));
 	float clump = vnoise(p * 24.0);
