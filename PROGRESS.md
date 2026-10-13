@@ -28,6 +28,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 02:00 UTC:
+  - Raced the 01:00 session on the same task (a face for the hero); its face (skin band +
+    eyeball meshes + face fill) landed first, so mine (a painted face strip with blinking
+    eyes) was dropped in the rebase. Kept the two orthogonal fixes found on the way:
+  - The straw hat is worn pushed back ~10 deg and 2 cm higher on the hood (`garb.gd`), so
+    the eye line shows under the front brim from a little below eye level even with the
+    idle stance's head bowed (before, the brim covered it from any camera at or above eye
+    height).
+  - The hat no longer glows on its underside in sunlight: `rag.gdshader` BACKLIGHT is off
+    for `rigid` pieces (plaited straw is opaque; the cloth translucency lit the inside of
+    the cone as brightly as the top).
+  - Lesson for the session script: two sessions overlapped for ~1 h on the same Next item;
+    pull before starting work (`git pull --rebase origin main` at the top of the session).
+  - Bots: `walk` PASS (eyes 0.058 m apart, 0.22 m in front), `soldier` PASS.
+  - Verdict: `face merged_face 60 11` fail: eyes now plainly visible under the pushed-back
+    brim and the hat underside reads dark; but the face looks cartoonish -- sclera too wide
+    and bright (eyes look startled), skin too orange and smooth. Next: shrink the lid opening
+    (show ~60 % of the iris height, upper lid over the iris top), dim/warm the sclera, desaturate
+    the skin toward a weathered brown with pore normals, add blinks (a hashed 0.15 s lid
+    close every 3-5 s on skin.gdshader's lid cut).
 - Session 2026-10-13 01:00 UTC:
   - **A face with eyes (Next item 7 follow-up; last verdict: "the face is a black void").**
     `garb.gd` `_add_face()`: a band of skin from the brow to the nose bridge (40x14 grid in

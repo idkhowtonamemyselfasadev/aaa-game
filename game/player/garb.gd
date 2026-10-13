@@ -50,6 +50,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	hm.set_shader_parameter("rigid", 1.0)
 	hm.set_shader_parameter("weave_scale", 150.0)
 	hm.set_shader_parameter("aspect", 0.35)
+	# worn pushed back a little on the hood, so the eye line shows under the front brim even
+	# with the idle stance's head bowed
+	var crown := Vector3(0.0, 2.10, -0.03)
+	hat.transform = Transform3D(Basis(Vector3.RIGHT, -0.17), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * 0.02)
 	head.add_child(hat)
 	tint = MANTLE
 	var mantle := _piece(_drape(), 0.0, 0.012, 0.35, 1.0)

@@ -145,6 +145,7 @@ void fragment() {
 	NORMAL_MAP_DEPTH = 0.8;
 	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band) * mix(1.0, COLOR.r, fold_ao);
 	AO_LIGHT_AFFECT = 0.3;
-	BACKLIGHT = vec3(0.12, 0.10, 0.08);
+	// a tightly plaited straw hat is opaque: no light through its underside
+	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
 	EMISSION = ember_col * glow * 3.0;
 }

@@ -754,5 +754,11 @@
   "time": "2026-10-13T02:13:42Z",
   "caption": "A soft face fill now lifts the hood and face cloth out of the brim's black shade, but from a camera at eye height the brim and down-pitched head still hide the eyes.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-0330-hero-hat-pushed-back.jpg",
+  "time": "2026-10-13T03:30:21Z",
+  "caption": "Front view of the hero with the straw hat now pushed back: the eyes show clearly under a brim whose underside no longer glows, but the face reads cartoonish (wide bright sclera, orange skin, no nose or cheek shape) and the hood and mantle are a flat dark mass.",
+  "verdict": "fail"
  }
 ]
