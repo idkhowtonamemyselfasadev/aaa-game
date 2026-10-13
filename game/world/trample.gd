@@ -5,6 +5,8 @@ extends Node
 ## springing back over TRAMPLE_LIFE seconds. Every walker (the hero, the Hollows) also
 ## presses boot prints into the ground (terrain.gdshader): left, right, left along the walk,
 ## darker pressed soil that fills with water in the rain and fades over PRINT_LIFE seconds.
+## The red deer (world/herd.gd) press cloven hoof slots into a buffer of their own
+## (hoof_prints): paired walking slots, splayed and deeper where they galloped.
 
 const N := 32             # footfalls kept (oldest recycled): ~19 m of trail
 const LIFE := 9.0         # s for a laid plant to stand up again (shader TRAMPLE_LIFE)
@@ -15,6 +17,9 @@ const PRINT_LIFE := 180.0 # s for a print to weather away
 const STRIDE := 0.72      # m between prints (alternating feet)
 const GAIT := 0.11        # m each foot sits off the walk line
 
+const HN := 256           # hoof prints kept (the whole herd shares them)
+const HOOF_LIFE := 150.0  # s for a hoof print to weather away (shader HOOF_LIFE)
+
 var player: Node3D
 var walkers: Array[Node3D] = []   # besides the hero: soldiers etc. (trail + prints)
 var _wstate := {}                 # walker -> [last pos, trail dist, print dist, foot parity]
@@ -23,6 +28,11 @@ var _pdirs: Array[Vector2] = []
 var _pnext := 0
 var _pimg: Image
 var _ptex: ImageTexture
+var _hoofs: Array[Vector4] = []  # x, z, age, depth 0..1
+var _hdirs: Array[Vector4] = []  # toe dir x, z, splay 0..1, size (m, hoof length)
+var _hnext := 0
+var _himg: Image
+var _htex: ImageTexture
 var _pts: Array[Vector4] = []    # x, z, age, strength
 var _dirs: Array[Vector2] = []
 var _next := 0
@@ -43,6 +53,12 @@ func _ready() -> void:
 	_pimg = Image.create_empty(PN, 2, false, Image.FORMAT_RGBAF)
 	_ptex = ImageTexture.create_from_image(_pimg)
 	RenderingServer.global_shader_parameter_set("foot_prints", _ptex)
+	for i in HN:
+		_hoofs.append(Vector4.ZERO)
+		_hdirs.append(Vector4.ZERO)
+	_himg = Image.create_empty(HN, 2, false, Image.FORMAT_RGBAF)
+	_htex = ImageTexture.create_from_image(_himg)
+	RenderingServer.global_shader_parameter_set("hoof_prints", _htex)
 
 func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -70,6 +86,13 @@ func _process(delta: float) -> void:
 			if q.z > PRINT_LIFE:
 				q = Vector4.ZERO
 			_prints[i] = q
+	for i in HN:
+		var h := _hoofs[i]
+		if h.w > 0.0:
+			h.z += delta
+			if h.z > HOOF_LIFE:
+				h = Vector4.ZERO
+			_hoofs[i] = h
 	_walk(player, delta, grounded)
 	for w in walkers:
 		if is_instance_valid(w) and w.is_inside_tree():
@@ -131,6 +154,34 @@ func add_print(at: Vector2, dir: Vector2, depth: float, age: float) -> void:
 	_pdirs[_pnext] = dir.normalized()
 	_pnext = (_pnext + 1) % PN
 
+## Press one cloven hoof print at `at`, toe along `dir`; `splay` 0 (walk) .. 1 (gallop:
+## the claws spread and the dew claws print behind), `size` the hoof length in metres.
+func add_hoof(at: Vector2, dir: Vector2, depth: float, splay: float, size: float, age := 0.0) -> void:
+	var d := dir.normalized()
+	_hoofs[_hnext] = Vector4(at.x, at.y, age, depth)
+	_hdirs[_hnext] = Vector4(d.x, d.y, splay, size)
+	_hnext = (_hnext + 1) % HN
+
+func active_hoofs() -> int:
+	var n := 0
+	for h in _hoofs:
+		if h.w > 0.0:
+			n += 1
+	return n
+
+## Nearest live hoof print to `at` within `r` m: (x, z, age, depth), or zero.
+func hoof_near(at: Vector3, r := 1.0) -> Vector4:
+	var best := Vector4.ZERO
+	var bd := r
+	for h in _hoofs:
+		if h.w <= 0.0:
+			continue
+		var dd := Vector2(h.x - at.x, h.y - at.z).length()
+		if dd < bd:
+			bd = dd
+			best = h
+	return best
+
 func _upload() -> void:
 	for i in N:
 		var r := _pts[i]
@@ -152,6 +203,21 @@ func _upload() -> void:
 		RenderingServer.global_shader_parameter_set("foot_box", Vector4(1e9, 1e9, -1e9, -1e9))
 	else:
 		RenderingServer.global_shader_parameter_set("foot_box", Vector4(lo.x - 0.3, lo.y - 0.3, hi.x + 0.3, hi.y + 0.3))
+	lo = Vector2(INF, INF)
+	hi = Vector2(-INF, -INF)
+	for i in HN:
+		var h := _hoofs[i]
+		var hd := _hdirs[i]
+		_himg.set_pixel(i, 0, Color(h.x, h.y, h.z, h.w))
+		_himg.set_pixel(i, 1, Color(hd.x, hd.y, hd.z, hd.w))
+		if h.w > 0.0:
+			lo = Vector2(minf(lo.x, h.x), minf(lo.y, h.y))
+			hi = Vector2(maxf(hi.x, h.x), maxf(hi.y, h.y))
+	_htex.update(_himg)
+	if lo.x == INF:
+		RenderingServer.global_shader_parameter_set("hoof_box", Vector4(1e9, 1e9, -1e9, -1e9))
+	else:
+		RenderingServer.global_shader_parameter_set("hoof_box", Vector4(lo.x - 0.2, lo.y - 0.2, hi.x + 0.2, hi.y + 0.2))
 
 ## Lay a trail along `path` (oldest first) whose footfalls are `age_old`..`age_new` s old
 ## (shots: a trodden track through the grass without having to walk it in real time).

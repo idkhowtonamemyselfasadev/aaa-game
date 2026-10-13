@@ -1827,6 +1827,12 @@ func _herd_test() -> void:
 	print("BOT herd fleeing: %.1f m ahead of the hero after 6 s, top speed %.1f m/s" % [gap, top])
 	if gap < 45.0 or top < 7.0:
 		return _combat_done(false, "the herd did not gallop away from the hero")
+	# the galloping herd left a track of splayed hoof prints behind it
+	var tr: Trample = _world.trample
+	var hp := tr.hoof_near(herd.centre() - herd._flee_dir * 6.0, 8.0)
+	print("BOT herd hoofs: %d pressed, %d live, one %.1f m behind the herd (depth %.2f)" % [herd.hoof_prints, tr.active_hoofs(), Vector2(hp.x, hp.y).distance_to(Vector2(herd.centre().x, herd.centre().z)) if hp.w > 0.0 else -1.0, hp.w])
+	if herd.hoof_prints < 20 or tr.active_hoofs() < 20 or hp.w < 0.9:
+		return _combat_done(false, "the fleeing deer left no hoof prints behind them")
 	t = 0.0
 	while herd.state != Herd.CALM and t < 60.0:
 		await _ticks(30)

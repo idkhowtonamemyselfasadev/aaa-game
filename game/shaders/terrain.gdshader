@@ -128,6 +128,69 @@ vec3 boot_prints(vec2 xz) {
 	return r;
 }
 
+// cloven hoof prints pressed by the red deer (world/trample.gd add_hoof): 256x2 RGBA float,
+// row 0 (x, z, age s, depth 0..1), row 1 (toe dir x, z, splay 0..1, hoof length m)
+global uniform sampler2D hoof_prints : filter_nearest, repeat_disable;
+global uniform vec4 hoof_box;
+const int HOOF_N = 256;
+const float HOOF_LIFE = 150.0;
+
+// Signed distance (m) to one claw of a cloven hoof: a rounded heel bulb tapering to a
+// blunt point at the toe, flat on the inner (cleft) side. p in hoof space, L hoof length.
+float claw_sdf(vec2 p, float L) {
+	float hl = 0.5 * L;
+	float t = clamp(p.x / hl, -1.0, 1.0);
+	// widest just behind the middle, narrowing to the toe
+	float w = 0.21 * L * (1.0 - 0.55 * smoothstep(-0.1, 1.0, t)) * (1.0 - 0.25 * smoothstep(-0.5, -1.0, t));
+	vec2 q = vec2(p.x, p.y - w * 0.85);
+	float e = (length(q / vec2(hl, w)) - 1.0) * w;
+	// the cleft side is cut straight
+	return max(e, -p.y + 0.012 * L);
+}
+
+// same as boot_prints: x pressed depth, y pushed-up rim, z toe weight
+vec3 hoof_prints_at(vec2 xz) {
+	vec3 r = vec3(0.0);
+	if (xz.x < hoof_box.x || xz.y < hoof_box.y || xz.x > hoof_box.z || xz.y > hoof_box.w) {
+		return r;
+	}
+	for (int i = 0; i < HOOF_N; i++) {
+		vec4 a = texelFetch(hoof_prints, ivec2(i, 0), 0);
+		if (a.w <= 0.0) {
+			continue;
+		}
+		vec2 d = xz - a.xy;
+		if (dot(d, d) > 0.025) {
+			continue;
+		}
+		vec4 f = texelFetch(hoof_prints, ivec2(i, 1), 0);
+		float L = f.w;
+		float splay = f.z;
+		vec2 lp = vec2(dot(d, f.xy), dot(d, vec2(-f.y, f.x)));
+		// the two claws, mirrored across the cleft; a gallop spreads them from the heel
+		float ang = 0.05 + 0.22 * splay;
+		vec2 pl = vec2(lp.x, abs(lp.y));
+		vec2 hinge = vec2(-0.45 * L, 0.0);
+		vec2 pr = pl - hinge;
+		pr = vec2(pr.x * cos(ang) + pr.y * sin(ang), -pr.x * sin(ang) + pr.y * cos(ang)) + hinge;
+		float sd = claw_sdf(pr - vec2(0.0, 0.02 * L * (1.0 + splay)), L);
+		// dew claws: two small dots behind the heel where the hoof sank deep (gallop)
+		float dew = (length(vec2(lp.x + 0.82 * L, pl.y - 0.3 * L)) - 0.07 * L);
+		sd = min(sd, mix(1.0, dew, step(0.35, splay)));
+		float age = a.z / HOOF_LIFE;
+		float keep = a.w * (1.0 - smoothstep(0.3, 1.0, age));
+		float soft = 0.003 + 0.008 * age;
+		float dent = 1.0 - smoothstep(-soft, soft * 0.5, sd);
+		float rim = smoothstep(0.02, 0.004, sd) * step(-0.001, sd);
+		// the toe digs in deepest, more so at a gallop
+		float toe = smoothstep(-0.3 * L, 0.45 * L, lp.x) * (0.6 + 0.4 * splay);
+		r.x = max(r.x, dent * keep);
+		r.y = max(r.y, rim * keep * (1.0 - r.x));
+		r.z = max(r.z, toe * dent * keep);
+	}
+	return r;
+}
+
 varying vec3 wpos;
 varying vec3 wnrm;
 varying float hollow;
@@ -379,7 +442,7 @@ void fragment() {
 	col = mix(col, moss, mossw);       h = mix(h, moss_h, mossw);
 	col = mix(col, rock, rockw);       h = mix(h, rock_h, rockw);
 	// ---- boot prints: pressed, matted and darker; deepest in soft litter, faint in turf ----
-	vec3 bp = fp < 0.03 ? boot_prints(xz) : vec3(0.0);
+	vec3 bp = fp < 0.03 ? max(boot_prints(xz), hoof_prints_at(xz)) : vec3(0.0);
 	float soft_g = (1.0 - rockw) * mix(0.55, 1.0, max(litw, mossw * 0.7));
 	float pr = bp.x * soft_g * (1.0 - smoothstep(0.015, 0.03, fp));
 	col = mix(col, mix(col, mix(earth, thatch_a, 0.35) * 0.8, 0.55) * 0.78, pr);

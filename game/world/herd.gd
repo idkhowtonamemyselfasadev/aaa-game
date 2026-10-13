@@ -18,6 +18,8 @@ extends Node3D
 enum { CALM, ALERT, FLEE }
 
 var _terrain: Terrain
+var _trample: Trample
+var hoof_prints := 0             # bots read this: prints pressed since start
 var _rng := RandomNumberGenerator.new()
 var _mm: MultiMesh
 var _deer: Array = []
@@ -48,9 +50,13 @@ class Deer:
 	var scale := 1.0
 	var gait := 1.0          # top speed in flight (m/s)
 	var pitch := 0.0
+	var hoof_d := 0.0        # m walked since the last hoof print
+	var hoof_side := 0
+	var bound := 0
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
+	_trample = get_node_or_null("../Trample")
 	_rng.seed = seed
 	var flora: Flora = get_node_or_null("../Flora")
 	if flora:
@@ -292,6 +298,7 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var fwd := Vector3(-sin(d.yaw), 0, -cos(d.yaw))
 	d.pos += fwd * d.speed * dt
 	d.pos.y = _terrain.height_at(d.pos.x, d.pos.z)
+	_hooves(d, fwd, d.speed * dt)
 	# stride: ~1.6 m per walk cycle, ~4.6 m per gallop bound (scaled with the animal)
 	var stride := lerpf(1.6, 4.6, smoothstep(2.6, 5.0, d.speed)) * d.scale
 	d.phase = fposmod(d.phase + d.speed * dt / stride, 1.0)
@@ -301,6 +308,42 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var hf := _terrain.height_at(d.pos.x + fwd.x * 0.85 * d.scale, d.pos.z + fwd.z * 0.85 * d.scale)
 	var hb := _terrain.height_at(d.pos.x - fwd.x * 0.85 * d.scale, d.pos.z - fwd.z * 0.85 * d.scale)
 	d.pitch = atan2(hf - hb, 1.7 * d.scale) * 0.8
+
+## Press hoof prints behind a moving deer. Walking, the hind foot lands in the fore print
+## (direct register), so one slot print per foot pair, alternating sides; at a gallop the
+## four hooves land in a group per bound (hinds ahead of the fores), claws splayed, deeper.
+func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
+	if _trample == null or moved <= 0.0:
+		return
+	d.hoof_d += moved
+	var f2 := Vector2(fwd.x, fwd.z)
+	var side := Vector2(-fwd.z, fwd.x)
+	var L := 0.08 * d.scale
+	var at := Vector2(d.pos.x, d.pos.z)
+	if d.speed < 4.0:
+		var step := 0.8 * d.scale * lerpf(1.0, 1.4, clampf((d.speed - 1.0) / 3.0, 0.0, 1.0))
+		if d.hoof_d < step:
+			return
+		d.hoof_d = 0.0
+		d.hoof_side = 1 - d.hoof_side
+		var lat := 0.085 * d.scale * (1.0 if d.hoof_side == 0 else -1.0)
+		var tr := clampf((d.speed - 1.2) / 2.8, 0.0, 1.0)   # a trot digs in a little more
+		_trample.add_hoof(at + side * lat, f2.rotated(lat * 1.2), lerpf(0.6, 0.8, tr), 0.15 * tr, L)
+		hoof_prints += 1
+	else:
+		var bnd := 4.6 * d.scale
+		if d.hoof_d < bnd:
+			return
+		d.hoof_d = 0.0
+		d.bound += 1
+		if d.bound % 2 == 1:   # every other bound: keeps the shared buffer a long trail
+			return
+		# fore L, fore R, then the hinds landing ahead and wider
+		var offs := [Vector2(-0.95, 0.06), Vector2(-0.7, -0.07), Vector2(-0.15, 0.1), Vector2(0.1, -0.11)]
+		for o: Vector2 in offs:
+			var p := at + f2 * (o.x * d.scale + _rng.randf_range(-0.04, 0.04)) + side * o.y * d.scale
+			_trample.add_hoof(p, f2.rotated(_rng.randf_range(-0.15, 0.15)), 1.0, _rng.randf_range(0.7, 1.0), L)
+			hoof_prints += 1
 
 func _write_instances() -> void:
 	for i in _deer.size():

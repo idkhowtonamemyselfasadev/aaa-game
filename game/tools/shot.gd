@@ -390,6 +390,31 @@ func _ready() -> void:
 			dist = 10.0
 		SPOTS[spot] = [hc + sdh * dist, hc]
 		print("SHOT herd at %s, %d deer" % [hc, herd.deer_positions().size()])
+	if spot == "hooves":
+		# deer tracks pressed into the meadow beside the hero: a hind's walking trail
+		# crossing a galloping one, seen low from ~3 m
+		var herd: Herd = world.herd
+		herd.alert_radius = 0.0
+		herd.flee_radius = 0.0
+		herd.place(player.global_position + Vector3(60, 0, 60))
+		var pp := player.global_position
+		var fwd := Vector3(0.8, 0, 0.6)
+		var side := fwd.cross(Vector3.UP)
+		var hc := pp + fwd * 4.0
+		for k in 2:
+			var dr := Herd.Deer.new()
+			dr.scale = 1.0
+			dr.speed = 0.9 if k == 0 else 9.0
+			var dir := side if k == 0 else (fwd + side * 0.3).normalized()
+			var start := hc - dir * 6.0 + (fwd * 0.6 if k == 0 else -fwd * 0.4)
+			if k == 0:   # a deer path: the grass along the walking track lies trodden
+				world.trample.seed_trail(PackedVector3Array([start, start + dir * 6.0, start + dir * 12.0]), 7.0, 3.0)
+			for j in 160:
+				dr.pos = start + dir * (j * 0.08)
+				herd._hooves(dr, dir, 0.08)
+		world.trample.frozen = true
+		SPOTS[spot] = [hc - fwd * 2.4 + side * 0.9, hc + fwd * 0.6 + side * 0.3]
+		print("SHOT hooves at %s, %d prints" % [hc, world.trample.active_hoofs()])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -409,6 +434,9 @@ func _ready() -> void:
 			look.y = terrain.height_at(look.x, look.z)
 		if spot == "trample":
 			pos.y = terrain.height_at(pos.x, pos.z) + (1.45 if "close" in args else 1.75)
+			look.y = terrain.height_at(look.x, look.z)
+		if spot == "hooves":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.6
 			look.y = terrain.height_at(look.x, look.z)
 		if spot == "herd":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.6
