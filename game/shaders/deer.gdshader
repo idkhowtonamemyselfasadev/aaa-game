@@ -111,7 +111,7 @@ void vertex() {
 void fragment() {
 	vec3 p = v_rest;
 	vec3 rn = normalize(v_rest_n);
-	float under = smoothstep(-0.25, -0.75, rn.y) * step(0.55, p.y) * step(v_col.r, 0.01);
+	float under = smoothstep(-0.45, -0.85, rn.y) * smoothstep(0.86, 0.76, p.y) * step(0.55, p.y) * step(v_col.r, 0.01);
 	// coat: red body, darker greyer neck and a dark dorsal line, buff belly, cream rump
 	vec3 col = coat;
 	float neckm = smoothstep(-0.5, -0.8, p.z) * step(v_col.r, 0.01);
