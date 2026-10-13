@@ -36,6 +36,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     the tall clumps and the sward.
   - Bot `moss` extended: 16/1560 grass sites on full moss grow (0.01) vs 0.95 in the open
     meadow. Bots: moss, walk, trample PASS.
+  - Verdicts: `boulder boulderG 90 15` fail: the boulder foot sits in open moss now, the
+    grass stops at its edge; lichen/crack contrast on top still map-like, lone blob.
+    `tree treeG 90 13` fail: the bole collar is now clean open moss, but it reads as a flat,
+    too-saturated green disc; next: desaturate/darken the collar towards olive and give it
+    cushion relief, and green the grove floor between the collars.
 - Session 2026-10-13 11:50 UTC: built boulder-flank moss in parallel with the 11:00
   session and found it already pushed (bb3dee1, which also mosses the oak boles) at rebase
   time; dropped the duplicate. Two notes for whoever touches it next: colour literals in a
