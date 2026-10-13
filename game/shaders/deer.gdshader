@@ -1,6 +1,7 @@
 shader_type spatial;
 // Red deer built by herd.gd. Legs, neck and head are posed here per instance:
-// INSTANCE_CUSTOM = (gait phase 0..1, speed m/s / 10, head down 0..1, head yaw rad).
+// INSTANCE_CUSTOM = (gait phase 0..1, speed m/s / 10, head down 0..1, head yaw rad);
+// a negative speed slot is -bed: lying down (0..1), forelegs kneel first, haunches after.
 // Mesh COLOR: r = leg (0 none, 0.25 LF, 0.5 RF, 0.75 LH, 1 RH), g = below the knee/hock
 // (0..1), b = neck/head bend weight (0 body .. 1 head), a = part (0 coat, 0.25 antler,
 // 0.5 eye, 1 ear). `stag` = 1 on the stag's material: dark shaggy rut mane on the neck.
@@ -56,8 +57,11 @@ void vertex() {
 		float shag = vnoise(vec3(v.x * 40.0, v.y * 9.0, v.z * 9.0));
 		v += n * nm * (0.012 + 0.05 * shag * smoothstep(0.2, -0.6, n.y));
 	}
-	float spd = ic.y * 10.0;
+	float spd = max(ic.y, 0.0) * 10.0;
 	float gal = smoothstep(2.6, 5.0, spd);
+	float bed = clamp(-ic.y, 0.0, 1.0);
+	float bed_f = smoothstep(0.0, 0.6, bed);   // forequarters: kneel first, rise last
+	float bed_h = smoothstep(0.3, 1.0, bed);   // haunches: down last, up first
 	int leg = int(round(COLOR.r * 4.0)) - 1;
 	if (leg >= 0) {
 		vec3 hip = HIP[leg];
@@ -69,6 +73,12 @@ void vertex() {
 		float swing = amp * sin(ph) + gal * mix(0.10, -0.12, hind);
 		float fold = mix(0.85, 1.5, gal) * clamp(spd / 1.0, 0.0, 1.0) * max(0.0, cos(ph));
 		fold = mix(fold, fold * 0.8, hind);
+		// lying: the forearm reaches forward to put the knee on the ground, the cannon
+		// folded back flat under the chest; the hind hock rests on the ground behind, the
+		// cannon tucked forward under the belly
+		float lb = hind > 0.5 ? bed_h : bed_f;
+		swing = mix(swing, hind > 0.5 ? -0.4 : 0.6, lb);
+		fold = mix(fold, hind > 0.5 ? -1.97 : 2.2, lb);
 		float lw = COLOR.g;
 		vec3 p = v - knee;
 		v = mix(v, knee + rot_x(p, -fold), lw);
@@ -102,6 +112,11 @@ void vertex() {
 	v = mid + rot_x(v - mid, rock);
 	v.y += gal * 0.06 * sin(TAU * ic.x * 2.0);
 	n = rot_x(n, rock);
+	// lying: the body sinks onto its brisket and belly (the forequarters first)
+	float drop = 0.56 * mix(bed_h, bed_f, smoothstep(0.35, -0.35, VERTEX.z));
+	v.y -= drop;
+	// the slope of a half-down body (kneeling on the forelegs) tilts the normals with it
+	n = rot_x(n, -0.56 * (bed_f - bed_h) / 0.8 * 0.6);
 	VERTEX = v;
 	NORMAL = normalize(n);
 	v_world = (MODEL_MATRIX * vec4(v, 1.0)).xyz;

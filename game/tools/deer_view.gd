@@ -1,6 +1,6 @@
 extends SceneTree
 ## Model check for the procedural red deer: four poses (stand, walk, graze, gallop) side by
-## side under a plain sun. Usage: godot res://tools/deer_view.gd -- out.png [yaw_deg] [stag] [near]
+## side under a plain sun. Usage: godot res://tools/deer_view.gd -- out.png [yaw_deg] [stag] [near] [rake] [bed]
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var out := args[0] if args.size() > 0 else "../shots/deer_view.png"
@@ -37,6 +37,10 @@ func _init() -> void:
 	mm.mesh = Herd.build_mesh("stag" in args)
 	mm.instance_count = 4
 	var poses := [Color(0, 0, 0, 0), Color(0.3, 0.09, 0, 0.4), Color(0, 0, 1, 0), Color(0.35, 0.95, 0, 0)]
+	if "bed" in args:   # stand, kneeling on the forelegs, lying head up, lying dozing
+		poses = [Color(0, 0, 0, 0), Color(0, -0.45, 0, 0.3), Color(0, -1, 0, -0.5), Color(0, -1, 0.3, 0.2)]
+		if "near" in args:   # the lying deer close up
+			poses[0] = poses[2]
 	for i in 4:
 		mm.set_instance_transform(i, Transform3D(Basis(Vector3.UP, yaw), Vector3(-3.6 + i * 2.4, 0, 0)))
 		mm.set_instance_custom_data(i, poses[i])

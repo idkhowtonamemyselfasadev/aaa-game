@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -89,6 +89,9 @@ func _ready() -> void:
 		return
 	if name == "herd":
 		_herd_test()
+		return
+	if name == "bed":
+		_bed_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -1874,3 +1877,54 @@ func _herd_test() -> void:
 	if herd.state != Herd.CALM or gap < herd.safe_radius or spread > 18.0 or clear < 0.8 or Vector2(c2.x, c2.z).length() > 215.0:
 		return _combat_done(false, "the herd did not settle again, together, far off and in the open")
 	_combat_done(true, "deer graze, look up at a hero in sight, bolt from a charge, settle far off")
+
+## Red deer at night: the herd beds down in the meadow (each deer lying in its own pressed
+## patch of grass), springs up to stare at a hero who comes into sight, lies down again once
+## he has gone, and is up and grazing again by dawn.
+func _bed_test() -> void:
+	var p := _player
+	var herd: Herd = _world.get_node("Herd")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var tr: Trample = _world.trample
+	var c := herd.centre()
+	var away := Vector3(c.x, 0, c.z).normalized()
+	if away.length() < 0.5:
+		away = Vector3(1, 0, 0)
+	var far := c - away * 110.0
+	p.global_position = Vector3(far.x, terrain.height_at(far.x, far.z) + 1.0, far.z)
+	_world.time_of_day = 23.0
+	var n := herd.deer_positions().size()
+	await _ticks(60 * 12)
+	var c1 := herd.centre()
+	var laid := 0
+	for q in herd.deer_positions():
+		if tr.herd_lay_at(q, 0.6) > 0.3:
+			laid += 1
+	print("BOT bed night: %d/%d deer lying at 23 h, drift %.1f m, %d lying in laid grass" % [herd.bedded(), n, c1.distance_to(c), laid])
+	if herd.bedded() < n - 1 or c1.distance_to(c) > 3.0 or laid < n - 2:
+		return _combat_done(false, "the herd did not bed down for the night")
+	var at := c1 - away * 35.0
+	p.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 1.0, at.z)
+	await _ticks(60 * 4)
+	var up := 0
+	for d: Herd.Deer in herd._deer:
+		if d.bed < 0.01:
+			up += 1
+	print("BOT bed alarmed: state %d, %d/%d deer up on their feet, heads up %d" % [herd.state, up, n, herd.heads_up()])
+	if herd.state != Herd.ALERT or up < n or herd.heads_up() < n - 1:
+		return _combat_done(false, "the bedded herd did not rise to stare at the hero")
+	p.global_position = Vector3(far.x, terrain.height_at(far.x, far.z) + 1.0, far.z)
+	await _ticks(60 * 14)
+	print("BOT bed settled again: state %d, %d/%d lying" % [herd.state, herd.bedded(), n])
+	if herd.state != Herd.CALM or herd.bedded() < n - 1:
+		return _combat_done(false, "the herd did not lie down again once the hero had gone")
+	_world.time_of_day = 6.0
+	await _ticks(60 * 6)
+	var grazing := 0
+	for d: Herd.Deer in herd._deer:
+		if d.bed <= 0.0:
+			grazing += 1
+	print("BOT bed dawn: %d/%d up at 6 h, %d lying" % [grazing, n, herd.bedded()])
+	if grazing < n:
+		return _combat_done(false, "the herd did not get up at dawn")
+	_combat_done(true, "deer bed down at night, rise to stare at a hero, lie down again, get up at dawn")

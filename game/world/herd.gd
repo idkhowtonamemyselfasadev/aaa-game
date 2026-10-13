@@ -36,6 +36,7 @@ var _threat_prev := {}
 var threat_pos := Vector3.ZERO
 var flee_events := 0             # bots read these
 var alert_events := 0
+var force_bed := false          # shots: lie down whatever the hour
 
 class Deer:
 	var pos := Vector3.ZERO
@@ -57,6 +58,10 @@ class Deer:
 	var bound := 0
 	var trail_d := 0.0       # m run since the last herd trail point
 	var stag := false
+	var bed := 0.0           # 0 standing .. 1 lying in its bed (front kneels first)
+	var bed_target := 0.0
+	var bed_jit := 0.0       # h: each deer lies down / gets up at its own time
+	var bed_d := 0.0         # s since its bed was last pressed into the grass
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -117,6 +122,7 @@ func _ready() -> void:
 		d.step_t = _rng.randf_range(2.0, 12.0)
 		d.phase = _rng.randf()
 		d.gait = _rng.randf_range(10.5, 12.5) * (0.92 if calf else 1.0)
+		d.bed_jit = fposmod(i * 0.618034, 1.0) * 1.2 - 0.6   # (keeps the herd's random stream)
 		_deer.append(d)
 	_write_instances()
 
@@ -184,6 +190,24 @@ func place(at: Vector3) -> void:
 
 # ---------------------------------------------------------------- simulation
 
+## Hour of the world clock (13 with no World, as in the deer viewer).
+func _hour() -> float:
+	var h = get_parent().get("time_of_day")
+	return 13.0 if h == null else float(h)
+
+## Night rest: the herd beds down in the meadow from about 22 h to 5 h, each deer at its
+## own time (the hinds settle within an hour of each other, rise again before dawn).
+func _resting(d: Deer, h: float) -> bool:
+	return h > 21.8 + d.bed_jit or h < 4.8 + d.bed_jit
+
+## Deer lying in their beds (bots).
+func bedded() -> int:
+	var n := 0
+	for d: Deer in _deer:
+		if d.bed > 0.95:
+			n += 1
+	return n
+
 func _threat(dt: float) -> Array:
 	var pl := get_node_or_null("../Player") as Node3D
 	if pl == null:
@@ -217,7 +241,8 @@ func _tick(dt: float, th: Array) -> void:
 			if _clear_at(ahead) < 6.0 or Vector2(ahead.x, ahead.z).length() > 180.0 or _terrain.normal_at(ahead.x, ahead.z).y < 0.9:
 				_wander = _wander.rotated(Vector3.UP, _rng.randf_range(1.5, 3.0))
 			_wander = _wander.rotated(Vector3.UP, _rng.randfn(0.0, 0.05) * dt)
-			anchor = _ground(anchor + _wander * 0.06 * dt)
+			if bedded() < _deer.size() / 2:
+				anchor = _ground(anchor + _wander * 0.06 * dt)
 			if dist < alert_radius + 2.0 * tspd:
 				state = ALERT
 				_alert_t = 0.0
@@ -268,26 +293,35 @@ func _bolt(from: Vector3) -> void:
 func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var want_speed := 0.0
 	var target := d.goal
+	var night := state == CALM and (force_bed or _resting(d, _hour()))
+	d.bed_target = 1.0 if night else 0.0
+	if night or d.bed > 0.0:
+		# lying in the grass chewing the cud: head up looking round, now and then dozing
+		# with the muzzle let down; the bed is pressed into the grass under her
+		d.look_t -= dt
+		if d.look_t < 0.0:
+			var doze := _rng.randf() < 0.35
+			d.head_target = 0.3 if doze else 0.0
+			d.head_yaw = _rng.randf_range(-0.25, 0.25) if doze else _rng.randf_range(-0.8, 0.8)
+			d.look_t = _rng.randf_range(4.0, 14.0)
+		if state == CALM:
+			d.goal = d.pos
+			d.step_t = _rng.randf_range(2.0, 8.0)
+		d.bed_d += dt
+		if d.bed > 0.9 and d.bed_d > 8.0 and _trample:
+			d.bed_d = 0.0
+			var bf := Vector3(-sin(d.yaw), 0, -cos(d.yaw))
+			_trample.add_herd_point(Vector2(d.pos.x, d.pos.z), Vector2(bf.x, bf.z), 1.0)
+	# down slowly (kneel, then the haunches), up quickly (haunches first) in alarm
+	d.bed = move_toward(d.bed, d.bed_target, (0.45 if d.bed_target > d.bed else (1.4 if state != CALM else 0.6)) * dt)
 	match state:
 		CALM:
-			d.look_t -= dt
-			if d.look_t < 0.0:
-				# lift the head to chew and look round, then back down to the grass
-				if d.head_target > 0.5:
-					d.head_target = 0.0
-					d.look_t = _rng.randf_range(2.0, 5.0)
-					d.head_yaw = _rng.randf_range(-0.6, 0.6)
-				else:
-					d.head_target = 1.0
-					d.look_t = _rng.randf_range(5.0, 16.0)
-					d.head_yaw = _rng.randf_range(-0.2, 0.2)
-			d.step_t -= dt
-			var slot := anchor + Vector3(d.slot.x, 0, d.slot.y)
-			if d.step_t < 0.0 or d.pos.distance_to(slot) > 9.0:
-				d.step_t = _rng.randf_range(6.0, 18.0)
-				d.goal = _ground(slot + Vector3(_rng.randfn(0.0, 1.5), 0, _rng.randfn(0.0, 1.5)))
+			if night or d.bed > 0.0:
+				pass
+			else:
+				_graze(d, dt)
 			target = d.goal
-			if Vector2(target.x - d.pos.x, target.z - d.pos.z).length() > 0.6:
+			if d.bed <= 0.0 and Vector2(target.x - d.pos.x, target.z - d.pos.z).length() > 0.6:
 				want_speed = 0.55 if d.head_target > 0.5 else 0.9
 		ALERT:
 			d.head_target = 0.0
@@ -302,10 +336,14 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 		FLEE:
 			d.head_target = 0.0
 			d.head_yaw = 0.0
+			if d.bed > 0.15:   # still scrambling up out of the bed
+				target = d.pos
 			# in flight the stag closes in and runs in his hinds' tracks (one shared lane)
 			target = anchor + Vector3(d.slot.x, 0, d.slot.y) * (0.3 if d.stag else 0.8) + _flee_dir * 4.0
 			var dist := Vector2(tp.x - d.pos.x, tp.z - d.pos.z).length()
 			want_speed = d.gait if dist < safe_radius else lerpf(d.gait, 2.2, clampf((dist - safe_radius) / 15.0, 0.0, 1.0))
+			if d.bed > 0.15:
+				want_speed = 0.0
 	# steer along the heading (no sideways sliding): turn toward the target, keep apart,
 	# swerve round trees and rocks
 	var steer := Vector3(target.x - d.pos.x, 0, target.z - d.pos.z)
@@ -342,6 +380,25 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var hf := _terrain.height_at(d.pos.x + fwd.x * 0.85 * d.scale, d.pos.z + fwd.z * 0.85 * d.scale)
 	var hb := _terrain.height_at(d.pos.x - fwd.x * 0.85 * d.scale, d.pos.z - fwd.z * 0.85 * d.scale)
 	d.pitch = atan2(hf - hb, 1.7 * d.scale) * 0.8
+
+## Calm grazing: lift the head to chew and look round, then back down to the grass; step
+## on to fresh grass near her place in the herd now and then.
+func _graze(d: Deer, dt: float) -> void:
+	d.look_t -= dt
+	if d.look_t < 0.0:
+		if d.head_target > 0.5:
+			d.head_target = 0.0
+			d.look_t = _rng.randf_range(2.0, 5.0)
+			d.head_yaw = _rng.randf_range(-0.6, 0.6)
+		else:
+			d.head_target = 1.0
+			d.look_t = _rng.randf_range(5.0, 16.0)
+			d.head_yaw = _rng.randf_range(-0.2, 0.2)
+	d.step_t -= dt
+	var slot := anchor + Vector3(d.slot.x, 0, d.slot.y)
+	if d.step_t < 0.0 or d.pos.distance_to(slot) > 9.0:
+		d.step_t = _rng.randf_range(6.0, 18.0)
+		d.goal = _ground(slot + Vector3(_rng.randfn(0.0, 1.5), 0, _rng.randfn(0.0, 1.5)))
 
 ## Press hoof prints behind a moving deer. Walking, the hind foot lands in the fore print
 ## (direct register), so one slot print per foot pair, alternating sides; at a gallop the
@@ -398,7 +455,9 @@ func _write_instances() -> void:
 		else:
 			hi += 1
 		mm.set_instance_transform(i, Transform3D(b.scaled(Vector3.ONE * d.scale), d.pos - Vector3.UP * 0.03))
-		mm.set_instance_custom_data(i, Color(d.phase, d.speed / 10.0, d.head, d.head_yaw))
+		# a deer in (or getting into or out of) its bed stands still: the speed slot then
+		# carries -bed for the lying pose in deer.gdshader
+		mm.set_instance_custom_data(i, Color(d.phase, -d.bed if d.bed > 0.001 else d.speed / 10.0, d.head, d.head_yaw))
 
 # ---------------------------------------------------------------- mesh
 

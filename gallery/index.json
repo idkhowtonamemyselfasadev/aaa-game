@@ -796,5 +796,17 @@
   "time": "2026-10-13T06:50:00Z",
   "caption": "Model check of the sculpted stag: deep brisket, flank tuck, shoulder blade and haunch relief; the coat is still a noise texture with no hair cards and the head reads long and thin.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-0750-deer-beds-day.jpg",
+  "time": "2026-10-13T07:50:58Z",
+  "caption": "The red deer herd lying in its beds in the tall meadow grass, heads up chewing the cud, the stag's antlers above the grass (pose forced at 10 h for the shot; in play they bed down at night); the oaks still read stylized and the near grass cards are coarse.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-0750-deer-beds-night.jpg",
+  "time": "2026-10-13T07:50:58Z",
+  "caption": "The herd bedded down at night under the stars with fireflies over the meadow: only dark silhouettes in the grass; the firefly-lit foreground blades read flat yellow-green.",
+  "verdict": "fail"
  }
 ]

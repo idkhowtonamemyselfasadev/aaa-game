@@ -376,6 +376,10 @@ func _ready() -> void:
 		if not "alert" in args:
 			herd.alert_radius = 0.0
 			herd.flee_radius = 0.0
+		if "bed" in args:   # the herd lying in its beds in the grass
+			herd.force_bed = true
+			for d: Herd.Deer in herd._deer:
+				d.bed = 1.0
 		var hc := herd.centre()
 		var sdh: Vector3 = world.sun.global_transform.basis.z
 		sdh = Vector3(sdh.x, 0, sdh.z).normalized().rotated(Vector3.UP, 0.5)
