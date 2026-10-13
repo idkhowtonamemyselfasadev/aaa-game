@@ -43,6 +43,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   - `tools/deer_view.gd` gains `stag`, `near` (one deer filling the frame) and `rake` (low
     back light) options: ~25 s per render, the fast loop for deer model work.
   - Bots: all 18 routes PASS (herd route included).
+  - Verdicts: `herd stag4 60 10 stag` fail: bodies better but the buff belly spread up the
+    tucked flank into a cow-like pale saddle (fixed: mask tightened). `herd stag5 60 10 stag`
+    fail (close): the stag reads deep-chested and heavy, the hinds' flanks tuck up properly;
+    at 8-12 m the coat is still a smooth noise texture (no hair breakup on the silhouette)
+    and the oaks still read stylized. Next: coat silhouette breakup (fur shell/fin cards on
+    the dorsal line, neck and belly) or the oak crown pass; the rut (roars at dusk).
 - Session 2026-10-13 05:00 UTC:
   - **A red deer stag (Next item 5 follow-up "a stag with antlers"; owner ALIVE).** `Herd`
     gains `stags` (1): a separate MultiMesh from `build_mesh(true)`: a swollen rutting neck

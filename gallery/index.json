@@ -784,5 +784,17 @@
   "time": "2026-10-13T05:45:00Z",
   "caption": "The new red deer stag broadside with a royal crown of antlers and a dark rut mane beside a hind; the body is still a smooth, muscle-less loft and the oak crowns read stylized.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261013-0650-stag-body.jpg",
+  "time": "2026-10-13T06:50:00Z",
+  "caption": "The stag now carries a deep chest under his rut neck and the hinds a tucked flank over a hanging thigh; at 8-12 m the deer still read as smooth, hairless shapes and the oak crowns stay stylized.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-0650-deer-model.jpg",
+  "time": "2026-10-13T06:50:00Z",
+  "caption": "Model check of the sculpted stag: deep brisket, flank tuck, shoulder blade and haunch relief; the coat is still a noise texture with no hair cards and the head reads long and thin.",
+  "verdict": "fail"
  }
 ]
