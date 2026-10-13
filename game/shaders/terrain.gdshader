@@ -326,7 +326,7 @@ vec3 cushions(vec2 p, float scale) {
 		}
 	}
 	float dome = sqrt(max(0.0, 1.0 - d1 * d1 * 1.1));
-	float crev = 1.0 - smoothstep(0.0, 0.18, d2 - d1);
+	float crev = 1.0 - smoothstep(0.0, 0.1, d2 - d1);
 	return vec3(dome * (1.0 - crev * 0.7), crev, tone);
 }
 
@@ -427,12 +427,18 @@ void fragment() {
 	// flanks a deeper green, crevices between cushions dark peaty brown, and a few cushions
 	// dried brown on top; the domes give the collar real relief in the bump
 	float fade_cu = 1.0 - smoothstep(0.01, 0.06, fp);
-	vec3 cu = cushions(xz, 5.5);
+	// warped so the cushion edges wander instead of tiling into polygons (it read as
+	// cracked mud up close), and the crevices only open in patches: cushions merge
+	vec2 cwarp = vec2(vnoise(wpos * 1.9), vnoise(wpos * 1.9 + 17.3)) - 0.5;
+	vec3 cu = cushions(xz + cwarp * 0.45, 5.5);
+	float cmask = smoothstep(0.35, 0.7, vnoise(wpos * 2.7 + 3.1));
+	cu.y *= cmask;
+	cu.x = mix(0.55 + cu.x * 0.45, cu.x, cmask);
 	vec3 olive_hi = mix(moss_b, thatch_a, 0.38) * 0.95;
 	vec3 olive_lo = mix(moss_a, soil, 0.25) * 0.9;
 	vec3 moss_f = mix(olive_lo, olive_hi, clamp(mix(mcush * 1.2 - 0.1, cu.x, 0.6 * fade_cu) + (mfine - 0.5) * 0.5 * fade_m, 0.0, 1.0));
 	moss_f = mix(moss_f, mix(thatch_a, leaf_b, 0.4) * 0.8, step(0.86, cu.z) * smoothstep(0.4, 0.9, cu.x) * 0.6 * fade_cu);
-	moss_f = mix(moss_f, soil * 0.45, cu.y * 0.75 * fade_cu);
+	moss_f = mix(moss_f, olive_lo * 0.55, cu.y * 0.55 * fade_cu);
 	float fh = (mix(mcush * 0.6, cu.x * 0.85, fade_cu) + vnoise(wpos * 16.0) * 0.25 + mfine * 0.1 * fade_m) * 0.018;
 	if (footw > 0.001) {
 		vec3 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);

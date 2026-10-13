@@ -1732,7 +1732,7 @@ func _moss_test() -> void:
 				# only the buttress against the bole may stand that high
 				var near := false
 				for t in flora.tree_xforms:
-					if Vector2(t.origin.x - v.x, t.origin.z - v.z).length() < 1.15 * t.basis.get_scale().x:
+					if Vector2(t.origin.x - v.x, t.origin.z - v.z).length() < 1.35 * t.basis.get_scale().x:
 						near = true
 						break
 				if not near:

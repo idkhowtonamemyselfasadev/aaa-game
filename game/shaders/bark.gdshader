@@ -66,11 +66,12 @@ void fragment() {
 	if (v_root > 0.5) {
 		// surface roots: the arched tops are worn bare and paler, moss and peat fill the
 		// crotches and the line where the root goes into the soil
+		// roots weather paler and greyer than the bole (scuffed, sun-bleached on top)
 		float top = smoothstep(0.2, 0.8, wn.y);
-		col = mix(col, bark_light * 1.15, top * 0.35 * f);
+		col = mix(col, bark_light * vec3(1.15, 1.12, 1.1), 0.3 + top * 0.35 * f);
 		float lowm = 1.0 - smoothstep(0.02, 0.14, v_soil);
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
-		col *= mix(0.5, 1.0, smoothstep(0.0, 0.07, v_soil));
+		col *= mix(0.7, 1.0, smoothstep(0.0, 0.07, v_soil));
 	}
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
 	float rough = mix(0.92, 0.8, m);

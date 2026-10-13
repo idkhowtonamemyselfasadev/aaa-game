@@ -220,7 +220,7 @@ func _build_roots() -> void:
 			var a := phase + k * TAU / n + r.randf_range(-0.35, 0.35)
 			var big := r.randf() < 0.6
 			var ln := (r.randf_range(1.8, 3.0) if big else r.randf_range(1.2, 1.9)) * s
-			var r0 := (r.randf_range(0.17, 0.24) if big else r.randf_range(0.1, 0.15)) * s
+			var r0 := (r.randf_range(0.2, 0.28) if big else r.randf_range(0.12, 0.17)) * s
 			_root(chunks[key], r, c, a, ln, r0, s)
 	for key in chunks:
 		var st: SurfaceTool = chunks[key]
@@ -251,9 +251,9 @@ func _root(st: SurfaceTool, r: RandomNumberGenerator, c: Vector3, a: float, ln: 
 	for i in N + 1:
 		var t := float(i) / N
 		var g := _terrain.height_at(p.x, p.y)
-		var rad := lerpf(r0, r0 * 0.12, pow(t, 0.8))
+		var rad := lerpf(r0, r0 * 0.3, pow(t, 0.8))
 		# buttress: high on the bole at the start, then just the top of the root shows
-		var y := g + lerpf(0.55 * s if depth == 0 else rad * 0.2, rad * 0.25 - 0.03, smoothstep(0.0, 0.4, t)) - 0.09 * t * t
+		var y := g + lerpf(0.55 * s if depth == 0 else rad * 0.2, rad * 0.25 - 0.03, smoothstep(0.0, 0.4, t)) - 0.2 * t * t * t
 		pts.append(Vector3(p.x, y, p.y))
 		var flare := 1.0 + 0.6 * (1.0 - smoothstep(0.0, 0.3, t)) if depth == 0 else 1.0
 		rads.append(rad * flare)
