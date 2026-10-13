@@ -1657,6 +1657,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+Claimed by session 2026-10-13 15:30 UTC: exposed oak roots radiating from the bole (item 4 follow-up).
 1. (done 07:00 (10-12): film grade pass with night scotopic shift + grain.) Grade follow-up:
    keep the night sky blue (exempt pixels above the horizon or with low luminance gradient from
    the rod desaturation, or push the scot tint bluer), dusk/dawn check under the grade.
