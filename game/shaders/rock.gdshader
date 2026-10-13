@@ -4,7 +4,8 @@ render_mode cull_back;
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 // Mossy boulders. World-space 3D noise (no triplanar seams): strata bands, cracks and
 // pitting in the normal, lichen spots, and moss on up-facing surfaces whose edge breaks
-// up with noise; a dark damp band where the stone meets the ground.
+// up with noise; moss creeping up the flanks from the foot collar (moss_map), higher on
+// the shaded side; a dark damp band where the stone meets the ground.
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.36, 0.35, 0.33);
@@ -16,6 +17,8 @@ uniform vec3 lichen : source_color = vec3(0.55, 0.52, 0.38);
 varying vec3 wp;
 varying vec3 wn;
 varying float ly;
+varying float v_above;   // m above the ground the boulder sits in
+varying float v_size;    // boulder size (m)
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -35,6 +38,9 @@ void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	ly = VERTEX.y;
+	// Flora sinks each boulder 0.3 x size into the ground (world/flora.gd)
+	v_size = length(MODEL_MATRIX[0].xyz);
+	v_above = wp.y - (MODEL_MATRIX[3].y + v_size * 0.3);
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
@@ -54,6 +60,15 @@ void fragment() {
 	col = mix(col, lichen, li * 0.6);
 	float mossw = smoothstep(0.35, 0.75, n.y + (fbm(wp * 1.3) - 0.5) * 0.9);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 6.0));
+	// moss creeping up the flanks from the foot collar: higher on the shaded side, in
+	// tongues that follow the cracks and run up the damp seams, thinning to a few patches
+	float shade = clamp(dot(n.xz, MOSS_SHADE), 0.0, 1.0);
+	float fm = foot_moss(wp.xz);
+	float creep_h = v_size * mix(0.12, 0.55, shade) * (0.6 + 0.8 * fbm(vec3(wp.xz * 1.7, 3.0)));
+	float tongue = fbm(vec3(wp.x * 2.6, wp.y * 0.9, wp.z * 2.6) + 7.0);
+	float creep = fm * (1.0 - smoothstep(creep_h * 0.45, creep_h, v_above + (0.5 - tongue) * v_size * 0.35));
+	creep *= smoothstep(-0.75, -0.2, n.y);   // not on the overhang undersides
+	mossw = max(mossw, smoothstep(0.15, 0.55, creep));
 	col = mix(col, mc, mossw);
 	col *= mix(0.55, 1.0, smoothstep(-0.35, 0.0, ly));    // damp foot
 	float rough = mix(0.78, 0.95, mossw);

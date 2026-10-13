@@ -27,6 +27,17 @@ float shelter_at(vec2 xz) {
 	return shelter_sample(xz).x;
 }
 
+// moss collars round the oak boles and boulder feet, baked by world/flora.gd (_bake_moss)
+// over the same square; 0 none .. 1 a full cushion (solid under a boulder's footprint)
+global uniform sampler2D moss_map : filter_linear, repeat_disable;
+const vec2 MOSS_SHADE = vec2(-0.6, -0.8);   // the shaded side, away from the afternoon sun
+
+float foot_moss(vec2 xz) {
+	vec2 uv = xz / SHELTER_SIZE + 0.5;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return 0.0;
+	return textureLod(moss_map, uv, 0.0).r;
+}
+
 // darken + gloss a surface by wetness `w`; `porous` 0 (rock, metal) .. 1 (soil, bark, dry grass)
 void wetten_by(inout vec3 albedo, inout float roughness, float porous, float w) {
 	w = clamp(w, 0.0, 1.0);

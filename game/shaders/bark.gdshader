@@ -53,6 +53,12 @@ void fragment() {
 	col *= 0.85 + 0.3 * n2(UV * vec2(40.0, 10.0));
 	float m = smoothstep(0.35, 0.8, wn.y + n2(UV * vec2(8.0, 3.0)) * 0.4 - 0.1);
 	m = max(m, smoothstep(1.2, 0.0, vy) * 0.8 * n2(UV * 6.0));
+	// the shaded side of the bole stays damp: moss climbs it from the foot collar in
+	// streaks that run up the furrows, reaching ~2.5 m (local) on the full north face
+	float shade = clamp(dot(normalize(wn.xz + vec2(1e-4)), MOSS_SHADE), 0.0, 1.0) * (1.0 - abs(wn.y));
+	float reach = mix(0.3, 2.6, shade) * (0.55 + 0.9 * n2w(vec2(UV.x * 6.0, 0.0), 12.0));
+	float climb = 1.0 - smoothstep(reach * 0.4, reach, vy);
+	m = max(m, smoothstep(0.2, 0.6, climb * (0.55 + 0.6 * f) * (0.7 + 0.5 * n2(UV * vec2(10.0, 2.0)))));
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
 	float rough = mix(0.92, 0.8, m);
 	weather_wetten(col, rough, 1.0);

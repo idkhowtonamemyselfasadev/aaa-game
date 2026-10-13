@@ -42,6 +42,18 @@ func _ready() -> void:
 		back.y = 0
 		back = back.normalized() * (16.0 if spot == "tree" else 6.0)
 		SPOTS[spot] = [best + back, best + Vector3.UP * (3.0 if spot == "tree" else -1.0)]
+	if spot == "boulder":
+		# a big boulder near the village, seen from its shaded side (moss creeping up the flank)
+		var flora: Flora = world.get_node("Flora")
+		var bf := Vector3.ZERO
+		for f: Vector3 in flora._rock_feet:
+			if f.y > 1.8 and (bf == Vector3.ZERO or Vector2(f.x, f.z).length() < Vector2(bf.x, bf.z).length()):
+				bf = f
+		var dir := Vector3(-0.6, 0, -0.8).rotated(Vector3.UP, 0.6)
+		var cp := Vector3(bf.x, 0, bf.z) + dir * (bf.y * 1.2 + 4.0)
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.6
+		SPOTS[spot] = [cp, Vector3(bf.x, terrain.height_at(bf.x, bf.z) + bf.y * 0.15, bf.z)]
+		print("SHOT boulder size %.1f at %s" % [bf.y, bf])
 	if spot == "birds" or spot == "rooks":
 		# "birds": camera close enough that the flock bursts up; "rooks": they keep feeding
 		var site: Vector3 = world.get_node("Birds").site_positions()[0]

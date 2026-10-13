@@ -78,14 +78,7 @@ vec2 wade_ripples(vec2 xz) {
 
 // boot prints pressed by the hero and the Hollows (world/trample.gd): 64x2 RGBA float,
 // row 0 (x, z, age s, depth 0..1), row 1 (heel-to-toe dir x, z); foot_box = live bounds
-// moss collars round the oak boles and boulder feet, baked by world/flora.gd (_bake_moss)
-global uniform sampler2D moss_map : filter_linear, repeat_disable;
-
-float foot_moss(vec2 xz) {
-	vec2 uv = xz / SHELTER_SIZE + 0.5;
-	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return 0.0;
-	return textureLod(moss_map, uv, 0.0).r;
-}
+// moss collars round the oak boles and boulder feet: foot_moss() in weather.gdshaderinc
 
 global uniform sampler2D foot_prints : filter_nearest, repeat_disable;
 global uniform vec4 foot_box;
