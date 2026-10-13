@@ -1710,9 +1710,39 @@ func _moss_test() -> void:
 	print("BOT moss grass: %d/%d sites on full moss grow grass (%.2f), open meadow %.2f" % [on_moss, on_tries, moss_rate, open_rate])
 	var n := flora.tree_xforms.size()
 	print("BOT moss: %d/%d oaks collared, %d shaded side mossier, %d/%d big boulders ringed, open meadow max %.2f" % [collared, n, shaded_more, rocks, big, open_moss])
+	# surface roots: every root dives into the soil at its tip and never floats clear of it
+	var terr: Terrain = _world.get_node("Terrain")
+	var buried := 0
+	for q in flora.root_tips:
+		if q.y < terr.height_at(q.x, q.z) + 0.02:
+			buried += 1
+	var root_meshes := 0
+	var floating := 0
+	var verts := 0
+	for c in flora.get_children():
+		if c is MeshInstance3D and c.name.begins_with("OakRoots"):
+			root_meshes += 1
+			var arr: Array = c.mesh.surface_get_arrays(0)
+			var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			verts += vs.size()
+			for vi in range(0, vs.size(), 5):
+				var v := vs[vi]
+				if v.y - terr.height_at(v.x, v.z) < 0.45:
+					continue
+				# only the buttress against the bole may stand that high
+				var near := false
+				for t in flora.tree_xforms:
+					if Vector2(t.origin.x - v.x, t.origin.z - v.z).length() < 1.15 * t.basis.get_scale().x:
+						near = true
+						break
+				if not near:
+					floating += 1
+	var nroots := flora.root_tips.size()
+	print("BOT roots: %d roots on %d oaks in %d chunks (%d verts), %d tips buried, %d verts >0.45 m above the soil away from a bole" % [nroots, n, root_meshes, verts, buried, floating])
 	_combat_done(collared >= n * 0.95 and shaded_more >= n * 0.9 and rocks >= big * 0.9 and big > 0 and open_moss < 0.05
-		and on_tries > 100 and moss_rate < 0.08 and open_rate > 0.3,
-		"moss collars at the oak boles and boulder feet, none in the open meadow, no tall grass on the cushions")
+		and on_tries > 100 and moss_rate < 0.08 and open_rate > 0.3
+		and nroots >= n * 4 and buried >= nroots * 0.97 and floating == 0 and root_meshes > 0,
+		"moss collars at the oak boles and boulder feet, none in the open meadow, no tall grass on the cushions, surface roots run out from every bole into the soil")
 
 func _trample_test() -> void:
 	var p := _player

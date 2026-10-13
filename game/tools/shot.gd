@@ -42,6 +42,18 @@ func _ready() -> void:
 		back.y = 0
 		back = back.normalized() * (16.0 if spot == "tree" else 6.0)
 		SPOTS[spot] = [best + back, best + Vector3.UP * (3.0 if spot == "tree" else -1.0)]
+	if spot == "roots":
+		# close on the bole foot of the oak nearest the village edge: surface roots in the moss
+		var flora: Flora = world.get_node("Flora")
+		var best := flora.tree_positions[0]
+		for q in flora.tree_positions:
+			if Vector2(q.x + 20, q.z - 50).length() < Vector2(best.x + 20, best.z - 50).length():
+				best = q
+		var back := -best
+		back.y = 0
+		var cp := best + back.normalized() * 5.5
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.9
+		SPOTS[spot] = [cp, best + Vector3.UP * 0.4]
 	if spot == "boulder":
 		# a big boulder near the village, seen from its shaded side (moss creeping up the flank)
 		var flora: Flora = world.get_node("Flora")

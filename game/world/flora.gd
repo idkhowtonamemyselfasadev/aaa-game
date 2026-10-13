@@ -69,6 +69,7 @@ func _ready() -> void:
 		leaf_material.set_shader_parameter("nmap_depth", 0.85)
 	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
+	_build_roots()
 	_scatter_rocks()
 	_bake_moss()
 	_scatter_understory()
@@ -193,6 +194,108 @@ func _build_tree(v: int) -> ArrayMesh:
 			ups.append(q)
 	_variant_perches.append(ups)
 	return mesh
+
+## Surface roots: 4-7 per oak, running out from the root flare and diving into the soil
+## 1.3-3 m out, built in world space so each one hugs the terrain under it (a shared
+## instanced mesh would float on the downhill side). Chunked ROOT_CHUNK m for culling.
+## COLOR.g = 1 marks a root for the bark shader, COLOR.b = height above the ground (m).
+const ROOT_CHUNK := 64.0
+var root_tips: Array[Vector3] = []   # bots: where each root goes under
+
+func _build_roots() -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed * 7 + 3
+	var chunks := {}
+	for xf in tree_xforms:
+		var s := xf.basis.get_scale().x
+		var c := xf.origin
+		var key := Vector2i(floori(c.x / ROOT_CHUNK), floori(c.z / ROOT_CHUNK))
+		if not chunks.has(key):
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			chunks[key] = st
+		var n := r.randi_range(4, 7)
+		var phase := r.randf() * TAU
+		for k in n:
+			var a := phase + k * TAU / n + r.randf_range(-0.35, 0.35)
+			var big := r.randf() < 0.6
+			var ln := (r.randf_range(1.8, 3.0) if big else r.randf_range(1.2, 1.9)) * s
+			var r0 := (r.randf_range(0.17, 0.24) if big else r.randf_range(0.1, 0.15)) * s
+			_root(chunks[key], r, c, a, ln, r0, s)
+	for key in chunks:
+		var st: SurfaceTool = chunks[key]
+		st.index()
+		st.generate_tangents()
+		var mi := MeshInstance3D.new()
+		mi.name = "OakRoots_%d_%d" % [key.x, key.y]
+		mi.mesh = st.commit()
+		if bark_material:
+			mi.material_override = bark_material
+		mi.visibility_range_end = 110.0
+		mi.visibility_range_end_margin = 15.0
+		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		add_child(mi)
+
+## One root from the bole at `c` along heading `a`: it leaves the flare as a buttress,
+## arches just proud of the soil (the top shows, the belly is buried) and sinks in at
+## its tip; big roots throw a thinner side root from their middle.
+func _root(st: SurfaceTool, r: RandomNumberGenerator, c: Vector3, a: float, ln: float, r0: float, s: float, depth := 0) -> void:
+	const N := 7
+	var pts: Array[Vector3] = []
+	var rads: Array[float] = []
+	var hs: Array[float] = []
+	var p := Vector2(c.x, c.z) + Vector2(cos(a), sin(a)) * (0.25 * s if depth == 0 else 0.0)
+	var heading := a
+	var wob := r.randf_range(-0.25, 0.25)
+	var step := ln / N
+	for i in N + 1:
+		var t := float(i) / N
+		var g := _terrain.height_at(p.x, p.y)
+		var rad := lerpf(r0, r0 * 0.12, pow(t, 0.8))
+		# buttress: high on the bole at the start, then just the top of the root shows
+		var y := g + lerpf(0.55 * s if depth == 0 else rad * 0.2, rad * 0.25 - 0.03, smoothstep(0.0, 0.4, t)) - 0.09 * t * t
+		pts.append(Vector3(p.x, y, p.y))
+		var flare := 1.0 + 0.6 * (1.0 - smoothstep(0.0, 0.3, t)) if depth == 0 else 1.0
+		rads.append(rad * flare)
+		hs.append(y - g)
+		heading += wob + r.randf_range(-0.22, 0.22)
+		p += Vector2(cos(heading), sin(heading)) * step
+	_root_tube(st, pts, rads, c)
+	root_tips.append(pts[N])
+	if depth == 0 and r0 > 0.15 * s and r.randf() < 0.75:
+		var m := pts[3]
+		var side := 1.0 if r.randf() < 0.5 else -1.0
+		_root(st, r, Vector3(m.x, 0.0, m.z), a + side * r.randf_range(0.5, 0.9), ln * 0.45, rads[3] * 0.55, s, 1)
+
+func _root_tube(st: SurfaceTool, pts: Array[Vector3], rads: Array[float], bole: Vector3) -> void:
+	const SIDES := 7
+	var n := pts.size()
+	var ring_prev: Array = []
+	var v_acc := 0.0
+	for i in n:
+		var fwd := (pts[mini(i + 1, n - 1)] - pts[maxi(i - 1, 0)]).normalized()
+		var side := fwd.cross(Vector3.UP).normalized()
+		var up := side.cross(fwd).normalized()
+		if i > 0:
+			v_acc += pts[i].distance_to(pts[i - 1]) / (TAU * maxf(rads[0], 0.05)) * 2.0
+		var ring: Array = []
+		for k in SIDES + 1:
+			var ang := float(k) / SIDES * TAU
+			var nrm := side * cos(ang) + up * sin(ang)
+			# roots are flattened (wider than tall) and a little knotted
+			var kn := 1.0 + 0.1 * sin(ang * 3.0 + i * 2.3)
+			var off := (side * cos(ang) * 1.25 + up * sin(ang) * 0.8) * rads[i] * kn
+			var v := pts[i] + off
+			var g := _terrain.height_at(v.x, v.z)
+			ring.append([v, nrm, Vector2(float(k) / SIDES * 2.0, v_acc), v.y - g])
+		if i > 0:
+			for k in SIDES:
+				for q in [ring_prev[k], ring_prev[k + 1], ring[k], ring_prev[k + 1], ring[k + 1], ring[k]]:
+					st.set_color(Color(0.0, 1.0, clampf(q[3], 0.0, 1.0)))
+					st.set_normal(q[1])
+					st.set_uv(q[2])
+					st.add_vertex(q[0])
+		ring_prev = ring
 
 ## World-space perch points (upper twig tips) in the crown of tree `i`.
 func perch_points(i: int) -> Array[Vector3]:

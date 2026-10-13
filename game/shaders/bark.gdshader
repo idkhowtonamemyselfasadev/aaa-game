@@ -12,6 +12,8 @@ uniform vec3 moss : source_color = vec3(0.17, 0.2, 0.06);
 
 varying vec3 wn;
 varying float vy;
+varying float v_root;   // 1 on a surface root (Flora._build_roots)
+varying float v_soil;   // root: height above the soil (m)
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n2(vec2 p) {
@@ -32,6 +34,8 @@ void vertex() {
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vy = VERTEX.y;
+	v_root = COLOR.g;
+	v_soil = COLOR.b;
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
@@ -59,6 +63,15 @@ void fragment() {
 	float reach = mix(0.3, 2.6, shade) * (0.55 + 0.9 * n2w(vec2(UV.x * 6.0, 0.0), 12.0));
 	float climb = 1.0 - smoothstep(reach * 0.4, reach, vy);
 	m = max(m, smoothstep(0.2, 0.6, climb * (0.55 + 0.6 * f) * (0.7 + 0.5 * n2(UV * vec2(10.0, 2.0)))));
+	if (v_root > 0.5) {
+		// surface roots: the arched tops are worn bare and paler, moss and peat fill the
+		// crotches and the line where the root goes into the soil
+		float top = smoothstep(0.2, 0.8, wn.y);
+		col = mix(col, bark_light * 1.15, top * 0.35 * f);
+		float lowm = 1.0 - smoothstep(0.02, 0.14, v_soil);
+		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
+		col *= mix(0.5, 1.0, smoothstep(0.0, 0.07, v_soil));
+	}
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
 	float rough = mix(0.92, 0.8, m);
 	weather_wetten(col, rough, 1.0);
