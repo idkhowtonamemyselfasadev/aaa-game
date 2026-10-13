@@ -36,6 +36,7 @@ var _variant_crown: Array[Vector2] = []
 var _perch: Array[Vector3] = []              # twig tips of the tree being built
 var _card_scale := 1.0                       # leaf card size/spread (1 oak, smaller on shrubs)
 var _variant_perches: Array = []             # per variant: upper-crown twig tips (local)
+var _cards: Array = []                       # leaf cards of the tree being built (see _emit_leaves)
 var tree_xforms: Array[Transform3D] = []     # per tree, same order as tree_positions
 var tree_variant: Array[int] = []
 
@@ -54,7 +55,10 @@ func _ready() -> void:
 	_grove.frequency = 1.0 / 70.0
 	_grove.fractal_octaves = 2
 	if leaf_material:
-		leaf_material.set_shader_parameter("leaf_tex", _leaf_atlas())
+		var atl := _leaf_atlas()
+		leaf_material.set_shader_parameter("leaf_tex", atl[0])
+		leaf_material.set_shader_parameter("leaf_nrm", atl[1])
+		leaf_material.set_shader_parameter("nmap_depth", 0.85)
 	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
 	_scatter_rocks()
@@ -157,10 +161,13 @@ func _build_tree(v: int) -> ArrayMesh:
 	_crown = Vector2(0.0, 1000.0)
 	_perch.clear()
 	var lean := Vector3(r.randf_range(-0.15, 0.15), 1.0, r.randf_range(-0.15, 0.15)).normalized()
+	_cards.clear()
 	_branch(r, Vector3.ZERO, lean, trunk_h, r.randf_range(0.42, 0.55), 0, 0.0)
+	_emit_leaves(1.0)
 	var mesh := ArrayMesh.new()
 	_bark.generate_tangents()
 	_bark.commit(mesh)
+	_leaves.generate_tangents()
 	_leaves.commit(mesh)
 	if bark_material:
 		mesh.surface_set_material(0, bark_material)
@@ -253,7 +260,7 @@ func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: floa
 	var tip := pts[pts.size() - 1]
 	if depth >= 3:
 		_perch.append(tip)
-		_leaf_cluster(r, tip, d, sway_end, 16)
+		_leaf_cluster(r, tip, d, sway_end, 22)
 		return
 	var kids := r.randi_range(2, 3) if depth > 0 else r.randi_range(3, 4)
 	var phase := r.randf() * TAU
@@ -269,8 +276,11 @@ func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: floa
 		_branch(r, sp, cd, cl, end_r * r.randf_range(0.75, 0.95), depth + 1, sway_end)
 	# extra leaf sprigs along the outer limbs so the crown is full, not lollipops
 	if depth == 2:
-		_leaf_cluster(r, pts[pts.size() / 2], d, sway_end, 7)
-		_leaf_cluster(r, pts[pts.size() - 1], d, sway_end, 6)
+		_leaf_cluster(r, pts[pts.size() / 2], d, sway_end, 9)
+		_leaf_cluster(r, pts[pts.size() - 1], d, sway_end, 8)
+	# inner crown: shaded sprigs where the main limbs fork, so the crown is not see-through
+	if depth == 1:
+		_leaf_cluster(r, pts[pts.size() - 1], d, sway_end, 7)
 
 func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1: float, flare: bool) -> void:
 	var n := pts.size()
@@ -310,71 +320,115 @@ func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1:
 		ring_prev = ring
 	# (open ends are hidden inside the parent limb or the leaf cluster)
 
-## A clump of crossed leaf-sprig cards around `c`; normals point out of the crown so it
-## lights as a soft volume. UV picks one of 4 atlas tiles.
+## A clump of crossed leaf-sprig cards around `c`, collected into `_cards`; _emit_leaves
+## writes them once the whole crown is known. UV picks one of 4 atlas tiles.
 func _leaf_cluster(r: RandomNumberGenerator, c: Vector3, d: Vector3, sway: float, count: int) -> void:
 	for i in count:
 		var off := Vector3(r.randfn(0, 0.9), r.randfn(0.25, 0.55), r.randfn(0, 0.9)) * _card_scale
 		var centre := c + off + d * 0.3 * _card_scale
-		var size := r.randf_range(1.3, 2.0) * _card_scale
+		var size := r.randf_range(1.15, 1.75) * _card_scale
 		var yaw := r.randf() * TAU
 		var tilt := r.randf_range(-0.6, 0.6)
 		var bx := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, tilt)
-		var right := bx.x * size
-		var upv := bx.y * size
-		var crown_n := (centre - _canopy_c).normalized().lerp(Vector3.UP, 0.3).normalized()
 		_crown = Vector2(maxf(_crown.x, Vector2(centre.x, centre.z).length() + size * 0.4), minf(_crown.y, centre.y))
 		var tile := r.randi() % 4
-		var uo := Vector2((tile % 2) * 0.5, (tile / 2) * 0.5)
-		var phase := r.randf()
-		var corners := [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+		_cards.append([centre, bx.x * size, bx.y * size, Vector2((tile % 2) * 0.5, (tile / 2) * 0.5), sway, r.randf()])
+
+## Write the collected leaf cards. The crown is treated as an ellipsoid fitted round the
+## card centres: vertex normals point out of it (soft volume lighting, per corner so the
+## shading rolls across a card), and COLOR.b is how deep in the crown the card sits
+## (0 outer shell .. 1 core, more on the underside): the shader darkens the inner leaves,
+## which see little sky, so the crown reads as a mass with a lit skin, not a flat sheet.
+## `occ_gain` scales that (shrubs are thin, so less).
+func _emit_leaves(occ_gain: float) -> void:
+	if _cards.is_empty():
+		return
+	var lo := Vector3(INF, INF, INF)
+	var hi := -lo
+	for cd in _cards:
+		lo = lo.min(cd[0])
+		hi = hi.max(cd[0])
+	var cen := (lo + hi) * 0.5
+	var rad := ((hi - lo) * 0.5).max(Vector3(0.3, 0.3, 0.3))
+	rad.x = maxf(rad.x, rad.z)
+	rad.z = rad.x
+	var corners := [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+	for cd in _cards:
+		var centre: Vector3 = cd[0]
+		var q := (centre - cen) / rad
+		var occ := clampf(1.0 - q.length(), 0.0, 1.0)
+		occ = clampf(occ * 1.25 + clampf(-q.y, 0.0, 1.0) * 0.35, 0.0, 1.0) * occ_gain
 		var vs: Array = []
 		for cc in corners:
-			var pos: Vector3 = centre + right * 0.5 * cc[0] + upv * 0.5 * cc[1]
-			var uv := uo + Vector2((cc[0] * 0.5 + 0.5) * 0.5, (0.5 - cc[1] * 0.5) * 0.5)
-			vs.append([pos, uv])
+			var pos: Vector3 = centre + cd[1] * 0.5 * cc[0] + cd[2] * 0.5 * cc[1]
+			var uv: Vector2 = cd[3] + Vector2((cc[0] * 0.5 + 0.5) * 0.5, (0.5 - cc[1] * 0.5) * 0.5)
+			var en := ((pos - cen) / (rad * rad)).normalized().lerp(Vector3.UP, 0.25).normalized()
+			vs.append([pos, uv, en])
 		for idx in [0, 1, 2, 0, 2, 3]:
 			var vv: Array = vs[idx]
-			_leaves.set_color(Color(sway, phase, 0))
-			_leaves.set_normal(crown_n)
+			_leaves.set_color(Color(cd[4], cd[5], occ))
+			_leaves.set_normal(vv[2])
 			_leaves.set_uv(vv[1])
 			_leaves.add_vertex(vv[0])
+	_cards.clear()
 
-## 1024x1024 atlas, 4 tiles; each tile is an oak sprig: a twig with 9-13 lobed leaves.
-func _leaf_atlas() -> ImageTexture:
+## 1024x1024 atlas, 4 tiles; each tile is an oak spray: 3-5 shoots fanning from the base,
+## each a twig ending in a rosette of small lobed leaves (~12 cm on a 1.5 m card, oak size),
+## over a back layer of darker, shaded leaves so the card has depth. Returns [albedo, normal]:
+## every leaf gets its own tilt and a fold along the midrib in the normal map, so the sun
+## catches some leaves and not others (real foliage glitter instead of a painted sheet).
+func _leaf_atlas() -> Array:
 	const S := 1024
 	const T := 512
 	var img := Image.create(S, S, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.18, 0.2, 0.08, 0.0))
+	var nimg := Image.create(S, S, false, Image.FORMAT_RGBA8)
+	nimg.fill(Color(0.5, 0.5, 1.0, 1.0))
 	var r := RandomNumberGenerator.new()
 	r.seed = 77
 	for tile in 4:
 		var ox := (tile % 2) * T
 		var oy := (tile / 2) * T
-		var base := Vector2(ox + T * 0.5, oy + T * 0.95)
-		var stem_dir := Vector2(r.randf_range(-0.2, 0.2), -1.0).normalized()
-		var stem_len := T * 0.75
-		_line(img, base, base + stem_dir * stem_len, 3.0, Color(0.22, 0.16, 0.1, 1))
-		var leaves := r.randi_range(22, 28)
-		for i in leaves:
-			var t := r.randf_range(0.15, 1.0)
-			var at := base + stem_dir * stem_len * t
-			var side := 1.0 if i % 2 == 0 else -1.0
-			var ang := stem_dir.angle() + side * r.randf_range(0.5, 1.2)
-			var ln := r.randf_range(0.2, 0.3) * T * (1.15 - t * 0.35)
-			var dir := Vector2.from_angle(ang)
-			# late-summer oak: deep olive, some yellowing, a rare dull-brown dead leaf (saturated
-			# rust at 12 % read as apples on a fruit tree at close range)
-			var hue := r.randf()
-			var col := Color(0.16, 0.22, 0.07)
-			if hue > 0.65:
-				col = Color(0.26, 0.27, 0.09)
-			if hue > 0.96:
-				col = Color(0.27, 0.19, 0.1)
-			col = col * r.randf_range(0.8, 1.15)
-			_leaf(img, at, dir, ln, ln * 0.36, col, Rect2i(ox, oy, T, T))
+		var clip := Rect2i(ox, oy, T, T)
+		var base := Vector2(ox + T * 0.5, oy + T * 0.97)
+		var shoots := r.randi_range(3, 5)
+		var tips: Array = []
+		for k in shoots:
+			var a := -PI * 0.5 + (float(k) / maxf(shoots - 1, 1) - 0.5) * 1.1 + r.randf_range(-0.15, 0.15)
+			var ln := T * r.randf_range(0.45, 0.68)
+			var mid := base + Vector2.from_angle(a) * ln * 0.5 + Vector2(r.randf_range(-20, 20), 0)
+			var tip := base + Vector2.from_angle(a + r.randf_range(-0.2, 0.2)) * ln
+			_line(img, base, mid, 2.0, Color(0.2, 0.15, 0.1, 1))
+			_line(img, mid, tip, 1.5, Color(0.22, 0.17, 0.1, 1))
+			tips.append([base, mid, tip])
+		# back layer: shaded leaves deeper in the spray
+		for pass_i in 2:
+			var back := pass_i == 0
+			for sh in tips:
+				var n := r.randi_range(9, 12) if back else r.randi_range(13, 18)
+				for i in n:
+					# leaves crowd toward the shoot tip (oak leaves grow in rosettes at the end)
+					var t := 1.0 - pow(r.randf(), 1.8) * 0.85
+					var at: Vector2 = (sh[0] as Vector2).lerp(sh[1], minf(t * 2.0, 1.0)) if t < 0.5 else (sh[1] as Vector2).lerp(sh[2], (t - 0.5) * 2.0)
+					var sdir := ((sh[2] as Vector2) - (sh[0] as Vector2)).normalized()
+					var ang := sdir.angle() + (1.0 if i % 2 == 0 else -1.0) * r.randf_range(0.3, 1.3) + r.randf_range(-0.2, 0.2)
+					if t > 0.9:
+						ang = r.randf() * TAU   # the terminal rosette spreads all round
+					var ll := r.randf_range(0.065, 0.095) * T * (0.85 if back else 1.0)
+					var hue := r.randf()
+					var col := Color(0.15, 0.21, 0.07)
+					if hue > 0.6:
+						col = Color(0.22, 0.25, 0.08)
+					if hue > 0.85:
+						col = Color(0.12, 0.17, 0.08)
+					if hue > 0.97:
+						col = Color(0.26, 0.19, 0.1)
+					col = col * r.randf_range(0.82, 1.12) * (0.72 if back else 1.0)
+					var tiltv := Vector2(r.randf_range(-0.7, 0.7), r.randf_range(-0.7, 0.7))
+					_leaf(img, at, Vector2.from_angle(ang), ll, ll * 0.34, col, clip, nimg, tiltv, true)
 	img.generate_mipmaps()
-	return ImageTexture.create_from_image(img)
+	nimg.generate_mipmaps()
+	return [ImageTexture.create_from_image(img), ImageTexture.create_from_image(nimg)]
 
 func _line(img: Image, a: Vector2, b: Vector2, w: float, col: Color) -> void:
 	var steps := int(a.distance_to(b))
@@ -388,7 +442,7 @@ func _line(img: Image, a: Vector2, b: Vector2, w: float, col: Color) -> void:
 
 ## Lobed oak leaf rasterised in its bounding box: half-width along the midrib follows a
 ## sine envelope with 4 lobes; lighter midrib and veins, darker toward the edge.
-func _leaf(img: Image, at: Vector2, dir: Vector2, ln: float, wd: float, col: Color, clip: Rect2i) -> void:
+func _leaf(img: Image, at: Vector2, dir: Vector2, ln: float, wd: float, col: Color, clip: Rect2i, nimg: Image = null, tiltv := Vector2.ZERO, obovate := false) -> void:
 	var nrm := Vector2(-dir.y, dir.x)
 	var lo := at.min(at + dir * ln) - Vector2(wd, wd) * 1.4
 	var hi := at.max(at + dir * ln) + Vector2(wd, wd) * 1.4
@@ -400,6 +454,9 @@ func _leaf(img: Image, at: Vector2, dir: Vector2, ln: float, wd: float, col: Col
 			if u < 0.0 or u > 1.0:
 				continue
 			var env := pow(sin(PI * clampf(u * 0.95 + 0.05, 0.0, 1.0)), 0.7)
+			if obovate:
+				# oak: narrow at the stalk, widest two thirds out, a rounded tip
+				env = pow(sin(PI * pow(clampf(u * 0.97 + 0.03, 0.0, 1.0), 1.4)), 0.75)
 			var lobes := 0.78 + 0.22 * absf(sin(u * PI * 4.5))
 			var hw := wd * env * lobes
 			if absf(v) > hw:
@@ -412,6 +469,12 @@ func _leaf(img: Image, at: Vector2, dir: Vector2, ln: float, wd: float, col: Col
 				c = c * 1.12                                             # veins
 			c.a = 1.0
 			img.set_pixel(x, y, c)
+			if nimg:
+				# leaf tilt + a V-fold along the midrib + the blade curling down to the tip
+				var side := signf(v) * minf(absf(v) / maxf(hw, 0.001) * 2.0, 1.0)
+				var g := tiltv + nrm * side * 0.45 - dir * (u - 0.4) * 0.5
+				var nn := Vector3(g.x, -g.y, 1.0).normalized()
+				nimg.set_pixel(x, y, Color(nn.x * 0.5 + 0.5, nn.y * 0.5 + 0.5, nn.z * 0.5 + 0.5, 1.0))
 
 # ---------------------------------------------------------------- rocks
 
@@ -552,6 +615,7 @@ func _scatter_understory() -> void:
 	fern_mat.set_shader_parameter("tint", Color(1.0, 1.0, 1.0))
 	fern_mat.set_shader_parameter("fill", 2.0)
 	fern_mat.set_shader_parameter("trample_gain", 1.0)
+	fern_mat.set_shader_parameter("nmap_depth", 0.0)   # fern strips carry no tangents
 	var shrub_leaf := leaf_material.duplicate() as ShaderMaterial
 	shrub_leaf.set_shader_parameter("tint", Color(1.15, 1.18, 0.95))
 	var ferns: Array[ArrayMesh] = []
@@ -726,6 +790,7 @@ func _build_shrub(v: int, leaf_mat: Material) -> ArrayMesh:
 	var keep_crown := _crown
 	_card_scale = 0.42
 	_canopy_c = Vector3(0, 0.9, 0)
+	_cards.clear()
 	var stems := r.randi_range(4, 7)
 	for k in stems:
 		var a := r.randf() * TAU
@@ -743,11 +808,13 @@ func _build_shrub(v: int, leaf_mat: Material) -> ArrayMesh:
 		_leaf_cluster(r, tip, d, 0.75, 9)
 		_leaf_cluster(r, pts[3], d, 0.55, 6)
 		_leaf_cluster(r, pts[2] + Vector3(r.randfn(0, 0.2), 0, r.randfn(0, 0.2)), d, 0.45, 4)
+	_emit_leaves(0.5)
 	_card_scale = 1.0
 	_crown = keep_crown
 	var mesh := ArrayMesh.new()
 	_bark.generate_tangents()
 	_bark.commit(mesh)
+	_leaves.generate_tangents()
 	_leaves.commit(mesh)
 	if bark_material:
 		mesh.surface_set_material(0, bark_material)

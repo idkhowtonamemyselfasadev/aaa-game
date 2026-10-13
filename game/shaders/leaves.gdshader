@@ -10,6 +10,11 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 #include "res://shaders/trample.gdshaderinc"
 
 uniform sampler2D leaf_tex : source_color, filter_linear_mipmap_anisotropic;
+// per-leaf tilt/fold normals painted with the oak atlas (flora.gd); 0 = off (ferns)
+uniform sampler2D leaf_nrm : hint_normal, filter_linear_mipmap_anisotropic;
+uniform float nmap_depth = 0.0;
+// how dark the core of the crown goes (COLOR.b = depth in the crown, set by flora.gd)
+uniform float crown_occ = 0.45;
 uniform vec3 tint : source_color = vec3(1.0, 1.0, 1.0);
 uniform float fade_dist = 380.0;
 // shade fill gain: oak crowns 0.45 (inner crown); ferns on the woodland floor more (they
@@ -20,6 +25,7 @@ uniform float fill = 0.45;
 uniform float trample_gain = 0.0;
 
 varying float v_phase;
+varying float v_occ;
 varying vec3 v_inst;
 
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
@@ -44,6 +50,7 @@ void vertex() {
 		}
 	}
 	v_phase = COLOR.g;
+	v_occ = COLOR.b;
 	v_inst = MODEL_MATRIX[3].xyz;
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
@@ -55,6 +62,11 @@ void fragment() {
 	vec3 col = t.rgb * tint * mix(0.85, 1.15, v_phase) * mix(vec3(0.9, 1.0, 0.9), vec3(1.15, 1.0, 0.8), iv);
 	ALBEDO = col;
 	ALPHA = t.a;
+	NORMAL_MAP = texture(leaf_nrm, UV).rgb;
+	NORMAL_MAP_DEPTH = nmap_depth;
+	// inner crown: leaves under other leaves see little sky or sun (darker, a touch bluer
+	// than the lit skin), so the crown reads as a volume
+	col *= mix(vec3(1.0), vec3(0.88, 0.95, 1.0) * (1.0 - crown_occ), v_occ);
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 	ALPHA_ANTIALIASING_EDGE = 0.3;
 	float rough = 0.72;
