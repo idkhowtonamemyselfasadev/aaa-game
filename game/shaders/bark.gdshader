@@ -6,10 +6,10 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // plated ridges, lichen/moss on the upward side and near the roots.
 #include "res://shaders/tree_wind.gdshaderinc"
 
-uniform vec3 bark_dark : source_color = vec3(0.15, 0.13, 0.11);
-uniform vec3 bark_light : source_color = vec3(0.46, 0.43, 0.38);
+uniform vec3 bark_dark : source_color = vec3(0.17, 0.12, 0.08);
+uniform vec3 bark_light : source_color = vec3(0.5, 0.47, 0.42);
 uniform vec3 lichen : source_color = vec3(0.56, 0.58, 0.50);
-uniform vec3 moss : source_color = vec3(0.17, 0.2, 0.06);
+uniform vec3 moss : source_color = vec3(0.21, 0.26, 0.08);
 
 varying vec3 wn;
 varying float vy;
@@ -31,22 +31,30 @@ float n2w(vec2 p, float per) {
 
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 
+float furrow(vec2 uv) {
+	// 12 ridges around (u in 0..2 -> 24 cells per wrap), stretched 6x along the limb;
+	// every term wraps at u = 2 so the displaced bole has no seam crack
+	vec2 p = vec2(uv.x * 12.0, uv.y * 2.0);
+	float a = n2w(p + vec2(n2w(p * vec2(0.5, 0.3), 12.0) * 1.5, 0.0), 24.0);
+	float b = n2w(p * vec2(2.0, 3.0) + 3.1, 48.0);
+	float r = 1.0 - abs(a * 2.0 - 1.0);
+	return clamp(r * 0.75 + b * 0.25, 0.0, 1.0);
+}
+
 void vertex() {
+	// the bole (COLOR.a < 1, Flora._tube disp) is pushed out into real plates and sunk
+	// into furrows, so the bark has relief in silhouette and in the shadows, not only
+	// in the normal map; 1 - COLOR.a is the relief depth in metres
+	float relief = 1.0 - COLOR.a;
+	if (relief > 0.0) {
+		VERTEX += NORMAL * (smoothstep(0.15, 0.9, furrow(UV)) - 0.6) * relief;
+	}
 	VERTEX += tree_wind(VERTEX, COLOR.r, MODEL_MATRIX, TIME);
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vy = VERTEX.y;
 	v_root = COLOR.g;
 	v_soil = COLOR.b;
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
-}
-
-float furrow(vec2 uv) {
-	// 12 ridges around (u in 0..2 -> 24 cells per wrap), stretched 6x along the limb
-	vec2 p = vec2(uv.x * 12.0, uv.y * 2.0);
-	float a = n2w(p + vec2(n2(p * vec2(0.5, 0.3)) * 1.5, 0.0), 24.0);
-	float b = n2w(p * vec2(2.0, 3.0) + 3.1, 48.0);
-	float r = 1.0 - abs(a * 2.0 - 1.0);
-	return clamp(r * 0.75 + b * 0.25, 0.0, 1.0);
 }
 
 void fragment() {
@@ -56,12 +64,15 @@ void fragment() {
 	float fy = furrow(UV + vec2(0.0, e * 4.0));
 	vec3 col = mix(bark_dark, bark_light, smoothstep(0.25, 0.85, f));
 	col *= 0.85 + 0.3 * n2(UV * vec2(40.0, 10.0));
+	// deep in the furrows the bark is warm red-brown (fresh inner layers, no weathering)
+	col = mix(col, vec3(0.2, 0.12, 0.07), (1.0 - smoothstep(0.1, 0.4, f)) * 0.6);
 	// old oak bark is grey-weathered on the plate tops, with pale crustose lichen blotches
 	// on the ridges (never in the furrows); the furrows stay dark brown
 	float plate = smoothstep(0.55, 0.9, f);
 	col = mix(col, col * vec3(1.08, 1.1, 1.12) + vec3(0.03), plate * 0.6);
-	float lb = smoothstep(0.62, 0.78, n2w(UV * vec2(9.0, 2.5), 18.0) * 0.7 + n2(UV * vec2(30.0, 9.0)) * 0.3);
-	col = mix(col, lichen * (0.85 + 0.2 * f), lb * plate * 0.7);
+	// blotches the size of a hand to a dinner plate, so they read from 5-10 m; they sit
+	// on the plates and only feather into the furrow lips
+	float lb = smoothstep(0.56, 0.7, n2w(UV * vec2(5.0, 1.4), 10.0) * 0.65 + n2(UV * vec2(18.0, 5.0)) * 0.35);
 	float m = smoothstep(0.35, 0.8, wn.y + n2(UV * vec2(8.0, 3.0)) * 0.4 - 0.1);
 	m = max(m, smoothstep(1.2, 0.0, vy) * 0.8 * n2(UV * 6.0));
 	// the shaded side of the bole stays damp: moss climbs it from the foot collar in
@@ -69,7 +80,8 @@ void fragment() {
 	float shade = clamp(dot(normalize(wn.xz + vec2(1e-4)), MOSS_SHADE), 0.0, 1.0) * (1.0 - abs(wn.y));
 	float reach = mix(0.3, 2.6, shade) * (0.55 + 0.9 * n2w(vec2(UV.x * 6.0, 0.0), 12.0));
 	float climb = 1.0 - smoothstep(reach * 0.4, reach, vy);
-	m = max(m, smoothstep(0.2, 0.6, climb * (0.55 + 0.6 * f) * (0.7 + 0.5 * n2(UV * vec2(10.0, 2.0)))));
+	// streaks, not a sheet: the climb breaks up into tongues with bare bark between
+	m = max(m, smoothstep(0.35, 0.75, climb * (0.45 + 0.6 * f) * (0.55 + 0.7 * n2(UV * vec2(10.0, 2.0)))));
 	if (v_root > 0.5) {
 		// surface roots: the arched tops are worn bare and paler, moss and peat fill the
 		// crotches and the line where the root goes into the soil
@@ -80,15 +92,17 @@ void fragment() {
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
 		col *= mix(0.8, 1.0, smoothstep(0.0, 0.07, v_soil));
 	}
-	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.85);
-	float rough = mix(0.92, 0.8, m);
+	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.75);
+	// lichen grows where the moss does not (the drier bark), so it shows on every side
+	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.25, 1.0, plate) * 0.8 * (1.0 - m));
+	float rough = mix(0.97, 0.85, m);
 	weather_wetten(col, rough, 1.0);
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.25;
+	SPECULAR = 0.08;   // dry bark has almost no sheen
 	NORMAL_MAP = normalize(vec3((f - fx) * 18.0, (f - fy) * 6.0, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.6;
-	AO = mix(0.6, 1.0, f);
+	AO = mix(0.5, 1.0, smoothstep(0.05, 0.6, f));
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	// trunks are vertical: bounce off the ground below, less in the furrows

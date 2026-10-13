@@ -411,7 +411,13 @@ func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: floa
 		p += d * (length / rings)
 	var end_r := radius * (0.62 if depth < 3 else 0.25)
 	var sway_end := minf(1.0, sway + 0.25 + 0.1 * depth)
-	_tube(pts, radius, end_r, sides, sway, sway_end, depth == 0)
+	if depth == 0:
+		# the bole gets a dense ring/side grid so the bark shader can push real furrows
+		# into it (COLOR.a < 1 = displace); resampled here so the random stream (and so
+		# every tree's shape) stays the same
+		_tube(_resample(pts, 0.2), radius, end_r, 48, sway, sway_end, true, 0.14)
+	else:
+		_tube(pts, radius, end_r, sides, sway, sway_end, false)
 	var tip := pts[pts.size() - 1]
 	if depth >= 3:
 		_perch.append(tip)
@@ -437,7 +443,17 @@ func _branch(r: RandomNumberGenerator, from: Vector3, dir: Vector3, length: floa
 	if depth == 1:
 		_leaf_cluster(r, pts[pts.size() - 1], d, sway_end, 7)
 
-func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1: float, flare: bool) -> void:
+## `pts` with extra points every `step` m along each segment (linear).
+func _resample(pts: Array[Vector3], step: float) -> Array[Vector3]:
+	var out: Array[Vector3] = [pts[0]]
+	for i in range(1, pts.size()):
+		var k := maxi(1, ceili(pts[i].distance_to(pts[i - 1]) / step))
+		for j in range(1, k + 1):
+			out.append(pts[i - 1].lerp(pts[i], float(j) / k))
+	return out
+
+## `disp`: bark relief depth as a fraction of the radius (bark.gdshader, via COLOR.a).
+func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1: float, flare: bool, disp := 0.0) -> void:
 	var n := pts.size()
 	var ring_prev: Array = []
 	var v_acc := 0.0
@@ -456,8 +472,10 @@ func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1:
 			var a := float(s) / sides * TAU
 			var nrm := side * cos(a) + up * sin(a)
 			# knobbly bark: a little radial noise so the silhouette is not a pipe
-			var k := 1.0 + 0.08 * sin(a * 3.0 + i * 1.7) + 0.05 * sin(a * 7.0 - i * 0.9)
-			ring.append([pts[i] + nrm * rad * k, nrm, Vector2(float(s) / sides * 2.0, v_acc)])
+			# (by length, so a resampled bole keeps the knobs of the 0.45 m ring path)
+			var fi := v_acc * TAU * maxf(r0, 0.05) * 0.5 / 0.45
+			var k := 1.0 + 0.08 * sin(a * 3.0 + fi * 1.7) + 0.05 * sin(a * 7.0 - fi * 0.9)
+			ring.append([pts[i] + nrm * rad * k, nrm, Vector2(float(s) / sides * 2.0, v_acc), rad * k * disp])
 		if i > 0:
 			var sw := lerpf(s0, s1, t)
 			var swp := lerpf(s0, s1, float(i - 1) / (n - 1))
@@ -468,7 +486,7 @@ func _tube(pts: Array[Vector3], r0: float, r1: float, sides: int, s0: float, s1:
 				var b1: Array = ring[s + 1]
 				for q in [[a0, swp], [a1, swp], [b0, sw], [a1, swp], [b1, sw], [b0, sw]]:
 					var vv: Array = q[0]
-					_bark.set_color(Color(q[1], 0, 0))
+					_bark.set_color(Color(q[1], 0, 0, 1.0 - vv[3]))
 					_bark.set_normal(vv[1])
 					_bark.set_uv(vv[2])
 					_bark.add_vertex(vv[0])

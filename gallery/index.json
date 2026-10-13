@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261010-0816-meadow-noon.jpg",
-  "time": "2026-10-10T08:16:26Z",
-  "caption": "New wind-combed procedural grass meadow at noon in Harrowmere Vale; bare ground between clumps is still flat grey-brown and the distant hills float as disconnected ribbons in the fog.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-0816-vale-slope-dusk.jpg",
   "time": "2026-10-10T08:16:26Z",
   "caption": "Grass on a Vale slope at 16:30 golden hour reads well up close, but past the 64 m grass radius the valley is an empty brown plane under grey sky with no trees, rocks or village.",
@@ -885,6 +879,12 @@
   "file": "20261013-1750-bark.jpg",
   "time": "2026-10-13T17:50:00Z",
   "caption": "Oak bole foot in grove shade after the bark lift: the trunk now shows its form and a grey weathered tone instead of a black silhouette, but it still reads as smooth charcoal with a sheen; no deep furrows or lichen read at 5 m, and the moss floor still shows a faint crack net.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261013-1845-bark-relief.jpg",
+  "time": "2026-10-13T18:45:14Z",
+  "caption": "Oak bole at 5 m in grove shade: the bark now has real displaced plates and furrows that break the silhouette, grey-brown with streaky moss instead of a black sheet; still reads too smooth and dark up close, lichen too faint, moss cushions underfoot still crackle like mud.",
   "verdict": "fail"
  }
 ]
