@@ -28,6 +28,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 11:50 UTC: built boulder-flank moss in parallel with the 11:00
+  session and found it already pushed (bb3dee1, which also mosses the oak boles) at rebase
+  time; dropped the duplicate. Two notes for whoever touches it next: colour literals in a
+  shader are linear, so sRGB moss colours must be `source_color` uniforms (written as vec3
+  literals they turn a boulder flat bright lime); the reach is measured above the sunk
+  instance origin, not the local terrain, so boulders on slopes get more moss downhill.
+  Sessions still overlap even after a pull at the start: pull again right before building.
+  No game change this session.
 - Session 2026-10-13 11:00 UTC:
   - **Moss creeping up boulder flanks and oak boles (10:00 follow-up "moss creeping up the
     boulder flanks from the collar").** `foot_moss()` + the `moss_map` global moved from
