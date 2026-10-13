@@ -8,7 +8,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 
 uniform vec3 bark_dark : source_color = vec3(0.17, 0.12, 0.08);
 uniform vec3 bark_light : source_color = vec3(0.5, 0.47, 0.42);
-uniform vec3 lichen : source_color = vec3(0.56, 0.58, 0.50);
+uniform vec3 lichen : source_color = vec3(0.66, 0.68, 0.58);
 uniform vec3 moss : source_color = vec3(0.21, 0.26, 0.08);
 
 varying vec3 wn;
@@ -41,6 +41,26 @@ float furrow(vec2 uv) {
 	return clamp(r * 0.75 + b * 0.25, 0.0, 1.0);
 }
 
+// old oak bark is "blocky": the plates between the furrows crack across every
+// 10-20 cm (UV is ~pi*r0 m per unit; 7 rows per unit ~ 0.18 m on a 0.4 m bole).
+// Each plate column gets its own crack offset and tilt, and some cracks are missing
+// so the blocks have uneven lengths. Returns 1 in a cross crack.
+float cracks(vec2 uv) {
+	vec2 q = vec2(uv.x * 12.0, uv.y * 7.0);
+	float c = mod(floor(q.x), 24.0);
+	float y = q.y + h21(vec2(c, 3.7)) + (fract(q.x) - 0.5) * (h21(vec2(c, 9.1)) - 0.5) * 0.7
+		+ (n2w(q * vec2(1.0, 0.5), 24.0) - 0.5) * 0.35;
+	float keep = step(0.3, h21(vec2(c, floor(y))));
+	return smoothstep(0.6, 0.9, abs(fract(y) - 0.5) * 2.0) * keep;
+}
+
+// the full bark height field: furrows with flat plate tops (narrow furrows), cut into
+// blocks by the cross cracks
+float bark_h(vec2 uv) {
+	float f = smoothstep(0.12, 0.62, furrow(uv));
+	return f * (1.0 - 0.8 * cracks(uv) * smoothstep(0.3, 0.7, f));
+}
+
 void vertex() {
 	// the bole (COLOR.a < 1, Flora._tube disp) is pushed out into real plates and sunk
 	// into furrows, so the bark has relief in silhouette and in the shadows, not only
@@ -58,10 +78,13 @@ void vertex() {
 }
 
 void fragment() {
+	// colour follows the coarse furrows; the blocky height field (cross cracks, flat
+	// plate tops) only drives the normal map and the cavity shading
 	float f = furrow(UV);
+	float h = bark_h(UV);
 	float e = 0.004;
-	float fx = furrow(UV + vec2(e, 0.0));
-	float fy = furrow(UV + vec2(0.0, e * 4.0));
+	float hx = bark_h(UV + vec2(e, 0.0));
+	float hy = bark_h(UV + vec2(0.0, e));
 	vec3 col = mix(bark_dark, bark_light, smoothstep(0.25, 0.85, f));
 	col *= 0.85 + 0.3 * n2(UV * vec2(40.0, 10.0));
 	// deep in the furrows the bark is warm red-brown (fresh inner layers, no weathering)
@@ -94,15 +117,17 @@ void fragment() {
 	}
 	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.75);
 	// lichen grows where the moss does not (the drier bark), so it shows on every side
-	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.25, 1.0, plate) * 0.8 * (1.0 - m));
+	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.25, 1.0, plate) * 0.9 * (1.0 - m));
 	float rough = mix(0.97, 0.85, m);
 	weather_wetten(col, rough, 1.0);
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.08;   // dry bark has almost no sheen
-	NORMAL_MAP = normalize(vec3((f - fx) * 18.0, (f - fy) * 6.0, 1.0)) * 0.5 + 0.5;
+	NORMAL_MAP = normalize(vec3((h - hx) * 12.0, (h - hy) * 12.0, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.6;
-	AO = mix(0.5, 1.0, smoothstep(0.05, 0.6, f));
+	// cavity: the furrow floors and the cross cracks stay dark even in the bounce fill
+	AO = mix(0.4, 1.0, smoothstep(0.05, 0.55, h));
+	ALBEDO *= mix(0.75, 1.0, smoothstep(0.0, 0.35, h));
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	// trunks are vertical: bounce off the ground below, less in the furrows
