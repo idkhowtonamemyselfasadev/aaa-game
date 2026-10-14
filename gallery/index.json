@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261010-1900-soldier-glint.jpg",
-  "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1900-soldier-thrust.jpg",
   "time": "2026-10-10T19:40:00Z",
   "caption": "Side-on as the soldier's lunging thrust lands on the hero at the practice post; the thrust reads as a body lunge but the spear is hidden along the view line, and both models are placeholder sci-fi soldiers.",
@@ -885,6 +879,12 @@
   "file": "20261014-1615-nightface-hooded.jpg",
   "time": "2026-10-14T16:15:00Z",
   "caption": "The hero at 22:30 by moonlight: the face now sinks into the hood's shadow under the brow, eye whites are grey instead of goggle-white and the hood rim reads; the hood opening still cuts the face as a hard polygon and the far ridges are faceted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-1715-hood-oval.jpg",
+  "time": "2026-10-14T17:15:00Z",
+  "caption": "The hero at 10:30 in the meadow: the hood's face opening is now a rounded arch with a thick rolled hem instead of a straight-edged cut; the face still reads too bright and doll-like at noon with startled eyes, and a pale patch shows at the throat under the face cloth.",
   "verdict": "fail"
  }
 ]

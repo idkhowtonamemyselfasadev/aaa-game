@@ -87,6 +87,59 @@ func _attach_sized(bone: String) -> Node3D:
 	off.transform = off.transform * Transform3D(Basis.from_scale(SIZE), Vector3.ZERO)
 	return off
 
+## The hero's hood: the Hollow's cowl, drawn a little forward round the face, with an oval
+## face opening (an arch from the brow down past the eyes, then wide round the face cloth and
+## closing at the throat) finished in a thick, slightly uneven rolled hem instead of a raw
+## straight-edged cut. UV.x runs round the hood (the outer 12 % either side is the roll),
+## UV.y from the crown to the throat.
+const HOOD_ROLL := 0.12
+const HOOD_YC := 1.952   # the arch's centre height, near the eye line
+const HOOD_H := 0.088    # the arch's half height: its top sits under the hat at 2.04
+const HOOD_W := 0.09     # the opening's half width from the eyes down
+
+func _hood() -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var gap := _hood_gap(v)
+		if u > HOOD_ROLL and u < 1.0 - HOOD_ROLL:
+			return _hood_at(lerpf(gap, TAU - gap, (u - HOOD_ROLL) / (1.0 - 2.0 * HOOD_ROLL)), v)
+		var left := u <= HOOD_ROLL
+		var ae := gap if left else TAU - gap
+		var into := 1.0 if left else -1.0
+		var phi := ((HOOD_ROLL - u) if left else (u - 1.0 + HOOD_ROLL)) / HOOD_ROLL * 1.45 * PI
+		var p := _hood_at(ae, v)
+		# the edge's tangent back into the hood and the outward normal off the cloth
+		var t := (_hood_at(ae + into * 0.02, v) - p).normalized()
+		var n := Vector3(p.x, 0.0, p.z + 0.06)
+		n = (n - t * n.dot(t)).normalized()
+		# the hem rolls out over the edge and lies back on the outside; thin at the arch's top,
+		# where it runs into the crown seam, and a little uneven along its length
+		var top_v := (2.09 - HOOD_YC - HOOD_H) / 0.43
+		var rr := 0.0105 * (1.0 + 0.25 * sin(v * 31.0 + 1.3) + 0.12 * sin(v * 77.0)) \
+				* smoothstep(top_v - 0.02, top_v + 0.07, v)
+		return p + n * rr * (1.0 - cos(phi)) - t * rr * sin(phi), 64, 40)
+
+## The hood surface at angle `a` round the head (0 = the front) and `v` from crown to throat.
+func _hood_at(a: float, v: float) -> Vector3:
+	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
+	var r := dome * (1.0 + 0.45 * smoothstep(0.7, 1.0, v))
+	r *= 1.0 + 0.03 * sin(a * 7.0) * v
+	var cz := -0.045 - 0.06 * pow(1.0 - v, 3.0)
+	# the cowl is drawn forward round the face, so its rim stands proud of the brow and cheeks
+	var fwd := 0.045 * pow(cos(a) * 0.5 + 0.5, 4.0) * smoothstep(0.03, 0.12, v) \
+			* (1.0 - smoothstep(0.5, 0.78, v))
+	return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43, cz + cos(a) * (0.192 * r + fwd))
+
+## Half-angle of the face opening at `v`: an elliptic arch over the eyes, straight sides
+## down the cheeks, then the Hollow cowl's wide gap round the face cloth closing at the throat.
+func _hood_gap(v: float) -> float:
+	var y := 2.09 - v * 0.43
+	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
+	var dy := maxf(y - HOOD_YC, 0.0) / HOOD_H
+	var half := HOOD_W * sqrt(maxf(1.0 - dy * dy, 0.0)) * (1.0 + 0.05 * sin(v * 19.0 + 0.7))
+	var arch := asin(clampf(half / (0.168 * maxf(dome, 0.05)), 0.0, 0.99))
+	var low := 0.22 + 0.42 * smoothstep(0.12, 0.4, v) - 0.5 * smoothstep(0.72, 1.0, v)
+	return lerpf(arch, low, smoothstep(0.42, 0.56, v))
+
 ## A conical woven straw hat (douli): a shallow cone from the crown point out to a wide brim
 ## that turns down a little at the rim, sitting low over the hood so the face is in its shade.
 ## UV.x runs round the hat, UV.y from the crown to the rim (the weave then reads as rings).
