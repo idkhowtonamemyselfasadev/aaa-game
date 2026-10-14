@@ -28,6 +28,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-13 23:58-2026-10-14 00:50 UTC:
+  - **Shrine seal glow only in the cuts (Next item 00, sealD verdict).** seal.gdshader: the
+    ember only lights the groove core (smoothstep 0.55-0.95 of the cut depth, cord pulse
+    x0.5) instead of the soft groove shoulders and worn shallow cuts; darker greystone lid
+    (stone_a 0.34, stone_b 0.2). shrine_seal.gd: EmberLight raised 0.35 -> 1.1 m, range 4.5,
+    attenuation 2.2, energy 0.015 + 0.16 * glow (was 0.04 + 0.5) so it warms the plinth and
+    hero softly instead of a hotspot on the lid face.
+  - Verdict `seal sealE 40 18.3` fail but better: the sigil reads as glowing carved cuts on
+    dark stone, no haze. Still wrong: flat dark floor litter round the plinth, bland pale
+    wall blocks, hero's face grey under the hat. Gallery: shrine-seal-cuts.
+  - Bots: shrine, ruin, walk PASS. Did not touch bark (claimed by the 22:58 session).
 - Session 2026-10-13 21:45-23:20 UTC:
   - **Shrine of Binding seal (Next item 0 said leave bark; item 2 ruin "shrine hook").**
     ruins.gd `_plinth()`: two courses of curved step stones (r 1.47 / 1.03) set into the
@@ -1761,7 +1772,9 @@ Claimed by session 2026-10-13 22:58 UTC: item 0 (bark plate-top fine relief, rou
 00. Shrine of Binding follow-ups: the lid opening (grinds aside, a stair down into dark)
    once Bind exists; the shrine interior itself (one Bind puzzle, 8-15 min, Ember shard
    reward); worn stair treads lit by the ember at night in the `ruinin` shot; feet still
-   float a little on the step stones (frustum collider).
+   float a little on the step stones (frustum collider). (done 00:50 10-14: glow only in
+   the cuts, no lid haze.) Next look fix in the keep: the floor litter round the plinth
+   is a flat dark texture -- give it loose stones, soil, leaf drift and grass tufts.
 0. (done 16:30 10-13: bark albedo lift; 17:58: displaced bole relief; 18:55: blocky
    cross cracks; 20:35: warm darker tone, varied cracks, soft moss cushions.) Bark close-up:
    the cross cracks still read as short dark dashes painted on a smooth plate -- give the

@@ -10,8 +10,8 @@ render_mode cull_back;
 global uniform vec3 bounce_light;
 #include "res://shaders/bounce.gdshaderinc"
 uniform float wake = 0.0;
-uniform vec3 stone_a : source_color = vec3(0.42, 0.4, 0.36);
-uniform vec3 stone_b : source_color = vec3(0.27, 0.26, 0.24);
+uniform vec3 stone_a : source_color = vec3(0.34, 0.32, 0.29);
+uniform vec3 stone_b : source_color = vec3(0.2, 0.19, 0.18);
 uniform vec3 moss_a : source_color = vec3(0.3, 0.34, 0.12);
 uniform vec3 ember : source_color = vec3(1.0, 0.42, 0.12);
 
@@ -120,9 +120,11 @@ void fragment() {
 	NORMAL = normalize((VIEW_MATRIX * vec4(wn, 0.0)).xyz);
 	AO = 1.0 - cut * 0.4;
 	// ember: only in the clean (unmossed) cuts; breathes, and pulses run in along the cords
-	float clean = cut * (1.0 - mossw);
+	// (the hot core only: the soft groove shoulders and the worn shallow cuts stay stone, so
+	// the face does not haze over)
+	float clean = smoothstep(0.55, 0.95, cut) * (1.0 - mossw);
 	float breathe = 0.8 + 0.2 * sin(TIME * 0.9);
 	float pulse = pow(0.5 + 0.5 * sin(TIME * 1.6 - r * 18.0), 3.0);
-	float e_amt = clean * (0.05 + wake * 0.55) * breathe + cords * (1.0 - mossw) * pulse * wake * 0.7;
+	float e_amt = clean * (0.05 + wake * 0.55) * breathe + smoothstep(0.55, 0.95, cords) * (1.0 - mossw) * pulse * wake * 0.5;
 	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(wn.y, 0.0, 1.0)) * AO + ember * e_amt;
 }

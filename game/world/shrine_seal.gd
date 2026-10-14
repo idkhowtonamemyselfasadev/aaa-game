@@ -36,10 +36,10 @@ func build(centre: Vector3, lid_top: float) -> void:
 	_light = OmniLight3D.new()
 	_light.name = "EmberLight"
 	_light.light_color = Color(1.0, 0.5, 0.22)
-	_light.omni_range = 2.6
-	_light.omni_attenuation = 1.6
+	_light.omni_range = 4.5
+	_light.omni_attenuation = 2.2
 	_light.shadow_enabled = false
-	_light.position = Vector3(0, 0.35, 0)
+	_light.position = Vector3(0, 1.1, 0)   # high and soft: warms the plinth and the hero, not a hotspot on the lid
 	add_child(_light)
 	_set_glow(0.0)
 
@@ -58,4 +58,4 @@ func _process(delta: float) -> void:
 
 func _set_glow(g: float) -> void:
 	_mat.set_shader_parameter("wake", g)
-	_light.light_energy = 0.04 + g * 0.5
+	_light.light_energy = 0.015 + g * 0.16

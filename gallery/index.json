@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261010-0857-vale-noon-hills.jpg",
-  "time": "2026-10-10T08:57:12Z",
-  "caption": "Noon in Harrowmere Vale: the hill bowl finally renders solid behind the wind-combed meadow (terrain winding fix); still no trees, rocks, village or textures, and the capsule player is a speck.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-0857-vale-moonlit-grass.jpg",
-  "time": "2026-10-10T08:57:12Z",
-  "caption": "22:30: new moonlight and star field make the night readable on wind-bent grass; no moon disc, fireflies or night life yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-0928-oak-grove-backlit.jpg",
-  "time": "2026-10-10T09:28:55Z",
-  "caption": "New procedural black-oak grove backlit at 15:30 with long trunk shadows through the grass; foreground shadow is crushed to black and leaf cards read as blobs up close.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-0928-oak-woodland-hills.jpg",
   "time": "2026-10-10T09:28:55Z",
   "caption": "Oak woodland now crowns the vale's hills above the wind-blown meadow at noon; boulders are too small to read, sky is flat and the hill ground is still bare procedural brown.",
@@ -897,6 +879,12 @@
   "file": "20261013-2315-shrine-seal.jpg",
   "time": "2026-10-13T23:15:00Z",
   "caption": "The carved Shrine of Binding lid on its worn two-step plinth in the ruined keep at dusk, sigil awake as the hero stands by; the whole lid face still hazes orange instead of only the cuts glowing, and the floor litter reads as a flat dark texture.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0014-shrine-seal-cuts.jpg",
+  "time": "2026-10-14T00:14:11Z",
+  "caption": "The Shrine of Binding lid at dusk with only the carved sigil cuts glowing ember on dark greystone, no more orange haze over the face; the keep floor litter still reads as a flat dark texture and the hero's face is lost in shade under the hat.",
   "verdict": "fail"
  }
 ]
