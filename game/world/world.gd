@@ -26,6 +26,7 @@ var trample: Trample
 var herd: Herd
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
+var face_shade := Color(0, 0, 0)    # shade light under the brim: feeds the hero's face fill
 const STAR_LEVELS := [0.12, 0.3, 0.55, 1.0]
 
 func _ready() -> void:
@@ -374,14 +375,20 @@ func _apply_weather(day: float) -> void:
 ## ambient, crushed by SSAO, and went black. Shaders that opt in (masonry) add albedo x this.
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
-	if not e.sdfgi_enabled:
-		var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
-		if sun.visible:
-			# a ~0.25 albedo meadow under the sun, half of it reaching a vertical face
-			b += sun.light_color * sun.light_energy * (0.25 + 0.75 * sun_h) * 0.13
-		if moon and moon.visible:
-			b += moon.light_color * moon.light_energy * 0.1
-		b += e.ambient_light_color * e.ambient_light_energy * 0.12
+	var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
+	if sun.visible:
+		# a ~0.25 albedo meadow under the sun, half of it reaching a vertical face
+		b += sun.light_color * sun.light_energy * (0.25 + 0.75 * sun_h) * 0.13
+	if moon and moon.visible:
+		b += moon.light_color * moon.light_energy * 0.1
+	b += e.ambient_light_color * e.ambient_light_energy * 0.12
+	# the hero's face fill follows the same shade light (GI or not: SDFGI cannot see under
+	# the brim at its probe size either)
+	face_shade = b * 4.0
+	if player and player.garb:
+		player.garb.light_face(face_shade)
+	if e.sdfgi_enabled:
+		b = Color(0, 0, 0)
 	RenderingServer.global_shader_parameter_set("bounce_light", Vector3(b.r, b.g, b.b))
 
 ## Sky material writes restart its radiance bake: only write a value that really changed.

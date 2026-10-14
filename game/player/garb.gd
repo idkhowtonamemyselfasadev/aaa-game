@@ -160,6 +160,22 @@ func _add_face(head: Node3D) -> void:
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
 
+## Midday shade light (see `light_face`): the fill's 0.26 was tuned against it.
+const NOON_SHADE := 1.16
+
+## Keep the face fill in step with the light the scene throws into the shade under the brim:
+## a constant warm lamp glowed orange under a blue moonlit hat at night and went flat against
+## the gold of a low sun. Energy follows the shade light (exposure lifts the dark hours), the
+## colour is the shade light's own hue, kept a little warm by the skin it bounces off.
+func light_face(shade: Color) -> void:
+	if fill == null:
+		return
+	var lum := shade.r * 0.3 + shade.g * 0.59 + shade.b * 0.11
+	var k := clampf(lum / NOON_SHADE, 0.0, 1.4)
+	fill.light_energy = 0.26 * clampf(pow(k, 0.7), 0.12, 1.3)
+	var hue := shade / maxf(maxf(shade.r, shade.g), maxf(shade.b, 1e-4))
+	fill.light_color = hue.lerp(Color(1.0, 0.86, 0.72), 0.45)
+
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
 	var a := lerpf(-1.0, 1.0, u)

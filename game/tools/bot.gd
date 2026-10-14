@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -98,6 +98,9 @@ func _ready() -> void:
 		return
 	if name == "shrine":
 		_shrine_test()
+		return
+	if name == "facelight":
+		_facelight_test()
 		return
 	if name == "flinch":
 		_flinch_test()
@@ -2098,3 +2101,29 @@ func _bed_test() -> void:
 	if grazing < n:
 		return _combat_done(false, "the herd did not get up at dawn")
 	_combat_done(true, "deer bed down at night, rise to stare at a hero, lie down again, get up at dawn")
+
+## The face fill under the hat follows the scene's shade light: full at noon, still lifting the
+## face at dusk, a dim cool glow at night (not a warm lamp under a moonlit hat).
+func _facelight_test() -> void:
+	var fill: OmniLight3D = _player.garb.fill
+	var got := {}
+	for h in [13.0, 17.5, 18.4, 19.2, 23.0, 6.3]:
+		_world.time_of_day = h
+		await _ticks(10)
+		var c := fill.light_color
+		got[h] = [fill.light_energy, c]
+		var s: Color = _world.face_shade
+		print("BOT facelight %.1f h: shade lum %.3f, fill %.3f colour (%.2f %.2f %.2f)" % [h,
+				s.r * 0.3 + s.g * 0.59 + s.b * 0.11, fill.light_energy, c.r, c.g, c.b])
+	var noon: float = got[13.0][0]
+	var dusk: float = got[18.4][0]
+	var night: float = got[23.0][0]
+	var nc: Color = got[23.0][1]
+	if absf(noon - 0.26) > 0.05:
+		return _combat_done(false, "noon face fill %.3f is off its tuned 0.26" % noon)
+	# exposure opens up to 1.6 at night vs 0.85 at noon: compare what reaches the screen
+	if dusk < 0.08 or night * 1.6 > noon * 0.85 * 0.8:
+		return _combat_done(false, "face fill does not dim from noon through dusk into night")
+	if nc.b <= nc.r:
+		return _combat_done(false, "the night face fill is still warm")
+	_combat_done(true, "the face fill follows the shade light from noon to night")
