@@ -40,8 +40,12 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side)]))
 	tint = INDIGO
-	var hood := _piece(_hood(), 0.0, 0.03, 0.0, 1.2)
-	(hood.material_override as ShaderMaterial).set_shader_parameter("wool", 1.0)
+	# the hero's hood is sewn, not torn like the Hollow's cowl: a straight turned and stitched
+	# hem where it falls over the mantle
+	var hood := _piece(_hood(), 0.0, 0.0, 0.0, 1.2)
+	var hdm := hood.material_override as ShaderMaterial
+	hdm.set_shader_parameter("wool", 1.0)
+	hdm.set_shader_parameter("hem_band", 1.0)
 	head.add_child(hood)
 	veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
 	var vm := veil.material_override as ShaderMaterial
@@ -184,6 +188,12 @@ func _veil() -> ArrayMesh:
 			var depth := smoothstep(0.1, 1.0, v)
 			# the lower edge sags into a soft point under the chin
 			var y := 1.935 - v * (0.235 + 0.06 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
+			# the top edge rides up over the bridge of the nose and sags into a soft dip under
+			# each cheekbone before running back flat under the hood, instead of a ruled line
+			var top := 1.0 - smoothstep(0.0, 0.35, v)
+			y += top * (0.004 * pow(maxf(front, 0.0), 14.0) \
+					- 0.008 * exp(-pow((absf(a) - 0.5) / 0.22, 2.0)) \
+					+ 0.002 * sin(a * 5.0 + 0.9))
 			var r := 1.0 + 0.06 * v * front + depth * (0.05 * ridge + 0.012 * fine)
 			var cav := mix_cav(ridge, fine, depth)
 			st.set_color(Color(cav, cav, cav))

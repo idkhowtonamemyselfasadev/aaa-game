@@ -80,7 +80,8 @@ void fragment() {
 	vec2 uv = vec2(UV.x, UV.y * aspect) + seed;
 	// torn hem: ragged tongues of cloth, frayed at the very edge
 	float tongue = fbm(vec2(UV.x * tongues + seed, seed * 3.0)) * 1.4 - 0.2;
-	float fray = vnoise(vec2(UV.x * 160.0, seed)) * 0.025;
+	// a turned, stitched hem does not fray: only a few loose fibres break its line
+	float fray = vnoise(vec2(UV.x * 160.0, seed)) * 0.025 * (1.0 - 0.85 * clamp(hem_band, 0.0, 1.0));
 	float edge = 1.0 - tear * clamp(tongue, 0.0, 1.0) - fray;
 	float to_hem = edge - UV.y;
 	if (to_hem < 0.0) discard;

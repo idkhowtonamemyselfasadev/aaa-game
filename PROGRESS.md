@@ -29,6 +29,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falls back to opengl3 after ~10 min, saving nothing).
 
 ## Done
+- Session 2026-10-14 20:00 UTC:
+  - **Hood hem and face cloth nose line (Next item 00).** garb.gd: the hero's hood is now
+    `tear` 0 with `hem_band` 1 (a straight turned, stitched hem where it falls over the
+    mantle instead of the Hollow's torn tongues); rag.gdshader scales the edge fray by
+    `1 - 0.85 * hem_band` so hemmed edges (hood, mantle) no longer fray. `_veil()` top edge
+    rides up 4 mm over the nose bridge and dips 8 mm under each cheekbone with a slight
+    wobble, instead of a ruled straight line. bot.gd eye-gap tolerance 0.012 (the cloth AABB
+    top is now the nose peak).
+  - Bots: facelight, walk PASS.
+  - Verdict: `face hem1 30 10.5` (~10 min) fail but better: clean hemmed hood edge, the face
+    cloth drapes over the nose. Still wrong: startled eyes (too much white), the hood's
+    front lappets hang as lumpy points over the chest, smooth skin. Gallery: face-hem.
 - Session 2026-10-14 19:12 UTC:
   - **Wool hood and face cloth, eye glint, collar gap (Next item 00).** rag.gdshader: new
     `wool` uniform (fibre fuzz noise at ~2x the weave scale, pills, soft fbm crease normals
@@ -2071,8 +2083,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (18:00 10-14: eyeballs recessed into the sockets, smaller iris, dimmer/cooler noon face,
    deeper face cloth.)
    (19:12 10-14: wool on hood/face cloth, cloth folds, collar gap closed, eye glint softened.)
-   Next: hem the hood's lower edge (tear 0 + hem_band, it is ragged like the Hollow's), a
-   soft sag/notch in the face cloth's straight top edge over the nose, skin pores/tone
+   (20:00 10-14: hood hemmed, no fray; face cloth rides over the nose, dips at the cheeks.)
+   Next: smooth the hood's front lappets (they hang as lumpy points over the chest), less
+   eye white, skin pores/tone
    variation on the face band, a little warm
    skin tone back at night (the face is grey-lavender), then a dusk look (`face x 30 18.8`); check the
    keep talus from the `ruinin` camera. Ivy leftovers: ivy reads a bit like bushy fans close up (thin out

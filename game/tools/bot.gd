@@ -213,8 +213,10 @@ func _finish(ok: bool, why: String) -> void:
 			var eye_front := (mid - head).dot(fwd)
 			print("BOT face: eyes %.3f m apart, %.2f m in front of the head bone, %.2f m above the cloth top, %.2f m below the hat top" % [
 					e0.distance_to(e1), eye_front, mid.y - veil.end.y, hat_box.end.y - mid.y])
+			# the cloth's top (its AABB) is the peak where it rides over the nose bridge, ~5 mm
+			# above where it crosses under the eyes either side
 			if ok and _route.size() > 0 and (e0.distance_to(e1) < 0.04 or e0.distance_to(e1) > 0.08
-					or eye_front < 0.03 or mid.y < veil.end.y - 0.01 or mid.y > hat_box.end.y):
+					or eye_front < 0.03 or mid.y < veil.end.y - 0.012 or mid.y > hat_box.end.y):
 				ok = false
 				why = "hero eyes not in the face gap"
 	elif ok:
