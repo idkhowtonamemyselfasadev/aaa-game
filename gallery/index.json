@@ -122,7 +122,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -891,6 +891,12 @@
   "file": "20261014-0141-keep-floor.jpg",
   "time": "2026-10-14T01:41:01Z",
   "caption": "The ruined keep floor round the Shrine of Binding at dusk: warm beaten earth with gravel, sunk stone spalls, drifted oak leaves and tufts at the wall foot instead of a flat dark carpet; the leaves are still too even in size and a few white pebble specks pop.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0311-keep-floor-litter.jpg",
+  "time": "2026-10-14T03:11:03Z",
+  "caption": "Keep floor round the Shrine of Binding at dusk: warm dark beaten earth with big and small oak leaves heaped in drifts and dark twigs, the white pebble specks and stray daisies gone; the floor still reads a little too dark and flat in shade and the hero's face is lost under the hat.",
   "verdict": "fail"
  }
 ]

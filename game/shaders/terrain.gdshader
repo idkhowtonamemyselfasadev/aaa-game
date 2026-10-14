@@ -534,19 +534,22 @@ void fragment() {
 		float fade_g = 1.0 - smoothstep(0.006, 0.03, fp);
 		float dust = fbm(wpos * 1.7 + 41.0);
 		// beaten earth paled by mortar dust, darker damp patches
-		vec3 kc = mix(soil * 1.05, vec3(0.29, 0.25, 0.2), smoothstep(0.4, 0.75, dust) * 0.6);
-		kc = mix(kc, soil * 0.6, smoothstep(0.55, 0.7, fbm(wpos * 0.8 + 63.0)) * 0.6);   // damp
+		// (colours here are linear: soil is a source_color uniform, ~0.03 linear)
+		vec3 kc = mix(soil * 1.7, vec3(0.1, 0.085, 0.064), smoothstep(0.4, 0.75, dust) * 0.6);
+		kc = mix(kc, soil * 1.0, smoothstep(0.55, 0.7, fbm(wpos * 0.8 + 63.0)) * 0.6);   // damp
 		kc *= 0.85 + 0.3 * micro;
 		float kh = micro * 0.004;
 		// two sizes of chips: pea gravel and thumb-sized spalls of the wall stone
 		float gdens = smoothstep(0.35, 0.7, dust + (meso - 0.5) * 0.5);
 		vec4 g1 = grit(xz, 18.0, 13.0, mix(0.92, 0.55, gdens));
 		vec4 g2 = grit(xz + 1.3, 9.0, 71.0, 0.55);
-		vec3 stone = vec3(0.34, 0.32, 0.28);
-		vec3 c1 = mix(kc, stone * (0.55 + 0.35 * g1.z), 0.5) * (0.9 + 0.12 * g1.w);
-		vec3 c2 = mix(stone, vec3(0.42, 0.37, 0.29), step(0.7, g2.z)) * (0.72 + 0.4 * g2.z) * (0.88 + 0.15 * g2.w);
+		vec3 stone = vec3(0.11, 0.1, 0.082);
+		// pea gravel sits in the dust, close to the floor tone, its tops only a little lighter
+		vec3 c1 = mix(kc, stone * (0.45 + 0.3 * g1.z), 0.4) * (0.88 + 0.08 * g1.w);
+		// spalls stay in the wall stone's grey-brown: no pale pebbles that pop as white specks
+		vec3 c2 = mix(stone, vec3(0.095, 0.078, 0.056), step(0.7, g2.z)) * (0.66 + 0.3 * g2.z) * (0.88 + 0.12 * g2.w);
 		kc = mix(kc, c1, g1.x * fade_g);
-		kh = max(kh, g1.y * 0.006 * fade_g);
+		kh = max(kh, g1.y * 0.0035 * fade_g);
 		kc = mix(kc, c2, g2.x * fade_g * gdens);
 		kh = max(kh, g2.y * 0.01 * fade_g * gdens);
 		// at range: a speckled grey-brown grit tone, not black
@@ -555,15 +558,45 @@ void fragment() {
 		float wallfoot = smoothstep(bounce_zone.z * 0.62, bounce_zone.z * 0.84, kd);
 		float drift = clamp(wallfoot * 1.1 + smoothstep(0.45, 0.7, fbm(wpos * 0.9 + 5.0)) * 0.75
 				+ 0.15, 0.0, 1.0);
+		// three leaf sizes (big flat oak leaves, middling, small curled ones), each layer
+		// clumped by its own noise so the leaves lie in heaps and windrows, not an even sprinkle
 		for (int k = 0; k < 3; k++) {
 			float fk = float(k);
-			vec3 lb = leafbed(xz + vec2(fk * 2.31 + 0.7, fk * 1.13), 5.5 + fk * 1.1);
+			float lsc = k == 0 ? 3.4 : (k == 1 ? 5.8 : 8.6);
+			vec3 lb = leafbed(xz + vec2(fk * 2.31 + 0.7, fk * 1.13), lsc);
 			vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.3, 0.95, lb.z)),
 					leaf_b * 0.8, step(0.85, fract(lb.z * 5.1)));
-			tone *= 0.82 + 0.06 * fk + 0.15 * lb.y;
-			float c = lb.x * fade_l * step(1.0 - drift * (1.0 - fk * 0.2), lb.z * 0.9 + 0.08);
+			tone *= 0.8 + 0.07 * fk + 0.15 * lb.y;
+			float clump = smoothstep(0.38, 0.62, fbm(wpos * (1.6 + fk * 0.9) + 17.0 * fk + 3.0));
+			float dk = clamp(drift * (0.45 + 0.9 * clump) - fk * 0.12, 0.0, 1.0);
+			float c = lb.x * fade_l * step(1.0 - dk, lb.z * 0.9 + 0.08);
 			kc = mix(kc, tone, c);
 			kh = mix(kh, 0.004 + 0.002 * fk + lb.y * 0.003, c);
+		}
+		// dead twigs blown off the oaks and the ivy: thin dark sticks, a few forked, lying
+		// across the leaves near the wall foot
+		{
+			vec2 q = xz * 2.2;
+			vec2 cell = floor(q);
+			vec3 r = hash23(cell + 211.0);
+			vec2 f = fract(q) - 0.5 - (r.xy - 0.5) * 0.4;
+			float ang = r.z * 6.2832;
+			vec2 dir = vec2(cos(ang), sin(ang));
+			vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x)));
+			float len = 0.22 + 0.2 * r.x;
+			float bend = l.y - 0.08 * sin(l.x * 7.0 + r.y * 6.0) * r.y;
+			float tw = (1.0 - smoothstep(0.006, 0.013 - 0.004 * (l.x / len), abs(bend)))
+					* step(abs(l.x), len);
+			// a side fork off the far half
+			vec2 fl = l - vec2(len * 0.3, 0.0);
+			vec2 fdir = normalize(vec2(1.0, 0.7 * sign(r.y - 0.5)));
+			float fx = dot(fl, fdir);
+			float fy = dot(fl, vec2(-fdir.y, fdir.x));
+			tw = max(tw, (1.0 - smoothstep(0.004, 0.009, abs(fy))) * step(0.0, fx) * step(fx, len * 0.45) * step(0.5, r.x));
+			tw *= step(1.0 - (0.25 + 0.5 * wallfoot), fract(r.x * 13.7 + r.z)) * fade_l;
+			vec3 twc = mix(vec3(0.016, 0.011, 0.008), vec3(0.05, 0.04, 0.03), fract(r.y * 9.1)) * (0.8 + 0.4 * micro);
+			kc = mix(kc, twc, tw);
+			kh = max(kh, tw * 0.011);
 		}
 		kc = mix(kc, mix(leaf_drift * 0.7, leaf_b, 0.5), drift * 0.5 * (1.0 - fade_l));
 		// moss creeps out from the wall foot on the north (shaded) side

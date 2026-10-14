@@ -34,7 +34,8 @@ static func mesh(sp: int) -> ArrayMesh:
 
 ## Scatter one chunk's flowers. Returns [Node3D holding the MultiMeshes, PackedVector3Array of
 ## head positions (world), PackedInt32Array of species per head].
-static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: float) -> Array:
+static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: float,
+		ruin := Vector3.INF, flora: Node = null) -> Array:
 	if not _noise_ready:
 		_noise_ready = true
 		_drift.seed = 4242
@@ -64,6 +65,12 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 			continue
 		var nrm := terrain.normal_at(x, z)
 		if nrm.y < 0.86 or terrain.pond_at(x, z) > 0.2:
+			continue
+		# no meadow flowers on the watchtower keep floor or through its walls, few in deep
+		# oak shade, none through the moss cushions (same masks as the grass)
+		if ruin != Vector3.INF and Vector2(x - ruin.x, z - ruin.z).length() < 4.8:
+			continue
+		if flora and (rng.randf() < flora.shelter_at(x, z) * 0.9 or flora.moss_at(x, z) > 0.12):
 			continue
 		# which species: a slow field picks the drift's flower, with some mixing at the seams
 		var kn := _kind.get_noise_2d(x, z) * 0.5 + 0.5 + rng.randfn(0.0, 0.08)

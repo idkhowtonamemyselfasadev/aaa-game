@@ -308,7 +308,8 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 			mmi.name = ["Upright", "Tussock", "Seeding"][kind]
 			root.add_child(mmi)
 	if d < flowers_m:
-		var fl := MeadowFlowers.build_chunk(k, chunk_m, _terrain, far)
+		var fflora := _find_ruin()
+		var fl := MeadowFlowers.build_chunk(k, chunk_m, _terrain, far, _ruin, fflora)
 		root.add_child(fl[0])
 		_heads[k] = [fl[1], fl[2]]
 	return root
