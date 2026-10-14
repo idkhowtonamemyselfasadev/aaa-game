@@ -114,18 +114,18 @@ void fragment() {
 	float det = dot(dpx, r1);
 	vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
 	NORMAL = normalize(abs(det) * NORMAL - grad * 1.6);
+	// the band tucks under the hood at the top and sides and under the face cloth below: its
+	// edges sink into the hood's shadow instead of ending at a lit rim (a pale mask at night)
+	// (wide falloffs: the hood opening hides the band's outer third, the shadow reaches in)
+	float tuck = smoothstep(0.0, 0.4, UV.x) * smoothstep(1.0, 0.6, UV.x)
+			* smoothstep(-0.05, 0.5, UV.y) * smoothstep(1.0, 0.72, UV.y);
+	alb *= mix(0.72, 1.0, tuck);
 	vec3 wn = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wn, wp, n), 1.0);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;
-	// the band tucks under the hood at the top and sides and under the face cloth below: its
-	// edges sink into the hood's shadow instead of ending at a lit rim (a pale mask at night)
-	// (wide falloffs: the hood opening hides the band's outer third, the shadow reaches in)
-	float tuck = smoothstep(0.0, 0.4, UV.x) * smoothstep(1.0, 0.6, UV.x)
-			* smoothstep(-0.05, 0.5, UV.y) * smoothstep(1.0, 0.72, UV.y);
-	alb *= mix(0.6, 1.0, tuck);
 	// the sockets and the brow overhang hold shadow
 	AO = mix(0.55, 1.0, smoothstep(0.0, 0.009, de)) * mix(0.8, 1.0, smoothstep(0.0, 0.006, -by))
 			* mix(0.15, 1.0, tuck);

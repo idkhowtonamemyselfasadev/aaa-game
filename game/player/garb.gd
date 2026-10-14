@@ -245,6 +245,7 @@ func _add_face(head: Node3D) -> void:
 		eye.transform = Transform3D(Basis.from_euler(Vector3(0.12, -side * 0.04, 0.0)),
 				Vector3(side * EYE_X, EYE_Y, front - EYE_R + 0.0008))
 		head.add_child(eye)
+		eye.set_instance_shader_parameter("side", side)
 		eyes.append(eye)
 	# a soft character fill under the brim, like a game's face light: the hat and hood put the
 	# face in deep shade that the scene's ambient barely reaches, so without it the face reads
@@ -280,7 +281,9 @@ func light_face(shade: Color) -> void:
 	var k := clampf(lum / NOON_SHADE, 0.0, 1.4)
 	fill.light_energy = FILL_NOON * clampf(pow(k, 0.7), 0.12, 1.3)
 	var hue := shade / maxf(maxf(shade.r, shade.g), maxf(shade.b, 1e-4))
-	fill.light_color = hue.lerp(Color(1.0, 0.88, 0.78), 0.4)
+	# at night the moonlit shade is blue-grey and the face went grey-lavender: keep more of the
+	# skin's own warmth as the light falls
+	fill.light_color = hue.lerp(Color(1.0, 0.86, 0.74), lerpf(0.62, 0.4, clampf(k, 0.0, 1.0)))
 
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:

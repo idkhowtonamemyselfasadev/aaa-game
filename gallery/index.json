@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261010-2134-smash.jpg",
-  "time": "2026-10-10T21:34:58Z",
-  "caption": "Tier-2 heavy smash driving the staff into the meadow; still wrong: the slam dust is a grey sphere, a stray glint cloud hangs in the sky, the staggered soldier is missing from the frame (shot tool), placeholder hero body.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-2200-sweep.jpg",
   "time": "2026-10-10T22:40:00Z",
   "caption": "First light sweep connecting with the practice post: the staff now travels flat at shoulder height as authored instead of lying sideways; still wrong: placeholder sci-fi hero body, the post blocks the hero in this camera, bare red soil between grass clumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-2200-overhead.jpg",
-  "time": "2026-10-10T22:48:00Z",
-  "caption": "Overhead strike coming down on the centre line with a long grip (vertical trail behind the post); still wrong: camera puts the post in front of the hero, placeholder body, flat foreground grass.",
   "verdict": "fail"
  },
  {
@@ -891,6 +879,18 @@
   "file": "20261014-2130-face-pores.jpg",
   "time": "2026-10-14T21:30:00Z",
   "caption": "The hero's face at noon with relaxed upper lids over the irises, greyer shaded eye whites and a weathered skin grain with crow's feet and frown lines; still wrong: the outer eye whites read bright at this range and the hood's front lappets hang as lumpy points.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-2215-face-corners.jpg",
+  "time": "2026-10-14T22:15:00Z",
+  "caption": "Hero portrait at 10:30: the eye whites now fall into shadow at the corners with a pink-brown inner corner, and the face edges sink into the hood; still wrong: lumpy hood lappets over the chest and a pale lit patch on the left brow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-2220-face-night.jpg",
+  "time": "2026-10-14T22:20:00Z",
+  "caption": "Hero at 23:00 under the moon with fireflies: the face reads as dim warm-neutral skin instead of grey-lavender; still wrong: fireflies light nearby grass a hot yellow-green and the far left ridge is a flat pale cut-out.",
   "verdict": "fail"
  }
 ]
