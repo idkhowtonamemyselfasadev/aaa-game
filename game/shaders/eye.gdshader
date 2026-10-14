@@ -36,9 +36,10 @@ void fragment() {
 	// the upper lid and the brow throw the top of the ball into shadow; the corners recede
 	AO = mix(1.0, 0.35, smoothstep(-0.1, 0.45, ln.y)) * mix(1.0, 0.6, smoothstep(0.9, 1.4, ang));
 	AO_LIGHT_AFFECT = 0.85;
-	ROUGHNESS = 0.06;
-	SPECULAR = 0.6;
-	CLEARCOAT = 1.0;
-	CLEARCOAT_ROUGHNESS = 0.02;
+	// a wet film, but in the hat's shade: a soft small glint, not a hot white dot
+	ROUGHNESS = 0.14;
+	SPECULAR = 0.4;
+	CLEARCOAT = 0.45;
+	CLEARCOAT_ROUGHNESS = 0.08;
 	SSS_STRENGTH = 0.2;
 }

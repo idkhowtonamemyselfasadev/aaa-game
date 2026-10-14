@@ -40,8 +40,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side)]))
 	tint = INDIGO
-	head.add_child(_piece(_hood(), 0.0, 0.03, 0.0, 1.2))
+	var hood := _piece(_hood(), 0.0, 0.03, 0.0, 1.2)
+	(hood.material_override as ShaderMaterial).set_shader_parameter("wool", 1.0)
+	head.add_child(hood)
 	veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
+	var vm := veil.material_override as ShaderMaterial
+	vm.set_shader_parameter("wool", 1.0)
+	vm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(veil)
 	_add_face(head)
 	tint = STRAW
@@ -157,15 +162,44 @@ func _hat() -> ArrayMesh:
 ## under the chin, hanging a little slack at the front; with the hat's shade only the eye line
 ## shows between it and the hood.
 func _veil() -> ArrayMesh:
-	return _grid(func(u: float, v: float) -> Vector3:
-		# wound round past the ears and down over the throat into the mantle's collar, so no
-		# pale armour neck shows between the cloth and the cape
-		var a := lerpf(-1.65, 1.65, u)
-		var front := cos(a)
-		# the lower edge sags into a soft point under the chin
-		var y := 1.935 - v * (0.18 + 0.06 * maxf(front, 0.0) * front)
-		var r := 1.0 + 0.06 * v * front + 0.015 * sin(a * 8.0 + v * 2.0) * v
-		return Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r), 24, 6)
+	var nu := 40
+	var nv := 12
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in nv + 1:
+		for i in nu + 1:
+			var u := float(i) / nu
+			var v := float(j) / nv
+			# wound round past the ears and down over the throat, its lower edge tucked inside
+			# the mantle's collar (1.72) all the way round, so no pale armour neck shows between
+			# the cloth and the cape
+			var a := lerpf(-1.65, 1.65, u)
+			var front := cos(a)
+			# soft folds hang from the nose bridge, deepening toward the chin and splitting a
+			# little where the cloth bunches at the sides under the hood
+			var phi := a * 7.0 + 0.8 * sin(a * 2.7 + 0.4) + 0.4 * sin(a * 6.3 + 1.1)
+			var ridge := sin(phi)
+			ridge = signf(ridge) * pow(absf(ridge), 0.7)
+			var fine := sin(a * 17.0 + 0.6 + v * 3.0) * smoothstep(0.4, 1.0, v)
+			var depth := smoothstep(0.1, 1.0, v)
+			# the lower edge sags into a soft point under the chin
+			var y := 1.935 - v * (0.235 + 0.06 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
+			var r := 1.0 + 0.06 * v * front + depth * (0.05 * ridge + 0.012 * fine)
+			var cav := mix_cav(ridge, fine, depth)
+			st.set_color(Color(cav, cav, cav))
+			st.set_uv(Vector2(u, v))
+			st.add_vertex(Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r))
+	for j in nv:
+		for i in nu:
+			var p0 := j * (nu + 1) + i
+			var p1 := p0 + 1
+			var p2 := p0 + nu + 1
+			var p3 := p2 + 1
+			st.add_index(p0); st.add_index(p1); st.add_index(p2)
+			st.add_index(p1); st.add_index(p3); st.add_index(p2)
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
 
 ## The face in the gap between the hood and the face cloth: a band of sun-browned skin from
 ## the brow to the bridge of the nose, with the brow ridge, the nose bridge and two shallow eye
@@ -213,7 +247,9 @@ func _add_face(head: Node3D) -> void:
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
 	fill.light_cull_mask = layer
-	fill.light_specular = 0.6
+	# a fill this close drew a hot white dot on each wet eye; it should model the face, not
+	# put a ring light in the eyes
+	fill.light_specular = 0.12
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
 

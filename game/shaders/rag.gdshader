@@ -27,6 +27,7 @@ uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = H
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
+uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 varying float hem_w;
@@ -111,6 +112,24 @@ void fragment() {
 		hem_shade = mix(1.0, (1.0 - 0.35 * seam) * mix(0.75, 1.0, lip), hem_band);
 		ty += (seam * 0.8 - (1.0 - lip) * 0.6) * hem_band;
 	}
+	// fulled wool: a fuzz of loose fibres over the weave, small pills, and soft creases where
+	// the cloth bunches, running mostly down the hang (UV.y); fades out with distance like the
+	// weave so it never shimmers
+	float fuzz = 0.0;
+	float pill = 0.0;
+	if (wool > 0.0) {
+		vec2 fv = uv * weave_scale * vec2(2.3, 0.9);
+		float wfine = 1.0 - smoothstep(0.4, 1.2, length(fwidth(fv)));
+		fuzz = (vnoise(fv) - 0.5 + 0.5 * (vnoise(fv * 2.7 + 7.0) - 0.5)) * wfine;
+		pill = smoothstep(0.72, 0.9, vnoise(uv * weave_scale * 0.35 + 3.0)) * wfine;
+		vec2 cv = uv * vec2(9.0, 3.0) + seed;
+		float c0 = fbm(cv);
+		float cx = fbm(cv + vec2(0.04, 0.0)) - c0;
+		float cy = fbm(cv + vec2(0.0, 0.04)) - c0;
+		tx = mix(tx * 0.6, tx * 0.6 + cx * 9.0, wool) + fuzz * 0.25 * wool;
+		ty = mix(ty * 0.6, ty * 0.6 + cy * 4.0, wool) + fuzz * 0.25 * wool;
+		thread = mix(thread, 0.5 + (thread - 0.5) * 0.6, wool);
+	}
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
@@ -121,6 +140,7 @@ void fragment() {
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
 	alb = mix(alb, alb * vec3(0.78, 0.62, 0.5), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
+	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, 0.7 + 0.3 * COLOR.r, fold_ao);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
@@ -148,4 +168,7 @@ void fragment() {
 	// a tightly plaited straw hat is opaque: no light through its underside
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
 	EMISSION = ember_col * glow * 3.0;
+	// wool fibres standing off the surface scatter a soft sheen at grazing angles
+	RIM = 0.35 * wool;
+	RIM_TINT = 0.4;
 }
