@@ -10,7 +10,7 @@ render_mode cull_disabled;
 uniform vec3 skin_col : source_color = vec3(0.40, 0.29, 0.225);
 uniform vec3 lid_col : source_color = vec3(0.30, 0.17, 0.13);
 uniform vec4 eyes = vec4(-0.031, 1.968, 0.031, 1.968);
-uniform vec2 eye_size = vec2(0.0135, 0.0042);
+uniform vec2 eye_size = vec2(0.0135, 0.0037);
 uniform float brow_y = 1.990;
 
 varying vec3 mp;
@@ -82,9 +82,16 @@ void fragment() {
 	ALBEDO = alb;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;
+	// the band tucks under the hood at the top and sides and under the face cloth below: its
+	// edges sink into the hood's shadow instead of ending at a lit rim (a pale mask at night)
+	// (wide falloffs: the hood opening hides the band's outer third, the shadow reaches in)
+	float tuck = smoothstep(0.0, 0.4, UV.x) * smoothstep(1.0, 0.6, UV.x)
+			* smoothstep(-0.05, 0.5, UV.y) * smoothstep(1.0, 0.72, UV.y);
+	alb *= mix(0.6, 1.0, tuck);
 	// the sockets and the brow overhang hold shadow
-	AO = mix(0.55, 1.0, smoothstep(0.0, 0.009, de)) * mix(0.8, 1.0, smoothstep(0.0, 0.006, -by));
-	AO_LIGHT_AFFECT = 0.6;
+	AO = mix(0.55, 1.0, smoothstep(0.0, 0.009, de)) * mix(0.8, 1.0, smoothstep(0.0, 0.006, -by))
+			* mix(0.15, 1.0, tuck);
+	AO_LIGHT_AFFECT = 0.8;
 	SSS_STRENGTH = 0.55;
 	SSS_TRANSMITTANCE_COLOR = vec4(0.9, 0.3, 0.2, 1.0);
 	SSS_TRANSMITTANCE_DEPTH = 0.08;

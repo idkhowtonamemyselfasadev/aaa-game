@@ -29,6 +29,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falls back to opengl3 after ~10 min, saving nothing).
 
 ## Done
+- Session 2026-10-14 16:00-17:00 UTC:
+  - **Face band no longer a pale mask at night (Next item 00 follow-up).** skin.gdshader:
+    the band's top/sides (under the hood) and bottom (under the face cloth) fade by UV into
+    the hood's shadow (albedo x0.6, AO to 0.15, AO_LIGHT_AFFECT 0.8 so the fill dims there
+    too) instead of ending in a lit rectangle; eye openings 15 % narrower (half height
+    0.0037). eye.gdshader: sclera grey-buff 0.40 instead of paper 0.58, the upper lid shades
+    the top of the ball and the corners recede (AO, light-affecting). garb.gd: face fill range
+    0.55 -> 0.7 so the hood rim round the face catches a little of it. The first fade
+    (20-30 % of the band) barely showed (the hood opening hides the band's outer third), so
+    the falloff is wide: u 0-0.4 / 0.6-1, v -0.05-0.5 from the brow, 0.72-1 to the cloth.
+  - Bots: facelight, walk PASS.
+  - Verdict: `face nightface2/3 30 22.5` (~9 min each) fail but better: the face now dims
+    into the hood's shadow from the brow down, the eyes are dark-irised with grey whites
+    instead of startled goggles, and the hood rim reads round the face; but the hood opening
+    still cuts the face as a hard straight-edged polygon (the hood mesh's opening, not the
+    band), and the face is still a flat grey-lavender. Gallery: nightface-hooded.
 - Session 2026-10-14 15:00-16:00 UTC:
   - **Face fill follows the day (Next item 00: "hero's face under the hat at dusk").**
     `HeroGarb.light_face(shade)`: the face fill under the brim no longer burns a constant warm
@@ -2004,8 +2020,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (13:30 10-14: joint grass, curtain stones out of true.) (14:00 10-14: curtain
    stones weathered dark, arrises grimy, more lichen/moss.)
    (15:00 10-14: face fill follows the shade light/hue by hour, bot `facelight`.)
-   Next: LOOK at the face at dusk/night (`face x 30 18.8` / `22.5`, SHOT_TIMEOUT=1800, nothing
-   else running) and retune NOON_SHADE/the 0.7 curve if it reads lost or glowing; check the
+   (16:00 10-14: face band edges sink into the hood shadow, greyer shaded sclera, narrower
+   lids, fill reaches the hood rim.)
+   Next: round the hood's face opening (garb.gd `_hood()`: an oval opening with a thick
+   rolled, slightly irregular rim instead of a straight-edged polygon cut), a little warm
+   skin tone back at night (the face is grey-lavender), then a dusk look (`face x 30 18.8`); check the
    keep talus from the `ruinin` camera. Ivy leftovers: ivy reads a bit like bushy fans close up (thin out
    leaves on the side shoots' outer ends), 33.6k leaves (watch the GPU profile).
 0. BARK IS DONE FOR NOW (6 sessions: 16:30-22:58 10-13). Remaining bark nits (dash-like

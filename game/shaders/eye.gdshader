@@ -22,7 +22,7 @@ void vertex() {
 void fragment() {
 	float ang = acos(clamp(ln.z, -1.0, 1.0));
 	float az = atan(ln.y, ln.x);
-	vec3 sclera = vec3(0.58, 0.52, 0.47);
+	vec3 sclera = vec3(0.40, 0.355, 0.32);   // a shaded eye white is grey-buff, not paper
 	// faint vessels toward the corners and a little shadow under the upper lid
 	float vessel = smoothstep(0.92, 1.0, hash(vec2(floor(az * 9.0), floor(ang * 30.0))));
 	sclera = mix(sclera, vec3(0.6, 0.3, 0.26), 0.25 * vessel * smoothstep(0.7, 1.2, ang));
@@ -33,6 +33,9 @@ void fragment() {
 	alb *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 0.07, abs(ang - iris_r)));
 	alb = mix(vec3(0.01), alb, smoothstep(pupil_r - 0.02, pupil_r + 0.02, ang));
 	ALBEDO = alb;
+	// the upper lid and the brow throw the top of the ball into shadow; the corners recede
+	AO = mix(1.0, 0.35, smoothstep(-0.1, 0.45, ln.y)) * mix(1.0, 0.6, smoothstep(0.9, 1.4, ang));
+	AO_LIGHT_AFFECT = 0.85;
 	ROUGHNESS = 0.06;
 	SPECULAR = 0.6;
 	CLEARCOAT = 1.0;

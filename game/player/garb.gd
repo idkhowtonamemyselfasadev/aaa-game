@@ -152,7 +152,7 @@ func _add_face(head: Node3D) -> void:
 	fill.name = "FaceFill"
 	fill.light_color = Color(1.0, 0.86, 0.72)
 	fill.light_energy = 0.26
-	fill.omni_range = 0.55
+	fill.omni_range = 0.7
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
 	fill.light_cull_mask = layer

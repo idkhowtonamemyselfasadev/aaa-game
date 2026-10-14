@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261010-1700-post-closeup.jpg",
-  "time": "2026-10-10T17:20:00Z",
-  "caption": "Close look at the new practice post (weathered oak, straw bundle, hemp lashings, rusted iron band) backlit at 10 h; straw and rope read well, the shaded oak top goes near-black and looks too smooth.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1800-dodge-dash.jpg",
-  "time": "2026-10-10T18:10:00Z",
-  "caption": "The new dash-step dodge frozen early: the hero sinks low and leans hard into the dash past the practice post, vitality bar with its pale lost segment bottom-left; still the sci-fi placeholder model and no real roll clip.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1800-dodge-hud.jpg",
-  "time": "2026-10-10T18:25:00Z",
-  "caption": "Later in the dodge with the reworked HUD: thin red vitality bar over a pale-gold stamina bar, both readable over bright grass; the pose reads as a running lean rather than a Wukong dodge, and the model is a placeholder.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
   "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
@@ -897,6 +879,12 @@
   "file": "20261014-1545-nightface.jpg",
   "time": "2026-10-14T15:45:00Z",
   "caption": "The hero at 22:30 under a moonlit sky with fireflies: the face fill is now cool and dim, but the face band still reads as a pale grey doll mask in a black hood, and the far ridges are faceted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-1615-nightface-hooded.jpg",
+  "time": "2026-10-14T16:15:00Z",
+  "caption": "The hero at 22:30 by moonlight: the face now sinks into the hood's shadow under the brow, eye whites are grey instead of goggle-white and the hood rim reads; the hood opening still cuts the face as a hard polygon and the far ridges are faceted.",
   "verdict": "fail"
  }
 ]
