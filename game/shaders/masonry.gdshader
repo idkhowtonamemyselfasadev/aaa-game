@@ -9,7 +9,9 @@ render_mode cull_back;
 // (COLOR.r: 0 on the end/bed faces, 1 at 15 cm in from those arrises), and the low joints
 // hold soil and moss.
 // INSTANCE_CUSTOM: r = block's height above the ground / 8 m, g = per-block random,
-// b = 1 for a stone laid in a wall course (0 for fallen blocks and rubble).
+// b = 1 for a stone laid in a wall course (0 for fallen blocks and rubble),
+// a = 1 for the curtain wall: low, damp, longer out in the weather -- a darker grey crust,
+// more lichen and moss, arrises worn dark rather than pale.
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.7, 0.62, 0.5);
@@ -37,6 +39,7 @@ varying float tint;
 varying float v_cloud;
 varying float jnt;
 varying float laid;
+varying float aged;
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -60,6 +63,7 @@ void vertex() {
 	v_cloud = cloud_shade_at(wp);
 	jnt = COLOR.r;
 	laid = INSTANCE_CUSTOM.b;
+	aged = INSTANCE_CUSTOM.a;
 }
 
 float surf(vec3 p) {
@@ -89,26 +93,32 @@ void fragment() {
 	base *= 0.8 + 0.35 * smoothstep(0.25, 0.75, crust);
 	base = mix(base, vec3(dot(base, vec3(0.33))) * 0.8, smoothstep(0.55, 0.8, fbm(wp * 1.1 + 31.0)) * 0.5);
 	base *= vec3(1.0, 0.98, 0.95) + vec3(0.04, 0.0, -0.04) * (tint - 0.5);
+	// the curtain: a dark grey weathering skin over most of every face, the bed colour
+	// showing through only where it flaked
+	float skin = smoothstep(0.3, 0.6, fbm(wp * 1.7 + tint * 5.0 + 17.0));
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.66, 0.66, 0.63), aged * mix(0.45, 0.8, skin));
 	vec3 col = base * (0.9 + s * 0.2);
-	// worn arrises: paler, rubbed smooth
-	// (the top arrises of the laid courses weather dark with the tops, below)
-	col = mix(col, base * 1.12 + 0.02, edge * 0.35 * (1.0 - 0.7 * laid * smoothstep(0.2, 0.7, n.y)));
+	// worn arrises: paler, rubbed smooth on the keep's sheltered stones; on the laid tops and
+	// on the curtain they weather dark with grime instead (only the odd fresh chip stays pale)
+	float fresh = smoothstep(0.72, 0.8, vn(wp * 6.0 + tint * 9.0));
+	col = mix(col, base * 1.1 + 0.015, edge * 0.3 * (1.0 - 0.8 * laid * smoothstep(0.2, 0.7, n.y)) * mix(1.0, fresh, aged));
+	col *= 1.0 - edge * aged * (1.0 - fresh) * 0.22;
 	// rain streaks down the vertical faces (long in y, narrow across)
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(n.y));
 	float streak = smoothstep(0.55, 0.85, fbm(vec3(wp.x * 7.0, wp.y * 0.35, wp.z * 7.0) + 3.0));
 	col *= 1.0 - streak * side * 0.4;
 	// lichen rosettes: yellow and grey-green crusts
-	float l1 = smoothstep(0.7, 0.76, fbm(wp * 4.0 + 21.0));
-	float l2 = smoothstep(0.68, 0.74, fbm(wp * 3.2 + 47.0));
+	float l1 = smoothstep(0.7 - aged * 0.06, 0.76 - aged * 0.06, fbm(wp * 4.0 + 21.0));
+	float l2 = smoothstep(0.68 - aged * 0.1, 0.74 - aged * 0.1, fbm(wp * 3.2 + 47.0));
 	col = mix(col, lichen_y * (0.8 + 0.4 * vn(wp * 40.0)), l1 * 0.75);
 	col = mix(col, lichen_g * (0.8 + 0.4 * vn(wp * 35.0)), l2 * 0.6);
 	// moss: on the tops, creeping down the lower courses and the shady joints
 	float low = 1.0 - smoothstep(0.0, 2.5, above);
 	// exposed bed tops of the laid courses: rain-darkened grey crust with soil and moss
-	float cap = laid * smoothstep(0.35, 0.8, n.y);
-	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * 0.7, cap * 0.55);
-	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5 + cap * 0.25) * 0.9
-	            + low * smoothstep(0.55, 0.75, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5);
+	float cap = laid * smoothstep(0.25 + 0.1 * (1.0 - aged), 0.7, n.y);
+	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * mix(0.7, 0.55, aged), cap * mix(0.55, 0.8, aged));
+	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5 + cap * (0.25 + 0.2 * aged)) * 0.9
+	            + low * smoothstep(0.55 - aged * 0.12, 0.75 - aged * 0.1, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5 * (1.0 - aged));
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
 	col = mix(col, mc, mossw);

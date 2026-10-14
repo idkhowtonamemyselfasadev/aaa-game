@@ -42,6 +42,10 @@ var scree_count := 0
 var curtain_scree := 0
 var joint_tufts := 0
 var _scree_tufts: Array = []         # grass rooted in the talus, planted with the crown tufts
+## 1 while laying the curtain wall: its stones stood out in the weather longer, lower and
+## damper than the keep's (darker crust, more lichen and moss; INSTANCE_CUSTOM.a)
+var _aged := 0.0
+var aged_count := 0
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -299,6 +303,7 @@ func _curtain() -> void:
 		y0 = minf(y0, g)
 		y1 = maxf(y1, g)
 	var y := y0 - 0.2
+	_aged = 1.0
 	while y < y1 + 2.6:
 		var ch := _course_height(y - y0 + 0.4)
 		for li in 2:
@@ -369,6 +374,7 @@ func _curtain() -> void:
 		if _rng.randf() < 0.4:
 			_scree_tufts.append([Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * _rng.randf_range(0.8, 1.25)), Vector3(p.x, surf + s * 0.15, p.z)), 1 if _rng.randf() < 0.6 else 0])
 	curtain_scree = block_count - before
+	_aged = 0.0
 
 ## Grass rooted in the soil lodged in a bed joint low on a wall face: on the open joint along
 ## the stone's top front edge, leaning out over the face (side = +1 outward, -1 inward).
@@ -541,8 +547,10 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), p)
-	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, 0)])
+	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, _aged)])
 	block_count += 1
+	if _aged > 0.0:
+		aged_count += 1
 	if collide and size.x > 0.4:
 		var cs := CollisionShape3D.new()
 		var box := BoxShape3D.new()

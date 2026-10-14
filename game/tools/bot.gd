@@ -1849,6 +1849,9 @@ func _ruin_test() -> void:
 	print("BOT ruin: %d talus stones at the curtain wall feet" % ruins.curtain_scree)
 	if ruins.curtain_scree < 150:
 		return _combat_done(false, "no talus at the curtain wall")
+	print("BOT ruin: %d curtain stones weathered dark (aged)" % ruins.aged_count)
+	if ruins.aged_count < 300:
+		return _combat_done(false, "curtain stones not flagged as weathered")
 	print("BOT ruin: %d grass tufts in the low wall joints" % ruins.joint_tufts)
 	if ruins.joint_tufts < 60:
 		return _combat_done(false, "no grass in the low wall joints")
