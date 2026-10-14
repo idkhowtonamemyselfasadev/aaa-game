@@ -37,6 +37,8 @@ const BINS := 720
 var _cover: Array[PackedFloat32Array] = []
 var _crest_tops: Array = []          # [leaf, angle, arc, r, top y, depth]
 var tuft_count := 0
+var scree_count := 0
+var _scree_tufts: Array = []         # grass rooted in the talus, planted with the crown tufts
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -63,6 +65,7 @@ func _ready() -> void:
 		_cover.append(c)
 	_tower()
 	_curtain()
+	_scree()
 	_dress_crown()
 	_fallen()
 	_plinth()
@@ -77,7 +80,10 @@ func _ready() -> void:
 ## jitter; the crest course is ragged ~0.25 m round it).
 func wall_top(a: float, r: float) -> float:
 	var gy := _terrain.height_at(site.x + cos(a) * r, site.z + sin(a) * r)
-	return gy + _crown(_crown_n, a, _breach, 2.2, 7.4)
+	var cr := _crown(_crown_n, a, _breach, 2.2, 7.4)
+	var low := _low(cr)
+	var leaf_off := -0.75 * low if r > 4.0 else 0.0
+	return gy + cr + leaf_off + minf(0.0, _crown_n.get_noise_2d(cos(a) * 380.0 + 900.0, sin(a) * 380.0) * 1.5 * low)
 
 ## Wall crown height (m above the site floor) at angle a round the tower.
 func _crown(n: FastNoiseLite, a: float, breach: float, lo: float, hi: float) -> float:
@@ -116,11 +122,23 @@ func _tower() -> void:
 				var arc: float = seg[1]
 				var p := site + Vector3(cos(a) * r, 0.0, sin(a) * r)
 				var gy := _terrain.height_at(p.x, p.z)
-				var top := gy + _crown(n, a, breach, 2.2, 7.4) + float(lf[2]) + _rng.randf_range(-0.25, 0.25)
+				var cr := _crown(n, a, breach, 2.2, 7.4)
+				var low := _low(cr)
+				# where the wall is broken down low it steps back like a scree slope: the outer
+				# face robbed a course or two below the core and the inner face, and the crest
+				# stepping up and down in columns a stone or two wide
+				var leaf_off: float = [-0.75, -0.3, 0.0][li] * low
+				var steps := n.get_noise_2d(cos(a) * 380.0 + 900.0, sin(a) * 380.0) * 1.5 * low
+				var top := gy + cr + float(lf[2]) + leaf_off + steps + _rng.randf_range(-0.25, 0.25)
 				if y + ch > top:
 					continue
 				if y + ch < gy - 0.05:
 					continue                         # buried footing
+				if li == 0 and low > 0.3 and y > gy + 0.5 and y + ch * 2.0 < top and _rng.randf() < 0.2 * low:
+					# a face stone fallen out mid-wall, the core showing in the hole; it lies at the foot
+					var fp := site + Vector3(cos(a), 0, sin(a)) * _rng.randf_range(4.8, 6.2)
+					_rubble(fp, _rng.randf_range(0.35, 0.6))
+					continue
 				var crest := y + ch * 2.0 > top     # top course: loose, slumped, some gone
 				if crest and _rng.randf() < 0.25:
 					continue                         # robbed or fallen
@@ -174,6 +192,45 @@ func _tower() -> void:
 		var p := site + Vector3(cos(a) * rr, 0, sin(a) * rr)
 		var s := _rng.randf_range(0.1, 0.3) * lerpf(0.7, 1.0, (rr - 1.75) / 1.2)
 		_rubble(p, s)
+
+## 0 where the keep stands tall, 1 where its crown (m above the ground) is broken down low.
+func _low(crown: float) -> float:
+	return 1.0 - smoothstep(3.0, 5.2, crown)
+
+## Talus against the outer face wherever the keep is broken down low: the stones and spalls
+## that fell off the crown heaped up to a metre against the wall foot and running out ~2.5 m,
+## with grass and soil grown into them; the trodden way through the breach stays clear.
+func _scree() -> void:
+	var bd := Vector3(cos(_breach), 0, sin(_breach))
+	var before := block_count
+	for i in 900:
+		var a := _rng.randf() * TAU
+		var low := _low(_crown(_crown_n, a, _breach, 2.2, 7.4))
+		if low < 0.15 or _rng.randf() > low:
+			continue
+		var hh := lerpf(0.5, 1.4, low) * (0.75 + 0.5 * _crown_n.get_noise_2d(cos(a) * 30.0, sin(a) * 30.0 + 500.0))
+		var run := hh * 2.6
+		var u := pow(_rng.randf(), 1.4)            # thicker against the wall
+		var rr := 4.62 + u * run
+		var p := site + Vector3(cos(a) * rr, 0, sin(a) * rr)
+		var off := p - site
+		if absf(off.dot(bd.cross(Vector3.UP))) < 1.4 and off.dot(bd) > 0.0:
+			continue
+		var g := _terrain.height_at(p.x, p.z)
+		var surf := g + hh * pow(1.0 - u, 1.6)
+		var s := _rng.randf_range(0.14, 0.42) * lerpf(1.0, 1.5, u)   # big stones roll furthest
+		if _rng.randf() < 0.07:
+			# a whole block off the crown, tipped and half sunk in the heap
+			var v := _rng.randi() % VARIANTS
+			var sz := _dims[v] * _rng.randf_range(0.8, 1.0)
+			var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randfn() * 0.45) * Basis(Vector3(0, 0, 1), _rng.randfn() * 0.35)
+			_place(Vector3(p.x, surf - sz.y * 0.2, p.z), b, sz, 0.0, false, v)
+			continue
+		var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randf_range(-0.7, 0.7)) * Basis(Vector3(0, 0, 1), _rng.randf_range(-0.5, 0.5))
+		_place(Vector3(p.x, surf - s * 0.12, p.z), b, Vector3(s, s * 0.55, s * 0.75), 0.0, false)
+		if _rng.randf() < 0.35:
+			_scree_tufts.append([Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * _rng.randf_range(0.8, 1.25)), Vector3(p.x, surf + s * 0.15, p.z)), 1 if _rng.randf() < 0.6 else 0])
+	scree_count = block_count - before
 
 ## Height of the next course, h m above the footing: big squared stones low down, then a mix
 ## of ordinary courses and the odd thin levelling course of slabs.
@@ -263,7 +320,7 @@ func _mark(l: int, a: float, arc: float, top: float) -> void:
 ## the sky (nothing set on it), loose stones knocked off the course above lie on it and grass
 ## tufts root in the soil blown into the joints and the rubble core.
 func _dress_crown() -> void:
-	var tufts: Array = []                 # [Transform3D, kind]
+	var tufts: Array = _scree_tufts.duplicate()   # [Transform3D, kind]
 	for ct in _crest_tops:
 		var l: int = ct[0]
 		var a: float = ct[1]

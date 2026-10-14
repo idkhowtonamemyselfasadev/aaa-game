@@ -1843,6 +1843,9 @@ func _ruin_test() -> void:
 	print("BOT ruin: ivy %d leaves, %d off the wall" % [ruins.ivy.leaf_count, stray])
 	if ruins.ivy.leaf_count < 800 or stray > 0:
 		return _combat_done(false, "ivy missing or leaves off the wall")
+	print("BOT ruin: %d scree stones heaped against the low wall" % ruins.scree_count)
+	if ruins.scree_count < 80:
+		return _combat_done(false, "no talus against the broken-down wall")
 	print("BOT ruin: %d grass tufts on the wall tops" % ruins.tuft_count)
 	if ruins.tuft_count < 40 or ruins.get_node_or_null("CrownGrass") == null:
 		return _combat_done(false, "no grass on the broken crown")

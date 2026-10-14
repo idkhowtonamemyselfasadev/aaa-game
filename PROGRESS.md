@@ -28,6 +28,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the bot/shot runs do it implicitly but print a lot).
 
 ## Done
+- Session 2026-10-14 11:00-12:00 UTC:
+  - **Breach-side ring steps back like scree (Next item 00).** ruins.gd: `_low(crown)` (1
+    where the keep crown is under ~2.4 m, 0 above 4.6 m). In the low zone the outer face is
+    robbed 0.75 m (x low) below the inner face and the core 0.3 m, so the broken wall steps
+    back face -> core -> inner face; a column noise (48 per turn, +-1.1 m x low) makes the
+    crest step up and down a stone or two wide; 12 % x low of outer-face stones above 0.5 m
+    are missing mid-wall (core shows through, the stone lies at the foot). New `_scree()`:
+    388 stones/spalls and the odd whole block heaped against the outer face in the low zone
+    (up to ~1 m at the wall foot, running out 2.6x its height, bigger stones further out),
+    the breach path kept clear, grass tufts rooted in it (planted with the crown tufts).
+    `wall_top` follows the new outer-face crest so the ivy stays on stone.
+    Tuned after shot A: step noise 380 per turn x1.5 m, holes 20 %, talus 0.5-1.4 m high,
+    low zone below 3-5.2 m crown.
+  - Verdict: `ruin screeA/screeB 40 10.5` fail: keep crest now ragged and stepped, but the
+    neat stacked low ring in the front of the `ruin` shot turned out to be the **curtain
+    wall** (12.5 m out, `_curtain()`), not the keep -- untouched this session. The talus is
+    hidden by the foreground grass from this camera. Gallery: keep-stepped-crest.
+  - Bots: ruin (408 scree stones, new check), shrine PASS.
 - Session 2026-10-14 10:00-10:50 UTC:
   - **Tumbled crown (Next item 00).** ruins.gd: crest stones 25 % missing (was 15 %), 30 %
     of the rest slumped (slid 8-22 cm off the bed, tipped 0.15-0.42 rad over the face, mostly
@@ -1917,9 +1935,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    linear colours fixed, stems fan into mats; FX dust/ash sRGB.) (07:55 10-14: mixed
    stones/courses, open joints, headers, chipped arrises.) (09:05 10-14: per-stone beds,
    iron stain, joint shadow, soil in low joints.) (10:50 10-14: tumbled crown, loose
-   stones and grass tufts on the open tops, dark mossy caps.) Next: the low breach-side
-   ring still reads as neat stacked courses (step its crown back course by course like a
-   scree slope: rubble and soil heaped against the face, stones missing mid-course); grass
+   stones and grass tufts on the open tops, dark mossy caps.) (12:00 10-14: low ring steps
+   back face/core/inner, stepped crest, holes mid-wall, talus heaped against the foot.)
+   Next: the low ring in front of the `ruin` shot is the CURTAIN wall (`_curtain()`):
+   give it the same treatment (column-stepped crest via a high-frequency noise, face
+   stones missing mid-wall, talus heaped both sides, more gaps robbed to the turf, grass in
+   the joints); check the keep talus from the `ruinin` camera; then grass
    tufts in the low joints (geometry); then the hero's face lost under the hat
    (face fill at dusk). Ivy leftovers: ivy reads a bit like bushy fans close up (thin out
    leaves on the side shoots' outer ends), 33.6k leaves (watch the GPU profile).
