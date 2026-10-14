@@ -100,6 +100,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	dm.albedo_texture = _soft_tex()
 	dm.vertex_color_use_as_albedo = true
+	dm.vertex_color_is_srgb = true      # dust_col is authored in sRGB
 	dm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	dm.billboard_keep_scale = true
 	dm.roughness = 1.0

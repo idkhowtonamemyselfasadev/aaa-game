@@ -12,8 +12,8 @@ global uniform vec3 bounce_light;
 #include "res://shaders/bounce.gdshaderinc"
 uniform vec3 leaf_dark : source_color = vec3(0.12, 0.2, 0.07);
 uniform vec3 leaf_mid : source_color = vec3(0.2, 0.29, 0.1);
-uniform vec3 leaf_young : source_color = vec3(0.42, 0.46, 0.17);
-uniform vec3 vein_col : source_color = vec3(0.5, 0.56, 0.36);
+uniform vec3 leaf_young : source_color = vec3(0.25, 0.31, 0.1);
+uniform vec3 vein_col : source_color = vec3(0.32, 0.38, 0.19);
 uniform float fill = 0.55;
 
 varying vec3 wp;
@@ -61,11 +61,12 @@ void fragment() {
 	// so the mats are not one even green
 	float dark_old = step(0.62, v_tone) * (1.0 - v_young) * mix(1.0, 0.6, v_old);
 	col = mix(col, col * vec3(0.62, 0.66, 0.6), dark_old);
-	col = mix(col, vec3(0.36, 0.34, 0.1), step(v_tone, 0.07) * (1.0 - v_young) * 0.75);
-	col = mix(col, vec3(0.2, 0.1, 0.07), step(0.07, v_tone) * step(v_tone, 0.13) * (1.0 - v_young) * 0.7);
+	// tone colours are linear (the source_color greens are ~0.01-0.06 linear)
+	col = mix(col, vec3(0.075, 0.062, 0.012), step(v_tone, 0.07) * (1.0 - v_young) * 0.75);
+	col = mix(col, vec3(0.036, 0.014, 0.009), step(0.07, v_tone) * step(v_tone, 0.13) * (1.0 - v_young) * 0.7);
 	float lum = dot(col, vec3(0.3, 0.59, 0.11));
 	col = mix(vec3(lum), col, mix(0.72, 0.95, v_rand));
-	col = mix(col, leaf_young, v_young);
+	col = mix(col, leaf_young, v_young * 0.8);
 	// mottled blade: a few darker and yellower blotches leaf to leaf
 	float blot = sin(q.x * 23.0 + v_rand * 40.0) * sin(q.y * 19.0 - v_rand * 17.0);
 	col *= 1.0 + blot * 0.08;

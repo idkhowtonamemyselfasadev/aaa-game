@@ -85,7 +85,7 @@ func _patch(a0: float, r: float, side: float, n: int) -> void:
 	if top - gy < 1.0:
 		return
 	for s in n:
-		var a := a0 + _rng.randfn() * 0.55 / r
+		var a := a0 + _rng.randfn() * 0.85 / r
 		var reach := lerpf(0.45, 1.0, pow(_rng.randf(), 0.6)) * minf(top - gy, 5.5)
 		_stem(a, gy - 0.08, r, side, 0.0, reach, 0.016, true)
 		if side > 0.0 and _rng.randf() < 0.6:
@@ -115,9 +115,13 @@ func _stem(a: float, y: float, r: float, side: float, dir: float, length: float,
 		y += cos(dir) * STEP
 		a += sin(dir) * STEP / r
 		dist += STEP
-		if main and dist > 0.25 and _rng.randf() < 0.08:
-			var sd := (1.0 if _rng.randf() < 0.5 else -1.0) * _rng.randf_range(0.5, 1.2)
-			_stem(a, y, r, side, sd, minf(length - dist, _rng.randf_range(0.35, 1.3)), rad * 0.6, false)
+		# side shoots fan out sideways (main stems often, shoots now and then a second
+		# order), so the stems knit into a mat instead of standing as vertical strands
+		var branch := 0.13 if main else 0.035
+		if dist > 0.2 and _rng.randf() < branch:
+			var sd := (1.0 if _rng.randf() < 0.5 else -1.0) * _rng.randf_range(0.8, 1.55)
+			var sl := _rng.randf_range(0.35, 1.1) if main else _rng.randf_range(0.2, 0.5)
+			_stem(a, y, r, side, sd, sl, rad * 0.6, false)
 	if pts.size() < 3:
 		return
 	var nrm_at := func(q: Vector3) -> Vector3:

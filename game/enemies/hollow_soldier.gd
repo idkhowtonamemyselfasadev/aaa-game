@@ -681,6 +681,7 @@ func _die(dir: Vector3) -> void:
 	q.size = Vector2(0.03, 0.03)
 	var m := StandardMaterial3D.new()
 	m.vertex_color_use_as_albedo = true
+	m.vertex_color_is_srgb = true       # the ash ramp is authored in sRGB
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

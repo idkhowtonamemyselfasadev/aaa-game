@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261010-1215-noon-mountain-ring.jpg",
-  "time": "2026-10-10T12:15:57Z",
-  "caption": "Noon meadow with oak groves and, new, a hazy snow-capped mountain ring closing the horizon; ridgelines are still faceted at distance and the hills are bare brown.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1326-rooks.jpg",
-  "time": "2026-10-10T13:26:08Z",
-  "caption": "A rook flock feeding on cropped turf in the vale at 14:00; reads as a real field, but the crop patch shows bare brown ground and the birds are tiny at 15 m.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1326-birds.jpg",
   "time": "2026-10-10T13:26:08Z",
   "caption": "Rooks bursting up out of the meadow as the camera comes within 10 m; motion reads in a clip, but the still is small dark specks and the shaded hillside is muddy.",
@@ -86,7 +74,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261014-0550-keep-ivy-pressed.jpg",
   "time": "2026-10-14T05:50:00Z",
   "caption": "Over the Shrine of Binding at 15:00: ivy leaves now lie pressed flatter to the inner wall with darker old leaves among them, but the pale young tips and yellowing leaves read like white flower specks, and the hero is a dark silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0650-keep-ivy-mats-range.jpg",
+  "time": "2026-10-14T06:50:00Z",
+  "caption": "Watchtower ruin from the approach slope at 10:30: the ivy now spreads into a wide dark mat over the keep face instead of thin vertical strands, but the keep stonework is still brick-regular and blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0650-keep-ivy-mats-close.jpg",
+  "time": "2026-10-14T06:50:00Z",
+  "caption": "Over the Shrine of Binding at 15:00: ivy stems now fan sideways into branching mats and the white-speck young/yellow leaves are gone, but the mats still read as bushy fans on the wall, the stones are slab-like and the hero is a dark silhouette.",
   "verdict": "fail"
  }
 ]
