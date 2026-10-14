@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261010-1326-birds.jpg",
-  "time": "2026-10-10T13:26:08Z",
-  "caption": "Rooks bursting up out of the meadow as the camera comes within 10 m; motion reads in a clip, but the still is small dark specks and the shaded hillside is muddy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1427-hero.jpg",
-  "time": "2026-10-10T14:27:23Z",
-  "caption": "The player is now a rigged, animated human instead of a capsule, standing in the afternoon meadow; still wrong: sci-fi armour and visor instead of a mythic hero, no face, hair or staff.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1427-herorun.jpg",
   "time": "2026-10-10T14:27:23Z",
   "caption": "Follow camera on the player mid-stride in the idle/walk/run blend at dusk, lantern glow on the grass; still wrong: placeholder Mixamo soldier model and no foot IK.",
@@ -74,7 +62,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261014-0650-keep-ivy-mats-close.jpg",
   "time": "2026-10-14T06:50:00Z",
   "caption": "Over the Shrine of Binding at 15:00: ivy stems now fan sideways into branching mats and the white-speck young/yellow leaves are gone, but the mats still read as bushy fans on the wall, the stones are slab-like and the hero is a dark silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0755-keep-coursed-range.jpg",
+  "time": "2026-10-14T07:55:00Z",
+  "caption": "Watchtower ruin from the approach slope at 10:30: the keep and curtain are now coursed rubble masonry of mixed-length stones with staggered dark joints instead of brick rows, but the stone is flat cold grey and the low ring still reads as stacked slabs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0755-keep-coursed-close.jpg",
+  "time": "2026-10-14T07:55:00Z",
+  "caption": "Over the Shrine of Binding at 15:00: the inner keep wall now shows mixed stones with chipped rounded arrises and open joints, but the floor rubble is pale and slab-like, colour is uniform grey and the hero is still a dark silhouette.",
   "verdict": "fail"
  }
 ]

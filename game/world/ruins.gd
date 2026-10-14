@@ -2,9 +2,9 @@ class_name Ruins
 extends Node3D
 ## The ruined watchtower on the knoll above Harrowmere (Flora.ruin_site), all generated here:
 ##  - cut stone blocks: rounded boxes with chipped arrises (noise eaten into the bevels and
-##    corners), a dozen size variants, instanced through MultiMesh with a per-block tint;
-##  - the tower: a round keep of three-leaf ashlar walls (outer face, rubble core, inner
-##    face) on rough courses, broken down to a jagged crown with a breach toward the
+##    corners), 16 size variants, instanced through MultiMesh with a per-block tint;
+##  - the tower: a round keep of three-leaf walls (outer face, rubble core, inner face)
+##    of mixed stretchers, closers and headers on courses of varying height with open joints, broken down to a jagged crown with a breach toward the
 ##    village, slumped top stones, fallen blocks downslope and flagstones/rubble inside;
 ##  - a curtain wall ring 12.5 m out, mostly robbed down to stepped stubs with gaps;
 ##  - in the middle of the keep floor a worn two-step plinth carrying the carved lid over the
@@ -16,8 +16,8 @@ extends Node3D
 @export var material: ShaderMaterial
 @export var seed: int = 777
 
-const VARIANTS := 12
-const BEVEL := 0.045
+const VARIANTS := 16
+const BEVEL := 0.06
 
 var site := Vector3.ZERO
 var block_count := 0
@@ -40,7 +40,9 @@ func _ready() -> void:
 	_rng.seed = seed
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
-		var d := Vector3(_rng.randf_range(0.75, 1.1), _rng.randf_range(0.4, 0.5), _rng.randf_range(0.5, 0.65))
+		# lengths spread 0.4-1.5 m so a closer or a long stretcher gets a stone of its own
+		# proportions (its bevels and chips are not squashed or stretched out of shape)
+		var d := Vector3(lerpf(0.4, 1.5, (v + _rng.randf()) / VARIANTS), _rng.randf_range(0.3, 0.5), _rng.randf_range(0.5, 0.65))
 		_dims.append(d)
 		meshes.append(_block_mesh(d, v))
 		_per.append([])
@@ -90,35 +92,42 @@ func _tower() -> void:
 	# three leaves: outer face, core (one course lower at the crown), inner face
 	var leaves := [[4.3, 0.62, 0.0], [3.75, 0.5, -0.45], [3.2, 0.6, 0.0]]
 	var y := base
-	var c := 0
 	while y < floor_y + 8.0:
-		var ch := _rng.randf_range(0.38, 0.48)
+		var ch := _course_height(y - base)
 		for lf in leaves:
 			var r: float = lf[0]
 			var depth: float = lf[1]
-			var count := int(round(TAU * r / 0.9))
-			var shift := (0.5 if c % 2 == 1 else 0.0) + (0.25 if r < 4.0 else 0.0)
-			for i in count:
-				var a := TAU * (i + shift) / count
+			for seg in _course_segments(r):
+				var a: float = seg[0]
+				var arc: float = seg[1]
 				var p := site + Vector3(cos(a) * r, 0.0, sin(a) * r)
 				var gy := _terrain.height_at(p.x, p.z)
 				var top := gy + _crown(n, a, breach, 2.2, 7.4) + float(lf[2]) + _rng.randf_range(-0.25, 0.25)
 				if y + ch > top:
 					continue
-				p.y = y + ch * 0.5
-				if p.y + ch * 0.5 < gy - 0.05:
+				if y + ch < gy - 0.05:
 					continue                         # buried footing
 				var crest := y + ch * 2.0 > top     # top course: loose, slumped, some gone
 				if crest and _rng.randf() < 0.15:
 					continue
-				var tilt := Vector3.ZERO
+				# open joints (2-6 cm, the mortar long washed out of them) and each block set on
+				# its own bed: tops step, faces stand a little proud or sunk, slightly out of true
+				var gap_v := _rng.randf_range(0.02, 0.06)
+				var bh := ch - gap_v
+				var bl := arc * r - _rng.randf_range(0.025, 0.065)
+				var bd := depth
+				var radial := _rng.randfn() * 0.018
+				if r != 3.75 and arc * r < 0.62 and _rng.randf() < 0.6:
+					bd = depth * 1.4                  # a header bonding into the core
+					radial += (-0.12 if r > 4.0 else 0.12)
+				p += Vector3(cos(a), 0, sin(a)) * radial
+				p.y = y + bh * 0.5 + _rng.randf_range(0.0, gap_v * 0.4)
+				var tilt := Vector3(_rng.randfn() * 0.012, _rng.randfn() * 0.02, _rng.randfn() * 0.012)
 				if crest:
 					tilt = Vector3(_rng.randfn() * 0.06, _rng.randfn() * 0.08, _rng.randfn() * 0.06)
 					p += Vector3(cos(a), 0, sin(a)) * _rng.randf_range(-0.05, 0.12)
-				var bl := TAU * r / count - 0.03
-				_place_ring(p, a, Vector3(bl, ch - 0.02, depth), tilt, maxf(0.0, y - gy))
+				_place_ring(p, a, Vector3(bl, bh, bd), tilt, maxf(0.0, y - gy))
 		y += ch
-		c += 1
 	# flagstones and rubble on the floor inside
 	for i in 70:
 		var a := _rng.randf() * TAU
@@ -140,6 +149,34 @@ func _tower() -> void:
 		var s := _rng.randf_range(0.1, 0.3) * lerpf(0.7, 1.0, (rr - 1.75) / 1.2)
 		_rubble(p, s)
 
+## Height of the next course, h m above the footing: big squared stones low down, then a mix
+## of ordinary courses and the odd thin levelling course of slabs.
+func _course_height(h: float) -> float:
+	if _rng.randf() < 0.12:
+		return _rng.randf_range(0.2, 0.27)
+	return _rng.randf_range(0.3, 0.52) * lerpf(1.18, 1.0, clampf(h / 2.0, 0.0, 1.0))
+
+## One course of a ring wall of radius r, as [centre angle, arc] per stone: stretchers of mixed
+## length with short closers and headers between them, the joints never lining up with the
+## course below (random start angle per course and leaf).
+func _course_segments(r: float) -> Array:
+	var lens: Array[float] = []
+	var total := 0.0
+	var circ := TAU * r
+	while total < circ - 0.3:
+		var u := _rng.randf()
+		var l := _rng.randf_range(0.36, 0.55) if u < 0.22 else (_rng.randf_range(1.15, 1.55) if u > 0.82 else _rng.randf_range(0.65, 1.05))
+		lens.append(l)
+		total += l
+	var k := circ / total
+	var a := _rng.randf() * TAU
+	var out := []
+	for l in lens:
+		var arc := l * k / r
+		out.append([a + arc * 0.5, arc])
+		a += arc
+	return out
+
 func _curtain() -> void:
 	var n := FastNoiseLite.new()
 	n.seed = seed + 9
@@ -147,28 +184,40 @@ func _curtain() -> void:
 	n.fractal_octaves = 2
 	var gate := atan2(-site.z, -site.x)
 	var r := 12.5
-	var count := int(round(TAU * r / 0.95))
-	for i in count:
-		var a := TAU * i / count
-		var h := lerpf(-0.6, 1.9, smoothstep(-0.45, 0.45, n.get_noise_2d(cos(a) * 22.0, sin(a) * 22.0) + n.get_noise_2d(cos(a) * 90.0, sin(a) * 90.0) * 0.25))
-		if absf(wrapf(a - gate, -PI, PI)) < 0.2:
-			continue                                 # the gateway
+	var hfn := func(a: float) -> float:
+		return lerpf(-0.6, 1.9, smoothstep(-0.45, 0.45, n.get_noise_2d(cos(a) * 22.0, sin(a) * 22.0) + n.get_noise_2d(cos(a) * 90.0, sin(a) * 90.0) * 0.25))
+	# robbed stubs where the stone was carted off down to the turf
+	for i in 80:
+		var a := TAU * i / 80.0
 		var p := site + Vector3(cos(a) * r, 0, sin(a) * r)
-		var g := _terrain.height_at(p.x, p.z)
-		var y := g - 0.2
-		var c := 0
-		while y < g + h:
-			var ch := _rng.randf_range(0.36, 0.46)
-			var aa := a + (0.5 if c % 2 == 1 else 0.0) * TAU / count
-			var q := site + Vector3(cos(aa), 0, sin(aa)) * (r + _rng.randf_range(-0.04, 0.04))
-			q.y = y + ch * 0.5
-			var crest := y + ch * 2.0 > g + h
-			var tilt := Vector3(_rng.randfn() * 0.05, _rng.randfn() * 0.07, _rng.randfn() * 0.05) if crest else Vector3.ZERO
-			_place_ring(q, aa, Vector3(TAU * r / count - 0.04, ch - 0.02, 0.7), tilt, y - g)
-			y += ch
-			c += 1
-		if h < 0.2 and _rng.randf() < 0.5:
+		if float(hfn.call(a)) < 0.2 and absf(wrapf(a - gate, -PI, PI)) >= 0.2 and _rng.randf() < 0.5:
 			_rubble(p + Vector3(_rng.randfn(), 0, _rng.randfn()) * 0.8, _rng.randf_range(0.4, 0.9))
+	# course by course, mixed stone lengths as in the keep; each stone stops where the robbed
+	# crest height at its angle says
+	var y0 := INF
+	var y1 := -INF
+	for i in 64:
+		var g := _terrain.height_at(site.x + cos(TAU * i / 64.0) * r, site.z + sin(TAU * i / 64.0) * r)
+		y0 = minf(y0, g)
+		y1 = maxf(y1, g)
+	var y := y0 - 0.2
+	while y < y1 + 1.9:
+		var ch := _course_height(y - y0 + 0.4)
+		for seg in _course_segments(r):
+			var a: float = seg[0]
+			if absf(wrapf(a - gate, -PI, PI)) < 0.2:
+				continue                             # the gateway
+			var q := site + Vector3(cos(a), 0, sin(a)) * (r + _rng.randf_range(-0.04, 0.04))
+			var g := _terrain.height_at(q.x, q.z)
+			var top := g + float(hfn.call(a))
+			if y < g - 0.2 - ch or y > top:
+				continue
+			var gap_v := _rng.randf_range(0.02, 0.05)
+			q.y = y + (ch - gap_v) * 0.5
+			var crest := y + ch * 2.0 > top
+			var tilt := Vector3(_rng.randfn() * 0.05, _rng.randfn() * 0.07, _rng.randfn() * 0.05) if crest else Vector3(_rng.randfn() * 0.01, _rng.randfn() * 0.02, _rng.randfn() * 0.01)
+			_place_ring(q, a, Vector3(float(seg[1]) * r - _rng.randf_range(0.03, 0.06), ch - gap_v, 0.7), tilt, maxf(0.0, y - g))
+		y += ch
 
 ## Blocks that fell from the crown: thrown out round the tower, most through the breach
 ## and down the slope, half sunk in the turf at all angles.
@@ -260,7 +309,12 @@ func _place_ring(p: Vector3, a: float, size: Vector3, tilt: Vector3, above: floa
 
 func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v: int = -1) -> void:
 	if v < 0:
+		# the best-fitting of three random variants by length
 		v = _rng.randi() % VARIANTS
+		for t in 2:
+			var w := _rng.randi() % VARIANTS
+			if absf(_dims[w].x - absf(size.x)) < absf(_dims[v].x - absf(size.x)):
+				v = w
 	var d: Vector3 = _dims[v]
 	var sc := Vector3(size.x / d.x, size.y / d.y, size.z / d.z)
 	# random flips so the same chips do not line up block after block
@@ -327,9 +381,15 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 	return mesh
 
 func _ticks(hh: float) -> PackedFloat32Array:
+	# bevel rows plus interior rows every ~11 cm, so the chips along an arris are resolved
 	var r := BEVEL
 	var inner := hh - r
-	return PackedFloat32Array([-hh, -hh + r * 0.4, -inner, -inner / 3.0, inner / 3.0, inner, hh - r * 0.4, hh])
+	var t := PackedFloat32Array([-hh, -hh + r * 0.4])
+	var m := maxi(2, int(ceil(inner * 2.0 / 0.11)))
+	for i in m + 1:
+		t.append(lerpf(-inner, inner, float(i) / m))
+	t.append_array(PackedFloat32Array([hh - r * 0.4, hh]))
+	return t
 
 func _shape(p: Vector3, h: Vector3, n: FastNoiseLite) -> Vector3:
 	var inner := h - Vector3.ONE * BEVEL
@@ -348,7 +408,7 @@ func _shape(p: Vector3, h: Vector3, n: FastNoiseLite) -> Vector3:
 	# chips: ragged bites out of the arrises, a gentle bulge/dish over the faces
 	var k := n.get_noise_3dv(p)
 	# (low-frequency term: faces are hand-dressed, not machined flat)
-	var bite := maxf(0.0, k + 0.1) * (0.075 * edge + 0.015) + n.get_noise_3dv(p * 2.3 + Vector3(7, 3, 1)) * 0.012 \
+	var bite := maxf(0.0, k + 0.1) * (0.1 * edge + 0.015) + maxf(0.0, n.get_noise_3dv(p * 0.6 + Vector3(4, 1, 8)) - 0.15) * 0.12 * edge + n.get_noise_3dv(p * 2.3 + Vector3(7, 3, 1)) * 0.012 \
 		+ n.get_noise_3dv(p * 0.35 + Vector3(2, 9, 4)) * 0.03
 	return p - nrm * bite
 
