@@ -44,7 +44,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   - Screenshots: the baseline `face duskface0 60 18.8` Vulkan shot timed out at 1500 s (a bot
     ran alongside for ~10 s; the face spot is slow) and the opengl3 fallback was killed, so no
     before image. A `face nightface 30 22.5` shot with SHOT_TIMEOUT=1800 was started after the
-    change; see the verdict below if it finished.
+    change and finished in ~28 min.
+  - Verdict: `face nightface 30 22.5` fail: a moonlit meadow with fireflies, the fill no longer
+    paints the face orange, but the face band still reads as a pale grey mask with startled
+    eyes inside a black hood (skin albedo/SSS too light at night, sclera too bright, the hood
+    near-black). Next: darken the skin and sclera under low light, give the hood a little of
+    the fill. Gallery: nightface.
 - Session 2026-10-14 14:00-14:45 UTC:
   - **Curtain stones weathered dark (Next item 00).** ruins.gd: `_aged` flag (INSTANCE_CUSTOM.a,
     1 for the curtain courses, its rubble and talus; `aged_count`). masonry.gdshader: aged
