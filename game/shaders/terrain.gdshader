@@ -310,6 +310,24 @@ vec4 litter(vec2 p, float scale) {
 
 // Leaf bed under the crowns: every cell holds one oak leaf (lobed, midrib), so a few
 // offset layers lie over each other into a full carpet. Returns (cover, height, tone).
+// Gravel and stone chips on the keep floor: one angular chip per cell (a rounded polygon
+// from a rotated box, faceted by a tilted plane). Returns (cover, height, tone, facet light).
+vec4 grit(vec2 p, float scale, float seed, float thin) {
+	vec2 q = p * scale;
+	vec2 cell = floor(q);
+	vec2 f = fract(q) - 0.5;
+	vec3 r = hash23(cell + seed);
+	float ang = r.x * 6.2832;
+	vec2 dir = vec2(cos(ang), sin(ang));
+	f -= (r.yz - 0.5) * 0.4;
+	vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x)));
+	vec2 ab = vec2(0.16 + 0.2 * r.z, 0.11 + 0.14 * r.y);
+	float d = mix(length(l / ab), max(abs(l.x) / ab.x, abs(l.y) / ab.y), 0.55);
+	float cov = (1.0 - smoothstep(0.82, 1.0, d)) * step(thin, fract(r.y * 7.13 + r.x));
+	float facet = dot(l / ab, vec2(cos(r.z * 9.0), sin(r.z * 9.0)));
+	return vec4(cov, cov * (1.0 - d * 0.5), r.z, facet);
+}
+
 // moss cushions: a 3x3 Worley search gives each cell a rounded dome (x = dome height 0..1,
 // y = crevice 0..1 where two cushions meet, z = per-cushion random tone)
 vec3 cushions(vec2 p, float scale) {
@@ -505,6 +523,59 @@ void fragment() {
 	col = mix(col, litcol, litw);      h = mix(h, lit_h, litw);
 	col = mix(col, moss, mossw);       h = mix(h, moss_h, mossw);
 	col = mix(col, rock, rockw);       h = mix(h, rock_h, rockw);
+	// ---- the keep floor: the ruined watchtower's beaten earth floor (bounce_zone holds the
+	// keep centre and its inner radius). Lime mortar dust and grit fallen from the walls,
+	// angular stone chips, wind-drifted oak leaves heaped against the wall foot and in the
+	// lee of the plinth, and low moss creeping out from the wall on the damp side.
+	float kd = length(xz - bounce_zone.xy);
+	float keepw = (1.0 - smoothstep(bounce_zone.z * 0.84, bounce_zone.z * 0.92, kd + (micro - 0.5) * 0.25))
+			* step(0.5, bounce_zone.z) * (1.0 - rockw);
+	if (keepw > 0.001) {
+		float fade_g = 1.0 - smoothstep(0.006, 0.03, fp);
+		float dust = fbm(wpos * 1.7 + 41.0);
+		// beaten earth paled by mortar dust, darker damp patches
+		vec3 kc = mix(soil * 1.05, vec3(0.29, 0.25, 0.2), smoothstep(0.4, 0.75, dust) * 0.6);
+		kc = mix(kc, soil * 0.6, smoothstep(0.55, 0.7, fbm(wpos * 0.8 + 63.0)) * 0.6);   // damp
+		kc *= 0.85 + 0.3 * micro;
+		float kh = micro * 0.004;
+		// two sizes of chips: pea gravel and thumb-sized spalls of the wall stone
+		float gdens = smoothstep(0.35, 0.7, dust + (meso - 0.5) * 0.5);
+		vec4 g1 = grit(xz, 18.0, 13.0, mix(0.92, 0.55, gdens));
+		vec4 g2 = grit(xz + 1.3, 9.0, 71.0, 0.55);
+		vec3 stone = vec3(0.34, 0.32, 0.28);
+		vec3 c1 = mix(kc, stone * (0.55 + 0.35 * g1.z), 0.5) * (0.9 + 0.12 * g1.w);
+		vec3 c2 = mix(stone, vec3(0.42, 0.37, 0.29), step(0.7, g2.z)) * (0.72 + 0.4 * g2.z) * (0.88 + 0.15 * g2.w);
+		kc = mix(kc, c1, g1.x * fade_g);
+		kh = max(kh, g1.y * 0.006 * fade_g);
+		kc = mix(kc, c2, g2.x * fade_g * gdens);
+		kh = max(kh, g2.y * 0.01 * fade_g * gdens);
+		// at range: a speckled grey-brown grit tone, not black
+		kc = mix(kc, mix(soil * 1.3, stone * 0.85, 0.35 + 0.3 * gdens), (1.0 - fade_g) * 0.6);
+		// leaves drift against the wall foot and lie loose across the floor
+		float wallfoot = smoothstep(bounce_zone.z * 0.62, bounce_zone.z * 0.84, kd);
+		float drift = clamp(wallfoot * 1.1 + smoothstep(0.45, 0.7, fbm(wpos * 0.9 + 5.0)) * 0.75
+				+ 0.15, 0.0, 1.0);
+		for (int k = 0; k < 3; k++) {
+			float fk = float(k);
+			vec3 lb = leafbed(xz + vec2(fk * 2.31 + 0.7, fk * 1.13), 5.5 + fk * 1.1);
+			vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.3, 0.95, lb.z)),
+					leaf_b * 0.8, step(0.85, fract(lb.z * 5.1)));
+			tone *= 0.82 + 0.06 * fk + 0.15 * lb.y;
+			float c = lb.x * fade_l * step(1.0 - drift * (1.0 - fk * 0.2), lb.z * 0.9 + 0.08);
+			kc = mix(kc, tone, c);
+			kh = mix(kh, 0.004 + 0.002 * fk + lb.y * 0.003, c);
+		}
+		kc = mix(kc, mix(leaf_drift * 0.7, leaf_b, 0.5), drift * 0.5 * (1.0 - fade_l));
+		// moss creeps out from the wall foot on the north (shaded) side
+		float north = clamp(-(xz.y - bounce_zone.y) / max(kd, 0.01), 0.0, 1.0);
+		float km = smoothstep(0.5, 0.72, mcush * 0.7 + wallfoot * (0.25 + 0.3 * north) + (mfine - 0.5) * 0.2 * fade_m)
+				* (1.0 - drift * 0.6);
+		kc = mix(kc, mix(olive_lo, olive_hi, clamp(mcush * 1.2 - 0.1, 0.0, 1.0)), km);
+		kh = mix(kh, mcush * 0.008, km);
+		col = mix(col, kc, keepw);
+		h = mix(h, kh, keepw);
+		litw = max(litw, keepw);
+	}
 	// ---- boot prints: pressed, matted and darker; deepest in soft litter, faint in turf ----
 	vec3 bp = fp < 0.03 ? max(boot_prints(xz), hoof_prints_at(xz)) : vec3(0.0);
 	float soft_g = (1.0 - rockw) * mix(0.75, 1.0, max(litw, mossw * 0.7));

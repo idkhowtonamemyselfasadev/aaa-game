@@ -116,6 +116,14 @@ func _tower() -> void:
 			_place(p, Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randfn() * 0.04), s, 0.0, false)
 		else:
 			_rubble(p, _rng.randf_range(0.35, 0.8))
+	# spalls and chips knocked off the crown: heaped along the wall foot, scattered thinner
+	# toward the plinth, half sunk in the floor
+	for i in 110:
+		var a := _rng.randf() * TAU
+		var rr := lerpf(1.75, 2.95, pow(_rng.randf(), 0.6))
+		var p := site + Vector3(cos(a) * rr, 0, sin(a) * rr)
+		var s := _rng.randf_range(0.1, 0.3) * lerpf(0.7, 1.0, (rr - 1.75) / 1.2)
+		_rubble(p, s)
 
 func _curtain() -> void:
 	var n := FastNoiseLite.new()
