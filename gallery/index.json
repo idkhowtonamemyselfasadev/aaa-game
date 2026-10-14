@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261010-1427-herorun.jpg",
-  "time": "2026-10-10T14:27:23Z",
-  "caption": "Follow camera on the player mid-stride in the idle/walk/run blend at dusk, lantern glow on the grass; still wrong: placeholder Mixamo soldier model and no foot IK.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1521-staff.jpg",
   "time": "2026-10-10T15:21:08Z",
   "caption": "Close rear view of the hero's new procedural staff slung across the back: worn bronze caps, red lacquered shaft, hemp-wrapped grip; still wrong: it is strapped to a sci-fi armoured soldier with no strap or scabbard holding it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1521-heroback.jpg",
-  "time": "2026-10-10T15:21:08Z",
-  "caption": "The hero seen from behind against a low sun, staff diagonal across the back at body scale; still wrong: placeholder Mixamo soldier model, flat cartoonish far mountains.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261014-0755-keep-coursed-close.jpg",
   "time": "2026-10-14T07:55:00Z",
   "caption": "Over the Shrine of Binding at 15:00: the inner keep wall now shows mixed stones with chipped rounded arrises and open joints, but the floor rubble is pale and slab-like, colour is uniform grey and the hero is still a dark silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0900-keep-stone-beds-range.jpg",
+  "time": "2026-10-14T08:41:00Z",
+  "caption": "The keep from the approach: stones now vary by bed (warm buff, ochre, rust-stained, pale, dark grey) with shadowed joints; the low ring still reads as stacked slabs with pale top edges.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0900-keep-stone-beds-close.jpg",
+  "time": "2026-10-14T09:00:00Z",
+  "caption": "Inside the keep: warmer, per-stone varied masonry with dark open joints and soil in the low ones; plinth stones still slab-like and the hero a dark silhouette.",
   "verdict": "fail"
  }
 ]

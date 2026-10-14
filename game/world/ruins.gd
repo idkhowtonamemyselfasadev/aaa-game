@@ -305,9 +305,10 @@ func _place_ring(p: Vector3, a: float, size: Vector3, tilt: Vector3, above: floa
 	var t := Vector3(-sin(a), 0, cos(a))
 	var rad := Vector3(cos(a), 0, sin(a))
 	var b := Basis(t, Vector3.UP, -rad) * Basis.from_euler(tilt)
-	_place(p, b, size, above, collide)
+	_place(p, b, size, above, collide, -1, 1.0)
 
-func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v: int = -1) -> void:
+## laid = 1 for a stone laid in a wall course (its ends and beds sit in joints), 0 loose.
+func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v: int = -1, laid := 0.0) -> void:
 	if v < 0:
 		# the best-fitting of three random variants by length
 		v = _rng.randi() % VARIANTS
@@ -322,7 +323,7 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), p)
-	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 0, 0)])
+	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, 0)])
 	block_count += 1
 	if collide and size.x > 0.4:
 		var cs := CollisionShape3D.new()
@@ -349,6 +350,7 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 			var us := _ticks(h[u_ax])
 			var vs := _ticks(h[v_ax])
 			var grid := []
+			var jg := {}   # shaped vertex -> joint colour of its unshaped grid point
 			for iu in us.size():
 				var row := []
 				for iv in vs.size():
@@ -356,7 +358,9 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 					p[axis] = h[axis] * sgn
 					p[u_ax] = us[iu]
 					p[v_ax] = vs[iv]
-					row.append(_shape(p, h, n))
+					var sp := _shape(p, h, n)
+					jg[sp] = _joint(p, h)
+					row.append(sp)
 				grid.append(row)
 			var fn := Vector3.ZERO
 			fn[axis] = sgn
@@ -369,9 +373,11 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 					# Godot front faces wind clockwise seen from outside
 					if (b - a).cross(c - a).dot(fn) > 0.0:
 						for q in [a, c, b, a, e, c]:
+							st.set_color(jg[q])
 							st.add_vertex(q)
 					else:
 						for q in [a, b, c, a, c, e]:
+							st.set_color(jg[q])
 							st.add_vertex(q)
 	st.index()
 	st.generate_normals()
@@ -379,6 +385,13 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 	if material:
 		mesh.surface_set_material(0, material)
 	return mesh
+
+## Vertex colour r: how far a point lies from the stone's end and bed arrises (0 on the end
+## and bed faces, 1 at >= 15 cm in on the face), so the shader can sink the joints into
+## shadow. A function of position only, so the faces still share their arris vertices.
+func _joint(q: Vector3, h: Vector3) -> Color:
+	var d := minf(h.x - absf(q.x), h.y - absf(q.y))
+	return Color(clampf(d / 0.15, 0.0, 1.0), 0, 0)
 
 func _ticks(hh: float) -> PackedFloat32Array:
 	# bevel rows plus interior rows every ~11 cm, so the chips along an arris are resolved
