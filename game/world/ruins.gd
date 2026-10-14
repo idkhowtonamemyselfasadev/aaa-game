@@ -6,7 +6,8 @@ extends Node3D
 ##  - the tower: a round keep of three-leaf walls (outer face, rubble core, inner face)
 ##    of mixed stretchers, closers and headers on courses of varying height with open joints, broken down to a jagged crown with a breach toward the
 ##    village, slumped top stones, fallen blocks downslope and flagstones/rubble inside;
-##  - a curtain wall ring 12.5 m out, mostly robbed down to stepped stubs with gaps;
+##  - a curtain wall ring 12.5 m out of two stone faces, robbed in stretches to the turf, its
+##    crest stepped in columns, face stones fallen out and talus heaped at both feet;
 ##  - in the middle of the keep floor a worn two-step plinth carrying the carved lid over the
 ##    Shrine of Binding (ShrineSeal).
 ## Every block that stands above ground gets a box collider.
@@ -30,7 +31,7 @@ var seal: ShrineSeal
 var ivy: Ivy
 var _crown_n: FastNoiseLite
 var _breach := 0.0
-## Highest stone top laid so far per wall leaf (0-2 keep faces/core, 3 curtain) and angle
+## Highest stone top laid so far per wall leaf (0-2 keep faces/core, 3-4 curtain faces) and angle
 ## bin, and the crest stones whose tops may stay open to the sky: after all courses are
 ## laid, the uncovered ones get loose stones and grass tufts (_dress_crown).
 const BINS := 720
@@ -38,6 +39,7 @@ var _cover: Array[PackedFloat32Array] = []
 var _crest_tops: Array = []          # [leaf, angle, arc, r, top y, depth]
 var tuft_count := 0
 var scree_count := 0
+var curtain_scree := 0
 var _scree_tufts: Array = []         # grass rooted in the talus, planted with the crown tufts
 
 func _ready() -> void:
@@ -58,7 +60,7 @@ func _ready() -> void:
 	_body = StaticBody3D.new()
 	_body.name = "RuinCollision"
 	add_child(_body)
-	for l in 4:
+	for l in 5:
 		var c := PackedFloat32Array()
 		c.resize(BINS)
 		c.fill(-INF)
@@ -260,6 +262,11 @@ func _course_segments(r: float) -> Array:
 		a += arc
 	return out
 
+## The curtain wall: two faces of squared stone (r +- 0.2 m) with the joint between them,
+## robbed in long stretches down to the turf. What stands is broken like the keep's low side:
+## the crest steps up and down in columns a stone or two wide, the two faces robbed to
+## different heights so one stands a course above the other, face stones fallen out mid-wall
+## and the stones heaped in a low talus against both feet.
 func _curtain() -> void:
 	var n := FastNoiseLite.new()
 	n.seed = seed + 9
@@ -268,7 +275,12 @@ func _curtain() -> void:
 	var gate := atan2(-site.z, -site.x)
 	var r := 12.5
 	var hfn := func(a: float) -> float:
-		return lerpf(-0.6, 1.9, smoothstep(-0.45, 0.45, n.get_noise_2d(cos(a) * 22.0, sin(a) * 22.0) + n.get_noise_2d(cos(a) * 90.0, sin(a) * 90.0) * 0.25))
+		return lerpf(-0.9, 1.9, smoothstep(-0.4, 0.45, n.get_noise_2d(cos(a) * 22.0, sin(a) * 22.0) + n.get_noise_2d(cos(a) * 90.0, sin(a) * 90.0) * 0.25))
+	# per face: the crest in columns a stone or two wide, and the face's own robbing
+	var top_of := func(a: float, li: int) -> float:
+		var cols := n.get_noise_2d(cos(a) * 450.0 + 700.0 * li, sin(a) * 450.0) * 0.55
+		var face := n.get_noise_2d(cos(a) * 160.0 - 400.0 * li, sin(a) * 160.0 + 250.0) * 0.4
+		return float(hfn.call(a)) + cols + face
 	# robbed stubs where the stone was carted off down to the turf
 	for i in 80:
 		var a := TAU * i / 80.0
@@ -284,26 +296,70 @@ func _curtain() -> void:
 		y0 = minf(y0, g)
 		y1 = maxf(y1, g)
 	var y := y0 - 0.2
-	while y < y1 + 1.9:
+	while y < y1 + 2.6:
 		var ch := _course_height(y - y0 + 0.4)
-		for seg in _course_segments(r):
-			var a: float = seg[0]
-			if absf(wrapf(a - gate, -PI, PI)) < 0.2:
-				continue                             # the gateway
-			var q := site + Vector3(cos(a), 0, sin(a)) * (r + _rng.randf_range(-0.04, 0.04))
-			var g := _terrain.height_at(q.x, q.z)
-			var top := g + float(hfn.call(a))
-			if y < g - 0.2 - ch or y > top:
-				continue
-			var gap_v := _rng.randf_range(0.02, 0.05)
-			q.y = y + (ch - gap_v) * 0.5
-			var crest := y + ch * 2.0 > top
-			var tilt := Vector3(_rng.randfn() * 0.05, _rng.randfn() * 0.07, _rng.randfn() * 0.05) if crest else Vector3(_rng.randfn() * 0.01, _rng.randfn() * 0.02, _rng.randfn() * 0.01)
-			_place_ring(q, a, Vector3(float(seg[1]) * r - _rng.randf_range(0.03, 0.06), ch - gap_v, 0.7), tilt, maxf(0.0, y - g))
-			_mark(3, a, float(seg[1]), q.y + (ch - gap_v) * 0.5)
-			if crest:
-				_crest_tops.append([3, a, float(seg[1]), r, q.y + (ch - gap_v) * 0.5, 0.7])
+		for li in 2:
+			var rr := r + (0.2 if li == 0 else -0.2)
+			var side := 1.0 if li == 0 else -1.0
+			for seg in _course_segments(rr):
+				var a: float = seg[0]
+				var arc: float = seg[1]
+				if absf(wrapf(a - gate, -PI, PI)) < 0.2:
+					continue                             # the gateway
+				var q := site + Vector3(cos(a), 0, sin(a)) * (rr + _rng.randf_range(-0.03, 0.03))
+				var g := _terrain.height_at(q.x, q.z)
+				var top := g + float(top_of.call(a, li)) + _rng.randf_range(-0.12, 0.12)
+				if y < g - 0.2 - ch or y + ch * 0.5 > top:
+					continue
+				var crest := y + ch * 1.5 > top
+				if crest and _rng.randf() < 0.2:
+					continue                             # robbed or fallen
+				if not crest and y > g + 0.25 and _rng.randf() < 0.1:
+					# a face stone fallen out, the other face's back showing in the hole
+					_rubble(site + Vector3(cos(a), 0, sin(a)) * (rr + side * _rng.randf_range(0.5, 1.4)), _rng.randf_range(0.3, 0.55))
+					continue
+				var gap_v := _rng.randf_range(0.02, 0.05)
+				q.y = y + (ch - gap_v) * 0.5 + _rng.randf_range(0.0, gap_v * 0.4)
+				q += Vector3(cos(a), 0, sin(a)) * _rng.randfn() * 0.02
+				var tilt := Vector3(_rng.randfn() * 0.01, _rng.randfn() * 0.02, _rng.randfn() * 0.01)
+				if crest:
+					tilt = Vector3(_rng.randfn() * 0.06, _rng.randfn() * 0.08, _rng.randfn() * 0.06)
+					if _rng.randf() < 0.25:
+						tilt.x = side * _rng.randf_range(0.12, 0.35)   # tipped out over its face
+						q += Vector3(cos(a), 0, sin(a)) * side * _rng.randf_range(0.04, 0.14)
+				_place_ring(q, a, Vector3(arc * rr - _rng.randf_range(0.03, 0.06), ch - gap_v, 0.36), tilt, maxf(0.0, y - g))
+				_mark(3 + li, a, arc, q.y + (ch - gap_v) * 0.5)
+				if crest:
+					_crest_tops.append([3 + li, a, arc, rr, q.y + (ch - gap_v) * 0.5, 0.36])
 		y += ch
+	# talus: the fallen stones and spalls heaped against both feet where the wall still stands,
+	# grass grown into them; the way through the gateway stays clear
+	var before := block_count
+	for i in 1100:
+		var a := _rng.randf() * TAU
+		if absf(wrapf(a - gate, -PI, PI)) < 0.28:
+			continue
+		var stand := float(hfn.call(a))
+		if stand < 0.0 or _rng.randf() > 0.35 + 0.35 * stand:
+			continue
+		var side := 1.0 if _rng.randf() < 0.55 else -1.0
+		var hh := clampf(0.15 + stand * 0.3, 0.15, 0.65) * (0.7 + 0.6 * absf(n.get_noise_2d(cos(a) * 60.0, sin(a) * 60.0 - 300.0)))
+		var u := pow(_rng.randf(), 1.3)
+		var p := site + Vector3(cos(a), 0, sin(a)) * (r + side * (0.42 + u * hh * 3.0))
+		var g := _terrain.height_at(p.x, p.z)
+		var surf := g + hh * pow(1.0 - u, 1.6)
+		var s := _rng.randf_range(0.12, 0.36) * lerpf(1.0, 1.4, u)
+		if _rng.randf() < 0.05:
+			var v := _rng.randi() % VARIANTS
+			var sz := Vector3(_dims[v].x, _dims[v].y, 0.36) * _rng.randf_range(0.8, 1.0)
+			var bb := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randfn() * 0.45) * Basis(Vector3(0, 0, 1), _rng.randfn() * 0.35)
+			_place(Vector3(p.x, surf - sz.y * 0.2, p.z), bb, sz, 0.0, false, v)
+			continue
+		var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randf_range(-0.7, 0.7)) * Basis(Vector3(0, 0, 1), _rng.randf_range(-0.5, 0.5))
+		_place(Vector3(p.x, surf - s * 0.12, p.z), b, Vector3(s, s * 0.55, s * 0.75), 0.0, false)
+		if _rng.randf() < 0.4:
+			_scree_tufts.append([Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * _rng.randf_range(0.8, 1.25)), Vector3(p.x, surf + s * 0.15, p.z)), 1 if _rng.randf() < 0.6 else 0])
+	curtain_scree = block_count - before
 
 func _bin(a: float) -> int:
 	return int(floor(wrapf(a, 0.0, TAU) / TAU * BINS)) % BINS
