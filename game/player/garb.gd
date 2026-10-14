@@ -130,13 +130,18 @@ func _hood() -> ArrayMesh:
 ## The hood surface at angle `a` round the head (0 = the front) and `v` from crown to throat.
 func _hood_at(a: float, v: float) -> Vector3:
 	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
-	var r := dome * (1.0 + 0.45 * smoothstep(0.7, 1.0, v))
+	# toward the front the cape's lower edge sweeps up in one curve under the chin and flares
+	# less, so the face opening closes in a rounded U instead of hanging two lappet points
+	var w := pow(cos(a) * 0.5 + 0.5, 2.0)
+	var r := dome * (1.0 + 0.45 * (1.0 - 0.55 * w) * smoothstep(0.7, 1.0, v))
 	r *= 1.0 + 0.03 * sin(a * 7.0) * v
+	# (up to 8.6 cm at the front; the edge still falls with v everywhere, so no fold-over)
+	var lift := 0.086 * w * pow(maxf(v - 0.6, 0.0) / 0.4, 1.6)
 	var cz := -0.045 - 0.06 * pow(1.0 - v, 3.0)
 	# the cowl is drawn forward round the face, so its rim stands proud of the brow and cheeks
 	var fwd := 0.045 * pow(cos(a) * 0.5 + 0.5, 4.0) * smoothstep(0.03, 0.12, v) \
 			* (1.0 - smoothstep(0.5, 0.78, v))
-	return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43, cz + cos(a) * (0.192 * r + fwd))
+	return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43 + lift, cz + cos(a) * (0.192 * r + fwd))
 
 ## Half-angle of the face opening at `v`: an elliptic arch over the eyes, straight sides
 ## down the cheeks, then the Hollow cowl's wide gap round the face cloth closing at the throat.

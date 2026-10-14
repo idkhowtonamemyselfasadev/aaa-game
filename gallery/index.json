@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261010-2200-sweep.jpg",
-  "time": "2026-10-10T22:40:00Z",
-  "caption": "First light sweep connecting with the practice post: the staff now travels flat at shoulder height as authored instead of lying sideways; still wrong: placeholder sci-fi hero body, the post blocks the hero in this camera, bare red soil between grass clumps.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0024-sweep-windup.jpg",
   "time": "2026-10-11T00:24:33Z",
   "caption": "Hollow Soldier coiling its new sweep: spear wound flat behind its right side, chest ember flaring; still placeholder sci-fi bodies and faceted far ridges.",
@@ -891,6 +885,12 @@
   "file": "20261014-2220-face-night.jpg",
   "time": "2026-10-14T22:20:00Z",
   "caption": "Hero at 23:00 under the moon with fireflies: the face reads as dim warm-neutral skin instead of grey-lavender; still wrong: fireflies light nearby grass a hot yellow-green and the far left ridge is a flat pale cut-out.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-2310-face-lappets.jpg",
+  "time": "2026-10-14T23:10:01Z",
+  "caption": "The hero's hood now sweeps up in a rounded edge under the chin instead of hanging two lumpy points over the chest; still wrong: the face cloth's sagging tip shows below the hood and the eyes still read a little startled.",
   "verdict": "fail"
  }
 ]
