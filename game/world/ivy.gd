@@ -30,6 +30,8 @@ func build(ruins: Ruins, terrain: Terrain, seed: int) -> void:
 	# outer face: both shoulders of the breach (seen on the approach), the north flank
 	var outer := [breach + 0.75, breach - 0.8, breach + 1.5, north, north + 0.55, north - 0.6,
 			breach + PI + 0.3]
+	# the faces either side of the breach that the approach (`ruin`) camera looks at
+	outer.append_array([breach + 1.1, breach - 1.15, breach - 1.5])
 	for a in outer:
 		_patch(a + _rng.randfn() * 0.08, 4.635, 1.0, _rng.randi_range(7, 10))
 	# inner face: across the floor from the breach (behind the shrine lid) and the north side
@@ -52,19 +54,27 @@ func build(ruins: Ruins, terrain: Terrain, seed: int) -> void:
 		var items: Array = leaves[k]
 		if items.is_empty():
 			continue
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_custom_data = true
-		mm.mesh = _blade(k)
-		mm.instance_count = items.size()
-		for i in items.size():
-			mm.set_instance_transform(i, items[i][0])
-			mm.set_instance_custom_data(i, items[i][1])
-		var mmi := MultiMeshInstance3D.new()
-		mmi.name = "IvyLeaves_%d" % k
-		mmi.multimesh = mm
-		mmi.material_override = lmat
-		add_child(mmi)
+		# LOD: every second leaf drops out past ~60 m (the mats still read as mats)
+		var blade := _blade(k)
+		for half in 2:
+			var mm := MultiMesh.new()
+			mm.transform_format = MultiMesh.TRANSFORM_3D
+			mm.use_custom_data = true
+			mm.mesh = blade
+			mm.instance_count = (items.size() + 1 - half) / 2
+			var j := 0
+			for i in range(half, items.size(), 2):
+				mm.set_instance_transform(j, items[i][0])
+				mm.set_instance_custom_data(j, items[i][1])
+				j += 1
+			var mmi := MultiMeshInstance3D.new()
+			mmi.name = "IvyLeaves_%d_%d" % [k, half]
+			mmi.multimesh = mm
+			mmi.material_override = lmat
+			if half == 1:
+				mmi.visibility_range_end = 60.0
+				mmi.visibility_range_end_margin = 4.0
+			add_child(mmi)
 		leaf_count += items.size()
 
 ## One clump: `n` stems rooted round angle a0 on the face of radius r; side = +1 for the
@@ -127,17 +137,19 @@ func _stem(a: float, y: float, r: float, side: float, dir: float, length: float,
 		var count := (3 if _rng.randf() < 0.4 else 2) if young < 0.5 else 1
 		for c in count:
 			var size := lerpf(0.11, 0.075, old * 0.6) * _rng.randf_range(0.75, 1.25) * lerpf(1.0, 0.45, young)
-			var pet := _rng.randf_range(0.03, 0.11) * lerpf(1.0, 0.5, young)
-			var pd := (n * 0.75 + lat * _rng.randf_range(0.3, 0.8) + Vector3.UP * 0.25).normalized()
+			# petioles short and laid along the stone, shortest on the old wood low down, so
+			# the blades lie pressed to the wall in overlapping shingles
+			var pet := _rng.randf_range(0.015, 0.065) * lerpf(0.55, 1.0, old) * lerpf(1.0, 0.5, young)
+			var pd := (n * 0.35 + lat * _rng.randf_range(0.4, 0.9) + Vector3.UP * 0.3).normalized()
 			var base := p + pd * pet
 			# blade faces out and a little up; tip hangs down and to the side (shingled)
-			var face := (n * 0.8 + Vector3.UP * _rng.randf_range(0.2, 0.6) + lat * _rng.randfn() * 0.25).normalized()
+			var face := (n + Vector3.UP * _rng.randf_range(0.05, 0.3) + lat * _rng.randfn() * 0.18).normalized()
 			var mid := (-Vector3.UP + lat * _rng.randf_range(0.0, 0.9) + n * 0.2)
 			mid = (mid - face * mid.dot(face)).normalized()
 			var xb := mid.cross(face).normalized()
 			var b := Basis(xb, mid, face) * Basis.from_scale(Vector3.ONE * size)
 			var shape := 2 if young > 0.5 else (_rng.randi() % 2)
-			leaves[shape].append([Transform3D(b, base), Color(young, _rng.randf(), old, 0)])
+			leaves[shape].append([Transform3D(b, base), Color(young, _rng.randf(), old, _rng.randf())])
 			lat = -lat
 
 func _at(a: float, y: float, r: float, side: float) -> Vector3:

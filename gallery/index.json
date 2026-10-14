@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261010-1116-noon-meadow-sky.jpg",
-  "time": "2026-10-10T11:16:48Z",
-  "caption": "Noon oak slope under a bright blue sky with readable shadow sides; leaf cards are blobby up close and the valley floor is bare brown.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1215-noon-mountain-ring.jpg",
   "time": "2026-10-10T12:15:57Z",
   "caption": "Noon meadow with oak groves and, new, a hazy snow-capped mountain ring closing the horizon; ridgelines are still faceted at distance and the hills are bare brown.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1215-afternoon-peaks.jpg",
-  "time": "2026-10-10T12:15:57Z",
-  "caption": "Late-afternoon view across the vale to layered ranges and snowy peaks; the foreground grass sits in deep shadow and the peaks form a uniform sawtooth.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261014-0441-keep-ivy-close.jpg",
   "time": "2026-10-14T04:41:00Z",
   "caption": "Inside the keep over the Shrine of Binding: dense shingled ivy with lobed dark leaves and light young tips climbs the inner wall; the mats stand off the stone a little like shrubs, read too evenly saturated green, and the hero's face is still lost under the hat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0550-keep-ivy-approach.jpg",
+  "time": "2026-10-14T05:50:00Z",
+  "caption": "The watchtower ruin from the approach slope at 10:30: ivy now climbs the outer face either side of the breach toward the camera; it still reads as separate vertical strands rather than spreading mats, and the keep stonework is brick-regular.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0550-keep-ivy-pressed.jpg",
+  "time": "2026-10-14T05:50:00Z",
+  "caption": "Over the Shrine of Binding at 15:00: ivy leaves now lie pressed flatter to the inner wall with darker old leaves among them, but the pale young tips and yellowing leaves read like white flower specks, and the hero is a dark silhouette.",
   "verdict": "fail"
  }
 ]
