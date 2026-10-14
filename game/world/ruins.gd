@@ -40,6 +40,7 @@ var _crest_tops: Array = []          # [leaf, angle, arc, r, top y, depth]
 var tuft_count := 0
 var scree_count := 0
 var curtain_scree := 0
+var joint_tufts := 0
 var _scree_tufts: Array = []         # grass rooted in the talus, planted with the crown tufts
 
 func _ready() -> void:
@@ -171,6 +172,8 @@ func _tower() -> void:
 						p.y -= _rng.randf_range(0.02, 0.08)
 				_place_ring(p, a, Vector3(bl, bh, bd), tilt, maxf(0.0, y - gy))
 				_mark(li, a, arc, p.y + bh * 0.5)
+				if li != 1 and not crest:
+					_joint_tuft(p, a, bh, bd, 1.0 if li == 0 else -1.0, y - gy)
 				if crest and not slumped:
 					_crest_tops.append([li, a, arc, r, p.y + bh * 0.5, bd])
 		y += ch
@@ -321,7 +324,11 @@ func _curtain() -> void:
 				var gap_v := _rng.randf_range(0.02, 0.05)
 				q.y = y + (ch - gap_v) * 0.5 + _rng.randf_range(0.0, gap_v * 0.4)
 				q += Vector3(cos(a), 0, sin(a)) * _rng.randfn() * 0.02
-				var tilt := Vector3(_rng.randfn() * 0.01, _rng.randfn() * 0.02, _rng.randfn() * 0.01)
+				# out of true: the frost has worked each stone loose, the more the higher it sits
+				# (the low courses are held by the talus and the turf)
+				var loose := clampf((y - g) / 1.6, 0.0, 1.0)
+				q += Vector3(cos(a), 0, sin(a)) * _rng.randfn() * (0.012 + 0.03 * loose)
+				var tilt := Vector3(_rng.randfn() * (0.01 + 0.03 * loose), _rng.randfn() * (0.02 + 0.06 * loose), _rng.randfn() * (0.01 + 0.035 * loose))
 				if crest:
 					tilt = Vector3(_rng.randfn() * 0.06, _rng.randfn() * 0.08, _rng.randfn() * 0.06)
 					if _rng.randf() < 0.25:
@@ -329,6 +336,8 @@ func _curtain() -> void:
 						q += Vector3(cos(a), 0, sin(a)) * side * _rng.randf_range(0.04, 0.14)
 				_place_ring(q, a, Vector3(arc * rr - _rng.randf_range(0.03, 0.06), ch - gap_v, 0.36), tilt, maxf(0.0, y - g))
 				_mark(3 + li, a, arc, q.y + (ch - gap_v) * 0.5)
+				if not crest:
+					_joint_tuft(q, a, ch - gap_v, 0.36, side, y - g)
 				if crest:
 					_crest_tops.append([3 + li, a, arc, rr, q.y + (ch - gap_v) * 0.5, 0.36])
 		y += ch
@@ -343,7 +352,7 @@ func _curtain() -> void:
 		if stand < 0.0 or _rng.randf() > 0.35 + 0.35 * stand:
 			continue
 		var side := 1.0 if _rng.randf() < 0.55 else -1.0
-		var hh := clampf(0.15 + stand * 0.3, 0.15, 0.65) * (0.7 + 0.6 * absf(n.get_noise_2d(cos(a) * 60.0, sin(a) * 60.0 - 300.0)))
+		var hh := clampf(0.25 + stand * 0.38, 0.2, 0.85) * (0.7 + 0.6 * absf(n.get_noise_2d(cos(a) * 60.0, sin(a) * 60.0 - 300.0)))
 		var u := pow(_rng.randf(), 1.3)
 		var p := site + Vector3(cos(a), 0, sin(a)) * (r + side * (0.42 + u * hh * 3.0))
 		var g := _terrain.height_at(p.x, p.z)
@@ -360,6 +369,21 @@ func _curtain() -> void:
 		if _rng.randf() < 0.4:
 			_scree_tufts.append([Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * _rng.randf_range(0.8, 1.25)), Vector3(p.x, surf + s * 0.15, p.z)), 1 if _rng.randf() < 0.6 else 0])
 	curtain_scree = block_count - before
+
+## Grass rooted in the soil lodged in a bed joint low on a wall face: on the open joint along
+## the stone's top front edge, leaning out over the face (side = +1 outward, -1 inward).
+## Dense near the damp foot, thinning out to ~2 m.
+func _joint_tuft(c: Vector3, a: float, h: float, depth: float, side: float, above: float) -> void:
+	if above < -0.1 or _rng.randf() > 0.3 * (1.0 - smoothstep(0.3, 2.0, above)):
+		return
+	var rad := Vector3(cos(a), 0, sin(a))
+	var t := Vector3(-rad.z, 0, rad.x)
+	var p := c + rad * side * (depth * 0.5 - 0.02) + t * _rng.randf_range(-0.3, 0.3) + Vector3.UP * (h * 0.5 - 0.01)
+	var sc := _rng.randf_range(0.45, 0.8)
+	var bb := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(sc, sc * _rng.randf_range(0.6, 0.95), sc))
+	bb = Basis(t, -side * _rng.randf_range(0.35, 0.8)) * bb
+	_scree_tufts.append([Transform3D(bb, p), 1 if _rng.randf() < 0.55 else 0])
+	joint_tufts += 1
 
 func _bin(a: float) -> int:
 	return int(floor(wrapf(a, 0.0, TAU) / TAU * BINS)) % BINS
