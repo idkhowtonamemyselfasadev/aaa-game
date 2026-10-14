@@ -314,6 +314,33 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		_heads[k] = [fl[1], fl[2]]
 	return root
 
+## A fixed set of tufts outside the streamed meadow (the grass on the ruin's wall tops):
+## items are [Transform3D, kind] with kind 0 upright, 1 tussock, 2 seeding.
+func static_tufts(items: Array) -> Node3D:
+	var root := Node3D.new()
+	for kind in 3:
+		var xf: Array[Transform3D] = []
+		for it in items:
+			if int(it[1]) == kind:
+				xf.append(it[0])
+		if xf.is_empty():
+			continue
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_custom_data = true
+		mm.mesh = _meshes[kind]
+		mm.instance_count = xf.size()
+		for n in xf.size():
+			mm.set_instance_transform(n, xf[n])
+			# drier straw-tipped tufts: thin soil on the stone dries out first
+			mm.set_instance_custom_data(n, Color(0.55 + 0.4 * fmod(n * 0.618, 1.0), 0, 0, 0))
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = ["Upright", "Tussock", "Seeding"][kind]
+		mmi.multimesh = mm
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mmi)
+	return root
+
 ## Tall clumps by kind (0 upright, 1 tussock, 2 seeding) in the loaded chunks (bots read it).
 func clump_kinds() -> PackedInt32Array:
 	var out := PackedInt32Array([0, 0, 0])

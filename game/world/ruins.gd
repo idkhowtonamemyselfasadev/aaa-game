@@ -30,6 +30,13 @@ var seal: ShrineSeal
 var ivy: Ivy
 var _crown_n: FastNoiseLite
 var _breach := 0.0
+## Highest stone top laid so far per wall leaf (0-2 keep faces/core, 3 curtain) and angle
+## bin, and the crest stones whose tops may stay open to the sky: after all courses are
+## laid, the uncovered ones get loose stones and grass tufts (_dress_crown).
+const BINS := 720
+var _cover: Array[PackedFloat32Array] = []
+var _crest_tops: Array = []          # [leaf, angle, arc, r, top y, depth]
+var tuft_count := 0
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -49,8 +56,14 @@ func _ready() -> void:
 	_body = StaticBody3D.new()
 	_body.name = "RuinCollision"
 	add_child(_body)
+	for l in 4:
+		var c := PackedFloat32Array()
+		c.resize(BINS)
+		c.fill(-INF)
+		_cover.append(c)
 	_tower()
 	_curtain()
+	_dress_crown()
 	_fallen()
 	_plinth()
 	for v in VARIANTS:
@@ -94,7 +107,8 @@ func _tower() -> void:
 	var y := base
 	while y < floor_y + 8.0:
 		var ch := _course_height(y - base)
-		for lf in leaves:
+		for li in leaves.size():
+			var lf: Array = leaves[li]
 			var r: float = lf[0]
 			var depth: float = lf[1]
 			for seg in _course_segments(r):
@@ -108,8 +122,8 @@ func _tower() -> void:
 				if y + ch < gy - 0.05:
 					continue                         # buried footing
 				var crest := y + ch * 2.0 > top     # top course: loose, slumped, some gone
-				if crest and _rng.randf() < 0.15:
-					continue
+				if crest and _rng.randf() < 0.25:
+					continue                         # robbed or fallen
 				# open joints (2-6 cm, the mortar long washed out of them) and each block set on
 				# its own bed: tops step, faces stand a little proud or sunk, slightly out of true
 				var gap_v := _rng.randf_range(0.02, 0.06)
@@ -123,10 +137,22 @@ func _tower() -> void:
 				p += Vector3(cos(a), 0, sin(a)) * radial
 				p.y = y + bh * 0.5 + _rng.randf_range(0.0, gap_v * 0.4)
 				var tilt := Vector3(_rng.randfn() * 0.012, _rng.randfn() * 0.02, _rng.randfn() * 0.012)
+				var slumped := false
 				if crest:
 					tilt = Vector3(_rng.randfn() * 0.06, _rng.randfn() * 0.08, _rng.randfn() * 0.06)
 					p += Vector3(cos(a), 0, sin(a)) * _rng.randf_range(-0.05, 0.12)
+					if _rng.randf() < 0.3:
+						# slid half off its bed and tipped over the face, mostly outward
+						slumped = true
+						var out := 1.0 if (_rng.randf() < 0.7) == (r > 3.75) else -1.0
+						tilt.x = out * _rng.randf_range(0.15, 0.42)
+						tilt.y += _rng.randfn() * 0.15
+						p += Vector3(cos(a), 0, sin(a)) * out * _rng.randf_range(0.08, 0.22)
+						p.y -= _rng.randf_range(0.02, 0.08)
 				_place_ring(p, a, Vector3(bl, bh, bd), tilt, maxf(0.0, y - gy))
+				_mark(li, a, arc, p.y + bh * 0.5)
+				if crest and not slumped:
+					_crest_tops.append([li, a, arc, r, p.y + bh * 0.5, bd])
 		y += ch
 	# flagstones and rubble on the floor inside
 	for i in 70:
@@ -217,7 +243,62 @@ func _curtain() -> void:
 			var crest := y + ch * 2.0 > top
 			var tilt := Vector3(_rng.randfn() * 0.05, _rng.randfn() * 0.07, _rng.randfn() * 0.05) if crest else Vector3(_rng.randfn() * 0.01, _rng.randfn() * 0.02, _rng.randfn() * 0.01)
 			_place_ring(q, a, Vector3(float(seg[1]) * r - _rng.randf_range(0.03, 0.06), ch - gap_v, 0.7), tilt, maxf(0.0, y - g))
+			_mark(3, a, float(seg[1]), q.y + (ch - gap_v) * 0.5)
+			if crest:
+				_crest_tops.append([3, a, float(seg[1]), r, q.y + (ch - gap_v) * 0.5, 0.7])
 		y += ch
+
+func _bin(a: float) -> int:
+	return int(floor(wrapf(a, 0.0, TAU) / TAU * BINS)) % BINS
+
+## Note a stone's top over the arc it covers in leaf l.
+func _mark(l: int, a: float, arc: float, top: float) -> void:
+	var c := _cover[l]
+	var b0 := _bin(a - arc * 0.5)
+	for k in int(ceil(arc / TAU * BINS)) + 1:
+		var b := (b0 + k) % BINS
+		c[b] = maxf(c[b], top)
+
+## The broken crown once every course is laid: where a crest stone's top is still open to
+## the sky (nothing set on it), loose stones knocked off the course above lie on it and grass
+## tufts root in the soil blown into the joints and the rubble core.
+func _dress_crown() -> void:
+	var tufts: Array = []                 # [Transform3D, kind]
+	for ct in _crest_tops:
+		var l: int = ct[0]
+		var a: float = ct[1]
+		var arc: float = ct[2]
+		var r: float = ct[3]
+		var top: float = ct[4]
+		var depth: float = ct[5]
+		var rad := Vector3(cos(a), 0, sin(a))
+		# a few points along the stone; skip any that a stone above covers
+		for i in 3:
+			var aa := a + arc * _rng.randf_range(-0.45, 0.45)
+			if _cover[l][_bin(aa)] > top + 0.06:
+				continue
+			var p := site + Vector3(cos(aa), 0, sin(aa)) * (r + _rng.randf_range(-0.3, 0.3) * depth)
+			p.y = top
+			var u := _rng.randf()
+			if i == 0 and u < 0.16:
+				# a loose stone off the course above, lying askew on this one
+				var s := Vector3(_rng.randf_range(0.28, 0.5), _rng.randf_range(0.16, 0.26), _rng.randf_range(0.24, 0.4))
+				var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randfn() * 0.12) * Basis(Vector3(0, 0, 1), _rng.randfn() * 0.12)
+				_place(p + Vector3.UP * (s.y * 0.45), b, s, top - _terrain.height_at(p.x, p.z), false)
+			elif u < (0.75 if l == 1 else 0.5):
+				# the core (rubble and soil) and the joints hold grass; tussocks most
+				var kind := 1 if _rng.randf() < 0.6 else 0
+				var sc := _rng.randf_range(0.45, 0.85) * (1.15 if l == 1 else 1.0)
+				var bb := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(sc, sc * _rng.randf_range(0.7, 1.1), sc))
+				# tufts on the face edge lean out over it
+				bb = Basis(Vector3(-rad.z, 0, rad.x), _rng.randfn() * 0.15) * bb
+				tufts.append([Transform3D(bb, p + Vector3.UP * 0.0), kind])
+	tuft_count = tufts.size()
+	var grass := get_node_or_null("../Grass") as GrassField
+	if grass and tufts.size() > 0:
+		var node := grass.static_tufts(tufts)
+		node.name = "CrownGrass"
+		add_child(node)
 
 ## Blocks that fell from the crown: thrown out round the tower, most through the breach
 ## and down the slope, half sunk in the turf at all angles.

@@ -91,7 +91,8 @@ void fragment() {
 	base *= vec3(1.0, 0.98, 0.95) + vec3(0.04, 0.0, -0.04) * (tint - 0.5);
 	vec3 col = base * (0.9 + s * 0.2);
 	// worn arrises: paler, rubbed smooth
-	col = mix(col, base * 1.12 + 0.02, edge * 0.35);
+	// (the top arrises of the laid courses weather dark with the tops, below)
+	col = mix(col, base * 1.12 + 0.02, edge * 0.35 * (1.0 - 0.7 * laid * smoothstep(0.2, 0.7, n.y)));
 	// rain streaks down the vertical faces (long in y, narrow across)
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(n.y));
 	float streak = smoothstep(0.55, 0.85, fbm(vec3(wp.x * 7.0, wp.y * 0.35, wp.z * 7.0) + 3.0));
@@ -103,7 +104,10 @@ void fragment() {
 	col = mix(col, lichen_g * (0.8 + 0.4 * vn(wp * 35.0)), l2 * 0.6);
 	// moss: on the tops, creeping down the lower courses and the shady joints
 	float low = 1.0 - smoothstep(0.0, 2.5, above);
-	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5) * 0.9
+	// exposed bed tops of the laid courses: rain-darkened grey crust with soil and moss
+	float cap = laid * smoothstep(0.35, 0.8, n.y);
+	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * 0.7, cap * 0.55);
+	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5 + cap * 0.25) * 0.9
 	            + low * smoothstep(0.55, 0.75, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5);
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
