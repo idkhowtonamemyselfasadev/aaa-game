@@ -273,7 +273,7 @@ func _dress_crown() -> void:
 		var depth: float = ct[5]
 		var rad := Vector3(cos(a), 0, sin(a))
 		# a few points along the stone; skip any that a stone above covers
-		for i in 3:
+		for i in 5:
 			var aa := a + arc * _rng.randf_range(-0.45, 0.45)
 			if _cover[l][_bin(aa)] > top + 0.06:
 				continue
@@ -285,10 +285,10 @@ func _dress_crown() -> void:
 				var s := Vector3(_rng.randf_range(0.28, 0.5), _rng.randf_range(0.16, 0.26), _rng.randf_range(0.24, 0.4))
 				var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randfn() * 0.12) * Basis(Vector3(0, 0, 1), _rng.randfn() * 0.12)
 				_place(p + Vector3.UP * (s.y * 0.45), b, s, top - _terrain.height_at(p.x, p.z), false)
-			elif u < (0.75 if l == 1 else 0.5):
+			elif u < (0.85 if l == 1 else 0.65):
 				# the core (rubble and soil) and the joints hold grass; tussocks most
 				var kind := 1 if _rng.randf() < 0.6 else 0
-				var sc := _rng.randf_range(0.45, 0.85) * (1.15 if l == 1 else 1.0)
+				var sc := _rng.randf_range(0.8, 1.3) * (1.15 if l == 1 else 1.0)
 				var bb := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(sc, sc * _rng.randf_range(0.7, 1.1), sc))
 				# tufts on the face edge lean out over it
 				bb = Basis(Vector3(-rad.z, 0, rad.x), _rng.randfn() * 0.15) * bb
