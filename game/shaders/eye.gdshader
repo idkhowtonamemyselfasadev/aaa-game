@@ -4,8 +4,8 @@ shader_type spatial;
 // local +Z; the lids (skin.gdshader) cut the visible part.
 
 uniform vec3 iris_col : source_color = vec3(0.16, 0.085, 0.04);
-uniform float iris_r = 0.72;   // angular radius of the iris (rad)
-uniform float pupil_r = 0.26;
+uniform float iris_r = 0.56;   // angular radius of the iris (rad): ~6 mm on a 12.5 mm ball
+uniform float pupil_r = 0.2;
 
 varying vec3 ln;
 

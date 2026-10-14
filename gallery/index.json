@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261010-1900-soldier-thrust.jpg",
-  "time": "2026-10-10T19:40:00Z",
-  "caption": "Side-on as the soldier's lunging thrust lands on the hero at the practice post; the thrust reads as a body lunge but the spear is hidden along the view line, and both models are placeholder sci-fi soldiers.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-2038-lockon.jpg",
   "time": "2026-10-10T20:38:24Z",
   "caption": "Lock-on: the follow camera slides over the right shoulder to frame the hero and the Hollow Soldier mid wind-up, with the bone-white reticle on its chest; still wrong: sci-fi placeholder bodies, over-bright foreground grass, steep framing shows too much ground.",
@@ -885,6 +879,12 @@
   "file": "20261014-1715-hood-oval.jpg",
   "time": "2026-10-14T17:15:00Z",
   "caption": "The hero at 10:30 in the meadow: the hood's face opening is now a rounded arch with a thick rolled hem instead of a straight-edged cut; the face still reads too bright and doll-like at noon with startled eyes, and a pale patch shows at the throat under the face cloth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-1815-face-noon.jpg",
+  "time": "2026-10-14T18:15:00Z",
+  "caption": "The hero's face at noon after the eyeballs were recessed: dark almond eyes under the lids and tanned skin in the hat's shade instead of goggle eyes on an orange doll face; still a hot specular dot in each eye, flat-looking wool on the hood and cloth, and a little pale armour at the collar.",
   "verdict": "fail"
  }
 ]

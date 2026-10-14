@@ -158,10 +158,12 @@ func _hat() -> ArrayMesh:
 ## shows between it and the hood.
 func _veil() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
-		var a := lerpf(-1.35, 1.35, u)
+		# wound round past the ears and down over the throat into the mantle's collar, so no
+		# pale armour neck shows between the cloth and the cape
+		var a := lerpf(-1.65, 1.65, u)
 		var front := cos(a)
 		# the lower edge sags into a soft point under the chin
-		var y := 1.935 - v * (0.14 + 0.05 * front * front)
+		var y := 1.935 - v * (0.18 + 0.06 * maxf(front, 0.0) * front)
 		var r := 1.0 + 0.06 * v * front + 0.015 * sin(a * 8.0 + v * 2.0) * v
 		return Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r), 24, 6)
 
@@ -192,10 +194,12 @@ func _add_face(head: Node3D) -> void:
 		eye.mesh = sphere
 		eye.material_override = emat
 		eye.layers = layer
-		# the cornea sits just behind the lid line; both eyes look a touch down the road
-		var front := _face_point_xy(side * EYE_X, EYE_Y, false).z
-		eye.transform = Transform3D(Basis.from_euler(Vector3(0.08, -side * 0.04, 0.0)),
-				Vector3(side * EYE_X, EYE_Y, front - EYE_R + 0.004))
+		# the cornea sits just under the lids, inside the socket (it used to stand 8 mm proud of
+		# the socket floor, so the whole ball bulged through the skin round the opening: goggle
+		# eyes); both eyes look a touch down the road, the upper lid over the top of the iris
+		var front := _face_point_xy(side * EYE_X, EYE_Y, true).z
+		eye.transform = Transform3D(Basis.from_euler(Vector3(0.12, -side * 0.04, 0.0)),
+				Vector3(side * EYE_X, EYE_Y, front - EYE_R + 0.0008))
 		head.add_child(eye)
 		eyes.append(eye)
 	# a soft character fill under the brim, like a game's face light: the hat and hood put the
@@ -204,7 +208,7 @@ func _add_face(head: Node3D) -> void:
 	fill = OmniLight3D.new()
 	fill.name = "FaceFill"
 	fill.light_color = Color(1.0, 0.86, 0.72)
-	fill.light_energy = 0.26
+	fill.light_energy = FILL_NOON
 	fill.omni_range = 0.7
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
@@ -213,8 +217,11 @@ func _add_face(head: Node3D) -> void:
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
 
-## Midday shade light (see `light_face`): the fill's 0.26 was tuned against it.
+## Midday shade light (see `light_face`): the fill's noon energy was tuned against it.
 const NOON_SHADE := 1.16
+## The fill at noon: 0.26 lit the face like a bright orange doll under the brim; the hat's
+## shade should still read as shade.
+const FILL_NOON := 0.17
 
 ## Keep the face fill in step with the light the scene throws into the shade under the brim:
 ## a constant warm lamp glowed orange under a blue moonlit hat at night and went flat against
@@ -225,9 +232,9 @@ func light_face(shade: Color) -> void:
 		return
 	var lum := shade.r * 0.3 + shade.g * 0.59 + shade.b * 0.11
 	var k := clampf(lum / NOON_SHADE, 0.0, 1.4)
-	fill.light_energy = 0.26 * clampf(pow(k, 0.7), 0.12, 1.3)
+	fill.light_energy = FILL_NOON * clampf(pow(k, 0.7), 0.12, 1.3)
 	var hue := shade / maxf(maxf(shade.r, shade.g), maxf(shade.b, 1e-4))
-	fill.light_color = hue.lerp(Color(1.0, 0.86, 0.72), 0.45)
+	fill.light_color = hue.lerp(Color(1.0, 0.88, 0.78), 0.4)
 
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:

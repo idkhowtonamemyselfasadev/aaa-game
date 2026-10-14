@@ -7,7 +7,7 @@ render_mode cull_disabled;
 // eyeballs sit behind them. `eyes` holds the two eye centres (x, y) in mesh space; `eye_size`
 // is the half width and the half height at the middle of the opening.
 
-uniform vec3 skin_col : source_color = vec3(0.40, 0.29, 0.225);
+uniform vec3 skin_col : source_color = vec3(0.34, 0.255, 0.21);
 uniform vec3 lid_col : source_color = vec3(0.30, 0.17, 0.13);
 uniform vec4 eyes = vec4(-0.031, 1.968, 0.031, 1.968);
 uniform vec2 eye_size = vec2(0.0135, 0.0037);
@@ -36,7 +36,7 @@ float almond(vec2 p, vec2 c, float side) {
 	float t = clamp(d.x * side / eye_size.x, -1.0, 1.0);   // -1 inner corner .. 1 outer
 	d.y -= 0.0012 * t;
 	float sh = pow(max(1.0 - t * t, 0.0), 0.75);
-	float top = eye_size.y * sh * 1.15;
+	float top = eye_size.y * sh * 1.05;
 	float bot = -eye_size.y * sh * 0.8;
 	float inside_x = abs(d.x) - eye_size.x;
 	return max(inside_x, max(d.y - top, bot - d.y));
@@ -92,7 +92,7 @@ void fragment() {
 	AO = mix(0.55, 1.0, smoothstep(0.0, 0.009, de)) * mix(0.8, 1.0, smoothstep(0.0, 0.006, -by))
 			* mix(0.15, 1.0, tuck);
 	AO_LIGHT_AFFECT = 0.8;
-	SSS_STRENGTH = 0.55;
+	SSS_STRENGTH = 0.35;
 	SSS_TRANSMITTANCE_COLOR = vec4(0.9, 0.3, 0.2, 1.0);
 	SSS_TRANSMITTANCE_DEPTH = 0.08;
 	SSS_TRANSMITTANCE_BOOST = 0.15;

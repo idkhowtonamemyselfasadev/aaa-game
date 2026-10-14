@@ -2119,10 +2119,10 @@ func _facelight_test() -> void:
 	var dusk: float = got[18.4][0]
 	var night: float = got[23.0][0]
 	var nc: Color = got[23.0][1]
-	if absf(noon - 0.26) > 0.05:
-		return _combat_done(false, "noon face fill %.3f is off its tuned 0.26" % noon)
+	if absf(noon - HeroGarb.FILL_NOON) > 0.04:
+		return _combat_done(false, "noon face fill %.3f is off its tuned %.2f" % [noon, HeroGarb.FILL_NOON])
 	# exposure opens up to 1.6 at night vs 0.85 at noon: compare what reaches the screen
-	if dusk < 0.08 or night * 1.6 > noon * 0.85 * 0.8:
+	if dusk < noon * 0.3 or night * 1.6 > noon * 0.85 * 0.8:
 		return _combat_done(false, "face fill does not dim from noon through dusk into night")
 	if nc.b <= nc.r:
 		return _combat_done(false, "the night face fill is still warm")
