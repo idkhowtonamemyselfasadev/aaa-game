@@ -36,10 +36,38 @@ float almond(vec2 p, vec2 c, float side) {
 	float t = clamp(d.x * side / eye_size.x, -1.0, 1.0);   // -1 inner corner .. 1 outer
 	d.y -= 0.0012 * t;
 	float sh = pow(max(1.0 - t * t, 0.0), 0.75);
-	float top = eye_size.y * sh * 1.05;
+	float top = eye_size.y * sh * 0.92;   // a relaxed upper lid over the top of the iris
 	float bot = -eye_size.y * sh * 0.8;
 	float inside_x = abs(d.x) - eye_size.x;
 	return max(inside_x, max(d.y - top, bot - d.y));
+}
+
+// Relief of the skin in metres (negative = sunk): a coarse weathered grain, crow's feet fanning
+// from the outer eye corners, a crease under each lower lid and two frown lines between the
+// brows. Drawn as a bump on the shading normal; also darkens the grooves a little.
+float skin_relief(vec2 p, float de) {
+	float h = (vnoise(p * 420.0) - 0.5) * 0.00018 + (vnoise(p * 1300.0 + 11.0) - 0.5) * 0.00006;
+	for (int i = 0; i < 2; i++) {
+		float side = i == 0 ? -1.0 : 1.0;
+		vec2 c = vec2(side * (abs(eyes.z) + eye_size.x + 0.0015), eyes.y + 0.0012);
+		vec2 q = p - c;
+		float r = length(q);
+		float a = atan(q.y, q.x * side);
+		float fan = (1.0 - smoothstep(0.55, 0.9, abs(a))) * smoothstep(0.0015, 0.004, r)
+				* (1.0 - smoothstep(0.009, 0.016, r));
+		float wob = vnoise(vec2(r * 300.0, float(i) * 5.0)) * 1.2;
+		float line = pow(abs(sin(a * 9.0 + wob + float(i))), 6.0);
+		h -= 0.00028 * fan * line;
+	}
+	// a crease running under each lower lid, ~4 mm below the lash line
+	float below = step(p.y, eyes.y - 0.001);
+	h -= 0.00022 * below * exp(-pow((de - 0.0045) / 0.0009, 2.0))
+			* (1.0 - smoothstep(0.004, 0.012, abs(abs(p.x) - abs(eyes.z) - 0.003)));
+	// two short frown lines between the brows
+	float fx = abs(abs(p.x) - 0.0055);
+	h -= 0.00025 * exp(-pow(fx / 0.0006, 2.0)) * smoothstep(1.972, 1.978, p.y)
+			* (1.0 - smoothstep(1.988, 1.996, p.y));
+	return h;
 }
 
 void vertex() {
@@ -76,6 +104,16 @@ void fragment() {
 	alb = mix(alb, vec3(0.035, 0.026, 0.02), brow * (0.55 + 0.45 * hair));
 	float rough = mix(0.52, 0.4, lid) + 0.1 * n;
 	rough = mix(rough, 0.7, brow);
+	// skin relief as a bump on the view-space normal (surface-gradient bump mapping)
+	float h = skin_relief(p, de);
+	alb *= 1.0 + clamp(h / 0.00028, -1.0, 0.3) * 0.25;
+	vec3 dpx = dFdx(VERTEX);
+	vec3 dpy = dFdy(VERTEX);
+	vec3 r1 = cross(dpy, NORMAL);
+	vec3 r2 = cross(NORMAL, dpx);
+	float det = dot(dpx, r1);
+	vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+	NORMAL = normalize(abs(det) * NORMAL - grad * 1.6);
 	vec3 wn = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wn, wp, n), 1.0);
