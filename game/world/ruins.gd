@@ -27,6 +27,9 @@ var _dims: Array[Vector3] = []          # per variant: full size of the block me
 var _per: Array = []                    # per variant: [Transform3D, Color]
 var _body: StaticBody3D
 var seal: ShrineSeal
+var ivy: Ivy
+var _crown_n: FastNoiseLite
+var _breach := 0.0
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -50,6 +53,16 @@ func _ready() -> void:
 	_plinth()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
+	ivy = Ivy.new()
+	ivy.name = "Ivy"
+	add_child(ivy)
+	ivy.build(self, _terrain, seed + 31)
+
+## World y of the keep's broken crown at angle a on the face of radius r (before the per-block
+## jitter; the crest course is ragged ~0.25 m round it).
+func wall_top(a: float, r: float) -> float:
+	var gy := _terrain.height_at(site.x + cos(a) * r, site.z + sin(a) * r)
+	return gy + _crown(_crown_n, a, _breach, 2.2, 7.4)
 
 ## Wall crown height (m above the site floor) at angle a round the tower.
 func _crown(n: FastNoiseLite, a: float, breach: float, lo: float, hi: float) -> float:
@@ -66,6 +79,8 @@ func _tower() -> void:
 	n.frequency = 0.02
 	n.fractal_octaves = 3
 	var breach := atan2(-site.z, -site.x)         # toward the village
+	_crown_n = n
+	_breach = breach
 	var floor_y := site.y
 	var base := INF
 	for k in 24:

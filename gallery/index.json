@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261010-1105-shade-tree.jpg",
-  "time": "2026-10-10T11:05:07Z",
-  "caption": "Backlit oak grove at 15:30: the shadowed grass and trunks now read with cool skylight instead of crushing to black; leaf cards still look like flat blobs up close.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1105-shade-rocks.jpg",
-  "time": "2026-10-10T11:05:07Z",
-  "caption": "Noon meadow and oak-crowned hills: shade under the grass is readable now; boulders are too small, hill ground is bare procedural brown.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1105-shade-village.jpg",
-  "time": "2026-10-10T11:05:07Z",
-  "caption": "Village edge at 16:30, previously half black: the shadowed meadow is now visible, but the sky is too dark navy for late afternoon and the horizon is empty.",
-  "verdict": "fail"
- },
- {
-  "file": "20261010-1116-afternoon-sky-blue.jpg",
-  "time": "2026-10-10T11:16:48Z",
-  "caption": "16:30 over the village meadow: the sky is now a deep clear blue instead of navy and the shaded meadow reads; a tree trunk still blocks the left edge and the hills are bare procedural orange.",
-  "verdict": "fail"
- },
- {
   "file": "20261010-1116-noon-meadow-sky.jpg",
   "time": "2026-10-10T11:16:48Z",
   "caption": "Noon oak slope under a bright blue sky with readable shadow sides; leaf cards are blobby up close and the valley floor is bare brown.",
@@ -122,7 +98,7 @@
  {
   "file": "20261010-1900-soldier-glint.jpg",
   "time": "2026-10-10T19:40:00Z",
-  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails — the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
+  "caption": "Hollow Soldier at the peak of its wind-up: grey ash-stone body with the ember flaring in the chest and a glint on the spear blade as the tell; still fails \u2014 the sci-fi armour silhouette shows under the ash and the backlit foreground grass is blown out.",
   "verdict": "fail"
  },
  {
@@ -897,6 +873,18 @@
   "file": "20261014-0311-keep-floor-litter.jpg",
   "time": "2026-10-14T03:11:03Z",
   "caption": "Keep floor round the Shrine of Binding at dusk: warm dark beaten earth with big and small oak leaves heaped in drifts and dark twigs, the white pebble specks and stray daisies gone; the floor still reads a little too dark and flat in shade and the hero's face is lost under the hat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0441-keep-ivy-range.jpg",
+  "time": "2026-10-14T04:41:00Z",
+  "caption": "The watchtower ruin from the approach in late-morning sun: ivy now climbs the keep's inner face in dark green mats seen through the breach; the outer face toward the camera is still bare and the near curtain blocks read a bit uniform.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261014-0441-keep-ivy-close.jpg",
+  "time": "2026-10-14T04:41:00Z",
+  "caption": "Inside the keep over the Shrine of Binding: dense shingled ivy with lobed dark leaves and light young tips climbs the inner wall; the mats stand off the stone a little like shrubs, read too evenly saturated green, and the hero's face is still lost under the hat.",
   "verdict": "fail"
  }
 ]

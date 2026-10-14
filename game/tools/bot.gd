@@ -1832,6 +1832,17 @@ func _ruin_test() -> void:
 	print("BOT ruin: site %s, %d stones, %d colliders, nearest tree/rock %.1f m" % [rs, ruins.block_count, ruins.get_node("RuinCollision").get_child_count(), near])
 	if ruins.block_count < 400 or near < 15.0:
 		return _combat_done(false, "ruin not built or overgrown by flora")
+	# ivy on the keep: enough leaves, none floating clear of the wall faces or above the crown
+	var stray := 0
+	for shape in ruins.ivy.leaves:
+		for it in shape:
+			var o: Vector3 = (it[0] as Transform3D).origin
+			var rr := Vector2(o.x - rs.x, o.z - rs.z).length()
+			if not ((rr > 4.55 and rr < 4.9) or (rr > 2.6 and rr < 2.95)):
+				stray += 1
+	print("BOT ruin: ivy %d leaves, %d off the wall" % [ruins.ivy.leaf_count, stray])
+	if ruins.ivy.leaf_count < 800 or stray > 0:
+		return _combat_done(false, "ivy missing or leaves off the wall")
 	var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
 	var start := rs + to_v * 26.0
 	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
