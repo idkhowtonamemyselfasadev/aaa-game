@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-0024-sweep-cut.jpg",
-  "time": "2026-10-11T00:24:33Z",
-  "caption": "The sweep mid-arc cutting flat through the hero at waist height; no spear swing trail yet, bodies are still the sci-fi placeholder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-0143-fireflies.jpg",
-  "time": "2026-10-11T01:43:53Z",
-  "caption": "Night meadow at 21:30: fireflies drift and blink over the grass, the brightest few lighting the blades green around them; the hero is still the sci-fi placeholder and the far ridges glow brighter than the night sky.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0143-midges.jpg",
   "time": "2026-10-11T01:43:53Z",
   "caption": "Low evening sun through the oak grove with a midge swarm glinting beside the trunk; the glints are subtle (a few px), canopy leaf cards are still large and flat.",
@@ -897,6 +885,12 @@
   "file": "20261015-0130-face-side.jpg",
   "time": "2026-10-15T01:11:50Z",
   "caption": "Hero portrait at 10:30: the hood now ends in a short collar over the shoulders; the near side still reads as a narrow strip and the eyes look a little startled.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-0220-face-wrap.jpg",
+  "time": "2026-10-15T02:20:00Z",
+  "caption": "Hero portrait at 10:30: the hood now wraps round the sides of the face cloth instead of a thin strip beside it; eyes still a little startled and a pale patch on the left brow.",
   "verdict": "fail"
  }
 ]

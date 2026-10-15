@@ -145,17 +145,22 @@ func _hood_at(a: float, v: float) -> Vector3:
 	# the cowl is drawn forward round the face, so its rim stands proud of the brow and cheeks
 	var fwd := 0.045 * pow(cos(a) * 0.5 + 0.5, 4.0) * smoothstep(0.03, 0.12, v) \
 			* (1.0 - smoothstep(0.5, 0.78, v))
-	return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43 + lift, cz + cos(a) * (0.192 * r + fwd))
+	# over the cheeks the cowl stands a little off the face cloth it now wraps further round
+	var cheek := 0.012 * exp(-pow((absf(wrapf(a, -PI, PI)) - 0.6) / 0.3, 2.0)) \
+			* smoothstep(0.3, 0.5, v) * (1.0 - smoothstep(0.8, 1.0, v))
+	return Vector3(sin(a) * (0.168 * r + cheek), 2.09 - v * 0.43 + lift,
+			cz + cos(a) * (0.192 * r + fwd + cheek))
 
 ## Half-angle of the face opening at `v`: an elliptic arch over the eyes, straight sides
-## down the cheeks, then the Hollow cowl's wide gap round the face cloth closing at the throat.
+## down the cheeks, then a gap round the face cloth closing at the throat -- narrower than the
+## Hollow cowl's, so the hood wraps the cloth's sides instead of standing as a strip beside it.
 func _hood_gap(v: float) -> float:
 	var y := 2.09 - v * 0.43
 	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
 	var dy := maxf(y - HOOD_YC, 0.0) / HOOD_H
 	var half := HOOD_W * sqrt(maxf(1.0 - dy * dy, 0.0)) * (1.0 + 0.05 * sin(v * 19.0 + 0.7))
 	var arch := asin(clampf(half / (0.168 * maxf(dome, 0.05)), 0.0, 0.99))
-	var low := 0.22 + 0.42 * smoothstep(0.12, 0.4, v) - 0.5 * smoothstep(0.72, 1.0, v)
+	var low := 0.22 + 0.32 * smoothstep(0.12, 0.4, v) - 0.5 * smoothstep(0.72, 1.0, v)
 	return lerpf(arch, low, smoothstep(0.42, 0.56, v))
 
 ## A conical woven straw hat (douli): a shallow cone from the crown point out to a wide brim
