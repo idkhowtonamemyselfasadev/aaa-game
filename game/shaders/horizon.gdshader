@@ -111,8 +111,27 @@ void fragment() {
 	             * (1.0 - smoothstep(0.5, 0.8, slope + (meso - 0.5) * 0.2 + coul * 0.1))
 	             * (1.0 - smoothstep(tl - 60.0, tl + 20.0, wpos.y));
 	forest *= smoothstep(20.0, 140.0, d);
+	// avalanche chutes: below the treeline the couloirs are swept clear of trees, so pale
+	// strips of turf and scree run down through the dark forest and break up the lower flanks
+	// (the flanks read as one flat grey-blue wash at 1.5-2.5 km otherwise)
+	float chute = (1.0 - smoothstep(0.1, 0.32, coul + (fine - 0.5) * 0.15))
+	            * smoothstep(tl - 330.0, tl - 140.0, wpos.y + (macro - 0.5) * 90.0)
+	            * smoothstep(140.0, 260.0, d);
+	forest *= 1.0 - chute * 0.92;
+	// cliff bands: harder beds crop out along the strike as broken dark rock steps across
+	// the flanks, each with a pale talus apron fanning out below it
+	float strike = dot(wpos.xz, acr) / 520.0;
+	float bandv = vnoise(vec2(wpos.y / 36.0 + macro * 3.0, strike));
+	float bandu = vnoise(vec2((wpos.y + 22.0) / 36.0 + macro * 3.0, strike));
+	float flank = smoothstep(150.0, 260.0, d) * (1.0 - smoothstep(snow_line - 80.0, snow_line, wpos.y));
+	float cliff = smoothstep(0.7, 0.78, bandv + (meso - 0.5) * 0.25) * flank;
+	float scree = smoothstep(0.68, 0.78, bandu + (meso - 0.5) * 0.25) * (1.0 - cliff) * flank
+	            * smoothstep(0.25, 0.6, 1.0 - coul + fine * 0.3);
+	forest *= 1.0 - max(cliff, scree * 0.85);
 	vec3 meadow = mix(meadow_a, meadow_b, clamp(meso * 0.8 + fine * 0.3 - 0.2, 0.0, 1.0));
 	vec3 trees  = mix(forest_a, forest_b, fine * 0.7 + meso * 0.3);
+	// stands of different age and species: dark spruce blocks beside lighter birch/larch
+	trees *= mix(0.65, 1.55, smoothstep(0.35, 0.7, fbm(wpos.xz * 0.0016 + 21.0)));
 	// rock on steep faces, with strata bands so cliffs read at distance
 	float strata = vnoise(vec2(wpos.y * 0.15 + meso * 3.0, macro * 4.0));
 	float rockw = smoothstep(0.3, 0.55, slope + (meso - 0.5) * 0.3);
@@ -134,9 +153,19 @@ void fragment() {
 	            * (1.0 - smoothstep(0.12, 0.42, coul + (fine - 0.5) * 0.2));
 	snoww = max(snoww, gsnow * 0.9);
 	// above the treeline and on ribs too steep for forest: dark turf and scrub, not bare grey
-	vec3 turf = alpine * (0.75 + 0.5 * meso) * mix(0.6, 1.0, crease) * mix(0.7, 1.2, coul);
+	// the turf zone is the broad mid band of every massif: at 2 km the haze compresses small
+	// value steps to nothing, so it needs big patches -- dark dwarf pine/juniper on the ribs,
+	// pale dry grass and scree in the couloirs, sunlit meadow shelves between
+	float shelf = smoothstep(0.45, 0.7, fbm(wpos.xz * 0.0025 + 5.0));
+	vec3 turf = alpine * (0.75 + 0.5 * meso) * mix(0.6, 1.0, crease);
+	turf = mix(turf * 0.45, turf * vec3(1.9, 1.75, 1.35), (1.0 - coul) * 0.8 + shelf * 0.5);
 	vec3 col = mix(turf, meadow, 1.0 - smoothstep(60.0, 220.0, d));
+	// chute floors: light grass and avalanche debris, brighter than the forest either side
+	vec3 chutec = mix(alpine * 2.1, rock_a * 1.25, smoothstep(0.4, 0.75, fine + coul * 0.3));
+	col = mix(col, chutec, chute * (1.0 - forest));
 	col = mix(col, trees, forest);
+	col = mix(col, rock_a * vec3(1.45, 1.4, 1.3) * (0.8 + 0.4 * fine), scree);
+	col = mix(col, rock_b * (0.8 + 0.6 * strata), cliff * 0.95);
 	col = mix(col, rock, rockw);
 	col = mix(col, snow, snoww);
 	col *= 0.85 + 0.3 * fine;
