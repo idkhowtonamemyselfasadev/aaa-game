@@ -86,6 +86,12 @@ void fragment() {
 			g = mix(g, ring, top);
 		}
 		alb = mix(alb, oak_dark, crack * 0.85);
+		// rust washed down out of the iron band in streaks and runs below it
+		float below = 1.56 - obj.y;
+		float runs = smoothstep(0.45, 0.8, vnoise(vec2(around * 48.0, 0.3))) * (0.6 + 0.4 * fine);
+		float stain = step(0.0, below) * runs * exp(-below / (0.05 + 0.18 * runs));
+		stain = max(stain, step(0.0, below) * smoothstep(0.02, 0.0, below) * 0.7);
+		alb = mix(alb, vec3(0.30, 0.15, 0.07), stain * 0.8);
 		float damp = smoothstep(0.35, -0.05, h);
 		alb = mix(alb, oak_dark * 1.3, damp * 0.6);
 		float moss = smoothstep(0.62, 0.8, fbm(vec2(around * 12.0, h * 9.0)) + damp * 0.4) * smoothstep(0.5, 0.2, h);
@@ -94,13 +100,57 @@ void fragment() {
 		bump = g * 0.5 + fine * 0.3 - crack * 1.2;
 		ao = 1.0 - crack * 0.6;
 	} else if (layer < 0.5) {
-		// hand-forged iron band, rusted, a few hammer facets
-		float r = fbm(vec2(around * 26.0, h * 90.0));
-		float flake = smoothstep(0.45, 0.7, r);
-		alb = mix(iron, rust, flake);
-		rough = mix(0.5, 0.95, flake);
-		metal = mix(0.8, 0.1, flake);
-		bump = r * 0.6 + vnoise(vec2(around * 60.0, h * 40.0)) * 0.3;
+		// hand-forged iron band, weathered to a brown-grey oxide: flat hammer facets (planar
+		// tilts per peen blow), the high spots of the facets worn back to dull grey iron by
+		// staff blows, orange bloom and dark scale in the hollows and along the edges, and
+		// two domed rivet heads where the strap ends overlap
+		vec2 m = vec2(around * 0.66, h);     // metres round / up (circumference ~0.66 m)
+		vec2 cell = m / 0.022;
+		vec2 ci = floor(cell);
+		float best = 9.0;
+		vec2 bo = vec2(0.0);
+		vec2 bid = vec2(0.0);
+		for (int j = -1; j <= 1; j++) {
+			for (int i = -1; i <= 1; i++) {
+				vec2 id = ci + vec2(float(i), float(j));
+				vec2 o = vec2(hash(id), hash(id + 17.3)) * 0.8 + 0.1;
+				vec2 d = id + o - cell;
+				float dd = dot(d, d);
+				if (dd < best) { best = dd; bo = d; bid = id; }
+			}
+		}
+		vec2 slope = vec2(hash(bid + 3.7), hash(bid + 9.1)) - 0.5;
+		float facet = dot(-bo, slope) * 1.6;          // planar tilt inside each peen mark
+		float hi = smoothstep(0.0, 0.5, facet + 0.25);  // proud part of the facet
+		float edge = 1.0 - smoothstep(0.0, 0.006, min(h - 1.56, 1.62 - h)); // band edges
+		float r = fbm(vec2(around * 30.0, h * 70.0));
+		float pit = smoothstep(0.55, 0.75, fbm(vec2(around * 90.0, h * 160.0)));
+		vec3 oxide = mix(vec3(0.20, 0.15, 0.12), vec3(0.30, 0.17, 0.09), r);
+		vec3 bloom = vec3(0.44, 0.21, 0.07);
+		vec3 bare = vec3(0.34, 0.31, 0.27);
+		float wear = smoothstep(0.72, 0.98, hi * (0.6 + 0.6 * vnoise(vec2(around * 8.0, h * 30.0))));
+		alb = mix(oxide, bloom, smoothstep(0.55, 0.8, r) * (1.0 - hi) * 0.8);
+		alb = mix(alb, vec3(0.09, 0.075, 0.065), max(edge * 0.6, pit * 0.5));
+		alb = mix(alb, bare, wear * (1.0 - edge));
+		rough = mix(0.88, 0.58, wear) + pit * 0.08;
+		metal = wear * 0.55;
+		bump = facet * 0.9 + r * 0.25 - pit * 0.35;
+		ao = 1.0 - edge * 0.35 - pit * 0.2;
+		// rivets on the overlap (a raised dome, a dark crevice ring round it)
+		for (int k = 0; k < 2; k++) {
+			vec2 rc = vec2(0.31 * 0.66 + float(k) * 0.035, 1.59);
+			float rd = length(m - rc) / 0.009;
+			float dome = sqrt(max(1.0 - rd * rd, 0.0));
+			float ring = smoothstep(0.85, 1.0, rd) * smoothstep(1.35, 1.0, rd);
+			bump += dome * 2.5;
+			alb = mix(alb, mix(oxide, bare, 0.35), dome > 0.0 ? 1.0 : 0.0);
+			alb = mix(alb, vec3(0.06, 0.05, 0.045), ring);
+			ao *= 1.0 - ring * 0.5;
+		}
+		// the overlapped strap end: a step and a dark seam down the band
+		float seam = smoothstep(0.004, 0.0, abs(m.x - 0.31 * 0.66 - 0.055));
+		alb = mix(alb, vec3(0.06, 0.05, 0.045), seam);
+		bump += step(m.x, 0.31 * 0.66 + 0.055) * step(0.31 * 0.66 - 0.02, m.x) * 0.6;
 	} else if (layer < 0.83 && stk.x > 0.5) {
 		// one straw stalk: a hollow round culm, gold to pale wheat to grey-weathered by stalk,
 		// with dark nodes, a lit ridge down the middle and darker edges where it rolls away;

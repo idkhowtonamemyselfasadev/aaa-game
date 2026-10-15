@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-0807-fallen.jpg",
-  "time": "2026-10-11T08:07:21Z",
-  "caption": "The fallen hero lying face-down in the amber grass before the screen fades to black; reads as a body, but the pose is a rigid plank and the sci-fi armour is still the model.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0849-kneel.jpg",
   "time": "2026-10-11T08:49:03Z",
   "caption": "Half a second after a killing blow the hero's knees fold onto the grass (bone-level bend, legs no longer sink into the ground), chest curled, one arm out; still the sci-fi Vanguard armour, coarse near grass.",
@@ -891,6 +885,12 @@
   "file": "20261015-1400-peaks.jpg",
   "time": "2026-10-15T14:17:00Z",
   "caption": "Morning over the vale: the far ring now rises as broad shouldered massifs that fade back in hazy layers instead of needle cones; the right-hand massif is still a milky flat wash in the haze and its faces lack forest/rock detail at this range.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-1520-post-iron.jpg",
+  "time": "2026-10-15T15:20:00Z",
+  "caption": "The practice post's iron band now reads as rusty forged iron with hammer facets worn dull grey, two rivets and rust runs staining the oak below, instead of a flat black stripe; at this range the band is small and the far peaks still wash pale.",
   "verdict": "fail"
  }
 ]
