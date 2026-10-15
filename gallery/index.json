@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-1120-soldier-legs.jpg",
-  "time": "2026-10-11T11:20:00Z",
-  "caption": "Hollow Soldier legs now bound in hemp: thigh, shin and boot wraps hide the old armour; the wraps are too thick and the boot wrap is a lump.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1120-soldier-side.jpg",
-  "time": "2026-10-11T11:20:00Z",
-  "caption": "Side view of the Hollow Soldier in the meadow: hood, mantle, tabards and bandaged limbs read as one revenant, but the silhouette is padded and bulky.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1220-butterfly-macro.jpg",
   "time": "2026-10-11T12:20:00Z",
   "caption": "Macro shot with depth of field of a small tortoiseshell basking on the meadow at 11 h; reads as a butterfly, but it hovers on no grass stem, its pattern washes out in the warm grade, and the near grass blades are flat ribbons over bare brown soil.",
@@ -897,6 +885,12 @@
   "file": "20261015-2030-peaks-dusk.jpg",
   "time": "2026-10-15T20:30:00Z",
   "caption": "The far ring at dusk: dimmer moonlit snow and no swirl, but the central massif shows regular pale vertical stripes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-2110-peaks-ribs.jpg",
+  "time": "2026-10-15T21:10:38Z",
+  "caption": "Far massifs at 10:30: ribs and snow couloirs now wander, fork and vary in width with fuller summit snow instead of even organ-pipe flutes; the lower flanks still read as a flat haze band.",
   "verdict": "fail"
  }
 ]

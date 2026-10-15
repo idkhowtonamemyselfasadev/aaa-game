@@ -124,9 +124,18 @@ void fragment() {
 	// averaged two noises and washed the ribs out).
 	float rr = length(wpos.xz);
 	vec2 rdir = wpos.xz / max(rr, 1.0) * 2400.0;
-	float coul = rnoise3(vec3(rdir / 95.0, rr / 420.0) + 3.7) * 0.6
-	           + rnoise3(vec3(rdir / 38.0, rr / 170.0) + 9.2) * 0.4;
-	coul = smoothstep(0.35, 0.95, coul);                     // 1 on a rib crest, 0 in a couloir
+	// the bare lattice noise spaced the ribs like organ pipes: bend them sideways along the
+	// ring (km-scale wander + a 200 m kink so ribs fork and converge) and let the main and
+	// secondary rib sets drift at different rates down the face
+	vec2 rtan = vec2(-rdir.y, rdir.x) / 2400.0;
+	float wander = (fbm(wpos.xz * 0.0014 + 7.0) - 0.5) * 300.0
+	             + (fbm(vec2(rr * 0.005, macro * 3.0) + rdir * 0.004) - 0.5) * 90.0;
+	vec2 rdw = rdir + rtan * wander;
+	float coul = rnoise3(vec3(rdw / 95.0, rr / 420.0) + 3.7) * 0.6
+	           + rnoise3(vec3((rdw + rtan * (meso - 0.5) * 60.0) / 38.0, rr / 170.0) + 9.2) * 0.4;
+	// rib width varies by massif: broad buttresses on some faces, thin fins on others
+	float rw = fbm(rdir * 0.0011 + 13.0);
+	coul = smoothstep(0.2 + 0.3 * rw, 0.8 + 0.25 * rw, coul); // 1 on a rib crest, 0 in a couloir
 	// forest climbs the lower flanks in tongues up the couloirs (deeper soil, shelter), thinning
 	// on the ribs: tongues of dark trees break up the massif bodies under the rock
 	float tl = snow_line - 170.0 + (macro - 0.5) * 120.0 + (1.0 - coul) * 70.0;
@@ -167,10 +176,12 @@ void fragment() {
 	rock *= mix(0.45, 1.1, crease);                           // shadowed gully floors
 	rock *= mix(0.55, 1.35, coul);                            // dark wet couloirs, pale ribs
 	// snow: above the line, only where it can settle (flatter), streaky down gullies; it lies
-	// in the gullies longer than on the ribs between them
+	// in the gullies longer than on the ribs between them; high up (summit snowfields) it
+	// plasters all but the steepest crests
 	float snoww = smoothstep(snow_line - 30.0, snow_line + 40.0,
 	                         wpos.y + (meso - 0.5) * 90.0 + (1.0 - crease) * 60.0 * steep0)
-	            * (1.0 - smoothstep(0.42, 0.7, slope - fine * 0.2 - (1.0 - crease) * 0.3));
+	            * (1.0 - smoothstep(0.42, 0.7, slope - fine * 0.2 - (1.0 - crease) * 0.3
+	                                 - smoothstep(snow_line + 40.0, snow_line + 160.0, wpos.y) * 0.22));
 	// firn and old avalanche snow lie on in the couloirs well below the summit snowfields:
 	// pale streaks down the dark rock, the strongest value break a far face has
 	float gsnow = smoothstep(snow_line - 190.0, snow_line - 60.0, wpos.y + (meso - 0.5) * 70.0)
