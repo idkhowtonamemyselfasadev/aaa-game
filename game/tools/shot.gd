@@ -717,6 +717,10 @@ func _ready() -> void:
 		await _action.call()
 		for i in 2:
 			await get_tree().process_frame
+	if "menu" in args:   # the pause menu over the frame
+		world.pause_menu.toggle()
+		for i in 2:
+			await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())

@@ -56,6 +56,7 @@ func _ready() -> void:
 		q.max_distance = 260.0
 		q.attenuation_filter_cutoff_hz = 4500.0   # distance takes the top off
 		q.attenuation_filter_db = -18.0
+		q.bus = &"Wildlife"
 		add_child(q)
 		_wild.append(q)
 	for i in 14:
@@ -64,6 +65,7 @@ func _ready() -> void:
 		p.max_distance = 70.0
 		p.attenuation_filter_cutoff_hz = 9000.0
 		p.attenuation_filter_db = -12.0
+		p.bus = &"SFX"
 		add_child(p)
 		_pool.append(p)
 	build_ms = Time.get_ticks_msec() - t0

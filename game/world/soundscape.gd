@@ -48,6 +48,7 @@ func _ready() -> void:
 		p.max_distance = 160.0
 		p.attenuation_filter_cutoff_hz = 6000.0   # far calls lose their top
 		p.attenuation_filter_db = -18.0
+		p.bus = &"Wildlife"
 		add_child(p)
 		_pool.append(p)
 	build_ms = Time.get_ticks_msec() - t0
@@ -158,6 +159,7 @@ func _on_thunder(strength: float, dist: float) -> void:
 	p.stream = _thunder_near if near else _thunder_far
 	p.volume_db = linear_to_db(clampf(strength, 0.15, 1.0)) - clampf(dist / 400.0, 0.0, 12.0) + 2.0
 	p.pitch_scale = _rng.randf_range(0.85, 1.1)
+	p.bus = &"Ambience"
 	add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)
@@ -172,6 +174,7 @@ func _bed(nm: String, s: AudioStreamWAV, base_db: float) -> void:
 	p.set_meta("base", base_db)
 	p.volume_db = -80.0
 	p.autoplay = true
+	p.bus = &"Ambience"
 	add_child(p)
 	_beds[nm] = p
 

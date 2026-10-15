@@ -26,6 +26,8 @@ var trample: Trample
 var herd: Herd
 var soundscape: Soundscape
 var foley: Foley
+var audio_mix: AudioMix
+var pause_menu: PauseMenu
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 var face_shade := Color(0, 0, 0)    # shade light under the brim: feeds the hero's face fill
@@ -87,6 +89,15 @@ func _ready() -> void:
 	herd = Herd.new()
 	herd.name = "Herd"
 	add_child(herd)
+	# the mix: per-layer buses and the stone reverb inside the keep
+	audio_mix = AudioMix.new()
+	audio_mix.name = "AudioMix"
+	audio_mix.world = self
+	add_child(audio_mix)
+	pause_menu = PauseMenu.new()
+	pause_menu.name = "PauseMenu"
+	pause_menu.mix = audio_mix
+	add_child(pause_menu)
 	# wind, rain, birdsong, crickets, rook calls and thunder, mixed by clock and weather
 	soundscape = Soundscape.new()
 	soundscape.name = "Soundscape"

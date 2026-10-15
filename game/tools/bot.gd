@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -74,6 +74,9 @@ func _ready() -> void:
 		return
 	if name == "foley":
 		_foley_test()
+		return
+	if name == "mix":
+		_mix_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1182,6 +1185,68 @@ func _foley_test() -> void:
 	if grass < 4 or wet < 4 or keep != "grit":
 		return _combat_done(false, "footfalls missing or on the wrong surface")
 	_combat_done(true, "swishes, impacts, slam, dodge and footfalls on grass/wet/grit all sound")
+
+func _mix_test() -> void:
+	var p := _player
+	var mix: AudioMix = _world.audio_mix
+	var f: Foley = _world.foley
+	var sc: Soundscape = _world.soundscape
+	var rs: Vector3 = _world.get_node("Flora").ruin_site
+	# the layers exist and route as Master > Ambience > Wildlife, Master > SFX, Master > Music
+	var miss := []
+	for b: String in AudioMix.BUSES:
+		if AudioServer.get_bus_index(b) == -1:
+			miss.append(b)
+	var sends := "%s %s %s" % [AudioServer.get_bus_send(AudioServer.get_bus_index("Wildlife")),
+		AudioServer.get_bus_send(AudioServer.get_bus_index("Ambience")), AudioServer.get_bus_send(AudioServer.get_bus_index("SFX"))]
+	print("BOT mix: buses %d, missing %s, sends Wildlife/Ambience/SFX -> %s" % [AudioServer.bus_count, str(miss), sends])
+	if not miss.is_empty() or sends != "Ambience Master Master":
+		return _combat_done(false, "bus layout wrong")
+	var wrong := 0
+	for n in f.get_children() + sc.get_children():
+		if n is AudioStreamPlayer3D or n is AudioStreamPlayer:
+			if not (String(n.bus) in ["SFX", "Wildlife", "Ambience"]):
+				wrong += 1
+	print("BOT mix: %d players on Master directly" % wrong)
+	if wrong > 0:
+		return _combat_done(false, "players not routed to a layer")
+	# out on the meadow: dry; inside the keep: the stone rings and the ambience dulls
+	await _ticks(60)
+	var open_e := mix.enclosure
+	var to_v := Vector3(-rs.x, 0, -rs.z).normalized()
+	var inside := rs + to_v * 1.7
+	p.global_position = Vector3(inside.x, rs.y + 0.6, inside.z)
+	await _ticks(60 * 3)
+	var verb := AudioServer.get_bus_effect(AudioServer.get_bus_index("SFX"), 0) as AudioEffectReverb
+	var lp := AudioServer.get_bus_effect(AudioServer.get_bus_index("Ambience"), 0) as AudioEffectLowPassFilter
+	print("BOT mix: enclosure open %.2f, in keep %.2f (hero %.1f m from centre), reverb wet %.2f, ambience cut %.0f Hz" % [open_e, mix.enclosure, Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length(), verb.wet, lp.cutoff_hz])
+	if open_e > 0.02 or mix.enclosure < 0.9 or verb.wet < 0.25 or lp.cutoff_hz > 5000.0:
+		return _combat_done(false, "keep did not change the space")
+	var away := rs + to_v * 20.0
+	p.global_position = Vector3(away.x, _world.get_node("Terrain").height_at(away.x, away.z) + 0.5, away.z)
+	await _ticks(60 * 3)
+	print("BOT mix: back on the slope enclosure %.2f, reverb on %s" % [mix.enclosure, AudioServer.is_bus_effect_enabled(AudioServer.get_bus_index("SFX"), 0)])
+	if mix.enclosure > 0.02:
+		return _combat_done(false, "reverb stayed on outside")
+	# the pause menu: pauses, its sliders set the layer volumes and are kept
+	var pm: PauseMenu = _world.pause_menu
+	pm.toggle()
+	var paused := get_tree().paused
+	(pm.sliders["SFX"] as HSlider).value = 0.5
+	(pm.sliders["Music"] as HSlider).value = 0.0
+	var sfx_db := AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX"))
+	var mute := AudioServer.is_bus_mute(AudioServer.get_bus_index("Music"))
+	pm.toggle()
+	var cf := ConfigFile.new()
+	cf.load(AudioMix.SETTINGS)
+	var saved := float(cf.get_value("audio", "sfx", -1.0))
+	print("BOT mix menu: paused %s, unpaused %s, SFX %.1f dB, music muted %s, saved sfx %.2f" % [paused, not get_tree().paused, sfx_db, mute, saved])
+	mix.set_volume("SFX", 1.0)
+	mix.set_volume("Music", 0.8)
+	mix.save_settings()
+	if not paused or get_tree().paused or absf(sfx_db + 6.02) > 0.1 or not mute or absf(saved - 0.5) > 0.01:
+		return _combat_done(false, "pause menu volumes did not apply or save")
+	_combat_done(true, "layers routed, keep reverb in/out, pause menu volumes apply and save")
 
 func _insects_test() -> void:
 	var p := _player

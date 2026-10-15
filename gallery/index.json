@@ -886,5 +886,11 @@
   "time": "2026-10-15T22:21:00Z",
   "caption": "The far ring under a storm front: the massifs now sink to dark storm-grey silhouettes rising out of a low rain band instead of glowing pale cut-outs; their faces show no relief in the rain and the edges are a little crisp for 2 km of downpour.",
   "verdict": "pass"
+ },
+ {
+  "file": "20261015-2334-pause-menu.jpg",
+  "time": "2026-10-15T23:34:00Z",
+  "caption": "Esc now pauses inside the ruined keep and opens a lacquer-and-brass sound panel (master, ambience, wildlife, effects, music); the sliders' grabbers are still Godot's stock white knobs and the dimmed keep behind is flat.",
+  "verdict": "fail"
  }
 ]
