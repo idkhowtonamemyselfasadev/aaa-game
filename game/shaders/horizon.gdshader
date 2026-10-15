@@ -30,6 +30,9 @@ uniform float haze_density = 0.0012;
 // 0.5 still left ~70% haze at 2 km on a clear day and flattened the massif faces into one
 // grey value; storms raise haze_density x7, so they still swallow the ring
 uniform float haze_scale = 0.4;
+// under a storm deck: the haze over the high massifs sinks to this x haze_color (the dark
+// cloud base behind them), while the low ring keeps the valley fog's value
+uniform float haze_top = 1.0;
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -218,5 +221,5 @@ void fragment() {
 	float far = smoothstep(250.0, 1100.0, dist);
 	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.45, night * snoww);
 	SPECULAR *= 1.0 - 0.7 * night;
-	FOG = vec4(haze_color, 1.0 - exp(-dist * haze_density * haze_scale));
+	FOG = vec4(haze_color * mix(1.0, haze_top, smoothstep(60.0, 380.0, wpos.y)), 1.0 - exp(-dist * haze_density * haze_scale));
 }

@@ -7,7 +7,10 @@ extends Node3D
 ## on a dodge and a low swelling breath on a perfect one, a dull blow when the hero is
 ## struck, the soldier's spear hissing through its thrust, and footfalls on grass, on the
 ## keep's gritty floor and splashing in wet ground. During the perfect-dodge slow motion the
-## whole mix slows and deepens with time. Bots read `played` (sound name -> count).
+## whole mix slows and deepens with time. The red deer have voices too: a hind's gruff
+## alarm bark as the herd bolts, the drum of their hooves on the turf (a splashing slap on
+## soaked ground) and, at dusk and before dawn, the stag's long groaning rut roar carried
+## down the vale. Bots read `played` (sound name -> count).
 
 const RATE := 22050
 
@@ -21,6 +24,7 @@ var hero_steps := 0       # footfalls of the hero alone (bots)
 var _rng := RandomNumberGenerator.new()
 var _s := {}              # sound name -> Array[AudioStreamWAV] variants
 var _pool: Array[AudioStreamPlayer3D] = []
+var _wild: Array[AudioStreamPlayer3D] = []   # far-carrying wildlife voices and hooves
 var _pending: Array = []  # [seconds left, name, position node or Vector3, db, pitch]
 var _ruin := Vector3.INF
 
@@ -42,6 +46,18 @@ func _ready() -> void:
 	_s["step_grass"] = [_make_step(0), _make_step(0), _make_step(0), _make_step(0)]
 	_s["step_grit"] = [_make_step(1), _make_step(1), _make_step(1)]
 	_s["step_wet"] = [_make_step(2), _make_step(2), _make_step(2)]
+	_s["bark"] = [_make_bark(1.0), _make_bark(0.9), _make_bark(1.12)]
+	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
+	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
+	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
+	for i in 7:
+		var q := AudioStreamPlayer3D.new()
+		q.unit_size = 10.0
+		q.max_distance = 260.0
+		q.attenuation_filter_cutoff_hz = 4500.0   # distance takes the top off
+		q.attenuation_filter_db = -18.0
+		add_child(q)
+		_wild.append(q)
 	for i in 14:
 		var p := AudioStreamPlayer3D.new()
 		p.unit_size = 6.0
@@ -85,6 +101,16 @@ func _process(delta: float) -> void:
 			_pending.remove_at(i)
 			var at: Vector3 = e[2].call() if e[2] is Callable else e[2]
 			_play(e[1], at, e[3], e[4])
+
+## Gives the red deer herd its voice: alarm barks, galloping hooves and the stag's roar.
+func hook_herd(h: Node) -> void:
+	if h == null or not h.has_signal("barked"):
+		return
+	h.barked.connect(func(at: Vector3) -> void: _play_wild("bark", at, -2.0, 14.0, true))
+	h.roared.connect(func(at: Vector3) -> void: _play_wild("roar", at, 2.0, 30.0, true))
+	h.galloped.connect(func(at: Vector3) -> void:
+		var nm := "gallop_wet" if surface_at(at) == "wet" else "gallop"
+		_play_wild(nm, at + Vector3.UP * 0.05, -9.0, 8.0, false))
 
 # ---------------------------------------------------------------- events
 
@@ -141,7 +167,136 @@ func _play(nm: String, at: Vector3, db: float, pitch := 1.0) -> void:
 	p.play()
 	played[nm] = int(played.get(nm, 0)) + 1
 
+## A wildlife sound on its own far-carrying pool. Hoofbeats only take a free voice (a whole
+## herd at a gallop thins itself out); a bark or a roar steals the oldest one.
+func _play_wild(nm: String, at: Vector3, db: float, unit: float, steal: bool) -> void:
+	var vs: Array = _s.get(nm, [])
+	if vs.is_empty():
+		return
+	var p: AudioStreamPlayer3D = null
+	for q in _wild:
+		if not q.playing:
+			p = q
+			break
+	if p == null:
+		if not steal:
+			return
+		p = _wild[_rng.randi() % _wild.size()]
+	p.stream = vs[_rng.randi() % vs.size()]
+	p.global_position = at
+	p.unit_size = unit
+	p.volume_db = db + _rng.randf_range(-1.5, 1.0)
+	p.pitch_scale = _rng.randf_range(0.94, 1.06)
+	p.play()
+	played[nm] = int(played.get(nm, 0)) + 1
+
 # ---------------------------------------------------------------- synthesis
+
+## Voiced sound through a vocal tract: a band-limited glottal pulse train (with jitter and
+## breath) fed through parallel two-pole formant resonators. `f0s` maps 0..1 -> pitch,
+## `env` 0..1 -> amplitude, `rasp` mixes in a period-doubled roughness.
+func _voice(dur: float, f0s: Callable, env: Callable, formants: Array, breath: float, rasp: float) -> PackedFloat32Array:
+	var n := int(dur * RATE)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var ph := 0.0
+	var jit := 0.0
+	var st := []
+	for f: Array in formants:
+		st.append([0.0, 0.0])
+	var odd := false
+	for i in n:
+		var k := float(i) / n
+		if _rng.randf() < 0.01:
+			jit = _rng.randfn(0.0, 0.025)
+		var f0: float = f0s.call(k) * (1.0 + jit)
+		ph += f0 / RATE
+		if ph >= 1.0:
+			ph -= 1.0
+			odd = not odd
+		# glottal flow derivative: a sharp closing snap once per period, softened
+		var g := -pow(sin(PI * minf(ph / 0.65, 1.0)), 3.0) + 0.55
+		if odd:
+			g *= 1.0 - rasp * _rng.randf_range(0.4, 0.9)
+		var w := _rng.randf() * 2.0 - 1.0
+		var src := g + w * breath
+		var out := 0.0
+		for j in formants.size():
+			var fr: float = formants[j][0]
+			var q: float = formants[j][1]
+			var amp: float = formants[j][2]
+			var gg := 2.0 * sin(PI * fr / RATE)
+			var lo: float = st[j][0]
+			var bp: float = st[j][1]
+			lo += gg * bp
+			bp += gg * (src - lo - bp / q)
+			st[j][0] = lo
+			st[j][1] = bp
+			out += bp * amp
+		x[i] = out * float(env.call(k))
+	return x
+
+## A red deer hind's alarm bark: one gruff, hoarse "bough", sharp onset, dropping pitch.
+func _make_bark(pt: float) -> AudioStreamWAV:
+	var dur := 0.34
+	var x := _voice(dur,
+		func(k: float) -> float: return pt * lerpf(330.0, 210.0, pow(k, 0.7)),
+		func(k: float) -> float: return smoothstep(0.0, 0.03, k) * exp(-maxf(k - 0.18, 0.0) * 7.0),
+		[[620.0 * pt, 4.0, 1.0], [1150.0 * pt, 5.0, 0.55], [2500.0, 6.0, 0.1]], 0.45, 0.6)
+	return _wav(x)
+
+## The stag's rut roar: a long deep groan swelling up and falling away, pushed through a
+## lowered larynx (closely packed low formants), rough with period doubling, then two short
+## grunts. Carries hundreds of metres.
+func _make_roar(pt: float) -> AudioStreamWAV:
+	var x := _voice(2.0,
+		func(k: float) -> float: return pt * (105.0 + 45.0 * sin(PI * pow(k, 0.8)) - 25.0 * k),
+		func(k: float) -> float: return smoothstep(0.0, 0.18, k) * (1.0 - smoothstep(0.7, 1.0, k)) * (0.85 + 0.15 * sin(k * 37.0)),
+		[[290.0, 3.0, 1.0], [560.0, 4.0, 0.8], [860.0, 4.0, 0.5], [1250.0, 5.0, 0.3], [2100.0, 5.0, 0.12]], 0.35, 0.7)
+	var out := PackedFloat32Array()
+	out.resize(int(3.2 * RATE))
+	for i in x.size():
+		out[i] = x[i]
+	for gi in 2:   # grunts
+		var gr := _voice(0.32,
+			func(k: float) -> float: return pt * lerpf(120.0, 85.0, k),
+			func(k: float) -> float: return smoothstep(0.0, 0.08, k) * (1.0 - smoothstep(0.5, 1.0, k)),
+			[[300.0, 3.0, 1.0], [580.0, 4.0, 0.7], [900.0, 4.0, 0.35]], 0.5, 0.8)
+		var at := int((2.15 + 0.5 * gi) * RATE)
+		for i in gr.size():
+			if at + i < out.size():
+				out[at + i] += gr[i] * 0.8
+	return _wav(out)
+
+## One gallop bound: the two fore hooves then the two hinds striking the turf (da-da..dum-dum),
+## a dull thud each with torn sod; on soaked ground a slap and spatter instead of a crunch.
+func _make_gallop(wet: bool) -> AudioStreamWAV:
+	var n := int(0.45 * RATE)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var hits := [0.0, _rng.randf_range(0.04, 0.06), _rng.randf_range(0.13, 0.15), _rng.randf_range(0.18, 0.21)]
+	for h in hits.size():
+		var at := int(float(hits[h]) * RATE)
+		var f := _rng.randf_range(70.0, 95.0)
+		var amp := _rng.randf_range(0.7, 1.0) * (1.0 if h >= 2 else 0.8)
+		var ph := 0.0
+		var lp := 0.0
+		var lp2 := 0.0
+		for j in int(0.2 * RATE):
+			if at + j >= n:
+				break
+			var t := float(j) / RATE
+			ph += TAU * f * (1.0 + 0.6 * exp(-t / 0.01)) / RATE
+			var w := _rng.randf() * 2.0 - 1.0
+			lp += 0.25 * (w - lp)
+			lp2 += 0.05 * (w - lp2)
+			var s := sin(ph) * exp(-t / 0.03)
+			if wet:
+				s += lp2 * 3.5 * exp(-t / 0.05) + lp * 0.3 * exp(-t / 0.09)
+			else:
+				s += (w - lp) * 0.25 * exp(-t / 0.02) + lp * 0.35 * exp(-t / 0.035)
+			x[at + j] += s * amp
+	return _wav(x, 0.75)
 
 func _wav(x: PackedFloat32Array, gain := 0.89) -> AudioStreamWAV:
 	var peak := 0.0001

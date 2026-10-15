@@ -18,6 +18,10 @@ extends Node3D
 
 enum { CALM, ALERT, FLEE }
 
+signal barked(at: Vector3)            # a hind's alarm bark as the herd bolts
+signal galloped(at: Vector3)          # one bound's four hooves drumming the turf
+signal roared(at: Vector3)            # the stag bells at dusk and dawn (rut)
+
 var _terrain: Terrain
 var _trample: Trample
 var hoof_prints := 0             # bots read this: prints pressed since start
@@ -37,6 +41,10 @@ var threat_pos := Vector3.ZERO
 var flee_events := 0             # bots read these
 var alert_events := 0
 var force_bed := false          # shots: lie down whatever the hour
+var roar_t := 20.0              # s to the stag's next roar while the herd is at peace
+var barks := 0                  # bots read these
+var roars := 0
+var _bark_q: Array = []         # [s left, deer] barks still to come in this alarm
 
 class Deer:
 	var pos := Vector3.ZERO
@@ -277,9 +285,37 @@ func _tick(dt: float, th: Array) -> void:
 				_wander = _flee_dir
 				for d: Deer in _deer:
 					d.look_t = _rng.randf_range(3.0, 10.0)
+	for i in range(_bark_q.size() - 1, -1, -1):
+		_bark_q[i][0] -= dt
+		if _bark_q[i][0] <= 0.0:
+			var bd: Deer = _bark_q[i][1]
+			_bark_q.remove_at(i)
+			barks += 1
+			barked.emit(bd.pos + Vector3.UP * 1.3 * bd.scale)
+	_rut(dt)
 	for d: Deer in _deer:
 		_update_deer(d, dt, tp)
 	_write_instances()
+
+## Rut: an undisturbed stag roars now and then through the evening and the small hours
+## before dawn, a long groaning bellow carried down the vale, quiet through the day.
+func _rut(dt: float) -> void:
+	if state != CALM or stags <= 0:
+		return
+	var h := _hour()
+	var dusk := h > 17.5 and h < 23.0
+	var dawn := h > 4.0 and h < 7.0
+	roar_t -= dt
+	if roar_t > 0.0:
+		return
+	roar_t = _rng.randf_range(25.0, 70.0) if (dusk or dawn) else _rng.randf_range(15.0, 30.0)
+	if not (dusk or dawn):
+		return
+	var st: Deer = _deer[_deer.size() - 1]
+	roars += 1
+	st.head_target = 0.0   # head up and stretched out to bellow
+	st.look_t = _rng.randf_range(4.0, 7.0)
+	roared.emit(st.pos + Vector3.UP * 1.5 * st.scale)
 
 func _bolt(from: Vector3) -> void:
 	state = FLEE
@@ -289,6 +325,14 @@ func _bolt(from: Vector3) -> void:
 	anchor = _ground(c)
 	for d: Deer in _deer:
 		d.head_target = 0.0
+	# the hind nearest the threat barks first, one or two others take it up as they run
+	var near: Deer = _deer[0]
+	for d: Deer in _deer:
+		if not d.stag and d.pos.distance_to(from) < near.pos.distance_to(from):
+			near = d
+	_bark_q.append([0.0, near])
+	for k in _rng.randi_range(1, 2):
+		_bark_q.append([_rng.randf_range(0.5, 1.6), _deer[_rng.randi() % _deer.size()]])
 
 func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var want_speed := 0.0
@@ -434,6 +478,7 @@ func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
 			return
 		d.hoof_d = 0.0
 		d.bound += 1
+		galloped.emit(d.pos)
 		if d.bound % 2 == 1:   # every other bound: keeps the shared buffer a long trail
 			return
 		# fore L, fore R, then the hinds landing ahead and wider

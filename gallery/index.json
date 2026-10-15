@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-1220-butterfly-macro.jpg",
-  "time": "2026-10-11T12:20:00Z",
-  "caption": "Macro shot with depth of field of a small tortoiseshell basking on the meadow at 11 h; reads as a butterfly, but it hovers on no grass stem, its pattern washes out in the warm grade, and the near grass blades are flat ribbons over bare brown soil.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1220-butterfly-meadow.jpg",
-  "time": "2026-10-11T12:20:00Z",
-  "caption": "A peacock butterfly settled over the 14 h meadow from half a metre; too small to read its eyes at this range, and the clumped grass over bare brown ground looks like a prototype.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1300-buttercup-drift.jpg",
   "time": "2026-10-11T13:00:00Z",
   "caption": "A buttercup drift speckles the 10:30 meadow with yellow heads above the wind-bent grass; the black soil under the grass and flat blade ribbons still look like a prototype.",
@@ -892,5 +880,11 @@
   "time": "2026-10-15T21:10:38Z",
   "caption": "Far massifs at 10:30: ribs and snow couloirs now wander, fork and vary in width with fuller summit snow instead of even organ-pipe flutes; the lower flanks still read as a flat haze band.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261015-2221-peaks-storm.jpg",
+  "time": "2026-10-15T22:21:00Z",
+  "caption": "The far ring under a storm front: the massifs now sink to dark storm-grey silhouettes rising out of a low rain band instead of glowing pale cut-outs; their faces show no relief in the rain and the edges are a little crisp for 2 km of downpour.",
+  "verdict": "pass"
  }
 ]

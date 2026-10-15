@@ -101,6 +101,7 @@ func _ready() -> void:
 	foley.weather = weather
 	add_child(foley)
 	foley.hook(player, [soldier], trample)
+	foley.hook_herd(herd)
 
 func _build_environment() -> void:
 	var e := Environment.new()
@@ -414,7 +415,12 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	# band; give it the moonlit horizon blue instead, a shade darker than that band
 	var nt := clampf(moon.light_energy / 1.25, 0.0, 1.0) if moon and moon.visible else 0.0
 	hc = hc.lerp(Color(0.045, 0.06, 0.12), nt)   # nt already falls with cloud (moon dims)
+	# under a closing deck the fog colour (lit for the near air) was brighter than the dark
+	# cloud base behind the ridges, so a storm left the fully hazed ring standing as pale
+	# flat cut-outs against the sky; the haze now sinks toward the deck's value with height
+	# (the low rain curtain stays as bright as the valley fog in front, so no seam)
 	mat.set_shader_parameter("haze_color", Vector3(hc.r, hc.g, hc.b))
+	mat.set_shader_parameter("haze_top", lerpf(1.0, 0.55, smoothstep(0.35, 1.0, c)))
 	mat.set_shader_parameter("haze_density", e.fog_density)
 
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;

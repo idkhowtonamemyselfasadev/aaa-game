@@ -2126,6 +2126,11 @@ func _herd_test() -> void:
 	print("BOT herd fleeing: %.1f m ahead of the hero after 6 s, top speed %.1f m/s" % [gap, top])
 	if gap < 45.0 or top < 7.0:
 		return _combat_done(false, "the herd did not gallop away from the hero")
+	# ... with an alarm bark as they went and their hooves drumming the turf
+	var fl: Foley = _world.foley
+	print("BOT herd voices: %d barks, played bark %d gallop %d (synth %d ms)" % [herd.barks, int(fl.played.get("bark", 0)), int(fl.played.get("gallop", 0)) + int(fl.played.get("gallop_wet", 0)), fl.build_ms])
+	if herd.barks < 1 or int(fl.played.get("bark", 0)) < 1 or int(fl.played.get("gallop", 0)) + int(fl.played.get("gallop_wet", 0)) < 6:
+		return _combat_done(false, "the herd bolted without an alarm bark or hoofbeats")
 	# the stag runs with his hinds, not left behind
 	var sc := herd.centre()
 	var stag_gap := -1.0
@@ -2172,7 +2177,19 @@ func _herd_test() -> void:
 	print("BOT herd settled: state %d after %.1f s, %.0f m from the hero, spread %.1f m, nearest tree/rock %.1f m, edge %.0f m" % [herd.state, t, gap, spread, clear, Vector2(c2.x, c2.z).length()])
 	if herd.state != Herd.CALM or gap < herd.safe_radius or spread > 18.0 or clear < 0.8 or Vector2(c2.x, c2.z).length() > 215.0:
 		return _combat_done(false, "the herd did not settle again, together, far off and in the open")
-	_combat_done(true, "deer graze, look up at a hero in sight, bolt from a charge, settle far off")
+	# the stag roars at dusk while the herd is at peace, never at noon
+	var r0 := herd.roars
+	_world.time_of_day = 13.0
+	herd.roar_t = 0.0
+	await _ticks(30)
+	var noon := herd.roars - r0
+	_world.time_of_day = 19.0
+	herd.roar_t = 0.0
+	await _ticks(30)
+	print("BOT herd rut: roars at noon %d, at 19 h %d, played roar %d" % [noon, herd.roars - r0 - noon, int(_world.foley.played.get("roar", 0))])
+	if noon != 0 or herd.roars - r0 - noon < 1 or int(_world.foley.played.get("roar", 0)) < 1:
+		return _combat_done(false, "the stag did not roar at dusk (or roared at noon)")
+	_combat_done(true, "deer graze, look up at a hero in sight, bolt barking from a charge with drumming hooves, settle far off; the stag roars at dusk")
 
 ## Red deer at night: the herd beds down in the meadow (each deer lying in its own pressed
 ## patch of grass), springs up to stare at a hero who comes into sight, lies down again once
