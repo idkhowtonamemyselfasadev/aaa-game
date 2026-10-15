@@ -305,6 +305,12 @@ func _ready() -> void:
 			side = -side
 		var mid := pp.lerp(post, 0.5)
 		SPOTS[spot] = [mid + side * 2.7 - to_post * 0.7, mid]
+	if spot == "post":
+		# post: a close 3/4 look at the practice post from the sun side, at chest height
+		var post: Vector3 = world.training_post.global_position
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var to_cam := Vector3(-light.x, 0, -light.z).normalized().rotated(Vector3.UP, 0.6)
+		SPOTS[spot] = [post + to_cam * 2.1 + Vector3.UP * 1.35, post + Vector3.UP * 0.95]
 	var dodge_u := -1.0
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
@@ -472,6 +478,9 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "post":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
+			look.y = (s[1] as Vector3).y
 		if spot == "face":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.8
 			look.y = terrain.height_at(look.x, look.z) + 1.75
