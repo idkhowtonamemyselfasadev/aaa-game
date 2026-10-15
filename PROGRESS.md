@@ -29,6 +29,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falls back to opengl3 after ~10 min, saving nothing).
 
 ## Done
+- Session 2026-10-15 11:00 UTC (overlapped the 09:00 and 10:00 sessions):
+  - Third parallel rebuild of the practice post; the 10:00 version on main is kept and
+    this one dropped (no game code change). Sessions now overlap because a Vulkan shot
+    takes 20-45 min: before starting, `git pull` and check the top Done entry so two
+    sessions do not take the same pick. Bots walk, combat, heavy, soldier, foley PASS
+    (on the dropped version). Its 30-frame `post` shot rendered in ~20 min under
+    SHOT_TIMEOUT=2400.
 - Session 2026-10-15 09:00 UTC (overlapped the 10:00 session):
   - Rebuilt the practice post in parallel with the 10:00 session, which pushed its own
     straw bundle first; that version is kept and this one dropped (no game code change).
