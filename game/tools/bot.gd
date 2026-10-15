@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -71,6 +71,9 @@ func _ready() -> void:
 		return
 	if name == "sound":
 		_sound_test()
+		return
+	if name == "foley":
+		_foley_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1119,6 +1122,66 @@ func _sound_test() -> void:
 	if ss.caws == r0:
 		return _combat_done(false, "no caws when a rook flock scattered")
 	_combat_done(true, "soundscape follows clock and weather, thunder and rook calls fire")
+
+func _foley_test() -> void:
+	var p := _player
+	var f: Foley = _world.foley
+	var c: StaffCombat = p.combat
+	var wx: Weather = _world.weather
+	wx.force(0.0)
+	print("BOT foley: synthesised in %d ms" % f.build_ms)
+	await _ticks(10)
+	# the light string on the practice post: a swish per swing, straw thuds on contact
+	var t := 0.0
+	var press := 0.0
+	while t < 4.5:
+		await get_tree().physics_frame
+		var dt := get_physics_process_delta_time()
+		t += dt
+		press += dt
+		if press > 0.3 and c.swings < 4:
+			p.bot_attack = true
+			press = 0.0
+	print("BOT foley string: swings %d hits %d, played %s" % [c.swings, c.hits, str(f.played)])
+	if int(f.played.get("swish", 0)) < 4 or int(f.played.get("straw", 0)) < 1:
+		return _combat_done(false, "light string swung or struck the post in silence")
+	# a tapped heavy: the deep whoom, the post struck with a boom under it, the ground slam
+	p.stamina = Player.STAMINA_MAX
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	await _wait_heavy_done(c)
+	await _ticks(30)
+	print("BOT foley heavy: %s" % str(f.played))
+	if int(f.played.get("whoom", 0)) < 1 or int(f.played.get("boom", 0)) < 1 or int(f.played.get("slam", 0)) < 1:
+		return _combat_done(false, "heavy smash had no whoom / boom / slam")
+	# a dodge whooshes
+	p.stamina = Player.STAMINA_MAX
+	p.bot_input = Vector2(1, 0)
+	p.bot_dodge = true
+	await _ticks(40)
+	p.bot_input = Vector2.ZERO
+	if int(f.played.get("dodge", 0)) < 1:
+		return _combat_done(false, "dodge made no sound")
+	# footfalls on the dry meadow, then on soaked ground
+	await _ticks(60)
+	var g0 := int(f.played.get("step_grass", 0))
+	var h0 := f.hero_steps
+	var x0 := p.global_position
+	p.bot_input = Vector2(0, -1)
+	await _ticks(60 * 3)
+	var grass := int(f.played.get("step_grass", 0)) - g0
+	print("BOT foley: hero %d steps over %.1f m, soldier %d" % [f.hero_steps - h0, p.global_position.distance_to(x0), grass - (f.hero_steps - h0)])
+	wx.force(1.0)
+	wx.wet = 1.0
+	await _ticks(60 * 3)
+	p.bot_input = Vector2.ZERO
+	var wet := int(f.played.get("step_wet", 0))
+	var keep := f.surface_at(_world.get_node("Flora").ruin_site)
+	print("BOT foley steps: grass %d in 12 s dry, wet %d in 12 s soaked, keep floor '%s'" % [grass, wet, keep])
+	if grass < 4 or wet < 4 or keep != "grit":
+		return _combat_done(false, "footfalls missing or on the wrong surface")
+	_combat_done(true, "swishes, impacts, slam, dodge and footfalls on grass/wet/grit all sound")
 
 func _insects_test() -> void:
 	var p := _player

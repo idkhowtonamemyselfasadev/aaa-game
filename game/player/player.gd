@@ -49,6 +49,7 @@ const RESPAWN_FADE := 1.2             # seconds the black lifts over after wakin
 signal died
 signal respawned
 signal dodged(perfect: bool)
+signal dash_started
 signal hurt(amount: float)
 signal lock_changed(target: Node3D)
 
@@ -588,6 +589,7 @@ func _try_dodge(dir2: Vector2) -> void:
 	dodge_t = 0.0
 	_dodge_rewarded = false
 	dodges += 1
+	dash_started.emit()
 
 ## Lean into the dash from the hips and sink low; the hop back leans away. Pivot at the hip
 ## so the feet stay planted under the body instead of swinging out.

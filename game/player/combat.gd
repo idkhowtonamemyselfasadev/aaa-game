@@ -12,6 +12,7 @@ signal swing_started(step: int)
 signal hit_landed(target: Node, point: Vector3, power: float)
 signal parried(attacker: Node)
 signal charge_tier(tier: int)
+signal slammed(at: Vector3, power: float)
 
 enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED }
 
@@ -610,6 +611,7 @@ func _ground_slam() -> void:
 	var at := Vector3(tip.x, player.global_position.y + 0.05, tip.z)
 	ImpactFX.spawn(player.get_parent(), at, Vector3.DOWN, "stone", 0.8 + 0.35 * float(tier))
 	player.add_shake(0.18 + 0.1 * float(tier))
+	slammed.emit(at, 0.8 + 0.35 * float(tier))
 
 ## Puts both grips on the authored staff line, pulls each into its shoulder's reach (the
 ## shoulders turn with the spine twist), then lays the staff through the two grips.

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-0443-dusk-lit-meadow.jpg",
-  "time": "2026-10-11T04:43:21Z",
-  "caption": "18:24 toward the sunset: afterglow behind the peaks under a violet sky, and the meadow and oaks now lit by the twilight instead of black; the valley floor is too saturated rose-red and the canopies are still leaf cards.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-0523-golden-hour.jpg",
-  "time": "2026-10-11T05:23:31Z",
-  "caption": "17:45 toward the sun: the low sun now lights the meadow a warm gold instead of an orange-red wash, with long oak shadows; still fails on faceted far ridges and leaf-card canopies.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0523-mauve-twilight.jpg",
   "time": "2026-10-11T05:23:31Z",
   "caption": "18:24 twilight: the valley floor now sits in a dusty mauve afterglow instead of saturated rose-red, ridges layered in haze; fails on faceted ridges, near-black canopies and coarse foreground grass.",
@@ -891,6 +879,12 @@
   "file": "20261015-0600-morning-grove.jpg",
   "time": "2026-10-15T06:56:00Z",
   "caption": "Morning sun raking across the meadow toward the oak grove, where birdsong and rook caws now sound; the far peaks still read as milky flat cut-outs, and the rooks are too small to see.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-0700-fight.jpg",
+  "time": "2026-10-15T07:36:00Z",
+  "caption": "Late-afternoon squaring off with the Hollow by the practice post (the fight now has swishes, impacts and footfalls); still wrong: both fighters are near-black backlit silhouettes, the straw post reads as a smooth cartoon cylinder, the far peaks are pale grey.",
   "verdict": "fail"
  }
 ]

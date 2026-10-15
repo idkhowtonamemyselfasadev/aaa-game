@@ -10,6 +10,9 @@ extends Node
 ## trail of their own through the grass (herd_trail): a lane of combed-over stems where the
 ## herd ran, standing up again over HERD_TRAIL_LIFE seconds.
 
+## A boot print was pressed: who, where (world, at the walker's height), ground speed m/s.
+signal footfall(walker: Node3D, at: Vector3, speed: float)
+
 const N := 32             # footfalls kept (oldest recycled): ~19 m of trail
 const LIFE := 9.0         # s for a laid plant to stand up again (shader TRAMPLE_LIFE)
 const STEP := 0.6        # m between trail points
@@ -169,6 +172,7 @@ func _walk(w: Node3D, delta: float, grounded: bool) -> void:
 			st[3] = 1 - int(st[3])
 			var side := Vector2(-d.y, d.x) * (GAIT if st[3] == 0 else -GAIT)
 			add_print(q + side, d, lerpf(0.7, 1.0, clampf(sp / 6.0, 0.0, 1.0)), 0.0)
+			footfall.emit(w, Vector3(q.x + side.x, p.y, q.y + side.y), sp)
 	st[1] += len - at
 	st[2] += len - at
 

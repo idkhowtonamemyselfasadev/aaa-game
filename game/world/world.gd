@@ -25,6 +25,7 @@ var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
 var soundscape: Soundscape
+var foley: Foley
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 var face_shade := Color(0, 0, 0)    # shade light under the brim: feeds the hero's face fill
@@ -93,6 +94,13 @@ func _ready() -> void:
 	soundscape.weather = weather
 	soundscape.birds = get_node_or_null("Birds")
 	add_child(soundscape)
+	# staff swishes, impacts, parry clangs, dodges and footfalls
+	foley = Foley.new()
+	foley.name = "Foley"
+	foley.world = self
+	foley.weather = weather
+	add_child(foley)
+	foley.hook(player, [soldier], trample)
 
 func _build_environment() -> void:
 	var e := Environment.new()
