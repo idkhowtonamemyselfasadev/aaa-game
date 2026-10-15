@@ -11,7 +11,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - Godot 4.7.2 is fetched by `tools/cloud-setup.sh` into `.tools/godot` (gitignored).
   Run it first thing every session.
 - Shots now take ~10 min each on the cloud box (more if bots run at the same time). The
-  xvfb timeout is `SHOT_TIMEOUT` (default 1500 s, was 600 s): a Vulkan shot that timed out
+  xvfb timeout is `SHOT_TIMEOUT` (default 3000 s since 09:00 10-15, was 1500 s): a Vulkan shot that timed out
   used to fall back to GL compatibility silently, giving a non-representative image (dark,
   no fog). If a shot log says "retrying opengl3", the frame is not a Forward+ frame. Do not
   run bots alongside a shot.
@@ -29,6 +29,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falls back to opengl3 after ~10 min, saving nothing).
 
 ## Done
+- Session 2026-10-15 09:00 UTC (overlapped the 10:00 session):
+  - Rebuilt the practice post in parallel with the 10:00 session, which pushed its own
+    straw bundle first; that version is kept and this one dropped (no game code change).
+    Ideas from the dropped version for item 0000: sheaf lobes on the core (~9 ridges with
+    dark seam creases) and end-grain rings + radial checks on the oak cap.
+  - Shot timing on this box: a 1280x720 Vulkan `impact1` shot took ~43 min (~30 min before
+    the first frame); two attempts died at the old 1500 s timeout, one falling back to
+    opengl3. `tools/shots.sh` now defaults `SHOT_TIMEOUT` to 3000 s. Budget one shot.
+  - Bots: combat, heavy, foley, soldier PASS (on the dropped version; no code kept).
 - Session 2026-10-15 10:00 UTC:
   - **Practice post straw bundle (pick from 08:00: "smooth cartoon cylinder").**
     `training_post.gd`: the lathe straw is now a dark packed core (0.9 x the new
