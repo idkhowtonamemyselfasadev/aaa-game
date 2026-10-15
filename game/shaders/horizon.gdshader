@@ -57,6 +57,22 @@ float fbm(vec2 p) {
 	return r;
 }
 
+float hash3(vec3 p) {
+	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+}
+float vnoise3(vec3 x) {
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x),
+	               mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
+	           mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x),
+	               mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float rnoise3(vec3 x) {
+	return 1.0 - abs(vnoise3(x) * 2.0 - 1.0);
+}
+
 // ridged value noise (sharp crests where the noise crosses 0.5)
 float rnoise(vec2 x) {
 	return 1.0 - abs(vnoise(x) * 2.0 - 1.0);
@@ -99,10 +115,17 @@ void fragment() {
 	// macro face structure that survives 2-3 km (a pixel is ~2.5 m there, the gully normals fade
 	// out): long couloirs down the fall line at 70-200 m, the ribs between them standing out
 	// lighter, so a far face reads as rock architecture instead of one flat grey value
-	vec2 acr = vec2(-down.y, down.x);
-	vec2 fq = vec2(dot(wpos.xz, acr), dot(wpos.xz, down));
-	float coul = rnoise(fq * vec2(1.0 / 95.0, 1.0 / 420.0) + 3.7) * 0.6
-	           + rnoise(fq * vec2(1.0 / 38.0, 1.0 / 170.0) + 9.2) * 0.4;
+	// the field is laid out in ring coordinates -- a point on a circle of 2.4 km for the
+	// direction from the Vale, and the radius -- not along the pixel's fall line: projecting
+	// km-scale world positions onto a direction taken from the bent coarse normal turned a
+	// few degrees of normal wobble into hundreds of metres of shift, and the ribs swirled like
+	// marble. The visible faces fall roughly toward the Vale, so radial is the fall line; the
+	// circle keeps it seamless all the way round (an atan seam needed a cross-fade that
+	// averaged two noises and washed the ribs out).
+	float rr = length(wpos.xz);
+	vec2 rdir = wpos.xz / max(rr, 1.0) * 2400.0;
+	float coul = rnoise3(vec3(rdir / 95.0, rr / 420.0) + 3.7) * 0.6
+	           + rnoise3(vec3(rdir / 38.0, rr / 170.0) + 9.2) * 0.4;
 	coul = smoothstep(0.35, 0.95, coul);                     // 1 on a rib crest, 0 in a couloir
 	// forest climbs the lower flanks in tongues up the couloirs (deeper soil, shelter), thinning
 	// on the ribs: tongues of dark trees break up the massif bodies under the rock
@@ -120,9 +143,10 @@ void fragment() {
 	forest *= 1.0 - chute * 0.92;
 	// cliff bands: harder beds crop out along the strike as broken dark rock steps across
 	// the flanks, each with a pale talus apron fanning out below it
-	float strike = dot(wpos.xz, acr) / 520.0;
-	float bandv = vnoise(vec2(wpos.y / 36.0 + macro * 3.0, strike));
-	float bandu = vnoise(vec2((wpos.y + 22.0) / 36.0 + macro * 3.0, strike));
+	// strike: along the ring, not along the bent normal (same swirl)
+	vec2 strike = rdir / 520.0;
+	float bandv = vnoise3(vec3(strike, wpos.y / 36.0 + macro * 3.0));
+	float bandu = vnoise3(vec3(strike, (wpos.y + 22.0) / 36.0 + macro * 3.0));
 	float flank = smoothstep(150.0, 260.0, d) * (1.0 - smoothstep(snow_line - 80.0, snow_line, wpos.y));
 	float cliff = smoothstep(0.7, 0.78, bandv + (meso - 0.5) * 0.25) * flank;
 	float scree = smoothstep(0.68, 0.78, bandu + (meso - 0.5) * 0.25) * (1.0 - cliff) * flank
@@ -181,7 +205,7 @@ void fragment() {
 	// starlit sky, as at night the land is darker than the sky glow over it); the snow fields
 	// lose most of their moonlit glare, so only the nearest ribs keep a faint modelling
 	float far = smoothstep(250.0, 1100.0, dist);
-	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.72, night * snoww);
+	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.45, night * snoww);
 	SPECULAR *= 1.0 - 0.7 * night;
 	FOG = vec4(haze_color, 1.0 - exp(-dist * haze_density * haze_scale));
 }

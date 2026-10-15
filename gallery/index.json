@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-1027-soldier-wraps-side.jpg",
-  "time": "2026-10-11T10:27:00Z",
-  "caption": "Side view in daylight: hood, mantle, sash and the new shin wraps hide most of the sci-fi armour; the shins look padded rather than bound and the ember cracks on the thighs still read as armour plates.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1120-soldier-legs.jpg",
   "time": "2026-10-11T11:20:00Z",
   "caption": "Hollow Soldier legs now bound in hemp: thigh, shin and boot wraps hide the old armour; the wraps are too thick and the boot wrap is a lump.",
@@ -891,6 +885,18 @@
   "file": "20261015-1946-peaks-dusk.jpg",
   "time": "2026-10-15T19:46:05Z",
   "caption": "At 18:50 the far ring is dimmer and its flanks sink into blue haze instead of glowing pale over a black valley; the moonlit snow tops still read bright and the left peaks' rib streaks swirl like marble.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-2030-peaks-ribs.jpg",
+  "time": "2026-10-15T20:30:00Z",
+  "caption": "The far ring by day: couloirs and ribs now run straight down the massif faces with no marble swirl, but the central massif reads a little like regular organ-pipe flutes and lost some summit snow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-2030-peaks-dusk.jpg",
+  "time": "2026-10-15T20:30:00Z",
+  "caption": "The far ring at dusk: dimmer moonlit snow and no swirl, but the central massif shows regular pale vertical stripes.",
   "verdict": "fail"
  }
 ]
