@@ -1,5 +1,6 @@
 shader_type spatial;
 #include "res://shaders/wet.gdshaderinc"
+#include "res://shaders/figure_fill.gdshaderinc"
 // Hero staff: COLOR.r picks the layer (0 lacquered wood, 0.5 worn bronze, 1 cloth wrap).
 // UV.x = around the shaft (0..1), UV.y = metres along it. All detail is procedural.
 
@@ -86,6 +87,7 @@ void fragment() {
 	float porous = layer > 0.75 ? 1.0 : (layer < 0.25 ? 0.6 : 0.0);
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, vnoise(vec2(around * 9.0, along * 5.0))), porous);
 	ALBEDO = alb;
+	EMISSION += figure_fill(alb, wet_n, wet_p);
 	ROUGHNESS = clamp(rough, 0.05, 1.0);
 	METALLIC = metal;
 	SPECULAR = 0.5;

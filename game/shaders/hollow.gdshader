@@ -1,5 +1,6 @@
 shader_type spatial;
 #include "res://shaders/wet.gdshaderinc"
+#include "res://shaders/figure_fill.gdshaderinc"
 // Hollow skin: the body's own albedo/normal detail turned to grey, cracked ash-stone, with
 // ember light leaking from the fissures — brightest in the chest, where the Ember's grief
 // burns. `ember` flares during a wind-up (the tell), `hit_flash` pulses on a hit, and
@@ -122,5 +123,9 @@ void fragment() {
 	NORMAL_MAP_DEPTH = 1.4;
 	AO = 1.0 - fis * 0.5;
 	AO_LIGHT_AFFECT = 0.4;
-	EMISSION = ember_col * glow * 3.2 + vec3(1.0, 0.75, 0.45) * pow(clamp(glow, 0.0, 4.0), 3.0) * 0.08;
+	EMISSION = ember_col * glow * 3.2 + vec3(1.0, 0.75, 0.45) * pow(clamp(glow, 0.0, 4.0), 3.0) * 0.08
+			+ figure_fill(ALBEDO, wet_n, wet_p) * AO;
+	// ash dust on the skin catches the sun round the silhouette
+	RIM = 0.15;
+	RIM_TINT = 0.5;
 }

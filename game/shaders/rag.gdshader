@@ -1,6 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled;
 #include "res://shaders/wet.gdshaderinc"
+#include "res://shaders/figure_fill.gdshaderinc"
 // Hollow rags: coarse undyed hemp gone grey with ash, stiff with soot near the torn hems,
 // singed at the edges where the Ember's heat leaks out. UV.x runs around/across the piece,
 // UV.y from where it is fastened (0) to the hem (1). The hem is torn by discard; a few moth
@@ -168,8 +169,8 @@ void fragment() {
 	AO_LIGHT_AFFECT = 0.3;
 	// a tightly plaited straw hat is opaque: no light through its underside
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
-	EMISSION = ember_col * glow * 3.0;
+	EMISSION = ember_col * glow * 3.0 + figure_fill(alb, wet_n, wet_p) * mix(1.0, COLOR.r, fold_ao);
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles
-	RIM = 0.35 * wool;
+	RIM = max(0.35 * wool, 0.1);
 	RIM_TINT = 0.4;
 }

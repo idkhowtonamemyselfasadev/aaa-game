@@ -1,5 +1,6 @@
 shader_type spatial;
 #include "res://shaders/wet.gdshaderinc"
+#include "res://shaders/figure_fill.gdshaderinc"
 // The hero's body: the imported model's albedo + normal maps (as its StandardMaterial3D drew
 // them), plus rain soaking the suit (wet.gdshaderinc, driven by world/soak.gd).
 
@@ -84,4 +85,8 @@ void fragment() {
 	SPECULAR = 0.5;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth;
+	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light
+	EMISSION = figure_fill(alb, wet_n, wet_p);
+	RIM = 0.15;
+	RIM_TINT = 0.55;
 }
