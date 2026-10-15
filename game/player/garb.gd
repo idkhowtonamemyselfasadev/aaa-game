@@ -191,8 +191,9 @@ func _veil() -> ArrayMesh:
 			ridge = signf(ridge) * pow(absf(ridge), 0.7)
 			var fine := sin(a * 17.0 + 0.6 + v * 3.0) * smoothstep(0.4, 1.0, v)
 			var depth := smoothstep(0.1, 1.0, v)
-			# the lower edge sags into a soft point under the chin
-			var y := 1.935 - v * (0.235 + 0.06 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
+			# the lower edge sags only a little under the chin, so it stays tucked behind the
+			# hood's front edge (1.746) instead of hanging a point below it
+			var y := 1.935 - v * (0.235 + 0.015 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
 			# the top edge rides up over the bridge of the nose and sags into a soft dip under
 			# each cheekbone before running back flat under the hood, instead of a ruled line
 			var top := 1.0 - smoothstep(0.0, 0.35, v)
