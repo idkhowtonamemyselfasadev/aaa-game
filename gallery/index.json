@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-0953-rags-side.jpg",
-  "time": "2026-10-11T09:53:00Z",
-  "caption": "Side view of the rags in daylight: woven hemp hood, mantle and sash over the ash body; the cloth is still a uniform charcoal and the tabards hang stiff as boards rather than draping.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1027-soldier-wraps-close.jpg",
-  "time": "2026-10-11T10:27:00Z",
-  "caption": "Close look at the Hollow Soldier's legs (grass hidden): the old greaves are now bound in wound hemp bandages fitted to the armour, but the wraps still read bulky and barrel-shaped and the boots show below.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1027-soldier-wraps-side.jpg",
   "time": "2026-10-11T10:27:00Z",
   "caption": "Side view in daylight: hood, mantle, sash and the new shin wraps hide most of the sci-fi armour; the shins look padded rather than bound and the ember cracks on the thighs still read as armour plates.",
@@ -891,6 +879,18 @@
   "file": "20261015-1818-peaks-flanks.jpg",
   "time": "2026-10-15T18:18:41Z",
   "caption": "The far massifs' mid and lower flanks now break into dark dwarf-pine ribs, paler grass couloirs, cliff bands with scree and avalanche chutes through the forest, instead of one grey band; the break-up is still faint under the 2 km haze and the left peak's streaks swirl.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-1946-peaks-night.jpg",
+  "time": "2026-10-15T19:46:05Z",
+  "caption": "At night the far ring now stands as layered moonlit blue-grey massifs with faint snow tops in a haze a shade darker than the sky, instead of a pure black cut-out; the near volumetric haze band still glows brighter than the land round it.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261015-1946-peaks-dusk.jpg",
+  "time": "2026-10-15T19:46:05Z",
+  "caption": "At 18:50 the far ring is dimmer and its flanks sink into blue haze instead of glowing pale over a black valley; the moonlit snow tops still read bright and the left peaks' rib streaks swirl like marble.",
   "verdict": "fail"
  }
 ]

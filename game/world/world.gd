@@ -347,8 +347,11 @@ func _apply_time() -> void:
 		# the far mountain ring sinks into a dark silhouette over the same twilight
 		var hz := get_node_or_null("Horizon/Mesh") as MeshInstance3D
 		if hz and hz.mesh and hz.mesh.surface_get_material(0) is ShaderMaterial:
+			# keyed to the moon's own ramp (1 - sin*5 - 1): with the old -3..-12 deg ramp the
+			# ring was still at full value at 18:50 (-5.8 deg) while the low moon (8 deg floor)
+			# lit its faces head-on and the snow glowed pale over a black valley
 			(hz.mesh.surface_get_material(0) as ShaderMaterial).set_shader_parameter("night",
-					smoothstep(deg_to_rad(-3.0), deg_to_rad(-12.0), elev))
+					smoothstep(0.0, 1.0, 1.0 - clampf(sin(elev) * 5.0 + 1.0, 0.0, 1.0)))
 		_apply_weather(day)
 
 ## A weather front over the time-of-day light: cloud swallows the sun and the sky's blue,
@@ -406,6 +409,11 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	var fog_lin := e.fog_light_color.srgb_to_linear() * e.fog_light_energy
 	var sky_lin := Color(0.17, 0.23, 0.33) * lerpf(0.04, 1.0, day)
 	var hc := fog_lin.lerp(sky_lin, 0.65 * (1.0 - c))
+	# night: the moonlit volumetric haze in front of the ring takes the sky's colour (sky
+	# affect 1.0), so a ring hazed in the dark fog colour stood black behind a glowing blue
+	# band; give it the moonlit horizon blue instead, a shade darker than that band
+	var nt := clampf(moon.light_energy / 1.25, 0.0, 1.0) if moon and moon.visible else 0.0
+	hc = hc.lerp(Color(0.045, 0.06, 0.12), nt)   # nt already falls with cloud (moon dims)
 	mat.set_shader_parameter("haze_color", Vector3(hc.r, hc.g, hc.b))
 	mat.set_shader_parameter("haze_density", e.fog_density)
 

@@ -181,7 +181,7 @@ void fragment() {
 	// starlit sky, as at night the land is darker than the sky glow over it); the snow fields
 	// lose most of their moonlit glare, so only the nearest ribs keep a faint modelling
 	float far = smoothstep(250.0, 1100.0, dist);
-	ALBEDO *= mix(1.0, mix(0.7, 0.36, far), night) * mix(1.0, 0.72, night * snoww);
+	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.72, night * snoww);
 	SPECULAR *= 1.0 - 0.7 * night;
 	FOG = vec4(haze_color, 1.0 - exp(-dist * haze_density * haze_scale));
 }
