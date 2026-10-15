@@ -892,5 +892,11 @@
   "time": "2026-10-15T00:15:00Z",
   "caption": "The hero's face cloth now ends tucked inside the hood instead of hanging a sagging point below it; still wrong: the hood's left side still falls in a long fold over the mantle and the eyes read a little startled.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261015-0130-face-side.jpg",
+  "time": "2026-10-15T01:11:50Z",
+  "caption": "Hero portrait at 10:30: the hood now ends in a short collar over the shoulders; the near side still reads as a narrow strip and the eyes look a little startled.",
+  "verdict": "fail"
  }
 ]

@@ -133,10 +133,14 @@ func _hood_at(a: float, v: float) -> Vector3:
 	# toward the front the cape's lower edge sweeps up in one curve under the chin and flares
 	# less, so the face opening closes in a rounded U instead of hanging two lappet points
 	var w := pow(cos(a) * 0.5 + 0.5, 2.0)
-	var r := dome * (1.0 + 0.45 * (1.0 - 0.55 * w) * smoothstep(0.7, 1.0, v))
+	# over the shoulders the cape lies close and ends higher, a short collar on the mantle
+	# instead of a long tongue hanging down the side; the back keeps its full flare
+	var side := sin(a) * sin(a) * (1.0 - w)
+	var r := dome * (1.0 + 0.45 * (1.0 - 0.55 * w - 0.4 * side) * smoothstep(0.7, 1.0, v))
 	r *= 1.0 + 0.03 * sin(a * 7.0) * v
-	# (up to 8.6 cm at the front; the edge still falls with v everywhere, so no fold-over)
-	var lift := 0.086 * w * pow(maxf(v - 0.6, 0.0) / 0.4, 1.6)
+	# (up to 8.6 cm at the front, ~4 cm at the sides; the edge still falls with v everywhere,
+	# so no fold-over)
+	var lift := (0.086 * w + 0.03 * side) * pow(maxf(v - 0.6, 0.0) / 0.4, 1.6)
 	var cz := -0.045 - 0.06 * pow(1.0 - v, 3.0)
 	# the cowl is drawn forward round the face, so its rim stands proud of the brow and cheeks
 	var fwd := 0.045 * pow(cos(a) * 0.5 + 0.5, 4.0) * smoothstep(0.03, 0.12, v) \
