@@ -392,7 +392,22 @@ func _apply_weather(day: float) -> void:
 	e.volumetric_fog_emission *= 1.0 - c
 	e.adjustment_saturation = lerpf(1.08, 0.82, c)
 	e.adjustment_contrast = lerpf(1.06, 1.1, c)
+	_apply_horizon_haze(e, day, c)
 	_apply_bounce(e)
+
+## The far ring's own haze (horizon.gdshader FOG): the scene fog's colour, pulled toward a
+## cool skylight blue by clear day (what its sky-sampled aerial perspective gave, but darker
+## than the sky behind the ridges so the massifs keep their value), same density.
+func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
+	var hz := get_node_or_null("Horizon/Mesh") as MeshInstance3D
+	if not (hz and hz.mesh and hz.mesh.surface_get_material(0) is ShaderMaterial):
+		return
+	var mat := hz.mesh.surface_get_material(0) as ShaderMaterial
+	var fog_lin := e.fog_light_color.srgb_to_linear() * e.fog_light_energy
+	var sky_lin := Color(0.17, 0.23, 0.33) * lerpf(0.04, 1.0, day)
+	var hc := fog_lin.lerp(sky_lin, 0.65 * (1.0 - c))
+	mat.set_shader_parameter("haze_color", Vector3(hc.r, hc.g, hc.b))
+	mat.set_shader_parameter("haze_density", e.fog_density)
 
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat

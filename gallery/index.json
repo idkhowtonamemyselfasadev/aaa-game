@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-0849-kneel.jpg",
-  "time": "2026-10-11T08:49:03Z",
-  "caption": "Half a second after a killing blow the hero's knees fold onto the grass (bone-level bend, legs no longer sink into the ground), chest curled, one arm out; still the sci-fi Vanguard armour, coarse near grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-0849-prone.jpg",
-  "time": "2026-10-11T08:49:03Z",
-  "caption": "The hero lying face-down with legs extended and head turned, staff dropped in the grass; reads as a fallen body, but the grass does not flatten under it and the armour is not mythic.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0953-rags-front.jpg",
   "time": "2026-10-11T09:53:00Z",
   "caption": "The Hollow Soldier now wears a deep hood with a dark face void, a ragged shoulder mantle, a sash and a torn tabard to the knees, the ember glowing through the open chest; the silhouette reads as a cloaked revenant, but it is backlit and the legs still show the old armour greaves.",
@@ -891,6 +879,12 @@
   "file": "20261015-1520-post-iron.jpg",
   "time": "2026-10-15T15:20:00Z",
   "caption": "The practice post's iron band now reads as rusty forged iron with hammer facets worn dull grey, two rivets and rust runs staining the oak below, instead of a flat black stripe; at this range the band is small and the far peaks still wash pale.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-1619-peaks-haze.jpg",
+  "time": "2026-10-15T16:19:02Z",
+  "caption": "The far massifs now stand darker and bluer than the sky in layered haze with snow on the tops, instead of a milky wash; their faces are still flat grey with little forest or rock break-up at 1.5-2.5 km, and the mid-range trees are sparse.",
   "verdict": "fail"
  }
 ]
