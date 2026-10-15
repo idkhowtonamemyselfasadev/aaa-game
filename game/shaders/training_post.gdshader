@@ -7,8 +7,8 @@ render_mode cull_disabled;
 // carry a per-stalk tone in COLOR.b and their layer depth in COLOR.a; UV.x across, UV.y
 // metres along, UV2.x 0..1 along.
 
-uniform vec3 oak_grey : source_color = vec3(0.27, 0.23, 0.185);
-uniform vec3 oak_dark : source_color = vec3(0.13, 0.11, 0.09);
+uniform vec3 oak_grey : source_color = vec3(0.44, 0.41, 0.36);
+uniform vec3 oak_dark : source_color = vec3(0.17, 0.15, 0.12);
 uniform vec3 iron : source_color = vec3(0.17, 0.16, 0.15);
 uniform vec3 rust : source_color = vec3(0.36, 0.17, 0.08);
 uniform vec3 straw_hi : source_color = vec3(0.70, 0.58, 0.34);
@@ -60,17 +60,36 @@ void fragment() {
 	float ao = 1.0;
 	if (layer < 0.16) {
 		// weathered oak: silver-grey sun-bleached grain, deep checking cracks, darker and
-		// damp near the ground with a little moss/lichen
+		// damp near the ground with a little dark moss at the foot; the cut top shows end
+		// grain (growth rings round an off-centre pith, radial checks) bleached pale
 		float g = fbm(vec2(around * 30.0, h * 1.2));
 		float fine = vnoise(vec2(around * 160.0, h * 4.0));
 		float crack = smoothstep(0.035, 0.0, abs(fbm(vec2(around * 7.0, h * 0.5)) - 0.5)) ;
 		crack *= smoothstep(0.3, 0.6, vnoise(vec2(around * 5.0, h * 2.5)));
-		alb = oak_grey * (0.55 + 0.8 * g) * (0.75 + 0.45 * fine);
+		// long silver streaks where rain runs down the grain, browner in the hollows
+		float streak = vnoise(vec2(around * 55.0, h * 0.6));
+		alb = oak_grey * (0.7 + 0.5 * g) * (0.82 + 0.3 * fine) * (0.85 + 0.25 * streak);
+		alb = mix(alb, alb * vec3(1.08, 0.95, 0.80), (1.0 - g) * 0.5);
+		float top = smoothstep(1.68, 1.70, obj.y);
+		if (top > 0.0) {
+			vec2 c = obj.xz - vec2(0.012, -0.008);
+			float r = length(c) + fbm(c * 40.0) * 0.012;
+			float ring = smoothstep(0.25, 0.0, abs(fract(r * 140.0) - 0.5) - 0.25);
+			float ang = atan(c.y, c.x);
+			float chk = smoothstep(0.06, 0.0, abs(fract(ang * 1.1 + fbm(c * 25.0) * 0.4) - 0.5))
+					* smoothstep(0.015, 0.06, r);
+			vec3 eg = vec3(0.50, 0.47, 0.42) * (0.82 + 0.25 * fbm(c * 90.0));
+			eg = mix(eg, oak_dark * 1.2, ring * 0.35);
+			eg = mix(eg, oak_dark * 0.6, chk * 0.9);
+			alb = mix(alb, eg, top);
+			crack = mix(crack, chk, top);
+			g = mix(g, ring, top);
+		}
 		alb = mix(alb, oak_dark, crack * 0.85);
-		float damp = smoothstep(0.35, 0.0, h);
-		alb = mix(alb, oak_dark * 1.4, damp * 0.6);
-		float moss = smoothstep(0.62, 0.78, fbm(vec2(around * 12.0, h * 9.0)) + damp * 0.35);
-		alb = mix(alb, vec3(0.16, 0.20, 0.07), moss * 0.7);
+		float damp = smoothstep(0.35, -0.05, h);
+		alb = mix(alb, oak_dark * 1.3, damp * 0.6);
+		float moss = smoothstep(0.62, 0.8, fbm(vec2(around * 12.0, h * 9.0)) + damp * 0.4) * smoothstep(0.5, 0.2, h);
+		alb = mix(alb, vec3(0.085, 0.10, 0.045), moss * 0.75);
 		rough = 0.82 + 0.1 * fine;
 		bump = g * 0.5 + fine * 0.3 - crack * 1.2;
 		ao = 1.0 - crack * 0.6;
