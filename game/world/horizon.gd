@@ -60,7 +60,13 @@ func height_at(x: float, z: float) -> float:
 	# mountain wall: ridged peaks rising with distance, a lower notch toward the south-east
 	# (the road to Greywold) so the horizon has a shape instead of a uniform rim
 	var ridge := _ridge.get_noise_2d(x, z) * 0.5 + 0.5
-	ridge = pow(clampf(ridge, 0.0, 1.0), 1.6)
+	ridge = clampf(ridge, 0.0, 1.0)
+	# broad massifs carry the ridged crests: the old pow(ridge, 1.6) alone stood every crest
+	# up as a needle cone from a flat floor; now crests sit on shouldered mountain bodies
+	# with long spurs, and the ridged term only sharpens their tops
+	var mass := smoothstep(0.25, 0.85, _hills.get_noise_2d(x * 0.22 + 900.0, z * 0.22 - 400.0) * 0.5 + 0.5)
+	ridge = 0.5 * mass + 0.5 * mass * ridge * ridge + 0.18 * ridge
+	ridge = clampf(ridge * 1.05, 0.0, 1.0)
 	var ang := atan2(z, x)
 	var notch := 1.0 - 0.45 * exp(-pow(wrapf(ang - 0.6, -PI, PI) / 0.5, 2.0))
 	var mount := peak_height_m * ridge * smoothstep(300.0, 1500.0, d) * notch

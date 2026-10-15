@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-0807-collapse.jpg",
-  "time": "2026-10-11T08:07:21Z",
-  "caption": "The hero 0.6 s after a killing blow, knees buckled with the staff still gripped low; framed far left, soldier missing from the frame (shot bug), Vanguard armour and faceted ridges.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0807-fallen.jpg",
   "time": "2026-10-11T08:07:21Z",
   "caption": "The fallen hero lying face-down in the amber grass before the screen fades to black; reads as a body, but the pose is a rigid plank and the sci-fi armour is still the model.",
@@ -891,6 +885,12 @@
   "file": "20261015-1310-post-oak.jpg",
   "time": "2026-10-15T13:10:09Z",
   "caption": "Practice post at 16:30 in back light: the oak now reads as silver-grey weathered wood with a pale end-grain cap and dark moss only at the foot, instead of a black cut-out; the iron band is still a flat black stripe and the far peaks are pale flat cones.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-1400-peaks.jpg",
+  "time": "2026-10-15T14:17:00Z",
+  "caption": "Morning over the vale: the far ring now rises as broad shouldered massifs that fade back in hazy layers instead of needle cones; the right-hand massif is still a milky flat wash in the haze and its faces lack forest/rock detail at this range.",
   "verdict": "fail"
  }
 ]

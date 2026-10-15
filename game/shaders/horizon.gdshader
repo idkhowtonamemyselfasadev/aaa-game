@@ -9,11 +9,15 @@ uniform vec3 meadow_a : source_color = vec3(0.30, 0.24, 0.09);
 uniform vec3 meadow_b : source_color = vec3(0.55, 0.42, 0.17);
 uniform vec3 forest_a : source_color = vec3(0.07, 0.09, 0.05);
 uniform vec3 forest_b : source_color = vec3(0.16, 0.17, 0.08);
-uniform vec3 rock_a   : source_color = vec3(0.36, 0.34, 0.32);
-uniform vec3 rock_b   : source_color = vec3(0.17, 0.16, 0.16);
-uniform vec3 snow     : source_color = vec3(0.86, 0.88, 0.92);
+// dark weathered granite/schist: the old 0.36 grey went near-white under the warm haze and
+// read as plaster cones; real far rock is darker than the sky behind it
+uniform vec3 rock_a   : source_color = vec3(0.25, 0.235, 0.21);
+uniform vec3 rock_b   : source_color = vec3(0.10, 0.095, 0.09);
+// alpine turf / dwarf scrub between the treeline and the bare faces
+uniform vec3 alpine   : source_color = vec3(0.17, 0.17, 0.09);
+uniform vec3 snow     : source_color = vec3(0.78, 0.80, 0.84);
 uniform float tile_half = 256.0;
-uniform float snow_line = 380.0;
+uniform float snow_line = 470.0;
 // 0 by day .. 1 at full night (world.gd). Moonlit snow and scree read as pale grey cut-outs
 // against the black night sky; the far ring sinks toward a dark silhouette instead.
 uniform float night = 0.0;
@@ -84,22 +88,25 @@ void fragment() {
 	float fine  = fbm(wpos.xz * 0.25);
 	// forest: patches that thin out with altitude and on steep ground; tree-crown speckle
 	float forest = smoothstep(0.3, 0.45, macro + meso * 0.25 - 0.1)
-	             * (1.0 - smoothstep(0.35, 0.6, slope))
-	             * (1.0 - smoothstep(snow_line - 160.0, snow_line - 40.0, wpos.y));
+	             * (1.0 - smoothstep(0.45, 0.72, slope + (meso - 0.5) * 0.2))
+	             * (1.0 - smoothstep(snow_line - 230.0, snow_line - 120.0, wpos.y + (macro - 0.5) * 80.0));
 	forest *= smoothstep(20.0, 140.0, d);
 	vec3 meadow = mix(meadow_a, meadow_b, clamp(meso * 0.8 + fine * 0.3 - 0.2, 0.0, 1.0));
 	vec3 trees  = mix(forest_a, forest_b, fine * 0.7 + meso * 0.3);
 	// rock on steep faces, with strata bands so cliffs read at distance
 	float strata = vnoise(vec2(wpos.y * 0.15 + meso * 3.0, macro * 4.0));
-	float rockw = smoothstep(0.22, 0.45, slope + (meso - 0.5) * 0.3);
+	float rockw = smoothstep(0.3, 0.55, slope + (meso - 0.5) * 0.3);
 	vec3 rock = mix(rock_b, rock_a, strata * 0.6 + fine * 0.4);
 	rock *= mix(0.45, 1.1, crease);                           // shadowed gully floors
 	// snow: above the line, only where it can settle (flatter), streaky down gullies; it lies
 	// in the gullies longer than on the ribs between them
 	float snoww = smoothstep(snow_line - 30.0, snow_line + 40.0,
 	                         wpos.y + (meso - 0.5) * 90.0 + (1.0 - crease) * 60.0 * steep0)
-	            * (1.0 - smoothstep(0.5, 0.8, slope - fine * 0.2 - (1.0 - crease) * 0.25));
-	vec3 col = mix(meadow, trees, forest);
+	            * (1.0 - smoothstep(0.42, 0.7, slope - fine * 0.2 - (1.0 - crease) * 0.3));
+	// above the treeline and on ribs too steep for forest: dark turf and scrub, not bare grey
+	vec3 turf = alpine * (0.75 + 0.5 * meso) * mix(0.6, 1.0, crease);
+	vec3 col = mix(turf, meadow, 1.0 - smoothstep(60.0, 220.0, d));
+	col = mix(col, trees, forest);
 	col = mix(col, rock, rockw);
 	col = mix(col, snow, snoww);
 	col *= 0.85 + 0.3 * fine;
