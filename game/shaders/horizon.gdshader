@@ -14,6 +14,9 @@ uniform vec3 rock_b   : source_color = vec3(0.17, 0.16, 0.16);
 uniform vec3 snow     : source_color = vec3(0.86, 0.88, 0.92);
 uniform float tile_half = 256.0;
 uniform float snow_line = 380.0;
+// 0 by day .. 1 at full night (world.gd). Moonlit snow and scree read as pale grey cut-outs
+// against the black night sky; the far ring sinks toward a dark silhouette instead.
+uniform float night = 0.0;
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -108,4 +111,10 @@ void fragment() {
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	// cloud shadows sweep the far ridges (per pixel: the ridge mesh is coarse)
 	ALBEDO *= cloud_shade_at(wpos);
+	// night: the ring darkens with distance into a silhouette (a dark mountain against the
+	// starlit sky, as at night the land is darker than the sky glow over it); the snow fields
+	// lose most of their moonlit glare, so only the nearest ribs keep a faint modelling
+	float far = smoothstep(250.0, 1100.0, dist);
+	ALBEDO *= mix(1.0, mix(0.7, 0.36, far), night) * mix(1.0, 0.72, night * snoww);
+	SPECULAR *= 1.0 - 0.7 * night;
 }

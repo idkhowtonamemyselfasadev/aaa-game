@@ -325,6 +325,11 @@ func _apply_time() -> void:
 		if grade:
 			# rods take over as the sky darkens: none at sunset, full by nautical dusk
 			grade.set_shader_parameter("night", smoothstep(deg_to_rad(-2.0), deg_to_rad(-12.0), elev))
+		# the far mountain ring sinks into a dark silhouette over the same twilight
+		var hz := get_node_or_null("Horizon/Mesh") as MeshInstance3D
+		if hz and hz.mesh and hz.mesh.surface_get_material(0) is ShaderMaterial:
+			(hz.mesh.surface_get_material(0) as ShaderMaterial).set_shader_parameter("night",
+					smoothstep(deg_to_rad(-3.0), deg_to_rad(-12.0), elev))
 		_apply_weather(day)
 
 ## A weather front over the time-of-day light: cloud swallows the sun and the sky's blue,
