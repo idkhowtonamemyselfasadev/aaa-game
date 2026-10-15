@@ -18,3 +18,4 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 - Watchtower ruin (chipped cut-stone blocks, keep, curtain wall, fallen stones): `game/world/ruins.gd` + `game/shaders/masonry.gdshader` — original, procedural.
 - Ivy on the keep (climbing stems, lobed leaf blades, painted veins): `game/world/ivy.gd` + `game/shaders/ivy.gdshader` — original, procedural.
 - Red deer herd (hinds and calves): `game/world/herd.gd` (lofted body/neck/head/legs/ears mesh, herd behaviour) + `game/shaders/deer.gdshader` (gait/grazing pose, coat markings, hair detail) — original, procedural. Model check: `game/tools/deer_view.gd`.
+- Soundscape (wind, leaf rustle, rain, crickets, six birdsong phrases, rook caws + wing clatter, near/far thunder): synthesised at load in `game/world/soundscape.gd` from noise and oscillators — original, no sample files.

@@ -24,6 +24,7 @@ var weather: Weather
 var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
+var soundscape: Soundscape
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 var face_shade := Color(0, 0, 0)    # shade light under the brim: feeds the hero's face fill
@@ -85,6 +86,13 @@ func _ready() -> void:
 	herd = Herd.new()
 	herd.name = "Herd"
 	add_child(herd)
+	# wind, rain, birdsong, crickets, rook calls and thunder, mixed by clock and weather
+	soundscape = Soundscape.new()
+	soundscape.name = "Soundscape"
+	soundscape.world = self
+	soundscape.weather = weather
+	soundscape.birds = get_node_or_null("Birds")
+	add_child(soundscape)
 
 func _build_environment() -> void:
 	var e := Environment.new()

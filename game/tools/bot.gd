@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -68,6 +68,9 @@ func _ready() -> void:
 		return
 	if name == "insects":
 		_insects_test()
+		return
+	if name == "sound":
+		_sound_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1062,6 +1065,61 @@ func _sweep_test() -> void:
 ## Insects: midge swarms by day that drift off when the hero walks into them, fireflies
 ## only after dusk, hovering over the ground, scattering when the hero runs through them,
 ## and streaming along with the camera.
+## Soundscape: layers follow the clock and the weather; birds sing by day, crickets at
+## night, thunder follows a strike, rooks caw when a flock scatters.
+func _sound_test() -> void:
+	var ss: Soundscape = _world.soundscape
+	var wx: Weather = _world.weather
+	print("BOT sound: synthesised in %d ms" % ss.build_ms)
+	for k in ["WindBed", "LeavesBed", "RainBed", "CricketsBed"]:
+		var bed: AudioStreamPlayer = ss.get_node(k)
+		var st: AudioStreamWAV = bed.stream
+		if st == null or st.data.size() < 20000 or st.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+			return _combat_done(false, "%s has no looping stream" % k)
+	wx.force(0.0)
+	_world.time_of_day = 6.5
+	var c0 := ss.calls
+	await _ticks(60 * 20)   # 20 s game time at dawn
+	var dawn: Dictionary = ss.levels.duplicate()
+	var dawn_calls := ss.calls - c0
+	print("BOT sound dawn: %s, calls %d" % [str(dawn), dawn_calls])
+	if dawn.birds < 0.9 or dawn_calls < 4 or dawn.crickets > 0.01 or dawn.rain > 0.01:
+		return _combat_done(false, "no dawn chorus, or crickets/rain heard at dawn")
+	_world.time_of_day = 23.0
+	c0 = ss.calls
+	await _ticks(60 * 15)
+	var night: Dictionary = ss.levels.duplicate()
+	print("BOT sound night: %s, calls %d" % [str(night), ss.calls - c0])
+	if night.crickets < 0.9 or night.birds > 0.01 or ss.calls - c0 > 1:
+		return _combat_done(false, "no crickets at night, or birds singing in the dark")
+	_world.time_of_day = 14.0
+	wx.force(1.0)
+	await _ticks(60 * 4)
+	var storm: Dictionary = ss.levels.duplicate()
+	print("BOT sound storm: rain %.2f wind %.2f, weather rain %.2f wind %.2f" % [storm.rain, storm.wind, wx.rain, wx.wind])
+	if storm.rain < 0.8 or storm.wind <= dawn.wind or storm.birds > 0.2:
+		return _combat_done(false, "storm not louder than the calm, or birds singing through it")
+	var k0 := ss.claps
+	wx.lightning.strike()
+	var t := 0.0
+	while ss.claps == k0 and t < 12.0:
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	print("BOT sound: thunder %.1f s after the strike (claps %d)" % [t, ss.claps])
+	if ss.claps == k0:
+		return _combat_done(false, "no thunder after a lightning strike")
+	var birds: Node = _world.get_node("Birds")
+	var r0 := ss.caws
+	for fl in birds._flocks:
+		if fl.state != 1:   # not already in the air
+			birds.scatter(fl, _player.global_position)
+			break
+	await _ticks(10)
+	print("BOT sound: rook caws %d" % (ss.caws - r0))
+	if ss.caws == r0:
+		return _combat_done(false, "no caws when a rook flock scattered")
+	_combat_done(true, "soundscape follows clock and weather, thunder and rook calls fire")
+
 func _insects_test() -> void:
 	var p := _player
 	var ins: Insects = _world.get_node("Insects")
