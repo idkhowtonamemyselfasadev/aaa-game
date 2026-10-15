@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-0953-rags-front.jpg",
-  "time": "2026-10-11T09:53:00Z",
-  "caption": "The Hollow Soldier now wears a deep hood with a dark face void, a ragged shoulder mantle, a sash and a torn tabard to the knees, the ember glowing through the open chest; the silhouette reads as a cloaked revenant, but it is backlit and the legs still show the old armour greaves.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0953-rags-side.jpg",
   "time": "2026-10-11T09:53:00Z",
   "caption": "Side view of the rags in daylight: woven hemp hood, mantle and sash over the ash body; the cloth is still a uniform charcoal and the tabards hang stiff as boards rather than draping.",
@@ -885,6 +879,12 @@
   "file": "20261015-1619-peaks-haze.jpg",
   "time": "2026-10-15T16:19:02Z",
   "caption": "The far massifs now stand darker and bluer than the sky in layered haze with snow on the tops, instead of a milky wash; their faces are still flat grey with little forest or rock break-up at 1.5-2.5 km, and the mid-range trees are sparse.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-1726-peaks-couloirs.jpg",
+  "time": "2026-10-15T17:26:07Z",
+  "caption": "Upper massifs now break into dark rock ribs with pale snow-filled couloirs; their lower flanks are still a flat grey-blue wash and the left peak's streaks swirl a little.",
   "verdict": "fail"
  }
 ]

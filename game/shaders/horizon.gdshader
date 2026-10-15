@@ -27,7 +27,9 @@ uniform float night = 0.0;
 // bluer than the sky behind them, with forest and rock still breaking up their faces.
 uniform vec3 haze_color = vec3(0.42, 0.48, 0.58);
 uniform float haze_density = 0.0012;
-uniform float haze_scale = 0.5;
+// 0.5 still left ~70% haze at 2 km on a clear day and flattened the massif faces into one
+// grey value; storms raise haze_density x7, so they still swallow the ring
+uniform float haze_scale = 0.4;
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -94,24 +96,45 @@ void fragment() {
 	float meso  = fbm(wpos.xz * 0.03);
 	float fine  = fbm(wpos.xz * 0.25);
 	// forest: patches that thin out with altitude and on steep ground; tree-crown speckle
-	float forest = smoothstep(0.3, 0.45, macro + meso * 0.25 - 0.1)
-	             * (1.0 - smoothstep(0.45, 0.72, slope + (meso - 0.5) * 0.2))
-	             * (1.0 - smoothstep(snow_line - 230.0, snow_line - 120.0, wpos.y + (macro - 0.5) * 80.0));
+	// macro face structure that survives 2-3 km (a pixel is ~2.5 m there, the gully normals fade
+	// out): long couloirs down the fall line at 70-200 m, the ribs between them standing out
+	// lighter, so a far face reads as rock architecture instead of one flat grey value
+	vec2 acr = vec2(-down.y, down.x);
+	vec2 fq = vec2(dot(wpos.xz, acr), dot(wpos.xz, down));
+	float coul = rnoise(fq * vec2(1.0 / 95.0, 1.0 / 420.0) + 3.7) * 0.6
+	           + rnoise(fq * vec2(1.0 / 38.0, 1.0 / 170.0) + 9.2) * 0.4;
+	coul = smoothstep(0.35, 0.95, coul);                     // 1 on a rib crest, 0 in a couloir
+	// forest climbs the lower flanks in tongues up the couloirs (deeper soil, shelter), thinning
+	// on the ribs: tongues of dark trees break up the massif bodies under the rock
+	float tl = snow_line - 170.0 + (macro - 0.5) * 120.0 + (1.0 - coul) * 70.0;
+	float forest = smoothstep(0.26, 0.42, macro + meso * 0.25 - 0.1 + (1.0 - coul) * 0.12)
+	             * (1.0 - smoothstep(0.5, 0.8, slope + (meso - 0.5) * 0.2 + coul * 0.1))
+	             * (1.0 - smoothstep(tl - 60.0, tl + 20.0, wpos.y));
 	forest *= smoothstep(20.0, 140.0, d);
 	vec3 meadow = mix(meadow_a, meadow_b, clamp(meso * 0.8 + fine * 0.3 - 0.2, 0.0, 1.0));
 	vec3 trees  = mix(forest_a, forest_b, fine * 0.7 + meso * 0.3);
 	// rock on steep faces, with strata bands so cliffs read at distance
 	float strata = vnoise(vec2(wpos.y * 0.15 + meso * 3.0, macro * 4.0));
 	float rockw = smoothstep(0.3, 0.55, slope + (meso - 0.5) * 0.3);
+	// the massif bodies are only ~25-30 deg overall, too gentle for the slope test, so above
+	// the treeline the ribs break out as bare rock by altitude and the turf keeps the couloirs
+	float above = smoothstep(tl + 10.0, tl + 130.0, wpos.y + (meso - 0.5) * 60.0);
+	rockw = max(rockw, above * smoothstep(0.3, 0.65, coul + (fine - 0.5) * 0.35) * 0.95);
 	vec3 rock = mix(rock_b, rock_a, strata * 0.6 + fine * 0.4);
 	rock *= mix(0.45, 1.1, crease);                           // shadowed gully floors
+	rock *= mix(0.55, 1.35, coul);                            // dark wet couloirs, pale ribs
 	// snow: above the line, only where it can settle (flatter), streaky down gullies; it lies
 	// in the gullies longer than on the ribs between them
 	float snoww = smoothstep(snow_line - 30.0, snow_line + 40.0,
 	                         wpos.y + (meso - 0.5) * 90.0 + (1.0 - crease) * 60.0 * steep0)
 	            * (1.0 - smoothstep(0.42, 0.7, slope - fine * 0.2 - (1.0 - crease) * 0.3));
+	// firn and old avalanche snow lie on in the couloirs well below the summit snowfields:
+	// pale streaks down the dark rock, the strongest value break a far face has
+	float gsnow = smoothstep(snow_line - 190.0, snow_line - 60.0, wpos.y + (meso - 0.5) * 70.0)
+	            * (1.0 - smoothstep(0.12, 0.42, coul + (fine - 0.5) * 0.2));
+	snoww = max(snoww, gsnow * 0.9);
 	// above the treeline and on ribs too steep for forest: dark turf and scrub, not bare grey
-	vec3 turf = alpine * (0.75 + 0.5 * meso) * mix(0.6, 1.0, crease);
+	vec3 turf = alpine * (0.75 + 0.5 * meso) * mix(0.6, 1.0, crease) * mix(0.7, 1.2, coul);
 	vec3 col = mix(turf, meadow, 1.0 - smoothstep(60.0, 220.0, d));
 	col = mix(col, trees, forest);
 	col = mix(col, rock, rockw);
