@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261011-0241-night-ridges.jpg",
-  "time": "2026-10-11T02:41:21Z",
-  "caption": "Night meadow at 22:00 with fireflies: the moonlit haze now continues into the sky so the far ridges sit as soft layered silhouettes under the stars instead of a glowing blue cut-out; ridges are still faceted and the grass blades read coarse up close.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-0432-dusk-afterglow.jpg",
   "time": "2026-10-11T04:32:08Z",
   "caption": "18:12, looking west over the meadow: the sky now holds a warm afterglow behind the silhouetted ridges after sunset instead of going black; the ridges are still faceted and the foreground grass is near-black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-0432-blue-hour.jpg",
-  "time": "2026-10-11T04:32:08Z",
-  "caption": "18:36 blue hour: the glow cools to violet-blue over the horizon as stars appear; the stars switch on all at once, too dense and gold-tinted for this early in the dusk.",
   "verdict": "fail"
  },
  {
@@ -891,6 +879,12 @@
   "file": "20261015-0400-ridges-night.jpg",
   "time": "2026-10-15T04:16:40Z",
   "caption": "Night meadow at 23:00: the far mountain ring now sinks into faint moonlit silhouettes instead of pale cut-outs; the meadow itself is still a flat grey-blue wash.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261015-0508-night-meadow.jpg",
+  "time": "2026-10-15T05:08:10Z",
+  "caption": "Night meadow at 23 h: moonlit grass tops now read cool silver over deep blue shadow instead of one grey wash; still too uniformly blue, the post's rope wrap stays yellow and the hero is a dark lump.",
   "verdict": "fail"
  }
 ]

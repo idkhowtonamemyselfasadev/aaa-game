@@ -283,7 +283,9 @@ func _apply_time() -> void:
 		var melev := -elev * 0.8
 		moon.rotation = Vector3(-maxf(melev, deg_to_rad(8.0)), az + PI, 0.0)
 		var night := 1.0 - clampf(sin(elev) * 5.0 + 1.0, 0.0, 1.0)
-		moon.light_energy = 0.8 * night
+		# a strong key against a dark ambient: moonlit grass tops and faces read silver over
+		# deep blue shadow (at 0.8 over a bright ambient the meadow was one grey wash)
+		moon.light_energy = 1.25 * night
 		moon.visible = night > 0.01
 	if env.environment:
 		var sky := env.environment.sky.sky_material as PhysicalSkyMaterial
@@ -306,7 +308,8 @@ func _apply_time() -> void:
 		# Day: blue-grey skylight that warms toward dusk; night: cool moonlit blue.
 		var sky_amb := Color(0.46, 0.53, 0.66).lerp(Color(0.56, 0.46, 0.42), low)
 		# the afterglow sky still lights the land through twilight
-		env.environment.ambient_light_color = Color(0.13, 0.17, 0.27).lerp(sky_amb, maxf(day, 0.8 * afterglow))
+		# night ambient is a dim deep blue so the moon, not the fill, models the land
+		env.environment.ambient_light_color = Color(0.075, 0.105, 0.2).lerp(sky_amb, maxf(day, 0.8 * afterglow))
 		env.environment.ambient_light_energy = lerpf(1.0, 1.15, day) * ambient_scale
 		# volumetrics only for local ground haze; distance haze is the depth fog (a dense
 		# volume ends at volumetric_fog_length and leaves a visible band on far ridges)
@@ -385,7 +388,8 @@ func _apply_bounce(e: Environment) -> void:
 		# a ~0.25 albedo meadow under the sun, half of it reaching a vertical face
 		b += sun.light_color * sun.light_energy * (0.25 + 0.75 * sun_h) * 0.13
 	if moon and moon.visible:
-		b += moon.light_color * moon.light_energy * 0.1
+		# the moon key was raised for contrast (0.8 -> 1.25), not for more fill in the shade
+		b += moon.light_color * moon.light_energy * 0.064
 	b += e.ambient_light_color * e.ambient_light_energy * 0.12
 	# the hero's face fill follows the same shade light (GI or not: SDFGI cannot see under
 	# the brim at its probe size either)

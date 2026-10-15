@@ -30,10 +30,12 @@ void fragment() {
 
 	// night: rod vision. Only what is dim loses colour; the colour that remains is blue.
 	float rod = 1.0 - smoothstep(0.2, 0.65, L);
-	vec3 scot = vec3(L * 1.08) * vec3(0.7, 0.86, 1.15);
+	vec3 scot = vec3(L * 1.08) * vec3(0.62, 0.84, 1.22);
 	vec3 nc = mix(c, scot, rod * 0.88);
-	// moonlit midnight-blue floor and a gentle lift so silhouettes still read
-	nc = pow(max(nc, vec3(0.0)), vec3(0.9)) + vec3(0.006, 0.010, 0.020) * (1.0 - L);
+	// moonlit contrast: shadows sink toward a midnight-blue floor (no lift, that turned the
+	// meadow into one grey wash), moonlit tops keep a cool silver; the floor keeps
+	// silhouettes readable
+	nc = pow(max(nc, vec3(0.0)), vec3(1.08)) + vec3(0.004, 0.008, 0.018) * (1.0 - L);
 
 	c = mix(day, nc, night);
 
