@@ -47,6 +47,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     fold added. robe2 FAIL overall: the board is gone, the robe drapes over the knees and
     down to the litter, the figure reads compact; still wrong: tilted slope framing, dark
     bundle of a body at 3 m, same-size litter blobs. Bots keeper, walk, talk PASS.
+- Session 2026-10-16 19:00 UTC (second, overlapping run): built a simpler back-panel-only
+  gravity hang in parallel; dropped it at rebase in favour of the fuller `HollowRags.hang`
+  above. Finding kept for the tilted pick frame: choosing between `dir`/`dir2` by
+  cross-slope does nothing for `keeperside` -- its two sides lie on one line, so their
+  cross-slopes are always equal (measured 1.99 vs 1.99 m over 5 m). Rotate the lens about
+  her instead (try +-0.3..0.6 rad off side-on and take the least cross-slope), or raise
+  it to ~0.9 m and look down a little. Also seen in a `keeperback ... pick` frame: a flat grey
+  slab clipping the bottom-left of the lens (near plane 0.9 m cuts a boulder or the
+  terrain) -- check it after the robe fix.
 - Session 2026-10-16 18:00 UTC:
   - **Fern forward scatter (item 00000).** foliage_light.gdshaderinc takes a `fwd_gain`
     (was a hard 2.2 on the forward-scatter lobe); grass/ivy pass 2.2, leaves.gdshader exposes
