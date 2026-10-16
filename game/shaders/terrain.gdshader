@@ -494,23 +494,35 @@ void fragment() {
 	// under the crowns the leaves lie thick: a third, denser layer of dry tan oak leaves
 	// (pale and sun-bleached on top, the earth barely shows between them)
 	// bottom to top: each layer covers part of the one below, the gaps show dark mould
-	vec3 bed = mix(earth * 0.8, mix(leaf_drift * 0.7, leaf_b, micro * 0.6), 0.85 - 0.3 * fade_l);
+	// the ground between the leaves is leaf mould: dark crumbled leaf, fragments and fine
+	// skeletons a shade or two under the whole leaves, not a bare dark gap
+	float frag = vnoise(wpos * 23.0) * 0.6 + vnoise(wpos * 61.0) * 0.4;
+	vec3 mould = mix(mix(earth * 0.7, leaf_b * 0.55, 0.6), leaf_a * 0.6, smoothstep(0.45, 0.8, frag) * fade_l);
+	vec3 bed = mix(mould, mix(leaf_drift * 0.62, leaf_b * 0.9, micro * 0.6), 0.5 - 0.35 * fade_l);
+	// the leaves blow together into drifts: in a drift they lie six deep and overlap, between
+	// drifts a few lie scattered on the mould
+	float clump = smoothstep(0.38, 0.68, fbm(wpos * 0.85 + 5.0) * 0.75 + micro * 0.35);
 	float bed_h = 0.0;
-	for (int k = 0; k < 4; k++) {
+	for (int k = 0; k < 6; k++) {
 		float fk = float(k);
-		vec4 lb = leafbed(xz + vec2(fk * 3.17, fk * 1.71), 4.2 + fk * 1.3);
-		// leaf by leaf the tone wanders: tan, russet, dark wet brown, a few still dull ochre
+		vec4 lb = leafbed(xz + vec2(fk * 3.17, fk * 1.71), 4.2 + fk * 1.1);
+		// leaf by leaf the tone wanders a little: tan, russet, dark wet brown; neighbours
+		// stay close in value so the bed reads as one layer, not a mosaic of chips
 		// (linear colours: the old (0.52, 0.43, 0.20) read as cream-white flecks)
-		vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.35, 0.95, lb.z)),
-				vec3(0.16, 0.10, 0.026), step(0.92, fract(lb.z * 7.3)) * 0.7);
-		tone = mix(tone, leaf_b * 0.45, step(0.78, fract(lb.z * 3.9 + 0.3)) * 0.8);
+		vec3 tone = mix(mix(leaf_drift * 0.8, leaf_a * 0.8, smoothstep(0.35, 0.95, lb.z)),
+				vec3(0.16, 0.10, 0.026), step(0.92, fract(lb.z * 7.3)) * 0.5);
+		tone = mix(tone, leaf_b * 0.55, step(0.78, fract(lb.z * 3.9 + 0.3)) * 0.6);
 		// damp patches darken whole runs of the bed, not single leaves
 		tone *= mix(1.0, 0.62, smoothstep(0.5, 0.75, fbm(wpos * 0.7 + 29.0)));
-		tone *= 0.72 + 0.06 * fk + 0.2 * clamp(lb.y, 0.0, 1.0);   // upper leaves catch more light
-		float c = lb.x * fade_l * (0.8 + 0.2 * step(0.2, lb.z));
-		bed *= 1.0 - lb.w * 0.4 * fade_l;
+		tone *= 0.7 + 0.04 * fk + 0.14 * clamp(lb.y, 0.0, 1.0);   // upper leaves catch more light
+		// how many leaves of this layer lie here: the lower four thin out between drifts,
+		// the top two only lie in the drifts
+		float dens = k < 4 ? mix(0.3 + 0.1 * fk, 1.0, clump) : clump * 0.85;
+		float keep = step(fract(lb.z * 5.13 + fk * 0.37), dens);
+		float c = lb.x * fade_l * keep;
+		bed *= 1.0 - lb.w * 0.22 * fade_l * keep;
 		bed = mix(bed, tone, c);
-		bed_h = mix(bed_h, 0.3 + 0.2 * fk + lb.y, c);
+		bed_h = mix(bed_h, 0.3 + 0.15 * fk + lb.y, c);
 	}
 	// between the collars the grove floor is not bare leaves: low moss patches spread in the
 	// damp shade and the leaf bed thins over them
@@ -520,7 +532,7 @@ void fragment() {
 	// some sward survives in the litter (little under the crowns)
 	litcol = mix(litcol, turf, smoothstep(0.55, 0.8, micro) * 0.7 * (1.0 - canopy * 0.8));
 	// at range the leaves average out: tan drift under the crowns, not red-brown earth
-	litcol = mix(litcol, mix(mix(earth, leaf_a * 0.8, 0.4), mix(leaf_drift * 0.7, leaf_b, 0.4), canopy), 1.0 - fade_l);
+	litcol = mix(litcol, mix(mix(earth, leaf_a * 0.8, 0.4), mix(leaf_drift * 0.6, leaf_b * 0.85, 0.45), canopy), 1.0 - fade_l);
 	litcol = mix(litcol, gmoss, gpatch * (1.0 - 0.5 * smoothstep(0.55, 0.85, micro) * fade_l));
 	float lit_h = max(max(lt.y, lt2.y * 0.6), bed_h * 0.35 * canopy) * fade_l * 0.006 + micro * 0.004;
 
