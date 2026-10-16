@@ -38,6 +38,10 @@ life as the new chain. She is right about the stakes and wrong about the price.
 - **The Cartographer (Sefi Ode)**, who built the towers and lost her sight doing it. Arc:
   each tower restored returns a memory; the last one returns her sight and she chooses to
   leave it unrestored.
+- **Hesper**, the last keeper of the Shrine of Binding, an old pilgrim living rough in the
+  ruined watchtower keep above Harrowmere. Keeps the sealed lid swept and watches the vale at
+  dawn and dusk. Arc (Act I side thread): she has guarded a door she cannot open for forty
+  years; when Wren opens it she must decide whether her life's watch was worth anything.
 - **Caelum**, the sky-island boy king, twelve years old and ruling a court of automatons. Arc:
   learns to come down.
 

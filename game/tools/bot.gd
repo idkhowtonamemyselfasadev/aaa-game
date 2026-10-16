@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -80,6 +80,9 @@ func _ready() -> void:
 		return
 	if name == "gfx":
 		_gfx_test()
+		return
+	if name == "keeper":
+		_keeper_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1293,6 +1296,82 @@ func _gfx_test() -> void:
 		return _combat_done(false, "picture settings not saved/reloaded (or sound section lost)")
 	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded")
 
+## Hesper keeps her day: tends the lid in the morning, gathers under the oaks (leaving the
+## keep through the breach), eats in the shade, shelters under a crown in the rain, dozes
+## seated against the inner wall at night, and stops to face the hero (named once).
+func _keeper_test() -> void:
+	var k: Keeper = _world.keeper
+	var wx: Weather = _world.weather
+	wx.force(0.0)
+	_player.global_position = Vector3(0, _player.global_position.y, 0)
+	var log := []
+	for leg in [[8.0, "tend"], [11.0, "gather"], [13.0, "eat"], [22.0, "sleep"], [6.0, "wake"]]:
+		_world.time_of_day = leg[0]
+		var n0 := int(k.visits.get(leg[1], 0))
+		var t := 0.0
+		var breach := false
+		var through_wall := false
+		while int(k.visits.get(leg[1], 0)) <= n0 and t < 240.0:
+			await get_tree().physics_frame
+			t += get_physics_process_delta_time()
+			var r := Vector2(k.global_position.x - k.site.x, k.global_position.z - k.site.z)
+			var ang := absf(r.angle_to(Vector2(k.to_v.x, k.to_v.z)))
+			if r.length() > 2.9 and r.length() < 4.4:
+				if ang < 0.45:
+					breach = true
+				else:
+					through_wall = true
+			if r.length() > 12.1 and r.length() < 12.9 and ang > 0.2:
+				through_wall = true            # over the curtain wall, not through the gateway
+		var at := k.global_position
+		var inside := Vector2(at.x - k.site.x, at.z - k.site.z).length() < 3.0
+		log.append("%s %.0fs in=%s breach=%s wall=%s" % [leg[1], t, inside, breach, through_wall])
+		print("BOT keeper %.1f h: %s after %.1f s at %s, inside keep %s, through breach %s, crossed wall %s" % [leg[0], k.activity, t, at, inside, breach, through_wall])
+		if int(k.visits.get(leg[1], 0)) <= n0:
+			return _combat_done(false, "did not reach her %s spot" % leg[1])
+		if through_wall:
+			return _combat_done(false, "walked through the keep wall going to %s" % leg[1])
+		if leg[1] in ["tend", "sleep"] and not inside:
+			return _combat_done(false, "%s should be on the keep floor" % leg[1])
+		if leg[1] in ["gather", "eat"] and inside:
+			return _combat_done(false, "%s should be out under the oaks" % leg[1])
+		if leg[1] == "sleep":
+			await _ticks(200)
+			print("BOT keeper: dozing sit %.2f, model drop %.2f" % [k.sit, k.model.position.y])
+			if k.sit < 0.95:
+				return _combat_done(false, "did not sit down to doze")
+	# rain: breaks off and gets under an oak crown
+	_world.time_of_day = 11.0
+	await _ticks(30)
+	wx.force(1.0)
+	var t2 := 0.0
+	while int(k.visits.get("shelter", 0)) < 1 and t2 < 240.0:
+		await get_tree().physics_frame
+		t2 += get_physics_process_delta_time()
+	var sh := wx.shelter_at(k.global_position.x, k.global_position.z)
+	print("BOT keeper rain: %s after %.1f s, crown shelter %.2f" % [k.activity, t2, sh])
+	if k.activity != "shelter" or int(k.visits.get("shelter", 0)) < 1 or sh < 0.3:
+		return _combat_done(false, "did not shelter under an oak in the rain")
+	wx.force(0.0)
+	await _ticks(20)
+	if k.activity == "shelter":
+		return _combat_done(false, "kept sheltering after the rain stopped")
+	# the hero walks up: she stops, turns to him and the HUD names her
+	var fwd := Vector3(sin(k.body.rotation.y), 0, cos(k.body.rotation.y))
+	var pp := k.global_position + fwd.rotated(Vector3.UP, 2.2) * 3.5
+	_player.global_position = Vector3(pp.x, _world.get_node("Terrain").height_at(pp.x, pp.z) + 0.3, pp.z)
+	await _ticks(150)
+	var d := _player.global_position - k.global_position
+	var face := absf(wrapf(atan2(d.x, d.z) - k.body.rotation.y, -PI, PI))
+	var hud: Hud = _player.get_node("Hud")
+	print("BOT keeper meet: noticing %s, facing off %.2f rad, speed %.2f, caption '%s'" % [k.noticing, face, Vector2(k.velocity.x, k.velocity.z).length(), hud.caption_title])
+	if not k.noticing or face > 0.35 or hud.caption_title != "Hesper":
+		return _combat_done(false, "did not stop, face and get named when the hero came up")
+	print("BOT keeper: warps %d, last at r %.1f from the keep (%s)" % [k.warps, Vector2(k.last_warp.x - k.site.x, k.last_warp.z - k.site.z).length(), k.last_warp])
+	if k.warps > 1:
+		return _combat_done(false, "got wedged %d times" % k.warps)
+	_combat_done(true, "day kept: %s; sheltered in rain, faced and named on meeting" % ", ".join(log))
+
 func _insects_test() -> void:
 	var p := _player
 	var ins: Insects = _world.get_node("Insects")
@@ -1986,6 +2065,8 @@ func _moss_test() -> void:
 func _trample_test() -> void:
 	var p := _player
 	var tr: Trample = _world.trample
+	# the point counts below are global: hold Hesper still so only the hero lays a trail
+	_world.keeper.set_physics_process(false)
 	var terrain: Terrain = _world.get_node("Terrain")
 	var start := p.global_position
 	await _ticks(20)

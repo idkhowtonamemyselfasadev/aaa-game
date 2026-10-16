@@ -238,6 +238,34 @@ func _ready() -> void:
 		var pp := rs + to_v * 40.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT ruin at %s" % rs)
+	if spot == "keeper":
+		# Hesper, the shrine keeper, three-quarter from the front at her spot for the hour
+		var kp: Keeper = world.keeper
+		kp.settle(world, world.time_of_day)
+		var at := kp.global_position
+		var yaw := kp.body.rotation.y
+		kp._gather_t = 1.0e6                       # hold her at this spot for the frame
+		var dir := Vector3(sin(yaw + 0.55), 0, cos(yaw + 0.55))
+		var dir2 := Vector3(sin(yaw - 0.55), 0, cos(yaw - 0.55))
+		var flora: Flora = world.get_node("Flora")
+		var clear := func(d: Vector3) -> float:
+			var m := INF
+			for q in flora.tree_positions:
+				m = minf(m, Vector2(q.x - (at.x + d.x * 3.0), q.z - (at.z + d.z * 3.0)).length())
+			return m
+		if clear.call(dir2) > clear.call(dir):
+			dir = dir2
+		var cp := at + dir * 3.0
+		cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 1.55
+		var rel := Vector3(at.x - kp.site.x, 0, at.z - kp.site.z)
+		if rel.length() < Keeper.KEEP_R:
+			# on the keep floor: from across the shrine lid, over the plinth, at her eye level
+			cp = kp.site - rel.normalized() * 0.9 + rel.normalized().cross(Vector3.UP) * 0.6
+			cp.y = at.y + 1.45
+		SPOTS[spot] = [cp, at + Vector3.UP * 1.15]
+		var pp := at + Vector3(30, 0, 30)
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT keeper %s at %s" % [kp.activity, at])
 	if spot == "seal":
 		# the carved shrine lid in the keep floor, the hero standing at its edge so it wakes
 		var rs: Vector3 = world.get_node("Ruins").site
@@ -480,6 +508,9 @@ func _ready() -> void:
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
+			look.y = (s[1] as Vector3).y
+		if spot == "keeper":
+			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.8

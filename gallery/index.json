@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-1300-mixed-meadow.jpg",
-  "time": "2026-10-11T13:00:00Z",
-  "caption": "Knapweed, ox-eye daisies and yarrow mixed through the 15 h meadow beside the hero and the Hollow Soldier; flowers read, but bare brown soil between grass clumps dominates.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1447-meadow-floor.jpg",
-  "time": "2026-10-11T14:47:03Z",
-  "caption": "Knee-height across a buttercup drift: the ground between the clumps is now lit turf with lying blades instead of a black void; the blade stroke pattern repeats like tread plate at grazing angles and the grass ribbons are still flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1447-turf-closeup.jpg",
   "time": "2026-10-11T14:47:03Z",
   "caption": "Looking down at the meadow floor: straw-strewn sward, moss and clover between the clumps reads as real ground; clump shadows are still very dark and the clumps too regular.",
@@ -885,6 +873,24 @@
   "file": "20261016-0026-picture-menu.jpg",
   "time": "2026-10-16T00:26:55Z",
   "caption": "Pause panel with the new Picture section (quality preset Low..Ultra, FSR 2 render scale) lined up under the sound sliders over the keep interior; slider knobs are still stock white, not brass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0158-keeper-tend.jpg",
+  "time": "2026-10-16T01:58:00Z",
+  "caption": "Hesper, the shrine keeper, tends the sealed lid in the ruined keep at 9 h in her own undyed wool, ash hood and faded woad robe; she still wears the hero's body cut and hat, and her linen leg wraps read too pale and thick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0158-keeper-gather.jpg",
+  "time": "2026-10-16T01:58:00Z",
+  "caption": "Hesper gathering at an oak below the keep in the afternoon, side-on to the bole; she just stands (no stoop-and-pick animation) and the shaded oak bole reads glossy black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0158-keeper-doze.jpg",
+  "time": "2026-10-16T01:58:00Z",
+  "caption": "Before dawn Hesper dozes seated against the keep's inner wall, knees drawn up and hat bowed over them; reads as a sleeper, but her old armour knee caps show orange and there is no bedroll or fire.",
   "verdict": "fail"
  }
 ]

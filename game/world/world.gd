@@ -24,6 +24,7 @@ var weather: Weather
 var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
+var keeper: Keeper
 var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
@@ -90,6 +91,14 @@ func _ready() -> void:
 	herd = Herd.new()
 	herd.name = "Herd"
 	add_child(herd)
+	# Hesper, the shrine keeper living in the ruined keep, keeping her day by the clock
+	keeper = Keeper.new()
+	keeper.name = "Keeper"
+	# enter the tree at the keep: at the origin her collider would land on the hero's start
+	keeper.position = (get_node("Ruins") as Ruins).site + Vector3.UP
+	add_child(keeper)
+	keeper.settle(self, time_of_day)
+	trample.walkers.append(keeper)
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"

@@ -18,6 +18,9 @@ var veil: MeshInstance3D
 var face: MeshInstance3D
 var eyes: Array[MeshInstance3D] = []
 var fill: OmniLight3D
+## Per-piece colour overrides for another wearer (an NPC): keys hood, hat, mantle, robe, sash,
+## wraps -> [dark, light, soot] like the constants below. Empty: the hero's own dyes.
+var palette := {}
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -39,7 +42,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	for side in ["Left", "Right"]:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side)]))
-	tint = INDIGO
+	tint = palette.get("hood", INDIGO)
 	# the hero's hood is sewn, not torn like the Hollow's cowl: a straight turned and stitched
 	# hem where it falls over the mantle
 	var hood := _piece(_hood(), 0.0, 0.0, 0.0, 1.2)
@@ -53,7 +56,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	vm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(veil)
 	_add_face(head)
-	tint = STRAW
+	tint = palette.get("hat", STRAW)
 	hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
 	var hm := hat.material_override as ShaderMaterial
 	hm.set_shader_parameter("rigid", 1.0)
@@ -64,7 +67,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	var crown := Vector3(0.0, 2.10, -0.03)
 	hat.transform = Transform3D(Basis(Vector3.RIGHT, -0.17), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * 0.02)
 	head.add_child(hat)
-	tint = MANTLE
+	tint = palette.get("mantle", MANTLE)
 	var mantle := _piece(_drape(), 0.0, 0.012, 0.35, 1.0)
 	var mm := mantle.material_override as ShaderMaterial
 	mm.set_shader_parameter("fold_ao", 1.0)
@@ -73,12 +76,12 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
-	tint = MADDER
+	tint = palette.get("robe", MADDER)
 	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30, 0.44, 0.90, 0.9, 1.0)
 	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34, 0.48, 0.96, -0.9, 2.0)
-	tint = OCHRE
+	tint = palette.get("sash", OCHRE)
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
-	tint = LINEN
+	tint = palette.get("wraps", LINEN)
 	for side in ["Left", "Right"]:
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.14, 0.93, 0.01, 8.0)
 		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
