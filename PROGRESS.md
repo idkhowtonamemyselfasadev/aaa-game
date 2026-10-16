@@ -33,6 +33,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-16 07:00 UTC:
+  - **Hesper's skirt (known bug "two panels with the wrapped legs between" / item 000).**
+    `HeroGarb.skirt` -> `_gore(sx)`: one side gore per hip on the hips attachment, an arc
+    from 32 to 148 deg off the front, 0.245/0.205 m radii at the seam flaring to a bell
+    (0.30 x, 0.34 fore-aft at the hem: her idle feet sit at z +-0.29), GORE_LEN 0.93 x
+    robe_len, soft vertical folds with fold_ao cavities; hung inside the panels' curled
+    edges so they lie over its ends. `rag.gdshader` gains `gore_swing`/`gore_top`: the
+    gore's front end follows the front panel's swing and its back end the back panel's
+    (weights (1-u)^2 / u^2, the side seam stays), fed from `HeroGarb._physics_process`.
+    Keeper sets `skirt = true`. Bot `keeper` adds a skirt check (2 gores, outside both knees,
+    from <= 0.3 m to >= 1.0 m) and prints knee/foot body positions. Shot spot `keeperside`
+    (square side-on). Shots (Forward+/lavapipe): `kside` (gores only to 140 deg, no bell) and
+    `kside2` 15.5 h (bell): the blue skirt reads down to the ground side-on, but in her
+    stand pose at the gather oak the BACK leg still shows grey-wrapped from thigh to foot
+    behind the skirt (fail) -- that pose steps back further than the idle the bot measures.
+    All keeper bots PASS.
 - Session 2026-10-16 04:00 UTC:
   - **Hesper stoops to pick at the litter (item 00000).** `Keeper._update_pick`: while she
     STANDs at a gather oak (not noticing the hero, not talking) every 3.5-7.5 s she crouches
@@ -2564,7 +2580,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    done 01:00 10-16: Hesper, `world/keeper.gd`.) Hesper next (own cut done 03:00 10-16): a wrap-round skirt (a tube
    of cloth from the sash to the ankles, or side gores joining the panels) so the side view
    shows no legs/armour, then grey hair wisps
-   at the hood opening, no face cloth (an old face), a walking stick, footfall foley + a hum/cough
+   at the hood opening (skirt gores done 07:00 10-16; NEXT: her back leg still shows behind
+   the skirt in the gather-oak stand pose (`keeperside x 15.5`): measure the foot in that
+   pose and either lower her back-panel swing_slack so the back panel and gore end follow
+   the leg, or narrow her stance with a hip-adduction pose tweak), no face cloth (an old face), a walking stick, footfall foley + a hum/cough
    voice, gather animation (stoop and pick: Crumple spine/knee bend while STAND at an oak),
    a small bedroll + cookfire in the keep (campfire light at night draws moths), (dialogue on
    interact done 02:00 10-16; next: a voice bark per line -- breathy hum/murmur, lines that
@@ -2709,9 +2728,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - Hesper (01:00 10-16; cut 03:00 10-16): own cut now (no hat, ankle robe, stoop, basket),
   but still the hero's body, face cloth and mantle shape; no hair; the basket hangs ~13 cm
   to one side of the spine in the idle (it rides the chest bone, which the idle twists);
-  straps never checked close up; from the side her robe is two panels with the wrapped
-  legs and the old armour's flank showing between (needs a wrap-round skirt piece or side
-  gores: next for her); old armour knee caps show orange in the doze; the face
+  straps never checked close up; side gores close the robe now (07:00 10-16), but in the
+  stand pose at the gather oaks her back leg still shows behind the skirt; old armour knee caps show orange in the doze; the face
   fill under her hat lights a pale patch on the floor at her feet while dozing; idle at the
   oaks (no gather/eat animation); routes are straight lines with a stuck sidestep (no
   navmesh); she does not react to combat or the Hollow; no sound.
