@@ -23,6 +23,10 @@ uniform float fill = 0.45;
 // ferns (flora.gd sets 1): fronds are pushed aside by the hero's legs and spring back;
 // 0 on the oak crowns
 uniform float trample_gain = 0.0;
+// thin-leaf transmission tint (foliage_light: a gain on the albedo). Oak leaves: yellow-green.
+// Ferns (flora.gd) get a deeper, weaker tint: a frond is thicker and darker than a sunlit oak
+// leaf, and the oak tint made back-lit fern cards glow lime on the grove floor.
+uniform vec3 backlight = vec3(0.95, 1.1, 0.42);
 
 varying float v_phase;
 varying float v_occ;
@@ -77,8 +81,7 @@ void fragment() {
 	// every sun-facing card went white at grazing angles looking toward the sun. 0.2 caps the
 	// grazing sheen at ~0.3 (a waxy oak leaf, not a mirror).
 	SPECULAR = 0.2;
-	// thin leaf transmission tint (foliage_light: a gain on the albedo): yellow-green
-	BACKLIGHT = vec3(0.95, 1.1, 0.42);
+	BACKLIGHT = backlight;
 	if (!FRONT_FACING) NORMAL = -NORMAL;
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)

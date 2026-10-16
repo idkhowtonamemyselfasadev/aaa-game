@@ -787,7 +787,8 @@ func _scatter_understory() -> void:
 	var fern_mat := leaf_material.duplicate() as ShaderMaterial
 	fern_mat.set_shader_parameter("leaf_tex", _fern_atlas())
 	fern_mat.set_shader_parameter("tint", Color(1.0, 1.0, 1.0))
-	fern_mat.set_shader_parameter("fill", 2.0)
+	fern_mat.set_shader_parameter("fill", 1.6)
+	fern_mat.set_shader_parameter("backlight", Vector3(0.62, 0.7, 0.36))
 	fern_mat.set_shader_parameter("trample_gain", 1.0)
 	fern_mat.set_shader_parameter("nmap_depth", 0.0)   # fern strips carry no tangents
 	var shrub_leaf := leaf_material.duplicate() as ShaderMaterial
@@ -1008,7 +1009,7 @@ func _fern_atlas() -> ImageTexture:
 	for tile in 4:
 		var ox := tile * W
 		var clip := Rect2i(ox, 0, W, H)
-		var base_col: Color = [Color(0.2, 0.33, 0.08), Color(0.24, 0.36, 0.09), Color(0.18, 0.3, 0.07), Color(0.42, 0.28, 0.11)][tile]
+		var base_col: Color = [Color(0.17, 0.28, 0.09), Color(0.2, 0.3, 0.1), Color(0.15, 0.26, 0.08), Color(0.42, 0.28, 0.11)][tile]
 		var cx := ox + W * 0.5
 		# rachis
 		_line(img, Vector2(cx, H - 1), Vector2(cx, 8), 2.0, base_col.darkened(0.35).lerp(Color(0.3, 0.26, 0.12), 0.4))
