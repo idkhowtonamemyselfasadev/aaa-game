@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-2215-wade-wake.jpg",
-  "time": "2026-10-11T22:15:00Z",
-  "caption": "After a shower the hero runs through a pool: ring trains spread across the water behind each footfall and a white crown bursts at the foot; the hero is still the sci-fi Vanguard, the splash sheet reads as a white sickle and the grass is flat ribbons.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-2215-wade-downpour.jpg",
-  "time": "2026-10-11T22:15:00Z",
-  "caption": "Downpour over a meadow pool: bigger foot splash at the hero's stride, rain rings everywhere; placeholder hero and low-detail grass keep it short of Wukong.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-2300-lightning-night.jpg",
   "time": "2026-10-11T23:00:00Z",
   "caption": "Night storm over the Vale: a jagged bolt drops from the flash-lit deck and the meadow flares blue-white; the bolt's foot gets a dark outline against the mountains, and the faceted mountain ring and ribbon grass still read as prototype.",
@@ -891,6 +879,12 @@
   "file": "20261016-1500-keeperpick.jpg",
   "time": "2026-10-16T15:00:00Z",
   "caption": "Hesper crouched in the leaf litter under a gather oak, seen from a level, low side camera with no grass blades in the lens; her body still reads as a dark jumble of robe and armour, the leaves are near-uniform blobs and a fern card glows too bright.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-1620-keepercloth.jpg",
+  "time": "2026-10-16T16:20:00Z",
+  "caption": "Hesper crouched at the gather oak: her body now reads as grey wool and linen instead of black lacquer and iron, robe lighter; still a busy bundle of separate panels and a lime back-lit fern on the left.",
   "verdict": "fail"
  }
 ]

@@ -18,6 +18,12 @@ uniform vec3 lacquer : source_color = vec3(0.034, 0.024, 0.020);
 uniform vec3 hide : source_color = vec3(0.26, 0.16, 0.085);
 uniform vec3 cinnabar : source_color = vec3(0.30, 0.055, 0.035);
 uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
+// 1: a wearer with no armour (Hesper): the plates become layered undyed wool, the iron
+// fittings (knee caps, bracers, collar) old linen bindings, the red stripes a faded russet
+// patch -- matte cloth, no metal, so a crouched figure reads as one soft bundle of cloth
+uniform float cloth_body = 0.0;
+uniform vec3 wool : source_color = vec3(0.30, 0.29, 0.27);
+uniform vec3 linen : source_color = vec3(0.44, 0.41, 0.35);
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -65,6 +71,20 @@ void fragment() {
 		o = mix(o, iron, iron_m);
 		r_o = mix(r_o, 0.55 + 0.25 * mott, iron_m);
 		metal = 0.7 * iron_m;
+		if (cloth_body > 0.0) {
+			// woven texture: a fine twill and slubs so the plates read as cloth, not paint
+			float tw = 0.5 + 0.5 * sin((UV.x + UV.y) * 1400.0);
+			float slub = h_noise(UV * vec2(300.0, 40.0));
+			vec3 w = wool * (0.78 + 0.18 * tw + 0.22 * mott) * mix(0.85, 1.1, slub);
+			vec3 ln = linen * (0.8 + 0.25 * h_noise(UV * vec2(25.0, 420.0)) + 0.1 * tw);
+			vec3 cl = mix(w, ln, iron_m);
+			cl = mix(cl, vec3(0.20, 0.12, 0.08) * (0.8 + 0.4 * mott), red_m * 0.7);
+			cl = mix(cl, w * 0.75, scratch * 0.5);
+			float body_m = clamp(tan_m + iron_m + red_m + scratch, 0.0, 1.0);
+			o = mix(o, cl, cloth_body * body_m);
+			r_o = mix(r_o, 0.93, cloth_body * body_m);
+			metal *= 1.0 - cloth_body;
+		}
 		// the visor glass (its own UV island, top left): a matte wound face cloth
 		vec2 vq = (UV - vec2(0.093, 0.215)) / vec2(0.085, 0.07);
 		float visor = 1.0 - smoothstep(0.85, 1.05, length(vq));

@@ -200,7 +200,7 @@ func _ready() -> void:
 		"hood": [Color(0.040, 0.038, 0.036), Color(0.20, 0.19, 0.18), 0.3],
 		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
 		"mantle": [Color(0.070, 0.058, 0.044), Color(0.36, 0.31, 0.24), 0.35],
-		"robe": [Color(0.048, 0.050, 0.056), Color(0.26, 0.27, 0.285), 0.4],
+		"robe": [Color(0.075, 0.078, 0.085), Color(0.36, 0.37, 0.385), 0.4],
 		"sash": [Color(0.075, 0.050, 0.030), Color(0.34, 0.24, 0.14), 0.3],
 		"wraps": [Color(0.14, 0.13, 0.11), Color(0.50, 0.47, 0.41), 0.4],
 	}
@@ -752,6 +752,8 @@ func _skin() -> void:
 			mat.set_shader_parameter("albedo_col", src.albedo_color)
 			mat.set_shader_parameter("roughness", src.roughness)
 			mat.set_shader_parameter("restyle", 1.0)
+			# no armour on her: the base body's plates and iron read as wool and linen
+			mat.set_shader_parameter("cloth_body", 1.0)
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
