@@ -154,6 +154,9 @@ var garb: HeroGarb
 var soak: Soak
 var anim_tree: AnimationTree
 var crumple: Crumple
+var square: SpineTwist          # squares her shoulders: the idle stands chest-turned to the right
+var _shoulders: Array[BoneAttachment3D] = []
+var _square_t := 0.0
 var _blend := 0.0
 var _model_rest: Transform3D
 var _hip_h := 0.95
@@ -215,6 +218,18 @@ func _ready() -> void:
 		# her ankle-length robe would let the idle stance's forward shin poke through the
 		# front panel; it rides on the leg sooner than the hero's knee-length one
 		garb.swing_slack = 0.3
+		# before the Crumple, so the stoop bends a chest that already faces forward: the hero's
+		# idle stands with the chest turned ~17 deg to the right, which swung her basket 11 cm
+		# off her spine to the left
+		square = SpineTwist.new()
+		square.name = "Square"
+		square.up = body
+		skel.add_child(square)
+		for side in ["Left", "Right"]:
+			var sh := BoneAttachment3D.new()
+			sh.bone_name = "mixamorig_%sArm" % side
+			skel.add_child(sh)
+			_shoulders.append(sh)
 		crumple = Crumple.new()
 		crumple.name = "Crumple"
 		skel.add_child(crumple)
@@ -291,6 +306,18 @@ func settle(w: Node3D, at_hour: float) -> void:
 		sit = 1.0
 		state = SIT
 	_last_pos = global_position
+
+## Her shoulder line as posed (two attachments ride the arms through the modifiers): its yaw
+## off the body's right axis is the stance's chest turn, which the twist slowly integrates
+## back out (~1.5 s), so the walk's stride-by-stride shoulder swing stays in.
+func _square_shoulders(delta: float) -> void:
+	if square == null:
+		return
+	var d := body.global_basis.inverse() * (_shoulders[0].global_position - _shoulders[1].global_position)
+	var yaw := atan2(d.z, d.x)
+	# settles fast at spawn, then only follows the slow stance changes
+	_square_t += delta
+	square.twist = clampf(square.twist + yaw * minf(delta / (0.25 if _square_t < 2.0 else 1.5), 1.0), -0.7, 0.7)
 
 ## At night the basket comes off her back and stands on the keep floor beside her bed, against
 ## the inner wall; the worn one hides while she sits (see _physics_process).
@@ -438,6 +465,7 @@ func _physics_process(delta: float) -> void:
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
 	_update_pick(delta)
+	_square_shoulders(delta)
 	_pose_sit()
 	if garb.basket_node != null:
 		garb.basket_node.visible = sit < 0.3

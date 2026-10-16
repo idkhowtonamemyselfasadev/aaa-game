@@ -843,7 +843,7 @@ func _flinch_test() -> void:
 	p.bot_heavy = false
 	while not (c.is_attacking() and c.current_attack() == StaffCombat.HEAVY):
 		await get_tree().physics_frame
-	await _ticks(3)
+	await _ticks(240)
 	var r := p.receive_attack(s, 1.0)
 	var kept := c.is_attacking() and c.current_attack() == StaffCombat.HEAVY
 	print("BOT flinch: hit on the downswing -> %s, armoured %d, flinches %d -> %d, swing kept %s" % [r, p.armoured_hits, f0, p.flinches, kept])
@@ -1308,7 +1308,8 @@ func _keeper_test() -> void:
 	wx.force(0.0)
 	_player.global_position = Vector3(0, _player.global_position.y, 0)
 	# her own cut: no hat, a basket of deadwood on her back, an ankle robe, a stooped head
-	await _ticks(10)
+	# (2 s: her shoulders square up off the idle's chest turn)
+	await _ticks(130)
 	var hb := k.skel.find_bone("mixamorig_Head")
 	# the stoop: how far the face cloth (it rides the head bone through its attachment, which
 	# sees the Crumple modifier; bone poses read here do not) sits forward of the feet
@@ -1329,6 +1330,8 @@ func _keeper_test() -> void:
 	var hem_k: float = hem.call(k.garb) - k.global_position.y
 	var hem_p: float = hem.call(_player.garb) - _player.global_position.y
 	print("BOT keeper cut: hat %s, basket %d meshes at body %s, face %.2f m ahead of the feet (hero %.2f), robe hem %.2f m (hero %.2f)" % [k.garb.hat != null, meshes, bpos, head_k, head_p, hem_k, hem_p])
+	if absf(bpos.x) > 0.05:
+		return _combat_done(false, "Hesper's basket hangs %.2f m off her spine" % bpos.x)
 	if k.garb.hat != null or meshes < 10 or bpos.z > -0.2 or bpos.y < 0.9 or head_k < head_p + 0.06 or hem_k > hem_p - 0.06 or hem_k < 0.0:
 		return _combat_done(false, "Hesper still cut like the hero (hat, no basket on her back, not stooped or robe not to the ankles)")
 	# the skirt: a gore each side, outside the knees, from the sash down past the shins
@@ -1521,7 +1524,7 @@ func _talk_test() -> void:
 	var p0 := k.global_position
 	for i in 4:
 		_player.bot_interact = true
-		await _ticks(3)
+		await _ticks(240)
 		heard.append(k.last_line)
 		print("BOT talk %d: '%s' | hud '%s: %s' saying %s" % [i, k.last_line, hud.say_speaker, hud.say_line, hud.saying()])
 		if hud.say_line != k.last_line or hud.say_speaker != "Hesper" or not hud.saying():

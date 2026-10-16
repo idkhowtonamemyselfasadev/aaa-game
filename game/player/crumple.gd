@@ -38,7 +38,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
 		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
-		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm, -0.55, bh), toss_arm, ts))
+		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm, -1.0, bh), toss_arm, ts))
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
