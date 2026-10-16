@@ -304,9 +304,9 @@ func _ready() -> void:
 		kp._rest_yaw = kp.goal_yaw
 		var pp := at - outw * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
-		var cp := at - to_h * 7.5 + to_h.cross(Vector3.UP) * 2.5
-		cp.y = terrain.height_at(cp.x, cp.z) + 1.7
-		SPOTS[spot] = [cp, at + to_h * 6.0 + Vector3.UP * 1.0]
+		var cp := at - to_h * 4.5 + to_h.cross(Vector3.UP) * 1.6
+		cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 2.1
+		SPOTS[spot] = [cp, at + to_h * 5.0 + Vector3.UP * 0.9]
 		print("SHOT wander %s at %s, herd %.1f m" % [kp.activity, at, at.distance_to(world.herd.centre())])
 	if spot == "seal":
 		# the carved shrine lid in the keep floor, the hero standing at its edge so it wakes
