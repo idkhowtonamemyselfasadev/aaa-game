@@ -99,6 +99,7 @@ func _ready() -> void:
 	add_child(keeper)
 	keeper.settle(self, time_of_day)
 	trample.walkers.append(keeper)
+	herd.familiar = keeper
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"

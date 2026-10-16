@@ -270,7 +270,7 @@ func _ready() -> void:
 			# crouched at the litter: lower, nearer, so the reach reads side-on
 			cp = at + dir * 2.4
 			cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 1.05
-		SPOTS[spot] = [cp, at + Vector3.UP * (0.6 if kp.pick_hold else 1.15)]
+		SPOTS[spot] = [cp, at + Vector3.UP * (0.45 if kp.pick_hold else 1.15)]
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])

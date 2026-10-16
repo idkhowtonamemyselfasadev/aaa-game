@@ -96,10 +96,11 @@ const STOOP_KNEE := 0.16
 const STOOP_NECK := 0.16
 # gathering under the oaks: every few seconds she crouches, curls right down over the litter
 # and reaches for an acorn or a stick, then straightens with a hand on her back
-const PICK_HIP := 0.62          # thighs forward; the knees fold twice that so the feet stay put
-const PICK_SPINE := 0.95
-const PICK_ARM := 0.85
-const PICK_ELBOW := 0.35
+const PICK_HIP := 1.0           # thighs forward; the knees fold twice that so the feet stay put
+const PICK_PELVIS := 0.6        # she bends at the waist as well as the knees
+const PICK_SPINE := 1.2
+const PICK_ARM := 2.4          # the arms hang straight down and a little ahead of the toes
+const PICK_ELBOW := -0.35
 const PICK_DOWN := 0.9          # s to get down (an old back: slower up than down)
 const PICK_HOLD := 1.3
 const PICK_UP := 1.4
@@ -131,6 +132,9 @@ var pick := 0.0                 # 0 upright .. 1 crouched over the leaf litter, 
 var picks := 0                  # times she has stooped to pick something up (bots)
 var _pick_t := 3.0              # s until the next stoop (negative: in the stoop)
 var pick_hold := false          # shots: stay down in the stoop
+var hand_mark: BoneAttachment3D
+var _back_hand := 0.0           # 0..1 the right hand on the small of her back
+var _rise_t := 0.0              # s left of straightening up with the hand on her back
 var stuck_t := 0.0
 var warps := 0                  # times she was lifted past an obstacle she could not get round
 var last_warp := Vector3.ZERO
@@ -207,6 +211,11 @@ func _ready() -> void:
 		crumple.name = "Crumple"
 		skel.add_child(crumple)
 		crumple.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
+		# rides the right hand through the modifier (bots measure her reach with it)
+		hand_mark = BoneAttachment3D.new()
+		hand_mark.name = "HandMark"
+		hand_mark.bone_name = "mixamorig_RightHand"
+		skel.add_child(hand_mark)
 		var hb := skel.find_bone("mixamorig_Hips")
 		if hb >= 0:
 			_hip_h = (skel.global_transform * skel.get_bone_global_rest(hb).origin).y - global_position.y
@@ -233,12 +242,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_spots = {
 		"sleep": [site + sleep_dir * 2.45, atan2(-sleep_dir.x, -sleep_dir.z)],
 		"tend": [site + to_v * 2.05 + side * 0.35, atan2(-to_v.x, -to_v.z)],
-		"wander": [
-		"I walk out at noon so my legs remember they are legs. The deer have stopped minding.",
-		"That hind with the torn ear is older than you. She was a calf the year the bells stopped.",
-		"Grass grows over everything here, child. Roads, walls, names. Given time, it will grow over me, and I shall let it.",
-	],
-	"watch": [site + to_v * 6.0, atan2(to_v.x, to_v.z)],
+		"watch": [site + to_v * 6.0, atan2(to_v.x, to_v.z)],
 		"breach_in": [site + to_v * 2.6],
 		"breach_out": [site + to_v * 5.2],
 		"gate_in": [site + to_v * 10.8],
@@ -608,6 +612,8 @@ func _pool_line(key: String) -> String:
 ## Stooping to the litter while she gathers: a slow crouch down, a hold with the hand at the
 ## ground, a slower straightening; not while she is walking, talking or watching the hero.
 func _update_pick(delta: float) -> void:
+	_rise_t -= delta
+	_back_hand = move_toward(_back_hand, 1.0 if _rise_t > 0.0 else 0.0, delta / 0.45)
 	if pick_hold:
 		pick = move_toward(pick, 1.0, delta / PICK_DOWN)
 		return
@@ -627,6 +633,7 @@ func _update_pick(delta: float) -> void:
 		pick = 1.0
 	else:
 		picks += 1
+		_rise_t = PICK_UP + 1.0
 		_pick_t = _rng.randf_range(3.5, 7.5)
 
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
@@ -643,7 +650,10 @@ func _pose_sit() -> void:
 	crumple.hip = lerpf(hip, 1.85, e)
 	crumple.knee = lerpf(knee, 2.15, e)
 	crumple.spine = lerpf(lerpf(STOOP_SPINE, PICK_SPINE, p), 0.55, e)
-	crumple.neck = lerpf(STOOP_NECK, 0.04, p) * (1.0 - e)
+	crumple.pelvis = PICK_PELVIS * p * (1.0 - e)
+	crumple.neck = lerpf(STOOP_NECK, 0.3, p) * (1.0 - e)
+	# straightening with an old back: the right hand goes to the small of it on the way up
+	crumple.back_hand = _back_hand * (1.0 - e)
 	crumple.arm = lerpf(PICK_ARM * p, 0.75, e)
 	crumple.elbow = lerpf(PICK_ELBOW * p, 1.1, e)
 	crumple.head_turn = 0.25 * e
@@ -651,7 +661,8 @@ func _pose_sit() -> void:
 	# hip height; the shin leans forward as far as the thigh, so the feet stay under her)
 	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5)
 	if p > 0.0:
-		bob = lerpf(bob, _hip_h * (1.0 - cos(hip)), p)
+		# tipping the pelvis lifts the hip joints (they hang behind and below its pivot)
+		bob = lerpf(bob, _hip_h * (1.0 - cos(hip)) + 0.1 * sin(PICK_PELVIS), p)
 	model.transform = _model_rest.translated(Vector3.DOWN * ((_hip_h - 0.14) * e + bob * (1.0 - e)))
 
 # --- look and animation (the hero's: Player._skin, Player._setup_animation) ---

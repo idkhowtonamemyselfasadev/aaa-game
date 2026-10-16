@@ -45,6 +45,11 @@ var roar_t := 20.0              # s to the stag's next roar while the herd is at
 var barks := 0                  # bots read these
 var roars := 0
 var _bark_q: Array = []         # [s left, deer] barks still to come in this alarm
+# Hesper: the herd knows her. A grazing deer near her lifts its head and watches her a
+# while, then goes back to the grass; she never alarms the herd.
+var familiar: Node3D
+const FAMILIAR_R := 24.0
+var glances := 0                # bots read this: times a deer looked up at her
 
 class Deer:
 	var pos := Vector3.ZERO
@@ -70,6 +75,7 @@ class Deer:
 	var bed_target := 0.0
 	var bed_jit := 0.0       # h: each deer lies down / gets up at its own time
 	var bed_d := 0.0         # s since its bed was last pressed into the grass
+	var glance_t := 0.0      # s left watching Hesper (negative: s until it may look again)
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -362,7 +368,7 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 		CALM:
 			if night or d.bed > 0.0:
 				pass
-			else:
+			elif not _glance(d, dt):
 				_graze(d, dt)
 			target = d.goal
 			if d.bed <= 0.0 and Vector2(target.x - d.pos.x, target.z - d.pos.z).length() > 0.6:
@@ -424,6 +430,29 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	var hf := _terrain.height_at(d.pos.x + fwd.x * 0.85 * d.scale, d.pos.z + fwd.z * 0.85 * d.scale)
 	var hb := _terrain.height_at(d.pos.x - fwd.x * 0.85 * d.scale, d.pos.z - fwd.z * 0.85 * d.scale)
 	d.pitch = atan2(hf - hb, 1.7 * d.scale) * 0.8
+
+## A grazing deer near Hesper now and then lifts its head, turns it to her and watches,
+## standing still, for a few seconds; true while it does.
+func _glance(d: Deer, dt: float) -> bool:
+	d.glance_t -= dt
+	if familiar == null or not familiar.is_inside_tree():
+		return false
+	var fp := familiar.global_position
+	var to := Vector3(fp.x - d.pos.x, 0, fp.z - d.pos.z)
+	if to.length() > FAMILIAR_R:
+		return false
+	if d.glance_t < -12.0 and _rng.randf() < dt * 0.05:
+		d.glance_t = _rng.randf_range(2.5, 6.0)
+		glances += 1
+	if d.glance_t <= 0.0:
+		return false
+	d.head_target = 0.0
+	d.goal = d.pos
+	var rel := wrapf(atan2(-to.x, -to.z) - d.yaw, -PI, PI)
+	d.head_yaw = clampf(rel, -1.1, 1.1)
+	if d.glance_t < 0.1:
+		d.look_t = _rng.randf_range(1.0, 3.0)   # back down to the grass soon after
+	return true
 
 ## Calm grazing: lift the head to chew and look round, then back down to the grass; step
 ## on to fresh grass near her place in the herd now and then.

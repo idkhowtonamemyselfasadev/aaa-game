@@ -12,6 +12,9 @@ var arm := 0.0               # radians, positive swings the upper arms forward
 var elbow := 0.0             # radians, positive bends the forearms
 var neck := 0.0              # radians, positive lifts the head back (an old stoop looks up)
 var head_turn := 0.0         # radians about the neck, so the face does not plant in the dirt
+var pelvis := 0.0            # radians, positive tips the pelvis (and all above it) forward
+							 # at the hip joints; the thighs are held where `hip` puts them
+var back_hand := 0.0         # 0..1: the right hand goes round to the small of the back
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -22,11 +25,14 @@ func _process_modification_with_delta(_delta: float) -> void:
 	var to_skel := frame.inverse()
 	var x := (to_skel * Vector3.RIGHT).normalized()
 	var up := (to_skel * Vector3.UP).normalized()
+	_bend(skel, "mixamorig_Hips", x, pelvis)
 	for side in ["Left", "Right"]:
-		_bend(skel, "mixamorig_%sUpLeg" % side, x, -hip)
+		_bend(skel, "mixamorig_%sUpLeg" % side, x, -hip - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, knee)
-		_bend(skel, "mixamorig_%sArm" % side, x, -arm)
-		_bend(skel, "mixamorig_%sForeArm" % side, x, -elbow)
+		var bh := back_hand if side == "Right" else 0.0
+		# a hand to the back: the upper arm swings behind the hip, the forearm folds across
+		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(arm, -0.55, bh))
+		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(elbow, 1.7, bh))
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)

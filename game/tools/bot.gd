@@ -1394,6 +1394,8 @@ func _keeper_test() -> void:
 			var deep := 0.0
 			var drift := 0.0
 			var drop := 0.0
+			var hand_lo := INF     # the wrist: the fingers reach ~0.18 m further, into the litter
+			var hand_back := -INF
 			var at0 := k.global_position
 			var tg := 0.0
 			while k.picks < p0 + 2 and tg < 40.0:
@@ -1402,10 +1404,16 @@ func _keeper_test() -> void:
 				if k.pick > deep:
 					deep = k.pick
 					drop = -k.model.position.y
+				var hm: Vector3 = k.hand_mark.global_position
+				if k.pick > 0.97:
+					hand_lo = minf(hand_lo, hm.y - _world.terrain.height_at(hm.x, hm.z))
+				if k._back_hand > 0.9 and k.pick < 0.3:
+					# behind the body's centre line: the hand is on her back
+					hand_back = maxf(hand_back, -(k.body.global_basis.inverse() * (hm - k.global_position)).z)
 				if k.pick > 0.05:
 					drift = maxf(drift, Vector2(k.global_position.x - at0.x, k.global_position.z - at0.z).length())
-			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, drift])
-			if k.picks < p0 + 2 or deep < 0.95 or drop < 0.12 or drift > 0.3:
+			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), hand %.2f m off the litter, %.2f m behind her rising, drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, hand_lo, hand_back, drift])
+			if k.picks < p0 + 2 or deep < 0.95 or drop < 0.12 or drift > 0.3 or hand_lo > 0.26 or hand_lo < -0.05 or hand_back < 0.0:
 				return _combat_done(false, "did not stoop to pick at the litter under the oaks")
 		if leg[1] == "wander":
 			var wr := Vector2(at.x - k.site.x, at.z - k.site.z).length()
@@ -1414,6 +1422,18 @@ func _keeper_test() -> void:
 			print("BOT keeper wander: stop %d at r %.1f from the keep, herd centre %.1f m off, ground normal %.2f" % [k.wander_stops.size(), wr, hd, slope])
 			if wr < 18.0 or wr > 47.0:
 				return _combat_done(false, "her meadow walk should stop 20-45 m out, got %.1f" % wr)
+			# the herd knows her: grazing near her they look up and watch, they never bolt
+			var hd2: Herd = _world.herd
+			hd2.place(at + Vector3(10, 0, 6))
+			var g0 := hd2.glances
+			var f0 := hd2.flee_events
+			var tw := 0.0
+			while tw < 40.0:
+				await get_tree().physics_frame
+				tw += get_physics_process_delta_time()
+			print("BOT keeper herd: %d glances at her in %.0f s, state %d, flee events %d" % [hd2.glances - g0, tw, hd2.state, hd2.flee_events - f0])
+			if hd2.glances - g0 < 2 or hd2.flee_events != f0:
+				return _combat_done(false, "the deer near her should look up at her and not flee")
 		if leg[1] == "sleep":
 			await _ticks(200)
 			print("BOT keeper: dozing sit %.2f, model drop %.2f" % [k.sit, k.model.position.y])
