@@ -104,6 +104,9 @@ const PICK_ELBOW := -0.35
 const PICK_DOWN := 0.9          # s to get down (an old back: slower up than down)
 const PICK_HOLD := 1.3
 const PICK_UP := 1.4
+const TOSS_AT := 1.9            # s after the hold: upright again, the find goes over her shoulder
+const TOSS_LEN := 1.0           # s with the hand up at the basket mouth
+const TOSS_DROP := 0.45         # s into the reach when she lets go of it
 
 signal activity_changed(name: String)
 
@@ -132,9 +135,14 @@ var pick := 0.0                 # 0 upright .. 1 crouched over the leaf litter, 
 var picks := 0                  # times she has stooped to pick something up (bots)
 var _pick_t := 3.0              # s until the next stoop (negative: in the stoop)
 var pick_hold := false          # shots: stay down in the stoop
+var toss_hold := false          # shots: hold the hand up at the basket mouth, stick in hand
 var hand_mark: BoneAttachment3D
 var _back_hand := 0.0           # 0..1 the right hand on the small of her back
 var _rise_t := 0.0              # s left of straightening up with the hand on her back
+var toss := 0.0                 # 0..1 the right hand up over her shoulder at the basket mouth
+var tosses := 0                 # finds dropped into the basket (bots)
+var _toss_t := -1.0             # s since she started up out of the last pick (negative: none)
+var _held: Node3D               # the stick in her hand, from the hold until it drops
 var stuck_t := 0.0
 var warps := 0                  # times she was lifted past an obstacle she could not get round
 var last_warp := Vector3.ZERO
@@ -216,6 +224,13 @@ func _ready() -> void:
 		hand_mark.name = "HandMark"
 		hand_mark.bone_name = "mixamorig_RightHand"
 		skel.add_child(hand_mark)
+		# the find: a short stick of deadwood across her fingers
+		_held = garb.held_stick()
+		_held.name = "HeldStick"
+		_held.position = Vector3(0.0, 0.085, 0.02)
+		_held.rotation = Vector3(0.0, 0.0, 0.35)
+		_held.visible = false
+		hand_mark.add_child(_held)
 		var hb := skel.find_bone("mixamorig_Hips")
 		if hb >= 0:
 			_hip_h = (skel.global_transform * skel.get_bone_global_rest(hb).origin).y - global_position.y
@@ -380,8 +395,8 @@ func _physics_process(delta: float) -> void:
 		_begin(want)
 	elif state == STAND and activity == "gather":
 		_gather_t -= delta
-		if pick > 0.02 or _pick_t < 0.0:
-			_gather_t = maxf(_gather_t, 0.1)    # finish the pick before she moves on
+		if pick > 0.02 or _pick_t < 0.0 or _toss_t >= 0.0:
+			_gather_t = maxf(_gather_t, 0.1)    # finish the pick (and the toss) before she moves on
 		if _gather_t <= 0.0 and _oaks.size() > 1:
 			_gather_i = (_gather_i + 1) % _oaks.size()
 			_route(_gather_spot(_gather_i))
@@ -614,11 +629,33 @@ func _pool_line(key: String) -> String:
 func _update_pick(delta: float) -> void:
 	_rise_t -= delta
 	_back_hand = move_toward(_back_hand, 1.0 if _rise_t > 0.0 else 0.0, delta / 0.45)
+	# once she is up, the find goes over her right shoulder into the basket
+	if _toss_t >= 0.0:
+		var was := _toss_t
+		_toss_t += delta
+		var up := _toss_t > TOSS_AT and _toss_t < TOSS_AT + TOSS_LEN
+		toss = move_toward(toss, 1.0 if up else 0.0, delta / 0.4)
+		if was <= TOSS_AT + TOSS_DROP and _toss_t > TOSS_AT + TOSS_DROP:
+			tosses += 1
+			if _held != null:
+				_held.visible = false
+		if _toss_t > TOSS_AT + TOSS_LEN + 0.6:
+			_toss_t = -1.0
+		_pick_t = maxf(_pick_t, 0.8)       # no new stoop with the arm still up
+	else:
+		toss = move_toward(toss, 0.0, delta / 0.4)
 	if pick_hold:
 		pick = move_toward(pick, 1.0, delta / PICK_DOWN)
 		return
+	if toss_hold:
+		toss = 1.0
+		if _held != null:
+			_held.visible = true
+		return
 	var working := state == STAND and activity == "gather" and not noticing and talking <= 0.0
 	if not working:
+		if _held != null and _held.visible and _toss_t < 0.0:
+			_toss_t = 0.0                      # cut short: the find still goes in the basket
 		_pick_t = maxf(_pick_t, _rng.randf_range(1.5, 3.0))
 		pick = move_toward(pick, 0.0, delta / PICK_UP)
 		return
@@ -631,9 +668,14 @@ func _update_pick(delta: float) -> void:
 		pick = move_toward(pick, 1.0, delta / PICK_DOWN)
 	elif t < PICK_DOWN + PICK_HOLD:
 		pick = 1.0
+		# her fingers close on something halfway through the hold
+		if _held != null and t > PICK_DOWN + PICK_HOLD * 0.5 and garb.basket_node != null:
+			_held.visible = true
 	else:
 		picks += 1
-		_rise_t = PICK_UP + 1.0
+		_rise_t = PICK_UP + 0.3
+		if _held != null and _held.visible:
+			_toss_t = 0.0
 		_pick_t = _rng.randf_range(3.5, 7.5)
 
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
@@ -654,6 +696,7 @@ func _pose_sit() -> void:
 	crumple.neck = lerpf(STOOP_NECK, 0.3, p) * (1.0 - e)
 	# straightening with an old back: the right hand goes to the small of it on the way up
 	crumple.back_hand = _back_hand * (1.0 - e)
+	crumple.toss = toss * (1.0 - e)
 	crumple.arm = lerpf(PICK_ARM * p, 0.75, e)
 	crumple.elbow = lerpf(PICK_ELBOW * p, 1.1, e)
 	crumple.head_turn = 0.25 * e

@@ -1398,7 +1398,10 @@ func _keeper_test() -> void:
 			var hand_back := -INF
 			var at0 := k.global_position
 			var tg := 0.0
-			while k.picks < p0 + 2 and tg < 40.0:
+			var t0 := k.tosses
+			var to_mouth := INF    # the hand at the top of its toss, from the basket mouth
+			var held_seen := false
+			while (k.picks < p0 + 2 or k._toss_t >= 0.0) and tg < 40.0:
 				await get_tree().physics_frame
 				tg += get_physics_process_delta_time()
 				if k.pick > deep:
@@ -1410,9 +1413,19 @@ func _keeper_test() -> void:
 				if k._back_hand > 0.9 and k.pick < 0.3:
 					# behind the body's centre line: the hand is on her back
 					hand_back = maxf(hand_back, -(k.body.global_basis.inverse() * (hm - k.global_position)).z)
+				if k._held.visible:
+					held_seen = true
+				if k.toss > 0.95:
+					var bn: Node3D = k.garb.basket_node
+					# the near (right-hand) side of the rim: the 0.3 m stick reaches on into the mouth
+					var mouth := bn.global_transform * Vector3(-0.15, HeroGarb.BASKET_TOP, HeroGarb.BASKET_Z)
+					to_mouth = minf(to_mouth, hm.distance_to(mouth))
 				if k.pick > 0.05:
 					drift = maxf(drift, Vector2(k.global_position.x - at0.x, k.global_position.z - at0.z).length())
 			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), hand %.2f m off the litter, %.2f m behind her rising, drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, hand_lo, hand_back, drift])
+			print("BOT keeper toss: %d finds into the basket, stick seen in hand %s, hand %.2f m from the rim at the top of the toss" % [k.tosses - t0, held_seen, to_mouth])
+			if k.tosses - t0 < 2 or not held_seen or to_mouth > 0.14:
+				return _combat_done(false, "her finds should go over her shoulder into the basket")
 			if k.picks < p0 + 2 or deep < 0.95 or drop < 0.12 or drift > 0.3 or hand_lo > 0.26 or hand_lo < -0.05 or hand_back < 0.0:
 				return _combat_done(false, "did not stoop to pick at the litter under the oaks")
 		if leg[1] == "wander":

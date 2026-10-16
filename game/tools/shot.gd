@@ -267,10 +267,12 @@ func _ready() -> void:
 			cp = kp.site - rel.normalized() * 0.9 + rel.normalized().cross(Vector3.UP) * 0.6
 			cp.y = at.y + 1.45
 		if kp.pick_hold:
-			# crouched at the litter: lower, nearer, so the reach reads side-on
-			cp = at + dir * 2.4
-			cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 1.05
-		SPOTS[spot] = [cp, at + Vector3.UP * (0.45 if kp.pick_hold else 1.15)]
+			# crouched at the litter: low and back, near her own height, so the reach reads
+			# side-on against the grove instead of from above
+			cp = at + dir * 3.0
+			cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 0.6
+		kp.toss_hold = "toss" in args              # up, dropping a find in the basket
+		SPOTS[spot] = [cp, at + Vector3.UP * (0.5 if kp.pick_hold else 1.15)]
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])

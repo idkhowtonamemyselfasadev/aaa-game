@@ -15,6 +15,10 @@ var head_turn := 0.0         # radians about the neck, so the face does not plan
 var pelvis := 0.0            # radians, positive tips the pelvis (and all above it) forward
 							 # at the hip joints; the thighs are held where `hip` puts them
 var back_hand := 0.0         # 0..1: the right hand goes round to the small of the back
+var toss := 0.0              # 0..1: the right hand reaches up over the shoulder into a back basket
+var toss_arm := 3.8          # the upper arm raised past the vertical, elbow up by the ear
+var toss_elbow := 1.4        # the forearm laid back over the shoulder
+var toss_in := -1.1          # the raised arm drawn in across toward the head (about body forward)
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -25,14 +29,19 @@ func _process_modification_with_delta(_delta: float) -> void:
 	var to_skel := frame.inverse()
 	var x := (to_skel * Vector3.RIGHT).normalized()
 	var up := (to_skel * Vector3.UP).normalized()
+	var fwd := (to_skel * Vector3.BACK).normalized()
 	_bend(skel, "mixamorig_Hips", x, pelvis)
 	for side in ["Left", "Right"]:
 		_bend(skel, "mixamorig_%sUpLeg" % side, x, -hip - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, knee)
 		var bh := back_hand if side == "Right" else 0.0
-		# a hand to the back: the upper arm swings behind the hip, the forearm folds across
-		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(arm, -0.55, bh))
-		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(elbow, 1.7, bh))
+		var ts := toss if side == "Right" else 0.0
+		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
+		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
+		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm, -0.55, bh), toss_arm, ts))
+		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
+		if ts > 0.0:
+			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)

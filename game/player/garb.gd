@@ -142,6 +142,30 @@ func _gore(sx: float) -> ArrayMesh:
 	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
 	return out
 
+## One crooked oak stick of deadwood from `base` along `lean`: two soft kinks, tapering to a
+## snapped tip, in the current tint.
+func _stick(base: Vector3, lean: Vector3, ln: float, r0: float, kink: float, k: int) -> MeshInstance3D:
+	var stick := _grid(func(u: float, v: float) -> Vector3:
+		var a := u * TAU
+		var off := Vector3(cos(kink), 0, sin(kink)) * 0.035 * sin(v * PI * 1.6) * ln
+		var c := base + lean * v * ln + off
+		var side := lean.cross(Vector3.FORWARD if absf(lean.z) < 0.9 else Vector3.UP).normalized()
+		var up2 := side.cross(lean).normalized()
+		var r := r0 * (1.0 - 0.45 * v) * (1.0 + 0.1 * sin(v * 23.0 + a * 2.0))
+		return c + (side * cos(a) + up2 * sin(a)) * r, 7, 6)
+	var sm := _piece(stick, 0.0, 0.0, 20.0 + k, 1.0)
+	var sh := sm.material_override as ShaderMaterial
+	sh.set_shader_parameter("rigid", 1.0)
+	sh.set_shader_parameter("weave_scale", 12.0)
+	sh.set_shader_parameter("aspect", ln / (r0 * TAU) * 0.15)
+	return sm
+
+## A short stick of deadwood she has just picked out of the litter, to hold in her hand
+## (centred on the origin, lying along +X).
+func held_stick() -> MeshInstance3D:
+	tint = palette.get("deadwood", [Color(0.055, 0.045, 0.036), Color(0.36, 0.32, 0.27), 0.5])
+	return _stick(Vector3(-0.15, 0, 0), Vector3.RIGHT, 0.30, 0.012, 1.3, 31)
+
 ## A back basket of woven willow, oval and tapering to a narrow foot, its open mouth finished
 ## in a thick wrapped rim, worn high between the shoulder blades over the mantle and hung on
 ## the chest bone (plain body space, no Hollow sizing). Deadwood she gathered under the oaks
@@ -212,23 +236,7 @@ func _basket() -> void:
 		var base := Vector3(rng.randf_range(-0.12, 0.12), BASKET_TOP - 0.25, BASKET_Z + rng.randf_range(-0.08, 0.06))
 		var ln := rng.randf_range(0.42, 0.78)
 		var lean := Vector3(base.x * 1.2 + rng.randf_range(-0.08, 0.08), 1.0, -0.22 + rng.randf_range(-0.1, 0.06)).normalized()
-		var r0 := rng.randf_range(0.011, 0.02)
-		var kink := rng.randf_range(0.0, TAU)
-		var stick := _grid(func(u: float, v: float) -> Vector3:
-			var a := u * TAU
-			# crooked: two soft kinks off the lean, tapering to a snapped tip
-			var off := Vector3(cos(kink), 0, sin(kink)) * 0.035 * sin(v * PI * 1.6) * ln
-			var c := base + lean * v * ln + off
-			var side := lean.cross(Vector3.FORWARD).normalized()
-			var up2 := side.cross(lean).normalized()
-			var r := r0 * (1.0 - 0.45 * v) * (1.0 + 0.1 * sin(v * 23.0 + a * 2.0))
-			return c + (side * cos(a) + up2 * sin(a)) * r, 7, 6)
-		var sm := _piece(stick, 0.0, 0.0, 20.0 + k, 1.0)
-		var sh := sm.material_override as ShaderMaterial
-		sh.set_shader_parameter("rigid", 1.0)
-		sh.set_shader_parameter("weave_scale", 12.0)
-		sh.set_shader_parameter("aspect", ln / (r0 * TAU) * 0.15)
-		basket_node.add_child(sm)
+		basket_node.add_child(_stick(base, lean, ln, rng.randf_range(0.011, 0.02), rng.randf_range(0.0, TAU), k))
 	# plaited bast straps from the rim's upper corners over the shoulders to under the arms
 	tint = palette.get("strap", [Color(0.07, 0.05, 0.03), Color(0.40, 0.31, 0.19), 0.4])
 	for sx in [-1.0, 1.0]:
