@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -83,6 +83,9 @@ func _ready() -> void:
 		return
 	if name == "keeper":
 		_keeper_test()
+		return
+	if name == "talk":
+		_talk_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1371,6 +1374,71 @@ func _keeper_test() -> void:
 	if k.warps > 1:
 		return _combat_done(false, "got wedged %d times" % k.warps)
 	_combat_done(true, "day kept: %s; sheltered in rain, faced and named on meeting" % ", ".join(log))
+
+func _talk_test() -> void:
+	var k: Keeper = _world.keeper
+	var hud: Hud = _player.get_node("Hud")
+	var terrain: Terrain = _world.get_node("Terrain")
+	_world.weather.force(0.0)
+	_world.time_of_day = 9.0
+	k.settle(_world, 9.0)
+	await _ticks(10)
+	# out of reach: no prompt, a press says nothing
+	var far := k.global_position + Vector3(0, 0, 6.0)
+	_player.global_position = Vector3(far.x, terrain.height_at(far.x, far.z) + 0.3, far.z)
+	await _ticks(20)
+	_player.bot_interact = true
+	await _ticks(20)
+	print("BOT talk far: prompt '%s' talks %d" % [hud.prompt_key if hud._prompt_hold > 0.0 else "", k.talks])
+	if k.talks > 0:
+		return _combat_done(false, "she answered from out of reach")
+	# step up beside her on the keep floor (round the plinth from her tend spot)
+	var side := (k.global_position - k.site)
+	side.y = 0.0
+	var pp := k.global_position + side.normalized().rotated(Vector3.UP, 1.3) * 1.6
+	_player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.3, pp.z)
+	await _ticks(40)
+	print("BOT talk near: prompt '%s %s' (hold %.2f)" % [hud.prompt_key, hud.prompt_verb, hud._prompt_hold])
+	if hud._prompt_hold <= 0.0 or hud.prompt_verb != "Speak":
+		return _combat_done(false, "no Speak prompt beside her")
+	var heard := []
+	var p0 := k.global_position
+	for i in 4:
+		_player.bot_interact = true
+		await _ticks(3)
+		heard.append(k.last_line)
+		print("BOT talk %d: '%s' | hud '%s: %s' saying %s" % [i, k.last_line, hud.say_speaker, hud.say_line, hud.saying()])
+		if hud.say_line != k.last_line or hud.say_speaker != "Hesper" or not hud.saying():
+			return _combat_done(false, "her line did not show as a subtitle")
+		await _ticks(60)
+	if k.talks != 4 or heard[0] != Keeper.INTRO[0] or heard[2] != Keeper.INTRO[2] or not (heard[3] in Keeper.LINES["tend"]):
+		return _combat_done(false, "lines out of order: %s" % [heard])
+	var d := _player.global_position - k.global_position
+	var face := absf(wrapf(atan2(d.x, d.z) - k.body.rotation.y, -PI, PI))
+	var moved := Vector2(k.global_position.x - p0.x, k.global_position.z - p0.z).length()
+	print("BOT talk: facing off %.2f rad, moved %.2f m while talking" % [face, moved])
+	if face > 0.4 or moved > 0.3:
+		return _combat_done(false, "did not hold still facing the hero while talking")
+	# the subtitle clears after its time
+	var t := 0.0
+	while hud.saying() and t < 15.0:
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if hud.saying():
+		return _combat_done(false, "subtitle never cleared")
+	# dozing at night: only a mumble, and she stays down
+	_world.time_of_day = 23.0
+	k.settle(_world, 23.0)
+	var sp := k.global_position + (k.site - k.global_position).normalized() * 1.4
+	_player.global_position = Vector3(sp.x, terrain.height_at(sp.x, sp.z) + 0.3, sp.z)
+	await _ticks(30)
+	var verb := hud.prompt_verb
+	_player.bot_interact = true
+	await _ticks(5)
+	print("BOT talk doze: prompt '%s', line '%s', sit %.2f" % [verb, k.last_line, k.sit])
+	if verb != "Listen" or not (k.last_line in Keeper.LINES["sleep"]) or k.sit < 0.95:
+		return _combat_done(false, "dozing she should only mumble")
+	_combat_done(true, "intro x3 then a tend line, subtitled, facing him; mumbles in her doze")
 
 func _insects_test() -> void:
 	var p := _player

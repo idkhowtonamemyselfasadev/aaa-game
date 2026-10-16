@@ -25,6 +25,15 @@ var caption_title := ""                 # place caption (bots read it)
 var caption_line := ""
 var caption_alpha := 0.0
 var _cap_hold := 0.0
+var _talk: Control
+var prompt_key := ""                    # "E" while a talker is in reach (bots read it)
+var prompt_verb := ""
+var _prompt_hold := 0.0
+var _prompt_a := 0.0
+var say_speaker := ""                   # the spoken line on screen (bots read it)
+var say_line := ""
+var _say_t := 0.0
+var _say_a := 0.0
 
 func _ready() -> void:
 	layer = 5
@@ -53,6 +62,12 @@ func _ready() -> void:
 	_cap.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_cap.draw.connect(_draw_caption)
 	add_child(_cap)
+	_talk = Control.new()
+	_talk.name = "Talk"
+	_talk.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_talk.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_talk.draw.connect(_draw_talk)
+	add_child(_talk)
 
 ## A place names itself while the hero stands at it: call every frame he is there; it fades in,
 ## and out again shortly after the calls stop.
@@ -62,6 +77,22 @@ func caption(title: String, line: String) -> void:
 	caption_title = title
 	caption_line = line
 	_cap_hold = 0.4
+
+## A talker in reach: call every frame it is; the key hint fades in beside the hero's feet line
+## and out shortly after the calls stop.
+func prompt(key: String, verb: String) -> void:
+	prompt_key = key
+	prompt_verb = verb
+	_prompt_hold = 0.2
+
+## A spoken line as a subtitle in the bottom band, held for `secs`, then fading.
+func say(speaker: String, line: String, secs: float) -> void:
+	say_speaker = speaker
+	say_line = line
+	_say_t = secs
+
+func saying() -> bool:
+	return _say_t > 0.0
 
 func _process(delta: float) -> void:
 	if player == null:
@@ -94,6 +125,14 @@ func _process(delta: float) -> void:
 	if ca != caption_alpha:
 		caption_alpha = ca
 		_cap.queue_redraw()
+	_prompt_hold -= delta
+	_say_t -= delta
+	var pa := move_toward(_prompt_a, 1.0 if _prompt_hold > 0.0 and _say_t <= 0.0 else 0.0, delta * 5.0)
+	var sa := move_toward(_say_a, 1.0 if _say_t > 0.0 else 0.0, delta * (6.0 if _say_t > 0.0 else 2.5))
+	if pa != _prompt_a or sa != _say_a or _say_t > 0.0:
+		_prompt_a = pa
+		_say_a = sa
+		_talk.queue_redraw()
 	var va := player.screen_black()
 	if va != veil_alpha or va > 0.0:
 		veil_alpha = va
@@ -150,6 +189,64 @@ func _draw_caption() -> void:
 	var ry := cy + 12.0 * s
 	_cap.draw_line(Vector2((vs.x - rw) * 0.5, ry), Vector2((vs.x + rw) * 0.5, ry), Color(0.62, 0.48, 0.3, 0.6 * a), maxf(1.0, s))
 	_cap.draw_string(font, Vector2((vs.x - lw) * 0.5, ry + lsize * 1.45), caption_line, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0.78, 0.72, 0.62, 0.85 * a))
+
+## Talk: the key hint is a small brass-rimmed keycap and a verb, low and centred; a spoken line
+## is a subtitle near the bottom edge -- the speaker's name in brass small caps, the words in
+## bone-white -- over a feathered dark band, wrapped to two lines at most.
+func _draw_talk() -> void:
+	var vs := _talk.get_viewport_rect().size
+	var s := vs.y / 1080.0
+	var font := ThemeDB.fallback_font
+	if _prompt_a > 0.001 and prompt_key != "":
+		var a := _prompt_a
+		var ksize := int(20.0 * s)
+		var vsize := int(22.0 * s)
+		var kw := maxf(font.get_string_size(prompt_key, HORIZONTAL_ALIGNMENT_LEFT, -1, ksize).x + 16.0 * s, 30.0 * s)
+		var vw := font.get_string_size(prompt_verb, HORIZONTAL_ALIGNMENT_LEFT, -1, vsize).x
+		var w := kw + 12.0 * s + vw
+		var x := (vs.x - w) * 0.5
+		var y := vs.y * 0.82
+		var key := Rect2(x, y - 22.0 * s, kw, 30.0 * s)
+		_talk.draw_rect(key.grow(6.0 * s).grow_individual(0, 0, vw + 12.0 * s, 0), Color(0.01, 0.01, 0.008, 0.35 * a))
+		_talk.draw_rect(key, Color(0.03, 0.025, 0.02, 0.75 * a))
+		_talk.draw_rect(key, Color(0.62, 0.48, 0.3, 0.8 * a), false, maxf(1.0, 1.4 * s))
+		_talk.draw_string(font, Vector2(x + (kw - font.get_string_size(prompt_key, HORIZONTAL_ALIGNMENT_LEFT, -1, ksize).x) * 0.5, y), prompt_key, HORIZONTAL_ALIGNMENT_LEFT, -1, ksize, Color(0.93, 0.86, 0.72, 0.95 * a))
+		_talk.draw_string(font, Vector2(x + kw + 12.0 * s, y), prompt_verb, HORIZONTAL_ALIGNMENT_LEFT, -1, vsize, Color(0.86, 0.80, 0.68, 0.9 * a))
+	if _say_a > 0.001 and say_line != "":
+		var a := _say_a * _say_a * (3.0 - 2.0 * _say_a)
+		var nsize := int(19.0 * s)
+		var lsize := int(27.0 * s)
+		var maxw := minf(vs.x * 0.62, 1100.0 * s)
+		var lines := _wrap(font, say_line, lsize, maxw)
+		var lh := lsize * 1.35
+		var who := " ".join(say_speaker.to_upper().split(""))
+		var y0 := vs.y - 70.0 * s - lh * lines.size()
+		var bw := maxw + 140.0 * s
+		var band := Rect2((vs.x - bw) * 0.5, y0 - nsize * 1.9, bw, nsize * 1.9 + lh * lines.size() + 22.0 * s)
+		for i in 6:
+			var g := band.grow_individual(-i * bw * 0.06, 0, -i * bw * 0.06, 0)
+			_talk.draw_rect(g, Color(0.01, 0.01, 0.008, 0.08 * a))
+		var nw := font.get_string_size(who, HORIZONTAL_ALIGNMENT_LEFT, -1, nsize).x
+		_talk.draw_string(font, Vector2((vs.x - nw) * 0.5, y0 - nsize * 0.5), who, HORIZONTAL_ALIGNMENT_LEFT, -1, nsize, Color(0.80, 0.63, 0.40, 0.9 * a))
+		for i in lines.size():
+			var lw := font.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lsize).x
+			var at := Vector2((vs.x - lw) * 0.5, y0 + lh * (i + 0.85))
+			_talk.draw_string(font, at + Vector2(0, 2.0 * s), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0, 0, 0, 0.55 * a))
+			_talk.draw_string(font, at, lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0.94, 0.91, 0.84, 0.97 * a))
+
+static func _wrap(font: Font, text: String, size: int, maxw: float) -> PackedStringArray:
+	var out := PackedStringArray()
+	var cur := ""
+	for w in text.split(" "):
+		var t := w if cur == "" else cur + " " + w
+		if cur != "" and font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > maxw:
+			out.append(cur)
+			cur = w
+		else:
+			cur = t
+	if cur != "":
+		out.append(cur)
+	return out
 
 func reticle_visible() -> bool:
 	return _lock_a > 0.5 and reticle_screen.x >= 0.0

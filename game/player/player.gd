@@ -95,6 +95,8 @@ var bot_jump := false
 var bot_attack := false
 var bot_lock := false
 var bot_heavy := false                  # heavy button held (bots)
+var bot_interact := false
+var interacts := 0                      # interact presses so far (talkers compare against it)
 var _heavy_was := false
 var use_bot_input := false
 
@@ -412,6 +414,9 @@ func _physics_process(delta: float) -> void:
 	_heavy_was = heavy_down
 	var want_lock := bot_lock if use_bot_input else Input.is_action_just_pressed("lock_on")
 	bot_lock = false
+	if (bot_interact if use_bot_input else Input.is_action_just_pressed("interact")):
+		interacts += 1
+	bot_interact = false
 	if want_lock:
 		toggle_lock()
 	_update_lock(delta)

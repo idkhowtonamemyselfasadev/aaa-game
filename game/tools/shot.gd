@@ -266,6 +266,28 @@ func _ready() -> void:
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
+	if spot == "talk":
+		# speaking with Hesper: over the hero's shoulder at her, out under an oak by day, her
+		# line as a subtitle
+		var kp: Keeper = world.keeper
+		kp.settle(world, world.time_of_day)
+		kp._gather_t = 1.0e6
+		var at := kp.global_position
+		var oak: Vector3 = kp._oaks[kp._gather_i] if not kp._oaks.is_empty() else at + Vector3.FORWARD
+		var away := Vector3(at.x - oak.x, 0, at.z - oak.z).normalized()
+		var pp := at + away.rotated(Vector3.UP, 0.5) * 2.1
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
+		var to_k := Vector3(at.x - pp.x, 0, at.z - pp.z).normalized()
+		player.body.rotation.y = atan2(to_k.x, to_k.z)
+		kp.body.rotation.y = atan2(-to_k.x, -to_k.z)
+		kp.goal_yaw = kp.body.rotation.y
+		kp.talking = 1.0e6
+		var hud: Hud = player.get_node("Hud")
+		hud.say("Hesper", Keeper.INTRO[1], 1.0e6)
+		var cp := pp - to_k * 2.4 + to_k.cross(Vector3.UP) * 1.45
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.75
+		SPOTS[spot] = [cp, at.lerp(pp, 0.3) + Vector3.UP * 1.3]
+		print("SHOT talk %s at %s" % [kp.activity, at])
 	if spot == "seal":
 		# the carved shrine lid in the keep floor, the hero standing at its edge so it wakes
 		var rs: Vector3 = world.get_node("Ruins").site
@@ -509,7 +531,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper":
+		if spot == "keeper" or spot == "talk":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

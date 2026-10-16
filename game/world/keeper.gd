@@ -15,7 +15,9 @@ extends CharacterBody3D
 ## until it passes, unless she is already in for the night. When the hero comes near she
 ## stops, turns to face him and watches him while he stays close; the first time, the HUD names
 ## her. Walks the ground with gravity; between the keep floor and the open slope she always
-## passes through the breach.
+## passes through the breach. In reach the hero can speak to her (interact): the first time she
+## introduces herself and the lid in three lines, after that each word gets a line that fits what
+## she is doing and the hour; dozing, she only mumbles.
 
 enum { WALK, STAND, SIT }
 
@@ -28,6 +30,51 @@ const NAME_AT := 4.5            # the HUD names her inside this, once
 const RAIN_SHELTER := 0.35      # rain above this sends her under an oak
 const KEEP_R := 3.6             # inside this of the site is the keep floor
 const CURTAIN_R := 12.5         # the curtain wall ring (Ruins._curtain), gateway toward to_v
+const TALK_R := 2.8             # the hero can speak to her inside this
+
+const INTRO := [
+	"Mind the lid, lamplighter. Forty years I've swept it, and it has never once swept me back.",
+	"That is the Shrine of Binding. Sealed since before the chain broke. No key, no handle, no manners.",
+	"If that lantern of yours can bend the world, perhaps it can bend a stone. I should like to see that. I should like to see anything, once.",
+]
+const LINES := {
+	"wake": [
+		"Dawn comes a little later every year. I still get up for it. Someone ought to.",
+		"Watch the far snow. When it goes pink, the Hollow walk back to their posts.",
+		"Cold hands, cold stone, cold tea. Good morning.",
+	],
+	"tend": [
+		"The cords on the lid warm when you stand near. They never once warmed for me.",
+		"I sweep it so whoever opens it will know we did not forget.",
+		"There was a bell for the keeper's hour. I ring it in my head now. Saves the rope.",
+	],
+	"tend_night": [
+		"See the ember in the grooves? It wakes at night, like an old dog dreaming.",
+		"Go and sleep, child. The lid is not going anywhere. That is rather its whole trouble.",
+	],
+	"gather": [
+		"Acorns, ceps, the odd honest root. The oaks feed anyone willing to stoop.",
+		"Do not tell the deer I take their acorns. They have long memories and short tempers.",
+		"My knees and I have an arrangement. I bend, they complain.",
+	],
+	"eat": [
+		"Sit, if you like. The shade is free and the bread is terrible.",
+		"I would offer you some, but then I should have less, and I am old and selfish.",
+	],
+	"watch": [
+		"Down there was Harrowmere. It had bells once, and a baker who sang flat.",
+		"There is a soldier in the meadow who has not noticed he is dead. Be kind to him. Be quick.",
+		"The light goes earlier every evening. I watch it go so it knows someone minded.",
+	],
+	"shelter": [
+		"Rain is the only thing in this vale that still arrives on time.",
+		"Under the oak, child. Even the Hollow have the sense to stand still in this.",
+	],
+	"sleep": [
+		"Mm... the lid is swept... come back at first light...",
+		"...forty years... nnh... mind the step...",
+	],
+}
 
 signal activity_changed(name: String)
 
@@ -43,6 +90,12 @@ var state := STAND
 var named := false              # the HUD has named her
 var noticing := false           # stopped to watch the hero
 var visits := {}                # activity -> count of times reached its spot (bots)
+var talks := 0                  # lines spoken to the hero (bots)
+var last_line := ""
+var talking := 0.0              # > 0 while her line is on screen: she holds still, facing him
+var _intro_i := 0
+var _line_i := {}
+var _seen_interacts := 0
 var path: Array[Vector3] = []
 var goal_yaw := 0.0
 var sit := 0.0                  # 0 standing .. 1 seated in the doze
@@ -250,8 +303,9 @@ func _physics_process(delta: float) -> void:
 			_gather_i = (_gather_i + 1) % _oaks.size()
 			_route(_gather_spot(_gather_i))
 	_update_notice()
+	_update_talk(delta)
 	var v := Vector3.ZERO
-	if state == WALK and not noticing and sit < 0.05:
+	if state == WALK and not noticing and talking <= 0.0 and sit < 0.05:
 		var tgt: Vector3 = path[0]
 		var d := Vector3(tgt.x - global_position.x, 0, tgt.z - global_position.z)
 		if d.length() < 0.35:
@@ -342,6 +396,9 @@ func _update_notice() -> void:
 	noticing = false
 	if player == null or state == SIT or sit > 0.05:
 		return
+	if talking > 0.0:
+		noticing = true                      # holds still and keeps facing him mid-line
+		return
 	var d := Vector3(player.global_position.x - global_position.x, 0, player.global_position.z - global_position.z)
 	if d.length() < NOTICE:
 		noticing = true
@@ -355,6 +412,52 @@ func _update_notice() -> void:
 		var s: Array = _spots.get(_spot_of(activity), [])
 		if s.size() > 1:
 			goal_yaw = s[1]
+
+## In reach the HUD offers "Speak"; each press gets the next line (the intro first, then the
+## pool for what she is doing). A press while a line shows skips on to the next one.
+func _update_talk(delta: float) -> void:
+	talking = maxf(talking - delta, 0.0)
+	if player == null:
+		return
+	var hud = player.get_node_or_null("Hud")
+	var presses: int = player.get("interacts")
+	var d := Vector3(player.global_position.x - global_position.x, 0, player.global_position.z - global_position.z)
+	var near: bool = d.length() < TALK_R and not player.is_dead() and player.get("lock_target") == null
+	if not near:
+		_seen_interacts = presses
+		return
+	if hud != null:
+		hud.prompt("E", "Speak" if sit < 0.5 else "Listen")
+	if presses == _seen_interacts:
+		return
+	_seen_interacts = presses
+	var line := _next_line()
+	last_line = line
+	talks += 1
+	talking = 2.4 + 0.055 * line.length()
+	if sit < 0.05:
+		goal_yaw = atan2(d.x, d.z)
+	if hud != null:
+		hud.say("Hesper", line, talking)
+
+func _next_line() -> String:
+	if sit >= 0.5 or activity == "sleep":
+		return _pool_line("sleep")
+	if _intro_i < INTRO.size():
+		_intro_i += 1
+		return INTRO[_intro_i - 1]
+	var key := activity
+	if activity == "tend" and _hour() >= 19.0:
+		key = "tend_night"
+	if not LINES.has(key):
+		key = "watch"
+	return _pool_line(key)
+
+func _pool_line(key: String) -> String:
+	var pool: Array = LINES[key]
+	var i := int(_line_i.get(key, 0))
+	_line_i[key] = i + 1
+	return pool[i % pool.size()]
 
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
 ## the floor as she sits.
