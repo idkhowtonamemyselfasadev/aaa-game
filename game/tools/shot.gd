@@ -259,6 +259,25 @@ func _ready() -> void:
 			return m
 		if clear.call(dir2) > clear.call(dir):
 			dir = dir2
+		if spot == "keeperside" and "pick" in args:
+			# the low pick lens on the oak's slope tilts the frame (the hillside runs across it
+			# diagonally); swing the lens round her, up to 0.6 rad off square, to the side
+			# whose ground runs most level across the frame, keeping clear of the boles
+			var best := INF
+			for base in [off, -off]:
+				for k in [0.0, 0.3, -0.3, 0.45, -0.45, 0.6, -0.6]:
+					var a: float = yaw + base + k
+					var d := Vector3(sin(a), 0, cos(a))
+					if clear.call(d) < 2.6:
+						continue
+					var r := d.cross(Vector3.UP) * 2.5
+					var c := at + d * 3.0
+					var cross := absf(terrain.height_at(c.x + r.x, c.z + r.z) - terrain.height_at(c.x - r.x, c.z - r.z))
+					var score := cross + absf(k) * 0.4          # prefer near side-on
+					if score < best:
+						best = score
+						dir = d
+			print("SHOT keeperside pick cross-slope score %.2f" % best)
 		var cp := at + dir * 3.0
 		cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 1.55
 		var rel := Vector3(at.x - kp.site.x, 0, at.z - kp.site.z)

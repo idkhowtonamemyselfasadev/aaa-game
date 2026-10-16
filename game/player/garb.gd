@@ -97,6 +97,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		for sx in [-1.0, 1.0]:
 			var g := _piece(_gore(sx), 0.06, 0.14, 40.0 + sx, GORE_LEN * robe_len / 0.42)
 			(g.material_override as ShaderMaterial).set_shader_parameter("fold_ao", 1.0)
+			(g.material_override as ShaderMaterial).set_shader_parameter("gore", 1.0)
 			hips.add_child(g)
 			gores.append(g)
 	tint = palette.get("sash", OCHRE)
@@ -115,7 +116,31 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 func _physics_process(delta: float) -> void:
 	super(delta)
 	for g in gores:
-		(g.material_override as ShaderMaterial).set_shader_parameter("gore_swing", Vector2(_swing_f, _swing_b))
+		var m := g.material_override as ShaderMaterial
+		m.set_shader_parameter("gore_swing", Vector2(_swing_f, _swing_b))
+		m.set_shader_parameter("gore_fold_f", fold_front)
+		m.set_shader_parameter("gore_fold_f2", fold_front2)
+		m.set_shader_parameter("gore_fold_b", fold_back)
+
+## A gore's hem point at `u` (0 front end .. 1 back end) in world space, walked through the
+## same swing and folds as rag.gdshader's gore pass (no flutter): for the bots.
+func gore_hem(i: int, u: float) -> Vector3:
+	var g: MeshInstance3D = gores[i]
+	var sx := -1.0 if i == 0 else 1.0
+	var a := lerpf(0.55, PI - 0.55, u)
+	var drop := GORE_LEN * robe_len
+	var wf := (1.0 - u) * (1.0 - u)
+	var wb := u * u
+	var p := Vector2.ZERO
+	var st := drop / 14.0
+	for j in 14:
+		var d := (j + 0.5) * st
+		var tf := _swing_f - fold_front.y * smoothstep(0.0, 0.07, d - fold_front.x) \
+				- fold_front2.y * smoothstep(0.0, 0.07, d - fold_front2.x)
+		var tb := -_swing_b - fold_back.y * smoothstep(0.0, 0.07, d - fold_back.x)
+		var t := tf * wf + tb * wb
+		p += st * Vector2(sin(t), -cos(t))
+	return g.global_transform * Vector3(sx * sin(a) * 0.30, 1.21 + p.y, cos(a) * 0.34 + p.x)
 
 ## A side gore: an arc of cloth round the hip from 32 deg to 148 deg off the front, hung just
 ## inside the panels' curled edges (so they lie over its ends at the top and the hem) and just

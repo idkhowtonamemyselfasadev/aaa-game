@@ -115,6 +115,7 @@ func _panel(parent: Node3D, top: Vector3, w0: float, w1: float, length: float, b
 		return Vector3(x * dir, -v * length, z), 12, 18)
 	pivot.add_child(_piece(mesh, 0.25, 0.18, sd, length / w1))
 	pivot.set_meta("len", length)
+	pivot.set_meta("w1", w1)
 	return pivot
 
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its

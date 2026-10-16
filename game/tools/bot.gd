@@ -1407,6 +1407,7 @@ func _keeper_test() -> void:
 			var tipped := 0.0
 			var knee_fold := 0.0
 			var hem_lo := INF
+			var gore_gap := 0.0
 			while (k.picks < p0 + 2 or k._toss_t >= 0.0) and tg < 40.0:
 				await get_tree().physics_frame
 				tg += get_physics_process_delta_time()
@@ -1432,6 +1433,14 @@ func _keeper_test() -> void:
 								e = Vector2(e.x + fo.x, e.y).rotated(fo.y) - Vector2(fo.x, 0.0)
 						var stoop_hem: Vector3 = pv.global_transform * Vector3(0, e.x, e.y)
 						hem_lo = minf(hem_lo, stoop_hem.y - _world.terrain.height_at(stoop_hem.x, stoop_hem.z))
+						if pv == g._front and not g.gores.is_empty():
+							# the gores' front ends close on the front panel's hem corners
+							var hw: float = pv.get_meta("w1", 0.5) * 0.5
+							for gi in 2:
+								var gh: Vector3 = g.gore_hem(gi, 0.0)
+								var corner: Vector3 = pv.global_transform * Vector3(hw * (-1.0 if gi == 0 else 1.0), e.x, e.y)
+								gore_gap = maxf(gore_gap, gh.distance_to(corner))
+								hem_lo = minf(hem_lo, gh.y - _world.terrain.height_at(gh.x, gh.z))
 				if k._back_hand > 0.9 and k.pick < 0.3:
 					# behind the body's centre line: the hand is on her back
 					hand_back = maxf(hand_back, -(k.body.global_basis.inverse() * (hm - k.global_position)).z)
@@ -1445,8 +1454,8 @@ func _keeper_test() -> void:
 				if k.pick > 0.05:
 					drift = maxf(drift, Vector2(k.global_position.x - at0.x, k.global_position.z - at0.z).length())
 			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), hand %.2f m off the litter, %.2f m behind her rising, drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, hand_lo, hand_back, drift])
-			print("BOT keeper robe: pelvis tip %.2f rad, front fold over the knees %.2f rad, lowest hem %.2f m off the litter" % [tipped, knee_fold, hem_lo])
-			if knee_fold < 0.3 or hem_lo < -0.1:
+			print("BOT keeper robe: pelvis tip %.2f rad, front fold over the knees %.2f rad, lowest hem %.2f m off the litter, gore ends %.2f m from the front hem corners" % [tipped, knee_fold, hem_lo, gore_gap])
+			if knee_fold < 0.3 or hem_lo < -0.1 or gore_gap > 0.25:
 				return _combat_done(false, "her robe should hang over her knees and stay out of the ground when she stoops")
 			print("BOT keeper toss: %d finds into the basket, stick seen in hand %s, hand %.2f m from the rim at the top of the toss" % [k.tosses - t0, held_seen, to_mouth])
 			if k.tosses - t0 < 2 or not held_seen or to_mouth > 0.14:

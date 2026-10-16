@@ -32,6 +32,10 @@ uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pillin
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
+uniform float gore = 0.0;          // 1: this piece is a side gore
+uniform vec2 gore_fold_f = vec2(1000.0, 0.0);  // the front panel's folds, which the gore's front end follows
+uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
+uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
@@ -97,9 +101,26 @@ void vertex() {
 	VERTEX += NORMAL * flutter * w;
 	VERTEX += sway * w;
 	// a side gore's front end (UV.x 0) rides out with the front panel, its back end with the
-	// back panel, the side seam between them stays put, so no gap opens at either panel's edge
-	float drop = max(gore_top - VERTEX.y, 0.0);
-	VERTEX.z += drop * (sin(gore_swing.x) * (1.0 - UV.x) * (1.0 - UV.x) - sin(gore_swing.y) * UV.x * UV.x);
+	// back panel, the side seam between them stays put, so no gap opens at either panel's edge;
+	// each end swings round like its panel and folds where the panel folds (over the knees,
+	// onto the ground), walked down the drop in short steps since the bends mix
+	if (gore > 0.5) {
+		float drop = max(gore_top - VERTEX.y, 0.0);
+		float wf = (1.0 - UV.x) * (1.0 - UV.x);
+		float wb = UV.x * UV.x;
+		vec2 p = vec2(0.0);
+		float st = drop / 14.0;
+		for (int i = 0; i < 14; i++) {
+			float d = (float(i) + 0.5) * st;
+			float tf = gore_swing.x - gore_fold_f.y * smoothstep(0.0, 0.07, d - gore_fold_f.x)
+					- gore_fold_f2.y * smoothstep(0.0, 0.07, d - gore_fold_f2.x);
+			float tb = -gore_swing.y - gore_fold_b.y * smoothstep(0.0, 0.07, d - gore_fold_b.x);
+			float t = tf * wf + tb * wb;
+			p += st * vec2(sin(t), -cos(t));
+		}
+		VERTEX.z += p.x;
+		VERTEX.y += p.y + drop;
+	}
 }
 
 void fragment() {
