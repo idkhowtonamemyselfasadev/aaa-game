@@ -1386,6 +1386,25 @@ func _keeper_test() -> void:
 			return _combat_done(false, "%s should be on the keep floor" % leg[1])
 		if leg[1] in ["gather", "eat"] and inside:
 			return _combat_done(false, "%s should be out under the oaks" % leg[1])
+		if leg[1] == "gather":
+			# working the litter: she crouches and reaches, and stays put while she does
+			var p0 := k.picks
+			var deep := 0.0
+			var drift := 0.0
+			var drop := 0.0
+			var at0 := k.global_position
+			var tg := 0.0
+			while k.picks < p0 + 2 and tg < 40.0:
+				await get_tree().physics_frame
+				tg += get_physics_process_delta_time()
+				if k.pick > deep:
+					deep = k.pick
+					drop = -k.model.position.y
+				if k.pick > 0.05:
+					drift = maxf(drift, Vector2(k.global_position.x - at0.x, k.global_position.z - at0.z).length())
+			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, drift])
+			if k.picks < p0 + 2 or deep < 0.95 or drop < 0.12 or drift > 0.3:
+				return _combat_done(false, "did not stoop to pick at the litter under the oaks")
 		if leg[1] == "wander":
 			var wr := Vector2(at.x - k.site.x, at.z - k.site.z).length()
 			var hd := Vector2(at.x - _world.herd.centre().x, at.z - _world.herd.centre().z).length()

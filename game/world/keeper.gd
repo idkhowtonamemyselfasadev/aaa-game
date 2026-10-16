@@ -94,6 +94,15 @@ const STOOP_SPINE := 0.26
 const STOOP_HIP := 0.06
 const STOOP_KNEE := 0.16
 const STOOP_NECK := 0.16
+# gathering under the oaks: every few seconds she crouches, curls right down over the litter
+# and reaches for an acorn or a stick, then straightens with a hand on her back
+const PICK_HIP := 0.62          # thighs forward; the knees fold twice that so the feet stay put
+const PICK_SPINE := 0.95
+const PICK_ARM := 0.85
+const PICK_ELBOW := 0.35
+const PICK_DOWN := 0.9          # s to get down (an old back: slower up than down)
+const PICK_HOLD := 1.3
+const PICK_UP := 1.4
 
 signal activity_changed(name: String)
 
@@ -118,6 +127,10 @@ var _seen_interacts := 0
 var path: Array[Vector3] = []
 var goal_yaw := 0.0
 var sit := 0.0                  # 0 standing .. 1 seated in the doze
+var pick := 0.0                 # 0 upright .. 1 crouched over the leaf litter, reaching
+var picks := 0                  # times she has stooped to pick something up (bots)
+var _pick_t := 3.0              # s until the next stoop (negative: in the stoop)
+var pick_hold := false          # shots: stay down in the stoop
 var stuck_t := 0.0
 var warps := 0                  # times she was lifted past an obstacle she could not get round
 var last_warp := Vector3.ZERO
@@ -363,6 +376,8 @@ func _physics_process(delta: float) -> void:
 		_begin(want)
 	elif state == STAND and activity == "gather":
 		_gather_t -= delta
+		if pick > 0.02 or _pick_t < 0.0:
+			_gather_t = maxf(_gather_t, 0.1)    # finish the pick before she moves on
 		if _gather_t <= 0.0 and _oaks.size() > 1:
 			_gather_i = (_gather_i + 1) % _oaks.size()
 			_route(_gather_spot(_gather_i))
@@ -374,7 +389,7 @@ func _physics_process(delta: float) -> void:
 	_update_notice()
 	_update_talk(delta)
 	var v := Vector3.ZERO
-	if state == WALK and not noticing and talking <= 0.0 and sit < 0.05:
+	if state == WALK and not noticing and talking <= 0.0 and sit < 0.05 and pick < 0.05:
 		var tgt: Vector3 = path[0]
 		var d := Vector3(tgt.x - global_position.x, 0, tgt.z - global_position.z)
 		if d.length() < 0.35:
@@ -403,6 +418,7 @@ func _physics_process(delta: float) -> void:
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
+	_update_pick(delta)
 	_pose_sit()
 	if garb.basket_node != null:
 		garb.basket_node.visible = sit < 0.3
@@ -589,23 +605,54 @@ func _pool_line(key: String) -> String:
 	_line_i[key] = i + 1
 	return pool[i % pool.size()]
 
+## Stooping to the litter while she gathers: a slow crouch down, a hold with the hand at the
+## ground, a slower straightening; not while she is walking, talking or watching the hero.
+func _update_pick(delta: float) -> void:
+	if pick_hold:
+		pick = move_toward(pick, 1.0, delta / PICK_DOWN)
+		return
+	var working := state == STAND and activity == "gather" and not noticing and talking <= 0.0
+	if not working:
+		_pick_t = maxf(_pick_t, _rng.randf_range(1.5, 3.0))
+		pick = move_toward(pick, 0.0, delta / PICK_UP)
+		return
+	_pick_t -= delta
+	if _pick_t >= 0.0:
+		pick = move_toward(pick, 0.0, delta / PICK_UP)
+		return
+	var t := -_pick_t
+	if t < PICK_DOWN:
+		pick = move_toward(pick, 1.0, delta / PICK_DOWN)
+	elif t < PICK_DOWN + PICK_HOLD:
+		pick = 1.0
+	else:
+		picks += 1
+		_pick_t = _rng.randf_range(3.5, 7.5)
+
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
 ## the floor as she sits.
 func _pose_sit() -> void:
 	if crumple == null:
 		return
 	var e := sit * sit * (3.0 - 2.0 * sit)
+	var p := pick * pick * (3.0 - 2.0 * pick)
+	# standing: the stoop, deepened into a crouch-and-reach while she picks at the litter
+	var hip := lerpf(STOOP_HIP, PICK_HIP, p)
+	var knee := lerpf(STOOP_KNEE, PICK_HIP * 2.0, p)
 	crumple.active = true
-	crumple.hip = lerpf(STOOP_HIP, 1.85, e)
-	crumple.knee = lerpf(STOOP_KNEE, 2.15, e)
-	crumple.spine = lerpf(STOOP_SPINE, 0.55, e)
-	crumple.neck = STOOP_NECK * (1.0 - e)
-	crumple.arm = 0.75 * e
-	crumple.elbow = 1.1 * e
+	crumple.hip = lerpf(hip, 1.85, e)
+	crumple.knee = lerpf(knee, 2.15, e)
+	crumple.spine = lerpf(lerpf(STOOP_SPINE, PICK_SPINE, p), 0.55, e)
+	crumple.neck = lerpf(STOOP_NECK, 0.04, p) * (1.0 - e)
+	crumple.arm = lerpf(PICK_ARM * p, 0.75, e)
+	crumple.elbow = lerpf(PICK_ELBOW * p, 1.1, e)
 	crumple.head_turn = 0.25 * e
-	# the bent knees lower the hips a little: keep the feet on the ground
-	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5) * (1.0 - e)
-	model.transform = _model_rest.translated(Vector3.DOWN * ((_hip_h - 0.14) * e + bob))
+	# the bent knees lower the hips: keep the feet on the ground (thigh and shin each half the
+	# hip height; the shin leans forward as far as the thigh, so the feet stay under her)
+	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5)
+	if p > 0.0:
+		bob = lerpf(bob, _hip_h * (1.0 - cos(hip)), p)
+	model.transform = _model_rest.translated(Vector3.DOWN * ((_hip_h - 0.14) * e + bob * (1.0 - e)))
 
 # --- look and animation (the hero's: Player._skin, Player._setup_animation) ---
 

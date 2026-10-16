@@ -247,6 +247,7 @@ func _ready() -> void:
 		var at := kp.global_position
 		var yaw := kp.body.rotation.y
 		kp._gather_t = 1.0e6                       # hold her at this spot for the frame
+		kp.pick_hold = "pick" in args              # down in the litter, reaching
 		var off := 0.55 if spot == "keeper" else (PI * 0.5 if spot == "keeperside" else PI - 0.8)
 		var dir := Vector3(sin(yaw + off), 0, cos(yaw + off))
 		var dir2 := Vector3(sin(yaw - off), 0, cos(yaw - off))
@@ -265,7 +266,11 @@ func _ready() -> void:
 			# on the keep floor: from across the shrine lid, over the plinth, at her eye level
 			cp = kp.site - rel.normalized() * 0.9 + rel.normalized().cross(Vector3.UP) * 0.6
 			cp.y = at.y + 1.45
-		SPOTS[spot] = [cp, at + Vector3.UP * 1.15]
+		if kp.pick_hold:
+			# crouched at the litter: lower, nearer, so the reach reads side-on
+			cp = at + dir * 2.4
+			cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 1.05
+		SPOTS[spot] = [cp, at + Vector3.UP * (0.6 if kp.pick_hold else 1.15)]
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
