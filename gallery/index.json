@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261011-1711-clouds-rain.jpg",
-  "time": "2026-10-11T17:11:15Z",
-  "caption": "A rain front from the valley: one grey ceiling meeting the ridges in rain haze, wind-combed grass, streaks; the deck is too uniform (no rolling bellies or scud) and the far ridges still read as a dark cut-out.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1711-clouds-dusk.jpg",
-  "time": "2026-10-11T17:11:15Z",
-  "caption": "Late afternoon toward the sun: rose-lit cumulus and streaks over the low sun, long tree shadows on the meadow; the trees are still blobby silhouettes and the cloud colour is a little too pink overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1855-puddles-rain.jpg",
   "time": "2026-10-11T18:55:42Z",
   "caption": "A rain pool in a meadow hollow: raindrop rings across the water, tufts standing in it and mirrored by SSR at the far shore; the near water is very dark, the shoreline is hard and the grass cards still read flat.",
@@ -891,6 +879,12 @@
   "file": "20261016-0708-hesper-pick.jpg",
   "time": "2026-10-16T07:08:09Z",
   "caption": "Hesper crouched under a gather oak, reaching into the leaf litter with her basket of deadwood on her back; her hand still stops at knee height, the oak bole close up reads as shiny dark cloth, the litter has bright white flecks and the robe reads saturated blue.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0730-keeper-skirt.jpg",
+  "time": "2026-10-16T07:30:00Z",
+  "caption": "Hesper side-on at a gather oak: her faded blue robe now closes into a bell skirt to the ground instead of two edge-on strips; still wrong: her back leg shows grey-wrapped behind the skirt in this stance and the frame is dark and flat.",
   "verdict": "fail"
  }
 ]
