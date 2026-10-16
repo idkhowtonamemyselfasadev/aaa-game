@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -77,6 +77,9 @@ func _ready() -> void:
 		return
 	if name == "mix":
 		_mix_test()
+		return
+	if name == "gfx":
+		_gfx_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1247,6 +1250,48 @@ func _mix_test() -> void:
 	if not paused or get_tree().paused or absf(sfx_db + 6.02) > 0.1 or not mute or absf(saved - 0.5) > 0.01:
 		return _combat_done(false, "pause menu volumes did not apply or save")
 	_combat_done(true, "layers routed, keep reverb in/out, pause menu volumes apply and save")
+
+## The picture panel: each preset sets its passes, the quality slider and render scale in
+## the pause menu drive them (FSR 2 below native), and both are kept in settings.cfg.
+func _gfx_test() -> void:
+	var g: GraphicsQuality = _world.graphics
+	var e: Environment = (_world.get_node("WorldEnvironment") as WorldEnvironment).environment
+	var vp := get_viewport()
+	print("BOT gfx: default %s, ssil %s, ssr %s, scale %.2f mode %d" % [GraphicsQuality.NAMES[g.level], e.ssil_enabled, e.ssr_enabled, vp.scaling_3d_scale, vp.scaling_3d_mode])
+	var default_ok := g.level == 2 and e.ssil_enabled and e.ssr_enabled and vp.scaling_3d_scale == 1.0
+	var pm: PauseMenu = _world.pause_menu
+	pm.toggle()
+	pm.quality_slider.value = 0.0
+	var low := [g.level, e.ssil_enabled, e.ssr_enabled, e.sdfgi_enabled, vp.mesh_lod_threshold]
+	pm.quality_slider.value = 3.0
+	var ultra := [g.level, e.ssil_enabled, e.ssr_enabled, e.sdfgi_cascades, vp.mesh_lod_threshold]
+	pm.scale_slider.value = 0.7
+	var fsr := [vp.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2, vp.scaling_3d_scale, vp.use_taa]
+	pm.toggle()
+	var cf := ConfigFile.new()
+	cf.load(GraphicsQuality.SETTINGS)
+	var saved := [int(cf.get_value("graphics", "quality", -1)), float(cf.get_value("graphics", "render_scale", -1.0)), cf.has_section("audio")]
+	print("BOT gfx: low %s, ultra %s, fsr %s, saved %s" % [low, ultra, fsr, saved])
+	# a fresh load reads them back
+	g.level = 2
+	g.render_scale = 1.0
+	g.load_settings()
+	var reread := [g.level, g.render_scale]
+	g.set_level(2)
+	g.set_render_scale(1.0)
+	g.save_settings()
+	print("BOT gfx: reloaded %s, restored %s %.2f" % [reread, GraphicsQuality.NAMES[g.level], vp.scaling_3d_scale])
+	if not default_ok:
+		return _combat_done(false, "default preset is not High at native scale")
+	if low[0] != 0 or low[1] or low[2] or low[3] or low[4] < 3.0:
+		return _combat_done(false, "Low preset did not drop SSIL/SSR/GI or raise the LOD threshold")
+	if ultra[0] != 3 or not ultra[1] or not ultra[2] or ultra[3] != 4 or ultra[4] > 1.0:
+		return _combat_done(false, "Ultra preset wrong")
+	if not fsr[0] or absf(fsr[1] - 0.7) > 0.01 or fsr[2]:
+		return _combat_done(false, "render scale did not switch to FSR 2")
+	if saved[0] != 3 or absf(saved[1] - 0.7) > 0.01 or not saved[2] or reread[0] != 3 or absf(reread[1] - 0.7) > 0.01:
+		return _combat_done(false, "picture settings not saved/reloaded (or sound section lost)")
+	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded")
 
 func _insects_test() -> void:
 	var p := _player

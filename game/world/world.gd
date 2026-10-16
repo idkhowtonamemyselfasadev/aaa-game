@@ -28,6 +28,7 @@ var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
 var pause_menu: PauseMenu
+var graphics: GraphicsQuality
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
 var _stars: Array[ImageTexture] = []     # star field at rising brightness (twilight fade-in)
 var face_shade := Color(0, 0, 0)    # shade light under the brim: feeds the hero's face fill
@@ -94,9 +95,15 @@ func _ready() -> void:
 	audio_mix.name = "AudioMix"
 	audio_mix.world = self
 	add_child(audio_mix)
+	# the picture preset and FSR 2 render scale (after the Environment is built)
+	graphics = GraphicsQuality.new()
+	graphics.name = "Graphics"
+	graphics.world = self
+	add_child(graphics)
 	pause_menu = PauseMenu.new()
 	pause_menu.name = "PauseMenu"
 	pause_menu.mix = audio_mix
+	pause_menu.graphics = graphics
 	add_child(pause_menu)
 	# wind, rain, birdsong, crickets, rook calls and thunder, mixed by clock and weather
 	soundscape = Soundscape.new()
