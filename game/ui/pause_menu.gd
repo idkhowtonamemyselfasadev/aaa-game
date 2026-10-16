@@ -9,6 +9,8 @@ const ROWS := [["Master", "Master"], ["Ambience", "Ambience"], ["Wildlife", "Wil
 	["Effects", "SFX"], ["Music", "Music"]]
 const BRASS := Color(0.62, 0.5, 0.3)
 const INK := Color(0.86, 0.82, 0.74)
+const LABEL_W := 110.0       # both sections' columns line up
+const VALUE_W := 60.0
 
 var mix: AudioMix
 var graphics: GraphicsQuality
@@ -59,7 +61,9 @@ func _ready() -> void:
 	col.add_child(grid)
 	for row: Array in ROWS:
 		var bus: String = row[1]
-		grid.add_child(_label(row[0], 15, INK))
+		var name_l := _label(row[0], 15, INK)
+		name_l.custom_minimum_size = Vector2(LABEL_W, 0)
+		grid.add_child(name_l)
 		var s := HSlider.new()
 		s.min_value = 0.0
 		s.max_value = 1.0
@@ -68,7 +72,7 @@ func _ready() -> void:
 		s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		grid.add_child(s)
 		var val := _label("", 14, INK.darkened(0.2))
-		val.custom_minimum_size = Vector2(44, 0)
+		val.custom_minimum_size = Vector2(VALUE_W, 0)
 		val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		grid.add_child(val)
 		s.value_changed.connect(func(v: float) -> void:
@@ -104,7 +108,9 @@ func _ready() -> void:
 
 ## One slider row in a 3-column grid; `on_change` applies the value and returns its readout.
 func _row(grid: GridContainer, title: String, lo: float, hi: float, step: float, on_change: Callable) -> HSlider:
-	grid.add_child(_label(title, 15, INK))
+	var name_l := _label(title, 15, INK)
+	name_l.custom_minimum_size = Vector2(LABEL_W, 0)
+	grid.add_child(name_l)
 	var s := HSlider.new()
 	s.min_value = lo
 	s.max_value = hi
@@ -113,7 +119,7 @@ func _row(grid: GridContainer, title: String, lo: float, hi: float, step: float,
 	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	grid.add_child(s)
 	var val := _label("", 14, INK.darkened(0.2))
-	val.custom_minimum_size = Vector2(64, 0)
+	val.custom_minimum_size = Vector2(VALUE_W, 0)
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	grid.add_child(val)
 	s.value_changed.connect(func(v: float) -> void: val.text = on_change.call(v))
