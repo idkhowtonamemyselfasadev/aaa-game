@@ -1347,7 +1347,9 @@ func _keeper_test() -> void:
 				outer = absf(c.x) + bb.size.x * 0.25
 				lo = bb.position.y - k.global_position.y
 				hi = bb.end.y - k.global_position.y
-		gore_txt += "%s knee x %.2f gore x %.2f y %.2f..%.2f; " % [side, knee.x, outer, lo, hi]
+		var fb := k.skel.find_bone("mixamorig_%sFoot" % side)
+		var foot := k.body.global_basis.inverse() * (k.skel.global_transform * k.skel.get_bone_global_pose(fb).origin - k.body.global_position)
+		gore_txt += "%s knee %s foot %s gore x %.2f y %.2f..%.2f; " % [side, knee, foot, outer, lo, hi]
 		if outer < absf(knee.x) + 0.05 or lo > 0.3 or hi < 1.0:
 			gore_ok = false
 	print("BOT keeper skirt: %d gores, %s" % [k.garb.gores.size(), gore_txt])

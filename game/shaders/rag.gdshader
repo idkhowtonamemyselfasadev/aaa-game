@@ -29,6 +29,8 @@ uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
+uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
+uniform float gore_top = 1.21;     // the gore's seam height (model space)
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 varying float hem_w;
@@ -75,6 +77,10 @@ void vertex() {
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;
 	VERTEX += NORMAL * flutter * w;
 	VERTEX += sway * w;
+	// a side gore's front end (UV.x 0) rides out with the front panel, its back end with the
+	// back panel, the side seam between them stays put, so no gap opens at either panel's edge
+	float drop = max(gore_top - VERTEX.y, 0.0);
+	VERTEX.z += drop * (sin(gore_swing.x) * (1.0 - UV.x) * (1.0 - UV.x) - sin(gore_swing.y) * UV.x * UV.x);
 }
 
 void fragment() {

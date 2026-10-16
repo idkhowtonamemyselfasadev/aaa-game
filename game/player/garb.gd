@@ -112,16 +112,22 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	tint = []
 	_last_pos = body.global_position
 
-## A side gore: an arc of cloth round the hip from 40 deg to 140 deg off the front, hung just
+func _physics_process(delta: float) -> void:
+	super(delta)
+	for g in gores:
+		(g.material_override as ShaderMaterial).set_shader_parameter("gore_swing", Vector2(_swing_f, _swing_b))
+
+## A side gore: an arc of cloth round the hip from 32 deg to 148 deg off the front, hung just
 ## inside the panels' curled edges (so they lie over its ends at the top and the hem) and just
 ## under the sash, flaring a little to the hem and falling in soft vertical folds that deepen
 ## toward the hem. COLOR.r is the fold cavity for the rag shader's fold_ao.
 const GORE_LEN := 0.93
 func _gore(sx: float) -> ArrayMesh:
 	var mesh := _grid(func(u: float, v: float) -> Vector3:
-		var a := lerpf(0.70, PI - 0.70, u)
+		var a := lerpf(0.55, PI - 0.55, u)
 		var rx := lerpf(0.245, 0.30, v)
-		var rz := lerpf(0.205, 0.22, v)
+		# a bell: deep fore and aft at the hem, so her idle stance's feet (+-0.29 m) stay inside
+		var rz := lerpf(0.205, 0.34, pow(v, 1.2))
 		var fold := 1.0 + (0.025 + 0.04 * v) * sin(u * PI * 7.0 + sx * 1.3 + 0.6 * sin(v * 3.0))
 		return Vector3(sx * sin(a) * rx * fold, 1.21 - v * GORE_LEN * robe_len, cos(a) * rz * fold), 18, 18)
 	# fold cavities: dark where the folds sink in
