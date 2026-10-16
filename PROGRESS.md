@@ -38,7 +38,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     her (0, +-0.3, +-0.45, +-0.6 rad off side-on, both sides) and takes the least ground
     cross-slope over 5 m, keeping 2.6 m from any bole (1.6 m let a bole + root fill the left
     third of the frame). level1: horizon now level (was tilted), but the level direction is
-    down-slope so the lens looks out over the vale from behind/above her.
+    down-slope so the lens looks out over the vale from behind/above her. level2 (2.6 m
+    clearance) FAIL: frame sits up-slope against the oak and the ruin, no bole in the lens,
+    horizon level, but it looks down on her from behind and her crouch is still a dark
+    bundle of slate panels under the basket; the litter leaves read as one blob size.
   - **Gores fold with the panels in the crouch.** rag.gdshader gore pass (`gore` flag):
     each end rotates with its panel (was a linear z shear) and follows the front panel's
     knee/ground folds and the back panel's ground fold, integrated down the drop in 14
@@ -2720,7 +2723,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    at her done 08:00 10-16; stick in hand + toss over the shoulder into the basket and a
    lower pick shot camera done 09:00 10-16; shoulders squared + basket centred on her spine
    done 10:00 10-16; litter flecks + leaf sizes/halos and slate robe done 11:00 10-16; oak bole lifted from
-   glossy black done 12:00 10-16; litter drifts + leaf mould done 13:00 10-16; warmer top leaves + lighter mould done 14:00 10-16; level low pick camera done 15:00 10-16; body armour -> wool/linen + lighter robe done 16:00 10-16; fern own backlight + darker atlas done 17:00 10-16; fern `fwd_gain` 0.7 done 18:00 10-16; robe hangs to gravity in the crouch (`HollowRags.hang`, knee/ground folds) done 19:00 10-16; level pick lens (least cross-slope) + gores fold with the panels done 21:00 10-16 -- next: the level lens now looks down-slope from behind her; prefer the up-slope direction (her against the hillside, face side) when both are level, then vary the litter leaf size in the foreground; then MOVE ON to the ALIVE gaps (village/NPCs) -- Hesper's crouch has had 12 sessions.) Hesper follow-ups from the dropped Corwin build: (speech by activity/hour/rain done
+   glossy black done 12:00 10-16; litter drifts + leaf mould done 13:00 10-16; warmer top leaves + lighter mould done 14:00 10-16; level low pick camera done 15:00 10-16; body armour -> wool/linen + lighter robe done 16:00 10-16; fern own backlight + darker atlas done 17:00 10-16; fern `fwd_gain` 0.7 done 18:00 10-16; robe hangs to gravity in the crouch (`HollowRags.hang`, knee/ground folds) done 19:00 10-16; level pick lens (least cross-slope) + gores fold with the panels done 21:00 10-16 -- next: the level lens now sees her from behind (level2); weight the choice toward her face side and keep the lens at her height when the ground rises, then vary the litter leaf size in the foreground; then MOVE ON to the ALIVE gaps (village/NPCs) -- Hesper's crouch has had 12 sessions.) Hesper follow-ups from the dropped Corwin build: (speech by activity/hour/rain done
    02:00 10-16 as interact dialogue, `Keeper.LINES`; the two quoted lines below could join
    the shelter/wake pools) speech -- on meeting, a second
    caption line that fits the hour, the weather and where she is (e.g. sheltering: "Under

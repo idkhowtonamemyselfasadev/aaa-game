@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261012-0145-sheet-lightning.jpg",
-  "time": "2026-10-12T01:45:01Z",
-  "caption": "Night storm, sheet lightning: the rain deck glows from inside behind the ridge with no channel, the meadow faintly lit; the ridges are faceted cut-outs and the rain streaks barely show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-0147-hero-dry-rain.jpg",
-  "time": "2026-10-12T01:47:47Z",
-  "caption": "Rain at 13:00 with the hero still dry: grey downpour, wind-bent grass; the hero is still the sci-fi Vanguard stand-in and the grass is ribbons, so not a Wukong shot.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-0147-hero-soaked.jpg",
-  "time": "2026-10-12T01:47:47Z",
-  "caption": "Same moment with the hero soaked: suit and staff grip darker and glossier, clearly wet; no drips or rivulets yet and the hero model is still the stand-in.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0232-shelter.jpg",
   "time": "2026-10-12T02:32:33Z",
   "caption": "The hero sheltering under an oak in a downpour: rain stops under the crown and the ground beneath stays drier; still fails because the leaf cards read as big flat blobs and the grass as yellow spikes.",
@@ -891,6 +873,18 @@
   "file": "20261016-2007-keeperrobe.jpg",
   "time": "2026-10-16T20:07:55Z",
   "caption": "Hesper crouched at the litter under a gather oak: her robe now falls over her knees and hangs to the ground instead of jutting out with her pelvis; still wrong: the low lens sits on the slope so the frame reads tilted, and her crouched body is a dark bundle at 3 m.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-2115-keeperlevel.jpg",
+  "time": "2026-10-16T21:15:00Z",
+  "caption": "Hesper picking under a gather oak with the pick lens re-aimed to the most level ground: the horizon and the vale beyond now read level instead of tilted; still wrong: an oak bole and root fill the left third and she is seen from behind as a grey bundle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-2140-keeperupslope.jpg",
+  "time": "2026-10-16T21:40:00Z",
+  "caption": "Hesper crouched at the litter against the oak and the ruined keep, lens kept clear of the boles: level frame, robe drapes to the leaves; still wrong: seen from above and behind, her crouch is a dark slate bundle and the litter leaves are all one size.",
   "verdict": "fail"
  }
 ]
