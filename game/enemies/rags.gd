@@ -27,7 +27,15 @@ var _vel := Vector3.ZERO
 var _trail := Vector3.ZERO
 var layer := 2           # render layer of the pieces (the soldier's ember light skips layer 2)
 var tint: Array = []
-var swing_slack := 0.0   # leg angle (rad) the panels clear before the thigh pushes them     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
+var swing_slack := 0.0   # leg angle (rad) the panels clear before the thigh pushes them
+## 0..1: how far the panels hang to gravity instead of riding the pelvis's tilt (a wearer who
+## bends at the waist). With it, on a deep stoop the front panel lies along the thighs and
+## folds down over the knees, and the back panel folds where it meets the ground.
+var hang := 0.0
+var fold_front := Vector2(1000.0, 0.0)   # (distance down the panel, angle) of its knee fold
+var fold_back := Vector2(1000.0, 0.0)
+var fold_front2 := Vector2(1000.0, 0.0)  # where the front panel meets the ground and pools
+var tip := 0.0                           # the pelvis's forward tilt (rad), for the bots     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -39,7 +47,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	_hips_rest = _rest_in_body(_hips)
 	for side in ["Left", "Right"]:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
-				skel.find_bone("mixamorig_%sLeg" % side)]))
+				skel.find_bone("mixamorig_%sLeg" % side), skel.find_bone("mixamorig_%sFoot" % side)]))
 	head.add_child(_piece(_hood(), 0.0, 0.10, 0.0, 1.2))
 	chest.add_child(_piece(_mantle(), 0.35, 0.22, 0.35, 1.0))
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
@@ -106,6 +114,7 @@ func _panel(parent: Node3D, top: Vector3, w0: float, w1: float, length: float, b
 		z += dir * 0.025 * v
 		return Vector3(x * dir, -v * length, z), 12, 18)
 	pivot.add_child(_piece(mesh, 0.25, 0.18, sd, length / w1))
+	pivot.set_meta("len", length)
 	return pivot
 
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its
@@ -231,6 +240,80 @@ func _sash() -> ArrayMesh:
 		var tilt := 0.03 * sin(a)
 		return Vector3(sin(a) * 0.258 * bulge, 1.245 - v * 0.15 + tilt, 0.005 + cos(a) * 0.222 * bulge), 36, 4)
 
+## Panels that hang to gravity: the pelvis's forward tilt is taken back out of both, the front
+## one rides the thighs right up to their angle on a deep stoop and folds down over the knees,
+## and either one folds where it would go into the ground (a robe pooling behind a crouch).
+func _hang_panels(fwd: float, bwd: float, k: float) -> void:
+	var up := _body.global_basis.y.normalized()
+	var ahead := _body.global_basis.z.normalized()
+	# the pivots' rest frame against the body's: how far the pelvis tips forward
+	var rot_f := _front.rotation.x
+	_front.rotation.x = 0.0
+	var down := -_front.global_basis.y.normalized()
+	var fz := _front.global_basis.z.normalized()
+	_front.rotation.x = rot_f
+	tip = -atan2(down.dot(ahead), -down.dot(up)) * hang
+	# the legs as posed after the skeleton's modifiers (a crouch bends them past the clip's
+	# pose, which get_bone_global_pose does not see here): the deepest thigh off the pelvis
+	var ground := INF
+	var knee := Vector3.ZERO
+	var knee_f := -INF
+	var thigh := -INF
+	for leg in _legs:
+		var hp := _joint(leg[0])
+		var kp := _joint(leg[1])
+		var d := kp - hp
+		thigh = maxf(thigh, atan2(d.dot(fz), d.dot(down)))
+		# the ground under her: the lower foot's ankle, less the ankle height
+		ground = minf(ground, _joint(leg[2]).dot(up) - 0.07)
+		if kp.dot(ahead) > knee_f:
+			knee_f = kp.dot(ahead)
+			knee = kp
+	var deep := hang * clampf(tip / 0.3, 0.0, 1.0)
+	var cap := lerpf(0.7, maxf(thigh, 0.7), deep)
+	fwd = maxf(fwd, lerpf(fwd, thigh - swing_slack, deep))
+	_swing_f = lerpf(_swing_f, minf(maxf(fwd * 1.1, tip), cap), k)
+	_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7) - tip, k)
+	var sy := _front.global_basis.y.length()
+	var ff := Vector2(1000.0, 0.0)
+	var ff2 := Vector2(1000.0, 0.0)
+	var fl: float = _front.get_meta("len", 1.0)
+	var fw := _swing_f - tip
+	if deep > 0.0:
+		# down the panel to the knee, then the rest hangs straight down from it, and what is
+		# longer than the knee is high pools forward on the ground in front of her
+		var kd := (knee - _front.global_position).length() / sy
+		if kd < fl:
+			var kh := (knee.dot(up) - ground - 0.03) / sy
+			ff = Vector2(kd, maxf(fw, 0.0) * deep)
+			if kh > 0.0 and kd + kh < fl:
+				ff2 = Vector2(kd + kh, -(PI * 0.5 - 0.05) * deep)
+	fold_front = fold_front.lerp(ff, k)
+	fold_front2 = fold_front2.lerp(ff2, k)
+	var fb := Vector2(1000.0, 0.0)
+	var bl: float = _back.get_meta("len", 1.0)
+	var bw := _swing_b + tip
+	var h := _back.global_position.dot(up) - ground - 0.03
+	var c := maxf(cos(bw), 0.2)
+	if bl * sy * c > h and h > 0.0:
+		fb = Vector2(h / c / sy, maxf(PI * 0.5 - bw - 0.05, 0.0) * hang)
+	fold_back = fold_back.lerp(fb, k)
+	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
+	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold2", fold_front2)
+	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
+
+var _joints := {}
+
+## A bone's joint in world space as posed after the skeleton's modifiers.
+func _joint(bone: int) -> Vector3:
+	var att: BoneAttachment3D = _joints.get(bone)
+	if att == null:
+		att = BoneAttachment3D.new()
+		att.bone_idx = bone
+		_skel.add_child(att)
+		_joints[bone] = att
+	return att.global_position
+
 ## A cloth sheet from f(u, v) -> point, u across (nu cells), v from the seam to the hem.
 func _grid(f: Callable, nu: int, nv: int) -> ArrayMesh:
 	var st := SurfaceTool.new()
@@ -272,8 +355,12 @@ func _physics_process(delta: float) -> void:
 		bwd = maxf(bwd, -ang)
 	fwd = maxf(fwd - swing_slack, 0.0)
 	bwd = maxf(bwd - swing_slack, 0.0)
-	_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), minf(delta * 14.0, 1.0))
-	_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), minf(delta * 14.0, 1.0))
+	var k := minf(delta * 14.0, 1.0)
+	if hang > 0.0:
+		_hang_panels(fwd, bwd, k)
+	else:
+		_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), k)
+		_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)
 	peak_swing = maxf(peak_swing, maxf(_swing_f, _swing_b))
 	_front.rotation.x = -_swing_f
 	_back.rotation.x = _swing_b

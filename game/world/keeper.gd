@@ -218,6 +218,8 @@ func _ready() -> void:
 		# her ankle-length robe would let the idle stance's forward shin poke through the
 		# front panel; it rides on the leg sooner than the hero's knee-length one
 		garb.swing_slack = 0.3
+		# she bends at the waist to pick: the robe hangs to gravity, over the knees and onto the litter
+		garb.hang = 1.0
 		# before the Crumple, so the stoop bends a chest that already faces forward: the hero's
 		# idle stands with the chest turned ~17 deg to the right, which swung her basket 11 cm
 		# off her spine to the left

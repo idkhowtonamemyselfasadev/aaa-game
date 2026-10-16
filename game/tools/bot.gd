@@ -1404,6 +1404,9 @@ func _keeper_test() -> void:
 			var t0 := k.tosses
 			var to_mouth := INF    # the hand at the top of its toss, from the basket mouth
 			var held_seen := false
+			var tipped := 0.0
+			var knee_fold := 0.0
+			var hem_lo := INF
 			while (k.picks < p0 + 2 or k._toss_t >= 0.0) and tg < 40.0:
 				await get_tree().physics_frame
 				tg += get_physics_process_delta_time()
@@ -1413,6 +1416,22 @@ func _keeper_test() -> void:
 				var hm: Vector3 = k.hand_mark.global_position
 				if k.pick > 0.97:
 					hand_lo = minf(hand_lo, hm.y - _world.terrain.height_at(hm.x, hm.z))
+					# the robe hangs: front over the knees, both hems at or above the litter
+					var g: HeroGarb = k.garb
+					tipped = maxf(tipped, g.tip)
+					knee_fold = maxf(knee_fold, g.fold_front.y)
+					for pf in [[g._front, g.fold_front, g.fold_front2], [g._back, g.fold_back, Vector2(1000, 0)]]:
+						var pv: Node3D = pf[0]
+						var f1: Vector2 = pf[1]
+						var f2: Vector2 = pf[2]
+						var ln: float = pv.get_meta("len", 1.0)
+						# the hem through both folds, in the panel's own space, then to the world
+						var e := Vector2(-ln, 0.0)      # (y, z)
+						for fo in [f2, f1]:
+							if -e.x > fo.x:
+								e = Vector2(e.x + fo.x, e.y).rotated(fo.y) - Vector2(fo.x, 0.0)
+						var stoop_hem: Vector3 = pv.global_transform * Vector3(0, e.x, e.y)
+						hem_lo = minf(hem_lo, stoop_hem.y - _world.terrain.height_at(stoop_hem.x, stoop_hem.z))
 				if k._back_hand > 0.9 and k.pick < 0.3:
 					# behind the body's centre line: the hand is on her back
 					hand_back = maxf(hand_back, -(k.body.global_basis.inverse() * (hm - k.global_position)).z)
@@ -1426,6 +1445,9 @@ func _keeper_test() -> void:
 				if k.pick > 0.05:
 					drift = maxf(drift, Vector2(k.global_position.x - at0.x, k.global_position.z - at0.z).length())
 			print("BOT keeper gather: %d picks in %.1f s, deepest %.2f (body drop %.2f m), hand %.2f m off the litter, %.2f m behind her rising, drifted %.2f m while stooped" % [k.picks - p0, tg, deep, drop, hand_lo, hand_back, drift])
+			print("BOT keeper robe: pelvis tip %.2f rad, front fold over the knees %.2f rad, lowest hem %.2f m off the litter" % [tipped, knee_fold, hem_lo])
+			if knee_fold < 0.3 or hem_lo < -0.1:
+				return _combat_done(false, "her robe should hang over her knees and stay out of the ground when she stoops")
 			print("BOT keeper toss: %d finds into the basket, stick seen in hand %s, hand %.2f m from the rim at the top of the toss" % [k.tosses - t0, held_seen, to_mouth])
 			if k.tosses - t0 < 2 or not held_seen or to_mouth > 0.14:
 				return _combat_done(false, "her finds should go over her shoulder into the basket")

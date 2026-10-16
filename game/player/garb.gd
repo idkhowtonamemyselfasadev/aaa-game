@@ -54,7 +54,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	_hips_rest = _rest_in_body(_hips)
 	for side in ["Left", "Right"]:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
-				skel.find_bone("mixamorig_%sLeg" % side)]))
+				skel.find_bone("mixamorig_%sLeg" % side), skel.find_bone("mixamorig_%sFoot" % side)]))
 	tint = palette.get("hood", INDIGO)
 	# the hero's hood is sewn, not torn like the Hollow's cowl: a straight turned and stitched
 	# hem where it falls over the mantle

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-2300-lightning-night.jpg",
-  "time": "2026-10-11T23:00:00Z",
-  "caption": "Night storm over the Vale: a jagged bolt drops from the flash-lit deck and the meadow flares blue-white; the bolt's foot gets a dark outline against the mountains, and the faceted mountain ring and ribbon grass still read as prototype.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0145-sheet-lightning.jpg",
   "time": "2026-10-12T01:45:01Z",
   "caption": "Night storm, sheet lightning: the rain deck glows from inside behind the ridge with no channel, the meadow faintly lit; the ridges are faceted cut-outs and the rain streaks barely show.",
@@ -891,6 +885,12 @@
   "file": "20261016-1827-fern.jpg",
   "time": "2026-10-16T18:27:28Z",
   "caption": "Hesper picking under an oak at 11:00: the fern against the sun no longer glows lime, but the low lens reads tilted on the slope and her crouched body is still a jumble of panels.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-2007-keeperrobe.jpg",
+  "time": "2026-10-16T20:07:55Z",
+  "caption": "Hesper crouched at the litter under a gather oak: her robe now falls over her knees and hangs to the ground instead of jutting out with her pelvis; still wrong: the low lens sits on the slope so the frame reads tilted, and her crouched body is a dark bundle at 3 m.",
   "verdict": "fail"
  }
 ]

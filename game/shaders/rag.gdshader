@@ -30,6 +30,8 @@ uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
+uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
+uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
@@ -69,9 +71,26 @@ float weave(vec2 wv) {
 	return mix(warp, weft, over);
 }
 
+void fold_panel(inout vec3 v, inout vec3 n, vec2 f) {
+	float fd = -v.y - f.x;
+	if (fd > 0.0) {
+		float fa = f.y * smoothstep(0.0, 0.07, fd);
+		float cs = cos(fa);
+		float sn = sin(fa);
+		vec2 r = vec2(v.y + f.x, v.z);
+		v.yz = vec2(r.x * cs - r.y * sn - f.x, r.x * sn + r.y * cs);
+		n.yz = vec2(n.y * cs - n.z * sn, n.y * sn + n.z * cs);
+	}
+}
+
 void vertex() {
 	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
+	// a robe panel folding over the knees and onto the ground: below each fold the cloth turns
+	// about the panel's x axis, eased in over a few centimetres so the bend is soft; the far
+	// fold first, so the near one carries it round
+	fold_panel(VERTEX, NORMAL, fold2);
+	fold_panel(VERTEX, NORMAL, fold);
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;
