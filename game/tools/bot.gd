@@ -1331,6 +1331,28 @@ func _keeper_test() -> void:
 	print("BOT keeper cut: hat %s, basket %d meshes at body %s, face %.2f m ahead of the feet (hero %.2f), robe hem %.2f m (hero %.2f)" % [k.garb.hat != null, meshes, bpos, head_k, head_p, hem_k, hem_p])
 	if k.garb.hat != null or meshes < 10 or bpos.z > -0.2 or bpos.y < 0.9 or head_k < head_p + 0.06 or hem_k > hem_p - 0.06 or hem_k < 0.0:
 		return _combat_done(false, "Hesper still cut like the hero (hat, no basket on her back, not stooped or robe not to the ankles)")
+	# the skirt: a gore each side, outside the knees, from the sash down past the shins
+	var gore_ok := k.garb.gores.size() == 2
+	var gore_txt := ""
+	for side in ["Left", "Right"]:
+		var kb := k.skel.find_bone("mixamorig_%sLeg" % side)
+		var knee := k.body.global_basis.inverse() * (k.skel.global_transform * k.skel.get_bone_global_pose(kb).origin - k.body.global_position)
+		var outer := 0.0
+		var lo := INF
+		var hi := -INF
+		for g in k.garb.gores:
+			var bb: AABB = g.global_transform * g.get_aabb()
+			var c := k.body.global_basis.inverse() * (bb.get_center() - k.body.global_position)
+			if signf(c.x) == signf(knee.x):
+				outer = absf(c.x) + bb.size.x * 0.25
+				lo = bb.position.y - k.global_position.y
+				hi = bb.end.y - k.global_position.y
+		gore_txt += "%s knee x %.2f gore x %.2f y %.2f..%.2f; " % [side, knee.x, outer, lo, hi]
+		if outer < absf(knee.x) + 0.05 or lo > 0.3 or hi < 1.0:
+			gore_ok = false
+	print("BOT keeper skirt: %d gores, %s" % [k.garb.gores.size(), gore_txt])
+	if not gore_ok:
+		return _combat_done(false, "Hesper's robe does not close into a skirt at the sides")
 	var log := []
 	for leg in [[8.0, "tend"], [11.0, "gather"], [13.0, "eat"], [14.0, "wander"], [14.1, "wander"], [22.0, "sleep"], [6.0, "wake"]]:
 		_world.time_of_day = leg[0]

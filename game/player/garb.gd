@@ -30,6 +30,10 @@ var robe_len := 1.0
 var robe_wide := 1.0     # panel width factor: wider panels curl round the hips into a skirt
 var basket := false
 var basket_node: Node3D
+## Side gores: a wedge of the robe cloth sewn in under each side of the panels, from the sash
+## to the hem, so a long robe closes into a skirt and the side view shows no legs or armour.
+var skirt := false
+var gores: Array[MeshInstance3D] = []
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -89,6 +93,12 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	tint = palette.get("robe", MADDER)
 	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30 * robe_wide, lerpf(0.44, 0.52, robe_len - 1.0) * robe_wide, 0.90 * robe_len, 0.9, 1.0)
 	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34 * robe_wide, lerpf(0.48, 0.56, robe_len - 1.0) * robe_wide, 0.96 * robe_len, -0.9, 2.0)
+	if skirt:
+		for sx in [-1.0, 1.0]:
+			var g := _piece(_gore(sx), 0.06, 0.14, 40.0 + sx, GORE_LEN * robe_len / 0.42)
+			(g.material_override as ShaderMaterial).set_shader_parameter("fold_ao", 1.0)
+			hips.add_child(g)
+			gores.append(g)
 	tint = palette.get("sash", OCHRE)
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
 	tint = palette.get("wraps", LINEN)
@@ -101,6 +111,30 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		_basket()
 	tint = []
 	_last_pos = body.global_position
+
+## A side gore: an arc of cloth round the hip from 40 deg to 140 deg off the front, hung just
+## inside the panels' curled edges (so they lie over its ends at the top and the hem) and just
+## under the sash, flaring a little to the hem and falling in soft vertical folds that deepen
+## toward the hem. COLOR.r is the fold cavity for the rag shader's fold_ao.
+const GORE_LEN := 0.93
+func _gore(sx: float) -> ArrayMesh:
+	var mesh := _grid(func(u: float, v: float) -> Vector3:
+		var a := lerpf(0.70, PI - 0.70, u)
+		var rx := lerpf(0.245, 0.30, v)
+		var rz := lerpf(0.205, 0.22, v)
+		var fold := 1.0 + (0.025 + 0.04 * v) * sin(u * PI * 7.0 + sx * 1.3 + 0.6 * sin(v * 3.0))
+		return Vector3(sx * sin(a) * rx * fold, 1.21 - v * GORE_LEN * robe_len, cos(a) * rz * fold), 18, 18)
+	# fold cavities: dark where the folds sink in
+	var arr := mesh.surface_get_arrays(0)
+	var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+	var cols := PackedColorArray()
+	for t in uvs:
+		var f := sin(t.x * PI * 7.0 + sx * 1.3 + 0.6 * sin(t.y * 3.0))
+		cols.append(Color(clampf(0.5 + 0.5 * f, 0.0, 1.0) * t.y + (1.0 - t.y), 0, 0))
+	arr[Mesh.ARRAY_COLOR] = cols
+	var out := ArrayMesh.new()
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return out
 
 ## A back basket of woven willow, oval and tapering to a narrow foot, its open mouth finished
 ## in a thick wrapped rim, worn high between the shoulder blades over the mantle and hung on

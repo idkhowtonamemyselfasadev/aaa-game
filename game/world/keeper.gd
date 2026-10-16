@@ -182,6 +182,8 @@ func _ready() -> void:
 	garb.robe_len = 1.1
 	garb.robe_wide = 1.3
 	garb.basket = true
+	# side gores close the long robe into a skirt: from the side no legs or old armour show
+	garb.skirt = true
 	add_child(garb)
 	if skel != null:
 		garb.build(skel, body)

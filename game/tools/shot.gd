@@ -238,15 +238,16 @@ func _ready() -> void:
 		var pp := rs + to_v * 40.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT ruin at %s" % rs)
-	if spot == "keeper" or spot == "keeperback":
+	if spot == "keeper" or spot == "keeperback" or spot == "keeperside":
 		# Hesper, the shrine keeper, three-quarter from the front at her spot for the hour
-		# ("keeperback": three-quarter from behind, for the basket and the stoop)
+		# ("keeperback": three-quarter from behind, for the basket and the stoop; "keeperside":
+		# square side-on, for the skirt)
 		var kp: Keeper = world.keeper
 		kp.settle(world, world.time_of_day)
 		var at := kp.global_position
 		var yaw := kp.body.rotation.y
 		kp._gather_t = 1.0e6                       # hold her at this spot for the frame
-		var off := 0.55 if spot == "keeper" else PI - 0.8
+		var off := 0.55 if spot == "keeper" else (PI * 0.5 if spot == "keeperside" else PI - 0.8)
 		var dir := Vector3(sin(yaw + off), 0, cos(yaw + off))
 		var dir2 := Vector3(sin(yaw - off), 0, cos(yaw - off))
 		var flora: Flora = world.get_node("Flora")
@@ -551,7 +552,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":
