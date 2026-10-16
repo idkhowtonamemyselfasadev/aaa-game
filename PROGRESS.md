@@ -33,6 +33,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-16 23:00 UTC (second, overlapping run): built a parallel cookfire
+  (`Cookfire`, GPUParticles3D, 22 moths) and dropped it at rebase in favour of `Hearth`
+  above. Findings to carry over: (1) lit smoke puffs (blend_mix, BACKLIGHT, an orange
+  emission on the low puffs) read as a clear grey column against the dark inner wall at 3 m,
+  where Hearth's smoke is too small to read -- larger puffs (0.25-0.4 m, x4 over a 6 s life)
+  are what did it; (2) moths need ~2x the insect.gdshader energy (3.0) and a 2 cm base size
+  to show at 2-3 m; (3) a lens along the wall arc at r 2.05, 0.95 m up, on the far side from
+  her bed, looking at the fire, clears the plinth stones, but the fire still sits among the
+  ruin's wall-foot spalls, so the ring stones get lost -- clear spalls inside ~0.7 m of the
+  hearth in ruins.gd; (4) `tools/shots.sh` once returned in seconds with no output and fell
+  back to opengl3 (also empty); a direct `xvfb-run ... --rendering-driver vulkan` call of the
+  same spot worked -- if it happens, run the shot directly; (5) bot `talk` failed once with
+  "no Speak prompt" (prompt hold sampled at a decaying 0.14), passed twice on rerun.
 - Session 2026-10-16 22:00 UTC:
   - **Hesper's cookfire (ALIVE gap; moved on from her crouch after 12 sessions).**
     `world/hearth.gd` (class Hearth, built by World at `Keeper.hearth_at`, r 2.35 from the
