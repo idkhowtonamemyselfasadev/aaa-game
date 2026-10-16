@@ -497,7 +497,8 @@ void fragment() {
 	// the ground between the leaves is leaf mould: dark crumbled leaf, fragments and fine
 	// skeletons a shade or two under the whole leaves, not a bare dark gap
 	float frag = vnoise(wpos * 23.0) * 0.6 + vnoise(wpos * 61.0) * 0.4;
-	vec3 mould = mix(mix(earth * 0.7, leaf_b * 0.55, 0.6), leaf_a * 0.6, smoothstep(0.45, 0.8, frag) * fade_l);
+	// (lifted x1.2: at x1.0 the mould read near-black between the drifts)
+	vec3 mould = mix(mix(earth * 0.7, leaf_b * 0.55, 0.6), leaf_a * 0.6, smoothstep(0.45, 0.8, frag) * fade_l) * 1.2;
 	vec3 bed = mix(mould, mix(leaf_drift * 0.62, leaf_b * 0.9, micro * 0.6), 0.5 - 0.35 * fade_l);
 	// the leaves blow together into drifts: in a drift they lie six deep and overlap, between
 	// drifts a few lie scattered on the mould
@@ -509,7 +510,9 @@ void fragment() {
 		// leaf by leaf the tone wanders a little: tan, russet, dark wet brown; neighbours
 		// stay close in value so the bed reads as one layer, not a mosaic of chips
 		// (linear colours: the old (0.52, 0.43, 0.20) read as cream-white flecks)
-		vec3 tone = mix(mix(leaf_drift * 0.8, leaf_a * 0.8, smoothstep(0.35, 0.95, lb.z)),
+		// the tan is pushed warmer (less blue/green) so the dry top leaves read russet-tan in
+		// the crowns' blue sky-fill instead of greyish-pale
+		vec3 tone = mix(mix(leaf_drift * vec3(0.9, 0.74, 0.5), leaf_a * 0.8, smoothstep(0.35, 0.95, lb.z)),
 				vec3(0.16, 0.10, 0.026), step(0.92, fract(lb.z * 7.3)) * 0.5);
 		tone = mix(tone, leaf_b * 0.55, step(0.78, fract(lb.z * 3.9 + 0.3)) * 0.6);
 		// damp patches darken whole runs of the bed, not single leaves
