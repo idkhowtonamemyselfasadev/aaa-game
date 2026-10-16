@@ -6,10 +6,15 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // plated ridges, lichen/moss on the upward side and near the roots.
 #include "res://shaders/tree_wind.gdshaderinc"
 
-uniform vec3 bark_dark : source_color = vec3(0.14, 0.1, 0.07);
-uniform vec3 bark_light : source_color = vec3(0.29, 0.25, 0.2);
+// (10-16 12:00) lifted from (0.14,0.1,0.07)/(0.29,0.25,0.2): the shaded bole read as a
+// black column; weathered oak bark is ~0.08-0.12 linear albedo
+uniform vec3 bark_dark : source_color = vec3(0.17, 0.125, 0.09);
+uniform vec3 bark_light : source_color = vec3(0.35, 0.31, 0.26);
 uniform vec3 lichen : source_color = vec3(0.5, 0.52, 0.44);
-uniform vec3 moss : source_color = vec3(0.21, 0.26, 0.08);
+// two moss tones like rock.gdshader (the single dark green read black-green on the
+// shaded side): olive cushions with paler yellow-green tops
+uniform vec3 moss : source_color = vec3(0.2, 0.24, 0.07);
+uniform vec3 moss_lit : source_color = vec3(0.34, 0.35, 0.13);
 
 varying vec3 wn;
 varying float vy;
@@ -144,16 +149,24 @@ void fragment() {
 		m = clamp(lowm * (0.6 + 0.6 * n2(UV * vec2(5.0, 2.0))) + top * smoothstep(0.55, 0.8, n2(UV * vec2(3.0, 1.2))) * 0.7, 0.0, 1.0);
 		col *= mix(0.8, 1.0, smoothstep(0.0, 0.07, v_soil));
 	}
-	col = mix(col, moss * (0.8 + 0.4 * f), m * 0.75);
+	vec3 mc = mix(moss, moss_lit, smoothstep(0.3, 0.8, n2(UV * vec2(22.0, 7.0)) * 0.6 + f * 0.4));
+	col = mix(col, mc, m * 0.75);
 	// lichen grows where the moss does not (the drier bark), so it shows on every side
 	col = mix(col, lichen * (0.85 + 0.2 * f), lb * mix(0.2, 1.0, plate) * 0.6 * (1.0 - m));
-	float rough = mix(0.97, 0.85, m);
+	// moss is a fibre mat, not a film: it stays fully matte (0.85 read as a wet sheen)
+	float rough = mix(0.97, 0.95, m);
 	weather_wetten(col, rough, 1.0);
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.08;   // dry bark has almost no sheen
-	NORMAL_MAP = normalize(vec3((h - hx) * 12.0, (h - hy) * 12.0, 1.0)) * 0.5 + 0.5;
-	NORMAL_MAP_DEPTH = 1.6;
+	// the crack lips are steep in h: unclamped, the slope tipped the normal near
+	// horizontal there and every crack rim caught the sky as a bright line (the "glossy"
+	// bole); soft-clamp the slope so plates stay tilted but never edge-on, and flatten
+	// it under moss (a cushion fills the relief)
+	vec2 sl = vec2(h - hx, h - hy) * 12.0;
+	sl = sl / (1.0 + length(sl) * 0.8) * (1.0 - 0.6 * m);
+	NORMAL_MAP = normalize(vec3(sl, 1.0)) * 0.5 + 0.5;
+	NORMAL_MAP_DEPTH = 1.2;
 	// cavity: the furrow floors and the cross cracks stay dark even in the bounce fill
 	AO = mix(0.4, 1.0, smoothstep(0.05, 0.55, h));
 	ALBEDO *= mix(0.82, 1.0, smoothstep(0.0, 0.3, h));

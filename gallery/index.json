@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-2049-oak-crowns-ridge.jpg",
-  "time": "2026-10-11T20:49:59Z",
-  "caption": "An oak at 15 h above the sunlit Vale, leaves now deep olive with a rare brown dead leaf instead of apple-like rust blobs; the leaf cards are still oversized at close range and the crowns lack fine silhouette detail.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-2135-wade-rain.jpg",
   "time": "2026-10-11T21:35:58Z",
   "caption": "The hero runs through a rain-filled meadow pool: raindrop rings on the water and small splash crowns speckling the grass and pool; the foot splash at the hero's stride is too small to read and the hero is still the sci-fi Vanguard stand-in.",
@@ -885,6 +879,12 @@
   "file": "20261016-1120-litter.jpg",
   "time": "2026-10-16T11:20:00Z",
   "caption": "Under the gather oak the leaf litter no longer carries cream-white flecks or pale pebbles: darker russet and wet-brown leaves of mixed sizes with soft shadows under each; still reads as a mosaic of separate leaves, the bole is glossy black and Hesper's robe (shot taken before the slate-grey change) still navy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-1220-oakbole.jpg",
+  "time": "2026-10-16T12:20:00Z",
+  "caption": "The gather oak's bole in back light now reads as grey-brown plated bark with olive moss on its shaded side instead of a glossy black-green column with bright crack rims; the leaf litter still reads as a mosaic of pale separate leaves and the lower bole keeps one bright plate edge.",
   "verdict": "fail"
  }
 ]
