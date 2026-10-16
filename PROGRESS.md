@@ -45,6 +45,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     done; a pick cut short (hero noticed) still tosses. `toss_hold` for shots. Bot keeper:
     2 tosses, stick seen, hand 0.10 m from the near rim at the top (pass < 0.14).
   - Shot camera for `pick`: 3 m back, 0.6 m above the ground (was 2.4 m / 1.05 m).
+  - Shots (Forward+/lavapipe): `keeperback ktoss 60 11 toss` FAIL: from behind, the raised
+    arm hides behind the basket, which hangs well out to her LEFT (fix the basket offset
+    first, then shoot the toss side-on from her right); `keeperside kpick3 60 11 pick`
+    FAIL: on the oak's slope the low camera tilts, grass blades fill the lens, she reads as
+    a dark heap -- aim the camera level (look target at camera height) and clear grass
+    within 1 m of the lens in shot.gd. Litter tiling/white flecks and glossy black bole
+    still there in both. Bots keeper, talk, walk PASS.
 - Session 2026-10-16 08:00 UTC:
   - **Hesper's hand reaches the litter + hand on her back (item 00000).** `Crumple` gains
     `pelvis` (tips the Hips bone forward; the thighs are counter-rotated so they stay where
