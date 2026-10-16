@@ -66,6 +66,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     grandmother was born.", tend + "The seal kept quiet all night. It usually does." (now
     the first tend line). Bot `keeper`: two wander legs (stops at r 37 and 44 m, through the
     gateway, no wall crossing, flat ground). Shot spot `wander` (herd placed 16 m past her).
+    Shot `wander2` 14.2 h (Forward+/lavapipe): Hesper with her basket among the grazing
+    deer in the tall meadow -- fail as a Wukong frame (deer small and flat-lit, thin far
+    oak savanna, flat noon light); 10-second clip: yes, an old woman and a herd at peace.
+    Lessons: a `pkill -f <pattern>` inside a bash -c kills its own shell when the pattern
+    appears in its command line (use `[s]hot.tscn`), and never `git reset` while a shot is
+    loading (shaders vanish mid-load -> white deer).
     Note: the herd centre at 14 h was ~50 m from her stops -- the cone limits how close she
     gets; deer do not react to her (they know her).
 - Session 2026-10-16 02:00 UTC:
