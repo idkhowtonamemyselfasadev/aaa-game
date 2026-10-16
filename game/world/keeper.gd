@@ -195,12 +195,12 @@ func _ready() -> void:
 	_setup_animation()
 	garb = HeroGarb.new()
 	garb.name = "Garb"
-	# undyed grey-brown wool, an ash hood, a faded woad robe, a rope-brown sash, old linen
+	# undyed grey-brown wool, an ash hood, a robe of woad washed out to slate grey, a rope-brown sash, old linen
 	garb.palette = {
 		"hood": [Color(0.040, 0.038, 0.036), Color(0.20, 0.19, 0.18), 0.3],
 		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
 		"mantle": [Color(0.070, 0.058, 0.044), Color(0.36, 0.31, 0.24), 0.35],
-		"robe": [Color(0.040, 0.050, 0.062), Color(0.24, 0.28, 0.32), 0.4],
+		"robe": [Color(0.048, 0.050, 0.056), Color(0.26, 0.27, 0.285), 0.4],
 		"sash": [Color(0.075, 0.050, 0.030), Color(0.34, 0.24, 0.14), 0.3],
 		"wraps": [Color(0.14, 0.13, 0.11), Color(0.50, 0.47, 0.41), 0.4],
 	}

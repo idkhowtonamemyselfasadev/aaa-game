@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261011-1933-cloud-shadows-ridge.jpg",
-  "time": "2026-10-11T19:33:43Z",
-  "caption": "Cumulus shadows now drift over the Vale at 15 h: the far valley glows gold in a sun gap while the right-hand foothills sit in cloud shade; tree crowns still read as flat leaf cards and the far peaks are smooth and faceted.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1933-cloud-shadows-valley.jpg",
-  "time": "2026-10-11T19:33:43Z",
-  "caption": "Looking down the valley at 14 h with sunlit and cloud-shaded patches across the meadow and mountains; the leaf cards facing the sun blow out to white like blossom, and the haze toward the sun washes out the right half.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-2049-oak-crowns-valley.jpg",
-  "time": "2026-10-11T20:49:59Z",
-  "caption": "Looking down the valley toward the sun at 14 h: the oak crowns now read olive-green with sunlit tops instead of white blossom; the haze toward the sun still washes out the right half and the far peaks are faceted.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-2049-oak-crowns-ridge.jpg",
   "time": "2026-10-11T20:49:59Z",
   "caption": "An oak at 15 h above the sunlit Vale, leaves now deep olive with a rare brown dead leaf instead of apple-like rust blobs; the leaf cards are still oversized at close range and the crowns lack fine silhouette detail.",
@@ -897,6 +879,12 @@
   "file": "20261016-1030-keeperback.jpg",
   "time": "2026-10-16T10:34:28Z",
   "caption": "Hesper from behind under the gather oak with her shoulders squared and the willow basket on her back; still wrong: tiled leaf litter with white flecks, grey armour knee caps at her legs, glossy black oak bole, and her raised arm hidden behind the basket.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-1120-litter.jpg",
+  "time": "2026-10-16T11:20:00Z",
+  "caption": "Under the gather oak the leaf litter no longer carries cream-white flecks or pale pebbles: darker russet and wet-brown leaves of mixed sizes with soft shadows under each; still reads as a mosaic of separate leaves, the bole is glossy black and Hesper's robe (shot taken before the slate-grey change) still navy.",
   "verdict": "fail"
  }
 ]

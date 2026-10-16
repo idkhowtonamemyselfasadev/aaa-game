@@ -352,7 +352,7 @@ vec3 cushions(vec2 p, float scale) {
 
 float fade_l_early(float fp) { return 1.0 - smoothstep(0.01, 0.05, fp); }
 
-vec3 leafbed(vec2 p, float scale) {
+vec4 leafbed(vec2 p, float scale) {
 	vec2 q = p * scale;
 	vec2 cell = floor(q);
 	vec2 f = fract(q) - 0.5;
@@ -361,11 +361,18 @@ vec3 leafbed(vec2 p, float scale) {
 	vec2 dir = vec2(cos(ang), sin(ang));
 	f -= (r.yz - 0.5) * 0.3;
 	vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x)));
-	float lob = 1.0 + 0.16 * sin(l.x * 30.0 + r.z * 6.0);
-	float e = length(l / (vec2(0.40, 0.21) * lob));
+	// each leaf its own size (a young leaf to a big flat one) so the cells do not read
+	// as an even grid of cobbles
+	float sz = mix(0.62, 1.12, fract(r.y * 13.7 + r.z * 3.1));
+	float lob = 1.0 + 0.16 * sin(l.x * 30.0 / sz + r.z * 6.0);
+	float e = length(l / (vec2(0.40, 0.21) * sz * lob));
 	float cov = 1.0 - smoothstep(0.85, 1.0, e);
 	float rib = smoothstep(0.025, 0.0, abs(l.y)) * cov;
-	return vec3(cov - rib * 0.3, cov * (0.4 + 0.6 * (1.0 - e)) - rib * 0.2, r.z);
+	// a curled leaf: one half turned up to the light, the other rolled into its own shade
+	float curl = cov * clamp(l.y / (0.21 * sz) * sign(r.z - 0.5), -1.0, 1.0);
+	// the soft shadow the leaf throws on whatever lies under it
+	float halo = (1.0 - smoothstep(0.95, 1.45, e)) * (1.0 - cov);
+	return vec4(cov - rib * 0.3, cov * (0.4 + 0.6 * (1.0 - e)) - rib * 0.2 + curl * 0.25, r.z, halo);
 }
 
 void fragment() {
@@ -463,7 +470,7 @@ void fragment() {
 	moss_f = mix(moss_f, olive_lo * 0.6, cu.y * 0.35 * fade_cu);
 	float fh = (mix(mcush * 0.6, mcush * 0.45 + cu.x * 0.3, fade_cu) + vnoise(wpos * 16.0) * 0.25 + mfine * 0.1 * fade_m) * 0.018;
 	if (footw > 0.001) {
-		vec3 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);
+		vec4 fl = leafbed(xz + vec2(11.3, 4.9), 3.3);
 		float on = fl.x * fade_l_early(fp) * step(0.45, fl.z) * (1.0 - smoothstep(0.3, 0.9, fm)) * canopy;
 		moss_f = mix(moss_f, mix(leaf_drift, leaf_a * 0.85, fl.z) * 0.85, on);
 		fh = mix(fh, 0.004 + fl.y * 0.003, on);
@@ -479,8 +486,9 @@ void fragment() {
 	vec3 earth = soil * (0.8 + 0.45 * micro);
 	vec3 litcol = earth;
 	vec3 leafc = mix(leaf_a, leaf_b, lt.w);
-	if (lt.z >= 0.34 && lt.z < 0.42) { leafc = vec3(0.24, 0.18, 0.12); }
-	if (lt.z >= 0.42) { leafc = vec3(0.27, 0.26, 0.24) * (0.75 + 0.4 * lt.w); }
+	// (linear colours: dark twigs, pebbles in the soil's grey-brown, no pale specks)
+	if (lt.z >= 0.34 && lt.z < 0.42) { leafc = vec3(0.035, 0.025, 0.016); }
+	if (lt.z >= 0.42) { leafc = vec3(0.055, 0.05, 0.042) * (0.75 + 0.4 * lt.w); }
 	litcol = mix(litcol, leafc, lt.x * fade_l);
 	litcol = mix(litcol, mix(leaf_a, thatch_a, lt2.w) * 0.9, lt2.x * fade_l * step(lt2.z, 0.34));
 	// under the crowns the leaves lie thick: a third, denser layer of dry tan oak leaves
@@ -490,12 +498,17 @@ void fragment() {
 	float bed_h = 0.0;
 	for (int k = 0; k < 4; k++) {
 		float fk = float(k);
-		vec3 lb = leafbed(xz + vec2(fk * 3.17, fk * 1.71), 4.2 + fk * 1.3);
-		// leaf by leaf the tone wanders: pale sun-bleached, tan, russet, a few still yellow
+		vec4 lb = leafbed(xz + vec2(fk * 3.17, fk * 1.71), 4.2 + fk * 1.3);
+		// leaf by leaf the tone wanders: tan, russet, dark wet brown, a few still dull ochre
+		// (linear colours: the old (0.52, 0.43, 0.20) read as cream-white flecks)
 		vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.35, 0.95, lb.z)),
-				vec3(0.52, 0.43, 0.20), step(0.92, fract(lb.z * 7.3)) * 0.7);
-		tone *= 0.8 + 0.05 * fk + 0.15 * lb.y;   // upper leaves catch more light
+				vec3(0.16, 0.10, 0.026), step(0.92, fract(lb.z * 7.3)) * 0.7);
+		tone = mix(tone, leaf_b * 0.45, step(0.78, fract(lb.z * 3.9 + 0.3)) * 0.8);
+		// damp patches darken whole runs of the bed, not single leaves
+		tone *= mix(1.0, 0.62, smoothstep(0.5, 0.75, fbm(wpos * 0.7 + 29.0)));
+		tone *= 0.72 + 0.06 * fk + 0.2 * clamp(lb.y, 0.0, 1.0);   // upper leaves catch more light
 		float c = lb.x * fade_l * (0.8 + 0.2 * step(0.2, lb.z));
+		bed *= 1.0 - lb.w * 0.4 * fade_l;
 		bed = mix(bed, tone, c);
 		bed_h = mix(bed_h, 0.3 + 0.2 * fk + lb.y, c);
 	}
@@ -563,7 +576,7 @@ void fragment() {
 		for (int k = 0; k < 3; k++) {
 			float fk = float(k);
 			float lsc = k == 0 ? 3.4 : (k == 1 ? 5.8 : 8.6);
-			vec3 lb = leafbed(xz + vec2(fk * 2.31 + 0.7, fk * 1.13), lsc);
+			vec3 lb = leafbed(xz + vec2(fk * 2.31 + 0.7, fk * 1.13), lsc).xyz;
 			vec3 tone = mix(mix(leaf_drift, leaf_a * 0.85, smoothstep(0.3, 0.95, lb.z)),
 					leaf_b * 0.8, step(0.85, fract(lb.z * 5.1)));
 			tone *= 0.8 + 0.07 * fk + 0.15 * lb.y;
