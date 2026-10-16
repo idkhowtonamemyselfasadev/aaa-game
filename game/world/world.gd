@@ -25,6 +25,7 @@ var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
 var keeper: Keeper
+var hearth: Hearth
 var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
@@ -100,6 +101,9 @@ func _ready() -> void:
 	keeper.settle(self, time_of_day)
 	trample.walkers.append(keeper)
 	herd.familiar = keeper
+	# her cookfire on the keep floor beside her bed, kept by the clock
+	hearth = Hearth.new()
+	hearth.setup(self, keeper.hearth_at)
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"

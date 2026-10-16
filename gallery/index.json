@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-0232-shelter.jpg",
-  "time": "2026-10-12T02:32:33Z",
-  "caption": "The hero sheltering under an oak in a downpour: rain stops under the crown and the ground beneath stays drier; still fails because the leaf cards read as big flat blobs and the grass as yellow spikes.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0232-pools.jpg",
   "time": "2026-10-12T02:32:33Z",
   "caption": "Open meadow in the same storm: pools, raindrop rings and wet soil unchanged outside the crowns; the wet bank top right is close to blown out and the far valley is a flat grey veil.",
@@ -885,6 +879,12 @@
   "file": "20261016-2140-keeperupslope.jpg",
   "time": "2026-10-16T21:40:00Z",
   "caption": "Hesper crouched at the litter against the oak and the ruined keep, lens kept clear of the boles: level frame, robe drapes to the leaves; still wrong: seen from above and behind, her crouch is a dark slate bundle and the litter leaves are all one size.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-2300-hearth.jpg",
+  "time": "2026-10-16T23:00:00Z",
+  "caption": "Hesper's new cookfire in the ruined keep at night: flames, firelight and soft shadows on the inner wall and ivy, sooted ring stones; still wrong: the lens sits in the wall-foot rubble so dark slabs fill the lower half, the fire is small in frame and Hesper dozing beside it reads as a dark blob.",
   "verdict": "fail"
  }
 ]

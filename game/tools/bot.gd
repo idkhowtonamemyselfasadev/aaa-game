@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -86,6 +86,9 @@ func _ready() -> void:
 		return
 	if name == "talk":
 		_talk_test()
+		return
+	if name == "hearth":
+		_hearth_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1302,6 +1305,94 @@ func _gfx_test() -> void:
 ## Hesper keeps her day: tends the lid in the morning, gathers under the oaks (leaving the
 ## keep through the breach), eats in the shade, shelters under a crown in the rain, dozes
 ## seated against the inner wall at night, and stops to face the hero (named once).
+## Hesper's cookfire: on the keep floor clear of the plinth and her way out, its meshes face
+## out, it blazes with light, flames, crackle and moths at night, is cold ash at noon, and rain
+## knocks the flames down; she walks out past it at dawn without stepping into it.
+func _hearth_test() -> void:
+	var k: Keeper = _world.keeper
+	var hr: Hearth = _world.hearth
+	var wx: Weather = _world.weather
+	wx.force(0.0)
+	var hp := hr.global_position
+	var r := Vector2(hp.x - k.site.x, hp.z - k.site.z).length()
+	var bed: Vector3 = k._spots["sleep"][0]
+	var to_bed := Vector2(hp.x - bed.x, hp.z - bed.z).length()
+	var fb := k._floor_basket.global_position
+	var to_basket := Vector2(hp.x - fb.x, hp.z - fb.z).length()
+	print("BOT hearth at r %.2f from the lid (plinth 1.75, keep %.1f), %.2f m from her bed, %.2f m from the basket" % [r, Keeper.KEEP_R, to_bed, to_basket])
+	if r - Hearth.RING_R < 1.8 or r + Hearth.RING_R > Keeper.KEEP_R - 0.4 or to_bed < 0.9 or to_bed > 2.0 or to_basket < 1.0:
+		return _combat_done(false, "hearth badly placed on the keep floor")
+	# every mesh faces outward (normals away from its own centre)
+	var bad := 0
+	var n_mesh := 0
+	for mi: MeshInstance3D in hr.find_children("*", "MeshInstance3D", true, false):
+		var a := mi.mesh.surface_get_arrays(0)
+		var vs: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+		var ns: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+		var c := Vector3.ZERO
+		for v in vs:
+			c += v
+		c /= vs.size()
+		var out := 0.0
+		for i in vs.size():
+			var d := vs[i] - c
+			if mi.name == "AshBed" or mi.name.begins_with("Log"):
+				d.y = 0.0                        # logs: radial, along their length y
+			out += ns[i].dot(Vector3.UP if mi.name == "AshBed" else d.normalized())
+		n_mesh += 1
+		if out <= 0.0:
+			bad += 1
+			print("BOT hearth inward mesh %s (%.1f)" % [mi.name, out])
+	print("BOT hearth meshes: %d, %d facing inward" % [n_mesh, bad])
+	if bad > 0 or n_mesh < 20:
+		return _combat_done(false, "hearth meshes missing or inside out")
+	# evening: blazing
+	_world.time_of_day = 21.0
+	await _ticks(240)
+	var moths := hr.moth_positions()
+	var far := 0.0
+	var low := INF
+	for m in moths:
+		far = maxf(far, m.distance_to(hr.global_position))
+		low = minf(low, m.y - hr.global_position.y)
+	print("BOT hearth 21 h: level %.2f, light %.2f, flames %s, sparks %s, smoke %s, crackle %s %.1f dB, moths %d within %.2f m, lowest %.2f m up" % [hr.level, hr.light.light_energy, hr.flames.emitting, hr.sparks.emitting, hr.smoke.emitting, hr.crackle.playing, hr.crackle.volume_db, moths.size(), far, low])
+	if hr.level < 0.95 or hr.light.light_energy < 1.5 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
+		return _combat_done(false, "the fire should blaze at night with moths round it")
+	var flame_a := hr.flames.color.a
+	var smoke_a := hr.smoke.color.a
+	wx.force(1.0)
+	await _ticks(240)
+	print("BOT hearth rain: flames alpha %.2f (dry %.2f), smoke alpha %.2f (dry %.2f), moths %d" % [hr.flames.color.a, flame_a, hr.smoke.color.a, smoke_a, hr.moth_positions().size()])
+	if wx.rain > 0.5 and (hr.flames.color.a >= flame_a or hr.smoke.color.a <= smoke_a):
+		return _combat_done(false, "rain should knock the flames down and thicken the smoke")
+	wx.force(0.0)
+	_world.time_of_day = 3.0
+	await _ticks(60)
+	print("BOT hearth 3 h: level %.2f, light %.2f" % [hr.level, hr.light.light_energy])
+	if hr.level > 0.7 or hr.level < 0.3:
+		return _combat_done(false, "the fire should burn down overnight")
+	# noon: cold
+	_world.time_of_day = 12.0
+	await _ticks(60)
+	print("BOT hearth noon: level %.2f, light visible %s, flames %s, crackle %s, moths %d" % [hr.level, hr.light.visible, hr.flames.emitting, hr.crackle.playing, hr.moth_positions().size()])
+	if hr.level > 0.0 or hr.light.visible or hr.flames.emitting or hr.crackle.playing or not hr.moth_positions().is_empty():
+		return _combat_done(false, "the fire should be cold ash at noon")
+	# dawn: she gets up from beside it and walks out to the breach, round it
+	_world.time_of_day = 5.0
+	k.settle(_world, 5.0)
+	await _ticks(60)
+	_world.time_of_day = 5.6
+	var closest := INF
+	for i in 1500:
+		await get_tree().physics_frame
+		closest = minf(closest, Vector2(k.global_position.x - hp.x, k.global_position.z - hp.z).length())
+		if k.state == Keeper.STAND and k.activity == "wake" and i > 100:
+			break
+	print("BOT hearth dawn: Hesper %s, closest %.2f m to the fire centre" % [k.activity, closest])
+	if closest < Hearth.RING_R + 0.3 or k.activity != "wake":
+		return _combat_done(false, "she should walk out round the fire at dawn")
+	_combat_done(true, "the hearth lights at dusk, burns down by dawn and draws moths")
+
 func _keeper_test() -> void:
 	var k: Keeper = _world.keeper
 	var wx: Weather = _world.weather

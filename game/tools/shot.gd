@@ -300,6 +300,19 @@ func _ready() -> void:
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
+	if spot == "hearth":
+		# Hesper's cookfire on the keep floor: from across the floor by the lid, the fire in
+		# the foreground, her bed and the inner face lit behind it (at night she dozes by it)
+		var kp: Keeper = world.keeper
+		kp.settle(world, world.time_of_day)
+		var hp: Vector3 = world.hearth.global_position
+		var from_lid := Vector3(hp.x - kp.site.x, 0, hp.z - kp.site.z).normalized()
+		var cp := hp - from_lid.rotated(Vector3.UP, -0.35) * 2.3
+		cp.y = hp.y + 1.25
+		SPOTS[spot] = [cp, hp + from_lid * 0.5 + Vector3.UP * 0.35]
+		var pp := kp.site + (kp.to_v) * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, world.hearth.level, kp.activity])
 	if spot == "talk":
 		# speaking with Hesper: over the hero's shoulder at her, out under an oak by day, her
 		# line as a subtitle
@@ -583,7 +596,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

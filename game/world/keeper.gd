@@ -58,6 +58,8 @@ const LINES := {
 	"tend_night": [
 		"See the ember in the grooves? It wakes at night, like an old dog dreaming.",
 		"Go and sleep, child. The lid is not going anywhere. That is rather its whole trouble.",
+		"Sit by the fire if you like. The moths have the best seats, but they can be argued with.",
+		"Every stick in that fire I carried up the hill on my back. Warm your hands slowly; they were expensive.",
 	],
 	"gather": [
 		"Acorns, ceps, the odd honest root. The oaks feed anyone willing to stoop.",
@@ -86,6 +88,7 @@ const LINES := {
 	"sleep": [
 		"Mm... the lid is swept... come back at first light...",
 		"...forty years... nnh... mind the step...",
+		"...mm... put a stick on, would you... the dry ones...",
 	],
 }
 # an old woman's stoop, held under every pose: the back rounds, hips and knees a little bent,
@@ -115,6 +118,7 @@ var weather: Weather
 var player: Node3D
 var terrain: Terrain
 var site := Vector3.ZERO
+var hearth_at := Vector3.ZERO    # her cookfire on the keep floor (World builds the Hearth)
 var to_v := Vector3.FORWARD     # from the keep out through the breach (toward the village)
 
 var activity := ""              # wake, watch, tend, gather, eat, wander, sleep, shelter
@@ -281,6 +285,9 @@ func settle(w: Node3D, at_hour: float) -> void:
 		"gate_out": [site + to_v * 14.4],
 	}
 	_set_down_basket(sleep_dir)
+	# her cookfire (Hearth): beside the bed on the far side from the basket and from her way
+	# out to the breach, between the plinth (r 1.75) and the inner face
+	hearth_at = site + sleep_dir.rotated(Vector3.UP, -0.6) * 2.35
 	if not _oaks.is_empty():
 		var o := _oaks[0]
 		var away := Vector3(o.x - site.x, 0, o.z - site.z).normalized()
