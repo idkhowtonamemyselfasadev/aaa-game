@@ -29,6 +29,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falls back to opengl3 after ~10 min, saving nothing).
 
 ## Done
+- Session 2026-10-16 01:00 UTC (parallel to the 01:00 Hesper session):
+  - Built a second shrine-keeper NPC ("Brother Corwin": sleep under an oak / tend the lid /
+    midday meadow wander / rain shelter / greet with a line by hour, weather and place) at
+    the same time as the Hesper session; Hesper landed first and covers the same ground
+    (plus sit and doze poses), so Corwin was DROPPED in the rebase -- nothing of it is in
+    the tree. Worth porting into Hesper (see Next). Bots on the merged tree: walk + keeper
+    PASS. Lessons for the box: a shot's Godot can hang on exit after writing the PNG
+    (40 min, blocked the next shot) -- run shots with a watchdog that kills `shot.tscn`
+    once the PNG exists; bots do not load `shot.gd`, so check a shot.gd edit with a shot
+    (a shadowed `var out` broke every shot silently, falling back to opengl3).
 - Session 2026-10-16 01:00 UTC:
   - **First NPC: Hesper, shrine keeper with a day schedule (item 000, ALIVE gap).** New
     `world/keeper.gd` (`Keeper`, CharacterBody3D, `world.keeper`, made after the herd,
@@ -2429,6 +2439,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+00000. Hesper follow-ups from the dropped Corwin build: speech -- on meeting, a second
+   caption line that fits the hour, the weather and where she is (e.g. sheltering: "Under
+   here. The keep lost its roof before my grandmother was born."; dawn at the lid: "The
+   seal kept quiet all night. It usually does."), and a midday wander out into the meadow
+   among the deer (random clear spots 12-45 m from the start, 15-40 s each) so she is seen
+   away from the keep.
 0000. Practice post leftovers (straw done 10:00 10-15, oak lifted + end grain 12:10 10-15):
    (iron band done 15:00 10-15: rust, facets, rivets, rust runs); check the knots and tails from the other side; then the pale
    flat far peaks (also flagged 08:00) -- shape + tone done 14:00 10-15; haze done 16:00 10-15
