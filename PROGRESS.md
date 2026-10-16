@@ -41,7 +41,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     `PauseMenu` gains a "Picture" section (Quality slider with 4 ticks + readout, Render
     scale "70%"/"Native") via a `_row()` helper; saves on close. Bot `gfx` (new, in bots.sh):
     default High/native, Low drops SSIL/SSR/GI and raises LOD, Ultra 4 cascades, 0.7 -> FSR 2,
-    saved + reloaded, audio section kept.
+    saved + reloaded, audio section kept. Sound and picture columns share label/value widths
+    (`LABEL_W`/`VALUE_W`) so the sliders line up. 26 bots PASS (herd on rerun: once failed
+    "did not graze calmly together", see bugs). Shot `ruinin menu3 30 10.5 menu`: panel
+    clean, columns aligned; knobs still stock white. Gallery: picture-menu.
 - Session 2026-10-15 23:00 UTC:
   - **Audio bus layout + volume sliders + keep reverb (item 000).** New `world/audio_mix.gd`
     (`AudioMix`, child of World, made before Soundscape/Foley): builds buses in code
@@ -2548,6 +2551,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Bot `herd` also failed once 00:00 10-16 with "the herd did not graze calmly together" (passed on rerun) -- the calm-graze check is seed/timing sensitive.
 - Bot `herd` lane check is borderline: 4/8 laid spots (needs 5) on one run 23:00 10-15, 5/8 on rerun -- loosen to 4 or lay the lane a little wider.
 - Deer voices (22:00 10-15): never listened to; bark/roar are formant synthesis and may
   sound synthetic -- swap for CC0 field recordings when possible. The stag roars from
