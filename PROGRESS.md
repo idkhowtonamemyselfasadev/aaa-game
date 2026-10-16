@@ -44,6 +44,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     (the squared right shoulder came 10 cm forward and the hand ended in front of the
     centre line). Bot keeper: new check |basket x| < 0.05 after 130 ticks; hand 0.03 m
     behind rising, toss hand 0.11 m from the near rim. PASS.
+  - Shot `keeperback ktoss2 60 11 toss` (Forward+/lavapipe) FAIL: the basket now sits on her
+    back (the 3/4 rear camera throws it toward the camera side), but the raised arm still
+    hides behind it, grey armour knee caps show at her legs, the litter is tiled with white
+    flecks and the oak bole glossy black. Bots keeper, talk, flinch, walk, death PASS.
 - Session 2026-10-16 09:00 UTC:
   - **Hesper puts each find in her basket (item 00000).** `HeroGarb._stick()` (factored out
     of the basket's deadwood) + `held_stick()`: a 0.30 m crooked stick on `hand_mark`,

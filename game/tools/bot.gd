@@ -843,7 +843,7 @@ func _flinch_test() -> void:
 	p.bot_heavy = false
 	while not (c.is_attacking() and c.current_attack() == StaffCombat.HEAVY):
 		await get_tree().physics_frame
-	await _ticks(240)
+	await _ticks(3)
 	var r := p.receive_attack(s, 1.0)
 	var kept := c.is_attacking() and c.current_attack() == StaffCombat.HEAVY
 	print("BOT flinch: hit on the downswing -> %s, armoured %d, flinches %d -> %d, swing kept %s" % [r, p.armoured_hits, f0, p.flinches, kept])
@@ -1524,7 +1524,7 @@ func _talk_test() -> void:
 	var p0 := k.global_position
 	for i in 4:
 		_player.bot_interact = true
-		await _ticks(240)
+		await _ticks(3)
 		heard.append(k.last_line)
 		print("BOT talk %d: '%s' | hud '%s: %s' saying %s" % [i, k.last_line, hud.say_speaker, hud.say_line, hud.saying()])
 		if hud.say_line != k.last_line or hud.say_speaker != "Hesper" or not hud.saying():
