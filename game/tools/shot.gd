@@ -288,6 +288,24 @@ func _ready() -> void:
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.75
 		SPOTS[spot] = [cp, at.lerp(pp, 0.3) + Vector3.UP * 1.3]
 		print("SHOT talk %s at %s" % [kp.activity, at])
+	if spot == "wander":
+		# Hesper on her afternoon meadow walk, the deer grazing on beyond her
+		var kp: Keeper = world.keeper
+		kp.settle(world, 14.0)
+		kp._gather_t = 1.0e6
+		var at := kp.global_position
+		var out := Vector3(at.x - kp.site.x, 0, at.z - kp.site.z).normalized()
+		world.herd.place(at + out * 16.0 + out.cross(Vector3.UP) * 3.0)
+		var to_h := Vector3(world.herd.centre().x - at.x, 0, world.herd.centre().z - at.z).normalized()
+		kp.body.rotation.y = atan2(to_h.x, to_h.z)
+		kp.goal_yaw = kp.body.rotation.y
+		kp._rest_yaw = kp.goal_yaw
+		var pp := at - out * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
+		var cp := at - to_h * 7.5 + to_h.cross(Vector3.UP) * 2.5
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.7
+		SPOTS[spot] = [cp, at + to_h * 6.0 + Vector3.UP * 1.0]
+		print("SHOT wander %s at %s, herd %.1f m" % [kp.activity, at, at.distance_to(world.herd.centre())])
 	if spot == "seal":
 		# the carved shrine lid in the keep floor, the hero standing at its edge so it wakes
 		var rs: Vector3 = world.get_node("Ruins").site
@@ -531,7 +549,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk":
+		if spot == "keeper" or spot == "talk" or spot == "wander":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

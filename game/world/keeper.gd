@@ -7,7 +7,9 @@ extends CharacterBody3D
 ##   07:00 tends the sealed lid (stands over it, head bowed)
 ##   10:00 walks down to the nearest oaks and gathers under them, grove to grove
 ##   12:30 eats in the shade of the nearest oak to the keep
-##   14:00 gathers again
+##   13:30 wanders out into the open meadow below the keep, stopping here and there to look
+##         at the deer (who know her and graze on), 20-45 m out in front of the gateway
+##   15:00 gathers again
 ##   17:30 watches the vale from the breach as the light goes
 ##   20:00 tends the lid again while the ember glows in the cuts
 ##   21:30 sits down against the inner wall and dozes, head on her knees, until dawn
@@ -31,6 +33,9 @@ const RAIN_SHELTER := 0.35      # rain above this sends her under an oak
 const KEEP_R := 3.6             # inside this of the site is the keep floor
 const CURTAIN_R := 12.5         # the curtain wall ring (Ruins._curtain), gateway toward to_v
 const TALK_R := 2.8             # the hero can speak to her inside this
+const WANDER_R := Vector2(20.0, 45.0)   # her meadow walk: this far out from the keep...
+const WANDER_CONE := 0.75       # ...within this of the line out through the gateway (rad), so a
+								# straight leg between two stops never cuts the curtain wall
 
 const INTRO := [
 	"Mind the lid, lamplighter. Forty years I've swept it, and it has never once swept me back.",
@@ -44,6 +49,7 @@ const LINES := {
 		"Cold hands, cold stone, cold tea. Good morning.",
 	],
 	"tend": [
+		"The seal kept quiet all night. It usually does.",
 		"The cords on the lid warm when you stand near. They never once warmed for me.",
 		"I sweep it so whoever opens it will know we did not forget.",
 		"There was a bell for the keeper's hour. I ring it in my head now. Saves the rope.",
@@ -61,6 +67,11 @@ const LINES := {
 		"Sit, if you like. The shade is free and the bread is terrible.",
 		"I would offer you some, but then I should have less, and I am old and selfish.",
 	],
+	"wander": [
+		"I walk out at noon so my legs remember they are legs. The deer have stopped minding.",
+		"That hind with the torn ear is older than you. She was a calf the year the bells stopped.",
+		"Grass grows over everything here, child. Roads, walls, names. Given time, it will grow over me, and I shall let it.",
+	],
 	"watch": [
 		"Down there was Harrowmere. It had bells once, and a baker who sang flat.",
 		"There is a soldier in the meadow who has not noticed he is dead. Be kind to him. Be quick.",
@@ -69,6 +80,7 @@ const LINES := {
 	"shelter": [
 		"Rain is the only thing in this vale that still arrives on time.",
 		"Under the oak, child. Even the Hollow have the sense to stand still in this.",
+		"Under here. The keep lost its roof before my grandmother was born.",
 	],
 	"sleep": [
 		"Mm... the lid is swept... come back at first light...",
@@ -85,7 +97,7 @@ var terrain: Terrain
 var site := Vector3.ZERO
 var to_v := Vector3.FORWARD     # from the keep out through the breach (toward the village)
 
-var activity := ""              # wake, watch, tend, gather, eat, sleep, shelter
+var activity := ""              # wake, watch, tend, gather, eat, wander, sleep, shelter
 var state := STAND
 var named := false              # the HUD has named her
 var noticing := false           # stopped to watch the hero
@@ -117,6 +129,9 @@ var _spots := {}
 var _oaks: Array[Vector3] = []
 var _gather_i := 0
 var _gather_t := 0.0
+var _wander_at := Vector3.ZERO
+var _rest_yaw := 0.0
+var wander_stops: Array[Vector3] = []   # where she stopped on her meadow walks (bots)
 var _last_pos := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 
@@ -186,7 +201,12 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_spots = {
 		"sleep": [site + sleep_dir * 2.45, atan2(-sleep_dir.x, -sleep_dir.z)],
 		"tend": [site + to_v * 2.05 + side * 0.35, atan2(-to_v.x, -to_v.z)],
-		"watch": [site + to_v * 6.0, atan2(to_v.x, to_v.z)],
+		"wander": [
+		"I walk out at noon so my legs remember they are legs. The deer have stopped minding.",
+		"That hind with the torn ear is older than you. She was a calf the year the bells stopped.",
+		"Grass grows over everything here, child. Roads, walls, names. Given time, it will grow over me, and I shall let it.",
+	],
+	"watch": [site + to_v * 6.0, atan2(to_v.x, to_v.z)],
 		"breach_in": [site + to_v * 2.6],
 		"breach_out": [site + to_v * 5.2],
 		"gate_in": [site + to_v * 10.8],
@@ -204,6 +224,10 @@ func settle(w: Node3D, at_hour: float) -> void:
 		var tg := Vector3(_oaks[0].x - g.x, 0, _oaks[0].z - g.z).cross(Vector3.UP)
 		s = [g, atan2(tg.x, tg.z)]
 		_gather_t = _rng.randf_range(25.0, 50.0)
+	elif a == "wander":
+		_wander_at = _wander_spot()
+		s = [_wander_at, atan2(to_v.x, to_v.z)]
+		_gather_t = _rng.randf_range(15.0, 40.0)
 	_place(s[0])
 	body.rotation.y = s[1] if s.size() > 1 else 0.0
 	goal_yaw = body.rotation.y
@@ -231,8 +255,10 @@ static func _activity_for(h: float) -> String:
 		return "tend"
 	if h < 12.5:
 		return "gather"
-	if h < 14.0:
+	if h < 13.5:
 		return "eat"
+	if h < 15.0:
+		return "wander"
 	if h < 17.5:
 		return "gather"
 	if h < 20.0:
@@ -302,6 +328,11 @@ func _physics_process(delta: float) -> void:
 		if _gather_t <= 0.0 and _oaks.size() > 1:
 			_gather_i = (_gather_i + 1) % _oaks.size()
 			_route(_gather_spot(_gather_i))
+	elif state == STAND and activity == "wander":
+		_gather_t -= delta
+		if _gather_t <= 0.0:
+			_wander_at = _wander_spot()
+			_route(_wander_at)
 	_update_notice()
 	_update_talk(delta)
 	var v := Vector3.ZERO
@@ -351,6 +382,9 @@ func _begin(a: String) -> void:
 	elif a == "gather":
 		_gather_i = 1 if _oaks.size() > 1 else 0
 		_route(_gather_spot(_gather_i))
+	elif a == "wander":
+		_wander_at = _wander_spot()
+		_route(_wander_at)
 	else:
 		var s: Array = _spots.get(_spot_of(a), _spots["tend"])
 		_route(s[0])
@@ -360,6 +394,47 @@ func _gather_spot(i: int) -> Vector3:
 	var o := _oaks[i]
 	var a := float(i) * 2.1 + 0.6
 	return o + Vector3(cos(a), 0, sin(a)) * 2.6
+
+## A stop on her meadow walk: open, gently sloping ground clear of boles and boulders, out in
+## front of the gateway; of a handful of candidates the one that brings her nearest a grazing
+## distance (10-16 m) from the herd, so she is seen among the deer.
+func _wander_spot() -> Vector3:
+	var flora := world.get_node("Flora") as Flora
+	var herd = world.get("herd")
+	var hc: Vector3 = herd.centre() if herd != null else Vector3.INF
+	var base := atan2(to_v.z, to_v.x)
+	var best := Vector3.INF
+	var bs := INF
+	for i in 28:
+		var ang := base + _rng.randf_range(-WANDER_CONE, WANDER_CONE)
+		var r := _rng.randf_range(WANDER_R.x, WANDER_R.y)
+		var q := site + Vector3(cos(ang), 0, sin(ang)) * r
+		q.y = terrain.height_at(q.x, q.z)
+		if terrain.normal_at(q.x, q.z, 1.5).y < 0.9:
+			continue
+		if _wander_at != Vector3.ZERO and Vector2(q.x - _wander_at.x, q.z - _wander_at.z).length() < 6.0:
+			continue
+		var clear := true
+		for t in flora.tree_positions:
+			if Vector2(t.x - q.x, t.z - q.z).length() < 4.0:
+				clear = false
+				break
+		if clear:
+			for b in flora.rock_positions:
+				if Vector2(b.x - q.x, b.z - q.z).length() < 3.5:
+					clear = false
+					break
+		if not clear:
+			continue
+		var score := _rng.randf() * 6.0
+		if hc != Vector3.INF:
+			score += absf(Vector2(q.x - hc.x, q.z - hc.z).length() - 13.0)
+		if score < bs:
+			bs = score
+			best = q
+	if best == Vector3.INF:
+		best = site + to_v * WANDER_R.x          # nothing open: just out past the gate
+	return best
 
 ## The nearest point well under a crown: the nearest oak to her, on its keep side.
 func _shelter_spot() -> Vector3:
@@ -386,6 +461,17 @@ func _arrive() -> void:
 			var t := d.cross(Vector3.UP)
 			goal_yaw = atan2(t.x, t.z)
 		_gather_t = _rng.randf_range(25.0, 50.0)
+	elif activity == "wander":
+		wander_stops.append(global_position)
+		_gather_t = _rng.randf_range(15.0, 40.0)
+		# stands looking at the deer if they are in sight, else out over the vale
+		var herd = world.get("herd")
+		var look: Vector3 = herd.centre() - global_position if herd != null else to_v
+		look.y = 0.0
+		if look.length() > 60.0 or look.length() < 0.5:
+			look = to_v
+		goal_yaw = atan2(look.x, look.z)
+		_rest_yaw = goal_yaw
 	elif s.size() > 1:
 		goal_yaw = s[1]
 	state = SIT if activity == "sleep" else STAND
@@ -412,6 +498,8 @@ func _update_notice() -> void:
 		var s: Array = _spots.get(_spot_of(activity), [])
 		if s.size() > 1:
 			goal_yaw = s[1]
+		elif activity == "wander":
+			goal_yaw = _rest_yaw
 
 ## In reach the HUD offers "Speak"; each press gets the next line (the intro first, then the
 ## pool for what she is doing). A press while a line shows skips on to the next one.

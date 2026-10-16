@@ -1308,9 +1308,11 @@ func _keeper_test() -> void:
 	wx.force(0.0)
 	_player.global_position = Vector3(0, _player.global_position.y, 0)
 	var log := []
-	for leg in [[8.0, "tend"], [11.0, "gather"], [13.0, "eat"], [22.0, "sleep"], [6.0, "wake"]]:
+	for leg in [[8.0, "tend"], [11.0, "gather"], [13.0, "eat"], [14.0, "wander"], [14.1, "wander"], [22.0, "sleep"], [6.0, "wake"]]:
 		_world.time_of_day = leg[0]
 		var n0 := int(k.visits.get(leg[1], 0))
+		if leg[1] == "wander" and k.activity == "wander" and k.state == Keeper.STAND:
+			k._gather_t = 0.05                 # the next stop of her walk
 		var t := 0.0
 		var breach := false
 		var through_wall := false
@@ -1338,6 +1340,13 @@ func _keeper_test() -> void:
 			return _combat_done(false, "%s should be on the keep floor" % leg[1])
 		if leg[1] in ["gather", "eat"] and inside:
 			return _combat_done(false, "%s should be out under the oaks" % leg[1])
+		if leg[1] == "wander":
+			var wr := Vector2(at.x - k.site.x, at.z - k.site.z).length()
+			var hd := Vector2(at.x - _world.herd.centre().x, at.z - _world.herd.centre().z).length()
+			var slope := (_world.get_node("Terrain") as Terrain).normal_at(at.x, at.z, 1.5).y
+			print("BOT keeper wander: stop %d at r %.1f from the keep, herd centre %.1f m off, ground normal %.2f" % [k.wander_stops.size(), wr, hd, slope])
+			if wr < 18.0 or wr > 47.0:
+				return _combat_done(false, "her meadow walk should stop 20-45 m out, got %.1f" % wr)
 		if leg[1] == "sleep":
 			await _ticks(200)
 			print("BOT keeper: dozing sit %.2f, model drop %.2f" % [k.sit, k.model.position.y])
