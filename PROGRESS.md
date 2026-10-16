@@ -48,7 +48,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     `kside2` 15.5 h (bell): the blue skirt reads down to the ground side-on, but in her
     stand pose at the gather oak the BACK leg still shows grey-wrapped from thigh to foot
     behind the skirt (fail) -- that pose steps back further than the idle the bot measures.
-    All keeper bots PASS.
+    Front shot `ktend` 9 h was stopped after 30+ min (shots slow after the rebase pulled new
+    code); not taken this session. Bots keeper, talk, walk PASS after the rebase.
 - Session 2026-10-16 04:00 UTC:
   - **Hesper stoops to pick at the litter (item 00000).** `Keeper._update_pick`: while she
     STANDs at a gather oak (not noticing the hero, not talking) every 3.5-7.5 s she crouches
