@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261011-2135-pool-downpour.jpg",
-  "time": "2026-10-11T21:35:58Z",
-  "caption": "Low view over a wind-combed pool in a downpour (before the drop splashes were fixed): rain rings, streaks and grey haze read as real weather; grass blades are still flat ribbons up close.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-2215-wade-wake.jpg",
   "time": "2026-10-11T22:15:00Z",
   "caption": "After a shower the hero runs through a pool: ring trains spread across the water behind each footfall and a white crown bursts at the foot; the hero is still the sci-fi Vanguard, the splash sheet reads as a white sickle and the grass is flat ribbons.",
@@ -891,6 +885,12 @@
   "file": "20261016-1400-littertan.jpg",
   "time": "2026-10-16T14:00:00Z",
   "caption": "The oak leaf drifts now lie russet and warm tan over a brown leaf mould instead of greyish-pale leaves on near-black gaps; the bole's crack rims still read as carved lines and Hesper's body is still the hero's.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-1500-keeperpick.jpg",
+  "time": "2026-10-16T15:00:00Z",
+  "caption": "Hesper crouched in the leaf litter under a gather oak, seen from a level, low side camera with no grass blades in the lens; her body still reads as a dark jumble of robe and armour, the leaves are near-uniform blobs and a fern card glows too bright.",
   "verdict": "fail"
  }
 ]

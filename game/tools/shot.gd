@@ -269,10 +269,15 @@ func _ready() -> void:
 		if kp.pick_hold:
 			# crouched at the litter: low and back, near her own height, so the reach reads
 			# side-on against the grove instead of from above
+			# side-on against the grove instead of from above; aimed level (look target at the
+			# lens height) so the oak's slope does not tilt the frame into the grass
 			cp = at + dir * 3.0
-			cp.y = maxf(terrain.height_at(cp.x, cp.z), at.y) + 0.6
+			cp.y = maxf(terrain.height_at(cp.x, cp.z) + 0.45, at.y + 0.65)
 		kp.toss_hold = "toss" in args              # up, dropping a find in the basket
-		SPOTS[spot] = [cp, at + Vector3.UP * (0.5 if kp.pick_hold else 1.15)]
+		var look_at := at + Vector3.UP * 1.15
+		if kp.pick_hold:
+			look_at = Vector3(at.x, cp.y - 0.08, at.z)
+		SPOTS[spot] = [cp, look_at]
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
@@ -601,6 +606,9 @@ func _ready() -> void:
 		free.look_at(look)
 		free.current = true
 		cam = free
+		if world.keeper.pick_hold and spot.begins_with("keeper"):
+			# the low pick lens sits in the meadow: clip the blades within 0.9 m of it
+			free.near = 0.9
 		if spot == "flowers":
 			free.near = 0.02
 			var cf := CameraAttributesPractical.new()
