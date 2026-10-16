@@ -2672,6 +2672,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- shot.gd (03:00 10-16): the `wander` spot (02:00-03:00 session) shadowed `var out` and broke
+  EVERY shot (parse error -> opengl3 fallback); renamed to `outw`. Always run
+  `.tools/godot --headless --path game --check-only -s res://tools/shot.gd` after editing it.
 - Hesper (01:00 10-16; cut 03:00 10-16): own cut now (no hat, ankle robe, stoop, basket),
   but still the hero's body, face cloth and mantle shape; no hair; the basket hangs ~13 cm
   to one side of the spine in the idle (it rides the chest bone, which the idle twists);

@@ -296,13 +296,13 @@ func _ready() -> void:
 		kp.settle(world, 14.0)
 		kp._gather_t = 1.0e6
 		var at := kp.global_position
-		var out := Vector3(at.x - kp.site.x, 0, at.z - kp.site.z).normalized()
-		world.herd.place(at + out * 16.0 + out.cross(Vector3.UP) * 3.0)
+		var outw := Vector3(at.x - kp.site.x, 0, at.z - kp.site.z).normalized()
+		world.herd.place(at + outw * 16.0 + outw.cross(Vector3.UP) * 3.0)
 		var to_h := Vector3(world.herd.centre().x - at.x, 0, world.herd.centre().z - at.z).normalized()
 		kp.body.rotation.y = atan2(to_h.x, to_h.z)
 		kp.goal_yaw = kp.body.rotation.y
 		kp._rest_yaw = kp.goal_yaw
-		var pp := at - out * 30.0
+		var pp := at - outw * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
 		var cp := at - to_h * 7.5 + to_h.cross(Vector3.UP) * 2.5
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.7
