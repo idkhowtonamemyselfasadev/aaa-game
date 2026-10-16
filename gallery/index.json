@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261011-2300-lightning-day.jpg",
-  "time": "2026-10-11T23:00:00Z",
-  "caption": "Afternoon downpour with a bolt striking past the oak groves through the rain haze; atmosphere works, but the hills and grass lack Wukong-level detail.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0145-sheet-lightning.jpg",
   "time": "2026-10-12T01:45:01Z",
   "caption": "Night storm, sheet lightning: the rain deck glows from inside behind the ridge with no channel, the meadow faintly lit; the ridges are faceted cut-outs and the rain streaks barely show.",
@@ -891,6 +885,12 @@
   "file": "20261016-1700-fernback.jpg",
   "time": "2026-10-16T17:20:00Z",
   "caption": "Hesper picking at the gather oak with the fern on the left now a deeper green with its own weaker backlight; the fern still glows against the sun, the pick camera tilts down with straw blades in the lens, and her crouched body is still a jumble of panels.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-1827-fern.jpg",
+  "time": "2026-10-16T18:27:28Z",
+  "caption": "Hesper picking under an oak at 11:00: the fern against the sun no longer glows lime, but the low lens reads tilted on the slope and her crouched body is still a jumble of panels.",
   "verdict": "fail"
  }
 ]

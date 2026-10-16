@@ -27,6 +27,8 @@ uniform float trample_gain = 0.0;
 // Ferns (flora.gd) get a deeper, weaker tint: a frond is thicker and darker than a sunlit oak
 // leaf, and the oak tint made back-lit fern cards glow lime on the grove floor.
 uniform vec3 backlight = vec3(0.95, 1.1, 0.42);
+// forward-scatter gain toward the sun (foliage_light); ferns (flora.gd) ~0.7
+uniform float fwd_gain = 2.2;
 
 varying float v_phase;
 varying float v_occ;
@@ -91,5 +93,5 @@ void fragment() {
 
 void light() {
 	foliage_light(NORMAL, LIGHT, VIEW, LIGHT_COLOR, ATTENUATION, LIGHT_IS_DIRECTIONAL,
-		BACKLIGHT, ROUGHNESS, SPECULAR_AMOUNT, 0.3, DIFFUSE_LIGHT, SPECULAR_LIGHT);
+		BACKLIGHT, fwd_gain, ROUGHNESS, SPECULAR_AMOUNT, 0.3, DIFFUSE_LIGHT, SPECULAR_LIGHT);
 }
