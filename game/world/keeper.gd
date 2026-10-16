@@ -1,7 +1,8 @@
 class_name Keeper
 extends CharacterBody3D
 ## Hesper, the last keeper of the Shrine of Binding: the vale's first person. An old pilgrim in
-## undyed wool and an ash-grey hood (the hero's rig and garb cut, her own dyes), living rough
+## undyed wool and an ash-grey hood, stooped under a willow basket of deadwood (the hero's rig
+## and garb, cut her own way: no hat, an ankle robe), living rough
 ## in the ruined keep on the knoll and keeping a day:
 ##   05:30 wakes against the inner wall, stands and walks out to the breach to watch the dawn
 ##   07:00 tends the sealed lid (stands over it, head bowed)
@@ -87,6 +88,12 @@ const LINES := {
 		"...forty years... nnh... mind the step...",
 	],
 }
+# an old woman's stoop, held under every pose: the back rounds, hips and knees a little bent,
+# the neck lifts the face back up to look ahead
+const STOOP_SPINE := 0.26
+const STOOP_HIP := 0.06
+const STOOP_KNEE := 0.16
+const STOOP_NECK := 0.16
 
 signal activity_changed(name: String)
 
@@ -134,6 +141,7 @@ var _rest_yaw := 0.0
 var wander_stops: Array[Vector3] = []   # where she stopped on her meadow walks (bots)
 var _last_pos := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
+var _floor_basket: Node3D
 
 func _ready() -> void:
 	collision_layer = 4
@@ -168,9 +176,18 @@ func _ready() -> void:
 		"sash": [Color(0.075, 0.050, 0.030), Color(0.34, 0.24, 0.14), 0.3],
 		"wraps": [Color(0.14, 0.13, 0.11), Color(0.50, 0.47, 0.41), 0.4],
 	}
+	# her own cut, so at range she never reads as a second hero: no straw hat (the hood alone),
+	# the robe to the ankles, and a willow gathering basket of deadwood on her back
+	garb.hatless = true
+	garb.robe_len = 1.1
+	garb.robe_wide = 1.3
+	garb.basket = true
 	add_child(garb)
 	if skel != null:
 		garb.build(skel, body)
+		# her ankle-length robe would let the idle stance's forward shin poke through the
+		# front panel; it rides on the leg sooner than the hero's knee-length one
+		garb.swing_slack = 0.3
 		crumple = Crumple.new()
 		crumple.name = "Crumple"
 		skel.add_child(crumple)
@@ -212,6 +229,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 		"gate_in": [site + to_v * 10.8],
 		"gate_out": [site + to_v * 14.4],
 	}
+	_set_down_basket(sleep_dir)
 	if not _oaks.is_empty():
 		var o := _oaks[0]
 		var away := Vector3(o.x - site.x, 0, o.z - site.z).normalized()
@@ -239,6 +257,24 @@ func settle(w: Node3D, at_hour: float) -> void:
 		sit = 1.0
 		state = SIT
 	_last_pos = global_position
+
+## At night the basket comes off her back and stands on the keep floor beside her bed, against
+## the inner wall; the worn one hides while she sits (see _physics_process).
+func _set_down_basket(sleep_dir: Vector3) -> void:
+	if garb.basket_node == null or _floor_basket != null:
+		return
+	_floor_basket = Node3D.new()
+	_floor_basket.name = "FloorBasket"
+	var copy := garb.basket_node.duplicate()
+	copy.transform = Transform3D.IDENTITY
+	# body space puts its foot at BASKET_FOOT behind the back: stand it on the floor
+	copy.position = Vector3(0, -HeroGarb.BASKET_FOOT + 0.01, -HeroGarb.BASKET_Z)
+	_floor_basket.add_child(copy)
+	var d := sleep_dir.rotated(Vector3.UP, 0.34)
+	var p := site + d * 2.5
+	_floor_basket.position = Vector3(p.x, terrain.height_at(p.x, p.z), p.z)
+	_floor_basket.rotation.y = atan2(-d.x, -d.z) + 0.4
+	world.add_child.call_deferred(_floor_basket)
 
 func _place(p: Vector3) -> void:
 	global_position = Vector3(p.x, terrain.height_at(p.x, p.z) + 0.05, p.z)
@@ -366,6 +402,10 @@ func _physics_process(delta: float) -> void:
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
 	_pose_sit()
+	if garb.basket_node != null:
+		garb.basket_node.visible = sit < 0.3
+		if _floor_basket != null:
+			_floor_basket.visible = sit >= 0.3
 	_update_animation(delta)
 	# her face fill follows the hero's (World.light_face sets it by hour); dozing, the hat
 	# hangs over her knees and the fill would only light the floor
@@ -553,14 +593,17 @@ func _pose_sit() -> void:
 	if crumple == null:
 		return
 	var e := sit * sit * (3.0 - 2.0 * sit)
-	crumple.active = e > 0.001
-	crumple.hip = 1.85 * e
-	crumple.knee = 2.15 * e
-	crumple.spine = 0.55 * e
+	crumple.active = true
+	crumple.hip = lerpf(STOOP_HIP, 1.85, e)
+	crumple.knee = lerpf(STOOP_KNEE, 2.15, e)
+	crumple.spine = lerpf(STOOP_SPINE, 0.55, e)
+	crumple.neck = STOOP_NECK * (1.0 - e)
 	crumple.arm = 0.75 * e
 	crumple.elbow = 1.1 * e
 	crumple.head_turn = 0.25 * e
-	model.transform = _model_rest.translated(Vector3.DOWN * (_hip_h - 0.14) * e)
+	# the bent knees lower the hips a little: keep the feet on the ground
+	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5) * (1.0 - e)
+	model.transform = _model_rest.translated(Vector3.DOWN * ((_hip_h - 0.14) * e + bob))
 
 # --- look and animation (the hero's: Player._skin, Player._setup_animation) ---
 

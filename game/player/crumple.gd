@@ -10,6 +10,7 @@ var hip := 0.0               # radians, positive brings the thigh forward
 var spine := 0.0             # radians, positive curls the chest forward (spread over 3 bones)
 var arm := 0.0               # radians, positive swings the upper arms forward
 var elbow := 0.0             # radians, positive bends the forearms
+var neck := 0.0              # radians, positive lifts the head back (an old stoop looks up)
 var head_turn := 0.0         # radians about the neck, so the face does not plant in the dirt
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
@@ -29,6 +30,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)
+	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.

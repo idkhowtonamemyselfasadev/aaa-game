@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261011-1447-turf-closeup.jpg",
-  "time": "2026-10-11T14:47:03Z",
-  "caption": "Looking down at the meadow floor: straw-strewn sward, moss and clover between the clumps reads as real ground; clump shadows are still very dark and the clumps too regular.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1447-valley.jpg",
-  "time": "2026-10-11T14:47:03Z",
-  "caption": "Afternoon valley from a hillside: the turf floor holds up at distance with no shimmer; the backlit tree crowns blow out white and the far peaks are faceted.",
-  "verdict": "fail"
- },
- {
-  "file": "20261011-1528-valley-rain.jpg",
-  "time": "2026-10-11T15:28:50Z",
-  "caption": "A rain front over the valley at noon: grey overcast light, rain streaks, wind-combed grass, the far ridges lost in rain haze; the sky is a flat grey with no cloud forms and the ridges are faceted.",
-  "verdict": "fail"
- },
- {
   "file": "20261011-1528-hero-rain.jpg",
   "time": "2026-10-11T15:28:50Z",
   "caption": "The hero in the meadow in the rain: soaked, darkened grass bent by gusts and streaks falling; the hero is still the sci-fi placeholder and no splashes or puddles show on the ground.",
@@ -897,6 +879,18 @@
   "file": "20261016-0250-talk.jpg",
   "time": "2026-10-16T02:50:00Z",
   "caption": "Speaking with Hesper under her gather oak: she stops and faces the hero and her line shows as a brass-and-bone subtitle; but she still wears the hero's cut, hat and armour plates, so the two read as twins, and the meadow light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0330-keeper-basket.jpg",
+  "time": "2026-10-16T03:30:00Z",
+  "caption": "Hesper gathering under an oak, side-on: no hat now, a hood, a woven willow basket of deadwood on her back and a slight stoop, so she no longer reads as a second hero; but her robe is two strips with wrapped legs between and the old armour shows at her side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261016-0330-keeper-floorbasket.jpg",
+  "time": "2026-10-16T03:30:00Z",
+  "caption": "Before dawn in the keep, Hesper's basket of deadwood stands on the floor beside her as she dozes against the inner wall; the scene is very dark and she is a shapeless lump in the shadow.",
   "verdict": "fail"
  }
 ]

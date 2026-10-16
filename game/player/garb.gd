@@ -21,6 +21,15 @@ var fill: OmniLight3D
 ## Per-piece colour overrides for another wearer (an NPC): keys hood, hat, mantle, robe, sash,
 ## wraps -> [dark, light, soot] like the constants below. Empty: the hero's own dyes.
 var palette := {}
+## Cut options for another wearer, set before build(): no straw hat (the hood alone), the robe
+## panels' length as a factor of the hero's shin-length ones, and a wicker gathering basket
+## worn on the back with deadwood standing out of it. The hero: hat, 1.0, no basket.
+## robe_wide widens the panels; their hip wrap then curls them round the sides.
+var hatless := false
+var robe_len := 1.0
+var robe_wide := 1.0     # panel width factor: wider panels curl round the hips into a skirt
+var basket := false
+var basket_node: Node3D
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -56,17 +65,18 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	vm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(veil)
 	_add_face(head)
-	tint = palette.get("hat", STRAW)
-	hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
-	var hm := hat.material_override as ShaderMaterial
-	hm.set_shader_parameter("rigid", 1.0)
-	hm.set_shader_parameter("weave_scale", 150.0)
-	hm.set_shader_parameter("aspect", 0.35)
-	# worn pushed back a little on the hood, so the eye line shows under the front brim even
-	# with the idle stance's head bowed
-	var crown := Vector3(0.0, 2.10, -0.03)
-	hat.transform = Transform3D(Basis(Vector3.RIGHT, -0.17), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * 0.02)
-	head.add_child(hat)
+	if not hatless:
+		tint = palette.get("hat", STRAW)
+		hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
+		var hm := hat.material_override as ShaderMaterial
+		hm.set_shader_parameter("rigid", 1.0)
+		hm.set_shader_parameter("weave_scale", 150.0)
+		hm.set_shader_parameter("aspect", 0.35)
+		# worn pushed back a little on the hood, so the eye line shows under the front brim even
+		# with the idle stance's head bowed
+		var crown := Vector3(0.0, 2.10, -0.03)
+		hat.transform = Transform3D(Basis(Vector3.RIGHT, -0.17), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * 0.02)
+		head.add_child(hat)
 	tint = palette.get("mantle", MANTLE)
 	var mantle := _piece(_drape(), 0.0, 0.012, 0.35, 1.0)
 	var mm := mantle.material_override as ShaderMaterial
@@ -77,8 +87,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
 	tint = palette.get("robe", MADDER)
-	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30, 0.44, 0.90, 0.9, 1.0)
-	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34, 0.48, 0.96, -0.9, 2.0)
+	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30 * robe_wide, lerpf(0.44, 0.52, robe_len - 1.0) * robe_wide, 0.90 * robe_len, 0.9, 1.0)
+	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34 * robe_wide, lerpf(0.48, 0.56, robe_len - 1.0) * robe_wide, 0.96 * robe_len, -0.9, 2.0)
 	tint = palette.get("sash", OCHRE)
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
 	tint = palette.get("wraps", LINEN)
@@ -87,8 +97,118 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
 		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.90, 0.012, 9.0)
 		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
+	if basket:
+		_basket()
 	tint = []
 	_last_pos = body.global_position
+
+## A back basket of woven willow, oval and tapering to a narrow foot, its open mouth finished
+## in a thick wrapped rim, worn high between the shoulder blades over the mantle and hung on
+## the chest bone (plain body space, no Hollow sizing). Deadwood she gathered under the oaks
+## stands out of the mouth, leaning back. Shoulder straps of plaited bast run up over the
+## shoulders from its upper corners.
+const BASKET_TOP := 1.50
+const BASKET_FOOT := 0.98
+const BASKET_Z := -0.35
+
+func _basket() -> void:
+	var chest := _attach(BONE_CHEST)
+	basket_node = Node3D.new()
+	basket_node.name = "Basket"
+	# leans back off the shoulders a little, like a loaded pack
+	basket_node.transform = Transform3D(Basis(Vector3.RIGHT, -0.10), Vector3.ZERO) \
+			.translated_local(-Vector3(0, BASKET_TOP, -0.2)).translated(Vector3(0, BASKET_TOP, -0.2))
+	chest.add_child(basket_node)
+	tint = palette.get("basket", [Color(0.10, 0.065, 0.032), Color(0.46, 0.34, 0.19), 0.45])
+	var h := BASKET_TOP - BASKET_FOOT
+	var wall := _grid(func(u: float, v: float) -> Vector3:
+		var a := u * TAU
+		# slightly bellied, flattened against the back, taper to the foot; the stakes show as
+		# shallow vertical ribs every 1/24 of the way round
+		var t := 1.0 - v
+		var rx := lerpf(0.15, 0.215, t) + 0.012 * sin(t * PI)
+		var rz := lerpf(0.11, 0.16, t) + 0.010 * sin(t * PI)
+		var rib := 1.0 + 0.018 * pow(absf(cos(a * 12.0)), 6.0)
+		var sag := 0.006 * sin(a * 3.0 + 1.7) * t
+		return Vector3(sin(a) * rx * rib, BASKET_TOP - v * h + sag, BASKET_Z + cos(a) * rz * rib), 48, 14)
+	var wm := _piece(wall, 0.0, 0.0, 9.0, 1.0)
+	var m := wm.material_override as ShaderMaterial
+	m.set_shader_parameter("rigid", 1.0)
+	m.set_shader_parameter("weave_scale", 34.0)
+	m.set_shader_parameter("aspect", h / 1.15)
+	basket_node.add_child(wm)
+	# the foot: a woven base dished up a little
+	var foot := _grid(func(u: float, v: float) -> Vector3:
+		var a := u * TAU
+		return Vector3(sin(a) * 0.15 * v, BASKET_FOOT + 0.015 * (1.0 - v), BASKET_Z + cos(a) * 0.11 * v), 24, 4)
+	var fm := _piece(foot, 0.0, 0.0, 10.0, 1.0)
+	(fm.material_override as ShaderMaterial).set_shader_parameter("rigid", 1.0)
+	(fm.material_override as ShaderMaterial).set_shader_parameter("weave_scale", 20.0)
+	basket_node.add_child(fm)
+	# the wrapped rim and two hoops lower down
+	for hoop in [[0.0, 0.02], [0.45, 0.011], [0.93, 0.012]]:
+		var t: float = 1.0 - hoop[0]
+		var rx := lerpf(0.15, 0.215, t) + 0.012 * sin(t * PI)
+		var rz := lerpf(0.11, 0.16, t) + 0.010 * sin(t * PI)
+		var y: float = BASKET_TOP - hoop[0] * h
+		var rr: float = hoop[1]
+		var ring := _grid(func(u: float, v: float) -> Vector3:
+			var a := u * TAU
+			var b := v * TAU
+			var c := Vector3(sin(a) * rx, y, BASKET_Z + cos(a) * rz)
+			var out := Vector3(sin(a), 0, cos(a))
+			# a wrapped rod: the binding spirals round it
+			var wr := rr * (1.0 + 0.12 * absf(sin(a * 70.0 + b)))
+			return c + out * cos(b) * wr + Vector3.UP * sin(b) * wr, 72, 6)
+		var rm := _piece(ring, 0.0, 0.0, 11.0 + hoop[0], 1.0)
+		(rm.material_override as ShaderMaterial).set_shader_parameter("rigid", 1.0)
+		(rm.material_override as ShaderMaterial).set_shader_parameter("weave_scale", 90.0)
+		basket_node.add_child(rm)
+	# deadwood: crooked oak sticks standing in the mouth, leaning back and splaying
+	tint = palette.get("deadwood", [Color(0.055, 0.045, 0.036), Color(0.36, 0.32, 0.27), 0.5])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4711
+	for k in 9:
+		var base := Vector3(rng.randf_range(-0.12, 0.12), BASKET_TOP - 0.25, BASKET_Z + rng.randf_range(-0.08, 0.06))
+		var ln := rng.randf_range(0.42, 0.78)
+		var lean := Vector3(base.x * 1.2 + rng.randf_range(-0.08, 0.08), 1.0, -0.22 + rng.randf_range(-0.1, 0.06)).normalized()
+		var r0 := rng.randf_range(0.011, 0.02)
+		var kink := rng.randf_range(0.0, TAU)
+		var stick := _grid(func(u: float, v: float) -> Vector3:
+			var a := u * TAU
+			# crooked: two soft kinks off the lean, tapering to a snapped tip
+			var off := Vector3(cos(kink), 0, sin(kink)) * 0.035 * sin(v * PI * 1.6) * ln
+			var c := base + lean * v * ln + off
+			var side := lean.cross(Vector3.FORWARD).normalized()
+			var up2 := side.cross(lean).normalized()
+			var r := r0 * (1.0 - 0.45 * v) * (1.0 + 0.1 * sin(v * 23.0 + a * 2.0))
+			return c + (side * cos(a) + up2 * sin(a)) * r, 7, 6)
+		var sm := _piece(stick, 0.0, 0.0, 20.0 + k, 1.0)
+		var sh := sm.material_override as ShaderMaterial
+		sh.set_shader_parameter("rigid", 1.0)
+		sh.set_shader_parameter("weave_scale", 12.0)
+		sh.set_shader_parameter("aspect", ln / (r0 * TAU) * 0.15)
+		basket_node.add_child(sm)
+	# plaited bast straps from the rim's upper corners over the shoulders to under the arms
+	tint = palette.get("strap", [Color(0.07, 0.05, 0.03), Color(0.40, 0.31, 0.19), 0.4])
+	for sx in [-1.0, 1.0]:
+		var pts := [Vector3(0.10 * sx, BASKET_TOP - 0.03, BASKET_Z + 0.15), Vector3(0.12 * sx, 1.585, -0.12),
+				Vector3(0.14 * sx, 1.60, 0.02), Vector3(0.155 * sx, 1.52, 0.135), Vector3(0.17 * sx, 1.34, 0.12)]
+		var strap := _grid(func(u: float, v: float) -> Vector3:
+			var f := v * (pts.size() - 1)
+			var i := mini(int(f), pts.size() - 2)
+			var p: Vector3 = (pts[i] as Vector3).lerp(pts[i + 1], f - i)
+			var dir: Vector3 = ((pts[i + 1] as Vector3) - pts[i]).normalized()
+			var n := Vector3(p.x * 0.6, 0.0, p.z).normalized() if i > 0 else Vector3(0, 0, 1)
+			n = (n - dir * n.dot(dir)).normalized()
+			var w := dir.cross(n).normalized()
+			# a flat band 3.5 cm wide, 6 mm thick, laid on the cloth
+			var a := u * TAU
+			return p + n * (0.012 + 0.003 * sin(a)) + w * 0.0175 * cos(a), 6, 16)
+		var stm := _piece(strap, 0.0, 0.0, 30.0 + sx, 1.0)
+		(stm.material_override as ShaderMaterial).set_shader_parameter("rigid", 1.0)
+		(stm.material_override as ShaderMaterial).set_shader_parameter("weave_scale", 60.0)
+		chest.add_child(stm)
 
 ## The Hollow's pieces are shaped for its model scaled 1.06 x 1.08 x 1.06; the hero's model is
 ## at 1, so the shaped pieces hang under this scale (the wraps fit the mesh and need none).

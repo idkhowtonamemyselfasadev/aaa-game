@@ -1307,6 +1307,30 @@ func _keeper_test() -> void:
 	var wx: Weather = _world.weather
 	wx.force(0.0)
 	_player.global_position = Vector3(0, _player.global_position.y, 0)
+	# her own cut: no hat, a basket of deadwood on her back, an ankle robe, a stooped head
+	await _ticks(10)
+	var hb := k.skel.find_bone("mixamorig_Head")
+	# the stoop: how far the face cloth (it rides the head bone through its attachment, which
+	# sees the Crumple modifier; bone poses read here do not) sits forward of the feet
+	var lean := func(g: HeroGarb, b: Node3D) -> float:
+		var c := g.veil.global_transform * g.veil.get_aabb().get_center()
+		return (b.global_basis.inverse() * (c - b.global_position)).z
+	var head_k: float = lean.call(k.garb, k.body)
+	var head_p: float = lean.call(_player.garb, _player.get_node("Body"))
+	var bk := k.garb.basket_node
+	var meshes := bk.find_children("*", "MeshInstance3D", true, false).size() if bk != null else 0
+	var bpos := k.body.global_basis.inverse() * ((bk.get_child(0) as MeshInstance3D).global_transform * (bk.get_child(0) as MeshInstance3D).get_aabb().get_center() - k.body.global_position) if bk != null else Vector3.ZERO
+	var hem := func(g: HeroGarb) -> float:
+		var lo := INF
+		for piv in [g._front, g._back]:
+			var mi := (piv as Node3D).get_child(0) as MeshInstance3D
+			lo = minf(lo, (mi.global_transform * mi.get_aabb()).position.y)
+		return lo
+	var hem_k: float = hem.call(k.garb) - k.global_position.y
+	var hem_p: float = hem.call(_player.garb) - _player.global_position.y
+	print("BOT keeper cut: hat %s, basket %d meshes at body %s, face %.2f m ahead of the feet (hero %.2f), robe hem %.2f m (hero %.2f)" % [k.garb.hat != null, meshes, bpos, head_k, head_p, hem_k, hem_p])
+	if k.garb.hat != null or meshes < 10 or bpos.z > -0.2 or bpos.y < 0.9 or head_k < head_p + 0.06 or hem_k > hem_p - 0.06 or hem_k < 0.0:
+		return _combat_done(false, "Hesper still cut like the hero (hat, no basket on her back, not stooped or robe not to the ankles)")
 	var log := []
 	for leg in [[8.0, "tend"], [11.0, "gather"], [13.0, "eat"], [14.0, "wander"], [14.1, "wander"], [22.0, "sleep"], [6.0, "wake"]]:
 		_world.time_of_day = leg[0]
@@ -1352,6 +1376,13 @@ func _keeper_test() -> void:
 			print("BOT keeper: dozing sit %.2f, model drop %.2f" % [k.sit, k.model.position.y])
 			if k.sit < 0.95:
 				return _combat_done(false, "did not sit down to doze")
+			var fb: Node3D = k._floor_basket
+			var fb_mi := fb.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+			var fb_low: float = (fb_mi.global_transform * fb_mi.get_aabb()).position.y - _world.get_node("Terrain").height_at(fb.global_position.x, fb.global_position.z)
+			var fb_r: float = Vector2(fb.global_position.x - k.site.x, fb.global_position.z - k.site.z).length()
+			print("BOT keeper: worn basket %s, floor basket %s at r %.2f, %.2f m off the floor" % [k.garb.basket_node.visible, fb.visible, fb_r, fb_low])
+			if k.garb.basket_node.visible or not fb.visible or fb_r > 2.9 or absf(fb_low) > 0.12:
+				return _combat_done(false, "basket not set down on the keep floor for the night")
 	# rain: breaks off and gets under an oak crown
 	_world.time_of_day = 11.0
 	await _ticks(30)
