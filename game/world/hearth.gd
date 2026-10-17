@@ -72,6 +72,9 @@ func setup(w: Node3D, at: Vector3) -> void:
 	_flick.fractal_octaves = 3
 	position = Vector3(at.x, terrain.height_at(at.x, at.z), at.z)
 	w.add_child(self)
+	# years of this fire have smoke-blackened the keep stones over and round it (masonry)
+	var c := global_position
+	RenderingServer.global_shader_parameter_set("hearth_soot", Vector4(c.x, c.y, c.z, 1.0))
 	for p in 3:
 		var m := ShaderMaterial.new()
 		m.shader = preload("res://shaders/hearth.gdshader")

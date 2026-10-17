@@ -25,6 +25,10 @@ uniform vec3 joint_soil : source_color = vec3(0.22, 0.17, 0.12);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
 global uniform vec3 bounce_light;
+// Hesper's cookfire (Hearth): xyz = the fire's foot, w = 1 when there is one. The stones
+// over and round it are smoke-blackened: a soot plume up the face behind the fire, widening
+// as it climbs, and a scorched skirt on the stones near the ring.
+global uniform vec4 hearth_soot;
 #include "res://shaders/bounce.gdshaderinc"
 uniform vec3 moss_a : source_color = vec3(0.3, 0.34, 0.12);
 uniform vec3 moss_b : source_color = vec3(0.4, 0.41, 0.16);
@@ -123,6 +127,24 @@ void fragment() {
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
 	col = mix(col, mc, mossw);
 	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
+	// soot from Hesper's fire: a plume up the faces that look at it, densest low and right
+	// over the fire, in billowed clouds with tide marks at the edge; the heat kept moss and
+	// lichen off; the stones nearest the ring scorched dark too
+	vec3 hv = wp - hearth_soot.xyz;
+	float hh = hv.y;
+	float hd = length(hv.xz);
+	float plume_r = 0.55 + max(hh, 0.0) * 0.32 + (fbm(wp * 2.6 + 3.0) - 0.5) * 0.5;
+	float sees = smoothstep(-0.25, 0.35, dot(n, normalize(-hv + vec3(0.0, 0.4, 0.0))));
+	float plume = (1.0 - smoothstep(plume_r * 0.55, plume_r, hd))
+	            * smoothstep(-0.3, 0.2, hh) * (1.0 - smoothstep(1.5, 4.5, hh)) * sees;
+	float skirt = (1.0 - smoothstep(0.5, 1.0, length(hv))) * mix(0.6, 1.0, sees);
+	float soot = clamp(max(plume, skirt * 0.8), 0.0, 1.0) * hearth_soot.w;
+	soot *= mix(0.75, 1.0, fbm(wp * 5.5 + 9.0));
+	// real soot is near-black (~0.02): at half a metre from the fire anything paler still
+	// reads as a lit stone, not a blackened one
+	vec3 sootc = vec3(0.022, 0.019, 0.016) * (0.8 + 0.5 * vn(wp * 30.0));
+	col = mix(col, sootc, soot * 0.97);
+	mossw *= 1.0 - soot;
 	// joints: grime and shade sinking into the gaps between the stones (the end and bed
 	// faces only show through the open joints); upward faces (crown tops) stay open to the sky
 	float up = smoothstep(0.5, 0.85, n.y);
@@ -133,11 +155,11 @@ void fragment() {
 	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
 	mossw = max(mossw, lowj * 0.6);
-	float rough = mix(0.82, 0.95, mossw) - edge * 0.08;
+	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08, soot * 0.97);
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.4;
+	SPECULAR = 0.4 * (1.0 - soot * 0.95);   // soot is dead matte: no sheen of the fire on it
 	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw));
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - jd * 0.3 - deep * 0.3);
