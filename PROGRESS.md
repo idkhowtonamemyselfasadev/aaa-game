@@ -33,6 +33,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-17 12:00 UTC:
+  - **Hunting the bleached cold hearth at noon (item 00000), not solved yet.** Content
+    hours left at 1.43 honestly: no new content this hour, only a diagnosis.
+  - hearth.gdshader: the keep shade fill on the hearth now matches the floor round it
+    (`mix(0.8, 0.3, n.y) x AO` instead of `mix(1, 0.5, n.y)` under the keep's 6x
+    `bounce_zone` gain; this term ignores shadow and SSAO). Cold ash albedo 0.15-0.36 ->
+    0.12-0.27 linear and split-oak grain 0.3-0.42 -> 0.22-0.32 linear (shader colours are
+    linear: the keep floor is ~0.05, so the ash read near-white).
+  - Shot `hearth noon12 60 12` FAIL: almost the same as char12. The fill was NOT the cause.
+  - Diagnostic shot `dbg12` with the hearth's ALBEDO forced to 0 (removed after): the hearth
+    goes black, so the white is DIFFUSE light reaching it, not specular/sky reflection
+    (the SPECULAR/roughness changes last session already hinted at this).
+  - A headless physics raycast from the ring toward the noon sun hits RuinCollision ~1.4 m
+    off at ring height, and the sun read only ~5.5 deg up (basis.z.y 0.095, though
+    `sun_peak_deg` is 28 -- check whether the clock had applied), so the collision says
+    shaded -- but the visible wall-foot stones may leave a gap the collision box does not.
+  - shot.gd: new `nosun` flag (sun `light_cull_mask = 0`: cuts direct sun only, the bounce
+    fill stays) to test that next.
+  - Bots hearth, ruin, keeper PASS.
 - Session 2026-10-17 11:00 UTC:
   - **Soot plume reaches the inner face (item 00000).** masonry.gdshader: the plume was
     0.55 m + 0.32 m/m with its full-strength core inside ~0.3 m, so the inner face 0.55 m
@@ -2969,8 +2988,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-00000. HEARTH follow-ups (FIRST: the soot plume over the fire barely shows now that the
-   near-field light is cut (done 10:00 10-17): strengthen it and check it at noon; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
+00000. HEARTH follow-ups (FIRST: the cold logs/ash/ring stones read bleached white at noon
+   -- diffuse light, not the fill term or specular (12:00 10-17). Run `hearth x 60 12 nosun`:
+   if the hearth goes dark, the sun leaks through the wall-foot rubble at ~5 deg (fix the
+   rubble/shadow caster or the ruin's shadow mesh); if not, debug-colour DIFFUSE_LIGHT via a
+   light() function or check SSIL (`nogi`). Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
    + lens on the lid done 00:00 10-17; flint click + catch whump + basket set down done
    01:00 10-17; next: a hand-held strike pose instead of the pick reach (both hands
    together over the tinder), a set-down/shoulder animation for the basket, a warm fill on

@@ -704,6 +704,10 @@ func _ready() -> void:
 		world.env.environment.sdfgi_enabled = false
 	if "noshadow" in args:
 		world.sun.shadow_enabled = false
+	if "nosun" in args:
+		# is a surface lit by a sun that leaks through a gap? Cuts the direct sun only (World
+		# rewrites its energy every frame; the bounce fill keeps reading sun.visible)
+		world.sun.light_cull_mask = 0
 	if "nogi" in args:
 		world.env.environment.sdfgi_enabled = false
 		world.env.environment.ssao_enabled = false

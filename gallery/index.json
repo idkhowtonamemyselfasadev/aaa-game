@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261012-0836-ruin-knoll.jpg",
-  "time": "2026-10-12T08:36:00Z",
-  "caption": "New ruined watchtower on the spur west of the village: a broken round keep and a robbed-out curtain wall of chipped cut stone stand on the skyline; half backlit from the low camera, the stone reads dark and the left grass blows out white.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-0836-ruin-inside.jpg",
-  "time": "2026-10-12T08:36:00Z",
-  "caption": "Standing in the breach of the watchtower at 13.5 h: coursed ashlar with worn arrises and the vale beyond, but the shaded inner face is near black (no bounce light reaches it) so the stonework barely reads.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0917-ruin-lit.jpg",
   "time": "2026-10-12T09:20:00Z",
   "caption": "The watchtower ruin from up the slope with the sun behind: lit, readable sandstone keep over the vale; the courses are still too regular and brick-like.",
@@ -897,6 +885,18 @@
   "file": "20261017-1150-hearth-noon.jpg",
   "time": "2026-10-17T11:50:00Z",
   "caption": "The cold hearth at noon in the shaded keep: the wall over the ring is dark and sooted, but the cold logs and ash bed read bleached white-lilac, brighter than anything else in the keep -- not a material sheen (rougher char changed nothing), still to be found.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1200-hearth-noon-fill.jpg",
+  "time": "2026-10-17T12:20:00Z",
+  "caption": "The cold hearth at noon after the keep fill on it was matched to the floor and the ash/split-wood albedo darkened: almost unchanged -- logs, ash and ring stones still read bleached white-lilac in the shaded keep, so the fill term was not the cause.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1200-hearth-noon-noalbedo.jpg",
+  "time": "2026-10-17T12:22:00Z",
+  "caption": "Diagnostic: the same view with the hearth's albedo forced to black -- the hearth goes black, so its white glare is diffuse light reaching it (suspect: sun leaking through a gap at the wall foot), not a sky reflection or specular.",
   "verdict": "fail"
  }
 ]
