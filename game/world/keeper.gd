@@ -265,6 +265,13 @@ func _ready() -> void:
 	soak.name = "Soak"
 	add_child(soak)
 
+## Her cookfire and the spot she kneels at to light it, from the keep site alone (Ruins
+## keeps that bit of floor swept before she is built): [hearth, kneel].
+static func hearth_layout(at: Vector3) -> Array[Vector3]:
+	var tv := Vector3(-at.x, 0, -at.z).normalized()
+	var sd := (-tv).rotated(Vector3.UP, 0.7)
+	return [at + sd.rotated(Vector3.UP, -0.6) * 2.35, at + sd.rotated(Vector3.UP, -0.95) * 2.4]
+
 ## Places her and works out her day's spots from the keep and the oaks round it.
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
@@ -293,10 +300,10 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_set_down_basket(sleep_dir)
 	# her cookfire (Hearth): beside the bed on the far side from the basket and from her way
 	# out to the breach, between the plinth (r 1.75) and the inner face
-	hearth_at = site + sleep_dir.rotated(Vector3.UP, -0.6) * 2.35
+	var hl := hearth_layout(site)
+	hearth_at = hl[0]
 	# lighting it: knelt at the ring on the side away from her bed, facing the fire
-	var kd := sleep_dir.rotated(Vector3.UP, -0.95)
-	var kp := site + kd * 2.4
+	var kp: Vector3 = hl[1]
 	var to_fire := Vector3(hearth_at.x - kp.x, 0, hearth_at.z - kp.z)
 	_spots["kindle"] = [kp, atan2(to_fire.x, to_fire.z)]
 	if not _oaks.is_empty():

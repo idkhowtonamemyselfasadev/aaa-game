@@ -1322,6 +1322,23 @@ func _hearth_test() -> void:
 	print("BOT hearth at r %.2f from the lid (plinth 1.75, keep %.1f), %.2f m from her bed, %.2f m from the basket" % [r, Keeper.KEEP_R, to_bed, to_basket])
 	if r - Hearth.RING_R < 1.8 or r + Hearth.RING_R > Keeper.KEEP_R - 0.4 or to_bed < 0.9 or to_bed > 2.0 or to_basket < 1.0:
 		return _combat_done(false, "hearth badly placed on the keep floor")
+	# her swept floor: no loose spalls or slabs on the ring or where she kneels
+	var ru: Ruins = _world.get_node("Ruins")
+	var knee: Vector3 = k._spots["kindle"][0]
+	var near_fire := 0
+	var near_knee := 0
+	for c in ru.get_children():
+		if c is MultiMeshInstance3D and c.name.begins_with("Stones_"):
+			var mm: MultiMesh = c.multimesh
+			for i in mm.instance_count:
+				var o: Vector3 = c.global_transform * mm.get_instance_transform(i).origin
+				if Vector2(o.x - hp.x, o.z - hp.z).length() < 0.9:
+					near_fire += 1
+				if Vector2(o.x - knee.x, o.z - knee.z).length() < 0.6:
+					near_knee += 1
+	print("BOT hearth swept floor: %d loose stones left out, %d stones within 0.9 m of the fire, %d within 0.6 m of her kneel spot" % [ru.swept_count, near_fire, near_knee])
+	if ru.swept_count < 3 or near_fire > 0 or near_knee > 0:
+		return _combat_done(false, "the floor round the hearth should be swept of rubble")
 	# every mesh faces outward (normals away from its own centre)
 	var bad := 0
 	var n_mesh := 0
@@ -1394,7 +1411,8 @@ func _hearth_test() -> void:
 		far = maxf(far, m.distance_to(hr.global_position))
 		low = minf(low, m.y - hr.global_position.y)
 	print("BOT hearth 21 h: level %.2f, light %.2f, flames %s, sparks %s, smoke %s, crackle %s %.1f dB, moths %d within %.2f m, lowest %.2f m up" % [hr.level, hr.light.light_energy, hr.flames.emitting, hr.sparks.emitting, hr.smoke.emitting, hr.crackle.playing, hr.crackle.volume_db, moths.size(), far, low])
-	if hr.level < 0.95 or hr.light.light_energy < 1.5 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
+	print("BOT hearth bounce glow %.2f" % hr.bounce.light_energy)
+	if hr.level < 0.95 or hr.light.light_energy < 1.5 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
 		return _combat_done(false, "the fire should blaze at night with moths round it")
 	var flame_a := hr.flames.color.a
 	var smoke_a := hr.smoke.color.a
@@ -1413,7 +1431,7 @@ func _hearth_test() -> void:
 	_world.time_of_day = 12.0
 	await _ticks(60)
 	print("BOT hearth noon: level %.2f, light visible %s, flames %s, crackle %s, moths %d" % [hr.level, hr.light.visible, hr.flames.emitting, hr.crackle.playing, hr.moth_positions().size()])
-	if hr.level > 0.0 or hr.light.visible or hr.flames.emitting or hr.crackle.playing or not hr.moth_positions().is_empty():
+	if hr.level > 0.0 or hr.light.visible or hr.bounce.visible or hr.flames.emitting or hr.crackle.playing or not hr.moth_positions().is_empty():
 		return _combat_done(false, "the fire should be cold ash at noon")
 	# dawn: she gets up from beside it and walks out to the breach, round it
 	_world.time_of_day = 5.0

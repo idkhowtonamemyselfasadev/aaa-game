@@ -31,6 +31,8 @@ var seal: ShrineSeal
 var ivy: Ivy
 var _crown_n: FastNoiseLite
 var _breach := 0.0
+var _swept: Array = []          # Hesper's swept hearth floor (_sweep_hearth)
+var swept_count := 0            # loose stones left out of it (bots)
 ## Highest stone top laid so far per wall leaf (0-2 keep faces/core, 3-4 curtain faces) and angle
 ## bin, and the crest stones whose tops may stay open to the sky: after all courses are
 ## laid, the uncovered ones get loose stones and grass tufts (_dress_crown).
@@ -54,6 +56,7 @@ func _ready() -> void:
 	# the keep's sunlit inner face lights its floor and rubble (see bounce.gdshaderinc)
 	RenderingServer.global_shader_parameter_set("bounce_zone", Vector4(site.x, site.z, 3.4, 5.0))
 	_rng.seed = seed
+	_sweep_hearth()
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# lengths spread 0.4-1.5 m so a closer or a long stretcher gets a stone of its own
@@ -519,6 +522,30 @@ func _plinth() -> void:
 	add_child(seal)
 	seal.build(site, lid_top)
 
+## Hesper's swept floor round her cookfire: no spalls or loose slabs on the ash ring, where
+## she kneels to light it, or between there and the open floor toward the lid (the side the
+## fire is seen from), as [a, b, r] capsules on the ground.
+func _sweep_hearth() -> void:
+	var hl := Keeper.hearth_layout(site)
+	var hp: Vector3 = hl[0]
+	var kn: Vector3 = hl[1]
+	var mid := (hp + kn) * 0.5
+	var side := Vector3(hp.x - kn.x, 0, hp.z - kn.z).normalized().cross(Vector3.UP)
+	if (mid + side).distance_to(site) > (mid - side).distance_to(site):
+		side = -side
+	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 1.9, 0.75]]
+
+func _is_swept(p: Vector3) -> bool:
+	for c in _swept:
+		var a: Vector3 = c[0]
+		var ab: Vector3 = c[1] - a
+		ab.y = 0.0
+		var ap := Vector3(p.x - a.x, 0, p.z - a.z)
+		var t := clampf(ap.dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0)
+		if (ap - ab * t).length() < c[2]:
+			return true
+	return false
+
 func _rubble(p: Vector3, s: float) -> void:
 	var b := Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3(1, 0, 0), _rng.randf_range(-0.9, 0.9)) * Basis(Vector3(0, 0, 1), _rng.randf_range(-0.6, 0.6))
 	p.y = _terrain.height_at(p.x, p.z)
@@ -547,6 +574,9 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), p)
+	if laid == 0.0 and not collide and _is_swept(p) and Vector2(p.x - site.x, p.z - site.z).length() > 1.7:
+		swept_count += 1          # after the rng draws, so the rest of the keep is unchanged
+		return
 	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, _aged)])
 	block_count += 1
 	if _aged > 0.0:

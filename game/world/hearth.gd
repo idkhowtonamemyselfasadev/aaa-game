@@ -20,6 +20,7 @@ var weather: Weather
 var terrain: Terrain
 var level := 0.0                # 0 cold .. 1 blazing (bots)
 var light: OmniLight3D
+var bounce: OmniLight3D          # the glow off the ash bed and hot stones, low and unshadowed
 var flames: CPUParticles3D
 var sparks: CPUParticles3D
 var smoke: CPUParticles3D
@@ -457,6 +458,17 @@ func _build_fire() -> void:
 	light.light_specular = 0.4
 	light.position = Vector3(0, 0.7, 0)
 	add_child(light)
+	# the ring stones and logs shadow the main light off anyone knelt close; this soft glow
+	# off the embers and the inside of the ring wraps her front, knees and hands instead
+	bounce = OmniLight3D.new()
+	bounce.name = "FireBounce"
+	bounce.light_color = Color(1.0, 0.45, 0.18)
+	bounce.omni_range = 2.6
+	bounce.omni_attenuation = 1.3
+	bounce.shadow_enabled = false
+	bounce.light_specular = 0.1
+	bounce.position = Vector3(0, 0.3, 0)
+	add_child(bounce)
 
 ## Moths: small dusty wings circling the flame, darting in and swerving out.
 func _build_moths() -> void:
@@ -691,6 +703,10 @@ func _apply(f: float, delta: float) -> void:
 	light.light_energy = (2.6 * flame + 0.35 * clampf(f * 3.0, 0.0, 1.0)) * fl
 	light.light_color = Color(1.0, 0.5, 0.2).lerp(Color(1.0, 0.3, 0.1), 1.0 - flame)
 	light.visible = light.light_energy > 0.01
+	# strongest while the fire is low (smouldering tinder, embers) when the main light is weak
+	bounce.light_energy = (0.55 * flame + 0.5 * clampf(f * 4.0, 0.0, 1.0) * (1.0 - 0.5 * flame)) * fl
+	bounce.light_color = light.light_color
+	bounce.visible = bounce.light_energy > 0.01
 	light.position = Vector3(_flick.get_noise_1d(_t * 5.0 + 50.0) * 0.04, 0.62 + 0.12 * flame, _flick.get_noise_1d(_t * 5.0 + 90.0) * 0.04)
 	if crackle.is_inside_tree():
 		var want := linear_to_db(maxf(flame * 0.9 + clampf(f * 3.0, 0.0, 1.0) * 0.1, 0.0001)) - 6.0
