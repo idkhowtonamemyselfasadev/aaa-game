@@ -358,6 +358,15 @@ func _ready() -> void:
 					if Vector2(o.x - sp.x, o.z - sp.z).length() < 1.2:
 						near += 1
 			print("SHOT kindle lens: %d keep stones within 1.2 m of its foot" % near)
+		if "warm" in args:
+			# three-quarter on to her as she sits warming her hands: from the keep floor on her
+			# face side, her firelit front and hands, the flames beside her, the wall behind
+			var kb: Vector3 = kp._spots["sleep"][0]
+			var inw := Vector3(kp.site.x - kb.x, 0, kp.site.z - kb.z).normalized()
+			var tf := Vector3(hp.x - kb.x, 0, hp.z - kb.z).normalized()
+			var sp := kb + (inw * 0.8 + tf * 0.6).normalized() * 2.1
+			sp.y = hp.y + 1.15
+			SPOTS[spot] = [sp, kb.lerp(hp, 0.45) + Vector3.UP * 0.45]
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, Hearth.level_for(world.time_of_day), kp.activity])

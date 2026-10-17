@@ -1311,6 +1311,11 @@ func _gfx_test() -> void:
 ## Hesper's cookfire: on the keep floor clear of the plinth and her way out, its meshes face
 ## out, it blazes with light, flames, crackle and moths at night, is cold ash at noon, and rain
 ## knocks the flames down; she walks out past it at dawn without stepping into it.
+## Hesper's right hand (it rides the modifier) to a point, flat (m).
+func _keeper_hand_to(k: Keeper, at: Vector3) -> float:
+	var p: Vector3 = k.hand_mark.global_position
+	return Vector2(p.x - at.x, p.z - at.z).length()
+
 func _hearth_test() -> void:
 	var k: Keeper = _world.keeper
 	var hr: Hearth = _world.hearth
@@ -1422,6 +1427,18 @@ func _hearth_test() -> void:
 		return _combat_done(false, "young flames should burn dimmer than the evening blaze")
 	if hr.level < 0.95 or hr.light.light_energy < 0.8 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
 		return _combat_done(false, "the fire should blaze at night with moths round it")
+	# 22 h: sat down for the night but still up to the blaze, turned to it, hands held out
+	_world.time_of_day = 22.0
+	k.settle(_world, 22.0)
+	await _ticks(120)
+	var sleep_yaw: float = k._spots["sleep"][1]
+	var to_f := Vector3(hp.x - k.global_position.x, 0, hp.z - k.global_position.z)
+	var off_sq := absf(angle_difference(sleep_yaw, atan2(to_f.x, to_f.z)))
+	var hand_warm := _keeper_hand_to(k, hp)
+	var warm_line := k._next_line()
+	print("BOT hearth warm 22 h: %s sit %.2f warm %.2f, facing %.2f rad off the fire (square to the keep %.2f), hands %.2f m from it, line \"%s\"" % [k.activity, k.sit, k.warm, k.warm_facing(), off_sq, hand_warm, warm_line])
+	if not (warm_line in Keeper.LINES["warm"]) or k.activity != "sleep" or k.warm < 0.9 or k.warm_facing() > off_sq * 0.6:
+		return _combat_done(false, "at 22 h she should sit turned to the fire, warming her hands")
 	var flame_a := hr.flames.color.a
 	var smoke_a := hr.smoke.color.a
 	wx.force(1.0)
@@ -1435,6 +1452,11 @@ func _hearth_test() -> void:
 	print("BOT hearth 3 h: level %.2f, light %.2f" % [hr.level, hr.light.light_energy])
 	if hr.level > 0.7 or hr.level < 0.3:
 		return _combat_done(false, "the fire should burn down overnight")
+	await _ticks(400)
+	var hand_doze := _keeper_hand_to(k, hp)
+	print("BOT hearth doze 3 h: warm %.2f, facing %.2f rad off the fire, hands %.2f m from it (%.2f warming)" % [k.warm, k.warm_facing(), hand_doze, hand_warm])
+	if k.warm > 0.05 or hand_doze < hand_warm + 0.1:
+		return _combat_done(false, "by 3 h she should have nodded off, hands drawn in")
 	# noon: cold
 	_world.time_of_day = 12.0
 	await _ticks(60)
@@ -1802,9 +1824,10 @@ func _talk_test() -> void:
 		t += get_physics_process_delta_time()
 	if hud.saying():
 		return _combat_done(false, "subtitle never cleared")
-	# dozing at night: only a mumble, and she stays down
-	_world.time_of_day = 23.0
-	k.settle(_world, 23.0)
+	# dozing at night (past the hour she sits up warming her hands): only a mumble, and she
+	# stays down
+	_world.time_of_day = 1.0
+	k.settle(_world, 1.0)
 	var sp := k.global_position + (k.site - k.global_position).normalized() * 1.4
 	_player.global_position = Vector3(sp.x, terrain.height_at(sp.x, sp.z) + 0.3, sp.z)
 	await _ticks(30)

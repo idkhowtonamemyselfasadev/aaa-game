@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-1720-deer-model.jpg",
-  "time": "2026-10-12T17:20:48Z",
-  "caption": "Model check of the new procedural red deer: standing, walking, grazing and galloping poses; good silhouette and coat markings, but the head is long and thin and the upper legs join the body as plain columns.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1830-herd-morning.jpg",
   "time": "2026-10-12T18:30:00Z",
   "caption": "Red deer grazing the meadow at 10 h, now lit by the meadow bounce with a readable red coat and cream rumps; the near grass is still sparse tufts over bare dark soil and the oaks read stylized.",
@@ -891,6 +885,12 @@
   "file": "20261017-2313-fox.jpg",
   "time": "2026-10-17T23:13:36Z",
   "caption": "A red fox has come in out of the dark to sit just inside the keep's breach at 22:30, watching Hesper's fire; its white bib is a flat over-bright patch, the face lacks a readable muzzle and eyes, and the breach rubble reads as big pale slabs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-2320-hearth-warm.jpg",
+  "time": "2026-10-17T23:20:01Z",
+  "caption": "Hesper at 22:00 sat up by her fire, turned to it with hands out to the warmth, wall in warm amber stone; still wrong: the flame core blows out white, the charred logs show a regular crackle pattern and her near hand stays close to her chest.",
   "verdict": "fail"
  }
 ]

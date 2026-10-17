@@ -85,6 +85,11 @@ const LINES := {
 		"Under the oak, child. Even the Hollow have the sense to stand still in this.",
 		"Under here. The keep lost its roof before my grandmother was born.",
 	],
+	"warm": [
+		"Sit, if you like. The fire does not mind who it warms.",
+		"Oak burns slow. Willow spits. My mother could tell them apart by the smoke.",
+		"I will drop off soon. When I do, put a stick on. A dry one.",
+	],
 	"sleep": [
 		"Mm... the lid is swept... come back at first light...",
 		"...forty years... nnh... mind the step...",
@@ -97,6 +102,13 @@ const STOOP_SPINE := 0.26
 const STOOP_HIP := 0.06
 const STOOP_KNEE := 0.16
 const STOOP_NECK := 0.16
+# warming her hands at the fire before she dozes: back up, face lifted, both arms out over
+# the knees, forearms a little bent so the palms come up to the heat; half turned to it
+const WARM_SPINE := 0.3
+const WARM_NECK := 0.22
+const WARM_ARM := 1.4
+const WARM_ELBOW := 0.45
+const WARM_TURN := 0.85
 # gathering under the oaks: every few seconds she crouches, curls right down over the litter
 # and reaches for an acorn or a stick, then straightens with a hand on her back
 const PICK_HIP := 1.0           # thighs forward; the knees fold twice that so the feet stay put
@@ -138,6 +150,8 @@ var _seen_interacts := 0
 var path: Array[Vector3] = []
 var goal_yaw := 0.0
 var sit := 0.0                  # 0 standing .. 1 seated in the doze
+var warm := 0.0                 # 0 head on her knees .. 1 sat up to the fire, hands out to it
+var warm_hold := -1.0           # shots: hold `warm` at this (negative: by the hour and fire)
 var pick := 0.0                 # 0 upright .. 1 crouched over the leaf litter, reaching
 var picks := 0                  # times she has stooped to pick something up (bots)
 var _pick_t := 3.0              # s until the next stoop (negative: in the stoop)
@@ -349,6 +363,12 @@ func settle(w: Node3D, at_hour: float) -> void:
 	if a == "sleep":
 		sit = 1.0
 		state = SIT
+		var h := _hour()
+		warm = 1.0 if (h >= 21.0 and h < 23.35 and Hearth.level_for(h) > 0.6) else 0.0
+		var to_f := Vector3(hearth_at.x - s[0].x, 0, hearth_at.z - s[0].z)
+		if warm > 0.0 and to_f.length() > 0.1:
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(to_f.x, to_f.z), WARM_TURN)
+			goal_yaw = body.rotation.y
 	_last_pos = global_position
 
 ## Her shoulder line as posed (two attachments ride the arms through the modifiers): its yaw
@@ -507,6 +527,7 @@ func _physics_process(delta: float) -> void:
 	velocity.z = lerpf(velocity.z, v.z, 1.0 - exp(-6.0 * delta))
 	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
 	move_and_slide()
+	_update_warm(delta)
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
@@ -671,7 +692,7 @@ func _update_talk(delta: float) -> void:
 		_seen_interacts = presses
 		return
 	if hud != null:
-		hud.prompt("E", "Speak" if sit < 0.5 else "Listen")
+		hud.prompt("E", "Speak" if (sit < 0.5 or warm > 0.5) else "Listen")
 	if presses == _seen_interacts:
 		return
 	_seen_interacts = presses
@@ -685,6 +706,8 @@ func _update_talk(delta: float) -> void:
 		hud.say("Hesper", line, talking)
 
 func _next_line() -> String:
+	if warm > 0.5:
+		return _pool_line("warm")
 	if sit >= 0.5 or activity == "sleep":
 		return _pool_line("sleep")
 	if _intro_i < INTRO.size():
@@ -798,6 +821,29 @@ func _update_kindle(delta: float) -> void:
 			hr.kindle()
 			kindles += 1
 
+## Sat down for the night while the fire still blazes (21:30 to ~23:20), she sits up turned
+## half round to it with her hands held out over her knees to the warmth; as it burns down
+## she nods off, head going down onto her knees and the body back square to the keep.
+func _update_warm(delta: float) -> void:
+	var hr = world.get("hearth")
+	var h := _hour()
+	var lit: float = hr.level if hr != null else 0.0
+	var want := 1.0 if (activity == "sleep" and h >= 21.0 and h < 23.35 and lit > 0.6) else 0.0
+	if warm_hold >= 0.0:
+		want = warm_hold
+	warm = move_toward(warm, want, delta / 3.0) if warm_hold < 0.0 else want
+	if activity != "sleep" or hr == null or not _spots.has("sleep"):
+		return
+	var to_f := Vector3(hearth_at.x - global_position.x, 0, hearth_at.z - global_position.z)
+	if to_f.length() > 0.1:
+		var e := warm * warm * (3.0 - 2.0 * warm)
+		goal_yaw = lerp_angle(_spots["sleep"][1], atan2(to_f.x, to_f.z), WARM_TURN * e)
+
+## Her body yaw turned toward the fire while she warms her hands (bots).
+func warm_facing() -> float:
+	var to_f := Vector3(hearth_at.x - global_position.x, 0, hearth_at.z - global_position.z)
+	return absf(angle_difference(body.rotation.y, atan2(to_f.x, to_f.z)))
+
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
 ## the floor as she sits.
 func _pose_sit() -> void:
@@ -811,15 +857,17 @@ func _pose_sit() -> void:
 	crumple.active = true
 	crumple.hip = lerpf(hip, 1.85, e)
 	crumple.knee = lerpf(knee, 2.15, e)
-	crumple.spine = lerpf(lerpf(STOOP_SPINE, PICK_SPINE, p), 0.55, e)
+	# warming her hands: sat up with only the old stoop in her back, head up to the flames
+	var w := warm * warm * (3.0 - 2.0 * warm) * e
+	crumple.spine = lerpf(lerpf(lerpf(STOOP_SPINE, PICK_SPINE, p), 0.55, e), WARM_SPINE, w)
 	crumple.pelvis = PICK_PELVIS * p * (1.0 - e)
-	crumple.neck = lerpf(STOOP_NECK, 0.3, p) * (1.0 - e)
+	crumple.neck = lerpf(lerpf(STOOP_NECK, 0.3, p) * (1.0 - e), WARM_NECK, w)
 	# straightening with an old back: the right hand goes to the small of it on the way up
 	crumple.back_hand = _back_hand * (1.0 - e)
 	crumple.toss = toss * (1.0 - e)
-	crumple.arm = lerpf(PICK_ARM * p, 0.75, e)
-	crumple.elbow = lerpf(PICK_ELBOW * p, 1.1, e)
-	crumple.head_turn = 0.25 * e
+	crumple.arm = lerpf(lerpf(PICK_ARM * p, 0.75, e), WARM_ARM, w)
+	crumple.elbow = lerpf(lerpf(PICK_ELBOW * p, 1.1, e), WARM_ELBOW, w)
+	crumple.head_turn = 0.25 * e * (1.0 - w)
 	# the bent knees lower the hips: keep the feet on the ground (thigh and shin each half the
 	# hip height; the shin leans forward as far as the thigh, so the feet stay under her)
 	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5)

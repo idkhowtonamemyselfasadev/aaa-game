@@ -462,7 +462,7 @@ func _build_fire() -> void:
 	add_child(smoke)
 	light = OmniLight3D.new()
 	light.name = "FireLight"
-	light.light_color = Color(1.0, 0.6, 0.32)
+	light.light_color = Color(1.0, 0.62, 0.36)
 	light.omni_range = 8.0
 	# Godot's omni falloff is d^-attenuation: at 1.6 the inner face 0.55 m off sat ~15x
 	# brighter than the keep floor 3 m out and clipped flat orange whatever its albedo
@@ -731,7 +731,8 @@ func _apply(f: float, delta: float) -> void:
 	light.light_energy = (1.35 * flame + 0.55 * clampf(f * 3.0, 0.0, 1.0) * (1.0 - 0.75 * flame)) * fl
 	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
 	# warm stone instead of painted orange; embers redden it, but not to a red gel
-	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.44, 0.19), 1.0 - flame)
+	# (the ember end was 0.44/0.19: the firelit wall at 1 am read salmon-red, not warm stone)
+	light.light_color = Color(1.0, 0.62, 0.36).lerp(Color(1.0, 0.5, 0.26), 1.0 - flame)
 	# a low fire's light dies off within a few metres: at 1 am the wall 2 m out still glowed
 	# almost as bright as the stones at the ring
 	light.omni_range = lerpf(5.0, 8.0, flame)
