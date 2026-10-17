@@ -322,7 +322,9 @@ func _ready() -> void:
 		# rubble)
 		var mid := (hp + kn) * 0.5
 		var outw := Vector3(mid.x - kp.site.x, 0, mid.z - kp.site.z).normalized()
-		var cp := kp.site - outw * 0.35
+		# from the lid's front edge (0.82 m radius), so its rim drops below the frame instead
+		# of filling the bottom fifth
+		var cp := kp.site + outw * 0.55
 		cp.y = hp.y + 1.95
 		# aimed a little higher so the sooted face over the fire fills the frame, not the plinth
 		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.8, mid.z)]

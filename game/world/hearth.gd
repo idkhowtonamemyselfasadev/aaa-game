@@ -725,11 +725,13 @@ func _apply(f: float, delta: float) -> void:
 	# light: a flicker of a few octaves, embers alone give a dim red glow
 	var fl := 0.82 + 0.18 * _flick.get_noise_1d(_t * 9.0) + 0.06 * _flick.get_noise_1d(_t * 31.0 + 100.0)
 	# the ember floor holds up as the flames die: a low fire at 1 am still lights the inner
-	# face and her bed, not a metre of floor (barely changed at full blaze)
-	light.light_energy = (1.35 * flame + 0.9 * clampf(f * 3.0, 0.0, 1.0) * (1.0 - 0.75 * flame)) * fl
+	# face and her bed, not a metre of floor (barely changed at full blaze). 0.9 was set
+	# while the night grade still turned dim firelit stone lavender; with that fixed it
+	# painted the whole inner face brick-red at 1 am, so back to 0.55
+	light.light_energy = (1.35 * flame + 0.55 * clampf(f * 3.0, 0.0, 1.0) * (1.0 - 0.75 * flame)) * fl
 	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
-	# warm stone instead of painted orange
-	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.36, 0.12), 1.0 - flame)
+	# warm stone instead of painted orange; embers redden it, but not to a red gel
+	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.44, 0.19), 1.0 - flame)
 	light.visible = light.light_energy > 0.01
 	# strongest while the fire is low (smouldering tinder, embers) when the main light is weak
 	bounce.light_energy = (0.55 * flame + 0.5 * clampf(f * 4.0, 0.0, 1.0) * (1.0 - 0.5 * flame)) * fl

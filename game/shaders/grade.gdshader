@@ -30,6 +30,12 @@ void fragment() {
 
 	// night: rod vision. Only what is dim loses colour; the colour that remains is blue.
 	float rod = 1.0 - smoothstep(0.2, 0.65, L);
+	// firelight is not rod-lit: a low fire's glow on the stones is dim (L ~0.05-0.2) but
+	// strongly orange, and at full rod weight it went lavender-grey like the moonlit floor
+	// round it. Warm-dominant pixels (red well over blue) keep their colour; the moonlit
+	// land (blue over red) and mildly warm albedo under moonlight still go to rods.
+	float warm = (c.r - c.b) / (c.r + 0.01);
+	rod *= 1.0 - 0.8 * smoothstep(0.3, 0.7, warm);
 	vec3 scot = vec3(L * 1.08) * vec3(0.62, 0.84, 1.22);
 	vec3 nc = mix(c, scot, rod * 0.88);
 	// moonlit contrast: shadows sink toward a midnight-blue floor (no lift, that turned the
