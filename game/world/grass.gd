@@ -320,9 +320,11 @@ func static_tufts(items: Array) -> Node3D:
 	var root := Node3D.new()
 	for kind in 3:
 		var xf: Array[Transform3D] = []
+		var sc: PackedFloat32Array = []
 		for it in items:
 			if int(it[1]) == kind:
 				xf.append(it[0])
+				sc.append(float(it[2]) if it.size() > 2 else 0.0)
 		if xf.is_empty():
 			continue
 		var mm := MultiMesh.new()
@@ -333,7 +335,8 @@ func static_tufts(items: Array) -> Node3D:
 		for n in xf.size():
 			mm.set_instance_transform(n, xf[n])
 			# drier straw-tipped tufts: thin soil on the stone dries out first
-			mm.set_instance_custom_data(n, Color(0.55 + 0.4 * fmod(n * 0.618, 1.0), 0, 0, 0))
+			# .z: singed by Hesper's fire (Ruins._scorch_tufts)
+			mm.set_instance_custom_data(n, Color(0.55 + 0.4 * fmod(n * 0.618, 1.0), 0, sc[n], 0))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.name = ["Upright", "Tussock", "Seeding"][kind]
 		mmi.multimesh = mm

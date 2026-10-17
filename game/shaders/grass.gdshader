@@ -43,6 +43,7 @@ float n2(vec2 p) {
 
 varying float v_shelter; // rain the oak crowns catch above this clump
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
+varying float v_scorch;  // singed by the hearth (static wall tufts, INSTANCE_CUSTOM.z)
 varying float v_laid;    // 0 standing .. 1 laid flat by the hero (trample.gdshaderinc)
 
 void vertex() {
@@ -53,6 +54,7 @@ void vertex() {
 	// per-instance data: INSTANCE_CUSTOM.x variation, .y height scale (baked into transform)
 	v_var = INSTANCE_CUSTOM.x;
 	v_sward = INSTANCE_CUSTOM.y;
+	v_scorch = INSTANCE_CUSTOM.z;
 	v_seed = UV.x;
 	// distance fade: sink and thin the blade as it reaches the draw distance
 	float d = distance(iw, CAMERA_POSITION_WORLD);
@@ -108,11 +110,13 @@ void fragment() {
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
+	// singed by the fire: brittle dark brown, tips sooted, little light through them
+	col = mix(col, vec3(0.07, 0.05, 0.03) * (0.7 + 0.6 * v_var) * mix(1.0, 0.55, v_h), v_scorch * 0.85);
 	weather_wetten_sheltered(col, rough, 0.85, v_shelter);
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;
-	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h;   // transmission tint (foliage_light)
+	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * v_scorch);   // transmission tint (foliage_light)
 	AO = v_ao;
 	AO_LIGHT_AFFECT = 0.4;
 	// a passing cloud takes the sun off the land

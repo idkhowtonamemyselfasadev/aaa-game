@@ -43,6 +43,8 @@ var tuft_count := 0
 var scree_count := 0
 var curtain_scree := 0
 var joint_tufts := 0
+var burnt_tufts := 0             # joint/crown tufts burnt off by the hearth (_scorch_tufts)
+var scorched_tufts := 0
 var _scree_tufts: Array = []         # grass rooted in the talus, planted with the crown tufts
 ## 1 while laying the curtain wall: its stones stood out in the weather longer, lower and
 ## damper than the keep's (darker crust, more lichen and moss; INSTANCE_CUSTOM.a)
@@ -439,12 +441,33 @@ func _dress_crown() -> void:
 				# tufts on the face edge lean out over it
 				bb = Basis(Vector3(-rad.z, 0, rad.x), _rng.randfn() * 0.15) * bb
 				tufts.append([Transform3D(bb, p + Vector3.UP * 0.0), kind])
+	tufts = _scorch_tufts(tufts)
 	tuft_count = tufts.size()
 	var grass := get_node_or_null("../Grass") as GrassField
 	if grass and tufts.size() > 0:
 		var node := grass.static_tufts(tufts)
 		node.name = "CrownGrass"
 		add_child(node)
+
+## Grass by Hesper's fire: the heat and smoke burn off the joint tufts right behind it (in
+## firelight their pale straw flared gold against the sooted stone) and singe the ones a
+## little further out dry and dark; [Transform3D, kind] -> [Transform3D, kind, scorch 0..1].
+func _scorch_tufts(tufts: Array) -> Array:
+	var hp: Vector3 = Keeper.hearth_layout(site)[0]
+	var out: Array = []
+	scorched_tufts = 0
+	for it in tufts:
+		var o: Vector3 = (it[0] as Transform3D).origin
+		var dh := Vector2(o.x - hp.x, o.z - hp.z).length()
+		var dy := o.y - hp.y
+		var sc := (1.0 - smoothstep(1.6, 3.4, dh)) * (1.0 - smoothstep(1.8, 4.5, dy))
+		if dh < 1.6 and dy < 3.0:
+			burnt_tufts += 1
+			continue
+		if sc > 0.05:
+			scorched_tufts += 1
+		out.append([it[0], it[1], sc])
+	return out
 
 ## Blocks that fell from the crown: thrown out round the tower, most through the breach
 ## and down the slope, half sunk in the turf at all angles.

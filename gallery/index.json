@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-1720-herd.jpg",
-  "time": "2026-10-12T17:20:48Z",
-  "caption": "A herd of procedural red deer hinds and calves grazing the amber meadow at 16.5 h; they read as deer and the scene feels alive, but at 19 m they are small dark silhouettes with little coat detail and the foreground grass is dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1720-deer-model.jpg",
   "time": "2026-10-12T17:20:48Z",
   "caption": "Model check of the new procedural red deer: standing, walking, grazing and galloping poses; good silhouette and coat markings, but the head is long and thin and the upper legs join the body as plain columns.",
@@ -885,6 +879,12 @@
   "file": "20261017-2117-hearth-low1am.jpg",
   "time": "2026-10-17T21:17:46Z",
   "caption": "Hesper's low fire at 1 am: warm firelit stone, the light now dying off faster away from the ring; the wall-joint grass tufts still read straw-gold and the wall-on lens has no Hesper in it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-2130-hearth-scorch22.jpg",
+  "time": "2026-10-17T21:30:34Z",
+  "caption": "Hesper's fire at 10 pm: the wall-joint grass behind it is burnt off and singed, so no gold streaks flare on the sooted stone; the lit wall still reads too salmon-red and the ivy goes blue-grey under the night grade.",
   "verdict": "fail"
  }
 ]
