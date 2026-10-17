@@ -65,7 +65,7 @@ void fragment() {
 	float breathe = 0.75 + 0.25 * sin(TIME * 1.7 + fbm(wp * 6.0) * 9.0);
 	if (part == 0) {
 		float s = fbm(wp * 9.0);
-		col = mix(vec3(0.07, 0.066, 0.062), vec3(0.17, 0.158, 0.14), smoothstep(0.25, 0.8, s + fbm(wp * 2.5) * 0.3));
+		col = mix(vec3(0.072, 0.065, 0.058), vec3(0.175, 0.158, 0.135), smoothstep(0.25, 0.8, s + fbm(wp * 2.5) * 0.3));
 		col = mix(col, vec3(0.36, 0.34, 0.28), smoothstep(0.66, 0.8, fbm(wp * 4.0 + 11.0)) * 0.3);   // lichen on the outer flank
 		// soot: the faces turned to the fire and the crown, ragged-edged
 		float inward = clamp(dot(n.xz, -normalize(rel.xz + 1e-4)) * 0.8 + n.y * 0.6 + 0.4, 0.0, 1.0);
@@ -104,7 +104,8 @@ void fragment() {
 		// ash bed: lp.xz is the bed's local plane, centred on the fire
 		float t = clamp(rr / ring_r, 0.0, 2.0);
 		float ash = fbm(wp * 11.0);
-		col = mix(vec3(0.12, 0.115, 0.11), vec3(0.27, 0.262, 0.25), smoothstep(0.4, 0.75, ash));   // weathered cold ash, not fresh white
+		// a warm brown-grey: neutral greys went cold blue-grey under the sky ambient at noon
+		col = mix(vec3(0.125, 0.112, 0.098), vec3(0.275, 0.255, 0.228), smoothstep(0.4, 0.75, ash));   // weathered cold ash, not fresh white
 		float coal = smoothstep(0.52, 0.72, fbm(wp * 26.0 + 4.0)) * (1.0 - smoothstep(0.55, 0.95, t));
 		col = mix(col, vec3(0.03, 0.028, 0.026), coal);
 		col = mix(col, vec3(0.02), (1.0 - smoothstep(0.0, 0.45, t)) * 0.7);   // charred middle

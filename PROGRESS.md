@@ -33,6 +33,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-17 15:00 UTC:
+  - **Hearth checked at dusk and at night after the 13:00 fill fix: both hold.** Content
+    hours stay 1.43 (a look pass, no new content).
+  - hearth.gdshader: cold ash and ring stones warmed to a brown-grey (ash 0.125/0.112/0.098
+    -> 0.275/0.255/0.228 linear) against the sky ambient's cold cast. Shot `hearth ash12`:
+    the ash reads a shade warmer, but the charred logs still read lavender-grey at noon --
+    the char colours (0.03-0.075, neutral) want the same warm tilt.
+  - Shot `hearth dusk21` (21 h): the fire blazes, the ring stones and ivied wall read warm
+    and sooted in its light, no cream bleach. Shot `hearth night1` (1 h): Hesper dozes by
+    it under moonlit walls; but the fire is still a full bright flame at 1 am (it should be
+    a low fire by then -- check `Hearth.level` against the clock; shot.gd prints level 0.00
+    in every frame, so the print reads before the hearth updates) and its light reaches
+    only a metre or two of the floor.
+  - Bots hearth, ruin, keeper PASS.
 - Session 2026-10-17 14:00 UTC (ran in parallel with the 13:00 one, same bug):
   - Reached the same diagnosis independently and dropped its own shader change for the
     13:00 fix already pushed. Extra evidence: `nogi` (SSAO/SSIL off; SDFGI is already
@@ -3013,10 +3027,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-00000. HEARTH follow-ups (noon bleach fixed 13:00 10-17: the fill's 6x keep gain, now
-   off on the hearth. FIRST next: check the hearth at dusk and at night (the fill change
-   also dims it there; the firelight should carry it) and warm the cold ash a touch -- it
-   reads a little blue-grey at noon. Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
+00000. HEARTH follow-ups (noon bleach fixed 13:00 10-17; dusk + night checked and ash
+   warmed 15:00 10-17. FIRST next: warm the char colours on the logs the same way (they
+   read lavender at noon), and find why the fire is still a full flame at 1 am -- it
+   should be a low fire while she dozes; fix the shot.gd level print to read after the
+   hearth updates. Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
    + lens on the lid done 00:00 10-17; flint click + catch whump + basket set down done
    01:00 10-17; next: a hand-held strike pose instead of the pick reach (both hands
    together over the tinder), a set-down/shoulder animation for the basket, a warm fill on
