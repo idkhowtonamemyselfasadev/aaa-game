@@ -160,9 +160,13 @@ func _build_stones() -> void:
 		var off := Vector3(_rng.randf() * 10.0, i * 3.1, 0)
 		var out := PackedVector3Array()
 		for p: Vector3 in ico[0]:
-			var q := p * (1.0 + n.get_noise_3dv(p + off) * 0.3)
+			var q := p * (1.0 + n.get_noise_3dv(p + off) * 0.38)
 			if q.y < -0.35:
 				q.y = -0.35 + (q.y + 0.35) * 0.3
+			# fieldstones lie on a bed face: a flat, slightly tilted top instead of a dome
+			var cap := 0.28 + q.x * 0.08
+			if q.y > cap:
+				q.y = cap + (q.y - cap) * 0.2
 			out.append(q)
 		for t in ico[1]:
 			st.add_vertex(out[t])
@@ -175,7 +179,7 @@ func _build_stones() -> void:
 		var z := sin(a) * rr
 		var b := Basis(Vector3.UP, -a + _rng.randf_range(-0.4, 0.4))
 		b = b * Basis(Vector3(1, 0, 0), _rng.randf_range(-0.15, 0.15))
-		mi.transform = Transform3D(b.scaled(Vector3(s * _rng.randf_range(0.9, 1.3), s * _rng.randf_range(0.55, 0.75), s)), Vector3(x, _ground(x, z) + s * 0.18, z))
+		mi.transform = Transform3D(b.scaled(Vector3(s * _rng.randf_range(0.9, 1.3), s * _rng.randf_range(0.42, 0.58), s)), Vector3(x, _ground(x, z) + s * 0.12, z))
 		add_child(mi)
 
 ## Four oak logs in a star, charred ends meeting over the middle; a split one among them,

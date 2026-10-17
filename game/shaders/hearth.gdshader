@@ -65,10 +65,10 @@ void fragment() {
 	float breathe = 0.75 + 0.25 * sin(TIME * 1.7 + fbm(wp * 6.0) * 9.0);
 	if (part == 0) {
 		float s = fbm(wp * 9.0);
-		col = mix(vec3(0.1, 0.095, 0.09), vec3(0.24, 0.225, 0.2), smoothstep(0.25, 0.8, s + fbm(wp * 2.5) * 0.3));
-		col = mix(col, vec3(0.5, 0.48, 0.4), smoothstep(0.66, 0.8, fbm(wp * 4.0 + 11.0)) * 0.35);   // lichen on the outer flank
+		col = mix(vec3(0.07, 0.066, 0.062), vec3(0.17, 0.158, 0.14), smoothstep(0.25, 0.8, s + fbm(wp * 2.5) * 0.3));
+		col = mix(col, vec3(0.36, 0.34, 0.28), smoothstep(0.66, 0.8, fbm(wp * 4.0 + 11.0)) * 0.3);   // lichen on the outer flank
 		// soot: the faces turned to the fire and the crown, ragged-edged
-		float inward = clamp(dot(n.xz, -normalize(rel.xz + 1e-4)) * 0.8 + n.y * 0.6 + 0.25, 0.0, 1.0);
+		float inward = clamp(dot(n.xz, -normalize(rel.xz + 1e-4)) * 0.8 + n.y * 0.6 + 0.4, 0.0, 1.0);
 		float soot = smoothstep(0.25, 0.75, inward + (fbm(wp * 7.0 + 3.0) - 0.5) * 0.7) * (1.0 - smoothstep(ring_r * 0.9, ring_r * 1.5, rr));
 		col = mix(col, vec3(0.025, 0.022, 0.02), soot * 0.92);
 		// heat-reddened stone at the soot's edge

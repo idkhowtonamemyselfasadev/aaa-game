@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261012-0459-dusk-peaks.jpg",
-  "time": "2026-10-12T04:59:45Z",
-  "caption": "Dusk toward the evening sun: snow lies in the new erosion gullies of the far peaks; foreground is too dark and the meadow shows banded shadow stripes.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0516-shed-hero.jpg",
   "time": "2026-10-12T05:16:00Z",
   "caption": "After a shower the drenched hero sheds drops off hands, knees and the staff end (bright beads by the feet); the dull grey dusk, plastic sci-fi suit and hazy grey backdrop still fail the Wukong bar.",
@@ -897,6 +891,12 @@
   "file": "20261017-0522-kindle-across.jpg",
   "time": "2026-10-17T05:22:24Z",
   "caption": "Hesper's young fire seen across the ring from beside the inner face: orange flames over charred logs, the ivied wall glowing warm, fireflies drifting -- but Hesper is hidden behind the flame and the ring stones read as pale puffy lumps.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-0632-kindle.jpg",
+  "time": "2026-10-17T06:32:37Z",
+  "caption": "Hesper's fire from the new low lens beside the ring: flatter, darker ring stones and the ivied inner face lit warm, but the lens sits too low and close, the stones still flare cream in the near firelight and Hesper is a dark hooded lump behind the logs.",
   "verdict": "fail"
  }
 ]
