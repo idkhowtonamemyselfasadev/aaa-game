@@ -49,6 +49,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     0.6, up again, no warps. Bots hearth, keeper, talk, walk PASS.
   - `hearth` shot lens moved up onto the lid (was in the wall-foot rubble); new `kindle` arg
     holds her down at the ring with the fire 13 s after catching.
+  - Shot `hearth kindle1 60 19.6 kindle` (Forward+/lavapipe, ~20 min; a first try was lost to
+    a shot.gd parse error -- `out` shadowed the script-level var) FAIL: a real flame body
+    with warm light and shadows up the ivied inner wall, no more rubble lens; still wrong:
+    from the lid the lens sees her from behind, so she reads as the basket on a dark blob,
+    and the lid's carved rim fills the lower third. Next: frame `kindle` side-on from the
+    breach side at ~1.2 m so her face and hands show against the flame, and lift the
+    lens's look target to cut the lid.
 - Session 2026-10-16 23:00 UTC (second, overlapping run): built a parallel cookfire
   (`Cookfire`, GPUParticles3D, 22 moths) and dropped it at rebase in favour of `Hearth`
   above. Findings to carry over: (1) lit smoke puffs (blend_mix, BACKLIGHT, an orange
