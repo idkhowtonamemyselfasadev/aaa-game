@@ -1417,7 +1417,7 @@ func _hearth_test() -> void:
 	print("BOT hearth bounce glow %.2f; flame brightness %.2f just after it caught, %.2f at 21 h" % [hr.bounce.light_energy, young_gain, hr.flame_gain])
 	if young_gain > 0.6 or hr.flame_gain < 0.99:
 		return _combat_done(false, "young flames should burn dimmer than the evening blaze")
-	if hr.level < 0.95 or hr.light.light_energy < 1.5 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
+	if hr.level < 0.95 or hr.light.light_energy < 0.8 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
 		return _combat_done(false, "the fire should blaze at night with moths round it")
 	var flame_a := hr.flames.color.a
 	var smoke_a := hr.smoke.color.a

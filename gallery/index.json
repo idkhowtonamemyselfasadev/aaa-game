@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-0639-rookery-grove.jpg",
-  "time": "2026-10-12T06:39:46Z",
-  "caption": "Inside the rookery grove just after sunset with the rooks settled in the crowns; the warm sky and backlit grass have mood, but the perched birds are lost in the black crowns and the oaks are blobby silhouettes.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-0731-night-meadow.jpg",
   "time": "2026-10-12T07:31:27Z",
   "caption": "The meadow at 21.5 h under the new night grade: moonlit blue-grey grass, fireflies and starlit peaks now read like night instead of a gold-lit field; still too flat and grey, the sky lost its blue and the left-edge rock is a black wedge.",
@@ -897,6 +891,12 @@
   "file": "20261017-0956-hearth.jpg",
   "time": "2026-10-17T09:56:00Z",
   "caption": "Hesper's fire at night with the keep stones above it sooted (soot is near-black and matte now), but the fire light still blows the inner face out to flat orange right behind it -- the light is too strong at half a metre, not the stone colour.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1013-hearth.jpg",
+  "time": "2026-10-17T10:13:00Z",
+  "caption": "Hesper's fire at night with a softer falloff: the inner face behind it no longer clips flat orange -- block relief, joints and ivy read in the firelight -- but the soot plume over the flame is still too faint and the plinth slabs fill the foreground.",
   "verdict": "fail"
  }
 ]

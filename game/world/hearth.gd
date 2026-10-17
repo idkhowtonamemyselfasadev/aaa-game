@@ -460,7 +460,11 @@ func _build_fire() -> void:
 	light.name = "FireLight"
 	light.light_color = Color(1.0, 0.6, 0.32)
 	light.omni_range = 8.0
-	light.omni_attenuation = 1.6
+	# Godot's omni falloff is d^-attenuation: at 1.6 the inner face 0.55 m off sat ~15x
+	# brighter than the keep floor 3 m out and clipped flat orange whatever its albedo
+	# (soot or not); at 1.0 the near face is ~5x the floor, so with the energy halved the
+	# room keeps its light while the stones behind the fire hold their soot and relief
+	light.omni_attenuation = 1.0
 	light.shadow_enabled = true
 	light.light_size = 0.12
 	# low specular: at 1 m the inner face's wet-looking block faces flared flat orange
@@ -716,7 +720,7 @@ func _apply(f: float, delta: float) -> void:
 	smoke.gravity = Vector3(0.8, 0, 0.6) * (0.15 + 0.6 * wind) + Vector3(0, 0.15, 0)
 	# light: a flicker of a few octaves, embers alone give a dim red glow
 	var fl := 0.82 + 0.18 * _flick.get_noise_1d(_t * 9.0) + 0.06 * _flick.get_noise_1d(_t * 31.0 + 100.0)
-	light.light_energy = (2.6 * flame + 0.35 * clampf(f * 3.0, 0.0, 1.0)) * fl
+	light.light_energy = (1.35 * flame + 0.2 * clampf(f * 3.0, 0.0, 1.0)) * fl
 	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
 	# warm stone instead of painted orange
 	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.36, 0.12), 1.0 - flame)
