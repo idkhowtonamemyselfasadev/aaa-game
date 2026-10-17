@@ -461,7 +461,9 @@ func _build_fire() -> void:
 	light.shadow_enabled = true
 	light.light_size = 0.12
 	light.light_specular = 0.4
-	light.position = Vector3(0, 0.7, 0)
+	# a metre up over the logs, so the ring stones and ash 0.4 m out don't sit in its
+	# inverse-square hot core and flare cream while the walls still take the light
+	light.position = Vector3(0, 1.0, 0)
 	add_child(light)
 	# the ring stones and logs shadow the main light off anyone knelt close; this soft glow
 	# off the embers and the inside of the ring wraps her front, knees and hands instead
@@ -716,7 +718,7 @@ func _apply(f: float, delta: float) -> void:
 	bounce.light_energy = (0.55 * flame + 0.5 * clampf(f * 4.0, 0.0, 1.0) * (1.0 - 0.5 * flame)) * fl
 	bounce.light_color = light.light_color
 	bounce.visible = bounce.light_energy > 0.01
-	light.position = Vector3(_flick.get_noise_1d(_t * 5.0 + 50.0) * 0.04, 0.62 + 0.12 * flame, _flick.get_noise_1d(_t * 5.0 + 90.0) * 0.04)
+	light.position = Vector3(_flick.get_noise_1d(_t * 5.0 + 50.0) * 0.04, 0.95 + 0.12 * flame, _flick.get_noise_1d(_t * 5.0 + 90.0) * 0.04)
 	if crackle.is_inside_tree():
 		var want := linear_to_db(maxf(flame * 0.9 + clampf(f * 3.0, 0.0, 1.0) * 0.1, 0.0001)) - 6.0
 		crackle.volume_db = want

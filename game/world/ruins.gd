@@ -535,8 +535,8 @@ func _sweep_hearth() -> void:
 		side = -side
 	var lens := Keeper.kindle_lens(site)
 	lens.y = hp.y
-	# out toward the lid, and from the ring out under the `kindle` lens across the fire
-	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 2.7, 0.75], [hp, lens, 0.7]]
+	# out toward the lid, and from her kneel spot out under the `kindle` lens on her face side
+	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 2.7, 0.75], [kn, lens, 0.8]]
 
 func _is_swept(p: Vector3) -> bool:
 	for c in _swept:

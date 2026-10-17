@@ -102,7 +102,7 @@ void fragment() {
 		// ash bed: lp.xz is the bed's local plane, centred on the fire
 		float t = clamp(rr / ring_r, 0.0, 2.0);
 		float ash = fbm(wp * 11.0);
-		col = mix(vec3(0.2, 0.195, 0.19), vec3(0.55, 0.53, 0.5), smoothstep(0.35, 0.7, ash));
+		col = mix(vec3(0.15, 0.145, 0.14), vec3(0.36, 0.35, 0.33), smoothstep(0.4, 0.75, ash));
 		float coal = smoothstep(0.52, 0.72, fbm(wp * 26.0 + 4.0)) * (1.0 - smoothstep(0.55, 0.95, t));
 		col = mix(col, vec3(0.03, 0.028, 0.026), coal);
 		col = mix(col, vec3(0.02), (1.0 - smoothstep(0.0, 0.45, t)) * 0.7);   // charred middle
