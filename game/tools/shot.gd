@@ -326,17 +326,11 @@ func _ready() -> void:
 		cp.y = hp.y + 1.75
 		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.45, mid.z)]
 		if "kindle" in args:
-			# side-on to her and the fire from the open floor (the side nearer the lid), so her
-			# face and hands show against the flames instead of her back
-			var line := Vector3(hp.x - kn.x, 0, hp.z - kn.z).normalized()
-			var side := line.cross(Vector3.UP)
-			if (mid + side).distance_to(kp.site) > (mid - side).distance_to(kp.site):
-				side = -side
-			# up at standing eye height and looking down onto the ring, so the frame starts at
-			# the swept ash instead of the floor slabs at the lens's foot
-			var sp := mid + side * 2.1
-			sp.y = hp.y + 1.9
-			SPOTS[spot] = [sp, Vector3(mid.x, hp.y + 0.25, mid.z)]
+			# across the flames at her: from the far side of the ring, turned in off the inner
+			# face, so the fire is in the foreground and she kneels into its light facing the
+			# lens (side-on, her lit front turned away and the floor's laid course at the foot)
+			var sp := Keeper.kindle_lens(kp.site)
+			SPOTS[spot] = [sp, Vector3(kn.x, hp.y + 0.55, kn.z).lerp(Vector3(hp.x, hp.y + 0.3, hp.z), 0.3)]
 			var near := 0
 			var ruins: Ruins = world.get_node("Ruins")
 			for v in ruins._per.size():

@@ -272,6 +272,18 @@ static func hearth_layout(at: Vector3) -> Array[Vector3]:
 	var sd := (-tv).rotated(Vector3.UP, 0.7)
 	return [at + sd.rotated(Vector3.UP, -0.6) * 2.35, at + sd.rotated(Vector3.UP, -0.95) * 2.4]
 
+## Where the `kindle` shot looks from: across the fire at her kneel spot, 1.5 m out past the
+## ring and turned in toward the keep centre off the inner face, at standing eye height
+## (Ruins sweeps the floor out to it).
+static func kindle_lens(at: Vector3) -> Vector3:
+	var hl := hearth_layout(at)
+	var hp: Vector3 = hl[0]
+	var away := Vector3(hp.x - hl[1].x, 0, hp.z - hl[1].z).normalized()
+	var inw := Vector3(at.x - hp.x, 0, at.z - hp.z).normalized()
+	var p := hp + (away * 0.75 + inw * 0.65).normalized() * 1.5
+	p.y = hp.y + 1.5
+	return p
+
 ## Places her and works out her day's spots from the keep and the oaks round it.
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
