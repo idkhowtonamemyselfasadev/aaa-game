@@ -306,10 +306,25 @@ func _ready() -> void:
 		var kp: Keeper = world.keeper
 		kp.settle(world, world.time_of_day)
 		var hp: Vector3 = world.hearth.global_position
-		var from_lid := Vector3(hp.x - kp.site.x, 0, hp.z - kp.site.z).normalized()
-		var cp := hp - from_lid.rotated(Vector3.UP, -0.35) * 2.3
-		cp.y = hp.y + 1.25
-		SPOTS[spot] = [cp, hp + from_lid * 0.5 + Vector3.UP * 0.35]
+		var kn: Vector3 = kp._spots["kindle"][0]
+		if "kindle" in args:
+			# the lighting moment: down at the ring, the tinder smoking and the first flames up
+			kp._place(kn)
+			kp.body.rotation.y = kp._spots["kindle"][1]
+			kp.goal_yaw = kp.body.rotation.y
+			kp.state = Keeper.STAND
+			kp.pick = 1.0
+			kp.pick_hold = true                   # stays down for the frame
+			world.hearth.kindled = 13.0
+			world.hearth.strike_flint(kn)
+		# from standing on the lid, across the keep floor: the fire and Hesper side by side
+		# with the inner face and its ivy lit behind them (was a lens down in the wall-foot
+		# rubble)
+		var mid := (hp + kn) * 0.5
+		var outw := Vector3(mid.x - kp.site.x, 0, mid.z - kp.site.z).normalized()
+		var cp := kp.site - outw * 0.35
+		cp.y = hp.y + 1.75
+		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.45, mid.z)]
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, world.hearth.level, kp.activity])

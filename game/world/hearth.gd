@@ -30,12 +30,20 @@ var _moth_on := 0.0
 var _flick := FastNoiseLite.new()
 var _rng := RandomNumberGenerator.new()
 var _t := 0.0
+var strike: CPUParticles3D       # flint sparks into the tinder while Hesper kneels to light it
+var strikes := 0                # (bots)
+var kindled := -1.0             # s since Hesper put flame to the tinder tonight (-1: not yet)
+const KINDLE_RAMP := 22.0       # s from the first smoke to a full blaze once she has lit it
 
 ## Fire level by the hour: lit at dusk, blazing in the evening, burning down overnight.
+## Hesper lights it herself at dusk (`kindle`); if she has not by 20:24 (sheltering, or the
+## hero was away) it catches by the clock.
 static func level_for(h: float) -> float:
-	if h >= 19.5 and h < 20.1:
-		return smoothstep(19.5, 20.1, h)
-	if h >= 20.1 and h < 23.0:
+	if h >= 19.5 and h < 20.4:
+		return 0.0
+	if h >= 20.4 and h < 20.9:
+		return smoothstep(20.4, 20.9, h)
+	if h >= 20.9 and h < 23.0:
 		return 1.0
 	if h >= 23.0 or h < 5.5:
 		var x := fposmod(h - 23.0, 24.0) / 6.5
@@ -370,6 +378,22 @@ func _build_fire() -> void:
 	sparks.position = Vector3(0, 0.15, 0)
 	sparks.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(sparks)
+	# flint sparks: a short hot spray off the steel down into the tinder at the log ends
+	strike = sparks.duplicate() as CPUParticles3D
+	strike.name = "Strike"
+	strike.amount = 10
+	strike.lifetime = 0.45
+	strike.one_shot = true
+	strike.explosiveness = 0.9
+	strike.emitting = false
+	strike.emission_sphere_radius = 0.03
+	strike.direction = Vector3.DOWN
+	strike.spread = 55.0
+	strike.initial_velocity_min = 0.6
+	strike.initial_velocity_max = 1.6
+	strike.gravity = Vector3(0, -4.0, 0)
+	strike.position = Vector3(0, 0.16, 0)
+	add_child(strike)
 	# smoke: a soft grey column leaning off with the wind, spreading as it climbs
 	smoke = CPUParticles3D.new()
 	smoke.name = "Smoke"
@@ -538,7 +562,30 @@ func _build_sound() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	_apply(level_for(_hour()), delta)
+	var h := _hour()
+	var f := level_for(h)
+	if h >= 9.5 and h < 19.5:
+		kindled = -1.0                       # a new evening: cold until she lights it
+	elif kindled >= 0.0:
+		kindled += delta
+	if kindled >= 0.0 and h >= 19.5 and h < 23.0:  # after 23 it burns down by the clock
+		var k := smoothstep(0.0, KINDLE_RAMP, kindled)
+		f = maxf(f, k * k)                   # a long smoulder before the flames take
+	_apply(f, delta)
+
+## Hesper's flint: a burst of sparks into the tinder.
+func strike_flint(from: Vector3) -> void:
+	strikes += 1
+	var d := Vector3(from.x - global_position.x, 0, from.z - global_position.z)
+	d = d.normalized() if d.length() > 0.05 else Vector3.FORWARD
+	strike.position = d * 0.2 + Vector3.UP * 0.18
+	strike.restart()
+	strike.emitting = true
+
+## Hesper's tinder has caught: the fire takes from here, smoke first, then flame.
+func kindle() -> void:
+	if kindled < 0.0:
+		kindled = 0.0
 
 func _apply(f: float, delta: float) -> void:
 	var rain := weather.rain if weather != null else 0.0

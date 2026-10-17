@@ -1346,6 +1346,36 @@ func _hearth_test() -> void:
 	print("BOT hearth meshes: %d, %d facing inward" % [n_mesh, bad])
 	if bad > 0 or n_mesh < 20:
 		return _combat_done(false, "hearth meshes missing or inside out")
+	# dusk: cold until Hesper walks in from the breach, kneels at the ring and strikes it alight
+	_player.global_position = k.site + k.to_v * 60.0 + Vector3.UP * 30.0
+	_world.time_of_day = 19.3
+	k.settle(_world, 19.3)
+	await _ticks(60)
+	hr.kindled = -1.0
+	_world.time_of_day = 19.55
+	await _ticks(30)
+	var cold := hr.level
+	var kn: Array = k._spots["kindle"]
+	var k_near := INF
+	var k_fire := INF
+	var down_at := -1
+	var warps0 := k.warps
+	for i in 2400:
+		_world.time_of_day = 19.6                # hold the hour: watch her, not the clock
+		await get_tree().physics_frame
+		var kp := k.global_position
+		k_fire = minf(k_fire, Vector2(kp.x - hp.x, kp.z - hp.z).length())
+		if k.pick > 0.95 and down_at < 0:
+			down_at = i
+			k_near = Vector2(kp.x - kn[0].x, kp.z - kn[0].z).length()
+		if hr.kindled > Keeper.KINDLE_NURSE and hr.level > 0.6 and k.pick < 0.05:
+			break
+	var face := absf(wrapf(k.body.rotation.y - float(kn[1]), -PI, PI))
+	print("BOT hearth kindle: cold %.2f before her, %s %s, down at frame %d %.2f m from the spot, %.2f m closest to the fire, facing it within %.2f rad, %d strikes, kindles %d, level %.2f now, pick %.2f, warps %d" % [cold, k.activity, k.state, down_at, k_near, k_fire, face, hr.strikes, k.kindles, hr.level, k.pick, k.warps - warps0])
+	if cold > 0.0 or k.activity != "kindle" or down_at < 0 or k_near > 0.5 or k_fire < Hearth.RING_R + 0.3 or face > 0.5:
+		return _combat_done(false, "Hesper should walk to the ring and kneel at it facing the fire")
+	if hr.strikes < Keeper.KINDLE_STRIKES or k.kindles != 1 or hr.level < 0.6 or not hr.flames.emitting or k.pick > 0.05 or k.warps > warps0:
+		return _combat_done(false, "her flint should light the fire, and she should get up once it takes")
 	# evening: blazing
 	_world.time_of_day = 21.0
 	await _ticks(240)
@@ -1391,7 +1421,7 @@ func _hearth_test() -> void:
 	print("BOT hearth dawn: Hesper %s, closest %.2f m to the fire centre" % [k.activity, closest])
 	if closest < Hearth.RING_R + 0.3 or k.activity != "wake":
 		return _combat_done(false, "she should walk out round the fire at dawn")
-	_combat_done(true, "the hearth lights at dusk, burns down by dawn and draws moths")
+	_combat_done(true, "Hesper lights the hearth at dusk; it burns down by dawn and draws moths")
 
 func _keeper_test() -> void:
 	var k: Keeper = _world.keeper

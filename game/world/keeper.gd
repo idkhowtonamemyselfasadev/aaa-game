@@ -110,6 +110,9 @@ const PICK_UP := 1.4
 const TOSS_AT := 1.9            # s after the hold: upright again, the find goes over her shoulder
 const TOSS_LEN := 1.0           # s with the hand up at the basket mouth
 const TOSS_DROP := 0.45         # s into the reach when she lets go of it
+const KINDLE_STRIKES := 5       # flint strikes before the tinder catches
+const KINDLE_EVERY := 0.85      # s between strikes
+const KINDLE_NURSE := 9.0       # s at least she stays down after it catches, until the flames show
 
 signal activity_changed(name: String)
 
@@ -174,6 +177,9 @@ var wander_stops: Array[Vector3] = []   # where she stopped on her meadow walks 
 var _last_pos := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _floor_basket: Node3D
+var _kindle_t := -1.0           # s down at the ring this evening (-1: not kneeling yet)
+var _strikes := 0
+var kindles := 0                # times she has lit the fire herself (bots)
 
 func _ready() -> void:
 	collision_layer = 4
@@ -288,6 +294,11 @@ func settle(w: Node3D, at_hour: float) -> void:
 	# her cookfire (Hearth): beside the bed on the far side from the basket and from her way
 	# out to the breach, between the plinth (r 1.75) and the inner face
 	hearth_at = site + sleep_dir.rotated(Vector3.UP, -0.6) * 2.35
+	# lighting it: knelt at the ring on the side away from her bed, facing the fire
+	var kd := sleep_dir.rotated(Vector3.UP, -0.95)
+	var kp := site + kd * 2.4
+	var to_fire := Vector3(hearth_at.x - kp.x, 0, hearth_at.z - kp.z)
+	_spots["kindle"] = [kp, atan2(to_fire.x, to_fire.z)]
 	if not _oaks.is_empty():
 		var o := _oaks[0]
 		var away := Vector3(o.x - site.x, 0, o.z - site.z).normalized()
@@ -367,8 +378,10 @@ static func _activity_for(h: float) -> String:
 		return "wander"
 	if h < 17.5:
 		return "gather"
-	if h < 20.0:
+	if h < 19.5:
 		return "watch"
+	if h < 20.3:
+		return "kindle"                      # down on her knees at the ring with the flint
 	return "tend"
 
 static func _spot_of(a: String) -> String:
@@ -473,6 +486,7 @@ func _physics_process(delta: float) -> void:
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
+	_update_kindle(delta)
 	_update_pick(delta)
 	_square_shoulders(delta)
 	_pose_sit()
@@ -502,6 +516,9 @@ func _begin(a: String) -> void:
 	else:
 		var s: Array = _spots.get(_spot_of(a), _spots["tend"])
 		_route(s[0])
+	if a == "kindle":
+		_kindle_t = -1.0
+		_strikes = 0
 	state = WALK                             # from the doze she stands up first (see sit)
 
 func _gather_spot(i: int) -> Vector3:
@@ -649,7 +666,7 @@ func _next_line() -> String:
 		_intro_i += 1
 		return INTRO[_intro_i - 1]
 	var key := activity
-	if activity == "tend" and _hour() >= 19.0:
+	if (activity == "tend" and _hour() >= 19.0) or activity == "kindle":
 		key = "tend_night"
 	if not LINES.has(key):
 		key = "watch"
@@ -689,6 +706,8 @@ func _update_pick(delta: float) -> void:
 		if _held != null:
 			_held.visible = true
 		return
+	if activity == "kindle":
+		return                               # _update_kindle has the pose
 	var working := state == STAND and activity == "gather" and not noticing and talking <= 0.0
 	if not working:
 		if _held != null and _held.visible and _toss_t < 0.0:
@@ -714,6 +733,35 @@ func _update_pick(delta: float) -> void:
 		if _held != null and _held.visible:
 			_toss_t = 0.0
 		_pick_t = _rng.randf_range(3.5, 7.5)
+
+## Lighting the fire at dusk: down at the ring, a few strikes of flint into the tinder, then
+## she stays down feeding it until the flames take, and gets up to stand over it. Not while
+## the hero has her attention; she goes back down after.
+func _update_kindle(delta: float) -> void:
+	if activity != "kindle":
+		return
+	var hr = world.get("hearth")
+	var lit: bool = hr != null and hr.kindled >= 0.0
+	var working := state == STAND and not noticing and talking <= 0.0 and hr != null
+	if lit and hr.kindled > KINDLE_NURSE and hr.level > 0.35:
+		working = false                      # done: up, and stands over it
+		if pick > 0.9 and _rise_t <= 0.0:
+			_rise_t = PICK_UP + 0.3          # with a hand to the small of her back
+	if not working:
+		pick = move_toward(pick, 0.0, delta / PICK_UP)
+		return
+	pick = move_toward(pick, 1.0, delta / PICK_DOWN)
+	if pick < 0.95:
+		return
+	_kindle_t = maxf(_kindle_t, 0.0) + delta
+	if lit:
+		return
+	if _kindle_t > KINDLE_EVERY * float(_strikes + 1):
+		_strikes += 1
+		hr.strike_flint(global_position)
+		if _strikes >= KINDLE_STRIKES:
+			hr.kindle()
+			kindles += 1
 
 ## The doze: knees drawn up, back to the wall, head down on the knees; the body sinks onto
 ## the floor as she sits.
