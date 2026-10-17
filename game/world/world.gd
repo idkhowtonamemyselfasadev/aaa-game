@@ -26,6 +26,7 @@ var trample: Trample
 var herd: Herd
 var keeper: Keeper
 var hearth: Hearth
+var fox: Fox
 var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
@@ -104,6 +105,9 @@ func _ready() -> void:
 	# her cookfire on the keep floor beside her bed, kept by the clock
 	hearth = Hearth.new()
 	hearth.setup(self, keeper.hearth_at)
+	# a fox that comes in out of the dark to sit at the edge of her firelight
+	fox = Fox.new()
+	fox.setup(self)
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"

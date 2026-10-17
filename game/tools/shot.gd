@@ -300,6 +300,23 @@ func _ready() -> void:
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
+	if spot == "fox":
+		# the fox sat in the breach at the edge of Hesper's firelight, looking in at the fire:
+		# low, three-quarter from the yard, the lit keep floor behind it
+		var kp: Keeper = world.keeper
+		kp.settle(world, world.time_of_day)
+		var fx: Fox = world.fox
+		fx.place_sitting()
+		# from the fire's side of the keep floor, so the firelight falls on its face and the
+		# night meadow shows through the breach behind it (a lens out in the yard sat in the
+		# wall rubble with the fox a dark streak)
+		var hp: Vector3 = world.hearth.global_position
+		var to_fx := Vector3(fx.sit_at.x - hp.x, 0, fx.sit_at.z - hp.z).normalized()
+		var cp := fx.sit_at - to_fx * 2.1 + to_fx.cross(Vector3.UP) * 0.9
+		cp.y = terrain.height_at(cp.x, cp.z) + 0.8
+		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
+		var pp := kp.site + kp.to_v * 60.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "hearth":
 		# Hesper's cookfire on the keep floor: from across the floor by the lid, the fire in
 		# the foreground, her bed and the inner face lit behind it (at night she dozes by it)
@@ -627,7 +644,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

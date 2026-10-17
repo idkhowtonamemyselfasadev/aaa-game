@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -89,6 +89,9 @@ func _ready() -> void:
 		return
 	if name == "hearth":
 		_hearth_test()
+		return
+	if name == "fox":
+		_fox_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1453,6 +1456,77 @@ func _hearth_test() -> void:
 	if closest < Hearth.RING_R + 0.3 or k.activity != "wake":
 		return _combat_done(false, "she should walk out round the fire at dawn")
 	_combat_done(true, "Hesper lights the hearth at dusk; it burns down by dawn and draws moths")
+
+## The fox: comes in through the gateway once the fire is going after dark, sits in the
+## breach at the edge of the firelight facing it, bolts from a hero walking up, keeps away.
+func _fox_test() -> void:
+	var k: Keeper = _world.keeper
+	var fx: Fox = _world.fox
+	var hr: Hearth = _world.hearth
+	var tr: Terrain = _world.get_node("Terrain")
+	_world.weather.force(0.0)
+	var far := k.site + k.to_v * 60.0
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	_world.time_of_day = 12.0
+	await _ticks(30)
+	print("BOT fox noon: state %d visible %s" % [fx.state, fx.visible])
+	if fx.state != Fox.AWAY or fx.visible:
+		return _combat_done(false, "no fox at the keep by day")
+	fx.arrive_h = 21.0
+	_world.time_of_day = 22.0
+	var wall_hits := 0
+	var sat_at := -1
+	for i in 6000:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+		var q := fx.global_position
+		var r := Vector2(q.x - k.site.x, q.z - k.site.z).length()
+		var off := absf(Vector3(q.x - k.site.x, 0, q.z - k.site.z).normalized().signed_angle_to(k.to_v, Vector3.UP))
+		if fx.visible and (((r > 11.6 and r < 13.4) or (r > 3.1 and r < 4.1)) and off > 0.3 or (r < Keeper.KEEP_R - 0.1 and off > 0.6)):
+			wall_hits += 1
+		if fx.state == Fox.SIT and fx.sit > 0.99:
+			sat_at = i
+			break
+	var q := fx.global_position
+	var to_fire := Vector2(hr.global_position.x - q.x, hr.global_position.z - q.z)
+	var face := absf(wrapf(fx.yaw - fx._face_fire(), -PI, PI))
+	print("BOT fox 22 h: state %d sat at frame %d, %.2f m off its seat, %.2f m from the fire (level %.2f), facing it within %.2f rad, %d frames through a wall, visits %d" % [fx.state, sat_at, q.distance_to(fx.sit_at), to_fire.length(), hr.level, face, wall_hits, fx.visits])
+	if sat_at < 0 or q.distance_to(fx.sit_at) > 0.35 or to_fire.length() < 3.5 or to_fire.length() > 8.0 or face > 0.3 or wall_hits > 0 or not fx.visible:
+		return _combat_done(false, "the fox should come in by the gateway and sit at the edge of the firelight facing it")
+	# looks round now and then
+	var yaw_span := 0.0
+	for i in 900:
+		await get_tree().physics_frame
+		yaw_span = maxf(yaw_span, absf(fx.head_yaw))
+	print("BOT fox head turns up to %.2f rad while sat" % yaw_span)
+	if yaw_span < 0.2 or fx.state != Fox.SIT:
+		return _combat_done(false, "the sat fox should look round now and then")
+	# the hero walks up: it bolts out into the dark
+	var side := fx.sit_at + k.to_v.cross(Vector3.UP) * 6.0
+	_player.global_position = Vector3(side.x, tr.height_at(side.x, side.z) + 0.2, side.z)
+	await _ticks(20)
+	var bolted := fx.state == Fox.BOLT
+	var top := 0.0
+	for i in 3000:
+		await get_tree().physics_frame
+		top = maxf(top, fx.speed)
+		if fx.state == Fox.AWAY:
+			break
+	print("BOT fox scare: bolted %s, top speed %.1f m/s, state %d visible %s, bolts %d, keeps away %.0f s" % [bolted, top, fx.state, fx.visible, fx.bolts, fx.shy_t])
+	if not bolted or top < 5.0 or fx.state != Fox.AWAY or fx.visible or fx.shy_t <= 0.0:
+		return _combat_done(false, "a hero walking up should send the fox off into the dark")
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	await _ticks(120)
+	if fx.state != Fox.AWAY:
+		return _combat_done(false, "a scared fox should keep away a while")
+	# before dawn: no fox once the fire is down and the light coming
+	fx.shy_t = 0.0
+	_world.time_of_day = 5.5
+	await _ticks(120)
+	print("BOT fox 5:30: state %d visible %s (fire %.2f)" % [fx.state, fx.visible, hr.level])
+	if fx.state != Fox.AWAY:
+		return _combat_done(false, "the fox should not come at first light")
+	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, and bolts from the hero")
 
 func _keeper_test() -> void:
 	var k: Keeper = _world.keeper
