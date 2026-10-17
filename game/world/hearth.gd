@@ -455,15 +455,17 @@ func _build_fire() -> void:
 	add_child(smoke)
 	light = OmniLight3D.new()
 	light.name = "FireLight"
-	light.light_color = Color(1.0, 0.5, 0.2)
+	light.light_color = Color(1.0, 0.6, 0.32)
 	light.omni_range = 8.0
 	light.omni_attenuation = 1.6
 	light.shadow_enabled = true
 	light.light_size = 0.12
-	light.light_specular = 0.4
-	# a metre up over the logs, so the ring stones and ash 0.4 m out don't sit in its
-	# inverse-square hot core and flare cream while the walls still take the light
-	light.position = Vector3(0, 1.0, 0)
+	# low specular: at 1 m the inner face's wet-looking block faces flared flat orange
+	light.light_specular = 0.2
+	# 0.8-0.9 m up over the logs, so the ring stones and ash 0.4 m out don't sit in its
+	# inverse-square hot core and flare cream, yet under the level of the inner face's
+	# nearest blocks so they take it at a slant instead of square on
+	light.position = Vector3(0, 0.85, 0)
 	add_child(light)
 	# the ring stones and logs shadow the main light off anyone knelt close; this soft glow
 	# off the embers and the inside of the ring wraps her front, knees and hands instead
@@ -712,13 +714,15 @@ func _apply(f: float, delta: float) -> void:
 	# light: a flicker of a few octaves, embers alone give a dim red glow
 	var fl := 0.82 + 0.18 * _flick.get_noise_1d(_t * 9.0) + 0.06 * _flick.get_noise_1d(_t * 31.0 + 100.0)
 	light.light_energy = (2.6 * flame + 0.35 * clampf(f * 3.0, 0.0, 1.0)) * fl
-	light.light_color = Color(1.0, 0.5, 0.2).lerp(Color(1.0, 0.3, 0.1), 1.0 - flame)
+	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
+	# warm stone instead of painted orange
+	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.36, 0.12), 1.0 - flame)
 	light.visible = light.light_energy > 0.01
 	# strongest while the fire is low (smouldering tinder, embers) when the main light is weak
 	bounce.light_energy = (0.55 * flame + 0.5 * clampf(f * 4.0, 0.0, 1.0) * (1.0 - 0.5 * flame)) * fl
 	bounce.light_color = light.light_color
 	bounce.visible = bounce.light_energy > 0.01
-	light.position = Vector3(_flick.get_noise_1d(_t * 5.0 + 50.0) * 0.04, 0.95 + 0.12 * flame, _flick.get_noise_1d(_t * 5.0 + 90.0) * 0.04)
+	light.position = Vector3(_flick.get_noise_1d(_t * 5.0 + 50.0) * 0.04, 0.78 + 0.1 * flame, _flick.get_noise_1d(_t * 5.0 + 90.0) * 0.04)
 	if crackle.is_inside_tree():
 		var want := linear_to_db(maxf(flame * 0.9 + clampf(f * 3.0, 0.0, 1.0) * 0.1, 0.0001)) - 6.0
 		crackle.volume_db = want

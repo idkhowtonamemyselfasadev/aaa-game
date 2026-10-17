@@ -831,6 +831,13 @@ func _ready() -> void:
 			world.weather.lightning.auto_strikes = false
 	for i in frames:
 		await get_tree().process_frame
+	if spot == "hearth" and "kindle" in args:
+		# which side of her the lens sees: her model forward (+Z) against the lens direction
+		var kb: Node3D = world.keeper.body
+		var kf := kb.global_basis.z
+		var to_lens := get_viewport().get_camera_3d().global_position - kb.global_position
+		print("SHOT kindle facing %s yaw %.2f (spot %.2f), lens dir %s, dot %.2f" % [kf, kb.rotation.y,
+			world.keeper._spots["kindle"][1], to_lens, Vector2(kf.x, kf.z).normalized().dot(Vector2(to_lens.x, to_lens.z).normalized())])
 	if spot == "face" and cam != null:
 		# aim from where the face actually is after the warm-up: out along head bone -> eyes,
 		# 3/4 from the left, from a little below eye level (the idle head pitches down, so

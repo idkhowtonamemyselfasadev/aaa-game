@@ -272,10 +272,11 @@ static func hearth_layout(at: Vector3) -> Array[Vector3]:
 	var sd := (-tv).rotated(Vector3.UP, 0.7)
 	return [at + sd.rotated(Vector3.UP, -0.6) * 2.35, at + sd.rotated(Vector3.UP, -0.95) * 2.4]
 
-## Where the `kindle` shot looks from: on her face side, 1.9 m out from her kneel spot,
-## swung 55 deg off the line to the fire toward the keep centre, so she kneels three-quarter
-## on to the lens with the flames beside her, at a standing-crouch eye height
-## (Ruins sweeps the floor out to it).
+## Where the `kindle` shot looks from: 1.9 m out from her kneel spot, swung 55 deg off the
+## line to the fire toward the keep centre, 1.25 m up -- low enough to see under her bowed
+## hood (from 1.5 m it looked onto her bent back), high enough to clear the plinth's laid
+## blocks (at 67 deg / 1.0 m 52 of them filled the lower half) (Ruins sweeps the floor out
+## to it).
 static func kindle_lens(at: Vector3) -> Vector3:
 	var hl := hearth_layout(at)
 	var hp: Vector3 = hl[0]
@@ -285,7 +286,7 @@ static func kindle_lens(at: Vector3) -> Vector3:
 	if (kn + s).distance_to(at) > (kn - s).distance_to(at):
 		s = -s
 	var p := kn + (f * 0.57 + s * 0.82).normalized() * 1.9
-	p.y = hp.y + 1.5
+	p.y = hp.y + 1.25
 	return p
 
 ## Places her and works out her day's spots from the keep and the oaks round it.
