@@ -491,9 +491,10 @@ func _physics_process(delta: float) -> void:
 	_square_shoulders(delta)
 	_pose_sit()
 	if garb.basket_node != null:
-		garb.basket_node.visible = sit < 0.3
+		var down := basket_down()
+		garb.basket_node.visible = not down
 		if _floor_basket != null:
-			_floor_basket.visible = sit >= 0.3
+			_floor_basket.visible = down
 	_update_animation(delta)
 	# her face fill follows the hero's (World.light_face sets it by hour); dozing, the hat
 	# hangs over her knees and the fill would only light the floor
@@ -733,6 +734,16 @@ func _update_pick(delta: float) -> void:
 		if _held != null and _held.visible:
 			_toss_t = 0.0
 		_pick_t = _rng.randf_range(3.5, 7.5)
+
+## The basket is off her back and standing by her bed from the moment she reaches the ring
+## to light the fire until she shoulders it for the dawn watch (so it does not ride up over
+## her bent back while she kneels at the flames).
+func basket_down() -> bool:
+	if sit >= 0.3:
+		return true
+	if activity == "kindle":
+		return state == STAND or pick > 0.05
+	return activity == "tend" and _hour() >= 19.5
 
 ## Lighting the fire at dusk: down at the ring, a few strikes of flint into the tinder, then
 ## she stays down feeding it until the flames take, and gets up to stand over it. Not while

@@ -325,6 +325,16 @@ func _ready() -> void:
 		var cp := kp.site - outw * 0.35
 		cp.y = hp.y + 1.75
 		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.45, mid.z)]
+		if "kindle" in args:
+			# side-on to her and the fire from the open floor (the side nearer the lid), so her
+			# face and hands show against the flames instead of her back
+			var line := Vector3(hp.x - kn.x, 0, hp.z - kn.z).normalized()
+			var side := line.cross(Vector3.UP)
+			if (mid + side).distance_to(kp.site) > (mid - side).distance_to(kp.site):
+				side = -side
+			var sp := mid + side * 2.1
+			sp.y = hp.y + 1.35
+			SPOTS[spot] = [sp, Vector3(mid.x, hp.y + 0.4, mid.z)]
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, world.hearth.level, kp.activity])

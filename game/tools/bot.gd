@@ -1355,6 +1355,8 @@ func _hearth_test() -> void:
 	_world.time_of_day = 19.55
 	await _ticks(30)
 	var cold := hr.level
+	var basket_walk := k.garb.basket_node.visible
+	var basket_kneel := true
 	var kn: Array = k._spots["kindle"]
 	var k_near := INF
 	var k_fire := INF
@@ -1368,6 +1370,7 @@ func _hearth_test() -> void:
 		if k.pick > 0.95 and down_at < 0:
 			down_at = i
 			k_near = Vector2(kp.x - kn[0].x, kp.z - kn[0].z).length()
+			basket_kneel = k.garb.basket_node.visible or not k._floor_basket.visible
 		if hr.kindled > Keeper.KINDLE_NURSE and hr.level > 0.6 and k.pick < 0.05:
 			break
 	var face := absf(wrapf(k.body.rotation.y - float(kn[1]), -PI, PI))
@@ -1376,6 +1379,11 @@ func _hearth_test() -> void:
 		return _combat_done(false, "Hesper should walk to the ring and kneel at it facing the fire")
 	if hr.strikes < Keeper.KINDLE_STRIKES or k.kindles != 1 or hr.level < 0.6 or not hr.flames.emitting or k.pick > 0.05 or k.warps > warps0:
 		return _combat_done(false, "her flint should light the fire, and she should get up once it takes")
+	print("BOT hearth basket: on her back walking in %s, on her back kneeling %s; flint sounds %d for %d strikes, catch sounds %d" % [basket_walk, basket_kneel, hr.flint_sounds, hr.strikes, hr.blow_sounds])
+	if not basket_walk or basket_kneel:
+		return _combat_done(false, "the basket should come off her back before she kneels at the fire")
+	if hr.flint_sounds != hr.strikes or hr.blow_sounds != 1:
+		return _combat_done(false, "each flint strike should click, and the catch should sound once")
 	# evening: blazing
 	_world.time_of_day = 21.0
 	await _ticks(240)

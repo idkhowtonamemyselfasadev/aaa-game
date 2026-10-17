@@ -8,7 +8,8 @@ extends Node3D
 ## flickering warm light and soft shadows round the keep, flames lick up off the logs,
 ## sparks rise and drift, smoke leans with the wind, the logs crackle and pop, and moths come
 ## in out of the dark to circle it. Rain knocks the flames down and thickens the smoke.
-## Bots read `level`, `light`, `flames`, `moth_positions()`, `crackle`.
+## Bots read `level`, `light`, `flames`, `moth_positions()`, `crackle`, `flint_sounds`,
+## `blow_sounds`.
 
 const RING_R := 0.36
 const LOGS := 4
@@ -23,6 +24,10 @@ var flames: CPUParticles3D
 var sparks: CPUParticles3D
 var smoke: CPUParticles3D
 var crackle: AudioStreamPlayer3D
+var flint: AudioStreamPlayer3D   # the steel's click and scrape on each strike
+var blow: AudioStreamPlayer3D    # her breath into the smouldering tinder, and the soft whump as it takes
+var flint_sounds := 0           # (bots)
+var blow_sounds := 0            # (bots)
 var _mat: Array[ShaderMaterial] = []
 var _moth_mm: MultiMesh
 var _moths: Array = []          # [phase, radius, height, speed, dive phase, flap rate]
@@ -78,6 +83,7 @@ func setup(w: Node3D, at: Vector3) -> void:
 	_build_fire()
 	_build_moths()
 	_build_sound()
+	_build_strike_sounds()
 	var body := StaticBody3D.new()
 	var cs := CollisionShape3D.new()
 	var cyl := CylinderShape3D.new()
@@ -558,6 +564,75 @@ func _build_sound() -> void:
 	crackle.volume_db = -80.0
 	add_child(crackle)
 
+## A one-shot 16-bit WAV from float samples, normalised to `gain`.
+static func _wav(x: PackedFloat32Array, rate: int, gain: float) -> AudioStreamWAV:
+	var peak := 0.0001
+	for v in x:
+		peak = maxf(peak, absf(v))
+	var b := PackedByteArray()
+	b.resize(x.size() * 2)
+	for i in x.size():
+		b.encode_s16(i * 2, int(clampf(x[i] / peak * gain, -1.0, 1.0) * 32767.0))
+	var s := AudioStreamWAV.new()
+	s.format = AudioStreamWAV.FORMAT_16_BITS
+	s.mix_rate = rate
+	s.data = b
+	return s
+
+func _one_shot(n: String, s: AudioStream, db: float) -> AudioStreamPlayer3D:
+	var a := AudioStreamPlayer3D.new()
+	a.name = n
+	a.stream = s
+	a.bus = &"SFX"
+	a.unit_size = 2.0
+	a.max_distance = 25.0
+	a.volume_db = db
+	a.position = Vector3(0, 0.2, 0)
+	add_child(a)
+	return a
+
+## Flint and steel: a bright scrape of the steel down the flint's edge, then the click of the
+## blow ringing off the steel for a few ms.
+func _build_strike_sounds() -> void:
+	const RATE := 22050
+	var n := int(RATE * 0.22)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var prev := 0.0
+	var scrape := int(RATE * 0.045)
+	for i in scrape:                         # rasp: highpassed noise, rising then cut off
+		var w := _rng.randf() * 2.0 - 1.0
+		var e := pow(float(i) / scrape, 1.5) * 0.35
+		x[i] = (w - prev * 0.85) * e
+		prev = w
+	for i in n - scrape:                     # the click: three steel partials, fast decay
+		var t := float(i) / RATE
+		var e := exp(-t * 55.0)
+		x[scrape + i] += e * (sin(TAU * 3150.0 * t) * 0.6 + sin(TAU * 4710.0 * t + 1.0) * 0.4 + sin(TAU * 6930.0 * t + 2.0) * 0.25)
+		if i < RATE * 0.006:
+			x[scrape + i] += (_rng.randf() * 2.0 - 1.0) * (1.0 - i / (RATE * 0.006))
+	flint = _one_shot("Flint", _wav(x, RATE, 0.85), -9.0)
+	# the catch: two soft breaths into the tinder (lowpassed noise swelling and dying) and the
+	# low whump of the flame taking on the second
+	n = RATE * 3
+	x = PackedFloat32Array()
+	x.resize(n)
+	var lp := 0.0
+	var lp2 := 0.0
+	for i in n:
+		var t := float(i) / RATE
+		var w := _rng.randf() * 2.0 - 1.0
+		lp += (w - lp) * 0.12
+		lp2 += (lp - lp2) * 0.3
+		var b1 := sin(PI * clampf(t / 0.7, 0.0, 1.0))
+		var b2 := sin(PI * clampf((t - 0.95) / 0.9, 0.0, 1.0))
+		x[i] = lp2 * (b1 * b1 * 0.7 + b2 * b2)
+		if t > 1.55:                         # the whump: a low swell with a breathy roar on top
+			var u := t - 1.55
+			var env := (1.0 - exp(-u * 18.0)) * exp(-u * 2.2)
+			x[i] += env * (sin(TAU * (62.0 + 30.0 * exp(-u * 6.0)) * u) * 0.9 + lp * 1.6)
+	blow = _one_shot("Blow", _wav(x, RATE, 0.8), -6.0)
+
 # ---------------------------------------------------------------- run
 
 func _process(delta: float) -> void:
@@ -581,11 +656,18 @@ func strike_flint(from: Vector3) -> void:
 	strike.position = d * 0.2 + Vector3.UP * 0.18
 	strike.restart()
 	strike.emitting = true
+	if flint.is_inside_tree():
+		flint.pitch_scale = _rng.randf_range(0.9, 1.12)
+		flint.play()
+		flint_sounds += 1
 
 ## Hesper's tinder has caught: the fire takes from here, smoke first, then flame.
 func kindle() -> void:
 	if kindled < 0.0:
 		kindled = 0.0
+		if blow.is_inside_tree():
+			blow.play()
+			blow_sounds += 1
 
 func _apply(f: float, delta: float) -> void:
 	var rain := weather.rain if weather != null else 0.0
