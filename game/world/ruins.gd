@@ -524,7 +524,7 @@ func _plinth() -> void:
 
 ## Hesper's swept floor round her cookfire: no spalls or loose slabs on the ash ring, where
 ## she kneels to light it, or between there and the open floor toward the lid (the side the
-## fire is seen from), as [a, b, r] capsules on the ground.
+## fire is seen from, out past the lens's foot), as [a, b, r] capsules on the ground.
 func _sweep_hearth() -> void:
 	var hl := Keeper.hearth_layout(site)
 	var hp: Vector3 = hl[0]
@@ -533,7 +533,7 @@ func _sweep_hearth() -> void:
 	var side := Vector3(hp.x - kn.x, 0, hp.z - kn.z).normalized().cross(Vector3.UP)
 	if (mid + side).distance_to(site) > (mid - side).distance_to(site):
 		side = -side
-	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 1.9, 0.75]]
+	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 2.7, 0.75]]   # out to under the `kindle` lens (2.1 m)
 
 func _is_swept(p: Vector3) -> bool:
 	for c in _swept:

@@ -38,6 +38,7 @@ var _rng := RandomNumberGenerator.new()
 var _t := 0.0
 var strike: CPUParticles3D       # flint sparks into the tinder while Hesper kneels to light it
 var strikes := 0                # (bots)
+var flame_gain := 1.0           # flame brightness (dimmed while the tinder is young; bots)
 var kindled := -1.0             # s since Hesper put flame to the tinder tonight (-1: not yet)
 const KINDLE_RAMP := 22.0       # s from the first smoke to a full blaze once she has lit it
 
@@ -690,7 +691,11 @@ func _apply(f: float, delta: float) -> void:
 	flames.emitting = flame > 0.02
 	flames.scale_amount_min = 0.4 + 0.35 * flame
 	flames.scale_amount_max = 0.7 + 0.6 * flame
-	flames.color = Color(1, 1, 1, clampf(flame * 1.4, 0.0, 1.0))
+	# young flames off fresh tinder are thin and orange, not a white-hot core: half the
+	# brightness for the first ~20 s after it catches
+	var young := 1.0 if kindled < 0.0 else lerpf(0.5, 1.0, smoothstep(6.0, 20.0, kindled))
+	flame_gain = young
+	flames.color = Color(young, young, young, clampf(flame * 1.4, 0.0, 1.0))
 	sparks.emitting = flame > 0.25
 	# smoke from the first smoulder to the last wisp; thicker when rain hisses on it
 	smoke.emitting = f > 0.01

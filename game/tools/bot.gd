@@ -1379,6 +1379,7 @@ func _hearth_test() -> void:
 	var k_fire := INF
 	var down_at := -1
 	var warps0 := k.warps
+	var young_gain := INF
 	for i in 2400:
 		_world.time_of_day = 19.6                # hold the hour: watch her, not the clock
 		await get_tree().physics_frame
@@ -1388,6 +1389,8 @@ func _hearth_test() -> void:
 			down_at = i
 			k_near = Vector2(kp.x - kn[0].x, kp.z - kn[0].z).length()
 			basket_kneel = k.garb.basket_node.visible or not k._floor_basket.visible
+		if hr.kindled >= 0.0 and hr.kindled < 5.0:
+			young_gain = minf(young_gain, hr.flame_gain)
 		if hr.kindled > Keeper.KINDLE_NURSE and hr.level > 0.6 and k.pick < 0.05:
 			break
 	var face := absf(wrapf(k.body.rotation.y - float(kn[1]), -PI, PI))
@@ -1411,7 +1414,9 @@ func _hearth_test() -> void:
 		far = maxf(far, m.distance_to(hr.global_position))
 		low = minf(low, m.y - hr.global_position.y)
 	print("BOT hearth 21 h: level %.2f, light %.2f, flames %s, sparks %s, smoke %s, crackle %s %.1f dB, moths %d within %.2f m, lowest %.2f m up" % [hr.level, hr.light.light_energy, hr.flames.emitting, hr.sparks.emitting, hr.smoke.emitting, hr.crackle.playing, hr.crackle.volume_db, moths.size(), far, low])
-	print("BOT hearth bounce glow %.2f" % hr.bounce.light_energy)
+	print("BOT hearth bounce glow %.2f; flame brightness %.2f just after it caught, %.2f at 21 h" % [hr.bounce.light_energy, young_gain, hr.flame_gain])
+	if young_gain > 0.6 or hr.flame_gain < 0.99:
+		return _combat_done(false, "young flames should burn dimmer than the evening blaze")
 	if hr.level < 0.95 or hr.light.light_energy < 1.5 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
 		return _combat_done(false, "the fire should blaze at night with moths round it")
 	var flame_a := hr.flames.color.a

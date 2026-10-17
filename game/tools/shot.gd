@@ -332,9 +332,19 @@ func _ready() -> void:
 			var side := line.cross(Vector3.UP)
 			if (mid + side).distance_to(kp.site) > (mid - side).distance_to(kp.site):
 				side = -side
+			# up at standing eye height and looking down onto the ring, so the frame starts at
+			# the swept ash instead of the floor slabs at the lens's foot
 			var sp := mid + side * 2.1
-			sp.y = hp.y + 1.35
-			SPOTS[spot] = [sp, Vector3(mid.x, hp.y + 0.4, mid.z)]
+			sp.y = hp.y + 1.9
+			SPOTS[spot] = [sp, Vector3(mid.x, hp.y + 0.25, mid.z)]
+			var near := 0
+			var ruins: Ruins = world.get_node("Ruins")
+			for v in ruins._per.size():
+				for e in ruins._per[v]:
+					var o: Vector3 = e[0].origin
+					if Vector2(o.x - sp.x, o.z - sp.z).length() < 1.2:
+						near += 1
+			print("SHOT kindle lens: %d keep stones within 1.2 m of its foot" % near)
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, world.hearth.level, kp.activity])
