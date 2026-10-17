@@ -44,7 +44,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     prints how many keep stones lie within 1.2 m of its foot.
   - Bot `hearth` checks flame brightness <= 0.6 in the first 5 s after it catches and 1.0
     at 21 h. Bot hearth PASS.
-  - Shot `hearth kindle4 60 19.6 kindle` rendering at commit time; verdict follows.
+  - Shot `hearth kindle4 60 19.6 kindle` (Forward+/lavapipe, ~25 min) FAIL: the flame is
+    now orange tongues over glowing logs (no white blow-out), the ash ring and the lit ivy
+    face read well and fireflies drift through, but the lower third is still a curved row
+    of big pillowy laid blocks (a laid course -- the plinth step or keep floor ring, not
+    spalls; the lane sweep took none) and Hesper is a dark unlit shape right of the fire.
+    Next: put the `kindle` lens on the far side of that course (inside it, between the
+    course and the ring, ~1.4 m from the fire) or swing it to the bed side, and give
+    Hesper a fire-facing fill (the bounce light sits on the ring's lid side, not hers).
 - Session 2026-10-17 02:00 UTC:
   - **Swept hearth floor + ember glow (item 00000).** `Keeper.hearth_layout(site)` (static)
     now gives the hearth and kneel spots from the keep site alone; Ruins calls it in
