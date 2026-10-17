@@ -52,11 +52,15 @@ static func level_for(h: float) -> float:
 		return smoothstep(20.4, 20.9, h)
 	if h >= 20.9 and h < 23.0:
 		return 1.0
-	if h >= 23.0 or h < 5.5:
-		var x := fposmod(h - 23.0, 24.0) / 6.5
-		return lerpf(1.0, 0.3, x)
+	# nobody feeds it once she dozes off: it falls to a low fire by 1 am, then smoulders
+	if h >= 23.0:
+		return lerpf(1.0, 0.72, smoothstep(23.0, 24.0, h))
+	if h < 1.0:
+		return lerpf(0.72, 0.45, smoothstep(0.0, 1.0, h))
+	if h < 5.5:
+		return lerpf(0.45, 0.25, (h - 1.0) / 4.5)
 	if h < 7.0:
-		return lerpf(0.3, 0.08, (h - 5.5) / 1.5)
+		return lerpf(0.25, 0.08, (h - 5.5) / 1.5)
 	if h < 9.5:
 		return lerpf(0.08, 0.0, (h - 7.0) / 2.5)
 	return 0.0

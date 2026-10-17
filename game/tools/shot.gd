@@ -341,7 +341,7 @@ func _ready() -> void:
 			print("SHOT kindle lens: %d keep stones within 1.2 m of its foot" % near)
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
-		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, world.hearth.level, kp.activity])
+		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, Hearth.level_for(world.time_of_day), kp.activity])
 	if spot == "talk":
 		# speaking with Hesper: over the hero's shoulder at her, out under an oak by day, her
 		# line as a subtitle

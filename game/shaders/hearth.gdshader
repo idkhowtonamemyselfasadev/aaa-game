@@ -88,7 +88,8 @@ void fragment() {
 		col = mix(bark, grain, split);
 		float cr = cells(vec3(lp.x * 38.0, lp.y * 22.0, lp.z * 38.0));
 		float crack = 1.0 - smoothstep(0.0, 0.09, cr);
-		vec3 charc = mix(vec3(0.03, 0.028, 0.026), vec3(0.075, 0.07, 0.065), smoothstep(0.1, 0.5, cr));
+		// warm-tilted like the ash: neutral char read lavender under the noon sky ambient
+		vec3 charc = mix(vec3(0.036, 0.029, 0.022), vec3(0.085, 0.07, 0.054), smoothstep(0.1, 0.5, cr));
 		col = mix(col, charc, charl);
 		col = mix(col, col * 0.5, smoothstep(0.42, 0.62, along) * (1.0 - smoothstep(0.62, 0.9, along)) * 0.6);   // browned
 		// char has only a faint dull sheen: at 0.6 it mirrored the noon sky and the cold logs
@@ -107,8 +108,8 @@ void fragment() {
 		// a warm brown-grey: neutral greys went cold blue-grey under the sky ambient at noon
 		col = mix(vec3(0.125, 0.112, 0.098), vec3(0.275, 0.255, 0.228), smoothstep(0.4, 0.75, ash));   // weathered cold ash, not fresh white
 		float coal = smoothstep(0.52, 0.72, fbm(wp * 26.0 + 4.0)) * (1.0 - smoothstep(0.55, 0.95, t));
-		col = mix(col, vec3(0.03, 0.028, 0.026), coal);
-		col = mix(col, vec3(0.02), (1.0 - smoothstep(0.0, 0.45, t)) * 0.7);   // charred middle
+		col = mix(col, vec3(0.036, 0.029, 0.022), coal);
+		col = mix(col, vec3(0.024, 0.02, 0.016), (1.0 - smoothstep(0.0, 0.45, t)) * 0.7);   // charred middle
 		// sooty rim fading into the floor's earth
 		float rim = smoothstep(0.85, 1.4, t + (fbm(wp * 5.0) - 0.5) * 0.4);
 		col = mix(col, vec3(0.09, 0.075, 0.06), rim);

@@ -33,6 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-17 16:00 UTC:
+  - **Hesper's fire now burns down to a low fire by the time she dozes, and the charred
+    logs are warm-black.** Content hours stay 1.43 (a look/behaviour pass).
+  - hearth.gd `level_for`: nobody feeds it after 23 h, so 1.0 -> 0.72 by midnight, 0.45
+    by 1 am (flame ~0.35: low licking flames, light ~0.5), 0.25 by 5:30, 0.08 by 7. Was 0.79
+    (near full blaze) at 1 am. Bot `hearth 3 h` now level 0.36.
+  - hearth.gdshader: log char, coal crumbs and the charred ash middle warm-tilted
+    (0.036/0.029/0.022 .. 0.085/0.07/0.054) like the ash, against the lavender cast at noon.
+  - shot.gd: the hearth print now reports `Hearth.level_for(hour)` instead of the not-yet
+    updated `level`.
+  - Bots hearth, keeper, ruin PASS. Shots `hearth char12` / `hearth low1`: see below.
 - Session 2026-10-17 15:00 UTC:
   - **Hearth checked at dusk and at night after the 13:00 fill fix: both hold.** Content
     hours stay 1.43 (a look pass, no new content).
@@ -3028,10 +3039,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 00000. HEARTH follow-ups (noon bleach fixed 13:00 10-17; dusk + night checked and ash
-   warmed 15:00 10-17. FIRST next: warm the char colours on the logs the same way (they
-   read lavender at noon), and find why the fire is still a full flame at 1 am -- it
-   should be a low fire while she dozes; fix the shot.gd level print to read after the
-   hearth updates. Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
+   warmed 15:00 10-17. Char warmed + low fire by 1 am + level print done 16:00 10-17. FIRST next:
+   check `hearth low1` / `char12` shots if the 16:00 session could not; then her doze
+   facing the fire with hands out to it, and a fox at the edge of the firelight. Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
    + lens on the lid done 00:00 10-17; flint click + catch whump + basket set down done
    01:00 10-17; next: a hand-held strike pose instead of the pick reach (both hands
    together over the tinder), a set-down/shoulder animation for the basket, a warm fill on
