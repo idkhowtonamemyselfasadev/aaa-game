@@ -732,6 +732,10 @@ func _apply(f: float, delta: float) -> void:
 	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
 	# warm stone instead of painted orange; embers redden it, but not to a red gel
 	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.44, 0.19), 1.0 - flame)
+	# a low fire's light dies off within a few metres: at 1 am the wall 2 m out still glowed
+	# almost as bright as the stones at the ring
+	light.omni_range = lerpf(5.0, 8.0, flame)
+	light.omni_attenuation = lerpf(1.7, 1.0, flame)
 	light.visible = light.light_energy > 0.01
 	# strongest while the fire is low (smouldering tinder, embers) when the main light is weak
 	bounce.light_energy = (0.55 * flame + 0.5 * clampf(f * 4.0, 0.0, 1.0) * (1.0 - 0.5 * flame)) * fl

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261012-1628-trodden-lane.jpg",
-  "time": "2026-10-12T16:28:00Z",
-  "caption": "The hero's track through the afternoon meadow now reads as a laid-flat lane with boot prints pressed along it; the ground in the lane is still near black (the standing grass shadows it) and the prints barely show in turf.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-1628-wet-prints.jpg",
-  "time": "2026-10-12T16:28:00Z",
-  "caption": "The same track after rain: boot prints should hold water, but only a glint or two shows through the grass and the lane is less clear than in the dry shot.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1720-herd.jpg",
   "time": "2026-10-12T17:20:48Z",
   "caption": "A herd of procedural red deer hinds and calves grazing the amber meadow at 16.5 h; they read as deer and the scene feels alive, but at 19 m they are small dark silhouettes with little coat detail and the foreground grass is dark.",
@@ -885,6 +873,18 @@
   "file": "20261017-1948-hearth-blaze22.jpg",
   "time": "2026-10-17T19:48:44Z",
   "caption": "The cookfire at full blaze at 22 h: warm firelit keep wall, ivy and swept floor with moonlit blue stones at the edge; the wall-joint grass blades flare as bright gold streaks and the lens is still a flat look at the wall.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-2117-night-meadow.jpg",
+  "time": "2026-10-17T21:17:46Z",
+  "caption": "The open meadow at 1 am back to moonlit silver-blue after the firelight grade had let straw-dry grass go olive-yellow; a few seed heads still catch a gold tint and no deer are in frame.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261017-2117-hearth-low1am.jpg",
+  "time": "2026-10-17T21:17:46Z",
+  "caption": "Hesper's low fire at 1 am: warm firelit stone, the light now dying off faster away from the ring; the wall-joint grass tufts still read straw-gold and the wall-on lens has no Hesper in it.",
   "verdict": "fail"
  }
 ]

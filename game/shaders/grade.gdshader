@@ -35,7 +35,10 @@ void fragment() {
 	// round it. Warm-dominant pixels (red well over blue) keep their colour; the moonlit
 	// land (blue over red) and mildly warm albedo under moonlight still go to rods.
 	float warm = (c.r - c.b) / (c.r + 0.01);
-	rod *= 1.0 - 0.8 * smoothstep(0.3, 0.7, warm);
+	// and only orange: firelight has red well over green too (g/r ~0.6); straw-dry meadow
+	// grass under the moon (r ~ g > b) was spared as "warm" and read olive-yellow at 1 am
+	float orange = smoothstep(0.12, 0.28, (c.r - c.g) / (c.r + 0.01));
+	rod *= 1.0 - 0.8 * smoothstep(0.3, 0.7, warm) * orange;
 	vec3 scot = vec3(L * 1.08) * vec3(0.62, 0.84, 1.22);
 	vec3 nc = mix(c, scot, rod * 0.88);
 	// moonlit contrast: shadows sink toward a midnight-blue floor (no lift, that turned the

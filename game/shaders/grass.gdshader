@@ -124,6 +124,11 @@ void fragment() {
 }
 
 void light() {
-	foliage_light(NORMAL, LIGHT, VIEW, LIGHT_COLOR, ATTENUATION, LIGHT_IS_DIRECTIONAL,
-		BACKLIGHT, 2.2, ROUGHNESS, SPECULAR_AMOUNT, 0.1, DIFFUSE_LIGHT, SPECULAR_LIGHT);
+	// a point light (Hesper's fire) sits low among the blades: seen across it, the wall-joint
+	// and floor tufts lit from behind flared bright gold with the sun's transmission. A fire
+	// a few metres off lights a blade mostly on its face; keep a weak, warm-neutral glow through it
+	bool dl = LIGHT_IS_DIRECTIONAL;
+	vec3 tr = dl ? BACKLIGHT : BACKLIGHT * 0.3;
+	foliage_light(NORMAL, LIGHT, VIEW, LIGHT_COLOR, ATTENUATION, dl,
+		tr, dl ? 2.2 : 0.35, ROUGHNESS, SPECULAR_AMOUNT, 0.1, DIFFUSE_LIGHT, SPECULAR_LIGHT);
 }
