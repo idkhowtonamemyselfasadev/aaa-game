@@ -33,6 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-17 00:00 UTC (second, overlapping run): built a parallel dusk lighting
+  (`kindle` 19:15-20:00, no flint) and dropped it at rebase in favour of the build above.
+  Findings to carry over: (1) a `kindle` lens side-on to the her-to-fire line, from the
+  open floor toward the lid (mid + side * 2.1 m, 1.35 m up), shows her, but she is backlit
+  by the flames: the worn basket tipped up on her crouched back is the main shape and her
+  slate body is lost in shadow -- set the basket down beside the bed before she kneels, and
+  give her front a small warm fill while the fire is low (the flames are under her hands);
+  (2) a lens raised to 1.65 m on the lid side still sees plinth/spall slabs fill the lower
+  half -- the spalls within ~0.8 m of the hearth and her kneel spot want clearing in
+  ruins.gd; (3) the bots run with `World.run_clock` off: a test that needs the hour to
+  pass must advance `time_of_day` by hand each frame.
 - Session 2026-10-17 00:00 UTC:
   - **Hesper lights the fire (item 00000 lighting moment).** keeper.gd: new activity
     `kindle` 19:30-20:18 (between watch and tend), spot `kindle` knelt at the ring 0.8 m
