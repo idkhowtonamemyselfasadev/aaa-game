@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261012-0917-ruin-lit.jpg",
-  "time": "2026-10-12T09:20:00Z",
-  "caption": "The watchtower ruin from up the slope with the sun behind: lit, readable sandstone keep over the vale; the courses are still too regular and brick-like.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-0917-ruin-inner-face.jpg",
-  "time": "2026-10-12T09:20:00Z",
-  "caption": "Inside the keep: the shaded inner face now reads as coursed stone thanks to bounce fill and grass is off the floor; the floor and rubble tops are still near black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-1000-ruin-floor.jpg",
-  "time": "2026-10-12T10:40:00Z",
-  "caption": "Inside the ruined keep at 13:30: rubble now reads as pale sandstone with moss on its tops and the inner wall is lit by the bounce fill, but the earth floor between the stones is still near black and the courses are too regular.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-1000-ruin-knoll.jpg",
-  "time": "2026-10-12T10:40:00Z",
-  "caption": "The watchtower ruin on its knoll under a cumulus sky with the vale and mountains behind; believable, but the block courses are brick-regular and the far range reads hazy grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1157-backlit.jpg",
   "time": "2026-10-12T11:57:37Z",
   "caption": "16 h looking toward the low sun: oak crowns now glow yellow-green with transmitted light over a sunlit meadow instead of black silhouettes; leaf cards still read as a few oversized leaves up close.",
@@ -897,6 +873,18 @@
   "file": "20261017-1200-hearth-noon-noalbedo.jpg",
   "time": "2026-10-17T12:22:00Z",
   "caption": "Diagnostic: the same view with the hearth's albedo forced to black -- the hearth goes black, so its white glare is diffuse light reaching it (suspect: sun leaking through a gap at the wall foot), not a sky reflection or specular.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1300-hearth-noon-nosun.jpg",
+  "time": "2026-10-17T13:12:00Z",
+  "caption": "Diagnostic: noon with the direct sun cut -- the cold hearth still glowed cream, so no sun leak; a second frame with the hearth's shade-fill term cut went near black, so the fill was the cause.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1300-hearth-noon-fixed.jpg",
+  "time": "2026-10-17T13:55:00Z",
+  "caption": "Noon in the keep after the fix: the cold fire ring now reads as dark sooted stones, charred logs and grey ash instead of a bleached cream star; the ash is a little cold blue-grey and the keep wall still reads dim and flat.",
   "verdict": "fail"
  }
 ]

@@ -84,7 +84,7 @@ void fragment() {
 		vec3 bark = mix(vec3(0.07, 0.06, 0.05), vec3(0.2, 0.17, 0.14), fbm(vec3(wp.x * 30.0, wp.y * 6.0, wp.z * 30.0)));
 		// split faces (vertex colour red marks them) show pale grain
 		float split = COLOR.r;
-		vec3 grain = mix(vec3(0.22, 0.165, 0.11), vec3(0.32, 0.245, 0.16), vn(vec3(wp.x * 4.0, wp.y * 60.0, wp.z * 4.0)));
+		vec3 grain = mix(vec3(0.15, 0.115, 0.08), vec3(0.22, 0.17, 0.115), vn(vec3(wp.x * 4.0, wp.y * 60.0, wp.z * 4.0)));
 		col = mix(bark, grain, split);
 		float cr = cells(vec3(lp.x * 38.0, lp.y * 22.0, lp.z * 38.0));
 		float crack = 1.0 - smoothstep(0.0, 0.09, cr);
@@ -131,8 +131,10 @@ void fragment() {
 	vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
 	NORMAL = normalize(abs(det) * NORMAL - grad);
 	AO = 0.85;
-	// the same keep fill the floor round it gets (terrain: mix(1, 0.35, n.y) x AO): at
-	// mix(1, 0.5) with the keep's 6x enclosure gain the cold ash and logs glowed pale at
-	// noon, ~3x the floor -- this term ignores shadow and SSAO, so it must not lead
-	EMISSION = ALBEDO * bounce_light * bounce_gain(wp) * mix(0.8, 0.3, clamp(n.y, 0.0, 1.0)) * AO + emit;
+	// shade fill with NO keep enclosure gain: the hearth is lit by almost nothing else at
+	// noon (a frame with this term cut goes near black), so under the 6x gain its flanks
+	// (0.8 x 6) and even its ash dome and flat stone tops (0.3 x 6) glowed cream against the
+	// wall stones (13:00 10-17: sun cut -> still white; fill cut -> black)
+	float facing = mix(0.8, 0.45, clamp(n.y, 0.0, 1.0));
+	EMISSION = ALBEDO * bounce_light * facing * AO + emit;
 }
