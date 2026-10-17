@@ -323,8 +323,9 @@ func _ready() -> void:
 		var mid := (hp + kn) * 0.5
 		var outw := Vector3(mid.x - kp.site.x, 0, mid.z - kp.site.z).normalized()
 		var cp := kp.site - outw * 0.35
-		cp.y = hp.y + 1.75
-		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.45, mid.z)]
+		cp.y = hp.y + 1.95
+		# aimed a little higher so the sooted face over the fire fills the frame, not the plinth
+		SPOTS[spot] = [cp, Vector3(mid.x, hp.y + 0.8, mid.z)]
 		if "kindle" in args:
 			# on her face side: she kneels three-quarter on to the lens, her firelit front and
 			# hands at the tinder, the flames beside her and the inner face behind

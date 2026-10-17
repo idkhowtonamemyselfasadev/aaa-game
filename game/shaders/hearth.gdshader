@@ -91,7 +91,9 @@ void fragment() {
 		vec3 charc = mix(vec3(0.03, 0.028, 0.026), vec3(0.075, 0.07, 0.065), smoothstep(0.1, 0.5, cr));
 		col = mix(col, charc, charl);
 		col = mix(col, col * 0.5, smoothstep(0.42, 0.62, along) * (1.0 - smoothstep(0.62, 0.9, along)) * 0.6);   // browned
-		rough = mix(0.85, 0.6, charl * (1.0 - crack));   // char has a dull silvery sheen
+		// char has only a faint dull sheen: at 0.6 it mirrored the noon sky and the cold logs
+		// read bleached white in the shaded keep
+		rough = mix(0.88, 0.8, charl * (1.0 - crack));
 		float hot = charl * charl * glow * breathe;
 		emit = mix(vec3(0.9, 0.18, 0.03), vec3(1.6, 0.6, 0.12), hot) * crack * hot * 3.2;
 		// a dying fire leaves only the ember ends glowing
@@ -119,7 +121,7 @@ void fragment() {
 	weather_wetten(col, rough, porous);
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.3;
+	SPECULAR = part == 0 ? 0.3 : 0.15;   // wood char and ash: no glossy sky glint
 	// a small detail bump from the pattern's gradient
 	// (surface-gradient bump in view space: Mikkelsen's derivative method)
 	float h = bump * 0.006;

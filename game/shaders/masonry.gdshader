@@ -133,10 +133,12 @@ void fragment() {
 	vec3 hv = wp - hearth_soot.xyz;
 	float hh = hv.y;
 	float hd = length(hv.xz);
-	float plume_r = 0.55 + max(hh, 0.0) * 0.32 + (fbm(wp * 2.6 + 3.0) - 0.5) * 0.5;
+	// the inner face stands ~0.55 m off the fire, so the plume core must already reach it at
+	// the fire's foot (was 0.55 + 0.32/m with the core inside 0.3 m: the wall sat on its edge)
+	float plume_r = 1.05 + max(hh, 0.0) * 0.42 + (fbm(wp * 2.6 + 3.0) - 0.5) * 0.45;
 	float sees = smoothstep(-0.25, 0.35, dot(n, normalize(-hv + vec3(0.0, 0.4, 0.0))));
-	float plume = (1.0 - smoothstep(plume_r * 0.55, plume_r, hd))
-	            * smoothstep(-0.3, 0.2, hh) * (1.0 - smoothstep(1.5, 4.5, hh)) * sees;
+	float plume = (1.0 - smoothstep(plume_r * 0.62, plume_r, hd))
+	            * smoothstep(-0.3, 0.1, hh) * (1.0 - smoothstep(2.5, 5.5, hh)) * sees;
 	float skirt = (1.0 - smoothstep(0.5, 1.0, length(hv))) * mix(0.6, 1.0, sees);
 	float soot = clamp(max(plume, skirt * 0.8), 0.0, 1.0) * hearth_soot.w;
 	soot *= mix(0.75, 1.0, fbm(wp * 5.5 + 9.0));
