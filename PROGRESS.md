@@ -33,6 +33,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-17 14:00 UTC (ran in parallel with the 13:00 one, same bug):
+  - Reached the same diagnosis independently and dropped its own shader change for the
+    13:00 fix already pushed. Extra evidence: `nogi` (SSAO/SSIL off; SDFGI is already
+    auto-off on lavapipe) left the hearth white too, and a census of every Light3D showed
+    nothing lighting it at noon (FireLight/FireBounce off, seal ember 0.015, both face fills
+    on mask 1 only). Content hours stay 1.43.
+  - shot.gd: new `lights` flag prints every Light3D (visible, energy, colour, range,
+    distance to the hearth, cull mask) and the ambient, for the next "what lights this?" hunt.
+  - Tried a floor-level `hearth` lens ~70 deg round the keep from the fire to get the plinth
+    out of frame: the camera sits in the ivy and the plinth is still in it -- reverted; a
+    better lens is probably beside the bed looking past the fire at the inner face.
+  - Bots hearth, ruin, keeper PASS.
 - Session 2026-10-17 13:00 UTC:
   - **The cold hearth no longer glows cream at noon (item 00000, solved).** Content hours
     left at 1.43: a visual bug fix, no new content.

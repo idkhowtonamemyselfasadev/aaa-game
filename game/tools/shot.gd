@@ -891,6 +891,14 @@ func _ready() -> void:
 	print("SHOT wade splashes %d" % we.wade_splashes)
 	if "dripdbg" in args:
 		print("SHOT drips aabb %s cam %s land %s" % [we._drips.capture_aabb(), get_viewport().get_camera_3d().global_position, we._drip_land.slice(0, 3)])
+	if "lights" in args or "nolights" in args:
+		# light census round the hearth: which lights reach it at this hour
+		var hp: Vector3 = world.hearth.global_position if world.get("hearth") else Vector3.ZERO
+		for l in get_tree().root.find_children("*", "Light3D", true, false):
+			var lt := l as Light3D
+			var rng := (lt as OmniLight3D).omni_range if lt is OmniLight3D else -1.0
+			print("SHOT light %s vis %s e %.3f col %s range %.2f d %.2f mask %d" % [lt.get_path(), lt.is_visible_in_tree(), lt.light_energy, lt.light_color, rng, lt.global_position.distance_to(hp), lt.light_cull_mask])
+		print("SHOT amb %s x %.3f" % [world.env.environment.ambient_light_color, world.env.environment.ambient_light_energy])
 	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s canopy %.2f drips %d" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color, we.canopy_water, we.canopy_drips])
 	get_tree().quit(0 if err == OK else 1)
 
