@@ -36,6 +36,9 @@ var day := 0.0
 var startled_total := 0      # bots read this: fireflies the hero has scattered
 var swarm_flees := 0         # bots read this: swarms that drifted off from the hero
 var butterflies: Butterflies   # the day layer that settles and flies (butterflies.gd)
+var _keep := Vector3.INF     # the ruined keep's centre (Flora.ruin_site): fireflies keep out
+const KEEP_OUT := 5.0        # m: the keep floor (3.6) and its walls; no fireflies in there
+
 
 class Fly:
 	var pos := Vector3.ZERO
@@ -170,6 +173,10 @@ func _process(delta: float) -> void:
 	var threat := player.global_position if player else anchor
 	var tvel := Vector3.ZERO if _threat_prev == Vector3.INF or delta <= 0.0 else (threat - _threat_prev) / delta
 	_threat_prev = threat
+	if _keep == Vector3.INF:
+		var flora := _world.get_node_or_null("Flora")
+		if flora and flora.get("ruin_site") != null:
+			_keep = flora.ruin_site
 	# first frame or a teleport (respawn, fast travel, cutscene cut): refill the bubble
 	if _anchor == Vector3.INF or _anchor.distance_to(anchor) > firefly_radius:
 		_anchor = anchor
@@ -179,7 +186,7 @@ func _process(delta: float) -> void:
 	var sun: Node3D = _world.get_node_or_null("Sun")
 	if sun:
 		_sun_dir = sun.global_transform.basis.z.normalized()   # toward the sun
-	_update_fireflies(delta, anchor, threat, tvel)
+	_update_fireflies(delta, anchor, threat, tvel, cam.global_position if cam else Vector3.INF)
 	_update_midges(delta, anchor, threat, cam.global_position if cam else Vector3.INF)
 
 func _spawn_fly(f: Fly, anchor: Vector3, r: float, toward := Vector3.ZERO) -> void:
@@ -194,6 +201,9 @@ func _spawn_fly(f: Fly, anchor: Vector3, r: float, toward := Vector3.ZERO) -> vo
 			continue
 		if _terrain.normal_at(p.x, p.z).y < 0.86 and tries < 5:
 			continue
+		# they live over the open grass, not inside the walled keep
+		if _in_keep(p, 0.5):
+			continue
 		f.ground = _terrain.height_at(p.x, p.z)
 		f.height = _height_pick()
 		f.pos = Vector3(p.x, f.ground + f.height, p.z)
@@ -201,7 +211,10 @@ func _spawn_fly(f: Fly, anchor: Vector3, r: float, toward := Vector3.ZERO) -> vo
 		f.startle = 0.0
 		return
 
-func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vector3) -> void:
+func _in_keep(p: Vector3, margin: float) -> bool:
+	return _keep != Vector3.INF and Vector2(p.x - _keep.x, p.z - _keep.z).length() < KEEP_OUT + margin
+
+func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vector3, cam_pos := Vector3.INF) -> void:
 	var tspeed := Vector2(tvel.x, tvel.z).length()
 	var scare_r := scare_radius + minf(tspeed, 8.0) * 0.25
 	var lit: Array = []
@@ -235,6 +248,12 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 			f.startle -= delta
 			if f.startle > 0.0 and d >= scare_r:
 				want = f.vel     # keep coasting on the escape
+		# one that wanders up to the keep walls turns back out over the grass
+		if _in_keep(f.pos, 0.0):
+			var out := Vector3(f.pos.x - _keep.x, 0.0, f.pos.z - _keep.z)
+			out = out.normalized() if out.length() > 0.05 else Vector3.RIGHT
+			want = out * 0.6 + Vector3(0, want.y, 0)
+			f.heading = atan2(out.z, out.x)
 		f.vel = f.vel.lerp(want, clampf(delta * (3.0 if f.startle > 0.0 else 1.2), 0.0, 1.0))
 		f.pos += f.vel * delta
 		f.pos.y = maxf(f.pos.y, f.ground + 0.15)
@@ -244,6 +263,9 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 		if f.startle > 0.0:
 			pulse = maxf(pulse, 0.65 + 0.35 * sin(_t * 23.0 + f.phase * 7.0))
 		f.glow = (pulse * 0.94 + 0.06) * on
+		# never a big lime blob on the lens: dim the ones drifting through the near plane
+		var dc := f.pos.distance_to(cam_pos) if cam_pos != Vector3.INF else 99.0
+		f.glow *= smoothstep(0.5, 1.6, dc)
 		_ff_mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, f.pos))
 		_ff_mm.set_instance_custom_data(i, Color(f.glow, 0.07, 0.0, 0.0))
 		if f.glow > 0.35 and f.pos.distance_squared_to(anchor) < 400.0:

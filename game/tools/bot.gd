@@ -1803,6 +1803,21 @@ func _insects_test() -> void:
 		return _combat_done(false, "fireflies did not scatter from the running hero")
 	if far > ins.firefly_radius + 6.0:
 		return _combat_done(false, "fireflies did not stream with the camera")
+	# the walled keep: none drift in there to sit on the lens by Hesper's fire
+	var ks: Vector3 = _world.get_node("Flora").ruin_site
+	p.global_position = Vector3(ks.x + 2.0, terrain.height_at(ks.x + 2.0, ks.z) + 0.2, ks.z)
+	await _ticks(240)
+	var in_keep := 0
+	var near_keep := 0
+	for f in ins.firefly_positions():
+		var dk := Vector2(f.x - ks.x, f.z - ks.z).length()
+		if dk < Insects.KEEP_OUT - 0.3:
+			in_keep += 1
+		elif dk < Insects.KEEP_OUT + 12.0:
+			near_keep += 1
+	print("BOT insects keep: %d fireflies inside the keep walls, %d in the grass round it" % [in_keep, near_keep])
+	if in_keep > 0 or near_keep < 5:
+		return _combat_done(false, "fireflies inside the keep, or none round it")
 	_world.time_of_day = 7.0
 	await _ticks(30)
 	print("BOT insects dawn: lit %d" % ins.visible_fireflies())

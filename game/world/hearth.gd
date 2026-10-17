@@ -724,7 +724,9 @@ func _apply(f: float, delta: float) -> void:
 	smoke.gravity = Vector3(0.8, 0, 0.6) * (0.15 + 0.6 * wind) + Vector3(0, 0.15, 0)
 	# light: a flicker of a few octaves, embers alone give a dim red glow
 	var fl := 0.82 + 0.18 * _flick.get_noise_1d(_t * 9.0) + 0.06 * _flick.get_noise_1d(_t * 31.0 + 100.0)
-	light.light_energy = (1.35 * flame + 0.2 * clampf(f * 3.0, 0.0, 1.0)) * fl
+	# the ember floor holds up as the flames die: a low fire at 1 am still lights the inner
+	# face and her bed, not a metre of floor (barely changed at full blaze)
+	light.light_energy = (1.35 * flame + 0.9 * clampf(f * 3.0, 0.0, 1.0) * (1.0 - 0.75 * flame)) * fl
 	# a wood fire (~1900 K) is orange-amber, not a saturated orange gel: the walls read
 	# warm stone instead of painted orange
 	light.light_color = Color(1.0, 0.6, 0.32).lerp(Color(1.0, 0.36, 0.12), 1.0 - flame)
