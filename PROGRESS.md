@@ -47,6 +47,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     flint sounds for 5 strikes and one catch sound. Bots hearth, keeper, talk PASS.
   - shot.gd: the `kindle` arg now frames side-on to her and the fire from the lid side of the
     floor (mid + side * 2.1 m, 1.35 m up), per the 00:00 finding.
+  - Shot `hearth kindle2 60 19.6 kindle` (Forward+/lavapipe, ~13 min) FAIL: the flame lights
+    the ivied inner wall warmly and the basket is gone from her back, but the side-on lens
+    looks across the wall-foot rubble: big dark spall slabs fill the lower half, and she is
+    a dark shape right of the fire with only her hood edge lit. Next: clear the spalls within
+    ~1 m of the hearth and her kneel spot in ruins.gd (both sides), then a warm fill on her
+    front (or lower the fire light so it reaches her) and re-shoot.
 - Session 2026-10-17 00:00 UTC (second, overlapping run): built a parallel dusk lighting
   (`kindle` 19:15-20:00, no flint) and dropped it at rebase in favour of the build above.
   Findings to carry over: (1) a `kindle` lens side-on to the her-to-fire line, from the
