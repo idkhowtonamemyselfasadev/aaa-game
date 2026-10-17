@@ -43,7 +43,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     (0.036/0.029/0.022 .. 0.085/0.07/0.054) like the ash, against the lavender cast at noon.
   - shot.gd: the hearth print now reports `Hearth.level_for(hour)` instead of the not-yet
     updated `level`.
-  - Bots hearth, keeper, ruin PASS. Shots `hearth char12` / `hearth low1`: see below.
+  - Bots hearth, keeper, ruin PASS.
+  - Shot `hearth char12` (noon): logs read dark sooted warm-black, no lavender; the frame
+    still fails -- lens low in the wall-foot rubble, keep murky. Shot `hearth low1` (1 h,
+    level 0.45): a low fire on the embers as wanted; its light now barely reaches the wall
+    (raise the low-fire bounce/light floor a little), and a firefly sits near the lens as a
+    big lime blob (keep fireflies out of the keep or off the near plane).
+  - The first shot run was killed by the tool's background limit after one shot; render
+    shots one per call. No PIL on the box: gallery JPEGs via ImageMagick `convert`.
 - Session 2026-10-17 15:00 UTC:
   - **Hearth checked at dusk and at night after the 13:00 fill fix: both hold.** Content
     hours stay 1.43 (a look pass, no new content).
@@ -3040,7 +3047,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 00000. HEARTH follow-ups (noon bleach fixed 13:00 10-17; dusk + night checked and ash
    warmed 15:00 10-17. Char warmed + low fire by 1 am + level print done 16:00 10-17. FIRST next:
-   check `hearth low1` / `char12` shots if the 16:00 session could not; then her doze
+   raise the low-fire light floor so the 1 am fire lights the inner face, keep fireflies out
+   of the keep (lime blob at the lens in `low1`), move the hearth lens up onto the plinth step; then her doze
    facing the fire with hands out to it, and a fox at the edge of the firelight. Soot plume widened 11:00 10-17; cookfire landed 22:00 10-16, `world/hearth.gd`; lighting moment
    + lens on the lid done 00:00 10-17; flint click + catch whump + basket set down done
    01:00 10-17; next: a hand-held strike pose instead of the pick reach (both hands

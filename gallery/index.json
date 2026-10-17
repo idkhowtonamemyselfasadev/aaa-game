@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-1157-ruin.jpg",
-  "time": "2026-10-12T11:57:37Z",
-  "caption": "16 h: the watchtower knoll is in sun now that the mountain ring no longer shadows the vale; the keep's courses are still brick-regular same-size blocks.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1231-ferns.jpg",
   "time": "2026-10-12T12:31:57Z",
   "caption": "Fern drift under the oaks at 13 h: shuttlecock ferns with arching pinnate fronds now fill the grove floor and the meadow grass thins under the crowns; the woodland shade is still near black and the ferns lack fine silhouette detail up close.",
@@ -885,6 +879,18 @@
   "file": "20261017-1500-hearth-night.jpg",
   "time": "2026-10-17T15:45:00Z",
   "caption": "1 am: Hesper dozes beside her fire under moonlit lavender walls; the fire should have burned down low by now and its light reaches only a metre or two of the floor.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1600-hearth-noon.jpg",
+  "time": "2026-10-17T16:38:00Z",
+  "caption": "Noon in the keep: the cold fire ring's charred logs now read sooted warm-black instead of lavender, but the lens sits low in the wall-foot rubble and the shaded keep reads murky and flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261017-1600-hearth-low.jpg",
+  "time": "2026-10-17T17:20:00Z",
+  "caption": "1 am: Hesper's fire has burned down to a low flame on the embers while she dozes, but its light hardly reaches the walls and a big lime firefly blob floats near the lens.",
   "verdict": "fail"
  }
 ]
