@@ -560,6 +560,9 @@ func _sweep_hearth() -> void:
 	lens.y = hp.y
 	# out toward the lid, and from her kneel spot out under the `kindle` lens on her face side
 	_swept = [[hp, hp, 1.05], [kn, kn, 0.8], [mid, mid + side * 2.7, 0.75], [kn, lens, 0.8]]
+	# the fox's seat by the breach and the floor out to where Hesper's crust lands
+	var fs := Fox.seat_sweep(site)
+	_swept.append([fs[0], fs[1], 0.65])
 
 func _is_swept(p: Vector3) -> bool:
 	for c in _swept:

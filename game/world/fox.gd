@@ -68,9 +68,7 @@ func setup(w: Node3D) -> void:
 	w.add_child(self)
 	var site := keeper.site
 	var tv := keeper.to_v
-	# just in through the breach on the keep floor, at the edge of the light, looking across
-	# at the fire (out in the breach itself it sat hidden among the rubble slabs)
-	sit_at = _ground(site + tv * 2.8)
+	sit_at = _ground(seat_of(site))
 	# its lying-up place out in the long grass, off to one side of the keep's gateway
 	den = _ground(site + tv.rotated(Vector3.UP, 1.25) * 34.0)
 	var mat := ShaderMaterial.new()
@@ -82,6 +80,22 @@ func setup(w: Node3D) -> void:
 	add_child(_mi)
 	global_position = den
 	visible = false
+
+## Its seat: just in from the breach on the keep floor, at the edge of the light, swung off
+## the breach line away from Hesper's way in to the lid so it sits on open floor (in the
+## breach mouth at 2.8 m its legs and the crust hid behind the rubble slabs). Ruins sweeps
+## the floor clear round it and out to where the crust lands (`seat_sweep`).
+static func seat_of(site: Vector3) -> Vector3:
+	var tv := Vector3(-site.x, 0, -site.z).normalized()
+	return site + tv.rotated(Vector3.UP, 0.42) * 2.3
+
+## [seat, crust] for Ruins' sweep: the crust lands ~0.7 m toward the fire, it stands a
+## snout's length back from it to eat.
+static func seat_sweep(site: Vector3) -> Array[Vector3]:
+	var s := seat_of(site)
+	var hp: Vector3 = Keeper.hearth_layout(site)[0]
+	var f := Vector3(hp.x - s.x, 0, hp.z - s.z).normalized()
+	return [s, s + f * 0.8]
 
 func _ground(p: Vector3) -> Vector3:
 	return Vector3(p.x, terrain.height_at(p.x, p.z), p.z)
