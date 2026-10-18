@@ -235,6 +235,32 @@ func _ready() -> void:
 		var pp := ct.door_gap + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT stonehouse at %s, %d stones %d slates" % [ct.global_position, ct.stone_count, ct.slate_count])
+	if spot == "hens":
+		# low in the garth, ~2 m off the nearest hen with the flock and the cottage's back
+		# wall beyond ("wide": from the yard's far corner, the whole flock and the house)
+		var hn: Hens = world.hens
+		var ct: StoneCottage = world.stone_cottage
+		for i in 120:
+			hn._process(1.0 / 30.0)
+		var hp := hn.at(0)
+		var mid := ct.to_global(Vector3(0, 0, -5.5))
+		var cp: Vector3
+		if "wide" in args:
+			cp = ct.to_global(Vector3(2.2, 0, -9.2))
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.25
+			SPOTS[spot] = [cp, mid + Vector3.UP * 0.4]
+		else:
+			var away := (hp - ct.to_global(Vector3(0, 0, -3.0)))
+			away.y = 0
+			away = away.normalized()
+			cp = hp + away * 1.9 + ct.global_basis.x * 0.5
+			var cl := Hens.clamp_yard(Vector2(ct.to_local(cp).x, ct.to_local(cp).z))
+			cp = ct.to_global(Vector3(cl.x, 0, cl.y))
+			cp.y = terrain.height_at(cp.x, cp.z) + 0.75
+			SPOTS[spot] = [cp, hp + Vector3.UP * 0.25]
+		var pp := ct.door_gap + ct.global_basis.z * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT hens: hen 0 at %s state %d, cam %s" % [hp, hn.hens[0].state, cp])
 	if spot == "drywall" or spot == "yardwall":
 		# the garth wall behind the stone cottage: from outside the east side, at the
 		# gateway with the wall running back and the house beyond ("back": from beyond the
@@ -752,7 +778,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

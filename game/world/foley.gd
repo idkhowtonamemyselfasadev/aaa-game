@@ -50,6 +50,8 @@ func _ready() -> void:
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
+	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
+	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
 	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
@@ -126,6 +128,13 @@ func hook_fox(f: Node) -> void:
 		_play_wild("fox_yelp" if alarm else "fox_bark", at, -3.0 if alarm else -1.0, 16.0, true))
 	if f.has_signal("crunched"):
 		f.crunched.connect(func(at: Vector3) -> void: _play_wild("crunch", at, -14.0, 1.5, false))
+
+## The hens in the garth: soft clucks as they work the yard, a squawk when one is put to flight.
+func hook_hens(h: Node) -> void:
+	if h == null or not h.has_signal("clucked"):
+		return
+	h.clucked.connect(func(at: Vector3) -> void: _play_wild("cluck", at, -13.0, 2.5, false))
+	h.squawked.connect(func(at: Vector3) -> void: _play_wild("squawk", at, -5.0, 6.0, true))
 
 ## The garth's field gate: a dry creak of iron eyes turning on the crooks, a knock as it shuts.
 func hook_gate(g: Node) -> void:
@@ -285,6 +294,47 @@ func _make_fox_bark(pt: float, count: int) -> AudioStreamWAV:
 		for i in y.size():
 			if at + i < out.size():
 				out[at + i] += y[i] * (1.0 - 0.1 * c)
+	return _wav(out)
+
+## A hen's cluck to herself: `count` short, low, throaty "buk"s close together, each a
+## quick drop in pitch through a small dark tract, the last a touch longer and rising.
+func _make_cluck(pt: float, count: int) -> AudioStreamWAV:
+	var gap := 0.13
+	var out := PackedFloat32Array()
+	out.resize(int((gap * count + 0.25) * RATE))
+	for c in count:
+		var last := c == count - 1 and count > 1
+		var d := 0.15 if last else 0.075
+		var y := _voice(d,
+			func(k: float) -> float: return pt * ((300.0 + 90.0 * k) if last else (360.0 - 110.0 * k)),
+			func(k: float) -> float: return smoothstep(0.0, 0.12, k) * exp(-maxf(k - 0.35, 0.0) * 6.0),
+			[[780.0 * pt, 3.5, 1.0], [1500.0 * pt, 4.5, 0.45], [2700.0 * pt, 6.0, 0.12]], 0.3, 0.35)
+		var at := int((c * gap + _rng.randf_range(0.0, 0.025)) * RATE)
+		for i in y.size():
+			if at + i < out.size():
+				out[at + i] += y[i] * (0.8 if last else 1.0)
+	return _wav(out)
+
+## A hen's alarm as she runs: two clipped "buk"s and a loud, ragged, rising "BAAWK".
+func _make_squawk(pt: float) -> AudioStreamWAV:
+	var out := PackedFloat32Array()
+	out.resize(int(0.9 * RATE))
+	for c in 2:
+		var y := _voice(0.06,
+			func(k: float) -> float: return pt * (520.0 - 120.0 * k),
+			func(k: float) -> float: return smoothstep(0.0, 0.15, k) * exp(-maxf(k - 0.3, 0.0) * 6.0),
+			[[1000.0 * pt, 4.0, 1.0], [2000.0 * pt, 5.0, 0.5]], 0.4, 0.5)
+		var at := int(c * 0.09 * RATE)
+		for i in y.size():
+			out[at + i] += y[i] * 0.7
+	var z := _voice(0.48,
+		func(k: float) -> float: return pt * (560.0 + 260.0 * sin(PI * minf(k * 1.4, 1.0)) - 80.0 * k),
+		func(k: float) -> float: return smoothstep(0.0, 0.06, k) * exp(-maxf(k - 0.45, 0.0) * 4.0),
+		[[1250.0 * pt, 3.5, 1.0], [2500.0 * pt, 4.5, 0.6], [3600.0 * pt, 6.0, 0.25]], 0.55, 0.75)
+	var at0 := int(0.2 * RATE)
+	for i in z.size():
+		if at0 + i < out.size():
+			out[at0 + i] += z[i]
 	return _wav(out)
 
 ## A bite through a dry crust in a fox's jaws: a crisp snap, then a short dry crackle of

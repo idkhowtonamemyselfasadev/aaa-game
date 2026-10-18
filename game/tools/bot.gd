@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall", "hens"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -115,6 +115,9 @@ func _ready() -> void:
 		return
 	if name == "yardwall":
 		_yardwall_test()
+		return
+	if name == "hens":
+		_hens_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2845,6 +2848,104 @@ func _drywall_test() -> void:
 	_combat_done(true, "the yard wall stands clear of trees and the timber house, the field gate swings away from you and falls shut with a creak and a knock, the wall holds")
 ## Yard walls: built of enough stones, clear of both houses' doors, trees and rocks; the
 ## hero runs at a wall and is stopped by it, then walks out through the cart gateway.
+## Hens: five birds in the garth that potter, scratch, peck and cluck by day, run squawking
+## from a hero walking up on them without leaving the yard, stand out heavy rain under the
+## back eaves and settle along the back wall at dusk.
+func _hens_test() -> void:
+	var hn: Hens = _world.hens
+	var c: StoneCottage = _world.stone_cottage
+	var tr: Terrain = _world.get_node("Terrain")
+	var foley: Foley = _world.foley
+	_world.weather.force(0.0)
+	_world.time_of_day = 10.0
+	var far := c.to_global(Vector3(0, 0, 25.0))
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.3, far.z)
+	await _ticks(10)
+	print("BOT hens: %d birds" % hn.hens.size())
+	if hn.hens.size() < 5:
+		return _combat_done(false, "no hens in the garth")
+	for h: Dictionary in hn.hens:
+		if not Hens.inside_yard(h.pos):
+			return _combat_done(false, "a hen starts outside the garth at %s" % h.pos)
+	# a day's pottering: ~40 s of game time
+	await _ticks(600)
+	print("BOT hens day: walked %.1f m, %d pecks, %d scratches, %d clucks (heard %d), flees %d" % [hn.walked, hn.pecks, hn.scratches, hn.clucks, foley.played.get("cluck", 0), hn.flees])
+	if hn.walked < 3.0 or hn.pecks < 5 or hn.scratches < 2 or hn.clucks < 3 or foley.played.get("cluck", 0) < 1:
+		return _combat_done(false, "the hens are not working the yard")
+	if hn.flees > 0:
+		return _combat_done(false, "a hen fled with nobody near")
+	# walk up on the nearest from 4 m away: it runs, squawking, and stays in the garth
+	var h0: Dictionary = hn.hens[0]
+	var hp := hn.at(0)
+	var from := hp + (c.to_global(Vector3(0, 0, -6.8)) - hp).normalized() * -0.0 + c.global_basis.x * 4.0
+	var fl := Hens.clamp_yard(Vector2(c.to_local(from).x, c.to_local(from).z))
+	from = c.to_global(Vector3(fl.x, 0, fl.y))
+	_player.global_position = Vector3(from.x, tr.height_at(from.x, from.z) + 0.3, from.z)
+	await _ticks(20)
+	var f0 := hn.flees
+	var t := 0.0
+	while hn.flees == f0 and t < 8.0:
+		hp = hn.at(0)
+		var d := Vector2(hp.x - _player.global_position.x, hp.z - _player.global_position.z)
+		_player.bot_input = d.normalized()
+		await _ticks(6)
+		t += 0.1
+	_player.bot_input = Vector2.ZERO
+	var close := Vector2(hn.at(0).x - _player.global_position.x, hn.at(0).z - _player.global_position.z).length()
+	print("BOT hens: walked up, %d flights after %.1f s (hero %.1f m off), squawks heard %d" % [hn.flees - f0, t, close, foley.played.get("squawk", 0)])
+	if hn.flees == f0 or foley.played.get("squawk", 0) < 1:
+		return _combat_done(false, "the hens let the hero walk right up")
+	var mx := 0.0
+	for i in 60:
+		await _ticks(3)
+		for h: Dictionary in hn.hens:
+			mx = maxf(mx, h.speed)
+			if not Hens.inside_yard(h.pos):
+				return _combat_done(false, "a hen ran out of the garth at %s" % h.pos)
+	print("BOT hens: fastest run %.1f m/s, all still inside the garth" % mx)
+	if mx < 1.5:
+		return _combat_done(false, "the fleeing hen never ran")
+	# heavy rain: in under the back eaves
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.3, far.z)
+	_world.weather.force(1.0)
+	await _ticks(500)
+	var sheltered := 0
+	for h: Dictionary in hn.hens:
+		if h.state == Hens.SHELTER and (h.pos as Vector2).y > Hens.EAVES_Z - 0.4:
+			sheltered += 1
+	print("BOT hens rain: %d under the eaves (rain %.2f)" % [sheltered, _world.weather.rain])
+	if sheltered < 4:
+		return _combat_done(false, "the hens stood out in the rain")
+	_world.weather.force(0.0)
+	await _ticks(200)
+	var out := 0
+	for h: Dictionary in hn.hens:
+		if h.state != Hens.SHELTER and h.state != Hens.ROOST:
+			out += 1
+	print("BOT hens after rain: %d back out" % out)
+	if out < 4:
+		return _combat_done(false, "the hens stayed in after the rain")
+	# dusk: up to the back wall and settled
+	_world.time_of_day = 19.8
+	await _ticks(500)
+	var roosting := 0
+	for h: Dictionary in hn.hens:
+		if h.state == Hens.ROOST and h.sit > 0.9:
+			roosting += 1
+	print("BOT hens night: %d settled at the back wall" % roosting)
+	if roosting < 5:
+		return _combat_done(false, "the hens did not go to roost at dusk")
+	_world.time_of_day = 7.0
+	await _ticks(200)
+	var up := 0
+	for h: Dictionary in hn.hens:
+		if h.state != Hens.ROOST and h.sit < 0.5:
+			up += 1
+	print("BOT hens morning: %d up" % up)
+	if up < 5:
+		return _combat_done(false, "the hens never got up in the morning")
+	_combat_done(true, "hens potter, scratch, peck and cluck, flee squawking inside the garth, shelter from rain, roost at dusk")
+
 func _yardwall_test() -> void:
 	var p := _player
 	var w: YardWall = _world.yard_wall

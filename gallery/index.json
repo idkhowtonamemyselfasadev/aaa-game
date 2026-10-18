@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261013-0943-oaks-leaves.jpg",
-  "time": "2026-10-13T09:43:00Z",
-  "caption": "The oak crowns now carry thousands of small lobed oak leaves in sprays, each catching the sun at its own angle, with a darker inner crown; the crowns are a little thin and see-through and the bare ground under them still reads flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0943-vale-oaks.jpg",
-  "time": "2026-10-13T09:43:00Z",
-  "caption": "Afternoon over the vale: the scattered oaks now read as real leafy trees at range; the far mountain ring is still washed-out and cardboard-like in the haze.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-1048-grove-moss.jpg",
-  "time": "2026-10-13T10:48:00Z",
-  "caption": "Oak grove at 13 h: the boles now stand in ragged collars of green moss, wider on the shaded side; the floor between them is still flat red-brown soil and the moss reads a touch too saturated.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-1202-boulder.jpg",
-  "time": "2026-10-13T12:02:31Z",
-  "caption": "A boulder in the meadow with moss creeping up its lower flank from the damp collar at its foot; the crack/lichen pattern on top is too contrasty and it sits alone instead of in an outcrop.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-1202-grove.jpg",
   "time": "2026-10-13T12:02:31Z",
   "caption": "Oak grove at 13 h with moss collars at the boles; the moss climbing the shaded side of the trunks faces away from this camera and the grove floor is still flat red-brown soil.",
@@ -897,6 +873,18 @@
   "file": "20261018-1330-gate-grey.jpg",
   "time": "2026-10-18T13:30:00Z",
   "caption": "The field gate between its moss-capped stoops at noon, the garth wall now grey rather than cream; still wrong: the wall stones read as pale pillowed rectangles in brick-like rows, the cope tops carry flat lime moss and the cottage stones beside it are still cream.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1456-hens-garth.jpg",
+  "time": "2026-10-18T14:56:43Z",
+  "caption": "Three of the garth's five hens (brown, buff, cuckoo) pottering on the scratched-short turf behind the stone cottage at 11:00; still wrong: the bare ground reads as dark straw streaks rather than dusty scratched earth, and the plumage is smooth with little feather breakup.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1456-hens-meadow.jpg",
+  "time": "2026-10-18T14:56:43Z",
+  "caption": "The same hens before the garth was scratched short: lost in knee-high meadow grass, which is why the yard now grows only a patchy short sward.",
   "verdict": "fail"
  }
 ]

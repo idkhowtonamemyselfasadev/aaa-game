@@ -187,9 +187,13 @@ func _step_sward() -> void:
 		var site := _site(x, z, rng, flora)
 		if site.x < 0.0:
 			continue
+		# the hens' garth: scratched short and patchy, bare earth between
+		var hen := Hens.scratched(x, z)
+		if hen > 0.0 and rng.randf() < hen * 0.6:
+			continue
 		var y := _terrain.height_at(x, z)
 		var nrm := _terrain.normal_at(x, z)
-		var s := lerpf(0.7, 1.25, rng.randf()) * (0.6 if site.z < 3.1 else 1.0) * lerpf(1.0, 0.7, site.y)
+		var s := lerpf(0.7, 1.25, rng.randf()) * (0.6 if site.z < 3.1 else 1.0) * lerpf(1.0, 0.7, site.y) * lerpf(1.0, 0.55, hen)
 		var crop := _crop_at(x, z)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		basis = Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.3).normalized())) * basis
@@ -254,7 +258,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 			have_prev = false
 			continue
 		var site := _site(x, z, rng, flora)
-		if site.x < 0.0:
+		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05:
 			have_prev = false
 			continue
 		px = x

@@ -31,6 +31,7 @@ var yard_wall: YardWall
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
+var hens: Hens
 var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
@@ -139,6 +140,9 @@ func _ready() -> void:
 	# a fox that comes in out of the dark to sit at the edge of her firelight
 	fox = Fox.new()
 	fox.setup(self)
+	# hens keeping the garth behind the stone cottage
+	hens = Hens.new()
+	hens.setup(self)
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"
@@ -171,6 +175,7 @@ func _ready() -> void:
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_gate(dry_wall.field_gate)
+	foley.hook_hens(hens)
 
 func _build_environment() -> void:
 	var e := Environment.new()
