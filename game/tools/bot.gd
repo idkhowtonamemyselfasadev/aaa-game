@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -109,6 +109,9 @@ func _ready() -> void:
 		return
 	if name == "stonehouse":
 		_stonehouse_test()
+		return
+	if name == "drywall":
+		_drywall_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2746,6 +2749,61 @@ func _stonehouse_test() -> void:
 	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
 		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
 	_combat_done(true, "walked up the step and in at the door, the walls hold, windows light at dusk")
+
+func _drywall_test() -> void:
+	var p := _player
+	var w: DryWall = _world.dry_wall
+	var c: StoneCottage = _world.stone_cottage
+	print("BOT drywall: %d stones (%d cope, %d through), %d colliders, gate %s" % [w.stone_count, w.cope_count, w.through_count, w.get_node("DryWallCollision").get_child_count(), w.gate])
+	if w.stone_count < 700 or w.cope_count < 100 or w.through_count < 15:
+		return _combat_done(false, "garth wall not built")
+	var flora: Flora = _world.get_node("Flora")
+	var near := 99.0
+	for q in flora.tree_positions + flora.rock_positions:
+		for o in w.outline(0.5):
+			near = minf(near, Vector2(q.x - o.x, q.z - o.z).length())
+	print("BOT drywall: nearest tree/rock to the wall %.1f m" % near)
+	if near < 1.2:
+		return _combat_done(false, "a tree or rock stands in the garth wall")
+	for o in w.outline(0.5):
+		if Cottage.inside(o.x, o.z, 0.5):
+			return _combat_done(false, "the garth wall runs into the timber house")
+	# walk round the east gable, through the gateway, into the middle of the yard
+	var terrain: Terrain = _world.get_node("Terrain")
+	var yard := c.to_global(Vector3(-0.3, 0, -6.8))
+	var out := (w.gate - c.to_global(Vector3(0, 0, -6.7)))
+	out.y = 0
+	out = out.normalized()
+	var start := w.gate + out * 5.0 + c.global_basis.z * 2.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	for wp in [w.gate + out * 2.0, w.gate, w.gate - out * 1.5, yard]:
+		var t := 0.0
+		while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.z).length() > 0.6 and t < 15.0:
+			var d := Vector2(wp.x - p.global_position.x, wp.z - p.global_position.z).normalized()
+			p.bot_input = d
+			await _ticks(6)
+			t += 0.1
+		print("BOT drywall reached %s in %.1f s, at %s" % [wp, t, p.global_position])
+		if t >= 15.0:
+			p.bot_input = Vector2.ZERO
+			return _combat_done(false, "could not walk through the gateway into the yard (stuck at %s)" % p.global_position)
+	# run at the back of the yard: the wall must hold
+	var back := -c.global_basis.z
+	var t2 := 0.0
+	var far := 0.0
+	while t2 < 4.0:
+		p.bot_input = Vector2(back.x, back.z)
+		p.bot_sprint = true
+		await _ticks(6)
+		t2 += 0.1
+		far = maxf(far, c.to_local(p.global_position).z * -1.0)
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	print("BOT drywall: ran at the back wall, got %.2f m behind the house centre (wall at ~10.4)" % far)
+	if far > 10.4:
+		return _combat_done(false, "ran through the garth wall")
+	_combat_done(true, "the yard wall stands clear of trees and the timber house, the gateway lets you in, the wall holds")
 
 func _ruin_test() -> void:
 	var p := _player

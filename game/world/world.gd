@@ -26,6 +26,7 @@ var trample: Trample
 var herd: Herd
 var cottage: Cottage
 var stone_cottage: StoneCottage
+var dry_wall: DryWall
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
@@ -105,6 +106,12 @@ func _ready() -> void:
 	stone_cottage.position = Vector3(sc.x, terrain.height_at(sc.x, sc.y), sc.y)
 	stone_cottage.rotation.y = StoneCottage.yaw()
 	add_child(stone_cottage)
+	# the dry-stone garth wall round the yard behind it, a gateway on the east side
+	dry_wall = DryWall.new()
+	dry_wall.name = "DryWall"
+	dry_wall.ruins_path = NodePath("../Ruins")
+	dry_wall.terrain_path = NodePath("../Terrain")
+	add_child(dry_wall)
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"

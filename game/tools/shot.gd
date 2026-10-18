@@ -235,6 +235,28 @@ func _ready() -> void:
 		var pp := ct.door_gap + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT stonehouse at %s, %d stones %d slates" % [ct.global_position, ct.stone_count, ct.slate_count])
+	if spot == "drywall":
+		# the garth wall behind the stone cottage: from outside the east side, at the
+		# gateway with the wall running back and the house beyond ("back": from beyond the
+		# back corner, along the back run toward the gable and its chimney)
+		var dw: DryWall = world.dry_wall
+		var ct: StoneCottage = world.stone_cottage
+		var bz := ct.global_basis.z
+		var bx := ct.global_basis.x
+		var g := dw.gate
+		if "back" in args:
+			var cn := ct.to_global(Vector3(7.5, 0, -14.5))
+			cn.y = terrain.height_at(cn.x, cn.z) + 1.7
+			var lk := ct.to_global(Vector3(-3.0, 0, -6.0))
+			lk.y = terrain.height_at(lk.x, lk.z) + 1.4
+			SPOTS[spot] = [cn, lk]
+		else:
+			var cp := g + bx * 5.5 + bz * 3.0
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.65
+			SPOTS[spot] = [cp, g - bz * 2.2 + Vector3.UP * 0.9]
+		var pp := ct.door_gap + bz * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT drywall gate %s, %d stones" % [g, dw.stone_count])
 	if spot == "ruin" or spot == "ruinin":
 		# the watchtower ruin on its knoll: "ruin" from the approach below the breach,
 		# "ruinin" standing in the breach looking across the floor at the inner face
@@ -718,7 +740,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

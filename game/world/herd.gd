@@ -92,6 +92,9 @@ func _ready() -> void:
 	var ct: StoneCottage = get_node_or_null("../StoneCottage")
 	if ct:
 		_obstacles.append_array(ct.outline(2.4))
+	var dw: DryWall = get_node_or_null("../DryWall")
+	if dw:
+		_obstacles.append_array(dw.outline(2.0))
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/deer.gdshader")
