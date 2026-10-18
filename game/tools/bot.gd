@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -104,9 +104,11 @@ func _ready() -> void:
 		return
 	if name == "ruin":
 		_ruin_test()
-		return
 	if name == "cottage":
 		_cottage_test()
+		return
+	if name == "stonehouse":
+		_stonehouse_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2683,6 +2685,67 @@ func _trample_test() -> void:
 		return _combat_done(false, "the soldier leaves no prints")
 	# a jump leaves no footfall in mid-air: teleport-free, nothing laid far from the hero
 	_combat_done(true, "grass, flowers and ferns part round the hero and spring back behind")
+
+## The stone cottage: built (stones, slates, smoke), clear of the timber house, the hero
+## walks up the step and in through the door, the back wall stops him inside, and the
+## windows light at dusk.
+func _stonehouse_test() -> void:
+	var p := _player
+	var c: StoneCottage = _world.stone_cottage
+	if Cottage.inside(c.global_position.x, c.global_position.z, StoneCottage.LEN * 0.5 + 1.0):
+		return _combat_done(false, "the stone cottage overlaps the timber house")
+	print("BOT stonehouse: %d stones, %d slates, %d colliders, floor %.2f m, base %.2f m" % [c.stone_count, c.slate_count, c.get_node("StoneCottageCollision").get_child_count(), c.floor_y, c.base_y])
+	if c.stone_count < 600 or c.slate_count < 1200:
+		return _combat_done(false, "cottage walls or roof not built")
+	var flora: Flora = _world.get_node("Flora")
+	var near := 99.0
+	for q in flora.tree_positions + flora.rock_positions:
+		near = minf(near, Vector2(q.x - c.global_position.x, q.z - c.global_position.z).length())
+	print("BOT stonehouse: nearest tree/rock %.1f m" % near)
+	if near < 6.0:
+		return _combat_done(false, "a tree or rock stands in the cottage")
+	var out := c.global_basis.z
+	var start := c.door_gap + out * 6.0
+	var terrain: Terrain = _world.get_node("Terrain")
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	for wp in [c.door_gap + out * 1.5, c.door_gap, c.global_position]:
+		var t := 0.0
+		while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.z).length() > 0.6 and t < 15.0:
+			var d := Vector2(wp.x - p.global_position.x, wp.z - p.global_position.z).normalized()
+			p.bot_input = d
+			await _ticks(6)
+			t += 0.1
+		print("BOT stonehouse reached %s in %.1f s, at %s" % [wp, t, p.global_position])
+		if t >= 15.0:
+			p.bot_input = Vector2.ZERO
+			return _combat_done(false, "could not walk into the cottage (stuck at %s)" % p.global_position)
+	var fy := c.global_position.y + c.floor_y
+	print("BOT stonehouse: inside at y %.2f, floor %.2f" % [p.global_position.y, fy])
+	if absf(p.global_position.y - fy) > 0.3:
+		return _combat_done(false, "not standing on the cottage floor")
+	var t2 := 0.0
+	var far := 0.0
+	while t2 < 4.0:
+		p.bot_input = Vector2(-out.x, -out.z)
+		p.bot_sprint = true
+		await _ticks(6)
+		t2 += 0.1
+		far = maxf(far, (p.global_position - c.global_position).dot(-out))
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	print("BOT stonehouse: ran at the back wall, got %.2f m in from the centre" % far)
+	if far > StoneCottage.DEP * 0.5 - StoneCottage.T + 0.1:
+		return _combat_done(false, "walked through the cottage back wall")
+	_world.time_of_day = 12.0
+	await _ticks(2)
+	var noon := c.lit
+	_world.time_of_day = 19.5
+	await _ticks(2)
+	print("BOT stonehouse: window light noon %.2f, 19:30 %.2f, smoke %s" % [noon, c.lit, c.smoke.emitting])
+	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
+		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
+	_combat_done(true, "walked up the step and in at the door, the walls hold, windows light at dusk")
 
 func _ruin_test() -> void:
 	var p := _player

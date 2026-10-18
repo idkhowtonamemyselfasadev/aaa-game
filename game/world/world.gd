@@ -25,6 +25,7 @@ var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
 var cottage: Cottage
+var stone_cottage: StoneCottage
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
@@ -95,6 +96,15 @@ func _ready() -> void:
 	soldier.plant(terrain)
 	soldier.face(p)
 	trample.walkers.append(soldier)   # the Hollow tramples the sward and leaves prints too
+	# a stone cottage across the green north of it, its door turned toward the start too
+	stone_cottage = StoneCottage.new()
+	stone_cottage.name = "StoneCottage"
+	stone_cottage.ruins_path = NodePath("../Ruins")
+	stone_cottage.terrain_path = NodePath("../Terrain")
+	var sc := StoneCottage.SITE
+	stone_cottage.position = Vector3(sc.x, terrain.height_at(sc.x, sc.y), sc.y)
+	stone_cottage.rotation.y = StoneCottage.yaw()
+	add_child(stone_cottage)
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"

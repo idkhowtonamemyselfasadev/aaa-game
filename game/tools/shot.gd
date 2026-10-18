@@ -221,6 +221,20 @@ func _ready() -> void:
 					bb.delay = 0.0
 					bb.vel = (rk - bb.pos).normalized() * 8.0
 		print("SHOT rookery at %s" % rk)
+	if spot == "stonehouse":
+		# the stone cottage, three-quarter from the front: door, windows, the slate
+		# slope and the chimney stack ("close": at the door, up at the eaves and the slates)
+		var ct: StoneCottage = world.stone_cottage
+		var o := ct.global_basis.z
+		var sd := ct.global_basis.x
+		var mid := ct.global_position + Vector3.UP * (ct.floor_y + 2.4)
+		if "close" in args:
+			SPOTS[spot] = [ct.door_gap + o * 3.2 + sd * 1.6 + Vector3.UP * 0.6, ct.door_gap + Vector3.UP * 1.3 - sd * 0.8]
+		else:
+			SPOTS[spot] = [mid + o * 12.0 + sd * 7.5 - Vector3.UP * 0.6, mid - Vector3.UP * 0.5]
+		var pp := ct.door_gap + o * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT stonehouse at %s, %d stones %d slates" % [ct.global_position, ct.stone_count, ct.slate_count])
 	if spot == "ruin" or spot == "ruinin":
 		# the watchtower ruin on its knoll: "ruin" from the approach below the breach,
 		# "ruinin" standing in the breach looking across the floor at the inner face
@@ -704,7 +718,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

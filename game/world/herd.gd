@@ -87,6 +87,11 @@ func _ready() -> void:
 		_obstacles.append_array(flora.rock_positions)
 	_obstacles.append_array(Cottage.outline_points())   # the house on the west of the green
 	anchor = _pick_site()
+	# the stone cottage: deer steer round its walls (added after the site pick, which
+	# keeps to open meadow 45 m out anyway)
+	var ct: StoneCottage = get_node_or_null("../StoneCottage")
+	if ct:
+		_obstacles.append_array(ct.outline(2.4))
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/deer.gdshader")
