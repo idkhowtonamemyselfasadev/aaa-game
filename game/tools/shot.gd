@@ -245,7 +245,20 @@ func _ready() -> void:
 		var hp := hn.at(0)
 		var mid := ct.to_global(Vector3(0, 0, -5.5))
 		var cp: Vector3
-		if "wide" in args:
+		if "house" in args:
+			# the hen house from the yard, three-quarter on its ladder face, a hen part way up
+			var h0: Dictionary = hn.hens[0]
+			h0.state = Hens.CLIMB
+			h0.c = 0.15
+			h0.wing = 0.0
+			hn._process(0.0)
+			hp = hn.at(0)
+			cp = ct.to_global(Vector3(-0.2, 0, -6.4))
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.15
+			var tgt := ct.to_global(Vector3(-2.9, 0, -8.5))
+			tgt.y = hn.house.base_y + 0.55
+			SPOTS[spot] = [cp, tgt]
+		elif "wide" in args:
 			cp = ct.to_global(Vector3(2.2, 0, -9.2))
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.25
 			SPOTS[spot] = [cp, mid + Vector3.UP * 0.4]

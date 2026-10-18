@@ -2853,7 +2853,7 @@ func _drywall_test() -> void:
 ## hero runs at a wall and is stopped by it, then walks out through the cart gateway.
 ## Hens: five birds in the garth that potter, scratch, peck and cluck by day, run squawking
 ## from a hero walking up on them without leaving the yard, stand out heavy rain under the
-## back eaves and settle along the back wall at dusk.
+## back eaves, go up the hen house ladder one at a time at dusk and come down it at dawn.
 ## The garth's bare earth and the worn path: mask baked, and the hero can walk each path
 ## end to end (door -> squeeze gap -> round the gable -> garth gate; door -> cart gateway).
 func _yardpath_test() -> void:
@@ -2980,26 +2980,58 @@ func _hens_test() -> void:
 	print("BOT hens after rain: %d back out" % out)
 	if out < 4:
 		return _combat_done(false, "the hens stayed in after the rain")
-	# dusk: up to the back wall and settled
+	# dusk: queued at the hen house ladder, up it one at a time and in
 	_world.time_of_day = 19.8
-	await _ticks(500)
-	var roosting := 0
+	var hh: HenHouse = hn.house
+	print("BOT hens: house %d boards, floor foot y %.2f, sill y %.2f, ladder foot local %s" % [hh.boards, hh.base_y, hh.sill_y(), HenHouse.foot()])
+	if hh.boards < 60 or not Hens.inside_yard(HenHouse.foot()):
+		return _combat_done(false, "no hen house in the garth")
+	var both := 0
+	var climb_y := -INF
+	for i in 1200:
+		await _ticks(1)
+		var on := 0
+		for h: Dictionary in hn.hens:
+			if h.state == Hens.CLIMB or h.state == Hens.DESCEND:
+				on += 1
+				climb_y = maxf(climb_y, hn.at(h.id).y)
+		if on > 1:
+			both += 1
+		if hn.went_in >= 5:
+			break
+	var inside := 0
 	for h: Dictionary in hn.hens:
-		if h.state == Hens.ROOST and h.sit > 0.9:
-			roosting += 1
-	print("BOT hens night: %d settled at the back wall" % roosting)
-	if roosting < 5:
-		return _combat_done(false, "the hens did not go to roost at dusk")
+		if h.inside and h.state == Hens.ROOST and not (h.mi as Node3D).visible:
+			inside += 1
+	print("BOT hens night: %d went up the ladder, %d in the house, highest on the ladder %.2f (sill %.2f), frames with two on it %d" % [hn.went_in, inside, climb_y, hh.sill_y(), both])
+	if inside < 5 or hn.went_in < 5:
+		return _combat_done(false, "the hens did not go into the hen house at dusk")
+	if both > 0:
+		return _combat_done(false, "two hens on the ladder at once")
+	if climb_y < hh.sill_y() - 0.1:
+		return _combat_done(false, "the hens never climbed the ladder")
+	# the hero walking past the house at night does not flush them out
+	var hp2 := c.to_global(Vector3(HenHouse.foot().x + 0.6, 0, HenHouse.foot().y))
+	_player.global_position = Vector3(hp2.x, tr.height_at(hp2.x, hp2.z) + 0.3, hp2.z)
+	var fl0 := hn.flees
+	await _ticks(60)
+	if hn.flees != fl0:
+		return _combat_done(false, "a hen fled from inside the house")
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.3, far.z)
 	_world.time_of_day = 7.0
-	await _ticks(200)
+	for i in 1500:
+		await _ticks(1)
+		if hn.came_out >= 5:
+			break
+	await _ticks(60)
 	var up := 0
 	for h: Dictionary in hn.hens:
-		if h.state != Hens.ROOST and h.sit < 0.5:
+		if h.state != Hens.ROOST and not h.inside and h.sit < 0.5 and (h.mi as Node3D).visible and Hens.inside_yard(h.pos):
 			up += 1
-	print("BOT hens morning: %d up" % up)
+	print("BOT hens morning: %d came down the ladder, %d up and about" % [hn.came_out, up])
 	if up < 5:
-		return _combat_done(false, "the hens never got up in the morning")
-	_combat_done(true, "hens potter, scratch, peck and cluck, flee squawking inside the garth, shelter from rain, roost at dusk")
+		return _combat_done(false, "the hens never came out in the morning")
+	_combat_done(true, "hens potter, scratch, peck and cluck, flee squawking inside the garth, shelter from rain, go up the ladder into the hen house one at a time at dusk and come down it at first light")
 
 func _yardwall_test() -> void:
 	var p := _player

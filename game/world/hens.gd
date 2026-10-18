@@ -8,8 +8,9 @@ extends Node3D
 ##  - a hero walking up on one sets it running off with its wings half out and a squawk;
 ##    the rest of the flock steps away and starts up again a few seconds later;
 ##  - heavy rain sends them in under the cottage's back eaves to stand it out, fluffed up;
-##  - at dusk they go up to the back wall and settle on the ground for the night, heads sunk,
-##    and get up again at first light.
+##  - at dusk they gather at the foot of the hen house's ladder (HenHouse) and go up it one
+##    at a time, into the house for the night; at first light they come down it again one
+##    after another, the first out soonest.
 ## They stay inside the garth walls (a clamp to the yard's quadrilateral in the cottage's
 ## frame), keep apart from each other and never leave by the field gate.
 ## Procedural mesh (Herd's loft helpers), posed in hen.gdshader.
@@ -18,7 +19,7 @@ extends Node3D
 signal clucked(at: Vector3)     # a soft cluck from one going about the yard
 signal squawked(at: Vector3)    # an alarm squawk from one put to flight
 
-enum { STAND, WALK, SCRATCH, PECK, FLEE, ROOST, SHELTER }
+enum { STAND, WALK, SCRATCH, PECK, FLEE, ROOST, SHELTER, CLIMB, DESCEND }
 
 const COUNT := 5
 const WALK_V := 0.42       # m/s pottering
@@ -27,10 +28,11 @@ const SHY_R := 1.9         # a hero this close (+0.45 m per m/s he moves) puts o
 const ROOST_H := 19.4      # they go up to the back wall at dusk
 const RISE_H := 5.9        # and come down again at first light
 const RAIN_IN := 0.45      # rain this heavy sends them under the eaves
+const CLIMB_T := 2.6       # seconds up (or down) the ladder
 ## The garth inside its walls in the cottage's frame (DryWall.RUNS_LOCAL pulled in ~0.6 m),
 ## counter-clockwise: east wall, back wall, west wall, the cottage's back wall.
 const YARD := [Vector2(3.3, -3.3), Vector2(4.0, -9.65), Vector2(-4.65, -10.05), Vector2(-3.3, -3.3)]
-## Where they stand out the rain and settle for the night: along the back wall under the
+## Where they stand out the rain: along the back wall under the
 ## eaves (eaves out to z -3.18, the wall's face at -2.8).
 const EAVES_Z := -3.45
 ## Plumage: [body, dark (lacing, tail), hackle (neck)], one per bird.
@@ -44,6 +46,7 @@ const BREEDS := [
 
 var world: Node3D
 var cottage: StoneCottage
+var house: HenHouse
 var terrain: Terrain
 var weather: Weather
 var hens: Array = []       # per bird: {mi, pos (local xz), yaw, state, t, speed, phase, peck, sit, wing, scratch, ...}
@@ -52,6 +55,8 @@ var scratches := 0
 var clucks := 0
 var flees := 0
 var walked := 0.0
+var went_in := 0          # times one went up the ladder into the house (bots)
+var came_out := 0
 var _rng := RandomNumberGenerator.new()
 var _prev_hero := Vector3.ZERO
 var _hero_v := 0.0
@@ -64,6 +69,9 @@ func setup(w: Node3D) -> void:
 	name = "Hens"
 	_rng.seed = 7741
 	w.add_child(self)
+	house = HenHouse.new()
+	cottage.add_child(house)
+	house.setup(terrain)
 	var mesh := build_mesh()
 	var sh: Shader = load("res://shaders/hen.gdshader")
 	for i in COUNT:
@@ -85,7 +93,7 @@ func setup(w: Node3D) -> void:
 		hens.append({"mi": mi, "pos": at, "yaw": _rng.randf() * TAU, "state": STAND, "t": _rng.randf_range(0.5, 3.0),
 			"speed": 0.0, "phase": _rng.randf(), "peck": 0.0, "sit": 0.0, "wing": 0.0, "scratch": 0.0,
 			"goal": at, "n": 0, "cluck_t": _rng.randf_range(2.0, 9.0), "calm": 0.0, "bob": 0.0, "head": 0.0,
-			"head_goal": 0.0, "fluff": 0.0, "id": i})
+			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0})
 	_prev_hero = _hero_pos()
 	_settle_now()
 
@@ -94,10 +102,8 @@ func _settle_now() -> void:
 	var night := _night(world.time_of_day)
 	for h: Dictionary in hens:
 		if night:
-			h.pos = _roost_spot(h.id)
-			h.state = ROOST
+			_go_inside(h)
 			h.sit = 1.0
-			h.yaw = _face_yard(h.id)
 		_place(h)
 
 func _night(hr: float) -> bool:
@@ -106,6 +112,26 @@ func _night(hr: float) -> bool:
 func _hero_pos() -> Vector3:
 	var p: Node3D = world.get("player")
 	return p.global_position if p else Vector3(1e6, 0, 1e6)
+
+## In the house for the night: out of sight, on the perch.
+func _go_inside(h: Dictionary) -> void:
+	h.pos = HenHouse.inside()
+	h.state = ROOST
+	h.inside = true
+	h.air = -INF
+	h.speed = 0.0
+	h.t = 0.0
+	(h.mi as Node3D).visible = false
+
+## Where one waits its turn for the ladder: a loose knot round its foot.
+func _queue_spot(id: int) -> Vector2:
+	return HenHouse.foot() + Vector2(0.25 + 0.22 * (id % 3), 0.42 * (id - 2) + 0.1 * sin(id * 1.9))
+
+func _on_ladder() -> bool:
+	for o: Dictionary in hens:
+		if o.state == CLIMB or o.state == DESCEND:
+			return true
+	return false
 
 ## Each bird's place along the back wall, spread out under the eaves.
 func _roost_spot(id: int) -> Vector2:
@@ -155,7 +181,7 @@ func _local_of(g: Vector3) -> Vector2:
 func _place(h: Dictionary) -> void:
 	var mi: MeshInstance3D = h.mi
 	var g := cottage.to_global(Vector3(h.pos.x, 0, h.pos.y))
-	g.y = terrain.height_at(g.x, g.z)
+	g.y = terrain.height_at(g.x, g.z) if h.air == -INF else h.air
 	mi.global_position = g
 	mi.global_rotation = Vector3(0, cottage.global_rotation.y + h.yaw, 0)
 	mi.set_instance_shader_parameter("phase", h.phase)
@@ -194,7 +220,7 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 	h.calm = maxf(0.0, h.calm - dt)
 	# a hero walking up on it: off it runs, wings half out, unless it is settled for the night
 	# and he only creeps (a roosting hen only shifts and grumbles at a walk)
-	if d_hero < shy and h.state != FLEE and not (h.state == ROOST and _hero_v < 2.0 and d_hero > 0.7):
+	if d_hero < shy and h.state != FLEE and h.state != CLIMB and h.state != DESCEND and not h.inside and not (h.state == ROOST and _hero_v < 2.0 and d_hero > 0.7):
 		var away: Vector2 = ((h.pos as Vector2) - hl).normalized() if d_hero > 0.01 else Vector2.RIGHT
 		away = away.rotated(_rng.randf_range(-0.5, 0.5))
 		var goal := clamp_yard((h.pos as Vector2) + away * _rng.randf_range(2.5, 3.6))
@@ -219,12 +245,55 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 				h.calm = 3.0
 			return
 		ROOST:
+			if night:
+				h.t = 0.0
+				return
+			# morning: out one after another, the first a few seconds after first light
+			if not night and h.inside:
+				if h.t <= -2.0 - 3.5 * h.id and not _on_ladder():
+					h.state = DESCEND
+					h.c = 1.0
+					h.inside = false
+					(h.mi as Node3D).visible = true
+					h.yaw = -PI * 0.5      # facing +x, out of the hole
+					h.sit = 0.0
+					h.fluff = 0.4
+				return
 			if not night:
 				h.state = STAND
 				h.t = _rng.randf_range(0.5, 2.0)
 			return
-	# night or rain: go to the back wall and settle / stand it out
-	if night or raining:
+		CLIMB, DESCEND:
+			_climb(h, dt)
+			return
+	# night: to the ladder's foot, wait a turn, up it and in
+	if night:
+		var q := HenHouse.foot()
+		if not _on_ladder() and (h.pos as Vector2).distance_to(q) < 1.4 and _first_waiting(h):
+			if (h.pos as Vector2).distance_to(q) > 0.1:
+				h.goal = q
+				h.state = WALK
+				_walk(h, dt, WALK_V)
+				return
+			h.state = CLIMB
+			h.c = 0.0
+			h.peck = 0.0
+			h.scratch = 0.0
+			return
+		var spot := _queue_spot(h.id)
+		if (h.pos as Vector2).distance_to(spot) > 0.15:
+			if h.state != WALK or (h.goal as Vector2).distance_to(spot) > 0.01:
+				h.state = WALK
+				h.goal = spot
+			_walk(h, dt, WALK_V * 1.3)
+		else:
+			h.yaw = lerp_angle(h.yaw, PI * 0.5, minf(1.0, dt * 2.0))   # facing the ladder (-x)
+			h.speed = 0.0
+			h.state = STAND
+			h.t = 1.0
+		return
+	# rain: in under the back eaves to stand it out
+	if raining:
 		var spot := _roost_spot(h.id)
 		if (h.pos as Vector2).distance_to(spot) > 0.15:
 			if h.state != WALK or (h.goal as Vector2).distance_to(spot) > 0.01:
@@ -234,7 +303,7 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 			return
 		h.yaw = lerp_angle(h.yaw, _face_yard(h.id), minf(1.0, dt * 2.0))
 		h.speed = 0.0
-		h.state = ROOST if night else SHELTER
+		h.state = SHELTER
 		return
 	if h.state == SHELTER:
 		h.state = STAND
@@ -269,6 +338,42 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 		clucks += 1
 		clucked.emit((h.mi as Node3D).global_position + Vector3.UP * 0.3)
 
+## The waiting bird nearest the ladder goes next.
+func _first_waiting(h: Dictionary) -> bool:
+	var q := HenHouse.foot()
+	var d: float = (h.pos as Vector2).distance_to(q)
+	for o: Dictionary in hens:
+		if o != h and not o.inside and o.state != CLIMB and (o.pos as Vector2).distance_to(q) < d - 0.01:
+			return false
+	return true
+
+## Up (CLIMB) or down (DESCEND) the ladder between its foot and the pop-hole: a hop up onto
+## the plank, short careful steps with a wing flick, in through the hole or off the end.
+func _climb(h: Dictionary, dt: float) -> void:
+	var up: bool = h.state == CLIMB
+	h.c = clampf(h.c + (dt if up else -dt) / CLIMB_T, 0.0, 1.0)
+	var fl := HenHouse.foot() - Vector2(0.12, 0)
+	var top := HenHouse.sill()
+	var u: float = h.c
+	h.pos = fl.lerp(top, u) if u > 0.0 else HenHouse.foot()
+	var g0 := terrain.height_at(cottage.to_global(Vector3(fl.x, 0, fl.y)).x, cottage.to_global(Vector3(fl.x, 0, fl.y)).z)
+	h.air = lerpf(g0, house.sill_y(), u) + 0.02
+	h.yaw = PI * 0.5 if up else -PI * 0.5
+	h.speed = 0.35
+	h.wing = maxf(h.wing, 0.35 * absf(sin(h.c * 19.0)))
+	if up and h.c >= 1.0:
+		went_in += 1
+		clucked.emit((h.mi as Node3D).global_position + Vector3.UP * 0.3)
+		_go_inside(h)
+		h.t = 0.0
+	elif not up and h.c <= 0.0:
+		came_out += 1
+		h.air = -INF
+		h.pos = clamp_yard(HenHouse.foot() + Vector2(0.3, 0.0))
+		h.state = STAND
+		h.t = _rng.randf_range(0.5, 1.5)
+		clucked.emit((h.mi as Node3D).global_position + Vector3.UP * 0.3)
+
 ## What a standing bird does next: potter on a little, scratch, peck, or look round.
 func _next(h: Dictionary) -> void:
 	var r := _rng.randf()
@@ -276,7 +381,7 @@ func _next(h: Dictionary) -> void:
 		var step := _fwd(h.yaw + _rng.randf_range(-1.4, 1.4)) * _rng.randf_range(0.5, 1.8)
 		var goal := (h.pos as Vector2) + step
 		# keep to the open yard, drift back toward the middle from the walls
-		if not inside_yard(goal) or _rng.randf() < 0.15:
+		if not inside_yard(goal) or HenHouse.covers(goal, 0.1) or _rng.randf() < 0.15:
 			goal = (h.pos as Vector2).lerp(Vector2(_rng.randf_range(-2.8, 2.8), _rng.randf_range(-8.9, -4.6)), 0.5)
 		h.goal = clamp_yard(goal)
 		h.state = WALK
