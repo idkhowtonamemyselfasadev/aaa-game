@@ -1532,6 +1532,7 @@ func _fox_test() -> void:
 	var top_graze := 0.0
 	var crust_at := Vector3.ZERO
 	var flick := 0.0
+	var nose_r := 99.0        # nearest its nose came to the keep centre while eating
 	for i in 3600:
 		_world.time_of_day = 22.0
 		await get_tree().physics_frame
@@ -1541,6 +1542,9 @@ func _fox_test() -> void:
 		if fx._scrap != null:
 			crust_at = fx._scrap.global_position
 		top_graze = maxf(top_graze, fx.graze)
+		if fx.graze > 0.5:
+			var nose: Vector3 = fx.global_position + Vector3(-sin(fx.yaw), 0, -cos(fx.yaw)) * Fox.SNOUT
+			nose_r = minf(nose_r, Vector2(nose.x - k.site.x, nose.z - k.site.z).length())
 		if fx.eaten > 0 and fx.state == Fox.SIT and fx.sit > 0.99:
 			break
 	if crust_at != Vector3.ZERO:
@@ -1548,6 +1552,10 @@ func _fox_test() -> void:
 	print("BOT fox crust: thrown at frame %d (warm %.2f, sit %.2f, arm up %.2f), landed %.2f m from its seat, nose down %.2f, eaten %d, back sat %s %.2f m off its seat" % [thrown, k.warm, k.sit, flick, min_land, top_graze, fx.eaten, fx.state == Fox.SIT, fx.global_position.distance_to(fx.sit_at)])
 	if thrown < 0 or flick < 0.9 or min_land > 1.3 or top_graze < 0.9 or fx.eaten < 1 or fx.state != Fox.SIT or fx.global_position.distance_to(fx.sit_at) > 0.35:
 		return _combat_done(false, "Hesper should toss the sat fox a crust, and it should eat it and sit again")
+	# the lid's plinth's laid blocks reach out to r ~1.9: eating, its nose stays on open floor
+	print("BOT fox crust floor: nose down at r %.2f m from the keep centre (plinth edge ~1.9)" % nose_r)
+	if nose_r < 1.95:
+		return _combat_done(false, "the fox should eat the crust on open floor, not with its head in the lid's plinth")
 	var fol := _world.get_node_or_null("Foley")
 	var crunches := int(fol.played.get("crunch", 0)) if fol != null and "played" in fol else -1
 	print("BOT fox manners: glanced %.2f rad round at her before it got up, licked its chops %d times, head shake %.2f rad, crunches %d" % [fx.glance, fx.licks, fx.shook, crunches])

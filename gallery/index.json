@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-2000-valley-seedheads.jpg",
-  "time": "2026-10-12T20:45:00Z",
-  "caption": "Evening over the valley: seeding grass stems with straw panicles catch the low sun on the slope in front; the far mountain ring is still a pale, smooth, blobby silhouette and the oaks are stylized.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-2255-hero-garb.jpg",
   "time": "2026-10-12T22:55:39Z",
   "caption": "The hero now reads as a mythic wanderer: woven straw hat over an indigo hood, dark mantle, madder robe panels, ochre sash and linen bindings; still the Vanguard visor under the hat, no face, and the practice post crowds the frame.",
@@ -897,6 +891,12 @@
   "file": "20261018-0442-foxcrust.jpg",
   "time": "2026-10-18T04:42:55Z",
   "caption": "The fox stood at Hesper's crust at 22:30 on the new floor seat; still wrong: its head is buried in the breach rubble, the coat glows a flat saturated red with no fur breakup, and the firelit wall reads as salmon brick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0544-foxcrust.jpg",
+  "time": "2026-10-18T05:44:00Z",
+  "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
   "verdict": "fail"
  }
 ]

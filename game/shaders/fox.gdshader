@@ -16,7 +16,7 @@ instance uniform float head_yaw = 0.0;   // rad, + to its left
 instance uniform float graze = 0.0;      // 0 head up .. 1 neck bowed, nose to the ground
 instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the tapetum
 
-uniform vec3 coat : source_color = vec3(0.50, 0.205, 0.07);       // fox red
+uniform vec3 coat : source_color = vec3(0.45, 0.215, 0.095);      // fox red, toward ginger-brown (pure red glowed flat under the fire)
 uniform vec3 coat_dark : source_color = vec3(0.30, 0.14, 0.065);   // the saddle, the brush's dark band
 uniform vec3 pale : source_color = vec3(0.52, 0.48, 0.41);         // throat strip, lips, cheeks: a dull cream, never snow
 uniform vec3 stocking : source_color = vec3(0.045, 0.035, 0.03);   // black legs and ear backs
@@ -134,7 +134,9 @@ void fragment() {
 	float ear = step(0.9, v_col.a);
 	vec3 col = coat;
 	// a darker grizzled saddle along the back, the flanks warmer
-	col = mix(col, coat_dark, smoothstep(0.55, 0.95, rn.y) * (1.0 - head) * (1.0 - legm) * 0.55);
+	col = mix(col, coat_dark, smoothstep(0.4, 0.9, rn.y) * (1.0 - head) * (1.0 - legm) * 0.7);
+	// broad patches of lighter and darker fur where the coat lies differently, so it is not one flat value
+	col *= mix(0.8, 1.1, vnoise(p * 9.0 + vec3(3.1, 0.0, 7.7))) * (1.0 - legm * 0.1);
 	// a buff-grey belly (hidden when it sits) and only a narrow cream strip from the throat
 	// down to the brisket: from the front a sitting fox is red with a pale blaze, not a white bib
 	float under = smoothstep(-0.2, -0.6, rn.y) * (1.0 - legm) * (1.0 - tail) * (1.0 - ear) * (1.0 - head);
@@ -189,6 +191,6 @@ void fragment() {
 	if (v_col.a > 0.4 && v_col.a < 0.6) {
 		EMISSION += vec3(0.85, 0.9, 0.45) * eyeshine * 2.4 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
 	}
-	BACKLIGHT = col * (0.15 + 0.6 * ear);
+	BACKLIGHT = col * (0.08 + 0.67 * ear);
 	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25, 0.5 + (clump - 0.5) * 0.15, 1.0));
 }

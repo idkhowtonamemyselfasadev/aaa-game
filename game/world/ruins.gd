@@ -564,6 +564,7 @@ func _sweep_hearth() -> void:
 	var fs := Fox.seat_sweep(site)
 	_swept.append([fs[0], fs[1], 0.65])
 	_swept.append([fs[0], fs[2], 0.5])
+	_swept.append([fs[1], fs[3], 0.45])
 
 func _is_swept(p: Vector3) -> bool:
 	for c in _swept:

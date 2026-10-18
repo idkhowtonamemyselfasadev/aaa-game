@@ -97,13 +97,24 @@ static func seat_of(site: Vector3) -> Vector3:
 	var tv := Vector3(-site.x, 0, -site.z).normalized()
 	return site + tv.rotated(Vector3.UP, 0.42) * 2.3
 
-## [seat, crust] for Ruins' sweep: the crust lands ~0.7 m toward the fire, it stands a
-## snout's length back from it to eat.
+## Where Hesper aims its crust: ~0.7 m round the floor ring from the seat, on the lens side.
+## (Tossed straight toward her across the fire it landed against the lid's plinth and the
+## fox ate with its head inside the plinth's laid blocks, r ~1.5 m.)
+static func crust_of(site: Vector3) -> Vector3:
+	var tv := Vector3(-site.x, 0, -site.z).normalized()
+	return site + tv.rotated(Vector3.UP, 0.42 + 0.31) * 2.25
+
+## Where the `fox ... crust` shot looks from: out by the wall foot past the crust, so it sees
+## the fox front three-quarter from outside, bowed to the crust with the plinth behind (from
+## `lens_of` it stood square on to the lens, eyes into it).
+static func crust_lens_of(site: Vector3) -> Vector3:
+	var tv := Vector3(-site.x, 0, -site.z).normalized()
+	return site + tv.rotated(Vector3.UP, 0.42 + 0.62) * 2.75
+
+## [seat, crust, lens, crust lens] for Ruins' sweep: it stands a snout's length back from the
+## crust to eat.
 static func seat_sweep(site: Vector3) -> Array[Vector3]:
-	var s := seat_of(site)
-	var hp: Vector3 = Keeper.hearth_layout(site)[0]
-	var f := Vector3(hp.x - s.x, 0, hp.z - s.z).normalized()
-	return [s, s + f * 0.8, lens_of(site)]
+	return [seat_of(site), crust_of(site), lens_of(site), crust_lens_of(site)]
 
 ## Where the `fox` shot looks from: on the keep floor ring (r 2.4) swung ~1.7 m round from
 ## the seat away from the breach and Hesper's way in, so it sees the fox three-quarter with
@@ -274,15 +285,16 @@ func take_scrap(scrap: Node3D) -> void:
 ## Shots: stood head down at a crust in front of its seat, part way through eating it.
 func place_eating() -> void:
 	place_sitting()
-	var to_fire := Vector3(hearth.global_position.x - sit_at.x, 0, hearth.global_position.z - sit_at.z).normalized()
 	var c := Keeper.crust()
 	world.add_child(c)
-	c.global_position = _ground(sit_at + to_fire * 0.7) + Vector3.UP * 0.018
+	c.global_position = _ground(crust_of(keeper.site)) + Vector3.UP * 0.018
 	c.rotation.y = 0.7
+	var to_c := Vector3(c.global_position.x - sit_at.x, 0, c.global_position.z - sit_at.z).normalized()
 	take_scrap(c)
 	sit = 0.0
 	_look_t = 0.0
-	global_position = _ground(c.global_position - to_fire * SNOUT)
+	global_position = _ground(c.global_position - to_c * SNOUT)
+	yaw = atan2(-to_c.x, -to_c.z)
 	path.clear()
 	_eat_t = SNIFF - 0.8
 	graze = 1.0

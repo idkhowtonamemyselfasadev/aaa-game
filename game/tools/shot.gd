@@ -318,11 +318,25 @@ func _ready() -> void:
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
 		if "crust" in args:
-			# eating Hesper's crust: from the same ring lens, a little closer
+			# eating Hesper's crust: front three-quarter from out by the wall foot (Fox.crust_lens_of)
 			var fq := fx.global_position
-			cp = Fox.lens_of(kp.site).lerp(fq, 0.15)
-			cp.y = terrain.height_at(cp.x, cp.z) + 0.6
-			SPOTS[spot] = [cp, Vector3(fq.x, fq.y + 0.18, fq.z) - to_fx * 0.2]
+			cp = Fox.crust_lens_of(kp.site)
+			cp.y = terrain.height_at(cp.x, cp.z) + 0.55
+			SPOTS[spot] = [cp, Vector3(fq.x, fq.y + 0.15, fq.z)]
+			if OS.get_environment("FOXDBG") != "":
+				var rn: Ruins = world.get_node("Ruins")
+				var fwd := Vector3(-sin(fx.yaw), 0, -cos(fx.yaw))
+				var head := fq + fwd * 0.45 + Vector3.UP * 0.2
+				print("SHOT foxdbg site %s fox %s yaw %.2f crust %s hearth %s cam %s head %s" % [kp.site, fq, fx.yaw, fx._scrap.global_position, hp, cp, head])
+				for per in rn._per:
+					for e in per:
+						var xf: Transform3D = e[0]
+						var o := xf.origin
+						var ab := head - cp
+						var t := clampf((o - cp).dot(ab) / ab.length_squared(), 0.0, 1.0)
+						var dd := (cp + ab * t).distance_to(o)
+						if dd < 0.6 or o.distance_to(head) < 0.8:
+							print("SHOT foxdbg block %s r %.2f ang %.2f d_line %.2f d_head %.2f t %.2f size %s laid %.0f" % [o, Vector2(o.x - kp.site.x, o.z - kp.site.z).length(), 0, dd, o.distance_to(head), t, xf.basis.get_scale(), (e[1] as Color).b])
 		if "close" in args:
 			# a portrait lens a metre off its face, a little to the side
 			cp = fx.sit_at - to_fx * 1.05 + to_fx.cross(Vector3.UP) * 0.5

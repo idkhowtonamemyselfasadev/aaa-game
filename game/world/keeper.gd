@@ -908,7 +908,7 @@ func _update_scrap(delta: float) -> void:
 		throw_scrap()
 
 ## Starts the throw now (shots and bots may call it): the crust goes in her hand and lands
-## a little short of the fox, on its side of the fire.
+## a little way round the floor from the fox (`Fox.crust_of`), clear of the lid's plinth.
 func throw_scrap() -> void:
 	var fx = world.get("fox")
 	if fx == null or hand_mark == null:
@@ -921,8 +921,9 @@ func throw_scrap() -> void:
 	_scrap = Keeper.crust()
 	hand_mark.add_child(_scrap)
 	_scrap.position = Vector3(0.0, 0.08, 0.03)
-	var to_her := Vector3(global_position.x - fx.sit_at.x, 0, global_position.z - fx.sit_at.z).normalized()
-	var at: Vector3 = fx.sit_at + to_her * 0.75 + to_her.cross(Vector3.UP) * _rng.randf_range(-0.2, 0.2)
+	var aim := Fox.crust_of(site)
+	var along := Vector3(aim.x - fx.sit_at.x, 0, aim.z - fx.sit_at.z).normalized()
+	var at: Vector3 = aim + along * _rng.randf_range(-0.12, 0.12)
 	_scrap_to = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.018, at.z)
 
 ## A heel of dark bread: a squashed, lumpy round with a hard brown crust and a torn pale crumb face.
