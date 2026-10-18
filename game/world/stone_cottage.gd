@@ -97,7 +97,7 @@ func _ready() -> void:
 	for v in VARIANTS:
 		# tight arrises and 5-8 fracture planes cut deep enough to take the corners off, so
 		# each face outline is a ragged polygon rather than a rounded tile
-		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.035, 0.045, 0.66, 0.92, true, Vector2i(5, 8)))
+		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.035, 0.045, 0.74, 0.94, true, Vector2i(5, 8)))
 		_rubble.append([])
 	_walls()
 	_chimney()
@@ -248,7 +248,7 @@ func _place_rubble(c: Vector3, b: Basis, size: Vector3) -> void:
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
 	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
-	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 2.0)])
+	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 2.5)])
 	stone_count += 1
 
 ## A dressed sandstone block (quoins, sills, flags, ridge), weathered (INSTANCE_CUSTOM.a = 1).
@@ -572,8 +572,8 @@ func _build_mortar() -> void:
 	m.set_shader_parameter("ground_y", global_position.y + floor_y)
 	# pointing weathered back and dirtied toward the gritstone's grey, so the joints read as
 	# shadowed gaps between the stones instead of an even pale outline round each one
-	m.set_shader_parameter("lime", Color(0.36, 0.35, 0.32))
-	m.set_shader_parameter("grime", Color(0.17, 0.16, 0.14))
+	m.set_shader_parameter("lime", Color(0.42, 0.41, 0.38))
+	m.set_shader_parameter("grime", Color(0.2, 0.19, 0.17))
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

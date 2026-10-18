@@ -13,7 +13,7 @@ render_mode cull_back;
 // a = 1 for the curtain wall: low, damp, longer out in the weather -- a darker grey crust,
 // more lichen and moss, arrises worn dark rather than pale. a = 2: aged FIELD stone (the
 // village's dry-stone walls): greyer gritstone, grey lichen rather than yellow, moss only on
-// the tops and the faces turned from the noon sun (+x: the sun stands at -x at noon), muted.
+// the tops and the faces turned from the noon sun (+x: the sun stands at -x at noon), muted; a above 2 also dims it greyer (the stone cottage's rubble).
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.7, 0.62, 0.5);
@@ -47,6 +47,7 @@ varying float jnt;
 varying float laid;
 varying float aged;
 varying float field;
+varying float dim;   // a above 2: a darker, greyer face (the cottage's rubble)
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -72,6 +73,7 @@ void vertex() {
 	laid = INSTANCE_CUSTOM.b;
 	aged = min(INSTANCE_CUSTOM.a, 1.0);
 	field = step(1.5, INSTANCE_CUSTOM.a);
+	dim = clamp(INSTANCE_CUSTOM.a - 2.0, 0.0, 1.0);
 }
 
 float surf(vec3 p) {
@@ -107,6 +109,7 @@ void fragment() {
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.66, 0.66, 0.63), aged * mix(0.45, 0.8, skin));
 	// field stone: a cool grey gritstone, darker, the beds only faintly showing
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.85 + 0.3 * fract(tint * 53.1)), field * 0.7);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * 0.84, dim * 0.6);
 	vec3 col = base * (0.9 + s * 0.2);
 	// worn arrises: paler, rubbed smooth on the keep's sheltered stones; on the laid tops and
 	// on the curtain they weather dark with grime instead (only the odd fresh chip stays pale)

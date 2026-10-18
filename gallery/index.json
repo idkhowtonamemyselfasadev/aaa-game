@@ -892,5 +892,11 @@
   "time": "2026-10-18T20:15:30Z",
   "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261018-2114-cottage-rubble.jpg",
+  "time": "2026-10-18T21:14:55Z",
+  "caption": "Stone cottage rubble after the cut/mortar tuning at 15.5 h: stones now fill their beds with narrower, lighter joints, but the facade is backlit in flat shade, the stones still read as rounded grey cobbles with pale tops, and the slate roof's lichen flecks read as noise.",
+  "verdict": "fail"
  }
 ]
