@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261013-1335-boulder.jpg",
-  "time": "2026-10-13T13:35:29Z",
-  "caption": "A mossy boulder sitting in the meadow with open moss at its foot; the lichen/crack pattern on top is still too map-like and the boulder is a lone blob, not an outcrop.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-1335-grove.jpg",
-  "time": "2026-10-13T13:35:29Z",
-  "caption": "Oak grove at 13 h: the moss collars at the boles now lie open with no tall grass through them, but read as a flat over-saturated green patch and the grove floor between is bare red-brown soil.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-1518-grove.jpg",
   "time": "2026-10-13T15:18:14Z",
   "caption": "Oak grove at 13 h: the floor between the boles now greens with olive moss patches and leaf drift instead of red-brown soil; mid-range floor still uniform, collars no longer stand out, no roots.",
@@ -897,6 +885,12 @@
   "file": "20261018-1825-henhouse2.jpg",
   "time": "2026-10-18T18:25:08Z",
   "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1925-stonecottage.jpg",
+  "time": "2026-10-18T19:25:07Z",
+  "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
   "verdict": "fail"
  }
 ]

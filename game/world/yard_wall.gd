@@ -295,16 +295,24 @@ func _build_core() -> void:
 ## A rough split field stone of unit size: a subdivided box rounded and lumped by noise,
 ## then cut back by a few fracture planes so it shows flat split faces and broken edges.
 func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
+	return stone_mesh(seed, v, mat)
+
+## The same, shared: `rad` rounds the arrises (unit space), `lump` the bulge of the faces,
+## fracture planes cut in at `cut0`..`cut1` from the centre; with `rel` those are fractions
+## of the box's reach along the plane normal, so a slanted cut only nicks a corner
+## (StoneCottage's squarer coursed rubble).
+static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false) -> ArrayMesh:
 	var n := FastNoiseLite.new()
-	n.seed = seed + v * 7
+	n.seed = sd + v * 7
 	n.frequency = 2.2
 	n.fractal_octaves = 4
 	var r := RandomNumberGenerator.new()
-	r.seed = seed + 300 + v
+	r.seed = sd + 300 + v
 	var cuts := []
 	for i in r.randi_range(3, 5):
 		var cn := Vector3(r.randf_range(-1, 1), r.randf_range(-0.6, 0.6), r.randf_range(-1, 1)).normalized()
-		cuts.append([cn, r.randf_range(0.36, 0.47)])
+		var reach := 0.5 * (absf(cn.x) + absf(cn.y) + absf(cn.z)) if rel else 1.0
+		cuts.append([cn, r.randf_range(cut0, cut1) * reach])
 	var div := 7
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -323,7 +331,7 @@ func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
 					p[u_ax] = float(iu) / div - 0.5
 					p[v_ax] = float(iv) / div - 0.5
 					crow.append(Color(clampf(minf(0.5 - absf(p.x), 0.5 - absf(p.y)) / 0.25, 0.0, 1.0), 0, 0))
-					row.append(_shape(p, n, cuts))
+					row.append(_shape(p, n, cuts, rad, lump))
 				grid.append(row)
 				cols.append(crow)
 			var fn := Vector3.ZERO
@@ -343,15 +351,14 @@ func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
 		mesh.surface_set_material(0, mat)
 	return mesh
 
-func _shape(p: Vector3, n: FastNoiseLite, cuts: Array) -> Vector3:
-	var rad := 0.16
+static func _shape(p: Vector3, n: FastNoiseLite, cuts: Array, rad: float, lump: float) -> Vector3:
 	var inner := Vector3.ONE * (0.5 - rad)
 	var q := p.clamp(-inner, inner)
 	var dd := p - q
 	if dd.length() > 0.0001:
 		p = q + dd.normalized() * rad
 	# lumps over the whole stone
-	p += p.normalized() * n.get_noise_3dv(p * 1.3) * 0.07
+	p += p.normalized() * n.get_noise_3dv(p * 1.3) * lump
 	# fracture planes: shear the stone flat where it split off its neighbour
 	for c in cuts:
 		var cn: Vector3 = c[0]

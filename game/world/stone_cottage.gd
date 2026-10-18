@@ -2,8 +2,9 @@ class_name StoneCottage
 extends Node3D
 ## A stone cottage of Harrowmere village, across the green north of the timber-framed house
 ## (Cottage), its door toward the start. All generated here:
-##  - walls of coursed rubble in the ruin's sandstone (Ruins' chipped block meshes, cottage
-##    sizes): through-stones on courses of varying height, long quoins at the corners
+##  - walls of coursed rubble: split grey field stones (YardWall's stone mesh, squarer) on
+##    beds of uneven height, each stone's top a little ragged under the mortar, dressed
+##    sandstone (Ruins' chipped blocks, aged) for the long quoins at the corners
 ##    bonding alternately into the long walls and the gables, jambs cut square at the door
 ##    and windows, the gables stepped up under the roof line;
 ##  - oak lintels over the openings, a tarred plank door on ledges, window frames with a
@@ -67,6 +68,7 @@ var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
 var _dims: Array[Vector3] = []
 var _per: Array = []
+var _rubble: Array = []        # per split-stone variant: [Transform3D, Color]
 var _slates: Array = []        # per slate mesh variant: [Transform3D, Color]
 var _slate_meshes: Array[ArrayMesh] = []
 var _mortar: Array[Transform3D] = []
@@ -91,6 +93,10 @@ func _ready() -> void:
 		_dims.append(d)
 		meshes.append(_ruins._block_mesh(d, 20 + v))
 		_per.append([])
+	var rubble: Array[ArrayMesh] = []
+	for v in VARIANTS:
+		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.08, 0.035, 0.88, 0.97, true))
+		_rubble.append([])
 	_walls()
 	_chimney()
 	_floor()
@@ -98,6 +104,7 @@ func _ready() -> void:
 	_roof()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
+		_multimesh(rubble[v], _rubble[v], "Rubble_%d" % v)
 	for v in _slate_meshes.size():
 		_multimesh(_slate_meshes[v], _slates[v], "Slates_%d" % v)
 	_build_mortar()
@@ -119,8 +126,14 @@ func _level() -> void:
 	floor_y = hi + 0.12 - global_position.y
 	base_y = lo - 0.3 - global_position.y
 
+## Mostly mid courses, now and then a thin snecking course or a deep one of big stones.
 func _course_h() -> float:
-	return _rng.randf_range(0.2, 0.3)
+	var r := _rng.randf()
+	if r < 0.18:
+		return _rng.randf_range(0.13, 0.18)
+	if r > 0.85:
+		return _rng.randf_range(0.32, 0.4)
+	return _rng.randf_range(0.19, 0.29)
 
 ## Lay one course of one wall: wall w spans s in [s0, s1] along its run; y is the course
 ## bottom, h its height. Openings cut the run; stones are trimmed to the jambs.
@@ -172,7 +185,9 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 	for i in lens.size():
 		var ln: float = lens[i]
 		var quoin := (i == 0 and q0) or (i == lens.size() - 1 and q1)
-		_stone(w, s + ln * 0.5, y + h * 0.5, Vector3(ln - 0.015, h - 0.012, T), quoin)
+		# rubble sits on its bed; its top falls short by up to 4 cm, the mortar showing above
+		var hh := h - 0.012 if quoin else h - 0.012 - _rng.randf_range(0.0, 0.04)
+		_stone(w, s + ln * 0.5, y + hh * 0.5 + 0.004, Vector3(ln - 0.015, hh, T), quoin)
 		s += ln
 
 ## Wall w's run direction and the cottage-local centre of a point `along` it at height cy.
@@ -208,8 +223,23 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 	# faces stand a little proud or sunk, stones sit a hair off square
 	c += dir.cross(Vector3.UP) * _rng.randf_range(-0.018, 0.018)
 	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)))
-	_place(c, b, size, 0.6 if quoin else _rng.randf())
+	if quoin:
+		_place(c, b, size, _rng.randf_range(0.5, 0.7))
+	else:
+		_place_rubble(c, b, size)
 
+## A split field stone of the walling (masonry field mode, INSTANCE_CUSTOM.a = 2).
+func _place_rubble(c: Vector3, b: Basis, size: Vector3) -> void:
+	var sc := size
+	if _rng.randf() < 0.5:
+		sc.x = -sc.x
+		sc.z = -sc.z
+	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
+	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
+	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 2.0)])
+	stone_count += 1
+
+## A dressed sandstone block (quoins, sills, flags, ridge), weathered (INSTANCE_CUSTOM.a = 1).
 func _place(c: Vector3, b: Basis, size: Vector3, tint: float) -> void:
 	var v := _rng.randi() % VARIANTS
 	for t in 2:
@@ -223,7 +253,7 @@ func _place(c: Vector3, b: Basis, size: Vector3, tint: float) -> void:
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
 	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
-	_per[v].append([xf, Color(above, tint, 1.0, 0.0)])
+	_per[v].append([xf, Color(above, tint, 1.0, 1.0)])
 	stone_count += 1
 
 ## Roof line: the deck underside's height above the floor at local z.
@@ -275,7 +305,7 @@ func _chimney() -> void:
 		for i in 2:
 			var a: float = zs[i]
 			var b: float = zs[i + 1]
-			_place(Vector3(x0 + STACK_W * 0.5, y + h * 0.5, (a + b) * 0.5), Basis(Vector3.BACK, Vector3.UP, Vector3.BACK.cross(Vector3.UP)) * Basis.from_euler(Vector3(0, _rng.randf_range(-0.02, 0.02), 0)), Vector3(b - a - 0.015, h - 0.012, STACK_W), _rng.randf())
+			_place_rubble(Vector3(x0 + STACK_W * 0.5, y + h * 0.5, (a + b) * 0.5), Basis(Vector3.BACK, Vector3.UP, Vector3.BACK.cross(Vector3.UP)) * Basis.from_euler(Vector3(0, _rng.randf_range(-0.02, 0.02), 0)), Vector3(b - a - 0.015, h - 0.012, STACK_W))
 		y += h
 		k += 1
 	# the cap: a thin oversailing slab
