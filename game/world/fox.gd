@@ -428,7 +428,7 @@ func _walk(dt: float, top: float) -> bool:
 
 # ---------------------------------------------------------------- mesh
 
-## A red fox about 0.38 m at the shoulder, 0.56 m nose to rump with a 0.4 m brush, facing
+## A red fox about 0.38 m at the shoulder, 0.56 m nose to rump with a 0.5 m brush, facing
 ## -Z, paws at y = 0. COLOR as the deer: r leg (0.25 LF, 0.5 RF, 0.75 LH, 1 RH), g below the
 ## wrist/hock, b neck/head bend weight, a part (0 coat, 0.5 eye, 0.75 brush, 1 ear).
 static func build_mesh() -> ArrayMesh:
@@ -491,15 +491,16 @@ static func build_mesh() -> ArrayMesh:
 		]
 		Herd._leg(st, fore, s, 0.25 if s > 0 else 0.5, 0.12, 18, 5)
 		Herd._leg(st, hind, s, 0.75 if s > 0 else 1.0, 0.125, 18, 5)
-	# the brush: thick, carried low and straight out behind
+	# the brush: thick, carried low and straight out behind, about 0.5 m long (the shader's
+	# TAIL_* tables mirror these keys for the sat curl)
 	var tail := [
 		[0.30, 0.385, 0.012, 0.012, 0.012, 0.0],
 		[0.345, 0.38, 0.034, 0.034, 0.034, 0.0],
-		[0.42, 0.35, 0.064, 0.062, 0.064, 0.0],
-		[0.52, 0.30, 0.072, 0.068, 0.07, 0.0],
-		[0.62, 0.25, 0.06, 0.058, 0.058, 0.0],
-		[0.69, 0.22, 0.032, 0.03, 0.03, 0.0],
-		[0.71, 0.212, 0.003, 0.003, 0.003, 0.0],
+		[0.429, 0.346, 0.064, 0.062, 0.064, 0.0],
+		[0.541, 0.29, 0.072, 0.068, 0.07, 0.0],
+		[0.653, 0.234, 0.06, 0.058, 0.058, 0.0],
+		[0.731, 0.201, 0.032, 0.03, 0.03, 0.0],
+		[0.754, 0.192, 0.003, 0.003, 0.003, 0.0],
 	]
 	Herd._loft(st, tail, 0.0, 28, 5, 0.0, 0.75, 3)
 	st.generate_tangents()

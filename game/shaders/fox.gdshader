@@ -1,7 +1,7 @@
 shader_type spatial;
 // Red fox built by fox.gd (Fox.build_mesh). Posed here from instance uniforms: a diagonal
 // trot that stretches into a bounding run, and a sit (haunches down, forelegs straight,
-// head held level, brush curled round the forepaws). Mesh COLOR as the deer's: r = leg
+// head held level, brush curled round the haunch to the forepaws). Mesh COLOR as the deer's: r = leg
 // (0.25 LF, 0.5 RF, 0.75 LH, 1 RH), g = below the wrist/hock, b = neck/head bend weight,
 // a = part (0 coat, 0.5 eye, 0.75 brush, 1 ear). Rest pose faces -Z, paws at y = 0.
 
@@ -30,6 +30,12 @@ varying float v_cloud;
 
 const vec3 HIP[4] = vec3[4](vec3(0.05, 0.38, -0.165), vec3(-0.05, 0.38, -0.165), vec3(0.055, 0.37, 0.22), vec3(-0.055, 0.37, 0.22));
 const vec3 KNEE[4] = vec3[4](vec3(0.05, 0.12, -0.19), vec3(-0.05, 0.12, -0.19), vec3(0.055, 0.125, 0.268), vec3(-0.055, 0.125, 0.268));
+// the brush's rest keys from Fox.build_mesh (z, y) and arc fraction at each, and the curve
+// (x, z) its sat curl lies along on the ground, round the right haunch to the forepaws
+const float TAIL_Z[7] = float[7](0.30, 0.345, 0.429, 0.541, 0.653, 0.731, 0.754);
+const float TAIL_Y[7] = float[7](0.385, 0.38, 0.346, 0.29, 0.234, 0.201, 0.192);
+const float TAIL_A[7] = float[7](0.0, 0.091, 0.274, 0.527, 0.780, 0.950, 1.0);
+const vec2 CURL[4] = vec2[4](vec2(0.0, 0.18), vec2(0.2, 0.21), vec2(0.215, -0.09), vec2(0.09, -0.18));
 // trot: diagonal pairs (LF with RH, RF with LH); run: a rotary gallop
 const float TROT_OFF[4] = float[4](0.0, 0.5, 0.5, 0.0);
 const float RUN_OFF[4] = float[4](0.12, 0.0, 0.58, 0.46);
@@ -77,19 +83,17 @@ void vertex() {
 		v = hip + rot_x(v - hip, swing * tw);
 		n = rot_x(n, swing * tw);
 	}
-	// the brush: streamed out level at a run, a slow sway at the trot; sitting it lies on
-	// the ground and curls round toward the forepaws
-	if (COLOR.a > 0.6 && COLOR.a < 0.9) {
+	// the brush: streamed out level at a run, a slow sway at the trot (sat: see below)
+	bool brush = COLOR.a > 0.6 && COLOR.a < 0.9;
+	if (brush) {
 		vec3 root = vec3(0.0, 0.38, 0.31);
-		float along = clamp((VERTEX.z - 0.31) / 0.4, 0.0, 1.0);
+		float along = clamp((VERTEX.z - 0.31) / 0.45, 0.0, 1.0);
 		float lift = -0.35 * run - 0.12 * clamp(spd, 0.0, 1.0);
 		float sway = 0.12 * sin(TAU * phase) * clamp(spd, 0.0, 1.0) * (1.0 - run);
-		float down = -(pitch + 0.56 * s);
-		v = root + rot_x(v - root, mix(lift, down, s));
-		n = rot_x(n, mix(lift, down, s));
-		float curl = (sway + s * 2.1 * along) ;
-		v = root + rot_y(v - root, curl * along);
-		n = rot_y(n, curl * along);
+		v = root + rot_x(v - root, lift);
+		n = rot_x(n, lift);
+		v = root + rot_y(v - root, sway * along);
+		n = rot_y(n, sway * along);
 	}
 	float b = COLOR.b;
 	if (b > 0.0) {
@@ -112,6 +116,32 @@ void vertex() {
 		vec3 sh = vec3(0.0, 0.38, -0.165);
 		v = sh + rot_x(v - sh, pitch);
 		n = rot_x(n, pitch);
+	}
+	// sat, the brush lies on the ground out of the rump and curls round the haunch, its tip
+	// beside the forepaws: each ring is carried from its rest frame onto a curve on the turf
+	if (brush && s > 0.0) {
+		float t = clamp(UV.y, 0.0, 1.0) * 6.0;
+		int k = min(int(t), 5);
+		float f = t - float(k);
+		vec3 k0 = vec3(0.0, TAIL_Y[k], TAIL_Z[k]);
+		vec3 k1 = vec3(0.0, TAIL_Y[k + 1], TAIL_Z[k + 1]);
+		vec3 tr = normalize(k1 - k0);
+		vec3 ur = cross(tr, vec3(1.0, 0.0, 0.0));
+		vec3 d = VERTEX - mix(k0, k1, f);
+		vec3 dn = NORMAL;
+		float a = mix(TAIL_A[k], TAIL_A[k + 1], f);
+		float u = 1.0 - a;
+		vec2 c = u * u * u * CURL[0] + 3.0 * u * u * a * CURL[1] + 3.0 * u * a * a * CURL[2] + a * a * a * CURL[3];
+		vec2 dc = 3.0 * u * u * (CURL[1] - CURL[0]) + 6.0 * u * a * (CURL[2] - CURL[1]) + 3.0 * a * a * (CURL[3] - CURL[2]);
+		vec3 ts = normalize(vec3(dc.x, 0.0, dc.y));
+		vec3 us = vec3(0.0, 1.0, 0.0);
+		vec3 xs = cross(us, ts);
+		// a little flattened where it lies, the underside on the ground
+		float squash = 0.82;
+		vec3 vs = vec3(c.x, mix(0.062, 0.05, a), c.y) + xs * d.x + us * dot(d, ur) * squash + ts * dot(d, tr);
+		vec3 ns = xs * dn.x + us * dot(dn, ur) / squash + ts * dot(dn, tr);
+		v = mix(v, vs, s);
+		n = mix(n, normalize(ns), s);
 	}
 	// the run: the back flexes and the body bounds
 	float rock = run * 0.08 * sin(TAU * phase + 1.2);

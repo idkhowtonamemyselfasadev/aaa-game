@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261012-2330-hero-back-mantle.jpg",
-  "time": "2026-10-12T23:37:28Z",
-  "caption": "Close rear view: straw hat, indigo hood and staff read well, but the mantle is a flat brown slab with a hard hem and the new face shot framed the hero's back.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0100-hero-mantle-drape.jpg",
-  "time": "2026-10-13T00:56:52Z",
-  "caption": "Rear view in the meadow: the hero's mantle now falls in folds to a soft scalloped hem over the madder robe and slung staff; the folds still read faintly at this range and the practice post crowds the frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-0100-hero-face-front.jpg",
   "time": "2026-10-13T00:56:52Z",
   "caption": "The face shot now frames the hero from the front-left under the straw hat, but the face is still a black void of hood and face cloth in the brim's shade with no eyes or skin.",
@@ -897,6 +885,18 @@
   "file": "20261018-0720-foxcrust.jpg",
   "time": "2026-10-18T07:20:00Z",
   "caption": "The fox at Hesper's crust with the smoother body mesh; still wrong: nearly head-on with bright eyeshine straight into the lens, the coat is a flat ginger with no guard-hair breakup, and the brick wall behind is salmon.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0734-foxcurl.jpg",
+  "time": "2026-10-18T07:34:27Z",
+  "caption": "The sat fox's brush now lies on the turf and curls round its haunch toward the forepaws; the coat still reads smooth and flat-lit, and rubble slabs crowd the lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0734-foxside.jpg",
+  "time": "2026-10-18T07:34:27Z",
+  "caption": "Side-on, the brush lies low along the ground behind the sat fox instead of sweeping up; the lens still sits high in rubble with a salmon brick wall behind.",
   "verdict": "fail"
  }
 ]
