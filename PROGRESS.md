@@ -3547,6 +3547,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (17:16 10-18) Hen house shot `hens henhouse 60 11.0 house fixfps` (Forward+ lavapipe): reads
+  as a raised boarded hen house with its ladder and a hen at the pop-hole, but FAILS the bar:
+  the boards are pale silvered grey with little value/grain contrast (darken, more tar or
+  creosote brown), the nest box reads as a flat shelf off the end (lid needs thickness and a
+  visible box below it), the roof edge is a thin dark line; the garth dust shows smooth pale
+  oval patches (dust baths) that look like decals. Shots ~13 min this session.
 - (15:00 10-18) Yard ground: the softened claw rakes, the path and the brighter dust have
   not been shot yet (shot `yardwall yg2 60 12.5 inyard fixfps` was started with the darker
   first version); the garth earth reads flat grey-brown in shade (add damp darker patches
