@@ -250,10 +250,22 @@ func _ready() -> void:
 			var lk := ct.to_global(Vector3(-3.0, 0, -6.0))
 			lk.y = terrain.height_at(lk.x, lk.z) + 1.4
 			SPOTS[spot] = [cn, lk]
+		elif "gate" in args:
+			# close on the field gate from outside, a little off square ("ajar": swung half
+			# open into the yard)
+			var gc := dw.field_gate.centre()
+			var ow := (g - ct.to_global(Vector3(0, 0, -6.7)))
+			ow.y = 0
+			ow = ow.normalized()
+			var cp := gc + ow * 3.4 + bz * 1.3
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.5
+			SPOTS[spot] = [cp, gc - ow * 0.6 - Vector3.UP * 0.15]
 		else:
 			var cp := g + bx * 5.5 + bz * 3.0
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.65
 			SPOTS[spot] = [cp, g - bz * 2.2 + Vector3.UP * 0.9]
+		if "ajar" in args:
+			dw.field_gate.pose(-0.75)
 		var pp := ct.door_gap + bz * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT drywall gate %s, %d stones" % [g, dw.stone_count])

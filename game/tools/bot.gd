@@ -2788,6 +2788,11 @@ func _drywall_test() -> void:
 		if t >= 15.0:
 			p.bot_input = Vector2.ZERO
 			return _combat_done(false, "could not walk through the gateway into the yard (stuck at %s)" % p.global_position)
+	# the field gate gave way as the hero came at it, and swung away from him into the yard
+	var fg := w.field_gate
+	print("BOT drywall gate: opened %d times, at %.2f rad" % [fg.opens, fg.angle])
+	if fg.opens < 1:
+		return _combat_done(false, "the field gate never swung open")
 	# run at the back of the yard: the wall must hold
 	var back := -c.global_basis.z
 	var t2 := 0.0
@@ -2803,7 +2808,38 @@ func _drywall_test() -> void:
 	print("BOT drywall: ran at the back wall, got %.2f m behind the house centre (wall at ~10.4)" % far)
 	if far > 10.4:
 		return _combat_done(false, "ran through the garth wall")
-	_combat_done(true, "the yard wall stands clear of trees and the timber house, the gateway lets you in, the wall holds")
+	# left alone, the gate falls shut by its weight and knocks to rest
+	var t3 := 0.0
+	while t3 < 12.0 and (fg.shuts < 1 or fg.angle != 0.0):
+		await _ticks(6)
+		t3 += 0.1
+	var foley: Foley = _world.foley
+	print("BOT drywall gate: shut after %.1f s (%d knocks), angle %.3f, creaks %d, knocks heard %d" % [t3, fg.shuts, fg.angle, foley.played.get("creak", 0), foley.played.get("wood", 0)])
+	if fg.shuts < 1 or fg.angle != 0.0:
+		return _combat_done(false, "the field gate did not fall shut")
+	if foley.played.get("creak", 0) < 1:
+		return _combat_done(false, "the gate swung without a creak")
+	# shut, it bars the way: walk at it from the yard side and it gives again, the other way
+	var o0 := fg.opens
+	var inside := w.gate - out * 2.5
+	p.global_position = Vector3(inside.x, terrain.height_at(inside.x, inside.z) + 0.5, inside.z)
+	await _ticks(10)
+	var t4 := 0.0
+	var mn := 0.0
+	var mx := 0.0
+	while t4 < 6.0 and Vector2(p.global_position.x - w.gate.x, p.global_position.z - w.gate.z).dot(Vector2(out.x, out.z)) < 1.5:
+		p.bot_input = Vector2(out.x, out.z)
+		await _ticks(6)
+		t4 += 0.1
+		mn = minf(mn, fg.angle)
+		mx = maxf(mx, fg.angle)
+	p.bot_input = Vector2.ZERO
+	print("BOT drywall gate from the yard: opened %d -> %d, swung %.2f..%.2f rad, out in %.1f s" % [o0, fg.opens, mn, mx, t4])
+	if fg.opens <= o0 or t4 >= 6.0:
+		return _combat_done(false, "could not get back out through the field gate")
+	if mn < -0.5 and mx > 0.5:
+		return _combat_done(false, "the gate swung both ways for one push")
+	_combat_done(true, "the yard wall stands clear of trees and the timber house, the field gate swings away from you and falls shut with a creak and a knock, the wall holds")
 
 func _ruin_test() -> void:
 	var p := _player

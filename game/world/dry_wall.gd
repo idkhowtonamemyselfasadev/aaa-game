@@ -36,6 +36,7 @@ var stone_count := 0
 var cope_count := 0
 var through_count := 0
 var gate := Vector3.ZERO      # world centre of the gateway (bots)
+var field_gate: FieldGate     # the oak gate hung on the north stoop
 var _ruins: Ruins
 var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
@@ -97,6 +98,7 @@ func _ready() -> void:
 	var b0 := _to_world(RUNS_LOCAL[0][1])
 	var g := a0.lerp(b0, GATE_AT)
 	gate = Vector3(g.x, _terrain.height_at(g.x, g.y), g.y)
+	_hang_gate(g, (b0 - a0).normalized())
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
 	_build_core()
@@ -192,6 +194,16 @@ func _face_stone(a: Vector2, d2: Vector2, dir: Vector3, nrm: Vector3, face: floa
 	var bas := Basis(dir, -batter * face) * Basis(dir, Vector3.UP, nrm)
 	bas = bas * Basis.from_euler(Vector3(_rng.randf_range(-0.06, 0.06), _rng.randf_range(-0.08, 0.08), _rng.randf_range(-0.11, 0.11)))
 	_place(c, bas, size, cy)
+
+## The field gate, its heel on the stoop that ends the first half of run 0 (d: along the run).
+func _hang_gate(g: Vector2, d: Vector2) -> void:
+	field_gate = FieldGate.new()
+	field_gate.name = "FieldGate"
+	var o := g - d * (GATE_W * 0.5 - 0.04)
+	var x := Vector3(d.x, 0, d.y)
+	field_gate.basis = Basis(x, Vector3.UP, x.cross(Vector3.UP))
+	field_gate.position = Vector3(o.x, minf(_terrain.height_at(o.x, o.y), _terrain.height_at(g.x + d.x * 0.6, g.y + d.y * 0.6)), o.y) - global_position
+	add_child(field_gate)
 
 ## An upright gate stoop at the end p of a run, d pointing out of the wall into the gap.
 func _stoop(p: Vector2, d: Vector2) -> void:

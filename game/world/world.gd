@@ -112,6 +112,7 @@ func _ready() -> void:
 	dry_wall.ruins_path = NodePath("../Ruins")
 	dry_wall.terrain_path = NodePath("../Terrain")
 	add_child(dry_wall)
+	dry_wall.field_gate.watch = player
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"
@@ -162,6 +163,7 @@ func _ready() -> void:
 	foley.hook(player, [soldier], trample)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
+	foley.hook_gate(dry_wall.field_gate)
 
 func _build_environment() -> void:
 	var e := Environment.new()

@@ -50,6 +50,7 @@ func _ready() -> void:
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
+	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
 	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
 	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
@@ -125,6 +126,13 @@ func hook_fox(f: Node) -> void:
 		_play_wild("fox_yelp" if alarm else "fox_bark", at, -3.0 if alarm else -1.0, 16.0, true))
 	if f.has_signal("crunched"):
 		f.crunched.connect(func(at: Vector3) -> void: _play_wild("crunch", at, -14.0, 1.5, false))
+
+## The garth's field gate: a dry creak of iron eyes turning on the crooks, a knock as it shuts.
+func hook_gate(g: Node) -> void:
+	if g == null or not g.has_signal("creaked"):
+		return
+	g.creaked.connect(func(at: Vector3) -> void: _play("creak", at, -9.0))
+	g.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-14.0, -3.0, pw), 0.72))
 
 # ---------------------------------------------------------------- events
 
@@ -303,6 +311,18 @@ func _make_crunch() -> AudioStreamWAV:
 		var snap := exp(-k * 60.0)
 		x[i] = hp * (grain * 0.8 + snap * 1.2) * smoothstep(0.0, 0.01, k) + chew * 0.6 * sin(PI * k)
 	return _wav(x)
+
+## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
+## uneven train of grinding clicks that runs together into a rising, wavering squeal and
+## falls off, thin and bright, with a hollow wooden body under it from the leaf.
+func _make_creak(pt: float) -> AudioStreamWAV:
+	var dur := 0.75
+	var wob := _rng.randf_range(5.0, 9.0)
+	var x := _voice(dur,
+		func(k: float) -> float: return pt * (lerpf(90.0, 470.0, smoothstep(0.0, 0.45, k)) - 120.0 * smoothstep(0.55, 1.0, k)) * (1.0 + 0.06 * sin(k * dur * TAU * wob)),
+		func(k: float) -> float: return smoothstep(0.0, 0.12, k) * (1.0 - smoothstep(0.7, 1.0, k)) * (0.75 + 0.25 * sin(k * 37.0)),
+		[[1250.0 * pt, 9.0, 1.0], [2600.0 * pt, 11.0, 0.6], [4300.0, 8.0, 0.25], [330.0, 3.0, 0.3]], 0.15, 0.7)
+	return _wav(x, 0.6)
 
 ## The stag's rut roar: a long deep groan swelling up and falling away, pushed through a
 ## lowered larynx (closely packed low formants), rough with period doubling, then two short
