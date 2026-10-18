@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261012-1930-sward-meadow.jpg",
-  "time": "2026-10-12T19:30:00Z",
-  "caption": "Behind the hero at 11 h: the meadow floor reads as continuous grass to ~25 m instead of tufts over soil; the hero is still the sci-fi Vanguard and the practice post crowds the frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-2000-player-meadow.jpg",
-  "time": "2026-10-12T20:45:00Z",
-  "caption": "Midday meadow round the hero: tall grass is now a mix of arching leafy clumps and low tussocks in knots over the short sward instead of one repeated spiky fan; hero is still the sci-fi Vanguard and the practice post crowds the frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-2000-valley-seedheads.jpg",
   "time": "2026-10-12T20:45:00Z",
   "caption": "Evening over the valley: seeding grass stems with straw panicles catch the low sun on the slope in front; the far mountain ring is still a pale, smooth, blobby silhouette and the oaks are stylized.",
@@ -891,6 +879,18 @@
   "file": "20261018-0231-foxcrust.jpg",
   "time": "2026-10-18T02:31:34Z",
   "caption": "The fox at night bowed nose-down over the crust Hesper tossed it on the keep floor; the pose reads, but it stands on dark rubble slabs that hide its legs and the crust, and its coat is a flat saturated orange.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0405-foxseat.jpg",
+  "time": "2026-10-18T04:05:00Z",
+  "caption": "The fox sat on swept keep floor just in from the breach, whole body, forelegs and brush in view at last; still a flat saturated orange coat with smooth fur and wall stones lit like flat panels.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0405-foxcrust.jpg",
+  "time": "2026-10-18T04:05:00Z",
+  "caption": "The fox at its crust spot on open floor, legs clear of the rubble now, but it stands head-up looking away, the crust is out of frame, the coat is flat orange and the legs thin sticks.",
   "verdict": "fail"
  }
 ]
