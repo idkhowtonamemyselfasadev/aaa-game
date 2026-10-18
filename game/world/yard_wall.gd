@@ -21,12 +21,14 @@ extends Node3D
 const W0 := 0.75          # width at the foot
 const W1 := 0.42          # width under the copes
 const H := 1.0            # foot to the top of the last course (under the copes)
-const COPE := 0.28        # cope stone height
+const COPE := 0.34        # cope stone height
 const VARIANTS := 8
 
 var stone_count := 0
 var cope_count := 0
 var through_count := 0
+var pin_count := 0
+var _wander := FastNoiseLite.new()
 var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
 var _per: Array = []           # per variant: [Transform3D, Color]
@@ -103,6 +105,8 @@ func _ready() -> void:
 	var ruins: Ruins = get_node(ruins_path)
 	_terrain = get_node(terrain_path)
 	_rng.seed = seed
+	_wander.seed = seed + 11
+	_wander.frequency = 0.45
 	_body = StaticBody3D.new()
 	_body.name = "YardWallCollision"
 	add_child(_body)
@@ -134,10 +138,12 @@ func _run(r: Array) -> void:
 		var s0: float = seg[0]
 		var s1: float = seg[1]
 		for side in [-1.0, 1.0]:
-			var y := -0.08                     # the footing course sits a little in the ground
+			var y := -0.1                      # the footing course sits a little in the ground
 			while y < H - 0.08:
 				var t := clampf(y / H, 0.0, 1.0)
-				var h := minf(_rng.randf_range(lerpf(0.19, 0.11, t), lerpf(0.26, 0.16, t)), H - y)
+				var h := minf(_rng.randf_range(lerpf(0.15, 0.08, t), lerpf(0.3, 0.19, t)), H - y)
+				if y < 0.0:
+					h = _rng.randf_range(0.3, 0.4)  # the footing: big boulders, half bedded in
 				if y > 0.42 and y < 0.6 and side > 0.0:
 					_throughs(a, d, s0, s1, y, h)
 				_course(a, d, s0, s1, y, h, side)
@@ -155,12 +161,34 @@ func _course(a: Vector2, d: Vector2, s0: float, s1: float, y: float, h: float, s
 	if _rng.randf() < 0.5:
 		s = s0                                 # every other course starts flush, so the ends bond
 	while s < s1 - 0.08:
-		var f := minf(_rng.randf_range(lerpf(0.26, 0.18, t), lerpf(0.55, 0.36, t)), s1 - s)
+		var foot := y < 0.0
+		var f := minf(_rng.randf_range(lerpf(0.2, 0.14, t), lerpf(0.6, 0.38, t)), s1 - s)
+		if foot:
+			f = minf(_rng.randf_range(0.45, 0.85), s1 - s)
 		var dep := minf(_rng.randf_range(0.26, 0.4), _half_w(y) * 2.0 * 0.62)
-		var hh := h * _rng.randf_range(0.82, 1.0)
-		var off := (_half_w(y + hh * 0.5) - dep * 0.5 + _rng.randf_range(-0.01, 0.025)) * side
-		_place(a, d, s + f * 0.5, off, y, Vector3(f, hh, dep), side, 0.05)
-		s += f + _rng.randf_range(0.0, 0.03)
+		# stones are never the course's height exactly: some short with a pinning stone
+		# packed over them, some standing proud into the course above
+		var hh := h * _rng.randf_range(0.66, 1.18)
+		if foot:
+			hh = h * _rng.randf_range(0.85, 1.25)
+		# the courses wander: the whole wall rises and dips along its length (less up top),
+		# and each stone sits a little high or low in its bed
+		var yy := y + _wander.get_noise_1d(s * 3.0 + side * 0.4) * 0.07 * (1.0 - t * 0.6) + _rng.randf_range(-0.018, 0.018)
+		var off := (_half_w(yy + hh * 0.5) - dep * 0.5 + _rng.randf_range(-0.015, 0.035)) * side
+		_place(a, d, s + f * 0.5, off, yy, Vector3(f, hh, dep), side, 0.07 if not foot else 0.1)
+		if hh < h * 0.86 and not foot:
+			_pin(a, d, s + f * 0.5, off, yy + hh, h - hh, f, side)
+		elif _rng.randf() < 0.22 and not foot:
+			_pin(a, d, s + f + 0.02, off, yy + h * 0.3, h * 0.4, 0.07, side)
+		s += f + _rng.randf_range(0.0, 0.045)
+
+## A pinning stone: a thin wedge driven into a gap to bed the stone above (over a short
+## stone, or upright into a vertical joint), its face a little proud of the wall.
+func _pin(a: Vector2, d: Vector2, s: float, off: float, y: float, gap: float, room: float, side: float) -> void:
+	var th := clampf(gap + 0.02, 0.04, 0.09)
+	var ln := clampf(room * _rng.randf_range(0.35, 0.7), 0.07, 0.22)
+	_place(a, d, s + _rng.randf_range(-0.03, 0.03), off + side * 0.02, y - 0.01, Vector3(ln, th, 0.16), side, 0.18)
+	pin_count += 1
 
 ## Through-stones: long stones across the whole wall, every ~0.9 m, ends proud of both faces.
 func _throughs(a: Vector2, d: Vector2, s0: float, s1: float, y: float, h: float) -> void:
@@ -175,13 +203,15 @@ func _throughs(a: Vector2, d: Vector2, s0: float, s1: float, y: float, h: float)
 func _copes(a: Vector2, d: Vector2, s0: float, s1: float) -> void:
 	var s := s0 + 0.04
 	while s < s1 - 0.05:
-		var th := _rng.randf_range(0.07, 0.15)
-		var ch := COPE * _rng.randf_range(0.75, 1.15)
-		var xf := _xf(a, d, s + th * 0.5, _rng.randf_range(-0.02, 0.02), H - 0.04, Vector3(th, ch, W1 + _rng.randf_range(0.02, 0.1)), 0.0, 0.0)
-		xf.basis = xf.basis.rotated(Vector3(d.x, 0, d.y).cross(Vector3.UP).normalized(), _rng.randf_range(-0.12, 0.12))
+		var th := _rng.randf_range(0.08, 0.17)
+		var ch := COPE * _rng.randf_range(0.7, 1.2)
+		var xf := _xf(a, d, s + th * 0.5, _rng.randf_range(-0.025, 0.025), H - 0.06, Vector3(th, ch, W1 + _rng.randf_range(0.04, 0.14)), 0.0, 0.0)
+		# set on edge leaning one way down a stretch, then the other: the run's lean wanders
+		var lean := _wander.get_noise_1d(s * 1.7 + 50.0) * 0.45 + _rng.randf_range(-0.08, 0.08)
+		xf.basis = xf.basis.rotated(Vector3(d.x, 0, d.y).cross(Vector3.UP).normalized(), lean)
 		_add(xf, H - 0.04)
 		cope_count += 1
-		s += th + _rng.randf_range(0.005, 0.025)
+		s += th / cos(lean) + _rng.randf_range(0.015, 0.05)
 
 ## A tall gate stone standing in the ground at the gateway's cheek.
 func _gate_stone(q: Vector2, d: Vector2) -> void:
@@ -221,7 +251,7 @@ func _xf(a: Vector2, d: Vector2, s: float, off: float, y: float, sz: Vector3, si
 	return Transform3D(b * Basis.from_scale(sc), Vector3(q.x, g + y + sz.y * 0.5, q.y))
 
 func _add(xf: Transform3D, above: float) -> void:
-	_per[_rng.randi() % VARIANTS].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 1.0, 1.0)])
+	_per[_rng.randi() % VARIANTS].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 1.0, 2.0)])
 	stone_count += 1
 
 ## Box colliders along a solid length, ~2 m each, following the ground.

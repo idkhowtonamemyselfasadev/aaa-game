@@ -2849,7 +2849,7 @@ func _yardwall_test() -> void:
 	var p := _player
 	var w: YardWall = _world.yard_wall
 	var terrain: Terrain = _world.get_node("Terrain")
-	print("BOT yardwall: %d stones (%d copes, %d throughs), %d colliders" % [w.stone_count, w.cope_count, w.through_count, w.get_node("YardWallCollision").get_child_count()])
+	print("BOT yardwall: %d stones (%d copes, %d throughs, %d pins), %d colliders" % [w.stone_count, w.cope_count, w.through_count, w.pin_count, w.get_node("YardWallCollision").get_child_count()])
 	if w.stone_count < 400 or w.cope_count < 80 or w.through_count < 8:
 		return _combat_done(false, "walls not built")
 	var flora: Flora = _world.get_node("Flora")

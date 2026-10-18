@@ -232,7 +232,7 @@ func _place(c: Vector3, b: Basis, size: Vector3, above: float) -> void:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
-	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 1.0, 1.0)])
+	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 1.0, 2.0)])
 	stone_count += 1
 
 func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:

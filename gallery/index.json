@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261013-0750-deer-beds-night.jpg",
-  "time": "2026-10-13T07:50:58Z",
-  "caption": "The herd bedded down at night under the stars with fireflies over the meadow: only dark silhouettes in the grass; the firefly-lit foreground blades read flat yellow-green.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0943-oaks-before.jpg",
-  "time": "2026-10-13T09:43:00Z",
-  "caption": "Before this session: the oak crowns were made of a few hundred big painted leaves the size of dinner plates, reading as stylized lollipop trees.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-0943-oaks-leaves.jpg",
   "time": "2026-10-13T09:43:00Z",
   "caption": "The oak crowns now carry thousands of small lobed oak leaves in sprays, each catching the sun at its own angle, with a darker inner crown; the crowns are a little thin and see-through and the bare ground under them still reads flat.",
@@ -897,6 +885,18 @@
   "file": "20261018-1230-yardwall_close.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1330-garth-noon.jpg",
+  "time": "2026-10-18T13:30:00Z",
+  "caption": "From the yard side at 12.5 h: Harrowmere's dry-stone walls are now a cool grey gritstone with grey lichen, and moss only on the tops and shaded faces; still wrong: the garth wall's stones are rounded blocks in level rows and grass fills the foreground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1330-gate-grey.jpg",
+  "time": "2026-10-18T13:30:00Z",
+  "caption": "The field gate between its moss-capped stoops at noon, the garth wall now grey rather than cream; still wrong: the wall stones read as pale pillowed rectangles in brick-like rows, the cope tops carry flat lime moss and the cottage stones beside it are still cream.",
   "verdict": "fail"
  }
 ]
