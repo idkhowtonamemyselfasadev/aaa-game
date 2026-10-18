@@ -13,6 +13,7 @@ instance uniform float phase = 0.0;
 instance uniform float speed = 0.0;      // m/s
 instance uniform float sit = 0.0;        // 0 standing .. 1 sat
 instance uniform float head_yaw = 0.0;   // rad, + to its left
+instance uniform float graze = 0.0;      // 0 head up .. 1 neck bowed, nose to the ground
 instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the tapetum
 
 uniform vec3 coat : source_color = vec3(0.50, 0.205, 0.07);       // fox red
@@ -100,6 +101,11 @@ void vertex() {
 		float yw = head_yaw * pow(b, 0.7);
 		v = nb + rot_y(v - nb, yw);
 		n = rot_y(n, yw);
+		// eating off the floor: the neck bows down from the withers, nose to the ground
+		vec3 wi = vec3(0.0, 0.38, -0.17);
+		float g = -1.3 * graze * smoothstep(0.0, 0.6, b);
+		v = wi + rot_x(v - wi, g);
+		n = rot_x(n, g);
 	}
 	// the body pitch about the shoulders, leaving the forelegs standing
 	if (!fore) {

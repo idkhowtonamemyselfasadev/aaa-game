@@ -19,6 +19,9 @@ var toss := 0.0              # 0..1: the right hand reaches up over the shoulder
 var toss_arm := 3.8          # the upper arm raised past the vertical, elbow up by the ear
 var toss_elbow := 1.4        # the forearm laid back over the shoulder
 var toss_in := -1.1          # the raised arm drawn in across toward the head (about body forward)
+var flick := 0.0             # 0..1: the right arm taken over by flick_arm/flick_elbow (a toss)
+var flick_arm := 0.0
+var flick_elbow := 0.0
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -42,6 +45,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
+		if side == "Right" and flick > 0.0:
+			# on top of the pose: the difference to the flick's arm and elbow
+			_bend(skel, "mixamorig_RightArm", x, -(flick_arm - arm) * flick)
+			_bend(skel, "mixamorig_RightForeArm", x, -(flick_elbow - elbow) * flick)
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)

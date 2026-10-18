@@ -89,6 +89,7 @@ const LINES := {
 		"Sit, if you like. The fire does not mind who it warms.",
 		"Oak burns slow. Willow spits. My mother could tell them apart by the smoke.",
 		"I will drop off soon. When I do, put a stick on. A dry one.",
+		"That one comes most nights. I keep the crusts back for it. Don't tell the deer.",
 	],
 	"sleep": [
 		"Mm... the lid is swept... come back at first light...",
@@ -122,6 +123,13 @@ const PICK_UP := 1.4
 const TOSS_AT := 1.9            # s after the hold: upright again, the find goes over her shoulder
 const TOSS_LEN := 1.0           # s with the hand up at the basket mouth
 const TOSS_DROP := 0.45         # s into the reach when she lets go of it
+# tossing the fox a crust from her seat: the arm comes up with the crust by her ear, then
+# flicks out straight toward it and drops back to the warmth
+const SCRAP_WAIT := Vector2(6.0, 14.0)   # s after the fox has sat before she throws
+const FLICK_UP := 0.7           # s raising it
+const FLICK_OUT := 0.22         # s the arm snaps out; the crust leaves her hand halfway
+const FLICK_BACK := 1.1         # s settling back to her hands-out pose
+const SCRAP_FLIGHT := 0.75      # s in the air
 const KINDLE_STRIKES := 5       # flint strikes before the tinder catches
 const KINDLE_EVERY := 0.85      # s between strikes
 const KINDLE_NURSE := 9.0       # s at least she stays down after it catches, until the flames show
@@ -194,6 +202,15 @@ var _floor_basket: Node3D
 var _kindle_t := -1.0           # s down at the ring this evening (-1: not kneeling yet)
 var _strikes := 0
 var kindles := 0                # times she has lit the fire herself (bots)
+var scraps := 0                 # crusts tossed to the fox (bots)
+var _scrap_t := -1.0            # s until she throws tonight's crust (negative: not waiting)
+var _scrap_night := -1          # the night she last threw one
+var _flick_t := -1.0            # s into the throw (negative: none)
+var _scrap: Node3D              # the crust: in her hand, in the air, then on the floor
+var _scrap_from := Vector3.ZERO
+var _scrap_to := Vector3.ZERO
+var _scrap_air := -1.0          # s in flight (negative: not flying)
+var flick_hold := -1.0          # shots: hold the throw at this many s in (negative: free)
 
 func _ready() -> void:
 	collision_layer = 4
@@ -528,6 +545,7 @@ func _physics_process(delta: float) -> void:
 	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
 	move_and_slide()
 	_update_warm(delta)
+	_update_scrap(delta)
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
@@ -838,6 +856,92 @@ func _update_warm(delta: float) -> void:
 	if to_f.length() > 0.1:
 		var e := warm * warm * (3.0 - 2.0 * warm)
 		goal_yaw = lerp_angle(_spots["sleep"][1], atan2(to_f.x, to_f.z), WARM_TURN * e)
+
+## Once a night, while she sits up warming her hands and the fox sits at the edge of the
+## light, she tosses it a crust across the floor; it gets up for it (Fox.take_scrap).
+func _update_scrap(delta: float) -> void:
+	var fx = world.get("fox")
+	var night := int(floor((_hour() + 12.0) / 24.0))
+	if _scrap_air >= 0.0 and _scrap != null:
+		_scrap_air += delta
+		var f := minf(_scrap_air / SCRAP_FLIGHT, 1.0)
+		var arc := maxf(_scrap_from.y, _scrap_to.y) + 0.9
+		# a parabola through the apex: up out of her hand, over the flames, down by the fox
+		var p := _scrap_from.lerp(_scrap_to, f)
+		p.y = lerpf(_scrap_from.y, _scrap_to.y, f) + 4.0 * (arc - (_scrap_from.y + _scrap_to.y) * 0.5) * f * (1.0 - f)
+		_scrap.global_position = p
+		_scrap.rotation.x += delta * 11.0
+		if f >= 1.0:
+			_scrap_air = -1.0
+			_scrap.rotation = Vector3(0.0, _rng.randf() * TAU, 0.0)
+			if fx != null and fx.state == Fox.SIT:
+				fx.take_scrap(_scrap)
+			else:
+				_scrap.queue_free()
+			_scrap = null
+	if _flick_t >= 0.0:
+		_flick_t = flick_hold if flick_hold >= 0.0 else _flick_t + delta
+		var t := _flick_t
+		var up := smoothstep(0.0, FLICK_UP, t)
+		var out := smoothstep(FLICK_UP, FLICK_UP + FLICK_OUT, t)
+		var back := smoothstep(FLICK_UP + FLICK_OUT, FLICK_UP + FLICK_OUT + FLICK_BACK, t)
+		crumple.flick = up * (1.0 - back)
+		crumple.flick_arm = lerpf(2.2, 1.45, out)
+		crumple.flick_elbow = lerpf(1.7, 0.1, out)
+		if _scrap != null and _scrap_air < 0.0 and t >= FLICK_UP + FLICK_OUT * 0.5:
+			_scrap.reparent(world)
+			_scrap_from = _scrap.global_position
+			_scrap_air = 0.0
+			scraps += 1
+		if back >= 1.0:
+			_flick_t = -1.0
+			crumple.flick = 0.0
+		return
+	var fox_sat: bool = fx != null and fx.state == Fox.SIT and fx.sit > 0.99
+	if not fox_sat or warm < 0.9 or sit < 0.95 or _scrap_night == night or hand_mark == null:
+		_scrap_t = -1.0
+		return
+	if _scrap_t < 0.0:
+		_scrap_t = _rng.randf_range(SCRAP_WAIT.x, SCRAP_WAIT.y)
+	_scrap_t -= delta
+	if _scrap_t <= 0.0:
+		throw_scrap()
+
+## Starts the throw now (shots and bots may call it): the crust goes in her hand and lands
+## a little short of the fox, on its side of the fire.
+func throw_scrap() -> void:
+	var fx = world.get("fox")
+	if fx == null or hand_mark == null:
+		return
+	_scrap_night = int(floor((_hour() + 12.0) / 24.0))
+	_scrap_t = -1.0
+	_flick_t = 0.0
+	if _scrap != null:
+		_scrap.queue_free()
+	_scrap = Keeper.crust()
+	hand_mark.add_child(_scrap)
+	_scrap.position = Vector3(0.0, 0.08, 0.03)
+	var to_her := Vector3(global_position.x - fx.sit_at.x, 0, global_position.z - fx.sit_at.z).normalized()
+	var at: Vector3 = fx.sit_at + to_her * 0.75 + to_her.cross(Vector3.UP) * _rng.randf_range(-0.2, 0.2)
+	_scrap_to = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.018, at.z)
+
+## A heel of dark bread: a squashed, lumpy round with a hard brown crust and a torn pale crumb face.
+static func crust() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Crust"
+	var mi := MeshInstance3D.new()
+	root.add_child(mi)
+	var m := SphereMesh.new()
+	m.radius = 0.045
+	m.height = 0.05
+	m.radial_segments = 14
+	m.rings = 8
+	mi.mesh = m
+	mi.scale = Vector3(1.0, 0.7, 0.75)
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://shaders/crust.gdshader")
+	mi.material_override = mat
+	return root
 
 ## Her body yaw turned toward the fire while she warms her hands (bots).
 func warm_facing() -> float:

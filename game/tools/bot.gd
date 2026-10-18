@@ -1515,7 +1515,8 @@ func _fox_test() -> void:
 	print("BOT fox 22 h: state %d sat at frame %d, %.2f m off its seat, %.2f m from the fire (level %.2f), facing it within %.2f rad, %d frames through a wall, visits %d" % [fx.state, sat_at, q.distance_to(fx.sit_at), to_fire.length(), hr.level, face, wall_hits, fx.visits])
 	if sat_at < 0 or q.distance_to(fx.sit_at) > 0.35 or to_fire.length() < 3.5 or to_fire.length() > 8.0 or face > 0.3 or wall_hits > 0 or not fx.visible:
 		return _combat_done(false, "the fox should come in by the gateway and sit at the edge of the firelight facing it")
-	# looks round now and then
+	# looks round now and then (Hesper holds her crust back until the crust check below)
+	k._scrap_night = int(floor((22.0 + 12.0) / 24.0))
 	var yaw_span := 0.0
 	for i in 900:
 		await get_tree().physics_frame
@@ -1523,6 +1524,36 @@ func _fox_test() -> void:
 	print("BOT fox head turns up to %.2f rad while sat" % yaw_span)
 	if yaw_span < 0.2 or fx.state != Fox.SIT:
 		return _combat_done(false, "the sat fox should look round now and then")
+	# Hesper, sat up warming her hands, tosses it a crust: it gets up, eats it, sits again
+	k.settle(_world, 22.0)
+	k._scrap_night = -1
+	var thrown := -1
+	var min_land := 99.0
+	var top_graze := 0.0
+	var crust_at := Vector3.ZERO
+	var flick := 0.0
+	for i in 3600:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+		flick = maxf(flick, k.crumple.flick)
+		if k.scraps > 0 and thrown < 0:
+			thrown = i
+		if fx._scrap != null:
+			crust_at = fx._scrap.global_position
+		top_graze = maxf(top_graze, fx.graze)
+		if fx.eaten > 0 and fx.state == Fox.SIT and fx.sit > 0.99:
+			break
+	if crust_at != Vector3.ZERO:
+		min_land = crust_at.distance_to(fx.sit_at)
+	print("BOT fox crust: thrown at frame %d (warm %.2f, sit %.2f, arm up %.2f), landed %.2f m from its seat, nose down %.2f, eaten %d, back sat %s %.2f m off its seat" % [thrown, k.warm, k.sit, flick, min_land, top_graze, fx.eaten, fx.state == Fox.SIT, fx.global_position.distance_to(fx.sit_at)])
+	if thrown < 0 or flick < 0.9 or min_land > 1.3 or top_graze < 0.9 or fx.eaten < 1 or fx.state != Fox.SIT or fx.global_position.distance_to(fx.sit_at) > 0.35:
+		return _combat_done(false, "Hesper should toss the sat fox a crust, and it should eat it and sit again")
+	# once a night
+	for i in 900:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+	if k.scraps != 1:
+		return _combat_done(false, "only one crust a night (%d)" % k.scraps)
 	# the hero walks up: it bolts out into the dark
 	var side := fx.sit_at + k.to_v.cross(Vector3.UP) * 6.0
 	_player.global_position = Vector3(side.x, tr.height_at(side.x, side.z) + 0.2, side.z)
@@ -1566,7 +1597,7 @@ func _fox_test() -> void:
 	await _ticks(60)
 	if fl.played.get("fox_bark", 0) != before:
 		return _combat_done(false, "no fox barks by day")
-	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, and bolts from the hero")
+	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, eats the crust she tosses it, and bolts from the hero")
 
 func _keeper_test() -> void:
 	var k: Keeper = _world.keeper

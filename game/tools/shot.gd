@@ -307,6 +307,8 @@ func _ready() -> void:
 		kp.settle(world, world.time_of_day)
 		var fx: Fox = world.fox
 		fx.place_sitting()
+		if "crust" in args:
+			fx.place_eating()
 		# from the fire's side of the keep floor, so the firelight falls on its face and the
 		# night meadow shows through the breach behind it (a lens out in the yard sat in the
 		# wall rubble with the fox a dark streak)
@@ -318,6 +320,12 @@ func _ready() -> void:
 			cp = fx.sit_at + to_fx.cross(Vector3.UP) * 1.6
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
+		if "crust" in args:
+			# eating Hesper's crust: three-quarter from the front, low, the fire behind the lens
+			var fq := fx.global_position
+			cp = fq - to_fx * 1.5 + to_fx.cross(Vector3.UP) * 0.9
+			cp.y = terrain.height_at(cp.x, cp.z) + 0.6
+			SPOTS[spot] = [cp, Vector3(fq.x, fq.y + 0.18, fq.z) - to_fx * 0.2]
 		if "close" in args:
 			# a portrait lens a metre off its face, a little to the side
 			cp = fx.sit_at - to_fx * 1.05 + to_fx.cross(Vector3.UP) * 0.5
@@ -375,6 +383,13 @@ func _ready() -> void:
 			var sp := kb + (inw * 0.8 + tf * 0.6).normalized() * 2.1
 			sp.y = hp.y + 1.15
 			SPOTS[spot] = [sp, kb.lerp(hp, 0.45) + Vector3.UP * 0.45]
+		if "flick" in args:
+			# the crust in her raised hand, about to go to the fox sat in the breach
+			world.fox.place_sitting()
+			kp.warm_hold = 1.0
+			kp.sit = 1.0
+			kp.throw_scrap()
+			kp.flick_hold = Keeper.FLICK_UP
 		var pp := kp.site + (kp.to_v) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT hearth at %s, level %.2f, Hesper %s" % [hp, Hearth.level_for(world.time_of_day), kp.activity])

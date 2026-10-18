@@ -8,17 +8,22 @@ extends Node3D
 ## away before dawn, when the fire burns low or rain comes on; a hero walking up on it makes
 ## it bolt back out into the dark, and it keeps away a while after.
 ## Procedural mesh (Herd's loft helpers), posed in fox.gdshader.
-## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`.
+## When Hesper tosses it a crust it gets up, creeps to it, noses it and eats it head down,
+## then goes back to its seat.
+## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`, `eaten`.
 
 signal barked(at: Vector3, alarm: bool)   # its night call from the dark, or a yelp as it bolts
 
-enum { AWAY, COME, SIT, GO, BOLT }
+enum { AWAY, COME, SIT, GO, BOLT, EAT }
 
 const TROT := 2.3          # m/s on its way in and out
 const CREEP := 0.7         # m/s over the last few metres to its seat
 const RUN := 6.5           # m/s bolting
 const SHY_R := 9.0         # a hero this close (+1.5 m per m/s he moves) puts it to flight
 const LEAVE_H := 4.6       # slips away before first light
+const SNOUT := 0.40        # m from its middle to its nose (where it stands to eat)
+const SNIFF := 1.2         # s nosing the crust before it takes it
+const CHEW := 4.5          # s eating it
 
 var world: Node3D
 var keeper: Keeper
@@ -47,6 +52,10 @@ var _night := -1            # which night arrive_h was drawn for
 var _prev_hero := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _mi: MeshInstance3D
+var graze := 0.0            # 0 head up .. 1 nose on the ground (shader)
+var eaten := 0              # crusts eaten (bots)
+var _scrap: Node3D
+var _eat_t := -1.0          # s with its nose at the crust (negative: still going to it)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -166,6 +175,12 @@ func _process(delta: float) -> void:
 				_bolt()
 			elif not _wanted(h):
 				_leave()
+		EAT:
+			_update_eat(dt)
+			if shy:
+				_bolt()
+			elif not _wanted(h):
+				_leave()
 		GO, BOLT:
 			sit = move_toward(sit, 0.0, dt / (0.25 if state == BOLT else 0.9))
 			if sit < 0.3 and _walk(dt, RUN if state == BOLT else TROT):
@@ -179,6 +194,8 @@ func _process(delta: float) -> void:
 		# a glance back over its shoulder as it goes
 		var to := Vector3(hp.x - global_position.x, 0, hp.z - global_position.z)
 		_head_goal = clampf(wrapf(atan2(-to.x, -to.z) - yaw, -PI, PI), -0.7, 0.7) * 0.6
+	if state != EAT:
+		graze = move_toward(graze, 0.0, dt / 0.5)
 	head_yaw = lerpf(head_yaw, _head_goal, 1.0 - exp(-3.0 * dt))
 	_phase = fposmod(_phase + dt * (speed / 0.95 if speed < 3.0 else speed / 1.6), 1.0)
 	global_rotation = Vector3(0, yaw, 0)
@@ -186,6 +203,7 @@ func _process(delta: float) -> void:
 	_mi.set_instance_shader_parameter("speed", speed)
 	_mi.set_instance_shader_parameter("sit", sit)
 	_mi.set_instance_shader_parameter("head_yaw", head_yaw)
+	_mi.set_instance_shader_parameter("graze", graze)
 	var fire := hearth.level if hearth else 0.0
 	_mi.set_instance_shader_parameter("eyeshine", fire * smoothstep(9.0, 3.0, global_position.distance_to(hearth.global_position)))
 
@@ -200,7 +218,7 @@ func _call(dt: float, h: float) -> void:
 			barked.emit(global_position + Vector3.UP * 0.5, true)
 	var dark := h >= 20.5 or h < 5.0
 	var rain := weather.rain if weather != null else 0.0
-	if not dark or rain > 0.3 or state == SIT or state == BOLT:
+	if not dark or rain > 0.3 or state == SIT or state == BOLT or state == EAT:
 		return
 	_bark_t -= dt
 	if _bark_t <= 0.0:
@@ -209,7 +227,73 @@ func _call(dt: float, h: float) -> void:
 		barks += 1
 		barked.emit(_ground(at) + Vector3.UP * 0.5, false)
 
+## Hesper's crust has landed near it: up off its haunches and over to it.
+func take_scrap(scrap: Node3D) -> void:
+	_drop_scrap()
+	_scrap = scrap
+	state = EAT
+	_eat_t = -1.0
+	var to := Vector3(scrap.global_position.x - global_position.x, 0, scrap.global_position.z - global_position.z)
+	var stand := scrap.global_position - to.normalized() * SNOUT if to.length() > SNOUT else global_position
+	path = [_ground(stand)]
+	_head_goal = 0.0
+	_look_t = 0.4               # a beat looking at it where it fell before it gets up
+
+## Shots: stood head down at a crust in front of its seat, part way through eating it.
+func place_eating() -> void:
+	place_sitting()
+	var to_fire := Vector3(hearth.global_position.x - sit_at.x, 0, hearth.global_position.z - sit_at.z).normalized()
+	var c := Keeper.crust()
+	world.add_child(c)
+	c.global_position = _ground(sit_at + to_fire * 0.7) + Vector3.UP * 0.018
+	c.rotation.y = 0.7
+	take_scrap(c)
+	sit = 0.0
+	_look_t = 0.0
+	global_position = _ground(c.global_position - to_fire * SNOUT)
+	path.clear()
+	_eat_t = SNIFF - 0.8
+	graze = 1.0
+
+func _drop_scrap() -> void:
+	if _scrap != null:
+		_scrap.queue_free()
+	_scrap = null
+
+func _update_eat(dt: float) -> void:
+	if _scrap == null:
+		state = COME
+		path = [sit_at]
+		return
+	var to := _scrap.global_position - global_position
+	var want_yaw := atan2(-to.x, -to.z)
+	if _look_t > 0.0:
+		_look_t -= dt
+		_head_goal = clampf(wrapf(want_yaw - yaw, -PI, PI), -0.8, 0.8)
+		return
+	if _eat_t < 0.0:
+		sit = move_toward(sit, 0.0, dt / 0.5)
+		if sit < 0.3 and _walk(dt, CREEP):
+			_eat_t = 0.0
+		return
+	speed = move_toward(speed, 0.0, 3.0 * dt)
+	yaw = lerp_angle(yaw, want_yaw, 3.0 * dt)
+	_head_goal = 0.0
+	_eat_t += dt
+	# nose down to it, a sniff, then the head working as it chews and swallows
+	var chew := 0.0 if _eat_t < SNIFF else 0.06 * (1.0 + sin(_eat_t * 14.0)) * smoothstep(SNIFF, SNIFF + 0.3, _eat_t)
+	var lift := smoothstep(SNIFF + CHEW - 0.8, SNIFF + CHEW, _eat_t)
+	graze = move_toward(graze, (1.0 - chew) * (1.0 - lift * 0.7), dt / 0.35)
+	var left := 1.0 - smoothstep(SNIFF + 0.4, SNIFF + CHEW - 0.6, _eat_t)
+	_scrap.scale = Vector3.ONE * maxf(left, 0.05)
+	if _eat_t >= SNIFF + CHEW:
+		_drop_scrap()
+		eaten += 1
+		state = COME
+		path = [sit_at]
+
 func _bolt() -> void:
+	_drop_scrap()
 	state = BOLT
 	bolts += 1
 	_yelp_t = _rng.randf_range(0.6, 1.2)
@@ -218,6 +302,7 @@ func _bolt() -> void:
 	_trim_path()
 
 func _leave() -> void:
+	_drop_scrap()
 	state = GO
 	path = _way_out() if global_position.distance_to(sit_at) < 9.0 else _to_den()
 	_trim_path()
@@ -239,7 +324,7 @@ func _walk(dt: float, top: float) -> bool:
 	var d := to.length()
 	var last := path.size() == 1
 	var want := top
-	if last and state == COME:
+	if last and (state == COME or state == EAT):
 		want = minf(top, maxf(d * 0.9, 0.12))       # creeps to a halt on its seat
 	speed = move_toward(speed, want, (9.0 if state == BOLT else 2.5) * dt)
 	if d < maxf(0.25, speed * dt * 1.5):
