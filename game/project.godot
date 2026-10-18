@@ -143,6 +143,14 @@ hoof_box={
 "type": "vec4",
 "value": Vector4(1e+09, 1e+09, -1e+09, -1e+09)
 }
+yard_mask={
+"type": "sampler2D",
+"value": ""
+}
+yard_box={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
 herd_trail={
 "type": "sampler2D",
 "value": ""

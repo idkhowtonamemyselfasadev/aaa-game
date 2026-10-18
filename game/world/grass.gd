@@ -189,7 +189,9 @@ func _step_sward() -> void:
 			continue
 		# the hens' garth: scratched short and patchy, bare earth between
 		var hen := Hens.scratched(x, z)
-		if hen > 0.0 and rng.randf() < hen * 0.6:
+		if hen > 0.0 and rng.randf() < hen * 0.75:
+			continue
+		if rng.randf() < YardGround.worn(x, z) * 0.95:   # the beaten path to the door
 			continue
 		var y := _terrain.height_at(x, z)
 		var nrm := _terrain.normal_at(x, z)
@@ -258,7 +260,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 			have_prev = false
 			continue
 		var site := _site(x, z, rng, flora)
-		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05:
+		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05 or rng.randf() < YardGround.worn(x, z) * 1.2:
 			have_prev = false
 			continue
 		px = x

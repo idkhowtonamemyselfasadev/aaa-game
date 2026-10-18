@@ -134,6 +134,10 @@ vec3 boot_prints(vec2 xz) {
 // row 0 (x, z, age s, depth 0..1), row 1 (toe dir x, z, splay 0..1, hoof length m)
 global uniform sampler2D hoof_prints : filter_nearest, repeat_disable;
 global uniform vec4 hoof_box;
+// the hens' garth and the worn yard path, baked by YardGround: r = (inside distance + 1) / 3,
+// g = path distance / 2, over the square at yard_box.xy of side yard_box.z (0 = none)
+global uniform sampler2D yard_mask : filter_linear, repeat_disable;
+global uniform vec4 yard_box;
 const int HOOF_N = 256;
 const float HOOF_LIFE = 150.0;
 
@@ -637,6 +641,129 @@ void fragment() {
 		h = mix(h, kh, keepw);
 		litw = max(litw, keepw);
 	}
+	// ---- the hens' garth and the worn path to the cottage door (YardGround) ----
+	// The garth is scratched down to dry bare earth: pale dust in the open, packed darker
+	// loam where the birds walk, fans of claw rakes with the dust kicked out behind them,
+	// dust-bath hollows of fine pale powder with a crumbly rim, pea grit, droppings and a few
+	// moulted feathers; ragged tufts of sward survive in patches and toward the wall feet.
+	// The path is a beaten band of bare earth through the gateway and round to the door.
+	float bare = 0.0;
+	vec2 yuv = (xz - yard_box.xy) / max(yard_box.z, 1e-3);
+	if (yard_box.z > 0.0 && all(greaterThan(yuv, vec2(0.0))) && all(lessThan(yuv, vec2(1.0)))) {
+		vec2 ym = texture(yard_mask, yuv).rg;
+		float gd = ym.r * 3.0 - 1.0;   // inside the garth's walls (m), negative outside
+		float td = ym.g * 2.0;         // to the path's centre line (m)
+		float rag = (meso - 0.5) * 0.6 + (micro - 0.5) * 0.3;
+		float garth = smoothstep(-0.05, 0.9, gd + rag);
+		float hw = 0.34 + 0.12 * vnoise(wpos * 0.7 + 3.0);
+		float trackw = 1.0 - smoothstep(hw * 0.55, hw * 1.35, td + rag * 0.35);
+		bare = max(garth, trackw) * (1.0 - rockw);
+		if (bare > 0.001) {
+			float fade_g = 1.0 - smoothstep(0.006, 0.03, fp);
+			float dusty = smoothstep(0.35, 0.7, fbm(wpos * 1.3 + 71.0));
+			vec3 dry = vec3(0.17, 0.135, 0.095);      // sun-dried dust (linear)
+			vec3 packed = vec3(0.085, 0.066, 0.045);  // trodden loam
+			vec3 bc = mix(packed, dry, dusty) * (0.88 + 0.24 * micro);
+			float bh = micro * 0.003;
+			// the path: packed hard in the middle where the feet go, dust at its shoulders
+			float mid = 1.0 - smoothstep(0.0, hw * 0.7, td);
+			bc = mix(bc, mix(bc, packed * 0.95, 0.6), trackw * mid * (1.0 - garth));
+			// pea grit and small stones worked up out of the loam
+			vec4 g1 = grit(xz, 24.0, 97.0, 0.78);
+			vec4 g2 = grit(xz + 2.1, 11.0, 53.0, 0.9);
+			vec3 stone = vec3(0.12, 0.112, 0.1);
+			bc = mix(bc, stone * (0.6 + 0.4 * g1.z) * (0.85 + 0.15 * g1.w), g1.x * fade_g * 0.8);
+			bh = max(bh, g1.y * 0.003 * fade_g);
+			bc = mix(bc, stone * (0.55 + 0.35 * g2.z) * (0.8 + 0.25 * g2.w), g2.x * fade_g);
+			bh = max(bh, g2.y * 0.008 * fade_g);
+			// claw rakes: a fan of three short grooves, the scratched-out dust heaped behind
+			{
+				vec2 q = xz * 3.2;
+				vec2 cell = floor(q);
+				vec3 r = hash23(cell + 151.0);
+				vec2 f = fract(q) - 0.5 - (r.xy - 0.5) * 0.5;
+				float ang = r.z * 6.2832;
+				float on = step(0.35, fract(r.x * 13.1 + r.y)) * garth;
+				float groove = 0.0;
+				for (int k = 0; k < 3; k++) {
+					float a = ang + (float(k) - 1.0) * 0.32;
+					vec2 dir = vec2(cos(a), sin(a));
+					vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x))) / 3.2;
+					float len = 0.1 + 0.05 * fract(r.y * 7.0 + float(k) * 0.3);
+					groove = max(groove, (1.0 - smoothstep(0.0015, 0.005, abs(l.y)))
+							* step(0.0, l.x) * (1.0 - smoothstep(len * 0.8, len, l.x)));
+				}
+				vec2 dir0 = vec2(cos(ang), sin(ang));
+				float spill = 1.0 - smoothstep(0.5, 1.0, length((f / 3.2 - dir0 * 0.17) / vec2(0.07, 0.07)));
+				groove *= on * fade_g;
+				spill *= on * fade_g * (0.5 + 0.5 * dusty);
+				bc = mix(bc, dry * 1.15, spill * 0.6);
+				bh += spill * 0.004;
+				bc = mix(bc, mix(bc, packed * 0.7, 0.5), groove);   // soft furrows, not ink
+				bh -= groove * 0.004;
+			}
+			// dust-bath hollows: a shallow bowl of fine pale powder, crumbs heaped round its lip
+			{
+				vec2 q = xz * 0.55;
+				vec2 cell = floor(q);
+				vec3 r = hash23(cell + 37.0);
+				vec2 f = (fract(q) - 0.5 - (r.xy - 0.5) * 0.4) / 0.55;
+				float rad = 0.24 + 0.14 * r.z;
+				float d = length(f * vec2(1.0, 1.15)) / rad + (vnoise(wpos * 9.0) - 0.5) * 0.15;
+				float on = step(0.45, r.z) * smoothstep(0.5, 0.9, garth);
+				float bowl = (1.0 - smoothstep(0.75, 1.0, d)) * on;
+				float lip = smoothstep(0.8, 1.0, d) * (1.0 - smoothstep(1.0, 1.3, d)) * on;
+				bc = mix(bc, dry * (1.25 + 0.15 * micro), bowl * 0.85);
+				bc = mix(bc, mix(bc, packed, 0.4), lip * 0.5);
+				bh += -0.012 * bowl * (1.0 - d * d * 0.6) + 0.004 * lip;
+			}
+			// droppings: small dark coils capped with white, and moulted body feathers
+			{
+				vec2 q = xz * 5.0;
+				vec2 cell = floor(q);
+				vec3 r = hash23(cell + 401.0);
+				vec2 f = (fract(q) - 0.5 - (r.xy - 0.5) * 0.6) / 5.0;
+				float d = length(f) / (0.012 + 0.006 * r.z);
+				float on = step(0.88, fract(r.x * 17.3 + r.z)) * garth * fade_g;
+				float dr = (1.0 - smoothstep(0.7, 1.0, d)) * on;
+				float cap = (1.0 - smoothstep(0.2, 0.55, length(f + vec2(0.004, 0.003)) / (0.012 + 0.006 * r.z))) * dr;
+				bc = mix(bc, mix(vec3(0.03, 0.026, 0.014), vec3(0.4, 0.39, 0.35), cap), dr);
+				bh = max(bh, dr * 0.005);
+			}
+			{
+				vec2 q = xz * 1.7;
+				vec2 cell = floor(q);
+				vec3 r = hash23(cell + 733.0);
+				vec2 f = (fract(q) - 0.5 - (r.xy - 0.5) * 0.6) / 1.7;
+				float ang = r.z * 6.2832;
+				vec2 dir = vec2(cos(ang), sin(ang));
+				vec2 l = vec2(dot(f, dir), dot(f, vec2(-dir.y, dir.x)));
+				float len = 0.05 + 0.04 * r.y;
+				float t = clamp(l.x / len, 0.0, 1.0);
+				float ly = l.y - 0.25 * len * t * t * (r.x - 0.5);   // a gentle curve
+				float wid = 0.014 * sin(3.1416 * pow(t, 0.7)) * (0.8 + 0.4 * r.x);
+				float vane = (1.0 - smoothstep(wid * 0.7, wid, abs(ly))) * step(0.0, l.x) * step(l.x, len);
+				float rach = (1.0 - smoothstep(0.0008, 0.0016, abs(ly))) * step(-0.012, l.x) * step(l.x, len);
+				float on = step(0.82, fract(r.y * 23.7 + r.x)) * garth * fade_g;
+				vec3 fc = fract(r.x * 5.3) < 0.5 ? vec3(0.32, 0.17, 0.07) : (fract(r.x * 5.3) < 0.8 ? vec3(0.42, 0.3, 0.16) : vec3(0.05, 0.045, 0.04));
+				fc *= 0.8 + 0.3 * smoothstep(0.0, wid, abs(ly)) * (1.0 - t * 0.4);
+				bc = mix(bc, fc, vane * on);
+				bc = mix(bc, vec3(0.5, 0.46, 0.38), rach * on * 0.8);
+				bh = max(bh, (vane * 0.0015 + rach * 0.002) * on);
+			}
+			// ragged tufts of the old sward survive in patches and along the wall feet
+			float tuft = smoothstep(0.58, 0.74, fbm(wpos * 0.9 + 23.0) * 0.75 + vnoise(wpos * 3.3) * 0.25
+					+ (1.0 - smoothstep(0.0, 0.6, garth)) * 0.35) * (1.0 - trackw * mid);
+			bc = mix(bc, mix(turf, thatch_a * 0.9, 0.35), tuft * 0.9);
+			bh = mix(bh, turf_h, tuft);
+			// at range: a dusty grey-brown with the sward patches
+			bc = mix(bc, mix(mix(packed, dry, 0.55), turf, 0.25), (1.0 - fade_g) * 0.5);
+			col = mix(col, bc, bare);
+			h = mix(h, bh, bare);
+			litw = max(litw, bare);
+			bare *= 1.0 - tuft;
+		}
+	}
 	// ---- boot prints: pressed, matted and darker; deepest in soft litter, faint in turf ----
 	vec3 bp = fp < 0.03 ? max(boot_prints(xz), hoof_prints_at(xz)) : vec3(0.0);
 	float soft_g = (1.0 - rockw) * mix(0.75, 1.0, max(litw, mossw * 0.7));
@@ -655,6 +782,7 @@ void fragment() {
 	float cav = clamp(h / 0.004, 0.0, 1.0);
 	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * max(fade_b, canopy * litw * fade_l));
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
+	rough = mix(rough, 0.96, bare);   // dry dust: no sheen at all
 	// the oak crowns keep the ground beneath them drier: no pools, few drops
 	float wet_here = weather_wet * (1.0 - SHELTER_DRY * shel);
 	wetten_by(col, rough, 1.0 - 0.6 * rockw, wet_here);

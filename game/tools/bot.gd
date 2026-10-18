@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall", "hens"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -118,6 +118,9 @@ func _ready() -> void:
 		return
 	if name == "hens":
 		_hens_test()
+		return
+	if name == "yardpath":
+		_yardpath_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2851,6 +2854,58 @@ func _drywall_test() -> void:
 ## Hens: five birds in the garth that potter, scratch, peck and cluck by day, run squawking
 ## from a hero walking up on them without leaving the yard, stand out heavy rain under the
 ## back eaves and settle along the back wall at dusk.
+## The garth's bare earth and the worn path: mask baked, and the hero can walk each path
+## end to end (door -> squeeze gap -> round the gable -> garth gate; door -> cart gateway).
+func _yardpath_test() -> void:
+	var p := _player
+	var terrain: Terrain = _world.get_node("Terrain")
+	var b := YardGround.mask_box
+	var tex := YardGround.mask
+	print("BOT yardpath: box %s, mask %s" % [b, tex])
+	if b.z <= 0.0 or not tex is Texture2D:
+		return _combat_done(false, "yard mask not published")
+	var c := StoneCottage.SITE
+	var mid := DryWall._to_world(Vector2(-0.3, -6.8))
+	print("BOT yardpath: garth middle dist %.2f scratched %.2f, house centre dist %.2f" % [YardGround.garth_dist(mid.x, mid.y), Hens.scratched(mid.x, mid.y), YardGround.garth_dist(c.x, c.y)])
+	if YardGround.garth_dist(mid.x, mid.y) < 2.0 or YardGround.garth_dist(c.x, c.y) > 0.0:
+		return _combat_done(false, "garth mask does not match the yard")
+	var flora: Flora = _world.get_node("Flora")
+	for q in flora.tree_positions + flora.rock_positions:
+		if YardGround.path_dist(q.x, q.z) < 2.0:
+			print("BOT yardpath: tree/rock %.1f m off the path at local %s" % [YardGround.path_dist(q.x, q.z), YardGround._to_local(q.x, q.z)])
+	for k in YardGround.PATHS_LOCAL.size():
+		var pts: Array = YardGround._paths()[k]
+		var pts_r := pts.duplicate()
+		pts_r.reverse()   # from the door outward
+		var st: Vector2 = pts_r[0] if k == 0 else pts[0]
+		p.global_position = Vector3(st.x, terrain.height_at(st.x, st.y) + 0.5, st.y)
+		await _ticks(20)
+		var route: Array = pts_r if k == 0 else pts
+		for i in range(1, route.size()):
+			var wp: Vector2 = route[i]
+			if YardGround.worn(wp.x, wp.y) < 0.99:
+				return _combat_done(false, "path %d point %d not worn" % [k, i])
+			var t := 0.0
+			# thread the squeeze gap (0.9 m) and the gateways closely; elsewhere he may cut corners
+			var tight := 0.3 if YardWall.dist(wp.x, wp.y) < 1.2 or DryWall.near(wp.x, wp.y, 0.8) else 0.8
+			while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.y).length() > tight and t < 15.0:
+				p.bot_input = _input_toward(Vector3(wp.x, 0.0, wp.y))
+				await _ticks(1)
+				t += 0.017
+			if t >= 15.0:
+				p.bot_input = Vector2.ZERO
+				var qp := PhysicsShapeQueryParameters3D.new()
+				var sph := SphereShape3D.new()
+				sph.radius = 1.0
+				qp.shape = sph
+				qp.transform = Transform3D(Basis.IDENTITY, p.global_position + Vector3.UP)
+				for hit in p.get_world_3d().direct_space_state.intersect_shape(qp, 16):
+					print("BOT yardpath: touching ", hit.collider, " ", hit.collider.get_parent())
+				return _combat_done(false, "could not walk path %d to point %d (stuck at %s, local %s, start %s)" % [k, i, p.global_position, YardGround._to_local(p.global_position.x, p.global_position.z), YardGround._to_local(st.x, st.y)])
+		p.bot_input = Vector2.ZERO
+		print("BOT yardpath: walked path %d (%d legs) to %s" % [k, route.size() - 1, p.global_position])
+	return _combat_done(true, "garth mask baked, both yard paths walkable end to end")
+
 func _hens_test() -> void:
 	var hn: Hens = _world.hens
 	var c: StoneCottage = _world.stone_cottage

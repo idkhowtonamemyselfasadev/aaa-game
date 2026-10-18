@@ -143,6 +143,8 @@ func _ready() -> void:
 	# hens keeping the garth behind the stone cottage
 	hens = Hens.new()
 	hens.setup(self)
+	# the garth scratched bare and the footpath worn round to the cottage door
+	YardGround.publish()
 	# the mix: per-layer buses and the stone reverb inside the keep
 	audio_mix = AudioMix.new()
 	audio_mix.name = "AudioMix"
