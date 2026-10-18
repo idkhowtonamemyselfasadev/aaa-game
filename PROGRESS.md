@@ -3181,7 +3181,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-00000-fox. (Glance at her before the crust + crunch sound (`Fox.crunched`, `Foley._make_crunch`) + after-meal lick/head shake (`Fox._after_meal`, `PEEK`/`SHAKE`) DONE 03:00 10-18 (other session), bot `fox manners` line; next: a tongue for the lick, ears rippling in the shake.) (seat on clear floor + ring lens DONE 03:00 10-18. NEXT: in `fox ... crust` it
+00000-fox. (Glance at her before the crust + crunch sound (`Fox.crunched`, `Foley._make_crunch`) + after-meal lick/head shake (`Fox._after_meal`, `PEEK`/`SHAKE`) DONE 03:00 10-18 (other session), bot `fox manners` line; next: a tongue for the lick, ears rippling in the shake. Shot `fox foxcrust2 60 22.5 crust` after the seat move FAILS: the crust stand point puts the fox's head INTO the breach rubble (move the crust/its stand point onto the swept floor, away from the wall), coat glows flat saturated red under the firelight, wall reads salmon brick from this side.) (seat on clear floor + ring lens DONE 03:00 10-18. NEXT: in `fox ... crust` it
    stands head UP looking away from the fire with the crust out of frame -- check
    `place_eating` sets graze/yaw toward the crust and aim the crust lens at the crust; the coat
    is still flat saturated orange (needs value variation: darker back/saddle, grizzled
