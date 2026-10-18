@@ -76,11 +76,12 @@ void fragment() {
 	col = mix(col, slate_pale * 1.4, vein * 0.5);
 	// lichen and moss: toward the eaves, on the exposed tails, off the ridge stones
 	float wetzone = eave * (1.0 - ridge);
-	float ros = fbm(wp * 7.0 + 21.0);
-	float ly = smoothstep(0.66 - wetzone * 0.14, 0.7 - wetzone * 0.14, ros) * (1.0 - side);
+	// sulphur lichen: few broad soft rosettes (a coarse patch field gates a finer edge)
+	float ros = fbm(wp * 2.6 + 21.0) + (fbm(wp * 9.0 + 4.0) - 0.5) * 0.12;
+	float ly = smoothstep(0.68 - wetzone * 0.1, 0.76 - wetzone * 0.1, ros) * (1.0 - side) * 0.8;
 	float lg = smoothstep(0.64, 0.69, fbm(wp * 11.0 + 7.0)) * (1.0 - side) * mix(0.4, 1.0, wetzone);
 	col = mix(col, lichen_g, lg * 0.7);
-	col = mix(col, lichen_y * mix(0.85, 1.05, vn(wp * 40.0)), ly * 0.85);
+	col = mix(col, lichen_y * mix(0.9, 1.02, vn(wp * 14.0)), ly * 0.75);
 	float mz = smoothstep(0.62, 0.72, fbm(wp * 4.0 + 50.0) + wetzone * 0.18 - 0.06) * smoothstep(0.55, 1.0, eave) * (1.0 - ridge);
 	col = mix(col, moss * mix(0.7, 1.15, vn(wp * 30.0)), mz);
 	// soot round the chimney stack, mostly downwind and above

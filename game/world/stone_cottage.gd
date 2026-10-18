@@ -97,7 +97,7 @@ func _ready() -> void:
 	for v in VARIANTS:
 		# tight arrises and 5-8 fracture planes cut deep enough to take the corners off, so
 		# each face outline is a ragged polygon rather than a rounded tile
-		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.035, 0.045, 0.74, 0.94, true, Vector2i(5, 8)))
+		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.022, 0.03, 0.76, 0.95, true, Vector2i(6, 9)))
 		_rubble.append([])
 	_walls()
 	_chimney()

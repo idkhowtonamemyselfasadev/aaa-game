@@ -110,11 +110,13 @@ void fragment() {
 	// field stone: a cool grey gritstone, darker, the beds only faintly showing
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.85 + 0.3 * fract(tint * 53.1)), field * 0.7);
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * 0.84, dim * 0.6);
+	// rubble: each split stone its own value and a faint warm (iron) or cool (blue) cast
+	base = mix(base, base * (0.72 + 0.5 * fract(tint * 91.7)) * mix(vec3(1.04, 1.0, 0.94), vec3(0.95, 0.99, 1.05), fract(tint * 17.9)), dim);
 	vec3 col = base * (0.9 + s * 0.2);
 	// worn arrises: paler, rubbed smooth on the keep's sheltered stones; on the laid tops and
 	// on the curtain they weather dark with grime instead (only the odd fresh chip stays pale)
 	float fresh = smoothstep(0.72, 0.8, vn(wp * 6.0 + tint * 9.0));
-	col = mix(col, base * 1.1 + 0.015, edge * 0.3 * (1.0 - 0.8 * laid * smoothstep(0.2, 0.7, n.y)) * mix(1.0, fresh, aged));
+	col = mix(col, base * 1.1 + 0.015, edge * 0.3 * (1.0 - dim * 0.75) * (1.0 - 0.8 * laid * smoothstep(0.2, 0.7, n.y)) * mix(1.0, fresh, aged));
 	col *= 1.0 - edge * aged * (1.0 - fresh) * 0.22;
 	// rain streaks down the vertical faces (long in y, narrow across)
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(n.y));
