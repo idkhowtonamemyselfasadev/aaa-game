@@ -27,6 +27,7 @@ var herd: Herd
 var cottage: Cottage
 var stone_cottage: StoneCottage
 var dry_wall: DryWall
+var yard_wall: YardWall
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
@@ -113,6 +114,12 @@ func _ready() -> void:
 	dry_wall.terrain_path = NodePath("../Terrain")
 	add_child(dry_wall)
 	dry_wall.field_gate.watch = player
+	# dry-stone walls closing the yard between the two houses, a cart gateway toward the green
+	yard_wall = YardWall.new()
+	yard_wall.name = "YardWall"
+	yard_wall.ruins_path = NodePath("../Ruins")
+	yard_wall.terrain_path = NodePath("../Terrain")
+	add_child(yard_wall)
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"

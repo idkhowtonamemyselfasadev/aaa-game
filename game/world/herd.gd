@@ -95,6 +95,7 @@ func _ready() -> void:
 	var dw: DryWall = get_node_or_null("../DryWall")
 	if dw:
 		_obstacles.append_array(dw.outline(2.0))
+	_obstacles.append_array(YardWall.outline(1.6))   # and the yard walls between the houses
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/deer.gdshader")

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -112,6 +112,9 @@ func _ready() -> void:
 		return
 	if name == "drywall":
 		_drywall_test()
+		return
+	if name == "yardwall":
+		_yardwall_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2840,6 +2843,80 @@ func _drywall_test() -> void:
 	if mn < -0.5 and mx > 0.5:
 		return _combat_done(false, "the gate swung both ways for one push")
 	_combat_done(true, "the yard wall stands clear of trees and the timber house, the field gate swings away from you and falls shut with a creak and a knock, the wall holds")
+## Yard walls: built of enough stones, clear of both houses' doors, trees and rocks; the
+## hero runs at a wall and is stopped by it, then walks out through the cart gateway.
+func _yardwall_test() -> void:
+	var p := _player
+	var w: YardWall = _world.yard_wall
+	var terrain: Terrain = _world.get_node("Terrain")
+	print("BOT yardwall: %d stones (%d copes, %d throughs), %d colliders" % [w.stone_count, w.cope_count, w.through_count, w.get_node("YardWallCollision").get_child_count()])
+	if w.stone_count < 400 or w.cope_count < 80 or w.through_count < 8:
+		return _combat_done(false, "walls not built")
+	var flora: Flora = _world.get_node("Flora")
+	var near := 99.0
+	for q in flora.tree_positions + flora.rock_positions:
+		near = minf(near, YardWall.dist(q.x, q.z))
+	print("BOT yardwall: nearest tree/rock %.1f m from a wall" % near)
+	if near < 1.2:
+		return _combat_done(false, "a tree or rock stands in a wall")
+	var sc: StoneCottage = _world.stone_cottage
+	var dd := YardWall.dist(sc.door_gap.x, sc.door_gap.z)
+	print("BOT yardwall: stone cottage door %.1f m from a wall" % dd)
+	if dd < 2.0:
+		return _combat_done(false, "a wall blocks the stone cottage door")
+	# the yard: halfway between the houses
+	var yard := Vector3((Cottage.SITE.x + StoneCottage.SITE.x) * 0.5, 0, (Cottage.SITE.y + StoneCottage.SITE.y) * 0.5)
+	var r: Array = YardWall.runs()[1]          # the west wall (squeeze gap at 0.4)
+	var a: Vector2 = r[0]
+	var b: Vector2 = r[1]
+	var m := a.lerp(b, 0.75)                   # a solid stretch
+	var out := Vector3(m.x - yard.x, 0, m.y - yard.z).normalized()
+	p.global_position = Vector3(yard.x, terrain.height_at(yard.x, yard.z) + 0.5, yard.z)
+	await _ticks(20)
+	var t := 0.0
+	var best := 99.0
+	while t < 5.0:
+		var dv := Vector2(m.x - p.global_position.x, m.y - p.global_position.z)
+		p.bot_input = dv.normalized() if dv.length() > 0.1 else Vector2(out.x, out.z)
+		p.bot_sprint = true
+		await _ticks(6)
+		t += 0.1
+		best = minf(best, YardWall.dist(p.global_position.x, p.global_position.z))
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	var past := Vector2(p.global_position.x - yard.x, p.global_position.z - yard.z).length() > Vector2(m.x - yard.x, m.y - yard.z).length() + 0.3
+	print("BOT yardwall: ran at the west wall, nearest %.2f m from its centre line, through: %s" % [best, past])
+	if past or best < 0.2:
+		return _combat_done(false, "ran through the yard wall")
+	# out through the cart gateway
+	var g: Array = YardWall.runs()[0]
+	var ga: Vector2 = g[0]
+	var gb: Vector2 = g[1]
+	var gc := ga.lerp(gb, g[2])
+	var gout := Vector2(gc.x - yard.x, gc.y - yard.z).normalized()
+	# walk at the gateway's mouth from the yard side, then on through it; done once he
+	# stands 2 m out past the wall line (the hero overshoots waypoints at 4x time)
+	var gn := Vector2(-(gb - ga).y, (gb - ga).x).normalized()
+	if gn.dot(gout) < 0.0:
+		gn = -gn
+	var t2 := 0.0
+	var crossed := -99.0
+	while t2 < 15.0:
+		var pp := Vector2(p.global_position.x, p.global_position.z)
+		crossed = (pp - gc).dot(gn)
+		if crossed > 2.0:
+			break
+		var wp := gc - gn * 1.2 if crossed < -1.0 and absf((pp - gc).dot(gn.orthogonal())) > 0.6 else gc + gn * 3.0
+		p.bot_input = (wp - pp).normalized()
+		await _ticks(6)
+		t2 += 0.1
+	p.bot_input = Vector2.ZERO
+	print("BOT yardwall: through the gateway in %.1f s, %.1f m out past the wall line, at %s" % [t2, crossed, p.global_position])
+	if crossed <= 2.0:
+		return _combat_done(false, "could not walk out through the gateway (stuck at %s)" % p.global_position)
+	if YardWall.dist(p.global_position.x, p.global_position.z) < 0.5:
+		return _combat_done(false, "ended up inside the wall")
+	_combat_done(true, "walls stand between the houses, hold the hero, and the gateway lets him out")
 
 func _ruin_test() -> void:
 	var p := _player

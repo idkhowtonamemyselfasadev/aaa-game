@@ -235,7 +235,7 @@ func _ready() -> void:
 		var pp := ct.door_gap + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT stonehouse at %s, %d stones %d slates" % [ct.global_position, ct.stone_count, ct.slate_count])
-	if spot == "drywall":
+	if spot == "drywall" or spot == "yardwall":
 		# the garth wall behind the stone cottage: from outside the east side, at the
 		# gateway with the wall running back and the house beyond ("back": from beyond the
 		# back corner, along the back run toward the gable and its chimney)
@@ -752,7 +752,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

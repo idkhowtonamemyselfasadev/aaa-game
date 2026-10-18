@@ -70,7 +70,7 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		# oak shade, none through the moss cushions (same masks as the grass)
 		if ruin != Vector3.INF and Vector2(x - ruin.x, z - ruin.z).length() < 4.8:
 			continue
-		if Cottage.inside(x, z, -0.2) or StoneCottage.inside(x, z, -0.2) or DryWall.near(x, z, 0.0):
+		if Cottage.inside(x, z, -0.2) or StoneCottage.inside(x, z, -0.2) or DryWall.near(x, z, 0.0) or YardWall.near(x, z, 0.0):
 			continue
 		if flora and (rng.randf() < flora.shelter_at(x, z) * 0.9 or flora.moss_at(x, z) > 0.12):
 			continue
