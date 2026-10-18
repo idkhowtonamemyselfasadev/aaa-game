@@ -312,8 +312,11 @@ func _ready() -> void:
 		# wall rubble with the fox a dark streak)
 		var hp: Vector3 = world.hearth.global_position
 		var to_fx := Vector3(fx.sit_at.x - hp.x, 0, fx.sit_at.z - hp.z).normalized()
-		var cp := fx.sit_at - to_fx * 2.1 + to_fx.cross(Vector3.UP) * 0.9
-		cp.y = terrain.height_at(cp.x, cp.z) + 0.8
+		var cp := fx.sit_at - to_fx * 1.5 + to_fx.cross(Vector3.UP) * 0.6
+		if "side" in args:
+			# square side-on, to check the sit pose (hind legs folded, brush round the paws)
+			cp = fx.sit_at + to_fx.cross(Vector3.UP) * 1.6
+		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
 		var pp := kp.site + kp.to_v * 60.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)

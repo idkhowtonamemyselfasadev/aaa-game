@@ -17,7 +17,7 @@ instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the 
 
 uniform vec3 coat : source_color = vec3(0.50, 0.205, 0.07);       // fox red
 uniform vec3 coat_dark : source_color = vec3(0.30, 0.14, 0.065);   // the saddle, the brush's dark band
-uniform vec3 pale : source_color = vec3(0.70, 0.66, 0.58);         // throat, chest, belly, cheeks
+uniform vec3 pale : source_color = vec3(0.52, 0.48, 0.41);         // throat strip, lips, cheeks: a dull cream, never snow
 uniform vec3 stocking : source_color = vec3(0.045, 0.035, 0.03);   // black legs and ear backs
 
 varying vec3 v_rest;
@@ -129,21 +129,26 @@ void fragment() {
 	vec3 col = coat;
 	// a darker grizzled saddle along the back, the flanks warmer
 	col = mix(col, coat_dark, smoothstep(0.55, 0.95, rn.y) * (1.0 - head) * (1.0 - legm) * 0.55);
-	// pale throat, chest and belly
-	float under = smoothstep(-0.2, -0.6, rn.y) * (1.0 - legm) * (1.0 - tail) * (1.0 - ear);
-	float chest = smoothstep(-0.18, -0.3, p.z) * smoothstep(-0.1, -0.6, rn.y + rn.z * 0.6) * (1.0 - legm) * (1.0 - head);
-	col = mix(col, pale, clamp(under * 0.85 + chest, 0.0, 1.0));
+	// a buff-grey belly (hidden when it sits) and only a narrow cream strip from the throat
+	// down to the brisket: from the front a sitting fox is red with a pale blaze, not a white bib
+	float under = smoothstep(-0.2, -0.6, rn.y) * (1.0 - legm) * (1.0 - tail) * (1.0 - ear) * (1.0 - head);
+	col = mix(col, mix(coat, pale, 0.3) * 0.75, under * 0.8);   // red-buff, so a sat fox shows no grey panel
+	float chest = smoothstep(-0.16, -0.26, p.z) * smoothstep(-0.05, -0.5, rn.y + rn.z * 0.6)
+		* smoothstep(0.042, 0.022, abs(p.x)) * (1.0 - legm) * (1.0 - head);
+	col = mix(col, pale, chest * 0.9);
 	// face: white cheeks and lips under a red mask, dark streak from the eye, black nose
-	col = mix(col, pale * 1.05, head * smoothstep(0.1, -0.35, rn.y) * smoothstep(-0.37, -0.43, p.z));
-	col = mix(col, coat_dark * 0.6, head * smoothstep(0.045, 0.02, abs(abs(p.x) - 0.03)) * smoothstep(-0.41, -0.44, p.z) * smoothstep(-0.48, -0.45, p.z) * step(0.0, rn.y + 0.2));
-	col = mix(col, vec3(0.02, 0.016, 0.014), head * smoothstep(-0.525, -0.535, p.z));
+	col = mix(col, pale, head * smoothstep(-0.15, -0.5, rn.y) * smoothstep(-0.37, -0.43, p.z));
+	// the muzzle's sides darken toward the black lips and nose; a dark tear streak from the eye
+	col = mix(col, coat_dark * 0.55, head * smoothstep(-0.44, -0.52, p.z) * smoothstep(0.3, 0.8, abs(rn.x)) * step(-0.25, rn.y) * 0.8);
+	col = mix(col, coat_dark * 0.45, head * smoothstep(0.012, 0.004, abs(abs(p.x) - 0.026)) * smoothstep(-0.405, -0.425, p.z) * smoothstep(-0.48, -0.45, p.z) * step(-0.1, rn.y));
+	col = mix(col, vec3(0.02, 0.016, 0.014), head * smoothstep(-0.54, -0.55, p.z));
 	// black stockings up the legs, a dark front line on the forelegs
 	col = mix(col, stocking, legm * smoothstep(0.24, 0.13, p.y));
 	col = mix(col, coat_dark * 0.5, legm * smoothstep(0.32, 0.22, p.y) * step(p.y, 0.32) * 0.6);
 	// ears: black backs, pale furred insides
 	if (ear > 0.5) {
 		float back = smoothstep(-0.2, 0.3, rn.z);
-		col = mix(pale * 0.75, stocking * 1.4, back);
+		col = mix(mix(coat, pale, 0.4) * 0.55, stocking * 1.4, back);   // the inner fur shadowed buff, not white
 		col = mix(col, stocking, smoothstep(0.64, 0.66, p.y));
 	}
 	// brush: red with a dark grizzled band and a white tip
@@ -176,7 +181,7 @@ void fragment() {
 	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);
 	// eyeshine: the tapetum throws the firelight back toward the fire (and a lens near it)
 	if (v_col.a > 0.4 && v_col.a < 0.6) {
-		EMISSION += vec3(0.95, 0.78, 0.35) * eyeshine * 0.9 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 6.0);
+		EMISSION += vec3(0.85, 0.9, 0.45) * eyeshine * 2.4 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
 	}
 	BACKLIGHT = col * (0.15 + 0.6 * ear);
 	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25, 0.5 + (clump - 0.5) * 0.15, 1.0));

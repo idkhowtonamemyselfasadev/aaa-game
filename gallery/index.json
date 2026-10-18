@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261012-1830-herd-morning.jpg",
-  "time": "2026-10-12T18:30:00Z",
-  "caption": "Red deer grazing the meadow at 10 h, now lit by the meadow bounce with a readable red coat and cream rumps; the near grass is still sparse tufts over bare dark soil and the oaks read stylized.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-1830-herd-evening.jpg",
   "time": "2026-10-12T18:30:00Z",
   "caption": "The herd at 16.5 h with the reworked head, neck and legs grazing below the oak line; deer still small in frame and the foreground grass is dark.",
@@ -891,6 +885,18 @@
   "file": "20261017-2320-hearth-warm.jpg",
   "time": "2026-10-17T23:20:01Z",
   "caption": "Hesper at 22:00 sat up by her fire, turned to it with hands out to the warmth, wall in warm amber stone; still wrong: the flame core blows out white, the charred logs show a regular crackle pattern and her near hand stays close to her chest.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0103-fox-front.jpg",
+  "time": "2026-10-18T01:03:36Z",
+  "caption": "The fox at the edge of Hesper's firelight after the look pass: red mask, longer narrower muzzle with dark sides, eyeshine, buff ear insides, only a narrow cream throat strip; still small in frame, legs and brush hidden behind the breach slab, fur reads smooth plastic.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0103-fox-side.jpg",
+  "time": "2026-10-18T01:03:36Z",
+  "caption": "Side lens on the sitting fox: head and chest profile read as a fox now, but a breach slab hides the body and the brush seems to stand up behind it instead of curling round the paws.",
   "verdict": "fail"
  }
 ]
