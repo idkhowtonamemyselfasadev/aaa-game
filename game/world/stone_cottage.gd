@@ -95,7 +95,9 @@ func _ready() -> void:
 		_per.append([])
 	var rubble: Array[ArrayMesh] = []
 	for v in VARIANTS:
-		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.08, 0.035, 0.88, 0.97, true))
+		# tight arrises and 5-8 fracture planes cut deep enough to take the corners off, so
+		# each face outline is a ragged polygon rather than a rounded tile
+		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.035, 0.045, 0.66, 0.92, true, Vector2i(5, 8)))
 		_rubble.append([])
 	_walls()
 	_chimney()
@@ -180,14 +182,22 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 		if take > 0.0:
 			lens[-1] += take
 			lens[-2] -= take
-	_mortar_run(w, (a + b) * 0.5, y + h * 0.5, Vector3(b - a, h, T - 0.07))
+	_mortar_run(w, (a + b) * 0.5, y + h * 0.5, Vector3(b - a, h, T - 0.1))
 	s = a
 	for i in lens.size():
 		var ln: float = lens[i]
 		var quoin := (i == 0 and q0) or (i == lens.size() - 1 and q1)
 		# rubble sits on its bed; its top falls short by up to 4 cm, the mortar showing above
 		var hh := h - 0.012 if quoin else h - 0.012 - _rng.randf_range(0.0, 0.04)
-		_stone(w, s + ln * 0.5, y + hh * 0.5 + 0.004, Vector3(ln - 0.015, hh, T), quoin)
+		if not quoin and h > 0.22 and ln < 0.55 and _rng.randf() < 0.3:
+			# a sneck: two smaller stones stacked to make up the course height
+			var lo := hh * _rng.randf_range(0.5, 0.65)
+			_stone(w, s + ln * 0.5, y + lo * 0.5 + 0.004, Vector3(ln - 0.015, lo - 0.01, T), false)
+			var l2 := ln * _rng.randf_range(0.55, 0.95)
+			var off := _rng.randf_range(0.0, ln - l2)
+			_stone(w, s + off + l2 * 0.5, y + lo + (hh - lo) * 0.5 + 0.004, Vector3(l2 - 0.015, hh - lo - 0.01, T), false)
+		else:
+			_stone(w, s + ln * 0.5, y + hh * 0.5 + 0.004, Vector3(ln - 0.015, hh, T), quoin)
 		s += ln
 
 ## Wall w's run direction and the cottage-local centre of a point `along` it at height cy.
@@ -209,7 +219,7 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 			c = Vector3(-LEN * 0.5 + T * 0.5, cy, along)
 	return [dir, c]
 
-## The lime-mortar core behind a course run, recessed 3.5 cm from both faces.
+## The lime-mortar core behind a course run, recessed 5 cm from both faces.
 func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
@@ -220,8 +230,10 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
 	var c: Vector3 = wa[1]
-	# faces stand a little proud or sunk, stones sit a hair off square
-	c += dir.cross(Vector3.UP) * _rng.randf_range(-0.018, 0.018)
+	# faces stand a little proud or sunk (rubble more than the dressed quoins), stones sit a
+	# hair off square
+	var proud := 0.018 if quoin else 0.032
+	c += dir.cross(Vector3.UP) * _rng.randf_range(-proud, proud)
 	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)))
 	if quoin:
 		_place(c, b, size, _rng.randf_range(0.5, 0.7))
@@ -558,6 +570,10 @@ func _build_mortar() -> void:
 	var m := ShaderMaterial.new()
 	m.shader = preload("res://shaders/mortar.gdshader")
 	m.set_shader_parameter("ground_y", global_position.y + floor_y)
+	# pointing weathered back and dirtied toward the gritstone's grey, so the joints read as
+	# shadowed gaps between the stones instead of an even pale outline round each one
+	m.set_shader_parameter("lime", Color(0.36, 0.35, 0.32))
+	m.set_shader_parameter("grime", Color(0.17, 0.16, 0.14))
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

@@ -33,6 +33,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-18 20:00 UTC:
+  - **Cottage rubble reads as rubble, not tiles** (Known bug 19:00 10-18). `YardWall.stone_mesh`
+    takes `ncut` (cut-count range, default 3-5, YardWall unchanged). StoneCottage's rubble
+    variants: rad 0.035 (was 0.08), lump 0.045, 5-8 fracture planes at 0.66-0.92 of reach
+    (was 0.88-0.97), so corners come off and face outlines are polygons. Rubble stands
+    +-3.2 cm proud/sunk (quoins keep +-1.8). Snecks: 30% of short stones (< 0.55 m) in
+    courses > 0.22 m become two stacked stones, the upper one shorter and offset. Mortar core
+    recessed 5 cm (was 3.5) and tinted grey-dark (`lime` 0.36/0.35/0.32, `grime` 0.17) via
+    shader params, so the joints read as shadowed gaps. Bots `stonehouse`, `yardwall`,
+    `yardpath` PASS; `hens` PASS 3 of 4 runs (night ladder check flaked once in a
+    back-to-back batch). Shot `stonehouse rub3 60 12.5 close fixfps` (Forward+ lavapipe,
+    ~25 min): split polygonal stones, dark joints -- but over-cut, see Known bugs.
 - Session 2026-10-18 19:00 UTC:
   - **Stone cottage masonry** (village item "fix the cottage items in Known bugs: smaller
     bevel / irregular course heights, facade value"). `YardWall.stone_mesh(sd, v, mat, rad,
@@ -3333,7 +3345,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    box with front corner posts, bearers, a 4 cm lid with a drip batten and a hasp; dust-bath
    hollows in `terrain.gdshader` now ragged scraped lobes with patchy powder, fewer of them.)
    (Cottage masonry DONE 19:00 10-18: grey split-stone rubble on uneven beds, dressed
-   sandstone quoins, see Done.) NEXT for the village: a second and third
+   sandstone quoins, see Done; rubble polygon/sneck/dark-joint pass DONE 20:00 10-18, one
+   tuning shot left -- see Known bugs.) NEXT for the village: a second and third
    house (vary size, whitewash on one, a lean-to/byre), (yard wall done) a trodden track
    between them, a lantern post (Kindle target), then a villager with a day schedule
    (wakes, works the yard, eats, goes in at dusk -- the cottage's `lit` follows her; a wooden field gate hung in the yard wall's gateway; hens in the yard) and
@@ -3566,6 +3579,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (20:15 10-18) Stone cottage rubble after the pass (`stonehouse rub3 ...`): now polygonal
+  split stones, but the cuts are too deep -- pale stones float as islands in wide dark
+  joints. Next: cuts 0.74-0.94 of reach, mortar a touch lighter (~0.42), stone faces a
+  little darker/greyer so the contrast drops; facade still in flat shade at 12.5.
+  Bot `hens` night ladder check flaked once (0 went up) when run right after other bots.
 - (19:00 10-18) Stone cottage rubble (`stonehouse rub2 60 12.5 close fixfps`): stones now fill
   their beds and read grey, but each is a rounded rectangle with an even pale lime outline,
   so the wall reads as tiles, not rubble: cut the rounding further (rad ~0.04), add more

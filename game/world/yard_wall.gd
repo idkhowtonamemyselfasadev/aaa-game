@@ -300,8 +300,8 @@ func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
 ## The same, shared: `rad` rounds the arrises (unit space), `lump` the bulge of the faces,
 ## fracture planes cut in at `cut0`..`cut1` from the centre; with `rel` those are fractions
 ## of the box's reach along the plane normal, so a slanted cut only nicks a corner
-## (StoneCottage's squarer coursed rubble).
-static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false) -> ArrayMesh:
+## (StoneCottage's squarer coursed rubble); `ncut` is the range of how many planes.
+static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false, ncut := Vector2i(3, 5)) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = sd + v * 7
 	n.frequency = 2.2
@@ -309,7 +309,7 @@ static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07
 	var r := RandomNumberGenerator.new()
 	r.seed = sd + 300 + v
 	var cuts := []
-	for i in r.randi_range(3, 5):
+	for i in r.randi_range(ncut.x, ncut.y):
 		var cn := Vector3(r.randf_range(-1, 1), r.randf_range(-0.6, 0.6), r.randf_range(-1, 1)).normalized()
 		var reach := 0.5 * (absf(cn.x) + absf(cn.y) + absf(cn.z)) if rel else 1.0
 		cuts.append([cn, r.randf_range(cut0, cut1) * reach])

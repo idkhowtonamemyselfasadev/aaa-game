@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261013-1518-grove.jpg",
-  "time": "2026-10-13T15:18:14Z",
-  "caption": "Oak grove at 13 h: the floor between the boles now greens with olive moss patches and leaf drift instead of red-brown soil; mid-range floor still uniform, collars no longer stand out, no roots.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-1518-boulder.jpg",
   "time": "2026-10-13T15:18:14Z",
   "caption": "Shaded boulder at 15 h: softer stone tone without marble-like crack veining, moss tongues on the flank; still a lone smooth blob, not an outcrop.",
@@ -891,6 +885,12 @@
   "file": "20261018-1925-stonecottage.jpg",
   "time": "2026-10-18T19:25:07Z",
   "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-2015-cottagerubble.jpg",
+  "time": "2026-10-18T20:15:30Z",
+  "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
   "verdict": "fail"
  }
 ]
