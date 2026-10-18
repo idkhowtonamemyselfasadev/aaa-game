@@ -13,6 +13,7 @@ extends Node3D
 ## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`, `eaten`.
 
 signal barked(at: Vector3, alarm: bool)   # its night call from the dark, or a yelp as it bolts
+signal crunched(at: Vector3)              # a bite into Hesper's crust
 
 enum { AWAY, COME, SIT, GO, BOLT, EAT }
 
@@ -24,6 +25,8 @@ const LEAVE_H := 4.6       # slips away before first light
 const SNOUT := 0.40        # m from its middle to its nose (where it stands to eat)
 const SNIFF := 1.2         # s nosing the crust before it takes it
 const CHEW := 4.5          # s eating it
+const PEEK := 1.6          # s from the crust landing to it getting up: looks at it, at her, at it
+const SHAKE := 1.1         # s licking its chops and shaking its head once the crust is gone
 
 var world: Node3D
 var keeper: Keeper
@@ -56,6 +59,11 @@ var graze := 0.0            # 0 head up .. 1 nose on the ground (shader)
 var eaten := 0              # crusts eaten (bots)
 var _scrap: Node3D
 var _eat_t := -1.0          # s with its nose at the crust (negative: still going to it)
+var _bite_t := 0.0          # s to its next crunch
+var _shake_t := -1.0        # s into its after-meal head shake (negative: not shaking)
+var glance := 0.0           # how far round toward Hesper it looked before the crust (bots)
+var shook := 0.0            # widest swing of its after-meal head shake (bots)
+var licks := 0              # chops licked (bots)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -254,11 +262,14 @@ func take_scrap(scrap: Node3D) -> void:
 	_scrap = scrap
 	state = EAT
 	_eat_t = -1.0
+	_shake_t = -1.0
+	_bite_t = 0.0
 	var to := Vector3(scrap.global_position.x - global_position.x, 0, scrap.global_position.z - global_position.z)
 	var stand := scrap.global_position - to.normalized() * SNOUT if to.length() > SNOUT else global_position
 	path = [_ground(stand)]
 	_head_goal = 0.0
-	_look_t = 0.4               # a beat looking at it where it fell before it gets up
+	_look_t = PEEK              # a look at it where it fell, a wary glance up at her, then it gets up
+	glance = 0.0
 
 ## Shots: stood head down at a crust in front of its seat, part way through eating it.
 func place_eating() -> void:
@@ -291,6 +302,15 @@ func _update_eat(dt: float) -> void:
 	if _look_t > 0.0:
 		_look_t -= dt
 		_head_goal = clampf(wrapf(want_yaw - yaw, -PI, PI), -0.8, 0.8)
+		# between the two looks at the crust, a glance up at the hand that threw it
+		if keeper != null and _look_t < PEEK - 0.45 and _look_t > 0.45:
+			var tk := keeper.global_position - global_position
+			var at_her := wrapf(atan2(-tk.x, -tk.z) - yaw, -PI, PI)
+			_head_goal = clampf(at_her, -1.0, 1.0)
+			glance = maxf(glance, absf(head_yaw) * signf(head_yaw * at_her))
+		return
+	if _shake_t >= 0.0:
+		_after_meal(dt)
 		return
 	if _eat_t < 0.0:
 		sit = move_toward(sit, 0.0, dt / 0.5)
@@ -307,9 +327,45 @@ func _update_eat(dt: float) -> void:
 	graze = move_toward(graze, (1.0 - chew) * (1.0 - lift * 0.7), dt / 0.35)
 	var left := 1.0 - smoothstep(SNIFF + 0.4, SNIFF + CHEW - 0.6, _eat_t)
 	_scrap.scale = Vector3.ONE * maxf(left, 0.05)
+	if _eat_t > SNIFF + 0.3 and _eat_t < SNIFF + CHEW - 0.9:
+		_bite_t -= dt
+		if _bite_t <= 0.0:
+			_bite_t = _rng.randf_range(0.35, 0.8)
+			crunched.emit(_scrap.global_position + Vector3.UP * 0.12)
 	if _eat_t >= SNIFF + CHEW:
-		_drop_scrap()
+		_scrap.visible = false
 		eaten += 1
+		_shake_t = 0.0
+		shook = 0.0
+		licks = 0
+
+## The crust gone: two licks round its chops (a dip and lift of the muzzle), then a quick
+## shake of the head side to side, dying away, before it goes back to its seat.
+func _after_meal(dt: float) -> void:
+	var t0 := _shake_t
+	_shake_t += dt
+	var t := _shake_t
+	speed = move_toward(speed, 0.0, 3.0 * dt)
+	# licks: the muzzle bobs down and up twice over the first half second
+	var lick := 0.0
+	if t < 0.55:
+		lick = 0.22 * maxf(sin(t / 0.55 * TAU * 2.0 - PI * 0.5) * 0.5 + 0.5, 0.0)
+		for c in [0.14, 0.41]:
+			if t0 < c and t >= c:
+				licks += 1
+	graze = move_toward(graze, 0.3 * (1.0 - smoothstep(0.4, 0.9, t)) + lick, dt / 0.12)
+	# the shake: ~5 Hz, set straight on the head (too quick for the head's lag)
+	var s := 0.0
+	if t > 0.5:
+		var u := t - 0.5
+		s = 0.55 * sin(u * TAU * 5.0) * exp(-u * 4.0)
+	_head_goal = s
+	head_yaw = s
+	shook = maxf(shook, absf(s))
+	if t >= SHAKE:
+		_shake_t = -1.0
+		_head_goal = 0.0
+		_drop_scrap()
 		state = COME
 		path = [sit_at]
 

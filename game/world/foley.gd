@@ -49,6 +49,7 @@ func _ready() -> void:
 	_s["bark"] = [_make_bark(1.0), _make_bark(0.9), _make_bark(1.12)]
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
+	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
 	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
 	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
@@ -122,6 +123,8 @@ func hook_fox(f: Node) -> void:
 		return
 	f.barked.connect(func(at: Vector3, alarm: bool) -> void:
 		_play_wild("fox_yelp" if alarm else "fox_bark", at, -3.0 if alarm else -1.0, 16.0, true))
+	if f.has_signal("crunched"):
+		f.crunched.connect(func(at: Vector3) -> void: _play_wild("crunch", at, -14.0, 1.5, false))
 
 # ---------------------------------------------------------------- events
 
@@ -275,6 +278,31 @@ func _make_fox_bark(pt: float, count: int) -> AudioStreamWAV:
 			if at + i < out.size():
 				out[at + i] += y[i] * (1.0 - 0.1 * c)
 	return _wav(out)
+
+## A bite through a dry crust in a fox's jaws: a crisp snap, then a short dry crackle of
+## crumbs breaking under the teeth -- high-passed noise grains with a soft wet chew under them.
+func _make_crunch() -> AudioStreamWAV:
+	var dur := 0.26
+	var n := int(dur * RATE)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var hp := 0.0
+	var prev := 0.0
+	var grain := 0.0
+	var chew := 0.0
+	for i in n:
+		var k := float(i) / n
+		var w := _rng.randf() * 2.0 - 1.0
+		hp = 0.7 * (hp + w - prev)          # one-pole high-pass: bright, dry
+		prev = w
+		# crackle: sparse grains, densest at the first snap, thinning out
+		if _rng.randf() < lerpf(0.05, 0.004, k):
+			grain = _rng.randf_range(0.4, 1.0)
+		grain *= 0.93
+		chew = lerpf(chew, w, 0.04)          # low muffled body of the bite
+		var snap := exp(-k * 60.0)
+		x[i] = hp * (grain * 0.8 + snap * 1.2) * smoothstep(0.0, 0.01, k) + chew * 0.6 * sin(PI * k)
+	return _wav(x)
 
 ## The stag's rut roar: a long deep groan swelling up and falling away, pushed through a
 ## lowered larynx (closely packed low formants), rough with period doubling, then two short

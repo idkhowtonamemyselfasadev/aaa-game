@@ -1548,6 +1548,11 @@ func _fox_test() -> void:
 	print("BOT fox crust: thrown at frame %d (warm %.2f, sit %.2f, arm up %.2f), landed %.2f m from its seat, nose down %.2f, eaten %d, back sat %s %.2f m off its seat" % [thrown, k.warm, k.sit, flick, min_land, top_graze, fx.eaten, fx.state == Fox.SIT, fx.global_position.distance_to(fx.sit_at)])
 	if thrown < 0 or flick < 0.9 or min_land > 1.3 or top_graze < 0.9 or fx.eaten < 1 or fx.state != Fox.SIT or fx.global_position.distance_to(fx.sit_at) > 0.35:
 		return _combat_done(false, "Hesper should toss the sat fox a crust, and it should eat it and sit again")
+	var fol := _world.get_node_or_null("Foley")
+	var crunches := int(fol.played.get("crunch", 0)) if fol != null and "played" in fol else -1
+	print("BOT fox manners: glanced %.2f rad round at her before it got up, licked its chops %d times, head shake %.2f rad, crunches %d" % [fx.glance, fx.licks, fx.shook, crunches])
+	if fx.glance < 0.15 or fx.licks < 2 or fx.shook < 0.3 or crunches == 0:
+		return _combat_done(false, "the fox should glance at Hesper before taking the crust, crunch it, then lick its chops and shake its head")
 	# once a night
 	for i in 900:
 		_world.time_of_day = 22.0
