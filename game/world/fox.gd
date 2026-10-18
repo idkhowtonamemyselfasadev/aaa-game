@@ -10,6 +10,8 @@ extends Node3D
 ## Procedural mesh (Herd's loft helpers), posed in fox.gdshader.
 ## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`.
 
+signal barked(at: Vector3, alarm: bool)   # its night call from the dark, or a yelp as it bolts
+
 enum { AWAY, COME, SIT, GO, BOLT }
 
 const TROT := 2.3          # m/s on its way in and out
@@ -38,6 +40,9 @@ var arrive_h := 21.4        # tonight's hour to come in (bots may set it)
 var shy_t := 0.0            # s it keeps away after a scare
 var visits := 0             # (bots)
 var bolts := 0
+var barks := 0
+var _bark_t := 40.0         # s to its next call out in the dark
+var _yelp_t := -1.0         # s to the alarm yelp once it has bolted
 var _night := -1            # which night arrive_h was drawn for
 var _prev_hero := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
@@ -127,6 +132,7 @@ func _process(delta: float) -> void:
 	var near := Vector2(hp.x - global_position.x, hp.z - global_position.z).length()
 	var shy := visible and near < SHY_R + 1.5 * minf(hs, 8.0)
 	shy_t = maxf(shy_t - dt, 0.0)
+	_call(dt, h)
 	match state:
 		AWAY:
 			visible = false
@@ -183,9 +189,30 @@ func _process(delta: float) -> void:
 	var fire := hearth.level if hearth else 0.0
 	_mi.set_instance_shader_parameter("eyeshine", fire * smoothstep(9.0, 3.0, global_position.distance_to(hearth.global_position)))
 
+## Its voice. Out in the dark grass at night (not sat by the fire, not in rain) it barks
+## now and then from round its den, a run of hoarse yaps; a bolting fox gives one sharp
+## yelp a moment after it breaks away.
+func _call(dt: float, h: float) -> void:
+	if _yelp_t >= 0.0:
+		_yelp_t -= dt
+		if _yelp_t < 0.0:
+			barks += 1
+			barked.emit(global_position + Vector3.UP * 0.5, true)
+	var dark := h >= 20.5 or h < 5.0
+	var rain := weather.rain if weather != null else 0.0
+	if not dark or rain > 0.3 or state == SIT or state == BOLT:
+		return
+	_bark_t -= dt
+	if _bark_t <= 0.0:
+		_bark_t = _rng.randf_range(70.0, 260.0)
+		var at := global_position if visible else den + Vector3(_rng.randf_range(-12.0, 12.0), 0.0, _rng.randf_range(-12.0, 12.0))
+		barks += 1
+		barked.emit(_ground(at) + Vector3.UP * 0.5, false)
+
 func _bolt() -> void:
 	state = BOLT
 	bolts += 1
+	_yelp_t = _rng.randf_range(0.6, 1.2)
 	shy_t = 150.0
 	path = _way_out() if global_position.distance_to(sit_at) < 9.0 else _to_den()
 	_trim_path()

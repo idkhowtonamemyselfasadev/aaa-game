@@ -318,6 +318,11 @@ func _ready() -> void:
 			cp = fx.sit_at + to_fx.cross(Vector3.UP) * 1.6
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
+		if "close" in args:
+			# a portrait lens a metre off its face, a little to the side
+			cp = fx.sit_at - to_fx * 1.05 + to_fx.cross(Vector3.UP) * 0.5
+			cp.y = fx.sit_at.y + 0.5
+			SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.38, fx.sit_at.z)]
 		var pp := kp.site + kp.to_v * 60.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "hearth":

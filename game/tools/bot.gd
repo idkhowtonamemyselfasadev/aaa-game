@@ -1537,6 +1537,18 @@ func _fox_test() -> void:
 	print("BOT fox scare: bolted %s, top speed %.1f m/s, state %d visible %s, bolts %d, keeps away %.0f s" % [bolted, top, fx.state, fx.visible, fx.bolts, fx.shy_t])
 	if not bolted or top < 5.0 or fx.state != Fox.AWAY or fx.visible or fx.shy_t <= 0.0:
 		return _combat_done(false, "a hero walking up should send the fox off into the dark")
+	var fl = _world.get("foley")
+	var yelps: int = fl.played.get("fox_yelp", 0) if fl else -1
+	print("BOT fox yelp as it bolted: %d (barks %d)" % [yelps, fx.barks])
+	if yelps < 1:
+		return _combat_done(false, "a bolting fox should yelp")
+	# out in the dark it barks now and then from round its den
+	fx._bark_t = 0.5
+	await _ticks(60)
+	var calls: int = fl.played.get("fox_bark", 0)
+	print("BOT fox night bark from the dark: %d" % calls)
+	if calls < 1:
+		return _combat_done(false, "the fox should bark from the dark at night")
 	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
 	await _ticks(120)
 	if fx.state != Fox.AWAY:
@@ -1548,6 +1560,12 @@ func _fox_test() -> void:
 	print("BOT fox 5:30: state %d visible %s (fire %.2f)" % [fx.state, fx.visible, hr.level])
 	if fx.state != Fox.AWAY:
 		return _combat_done(false, "the fox should not come at first light")
+	var before: int = fl.played.get("fox_bark", 0)
+	_world.time_of_day = 12.0
+	fx._bark_t = 0.5
+	await _ticks(60)
+	if fl.played.get("fox_bark", 0) != before:
+		return _combat_done(false, "no fox barks by day")
 	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, and bolts from the hero")
 
 func _keeper_test() -> void:

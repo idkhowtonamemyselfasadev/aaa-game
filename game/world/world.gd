@@ -138,6 +138,7 @@ func _ready() -> void:
 	add_child(foley)
 	foley.hook(player, [soldier], trample)
 	foley.hook_herd(herd)
+	foley.hook_fox(fox)
 
 func _build_environment() -> void:
 	var e := Environment.new()

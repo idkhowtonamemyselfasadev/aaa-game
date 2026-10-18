@@ -47,6 +47,8 @@ func _ready() -> void:
 	_s["step_grit"] = [_make_step(1), _make_step(1), _make_step(1)]
 	_s["step_wet"] = [_make_step(2), _make_step(2), _make_step(2)]
 	_s["bark"] = [_make_bark(1.0), _make_bark(0.9), _make_bark(1.12)]
+	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
+	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
 	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
@@ -113,6 +115,13 @@ func hook_herd(h: Node) -> void:
 	h.galloped.connect(func(at: Vector3) -> void:
 		var nm := "gallop_wet" if surface_at(at) == "wet" else "gallop"
 		_play_wild(nm, at + Vector3.UP * 0.05, -9.0, 8.0, false))
+
+## The fox's night barks from the dark grass and its yelp as it bolts.
+func hook_fox(f: Node) -> void:
+	if f == null or not f.has_signal("barked"):
+		return
+	f.barked.connect(func(at: Vector3, alarm: bool) -> void:
+		_play_wild("fox_yelp" if alarm else "fox_bark", at, -3.0 if alarm else -1.0, 16.0, true))
 
 # ---------------------------------------------------------------- events
 
@@ -246,6 +255,26 @@ func _make_bark(pt: float) -> AudioStreamWAV:
 		func(k: float) -> float: return smoothstep(0.0, 0.03, k) * exp(-maxf(k - 0.18, 0.0) * 7.0),
 		[[620.0 * pt, 4.0, 1.0], [1150.0 * pt, 5.0, 0.55], [2500.0, 6.0, 0.1]], 0.45, 0.6)
 	return _wav(x)
+
+## A red fox's bark: `count` hoarse, high yaps ("wow-wow-wow") about a third of a second
+## apart, each a quick rise and fall in pitch through a small, bright vocal tract with
+## plenty of breath; the run slows and drops a little toward its end. One yap is the yelp.
+func _make_fox_bark(pt: float, count: int) -> AudioStreamWAV:
+	var gap := 0.36
+	var out := PackedFloat32Array()
+	out.resize(int((gap * count + 0.35) * RATE))
+	for c in count:
+		var lo := 1.0 - 0.05 * c
+		var d := 0.17 + 0.02 * c
+		var y := _voice(d,
+			func(k: float) -> float: return pt * lo * (560.0 + 380.0 * sin(PI * pow(k, 0.6)) - 120.0 * k),
+			func(k: float) -> float: return smoothstep(0.0, 0.06, k) * exp(-maxf(k - 0.3, 0.0) * 5.0),
+			[[1050.0 * pt, 4.0, 1.0], [1900.0 * pt, 5.0, 0.6], [3300.0 * pt, 6.0, 0.25]], 0.55, 0.45)
+		var at := int((c * gap + _rng.randf_range(0.0, 0.04)) * RATE)
+		for i in y.size():
+			if at + i < out.size():
+				out[at + i] += y[i] * (1.0 - 0.1 * c)
+	return _wav(out)
 
 ## The stag's rut roar: a long deep groan swelling up and falling away, pushed through a
 ## lowered larynx (closely packed low formants), rough with period doubling, then two short
