@@ -301,29 +301,26 @@ func _ready() -> void:
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
 	if spot == "fox":
-		# the fox sat in the breach at the edge of Hesper's firelight, looking in at the fire:
-		# low, three-quarter from the yard, the lit keep floor behind it
+		# the fox sat just in from the breach at the edge of Hesper's firelight, looking in at
+		# the fire: low, three-quarter from round the floor ring (Fox.lens_of)
 		var kp: Keeper = world.keeper
 		kp.settle(world, world.time_of_day)
 		var fx: Fox = world.fox
 		fx.place_sitting()
 		if "crust" in args:
 			fx.place_eating()
-		# from the fire's side of the keep floor, so the firelight falls on its face and the
-		# night meadow shows through the breach behind it (a lens out in the yard sat in the
-		# wall rubble with the fox a dark streak)
 		var hp: Vector3 = world.hearth.global_position
 		var to_fx := Vector3(fx.sit_at.x - hp.x, 0, fx.sit_at.z - hp.z).normalized()
-		var cp := fx.sit_at - to_fx * 1.5 + to_fx.cross(Vector3.UP) * 0.6
+		var cp := Fox.lens_of(kp.site)
 		if "side" in args:
 			# square side-on, to check the sit pose (hind legs folded, brush round the paws)
 			cp = fx.sit_at + to_fx.cross(Vector3.UP) * 1.6
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
 		if "crust" in args:
-			# eating Hesper's crust: three-quarter from the front, low, the fire behind the lens
+			# eating Hesper's crust: from the same ring lens, a little closer
 			var fq := fx.global_position
-			cp = fq - to_fx * 1.5 + to_fx.cross(Vector3.UP) * 0.9
+			cp = Fox.lens_of(kp.site).lerp(fq, 0.15)
 			cp.y = terrain.height_at(cp.x, cp.z) + 0.6
 			SPOTS[spot] = [cp, Vector3(fq.x, fq.y + 0.18, fq.z) - to_fx * 0.2]
 		if "close" in args:

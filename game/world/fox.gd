@@ -95,7 +95,14 @@ static func seat_sweep(site: Vector3) -> Array[Vector3]:
 	var s := seat_of(site)
 	var hp: Vector3 = Keeper.hearth_layout(site)[0]
 	var f := Vector3(hp.x - s.x, 0, hp.z - s.z).normalized()
-	return [s, s + f * 0.8]
+	return [s, s + f * 0.8, lens_of(site)]
+
+## Where the `fox` shot looks from: on the keep floor ring (r 2.4) swung ~1.7 m round from
+## the seat away from the breach and Hesper's way in, so it sees the fox three-quarter with
+## the fire across the floor (a lens 1.5 m back toward the fire stood on the plinth).
+static func lens_of(site: Vector3) -> Vector3:
+	var tv := Vector3(-site.x, 0, -site.z).normalized()
+	return site + tv.rotated(Vector3.UP, 0.42 + 0.72) * 2.4
 
 func _ground(p: Vector3) -> Vector3:
 	return Vector3(p.x, terrain.height_at(p.x, p.z), p.z)
