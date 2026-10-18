@@ -3514,6 +3514,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (11:00 10-18) Garth wall (`DryWall`): the gate lens was shot before the irregular-coursing
   change -- re-shoot it; hearting core is a plain dark box (fine in the gaps, check close
   up); the wall's ends butt the cottage's back wall without bonding into it.
+- (12:30 10-18) Yard walls (`YardWall`), shot `yardwall ywi 60 12.5 inyard fixfps`: they read
+  as dry-stone but too regular -- stones of near-equal size in level brick-like rows (vary
+  course height more, mix in big footing boulders, pinning stones, let courses wander); the
+  masonry moss lands as flat saturated lime patches on the face stones (cut it to the tops
+  and the north face; lower its saturation for `aged` field stone); the copes do not stand
+  out from the top course (taller, more lean, darker gaps); face stones pale cream -- greyer.
+  The 15.5 h frames (`yw`, `ywc`) are backlit: the wall lies in the houses' shadow and the
+  grass hides its foot; shoot it at ~12 h or from the yard. Gate stones not seen yet.
 - (08:30 10-18) Cottage: chimney stones read as stark near-black/white blocks (masonry tint
   on scaled-down stones, tops lit), the oak frame reads flat mid-grey (needs browner, more
   value and grain contrast), rafter tails cut square to the slope look like triangles from

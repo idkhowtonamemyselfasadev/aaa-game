@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261013-0750-deer-beds-day.jpg",
-  "time": "2026-10-13T07:50:58Z",
-  "caption": "The red deer herd lying in its beds in the tall meadow grass, heads up chewing the cud, the stag's antlers above the grass (pose forced at 10 h for the shot; in play they bed down at night); the oaks still read stylized and the near grass cards are coarse.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-0750-deer-beds-night.jpg",
   "time": "2026-10-13T07:50:58Z",
   "caption": "The herd bedded down at night under the stars with fireflies over the meadow: only dark silhouettes in the grass; the firefly-lit foreground blades read flat yellow-green.",
@@ -891,6 +885,18 @@
   "file": "20261018-1200-gate-ajar.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "Close on the field gate swung half open into the yard (it swings away from the hero and falls shut with a creak and a knock); still wrong: bars and brace read too pale and smooth, wall faces are light rectangular blocks, no track worn through the gateway.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1230-yardwall_noon.jpg",
+  "time": "2026-10-18T12:30:00Z",
+  "caption": "From inside Harrowmere's new yard at noon: dry-stone walls with copes run from the timber house to the stone cottage, the cart gateway open between them; the stones lie in too-even brick-like rows, the moss is flat lime patches and the copes barely read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1230-yardwall_close.jpg",
+  "time": "2026-10-18T12:30:00Z",
+  "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
   "verdict": "fail"
  }
 ]
