@@ -709,11 +709,16 @@ void fragment() {
 				vec3 r = hash23(cell + 37.0);
 				vec2 f = (fract(q) - 0.5 - (r.xy - 0.5) * 0.4) / 0.55;
 				float rad = 0.24 + 0.14 * r.z;
-				float d = length(f * vec2(1.0, 1.15)) / rad + (vnoise(wpos * 9.0) - 0.5) * 0.15;
-				float on = step(0.45, r.z) * smoothstep(0.5, 0.9, garth);
-				float bowl = (1.0 - smoothstep(0.75, 1.0, d)) * on;
+				// ragged scraped-out outline (a bird's wallow, not a stamped oval): low warp for the
+				// lobes, fine noise for the crumbled edge
+				float d = length(f * vec2(1.0, 1.15)) / rad + (vnoise(wpos * 3.1 + vec3(r.xy * 9.0, 0.0)) - 0.5) * 0.55
+					+ (vnoise(wpos * 13.0) - 0.5) * 0.22;
+				float on = step(0.55, r.z) * smoothstep(0.5, 0.9, garth);
+				float bowl = (1.0 - smoothstep(0.55, 1.0, d)) * on;
 				float lip = smoothstep(0.8, 1.0, d) * (1.0 - smoothstep(1.0, 1.3, d)) * on;
-				bc = mix(bc, dry * (1.25 + 0.15 * micro), bowl * 0.85);
+				// powder lies patchy in the bowl: drifts, with packed earth and grit showing through
+				float powder = bowl * mix(0.3, 0.75, smoothstep(0.3, 0.7, vnoise(wpos * 7.0 + 3.0)));
+				bc = mix(bc, dry * (1.15 + 0.15 * micro), powder);
 				bc = mix(bc, mix(bc, packed, 0.4), lip * 0.5);
 				bh += -0.012 * bowl * (1.0 - d * d * 0.6) + 0.004 * lip;
 			}

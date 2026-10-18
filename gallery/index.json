@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261013-1202-grove.jpg",
-  "time": "2026-10-13T12:02:31Z",
-  "caption": "Oak grove at 13 h with moss collars at the boles; the moss climbing the shaded side of the trunks faces away from this camera and the grove floor is still flat red-brown soil.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-1335-boulder.jpg",
   "time": "2026-10-13T13:35:29Z",
   "caption": "A mossy boulder sitting in the meadow with open moss at its foot; the lichen/crack pattern on top is still too map-like and the boulder is a lone blob, not an outcrop.",
@@ -897,6 +891,12 @@
   "file": "20261018-1716-henhouse.jpg",
   "time": "2026-10-18T17:16:00Z",
   "caption": "The new oak hen house in the garth at 11 h with a hen climbing its ladder to the pop-hole; still wrong: boards read pale silver and flat, the nest box reads as a bare shelf, the garth dust shows smooth pale ovals.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-1825-henhouse2.jpg",
+  "time": "2026-10-18T18:25:08Z",
+  "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
   "verdict": "fail"
  }
 ]

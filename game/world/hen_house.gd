@@ -15,6 +15,8 @@ const WALL_FRONT := 0.82                # eaves height above the floor at the ya
 const WALL_BACK := 0.6                  # and at the wall side (the roof falls west)
 const HOLE := Vector2(0.24, 0.3)        # pop-hole width (z) by height
 const LADDER := 0.95                    # ladder run out from the yard face (x)
+const CREOSOTE := Color(0.2, 0.12, 0.065)  # the boards' stain, worn back to silver on the grain
+const PITCH := Color(0.07, 0.06, 0.05)     # the roof's tar
 
 var terrain: Terrain
 var base_y := 0.0                       # floor's foot level, world y, at the house
@@ -142,20 +144,36 @@ func _build() -> void:
 	for i in n:
 		var c := top_e + slope * (bw * (i + 0.5)) + rn * (0.012 * (n - i) * 0.6)
 		var zl := hz + over * 0.8
-		_oak(c + Vector3(0, 0, -zl - _rng.randf_range(0.0, 0.02)), c + Vector3(0, 0, zl + _rng.randf_range(0.0, 0.02)), bw + 0.04, 0.02, rn, 0.8)
+		_oak(c + Vector3(0, 0, -zl - _rng.randf_range(0.0, 0.02)), c + Vector3(0, 0, zl + _rng.randf_range(0.0, 0.02)), bw + 0.04, 0.02, rn, 0.85, PITCH)
+	# a fascia along the eaves and barge boards up the verges give the roof an edge
+	var zf := hz + over * 0.8 + 0.025
+	var ye := y_f + over * drop - 0.025
+	_oak(Vector3(hx + over + 0.012, ye, -zf), Vector3(hx + over + 0.012, ye, zf), 0.085, 0.024, Vector3.RIGHT, 0.6)
+	for s in [-1.0, 1.0]:
+		_oak(Vector3(hx + over, ye, s * zf), Vector3(-hx - over, y_b - over * drop - 0.025, s * zf), 0.085, 0.024, Vector3(0, 0, s), 0.6)
 	# nest box off the south end: a little lean-to with a hinged lid
 	var nz := hz + 0.012
 	var nb := Vector3(0.18, fl + 0.05, nz + 0.17)
 	for s in [-1.0, 1.0]:
 		_board(Vector3(nb.x + s * 0.2, fl + 0.05, nz + 0.17), 0.27, 0.34, Vector3(s, 0, 0))
-	_board(Vector3(nb.x, fl + 0.05, nz + 0.34), 0.24, 0.42, Vector3.BACK)
+	_board(Vector3(nb.x, fl + 0.04, nz + 0.34), 0.275, 0.42, Vector3.BACK)
 	_oak(Vector3(nb.x - 0.21, fl + 0.06, nz + 0.17), Vector3(nb.x + 0.21, fl + 0.06, nz + 0.17), 0.34, 0.025, Vector3.UP)
-	_oak(Vector3(nb.x - 0.23, fl + 0.355, nz + 0.02), Vector3(nb.x + 0.23, fl + 0.355, nz + 0.02), 0.025, 0.05, Vector3.UP)
-	var lid_a := Vector3(nb.x, fl + 0.36, nz + 0.0)
-	var lid_b := Vector3(nb.x, fl + 0.305, nz + 0.38)
-	_oak(lid_a, lid_b, 0.46, 0.022, Vector3.UP, 0.8)
+	# bearers under the box, out of the house's sole plate
 	for s in [-1.0, 1.0]:
-		_ironbox(Vector3(nb.x + s * 0.13, fl + 0.37, nz + 0.04), Vector3(0.03, 0.01, 0.1))
+		_oak(Vector3(nb.x + s * 0.15, fl + 0.02, nz - 0.05), Vector3(nb.x + s * 0.15, fl + 0.02, nz + 0.33), 0.045, 0.05, Vector3.UP)
+	# a corner post at each front corner so the box reads as a box, not a shelf
+	for s in [-1.0, 1.0]:
+		_oak(Vector3(nb.x + s * 0.2, fl + 0.03, nz + 0.33), Vector3(nb.x + s * 0.2, fl + 0.33, nz + 0.33), 0.035, 0.035, Vector3.BACK)
+	_oak(Vector3(nb.x - 0.23, fl + 0.355, nz + 0.02), Vector3(nb.x + 0.23, fl + 0.355, nz + 0.02), 0.025, 0.05, Vector3.UP)
+	var lid_a := Vector3(nb.x, fl + 0.375, nz + 0.0)
+	var lid_b := Vector3(nb.x, fl + 0.32, nz + 0.4)
+	_oak(lid_a, lid_b, 0.48, 0.038, Vector3.UP, 0.85, PITCH)
+	# a drip batten under the lid's front edge, and the hasp down onto the front
+	var lip := lid_b + Vector3(0, -0.035, -0.015)
+	_oak(lip + Vector3(-0.235, 0, 0), lip + Vector3(0.235, 0, 0), 0.05, 0.022, Vector3.BACK, 0.6)
+	_ironbox(Vector3(nb.x, fl + 0.27, nz + 0.355), Vector3(0.03, 0.09, 0.008))
+	for s in [-1.0, 1.0]:
+		_ironbox(Vector3(nb.x + s * 0.13, fl + 0.395, nz + 0.04), Vector3(0.03, 0.01, 0.1))
 	# ladder: one wide plank from the sill down to the dust, slats nailed across it
 	var top_p := Vector3(hx + 0.03, fl + 0.01, 0)
 	var foot_l := foot() - Vector2(0.12, 0)
@@ -184,7 +202,7 @@ func _build() -> void:
 
 ## Oak in its own unscaled mesh with the grain along the run a -> b; `n` is the way its
 ## broad face looks (section w across, d through along n).
-func _oak(a: Vector3, b: Vector3, w: float, d: float, n: Vector3, tar := 0.0) -> void:
+func _oak(a: Vector3, b: Vector3, w: float, d: float, n: Vector3, tar := 0.0, stain := CREOSOTE) -> void:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(w, maxf(a.distance_to(b), 0.005), d)
@@ -192,6 +210,7 @@ func _oak(a: Vector3, b: Vector3, w: float, d: float, n: Vector3, tar := 0.0) ->
 	m.shader = _timber
 	m.set_shader_parameter("seed", float(boards) * 1.37 + 20.0)
 	m.set_shader_parameter("tar", tar)
+	m.set_shader_parameter("tar_col", stain)
 	bm.material = m
 	mi.mesh = bm
 	var y := (b - a).normalized()
@@ -209,7 +228,7 @@ func _oak(a: Vector3, b: Vector3, w: float, d: float, n: Vector3, tar := 0.0) ->
 func _board(p: Vector3, h: float, w: float, n: Vector3) -> void:
 	var lean := Vector3(_rng.randf_range(-0.006, 0.006), 0, _rng.randf_range(-0.006, 0.006))
 	var off := n * (0.006 if boards % 2 == 0 else 0.0)
-	_oak(p + off, p + off + Vector3(0, h, 0) + lean, w, 0.018, n, 0.25 + _rng.randf() * 0.15)
+	_oak(p + off, p + off + Vector3(0, h, 0) + lean, w, 0.018, n, 0.72 + _rng.randf() * 0.2)
 
 func _ironbox(c: Vector3, size: Vector3) -> void:
 	var mi := MeshInstance3D.new()
