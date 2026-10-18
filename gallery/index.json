@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261013-0100-hero-face-front.jpg",
-  "time": "2026-10-13T00:56:52Z",
-  "caption": "The face shot now frames the hero from the front-left under the straw hat, but the face is still a black void of hood and face cloth in the brim's shade with no eyes or skin.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0200-hero-eyes.jpg",
-  "time": "2026-10-13T02:13:42Z",
-  "caption": "The hero now has a face: skin, brows and two dark eyes look out between the hood and the indigo face cloth under the straw hat; still a smooth doll-like shell with no nose or cheek shape, and the eyes never blink.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0200-hero-face-fill.jpg",
-  "time": "2026-10-13T02:13:42Z",
-  "caption": "A soft face fill now lifts the hood and face cloth out of the brim's black shade, but from a camera at eye height the brim and down-pitched head still hide the eyes.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-0330-hero-hat-pushed-back.jpg",
-  "time": "2026-10-13T03:30:21Z",
-  "caption": "Front view of the hero with the straw hat now pushed back: the eyes show clearly under a brim whose underside no longer glows, but the face reads cartoonish (wide bright sclera, orange skin, no nose or cheek shape) and the hood and mantle are a flat dark mass.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-0332-hooves.jpg",
   "time": "2026-10-13T03:32:25Z",
   "caption": "A deer path trodden through the meadow grass with hoof prints pressed into it; the laid lane reads, but the 8 cm cloven slots are lost in the dark soil and grass at 3 m.",
@@ -897,6 +873,18 @@
   "file": "20261018-0734-foxside.jpg",
   "time": "2026-10-18T07:34:27Z",
   "caption": "Side-on, the brush lies low along the ground behind the sat fox instead of sweeping up; the lens still sits high in rubble with a salmon brick wall behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0906-cottage.jpg",
+  "time": "2026-10-18T09:06:46Z",
+  "caption": "Harrowmere's first cottage from the green in morning light: slate roof with eave moss, oak frame, limewashed daub, stone chimney; the chimney stones read as stark black/white blocks, the oak is flat grey, no smoke or path yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0906-cottage-door.jpg",
+  "time": "2026-10-18T09:06:46Z",
+  "caption": "The cottage door bay close up: individually laid riven slates with lichen, hewn rafter tails, plank door with iron straps; the oak reads flat grey and the rafter tails are cut square to the slope instead of plumb.",
   "verdict": "fail"
  }
 ]

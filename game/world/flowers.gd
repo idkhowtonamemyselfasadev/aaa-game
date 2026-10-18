@@ -70,6 +70,8 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		# oak shade, none through the moss cushions (same masks as the grass)
 		if ruin != Vector3.INF and Vector2(x - ruin.x, z - ruin.z).length() < 4.8:
 			continue
+		if Cottage.inside(x, z, -0.2):
+			continue
 		if flora and (rng.randf() < flora.shelter_at(x, z) * 0.9 or flora.moss_at(x, z) > 0.12):
 			continue
 		# which species: a slow field picks the drift's flower, with some mixing at the seams

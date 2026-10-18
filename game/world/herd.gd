@@ -85,6 +85,7 @@ func _ready() -> void:
 	if flora:
 		_obstacles.append_array(flora.tree_positions)
 		_obstacles.append_array(flora.rock_positions)
+	_obstacles.append_array(Cottage.outline_points())   # the house on the west of the green
 	anchor = _pick_site()
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
 	var mat := ShaderMaterial.new()

@@ -26,6 +26,10 @@ var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
 var _dims: Array[Vector3] = []          # per variant: full size of the block mesh
 var _per: Array = []                    # per variant: [Transform3D, Color]
+## the stone meshes (one per variant, sized _dims), shared with the village (Cottage)
+var block_meshes: Array[ArrayMesh] = []
+var block_dims: Array[Vector3]:
+	get: return _dims
 var _body: StaticBody3D
 var seal: ShrineSeal
 var ivy: Ivy
@@ -83,6 +87,7 @@ func _ready() -> void:
 	_plinth()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
+	block_meshes = meshes
 	ivy = Ivy.new()
 	ivy.name = "Ivy"
 	add_child(ivy)

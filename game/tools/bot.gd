@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -104,6 +104,9 @@ func _ready() -> void:
 		return
 	if name == "ruin":
 		_ruin_test()
+		return
+	if name == "cottage":
+		_cottage_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -2753,6 +2756,56 @@ func _ruin_test() -> void:
 	if far > 3.4:
 		return _combat_done(false, "walked through the tower wall")
 	_combat_done(true, "walked in through the breach and the walls hold")
+
+## Harrowmere's first house: built (slates, footing stones, frame), standing on the green
+## clear of the start, the herd steers off it, and the hero walks from the start to its door
+## and cannot run in through the wall.
+func _cottage_test() -> void:
+	var p := _player
+	var c: Cottage = _world.cottage
+	var terrain: Terrain = _world.get_node("Terrain")
+	print("BOT cottage: %d slates, %d stones, %d beams, footing %.2f m deep, ridge %.2f m" % [c.slate_count, c.stone_count, c.beam_count, -c.base_y, c.ridge_y])
+	if c.slate_count < 1200 or c.stone_count < 60 or c.beam_count < 80:
+		return _combat_done(false, "cottage not fully built")
+	var start := p.global_position
+	if Cottage.inside(start.x, start.z, 4.0) or Cottage.inside(_world.soldier.global_position.x, _world.soldier.global_position.z, 2.0):
+		return _combat_done(false, "cottage stands on the start or the soldier's post")
+	var herd: Herd = _world.herd
+	var obs := 0
+	for o in herd._obstacles:
+		if Cottage.inside(o.x, o.z):
+			obs += 1
+	if obs < 10:
+		return _combat_done(false, "the herd does not know the house is there")
+	# walk to the doorstep
+	var door := c.global_position + Cottage.front() * (Cottage.WID * 0.5 + 1.2) - Cottage.front().cross(Vector3.UP) * 0.75
+	var t := 0.0
+	while Vector2(p.global_position.x - door.x, p.global_position.z - door.z).length() > 0.8 and t < 30.0:
+		var d := Vector2(door.x - p.global_position.x, door.z - p.global_position.z).normalized()
+		p.bot_input = d
+		await _ticks(6)
+		t += 0.1
+	print("BOT cottage: reached the door in %.1f s at %s" % [t, p.global_position])
+	if t >= 30.0:
+		p.bot_input = Vector2.ZERO
+		return _combat_done(false, "could not walk to the cottage door")
+	# run at the door and the wall: he must stay outside
+	var deepest := 99.0
+	var t2 := 0.0
+	var f := Cottage.front()
+	while t2 < 4.0:
+		p.bot_input = Vector2(-f.x, -f.z)
+		p.bot_sprint = true
+		await _ticks(6)
+		t2 += 0.1
+		var l := Cottage.to_local_xz(p.global_position.x, p.global_position.z)
+		deepest = minf(deepest, l.y)
+	p.bot_input = Vector2.ZERO
+	p.bot_sprint = false
+	print("BOT cottage: ran at the door, nearest %.2f m from the ridge line (wall at %.2f)" % [deepest, Cottage.WID * 0.5])
+	if deepest < Cottage.WID * 0.5 - 0.1:
+		return _combat_done(false, "walked through the cottage wall")
+	_combat_done(true, "the house stands on the green and its walls hold")
 
 ## Shrine seal in the keep: the lid sleeps dim from the gateway, the hero walks in through
 ## the breach and up the plinth onto the lid, the sigil wakes and the place names itself;

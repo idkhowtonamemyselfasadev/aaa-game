@@ -678,6 +678,23 @@ func _ready() -> void:
 		world.trample.frozen = true
 		SPOTS[spot] = [hc - fwd * 2.4 + side * 0.9, hc + fwd * 0.6 + side * 0.3]
 		print("SHOT hooves at %s, %d prints" % [hc, world.trample.active_hoofs()])
+	if spot == "cottage":
+		# Harrowmere's first house from the green: three-quarter on the door side and the
+		# chimney gable ("close": on the door and window; "back": the rear slope and chimney)
+		var c: Cottage = world.cottage
+		var f := Cottage.front()
+		var al := f.cross(Vector3.UP)          # the house's -x (toward the chimney gable)
+		var cp := c.global_position
+		var d := 12.5
+		var off := f * d + al * 5.5
+		if "close" in args:
+			off = f * 5.2 - al * 0.6
+		elif "back" in args:
+			off = -f * 10.0 + al * 7.5
+		var pos := cp + off
+		pos.y = terrain.height_at(pos.x, pos.z) + 1.65
+		SPOTS[spot] = [pos, cp + Vector3.UP * (1.3 if "close" in args else 2.1) - al * (0.4 if "close" in args else 0.0)]
+		print("SHOT cottage %d slates %d stones %d beams" % [c.slate_count, c.stone_count, c.beam_count])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -687,7 +704,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

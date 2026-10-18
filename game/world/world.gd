@@ -24,6 +24,7 @@ var weather: Weather
 var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
+var cottage: Cottage
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
@@ -81,6 +82,11 @@ func _ready() -> void:
 	add_child(training_post)
 	training_post.global_position = Vector3(p.x + 0.15, 0.0, p.z + 1.45)
 	training_post.plant(terrain)
+	# Harrowmere's first house, on the west edge of the green, its door toward the start
+	cottage = Cottage.new()
+	cottage.name = "Cottage"
+	add_child(cottage)
+	cottage.build(terrain, get_node("Ruins") as Ruins)
 	# the first Hollow: a spear soldier keeping watch down the meadow, out of the start's way
 	soldier = HollowSoldier.new()
 	soldier.name = "HollowSoldier"

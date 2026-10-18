@@ -121,6 +121,9 @@ func _site(x: float, z: float, rng: RandomNumberGenerator, flora: Node) -> Vecto
 	# (< 1.9: the shrine plinth); tufts thicken toward the wall foot, where feet never went
 	if keep < 1.9 or (keep < 4.6 and (keep > 3.0 or rng.randf() > 0.1 + 0.35 * smoothstep(2.3, 2.9, keep))):
 		return Vector3(-1, 0, 0)
+	# Harrowmere's first house: no meadow through its footing (a fringe stands under the eaves)
+	if Cottage.inside(x, z, -0.4):
+		return Vector3(-1, 0, 0)
 	# woodland floor: deep under the oak crowns the meadow gives way to ferns and litter,
 	# with only thin, shorter shade grass
 	var shade: float = flora.shelter_at(x, z) if flora else 0.0
