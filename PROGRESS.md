@@ -41,7 +41,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     highlight is cut by 75% so the tops stop reading as pale cobble caps. Slate roof: the
     sulphur lichen is now a few broad soft rosettes (fbm at 2.6/m with a soft 0.68-0.76 edge,
     weaker) instead of fine speckle. Shot lens moved to 9.5 h (the facade's lit side).
-    Bots `stonehouse`, `yardwall` PASS.
+    Bots `stonehouse`, `yardwall` PASS. Shot `stonehouse rub5 60 9.5 close fixfps` (Forward+
+    lavapipe, ~15 min): FAILS, see Known bugs.
 - Session 2026-10-18 21:00 UTC:
   - **Cottage rubble contrast tuned** (Known bug 20:15 10-18: over-cut stones floating in
     wide dark joints). Rubble fracture cuts now 0.74-0.94 of reach (was 0.66-0.92), so the
@@ -3597,6 +3598,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (22:15 10-18) Cottage `rub5` (9.5 h, close lens): the per-stone value spread shows, but
+  the stones still read as rounded, pillowed blue-grey cobbles. The silhouettes come from
+  the mesh's bulging faces, not the corner radius: flatten the face (lower `lump`, clamp the
+  face to a plane with a few big chips). The facade is still in shade at 9.5 and lit only
+  by blue sky, so move the lens round to the sunlit gable instead of changing the hour.
+  The slate lichen now sits in olive bands along the slate tails: tint it greyer/paler and
+  break it with the patch noise. Mortar joints read near-black: raise them toward 0.45.
+  Do one more cottage pass with these, THEN the second house.
 - (21:15 10-18) Cottage `rub4` (15.5 h, close lens): the over-cut islands are gone, but the
   facade is backlit in flat shade at 15.5 too (the lens looks east-ish into the sun's
   shadow side -- shoot at ~9.5 or move the lens round to the lit side), the rubble stones

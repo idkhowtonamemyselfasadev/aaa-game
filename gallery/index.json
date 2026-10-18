@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261013-1518-boulder.jpg",
-  "time": "2026-10-13T15:18:14Z",
-  "caption": "Shaded boulder at 15 h: softer stone tone without marble-like crack veining, moss tongues on the flank; still a lone smooth blob, not an outcrop.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-1648-roots-first.jpg",
   "time": "2026-10-13T16:48:19Z",
   "caption": "First pass of oak surface roots at a bole foot: they read as thin black claws, and the moss cushions up close tile like cracked mud (both reworked in later commits).",
@@ -897,6 +891,12 @@
   "file": "20261018-2114-cottage-rubble.jpg",
   "time": "2026-10-18T21:14:55Z",
   "caption": "Stone cottage rubble after the cut/mortar tuning at 15.5 h: stones now fill their beds with narrower, lighter joints, but the facade is backlit in flat shade, the stones still read as rounded grey cobbles with pale tops, and the slate roof's lichen flecks read as noise.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-2216-cottage.jpg",
+  "time": "2026-10-18T22:16:17Z",
+  "caption": "Stone cottage door at 9.5 h after the rubble/slate pass: stones now vary in value and the slate lichen is in broad patches, but the wall stones still read as rounded blue-grey cobbles, the facade sits in sky-lit shade, and the lichen bands along the slate tails.",
   "verdict": "fail"
  }
 ]
