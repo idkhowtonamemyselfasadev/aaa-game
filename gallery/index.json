@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261012-2255-hero-garb.jpg",
-  "time": "2026-10-12T22:55:39Z",
-  "caption": "The hero now reads as a mythic wanderer: woven straw hat over an indigo hood, dark mantle, madder robe panels, ochre sash and linen bindings; still the Vanguard visor under the hat, no face, and the practice post crowds the frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261012-2330-hero-lacquer.jpg",
-  "time": "2026-10-12T23:37:28Z",
-  "caption": "The hero's sci-fi plates now read as dark lacquered lamellar and the blue visor is gone under a dark face cloth; the face is still a dark void with no eyes and the practice post crowds the frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261012-2330-hero-back-mantle.jpg",
   "time": "2026-10-12T23:37:28Z",
   "caption": "Close rear view: straw hat, indigo hood and staff read well, but the mantle is a flat brown slab with a hard hem and the new face shot framed the hero's back.",
@@ -897,6 +885,18 @@
   "file": "20261018-0544-foxcrust.jpg",
   "time": "2026-10-18T05:44:00Z",
   "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0720-foxside.jpg",
+  "time": "2026-10-18T07:20:00Z",
+  "caption": "The fox sat at the edge of Hesper's firelight from the side with its new dense, sculpted body: smooth flanks and a round haunch instead of facets; still wrong: the brush sweeps up behind it instead of curling round the paws, and the keep wall reads salmon brick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261018-0720-foxcrust.jpg",
+  "time": "2026-10-18T07:20:00Z",
+  "caption": "The fox at Hesper's crust with the smoother body mesh; still wrong: nearly head-on with bright eyeshine straight into the lens, the coat is a flat ginger with no guard-hair breakup, and the brick wall behind is salmon.",
   "verdict": "fail"
  }
 ]

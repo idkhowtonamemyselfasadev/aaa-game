@@ -447,7 +447,7 @@ static func build_mesh() -> ArrayMesh:
 		[-0.335, 0.50, 0.055, 0.052, 0.068, 0.75],
 		[-0.35, 0.53, 0.045, 0.04, 0.05, 1.0],
 	]
-	Herd._loft(st, body, 0.0, 24, 3, 0.0, 0.0)
+	Herd._loft(st, body, 0.0, 40, 6, 0.0, 0.0, 2)
 	# head: broad cheeks tapering to a long narrow muzzle
 	var head := [
 		[-0.315, 0.56, 0.01, 0.01, 0.01, 1.0],
@@ -459,7 +459,7 @@ static func build_mesh() -> ArrayMesh:
 		[-0.54, 0.505, 0.011, 0.011, 0.012, 1.0],
 		[-0.555, 0.503, 0.002, 0.002, 0.002, 1.0],
 	]
-	Herd._loft(st, head, 0.0, 16, 3, 0.0, 0.0)
+	Herd._loft(st, head, 0.0, 32, 6, 0.0, 0.0, 3)
 	for s in [-1.0, 1.0]:
 		# ears: tall pointed triangles, upright and a little out (z, y, hw, thick, thick, bend, x)
 		var ear := [
@@ -468,7 +468,7 @@ static func build_mesh() -> ArrayMesh:
 			[-0.352, 0.64, 0.022, 0.006, 0.006, 1.0, 0.043],
 			[-0.355, 0.672, 0.003, 0.003, 0.003, 1.0, 0.05],
 		]
-		Herd._loft(st, ear, s, 10, 2, 0.0, 1.0)
+		Herd._loft(st, ear, s, 12, 3, 0.0, 1.0)
 		Herd._sphere(st, Vector3(0.033 * s, 0.566, -0.402), 0.012, 1.0, 0.5)
 		# legs: (x, y, z, half-width, half-depth front, half-depth back)
 		var fore := [
@@ -489,8 +489,8 @@ static func build_mesh() -> ArrayMesh:
 			[0.05, 0.014, 0.245, 0.019, 0.028, 0.016],
 			[0.05, -0.003, 0.238, 0.003, 0.003, 0.003],
 		]
-		Herd._leg(st, fore, s, 0.25 if s > 0 else 0.5, 0.12)
-		Herd._leg(st, hind, s, 0.75 if s > 0 else 1.0, 0.125)
+		Herd._leg(st, fore, s, 0.25 if s > 0 else 0.5, 0.12, 18, 5)
+		Herd._leg(st, hind, s, 0.75 if s > 0 else 1.0, 0.125, 18, 5)
 	# the brush: thick, carried low and straight out behind
 	var tail := [
 		[0.30, 0.385, 0.012, 0.012, 0.012, 0.0],
@@ -501,6 +501,6 @@ static func build_mesh() -> ArrayMesh:
 		[0.69, 0.22, 0.032, 0.03, 0.03, 0.0],
 		[0.71, 0.212, 0.003, 0.003, 0.003, 0.0],
 	]
-	Herd._loft(st, tail, 0.0, 14, 3, 0.0, 0.75)
+	Herd._loft(st, tail, 0.0, 28, 5, 0.0, 0.75, 3)
 	st.generate_tangents()
 	return st.commit()

@@ -563,7 +563,7 @@ static func build_mesh(stag := false) -> ArrayMesh:
 			body[i][2] *= w
 			body[i][3] *= lerpf(1.0, w, 0.6)
 			body[i][4] *= w * 1.05
-	_loft(st, body, 0.0, 32, 3, 0.0, 0.0, true)
+	_loft(st, body, 0.0, 32, 3, 0.0, 0.0, 1)
 	if stag:
 		for s in [-1.0, 1.0]:
 			_antler(st, s)
@@ -665,7 +665,8 @@ static func _branch(st: SurfaceTool, keys: Array, r0: float, r1: float, s: float
 ## Loft rings through `keys` (z, y, hw, hu, hd, bend[, x]) in the YZ plane; each ring is a
 ## half-ellipse above (hu) and below (hd) the path, hw wide. Keys are resampled with cubic
 ## interpolation, `sub` rings per span.
-static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int, leg: float, part: float, muscle := false) -> void:
+## `muscle`: 0 plain, 1 deer landmarks, 2 fox landmarks, 3 plain with grid normals.
+static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int, leg: float, part: float, muscle := 0) -> void:
 	var rings: Array = []
 	for i in keys.size() - 1:
 		var k0: Array = keys[maxi(i - 1, 0)]
@@ -685,7 +686,7 @@ static func _loft(st: SurfaceTool, keys: Array, side: float, seg: int, sub: int,
 		pts.append(Vector3(x * side, r[1], r[0]))
 	_tube(st, pts, rings, seg, side, leg, -1.0, part, true, muscle)
 
-static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: float) -> void:
+static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: float, seg := 12, sub := 3) -> void:
 	var pts: Array = []
 	var rings: Array = []
 	for i in keys.size() - 1:
@@ -693,8 +694,8 @@ static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: 
 		var k1: Array = keys[i]
 		var k2: Array = keys[i + 1]
 		var k3: Array = keys[mini(i + 2, keys.size() - 1)]
-		for j in 3:
-			var t := j / 3.0
+		for j in sub:
+			var t := float(j) / sub
 			var r := []
 			for c in k1.size():
 				r.append(cubic_interpolate(k1[c], k2[c], k0[c], k3[c], t))
@@ -704,11 +705,11 @@ static func _leg(st: SurfaceTool, keys: Array, side: float, leg: float, knee_y: 
 	for r: Array in rings:
 		pts.append(Vector3(r[0] * side, r[1], r[2]))
 		rr.append([0, 0, r[3], r[4], r[5], 0.0])
-	_tube(st, pts, rr, 12, side, leg, knee_y, 0.0, false)
+	_tube(st, pts, rr, seg, side, leg, knee_y, 0.0, false, 3 if sub > 3 else 0)
 
 ## Sweep ellipse rings along `pts`. Ring frame: X across, u = perpendicular to the path in YZ
 ## (up for a forward path, forward for a downward one).
-static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: float, leg: float, knee_y: float, part: float, mirror_x: bool, muscle := false) -> void:
+static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: float, leg: float, knee_y: float, part: float, mirror_x: bool, muscle := 0) -> void:
 	var n := pts.size()
 	var verts: Array = []
 	for i in n:
@@ -732,8 +733,12 @@ static func _tube(st: SurfaceTool, pts: Array, rings: Array, seg: int, side: flo
 			var col := Color(leg, low, float(r[5]), part)
 			row.append([q, nn, col, Vector2(float(k) / seg, float(i) / (n - 1))])
 		verts.append(row)
-	if muscle:
+	if muscle == 1:
 		_sculpt(verts, n, seg)
+	elif muscle == 2:
+		_sculpt_fox(verts, n, seg)
+	elif muscle == 3:
+		_grid_normals(verts, n, seg)
 	for i in n - 1:
 		for k in seg:
 			var a: Array = verts[i][k]
@@ -766,6 +771,29 @@ static func _sculpt(verts: Array, n: int, seg: int) -> void:
 			d -= 0.022 * _bump(q.z + 0.19 - (q.y - 1.1) * 0.35, q.y - 1.0, 0.045, 0.13)   # groove behind the blade
 			var lat := smoothstep(0.0, 0.75, absf(nn.x))
 			v[0] = q + Vector3(signf(nn.x) * d * lat * 2.0, 0, 0)
+	_grid_normals(verts, n, seg)
+
+## The fox's landmarks at its scale: shoulder blades and the elbow mass over the forelegs,
+## round haunches over the hind legs, a slight hollow at the loin between them, so the barrel
+## stops reading as a smooth tube from the side and a sat fox gets its haunch bulge.
+static func _sculpt_fox(verts: Array, n: int, seg: int) -> void:
+	for i in n:
+		for k in seg + 1:
+			var v: Array = verts[i][k]
+			var q: Vector3 = v[0]
+			var nn: Vector3 = v[1]
+			var d := 0.010 * _bump(q.z + 0.17 - (q.y - 0.42) * 0.4, q.y - 0.41, 0.045, 0.05)   # scapula
+			d += 0.008 * _bump(q.z + 0.15, q.y - 0.33, 0.04, 0.035)   # elbow / triceps
+			d += 0.014 * _bump(q.z - 0.235, q.y - 0.39, 0.06, 0.05)   # haunch
+			d += 0.006 * _bump(q.z - 0.18, q.y - 0.32, 0.035, 0.035)   # stifle
+			d -= 0.007 * _bump(q.z - 0.06, q.y - 0.35, 0.05, 0.045)   # loin / flank hollow
+			var lat := smoothstep(0.0, 0.75, absf(nn.x))
+			v[0] = q + Vector3(signf(nn.x) * d * lat, 0, 0)
+	_grid_normals(verts, n, seg)
+
+## Normals from the vertex grid (along the path x around the ring), so tapers and sculpted
+## bulges shade with their real slope instead of the ring's flat ellipse normal.
+static func _grid_normals(verts: Array, n: int, seg: int) -> void:
 	for i in n:
 		for k in seg + 1:
 			var v: Array = verts[i][k]
