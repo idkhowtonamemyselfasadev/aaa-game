@@ -5,10 +5,13 @@ extends CharacterBody3D
 ## kirtle to the ankles, no basket). She keeps a day by the clock and the weather:
 ##   06:00 opens the door and stands on the step looking out over the green
 ##   06:30 draws water at the butt by the door corner (stoops to dip the pail, straightens)
-##   08:00 splits wood at the chopping block by the lean-to (WoodChop: sets a round on the
+##   07:20 takes the grain bag round the yard walls to the stone cottage's garth and casts
+##         grain over its east wall to the hens (HenFeed; they come running for it)
+##   08:25 splits wood at the chopping block by the lean-to (WoodChop: sets a round on the
 ##         block, heaves the axe over her head and brings it down; the halves jump off)
 ##   12:00 sits on the bench under the window to eat
 ##   13:00 back to the butt, then the woodpile through the afternoon
+##   16:20 the hens' second feed, then back to the woodpile
 ##   18:50 walks out to the lantern post on the green with a taper and lights the lantern
 ##   19:40 sits out on the bench in the last of the light
 ##   20:40 goes in for the night (the windows stay lit until bedtime)
@@ -35,6 +38,11 @@ const STOOP_DOWN := 0.9
 const STOOP_HOLD := 1.4
 const STOOP_UP := 1.1
 # the axe pose keys: hip, knee, spine, arm, elbow, neck (Crumple)
+## The hens' feed, in the stone cottage's frame: where she stands outside the garth's east
+## wall (clear of the field gate's swing), and the way there round the outside of the yard
+## walls and past the cottage's east gable.
+const FEED_STAND := Vector2(5.45, -8.3)
+const FEED_WAY := [Vector2(8.6, 4.2), Vector2(6.7, -2.6)]
 const CHOP_READY := [0.08, 0.12, 0.12, 0.5, 0.7, -0.1]
 const CHOP_TOP := [0.0, 0.06, -0.12, 2.85, 1.05, 0.05]
 const CHOP_HIT := [0.4, 0.45, 0.55, 1.05, 0.08, -0.25]
@@ -85,6 +93,8 @@ var hand_mark: BoneAttachment3D
 var left_mark: BoneAttachment3D
 var taper: MeshInstance3D
 var chop: WoodChop
+var feed: HenFeed
+var hens: Hens
 var _taper_flame: OmniLight3D
 var _blend := 0.0
 var _model_rest: Transform3D
@@ -190,8 +200,14 @@ func settle(w: Node3D, at_hour: float) -> void:
 	terrain = w.get_node("Terrain")
 	home = w.get("white_cottage")
 	lantern = w.get("lantern_post")
+	hens = w.get("hens")
 	if chop != null and chop.villager == null:
 		chop.setup(self, home)
+	if hens != null and feed == null:
+		feed = HenFeed.new()
+		feed.name = "HenFeed"
+		add_child(feed)
+		feed.setup(self, hens)
 	_rng.seed = 4242
 	var hd := WhiteCottage.W_DEP * 0.5
 	var fy := home.global_rotation.y         # the door side's facing (local +z)
@@ -206,6 +222,13 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_seat = home.bench_seat
 	_spots["eat"] = [home.to_global(Vector3(WhiteCottage.BENCH_X + 0.1, 0, hd + 0.75)), fy]
 	_spots["evening"] = _spots["eat"]
+	if hens != null:
+		var sc := hens.cottage
+		var fs := sc.to_global(Vector3(FEED_STAND.x, 0, FEED_STAND.y))
+		var land := sc.to_global(Vector3(HenFeed.LAND.x, 0, HenFeed.LAND.y))
+		_spots["feed"] = [fs, atan2(land.x - fs.x, land.z - fs.z)]
+		for i in FEED_WAY.size():
+			_spots["feed_way%d" % i] = [sc.to_global(Vector3(FEED_WAY[i].x, 0, FEED_WAY[i].y)), 0.0]
 	if lantern != null:
 		var lc := lantern.lantern_center()
 		var out := Vector3(lc.x - lantern.global_position.x, 0, lc.z - lantern.global_position.z).normalized()
@@ -216,6 +239,8 @@ func settle(w: Node3D, at_hour: float) -> void:
 	carrying = false
 	activity = ""
 	var a := _activity_for(at_hour)
+	if not _spots.has(_spot_name(a)):
+		a = "wood"
 	var sp: Array = _spots[_spot_name(a)]
 	_place(sp[0])
 	goal_yaw = sp[1]
@@ -250,14 +275,20 @@ static func _activity_for(h: float) -> String:
 		return "in"
 	if h < 6.5:
 		return "wake"
-	if h < 8.0:
+	if h < 7.33:
 		return "water"
+	if h < 8.42:
+		return "feed"
 	if h < 12.0:
 		return "wood"
 	if h < 13.0:
 		return "eat"
 	if h < 14.0:
 		return "water"
+	if h < 16.33:
+		return "wood"
+	if h < 17.33:
+		return "feed"
 	if h < 18.83:
 		return "wood"
 	if h < 19.67:
@@ -294,8 +325,19 @@ func _route(to: Vector3) -> void:
 		to = _spots["door"][0]
 	var wd: Vector3 = _spots["wood"][0]
 	var here := global_position
+	# to and from the garth: round the outside of the yard walls
+	var fd: Vector3 = _spots["feed"][0] if _spots.has("feed") else Vector3.INF
+	var at_feed := Vector2(here.x - fd.x, here.z - fd.z).length() < 2.0
+	var to_feed := to.distance_to(fd) < 0.1
+	if at_feed and not to_feed:
+		for i in range(FEED_WAY.size() - 1, -1, -1):
+			path.append(_spots["feed_way%d" % i][0])
+		here = path[path.size() - 1]
 	if (Vector2(here.x - wd.x, here.z - wd.z).length() < 1.0) != (to.distance_to(wd) < 1.0):
 		path.append(_spots["round"][0])
+	if to_feed and not at_feed:
+		for i in FEED_WAY.size():
+			path.append(_spots["feed_way%d" % i][0])
 	path.append(to)
 	state = WALK
 	stuck_t = 0.0
@@ -313,6 +355,8 @@ func _physics_process(delta: float) -> void:
 	if want == "wake" or want == "water":
 		if h < 13.0:
 			lantern_lit = false
+	if want == "feed" and not _spots.has("feed"):
+		want = "wood"
 	if want != activity:
 		_begin(want)
 	_update_notice()
@@ -356,6 +400,8 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	_update_work(delta)
+	if feed != null:
+		feed.update(delta, state == STAND and activity == "feed" and not noticing, activity == "feed" and state != IN)
 	_update_light(delta)
 	_pose()
 	_update_animation(delta)
@@ -517,6 +563,13 @@ func _pose() -> void:
 	crumple.flick = r
 	crumple.flick_arm = 2.75
 	crumple.flick_elbow = 0.35
+	if feed != null and feed.weight > 0.0:
+		# the cast: the right arm from the bag at her hip up to her chest and out over the wall
+		var fw := feed.weight * feed.weight * (3.0 - 2.0 * feed.weight)
+		crumple.flick = fw
+		crumple.flick_arm = feed.arm
+		crumple.flick_elbow = feed.elbow
+		crumple.spine += feed.lean * fw
 	# bent knees lower the hips; sat, the hips come down onto the seat
 	var bob := _hip_h * (1.0 - cos(0.75 * p * 0.5)) * 0.5 + 0.06 * p
 	var down := lerpf(bob, _hip_h - SEAT_H - 0.05, s)

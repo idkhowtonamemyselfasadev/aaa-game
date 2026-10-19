@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -137,6 +137,9 @@ func _ready() -> void:
 		_villager_test()
 	if name == "chop":
 		_chop_test()
+		return
+	if name == "feed":
+		_feed_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -3959,3 +3962,83 @@ func _chop_test() -> void:
 	if c.holding or not c.block_axe.visible or c.axe.visible:
 		return _combat_done(false, "the axe went to the bench with her")
 	_combat_done(true, "Edda splits rounds at the block: heave, strike, the halves jump off")
+
+## Edda feeds the hens: from the butt she takes the grain bag round the outside of the yard
+## walls to the garth's east wall (never through a wall, never into the yard), casts six
+## handfuls over it, the grain lies on the yard and the hens run to it and eat it; then she
+## goes back round to the woodpile.
+func _feed_test() -> void:
+	var v: Villager = _world.villager
+	var hn: Hens = _world.hens
+	var tr: Terrain = _world.get_node("Terrain")
+	if v == null or v.feed == null or hn == null:
+		return _combat_done(false, "no villager, feed or hens")
+	var f := v.feed
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, -30.0) + 0.5, -30.0)
+	_world.time_of_day = 7.0
+	v.settle(_world, 7.0)
+	await _ticks(300)
+	_world.time_of_day = 7.34
+	var segs := DryWall.segments()
+	var closest := INF
+	var in_yard := 0
+	var arrived := -1
+	var bag_gap := INF
+	var peak_grain := 0
+	for i in 2600:
+		await get_tree().physics_frame
+		var p := v.global_position
+		# clearance from either wall's face
+		closest = minf(closest, YardWall.dist(p.x, p.z) - YardWall.W0 * 0.5)
+		for sg in segs:
+			var q := Geometry2D.get_closest_point_to_segment(Vector2(p.x, p.z), sg[0], sg[1])
+			closest = minf(closest, q.distance_to(Vector2(p.x, p.z)) - DryWall.BASE_W * 0.5)
+		var l := hn.cottage.to_local(p)
+		if Hens.inside_yard(Vector2(l.x, l.z)):
+			in_yard += 1
+		if arrived < 0 and v.visits.get("feed", 0) > 0:
+			arrived = i
+		if f.weight > 0.9 and f.arm < 0.22:
+			bag_gap = minf(bag_gap, v.hand_mark.global_position.distance_to(f.bag.global_position))
+		peak_grain = maxi(peak_grain, hn.grain.size())
+	var near := 0
+	for h in hn.hens:
+		if h.feed:
+			near += 1
+		print("BOT feed hen %d: state %d pos %s nearest grain %.2f m, t %.2f" % [h.id, h.state, str(h.pos), (h.pos as Vector2).distance_to(hn._nearest_grain(h.pos)), h.t])
+	print("BOT feed: arrived tick %d, casts %d, thrown %d, peak on the ground %d, eaten %d, left %d, hens fed %d, warps %d, clear of the walls by %.2f m, ticks in the yard %d, hand to bag %.2f m, bag shown %s, grain heard %d" % [arrived, f.casts, hn.thrown, peak_grain, hn.fed, hn.grain.size(), near, v.warps, closest, in_yard, bag_gap, f.bag.visible, _world.foley.played.get("grain", 0)])
+	if arrived < 0 or v.activity != "feed":
+		return _combat_done(false, "she never got to the garth wall")
+	if f.casts < HenFeed.CASTS or hn.thrown < 60:
+		return _combat_done(false, "she did not cast the grain")
+	if hn.fed < 30:
+		return _combat_done(false, "the hens did not eat the grain")
+	if v.warps > 0 or in_yard > 0 or closest < 0.2:
+		return _combat_done(false, "she went through a wall or into the yard")
+	if not f.bag.visible or bag_gap > 0.3:
+		return _combat_done(false, "no grain bag at her hip, or her hand never in it")
+	if _world.foley.played.get("grain", 0) < HenFeed.CASTS:
+		return _combat_done(false, "the casts are not heard")
+	# grain all lies inside the yard, on the ground
+	for i in hn.grain.size():
+		if not Hens.inside_yard(hn.grain[i]):
+			return _combat_done(false, "grain outside the yard")
+	# the rest gets eaten up
+	await _ticks(1500)
+	print("BOT feed after: eaten %d, left %d" % [hn.fed, hn.grain.size()])
+	if hn.grain.size() > 0:
+		return _combat_done(false, "grain left lying a minute on")
+	_world.time_of_day = 8.45
+	for i in 2600:
+		await get_tree().physics_frame
+		var p := v.global_position
+		var l := hn.cottage.to_local(p)
+		if Hens.inside_yard(Vector2(l.x, l.z)):
+			in_yard += 1
+		if v.visits.get("wood", 0) > 0 and v.state == Villager.STAND:
+			break
+	print("BOT feed back: %s visits %s, warps %d, bag shown %s" % [v.activity, str(v.visits), v.warps, f.bag.visible])
+	if v.visits.get("wood", 0) < 1 or v.warps > 0 or f.bag.visible:
+		return _combat_done(false, "she did not get back to the woodpile")
+	_combat_done(true, "Edda casts grain over the garth wall and the hens run to it and eat it up")

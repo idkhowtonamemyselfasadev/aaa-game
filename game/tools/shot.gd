@@ -876,6 +876,21 @@ func _ready() -> void:
 			cp = at + f * 0.35 + lens * 3.6
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.35
 			tgt = at + f * 0.45 + Vector3.UP * 1.05
+		if "feed" in args and vg.feed != null:
+			# from inside the garth, low over the hens at the grain, Edda casting over the wall
+			var hn: Hens = world.hens
+			var ct: StoneCottage = world.stone_cottage
+			for k in 3:
+				var lw := HenFeed.LAND + Vector2(0.5 * (k - 1), 0.4 * sin(k * 2.0))
+				hn._land(lw, (lw - Villager.FEED_STAND).normalized())
+			for k in 150:
+				hn._process(1.0 / 30.0)
+			# the capture lands a little after the hand opens
+			vg.feed._t = HenFeed.CAST_T * (2.0 + HenFeed.RELEASE + 0.03) - 2.0
+			cp = ct.to_global(Vector3(-0.4, 0, -6.9))
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.25
+			tgt = ct.to_global(Vector3(3.6, 0, -8.1))
+			tgt.y = terrain.height_at(tgt.x, tgt.z) + 0.75
 		SPOTS[spot] = [cp, tgt]
 		var pp := at + f * -30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)

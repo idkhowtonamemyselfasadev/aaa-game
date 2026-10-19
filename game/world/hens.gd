@@ -11,6 +11,10 @@ extends Node3D
 ##  - at dusk they gather at the foot of the hen house's ladder (HenHouse) and go up it one
 ##    at a time, into the house for the night; at first light they come down it again one
 ##    after another, the first out soonest.
+##  - morning and afternoon Edda casts grain over the east wall (HenFeed -> `scatter`): the
+##    grains lie where they fell, pale on the scratched earth, and the hens come running with
+##    their wings half out and work through them one beak-length at a time, a peck for a
+##    grain (some miss), until the last is gone.
 ## They stay inside the garth walls (a clamp to the yard's quadrilateral in the cottage's
 ## frame), keep apart from each other and never leave by the field gate.
 ## Procedural mesh (Herd's loft helpers), posed in hen.gdshader.
@@ -35,6 +39,9 @@ const YARD := [Vector2(3.3, -3.3), Vector2(4.0, -9.65), Vector2(-4.65, -10.05), 
 ## Where they stand out the rain: along the back wall under the
 ## eaves (eaves out to z -3.18, the wall's face at -2.8).
 const EAVES_Z := -3.45
+const GRAIN_COL := Color(0.62, 0.50, 0.30)   # wheat, dull gold
+const GRAIN_MAX := 240
+const GRAIN_FLY := 0.5     # s from the hand to the ground
 ## Plumage: [body, dark (lacing, tail), hackle (neck)], one per bird.
 const BREEDS := [
 	[Color(0.36, 0.17, 0.07), Color(0.13, 0.06, 0.03), Color(0.46, 0.25, 0.10)],    # brown (red-brown hybrid)
@@ -57,6 +64,13 @@ var flees := 0
 var walked := 0.0
 var went_in := 0          # times one went up the ladder into the house (bots)
 var came_out := 0
+var grain: Array[Vector2] = []    # grains lying in the yard (local xz)
+var thrown := 0           # grains cast in (bots)
+var fed := 0              # grains eaten (bots)
+var _grain_y: Array[float] = []
+var _grain_b: Array[Basis] = []
+var _grain_mm: MultiMesh
+var _landing: Array = []  # [s until it lands, local centre, local throw direction]
 var _rng := RandomNumberGenerator.new()
 var _prev_hero := Vector3.ZERO
 var _hero_v := 0.0
@@ -93,9 +107,133 @@ func setup(w: Node3D) -> void:
 		hens.append({"mi": mi, "pos": at, "yaw": _rng.randf() * TAU, "state": STAND, "t": _rng.randf_range(0.5, 3.0),
 			"speed": 0.0, "phase": _rng.randf(), "peck": 0.0, "sit": 0.0, "wing": 0.0, "scratch": 0.0,
 			"goal": at, "n": 0, "cluck_t": _rng.randf_range(2.0, 9.0), "calm": 0.0, "bob": 0.0, "head": 0.0,
-			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0})
+			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0, "feed": false})
+	_grain_mm = MultiMesh.new()
+	_grain_mm.transform_format = MultiMesh.TRANSFORM_3D
+	_grain_mm.mesh = grain_mesh()
+	_grain_mm.instance_count = GRAIN_MAX
+	_grain_mm.visible_instance_count = 0
+	var gmi := MultiMeshInstance3D.new()
+	gmi.name = "Grain"
+	gmi.multimesh = _grain_mm
+	var gm := StandardMaterial3D.new()
+	gm.albedo_color = GRAIN_COL
+	gm.roughness = 0.6
+	gmi.material_override = gm
+	gmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cottage.add_child(gmi)
 	_prev_hero = _hero_pos()
 	_settle_now()
+
+## One wheat grain, ~8 mm long, its long axis along y.
+static func grain_mesh() -> Mesh:
+	var m := SphereMesh.new()
+	m.radius = 0.0024
+	m.height = 0.0085
+	m.radial_segments = 6
+	m.rings = 3
+	return m
+
+## A handful cast from `from` toward world `to` (`reach` m off): it lands GRAIN_FLY s later
+## as a fan of grains strung out along the throw.
+func scatter(to: Vector3, reach: float, from: Vector3) -> void:
+	var dl := _local_of(to) - _local_of(from)
+	_landing.append([GRAIN_FLY, _local_of(to), dl.normalized() if dl.length() > 0.01 else Vector2.LEFT, reach])
+
+func _land(c: Vector2, dir: Vector2) -> void:
+	var n := _rng.randi_range(18, 24)
+	for i in n:
+		if grain.size() >= GRAIN_MAX:
+			break
+		var l := clamp_yard(c + dir * _rng.randfn(0.0, 0.42) + dir.orthogonal() * _rng.randfn(0.0, 0.26))
+		if HenHouse.covers(l, 0.05):
+			continue
+		var g := cottage.to_global(Vector3(l.x, 0, l.y))
+		grain.append(l)
+		_grain_y.append(terrain.height_at(g.x, g.z) - cottage.global_position.y + 0.002)
+		# lying on its side, turned any way
+		_grain_b.append(Basis(Vector3.UP, _rng.randf() * TAU) * Basis(Vector3.RIGHT, PI * 0.5 + _rng.randf_range(-0.2, 0.2)))
+		thrown += 1
+	_sync_grain()
+
+func _sync_grain() -> void:
+	for i in grain.size():
+		_grain_mm.set_instance_transform(i, Transform3D(_grain_b[i], Vector3(grain[i].x, _grain_y[i], grain[i].y)))
+	_grain_mm.visible_instance_count = grain.size()
+
+## Takes the grain nearest `beak` within `r` (a peck that found one).
+func _eat_near(beak: Vector2, r: float) -> bool:
+	var bi := -1
+	var bd := r * r
+	for i in grain.size():
+		var d := grain[i].distance_squared_to(beak)
+		if d < bd:
+			bd = d
+			bi = i
+	if bi < 0:
+		return false
+	var last := grain.size() - 1
+	grain[bi] = grain[last]
+	_grain_y[bi] = _grain_y[last]
+	_grain_b[bi] = _grain_b[last]
+	grain.resize(last)
+	_grain_y.resize(last)
+	_grain_b.resize(last)
+	fed += 1
+	_sync_grain()
+	return true
+
+func _nearest_grain(p: Vector2) -> Vector2:
+	var best := p
+	var bd := INF
+	for g in grain:
+		var d := g.distance_squared_to(p)
+		if d < bd:
+			bd = d
+			best = g
+	return best
+
+## At the grain while there is any: runs to the nearest, a beak's length short of it, and
+## pecks; true while it is feeding (the usual pottering is off).
+func _feed(h: Dictionary, dt: float) -> bool:
+	if grain.is_empty():
+		h.feed = false
+		return false
+	if h.state == PECK and h.feed:
+		if h.t <= 0.0:
+			h.n -= 1
+			pecks += 1
+			if _rng.randf() < 0.6:
+				_eat_near((h.pos as Vector2) + _fwd(h.yaw) * 0.1, 0.16)
+			h.t = _rng.randf_range(0.22, 0.4)
+			if h.n <= 0:
+				h.state = STAND
+				h.t = 0.0
+		return true
+	if not h.feed:
+		# heads up at the patter, then off to it, the nearest first
+		h.feed = true
+		h.state = STAND
+		h.t = 0.2 + 0.25 * h.id
+		h.head_goal = 0.0
+	if h.state == STAND and h.t > 0.0:
+		return true
+	var best := _nearest_grain(h.pos)
+	var to: Vector2 = best - (h.pos as Vector2)
+	var dist := to.length()
+	if dist > 0.26:
+		h.goal = best - to / dist * 0.1
+		h.state = WALK
+		var fast := dist > 1.0
+		_walk(h, dt, RUN_V * 0.55 if fast else WALK_V * 1.4)
+		if fast:
+			h.wing = maxf(h.wing, 0.3)
+		return true
+	h.yaw = atan2(-to.x, -to.y)
+	h.state = PECK
+	h.n = _rng.randi_range(2, 4)
+	h.t = 0.3
+	return true
 
 ## Puts them where the hour has them at once (game start, or a bot / shot jumping the clock).
 func _settle_now() -> void:
@@ -209,6 +347,11 @@ func _process(delta: float) -> void:
 	var hl := _local_of(hero)
 	var raining := weather != null and weather.rain > RAIN_IN
 	var night := _night(hr)
+	for i in range(_landing.size() - 1, -1, -1):
+		_landing[i][0] -= dt
+		if _landing[i][0] <= 0.0:
+			_land(_landing[i][1], _landing[i][2])
+			_landing.remove_at(i)
 	for h: Dictionary in hens:
 		_think(h, dt, hl, night, raining)
 		_animate(h, dt)
@@ -308,31 +451,33 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 	if h.state == SHELTER:
 		h.state = STAND
 		h.t = _rng.randf_range(0.5, 2.0)
-	match h.state:
-		STAND:
-			if h.t <= 0.0:
-				_next(h)
-		WALK:
-			if _walk(h, dt, WALK_V) or h.t <= 0.0:
-				h.state = STAND
-				h.t = _rng.randf_range(0.4, 1.6)
-		SCRATCH:
-			if h.t <= 0.0:
-				# a step back to look at what it turned up, then at it
-				h.state = PECK
-				h.n = _rng.randi_range(2, 5)
-				h.t = 0.35
-				h.pos = clamp_yard((h.pos as Vector2) - _fwd(h.yaw) * 0.08)
-		PECK:
-			if h.t <= 0.0:
-				h.n -= 1
-				pecks += 1
-				h.t = _rng.randf_range(0.28, 0.5)
-				if h.n <= 0:
+	var feeding := _feed(h, dt)
+	if not feeding:
+		match h.state:
+			STAND:
+				if h.t <= 0.0:
+					_next(h)
+			WALK:
+				if _walk(h, dt, WALK_V) or h.t <= 0.0:
 					h.state = STAND
-					h.t = _rng.randf_range(0.6, 2.0)
+					h.t = _rng.randf_range(0.4, 1.6)
+			SCRATCH:
+				if h.t <= 0.0:
+					# a step back to look at what it turned up, then at it
+					h.state = PECK
+					h.n = _rng.randi_range(2, 5)
+					h.t = 0.35
+					h.pos = clamp_yard((h.pos as Vector2) - _fwd(h.yaw) * 0.08)
+			PECK:
+				if h.t <= 0.0:
+					h.n -= 1
+					pecks += 1
+					h.t = _rng.randf_range(0.28, 0.5)
+					if h.n <= 0:
+						h.state = STAND
+						h.t = _rng.randf_range(0.6, 2.0)
 	# a cluck to itself now and then, more often while it works the turf
-	h.cluck_t -= dt * (1.6 if h.state == SCRATCH or h.state == PECK else 1.0)
+	h.cluck_t -= dt * (2.5 if feeding else 1.6 if h.state == SCRATCH or h.state == PECK else 1.0)
 	if h.cluck_t <= 0.0:
 		h.cluck_t = _rng.randf_range(3.5, 11.0)
 		clucks += 1

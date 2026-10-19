@@ -52,6 +52,7 @@ func _ready() -> void:
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
+	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
 	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
@@ -155,6 +156,12 @@ func hook_villager(v: Node) -> void:
 	if c != null:
 		c.chopped.connect(func(at: Vector3, split: bool) -> void:
 			_play("chop" if split else "thud", at, -4.0 if split else -7.0, _rng.randf_range(0.93, 1.07)))
+	var fd = v.get("feed")
+	if fd != null:
+		fd.scattered.connect(func(at: Vector3) -> void:
+			_play("grain", at, -12.0, _rng.randf_range(0.92, 1.08))
+			# the fan pattering down on the yard over the wall
+			_pending.append([0.5, "grain", at + (v.get("body") as Node3D).global_basis.z * 2.2, -15.0, 1.25]))
 	if v.has_signal("door"):
 		v.door.connect(func(at: Vector3) -> void:
 			_play("creak", at, -15.0, 0.62)
@@ -378,6 +385,28 @@ func _make_crunch() -> AudioStreamWAV:
 		var snap := exp(-k * 60.0)
 		x[i] = hp * (grain * 0.8 + snap * 1.2) * smoothstep(0.0, 0.01, k) + chew * 0.6 * sin(PI * k)
 	return _wav(x)
+
+## A handful of grain cast out: a soft dry rush as it leaves the hand, then a thin patter of
+## grains -- dense tiny ticks of bright noise thinning out over half a second.
+func _make_grain() -> AudioStreamWAV:
+	var dur := 0.55
+	var n := int(dur * RATE)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var hp := 0.0
+	var prev := 0.0
+	var tick := 0.0
+	for i in n:
+		var k := float(i) / n
+		var w := _rng.randf() * 2.0 - 1.0
+		hp = 0.55 * (hp + w - prev)
+		prev = w
+		if _rng.randf() < lerpf(0.03, 0.002, k):
+			tick = _rng.randf_range(0.3, 1.0)
+		tick *= 0.8
+		var rush := exp(-k * 9.0) * smoothstep(0.0, 0.04, k)
+		x[i] = hp * (tick * 0.9 + rush * 0.35)
+	return _wav(x, 0.5)
 
 ## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
 ## uneven train of grinding clicks that runs together into a rising, wavering squeal and
