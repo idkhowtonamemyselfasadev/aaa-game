@@ -33,6 +33,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-19 07:00 UTC:
+  - **Bot `walk` passes again** (Known bug 04:50 10-19): the hero's face cloth top now sits
+    6 mm lower (`HeroGarb._veil` base 1.935 -> 1.929, lower edge unchanged at 1.70), and the
+    face band runs 1.2 cm further down (2.016..1.914, tuck-back 1.932..1.914) so no gap opens
+    under the cheekbone dips. Check: eyes -0.01 m vs the cloth top (limit -0.012).
+  - **Gable steps no longer poke above the verge** (Known bug 02:45 10-19): StoneCottage's
+    stepped gable courses are held 8 cm in from the roof line (the oversize, off-square split
+    stones pushed the corner of a step cut exactly to the line up through the verge); the
+    mortar tabling fills the rest. Applies to both stone houses.
 - Session 2026-10-19 04:00 UTC:
   - **White cottage reads as limewashed rubble, not white bricks** (Known bug 02:45 10-19).
     The lime core (`StoneCottage._mortar_run`, the gable tabling and the chimney core) on a

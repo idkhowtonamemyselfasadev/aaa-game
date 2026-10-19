@@ -313,7 +313,10 @@ func _walls() -> void:
 	while y < floor_y + roof_under(0.0) - 0.05:
 		var h := _course_h()
 		var top := y + h - floor_y
-		var half := wdep * 0.5 - (top - eaves) / tan(PITCH)
+		# held 8 cm in from the roof line: the split stones are laid 6-7 % oversize and a
+		# hair off square, so a step cut to the line pushed its corner up through the verge;
+		# the tabling fills the rest under the deck
+		var half := wdep * 0.5 - (top - eaves) / tan(PITCH) - 0.08
 		if half < 0.2:
 			break
 		_course(2, -half, half, y, h, false, false)

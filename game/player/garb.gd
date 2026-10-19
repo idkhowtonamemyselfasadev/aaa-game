@@ -398,7 +398,7 @@ func _veil() -> ArrayMesh:
 			var depth := smoothstep(0.1, 1.0, v)
 			# the lower edge sags only a little under the chin, so it stays tucked behind the
 			# hood's front edge (1.746) instead of hanging a point below it
-			var y := 1.935 - v * (0.235 + 0.015 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
+			var y := 1.929 - v * (0.229 + 0.015 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
 			# the top edge rides up over the bridge of the nose and sags into a soft dip under
 			# each cheekbone before running back flat under the hood, instead of a ruled line
 			var top := 1.0 - smoothstep(0.0, 0.35, v)
@@ -499,7 +499,7 @@ func light_face(shade: Color) -> void:
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
 	var a := lerpf(-1.0, 1.0, u)
-	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, 1.926, v), true)
+	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, 1.914, v), true)
 
 ## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
 ## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
@@ -518,7 +518,7 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	# cheekbones forward under the outer eye corners, then the lower edge tucks back under the
 	# face cloth and the sides under the hood
 	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
-	z -= 0.02 * smoothstep(1.942, 1.926, y)
+	z -= 0.02 * smoothstep(1.932, 1.914, y)
 	z -= 0.03 * smoothstep(0.06, 0.09, absf(x))
 	return Vector3(x, y, z)
 
