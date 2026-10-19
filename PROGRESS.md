@@ -43,7 +43,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   green". Bot `eddatalk` (far: silent; near: prompt + named, intro x2 then a wood line,
   subtitled, facing, not moved; bench: eat line, still sat; night: silent). `villager` route in
   bot.gd now returns instead of falling through to `chop`. Shot lens `villager <name> 60 10.0
-  talk fixfps` (over the hero's shoulder from the green side, subtitle on).
+  talk fixfps` (over the hero's shoulder from the green side, subtitle on). Shot `eddatalk`
+  FAILS the Wukong bar: subtitle reads well, but her face is lost under the coif (no eyes read
+  at 3 m), the hero's back hides half of her, the lean-to's limewash reads flat and blotchy.
+  Next: swing that lens wider so both faces show, and give the coif a face opening.
 - 2026-10-19 15:30: **Edda feeds the hens over the garth wall** (`world/hen_feed.gd`, `HenFeed`).
   New `feed` slot in `Villager._activity_for` (07:20-08:25 and 16:20-17:20, wood after).
   Stand `Villager.FEED_STAND` (5.45, -8.3) and the way round the yard walls `FEED_WAY` in the
