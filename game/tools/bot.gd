@@ -2773,6 +2773,17 @@ func _stonehouse_test(c: StoneCottage = null) -> void:
 	var noon := c.lit
 	_world.time_of_day = 19.5
 	await _ticks(2)
+	if c is WhiteCottage and _world.villager != null:
+		# Edda's lamp: dark while she sits out, lit once she has gone in for the night
+		_world.villager.settle(_world, 19.9)
+		await _ticks(200)
+		var out_lit := c.lit
+		_world.time_of_day = 21.0
+		_world.villager.settle(_world, 21.0)
+		await _ticks(200)
+		print("BOT whitehouse: lamp %.2f while she sits out at 19:54, %.2f once she is in" % [out_lit, c.lit])
+		if out_lit > 0.05:
+			return _combat_done(false, "the lamp burns with nobody in")
 	print("BOT stonehouse: window light noon %.2f, 19:30 %.2f, smoke %s" % [noon, c.lit, c.smoke.emitting])
 	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
 		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
@@ -3822,6 +3833,22 @@ func _villager_test() -> void:
 			return _combat_done(false, "she never got to her %s" % st[1])
 		if (st[1] == "water" or st[1] == "wood") and v.stoops - s0 < 2:
 			return _combat_done(false, "she stands idle at the %s" % st[1])
+		if st[1] == "water":
+			var pl: WaterButt = v.home.pail
+			var grip := pl.global_position + Vector3.UP * WhiteCottage.pail_grip()
+			print("BOT villager pail: carrying %s, dips %d, level %.2f, grip %.2f m from her hand" % [v.carrying, v.dips, pl.level, grip.distance_to(v.hand_mark.global_position)])
+			if not v.carrying or v.dips < 1 or pl.level < 0.8:
+				return _combat_done(false, "she never filled her pail at the butt")
+			if v.stoop < 0.5 and grip.distance_to(v.hand_mark.global_position) > 0.1:
+				return _combat_done(false, "the pail does not hang from her hand")
+		if st[1] == "wood":
+			var pl: WaterButt = v.home.pail
+			var bt: Vector3 = v.home.butt.global_position
+			var off := Vector2(pl.global_position.x - bt.x, pl.global_position.z - bt.z).length()
+			var tr0: Terrain = _world.get_node("Terrain")
+			print("BOT villager pail down: carrying %s, moves %d, %.2f m from the butt, foot %.2f above ground" % [v.carrying, v.pail_moves, off, pl.global_position.y - tr0.height_at(pl.global_position.x, pl.global_position.z)])
+			if v.carrying or v.pail_moves < 2 or off > 1.6 or absf(pl.global_position.y - tr0.height_at(pl.global_position.x, pl.global_position.z)) > 0.05:
+				return _combat_done(false, "she did not set the pail down by the butt")
 	if v.sit < 0.95 or v.global_position.distance_to(Vector3(v.home.bench_seat.x, v.global_position.y, v.home.bench_seat.z)) > 0.2:
 		return _combat_done(false, "she is not sat on the bench at noon")
 	# rain sends her in; when it passes she comes out again
@@ -3860,6 +3887,9 @@ func _villager_test() -> void:
 	print("BOT villager night: %s visible %s gone in %d, warps %d" % [v.activity, v.visible, v.goings_in, v.warps])
 	if v.visible or v.activity != "in":
 		return _combat_done(false, "she does not go in at night")
+	print("BOT villager lamp in the window: %.2f" % v.home.lit)
+	if v.home.lit < 0.9:
+		return _combat_done(false, "no lamp in her window once she is in")
 	if v.warps > 0:
 		return _combat_done(false, "she wedged on her rounds and was lifted %d times" % v.warps)
 	# the hero walks up by day: she stops and turns to him

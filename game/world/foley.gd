@@ -145,13 +145,20 @@ func hook_gate(g: Node) -> void:
 	g.creaked.connect(func(at: Vector3) -> void: _play("creak", at, -9.0))
 	g.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-14.0, -3.0, pw), 0.72))
 
-## Edda at the block: the bite and crack of a round splitting, or a dull thud as the bit sticks.
+## Edda at the block (the bite and crack of a round splitting, or a dull thud as the bit
+## sticks) and at her cottage door (a low, short creak of the strap hinges and the wooden
+## latch dropping into its keeper as it shuts behind her).
 func hook_villager(v: Node) -> void:
-	var c = v.get("chop") if v != null else null
-	if c == null:
+	if v == null:
 		return
-	c.chopped.connect(func(at: Vector3, split: bool) -> void:
-		_play("chop" if split else "thud", at, -4.0 if split else -7.0, _rng.randf_range(0.93, 1.07)))
+	var c = v.get("chop")
+	if c != null:
+		c.chopped.connect(func(at: Vector3, split: bool) -> void:
+			_play("chop" if split else "thud", at, -4.0 if split else -7.0, _rng.randf_range(0.93, 1.07)))
+	if v.has_signal("door"):
+		v.door.connect(func(at: Vector3) -> void:
+			_play("creak", at, -15.0, 0.62)
+			_pending.append([0.55, "wood", at, -11.0, 1.5]))
 
 # ---------------------------------------------------------------- events
 

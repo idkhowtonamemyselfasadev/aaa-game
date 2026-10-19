@@ -758,9 +758,13 @@ static func lit_for(h: float) -> float:
 		return smoothstep(5.4, 5.6, h) * (1.0 - smoothstep(6.2, 6.6, h)) * 0.6
 	return 0.0
 
-func _process(_delta: float) -> void:
+## How lit the windows are now (the clock's; a cottage with someone living in it overrides).
+func _lit_now(h: float, _delta: float) -> float:
+	return lit_for(h)
+
+func _process(delta: float) -> void:
 	var h: float = _world.time_of_day if "time_of_day" in _world else 12.0
-	lit = lit_for(h)
+	lit = _lit_now(h, delta)
 	panes.set_shader_parameter("lit", lit)
 	lamp.light_energy = lit * 1.6
 	lamp.visible = lit > 0.01

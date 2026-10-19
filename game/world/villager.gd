@@ -15,6 +15,11 @@ extends CharacterBody3D
 ## Under a rain front she breaks off and goes indoors until it eases (the lantern round
 ## excepted: it still gets lit). Indoors she is not drawn. When the hero comes near she stops,
 ## turns to face him and watches him while he stays close.
+## At the butt she takes up her pail from where it stands, dips it, and sets it down again
+## before she goes on; the door creaks and its latch drops as she goes in and out, and the
+## cottage's lamp burns only while she is indoors (WhiteCottage._lit_now).
+
+signal door(at: Vector3)          # the cottage door opened or shut behind her (Foley)
 
 enum { WALK, STAND, SIT, IN }
 
@@ -50,6 +55,11 @@ var noticing := false
 var lantern_lit := false         # she has lit the lantern this evening (LanternPost reads it)
 var lights := 0                  # times she has lit it (bots)
 var stoops := 0                  # times she has bent to the pail or the woodpile (bots)
+var carrying := false            # the pail in her hand
+var dips := 0                    # times she has dipped the pail in the butt (bots)
+var pail_moves := 0              # times she has taken it up or set it down (bots)
+var _pail_k := 0.0               # 0 where it stood .. 1 hung from her hand
+var _pail_from := Transform3D()
 var visits := {}                 # activity -> times she reached its spot (bots)
 var goings_in := 0               # times she went in at the door (bots)
 var warps := 0
@@ -202,6 +212,8 @@ func settle(w: Node3D, at_hour: float) -> void:
 		var st := lc + out * 0.45
 		_spots["lamp"] = [st, atan2(-out.x, -out.z)]
 		lantern.lighter = self
+	home.keeper = self
+	carrying = false
 	activity = ""
 	var a := _activity_for(at_hour)
 	var sp: Array = _spots[_spot_name(a)]
@@ -217,6 +229,13 @@ func settle(w: Node3D, at_hour: float) -> void:
 		lantern_lit = at_hour >= 19.3
 	if a == "lamp" and not lantern_lit:
 		_light_t = 0.0
+	if a == "water" and home.pail != null:
+		# already at it: the pail in her hand, filled
+		carrying = true
+		_pail_k = 1.0
+		_pail_from = home.pail.global_transform
+		home.pail.level = 0.82
+	home.lit = WhiteCottage.lit_for(at_hour) if state == IN else 0.0
 	_show(state != IN)
 
 func _place(p: Vector3) -> void:
@@ -269,6 +288,7 @@ func _route(to: Vector3) -> void:
 		# out through the door onto the step
 		_place(_spots["door"][0])
 		_show(true)
+		door.emit(home.to_global(Vector3(-0.3, 1.0, WhiteCottage.W_DEP * 0.5)))
 	# going in: up to the step, and in at the door (the door leaf is shut geometry)
 	if to.distance_to(_spots["door_in"][0]) < 0.1:
 		to = _spots["door"][0]
@@ -361,6 +381,7 @@ func _arrive() -> void:
 		state = IN
 		goings_in += 1
 		_show(false)
+		door.emit(home.to_global(Vector3(-0.3, 1.0, WhiteCottage.W_DEP * 0.5)))
 	elif activity == "eat" or activity == "evening":
 		state = SIT
 	elif activity == "lamp":
@@ -380,6 +401,13 @@ func _update_notice() -> void:
 
 ## At the butt and the woodpile: bend down, hold, straighten, a pause, again.
 func _update_work(delta: float) -> void:
+	_update_pail(delta)
+	if carrying and activity != "water":
+		# done at the butt: stoop and set the pail down before going on
+		stoop = move_toward(stoop, 1.0, delta / STOOP_DOWN)
+		if stoop > 0.95:
+			_drop_pail()
+		return
 	var working := state == STAND and (activity == "water" or activity == "wood") and not noticing
 	if chop != null:
 		chop.update(delta, working and activity == "wood")
@@ -402,9 +430,39 @@ func _update_work(delta: float) -> void:
 	var t := -_stoop_t
 	if t < STOOP_DOWN + STOOP_HOLD:
 		stoop = move_toward(stoop, 1.0, delta / STOOP_DOWN)
+		if activity == "water" and stoop > 0.95:
+			if not carrying and home.pail != null:
+				# the first bend: take the pail up by its bail from where it stands
+				carrying = true
+				pail_moves += 1
+				home.pail.level = minf(home.pail.level, 0.25)
+				_pail_from = home.pail.global_transform
+				_pail_k = 0.0
+			elif carrying and _pail_k > 0.99 and t > STOOP_DOWN + STOOP_HOLD * 0.5 and home.pail.level < 0.8:
+				home.pail.level = 0.82
+				dips += 1
 	else:
 		stoops += 1
 		_stoop_t = _rng.randf_range(2.5, 5.0) if activity == "wood" else _rng.randf_range(4.0, 8.0)
+
+## The pail hangs plumb from her right hand by its bail, turned across her stride; taken up,
+## it swings over from where it stood. Bent to the butt it goes in over the rim.
+func _update_pail(delta: float) -> void:
+	if not carrying or home == null or home.pail == null or hand_mark == null:
+		return
+	_pail_k = move_toward(_pail_k, 1.0, delta / 0.45)
+	var hp := hand_mark.global_position
+	var foot := hp - Vector3(0, WhiteCottage.pail_grip(), 0)
+	foot.y = maxf(foot.y, terrain.height_at(foot.x, foot.z))
+	var carry := Transform3D(Basis(Vector3.UP, body.global_rotation.y + PI * 0.5).scaled(WhiteCottage.PAIL_SCALE), foot)
+	var e := _pail_k * _pail_k * (3.0 - 2.0 * _pail_k)
+	home.pail.global_transform = _pail_from.interpolate_with(carry, e)
+
+func _drop_pail() -> void:
+	carrying = false
+	pail_moves += 1
+	var p := home.pail.global_position
+	home.put_pail(p, body.global_rotation.y + PI * 0.5)
 
 ## The taper up to the lantern's door until the wick catches.
 func _update_light(delta: float) -> void:

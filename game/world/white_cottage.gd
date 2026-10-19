@@ -60,6 +60,11 @@ const BLOCK_AT := Vector2(W_LEN * 0.5 + 1.2, LEAN_Z + 1.0)   # chopping block, o
 const BUTT_AT := Vector2(3.05, 2.5 + 0.4)
 ## The bench against the door wall, left of the door under the window.
 const BENCH_X := -1.75
+## Where Edda's pail first stands, on the ground beside the butt (she puts it down where
+## she finishes with it after that).
+const PAIL_AT := Vector2(BUTT_AT.x + 0.5, BUTT_AT.y + 0.55)
+const PAIL_SCALE := Vector3(0.43, 0.32, 0.43)   # of the butt's cask: 0.29 m tall, 0.29 m across
+const BAIL_RISE := 0.17          # the iron bail's crown above the rim
 const BENCH_LEN := 1.45
 
 var butt: WaterButt
@@ -67,6 +72,21 @@ var logs := 0                    # split logs stacked and lying about (bots)
 var lean_floor := 0.0            # local ground height in the lean-to's middle
 var lean_stones := 0
 var bench_seat := Vector3.ZERO   # world centre of the bench's seat (bots)
+var keeper: Node                 # Edda (Villager): the lamp burns only while she is in
+var pail: WaterButt              # her pail, on the ground by the butt or in her hand
+
+## The lamp is lit while she is indoors after dusk (and the dawn candle before she is up);
+## in out of the rain by day the hearth's glow shows in the panes. It takes a moment to
+## kindle and to go out.
+func _lit_now(h: float, delta: float) -> float:
+	if keeper == null:
+		return lit_for(h)
+	var goal := 0.0
+	if not keeper.outdoors():
+		goal = lit_for(h)
+		if keeper.activity == "shelter":
+			goal = maxf(goal, 0.35)
+	return move_toward(lit, goal, delta / 1.5)
 
 func _ready() -> void:
 	super()
@@ -96,6 +116,7 @@ func _yard_things() -> void:
 	if tr:
 		butt.terrain_mat = tr.material as ShaderMaterial
 	_box(Vector3(bx, g + 0.13 + WaterButt.H * 0.5, bz), Vector3(0.66, WaterButt.H + 0.1, 0.66))
+	_build_pail()
 	# the bench: a thick oak plank, silvered on top, on two upright stones
 	var hd := wdep * 0.5
 	var sz := hd + 0.2
@@ -110,6 +131,82 @@ func _yard_things() -> void:
 	_box(Vector3(BENCH_X, (sg + seat_y) * 0.5, sz), Vector3(BENCH_LEN, seat_y - sg + 0.05, 0.36))
 	bench_seat = to_global(Vector3(BENCH_X, seat_y + 0.035, sz))
 	_multimesh(_ruins._block_mesh(_dims[0], 20), legs, "YardStones")
+
+## Edda's pail: a little coopered tub (the butt's cask builder cut down: oak staves, iron
+## hoops, water inside that rain tops up) with a forged iron bail on two ears. Top-level so
+## it hangs plumb from her hand when carried.
+func _build_pail() -> void:
+	pail = WaterButt.new()
+	pail.name = "Pail"
+	pail.top_level = true
+	add_child(pail)
+	pail.scale = PAIL_SCALE
+	pail.level = 0.25
+	pail.weather = butt.weather
+	pail.terrain_mat = butt.terrain_mat
+	var rim := WaterButt.H * PAIL_SCALE.y
+	var half := WaterButt.R_END * PAIL_SCALE.x + 0.012
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	const SEG := 14
+	const SIDES := 6
+	const TR := 0.0055
+	var ring: Array = []
+	for i in SEG + 1:
+		var a := PI * float(i) / SEG
+		# a rounded hoop of bar: wide shoulders over the ears, a flatter crown for the hand
+		var c := Vector3(half * cos(a), rim - 0.03 + BAIL_RISE * pow(sin(a), 0.7), 0.0)
+		var tg := Vector3(-half * sin(a), BAIL_RISE * cos(a), 0.0).normalized()
+		var nx := tg.cross(Vector3.BACK).normalized()
+		var pts: Array = []
+		for k in SIDES:
+			var b := TAU * float(k) / SIDES
+			var n := nx * cos(b) + Vector3.BACK * sin(b)
+			pts.append([c + n * TR, n])
+		ring.append(pts)
+	for i in SEG:
+		for k in SIDES:
+			var q := [ring[i][k], ring[i][(k + 1) % SIDES], ring[i + 1][(k + 1) % SIDES], ring[i + 1][k]]
+			for idx in [0, 2, 1, 0, 3, 2]:
+				st.set_normal(q[idx][1])
+				st.add_vertex(q[idx][0])
+	# the two ears: flat iron straps riveted to the staves, the bail's ends through them
+	for side in [-1.0, 1.0]:
+		_strap(st, Vector3(side * (half - 0.004), rim - 0.03, 0.0), side)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.13, 0.085, 0.06)
+	mat.metallic = 0.55
+	mat.roughness = 0.78
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var bail := MeshInstance3D.new()
+	bail.name = "Bail"
+	bail.mesh = st.commit()
+	bail.material_override = mat
+	pail.add_child(bail)
+	# undo the tub's squash so the bar stays round
+	bail.scale = Vector3.ONE / PAIL_SCALE
+	bail.position = Vector3.ZERO
+	put_pail(to_global(Vector3(PAIL_AT.x, 0, PAIL_AT.y)), global_rotation.y + 0.7)
+
+func _strap(st: SurfaceTool, at: Vector3, side: float) -> void:
+	var h := 0.07
+	var w := 0.022
+	var n := Vector3(side, 0, 0)
+	var c := [Vector3(0, -h, -w), Vector3(0, -h, w), Vector3(0, 0.012, w), Vector3(0, 0.012, -w)]
+	var idx := [0, 1, 2, 0, 2, 3] if side > 0 else [0, 2, 1, 0, 3, 2]
+	for i in idx:
+		st.set_normal(n)
+		st.add_vertex(at + c[i] + n * 0.003)
+
+## Stands the pail on the ground at `p` (world), turned to `yaw`.
+func put_pail(p: Vector3, yaw: float) -> void:
+	var tr = _world.get_node_or_null("Terrain")
+	var y: float = tr.height_at(p.x, p.z) if tr else p.y
+	pail.global_transform = Transform3D(Basis(Vector3.UP, yaw).scaled(PAIL_SCALE), Vector3(p.x, y - 0.01, p.z))
+
+## The bail's crown above the pail's foot (where a hand holds it), world metres.
+static func pail_grip() -> float:
+	return WaterButt.H * PAIL_SCALE.y - 0.03 + BAIL_RISE
 
 ## Rafter-top height (above the floor) of the lean-to's roof at local x.
 func lean_top(x: float) -> float:

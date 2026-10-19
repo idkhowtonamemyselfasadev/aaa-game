@@ -206,6 +206,7 @@ func _ready() -> void:
 	foley.hook_gate(dry_wall.field_gate)
 	foley.hook_villager(villager)
 	foley.hook_hens(hens)
+	foley.hook_villager(villager)
 
 func _build_environment() -> void:
 	var e := Environment.new()
