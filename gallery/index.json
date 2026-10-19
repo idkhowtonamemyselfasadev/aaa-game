@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261014-1545-nightface.jpg",
-  "time": "2026-10-14T15:45:00Z",
-  "caption": "The hero at 22:30 under a moonlit sky with fireflies: the face fill is now cool and dim, but the face band still reads as a pale grey doll mask in a black hood, and the far ridges are faceted.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-1615-nightface-hooded.jpg",
   "time": "2026-10-14T16:15:00Z",
   "caption": "The hero at 22:30 by moonlight: the face now sinks into the hood's shadow under the brow, eye whites are grey instead of goggle-white and the hood rim reads; the hood opening still cuts the face as a hard polygon and the far ridges are faceted.",
@@ -897,6 +891,12 @@
   "file": "20261019-1622-eddatalk.jpg",
   "time": "2026-10-19T16:22:00Z",
   "caption": "Wren speaking with Edda at her woodpile, her line about Tam as a subtitle; her face is lost under the coif, the hero hides half of her and the lean-to plaster reads flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1730-feedwait.jpg",
+  "time": "2026-10-19T17:30:00Z",
+  "caption": "Morning feed: the hens lined up at the inside of the garth wall at Edda's call, her hooded figure beyond it with the grain bag; the yard foreground is backlit nearly black and the hens read small and dark.",
   "verdict": "fail"
  }
 ]

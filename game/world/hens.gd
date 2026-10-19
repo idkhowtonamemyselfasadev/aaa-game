@@ -14,7 +14,9 @@ extends Node3D
 ##  - morning and afternoon Edda casts grain over the east wall (HenFeed -> `scatter`): the
 ##    grains lie where they fell, pale on the scratched earth, and the hens come running with
 ##    their wings half out and work through them one beak-length at a time, a peck for a
-##    grain (some miss), until the last is gone.
+##    grain (some miss), until the last is gone. When they hear her call as she comes round
+##    with the bag (`expect`), they leave off and gather at the inside of the east wall,
+##    heads up toward her, jostling, and wait there for the grain.
 ## They stay inside the garth walls (a clamp to the yard's quadrilateral in the cottage's
 ## frame), keep apart from each other and never leave by the field gate.
 ## Procedural mesh (Herd's loft helpers), posed in hen.gdshader.
@@ -67,6 +69,9 @@ var came_out := 0
 var grain: Array[Vector2] = []    # grains lying in the yard (local xz)
 var thrown := 0           # grains cast in (bots)
 var fed := 0              # grains eaten (bots)
+var at_wall := 0          # hens waiting at the east wall for the grain right now (bots)
+var _call_t := 0.0        # > 0 while her call is still fresh
+var _call_from := Vector2.ZERO   # where she called from (local xz)
 var _grain_y: Array[float] = []
 var _grain_b: Array[Basis] = []
 var _grain_mm: MultiMesh
@@ -107,7 +112,7 @@ func setup(w: Node3D) -> void:
 		hens.append({"mi": mi, "pos": at, "yaw": _rng.randf() * TAU, "state": STAND, "t": _rng.randf_range(0.5, 3.0),
 			"speed": 0.0, "phase": _rng.randf(), "peck": 0.0, "sit": 0.0, "wing": 0.0, "scratch": 0.0,
 			"goal": at, "n": 0, "cluck_t": _rng.randf_range(2.0, 9.0), "calm": 0.0, "bob": 0.0, "head": 0.0,
-			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0, "feed": false})
+			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0, "feed": false, "heard": false})
 	_grain_mm = MultiMesh.new()
 	_grain_mm.transform_format = MultiMesh.TRANSFORM_3D
 	_grain_mm.mesh = grain_mesh()
@@ -235,6 +240,64 @@ func _feed(h: Dictionary, dt: float) -> bool:
 	h.t = 0.3
 	return true
 
+## Edda's call from beyond the wall: the hens come to the east wall and wait for the grain.
+func expect(from: Vector3) -> void:
+	_call_t = 7.0
+	_call_from = _local_of(from)
+
+## Where a bird waits for the grain: strung along the inside of the east wall near where the
+## handfuls land, a little off the stones, the nearer ones to her the first there.
+static func wall_spot(id: int) -> Vector2:
+	var a: Vector2 = YARD[0]
+	var b: Vector2 = YARD[1]
+	var e := (b - a).normalized()
+	var inward := Vector2(e.y, -e.x)
+	return a + (b - a) * (0.5 + 0.085 * id) + inward * (0.42 + 0.12 * float(id % 2))
+
+## At her call (and no grain down yet): to the wall at a hurry, then stand there facing it,
+## heads up and turning, and stir now and then. True while it is at this.
+func _gather(h: Dictionary, dt: float) -> bool:
+	if _call_t <= 0.0 or not grain.is_empty() or not _landing.is_empty():
+		h.heard = false
+		return false
+	if not h.heard:
+		# heads up at the call first, then off, some sooner than others
+		h.heard = true
+		h.state = STAND
+		h.t = 0.15 + 0.3 * float((h.id * 3) % 5) / 5.0
+		h.head_goal = 0.0
+		return true
+	var spot := wall_spot(h.id)
+	var to: Vector2 = spot - (h.pos as Vector2)
+	if to.length() > 0.12:
+		if h.state == STAND and h.t > 0.0 and h.speed < 0.05:
+			return true
+		if h.state != WALK or (h.goal as Vector2).distance_to(spot) > 0.01:
+			h.state = WALK
+			h.goal = spot
+		var fast := to.length() > 1.2
+		_walk(h, dt, RUN_V * 0.5 if fast else WALK_V * 1.5)
+		if fast:
+			h.wing = maxf(h.wing, 0.25)
+		return true
+	at_wall += 1
+	# facing the wall (and her, beyond it), the head cocked toward where she called from
+	var a: Vector2 = YARD[0]
+	var e: Vector2 = ((YARD[1] as Vector2) - a).normalized()
+	var out := Vector2(-e.y, e.x)
+	var want := atan2(-out.x, -out.y)
+	h.yaw = lerp_angle(h.yaw, want, minf(1.0, dt * 3.0))
+	h.speed = 0.0
+	if h.state != STAND:
+		h.state = STAND
+		h.t = _rng.randf_range(0.6, 1.4)
+	if h.t <= 0.0:
+		var c: Vector2 = _call_from - (h.pos as Vector2)
+		var look := clampf(wrapf(atan2(-c.x, -c.y) - h.yaw, -PI, PI), -0.8, 0.8)
+		h.head_goal = clampf(look + _rng.randf_range(-0.35, 0.35), -0.9, 0.9)
+		h.t = _rng.randf_range(0.5, 1.3)
+	return true
+
 ## Puts them where the hour has them at once (game start, or a bot / shot jumping the clock).
 func _settle_now() -> void:
 	var night := _night(world.time_of_day)
@@ -347,6 +410,8 @@ func _process(delta: float) -> void:
 	var hl := _local_of(hero)
 	var raining := weather != null and weather.rain > RAIN_IN
 	var night := _night(hr)
+	_call_t = maxf(0.0, _call_t - dt)
+	at_wall = 0
 	for i in range(_landing.size() - 1, -1, -1):
 		_landing[i][0] -= dt
 		if _landing[i][0] <= 0.0:
@@ -452,6 +517,8 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 		h.state = STAND
 		h.t = _rng.randf_range(0.5, 2.0)
 	var feeding := _feed(h, dt)
+	if not feeding and h.calm <= 0.0:
+		feeding = _gather(h, dt)
 	if not feeding:
 		match h.state:
 			STAND:

@@ -53,6 +53,7 @@ func _ready() -> void:
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
 	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
+	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
 	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
@@ -162,6 +163,7 @@ func hook_villager(v: Node) -> void:
 			_play("grain", at, -12.0, _rng.randf_range(0.92, 1.08))
 			# the fan pattering down on the yard over the wall
 			_pending.append([0.5, "grain", at + (v.get("body") as Node3D).global_basis.z * 2.2, -15.0, 1.25]))
+		fd.called.connect(func(at: Vector3) -> void: _play("call", at, -6.0, _rng.randf_range(0.97, 1.03)))
 	if v.has_signal("door"):
 		v.door.connect(func(at: Vector3) -> void:
 			_play("creak", at, -15.0, 0.62)
@@ -407,6 +409,45 @@ func _make_grain() -> AudioStreamWAV:
 		var rush := exp(-k * 9.0) * smoothstep(0.0, 0.04, k)
 		x[i] = hp * (tick * 0.9 + rush * 0.35)
 	return _wav(x, 0.5)
+
+## Edda calling the hens as she comes with the bag: "chook-chook-chook" in a woman's voice,
+## lightly sung -- each a breathy "ch" of bright noise, a short rounded "oo" (low F1/F2)
+## stopped hard on the "k" with a little click, quick and level, the last held longer and
+## lifted then let fall.
+func _make_call(pt: float, count: int) -> AudioStreamWAV:
+	var gap := 0.21
+	var out := PackedFloat32Array()
+	out.resize(int((gap * count + 0.45) * RATE))
+	for c in count:
+		var last := c == count - 1
+		var at := int((c * gap + _rng.randf_range(0.0, 0.015)) * RATE)
+		# the "ch": 45 ms of high-passed hiss
+		var ch := int(0.045 * RATE)
+		var prev := 0.0
+		var hp := 0.0
+		for i in ch:
+			var w := _rng.randf() * 2.0 - 1.0
+			hp = 0.4 * (hp + w - prev)
+			prev = w
+			var k := float(i) / ch
+			if at + i < out.size():
+				out[at + i] += hp * 0.5 * smoothstep(0.0, 0.3, k) * (1.0 - 0.5 * k)
+		var d := 0.3 if last else 0.11
+		var f0 := 300.0 * pt * (1.0 + 0.04 * c)
+		var y := _voice(d,
+			func(k: float) -> float: return f0 * ((1.0 + 0.12 * sin(PI * minf(k * 1.6, 1.0)) - 0.1 * k) if last else (1.03 - 0.06 * k)),
+			func(k: float) -> float: return smoothstep(0.0, 0.08, k) * (1.0 - smoothstep(0.82 if not last else 0.7, 1.0, k)),
+			[[380.0 * pt, 5.0, 1.0], [880.0 * pt, 6.0, 0.5], [2500.0 * pt, 8.0, 0.08]], 0.12, 0.05)
+		var vs := at + ch - int(0.008 * RATE)
+		for i in y.size():
+			if vs + i < out.size():
+				out[vs + i] += y[i] * 0.9
+		# the "k": a tiny release click after the stop
+		var kc := vs + y.size() + int(0.025 * RATE)
+		for i in int(0.012 * RATE):
+			if kc + i < out.size():
+				out[kc + i] += (_rng.randf() * 2.0 - 1.0) * 0.25 * exp(-float(i) / (0.002 * RATE))
+	return _wav(out, 0.8)
 
 ## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
 ## uneven train of grinding clicks that runs together into a rising, wavering squeal and

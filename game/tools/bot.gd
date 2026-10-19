@@ -4057,9 +4057,15 @@ func _feed_test() -> void:
 	var arrived := -1
 	var bag_gap := INF
 	var peak_grain := 0
+	var wall_wait := 0          # most hens waiting at the east wall before the first grain fell
+	var call_d := INF           # how near the garth she was at her first call
 	for i in 2600:
 		await get_tree().physics_frame
 		var p := v.global_position
+		if hn.thrown == 0:
+			wall_wait = maxi(wall_wait, hn.at_wall)
+		if f.calls > 0 and call_d == INF:
+			call_d = v.global_position.distance_to(hn.cottage.to_global(Vector3(HenFeed.LAND.x, 0, HenFeed.LAND.y)))
 		# clearance from either wall's face
 		closest = minf(closest, YardWall.dist(p.x, p.z) - YardWall.W0 * 0.5)
 		for sg in segs:
@@ -4079,8 +4085,16 @@ func _feed_test() -> void:
 			near += 1
 		print("BOT feed hen %d: state %d pos %s nearest grain %.2f m, t %.2f" % [h.id, h.state, str(h.pos), (h.pos as Vector2).distance_to(hn._nearest_grain(h.pos)), h.t])
 	print("BOT feed: arrived tick %d, casts %d, thrown %d, peak on the ground %d, eaten %d, left %d, hens fed %d, warps %d, clear of the walls by %.2f m, ticks in the yard %d, hand to bag %.2f m, bag shown %s, grain heard %d" % [arrived, f.casts, hn.thrown, peak_grain, hn.fed, hn.grain.size(), near, v.warps, closest, in_yard, bag_gap, f.bag.visible, _world.foley.played.get("grain", 0)])
+	print("BOT feed call: %d calls (heard %d), first %.1f m from the garth, %d hens waiting at the wall before the grain" % [f.calls, _world.foley.played.get("call", 0), call_d, wall_wait])
 	if arrived < 0 or v.activity != "feed":
 		return _combat_done(false, "she never got to the garth wall")
+	if f.calls < 2 or _world.foley.played.get("call", 0) < 2:
+		return _combat_done(false, "she did not call the hens as she came")
+	if wall_wait < 4:
+		return _combat_done(false, "the hens did not gather at the wall at her call")
+	for i in Hens.COUNT:
+		if not Hens.inside_yard(Hens.wall_spot(i)) or HenHouse.covers(Hens.wall_spot(i), 0.1):
+			return _combat_done(false, "a wall spot outside the yard")
 	if f.casts < HenFeed.CASTS or hn.thrown < 60:
 		return _combat_done(false, "she did not cast the grain")
 	if hn.fed < 30:
@@ -4112,4 +4126,4 @@ func _feed_test() -> void:
 	print("BOT feed back: %s visits %s, warps %d, bag shown %s" % [v.activity, str(v.visits), v.warps, f.bag.visible])
 	if v.visits.get("wood", 0) < 1 or v.warps > 0 or f.bag.visible:
 		return _combat_done(false, "she did not get back to the woodpile")
-	_combat_done(true, "Edda casts grain over the garth wall and the hens run to it and eat it up")
+	_combat_done(true, "Edda calls the hens as she comes, they gather at the wall, she casts grain over it and they run to it and eat it up")

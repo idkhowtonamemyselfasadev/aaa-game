@@ -4,14 +4,19 @@ extends Node3D
 ## grain bag hung at her right hip, dips her hand into it, draws it up to her chest and casts
 ## the handful out over the wall in a low forward sweep. The grain flies in a fan and patters
 ## down inside the yard (Hens.scatter), where the hens come running for it. Six casts, then she
-## stands and watches them at it. Drives her right arm through `weight` (0 arm free .. 1 in the
+## stands and watches them at it. On her way round the walls, once she is in earshot, she
+## calls them ("chook-chook-chook", `called`), and they come to the inside of the east wall
+## and wait there for the grain (Hens.expect). Drives her right arm through `weight` (0 arm free .. 1 in the
 ## cast), `arm` and `elbow` (Crumple.flick_arm / flick_elbow).
 
 signal scattered(at: Vector3)
+signal called(at: Vector3)        # her call to the hens as she comes with the bag (Foley)
 
 const CAST_T := 2.6              # s per handful: dip, draw up, cast, back
 const CASTS := 6
 const RELEASE := 0.56            # point in the cycle the hand opens
+const CALL_R := 20.0             # she starts calling this far from the garth
+const CALL_T := 2.8              # s between calls
 ## Where the handfuls land, in the stone cottage's frame: the open garth inside the east wall,
 ## clear of the hen house (west) and the gateway's swing.
 const LAND := Vector2(2.0, -8.0)
@@ -30,12 +35,14 @@ var villager: Villager
 var hens: Hens
 var bag: MeshInstance3D
 var casts := 0                   # handfuls thrown (bots)
+var calls := 0                   # calls to the hens (bots)
 var weight := 0.0
 var arm := 0.18
 var elbow := 0.75
 var lean := 0.0                  # a little into the cast
 
 var _t := -1.0                   # time into this feed (negative: not at it)
+var _call_t := 0.0
 var _grain: CPUParticles3D
 var _rng := RandomNumberGenerator.new()
 
@@ -129,6 +136,7 @@ static func build_bag() -> ArrayMesh:
 func update(delta: float, working: bool, carrying_bag: bool) -> void:
 	if bag != null:
 		bag.visible = carrying_bag
+	_update_call(delta, carrying_bag and _t < RELEASE * CAST_T)
 	if not working:
 		_t = -1.0
 		weight = move_toward(weight, 0.0, delta / 0.5)
@@ -157,6 +165,24 @@ func update(delta: float, working: bool, carrying_bag: bool) -> void:
 	lean = 0.12 * smoothstep(0.4, 0.6, u) * (1.0 - smoothstep(0.7, 1.0, u))
 	if u0 < RELEASE and u >= RELEASE and floori(t0 / CAST_T) == n:
 		_cast()
+
+## Calls the hens while she brings the bag round, until the first handful flies.
+func _update_call(delta: float, on: bool) -> void:
+	if not on or hens == null:
+		_call_t = 0.0
+		return
+	var to := hens.cottage.to_global(Vector3(LAND.x, 0, LAND.y))
+	var p := villager.global_position
+	if Vector2(p.x - to.x, p.z - to.z).length() > CALL_R:
+		return
+	_call_t -= delta
+	if _call_t > 0.0:
+		return
+	_call_t = CALL_T + _rng.randf_range(-0.6, 0.8)
+	calls += 1
+	var head := p + Vector3.UP * 1.55
+	called.emit(head)
+	hens.expect(head)
 
 func _cast() -> void:
 	casts += 1
