@@ -428,6 +428,7 @@ func _bat_test() -> void:
 	var st0 := b.stretches
 	await _ticks(180)
 	var stretched := b.stretches > st0 and b.state == Bat.ROOST
+	var grumbled := b.grumbles > 0 and b.calls == 0
 	_world.time_of_day = 19.3
 	await _ticks(60)
 	var dusk := b.state != Bat.ROOST
@@ -458,6 +459,12 @@ func _bat_test() -> void:
 		return _combat_done(false, "the bat never hunts the moths")
 	if b.nearest_lamp < Bat.KEEP_OFF - 0.02 or b.lowest < 0.98 or far > Bat.LOOP_R.y + 2.0:
 		return _combat_done(false, "the bat flies into the lantern, the turf or off the green")
+	var f: Foley = _world.foley
+	print("BOT bat: voice -- %d calls on the wing, %d buzzes for %d stoops, %d grumbles at the roost (quiet there by day %s); Foley played call %d, buzz %d, grumble %d" % [b.calls, b.buzzes, b.stoops, b.grumbles, grumbled, f.played.get("bat_call", 0), f.played.get("bat_buzz", 0), f.played.get("bat_grumble", 0)])
+	if not grumbled or b.calls < 3 or b.buzzes != b.stoops:
+		return _combat_done(false, "the bat is silent, or calls from the roost, or stoops without a feeding buzz")
+	if f.played.get("bat_call", 0) < 1 or f.played.get("bat_buzz", 0) < 1 or f.played.get("bat_grumble", 0) < 1:
+		return _combat_done(false, "the bat's chirps never reach the Foley")
 	weather.force(1.0)
 	await _ticks(900)
 	var storm := b.state != Bat.ROOST

@@ -103,8 +103,10 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = mix(0.55, 0.9, bone);
 	SPECULAR = 0.35;
-	// the candle through the membrane: red-orange where it is thin, the bones dark against it
-	BACKLIGHT = vec3(0.9, 0.32, 0.12) * (1.0 - bone * 0.8) * (0.6 + 0.4 * edge);
+	// light through the membrane: dull red where it is thin, the bones dark against it. Fur
+	// passes none, and wings wrapped in layers round the body at the roost almost none (it
+	// otherwise glowed orange in the woodshed's shade by day)
+	BACKLIGHT = vec3(0.42, 0.13, 0.05) * (1.0 - bone * 0.8) * (0.6 + 0.4 * edge) * (1.0 - body) * (1.0 - 0.9 * furl);
 	float d = length(v_world - lamp_pos);
 	EMISSION = col * vec3(1.0, 0.6, 0.3) * lamp_lit * 0.6 / (1.0 + d * d * 8.0);
 }

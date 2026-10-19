@@ -10,7 +10,12 @@ extends Node3D
 ## wrapped, swaying a little, now and then a stretch and a shiver of the wings); at dusk it
 ## lets go, drops, opens its wings and flies out of the open end to the light, and at first
 ## light (or when rain drives it in) it flies back in under the eaves, swings up and hangs.
-## Membrane wings with finger bones, flap and fold: bat.gdshader.
+## Membrane wings with finger bones, flap and fold: bat.gdshader. It is heard as well as
+## seen: on its loop a thin, high trill of social chirps every few seconds, a rattle of
+## clicks closing into a buzz as it stoops on a moth, and a scratchy grumble at the roost
+## when it stretches (`chirped`, voiced by Foley).
+
+signal chirped(at: Vector3, kind: int)   # CALL in flight, BUZZ on a stoop, GRUMBLE at the roost
 
 enum { AWAY, IN, PATROL, CHASE, OUT, ROOST, DROP, HOME }
 
@@ -25,6 +30,7 @@ const CATCH_R := 0.09           # wing scoop / tail pouch reach
 const FLAP_HZ := 9.0
 const HANG := 0.035             # roost point (its feet) to the body centre, hanging
 const DROP_T := 0.32            # s falling, wings still wrapped, before it opens and flies
+enum { CALL, BUZZ, GRUMBLE }
 
 var post: LanternPost
 var moths: Moths
@@ -43,6 +49,9 @@ var drops := 0                  # bots: times it let go of the roost at dusk
 var homings := 0                # bots: times it hung up again under the eaves
 var stretches := 0              # bots: wing stretches while roosting
 var fell := 0.0                 # bots: how far below its hold it dropped before flying
+var calls := 0                  # bots: social chirps on the wing
+var buzzes := 0                 # bots: feeding buzzes (one per stoop)
+var grumbles := 0               # bots: grumbles at the roost
 var vel := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _mat: ShaderMaterial
@@ -64,6 +73,7 @@ var _drop_t := 0.0
 var _stretch := 0.0             # s left in a stretch at the roost
 var _stretch_in := 20.0         # s to the next
 var _sway_t := 0.0
+var _call_in := 2.0             # s to the next social chirp on the loop
 
 func _ready() -> void:
 	top_level = true
@@ -180,6 +190,12 @@ func _process(delta: float) -> void:
 	if state == PATROL or state == CHASE:
 		nearest_lamp = minf(nearest_lamp, global_position.distance_to(c))
 		lowest = minf(lowest, global_position.y - post.global_position.y)
+	if state == PATROL or state == IN:
+		_call_in -= delta
+		if _call_in <= 0.0:
+			_call_in = _rng.randf_range(2.5, 7.0)
+			calls += 1
+			chirped.emit(global_position, CALL)
 	if state == ROOST:
 		_roosting(0.0)
 		return
@@ -220,6 +236,9 @@ func _roosting(delta: float) -> void:
 		_stretch = 1.6
 		_stretch_in = _rng.randf_range(18.0, 45.0)
 		stretches += 1
+		if _rng.randf() < 0.7 or grumbles == 0:
+			grumbles += 1
+			chirped.emit(global_position, GRUMBLE)
 	var open := 0.0
 	if _stretch > 0.0:
 		_stretch -= delta
@@ -317,6 +336,8 @@ func _step(c: Vector3, dt: float) -> void:
 					state = CHASE
 					_chase_t = 0.0
 					stoops += 1
+					buzzes += 1
+					chirped.emit(p, BUZZ)
 		CHASE:
 			accel = 14.0
 			_chase_t += dt
