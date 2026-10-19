@@ -231,6 +231,8 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
+	if limewash:
+		size.z = T - 0.012     # lime laid on thick fills the joints nearly to the faces
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
 ## Place one wall stone: wall-local (along, centre height) -> cottage local.
@@ -589,8 +591,8 @@ func _build_mortar() -> void:
 	m.set_shader_parameter("grime", Color(0.25, 0.23, 0.2))
 	if limewash:
 		# the lime coats run over the pointing too: only a faint shadow line between stones
-		m.set_shader_parameter("lime", Color(0.7, 0.69, 0.64))
-		m.set_shader_parameter("grime", Color(0.42, 0.41, 0.35))
+		m.set_shader_parameter("lime", Color(0.72, 0.705, 0.65))
+		m.set_shader_parameter("grime", Color(0.36, 0.35, 0.3))
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
