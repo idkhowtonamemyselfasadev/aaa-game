@@ -43,7 +43,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   notes, 3.2-3.9 s, vibrato as notes hold, a breath dip mid-phrase, -14 dB). Offline check:
   hum fundamental ~210-250 Hz, peak 0.55. Bots: `chop` now requires a heave per swing and
   >= 1 grunt heard (17/17); `villager` holds 20:00 for 1500 ticks on the bench and requires a
-  hum heard (8 hums). Screenshot verdicts below under this session.
+  hum heard (8 hums). Shots (Forward+, ~10 min each): `villager bench 60 20.0 fixfps` FAILS:
+  Edda sat on the bench under fireflies, but the frame is crushed navy, her face is lost
+  under the coif, and the lantern's light lands on the wall as a green-yellow smear (warm it
+  toward amber and soften its falloff; lift her face with the garb fill at night).
+  `villager heave 60 9.0 chop fixfps` FAILS: axe up over her head at the top of the heave,
+  but the lens sees her from behind and small against the white wall, and the stacked
+  billets in the lean-to read as a flat pattern (give them real end-grain depth). Next for the
+  village: a three-quarter front chop lens, the warm lantern pool, then the byre.
 - 2026-10-19 17:30: **Edda calls the hens; they gather at the wall** (`HenFeed._update_call`,
   `CALL_R` 20 m, `CALL_T` 2.8 s, signal `called`; `Hens.expect`, `Hens.wall_spot(id)`,
   `Hens._gather`, `at_wall`; Foley `call` = `_make_call` (breathy "ch" + rounded "oo" voiced at
