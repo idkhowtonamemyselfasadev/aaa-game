@@ -242,7 +242,7 @@ func _ready() -> void:
 			var fs: Vector3 = best[1]
 			var wc: Vector3 = ct.global_position + Vector3.UP * (ct.floor_y + 1.2) + fo * (float(best[2]) * 0.5)
 			SPOTS[spot] = [wc + fo * 3.4 + fs * 1.8 + Vector3.UP * 0.3, wc - fs * 0.6 + Vector3.UP * 0.2]
-			print("SHOT stonehouse sunny face %s (sun dot %.2f)" % [fo, fo.dot(to_sun.normalized())])
+			print("SHOT stonehouse sunny face %s (sun dot %.2f, to sun %s)" % [fo, fo.dot(to_sun.normalized()), world.sun.global_basis.z])
 		elif "close" in args:
 			SPOTS[spot] = [ct.door_gap + o * 3.2 + sd * 1.6 + Vector3.UP * 0.6, ct.door_gap + Vector3.UP * 1.3 - sd * 0.8]
 		else:

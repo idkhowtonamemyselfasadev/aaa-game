@@ -188,8 +188,8 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 	for i in lens.size():
 		var ln: float = lens[i]
 		var quoin := (i == 0 and q0) or (i == lens.size() - 1 and q1)
-		# rubble sits on its bed; its top falls short by up to 4 cm, the mortar showing above
-		var hh := h - 0.012 if quoin else h - 0.012 - _rng.randf_range(0.0, 0.04)
+		# rubble sits on its bed; its top falls short by up to 2.5 cm, the mortar showing above
+		var hh := h - 0.012 if quoin else h - 0.012 - _rng.randf_range(0.0, 0.025)
 		if not quoin and h > 0.22 and ln < 0.55 and _rng.randf() < 0.3:
 			# a sneck: two smaller stones stacked to make up the course height
 			var lo := hh * _rng.randf_range(0.5, 0.65)
@@ -244,7 +244,9 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 
 ## A split field stone of the walling (masonry field mode, INSTANCE_CUSTOM.a = 2).
 func _place_rubble(c: Vector3, b: Basis, size: Vector3) -> void:
-	var sc := size
+	# the split cuts eat 5-24 % off each outline, so the stone is laid oversize along the wall
+	# and up the course: neighbours then nearly touch and the joints stay narrow
+	var sc := size * Vector3(1.07, 1.06, 1.0)
 	if _rng.randf() < 0.5:
 		sc.x = -sc.x
 		sc.z = -sc.z
@@ -574,8 +576,8 @@ func _build_mortar() -> void:
 	m.set_shader_parameter("ground_y", global_position.y + floor_y)
 	# pointing weathered back and dirtied toward the gritstone's grey, so the joints read as
 	# shadowed gaps between the stones instead of an even pale outline round each one
-	m.set_shader_parameter("lime", Color(0.42, 0.41, 0.38))
-	m.set_shader_parameter("grime", Color(0.2, 0.19, 0.17))
+	m.set_shader_parameter("lime", Color(0.5, 0.47, 0.41))
+	m.set_shader_parameter("grime", Color(0.25, 0.23, 0.2))
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

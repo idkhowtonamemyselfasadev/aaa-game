@@ -16,7 +16,7 @@ uniform vec3 slate_green : source_color = vec3(0.23, 0.25, 0.23);
 uniform vec3 slate_pale : source_color = vec3(0.36, 0.37, 0.38);
 uniform vec3 lichen_y : source_color = vec3(0.6, 0.58, 0.44);
 uniform vec3 lichen_g : source_color = vec3(0.55, 0.57, 0.52);
-uniform vec3 moss : source_color = vec3(0.3, 0.33, 0.13);
+uniform vec3 moss : source_color = vec3(0.19, 0.21, 0.13);   // old dark cushion moss, not fresh green
 
 varying vec3 wp;
 varying vec3 wn;
@@ -85,7 +85,7 @@ void fragment() {
 	col = mix(col, lichen_g, lg * 0.7);
 	col = mix(col, lichen_y * mix(0.9, 1.02, vn(wp * 14.0)), ly * 0.75);
 	float mz = smoothstep(0.62, 0.72, fbm(wp * 4.0 + 50.0) + wetzone * 0.18 - 0.06) * smoothstep(0.55, 1.0, eave) * (1.0 - ridge);
-	col = mix(col, moss * mix(0.7, 1.15, vn(wp * 30.0)), mz);
+	col = mix(col, moss * mix(0.7, 1.1, vn(wp * 30.0)), mz * 0.85);
 	// soot round the chimney stack, mostly downwind and above
 	float soot = (1.0 - smoothstep(0.4, 1.8, stack)) * 0.55;
 	col *= 1.0 - soot;
