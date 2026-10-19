@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -135,6 +135,10 @@ func _ready() -> void:
 		return
 	if name == "villager":
 		_villager_test()
+		return
+	if name == "eddatalk":
+		_eddatalk_test()
+		return
 	if name == "chop":
 		_chop_test()
 		return
@@ -3811,6 +3815,73 @@ func _facelight_test() -> void:
 ## Edda keeps her day: out of the door at dawn, stooping at the butt and the woodpile, sat on
 ## the bench at noon, out to the lantern at dusk to light it with her taper (and it stays dark
 ## until she does), in at night, and in out of the rain.
+## Edda: no answer from out of reach; beside her at the woodpile a Speak prompt, her two intro
+## lines then a wood line, subtitled, held still facing the hero; sat on the bench at noon she
+## answers with an eat line without getting up; indoors no prompt at all.
+func _eddatalk_test() -> void:
+	var v: Villager = _world.villager
+	var hud: Hud = _player.get_node("Hud")
+	var tr: Terrain = _world.get_node("Terrain")
+	if v == null:
+		return _combat_done(false, "no villager")
+	_world.weather.force(0.0)
+	_world.time_of_day = 9.0
+	v.settle(_world, 9.0)
+	await _ticks(10)
+	var far := v.global_position + Vector3(0, 0, 7.0).rotated(Vector3.UP, v.body.rotation.y)
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.3, far.z)
+	await _ticks(20)
+	_player.bot_interact = true
+	await _ticks(20)
+	print("BOT eddatalk far: talks %d" % v.talks)
+	if v.talks > 0:
+		return _combat_done(false, "she answered from out of reach")
+	var pp := v.global_position + Vector3(0, 0, 1.7).rotated(Vector3.UP, v.body.rotation.y + 0.6)
+	_player.global_position = Vector3(pp.x, tr.height_at(pp.x, pp.z) + 0.3, pp.z)
+	await _ticks(60)
+	print("BOT eddatalk near: prompt '%s %s' (hold %.2f), named %s" % [hud.prompt_key, hud.prompt_verb, hud._prompt_hold, v.named])
+	if hud._prompt_hold <= 0.0 or hud.prompt_verb != "Speak" or not v.named:
+		return _combat_done(false, "no Speak prompt beside her")
+	var heard := []
+	var p0 := v.global_position
+	for i in 3:
+		_player.bot_interact = true
+		await _ticks(3)
+		heard.append(v.last_line)
+		print("BOT eddatalk %d: '%s' | hud '%s' saying %s" % [i, v.last_line, hud.say_speaker, hud.saying()])
+		if hud.say_line != v.last_line or hud.say_speaker != "Edda" or not hud.saying():
+			return _combat_done(false, "her line did not show as a subtitle")
+		await _ticks(90)
+	if v.talks != 3 or heard[0] != Villager.INTRO[0] or heard[1] != Villager.INTRO[1] or not (heard[2] in Villager.LINES["wood"]):
+		return _combat_done(false, "lines out of order: %s" % [heard])
+	var d := _player.global_position - v.global_position
+	var face := absf(wrapf(atan2(d.x, d.z) - v.body.rotation.y, -PI, PI))
+	var moved := Vector2(v.global_position.x - p0.x, v.global_position.z - p0.z).length()
+	print("BOT eddatalk: facing off %.2f rad, moved %.2f m, stoop %.2f, talking %.1f s" % [face, moved, v.stoop, v.talking])
+	if face > 0.4 or moved > 0.3:
+		return _combat_done(false, "did not hold still facing the hero while talking")
+	# noon on the bench: an eat line, and she stays sat
+	_world.time_of_day = 12.2
+	v.settle(_world, 12.2)
+	var sp: Vector3 = v.global_position + Vector3(0, 0, 1.6).rotated(Vector3.UP, v.body.rotation.y)
+	_player.global_position = Vector3(sp.x, tr.height_at(sp.x, sp.z) + 0.3, sp.z)
+	await _ticks(30)
+	_player.bot_interact = true
+	await _ticks(30)
+	print("BOT eddatalk bench: '%s', sit %.2f" % [v.last_line, v.sit])
+	if not (v.last_line in Villager.LINES["eat"]) or v.sit < 0.95:
+		return _combat_done(false, "on the bench she should answer sat")
+	# night: she is in, no prompt and no line
+	_world.time_of_day = 23.0
+	v.settle(_world, 23.0)
+	await _ticks(10)
+	var n0 := v.talks
+	_player.bot_interact = true
+	await _ticks(20)
+	if v.talks != n0:
+		return _combat_done(false, "she answered from inside the house")
+	_combat_done(true, "intro x2 then a wood line, subtitled, facing him; an eat line sat on the bench; silent indoors")
+
 func _villager_test() -> void:
 	var v: Villager = _world.villager
 	var lp: LanternPost = _world.lantern_post

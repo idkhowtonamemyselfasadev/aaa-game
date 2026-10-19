@@ -891,9 +891,26 @@ func _ready() -> void:
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.25
 			tgt = ct.to_global(Vector3(3.6, 0, -8.1))
 			tgt.y = terrain.height_at(tgt.x, tgt.z) + 0.75
-		SPOTS[spot] = [cp, tgt]
 		var pp := at + f * -30.0
-		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		if "talk" in args:
+			# speaking with her: over the hero's shoulder from the green side, her line as a
+			# subtitle, the house and her work behind her
+			var to_side := lens if vg.activity != "lamp" else f
+			pp = at + to_side * 2.0
+			var to_v := Vector3(at.x - pp.x, 0, at.z - pp.z).normalized()
+			vg.talking = 1.0e6
+			vg.body.rotation.y = atan2(-to_v.x, -to_v.z)
+			vg.goal_yaw = vg.body.rotation.y
+			var hud: Hud = player.get_node("Hud")
+			hud.say("Edda", Villager.LINES["wood"][3] if vg.activity == "wood" else Villager.INTRO[1], 1.0e6)
+			cp = pp - to_v * 2.2 + to_v.cross(Vector3.UP) * 1.2
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.7
+			tgt = at.lerp(pp, 0.3) + Vector3.UP * 1.3
+			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
+			player.body.rotation.y = atan2(to_v.x, to_v.z)
+		else:
+			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		SPOTS[spot] = [cp, tgt]
 		print("SHOT villager %s at %s" % [vg.activity, at])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]

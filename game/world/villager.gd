@@ -21,6 +21,9 @@ extends CharacterBody3D
 ## At the butt she takes up her pail from where it stands, dips it, and sets it down again
 ## before she goes on; the door creaks and its latch drops as she goes in and out, and the
 ## cottage's lamp burns only while she is indoors (WhiteCottage._lit_now).
+## In reach the hero can speak to her (interact): the first time she introduces herself, after
+## that each press gets a line for what she is about; she holds still facing him while it shows
+## (sat on the bench she answers from where she sits).
 
 signal door(at: Vector3)          # the cottage door opened or shut behind her (Foley)
 
@@ -37,6 +40,48 @@ const LIGHT_LEN := 3.5           # s with the taper up at the lantern before it 
 const STOOP_DOWN := 0.9
 const STOOP_HOLD := 1.4
 const STOOP_UP := 1.1
+const TALK_R := 2.8              # the hero can speak to her inside this
+const NAME_AT := 4.5             # the HUD names her inside this, once
+const INTRO := [
+	"You'll be the lamplighter's apprentice. Mind the hens' yard; they've had nothing but foxes and opinions all week.",
+	"Edda. This is my house, that's my woodpile, and that lantern on the green is mine to light. Don't you go lighting it for me.",
+]
+const LINES := {
+	"wake": [
+		"Morning. The green's still wet; walk round it, not across, or you'll be tracking it in somebody's door.",
+		"I like the first hour. Nobody wants anything of me yet.",
+	],
+	"water": [
+		"The butt fills off the roof. Rain's the only thing in this village that comes to my door unasked.",
+		"Two pails for the house, one for the hens, and one for whatever the day breaks.",
+		"Don't drink from it. There's moss in there older than you.",
+	],
+	"feed": [
+		"Six handfuls. Seven and they get ideas.",
+		"The speckled one is called Bishop. She knows what she did.",
+		"They come to the wall when they hear the bag. Like men to a bell.",
+	],
+	"wood": [
+		"Stand off the block, love. The halves go where they please.",
+		"Ash splits clean. Elm fights you. I keep the elm for days I'm angry.",
+		"Winter's long in the vale now. Longer every year. The woodpile knows it before the almanac does.",
+		"My Tam stacked better than this. Bark up, he'd say, so the rain runs off. I stack it bark down to spite him.",
+	],
+	"eat": [
+		"Bread and a bit of hard cheese. Sit if you want; you're not having any.",
+		"Noon's the only time the bench is mine. The rest of the day it's the cat's.",
+	],
+	"lamp": [
+		"Every night. Someone up at the keep ought to be able to see the way down.",
+		"Tam went up the hill one dusk to see to the old keeper. I lit this so he'd find the green coming home. I still light it.",
+		"Hush now. It takes if you're patient and goes out if you're not.",
+	],
+	"evening": [
+		"There it burns. Silly, isn't it. But the moths are grateful.",
+		"Sit a moment. The evening's the one thing in this vale that's still worth the wait.",
+		"When I can't do it any more, you'll light it for me? Only if I ask. Not before.",
+	],
+}
 # the axe pose keys: hip, knee, spine, arm, elbow, neck (Crumple)
 ## The hens' feed, in the stone cottage's frame: where she stands outside the garth's east
 ## wall (clear of the field gate's swing), and the way there round the outside of the yard
@@ -72,6 +117,13 @@ var visits := {}                 # activity -> times she reached its spot (bots)
 var goings_in := 0               # times she went in at the door (bots)
 var warps := 0
 var stuck_t := 0.0
+var named := false               # the HUD has named her
+var talks := 0                   # lines spoken to the hero (bots)
+var last_line := ""
+var talking := 0.0               # > 0 while her line is on screen: she holds still, facing him
+var _intro_i := 0
+var _line_i := {}
+var _seen_interacts := 0
 
 var sit := 0.0                   # 0 standing .. 1 sat on the bench
 var stoop := 0.0                 # 0 upright .. 1 bent to the pail / the logs
@@ -360,6 +412,7 @@ func _physics_process(delta: float) -> void:
 	if want != activity:
 		_begin(want)
 	_update_notice()
+	_update_talk(delta)
 	if state == IN:
 		velocity = Vector3.ZERO
 		return
@@ -437,13 +490,63 @@ func _arrive() -> void:
 ## Stops and turns to the hero when he comes close (not while sat or mid-stoop).
 func _update_notice() -> void:
 	noticing = false
-	if player == null or state == IN or stoop > 0.1 or reach > 0.1 or state == SIT:
+	if player == null or state == IN or state == SIT:
 		return
 	var d := player.global_position - global_position
 	d.y = 0.0
+	if talking > 0.0:
+		noticing = true                      # holds still and keeps facing him mid-line
+		if stoop < 0.1 and reach < 0.1:
+			goal_yaw = atan2(d.x, d.z)
+		return
+	if stoop > 0.1 or reach > 0.1:
+		return
 	if d.length() < NOTICE:
 		noticing = true
 		goal_yaw = atan2(d.x, d.z)
+		if not named and d.length() < NAME_AT:
+			named = true
+			var hud = player.get_node_or_null("Hud")
+			if hud != null:
+				hud.caption("Edda", "Cottager on Harrowmere green")
+
+## In reach the HUD offers "Speak"; each press gets the next line (the intro first, then the
+## pool for what she is about). A press while a line shows skips on to the next one.
+func _update_talk(delta: float) -> void:
+	talking = maxf(talking - delta, 0.0)
+	if player == null:
+		return
+	var presses: int = player.get("interacts")
+	var d := Vector3(player.global_position.x - global_position.x, 0, player.global_position.z - global_position.z)
+	var near: bool = state != IN and d.length() < TALK_R and not player.is_dead() and player.get("lock_target") == null
+	if not near:
+		_seen_interacts = presses
+		return
+	var hud = player.get_node_or_null("Hud")
+	if hud != null:
+		hud.prompt("E", "Speak")
+	if presses == _seen_interacts:
+		return
+	_seen_interacts = presses
+	var line := _next_line()
+	last_line = line
+	talks += 1
+	talking = 2.4 + 0.055 * line.length()
+	named = true
+	if hud != null:
+		hud.say("Edda", line, talking)
+
+func _next_line() -> String:
+	if _intro_i < INTRO.size():
+		_intro_i += 1
+		return INTRO[_intro_i - 1]
+	var key := activity
+	if not LINES.has(key):
+		key = "wood"
+	var pool: Array = LINES[key]
+	var i := int(_line_i.get(key, 0))
+	_line_i[key] = i + 1
+	return pool[i % pool.size()]
 
 ## At the butt and the woodpile: bend down, hold, straighten, a pause, again.
 func _update_work(delta: float) -> void:
