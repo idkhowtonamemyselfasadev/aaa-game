@@ -824,7 +824,13 @@ func _ready() -> void:
 		var lc := lp.lantern_center()
 		var cp: Vector3
 		var tgt: Vector3
-		if "wide" in args:
+		if "track" in args:
+			# standing on the track out toward the start, looking back up it to where the
+			# tracks meet at the post, the white cottage's and timber house's tracks beyond
+			cp = Vector3(-3.6, 0.0, 1.2)
+			cp.y = terrain.height_at(cp.x, cp.z) + 2.3
+			tgt = Vector3(-10.0, terrain.height_at(-10.0, 4.5) + 0.2, 4.5)
+		elif "wide" in args:
 			cp = at + o * 7.0 + sd * 4.5
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.7
 			tgt = at + o * 0.5 + Vector3.UP * 1.2

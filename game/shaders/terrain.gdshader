@@ -135,7 +135,7 @@ vec3 boot_prints(vec2 xz) {
 global uniform sampler2D hoof_prints : filter_nearest, repeat_disable;
 global uniform vec4 hoof_box;
 // the hens' garth and the worn yard path, baked by YardGround: r = (inside distance + 1) / 3,
-// g = path distance / 2, over the square at yard_box.xy of side yard_box.z (0 = none)
+// g = path distance / 2, b = that path's wear (village tracks fade out), over the square at yard_box.xy of side yard_box.z (0 = none)
 global uniform sampler2D yard_mask : filter_linear, repeat_disable;
 global uniform vec4 yard_box;
 const int HOOF_N = 256;
@@ -647,16 +647,21 @@ void fragment() {
 	// dust-bath hollows of fine pale powder with a crumbly rim, pea grit, droppings and a few
 	// moulted feathers; ragged tufts of sward survive in patches and toward the wall feet.
 	// The path is a beaten band of bare earth through the gateway and round to the door.
+	// The village tracks across the green are the same beaten earth, narrower where fewer
+	// feet go, the sward closing in over them toward the meadow (wear b).
 	float bare = 0.0;
 	vec2 yuv = (xz - yard_box.xy) / max(yard_box.z, 1e-3);
 	if (yard_box.z > 0.0 && all(greaterThan(yuv, vec2(0.0))) && all(lessThan(yuv, vec2(1.0)))) {
-		vec2 ym = texture(yard_mask, yuv).rg;
+		vec3 ym = texture(yard_mask, yuv).rgb;
 		float gd = ym.r * 3.0 - 1.0;   // inside the garth's walls (m), negative outside
 		float td = ym.g * 2.0;         // to the path's centre line (m)
 		float rag = (meso - 0.5) * 0.6 + (micro - 0.5) * 0.3;
 		float garth = smoothstep(-0.05, 0.9, gd + rag);
-		float hw = 0.34 + 0.12 * vnoise(wpos * 0.7 + 3.0);
+		float wear = smoothstep(0.05, 0.85, ym.b);
+		float hw = (0.34 + 0.12 * vnoise(wpos * 0.7 + 3.0)) * mix(0.55, 1.0, wear);
 		float trackw = 1.0 - smoothstep(hw * 0.55, hw * 1.35, td + rag * 0.35);
+		// where it wears thin, live sward breaks it into a broken line of bare patches
+		trackw *= smoothstep(0.0, 0.35, wear - (1.0 - fbm(wpos * 0.8 + 19.0)) * (1.0 - wear) * 0.9);
 		bare = max(garth, trackw) * (1.0 - rockw);
 		if (bare > 0.001) {
 			float fade_g = 1.0 - smoothstep(0.006, 0.03, fp);

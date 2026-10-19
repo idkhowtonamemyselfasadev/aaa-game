@@ -3104,7 +3104,18 @@ func _yardpath_test() -> void:
 	for q in flora.tree_positions + flora.rock_positions:
 		if YardGround.path_dist(q.x, q.z) < 2.0:
 			print("BOT yardpath: tree/rock %.1f m off the path at local %s" % [YardGround.path_dist(q.x, q.z), YardGround._to_local(q.x, q.z)])
-	for k in YardGround.PATHS_LOCAL.size():
+	# the village tracks: the mask's wear channel is full on the green and gone at the meadow end
+	var img := (tex as ImageTexture).get_image()
+	for t: Array in YardGround.TRACKS:
+		for q: Array in [t[1], t[t.size() - 1]]:
+			var w: Vector2 = q[0]
+			var px := img.get_pixel(clampi(int((w.x - b.x) / b.z * img.get_width()), 0, img.get_width() - 1), clampi(int((w.y - b.y) / b.z * img.get_height()), 0, img.get_height() - 1))
+			print("BOT yardpath: track point %s wear %.2f mask dist %.2f wear %.2f worn %.2f" % [w, q[1], px.g * 2.0, px.b, YardGround.worn(w.x, w.y)])
+			if px.g * 2.0 > 0.2 or absf(px.b - q[1]) > 0.1:
+				return _combat_done(false, "track mask does not match the track at %s" % w)
+			if (q[1] > 0.9 and YardGround.worn(w.x, w.y) < 0.95) or (q[1] < 0.05 and YardGround.worn(w.x, w.y) > 0.05):
+				return _combat_done(false, "track wear wrong at %s" % w)
+	for k in YardGround._paths().size():
 		var pts: Array = YardGround._paths()[k]
 		var pts_r := pts.duplicate()
 		pts_r.reverse()   # from the door outward
@@ -3114,7 +3125,7 @@ func _yardpath_test() -> void:
 		var route: Array = pts_r if k == 0 else pts
 		for i in range(1, route.size()):
 			var wp: Vector2 = route[i]
-			if YardGround.worn(wp.x, wp.y) < 0.99:
+			if k < YardGround.PATHS_LOCAL.size() and YardGround.worn(wp.x, wp.y) < 0.99:
 				return _combat_done(false, "path %d point %d not worn" % [k, i])
 			var t := 0.0
 			# thread the squeeze gap (0.9 m) and the gateways closely; elsewhere he may cut corners
@@ -3135,7 +3146,7 @@ func _yardpath_test() -> void:
 				return _combat_done(false, "could not walk path %d to point %d (stuck at %s, local %s, start %s)" % [k, i, p.global_position, YardGround._to_local(p.global_position.x, p.global_position.z), YardGround._to_local(st.x, st.y)])
 		p.bot_input = Vector2.ZERO
 		print("BOT yardpath: walked path %d (%d legs) to %s" % [k, route.size() - 1, p.global_position])
-	return _combat_done(true, "garth mask baked, both yard paths walkable end to end")
+	return _combat_done(true, "garth mask baked, both yard paths and the four village tracks walkable end to end, the tracks fade out toward the meadow")
 
 func _hens_test() -> void:
 	var hn: Hens = _world.hens

@@ -6,6 +6,9 @@ extends RefCounted
 ## the green. Both are baked into a small mask texture (global `yard_mask` / `yard_box`) that
 ## the terrain shader turns into dust, packed loam, claw rakes and dust baths; grass and
 ## flowers ask `worn` so the path stays bare.
+## The village tracks are baked into the same mask: footpaths worn across the green from
+## each house door to the lantern post where they meet, and one on from there out toward
+## the start, fading back into the sward as fewer feet go that way.
 
 const RES := 0.15     # mask texel (m)
 ## Footpaths in the stone cottage's local frame (x along its length, +z out of the door).
@@ -18,7 +21,23 @@ const PATHS_LOCAL := [
 	 Vector2(-6.8, 12.0), Vector2(-6.4, 17.0)],
 ]
 
+## Village tracks in world xz: [point, wear 0..1] (wear fades the far end into the sward).
+const TRACKS := [
+	# the white cottage's door, round the front of the green to the lantern post
+	[[Vector2(-16.75, -1.0), 1.0], [Vector2(-16.0, 0.3), 1.0], [Vector2(-13.8, 1.7), 1.0],
+	 [Vector2(-11.7, 2.25), 1.0], [Vector2(-10.3, 2.2), 1.0], [Vector2(-9.7, 3.7), 1.0]],
+	# the timber house's door, a few steps down to it
+	[[Vector2(-10.45, 7.0), 1.0], [Vector2(-9.95, 6.1), 1.0], [Vector2(-9.6, 4.9), 1.0], [Vector2(-9.7, 3.7), 1.0]],
+	# the stone cottage's cart gateway path, down the green past the timber house's gable
+	[[Vector2(-7.14, 15.23), 1.0], [Vector2(-5.8, 12.6), 1.0], [Vector2(-6.3, 9.3), 1.0],
+	 [Vector2(-8.2, 6.0), 1.0], [Vector2(-9.7, 3.7), 1.0]],
+	# from the lantern post on out toward the start, wearing out into the meadow
+	[[Vector2(-9.7, 3.7), 1.0], [Vector2(-7.6, 3.0), 0.95], [Vector2(-5.2, 2.0), 0.8],
+	 [Vector2(-3.1, 1.3), 0.5], [Vector2(-1.4, 0.9), 0.0]],
+]
+
 static var _paths_world: Array = []
+static var _wear_world: Array = []   # per point, parallel to _paths_world
 static var mask: ImageTexture        # as published (bots read these back)
 static var mask_box := Vector4.ZERO
 
@@ -31,10 +50,37 @@ static func _paths() -> Array:
 	if _paths_world.is_empty():
 		for p: Array in PATHS_LOCAL:
 			var w := PackedVector2Array()
+			var e := PackedFloat32Array()
 			for l: Vector2 in p:
 				w.append(DryWall._to_world(l))
+				e.append(1.0)
 			_paths_world.append(w)
+			_wear_world.append(e)
+		for t: Array in TRACKS:
+			var w := PackedVector2Array()
+			var e := PackedFloat32Array()
+			for q: Array in t:
+				w.append(q[0])
+				e.append(q[1])
+			_paths_world.append(w)
+			_wear_world.append(e)
 	return _paths_world
+
+## (distance (m) to the nearest path centre line, that path's wear there 0..1) at world (x, z).
+static func path_wear(x: float, z: float) -> Vector2:
+	var p := Vector2(x, z)
+	var best := Vector2(INF, 0.0)
+	var paths := _paths()
+	for k in paths.size():
+		var w: PackedVector2Array = paths[k]
+		var e: PackedFloat32Array = _wear_world[k]
+		for i in w.size() - 1:
+			var c := Geometry2D.get_closest_point_to_segment(p, w[i], w[i + 1])
+			var d := p.distance_to(c)
+			if d < best.x:
+				var sl := w[i].distance_to(w[i + 1])
+				best = Vector2(d, lerpf(e[i], e[i + 1], w[i].distance_to(c) / maxf(sl, 1e-4)))
+	return best
 
 ## Distance (m) from world (x, z) to the nearest path centre line.
 static func path_dist(x: float, z: float) -> float:
@@ -55,10 +101,11 @@ static func garth_dist(x: float, z: float) -> float:
 
 ## 0..1: how bare the path has worn the turf at (x, z) (1 on the line, 0 past ~0.5 m).
 static func worn(x: float, z: float) -> float:
-	var d := Vector2(x, z) - StoneCottage.SITE
-	if d.length_squared() > 625.0:
+	var b := mask_box if mask_box.z > 0.0 else Vector4(-40.0, -10.0, 60.0, 0.0)
+	if x < b.x or z < b.y or x > b.x + b.z or z > b.y + b.z:
 		return 0.0
-	return 1.0 - smoothstep(0.22, 0.5, path_dist(x, z))
+	var pw := path_wear(x, z)
+	return (1.0 - smoothstep(0.22, 0.5, pw.x)) * smoothstep(0.1, 0.6, pw.y)
 
 ## World xz square covering the garth and the paths: (x0, z0, side).
 static func box() -> Vector3:
@@ -76,19 +123,60 @@ static func box() -> Vector3:
 	var c := (lo + hi) * 0.5
 	return Vector3(c.x - side * 0.5, c.y - side * 0.5, side)
 
-## Bakes the mask and hands it to the shaders.
+## Bakes the mask and hands it to the shaders: r garth, g path distance, b that path's wear.
+## Each segment only writes the texels within 2 m of it, and the garth only its own corner,
+## so the bake stays cheap as the tracks reach across the green.
 static func publish() -> void:
 	var t0 := Time.get_ticks_usec()
 	var b := box()
 	var n := int(ceil(b.z / RES))
-	var img := Image.create(n, n, false, Image.FORMAT_RG8)
+	var cell := b.z / n
+	var dist := PackedFloat32Array()
+	dist.resize(n * n)
+	dist.fill(2.0)
+	var wear := PackedFloat32Array()
+	wear.resize(n * n)
+	var paths := _paths()
+	for k in paths.size():
+		var w: PackedVector2Array = paths[k]
+		var e: PackedFloat32Array = _wear_world[k]
+		for s in w.size() - 1:
+			var a := w[s]
+			var c := w[s + 1]
+			var sl := maxf(a.distance_to(c), 1e-4)
+			var i0 := maxi(int((minf(a.x, c.x) - 2.0 - b.x) / cell), 0)
+			var i1 := mini(int((maxf(a.x, c.x) + 2.0 - b.x) / cell) + 1, n)
+			var j0 := maxi(int((minf(a.y, c.y) - 2.0 - b.y) / cell), 0)
+			var j1 := mini(int((maxf(a.y, c.y) + 2.0 - b.y) / cell) + 1, n)
+			for j in range(j0, j1):
+				var z := b.y + (j + 0.5) * cell
+				for i in range(i0, i1):
+					var p := Vector2(b.x + (i + 0.5) * cell, z)
+					var q := Geometry2D.get_closest_point_to_segment(p, a, c)
+					var d := p.distance_to(q)
+					if d < dist[j * n + i]:
+						dist[j * n + i] = d
+						wear[j * n + i] = lerpf(e[s], e[s + 1], a.distance_to(q) / sl)
+	var garth := PackedFloat32Array()
+	garth.resize(n * n)
+	var lo := Vector2(INF, INF)
+	var hi := -lo
+	for l: Vector2 in Hens.YARD:
+		var g := DryWall._to_world(l)
+		lo = Vector2(minf(lo.x, g.x), minf(lo.y, g.y))
+		hi = Vector2(maxf(hi.x, g.x), maxf(hi.y, g.y))
+	var gi0 := maxi(int((lo.x - 1.5 - b.x) / cell), 0)
+	var gi1 := mini(int((hi.x + 1.5 - b.x) / cell) + 1, n)
+	var gj0 := maxi(int((lo.y - 1.5 - b.y) / cell), 0)
+	var gj1 := mini(int((hi.y + 1.5 - b.y) / cell) + 1, n)
+	for j in range(gj0, gj1):
+		for i in range(gi0, gi1):
+			garth[j * n + i] = clampf((garth_dist(b.x + (i + 0.5) * cell, b.y + (j + 0.5) * cell) + 1.0) / 3.0, 0.0, 1.0)
+	var img := Image.create(n, n, false, Image.FORMAT_RGB8)
 	for j in n:
-		var z := b.y + (j + 0.5) * b.z / n
 		for i in n:
-			var x := b.x + (i + 0.5) * b.z / n
-			var g := clampf((garth_dist(x, z) + 1.0) / 3.0, 0.0, 1.0)
-			var t := clampf(path_dist(x, z) / 2.0, 0.0, 1.0)
-			img.set_pixel(i, j, Color(g, t, 0.0))
+			var o := j * n + i
+			img.set_pixel(i, j, Color(garth[o], clampf(dist[o] / 2.0, 0.0, 1.0), wear[o]))
 	mask = ImageTexture.create_from_image(img)
 	mask_box = Vector4(b.x, b.y, b.z, 0.0)
 	RenderingServer.global_shader_parameter_set("yard_mask", mask)

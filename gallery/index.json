@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261014-0755-keep-coursed-range.jpg",
-  "time": "2026-10-14T07:55:00Z",
-  "caption": "Watchtower ruin from the approach slope at 10:30: the keep and curtain are now coursed rubble masonry of mixed-length stones with staggered dark joints instead of brick rows, but the stone is flat cold grey and the low ring still reads as stacked slabs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0755-keep-coursed-close.jpg",
-  "time": "2026-10-14T07:55:00Z",
-  "caption": "Over the Shrine of Binding at 15:00: the inner keep wall now shows mixed stones with chipped rounded arrises and open joints, but the floor rubble is pale and slab-like, colour is uniform grey and the hero is still a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0900-keep-stone-beds-range.jpg",
   "time": "2026-10-14T08:41:00Z",
   "caption": "The keep from the approach: stones now vary by bed (warm buff, ochre, rust-stained, pale, dark grey) with shadowed joints; the low ring still reads as stacked slabs with pale top edges.",
@@ -897,6 +885,12 @@
   "file": "20261019-0956-moths-close.jpg",
   "time": "2026-10-19T09:56:19Z",
   "caption": "Close crop of the moths round the lantern and one settled on the post; they catch the candle warmly but read as specks rather than winged moths except the one nearest the camera.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1029-tracks.jpg",
+  "time": "2026-10-19T10:29:26Z",
+  "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
   "verdict": "fail"
  }
 ]
