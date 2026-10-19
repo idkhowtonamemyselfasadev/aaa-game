@@ -3640,6 +3640,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   before the wash fix) the gable's stepped stone courses stick out above the verge boards
   at the top: StoneCottage's gable steps overshoot the roof line on this narrower house
   (cap the gable courses at `roof_under` minus the deck, or verge boards that cover them).
+  `wh3` (sunny close, after the wash fix): the lime runs as one skin over stones and joints
+  now, but the flaked patches read as dark holes (lighten them to a warm stone grey, smaller)
+  and the long quoins on the gable corner read as flat planes. The mortar tabling under the
+  verges went in after `wh3` and is NOT yet checked in a shot: re-shoot
+  `stonehouse whN 60 13.0 white sunny fixfps` first thing (and the stone cottage's gable).
   Next for it: a whitewashed chimney/darker tarred plinth band, a water butt, a bench.
 - (01:15 10-19) Cottage `rub7` (sunny, 11.0): sunlit gable, far courses read well, but the
   near stones still look like separate pebbles on a pale beige mortar bed, and the slates
