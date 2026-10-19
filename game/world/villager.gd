@@ -99,7 +99,7 @@ func _ready() -> void:
 	# a bleached linen coif, a brown wool shawl, a kirtle of madder washed out to rust, a
 	# leather girdle, linen wraps
 	garb.palette = {
-		"hood": [Color(0.13, 0.12, 0.10), Color(0.62, 0.59, 0.52), 0.35],
+		"hood": [Color(0.10, 0.092, 0.078), Color(0.46, 0.43, 0.37), 0.35],
 		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
 		"mantle": [Color(0.060, 0.042, 0.030), Color(0.30, 0.22, 0.15), 0.35],
 		"robe": [Color(0.090, 0.040, 0.030), Color(0.42, 0.20, 0.14), 0.4],
@@ -388,7 +388,7 @@ func _update_light(delta: float) -> void:
 	if taper != null:
 		taper.visible = activity == "lamp"
 		var burn := 1.0 if activity == "lamp" and state != WALK or reach > 0.05 else 0.0
-		_taper_flame.light_energy = move_toward(_taper_flame.light_energy, burn * 0.6, delta)
+		_taper_flame.light_energy = move_toward(_taper_flame.light_energy, burn * 0.3, delta)
 
 func _pose() -> void:
 	if crumple == null:

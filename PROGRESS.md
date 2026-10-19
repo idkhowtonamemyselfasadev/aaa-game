@@ -49,6 +49,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   rain and back out to the wood after; the lantern dark ~11 s while she walks out, then lit
   once by her; evening on the bench; in at night; no warps; turns to face the hero). Shot
   spot `villager` (`tools/shots.sh "villager <name> 60 <hour> fixfps"`, `wide` = 7 m back).
+  Shots (Forward+, lavapipe): `vil_lamp` (19.0 h) -- arm and taper up at the lantern as it
+  catches, reads well, FAIL: the coif glowed as a pale veil over the face (coif darkened and
+  taper light halved after it, not re-shot); `vil_wood` (9.5 h) -- she stands at the block
+  by the lean-to with the house behind, FAIL: the hero's grey chest plate and sleeves still
+  show under her shawl (cloth_body does not hide the plate shapes) and the hood swallows her
+  face. NEXT for her look: her own kirtle/bodice and apron cut in HeroGarb (cover the torso
+  plates), a coif that frames the face instead of a deep hood, sleeves rolled to the elbow.
 - Session 2026-10-19 10:00 UTC:
   - **Moths at the lantern** (lantern follow-up "moths round it at night").
     `world/moths.gd` (`Moths`, child of `LanternPost`, top-level, `LanternPost.moths`): 9 moths
@@ -3767,6 +3774,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- Edda (villager) still wears the hero's armoured torso under her shawl and her hood hides her
+  face (see the 11:00 10-19 Done entry); at the woodpile she only stoops -- no axe swing yet.
 - (10:00 10-19) Moths `moths3` (`lantern moths3 60 21.5 moths fixfps`): they show as warm
   flecks looping the lantern and one near the lens reads as a winged moth, but at 1-2 m most
   are 3-5 px specks: try a slightly larger half span (0.025) or a soft motion-blur streak in

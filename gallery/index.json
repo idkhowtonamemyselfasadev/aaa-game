@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261014-0900-keep-stone-beds-range.jpg",
-  "time": "2026-10-14T08:41:00Z",
-  "caption": "The keep from the approach: stones now vary by bed (warm buff, ochre, rust-stained, pale, dark grey) with shadowed joints; the low ring still reads as stacked slabs with pale top edges.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0900-keep-stone-beds-close.jpg",
   "time": "2026-10-14T09:00:00Z",
   "caption": "Inside the keep: warmer, per-stone varied masonry with dark open joints and soil in the low ones; plinth stones still slab-like and the hero a dark silhouette.",
@@ -891,6 +885,18 @@
   "file": "20261019-1029-tracks.jpg",
   "time": "2026-10-19T10:29:26Z",
   "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1203-villager-lamp.jpg",
+  "time": "2026-10-19T12:03:27Z",
+  "caption": "Edda at dusk on the green, taper raised to the lantern as its candle catches; her coif reads as a pale veil hiding the face and the taper itself barely shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1203-villager-woodpile.jpg",
+  "time": "2026-10-19T12:03:27Z",
+  "caption": "Edda at the woodpile by the white cottage's lean-to in the morning; the house reads well but her bodice still shows the hero's grey armour plates and the hood swallows her face.",
   "verdict": "fail"
  }
 ]
