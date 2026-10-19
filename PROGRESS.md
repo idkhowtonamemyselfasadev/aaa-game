@@ -48,7 +48,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   Removed a duplicate `foley.hook_villager` in world.gd (every door creak and axe blow was
   played twice). Bot `feed` (arrives with no warps, never in the yard, >= 0.2 m clear of both
   walls, 6 casts, ~130 grains, all eaten within a minute, hand reaches the bag, back to the
-  woodpile with the bag put away). Shot `villager feed1 60 7.9 feed fixfps`.
+  woodpile with the bag put away). Shot `villager feed1 60 7.9 feed fixfps` (Forward+):
+  FAIL as a Wukong frame -- the yard is in the cottage's deep morning shadow, the hens
+  read but the grain on the ground is invisible, and Edda shows only from the shoulders
+  up behind the copes with her cast arm hidden. NEXT for the feed shot: a lens outside the
+  wall, side-on to her, so the arm and the grain fan show against the sky; the afternoon
+  feed (16:40) when the yard is sunlit; paler, larger-looking grain (a few clumps).
 - 2026-10-19 13:00: **Edda splits wood at the block** (`world/wood_chop.gd`, `WoodChop`; `world/axe.gd`,
   `Axe`). Cycle (s): stoop and set a round (0-2.4), settle, heave (2.9-3.9), hold, strike
   (4.15-4.33, ease-in), follow through, recover (5.6), rest 1-2.5 s; 1 in 4 blows sticks
