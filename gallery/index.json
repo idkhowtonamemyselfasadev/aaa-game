@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261014-0650-keep-ivy-mats-range.jpg",
-  "time": "2026-10-14T06:50:00Z",
-  "caption": "Watchtower ruin from the approach slope at 10:30: the ivy now spreads into a wide dark mat over the keep face instead of thin vertical strands, but the keep stonework is still brick-regular and blocky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0650-keep-ivy-mats-close.jpg",
-  "time": "2026-10-14T06:50:00Z",
-  "caption": "Over the Shrine of Binding at 15:00: ivy stems now fan sideways into branching mats and the white-speck young/yellow leaves are gone, but the mats still read as bushy fans on the wall, the stones are slab-like and the hero is a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0755-keep-coursed-range.jpg",
   "time": "2026-10-14T07:55:00Z",
   "caption": "Watchtower ruin from the approach slope at 10:30: the keep and curtain are now coursed rubble masonry of mixed-length stones with staggered dark joints instead of brick rows, but the stone is flat cold grey and the low ring still reads as stacked slabs.",
@@ -885,6 +873,18 @@
   "file": "20261019-0751-leanto-woodpile.jpg",
   "time": "2026-10-19T07:51:15Z",
   "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0836-lantern-night.jpg",
+  "time": "2026-10-19T08:36:59Z",
+  "caption": "The new oak lantern post on the green at 20:36: candlelight through horn panes pools warm on the grass and throws the frame's shadow on the timber house; the panes glow as one flat bright box and the post reads a little clean.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261019-0836-lantern-day.jpg",
+  "time": "2026-10-19T08:36:59Z",
+  "caption": "The lantern post by day, backlit against the timber house: the post is a dark silhouette, the horn panes read milky white like paper, and the timber house roof is a flat dark plane.",
   "verdict": "fail"
  }
 ]

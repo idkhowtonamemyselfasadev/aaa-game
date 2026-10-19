@@ -99,6 +99,7 @@ func _ready() -> void:
 	if dw:
 		_obstacles.append_array(dw.outline(2.0))
 	_obstacles.append_array(YardWall.outline(1.6))   # and the yard walls between the houses
+	_obstacles.append(Vector3(LanternPost.SITE.x, 0.0, LanternPost.SITE.y))   # the lantern post
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/deer.gdshader")

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -114,6 +114,9 @@ func _ready() -> void:
 		return
 	if name == "leanto":
 		_leanto_test()
+		return
+	if name == "lantern":
+		_lantern_test()
 		return
 	if name == "waterbutt":
 		_waterbutt_test()
@@ -2836,6 +2839,68 @@ func _leanto_test() -> void:
 	if -lims[1] < -WhiteCottage.LEAN_Z - 0.05:
 		return _combat_done(false, "walked through the lean-to's end wall")
 	_combat_done(true, "lean-to built clear of trees and houses, walked in at its open end, its walls hold")
+
+func _lantern_test() -> void:
+	var p := _player
+	var lp: LanternPost = _world.lantern_post
+	if lp == null or lp.get_node_or_null("Post") == null or lp.pivot.get_node_or_null("Lantern") == null:
+		return _combat_done(false, "no lantern post on the green")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var at := lp.global_position
+	var gy := terrain.height_at(at.x, at.z)
+	var lc := lp.lantern_center()
+	print("BOT lantern: post foot %.2f m off the ground, lantern %.2f m up, %.2f m out" % [at.y - gy, lc.y - gy, Vector2(lc.x - at.x, lc.z - at.z).length()])
+	if absf(at.y - gy) > 0.05 or lc.y - gy < 1.7 or lc.y - gy > 2.4:
+		return _combat_done(false, "the lantern hangs at a silly height")
+	for q in [Vector2(at.x, at.z), Vector2(lc.x, lc.z)]:
+		if Cottage.inside(q.x, q.y, 0.8) or StoneCottage.inside(q.x, q.y, 0.8) or WhiteCottage.covers(q.x, q.y, 0.8) or YardWall.near(q.x, q.y, 0.8) or DryWall.near(q.x, q.y, 0.8):
+			return _combat_done(false, "the lantern post stands in a house or a wall")
+	# dark by day, burning at night, out again after dawn
+	var lits := []
+	for h in [12.0, 19.0, 21.0, 2.0, 7.0]:
+		_world.time_of_day = h
+		await _ticks(20)
+		lits.append(lp.lit)
+	print("BOT lantern: lit at 12/19/21/2/7 h = %s, lamp energy now %.2f" % [str(lits), lp.lamp.light_energy])
+	if lits[0] > 0.0 or lits[1] > 0.0 or lits[2] < 0.95 or lits[3] < 0.95 or lits[4] > 0.0:
+		return _combat_done(false, "the lantern keeps the wrong hours")
+	_world.time_of_day = 21.0
+	await _ticks(3)
+	if not lp.lamp.visible or lp.lamp.light_energy < 0.8:
+		return _combat_done(false, "a lit lantern gives no light")
+	# it sways a little in the breeze and more in a storm, but never flies up
+	var weather: Weather = _world.weather
+	lp.max_sway = 0.0
+	weather.force(0.0)
+	await _ticks(300)
+	var calm := lp.max_sway
+	weather.force(1.0)
+	weather.wind = 1.0
+	lp.max_sway = 0.0
+	await _ticks(300)
+	var storm := lp.max_sway
+	print("BOT lantern: sway %.3f rad in the breeze, %.3f in a storm" % [calm, storm])
+	if calm < 0.005 or calm > 0.12 or storm <= calm or storm > 0.35:
+		return _combat_done(false, "the lantern does not swing right")
+	weather.force(0.0)
+	# walk at the post: it must stop the hero
+	var out := lp.global_basis.z
+	var start := at + out.rotated(Vector3.UP, 1.2) * 3.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	var t := 0.0
+	var closest := 99.0
+	while t < 3.0:
+		var d := Vector2(at.x - p.global_position.x, at.z - p.global_position.z).normalized()
+		p.bot_input = d
+		await _ticks(6)
+		t += 0.1
+		closest = minf(closest, Vector2(at.x - p.global_position.x, at.z - p.global_position.z).length())
+	p.bot_input = Vector2.ZERO
+	print("BOT lantern: walked at the post, closest %.2f m from its axis" % closest)
+	if closest < LanternPost.POST_W * 0.5:
+		return _combat_done(false, "walked through the lantern post")
+	_combat_done(true, "lantern post stands on the green, lit dusk to dawn, sways, blocks the hero")
 
 func _waterbutt_test() -> void:
 	var p := _player

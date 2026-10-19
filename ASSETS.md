@@ -8,6 +8,7 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 | `game/player/models/vanguard.glb` | Rigged humanoid "Vanguard" (Mixamo character) with Idle/Walk/Run/TPose clips, 2.1 MB | Mixamo, via the three.js repo (`examples/models/gltf/Soldier.glb`) | Mixamo license (royalty-free use in games) |
 
 ## Procedural (no license needed)
+- Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.
 - `game/shaders/terrain.gdshader` — slope-blended grass/dirt/rock using a NoiseTexture2D.
 - Oak trees, leaf atlas, boulders, bark/leaf/rock shaders: generated procedurally in `game/world/flora.gd` and `game/shaders/` (original, no third-party assets).

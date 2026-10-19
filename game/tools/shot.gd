@@ -814,6 +814,28 @@ func _ready() -> void:
 		pos.y = terrain.height_at(pos.x, pos.z) + 1.65
 		SPOTS[spot] = [pos, cp + Vector3.UP * (1.3 if "close" in args else 2.1) - al * (0.4 if "close" in args else 0.0)]
 		print("SHOT cottage %d slates %d stones %d beams" % [c.slate_count, c.stone_count, c.beam_count])
+	if spot == "lantern":
+		# the lantern post from the green, three-quarter on the arm: the lantern a little
+		# above eye height with the houses beyond ("wide": back 8 m, its light on the grass)
+		var lp: LanternPost = world.lantern_post
+		var at := lp.global_position
+		var o := lp.global_basis.z
+		var sd := lp.global_basis.x
+		var lc := lp.lantern_center()
+		var cp: Vector3
+		var tgt: Vector3
+		if "wide" in args:
+			cp = at + o * 7.0 + sd * 4.5
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.7
+			tgt = at + o * 0.5 + Vector3.UP * 1.2
+		else:
+			cp = lc + o * 1.9 + sd * 1.3
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.6
+			tgt = lc - Vector3.UP * 0.25 - o * 0.3
+		SPOTS[spot] = [cp, tgt]
+		var pp := at + o * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT lantern at %s, lantern %s, lit %.2f" % [at, lc, lp.lit])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -823,7 +845,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

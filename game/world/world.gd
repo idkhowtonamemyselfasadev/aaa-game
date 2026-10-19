@@ -29,6 +29,7 @@ var stone_cottage: StoneCottage
 var white_cottage: WhiteCottage
 var dry_wall: DryWall
 var yard_wall: YardWall
+var lantern_post: LanternPost
 var keeper: Keeper
 var hearth: Hearth
 var fox: Fox
@@ -131,6 +132,14 @@ func _ready() -> void:
 	yard_wall.ruins_path = NodePath("../Ruins")
 	yard_wall.terrain_path = NodePath("../Terrain")
 	add_child(yard_wall)
+	# an oak lantern post where the tracks meet on the green, lit from dusk to first light
+	lantern_post = LanternPost.new()
+	lantern_post.name = "LanternPost"
+	lantern_post.weather = weather
+	var lp := LanternPost.SITE
+	lantern_post.position = Vector3(lp.x, terrain.height_at(lp.x, lp.y), lp.y)
+	lantern_post.rotation.y = LanternPost.facing()
+	add_child(lantern_post)
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"
