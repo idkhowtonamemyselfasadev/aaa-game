@@ -98,11 +98,10 @@ func _ready() -> void:
 	var fur := StandardMaterial3D.new()
 	fur.albedo_color = Color(0.20, 0.14, 0.10)
 	fur.roughness = 1.0
+	# fur passes no light: a backlit fur ball glowed red-orange against the bright open end
 	fur.rim_enabled = true
-	fur.rim = 0.6
-	fur.rim_tint = 0.7
-	fur.backlight_enabled = true
-	fur.backlight = Color(0.35, 0.16, 0.08)
+	fur.rim = 0.3
+	fur.rim_tint = 0.85
 	var ball := SphereMesh.new()
 	ball.radius = 0.5
 	ball.height = 1.0
@@ -119,7 +118,8 @@ func _ready() -> void:
 	ear.rings = 1
 	var skin := fur.duplicate() as StandardMaterial3D
 	skin.albedo_color = Color(0.13, 0.09, 0.07)
-	skin.backlight = Color(0.6, 0.25, 0.1)
+	skin.backlight_enabled = true      # only the thin ears let a little light through
+	skin.backlight = Color(0.16, 0.06, 0.03)
 	for s in [-1.0, 1.0]:
 		var e := _part("Ear", ear, skin, Vector3(s * 0.007, 0.011, -0.027), Vector3(0.008, 0.012, 0.004))
 		e.rotation = Vector3(-0.35, 0.0, -s * 0.35)
