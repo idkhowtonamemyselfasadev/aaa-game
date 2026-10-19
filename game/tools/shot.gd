@@ -848,6 +848,15 @@ func _ready() -> void:
 			b.basis = Basis.looking_at(fly, Vector3.UP).rotated(fly, -0.3)
 			b.state = Bat.PATROL
 			b.hold = true
+		elif "roost" in args:
+			# under the woodshed eaves by day: the bat hanging head down from the boards,
+			# wings wrapped, seen from just outside the open end and below
+			var b := lp.bat
+			var f: Vector3 = b.roost_face
+			var sdr := f.cross(Vector3.UP).normalized()
+			cp = b.roost_at + f * 0.5 + sdr * 0.16 - Vector3.UP * 0.22
+			tgt = b.roost_at - Vector3.UP * 0.05
+			b._stretch_in = 1e6
 		elif "moths" in args:
 			# close under the lantern: the moths looping round the panes, the post face beside
 			cp = lc + o * 0.95 + sd * 0.75

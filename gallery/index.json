@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261014-2215-face-corners.jpg",
-  "time": "2026-10-14T22:15:00Z",
-  "caption": "Hero portrait at 10:30: the eye whites now fall into shadow at the corners with a pink-brown inner corner, and the face edges sink into the hood; still wrong: lumpy hood lappets over the chest and a pale lit patch on the left brow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-2220-face-night.jpg",
-  "time": "2026-10-14T22:20:00Z",
-  "caption": "Hero at 23:00 under the moon with fireflies: the face reads as dim warm-neutral skin instead of grey-lavender; still wrong: fireflies light nearby grass a hot yellow-green and the far left ridge is a flat pale cut-out.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-2310-face-lappets.jpg",
   "time": "2026-10-14T23:10:01Z",
   "caption": "The hero's hood now sweeps up in a rounded edge under the chin instead of hanging two lumpy points over the chest; still wrong: the face cloth's sagging tip shows below the hood and the eyes still read a little startled.",
@@ -891,6 +879,12 @@
   "file": "20261019-2120-bat.jpg",
   "time": "2026-10-19T21:20:00Z",
   "caption": "The new bat hawking moths above the lit lantern on the green; it reads only as a tiny flat orange cut-out against the roof (membrane backlight/emission far too strong, lens too far), and the night frame is still crushed navy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-2050-bat-roost.jpg",
+  "time": "2026-10-19T21:45:00Z",
+  "caption": "The pipistrelle hanging head down under the white cottage's woodshed boards between the rafters at 17:30, wings wrapped; still wrong: its fur glows red-orange in the shade (night candle backlight too strong by day) so it reads as a blob, not a dark brown bat.",
   "verdict": "fail"
  }
 ]

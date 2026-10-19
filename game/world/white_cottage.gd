@@ -212,6 +212,18 @@ static func pail_grip() -> float:
 func lean_top(x: float) -> float:
 	return LEAN_HI - (x - wlen * 0.5) * tan(LEAN_P)
 
+## Where the pipistrelle hangs by day (Bat.roost_at): from the underside of the lean-to's
+## boards between the two rafters nearest the open end, up by the gable plate.
+func bat_roost() -> Vector3:
+	var x := wlen * 0.5 + 0.45
+	return to_global(Vector3(x, floor_y + lean_top(x) - 0.01, LEAN_Z - 0.31))
+
+## Just outside the lean-to's open end, under the eaves line: the bat leaves and comes home
+## by here (Bat.door_at).
+func bat_door() -> Vector3:
+	var x := wlen * 0.5 + 0.9
+	return to_global(Vector3(x, floor_y + lean_top(x) - 0.5, LEAN_Z + 1.3))
+
 ## Walls 4 (the lean-to's outer wall, run along z) and 5 (its back end wall, run along x).
 func _wall_at(w: int, along: float, cy: float) -> Array:
 	if w == 4:

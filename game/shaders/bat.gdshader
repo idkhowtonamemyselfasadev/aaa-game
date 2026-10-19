@@ -10,6 +10,7 @@ uniform float half_span = 0.12;
 uniform float flap = 0.0;       // beat phase, rad
 uniform float amp = 1.0;        // 1 full beat .. ~0.2 a glide
 uniform float snap = 0.0;       // 1 at the scoop of a catch: wings flung forward and down
+uniform float furl = 0.0;       // 1 hanging at the roost: the wings wrapped down round the body
 uniform vec3 lamp_pos;
 uniform float lamp_lit = 0.0;
 
@@ -40,8 +41,13 @@ void vertex() {
 	// the membrane bellies up between the bones under load
 	float belly = (1.0 - abs(VERTEX.z) / 0.6) * smoothstep(0.0, 0.25, u) * (1.0 - smoothstep(0.8, 1.0, u));
 	p.y += belly * 0.05 * (0.5 - 0.5 * s);
+	// furled: the arm folds flat against the flank and the fingers lie back along the
+	// forearm, the membrane wrapped down round the belly in a narrow dark bundle
+	vec2 fp = vec2(0.13 * smoothstep(0.0, 0.4, u) - 0.05 * smoothstep(0.4, 1.0, u), -0.32 * smoothstep(0.05, 1.0, u));
+	p = mix(p, fp, furl);
+	z = mix(z, z * 0.45 - 0.12 * u, furl);
 	VERTEX = vec3(side * p.x, p.y, z) * half_span;
-	NORMAL = normalize(vec3(-side * sin(a2), cos(a2), 0.0));
+	NORMAL = normalize(mix(vec3(-side * sin(a2), cos(a2), 0.0), vec3(side, 0.0, 0.0), furl));
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 

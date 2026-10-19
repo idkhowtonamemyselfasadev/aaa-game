@@ -6,9 +6,13 @@ extends Node3D
 ## loop and stoops at it: a snap of the wings, and either the moth is gone or it has dropped
 ## out of the way (moths hear the bat and power-dive, `Moths.dodge`) and the bat overshoots
 ## and swings back round. Rain and strong wind send it off; it leaves before first light.
+## By day it hangs head down under the white cottage's woodshed boards (`roost_at`, wings
+## wrapped, swaying a little, now and then a stretch and a shiver of the wings); at dusk it
+## lets go, drops, opens its wings and flies out of the open end to the light, and at first
+## light (or when rain drives it in) it flies back in under the eaves, swings up and hangs.
 ## Membrane wings with finger bones, flap and fold: bat.gdshader.
 
-enum { AWAY, IN, PATROL, CHASE, OUT }
+enum { AWAY, IN, PATROL, CHASE, OUT, ROOST, DROP, HOME }
 
 const HALF_SPAN := 0.12         # m: ~24 cm wingspan
 const FAR := 14.0               # where it comes in from / goes back to
@@ -19,6 +23,8 @@ const SPEED := 4.6              # m/s on patrol
 const CHASE_SPEED := 6.4
 const CATCH_R := 0.09           # wing scoop / tail pouch reach
 const FLAP_HZ := 9.0
+const HANG := 0.035             # roost point (its feet) to the body centre, hanging
+const DROP_T := 0.32            # s falling, wings still wrapped, before it opens and flies
 
 var post: LanternPost
 var moths: Moths
@@ -30,6 +36,13 @@ var stoops := 0                 # bots: chases started
 var nearest_lamp := 99.0        # bots: closest it came to the lantern centre while out
 var lowest := 99.0              # bots: lowest height above the post foot while out
 var hold := false               # shot tool: freeze it in place (still flapping)
+var roost_at := Vector3.INF     # its feet's hold under the woodshed boards (world.gd)
+var door_at := Vector3.INF      # just outside the woodshed's open end
+var roost_face := Vector3.BACK  # out of the open end: the hanging bat's belly faces this way
+var drops := 0                  # bots: times it let go of the roost at dusk
+var homings := 0                # bots: times it hung up again under the eaves
+var stretches := 0              # bots: wing stretches while roosting
+var fell := 0.0                 # bots: how far below its hold it dropped before flying
 var vel := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _mat: ShaderMaterial
@@ -45,6 +58,12 @@ var _target := -1               # moth index being chased
 var _chase_t := 0.0
 var _bank := 0.0
 var _snap := 0.0                # 1 at a catch/miss wing snap, decays
+var _furl := 0.0                # 0 wings flying .. 1 wrapped round it, hanging
+var _leg := 0                   # HOME: 0 to the door, 1 in under the boards
+var _drop_t := 0.0
+var _stretch := 0.0             # s left in a stretch at the roost
+var _stretch_in := 20.0         # s to the next
+var _sway_t := 0.0
 
 func _ready() -> void:
 	top_level = true
@@ -119,13 +138,28 @@ func _process(delta: float) -> void:
 	_mat.set_shader_parameter("lamp_pos", post.flame_pos.global_position)
 	_mat.set_shader_parameter("lamp_lit", post.lit)
 	var want := wanted()
+	var roosts := roost_at != Vector3.INF
 	if state == AWAY:
-		if not want:
+		if roosts:
+			_hang_up()
+		elif not want:
 			visible = false
 			return
-		_arrive(c)
-	elif not want and state != OUT:
-		state = OUT
+		else:
+			_arrive(c)
+	if state == ROOST:
+		visible = true
+		if want and not hold:
+			state = DROP
+			_drop_t = 0.0
+			vel = Vector3.ZERO
+			drops += 1
+		else:
+			_roosting(delta)
+			return
+	elif not want and state not in [OUT, HOME, DROP]:
+		state = HOME if roosts else OUT
+		_leg = 0
 		_target = -1
 	visible = true
 	if hold:
@@ -138,12 +172,17 @@ func _process(delta: float) -> void:
 	var dt := delta / steps
 	for i in steps:
 		_step(c, dt)
+		if state == ROOST:
+			break
 		if state == AWAY:
 			visible = false
 			return
 	if state == PATROL or state == CHASE:
 		nearest_lamp = minf(nearest_lamp, global_position.distance_to(c))
 		lowest = minf(lowest, global_position.y - post.global_position.y)
+	if state == ROOST:
+		_roosting(0.0)
+		return
 	_wings(delta, state == PATROL and _glide > 0.5)
 	# face the flight line, banked into the turn
 	if vel.length() > 0.2:
@@ -158,6 +197,44 @@ func _wings(delta: float, gliding: bool) -> void:
 	_mat.set_shader_parameter("flap", fmod(_flap, TAU))
 	_mat.set_shader_parameter("amp", lerpf(1.0, 0.18, _glide))
 	_mat.set_shader_parameter("snap", _snap)
+	_furl = move_toward(_furl, 1.0 if state == DROP and _drop_t < DROP_T else 0.0, delta * 5.0)
+	_mat.set_shader_parameter("furl", _furl)
+
+## Hangs at the roost now, wings wrapped (dawn on a fresh load, or the end of the flight home).
+func _hang_up() -> void:
+	state = ROOST
+	vel = Vector3.ZERO
+	_target = -1
+	_furl = 1.0
+	_stretch = 0.0
+	global_position = roost_at - Vector3.UP * HANG
+
+## Hanging head down from the boards, belly to the open end: a slow sway in the draught, and
+## every half minute or so it unwraps one wing a little, shivers it and wraps it again.
+func _roosting(delta: float) -> void:
+	_sway_t += delta
+	var w := weather.wind if weather else 0.0
+	var sway := (0.04 + 0.12 * w) * sin(_sway_t * 1.7) + 0.03 * sin(_sway_t * 0.63 + 1.0)
+	_stretch_in -= delta
+	if _stretch_in <= 0.0 and _stretch <= 0.0:
+		_stretch = 1.6
+		_stretch_in = _rng.randf_range(18.0, 45.0)
+		stretches += 1
+	var open := 0.0
+	if _stretch > 0.0:
+		_stretch -= delta
+		var u := 1.0 - _stretch / 1.6
+		open = sin(u * PI) * 0.55
+		_flap += delta * TAU * 3.0
+	_furl = 1.0 - open
+	_mat.set_shader_parameter("furl", _furl)
+	_mat.set_shader_parameter("flap", fmod(_flap, TAU) if open > 0.0 else 4.0)
+	_mat.set_shader_parameter("amp", 0.25 * open)
+	_mat.set_shader_parameter("snap", 0.0)
+	var face := Vector3(roost_face.x, 0, roost_face.z).normalized()
+	var b := Basis.looking_at(Vector3.DOWN, -face)
+	global_position = roost_at - Vector3.UP * HANG
+	basis = b.rotated(face.cross(Vector3.UP).normalized(), sway).orthonormalized()
 
 func _arrive(c: Vector3) -> void:
 	var a := _rng.randf() * TAU
@@ -174,6 +251,35 @@ func _step(c: Vector3, dt: float) -> void:
 	var desired := vel
 	var accel := 9.0
 	match state:
+		DROP:
+			# let go: a short fall with the wings still wrapped, then they snap open and it
+			# flies out under the eaves, past the door point, and on to the light
+			_drop_t += dt
+			if _drop_t < DROP_T:
+				desired = Vector3(0, -2.2, 0) + roost_face * 0.4
+				accel = 6.0
+				fell = maxf(fell, roost_at.y - p.y)
+			else:
+				var to_door := door_at - p
+				desired = (to_door.normalized() + Vector3.UP * 0.1) * SPEED
+				if to_door.length() < 0.5:
+					state = IN
+		HOME:
+			# back under the eaves: to the door point, then in to the roost, slowing, and it
+			# swings up and takes hold
+			var tgt := door_at if _leg == 0 else roost_at - Vector3.UP * HANG
+			var to := tgt - p
+			if _leg == 0:
+				desired = to.normalized() * SPEED * 1.2
+				if to.length() < 0.5:
+					_leg = 1
+			else:
+				desired = to.normalized() * minf(SPEED, 0.6 + to.length() * 3.0)
+				accel = 12.0
+				if to.length() < 0.06:
+					homings += 1
+					_hang_up()
+					return
 		IN:
 			desired = (c + Vector3(0, 1.0, 0) - p).normalized() * SPEED * 1.2
 			var rh := Vector2(p.x - c.x, p.z - c.z)
@@ -234,6 +340,9 @@ func _step(c: Vector3, dt: float) -> void:
 	var side := vel.cross(Vector3.UP).dot(desired - vel)
 	_bank = lerpf(_bank, clampf(-side * 0.12, -1.0, 1.0), clampf(dt * 8.0, 0.0, 1.0))
 	p += vel * dt
+	if state == DROP or state == HOME:
+		global_position = p
+		return
 	# never into the lantern, the post or the turf
 	var rel := p - c
 	if rel.length() < KEEP_OFF:

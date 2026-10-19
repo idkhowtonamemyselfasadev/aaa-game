@@ -141,6 +141,10 @@ func _ready() -> void:
 	lantern_post.position = Vector3(lp.x, terrain.height_at(lp.x, lp.y), lp.y)
 	lantern_post.rotation.y = LanternPost.facing()
 	add_child(lantern_post)
+	# the bat roosts under the white cottage's woodshed eaves by day
+	lantern_post.bat.roost_at = white_cottage.bat_roost()
+	lantern_post.bat.door_at = white_cottage.bat_door()
+	lantern_post.bat.roost_face = white_cottage.global_basis.z
 	# red deer grazing the open meadow out from the start
 	herd = Herd.new()
 	herd.name = "Herd"

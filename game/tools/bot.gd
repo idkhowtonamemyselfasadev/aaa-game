@@ -415,37 +415,60 @@ func _bat_test() -> void:
 	weather.wind = 0.0
 	_world.time_of_day = 12.0
 	await _ticks(60)
-	var noon := b.visible
+	var noon := b.state != Bat.ROOST
+	var hang_off := b.global_position.distance_to(b.roost_at)
+	var noon_y: float = b.global_position.y - _world.terrain.height_at(b.global_position.x, b.global_position.z)
+	var wc: WhiteCottage = _world.white_cottage
+	var under := WhiteCottage.covers(b.global_position.x, b.global_position.z)
+	# a stretch of the wings now and then while it hangs
+	b._stretch_in = 0.5
+	var st0 := b.stretches
+	await _ticks(180)
+	var stretched := b.stretches > st0 and b.state == Bat.ROOST
 	_world.time_of_day = 19.3
 	await _ticks(60)
-	var dusk := b.visible
+	var dusk := b.state != Bat.ROOST
+	print("BOT bat: noon %s at the roost (%.3f m off its hold, %.2f m up, under the woodshed %s), stretched %s, dusk %s" % [b.state, hang_off, noon_y, under, stretched, dusk])
+	if noon or hang_off > 0.06 or not under or noon_y < 1.6 or not stretched or wc == null:
+		return _combat_done(false, "the bat is not hanging under the woodshed eaves by day")
 	_world.time_of_day = 21.5
 	var out_at := -1
 	var far := 0.0
+	var door_by := false
 	for i in 240:
 		await _ticks(10)
-		if b.visible and out_at < 0:
+		if b.state == Bat.IN and b.global_position.distance_to(b.door_at) < 1.2:
+			door_by = true
+		if (b.state == Bat.PATROL or b.state == Bat.CHASE) and out_at < 0:
 			out_at = i
 		if b.state == Bat.PATROL or b.state == Bat.CHASE:
 			var c := lp.lantern_center()
 			far = maxf(far, Vector2(b.global_position.x - c.x, b.global_position.z - c.z).length())
 	print("BOT bat: noon %s, dusk %s, out from tick %d0, stoops %d, catches %d (moths eaten %d), misses %d, moth dives %d" % [noon, dusk, out_at, b.stoops, b.catches, mo.eaten, b.misses, mo.dodges])
 	print("BOT bat: nearest the lantern %.2f m, lowest %.2f m over the post foot, farthest out %.2f m" % [b.nearest_lamp, b.lowest, far])
+	print("BOT bat: drops %d, fell %.2f m before flying, out by the woodshed door %s" % [b.drops, b.fell, door_by])
 	if noon or dusk:
 		return _combat_done(false, "the bat is out by day or before the lantern is lit")
+	if b.drops != 1 or b.fell < 0.1 or not door_by:
+		return _combat_done(false, "the bat never drops out of the woodshed roost at dusk")
 	if out_at < 0 or b.stoops < 3 or b.catches + b.misses < 2 or mo.eaten != b.catches:
 		return _combat_done(false, "the bat never hunts the moths")
 	if b.nearest_lamp < Bat.KEEP_OFF - 0.02 or b.lowest < 0.98 or far > Bat.LOOP_R.y + 2.0:
 		return _combat_done(false, "the bat flies into the lantern, the turf or off the green")
 	weather.force(1.0)
 	await _ticks(900)
-	var storm := b.visible
+	var storm := b.state != Bat.ROOST
+	var h0 := b.homings
 	weather.force(0.0)
+	await _ticks(600)
+	var back_out := b.state in [Bat.PATROL, Bat.CHASE, Bat.IN] and b.drops == 2
 	_world.time_of_day = 7.0
 	await _ticks(900)
-	print("BOT bat: out in a storm %s, after dawn %s" % [storm, b.visible])
-	if storm or b.visible:
-		return _combat_done(false, "the bat stays out in the rain or the daylight")
+	print("BOT bat: sheltered from the storm %s (homings %d), out again after it %s, roosting after dawn %s (%.3f m off its hold), homings %d" % [not storm, h0, back_out, b.state == Bat.ROOST, b.global_position.distance_to(b.roost_at), b.homings])
+	if storm or h0 < 1 or b.state != Bat.ROOST or b.homings < 2:
+		return _combat_done(false, "the bat stays out in the rain or the daylight instead of going home to roost")
+	if not back_out:
+		return _combat_done(false, "the bat never comes out again once the rain has passed")
 	_combat_done(true, "the bat hawks the moths at the lantern after dark")
 
 func _combat_done(ok: bool, why: String) -> void:
