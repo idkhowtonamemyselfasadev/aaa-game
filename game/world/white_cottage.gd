@@ -339,23 +339,15 @@ func _woodpile(gx: float, ox: float) -> void:
 	_multimesh(block, [[Transform3D(Basis(Vector3.UP, 0.7), Vector3(bx, by + 0.2, bz)), Color(0.4, 0.5, 0.0, 1.0)]], "ChoppingBlock")
 	_box(Vector3(bx, by + 0.2, bz), Vector3(0.5, 0.48, 0.5))
 	var top_y := by + 0.2 + 0.24
-	var helve := _beam(Vector3(bx + 0.28, top_y + 0.22, bz + 0.08), Vector3(0.75, 0.62, 0.2), 0.78, Vector3(0.035, 0.028, 1), 340.0, 0.0)
-	helve.name = "AxeHelve"
-	var head := MeshInstance3D.new()
-	head.name = "AxeHead"
-	var hm := BoxMesh.new()
-	hm.size = Vector3(0.17, 0.05, 0.03)
-	var iron := StandardMaterial3D.new()
-	iron.albedo_color = Color(0.16, 0.14, 0.13)
-	iron.metallic = 0.75
-	iron.roughness = 0.55
-	hm.material = iron
-	head.mesh = hm
-	add_child(head)
+	# the axe, its bit sunk into the block's top, the helve slanting up and out
 	var hd := Vector3(0.75, 0.62, 0.2).normalized()
 	var bit := (Vector3.DOWN - hd * hd.dot(Vector3.DOWN)).normalized()
-	head.basis = Basis(bit, hd, bit.cross(hd).normalized())
-	head.position = Vector3(bx + 0.28, top_y + 0.22, bz + 0.08) - hd * 0.38 + bit * 0.03
+	var axe := Axe.new()
+	axe.name = "BlockAxe"
+	var ab := Basis(bit.cross(-hd).normalized(), -hd, bit)
+	var edge := Vector3(bx + 0.03, top_y - 0.03, bz + 0.02)
+	axe.transform = Transform3D(ab, edge - ab * Axe.edge_point())
+	add_child(axe)
 	# split logs and chips scattered round its foot, a couple of uncut rounds waiting
 	var lying: Array = []
 	var chips: Array = []

@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261014-1000-keep-crown-mossy.jpg",
-  "time": "2026-10-14T10:20:00Z",
-  "caption": "The keep from the approach: the exposed course tops now weather dark and mossy, with no pale edges, and the crest is ragged with slumped stones; the wall-top grass is still too small to read and the low ring looks like neat stacked courses.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-1050-keep-crown-tufts.jpg",
-  "time": "2026-10-14T10:50:00Z",
-  "caption": "Grass tufts now root along the broken crests of the keep and the low breach-side ring; that ring still reads as neat stacked courses instead of a tumbled scree of stone and soil.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-1200-keep-stepped-crest.jpg",
-  "time": "2026-10-14T12:00:00Z",
-  "caption": "Keep crest now steps up and down in ragged columns with talus at its foot; the neat low ring in front is actually the curtain wall, still stacked brick-regular courses, and the foreground grass hides the scree.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-1223-curtain-stepped.jpg",
   "time": "2026-10-14T12:23:45Z",
   "caption": "The ruined curtain wall in front of the keep now steps up in stone-wide columns over a talus in the grass; it still reads as a neat stepped stack of pale-edged slabs rather than a tumbled wall.",
@@ -897,6 +879,18 @@
   "file": "20261019-1212-trackpools.jpg",
   "time": "2026-10-19T12:12:11Z",
   "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1359-edda-heave.jpg",
+  "time": "2026-10-19T13:59:48Z",
+  "caption": "Edda heaves the axe up over her head at the chopping block by the lean-to; she reads small against the white wall from this 3.6 m lens and the axe is hard to pick out.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1359-edda-split.jpg",
+  "time": "2026-10-19T13:59:48Z",
+  "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
   "verdict": "fail"
  }
 ]

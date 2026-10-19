@@ -22,6 +22,7 @@ var toss_in := -1.1          # the raised arm drawn in across toward the head (a
 var flick := 0.0             # 0..1: the right arm taken over by flick_arm/flick_elbow (a toss)
 var flick_arm := 0.0
 var flick_elbow := 0.0
+var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -41,6 +42,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
 		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
+		if clasp != 0.0:
+			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
 		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm, -1.0, bh), toss_arm, ts))
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:

@@ -37,6 +37,8 @@ func _ready() -> void:
 	_s["straw"] = [_make_hit(140.0, 0.09, 0.55, 1800.0), _make_hit(120.0, 0.1, 0.6, 1500.0)]
 	_s["stone"] = [_make_hit(95.0, 0.14, 0.45, 3200.0, 0.5), _make_hit(110.0, 0.12, 0.4, 3600.0, 0.5)]
 	_s["wood"] = [_make_hit(220.0, 0.07, 0.25, 2500.0, 0.0, 640.0)]
+	_s["chop"] = [_make_hit(150.0, 0.08, 0.6, 2600.0, 0.0, 330.0), _make_hit(165.0, 0.07, 0.55, 2900.0, 0.0, 360.0)]
+	_s["thud"] = [_make_hit(110.0, 0.09, 0.2, 1200.0, 0.0, 240.0)]
 	_s["body"] = [_make_hit(80.0, 0.16, 0.3, 900.0)]
 	_s["boom"] = [_make_hit(55.0, 0.35, 0.15, 400.0)]
 	_s["clang"] = [_make_clang(610.0), _make_clang(680.0)]
@@ -142,6 +144,14 @@ func hook_gate(g: Node) -> void:
 		return
 	g.creaked.connect(func(at: Vector3) -> void: _play("creak", at, -9.0))
 	g.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-14.0, -3.0, pw), 0.72))
+
+## Edda at the block: the bite and crack of a round splitting, or a dull thud as the bit sticks.
+func hook_villager(v: Node) -> void:
+	var c = v.get("chop") if v != null else null
+	if c == null:
+		return
+	c.chopped.connect(func(at: Vector3, split: bool) -> void:
+		_play("chop" if split else "thud", at, -4.0 if split else -7.0, _rng.randf_range(0.93, 1.07)))
 
 # ---------------------------------------------------------------- events
 

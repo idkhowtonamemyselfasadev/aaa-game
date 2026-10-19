@@ -204,6 +204,7 @@ func _ready() -> void:
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_gate(dry_wall.field_gate)
+	foley.hook_villager(villager)
 	foley.hook_hens(hens)
 
 func _build_environment() -> void:

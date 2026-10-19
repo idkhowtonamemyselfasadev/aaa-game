@@ -5,7 +5,8 @@ extends CharacterBody3D
 ## kirtle to the ankles, no basket). She keeps a day by the clock and the weather:
 ##   06:00 opens the door and stands on the step looking out over the green
 ##   06:30 draws water at the butt by the door corner (stoops to dip the pail, straightens)
-##   08:00 works the woodpile at the lean-to's open end (stoops for split logs, stacks them)
+##   08:00 splits wood at the chopping block by the lean-to (WoodChop: sets a round on the
+##         block, heaves the axe over her head and brings it down; the halves jump off)
 ##   12:00 sits on the bench under the window to eat
 ##   13:00 back to the butt, then the woodpile through the afternoon
 ##   18:50 walks out to the lantern post on the green with a taper and lights the lantern
@@ -28,6 +29,11 @@ const LIGHT_LEN := 3.5           # s with the taper up at the lantern before it 
 const STOOP_DOWN := 0.9
 const STOOP_HOLD := 1.4
 const STOOP_UP := 1.1
+# the axe pose keys: hip, knee, spine, arm, elbow, neck (Crumple)
+const CHOP_READY := [0.08, 0.12, 0.12, 0.5, 0.7, -0.1]
+const CHOP_TOP := [0.0, 0.06, -0.12, 2.85, 1.05, 0.05]
+const CHOP_HIT := [0.4, 0.45, 0.55, 1.05, 0.08, -0.25]
+var clasp_amt := 0.85            # both arms drawn in onto the helve (Crumple.clasp)
 
 var world: Node3D
 var weather: Weather
@@ -66,7 +72,9 @@ var garb: HeroGarb
 var anim_tree: AnimationTree
 var crumple: Crumple
 var hand_mark: BoneAttachment3D
+var left_mark: BoneAttachment3D
 var taper: MeshInstance3D
+var chop: WoodChop
 var _taper_flame: OmniLight3D
 var _blend := 0.0
 var _model_rest: Transform3D
@@ -123,10 +131,22 @@ func _ready() -> void:
 		hand_mark.name = "HandMark"
 		hand_mark.bone_name = "mixamorig_RightHand"
 		skel.add_child(hand_mark)
+		left_mark = BoneAttachment3D.new()
+		left_mark.name = "LeftHandMark"
+		left_mark.bone_name = "mixamorig_LeftHand"
+		skel.add_child(left_mark)
 		_build_taper()
+		chop = WoodChop.new()
+		chop.name = "WoodChop"
+		add_child(chop)
 		var hb := skel.find_bone("mixamorig_Hips")
 		if hb >= 0:
 			_hip_h = (skel.global_transform * skel.get_bone_global_rest(hb).origin).y - global_position.y
+
+## Her left palm in the world (the second hand on the axe helve).
+func left_hand_pos() -> Vector3:
+	# (a BoneAttachment: get_bone_global_pose would miss Crumple's bends)
+	return left_mark.global_position + left_mark.global_basis.y.normalized() * 0.07
 
 ## A long rush taper in her right hand, its tip burning while she lights the lantern.
 func _build_taper() -> void:
@@ -160,6 +180,8 @@ func settle(w: Node3D, at_hour: float) -> void:
 	terrain = w.get_node("Terrain")
 	home = w.get("white_cottage")
 	lantern = w.get("lantern_post")
+	if chop != null and chop.villager == null:
+		chop.setup(self, home)
 	_rng.seed = 4242
 	var hd := WhiteCottage.W_DEP * 0.5
 	var fy := home.global_rotation.y         # the door side's facing (local +z)
@@ -168,7 +190,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 	var bt := WhiteCottage.BUTT_AT
 	_spots["water"] = [home.to_global(Vector3(bt.x + 0.1, 0, bt.y + 0.62)), fy + PI]
 	var bk := WhiteCottage.BLOCK_AT
-	_spots["wood"] = [home.to_global(Vector3(bk.x - 0.7, 0, bk.y + 0.1)), fy + PI * 0.5]
+	_spots["wood"] = [home.to_global(Vector3(bk.x - 0.75, 0, bk.y + 0.1)), fy + PI * 0.5]
 	# round the front of the water butt to and from the woodpile
 	_spots["round"] = [home.to_global(Vector3(3.7, 0, bt.y + 1.0)), fy]
 	_seat = home.bench_seat
@@ -359,6 +381,16 @@ func _update_notice() -> void:
 ## At the butt and the woodpile: bend down, hold, straighten, a pause, again.
 func _update_work(delta: float) -> void:
 	var working := state == STAND and (activity == "water" or activity == "wood") and not noticing
+	if chop != null:
+		chop.update(delta, working and activity == "wood")
+		if chop.holding:
+			stoop = chop.bend
+			if chop.bend > 0.95 and _stoop_t > 0.0:
+				stoops += 1
+				_stoop_t = -1.0
+			elif chop.bend < 0.5:
+				_stoop_t = 1.0
+			return
 	if not working:
 		stoop = move_toward(stoop, 0.0, delta / STOOP_UP)
 		_stoop_t = maxf(_stoop_t, 1.0)
@@ -406,6 +438,24 @@ func _pose() -> void:
 	crumple.elbow = lerpf(-0.2 * p, 1.2, s)
 	crumple.head_turn = 0.0
 	# the taper: right arm up and forward, the elbow a little soft, to the lantern's door
+	if chop != null and chop.holding:
+		# the axe in both hands: low before her, heaved up over the head, struck down through
+		var lf := chop.lift
+		var k: Array = CHOP_READY.duplicate()
+		var to: Array = CHOP_TOP if lf >= 0.0 else CHOP_HIT
+		var w := absf(lf)
+		for i in k.size():
+			k[i] = lerpf(lerpf(k[i], to[i], w), [0.55 * p, 0.75 * p, 0.95 * p, 1.7 * p, -0.2 * p, 0.15 * p][i], p)
+		crumple.hip = k[0]
+		crumple.knee = k[1]
+		crumple.spine = k[2]
+		crumple.arm = k[3]
+		crumple.elbow = k[4]
+		crumple.neck = k[5]
+		crumple.clasp = clasp_amt * (1.0 - p)
+		p = maxf(p, 0.6 * maxf(-lf, 0.0))
+	else:
+		crumple.clasp = 0.0
 	crumple.flick = r
 	crumple.flick_arm = 2.75
 	crumple.flick_elbow = 0.35

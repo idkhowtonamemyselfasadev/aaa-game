@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -135,6 +135,8 @@ func _ready() -> void:
 		return
 	if name == "villager":
 		_villager_test()
+	if name == "chop":
+		_chop_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -3872,3 +3874,58 @@ func _villager_test() -> void:
 	if not v.noticing or off > 0.35:
 		return _combat_done(false, "she ignores the hero")
 	_combat_done(true, "Edda keeps her day: water, wood, the bench, the lantern, in at night and out of the rain")
+
+## Edda at the chopping block: the axe comes out of the block into her hands, she heaves it
+## overhead and brings the bit down onto the round, the round splits and the halves land on
+## the ground either side; a thud and a crack are heard; the axe goes back in the block after.
+func _chop_test() -> void:
+	var v: Villager = _world.villager
+	var tr: Terrain = _world.get_node("Terrain")
+	if v == null or v.chop == null:
+		return _combat_done(false, "no villager or no chop")
+	var c := v.chop
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, -30.0) + 0.5, -30.0)
+	_world.time_of_day = 9.0
+	v.settle(_world, 9.0)
+	var hits: Array = []
+	c.chopped.connect(func(at: Vector3, split: bool) -> void: hits.append([at, split, -1.0]))
+	var top_lift := 0.0
+	var gap := 0.0
+	var gaps := 0
+	var held := 0
+	for i in 1600:
+		await get_tree().physics_frame
+		top_lift = maxf(top_lift, c.lift)
+		if c.holding:
+			held += 1
+			if c.lift > 0.95 or c.lift < -0.95:
+				gap += v.left_hand_pos().distance_to(v.hand_mark.global_position)
+				gaps += 1
+		for h in hits:
+			if h[2] < 0.0:
+				h[2] = (c.axe.global_transform * Axe.edge_point()).distance_to(h[0])
+	var errs := hits.map(func(h: Array) -> float: return h[2])
+	var halves_ok := true
+	for i in 2:
+		var mm := (c.get_child(2 + i) as MultiMeshInstance3D).multimesh
+		var o := mm.get_instance_transform(0).origin
+		if c.splits > 0 and c._halves_on and absf(o.y - tr.height_at(o.x, o.z)) > 0.2:
+			halves_ok = false
+	var foley: Foley = _world.foley
+	print("BOT chop: held %d ticks, swings %d, splits %d, top lift %.2f, bit off the mark %s, reach %.2f, hand gap %.2f m, halves on the ground %s, chops heard %d thuds %d, block axe shown %s" % [held, c.swings, c.splits, top_lift, str(errs), c.reach, gap / maxf(gaps, 1), halves_ok, foley.played.get("chop", 0), foley.played.get("thud", 0), c.block_axe.visible])
+	if held < 600 or c.swings < 2 or c.splits < 1 or top_lift < 0.95:
+		return _combat_done(false, "she does not chop")
+	for e in errs:
+		if e > 0.12:
+			return _combat_done(false, "the bit lands %.2f m off the round" % e)
+	if not halves_ok or c.block_axe.visible:
+		return _combat_done(false, "halves hang in the air or the axe stayed in the block")
+	if foley.played.get("chop", 0) < 1:
+		return _combat_done(false, "no chop heard")
+	_world.time_of_day = 12.1
+	await _ticks(400)
+	print("BOT chop after: %s holding %s, block axe shown %s" % [v.activity, c.holding, c.block_axe.visible])
+	if c.holding or not c.block_axe.visible or c.axe.visible:
+		return _combat_done(false, "the axe went to the bench with her")
+	_combat_done(true, "Edda splits rounds at the block: heave, strike, the halves jump off")

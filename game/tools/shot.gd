@@ -865,6 +865,17 @@ func _ready() -> void:
 		if vg.activity == "lamp":
 			tgt = at.lerp(world.lantern_post.lantern_center(), 0.5)
 			cp.y += 0.2
+		if "chop" in args or "split" in args:
+			# side on from the green to the block: her heave and the axe's arc, the halves
+			# ("split": the moment after the blow, the halves jumping off)
+			var ch := vg.chop
+			ch._round_on = true
+			ch._t = 3.0 if "chop" in args else 3.95
+			ch.pin = 3.98 if "chop" in args else 4.62
+			lens = (vg.home.global_basis.z + f * 0.45).normalized()
+			cp = at + f * 0.35 + lens * 3.6
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.35
+			tgt = at + f * 0.45 + Vector3.UP * 1.05
 		SPOTS[spot] = [cp, tgt]
 		var pp := at + f * -30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
