@@ -11,6 +11,8 @@ uniform float drip = 0.0;      // 0..1 extra drops from the eaves while it rains
 uniform float seed = 0.0;
 
 varying vec3 wp;
+varying vec3 ctr;
+varying float rad;
 
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vn2(vec2 x) {
@@ -20,6 +22,8 @@ float vn2(vec2 x) {
 
 void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	ctr = MODEL_MATRIX[3].xyz;
+	rad = max(length(MODEL_MATRIX[0].xyz), 0.01);
 }
 
 void fragment() {
@@ -30,9 +34,10 @@ void fragment() {
 	float rough = 0.03;
 	// pollen and dust skin, gathered against the staves
 	float edge = smoothstep(0.32, 0.5, length(lp));
-	float film = smoothstep(0.5, 0.8, vn2(xz * 18.0 + seed) + edge * 0.4);
-	col = mix(col, vec3(0.2, 0.18, 0.1), film * 0.35);
-	rough = mix(rough, 0.35, film * 0.6);
+	// (thin and patchy: a full skin made the whole disc read matte)
+	float film = smoothstep(0.62, 0.9, vn2(xz * 22.0 + seed) * 0.8 + edge * 0.45);
+	col = mix(col, vec3(0.2, 0.18, 0.1), film * 0.2);
+	rough = mix(rough, 0.22, film * 0.5);
 	// fallen oak/ash leaves afloat, drifting slowly round
 	float ang = TIME * 0.01 + seed;
 	mat2 rot = mat2(vec2(cos(ang), sin(ang)), vec2(-sin(ang), cos(ang)));
@@ -68,5 +73,19 @@ void fragment() {
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	vec3 vdir = normalize(CAMERA_POSITION_WORLD - wp);
 	float fres = 0.02 + 0.98 * pow(1.0 - clamp(dot(n, vdir), 0.0, 1.0), 5.0);
-	EMISSION = sky_sheen * min(0.08 + fres * 2.5, 0.55) * (1.0 - leaf) * (1.0 - film * 0.5);
+	// mirrored sky: brighter toward the zenith, cut off by the dark inside of the staves
+	// near the rim on the far side (the reflection ray hits wood, not sky)
+	vec3 rv = reflect(-vdir, n);
+	float up = clamp(rv.y, 0.0, 1.0);
+	// (the haze colour alone tinted the disc pink-brown: cool it toward a pale overcast sky)
+	vec3 sky = mix(vec3(dot(sky_sheen, vec3(0.3, 0.55, 0.15))), sky_sheen, 0.35) * vec3(0.9, 0.97, 1.08);
+	sky *= 0.7 + 0.6 * up;
+	vec2 far_dir = normalize(-vdir.xz + vec2(1e-4));
+	vec2 off = (wp.xz - ctr.xz) / rad;   // -1..1 across the disc in world space
+	float rim = smoothstep(0.45, 0.95, dot(off, far_dir) + length(off) * 0.3);
+	float refl = min(0.06 + fres * 4.0, 0.8) * (1.0 - rim * 0.8);
+	// a thin bright meniscus where the water climbs the staves
+	float men = smoothstep(0.9, 0.99, length(off)) * (1.0 - leaf);
+	refl += men * 0.35;
+	EMISSION = sky * refl * (1.0 - leaf) * (1.0 - film * 0.6);
 }

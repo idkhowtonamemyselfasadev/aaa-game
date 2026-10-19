@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261014-0014-shrine-seal-cuts.jpg",
-  "time": "2026-10-14T00:14:11Z",
-  "caption": "The Shrine of Binding lid at dusk with only the carved sigil cuts glowing ember on dark greystone, no more orange haze over the face; the keep floor litter still reads as a flat dark texture and the hero's face is lost in shade under the hat.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0141-keep-floor.jpg",
   "time": "2026-10-14T01:41:01Z",
   "caption": "The ruined keep floor round the Shrine of Binding at dusk: warm beaten earth with gravel, sunk stone spalls, drifted oak leaves and tufts at the wall foot instead of a flat dark carpet; the leaves are still too even in size and a few white pebble specks pop.",
@@ -897,6 +891,12 @@
   "file": "20261019-0450-limewash-gable.jpg",
   "time": "2026-10-19T04:50:00Z",
   "caption": "The white cottage's sunlit gable after the proud-lime pass: the rubble shows only as soft bumps under the coat with small pale flakes; the plane is still a little too even and the lens frames mostly blank wall.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0555-waterbutt.jpg",
+  "time": "2026-10-19T05:55:32Z",
+  "caption": "Water butt by the limewashed cottage: the rainwater now mirrors a cool sky with a dark far rim and floating leaves instead of a matte brown disc; the water is still a little flat and the shadowed yard is dim.",
   "verdict": "fail"
  }
 ]

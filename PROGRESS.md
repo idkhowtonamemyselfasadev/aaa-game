@@ -51,6 +51,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
     sun formula itself is right).
   - Bot `walk` route goes round the white cottage (waypoint (-24, -12)); it used to time out
     against its wall. See Known bugs for the face check it now reaches.
+- Session 2026-10-19 05:00 UTC (butt water):
+  - **Water butt water mirrors the sky** (Known bug `butt3`): thinner patchy pollen film, a
+    cool desaturated sky reflection brighter toward the zenith, the far rim darkened where the
+    reflection hits the staves, a bright meniscus at the edge (`butt_water.gdshader`). Shot
+    `butt5` (11.0, butt lens): reads as still dark water with sky in it and leaves afloat.
+    (This session also did a lime-flush pass on the white cottage in parallel with the 04:00
+    session; theirs landed first and is kept, mine was dropped in the rebase.)
+  - Bots `whitehouse`, `waterbutt`, `stonehouse` PASS.
 - Session 2026-10-19 (water butt):
   - **A water butt and a bench at the white cottage** (`world/water_butt.gd` `WaterButt`,
     `butt.gdshader`, `butt_water.gdshader`; placed by `WhiteCottage._yard_things`). An old
@@ -3678,6 +3686,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   before the head bone, ~-0.01..-0.015 m above the veil's AABB top, limit -0.012): the face
   cloth rides ~1.5 cm too high over the eyes in this pose -- lower the veil's top edge a
   centimetre (HeroGarb) or check the pose at the check.
+- (05:00 10-19) `butt5`: the butt water reads as water now but is still a flat even sheen --
+  it needs real reflection of the eaves/wall (SSR or a reflection probe by the cottage), and
+  rain rings remain unchecked in a shot. NEXT for the village: the lean-to/byre, then the villager.
 - (water butt session 10-19) `butt3` (11.0, butt lens): the cask reads as grey-brown staved
   oak with dark rusted hoops on its stones, bench by the door. FAILS: the water reads as a
   matte grey-brown disc (pollen film too strong, sheen flat; no sky/eaves reflection --
