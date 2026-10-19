@@ -20,7 +20,7 @@ const LW := 0.2             # lantern body width
 const LH := 0.36            # lantern height (top ring to base plate)
 const FRAME_DOWN := 0.13    # top ring to the top frame (chimney and cap between)
 const DROP := 0.17          # pivot (hook) to the lantern's top ring
-const LAMP := Color(1.0, 0.64, 0.33)
+const LAMP := Color(1.0, 0.54, 0.25)   # deep amber: paler read olive on limewash under the night grade
 
 var lit := 0.0              # 0 dark .. 1 burning
 var lighter: Node = null    # Edda (Villager): lights it at dusk with her taper (`lantern_lit`)
@@ -133,8 +133,9 @@ func _ready() -> void:
 	lamp = OmniLight3D.new()
 	lamp.name = "Lamp"
 	lamp.light_color = LAMP
-	lamp.omni_range = 9.0
-	lamp.omni_attenuation = 1.4
+	# a soft, wide falloff: at 1.4 the pool on the cottage wall had a hard round rim
+	lamp.omni_range = 10.0
+	lamp.omni_attenuation = 0.85
 	lamp.shadow_enabled = true
 	lamp.shadow_bias = 0.03
 	lamp.light_size = 0.03
@@ -194,7 +195,7 @@ func _apply() -> void:
 	_flame.set_shader_parameter("lit", lit)
 	_horn.set_shader_parameter("lit", lit * fl)
 	_tallow.set_shader_parameter("lit", lit * fl)
-	lamp.light_energy = lit * 1.5 * fl
+	lamp.light_energy = lit * 1.15 * fl
 	lamp.visible = lit > 0.01
 	flame_pos.get_node("Flame").visible = lit > 0.01
 

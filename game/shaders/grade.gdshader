@@ -36,8 +36,10 @@ void fragment() {
 	// land (blue over red) and mildly warm albedo under moonlight still go to rods.
 	float warm = (c.r - c.b) / (c.r + 0.01);
 	// and only orange: firelight has red well over green too (g/r ~0.6); straw-dry meadow
-	// grass under the moon (r ~ g > b) was spared as "warm" and read olive-yellow at 1 am
-	float orange = smoothstep(0.12, 0.28, (c.r - c.g) / (c.r + 0.01));
+	// grass under the moon (r ~ g > b) was spared as "warm" and read olive-yellow at 1 am.
+	// Lamplight on limewash tonemaps to r a little over g (g/r ~0.75-0.85): at the old
+	// 0.12-0.28 gate it went half to rods and the pool read green-yellow on the wall
+	float orange = smoothstep(0.07, 0.2, (c.r - c.g) / (c.r + 0.01));
 	rod *= 1.0 - 0.8 * smoothstep(0.3, 0.7, warm) * orange;
 	vec3 scot = vec3(L * 1.08) * vec3(0.62, 0.84, 1.22);
 	vec3 nc = mix(c, scot, rod * 0.88);

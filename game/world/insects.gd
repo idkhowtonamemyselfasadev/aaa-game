@@ -81,10 +81,12 @@ func _ready() -> void:
 	for i in light_count:
 		var l := OmniLight3D.new()
 		l.name = "FireflyLight%d" % i
-		# a soft warm-green glow on the grass blades round each fly, not a hot lime pool
+		# a soft warm-green glow on the grass blades round each fly, not a hot lime pool:
+		# at 1.7 m a fly drifting by the white cottage threw a 2 m lime disc on the limewash
+		# (it read as the lantern's light); a real fly lights a hand's breadth round it
 		l.light_color = Color(0.86, 0.94, 0.52)
-		l.omni_range = 1.7
-		l.omni_attenuation = 2.2
+		l.omni_range = 0.9
+		l.omni_attenuation = 2.0
 		l.light_specular = 0.15
 		l.shadow_enabled = false
 		l.light_energy = 0.0
@@ -279,7 +281,7 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 			var f: Fly = _ff[lit[k]]
 			l.visible = true
 			l.global_position = f.pos
-			l.light_energy = f.glow * 0.3
+			l.light_energy = f.glow * 0.22
 		else:
 			l.visible = false
 
