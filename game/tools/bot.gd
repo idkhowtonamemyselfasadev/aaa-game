@@ -2868,6 +2868,38 @@ func _lantern_test() -> void:
 	await _ticks(3)
 	if not lp.lamp.visible or lp.lamp.light_energy < 0.8:
 		return _combat_done(false, "a lit lantern gives no light")
+	# moths come in to the light at night, loop round it, bump the panes, settle on the post
+	var mo := lp.moths
+	var weather0: Weather = _world.weather
+	weather0.force(0.0)
+	mo.bumps = 0
+	var seen := 0
+	var sat := 0
+	for k in 40:
+		await _ticks(30)
+		seen = maxi(seen, mo.visible_count)
+		sat = maxi(sat, mo.settled_count)
+	mo.max_dist = 0.0
+	await _ticks(300)
+	print("BOT lantern: moths round the light %d (max), settled on the post %d, pane bumps %d, strayed %.2f m" % [seen, sat, mo.bumps, mo.max_dist])
+	if seen < 6 or mo.bumps < 1 or sat < 1 or mo.max_dist > 1.4 or mo.max_dist < 0.15:
+		return _combat_done(false, "no believable moths round the lantern")
+	for m in mo._m:
+		if m.state != Moths.AWAY:
+			var rel: Vector3 = m.pos - lp.lantern_center()
+			if rel.y > -0.2 and rel.y < 0.25 and Vector2(rel.x, rel.z).length() < Moths.PANE_R - 0.005:
+				return _combat_done(false, "a moth flew inside the lantern")
+	weather0.force(1.0)
+	await _ticks(900)
+	var in_rain := mo.visible_count
+	weather0.force(0.0)
+	_world.time_of_day = 12.0
+	await _ticks(900)
+	print("BOT lantern: moths in a storm %d, at noon %d" % [in_rain, mo.visible_count])
+	if in_rain > 3 or mo.visible_count > 0:
+		return _combat_done(false, "moths ignore the rain or the daylight")
+	_world.time_of_day = 21.0
+	await _ticks(3)
 	# it sways a little in the breeze and more in a storm, but never flies up
 	var weather: Weather = _world.weather
 	lp.max_sway = 0.0
@@ -2900,7 +2932,7 @@ func _lantern_test() -> void:
 	print("BOT lantern: walked at the post, closest %.2f m from its axis" % closest)
 	if closest < LanternPost.POST_W * 0.5:
 		return _combat_done(false, "walked through the lantern post")
-	_combat_done(true, "lantern post stands on the green, lit dusk to dawn, sways, blocks the hero")
+	_combat_done(true, "lantern post stands on the green, lit dusk to dawn, moths at the light, sways, blocks the hero")
 
 func _waterbutt_test() -> void:
 	var p := _player

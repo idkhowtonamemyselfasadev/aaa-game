@@ -35,6 +35,7 @@ var _sway := Vector2.ZERO   # (pitch, roll) rad
 var _sway_v := Vector2.ZERO
 var _t := 0.0
 var max_sway := 0.0         # largest swing seen (bots)
+var moths: Moths           # moths round the lit lantern (moths.gd)
 
 ## World yaw: local +z (the arm) reaches toward the village centre.
 static func facing() -> float:
@@ -144,6 +145,11 @@ func _ready() -> void:
 	col.shape = box
 	col.position.y = POST_H * 0.5
 	add_child(col)
+	moths = Moths.new()
+	moths.name = "Moths"
+	moths.post = self
+	moths.weather = weather
+	add_child(moths)
 	_apply()
 
 func _add(n: String, m: Mesh, mat: Material, at: Vector3) -> MeshInstance3D:

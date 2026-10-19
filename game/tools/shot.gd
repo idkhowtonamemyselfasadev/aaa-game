@@ -828,6 +828,11 @@ func _ready() -> void:
 			cp = at + o * 7.0 + sd * 4.5
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.7
 			tgt = at + o * 0.5 + Vector3.UP * 1.2
+		elif "moths" in args:
+			# close under the lantern: the moths looping round the panes, the post face beside
+			cp = lc + o * 0.95 + sd * 0.75
+			cp.y = lc.y - 0.35
+			tgt = lc - o * 0.25 - Vector3.UP * 0.1
 		else:
 			cp = lc + o * 1.9 + sd * 1.3
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.6
