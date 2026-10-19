@@ -232,7 +232,7 @@ func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
 	if limewash:
-		size.z = T - 0.012     # lime laid on thick fills the joints nearly to the faces
+		size.z = T - 0.03      # lime laid on thick fills the joints most of the way to the faces
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
 ## Place one wall stone: wall-local (along, centre height) -> cottage local.
@@ -317,6 +317,14 @@ func _walls() -> void:
 		_course(2, -half, half, y, h, false, false)
 		_course(3, -half, half, y, h, false, false)
 		y += h
+	# tabling: a sloped bed of mortar along each gable top under the deck, filling the
+	# stepped triangles the courses leave below the roof line
+	var run := wdep * 0.5 / cos(PITCH)
+	for gx in [-1.0, 1.0]:
+		for side in [-1.0, 1.0]:
+			var zc: float = side * wdep * 0.25
+			var c := Vector3(gx * (wlen * 0.5 - T * 0.5), floor_y + roof_under(zc) - 0.15 / cos(PITCH), zc)
+			_mortar.append(Transform3D(Basis(Vector3.RIGHT, PITCH * side) * Basis.from_scale(Vector3(T - 0.03, 0.3, run)), c))
 
 func _chimney() -> void:
 	var x0 := -wlen * 0.5
@@ -591,8 +599,7 @@ func _build_mortar() -> void:
 	m.set_shader_parameter("grime", Color(0.25, 0.23, 0.2))
 	if limewash:
 		# the lime coats run over the pointing too: only a faint shadow line between stones
-		m.set_shader_parameter("lime", Color(0.72, 0.705, 0.65))
-		m.set_shader_parameter("grime", Color(0.36, 0.35, 0.3))
+		m.set_shader_parameter("wash", 1.0)
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

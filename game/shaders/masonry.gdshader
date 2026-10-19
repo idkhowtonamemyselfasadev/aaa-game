@@ -52,9 +52,9 @@ varying float jnt;
 varying float laid;
 varying float aged;
 varying float field;
-varying float dim;
+varying float dim;   // a above 2: a darker, greyer face (the cottage's rubble)
 varying float lw;         // 1: limewashed (a = 4)
-varying float floor_w;    // world y of the ground this stone's `above` counts from   // a above 2: a darker, greyer face (the cottage's rubble)
+varying float floor_w;    // world y of the ground this stone's `above` counts from
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
