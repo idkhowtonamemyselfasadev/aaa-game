@@ -23,6 +23,7 @@ const DROP := 0.17          # pivot (hook) to the lantern's top ring
 const LAMP := Color(1.0, 0.64, 0.33)
 
 var lit := 0.0              # 0 dark .. 1 burning
+var lighter: Node = null    # Edda (Villager): lights it at dusk with her taper (`lantern_lit`)
 var weather: Weather
 var pivot: Node3D           # the hook the lantern hangs from (swings)
 var lamp: OmniLight3D
@@ -35,6 +36,7 @@ var _sway := Vector2.ZERO   # (pitch, roll) rad
 var _sway_v := Vector2.ZERO
 var _t := 0.0
 var max_sway := 0.0         # largest swing seen (bots)
+var _caught := 0.0
 var moths: Moths           # moths round the lit lantern (moths.gd)
 
 ## World yaw: local +z (the arm) reaches toward the village centre.
@@ -165,6 +167,13 @@ func _process(delta: float) -> void:
 	_t += delta
 	var h: float = _world.time_of_day if "time_of_day" in _world else 12.0
 	lit = lit_for(h)
+	if lighter != null and h >= 12.0 and h < 20.0:
+		# dusk: dark until her taper reaches the wick, then the flame takes over a second
+		var want := 1.0 if lighter.get("lantern_lit") else 0.0
+		_caught = move_toward(_caught, want, delta / 1.2)
+		lit = _caught
+	else:
+		_caught = lit
 	# sway: a damped pendulum (~0.9 s period on its short drop) pushed by gusts
 	var w := weather.wind if weather else 0.0
 	var gust := (0.25 + w * 1.6) * (0.55 + 0.45 * sin(_t * 0.7) * sin(_t * 1.9 + 1.3))

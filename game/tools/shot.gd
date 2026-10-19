@@ -847,6 +847,28 @@ func _ready() -> void:
 		var pp := at + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT lantern at %s, lantern %s, lit %.2f" % [at, lc, lp.lit])
+	if spot == "villager":
+		# Edda at her spot for the hour, three-quarter from the front at 3.4 m, eye height
+		# ("wide": back 7 m with the house behind her)
+		var vg: Villager = world.villager
+		vg.settle(world, world.time_of_day)
+		var at := vg.global_position
+		var f := Vector3(sin(vg.goal_yaw), 0, cos(vg.goal_yaw))
+		var dist := 7.0 if "wide" in args else 3.4
+		var lens := f.rotated(Vector3.UP, 0.6)
+		if vg.activity != "lamp":
+			# round the house: always from the green side, never against a wall
+			lens = (lens + vg.home.global_basis.z * 1.2).normalized()
+		var cp := at + lens * dist
+		cp.y = terrain.height_at(cp.x, cp.z) + (1.7 if "wide" in args else 1.45)
+		var tgt := at + Vector3.UP * (1.0 if vg.state == Villager.SIT else 1.25)
+		if vg.activity == "lamp":
+			tgt = at.lerp(world.lantern_post.lantern_center(), 0.5)
+			cp.y += 0.2
+		SPOTS[spot] = [cp, tgt]
+		var pp := at + f * -30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT villager %s at %s" % [vg.activity, at])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -856,7 +878,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

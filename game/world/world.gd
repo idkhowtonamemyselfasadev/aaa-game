@@ -31,6 +31,7 @@ var dry_wall: DryWall
 var yard_wall: YardWall
 var lantern_post: LanternPost
 var keeper: Keeper
+var villager: Villager
 var hearth: Hearth
 var fox: Fox
 var hens: Hens
@@ -162,6 +163,13 @@ func _ready() -> void:
 	# hens keeping the garth behind the stone cottage
 	hens = Hens.new()
 	hens.setup(self)
+	# Edda, the cottager in the white house: water, wood, the bench, the lantern at dusk
+	villager = Villager.new()
+	villager.name = "Villager"
+	villager.position = white_cottage.global_position + Vector3.UP
+	add_child(villager)
+	villager.settle(self, time_of_day)
+	trample.walkers.append(villager)
 	# the garth scratched bare and the footpath worn round to the cottage door
 	YardGround.publish()
 	# the mix: per-layer buses and the stone reverb inside the keep

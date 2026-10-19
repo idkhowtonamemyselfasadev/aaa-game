@@ -42,6 +42,11 @@ life as the new chain. She is right about the stakes and wrong about the price.
   ruined watchtower keep above Harrowmere. Keeps the sealed lid swept and watches the vale at
   dawn and dusk. Arc (Act I side thread): she has guarded a door she cannot open for forty
   years; when Wren opens it she must decide whether her life's watch was worth anything.
+- **Edda**, a cottager in the limewashed house on Harrowmere's green: draws water, splits
+  and stacks the wood, eats on the bench by her door and lights the green's lantern at dusk
+  with a taper. Arc (Act I side thread): she lit that lantern every night for a husband who
+  went up to the keep and never came back down; Wren's Kindle can light it for her the night
+  she cannot.
 - **Caelum**, the sky-island boy king, twelve years old and ruling a court of automatons. Arc:
   learns to come down.
 

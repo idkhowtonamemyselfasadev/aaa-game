@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -132,6 +132,9 @@ func _ready() -> void:
 		return
 	if name == "yardpath":
 		_yardpath_test()
+		return
+	if name == "villager":
+		_villager_test()
 		return
 	if name == "understory":
 		_understory_test()
@@ -3722,3 +3725,84 @@ func _facelight_test() -> void:
 	if nc.b <= nc.r:
 		return _combat_done(false, "the night face fill is still warm")
 	_combat_done(true, "the face fill follows the shade light from noon to night")
+
+## Edda keeps her day: out of the door at dawn, stooping at the butt and the woodpile, sat on
+## the bench at noon, out to the lantern at dusk to light it with her taper (and it stays dark
+## until she does), in at night, and in out of the rain.
+func _villager_test() -> void:
+	var v: Villager = _world.villager
+	var lp: LanternPost = _world.lantern_post
+	var tr: Terrain = _world.get_node("Terrain")
+	if v == null or v.home == null:
+		return _combat_done(false, "no villager")
+	_world.weather.force(0.0)
+	# the hero well away, so she does not stop to watch him
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, -30.0) + 0.5, -30.0)
+	_world.time_of_day = 3.0
+	v.settle(_world, 3.0)
+	await _ticks(10)
+	print("BOT villager at 3 h: %s, visible %s" % [v.activity, v.visible])
+	if v.visible or v.activity != "in":
+		return _combat_done(false, "she is out at 3 in the morning")
+	var stages := [[6.1, "wake", 300], [6.6, "water", 900], [9.0, "wood", 900], [12.1, "eat", 400]]
+	for st in stages:
+		_world.time_of_day = st[0]
+		var s0 := v.stoops
+		await _ticks(st[2])
+		print("BOT villager at %.1f h: %s, state %d, visits %s, stoops +%d, sit %.2f, warps %d" % [st[0], v.activity, v.state, str(v.visits), v.stoops - s0, v.sit, v.warps])
+		if v.activity != st[1] or v.visits.get(st[1], 0) < 1 or not v.visible:
+			return _combat_done(false, "she never got to her %s" % st[1])
+		if (st[1] == "water" or st[1] == "wood") and v.stoops - s0 < 2:
+			return _combat_done(false, "she stands idle at the %s" % st[1])
+	if v.sit < 0.95 or v.global_position.distance_to(Vector3(v.home.bench_seat.x, v.global_position.y, v.home.bench_seat.z)) > 0.2:
+		return _combat_done(false, "she is not sat on the bench at noon")
+	# rain sends her in; when it passes she comes out again
+	_world.time_of_day = 15.0
+	await _ticks(600)
+	_world.weather.force(1.0)
+	await _ticks(600)
+	var in_rain := v.visible
+	var goes := v.goings_in
+	_world.weather.force(0.0)
+	await _ticks(900)
+	print("BOT villager rain: out in it %s, gone in %d, after: %s visible %s" % [in_rain, goes, v.activity, v.visible])
+	if in_rain or goes < 1 or not v.visible or v.activity != "wood":
+		return _combat_done(false, "she does not shelter from the rain")
+	# dusk: the lantern stays dark until she has walked out and lit it
+	_world.time_of_day = 18.85
+	var dark_until := 0.0
+	var lit_at := -1.0
+	for i in 120:
+		await _ticks(10)
+		if lp.lit < 0.05:
+			dark_until = i
+		if lp.lit > 0.9 and lit_at < 0.0:
+			lit_at = i
+	var hand := v.hand_mark.global_position.distance_to(lp.lantern_center()) if v.hand_mark else 99.0
+	print("BOT villager lamp: lights %d, dark for %d0 ticks, burning from tick %d0, %s, at the post %.2f m" % [v.lights, dark_until, lit_at, v.activity, Vector2(v.global_position.x - lp.global_position.x, v.global_position.z - lp.global_position.z).length()])
+	if v.lights != 1 or lit_at < 0.0 or dark_until < 10:
+		return _combat_done(false, "she never lit the lantern")
+	_world.time_of_day = 20.0
+	await _ticks(400)
+	print("BOT villager evening: %s sit %.2f; lantern %.2f" % [v.activity, v.sit, lp.lit])
+	if v.activity != "evening" or v.sit < 0.9 or lp.lit < 0.95:
+		return _combat_done(false, "no evening on the bench")
+	_world.time_of_day = 20.8
+	await _ticks(600)
+	print("BOT villager night: %s visible %s gone in %d, warps %d" % [v.activity, v.visible, v.goings_in, v.warps])
+	if v.visible or v.activity != "in":
+		return _combat_done(false, "she does not go in at night")
+	if v.warps > 0:
+		return _combat_done(false, "she wedged on her rounds and was lifted %d times" % v.warps)
+	# the hero walks up by day: she stops and turns to him
+	_world.time_of_day = 9.5
+	await _ticks(600)
+	var to := v.global_position + Vector3(2.5, 0, 0.0).rotated(Vector3.UP, v.body.rotation.y + 2.0)
+	_player.global_position = Vector3(to.x, tr.height_at(to.x, to.z) + 0.3, to.z)
+	await _ticks(200)
+	var d := _player.global_position - v.global_position
+	var off := absf(wrapf(atan2(d.x, d.z) - v.body.rotation.y, -PI, PI))
+	print("BOT villager notice: noticing %s, facing off %.2f rad" % [v.noticing, off])
+	if not v.noticing or off > 0.35:
+		return _combat_done(false, "she ignores the hero")
+	_combat_done(true, "Edda keeps her day: water, wood, the bench, the lantern, in at night and out of the rain")

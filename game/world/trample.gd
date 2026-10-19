@@ -122,7 +122,7 @@ func _process(delta: float) -> void:
 			_hts[i] = t
 	_walk(player, delta, grounded)
 	for w in walkers:
-		if is_instance_valid(w) and w.is_inside_tree():
+		if is_instance_valid(w) and w.is_inside_tree() and w.is_visible_in_tree():
 			_walk(w, delta, (w as CharacterBody3D).is_on_floor() if w is CharacterBody3D else true)
 	_upload()
 
