@@ -224,7 +224,8 @@ func _ready() -> void:
 	if spot == "stonehouse":
 		# the stone cottage, three-quarter from the front: door, windows, the slate
 		# slope and the chimney stack ("close": at the door, up at the eaves and the slates)
-		var ct: StoneCottage = world.stone_cottage
+		# ("white": the same lenses on the limewashed cottage)
+		var ct: StoneCottage = world.white_cottage if "white" in args else world.stone_cottage
 		var o := ct.global_basis.z
 		var sd := ct.global_basis.x
 		var mid := ct.global_position + Vector3.UP * (ct.floor_y + 2.4)
@@ -233,7 +234,7 @@ func _ready() -> void:
 			# at this hour, so the rubble is read in sunlight rather than flat sky shade
 			var to_sun: Vector3 = world.sun.global_basis.z
 			to_sun.y = 0.0
-			var faces := [[o, sd, StoneCottage.DEP], [-o, -sd, StoneCottage.DEP], [sd, -o, StoneCottage.LEN], [-sd, o, StoneCottage.LEN]]
+			var faces := [[o, sd, ct.wdep], [-o, -sd, ct.wdep], [sd, -o, ct.wlen], [-sd, o, ct.wlen]]
 			var best: Array = faces[0]
 			for f in faces:
 				if (f[0] as Vector3).dot(to_sun) > (best[0] as Vector3).dot(to_sun):

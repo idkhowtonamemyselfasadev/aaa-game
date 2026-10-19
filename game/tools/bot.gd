@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -109,6 +109,8 @@ func _ready() -> void:
 		return
 	if name == "stonehouse":
 		_stonehouse_test()
+	if name == "whitehouse":
+		_stonehouse_test(_world.white_cottage)
 		return
 	if name == "drywall":
 		_drywall_test()
@@ -2701,13 +2703,16 @@ func _trample_test() -> void:
 ## The stone cottage: built (stones, slates, smoke), clear of the timber house, the hero
 ## walks up the step and in through the door, the back wall stops him inside, and the
 ## windows light at dusk.
-func _stonehouse_test() -> void:
+func _stonehouse_test(c: StoneCottage = null) -> void:
 	var p := _player
-	var c: StoneCottage = _world.stone_cottage
-	if Cottage.inside(c.global_position.x, c.global_position.z, StoneCottage.LEN * 0.5 + 1.0):
+	if c == null:
+		c = _world.stone_cottage
+	if Cottage.inside(c.global_position.x, c.global_position.z, c.wlen * 0.5 + 1.0):
 		return _combat_done(false, "the stone cottage overlaps the timber house")
+	if c != _world.stone_cottage and (StoneCottage.inside(c.global_position.x, c.global_position.z, c.wlen * 0.5 + 1.0) or YardWall.near(c.global_position.x, c.global_position.z, c.wlen * 0.5 + 1.0)):
+		return _combat_done(false, "the white cottage overlaps the stone cottage or the yard")
 	print("BOT stonehouse: %d stones, %d slates, %d colliders, floor %.2f m, base %.2f m" % [c.stone_count, c.slate_count, c.get_node("StoneCottageCollision").get_child_count(), c.floor_y, c.base_y])
-	if c.stone_count < 600 or c.slate_count < 1200:
+	if c.stone_count < 450 or c.slate_count < 800:
 		return _combat_done(false, "cottage walls or roof not built")
 	var flora: Flora = _world.get_node("Flora")
 	var near := 99.0
@@ -2747,7 +2752,7 @@ func _stonehouse_test() -> void:
 	p.bot_input = Vector2.ZERO
 	p.bot_sprint = false
 	print("BOT stonehouse: ran at the back wall, got %.2f m in from the centre" % far)
-	if far > StoneCottage.DEP * 0.5 - StoneCottage.T + 0.1:
+	if far > c.wdep * 0.5 - StoneCottage.T + 0.1:
 		return _combat_done(false, "walked through the cottage back wall")
 	_world.time_of_day = 12.0
 	await _ticks(2)

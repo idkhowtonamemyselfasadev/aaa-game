@@ -26,6 +26,7 @@ var trample: Trample
 var herd: Herd
 var cottage: Cottage
 var stone_cottage: StoneCottage
+var white_cottage: WhiteCottage
 var dry_wall: DryWall
 var yard_wall: YardWall
 var keeper: Keeper
@@ -108,6 +109,15 @@ func _ready() -> void:
 	stone_cottage.position = Vector3(sc.x, terrain.height_at(sc.x, sc.y), sc.y)
 	stone_cottage.rotation.y = StoneCottage.yaw()
 	add_child(stone_cottage)
+	# a limewashed cottage on the south-west of the green beside the timber house
+	white_cottage = WhiteCottage.new()
+	white_cottage.name = "WhiteCottage"
+	white_cottage.ruins_path = NodePath("../Ruins")
+	white_cottage.terrain_path = NodePath("../Terrain")
+	var wc := WhiteCottage.HOME
+	white_cottage.position = Vector3(wc.x, terrain.height_at(wc.x, wc.y), wc.y)
+	white_cottage.rotation.y = WhiteCottage.facing()
+	add_child(white_cottage)
 	# the dry-stone garth wall round the yard behind it, a gateway on the east side
 	dry_wall = DryWall.new()
 	dry_wall.name = "DryWall"

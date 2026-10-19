@@ -53,6 +53,12 @@ const OPENINGS := [
 	[2, 0.0, 1.15, 0.6, 0.6],
 ]
 
+## Per-house shape (defaults: this stone cottage; WhiteCottage sets its own in _init)
+var wlen := LEN
+var wdep := DEP
+var eaves := EAVES
+var openings: Array = OPENINGS
+var limewash := false        # rubble and quoins under coats of white lime (WhiteCottage)
 var floor_y := 0.0
 var base_y := 0.0
 var stone_count := 0
@@ -81,7 +87,7 @@ func _ready() -> void:
 	_terrain = get_node(terrain_path)
 	_world = get_parent()
 	_rng.seed = seed
-	rise = DEP * 0.5 * tan(PITCH)
+	rise = wdep * 0.5 * tan(PITCH)
 	_timber_mat = preload("res://shaders/timber.gdshader")
 	_level()
 	_body = StaticBody3D.new()
@@ -122,7 +128,7 @@ func _level() -> void:
 	var lo := INF
 	for ix in 5:
 		for iz in 4:
-			var p := to_global(Vector3((ix / 4.0 - 0.5) * LEN, 0, (iz / 3.0 - 0.5) * DEP))
+			var p := to_global(Vector3((ix / 4.0 - 0.5) * wlen, 0, (iz / 3.0 - 0.5) * wdep))
 			var h := _terrain.height_at(p.x, p.z)
 			hi = maxf(hi, h)
 			lo = minf(lo, h)
@@ -142,14 +148,14 @@ func _course_h() -> float:
 ## bottom, h its height. Openings cut the run; stones are trimmed to the jambs.
 func _course(w: int, s0: float, s1: float, y: float, h: float, quoin0: bool, quoin1: bool) -> void:
 	var cuts := []
-	for o in OPENINGS:
+	for o in openings:
 		if o[0] != w:
 			continue
 		var sy: float = floor_y + o[2]
 		if y + h > sy + 0.02 and y < sy + o[4] + 0.25:     # (+ the lintel's depth)
 			cuts.append([o[1] - o[3] * 0.5, o[1] + o[3] * 0.5])
 	# chimney: the stack takes the middle of the west gable above the eaves
-	if w == 3 and y + h * 0.5 > floor_y + EAVES - 0.05:
+	if w == 3 and y + h * 0.5 > floor_y + eaves - 0.05:
 		cuts.append([-STACK_W * 0.6, STACK_W * 0.6])
 	var segs := [[s0, s1, quoin0, quoin1]]
 	for c in cuts:
@@ -208,16 +214,16 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 	match w:
 		0:
 			dir = Vector3.RIGHT
-			c = Vector3(along, cy, DEP * 0.5 - T * 0.5)
+			c = Vector3(along, cy, wdep * 0.5 - T * 0.5)
 		1:
 			dir = Vector3.RIGHT
-			c = Vector3(along, cy, -DEP * 0.5 + T * 0.5)
+			c = Vector3(along, cy, -wdep * 0.5 + T * 0.5)
 		2:
 			dir = Vector3.BACK
-			c = Vector3(LEN * 0.5 - T * 0.5, cy, along)
+			c = Vector3(wlen * 0.5 - T * 0.5, cy, along)
 		_:
 			dir = Vector3.BACK
-			c = Vector3(-LEN * 0.5 + T * 0.5, cy, along)
+			c = Vector3(-wlen * 0.5 + T * 0.5, cy, along)
 	return [dir, c]
 
 ## The lime-mortar core behind a course run, recessed 3 cm from both faces (deeper sank the
@@ -235,10 +241,12 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 	# faces stand a little proud or sunk (rubble more than the dressed quoins), stones sit a
 	# hair off square
 	var proud := 0.018 if quoin else 0.032
+	if limewash:
+		proud *= 0.4     # the coats fill the hollows and round the faces into one skin
 	c += dir.cross(Vector3.UP) * _rng.randf_range(-proud, proud)
 	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)))
 	if quoin:
-		_place(c, b, size, _rng.randf_range(0.5, 0.7))
+		_place(c, b, size, _rng.randf_range(0.5, 0.7), 4.0 if limewash else 1.0)
 	else:
 		_place_rubble(c, b, size)
 
@@ -252,11 +260,12 @@ func _place_rubble(c: Vector3, b: Basis, size: Vector3) -> void:
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
 	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
-	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 2.5)])
+	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 4.0 if limewash else 2.5)])
 	stone_count += 1
 
 ## A dressed sandstone block (quoins, sills, flags, ridge), weathered (INSTANCE_CUSTOM.a = 1).
-func _place(c: Vector3, b: Basis, size: Vector3, tint: float) -> void:
+## `mode` is INSTANCE_CUSTOM.a (4 = limewashed).
+func _place(c: Vector3, b: Basis, size: Vector3, tint: float, mode := 1.0) -> void:
 	var v := _rng.randi() % VARIANTS
 	for t in 2:
 		var o := _rng.randi() % VARIANTS
@@ -269,20 +278,20 @@ func _place(c: Vector3, b: Basis, size: Vector3, tint: float) -> void:
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
 	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
-	_per[v].append([xf, Color(above, tint, 1.0, 1.0)])
+	_per[v].append([xf, Color(above, tint, 1.0, mode)])
 	stone_count += 1
 
 ## Roof line: the deck underside's height above the floor at local z.
 func roof_under(z: float) -> float:
-	return EAVES + (DEP * 0.5 - absf(z)) * tan(PITCH)
+	return eaves + (wdep * 0.5 - absf(z)) * tan(PITCH)
 
 func _walls() -> void:
 	var y := base_y
 	var k := 0
-	var hl := LEN * 0.5
-	var hd := DEP * 0.5
-	while y < floor_y + EAVES - 0.1:
-		var h := minf(_course_h(), floor_y + EAVES - y)
+	var hl := wlen * 0.5
+	var hd := wdep * 0.5
+	while y < floor_y + eaves - 0.1:
+		var h := minf(_course_h(), floor_y + eaves - y)
 		var long_full := k % 2 == 0
 		if long_full:
 			_course(0, -hl, hl, y, h, true, true)
@@ -300,7 +309,7 @@ func _walls() -> void:
 	while y < floor_y + roof_under(0.0) - 0.05:
 		var h := _course_h()
 		var top := y + h - floor_y
-		var half := DEP * 0.5 - (top - EAVES) / tan(PITCH)
+		var half := wdep * 0.5 - (top - eaves) / tan(PITCH)
 		if half < 0.2:
 			break
 		_course(2, -half, half, y, h, false, false)
@@ -308,8 +317,8 @@ func _walls() -> void:
 		y += h
 
 func _chimney() -> void:
-	var x0 := -LEN * 0.5
-	var y := floor_y + EAVES - 0.05
+	var x0 := -wlen * 0.5
+	var y := floor_y + eaves - 0.05
 	var top := floor_y + roof_under(0.0) + DECK + 1.0
 	var k := 0
 	while y < top:
@@ -332,28 +341,28 @@ var smoke_at := Vector3.ZERO
 
 ## Flagstone floor inside, a threshold slab and a step out of the door.
 func _floor() -> void:
-	var z := -DEP * 0.5 + T
-	while z < DEP * 0.5 - T - 0.05:
-		var dz := minf(_rng.randf_range(0.45, 0.75), DEP * 0.5 - T - z)
-		var x := -LEN * 0.5 + T
-		while x < LEN * 0.5 - T - 0.05:
-			var dx := minf(_rng.randf_range(0.5, 0.9), LEN * 0.5 - T - x)
+	var z := -wdep * 0.5 + T
+	while z < wdep * 0.5 - T - 0.05:
+		var dz := minf(_rng.randf_range(0.45, 0.75), wdep * 0.5 - T - z)
+		var x := -wlen * 0.5 + T
+		while x < wlen * 0.5 - T - 0.05:
+			var dx := minf(_rng.randf_range(0.5, 0.9), wlen * 0.5 - T - x)
 			_place(Vector3(x + dx * 0.5, floor_y - 0.07, z + dz * 0.5), Basis.from_euler(Vector3(0, _rng.randf_range(-0.03, 0.03), 0)), Vector3(dx - 0.02, 0.14, dz - 0.02), _rng.randf())
 			x += dx
 		z += dz
-	var door: Array = OPENINGS[0]
-	_place(Vector3(door[1], floor_y - 0.06, DEP * 0.5 - T * 0.5), Basis.IDENTITY, Vector3(door[3] + 0.1, 0.14, T + 0.02), 0.5)
-	var gy := _terrain.height_at(to_global(Vector3(door[1], 0, DEP * 0.5 + 0.35)).x, to_global(Vector3(door[1], 0, DEP * 0.5 + 0.35)).z) - global_position.y
+	var door: Array = openings[0]
+	_place(Vector3(door[1], floor_y - 0.06, wdep * 0.5 - T * 0.5), Basis.IDENTITY, Vector3(door[3] + 0.1, 0.14, T + 0.02), 0.5)
+	var gy := _terrain.height_at(to_global(Vector3(door[1], 0, wdep * 0.5 + 0.35)).x, to_global(Vector3(door[1], 0, wdep * 0.5 + 0.35)).z) - global_position.y
 	var sh := clampf(floor_y - gy, 0.12, 0.5)
-	_place(Vector3(door[1], floor_y - sh * 0.5 - 0.02, DEP * 0.5 + 0.32), Basis.from_euler(Vector3(0, 0.03, 0)), Vector3(door[3] + 0.5, sh + 0.12, 0.62), 0.4)
-	door_gap = to_global(Vector3(door[1], floor_y + 1.0, DEP * 0.5 - T * 0.5))
+	_place(Vector3(door[1], floor_y - sh * 0.5 - 0.02, wdep * 0.5 + 0.32), Basis.from_euler(Vector3(0, 0.03, 0)), Vector3(door[3] + 0.5, sh + 0.12, 0.62), 0.4)
+	door_gap = to_global(Vector3(door[1], floor_y + 1.0, wdep * 0.5 - T * 0.5))
 
 ## Lintels, door, window frames, sills and shutters.
 func _openings() -> void:
 	panes = ShaderMaterial.new()
 	panes.shader = preload("res://shaders/pane.gdshader")
-	for i in OPENINGS.size():
-		var o: Array = OPENINGS[i]
+	for i in openings.size():
+		var o: Array = openings[i]
 		var w: int = o[0]
 		var along: float = o[1]
 		var sill: float = o[2]
@@ -363,10 +372,10 @@ func _openings() -> void:
 		var out := Vector3.BACK if w == 0 else (Vector3.FORWARD if w == 1 else (Vector3.RIGHT if w == 2 else Vector3.LEFT))
 		var face_c: Vector3
 		match w:
-			0: face_c = Vector3(along, 0, DEP * 0.5 - T * 0.5)
-			1: face_c = Vector3(along, 0, -DEP * 0.5 + T * 0.5)
-			2: face_c = Vector3(LEN * 0.5 - T * 0.5, 0, along)
-			_: face_c = Vector3(-LEN * 0.5 + T * 0.5, 0, along)
+			0: face_c = Vector3(along, 0, wdep * 0.5 - T * 0.5)
+			1: face_c = Vector3(along, 0, -wdep * 0.5 + T * 0.5)
+			2: face_c = Vector3(wlen * 0.5 - T * 0.5, 0, along)
+			_: face_c = Vector3(-wlen * 0.5 + T * 0.5, 0, along)
 		var top := floor_y + sill + oh
 		# lintel: oak, bearing 0.3 m into the wall on each side
 		_beam(face_c + Vector3(0, top + 0.12, 0), dir, ow + 0.6, Vector3(0.24, T - 0.04, 0), float(i), 0.0, out)
@@ -448,8 +457,8 @@ func _roof() -> void:
 	for v in 4:
 		_slate_meshes.append(_slate_mesh(v))
 		_slates.append([])
-	var half_len := LEN * 0.5 + OVER_V
-	var run := (DEP * 0.5 + OVER_E) / cos(PITCH)       # deck length ridge -> eaves edge
+	var half_len := wlen * 0.5 + OVER_V
+	var run := (wdep * 0.5 + OVER_E) / cos(PITCH)       # deck length ridge -> eaves edge
 	for side in [-1.0, 1.0]:
 		var down := Vector3(0, -sin(PITCH), cos(PITCH) * side)
 		var nrm := Vector3(0, cos(PITCH), sin(PITCH) * side)
@@ -485,10 +494,10 @@ func _roof() -> void:
 			k += 1
 	# ridge: saddle stones along the apex
 	var rt := Vector3(0, floor_y + roof_under(0.0) + DECK, 0)
-	var x := -LEN * 0.5 - OVER_V
-	while x < LEN * 0.5 + OVER_V - 0.1:
-		var ln := minf(_rng.randf_range(0.4, 0.55), LEN * 0.5 + OVER_V - x)
-		if x + ln * 0.5 > -LEN * 0.5 + STACK_W + 0.05 or x + ln * 0.5 < -LEN * 0.5 - 0.05:
+	var x := -wlen * 0.5 - OVER_V
+	while x < wlen * 0.5 + OVER_V - 0.1:
+		var ln := minf(_rng.randf_range(0.4, 0.55), wlen * 0.5 + OVER_V - x)
+		if x + ln * 0.5 > -wlen * 0.5 + STACK_W + 0.05 or x + ln * 0.5 < -wlen * 0.5 - 0.05:
 			_place(Vector3(x + ln * 0.5, rt.y + 0.06, 0), Basis.from_euler(Vector3(0, _rng.randf_range(-0.02, 0.02), 0)), Vector3(ln - 0.01, 0.16, 0.36), 0.15)
 		x += ln
 
@@ -578,6 +587,10 @@ func _build_mortar() -> void:
 	# shadowed gaps between the stones instead of an even pale outline round each one
 	m.set_shader_parameter("lime", Color(0.5, 0.47, 0.41))
 	m.set_shader_parameter("grime", Color(0.25, 0.23, 0.2))
+	if limewash:
+		# the lime coats run over the pointing too: only a faint shadow line between stones
+		m.set_shader_parameter("lime", Color(0.7, 0.69, 0.64))
+		m.set_shader_parameter("grime", Color(0.42, 0.41, 0.35))
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -599,31 +612,31 @@ func _box(c: Vector3, size: Vector3, b := Basis.IDENTITY) -> void:
 	_body.add_child(cs)
 
 func _colliders() -> void:
-	var hl := LEN * 0.5
-	var hd := DEP * 0.5
-	var h := floor_y + EAVES - base_y
+	var hl := wlen * 0.5
+	var hd := wdep * 0.5
+	var h := floor_y + eaves - base_y
 	var cy := base_y + h * 0.5
-	var door: Array = OPENINGS[0]
+	var door: Array = openings[0]
 	var dl: float = door[1] - door[3] * 0.5
 	var dr: float = door[1] + door[3] * 0.5
 	# front wall either side of the door, and over it
 	_box(Vector3((-hl + dl) * 0.5, cy, hd - T * 0.5), Vector3(dl + hl, h, T))
 	_box(Vector3((dr + hl) * 0.5, cy, hd - T * 0.5), Vector3(hl - dr, h, T))
 	var dtop: float = floor_y + door[4]
-	_box(Vector3(door[1], (dtop + floor_y + EAVES) * 0.5, hd - T * 0.5), Vector3(door[3], floor_y + EAVES - dtop, T))
-	_box(Vector3(0, cy, -hd + T * 0.5), Vector3(LEN, h, T))
+	_box(Vector3(door[1], (dtop + floor_y + eaves) * 0.5, hd - T * 0.5), Vector3(door[3], floor_y + eaves - dtop, T))
+	_box(Vector3(0, cy, -hd + T * 0.5), Vector3(wlen, h, T))
 	var gh := floor_y + roof_under(0.0) - base_y
 	for sgn in [-1.0, 1.0]:
-		_box(Vector3(sgn * (hl - T * 0.5), base_y + gh * 0.5, 0), Vector3(T, gh, DEP))
+		_box(Vector3(sgn * (hl - T * 0.5), base_y + gh * 0.5, 0), Vector3(T, gh, wdep))
 	# the floor slab
-	_box(Vector3(0, (floor_y + base_y) * 0.5, 0), Vector3(LEN - T * 2.0, floor_y - base_y, DEP - T * 2.0))
+	_box(Vector3(0, (floor_y + base_y) * 0.5, 0), Vector3(wlen - T * 2.0, floor_y - base_y, wdep - T * 2.0))
 	# both roof slopes
-	var run := (DEP * 0.5 + OVER_E) / cos(PITCH)
+	var run := (wdep * 0.5 + OVER_E) / cos(PITCH)
 	for side in [-1.0, 1.0]:
 		var down := Vector3(0, -sin(PITCH), cos(PITCH) * side)
 		var nrm := Vector3(0, cos(PITCH), sin(PITCH) * side)
 		var c := Vector3(0, floor_y + roof_under(0.0), 0) + down * run * 0.5 + nrm * (DECK * 0.5 + 0.02)
-		_box(c, Vector3(LEN + OVER_V * 2.0, DECK + 0.04, run), Basis(nrm.cross(down), nrm, down).orthonormalized())
+		_box(c, Vector3(wlen + OVER_V * 2.0, DECK + 0.04, run), Basis(nrm.cross(down), nrm, down).orthonormalized())
 	# a ramp under the door step, so the threshold can be walked up onto
 	var gy := _terrain.height_at(to_global(Vector3(dl, 0, hd + 1.2)).x, to_global(Vector3(dl, 0, hd + 1.2)).z) - global_position.y
 	var rise_s := floor_y - gy
@@ -632,7 +645,7 @@ func _colliders() -> void:
 		_box(Vector3(door[1], floor_y - rise_s * 0.5 - 0.06, hd + 0.6), Vector3(door[3] + 0.4, 0.12, sqrt(1.44 + rise_s * rise_s)), Basis(Vector3.RIGHT, ang))
 	# chimney stack
 	var st := floor_y + roof_under(0.0) + DECK + 1.0
-	_box(Vector3(-hl + STACK_W * 0.5, (floor_y + EAVES + st) * 0.5, 0), Vector3(STACK_W, st - floor_y - EAVES, 1.0))
+	_box(Vector3(-hl + STACK_W * 0.5, (floor_y + eaves + st) * 0.5, 0), Vector3(STACK_W, st - floor_y - eaves, 1.0))
 
 func _puff_tex() -> ImageTexture:
 	var n := FastNoiseLite.new()
@@ -707,12 +720,12 @@ func _build_lights() -> void:
 ## World points every ~`step` m round the walls (and along the middle), for steering.
 func outline(step: float) -> Array[Vector3]:
 	var pts: Array[Vector3] = []
-	var nx := ceili(LEN / step)
-	var nz := ceili(DEP / step)
+	var nx := ceili(wlen / step)
+	var nz := ceili(wdep / step)
 	for i in nx + 1:
 		for j in nz + 1:
 			if i == 0 or j == 0 or i == nx or j == nz or j == nz / 2:
-				pts.append(to_global(Vector3((float(i) / nx - 0.5) * LEN, 0, (float(j) / nz - 0.5) * DEP)))
+				pts.append(to_global(Vector3((float(i) / nx - 0.5) * wlen, 0, (float(j) / nz - 0.5) * wdep)))
 	return pts
 
 ## 0..1: how lit the windows are at hour h (lamps from dusk to bedtime, a candle at dawn).

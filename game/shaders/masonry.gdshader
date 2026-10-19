@@ -14,6 +14,9 @@ render_mode cull_back;
 // more lichen and moss, arrises worn dark rather than pale. a = 2: aged FIELD stone (the
 // village's dry-stone walls): greyer gritstone, grey lichen rather than yellow, moss only on
 // the tops and the faces turned from the noon sun (+x: the sun stands at -x at noon), muted; a above 2 also dims it greyer (the stone cottage's rubble).
+// a = 4: LIMEWASHED (the white cottage): coats of white lime over the rubble, thin over the
+// stone arrises, flaked in ragged patches low down, rain runs from the eaves, green algae
+// and splash grime rising from the foot.
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.7, 0.62, 0.5);
@@ -24,6 +27,8 @@ uniform vec3 stone_pale : source_color = vec3(0.72, 0.7, 0.64);
 uniform vec3 stone_dark : source_color = vec3(0.43, 0.42, 0.39);
 uniform vec3 iron_stain : source_color = vec3(0.5, 0.3, 0.16);
 uniform vec3 joint_soil : source_color = vec3(0.22, 0.17, 0.12);
+uniform vec3 limewash : source_color = vec3(0.74, 0.725, 0.67);
+uniform vec3 lime_algae : source_color = vec3(0.3, 0.34, 0.2);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
 global uniform vec3 bounce_light;
@@ -47,7 +52,9 @@ varying float jnt;
 varying float laid;
 varying float aged;
 varying float field;
-varying float dim;   // a above 2: a darker, greyer face (the cottage's rubble)
+varying float dim;
+varying float lw;         // 1: limewashed (a = 4)
+varying float floor_w;    // world y of the ground this stone's `above` counts from   // a above 2: a darker, greyer face (the cottage's rubble)
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -74,6 +81,8 @@ void vertex() {
 	aged = min(INSTANCE_CUSTOM.a, 1.0);
 	field = step(1.5, INSTANCE_CUSTOM.a);
 	dim = clamp(INSTANCE_CUSTOM.a - 2.0, 0.0, 1.0);
+	lw = step(3.5, INSTANCE_CUSTOM.a);
+	floor_w = MODEL_MATRIX[3].y - above;
 }
 
 float surf(vec3 p) {
@@ -142,6 +151,23 @@ void fragment() {
 	mc = mix(mc, vec3(dot(mc, vec3(0.3, 0.5, 0.2))) * vec3(0.95, 1.05, 0.85), field * 0.45) * mix(1.0, 0.82, field);
 	col = mix(col, mc, mossw);
 	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
+	// limewash: a white skin over everything above, the coats a little uneven
+	float ab = wp.y - floor_w;     // per fragment (above is per stone)
+	float coat = fbm(wp * 2.6 + 7.0);
+	vec3 lwc = limewash * (0.9 + 0.12 * coat) * (0.97 + 0.05 * vn(wp * 90.0));
+	lwc = mix(lwc, lwc * vec3(0.97, 0.97, 0.93), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));   // old coats yellowed
+	// flaked back to the stone in ragged patches, more toward the foot and on the arrises
+	float flake = smoothstep(0.66, 0.69, fbm(wp * 2.2 + 13.0) + (1.0 - smoothstep(0.0, 1.0, ab)) * 0.1 + edge * 0.06);
+	vec3 lcol = mix(lwc, col * 0.9, flake * 0.9);
+	// rain runs down from the eaves and under the sills: soft grey streaks
+	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
+	lcol *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));
+	// splash grime and green algae rising from the ground, ragged at the top
+	float splash = 1.0 - smoothstep(0.0, 0.45 + 0.35 * fbm(wp * vec3(2.5, 0.4, 2.5) + 1.0), ab);
+	vec3 grimec = mix(vec3(0.36, 0.34, 0.29), lime_algae, smoothstep(0.4, 0.65, fbm(wp * 4.0 + 2.0)));
+	lcol = mix(lcol, grimec * (0.85 + 0.3 * coat), splash * 0.8);
+	col = mix(col, lcol, lw);
+	mossw *= 1.0 - lw * (1.0 - splash * 0.5);
 	// soot from Hesper's fire: a plume up the faces that look at it, densest low and right
 	// over the fire, in billowed clouds with tide marks at the edge; the heat kept moss and
 	// lichen off; the stones nearest the ring scorched dark too
@@ -167,7 +193,7 @@ void fragment() {
 	float up = smoothstep(0.5, 0.85, n.y);
 	float jd = (1.0 - smoothstep(0.0, 0.55, jnt)) * mix(0.3, 1.0, laid) * (1.0 - up * 0.85);
 	float deep = (1.0 - smoothstep(0.0, 0.2, jnt)) * mix(0.3, 1.0, laid) * (1.0 - up);
-	col *= 1.0 - jd * 0.08 - deep * 0.4;
+	col *= 1.0 - (jd * 0.08 + deep * 0.4) * mix(1.0, 0.3, lw);   // lime fills the joints
 	// soil and moss lodged in the low joints
 	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
@@ -177,7 +203,7 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.4 * (1.0 - soot * 0.95);   // soot is dead matte: no sheen of the fire on it
-	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw));
+	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw) * mix(1.0, 0.45, lw));
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - jd * 0.3 - deep * 0.3);
 	ALBEDO *= v_cloud;

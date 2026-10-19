@@ -92,6 +92,9 @@ func _ready() -> void:
 	var ct: StoneCottage = get_node_or_null("../StoneCottage")
 	if ct:
 		_obstacles.append_array(ct.outline(2.4))
+	var wct: WhiteCottage = get_node_or_null("../WhiteCottage")
+	if wct:
+		_obstacles.append_array(wct.outline(2.4))
 	var dw: DryWall = get_node_or_null("../DryWall")
 	if dw:
 		_obstacles.append_array(dw.outline(2.0))
