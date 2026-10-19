@@ -59,7 +59,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   of a stooping bat may power-dive, which makes the bat miss). Bot `bat` (~38% catch rate,
   keeps 0.38 m off the lantern, >= 1 m over the turf, out of storms/daylight). Shot lens
   `lantern <name> 60 21.5 bat fixfps` (bat frozen 0.75 m out from the lantern, flying away
-  from the lens).
+  from the lens). Shot `bat1` FAILS (the shot took ~50 min on the cloud box, background
+  tasks need a 60 min timeout): the bat is tiny and glows as a flat orange cut-out by the
+  roof edge. NEXT for it: cut `BACKLIGHT` to ~0.25 and `EMISSION` to ~0.15 so it reads as
+  a dark silhouette with only the thin trailing edge glowing, and bring the `bat` lens
+  closer (bat ~0.8 m from the camera, lantern behind it).
 - 2026-10-19 18:00: **Edda's voice barks: a grunt on the axe heave, a hum on the bench**
   (`WoodChop.heaved` signal + `heaves` counter, emitted 0.05 s before `T_STRIKE` so the
   exhale peaks as the bit lands; `Villager.hummed` + `hums`, `_update_hum`: only sat on the
