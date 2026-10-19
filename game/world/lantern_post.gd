@@ -38,6 +38,7 @@ var _t := 0.0
 var max_sway := 0.0         # largest swing seen (bots)
 var _caught := 0.0
 var moths: Moths           # moths round the lit lantern (moths.gd)
+var bat: Bat               # the pipistrelle that hawks them after dark (bat.gd)
 
 ## World yaw: local +z (the arm) reaches toward the village centre.
 static func facing() -> float:
@@ -153,6 +154,12 @@ func _ready() -> void:
 	moths.post = self
 	moths.weather = weather
 	add_child(moths)
+	bat = Bat.new()
+	bat.name = "Bat"
+	bat.post = self
+	bat.moths = moths
+	bat.weather = weather
+	add_child(bat)
 	_apply()
 
 func _add(n: String, m: Mesh, mat: Material, at: Vector3) -> MeshInstance3D:

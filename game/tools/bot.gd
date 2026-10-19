@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -138,6 +138,9 @@ func _ready() -> void:
 		return
 	if name == "eddatalk":
 		_eddatalk_test()
+		return
+	if name == "bat":
+		_bat_test()
 		return
 	if name == "chop":
 		_chop_test()
@@ -397,6 +400,53 @@ func _combat_test() -> void:
 		return
 	_route = []
 	_finish(true, "light string chained, staff re-slung after %.1f s idle" % w)
+
+## The bat over the green: out only after dark with the lantern burning, hunting the moths
+## round it (stoops, catches, misses, moths diving away) without touching the lantern, the
+## post or the turf, and gone in a storm and by day.
+func _bat_test() -> void:
+	var lp: LanternPost = _world.lantern_post
+	if lp == null or lp.bat == null:
+		return _combat_done(false, "no bat at the lantern")
+	var b := lp.bat
+	var mo := lp.moths
+	var weather: Weather = _world.weather
+	weather.force(0.0)
+	weather.wind = 0.0
+	_world.time_of_day = 12.0
+	await _ticks(60)
+	var noon := b.visible
+	_world.time_of_day = 19.3
+	await _ticks(60)
+	var dusk := b.visible
+	_world.time_of_day = 21.5
+	var out_at := -1
+	var far := 0.0
+	for i in 240:
+		await _ticks(10)
+		if b.visible and out_at < 0:
+			out_at = i
+		if b.state == Bat.PATROL or b.state == Bat.CHASE:
+			var c := lp.lantern_center()
+			far = maxf(far, Vector2(b.global_position.x - c.x, b.global_position.z - c.z).length())
+	print("BOT bat: noon %s, dusk %s, out from tick %d0, stoops %d, catches %d (moths eaten %d), misses %d, moth dives %d" % [noon, dusk, out_at, b.stoops, b.catches, mo.eaten, b.misses, mo.dodges])
+	print("BOT bat: nearest the lantern %.2f m, lowest %.2f m over the post foot, farthest out %.2f m" % [b.nearest_lamp, b.lowest, far])
+	if noon or dusk:
+		return _combat_done(false, "the bat is out by day or before the lantern is lit")
+	if out_at < 0 or b.stoops < 3 or b.catches + b.misses < 2 or mo.eaten != b.catches:
+		return _combat_done(false, "the bat never hunts the moths")
+	if b.nearest_lamp < Bat.KEEP_OFF - 0.02 or b.lowest < 0.98 or far > Bat.LOOP_R.y + 2.0:
+		return _combat_done(false, "the bat flies into the lantern, the turf or off the green")
+	weather.force(1.0)
+	await _ticks(900)
+	var storm := b.visible
+	weather.force(0.0)
+	_world.time_of_day = 7.0
+	await _ticks(900)
+	print("BOT bat: out in a storm %s, after dawn %s" % [storm, b.visible])
+	if storm or b.visible:
+		return _combat_done(false, "the bat stays out in the rain or the daylight")
+	_combat_done(true, "the bat hawks the moths at the lantern after dark")
 
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])

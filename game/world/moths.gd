@@ -19,6 +19,8 @@ var visible_count := 0          # bots: moths out round the light now
 var settled_count := 0          # bots: moths sat on the post now
 var bumps := 0                  # bots: times a moth hit the panes
 var max_dist := 0.0             # bots: farthest a circling moth strayed from the lantern
+var eaten := 0                  # bots: moths the bat took (bat.gd)
+var dodges := 0                 # bots: power-dives away from the bat
 var _mm: MultiMesh
 var _mat: ShaderMaterial
 var _rng := RandomNumberGenerator.new()
@@ -44,6 +46,8 @@ class Moth:
 	var rest := 0.0
 	var spot := Vector3.ZERO    # settle point (world) and the face normal there
 	var spot_n := Vector3.FORWARD
+	var gone := 0.0             # s before a new moth takes this one's place after the bat ate it
+	var dive := 0.0             # s left in a power-dive away from the bat
 
 func _ready() -> void:
 	top_level = true
@@ -100,7 +104,8 @@ func _process(delta: float) -> void:
 	var dt := delta / steps
 	for i in COUNT:
 		var m: Moth = _m[i]
-		var wanted := m.gate < want
+		m.gone = maxf(m.gone - delta, 0.0)
+		var wanted := m.gate < want and m.gone <= 0.0
 		if wanted and m.state == AWAY:
 			_arrive(m, c)
 			if jump:
@@ -135,6 +140,51 @@ func _arrive(m: Moth, c: Vector3) -> void:
 	m.y_off = _rng.randf_range(-0.25, 0.3)
 	m.timer = _rng.randf_range(0.5, 2.0)
 
+## The bat's pick: the nearest moth looping round the light within 4 m of `from`, or -1.
+func prey_for(from: Vector3) -> int:
+	var best := -1
+	var bd := 4.0
+	for i in COUNT:
+		if catchable(i) and _m[i].dive <= 0.0:
+			var d: float = _m[i].pos.distance_to(from)
+			if d < bd:
+				bd = d
+				best = i
+	return best
+
+func catchable(i: int) -> bool:
+	return i >= 0 and i < COUNT and (_m[i].state == CIRCLE or _m[i].state == BUMP or _m[i].state == IN)
+
+func diving(i: int) -> bool:
+	return _m[i].dive > 0.0
+
+func moth_pos(i: int) -> Vector3:
+	return _m[i].pos
+
+func moth_vel(i: int) -> Vector3:
+	return _m[i].vel
+
+## Taken by the bat: gone from the light; another comes in out of the dark a while later.
+func snatch(i: int) -> void:
+	var m: Moth = _m[i]
+	m.state = AWAY
+	m.gone = _rng.randf_range(6.0, 14.0)
+	m.dive = 0.0
+	eaten += 1
+	_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * 0.0001), m.pos + Vector3.DOWN * 50.0))
+
+## A moth that hears the bat close folds and drops (once per stoop).
+func dodge(i: int, bat_pos: Vector3) -> void:
+	var m: Moth = _m[i]
+	if m.dive > 0.0 or _rng.randf() > 0.06:
+		return
+	var away := m.pos - bat_pos
+	away.y = 0.0
+	m.vel = away.normalized() * 0.6 + Vector3.DOWN * 1.2
+	m.dive = _rng.randf_range(0.35, 0.6)
+	m.state = CIRCLE
+	dodges += 1
+
 func _leave(m: Moth, c: Vector3) -> void:
 	var out := m.pos - c
 	out.y = 0.0
@@ -165,6 +215,14 @@ func _step(m: Moth, c: Vector3, dt: float, drift: Vector3) -> void:
 				m.state = AWAY
 				return
 		CIRCLE, BUMP:
+			if m.dive > 0.0:
+				# folded and falling, a jink at the bottom, then back up to the light
+				m.dive -= dt
+				m.vel.y -= 5.0 * dt
+				m.vel *= 1.0 - dt * 1.2
+				m.pos += m.vel * dt
+				m.basis = Basis.looking_at(m.vel.normalized() if m.vel.length() > 0.05 else Vector3.DOWN, Vector3.FORWARD).orthonormalized()
+				return
 			var rel := m.pos - c
 			var rh := Vector3(rel.x, 0.0, rel.z)
 			var d := maxf(rh.length(), 0.001)

@@ -834,6 +834,20 @@ func _ready() -> void:
 			cp = at + o * 7.0 + sd * 4.5
 			cp.y = terrain.height_at(cp.x, cp.z) + 1.7
 			tgt = at + o * 0.5 + Vector3.UP * 1.2
+		elif "bat" in args:
+			# under the lantern looking up past it: the bat crossing the light a metre out,
+			# its full span, the candle glowing through its wings
+			cp = lc + o * 2.0 + sd * 0.9
+			cp.y = lc.y - 0.6
+			tgt = lc + Vector3.UP * 0.25
+			var b := lp.bat
+			var to_cam := (cp - lc).normalized()
+			b.global_position = lc + to_cam * 0.75 + Vector3.UP * 0.3 + to_cam.cross(Vector3.UP).normalized() * 0.18
+			# flying away from the lens over the light: the whole span shows from behind-below
+			var fly := Vector3(-to_cam.x, 0.12, -to_cam.z).normalized()
+			b.basis = Basis.looking_at(fly, Vector3.UP).rotated(fly, -0.3)
+			b.state = Bat.PATROL
+			b.hold = true
 		elif "moths" in args:
 			# close under the lantern: the moths looping round the panes, the post face beside
 			cp = lc + o * 0.95 + sd * 0.75
