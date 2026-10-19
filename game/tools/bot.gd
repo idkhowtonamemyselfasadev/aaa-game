@@ -5,7 +5,7 @@ extends Node
 
 const ROUTES := {
 	# walk a loop across the vale: proves terrain collision, slopes and stamina work
-	"walk": [Vector2(0, 0), Vector2(40, 10), Vector2(60, -40), Vector2(0, -60), Vector2(-50, -10), Vector2(0, 0)],
+	"walk": [Vector2(0, 0), Vector2(40, 10), Vector2(60, -40), Vector2(0, -60), Vector2(-50, -10), Vector2(-24, -12), Vector2(0, 0)],   # (round the south of the white cottage)
 	# climb the eastern ridge with sprint+jump: proves steep slopes are walkable up to floor_max_angle
 	"ridge": [Vector2(0, 0), Vector2(120, 120), Vector2(200, 200)],
 	# stand in the meadow and chain the Ward light string, then wait for the staff to be slung

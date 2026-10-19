@@ -56,7 +56,22 @@ void fragment() {
 	float splash = 1.0 - smoothstep(0.0, 0.45 + 0.35 * fbm(wp * vec3(2.5, 0.4, 2.5) + 1.0), ab);
 	vec3 grimec = mix(vec3(0.36, 0.34, 0.29), lime_algae, smoothstep(0.4, 0.65, fbm(wp * 4.0 + 2.0)));
 	lwc = mix(lwc, grimec * (0.85 + 0.3 * coat), splash * 0.8);
-	col = mix(col, lwc * 0.94, wash);    // a touch darker: the joint lies a little back in shade
+	// on the white cottage the lime core stands a hair proud of the stone faces, so it IS the
+	// wall's skin over the sunk stones: the same small flaked patches as masonry a = 4 (the
+	// rubble showing grey through), and a soft trowelled undulation instead of a flat plane
+	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12 - smoothstep(1.0, 2.2, ab) * 0.06;
+	float flake = smoothstep(0.71, 0.735, fn) * wash;
+	float rim = smoothstep(0.69, 0.71, fn) * (1.0 - flake) * wash;
+	vec3 under = vec3(0.45, 0.43, 0.39) * (0.85 + 0.3 * vn(wp * 30.0));
+	lwc = mix(lwc * (1.0 - rim * 0.18), under, flake);
+	col = mix(col, lwc, wash);
+	float bump = fbm(wp * 6.0 + 4.0);
+	vec3 e = vec3(0.01, 0.0, 0.0);
+	vec3 gb = vec3(fbm((wp + e.xyy) * 6.0 + 4.0), fbm((wp + e.yxy) * 6.0 + 4.0), fbm((wp + e.yyx) * 6.0 + 4.0)) - bump;
+	gb /= 0.01;
+	vec3 nn = normalize(wn);
+	vec3 pn = normalize(nn - (gb - nn * dot(gb, nn)) * 0.012 * wash);
+	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	float rough = 0.95;
 	weather_wetten(col, rough, 0.9);
 	ALBEDO = col * v_cloud;

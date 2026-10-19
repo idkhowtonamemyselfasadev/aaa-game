@@ -232,7 +232,9 @@ func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
 	if limewash:
-		size.z = T - 0.03      # lime laid on thick fills the joints most of the way to the faces
+		# coats laid on thick over the rubble: the lime stands ~6 mm proud of the stones' mean
+		# face, so most of them sink under it and only the proud crowns show as soft bumps
+		size.z = T + 0.012
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
 ## Place one wall stone: wall-local (along, centre height) -> cottage local.
@@ -324,7 +326,7 @@ func _walls() -> void:
 		for side in [-1.0, 1.0]:
 			var zc: float = side * wdep * 0.25
 			var c := Vector3(gx * (wlen * 0.5 - T * 0.5), floor_y + roof_under(zc) - 0.15 / cos(PITCH), zc)
-			_mortar.append(Transform3D(Basis(Vector3.RIGHT, PITCH * side) * Basis.from_scale(Vector3(T - 0.03, 0.3, run)), c))
+			_mortar.append(Transform3D(Basis(Vector3.RIGHT, PITCH * side) * Basis.from_scale(Vector3(T + 0.012 if limewash else T - 0.03, 0.3, run)), c))
 
 func _chimney() -> void:
 	var x0 := -wlen * 0.5
@@ -334,7 +336,9 @@ func _chimney() -> void:
 	while y < top:
 		var h := _course_h()
 		# two stones a course, the joint swapping sides each course
-		_mortar.append(Transform3D(Basis.from_scale(Vector3(STACK_W - 0.07, h, 0.93)), Vector3(x0 + STACK_W * 0.5, y + h * 0.5, 0.0)))
+		# (limewashed: the lime skin stands a hair proud of the stones, as on the walls)
+		var core := Vector3(STACK_W + 0.012, h, 1.012) if limewash else Vector3(STACK_W - 0.07, h, 0.93)
+		_mortar.append(Transform3D(Basis.from_scale(core), Vector3(x0 + STACK_W * 0.5, y + h * 0.5, 0.0)))
 		var cut := 0.55 if k % 2 == 0 else 0.45
 		var zs := [-0.5, -0.5 + cut, 0.5]
 		for i in 2:

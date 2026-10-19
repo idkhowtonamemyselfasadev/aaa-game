@@ -157,8 +157,16 @@ void fragment() {
 	vec3 lwc = limewash * (0.9 + 0.12 * coat) * (0.97 + 0.05 * vn(wp * 90.0));
 	lwc = mix(lwc, lwc * vec3(0.97, 0.97, 0.93), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));   // old coats yellowed
 	// flaked back to the stone in ragged patches, more toward the foot and on the arrises
-	float flake = smoothstep(0.66, 0.69, fbm(wp * 2.2 + 13.0) + (1.0 - smoothstep(0.0, 1.0, ab)) * 0.1 + edge * 0.06);
-	vec3 lcol = mix(lwc, col * 0.9, flake * 0.9);
+	// (small, and mostly low: big patches up the wall read as dark holes in the coat)
+	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12 + edge * 0.05
+	         - smoothstep(1.0, 2.2, ab) * 0.06;
+	float flake = smoothstep(0.71, 0.735, fn);
+	// what shows is the stone under old coats: a warm pale grey with lime left in its pores,
+	// the bare stone's moss and damp barely there; the broken coat's edge casts a thin shade
+	vec3 under = mix(vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.05, 1.0, 0.92), vec3(0.47, 0.44, 0.39), 0.6);
+	under = mix(under, lwc * 0.85, 0.3 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
+	float rim = smoothstep(0.69, 0.71, fn) * (1.0 - flake);
+	vec3 lcol = mix(lwc * (1.0 - rim * 0.18), under, flake);
 	// rain runs down from the eaves and under the sills: soft grey streaks
 	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
 	lcol *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));

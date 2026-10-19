@@ -27,6 +27,9 @@ func _ready() -> void:
 	if args.size() > 3:
 		world.time_of_day = float(args[3])
 	await get_tree().process_frame
+	# (the frame above can resolve before the world's _process: without this the lenses that
+	# read the sun -- `stonehouse ... sunny` -- aimed by the scene's default 17.25 h sun)
+	world._apply_time()
 	var player: Player = world.get_node("Player")
 	var terrain: Terrain = world.get_node("Terrain")
 	var cam: Camera3D = player.camera
