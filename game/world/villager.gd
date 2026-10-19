@@ -23,9 +23,11 @@ extends CharacterBody3D
 ## cottage's lamp burns only while she is indoors (WhiteCottage._lit_now).
 ## In reach the hero can speak to her (interact): the first time she introduces herself, after
 ## that each press gets a line for what she is about; she holds still facing him while it shows
-## (sat on the bench she answers from where she sits).
+## (sat on the bench she answers from where she sits). Out on the bench of an evening she
+## hums to herself, a phrase every ten seconds or so, and stops while the hero is near.
 
 signal door(at: Vector3)          # the cottage door opened or shut behind her (Foley)
+signal hummed(at: Vector3)        # a phrase hummed to herself on the bench of an evening (Foley)
 
 enum { WALK, STAND, SIT, IN }
 
@@ -119,6 +121,8 @@ var warps := 0
 var stuck_t := 0.0
 var named := false               # the HUD has named her
 var talks := 0                   # lines spoken to the hero (bots)
+var hums := 0                    # phrases hummed on the bench (bots)
+var _hum_t := 3.0                # s until the next phrase
 var last_line := ""
 var talking := 0.0               # > 0 while her line is on screen: she holds still, facing him
 var _intro_i := 0
@@ -453,6 +457,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	_update_work(delta)
+	_update_hum(delta)
 	if feed != null:
 		feed.update(delta, state == STAND and activity == "feed" and not noticing, activity == "feed" and state != IN)
 	_update_light(delta)
@@ -593,6 +598,16 @@ func _update_work(delta: float) -> void:
 	else:
 		stoops += 1
 		_stoop_t = _rng.randf_range(2.5, 5.0) if activity == "wood" else _rng.randf_range(4.0, 8.0)
+
+func _update_hum(delta: float) -> void:
+	if state != SIT or activity != "evening" or sit < 0.95 or noticing or talking > 0.0:
+		_hum_t = maxf(_hum_t, 2.5)
+		return
+	_hum_t -= delta
+	if _hum_t <= 0.0:
+		hums += 1
+		hummed.emit(global_position + Vector3.UP * 1.2)
+		_hum_t = _rng.randf_range(8.0, 15.0)
 
 ## The pail hangs plumb from her right hand by its bail, turned across her stride; taken up,
 ## it swings over from where it stood. Bent to the butt it goes in over the rim.

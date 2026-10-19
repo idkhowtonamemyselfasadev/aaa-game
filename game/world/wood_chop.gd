@@ -8,6 +8,7 @@ extends Node3D
 ## holds the axe in her hands while she is at the block.
 
 signal chopped(at: Vector3, split: bool)
+signal heaved(at: Vector3)        # her breath driven out as the axe starts down (Foley)
 
 const ROUND_R := 0.12
 const ROUND_LEN := 0.34
@@ -30,6 +31,7 @@ var axe: Axe
 var block_axe: Node3D
 var splits := 0                  # rounds split (bots)
 var swings := 0                  # blows struck (bots)
+var heaves := 0                  # breaths pushed out on the downstroke (bots)
 var holding := false             # the axe in her hands (else bitten into the block)
 var bend := 0.0                  # 0 upright .. 1 stooped to the logs
 var lift := 0.0                  # the swing pose, see the class note
@@ -181,6 +183,10 @@ func _step(delta: float) -> void:
 	elif t < T_STRIKE:
 		lift = 1.0
 		theta = TH_TOP
+		if t0 < T_STRIKE - 0.05 and t >= T_STRIKE - 0.05 and villager != null:
+			# timed so the "hah" peaks as the bit lands
+			heaves += 1
+			heaved.emit(villager.global_position + Vector3.UP * 1.5)
 	elif t < T_HIT:
 		var u := (t - T_STRIKE) / (T_HIT - T_STRIKE)
 		lift = 1.0 - 2.0 * u * u

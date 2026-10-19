@@ -3956,6 +3956,13 @@ func _villager_test() -> void:
 	print("BOT villager evening: %s sit %.2f; lantern %.2f" % [v.activity, v.sit, lp.lit])
 	if v.activity != "evening" or v.sit < 0.9 or lp.lit < 0.95:
 		return _combat_done(false, "no evening on the bench")
+	var h0 := v.hums
+	for i in 1500:
+		_world.time_of_day = 20.0
+		await get_tree().physics_frame
+	print("BOT villager hums on the bench: %d (heard %d)" % [v.hums - h0, _world.foley.played.get("hum", 0)])
+	if v.hums - h0 < 1 or _world.foley.played.get("hum", 0) < 1:
+		return _combat_done(false, "she does not hum on the bench")
 	_world.time_of_day = 20.8
 	await _ticks(600)
 	print("BOT villager night: %s visible %s gone in %d, warps %d" % [v.activity, v.visible, v.goings_in, v.warps])
@@ -4027,6 +4034,9 @@ func _chop_test() -> void:
 		return _combat_done(false, "halves hang in the air or the axe stayed in the block")
 	if foley.played.get("chop", 0) < 1:
 		return _combat_done(false, "no chop heard")
+	print("BOT chop heaves: %d for %d swings, grunts heard %d" % [c.heaves, c.swings, foley.played.get("grunt", 0)])
+	if c.heaves < c.swings or foley.played.get("grunt", 0) < 1:
+		return _combat_done(false, "no breath on the heave")
 	_world.time_of_day = 12.1
 	await _ticks(400)
 	print("BOT chop after: %s holding %s, block axe shown %s" % [v.activity, c.holding, c.block_axe.visible])

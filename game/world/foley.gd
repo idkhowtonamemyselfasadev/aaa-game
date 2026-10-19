@@ -54,6 +54,8 @@ func _ready() -> void:
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
 	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
 	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
+	_s["grunt"] = [_make_grunt(1.0), _make_grunt(1.05), _make_grunt(0.95)]
+	_s["hum"] = [_make_hum(1.0, 0), _make_hum(0.97, 1), _make_hum(1.02, 2)]
 	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
@@ -147,9 +149,10 @@ func hook_gate(g: Node) -> void:
 	g.creaked.connect(func(at: Vector3) -> void: _play("creak", at, -9.0))
 	g.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-14.0, -3.0, pw), 0.72))
 
-## Edda at the block (the bite and crack of a round splitting, or a dull thud as the bit
+## Edda at the block (her breath driven out in a short "hah" as the axe comes down, the bite and crack of a round splitting, or a dull thud as the bit
 ## sticks) and at her cottage door (a low, short creak of the strap hinges and the wooden
-## latch dropping into its keeper as it shuts behind her).
+## latch dropping into its keeper as it shuts behind her), and humming to herself on the
+## bench of an evening.
 func hook_villager(v: Node) -> void:
 	if v == null:
 		return
@@ -164,6 +167,10 @@ func hook_villager(v: Node) -> void:
 			# the fan pattering down on the yard over the wall
 			_pending.append([0.5, "grain", at + (v.get("body") as Node3D).global_basis.z * 2.2, -15.0, 1.25]))
 		fd.called.connect(func(at: Vector3) -> void: _play("call", at, -6.0, _rng.randf_range(0.97, 1.03)))
+	if c != null and c.has_signal("heaved"):
+		c.heaved.connect(func(at: Vector3) -> void: _play("grunt", at, -10.0, _rng.randf_range(0.96, 1.04)))
+	if v.has_signal("hummed"):
+		v.hummed.connect(func(at: Vector3) -> void: _play("hum", at, -14.0))
 	if v.has_signal("door"):
 		v.door.connect(func(at: Vector3) -> void:
 			_play("creak", at, -15.0, 0.62)
@@ -448,6 +455,63 @@ func _make_call(pt: float, count: int) -> AudioStreamWAV:
 			if kc + i < out.size():
 				out[kc + i] += (_rng.randf() * 2.0 - 1.0) * 0.25 * exp(-float(i) / (0.002 * RATE))
 	return _wav(out, 0.8)
+
+## Edda's effort at the block as the axe comes down: a breath pushed out through an open
+## throat ("hah") -- a puff of aspiration, then a short, low, roughened vowel that drops in
+## pitch and is cut off as the bit lands.
+func _make_grunt(pt: float) -> AudioStreamWAV:
+	var pre := int(0.05 * RATE)
+	var y := _voice(0.22,
+		func(k: float) -> float: return pt * lerpf(250.0, 175.0, pow(k, 0.8)),
+		func(k: float) -> float: return smoothstep(0.0, 0.12, k) * exp(-maxf(k - 0.25, 0.0) * 5.0) * (1.0 - smoothstep(0.85, 1.0, k)),
+		[[680.0 * pt, 5.0, 1.0], [1180.0 * pt, 6.0, 0.45], [2750.0 * pt, 8.0, 0.07]], 0.4, 0.25)
+	var out := PackedFloat32Array()
+	out.resize(pre + y.size())
+	# the "h": lowpassed breath noise rising into the vowel
+	var lo := 0.0
+	for i in pre + int(0.06 * RATE):
+		lo += 0.18 * ((_rng.randf() * 2.0 - 1.0) - lo)
+		var k := float(i) / pre
+		out[i] += lo * 0.6 * smoothstep(0.0, 1.0, k) * (1.0 - smoothstep(1.0, 2.2, k))
+	for i in y.size():
+		out[pre + i] += y[i]
+	return _wav(out, 0.6)
+
+## Edda humming on the bench: a closed-mouth "mm" (one low nasal formant, the upper ones
+## nearly gone) wandering through a slow folk phrase -- notes slurred into each other, a
+## gentle vibrato coming in as each is held, a soft breath between the two halves.
+func _make_hum(pt: float, tune: int) -> AudioStreamWAV:
+	var tunes := [
+		[[0, 0.5], [2, 0.35], [3, 0.7], [2, 0.35], [0, 0.4], [-2, 0.9]],
+		[[-2, 0.4], [0, 0.4], [3, 0.5], [5, 0.8], [3, 0.4], [2, 0.4], [0, 1.0]],
+		[[3, 0.6], [2, 0.3], [0, 0.4], [2, 0.6], [-2, 0.5], [0, 1.1]],
+	]
+	var notes: Array = tunes[tune % tunes.size()]
+	var total := 0.0
+	for n: Array in notes:
+		total += n[1]
+	var base := 205.0 * pt
+	var pitch := func(k: float) -> float:
+		var t := k * total
+		var at := 0.0
+		for i in notes.size():
+			var d: float = notes[i][1]
+			if t < at + d or i == notes.size() - 1:
+				var u := clampf((t - at) / d, 0.0, 1.0)
+				var prev: float = notes[maxi(i - 1, 0)][0]
+				# slur up from the last note over the first ~70 ms, then vibrato as it holds
+				var st := lerpf(prev, float(notes[i][0]), smoothstep(0.0, minf(0.07 / d, 0.5), u))
+				var vib := 0.18 * smoothstep(0.3, 0.8, u) * sin(TAU * 5.2 * t)
+				return base * pow(2.0, (st + vib) / 12.0)
+			at += d
+		return base
+	var env := func(k: float) -> float:
+		var t := k * total
+		var half := total * 0.5
+		return smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(total - 0.5, total, t)) * (1.0 - 0.6 * exp(-pow((t - half) / 0.06, 2.0)))
+	var x := _voice(total, pitch, env,
+		[[250.0 * pt, 4.0, 1.0], [1050.0, 6.0, 0.06], [2300.0, 8.0, 0.02]], 0.03, 0.0)
+	return _wav(x, 0.55)
 
 ## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
 ## uneven train of grinding clicks that runs together into a rising, wavering squeal and
