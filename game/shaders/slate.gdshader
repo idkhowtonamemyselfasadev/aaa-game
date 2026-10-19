@@ -14,7 +14,7 @@ uniform vec3 slate_blue : source_color = vec3(0.2, 0.22, 0.25);
 uniform vec3 slate_purple : source_color = vec3(0.25, 0.21, 0.24);
 uniform vec3 slate_green : source_color = vec3(0.23, 0.25, 0.23);
 uniform vec3 slate_pale : source_color = vec3(0.36, 0.37, 0.38);
-uniform vec3 lichen_y : source_color = vec3(0.66, 0.6, 0.3);
+uniform vec3 lichen_y : source_color = vec3(0.6, 0.58, 0.44);
 uniform vec3 lichen_g : source_color = vec3(0.55, 0.57, 0.52);
 uniform vec3 moss : source_color = vec3(0.3, 0.33, 0.13);
 
@@ -78,7 +78,9 @@ void fragment() {
 	float wetzone = eave * (1.0 - ridge);
 	// sulphur lichen: few broad soft rosettes (a coarse patch field gates a finer edge)
 	float ros = fbm(wp * 2.6 + 21.0) + (fbm(wp * 9.0 + 4.0) - 0.5) * 0.12;
-	float ly = smoothstep(0.68 - wetzone * 0.1, 0.76 - wetzone * 0.1, ros) * (1.0 - side) * 0.8;
+	// (a coarse field over the whole slope breaks up the bands along the slate tails)
+	float colony = smoothstep(0.42, 0.62, fbm(wp * 0.7 + 33.0));
+	float ly = smoothstep(0.68 - wetzone * 0.1, 0.76 - wetzone * 0.1, ros) * (1.0 - side) * 0.8 * colony;
 	float lg = smoothstep(0.64, 0.69, fbm(wp * 11.0 + 7.0)) * (1.0 - side) * mix(0.4, 1.0, wetzone);
 	col = mix(col, lichen_g, lg * 0.7);
 	col = mix(col, lichen_y * mix(0.9, 1.02, vn(wp * 14.0)), ly * 0.75);

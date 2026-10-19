@@ -301,7 +301,10 @@ func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
 ## fracture planes cut in at `cut0`..`cut1` from the centre; with `rel` those are fractions
 ## of the box's reach along the plane normal, so a slanted cut only nicks a corner
 ## (StoneCottage's squarer coursed rubble); `ncut` is the range of how many planes.
-static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false, ncut := Vector2i(3, 5)) -> ArrayMesh:
+## `crisp`: the normals are smoothed only within each split plane (the original face or a
+## fracture cut), so the arrises between planes stay sharp and the stone reads as split
+## rather than pillowed.
+static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false, ncut := Vector2i(3, 5), crisp := false) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = sd + v * 7
 	n.frequency = 2.2
@@ -314,8 +317,8 @@ static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07
 		var reach := 0.5 * (absf(cn.x) + absf(cn.y) + absf(cn.z)) if rel else 1.0
 		cuts.append([cn, r.randf_range(cut0, cut1) * reach])
 	var div := 7
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# triangles as [position, colour, plane id] x 3
+	var tris := []
 	for axis in 3:
 		for sgn in [-1.0, 1.0]:
 			var u_ax := (axis + 1) % 3
@@ -331,7 +334,7 @@ static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07
 					p[u_ax] = float(iu) / div - 0.5
 					p[v_ax] = float(iv) / div - 0.5
 					crow.append(Color(clampf(minf(0.5 - absf(p.x), 0.5 - absf(p.y)) / 0.25, 0.0, 1.0), 0, 0))
-					row.append(_shape(p, n, cuts, rad, lump))
+					row.append(_shape(p, n, cuts, rad, lump, axis * 2 + int(sgn > 0.0)))
 				grid.append(row)
 				cols.append(crow)
 			var fn := Vector3.ZERO
@@ -340,18 +343,51 @@ static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07
 				for iv in div:
 					var q := [grid[iu][iv], grid[iu + 1][iv], grid[iu + 1][iv + 1], grid[iu][iv + 1]]
 					var c := [cols[iu][iv], cols[iu + 1][iv], cols[iu + 1][iv + 1], cols[iu][iv + 1]]
-					var order := [0, 2, 1, 0, 3, 2] if ((q[1] - q[0]).cross(q[2] - q[0])).dot(fn) > 0.0 else [0, 1, 2, 0, 2, 3]
-					for k in order:
-						st.set_color(c[k])
-						st.add_vertex(q[k])
-	st.index()
-	st.generate_normals()
+					var order := [0, 2, 1, 0, 3, 2] if ((q[1][0] - q[0][0]).cross(q[2][0] - q[0][0])).dot(fn) > 0.0 else [0, 1, 2, 0, 2, 3]
+					for t in 2:
+						var tri := []
+						for k in 3:
+							var i: int = order[t * 3 + k]
+							tri.append([q[i][0], c[i], q[i][1]])
+						tris.append(tri)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	if not crisp:
+		for tri in tris:
+			for vx in tri:
+				st.set_color(vx[1])
+				st.add_vertex(vx[0])
+		st.index()
+		st.generate_normals()
+	else:
+		# a triangle belongs to the plane most of its corners lie on; normals are summed per
+		# (corner, plane), so they blend across a plane but break at the arris between two
+		var acc := {}
+		var groups := []
+		for tri in tris:
+			var g: int = tri[0][2] if tri[0][2] == tri[1][2] or tri[0][2] == tri[2][2] else tri[1][2]
+			groups.append(g)
+			var a: Vector3 = tri[0][0]
+			# clockwise front faces: (c - a) x (b - a) points out
+			var fnm: Vector3 = (tri[2][0] - a).cross(tri[1][0] - a)
+			for vx in tri:
+				var key := [vx[0], g]
+				acc[key] = acc.get(key, Vector3.ZERO) + fnm
+		for t in tris.size():
+			for vx in tris[t]:
+				var nm: Vector3 = acc[[vx[0], groups[t]]]
+				st.set_normal(nm.normalized() if nm.length() > 1e-9 else Vector3.UP)
+				st.set_color(vx[1])
+				st.add_vertex(vx[0])
 	var mesh := st.commit()
 	if mat:
 		mesh.surface_set_material(0, mat)
 	return mesh
 
-static func _shape(p: Vector3, n: FastNoiseLite, cuts: Array, rad: float, lump: float) -> Vector3:
+## Returns [shaped point, plane id]: the id is the cube face it started on, or 6 + the
+## fracture cut that last sheared it flat.
+static func _shape(p: Vector3, n: FastNoiseLite, cuts: Array, rad: float, lump: float, face := 0) -> Array:
+	var id := face
 	var inner := Vector3.ONE * (0.5 - rad)
 	var q := p.clamp(-inner, inner)
 	var dd := p - q
@@ -360,14 +396,15 @@ static func _shape(p: Vector3, n: FastNoiseLite, cuts: Array, rad: float, lump: 
 	# lumps over the whole stone
 	p += p.normalized() * n.get_noise_3dv(p * 1.3) * lump
 	# fracture planes: shear the stone flat where it split off its neighbour
-	for c in cuts:
-		var cn: Vector3 = c[0]
-		var k: float = p.dot(cn) - c[1]
+	for ci in cuts.size():
+		var cn: Vector3 = cuts[ci][0]
+		var k: float = p.dot(cn) - cuts[ci][1]
 		if k > 0.0:
 			p -= cn * k
+			id = 6 + ci
 	# fine pitting / grain
 	p += p.normalized() * n.get_noise_3dv(p * 6.0 + Vector3(3, 7, 1)) * 0.012
-	return p
+	return [p, id]
 
 func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:
 	if items.is_empty():

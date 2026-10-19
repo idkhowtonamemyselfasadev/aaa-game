@@ -228,7 +228,22 @@ func _ready() -> void:
 		var o := ct.global_basis.z
 		var sd := ct.global_basis.x
 		var mid := ct.global_position + Vector3.UP * (ct.floor_y + 2.4)
-		if "close" in args:
+		if "sunny" in args:
+			# close three-quarter on whichever wall (front, back or a gable) the sun lights most
+			# at this hour, so the rubble is read in sunlight rather than flat sky shade
+			var to_sun: Vector3 = world.sun.global_basis.z
+			to_sun.y = 0.0
+			var faces := [[o, sd, StoneCottage.DEP], [-o, -sd, StoneCottage.DEP], [sd, -o, StoneCottage.LEN], [-sd, o, StoneCottage.LEN]]
+			var best: Array = faces[0]
+			for f in faces:
+				if (f[0] as Vector3).dot(to_sun) > (best[0] as Vector3).dot(to_sun):
+					best = f
+			var fo: Vector3 = best[0]
+			var fs: Vector3 = best[1]
+			var wc: Vector3 = ct.global_position + Vector3.UP * (ct.floor_y + 1.2) + fo * (float(best[2]) * 0.5)
+			SPOTS[spot] = [wc + fo * 3.4 + fs * 1.8 + Vector3.UP * 0.3, wc - fs * 0.6 + Vector3.UP * 0.2]
+			print("SHOT stonehouse sunny face %s (sun dot %.2f)" % [fo, fo.dot(to_sun.normalized())])
+		elif "close" in args:
 			SPOTS[spot] = [ct.door_gap + o * 3.2 + sd * 1.6 + Vector3.UP * 0.6, ct.door_gap + Vector3.UP * 1.3 - sd * 0.8]
 		else:
 			SPOTS[spot] = [mid + o * 12.0 + sd * 7.5 - Vector3.UP * 0.6, mid - Vector3.UP * 0.5]

@@ -96,8 +96,9 @@ func _ready() -> void:
 	var rubble: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# tight arrises and 5-8 fracture planes cut deep enough to take the corners off, so
-		# each face outline is a ragged polygon rather than a rounded tile
-		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.022, 0.03, 0.76, 0.95, true, Vector2i(6, 9)))
+		# each face outline is a ragged polygon rather than a rounded tile; little lump and crisp
+		# normals, so the faces read as flat split planes, not pillows
+		rubble.append(YardWall.stone_mesh(seed + 77, v, _ruins.material, 0.022, 0.012, 0.76, 0.95, true, Vector2i(6, 9), true))
 		_rubble.append([])
 	_walls()
 	_chimney()
@@ -182,7 +183,7 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 		if take > 0.0:
 			lens[-1] += take
 			lens[-2] -= take
-	_mortar_run(w, (a + b) * 0.5, y + h * 0.5, Vector3(b - a, h, T - 0.1))
+	_mortar_run(w, (a + b) * 0.5, y + h * 0.5, Vector3(b - a, h, T - 0.06))
 	s = a
 	for i in lens.size():
 		var ln: float = lens[i]
@@ -219,7 +220,8 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 			c = Vector3(-LEN * 0.5 + T * 0.5, cy, along)
 	return [dir, c]
 
-## The lime-mortar core behind a course run, recessed 5 cm from both faces.
+## The lime-mortar core behind a course run, recessed 3 cm from both faces (deeper sank the
+## joints into black shadow).
 func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
