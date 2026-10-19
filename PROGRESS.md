@@ -3683,6 +3683,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (07:00 10-19) `wh8` (15.0, wide): the white cottage's gable now ends cleanly under the
+  verge. Still wrong: the slate roof reads flat near-black from 15 m (needs a lighter, bluer
+  slate albedo with sky specular, and moss/lichen visible at range); the lime walls look dim
+  grey next to the sunlit grass. `wh7` (13.0 sunny) framed the eaves wall, not the gable:
+  slates read pillowy, window sill thin. The lime core dark-slot bug (04:50) is unchecked.
+  NEXT for the village: the lean-to/byre, then the villager.
 - (04:50 10-19) White cottage after the proud-lime pass (`wh5`, `wh6`): reads as limewashed
   rubble, but a few small DARK SLOTS remain in the coat (near the door-side corner, beside
   the window jambs) -- gaps in the lime core where course runs stop at cuts/quoins on
