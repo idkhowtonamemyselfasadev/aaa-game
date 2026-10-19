@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261014-0141-keep-floor.jpg",
-  "time": "2026-10-14T01:41:01Z",
-  "caption": "The ruined keep floor round the Shrine of Binding at dusk: warm beaten earth with gravel, sunk stone spalls, drifted oak leaves and tufts at the wall foot instead of a flat dark carpet; the leaves are still too even in size and a few white pebble specks pop.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0311-keep-floor-litter.jpg",
-  "time": "2026-10-14T03:11:03Z",
-  "caption": "Keep floor round the Shrine of Binding at dusk: warm dark beaten earth with big and small oak leaves heaped in drifts and dark twigs, the white pebble specks and stray daisies gone; the floor still reads a little too dark and flat in shade and the hero's face is lost under the hat.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0441-keep-ivy-range.jpg",
   "time": "2026-10-14T04:41:00Z",
   "caption": "The watchtower ruin from the approach in late-morning sun: ivy now climbs the keep's inner face in dark green mats seen through the breach; the outer face toward the camera is still bare and the near curtain blocks read a bit uniform.",
@@ -897,6 +885,18 @@
   "file": "20261019-0555-waterbutt.jpg",
   "time": "2026-10-19T05:55:32Z",
   "caption": "Water butt by the limewashed cottage: the rainwater now mirrors a cool sky with a dark far rim and floating leaves instead of a matte brown disc; the water is still a little flat and the shadowed yard is dim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0700-whitecottage-gable.jpg",
+  "time": "2026-10-19T07:00:00Z",
+  "caption": "White cottage on the green at 15.0 h: its gable now ends cleanly under the verge with no stepped stones showing, but the slate roof still reads flat near-black from 15 m and the lime walls look dim beside the sunlit grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0700-whitecottage-eaves.jpg",
+  "time": "2026-10-19T07:00:00Z",
+  "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
   "verdict": "fail"
  }
 ]
