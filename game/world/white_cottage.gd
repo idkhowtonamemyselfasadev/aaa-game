@@ -314,7 +314,7 @@ func _woodpile(gx: float, ox: float) -> void:
 				var b := Basis(Vector3.RIGHT, PI * 0.5) * Basis(Vector3.UP, ang)
 				b = Basis.from_euler(Vector3(_rng.randf_range(-0.06, 0.06), _rng.randf_range(-0.08, 0.08), 0)) * b
 				var c := Vector3(x + w * 0.5 + _rng.randf_range(-0.02, 0.02), yl + _rng.randf_range(-0.015, 0.015), zb + row * 0.38 + _rng.randf_range(-0.04, 0.05))
-				items[v].append([Transform3D(b.scaled(Vector3.ONE * _rng.randf_range(0.9, 1.1)), c), Color(_rng.randf(), _rng.randf_range(0.3, 0.8), float(_rng.randf() < 0.3), 1.0)])
+				items[v].append([Transform3D(b.scaled(Vector3.ONE * _rng.randf_range(0.9, 1.1)), c), Color(_rng.randf(), _rng.randf_range(0.1, 0.6), float(_rng.randf() < 0.3), 1.0)])
 				logs += 1
 			x += w
 		yl += 0.125
@@ -336,7 +336,7 @@ func _woodpile(gx: float, ox: float) -> void:
 	var by := _ground(bx, bz)
 	var block := _log_mesh(0.27, 0.48, 1.0, 50)
 	block.surface_set_material(0, outm)
-	_multimesh(block, [[Transform3D(Basis(Vector3.UP, 0.7), Vector3(bx, by + 0.2, bz)), Color(0.4, 0.85, 0.0, 1.0)]], "ChoppingBlock")
+	_multimesh(block, [[Transform3D(Basis(Vector3.UP, 0.7), Vector3(bx, by + 0.2, bz)), Color(0.4, 0.5, 0.0, 1.0)]], "ChoppingBlock")
 	_box(Vector3(bx, by + 0.2, bz), Vector3(0.5, 0.48, 0.5))
 	var top_y := by + 0.2 + 0.24
 	var helve := _beam(Vector3(bx + 0.28, top_y + 0.22, bz + 0.08), Vector3(0.75, 0.62, 0.2), 0.78, Vector3(0.035, 0.028, 1), 340.0, 0.0)

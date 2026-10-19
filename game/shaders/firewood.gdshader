@@ -51,16 +51,17 @@ void fragment() {
 	// split faces: torn fibres in long streaks along Y, a few dark heart streaks
 	float fib = fbm(sd * vec3(60.0, 2.5, 60.0));
 	float streak = fbm(sd * vec3(9.0, 0.6, 9.0));
-	vec3 fresh = mix(vec3(0.56, 0.43, 0.29), vec3(0.66, 0.53, 0.37), fib);
+	vec3 fresh = mix(vec3(0.5, 0.36, 0.22), vec3(0.6, 0.45, 0.29), fib);
 	fresh = mix(fresh, vec3(0.38, 0.27, 0.17), smoothstep(0.55, 0.75, streak) * 0.6);
 	vec3 grey = mix(vec3(0.4, 0.37, 0.33), vec3(0.52, 0.49, 0.44), fib);
-	vec3 wood = mix(fresh, grey, season);
+	vec3 wood = mix(fresh, grey, season * 0.6);
 	// sawn ends: growth rings round the axis, a darker heart, radial drying checks
 	float ring = sin(r * 380.0 + fbm(sd * 6.0) * 6.0) * 0.5 + 0.5;
 	float ang = atan(op.z, op.x);
 	float check = smoothstep(0.035, 0.0, abs(fract(ang * 1.2 + fbm(sd * 3.0) * 0.6) - 0.5)) * smoothstep(0.01, 0.04, r);
-	vec3 endc = mix(vec3(0.5, 0.38, 0.25), vec3(0.36, 0.25, 0.15), ring * 0.55 + smoothstep(0.05, 0.0, r) * 0.3);
-	endc = mix(endc, mix(vec3(0.42, 0.38, 0.33), vec3(0.3, 0.27, 0.24), ring * 0.4), season * 0.8);
+	vec3 endc = mix(vec3(0.46, 0.32, 0.19), vec3(0.3, 0.19, 0.1), ring * 0.55 + smoothstep(0.06, 0.0, r) * 0.35);
+	// only a little grey from the weather on the ends
+	endc = mix(endc, mix(vec3(0.38, 0.32, 0.26), vec3(0.27, 0.22, 0.17), ring * 0.4), season * 0.35);
 	endc = mix(endc, vec3(0.07, 0.05, 0.035), check * 0.85);
 	// bark: deep fissured ridges along Y (oak) or smoother with lenticels (b)
 	float fis = fbm(vec3(ang * 3.0, op.y * 2.2, cust.r * 9.0) * vec3(4.0, 3.0, 1.0));

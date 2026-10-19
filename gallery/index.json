@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261014-0441-keep-ivy-range.jpg",
-  "time": "2026-10-14T04:41:00Z",
-  "caption": "The watchtower ruin from the approach in late-morning sun: ivy now climbs the keep's inner face in dark green mats seen through the breach; the outer face toward the camera is still bare and the near curtain blocks read a bit uniform.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0441-keep-ivy-close.jpg",
-  "time": "2026-10-14T04:41:00Z",
-  "caption": "Inside the keep over the Shrine of Binding: dense shingled ivy with lobed dark leaves and light young tips climbs the inner wall; the mats stand off the stone a little like shrubs, read too evenly saturated green, and the hero's face is still lost under the hat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0550-keep-ivy-approach.jpg",
-  "time": "2026-10-14T05:50:00Z",
-  "caption": "The watchtower ruin from the approach slope at 10:30: ivy now climbs the outer face either side of the breach toward the camera; it still reads as separate vertical strands rather than spreading mats, and the keep stonework is brick-regular.",
-  "verdict": "fail"
- },
- {
-  "file": "20261014-0550-keep-ivy-pressed.jpg",
-  "time": "2026-10-14T05:50:00Z",
-  "caption": "Over the Shrine of Binding at 15:00: ivy leaves now lie pressed flatter to the inner wall with darker old leaves among them, but the pale young tips and yellowing leaves read like white flower specks, and the hero is a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-0650-keep-ivy-mats-range.jpg",
   "time": "2026-10-14T06:50:00Z",
   "caption": "Watchtower ruin from the approach slope at 10:30: the ivy now spreads into a wide dark mat over the keep face instead of thin vertical strands, but the keep stonework is still brick-regular and blocky.",
@@ -897,6 +873,18 @@
   "file": "20261019-0700-whitecottage-eaves.jpg",
   "time": "2026-10-19T07:00:00Z",
   "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0751-leanto-wide.jpg",
+  "time": "2026-10-19T07:51:15Z",
+  "caption": "The white cottage with its new limewashed woodshed lean-to off the east gable from the meadow: reads as a real outshut, but its outer wall is a plain white block from here and the tall grass hides the woodpile and chopping block.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0751-leanto-woodpile.jpg",
+  "time": "2026-10-19T07:51:15Z",
+  "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
   "verdict": "fail"
  }
 ]
