@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "waterbutt", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -111,6 +111,9 @@ func _ready() -> void:
 		_stonehouse_test()
 	if name == "whitehouse":
 		_stonehouse_test(_world.white_cottage)
+		return
+	if name == "waterbutt":
+		_waterbutt_test()
 		return
 	if name == "drywall":
 		_drywall_test()
@@ -2763,6 +2766,62 @@ func _stonehouse_test(c: StoneCottage = null) -> void:
 	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
 		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
 	_combat_done(true, "walked up the step and in at the door, the walls hold, windows light at dusk")
+
+func _waterbutt_test() -> void:
+	var p := _player
+	var c: WhiteCottage = _world.white_cottage
+	var b := c.butt
+	if b == null or b.get_node_or_null("Cask") == null or b.get_node_or_null("Hoops") == null:
+		return _combat_done(false, "no water butt by the white cottage")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var bp := b.global_position
+	var gy := terrain.height_at(bp.x, bp.z)
+	print("BOT waterbutt: butt foot %.2f m over the ground, level %.2f, bench seat %.2f m up" % [bp.y - gy, b.level, c.bench_seat.y - terrain.height_at(c.bench_seat.x, c.bench_seat.z)])
+	if absf(bp.y - gy - 0.13) > 0.12:
+		return _combat_done(false, "the butt floats or sinks")
+	var sh := c.bench_seat.y - terrain.height_at(c.bench_seat.x, c.bench_seat.z)
+	if sh < 0.3 or sh > 0.65:
+		return _combat_done(false, "bench seat at a silly height")
+	# walk at the butt from the green: it must stop the hero
+	var out := c.global_basis.z
+	var start := bp + out * 3.0
+	p.global_position = Vector3(start.x, terrain.height_at(start.x, start.z) + 0.5, start.z)
+	await _ticks(20)
+	var t := 0.0
+	var closest := 99.0
+	while t < 3.0:
+		var d := Vector2(bp.x - p.global_position.x, bp.z - p.global_position.z).normalized()
+		p.bot_input = d
+		await _ticks(6)
+		t += 0.1
+		closest = minf(closest, Vector2(bp.x - p.global_position.x, bp.z - p.global_position.z).length())
+	p.bot_input = Vector2.ZERO
+	print("BOT waterbutt: walked at it, closest %.2f m from its axis" % closest)
+	if closest < WaterButt.R_MID:
+		return _combat_done(false, "walked through the water butt")
+	# a downpour fills it, a dry spell lowers it
+	var weather: Weather = _world.weather
+	b.level = 0.5
+	weather.force(1.0)
+	b._set_level()
+	var y0 := b.surface_y()
+	await _ticks(600)
+	var wet_level := b.level
+	print("BOT waterbutt: rain %.2f, level 0.50 -> %.2f, surface %.3f -> %.3f m" % [weather.rain, wet_level, y0, b.surface_y()])
+	if wet_level < 0.53 or b.surface_y() <= y0:
+		return _combat_done(false, "the rain did not fill the butt")
+	b.level = 0.999
+	await _ticks(300)
+	print("BOT waterbutt: brim-full in the rain, spill %.2f" % b.spill)
+	if b.spill < 0.2:
+		return _combat_done(false, "a full butt does not run over")
+	weather.force(0.0)
+	b.level = 0.5
+	await _ticks(600)
+	print("BOT waterbutt: dry, level 0.50 -> %.3f, spill %.2f" % [b.level, b.spill])
+	if b.level >= 0.5 or b.spill > 0.05:
+		return _combat_done(false, "the butt does not settle in dry weather")
+	_combat_done(true, "the butt stands on its stones, blocks the hero, fills in rain, runs over when full")
 
 func _drywall_test() -> void:
 	var p := _player

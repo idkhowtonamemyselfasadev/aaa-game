@@ -244,6 +244,11 @@ func _ready() -> void:
 			var wc: Vector3 = ct.global_position + Vector3.UP * (ct.floor_y + 1.2) + fo * (float(best[2]) * 0.5)
 			SPOTS[spot] = [wc + fo * 3.4 + fs * 1.8 + Vector3.UP * 0.3, wc - fs * 0.6 + Vector3.UP * 0.2]
 			print("SHOT stonehouse sunny face %s (sun dot %.2f, to sun %s)" % [fo, fo.dot(to_sun.normalized()), world.sun.global_basis.z])
+		elif "butt" in args and ct is WhiteCottage:
+			# the water butt under the eaves drip, a little above it so the water shows, the
+			# bench and the door beyond along the wall
+			var bp: Vector3 = (ct as WhiteCottage).butt.global_position
+			SPOTS[spot] = [bp + o * 1.7 + sd * 0.9 + Vector3.UP * 2.0, bp + Vector3.UP * 0.5 - sd * 1.2]
 		elif "close" in args:
 			SPOTS[spot] = [ct.door_gap + o * 3.2 + sd * 1.6 + Vector3.UP * 0.6, ct.door_gap + Vector3.UP * 1.3 - sd * 0.8]
 		else:

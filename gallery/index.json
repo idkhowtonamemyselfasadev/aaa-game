@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261013-2141-bark-sun.jpg",
-  "time": "2026-10-13T21:41:00Z",
-  "caption": "Oak bole foot at 10 h front sun: bark now warm grey-brown instead of birch-white and the moss collar reads as soft olive cushions instead of a crackled-mud net; the cross cracks still look like short painted dashes and the bole is too smooth between them.",
-  "verdict": "fail"
- },
- {
-  "file": "20261013-2141-bark-backlit.jpg",
-  "time": "2026-10-13T21:41:00Z",
-  "caption": "Same oak at 15 h against the light: the bole keeps a brown form in the shade with more bounce fill and the moss underfoot only shows a faint cushion pattern; bark detail is lost in the shade and the crown is still dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261013-2315-shrine-seal.jpg",
   "time": "2026-10-13T23:15:00Z",
   "caption": "The carved Shrine of Binding lid on its worn two-step plinth in the ruined keep at dusk, sigil awake as the hero stands by; the whole lid face still hazes orange instead of only the cuts glowing, and the floor litter reads as a flat dark texture.",
@@ -897,6 +885,18 @@
   "file": "20261019-0246-whitecottage-gable.jpg",
   "time": "2026-10-19T02:46:13Z",
   "caption": "The white cottage's gable close up: the lime now runs unbroken over stones and joints, but flaked patches read as dark holes and the stepped gable courses showed below the verge (tabling added after this shot).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0414-waterbutt.jpg",
+  "time": "2026-10-19T04:14:52Z",
+  "caption": "The white cottage's new oak water butt under the eaves with the bench by the door: the cask reads as staved oak with rusted hoops, but the water surface is a matte grey-brown disc with no reflection and the limewash still reads as white brick blocks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-0414-waterbutt-rain.jpg",
+  "time": "2026-10-19T04:14:52Z",
+  "caption": "The water butt in rain at 14:00: grey overcast light suits the place, but no rain streaks or rings are visible at this range and the barrel's inside reads empty and dark.",
   "verdict": "fail"
  }
 ]
