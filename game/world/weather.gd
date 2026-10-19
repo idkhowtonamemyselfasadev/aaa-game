@@ -310,12 +310,16 @@ func _process(delta: float) -> void:
 	_push_globals()
 
 ## True where rain stands in a pool right now (mirrors the terrain shader's puddles: the
-## water climbs from the deepest hollows to every one deeper than `puddle_soaked`).
+## water climbs from the deepest hollows to every one deeper than `puddle_soaked`, and
+## stands in the trodden tracks' scuffed dips, YardGround.rut_pool).
 func pool_at(x: float, z: float) -> bool:
 	var terrain = get_parent().get("terrain")
 	if terrain == null:
 		return false
-	var fill := smoothstep(0.35, 1.0, wet_at(x, z))
+	var w := wet_at(x, z)
+	if YardGround.rut_pool(Vector3(x, terrain.height_at(x, z), z), w):
+		return true
+	var fill := smoothstep(0.35, 1.0, w)
 	if fill < 0.01:
 		return false
 	var thr := lerpf(0.85, 0.27, fill)

@@ -3149,7 +3149,73 @@ func _yardpath_test() -> void:
 				return _combat_done(false, "could not walk path %d to point %d (stuck at %s, local %s, start %s)" % [k, i, p.global_position, YardGround._to_local(p.global_position.x, p.global_position.z), YardGround._to_local(st.x, st.y)])
 		p.bot_input = Vector2.ZERO
 		print("BOT yardpath: walked path %d (%d legs) to %s" % [k, route.size() - 1, p.global_position])
-	return _combat_done(true, "garth mask baked, both yard paths and the four village tracks walkable end to end, the tracks fade out toward the meadow")
+	# after rain the tracks hold water in their scuffed dips: none when dry, a few after a
+	# shower, a chain of pools down the middle when soaked, never out on the sward
+	var tr: Terrain = _world.terrain
+	var cover := {}
+	for wet in [0.0, 0.5, 1.0]:
+		var r_on := 0
+		var r_n := 0
+		var r_off := 0
+		for t: Array in YardGround.TRACKS:
+			for i in t.size() - 1:
+				var ra: Vector2 = t[i][0]
+				var rc: Vector2 = t[i + 1][0]
+				for k in 20:
+					var rq := ra.lerp(rc, k / 20.0)
+					var nrm := (rc - ra).normalized().orthogonal()
+					if YardGround.rut_pool(Vector3(rq.x, tr.height_at(rq.x, rq.y), rq.y), wet):
+						r_on += 1
+					var ro := rq + nrm * 1.2
+					if YardGround.rut_pool(Vector3(ro.x, tr.height_at(ro.x, ro.y), ro.y), wet):
+						r_off += 1
+					r_n += 1
+		cover[wet] = float(r_on) / r_n
+		print("BOT yardpath: wet %.1f, %.0f %% of the track centre lines hold water, %d pools 1.2 m out on the sward" % [wet, cover[wet] * 100.0, r_off])
+		if r_off > 0:
+			return _combat_done(false, "track pools spill out onto the sward")
+	if cover[0.0] > 0.0 or cover[0.5] >= cover[1.0] or cover[1.0] < 0.12 or cover[1.0] > 0.7:
+		return _combat_done(false, "track pools do not fill with the rain (%s)" % cover)
+	# the hero splashes through them
+	var wx: Weather = _world.weather
+	wx.wet = 1.0
+	# the longest run of pool down a track's middle: walk it from a metre before to past it
+	var best := [0, Vector2.ZERO, Vector2.ZERO]
+	for t: Array in YardGround.TRACKS:
+		for i in t.size() - 1:
+			var run := 0
+			var first := Vector2.ZERO
+			for k in 41:
+				var pq: Vector2 = (t[i][0] as Vector2).lerp(t[i + 1][0], k / 40.0)
+				if wx.pool_at(pq.x, pq.y):
+					if run == 0:
+						first = pq
+					run += 1
+					if run > best[0]:
+						best = [run, first, pq]
+				else:
+					run = 0
+	if best[0] < 2:
+		return _combat_done(false, "no track pool to wade through when soaked")
+	var pa: Vector2 = best[1]
+	var pb: Vector2 = best[2]
+	var dir2 := (pb - pa).normalized()
+	var st2 := pa - dir2 * 1.5
+	var en2 := pb + dir2 * 1.0
+	var pool := Vector3(pa.x, tr.height_at(pa.x, pa.y), pa.y)
+	var w0 := wx.wade_splashes
+	p.global_position = Vector3(st2.x, tr.height_at(st2.x, st2.y) + 0.1, st2.y)
+	for i in 240:
+		if Vector2(p.global_position.x, p.global_position.z).distance_to(en2) < 0.3:
+			break
+		p.bot_input = _input_toward(Vector3(en2.x, 0.0, en2.y))
+		await _ticks(1)
+	p.bot_input = Vector2.ZERO
+	print("BOT yardpath: track pool %.1f m long at %s, %d wade splashes walking down it" % [pa.distance_to(pb), pool, wx.wade_splashes - w0])
+	wx.wet = 0.0
+	if wx.wade_splashes - w0 < 1:
+		return _combat_done(false, "hero does not splash in the track pool")
+	return _combat_done(true, "garth mask baked, both yard paths and the four village tracks walkable end to end, the tracks fade out toward the meadow, and hold pools after rain that the hero splashes through")
 
 func _hens_test() -> void:
 	var hn: Hens = _world.hens

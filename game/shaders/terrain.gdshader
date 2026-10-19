@@ -650,6 +650,7 @@ void fragment() {
 	// The village tracks across the green are the same beaten earth, narrower where fewer
 	// feet go, the sward closing in over them toward the meadow (wear b).
 	float bare = 0.0;
+	float rut = 0.0;   // where rain stands in the trodden tracks (low packed middle, puddles below)
 	vec2 yuv = (xz - yard_box.xy) / max(yard_box.z, 1e-3);
 	if (yard_box.z > 0.0 && all(greaterThan(yuv, vec2(0.0))) && all(lessThan(yuv, vec2(1.0)))) {
 		vec3 ym = texture(yard_mask, yuv).rgb;
@@ -673,6 +674,12 @@ void fragment() {
 			// the path: packed hard in the middle where the feet go, dust at its shoulders
 			float mid = 1.0 - smoothstep(0.0, hw * 0.7, td);
 			bc = mix(bc, mix(bc, packed * 0.95, 0.6), trackw * mid * (1.0 - garth));
+			// the feet wear the middle into a shallow trough, lowest in hollows scuffed out
+			// at intervals along it (where the feet land on a slope, the turn at a door): a
+			// 0..1 depth that the rain fills from the deepest dips outward
+			float scuff = fbm(wpos * vec3(0.9, 0.0, 0.9) + 43.0);
+			rut = trackw * (1.0 - smoothstep(0.0, hw * 0.85, td + rag * 0.25)) * (1.0 - garth)
+				* smoothstep(0.42, 0.72, scuff + (vnoise(wpos * 2.3 + 7.0) - 0.5) * 0.18) * wear;
 			// pea grit and small stones worked up out of the loam
 			vec4 g1 = grit(xz, 24.0, 97.0, 0.78);
 			vec4 g2 = grit(xz + 2.1, 11.0, 53.0, 0.9);
@@ -814,6 +821,16 @@ void fragment() {
 	col = mix(col, mix(col * 0.6, puddle_mud, depth) * 0.8, pud);
 	rough = mix(rough, 0.03, pud);
 	// rain gathers in the boot prints: little dark mirrors along the track
+	// rain holds in the trodden tracks: the scuffed dips first, then a chain of long thin
+	// pools down the packed middle with a slick of mud at their edges
+	float rthr = mix(0.95, 0.25, smoothstep(0.3, 0.9, wet_here));
+	float rpool = smoothstep(rthr, rthr + 0.08, rut + (micro - 0.5) * 0.05) * step(0.2, wet_here);
+	float rshore = smoothstep(rthr - 0.25, rthr, rut) * step(0.2, wet_here) * (1.0 - rpool);
+	col = mix(col, col * 0.62, rshore);
+	rough = mix(rough, 0.15, rshore * 0.9);
+	col = mix(col, mix(col * 0.55, puddle_mud, 0.6) * 0.75, rpool);
+	rough = mix(rough, 0.03, rpool);
+	pud = max(pud, rpool);
 	float hold = pr * smoothstep(0.25, 0.7, wet_here) * flat_w;
 	col = mix(col, col * 0.55, hold * 0.8);
 	rough = mix(rough, 0.05, hold);

@@ -182,3 +182,54 @@ static func publish() -> void:
 	RenderingServer.global_shader_parameter_set("yard_mask", mask)
 	RenderingServer.global_shader_parameter_set("yard_box", mask_box)
 	print("YardGround: %dx%d mask over %.1f m in %.0f ms" % [n, n, b.z, (Time.get_ticks_usec() - t0) / 1000.0])
+
+## The terrain shader's value noise, mirrored so the CPU can tell where its patterns fall.
+static func _fr(v: Vector3) -> Vector3:
+	return v - v.floor()
+
+static func _hash3(p: Vector3) -> float:
+	p = _fr(p * 0.3183099 + Vector3(0.1, 0.2, 0.3)) * 17.0
+	var r := p.x * p.y * p.z * (p.x + p.y + p.z)
+	return r - floorf(r)
+
+static func _vnoise(x: Vector3) -> float:
+	var i := x.floor()
+	var f := x - i
+	f = f * f * (Vector3.ONE * 3.0 - 2.0 * f)
+	return lerpf(lerpf(lerpf(_hash3(i), _hash3(i + Vector3(1, 0, 0)), f.x),
+			lerpf(_hash3(i + Vector3(0, 1, 0)), _hash3(i + Vector3(1, 1, 0)), f.x), f.y),
+		lerpf(lerpf(_hash3(i + Vector3(0, 0, 1)), _hash3(i + Vector3(1, 0, 1)), f.x),
+			lerpf(_hash3(i + Vector3(0, 1, 1)), _hash3(i + Vector3(1, 1, 1)), f.x), f.y), f.z)
+
+static func _fbm(p: Vector3) -> float:
+	var a := 0.5
+	var r := 0.0
+	for k in 4:
+		r += a * _vnoise(p)
+		p = p * 2.03 + Vector3.ONE * 7.1
+		a *= 0.5
+	return r
+
+## 0..1 depth of the trough the feet have worn down the middle of a track at world `w`
+## (mirrors `rut` in terrain.gdshader, without its fine ragged-edge noise): rain stands in
+## it from the deepest scuffed dips outward (see `rut_pool`).
+static func rut_at(w: Vector3) -> float:
+	var pw := path_wear(w.x, w.z)
+	if pw.x > 0.6:
+		return 0.0
+	if Hens.inside_yard(_to_local(w.x, w.z)):
+		return 0.0
+	var wear := smoothstep(0.05, 0.85, pw.y)
+	var hw := (0.34 + 0.12 * _vnoise(w * 0.7 + Vector3.ONE * 3.0)) * lerpf(0.55, 1.0, wear)
+	var trackw := 1.0 - smoothstep(hw * 0.55, hw * 1.35, pw.x)
+	var scuff := _fbm(Vector3(w.x * 0.9, 0.0, w.z * 0.9) + Vector3.ONE * 43.0)
+	return trackw * (1.0 - smoothstep(0.0, hw * 0.85, pw.x)) \
+		* smoothstep(0.42, 0.72, scuff + (_vnoise(w * 2.3 + Vector3.ONE * 7.0) - 0.5) * 0.18) * wear
+
+## True where rain stands in a track at world `w` with the ground this wet (the shader's
+## `rpool`: the water rises from the deepest dips as the ground soaks).
+static func rut_pool(w: Vector3, wet: float) -> bool:
+	if wet < 0.2:
+		return false
+	var rthr := lerpf(0.95, 0.25, smoothstep(0.3, 0.9, wet))
+	return rut_at(w) > rthr + 0.05

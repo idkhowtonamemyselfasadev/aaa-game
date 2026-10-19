@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261014-0900-keep-stone-beds-close.jpg",
-  "time": "2026-10-14T09:00:00Z",
-  "caption": "Inside the keep: warmer, per-stone varied masonry with dark open joints and soil in the low ones; plinth stones still slab-like and the hero a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-1000-keep-crown-mossy.jpg",
   "time": "2026-10-14T10:20:00Z",
   "caption": "The keep from the approach: the exposed course tops now weather dark and mossy, with no pale edges, and the crest is ragged with slumped stones; the wall-top grass is still too small to read and the low ring looks like neat stacked courses.",
@@ -897,6 +891,12 @@
   "file": "20261019-1203-villager-woodpile.jpg",
   "time": "2026-10-19T12:03:27Z",
   "caption": "Edda at the woodpile by the white cottage's lean-to in the morning; the house reads well but her bodice still shows the hero's grey armour plates and the hood swallows her face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1212-trackpools.jpg",
+  "time": "2026-10-19T12:12:11Z",
+  "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
   "verdict": "fail"
  }
 ]
