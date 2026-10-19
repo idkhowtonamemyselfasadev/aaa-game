@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261014-1223-curtain-stepped.jpg",
-  "time": "2026-10-14T12:23:45Z",
-  "caption": "The ruined curtain wall in front of the keep now steps up in stone-wide columns over a talus in the grass; it still reads as a neat stepped stack of pale-edged slabs rather than a tumbled wall.",
-  "verdict": "fail"
- },
- {
   "file": "20261014-1325-curtain-joint-grass.jpg",
   "time": "2026-10-14T13:25:00Z",
   "caption": "The curtain wall stub in front of the keep: its upper stones now sit out of true and grass sprouts from the low joints over a deeper talus; the courses still read as too regular and pale-edged at this range.",
@@ -891,6 +885,18 @@
   "file": "20261019-1359-edda-split.jpg",
   "time": "2026-10-19T13:59:48Z",
   "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1440-edda-pail.jpg",
+  "time": "2026-10-19T14:40:02Z",
+  "caption": "Edda at the water butt at 7 am with her pail hung from her right hand; the lens sits behind her so the pail barely reads, and her hair is a smooth blob.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-1440-edda-night.jpg",
+  "time": "2026-10-19T14:40:02Z",
+  "caption": "Edda's cottage at 21:20 with its lamp lit now that she is in; the door leaf stands open at night and the limewash reads flat blue-grey.",
   "verdict": "fail"
  }
 ]

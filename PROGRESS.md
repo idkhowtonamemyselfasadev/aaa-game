@@ -66,6 +66,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   Bots `villager` (pail carried + filled at 6.6 h, grip on her hand, set down by the butt by
   9 h, lamp in the window once in) and `whitehouse` (lamp 0 while she sits out at 19:54, 1 once
   in) pass. Shots `villager pail 60 7.0 fixfps`, `villager night 60 21.3 wide fixfps`.
+  Verdicts: `pail` FAIL -- the pail hangs at her right side but the water lens frames her
+  from behind (put the lens round to the green side of the butt so her front and the pail
+  show); `night` FAIL as Wukong -- warm lamps in both windows read well, but the door leaf
+  stands OPEN at night while she is in (shut it when she is in), limewash flat blue-grey.
 - 2026-10-19 11:00: **Edda, a villager with a day schedule** (`world/villager.gd`, `Villager`,
   built in `World` after the hens; DESIGN.md character list). The hero's rig + HeroGarb in her
   own palette (linen coif, rust madder kirtle to the ankles, brown shawl, no basket), Idle/Walk
