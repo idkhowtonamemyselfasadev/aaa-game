@@ -886,5 +886,17 @@
   "time": "2026-10-19T21:45:00Z",
   "caption": "The pipistrelle hanging head down under the white cottage's woodshed boards between the rafters at 17:30, wings wrapped; still wrong: its fur glows red-orange in the shade (night candle backlight too strong by day) so it reads as a blob, not a dark brown bat.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261019-2311-doorstones-white.jpg",
+  "time": "2026-10-19T23:11:10Z",
+  "caption": "Stepping stones outside the white cottage door: the slabs are laid on the worn track but read as dark blue-grey pillowed lumps in the house shade, not pale trodden flags.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261019-2311-doorstones-white-wide.jpg",
+  "time": "2026-10-19T23:11:10Z",
+  "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
+  "verdict": "fail"
  }
 ]

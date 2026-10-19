@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -132,6 +132,9 @@ func _ready() -> void:
 		return
 	if name == "yardpath":
 		_yardpath_test()
+		return
+	if name == "doorstones":
+		_doorstones_test()
 		return
 	if name == "villager":
 		_villager_test()
@@ -3183,6 +3186,45 @@ func _drywall_test() -> void:
 ## back eaves, go up the hen house ladder one at a time at dusk and come down it at dawn.
 ## The garth's bare earth and the worn path: mask baked, and the hero can walk each path
 ## end to end (door -> squeeze gap -> round the gable -> garth gate; door -> cart gateway).
+## The stepping stones at the doors: laid on the worn tracks, clear of the houses and walls,
+## a lip proud of the dirt (not buried, not floating), and the hero walks out over them.
+func _doorstones_test() -> void:
+	var p := _player
+	var ds: DoorStones = _world.door_stones
+	var tr: Terrain = _world.terrain
+	print("BOT doorstones: %d slabs" % ds.stone_count)
+	if ds.stone_count != 10:
+		return _combat_done(false, "expected 10 slabs, got %d" % ds.stone_count)
+	for q in ds.stones:
+		var g := tr.height_at(q.x, q.z)
+		var house := StoneCottage.inside(q.x, q.z, 0.3) or WhiteCottage.covers(q.x, q.z, 0.3) or Cottage.inside(q.x, q.z, 0.3)
+		print("BOT doorstones: slab %s lip %.3f worn %.2f house %s wall %s" % [q, q.y - g, YardGround.worn(q.x, q.z), house, YardWall.near(q.x, q.z, 0.3)])
+		if q.y - g < 0.0 or q.y - g > 0.09:
+			return _combat_done(false, "slab at %s sits %.3f off the ground" % [q, q.y - g])
+		if YardGround.worn(q.x, q.z) < 0.5:
+			return _combat_done(false, "slab at %s is off the worn track" % q)
+		if house or YardWall.near(q.x, q.z, 0.3) or DryWall.near(q.x, q.z, 0.3):
+			return _combat_done(false, "slab at %s is in a house or wall" % q)
+	# walk out of each door along its track, over the slabs, to a point 2.6 m out
+	for r: Array in DoorStones.runs():
+		var w: PackedVector2Array = r[0]
+		var st: Vector2 = DoorStones.along(w, 0.15)[0]
+		var to: Vector2 = DoorStones.along(w, 2.6)[0]
+		p.global_position = Vector3(st.x, tr.height_at(st.x, st.y) + 0.5, st.y)
+		await _ticks(20)
+		var t := 0.0
+		var mid: Vector2 = DoorStones.along(w, 1.3)[0]
+		for wp: Vector2 in [mid, to]:
+			while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.y).length() > 0.35 and t < 8.0:
+				p.bot_input = _input_toward(Vector3(wp.x, 0.0, wp.y))
+				await _ticks(1)
+				t += 0.017
+		p.bot_input = Vector2.ZERO
+		print("BOT doorstones: walked from %s to %s in %.1f s" % [st, p.global_position, t])
+		if t >= 8.0:
+			return _combat_done(false, "could not walk out over the slabs from %s" % st)
+	_combat_done(true, "door stones laid and walkable")
+
 func _yardpath_test() -> void:
 	var p := _player
 	var terrain: Terrain = _world.get_node("Terrain")

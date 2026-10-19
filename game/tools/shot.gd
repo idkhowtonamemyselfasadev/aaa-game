@@ -797,6 +797,20 @@ func _ready() -> void:
 		world.trample.frozen = true
 		SPOTS[spot] = [hc - fwd * 2.4 + side * 0.9, hc + fwd * 0.6 + side * 0.3]
 		print("SHOT hooves at %s, %d prints" % [hc, world.trample.active_hoofs()])
+	if spot == "doorstones":
+		# standing on a house's track a few metres out, looking down it over the stepping
+		# stones to the door (default the white cottage; "stone": the stone cottage,
+		# "timber": the timber house)
+		var k := 1 if not ("stone" in args or "timber" in args) else (0 if "stone" in args else 2)
+		var w: PackedVector2Array = DoorStones.runs()[k][0]
+		var far: Array = DoorStones.along(w, 3.3)
+		var q: Vector2 = far[0]
+		var side: Vector2 = (far[1] as Vector2).orthogonal() * 0.45
+		var cp := Vector3(q.x + side.x, 0.0, q.y + side.y)
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.8
+		var at: Vector2 = DoorStones.along(w, 0.6)[0]
+		SPOTS[spot] = [cp, Vector3(at.x, terrain.height_at(at.x, at.y) + 0.25, at.y)]
+		print("SHOT doorstones %d slabs" % world.door_stones.stone_count)
 	if spot == "cottage":
 		# Harrowmere's first house from the green: three-quarter on the door side and the
 		# chimney gable ("close": on the door and window; "back": the rear slope and chimney)
@@ -951,7 +965,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":
