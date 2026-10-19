@@ -33,6 +33,28 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- Session 2026-10-19 08:00 UTC:
+  - **Woodshed lean-to off the white cottage's east gable** (village item "a lean-to/byre").
+    `WhiteCottage._extras()` (new `StoneCottage._extras()` hook, called after `_roof()` so
+    its stones/slates/mortar go into the house's multimeshes): an outshut 2.3 m out by
+    3.2 m long (`LEAN_*` consts), walls 4 (outer, quoined both ends, up under an oak wall
+    plate) and 5 (back end wall, raked under the roof line) via `_wall_at` overrides and the
+    house's own `_course`, limewashed like the house; pent roof at 24 deg: an oak plate on
+    three stone corbels along the gable, 7 rafters showing at the open end, boards, graded
+    slates in broken bond, a lime fillet where it tucks under the gable, tarred barge
+    boards and fascia. Open at the green end. Inside: ~180 split logs (`_log_mesh`:
+    quarters/halves/thirds with sloping saw cuts, bark faces with radial normals) stacked
+    two deep against the end wall, a ragged top row; out front a chopping block (an elm
+    round) with an axe bitten into it, split logs, uncut rounds and ~40 chips round its
+    foot. New `shaders/firewood.gdshader` (object space: bark = faces pointing away from the
+    log axis, fissured oak or smooth lenticelled bark; split faces with torn fibres and
+    heart streaks, fresh tan to weathered grey; sawn ends with growth rings, a dark heart
+    and radial drying checks; the outside pieces wet in rain). Colliders: both walls, the
+    roof slope, the stack face, the block. `WhiteCottage.covers` / `outline` include it
+    (grass keeps off, deer steer round). Bot `leanto` (new, in bots.sh): built, 21 m clear
+    of trees/rocks and clear of the other houses, 2.66 m headroom at the open end, walk in
+    from the green, sprint at the outer wall and at the woodpile: both hold. PASS.
+    Shot lens: `tools/shots.sh "stonehouse <name> 60 10.5 white lean fixfps"`.
 - Session 2026-10-19 07:00 UTC:
   - **Bot `walk` passes again** (Known bug 04:50 10-19): the hero's face cloth top now sits
     6 mm lower (`HeroGarb._veil` base 1.935 -> 1.929, lower edge unchanged at 1.70), and the

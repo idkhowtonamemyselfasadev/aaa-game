@@ -252,6 +252,14 @@ func _ready() -> void:
 			# bench and the door beyond along the wall
 			var bp: Vector3 = (ct as WhiteCottage).butt.global_position
 			SPOTS[spot] = [bp + o * 1.7 + sd * 0.9 + Vector3.UP * 2.0, bp + Vector3.UP * 0.5 - sd * 1.2]
+		elif "lean" in args and ct is WhiteCottage:
+			# the woodshed lean-to off the east gable from the green, three-quarter on its
+			# open end: the woodpile inside, the chopping block and the axe out front
+			var gx := ct.wlen * 0.5
+			var lm := ct.to_global(Vector3(gx + 1.0, ct.floor_y + 1.1, 0.0))
+			var cp := ct.to_global(Vector3(gx + 4.6, 0.0, WhiteCottage.LEAN_Z + 4.4))
+			cp.y = terrain.height_at(cp.x, cp.z) + 1.55
+			SPOTS[spot] = [cp, lm]
 		elif "close" in args:
 			SPOTS[spot] = [ct.door_gap + o * 3.2 + sd * 1.6 + Vector3.UP * 0.6, ct.door_gap + Vector3.UP * 1.3 - sd * 0.8]
 		else:

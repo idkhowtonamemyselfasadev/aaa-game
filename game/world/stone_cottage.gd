@@ -111,6 +111,7 @@ func _ready() -> void:
 	_floor()
 	_openings()
 	_roof()
+	_extras()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
 		_multimesh(rubble[v], _rubble[v], "Rubble_%d" % v)
@@ -120,6 +121,11 @@ func _ready() -> void:
 	_colliders()
 	_build_smoke()
 	_build_lights()
+
+## Per-house additions laid before the stones and slates are committed (WhiteCottage's
+## lean-to): may call _course/_place_rubble/_slates/_mortar like the house itself.
+func _extras() -> void:
+	pass
 
 ## Floor level: a little over the highest ground under the footprint; the footings run down
 ## below the lowest.

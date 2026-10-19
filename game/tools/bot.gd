@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "waterbutt", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -111,6 +111,9 @@ func _ready() -> void:
 		_stonehouse_test()
 	if name == "whitehouse":
 		_stonehouse_test(_world.white_cottage)
+		return
+	if name == "leanto":
+		_leanto_test()
 		return
 	if name == "waterbutt":
 		_waterbutt_test()
@@ -2766,6 +2769,73 @@ func _stonehouse_test(c: StoneCottage = null) -> void:
 	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
 		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
 	_combat_done(true, "walked up the step and in at the door, the walls hold, windows light at dusk")
+
+func _leanto_test() -> void:
+	var p := _player
+	var c: WhiteCottage = _world.white_cottage
+	var terrain: Terrain = _world.get_node("Terrain")
+	print("BOT leanto: %d wall stones, %d logs, %d slates on the house+lean-to, floor %.2f" % [c.lean_stones, c.logs, c.slate_count, c.lean_floor])
+	if c.lean_stones < 60 or c.logs < 60 or c.get_node_or_null("ChoppingBlock") == null:
+		return _combat_done(false, "lean-to walls, woodpile or chopping block not built")
+	var gx := c.wlen * 0.5
+	var mid := c.to_global(Vector3(gx + (WhiteCottage.LEAN_D - StoneCottage.T) * 0.5, 0, 0))
+	var flora: Flora = _world.get_node("Flora")
+	var near := 99.0
+	for q in flora.tree_positions + flora.rock_positions:
+		near = minf(near, Vector2(q.x - mid.x, q.z - mid.z).length())
+	print("BOT leanto: nearest tree/rock %.1f m" % near)
+	if near < 3.5:
+		return _combat_done(false, "a tree or rock stands in the lean-to")
+	if StoneCottage.inside(mid.x, mid.z, 3.0) or Cottage.inside(mid.x, mid.z, 2.0) or YardWall.near(mid.x, mid.z, 2.0):
+		return _combat_done(false, "the lean-to runs into another house or the yard wall")
+	# headroom at the open end: the rafters must clear a walker
+	var head := c.lean_top(gx + 0.85) - WhiteCottage.RAFTER + c.floor_y - c.lean_floor
+	print("BOT leanto: headroom %.2f m in the middle of the open end" % head)
+	if head < 1.95:
+		return _combat_done(false, "no headroom under the lean-to roof")
+	# walk in from the green through the open end, to just in front of the woodpile
+	var front := c.to_global(Vector3(gx + 0.8, 0, WhiteCottage.LEAN_Z + 2.4))
+	p.global_position = Vector3(front.x, terrain.height_at(front.x, front.z) + 0.5, front.z)
+	await _ticks(20)
+	var inner := c.to_global(Vector3(gx + 0.8, 0, -0.05))
+	for wp in [c.to_global(Vector3(gx + 0.8, 0, WhiteCottage.LEAN_Z + 0.4)), inner]:
+		var t := 0.0
+		while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.z).length() > 0.45 and t < 12.0:
+			p.bot_input = Vector2(wp.x - p.global_position.x, wp.z - p.global_position.z).normalized()
+			await _ticks(6)
+			t += 0.1
+		print("BOT leanto reached %s in %.1f s" % [wp, t])
+		if t >= 12.0:
+			p.bot_input = Vector2.ZERO
+			return _combat_done(false, "could not walk into the lean-to (stuck at %s)" % c.to_local(p.global_position))
+	# sprint at the outer wall and at the woodpile's end wall from the middle: both hold
+	# (only a crossing in line with the wall counts; sliding out round the open end does not)
+	var lims := []
+	for dirl in [Vector3.RIGHT, Vector3.FORWARD]:
+		p.global_position = Vector3(inner.x, terrain.height_at(inner.x, inner.z) + 0.3, inner.z)
+		p.velocity = Vector3.ZERO
+		await _ticks(10)
+		var d: Vector3 = c.global_basis * dirl
+		var t2 := 0.0
+		var far := -99.0
+		while t2 < 2.0:
+			p.bot_input = Vector2(d.x, d.z).normalized()
+			p.bot_sprint = true
+			await _ticks(3)
+			t2 += 0.05
+			var l := c.to_local(p.global_position)
+			if (dirl.x > 0.5 and absf(l.z) < WhiteCottage.LEAN_Z - 0.4) or (dirl.x < 0.5 and l.x > gx + 0.3 and l.x < gx + WhiteCottage.LEAN_D - StoneCottage.T - 0.3):
+				far = maxf(far, l.dot(dirl))
+		lims.append(far)
+		p.bot_input = Vector2.ZERO
+		p.bot_sprint = false
+		await _ticks(10)
+	print("BOT leanto: ran at the outer wall to x %.2f (inner face %.2f), at the back to z %.2f (wall face %.2f)" % [lims[0], gx + WhiteCottage.LEAN_D - StoneCottage.T, -lims[1], -WhiteCottage.LEAN_Z + StoneCottage.T])
+	if lims[0] > gx + WhiteCottage.LEAN_D - StoneCottage.T + 0.05:
+		return _combat_done(false, "walked through the lean-to's outer wall")
+	if -lims[1] < -WhiteCottage.LEAN_Z - 0.05:
+		return _combat_done(false, "walked through the lean-to's end wall")
+	_combat_done(true, "lean-to built clear of trees and houses, walked in at its open end, its walls hold")
 
 func _waterbutt_test() -> void:
 	var p := _player
