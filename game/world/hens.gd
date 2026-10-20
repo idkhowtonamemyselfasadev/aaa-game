@@ -11,6 +11,10 @@ extends Node3D
 ##  - at dusk they gather at the foot of the hen house's ladder (HenHouse) and go up it one
 ##    at a time, into the house for the night; at first light they come down it again one
 ##    after another, the first out soonest.
+##  - Osric (Neighbour), whose hens they are, is no hero to them: they step smartly out of his
+##    road when he walks through the garth (a hurried few steps aside, no squawk), and while he
+##    stoops over the eggs or the scratched ground they drift over to peck round his boots
+##    at what he turns up;
 ##  - morning and afternoon Edda casts grain over the east wall (HenFeed -> `scatter`): the
 ##    grains lie where they fell, pale on the scratched earth, and the hens come running with
 ##    their wings half out and work through them one beak-length at a time, a peck for a
@@ -20,7 +24,8 @@ extends Node3D
 ## They stay inside the garth walls (a clamp to the yard's quadrilateral in the cottage's
 ## frame), keep apart from each other and never leave by the field gate.
 ## Procedural mesh (Herd's loft helpers), posed in hen.gdshader.
-## Bots read `hens` (dicts), `pecks`, `scratches`, `clucks`, `flees`, `walked`.
+## Bots read `hens` (dicts), `pecks`, `scratches`, `clucks`, `flees`, `walked`, `gave_way`,
+## `round_keeper`.
 
 signal clucked(at: Vector3)     # a soft cluck from one going about the yard
 signal squawked(at: Vector3)    # an alarm squawk from one put to flight
@@ -35,6 +40,8 @@ const ROOST_H := 19.4      # they go up to the back wall at dusk
 const RISE_H := 5.9        # and come down again at first light
 const RAIN_IN := 0.45      # rain this heavy sends them under the eaves
 const CLIMB_T := 2.6       # seconds up (or down) the ladder
+const GIVE_R := 0.95       # Osric walking this close (and coming on) moves one out of his road
+const ROUND_P := 0.55      # chance a bird's next potter takes it over to where he works
 ## The garth inside its walls in the cottage's frame (DryWall.RUNS_LOCAL pulled in ~0.6 m),
 ## counter-clockwise: east wall, back wall, west wall, the cottage's back wall.
 const YARD := [Vector2(3.3, -3.3), Vector2(4.0, -9.65), Vector2(-4.65, -10.05), Vector2(-3.3, -3.3)]
@@ -70,6 +77,12 @@ var grain: Array[Vector2] = []    # grains lying in the yard (local xz)
 var thrown := 0           # grains cast in (bots)
 var fed := 0              # grains eaten (bots)
 var at_wall := 0          # hens waiting at the east wall for the grain right now (bots)
+var gave_way := 0         # times one stepped out of Osric's road (bots)
+var round_keeper := 0     # hens within 2 m of Osric while he stoops at his work, right now (bots)
+var keeper: Node3D        # Osric (Neighbour), looked up lazily (built after the hens)
+var _keeper_l := Vector2(1e6, 1e6)   # where he is (local xz)
+var _keeper_v := Vector2.ZERO        # his walking velocity (local xz, m/s)
+var _keeper_working := false         # stooped at the nest box or over the ground
 var _call_t := 0.0        # > 0 while her call is still fresh
 var _call_from := Vector2.ZERO   # where she called from (local xz)
 var _grain_y: Array[float] = []
@@ -112,7 +125,7 @@ func setup(w: Node3D) -> void:
 		hens.append({"mi": mi, "pos": at, "yaw": _rng.randf() * TAU, "state": STAND, "t": _rng.randf_range(0.5, 3.0),
 			"speed": 0.0, "phase": _rng.randf(), "peck": 0.0, "sit": 0.0, "wing": 0.0, "scratch": 0.0,
 			"goal": at, "n": 0, "cluck_t": _rng.randf_range(2.0, 9.0), "calm": 0.0, "bob": 0.0, "head": 0.0,
-			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0, "feed": false, "heard": false})
+			"head_goal": 0.0, "fluff": 0.0, "id": i, "inside": false, "air": -INF, "c": 0.0, "feed": false, "heard": false, "hurry": 0.0})
 	_grain_mm = MultiMesh.new()
 	_grain_mm.transform_format = MultiMesh.TRANSFORM_3D
 	_grain_mm.mesh = grain_mesh()
@@ -412,6 +425,7 @@ func _process(delta: float) -> void:
 	var night := _night(hr)
 	_call_t = maxf(0.0, _call_t - dt)
 	at_wall = 0
+	_track_keeper(dt)
 	for i in range(_landing.size() - 1, -1, -1):
 		_landing[i][0] -= dt
 		if _landing[i][0] <= 0.0:
@@ -443,6 +457,9 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 		h.scratch = 0.0
 		flees += 1
 		squawked.emit((h.mi as Node3D).global_position + Vector3.UP * 0.3)
+		return
+	h.hurry = maxf(0.0, h.hurry - dt)
+	if not night and not raining and _give_way(h):
 		return
 	h.t -= dt
 	match h.state:
@@ -525,7 +542,7 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 				if h.t <= 0.0:
 					_next(h)
 			WALK:
-				if _walk(h, dt, WALK_V) or h.t <= 0.0:
+				if _walk(h, dt, WALK_V * (2.6 if h.hurry > 0.0 else 1.0)) or h.t <= 0.0:
 					h.state = STAND
 					h.t = _rng.randf_range(0.4, 1.6)
 			SCRATCH:
@@ -589,6 +606,16 @@ func _climb(h: Dictionary, dt: float) -> void:
 ## What a standing bird does next: potter on a little, scratch, peck, or look round.
 func _next(h: Dictionary) -> void:
 	var r := _rng.randf()
+	# Osric stooped at his work: over to peck round his boots at what he turns up
+	if _keeper_working and (h.pos as Vector2).distance_to(_keeper_l) > 1.7 and _rng.randf() < ROUND_P:
+		var kf := _fwd(keeper.body.rotation.y - cottage.global_rotation.y + PI) if keeper.get("body") else Vector2.ZERO
+		for k in 4:
+			var to := _keeper_l + (kf.rotated(_rng.randf_range(-1.6, 1.6)) if kf != Vector2.ZERO else Vector2.RIGHT.rotated(_rng.randf() * TAU)) * _rng.randf_range(0.75, 1.45)
+			if inside_yard(to) and not HenHouse.covers(to, 0.15):
+				h.goal = clamp_yard(to)
+				h.state = WALK
+				h.t = 9.0
+				return
 	if r < 0.42:
 		var step := _fwd(h.yaw + _rng.randf_range(-1.4, 1.4)) * _rng.randf_range(0.5, 1.8)
 		var goal := (h.pos as Vector2) + step
@@ -611,6 +638,56 @@ func _next(h: Dictionary) -> void:
 		h.state = STAND
 		h.t = _rng.randf_range(0.8, 2.2)
 
+## Where Osric is and what he is about, in the garth's frame.
+func _track_keeper(dt: float) -> void:
+	if keeper == null:
+		keeper = world.get("neighbour")
+	round_keeper = 0
+	if keeper == null or not keeper.visible:
+		_keeper_l = Vector2(1e6, 1e6)
+		_keeper_v = Vector2.ZERO
+		_keeper_working = false
+		return
+	var kl := _local_of(keeper.global_position)
+	if _keeper_l.x < 1e5 and dt > 0.0:
+		var v := (kl - _keeper_l) / dt
+		_keeper_v = Vector2.ZERO if v.length() > 30.0 else _keeper_v.lerp(v, minf(1.0, dt * 6.0))
+	_keeper_l = kl
+	var act: String = keeper.get("activity")
+	_keeper_working = (act == "eggs" or act == "tend") and keeper.get("state") != Villager.WALK and inside_yard(kl)
+	if _keeper_working:
+		for h: Dictionary in hens:
+			if not h.inside and (h.pos as Vector2).distance_to(kl) < 2.0:
+				round_keeper += 1
+
+## Osric walking through the garth: a bird in his road (or about to be) hurries a few steps
+## aside, off the line he walks, no squawk. True if it set off this frame.
+func _give_way(h: Dictionary) -> bool:
+	if h.inside or h.state == FLEE or h.state == CLIMB or h.state == DESCEND or h.state == ROOST:
+		return false
+	if h.hurry > 0.0 or _keeper_v.length() < 0.3:
+		return false
+	var rel: Vector2 = (h.pos as Vector2) - _keeper_l
+	var dir := _keeper_v.normalized()
+	var ahead := rel.dot(dir)
+	var side := rel.dot(dir.orthogonal())
+	# in a short lane ahead of his boots, or right at them
+	if not ((ahead > -0.2 and ahead < GIVE_R + 0.8 and absf(side) < 0.65) or rel.length() < 0.55):
+		return false
+	var sgn := signf(side) if absf(side) > 0.05 else (1.0 if h.id % 2 == 0 else -1.0)
+	var goal := clamp_yard((h.pos as Vector2) + dir.orthogonal() * sgn * _rng.randf_range(0.8, 1.2) + dir * 0.25)
+	if goal.distance_to(h.pos) < 0.4:
+		goal = clamp_yard((h.pos as Vector2) - dir.orthogonal() * sgn * 1.0 + dir * 0.6)
+	h.goal = goal
+	h.state = WALK
+	h.t = 2.5
+	h.hurry = 1.4
+	h.peck = 0.0
+	h.scratch = 0.0
+	h.wing = maxf(h.wing, 0.15)
+	gave_way += 1
+	return true
+
 ## Local forward of a bird at `yaw` (mesh faces -Z).
 static func _fwd(yaw: float) -> Vector2:
 	return Vector2(-sin(yaw), -cos(yaw))
@@ -623,10 +700,11 @@ func _walk(h: Dictionary, dt: float, top: float) -> bool:
 		h.speed = move_toward(h.speed, 0.0, 4.0 * dt)
 		return true
 	var want_yaw := atan2(-to.x, -to.y)
-	var turn := 9.0 if h.state == FLEE else 4.0
+	var quick: bool = h.state == FLEE or h.hurry > 0.0
+	var turn := 9.0 if quick else 4.0
 	h.yaw += clampf(wrapf(want_yaw - h.yaw, -PI, PI), -turn * dt, turn * dt)
 	var facing := cos(wrapf(want_yaw - h.yaw, -PI, PI))
-	h.speed = move_toward(h.speed, top * clampf(facing, 0.15, 1.0) * minf(1.0, d * 2.5 + 0.2), (10.0 if h.state == FLEE else 2.5) * dt)
+	h.speed = move_toward(h.speed, top * clampf(facing, 0.15, 1.0) * minf(1.0, d * 2.5 + 0.2), (10.0 if h.state == FLEE else 6.0 if quick else 2.5) * dt)
 	var mv := _fwd(h.yaw) * minf(h.speed * dt, d)
 	# keep a beak's length from the others
 	for o: Dictionary in hens:

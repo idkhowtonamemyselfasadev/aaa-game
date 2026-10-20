@@ -934,6 +934,19 @@ func _ready() -> void:
 			var fc := fb.get_center()
 			var lf := f.rotated(Vector3.UP, 0.45)
 			SPOTS[spot] = [fc + lf * 1.1 + Vector3.UP * 0.02, fc - Vector3.UP * 0.12]
+		if "flock" in args:
+			# the hens already drifted over to peck round his boots (Hens._next does it over a
+			# minute; the shot's warm-up is two seconds)
+			var hn: Hens = world.hens
+			var kl := nb.cottage.to_local(at)
+			var kf3 := nb.cottage.to_local(at + f) - kl
+			var kf := Vector2(kf3.x, kf3.z).normalized()
+			for k in hn.hens.size():
+				var hh: Dictionary = hn.hens[k]
+				hh.pos = Hens.clamp_yard(Vector2(kl.x, kl.z) + kf.rotated(-1.3 + 0.65 * k) * (0.8 + 0.25 * (k % 3)))
+				hh.state = Hens.STAND
+				hh.t = 0.3 * k
+				hh.yaw = _rng_yaw(k)
 		var pp := at + Vector3(40, 0, 40)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT osric %s at %s lean %.2f" % [nb.activity, at, nb.lean])
@@ -1376,3 +1389,7 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 
 func _rr(a: float, b: float) -> float:
 	return randf_range(a, b)
+
+## A spread of headings for staged birds.
+func _rng_yaw(k: int) -> float:
+	return fmod(k * 2.39, TAU)

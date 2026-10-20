@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261015-2334-pause-menu.jpg",
-  "time": "2026-10-15T23:34:00Z",
-  "caption": "Esc now pauses inside the ruined keep and opens a lacquer-and-brass sound panel (master, ambience, wildlife, effects, music); the sliders' grabbers are still Godot's stock white knobs and the dimmed keep behind is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0026-picture-menu.jpg",
   "time": "2026-10-16T00:26:55Z",
   "caption": "Pause panel with the new Picture section (quality preset Low..Ultra, FSR 2 render scale) lined up under the sound sliders over the keep interior; slider knobs are still stock white, not brass.",
@@ -885,6 +879,18 @@
   "file": "20261020-1430-osric-lean.jpg",
   "time": "2026-10-20T14:30:22Z",
   "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1503-osric-flock.jpg",
+  "time": "2026-10-20T15:03:13Z",
+  "caption": "The hens have drifted over to peck round Osric's boots while he tends the sunlit garth; still wrong: he wears the hero's wide straw douli and a pale hood that reads as a mask, and stands stiff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1503-osric-lean-face.jpg",
+  "time": "2026-10-20T15:03:13Z",
+  "caption": "Osric leaning on the garth wall at 9.5 h, close up: broken -- an oversized hat brim hides the bowed head entirely, the forearms are blocky stubs, and the cope stones are blurry at this range.",
   "verdict": "fail"
  }
 ]

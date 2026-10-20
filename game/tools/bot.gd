@@ -4286,6 +4286,41 @@ func _neighbour_test() -> void:
 	print("BOT neighbour gate after: angle %.2f, opens %d, shuts %d" % [fg.angle, fg.opens - o0, fg.shuts])
 	if absf(fg.angle) > 0.05:
 		return _combat_done(false, "the field gate hangs open after him")
+	# the hens: over to peck round his boots while he tends the garth, out of his road as he goes
+	var hn: Hens = _world.hens
+	v.settle(_world, 11.0)
+	var most := 0
+	for i in 60:
+		await _hold_hour(11.0, 20)
+		most = maxi(most, hn.round_keeper)
+	print("BOT neighbour hens round him at the garth: up to %d of %d within 2 m (%s)" % [most, hn.hens.size(), v.activity])
+	if most < 3:
+		return _combat_done(false, "the hens pay him no mind while he tends the garth")
+	# all five strung across his road to the field gate, then off he goes for his dinner
+	var a := v.cottage.to_local(v.global_position)
+	var b: Vector2 = Neighbour.WAY[Neighbour.WAY.size() - 1]
+	for k in hn.hens.size():
+		var hh: Dictionary = hn.hens[k]
+		hh.pos = Hens.clamp_yard(Vector2(a.x, a.z).lerp(b, 0.2 + 0.15 * k))
+		hh.state = Hens.STAND
+		hh.t = 30.0
+		hh.hurry = 0.0
+	var gw0 := hn.gave_way
+	var f0 := hn.flees
+	var closest := 9.0
+	_world.time_of_day = 12.3
+	for i in 1500:
+		_world.time_of_day = 12.3
+		await get_tree().physics_frame
+		if not v.visible:
+			break
+		var kl := v.cottage.to_local(v.global_position)
+		if Hens.inside_yard(Vector2(kl.x, kl.z)):
+			for hh: Dictionary in hn.hens:
+				closest = minf(closest, (hh.pos as Vector2).distance_to(Vector2(kl.x, kl.z)))
+	print("BOT neighbour hens in his road: gave way %d times, closest %.2f m, flights %d" % [hn.gave_way - gw0, closest, hn.flees - f0])
+	if hn.gave_way - gw0 < 2 or closest < 0.3:
+		return _combat_done(false, "the hens do not get out of his road")
 	# rain at the wall sends him in, the long way round; when it passes he comes out again
 	await _hold_arrive(v, 14.5, 3000, 200)
 	_world.weather.force(1.0)
@@ -4316,7 +4351,7 @@ func _neighbour_test() -> void:
 	print("BOT neighbour notice: noticing %s, facing off %.2f rad, lean %.2f" % [v.noticing, off, v.lean])
 	if not v.noticing or off > 0.35 or v.lean > 0.1:
 		return _combat_done(false, "he ignores the hero")
-	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in): eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
+	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager
