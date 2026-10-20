@@ -70,7 +70,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   applied to the sun too, so the roosting bat glowed red-orange in the shade). Bot `bat`
   now also checks: a grumble but no calls at the roost by day, >=3 calls on the wing,
   one buzz per stoop, and that Foley played all three (31 calls, 30 buzzes / 30 stoops, 1
-  grumble). Bots bat, foley, leanto PASS. The 13:00 `leanto` failure no longer reproduces
+  grumble). The orange glow was mostly the fur `StandardMaterial3D`'s backlight (and the
+  ears'), not the wing shader: fur backlight off, rim 0.3, ears a faint 0.16/0.06/0.03.
+  Shot `lantern roostfix2 60 17.5 roost fixfps`: now a dark brown silhouette under the
+  boards (verdict still fail: too small/featureless from that lens -- next: a closer roost
+  lens, fur noise on the body, readable ears). Renderer: Forward+ Vulkan/lavapipe under
+  xvfb, shots ~12 min. Bots bat, foley, leanto, doorstones PASS. The 13:00 `leanto` failure no longer reproduces
   (passes on main before this change; dropped from Known bugs).
 - 2026-10-19 20:45: **The bat roosts under the woodshed eaves and drops out at dusk**
   `Bat` gained ROOST / DROP / HOME states. `WhiteCottage.bat_roost()` (under the lean-to

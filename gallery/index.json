@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261014-2310-face-lappets.jpg",
-  "time": "2026-10-14T23:10:01Z",
-  "caption": "The hero's hood now sweeps up in a rounded edge under the chin instead of hanging two lumpy points over the chest; still wrong: the face cloth's sagging tip shows below the hood and the eyes still read a little startled.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-0015-face-sag.jpg",
-  "time": "2026-10-15T00:15:00Z",
-  "caption": "The hero's face cloth now ends tucked inside the hood instead of hanging a sagging point below it; still wrong: the hood's left side still falls in a long fold over the mantle and the eyes read a little startled.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-0130-face-side.jpg",
-  "time": "2026-10-15T01:11:50Z",
-  "caption": "Hero portrait at 10:30: the hood now ends in a short collar over the shoulders; the near side still reads as a narrow strip and the eyes look a little startled.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-0220-face-wrap.jpg",
   "time": "2026-10-15T02:20:00Z",
   "caption": "Hero portrait at 10:30: the hood now wraps round the sides of the face cloth instead of a thin strip beside it; eyes still a little startled and a pale patch on the left brow.",
@@ -897,6 +879,12 @@
   "file": "20261019-2311-doorstones-white-wide.jpg",
   "time": "2026-10-19T23:11:10Z",
   "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0000-bat-roost-dark.jpg",
+  "time": "2026-10-20T00:10:00Z",
+  "caption": "The pipistrelle hanging under the woodshed boards at 17:30 now reads as a dark brown bat instead of a glowing red-orange blob (fur backlight removed); still wrong: at this range it is a tiny featureless silhouette, no fur, ears or wrapped-wing shape readable.",
   "verdict": "fail"
  }
 ]
