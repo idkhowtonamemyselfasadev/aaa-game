@@ -3228,7 +3228,8 @@ func _doorstones_test() -> void:
 		var mid: Vector2 = DoorStones.along(w, 1.3)[0]
 		for wp: Vector2 in [mid, to]:
 			while Vector2(p.global_position.x - wp.x, p.global_position.z - wp.y).length() > 0.35 and t < 8.0:
-				p.bot_input = _input_toward(Vector3(wp.x, 0.0, wp.y))
+				# a walk, not a run: at a run a stride nearly spans the 2 m of slabs
+				p.bot_input = _input_toward(Vector3(wp.x, 0.0, wp.y)) * 0.3
 				await _ticks(1)
 				t += 0.017
 		p.bot_input = Vector2.ZERO
@@ -3244,6 +3245,8 @@ func _doorstones_test() -> void:
 	var grass := _world.get_node("Grass")
 	var blades := 0
 	var through := 0
+	var tall := 0
+	var tall_max := 0.0
 	for ch in grass.get_children():
 		var mmis: Array = [ch] if ch is MultiMeshInstance3D else []
 		for c in ch.get_children():
@@ -3257,9 +3260,18 @@ func _doorstones_test() -> void:
 				blades += 1
 				if DoorStones.under(o.x, o.z, -0.02):
 					through += 1
-	print("BOT doorstones: %d clumps near the last door, %d through a slab" % [blades, through])
+				# a tall meadow clump (not the short sward) standing right at a slab's edge
+				if not m.name.begins_with("Sward") and DoorStones.near(o.x, o.z) > 0.6:
+					var hgt := m.multimesh.get_instance_transform(i).basis.y.length()
+					if hgt > tall_max:
+						tall_max = hgt
+					if hgt > 0.75:
+						tall += 1
+	print("BOT doorstones: %d clumps near the last door, %d through a slab, %d tall at a slab edge (max scale %.2f)" % [blades, through, tall, tall_max])
 	if blades < 50 or through > 0:
 		return _combat_done(false, "%d grass clumps grow through the slabs (%d near)" % [through, blades])
+	if tall > 0:
+		return _combat_done(false, "%d tall clumps lean over the slabs" % tall)
 	_combat_done(true, "door stones laid, walkable, grass-free and sounding of stone")
 
 func _yardpath_test() -> void:

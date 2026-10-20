@@ -33,6 +33,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- 2026-10-20 01:30: **Door stones uncovered: the tall grass at their edges trodden down, the slab tops foot-worn pale**
+  `DoorStones.near(x, z, inner 0.4, outer 1.05)` (1 near a slab centre, 0 past ~1 m);
+  `grass.gd` tall clumps skip at `near * 0.8` and the survivors shrink to `lerp(1, 0.55, near)`,
+  so no tussock leans over a slab. Masonry shader: `INSTANCE_CUSTOM.r < 0` = TRODDEN (door
+  slabs now pass r = -0.125): the walked top loses its moss (x0.08), is lifted to a paler
+  warm grey (x1.22 + 0.025) and a little smoother, and is no longer darkened as a damp low
+  course; moss stays in the arrises and sunk edges. Bot `doorstones` now walks at a walk
+  (input x0.3: at a run a stride spans the 2 m of slabs and only 2 of 3 required footfalls
+  landed on stone, a pre-existing marginal fail on this box) and fails if any tall
+  (non-sward) clump scaled over 0.75 stands within ~0.66 m of a slab centre (0 now).
 - 2026-10-20 00:30: **Grass off the door stones; footsteps sound of stone on them**
   `DoorStones.plan()` (static, seed-only layout cached once: centre, track dir, size, yaw,
   tilt, flip, variant, tint per slab; the node's `_ready` now just sets each on the terrain)

@@ -93,6 +93,18 @@ static func under(x: float, z: float, margin := 0.0) -> bool:
 			return true
 	return false
 
+## How close (x, z) lies to the stones: 1 within `inner` metres of a slab's centre, 0 past
+## `outer`. The tall meadow clumps thin and shorten in this band so they do not lean over the
+## slabs and bury them.
+static func near(x: float, z: float, inner := 0.4, outer := 1.05) -> float:
+	var best := INF
+	for sl: Array in plan():
+		var c: Vector2 = sl[0]
+		best = minf(best, Vector2(x - c.x, z - c.y).length_squared())
+	if best > outer * outer:
+		return 0.0
+	return 1.0 - smoothstep(inner, outer, sqrt(best))
+
 func _ready() -> void:
 	var ruins: Ruins = get_node(ruins_path)
 	_terrain = get_node(terrain_path)
@@ -126,7 +138,7 @@ func _lay(sl: Array) -> void:
 	if sl[7]:
 		sc = Vector3(-sc.x, sc.y, -sc.z)   # flipped so the same splits do not repeat
 	var c3 := Vector3(q.x, top - THICK * 0.5, q.y) - global_position
-	_per[sl[8]].append([Transform3D(b * Basis.from_scale(sc), c3), Color(0.0, sl[9], 0.0, 2.0)])
+	_per[sl[8]].append([Transform3D(b * Basis.from_scale(sc), c3), Color(-0.125, sl[9], 0.0, 2.0)])
 	stones.append(Vector3(q.x, top, q.y))
 	stone_count += 1
 

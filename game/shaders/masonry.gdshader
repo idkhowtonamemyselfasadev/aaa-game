@@ -17,6 +17,8 @@ render_mode cull_back;
 // a = 4: LIMEWASHED (the white cottage): coats of white lime over the rubble, thin over the
 // stone arrises, flaked in ragged patches low down, rain runs from the eaves, green algae
 // and splash grime rising from the foot.
+// r below 0: a TRODDEN slab (the door stones): the top is foot-worn -- no moss or lichen on
+// it, paler and smoothed, not darkened as a damp low course; moss only in its edges.
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.7, 0.62, 0.5);
@@ -54,6 +56,7 @@ varying float aged;
 varying float field;
 varying float dim;   // a above 2: a darker, greyer face (the cottage's rubble)
 varying float lw;         // 1: limewashed (a = 4)
+varying float trod;       // 1: a door stone's walked top (r < 0)
 varying float floor_w;    // world y of the ground this stone's `above` counts from
 
 float hash3(vec3 p) {
@@ -73,7 +76,8 @@ void vertex() {
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vec3 an = abs(normalize(NORMAL));
 	edge = 1.0 - smoothstep(0.86, 0.98, max(an.x, max(an.y, an.z)));
-	above = INSTANCE_CUSTOM.r * 8.0;
+	trod = step(INSTANCE_CUSTOM.r, -0.05);
+	above = max(INSTANCE_CUSTOM.r * 8.0, 0.0) + trod * 1.2;   // a trodden top is not a damp low course
 	tint = INSTANCE_CUSTOM.g;
 	v_cloud = cloud_shade_at(wp);
 	jnt = COLOR.r;
@@ -149,6 +153,11 @@ void fragment() {
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
 	mc = mix(mc, vec3(dot(mc, vec3(0.3, 0.5, 0.2))) * vec3(0.95, 1.05, 0.85), field * 0.45) * mix(1.0, 0.82, field);
+	// door stones: feet have worn the tops clean and a little paler and smoother; moss and
+	// lichen keep to the arrises and the sunk edges
+	float walked = trod * smoothstep(0.55, 0.85, n.y) * (1.0 - edge * 0.6);
+	mossw *= 1.0 - walked * 0.92;
+	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.02, 1.0, 0.96) * 1.22 + 0.025, walked * 0.85);
 	col = mix(col, mc, mossw);
 	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
 	// limewash: a white skin over everything above, the coats a little uneven
@@ -206,7 +215,7 @@ void fragment() {
 	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
 	mossw = max(mossw, lowj * 0.6);
-	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08, soot * 0.97);
+	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12, soot * 0.97);
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
 	ALBEDO = col;
 	ROUGHNESS = rough;
