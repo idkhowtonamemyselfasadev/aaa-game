@@ -3214,6 +3214,12 @@ func _doorstones_test() -> void:
 			return _combat_done(false, "slab at %s is in a house or wall" % q)
 		if not DoorStones.under(q.x, q.z) or ds.top_at(q.x, q.z) != q.y:
 			return _combat_done(false, "plan footprint misses the slab at %s" % q)
+	# the dirt gaps + rain pools: one draped patch per slab, reaching GAP + POOL past its edges
+	var gaps := ds.get_node_or_null("Gaps") as MeshInstance3D
+	if gaps == null or gaps.mesh.surface_get_array_len(0) != ds.stone_count * 216:
+		return _combat_done(false, "dirt/pool patches missing round the slabs")
+	var ga := gaps.mesh.get_aabb()
+	print("BOT doorstones: gap patches %d verts, aabb %s" % [gaps.mesh.surface_get_array_len(0), ga.size])
 	var foley: Foley = _world.foley
 	var stone0 := int(foley.played.get("step_stone", 0))
 	var steps0 := foley.hero_steps

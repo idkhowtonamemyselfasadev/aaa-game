@@ -222,10 +222,23 @@ void fragment() {
 	mossw = max(mossw, lowj * 0.6);
 	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12, soot * 0.97);
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
+	// door stones in the rain: the rubbed sandstone soaks a deep wet buff, and a skin of water
+	// lies in the shallow dish feet have worn in the top -- glassy, the drops ringing it --
+	// while the higher, rougher patches of the top only glisten
+	float wet_top = walked * weather_wet;
+	float dish = smoothstep(0.42, 0.6, rub * 0.6 + fbm(wp * vec3(2.6, 1.0, 2.6) + 41.0) * 0.6 - edge * 0.5);
+	float film = wet_top * dish * smoothstep(0.3, 0.85, weather_wet);
+	col *= 1.0 - wet_top * 0.2 - film * 0.18;
+	rough = mix(rough, 0.05, film);
+	rough = mix(rough, min(rough, 0.32), wet_top * (1.0 - film));
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.4 * (1.0 - soot * 0.95);   // soot is dead matte: no sheen of the fire on it
-	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw) * mix(1.0, 0.45, lw));
+	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw) * mix(1.0, 0.45, lw) * (1.0 - film * 0.85));
+	if (film > 0.01 && weather_rain > 0.01) {
+		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05 * film;
+		pn = normalize(pn + vec3(-sl.x, 0.0, -sl.y));
+	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - jd * 0.3 - deep * 0.3);
 	ALBEDO *= v_cloud;

@@ -147,8 +147,10 @@ func _lay(sl: Array) -> void:
 	stone_count += 1
 
 ## The dirt packed into the crack round each slab: one patch of ground-hugging grid per slab,
-## a hand's breadth bigger than it, draped on the terrain just above the track's dirt.
+## a hand's breadth bigger than it, draped on the terrain just above the track's dirt. The
+## patch runs on another `POOL` past the dirt so rain can lie in pools along the slab's edges.
 const GAP := 0.07
+const POOL := 0.2
 func _gaps() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -158,8 +160,8 @@ func _gaps() -> void:
 		var sz: Vector3 = sl[3]
 		var bx := Vector2(cos(sl[4]), -sin(sl[4]))
 		var bz := Vector2(sin(sl[4]), cos(sl[4]))
-		var hx := sz.x * 0.5 + GAP
-		var hz := sz.z * 0.5 + GAP
+		var hx := sz.x * 0.5 + GAP + POOL
+		var hz := sz.z * 0.5 + GAP + POOL
 		var verts := []
 		for i in n + 1:
 			for j in n + 1:
@@ -175,7 +177,7 @@ func _gaps() -> void:
 		for k: int in idx:
 			st.set_normal(Vector3.UP)
 			st.set_uv(verts[k][1])
-			st.set_uv2(Vector2(hx, hz))
+			st.set_uv2(Vector2(sz.x, sz.z) * 0.5)
 			st.add_vertex(verts[k][0])
 	var mi := MeshInstance3D.new()
 	mi.name = "Gaps"
