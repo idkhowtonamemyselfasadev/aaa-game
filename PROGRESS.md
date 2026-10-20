@@ -4299,6 +4299,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (17:30 10-20) Bot `neighbour` "hens in his road" check is marginal and seed-sensitive: the
+  closest hen comes 0.25-0.42 m from Osric's boots against a 0.3 m limit depending on tiny
+  timing changes (a hen pinned against the garth wall in his road). It failed on 39392f6 and
+  passes on 89c975d; a try at re-goaling a still-pinned bird made it fail again, so it was not
+  committed. Fix properly: have Osric side-step a bird he cannot pass, or let a pinned hen flutter
+  up over him (a FLEE hop) instead of walking.
+- (17:30 10-20) Two sessions built the Edda/Osric word over the wall at the same time; the
+  later one was dropped. Sessions: `git pull --rebase origin main` BEFORE starting work too.
 - (16:00 10-20) Bot `neighbour` failed once ("the hens do not get out of his road") while a shot
   and five other bots ran at once; it passed twice alone. Timing-sensitive under load.
 - (10:50 10-20) Brack's coat reads flat and slightly faceted up close (no fur shading); he watches
