@@ -53,6 +53,7 @@ func _ready() -> void:
 	_s["bark"] = [_make_bark(1.0), _make_bark(0.9), _make_bark(1.12)]
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
+	_s["dog_bark"] = [_make_dog_bark(1.0), _make_dog_bark(0.93), _make_dog_bark(1.07)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
 	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
 	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
@@ -139,6 +140,13 @@ func hook_fox(f: Node) -> void:
 		_play_wild("fox_yelp" if alarm else "fox_bark", at, -3.0 if alarm else -1.0, 16.0, true))
 	if f.has_signal("crunched"):
 		f.crunched.connect(func(at: Vector3) -> void: _play_wild("crunch", at, -14.0, 1.5, false))
+
+## Brack the collie's barks: glad ones as it runs out to meet the hero, guard barks at night.
+func hook_dog(d: Node) -> void:
+	if d == null or not d.has_signal("barked"):
+		return
+	d.barked.connect(func(at: Vector3, alarm: bool) -> void:
+		_play_wild("dog_bark", at, 0.0 if alarm else -3.0, 14.0, true))
 
 ## The hens in the garth: soft clucks as they work the yard, a squawk when one is put to flight.
 func hook_hens(h: Node) -> void:
@@ -349,6 +357,20 @@ func _make_fox_bark(pt: float, count: int) -> AudioStreamWAV:
 		for i in y.size():
 			if at + i < out.size():
 				out[at + i] += y[i] * (1.0 - 0.1 * c)
+	return _wav(out)
+
+## A medium dog's single bark: a hard, chesty "rowf" -- a sharp onset, the pitch jumping up
+## then falling, through a bigger, darker tract than the fox's, with a rough edge to it.
+func _make_dog_bark(pt: float) -> AudioStreamWAV:
+	var y := _voice(0.2,
+		func(k: float) -> float: return pt * (330.0 + 260.0 * sin(PI * pow(k, 0.45)) - 150.0 * k),
+		func(k: float) -> float: return smoothstep(0.0, 0.03, k) * exp(-maxf(k - 0.2, 0.0) * 5.5),
+		[[620.0 * pt, 3.0, 1.0], [1250.0 * pt, 4.0, 0.7], [2400.0 * pt, 5.5, 0.3]], 0.75, 0.4)
+	var out := PackedFloat32Array()
+	out.resize(int(0.4 * RATE))
+	for i in y.size():
+		if i < out.size():
+			out[i] = y[i]
 	return _wav(out)
 
 ## A hen's cluck to herself: `count` short, low, throaty "buk"s close together, each a

@@ -419,6 +419,28 @@ func _ready() -> void:
 		var pp := at + Vector3(30, 0, 30)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
+	if spot == "dog":
+		# Brack on the green before the white cottage, sat watching the yard (or "sniff":
+		# nose to the turf; "door": in its place by the door), a low three-quarter lens
+		var dg: Dog = world.dog
+		var at := dg.home + Vector3(1.5, 0, 1.0)
+		if "door" in args:
+			dg.place_bed()
+			at = dg.bed
+		else:
+			dg.global_position = dg._ground(at)
+			dg._start(Dog.SNIFF if "sniff" in args else Dog.REST, 1e6)
+			dg.sit = 0.0 if "sniff" in args else 1.0
+			dg.graze = 1.0 if "sniff" in args else 0.0
+			dg.yaw = 0.6
+		at = dg.global_position
+		var fwd := Vector3(-sin(dg.yaw), 0, -cos(dg.yaw))
+		var cp := at + fwd.rotated(Vector3.UP, 0.75) * (1.6 if "close" in args else 2.6)
+		cp.y = terrain.height_at(cp.x, cp.z) + 0.75
+		SPOTS[spot] = [cp, Vector3(at.x, at.y + 0.4, at.z)]
+		var pp := at + Vector3(40, 0, 40)
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT dog at %s yaw %.2f state %d" % [at, dg.yaw, dg.state])
 	if spot == "fox":
 		# the fox sat just in from the breach at the edge of Hesper's firelight, looking in at
 		# the fire: low, three-quarter from round the floor ring (Fox.lens_of)
@@ -965,7 +987,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

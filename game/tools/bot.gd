@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -92,6 +92,9 @@ func _ready() -> void:
 		return
 	if name == "fox":
 		_fox_test()
+		return
+	if name == "dog":
+		_dog_test()
 		return
 	if name == "butterflies":
 		_butterflies_test()
@@ -1604,6 +1607,102 @@ func _hearth_test() -> void:
 
 ## The fox: comes in through the gateway once the fire is going after dark, sits in the
 ## breach at the edge of the firelight facing it, bolts from a hero walking up, keeps away.
+## Brack, Edda's collie: potters about the green by day, runs out barking and wagging to
+## meet the hero, keeps at his heel about the cottage and stays home when he leaves, and
+## sits by the white cottage door at night and in rain, guard-barking at a hero in the dark.
+func _dog_test() -> void:
+	var dg: Dog = _world.dog
+	var tr: Terrain = _world.get_node("Terrain")
+	_world.weather.force(0.0)
+	var far := dg.home + Vector3(70.0, 0, 0)
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	_world.time_of_day = 10.0
+	await _ticks(30)
+	var moved := 0.0
+	var sniffs := 0
+	var rests := 0
+	var prev := dg.global_position
+	var max_home := 0.0
+	var prev_state := dg.state
+	for i in 3000:
+		await get_tree().physics_frame
+		moved += dg.global_position.distance_to(prev)
+		prev = dg.global_position
+		max_home = maxf(max_home, Vector2(prev.x - dg.home.x, prev.z - dg.home.z).length())
+		if dg.state != prev_state:
+			if dg.state == Dog.SNIFF:
+				sniffs += 1
+			if dg.state == Dog.REST:
+				rests += 1
+			prev_state = dg.state
+	print("BOT dog day: walked %.1f m, %d sniffs, %d rests, at most %.1f m from home, state %d" % [moved, sniffs, rests, max_home, dg.state])
+	if moved < 5.0 or sniffs < 1 or rests < 1 or max_home > Dog.RANGE or dg.state in [Dog.GREET, Dog.HEEL, Dog.BED]:
+		return _combat_done(false, "the dog should potter about the green by day, nosing about and sitting")
+	# the hero walks up: it barks, runs to meet him wagging, and sits at his heel
+	var fb0: int = _world.foley.played.get("dog_bark", 0)
+	var b0 := dg.barks
+	# about 11 m from where it is, on open ground within its range of home
+	var near := dg.home
+	for k in 24:
+		var a := TAU * k / 24.0
+		var q := dg.global_position + Vector3(cos(a), 0, sin(a)) * 11.0
+		if dg._clear(q, 1.6) and Vector2(q.x - dg.home.x, q.z - dg.home.z).length() < Dog.RANGE - 6.0:
+			near = q
+			break
+	_player.global_position = Vector3(near.x, tr.height_at(near.x, near.z) + 0.2, near.z)
+	var met := -1
+	var wag_max := 0.0
+	for i in 1200:
+		await get_tree().physics_frame
+		wag_max = maxf(wag_max, dg.wag)
+		if dg.state == Dog.HEEL and met < 0:
+			met = i
+		if met >= 0 and i > met + 200:
+			break
+	var gap := Vector2(dg.global_position.x - _player.global_position.x, dg.global_position.z - _player.global_position.z).length()
+	print("BOT dog greet: state %d, met at frame %d, %.2f m from the hero, wag %.2f, sit %.2f, %d barks (%d sounded), greets %d" % [dg.state, met, gap, wag_max, dg.sit, dg.barks - b0, _world.foley.played.get("dog_bark", 0) - fb0, dg.greets])
+	if met < 0 or gap > Dog.HEEL_R + 1.0 or gap < 0.8 or wag_max < 0.6 or dg.barks - b0 < 2 or _world.foley.played.get("dog_bark", 0) - fb0 < 1:
+		return _combat_done(false, "the dog should bark, run out wagging and come to the hero's heel")
+	# the hero leaves the village: it gives up and goes back to its pottering near home
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	await _ticks(120)
+	var back := Vector2(dg.global_position.x - dg.home.x, dg.global_position.z - dg.home.z).length()
+	print("BOT dog hero gone: state %d, %.1f m from home" % [dg.state, back])
+	if dg.state in [Dog.GREET, Dog.HEEL] or back > Dog.RANGE:
+		return _combat_done(false, "the dog should stay home when the hero leaves")
+	# dusk: back to the door, sat
+	_world.time_of_day = 22.0
+	var bedded := -1
+	for i in 2400:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+		if dg.state == Dog.BED and dg.sit > 0.99:
+			bedded = i
+			break
+	print("BOT dog night: state %d bedded at frame %d, %.2f m from its place by the door" % [dg.state, bedded, dg.global_position.distance_to(dg.bed)])
+	if bedded < 0 or dg.global_position.distance_to(dg.bed) > 0.4:
+		return _combat_done(false, "the dog should go to its place by the door at night")
+	# a hero walking up on the dark house sets it barking
+	var b1 := dg.barks
+	var by := dg.bed + Vector3(dg.bed.x - dg.home.x, 0, dg.bed.z - dg.home.z).normalized() * -6.0
+	_player.global_position = Vector3(by.x, tr.height_at(by.x, by.z) + 0.2, by.z)
+	for i in 240:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+	print("BOT dog night hero: %d guard barks, still in bed %s" % [dg.barks - b1, dg.state == Dog.BED])
+	if dg.barks - b1 < 2 or dg.barks - b1 > 6 or dg.state != Dog.BED:
+		return _combat_done(false, "the dog should guard-bark from the door at a hero in the dark")
+	# rain at noon keeps it by the door too
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	_world.time_of_day = 12.0
+	_world.weather.force(1.0)
+	await _ticks(60)
+	print("BOT dog rain: rain %.2f state %d" % [_world.weather.rain, dg.state])
+	if dg.state != Dog.BED:
+		return _combat_done(false, "the dog should shelter at the door in rain")
+	_world.weather.force(0.0)
+	return _combat_done(true, "the collie potters on the green, runs out barking and wagging to the hero's heel, stays home when he leaves, and keeps the door at night and in rain")
+
 func _fox_test() -> void:
 	var k: Keeper = _world.keeper
 	var fx: Fox = _world.fox

@@ -282,7 +282,8 @@ Hour budget changes require editing §5 and the matching PROGRESS.md counter.
   in lamplight; campfires draw wildlife at night.
 - **People:** NPCs with daily schedules (wake, work, eat, sleep), who shelter from rain, react
   to the player and to the time of day; villages with sound and movement (smoke, laundry,
-  doors, animals in pens).
+  doors, animals in pens, a farm dog -- Edda's collie Brack -- that potters on the green,
+  runs out barking to meet the player and keeps her door at night and in rain).
 - **Roads:** ambient events — travellers, merchants with carts, Hollow ambushes, animals
   crossing.
 - **Reactive world:** grass flattens under feet, footprints in mud/snow, water ripples,

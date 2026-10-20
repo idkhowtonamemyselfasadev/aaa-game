@@ -35,6 +35,7 @@ var keeper: Keeper
 var villager: Villager
 var hearth: Hearth
 var fox: Fox
+var dog: Dog
 var hens: Hens
 var soundscape: Soundscape
 var foley: Foley
@@ -181,6 +182,9 @@ func _ready() -> void:
 	add_child(villager)
 	villager.settle(self, time_of_day)
 	trample.walkers.append(villager)
+	# Brack, her collie: potters on the green, meets the hero, sits by her door at night
+	dog = Dog.new()
+	dog.setup(self)
 	# the garth scratched bare and the footpath worn round to the cottage door
 	YardGround.publish()
 	# the mix: per-layer buses and the stone reverb inside the keep
@@ -214,6 +218,7 @@ func _ready() -> void:
 	foley.hook(player, [soldier], trample)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
+	foley.hook_dog(dog)
 	foley.hook_gate(dry_wall.field_gate)
 	foley.hook_villager(villager)
 	foley.hook_hens(hens)
