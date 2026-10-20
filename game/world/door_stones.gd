@@ -20,6 +20,7 @@ var stone_count := 0
 var stones: Array[Vector3] = []    # world centre of each slab's top (bots)
 var _terrain: Terrain
 var _per: Array = []
+var bounces: Array[OmniLight3D] = []   # daylight thrown back off each door's trodden yard
 
 ## The tracks out of each door, as world xz polylines starting at the door.
 static func runs() -> Array:
@@ -122,6 +123,40 @@ func _ready() -> void:
 		_multimesh(meshes[v], _per[v], "Slabs_%d" % v)
 	_gaps()
 	_pools()
+	_bounce()
+
+## The doorways sit in the house's own shadow, and with only the sky ambient the reveal and
+## the stones under it went blue-black at midday. A real doorway is lit from below by the
+## sunlit yard in front of it: a broad, soft, unshadowed warm fill a metre out from each door,
+## low, that follows the sun's strength and dies at dusk.
+func _bounce() -> void:
+	for r in runs():
+		var w: PackedVector2Array = r[0]
+		var a: Array = along(w, 1.3)
+		var q: Vector2 = a[0]
+		var l := OmniLight3D.new()
+		l.name = "DoorBounce"
+		l.shadow_enabled = false
+		l.omni_range = 3.6
+		l.omni_attenuation = 1.6
+		l.light_color = Color(1.0, 0.86, 0.68)
+		l.light_specular = 0.05
+		l.light_energy = 0.0
+		l.position = Vector3(q.x, _terrain.height_at(q.x, q.y) + 0.45, q.y)
+		add_child(l)
+		bounces.append(l)
+
+func _process(_delta: float) -> void:
+	var world := get_parent()
+	if not ("sun" in world) or world.sun == null:
+		return
+	# the sun's 0..3 energy; overcast already dims it, and wet dark ground throws back less
+	var e: float = clampf(world.sun.light_energy / 3.0, 0.0, 1.0) * 0.55
+	if "weather" in world and world.weather != null:
+		e *= 1.0 - 0.3 * world.weather.wet
+	for l in bounces:
+		l.light_energy = e
+		l.visible = e > 0.01
 
 func _lay(sl: Array) -> void:
 	var q: Vector2 = sl[0]

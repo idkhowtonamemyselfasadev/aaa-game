@@ -3235,6 +3235,19 @@ func _doorstones_test() -> void:
 	print("BOT doorstones: pool rings %d verts, edge distance %.2f..%.2f" % [pv.size(), lo, hi])
 	if pv.size() < ds.stone_count * 600 or lo > 0.01 or hi < 0.99:
 		return _combat_done(false, "pool rings do not span the slab edge out to POOL_OUT")
+	# the warm yard bounce under each doorway: up by day, out by night
+	if ds.bounces.size() != DoorStones.runs().size():
+		return _combat_done(false, "expected a door bounce light per door, got %d" % ds.bounces.size())
+	var h0: float = _world.time_of_day
+	for hr: float in [13.0, 1.0]:
+		_world.time_of_day = hr
+		await _ticks(6)
+		var be := ds.bounces[0].light_energy
+		print("BOT doorstones: door bounce at %.0f h: %.2f (sun %.2f)" % [hr, be, _world.sun.light_energy])
+		if (hr == 13.0 and be < 0.15) or (hr == 1.0 and ds.bounces[0].visible):
+			return _combat_done(false, "door bounce %.2f wrong at %.0f h" % [be, hr])
+	_world.time_of_day = h0
+	await _ticks(6)
 	var foley: Foley = _world.foley
 	var stone0 := int(foley.played.get("step_stone", 0))
 	var steps0 := foley.hero_steps

@@ -1061,7 +1061,18 @@ func _ready() -> void:
 			world.ambient_scale = float(a.substr(5))
 	for a in args:
 		if a.begins_with("rain="):
-			world.weather.force(float(a.substr(5)))
+			# rain= is the rain level wanted, not the front strength: a front under ~0.6
+			# is only overcast (Weather._rain_level), so rain=0.5 used to give rain 0.00
+			var want := clampf(float(a.substr(5)), 0.0, 1.0)
+			var lo := 0.0
+			var hi := 1.0
+			for _i in 24:
+				var mid := (lo + hi) * 0.5
+				if smoothstep(0.55, 0.95, mid) * mid < want:
+					lo = mid
+				else:
+					hi = mid
+			world.weather.force(hi if want > 0.0 else 0.0)
 	for a in args:
 		if a.begins_with("wet="):    # soak the ground after a passing shower (pools, light rain)
 			world.weather.wet = float(a.substr(4))

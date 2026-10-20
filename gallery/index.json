@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261015-1100-post-close.jpg",
-  "time": "2026-10-15T11:00:47Z",
-  "caption": "Close-up of the straw bundle: individual gold, grey and rusty stalks, sagging rope lashings biting into the bulges; the oak post top still reads black and flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-1310-post-oak.jpg",
-  "time": "2026-10-15T13:10:09Z",
-  "caption": "Practice post at 16:30 in back light: the oak now reads as silver-grey weathered wood with a pale end-grain cap and dark moss only at the foot, instead of a black cut-out; the iron band is still a flat black stripe and the far peaks are pale flat cones.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-1400-peaks.jpg",
-  "time": "2026-10-15T14:17:00Z",
-  "caption": "Morning over the vale: the far ring now rises as broad shouldered massifs that fade back in hazy layers instead of needle cones; the right-hand massif is still a milky flat wash in the haze and its faces lack forest/rock detail at this range.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-1520-post-iron.jpg",
   "time": "2026-10-15T15:20:00Z",
   "caption": "The practice post's iron band now reads as rusty forged iron with hammer facets worn dull grey, two rivets and rust runs staining the oak below, instead of a flat black stripe; at this range the band is small and the far peaks still wash pale.",
@@ -891,6 +873,18 @@
   "file": "20261020-0520-doorstones-pools.jpg",
   "time": "2026-10-20T05:20:00Z",
   "caption": "White cottage door flags soaked at 13:00: the rain pools along the slab edges are now an opaque water skin (no more white-mirror bug) showing faint sky in the hollows, but the doorway sits in deep shade and the pools still read as dark wet ground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0706-doorbounce.jpg",
+  "time": "2026-10-20T07:06:10Z",
+  "caption": "The white cottage doorway at 13 h, now lifted out of blue-black shade by a warm yard-bounce fill; the fill still pools a little lamp-like on the nearest slabs and the grass in front stays dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0706-rainpools.jpg",
+  "time": "2026-10-20T07:06:10Z",
+  "caption": "The timber house door stones in real rain (rain 0.5 now actually falls in shots): splash rings and wet slabs, but the overcast frame is dark and murky.",
   "verdict": "fail"
  }
 ]
