@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261015-0508-night-meadow.jpg",
-  "time": "2026-10-15T05:08:10Z",
-  "caption": "Night meadow at 23 h: moonlit grass tops now read cool silver over deep blue shadow instead of one grey wash; still too uniformly blue, the post's rope wrap stays yellow and the hero is a dark lump.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-0600-dawn-valley.jpg",
-  "time": "2026-10-15T06:38:00Z",
-  "caption": "Dawn over the vale, where the first soundscape now plays a dawn chorus from the oak groves; the far peaks are still pale grey cones, too bright against the dark land, and the foreground grass is murky.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-0600-morning-grove.jpg",
   "time": "2026-10-15T06:56:00Z",
   "caption": "Morning sun raking across the meadow toward the oak grove, where birdsong and rook caws now sound; the far peaks still read as milky flat cut-outs, and the rooks are too small to see.",
@@ -891,6 +879,18 @@
   "file": "20261020-0155-doorstones-worn-timber.jpg",
   "time": "2026-10-20T01:55:00Z",
   "caption": "The timber house's door slabs now show clear of the grass with clean walked tops; still wrong: they read as small blue-grey lumps rather than broad flat warm flags, and the house's infill panels look flat white.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0250-doorstones-flags-timber.jpg",
+  "time": "2026-10-20T02:50:00Z",
+  "caption": "The timber house's door stones now lie as broad, thin split flags across the track with clouded worn tops and dirt in their edges; still wrong: they read cool grey-white and too smooth in the late light, and the house infill looks flat white.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0250-doorstones-flags-stone.jpg",
+  "time": "2026-10-20T02:50:00Z",
+  "caption": "The stone cottage's door flags now read flat and broad underfoot; still wrong: the whole doorway sits in deep blue-black shade so the stones and the wall barely read.",
   "verdict": "fail"
  }
 ]
