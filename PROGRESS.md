@@ -33,6 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- 2026-10-20 04:30: **The wet door-stone tops lose some of their milky haze** (small)
+  Masonry wet tops (`INSTANCE_CUSTOM.r < 0`): under the water film the stone darkens a further
+  x0.78 and warms (`col * (1.08, 0.97, 0.82)`), and the broad glisten on the drier parts of a wet
+  top has SPECULAR cut by up to 35%. Shot `doorstones dsp_white 60 13.0 rain=0.5 wet=1 fixfps`
+  (taken with film x0.7) showed the flags too near-black, so it was eased to x0.78 (not re-shot).
+  FAILED + REVERTED this session: an opaque pool skin (second MeshInstance over the `Gaps` patch
+  mesh, `stone_pool.gdshader`, roughness 0.03, SPECULAR 0.5, discard outside the pool mask so
+  SSR would take it). In the shot the WHOLE patch round every slab (the full GAP+POOL
+  rectangle, ragged terrain outline) drew as a white mirror reflecting the limewashed wall --
+  the pool mask passed everywhere, as if UV/UV2 read zero in the opaque pass (mask is 0.67 at
+  out_m = 0). Not diagnosed; see Next. Bots `doorstones`, `walk` PASS.
 - 2026-10-20 03:30: **The door stones go dark and glassy in the rain, with water lying along their edges**
   Masonry (`INSTANCE_CUSTOM.r < 0`, trodden tops): with `weather_wet` the walked top soaks a
   deeper buff (x0.8) and a water film (`film`) lies in the foot-worn dish (fbm `dish` mask, kept
@@ -3758,6 +3769,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0000000000. (04:30 10-20) Edge pools still dark mud. An opaque cut-out skin was tried and failed
+   (see Done 04:30: the whole patch drew as a white mirror). Before retrying, debug the mask in
+   the opaque pass: output `ALBEDO = vec3(UV2, 0)` / `vec3(abs(UV), 0)` on a cheap shot to see
+   whether UV/UV2 arrive; consider passing the slab-local coords in COLOR or CUSTOM0 instead.
+   Also fade the mask out before the patch edge (no rectangular cut), lower SPECULAR to ~0.35 and
+   roughness to ~0.08 so a pool in front of the white wall is not a pure-white mirror. Shots
+   take ~20 min each on the cloud box now; run them with a 3600 s Bash timeout. Then the stone
+   cottage doorway's deep shade at 11 h, then the byre / second villager / a dog.
 000000000. (03:30 10-20) Wet door stones DONE (see Done). NEXT: the edge pools hardly read --
    give them sky/SSR reflection strength (they are a transparent decal, so no SSR: maybe draw
    them opaque with a depth offset) and make the wet top sheen less milky (tint the reflection

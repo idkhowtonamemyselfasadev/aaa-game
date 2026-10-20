@@ -892,5 +892,11 @@
   "time": "2026-10-20T03:45:00Z",
   "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261020-0430-doorstones-poolskin-fail.jpg",
+  "time": "2026-10-20T04:30:00Z",
+  "caption": "White cottage door flags in rain at 13:00 with a trial opaque pool skin: the whole patch round the slabs drew as a white mirror instead of thin edge pools; the trial was reverted, only the darker wet-flag tops were kept.",
+  "verdict": "fail"
  }
 ]

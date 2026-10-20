@@ -228,12 +228,17 @@ void fragment() {
 	float wet_top = walked * weather_wet;
 	float dish = smoothstep(0.42, 0.6, rub * 0.6 + fbm(wp * vec3(2.6, 1.0, 2.6) + 41.0) * 0.6 - edge * 0.5);
 	float film = wet_top * dish * smoothstep(0.3, 0.85, weather_wet);
-	col *= 1.0 - wet_top * 0.2 - film * 0.18;
+	// under the film the stone goes deep and warm (water saturates its colour rather than
+	// greying it), so the sheen is the sky's reflection on a dark wet top, not a milky haze
+	col *= 1.0 - wet_top * 0.2 - film * 0.22;
+	col = mix(col, col * vec3(1.08, 0.97, 0.82), film);
 	rough = mix(rough, 0.05, film);
 	rough = mix(rough, min(rough, 0.32), wet_top * (1.0 - film));
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.4 * (1.0 - soot * 0.95);   // soot is dead matte: no sheen of the fire on it
+	// soot is dead matte: no sheen of the fire on it; the wet top's broad glisten is held
+	// down (water's own reflectance is low, ~2%) so only the glassy film catches the light
+	SPECULAR = 0.4 * (1.0 - soot * 0.95) * (1.0 - wet_top * (1.0 - film) * 0.35);
 	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw) * mix(1.0, 0.45, lw) * (1.0 - film * 0.85));
 	if (film > 0.01 && weather_rain > 0.01) {
 		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05 * film;
