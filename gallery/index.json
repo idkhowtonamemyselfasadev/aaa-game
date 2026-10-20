@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261015-1619-peaks-haze.jpg",
-  "time": "2026-10-15T16:19:02Z",
-  "caption": "The far massifs now stand darker and bluer than the sky in layered haze with snow on the tops, instead of a milky wash; their faces are still flat grey with little forest or rock break-up at 1.5-2.5 km, and the mid-range trees are sparse.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-1726-peaks-couloirs.jpg",
   "time": "2026-10-15T17:26:07Z",
   "caption": "Upper massifs now break into dark rock ribs with pale snow-filled couloirs; their lower flanks are still a flat grey-blue wash and the left peak's streaks swirl a little.",
@@ -891,6 +885,12 @@
   "file": "20261020-0820-doorstones-storm-lifted.jpg",
   "time": "2026-10-20T08:20:00Z",
   "caption": "Same storm at the timber house door after the lift: the storm frame reads a good stop brighter and the flags now sit in bare dark loam with the sward cleared off the pool band; still wrong: the flags read as smooth pale lumps and the pools barely show.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0949-dog-green.jpg",
+  "time": "2026-10-20T09:49:33Z",
+  "caption": "Brack, Edda's new black-and-white collie, sat on the green by the timber house; it reads as a dog but the tall meadow grass buries it and the low lens sits in the grass.",
   "verdict": "fail"
  }
 ]

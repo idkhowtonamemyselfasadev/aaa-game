@@ -423,7 +423,7 @@ func _ready() -> void:
 		# Brack on the green before the white cottage, sat watching the yard (or "sniff":
 		# nose to the turf; "door": in its place by the door), a low three-quarter lens
 		var dg: Dog = world.dog
-		var at := dg.home + Vector3(1.5, 0, 1.0)
+		var at := dg.home    # on the trodden track, where the sward is short
 		if "door" in args:
 			dg.place_bed()
 			at = dg.bed
@@ -435,7 +435,16 @@ func _ready() -> void:
 			dg.yaw = 0.6
 		at = dg.global_position
 		var fwd := Vector3(-sin(dg.yaw), 0, -cos(dg.yaw))
-		var cp := at + fwd.rotated(Vector3.UP, 0.75) * (1.6 if "close" in args else 2.6)
+		var dist := 1.6 if "close" in args else 2.6
+		# front three-quarter, swung round until neither the lens nor the line to the dog
+		# runs into a house or wall
+		var cp := at + fwd.rotated(Vector3.UP, 0.75) * dist
+		for k in 16:
+			var a := 0.75 + (0.4 * ceilf(k / 2.0) * (1.0 if k % 2 == 0 else -1.0))
+			var q := at + fwd.rotated(Vector3.UP, a) * dist
+			if dg._clear(q, 1.2) and dg._clear(at.lerp(q, 0.5), 1.0):
+				cp = q
+				break
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.75
 		SPOTS[spot] = [cp, Vector3(at.x, at.y + 0.4, at.z)]
 		var pp := at + Vector3(40, 0, 40)
