@@ -44,7 +44,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   past each slab, UV2 = slab half size. Bot `doorstones` checks the 10 gap patches (2160
   verts) and PASS. Shot `doorstones dsw_timber 60 16.5 timber rain=0.7 wet=1 fixfps`: the
   flags read wet with bright sky sheen on their tops; the edge pools barely show under the
-  dark storm sky and the whole frame is very dark; the sheen is a little milky-white.
+  dark storm sky and the whole frame is very dark; the sheen is a little milky-white. Shot `doorstones dsw_white 60 13.0 rain=0.5 wet=1
+  fixfps`: dark glossy flags with wet pools round them read well, but the pools are near-black
+  (no sky reflection on the transparent decal) -- FAIL overall.
 - 2026-10-20 02:50: **Door stones reshaped into broad flat flags with dirt-packed edges**
   `DoorStones`: slabs now 0.52-0.64 m along the track x 0.72-0.9 m across it (they lie
   across the line of walk), 5.5 cm thick, PACE 0.82; mesh `YardWall.stone_mesh(..., rad 0.07,

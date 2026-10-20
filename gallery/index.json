@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261015-0600-morning-grove.jpg",
-  "time": "2026-10-15T06:56:00Z",
-  "caption": "Morning sun raking across the meadow toward the oak grove, where birdsong and rook caws now sound; the far peaks still read as milky flat cut-outs, and the rooks are too small to see.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-0700-fight.jpg",
-  "time": "2026-10-15T07:36:00Z",
-  "caption": "Late-afternoon squaring off with the Hollow by the practice post (the fight now has swishes, impacts and footfalls); still wrong: both fighters are near-black backlit silhouettes, the straw post reads as a smooth cartoon cylinder, the far peaks are pale grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-0800-fight-fill.jpg",
   "time": "2026-10-15T08:30:00Z",
   "caption": "Afternoon fight in back light: hero and Hollow now take meadow bounce and a sun rim, so the red robe, ochre sash, wraps and ash skin read instead of black cut-outs; the straw post is still a smooth cartoon cylinder and the far peaks are pale.",
@@ -891,6 +879,18 @@
   "file": "20261020-0250-doorstones-flags-stone.jpg",
   "time": "2026-10-20T02:50:00Z",
   "caption": "The stone cottage's door flags now read flat and broad underfoot; still wrong: the whole doorway sits in deep blue-black shade so the stones and the wall barely read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0330-doorstones-wet-timber.jpg",
+  "time": "2026-10-20T03:45:00Z",
+  "caption": "Timber house door flags in a storm at 16:30: the worn tops now read wet with a bright sky sheen; still fail: frame very dark, sheen a little milky, the edge pools barely show.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0330-doorstones-wet-white.jpg",
+  "time": "2026-10-20T03:45:00Z",
+  "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
   "verdict": "fail"
  }
 ]
