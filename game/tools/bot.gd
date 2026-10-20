@@ -1626,10 +1626,13 @@ func _dog_test() -> void:
 	var prev_state := dg.state
 	var on_track := 0
 	var lay_min := 1.0
+	var day_lie := 0
 	for i in 3000:
 		await get_tree().physics_frame
 		if YardGround.path_dist(dg.global_position.x, dg.global_position.z) < 0.8:
 			on_track += 1
+		if dg.state == Dog.REST and dg.lie > 0.99:
+			day_lie += 1
 		if dg.state == Dog.REST and dg.sit > 0.99:
 			lay_min = minf(lay_min, _world.trample.herd_lay_at(dg.global_position + Vector3(0.3, 0, 0)))
 		moved += dg.global_position.distance_to(prev)
@@ -1645,7 +1648,8 @@ func _dog_test() -> void:
 	if moved < 5.0 or sniffs < 1 or rests < 1 or max_home > Dog.RANGE or dg.state in [Dog.GREET, Dog.HEEL, Dog.BED]:
 		return _combat_done(false, "the dog should potter about the green by day, nosing about and sitting")
 	print("BOT dog shows: %.0f%% of the time on a trodden track, %d spots pressed, grass beside it laid %.2f (min while sat)" % [100.0 * on_track / 3000.0, dg.pressed, lay_min])
-	if on_track < 900 or dg.pressed < 1 or lay_min < 0.5:
+	print("BOT dog day rests lying down: %d frames" % day_lie)
+	if on_track < 900 or dg.pressed < 1 or lay_min < 0.5 or day_lie < 1:
 		return _combat_done(false, "the dog should keep mostly to the tracks and press the grass flat where it sits")
 	# the hero walks up: it barks, runs to meet him wagging, and sits at his heel
 	var fb0: int = _world.foley.played.get("dog_bark", 0)
@@ -1694,8 +1698,8 @@ func _dog_test() -> void:
 	for i in 240:
 		_world.time_of_day = 22.0
 		await get_tree().physics_frame
-	print("BOT dog lies down: lie %.2f sit %.2f" % [dg.lie, dg.sit])
-	if dg.lie < 0.95:
+	print("BOT dog lies down: lie %.2f sit %.2f doze %.2f" % [dg.lie, dg.sit, dg.doze])
+	if dg.lie < 0.95 or dg.doze < 0.5:
 		return _combat_done(false, "the dog should lie down in its place at night")
 	# a hero walking up on the dark house sets it barking
 	var b1 := dg.barks

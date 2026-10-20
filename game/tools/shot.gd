@@ -421,7 +421,8 @@ func _ready() -> void:
 		print("SHOT keeper %s at %s" % [kp.activity, at])
 	if spot == "dog":
 		# Brack on the white cottage's track (where the sward is trodden short), sat watching
-		# the yard (or "sniff": nose to the turf; "door": in its place by the door); the lens
+		# the yard (or "sniff": nose to the turf; "door": in its place by the door; "down":
+		# lying in the sun); the lens
 		# stands further out on the same track looking back up it at the dog and the door
 		var dg: Dog = world.dog
 		var run: PackedVector2Array = DoorStones.runs()[1][0]
@@ -432,12 +433,17 @@ func _ready() -> void:
 		if "door" in args:
 			dg.place_bed()
 			at = dg.bed
+			dg.doze = dg.lie   # long settled: asleep, chin on its paws
 		else:
 			dg.global_position = at
 			dg._start(Dog.SNIFF if "sniff" in args else Dog.REST, 1e6)
 			dg.sit = 0.0 if "sniff" in args else 1.0
 			dg.graze = 1.0 if "sniff" in args else 0.0
 			dg.yaw = atan2(-dq[1].x, -dq[1].y) + 0.5   # facing out down the track, turned a little
+			if "down" in args:   # a daytime rest taken lying, head up
+				dg.sit = 1.0
+				dg.lie = 1.0
+				dg.rest_down = true
 		at = dg.global_position
 		var lv := Vector2(lq[0].x, lq[0].y) + Vector2(-lq[1].y, lq[1].x) * 0.6
 		var cp := Vector3(lv.x, terrain.height_at(lv.x, lv.y) + 1.25, lv.y)

@@ -19,6 +19,7 @@ instance uniform float graze = 0.0;      // 0 head up .. 1 neck bowed, nose to t
 instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the tapetum
 instance uniform float wag = 0.0;        // 0 still .. 1 a glad, fast wag
 instance uniform float lie = 0.0;        // 0 sat .. 1 lying down (only with sit = 1)
+instance uniform float doze = 0.0;       // lying, 0 head up .. 1 asleep, chin down on the forepaws
 
 uniform vec3 coat : source_color = vec3(0.045, 0.040, 0.037);     // weathered black, a little brown in the sun
 uniform vec3 coat_dark : source_color = vec3(0.028, 0.025, 0.024); // the saddle
@@ -119,7 +120,7 @@ void vertex() {
 		n = rot_y(n, yw);
 		// eating off the floor: the neck bows down from the withers, nose to the ground
 		vec3 wi = vec3(0.0, 0.38, -0.17);
-		float g = (-1.3 * graze - 0.42 * l) * smoothstep(0.0, 0.6, b);   // lying: chin low over the paws
+		float g = (-1.3 * graze - (0.42 + 0.12 * doze) * l) * smoothstep(0.0, 0.6, b);   // lying: chin low over the paws
 		v = wi + rot_x(v - wi, g);
 		n = rot_x(n, g);
 	}

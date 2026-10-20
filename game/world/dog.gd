@@ -10,7 +10,9 @@ extends Node3D
 ## helpers), posed in dog.gdshader.
 ## It keeps mostly to the trodden tracks, and the grass it sits or noses about in is pressed
 ## flat under it (a point on Trample's herd trail), so it is not lost in the meadow.
-## Bots read `state`, `sit`, `lie`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`.
+## Lying at night it dozes, its chin sinking onto its paws, and lifts its head when the hero
+## comes within 11 m; about a third of its daytime rests are taken lying down, head up.
+## Bots read `state`, `sit`, `lie`, `doze`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`.
 
 signal barked(at: Vector3, alarm: bool)   # a greeting bark, or a guard bark at night
 
@@ -31,7 +33,9 @@ var terrain: Terrain
 var weather: Weather
 var state := POTTER
 var sit := 0.0
-var lie := 0.0               # 0 sat .. 1 lying down (at night by the door)
+var lie := 0.0               # 0 sat .. 1 lying down (at night by the door, some daytime rests)
+var doze := 0.0              # lying, 0 head up .. 1 chin on its paws
+var rest_down := false       # the current daytime rest is taken lying
 var wag := 0.0
 var speed := 0.0
 var yaw := 0.0
@@ -137,6 +141,7 @@ func _process(delta: float) -> void:
 	_t -= dt
 	var want_sit := 0.0
 	var want_lie := 0.0
+	var want_doze := 0.0
 	var top := 0.0
 	var look := Vector3.INF
 	var wag_goal := 0.0
@@ -151,6 +156,7 @@ func _process(delta: float) -> void:
 				_start(REST, _rng.randf_range(8.0, 20.0))
 		REST:
 			want_sit = 1.0
+			want_lie = 1.0 if rest_down else 0.0
 			if _t <= 0.0:
 				_pick_goal()
 				_start(POTTER, 0.0)
@@ -174,6 +180,7 @@ func _process(delta: float) -> void:
 			# at night it lies down in its place, up on its haunches again to bark or watch him
 			var h := _hour()
 			want_lie = 1.0 if (h >= 21.0 or h < 5.75) and _bark_n == 0 and near > 6.0 else 0.0
+			want_doze = want_lie if near > 11.0 else 0.0
 			if global_position.distance_to(bed) > 0.3:
 				want_sit = 0.0
 				want_lie = 0.0
@@ -225,6 +232,7 @@ func _process(delta: float) -> void:
 	lie = move_toward(lie, want_lie if sit > 0.95 else 0.0, dt / (1.4 if want_lie > 0.0 else 0.5))
 	if lie > 0.01:
 		sit = 1.0
+	doze = move_toward(doze, want_doze * lie, dt / (2.5 if want_doze * lie > doze else 0.4))
 	if state != SNIFF:
 		graze = move_toward(graze, 0.0, dt / 0.5)
 	wag = move_toward(wag, wag_goal * (1.0 if near < 8.0 else 0.4), dt / 0.4)
@@ -245,6 +253,7 @@ func _process(delta: float) -> void:
 	_mi.set_instance_shader_parameter("graze", graze)
 	_mi.set_instance_shader_parameter("wag", wag)
 	_mi.set_instance_shader_parameter("lie", lie)
+	_mi.set_instance_shader_parameter("doze", doze)
 
 var _greet_gap := AGAIN   # s since it last left the hero's side
 
@@ -276,6 +285,7 @@ func _pick_goal() -> void:
 			var r := Vector2(p.x - home.x, p.z - home.z).length()
 			if r > 1.5 and r < 10.0 and _clear(p, 1.3):
 				goal = _ground(p)
+				rest_down = _rng.randf() < 0.35
 				return
 	for i in 12:
 		var a := _rng.randf() * TAU
@@ -283,8 +293,10 @@ func _pick_goal() -> void:
 		var p := home + Vector3(cos(a), 0, sin(a)) * r
 		if _clear(p, 1.3):
 			goal = _ground(p)
+			rest_down = _rng.randf() < 0.35
 			return
 	goal = home
+	rest_down = false
 
 func _clear(p: Vector3, r: float) -> bool:
 	for o in _obstacles:
@@ -304,6 +316,8 @@ func _steer_to(to: Vector3, dt: float) -> bool:
 	if state == HEEL:
 		top = TROT if d > 3.0 else WALK
 	var want := minf(top, maxf(d * 1.2, 0.3))
+	if lie > 0.15:
+		want = 0.0    # up on its feet before it goes
 	speed = move_toward(speed, want, 3.0 * dt)
 	var dir := d3 / d
 	var push := Vector3.ZERO
