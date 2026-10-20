@@ -72,21 +72,7 @@ var logs := 0                    # split logs stacked and lying about (bots)
 var lean_floor := 0.0            # local ground height in the lean-to's middle
 var lean_stones := 0
 var bench_seat := Vector3.ZERO   # world centre of the bench's seat (bots)
-var keeper: Node                 # Edda (Villager): the lamp burns only while she is in
 var pail: WaterButt              # her pail, on the ground by the butt or in her hand
-
-## The lamp is lit while she is indoors after dusk (and the dawn candle before she is up);
-## in out of the rain by day the hearth's glow shows in the panes. It takes a moment to
-## kindle and to go out.
-func _lit_now(h: float, delta: float) -> float:
-	if keeper == null:
-		return lit_for(h)
-	var goal := 0.0
-	if not keeper.outdoors():
-		goal = lit_for(h)
-		if keeper.activity == "shelter":
-			goal = maxf(goal, 0.35)
-	return move_toward(lit, goal, delta / 1.5)
 
 func _ready() -> void:
 	super()

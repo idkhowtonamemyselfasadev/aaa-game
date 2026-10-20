@@ -12,6 +12,7 @@ uniform vec3 lid_col : source_color = vec3(0.30, 0.17, 0.13);
 uniform vec4 eyes = vec4(-0.031, 1.968, 0.031, 1.968);
 uniform vec2 eye_size = vec2(0.0135, 0.0037);
 uniform float brow_y = 1.990;
+uniform float low_tuck = 0.72;   // UV.y where the lower edge starts sinking into shade
 
 varying vec3 mp;
 
@@ -118,7 +119,7 @@ void fragment() {
 	// edges sink into the hood's shadow instead of ending at a lit rim (a pale mask at night)
 	// (wide falloffs: the hood opening hides the band's outer third, the shadow reaches in)
 	float tuck = smoothstep(0.0, 0.4, UV.x) * smoothstep(1.0, 0.6, UV.x)
-			* smoothstep(-0.05, 0.5, UV.y) * smoothstep(1.0, 0.72, UV.y);
+			* smoothstep(-0.05, 0.5, UV.y) * smoothstep(1.0, low_tuck, UV.y);
 	alb *= mix(0.72, 1.0, tuck);
 	vec3 wn = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;

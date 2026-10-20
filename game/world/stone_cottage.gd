@@ -68,6 +68,7 @@ var smoke: CPUParticles3D
 var lamp: OmniLight3D
 var panes: ShaderMaterial
 var lit := 0.0
+var keeper: Node                 # who lives here (Villager): the lamp burns only while they are in
 var door_gap := Vector3.ZERO  # world centre of the open doorway (bots)
 var _ruins: Ruins
 var _terrain: Terrain
@@ -758,9 +759,19 @@ static func lit_for(h: float) -> float:
 		return smoothstep(5.4, 5.6, h) * (1.0 - smoothstep(6.2, 6.6, h)) * 0.6
 	return 0.0
 
-## How lit the windows are now (the clock's; a cottage with someone living in it overrides).
-func _lit_now(h: float, _delta: float) -> float:
-	return lit_for(h)
+## How lit the windows are now: with nobody living in it, the clock's; with a keeper (Edda in
+## the white cottage, Osric here) the lamp burns only while they are indoors after dusk (and
+## the dawn candle before they are up), and in out of the rain by day the hearth's glow shows
+## in the panes. It takes a moment to kindle and to go out.
+func _lit_now(h: float, delta: float) -> float:
+	if keeper == null:
+		return lit_for(h)
+	var goal := 0.0
+	if not keeper.outdoors():
+		goal = lit_for(h)
+		if keeper.activity == "shelter":
+			goal = maxf(goal, 0.35)
+	return move_toward(lit, goal, delta / 1.5)
 
 func _process(delta: float) -> void:
 	var h: float = _world.time_of_day if "time_of_day" in _world else 12.0

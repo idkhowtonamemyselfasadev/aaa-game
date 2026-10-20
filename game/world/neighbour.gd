@@ -3,7 +3,9 @@ extends Villager
 ## Osric, Edda's neighbour in the stone cottage across the yard: an old shepherd gone stiff in
 ## the knees, whose hens they are (Edda feeds them for him over the garth wall; he keeps the
 ## house and the eggs). Edda's rig and garb builder, cut as an old working man: a battered felt
-## hat, an oiled wool cape, a long fleece-grey smock, a rope girdle. His day by the clock:
+## hat, an oiled wool cape, a long fleece-grey smock, a rope girdle, and no face cloth: his own
+## weathered face with a nose and a grizzled grey beard (HeroGarb.beard). His cottage's lamp
+## burns only while he is in (StoneCottage.keeper). His day by the clock:
 ##   06:45 out on his step, looking over the yard
 ##   07:15 round to the garth by the squeeze gap in the east yard wall, down the outside of
 ##         the gable and in at the field gate (it swings for him as it does for the hero);
@@ -83,6 +85,8 @@ func _dress() -> void:
 		"wraps": [Color(0.09, 0.085, 0.075), Color(0.40, 0.38, 0.34), 0.4],
 	}
 	garb.robe_len = 0.85
+	# no face cloth: his own weathered face, the nose, and a grizzled grey beard
+	garb.beard = true
 
 func _kit() -> void:
 	pass
@@ -94,6 +98,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 	player = w.get_node_or_null("Player")
 	terrain = w.get_node("Terrain")
 	cottage = w.get("stone_cottage")
+	cottage.keeper = self             # his lamp burns only while he is in
 	_rng.seed = 5353
 	var fy := cottage.global_rotation.y      # the door side's facing (local +z)
 	_spots["door"] = [_at(C_DOOR), fy]

@@ -34,11 +34,18 @@ var basket_node: Node3D
 ## to the hem, so a long robe closes into a skirt and the side view shows no legs or armour.
 var skirt := false
 var gores: Array[MeshInstance3D] = []
+## An old man's bare face instead of the face cloth: the face runs on down past a nose to the
+## upper lip, and a grey beard and moustache (beard.gdshader on the face cloth's shape) cover
+## the jaw and the throat down into the mantle's collar.
+var beard := false
+var beard_col := Color(0.50, 0.48, 0.45)
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
 const EYE_Y := 1.968
 const EYE_R := 0.0125
+## A bearded face's lower edge (under the nose, behind the moustache).
+const FACE_LOW_BEARD := 1.872
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -63,10 +70,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	hdm.set_shader_parameter("wool", 1.0)
 	hdm.set_shader_parameter("hem_band", 1.0)
 	head.add_child(hood)
-	veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
-	var vm := veil.material_override as ShaderMaterial
-	vm.set_shader_parameter("wool", 1.0)
-	vm.set_shader_parameter("fold_ao", 1.0)
+	if beard:
+		veil = _beard()
+	else:
+		veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
+		var vm := veil.material_override as ShaderMaterial
+		vm.set_shader_parameter("wool", 1.0)
+		vm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(veil)
 	_add_face(head)
 	if not hatless:
@@ -422,6 +432,20 @@ func _veil() -> ArrayMesh:
 	st.generate_tangents()
 	return st.commit()
 
+## The beard: the face cloth's shape, a little fuller, drawn as coarse grey hair; its top edge
+## is cut by beard.gdshader into a moustache line under the nose rising to the cheekbones.
+func _beard() -> MeshInstance3D:
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://shaders/beard.gdshader")
+	mat.set_shader_parameter("hair_col", beard_col)
+	var mi := MeshInstance3D.new()
+	mi.name = "Beard"
+	mi.mesh = _veil()
+	mi.material_override = mat
+	mi.layers = layer
+	mi.transform = Transform3D(Basis.from_scale(Vector3(1.05, 1.0, 1.07)), Vector3.ZERO)
+	return mi
+
 ## The face in the gap between the hood and the face cloth: a band of sun-browned skin from
 ## the brow to the bridge of the nose, with the brow ridge, the nose bridge and two shallow eye
 ## sockets shaped in, almond lid openings cut by skin.gdshader, and two wet eyeballs behind
@@ -430,9 +454,12 @@ func _add_face(head: Node3D) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://shaders/skin.gdshader")
 	mat.set_shader_parameter("eyes", Vector4(-EYE_X, EYE_Y, EYE_X, EYE_Y))
+	if beard:
+		# the nose and upper lip show; only the strip under the moustache tucks into shade
+		mat.set_shader_parameter("low_tuck", 0.88)
 	face = MeshInstance3D.new()
 	face.name = "Face"
-	face.mesh = _grid(_face_point, 40, 14)
+	face.mesh = _grid(_face_point, 40, 24 if beard else 14)
 	face.material_override = mat
 	face.layers = layer
 	head.add_child(face)
@@ -499,7 +526,7 @@ func light_face(shade: Color) -> void:
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
 	var a := lerpf(-1.0, 1.0, u)
-	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, 1.914, v), true)
+	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, FACE_LOW_BEARD if beard else 1.914, v), true)
 
 ## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
 ## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
@@ -510,7 +537,18 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	var z := -0.035 + cos(a) * 0.19
 	# brow ridge over the eyes, the bridge of the nose running down the middle
 	z += 0.006 * exp(-pow((y - 1.992) / 0.008, 2.0)) * (1.0 - smoothstep(0.05, 0.075, absf(x)))
-	z += 0.007 * exp(-pow(x / 0.009, 2.0)) * smoothstep(1.995, 1.95, y)
+	if beard:
+		# a whole nose: the bridge narrow between the eyes, widening and standing out to a
+		# rounded tip over the moustache, with the nostril wings either side of it; under it
+		# the lip runs back behind the moustache
+		var t := clampf((1.985 - y) / 0.08, 0.0, 1.0)
+		var w := 0.0065 + 0.008 * t
+		var under := smoothstep(1.889, 1.903, y)
+		z += (0.004 + 0.019 * pow(t, 1.4)) * exp(-pow(x / w, 2.0)) * under
+		z += 0.007 * exp(-pow((absf(x) - 0.0135) / 0.006, 2.0) - pow((y - 1.904) / 0.007, 2.0))
+		z -= 0.03 * smoothstep(1.899, 1.880, y)
+	else:
+		z += 0.007 * exp(-pow(x / 0.009, 2.0)) * smoothstep(1.995, 1.95, y)
 	if sockets:
 		for c in [-EYE_X, EYE_X]:
 			var d := pow((x - c) / 0.019, 2.0) + pow((y - EYE_Y) / 0.011, 2.0)
@@ -518,7 +556,8 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	# cheekbones forward under the outer eye corners, then the lower edge tucks back under the
 	# face cloth and the sides under the hood
 	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
-	z -= 0.02 * smoothstep(1.932, 1.914, y)
+	if not beard:
+		z -= 0.02 * smoothstep(1.932, 1.914, y)
 	z -= 0.03 * smoothstep(0.06, 0.09, absf(x))
 	return Vector3(x, y, z)
 

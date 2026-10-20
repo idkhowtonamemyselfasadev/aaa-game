@@ -928,6 +928,12 @@ func _ready() -> void:
 		var cp := at + lens * (3.6 if nb.activity == "lean" else 3.4)
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
 		SPOTS[spot] = [cp, at + Vector3.UP * 1.3]
+		if "face" in args:
+			# a head-and-shoulders portrait at 1.1 m: the nose, the beard, the eyes under the brim
+			var fb := nb.garb.face.global_transform * nb.garb.face.get_aabb()
+			var fc := fb.get_center()
+			var lf := f.rotated(Vector3.UP, 0.45)
+			SPOTS[spot] = [fc + lf * 1.1 + Vector3.UP * 0.02, fc - Vector3.UP * 0.12]
 		var pp := at + Vector3(40, 0, 40)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT osric %s at %s lean %.2f" % [nb.activity, at, nb.lean])
@@ -1257,6 +1263,20 @@ func _ready() -> void:
 		cam.global_position = fc + fdir * 0.85 + Vector3.DOWN * 0.14
 		cam.look_at(fc + Vector3.DOWN * 0.04)
 		print("SHOT face at %s, camera %s" % [fc, cam.global_position])
+		for i in 3:
+			await get_tree().process_frame
+	if spot == "osric" and "face" in args and cam != null:
+		# the portrait aimed after the warm-up, from where his face is in the pose he holds
+		# (leaning, the head drops forward over the cope): 3/4 from the front, just under eye level
+		var nb2: Neighbour = world.neighbour
+		var fc := (nb2.garb.eyes[0].global_position + nb2.garb.eyes[1].global_position) * 0.5
+		var hsk := nb2.skel
+		var hb := hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_Head")).origin
+		var ef := fc - hb
+		var fdir := Vector3(ef.x, 0, ef.z).normalized().rotated(Vector3.UP, 0.45)
+		cam.global_position = fc + fdir * 0.9 + Vector3.DOWN * 0.08
+		cam.look_at(fc + Vector3.DOWN * 0.06)
+		print("SHOT osric face at %s, camera %s" % [fc, cam.global_position])
 		for i in 3:
 			await get_tree().process_frame
 	for a in args:

@@ -4249,6 +4249,12 @@ func _neighbour_test() -> void:
 	print("BOT neighbour at 3 h: %s, visible %s" % [v.activity, v.visible])
 	if v.visible or v.activity != "in":
 		return _combat_done(false, "he is out at 3 in the morning")
+	# his own face and a grey beard, not the hero's face cloth; the face runs down past the nose
+	var g := v.garb
+	var fb := g.face.get_aabb() if g.face != null else AABB()
+	print("BOT neighbour face: %s over the jaw, face %.3f..%.3f m, eyes %d" % [g.veil.name if g.veil else "nothing", fb.position.y, fb.end.y, g.eyes.size()])
+	if g.veil == null or g.veil.name != "Beard" or g.face == null or fb.position.y > 1.88 or g.eyes.size() != 2:
+		return _combat_done(false, "Osric has no beard or no nose")
 	var o0 := fg.opens
 	var stages := [[6.9, "wake", 0], [7.5, "eggs", 700], [9.0, "lean", 200], [11.0, "tend", 700], [12.5, "in", 0], [14.0, "lean", 200], [19.2, "shut", 0], [20.0, "step", 0]]
 	for st in stages:
@@ -4270,6 +4276,11 @@ func _neighbour_test() -> void:
 			return _combat_done(false, "he does not lean on the wall")
 		if st[1] == "eggs" and fg.opens - o0 < 1:
 			return _combat_done(false, "the field gate never swung for him")
+		if st[1] == "step":
+			# out on his step at dusk: nobody in, so his lamp is not lit yet
+			print("BOT neighbour lamp while he is on the step: %.2f" % v.cottage.lit)
+			if v.cottage.lit > 0.05:
+				return _combat_done(false, "his lamp burns with nobody in")
 	if fg.angle != 0.0 and absf(fg.angle) > 0.05:
 		await _hold_hour(20.0, 300)
 	print("BOT neighbour gate after: angle %.2f, opens %d, shuts %d" % [fg.angle, fg.opens - o0, fg.shuts])
@@ -4287,9 +4298,11 @@ func _neighbour_test() -> void:
 	if in_rain or goes < 2 or not v.visible or v.activity != "lean":
 		return _combat_done(false, "he does not shelter from the rain")
 	await _hold_arrive(v, 21.2, 3000, 40)
-	print("BOT neighbour night: %s visible %s gone in %d, warps %d" % [v.activity, v.visible, v.goings_in, v.warps])
+	print("BOT neighbour night: %s visible %s gone in %d, warps %d, lamp %.2f" % [v.activity, v.visible, v.goings_in, v.warps, v.cottage.lit])
 	if v.visible or v.activity != "in":
 		return _combat_done(false, "he does not go in at night")
+	if v.cottage.lit < 0.5:
+		return _combat_done(false, "he is in at night with his lamp unlit")
 	if v.warps > 0:
 		return _combat_done(false, "he wedged on his rounds and was lifted %d times" % v.warps)
 	# the hero walks up while he leans on the wall: he straightens and turns to him
@@ -4303,7 +4316,7 @@ func _neighbour_test() -> void:
 	print("BOT neighbour notice: noticing %s, facing off %.2f rad, lean %.2f" % [v.noticing, off, v.lean])
 	if not v.noticing or off > 0.35 or v.lean > 0.1:
 		return _combat_done(false, "he ignores the hero")
-	_combat_done(true, "Osric keeps his day: eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
+	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in): eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager
