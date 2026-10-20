@@ -803,7 +803,7 @@ func _ready() -> void:
 		# "timber": the timber house)
 		var k := 1 if not ("stone" in args or "timber" in args) else (0 if "stone" in args else 2)
 		var w: PackedVector2Array = DoorStones.runs()[k][0]
-		var far: Array = DoorStones.along(w, 3.3)
+		var far: Array = DoorStones.along(w, 3.8)
 		var q: Vector2 = far[0]
 		var side: Vector2 = (far[1] as Vector2).orthogonal() * 0.45
 		var cp := Vector3(q.x + side.x, 0.0, q.y + side.y)

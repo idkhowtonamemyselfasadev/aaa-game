@@ -157,7 +157,12 @@ void fragment() {
 	// lichen keep to the arrises and the sunk edges
 	float walked = trod * smoothstep(0.55, 0.85, n.y) * (1.0 - edge * 0.6);
 	mossw *= 1.0 - walked * 0.92;
-	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.02, 1.0, 0.96) * 1.22 + 0.025, walked * 0.85);
+	// the walked top goes the warm buff grey of rubbed sandstone, not the cool field grey
+	// (a little clouded: worn smooth here, foot-dulled and stained there)
+	float rub = fbm(wp * vec3(5.0, 1.0, 5.0) + 11.0);
+	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.14, 1.0, 0.8) * mix(0.92, 1.12, rub) + vec3(0.03, 0.022, 0.008), walked * mix(0.6, 0.85, rub));
+	// the slab's sides and sunk edges carry the track's dirt
+	col = mix(col, col * vec3(0.62, 0.52, 0.42), trod * (1.0 - smoothstep(0.35, 0.75, n.y)) * 0.7);
 	col = mix(col, mc, mossw);
 	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
 	// limewash: a white skin over everything above, the coats a little uneven

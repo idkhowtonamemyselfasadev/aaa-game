@@ -304,7 +304,7 @@ func _stone_mesh(v: int, mat: Material) -> ArrayMesh:
 ## `crisp`: the normals are smoothed only within each split plane (the original face or a
 ## fracture cut), so the arrises between planes stay sharp and the stone reads as split
 ## rather than pillowed.
-static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false, ncut := Vector2i(3, 5), crisp := false) -> ArrayMesh:
+static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07, cut0 := 0.36, cut1 := 0.47, rel := false, ncut := Vector2i(3, 5), crisp := false, upright := false) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = sd + v * 7
 	n.frequency = 2.2
@@ -314,6 +314,9 @@ static func stone_mesh(sd: int, v: int, mat: Material, rad := 0.16, lump := 0.07
 	var cuts := []
 	for i in r.randi_range(ncut.x, ncut.y):
 		var cn := Vector3(r.randf_range(-1, 1), r.randf_range(-0.6, 0.6), r.randf_range(-1, 1)).normalized()
+		if upright:
+			# split faces stand plumb: a flag's bed and top stay flat, only its edges are broken
+			cn = Vector3(cn.x, 0.0, cn.z).normalized()
 		var reach := 0.5 * (absf(cn.x) + absf(cn.y) + absf(cn.z)) if rel else 1.0
 		cuts.append([cn, r.randf_range(cut0, cut1) * reach])
 	var div := 7

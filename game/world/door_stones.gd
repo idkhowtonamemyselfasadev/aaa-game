@@ -12,9 +12,9 @@ extends Node3D
 
 const VARIANTS := 5
 const START := 0.55       # first stone's centre, metres along the track from the door
-const PACE := 0.74        # stone to stone along the track
+const PACE := 0.82        # stone to stone along the track
 const PROUD := 0.015      # the top's lip above the ground
-const THICK := 0.07
+const THICK := 0.055
 
 var stone_count := 0
 var stones: Array[Vector3] = []    # world centre of each slab's top (bots)
@@ -68,7 +68,9 @@ static func plan() -> Array:
 			# a step for the left foot, then the right: the slabs wander either side of the line
 			q += right * (0.07 if i % 2 == 0 else -0.07) + right * rng.randf_range(-0.04, 0.04)
 			# the last one out is smaller, half lost in the dirt where the track runs on
-			var sz := Vector3(rng.randf_range(0.58, 0.72), THICK, rng.randf_range(0.46, 0.56))
+			# broad flags laid across the track (x along it, z across): wide enough to take a
+			# whole foot and then some, thin field slabs split along their bedding
+			var sz := Vector3(rng.randf_range(0.52, 0.64), THICK, rng.randf_range(0.72, 0.9))
 			if i == r[1] - 1:
 				sz *= Vector3(0.82, 1.0, 0.85)
 			var yaw := atan2(right.x, right.y) + rng.randf_range(-0.35, 0.35)
@@ -85,7 +87,7 @@ static func under(x: float, z: float, margin := 0.0) -> bool:
 		var c: Vector2 = sl[0]
 		var o := Vector2(x, z) - c
 		var sz: Vector3 = sl[3]
-		if o.length_squared() > pow(0.47 + maxf(margin, 0.0), 2.0):   # cheap reject: < 0.47 m centre to corner
+		if o.length_squared() > pow(0.6 + maxf(margin, 0.0), 2.0):   # cheap reject: < 0.6 m centre to corner
 			continue
 		var bx := Vector2(cos(sl[4]), -sin(sl[4]))      # the slab's own x axis in xz (Basis(UP, yaw))
 		var bz := Vector2(sin(sl[4]), cos(sl[4]))
@@ -96,7 +98,7 @@ static func under(x: float, z: float, margin := 0.0) -> bool:
 ## How close (x, z) lies to the stones: 1 within `inner` metres of a slab's centre, 0 past
 ## `outer`. The tall meadow clumps thin and shorten in this band so they do not lean over the
 ## slabs and bury them.
-static func near(x: float, z: float, inner := 0.4, outer := 1.05) -> float:
+static func near(x: float, z: float, inner := 0.5, outer := 1.15) -> float:
 	var best := INF
 	for sl: Array in plan():
 		var c: Vector2 = sl[0]
@@ -110,13 +112,15 @@ func _ready() -> void:
 	_terrain = get_node(terrain_path)
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
-		# squarish slabs: rounder arrises worn by feet, only a couple of shallow splits
-		meshes.append(YardWall.stone_mesh(seed, v, ruins.material, 0.2, 0.05, 0.42, 0.49, true, Vector2i(2, 3)))
+		# flat flags: tight arrises worn by feet, a broad level top, the edges broken by a
+		# couple of plumb splits so the outline is a split slab's, not a pebble's
+		meshes.append(YardWall.stone_mesh(seed, v, ruins.material, 0.07, 0.035, 0.43, 0.49, false, Vector2i(2, 3), false, true))
 		_per.append([])
 	for sl: Array in plan():
 		_lay(sl)
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Slabs_%d" % v)
+	_gaps()
 
 func _lay(sl: Array) -> void:
 	var q: Vector2 = sl[0]
@@ -141,6 +145,46 @@ func _lay(sl: Array) -> void:
 	_per[sl[8]].append([Transform3D(b * Basis.from_scale(sc), c3), Color(-0.125, sl[9], 0.0, 2.0)])
 	stones.append(Vector3(q.x, top, q.y))
 	stone_count += 1
+
+## The dirt packed into the crack round each slab: one patch of ground-hugging grid per slab,
+## a hand's breadth bigger than it, draped on the terrain just above the track's dirt.
+const GAP := 0.07
+func _gaps() -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := 6
+	for sl: Array in plan():
+		var q: Vector2 = sl[0]
+		var sz: Vector3 = sl[3]
+		var bx := Vector2(cos(sl[4]), -sin(sl[4]))
+		var bz := Vector2(sin(sl[4]), cos(sl[4]))
+		var hx := sz.x * 0.5 + GAP
+		var hz := sz.z * 0.5 + GAP
+		var verts := []
+		for i in n + 1:
+			for j in n + 1:
+				var lx := lerpf(-hx, hx, float(i) / n)
+				var lz := lerpf(-hz, hz, float(j) / n)
+				var p := q + bx * lx + bz * lz
+				verts.append([Vector3(p.x, _terrain.height_at(p.x, p.y) + 0.008, p.y) - global_position, Vector2(lx, lz)])
+		var idx := []
+		for i in n:
+			for j in n:
+				var a := i * (n + 1) + j
+				idx.append_array([a, a + n + 1, a + 1, a + 1, a + n + 1, a + n + 2])
+		for k: int in idx:
+			st.set_normal(Vector3.UP)
+			st.set_uv(verts[k][1])
+			st.set_uv2(Vector2(hx, hz))
+			st.add_vertex(verts[k][0])
+	var mi := MeshInstance3D.new()
+	mi.name = "Gaps"
+	mi.mesh = st.commit()
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://shaders/stone_gap.gdshader")
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 ## Top of the slab under (x, z), or NAN off the stones (the foley's footsteps).
 func top_at(x: float, z: float) -> float:
