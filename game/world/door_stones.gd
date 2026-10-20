@@ -98,8 +98,9 @@ static func under(x: float, z: float, margin := 0.0) -> bool:
 
 ## How close (x, z) lies to the stones: 1 within `inner` metres of a slab's centre, 0 past
 ## `outer`. The tall meadow clumps thin and shorten in this band so they do not lean over the
-## slabs and bury them.
-static func near(x: float, z: float, inner := 0.5, outer := 1.15) -> float:
+## slabs and bury them (wide enough that a storm gust laying a metre-tall clump flat from its
+## edge still falls short of the flags and the pools along them).
+static func near(x: float, z: float, inner := 0.75, outer := 1.75) -> float:
 	var best := INF
 	for sl: Array in plan():
 		var c: Vector2 = sl[0]

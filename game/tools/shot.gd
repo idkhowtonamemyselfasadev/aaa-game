@@ -1073,6 +1073,8 @@ func _ready() -> void:
 				else:
 					hi = mid
 			world.weather.force(hi if want > 0.0 else 0.0)
+		if a.begins_with("cloud="):   # a front strength as is (below 0.55: overcast, dry)
+			world.weather.force(float(a.substr(6)))
 	for a in args:
 		if a.begins_with("wet="):    # soak the ground after a passing shower (pools, light rain)
 			world.weather.wet = float(a.substr(4))

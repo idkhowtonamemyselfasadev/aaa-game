@@ -886,5 +886,11 @@
   "time": "2026-10-20T07:06:10Z",
   "caption": "The timber house door stones in real rain (rain 0.5 now actually falls in shots): splash rings and wet slabs, but the overcast frame is dark and murky.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261020-0735-doorstones-timber-storm.jpg",
+  "time": "2026-10-20T07:35:43Z",
+  "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
+  "verdict": "fail"
  }
 ]

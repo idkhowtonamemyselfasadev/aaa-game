@@ -263,7 +263,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		# by the door stones: most tall clumps trodden out, the rest kept short, so none lean
 		# over the slabs and hide them
 		var stones := DoorStones.near(x, z)
-		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05 or rng.randf() < YardGround.worn(x, z) * 1.2 or rng.randf() < stones * 0.8:
+		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05 or rng.randf() < YardGround.worn(x, z) * 1.2 or rng.randf() < stones * 0.92:
 			have_prev = false
 			continue
 		px = x
@@ -285,7 +285,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 			kind = 2
 		elif roll > 0.74 - 0.2 * shade - 0.12 * (1.0 - patch):
 			kind = 1
-		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far) * lerpf(1.0, 0.55, stones)
+		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far) * lerpf(1.0, 0.42, stones)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		# lean with the slope a little so clumps don't look stuck on like pins, plus a
 		# random tilt so neighbours never stand quite parallel
