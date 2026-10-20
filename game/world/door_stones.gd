@@ -121,6 +121,7 @@ func _ready() -> void:
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Slabs_%d" % v)
 	_gaps()
+	_pools()
 
 func _lay(sl: Array) -> void:
 	var q: Vector2 = sl[0]
@@ -184,6 +185,54 @@ func _gaps() -> void:
 	mi.mesh = st.commit()
 	var m := ShaderMaterial.new()
 	m.shader = preload("res://shaders/stone_gap.gdshader")
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+
+## The rain pools themselves: an opaque skin (so screen-space reflections take it) on a fine
+## ring of ground round each slab, out to `POOL_OUT` past its edges. Each vertex carries its
+## metres out past the slab's edge in COLOR.r (/ POOL_OUT) -- the shader cuts the lobed pool
+## out of the ring from that and discards the rest, and all of it while the ground is dry.
+const POOL_OUT := 0.24
+const POOL_CELL := 0.035
+func _pools() -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for sl: Array in plan():
+		var q: Vector2 = sl[0]
+		var sz: Vector3 = sl[3]
+		var bx := Vector2(cos(sl[4]), -sin(sl[4]))
+		var bz := Vector2(sin(sl[4]), cos(sl[4]))
+		var h := Vector2(sz.x, sz.z) * 0.5
+		var e := h + Vector2(POOL_OUT, POOL_OUT)
+		var nx := ceili(e.x * 2.0 / POOL_CELL)
+		var nz := ceili(e.y * 2.0 / POOL_CELL)
+		var at := func(i: int, j: int) -> Array:
+			var l := Vector2(lerpf(-e.x, e.x, float(i) / nx), lerpf(-e.y, e.y, float(j) / nz))
+			var p := q + bx * l.x + bz * l.y
+			var out := maxf(absf(l.x) - h.x, absf(l.y) - h.y)
+			return [Vector3(p.x, _terrain.height_at(p.x, p.y) + 0.006, p.y) - global_position,
+				clampf(out / POOL_OUT, 0.0, 1.0)]
+		for i in nx:
+			for j in nz:
+				# skip the cells wholly under the slab
+				var cx := absf(lerpf(-e.x, e.x, (i + 0.5) / nx))
+				var cz := absf(lerpf(-e.y, e.y, (j + 0.5) / nz))
+				if cx < h.x - POOL_CELL and cz < h.y - POOL_CELL:
+					continue
+				var a: Array = at.call(i, j)
+				var b: Array = at.call(i + 1, j)
+				var c: Array = at.call(i, j + 1)
+				var d: Array = at.call(i + 1, j + 1)
+				for v: Array in [a, c, b, b, c, d]:
+					st.set_normal(Vector3.UP)
+					st.set_color(Color(v[1], 0.0, 0.0, 1.0))
+					st.add_vertex(v[0])
+	var mi := MeshInstance3D.new()
+	mi.name = "Pools"
+	mi.mesh = st.commit()
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://shaders/stone_pool.gdshader")
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)

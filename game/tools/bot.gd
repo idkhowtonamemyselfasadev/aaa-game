@@ -3220,6 +3220,21 @@ func _doorstones_test() -> void:
 		return _combat_done(false, "dirt/pool patches missing round the slabs")
 	var ga := gaps.mesh.get_aabb()
 	print("BOT doorstones: gap patches %d verts, aabb %s" % [gaps.mesh.surface_get_array_len(0), ga.size])
+	# the opaque pool skins: a fine ring round each slab, each vertex's edge distance in COLOR.r
+	var pools := ds.get_node_or_null("Pools") as MeshInstance3D
+	if pools == null or pools.mesh.get_surface_count() != 1:
+		return _combat_done(false, "rain pool rings missing round the slabs")
+	var pa := pools.mesh.surface_get_arrays(0)
+	var pcol: PackedColorArray = pa[Mesh.ARRAY_COLOR]
+	var pv: PackedVector3Array = pa[Mesh.ARRAY_VERTEX]
+	var lo := 1.0
+	var hi := 0.0
+	for cc in pcol:
+		lo = minf(lo, cc.r)
+		hi = maxf(hi, cc.r)
+	print("BOT doorstones: pool rings %d verts, edge distance %.2f..%.2f" % [pv.size(), lo, hi])
+	if pv.size() < ds.stone_count * 600 or lo > 0.01 or hi < 0.99:
+		return _combat_done(false, "pool rings do not span the slab edge out to POOL_OUT")
 	var foley: Foley = _world.foley
 	var stone0 := int(foley.played.get("step_stone", 0))
 	var steps0 := foley.hero_steps

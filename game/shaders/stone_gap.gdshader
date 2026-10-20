@@ -10,7 +10,6 @@ render_mode blend_mix, depth_draw_never, cull_disabled;
 global uniform vec3 bounce_light;
 uniform vec3 loam : source_color = vec3(0.13, 0.095, 0.065);
 uniform vec3 loam_dry : source_color = vec3(0.24, 0.19, 0.13);
-uniform vec3 pool_floor : source_color = vec3(0.045, 0.036, 0.026);
 
 // UV: metres from the slab's centre along its own x/z; UV2: the slab's half size in metres
 // (the patch runs DoorStones.GAP + POOL past it)
@@ -48,20 +47,12 @@ void fragment() {
 	           * step(0.04, reach);
 	// a dark wet margin round each pool
 	float margin = (1.0 - smoothstep(reach, reach + 0.05, out_m + rag * 0.4)) * smoothstep(0.2, 0.6, weather_wet);
-	vec3 pc = pool_floor * (0.85 + 0.3 * crumbs);
 	c = mix(c, c * 0.7, margin * (1.0 - dirt));
-	c = mix(c, pc, pool);
-	rough = mix(rough, 0.04, pool);
-	// drops ringing the pool's skin, the mud's grain gone under it
-	vec3 nw = vec3(0.0, 1.0, 0.0);
-	if (pool > 0.01 && weather_rain > 0.01) {
-		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05;
-		nw = normalize(vec3(-sl.x, 1.0, -sl.y));
-	}
-	NORMAL = mix(NORMAL, normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz), pool);
 	ALBEDO = c;
 	ROUGHNESS = rough;
-	SPECULAR = mix(0.3, 0.5, pool);
-	ALPHA = clamp(max(dirt * 0.85, max(pool * 0.97, margin * 0.6)), 0.0, 1.0);
-	EMISSION = c * bounce_light * 0.4 * (1.0 - pool * 0.8);
+	SPECULAR = 0.3;
+	// the water itself is the opaque skin under this (`stone_pool.gdshader`): leave a hole for it
+	float hole = step(0.5, pool);
+	ALPHA = clamp(max(dirt * 0.85, margin * 0.6), 0.0, 1.0) * (1.0 - hole);
+	EMISSION = c * bounce_light * 0.4;
 }

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261015-0800-fight-fill.jpg",
-  "time": "2026-10-15T08:30:00Z",
-  "caption": "Afternoon fight in back light: hero and Hollow now take meadow bounce and a sun rim, so the red robe, ochre sash, wraps and ash skin read instead of black cut-outs; the straw post is still a smooth cartoon cylinder and the far peaks are pale.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-1100-post.jpg",
-  "time": "2026-10-15T11:00:47Z",
-  "caption": "The practice post is now a bundle of loose straw stalks lashed with twisted rope, its cut ends splaying like a broom; the oak above and below it is still a near-black silhouette in back light with lime moss blotches.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-1100-post-close.jpg",
   "time": "2026-10-15T11:00:47Z",
   "caption": "Close-up of the straw bundle: individual gold, grey and rusty stalks, sagging rope lashings biting into the bulges; the oak post top still reads black and flat.",
@@ -897,6 +885,12 @@
   "file": "20261020-0430-doorstones-poolskin-fail.jpg",
   "time": "2026-10-20T04:30:00Z",
   "caption": "White cottage door flags in rain at 13:00 with a trial opaque pool skin: the whole patch round the slabs drew as a white mirror instead of thin edge pools; the trial was reverted, only the darker wet-flag tops were kept.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0520-doorstones-pools.jpg",
+  "time": "2026-10-20T05:20:00Z",
+  "caption": "White cottage door flags soaked at 13:00: the rain pools along the slab edges are now an opaque water skin (no more white-mirror bug) showing faint sky in the hollows, but the doorway sits in deep shade and the pools still read as dark wet ground.",
   "verdict": "fail"
  }
 ]
