@@ -39,7 +39,7 @@ var gores: Array[MeshInstance3D] = []
 ## upper lip, and a grey beard and moustache (beard.gdshader on the face cloth's shape) cover
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
-var beard_col := Color(0.50, 0.48, 0.45)
+var beard_col := Color(0.44, 0.42, 0.39)
 ## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
 ## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
 var fill_gain := 1.0
@@ -76,6 +76,16 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	head.add_child(hood)
 	if beard:
 		veil = _beard()
+		# a dark wool scarf wound under the beard (the face cloth's shape, a hair smaller), so
+		# where the beard's ragged lower edge rises along the jaw it shows shadowed wool, never
+		# the armour plate at the collar
+		var scarf := _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
+		scarf.name = "Scarf"
+		var sm := scarf.material_override as ShaderMaterial
+		sm.set_shader_parameter("wool", 1.0)
+		sm.set_shader_parameter("fold_ao", 1.0)
+		scarf.transform = Transform3D(Basis.from_scale(Vector3(0.97, 1.0, 0.96)), Vector3(0.0, -0.012, -0.0014))
+		head.add_child(scarf)
 	else:
 		veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
 		var vm := veil.material_override as ShaderMaterial

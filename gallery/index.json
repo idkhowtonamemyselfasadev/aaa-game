@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-0330-keeper-basket.jpg",
-  "time": "2026-10-16T03:30:00Z",
-  "caption": "Hesper gathering under an oak, side-on: no hat now, a hood, a woven willow basket of deadwood on her back and a slight stoop, so she no longer reads as a second hero; but her robe is two strips with wrapped legs between and the old armour shows at her side.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0330-keeper-floorbasket.jpg",
   "time": "2026-10-16T03:30:00Z",
   "caption": "Before dawn in the keep, Hesper's basket of deadwood stands on the floor beside her as she dozes against the inner wall; the scene is very dark and she is a shapeless lump in the shadow.",
@@ -897,6 +891,12 @@
   "file": "20261020-1930-osric-facefill.jpg",
   "time": "2026-10-20T19:30:54Z",
   "caption": "Osric at his door at 07:00 with a stronger face fill under the felt brim: his face, nose and eyes finally show, but the lightened beard reads as a pale flat block with a ruled lower edge and a grey plate still shows under it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-2045-osric-beard.jpg",
+  "time": "2026-10-20T20:45:28Z",
+  "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
   "verdict": "fail"
  }
 ]

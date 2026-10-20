@@ -6,9 +6,11 @@ render_mode cull_disabled;
 // sweep out and down from the middle of the upper lip; pepper-dark hairs mixed in, darker in
 // the clumps' hollows (COLOR.r, the cloth's fold cavity, reads as the beard's clumping). The
 // top edge is cut into a moustache line under the nose that rises to the cheekbones, with a
-// ragged fringe so it never reads as a ruled edge.
+// ragged fringe so it never reads as a ruled edge. The lower edge is cut too: a rounded outline
+// that comes to a soft point under the chin and rises along the jaw, ragged in clumps, the
+// strands thinning out toward it so it never reads as a pale plate with a ruled bottom.
 
-uniform vec3 hair_col : source_color = vec3(0.50, 0.48, 0.45);
+uniform vec3 hair_col : source_color = vec3(0.44, 0.42, 0.39);
 uniform vec3 dark_col : source_color = vec3(0.10, 0.092, 0.082);
 
 varying vec3 mp;
@@ -44,6 +46,13 @@ void fragment() {
 	if (front > 0.5 && p.y > top + fringe) {
 		discard;
 	}
+	// the lower outline: a soft point under the chin (mesh 1.697), rising along the jaw to the
+	// sides (1.738 at the hood), ragged in 1-2 cm clumps
+	float low = 1.697 + 0.041 * pow(smoothstep(0.004, 0.115, ax), 1.3);
+	low += (vnoise(vec2(p.x * 70.0, 7.0)) - 0.5) * 0.012 + (vnoise(vec2(p.x * 180.0, 2.0)) - 0.5) * 0.005;
+	if (p.y < low) {
+		discard;
+	}
 	// strand direction: straight down the jaw; on the moustache sweeping out and down from the
 	// philtrum
 	float moust = smoothstep(1.86, 1.878, p.y) * (1.0 - smoothstep(0.04, 0.06, ax));
@@ -56,15 +65,23 @@ void fragment() {
 	float s2 = vnoise(vec2(q.x * 5200.0 + 13.0, q.y * 160.0));
 	float lock = vnoise(vec2(q.x * 260.0, q.y * 18.0 + 5.0));
 	float strand = s1 * 0.6 + s2 * 0.4;
+	// the strands thin out over the last 1.6 cm: the brighter ones run on lower, the hollows
+	// between the locks end first (an alpha-scissor fringe, not a ruled edge)
+	float thin = (p.y - low) / 0.016;
+	if (thin < 1.0 && thin + strand * 0.55 + lock * 0.35 < 0.62 + 0.25 * hash(vec2(floor(q.x * 2600.0), 3.0))) {
+		discard;
+	}
 	// grizzled: mostly grey-white with dark hairs through it, darker toward the roots at the
 	// moustache line and in the hollows between the locks
 	float pepper = step(0.72, hash(vec2(floor(q.x * 3200.0), floor(q.y * 40.0))));
 	// (full dark-to-light strands read as grey bark, too little as a white plaster patch)
 	vec3 alb = mix(hair_col * 0.62, hair_col, smoothstep(0.1, 0.9, strand));
 	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.32);
-	float hollow = mix(0.8, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
+	float hollow = mix(0.68, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
-	alb *= hollow * root;
+	// the thinning tips let the shade under the jaw show through
+	float tip = mix(0.72, 1.0, smoothstep(0.0, 1.4, thin));
+	alb *= hollow * root * tip;
 	// stained at the lip by pipe smoke and broth
 	float stain = (1.0 - smoothstep(0.0, 0.02, ax)) * smoothstep(1.86, 1.885, p.y);
 	alb = mix(alb, alb * vec3(0.85, 0.72, 0.55), 0.5 * stain);
