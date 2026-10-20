@@ -189,6 +189,9 @@ func _ready() -> void:
 	add_child(neighbour)
 	neighbour.settle(self, time_of_day)
 	trample.walkers.append(neighbour)
+	# the two of them pass a word when they meet out of doors
+	villager.mate = neighbour
+	neighbour.mate = villager
 	# Brack, her collie: potters on the green, meets the hero, sits by her door at night
 	dog = Dog.new()
 	dog.setup(self)

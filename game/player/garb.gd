@@ -26,6 +26,7 @@ var palette := {}
 ## worn on the back with deadwood standing out of it. The hero: hat, 1.0, no basket.
 ## robe_wide widens the panels; their hip wrap then curls them round the sides.
 var hatless := false
+var felt_hat := false            # a battered felt hat (round dented crown, narrow soft brim) for the douli
 var robe_len := 1.0
 var robe_wide := 1.0     # panel width factor: wider panels curl round the hips into a skirt
 var basket := false
@@ -81,11 +82,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	_add_face(head)
 	if not hatless:
 		tint = palette.get("hat", STRAW)
-		hat = _piece(_hat(), 0.0, 0.0, 4.0, 1.0)
+		hat = _piece(_felt() if felt_hat else _hat(), 0.0, 0.0, 4.0, 1.0)
 		var hm := hat.material_override as ShaderMaterial
 		hm.set_shader_parameter("rigid", 1.0)
-		hm.set_shader_parameter("weave_scale", 150.0)
-		hm.set_shader_parameter("aspect", 0.35)
+		if felt_hat:
+			hm.set_shader_parameter("wool", 1.0)
+		else:
+			hm.set_shader_parameter("weave_scale", 150.0)
+			hm.set_shader_parameter("aspect", 0.35)
 		# worn pushed back a little on the hood, so the eye line shows under the front brim even
 		# with the idle stance's head bowed
 		var crown := Vector3(0.0, 2.10, -0.03)
@@ -381,6 +385,39 @@ func _hat() -> ArrayMesh:
 		# the plaited rim is a touch uneven
 		r *= 1.0 + 0.006 * sin(a * 11.0) * v
 		return Vector3(sin(a) * r, y, -0.03 + cos(a) * r), 48, 12)
+
+## An old man's felt hat worn over the hood: a round crown with a crease pinched down its
+## top front to back, walls a little out of true, and a narrow soft brim that droops at the
+## front and back and has gone wavy with the weather. UV.y runs from the crown's middle down
+## the wall and out to the brim's edge.
+func _felt() -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var a := u * TAU
+		var ca := cos(a)
+		var sa := sin(a)
+		# the crown's base hugs the hood (0.168 x 0.192 m round its centre, z -0.045)
+		var rx := 0.183
+		var rz := 0.207
+		var y := 0.0
+		var k := 0.0
+		if v < 0.3:
+			# the top: a low dome from the middle out to the crown's shoulder, the crease
+			# pinched down along the middle line
+			var t := v / 0.3
+			k = 0.94 * sin(t * PI * 0.5)
+			y = 2.215 - 0.02 * t * t - 0.032 * exp(-pow(sa * k / 0.32, 2.0)) * (1.0 - t * t * 0.8)
+		elif v < 0.62:
+			# the wall: down from the shoulder to the band, tapering in a touch toward the top
+			var t := (v - 0.3) / 0.32
+			k = lerpf(0.94, 1.0, t)
+			y = lerpf(2.195, 2.03, t)
+		else:
+			# the brim: out 7 cm, drooping at the front and back, wavy at the edge
+			var t := (v - 0.62) / 0.38
+			k = 1.0 + t * 0.075 / 0.19
+			y = 2.03 - 0.004 * t - (0.018 * ca * ca + 0.006 * sin(a * 5.0 + 0.7)) * t * t
+		k *= 1.0 + 0.012 * sin(a * 3.0 + 0.4)
+		return Vector3(sa * rx * k, y, -0.045 + ca * rz * k), 48, 16)
 
 ## A face cloth of the same indigo wool wound across the face from the bridge of the nose to
 ## under the chin, hanging a little slack at the front; with the hat's shade only the eye line

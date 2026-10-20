@@ -39,6 +39,7 @@ var lean := 0.0                  # 0 upright .. 1 forearms on the wall
 var leans := 0                   # times he settled onto the wall (bots)
 
 func _init() -> void:
+	exchanges = {}                   # Edda opens; he answers
 	who = "Osric"
 	who_title = "Shepherd, the stone cottage"
 	intro = [
@@ -77,7 +78,8 @@ func _dress() -> void:
 	# a battered felt hat, an oiled grey-brown wool cape, a long smock of undyed fleece-grey
 	# wool to below the knee, a hemp rope girdle, grey wraps
 	garb.palette = {
-		"hood": [Color(0.075, 0.07, 0.062), Color(0.36, 0.34, 0.30), 0.35],
+		# a dark hood under the hat (a pale one read as a ski mask round his face)
+		"hood": [Color(0.035, 0.032, 0.028), Color(0.15, 0.14, 0.12), 0.4],
 		"hat": [Color(0.05, 0.042, 0.032), Color(0.25, 0.21, 0.16), 0.3],
 		"mantle": [Color(0.055, 0.048, 0.036), Color(0.30, 0.26, 0.19), 0.35],
 		"robe": [Color(0.11, 0.10, 0.085), Color(0.46, 0.43, 0.37), 0.4],
@@ -85,6 +87,7 @@ func _dress() -> void:
 		"wraps": [Color(0.09, 0.085, 0.075), Color(0.40, 0.38, 0.34), 0.4],
 	}
 	garb.robe_len = 0.85
+	garb.felt_hat = true
 	# no face cloth: his own weathered face, the nose, and a grizzled grey beard
 	garb.beard = true
 
@@ -94,6 +97,7 @@ func _kit() -> void:
 ## His day's spots round the stone cottage and in the garth, then where he is now.
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
+	_reset_greet()
 	weather = w.get("weather")
 	player = w.get_node_or_null("Player")
 	terrain = w.get_node("Terrain")

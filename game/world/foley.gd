@@ -58,6 +58,8 @@ func _ready() -> void:
 	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
 	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
 	_s["grunt"] = [_make_grunt(1.0), _make_grunt(1.05), _make_grunt(0.95)]
+	_s["murmur"] = [_make_murmur(1.0, 5), _make_murmur(1.04, 7), _make_murmur(0.97, 6)]
+	_s["murmur_low"] = [_make_murmur(0.62, 5), _make_murmur(0.6, 6), _make_murmur(0.65, 7)]
 	_s["hum"] = [_make_hum(1.0, 0), _make_hum(0.97, 1), _make_hum(1.02, 2)]
 	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
@@ -199,6 +201,8 @@ func hook_villager(v: Node) -> void:
 		c.heaved.connect(func(at: Vector3) -> void: _play("grunt", at, -10.0, _rng.randf_range(0.96, 1.04)))
 	if v.has_signal("hummed"):
 		v.hummed.connect(func(at: Vector3) -> void: _play("hum", at, -14.0))
+	if v.has_signal("spoke"):
+		v.spoke.connect(func(at: Vector3, low: bool) -> void: _play("murmur_low" if low else "murmur", at, -13.0))
 	if v.has_signal("door"):
 		v.door.connect(func(at: Vector3) -> void:
 			_play("creak", at, -15.0, 0.62)
@@ -556,6 +560,32 @@ func _make_hum(pt: float, tune: int) -> AudioStreamWAV:
 	var x := _voice(total, pitch, env,
 		[[250.0 * pt, 4.0, 1.0], [1050.0, 6.0, 0.06], [2300.0, 8.0, 0.02]], 0.03, 0.0)
 	return _wav(x, 0.55)
+
+## Two neighbours talking, heard from across a yard: no words, just the run of it -- quick
+## syllables on shifting vowels (each its own formant pair), a falling line with a lift at
+## the stresses, little gaps between words and a longer one mid-phrase. `pt` sets the voice
+## (~0.6 an old man's), `syl` how many syllables.
+func _make_murmur(pt: float, syl: int) -> AudioStreamWAV:
+	var vowels := [[700.0, 1200.0], [500.0, 1750.0], [350.0, 2200.0], [450.0, 900.0], [380.0, 1000.0]]
+	var out := PackedFloat32Array()
+	out.resize(int(0.05 * RATE))
+	for i in syl:
+		var d := _rng.randf_range(0.11, 0.21)
+		var v: Array = vowels[_rng.randi() % vowels.size()]
+		var stress := 1.0 if i % 3 == 0 else 0.7
+		var line := 1.0 - 0.18 * float(i) / syl
+		var base := 210.0 * pt * line * (1.06 if stress > 0.9 else 1.0)
+		var x := _voice(d, func(k: float) -> float: return base * (1.0 + 0.05 * sin(PI * k)),
+			func(k: float) -> float: return stress * sin(PI * k) * sin(PI * k),
+			[[v[0] * lerpf(1.0, 1.15, pt - 0.6), 5.0, 1.0], [v[1], 7.0, 0.35], [2600.0, 9.0, 0.06]], 0.06, 0.15 if pt < 0.8 else 0.0)
+		out.append_array(x)
+		var gap := 0.03 if _rng.randf() < 0.6 else 0.09
+		if i == syl / 2:
+			gap = 0.22
+		var g := PackedFloat32Array()
+		g.resize(int(gap * RATE))
+		out.append_array(g)
+	return _wav(out, 0.5)
 
 ## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
 ## uneven train of grinding clicks that runs together into a rising, wavering squeal and

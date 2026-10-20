@@ -934,6 +934,20 @@ func _ready() -> void:
 			var fc := fb.get_center()
 			var lf := f.rotated(Vector3.UP, 0.45)
 			SPOTS[spot] = [fc + lf * 1.1 + Vector3.UP * 0.02, fc - Vector3.UP * 0.12]
+		if "pair" in args:
+			# Edda at her feed round over the garth wall, the two of them passing a word: the
+			# lens off to the side of the line between them, framing both
+			var ed: Villager = world.villager
+			ed.settle(world, world.time_of_day)
+			var mid := (ed.global_position + at) * 0.5
+			var ln := at - ed.global_position
+			ln.y = 0.0
+			var side := Vector3(-ln.z, 0, ln.x).normalized()
+			if side.dot(mid - nb.cottage.global_position) < 0.0:
+				side = -side
+			var pc := mid + side * 7.5
+			pc.y = terrain.height_at(pc.x, pc.z) + 1.6
+			SPOTS[spot] = [pc, mid + Vector3.UP * 1.1]
 		if "flock" in args:
 			# the hens already drifted over to peck round his boots (Hens._next does it over a
 			# minute; the shot's warm-up is two seconds)

@@ -25,9 +25,14 @@ extends CharacterBody3D
 ## that each press gets a line for what she is about; she holds still facing him while it shows
 ## (sat on the bench she answers from where she sits). Out on the bench of an evening she
 ## hums to herself, a phrase every ten seconds or so, and stops while the hero is near.
+## When she and Osric come within a few metres of each other out of doors (her feed round
+## passes his garth) they stop, turn to each other and pass a word: she says hers, he
+## answers; the hero overhears it on the HUD if he is near, and hears a murmur of voices
+## from farther off. Once a meeting; they speak again after they have parted, or after a while.
 
 signal door(at: Vector3)          # the cottage door opened or shut behind her (Foley)
 signal hummed(at: Vector3)        # a phrase hummed to herself on the bench of an evening (Foley)
+signal spoke(at: Vector3, low: bool)   # a line passed to the neighbour (Foley: a murmur)
 
 enum { WALK, STAND, SIT, IN }
 
@@ -44,6 +49,27 @@ const STOOP_HOLD := 1.4
 const STOOP_UP := 1.1
 const TALK_R := 2.8              # the hero can speak to her inside this
 const NAME_AT := 4.5             # the HUD names her inside this, once
+const GREET_R := 9.5             # she and Osric pass a word inside this (over the garth wall)
+const PART_R := 13.0             # ...and only again once they have been this far apart
+const GREET_AGAIN := 150.0       # s: or this long together (Osric on his wall, her feed round)
+const HEAR_R := 13.0             # the hero overhears it on the HUD inside this of either of them
+## What she opens with when she meets Osric, by the hour, and what he says back.
+const EXCHANGES := {
+	"morning": [
+		["Morning, Osric. Your Bishop's been in my woodpile again.", "Then she's your Bishop. I'll not have a hen that keeps company like that."],
+		["You're out early for a man with knees.", "The knees wake first. I just follow them out."],
+		["Rain later, you reckon?", "By three. Bring your washing in at two and call it wisdom."],
+	],
+	"day": [
+		["Six handfuls, Osric. Not seven.", "I never said seven. I said they looked like seven."],
+		["Still counting them, are you? The sheep?", "Nine hundred and four. One's limping. I'll see to her in the morning."],
+		["You'll sit down at that wall one day and not get up.", "That's the plan, Edda. That's been the plan for years."],
+	],
+	"evening": [
+		["I'll be lighting it soon.", "I know you will. I can set my supper by you."],
+		["Hens in?", "Counted and in. Fox will have to make do with the moon."],
+	],
+}
 const INTRO := [
 	"You'll be the lamplighter's apprentice. Mind the hens' yard; they've had nothing but foxes and opinions all week.",
 	"Edda. This is my house, that's my woodpile, and that lantern on the green is mine to light. Don't you go lighting it for me.",
@@ -133,6 +159,16 @@ var talking := 0.0               # > 0 while her line is on screen: she holds st
 var _intro_i := 0
 var _line_i := {}
 var _seen_interacts := 0
+var mate: Villager               # the neighbour across the yard she passes a word with (World)
+var exchanges: Dictionary = EXCHANGES   # her openers and his answers ({} for the one who answers)
+var greeting := 0.0              # > 0 while turned to the mate mid-exchange
+var greets := 0                  # lines passed to the mate (bots)
+var heard := 0                   # of them, lines the hero overheard on the HUD (bots)
+var _greet_armed := true         # parted since the last word
+var _greet_t := 0.0              # s together since the last word
+var _answer := ""                # the mate's answer, due in _answer_in s
+var _answer_in := -1.0
+var _ex_i := {}
 
 var sit := 0.0                   # 0 standing .. 1 sat on the bench
 var stoop := 0.0                 # 0 upright .. 1 bent to the pail / the logs
@@ -264,6 +300,7 @@ func _build_taper() -> void:
 ## Her day's spots round the white cottage and out at the lantern, then where she is now.
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
+	_reset_greet()
 	weather = w.get("weather")
 	player = w.get_node_or_null("Player")
 	terrain = w.get_node("Terrain")
@@ -443,6 +480,7 @@ func _physics_process(delta: float) -> void:
 		want = "wood"
 	if want != activity:
 		_begin(want)
+	_update_greet(delta)
 	_update_notice()
 	_update_talk(delta)
 	if state == IN:
@@ -532,6 +570,12 @@ func _update_notice() -> void:
 		if stoop < 0.1 and reach < 0.1:
 			goal_yaw = atan2(d.x, d.z)
 		return
+	if greeting > 0.0 and mate != null:
+		noticing = true                      # holds still, turned to the neighbour
+		if stoop < 0.1 and reach < 0.1:
+			var m := mate.global_position - global_position
+			goal_yaw = atan2(m.x, m.z)
+		return
 	if stoop > 0.1 or reach > 0.1:
 		return
 	if d.length() < NOTICE:
@@ -568,6 +612,76 @@ func _update_talk(delta: float) -> void:
 	named = true
 	if hud != null:
 		hud.say(who, line, talking)
+
+## Meeting the neighbour out of doors: whoever has openers says one for the hour, the other
+## answers when it is done; both stop and face each other until the answer has been said.
+func _update_greet(delta: float) -> void:
+	greeting = maxf(greeting - delta, 0.0)
+	if _answer_in >= 0.0:
+		_answer_in -= delta
+		if _answer_in < 0.0:
+			_say_to_mate(_answer, true)
+			_answer = ""
+	if mate == null or exchanges.is_empty():
+		return
+	var d := Vector2(mate.global_position.x - global_position.x, mate.global_position.z - global_position.z).length()
+	var out := state != IN and mate.state != IN and visible and mate.visible
+	if not out or d > PART_R:
+		_greet_armed = true
+		_greet_t = 0.0
+		return
+	if d > GREET_R:
+		return
+	_greet_t += delta
+	if not _greet_armed and _greet_t < GREET_AGAIN:
+		return
+	if greeting > 0.0 or mate.greeting > 0.0 or talking > 0.0 or mate.talking > 0.0 or noticing or mate.noticing:
+		return                           # one of them is busy with the hero (or mid-word)
+	if activity == "shelter" or mate.activity == "shelter":
+		return
+	var h := _hour()
+	var key := "morning" if h < 10.0 else ("day" if h < 18.0 else "evening")
+	var pool: Array = exchanges.get(key, [])
+	if pool.is_empty():
+		return
+	var i := int(_ex_i.get(key, 0))
+	_ex_i[key] = i + 1
+	var ex: Array = pool[i % pool.size()]
+	_greet_armed = false
+	_greet_t = 0.0
+	var t1 := _say_to_mate(ex[0], false)
+	mate._answer = ex[1]
+	mate._answer_in = t1 + 0.35
+	var t2 := 2.4 + 0.055 * str(ex[1]).length()
+	greeting = t1 + 0.35 + t2 + 0.6
+	mate.greeting = greeting
+
+## One line of an exchange: counted, murmured (Foley), and on the HUD if the hero is near and
+## not already being spoken to. Returns how long it holds.
+func _reset_greet() -> void:
+	greeting = 0.0
+	_answer = ""
+	_answer_in = -1.0
+	_greet_armed = true
+	_greet_t = 0.0
+
+func _say_to_mate(line: String, answer: bool) -> float:
+	var secs := 2.4 + 0.055 * line.length()
+	greets += 1
+	spoke.emit(global_position + Vector3.UP * 1.6, who != "Edda")
+	if player == null:
+		return secs
+	# within earshot of either of them: the hero who hears her hears his answer too
+	var pp := Vector2(player.global_position.x, player.global_position.z)
+	var d := pp.distance_to(Vector2(global_position.x, global_position.z))
+	if mate != null:
+		d = minf(d, pp.distance_to(Vector2(mate.global_position.x, mate.global_position.z)))
+	var hud = player.get_node_or_null("Hud")
+	if hud != null and d < HEAR_R and (answer or not hud.saying()):
+		hud.say(who, line, secs)
+		last_line = line
+		heard += 1
+	return secs
 
 func _next_line() -> String:
 	if _intro_i < intro.size():

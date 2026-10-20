@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261016-0158-keeper-tend.jpg",
-  "time": "2026-10-16T01:58:00Z",
-  "caption": "Hesper, the shrine keeper, tends the sealed lid in the ruined keep at 9 h in her own undyed wool, ash hood and faded woad robe; she still wears the hero's body cut and hat, and her linen leg wraps read too pale and thick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0158-keeper-gather.jpg",
-  "time": "2026-10-16T01:58:00Z",
-  "caption": "Hesper gathering at an oak below the keep in the afternoon, side-on to the bole; she just stands (no stoop-and-pick animation) and the shaded oak bole reads glossy black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0250-talk.jpg",
-  "time": "2026-10-16T02:50:00Z",
-  "caption": "Speaking with Hesper under her gather oak: she stops and faces the hero and her line shows as a brass-and-bone subtitle; but she still wears the hero's cut, hat and armour plates, so the two read as twins, and the meadow light is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0330-keeper-basket.jpg",
   "time": "2026-10-16T03:30:00Z",
   "caption": "Hesper gathering under an oak, side-on: no hat now, a hood, a woven willow basket of deadwood on her back and a slight stoop, so she no longer reads as a second hero; but her robe is two strips with wrapped legs between and the old armour shows at her side.",
@@ -891,6 +873,18 @@
   "file": "20261020-1540-osric-lean.jpg",
   "time": "2026-10-20T15:40:01Z",
   "caption": "Osric leaning on the garth wall at 09:30, head now lifted to look out over the field, hens on the garth, the vale and peaks behind; FAIL: he is too small and side-on to read his face, and the forearm wraps are still blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1659-osric-felthat.jpg",
+  "time": "2026-10-20T16:59:44Z",
+  "caption": "Osric on his step at 7 h with a dark hood (no more pale ski mask) and the new felt hat, which still reads as a tall stovepipe; red eye glint, flat beard and collar armour still show.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1659-edda-osric-pair.jpg",
+  "time": "2026-10-20T16:59:44Z",
+  "caption": "Edda at the garth wall and Osric in the garth turned to each other mid-exchange at 16.4 h; both are small and the dry-wall foreground is in deep shade.",
   "verdict": "fail"
  }
 ]

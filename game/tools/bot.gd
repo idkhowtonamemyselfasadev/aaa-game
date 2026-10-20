@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -141,6 +141,10 @@ func _ready() -> void:
 		return
 	if name == "neighbour":
 		_neighbour_test()
+		return
+	if name == "greet":
+		_greet_test()
+		return
 	if name == "villager":
 		_villager_test()
 		return
@@ -4352,6 +4356,77 @@ func _neighbour_test() -> void:
 	if not v.noticing or off > 0.35 or v.lean > 0.1:
 		return _combat_done(false, "he ignores the hero")
 	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
+
+## Edda and Osric pass a word when her feed round brings her by his garth: both stop and turn
+## to each other, she says hers and he answers; the hero overhears it from nearby, and they do
+## not keep at it while they stand together.
+func _greet_test() -> void:
+	var e: Villager = _world.villager
+	var o: Neighbour = _world.neighbour
+	var tr: Terrain = _world.get_node("Terrain")
+	if e == null or o == null or e.mate != o or o.mate != e:
+		return _combat_done(false, "the neighbours do not know each other")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, -30.0) + 0.5, -30.0)
+	var fl = _world.get("foley")
+	for h in [7.4, 16.4]:
+		e.settle(_world, h)
+		o.settle(_world, h)
+		var g0 := e.greets + o.greets
+		var m0: int = fl.played.get("murmur", 0) + fl.played.get("murmur_low", 0) if fl != null else 0
+		var closest := 99.0
+		var faced := 9.0
+		var both := false
+		var first := -1
+		for i in 2400:
+			_world.time_of_day = h
+			await get_tree().physics_frame
+			var dd := e.global_position.distance_to(o.global_position)
+			closest = minf(closest, dd)
+			if first < 0 and e.greets + o.greets > g0:
+				first = i
+			if e.greeting > 0.0 and o.greeting > 0.0 and e.greeting < 1.5:
+				both = true
+				var a := e.global_position.direction_to(o.global_position)
+				var b := o.global_position.direction_to(e.global_position)
+				faced = minf(faced, absf(wrapf(atan2(a.x, a.z) - e.body.rotation.y, -PI, PI)) + absf(wrapf(atan2(b.x, b.z) - o.body.rotation.y, -PI, PI)))
+			if first >= 0 and i > first + 900:
+				break
+		var lines := e.greets + o.greets - g0
+		var m1: int = fl.played.get("murmur", 0) + fl.played.get("murmur_low", 0) if fl != null else 0
+		print("BOT greet at %.1f h: %s / %s, closest %.1f m, lines %d (first at tick %d), turned to each other off %.2f rad, murmurs %d" % [h, e.activity, o.activity, closest, lines, first, faced, m1 - m0])
+		if lines < 2:
+			return _combat_done(false, "Edda and Osric pass without a word at %.1f h" % h)
+		if lines > 2:
+			return _combat_done(false, "they keep on talking (%d lines in one meeting)" % lines)
+		if not both or faced > 0.6:
+			return _combat_done(false, "they do not turn to each other")
+		if fl != null and m1 - m0 < 2:
+			return _combat_done(false, "no murmur of voices")
+	# the hero standing off a few metres hears it on the HUD
+	e.settle(_world, 16.4)
+	o.settle(_world, 16.4)
+	var hud = _player.get_node_or_null("Hud")
+	var h0 := e.heard + o.heard
+	var saw := ""
+	var placed := false
+	for i in 2400:
+		_world.time_of_day = 16.4
+		await get_tree().physics_frame
+		var dd := e.global_position.distance_to(o.global_position)
+		if not placed and dd < Villager.GREET_R + 1.5:
+			# 8 m behind Edda, outside her notice ring
+			var at := e.global_position + (e.global_position - o.global_position).normalized() * 8.0
+			_player.global_position = Vector3(at.x, tr.height_at(at.x, at.z) + 0.3, at.z)
+			placed = true
+		if hud != null and hud.saying() and saw.find(hud.say_speaker) < 0:
+			saw += hud.say_speaker + " "
+		if e.heard + o.heard - h0 >= 2:
+			break
+	print("BOT greet overheard: %d lines, HUD showed %s, hero %.1f m from Edda" % [e.heard + o.heard - h0, saw, _player.global_position.distance_to(e.global_position)])
+	if e.heard + o.heard - h0 < 2 or saw.find("Edda") < 0 or saw.find("Osric") < 0:
+		return _combat_done(false, "the hero does not overhear them")
+	_combat_done(true, "Edda and Osric stop, turn to each other and pass a word at the garth (once a meeting), murmuring, and the hero overhears it")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager
