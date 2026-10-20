@@ -104,6 +104,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		hm.set_shader_parameter("rigid", 1.0)
 		if felt_hat:
 			hm.set_shader_parameter("wool", 1.0)
+			hm.set_shader_parameter("felt", 1.0)
 		else:
 			hm.set_shader_parameter("weave_scale", 150.0)
 			hm.set_shader_parameter("aspect", 0.35)
@@ -445,10 +446,11 @@ func _felt() -> ArrayMesh:
 			k = lerpf(0.86, 1.0, sqrt(t))
 			y = lerpf(2.104, 1.995, t)
 		else:
-			# the brim: out 9 cm, drooping at the front and back, wavy at the edge
+			# the brim: out 7.5 cm and gone soft all round, drooping at the sides too (a level
+			# side brim read as a cowboy's curl) and most at the front and back, wavy at the edge
 			var t := (v - 0.62) / 0.38
-			k = 1.0 + t * 0.09 / 0.185
-			y = 1.995 - 0.006 * t - (0.03 * ca * ca + 0.007 * sin(a * 5.0 + 0.7)) * t * t
+			k = 1.0 + t * 0.075 / 0.185
+			y = 1.995 - 0.008 * t - (0.022 + 0.026 * ca * ca + 0.007 * sin(a * 5.0 + 0.7)) * t * t
 		k *= 1.0 + 0.012 * sin(a * 3.0 + 0.4)
 		return Vector3(sa * rx * k, y, -0.045 + ca * rz * k), 48, 16)
 

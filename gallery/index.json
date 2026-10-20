@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261016-0708-hesper-pick.jpg",
-  "time": "2026-10-16T07:08:09Z",
-  "caption": "Hesper crouched under a gather oak, reaching into the leaf litter with her basket of deadwood on her back; her hand still stops at knee height, the oak bole close up reads as shiny dark cloth, the litter has bright white flecks and the robe reads saturated blue.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0730-keeper-skirt.jpg",
-  "time": "2026-10-16T07:30:00Z",
-  "caption": "Hesper side-on at a gather oak: her faded blue robe now closes into a bell skirt to the ground instead of two edge-on strips; still wrong: her back leg shows grey-wrapped behind the skirt in this stance and the frame is dark and flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0834-keeper-pick.jpg",
   "time": "2026-10-16T08:34:05Z",
   "caption": "Hesper crouched under an oak with her back bent and her hand down in the leaf litter, picking; still wrong: top-down framing, a tiled litter with white flecks, a saturated blue robe and a glossy black bole.",
@@ -897,6 +885,12 @@
   "file": "20261020-2220-osric-ashbeard.jpg",
   "time": "2026-10-20T22:20:00Z",
   "caption": "Osric at his door at dawn with a cooler ash-grey beard (yellow only at the lip) and a darker wool smock; the beard still shows fine vertical streaks, the felt hat reads orange-brown and cowboy-like, and the cape looks smooth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-2340-osric-hat.jpg",
+  "time": "2026-10-20T23:40:00Z",
+  "caption": "Osric at his door at dawn: the felt hat is darker, matte and droops all round now, but still reads warm brown, and the cape is smooth and plasticky.",
   "verdict": "fail"
  }
 ]

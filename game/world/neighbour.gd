@@ -80,7 +80,8 @@ func _dress() -> void:
 	garb.palette = {
 		# a dark hood under the hat (a pale one read as a ski mask round his face)
 		"hood": [Color(0.035, 0.032, 0.028), Color(0.15, 0.14, 0.12), 0.4],
-		"hat": [Color(0.05, 0.042, 0.032), Color(0.25, 0.21, 0.16), 0.3],
+		# weathered near-black felt: the warmer brown read orange in the dawn light
+		"hat": [Color(0.035, 0.032, 0.028), Color(0.18, 0.16, 0.135), 0.3],
 		"mantle": [Color(0.055, 0.048, 0.036), Color(0.30, 0.26, 0.19), 0.35],
 		# a touch darker: the undyed fleece-grey read bright against the dusk
 		"robe": [Color(0.10, 0.09, 0.078), Color(0.38, 0.355, 0.31), 0.4],

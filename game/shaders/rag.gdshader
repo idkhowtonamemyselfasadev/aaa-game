@@ -28,6 +28,7 @@ uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = H
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
+uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
@@ -186,7 +187,7 @@ void fragment() {
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
 	// old dye and rust stains in blotches
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
-	alb = mix(alb, alb * vec3(0.78, 0.62, 0.5), stain * 0.6);
+	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.74, 0.72, 0.68), felt), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
 	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, 0.7 + 0.3 * COLOR.r, fold_ao);
@@ -200,13 +201,13 @@ void fragment() {
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve * 1.1)) * 2.5;
 	}
 	if (!FRONT_FACING) alb *= 0.55;
-	float rough = 0.93 - 0.06 * thread;
+	float rough = mix(0.93 - 0.06 * thread, 0.99, felt);
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
-	SPECULAR = 0.3;
+	SPECULAR = mix(0.3, 0.12, felt);
 	METALLIC = 0.0;
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
@@ -217,6 +218,6 @@ void fragment() {
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
 	EMISSION = ember_col * glow * 3.0 + figure_fill(alb, wet_n, wet_p) * mix(1.0, COLOR.r, fold_ao);
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles
-	RIM = max(0.35 * wool, 0.1);
+	RIM = mix(max(0.35 * wool, 0.1), 0.06, felt);
 	RIM_TINT = 0.4;
 }
