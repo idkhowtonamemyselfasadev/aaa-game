@@ -3858,8 +3858,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 00000000000000000. (12:50 10-20) Osric, the second villager (stone cottage), DONE (see Done).
-   Bot `neighbour` passes. NEXT: (a) look at the lean pose in the shot (see Done for the
-   verdict) and fix the forearms onto the cope if they float; (b) his stone cottage window
+   Bot `neighbour` passes. Shot `osric osric_lean 60 15.5 fixfps` FAILS: 15.5 h is the start
+   of his "tend" slot, not "lean" (re-shoot at 14.5 or 9.5), the garth foreground is in deep
+   shade, and the pale "hood" layer draws as a veil over his face. NEXT: (a) fix the face:
+   try `garb.hatless = true` with a dark hood, or hide the hood under the hat so his face shows;
+   then shoot the lean at 9.5 h (sun on the garth) and fix the forearms onto the cope if they float; (b) his stone cottage window
    should light only while he is in (override `StoneCottage._lit_now` like WhiteCottage); (c)
    Edda and Osric exchange a word when both are in the yard (Edda's feed round passes his
    wall), (d) the hens gather round him at the nest box / scatter from his feet. Then the byre.

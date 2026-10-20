@@ -886,5 +886,11 @@
   "time": "2026-10-20T11:58:00Z",
   "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261020-1237-osric.jpg",
+  "time": "2026-10-20T12:37:54Z",
+  "caption": "Osric, the new stone-cottage villager, tending his garth at 15.5 h with Edda beyond the field gate; FAIL: the foreground is in deep shade and his pale hood reads as a veil over his face.",
+  "verdict": "fail"
  }
 ]
