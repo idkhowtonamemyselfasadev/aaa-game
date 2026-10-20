@@ -2288,7 +2288,11 @@ func _weather_test() -> void:
 	for j in 81:
 		for i in 81:
 			var q := pp0 + Vector3(i * 3.0 - 120.0, 0, j * 3.0 - 120.0)
-			if wx.pool_at(q.x, q.z) and wx.pool_at(q.x + 0.8, q.z) and wx.pool_at(q.x - 0.8, q.z) \
+			# a pool ~5 m long along the run, so two walking footfalls land in it
+			var long_pool := true
+			for k in 7:
+				long_pool = long_pool and wx.pool_at(q.x + k * 0.8 - 2.4, q.z)
+			if long_pool \
 					and (pool == Vector3.INF or q.distance_to(pp0) < pool.distance_to(pp0)):
 				pool = q
 	if pool == Vector3.INF:
@@ -2300,17 +2304,20 @@ func _weather_test() -> void:
 	await _ticks(10)
 	var w0 := wx.wade_splashes
 	var dry_steps := 0
-	_player.bot_input = Vector2(0, -1)
-	while _player.global_position.x < pool.x - 1.2 and dry_steps < 600:
+	_player.bot_input = Vector2(0, -0.5)   # walk, not run: at 6.5 m/s one stride clears a puddle
+	while _player.global_position.x < pool.x - 3.2 and dry_steps < 600:
 		await get_tree().physics_frame
 		dry_steps += 1
 		if wx.pool_at(_player.global_position.x, _player.global_position.z):
 			break
 	var w_dry := wx.wade_splashes - w0
 	var rings := 0
-	for i in 50:
+	# walk on across the pool (it reaches ~2.4 m past its centre) for up to 3 s
+	for i in 180:
 		await get_tree().physics_frame
 		rings = maxi(rings, wx.wake_rings())
+		if i >= 50 and (_player.global_position.x > pool.x + 2.3 or wx.wade_splashes - w0 - w_dry >= 2):
+			break
 	_player.bot_input = Vector2.ZERO
 	var w_pool := wx.wade_splashes - w0 - w_dry
 	print("BOT weather wade: pool at %s, %d splashes on the dry run-up, %d through the pool" % [pool, w_dry, w_pool])
