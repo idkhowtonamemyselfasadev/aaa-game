@@ -2,7 +2,8 @@ shader_type spatial;
 // Edda's black-and-white farm collie built by dog.gd (Dog.build_mesh), posed like the fox
 // (fox.gdshader, whose rig it shares) plus a tail wag. Posed from instance uniforms: a diagonal
 // trot that stretches into a bounding run, and a sit (haunches down, forelegs straight,
-// head held level, brush curled round the haunch to the forepaws). Mesh COLOR as the deer's: r = leg
+// head held level, brush curled round the haunch to the forepaws), and a lie on top of the sit
+// (the night "down": body level on the turf, forelegs out in front, chin low over the paws). Mesh COLOR as the deer's: r = leg
 // (0.25 LF, 0.5 RF, 0.75 LH, 1 RH), g = below the wrist/hock, b = neck/head bend weight,
 // a = part (0 coat, 0.5 eye, 0.75 brush, 1 ear). Rest pose faces -Z, paws at y = 0.
 
@@ -17,6 +18,7 @@ instance uniform float head_yaw = 0.0;   // rad, + to its left
 instance uniform float graze = 0.0;      // 0 head up .. 1 neck bowed, nose to the ground
 instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the tapetum
 instance uniform float wag = 0.0;        // 0 still .. 1 a glad, fast wag
+instance uniform float lie = 0.0;        // 0 sat .. 1 lying down (only with sit = 1)
 
 uniform vec3 coat : source_color = vec3(0.045, 0.040, 0.037);     // weathered black, a little brown in the sun
 uniform vec3 coat_dark : source_color = vec3(0.028, 0.025, 0.024); // the saddle
@@ -61,7 +63,9 @@ void vertex() {
 	float spd = speed;
 	float run = smoothstep(3.2, 5.5, spd);
 	float s = smoothstep(0.0, 1.0, sit);
-	float pitch = 0.74 * s;                    // the body tips back onto its haunches
+	float l = smoothstep(0.0, 1.0, lie) * s;
+	float pitch = 0.74 * s * (1.0 - l);        // the body tips back onto its haunches (level lying)
+	float drop = 0.335 * l;                    // lying, the chest and belly come down to the turf
 	int leg = int(round(COLOR.r * 4.0)) - 1;
 	bool fore = leg == 0 || leg == 1;
 	if (leg >= 0) {
@@ -77,6 +81,10 @@ void vertex() {
 		if (!fore) {
 			swing = mix(swing, 1.57 - pitch, s);
 			fold = mix(fold, 1.75, s);
+		} else {
+			// lying: the forelegs reach out in front along the ground, the paws a little tipped
+			swing = mix(swing, 1.5, l);
+			fold = mix(fold, -0.12, l);
 		}
 		vec3 p = v - knee;
 		v = mix(v, knee + rot_x(p, -fold), COLOR.g);
@@ -111,7 +119,7 @@ void vertex() {
 		n = rot_y(n, yw);
 		// eating off the floor: the neck bows down from the withers, nose to the ground
 		vec3 wi = vec3(0.0, 0.38, -0.17);
-		float g = -1.3 * graze * smoothstep(0.0, 0.6, b);
+		float g = (-1.3 * graze - 0.42 * l) * smoothstep(0.0, 0.6, b);   // lying: chin low over the paws
 		v = wi + rot_x(v - wi, g);
 		n = rot_x(n, g);
 	}
@@ -142,7 +150,7 @@ void vertex() {
 		vec3 xs = cross(us, ts);
 		// a little flattened where it lies, the underside on the ground
 		float squash = 0.82;
-		vec3 vs = vec3(c.x, mix(0.062, 0.05, a), c.y) + xs * d.x + us * dot(d, ur) * squash + ts * dot(d, tr);
+		vec3 vs = vec3(c.x, mix(0.062, 0.05, a) + drop, c.y) + xs * d.x + us * dot(d, ur) * squash + ts * dot(d, tr);
 		vec3 ns = xs * dn.x + us * dot(dn, ur) / squash + ts * dot(dn, tr);
 		v = mix(v, vs, s);
 		n = mix(n, normalize(ns), s);
@@ -151,6 +159,7 @@ void vertex() {
 	float rock = run * 0.08 * sin(TAU * phase + 1.2);
 	vec3 mid = vec3(0.0, 0.37, 0.0);
 	v = mid + rot_x(v - mid, rock);
+	v.y -= drop;
 	v.y += run * 0.035 * sin(TAU * phase * 2.0) + 0.012 * clamp(spd, 0.0, 1.5) * (1.0 - run) * sin(TAU * phase * 2.0);
 	n = rot_x(n, rock);
 	VERTEX = v;

@@ -1624,8 +1624,14 @@ func _dog_test() -> void:
 	var prev := dg.global_position
 	var max_home := 0.0
 	var prev_state := dg.state
+	var on_track := 0
+	var lay_min := 1.0
 	for i in 3000:
 		await get_tree().physics_frame
+		if YardGround.path_dist(dg.global_position.x, dg.global_position.z) < 0.8:
+			on_track += 1
+		if dg.state == Dog.REST and dg.sit > 0.99:
+			lay_min = minf(lay_min, _world.trample.herd_lay_at(dg.global_position + Vector3(0.3, 0, 0)))
 		moved += dg.global_position.distance_to(prev)
 		prev = dg.global_position
 		max_home = maxf(max_home, Vector2(prev.x - dg.home.x, prev.z - dg.home.z).length())
@@ -1638,6 +1644,9 @@ func _dog_test() -> void:
 	print("BOT dog day: walked %.1f m, %d sniffs, %d rests, at most %.1f m from home, state %d" % [moved, sniffs, rests, max_home, dg.state])
 	if moved < 5.0 or sniffs < 1 or rests < 1 or max_home > Dog.RANGE or dg.state in [Dog.GREET, Dog.HEEL, Dog.BED]:
 		return _combat_done(false, "the dog should potter about the green by day, nosing about and sitting")
+	print("BOT dog shows: %.0f%% of the time on a trodden track, %d spots pressed, grass beside it laid %.2f (min while sat)" % [100.0 * on_track / 3000.0, dg.pressed, lay_min])
+	if on_track < 900 or dg.pressed < 1 or lay_min < 0.5:
+		return _combat_done(false, "the dog should keep mostly to the tracks and press the grass flat where it sits")
 	# the hero walks up: it barks, runs to meet him wagging, and sits at his heel
 	var fb0: int = _world.foley.played.get("dog_bark", 0)
 	var b0 := dg.barks
@@ -1682,26 +1691,34 @@ func _dog_test() -> void:
 	print("BOT dog night: state %d bedded at frame %d, %.2f m from its place by the door" % [dg.state, bedded, dg.global_position.distance_to(dg.bed)])
 	if bedded < 0 or dg.global_position.distance_to(dg.bed) > 0.4:
 		return _combat_done(false, "the dog should go to its place by the door at night")
+	for i in 240:
+		_world.time_of_day = 22.0
+		await get_tree().physics_frame
+	print("BOT dog lies down: lie %.2f sit %.2f" % [dg.lie, dg.sit])
+	if dg.lie < 0.95:
+		return _combat_done(false, "the dog should lie down in its place at night")
 	# a hero walking up on the dark house sets it barking
 	var b1 := dg.barks
 	var by := dg.bed + Vector3(dg.bed.x - dg.home.x, 0, dg.bed.z - dg.home.z).normalized() * -6.0
 	_player.global_position = Vector3(by.x, tr.height_at(by.x, by.z) + 0.2, by.z)
+	var lie_min := 1.0
 	for i in 240:
 		_world.time_of_day = 22.0
 		await get_tree().physics_frame
-	print("BOT dog night hero: %d guard barks, still in bed %s" % [dg.barks - b1, dg.state == Dog.BED])
-	if dg.barks - b1 < 2 or dg.barks - b1 > 6 or dg.state != Dog.BED:
+		lie_min = minf(lie_min, dg.lie)
+	print("BOT dog night hero: %d guard barks, still in bed %s, sat up to bark (lie %.2f)" % [dg.barks - b1, dg.state == Dog.BED, lie_min])
+	if dg.barks - b1 < 2 or dg.barks - b1 > 6 or dg.state != Dog.BED or lie_min > 0.1:
 		return _combat_done(false, "the dog should guard-bark from the door at a hero in the dark")
 	# rain at noon keeps it by the door too
 	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
 	_world.time_of_day = 12.0
 	_world.weather.force(1.0)
 	await _ticks(60)
-	print("BOT dog rain: rain %.2f state %d" % [_world.weather.rain, dg.state])
-	if dg.state != Dog.BED:
+	print("BOT dog rain: rain %.2f state %d lie %.2f" % [_world.weather.rain, dg.state, dg.lie])
+	if dg.state != Dog.BED or dg.lie > 0.05:
 		return _combat_done(false, "the dog should shelter at the door in rain")
 	_world.weather.force(0.0)
-	return _combat_done(true, "the collie potters on the green, runs out barking and wagging to the hero's heel, stays home when he leaves, and keeps the door at night and in rain")
+	return _combat_done(true, "the collie potters on the green, runs out barking and wagging to the hero's heel, stays home when he leaves, keeps to the tracks pressing the grass where it sits, lies down by the door at night and sits up to bark, and shelters there in rain")
 
 func _fox_test() -> void:
 	var k: Keeper = _world.keeper

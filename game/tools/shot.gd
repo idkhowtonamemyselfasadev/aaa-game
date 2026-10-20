@@ -420,36 +420,31 @@ func _ready() -> void:
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT keeper %s at %s" % [kp.activity, at])
 	if spot == "dog":
-		# Brack on the green before the white cottage, sat watching the yard (or "sniff":
-		# nose to the turf; "door": in its place by the door), a low three-quarter lens
+		# Brack on the white cottage's track (where the sward is trodden short), sat watching
+		# the yard (or "sniff": nose to the turf; "door": in its place by the door); the lens
+		# stands further out on the same track looking back up it at the dog and the door
 		var dg: Dog = world.dog
-		var at := dg.home    # on the trodden track, where the sward is short
+		var run: PackedVector2Array = DoorStones.runs()[1][0]
+		var dl := 1.0 if "door" in args else 4.5
+		var dq: Array = DoorStones.along(run, dl)
+		var lq: Array = DoorStones.along(run, dl + (2.4 if "close" in args else 3.4))
+		var at := dg._ground(Vector3(dq[0].x, 0, dq[0].y))
 		if "door" in args:
 			dg.place_bed()
 			at = dg.bed
 		else:
-			dg.global_position = dg._ground(at)
+			dg.global_position = at
 			dg._start(Dog.SNIFF if "sniff" in args else Dog.REST, 1e6)
 			dg.sit = 0.0 if "sniff" in args else 1.0
 			dg.graze = 1.0 if "sniff" in args else 0.0
-			dg.yaw = 0.6
+			dg.yaw = atan2(-dq[1].x, -dq[1].y) + 0.5   # facing out down the track, turned a little
 		at = dg.global_position
-		var fwd := Vector3(-sin(dg.yaw), 0, -cos(dg.yaw))
-		var dist := 1.6 if "close" in args else 2.6
-		# front three-quarter, swung round until neither the lens nor the line to the dog
-		# runs into a house or wall
-		var cp := at + fwd.rotated(Vector3.UP, 0.75) * dist
-		for k in 16:
-			var a := 0.75 + (0.4 * ceilf(k / 2.0) * (1.0 if k % 2 == 0 else -1.0))
-			var q := at + fwd.rotated(Vector3.UP, a) * dist
-			if dg._clear(q, 1.2) and dg._clear(at.lerp(q, 0.5), 1.0):
-				cp = q
-				break
-		cp.y = terrain.height_at(cp.x, cp.z) + 0.75
-		SPOTS[spot] = [cp, Vector3(at.x, at.y + 0.4, at.z)]
+		var lv := Vector2(lq[0].x, lq[0].y) + Vector2(-lq[1].y, lq[1].x) * 0.6
+		var cp := Vector3(lv.x, terrain.height_at(lv.x, lv.y) + 1.25, lv.y)
+		SPOTS[spot] = [cp, Vector3(at.x, at.y + 0.35, at.z)]
 		var pp := at + Vector3(40, 0, 40)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
-		print("SHOT dog at %s yaw %.2f state %d" % [at, dg.yaw, dg.state])
+		print("SHOT dog at %s yaw %.2f state %d lie %.2f" % [at, dg.yaw, dg.state, dg.lie])
 	if spot == "fox":
 		# the fox sat just in from the breach at the edge of Hesper's firelight, looking in at
 		# the fire: low, three-quarter from round the floor ring (Fox.lens_of)

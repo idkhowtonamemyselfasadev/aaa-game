@@ -8,7 +8,9 @@ extends Node3D
 ## pottering. At night and in rain it sits by the white cottage door under the eaves, and a
 ## hero walking up in the dark sets it barking. Procedural mesh on the fox's rig (Herd's loft
 ## helpers), posed in dog.gdshader.
-## Bots read `state`, `sit`, `wag`, `greets`, `barks`, `bed`, `home`.
+## It keeps mostly to the trodden tracks, and the grass it sits or noses about in is pressed
+## flat under it (a point on Trample's herd trail), so it is not lost in the meadow.
+## Bots read `state`, `sit`, `lie`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`.
 
 signal barked(at: Vector3, alarm: bool)   # a greeting bark, or a guard bark at night
 
@@ -21,12 +23,15 @@ const NOTICE_R := 16.0      # it notices the hero this far off
 const HEEL_R := 2.2         # keeps about this far from him
 const RANGE := 26.0         # never strays further than this from its door
 const AGAIN := 90.0         # s the hero must be away before it greets him again
+const ON_TRACK := 0.7       # share of its potter spots picked on a trodden track
+const PRESS := 0.2          # trail point age it holds under itself (full lay in the shader)
 
 var world: Node3D
 var terrain: Terrain
 var weather: Weather
 var state := POTTER
 var sit := 0.0
+var lie := 0.0               # 0 sat .. 1 lying down (at night by the door)
 var wag := 0.0
 var speed := 0.0
 var yaw := 0.0
@@ -48,6 +53,9 @@ var _phase := 0.0
 var _obstacles: Array[Vector3] = []
 var _rng := RandomNumberGenerator.new()
 var _mi: MeshInstance3D
+var _trample: Trample
+var pressed := 0             # trail points it has laid (bots)
+var _press_at := Vector3.INF
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -56,6 +64,7 @@ func setup(w: Node3D) -> void:
 	name = "Dog"
 	_rng.seed = 5521
 	w.add_child(self)
+	_trample = w.get_node_or_null("Trample")
 	# the white cottage's door and the way out of it (the village track that starts there)
 	var run: PackedVector2Array = DoorStones.runs()[1][0]
 	var d0 := Vector3(run[0].x, 0, run[0].y)
@@ -105,6 +114,8 @@ func place_bed() -> void:
 	global_position = bed
 	yaw = bed_yaw
 	sit = 1.0
+	var h := _hour()
+	lie = 1.0 if h >= 21.0 or h < 5.75 else 0.0
 	speed = 0.0
 	state = BED
 
@@ -125,6 +136,7 @@ func _process(delta: float) -> void:
 	var noticed := near < NOTICE_R and hero_home < RANGE
 	_t -= dt
 	var want_sit := 0.0
+	var want_lie := 0.0
 	var top := 0.0
 	var look := Vector3.INF
 	var wag_goal := 0.0
@@ -159,8 +171,12 @@ func _process(delta: float) -> void:
 				want_sit = 1.0 if near < HEEL_R + 0.6 and speed < 0.2 else 0.0
 		BED:
 			want_sit = 1.0
+			# at night it lies down in its place, up on its haunches again to bark or watch him
+			var h := _hour()
+			want_lie = 1.0 if (h >= 21.0 or h < 5.75) and _bark_n == 0 and near > 6.0 else 0.0
 			if global_position.distance_to(bed) > 0.3:
 				want_sit = 0.0
+				want_lie = 0.0
 				top = TROT
 				_steer_to(bed, dt)
 			else:
@@ -206,6 +222,9 @@ func _process(delta: float) -> void:
 	if top <= 0.0:
 		speed = move_toward(speed, 0.0, 4.0 * dt)
 	sit = move_toward(sit, want_sit if speed < 0.3 else 0.0, dt / 0.6)
+	lie = move_toward(lie, want_lie if sit > 0.95 else 0.0, dt / (1.4 if want_lie > 0.0 else 0.5))
+	if lie > 0.01:
+		sit = 1.0
 	if state != SNIFF:
 		graze = move_toward(graze, 0.0, dt / 0.5)
 	wag = move_toward(wag, wag_goal * (1.0 if near < 8.0 else 0.4), dt / 0.4)
@@ -218,20 +237,46 @@ func _process(delta: float) -> void:
 	head_yaw = lerpf(head_yaw, hg, 1.0 - exp(-3.0 * dt))
 	_phase = fposmod(_phase + dt * (speed / (0.95 * SCALE) if speed < 3.0 else speed / (1.6 * SCALE)), 1.0)
 	global_rotation = Vector3(0, yaw, 0)
+	_press_grass()
 	_mi.set_instance_shader_parameter("phase", _phase)
 	_mi.set_instance_shader_parameter("speed", speed / SCALE)
 	_mi.set_instance_shader_parameter("sit", sit)
 	_mi.set_instance_shader_parameter("head_yaw", head_yaw)
 	_mi.set_instance_shader_parameter("graze", graze)
 	_mi.set_instance_shader_parameter("wag", wag)
+	_mi.set_instance_shader_parameter("lie", lie)
 
 var _greet_gap := AGAIN   # s since it last left the hero's side
 
 func _last_greet_ok() -> bool:
 	return _greet_gap >= AGAIN or greets == 0
 
-## A new spot to potter to: on the open green in front of the cottage, clear of the walls.
+## Grass it sits or noses about in lies pressed down round it while it stays (one point on the
+## herd trail, held fresh; it stands up again over HERD_TRAIL_LIFE once it trots on). Only
+## when still, so its pottering does not spend the herd's 64 points.
+func _press_grass() -> void:
+	if _trample == null or speed > 0.3:
+		return
+	var p := global_position
+	_trample.add_herd_point(Vector2(p.x, p.z), Vector2(-sin(yaw), -cos(yaw)), 1.0, PRESS)
+	if _press_at == Vector3.INF or p.distance_to(_press_at) > 0.3:
+		pressed += 1
+	_press_at = p
+
+## A new spot to potter to: mostly along the trodden tracks near the cottage (where the
+## sward is short and it shows), else on the open green, clear of the walls.
 func _pick_goal() -> void:
+	if _rng.randf() < ON_TRACK:
+		var paths := YardGround._paths()
+		for i in 12:
+			var w: PackedVector2Array = paths[_rng.randi() % paths.size()]
+			var k := _rng.randi() % (w.size() - 1)
+			var q := w[k].lerp(w[k + 1], _rng.randf())
+			var p := Vector3(q.x, 0, q.y)
+			var r := Vector2(p.x - home.x, p.z - home.z).length()
+			if r > 1.5 and r < 10.0 and _clear(p, 1.3):
+				goal = _ground(p)
+				return
 	for i in 12:
 		var a := _rng.randf() * TAU
 		var r := _rng.randf_range(1.5, 9.0)
