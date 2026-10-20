@@ -193,6 +193,10 @@ func _step_sward() -> void:
 			continue
 		if rng.randf() < YardGround.worn(x, z) * 0.95:   # the beaten path to the door
 			continue
+		# bare trodden loam round each flag, where the rain pools lie: none in the pool band,
+		# a ragged few just past it
+		if DoorStones.under(x, z, 0.26) or (DoorStones.under(x, z, 0.42) and rng.randf() < 0.65):
+			continue
 		var y := _terrain.height_at(x, z)
 		var nrm := _terrain.normal_at(x, z)
 		var s := lerpf(0.7, 1.25, rng.randf()) * (0.6 if site.z < 3.1 else 1.0) * lerpf(1.0, 0.7, site.y) * lerpf(1.0, 0.55, hen)

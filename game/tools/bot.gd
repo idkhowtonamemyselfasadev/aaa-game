@@ -3281,6 +3281,7 @@ func _doorstones_test() -> void:
 	var through := 0
 	var tall := 0
 	var tall_max := 0.0
+	var in_pools := 0
 	for ch in grass.get_children():
 		var mmis: Array = [ch] if ch is MultiMeshInstance3D else []
 		for c in ch.get_children():
@@ -3294,6 +3295,9 @@ func _doorstones_test() -> void:
 				blades += 1
 				if DoorStones.under(o.x, o.z, -0.02):
 					through += 1
+				# the short sward kept off the bare loam band where the rain pools lie
+				elif m.name.begins_with("Sward") and DoorStones.under(o.x, o.z, 0.24):
+					in_pools += 1
 				# a tall meadow clump (not the short sward) standing right at a slab's edge
 				if not m.name.begins_with("Sward") and DoorStones.near(o.x, o.z) > 0.6:
 					var hgt := m.multimesh.get_instance_transform(i).basis.y.length()
@@ -3306,6 +3310,9 @@ func _doorstones_test() -> void:
 		return _combat_done(false, "%d grass clumps grow through the slabs (%d near)" % [through, blades])
 	if tall > 0:
 		return _combat_done(false, "%d tall clumps lean over the slabs" % tall)
+	print("BOT doorstones: %d sward blades in the pool band" % in_pools)
+	if in_pools > 0:
+		return _combat_done(false, "%d sward blades stand in the pool band round the slabs" % in_pools)
 	_combat_done(true, "door stones laid, walkable, grass-free and sounding of stone")
 
 func _yardpath_test() -> void:

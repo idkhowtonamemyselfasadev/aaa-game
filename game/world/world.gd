@@ -496,7 +496,10 @@ func _apply_weather(day: float) -> void:
 	# flat grey skylight replaces the sun's warmth: more ambient by day, cooler and greyer
 	var grey := Color(0.46, 0.49, 0.54) * lerpf(0.3, 1.0, day)
 	e.ambient_light_color = e.ambient_light_color.lerp(grey, 0.75 * c)
-	e.ambient_light_energy *= 1.0 + 0.35 * c * day
+	e.ambient_light_energy *= 1.0 + 0.55 * c * day
+	# the eye opens under a storm deck: with the sun ~80% gone the scene sat a stop under,
+	# wet yards read as murk; moody, but readable
+	e.tonemap_exposure *= 1.0 + 0.24 * c * day
 	e.fog_density = lerpf(0.0012, 0.008, c)
 	e.fog_light_color = e.fog_light_color.lerp(Color(0.5, 0.53, 0.57) * lerpf(0.12, 1.0, day), c)
 	e.fog_sun_scatter = lerpf(0.15, 0.0, c)

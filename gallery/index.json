@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261015-1520-post-iron.jpg",
-  "time": "2026-10-15T15:20:00Z",
-  "caption": "The practice post's iron band now reads as rusty forged iron with hammer facets worn dull grey, two rivets and rust runs staining the oak below, instead of a flat black stripe; at this range the band is small and the far peaks still wash pale.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-1619-peaks-haze.jpg",
   "time": "2026-10-15T16:19:02Z",
   "caption": "The far massifs now stand darker and bluer than the sky in layered haze with snow on the tops, instead of a milky wash; their faces are still flat grey with little forest or rock break-up at 1.5-2.5 km, and the mid-range trees are sparse.",
@@ -891,6 +885,12 @@
   "file": "20261020-0735-doorstones-timber-storm.jpg",
   "time": "2026-10-20T07:35:43Z",
   "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-0820-doorstones-storm-lifted.jpg",
+  "time": "2026-10-20T08:20:00Z",
+  "caption": "Same storm at the timber house door after the lift: the storm frame reads a good stop brighter and the flags now sit in bare dark loam with the sward cleared off the pool band; still wrong: the flags read as smooth pale lumps and the pools barely show.",
   "verdict": "fail"
  }
 ]
