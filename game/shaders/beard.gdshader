@@ -59,9 +59,10 @@ void fragment() {
 	// grizzled: mostly grey-white with dark hairs through it, darker toward the roots at the
 	// moustache line and in the hollows between the locks
 	float pepper = step(0.72, hash(vec2(floor(q.x * 3200.0), floor(q.y * 40.0))));
-	vec3 alb = mix(dark_col, hair_col, smoothstep(0.15, 0.85, strand));
-	alb = mix(alb, dark_col * 1.4, pepper * 0.7);
-	float hollow = mix(0.55, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.6, 1.0, cav);
+	// (full dark-to-light strands read as grey bark, too little as a white plaster patch)
+	vec3 alb = mix(hair_col * 0.42, hair_col, smoothstep(0.1, 0.9, strand));
+	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.55);
+	float hollow = mix(0.66, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
 	alb *= hollow * root;
 	// stained at the lip by pipe smoke and broth
@@ -72,7 +73,7 @@ void fragment() {
 	alb *= 1.0 - 0.6 * lips;
 	float rough = mix(0.62, 0.48, strand);
 	// the strands as a bump on the shading normal
-	float h = strand * 0.0004 + lock * 0.0012;
+	float h = strand * 0.0003 + lock * 0.0011;
 	vec3 dpx = dFdx(VERTEX);
 	vec3 dpy = dFdy(VERTEX);
 	vec3 r1 = cross(dpy, NORMAL);

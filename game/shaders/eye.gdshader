@@ -35,7 +35,8 @@ void fragment() {
 	float horiz = abs(ln.x);
 	sclera *= 1.0 - 0.6 * smoothstep(0.4, 0.85, horiz);
 	float inner = smoothstep(0.7, 0.9, -ln.x * side);
-	sclera = mix(sclera, vec3(0.30, 0.13, 0.11), 0.85 * inner);
+	// (a saturated red caruncle read as a red glint in the eye at any range)
+	sclera = mix(sclera, vec3(0.25, 0.16, 0.14), 0.6 * inner);
 	vec3 alb = mix(iris, sclera, smoothstep(iris_r - 0.03, iris_r + 0.03, ang));
 	// limbal ring: the iris edge darkens
 	alb *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 0.07, abs(ang - iris_r)));

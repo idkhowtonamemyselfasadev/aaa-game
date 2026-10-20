@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-0026-picture-menu.jpg",
-  "time": "2026-10-16T00:26:55Z",
-  "caption": "Pause panel with the new Picture section (quality preset Low..Ultra, FSR 2 render scale) lined up under the sound sliders over the keep interior; slider knobs are still stock white, not brass.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0158-keeper-tend.jpg",
   "time": "2026-10-16T01:58:00Z",
   "caption": "Hesper, the shrine keeper, tends the sealed lid in the ruined keep at 9 h in her own undyed wool, ash hood and faded woad robe; she still wears the hero's body cut and hat, and her linen leg wraps read too pale and thick.",
@@ -15,12 +9,6 @@
   "file": "20261016-0158-keeper-gather.jpg",
   "time": "2026-10-16T01:58:00Z",
   "caption": "Hesper gathering at an oak below the keep in the afternoon, side-on to the bole; she just stands (no stoop-and-pick animation) and the shaded oak bole reads glossy black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0158-keeper-doze.jpg",
-  "time": "2026-10-16T01:58:00Z",
-  "caption": "Before dawn Hesper dozes seated against the keep's inner wall, knees drawn up and hat bowed over them; reads as a sleeper, but her old armour knee caps show orange and there is no bedroll or fire.",
   "verdict": "fail"
  },
  {
@@ -891,6 +879,18 @@
   "file": "20261020-1503-osric-lean-face.jpg",
   "time": "2026-10-20T15:03:13Z",
   "caption": "Osric leaning on the garth wall at 9.5 h, close up: broken -- an oversized hat brim hides the bowed head entirely, the forearms are blocky stubs, and the cope stones are blurry at this range.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1540-osric-face.jpg",
+  "time": "2026-10-20T15:40:01Z",
+  "caption": "Osric at his door at 07:00 with an older, paler skin in place of the orange mask; FAIL: the beard (this frame from before the re-tune) reads as a flat white plaster patch, an eye still glints red and armour shows at the collar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1540-osric-lean.jpg",
+  "time": "2026-10-20T15:40:01Z",
+  "caption": "Osric leaning on the garth wall at 09:30, head now lifted to look out over the field, hens on the garth, the vale and peaks behind; FAIL: he is too small and side-on to read his face, and the forearm wraps are still blocky.",
   "verdict": "fail"
  }
 ]

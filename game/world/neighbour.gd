@@ -212,5 +212,6 @@ func _pose() -> void:
 	crumple.spine = lerpf(crumple.spine, 0.42, l)
 	crumple.arm = lerpf(crumple.arm, 1.15, l)
 	crumple.elbow = lerpf(crumple.elbow, 1.55, l)
-	crumple.neck = lerpf(crumple.neck, -0.45, l)
+	# (positive lifts the head: -0.45 bowed it so far the hat brim hid his face)
+	crumple.neck = lerpf(crumple.neck, 0.3, l)
 	crumple.clasp = lerpf(crumple.clasp, 0.45, l)

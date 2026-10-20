@@ -13,6 +13,8 @@ uniform vec4 eyes = vec4(-0.031, 1.968, 0.031, 1.968);
 uniform vec2 eye_size = vec2(0.0135, 0.0037);
 uniform float brow_y = 1.990;
 uniform float low_tuck = 0.72;   // UV.y where the lower edge starts sinking into shade
+uniform float age = 0.0;         // 0 a working adult .. 1 an old man: paler, greyer, liver
+                                 // spots, deeper lines, the colour only in the cheeks and nose
 
 varying vec3 mp;
 
@@ -68,6 +70,11 @@ float skin_relief(vec2 p, float de) {
 	float fx = abs(abs(p.x) - 0.0055);
 	h -= 0.00025 * exp(-pow(fx / 0.0006, 2.0)) * smoothstep(1.972, 1.978, p.y)
 			* (1.0 - smoothstep(1.988, 1.996, p.y));
+	// age: everything cut deeper, and long lines across the forehead over the brows
+	h *= 1.0 + 0.8 * age;
+	float fy = fract((p.y - 1.998) / 0.0042 + 0.25 * vnoise(vec2(p.x * 90.0, 2.0)));
+	h -= age * 0.0002 * exp(-pow((fy - 0.5) / 0.09, 2.0)) * smoothstep(1.997, 2.001, p.y)
+			* (1.0 - smoothstep(0.03, 0.05, abs(p.x)));
 	return h;
 }
 
@@ -89,9 +96,23 @@ void fragment() {
 	vec3 alb = skin_col * (0.86 + 0.22 * n) * (0.92 + 0.12 * blotch);
 	float cheek = smoothstep(0.018, 0.04, abs(p.x)) * (1.0 - smoothstep(1.958, 1.94, p.y) * 0.0);
 	alb = mix(alb, alb * vec3(1.08, 0.88, 0.85), 0.35 * cheek * smoothstep(1.962, 1.945, p.y));
+	if (age > 0.0) {
+		// an old face: the sun-brown drained to a paler, greyer skin with blotched patches and
+		// a few liver spots; the colour stays in broken veins on the cheekbones and the nose tip
+		float l = dot(alb, vec3(0.3, 0.59, 0.11));
+		alb = mix(alb, vec3(l) * vec3(1.06, 0.98, 0.92), 0.45 * age);
+		alb *= mix(1.0, 0.82 + 0.3 * vnoise(p * 140.0 + 21.0), 0.6 * age);
+		float spot = smoothstep(0.78, 0.86, vnoise(p * 330.0 + 40.0)) * smoothstep(1.95, 1.975, p.y);
+		alb = mix(alb, alb * vec3(0.72, 0.6, 0.5), 0.6 * age * spot);
+		float ruddy = exp(-pow((abs(p.x) - 0.042) / 0.014, 2.0) - pow((p.y - 1.948) / 0.012, 2.0))
+				+ exp(-pow(p.x / 0.012, 2.0) - pow((p.y - 1.912) / 0.012, 2.0));
+		float veins = 0.6 + 0.4 * vnoise(vec2(p.x * 1500.0, p.y * 700.0));
+		alb = mix(alb, alb * vec3(1.25, 0.82, 0.8), 0.55 * age * clamp(ruddy, 0.0, 1.0) * veins);
+	}
 	// lids: darker, slightly purple skin in a band round each opening; lash line at the edge
 	float lid = 1.0 - smoothstep(0.0, 0.006, de);
-	alb = mix(alb, lid_col, 0.55 * lid);
+	// (an old man's lids are hooded and dull, not pink: the red rims read as glinting red eyes)
+	alb = mix(alb, mix(lid_col, alb * 0.7, 0.6 * age), 0.55 * lid);
 	float lash = 1.0 - smoothstep(0.0, 0.0011, de);
 	// the upper lash line is heavier than the lower
 	float upper = step(eyes.y - 0.001, p.y);

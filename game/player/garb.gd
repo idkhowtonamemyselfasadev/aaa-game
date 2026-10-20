@@ -457,6 +457,11 @@ func _add_face(head: Node3D) -> void:
 	if beard:
 		# the nose and upper lip show; only the strip under the moustache tucks into shade
 		mat.set_shader_parameter("low_tuck", 0.88)
+		# an old man's face: paler and greyer than the hero's sun-brown, which read as a flat
+		# orange mask under the warm face fill
+		mat.set_shader_parameter("age", 1.0)
+		mat.set_shader_parameter("skin_col", Color(0.33, 0.27, 0.24))
+		mat.set_shader_parameter("lid_col", Color(0.26, 0.19, 0.16))
 	face = MeshInstance3D.new()
 	face.name = "Face"
 	face.mesh = _grid(_face_point, 40, 24 if beard else 14)
