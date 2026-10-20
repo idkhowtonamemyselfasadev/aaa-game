@@ -3845,6 +3845,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0000000000000000. (11:58 10-20) Brack dozes / lies in the sun DONE (see Done 11:20). Shots
+   `dog dog_down 60 15.5 down fixfps` and `dog dog_doze 60 21.5 door fixfps` FAIL: he lies
+   right but is small and in shade behind a dark wall of near grass; at night by the door he
+   is a dim shape. Do NOT spend more sessions on the dog's framing: move on to the byre / a
+   second villager (Edda calling the dog on her rounds can ride along with that). Note: PIL is
+   broken on the cloud box; make gallery JPEGs with ImageMagick `convert`.
 0000000000000000. (10:50 10-20) Brack (a) shows on the track and (b) lies down at night: DONE. Shot
    `dog dog_sit2 60 15.5 fixfps` passes on framing (whole dog on the track, cottage door behind) but
    the foreground is in deep shade and the dog reads flat/low-detail (coat needs fur shading: strand

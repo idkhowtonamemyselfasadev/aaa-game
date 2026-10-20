@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261015-1946-peaks-dusk.jpg",
-  "time": "2026-10-15T19:46:05Z",
-  "caption": "At 18:50 the far ring is dimmer and its flanks sink into blue haze instead of glowing pale over a black valley; the moonlit snow tops still read bright and the left peaks' rib streaks swirl like marble.",
-  "verdict": "fail"
- },
- {
   "file": "20261015-2030-peaks-ribs.jpg",
   "time": "2026-10-15T20:30:00Z",
   "caption": "The far ring by day: couloirs and ribs now run straight down the massif faces with no marble swirl, but the central massif reads a little like regular organ-pipe flutes and lost some summit snow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-2030-peaks-dusk.jpg",
-  "time": "2026-10-15T20:30:00Z",
-  "caption": "The far ring at dusk: dimmer moonlit snow and no swirl, but the central massif shows regular pale vertical stripes.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261020-1059-dog-night.jpg",
   "time": "2026-10-20T10:59:14Z",
   "caption": "Edda's cottage at 22 h with fireflies, Brack lying down in his place by the door; still wrong: he is lost in the dark at the wall foot and the frame is murky blue-black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1136-dog-sun.jpg",
+  "time": "2026-10-20T11:36:00Z",
+  "caption": "Brack lying in the sun on the trodden track before the white cottage: he reads as a low black-and-white dog lying down, but he is small, in the shade of the tall foreground grass, and the near grass is a dark wall.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1158-dog-doze.jpg",
+  "time": "2026-10-20T11:58:00Z",
+  "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
   "verdict": "fail"
  }
 ]
