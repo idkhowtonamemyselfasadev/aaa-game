@@ -3718,7 +3718,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0000000. (22:00 10-19) Door stones landed. (Grass kept off them + stone/wet-stone footsteps
-   DONE 00:30 10-20.) Next for them: a darker wet sheen on them in rain, puddles lying round their edges. Then the
+   DONE 00:30 10-20; shots `doorstones ds 60 11.0 stone fixfps` / `dst 60 16.5 timber`
+   still FAIL: tall tussocks either side of the narrow worn strip lean over and hide the slabs,
+   and the slabs read dark in the house shade -- thin/shorten the tall clumps within ~0.8 m of
+   the door tracks and lift the slabs' albedo. Do that FIRST.) Then: a darker wet sheen on them in rain, puddles lying round their edges. Then the
    other village items below (byre, second villager in the stone cottage, a dog).
 000000-village. (Stone cottage DONE 09:50 10-18 alongside the other session's timber house:
    `world/stone_cottage.gd` (`StoneCottage`, `SITE` (-24, 22), door toward the start; grass
