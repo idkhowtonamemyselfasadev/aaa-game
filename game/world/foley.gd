@@ -48,6 +48,8 @@ func _ready() -> void:
 	_s["step_grass"] = [_make_step(0), _make_step(0), _make_step(0), _make_step(0)]
 	_s["step_grit"] = [_make_step(1), _make_step(1), _make_step(1)]
 	_s["step_wet"] = [_make_step(2), _make_step(2), _make_step(2)]
+	_s["step_stone"] = [_make_step(3), _make_step(3), _make_step(3)]
+	_s["step_stone_wet"] = [_make_step(4), _make_step(4), _make_step(4)]
 	_s["bark"] = [_make_bark(1.0), _make_bark(0.9), _make_bark(1.12)]
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
@@ -222,11 +224,13 @@ func _on_footfall(w: Node3D, at: Vector3, speed: float) -> void:
 		hero_steps += 1
 	_play(nm, at + Vector3.UP * 0.05, db)
 
-## What a foot meets at `at`: "grit" on the keep floor, "wet" in a pool or soaked ground,
-## else "grass".
+## What a foot meets at `at`: "grit" on the keep floor, "stone" (or "stone_wet" in rain) on
+## a door slab, "wet" in a pool or soaked ground, else "grass".
 func surface_at(at: Vector3) -> String:
 	if _ruin != Vector3.INF and Vector2(at.x - _ruin.x, at.z - _ruin.z).length() < 3.6:
 		return "grit"
+	if DoorStones.under(at.x, at.z, 0.03):
+		return "stone_wet" if weather and weather.wet_at(at.x, at.z) > 0.45 else "stone"
 	if weather and (weather.pool_at(at.x, at.z) or weather.wet_at(at.x, at.z) > 0.45):
 		return "wet"
 	return "grass"
@@ -799,6 +803,11 @@ func _make_step(kind: int) -> AudioStreamWAV:
 				s += (w - lp) * 0.35 * e * (0.5 + 0.5 * _rng.randf())   # stem crunch
 			1:
 				s += (w - lp) * 0.25 * e
+			3, 4:
+				# a slab does not give: the thud is shorter and the heel and toe knock dry
+				s = thud * 0.55 * exp(-t / 0.012) + (w - lp) * 0.12 * e * exp(-t / 0.05)
+				if kind == 4:   # a thin film of water slapped off the top
+					s += (w - lp) * 0.3 * exp(-t / 0.02) + lp * 0.5 * exp(-maxf(t - toe, 0.0) / 0.03) * smoothstep(toe - 0.004, toe, t)
 			_:
 				s += lp2 * 3.0 * e + lp * 0.4 * exp(-maxf(t - toe, 0.0) / 0.07) * smoothstep(toe - 0.01, toe, t)
 		x[i] = s
@@ -810,4 +819,13 @@ func _make_step(kind: int) -> AudioStreamWAV:
 			for j in 90:
 				if at + j < n:
 					x[at + j] += amp * sin(TAU * ff * j / RATE) * exp(-j / 12.0)
+	if kind >= 3:   # the stone rings for a moment under the heel, then the toe
+		var hs := RATE / 1000.0
+		for hit in [[0.0, 1.0], [toe, 0.55]]:
+			var at := int(hit[0] * RATE)
+			for f in [_rng.randf_range(1400.0, 1900.0), _rng.randf_range(2600.0, 3400.0), _rng.randf_range(4200.0, 5200.0)]:
+				var amp: float = hit[1] * _rng.randf_range(0.1, 0.18) * (1600.0 / f)
+				for j in int(18.0 * hs):
+					if at + j < n:
+						x[at + j] += amp * sin(TAU * f * j / RATE) * exp(-j / (2.5 * hs))
 	return _wav(x, 0.7)

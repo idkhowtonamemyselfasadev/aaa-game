@@ -19,7 +19,6 @@ const THICK := 0.07
 var stone_count := 0
 var stones: Array[Vector3] = []    # world centre of each slab's top (bots)
 var _terrain: Terrain
-var _rng := RandomNumberGenerator.new()
 var _per: Array = []
 
 ## The tracks out of each door, as world xz polylines starting at the door.
@@ -48,53 +47,101 @@ static func along(w: PackedVector2Array, s: float) -> Array:
 		s -= l
 	return [w[w.size() - 1], Vector2(0, 1)]
 
+## The slabs' layout in plan, worked out once from the seed alone (no terrain), so grass and
+## the foley can ask where the stones lie before or without the node: per slab
+## [centre xz, track dir, right, size, yaw, tilt x, tilt z, flipped, variant, tint].
+static var _plan: Array = []
+
+static func plan() -> Array:
+	if not _plan.is_empty():
+		return _plan
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7373
+	for r in runs():
+		var w: PackedVector2Array = r[0]
+		var s := START + rng.randf_range(-0.05, 0.08)
+		for i in r[1]:
+			var a: Array = along(w, s)
+			var q: Vector2 = a[0]
+			var d: Vector2 = a[1]
+			var right := Vector2(-d.y, d.x)
+			# a step for the left foot, then the right: the slabs wander either side of the line
+			q += right * (0.07 if i % 2 == 0 else -0.07) + right * rng.randf_range(-0.04, 0.04)
+			# the last one out is smaller, half lost in the dirt where the track runs on
+			var sz := Vector3(rng.randf_range(0.58, 0.72), THICK, rng.randf_range(0.46, 0.56))
+			if i == r[1] - 1:
+				sz *= Vector3(0.82, 1.0, 0.85)
+			var yaw := atan2(right.x, right.y) + rng.randf_range(-0.35, 0.35)
+			var tx := rng.randf_range(-0.03, 0.03)
+			var tz := rng.randf_range(-0.03, 0.03)
+			var flip := rng.randf() < 0.5
+			_plan.append([q, d, right, sz, yaw, tx, tz, flip, rng.randi() % VARIANTS, rng.randf()])
+			s += PACE + rng.randf_range(-0.06, 0.06)
+	return _plan
+
+## Whether (x, z) lies on a slab, its footprint grown by `margin` metres (negative shrinks).
+static func under(x: float, z: float, margin := 0.0) -> bool:
+	for sl: Array in plan():
+		var c: Vector2 = sl[0]
+		var o := Vector2(x, z) - c
+		var sz: Vector3 = sl[3]
+		if o.length_squared() > pow(0.47 + maxf(margin, 0.0), 2.0):   # cheap reject: < 0.47 m centre to corner
+			continue
+		var bx := Vector2(cos(sl[4]), -sin(sl[4]))      # the slab's own x axis in xz (Basis(UP, yaw))
+		var bz := Vector2(sin(sl[4]), cos(sl[4]))
+		if absf(o.dot(bx)) <= sz.x * 0.5 + margin and absf(o.dot(bz)) <= sz.z * 0.5 + margin:
+			return true
+	return false
+
 func _ready() -> void:
 	var ruins: Ruins = get_node(ruins_path)
 	_terrain = get_node(terrain_path)
-	_rng.seed = seed
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# squarish slabs: rounder arrises worn by feet, only a couple of shallow splits
 		meshes.append(YardWall.stone_mesh(seed, v, ruins.material, 0.2, 0.05, 0.42, 0.49, true, Vector2i(2, 3)))
 		_per.append([])
-	for r in runs():
-		_lay(r[0], r[1])
+	for sl: Array in plan():
+		_lay(sl)
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Slabs_%d" % v)
 
-func _lay(w: PackedVector2Array, n: int) -> void:
-	var s := START + _rng.randf_range(-0.05, 0.08)
-	for i in n:
-		var a: Array = along(w, s)
-		var q: Vector2 = a[0]
-		var d: Vector2 = a[1]
-		var right := Vector2(-d.y, d.x)
-		# a step for the left foot, then the right: the slabs wander either side of the line
-		q += right * (0.07 if i % 2 == 0 else -0.07) + right * _rng.randf_range(-0.04, 0.04)
-		# the last one out is smaller, half lost in the dirt where the track runs on
-		var sz := Vector3(_rng.randf_range(0.58, 0.72), THICK, _rng.randf_range(0.46, 0.56))
-		if i == n - 1:
-			sz *= Vector3(0.82, 1.0, 0.85)
-		# the slab's low corner sets it: sample the ground under its footprint
-		var g := INF
-		var hi := -INF
-		for c in [Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2.ZERO]:
-			var p: Vector2 = q + right * c.x * sz.x + d * c.y * sz.z
-			var h := _terrain.height_at(p.x, p.y)
-			g = minf(g, h)
-			hi = maxf(hi, h)
-		var top := lerpf(g, hi, 0.6) + PROUD
-		var yaw := atan2(right.x, right.y) + _rng.randf_range(-0.35, 0.35)
-		var b := Basis(Vector3.UP, yaw)
-		b = b.rotated(b.x, _rng.randf_range(-0.03, 0.03)).rotated(b.z, _rng.randf_range(-0.03, 0.03))
-		var sc := sz
-		if _rng.randf() < 0.5:
-			sc = Vector3(-sc.x, sc.y, -sc.z)   # flipped so the same splits do not repeat
-		var c3 := Vector3(q.x, top - THICK * 0.5, q.y) - global_position
-		_per[_rng.randi() % VARIANTS].append([Transform3D(b * Basis.from_scale(sc), c3), Color(0.0, _rng.randf(), 0.0, 2.0)])
-		stones.append(Vector3(q.x, top, q.y))
-		stone_count += 1
-		s += PACE + _rng.randf_range(-0.06, 0.06)
+func _lay(sl: Array) -> void:
+	var q: Vector2 = sl[0]
+	var d: Vector2 = sl[1]
+	var right: Vector2 = sl[2]
+	var sz: Vector3 = sl[3]
+	# the slab's low corner sets it: sample the ground under its footprint
+	var g := INF
+	var hi := -INF
+	for c in [Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2.ZERO]:
+		var p: Vector2 = q + right * c.x * sz.x + d * c.y * sz.z
+		var h := _terrain.height_at(p.x, p.y)
+		g = minf(g, h)
+		hi = maxf(hi, h)
+	var top := lerpf(g, hi, 0.6) + PROUD
+	var b := Basis(Vector3.UP, sl[4])
+	b = b.rotated(b.x, sl[5]).rotated(b.z, sl[6])
+	var sc := sz
+	if sl[7]:
+		sc = Vector3(-sc.x, sc.y, -sc.z)   # flipped so the same splits do not repeat
+	var c3 := Vector3(q.x, top - THICK * 0.5, q.y) - global_position
+	_per[sl[8]].append([Transform3D(b * Basis.from_scale(sc), c3), Color(0.0, sl[9], 0.0, 2.0)])
+	stones.append(Vector3(q.x, top, q.y))
+	stone_count += 1
+
+## Top of the slab under (x, z), or NAN off the stones (the foley's footsteps).
+func top_at(x: float, z: float) -> float:
+	if not under(x, z, 0.03):
+		return NAN
+	var best := NAN
+	var bd := INF
+	for q in stones:
+		var dd := Vector2(q.x - x, q.z - z).length_squared()
+		if dd < bd:
+			bd = dd
+			best = q.y
+	return best
 
 func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:
 	if items.is_empty():

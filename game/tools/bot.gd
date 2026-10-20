@@ -3212,6 +3212,11 @@ func _doorstones_test() -> void:
 			return _combat_done(false, "slab at %s is off the worn track" % q)
 		if house or YardWall.near(q.x, q.z, 0.3) or DryWall.near(q.x, q.z, 0.3):
 			return _combat_done(false, "slab at %s is in a house or wall" % q)
+		if not DoorStones.under(q.x, q.z) or ds.top_at(q.x, q.z) != q.y:
+			return _combat_done(false, "plan footprint misses the slab at %s" % q)
+	var foley: Foley = _world.foley
+	var stone0 := int(foley.played.get("step_stone", 0))
+	var steps0 := foley.hero_steps
 	# walk out of each door along its track, over the slabs, to a point 2.6 m out
 	for r: Array in DoorStones.runs():
 		var w: PackedVector2Array = r[0]
@@ -3230,7 +3235,32 @@ func _doorstones_test() -> void:
 		print("BOT doorstones: walked from %s to %s in %.1f s" % [st, p.global_position, t])
 		if t >= 8.0:
 			return _combat_done(false, "could not walk out over the slabs from %s" % st)
-	_combat_done(true, "door stones laid and walkable")
+	var on_stone := int(foley.played.get("step_stone", 0)) - stone0
+	print("BOT doorstones: %d hero steps, %d on stone" % [foley.hero_steps - steps0, on_stone])
+	if on_stone < 3:
+		return _combat_done(false, "only %d footsteps sounded on the slabs" % on_stone)
+	# no blade of the meadow or the short sward through a slab (grass streamed round the last door)
+	await _ticks(240)
+	var grass := _world.get_node("Grass")
+	var blades := 0
+	var through := 0
+	for ch in grass.get_children():
+		var mmis: Array = [ch] if ch is MultiMeshInstance3D else []
+		for c in ch.get_children():
+			if c is MultiMeshInstance3D:
+				mmis.append(c)
+		for m: MultiMeshInstance3D in mmis:
+			for i in m.multimesh.instance_count:
+				var o: Vector3 = m.global_transform * m.multimesh.get_instance_transform(i).origin
+				if absf(o.x - p.global_position.x) > 12.0 or absf(o.z - p.global_position.z) > 12.0:
+					continue
+				blades += 1
+				if DoorStones.under(o.x, o.z, -0.02):
+					through += 1
+	print("BOT doorstones: %d clumps near the last door, %d through a slab" % [blades, through])
+	if blades < 50 or through > 0:
+		return _combat_done(false, "%d grass clumps grow through the slabs (%d near)" % [through, blades])
+	_combat_done(true, "door stones laid, walkable, grass-free and sounding of stone")
 
 func _yardpath_test() -> void:
 	var p := _player
