@@ -531,7 +531,7 @@ func _physics_process(delta: float) -> void:
 	_update_animation(delta)
 	var pg = player.get("garb") if player != null else null
 	if garb.fill != null and pg != null and pg.fill != null:
-		garb.fill.light_energy = pg.fill.light_energy
+		garb.fill.light_energy = pg.fill.light_energy * garb.fill_gain
 		garb.fill.light_color = pg.fill.light_color
 
 func _begin(a: String) -> void:

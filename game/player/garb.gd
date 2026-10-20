@@ -40,6 +40,9 @@ var gores: Array[MeshInstance3D] = []
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
 var beard_col := Color(0.50, 0.48, 0.45)
+## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
+## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
+var fill_gain := 1.0
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -486,7 +489,11 @@ func _beard() -> MeshInstance3D:
 	mi.mesh = _veil()
 	mi.material_override = mat
 	mi.layers = layer
-	mi.transform = Transform3D(Basis.from_scale(Vector3(1.05, 1.0, 1.07)), Vector3.ZERO)
+	# run on down 2.5 cm past the face cloth's tuck (stretched from the moustache line, so it
+	# stays put under the nose): its lower edge sits deep in the mantle's collar and no armour
+	# plate shows in a gap under the jaw
+	var top := 1.893
+	mi.transform = Transform3D(Basis.from_scale(Vector3(1.05, 1.13, 1.07)), Vector3(0.0, top - top * 1.13, 0.0))
 	return mi
 
 ## The face in the gap between the hood and the face cloth: a band of sun-browned skin from

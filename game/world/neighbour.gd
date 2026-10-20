@@ -90,6 +90,8 @@ func _dress() -> void:
 	garb.felt_hat = true
 	# no face cloth: his own weathered face, the nose, and a grizzled grey beard
 	garb.beard = true
+	# the felt brim and the dark hood put his face in deep shade: a stronger fill under it
+	garb.fill_gain = 1.9
 
 func _kit() -> void:
 	pass

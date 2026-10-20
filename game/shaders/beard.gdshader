@@ -60,9 +60,9 @@ void fragment() {
 	// moustache line and in the hollows between the locks
 	float pepper = step(0.72, hash(vec2(floor(q.x * 3200.0), floor(q.y * 40.0))));
 	// (full dark-to-light strands read as grey bark, too little as a white plaster patch)
-	vec3 alb = mix(hair_col * 0.42, hair_col, smoothstep(0.1, 0.9, strand));
-	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.55);
-	float hollow = mix(0.66, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
+	vec3 alb = mix(hair_col * 0.62, hair_col, smoothstep(0.1, 0.9, strand));
+	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.32);
+	float hollow = mix(0.8, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
 	alb *= hollow * root;
 	// stained at the lip by pipe smoke and broth
