@@ -93,7 +93,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# worn pushed back a little on the hood, so the eye line shows under the front brim even
 		# with the idle stance's head bowed
 		var crown := Vector3(0.0, 2.10, -0.03)
-		hat.transform = Transform3D(Basis(Vector3.RIGHT, -0.17), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * 0.02)
+		# the felt hat sits down on the hood, tipped back only a little
+		var tip := -0.08 if felt_hat else -0.17
+		var up := 0.0 if felt_hat else 0.02
+		hat.transform = Transform3D(Basis(Vector3.RIGHT, tip), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * up)
 		head.add_child(hat)
 	tint = palette.get("mantle", MANTLE)
 	var mantle := _piece(_drape(), 0.0, 0.012, 0.35, 1.0)
@@ -395,27 +398,30 @@ func _felt() -> ArrayMesh:
 		var a := u * TAU
 		var ca := cos(a)
 		var sa := sin(a)
-		# the crown's base hugs the hood (0.168 x 0.192 m round its centre, z -0.045)
-		var rx := 0.183
-		var rz := 0.207
+		# the band sits low round the hood's widest part (about 2.0 m, where the hood is
+		# ~0.155 x 0.177 m round its centre, z -0.045), so the crown stands only ~0.13 m
+		# above it instead of riding high like a stovepipe
+		var rx := 0.172
+		var rz := 0.198
 		var y := 0.0
 		var k := 0.0
 		if v < 0.3:
-			# the top: a low dome from the middle out to the crown's shoulder, the crease
-			# pinched down along the middle line
+			# the top: a low dome from the middle out to the crown's rounded shoulder, the
+			# crease pinched down along the middle line (its floor still 2 cm over the hood)
 			var t := v / 0.3
-			k = 0.94 * sin(t * PI * 0.5)
-			y = 2.215 - 0.02 * t * t - 0.032 * exp(-pow(sa * k / 0.32, 2.0)) * (1.0 - t * t * 0.8)
+			k = 0.86 * sin(t * PI * 0.5)
+			y = 2.13 - 0.026 * t * t - 0.02 * exp(-pow(sa * k / 0.3, 2.0)) * (1.0 - t * t * 0.8)
 		elif v < 0.62:
-			# the wall: down from the shoulder to the band, tapering in a touch toward the top
+			# the wall: down from the shoulder to the band, tapering in toward the top so the
+			# crown reads round, the shoulder eased over in a curve
 			var t := (v - 0.3) / 0.32
-			k = lerpf(0.94, 1.0, t)
-			y = lerpf(2.195, 2.03, t)
+			k = lerpf(0.86, 1.0, sqrt(t))
+			y = lerpf(2.104, 1.995, t)
 		else:
-			# the brim: out 7 cm, drooping at the front and back, wavy at the edge
+			# the brim: out 9 cm, drooping at the front and back, wavy at the edge
 			var t := (v - 0.62) / 0.38
-			k = 1.0 + t * 0.075 / 0.19
-			y = 2.03 - 0.004 * t - (0.018 * ca * ca + 0.006 * sin(a * 5.0 + 0.7)) * t * t
+			k = 1.0 + t * 0.09 / 0.185
+			y = 1.995 - 0.006 * t - (0.03 * ca * ca + 0.007 * sin(a * 5.0 + 0.7)) * t * t
 		k *= 1.0 + 0.012 * sin(a * 3.0 + 0.4)
 		return Vector3(sa * rx * k, y, -0.045 + ca * rz * k), 48, 16)
 

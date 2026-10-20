@@ -665,20 +665,23 @@ func _track_keeper(dt: float) -> void:
 func _give_way(h: Dictionary) -> bool:
 	if h.inside or h.state == FLEE or h.state == CLIMB or h.state == DESCEND or h.state == ROOST:
 		return false
-	if h.hurry > 0.0 or _keeper_v.length() < 0.3:
+	if _keeper_v.length() < 0.3:
 		return false
 	var rel: Vector2 = (h.pos as Vector2) - _keeper_l
 	var dir := _keeper_v.normalized()
+	var perp := dir.orthogonal()
 	var ahead := rel.dot(dir)
-	var side := rel.dot(dir.orthogonal())
+	var side := rel.dot(perp)
 	# in a short lane ahead of his boots, or right at them
 	if not ((ahead > -0.2 and ahead < GIVE_R + 0.8 and absf(side) < 0.65) or rel.length() < 0.55):
 		return false
-	var sgn := signf(side) if absf(side) > 0.05 else (1.0 if h.id % 2 == 0 else -1.0)
-	var goal := clamp_yard((h.pos as Vector2) + dir.orthogonal() * sgn * _rng.randf_range(0.8, 1.2) + dir * 0.25)
-	if goal.distance_to(h.pos) < 0.4:
-		goal = clamp_yard((h.pos as Vector2) - dir.orthogonal() * sgn * 1.0 + dir * 0.6)
-	h.goal = goal
+	if h.hurry > 0.0:
+		# already hurrying aside: only a bird whose way out the wall has shut (its goal still
+		# in his lane) and that he is almost on looks again
+		var gl: Vector2 = (h.goal as Vector2) - _keeper_l
+		if h.hurry > 1.0 or rel.length() > 0.6 or absf(gl.dot(perp)) > 0.55 or gl.dot(dir) < -0.1:
+			return false
+	h.goal = _way_out(h.pos, dir, side, h.id)
 	h.state = WALK
 	h.t = 2.5
 	h.hurry = 1.4
@@ -687,6 +690,26 @@ func _give_way(h: Dictionary) -> bool:
 	h.wing = maxf(h.wing, 0.15)
 	gave_way += 1
 	return true
+
+## Where a bird at `p` in Osric's lane (walking along `dir`) goes: a step aside to the side it
+## is already on, else the other; where the garth wall clamps both back into his lane (a bird
+## pinned against the wall he walks along), it runs on ahead of him and off at a slant.
+func _way_out(p: Vector2, dir: Vector2, side: float, id: int) -> Vector2:
+	var perp := dir.orthogonal()
+	var sgn := signf(side) if absf(side) > 0.05 else (1.0 if id % 2 == 0 else -1.0)
+	var best := p
+	var best_lat := -1.0
+	for c: Vector2 in [Vector2(sgn, 0.25), Vector2(sgn, 0.6), Vector2(-sgn, 0.6), Vector2(-sgn, 1.0)]:
+		var g := clamp_yard(p + perp * c.x * _rng.randf_range(0.85, 1.2) + dir * c.y)
+		# how far off his line the clamped spot really is
+		var lat := absf((g - _keeper_l).dot(perp))
+		if lat > 0.7 and (g - _keeper_l).dot(dir) > -0.3:
+			return g
+		if lat > best_lat:
+			best_lat = lat
+			best = g
+	var run := clamp_yard(p + dir * 1.8 + perp * sgn * 0.6)
+	return run if absf((run - _keeper_l).dot(perp)) > best_lat else best
 
 ## Local forward of a bird at `yaw` (mesh faces -Z).
 static func _fwd(yaw: float) -> Vector2:
