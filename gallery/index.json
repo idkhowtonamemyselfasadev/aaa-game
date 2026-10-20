@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261015-2030-peaks-ribs.jpg",
-  "time": "2026-10-15T20:30:00Z",
-  "caption": "The far ring by day: couloirs and ribs now run straight down the massif faces with no marble swirl, but the central massif reads a little like regular organ-pipe flutes and lost some summit snow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-2110-peaks-ribs.jpg",
-  "time": "2026-10-15T21:10:38Z",
-  "caption": "Far massifs at 10:30: ribs and snow couloirs now wander, fork and vary in width with fuller summit snow instead of even organ-pipe flutes; the lower flanks still read as a flat haze band.",
-  "verdict": "fail"
- },
- {
-  "file": "20261015-2221-peaks-storm.jpg",
-  "time": "2026-10-15T22:21:00Z",
-  "caption": "The far ring under a storm front: the massifs now sink to dark storm-grey silhouettes rising out of a low rain band instead of glowing pale cut-outs; their faces show no relief in the rain and the edges are a little crisp for 2 km of downpour.",
-  "verdict": "pass"
- },
- {
   "file": "20261015-2334-pause-menu.jpg",
   "time": "2026-10-15T23:34:00Z",
   "caption": "Esc now pauses inside the ruined keep and opens a lacquer-and-brass sound panel (master, ambience, wildlife, effects, music); the sliders' grabbers are still Godot's stock white knobs and the dimmed keep behind is flat.",
@@ -891,6 +873,18 @@
   "file": "20261020-1237-osric.jpg",
   "time": "2026-10-20T12:37:54Z",
   "caption": "Osric, the new stone-cottage villager, tending his garth at 15.5 h with Edda beyond the field gate; FAIL: the foreground is in deep shade and his pale hood reads as a veil over his face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1430-osric-face.jpg",
+  "time": "2026-10-20T14:30:22Z",
+  "caption": "Osric on his step at 07:00 with his own face for the first time: a nose and a grizzled grey beard under the hood instead of the face cloth; FAIL: the skin is a flat orange mask, the eyes glint red and the beard reads as grey bark, not hair.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-1430-osric-lean.jpg",
+  "time": "2026-10-20T14:30:22Z",
+  "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
   "verdict": "fail"
  }
 ]
