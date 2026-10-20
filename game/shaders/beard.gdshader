@@ -11,7 +11,7 @@ render_mode cull_disabled;
 // strands thinning out toward it so it never reads as a pale plate with a ruled bottom. Lock-
 // level value variation and sparse dark sideburns keep it from reading as one even mask.
 
-uniform vec3 hair_col : source_color = vec3(0.37, 0.345, 0.30);
+uniform vec3 hair_col : source_color = vec3(0.36, 0.35, 0.33);
 uniform vec3 dark_col : source_color = vec3(0.10, 0.092, 0.082);
 
 varying vec3 mp;
@@ -75,8 +75,9 @@ void fragment() {
 	// grizzled: mostly grey-white with dark hairs through it, darker toward the roots at the
 	// moustache line and in the hollows between the locks
 	float pepper = step(0.72, hash(vec2(floor(q.x * 3200.0), floor(q.y * 40.0))));
-	// (full dark-to-light strands read as grey bark, too little as a white plaster patch)
-	vec3 alb = mix(hair_col * 0.62, hair_col, smoothstep(0.1, 0.9, strand));
+	// (full dark-to-light strands read as grey bark or wood grain, too little as a white
+	// plaster patch: a soft fine-strand contrast, the clumping carried by the locks)
+	vec3 alb = mix(hair_col * 0.8, hair_col, smoothstep(0.15, 0.85, s1 * 0.75 + s2 * 0.25));
 	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.32);
 	float hollow = mix(0.68, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
@@ -93,8 +94,9 @@ void fragment() {
 	}
 	alb *= mix(1.0, 0.55, side);
 	alb *= hollow * root * tip;
-	// an old man's grey yellows: nicotine and age warm it toward the lip and the chin
-	alb *= mix(vec3(1.0), vec3(1.04, 0.97, 0.84), 0.6);
+	// an old man's grey yellows only round the mouth (nicotine, age): the rest stays ash grey
+	float near_lip = (1.0 - smoothstep(0.015, 0.05, ax)) * smoothstep(1.80, 1.865, p.y);
+	alb *= mix(vec3(1.0), vec3(1.04, 0.97, 0.84), 0.6 * near_lip);
 	// stained at the lip by pipe smoke and broth
 	float stain = (1.0 - smoothstep(0.0, 0.02, ax)) * smoothstep(1.86, 1.885, p.y);
 	alb = mix(alb, alb * vec3(0.85, 0.72, 0.55), 0.5 * stain);

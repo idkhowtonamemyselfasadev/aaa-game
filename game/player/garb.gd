@@ -39,7 +39,7 @@ var gores: Array[MeshInstance3D] = []
 ## upper lip, and a grey beard and moustache (beard.gdshader on the face cloth's shape) cover
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
-var beard_col := Color(0.37, 0.345, 0.30)
+var beard_col := Color(0.36, 0.35, 0.33)
 ## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
 ## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
 var fill_gain := 1.0
