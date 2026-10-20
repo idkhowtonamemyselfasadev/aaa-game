@@ -92,6 +92,8 @@ func _dress() -> void:
 	garb.beard = true
 	# the felt brim and the dark hood put his face in deep shade: a stronger fill under it
 	garb.fill_gain = 1.9
+	# a wool smock over his chest: no armour plates under the cape's hem or in its open front
+	garb.smock = true
 
 func _kit() -> void:
 	pass

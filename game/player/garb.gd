@@ -39,10 +39,14 @@ var gores: Array[MeshInstance3D] = []
 ## upper lip, and a grey beard and moustache (beard.gdshader on the face cloth's shape) cover
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
-var beard_col := Color(0.44, 0.42, 0.39)
+var beard_col := Color(0.37, 0.345, 0.30)
 ## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
 ## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
 var fill_gain := 1.0
+## A smock of the robe cloth over the whole torso, from the collar under the mantle down under
+## the sash, so another wearer (an NPC without armour) shows wool on the chest, never the
+## Vanguard's plates under the mantle's hem and in its open front.
+var smock := false
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -121,6 +125,16 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
 	tint = palette.get("robe", MADDER)
+	if smock:
+		var sk := _piece(_smock(), 0.0, 0.0, 12.0, 1.4)
+		sk.name = "Smock"
+		var skm := sk.material_override as ShaderMaterial
+		skm.set_shader_parameter("wool", 1.0)
+		skm.set_shader_parameter("fold_ao", 1.0)
+		skm.set_shader_parameter("hem_band", 1.0)
+		# no flutter: it sits close over the plates
+		skm.set_shader_parameter("rigid", 1.0)
+		chest.add_child(sk)
 	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30 * robe_wide, lerpf(0.44, 0.52, robe_len - 1.0) * robe_wide, 0.90 * robe_len, 0.9, 1.0)
 	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34 * robe_wide, lerpf(0.48, 0.56, robe_len - 1.0) * robe_wide, 0.96 * robe_len, -0.9, 2.0)
 	if skirt:
@@ -661,6 +675,54 @@ func _drape() -> ArrayMesh:
 			st.set_color(Color(cav, cav, cav))
 			st.set_uv(Vector2(u, v))
 			st.add_vertex(Vector3(sin(a) * rx * fold * collar, y, -0.045 + cos(a) * rz * fold * collar))
+	for j in nv:
+		for i in nu:
+			var p0 := j * (nu + 1) + i
+			var p1 := p0 + 1
+			var p2 := p0 + nu + 1
+			var p3 := p2 + 1
+			st.add_index(p0); st.add_index(p1); st.add_index(p2)
+			st.add_index(p1); st.add_index(p3); st.add_index(p2)
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
+
+## The smock: a closed wool tube round the torso (garb space), gathered at the collar inside
+## the mantle (1.70), full over the chest (the Vanguard's plates reach |x| 0.233 and z +0.156 /
+## -0.229 there) and falling straight to under the sash (1.21), with soft vertical folds and a
+## little blousing over the girdle. A squarish super-ellipse so the plates' corners stay inside.
+func _smock() -> ArrayMesh:
+	var nu := 72
+	var nv := 22
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in nv + 1:
+		for i in nu + 1:
+			var u := float(i) / nu
+			var v := float(j) / nv
+			var a := u * TAU
+			var y := lerpf(1.70, 1.21, v)
+			var full := smoothstep(1.70, 1.50, y)
+			var rx := lerpf(0.135, 0.258, full)
+			var rz := lerpf(0.13, 0.222, full)
+			var zc := lerpf(-0.035, -0.008, smoothstep(1.42, 1.22, y))
+			# blousing over the girdle, then drawn in under it
+			var blouse := 1.0 + 0.035 * exp(-pow((y - 1.30) / 0.05, 2.0)) - 0.03 * smoothstep(1.26, 1.21, y)
+			var phi := a * 7.0 + 0.8 * sin(a * 2.7 + 1.1) + 0.4 * sin(a * 4.3 + v * 3.0)
+			var ridge := sin(phi)
+			var fine := sin(a * 17.0 + 0.6 + v * 4.0) * 0.5
+			var depth := smoothstep(0.1, 0.6, v)
+			var fold := 1.0 + depth * (0.022 * ridge + 0.007 * fine)
+			var ca := cos(a)
+			var sa := sin(a)
+			# super-ellipse (exponent 2.6): squarer than an ellipse at the diagonals
+			var e := 2.0 / 2.6
+			var sx := signf(sa) * pow(absf(sa), e)
+			var sz := signf(ca) * pow(absf(ca), e)
+			var cav := mix_cav(ridge, fine, depth)
+			st.set_color(Color(cav, cav, cav))
+			st.set_uv(Vector2(u, v))
+			st.add_vertex(Vector3(sx * rx * fold * blouse, y, zc + sz * rz * fold * blouse))
 	for j in nv:
 		for i in nu:
 			var p0 := j * (nu + 1) + i

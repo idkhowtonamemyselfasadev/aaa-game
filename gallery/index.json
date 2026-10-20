@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261016-0330-keeper-floorbasket.jpg",
-  "time": "2026-10-16T03:30:00Z",
-  "caption": "Before dawn in the keep, Hesper's basket of deadwood stands on the floor beside her as she dozes against the inner wall; the scene is very dark and she is a shapeless lump in the shadow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0650-wander.jpg",
-  "time": "2026-10-16T06:50:00Z",
-  "caption": "Hesper on her afternoon meadow walk, basket on her back, standing among the grazing red deer below the keep; still wrong: the deer read small and flat-lit, the far oak savanna is thin and the noon light is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0708-hesper-pick.jpg",
   "time": "2026-10-16T07:08:09Z",
   "caption": "Hesper crouched under a gather oak, reaching into the leaf litter with her basket of deadwood on her back; her hand still stops at knee height, the oak bole close up reads as shiny dark cloth, the litter has bright white flecks and the robe reads saturated blue.",
@@ -897,6 +885,12 @@
   "file": "20261020-2045-osric-beard.jpg",
   "time": "2026-10-20T20:45:28Z",
   "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261020-2140-osric-smock.jpg",
+  "time": "2026-10-20T21:40:00Z",
+  "caption": "Osric at his door at dawn in a wool smock (no more armour plates on his chest) with a beard in locks; the beard is still too yellow-brown with wood-grain-like strands and the smock a little bright.",
   "verdict": "fail"
  }
 ]

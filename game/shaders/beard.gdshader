@@ -8,9 +8,10 @@ render_mode cull_disabled;
 // top edge is cut into a moustache line under the nose that rises to the cheekbones, with a
 // ragged fringe so it never reads as a ruled edge. The lower edge is cut too: a rounded outline
 // that comes to a soft point under the chin and rises along the jaw, ragged in clumps, the
-// strands thinning out toward it so it never reads as a pale plate with a ruled bottom.
+// strands thinning out toward it so it never reads as a pale plate with a ruled bottom. Lock-
+// level value variation and sparse dark sideburns keep it from reading as one even mask.
 
-uniform vec3 hair_col : source_color = vec3(0.44, 0.42, 0.39);
+uniform vec3 hair_col : source_color = vec3(0.37, 0.345, 0.30);
 uniform vec3 dark_col : source_color = vec3(0.10, 0.092, 0.082);
 
 varying vec3 mp;
@@ -81,7 +82,19 @@ void fragment() {
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
 	// the thinning tips let the shade under the jaw show through
 	float tip = mix(0.72, 1.0, smoothstep(0.0, 1.4, thin));
+	// lock by lock the grey varies (+-25 %): some locks whiter, some still dark, so it reads as
+	// hair grown in clumps and never as one even pale mask
+	float lockv = vnoise(vec2(q.x * 95.0 + 31.0, q.y * 9.0));
+	alb *= mix(0.75, 1.25, smoothstep(0.15, 0.85, lockv));
+	// the sides thin into sparse dark sideburns that fade into the hood's shade
+	float side = smoothstep(0.065, 0.1, ax);
+	if (side > 0.0 && strand + 0.4 * lock < 0.25 + 0.75 * side * hash(vec2(floor(q.x * 2600.0), 7.0))) {
+		discard;
+	}
+	alb *= mix(1.0, 0.55, side);
 	alb *= hollow * root * tip;
+	// an old man's grey yellows: nicotine and age warm it toward the lip and the chin
+	alb *= mix(vec3(1.0), vec3(1.04, 0.97, 0.84), 0.6);
 	// stained at the lip by pipe smoke and broth
 	float stain = (1.0 - smoothstep(0.0, 0.02, ax)) * smoothstep(1.86, 1.885, p.y);
 	alb = mix(alb, alb * vec3(0.85, 0.72, 0.55), 0.5 * stain);
