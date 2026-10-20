@@ -33,6 +33,7 @@ var door_stones: DoorStones
 var lantern_post: LanternPost
 var keeper: Keeper
 var villager: Villager
+var neighbour: Neighbour
 var hearth: Hearth
 var fox: Fox
 var dog: Dog
@@ -182,6 +183,12 @@ func _ready() -> void:
 	add_child(villager)
 	villager.settle(self, time_of_day)
 	trample.walkers.append(villager)
+	neighbour = Neighbour.new()
+	neighbour.name = "Neighbour"
+	neighbour.position = stone_cottage.global_position + Vector3.UP
+	add_child(neighbour)
+	neighbour.settle(self, time_of_day)
+	trample.walkers.append(neighbour)
 	# Brack, her collie: potters on the green, meets the hero, sits by her door at night
 	dog = Dog.new()
 	dog.setup(self)
@@ -221,6 +228,7 @@ func _ready() -> void:
 	foley.hook_dog(dog)
 	foley.hook_gate(dry_wall.field_gate)
 	foley.hook_villager(villager)
+	foley.hook_villager(neighbour)
 	foley.hook_hens(hens)
 	foley.hook_bat(lantern_post.bat)
 

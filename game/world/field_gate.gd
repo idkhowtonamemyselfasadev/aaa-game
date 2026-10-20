@@ -21,6 +21,7 @@ const OPEN := 1.45       # how far it swings when pushed (rad)
 const REACH := 1.9       # how near you come before it gives (m from the leaf centre)
 
 var watch: Node3D        # who pushes it (the hero)
+var walkers: Array[Node3D] = []   # villagers who go through it too (the nearest one shown pushes)
 var angle := 0.0         # 0 shut; + swings toward +z (the leaf's local), - toward -z
 var opens := 0           # times pushed open (bots)
 var shuts := 0           # times knocked shut (bots)
@@ -127,8 +128,18 @@ func centre() -> Vector3:
 	return _leaf.to_global(Vector3(W * 0.5, 0.6, 0))
 
 func _physics_process(delta: float) -> void:
-	if watch:
-		var lp := to_local(watch.global_position)
+	var who := watch
+	if who != null:
+		var wd := Vector2(to_local(who.global_position).x - W * 0.5, to_local(who.global_position).z).length()
+		for w in walkers:
+			if w.visible:
+				var lw := to_local(w.global_position)
+				var dw := Vector2(lw.x - W * 0.5, lw.z).length()
+				if dw < wd:
+					who = w
+					wd = dw
+	if who:
+		var lp := to_local(who.global_position)
 		var near := Vector2(lp.x - W * 0.5, lp.z).length() < REACH and lp.y > -1.0 and lp.y < 2.5
 		# inside the swept disc, it stays held open the way it went
 		var swept := Vector2(lp.x, lp.z).length() < W + 0.6 and lp.x > -0.4

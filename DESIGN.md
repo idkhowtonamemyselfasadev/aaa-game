@@ -47,6 +47,10 @@ life as the new chain. She is right about the stakes and wrong about the price.
   with a taper. Arc (Act I side thread): she lit that lantern every night for a husband who
   went up to the keep and never came back down; Wren's Kindle can light it for her the night
   she cannot.
+- **Osric**, Edda's neighbour in the stone cottage, an old shepherd gone stiff in the knees:
+  keeps the hens she feeds for him, takes the eggs, leans on the garth wall looking out over
+  the field where his fold used to be. Arc (Act I side thread): he still counts a flock that
+  is gone; the player can bring him word of the last of it from the high fell.
 - **Caelum**, the sky-island boy king, twelve years old and ruling a court of automatons. Arc:
   learns to come down.
 

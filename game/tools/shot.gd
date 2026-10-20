@@ -916,6 +916,21 @@ func _ready() -> void:
 		var pp := at + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT lantern at %s, lantern %s, lit %.2f" % [at, lc, lp.lit])
+	if spot == "osric":
+		# Osric at his spot for the hour, three-quarter from the front at 3.4 m; leaning on the
+		# garth's back wall the lens stands out in the field beyond it, looking back at him
+		# over the cope with the hen house and the cottage's back behind
+		var nb: Neighbour = world.neighbour
+		nb.settle(world, world.time_of_day)
+		var at := nb.global_position
+		var f := Vector3(sin(nb.goal_yaw), 0, cos(nb.goal_yaw))
+		var lens := f.rotated(Vector3.UP, 0.55 if nb.activity == "lean" else 0.7)
+		var cp := at + lens * (3.6 if nb.activity == "lean" else 3.4)
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
+		SPOTS[spot] = [cp, at + Vector3.UP * 1.3]
+		var pp := at + Vector3(40, 0, 40)
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT osric %s at %s lean %.2f" % [nb.activity, at, nb.lean])
 	if spot == "villager":
 		# Edda at her spot for the hour, three-quarter from the front at 3.4 m, eye height
 		# ("wide": back 7 m with the house behind her)
@@ -997,7 +1012,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

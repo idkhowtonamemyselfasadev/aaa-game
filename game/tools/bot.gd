@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -139,6 +139,8 @@ func _ready() -> void:
 	if name == "doorstones":
 		_doorstones_test()
 		return
+	if name == "neighbour":
+		_neighbour_test()
 	if name == "villager":
 		_villager_test()
 		return
@@ -4213,6 +4215,95 @@ func _eddatalk_test() -> void:
 	if v.talks != n0:
 		return _combat_done(false, "she answered from inside the house")
 	_combat_done(true, "intro x2 then a wood line, subtitled, facing him; an eat line sat on the bench; silent indoors")
+
+## Holds the clock at hour h for n physics ticks (a long walk must not run past the slot).
+func _hold_hour(h: float, n: int) -> void:
+	for i in n:
+		_world.time_of_day = h
+		await get_tree().physics_frame
+
+## Holds hour h until the walker has stopped walking (at most n ticks), then `after` more.
+func _hold_arrive(v: Villager, h: float, n: int, after: int) -> void:
+	await _hold_hour(h, 20)
+	for i in n:
+		if v.state != Villager.WALK:
+			break
+		_world.time_of_day = h
+		await get_tree().physics_frame
+	await _hold_hour(h, after)
+
+## Osric's day: out on his step, round by the squeeze gap and in at the field gate to the
+## eggs, leaning on the back wall, tending the garth, the long way in for his dinner and out
+## again, in out of the rain, by the hen house at dusk, in at night; turns to the hero.
+func _neighbour_test() -> void:
+	var v: Neighbour = _world.neighbour
+	var tr: Terrain = _world.get_node("Terrain")
+	var fg: FieldGate = _world.dry_wall.field_gate
+	if v == null or v.cottage == null:
+		return _combat_done(false, "no neighbour")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, -30.0) + 0.5, -30.0)
+	_world.time_of_day = 3.0
+	v.settle(_world, 3.0)
+	await _ticks(10)
+	print("BOT neighbour at 3 h: %s, visible %s" % [v.activity, v.visible])
+	if v.visible or v.activity != "in":
+		return _combat_done(false, "he is out at 3 in the morning")
+	var o0 := fg.opens
+	var stages := [[6.9, "wake", 0], [7.5, "eggs", 700], [9.0, "lean", 200], [11.0, "tend", 700], [12.5, "in", 0], [14.0, "lean", 200], [19.2, "shut", 0], [20.0, "step", 0]]
+	for st in stages:
+		var s0 := v.stoops
+		var g0 := v.goings_in
+		await _hold_arrive(v, st[0], 3000, st[2] + 40)
+		var lc := v.cottage.to_local(v.global_position)
+		print("BOT neighbour at %.1f h: %s, state %d, visits %s, stoops +%d, lean %.2f, gate opens %d, warps %d, at (%.1f, %.1f) local" % [st[0], v.activity, v.state, str(v.visits), v.stoops - s0, v.lean, fg.opens - o0, v.warps, lc.x, lc.z])
+		if v.activity != st[1] or v.visits.get(st[1], 0) < 1:
+			return _combat_done(false, "he never got to his %s" % st[1])
+		if st[1] == "in":
+			if v.visible or v.goings_in <= g0:
+				return _combat_done(false, "he did not go in for his dinner")
+		elif not v.visible:
+			return _combat_done(false, "he is not out at his %s" % st[1])
+		if (st[1] == "eggs" or st[1] == "tend") and v.stoops - s0 < 2:
+			return _combat_done(false, "he stands idle at the %s" % st[1])
+		if st[1] == "lean" and v.lean < 0.95:
+			return _combat_done(false, "he does not lean on the wall")
+		if st[1] == "eggs" and fg.opens - o0 < 1:
+			return _combat_done(false, "the field gate never swung for him")
+	if fg.angle != 0.0 and absf(fg.angle) > 0.05:
+		await _hold_hour(20.0, 300)
+	print("BOT neighbour gate after: angle %.2f, opens %d, shuts %d" % [fg.angle, fg.opens - o0, fg.shuts])
+	if absf(fg.angle) > 0.05:
+		return _combat_done(false, "the field gate hangs open after him")
+	# rain at the wall sends him in, the long way round; when it passes he comes out again
+	await _hold_arrive(v, 14.5, 3000, 200)
+	_world.weather.force(1.0)
+	await _hold_arrive(v, 14.5, 3000, 60)
+	var in_rain := v.visible
+	var goes := v.goings_in
+	_world.weather.force(0.0)
+	await _hold_arrive(v, 14.5, 3000, 200)
+	print("BOT neighbour rain: out in it %s, gone in %d, after: %s visible %s lean %.2f" % [in_rain, goes, v.activity, v.visible, v.lean])
+	if in_rain or goes < 2 or not v.visible or v.activity != "lean":
+		return _combat_done(false, "he does not shelter from the rain")
+	await _hold_arrive(v, 21.2, 3000, 40)
+	print("BOT neighbour night: %s visible %s gone in %d, warps %d" % [v.activity, v.visible, v.goings_in, v.warps])
+	if v.visible or v.activity != "in":
+		return _combat_done(false, "he does not go in at night")
+	if v.warps > 0:
+		return _combat_done(false, "he wedged on his rounds and was lifted %d times" % v.warps)
+	# the hero walks up while he leans on the wall: he straightens and turns to him
+	v.settle(_world, 9.0)
+	await _hold_hour(9.0, 200)
+	var to := v.global_position + Vector3(2.0, 0, 0.0).rotated(Vector3.UP, v.body.rotation.y + 2.2)
+	_player.global_position = Vector3(to.x, tr.height_at(to.x, to.z) + 0.3, to.z)
+	await _hold_hour(9.0, 200)
+	var d := _player.global_position - v.global_position
+	var off := absf(wrapf(atan2(d.x, d.z) - v.body.rotation.y, -PI, PI))
+	print("BOT neighbour notice: noticing %s, facing off %.2f rad, lean %.2f" % [v.noticing, off, v.lean])
+	if not v.noticing or off > 0.35 or v.lean > 0.1:
+		return _combat_done(false, "he ignores the hero")
+	_combat_done(true, "Osric keeps his day: eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager

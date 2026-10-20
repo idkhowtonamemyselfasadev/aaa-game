@@ -94,6 +94,11 @@ const CHOP_READY := [0.08, 0.12, 0.12, 0.5, 0.7, -0.1]
 const CHOP_TOP := [0.0, 0.06, -0.12, 2.85, 1.05, 0.05]
 const CHOP_HIT := [0.4, 0.45, 0.55, 1.05, 0.08, -0.25]
 var clasp_amt := 0.85            # both arms drawn in onto the helve (Crumple.clasp)
+## Who this is (the HUD's caption) and what they say: a neighbour (Neighbour) sets its own.
+var who := "Edda"
+var who_title := "Cottager on Harrowmere green"
+var intro: Array = INTRO
+var lines: Dictionary = LINES
 
 var world: Node3D
 var weather: Weather
@@ -180,20 +185,7 @@ func _ready() -> void:
 	_setup_animation()
 	garb = HeroGarb.new()
 	garb.name = "Garb"
-	# a bleached linen coif, a brown wool shawl, a kirtle of madder washed out to rust, a
-	# leather girdle, linen wraps
-	garb.palette = {
-		"hood": [Color(0.10, 0.092, 0.078), Color(0.46, 0.43, 0.37), 0.35],
-		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
-		"mantle": [Color(0.060, 0.042, 0.030), Color(0.30, 0.22, 0.15), 0.35],
-		"robe": [Color(0.090, 0.040, 0.030), Color(0.42, 0.20, 0.14), 0.4],
-		"sash": [Color(0.040, 0.028, 0.018), Color(0.22, 0.15, 0.09), 0.3],
-		"wraps": [Color(0.15, 0.14, 0.12), Color(0.55, 0.52, 0.46), 0.4],
-	}
-	garb.hatless = true
-	garb.robe_len = 1.1
-	garb.robe_wide = 1.25
-	garb.skirt = true
+	_dress()
 	add_child(garb)
 	if skel != null:
 		garb.build(skel, body)
@@ -211,13 +203,34 @@ func _ready() -> void:
 		left_mark.name = "LeftHandMark"
 		left_mark.bone_name = "mixamorig_LeftHand"
 		skel.add_child(left_mark)
-		_build_taper()
-		chop = WoodChop.new()
-		chop.name = "WoodChop"
-		add_child(chop)
+		_kit()
 		var hb := skel.find_bone("mixamorig_Hips")
 		if hb >= 0:
 			_hip_h = (skel.global_transform * skel.get_bone_global_rest(hb).origin).y - global_position.y
+
+## Her clothes (HeroGarb's palette and cut).
+func _dress() -> void:
+	# a bleached linen coif, a brown wool shawl, a kirtle of madder washed out to rust, a
+	# leather girdle, linen wraps
+	garb.palette = {
+		"hood": [Color(0.10, 0.092, 0.078), Color(0.46, 0.43, 0.37), 0.35],
+		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
+		"mantle": [Color(0.060, 0.042, 0.030), Color(0.30, 0.22, 0.15), 0.35],
+		"robe": [Color(0.090, 0.040, 0.030), Color(0.42, 0.20, 0.14), 0.4],
+		"sash": [Color(0.040, 0.028, 0.018), Color(0.22, 0.15, 0.09), 0.3],
+		"wraps": [Color(0.15, 0.14, 0.12), Color(0.55, 0.52, 0.46), 0.4],
+	}
+	garb.hatless = true
+	garb.robe_len = 1.1
+	garb.robe_wide = 1.25
+	garb.skirt = true
+
+## What she works with: the lamp taper and the axe at the woodpile.
+func _kit() -> void:
+	_build_taper()
+	chop = WoodChop.new()
+	chop.name = "WoodChop"
+	add_child(chop)
 
 ## Her left palm in the world (the second hand on the axe helve).
 func left_hand_pos() -> Vector3:
@@ -351,6 +364,21 @@ static func _activity_for(h: float) -> String:
 		return "lamp"
 	return "evening"
 
+## The activity for hour h and the spot it is done at (overridable: a neighbour keeps another day).
+func _want_for(h: float) -> String:
+	return _activity_for(h)
+
+func _spot_for(a: String) -> String:
+	return _spot_name(a)
+
+## Where the door creaks (Foley).
+func _door_point() -> Vector3:
+	return home.to_global(Vector3(-0.3, 1.0, WhiteCottage.W_DEP * 0.5))
+
+## True for the activities done stooping, bend after bend.
+func _works(a: String) -> bool:
+	return a == "water" or a == "wood"
+
 static func _spot_name(a: String) -> String:
 	if a == "in" or a == "shelter":
 		return "door_in"
@@ -375,7 +403,7 @@ func _route(to: Vector3) -> void:
 		# out through the door onto the step
 		_place(_spots["door"][0])
 		_show(true)
-		door.emit(home.to_global(Vector3(-0.3, 1.0, WhiteCottage.W_DEP * 0.5)))
+		door.emit(_door_point())
 	# going in: up to the step, and in at the door (the door leaf is shut geometry)
 	if to.distance_to(_spots["door_in"][0]) < 0.1:
 		to = _spots["door"][0]
@@ -402,7 +430,7 @@ func _physics_process(delta: float) -> void:
 	if world == null:
 		return
 	var h := _hour()
-	var want := _activity_for(h)
+	var want := _want_for(h)
 	var raining := weather != null and weather.rain > RAIN_IN
 	if raining and want != "in" and want != "lamp":
 		want = "shelter"
@@ -471,7 +499,7 @@ func _physics_process(delta: float) -> void:
 func _begin(a: String) -> void:
 	activity = a
 	_light_t = -1.0
-	var to: Vector3 = _spots[_spot_name(a)][0]
+	var to: Vector3 = _spots[_spot_for(a)][0]
 	if a == "in" or a == "shelter":
 		if state == IN:
 			return
@@ -480,12 +508,12 @@ func _begin(a: String) -> void:
 func _arrive() -> void:
 	state = STAND
 	visits[activity] = visits.get(activity, 0) + 1
-	goal_yaw = _spots[_spot_name(activity)][1]
+	goal_yaw = _spots[_spot_for(activity)][1]
 	if activity == "in" or activity == "shelter":
 		state = IN
 		goings_in += 1
 		_show(false)
-		door.emit(home.to_global(Vector3(-0.3, 1.0, WhiteCottage.W_DEP * 0.5)))
+		door.emit(_door_point())
 	elif activity == "eat" or activity == "evening":
 		state = SIT
 	elif activity == "lamp":
@@ -513,7 +541,7 @@ func _update_notice() -> void:
 			named = true
 			var hud = player.get_node_or_null("Hud")
 			if hud != null:
-				hud.caption("Edda", "Cottager on Harrowmere green")
+				hud.caption(who, who_title)
 
 ## In reach the HUD offers "Speak"; each press gets the next line (the intro first, then the
 ## pool for what she is about). A press while a line shows skips on to the next one.
@@ -539,16 +567,16 @@ func _update_talk(delta: float) -> void:
 	talking = 2.4 + 0.055 * line.length()
 	named = true
 	if hud != null:
-		hud.say("Edda", line, talking)
+		hud.say(who, line, talking)
 
 func _next_line() -> String:
-	if _intro_i < INTRO.size():
+	if _intro_i < intro.size():
 		_intro_i += 1
-		return INTRO[_intro_i - 1]
+		return intro[_intro_i - 1]
 	var key := activity
-	if not LINES.has(key):
-		key = "wood"
-	var pool: Array = LINES[key]
+	if not lines.has(key):
+		key = "wood" if lines.has("wood") else str(lines.keys()[0])
+	var pool: Array = lines[key]
 	var i := int(_line_i.get(key, 0))
 	_line_i[key] = i + 1
 	return pool[i % pool.size()]
@@ -562,7 +590,7 @@ func _update_work(delta: float) -> void:
 		if stoop > 0.95:
 			_drop_pail()
 		return
-	var working := state == STAND and (activity == "water" or activity == "wood") and not noticing
+	var working := state == STAND and _works(activity) and not noticing
 	if chop != null:
 		chop.update(delta, working and activity == "wood")
 		if chop.holding:
@@ -597,7 +625,7 @@ func _update_work(delta: float) -> void:
 				dips += 1
 	else:
 		stoops += 1
-		_stoop_t = _rng.randf_range(2.5, 5.0) if activity == "wood" else _rng.randf_range(4.0, 8.0)
+		_stoop_t = _rng.randf_range(2.5, 5.0) if activity != "water" else _rng.randf_range(4.0, 8.0)
 
 func _update_hum(delta: float) -> void:
 	if state != SIT or activity != "evening" or sit < 0.95 or noticing or talking > 0.0:
