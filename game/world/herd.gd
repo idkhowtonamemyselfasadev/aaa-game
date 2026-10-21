@@ -34,6 +34,7 @@ var state := CALM
 var anchor := Vector3.ZERO       # herd centre the deer graze round
 var _wander := Vector3.ZERO
 var _flee_dir := Vector3.ZERO
+var _rim_side := 0.0             # which way a flight swings along the valley rim (latched)
 var _calm_t := 0.0
 var _alert_t := 0.0
 var _threat_prev := {}
@@ -249,9 +250,11 @@ func _threat(dt: float) -> Array:
 
 func _process(delta: float) -> void:
 	# a slow frame (or the bots' 4x time scale) is split into <= 1/30 s steps instead of
-	# clamped, so the herd keeps real time; only a hitch over 0.2 s loses time
+	# clamped, so the herd keeps real time with the physics-driven hero; only a hitch over
+	# 0.5 s loses time (a slow box at 4x hit the old 0.2 s cap every frame and the deer
+	# fell behind a sprinting hero)
 	var th := _threat(maxf(delta, 0.001))
-	var steps := clampi(ceili(delta * 30.0), 1, 6)
+	var steps := clampi(ceili(delta * 30.0), 1, 15)
 	var dt := minf(delta / steps, 1.0 / 30.0)
 	for i in steps:
 		_tick(dt, th)
@@ -293,9 +296,15 @@ func _tick(dt: float, th: Array) -> void:
 			var dir := (_flee_dir * 0.7 + away * 0.3).normalized()
 			var probe := anchor + dir * 14.0
 			if Vector2(probe.x, probe.z).length() > 200.0:
+				# swing along the rim on the side away from the threat, never back past it;
+				# the side is picked once per flight so a flight straight at the rim can't dither
 				var tang := dir.cross(Vector3.UP)
-				if tang.dot(-probe) < 0.0:
-					tang = -tang
+				if _rim_side == 0.0:
+					var score := tang.dot(away)
+					if absf(score) < 0.15:
+						score = tang.dot(-probe)
+					_rim_side = 1.0 if score >= 0.0 else -1.0
+				tang *= _rim_side
 				dir = (dir * 0.3 + tang).normalized()
 			_flee_dir = _flee_dir.lerp(dir, minf(1.0, dt * 1.5)).normalized()
 			var lead := 11.5 if dist < safe_radius else maxf(0.0, 11.5 - (dist - safe_radius) * 0.6)
@@ -340,6 +349,7 @@ func _rut(dt: float) -> void:
 func _bolt(from: Vector3) -> void:
 	state = FLEE
 	flee_events += 1
+	_rim_side = 0.0
 	var c := centre()
 	_flee_dir = Vector3(c.x - from.x, 0, c.z - from.z).normalized().rotated(Vector3.UP, _rng.randf_range(-0.4, 0.4))
 	anchor = _ground(c)

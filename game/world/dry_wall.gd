@@ -151,7 +151,13 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 				# stone is tucked in over them; others stand a little proud of it
 				var sh := h * _rng.randf_range(0.62, 1.08)
 				var lift := _rng.randf_range(-0.015, 0.02)
-				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - 0.03, sh - 0.012, DEPTH * _rng.randf_range(0.85, 1.1)), batter)
+				# head joints of uneven width: some butt tight, some gape and get a chip
+				# driven in, so the joints don't read as one even dark grid
+				var hj := _rng.randf_range(0.008, 0.05)
+				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - hj, sh - 0.012, DEPTH * _rng.randf_range(0.85, 1.1)), batter)
+				if hj > 0.032 and s + sl < ln - 0.1 and _rng.randf() < 0.6:
+					var ch := _rng.randf_range(0.04, 0.08)
+					_face_stone(a, d2, dir, nrm, face, s + sl, y + _rng.randf_range(0.0, maxf(0.0, sh - ch)), Vector3(hj + 0.012, ch, DEPTH * 0.4), batter)
 				if sh < h * 0.82 and sl > 0.22:
 					var ph := h - sh - 0.02
 					_face_stone(a, d2, dir, nrm, face, s + sl * _rng.randf_range(0.35, 0.65), y + lift + sh, Vector3(sl * _rng.randf_range(0.45, 0.8), maxf(ph, 0.04), DEPTH * 0.6), batter)
@@ -303,13 +309,12 @@ func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mmi)
 
-## The hearting: small packing stones between the faces, read as a dark, rough core in the
-## gaps (no mortar in a dry wall).
+## The hearting: small packing stones between the faces, seen in the gaps as chips, voids,
+## silt and moss (no mortar in a dry wall).
 func _build_core() -> void:
 	var bm := BoxMesh.new()
-	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(0.13, 0.12, 0.1)
-	m.roughness = 1.0
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shaders/hearting.gdshader")   # packing chips, silt and moss
 	bm.material = m
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
