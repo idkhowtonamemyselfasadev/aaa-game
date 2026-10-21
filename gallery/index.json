@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261016-0834-keeper-pick.jpg",
-  "time": "2026-10-16T08:34:05Z",
-  "caption": "Hesper crouched under an oak with her back bent and her hand down in the leaf litter, picking; still wrong: top-down framing, a tiled litter with white flecks, a saturated blue robe and a glossy black bole.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-0934-keeper-toss.jpg",
   "time": "2026-10-16T09:34:56Z",
   "caption": "Hesper from behind at the gather oak, her right arm up at the basket to drop a find; the arm is hidden behind the basket, which hangs well off to her left, the leaf litter is a tiled pattern with white flecks and the oak bole reads glossy black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-0934-keeper-pick-low.jpg",
-  "time": "2026-10-16T09:34:56Z",
-  "caption": "Hesper crouched at the litter from the new low camera (3 m back, 0.6 m up): on this slope the frame tilts, grass blades sit in front of the lens and she reads as a dark heap; the litter still tiles with white flecks.",
   "verdict": "fail"
  },
  {
@@ -897,6 +885,12 @@
   "file": "20261021-0040-osric-coolhat.jpg",
   "time": "2026-10-21T00:40:00Z",
   "caption": "Osric at his door at dawn: the felt hat is a cooler dark grey-brown and the cape shows wool fibre instead of plastic, but the brim still curls up at the sides and the cape and beard carry fine vertical streaks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-0210-kitemob.jpg",
+  "time": "2026-10-21T02:10:00Z",
+  "caption": "A red kite pulls up from its stoop over the meadow with four rooks mobbing it from below; the birds read, but the frame is mostly empty sky and one cloud shows a hard straight top edge.",
   "verdict": "fail"
  }
 ]

@@ -4432,6 +4432,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (01:40 10-21) Kite hunt: the kite's stoop is a straight steer at the flock (no fold-and-drop
   final stoop, no talons forward, never actually takes a bird); mobbing rooks can pass through
   the kite's body (no separation); the mob caw reuses the scatter burst (wing clatter in it).
+- (01:40 10-21) Shot `mob mob1 90 11.0 fixfps` (looked at): kite and 4 mobbing rooks read
+  well against the sky, but a low cumulus shows a hard, ruled straight top edge (a cloud
+  layer clipped by a plane/box?); check `clouds.gd` at a low upward lens. Shot verdict: fail
+  (empty sky frame, not a Wukong shot; the behaviour is the point). Gallery:
+  20261021-0210-kitemob.jpg. PIL is broken on the cloud box: convert gallery JPEGs with a
+  `godot --headless -s` script (Image.load_from_file + save_jpg).
 - (17:30 10-20, fix attempted 18:40 with `Hens._way_out`, see Done) Bot `neighbour` "hens in his road" check was marginal and seed-sensitive: the
   closest hen comes 0.25-0.42 m from Osric's boots against a 0.3 m limit depending on tiny
   timing changes (a hen pinned against the garth wall in his road). It failed on 39392f6 and
