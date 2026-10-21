@@ -51,6 +51,10 @@ life as the new chain. She is right about the stakes and wrong about the price.
   keeps the hens she feeds for him, takes the eggs, leans on the garth wall looking out over
   the field where his fold used to be. Arc (Act I side thread): he still counts a flock that
   is gone; the player can bring him word of the last of it from the high fell.
+- **Wat Pennock**, a pedlar on the fell road (the first ambient road event): a creel of dyed
+  cloth, salt and needles on his back and an ash staff, through the village at 09:00 and back
+  at 14:30, a word called to Edda across the green and to Osric over his wall. Later: a trade
+  window (salt, thread, a whetstone) and news of the keep that changes with the story.
 - **Caelum**, the sky-island boy king, twelve years old and ruling a court of automatons. Arc:
   learns to come down.
 

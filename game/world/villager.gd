@@ -164,6 +164,9 @@ var exchanges: Dictionary = EXCHANGES   # her openers and his answers ({} for th
 var greeting := 0.0              # > 0 while turned to the mate mid-exchange
 var greets := 0                  # lines passed to the mate (bots)
 var heard := 0                   # of them, lines the hero overheard on the HUD (bots)
+var greet_to: Villager           # whom she is turned to mid-exchange (the mate, or a passer-by)
+var greet_r := GREET_R           # how near the mate must be for a word (a pedlar calls across the green)
+var part_r := PART_R
 var _greet_armed := true         # parted since the last word
 var _greet_t := 0.0              # s together since the last word
 var _answer := ""                # the mate's answer, due in _answer_in s
@@ -573,7 +576,8 @@ func _update_notice() -> void:
 	if greeting > 0.0 and mate != null:
 		noticing = true                      # holds still, turned to the neighbour
 		if stoop < 0.1 and reach < 0.1:
-			var m := mate.global_position - global_position
+			var gt: Villager = greet_to if greet_to != null else mate
+			var m := gt.global_position - global_position
 			goal_yaw = atan2(m.x, m.z)
 		return
 	if stoop > 0.1 or reach > 0.1:
@@ -626,11 +630,11 @@ func _update_greet(delta: float) -> void:
 		return
 	var d := Vector2(mate.global_position.x - global_position.x, mate.global_position.z - global_position.z).length()
 	var out := state != IN and mate.state != IN and visible and mate.visible
-	if not out or d > PART_R:
+	if not out or d > part_r:
 		_greet_armed = true
 		_greet_t = 0.0
 		return
-	if d > GREET_R:
+	if d > greet_r:
 		return
 	_greet_t += delta
 	if not _greet_armed and _greet_t < GREET_AGAIN:
@@ -649,6 +653,8 @@ func _update_greet(delta: float) -> void:
 	var ex: Array = pool[i % pool.size()]
 	_greet_armed = false
 	_greet_t = 0.0
+	greet_to = mate
+	mate.greet_to = self
 	var t1 := _say_to_mate(ex[0], false)
 	mate._answer = ex[1]
 	mate._answer_in = t1 + 0.35

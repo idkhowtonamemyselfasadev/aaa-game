@@ -31,6 +31,8 @@ var robe_len := 1.0
 var robe_wide := 1.0     # panel width factor: wider panels curl round the hips into a skirt
 var basket := false
 var basket_node: Node3D
+## A pedlar's load instead of deadwood: rolled bolts of dyed cloth laid across the mouth.
+var basket_wares := false
 ## Side gores: a wedge of the robe cloth sewn in under each side of the panels, from the sash
 ## to the hem, so a long robe closes into a skirt and the side view shows no legs or armour.
 var skirt := false
@@ -305,11 +307,13 @@ func _basket() -> void:
 		(rm.material_override as ShaderMaterial).set_shader_parameter("rigid", 1.0)
 		(rm.material_override as ShaderMaterial).set_shader_parameter("weave_scale", 90.0)
 		basket_node.add_child(rm)
+	if basket_wares:
+		_wares()
 	# deadwood: crooked oak sticks standing in the mouth, leaning back and splaying
 	tint = palette.get("deadwood", [Color(0.055, 0.045, 0.036), Color(0.36, 0.32, 0.27), 0.5])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4711
-	for k in 9:
+	for k in (0 if basket_wares else 9):
 		var base := Vector3(rng.randf_range(-0.12, 0.12), BASKET_TOP - 0.25, BASKET_Z + rng.randf_range(-0.08, 0.06))
 		var ln := rng.randf_range(0.42, 0.78)
 		var lean := Vector3(base.x * 1.2 + rng.randf_range(-0.08, 0.08), 1.0, -0.22 + rng.randf_range(-0.1, 0.06)).normalized()
@@ -334,6 +338,42 @@ func _basket() -> void:
 		(stm.material_override as ShaderMaterial).set_shader_parameter("rigid", 1.0)
 		(stm.material_override as ShaderMaterial).set_shader_parameter("weave_scale", 60.0)
 		chest.add_child(stm)
+
+## A pedlar's wares in the basket mouth: four bolts of dyed wool rolled tight, lying across
+## and stacked a little proud of the rim, each a lumpy roll whose wound layers show as a spiral
+## ridge, tied round twice with cord.
+func _wares() -> void:
+	var dyes := [MADDER, INDIGO, OCHRE, LINEN]
+	var at := [Vector3(0.0, BASKET_TOP + 0.01, BASKET_Z + 0.07), Vector3(0.01, BASKET_TOP + 0.02, BASKET_Z - 0.065),
+			Vector3(-0.01, BASKET_TOP + 0.105, BASKET_Z + 0.005), Vector3(0.0, BASKET_TOP + 0.185, BASKET_Z - 0.01)]
+	var lens := [0.44, 0.40, 0.46, 0.34]
+	var rads := [0.062, 0.058, 0.066, 0.05]
+	for k in 4:
+		tint = dyes[k]
+		var c: Vector3 = at[k]
+		var ln: float = lens[k]
+		var r0: float = rads[k]
+		var tilt := 0.08 * (k % 2 * 2 - 1)
+		var bolt := _grid(func(u: float, v: float) -> Vector3:
+			var a := u * TAU
+			var x := (v - 0.5) * ln
+			# the roll: a spiral ridge of wound layers, fuller in the middle, the ends cut soft
+			var end := clampf(minf(v, 1.0 - v) * 14.0, 0.0, 1.0)
+			var r := r0 * (0.9 + 0.1 * end) * (1.0 + 0.035 * sin(a * 3.0 + v * 9.0) + 0.04 * fposmod(a / TAU + v * 2.0, 1.0))
+			# the cord ties at a quarter in from each end pinch it
+			r *= 1.0 - 0.09 * exp(-pow((absf(v - 0.5) - 0.27) * 40.0, 2.0))
+			return c + Vector3(x, x * tilt + sin(a) * r, cos(a) * r), 28, 16)
+		var bm := _piece(bolt, 0.0, 0.0, 40.0 + k, 1.0)
+		var sh := bm.material_override as ShaderMaterial
+		sh.set_shader_parameter("rigid", 1.0)
+		sh.set_shader_parameter("weave_scale", 110.0)
+		basket_node.add_child(bm)
+
+## A pedlar's walking staff: an ash pole a little taller than its owner, crooked and thinning
+## to the foot, lying along -Y from its grip at the origin (held at about chest height).
+func walking_staff() -> MeshInstance3D:
+	tint = palette.get("staff", [Color(0.06, 0.045, 0.03), Color(0.40, 0.33, 0.24), 0.45])
+	return _stick(Vector3(0, 0.32, 0), Vector3.DOWN, 1.55, 0.019, 0.7, 37)
 
 ## The Hollow's pieces are shaped for its model scaled 1.06 x 1.08 x 1.06; the hero's model is
 ## at 1, so the shaped pieces hang under this scale (the wraps fit the mesh and need none).

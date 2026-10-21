@@ -34,6 +34,7 @@ var lantern_post: LanternPost
 var keeper: Keeper
 var villager: Villager
 var neighbour: Neighbour
+var pedlar: Pedlar
 var hearth: Hearth
 var fox: Fox
 var dog: Dog
@@ -192,6 +193,13 @@ func _ready() -> void:
 	# the two of them pass a word when they meet out of doors
 	villager.mate = neighbour
 	neighbour.mate = villager
+	# Wat the pedlar, through on the fell road twice a day, a word for each of them
+	pedlar = Pedlar.new()
+	pedlar.name = "Pedlar"
+	pedlar.position = white_cottage.global_position + Vector3(0, 1, 30)
+	add_child(pedlar)
+	pedlar.settle(self, time_of_day)
+	trample.walkers.append(pedlar)
 	# Brack, her collie: potters on the green, meets the hero, sits by her door at night
 	dog = Dog.new()
 	dog.setup(self)
@@ -232,6 +240,7 @@ func _ready() -> void:
 	foley.hook_gate(dry_wall.field_gate)
 	foley.hook_villager(villager)
 	foley.hook_villager(neighbour)
+	foley.hook_villager(pedlar)
 	foley.hook_hens(hens)
 	foley.hook_bat(lantern_post.bat)
 

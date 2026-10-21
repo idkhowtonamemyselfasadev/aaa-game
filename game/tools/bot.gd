@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -147,6 +147,9 @@ func _ready() -> void:
 		return
 	if name == "greet":
 		_greet_test()
+		return
+	if name == "pedlar":
+		_pedlar_test()
 		return
 	if name == "villager":
 		_villager_test()
@@ -4489,6 +4492,77 @@ func _greet_test() -> void:
 	if e.heard + o.heard - h0 < 2 or saw.find("Edda") < 0 or saw.find("Osric") < 0:
 		return _combat_done(false, "the hero does not overhear them")
 	_combat_done(true, "Edda and Osric stop, turn to each other and pass a word at the garth (once a meeting), murmuring, and the hero overhears it")
+
+func _pedlar_test() -> void:
+	var pd: Pedlar = _world.pedlar
+	var e: Villager = _world.villager
+	var o: Neighbour = _world.neighbour
+	var tr: Terrain = _world.get_node("Terrain")
+	if pd == null:
+		return _combat_done(false, "no pedlar")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, 30.0) + 0.5, 30.0)
+	# off the road at dawn, sets out by the clock at 09:00
+	e.settle(_world, 8.95)
+	o.settle(_world, 8.95)
+	pd.settle(_world, 8.95)
+	var hidden := not pd.visible
+	for i in 30:
+		_world.time_of_day = 9.02
+		await get_tree().physics_frame
+	if not hidden or not pd.on_road or not pd.visible:
+		return _combat_done(false, "the pedlar does not set out at 09:00 (hidden before %s, on road %s)" % [hidden, pd.on_road])
+	for leg in [[9.3, false], [14.6, true]]:
+		var h: float = leg[0]
+		e.settle(_world, h)
+		o.settle(_world, h)
+		pd.settle(_world, h)
+		pd.set_out(leg[1])
+		var j0 := pd.journeys
+		var s0 := pd.stops
+		var w0 := pd.warps
+		var faced := 9.0
+		var wet := 0
+		var ticks := 0
+		for i in 30000:
+			_world.time_of_day = h
+			await get_tree().physics_frame
+			ticks = i
+			if pd.greeting > 0.0 and pd.mate != null and pd.mate.greeting > 0.0 and pd.greeting < 1.5:
+				var m: Villager = pd.mate
+				var a := m.global_position.direction_to(pd.global_position)
+				faced = minf(faced, absf(wrapf(atan2(a.x, a.z) - m.body.rotation.y, -PI, PI)))
+			if pd.journeys > j0:
+				break
+		print("BOT pedlar %.1f h (%s): %d ticks, journeys %d, stands %d, warps %d, greeted %s, Edda %s / Osric %s, mate turned to him off %.2f rad" % [h, "back" if leg[1] else "out", ticks, pd.journeys - j0, pd.stops - s0, pd.warps - w0, pd.greeted.keys(), e.activity, o.activity, faced])
+		if pd.journeys == j0:
+			return _combat_done(false, "the pedlar never got through the village (leg %d of %d at %s)" % [pd._leg, pd._legs.size(), pd.global_position])
+		if pd.stops - s0 != 2:
+			return _combat_done(false, "the pedlar made %d stands, not 2" % (pd.stops - s0))
+		if pd.warps - w0 > 1:
+			return _combat_done(false, "the pedlar got stuck %d times" % (pd.warps - w0))
+		if not pd.greeted.has("Edda") or not pd.greeted.has("Osric"):
+			return _combat_done(false, "the pedlar passed without a word for %s" % ("Edda" if not pd.greeted.has("Edda") else "Osric"))
+		if faced > 0.7:
+			return _combat_done(false, "the one he greets does not turn to him")
+		if pd.visible:
+			return _combat_done(false, "the pedlar is still drawn off the road")
+	# rain does not stop him: he hurries on
+	e.settle(_world, 10.0)
+	o.settle(_world, 10.0)
+	pd.settle(_world, 10.0)
+	pd.set_out(false)
+	_world.weather.force(1.0)
+	var p0 := pd.global_position
+	for i in 600:
+		_world.time_of_day = 10.0
+		await get_tree().physics_frame
+	var moved := pd.global_position.distance_to(p0)
+	print("BOT pedlar in rain: %s, moved %.1f m in 600 ticks, visible %s" % [pd.activity, moved, pd.visible])
+	_world.weather.force(0.0)
+	if moved < 8.0 or not pd.visible:
+		return _combat_done(false, "the rain stops the pedlar")
+	_combat_done(true, "Wat the pedlar sets out at 09:00, walks the road through the village both ways, stands on the green and at Osric's wall, passes a word with Edda and Osric (they turn to him), and hurries on through rain")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager

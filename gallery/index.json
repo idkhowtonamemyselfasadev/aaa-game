@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261016-0934-keeper-toss.jpg",
-  "time": "2026-10-16T09:34:56Z",
-  "caption": "Hesper from behind at the gather oak, her right arm up at the basket to drop a find; the arm is hidden behind the basket, which hangs well off to her left, the leaf litter is a tiled pattern with white flecks and the oak bole reads glossy black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-1030-keeperback.jpg",
-  "time": "2026-10-16T10:34:28Z",
-  "caption": "Hesper from behind under the gather oak with her shoulders squared and the willow basket on her back; still wrong: tiled leaf litter with white flecks, grey armour knee caps at her legs, glossy black oak bole, and her raised arm hidden behind the basket.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-1120-litter.jpg",
   "time": "2026-10-16T11:20:00Z",
   "caption": "Under the gather oak the leaf litter no longer carries cream-white flecks or pale pebbles: darker russet and wet-brown leaves of mixed sizes with soft shadows under each; still reads as a mosaic of separate leaves, the bole is glossy black and Hesper's robe (shot taken before the slate-grey change) still navy.",
@@ -897,6 +885,12 @@
   "file": "20261021-0229-osric-brim.jpg",
   "time": "2026-10-21T02:29:00Z",
   "caption": "Osric at dawn by his cottage: the felt brim now droops all round like a slouch hat and the wool cape has lost its wood-grain streaks, but the beard still shows fine vertical streaks and the skin reads flat orange.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-0350-pedlar.jpg",
+  "time": "2026-10-21T03:50:00Z",
+  "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
   "verdict": "fail"
  }
 ]

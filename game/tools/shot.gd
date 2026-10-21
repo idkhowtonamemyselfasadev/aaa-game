@@ -926,6 +926,23 @@ func _ready() -> void:
 		var pp := at + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT lantern at %s, lantern %s, lit %.2f" % [at, lc, lp.lit])
+	if spot == "pedlar":
+		# Wat on his stand on the green, the creel on his back: three-quarter from the front at
+		# 3.6 m ("back": from behind his shoulder, the creel and the green beyond)
+		var pd: Pedlar = world.pedlar
+		pd.settle(world, world.time_of_day)
+		pd.set_out(false)
+		pd._place(pd._legs[3][0])
+		pd._leg = 3
+		pd._arrive()
+		pd._stand_t = 999.0
+		pd.body.rotation.y = pd.goal_yaw
+		var at := pd.global_position
+		var f := Vector3(sin(pd.goal_yaw), 0, cos(pd.goal_yaw))
+		var lens := f.rotated(Vector3.UP, 2.5 if "back" in args else 0.6)
+		var cp := at + lens * 3.6
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
+		SPOTS[spot] = [cp, at + Vector3.UP * 1.15]
 	if spot == "osric":
 		# Osric at his spot for the hour, three-quarter from the front at 3.4 m; leaning on the
 		# garth's back wall the lens stands out in the field beyond it, looking back at him
@@ -1055,7 +1072,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":
