@@ -1412,6 +1412,11 @@ func _ready() -> void:
 		print("SHOT mob kite %s (hunt %d) %.1f m from the lens, %d mob events" % [kb.pos, kb.hunt, kb.pos.distance_to(cam.global_position), world.get_node("Birds").mob_events])
 		for i in 2:
 			await get_tree().process_frame
+	if dodge_u < 0.0 and foe_u < 0.0 and impact_step < 0 and not "hud" in args:
+		# the vitality/stamina bars only belong in combat frames ("hud" keeps them anywhere)
+		(player.get_node("Hud/Bars") as Control).visible = false
+		for i in 2:
+			await get_tree().process_frame
 	if _action.is_valid():
 		await _action.call()
 		for i in 2:

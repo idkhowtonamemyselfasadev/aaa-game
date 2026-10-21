@@ -17,6 +17,9 @@ render_mode cull_back;
 // a = 4: LIMEWASHED (the white cottage): coats of white lime over the rubble, thin over the
 // stone arrises, flaked in ragged patches low down, rain runs from the eaves, green algae
 // and splash grime rising from the foot.
+// b = 2: a STILE slab (a gritstone flag set on end through a field wall): crusted in grey-green
+// and yellow lichen, and rubbed smooth, dark and faintly greasy along its arrises and top at
+// hand-and-hip height where folk squeeze through.
 // r below 0: a TRODDEN slab (the door stones): the top is foot-worn -- no moss or lichen on
 // it, paler and smoothed, not darkened as a damp low course; moss only in its edges.
 
@@ -57,6 +60,7 @@ varying float field;
 varying float dim;   // a above 2: a darker, greyer face (the cottage's rubble)
 varying float lw;         // 1: limewashed (a = 4)
 varying float trod;       // 1: a door stone's walked top (r < 0)
+varying float slab;       // 1: a stile slab (b = 2)
 varying float floor_w;    // world y of the ground this stone's `above` counts from
 
 float hash3(vec3 p) {
@@ -81,7 +85,8 @@ void vertex() {
 	tint = INSTANCE_CUSTOM.g;
 	v_cloud = cloud_shade_at(wp);
 	jnt = COLOR.r;
-	laid = INSTANCE_CUSTOM.b;
+	laid = min(INSTANCE_CUSTOM.b, 1.0);
+	slab = step(1.5, INSTANCE_CUSTOM.b);
 	aged = min(INSTANCE_CUSTOM.a, 1.0);
 	field = step(1.5, INSTANCE_CUSTOM.a);
 	dim = clamp(INSTANCE_CUSTOM.a - 2.0, 0.0, 1.0);
@@ -140,6 +145,20 @@ void fragment() {
 	float l2 = smoothstep(0.68 - aged * 0.1, 0.74 - aged * 0.1, fbm(wp * 3.2 + 47.0));
 	col = mix(col, lichen_y * (0.8 + 0.4 * vn(wp * 40.0)), l1 * mix(0.75, 0.3, field));
 	col = mix(col, lichen_g * mix(0.8 + 0.4 * vn(wp * 35.0), 0.65 + 0.3 * vn(wp * 35.0), field), l2 * 0.6);
+	// stile slab: its open faces carry more crust lichen than the coursed wall (a slab stands
+	// clear of the wall's shade and drip), in clustered rosettes
+	float sl1 = smoothstep(0.57, 0.63, fbm(wp * 5.5 + 71.0)) * smoothstep(0.35, 0.55, fbm(wp * 1.3 + 4.0));
+	float sl2 = smoothstep(0.66, 0.7, fbm(wp * 8.0 + 13.0));
+	col = mix(col, lichen_g * (0.7 + 0.45 * vn(wp * 45.0)), sl1 * 0.75 * slab);
+	col = mix(col, lichen_y * (0.75 + 0.35 * vn(wp * 50.0)), sl2 * 0.65 * slab);
+	col *= 1.0 - slab * side * smoothstep(0.5, 0.8, fbm(vec3(wp.x * 14.0, wp.y * 0.5, wp.z * 14.0) + 8.0)) * 0.3;
+	// ...and where hands grip the top and coats and hips squeeze past the arrises it is
+	// rubbed bare: smooth, darker, a faint greasy sheen, no lichen or moss
+	float hab = wp.y - floor_w;
+	float polish = slab * smoothstep(0.38, 0.6, hab) * (1.0 - smoothstep(1.25, 1.5, hab))
+	             * max(smoothstep(0.15, 0.6, edge), smoothstep(0.55, 0.85, n.y))
+	             * mix(0.6, 1.0, fbm(wp * vec3(3.0, 9.0, 3.0) + 5.0));
+	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.0, 0.92, 0.8) * 0.68, polish * 0.85);
 	// moss: on the tops, creeping down the lower courses and the shady joints
 	float low = 1.0 - smoothstep(0.0, 2.5, above);
 	// exposed bed tops of the laid courses: rain-darkened grey crust with soil and moss
@@ -163,6 +182,7 @@ void fragment() {
 	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.14, 1.0, 0.8) * mix(0.92, 1.12, rub) + vec3(0.03, 0.022, 0.008), walked * mix(0.6, 0.85, rub));
 	// the slab's sides and sunk edges carry the track's dirt
 	col = mix(col, col * vec3(0.62, 0.52, 0.42), trod * (1.0 - smoothstep(0.35, 0.75, n.y)) * 0.7);
+	mossw *= 1.0 - polish;
 	col = mix(col, mc, mossw);
 	col *= mix(0.72, 1.0, smoothstep(0.0, 1.2, above));       // damp lower courses
 	// limewash: a white skin over everything above, the coats a little uneven
@@ -221,6 +241,7 @@ void fragment() {
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
 	mossw = max(mossw, lowj * 0.6);
 	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12, soot * 0.97);
+	rough = mix(rough, 0.48, polish);
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
 	// door stones in the rain: the rubbed sandstone soaks a deep wet buff, and a skin of water
 	// lies in the shallow dish feet have worn in the top -- glassy, the drops ringing it --

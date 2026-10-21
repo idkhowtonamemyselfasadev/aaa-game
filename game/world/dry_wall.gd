@@ -241,7 +241,7 @@ func _stile() -> void:
 		var side := dir * cos(lean) - Vector3.UP * sgn * sin(lean)
 		var foot := Vector3(g.x - global_position.x, gy - 0.12, g.y - global_position.z) + dir * sgn * (STILE_FOOT * 0.5 + th * 0.5)
 		var bas := Basis(up, side, up.cross(side)) * Basis.from_euler(Vector3(_rng.randf_range(-0.04, 0.04), 0, 0))
-		_place(foot + up * ln * 0.5, bas, Vector3(ln, th, BASE_W - 0.02), ln * 0.5)
+		_place(foot + up * ln * 0.5, bas, Vector3(ln, th, BASE_W - 0.02), ln * 0.5, 2.0)
 		var cs := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		box.size = Vector3(0.16, BODY_H + 0.6, BASE_W - 0.1)
@@ -251,7 +251,7 @@ func _stile() -> void:
 		_body.add_child(cs)
 	# the tread: a flat stone bedded flush between them, its top worn smooth by boots
 	var tb := Basis(dir, Vector3.UP, nrm) * Basis.from_euler(Vector3(0, _rng.randf_range(-0.08, 0.08), 0))
-	_place(Vector3(g.x - global_position.x, gy - 0.03, g.y - global_position.z), tb, Vector3(STILE_FOOT + 0.1, 0.08, BASE_W + 0.16), 0.0)
+	_place(Vector3(g.x - global_position.x, gy - 0.03, g.y - global_position.z), tb, Vector3(STILE_FOOT + 0.1, 0.08, BASE_W + 0.16), -0.5)
 
 ## An upright gate stoop at the end p of a run, d pointing out of the wall into the gap.
 func _stoop(p: Vector2, d: Vector2) -> void:
@@ -268,7 +268,9 @@ func _stoop(p: Vector2, d: Vector2) -> void:
 	cs.transform = Transform3D(bas.orthonormalized(), c)
 	_body.add_child(cs)
 
-func _place(c: Vector3, b: Basis, size: Vector3, above: float) -> void:
+## `above` at -0.4 or below marks a foot-worn top (masonry.gdshader's trodden slab); `laid` 2 marks a
+## stile slab (lichen-crusted flag, its arrises rubbed smooth by hands and hips).
+func _place(c: Vector3, b: Basis, size: Vector3, above: float, laid := 1.0) -> void:
 	var v := _rng.randi() % VARIANTS
 	for t in 2:
 		var o := _rng.randi() % VARIANTS
@@ -280,7 +282,8 @@ func _place(c: Vector3, b: Basis, size: Vector3, above: float) -> void:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
-	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), 1.0, 2.0)])
+	var r := clampf(above / 8.0, 0.0, 1.0) if above > -0.4 else -0.0625
+	_per[v].append([xf, Color(r, _rng.randf(), laid, 2.0)])
 	stone_count += 1
 
 func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:

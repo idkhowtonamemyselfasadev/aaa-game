@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-2140-keeperupslope.jpg",
-  "time": "2026-10-16T21:40:00Z",
-  "caption": "Hesper crouched at the litter against the oak and the ruined keep, lens kept clear of the boles: level frame, robe drapes to the leaves; still wrong: seen from above and behind, her crouch is a dark slate bundle and the litter leaves are all one size.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-2300-hearth.jpg",
   "time": "2026-10-16T23:00:00Z",
   "caption": "Hesper's new cookfire in the ruined keep at night: flames, firelight and soft shadows on the inner wall and ivy, sooted ring stones; still wrong: the lens sits in the wall-foot rubble so dark slabs fill the lower half, the fire is small in frame and Hesper dozing beside it reads as a dark blob.",
@@ -885,6 +879,12 @@
   "file": "20261021-1250-stile.jpg",
   "time": "2026-10-21T12:45:00Z",
   "caption": "The new squeeze stile in the garth's back wall seen from the fell footpath: two leaning slabs with a worn path through the slot toward Osric's cottage; still wrong: the slot reads wider than a real squeeze stile, the wall courses look too regular and tiled, and the light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-1349-stile.jpg",
+  "time": "2026-10-21T13:49:50Z",
+  "caption": "The squeeze stile in the garth's back wall from the fell footpath: two leaning gritstone slabs with their tops rubbed bare by hands, a beaten path through the slot, no HUD bars; still wrong: the slabs' narrow faces read plain grey and the wall's dark joints form a regular grid.",
   "verdict": "fail"
  }
 ]
