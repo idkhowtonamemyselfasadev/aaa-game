@@ -126,7 +126,13 @@ void fragment() {
 	float skin = smoothstep(0.3, 0.6, fbm(wp * 1.7 + tint * 5.0 + 17.0));
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.66, 0.66, 0.63), aged * mix(0.45, 0.8, skin));
 	// field stone: a cool grey gritstone, darker, the beds only faintly showing
-	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.85 + 0.3 * fract(tint * 53.1)), field * 0.7);
+	// (each stone its own value, 0.6-1.1: a field wall's stones came off different fells, and
+	// an even grey face reads as pale tiles on the dark joint grid)
+	float fv = fract(tint * 53.1);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.6 + 0.5 * fv * fv * (3.0 - 2.0 * fv)), field * 0.8);
+	// and a dark grey-black crust (old lichen, soot of the weather) over broad patches of its face
+	float fcr = smoothstep(0.45, 0.72, fbm(wp * 2.8 + tint * 11.0 + 61.0));
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.52, 0.53, 0.5), field * fcr * 0.7);
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * 0.84, dim * 0.6);
 	// rubble: each split stone its own value and a faint warm (iron) or cool (blue) cast
 	base = mix(base, base * (0.72 + 0.5 * fract(tint * 91.7)) * mix(vec3(1.04, 1.0, 0.94), vec3(0.95, 0.99, 1.05), fract(tint * 17.9)), dim);
@@ -235,7 +241,9 @@ void fragment() {
 	float up = smoothstep(0.5, 0.85, n.y);
 	float jd = (1.0 - smoothstep(0.0, 0.55, jnt)) * mix(0.3, 1.0, laid) * (1.0 - up * 0.85);
 	float deep = (1.0 - smoothstep(0.0, 0.2, jnt)) * mix(0.3, 1.0, laid) * (1.0 - up);
-	col *= 1.0 - (jd * 0.08 + deep * 0.4) * mix(1.0, 0.3, lw);   // lime fills the joints
+	// (a field wall's joints are mostly shadow already: darkening their albedo as well made
+	// a near-black grid of them round pale stones)
+	col *= 1.0 - (jd * 0.08 + deep * mix(0.4, 0.15, field)) * mix(1.0, 0.3, lw);   // lime fills the joints
 	// soil and moss lodged in the low joints
 	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
@@ -266,7 +274,7 @@ void fragment() {
 		pn = normalize(pn + vec3(-sl.x, 0.0, -sl.y));
 	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - jd * 0.3 - deep * 0.3);
+	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field));
 	ALBEDO *= v_cloud;
 	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops
 	// (they see the sky, which the ambient already covers); joints and pits get less

@@ -149,12 +149,17 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 					sl = ln - s
 				# rubble, not ashlar: some stones fall short of the course and a thin pinning
 				# stone is tucked in over them; others stand a little proud of it
-				var sh := h * _rng.randf_range(0.62, 1.08)
+				# (most fill their course: the waller picks to fit, and a face of short stones
+				# under pinnings reads as a grid of dark gaps from any distance)
+				var sh := h * (_rng.randf_range(0.62, 0.8) if _rng.randf() < 0.25 else _rng.randf_range(0.88, 1.08))
 				var lift := _rng.randf_range(-0.015, 0.02)
 				# head joints of uneven width: some butt tight, some gape and get a chip
 				# driven in, so the joints don't read as one even dark grid
-				var hj := _rng.randf_range(0.008, 0.05)
-				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - hj, sh - 0.012, DEPTH * _rng.randf_range(0.85, 1.1)), batter)
+				# (skewed tight: most stones butt, few gape)
+				var hj := lerpf(0.003, 0.05, pow(_rng.randf(), 1.8))
+				# bed joints too: most courses sit on each other, stone on stone
+				var bj := lerpf(0.0, 0.012, pow(_rng.randf(), 2.0))
+				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - hj, sh - bj, DEPTH * _rng.randf_range(0.85, 1.1)), batter)
 				if hj > 0.032 and s + sl < ln - 0.1 and _rng.randf() < 0.6:
 					var ch := _rng.randf_range(0.04, 0.08)
 					_face_stone(a, d2, dir, nrm, face, s + sl, y + _rng.randf_range(0.0, maxf(0.0, sh - ch)), Vector3(hj + 0.012, ch, DEPTH * 0.4), batter)
