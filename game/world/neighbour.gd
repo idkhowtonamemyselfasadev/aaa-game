@@ -41,11 +41,16 @@ const STILE_WAY := [Vector2(-1.1, -9.4), Vector2(-1.18, -10.0), Vector2(-1.22, -
 ## His spot on the fell side: [stand, look-at], up the slope where the flock was.
 const FELL := [Vector2(-2.3, -15.4), Vector2(-4.6, -23.0)]
 const LEAN_IN := 1.6             # s to settle onto the wall
+const GAZE_IN := 1.4             # s to settle into his stance on the fell
+const SHADE_CYCLE := 15.0        # s between raising a hand to the brim against the low sun
 
 var cottage: StoneCottage
 var lean := 0.0                  # 0 upright .. 1 forearms on the wall
 var leans := 0                   # times he settled onto the wall (bots)
 var stiles := 0                  # times he squeezed through the stile, either way (bots)
+var gaze := 0.0                  # 0 .. 1 standing on the fell side, looking up where the flock was
+var shades := 0                  # times he raised a hand to the brim on the fell (bots)
+var _gt := 0.0                   # seconds into his stance on the fell (sway, scan, shading)
 
 func _init() -> void:
 	exchanges = {}                   # Edda opens; he answers
@@ -106,8 +111,14 @@ func _dress() -> void:
 	garb.felt_hat = true
 	# no face cloth: his own weathered face, the nose, and a grizzled grey beard
 	garb.beard = true
-	# the felt brim and the dark hood put his face in deep shade: a stronger fill under it
-	garb.fill_gain = 1.9
+	# grizzled: dark hair shot with grey, not white (a pale beard under the fill read as a
+	# white mask in the shade at 3 m)
+	garb.beard_col = Color(0.20, 0.19, 0.175)
+	# weathered and wind-reddened, darker than the old default: a pale grey face glowed
+	garb.skin_col = Color(0.27, 0.195, 0.16)
+	# the felt brim and the dark hood put his face in deep shade: a fill under it, but no more
+	# than the shade around him (1.9 lit his face and beard as a pale mask on the fell at dusk)
+	garb.fill_gain = 1.3
 	# a wool smock over his chest: no armour plates under the cape's hem or in its open front
 	garb.smock = true
 	# an oiled wool cape, fuzzed and pilled like the smock: smooth cloth read as plastic
@@ -153,6 +164,8 @@ func settle(w: Node3D, at_hour: float) -> void:
 	activity = a
 	state = IN if a == "in" else STAND
 	lean = 1.0 if a == "lean" else 0.0
+	gaze = 1.0 if a == "fell" else 0.0
+	_gt = 2.6 if a == "fell" else 0.0      # a hand already rising to the brim (shots)
 	_show(state != IN)
 
 func _at(l: Vector2) -> Vector3:
@@ -246,13 +259,26 @@ func _arrive() -> void:
 func _physics_process(delta: float) -> void:
 	var on := state == STAND and activity == "lean" and not noticing and talking <= 0.0
 	lean = move_toward(lean, 1.0 if on else 0.0, delta / LEAN_IN)
+	var up := state == STAND and activity == "fell" and not noticing and talking <= 0.0
+	gaze = move_toward(gaze, 1.0 if up else 0.0, delta / GAZE_IN)
+	if gaze > 0.0:
+		var was := fmod(_gt, SHADE_CYCLE)
+		_gt += delta
+		if was < 1.5 and fmod(_gt, SHADE_CYCLE) >= 1.5:
+			shades += 1
+	else:
+		_gt = 0.0
 	super._physics_process(delta)
 
 ## Leaning on the wall: bent forward at the hips over the cope, forearms laid on it, head up
 ## to look out over the field.
 func _pose() -> void:
 	super._pose()
-	if crumple == null or lean <= 0.0:
+	if crumple == null:
+		return
+	if gaze > 0.0:
+		_pose_fell()
+	if lean <= 0.0:
 		return
 	var l := lean * lean * (3.0 - 2.0 * lean)
 	crumple.hip = lerpf(crumple.hip, 0.32, l)
@@ -263,3 +289,24 @@ func _pose() -> void:
 	# (positive lifts the head: -0.45 bowed it so far the hat brim hid his face)
 	crumple.neck = lerpf(crumple.neck, 0.3, l)
 	crumple.clasp = lerpf(crumple.clasp, 0.45, l)
+
+## Standing on the fell side looking up where his flock grazed: knees soft, the head lifted and
+## slowly scanning the slope, his weight rocking from foot to foot, and now and then a hand
+## raised to the hat brim against the low sun (the right arm, as the lantern reach does).
+func _pose_fell() -> void:
+	var g := gaze * gaze * (3.0 - 2.0 * gaze)
+	crumple.knee += 0.07 * g
+	crumple.hip += 0.04 * g
+	crumple.spine += 0.06 * g
+	crumple.neck += 0.16 * g
+	crumple.head_turn += 0.22 * g * sin(_gt * TAU / 11.0)
+	# the hand up from 1.5 s into each cycle, held about five seconds, then down again
+	var c := fmod(_gt, SHADE_CYCLE)
+	var sh := smoothstep(1.5, 2.6, c) * (1.0 - smoothstep(6.8, 8.0, c)) * g
+	if sh > crumple.flick:
+		crumple.flick = sh
+		crumple.flick_arm = 2.05
+		crumple.flick_elbow = 1.8
+	# weight from one foot to the other: a slow roll of the whole body about the feet
+	var sway := sin(_gt * TAU / 7.5) * g
+	model.transform = model.transform.rotated_local(Vector3.BACK, 0.022 * sway)

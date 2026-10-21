@@ -42,6 +42,8 @@ var gores: Array[MeshInstance3D] = []
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
 var beard_col := Color(0.36, 0.35, 0.33)
+## A bearded face's skin (an old man's: the age path greys it further in skin.gdshader).
+var skin_col := Color(0.33, 0.27, 0.24)
 ## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
 ## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
 var fill_gain := 1.0
@@ -584,7 +586,7 @@ func _add_face(head: Node3D) -> void:
 		# an old man's face: paler and greyer than the hero's sun-brown, which read as a flat
 		# orange mask under the warm face fill
 		mat.set_shader_parameter("age", 1.0)
-		mat.set_shader_parameter("skin_col", Color(0.33, 0.27, 0.24))
+		mat.set_shader_parameter("skin_col", skin_col)
 		mat.set_shader_parameter("lid_col", Color(0.26, 0.19, 0.16))
 	face = MeshInstance3D.new()
 	face.name = "Face"

@@ -4551,6 +4551,15 @@ func _neighbour_test() -> void:
 			print("BOT neighbour fell: stiles %d, past the wall %s, warps %d" % [v.stiles, Neighbour.past_stile(lc), v.warps])
 			if v.stiles < 1 or not Neighbour.past_stile(lc) or v.warps > 0:
 				return _combat_done(false, "he never went out through the stile onto the fell")
+			# standing up there looking up the fell, not frozen: a hand to the brim now and then
+			var sh0 := v.shades
+			for i in 3000:
+				if v.shades > sh0:
+					break
+				await get_tree().physics_frame
+			print("BOT neighbour on the fell: gaze %.2f, hand to the brim %d" % [v.gaze, v.shades - sh0])
+			if v.gaze < 0.95 or v.shades <= sh0:
+				return _combat_done(false, "he stands stiff on the fell")
 		if st[1] == "shut" and (v.stiles < 2 or Neighbour.past_stile(lc)):
 			return _combat_done(false, "he never came back in through the stile")
 		if st[1] == "eggs" and fg.opens - o0 < 1:
