@@ -170,7 +170,12 @@ void fragment() {
 	// exposed bed tops of the laid courses: rain-darkened grey crust with soil and moss
 	float cap = laid * smoothstep(0.25 + 0.1 * (1.0 - aged), 0.7, n.y);
 	col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * mix(0.7, 0.55, aged), cap * mix(0.55, 0.8, aged));
-	float mossw = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5 + cap * (0.25 + 0.2 * aged)) * 0.9
+	float topm = smoothstep(0.55, 0.9, n.y + (fbm(wp * 1.6) - 0.5) * 1.5 + cap * (0.25 + 0.2 * aged)) * 0.9;
+	// field walls: moss on the tops only in cushions, not a green band along the whole cope;
+	// about a third of the stones (later set, or turned by frost) bare grey
+	float cush = smoothstep(0.42, 0.62, fbm(wp * vec3(1.1, 2.0, 1.1) + 29.0)) * step(0.33, fract(tint * 7.31));
+	topm *= mix(1.0, mix(0.08, 1.0, cush), field);
+	float mossw = topm
 	            + low * smoothstep(0.55 - aged * 0.12, 0.75 - aged * 0.1, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5 * (1.0 - aged));
 	// field walls: the low moss keeps to the shaded faces and the joints, not the open faces
 	float shade_face = smoothstep(-0.1, 0.75, n.x) * smoothstep(0.35, 0.65, fbm(wp * 3.0 + 2.0));

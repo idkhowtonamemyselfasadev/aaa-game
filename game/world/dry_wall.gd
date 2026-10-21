@@ -137,6 +137,7 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 	for face in [-1.0, 1.0]:
 		var y := 0.0
 		var course := 0
+		var shear := 0.0   # the head joints' lean, kept over a few stones so they meet
 		while y < BODY_H - 0.06:
 			var h := _rng.randf_range(0.13, 0.21) * lerpf(1.15, 0.8, y / BODY_H)
 			h = minf(h, BODY_H - y)
@@ -159,7 +160,11 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 				var hj := lerpf(0.003, 0.05, pow(_rng.randf(), 1.8))
 				# bed joints too: most courses sit on each other, stone on stone
 				var bj := lerpf(0.0, 0.012, pow(_rng.randf(), 2.0))
-				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - hj, sh - bj, DEPTH * _rng.randf_range(0.85, 1.1)), batter)
+				# rubble splits askew: runs of stones whose head joints lean together (the
+				# face reads as parallelograms and wedges, not a grid of upright joints)
+				if _rng.randf() < 0.4:
+					shear = 0.0 if _rng.randf() < 0.4 else _rng.randf_range(-0.42, 0.42)
+				_face_stone(a, d2, dir, nrm, face, s + sl * 0.5, y + lift, Vector3(sl - hj, sh - bj, DEPTH * _rng.randf_range(0.85, 1.1)), batter, shear)
 				if hj > 0.032 and s + sl < ln - 0.1 and _rng.randf() < 0.6:
 					var ch := _rng.randf_range(0.04, 0.08)
 					_face_stone(a, d2, dir, nrm, face, s + sl, y + _rng.randf_range(0.0, maxf(0.0, sh - ch)), Vector3(hj + 0.012, ch, DEPTH * 0.4), batter)
@@ -169,6 +174,16 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 				s += sl
 			y += h
 			course += 1
+			# now and then a thin slate laid along the bed between courses, its edge proud
+			# of the face: the long thin line that breaks a coursed face's even banding
+			if y < BODY_H - 0.2 and y > 0.15 and _rng.randf() < 0.4:
+				var q := _rng.randf_range(0.0, 0.6)
+				while q < ln - 0.35:
+					var ql := minf(_rng.randf_range(0.35, 0.9), ln - q - 0.05)
+					if _rng.randf() < 0.55:
+						var qh := _rng.randf_range(0.028, 0.045)
+						_face_stone(a, d2, dir, nrm, face, q + ql * 0.5, y - qh * 0.6, Vector3(ql, qh, DEPTH * 0.7), batter, 0.0, 0.018)
+					q += ql + _rng.randf_range(0.05, 0.6)
 	# through-stones at half height, every ~0.9 m, ends proud of both faces
 	var t := _rng.randf_range(0.3, 0.6)
 	while t < ln - 0.3:
@@ -188,7 +203,9 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 		var p := a + d2 * (s2 + th * 0.5)
 		var ch := _rng.randf_range(0.2, 0.36)
 		var c := Vector3(p.x - global_position.x, _ground(p) + BODY_H + ch * 0.5 - 0.03, p.y - global_position.z)
-		var bas := Basis(nrm, Vector3.UP, -dir) * Basis.from_euler(Vector3(lean + _rng.randf_range(-0.1, 0.1), _rng.randf_range(-0.14, 0.14), _rng.randf_range(-0.07, 0.07)))
+		# the odd cope stone knocked over further by sheep or frost
+		var tip := _rng.randf_range(0.14, 0.26) * signf(_rng.randf() - 0.5) if _rng.randf() < 0.15 else 0.0
+		var bas := Basis(nrm, Vector3.UP, -dir) * Basis.from_euler(Vector3(lean + tip + _rng.randf_range(-0.1, 0.1), _rng.randf_range(-0.14, 0.14), _rng.randf_range(-0.07, 0.07)))
 		_place(c, bas, Vector3(TOP_W + _rng.randf_range(-0.02, 0.06), ch, th), BODY_H + ch * 0.5)
 		cope_count += 1
 		s2 += th + _rng.randf_range(0.0, 0.025)
@@ -212,15 +229,18 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 		_body.add_child(cs)
 
 ## One face stone: `along` from a, its bed at y above the ground, on face `face` (+-1).
-func _face_stone(a: Vector2, d2: Vector2, dir: Vector3, nrm: Vector3, face: float, along: float, y: float, size: Vector3, batter: float) -> void:
+## shear: the head joints' lean (top edge shifted shear * height); proud: set out of the face.
+func _face_stone(a: Vector2, d2: Vector2, dir: Vector3, nrm: Vector3, face: float, along: float, y: float, size: Vector3, batter: float, shear := 0.0, proud := 0.0) -> void:
 	var p := a + d2 * along
 	var cy := y + size.y * 0.5
-	var off := _hw(cy) - size.z * 0.5 + _rng.randf_range(-0.02, 0.025)
+	var off := _hw(cy) - size.z * 0.5 + _rng.randf_range(-0.02, 0.025) + proud
 	var c := Vector3(p.x - global_position.x, _ground(p) + cy, p.y - global_position.z) + nrm * face * off
 	# batter: the face leans in toward the top (rotating about dir tips UP toward +nrm)
 	var bas := Basis(dir, -batter * face) * Basis(dir, Vector3.UP, nrm)
-	bas = bas * Basis.from_euler(Vector3(_rng.randf_range(-0.06, 0.06), _rng.randf_range(-0.08, 0.08), _rng.randf_range(-0.11, 0.11)))
-	_place(c, bas, size, cy)
+	# a few set well off the level, as a waller beds an awkward stone
+	var roll := _rng.randf_range(-0.11, 0.11) if _rng.randf() < 0.88 else _rng.randf_range(0.15, 0.24) * signf(_rng.randf() - 0.5)
+	bas = bas * Basis.from_euler(Vector3(_rng.randf_range(-0.06, 0.06), _rng.randf_range(-0.08, 0.08), roll))
+	_place(c, bas, size, cy, 1.0, shear * face)
 
 ## The field gate, its heel on the stoop that ends the first half of run 0 (d: along the run).
 func _hang_gate(g: Vector2, d: Vector2) -> void:
@@ -281,7 +301,7 @@ func _stoop(p: Vector2, d: Vector2) -> void:
 
 ## `above` at -0.4 or below marks a foot-worn top (masonry.gdshader's trodden slab); `laid` 2 marks a
 ## stile slab (lichen-crusted flag, its arrises rubbed smooth by hands and hips).
-func _place(c: Vector3, b: Basis, size: Vector3, above: float, laid := 1.0) -> void:
+func _place(c: Vector3, b: Basis, size: Vector3, above: float, laid := 1.0, shear := 0.0) -> void:
 	var v := _rng.randi() % VARIANTS
 	for t in 2:
 		var o := _rng.randi() % VARIANTS
@@ -292,7 +312,8 @@ func _place(c: Vector3, b: Basis, size: Vector3, above: float, laid := 1.0) -> v
 	if _rng.randf() < 0.5:
 		sc.x = -sc.x
 		sc.z = -sc.z
-	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
+	# shear in the stone's own frame: x += shear * y (parallelogram face, head joints askew)
+	var xf := Transform3D(b.orthonormalized() * Basis(Vector3.RIGHT, Vector3(shear, 1, 0), Vector3.BACK) * Basis.from_scale(sc), c)
 	var r := clampf(above / 8.0, 0.0, 1.0) if above > -0.4 else -0.0625
 	_per[v].append([xf, Color(r, _rng.randf(), laid, 2.0)])
 	stone_count += 1
