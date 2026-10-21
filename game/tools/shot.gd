@@ -976,6 +976,24 @@ func _ready() -> void:
 			var cpw := dp + away * 2.2 + sd * 1.1
 			cpw.y = terrain.height_at(cpw.x, cpw.z) + 0.75
 			SPOTS[spot] = [cpw, at + Vector3.UP * 0.8]
+		if "sidestep" in args:
+			# Wat walking off the green with Brack sat on his line a stride ahead: he bends his
+			# course round the dog; the lens low off to the side the dog is on, both in frame
+			var dg: Dog = world.dog
+			var nx: Vector3 = pd._legs[4][0]
+			var dir := Vector3(nx.x - at.x, 0, nx.z - at.z).normalized()
+			var dp := at + dir * 2.6
+			dp = Vector3(dp.x, terrain.height_at(dp.x, dp.z), dp.z)
+			dg.global_position = dp
+			dg.yaw = atan2(-dir.x, -dir.z)
+			dg._warned = pd.journeys
+			dg._start(Dog.REST, 999.0)
+			dg.sit = 1.0
+			pd._go_leg(4)
+			var sd := dir.cross(Vector3.UP)
+			var cps := dp + sd * 3.4 + dir * 1.2
+			cps.y = terrain.height_at(cps.x, cps.z) + 1.1
+			SPOTS[spot] = [cps, dp + Vector3.UP * 0.7 - dir * 0.6]
 	if spot == "osric":
 		# Osric at his spot for the hour, three-quarter from the front at 3.4 m; leaning on the
 		# garth's back wall the lens stands out in the field beyond it, looking back at him

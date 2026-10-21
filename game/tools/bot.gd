@@ -4566,11 +4566,15 @@ func _pedlar_test() -> void:
 		var dog_out := 0.0
 		var dog_eye := 9.0
 		var dog_closest := 99.0
+		var dog_pass := 99.0
+		var sd0 := pd.sidesteps
 		for i in 30000:
 			_world.time_of_day = h
 			await get_tree().physics_frame
 			ticks = i
 			dog_closest = minf(dog_closest, dg.global_position.distance_to(pd.global_position))
+			if pd.state == Villager.WALK:
+				dog_pass = minf(dog_pass, Vector2(dg.global_position.x - pd.global_position.x, dg.global_position.z - pd.global_position.z).length())
 			if dg.state == Dog.WARN:
 				dog_out = maxf(dog_out, dg.global_position.distance_to(dg._warn_from))
 				var dp := pd.global_position - dg.global_position
@@ -4583,6 +4587,9 @@ func _pedlar_test() -> void:
 				break
 		print("BOT pedlar %.1f h (%s): %d ticks, journeys %d, stands %d, warps %d, greeted %s, Edda %s / Osric %s, mate turned to him off %.2f rad" % [h, "back" if leg[1] else "out", ticks, pd.journeys - j0, pd.stops - s0, pd.warps - w0, pd.greeted.keys(), e.activity, o.activity, faced])
 		print("BOT pedlar dog: closest %.1f m, woofs %d (%d sounded), warns %d, trotted out %.1f m, eyes on him off %.2f rad, state after %d" % [dog_closest, dg.woofs - wf0, _world.foley.played.get("dog_woof", 0) - fw0, dg.warns - wn0, dog_out, dog_eye, dg.state])
+		print("BOT pedlar walks past the dog no closer than %.2f m, sidesteps %d" % [dog_pass, pd.sidesteps - sd0])
+		if dog_pass < 0.75:
+			return _combat_done(false, "the pedlar walks through the dog (%.2f m)" % dog_pass)
 		if dg.woofs - wf0 != 1 or dg.warns - wn0 != 1 or _world.foley.played.get("dog_woof", 0) - fw0 < 1:
 			return _combat_done(false, "the dog should woof once at the pedlar going by")
 		if dog_out < 1.0 or dog_out > Dog.FOLLOW + 1.0 or dog_eye > 0.3 or dg.state == Dog.WARN:
@@ -4614,7 +4621,7 @@ func _pedlar_test() -> void:
 	_world.weather.force(0.0)
 	if moved < 8.0 or not pd.visible:
 		return _combat_done(false, "the rain stops the pedlar")
-	_combat_done(true, "Wat the pedlar sets out at 09:00, walks the road through the village both ways, stands on the green and at Osric's wall, passes a word with Edda and Osric (they turn to him), and hurries on through rain; Brack woofs at him, trots a few steps after him and watches him go")
+	_combat_done(true, "Wat the pedlar sets out at 09:00, walks the road through the village both ways, stands on the green and at Osric's wall, passes a word with Edda and Osric (they turn to him), and hurries on through rain; Brack woofs at him, trots a few steps after him and watches him go; he steps round the dog instead of through it")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager

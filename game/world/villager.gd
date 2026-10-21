@@ -499,8 +499,8 @@ func _physics_process(delta: float) -> void:
 				_arrive()
 		else:
 			var sp := HURRY_SPEED if activity == "shelter" else WALK_SPEED
-			v = d.normalized() * sp
-			goal_yaw = atan2(d.x, d.z)
+			v = _steer(d.normalized()) * sp
+			goal_yaw = atan2(v.x, v.z)
 			var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
 			stuck_t = stuck_t + delta if moved < sp * delta * 0.3 else maxf(stuck_t - delta, 0.0)
 			if stuck_t > 0.6:
@@ -536,6 +536,10 @@ func _physics_process(delta: float) -> void:
 	if garb.fill != null and pg != null and pg.fill != null:
 		garb.fill.light_energy = pg.fill.light_energy * garb.fill_gain
 		garb.fill.light_color = pg.fill.light_color
+
+## The walking direction toward the next path point, bent round anything in the way (none here).
+func _steer(dir: Vector3) -> Vector3:
+	return dir
 
 func _begin(a: String) -> void:
 	activity = a

@@ -26,11 +26,14 @@ const SET_OUT := [9.0, 14.5]               # hours he sets off (morning in from 
 const STAND_GREEN := 26.0                  # s he stands on the green
 const STAND_WALL := 14.0                   # s he stands at Osric's wall
 const CALL_R := 15.0                       # he calls a word across the green this far
+const CLEAR := 1.1                         # m he keeps between his line and the dog
 
 var journeys := 0                # walks through finished (bots)
 var stops := 0                   # stands reached on the way (bots)
 var greeted := {}                # who he has passed a word with this walk -> true
 var on_road := false
+var sidesteps := 0               # times he has stepped round the dog (bots)
+var _side_on := false
 var edda: Villager
 var osric: Villager
 var staff: MeshInstance3D
@@ -193,6 +196,30 @@ func _go_leg(i: int) -> void:
 	path.append(_legs[_leg][0])
 	state = WALK
 	stuck_t = 0.0
+
+## Steps round Brack where it sits or potters in his road instead of walking through it: if the
+## dog is ahead within a few strides and closer than CLEAR to his line, he bends his course off
+## to the side it is not on, more the closer it lies, and comes back onto the line past it.
+func _steer(dir: Vector3) -> Vector3:
+	var dg = world.get("dog")
+	if dg == null or not dg.visible:
+		return dir
+	var o: Vector3 = dg.global_position - global_position
+	o.y = 0.0
+	var ahead := o.dot(dir)
+	if ahead < -0.3 or ahead > 3.0:
+		return dir
+	var side := Vector3(dir.z, 0.0, -dir.x)
+	var lat := o.dot(side)
+	if absf(lat) >= CLEAR:
+		return dir
+	# off the dog's side; strongest when it is right on his line and a stride ahead
+	var k := (1.0 - absf(lat) / CLEAR) * clampf(1.0 - (ahead - 0.8) / 2.2, 0.0, 1.0) * 1.6
+	if ahead < 0.8:
+		k = maxf(k, (1.0 - absf(lat) / CLEAR) * 1.6)
+	sidesteps += 1 if k > 0.3 and not _side_on else 0
+	_side_on = k > 0.3
+	return (dir - side * signf(lat if absf(lat) > 0.01 else 1.0) * k).normalized()
 
 func _want_for(_h: float) -> String:
 	return "road" if on_road else "in"
