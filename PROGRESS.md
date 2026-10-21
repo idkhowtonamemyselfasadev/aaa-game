@@ -44,7 +44,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   falling "weeoo" notes with an 11 Hz quaver that grows into each tail) and a harsh call (three
   0.2 s shrill 3.0->3.6->2.5 kHz notes with more breath). Checked on a spectrogram of the
   dumped WAVs. Bot `kite` now also checks a soaring call fires from >= 40 m up (81 m) and the
-  mobbed kite shrieks (4 times in 3.7 s).
+  mobbed kite shrieks (4 times in 3.7 s). Shot `mob kitecall_mob 110 11.0 fixfps` (Forward+,
+  ~30 min): the kite climbing away with four rooks on its tail; FAILS as a Wukong frame (empty
+  flat sky, tiny silhouettes, no ground in shot); fine as proof of the mob, the call is audio.
 - (04:30 10-21) **The pedlar's road is worn into the ground.** YardGround gained `ROAD` (a cart
   track centre line in world xz with wear, from the SE meadow (20, -27) up to the green by the
   lantern post) baked as two wheel ruts `GAUGE` 1.35 m apart (`road_ruts()`, mitred offsets), the

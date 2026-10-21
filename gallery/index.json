@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261016-1120-litter.jpg",
-  "time": "2026-10-16T11:20:00Z",
-  "caption": "Under the gather oak the leaf litter no longer carries cream-white flecks or pale pebbles: darker russet and wet-brown leaves of mixed sizes with soft shadows under each; still reads as a mosaic of separate leaves, the bole is glossy black and Hesper's robe (shot taken before the slate-grey change) still navy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-1220-oakbole.jpg",
-  "time": "2026-10-16T12:20:00Z",
-  "caption": "The gather oak's bole in back light now reads as grey-brown plated bark with olive moss on its shaded side instead of a glossy black-green column with bright crack rims; the leaf litter still reads as a mosaic of pale separate leaves and the lower bole keeps one bright plate edge.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-1320-litterdrift.jpg",
-  "time": "2026-10-16T13:20:00Z",
-  "caption": "The leaf litter under the gather oak now lies in drifts of overlapping lobed leaves over dark leaf mould instead of an even polka-dot grid; the top tan leaves are still a greyish pale against too-dark mould, and Hesper's knee wraps show grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-1400-littertan.jpg",
   "time": "2026-10-16T14:00:00Z",
   "caption": "The oak leaf drifts now lie russet and warm tan over a brown leaf mould instead of greyish-pale leaves on near-black gaps; the bole's crack rims still read as carved lines and Hesper's body is still the hero's.",
@@ -898,5 +880,11 @@
   "time": "2026-10-21T04:44:21Z",
   "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
   "verdict": "pass"
+ },
+ {
+  "file": "20261021-0540-kitemob.jpg",
+  "time": "2026-10-21T05:40:00Z",
+  "caption": "A red kite shrieking as it climbs away from four mobbing rooks over the meadow at 11:00; still wrong: an empty flat sky with the birds as tiny silhouettes, no landscape to anchor the frame.",
+  "verdict": "fail"
  }
 ]
