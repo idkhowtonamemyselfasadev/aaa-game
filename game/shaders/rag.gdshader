@@ -29,6 +29,7 @@ uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
+uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
@@ -167,7 +168,7 @@ void fragment() {
 	float fuzz = 0.0;
 	float pill = 0.0;
 	if (wool > 0.0) {
-		vec2 fv = uv * weave_scale * vec2(2.3, 0.9);
+		vec2 fv = uv * weave_scale * vec2(2.3, 2.3 * fuzz_ratio);
 		float wfine = 1.0 - smoothstep(0.4, 1.2, length(fwidth(fv)));
 		fuzz = (vnoise(fv) - 0.5 + 0.5 * (vnoise(fv * 2.7 + 7.0) - 0.5)) * wfine;
 		pill = smoothstep(0.72, 0.9, vnoise(uv * weave_scale * 0.35 + 3.0)) * wfine;

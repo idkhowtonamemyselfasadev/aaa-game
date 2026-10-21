@@ -126,6 +126,9 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mm.set_shader_parameter("tongues", 3.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
+		# fulled wool has no grain down the hang: near-round fuzz, not wood-grain streaks
+		mm.set_shader_parameter("fuzz_ratio", 0.9)
+		mm.set_shader_parameter("weave_scale", 180.0)
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
@@ -450,11 +453,12 @@ func _felt() -> ArrayMesh:
 			k = lerpf(0.86, 1.0, sqrt(t))
 			y = lerpf(2.104, 1.995, t)
 		else:
-			# the brim: out 7.5 cm and gone soft all round, drooping at the sides too (a level
-			# side brim read as a cowboy's curl) and most at the front and back, wavy at the edge
+			# the brim: out 6 cm and gone soft all round, drooping as low at the sides as at the
+			# front and back (a higher side brim curls up like a cowboy's from a 3/4 lens),
+			# wavy at the edge
 			var t := (v - 0.62) / 0.38
-			k = 1.0 + t * 0.075 / 0.185
-			y = 1.995 - 0.008 * t - (0.022 + 0.026 * ca * ca + 0.007 * sin(a * 5.0 + 0.7)) * t * t
+			k = 1.0 + t * 0.06 / 0.185
+			y = 1.995 - 0.008 * t - (0.044 + 0.006 * sa * sa + 0.006 * sin(a * 5.0 + 0.7)) * t * t
 		k *= 1.0 + 0.012 * sin(a * 3.0 + 0.4)
 		return Vector3(sa * rx * k, y, -0.045 + ca * rz * k), 48, 16)
 
