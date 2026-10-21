@@ -3,7 +3,8 @@ extends Node3D
 ## The vale's layered soundscape, synthesised at load (no sample files): a wind bed that
 ## swells with the weather, a rain hiss with drop patter, a dawn/dusk-weighted birdsong of
 ## whistles, trills and two-note calls from the oak groves, crickets in the night grass,
-## rook caws + wing clatter when a flock scatters, and thunder after each lightning stroke
+## rook caws + wing clatter when a flock scatters, the red kites' thin whistle from high over
+## the meadow (shriller when the rooks mob one), and thunder after each lightning stroke
 ## (crack up close, long rolling rumble far off). Layer levels follow the world clock and
 ## the Weather; bots read `levels`, `calls` and `claps`.
 
@@ -17,6 +18,7 @@ var levels := {}          # layer name -> linear gain this frame (bots)
 var calls := 0            # bird calls started (bots)
 var claps := 0            # thunder claps played (bots)
 var caws := 0             # rook scatter calls played (bots)
+var kite_calls := 0       # kite whistles played (bots)
 var build_ms := 0         # synthesis time at load (bots)
 
 var _rng := RandomNumberGenerator.new()
@@ -25,6 +27,10 @@ var _songs: Array[AudioStreamWAV] = []
 var _thunder_near: AudioStreamWAV
 var _thunder_far: AudioStreamWAV
 var _caw: AudioStreamWAV
+var _kite_songs: Array[AudioStreamWAV] = []   # soaring calls
+var _kite_harsh: AudioStreamWAV
+var _kite_voice: AudioStreamPlayer3D
+var _last_kite := 0
 var _pool: Array[AudioStreamPlayer3D] = []
 var _next_call := 2.0
 var _t := 0.0
@@ -43,6 +49,17 @@ func _ready() -> void:
 	_thunder_near = _make_thunder(true)
 	_thunder_far = _make_thunder(false)
 	_caw = _make_caws()
+	for k in 2:
+		_kite_songs.append(_make_kite(false, k))
+	_kite_harsh = _make_kite(true, 0)
+	# a kite calls from 60-120 m up, so it gets its own long-range voice
+	_kite_voice = AudioStreamPlayer3D.new()
+	_kite_voice.unit_size = 45.0
+	_kite_voice.max_distance = 420.0
+	_kite_voice.attenuation_filter_cutoff_hz = 9000.0
+	_kite_voice.attenuation_filter_db = -10.0
+	_kite_voice.bus = &"Wildlife"
+	add_child(_kite_voice)
 	for i in 8:
 		var p := AudioStreamPlayer3D.new()
 		p.unit_size = 14.0
@@ -100,6 +117,9 @@ func _process(delta: float) -> void:
 	if birds and "mob_caws" in birds and birds.mob_caws != _last_mob:
 		_last_mob = birds.mob_caws
 		_mob_caw(birds.mob_caw_at)
+	if birds and "kite_calls" in birds and birds.kite_calls != _last_kite:
+		_last_kite = birds.kite_calls
+		_kite_call(birds.kite_call_at, birds.kite_call_harsh, rain)
 
 func _band(h: float, a: float, b: float, c: float, d: float) -> float:
 	return smoothstep(a, b, h) * (1.0 - smoothstep(c, d, h))
@@ -149,6 +169,15 @@ func _mob_caw(at: Vector3) -> void:
 	p.volume_db = -7.0
 	p.play()
 	caws += 1
+
+## A red kite's whistle from wherever it is circling; rain muffles it.
+func _kite_call(at: Vector3, harsh: bool, rain: float) -> void:
+	_kite_voice.stream = _kite_harsh if harsh else _kite_songs[_rng.randi() % _kite_songs.size()]
+	_kite_voice.global_position = at
+	_kite_voice.pitch_scale = _rng.randf_range(0.96, 1.04)
+	_kite_voice.volume_db = (-3.0 if harsh else -5.0) - 8.0 * rain
+	_kite_voice.play()
+	kite_calls += 1
 
 func _rook_scatter() -> void:
 	var at := _listener() + Vector3(0, 6, 0)
@@ -417,4 +446,45 @@ func _make_caws() -> AudioStreamWAV:
 			var e := sin(PI * minf(k * 3.0, 1.0)) if k < 0.33 else 1.0 - (k - 0.33) / 0.67
 			var nz := _rng.randf() * 2.0 - 1.0
 			x[i0 + j] += 0.5 * e * (saw * 0.7 + nz * 0.3 * absf(saw))
+	return _wav(x, RATE, 0)
+
+## Red kite: a long, thin "weee-ooo" (a whistle that climbs, holds and falls away) then a run
+## of quavering "weeoo" notes, each a short fall with a fast warble on it. The harsh call is
+## the mobbed kite's: three quick shrill "kiew"s with more breath in them.
+func _make_kite(harsh: bool, variant: int) -> AudioStreamWAV:
+	var notes: Array = []   # [start s, dur s, f0, f_peak, f1, warble Hz, amp]
+	if harsh:
+		for i in 3:
+			notes.append([i * 0.26, 0.2, 3000.0, 3600.0, 2500.0, 0.0, 1.0 - i * 0.12])
+	else:
+		notes.append([0.0, 0.85 + 0.15 * variant, 2300.0, 3150.0, 2050.0, 0.0, 1.0])
+		var reps := 3 + variant
+		var t := 1.0 + 0.15 * variant
+		for i in reps:
+			var d := 0.34 - i * 0.02
+			notes.append([t, d, 2700.0, 2950.0, 2000.0, 11.0, 0.75 - i * 0.1])
+			t += d + 0.05
+	var dur: float = notes[-1][0] + notes[-1][1] + 0.4
+	var n := int(dur * RATE)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var lp := 0.0
+	for nt: Array in notes:
+		var i0 := int(nt[0] * RATE)
+		var m := int(nt[1] * RATE)
+		var ph := 0.0
+		for j in m:
+			if i0 + j >= n:
+				break
+			var k := float(j) / m
+			# pitch: up to the peak over the first quarter, then the long fall
+			var f: float = lerpf(nt[2], nt[3], smoothstep(0.0, 0.25, k)) if k < 0.25 \
+				else lerpf(nt[3], nt[4], pow((k - 0.25) / 0.75, 1.4))
+			f += sin(TAU * nt[5] * j / RATE) * 160.0 * k   # the quaver grows into the tail
+			ph += TAU * f / RATE
+			var e := smoothstep(0.0, 0.08, k) * (1.0 - smoothstep(0.7, 1.0, k))
+			var w := _rng.randf() * 2.0 - 1.0
+			lp += 0.3 * (w - lp)
+			var breath := (0.35 if harsh else 0.06) * lp
+			x[i0 + j] += nt[6] * e * (sin(ph) + 0.08 * sin(2.0 * ph) + breath)
 	return _wav(x, RATE, 0)

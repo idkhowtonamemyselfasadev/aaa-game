@@ -46,6 +46,9 @@ var mob_events := 0
 var mob_closest := INF       # nearest a mobbing rook got to its kite (m)
 var mob_caws := 0            # soundscape plays a caw at mob_caw_at each time this ticks
 var mob_caw_at := Vector3.ZERO
+var kite_calls := 0          # soundscape plays a kite's whistle at kite_call_at each tick
+var kite_call_at := Vector3.ZERO
+var kite_call_harsh := false # the shriller, quicker call of a kite being mobbed
 var rookery := Vector3.ZERO  # centre of the roost trees (ground level)
 var rookery_trees: Array[int] = []
 var _first := true
@@ -74,6 +77,7 @@ class Bird:
 	var hunt_t := 0.0
 	var prey = null           # kites: the Flock it stoops at
 	var mob = null            # rooks: the kite it is chasing
+	var call_t := 0.0         # kites: seconds to its next whistle
 
 class Flock:
 	var site := 0
@@ -128,6 +132,7 @@ func _ready() -> void:
 		b.legs = 0.0
 		b.state = AIR
 		b.hunt_t = _rng.randf_range(40.0, stoop_every.y)
+		b.call_t = _rng.randf_range(8.0, 30.0)
 		b.pos = _soar_point(b)
 		_kites.append(b)
 	_pick_rookery()
@@ -518,6 +523,7 @@ func _soar_point(b: Bird) -> Vector3:
 func _update_kite(b: Bird, dt: float, tod) -> void:
 	b.phase += dt * 0.16
 	var day: bool = tod == null or (tod > 7.5 and tod < 17.5)
+	_kite_voice(b, dt, tod)
 	match b.hunt:
 		SOAR:
 			_soar_kite(b, dt)
@@ -547,6 +553,30 @@ func _update_kite(b: Bird, dt: float, tod) -> void:
 			if b.pos.distance_to(home) < 4.0:
 				b.hunt = SOAR
 				b.hunt_t = _rng.randf_range(stoop_every.x, stoop_every.y)
+
+## A soaring kite whistles now and then ("weee-ooo", then a quavering "weeoo-weeoo"), more
+## in the morning; a mobbed one calls in shriller, quicker bursts. Silent once it roosts.
+func _kite_voice(b: Bird, dt: float, tod) -> void:
+	if tod != null and (tod < 6.5 or tod > 19.0):
+		return
+	b.call_t -= dt
+	if b.call_t > 0.0:
+		return
+	match b.hunt:
+		SOAR, REJOIN:
+			kite_call(b, false)
+			var morning: float = 1.0 if tod == null else 1.0 - 0.5 * smoothstep(11.0, 14.0, tod)
+			b.call_t = _rng.randf_range(25.0, 70.0) / morning
+		MOBBED:
+			kite_call(b, true)
+			b.call_t = _rng.randf_range(2.5, 5.0)
+		_:
+			b.call_t = _rng.randf_range(3.0, 6.0)   # stooping is silent
+
+func kite_call(b: Bird, harsh: bool) -> void:
+	kite_calls += 1
+	kite_call_at = b.pos
+	kite_call_harsh = harsh
 
 func _soar_kite(b: Bird, dt: float) -> void:
 	var dir := 1.0 if int(b.off.x) % 2 == 0 else -1.0
@@ -620,6 +650,7 @@ func _start_mob(fl: Flock, kite: Bird) -> void:
 	# the flock stays up until the mob has driven the kite off and come back
 	fl.air_t = maxf(fl.air_t, kite.hunt_t + 18.0)
 	kite.prey = fl
+	kite.call_t = 0.4   # it shrieks as soon as the rooks are on it
 
 func _release_mob(kite: Bird) -> void:
 	var fl: Flock = kite.prey

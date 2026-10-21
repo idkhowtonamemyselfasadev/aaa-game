@@ -2746,6 +2746,16 @@ func _kite_test() -> void:
 	_player.global_position = Vector3(0, terrain.height_at(0, 0) + 1.0, 0)
 	_world.time_of_day = 11.0
 	await _ticks(120)
+	# a soaring kite whistles, and the soundscape plays it from up where the kite is
+	var ss: Soundscape = _world.soundscape
+	var sc0 := ss.kite_calls
+	birds._kites[0].call_t = 0.0
+	await _ticks(10)
+	var voice: AudioStreamPlayer3D = ss._kite_voice
+	var up := voice.global_position.y - terrain.height_at(voice.global_position.x, voice.global_position.z)
+	print("BOT kite call: %d soaring call(s), voice %.0f m up, %.1f s long" % [ss.kite_calls - sc0, up, voice.stream.get_length() if voice.stream else 0.0])
+	if ss.kite_calls == sc0 or up < 40.0 or voice.stream == ss._kite_harsh:
+		return _combat_done(false, "a soaring kite did not whistle from the sky")
 	var k: Birds.Bird = null
 	for kk: Birds.Bird in birds._kites:
 		var c0: int = birds.census()["ground"]
@@ -2776,9 +2786,18 @@ func _kite_test() -> void:
 	t = 0.0
 	var caws0 := birds.mob_caws
 	var climb_lo := k.pos.y
+	var harsh := 0
+	var heard := ss.kite_calls
 	while k.hunt == Birds.MOBBED and t < 40.0:
 		await _ticks(10)
 		t += 10.0 / 60.0
+		if ss.kite_calls != heard:
+			heard = ss.kite_calls
+			if voice.stream == ss._kite_harsh:
+				harsh += 1
+	print("BOT kite harsh: the mobbed kite shrieked %d times in %.1f s" % [harsh, t])
+	if harsh == 0:
+		return _combat_done(false, "the mobbed kite never shrieked")
 	print("BOT kite mobbed: %d rooks on it, closest %.1f m, %d mob caws, climbed %.0f m in %.1f s" % [n, birds.mob_closest, birds.mob_caws - caws0, k.pos.y - climb_lo, t])
 	if n < 3 or birds.mob_closest > 4.0:
 		return _combat_done(false, "the rooks did not mob the kite")
