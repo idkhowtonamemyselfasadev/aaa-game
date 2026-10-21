@@ -85,6 +85,7 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		vars[sp].append(rng.randf())
 		heads.append(t * Vector3(0, HEAD_H[sp], 0))
 		kinds.append(sp)
+	_verges(k, chunk_m, terrain, far, rng, xfs, vars, heads, kinds, half)
 	var root := Node3D.new()
 	root.name = "Flowers"
 	for sp in SPECIES:
@@ -105,6 +106,57 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		mmi.visibility_range_end = 60.0
 		root.add_child(mmi)
 	return [root, heads, kinds]
+
+## The cart track's verges: the mower and the grazing beasts keep off the strip either side of
+## the ruts, so the road runs between two ribbons of tall yarrow, knapweed and ox-eye daisies
+## (the verge band ~1.1..2.3 m out from the centre line), and the crown strip left standing
+## between the wheel ruts carries a few low buttercups and daisies. Thinner where the road is
+## barely worn (its far end in the meadow), as fewer carts disturb the turf there.
+static func _verges(k: Vector2i, chunk_m: float, terrain: Terrain, far: float, rng: RandomNumberGenerator,
+		xfs: Array, vars: Array, heads: PackedVector3Array, kinds: PackedInt32Array, half: float) -> void:
+	var road: Array = YardGround.ROAD
+	var lo := Vector2(k.x, k.y) * chunk_m - Vector2(3.0, 3.0)
+	var hi := lo + Vector2(chunk_m + 6.0, chunk_m + 6.0)
+	var dens := (1.0 - far) * (1.0 - far) * 0.85 + 0.15
+	for i in road.size() - 1:
+		var a: Vector2 = road[i][0]
+		var b: Vector2 = road[i + 1][0]
+		if maxf(a.x, b.x) < lo.x or minf(a.x, b.x) > hi.x or maxf(a.y, b.y) < lo.y or minf(a.y, b.y) > hi.y:
+			continue
+		var dir := (b - a).normalized()
+		var side := dir.orthogonal()
+		var n := int(a.distance_to(b) * 9.0 * dens)
+		for j in n:
+			var t := rng.randf()
+			var wear := lerpf(road[i][1], road[i + 1][1], t)
+			var crown := rng.randf() < 0.18
+			var off := rng.randfn(0.0, 0.12) if crown else (1.1 + absf(rng.randfn(0.0, 0.5))) * (1.0 if rng.randf() < 0.5 else -1.0)
+			var p := a.lerp(b, t) + side * off
+			var x := p.x
+			var z := p.y
+			if x < k.x * chunk_m or z < k.y * chunk_m or x >= (k.x + 1) * chunk_m or z >= (k.y + 1) * chunk_m:
+				continue
+			if absf(x) > half or absf(z) > half or rng.randf() > smoothstep(0.05, 0.5, wear):
+				continue
+			if YardGround.worn(x, z) > 0.1 or LanternPost.near(x, z, 0.15) or terrain.pond_at(x, z) > 0.2:
+				continue
+			var sp: int
+			var s: float
+			if crown:
+				# low among the crown strip's short sward (the axles brush anything tall)
+				sp = 1 if rng.randf() < 0.6 else 0
+				s = rng.randf_range(0.6, 0.85)
+			else:
+				var r := rng.randf()
+				sp = 3 if r < 0.38 else 2 if r < 0.68 else 0 if r < 0.9 else 1
+				s = rng.randf_range(1.15, 1.6)
+			var y := terrain.height_at(x, z)
+			var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.85, 1.2), s))
+			var tr := Transform3D(basis, Vector3(x, y - 0.02, z))
+			xfs[sp].append(tr)
+			vars[sp].append(rng.randf())
+			heads.append(tr * Vector3(0, HEAD_H[sp], 0))
+			kinds.append(sp)
 
 # ---------------------------------------------------------------- mesh building
 

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -138,6 +138,9 @@ func _ready() -> void:
 		return
 	if name == "yardpath":
 		_yardpath_test()
+		return
+	if name == "verge":
+		_verge_test()
 		return
 	if name == "doorstones":
 		_doorstones_test()
@@ -3531,6 +3534,61 @@ func _doorstones_test() -> void:
 	if in_pools > 0:
 		return _combat_done(false, "%d sward blades stand in the pool band round the slabs" % in_pools)
 	_combat_done(true, "door stones laid, walkable, grass-free and sounding of stone")
+
+## Verge flowers: the cart track runs between two ribbons of wildflowers, much denser than the
+## open meadow a few metres off, with a few low ones on the crown strip and none in the ruts.
+func _verge_test() -> void:
+	var terrain: Terrain = _world.get_node("Terrain")
+	var grass: GrassField = _world.get_node("Grass")
+	await _ticks(10)
+	var road: Array = YardGround.ROAD
+	var ruts := YardGround.road_ruts()
+	var ks := {}
+	for i in road.size() - 1:
+		var a: Vector2 = road[i][0]
+		var b: Vector2 = road[i + 1][0]
+		for t in 21:
+			for o in [-8.0, 0.0, 8.0]:
+				var q: Vector2 = a.lerp(b, t / 20.0) + (b - a).normalized().orthogonal() * o
+				ks[Vector2i(floori(q.x / grass.chunk_m), floori(q.y / grass.chunk_m))] = true
+	var verge := 0
+	var meadow := 0
+	var crown := 0
+	var in_rut := 0
+	var sp_v := [0, 0, 0, 0]
+	for k: Vector2i in ks:
+		var fl := MeadowFlowers.build_chunk(k, grass.chunk_m, terrain, 0.0, grass._ruin, grass._find_ruin())
+		(fl[0] as Node).free()
+		var hs: PackedVector3Array = fl[1]
+		var kinds: PackedInt32Array = fl[2]
+		for n in hs.size():
+			var h := Vector2(hs[n].x, hs[n].z)
+			# distance to the centre line over its worn stretch (wear > 0.4)
+			var d := INF
+			for i in range(1, road.size() - 2):
+				d = minf(d, h.distance_to(Geometry2D.get_closest_point_to_segment(h, road[i][0], road[i + 1][0])))
+			var dr := INF
+			for r in ruts:
+				var w: PackedVector2Array = r[0]
+				for i in range(1, w.size() - 2):
+					dr = minf(dr, h.distance_to(Geometry2D.get_closest_point_to_segment(h, w[i], w[i + 1])))
+			if d < 0.3:
+				crown += 1
+			elif d > 1.0 and d < 2.6:
+				verge += 1
+				sp_v[kinds[n]] += 1
+			elif d > 6.0 and d < 7.6:
+				meadow += 1
+			if dr < 0.12:
+				in_rut += 1
+	print("BOT verge: %d chunks, verge band %d heads (daisy %d buttercup %d knapweed %d yarrow %d), same-width meadow band 6 m out %d, crown %d, in the ruts %d" % [ks.size(), verge, sp_v[0], sp_v[1], sp_v[2], sp_v[3], meadow, crown, in_rut])
+	if verge < 120 or verge < meadow * 2:
+		return _combat_done(false, "the verges are not markedly more flowery than the meadow")
+	if crown < 5:
+		return _combat_done(false, "no low flowers on the crown strip")
+	if in_rut > 0:
+		return _combat_done(false, "%d flowers growing in the wheel ruts" % in_rut)
+	_combat_done(true, "the cart track runs between flowered verges")
 
 func _yardpath_test() -> void:
 	var p := _player
