@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261016-1400-littertan.jpg",
-  "time": "2026-10-16T14:00:00Z",
-  "caption": "The oak leaf drifts now lie russet and warm tan over a brown leaf mould instead of greyish-pale leaves on near-black gaps; the bole's crack rims still read as carved lines and Hesper's body is still the hero's.",
-  "verdict": "fail"
- },
- {
-  "file": "20261016-1500-keeperpick.jpg",
-  "time": "2026-10-16T15:00:00Z",
-  "caption": "Hesper crouched in the leaf litter under a gather oak, seen from a level, low side camera with no grass blades in the lens; her body still reads as a dark jumble of robe and armour, the leaves are near-uniform blobs and a fern card glows too bright.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-1620-keepercloth.jpg",
   "time": "2026-10-16T16:20:00Z",
   "caption": "Hesper crouched at the gather oak: her body now reads as grey wool and linen instead of black lacquer and iron, robe lighter; still a busy bundle of separate panels and a lime back-lit fern on the left.",
@@ -898,5 +886,11 @@
   "time": "2026-10-21T07:50:00Z",
   "caption": "Wat the pedlar walking off the green past the lantern post, bending his line round Brack sat in his road; still wrong: the lens frames him half behind the post with the dog lost in tall grass, near grass blades read as flat paper ribbons and the figures read blocky at this distance.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261021-0840-verge.jpg",
+  "time": "2026-10-21T08:40:00Z",
+  "caption": "Wat walks the cart track toward the village with daisies and buttercups now edging the verge; the taller yarrow and knapweed of the verge ribbons are mostly drowned in the ripe grass, so the verges do not yet read as a distinct flowered strip.",
+  "verdict": "pass"
  }
 ]
