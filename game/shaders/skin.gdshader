@@ -107,7 +107,21 @@ void fragment() {
 		float ruddy = exp(-pow((abs(p.x) - 0.042) / 0.014, 2.0) - pow((p.y - 1.948) / 0.012, 2.0))
 				+ exp(-pow(p.x / 0.012, 2.0) - pow((p.y - 1.912) / 0.012, 2.0));
 		float veins = 0.6 + 0.4 * vnoise(vec2(p.x * 1500.0, p.y * 700.0));
-		alb = mix(alb, alb * vec3(1.25, 0.82, 0.8), 0.55 * age * clamp(ruddy, 0.0, 1.0) * veins);
+		alb = mix(alb, alb * vec3(1.2, 0.86, 0.82), 0.4 * age * clamp(ruddy, 0.0, 1.0) * veins);
+		// the form an old face has under a hat: the sockets sunk in darker, thinner skin, the
+		// temples hollow, the brow bone and the cheekbones a shade lighter where they catch the
+		// light (a uniform albedo read as a flat mask with no eyes at a few metres)
+		float sock = 0.0;
+		for (int i = 0; i < 2; i++) {
+			vec2 c = i == 0 ? eyes.xy : eyes.zw;
+			sock = max(sock, exp(-pow((p.x - c.x) / 0.022, 2.0) - pow((p.y - c.y + 0.002) / 0.012, 2.0)));
+		}
+		alb *= mix(1.0, 0.62, age * sock);
+		float bone = exp(-pow((p.y - 1.993) / 0.006, 2.0)) * (1.0 - smoothstep(0.035, 0.06, abs(p.x)))
+				+ exp(-pow((abs(p.x) - 0.046) / 0.012, 2.0) - pow((p.y - 1.952) / 0.008, 2.0));
+		alb *= 1.0 + 0.16 * age * clamp(bone, 0.0, 1.0);
+		float temple = smoothstep(0.05, 0.075, abs(p.x)) * smoothstep(1.955, 1.975, p.y);
+		alb *= mix(1.0, 0.8, age * temple);
 	}
 	// lids: darker, slightly purple skin in a band round each opening; lash line at the edge
 	float lid = 1.0 - smoothstep(0.0, 0.006, de);

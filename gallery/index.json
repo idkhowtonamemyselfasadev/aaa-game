@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261017-0850-kindle.jpg",
-  "time": "2026-10-17T08:50:00Z",
-  "caption": "Hesper kindling her fire from a lower 1.25 m lens with warmer amber firelight: the flame and charred logs read, but the inner-face blocks behind it still glow flat cream (they want soot), she is a bowed hood, and plinth slabs fill the lower right.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-0956-hearth.jpg",
-  "time": "2026-10-17T09:56:00Z",
-  "caption": "Hesper's fire at night with the keep stones above it sooted (soot is near-black and matte now), but the fire light still blows the inner face out to flat orange right behind it -- the light is too strong at half a metre, not the stone colour.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-1013-hearth.jpg",
-  "time": "2026-10-17T10:13:00Z",
-  "caption": "Hesper's fire at night with a softer falloff: the inner face behind it no longer clips flat orange -- block relief, joints and ivy read in the firelight -- but the soot plume over the flame is still too faint and the plinth slabs fill the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1130-hearth-night.jpg",
   "time": "2026-10-17T11:30:00Z",
   "caption": "Hesper's fire at night with the wider soot plume: the courses over the fire now go dark and the ivy, fireflies and keep relief read in warm light, but the stones right behind the flame still glow orange and the ash and logs flare pale.",
@@ -897,6 +879,12 @@
   "file": "20261021-2215-osric-beard.jpg",
   "time": "2026-10-21T22:15:00Z",
   "caption": "Osric's beard is now short and full, tapering to a point and shaded at the sides and underneath; still a fail: his face is a flat reddish mask with no eyes showing under the brim and the hood frames it like a helmet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-2350-osric-face.jpg",
+  "time": "2026-10-21T23:50:00Z",
+  "caption": "Osric's face at 17:10 with a greyer, less ruddy skin, darker sockets and lighter brow and cheekbones; still a fail: the eyes sit in the brim's shade so the face reads as a nose and beard in a dark hood.",
   "verdict": "fail"
  }
 ]

@@ -588,6 +588,8 @@ func _add_face(head: Node3D) -> void:
 		mat.set_shader_parameter("age", 1.0)
 		mat.set_shader_parameter("skin_col", skin_col)
 		mat.set_shader_parameter("lid_col", Color(0.26, 0.19, 0.16))
+		# a little more open: the 7 mm slit vanished under the brow at a few metres
+		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0044))
 	face = MeshInstance3D.new()
 	face.name = "Face"
 	face.mesh = _grid(_face_point, 40, 24 if beard else 14)

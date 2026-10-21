@@ -114,8 +114,9 @@ func _dress() -> void:
 	# grizzled: dark hair shot with grey, not white (a pale beard under the fill read as a
 	# white mask in the shade at 3 m)
 	garb.beard_col = Color(0.20, 0.19, 0.175)
-	# weathered and wind-reddened, darker than the old default: a pale grey face glowed
-	garb.skin_col = Color(0.27, 0.195, 0.16)
+	# weathered and wind-reddened, darker than the old default: a pale grey face glowed; a touch
+	# greyer again (0.27/0.195/0.16 read as a flat orange-red mask under the low sun)
+	garb.skin_col = Color(0.24, 0.18, 0.155)
 	# the felt brim and the dark hood put his face in deep shade: a fill under it, but no more
 	# than the shade around him (1.9 lit his face and beard as a pale mask on the fell at dusk)
 	garb.fill_gain = 1.3
