@@ -42,11 +42,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   to him there. `stiles` counter for bots. Bot `neighbour` gains a 17.1 h stage (out past the
   wall, stiles >= 1, no warps) and checks he is back inside by 19.2 h (stiles >= 2): PASS,
   warps 0. Bots hens, greet, pedlar, stonehouse PASS. shot.gd: `osric ... stile` arg puts him
-  in the slot for a lens from the fell footpath (not rendered this session: budget). Shot
+  in the slot for a lens from the fell footpath; shot `osric osricstile 90 16.9 stile` (looked at): he stands in the slot between the slabs, side-on and dark against the shaded wall; fail only for that and the lumpy cope. Shot
   `osric osricfell 90 17.1` (Forward+, ~33 min, looked at): Osric in the long grass outside the
   wall, cottage and wall behind, sunset sky. Verdict fail: he reads stiff and underlit in the
   shade, his face a pale mask at 3.4 m, and a pale-headed figure behind the wall reads odd.
-  Gallery: 20261021-1944-osric-fell.jpg.
+  Gallery: 20261021-1944-osric-fell.jpg, 20261021-2006-osric-stile.jpg.
 - (18:00 10-21) **Garth wall: rounded, broken field rubble + stonehouse bot fixed.**
   `Ruins._block_mesh()` (and `_ticks`/`_shape`) take an optional `bevel` and `rough`
   (defaults: the ruins' 6 cm bevel, 1x chips). `DryWall` builds its stone variants with a
@@ -4230,7 +4230,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0000000000000000000000000000000000000000000000000. (19:00 10-21) Osric through the stile DONE. FIRST:
-   render `osric osricstile 90 16.9 stile` and look at it; Osric's face reads as a pale mask
+   Osric's face reads as a pale mask
    in shade at 3.4 m (darker skin albedo/more fill under the brim, or a stronger SSS); his
    stance on the fell is stiff (a slow weight shift, a hand to the brim against the low sun);
    then flatter, sharper cope variants, the stile slabs' plain narrow faces, the `woof`

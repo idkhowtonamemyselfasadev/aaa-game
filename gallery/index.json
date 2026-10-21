@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-0418-kindle.jpg",
-  "time": "2026-10-17T04:18:46Z",
-  "caption": "Hesper's fresh cookfire at dusk from above: the flame is now orange instead of a white blow-out and the ash ring reads, but a row of big laid plinth blocks still fills the foreground and Hesper is an unlit silhouette right of the fire.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-0522-kindle-across.jpg",
   "time": "2026-10-17T05:22:24Z",
   "caption": "Hesper's young fire seen across the ring from beside the inner face: orange flames over charred logs, the ivied wall glowing warm, fireflies drifting -- but Hesper is hidden behind the flame and the ring stones read as pale puffy lumps.",
@@ -897,6 +891,12 @@
   "file": "20261021-1944-osric-fell.jpg",
   "time": "2026-10-21T19:44:00Z",
   "caption": "Osric out past the garth's back wall at 17:00, standing on the fell footpath where his flock grazed, the stone cottage behind: a living moment, but he reads stiff and underlit in the sunset shade and his face reads as a pale mask at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-2006-osric-stile.jpg",
+  "time": "2026-10-21T20:06:00Z",
+  "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
   "verdict": "fail"
  }
 ]
