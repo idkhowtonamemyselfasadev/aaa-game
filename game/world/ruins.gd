@@ -627,7 +627,9 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 
 ## A cut stone of size d: a subdivided box rounded off by BEVEL, its arrises and corners
 ## chipped with noise, faces slightly dished/bulged.
-func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
+## bevel and rough default to the ruins' dressed stone; a field wall passes a bigger bevel
+## and rougher chips for rounder, more broken rubble.
+func _block_mesh(d: Vector3, v: int, bevel := BEVEL, rough := 1.0) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = seed + 50 + v
 	n.frequency = 4.0
@@ -639,8 +641,8 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 		for sgn in [-1.0, 1.0]:
 			var u_ax := (axis + 1) % 3
 			var v_ax := (axis + 2) % 3
-			var us := _ticks(h[u_ax])
-			var vs := _ticks(h[v_ax])
+			var us := _ticks(h[u_ax], bevel)
+			var vs := _ticks(h[v_ax], bevel)
 			var grid := []
 			var jg := {}   # shaped vertex -> joint colour of its unshaped grid point
 			for iu in us.size():
@@ -650,7 +652,7 @@ func _block_mesh(d: Vector3, v: int) -> ArrayMesh:
 					p[axis] = h[axis] * sgn
 					p[u_ax] = us[iu]
 					p[v_ax] = vs[iv]
-					var sp := _shape(p, h, n)
+					var sp := _shape(p, h, n, bevel, rough)
 					jg[sp] = _joint(p, h)
 					row.append(sp)
 				grid.append(row)
@@ -685,9 +687,8 @@ func _joint(q: Vector3, h: Vector3) -> Color:
 	var d := minf(h.x - absf(q.x), h.y - absf(q.y))
 	return Color(clampf(d / 0.15, 0.0, 1.0), 0, 0)
 
-func _ticks(hh: float) -> PackedFloat32Array:
+func _ticks(hh: float, r := BEVEL) -> PackedFloat32Array:
 	# bevel rows plus interior rows every ~11 cm, so the chips along an arris are resolved
-	var r := BEVEL
 	var inner := hh - r
 	var t := PackedFloat32Array([-hh, -hh + r * 0.4])
 	var m := maxi(2, int(ceil(inner * 2.0 / 0.11)))
@@ -696,8 +697,8 @@ func _ticks(hh: float) -> PackedFloat32Array:
 	t.append_array(PackedFloat32Array([hh - r * 0.4, hh]))
 	return t
 
-func _shape(p: Vector3, h: Vector3, n: FastNoiseLite) -> Vector3:
-	var inner := h - Vector3.ONE * BEVEL
+func _shape(p: Vector3, h: Vector3, n: FastNoiseLite, bevel := BEVEL, rough := 1.0) -> Vector3:
+	var inner := h - Vector3.ONE * bevel
 	var q := p.clamp(-inner, inner)
 	var dd := p - q
 	var nrm: Vector3
@@ -707,14 +708,14 @@ func _shape(p: Vector3, h: Vector3, n: FastNoiseLite) -> Vector3:
 		# on an arris or corner: two or three axes out of the inner box
 		var outs := int(absf(dd.x) > 0.001) + int(absf(dd.y) > 0.001) + int(absf(dd.z) > 0.001)
 		edge = 0.0 if outs < 2 else 1.0
-		p = q + nrm * BEVEL
+		p = q + nrm * bevel
 	else:
 		nrm = p.normalized()
 	# chips: ragged bites out of the arrises, a gentle bulge/dish over the faces
 	var k := n.get_noise_3dv(p)
 	# (low-frequency term: faces are hand-dressed, not machined flat)
-	var bite := maxf(0.0, k + 0.1) * (0.1 * edge + 0.015) + maxf(0.0, n.get_noise_3dv(p * 0.6 + Vector3(4, 1, 8)) - 0.15) * 0.12 * edge + n.get_noise_3dv(p * 2.3 + Vector3(7, 3, 1)) * 0.012 \
-		+ n.get_noise_3dv(p * 0.35 + Vector3(2, 9, 4)) * 0.03
+	var bite := maxf(0.0, k + 0.1) * (0.1 * edge + 0.015) * rough + maxf(0.0, n.get_noise_3dv(p * 0.6 + Vector3(4, 1, 8)) - 0.15) * 0.12 * edge * rough \
+		+ n.get_noise_3dv(p * 2.3 + Vector3(7, 3, 1)) * 0.012 * rough + n.get_noise_3dv(p * 0.35 + Vector3(2, 9, 4)) * 0.03 * rough
 	return p - nrm * bite
 
 func _multimesh(mesh: Mesh, items: Array, nm: String) -> void:

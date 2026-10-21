@@ -9,8 +9,8 @@ extends Node3D
 ##  - a dark hearting of small packing between the faces, seen only in the gaps;
 ##  - a cope of stones set on edge along the top, leaning a little downhill;
 ##  - curtain-wall weathering (the masonry shader's `aged`): grey crust, lichen, moss tops.
-## Stones are Ruins' chipped block meshes built at twice size and scaled down, so their bevel
-## and chips are half as round as the cottage's. Box colliders per 1.5 m piece; grass,
+## Stones are Ruins' chipped block meshes built at twice size with a bigger bevel and rougher
+## chips, then scaled down: rounded, broken field rubble rather than dressed blocks. Box colliders per 1.5 m piece; grass,
 ## flowers and the herd keep off its footing (`near`).
 
 @export var ruins_path: NodePath
@@ -101,10 +101,11 @@ func _ready() -> void:
 	add_child(_body)
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
-		# twice the laid size: scaled by ~0.5 when placed, so the 6 cm bevel becomes ~3 cm
+		# twice the laid size, scaled by ~0.5 when placed: field rubble, not dressed stone, so a
+		# 10-13 cm bevel (5-6.5 cm laid) and chips 1.6-2x the ruins' bite off its arrises
 		var d := Vector3(lerpf(0.5, 1.1, (v + _rng.randf()) / VARIANTS), _rng.randf_range(0.28, 0.42), 0.6)
 		_dims.append(d)
-		meshes.append(_ruins._block_mesh(d, 60 + v))
+		meshes.append(_ruins._block_mesh(d, 60 + v, minf(_rng.randf_range(0.1, 0.13), d.y * 0.5 - 0.02), _rng.randf_range(1.6, 2.0)))
 		_per.append([])
 	var segs := segments()
 	for i in segs.size():

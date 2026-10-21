@@ -126,10 +126,10 @@ void fragment() {
 	float skin = smoothstep(0.3, 0.6, fbm(wp * 1.7 + tint * 5.0 + 17.0));
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.66, 0.66, 0.63), aged * mix(0.45, 0.8, skin));
 	// field stone: a cool grey gritstone, darker, the beds only faintly showing
-	// (each stone its own value, 0.6-1.1: a field wall's stones came off different fells, and
+	// (each stone its own value, 0.5-0.98: a field wall's stones came off different fells, and
 	// an even grey face reads as pale tiles on the dark joint grid)
 	float fv = fract(tint * 53.1);
-	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.6 + 0.5 * fv * fv * (3.0 - 2.0 * fv)), field * 0.8);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.8, 0.81, 0.8) * (0.5 + 0.48 * fv * fv * (3.0 - 2.0 * fv)), field * 0.8);
 	// and a dark grey-black crust (old lichen, soot of the weather) over broad patches of its face
 	float fcr = smoothstep(0.45, 0.72, fbm(wp * 2.8 + tint * 11.0 + 61.0));
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.52, 0.53, 0.5), field * fcr * 0.7);

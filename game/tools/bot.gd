@@ -3102,6 +3102,18 @@ func _stonehouse_test(c: StoneCottage = null) -> void:
 		print("BOT whitehouse: lamp %.2f while she sits out at 19:54, %.2f once she is in" % [out_lit, c.lit])
 		if out_lit > 0.05:
 			return _combat_done(false, "the lamp burns with nobody in")
+	elif not c is WhiteCottage and _world.get("neighbour") != null:
+		# Osric's lamp: dark while he sees the hens up at 19:30, lit once he is in at 21:00
+		var nb: Node = _world.get("neighbour")
+		nb.settle(_world, 19.5)
+		await _ticks(200)
+		var out_lit := c.lit
+		_world.time_of_day = 21.2
+		nb.settle(_world, 21.2)
+		await _ticks(200)
+		print("BOT stonehouse: lamp %.2f while Osric is out at 19:30, %.2f once he is in" % [out_lit, c.lit])
+		if out_lit > 0.05:
+			return _combat_done(false, "the lamp burns with nobody in")
 	print("BOT stonehouse: window light noon %.2f, 19:30 %.2f, smoke %s" % [noon, c.lit, c.smoke.emitting])
 	if noon > 0.01 or c.lit < 0.9 or not c.smoke.emitting:
 		return _combat_done(false, "windows not lit at dusk or no chimney smoke")
