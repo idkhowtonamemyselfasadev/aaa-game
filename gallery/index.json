@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-0215-kindle-side.jpg",
-  "time": "2026-10-17T02:15:44Z",
-  "caption": "Hesper kneeling at the ring as the fire she just struck catches, basket now set down: the flames light the ivied keep wall well, but a fan of dark rubble slabs fills the lower half and she is still a dark shape beside the fire.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-0349-hearth-kindle.jpg",
   "time": "2026-10-17T03:49:49Z",
   "caption": "Hesper knelt at the tinder at dusk: the fire and its new ember glow light her robe and the ivied wall warmly and the ash ring is swept clear, but big floor slabs at the lens foot still fill the lower half and the flame core blows out to white.",
@@ -891,6 +885,12 @@
   "file": "20261021-1630-stile-askew.jpg",
   "time": "2026-10-21T16:30:00Z",
   "caption": "The garth wall's stones now split askew with leaning head joints, thin slates and a few knocked cope stones, and the cope moss is broken into cushions; the cope still reads as a row of similar upright slabs and the near face stones are still too boxy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-1754-stile-cope.jpg",
+  "time": "2026-10-21T17:54:38Z",
+  "caption": "Garth wall squeeze stile at 10:00: the cope now rises and falls in runs with leaning stones and blocky capstones instead of a row of like slabs; the near face stones on the right still read as pale boxy blocks with sharp arrises.",
   "verdict": "fail"
  }
 ]
