@@ -892,5 +892,11 @@
   "time": "2026-10-21T03:50:00Z",
   "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261021-0444-road.jpg",
+  "time": "2026-10-21T04:44:21Z",
+  "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
+  "verdict": "pass"
  }
 ]
