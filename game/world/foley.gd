@@ -54,6 +54,7 @@ func _ready() -> void:
 	_s["fox_bark"] = [_make_fox_bark(1.0, 3), _make_fox_bark(1.06, 4), _make_fox_bark(0.95, 3)]
 	_s["fox_yelp"] = [_make_fox_bark(1.1, 1), _make_fox_bark(1.0, 1)]
 	_s["dog_bark"] = [_make_dog_bark(1.0), _make_dog_bark(0.93), _make_dog_bark(1.07)]
+	_s["dog_woof"] = [_make_dog_woof(1.0), _make_dog_woof(0.95)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
 	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
 	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
@@ -149,6 +150,8 @@ func hook_dog(d: Node) -> void:
 		return
 	d.barked.connect(func(at: Vector3, alarm: bool) -> void:
 		_play_wild("dog_bark", at, 0.0 if alarm else -3.0, 14.0, true))
+	if d.has_signal("woofed"):
+		d.woofed.connect(func(at: Vector3) -> void: _play_wild("dog_woof", at, -1.0, 14.0, true))
 
 ## The hens in the garth: soft clucks as they work the yard, a squawk when one is put to flight.
 func hook_hens(h: Node) -> void:
@@ -375,6 +378,23 @@ func _make_dog_bark(pt: float) -> AudioStreamWAV:
 	for i in y.size():
 		if i < out.size():
 			out[i] = y[i]
+	return _wav(out)
+
+## Its gruff warning at a stranger: "wuff-wuff", two low, short, closed-mouthed barks with
+## more growl in them than its glad bark -- a lower, flatter pitch, a dark tract, rough voicing.
+func _make_dog_woof(pt: float) -> AudioStreamWAV:
+	var out := PackedFloat32Array()
+	out.resize(int(0.75 * RATE))
+	for c in 2:
+		var q := pt * (1.0 if c == 0 else 0.94)
+		var y := _voice(0.17 if c == 0 else 0.15,
+			func(k: float) -> float: return q * (215.0 + 120.0 * sin(PI * pow(k, 0.5)) - 70.0 * k),
+			func(k: float) -> float: return smoothstep(0.0, 0.05, k) * exp(-maxf(k - 0.15, 0.0) * 6.5),
+			[[430.0 * q, 3.0, 1.0], [900.0 * q, 4.0, 0.55], [1900.0 * q, 5.5, 0.15]], 0.55, 0.65)
+		var at := int((c * 0.27 + _rng.randf_range(0.0, 0.03)) * RATE)
+		for i in y.size():
+			if at + i < out.size():
+				out[at + i] += y[i] * (1.0 if c == 0 else 0.85)
 	return _wav(out)
 
 ## A hen's cluck to herself: `count` short, low, throaty "buk"s close together, each a

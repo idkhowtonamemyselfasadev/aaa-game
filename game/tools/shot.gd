@@ -958,6 +958,24 @@ func _ready() -> void:
 			var cp2 := Vector3(c2.x, terrain.height_at(c2.x, c2.y) + 1.35, c2.y)
 			var gr: Vector2 = YardGround.ROAD[4][0]
 			SPOTS[spot] = [cp2, Vector3(gr.x, terrain.height_at(gr.x, gr.y) + 1.6, gr.y)]
+		if "woof" in args:
+			# Brack stood off 5 m from him on the green, seeing him off: the lens low behind
+			# the dog's shoulder, the dog large in the foreground and Wat beyond it
+			var dg: Dog = world.dog
+			var away := (dg.home - at)
+			away.y = 0.0
+			away = away.normalized()
+			var dp := at + away * 5.0
+			dp = Vector3(dp.x, terrain.height_at(dp.x, dp.z), dp.z)
+			dg.global_position = dp
+			dg.yaw = atan2(away.x, away.z)
+			dg._warned = pd.journeys
+			dg._warn_from = dp
+			dg._start(Dog.WARN, 0.0)
+			var sd := away.cross(Vector3.UP)
+			var cpw := dp + away * 2.2 + sd * 1.1
+			cpw.y = terrain.height_at(cpw.x, cpw.z) + 0.75
+			SPOTS[spot] = [cpw, at + Vector3.UP * 0.8]
 	if spot == "osric":
 		# Osric at his spot for the hour, three-quarter from the front at 3.4 m; leaning on the
 		# garth's back wall the lens stands out in the field beyond it, looking back at him

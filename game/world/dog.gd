@@ -12,11 +12,16 @@ extends Node3D
 ## flat under it (a point on Trample's herd trail), so it is not lost in the meadow.
 ## Lying at night it dozes, its chin sinking onto its paws, and lifts its head when the hero
 ## comes within 11 m; about a third of its daytime rests are taken lying down, head up.
-## Bots read `state`, `sit`, `lie`, `doze`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`.
+## When Wat the pedlar comes by on the road it gives him a gruff "wuff-wuff", stiff-tailed,
+## and trots a few steps out after him, then stands watching him off down the road before it
+## goes back to its pottering (from its place at the door in rain, it only woofs and watches).
+## Bots read `state`, `sit`, `lie`, `doze`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`,
+## `woofs`, `warns`.
 
 signal barked(at: Vector3, alarm: bool)   # a greeting bark, or a guard bark at night
+signal woofed(at: Vector3)                # its gruff two-bark at a stranger on the road
 
-enum { POTTER, SNIFF, REST, GREET, HEEL, BED }
+enum { POTTER, SNIFF, REST, GREET, HEEL, BED, WARN }
 
 const SCALE := 1.3          # on the fox rig: ~0.5 m at the shoulder
 const WALK := 1.1           # m/s pottering
@@ -27,6 +32,9 @@ const RANGE := 26.0         # never strays further than this from its door
 const AGAIN := 90.0         # s the hero must be away before it greets him again
 const ON_TRACK := 0.7       # share of its potter spots picked on a trodden track
 const PRESS := 0.2          # trail point age it holds under itself (full lay in the shader)
+const WARN_R := 15.0        # it takes notice of the pedlar this far off
+const FOLLOW := 6.0         # trots at most this far out after him
+const SEE_OFF := 20.0       # watches him till he is this far off, then goes back to pottering
 
 var world: Node3D
 var terrain: Terrain
@@ -59,6 +67,11 @@ var _rng := RandomNumberGenerator.new()
 var _mi: MeshInstance3D
 var _trample: Trample
 var pressed := 0             # trail points it has laid (bots)
+var woofs := 0               # gruff woofs at the pedlar (bots)
+var warns := 0               # times it has seen the pedlar off (bots)
+var _warned := -1            # the pedlar's walk (journeys count) it has already seen off
+var _warn_from := Vector3.ZERO
+var _woof_t := 0.0
 var _press_at := Vector3.INF
 
 func setup(w: Node3D) -> void:
@@ -175,6 +188,27 @@ func _process(delta: float) -> void:
 				_steer_to(hp - to_hero.normalized() * HEEL_R, dt)
 			else:
 				want_sit = 1.0 if near < HEEL_R + 0.6 and speed < 0.2 else 0.0
+		WARN:
+			# stiff-legged after the stranger a few steps, then stood watching him go
+			var pd := _pedlar()
+			if pd != null and pd.on_road and pd.visible:
+				var pp := pd.global_position
+				look = pp
+				var gone := Vector2(pp.x - global_position.x, pp.z - global_position.z).length()
+				var out := Vector2(global_position.x - _warn_from.x, global_position.z - _warn_from.z).length()
+				if gone > 5.0 and out < FOLLOW and _t > 0.0:
+					top = TROT * 0.8
+					_steer_to(pp - (pp - global_position).normalized() * 4.5, dt)
+				else:
+					_t = 0.0
+					want_sit = 1.0 if gone > 9.0 else 0.0
+					yaw += clampf(wrapf(atan2(-(pp.x - global_position.x), -(pp.z - global_position.z)) - yaw, -PI, PI), -3.0 * dt, 3.0 * dt)
+				if gone > SEE_OFF:
+					_pick_goal()
+					_start(POTTER, 0.0)
+			else:
+				_pick_goal()
+				_start(POTTER, 0.0)
 		BED:
 			want_sit = 1.0
 			# at night it lies down in its place, up on its haunches again to bark or watch him
@@ -190,6 +224,10 @@ func _process(delta: float) -> void:
 				yaw += clampf(wrapf(bed_yaw - yaw, -PI, PI), -3.0 * dt, 3.0 * dt)
 			if near < 10.0:
 				look = hp
+			else:
+				var pw := _pedlar()
+				if pw != null and pw.on_road and pw.visible and global_position.distance_to(pw.global_position) < SEE_OFF:
+					look = pw.global_position
 	# what takes it from one thing to the next
 	if noticed:
 		_away_t = 0.0
@@ -215,6 +253,20 @@ func _process(delta: float) -> void:
 	elif state in [GREET, HEEL] and (hero_home > RANGE or near > NOTICE_R + 6.0):
 		_pick_goal()
 		_start(POTTER, 0.0)
+	elif state in [POTTER, SNIFF, REST] and _pedlar_by():
+		_warned = _pedlar().journeys
+		warns += 1
+		_warn_from = global_position
+		_start(WARN, 9.0)
+		_woof_t = 0.35
+	if shelter and state == BED and _pedlar_by():
+		_warned = _pedlar().journeys
+		_woof_t = 0.5
+	if _woof_t > 0.0:
+		_woof_t -= dt
+		if _woof_t <= 0.0:
+			woofs += 1
+			woofed.emit(global_position + Vector3.UP * 0.5)
 	_greet_gap = (_greet_gap + dt) if state not in [GREET, HEEL] else 0.0
 	# its voice
 	if _bark_n > 0:
@@ -235,7 +287,7 @@ func _process(delta: float) -> void:
 	doze = move_toward(doze, want_doze * lie, dt / (2.5 if want_doze * lie > doze else 0.4))
 	if state != SNIFF:
 		graze = move_toward(graze, 0.0, dt / 0.5)
-	wag = move_toward(wag, wag_goal * (1.0 if near < 8.0 else 0.4), dt / 0.4)
+	wag = move_toward(wag, wag_goal * (1.0 if near < 8.0 else 0.4), dt / (0.15 if state == WARN else 0.4))
 	var hg := 0.0
 	if look != Vector3.INF:
 		var tl := look - global_position
@@ -256,6 +308,16 @@ func _process(delta: float) -> void:
 	_mi.set_instance_shader_parameter("doze", doze)
 
 var _greet_gap := AGAIN   # s since it last left the hero's side
+
+func _pedlar() -> Pedlar:
+	return world.get("pedlar") as Pedlar
+
+## Wat on the road within notice, and not yet seen off on this walk of his.
+func _pedlar_by() -> bool:
+	var pd := _pedlar()
+	if pd == null or not pd.on_road or not pd.visible or pd.journeys == _warned:
+		return false
+	return global_position.distance_to(pd.global_position) < WARN_R
 
 func _last_greet_ok() -> bool:
 	return _greet_gap >= AGAIN or greets == 0
@@ -312,7 +374,7 @@ func _steer_to(to: Vector3, dt: float) -> bool:
 	if d < 0.3:
 		_stuck_t = 0.0
 		return true
-	var top := TROT if state in [GREET, HEEL, BED] else WALK
+	var top := TROT if state in [GREET, HEEL, BED, WARN] else WALK
 	if state == HEEL:
 		top = TROT if d > 3.0 else WALK
 	var want := minf(top, maxf(d * 1.2, 0.3))
