@@ -41,3 +41,9 @@ if command -v xvfb-run >/dev/null 2>&1; then
 else
   echo "SHOTS_UNAVAILABLE" > "$TOOLS/status"; echo "== no xvfb: screenshots skipped this session"
 fi
+# headless import: registers class_names (bots fail with "Identifier not declared" without
+# it) and imports textures before the first shot. Skipped when .godot/ already has a cache.
+if [ ! -f "$ROOT/game/.godot/global_script_class_cache.cfg" ]; then
+  echo "== importing project (first run, a few minutes)"
+  timeout 1500 "$TOOLS/godot" --headless --path "$ROOT/game" --import >/dev/null 2>&1 || echo "!! import returned non-zero"
+fi

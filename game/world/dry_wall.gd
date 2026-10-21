@@ -195,20 +195,66 @@ func _lay(a: Vector2, b: Vector2, stoop_b: bool, stoop_a: bool) -> void:
 		_place(c, bas, Vector3(w, _rng.randf_range(0.1, 0.14), _rng.randf_range(0.22, 0.32)), yy)
 		through_count += 1
 		t += _rng.randf_range(0.8, 1.05)
-	# the cope: stones on edge across the top, leaning a little downhill
+	# the cope: stones on edge across the top, leaning a little downhill. Not a row of like
+	# slabs: heights wander in runs (the waller used what the field gave), a pair now and
+	# then leans together into an A, the odd flat capstone lies on its bed, and here and
+	# there one has gone, leaving a gap
 	var lean := clampf((_ground(b) - _ground(a)) / ln * 2.0, -0.15, 0.15)
 	var s2 := 0.06
+	var run_h := _rng.randf_range(0.2, 0.32)
+	var pair := 0   # 1: this stone leans on the next; 2: this one is the next
+	var pair_tip := 0.0
 	while s2 < ln - 0.05:
-		var th := _rng.randf_range(0.07, 0.15)
+		if _rng.randf() < 0.3:
+			run_h = clampf(run_h + _rng.randf_range(-0.09, 0.09), 0.15, 0.36)
+		if pair == 0 and _rng.randf() < 0.035 and s2 > 0.3 and s2 < ln - 0.4:
+			s2 += _rng.randf_range(0.1, 0.24)
+			continue
+		if pair == 0 and _rng.randf() < 0.06 and s2 < ln - 0.5:
+			# a flat capstone on its bed, wider than the wall top
+			var fl := _rng.randf_range(0.28, 0.46)
+			var fh := _rng.randf_range(0.07, 0.11)
+			var fp := a + d2 * (s2 + fl * 0.5)
+			var fc := Vector3(fp.x - global_position.x, _ground(fp) + BODY_H + fh * 0.5 - 0.015, fp.y - global_position.z)
+			var fb := Basis(nrm, Vector3.UP, -dir) * Basis.from_euler(Vector3(lean * 0.5 + _rng.randf_range(-0.05, 0.05), _rng.randf_range(-0.2, 0.2), _rng.randf_range(-0.06, 0.06)))
+			_place(fc, fb, Vector3(TOP_W + _rng.randf_range(0.04, 0.12), fh, fl), BODY_H + fh * 0.5)
+			cope_count += 1
+			s2 += fl + _rng.randf_range(0.0, 0.03)
+			continue
+		var th := _rng.randf_range(0.06, 0.16)
+		var ch := clampf(run_h * _rng.randf_range(0.7, 1.25), 0.14, 0.4)
+		var tip := 0.0
+		if pair == 0 and _rng.randf() < 0.08:
+			# rotating about the wall's normal by +x tips the top toward a (back along the run),
+			# so the first of the pair tips -x (toward the next) and the second +x
+			pair = 1
+			pair_tip = _rng.randf_range(0.22, 0.34)
+			tip = -pair_tip
+		elif pair == 1:
+			pair = 2
+			tip = pair_tip * _rng.randf_range(0.85, 1.1)
+			ch = clampf(ch, 0.2, 0.36)
+		else:
+			pair = 0
+			# the odd cope stone knocked over further by sheep or frost
+			if _rng.randf() < 0.15:
+				tip = _rng.randf_range(0.14, 0.26) * signf(_rng.randf() - 0.5)
+		if pair == 2:
+			pair = 0
+			pair_tip = -1.0   # marks: next stone keeps its distance from the A's foot
 		var p := a + d2 * (s2 + th * 0.5)
-		var ch := _rng.randf_range(0.2, 0.36)
-		var c := Vector3(p.x - global_position.x, _ground(p) + BODY_H + ch * 0.5 - 0.03, p.y - global_position.z)
-		# the odd cope stone knocked over further by sheep or frost
-		var tip := _rng.randf_range(0.14, 0.26) * signf(_rng.randf() - 0.5) if _rng.randf() < 0.15 else 0.0
-		var bas := Basis(nrm, Vector3.UP, -dir) * Basis.from_euler(Vector3(lean + tip + _rng.randf_range(-0.1, 0.1), _rng.randf_range(-0.14, 0.14), _rng.randf_range(-0.07, 0.07)))
-		_place(c, bas, Vector3(TOP_W + _rng.randf_range(-0.02, 0.06), ch, th), BODY_H + ch * 0.5)
+		var c := Vector3(p.x - global_position.x, _ground(p) + BODY_H + ch * 0.5 * cos(tip) - 0.03, p.y - global_position.z)
+		var bas := Basis(nrm, Vector3.UP, -dir) * Basis.from_euler(Vector3(lean + tip + _rng.randf_range(-0.08, 0.08), _rng.randf_range(-0.14, 0.14), _rng.randf_range(-0.07, 0.07)))
+		_place(c, bas, Vector3(TOP_W + _rng.randf_range(-0.04, 0.06), ch, th), BODY_H + ch * 0.5)
 		cope_count += 1
-		s2 += th + _rng.randf_range(0.0, 0.025)
+		# leaning stones need their footprint: the A's feet stand apart by the lean
+		var gap := _rng.randf_range(0.0, 0.025)
+		if pair == 1:
+			gap = sin(pair_tip) * ch * 0.9
+		elif pair_tip < 0.0:
+			gap = _rng.randf_range(0.02, 0.06)
+			pair_tip = 0.0
+		s2 += th + gap
 	if stoop_b:
 		_stoop(b, d2)
 	if stoop_a:
