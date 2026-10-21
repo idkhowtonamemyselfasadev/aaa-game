@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-0522-kindle-across.jpg",
-  "time": "2026-10-17T05:22:24Z",
-  "caption": "Hesper's young fire seen across the ring from beside the inner face: orange flames over charred logs, the ivied wall glowing warm, fireflies drifting -- but Hesper is hidden behind the flame and the ring stones read as pale puffy lumps.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-0632-kindle.jpg",
   "time": "2026-10-17T06:32:37Z",
   "caption": "Hesper's fire from the new low lens beside the ring: flatter, darker ring stones and the ivied inner face lit warm, but the lens sits too low and close, the stones still flare cream in the near firelight and Hesper is a dark hooded lump behind the logs.",
@@ -897,6 +891,12 @@
   "file": "20261021-2006-osric-stile.jpg",
   "time": "2026-10-21T20:06:00Z",
   "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-2045-osric-fell-stance.jpg",
+  "time": "2026-10-21T20:45:00Z",
+  "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
   "verdict": "fail"
  }
 ]

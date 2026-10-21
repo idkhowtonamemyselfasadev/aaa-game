@@ -44,8 +44,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (0.27/0.195/0.16), his `beard_col` grizzled dark grey 0.20/0.19/0.175 (was the 0.36 default),
   `fill_gain` 1.9 -> 1.3. Bot `neighbour` gains an "on the fell" check (gaze >= 0.95 and a
   hand to the brim within 3000 frames): PASS (first run tripped the pre-existing hen
-  closeness flake, 0.26 m < 0.3; rerun 0.48 m PASS). Shot `osric osricfell2 90 17.1`: see the
-  next entry/gallery if it landed; if not, render it FIRST next session.
+  closeness flake, 0.26 m < 0.3; rerun 0.48 m PASS). Shot `osric osricfell2 90 17.1`
+  (Forward+, ~33 min, looked at, cropped): ruddy skin now shows under the brim instead of a
+  white mask, but a pale grey vertical strip still runs from his jaw down his chest (the
+  beard seen side-on against the smock's open front, or the smock itself) and the hand at the
+  brim is not visible (he faces left of the lens; the right arm is on the far side, or the
+  shade window had passed). Verdict fail. Gallery: 20261021-2045-osric-fell-stance.jpg.
 - (19:00 10-21) **Osric uses the squeeze stile.** `Neighbour`: a new `fell` activity at
   16:45-17:30 (tend now ends 16:45). `STILE_WAY` (5 points through the slot at about
   (-1.2, -10.5) cottage-local, on `YardGround.PATHS_LOCAL[2]`) and a `FELL` stand spot at
@@ -4243,9 +4247,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 00000000000000000000000000000000000000000000000000. (20:00 10-21) Osric fell stance + face DONE. FIRST:
-   look at `osric osricfell2 90 17.1` (hand to the brim: check the arm angle reads as shading
-   the eyes, not a salute or clipping the brim; tune flick_arm/flick_elbow) and
-   `osric osricface 90 17.1 face` for the new skin/beard; then the pedlar's face (known bugs
+   the pale grey strip under Osric's jaw in `osricfell2` (render `osric osricface 90 17.1 face`
+   to see whether it is the beard or the smock front; darken whichever it is); verify the hand
+   to the brim with a lens from his right front (print `nb._gt`/`crumple.flick` at capture in
+   shot.gd; tune flick_arm 2.05/flick_elbow 1.8 so it reads as shading the eyes); then the pedlar's face (known bugs
    03:30), the stile slabs' plain narrow faces, the `woof` lens's right-edge grey slab, rut
    cobbles near the green; make the neighbour bot's hen-closeness check robust (flaky 0.26 m).
 0000000000000000000000000000000000000000000000000. (19:00 10-21) Osric through the stile DONE. FIRST:
