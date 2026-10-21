@@ -44,7 +44,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   smaller one rolled against them. `RutStones.under(x, z, margin)`: grass (_site and the
   sward under-layer) and both flower scatters keep out of them. Bot `rutstones`: 158 cobbles
   (0 off the rut bed, 0 floating/buried), 7 verge stones (0 in the wheel track), 0 clumps or
-  flowers growing through them: PASS; `verge` still PASS.
+  flowers growing through them: PASS; `verge` still PASS. Shot `pedlar rutstones 90 9.6 road`
+  (Forward+, ~45 min, looked at): a verge stone reads well half in the sward on each side;
+  the rut cobbles show as small dark pebbles in the right rut but are sparse and dark in
+  frame (follow-up: denser patches near the green, paler scoured tops). Gallery:
+  20261021-1041-rut-stones.jpg (pass). (python3 PIL is broken on the box; use `convert`.)
 - (09:00 10-21) **Cropped verge sward.** `YardGround.verge(x, z)` 0..1: a band ~0.9..2.6 m out
   from `ROAD`'s centre line plus the crown strip (< ~0.5 m), faded with the road's wear. Grass
   uses it: tall clumps on the verge dropped with chance 0.7*v, scaled x0.55 lower, no seeding

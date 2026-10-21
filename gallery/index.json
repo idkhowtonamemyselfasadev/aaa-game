@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-1700-fernback.jpg",
-  "time": "2026-10-16T17:20:00Z",
-  "caption": "Hesper picking at the gather oak with the fern on the left now a deeper green with its own weaker backlight; the fern still glows against the sun, the pick camera tilts down with straw blades in the lens, and her crouched body is still a jumble of panels.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-1827-fern.jpg",
   "time": "2026-10-16T18:27:28Z",
   "caption": "Hesper picking under an oak at 11:00: the fern against the sun no longer glows lime, but the low lens reads tilted on the slope and her crouched body is still a jumble of panels.",
@@ -891,6 +885,12 @@
   "file": "20261021-0953-verge-cropped.jpg",
   "time": "2026-10-21T09:53:00Z",
   "caption": "Wat walks the cart track toward the village; the verges either side of the ruts are now cropped to a short green turf so the daisies and buttercups stand over it as a clear ribbon against the ripe meadow; near-lens grass blades still read as flat ribbons and the yarrow/knapweed are sparse in frame.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261021-1041-rut-stones.jpg",
+  "time": "2026-10-21T10:41:00Z",
+  "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
   "verdict": "pass"
  }
 ]
