@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -138,6 +138,9 @@ func _ready() -> void:
 		return
 	if name == "yardpath":
 		_yardpath_test()
+		return
+	if name == "rutstones":
+		_rutstones_test()
 		return
 	if name == "verge":
 		_verge_test()
@@ -3614,6 +3617,65 @@ func _verge_test() -> void:
 	if tall[1][0] < 50 or tall[0][0] > tall[1][0] * 0.6 or hv > hm * 0.75 or tall[0][2] > 0:
 		return _combat_done(false, "the verge sward is not cropped shorter than the meadow")
 	_combat_done(true, "the cart track runs between flowered verges")
+
+func _rutstones_test() -> void:
+	var terrain: Terrain = _world.get_node("Terrain")
+	var rs: RutStones = _world.get_node("RutStones")
+	var grass: GrassField = _world.get_node("Grass")
+	await _ticks(10)
+	var ruts := YardGround.road_ruts()
+	var road: Array = YardGround.ROAD
+	# cobbles: in the rut beds, sitting on the ground, none floating or buried
+	var off_rut := 0
+	var bad_y := 0
+	for c: Vector3 in rs.cobbles:
+		var h := Vector2(c.x, c.z)
+		var dr := INF
+		for r in ruts:
+			var w: PackedVector2Array = r[0]
+			for i in w.size() - 1:
+				dr = minf(dr, h.distance_to(Geometry2D.get_closest_point_to_segment(h, w[i], w[i + 1])))
+		if dr > 0.2:
+			off_rut += 1
+		var g := terrain.height_at(c.x, c.z)
+		if c.y < g + 0.004 or c.y > g + 0.07:
+			bad_y += 1
+	# verge stones: out past the ruts, in the verge band, none in the wheel track
+	var in_track := 0
+	for b: Vector3 in rs.boulders:
+		var h := Vector2(b.x, b.z)
+		var d := INF
+		for i in road.size() - 1:
+			d = minf(d, h.distance_to(Geometry2D.get_closest_point_to_segment(h, road[i][0], road[i + 1][0])))
+		if d < 0.95:
+			in_track += 1
+	print("BOT rutstones: %d cobbles in the ruts (%d off the rut bed, %d not sitting on the ground), %d verge stones (%d in the wheel track)" % [rs.cobble_count, off_rut, bad_y, rs.boulder_count, in_track])
+	if rs.cobble_count < 80 or off_rut > 0 or bad_y > 0:
+		return _combat_done(false, "the rut cobbles are missing or misplaced")
+	if rs.boulder_count < 4 or in_track > 0:
+		return _combat_done(false, "the verge stones are missing or lie in the track")
+	# no grass blade or flower growing up through a verge stone
+	var ks := {}
+	for b: Vector3 in rs.boulders:
+		ks[Vector2i(floori(b.x / grass.chunk_m), floori(b.z / grass.chunk_m))] = true
+	var through := 0
+	grass.record_clumps = []
+	for k: Vector2i in ks:
+		grass._build_chunk(k).free()
+		var fl := MeadowFlowers.build_chunk(k, grass.chunk_m, terrain, 0.0, grass._ruin, grass._find_ruin())
+		(fl[0] as Node).free()
+		for hp: Vector3 in (fl[1] as PackedVector3Array):
+			if RutStones.under(hp.x, hp.z, -0.04):
+				through += 1
+	for c: Array in grass.record_clumps:
+		var xf: Transform3D = c[1]
+		if RutStones.under(xf.origin.x, xf.origin.z, -0.04):
+			through += 1
+	grass.record_clumps = null
+	print("BOT rutstones: %d chunks checked, %d clumps/flowers growing through a verge stone" % [ks.size(), through])
+	if through > 0:
+		return _combat_done(false, "grass grows through the verge stones")
+	_combat_done(true, "the cart track's ruts are stony and its verges strewn with field stones")
 
 func _yardpath_test() -> void:
 	var p := _player

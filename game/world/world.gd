@@ -30,6 +30,7 @@ var white_cottage: WhiteCottage
 var dry_wall: DryWall
 var yard_wall: YardWall
 var door_stones: DoorStones
+var rut_stones: RutStones
 var lantern_post: LanternPost
 var keeper: Keeper
 var villager: Villager
@@ -143,6 +144,12 @@ func _ready() -> void:
 	door_stones.ruins_path = NodePath("../Ruins")
 	door_stones.terrain_path = NodePath("../Terrain")
 	add_child(door_stones)
+	# cobbles bared in the cart track's ruts, field stones levered out onto its verges
+	rut_stones = RutStones.new()
+	rut_stones.name = "RutStones"
+	rut_stones.ruins_path = NodePath("../Ruins")
+	rut_stones.terrain_path = NodePath("../Terrain")
+	add_child(rut_stones)
 	# an oak lantern post where the tracks meet on the green, lit from dusk to first light
 	lantern_post = LanternPost.new()
 	lantern_post.name = "LanternPost"
