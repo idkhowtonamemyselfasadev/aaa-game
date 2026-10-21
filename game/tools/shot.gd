@@ -943,6 +943,21 @@ func _ready() -> void:
 		var cp := at + lens * 3.6
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
 		SPOTS[spot] = [cp, at + Vector3.UP * 1.15]
+		if "road" in args:
+			# out on the cart track in the meadow, walking in toward the village: the lens low
+			# behind him on the verge, both ruts running away past him to the green
+			var ra: Vector2 = YardGround.ROAD[1][0]
+			var rb: Vector2 = YardGround.ROAD[2][0]
+			var wp := ra.lerp(rb, 0.45)
+			pd._place(Vector3(wp.x, terrain.height_at(wp.x, wp.y), wp.y))
+			pd._stand_t = 999.0
+			var dir := (rb - ra).normalized()
+			pd.goal_yaw = atan2(dir.x, dir.y)
+			pd.body.rotation.y = pd.goal_yaw
+			var c2 := ra - dir * 3.0 + dir.orthogonal() * 1.1
+			var cp2 := Vector3(c2.x, terrain.height_at(c2.x, c2.y) + 1.35, c2.y)
+			var gr: Vector2 = YardGround.ROAD[4][0]
+			SPOTS[spot] = [cp2, Vector3(gr.x, terrain.height_at(gr.x, gr.y) + 1.6, gr.y)]
 	if spot == "osric":
 		# Osric at his spot for the hour, three-quarter from the front at 3.4 m; leaning on the
 		# garth's back wall the lens stands out in the field beyond it, looking back at him

@@ -36,6 +36,20 @@ const TRACKS := [
 	 [Vector2(-3.1, 1.3), 0.5], [Vector2(-1.4, 0.9), 0.0]],
 ]
 
+## The old road over the vale that Wat Pennock walks (Pedlar.ROAD_IN, LEG_SC): a cart track in
+## from the south-east meadow, two wheel ruts with a strip of sward left standing between them,
+## worn deepest where it comes up onto the green; centre line in world xz [point, wear].
+const ROAD := [[Vector2(20.0, -27.0), 0.0], [Vector2(14.0, -20.0), 0.55], [Vector2(5.0, -11.0), 0.72],
+	[Vector2(-4.0, -2.0), 0.75], [Vector2(-6.6, 0.3), 0.6], [Vector2(-8.2, 1.3), 0.25]]
+const GAUGE := 1.35      # m between the rut centres
+## On from the green his road is only a footpath: round the stone cottage's east gable, along
+## the field side of the garth's back wall and away up the fell, fading out on the slope.
+const ROAD_PATHS := [
+	[[Vector2(-8.6, 1.4), 0.3], [Vector2(-17.0, 5.3), 0.5], [Vector2(-25.94, 9.53), 0.55],
+	 [Vector2(-34.04, 16.96), 0.55], [Vector2(-37.24, 25.32), 0.55], [Vector2(-33.82, 29.64), 0.5],
+	 [Vector2(-29.04, 40.18), 0.0]],
+]
+
 static var _paths_world: Array = []
 static var _wear_world: Array = []   # per point, parallel to _paths_world
 static var mask: ImageTexture        # as published (bots read these back)
@@ -64,7 +78,34 @@ static func _paths() -> Array:
 				e.append(q[1])
 			_paths_world.append(w)
 			_wear_world.append(e)
+		for t: Array in ROAD_PATHS:
+			var w := PackedVector2Array()
+			var e := PackedFloat32Array()
+			for q: Array in t:
+				w.append(q[0])
+				e.append(q[1])
+			_paths_world.append(w)
+			_wear_world.append(e)
+		for r in road_ruts():
+			_paths_world.append(r[0])
+			_wear_world.append(r[1])
 	return _paths_world
+
+## The cart track's two wheel ruts: [[points, wear], [points, wear]], offset half the gauge
+## either side of ROAD's centre line (mitred at the bends).
+static func road_ruts() -> Array:
+	var out := []
+	for side in [-1.0, 1.0]:
+		var w := PackedVector2Array()
+		var e := PackedFloat32Array()
+		for i in ROAD.size():
+			var a: Vector2 = ROAD[maxi(i - 1, 0)][0]
+			var c: Vector2 = ROAD[mini(i + 1, ROAD.size() - 1)][0]
+			var nrm := (c - a).normalized().orthogonal()
+			w.append(ROAD[i][0] + nrm * side * GAUGE * 0.5)
+			e.append(ROAD[i][1])
+		out.append([w, e])
+	return out
 
 ## (distance (m) to the nearest path centre line, that path's wear there 0..1) at world (x, z).
 static func path_wear(x: float, z: float) -> Vector2:
@@ -123,6 +164,35 @@ static func box() -> Vector3:
 	var c := (lo + hi) * 0.5
 	return Vector3(c.x - side * 0.5, c.y - side * 0.5, side)
 
+## A segment cut into pieces no longer than 3 m: [a, c, wear at a, wear at c] each, so a long
+## diagonal stretch of road only scans the texels near it, not its whole bounding square.
+static func _pieces(a: Vector2, c: Vector2, ea: float, ec: float) -> Array:
+	var k := maxi(int(ceil(a.distance_to(c) / 3.0)), 1)
+	var out := []
+	for i in k:
+		out.append([a.lerp(c, float(i) / k), a.lerp(c, float(i + 1) / k),
+			lerpf(ea, ec, float(i) / k), lerpf(ea, ec, float(i + 1) / k)])
+	return out
+
+## Writes one piece's distance and wear into the texels within 2 m of it.
+static func _bake_segment(piece: Array, b: Vector3, n: int, cell: float, dist: PackedFloat32Array, wear: PackedFloat32Array) -> void:
+	var a: Vector2 = piece[0]
+	var c: Vector2 = piece[1]
+	var sl := maxf(a.distance_to(c), 1e-4)
+	var i0 := maxi(int((minf(a.x, c.x) - 2.0 - b.x) / cell), 0)
+	var i1 := mini(int((maxf(a.x, c.x) + 2.0 - b.x) / cell) + 1, n)
+	var j0 := maxi(int((minf(a.y, c.y) - 2.0 - b.y) / cell), 0)
+	var j1 := mini(int((maxf(a.y, c.y) + 2.0 - b.y) / cell) + 1, n)
+	for j in range(j0, j1):
+		var z := b.y + (j + 0.5) * cell
+		for i in range(i0, i1):
+			var p := Vector2(b.x + (i + 0.5) * cell, z)
+			var q := Geometry2D.get_closest_point_to_segment(p, a, c)
+			var d := p.distance_to(q)
+			if d < dist[j * n + i]:
+				dist[j * n + i] = d
+				wear[j * n + i] = lerpf(piece[2], piece[3], a.distance_to(q) / sl)
+
 ## Bakes the mask and hands it to the shaders: r garth, g path distance, b that path's wear.
 ## Each segment only writes the texels within 2 m of it, and the garth only its own corner,
 ## so the bake stays cheap as the tracks reach across the green.
@@ -141,22 +211,8 @@ static func publish() -> void:
 		var w: PackedVector2Array = paths[k]
 		var e: PackedFloat32Array = _wear_world[k]
 		for s in w.size() - 1:
-			var a := w[s]
-			var c := w[s + 1]
-			var sl := maxf(a.distance_to(c), 1e-4)
-			var i0 := maxi(int((minf(a.x, c.x) - 2.0 - b.x) / cell), 0)
-			var i1 := mini(int((maxf(a.x, c.x) + 2.0 - b.x) / cell) + 1, n)
-			var j0 := maxi(int((minf(a.y, c.y) - 2.0 - b.y) / cell), 0)
-			var j1 := mini(int((maxf(a.y, c.y) + 2.0 - b.y) / cell) + 1, n)
-			for j in range(j0, j1):
-				var z := b.y + (j + 0.5) * cell
-				for i in range(i0, i1):
-					var p := Vector2(b.x + (i + 0.5) * cell, z)
-					var q := Geometry2D.get_closest_point_to_segment(p, a, c)
-					var d := p.distance_to(q)
-					if d < dist[j * n + i]:
-						dist[j * n + i] = d
-						wear[j * n + i] = lerpf(e[s], e[s + 1], a.distance_to(q) / sl)
+			for piece: Array in _pieces(w[s], w[s + 1], e[s], e[s + 1]):
+				_bake_segment(piece, b, n, cell, dist, wear)
 	var garth := PackedFloat32Array()
 	garth.resize(n * n)
 	var lo := Vector2(INF, INF)
@@ -172,11 +228,13 @@ static func publish() -> void:
 	for j in range(gj0, gj1):
 		for i in range(gi0, gi1):
 			garth[j * n + i] = clampf((garth_dist(b.x + (i + 0.5) * cell, b.y + (j + 0.5) * cell) + 1.0) / 3.0, 0.0, 1.0)
-	var img := Image.create(n, n, false, Image.FORMAT_RGB8)
-	for j in n:
-		for i in n:
-			var o := j * n + i
-			img.set_pixel(i, j, Color(garth[o], clampf(dist[o] / 2.0, 0.0, 1.0), wear[o]))
+	var px := PackedByteArray()
+	px.resize(n * n * 3)
+	for o in n * n:
+		px[o * 3] = int(round(garth[o] * 255.0))
+		px[o * 3 + 1] = int(round(clampf(dist[o] / 2.0, 0.0, 1.0) * 255.0))
+		px[o * 3 + 2] = int(round(clampf(wear[o], 0.0, 1.0) * 255.0))
+	var img := Image.create_from_data(n, n, false, Image.FORMAT_RGB8, px)
 	mask = ImageTexture.create_from_image(img)
 	mask_box = Vector4(b.x, b.y, b.z, 0.0)
 	RenderingServer.global_shader_parameter_set("yard_mask", mask)

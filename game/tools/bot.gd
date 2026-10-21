@@ -3541,7 +3541,23 @@ func _yardpath_test() -> void:
 				return _combat_done(false, "track mask does not match the track at %s" % w)
 			if (q[1] > 0.9 and YardGround.worn(w.x, w.y) < 0.95) or (q[1] < 0.05 and YardGround.worn(w.x, w.y) > 0.05):
 				return _combat_done(false, "track wear wrong at %s" % w)
-	for k in YardGround._paths().size():
+	# the pedlar's cart track: both wheel ruts beaten bare, the sward standing between them,
+	# and his footpath on over the fell worn where he walks it
+	for i in range(1, YardGround.ROAD.size() - 1):
+		var rc0: Vector2 = YardGround.ROAD[i][0]
+		var nrm: Vector2 = (YardGround.ROAD[i + 1][0] - YardGround.ROAD[i - 1][0]).normalized().orthogonal()
+		var r0 := rc0 - nrm * YardGround.GAUGE * 0.5
+		var r1 := rc0 + nrm * YardGround.GAUGE * 0.5
+		print("BOT yardpath: road %s wear %.2f ruts worn %.2f %.2f, middle %.2f" % [rc0, YardGround.ROAD[i][1], YardGround.worn(r0.x, r0.y), YardGround.worn(r1.x, r1.y), YardGround.worn(rc0.x, rc0.y)])
+		if YardGround.ROAD[i][1] >= 0.55 and (YardGround.worn(r0.x, r0.y) < 0.85 or YardGround.worn(r1.x, r1.y) < 0.85):
+			return _combat_done(false, "road ruts not worn at %s" % rc0)
+		if YardGround.ROAD[i][1] >= 0.55 and YardGround.worn(rc0.x, rc0.y) > 0.05:
+			return _combat_done(false, "road middle worn bare at %s" % rc0)
+	for q: Array in YardGround.ROAD_PATHS[0].slice(1, -1):
+		var w: Vector2 = q[0]
+		if YardGround.worn(w.x, w.y) < 0.85:
+			return _combat_done(false, "fell path not worn at %s" % w)
+	for k in YardGround.PATHS_LOCAL.size() + YardGround.TRACKS.size():
 		var pts: Array = YardGround._paths()[k]
 		var pts_r := pts.duplicate()
 		pts_r.reverse()   # from the door outward
