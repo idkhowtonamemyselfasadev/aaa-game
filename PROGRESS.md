@@ -44,6 +44,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   now checks each walk: exactly 1 woof (sounded), 1 warn, trotted out 1-7 m (6.0 / 5.6 m), its
   eyes on him (0.00 rad) and back to pottering after. Bot `dog` still passes. Shot option
   `pedlar <n> 60 9.4 woof fixfps` (dog 5 m off Wat on the green, low lens behind the dog).
+  Shot `pedlar dogwoof 60 9.4 woof fixfps` (Forward+, ~30 min): the dog stands turned to Wat
+  on the green, reads as watching him; FAILS as a Wukong frame: at 0.75 m the lens is inside
+  the tall meadow grass, whose near blades render as huge flat paper ribbons (no thickness, no
+  translucency, hard edges), a flat grey wall slab edge at the right frame edge, HUD bars on.
 - (05:00 10-21) **The kites call.** `Birds._kite_voice()`: each kite has a `call_t`; while
   soaring/rejoining it whistles every 25-70 s (up to twice as often before 11:00), a mobbed kite
   calls every 2.5-5 s (first one 0.4 s after the rooks get on it, set in `_start_mob`), a
@@ -4055,7 +4059,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    window for Wat (talk -> a small stock: salt, thread, a whetstone; coin or eggs), then road
    follow-ups: a few cart-wheel stones / a field gate where the fell path meets the wall, verge
    flowers along the ruts. Dog nit: on the back walk Wat's path passes 0.3 m from the dog (he
-   walks through where it sits); give the pedlar a small sidestep round the dog.
+   walks through where it sits); give the pedlar a small sidestep round the dog. Grass nit:
+   near-lens grass blades (< 1 m from camera) look like flat ribbons; fade/thin blades near the
+   camera or give them a curved normal + translucency.
 00000000000000000000000000000000000. (05:00 10-21) Kite's call DONE. FIRST: the dog barking at the
    pedlar as he passes Edda's door (a gruff two-bark woof synthesised like the caws, the dog
    turning to the road and trotting a few steps after him), then a trade window for Wat; road
