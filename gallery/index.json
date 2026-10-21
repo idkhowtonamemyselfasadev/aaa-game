@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-2007-keeperrobe.jpg",
-  "time": "2026-10-16T20:07:55Z",
-  "caption": "Hesper crouched at the litter under a gather oak: her robe now falls over her knees and hangs to the ground instead of jutting out with her pelvis; still wrong: the low lens sits on the slope so the frame reads tilted, and her crouched body is a dark bundle at 3 m.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-2115-keeperlevel.jpg",
   "time": "2026-10-16T21:15:00Z",
   "caption": "Hesper picking under a gather oak with the pick lens re-aimed to the most level ground: the horizon and the vale beyond now read level instead of tilted; still wrong: an oak bole and root fill the left third and she is seen from behind as a grey bundle.",
@@ -886,5 +880,11 @@
   "time": "2026-10-21T10:41:00Z",
   "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
   "verdict": "pass"
+ },
+ {
+  "file": "20261021-1124-near-grass.jpg",
+  "time": "2026-10-21T11:24:34Z",
+  "caption": "Low lens in the meadow behind Brack the collie watching Wat: the near grass now shrinks into the sward close to the camera and shows rolled, ribbed blades instead of hand-sized paper ribbons; still wrong: a grey slab at the right frame edge, HUD bars on, the dog reads a little flat.",
+  "verdict": "fail"
  }
 ]

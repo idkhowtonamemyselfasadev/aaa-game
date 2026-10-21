@@ -23,6 +23,11 @@ uniform float fade_end = 64.0;
 // short sward under-layer (INSTANCE_CUSTOM.y = 1, grass.gd _build_sward): own close fade
 uniform float sward_fade_start = 17.0;
 uniform float sward_fade_end = 26.0;
+// near the lens: clumps whose heart is within near_end of the camera shrink down into the
+// sward (by near_start they are a quarter size), so a low camera never looks through
+// hand-sized flat blades
+uniform float near_start = 0.45;
+uniform float near_end = 1.25;
 uniform vec3 sward_green : source_color = vec3(0.36, 0.42, 0.14);
 // seed stems and panicles (UV.x = 1, grass.gd _build_seeding_mesh): ripe straw, some
 // heads still flushed purple-brown
@@ -34,6 +39,7 @@ varying float v_var;      // per-instance variation
 varying float v_ao;
 varying float v_sward;    // 1 = short sward blade
 varying float v_seed;     // 1 = seed stem / spikelet
+varying float v_across;   // -1 .. 1 across the blade (UV2.x)
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n2(vec2 p) {
@@ -88,6 +94,17 @@ void vertex() {
 	// bend in world space, convert back to local (instances are rotated/scaled)
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
+	float dn = distance(origin + vec3(0.0, 0.3, 0.0), CAMERA_POSITION_WORLD);
+	VERTEX *= mix(0.25, 1.0, smoothstep(near_start, near_end, dn));
+	// rolled blade: the mesh normal leans off the blade's heading (grass.gd _blade), so the
+	// blade's sideways axis is recoverable; tip the edge normals out along it so the light
+	// rolls across a keeled leaf instead of a flat ribbon (spikelets keep theirs)
+	v_across = UV2.x;
+	vec3 side = vec3(NORMAL.z, 0.0, -NORMAL.x);
+	float sl = length(side);
+	if (sl > 0.01) {
+		NORMAL = normalize(NORMAL + side / sl * UV2.x * 0.7 * (1.0 - v_seed));
+	}
 	// the sward is short and open to the sky: its roots are far less occluded
 	v_ao = mix(mix(0.35, 0.6, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
 	v_ao = mix(v_ao, 1.0, v_seed * 0.5);   // thin stems stand clear of the clump's shade
@@ -107,6 +124,15 @@ void fragment() {
 	head *= 0.85 + 0.3 * fract(v_var * 29.1);
 	col = mix(col, mix(tip * 0.9, head, smoothstep(0.45, 0.8, v_h)), v_seed);
 	float rough = 0.82;
+	// close up a blade shows its pale midrib, fine parallel veins and thin, lighter edges;
+	// faded out once a blade is only a few pixels wide (fwidth) so it never shimmers
+	float ac = abs(v_across);
+	float near_d = 1.0 - smoothstep(0.25, 0.7, fwidth(v_across));
+	float rib = 1.0 - smoothstep(0.0, 0.14, ac);
+	float vein = 0.5 + 0.5 * cos(ac * 31.4);
+	float edge = smoothstep(0.78, 1.0, ac);
+	col *= 1.0 + near_d * (0.22 * rib - 0.07 * vein + 0.12 * edge) * (1.0 - v_seed);
+	rough = mix(rough, 0.68, near_d * rib * 0.5);
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
@@ -116,7 +142,8 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = rough;
 	SPECULAR = 0.35;
-	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * v_scorch);   // transmission tint (foliage_light)
+	// thin edges let more sun through than the ribbed middle
+	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * v_scorch) * (0.85 + 0.3 * smoothstep(0.4, 1.0, abs(v_across)));   // transmission tint (foliage_light)
 	AO = v_ao;
 	AO_LIGHT_AFFECT = 0.4;
 	// a passing cloud takes the sun off the land

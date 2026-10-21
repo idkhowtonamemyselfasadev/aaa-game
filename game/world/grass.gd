@@ -415,7 +415,8 @@ func flower_near(p: Vector3, r: float, rng: RandomNumberGenerator, species := -1
 ## random headings (no even fan) with some blades arching over.
 ## `sward`: a low mat of 22 fine blades spread over ~0.5 m, 2 segments each.
 ## UV.y carries 0 (root) .. 1 (tip) for the shader's wind and shading; UV.x is 1 on seed
-## stems and heads (grass.gdshader colours them as ripe straw).
+## stems and heads (grass.gdshader colours them as ripe straw); UV2.x runs -1 .. 1 across
+## the blade (the shader rolls the normal and draws the midrib and veins with it).
 func _build_clump_mesh(sward := false) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -499,6 +500,7 @@ func _spikelet(st: SurfaceTool, at: Vector3, out: Vector3, ln: float, v: float) 
 		for p in [at, mid - w, mid + w, mid - w, tip, mid + w]:
 			st.set_normal(n)
 			st.set_uv(Vector2(1.0, v))
+			st.set_uv2(Vector2(0.0 if p == at or p == tip else (-1.0 if p == mid - w else 1.0), 0.0))
 			st.add_vertex(p)
 
 ## A tapered blade from `root` heading `dir`: rises `height`, leans `lean` out (quadratic)
@@ -518,9 +520,10 @@ func _blade(st: SurfaceTool, root: Vector3, dir: Vector3, height: float, lean: f
 		if s > 0:
 			var t0 := float(s - 1) / seg
 			var n := (dir * -0.4 + Vector3.UP).normalized()
-			for v in [[prev_l, t0], [l, t], [prev_r, t0], [prev_r, t0], [l, t], [r, t]]:
+			for v in [[prev_l, t0, -1.0], [l, t, -1.0], [prev_r, t0, 1.0], [prev_r, t0, 1.0], [l, t, -1.0], [r, t, 1.0]]:
 				st.set_normal(n)
 				st.set_uv(Vector2(seed, v[1]))
+				st.set_uv2(Vector2(v[2], 0.0))   # across the blade: -1 left edge .. 1 right
 				st.add_vertex(v[0])
 		prev_l = l
 		prev_r = r
