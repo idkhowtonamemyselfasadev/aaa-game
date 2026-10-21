@@ -45,6 +45,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   worn (>= 0.97) with a bare-free middle (0.00) at every road point and the fell path worn;
   it walks only the yard paths and village tracks as before. Shot option `pedlar <n> 60 9.4
   fixfps road` (Wat on the track in the meadow, lens low behind him on the verge).
+  Shot `road1` (~25 min): PASS, both ruts read clearly running up to the green with the
+  sward standing between them; the rut beds are a little smooth and even in tone.
 - (03:30 10-21) **A pedlar on the road (owner ALIVE: "ambient events on the roads, travellers,
   merchants").** New `Pedlar` (world/pedlar.gd, extends Villager), Wat Pennock: Edda's rig in a
   dark hood + felt hat, russet wool cape, dun smock, a dark beard, the willow creel on his back
