@@ -1012,6 +1012,17 @@ func _ready() -> void:
 		var cp := at + lens * (3.6 if nb.activity == "lean" else 3.4)
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
 		SPOTS[spot] = [cp, at + Vector3.UP * 1.3]
+		if "stile" in args:
+			# squeezing through the stile in the back wall on his way out onto the fell, from
+			# the fell footpath outside, a little off square, the garth and the cottage beyond
+			var sl: Vector3 = nb._spots["stile2"][0]
+			var sf: Vector3 = nb._spots["fell"][0]
+			nb.global_position = Vector3(sl.x, terrain.height_at(sl.x, sl.z) + 0.03, sl.z)
+			nb.goal_yaw = atan2(sf.x - sl.x, sf.z - sl.z)
+			nb.body.rotation.y = nb.goal_yaw
+			var sc := nb.cottage.to_global(Vector3(0.6, 0, -14.6))
+			sc.y = terrain.height_at(sc.x, sc.z) + 1.6
+			SPOTS[spot] = [sc, sl + Vector3.UP * 1.1]
 		if "face" in args:
 			# a head-and-shoulders portrait at 1.1 m: the nose, the beard, the eyes under the brim
 			var fb := nb.garb.face.global_transform * nb.garb.face.get_aabb()

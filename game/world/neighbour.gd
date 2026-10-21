@@ -14,7 +14,10 @@ extends Villager
 ##         over the field
 ##   10:30 tends the garth: stooping over the scratched ground (stones, muck, a dropped feather)
 ##   12:15 in for his dinner, the long way round again
-##   13:00 back to the wall, 15:30 the garth again, 17:30 the wall in the evening light
+##   13:00 back to the wall, 15:30 the garth again
+##   16:45 out through the squeeze stile in the back wall and a few steps up the fell footpath,
+##         to stand and look up the fell where his flock grazed (and back in the same way)
+##   17:30 the wall in the evening light
 ##   19:00 stands by the hen house while they go up the ladder for the night
 ##   19:40 back to his step for the last of the light, 21:00 in to bed
 ## Rain sends him in, as it does Edda. He stops and turns to the hero when he comes close,
@@ -32,11 +35,17 @@ const GARTH := {
 	"tend": [Vector2(-0.9, -5.6), Vector2(-1.3, -7.2)],
 	"shut": [Vector2(-1.25, -8.25), Vector2(-2.06, -8.55)],   # by the ladder's foot at dusk
 }
+## Through the squeeze stile in the back wall (DryWall.STILE_AT, the slot at about
+## (-1.2, -10.5)) and out onto the fell footpath (YardGround.PATHS_LOCAL[2]).
+const STILE_WAY := [Vector2(-1.1, -9.4), Vector2(-1.18, -10.0), Vector2(-1.22, -10.5), Vector2(-1.26, -11.05), Vector2(-1.7, -13.15)]
+## His spot on the fell side: [stand, look-at], up the slope where the flock was.
+const FELL := [Vector2(-2.3, -15.4), Vector2(-4.6, -23.0)]
 const LEAN_IN := 1.6             # s to settle onto the wall
 
 var cottage: StoneCottage
 var lean := 0.0                  # 0 upright .. 1 forearms on the wall
 var leans := 0                   # times he settled onto the wall (bots)
+var stiles := 0                  # times he squeezed through the stile, either way (bots)
 
 func _init() -> void:
 	exchanges = {}                   # Edda opens; he answers
@@ -63,6 +72,11 @@ func _init() -> void:
 		"tend": [
 			"Hens are like the gentry. They scratch up a mess and leave it for the likes of me.",
 			"Pick the stones out or they'll have the turf off down to the rock.",
+		],
+		"fell": [
+			"Up there was the fold, and the fold was me. Now it's thistles, and I come and look at the thistles.",
+			"You don't stop being a shepherd. You only stop having sheep.",
+			"Wind off the tops. Smell it? Snow on the far fells already.",
 		],
 		"shut": [
 			"Up you go. One at a time, like a sermon.",
@@ -117,6 +131,11 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_spots["door_in"] = [_at(C_DOOR_IN), fy]
 	for i in WAY.size():
 		_spots["way%d" % i] = [_at(WAY[i]), 0.0]
+	for i in STILE_WAY.size():
+		_spots["stile%d" % i] = [_at(STILE_WAY[i]), 0.0]
+	var fs := _at(FELL[0])
+	var fl := _at(FELL[1])
+	_spots["fell"] = [fs, atan2(fl.x - fs.x, fl.z - fs.z)]
 	for k in GARTH:
 		var st := _at(GARTH[k][0])
 		var lk := _at(GARTH[k][1])
@@ -154,8 +173,10 @@ func _want_for(h: float) -> String:
 		return "in"
 	if h < 15.5:
 		return "lean"
-	if h < 17.5:
+	if h < 16.75:
 		return "tend"
+	if h < 17.5:
+		return "fell"
 	if h < 19.0:
 		return "lean"
 	if h < 19.67:
@@ -176,12 +197,17 @@ func _works(a: String) -> bool:
 	return a == "eggs" or a == "tend"
 
 static func in_garth(a: String) -> bool:
-	return GARTH.has(a)
+	return GARTH.has(a) or a == "fell"
+
+## Out on the fell side of the garth's back wall (cottage-local), past the stile.
+static func past_stile(l: Vector3) -> bool:
+	return l.z < -10.75 and l.x < 4.3
 
 ## Out of the door onto the step, and between the yard and the garth the long way round.
 func _route(to: Vector3) -> void:
 	path.clear()
 	var here_garth := false
+	var here_fell := false
 	if state == IN:
 		_place(_spots["door"][0])
 		_show(true)
@@ -189,15 +215,25 @@ func _route(to: Vector3) -> void:
 	else:
 		var lh := cottage.to_local(global_position)
 		here_garth = lh.z < -3.0 and lh.x < 4.3
+		here_fell = past_stile(lh)
 	if to.distance_to(_spots["door_in"][0]) < 0.1:
 		to = _spots["door"][0]
 	var to_garth := in_garth(activity)
+	var to_fell := activity == "fell"
+	if here_fell and not to_fell:
+		for i in range(STILE_WAY.size() - 1, -1, -1):
+			path.append(_spots["stile%d" % i][0])
+		stiles += 1
 	if here_garth and not to_garth:
 		for i in range(WAY.size() - 1, -1, -1):
 			path.append(_spots["way%d" % i][0])
 	elif to_garth and not here_garth:
 		for i in WAY.size():
 			path.append(_spots["way%d" % i][0])
+	if to_fell and not here_fell:
+		for i in STILE_WAY.size():
+			path.append(_spots["stile%d" % i][0])
+		stiles += 1
 	path.append(to)
 	state = WALK
 	stuck_t = 0.0

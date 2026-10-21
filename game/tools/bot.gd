@@ -4528,7 +4528,7 @@ func _neighbour_test() -> void:
 	if g.veil == null or g.veil.name != "Beard" or g.face == null or fb.position.y > 1.88 or g.eyes.size() != 2:
 		return _combat_done(false, "Osric has no beard or no nose")
 	var o0 := fg.opens
-	var stages := [[6.9, "wake", 0], [7.5, "eggs", 700], [9.0, "lean", 200], [11.0, "tend", 700], [12.5, "in", 0], [14.0, "lean", 200], [19.2, "shut", 0], [20.0, "step", 0]]
+	var stages := [[6.9, "wake", 0], [7.5, "eggs", 700], [9.0, "lean", 200], [11.0, "tend", 700], [12.5, "in", 0], [14.0, "lean", 200], [17.1, "fell", 0], [19.2, "shut", 0], [20.0, "step", 0]]
 	for st in stages:
 		var s0 := v.stoops
 		var g0 := v.goings_in
@@ -4546,6 +4546,13 @@ func _neighbour_test() -> void:
 			return _combat_done(false, "he stands idle at the %s" % st[1])
 		if st[1] == "lean" and v.lean < 0.95:
 			return _combat_done(false, "he does not lean on the wall")
+		if st[1] == "fell":
+			# out through the squeeze stile and up the fell footpath, not lifted over the wall
+			print("BOT neighbour fell: stiles %d, past the wall %s, warps %d" % [v.stiles, Neighbour.past_stile(lc), v.warps])
+			if v.stiles < 1 or not Neighbour.past_stile(lc) or v.warps > 0:
+				return _combat_done(false, "he never went out through the stile onto the fell")
+		if st[1] == "shut" and (v.stiles < 2 or Neighbour.past_stile(lc)):
+			return _combat_done(false, "he never came back in through the stile")
 		if st[1] == "eggs" and fg.opens - o0 < 1:
 			return _combat_done(false, "the field gate never swung for him")
 		if st[1] == "step":
@@ -4623,7 +4630,7 @@ func _neighbour_test() -> void:
 	print("BOT neighbour notice: noticing %s, facing off %.2f rad, lean %.2f" % [v.noticing, off, v.lean])
 	if not v.noticing or off > 0.35 or v.lean > 0.1:
 		return _combat_done(false, "he ignores the hero")
-	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, in for dinner and at night, out of the rain, through the field gate")
+	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, out through the stile onto the fell and back, in for dinner and at night, out of the rain, through the field gate")
 
 ## Edda and Osric pass a word when her feed round brings her by his garth: both stop and turn
 ## to each other, she says hers and he answers; the hero overhears it from nearby, and they do
