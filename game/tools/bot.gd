@@ -1644,6 +1644,7 @@ func _dog_test() -> void:
 	var prev_state := dg.state
 	var on_track := 0
 	var lay_min := 1.0
+	var rest_lay := -1.0
 	var day_lie := 0
 	for i in 3000:
 		await get_tree().physics_frame
@@ -1652,7 +1653,11 @@ func _dog_test() -> void:
 		if dg.state == Dog.REST and dg.lie > 0.99:
 			day_lie += 1
 		if dg.state == Dog.REST and dg.sit > 0.99:
-			lay_min = minf(lay_min, _world.trample.herd_lay_at(dg.global_position + Vector3(0.3, 0, 0)))
+			# how flat the grass beside it lies by the time it gets up (it presses as it sits)
+			rest_lay = maxf(rest_lay, _world.trample.herd_lay_at(dg.global_position + Vector3(0.3, 0, 0)))
+		elif rest_lay >= 0.0 and dg.state != Dog.REST:
+			lay_min = minf(lay_min, rest_lay)
+			rest_lay = -1.0
 		moved += dg.global_position.distance_to(prev)
 		prev = dg.global_position
 		max_home = maxf(max_home, Vector2(prev.x - dg.home.x, prev.z - dg.home.z).length())
@@ -3810,11 +3815,15 @@ func _yardpath_test() -> void:
 	var pool := Vector3(pa.x, tr.height_at(pa.x, pa.y), pa.y)
 	var w0 := wx.wade_splashes
 	p.global_position = Vector3(st2.x, tr.height_at(st2.x, st2.y) + 0.1, st2.y)
-	for i in 240:
-		if Vector2(p.global_position.x, p.global_position.z).distance_to(en2) < 0.3:
+	# a short pool can fall between two strides: down it, and back up it if no foot landed
+	for aim: Vector2 in [en2, st2]:
+		for i in 240:
+			if Vector2(p.global_position.x, p.global_position.z).distance_to(aim) < 0.3:
+				break
+			p.bot_input = _input_toward(Vector3(aim.x, 0.0, aim.y))
+			await _ticks(1)
+		if wx.wade_splashes > w0:
 			break
-		p.bot_input = _input_toward(Vector3(en2.x, 0.0, en2.y))
-		await _ticks(1)
 	p.bot_input = Vector2.ZERO
 	print("BOT yardpath: track pool %.1f m long at %s, %d wade splashes walking down it" % [pa.distance_to(pb), pool, wx.wade_splashes - w0])
 	wx.wet = 0.0

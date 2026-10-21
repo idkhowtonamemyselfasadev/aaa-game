@@ -329,7 +329,7 @@ func _press_grass() -> void:
 	if _trample == null or speed > 0.3:
 		return
 	var p := global_position
-	_trample.add_herd_point(Vector2(p.x, p.z), Vector2(-sin(yaw), -cos(yaw)), 1.0, PRESS)
+	_trample.add_herd_point(Vector2(p.x, p.z), Vector2(-sin(yaw), -cos(yaw)), 1.0, PRESS, 0.2)
 	if _press_at == Vector3.INF or p.distance_to(_press_at) > 0.3:
 		pressed += 1
 	_press_at = p

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261016-2115-keeperlevel.jpg",
-  "time": "2026-10-16T21:15:00Z",
-  "caption": "Hesper picking under a gather oak with the pick lens re-aimed to the most level ground: the horizon and the vale beyond now read level instead of tilted; still wrong: an oak bole and root fill the left third and she is seen from behind as a grey bundle.",
-  "verdict": "fail"
- },
- {
   "file": "20261016-2140-keeperupslope.jpg",
   "time": "2026-10-16T21:40:00Z",
   "caption": "Hesper crouched at the litter against the oak and the ruined keep, lens kept clear of the boles: level frame, robe drapes to the leaves; still wrong: seen from above and behind, her crouch is a dark slate bundle and the litter leaves are all one size.",
@@ -885,6 +879,12 @@
   "file": "20261021-1124-near-grass.jpg",
   "time": "2026-10-21T11:24:34Z",
   "caption": "Low lens in the meadow behind Brack the collie watching Wat: the near grass now shrinks into the sward close to the camera and shows rolled, ribbed blades instead of hand-sized paper ribbons; still wrong: a grey slab at the right frame edge, HUD bars on, the dog reads a little flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-1250-stile.jpg",
+  "time": "2026-10-21T12:45:00Z",
+  "caption": "The new squeeze stile in the garth's back wall seen from the fell footpath: two leaning slabs with a worn path through the slot toward Osric's cottage; still wrong: the slot reads wider than a real squeeze stile, the wall courses look too regular and tiled, and the light is flat.",
   "verdict": "fail"
  }
 ]

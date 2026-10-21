@@ -194,10 +194,12 @@ func add_hoof(at: Vector2, dir: Vector2, depth: float, splay: float, size: float
 ## one herd run in each other's tracks, so a point near an existing one refreshes it (and
 ## keeps the stronger push) rather than spending a new slot: the 64 points then cover a
 ## whole fled herd's lane instead of a few metres per animal.
-func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0) -> void:
+## `merge`: how near an existing point must be to be refreshed instead (a sitting animal
+## passes a small one so its press lands under it, not on an old spot beside it).
+func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0, merge := HERD_MERGE) -> void:
 	for i in HTN:
 		var t := _hts[i]
-		if t.w > 0.0 and Vector2(t.x - at.x, t.y - at.y).length() < HERD_MERGE:
+		if t.w > 0.0 and Vector2(t.x - at.x, t.y - at.y).length() < merge:
 			_hts[i] = Vector4(t.x, t.y, minf(t.z, age), maxf(t.w, strength))
 			if t.z > age:
 				_htd[i] = dir.normalized()
