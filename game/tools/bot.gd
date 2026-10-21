@@ -3588,6 +3588,31 @@ func _verge_test() -> void:
 		return _combat_done(false, "no low flowers on the crown strip")
 	if in_rut > 0:
 		return _combat_done(false, "%d flowers growing in the wheel ruts" % in_rut)
+	# the verge sward is cropped short so the flowers stand over it: tall clumps fewer and lower
+	var tall := [[0, 0.0, 0], [0, 0.0, 0]]   # [clumps, summed height, seeding kind] verge / meadow
+	var tall_all := 0
+	grass.record_clumps = []
+	for k: Vector2i in ks:
+		grass._build_chunk(k).free()
+	tall_all = grass.record_clumps.size()
+	for c: Array in grass.record_clumps:
+		var xf: Transform3D = c[1]
+		var h := Vector2(xf.origin.x, xf.origin.z)
+		var d := INF
+		for i in range(1, road.size() - 2):
+			d = minf(d, h.distance_to(Geometry2D.get_closest_point_to_segment(h, road[i][0], road[i + 1][0])))
+		var b := 0 if d > 1.1 and d < 2.3 else 1 if d > 6.0 and d < 7.2 else -1
+		if b >= 0:
+			tall[b][0] += 1
+			tall[b][1] += xf.basis.y.length()
+			if c[0] == 2:
+				tall[b][2] += 1
+	grass.record_clumps = null
+	var hv: float = tall[0][1] / maxf(tall[0][0], 1.0)
+	var hm: float = tall[1][1] / maxf(tall[1][0], 1.0)
+	print("BOT verge: tall clumps verge band %d (mean height x%.2f, seeding %d) vs meadow band %d (x%.2f, seeding %d), %d in all" % [tall[0][0], hv, tall[0][2], tall[1][0], hm, tall[1][2], tall_all])
+	if tall[1][0] < 50 or tall[0][0] > tall[1][0] * 0.6 or hv > hm * 0.75 or tall[0][2] > 0:
+		return _combat_done(false, "the verge sward is not cropped shorter than the meadow")
 	_combat_done(true, "the cart track runs between flowered verges")
 
 func _yardpath_test() -> void:

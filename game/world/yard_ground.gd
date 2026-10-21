@@ -148,6 +148,27 @@ static func worn(x: float, z: float) -> float:
 	var pw := path_wear(x, z)
 	return (1.0 - smoothstep(0.22, 0.5, pw.x)) * smoothstep(0.1, 0.6, pw.y)
 
+## 0..1: how short the cart track's verges keep the sward at world (x, z): beasts driven along
+## the road crop it and the cart wheels brush it, so a band ~0.9..2.6 m out from the centre
+## line (and the crown strip between the ruts) stands at a short green turf, and the verge
+## flowers (MeadowFlowers._verges) stand over it. Fades out with the road's wear.
+static func verge(x: float, z: float) -> float:
+	if x < -11.0 or x > 23.0 or z < -30.0 or z > 4.5:
+		return 0.0
+	var p := Vector2(x, z)
+	var best := INF
+	var wear := 0.0
+	for i in ROAD.size() - 1:
+		var a: Vector2 = ROAD[i][0]
+		var b: Vector2 = ROAD[i + 1][0]
+		var c := Geometry2D.get_closest_point_to_segment(p, a, b)
+		var d := p.distance_to(c)
+		if d < best:
+			best = d
+			wear = lerpf(ROAD[i][1], ROAD[i + 1][1], a.distance_to(c) / maxf(a.distance_to(b), 1e-4))
+	var band := maxf(1.0 - smoothstep(0.35, 0.6, best), smoothstep(0.7, 1.0, best) * (1.0 - smoothstep(2.3, 2.9, best)))
+	return band * smoothstep(0.05, 0.45, wear)
+
 ## World xz square covering the garth and the paths: (x0, z0, side).
 static func box() -> Vector3:
 	var lo := Vector2(INF, INF)

@@ -201,12 +201,15 @@ func _step_sward() -> void:
 		var nrm := _terrain.normal_at(x, z)
 		var s := lerpf(0.7, 1.25, rng.randf()) * (0.6 if site.z < 3.1 else 1.0) * lerpf(1.0, 0.7, site.y) * lerpf(1.0, 0.55, hen)
 		var crop := _crop_at(x, z)
+		# the cart track's verges: cropped short and green so the verge flowers stand over it
+		var vg := YardGround.verge(x, z)
+		crop *= lerpf(1.0, 0.6, vg)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		basis = Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.3).normalized())) * basis
 		basis = basis.scaled(Vector3(s, s * lerpf(0.7, 1.3, rng.randf()) * lerpf(0.45, 1.0, crop), s))
 		xf.append(Transform3D(basis, Vector3(x, y - 0.02, z)))
 		# greener than the tall grass on average (live leaf under the seed heads)
-		var_.append(clampf(site.x * 0.5 + rng.randf() * 0.45 - 0.1, 0.0, 1.0))
+		var_.append(clampf(site.x * 0.5 + rng.randf() * 0.45 - 0.1, 0.0, 1.0) * lerpf(1.0, 0.4, vg))
 	_job.i = end
 	_job["var"] = var_   # packed arrays are values: write back
 	if end < sward_per_chunk:
@@ -230,6 +233,10 @@ func _step_sward() -> void:
 	_sward[k] = mmi
 	_job = {}
 	sward_build_ms = maxf(sward_build_ms, (Time.get_ticks_usec() - t0) / 1000.0)
+
+## Bots set this to an Array to get [kind, Transform3D] of every tall clump _build_chunk places
+## (the headless renderer does not hand multimesh transforms back).
+var record_clumps = null
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var flora := _find_ruin()
@@ -267,7 +274,9 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		# by the door stones: most tall clumps trodden out, the rest kept short, so none lean
 		# over the slabs and hide them
 		var stones := DoorStones.near(x, z)
-		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05 or rng.randf() < YardGround.worn(x, z) * 1.2 or rng.randf() < stones * 0.92:
+		# the cart track's verges are cropped: most tall clumps gone, the rest kept low
+		var vg := YardGround.verge(x, z)
+		if site.x < 0.0 or rng.randf() < Hens.scratched(x, z) * 1.05 or rng.randf() < YardGround.worn(x, z) * 1.2 or rng.randf() < stones * 0.92 or rng.randf() < vg * 0.7:
 			have_prev = false
 			continue
 		px = x
@@ -285,11 +294,11 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		# keep the leafy kinds.
 		var kind := 0
 		var roll := rng.randf()
-		if crop > 0.9 and keep > 3.1 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
+		if crop > 0.9 and keep > 3.1 and vg < 0.2 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
 			kind = 2
 		elif roll > 0.74 - 0.2 * shade - 0.12 * (1.0 - patch):
 			kind = 1
-		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far) * lerpf(1.0, 0.42, stones)
+		var s := lerpf(0.55, 1.2, rng.randf()) * (0.45 if keep < 3.1 else 1.0) * lerpf(1.0, 0.6, shade) * lerpf(0.75, 1.15, patch) * lerpf(1.0, 1.4, far) * lerpf(1.0, 0.42, stones) * lerpf(1.0, 0.55, vg)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		# lean with the slope a little so clumps don't look stuck on like pins, plus a
 		# random tilt so neighbours never stand quite parallel
@@ -299,7 +308,9 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var wide := rng.randf_range(0.75, 1.3)
 		basis = basis.scaled(Vector3(s * wide, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s / wide))
 		(xfs[kind] as Array[Transform3D]).append(Transform3D(basis, Vector3(x, y - 0.03, z)))
-		(vars[kind] as Array).append(dry)
+		(vars[kind] as Array).append(dry * lerpf(1.0, 0.5, vg))
+		if record_clumps != null:
+			record_clumps.append([kind, xfs[kind].back()])
 	var root: MultiMeshInstance3D = null
 	for kind in 3:
 		var xf: Array[Transform3D] = xfs[kind]
