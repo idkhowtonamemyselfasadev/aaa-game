@@ -4827,6 +4827,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (22:00-00:00 10-21, parallel session) A second session darkened Osric's beard in parallel
+  (beard_col 0.14, lock hollows 0.42, 3 mm lock bump, rim 0.12, cheeks darkened to 0.5); it
+  looked right in its own shot but collided with 4ad5a5c/743485e, which fixed the same beard,
+  so it was dropped unmerged. If the beard still reads too pale or flat, those values are a
+  tested starting point. Shots took ~40 min each on that box: wait on them with a 90-min
+  background timeout, since the 30-min default killed the first one.
 - (20:00 10-21) ~~Bot `neighbour` hen-closeness check is flaky~~ FIXED 22:15 10-21 (a pinned hen flutters clear; closest 0.43-0.47 m on three runs).
 - (14:00 10-21) ~~Bot `stonehouse` FAILS~~ FIXED 18:00 10-21 (the bot ignored Osric's schedule).
 - (13:00 10-21) Bot `yardpath` splash check is flaky, not broken: failed once (0 wade splashes), then passed twice in a row on the same build.
