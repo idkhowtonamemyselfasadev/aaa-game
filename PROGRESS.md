@@ -40,6 +40,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   stand over the grass), 18% low (0.6..0.85) buttercups/daisies on the crown strip; nothing
   where `YardGround.worn` > 0.1, so the ruts stay bare. New bot `verge`: 9 chunks, verge band
   356 heads vs 164 in a same-width meadow band 6 m out, crown 73, in the ruts 0: PASS.
+  Shot `pedlar verge 90 9.6 road` (Forward+, ~37 min, looked at; rendered with an earlier
+  5 tries/m density): daisies and buttercups now edge the left verge, but the yarrow and
+  knapweed sink into the ripe grass, so the verge does not read as a distinct flowered
+  ribbon yet. Follow-up: shorter, greener sward on the verge band (grass.gd height x0.6
+  where 1..2.5 m off ROAD) so the verge flowers stand over it. Gallery:
+  20261021-0840-verge.jpg (pass for the frame overall).
 - (07:00 10-21) **Wat steps round the dog.** `Villager._steer(dir)` hook (identity) on the
   walk direction; `Pedlar._steer()` bends his course off the dog's side when Brack is ahead
   within 3 m and closer than `CLEAR` 1.1 m to his line (weight grows the nearer it lies to the
@@ -4076,7 +4082,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 00000000000000000000000000000000000000. (08:00 10-21) Verge flowers DONE. FIRST: a field gate /
-   stile where the fell footpath meets the garth's back wall, and a few cart-wheel stones
+   stile where the fell footpath meets the garth's back wall, the verge sward cut shorter
+   so the verge flowers show (see Done 08:00), and a few cart-wheel stones
    and scuffs in the rut beds; then the near-lens grass nit (blades < 1 m from the camera
    read as flat paper ribbons: fade/thin them near the camera, curved normal + translucency).
 0000000000000000000000000000000000000. (07:00 10-21) Pedlar sidesteps the dog DONE. FIRST: road
