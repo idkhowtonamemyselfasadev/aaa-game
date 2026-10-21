@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-0349-hearth-kindle.jpg",
-  "time": "2026-10-17T03:49:49Z",
-  "caption": "Hesper knelt at the tinder at dusk: the fire and its new ember glow light her robe and the ivied wall warmly and the ash ring is swept clear, but big floor slabs at the lens foot still fill the lower half and the flame core blows out to white.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-0418-kindle.jpg",
   "time": "2026-10-17T04:18:46Z",
   "caption": "Hesper's fresh cookfire at dusk from above: the flame is now orange instead of a white blow-out and the ash ring reads, but a row of big laid plinth blocks still fills the foreground and Hesper is an unlit silhouette right of the fire.",
@@ -891,6 +885,12 @@
   "file": "20261021-1754-stile-cope.jpg",
   "time": "2026-10-21T17:54:38Z",
   "caption": "Garth wall squeeze stile at 10:00: the cope now rises and falls in runs with leaning stones and blocky capstones instead of a row of like slabs; the near face stones on the right still read as pale boxy blocks with sharp arrises.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-1831-stile-rubble.jpg",
+  "time": "2026-10-21T18:31:47Z",
+  "caption": "Garth wall by the squeeze stile at 10:00: field stones now rounded, chipped rubble in darker greys; the cope now reads as rounded mossy lumps rather than split slabs and the far-left run's faces are still flat tiles in a regular grid.",
   "verdict": "fail"
  }
 ]

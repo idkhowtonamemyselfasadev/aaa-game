@@ -42,7 +42,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   `stonehouse` bot failure (pre-existing since 14:00) was the bot, not the game: Osric is at
   the hen house at 19:30, so his lamp is rightly dark; the bot now settles him out at 19:30
   (lamp must be dark) and in at 21:12 (lamp must burn), as the whitehouse bot does for Edda.
-  Bots drywall, yardwall, stonehouse, whitehouse, ruin PASS. Shot pending at commit time (see the next entry).
+  Bots drywall, yardwall, stonehouse, whitehouse, ruin PASS. Shot `drywall stile 60 10.0 stile`
+  (Forward+, looked at): face stones in the near right run now read as rounded, broken
+  field rubble with chipped edges, darker. Verdict still fail: the rounder cope stones now
+  read as mossy lumps/pebbles rather than split slabs set on edge (give the cope its own
+  sharper, flatter variants), and the far left run's faces still read as flat tiles in a
+  regular grid. Gallery: 20261021-1831-stile-rubble.jpg.
 - (17:00 10-21) **Garth wall: a cope that varies.** `DryWall._lay()` cope loop: heights
   follow a wandering run height (0.15-0.36, re-rolled 30% per stone) times 0.7-1.25,
   thickness 0.06-0.16; 8% start an A pair (first tips -0.22..-0.34 rad toward the next, the
@@ -4213,7 +4218,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 000000000000000000000000000000000000000000000000. (18:00 10-21) Rounded field rubble DONE. The wall
    has had seven sessions: go back to ALIVE items now (owner direction). FIRST: Osric (or the
    pedlar) using the stile now and then (a living-place item that also shows the stile off);
-   then the stile slabs' plain narrow faces, the `woof` lens's right-edge grey slab, rut
+   then flatter, sharper cope variants (the rounder mesh made the cope lumpy), the stile slabs' plain narrow faces, the `woof` lens's right-edge grey slab, rut
    cobbles near the green.
 00000000000000000000000000000000000000000000000. (17:00 10-21) Varied cope DONE. FIRST:
    rounder, more broken arrises on field face stones (block mesh variants with bigger chips
