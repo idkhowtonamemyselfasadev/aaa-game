@@ -47,6 +47,8 @@ var fill_gain := 1.0
 ## the sash, so another wearer (an NPC without armour) shows wool on the chest, never the
 ## Vanguard's plates under the mantle's hem and in its open front.
 var smock := false
+## The mantle in fulled wool (fuzz, pills, soft creases) rather than the hero's smooth cape.
+var mantle_wool := false
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
 const EYE_X := 0.031
@@ -122,6 +124,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mm.set_shader_parameter("fold_ao", 1.0)
 	mm.set_shader_parameter("hem_band", 1.0)
 	mm.set_shader_parameter("tongues", 3.0)
+	if mantle_wool:
+		mm.set_shader_parameter("wool", 1.0)
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)

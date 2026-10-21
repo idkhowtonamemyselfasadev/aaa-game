@@ -187,7 +187,7 @@ void fragment() {
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
 	// old dye and rust stains in blotches
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
-	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.74, 0.72, 0.68), felt), stain * 0.6);
+	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
 	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, 0.7 + 0.3 * COLOR.r, fold_ao);
@@ -216,7 +216,10 @@ void fragment() {
 	AO_LIGHT_AFFECT = 0.3;
 	// a tightly plaited straw hat is opaque: no light through its underside
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
-	EMISSION = ember_col * glow * 3.0 + figure_fill(alb, wet_n, wet_p) * mix(1.0, COLOR.r, fold_ao);
+	// the meadow's warm bounce turned a near-black felt hat orange-brown: felt takes a greyer fill
+	vec3 fill = figure_fill(alb, wet_n, wet_p);
+	fill = mix(fill, vec3(dot(fill, vec3(0.3, 0.55, 0.15))), 0.7 * felt);
+	EMISSION = ember_col * glow * 3.0 + fill * mix(1.0, COLOR.r, fold_ao);
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles
 	RIM = mix(max(0.35 * wool, 0.1), 0.06, felt);
 	RIM_TINT = 0.4;
