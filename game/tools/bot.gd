@@ -3323,7 +3323,9 @@ func _drywall_test() -> void:
 	var p := _player
 	var w: DryWall = _world.dry_wall
 	var c: StoneCottage = _world.stone_cottage
-	print("BOT drywall: %d stones (%d cope, %d through), %d colliders, gate %s" % [w.stone_count, w.cope_count, w.through_count, w.get_node("DryWallCollision").get_child_count(), w.gate])
+	print("BOT drywall: %d stones (%d cope, %d through), %d colliders, gate %s, stile %s" % [w.stone_count, w.cope_count, w.through_count, w.get_node("DryWallCollision").get_child_count(), w.gate, w.stile])
+	if w.stile == Vector3.ZERO:
+		return _combat_done(false, "no squeeze stile in the back wall")
 	if w.stone_count < 700 or w.cope_count < 100 or w.through_count < 15:
 		return _combat_done(false, "garth wall not built")
 	var flora: Flora = _world.get_node("Flora")

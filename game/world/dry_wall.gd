@@ -2,7 +2,7 @@ class_name DryWall
 extends Node3D
 ## The dry-stone garth wall round the yard behind Harrowmere's stone cottage (StoneCottage):
 ## three runs from the back corners out round a yard, a gateway with two upright gate stoops
-## on the east side. Built the way a waller lays it, all generated here:
+## on the east side, and a squeeze stile in the back run where the fell footpath goes by. Built the way a waller lays it, all generated here:
 ##  - two battered faces of rough sandstone rubble (no mortar) in irregular courses that
 ##    follow the ground, each stone a hair off square, the faces leaning in toward the top;
 ##  - through-stones across the whole width at half height, their ends standing proud;
@@ -31,11 +31,20 @@ const RUNS_LOCAL := [
 	[Vector2(-5.3, -10.7), Vector2(-3.9, -3.25)],
 ]
 const GATE_AT := 0.45    # gateway centre as a fraction along run 0
+## The squeeze stile in the back run (run 1): two tall slabs set on end through the wall,
+## leaning apart, so the slot is a hand's width at the foot and opens to the hip (folk get
+## through, sheep do not), a hollow-worn tread stone between them.
+const STILE_AT := 0.59   # stile centre as a fraction along run 1
+const STILE_GAP := 0.84  # the wall broken off either side of it (m)
+const STILE_FOOT := 0.42 # slot between the slabs at the foot (as seen)
+const STILE_LEAN := 0.19 # each slab's lean out of the slot (rad)
+const STILE_CLEAR := 0.74   # the colliders' clear width (a walker's shoulders)
 
 var stone_count := 0
 var cope_count := 0
 var through_count := 0
 var gate := Vector3.ZERO      # world centre of the gateway (bots)
+var stile := Vector3.ZERO     # world centre of the squeeze stile (bots)
 var field_gate: FieldGate     # the oak gate hung on the north stoop
 var _ruins: Ruins
 var _terrain: Terrain
@@ -62,6 +71,12 @@ static func segments() -> Array:
 			var g := a + d * ln * GATE_AT
 			out.append([a, g - d * GATE_W * 0.5])
 			out.append([g + d * GATE_W * 0.5, b])
+		elif i == 1:
+			var ln := a.distance_to(b)
+			var d := (b - a) / ln
+			var g := a + d * ln * STILE_AT
+			out.append([a, g - d * STILE_GAP * 0.5])
+			out.append([g + d * STILE_GAP * 0.5, b])
 		else:
 			out.append([a, b])
 	return out
@@ -99,6 +114,7 @@ func _ready() -> void:
 	var g := a0.lerp(b0, GATE_AT)
 	gate = Vector3(g.x, _terrain.height_at(g.x, g.y), g.y)
 	_hang_gate(g, (b0 - a0).normalized())
+	_stile()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
 	_build_core()
@@ -204,6 +220,38 @@ func _hang_gate(g: Vector2, d: Vector2) -> void:
 	field_gate.basis = Basis(x, Vector3.UP, x.cross(Vector3.UP))
 	field_gate.position = Vector3(o.x, minf(_terrain.height_at(o.x, o.y), _terrain.height_at(g.x + d.x * 0.6, g.y + d.y * 0.6)), o.y) - global_position
 	add_child(field_gate)
+
+## The squeeze stile: two slabs on end through the wall either side of the slot, leaning out
+## of it, a flat tread stone worn hollow between them. Colliders stand plumb at the slot's
+## clear width, so the hero walks through where the slabs open past his hips.
+func _stile() -> void:
+	var a := _to_world(RUNS_LOCAL[1][0])
+	var b := _to_world(RUNS_LOCAL[1][1])
+	var g := a.lerp(b, STILE_AT)
+	var d2 := (b - a).normalized()
+	var dir := Vector3(d2.x, 0, d2.y)
+	var nrm := dir.cross(Vector3.UP)
+	stile = Vector3(g.x, _terrain.height_at(g.x, g.y), g.y)
+	var gy := _ground(g)
+	var ln := BODY_H + 0.42      # slab length, 0.12 of it sunk in the ground
+	var th := 0.13
+	for sgn: float in [-1.0, 1.0]:
+		var lean := STILE_LEAN + _rng.randf_range(-0.03, 0.03)
+		var up := Vector3.UP * cos(lean) + dir * sgn * sin(lean)
+		var side := dir * cos(lean) - Vector3.UP * sgn * sin(lean)
+		var foot := Vector3(g.x - global_position.x, gy - 0.12, g.y - global_position.z) + dir * sgn * (STILE_FOOT * 0.5 + th * 0.5)
+		var bas := Basis(up, side, up.cross(side)) * Basis.from_euler(Vector3(_rng.randf_range(-0.04, 0.04), 0, 0))
+		_place(foot + up * ln * 0.5, bas, Vector3(ln, th, BASE_W - 0.02), ln * 0.5)
+		var cs := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.16, BODY_H + 0.6, BASE_W - 0.1)
+		cs.shape = box
+		var m := g + d2 * sgn * (STILE_CLEAR * 0.5 + 0.08)
+		cs.transform = Transform3D(Basis(dir, Vector3.UP, nrm), Vector3(m.x - global_position.x, gy + (BODY_H + 0.6) * 0.5 - 0.3, m.y - global_position.z))
+		_body.add_child(cs)
+	# the tread: a flat stone bedded flush between them, its top worn smooth by boots
+	var tb := Basis(dir, Vector3.UP, nrm) * Basis.from_euler(Vector3(0, _rng.randf_range(-0.08, 0.08), 0))
+	_place(Vector3(g.x - global_position.x, gy - 0.03, g.y - global_position.z), tb, Vector3(STILE_FOOT + 0.1, 0.08, BASE_W + 0.16), 0.0)
 
 ## An upright gate stoop at the end p of a run, d pointing out of the wall into the gap.
 func _stoop(p: Vector2, d: Vector2) -> void:

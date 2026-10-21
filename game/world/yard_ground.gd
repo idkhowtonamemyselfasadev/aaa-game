@@ -19,6 +19,10 @@ const PATHS_LOCAL := [
 	# the door, across the yard, out of the cart gateway toward the green
 	[Vector2(0.6, 3.75), Vector2(-1.4, 6.0), Vector2(-3.2, 7.4), Vector2(-5.2, 8.6),
 	 Vector2(-6.8, 12.0), Vector2(-6.4, 17.0)],
+	# from the garth gate across the scratch-yard, through the back wall's squeeze stile
+	# (DryWall.STILE_AT) and out onto the fell footpath behind it
+	[Vector2(2.4, -6.7), Vector2(0.5, -8.1), Vector2(-1.1, -9.55), Vector2(-1.2, -10.47),
+	 Vector2(-1.25, -11.4), Vector2(-1.7, -13.15)],
 ]
 
 ## Village tracks in world xz: [point, wear 0..1] (wear fades the far end into the sward).

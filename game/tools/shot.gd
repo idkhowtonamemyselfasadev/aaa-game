@@ -331,6 +331,12 @@ func _ready() -> void:
 			var lk := ct.to_global(Vector3(-3.0, 0, -6.0))
 			lk.y = terrain.height_at(lk.x, lk.z) + 1.4
 			SPOTS[spot] = [cn, lk]
+		elif "stile" in args:
+			# the squeeze stile in the back run, from the fell footpath outside, a little off
+			# square so both slabs and the slot between them show, the garth beyond
+			var sc := ct.to_global(Vector3(0.4, 0, -14.3))
+			sc.y = terrain.height_at(sc.x, sc.z) + 1.55
+			SPOTS[spot] = [sc, dw.stile + Vector3.UP * 0.55]
 		elif "gate" in args:
 			# close on the field gate from outside, a little off square ("ajar": swung half
 			# open into the yard)
