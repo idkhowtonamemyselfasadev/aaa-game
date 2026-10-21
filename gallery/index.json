@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261017-0632-kindle.jpg",
-  "time": "2026-10-17T06:32:37Z",
-  "caption": "Hesper's fire from the new low lens beside the ring: flatter, darker ring stones and the ivied inner face lit warm, but the lens sits too low and close, the stones still flare cream in the near firelight and Hesper is a dark hooded lump behind the logs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-0717-kindle.jpg",
-  "time": "2026-10-17T07:17:31Z",
-  "caption": "Hesper's young fire from a raised lens on her side of the ring: the ring stones and ash no longer flare cream, but the inner-face blocks now glow flat orange under the higher fire light, Hesper still shows her back, and plinth slabs fill the lower right.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-0850-kindle.jpg",
   "time": "2026-10-17T08:50:00Z",
   "caption": "Hesper kindling her fire from a lower 1.25 m lens with warmer amber firelight: the flame and charred logs read, but the inner-face blocks behind it still glow flat cream (they want soot), she is a bowed hood, and plinth slabs fill the lower right.",
@@ -897,6 +885,18 @@
   "file": "20261021-2045-osric-fell-stance.jpg",
   "time": "2026-10-21T20:45:00Z",
   "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-2140-osric-beard-before.jpg",
+  "time": "2026-10-21T21:40:00Z",
+  "caption": "Osric's face portrait at 17:00 before the fix: the 'pale strip' under his jaw is his beard, a 20 cm flat grey plate hanging down his chest; his face above it is a reddish mask.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261021-2215-osric-beard.jpg",
+  "time": "2026-10-21T22:15:00Z",
+  "caption": "Osric's beard is now short and full, tapering to a point and shaded at the sides and underneath; still a fail: his face is a flat reddish mask with no eyes showing under the brim and the hood frames it like a helmet.",
   "verdict": "fail"
  }
 ]

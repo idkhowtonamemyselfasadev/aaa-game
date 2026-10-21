@@ -675,6 +675,27 @@ func _give_way(h: Dictionary) -> bool:
 	# in a short lane ahead of his boots, or right at them
 	if not ((ahead > -0.2 and ahead < GIVE_R + 0.8 and absf(side) < 0.65) or rel.length() < 0.55):
 		return false
+	if h.hurry > 0.0 and rel.length() < 0.45:
+		# hurrying aside and he is all but on it (pinned against the wall in his lane): it
+		# flutters off past him, wings out, with an indignant squawk
+		# off to whichever side the wall leaves room on, else straight on ahead of him at a run
+		var g := clamp_yard((h.pos as Vector2) + dir * 2.4)
+		var best_lat := 0.7
+		for s: float in [signf(side + 0.001), -signf(side + 0.001)]:
+			var c := clamp_yard((h.pos as Vector2) + perp * s * 1.3 + dir * 0.5)
+			var lat := absf((c - _keeper_l).dot(perp))
+			if lat > best_lat:
+				best_lat = lat
+				g = c
+		h.goal = g
+		h.state = FLEE
+		h.t = 1.2
+		h.hurry = 0.0
+		h.peck = 0.0
+		h.scratch = 0.0
+		flees += 1
+		squawked.emit((h.mi as Node3D).global_position + Vector3.UP * 0.3)
+		return true
 	if h.hurry > 0.0:
 		# already hurrying aside: only a bird whose way out the wall has shut (its goal still
 		# in his lane) and that he is almost on looks again

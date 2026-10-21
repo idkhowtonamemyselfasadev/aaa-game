@@ -47,9 +47,11 @@ void fragment() {
 	if (front > 0.5 && p.y > top + fringe) {
 		discard;
 	}
-	// the lower outline: a soft point under the chin (mesh 1.697), rising along the jaw to the
-	// sides (1.738 at the hood), ragged in 1-2 cm clumps
-	float low = 1.697 + 0.041 * pow(smoothstep(0.004, 0.115, ax), 1.3);
+	// the lower outline: a short, full beard tapering to a soft point a hand under the chin
+	// (mesh 1.768) and rising steeply along the jaw to the sides (1.838 at the hood), ragged in
+	// 1-2 cm clumps (it used to run 20 cm down to 1.697 with a flat bottom and read as a pale
+	// plate hung from his face down the chest)
+	float low = 1.768 + 0.07 * pow(smoothstep(0.0, 0.1, ax), 0.85);
 	low += (vnoise(vec2(p.x * 70.0, 7.0)) - 0.5) * 0.012 + (vnoise(vec2(p.x * 180.0, 2.0)) - 0.5) * 0.005;
 	if (p.y < low) {
 		discard;
@@ -94,6 +96,10 @@ void fragment() {
 	}
 	alb *= mix(1.0, 0.55, side);
 	alb *= hollow * root * tip;
+	// a beard has volume: the front of the jaw catches the light, the sides turn away and the
+	// underside toward the point sits in the shade of the chin
+	alb *= mix(0.62, 1.0, 1.0 - smoothstep(0.02, 0.075, ax));
+	alb *= mix(0.7, 1.0, smoothstep(low, low + 0.045, p.y));
 	// an old man's grey yellows only round the mouth (nicotine, age): the rest stays ash grey
 	float near_lip = (1.0 - smoothstep(0.015, 0.05, ax)) * smoothstep(1.80, 1.865, p.y);
 	alb *= mix(vec3(1.0), vec3(1.04, 0.97, 0.84), 0.6 * near_lip);
@@ -122,7 +128,7 @@ void fragment() {
 	AO = hollow;
 	AO_LIGHT_AFFECT = 0.5;
 	// grey hair scatters a soft sheen at grazing angles and glows a little against the light
-	RIM = 0.3;
+	RIM = 0.12;
 	RIM_TINT = 0.6;
 	BACKLIGHT = hair_col * 0.25;
 }
