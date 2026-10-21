@@ -9,6 +9,9 @@ extends Node3D
 ## the rookery (a few oaks in the densest grove), wheels over it and settles into the upper
 ## crowns for the night; a player walking under the rookery puts them up, they circle and
 ## settle again. At dawn they leave for the feeding grounds.
+## The kites hunt: now and then by day one breaks off its circle and slants down at a feeding
+## flock; the rooks burst up and a handful of them mob it, cawing and stooping at it on its
+## tail while it labours back up to its soaring height, then they drop back to the flock.
 
 @export var terrain_path: NodePath
 @export var flock_count: int = 3
@@ -19,6 +22,10 @@ extends Node3D
 @export var roost_hour: float = 17.8         # flocks head for the rookery from here (+0..0.6 h)
 @export var leave_hour: float = 5.6          # and leave it from here (+0..0.5 h)
 @export var roost_scare_radius: float = 9.0  # a player this close under the rookery puts them up
+@export var stoop_every := Vector2(150.0, 330.0)  # seconds between a kite's stoops (by day)
+@export var mobbers := 4                     # rooks that chase a stooping kite off
+
+enum { SOAR, STOOP, MOBBED, REJOIN }         # kite hunt states
 
 enum { GROUND, AIR, LANDING, PERCH }
 
@@ -34,6 +41,11 @@ var _threat_prev := {}
 var scatter_events := 0      # bots read this
 var landings := 0
 var roost_landings := 0
+var kite_stoops := 0         # bots read these
+var mob_events := 0
+var mob_closest := INF       # nearest a mobbing rook got to its kite (m)
+var mob_caws := 0            # soundscape plays a caw at mob_caw_at each time this ticks
+var mob_caw_at := Vector3.ZERO
 var rookery := Vector3.ZERO  # centre of the roost trees (ground level)
 var rookery_trees: Array[int] = []
 var _first := true
@@ -58,6 +70,10 @@ class Bird:
 	var roll := 0.0
 	var perch := Vector3.ZERO # roost spot in a crown
 	var shuffle_t := 0.0
+	var hunt := 0             # kites: SOAR/STOOP/MOBBED/REJOIN
+	var hunt_t := 0.0
+	var prey = null           # kites: the Flock it stoops at
+	var mob = null            # rooks: the kite it is chasing
 
 class Flock:
 	var site := 0
@@ -110,6 +126,9 @@ func _ready() -> void:
 		b.off = Vector3(_rng.randf_range(-60, 60), _rng.randf_range(70, 95), _rng.randf_range(-60, 60))
 		b.fold = 0.0
 		b.legs = 0.0
+		b.state = AIR
+		b.hunt_t = _rng.randf_range(40.0, stoop_every.y)
+		b.pos = _soar_point(b)
 		_kites.append(b)
 	_pick_rookery()
 	_write_instances()
@@ -279,7 +298,7 @@ func _process(delta: float) -> void:
 	var tod = get_parent().get("time_of_day")
 	_kite_mmi.visible = tod == null or (tod > 6.5 and tod < 19.0)   # kites roost at night
 	for b: Bird in _kites:
-		_update_kite(b, dt)
+		_update_kite(b, dt, tod)
 	_write_instances()
 
 ## Scare the flock away from `from` (also used by tests and spontaneous take-offs).
@@ -425,6 +444,9 @@ func _air_bird(b: Bird, fl: Flock, dt: float) -> void:
 	b.fold = move_toward(b.fold, 0.0, dt * 6.0)
 	b.legs = move_toward(b.legs, 0.0, dt * 2.5)
 	b.peck = move_toward(b.peck, 0.0, dt * 3.0)
+	if b.mob != null:
+		_mob_bird(b, dt)
+		return
 	var t := _t * 0.35 + b.phase
 	var wheel := fl.anchor + Vector3(cos(_t * 0.22 + fl.site) * 14.0, 0, sin(_t * 0.22 + fl.site) * 14.0)
 	var tgt := wheel + b.off.rotated(Vector3.UP, t) + Vector3(0, sin(t * 1.7) * 1.5, 0)
@@ -485,20 +507,143 @@ func _wings(b: Bird, beat_hz: float, amp: float, dt: float) -> void:
 		# glide: wings out flat with a slight dihedral
 		b.flap = move_toward(b.flap, 0.12, dt * 5.0)
 
-func _update_kite(b: Bird, dt: float) -> void:
-	b.phase += dt * 0.16
+## Where a kite's soaring circle puts it now (its phase keeps running while it hunts).
+func _soar_point(b: Bird) -> Vector3:
 	var dir := 1.0 if int(b.off.x) % 2 == 0 else -1.0
 	var c := Vector3(b.off.x, _terrain.height_at(b.off.x, b.off.z) + b.off.y, b.off.z)
 	var r := 45.0 + sin(b.phase * 0.37) * 12.0
 	var a := b.phase * dir
-	b.pos = c + Vector3(cos(a) * r, sin(b.phase * 0.8) * 4.0, sin(a) * r)
+	return c + Vector3(cos(a) * r, sin(b.phase * 0.8) * 4.0, sin(a) * r)
+
+func _update_kite(b: Bird, dt: float, tod) -> void:
+	b.phase += dt * 0.16
+	var day: bool = tod == null or (tod > 7.5 and tod < 17.5)
+	match b.hunt:
+		SOAR:
+			_soar_kite(b, dt)
+			b.hunt_t -= dt
+			if b.hunt_t < 0.0:
+				b.hunt_t = 30.0
+				if day:
+					stoop(b)
+		STOOP:
+			_stoop_kite(b, dt)
+		MOBBED:
+			# labour back up toward the soaring circle, rowing on slow deep beats
+			b.hunt_t -= dt
+			var home := _soar_point(b)
+			var tgt := b.pos.lerp(home, 0.5) + Vector3.UP * 25.0
+			_steer(b, tgt, 9.5, 5.0, dt)
+			_wings(b, 2.6, 0.55, dt)
+			b.fold = move_toward(b.fold, 0.0, dt * 2.0)
+			if b.hunt_t < 0.0:
+				_release_mob(b)
+				b.hunt = REJOIN
+		REJOIN:
+			var home := _soar_point(b)
+			_steer(b, home, 10.0, 5.0, dt)
+			_wings(b, 1.8 if b.pos.y < home.y - 3.0 else 0.0, 0.4, dt)
+			b.fold = move_toward(b.fold, 0.0, dt * 2.0)
+			if b.pos.distance_to(home) < 4.0:
+				b.hunt = SOAR
+				b.hunt_t = _rng.randf_range(stoop_every.x, stoop_every.y)
+
+func _soar_kite(b: Bird, dt: float) -> void:
+	var dir := 1.0 if int(b.off.x) % 2 == 0 else -1.0
+	var c := Vector3(b.off.x, 0, b.off.z)
+	var a := b.phase * dir
+	b.pos = _soar_point(b)
 	var tang := Vector3(-sin(a), 0, cos(a)) * dir
 	b.yaw = atan2(-tang.x, -tang.z)
 	b.vel = tang * 8.0
 	# bank into the circle; soaring on flat wings with the odd slow flex
 	var right := Vector3(cos(b.yaw), 0, -sin(b.yaw))
-	b.roll = 0.3 * signf(right.dot(c - b.pos))
+	b.roll = 0.3 * signf(right.dot(Vector3(c.x - b.pos.x, 0, c.z - b.pos.z)))
 	b.flap = 0.1 + sin(_t * 1.3 + b.off.x) * 0.03
+	b.fold = move_toward(b.fold, 0.0, dt * 2.0)
+
+## Send kite `b` down at the nearest flock feeding on the meadow (false if none in reach).
+func stoop(b: Bird) -> bool:
+	if b.hunt != SOAR:
+		return false
+	var best = null
+	var best_d := 220.0
+	for fl: Flock in _flocks:
+		if fl.state != GROUND:
+			continue
+		var d := Vector2(_sites[fl.site].x - b.pos.x, _sites[fl.site].z - b.pos.z).length()
+		var taken := false
+		for k: Bird in _kites:
+			if k != b and k.prey == fl:
+				taken = true
+		if d < best_d and not taken:
+			best_d = d
+			best = fl
+	if best == null:
+		return false
+	b.prey = best
+	b.hunt = STOOP
+	kite_stoops += 1
+	return true
+
+## A long slanting glide, wings half drawn back, aimed a few metres over the feeding rooks;
+## they see it coming and go up at it well before it gets there.
+func _stoop_kite(b: Bird, dt: float) -> void:
+	var fl: Flock = b.prey
+	var site := _sites[fl.site]
+	var tgt := site + Vector3.UP * 6.0
+	var d := b.pos.distance_to(tgt)
+	_steer(b, tgt, 15.0, 4.0, dt)
+	b.flap = move_toward(b.flap, 0.05, dt * 2.0)
+	b.fold = move_toward(b.fold, 0.4 if d > 30.0 else 0.2, dt * 1.5)
+	var gone := fl.state != GROUND
+	if d < 32.0 or gone:
+		if not gone:
+			scatter(fl, Vector3(b.pos.x, site.y, b.pos.z))
+		_start_mob(fl, b)
+		b.hunt = MOBBED
+		b.hunt_t = _rng.randf_range(13.0, 17.0)
+
+func _start_mob(fl: Flock, kite: Bird) -> void:
+	mob_events += 1
+	var n := 0
+	var order := fl.birds.duplicate()
+	order.sort_custom(func(x: Bird, y: Bird) -> bool: return x.pos.distance_squared_to(kite.pos) < y.pos.distance_squared_to(kite.pos))
+	for b: Bird in order:
+		if n >= mobbers:
+			break
+		if b.state != AIR:
+			continue
+		b.mob = kite
+		b.delay = minf(b.delay, 0.2) + n * 0.25
+		n += 1
+	# the flock stays up until the mob has driven the kite off and come back
+	fl.air_t = maxf(fl.air_t, kite.hunt_t + 18.0)
+	kite.prey = fl
+
+func _release_mob(kite: Bird) -> void:
+	var fl: Flock = kite.prey
+	if fl != null:
+		for b: Bird in fl.birds:
+			if b.mob == kite:
+				b.mob = null
+	kite.prey = null
+
+## A mobbing rook: rows hard after the kite, swings in at its back from above and to one
+## side, falls away and comes in again, cawing.
+func _mob_bird(b: Bird, dt: float) -> void:
+	var k: Bird = b.mob
+	var fwd := k.vel.normalized() if k.vel.length() > 0.5 else Vector3.FORWARD
+	var side := fwd.cross(Vector3.UP).normalized()
+	var swing := sin(_t * 1.1 + b.phase * 3.0)
+	var off := -fwd * (2.5 + 2.0 * (1.0 - swing)) + side * (sin(b.phase * 5.0) * 3.0) + Vector3.UP * (1.0 + 1.5 * swing)
+	_steer(b, k.pos + off, 15.0, 16.0, dt)
+	_wings(b, 7.5, 0.95, dt)
+	var d := b.pos.distance_to(k.pos)
+	mob_closest = minf(mob_closest, d)
+	if d < 8.0 and _rng.randf() < dt * 0.15:
+		mob_caws += 1
+		mob_caw_at = b.pos
 
 func _write_instances() -> void:
 	var i := 0

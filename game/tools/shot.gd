@@ -74,6 +74,16 @@ func _ready() -> void:
 		var site: Vector3 = world.get_node("Birds").site_positions()[0]
 		var d := 9.0 if spot == "birds" else 15.5
 		SPOTS[spot] = [site + Vector3(-d * 0.8, 0, d * 0.6), site + Vector3(0, -0.5 if spot == "rooks" else 3.5, 0)]
+	if spot == "mob":
+		# a kite caught low over the meadow by the rooks: it is sent down at the first flock
+		# from 40 m out, the camera stands by the flock and is aimed up at it after the warm-up
+		var bd: Birds = world.get_node("Birds")
+		var site: Vector3 = bd.site_positions()[bd._flocks[0].site]
+		SPOTS[spot] = [site + Vector3(-12.4, 0, 9.3), site + Vector3(0, 6, 0)]
+		var kt: Birds.Bird = bd._kites[0]
+		kt.pos = site + Vector3(20, terrain.height_at(site.x + 20, site.z + 15) - site.y + 18, 15)
+		kt.vel = Vector3(-8, -3, -6)
+		bd.stoop(kt)
 	if spot == "midges":
 		# a midge swarm against the low sun: camera on the far side, sun behind the cloud
 		await get_tree().process_frame
@@ -1321,6 +1331,13 @@ func _ready() -> void:
 			for i in 3:
 				await get_tree().process_frame
 			print("SHOT bolt at %s flash %.2f strikes %d" % [at, lt.flash, lt.strikes])
+	if spot == "mob" and cam != null:
+		var kb: Birds.Bird = (world.get_node("Birds") as Birds)._kites[0]
+		cam.fov = 34.0
+		cam.look_at(kb.pos + Vector3.DOWN * 1.0)
+		print("SHOT mob kite %s (hunt %d) %.1f m from the lens, %d mob events" % [kb.pos, kb.hunt, kb.pos.distance_to(cam.global_position), world.get_node("Birds").mob_events])
+		for i in 2:
+			await get_tree().process_frame
 	if _action.is_valid():
 		await _action.call()
 		for i in 2:

@@ -29,6 +29,7 @@ var _pool: Array[AudioStreamPlayer3D] = []
 var _next_call := 2.0
 var _t := 0.0
 var _last_scatter := 0
+var _last_mob := 0
 
 func _ready() -> void:
 	_rng.seed = 7741
@@ -96,6 +97,9 @@ func _process(delta: float) -> void:
 	if birds and "scatter_events" in birds and birds.scatter_events != _last_scatter:
 		_last_scatter = birds.scatter_events
 		_rook_scatter()
+	if birds and "mob_caws" in birds and birds.mob_caws != _last_mob:
+		_last_mob = birds.mob_caws
+		_mob_caw(birds.mob_caw_at)
 
 func _band(h: float, a: float, b: float, c: float, d: float) -> float:
 	return smoothstep(a, b, h) * (1.0 - smoothstep(c, d, h))
@@ -134,6 +138,17 @@ func _bird_call(song: float) -> void:
 	p.volume_db = -9.0 + linear_to_db(clampf(song, 0.2, 1.0)) + _rng.randf_range(-4.0, 1.0)
 	p.play()
 	calls += 1
+
+## A rook mobbing a kite: one harsh call from the bird, a little softer and higher than the
+## lift-off burst.
+func _mob_caw(at: Vector3) -> void:
+	var p := _free_voice()
+	p.stream = _caw
+	p.global_position = at
+	p.pitch_scale = _rng.randf_range(1.05, 1.18)
+	p.volume_db = -7.0
+	p.play()
+	caws += 1
 
 func _rook_scatter() -> void:
 	var at := _listener() + Vector3(0, 6, 0)

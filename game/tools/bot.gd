@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -104,6 +104,9 @@ func _ready() -> void:
 		return
 	if name == "roost":
 		_roost_test()
+		return
+	if name == "kite":
+		_kite_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -2731,6 +2734,65 @@ func _roost_test() -> void:
 	if birds.census()["ground"] < birds.flock_count * birds.birds_per_flock:
 		return _combat_done(false, "rooks did not leave the roost for the meadow at dawn")
 	_combat_done(true, "rooks roost at dusk, flush and resettle, leave at dawn")
+
+## A kite hunts: it leaves its circle, slants down at a feeding flock, the rooks go up and a
+## few mob it close on its tail while it climbs back, then let it go and the flock settles.
+func _kite_test() -> void:
+	var birds: Birds = _world.get_node("Birds")
+	var terrain: Terrain = _world.get_node("Terrain")
+	_player.global_position = Vector3(0, terrain.height_at(0, 0) + 1.0, 0)
+	_world.time_of_day = 11.0
+	await _ticks(120)
+	var k: Birds.Bird = null
+	for kk: Birds.Bird in birds._kites:
+		var c0: int = birds.census()["ground"]
+		if c0 > 0 and birds.stoop(kk):
+			k = kk
+			break
+	if k == null:
+		return _combat_done(false, "no kite could find a feeding flock to stoop at")
+	var fl: Birds.Flock = k.prey
+	var site: Vector3 = birds._sites[fl.site]
+	var h0 := k.pos.y - terrain.height_at(k.pos.x, k.pos.z)
+	var s0 := birds.scatter_events
+	var lo := INF
+	var t := 0.0
+	while k.hunt == Birds.STOOP and t < 60.0:
+		await _ticks(10)
+		t += 10.0 / 60.0
+		lo = minf(lo, k.pos.y - terrain.height_at(k.pos.x, k.pos.z))
+	print("BOT kite stoop: from %.0f m up, down to %.0f m over the meadow in %.1f s, %d m from the flock" % [h0, lo, t, int(Vector2(k.pos.x - site.x, k.pos.z - site.z).length())])
+	if k.hunt != Birds.MOBBED or birds.scatter_events == s0 or fl.state != Birds.AIR:
+		return _combat_done(false, "the stoop did not put the flock up")
+	if lo > h0 - 20.0:
+		return _combat_done(false, "the kite did not come down on the flock")
+	var n := 0
+	for b: Birds.Bird in fl.birds:
+		if b.mob == k:
+			n += 1
+	t = 0.0
+	var caws0 := birds.mob_caws
+	var climb_lo := k.pos.y
+	while k.hunt == Birds.MOBBED and t < 40.0:
+		await _ticks(10)
+		t += 10.0 / 60.0
+	print("BOT kite mobbed: %d rooks on it, closest %.1f m, %d mob caws, climbed %.0f m in %.1f s" % [n, birds.mob_closest, birds.mob_caws - caws0, k.pos.y - climb_lo, t])
+	if n < 3 or birds.mob_closest > 4.0:
+		return _combat_done(false, "the rooks did not mob the kite")
+	if k.pos.y - climb_lo < 15.0:
+		return _combat_done(false, "the kite did not climb away from the mob")
+	t = 0.0
+	while (k.hunt != Birds.SOAR or fl.state != Birds.GROUND) and t < 120.0:
+		await _ticks(30)
+		t += 0.5
+	var stray := 0
+	for b: Birds.Bird in fl.birds:
+		if b.mob != null:
+			stray += 1
+	print("BOT kite after: kite %s, flock %s after %.1f s, %d still mobbing" % [["soaring", "stooping", "mobbed", "rejoining"][k.hunt], ["ground", "air", "landing", "perch"][fl.state], t, stray])
+	if k.hunt != Birds.SOAR or fl.state != Birds.GROUND or stray > 0:
+		return _combat_done(false, "kite or flock did not go back to soaring / feeding")
+	_combat_done(true, "a kite stoops at the rooks, they mob it back up into the sky, then settle")
 
 ## The watchtower ruin: built on a knoll clear of trees and boulders, the hero walks in
 ## through the curtain gateway and the breach to the tower floor, and its walls stop him.
