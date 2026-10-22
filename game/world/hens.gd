@@ -707,7 +707,7 @@ func _give_way(h: Dictionary) -> bool:
 	# in a short lane ahead of his boots, or right at them
 	if not ((ahead > -0.2 and ahead < GIVE_R + 0.8 and absf(side) < 0.65) or rel.length() < 0.55):
 		return false
-	if h.hurry > 0.0 and rel.length() < 0.45:
+	if h.hurry > 0.0 and rel.length() < 0.55:
 		# hurrying aside and he is all but on it (pinned against the wall in his lane): it
 		# flutters off past him, wings out, with an indignant squawk
 		# off to whichever side the wall leaves room on, else straight on ahead of him at a run
