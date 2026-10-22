@@ -23,6 +23,10 @@ var flick := 0.0             # 0..1: the right arm taken over by flick_arm/flick
 var flick_arm := 0.0
 var flick_elbow := 0.0
 var flick_out := 0.0         # radians: the flicked arm swung out to the right about the body's up axis
+var grip := 0.0              # 0..1: the right hand's fingers close into a fist (round a bail or a helve)
+var grip_fold := 0.0         # (bots) the closed hand as posed: the middle finger's first bone . the palm's normal
+var grip_thumb := 0.0        # (bots) the thumb's second bone . the palm's normal (folded over the fingers)
+var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
@@ -55,11 +59,57 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_bend(skel, "mixamorig_RightForeArm", x, -(flick_elbow - elbow) * flick)
 			if flick_out != 0.0:
 				_bend(skel, "mixamorig_RightArm", up, -flick_out * flick)
+	if grip > 0.0:
+		_grip(skel, "Right", grip)
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
+
+const GRIP_CURL := [1.25, 1.2, 0.8]   # radians per finger joint, knuckle to tip, at a full fist
+const THUMB_CURL := [0.55, 0.6, 0.5]
+
+## Closes a hand: each finger folds toward the palm about its knuckle hinge. The hinge is found
+## from the hand's own bones (finger direction and the pinky-to-index line), so it holds
+## whatever the arm is doing; the thumb only half closes, across the fingers.
+func _grip(skel: Skeleton3D, side: String, g: float) -> void:
+	var hb := skel.find_bone("mixamorig_%sHand" % side)
+	var mid := skel.find_bone("mixamorig_%sHandMiddle1" % side)
+	var idx := skel.find_bone("mixamorig_%sHandIndex1" % side)
+	var pin := skel.find_bone("mixamorig_%sHandPinky1" % side)
+	if hb < 0 or mid < 0 or idx < 0 or pin < 0:
+		return
+	var h := skel.get_bone_global_pose(hb).origin
+	var dir := (skel.get_bone_global_pose(mid).origin - h).normalized()
+	var across := skel.get_bone_global_pose(idx).origin - skel.get_bone_global_pose(pin).origin
+	across = (across - dir * across.dot(dir)).normalized()
+	# the palm faces across x dir for a right hand (index on the thumb side), the other way for a left
+	var palm := across.cross(dir) * (1.0 if side == "Right" else -1.0)
+	var hinge := dir.cross(palm).normalized()
+	for f in ["Index", "Middle", "Ring", "Pinky"]:
+		for j in 3:
+			_bend(skel, "mixamorig_%sHand%s%d" % [side, f, j + 1], hinge, GRIP_CURL[j] * g)
+	# the thumb folds over the fingers about its own hinge (the thumb's line x the palm's
+	# normal), not the fingers' one: on theirs it stuck out sideways like a thumbs-up
+	var t1 := skel.find_bone("mixamorig_%sHandThumb1" % side)
+	var t2 := skel.find_bone("mixamorig_%sHandThumb2" % side)
+	var t3 := skel.find_bone("mixamorig_%sHandThumb3" % side)
+	if t1 >= 0 and t2 >= 0 and t3 >= 0:
+		var tl := (skel.get_bone_global_pose(t2).origin - skel.get_bone_global_pose(t1).origin).normalized()
+		var th := tl.cross(palm).normalized()
+		for j in 3:
+			_bend(skel, "mixamorig_%sHandThumb%d" % [side, j + 1], th, THUMB_CURL[j] * g)
+		grip_thumb = (skel.get_bone_global_pose(t3).origin - skel.get_bone_global_pose(t2).origin).normalized().dot(palm)
+	# (bots) the middle finger as posed: its first bone into the palm, its second turned back
+	var m2 := skel.find_bone("mixamorig_%sHandMiddle2" % side)
+	var m3 := skel.find_bone("mixamorig_%sHandMiddle3" % side)
+	if m2 >= 0 and m3 >= 0:
+		var a1 := skel.get_bone_global_pose(mid).origin
+		var a2 := skel.get_bone_global_pose(m2).origin
+		var a3 := skel.get_bone_global_pose(m3).origin
+		grip_fold = (a2 - a1).normalized().dot(palm)
+		grip_turn = (a3 - a2).normalized().dot(dir)
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 func _bend(skel: Skeleton3D, bone_name: String, axis_skel: Vector3, angle: float) -> void:

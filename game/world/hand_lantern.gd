@@ -102,7 +102,7 @@ func _ready() -> void:
 	fill = OmniLight3D.new()
 	fill.name = "VentGlow"
 	fill.light_color = LAMP.lerp(Color(1.0, 0.75, 0.5), 0.3)
-	fill.omni_range = 1.4
+	fill.omni_range = 1.7
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
 	fill.light_specular = 0.2
@@ -156,6 +156,6 @@ func _apply() -> void:
 	_tallow.set_shader_parameter("lit", lit * fl)
 	lamp.light_energy = lit * 0.9 * fl
 	lamp.visible = lit > 0.01 and is_visible_in_tree()
-	fill.light_energy = lit * face_fill * 0.55 * fl
+	fill.light_energy = lit * face_fill * 0.8 * fl
 	fill.visible = lamp.visible and face_fill > 0.01
 	_flame_mi.visible = lit > 0.01

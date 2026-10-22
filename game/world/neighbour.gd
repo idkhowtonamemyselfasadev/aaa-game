@@ -480,6 +480,8 @@ func _pose() -> void:
 		crumple.flick_arm = 2.2
 		crumple.flick_elbow = 0.15
 		crumple.flick_out = 0.4
+		# (an open hand read as a wave in `lookout4`: the fist closes round the bail)
+		crumple.grip = maxf(crumple.grip, u)
 		crumple.spine += 0.06 * u
 		# (0.08 left his face a dark smudge under the brim in `lookout2`: chin up, eyes out)
 		crumple.neck += 0.2 * u

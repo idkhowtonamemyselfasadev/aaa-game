@@ -837,6 +837,7 @@ func _pose() -> void:
 		p = maxf(p, 0.6 * maxf(-lf, 0.0))
 	else:
 		crumple.clasp = 0.0
+	crumple.grip = 0.0
 	crumple.flick = r
 	crumple.flick_arm = 2.75
 	crumple.flick_elbow = 0.35
