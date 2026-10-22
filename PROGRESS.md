@@ -43,7 +43,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   0.20/0.16/0.12 -> 0.25/0.21/0.165 so the deeper hollows don't black out his beard.
   `rag.gdshader`: wool no longer takes the `slub` term (140 bands across the hang = the
   wood-grain rings on the cape and hood); it gets a blotchy near-round fbm mottle instead.
-  Bot neighbour passes. Shot: see below / next entry.
+  Bot neighbour passes. Shot `osric osricface5 90 17.1 face` (~45 min, looked at): the beard
+  reads as dark grizzled grey with clumped locks (fixed), the cape's wood-grain rings are gone
+  (fixed); still fail: the hood's opening still reads as a squarish frame from the front, and
+  the cape is now plain flat brown. Gallery: 20261022-0200-osric-hood.jpg.
 - (00:30 10-22) **Osric's eyes lifted out of the brim shadow.** `garb.gd`: felt hat tip
   -0.08 -> -0.13 rad (front brim higher off the eye line); bearded wearers (Osric, Wat) get a
   cleaner eye white (`eye.gdshader` new `sclera_gain`, 1.27: 0.33 -> 0.42) and `eye_fill`, a
@@ -4286,6 +4289,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+000000000000000000000000000000000000000000000000000000. (02:00 10-22) Beard dark + cape banding DONE, hood
+   partly. FIRST: the hood opening still reads square from the front in `osricface5`: give it
+   a peaked/pointed arch top (a lifted point at x=0 over the brow) and let one side fall
+   lower than the other (asymmetric `_hood_gap` for `beard`); the mantle wool is now flat
+   plain brown: add visible fulled texture at 1 m (stronger crease cx/cy normal, darker
+   fold valleys via fold_ao, a little dust on the shoulders). Then go back to ALIVE items.
+   One shot per session (~45 min); a container restart killed the first shot this session.
 00000000000000000000000000000000000000000000000000000. (00:30 10-22) Eyes out of the brim shadow DONE (eyes now
    show). FIRST: the hood reads as a stiff square box round Osric's face in `osricface4`:
    softer, narrower opening and a slumped crown for Osric (`HOOD_W`, `HOOD_ROLL`; the hero
