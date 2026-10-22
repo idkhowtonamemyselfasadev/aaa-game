@@ -397,6 +397,10 @@ func _update_lookout(delta: float) -> void:
 	if hand_lantern != null:
 		hand_lantern.want = 1.0 if out or hold_lift else 0.0
 		hand_lantern.face_fill = lift
+		var hb := skel.find_bone("mixamorig_Head") if skel != null else -1
+		if hb >= 0:
+			var head := skel.global_transform * skel.get_bone_global_pose(hb).origin
+			hand_lantern.face_at = head + Vector3.UP * 0.16 + body.global_transform.basis.z * 0.26
 		hand_lantern.visible = (out or hold_lift or hand_lantern.lit > 0.02) and state != IN
 
 func _call_out() -> void:

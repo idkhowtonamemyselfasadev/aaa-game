@@ -17,6 +17,8 @@ var pivot: Node3D           # the ring: plumb, swinging
 var lamp: OmniLight3D
 var fill: OmniLight3D       # the glow leaking up through the lid's vents onto the carrier's face
 var face_fill := 0.0        # set by the carrier: 1 with the lantern held up at his chin
+var fill_rest := Vector3.ZERO  # the glow's place over the vents, in the ring's space
+var face_at := Vector3.INF  # set by the carrier: just before his face (world); the glow leans toward it
 var max_sway := 0.0         # largest swing seen (bots)
 var _horn: ShaderMaterial
 var _flame: ShaderMaterial
@@ -102,12 +104,13 @@ func _ready() -> void:
 	fill = OmniLight3D.new()
 	fill.name = "VentGlow"
 	fill.light_color = LAMP.lerp(Color(1.0, 0.75, 0.5), 0.3)
-	fill.omni_range = 2.0
-	fill.omni_attenuation = 1.2
+	fill.omni_range = 1.7       # it leans in toward the face now (face_at): at 2.0 / 1.2 it washed his chest
+	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
 	fill.light_specular = 0.2
 	fill.position = Vector3(0, 0.28, 0)    # up nearer the face: from 0.16 it barely reached past the brim
 	pivot.add_child(fill)
+	fill_rest = fill.position
 	_apply()
 
 ## Where the flame burns (world), for lenses and bots.
@@ -157,5 +160,12 @@ func _apply() -> void:
 	lamp.light_energy = lit * 0.9 * fl
 	lamp.visible = lit > 0.01 and is_visible_in_tree()
 	fill.light_energy = lit * face_fill * 0.8 * fl
+	# the vents' glow spills up over the lid toward the face: from the lantern it fell off before
+	# it reached under the brim, so lean it partway there as the lantern comes up
+	var vent := pivot.global_transform * fill_rest
+	if face_at.is_finite() and face_fill > 0.0:
+		fill.global_position = vent.lerp(face_at, 0.5 * face_fill)
+	else:
+		fill.global_position = vent
 	fill.visible = lamp.visible and face_fill > 0.01
 	_flame_mi.visible = lit > 0.01

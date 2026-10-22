@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-2117-hearth-low1am.jpg",
-  "time": "2026-10-17T21:17:46Z",
-  "caption": "Hesper's low fire at 1 am: warm firelit stone, the light now dying off faster away from the ring; the wall-joint grass tufts still read straw-gold and the wall-on lens has no Hesper in it.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-2130-hearth-scorch22.jpg",
   "time": "2026-10-17T21:30:34Z",
   "caption": "Hesper's fire at 10 pm: the wall-joint grass behind it is burnt off and singed, so no gold streaks flare on the sooted stone; the lit wall still reads too salmon-red and the ivy goes blue-grey under the night grade.",
@@ -891,6 +885,12 @@
   "file": "20261022-1858-lookout.jpg",
   "time": "2026-10-22T18:58:13Z",
   "caption": "Osric at the yard-wall gap at night: the lantern's glow now reaches his cheek and the underside of the brim, but his thumb still sticks out sideways off the bail like a hitch-hiker's and the face is still mostly shadow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-2031-lookout8.jpg",
+  "time": "2026-10-22T20:31:36Z",
+  "caption": "Osric at the yard-wall gap at 01:30 with the lantern's glow now leaning up toward his face, so his face and beard read warm under the hat brim; still wrong: a hard bright band lights the brim's underside, the coat is flat pale grey with no weave, and the right-hand wall stones show orange-red patches.",
   "verdict": "fail"
  }
 ]
