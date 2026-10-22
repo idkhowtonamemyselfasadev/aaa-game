@@ -4372,7 +4372,14 @@ Content hours playable: 3.4
    way, back at its place after). New dog state ATTEND (dog.gd), Neighbour.out_looking() /
    lookout_spot(). NOT yet on screen: the `lookout` shot spot does not place the dog; add a
    shot option that puts Brack at its ATTEND spot (Dog._attend_at) and re-shoot. The
-   `lookout2` shot this session: see the line below this item.
+   (DONE: the `lookout` shot option now calls Dog.place_attend(), so re-shooting shows him.)
+   `lookout2` SHOT this session (flick 2.15/0.3 pose, Forward+, ~43 min with SHOT_TIMEOUT=4500,
+   verdict FAIL, in the gallery): the lantern is now held up before his chest, lit, warm light on
+   the wall stones; but his face is a dark smudge under the brim (a fist up near the brim
+   looks odd), the coat reads flat pale grey, and the night is flat blue with too many bright
+   fireflies for 01:30. NEXT: a small warm OmniLight fill at the lantern aimed at his face (or
+   lift the head with `neck`), cut firefly density after midnight, then
+   `SHOT_TIMEOUT=4500 tools/shots.sh "osric lookout3 90 1.5 lookout fixfps"` (now shows Brack).
 00000000000000000000000000000000000000000000000000000000000000. (11:00 10-22) Osric's lantern lift pose FIXED
    (bot-verified, NOT yet seen on screen). The lookout pose is now flick_arm 2.15, elbow 0.3
    (2.0/1.2 raised it to 1.54 m but tucked it in at 0.18 m; 2.3/0.7 same; 1.9/0.4 only

@@ -864,12 +864,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261022-0700-watlamp2.jpg",
-  "time": "2026-10-22T07:00:00Z",
-  "caption": "Wat walks the cart track at dusk with his horn lantern now glowing a soft amber, fireflies over the meadow; seen from behind, the scene beyond the lantern pool is nearly black and the pool reads as a red-brown smear.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-0654-henfox.jpg",
   "time": "2026-10-22T06:54:00Z",
   "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
@@ -882,6 +876,12 @@
   "verdict": "fail"
  },
  {
+  "file": "20261022-0700-watlamp2.jpg",
+  "time": "2026-10-22T07:00:00Z",
+  "caption": "Wat walks the cart track at dusk with his horn lantern now glowing a soft amber, fireflies over the meadow; seen from behind, the scene beyond the lantern pool is nearly black and the pool reads as a red-brown smear.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261022-0830-foxfur.jpg",
   "time": "2026-10-22T08:30:00Z",
   "caption": "Fur pass on the fox at Osric's hen ladder at 17:24: the coat is now a muted ginger-brown with combed tufts and no red glow, but Osric happens to be standing in front of it, so the fur is barely seen and needs a clean night re-shot.",
@@ -891,6 +891,12 @@
   "file": "20261022-1000-osriclookout.jpg",
   "time": "2026-10-22T10:00:00Z",
   "caption": "Osric woken at 01:30, out at the gap in the yard wall with his horn lantern lit and warm light on the wall stones; but the lantern hangs at his waist instead of held up, his face is lost under the brim, and the moonlit night reads flat blue-grey rather than Wukong-dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-1345-lookout2.jpg",
+  "time": "2026-10-22T13:45:00Z",
+  "caption": "Osric at the yard-wall gap at 01:30 now holds his lit horn lantern up before his chest and its warm light falls on the wall stones; but his face is still a dark smudge under the brim, his coat reads flat pale grey, and the moonlit night is flat blue.",
   "verdict": "fail"
  }
 ]
