@@ -28,7 +28,7 @@ var palette := {}
 ## worn on the back with deadwood standing out of it. The hero: hat, 1.0, no basket.
 ## robe_wide widens the panels; their hip wrap then curls them round the sides.
 var hatless := false
-var felt_hat := false            # a battered felt hat (round dented crown, narrow soft brim) for the douli
+var felt_hat := false            # a battered felt hat (tapered, front-pinched crown, soft snap brim) for the douli
 var robe_len := 1.0
 var robe_wide := 1.0     # panel width factor: wider panels curl round the hips into a skirt
 var basket := false
@@ -508,26 +508,36 @@ func _felt() -> ArrayMesh:
 		var rz := 0.198
 		var y := 0.0
 		var k := 0.0
+		# a front pinch: two thumb dents either side of the front of the crown (where a hand
+		# takes the hat off), deepest up at the shoulder and gone by the band
+		var off := absf(atan2(sa, ca))
+		var pinch := exp(-pow((off - 0.6) / 0.3, 2.0))
+		# battered: the crown has slumped a little toward the left rear
+		var slump := 0.007 * sin(a + 2.2)
 		if v < 0.3:
 			# the top: a low dome from the middle out to the crown's rounded shoulder, the
 			# crease pinched down along the middle line (its floor still 2 cm over the hood)
 			var t := v / 0.3
-			k = 0.86 * sin(t * PI * 0.5)
+			k = 0.80 * sin(t * PI * 0.5)
 			y = 2.13 - 0.026 * t * t - 0.02 * exp(-pow(sa * k / 0.3, 2.0)) * (1.0 - t * t * 0.8)
+			y += slump * t - 0.014 * pinch * t * t
+			k *= 1.0 - 0.10 * pinch * t * t
 		elif v < 0.62:
-			# the wall: down from the shoulder to the band, tapering in toward the top so the
-			# crown reads round, the shoulder eased over in a curve
+			# the wall: down from the shoulder to the band, tapering in hard toward the top with
+			# a soft belly through the middle, so it reads as a worn felt crown, not a bucket
 			var t := (v - 0.3) / 0.32
-			k = lerpf(0.86, 1.0, sqrt(t))
-			y = lerpf(2.104, 1.995, t)
+			k = lerpf(0.80, 1.0, t) + 0.03 * sin(t * PI)
+			y = lerpf(2.104 + slump - 0.014 * pinch, 1.995, t)
+			k *= 1.0 - 0.10 * pinch * (1.0 - t) * (1.0 - t)
 		else:
-			# the brim: out 6 cm and gone soft all round, drooping as low at the sides as at the
-			# front and back (a higher side brim curls up like a cowboy's from a 3/4 lens),
-			# wavy at the edge
+			# the brim: out ~6 cm and gone soft, snapped down at the front and back and flatter
+			# at the sides (a higher side brim would curl up like a cowboy's), the front left
+			# dragged lower than the right where it is always pulled on, wavy at the edge
 			var t := (v - 0.62) / 0.38
-			k = 1.0 + t * 0.06 / 0.185
-			y = 1.995 - 0.008 * t - (0.044 + 0.006 * sa * sa + 0.006 * sin(a * 5.0 + 0.7)) * t * t
-		k *= 1.0 + 0.012 * sin(a * 3.0 + 0.4)
+			k = 1.0 + t * (0.055 + 0.01 * ca * ca) / 0.185
+			var droop := 0.032 + 0.016 * ca * ca + 0.004 * sa * sa + 0.006 * maxf(ca, 0.0) * maxf(sa, 0.0)
+			droop += 0.006 * sin(a * 5.0 + 0.7) + 0.003 * sin(a * 9.0 + 2.1)
+			y = 1.995 - 0.008 * t - droop * t * t
 		return Vector3(sa * rx * k, y, -0.045 + ca * rz * k), 48, 16)
 
 ## A face cloth of the same indigo wool wound across the face from the bridge of the nose to
