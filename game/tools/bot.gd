@@ -4768,8 +4768,13 @@ func _pedlar_test() -> void:
 		await get_tree().physics_frame
 	if not hidden or not pd.on_road or not pd.visible:
 		return _combat_done(false, "the pedlar does not set out at 09:00 (hidden before %s, on road %s)" % [hidden, pd.on_road])
-	for leg in [[9.3, false], [14.6, true]]:
+	for leg in [[9.3, false], [14.6, true], [19.5, false]]:
 		var h: float = leg[0]
+		var dusk := Pedlar.lantern_for(h)
+		var lit_max := 0.0
+		var lamp_hi := -INF
+		var lamp_lo := INF
+		var sway0 := pd.hand_lantern.max_sway if pd.hand_lantern else 0.0
 		e.settle(_world, h)
 		o.settle(_world, h)
 		pd.settle(_world, h)
@@ -4793,6 +4798,12 @@ func _pedlar_test() -> void:
 			_world.time_of_day = h
 			await get_tree().physics_frame
 			ticks = i
+			if pd.hand_lantern != null and pd.visible:
+				lit_max = maxf(lit_max, pd.hand_lantern.lit)
+				if pd.hand_lantern.lit > 0.5 and pd.state == Villager.WALK:
+					var ly := pd.hand_lantern.flame_center().y - pd.global_position.y
+					lamp_hi = maxf(lamp_hi, ly)
+					lamp_lo = minf(lamp_lo, ly)
 			dog_closest = minf(dog_closest, dg.global_position.distance_to(pd.global_position))
 			if pd.state == Villager.WALK:
 				dog_pass = minf(dog_pass, Vector2(dg.global_position.x - pd.global_position.x, dg.global_position.z - pd.global_position.z).length())
@@ -4809,6 +4820,17 @@ func _pedlar_test() -> void:
 		print("BOT pedlar %.1f h (%s): %d ticks, journeys %d, stands %d, warps %d, greeted %s, Edda %s / Osric %s, mate turned to him off %.2f rad" % [h, "back" if leg[1] else "out", ticks, pd.journeys - j0, pd.stops - s0, pd.warps - w0, pd.greeted.keys(), e.activity, o.activity, faced])
 		print("BOT pedlar dog: closest %.1f m, woofs %d (%d sounded), warns %d, trotted out %.1f m, eyes on him off %.2f rad, state after %d" % [dog_closest, dg.woofs - wf0, _world.foley.played.get("dog_woof", 0) - fw0, dg.warns - wn0, dog_out, dog_eye, dg.state])
 		print("BOT pedlar walks past the dog no closer than %.2f m, sidesteps %d" % [dog_pass, pd.sidesteps - sd0])
+		print("BOT pedlar lantern: lit max %.2f, flame %.2f..%.2f m above his feet, swing %.2f rad" % [lit_max, lamp_lo, lamp_hi, (pd.hand_lantern.max_sway if pd.hand_lantern else 0.0)])
+		if pd.hand_lantern == null:
+			return _combat_done(false, "the pedlar has no hand lantern")
+		if dusk and lit_max < 0.95:
+			return _combat_done(false, "the pedlar's lantern is not lit on the dusk walk (%.2f)" % lit_max)
+		if not dusk and lit_max > 0.0:
+			return _combat_done(false, "the pedlar's lantern burns in daylight")
+		if dusk and (lamp_lo < 0.15 or lamp_hi > 0.9):
+			return _combat_done(false, "the lantern does not hang from his hand at his knee (%.2f..%.2f m)" % [lamp_lo, lamp_hi])
+		if dusk and pd.hand_lantern.max_sway < 0.03:
+			return _combat_done(false, "the lantern does not swing as he walks (%.3f rad)" % pd.hand_lantern.max_sway)
 		if dog_pass < 0.75:
 			return _combat_done(false, "the pedlar walks through the dog (%.2f m)" % dog_pass)
 		if dg.woofs - wf0 != 1 or dg.warns - wn0 != 1 or _world.foley.played.get("dog_woof", 0) - fw0 < 1:
@@ -4842,7 +4864,7 @@ func _pedlar_test() -> void:
 	_world.weather.force(0.0)
 	if moved < 8.0 or not pd.visible:
 		return _combat_done(false, "the rain stops the pedlar")
-	_combat_done(true, "Wat the pedlar sets out at 09:00, walks the road through the village both ways, stands on the green and at Osric's wall, passes a word with Edda and Osric (they turn to him), and hurries on through rain; Brack woofs at him, trots a few steps after him and watches him go; he steps round the dog instead of through it")
+	_combat_done(true, "Wat the pedlar sets out at 09:00, walks the road through the village both ways, stands on the green and at Osric's wall, passes a word with Edda and Osric (they turn to him), and hurries on through rain; at dusk he comes through again with a lit horn lantern swinging from his left hand; Brack woofs at him, trots a few steps after him and watches him go; he steps round the dog instead of through it")
 
 func _villager_test() -> void:
 	var v: Villager = _world.villager

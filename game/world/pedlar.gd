@@ -9,6 +9,9 @@ extends Villager
 ##         stone cottage and along the field side of its garth wall, where he stops for a word
 ##         with Osric if he is leaning on it, and off north-west over the fell
 ##   14:30 back the other way, the same stops in reverse
+##   19:24 in the dusk, up out of the south-east meadow again with a horn lantern lit in his
+##         left hand, its light swinging along the ruts, the same stops (he lodges at the fell
+##         farm the nights he is late on the coast road); the lantern is put out by daylight
 ## Rain does not stop him; he hurries. When the hero comes close he stops and turns to him and
 ## can be spoken to like the others. Off the road he is not drawn. Bots read `journeys`,
 ## `stops`, `greeted` and Villager's counters.
@@ -22,7 +25,8 @@ const GREEN := Vector2(-8.6, 1.4)          # his stand on the green, by the lant
 const LEG_SC := [Vector2(10.5, 7.0), Vector2(10.5, -4.0), Vector2(6.5, -12.0), Vector2(1.0, -12.4),
 		Vector2(-10.0, -16.0), Vector2(-26.0, -40.0), Vector2(-40.0, -66.0)]
 const WALL_STOP := 3                       # index in LEG_SC of the stop behind Osric's wall
-const SET_OUT := [9.0, 14.5]               # hours he sets off (morning in from the south-east)
+const SET_OUT := [9.0, 14.5, 19.4]         # hours he sets off (morning and dusk in from the south-east)
+const BACK := 1                            # the window that walks the road the other way
 const STAND_GREEN := 26.0                  # s he stands on the green
 const STAND_WALL := 14.0                   # s he stands at Osric's wall
 const CALL_R := 15.0                       # he calls a word across the green this far
@@ -37,6 +41,7 @@ var _side_on := false
 var edda: Villager
 var osric: Villager
 var staff: MeshInstance3D
+var hand_lantern: HandLantern    # carried lit on the dusk walk
 var _legs: Array = []            # [ground point, stand s, facing point or null]
 var _leg := 0
 var _stand_t := 0.0
@@ -58,6 +63,12 @@ const EX := {
 			["Your lantern's leaning. I'll not charge you for saying so.",
 				"It's leaned twenty years. It knows the way it likes to stand."],
 		],
+		"evening": [
+			["Benighted again, mistress. Hob's fire'll be in before I'm there.",
+				"Then walk faster and talk less. Mind the ford in the dark."],
+			["Two lanterns on the green tonight. Yours is the prettier.",
+				"Mine stays where it's put. Go on, Wat, before the Hollows wake."],
+		],
 	},
 	"Osric": {
 		"morning": [
@@ -71,6 +82,12 @@ const EX := {
 				"They're Edda's hens when they're in the turnips."],
 			["Fine weather for leaning.",
 				"There's no other kind, if you lean right."],
+		],
+		"evening": [
+			["Hens shut in, Osric?",
+				"Every one. The fox can read the latch, but it can't lift it."],
+			["A late road and a cold one.",
+				"Keep the light low and your feet on the ruts, lad."],
 		],
 	},
 }
@@ -126,6 +143,18 @@ func _kit() -> void:
 	hand_mark.add_child(staff)
 	# across the palm (the hand bone's x), foot forward and down ahead of the stride
 	staff.transform = Transform3D(Basis(Vector3.FORWARD, PI * 0.5) * Basis(Vector3.RIGHT, 0.25), Vector3(0.0, 0.08, 0.02))
+	if left_mark == null:
+		return
+	# a horn lantern by its ring in the left fist, hanging plumb at his knee
+	hand_lantern = HandLantern.new()
+	hand_lantern.name = "HandLantern"
+	hand_lantern.facing = body
+	left_mark.add_child(hand_lantern)
+	hand_lantern.position = Vector3(0.0, 0.08, 0.025)
+
+## Lantern light wanted: on the road between dusk and first light.
+static func lantern_for(h: float) -> bool:
+	return h >= 19.0 or h < 5.8
 
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
@@ -150,7 +179,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 	_show(false)
 	for i in SET_OUT.size():
 		if absf(at_hour - SET_OUT[i]) <= 0.05:
-			set_out(i == 1)
+			set_out(i == BACK)
 			_set_out[i] = true
 
 ## Sets off on the road through the village now (`back`: the afternoon way, north-west in).
@@ -261,11 +290,14 @@ func _physics_process(delta: float) -> void:
 		for i in SET_OUT.size():
 			if h >= SET_OUT[i] and h < SET_OUT[i] + 1.0 and not _set_out.has(i):
 				_set_out[i] = true
-				set_out(i == 1)
+				set_out(i == BACK)
 	elif state == STAND and greeting <= 0.0 and talking <= 0.0 and not noticing:
 		_stand_t -= delta
 		if _stand_t <= 0.0:
 			_go_leg(_leg + 1)
+	if hand_lantern != null:
+		hand_lantern.want = 1.0 if on_road and lantern_for(h) else 0.0
+		hand_lantern.visible = on_road and (lantern_for(h) or hand_lantern.lit > 0.0)
 	_pick_mate()
 	super._physics_process(delta)
 	if greets > _greets_seen:

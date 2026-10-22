@@ -964,6 +964,16 @@ func _ready() -> void:
 			var cp2 := Vector3(c2.x, terrain.height_at(c2.x, c2.y) + 1.35, c2.y)
 			var gr: Vector2 = YardGround.ROAD[4][0]
 			SPOTS[spot] = [cp2, Vector3(gr.x, terrain.height_at(gr.x, gr.y) + 1.6, gr.y)]
+			if "lamp" in args:
+				# dusk: ahead of him and off his left side, low, looking back at the lit horn
+				# lantern at his knee, its pool on the ruts and the meadow behind going dark
+				var lft := Vector2(dir.y, -dir.x)
+				var c3 := wp + dir * 3.4 + lft * 1.6
+				var cp3 := Vector3(c3.x, terrain.height_at(c3.x, c3.y) + 1.1, c3.y)
+				SPOTS[spot] = [cp3, pd.global_position + Vector3.UP * 0.75 + Vector3(lft.x, 0, lft.y) * 0.2]
+		if pd.hand_lantern != null:
+			pd.hand_lantern.lit = 1.0 if Pedlar.lantern_for(world.time_of_day) else 0.0
+			pd.hand_lantern.visible = pd.hand_lantern.lit > 0.0
 		if "woof" in args:
 			# Brack stood off 5 m from him on the green, seeing him off: the lens low behind
 			# the dog's shoulder, the dog large in the foreground and Wat beyond it
