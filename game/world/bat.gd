@@ -49,6 +49,7 @@ var drops := 0                  # bots: times it let go of the roost at dusk
 var homings := 0                # bots: times it hung up again under the eaves
 var stretches := 0              # bots: wing stretches while roosting
 var fell := 0.0                 # bots: how far below its hold it dropped before flying
+var door_pass := 99.0           # bots: closest it came to the door point flying out after a drop
 var calls := 0                  # bots: social chirps on the wing
 var buzzes := 0                 # bots: feeding buzzes (one per stoop)
 var grumbles := 0               # bots: grumbles at the roost
@@ -164,6 +165,7 @@ func _process(delta: float) -> void:
 			_drop_t = 0.0
 			vel = Vector3.ZERO
 			drops += 1
+			door_pass = 99.0
 		else:
 			_roosting(delta)
 			return
@@ -280,6 +282,7 @@ func _step(c: Vector3, dt: float) -> void:
 				fell = maxf(fell, roost_at.y - p.y)
 			else:
 				var to_door := door_at - p
+				door_pass = minf(door_pass, to_door.length())
 				desired = (to_door.normalized() + Vector3.UP * 0.1) * SPEED
 				if to_door.length() < 0.5:
 					state = IN

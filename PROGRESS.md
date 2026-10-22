@@ -4367,6 +4367,17 @@ Content hours playable: 3.4
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+00000000000000000000000000000000000000000000000000000000000000000000. (19:00 10-22) Osric's thumb tip lies across his fist + bat door bot made exact (bot-verified; shot pending at commit time, see the next entry/gallery).
+   Crumple: new THUMB_WRAP -0.35 rad turns Thumb2 and Thumb3 about the hand's length axis (dir) after
+   the curl, so the last bone points pinky-ward across the curled fingers instead of straight out
+   of the fist. New (bots) grip_tip = Thumb3's bone direction in the hand frame (along, index-ward,
+   palm-ward): was (-0.20, -0.63, 0.75), now (-0.20, -0.96, 0.17); henfox fails if index-ward > -0.75.
+   Tried and rejected: folding Thumb2/3 about the fingers' hinge (+-0.8 only swings the tip between
+   up past the knuckles and back at the wrist). Bat: Bat.door_pass (closest approach to the door
+   point after a drop) replaces the bot's 10-tick sample, threshold 0.6 m. Bots pass: henfox bat
+   neighbour villager lantern facelight walk. NEXT: look at shot `lookout8`; then the coat
+   weave/wear contrast at night, the orange-red patches on the right-hand wall stones, the fox fur
+   re-shoot, Wat's lantern lift `watlamp3`.
 0000000000000000000000000000000000000000000000000000000000000000000. (18:00 10-22) Lantern moth bot fixed + Osric's face fill raised + thumb swing (bot-verified, shot).
    Moths: a moth that power-dives away from the bat (Moths.dodge) is flagged `back` until it is
    within r+0.3 m of the light again, and max_dist skips it; that dive (drops ~1.5-3 m) was what
@@ -5090,7 +5101,7 @@ Content hours playable: 3.4
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
-- (18:00 10-22) Bot `bat` FAILS on clean main (99e95e6) too: "the bat never drops out of the woodshed roost at dusk" (drops 1, fell 0.42 m, but 'out by the woodshed door false'). Catches/stoops all fine; the exit check (door side) needs a look.
+- (18:00 10-22) ~~Bot `bat` FAILS on clean main~~ FIXED 19:00 10-22 (the bot sampled every 10 ticks at 4x and could miss the ~0.1 s the bat spends by the door; Bat now records `door_pass`, closest approach to the door point after a drop, and the bot checks it, 0.47-0.50 m on four runs). Was: fails on clean main (99e95e6) too: "the bat never drops out of the woodshed roost at dusk" (drops 1, fell 0.42 m, but 'out by the woodshed door false'). Catches/stoops all fine; the exit check (door side) needs a look.
 - (17:00 10-22) ~~`lantern` bot now fails every run~~ FIXED 18:00 10-22 (bat-dodge dives counted as strays). Was: fails every run on "no believable moths" (9 moths max, strays 1.5-3.3 m) on clean main too, not just now and then: probably the 13:00 late_share firefly/insect thinning after midnight also thins the moths at the 02:00 sample. Exempt moths from late_share or move the bot's moth sample to 22:00.
 - (13:00 10-22) The `lantern` bot fails now and then on "no believable moths" (a moth strays 2.07 m from the light, limit 1.4); passes on re-run with and without this session's changes. Widen the moths' leash or the margin.
 - (10-22) ~~`neighbour` bot's "hens in his road" check is intermittent~~ FIXED 11:00 10-22 (flutter radius 0.55 m): the same code gave

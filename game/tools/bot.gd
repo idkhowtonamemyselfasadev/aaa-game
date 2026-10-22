@@ -465,8 +465,6 @@ func _bat_test() -> void:
 	var door_by := false
 	for i in 240:
 		await _ticks(10)
-		if b.state == Bat.IN and b.global_position.distance_to(b.door_at) < 1.2:
-			door_by = true
 		if (b.state == Bat.PATROL or b.state == Bat.CHASE) and out_at < 0:
 			out_at = i
 		if b.state == Bat.PATROL or b.state == Bat.CHASE:
@@ -474,7 +472,9 @@ func _bat_test() -> void:
 			far = maxf(far, Vector2(b.global_position.x - c.x, b.global_position.z - c.z).length())
 	print("BOT bat: noon %s, dusk %s, out from tick %d0, stoops %d, catches %d (moths eaten %d), misses %d, moth dives %d" % [noon, dusk, out_at, b.stoops, b.catches, mo.eaten, b.misses, mo.dodges])
 	print("BOT bat: nearest the lantern %.2f m, lowest %.2f m over the post foot, farthest out %.2f m" % [b.nearest_lamp, b.lowest, far])
-	print("BOT bat: drops %d, fell %.2f m before flying, out by the woodshed door %s" % [b.drops, b.fell, door_by])
+	# read off the bat's own per-step record: a 10-tick sample at 4x missed the 0.1 s it spends by the door
+	door_by = b.door_pass < 0.6
+	print("BOT bat: drops %d, fell %.2f m before flying, out by the woodshed door %s (%.2f m)" % [b.drops, b.fell, door_by, b.door_pass])
 	if noon or dusk:
 		return _combat_done(false, "the bat is out by day or before the lantern is lit")
 	if b.drops != 1 or b.fell < 0.1 or not door_by:
@@ -1910,6 +1910,7 @@ func _osric_sample(i: int) -> void:
 			_os["fist_turn"] = minf(_os["fist_turn"], nb.crumple.grip_turn)
 			_os["fist_thumb"] = maxf(_os["fist_thumb"], nb.crumple.grip_thumb)
 			_os["thumb_gap"] = minf(_os["thumb_gap"], nb.crumple.grip_gap)
+			_os["thumb_tip"] = nb.crumple.grip_tip
 			# the vent glow that lights his face from below
 			var fl: OmniLight3D = nb.hand_lantern.fill
 			if fl.visible:
@@ -1963,7 +1964,7 @@ func _henfox_test() -> void:
 	var dog_look := 0.0
 	var reached := -1
 	var gone := -1
-	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1, "dog_near": 99.0, "dog_sit": 0.0, "dog_clear": 99.0, "fill": 0.0, "fill_y": 0.0, "face_gap": 99.0, "fist": -9.0, "fist_turn": 9.0, "fist_thumb": -9.0, "thumb_gap": 99.0}
+	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1, "dog_near": 99.0, "dog_sit": 0.0, "dog_clear": 99.0, "fill": 0.0, "fill_y": 0.0, "face_gap": 99.0, "fist": -9.0, "fist_turn": 9.0, "fist_thumb": -9.0, "thumb_gap": 99.0, "thumb_tip": Vector3.ZERO}
 	for i in 9000:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
@@ -2029,8 +2030,9 @@ func _henfox_test() -> void:
 	print("BOT henfox lantern hand: %.2f m from his head" % _os["face_gap"])
 	if _os["face_gap"] < 0.47:
 		return _combat_done(false, "Osric's lantern fist should be out before him, not up beside his face")
+	print("BOT henfox thumb tip: along the hand %.2f, index-ward %.2f, palm-ward %.2f" % [_os["thumb_tip"].x, _os["thumb_tip"].y, _os["thumb_tip"].z])
 	print("BOT henfox fist: middle finger's first bone %.2f into the palm, its second %.2f along the hand (below 0: folded back), thumb %.2f over into the palm, its last joint %.3f m from the index's middle joint" % [_os["fist"], _os["fist_turn"], _os["fist_thumb"], _os["thumb_gap"]])
-	if _os["fist"] < 0.8 or _os["fist_turn"] > -0.3 or _os["fist_thumb"] < 0.5 or _os["thumb_gap"] > 0.08:
+	if _os["fist"] < 0.8 or _os["fist_turn"] > -0.3 or _os["fist_thumb"] < 0.5 or _os["thumb_gap"] > 0.08 or _os["thumb_tip"].y > -0.75:
 		return _combat_done(false, "Osric's fingers should close round the lantern bail, not hang open in a wave")
 	print("BOT henfox face glow: energy %.2f at %.2f m up" % [_os["fill"], _os["fill_y"]])
 	if _os["fill"] < 0.3 or _os["fill_y"] < 1.7:
