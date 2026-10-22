@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-1300-hearth-noon-nosun.jpg",
-  "time": "2026-10-17T13:12:00Z",
-  "caption": "Diagnostic: noon with the direct sun cut -- the cold hearth still glowed cream, so no sun leak; a second frame with the hearth's shade-fill term cut went near black, so the fill was the cause.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1300-hearth-noon-fixed.jpg",
   "time": "2026-10-17T13:55:00Z",
   "caption": "Noon in the keep after the fix: the cold fire ring now reads as dark sooted stones, charred logs and grey ash instead of a bleached cream star; the ash is a little cold blue-grey and the keep wall still reads dim and flat.",
