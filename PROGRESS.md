@@ -4995,6 +4995,9 @@ Content hours playable: 3.4
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (10-22) `neighbour` bot's "hens in his road" check is intermittent: the same code gave
+  closest 0.23 m (FAIL, threshold 0.3) on one run and 0.46 m (PASS) on the next (daytime garth
+  walk). The hens' give-way margin in Hens._give_way is borderline; widen it a little.
 - (07:00 10-22) Bot `henfox` is flaky on clean main (f0081e2): one run in two the fox is still
   visible after the 9000-frame prowl loop ("the dog's barking should send the fox back out
   through the stile", gone -1). Lengthen the loop or find where its way out stalls (path end
