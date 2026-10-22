@@ -1893,6 +1893,12 @@ func _osric_sample(i: int) -> void:
 		var gap: Vector3 = nb._spots["lookout"][0]
 		_os["lamp"] = maxf(_os["lamp"], nb.hand_lantern.lit if nb.hand_lantern.visible else 0.0)
 		_os["lift"] = maxf(_os["lift"], nb.lift)
+		if nb.lift > 0.95 and nb.hand_lantern.visible:
+			# the ring in the hand: how high and how far out before him it is held
+			var rp: Vector3 = nb.hand_lantern.global_position - nb.global_position
+			var fwd: Vector3 = nb.body.global_transform.basis.z
+			_os["ring_y"] = maxf(_os["ring_y"], rp.y)
+			_os["ring_out"] = maxf(_os["ring_out"], Vector2(rp.x, rp.z).dot(Vector2(fwd.x, fwd.z).normalized()))
 		_os["gap"] = minf(_os["gap"], Vector2(nb.global_position.x - gap.x, nb.global_position.z - gap.z).length())
 		_os["sill"] = minf(_os["sill"], _world.stone_cottage.lit)
 	elif _os["out"]:
@@ -1931,7 +1937,7 @@ func _henfox_test() -> void:
 	var dog_look := 0.0
 	var reached := -1
 	var gone := -1
-	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "sill": 1.0, "back_in": -1}
+	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1}
 	for i in 9000:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
@@ -1989,9 +1995,11 @@ func _henfox_test() -> void:
 	var lift_max: float = _os["lift"]
 	var sill_min: float = _os["sill"]
 	var back_in: int = _os["back_in"]
-	print("BOT henfox lookout: lookouts %d, out %s, at the gap %.2f m, lantern lit %.2f, lifted %.2f, calls %d, window while out %.2f, back in at frame %d, lantern shown %s" % [nb.lookouts, _os["out"], gap_min, lamp_max, lift_max, nb.calls, sill_min, back_in, nb.hand_lantern.visible])
+	print("BOT henfox lookout: lookouts %d, out %s, at the gap %.2f m, lantern lit %.2f, lifted %.2f (ring %.2f m up, %.2f m out), calls %d, window while out %.2f, back in at frame %d, lantern shown %s" % [nb.lookouts, _os["out"], gap_min, lamp_max, lift_max, _os["ring_y"], _os["ring_out"], nb.calls, sill_min, back_in, nb.hand_lantern.visible])
 	if nb.lookouts != 1 or gap_min > 0.5 or lamp_max < 0.8 or lift_max < 0.95 or nb.calls < 2:
 		return _combat_done(false, "woken, Osric should come out to the gap with his lantern lit, hold it up and call out")
+	if _os["ring_y"] < 1.5 or _os["ring_out"] < 0.25:
+		return _combat_done(false, "Osric should hold the lantern up and out before him at chin height, not at his waist")
 	if back_in < 0 or nb.hand_lantern.visible or nb.activity != "in":
 		return _combat_done(false, "Osric should go back in to bed after looking")
 	if sill_min < 0.2:

@@ -466,8 +466,10 @@ func _pose() -> void:
 		# down the dark beyond the wall; the head a little forward under the brim, peering
 		var u := lift * lift * (3.0 - 2.0 * lift)
 		crumple.flick = maxf(crumple.flick, u)
-		crumple.flick_arm = 1.45
-		crumple.flick_elbow = 0.75
+		# (1.45/0.75 left it hanging at his waist: the henfox bot now holds the ring at 1.5 m+,
+		# a hand's length out before him)
+		crumple.flick_arm = 2.15
+		crumple.flick_elbow = 0.3
 		crumple.spine += 0.06 * u
 		crumple.neck += 0.08 * u
 	if latch > 0.0:
