@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261017-1200-hearth-noon-fill.jpg",
-  "time": "2026-10-17T12:20:00Z",
-  "caption": "The cold hearth at noon after the keep fill on it was matched to the floor and the ash/split-wood albedo darkened: almost unchanged -- logs, ash and ring stones still read bleached white-lilac in the shaded keep, so the fill term was not the cause.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-1200-hearth-noon-noalbedo.jpg",
-  "time": "2026-10-17T12:22:00Z",
-  "caption": "Diagnostic: the same view with the hearth's albedo forced to black -- the hearth goes black, so its white glare is diffuse light reaching it (suspect: sun leaking through a gap at the wall foot), not a sky reflection or specular.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1300-hearth-noon-nosun.jpg",
   "time": "2026-10-17T13:12:00Z",
   "caption": "Diagnostic: noon with the direct sun cut -- the cold hearth still glowed cream, so no sun leak; a second frame with the hearth's shade-fill term cut went near black, so the fill was the cause.",
@@ -891,6 +879,12 @@
   "file": "20261022-0300-osric-dust.jpg",
   "time": "2026-10-22T03:00:00Z",
   "caption": "Osric at the garth in late sun: his hood now hangs askew with a worn uneven rim and his wool mantle carries road dust and wear; his face still reads as a smooth mask and the mantle is still too clean-edged.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-0400-osric-slide.jpg",
+  "time": "2026-10-22T04:00:00Z",
+  "caption": "Osric bent to the hen house at dusk as he drops the pop-hole slide; the sun is already down so the frame is near black, only his hat and the ladder show against the fireflies.",
   "verdict": "fail"
  }
 ]

@@ -21,6 +21,18 @@ const PITCH := Color(0.07, 0.06, 0.05)     # the roof's tar
 var terrain: Terrain
 var base_y := 0.0                       # floor's foot level, world y, at the house
 var boards := 0                         # pieces of oak built (bots)
+## The pop-hole slide: 0 propped up in its guides .. 1 dropped shut over the hole. Osric
+## (Neighbour) drops it once the last hen is in at dusk and lifts it again at first light;
+## the hens stay in until it is up.
+var shut := 0.0
+var slide: Node3D
+var drops := 0                          # times it was dropped shut (bots)
+var lifts := 0                          # and lifted again
+var _shut_goal := 0.0
+var _fall_v := 0.0
+const SLIDE_DROP := HOLE.y              # m the shutter drops from propped to shut
+## A wooden clack as the slide hits the sill (pw 1), a lighter knock as it is propped (0.4).
+signal knocked(at: Vector3, pw: float)
 var _timber: Shader
 var _iron: StandardMaterial3D
 var _rng := RandomNumberGenerator.new()
@@ -112,8 +124,13 @@ func _build() -> void:
 	for s in [-1.0, 1.0]:
 		_oak(Vector3(hx + 0.03, fl, s * (hz2 + 0.02)), Vector3(hx + 0.03, fl + HOLE.y + 0.32, s * (hz2 + 0.02)), 0.03, 0.025, Vector3.RIGHT)
 	_oak(Vector3(hx + 0.035, fl + 0.005, -hz2 - 0.03), Vector3(hx + 0.035, fl + 0.005, hz2 + 0.03), 0.03, 0.03, Vector3.UP)
+	slide = Node3D.new()
+	slide.name = "Slide"
+	add_child(slide)
 	_oak(Vector3(hx + 0.05, fl + HOLE.y + 0.15, -hz2), Vector3(hx + 0.05, fl + HOLE.y + 0.15, hz2), HOLE.y * 0.9, 0.02, Vector3.RIGHT, 0.5)
+	_adopt(slide)
 	_ironbox(Vector3(hx + 0.065, fl + HOLE.y + 0.31, 0), Vector3(0.012, 0.012, 0.06))
+	_adopt(slide)
 	# a dark inside behind the hole (the floor's far side and back boards are lit otherwise)
 	var shade := MeshInstance3D.new()
 	var sm := BoxMesh.new()
@@ -199,6 +216,50 @@ func _build() -> void:
 	cs.position = Vector3(0, (fl + hf + 0.1) * 0.5 - 0.05, 0.12)
 	body.add_child(cs)
 	add_child(body)
+
+## Moves the last-built piece under `to` (it keeps its place).
+func _adopt(to: Node3D) -> void:
+	var c := get_child(get_child_count() - 1)
+	remove_child(c)
+	to.add_child(c)
+
+## World point of the slide's handle (where a hand takes it).
+func handle_at() -> Vector3:
+	return slide.to_global(Vector3(SIZE.x * 0.5 + 0.065, FLOOR + HOLE.y + 0.31, 0))
+
+## Drop the slide (it falls in its guides and claps onto the sill) / lift it back up.
+func close() -> void:
+	_shut_goal = 1.0
+
+func open() -> void:
+	_shut_goal = 0.0
+
+## Straight to a state without the fall (settling the world at an hour).
+func set_shut(on: bool) -> void:
+	_shut_goal = 1.0 if on else 0.0
+	shut = _shut_goal
+	_fall_v = 0.0
+	if slide != null:
+		slide.position.y = -SLIDE_DROP * shut
+
+func _process(delta: float) -> void:
+	if slide == null or is_equal_approx(shut, _shut_goal):
+		return
+	if _shut_goal > shut:
+		# let go: it drops in its guides, quick, and claps onto the sill
+		_fall_v += 9.8 * 0.6 * delta
+		shut = minf(shut + _fall_v * delta / SLIDE_DROP, 1.0)
+		if shut >= 1.0:
+			_fall_v = 0.0
+			drops += 1
+			knocked.emit(handle_at(), 1.0)
+	else:
+		# drawn up by the handle, steadily, and propped on its peg
+		shut = maxf(shut - delta / 0.8, 0.0)
+		if shut <= 0.0:
+			lifts += 1
+			knocked.emit(handle_at(), 0.4)
+	slide.position.y = -SLIDE_DROP * shut
 
 ## Oak in its own unscaled mesh with the grain along the run a -> b; `n` is the way its
 ## broad face looks (section w across, d through along n).

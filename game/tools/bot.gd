@@ -4532,6 +4532,13 @@ func _neighbour_test() -> void:
 	for st in stages:
 		var s0 := v.stoops
 		var g0 := v.goings_in
+		if st[1] == "step":
+			# he waits by the ladder till the last hen is up and the slide dropped
+			for i in 6000:
+				if v.activity == "step":
+					break
+				_world.time_of_day = st[0]
+				await get_tree().physics_frame
 		await _hold_arrive(v, st[0], 3000, st[2] + 40)
 		var lc := v.cottage.to_local(v.global_position)
 		print("BOT neighbour at %.1f h: %s, state %d, visits %s, stoops +%d, lean %.2f, gate opens %d, warps %d, at (%.1f, %.1f) local" % [st[0], v.activity, v.state, str(v.visits), v.stoops - s0, v.lean, fg.opens - o0, v.warps, lc.x, lc.z])
@@ -4569,6 +4576,11 @@ func _neighbour_test() -> void:
 			print("BOT neighbour lamp while he is on the step: %.2f" % v.cottage.lit)
 			if v.cottage.lit > 0.05:
 				return _combat_done(false, "his lamp burns with nobody in")
+			# the hens all in and the slide down over the pop-hole before he left them
+			var hh: HenHouse = _world.hens.house
+			print("BOT neighbour slide at dusk: all in %s, shut %.2f, his drops %d, house drops %d" % [_world.hens.all_in(), hh.shut, v.shuts, hh.drops])
+			if not _world.hens.all_in() or hh.shut < 0.99 or v.shuts < 1:
+				return _combat_done(false, "he left the hen house open to the fox")
 	if fg.angle != 0.0 and absf(fg.angle) > 0.05:
 		await _hold_hour(20.0, 300)
 	print("BOT neighbour gate after: angle %.2f, opens %d, shuts %d" % [fg.angle, fg.opens - o0, fg.shuts])
@@ -4628,6 +4640,31 @@ func _neighbour_test() -> void:
 		return _combat_done(false, "he is in at night with his lamp unlit")
 	if v.warps > 0:
 		return _combat_done(false, "he wedged on his rounds and was lifted %d times" % v.warps)
+	# first light: the slide is still down and the hens wait in; out he comes, reaches down and
+	# draws it up, and they come down the ladder one after another; then he goes to his step
+	var hh2: HenHouse = hn.house
+	_world.time_of_day = 5.0
+	hn._settle_now()
+	v.settle(_world, 5.0)
+	await _hold_hour(5.0, 30)
+	var op0 := v.opens
+	var shut_at_5 := hh2.shut
+	await _hold_hour(5.95, 600)
+	var held := hn.all_in()
+	await _hold_arrive(v, 5.95, 3000, 400)
+	var down := 0
+	for i in 2400:
+		_world.time_of_day = 5.95
+		await get_tree().physics_frame
+		down = 0
+		for hd: Dictionary in hn.hens:
+			if not hd.inside and hd.state != Hens.CLIMB and hd.state != Hens.DESCEND:
+				down += 1
+		if down == hn.hens.size() and v.activity == "wake":
+			break
+	print("BOT neighbour slide at dawn: shut at 5 h %.2f, hens held in %s, opens +%d, shut now %.2f, hens down %d of %d, he is at his %s" % [shut_at_5, held, v.opens - op0, hh2.shut, down, hn.hens.size(), v.activity])
+	if shut_at_5 < 0.99 or v.opens - op0 < 1 or hh2.shut > 0.01 or down < hn.hens.size() or v.activity != "wake":
+		return _combat_done(false, "the hen house is not opened at first light")
 	# the hero walks up while he leans on the wall: he straightens and turns to him
 	v.settle(_world, 9.0)
 	await _hold_hour(9.0, 200)
@@ -4639,7 +4676,7 @@ func _neighbour_test() -> void:
 	print("BOT neighbour notice: noticing %s, facing off %.2f rad, lean %.2f" % [v.noticing, off, v.lean])
 	if not v.noticing or off > 0.35 or v.lean > 0.1:
 		return _combat_done(false, "he ignores the hero")
-	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, out through the stile onto the fell and back, in for dinner and at night, out of the rain, through the field gate")
+	_combat_done(true, "Osric keeps his day (his lamp lit only while he is in; the hens peck round his boots and get out of his road): eggs, the wall, the garth, out through the stile onto the fell and back, in for dinner and at night, out of the rain, through the field gate; he drops the hen house slide at dusk and lifts it at first light")
 
 ## Edda and Osric pass a word when her feed round brings her by his garth: both stop and turn
 ## to each other, she says hers and he answers; the hero overhears it from nearby, and they do

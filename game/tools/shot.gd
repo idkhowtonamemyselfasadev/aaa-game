@@ -1023,6 +1023,26 @@ func _ready() -> void:
 			var sc := nb.cottage.to_global(Vector3(0.6, 0, -14.6))
 			sc.y = terrain.height_at(sc.x, sc.z) + 1.6
 			SPOTS[spot] = [sc, sl + Vector3.UP * 1.1]
+		if "slide" in args:
+			# dusk, the hens all in: Osric beside the hen house ladder, bent to the pop-hole with
+			# his hand on the slide just dropped over it; from the yard, three-quarter on the house
+			var hn: Hens = world.hens
+			hn._settle_now()
+			var sp: Array = nb._spots["slide"]
+			var s0: Vector3 = sp[0]
+			nb.global_position = Vector3(s0.x, terrain.height_at(s0.x, s0.z) + 0.03, s0.z)
+			nb.goal_yaw = sp[1]
+			nb.body.rotation.y = nb.goal_yaw
+			nb.state = Villager.STAND
+			nb.path.clear()
+			nb.hold_latch = true
+			nb.latch = 1.0
+			hn.house.set_shut(true)
+			var sc := nb.cottage.to_global(Vector3(-0.6, 0, -6.1))
+			sc.y = terrain.height_at(sc.x, sc.z) + 1.45
+			var tg := nb.cottage.to_global(Vector3(-3.0, 0, -8.15))
+			tg.y = hn.house.base_y + 0.75
+			SPOTS[spot] = [sc, tg]
 		if "face" in args:
 			# a head-and-shoulders portrait at 1.1 m: the nose, the beard, the eyes under the brim
 			var fb := nb.garb.face.global_transform * nb.garb.face.get_aabb()

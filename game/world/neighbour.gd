@@ -18,7 +18,11 @@ extends Villager
 ##   16:45 out through the squeeze stile in the back wall and a few steps up the fell footpath,
 ##         to stand and look up the fell where his flock grazed (and back in the same way)
 ##   17:30 the wall in the evening light
-##   19:00 stands by the hen house while they go up the ladder for the night
+##   05:50 round to the garth at first light to lift the hen house's pop-hole slide (they
+##         stay in until he does), then back to his step
+##   19:00 stands by the hen house while they go up the ladder for the night; when the last
+##         is in he steps up beside the ladder and drops the slide over the hole against the
+##         fox (he waits on, up to 21:00, if one is still out)
 ##   19:40 back to his step for the last of the light, 21:00 in to bed
 ## Rain sends him in, as it does Edda. He stops and turns to the hero when he comes close,
 ## and has his own lines for what he is about. Bots read Villager's counters plus `lean`.
@@ -34,7 +38,11 @@ const GARTH := {
 	"lean": [Vector2(1.0, -9.5), Vector2(1.0, -14.0)],        # forearms on the back wall's cope
 	"tend": [Vector2(-0.9, -5.6), Vector2(-1.3, -7.2)],
 	"shut": [Vector2(-1.25, -8.25), Vector2(-2.06, -8.55)],   # by the ladder's foot at dusk
+	"slide": [Vector2(-2.82, -7.8), Vector2(-3.2, -8.5)],     # beside the ladder, at the slide
 }
+const OPEN_H := 5.8              # out to lift the slide at first light
+const SHUT_BY := 19.67           # the slide is down by now on a quiet evening
+const LATCH_UP := 0.8            # s to reach the slide's handle (and as long back)
 ## Through the squeeze stile in the back wall (DryWall.STILE_AT, the slot at about
 ## (-1.2, -10.5)) and out onto the fell footpath (YardGround.PATHS_LOCAL[2]).
 const STILE_WAY := [Vector2(-1.1, -9.4), Vector2(-1.18, -10.0), Vector2(-1.22, -10.5), Vector2(-1.26, -11.05), Vector2(-1.7, -13.15)]
@@ -51,6 +59,12 @@ var stiles := 0                  # times he squeezed through the stile, either w
 var gaze := 0.0                  # 0 .. 1 standing on the fell side, looking up where the flock was
 var shades := 0                  # times he raised a hand to the brim on the fell (bots)
 var _gt := 0.0                   # seconds into his stance on the fell (sway, scan, shading)
+var latch := 0.0                 # 0 arm down .. 1 the hand on the slide's handle
+var shuts := 0                   # times he dropped the slide at dusk (bots)
+var opens := 0                   # and lifted it at first light
+var _latch_t := -1.0             # s into a reach for the slide (-1 not reaching)
+var _seen_in := 0.0              # s since he saw the last hen go in
+var hold_latch := false          # shots: keep the hand on the slide
 
 func _init() -> void:
 	exchanges = {}                   # Edda opens; he answers
@@ -86,6 +100,10 @@ func _init() -> void:
 		"shut": [
 			"Up you go. One at a time, like a sermon.",
 			"Count them in. Fox counts them too, and he's better at it.",
+		],
+		"open": [
+			"Out you come. Mind the fox's been round. I can smell him on the wall.",
+			"First light and they're shouting at me through the boards. Like being married.",
 		],
 		"step": [
 			"She'll have that lamp lit soon. Every night. I've stopped telling her.",
@@ -137,6 +155,7 @@ func settle(w: Node3D, at_hour: float) -> void:
 	terrain = w.get_node("Terrain")
 	cottage = w.get("stone_cottage")
 	cottage.keeper = self             # his lamp burns only while he is in
+	hens = w.get("hens")
 	_rng.seed = 5353
 	var fy := cottage.global_rotation.y      # the door side's facing (local +z)
 	_spots["door"] = [_at(C_DOOR), fy]
@@ -172,7 +191,17 @@ func settle(w: Node3D, at_hour: float) -> void:
 func _at(l: Vector2) -> Vector3:
 	return cottage.to_global(Vector3(l.x, 0, l.y))
 
+func _house() -> HenHouse:
+	return hens.house if hens != null else null
+
 func _want_for(h: float) -> String:
+	var hh := _house()
+	if hh != null and h >= 19.0 and h < 21.0 and hh.shut < 0.5:
+		return "shut"                 # until they are in and the slide is down
+	if hh != null and h >= OPEN_H and h < 19.0 and hh.shut > 0.5:
+		return "open"                 # first light (or after the rain kept him in)
+	if h >= OPEN_H and h < 6.75:
+		return "wake"                 # lifted: on his step till the day starts
 	if h < 6.75 or h >= 21.0:
 		return "in"
 	if h < 7.25:
@@ -202,6 +231,8 @@ func _spot_for(a: String) -> String:
 		return "door_in"
 	if a == "wake" or a == "step":
 		return "door"
+	if a == "open":
+		return "slide"
 	return a
 
 func _door_point() -> Vector3:
@@ -211,7 +242,7 @@ func _works(a: String) -> bool:
 	return a == "eggs" or a == "tend"
 
 static func in_garth(a: String) -> bool:
-	return GARTH.has(a) or a == "fell"
+	return GARTH.has(a) or a == "fell" or a == "open"
 
 ## Out on the fell side of the garth's back wall (cottage-local), past the stile.
 static func past_stile(l: Vector3) -> bool:
@@ -256,12 +287,15 @@ func _arrive() -> void:
 	super._arrive()
 	if activity == "lean":
 		leans += 1
+	if global_position.distance_to(_spots["slide"][0]) < 0.45:
+		goal_yaw = _spots["slide"][1]
 
 func _physics_process(delta: float) -> void:
 	var on := state == STAND and activity == "lean" and not noticing and talking <= 0.0
 	lean = move_toward(lean, 1.0 if on else 0.0, delta / LEAN_IN)
 	var up := state == STAND and activity == "fell" and not noticing and talking <= 0.0
 	gaze = move_toward(gaze, 1.0 if up else 0.0, delta / GAZE_IN)
+	_update_slide(delta)
 	if gaze > 0.0:
 		var was := fmod(_gt, SHADE_CYCLE)
 		_gt += delta
@@ -271,6 +305,55 @@ func _physics_process(delta: float) -> void:
 		_gt = 0.0
 	super._physics_process(delta)
 
+## The slide: at dusk, a few seconds after the last hen has gone in, he steps up beside the
+## ladder, reaches down to the handle and lets the slide drop; at first light he reaches and
+## draws it up. Then back to his stand (dusk) or on with his day (it is "open" no longer).
+func _update_slide(delta: float) -> void:
+	var hh := _house()
+	if hh == null:
+		return
+	var free := not noticing and talking <= 0.0
+	if hold_latch:
+		latch = 1.0
+		return
+	if _latch_t >= 0.0:
+		_latch_t += delta
+		latch = move_toward(latch, 1.0 if _latch_t < LATCH_UP + 0.5 else 0.0, delta / LATCH_UP)
+		if _latch_t >= LATCH_UP + 0.1 and _latch_t - delta < LATCH_UP + 0.1:
+			if activity == "shut":
+				hh.close()
+				shuts += 1
+			else:
+				hh.open()
+				opens += 1
+		if _latch_t > LATCH_UP * 2.0 + 0.6:
+			_latch_t = -1.0
+			if activity == "shut":
+				# back from the ladder to his stand till he goes in
+				path.clear()
+				path.append(_spots["shut"][0])
+				state = WALK
+		return
+	latch = move_toward(latch, 0.0, delta / LATCH_UP)
+	if state != STAND or not free:
+		_seen_in = 0.0
+		return
+	var at_slide := global_position.distance_to(_spots["slide"][0]) < 0.45
+	if activity == "open" and at_slide and hh.shut > 0.5:
+		_latch_t = 0.0
+	elif activity == "shut" and hh.shut < 0.5 and hens.all_in():
+		_seen_in += delta
+		if _seen_in > 2.5:
+			_seen_in = 0.0
+			if at_slide:
+				_latch_t = 0.0
+			else:
+				path.clear()
+				path.append(_spots["slide"][0])
+				state = WALK
+	else:
+		_seen_in = 0.0
+
 ## Leaning on the wall: bent forward at the hips over the cope, forearms laid on it, head up
 ## to look out over the field.
 func _pose() -> void:
@@ -279,6 +362,17 @@ func _pose() -> void:
 		return
 	if gaze > 0.0:
 		_pose_fell()
+	if latch > 0.0:
+		# a stiff old man's reach down to the handle at hip height: bent at the hips and the
+		# knees, the right arm out and down, the head bowed to see it
+		var k := latch * latch * (3.0 - 2.0 * latch)
+		crumple.hip += 0.38 * k
+		crumple.knee += 0.22 * k
+		crumple.spine += 0.3 * k
+		crumple.neck -= 0.2 * k
+		crumple.flick = maxf(crumple.flick, k)
+		crumple.flick_arm = 1.15
+		crumple.flick_elbow = 0.35
 	if lean <= 0.0:
 		return
 	var l := lean * lean * (3.0 - 2.0 * lean)

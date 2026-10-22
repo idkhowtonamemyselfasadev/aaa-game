@@ -159,6 +159,10 @@ func hook_hens(h: Node) -> void:
 		return
 	h.clucked.connect(func(at: Vector3) -> void: _play_wild("cluck", at, -13.0, 2.5, false))
 	h.squawked.connect(func(at: Vector3) -> void: _play_wild("squawk", at, -5.0, 6.0, true))
+	var hh = h.get("house")
+	if hh != null and hh.has_signal("knocked"):
+		# the pop-hole slide: a hollow wooden clap as it drops onto the sill, a knock as it's propped
+		hh.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-16.0, -4.0, pw), lerpf(1.25, 0.9, pw)))
 
 ## The bat at the lantern: its thin chirping trill on the loop, the click-rattle closing to a
 ## buzz as it stoops, and a dry grumble from the woodshed eaves as it stretches by day. All

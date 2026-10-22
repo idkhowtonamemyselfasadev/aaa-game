@@ -314,11 +314,21 @@ func _gather(h: Dictionary, dt: float) -> bool:
 ## Puts them where the hour has them at once (game start, or a bot / shot jumping the clock).
 func _settle_now() -> void:
 	var night := _night(world.time_of_day)
+	# Osric has the slide down from when he has seen them in until he lifts it at first light
+	var hr: float = world.time_of_day
+	house.set_shut(night and (hr >= Neighbour.SHUT_BY or hr < Neighbour.OPEN_H))
 	for h: Dictionary in hens:
 		if night:
 			_go_inside(h)
 			h.sit = 1.0
 		_place(h)
+
+## True when every bird is in the house (Osric drops the slide then).
+func all_in() -> bool:
+	for h: Dictionary in hens:
+		if not h.inside:
+			return false
+	return true
 
 func _night(hr: float) -> bool:
 	return hr >= ROOST_H or hr < RISE_H
@@ -475,6 +485,10 @@ func _think(h: Dictionary, dt: float, hl: Vector2, night: bool, raining: bool) -
 				return
 			# morning: out one after another, the first a few seconds after first light
 			if not night and h.inside:
+				# the slide is still down: they wait in the house, muttering, until it is lifted
+				if house.shut > 0.05:
+					h.t = 0.0
+					return
 				if h.t <= -2.0 - 3.5 * h.id and not _on_ladder():
 					h.state = DESCEND
 					h.c = 1.0
