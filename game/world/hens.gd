@@ -92,6 +92,8 @@ var _landing: Array = []  # [s until it lands, local centre, local throw directi
 var _rng := RandomNumberGenerator.new()
 var _prev_hero := Vector3.ZERO
 var _hero_v := 0.0
+var _stir: Array[float] = []        # s to each startled squawk from inside the shut house
+var stirred := 0                    # squawks from the shut house at the fox (bots)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -323,6 +325,16 @@ func _settle_now() -> void:
 			h.sit = 1.0
 		_place(h)
 
+## Something at the shut slide in the night: a startled squawk or three from the perch,
+## one setting off the next.
+func stir() -> void:
+	if not _stir.is_empty():
+		return
+	var t := _rng.randf_range(0.2, 0.5)
+	for i in 2 + _rng.randi() % 2:
+		_stir.append(t)
+		t += _rng.randf_range(0.35, 0.9)
+
 ## True when every bird is in the house (Osric drops the slide then).
 func all_in() -> bool:
 	for h: Dictionary in hens:
@@ -434,6 +446,12 @@ func _process(delta: float) -> void:
 	var raining := weather != null and weather.rain > RAIN_IN
 	var night := _night(hr)
 	_call_t = maxf(0.0, _call_t - dt)
+	for i in range(_stir.size() - 1, -1, -1):
+		_stir[i] -= dt
+		if _stir[i] <= 0.0:
+			_stir.remove_at(i)
+			stirred += 1
+			squawked.emit(house.global_position + Vector3(0, HenHouse.FLOOR + 0.3, 0))
 	at_wall = 0
 	_track_keeper(dt)
 	for i in range(_landing.size() - 1, -1, -1):

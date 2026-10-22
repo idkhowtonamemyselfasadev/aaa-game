@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -92,6 +92,9 @@ func _ready() -> void:
 		return
 	if name == "fox":
 		_fox_test()
+		return
+	if name == "henfox":
+		_henfox_test()
 		return
 	if name == "dog":
 		_dog_test()
@@ -1877,6 +1880,107 @@ func _fox_test() -> void:
 	if fl.played.get("fox_bark", 0) != before:
 		return _combat_done(false, "no fox barks by day")
 	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, eats the crust she tosses it, and bolts from the hero")
+
+func _henfox_test() -> void:
+	var fx: Fox = _world.fox
+	var sc: Node3D = _world.stone_cottage
+	var hn: Hens = _world.hens
+	var hh: HenHouse = hn.house
+	var dg: Dog = _world.dog
+	var tr: Terrain = _world.get_node("Terrain")
+	var fl = _world.get("foley")
+	var stile: Vector3 = _world.dry_wall.stile
+	_world.weather.force(0.0)
+	var far := sc.global_position + Vector3(0, 0, 70.0)
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	# the small hours, the hens shut in, Brack lying at Edda's door
+	_world.time_of_day = 1.5
+	hn._settle_now()
+	dg.place_bed()
+	fx.prowl_h = 1.0
+	await _ticks(30)
+	print("BOT henfox start: slide shut %.2f, hens all in %s, dog state %d lie %.2f, fox state %d" % [hh.shut, hn.all_in(), dg.state, dg.lie, fx.state])
+	if hh.shut < 0.99 or not hn.all_in():
+		return _combat_done(false, "the hens should be shut in at 01:30")
+	var sq0: int = fl.played.get("squawk", 0)
+	var db0: int = fl.played.get("dog_bark", 0)
+	var wd0: int = fl.played.get("wood", 0)
+	var b0 := dg.barks
+	var stile_in := 99.0
+	var stile_out := 99.0
+	var top_pitch := 0.0
+	var top_y := 0.0
+	var lie_min := 1.0
+	var dog_look := 0.0
+	var reached := -1
+	var gone := -1
+	for i in 9000:
+		_world.time_of_day = 1.5
+		await get_tree().physics_frame
+		if fx.state != Fox.PROWL and fx.prowls == 0:
+			continue
+		var d := Vector2(fx.global_position.x - stile.x, fx.global_position.z - stile.z).length()
+		if fx.tries == 0:
+			stile_in = minf(stile_in, d)
+		elif fx._pstep == 4:
+			stile_out = minf(stile_out, d)
+		top_pitch = maxf(top_pitch, fx.pitch)
+		top_y = maxf(top_y, fx.global_position.y - tr.height_at(fx.global_position.x, fx.global_position.z))
+		if fx.tries > 0 and reached < 0:
+			reached = i
+		if dg.fox_alarms > 0:
+			lie_min = minf(lie_min, dg.lie)
+			dog_look = maxf(dog_look, absf(dg.head_yaw))
+		if fx.prowls > 0 and fx.state == Fox.AWAY:
+			gone = i
+			break
+	var sill := hh.ladder_at(0.0)
+	print("BOT henfox prowl: prowls %d, through the stile in %.2f m / out %.2f m, up the ladder at frame %d (pitch %.2f rad, %.2f m off the ground), scrabbles %d, hens squawked %d (%d sounded), dog alarms %d barks %d (%d sounded, lie down to %.2f, head round %.2f), wood knocks %d, fled %d, gone at frame %d visible %s" % [fx.prowls, stile_in, stile_out, reached, top_pitch, top_y, fx.scrabbles, hn.stirred, fl.played.get("squawk", 0) - sq0, dg.fox_alarms, dg.barks - b0, fl.played.get("dog_bark", 0) - db0, lie_min, dog_look, fl.played.get("wood", 0) - wd0, fx.fled, gone, fx.visible])
+	if fx.prowls != 1 or reached < 0 or stile_in > 0.6 or stile_out > 0.6 or top_pitch < 0.3 or top_y < 0.2:
+		return _combat_done(false, "the fox should come in through the stile and up the hens' ladder to the slide")
+	if fx.scrabbles < 1 or hn.stirred < 1 or fl.played.get("squawk", 0) - sq0 < 1 or fl.played.get("wood", 0) - wd0 < 1:
+		return _combat_done(false, "the fox should scrabble at the slide and set the hens squawking")
+	if dg.fox_alarms < 1 or dg.barks - b0 < 3 or fl.played.get("dog_bark", 0) - db0 < 1 or lie_min > 0.3:
+		return _combat_done(false, "Brack should sit up at the door and bark at the fox")
+	if fx.fled < 1 or gone < 0 or fx.visible:
+		return _combat_done(false, "the dog's barking should send the fox back out through the stile")
+	if hh.shut < 0.99 or not hn.all_in():
+		return _combat_done(false, "the slide should hold and the hens stay in")
+	# once a night
+	for i in 600:
+		_world.time_of_day = 1.6
+		await get_tree().physics_frame
+	if fx.prowls != 1:
+		return _combat_done(false, "the fox should try the hen house only once a night (%d)" % fx.prowls)
+	# the hero about the garth: it bolts back out of the stile
+	fx._prowled = false
+	fx.shy_t = 0.0
+	dg._fox_t = 0.0
+	var bolts0 := fx.bolts
+	var inside := sc.to_global(Vector3(1.5, 0, -5.0))
+	var scared := false
+	for i in 9000:
+		_world.time_of_day = 1.6
+		await get_tree().physics_frame
+		if fx.state == Fox.PROWL and fx._pstep == 0 and fx.path.size() <= Fox.ROUND.size() + 1 and not scared:
+			_player.global_position = Vector3(inside.x, tr.height_at(inside.x, inside.z) + 0.2, inside.z)
+			scared = true
+		if scared and fx.state == Fox.AWAY:
+			break
+	print("BOT henfox scare: prowls %d, bolts %d, tries %d, state %d visible %s" % [fx.prowls, fx.bolts - bolts0, fx.tries, fx.state, fx.visible])
+	if fx.prowls != 2 or fx.bolts - bolts0 < 1 or fx.tries != 1 or fx.state != Fox.AWAY:
+		return _combat_done(false, "a hero in the garth should send the prowling fox off before it reaches the ladder")
+	# the slide left propped: it does not come
+	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
+	fx._prowled = false
+	fx.shy_t = 0.0
+	hh.set_shut(false)
+	for i in 900:
+		_world.time_of_day = 1.6
+		await get_tree().physics_frame
+	if fx.prowls != 2 or fx.state == Fox.PROWL:
+		return _combat_done(false, "no prowl at an open hen house")
+	_combat_done(true, "a fox tries Osric's shut hen house in the small hours and Brack barks it off")
 
 func _keeper_test() -> void:
 	var k: Keeper = _world.keeper

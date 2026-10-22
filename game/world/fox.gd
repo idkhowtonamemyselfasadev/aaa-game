@@ -10,12 +10,19 @@ extends Node3D
 ## Procedural mesh (Herd's loft helpers), posed in fox.gdshader.
 ## When Hesper tosses it a crust it gets up, creeps to it, noses it and eats it head down,
 ## then goes back to its seat.
-## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`, `eaten`.
+## Some nights, in the small hours, it goes off from the fire (or out of its lying-up place)
+## to try Osric's hen house: down off the fell to the squeeze stile in the garth's back wall,
+## through it, nose down round the shut house, up the hens' ladder to the pop-hole, where it
+## noses and scrabbles at the dropped slide. The hens squawk on their perch, Brack across the
+## green sits up at Edda's door and gives tongue, and the fox drops off the ladder and is away
+## back out through the stile at a run. With the slide propped (or rain on) it does not come.
+## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`, `eaten`, `prowls`, `tries`,
+## `scrabbles`, `fled`, `pitch`.
 
 signal barked(at: Vector3, alarm: bool)   # its night call from the dark, or a yelp as it bolts
 signal crunched(at: Vector3)              # a bite into Hesper's crust
 
-enum { AWAY, COME, SIT, GO, BOLT, EAT }
+enum { AWAY, COME, SIT, GO, BOLT, EAT, PROWL }
 
 const TROT := 2.3          # m/s on its way in and out
 const CREEP := 0.7         # m/s over the last few metres to its seat
@@ -27,6 +34,15 @@ const SNIFF := 1.2         # s nosing the crust before it takes it
 const CHEW := 4.5          # s eating it
 const PEEK := 1.6          # s from the crust landing to it getting up: looks at it, at her, at it
 const SHAKE := 1.1         # s licking its chops and shaking its head once the crust is gone
+## The prowl, in the stone cottage's frame: where it comes down the fell to the stile, and
+## its sniff round the hen house (north side, the back, the south side) to the ladder's foot.
+const FELL_IN := Vector2(-2.4, -21.0)
+const ROUND := [Vector2(-1.5, -9.3), Vector2(-2.6, -9.6), Vector2(-3.7, -9.65), Vector2(-4.45, -8.6),
+	Vector2(-3.7, -7.5), Vector2(-2.45, -7.7)]
+const LADDER_IN := 1.45    # ladder u where it steps up (past the foot, on the dust)
+const LADDER_TOP := 0.34   # and where it stops, forepaws by the sill and nose to the slide
+const CLIMB := 0.75        # ladder u per second, up (down is quicker)
+const TRY_T := 6.0         # s at the slide at most when nothing scares it off
 
 var world: Node3D
 var keeper: Keeper
@@ -64,6 +80,20 @@ var _shake_t := -1.0        # s into its after-meal head shake (negative: not sh
 var glance := 0.0           # how far round toward Hesper it looked before the crust (bots)
 var shook := 0.0            # widest swing of its after-meal head shake (bots)
 var licks := 0              # chops licked (bots)
+var prowl_h := 1.8          # tonight's hour to go and try the hen house (bots may set it)
+var prowls := 0             # times it went to the hen house (bots)
+var tries := 0              # times it got up the ladder to the slide
+var scrabbles := 0          # paws at the slide
+var fled := 0               # times it was put off the ladder by the dog's barking
+var pitch := 0.0            # nose-up tilt on the ladder
+var _prowled := false       # has tried the hen house tonight
+var _pstep := 0             # 0 in to the ladder, 1 up it, 2 at the slide, 3 down, 4 away
+var _pt := 0.0
+var _rung := LADDER_IN
+var _flee := false
+var _dog_barks0 := 0
+var _next_scrabble := 0.9
+var hold := false           # shots: held in its pose
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -187,7 +217,9 @@ func _process(delta: float) -> void:
 			visible = false
 			sit = 0.0
 			var hero_at_seat := Vector2(hp.x - sit_at.x, hp.z - sit_at.z).length() < SHY_R + 6.0
-			if shy_t <= 0.0 and _wanted(h) and not hero_at_seat:
+			if _prowl_wanted(h, hp):
+				_start_prowl()
+			elif shy_t <= 0.0 and _wanted(h) and not hero_at_seat:
 				state = COME
 				global_position = den
 				path = _way_in()
@@ -196,7 +228,7 @@ func _process(delta: float) -> void:
 		COME:
 			if shy:
 				_bolt()
-			elif not _wanted(h):
+			elif not _wanted(h) or _prowl_wanted(h, hp):
 				_leave()
 			elif _walk(dt, TROT if path.size() > 1 else CREEP):
 				state = SIT
@@ -213,7 +245,7 @@ func _process(delta: float) -> void:
 				_look_t = _rng.randf_range(2.5, 7.0) if _head_goal == 0.0 else _rng.randf_range(1.2, 3.0)
 			if shy:
 				_bolt()
-			elif not _wanted(h):
+			elif not _wanted(h) or _prowl_wanted(h, hp):
 				_leave()
 		EAT:
 			_update_eat(dt)
@@ -221,6 +253,13 @@ func _process(delta: float) -> void:
 				_bolt()
 			elif not _wanted(h):
 				_leave()
+		PROWL:
+			if hold:
+				pass
+			elif shy and not _flee:
+				_prowl_scared()
+			else:
+				_update_prowl(dt)
 		GO, BOLT:
 			sit = move_toward(sit, 0.0, dt / (0.25 if state == BOLT else 0.9))
 			if sit < 0.3 and _walk(dt, RUN if state == BOLT else TROT):
@@ -234,11 +273,13 @@ func _process(delta: float) -> void:
 		# a glance back over its shoulder as it goes
 		var to := Vector3(hp.x - global_position.x, 0, hp.z - global_position.z)
 		_head_goal = clampf(wrapf(atan2(-to.x, -to.z) - yaw, -PI, PI), -0.7, 0.7) * 0.6
-	if state != EAT:
+	if state != EAT and state != PROWL:
 		graze = move_toward(graze, 0.0, dt / 0.5)
+	if state != PROWL:
+		pitch = move_toward(pitch, 0.0, dt / 0.3)
 	head_yaw = lerpf(head_yaw, _head_goal, 1.0 - exp(-3.0 * dt))
 	_phase = fposmod(_phase + dt * (speed / 0.95 if speed < 3.0 else speed / 1.6), 1.0)
-	global_rotation = Vector3(0, yaw, 0)
+	global_rotation = Vector3(pitch, yaw, 0)
 	_mi.set_instance_shader_parameter("phase", _phase)
 	_mi.set_instance_shader_parameter("speed", speed)
 	_mi.set_instance_shader_parameter("sit", sit)
@@ -258,7 +299,7 @@ func _call(dt: float, h: float) -> void:
 			barked.emit(global_position + Vector3.UP * 0.5, true)
 	var dark := h >= 20.5 or h < 5.0
 	var rain := weather.rain if weather != null else 0.0
-	if not dark or rain > 0.3 or state == SIT or state == BOLT or state == EAT:
+	if not dark or rain > 0.3 or state == SIT or state == BOLT or state == EAT or state == PROWL:
 		return
 	_bark_t -= dt
 	if _bark_t <= 0.0:
@@ -381,6 +422,178 @@ func _after_meal(dt: float) -> void:
 		state = COME
 		path = [sit_at]
 
+# ---------------------------------------------------------------- the hen house
+
+func _hens() -> Hens:
+	return world.get("hens") as Hens
+
+func _dog() -> Dog:
+	return world.get("dog") as Dog
+
+## A stone-cottage-local point on the ground, in the world.
+func _sc(l: Vector2) -> Vector3:
+	var sc := world.get("stone_cottage") as Node3D
+	return _ground(sc.to_global(Vector3(l.x, 0, l.y)))
+
+## Does it go and try the hen house now: the small hours, once a night, the slide down,
+## no rain, nothing to scare it, nobody about the garth.
+func _prowl_wanted(h: float, hp: Vector3) -> bool:
+	if h > 8.0 and h < 18.0:
+		if _prowled:
+			_prowled = false
+			prowl_h = 0.9 + _rng.randf() * 1.8
+		return false
+	var hn := _hens()
+	if _prowled or hn == null or hn.house == null or shy_t > 0.0:
+		return false
+	var rain := weather.rain if weather != null else 0.0
+	var hp_l := Vector2(hp.x, hp.z)
+	var at := _sc(HenHouse.foot())
+	return h >= prowl_h and h < LEAVE_H - 0.6 and rain < 0.3 and hn.house.shut > 0.9 \
+		and hp_l.distance_to(Vector2(at.x, at.z)) > SHY_R + 6.0
+
+## The stile, from the fell side in (or reversed, out).
+func _stile_in() -> Array[Vector3]:
+	var w: Array[Vector3] = []
+	for i in range(Neighbour.STILE_WAY.size() - 1, -1, -1):
+		w.append(_sc(Neighbour.STILE_WAY[i]))
+	return w
+
+func _ladder(u: float) -> Vector3:
+	var p := _hens().house.ladder_at(u)
+	return Vector3(p.x, maxf(p.y, terrain.height_at(p.x, p.z)), p.z)
+
+func _start_prowl() -> void:
+	state = PROWL
+	prowls += 1
+	_prowled = true
+	_pstep = 0
+	_flee = false
+	_rung = LADDER_IN
+	global_position = den
+	visible = true
+	path = [_sc(FELL_IN)]
+	path.append_array(_stile_in())
+	for l: Vector2 in ROUND:
+		path.append(_sc(l))
+	path.append(_ladder(LADDER_IN))
+
+## Its way back out: to the stile, through it, up the fell and off to its lying-up place.
+func _prowl_out() -> void:
+	_pstep = 4
+	var sc := world.get("stone_cottage") as Node3D
+	var l := sc.to_local(global_position)
+	path.clear()
+	if not Neighbour.past_stile(l):
+		var w := _stile_in()
+		w.reverse()
+		if l.x < -2.0 and l.z > -9.0:
+			path.append(_sc(Vector2(-1.5, -8.9)))    # round the ladder's foot, not under it
+		path.append_array(w)
+	path.append(_sc(FELL_IN))
+	path.append(den)
+
+## The hero has walked up on it at the hen house: off the ladder and away at a run.
+func _prowl_scared() -> void:
+	_flee = true
+	bolts += 1
+	_yelp_t = _rng.randf_range(0.4, 0.9)
+	shy_t = 150.0
+	if _pstep == 0:
+		_prowl_out()
+	elif _pstep < 3:
+		_pstep = 3
+
+func _update_prowl(dt: float) -> void:
+	var hn := _hens()
+	match _pstep:
+		0:
+			# trotting in off the fell; through the stile it creeps, nose down round the house
+			var sc := world.get("stone_cottage") as Node3D
+			var inside := not Neighbour.past_stile(sc.to_local(global_position)) and path.size() <= ROUND.size() + 1
+			graze = move_toward(graze, 0.55 if inside else 0.0, dt / 0.6)
+			_head_goal = 0.25 * sin(_pt * 1.7) if inside else 0.0
+			_pt += dt
+			if _walk(dt, 0.9 if inside else TROT):
+				_pstep = 1
+				_pt = 0.0
+		1, 3:
+			# up (or back down) the hens' ladder, nose up with the slope
+			var up := _pstep == 1
+			var goal := LADDER_TOP if up else LADDER_IN
+			var rate := CLIMB if up else (2.4 if _flee else 1.3)
+			_rung = move_toward(_rung, goal, rate * dt)
+			var p := _ladder(_rung)
+			var q := _ladder(_rung - 0.05)
+			var to := q - p
+			yaw = lerp_angle(yaw, atan2(-to.x, -to.z), 8.0 * dt)
+			global_position = p
+			var on := clampf((p.y - terrain.height_at(p.x, p.z)) / 0.08, 0.0, 1.0)
+			pitch = move_toward(pitch, atan2(to.y, Vector2(to.x, to.z).length()) * on, dt / 0.25)
+			speed = 0.55 if up else (1.6 if _flee else 0.8)
+			graze = move_toward(graze, 0.15, dt / 0.4)
+			_head_goal = 0.0
+			if is_equal_approx(_rung, goal):
+				if up:
+					_pstep = 2
+					_pt = 0.0
+					tries += 1
+					_next_scrabble = 0.9
+					var dg := _dog()
+					_dog_barks0 = dg.barks if dg != null else 0
+				else:
+					pitch = 0.0
+					_prowl_out()
+		2:
+			# at the shut slide: nose along its edges, a scrabble of paws at it
+			_pt += dt
+			speed = move_toward(speed, 0.0, 4.0 * dt)
+			graze = move_toward(graze, 0.3 + 0.08 * sin(_pt * 9.0), dt / 0.2)
+			_head_goal = 0.32 * sin(_pt * 2.4)
+			if _pt >= _next_scrabble:
+				_next_scrabble = _pt + _rng.randf_range(0.35, 1.1)
+				scrabbles += 1
+				hn.house.knocked.emit(hn.house.handle_at() + Vector3.DOWN * 0.25, 0.1)
+			if _pt > 0.6:
+				hn.stir()
+			var dg := _dog()
+			if _pt > 1.3 and dg != null and dg.global_position.distance_to(global_position) < 60.0:
+				dg.hear_fox(global_position)
+			# the dog's first bark from across the green puts it off
+			if dg != null and dg.barks > _dog_barks0 and not _flee:
+				_flee = true
+				fled += 1
+				_pt = maxf(_pt, TRY_T - 0.5)
+			if _pt >= TRY_T:
+				_pstep = 3
+		4:
+			graze = move_toward(graze, 0.0, dt / 0.4)
+			_head_goal = 0.0
+			# through the slot at a squeeze, then away up the fell
+			var sc := world.get("stone_cottage") as Node3D
+			var out := Neighbour.past_stile(sc.to_local(global_position)) and path.size() <= 2
+			if _walk(dt, (RUN * 0.75 if _flee else TROT) if out else 1.6):
+				state = AWAY
+				visible = false
+
+## Shots: up the hens' ladder with its nose to the shut slide.
+func place_at_slide() -> void:
+	_start_prowl()
+	path.clear()
+	_pstep = 2
+	_rung = LADDER_TOP
+	var p := _ladder(LADDER_TOP)
+	var to := _ladder(LADDER_TOP - 0.05) - p
+	global_position = p
+	yaw = atan2(-to.x, -to.z)
+	pitch = atan2(to.y, Vector2(to.x, to.z).length())
+	graze = 0.3
+	_pt = 0.2
+	sit = 0.0
+	head_yaw = 0.2
+	_head_goal = 0.2
+	hold = true
+
 func _bolt() -> void:
 	_drop_scrap()
 	state = BOLT
@@ -413,13 +626,15 @@ func _walk(dt: float, top: float) -> bool:
 	var d := to.length()
 	var last := path.size() == 1
 	var want := top
-	if last and (state == COME or state == EAT):
+	if last and (state == COME or state == EAT or (state == PROWL and _pstep == 0)):
 		want = minf(top, maxf(d * 0.9, 0.12))       # creeps to a halt on its seat
-	speed = move_toward(speed, want, (9.0 if state == BOLT else 2.5) * dt)
+	var want_yaw := atan2(-to.x, -to.z)
+	if state == PROWL and d < 1.5 and absf(wrapf(want_yaw - yaw, -PI, PI)) > 0.7:
+		want = minf(want, 0.8)                     # checks to turn short (the stile's slot)
+	speed = move_toward(speed, want, (9.0 if state == BOLT or state == PROWL else 2.5) * dt)
 	if d < maxf(0.25, speed * dt * 1.5):
 		path.remove_at(0)
 		return path.is_empty()
-	var want_yaw := atan2(-to.x, -to.z)
 	yaw += clampf(wrapf(want_yaw - yaw, -PI, PI), -5.0 * dt, 5.0 * dt)
 	var fwd := Vector3(-sin(yaw), 0, -cos(yaw))
 	var p := global_position + fwd * minf(speed * dt, d)

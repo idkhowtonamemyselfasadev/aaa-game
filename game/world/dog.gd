@@ -73,6 +73,9 @@ var _warned := -1            # the pedlar's walk (journeys count) it has already
 var _warn_from := Vector3.ZERO
 var _woof_t := 0.0
 var _press_at := Vector3.INF
+var _fox_at := Vector3.INF   # where it heard the fox at the hen house (looks that way, sat up)
+var _fox_t := 0.0            # s it keeps sat up staring that way
+var fox_alarms := 0          # times it has given tongue at the fox in the night (bots)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -125,6 +128,18 @@ func _hour() -> float:
 func _night_or_rain() -> bool:
 	var h := _hour()
 	return h >= 21.0 or h < 5.75 or (weather != null and weather.rain > 0.3)
+
+## A fox at Osric's hen house in the night, the hens squawking: up off its side at its
+## place by the door, staring across the green that way and giving tongue, a hard run of
+## barks, until it goes quiet again.
+func hear_fox(at: Vector3) -> void:
+	if state != BED or _fox_t > 0.0:
+		return
+	_fox_at = at
+	_fox_t = 9.0
+	fox_alarms += 1
+	_bark_n = 4 + _rng.randi() % 3
+	_bark_t = _rng.randf_range(0.25, 0.5)
 
 ## Straight onto its place by the door, sat (bots and the night start).
 func place_bed() -> void:
@@ -213,7 +228,8 @@ func _process(delta: float) -> void:
 			want_sit = 1.0
 			# at night it lies down in its place, up on its haunches again to bark or watch him
 			var h := _hour()
-			want_lie = 1.0 if (h >= 21.0 or h < 5.75) and _bark_n == 0 and near > 6.0 else 0.0
+			_fox_t = maxf(_fox_t - dt, 0.0)
+			want_lie = 1.0 if (h >= 21.0 or h < 5.75) and _bark_n == 0 and near > 6.0 and _fox_t <= 0.0 else 0.0
 			want_doze = want_lie if near > 11.0 else 0.0
 			if global_position.distance_to(bed) > 0.3:
 				want_sit = 0.0
@@ -224,6 +240,8 @@ func _process(delta: float) -> void:
 				yaw += clampf(wrapf(bed_yaw - yaw, -PI, PI), -3.0 * dt, 3.0 * dt)
 			if near < 10.0:
 				look = hp
+			elif _fox_t > 0.0:
+				look = _fox_at
 			else:
 				var pw := _pedlar()
 				if pw != null and pw.on_road and pw.visible and global_position.distance_to(pw.global_position) < SEE_OFF:

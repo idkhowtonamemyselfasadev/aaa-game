@@ -484,6 +484,21 @@ func _ready() -> void:
 			cp = fx.sit_at + to_fx.cross(Vector3.UP) * 1.6
 		cp.y = terrain.height_at(cp.x, cp.z) + 0.55
 		SPOTS[spot] = [cp, Vector3(fx.sit_at.x, fx.sit_at.y + 0.3, fx.sit_at.z)]
+		if "henhouse" in args:
+			# the small hours at Osric's hen house: up the hens' ladder, nose to the shut slide;
+			# from the garth, side-on three-quarter across the ladder, the house filling the frame
+			var hn: Hens = world.hens
+			hn._settle_now()
+			hn.house.set_shut(true)
+			fx.place_at_slide()
+			var sc: Node3D = world.stone_cottage
+			var lp := sc.to_global(Vector3(-1.2, 0, -6.6))
+			lp.y = terrain.height_at(lp.x, lp.z) + 0.9
+			var tg := fx.global_position + Vector3.UP * 0.25
+			SPOTS[spot] = [lp, tg]
+			var pp := fx.global_position + Vector3(40, 0, 40)
+			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+			print("SHOT fox at the slide %s pitch %.2f yaw %.2f slide %.2f" % [fx.global_position, fx.pitch, fx.yaw, hn.house.shut])
 		if "crust" in args:
 			# eating Hesper's crust: front three-quarter from out by the wall foot (Fox.crust_lens_of)
 			var fq := fx.global_position

@@ -227,6 +227,12 @@ func _adopt(to: Node3D) -> void:
 func handle_at() -> Vector3:
 	return slide.to_global(Vector3(SIZE.x * 0.5 + 0.065, FLOOR + HOLE.y + 0.31, 0))
 
+## World point on the ladder's tread (on the slats), `u` from the sill (0) to its foot (1).
+func ladder_at(u: float) -> Vector3:
+	var top := Vector3(SIZE.x * 0.5 + 0.03, FLOOR + 0.05, 0)
+	var foot_p := Vector3(SIZE.x * 0.5 + LADDER, _ground(foot() - Vector2(0.12, 0)) - base_y + 0.05, 0)
+	return to_global(top.lerp(foot_p, u))
+
 ## Drop the slide (it falls in its guides and claps onto the sill) / lift it back up.
 func close() -> void:
 	_shut_goal = 1.0
