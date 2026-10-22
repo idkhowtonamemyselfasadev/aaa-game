@@ -26,6 +26,7 @@ var flick_out := 0.0         # radians: the flicked arm swung out to the right a
 var grip := 0.0              # 0..1: the right hand's fingers close into a fist (round a bail or a helve)
 var grip_fold := 0.0         # (bots) the closed hand as posed: the middle finger's first bone . the palm's normal
 var grip_thumb := 0.0        # (bots) the thumb's second bone . the palm's normal (folded over the fingers)
+var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if rigged) to the index's middle joint
 var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
@@ -69,6 +70,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 
 const GRIP_CURL := [1.25, 1.2, 0.8]   # radians per finger joint, knuckle to tip, at a full fist
 const THUMB_CURL := [0.55, 0.6, 0.5]
+const THUMB_SWING := -1.5    # radians: the thumb's root swung in across the palm (opposition)
 
 ## Closes a hand: each finger folds toward the palm about its knuckle hinge. The hinge is found
 ## from the hand's own bones (finger direction and the pinky-to-index line), so it holds
@@ -96,11 +98,19 @@ func _grip(skel: Skeleton3D, side: String, g: float) -> void:
 	var t2 := skel.find_bone("mixamorig_%sHandThumb2" % side)
 	var t3 := skel.find_bone("mixamorig_%sHandThumb3" % side)
 	if t1 >= 0 and t2 >= 0 and t3 >= 0:
+		# first swing its root in across the palm about the hand's length, so the thumb lies
+		# along the curled index instead of hooking out on the back-of-hand side
+		_bend(skel, "mixamorig_%sHandThumb1" % side, across.cross(palm).normalized(), THUMB_SWING * g)
 		var tl := (skel.get_bone_global_pose(t2).origin - skel.get_bone_global_pose(t1).origin).normalized()
 		var th := tl.cross(palm).normalized()
 		for j in 3:
 			_bend(skel, "mixamorig_%sHandThumb%d" % [side, j + 1], th, THUMB_CURL[j] * g)
 		grip_thumb = (skel.get_bone_global_pose(t3).origin - skel.get_bone_global_pose(t2).origin).normalized().dot(palm)
+		var t4 := skel.find_bone("mixamorig_%sHandThumb4" % side)
+		var i2 := skel.find_bone("mixamorig_%sHandIndex2" % side)
+		if i2 >= 0:
+			var tip := skel.get_bone_global_pose(t4 if t4 >= 0 else t3).origin
+			grip_gap = tip.distance_to(skel.get_bone_global_pose(i2).origin) * skel.global_basis.get_scale().x
 	# (bots) the middle finger as posed: its first bone into the palm, its second turned back
 	var m2 := skel.find_bone("mixamorig_%sHandMiddle2" % side)
 	var m3 := skel.find_bone("mixamorig_%sHandMiddle3" % side)

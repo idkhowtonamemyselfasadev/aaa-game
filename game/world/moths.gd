@@ -48,6 +48,7 @@ class Moth:
 	var spot_n := Vector3.FORWARD
 	var gone := 0.0             # s before a new moth takes this one's place after the bat ate it
 	var dive := 0.0             # s left in a power-dive away from the bat
+	var back := false           # climbing back to the light after a dive (not a stray)
 
 func _ready() -> void:
 	top_level = true
@@ -124,7 +125,11 @@ func _process(delta: float) -> void:
 		if m.state == REST:
 			settled_count += 1
 		elif m.state == CIRCLE or m.state == BUMP:
-			max_dist = maxf(max_dist, m.pos.distance_to(c))
+			var dc := m.pos.distance_to(c)
+			if m.back and m.dive <= 0.0 and dc < m.r + 0.3:
+				m.back = false
+			if not m.back:
+				max_dist = maxf(max_dist, dc)
 		m.rest = move_toward(m.rest, 1.0 if m.state == REST else 0.0, delta * 6.0)
 		_mm.set_instance_transform(i, Transform3D(m.basis, m.pos))
 		_mm.set_instance_custom_data(i, Color(m.phase, m.rest, float(m.kind), HALF_SPAN))
@@ -136,6 +141,7 @@ func _arrive(m: Moth, c: Vector3) -> void:
 	m.pos = c + Vector3(cos(a) * FAR, _rng.randf_range(-1.8, 0.5), sin(a) * FAR)
 	m.vel = (c - m.pos).normalized() * m.speed
 	m.state = IN
+	m.back = false
 	m.r = _rng.randf_range(0.2, 0.6)
 	m.y_off = _rng.randf_range(-0.25, 0.3)
 	m.timer = _rng.randf_range(0.5, 2.0)
@@ -182,6 +188,7 @@ func dodge(i: int, bat_pos: Vector3) -> void:
 	away.y = 0.0
 	m.vel = away.normalized() * 0.6 + Vector3.DOWN * 1.2
 	m.dive = _rng.randf_range(0.35, 0.6)
+	m.back = true
 	m.state = CIRCLE
 	dodges += 1
 

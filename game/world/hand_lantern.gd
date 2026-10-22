@@ -102,11 +102,11 @@ func _ready() -> void:
 	fill = OmniLight3D.new()
 	fill.name = "VentGlow"
 	fill.light_color = LAMP.lerp(Color(1.0, 0.75, 0.5), 0.3)
-	fill.omni_range = 1.7
-	fill.omni_attenuation = 1.6
+	fill.omni_range = 2.0
+	fill.omni_attenuation = 1.2
 	fill.shadow_enabled = false
 	fill.light_specular = 0.2
-	fill.position = Vector3(0, 0.16, 0)
+	fill.position = Vector3(0, 0.28, 0)    # up nearer the face: from 0.16 it barely reached past the brim
 	pivot.add_child(fill)
 	_apply()
 

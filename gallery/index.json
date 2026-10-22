@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261017-1948-hearth-low1am.jpg",
-  "time": "2026-10-17T19:48:44Z",
-  "caption": "Hesper's low fire at 1 am after the night-grade fix: the keep's inner face now reads warm amber stone with relief instead of lavender-grey; the light is still a bit even across the whole wall for a low fire and the wall-joint grass glows gold.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-2117-night-meadow.jpg",
-  "time": "2026-10-17T21:17:46Z",
-  "caption": "The open meadow at 1 am back to moonlit silver-blue after the firelight grade had let straw-dry grass go olive-yellow; a few seed heads still catch a gold tint and no deer are in frame.",
-  "verdict": "pass"
- },
- {
   "file": "20261017-2117-hearth-low1am.jpg",
   "time": "2026-10-17T21:17:46Z",
   "caption": "Hesper's low fire at 1 am: warm firelit stone, the light now dying off faster away from the ring; the wall-joint grass tufts still read straw-gold and the wall-on lens has no Hesper in it.",
@@ -897,6 +885,12 @@
   "file": "20261022-1715-lookout6.jpg",
   "time": "2026-10-22T17:15:46Z",
   "caption": "Osric at the yard-wall gap at 01:30 with his fingers now closed into a fist round the lantern bail and the lantern hanging below it; still wrong: his thumb hooks out toward his face, his face under the brim still reads dark, and the coat is flat pale grey.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-1858-lookout.jpg",
+  "time": "2026-10-22T18:58:13Z",
+  "caption": "Osric at the yard-wall gap at night: the lantern's glow now reaches his cheek and the underside of the brim, but his thumb still sticks out sideways off the bail like a hitch-hiker's and the face is still mostly shadow.",
   "verdict": "fail"
  }
 ]
