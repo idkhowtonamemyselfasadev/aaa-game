@@ -8,6 +8,7 @@ extends Node3D
 
 const SCALE := 0.8          # of the post lantern
 const LAMP := Color(1.0, 0.56, 0.27)
+const HORN_GAIN := 0.5      # the post's horn glow blew out to flat orange at knee height
 
 var lit := 0.0
 var want := 0.0             # the carrier's wish: the flame comes up / dies over ~1.5 s
@@ -137,7 +138,7 @@ func _process(delta: float) -> void:
 func _apply() -> void:
 	var fl := 0.82 + 0.1 * sin(_t * 13.0) * sin(_t * 7.3 + 1.0) + 0.08 * sin(_t * 23.0 + 0.5)
 	_flame.set_shader_parameter("lit", lit)
-	_horn.set_shader_parameter("lit", lit * fl)
+	_horn.set_shader_parameter("lit", lit * fl * HORN_GAIN)
 	_tallow.set_shader_parameter("lit", lit * fl)
 	lamp.light_energy = lit * 0.9 * fl
 	lamp.visible = lit > 0.01 and is_visible_in_tree()

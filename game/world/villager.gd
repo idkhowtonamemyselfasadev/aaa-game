@@ -498,7 +498,7 @@ func _physics_process(delta: float) -> void:
 			if path.is_empty():
 				_arrive()
 		else:
-			var sp := HURRY_SPEED if activity == "shelter" else WALK_SPEED
+			var sp := HURRY_SPEED if activity == "shelter" else WALK_SPEED * _pace()
 			v = _steer(d.normalized()) * sp
 			goal_yaw = atan2(v.x, v.z)
 			var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
@@ -552,6 +552,10 @@ func _begin(a: String) -> void:
 		if state == IN:
 			return
 	_route(to)
+
+## Walking pace as a share of WALK_SPEED (the pedlar slows on his last leg of the day).
+func _pace() -> float:
+	return 1.0
 
 func _arrive() -> void:
 	state = STAND

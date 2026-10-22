@@ -156,6 +156,10 @@ func _kit() -> void:
 static func lantern_for(h: float) -> bool:
 	return h >= 19.0 or h < 5.8
 
+## The dusk walk is his third road of the day: a shorter, wearier step.
+func _pace() -> float:
+	return 0.8 if world != null and lantern_for(_hour()) else 1.0
+
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w
 	_reset_greet()
