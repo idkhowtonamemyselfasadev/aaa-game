@@ -772,8 +772,10 @@ func _lit_now(h: float, delta: float) -> float:
 		goal = lit_for(h)
 		if keeper.activity == "shelter":
 			goal = maxf(goal, 0.35)
-		if _rouse_t > 0.0:
-			goal = maxf(goal, 0.7)      # up in the night with a candle to see what's at the hens
+	if _rouse_t > 0.0:
+		# up in the night with a candle to see what's at the hens (left burning on the sill
+		# while he is out at the gap with the lantern)
+		goal = maxf(goal, 0.7 if not keeper.outdoors() else 0.45)
 	return move_toward(lit, goal, delta / 1.5)
 
 ## Something at the hens in the night (Brack barking at the fox): the keeper gets up and
@@ -781,6 +783,8 @@ func _lit_now(h: float, delta: float) -> float:
 func rouse(secs: float) -> void:
 	_rouse_t = maxf(_rouse_t, secs)
 	rousings += 1
+	if keeper != null and keeper.has_method("roused"):
+		keeper.roused()
 
 var _rouse_t := 0.0
 var rousings := 0                # (bots)

@@ -24,6 +24,10 @@ extends Villager
 ##         is in he steps up beside the ladder and drops the slide over the hole against the
 ##         fox (he waits on, up to 21:00, if one is still out)
 ##   19:40 back to his step for the last of the light, 21:00 in to bed
+## Woken in the night (Brack barking at a fox at the hens: StoneCottage.rouse), he lights a
+## candle, and a little after comes out with his horn lantern lit, across the yard to the
+## squeeze gap in the east wall, where he holds it up to look down the gable toward the garth
+## and calls out into the dark; then back in to bed.
 ## Rain sends him in, as it does Edda. He stops and turns to the hero when he comes close,
 ## and has his own lines for what he is about. Bots read Villager's counters plus `lean`.
 
@@ -51,6 +55,9 @@ const FELL := [Vector2(-2.3, -15.4), Vector2(-4.6, -23.0)]
 const LEAN_IN := 1.6             # s to settle onto the wall
 const GAZE_IN := 1.4             # s to settle into his stance on the fell
 const SHADE_CYCLE := 15.0        # s between raising a hand to the brim against the low sun
+const ROUSE_OUT := 11.0          # s from the barking waking him to his door opening (boots, lantern)
+const LOOKOUT_HOLD := 26.0       # s stood at the gap with the lantern up, then back in
+const LIFT_IN := 0.9             # s to raise the lantern / lower it
 
 var cottage: StoneCottage
 var lean := 0.0                  # 0 upright .. 1 forearms on the wall
@@ -65,6 +72,14 @@ var opens := 0                   # and lifted it at first light
 var _latch_t := -1.0             # s into a reach for the slide (-1 not reaching)
 var _seen_in := 0.0              # s since he saw the last hen go in
 var hold_latch := false          # shots: keep the hand on the slide
+var hand_lantern: HandLantern    # carried out lit when woken in the night
+var lift := 0.0                  # 0 the lantern at his knee .. 1 held up before him
+var lookouts := 0                # times he came out to look when woken (bots)
+var calls := 0                   # times he called out into the dark (bots)
+var _out_in := -1.0              # s until he comes out (negative: not woken)
+var _look_t := -1.0              # s stood at the gap (negative: not there yet)
+var _looking := false            # out of bed to look (until LOOKOUT_HOLD at the gap)
+var hold_lift := false           # shots: keep the lantern up
 
 func _init() -> void:
 	exchanges = {}                   # Edda opens; he answers
@@ -105,6 +120,10 @@ func _init() -> void:
 			"Out you come. Mind the fox's been round. I can smell him on the wall.",
 			"First light and they're shouting at me through the boards. Like being married.",
 		],
+		"lookout": [
+			"Was that the fox? Brack's not a dog to bark at nothing. Not at my age, nor his.",
+			"Hold that light still. No, you've no light. Hold yourself still, then.",
+		],
 		"step": [
 			"She'll have that lamp lit soon. Every night. I've stopped telling her.",
 			"Sit on the wall if you like. It's the warmest stone in the vale at this hour.",
@@ -144,7 +163,27 @@ func _dress() -> void:
 	garb.mantle_wool = true
 
 func _kit() -> void:
-	pass
+	# a horn lantern by its ring in the right fist, taken out when he is woken in the night
+	hand_lantern = HandLantern.new()
+	hand_lantern.name = "HandLantern"
+	hand_lantern.facing = body
+	hand_mark.add_child(hand_lantern)
+	hand_lantern.position = Vector3(0.0, 0.08, 0.025)
+	hand_lantern.visible = false
+
+## The calls he puts out into the dark from the gap (to the hero on the HUD when near).
+const CALLS := [
+	"Who's that down there? Go on! Get off out of it, you red thief!",
+	"Is that you, fox? I've a stick and I've a long memory. Off with you!",
+]
+
+## Woken by the dog in the night (StoneCottage.rouse): out with the lantern in a little while.
+func roused() -> void:
+	if state != IN or activity != "in" or _out_in >= 0.0 or _looking:
+		return
+	if weather != null and weather.rain > RAIN_IN:
+		return                        # not out in that; he listens from his bed
+	_out_in = ROUSE_OUT
 
 ## His day's spots round the stone cottage and in the garth, then where he is now.
 func settle(w: Node3D, at_hour: float) -> void:
@@ -164,6 +203,13 @@ func settle(w: Node3D, at_hour: float) -> void:
 		_spots["way%d" % i] = [_at(WAY[i]), 0.0]
 	for i in STILE_WAY.size():
 		_spots["stile%d" % i] = [_at(STILE_WAY[i]), 0.0]
+	# the squeeze gap in the east yard wall, looking down the outside of the gable to the garth
+	var la := _at(WAY[1])
+	var lb := _at(WAY[2])
+	_spots["lookout"] = [la, atan2(lb.x - la.x, lb.z - la.z)]
+	_out_in = -1.0
+	_look_t = -1.0
+	_looking = false
 	var fs := _at(FELL[0])
 	var fl := _at(FELL[1])
 	_spots["fell"] = [fs, atan2(fl.x - fs.x, fl.z - fs.z)]
@@ -195,6 +241,8 @@ func _house() -> HenHouse:
 	return hens.house if hens != null else null
 
 func _want_for(h: float) -> String:
+	if _looking:
+		return "lookout"
 	var hh := _house()
 	if hh != null and h >= 19.0 and h < 21.0 and hh.shut < 0.5:
 		return "shut"                 # until they are in and the slide is down
@@ -263,6 +311,10 @@ func _route(to: Vector3) -> void:
 		here_fell = past_stile(lh)
 	if to.distance_to(_spots["door_in"][0]) < 0.1:
 		to = _spots["door"][0]
+	# to and from the gap in the east yard wall by the yard side of it
+	var at_look := global_position.distance_to(_spots["lookout"][0]) < 0.8
+	if (activity == "lookout") != at_look and state != IN or (activity == "lookout" and state == IN):
+		path.append(_spots["way0"][0])
 	var to_garth := in_garth(activity)
 	var to_fell := activity == "fell"
 	if here_fell and not to_fell:
@@ -289,6 +341,9 @@ func _arrive() -> void:
 		leans += 1
 	if global_position.distance_to(_spots["slide"][0]) < 0.45:
 		goal_yaw = _spots["slide"][1]
+	if activity == "lookout" and _look_t < 0.0:
+		_look_t = 0.0
+		lookouts += 1
 
 func _physics_process(delta: float) -> void:
 	var on := state == STAND and activity == "lean" and not noticing and talking <= 0.0
@@ -296,6 +351,7 @@ func _physics_process(delta: float) -> void:
 	var up := state == STAND and activity == "fell" and not noticing and talking <= 0.0
 	gaze = move_toward(gaze, 1.0 if up else 0.0, delta / GAZE_IN)
 	_update_slide(delta)
+	_update_lookout(delta)
 	if gaze > 0.0:
 		var was := fmod(_gt, SHADE_CYCLE)
 		_gt += delta
@@ -304,6 +360,49 @@ func _physics_process(delta: float) -> void:
 	else:
 		_gt = 0.0
 	super._physics_process(delta)
+
+## Woken: the door opens after ROUSE_OUT s and he walks to the gap with the lantern lit at his
+## knee; there he lifts it before him, peers down the gable, calls out once and again, and
+## after LOOKOUT_HOLD s goes back in (the lantern dies as he shuts the door behind him).
+func _update_lookout(delta: float) -> void:
+	if _out_in >= 0.0:
+		_out_in -= delta
+		if _out_in < 0.0:
+			_looking = true              # the door opens: out to the gap
+			_look_t = -1.0
+	if _looking and weather != null and weather.rain > RAIN_IN:
+		_looking = false                 # rain coming on: back in
+	if _looking and _look_t >= 0.0 and state == STAND and activity == "lookout":
+		var was := _look_t
+		if talking <= 0.0:
+			_look_t += delta
+		if (was < 2.4 and _look_t >= 2.4) or (was < 13.0 and _look_t >= 13.0):
+			_call_out()
+		if _look_t >= LOOKOUT_HOLD:
+			_looking = false             # nothing more to see: back to bed
+	if not _looking and state == IN:
+		_look_t = -1.0
+	# lit from the door out and back to it (it dies as he shuts the door)
+	var out := _looking or (_look_t >= LOOKOUT_HOLD and state == WALK)
+	var up := (_looking and activity == "lookout" and state == STAND and not noticing) or hold_lift
+	lift = move_toward(lift, 1.0 if up else 0.0, delta / LIFT_IN)
+	if hand_lantern != null:
+		hand_lantern.want = 1.0 if out or hold_lift else 0.0
+		hand_lantern.visible = (out or hold_lift or hand_lantern.lit > 0.02) and state != IN
+
+func _call_out() -> void:
+	var line: String = CALLS[calls % CALLS.size()]
+	calls += 1
+	spoke.emit(global_position + Vector3.UP * 1.6, false)
+	if player == null:
+		return
+	var hud = player.get_node_or_null("Hud")
+	var d := Vector2(player.global_position.x - global_position.x, player.global_position.z - global_position.z).length()
+	if hud != null and d < HEAR_R * 2.0 and not hud.saying():
+		var secs := 2.4 + 0.055 * line.length()
+		hud.say(who, line, secs)
+		last_line = line
+		heard += 1
 
 ## The slide: at dusk, a few seconds after the last hen has gone in, he steps up beside the
 ## ladder, reaches down to the handle and lets the slide drop; at first light he reaches and
@@ -362,6 +461,15 @@ func _pose() -> void:
 		return
 	if gaze > 0.0:
 		_pose_fell()
+	if lift > 0.0:
+		# the lantern held up and out before him at the height of his chin, to throw its light
+		# down the dark beyond the wall; the head a little forward under the brim, peering
+		var u := lift * lift * (3.0 - 2.0 * lift)
+		crumple.flick = maxf(crumple.flick, u)
+		crumple.flick_arm = 1.45
+		crumple.flick_elbow = 0.75
+		crumple.spine += 0.06 * u
+		crumple.neck += 0.08 * u
 	if latch > 0.0:
 		# a stiff old man's reach down to the handle at hip height: bent at the hips and the
 		# knees, the right arm out and down, the head bowed to see it

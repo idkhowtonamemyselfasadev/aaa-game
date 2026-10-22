@@ -1881,6 +1881,23 @@ func _fox_test() -> void:
 		return _combat_done(false, "no fox barks by day")
 	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, eats the crust she tosses it, and bolts from the hero")
 
+## Osric woken by the barking (_henfox_test): out to the gap with his lantern and back in.
+var _os := {}
+
+func _osric_sample(i: int) -> void:
+	var nb: Neighbour = _world.neighbour
+	if _os["back_in"] >= 0 or _world.stone_cottage.rousings == 0:
+		return                           # (before the barking he may still be walking in)
+	if nb.outdoors():
+		_os["out"] = true
+		var gap: Vector3 = nb._spots["lookout"][0]
+		_os["lamp"] = maxf(_os["lamp"], nb.hand_lantern.lit if nb.hand_lantern.visible else 0.0)
+		_os["lift"] = maxf(_os["lift"], nb.lift)
+		_os["gap"] = minf(_os["gap"], Vector2(nb.global_position.x - gap.x, nb.global_position.z - gap.z).length())
+		_os["sill"] = minf(_os["sill"], _world.stone_cottage.lit)
+	elif _os["out"]:
+		_os["back_in"] = i
+
 func _henfox_test() -> void:
 	var fx: Fox = _world.fox
 	var sc: Node3D = _world.stone_cottage
@@ -1914,9 +1931,11 @@ func _henfox_test() -> void:
 	var dog_look := 0.0
 	var reached := -1
 	var gone := -1
+	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "sill": 1.0, "back_in": -1}
 	for i in 9000:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
+		_osric_sample(i)
 		if fx.state != Fox.PROWL and fx.prowls == 0:
 			continue
 		var d := Vector2(fx.global_position.x - stile.x, fx.global_position.z - stile.z).length()
@@ -1952,9 +1971,31 @@ func _henfox_test() -> void:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
 		lit_max = maxf(lit_max, sc.lit)
+		_osric_sample(i)
 	print("BOT henfox candle: rousings %d, lit %.2f, Osric outdoors %s" % [sc.rousings, lit_max, _world.neighbour.outdoors()])
 	if sc.rousings < 1 or lit_max < 0.3:
 		return _combat_done(false, "Brack's barking should wake Osric and light his candle")
+	# and a little after he comes out with his lantern lit to the gap in the yard wall, holds it
+	# up, calls into the dark, and goes back in to bed
+	var nb: Neighbour = _world.neighbour
+	for i in 4000:
+		if _os["back_in"] >= 0:
+			break
+		_world.time_of_day = 1.5
+		await get_tree().physics_frame
+		_osric_sample(i)
+	var gap_min: float = _os["gap"]
+	var lamp_max: float = _os["lamp"]
+	var lift_max: float = _os["lift"]
+	var sill_min: float = _os["sill"]
+	var back_in: int = _os["back_in"]
+	print("BOT henfox lookout: lookouts %d, out %s, at the gap %.2f m, lantern lit %.2f, lifted %.2f, calls %d, window while out %.2f, back in at frame %d, lantern shown %s" % [nb.lookouts, _os["out"], gap_min, lamp_max, lift_max, nb.calls, sill_min, back_in, nb.hand_lantern.visible])
+	if nb.lookouts != 1 or gap_min > 0.5 or lamp_max < 0.8 or lift_max < 0.95 or nb.calls < 2:
+		return _combat_done(false, "woken, Osric should come out to the gap with his lantern lit, hold it up and call out")
+	if back_in < 0 or nb.hand_lantern.visible or nb.activity != "in":
+		return _combat_done(false, "Osric should go back in to bed after looking")
+	if sill_min < 0.2:
+		return _combat_done(false, "the candle should stay burning on the sill while he is out")
 	# once a night
 	for i in 600:
 		_world.time_of_day = 1.6

@@ -1069,6 +1069,29 @@ func _ready() -> void:
 			var tg := nb.cottage.to_global(Vector3(-3.0, 0, -8.15))
 			tg.y = hn.house.base_y + 0.75
 			SPOTS[spot] = [sc, tg]
+		if "lookout" in args:
+			# woken in the night: Osric in the squeeze gap of the east yard wall, the horn lantern
+			# held up before him, peering down the gable toward the garth; from down the gable,
+			# three-quarter on his lit face, the candle in the cottage window behind
+			var lp: Array = nb._spots["lookout"]
+			var l0: Vector3 = lp[0]
+			nb.global_position = Vector3(l0.x, terrain.height_at(l0.x, l0.z) + 0.03, l0.z)
+			nb._show(true)
+			nb.activity = "lookout"
+			nb._looking = true
+			nb._look_t = 6.0
+			nb.state = Villager.STAND
+			nb.path.clear()
+			nb.goal_yaw = lp[1]
+			nb.body.rotation.y = nb.goal_yaw
+			nb.hold_lift = true
+			nb.lift = 1.0
+			nb.hand_lantern.lit = 1.0
+			nb.cottage._rouse_t = 600.0
+			var lf := Vector3(sin(nb.goal_yaw), 0, cos(nb.goal_yaw)).rotated(Vector3.UP, -0.5)
+			var lc := l0 + lf * 3.2
+			lc.y = terrain.height_at(lc.x, lc.z) + 1.55
+			SPOTS[spot] = [lc, l0 + Vector3.UP * 1.35]
 		if "face" in args:
 			# a head-and-shoulders portrait at 1.1 m: the nose, the beard, the eyes under the brim
 			var fb := nb.garb.face.global_transform * nb.garb.face.get_aabb()
