@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261017-1600-hearth-low.jpg",
-  "time": "2026-10-17T17:20:00Z",
-  "caption": "1 am: Hesper's fire has burned down to a low flame on the embers while she dozes, but its light hardly reaches the walls and a big lime firefly blob floats near the lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1838-hearth-low1am.jpg",
   "time": "2026-10-17T18:38:38Z",
   "caption": "Hesper's low fire at 1 am with no firefly blob on the lens; the firelight still barely reaches the moonlit inner face and the lid rim darkens the bottom of frame.",
@@ -885,6 +879,12 @@
   "file": "20261022-0654-henfoxdusk.jpg",
   "time": "2026-10-22T06:54:00Z",
   "caption": "Same moment at 19:54 from the garth: the hen house and ladder read against the moonlit trees, but the fox is only a red smear in the dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-0830-foxfur.jpg",
+  "time": "2026-10-22T08:30:00Z",
+  "caption": "Fur pass on the fox at Osric's hen ladder at 17:24: the coat is now a muted ginger-brown with combed tufts and no red glow, but Osric happens to be standing in front of it, so the fur is barely seen and needs a clean night re-shot.",
   "verdict": "fail"
  }
 ]

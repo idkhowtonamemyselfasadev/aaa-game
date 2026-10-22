@@ -16,8 +16,8 @@ instance uniform float head_yaw = 0.0;   // rad, + to its left
 instance uniform float graze = 0.0;      // 0 head up .. 1 neck bowed, nose to the ground
 instance uniform float eyeshine = 0.0;   // the fire's light thrown back by the tapetum
 
-uniform vec3 coat : source_color = vec3(0.45, 0.215, 0.095);      // fox red, toward ginger-brown (pure red glowed flat under the fire)
-uniform vec3 coat_dark : source_color = vec3(0.30, 0.14, 0.065);   // the saddle, the brush's dark band
+uniform vec3 coat : source_color = vec3(0.40, 0.215, 0.11);       // fox red, toward ginger-brown (pure red glowed flat under the fire, and read as a red smear at night)
+uniform vec3 coat_dark : source_color = vec3(0.22, 0.12, 0.07);    // the saddle, the brush's dark band: grizzled brown, not deep red
 uniform vec3 pale : source_color = vec3(0.52, 0.48, 0.41);         // throat strip, lips, cheeks: a dull cream, never snow
 uniform vec3 stocking : source_color = vec3(0.045, 0.035, 0.03);   // black legs and ear backs
 
@@ -164,7 +164,7 @@ void fragment() {
 	float ear = step(0.9, v_col.a);
 	vec3 col = coat;
 	// a darker grizzled saddle along the back, the flanks warmer
-	col = mix(col, coat_dark, smoothstep(0.4, 0.9, rn.y) * (1.0 - head) * (1.0 - legm) * 0.7);
+	col = mix(col, coat_dark, smoothstep(0.3, 0.85, rn.y) * (1.0 - head) * (1.0 - legm) * 0.85);
 	// broad patches of lighter and darker fur where the coat lies differently, so it is not one flat value
 	col *= mix(0.8, 1.1, vnoise(p * 9.0 + vec3(3.1, 0.0, 7.7))) * (1.0 - legm * 0.1);
 	// a buff-grey belly (hidden when it sits) and only a narrow cream strip from the throat
@@ -181,8 +181,8 @@ void fragment() {
 	col = mix(col, coat_dark * 0.45, head * smoothstep(0.012, 0.004, abs(abs(p.x) - 0.026)) * smoothstep(-0.405, -0.425, p.z) * smoothstep(-0.48, -0.45, p.z) * step(-0.1, rn.y));
 	col = mix(col, vec3(0.02, 0.016, 0.014), head * smoothstep(-0.54, -0.55, p.z));
 	// black stockings up the legs, a dark front line on the forelegs
-	col = mix(col, stocking, legm * smoothstep(0.24, 0.13, p.y));
-	col = mix(col, coat_dark * 0.5, legm * smoothstep(0.32, 0.22, p.y) * step(p.y, 0.32) * 0.6);
+	col = mix(col, stocking, legm * smoothstep(0.29, 0.17, p.y));
+	col = mix(col, coat_dark * 0.45, legm * smoothstep(0.36, 0.26, p.y) * 0.7);
 	// ears: black backs, pale furred insides
 	if (ear > 0.5) {
 		float back = smoothstep(-0.2, 0.3, rn.z);
@@ -197,7 +197,16 @@ void fragment() {
 	// guard hairs and underfur
 	float strand = vnoise(vec3(p.x * 300.0, p.y * 70.0, p.z * 70.0));
 	float clump = vnoise(p * 55.0);
-	col *= mix(0.78, 1.12, strand) * mix(0.88, 1.08, clump);
+	// the lie of the coat: tufts combed back along the body (down the legs, out along the
+	// brush), coarse enough to still read as fur at a few metres where `strand` averages out
+	vec3 fq = legm > 0.5 ? vec3(p.x * 90.0, p.y * 14.0, p.z * 90.0) : vec3(p.x * 85.0, p.y * 85.0, p.z * 13.0);
+	if (tail > 0.5) { fq = vec3(p.x * 70.0, p.y * 70.0, v_along * 6.0); }
+	float flow = vnoise(fq + vec3(5.3, 1.7, 0.0));
+	float tuft = vnoise(fq * vec3(2.3, 2.3, 1.4) + vec3(0.0, 9.1, 2.2));
+	col *= mix(0.78, 1.12, strand) * mix(0.88, 1.08, clump) * mix(0.72, 1.12, flow * 0.6 + tuft * 0.4);
+	// a little grey in the red: desaturate toward the luminance, more on the back and flanks
+	float lum = dot(col, vec3(0.3, 0.55, 0.15));
+	col = mix(col, vec3(lum), 0.12 + 0.1 * (1.0 - legm) * smoothstep(0.0, 0.8, rn.y));
 	// grizzle: pale-tipped guard hairs on the back and brush
 	col = mix(col, pale, smoothstep(0.75, 0.95, vnoise(p * 190.0)) * 0.22 * (1.0 - legm) * (1.0 - head));
 	float rough = 0.8;
@@ -213,7 +222,7 @@ void fragment() {
 	ROUGHNESS = mix(rough, 0.35, wet);
 	SPECULAR = spec;
 	float rim = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.5);
-	ALBEDO += coat * rim * 0.25 * (1.0 - wet) * (1.0 - legm * 0.7);
+	ALBEDO += mix(coat, pale, 0.4) * rim * 0.14 * (1.0 - wet) * (1.0 - legm * 0.7);   // soft halo of the guard hairs, not a red glow
 	ALBEDO *= v_cloud;
 	float ao = mix(0.55, 1.0, smoothstep(0.05, 0.35, p.y));
 	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);
@@ -222,5 +231,5 @@ void fragment() {
 		EMISSION += vec3(0.85, 0.9, 0.45) * eyeshine * 2.4 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
 	}
 	BACKLIGHT = col * (0.08 + 0.67 * ear);
-	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25, 0.5 + (clump - 0.5) * 0.15, 1.0));
+	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25 + (flow - 0.5) * 0.3, 0.5 + (clump - 0.5) * 0.15 + (tuft - 0.5) * 0.2, 1.0));
 }
