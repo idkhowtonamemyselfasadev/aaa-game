@@ -159,7 +159,7 @@ func _apply() -> void:
 	_tallow.set_shader_parameter("lit", lit * fl)
 	lamp.light_energy = lit * 0.9 * fl
 	lamp.visible = lit > 0.01 and is_visible_in_tree()
-	fill.light_energy = lit * face_fill * 0.8 * fl
+	fill.light_energy = lit * face_fill * (0.8 - 0.1 * face_fill) * fl   # a touch softer at full lean, right under the brim
 	# the vents' glow spills up over the lid toward the face: from the lantern it fell off before
 	# it reached under the brim, so lean it partway there as the lantern comes up
 	var vent := pivot.global_transform * fill_rest

@@ -2036,7 +2036,7 @@ func _henfox_test() -> void:
 	if _os["fist"] < 0.8 or _os["fist_turn"] > -0.3 or _os["fist_thumb"] < 0.5 or _os["thumb_gap"] > 0.08 or _os["thumb_tip"].y > -0.75:
 		return _combat_done(false, "Osric's fingers should close round the lantern bail, not hang open in a wave")
 	print("BOT henfox face glow: energy %.2f at %.2f m up, %.2f m from his eyes" % [_os["fill"], _os["fill_y"], _os["fill_head"]])
-	if _os["fill"] < 0.3 or _os["fill_y"] < 1.7 or _os["fill_head"] > 0.38:
+	if _os["fill"] < 0.3 or _os["fill_y"] < 1.65 or _os["fill_head"] > 0.38:   # 1.65: the glow sits a little lower since 10-22 21:30 (higher lit a band on the brim)
 		return _combat_done(false, "the held-up lantern should throw a warm glow up onto Osric's face")
 	if back_in < 0 or nb.hand_lantern.visible or nb.activity != "in":
 		return _combat_done(false, "Osric should go back in to bed after looking")
