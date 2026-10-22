@@ -64,7 +64,7 @@ func _ready() -> void:
 	add_child(trample)
 	moon = DirectionalLight3D.new()
 	moon.name = "Moon"
-	moon.light_color = Color(0.62, 0.72, 1.0)
+	moon.light_color = Color(0.5, 0.6, 0.68)   # (0.62, 0.72, 1.0) washed pale walls a bright flat blue at 01:30
 	moon.shadow_enabled = true
 	moon.directional_shadow_max_distance = 150.0
 	moon.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY

@@ -477,8 +477,9 @@ func _pose() -> void:
 		crumple.flick = maxf(crumple.flick, u)
 		# (1.45/0.75 left it hanging at his waist: the henfox bot now holds the ring at 1.5 m+,
 		# a hand's length out before him)
-		crumple.flick_arm = 2.15
-		crumple.flick_elbow = 0.3
+		crumple.flick_arm = 2.2
+		crumple.flick_elbow = 0.15
+		crumple.flick_out = 0.4
 		crumple.spine += 0.06 * u
 		# (0.08 left his face a dark smudge under the brim in `lookout2`: chin up, eyes out)
 		crumple.neck += 0.2 * u
@@ -493,6 +494,7 @@ func _pose() -> void:
 		crumple.flick = maxf(crumple.flick, k)
 		crumple.flick_arm = 1.15
 		crumple.flick_elbow = 0.35
+		crumple.flick_out = 0.0
 	if lean <= 0.0:
 		return
 	var l := lean * lean * (3.0 - 2.0 * lean)
@@ -522,6 +524,7 @@ func _pose_fell() -> void:
 		crumple.flick = sh
 		crumple.flick_arm = 2.05
 		crumple.flick_elbow = 1.8
+		crumple.flick_out = 0.0
 	# weight from one foot to the other: a slow roll of the whole body about the feet
 	var sway := sin(_gt * TAU / 7.5) * g
 	model.transform = model.transform.rotated_local(Vector3.BACK, 0.022 * sway)

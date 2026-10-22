@@ -22,6 +22,7 @@ var toss_in := -1.1          # the raised arm drawn in across toward the head (a
 var flick := 0.0             # 0..1: the right arm taken over by flick_arm/flick_elbow (a toss)
 var flick_arm := 0.0
 var flick_elbow := 0.0
+var flick_out := 0.0         # radians: the flicked arm swung out to the right about the body's up axis
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
@@ -52,6 +53,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 			# on top of the pose: the difference to the flick's arm and elbow
 			_bend(skel, "mixamorig_RightArm", x, -(flick_arm - arm) * flick)
 			_bend(skel, "mixamorig_RightForeArm", x, -(flick_elbow - elbow) * flick)
+			if flick_out != 0.0:
+				_bend(skel, "mixamorig_RightArm", up, -flick_out * flick)
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)
