@@ -4364,7 +4364,12 @@ Content hours playable: 3.4
 
 ## Next (milestone 1 — vertical slice, in order)
 0000000000000000000000000000000000000000000000000000000000000. (09:00 10-22) Osric's night lookout DONE.
-   Shot `lookout1` (osric lookout1 90 1.5 lookout fixfps) was rendering at commit time; check it.
+   Shot `lookout1` (osric lookout1 90 1.5 lookout fixfps, Forward+, ~45 min, verdict FAIL): he
+   stands in the gap with the lantern lit and its warm light on the wall stones, reads as a
+   night lookout; but the lantern hangs at his waist (the flick 1.45/0.75 lift does not raise
+   the hand: try flick_arm ~2.0, elbow ~1.2, as the brim-shading hand does), his face is lost
+   in the brim shadow, and the moonlit night is flat blue-grey. FIRST fix the lift pose and
+   re-shoot `lookout2`.
    Still open from earlier: re-shoot the fox fur at night (`fox foxfur2 90 1.5 henhouse`), Wat
    lifting his lantern ahead now and then on the dusk leg (Osric's `lift` pose is a tested
    template: Crumple flick arm 1.45, elbow 0.75, but on the left hand for Wat Crumple has no
