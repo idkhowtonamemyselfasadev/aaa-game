@@ -1088,6 +1088,9 @@ func _ready() -> void:
 			nb.lift = 1.0
 			nb.hand_lantern.lit = 1.0
 			nb.cottage._rouse_t = 600.0
+			var dgl = world.get("dog")
+			if dgl != null:
+				dgl.place_attend()      # Brack sat at his knee
 			var lf := Vector3(sin(nb.goal_yaw), 0, cos(nb.goal_yaw)).rotated(Vector3.UP, -0.5)
 			var lc := l0 + lf * 3.2
 			lc.y = terrain.height_at(lc.x, lc.z) + 1.55

@@ -185,6 +185,14 @@ func roused() -> void:
 		return                        # not out in that; he listens from his bed
 	_out_in = ROUSE_OUT
 
+## Out of his door to look at the gap with the lantern (Brack trots over to sit by him).
+func out_looking() -> bool:
+	return _looking and state != IN
+
+## Where he stands at the gap and the way he faces there, down the gable to the garth.
+func lookout_spot() -> Array:
+	return _spots["lookout"]
+
 ## His day's spots round the stone cottage and in the garth, then where he is now.
 func settle(w: Node3D, at_hour: float) -> void:
 	world = w

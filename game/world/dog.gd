@@ -15,13 +15,16 @@ extends Node3D
 ## When Wat the pedlar comes by on the road it gives him a gruff "wuff-wuff", stiff-tailed,
 ## and trots a few steps out after him, then stands watching him off down the road before it
 ## goes back to its pottering (from its place at the door in rain, it only woofs and watches).
+## When Osric comes out in the night with his lantern to look at the gap in his yard wall, it
+## gets up off its place, trots across the green to him and sits at his knee on the yard side
+## of the gap, looking where he looks, and goes back to its place when he goes in.
 ## Bots read `state`, `sit`, `lie`, `doze`, `wag`, `greets`, `barks`, `bed`, `home`, `pressed`,
 ## `woofs`, `warns`.
 
 signal barked(at: Vector3, alarm: bool)   # a greeting bark, or a guard bark at night
 signal woofed(at: Vector3)                # its gruff two-bark at a stranger on the road
 
-enum { POTTER, SNIFF, REST, GREET, HEEL, BED, WARN }
+enum { POTTER, SNIFF, REST, GREET, HEEL, BED, WARN, ATTEND }
 
 const SCALE := 1.3          # on the fox rig: ~0.5 m at the shoulder
 const WALK := 1.1           # m/s pottering
@@ -76,6 +79,8 @@ var _press_at := Vector3.INF
 var _fox_at := Vector3.INF   # where it heard the fox at the hen house (looks that way, sat up)
 var _fox_t := 0.0            # s it keeps sat up staring that way
 var fox_alarms := 0          # times it has given tongue at the fox in the night (bots)
+var attends := 0             # times it went over to sit by Osric at the gap (bots)
+var _attend_at := Vector3.INF  # its spot at his knee (yard side of the gap)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -150,6 +155,21 @@ func place_bed() -> void:
 	lie = 1.0 if h >= 21.0 or h < 5.75 else 0.0
 	speed = 0.0
 	state = BED
+
+## Straight onto its spot sat at Osric's knee at the gap, looking down the gable (shots).
+func place_attend() -> void:
+	var nb := _osric()
+	if nb == null:
+		return
+	var sp: Array = nb.lookout_spot()
+	var fwd := Vector3(sin(sp[1]), 0, cos(sp[1]))
+	_attend_at = _ground(sp[0] - fwd * 0.9 + fwd.cross(Vector3.UP) * 0.55)
+	global_position = _attend_at
+	yaw = atan2(-fwd.x, -fwd.z)
+	sit = 1.0
+	lie = 0.0
+	speed = 0.0
+	state = ATTEND
 
 func _start(s: int, t: float) -> void:
 	state = s
@@ -246,6 +266,26 @@ func _process(delta: float) -> void:
 				var pw := _pedlar()
 				if pw != null and pw.on_road and pw.visible and global_position.distance_to(pw.global_position) < SEE_OFF:
 					look = pw.global_position
+		ATTEND:
+			# across to Osric at the gap, then sat by him looking down the gable with him
+			var nb := _osric()
+			if nb == null or not nb.out_looking():
+				state = BED          # he has gone in: back to its place
+			else:
+				var sp: Array = nb.lookout_spot()
+				var gp: Vector3 = sp[0]
+				var fwd := Vector3(sin(sp[1]), 0, cos(sp[1]))
+				if _attend_at == Vector3.INF:
+					_attend_at = _ground(gp - fwd * 0.9 + fwd.cross(Vector3.UP) * 0.55)
+				var at_him := Vector2(nb.global_position.x - gp.x, nb.global_position.z - gp.z).length() < 1.0
+				if global_position.distance_to(_attend_at) > 0.3 and not _steer_to(_attend_at, dt):
+					top = TROT
+					look = nb.global_position
+					wag_goal = 0.4
+				else:
+					want_sit = 1.0
+					look = gp + fwd * 6.0 if at_him else nb.global_position
+					yaw += clampf(wrapf(atan2(-fwd.x, -fwd.z) - yaw, -PI, PI), -3.0 * dt, 3.0 * dt)
 	# what takes it from one thing to the next
 	if noticed:
 		_away_t = 0.0
@@ -254,7 +294,12 @@ func _process(delta: float) -> void:
 		if _away_t > 20.0:
 			_guarded = false    # it barks at him afresh once he has been gone a while
 	if shelter:
-		if state != BED:
+		var nbo := _osric()
+		if state == BED and _bark_n == 0 and nbo != null and nbo.out_looking() and near > 9.0:
+			state = ATTEND           # he is out with his lantern: over to him
+			attends += 1
+			_attend_at = Vector3.INF
+		elif state != BED and state != ATTEND:
 			state = BED
 		# a hero walking up on the dark house sets it off
 		if near < 9.0 and not _guarded:
@@ -327,6 +372,9 @@ func _process(delta: float) -> void:
 
 var _greet_gap := AGAIN   # s since it last left the hero's side
 
+func _osric() -> Neighbour:
+	return world.get("neighbour") as Neighbour
+
 func _pedlar() -> Pedlar:
 	return world.get("pedlar") as Pedlar
 
@@ -392,7 +440,7 @@ func _steer_to(to: Vector3, dt: float) -> bool:
 	if d < 0.3:
 		_stuck_t = 0.0
 		return true
-	var top := TROT if state in [GREET, HEEL, BED, WARN] else WALK
+	var top := TROT if state in [GREET, HEEL, BED, WARN, ATTEND] else WALK
 	if state == HEEL:
 		top = TROT if d > 3.0 else WALK
 	var want := minf(top, maxf(d * 1.2, 0.3))
@@ -406,7 +454,7 @@ func _steer_to(to: Vector3, dt: float) -> bool:
 		var l := a.length()
 		if l < 1.4 and l > 0.001:
 			push += a / l * (1.4 - l) / 1.4
-	if state == BED:
+	if state == BED or state == ATTEND:
 		push *= clampf((d - 0.6) / 2.0, 0.0, 1.0)   # its place is in against the wall
 	if push.length() > 0.01:
 		# slide along the wall rather than into it

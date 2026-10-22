@@ -1901,6 +1901,16 @@ func _osric_sample(i: int) -> void:
 			_os["ring_out"] = maxf(_os["ring_out"], Vector2(rp.x, rp.z).dot(Vector2(fwd.x, fwd.z).normalized()))
 		_os["gap"] = minf(_os["gap"], Vector2(nb.global_position.x - gap.x, nb.global_position.z - gap.z).length())
 		_os["sill"] = minf(_os["sill"], _world.stone_cottage.lit)
+		# Brack over by him at the gap, sat at his knee
+		var dg: Dog = _world.dog
+		if dg.state == Dog.ATTEND and dg.speed > 0.5:
+			for o in dg._obstacles:
+				_os["dog_clear"] = minf(_os["dog_clear"], Vector2(dg.global_position.x - o.x, dg.global_position.z - o.z).length())
+		if nb._look_t > 4.0:
+			var dd := Vector2(dg.global_position.x - nb.global_position.x, dg.global_position.z - nb.global_position.z).length()
+			_os["dog_near"] = minf(_os["dog_near"], dd)
+			if dd < 1.8:
+				_os["dog_sit"] = maxf(_os["dog_sit"], dg.sit)
 	elif _os["out"]:
 		_os["back_in"] = i
 
@@ -1937,7 +1947,7 @@ func _henfox_test() -> void:
 	var dog_look := 0.0
 	var reached := -1
 	var gone := -1
-	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1}
+	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1, "dog_near": 99.0, "dog_sit": 0.0, "dog_clear": 99.0}
 	for i in 9000:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
@@ -2004,6 +2014,17 @@ func _henfox_test() -> void:
 		return _combat_done(false, "Osric should go back in to bed after looking")
 	if sill_min < 0.2:
 		return _combat_done(false, "the candle should stay burning on the sill while he is out")
+	# Brack trotted over to sit by him at the gap, and goes back to its place when he goes in
+	for i in 900:
+		_world.time_of_day = 1.6
+		await get_tree().physics_frame
+		if dg.state == Dog.BED and dg.global_position.distance_to(dg.bed) < 0.35:
+			break
+	print("BOT henfox brack: attends %d, nearest to Osric at the gap %.2f m, sat by him %.2f, closest to a wall on the way %.2f m, back at its place %.2f m (state %d)" % [dg.attends, _os["dog_near"], _os["dog_sit"], _os["dog_clear"], dg.global_position.distance_to(dg.bed), dg.state])
+	if dg.attends != 1 or _os["dog_near"] > 1.6 or _os["dog_sit"] < 0.9 or _os["dog_clear"] < 0.3:
+		return _combat_done(false, "Brack should trot over and sit by Osric at the gap while he looks out")
+	if dg.state != Dog.BED or dg.global_position.distance_to(dg.bed) > 0.35:
+		return _combat_done(false, "Brack should go back to its place by Edda's door when Osric goes in")
 	# once a night
 	for i in 600:
 		_world.time_of_day = 1.6
