@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261017-1500-hearth-dusk.jpg",
-  "time": "2026-10-17T15:32:00Z",
-  "caption": "Dusk in the keep: Hesper's fire blazes in its ring and lights the sooted stones and ivied wall warm with no bleaching; the flame is still a simple bright tongue and the frame reads dark and murky away from it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-1500-hearth-night.jpg",
-  "time": "2026-10-17T15:45:00Z",
-  "caption": "1 am: Hesper dozes beside her fire under moonlit lavender walls; the fire should have burned down low by now and its light reaches only a metre or two of the floor.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1600-hearth-noon.jpg",
   "time": "2026-10-17T16:38:00Z",
   "caption": "Noon in the keep: the cold fire ring's charred logs now read sooted warm-black instead of lavender, but the lens sits low in the wall-foot rubble and the shaded keep reads murky and flat.",
@@ -885,6 +873,18 @@
   "file": "20261022-0700-watlamp2.jpg",
   "time": "2026-10-22T07:00:00Z",
   "caption": "Wat walks the cart track at dusk with his horn lantern now glowing a soft amber, fireflies over the meadow; seen from behind, the scene beyond the lantern pool is nearly black and the pool reads as a red-brown smear.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-0654-henfox.jpg",
+  "time": "2026-10-22T06:54:00Z",
+  "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-0654-henfoxdusk.jpg",
+  "time": "2026-10-22T06:54:00Z",
+  "caption": "Same moment at 19:54 from the garth: the hen house and ladder read against the moonlit trees, but the fox is only a red smear in the dark.",
   "verdict": "fail"
  }
 ]

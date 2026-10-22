@@ -492,8 +492,8 @@ func _ready() -> void:
 			hn.house.set_shut(true)
 			fx.place_at_slide()
 			var sc: Node3D = world.stone_cottage
-			var lp := sc.to_global(Vector3(-1.2, 0, -6.6))
-			lp.y = terrain.height_at(lp.x, lp.z) + 0.9
+			var lp := sc.to_global(Vector3(-2.1, 0, -6.75))
+			lp.y = terrain.height_at(lp.x, lp.z) + 0.75
 			var tg := fx.global_position + Vector3.UP * 0.25
 			SPOTS[spot] = [lp, tg]
 			var pp := fx.global_position + Vector3(40, 0, 40)

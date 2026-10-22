@@ -4336,7 +4336,12 @@ Content hours playable: 3.4
 00000000000000000000000000000000000000000000000000000000000. (06:30 10-22) Fox at the hen house DONE. NEXT ALIVE
    items: Osric's window lamp lighting (or him calling out) when Brack and the hens go off at
    night; Wat lifting his lantern ahead now and then on the dusk leg; re-render `watlamp3` (see
-   the 06:00 item below). Check the `henfox` shot verdict in the gallery entry before touching the pose.
+   the 06:00 item below). `henfox2` (18.8 h, lens cottage-local (-2.1, -6.75) at 0.75 m, verdict FAIL):
+   the fox reads as climbing the ladder with its nose at the pop-hole, but the frame is very
+   dark (sun 0.03 at 18.8) and the fox's coat is a smooth saturated red with no pelt
+   variation and its dark stockings lost; a fur pass on fox.gdshader (guard-hair noise,
+   darker back, paler throat/belly, desaturate) would help both fox shots. The 19.9 `henfox`
+   lens (-1.2, -6.6) shows only a red smear.
 0000000000000000000000000000000000000000000000000000000000. (06:00 10-22) Wearier dusk step + softer horn DONE.
    NEXT ALIVE item: a fox testing the shut hen house at night (sniffing round it, Brack
    barking, Osric's window lighting) now that the slide is a real defence; then Wat lifting
