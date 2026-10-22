@@ -4375,7 +4375,13 @@ Content hours playable: 3.4
    Tried and rejected: folding Thumb2/3 about the fingers' hinge (+-0.8 only swings the tip between
    up past the knuckles and back at the wrist). Bat: Bat.door_pass (closest approach to the door
    point after a drop) replaces the bot's 10-tick sample, threshold 0.6 m. Bots pass: henfox bat
-   neighbour villager lantern facelight walk. NEXT: look at shot `lookout8`; then the coat
+   neighbour villager lantern facelight walk. Shot `lookout8` (Forward+, ~50 min, verdict FAIL, in
+   the gallery as 20261022-2049-lookout.jpg): at full frame the hand reads as a fist, but a 3x crop
+   shows the thumb still as a stub poking sideways out of the fist's top toward his face, so the
+   bot's grip_tip direction is not what reads on screen (the visible thumb is probably the
+   Thumb1/Thumb2 mass, not the last bone: check where the thumb's skinned verts actually sit, e.g.
+   pose the hand alone in a close shot at noon); the face is still a dark mask under the brim and
+   the hat reads like a bucket. NEXT: that close hand shot, then the coat
    weave/wear contrast at night, the orange-red patches on the right-hand wall stones, the fox fur
    re-shoot, Wat's lantern lift `watlamp3`.
 00000000000000000000000000000000000000000000000000000000000000000000. (20:30 10-22) Osric's face lit under the brim DONE (bot-verified, shot).
