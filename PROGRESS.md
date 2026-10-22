@@ -4372,9 +4372,13 @@ Content hours playable: 3.4
    energy = lit * face_fill * 0.55; Neighbour sets face_fill = lift. The lookout pose lifts the
    head more (neck +0.2, was +0.08). henfox bot checks the glow (reads 0.55 at 1.69 m up).
    Insects: `late_share` scales the firefly night from 1.0 at 22:30 down to 0.2 by midnight,
-   back up from 03:00 (insects bot: 104 lit at 22:00, 24 at 01:30). Shot `lookout3` started
-   this session (see the screenshot verdicts / gallery for the result). NEXT: if the face still
-   reads dark, raise VentGlow energy (0.55 -> 0.9) or move it to 0.22 m; the coat reading
+   back up from 03:00 (insects bot: 104 lit at 22:00, 24 at 01:30). Shot `lookout3` (osric
+   lookout3 90 1.5 lookout fixfps, Forward+, ~25 min, verdict FAIL, in the gallery): his face and
+   beard now read, lit warm from below; Brack sits at his knee; only a few fireflies left. Still
+   wrong: a dark raised fist (the left hand?) sits up beside his face and reads odd; the
+   whitewashed cottage glows too bright and blue for 01:30 (the moonlight is too strong on
+   pale walls: cut the moon energy or the wall albedo at night); a few wall stones on the right
+   show orange-red patches. NEXT: find and lower that raised hand in the lookout pose; the coat reading
    flat pale grey at night (give the coat shader more weave/wear contrast), the flat blue moonlit
    night (grade the moon colour toward a desaturated teal with warmer lantern contrast); then
    the older open items (fox fur re-shoot `fox foxfur2 90 1.5 henhouse`, Wat's lantern lift on

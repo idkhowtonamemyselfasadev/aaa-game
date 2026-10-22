@@ -1,26 +1,8 @@
 [
  {
-  "file": "20261017-1600-hearth-noon.jpg",
-  "time": "2026-10-17T16:38:00Z",
-  "caption": "Noon in the keep: the cold fire ring's charred logs now read sooted warm-black instead of lavender, but the lens sits low in the wall-foot rubble and the shaded keep reads murky and flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-1838-hearth-low1am.jpg",
-  "time": "2026-10-17T18:38:38Z",
-  "caption": "Hesper's low fire at 1 am with no firefly blob on the lens; the firelight still barely reaches the moonlit inner face and the lid rim darkens the bottom of frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1948-hearth-low1am.jpg",
   "time": "2026-10-17T19:48:44Z",
   "caption": "Hesper's low fire at 1 am after the night-grade fix: the keep's inner face now reads warm amber stone with relief instead of lavender-grey; the light is still a bit even across the whole wall for a low fire and the wall-joint grass glows gold.",
-  "verdict": "fail"
- },
- {
-  "file": "20261017-1948-hearth-blaze22.jpg",
-  "time": "2026-10-17T19:48:44Z",
-  "caption": "The cookfire at full blaze at 22 h: warm firelit keep wall, ivy and swept floor with moonlit blue stones at the edge; the wall-joint grass blades flare as bright gold streaks and the lens is still a flat look at the wall.",
   "verdict": "fail"
  },
  {
@@ -897,6 +879,12 @@
   "file": "20261022-1345-lookout2.jpg",
   "time": "2026-10-22T13:45:00Z",
   "caption": "Osric at the yard-wall gap at 01:30 now holds his lit horn lantern up before his chest and its warm light falls on the wall stones; but his face is still a dark smudge under the brim, his coat reads flat pale grey, and the moonlit night is flat blue.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-1430-lookout3.jpg",
+  "time": "2026-10-22T14:34:00Z",
+  "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: its glow now lights his face and beard from below, Brack sits at his knee and only a few fireflies remain; still wrong: a dark raised fist beside his face, the whitewashed cottage glows too bright and blue for the small hours, and his coat reads flat pale grey.",
   "verdict": "fail"
  }
 ]
