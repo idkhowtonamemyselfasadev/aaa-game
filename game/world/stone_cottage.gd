@@ -764,6 +764,7 @@ static func lit_for(h: float) -> float:
 ## the dawn candle before they are up), and in out of the rain by day the hearth's glow shows
 ## in the panes. It takes a moment to kindle and to go out.
 func _lit_now(h: float, delta: float) -> float:
+	_rouse_t = maxf(_rouse_t - delta, 0.0)
 	if keeper == null:
 		return lit_for(h)
 	var goal := 0.0
@@ -771,7 +772,18 @@ func _lit_now(h: float, delta: float) -> float:
 		goal = lit_for(h)
 		if keeper.activity == "shelter":
 			goal = maxf(goal, 0.35)
+		if _rouse_t > 0.0:
+			goal = maxf(goal, 0.7)      # up in the night with a candle to see what's at the hens
 	return move_toward(lit, goal, delta / 1.5)
+
+## Something at the hens in the night (Brack barking at the fox): the keeper gets up and
+## lights a candle for a while, then goes back to bed.
+func rouse(secs: float) -> void:
+	_rouse_t = maxf(_rouse_t, secs)
+	rousings += 1
+
+var _rouse_t := 0.0
+var rousings := 0                # (bots)
 
 func _process(delta: float) -> void:
 	var h: float = _world.time_of_day if "time_of_day" in _world else 12.0

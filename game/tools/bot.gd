@@ -1946,6 +1946,15 @@ func _henfox_test() -> void:
 		return _combat_done(false, "the dog's barking should send the fox back out through the stile")
 	if hh.shut < 0.99 or not hn.all_in():
 		return _combat_done(false, "the slide should hold and the hens stay in")
+	# the barking wakes Osric: his candle comes on (dark before the fox came)
+	var lit_max := 0.0
+	for i in 240:
+		_world.time_of_day = 1.5
+		await get_tree().physics_frame
+		lit_max = maxf(lit_max, sc.lit)
+	print("BOT henfox candle: rousings %d, lit %.2f, Osric outdoors %s" % [sc.rousings, lit_max, _world.neighbour.outdoors()])
+	if sc.rousings < 1 or lit_max < 0.3:
+		return _combat_done(false, "Brack's barking should wake Osric and light his candle")
 	# once a night
 	for i in 600:
 		_world.time_of_day = 1.6

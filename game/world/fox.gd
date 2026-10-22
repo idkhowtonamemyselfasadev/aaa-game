@@ -563,6 +563,10 @@ func _update_prowl(dt: float) -> void:
 			if dg != null and dg.barks > _dog_barks0 and not _flee:
 				_flee = true
 				fled += 1
+				# the barking wakes Osric: a candle comes on in the stone cottage
+				var stc = world.get("stone_cottage")
+				if stc != null and stc.has_method("rouse"):
+					stc.rouse(90.0)
 				_pt = maxf(_pt, TRY_T - 0.5)
 			if _pt >= TRY_T:
 				_pstep = 3
