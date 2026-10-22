@@ -33,6 +33,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (00:30 10-22) **Osric's eyes lifted out of the brim shadow.** `garb.gd`: felt hat tip
+  -0.08 -> -0.13 rad (front brim higher off the eye line); bearded wearers (Osric, Wat) get a
+  cleaner eye white (`eye.gdshader` new `sclera_gain`, 1.27: 0.33 -> 0.42) and `eye_fill`, a
+  tiny OmniLight 11 cm in front of the eyes (range 0.16, so it misses beard and hood) whose
+  energy follows the face fill x0.5 (`villager.gd`). Bots neighbour, pedlar, facelight,
+  greet, villager pass. Shot `osric osricface4 90 17.1 face` pending at commit time (see below).
 - (23:50 10-21) **Osric's face: greyer skin, modelled sockets.** `neighbour.gd` skin_col
   0.27/0.195/0.16 -> 0.24/0.18/0.155. `skin.gdshader` (age > 0 only, so the hero is unchanged):
   ruddy cheek/nose mix 0.55 -> 0.4 and less red; albedo x0.62 in an ellipse round each eye

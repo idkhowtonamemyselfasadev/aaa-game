@@ -18,6 +18,8 @@ var veil: MeshInstance3D
 var face: MeshInstance3D
 var eyes: Array[MeshInstance3D] = []
 var fill: OmniLight3D
+## A bearded wearer's tiny catch fill at eye level (see `_add_face`); null on the hero.
+var eye_fill: OmniLight3D
 ## Per-piece colour overrides for another wearer (an NPC): keys hood, hat, mantle, robe, sash,
 ## wraps -> [dark, light, soot] like the constants below. Empty: the hero's own dyes.
 var palette := {}
@@ -117,8 +119,9 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# worn pushed back a little on the hood, so the eye line shows under the front brim even
 		# with the idle stance's head bowed
 		var crown := Vector3(0.0, 2.10, -0.03)
-		# the felt hat sits down on the hood, tipped back only a little
-		var tip := -0.08 if felt_hat else -0.17
+		# the felt hat sits down on the hood, tipped back a little (at -0.08 its front brim
+		# hid the old man's eyes in shade at any range)
+		var tip := -0.13 if felt_hat else -0.17
 		var up := 0.0 if felt_hat else 0.02
 		hat.transform = Transform3D(Basis(Vector3.RIGHT, tip), Vector3.ZERO).translated_local(-crown).translated(crown + Vector3.UP * up)
 		head.add_child(hat)
@@ -598,6 +601,10 @@ func _add_face(head: Node3D) -> void:
 	head.add_child(face)
 	var emat := ShaderMaterial.new()
 	emat.shader = preload("res://shaders/eye.gdshader")
+	if beard:
+		# deep in the felt brim's shade the grey-buff white went to the skin's value and the
+		# eye vanished: a cleaner white keeps it reading as an eye at a few metres
+		emat.set_shader_parameter("sclera_gain", 1.27)
 	var sphere := SphereMesh.new()
 	sphere.radius = EYE_R
 	sphere.height = EYE_R * 2.0
@@ -634,6 +641,21 @@ func _add_face(head: Node3D) -> void:
 	fill.light_specular = 0.12
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
+	if beard:
+		# the brow and the brim keep the broad fill off the sockets: a tiny light a hand in
+		# front of the eyes, out of reach of the beard and the hood, lifts only the eye line
+		# (its energy follows the fill's, see villager.gd)
+		eye_fill = OmniLight3D.new()
+		eye_fill.name = "EyeFill"
+		eye_fill.light_color = fill.light_color
+		eye_fill.light_energy = 0.0
+		eye_fill.omni_range = 0.16
+		eye_fill.omni_attenuation = 1.0
+		eye_fill.shadow_enabled = false
+		eye_fill.light_cull_mask = layer
+		eye_fill.light_specular = 0.08
+		eye_fill.position = Vector3(0.0, EYE_Y - 0.004, _face_point_xy(0.0, EYE_Y, false).z + 0.11)
+		head.add_child(eye_fill)
 
 ## Midday shade light (see `light_face`): the fill's noon energy was tuned against it.
 const NOON_SHADE := 1.16

@@ -6,6 +6,8 @@ shader_type spatial;
 uniform vec3 iris_col : source_color = vec3(0.16, 0.085, 0.04);
 uniform float iris_r = 0.56;   // angular radius of the iris (rad): ~6 mm on a 12.5 mm ball
 uniform float pupil_r = 0.2;
+// the white's brightness against the default grey-buff (a deep brim wants it cleaner)
+uniform float sclera_gain = 1.0;
 // the eye's side of the face: -1 at -x, 1 at +x (the nose lies toward -side in local x)
 instance uniform float side = 1.0;
 
@@ -24,7 +26,7 @@ void vertex() {
 void fragment() {
 	float ang = acos(clamp(ln.z, -1.0, 1.0));
 	float az = atan(ln.y, ln.x);
-	vec3 sclera = vec3(0.33, 0.29, 0.26);   // a shaded eye white is grey-buff, not paper
+	vec3 sclera = vec3(0.33, 0.29, 0.26) * sclera_gain;   // a shaded eye white is grey-buff, not paper
 	// faint vessels toward the corners and a little shadow under the upper lid
 	float vessel = smoothstep(0.92, 1.0, hash(vec2(floor(az * 9.0), floor(ang * 30.0))));
 	sclera = mix(sclera, vec3(0.6, 0.3, 0.26), 0.25 * vessel * smoothstep(0.7, 1.2, ang));

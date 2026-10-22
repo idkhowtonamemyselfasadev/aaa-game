@@ -536,6 +536,9 @@ func _physics_process(delta: float) -> void:
 	if garb.fill != null and pg != null and pg.fill != null:
 		garb.fill.light_energy = pg.fill.light_energy * garb.fill_gain
 		garb.fill.light_color = pg.fill.light_color
+		if garb.eye_fill != null:
+			garb.eye_fill.light_energy = garb.fill.light_energy * 0.5
+			garb.eye_fill.light_color = garb.fill.light_color
 
 ## The walking direction toward the next path point, bent round anything in the way (none here).
 func _steer(dir: Vector3) -> Vector3:
