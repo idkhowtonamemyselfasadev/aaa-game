@@ -110,7 +110,7 @@ func _dress() -> void:
 	garb.robe_len = 0.8
 	garb.felt_hat = true
 	garb.beard = true
-	garb.beard_col = Color(0.20, 0.16, 0.12)
+	garb.beard_col = Color(0.25, 0.21, 0.165)
 	garb.fill_gain = 1.7
 	garb.smock = true
 	garb.mantle_wool = true

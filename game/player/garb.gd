@@ -441,6 +441,16 @@ func _hood_at(a: float, v: float) -> Vector3:
 	# over the cheeks the cowl stands a little off the face cloth it now wraps further round
 	var cheek := 0.012 * exp(-pow((absf(wrapf(a, -PI, PI)) - 0.6) / 0.3, 2.0)) \
 			* smoothstep(0.3, 0.5, v) * (1.0 - smoothstep(0.8, 1.0, v))
+	if beard:
+		# an old shepherd's worn cowl is no stiff box round the face: it is drawn in under the
+		# jaw so the head's outline rounds before the cloth spreads over the shoulders, the
+		# crown slumps a little behind the brim, and the cloth falls in a few soft, uneven
+		# drape folds instead of flat walls
+		var sd := sin(a) * sin(a)
+		r *= 1.0 - 0.09 * sd * exp(-pow((v - 0.62) / 0.13, 2.0))
+		r *= 1.0 + 0.035 * sin(a * 5.0 + 1.3 + v * 3.0) * smoothstep(0.3, 0.9, v) \
+				+ 0.018 * sin(a * 11.0 + 0.4) * smoothstep(0.5, 1.0, v)
+		cz -= 0.025 * (1.0 - smoothstep(0.0, 0.3, v)) * (0.5 - 0.5 * cos(a))
 	return Vector3(sin(a) * (0.168 * r + cheek), 2.09 - v * 0.43 + lift,
 			cz + cos(a) * (0.192 * r + fwd + cheek))
 
@@ -452,6 +462,10 @@ func _hood_gap(v: float) -> float:
 	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
 	var dy := maxf(y - HOOD_YC, 0.0) / HOOD_H
 	var half := HOOD_W * sqrt(maxf(1.0 - dy * dy, 0.0)) * (1.0 + 0.05 * sin(v * 19.0 + 0.7))
+	if beard:
+		# the opening's sides follow the face in toward the chin instead of running straight
+		# down the cheeks (a square frame read as a helmet), and its edge wavers a little more
+		half *= (1.0 - 0.22 * smoothstep(1.95, 1.84, y)) * (1.0 + 0.04 * sin(v * 31.0 + 2.1))
 	var arch := asin(clampf(half / (0.168 * maxf(dome, 0.05)), 0.0, 0.99))
 	var low := 0.22 + 0.32 * smoothstep(0.12, 0.4, v) - 0.5 * smoothstep(0.72, 1.0, v)
 	return lerpf(arch, low, smoothstep(0.42, 0.56, v))

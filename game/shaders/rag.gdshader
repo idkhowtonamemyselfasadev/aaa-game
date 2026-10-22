@@ -184,7 +184,10 @@ void fragment() {
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
 	float soot = (smoothstep(0.18, 0.0, to_hem) * 0.65 + burn_rim * 0.8) * soot_amt;
-	float tone = clamp(0.35 + 0.45 * grime + 0.2 * slub, 0.0, 1.0);
+	// (slub runs in bands across the hang: on fulled wool it read as wood-grain rings, so wool
+	// takes a blotchy, near-round mottle instead)
+	float mottle = fbm(uv * vec2(7.0, 6.0) + 17.0) - 0.5;
+	float tone = clamp(0.35 + 0.45 * grime + 0.2 * mix(slub, 0.5 + mottle, clamp(wool, 0.0, 1.0)), 0.0, 1.0);
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
 	// old dye and rust stains in blotches
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));

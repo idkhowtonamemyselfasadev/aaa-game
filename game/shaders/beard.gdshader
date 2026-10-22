@@ -81,7 +81,7 @@ void fragment() {
 	// plaster patch: a soft fine-strand contrast, the clumping carried by the locks)
 	vec3 alb = mix(hair_col * 0.8, hair_col, smoothstep(0.15, 0.85, s1 * 0.75 + s2 * 0.25));
 	alb = mix(alb, mix(dark_col, hair_col, 0.3), pepper * 0.32);
-	float hollow = mix(0.68, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
+	float hollow = mix(0.42, 1.0, smoothstep(0.25, 0.75, lock)) * mix(0.7, 1.0, cav);
 	float root = mix(0.7, 1.0, smoothstep(0.0, 0.006, top - p.y));
 	// the thinning tips let the shade under the jaw show through
 	float tip = mix(0.72, 1.0, smoothstep(0.0, 1.4, thin));
@@ -94,7 +94,7 @@ void fragment() {
 	if (side > 0.0 && strand + 0.4 * lock < 0.25 + 0.75 * side * hash(vec2(floor(q.x * 2600.0), 7.0))) {
 		discard;
 	}
-	alb *= mix(1.0, 0.55, side);
+	alb *= mix(1.0, 0.5, side);
 	alb *= hollow * root * tip;
 	// a beard has volume: the front of the jaw catches the light, the sides turn away and the
 	// underside toward the point sits in the shade of the chin
@@ -111,7 +111,7 @@ void fragment() {
 	alb *= 1.0 - 0.6 * lips;
 	float rough = mix(0.62, 0.48, strand);
 	// the strands as a bump on the shading normal
-	float h = strand * 0.0003 + lock * 0.0011;
+	float h = strand * 0.0003 + lock * 0.003;
 	vec3 dpx = dFdx(VERTEX);
 	vec3 dpy = dFdy(VERTEX);
 	vec3 r1 = cross(dpy, NORMAL);
