@@ -4380,7 +4380,7 @@ Content hours playable: 3.4
    shows the thumb still as a stub poking sideways out of the fist's top toward his face, so the
    bot's grip_tip direction is not what reads on screen (the visible thumb is probably the
    Thumb1/Thumb2 mass, not the last bone: check where the thumb's skinned verts actually sit, e.g.
-   pose the hand alone in a close shot at noon); the face is still a dark mask under the brim and
+   pose the hand alone in a close shot at noon); (this shot predates bee91b5's brim glow, so the dark face here is the old lighting) and
    the hat reads like a bucket. NEXT: that close hand shot, then the coat
    weave/wear contrast at night, the orange-red patches on the right-hand wall stones, the fox fur
    re-shoot, Wat's lantern lift `watlamp3`.
