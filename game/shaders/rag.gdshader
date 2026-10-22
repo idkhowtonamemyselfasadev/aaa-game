@@ -167,6 +167,7 @@ void fragment() {
 	// weave so it never shimmers
 	float fuzz = 0.0;
 	float pill = 0.0;
+	float crease_dark = 0.0;
 	if (wool > 0.0) {
 		vec2 fv = uv * weave_scale * vec2(2.3, 2.3 * fuzz_ratio);
 		float wfine = 1.0 - smoothstep(0.4, 1.2, length(fwidth(fv)));
@@ -176,8 +177,15 @@ void fragment() {
 		float c0 = fbm(cv);
 		float cx = fbm(cv + vec2(0.04, 0.0)) - c0;
 		float cy = fbm(cv + vec2(0.0, 0.04)) - c0;
-		tx = mix(tx * 0.6, tx * 0.6 + cx * 9.0, wool) + fuzz * 0.25 * wool;
-		ty = mix(ty * 0.6, ty * 0.6 + cy * 4.0, wool) + fuzz * 0.25 * wool;
+		// a second, tighter set of rumples so the creases read at arm's length, not only as
+		// broad swells
+		vec2 cv2 = uv * vec2(22.0, 9.0) + seed * 1.7 + 5.0;
+		float d0 = vnoise(cv2);
+		float dx = vnoise(cv2 + vec2(0.05, 0.0)) - d0;
+		float dy = vnoise(cv2 + vec2(0.0, 0.05)) - d0;
+		tx = mix(tx * 0.6, tx * 0.6 + cx * 14.0 + dx * 5.0, wool) + fuzz * 0.25 * wool;
+		ty = mix(ty * 0.6, ty * 0.6 + cy * 7.0 + dy * 3.0, wool) + fuzz * 0.25 * wool;
+		crease_dark = smoothstep(0.42, 0.3, c0) * 0.25 + smoothstep(0.45, 0.25, d0) * 0.1;
 		thread = mix(thread, 0.5 + (thread - 0.5) * 0.6, wool);
 	}
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
@@ -194,7 +202,16 @@ void fragment() {
 	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6);
 	alb *= 0.86 + 0.14 * thread;
 	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
-	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, 0.7 + 0.3 * COLOR.r, fold_ao);
+	// worn wool: rubbed thin and faded in broad patches, darker and greasier in the crease
+	// valleys, and a dusting of dry road dust where the cloth faces the sky (the shoulders)
+	vec3 up_n = mat3(INV_VIEW_MATRIX) * NORMAL;
+	if (wool > 0.0) {
+		float wear = smoothstep(0.5, 0.7, fbm(uv * vec2(3.5, 2.5) + 41.0));
+		alb *= (1.0 + 0.18 * wear * wool) * (1.0 - crease_dark * wool);
+		float dust = smoothstep(0.35, 0.85, up_n.y) * (0.45 + 0.55 * fbm(uv * 14.0 + 61.0));
+		alb = mix(alb, vec3(0.30, 0.27, 0.22), clamp(dust * 0.45 * wool, 0.0, 0.5));
+	}
+	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, mix(0.7, 0.55, clamp(wool, 0.0, 1.0)) + mix(0.3, 0.45, clamp(wool, 0.0, 1.0)) * COLOR.r, fold_ao);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
 	float singe = (1.0 - smoothstep(0.0, 0.012, to_hem)) * step(0.5, fbm(vec2(UV.x * 23.0, seed)));

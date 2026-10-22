@@ -398,14 +398,16 @@ const HOOD_ROLL := 0.12
 const HOOD_YC := 1.952   # the arch's centre height, near the eye line
 const HOOD_H := 0.088    # the arch's half height: its top sits under the hat at 2.04
 const HOOD_W := 0.09     # the opening's half width from the eyes down
+const HOOD_H_PEAK := 0.098  # a bearded wearer's peaked arch: its point a centimetre higher
 
 func _hood() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
-		var gap := _hood_gap(v)
+		var gap_l := _hood_gap(v, 1.0)
+		var gap_r := _hood_gap(v, -1.0)
 		if u > HOOD_ROLL and u < 1.0 - HOOD_ROLL:
-			return _hood_at(lerpf(gap, TAU - gap, (u - HOOD_ROLL) / (1.0 - 2.0 * HOOD_ROLL)), v)
+			return _hood_at(lerpf(gap_l, TAU - gap_r, (u - HOOD_ROLL) / (1.0 - 2.0 * HOOD_ROLL)), v)
 		var left := u <= HOOD_ROLL
-		var ae := gap if left else TAU - gap
+		var ae := gap_l if left else TAU - gap_r
 		var into := 1.0 if left else -1.0
 		var phi := ((HOOD_ROLL - u) if left else (u - 1.0 + HOOD_ROLL)) / HOOD_ROLL * 1.45 * PI
 		var p := _hood_at(ae, v)
@@ -415,7 +417,7 @@ func _hood() -> ArrayMesh:
 		n = (n - t * n.dot(t)).normalized()
 		# the hem rolls out over the edge and lies back on the outside; thin at the arch's top,
 		# where it runs into the crown seam, and a little uneven along its length
-		var top_v := (2.09 - HOOD_YC - HOOD_H) / 0.43
+		var top_v := (2.09 - HOOD_YC - (HOOD_H_PEAK if beard else HOOD_H)) / 0.43
 		var rr := 0.0105 * (1.0 + 0.25 * sin(v * 31.0 + 1.3) + 0.12 * sin(v * 77.0)) \
 				* smoothstep(top_v - 0.02, top_v + 0.07, v)
 		return p + n * rr * (1.0 - cos(phi)) - t * rr * sin(phi), 64, 40)
@@ -457,12 +459,19 @@ func _hood_at(a: float, v: float) -> Vector3:
 ## Half-angle of the face opening at `v`: an elliptic arch over the eyes, straight sides
 ## down the cheeks, then a gap round the face cloth closing at the throat -- narrower than the
 ## Hollow cowl's, so the hood wraps the cloth's sides instead of standing as a strip beside it.
-func _hood_gap(v: float) -> float:
+func _hood_gap(v: float, s := 1.0) -> float:
 	var y := 2.09 - v * 0.43
 	var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
 	var dy := maxf(y - HOOD_YC, 0.0) / HOOD_H
 	var half := HOOD_W * sqrt(maxf(1.0 - dy * dy, 0.0)) * (1.0 + 0.05 * sin(v * 19.0 + 0.7))
 	if beard:
+		# an old cowl's opening is no round-topped frame: the cloth over the brow is pulled to a
+		# soft peak where the hood's crown seam meets it, and the opening hangs a little askew,
+		# one side (s = -1) sagging lower and wider than the other, the way a worn hood sits
+		var yk := y + s * 0.006
+		var dp := clampf(maxf(yk - HOOD_YC, 0.0) / HOOD_H_PEAK, 0.0, 1.0)
+		half = HOOD_W * pow(1.0 - dp, 0.85) * pow(1.0 + dp, 0.35) * (1.0 + 0.05 * sin(v * 19.0 + 0.7))
+		half *= 1.0 - 0.05 * s * smoothstep(1.97, 1.88, y)
 		# the opening's sides follow the face in toward the chin instead of running straight
 		# down the cheeks (a square frame read as a helmet), and its edge wavers a little more
 		half *= (1.0 - 0.22 * smoothstep(1.95, 1.84, y)) * (1.0 + 0.04 * sin(v * 31.0 + 2.1))

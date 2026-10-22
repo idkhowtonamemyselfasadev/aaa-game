@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-1150-hearth-noon.jpg",
-  "time": "2026-10-17T11:50:00Z",
-  "caption": "The cold hearth at noon in the shaded keep: the wall over the ring is dark and sooted, but the cold logs and ash bed read bleached white-lilac, brighter than anything else in the keep -- not a material sheen (rougher char changed nothing), still to be found.",
-  "verdict": "fail"
- },
- {
   "file": "20261017-1200-hearth-noon-fill.jpg",
   "time": "2026-10-17T12:20:00Z",
   "caption": "The cold hearth at noon after the keep fill on it was matched to the floor and the ash/split-wood albedo darkened: almost unchanged -- logs, ash and ring stones still read bleached white-lilac in the shaded keep, so the fill term was not the cause.",
@@ -891,6 +885,12 @@
   "file": "20261022-0200-osric-hood.jpg",
   "time": "2026-10-22T02:00:00Z",
   "caption": "Osric at 17:10: the beard is now dark grizzled grey with clumped locks and the cape has lost its wood-grain rings; still a fail: from the front the hood still frames the face as a squarish opening and the cape is now a plain, untextured-looking brown.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-0300-osric-dust.jpg",
+  "time": "2026-10-22T03:00:00Z",
+  "caption": "Osric at the garth in late sun: his hood now hangs askew with a worn uneven rim and his wool mantle carries road dust and wear; his face still reads as a smooth mask and the mantle is still too clean-edged.",
   "verdict": "fail"
  }
 ]
