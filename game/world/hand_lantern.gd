@@ -107,7 +107,7 @@ func _ready() -> void:
 	fill.omni_range = 1.7       # it leans in toward the face now (face_at): at 2.0 / 1.2 it washed his chest
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
-	fill.light_specular = 0.2
+	fill.light_specular = 0.0     # 0.2 lit a bright specular band along the hat brim's front edge
 	fill.position = Vector3(0, 0.28, 0)    # up nearer the face: from 0.16 it barely reached past the brim
 	pivot.add_child(fill)
 	fill_rest = fill.position

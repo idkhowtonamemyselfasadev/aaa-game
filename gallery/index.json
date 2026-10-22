@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261017-2320-hearth-warm.jpg",
-  "time": "2026-10-17T23:20:01Z",
-  "caption": "Hesper at 22:00 sat up by her fire, turned to it with hands out to the warmth, wall in warm amber stone; still wrong: the flame core blows out white, the charred logs show a regular crackle pattern and her near hand stays close to her chest.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-0103-fox-front.jpg",
   "time": "2026-10-18T01:03:36Z",
   "caption": "The fox at the edge of Hesper's firelight after the look pass: red mask, longer narrower muzzle with dark sides, eyeshine, buff ear insides, only a narrow cream throat strip; still small in frame, legs and brush hidden behind the breach slab, fur reads smooth plastic.",
@@ -891,6 +885,12 @@
   "file": "20261022-2141-lookout9.jpg",
   "time": "2026-10-22T21:41:19Z",
   "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: the glow on his hat brim is dimmer and narrower than before, but a bright streak still crosses the brim's front, his face is still mostly shadow, the hat reads like a bucket and the thumb pokes up.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261022-2246-lookout10.jpg",
+  "time": "2026-10-22T22:46:43Z",
+  "caption": "Osric holding his lantern up at the yard-wall gap at night: the bright band across his hat brim has shrunk to a small warm spot at the left edge, but his face is still mostly shadow and the hat still reads as a bucket.",
   "verdict": "fail"
  }
 ]

@@ -400,7 +400,7 @@ func _update_lookout(delta: float) -> void:
 		var hb := skel.find_bone("mixamorig_Head") if skel != null else -1
 		if hb >= 0:
 			var head := skel.global_transform * skel.get_bone_global_pose(hb).origin
-			hand_lantern.face_at = head + Vector3.UP * 0.11 + body.global_transform.basis.z * 0.26   # 0.16 lit a hard band on the brim's underside
+			hand_lantern.face_at = head + Vector3.UP * 0.11 + body.global_transform.basis.z * 0.18   # up 0.16 / out 0.26 lit a hard band on the brim; this sits behind its edge
 		hand_lantern.visible = (out or hold_lift or hand_lantern.lit > 0.02) and state != IN
 
 func _call_out() -> void:
