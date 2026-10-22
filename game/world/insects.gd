@@ -32,6 +32,7 @@ var _threat_prev := Vector3.INF
 var _t := 0.0
 var _sun_dir := Vector3.UP
 var night := 0.0             # 0 day .. 1 full firefly night
+var late_share := 1.0        # share of the swarm still out: fireflies peak after dusk, thin after midnight
 var day := 0.0
 var startled_total := 0      # bots read this: fireflies the hero has scattered
 var swarm_flees := 0         # bots read this: swarms that drifted off from the hero
@@ -162,6 +163,8 @@ func _process(delta: float) -> void:
 	_t += delta
 	var h := _hour()
 	night = smoothstep(18.3, 19.3, h) if h > 12.0 else 1.0 - smoothstep(4.3, 5.4, h)
+	# the display is thickest in the first hours of dark; by the small hours only a few stragglers
+	late_share = 1.0 - 0.8 * (smoothstep(22.5, 24.0, h) if h > 12.0 else 1.0 - smoothstep(3.0, 4.0, h))
 	# midges: from mid-morning, thickest in the long evening light, gone at dusk
 	day = smoothstep(7.0, 9.0, h) * (1.0 - smoothstep(18.4, 19.1, h))
 	# no swarms or glow in the rain
@@ -224,7 +227,7 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 	for i in n:
 		var f: Fly = _ff[i]
 		# active share of the swarm ramps with the night
-		var on := clampf((night - f.gate * 0.85) * 6.0, 0.0, 1.0)
+		var on := clampf((night * late_share - f.gate * 0.85) * 6.0, 0.0, 1.0)
 		var to_anchor := Vector2(f.pos.x - anchor.x, f.pos.z - anchor.z)
 		if to_anchor.length() > firefly_radius + 4.0:
 			# left the bubble behind the camera: re-enter on the far side, ahead of travel

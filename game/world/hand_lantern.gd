@@ -15,6 +15,8 @@ var want := 0.0             # the carrier's wish: the flame comes up / dies over
 var facing: Node3D          # the carrier's body (+z is the way he faces)
 var pivot: Node3D           # the ring: plumb, swinging
 var lamp: OmniLight3D
+var fill: OmniLight3D       # the glow leaking up through the lid's vents onto the carrier's face
+var face_fill := 0.0        # set by the carrier: 1 with the lantern held up at his chin
 var max_sway := 0.0         # largest swing seen (bots)
 var _horn: ShaderMaterial
 var _flame: ShaderMaterial
@@ -94,6 +96,18 @@ func _ready() -> void:
 	lamp.light_size = 0.03
 	lamp.position = Vector3(0, 0.01, 0)
 	fp.add_child(lamp)
+	# the shadowed lamp leaves the face above the lid black (the lid and bail shade it, and
+	# the hat brim the rest): a soft unshadowed warm glow just over the vents lights the chin,
+	# cheeks and eyes from below the way a held-up lantern does
+	fill = OmniLight3D.new()
+	fill.name = "VentGlow"
+	fill.light_color = LAMP.lerp(Color(1.0, 0.75, 0.5), 0.3)
+	fill.omni_range = 1.4
+	fill.omni_attenuation = 1.6
+	fill.shadow_enabled = false
+	fill.light_specular = 0.2
+	fill.position = Vector3(0, 0.16, 0)
+	pivot.add_child(fill)
 	_apply()
 
 ## Where the flame burns (world), for lenses and bots.
@@ -142,4 +156,6 @@ func _apply() -> void:
 	_tallow.set_shader_parameter("lit", lit * fl)
 	lamp.light_energy = lit * 0.9 * fl
 	lamp.visible = lit > 0.01 and is_visible_in_tree()
+	fill.light_energy = lit * face_fill * 0.55 * fl
+	fill.visible = lamp.visible and face_fill > 0.01
 	_flame_mi.visible = lit > 0.01

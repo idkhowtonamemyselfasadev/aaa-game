@@ -1899,6 +1899,11 @@ func _osric_sample(i: int) -> void:
 			var fwd: Vector3 = nb.body.global_transform.basis.z
 			_os["ring_y"] = maxf(_os["ring_y"], rp.y)
 			_os["ring_out"] = maxf(_os["ring_out"], Vector2(rp.x, rp.z).dot(Vector2(fwd.x, fwd.z).normalized()))
+			# the vent glow that lights his face from below
+			var fl: OmniLight3D = nb.hand_lantern.fill
+			if fl.visible:
+				_os["fill"] = maxf(_os["fill"], fl.light_energy)
+				_os["fill_y"] = maxf(_os["fill_y"], fl.global_position.y - nb.global_position.y)
 		_os["gap"] = minf(_os["gap"], Vector2(nb.global_position.x - gap.x, nb.global_position.z - gap.z).length())
 		_os["sill"] = minf(_os["sill"], _world.stone_cottage.lit)
 		# Brack over by him at the gap, sat at his knee
@@ -1947,7 +1952,7 @@ func _henfox_test() -> void:
 	var dog_look := 0.0
 	var reached := -1
 	var gone := -1
-	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1, "dog_near": 99.0, "dog_sit": 0.0, "dog_clear": 99.0}
+	_os = {"out": false, "gap": 99.0, "lamp": 0.0, "lift": 0.0, "ring_y": 0.0, "ring_out": -9.0, "sill": 1.0, "back_in": -1, "dog_near": 99.0, "dog_sit": 0.0, "dog_clear": 99.0, "fill": 0.0, "fill_y": 0.0}
 	for i in 9000:
 		_world.time_of_day = 1.5
 		await get_tree().physics_frame
@@ -2010,6 +2015,9 @@ func _henfox_test() -> void:
 		return _combat_done(false, "woken, Osric should come out to the gap with his lantern lit, hold it up and call out")
 	if _os["ring_y"] < 1.5 or _os["ring_out"] < 0.25:
 		return _combat_done(false, "Osric should hold the lantern up and out before him at chin height, not at his waist")
+	print("BOT henfox face glow: energy %.2f at %.2f m up" % [_os["fill"], _os["fill_y"]])
+	if _os["fill"] < 0.3 or _os["fill_y"] < 1.55:
+		return _combat_done(false, "the held-up lantern should throw a warm glow up onto Osric's face")
 	if back_in < 0 or nb.hand_lantern.visible or nb.activity != "in":
 		return _combat_done(false, "Osric should go back in to bed after looking")
 	if sill_min < 0.2:
@@ -2426,6 +2434,13 @@ func _insects_test() -> void:
 	print("BOT insects keep: %d fireflies inside the keep walls, %d in the grass round it" % [in_keep, near_keep])
 	if in_keep > 0 or near_keep < 5:
 		return _combat_done(false, "fireflies inside the keep, or none round it")
+	# the small hours: the display has thinned to a few stragglers
+	_world.time_of_day = 1.5
+	await _ticks(90)
+	var late_lit := ins.visible_fireflies()
+	print("BOT insects small hours: lit %d (at 22:00 %d), share %.2f" % [late_lit, lit, ins.late_share])
+	if late_lit > lit * 0.45 or late_lit < 1:
+		return _combat_done(false, "fireflies not thinned after midnight, or none left at all")
 	_world.time_of_day = 7.0
 	await _ticks(30)
 	print("BOT insects dawn: lit %d" % ins.visible_fireflies())

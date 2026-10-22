@@ -396,6 +396,7 @@ func _update_lookout(delta: float) -> void:
 	lift = move_toward(lift, 1.0 if up else 0.0, delta / LIFT_IN)
 	if hand_lantern != null:
 		hand_lantern.want = 1.0 if out or hold_lift else 0.0
+		hand_lantern.face_fill = lift
 		hand_lantern.visible = (out or hold_lift or hand_lantern.lit > 0.02) and state != IN
 
 func _call_out() -> void:
@@ -479,7 +480,8 @@ func _pose() -> void:
 		crumple.flick_arm = 2.15
 		crumple.flick_elbow = 0.3
 		crumple.spine += 0.06 * u
-		crumple.neck += 0.08 * u
+		# (0.08 left his face a dark smudge under the brim in `lookout2`: chin up, eyes out)
+		crumple.neck += 0.2 * u
 	if latch > 0.0:
 		# a stiff old man's reach down to the handle at hip height: bent at the hips and the
 		# knees, the right arm out and down, the head bowed to see it
