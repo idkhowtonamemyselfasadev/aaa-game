@@ -4333,8 +4333,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    items: birds scattering is already done (birds.gd), so: a fox testing the shut hen house
    at night (sniffing round it, Osric's dog barking) now that the slide is a real defence;
    Wat walks his dusk leg with the same gait as by day: a slower, wearier step and a lifted
-   lantern when he looks ahead would sell it; check `watlamp` (see verdicts) for the lantern's
-   scale in his hand and whether the light pool reads on the ruts.
+   lantern when he looks ahead would sell it. `watlamp` (19.7 h, verdict FAIL): the lantern
+   and its warm pool on the ruts read well, but the `road lamp` lens lands behind him (he
+   faces the other way from `dir`: flip the lens to `wp - dir*3.4`), the horn panes blow out
+   to flat orange (lower `_horn` lit gain for the hand lantern), and a flower stalk crosses
+   the foreground (nudge the lens off the verge).
 00000000000000000000000000000000000000000000000000000000. (04:00 10-22) Hen-house slide DONE. NEXT ALIVE items:
    a traveller on the road at dusk (Wat only walks at 09:00/14:30), birds scattering as the
    player approaches the green, a fox testing the shut hen house at night (sniffing round
