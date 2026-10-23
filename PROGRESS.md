@@ -33,7 +33,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (07:10 10-23) **Osric's idle weight shift** (bot-verified; shot `osricidle` pending at commit time).
+- (07:10 10-23) **Osric's idle weight shift** (bot-verified, shot `osricidle`).
   neighbour.gd: new `idle` (eases in over IDLE_IN 1.2 s when he stands still, visible, not
   noticing/talking, not on the fell) and `_pose_idle()`: a body roll about the feet of +-0.018 rad
   on a 9 s cycle shaped to linger on each foot (sign(sin)*|sin|^0.6), the knee/hip giving a touch at
@@ -41,6 +41,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   0.18 rad + 5.3 s 0.08 rad). Muted by lean, latch (90 %) and lift (50 %). New `roll` var (the
   summed fell/idle roll) for bots. Neighbour bot: on his step at 20 h, over 12 s idle must be 1,
   roll range 0.02..0.05 rad, head range >= 0.15 (reads roll -0.018..0.018, head -0.13..0.23).
+  Shot `osric osricidle 90 7.2` (Forward+, ~30 min, verdict FAIL, gallery *-osric-idle.jpg): Osric
+  by his door, turned in profile, in the cottage's morning shadow; the frame is badly underexposed
+  (the yard is near black under a bright sky), so the pose cannot be judged. Morning exposure in
+  the yard's shade (auto-exposure / ambient fill) is now the worst thing in the frame.
   Bots neighbour henfox pedlar walk villager pass. NEXT: same idle life for Edda (Villager) and
   Wat when they stand, the hero's cape in a run/attack shot with plumb on, the night yard-wall
   shot (verify 808a6d8), the thumb stub, fox fur re-shoot, Wat's lantern `watlamp3`.

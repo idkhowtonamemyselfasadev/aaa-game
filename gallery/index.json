@@ -1,11 +1,5 @@
 [
   {
-    "file": "20261018-0544-foxcrust.jpg",
-    "time": "2026-10-18T05:44:00Z",
-    "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
-    "verdict": "fail"
-  },
-  {
     "file": "20261018-0720-foxside.jpg",
     "time": "2026-10-18T07:20:00Z",
     "caption": "The fox sat at the edge of Hesper's firelight from the side with its new dense, sculpted body: smooth flanks and a round haunch instead of facets; still wrong: the brush sweeps up behind it instead of curling round the paws, and the keep wall reads salmon brick.",
@@ -897,6 +891,12 @@
     "file": "20261023-0708-osric-capefall.jpg",
     "time": "2026-10-23T07:08:40Z",
     "caption": "Osric on the fell at 17:10 from 2.3 m with his wool cape now falling close down over the shoulders and arms: the stiff pointed flap that stood out at his side is gone, but the pale armour still shows down his chest, his face is a dark mask under the brim and the pose is stiff.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0745-osric-idle.jpg",
+    "time": "2026-10-23T07:45:00Z",
+    "caption": "Osric idling at his cottage door at 07:12 with his weight on one foot: the stone cottage, hill and sky read well, but he stands in deep shadow by the door and the frame is badly underexposed, so the figure is a dark silhouette.",
     "verdict": "fail"
   }
 ]
