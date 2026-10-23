@@ -40,6 +40,8 @@ uniform vec2 gore_fold_f = vec2(1000.0, 0.0);  // the front panel's folds, which
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
+uniform vec4 arm_l = vec4(0.0);     // the mantle: an elbow (mesh space, w 1 = in use) the cape lifts over
+uniform vec4 arm_r = vec4(0.0);
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
 uniform float plumb = 0.0;         // > 0 (a cape): below hang_top the cloth falls toward world down, not the bone's -Y
@@ -93,6 +95,34 @@ void fold_panel(inout vec3 v, inout vec3 n, vec2 f) {
 	}
 }
 
+// The mantle over a raised arm: the cape's radial lines near the elbow's bearing turn up and
+// out about the collar ring (y 1.72, radius 0.1485, centred z -0.045) until they pass over the
+// elbow, the way heavy wool lifts and tents over an arm reached up beneath it. Must match
+// HeroGarb.cape_lift() (the bots read that).
+void lift_over_arm(inout vec3 v, inout vec3 n, vec4 e, float a) {
+	if (e.w <= 0.0) {
+		return;
+	}
+	vec2 eo = vec2(e.x, e.z + 0.045);
+	float ae = atan(eo.x, eo.y);
+	float da = mod(a - ae + PI, TAU) - PI;
+	float wa = exp(-pow(da / 0.55, 2.0)) * e.w;
+	float re = length(eo);
+	float th = atan(re - 0.1485, 1.72 - e.y) + atan(0.07, max(length(vec2(re - 0.1485, 1.72 - e.y)), 0.1));
+	float d = clamp(th - 0.5, 0.0, 1.6) * wa;
+	if (d <= 0.0) {
+		return;
+	}
+	vec3 rn = vec3(sin(a), 0.0, cos(a));
+	vec3 c = vec3(0.0, 1.72, -0.045) + rn * 0.1485;
+	vec3 k = vec3(-rn.z, 0.0, rn.x);
+	float cs = cos(d);
+	float sn = sin(d);
+	vec3 p = v - c;
+	v = c + p * cs + cross(k, p) * sn + k * dot(k, p) * (1.0 - cs);
+	n = n * cs + cross(k, n) * sn + k * dot(k, n) * (1.0 - cs);
+}
+
 void vertex() {
 	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
@@ -117,6 +147,10 @@ void vertex() {
 		}
 		VERTEX = p;
 	}
+	// then up over a raised elbow (the mantle only: arm_l/arm_r w is 0 on every other piece)
+	float ca = mix(0.42, TAU - 0.42, UV.x);
+	lift_over_arm(VERTEX, NORMAL, arm_l, ca);
+	lift_over_arm(VERTEX, NORMAL, arm_r, ca);
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;

@@ -4785,6 +4785,24 @@ func _neighbour_test() -> void:
 			print("BOT neighbour on the fell: gaze %.2f, hand to the brim %d" % [v.gaze, v.shades - sh0])
 			if v.gaze < 0.95 or v.shades <= sh0:
 				return _combat_done(false, "he stands stiff on the fell")
+			# the hand held at the brim: the cape lifts over that raised elbow instead of the
+			# elbow poking out through the cloth, and stays down over the hanging arm
+			for i in 3000:
+				if fmod(v._gt, Neighbour.SHADE_CYCLE) > 4.5:
+					break
+				await get_tree().physics_frame
+			var eb: Vector2 = v.garb.elbow_bearing(1)
+			var up_r: float = v.garb.cape_lift(1, eb.x)
+			var lb: Vector2 = v.garb.elbow_bearing(0)
+			var up_l: float = v.garb.cape_lift(0, lb.x)
+			print("BOT neighbour cape over the raised arm: elbow %.2f rad off plumb at bearing %.2f, cape line %.2f (lift %.2f); hanging elbow %.2f off plumb, lift %.2f" % [eb.y, eb.x, HeroGarb.CAPE_LINE + up_r, up_r, lb.y, up_l])
+			if up_r < 0.2 or HeroGarb.CAPE_LINE + up_r < eb.y:
+				return _combat_done(false, "his raised elbow pokes out through the cape")
+			if up_l > 0.05:
+				return _combat_done(false, "the cape lifts over his hanging arm")
+			# the cape falls close down the arms now: the hanging elbow still well inside it
+			if lb.y > HeroGarb.CAPE_LINE - 0.1:
+				return _combat_done(false, "his hanging elbow pushes out against the cape")
 		if st[1] == "shut" and (v.stiles < 2 or Neighbour.past_stile(lc)):
 			return _combat_done(false, "he never came back in through the stile")
 		if st[1] == "eggs" and fg.opens - o0 < 1:

@@ -55,8 +55,16 @@ var fill_gain := 1.0
 var smock := false
 ## The mantle in fulled wool (fuzz, pills, soft creases) rather than the hero's smooth cape.
 var mantle_wool := false
+## Each elbow (left, right) in the mantle's mesh space, fed to its shader so the cape lifts
+## over a raised arm.
+var elbow_in_cape: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _cape: MeshInstance3D
+var _elbows: Array[BoneAttachment3D] = []
 
 ## Eye centres (x, y) in garb space, the depth the eyeballs' fronts sit at, and their radius.
+## The angle off plumb (rad) of the mantle's lines from the collar ring down to the hem at the
+## sides; an elbow raised past it lifts the cloth (rag.gdshader's lift_over_arm, 0.5 there).
+const CAPE_LINE := 0.5
 const EYE_X := 0.031
 const EYE_Y := 1.968
 const EYE_R := 0.0125
@@ -143,6 +151,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
+	_cape = mantle
+	# bone attachments, not the skeleton's poses: those are restored after the pose modifiers
+	# run, so they would never show an arm the crumple raised
+	for side in ["Left", "Right"]:
+		var ea := BoneAttachment3D.new()
+		ea.bone_name = "mixamorig_%sForeArm" % side
+		skel.add_child(ea)
+		_elbows.append(ea)
 	tint = palette.get("robe", MADDER)
 	if smock:
 		var sk := _piece(_smock(), 0.0, 0.0, 12.0, 1.4)
@@ -179,6 +195,34 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 
 func _physics_process(delta: float) -> void:
 	super(delta)
+	if _cape != null and _elbows.size() == 2:
+		var mm := _cape.material_override as ShaderMaterial
+		var inv := _cape.global_transform.affine_inverse()
+		for i in 2:
+			var e := inv * _elbows[i].global_position
+			elbow_in_cape[i] = e
+			mm.set_shader_parameter("arm_l" if i == 0 else "arm_r", Vector4(e.x, e.y, e.z, 1.0))
+
+## How far (rad) the mantle's radial line at bearing `a` (mesh space, 0 = straight ahead) turns
+## up over elbow `i` (0 left, 1 right): rag.gdshader's lift_over_arm, for the bots.
+func cape_lift(i: int, a: float) -> float:
+	var e := elbow_in_cape[i]
+	var eo := Vector2(e.x, e.z + 0.045)
+	var ae := atan2(eo.x, eo.y)
+	var da := fposmod(a - ae + PI, TAU) - PI
+	var wa := exp(-pow(da / 0.55, 2.0))
+	var re := eo.length()
+	var dv := Vector2(re - 0.1485, 1.72 - e.y)
+	var th := atan2(dv.x, dv.y) + atan2(0.07, maxf(dv.length(), 0.1))
+	return clampf(th - CAPE_LINE, 0.0, 1.6) * wa
+
+## The elbow's bearing round the collar (mesh space, as cape_lift takes it) and the angle off
+## plumb (rad) of the line from the collar ring to it.
+func elbow_bearing(i: int) -> Vector2:
+	var e := elbow_in_cape[i]
+	var eo := Vector2(e.x, e.z + 0.045)
+	var re := eo.length()
+	return Vector2(atan2(eo.x, eo.y), atan2(re - 0.1485, 1.72 - e.y))
 	for g in gores:
 		var m := g.material_override as ShaderMaterial
 		m.set_shader_parameter("gore_swing", Vector2(_swing_f, _swing_b))
@@ -771,9 +815,13 @@ func _drape() -> ArrayMesh:
 			var v := float(j) / nv
 			var gap := 0.42
 			var a := lerpf(gap, TAU - gap, u)
-			var k := pow(v, 0.42)
-			var rx := lerpf(0.135, 0.38, k)
-			var rz := lerpf(0.135, 0.315, k)
+			# out over the shoulders in the top 60 %, then falling near plumb down the upper arms
+			# (a cone out to 0.38 at the hem stood off the arms like a stiff lampshade, its side a
+			# pointed flap in the `osricclose` shot)
+			var k := 1.0 - pow(1.0 - minf(v / 0.6, 1.0), 2.0)
+			var drop := smoothstep(0.6, 1.0, v)
+			var rx := lerpf(0.135, 0.31, k) + 0.02 * drop
+			var rz := lerpf(0.135, 0.29, k) + 0.025 * drop
 			# fold phase: ~8 folds round the cape, unevenly spaced, a few splitting near the hem
 			var phi := a * 8.0 + 0.9 * sin(a * 2.3 + 0.7) + 0.5 * sin(a * 5.1 + 2.0)
 			var ridge := sin(phi)
@@ -784,7 +832,9 @@ func _drape() -> ArrayMesh:
 			var depth := smoothstep(0.02, 0.8, v)
 			var fold := 1.0 + depth * (0.12 * ridge + 0.03 * fine)
 			# the hem hangs lower at the back; ridges carry it a little lower than the valleys
-			var hem := lerpf(1.44, 1.29, (1.0 - cos(a)) * 0.5) - 0.03 * ridge - 0.01 * fine
+			# the sides, hanging down the arms, a little lower than a straight front-to-back slope,
+			# so the side silhouette ends round instead of on a diagonal point
+			var hem := lerpf(1.44, 1.29, (1.0 - cos(a)) * 0.5) - 0.035 * sin(a) * sin(a) - 0.03 * ridge - 0.01 * fine
 			# a slight roll at the collar where the cloth gathers round the neck
 			var collar := 1.0 + 0.10 * (1.0 - smoothstep(0.0, 0.12, v))
 			var y := lerpf(1.72, hem, v)

@@ -1038,6 +1038,14 @@ func _ready() -> void:
 		var cp := at + lens * (3.6 if nb.activity == "lean" else 3.4)
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.5
 		SPOTS[spot] = [cp, at + Vector3.UP * 1.3]
+		if "close" in args:
+			# the whole figure at 2.3 m, to judge how the cape hangs over the arms
+			var cc := at + lens * 2.3
+			cc.y = terrain.height_at(cc.x, cc.z) + 1.45
+			SPOTS[spot] = [cc, at + Vector3.UP * 1.25]
+		if "shade" in args:
+			# on the fell, a few seconds into a hand raised to the brim (the warm-up adds ~3 s)
+			nb._gt = 1.5
 		if "stile" in args:
 			# squeezing through the stile in the back wall on his way out onto the fell, from
 			# the fell footpath outside, a little off square, the garth and the cottage beyond
