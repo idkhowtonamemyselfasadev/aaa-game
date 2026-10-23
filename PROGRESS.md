@@ -33,6 +33,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (21:00 10-23) **Moss on the keep's beds as a living pile** (bot-verified `climb ruin walk moss`; shot `climb7` pending at commit time, see the next entry/gallery).
+  masonry.gdshader, ruin laid stones only: the top moss now grows in cushions and mats (fbm
+  2.6/1.2/2.6 per stone, thicker toward the joints and arrises), its edges broken into tufts
+  (vn x24), 18 % of stones bare; colour is a fibrous grain (vn x70/40 + x150) from a deep olive
+  stem shade (new `moss_dark`) to yellow-green tips, darker at mat edges and in the joints, with
+  sun-burnt brown patches (new `moss_dry`); a fibrous bump (vn x70 gradient, 0.006) in the
+  normal and AO down to 0.65 in the pile's gaps. Field walls, cottages, door stones untouched.
+  shot.gd `climb ... side`: camera hero + rad*0.7 + tan*3.0 - 0.5 up, looking at hero + 0.5
+  (the old pos/look override is not the cause: climb keeps its own y; the camera was simply too
+  far out from the face plane). NEXT: judge climb7, then glide.
 - (20:20 10-23) **Keep face relief** (bot-verified `ruin climb hearth walk cottage stonehouse drywall`; shot `climb6`, verdict FAIL, gallery *-climb-relief.jpg).
   ruins.gd: the keep's laid stones (laid, not curtain/_aged) now use their own 16 meshes with
   KEEP_BEVEL 0.032 (was the shared 0.06; rubble, curtain and the cottages' footings keep 0.06), as

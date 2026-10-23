@@ -47,6 +47,8 @@ global uniform vec4 hearth_soot;
 #include "res://shaders/bounce.gdshaderinc"
 uniform vec3 moss_a : source_color = vec3(0.3, 0.34, 0.12);
 uniform vec3 moss_b : source_color = vec3(0.4, 0.41, 0.16);
+uniform vec3 moss_dark : source_color = vec3(0.13, 0.16, 0.06);
+uniform vec3 moss_dry : source_color = vec3(0.38, 0.31, 0.17);
 uniform vec3 lichen_y : source_color = vec3(0.62, 0.56, 0.32);
 uniform vec3 lichen_g : source_color = vec3(0.55, 0.57, 0.5);
 
@@ -198,6 +200,14 @@ void fragment() {
 	// about a third of the stones (later set, or turned by frost) bare grey
 	float cush = smoothstep(0.42, 0.62, fbm(wp * vec3(1.1, 2.0, 1.1) + 29.0)) * step(0.33, fract(tint * 7.31));
 	topm *= mix(1.0, mix(0.08, 1.0, cush), field);
+	// the ruin's beds: moss in cushions and mats, thickest against the back arris and in the
+	// joints where soil lodges, a few stones bare where it never took or peeled off in a dry
+	// summer; the cushions' ragged edges break into separate tufts
+	float mcush = smoothstep(0.36, 0.62, fbm(wp * vec3(2.6, 1.2, 2.6) + tint * 9.0 + 53.0)
+	                         + (1.0 - smoothstep(0.0, 0.4, jnt)) * 0.25 + edge * 0.12);
+	float tuft = smoothstep(0.25, 0.75, vn(wp * 24.0 + 3.0));
+	float mbare = step(0.18, fract(tint * 13.37));
+	topm *= mix(1.0, mix(0.05, 1.0, mcush * mix(0.55, 1.0, tuft)) * mix(0.1, 1.0, mbare), ruin * laid);
 	float mossw = topm
 	            + low * smoothstep(0.55 - aged * 0.12, 0.75 - aged * 0.1, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5 * (1.0 - aged));
 	// field walls: the low moss keeps to the shaded faces and the joints, not the open faces
@@ -205,6 +215,14 @@ void fragment() {
 	mossw *= mix(1.0, max(smoothstep(0.5, 0.85, n.y), max(shade_face, (1.0 - smoothstep(0.0, 0.35, jnt)) * 0.7)), field);
 	mossw = clamp(mossw, 0.0, 1.0);
 	vec3 mc = mix(moss_a, moss_b, fbm(wp * 7.0));
+	// on the ruin the moss is a living pile, not a green film: fronds in a fine fibrous grain
+	// (bright tips over dark stems), the thin edges of a mat and the joints a deep olive
+	// shadow, the thick cushion cores yellow-green, dead brown patches burnt by the sun
+	float fib = vn(wp * vec3(70.0, 40.0, 70.0)) * 0.6 + vn(wp * 150.0 + 7.0) * 0.4;
+	vec3 mlive = mix(moss_dark, mix(moss_a, moss_b * 1.12, fbm(wp * 5.0 + 19.0)), smoothstep(0.2, 0.8, fib));
+	mlive = mix(mlive * 0.55, mlive, smoothstep(0.05, 0.45, jnt) * smoothstep(0.15, 0.6, mcush));
+	mlive = mix(mlive, moss_dry * (0.7 + 0.5 * fib), smoothstep(0.6, 0.72, fbm(wp * 6.0 + tint * 3.0 + 77.0)) * 0.8);
+	mc = mix(mc, mlive, ruin);
 	mc = mix(mc, vec3(dot(mc, vec3(0.3, 0.5, 0.2))) * vec3(0.95, 1.05, 0.85), field * 0.45) * mix(1.0, 0.82, field);
 	// door stones: feet have worn the tops clean and a little paler and smoother; moss and
 	// lichen keep to the arrises and the sunk edges
@@ -303,14 +321,21 @@ void fragment() {
 	               fbm((wp + vec3(0, 0, se)) * 3.6 + tint * 19.0)) - fbm(wp * 3.6 + tint * 19.0);
 	sg /= se;
 	float rim_w = smoothstep(0.62, 0.67, spn) * (1.0 - smoothstep(0.67, 0.72, spn)) * ruin * (1.0 - mossw);
+	// the moss pile's fronds: a fibrous bump in the normal (the stone's tooling smoothed out
+	// under it), so a lit mat breaks into tiny highlights and shades rather than a flat sheen
+	float me = 0.004;
+	vec3 mg = vec3(vn((wp + vec3(me, 0, 0)) * 70.0), vn((wp + vec3(0, me, 0)) * 70.0), vn((wp + vec3(0, 0, me)) * 70.0)) - vn(wp * 70.0);
+	mg /= me;
 	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(mix(0.02, 0.034, ruin), 0.006, mossw) * mix(1.0, 0.45, lw) * (1.0 - film * 0.85)
-	                    + (sg - n * dot(sg, n)) * rim_w * 0.09);
+	                    + (sg - n * dot(sg, n)) * rim_w * 0.09
+	                    - (mg - n * dot(mg, n)) * mossw * ruin * 0.006);
 	if (film > 0.01 && weather_rain > 0.01) {
 		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05 * film;
 		pn = normalize(pn + vec3(-sl.x, 0.0, -sl.y));
 	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field)) * (1.0 - sp_rim * 0.3);
+	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field)) * (1.0 - sp_rim * 0.3)
+	   * (1.0 - mossw * ruin * (1.0 - fib) * 0.35);
 	ALBEDO *= v_cloud;
 	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops
 	// (they see the sky, which the ambient already covers); joints and pits get less

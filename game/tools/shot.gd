@@ -1247,8 +1247,10 @@ func _ready() -> void:
 		if "side" in args:
 			# three-quarter, mostly along the face from one side, level with the hips: the
 			# hero's side, the hands and feet on the stones and the face's relief raking away
-			cp = hero + rad * 1.2 + tan * 3.5 + Vector3.DOWN * 0.2
-		SPOTS[spot] = [cp, hero + Vector3.UP * 0.3]
+			# (rad * 1.2 still left the robe and back filling the frame: the drum curves away from
+			# the tangent, so the camera can sit nearer the face plane and look up at the hands)
+			cp = hero + rad * 0.7 + tan * 3.0 + Vector3.DOWN * 0.5
+		SPOTS[spot] = [cp, hero + Vector3.UP * (0.5 if "side" in args else 0.3)]
 		print("SHOT climb at %.2f rad, face %.1f m" % [best, pick + 5.0])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
