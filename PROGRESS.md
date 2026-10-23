@@ -51,7 +51,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   exclude the fell and `_idle_weight` to mute by lean/latch/lift). New bot checks: villager (on her
   step at 06:10, roll range 0.015..0.04, head range >= 0.15; reads -0.014..0.014, -0.14..0.22) and
   pedlar (idle on each stand, roll range 0.015..0.04; reads -0.012..0.012). Bots pass: villager
-  pedlar neighbour greet eddatalk henfox chop feed walk. Shot pending at commit time (see the gallery commit).
+  pedlar neighbour greet eddatalk henfox chop feed walk. Shot `villager eddaidle 90 6.2`: NO FRAME. Vulkan hit the 3000 s timeout, then the opengl3 retry ran 23 min and was killed at the session budget, so there is no gallery entry this session. A still cannot show the sway anyway; re-shoot Edda on her step next session (start it first thing so it has the whole hour). NEXT: lift the shaded ground (grass/terrain bounce), the night yard-wall shot (verify 808a6d8), the thumb stub, fox fur re-shoot, Wat's lantern `watlamp3`.
 - (08:10 10-23) **The camera opens up for a low sun** (bot-verified, shot `osricidle2`).
   world.gd: new low_sun_gain(): key = sun energy x sun height (floor 0.15) + ambient energy x
   ambient luminance; gain = sqrt(NOON_KEY 2.0 / key) clamped 1.0..1.5, applied by day to the
