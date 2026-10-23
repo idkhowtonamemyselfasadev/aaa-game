@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1138-drywall-gate.jpg",
-  "time": "2026-10-18T11:38:02Z",
-  "caption": "The garth wall's east gateway between two upright stoops at 11 h (first version); the face stones are too evenly coursed and pale with dark joints, so it reads a little brick-like (made more irregular after this shot).",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1200-gate-ajar.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "Close on the field gate swung half open into the yard (it swings away from the hero and falls shut with a creak and a knock); still wrong: bars and brace read too pale and smooth, wall faces are light rectangular blocks, no track worn through the gateway.",
@@ -891,6 +885,12 @@
   "file": "20261023-1734-climb-feet.jpg",
   "time": "2026-10-23T17:34:16Z",
   "caption": "The hero climbing the keep face from the side: one knee is drawn up and the foot is planted on a stone below. The red cloth still hangs dead straight off the wall, the masonry is too blocky and clean, and the camera sits too far behind to show the hands.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-1834-climb-robe.jpg",
+  "time": "2026-10-23T18:34:20Z",
+  "caption": "The climbing hero's red robe panel now drags toward the drawn-up knee instead of hanging dead plumb; at this range the figure is small and the keep masonry still reads blocky and clean.",
   "verdict": "fail"
  }
 ]
