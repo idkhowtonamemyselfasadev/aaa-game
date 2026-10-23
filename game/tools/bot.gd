@@ -1466,7 +1466,7 @@ func _gfx_test() -> void:
 		return _combat_done(false, "low-sun exposure wrong")
 	# open ground gets the low-sun skylight at 07:00/17:00 only (none at noon or night)
 	print("BOT gfx: ground fill noon %.3f 07:12 %.3f 16:48 %.3f night %.3f" % [fill[12.0], fill[7.2], fill[16.8], fill[23.0]])
-	if fill[12.0] > 0.001 or fill[23.0] > 0.001 or fill[7.2] < 0.08 or fill[7.2] > 0.2 or absf(fill[7.2] - fill[16.8]) > 0.01:
+	if fill[12.0] > 0.001 or fill[23.0] > 0.001 or fill[7.2] < 0.15 or fill[7.2] > 0.3 or absf(fill[7.2] - fill[16.8]) > 0.01:
 		return _combat_done(false, "low-sun ground fill wrong")
 	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure and ground fill")
 

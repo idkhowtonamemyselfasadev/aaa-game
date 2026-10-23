@@ -154,7 +154,7 @@ void fragment() {
 	EMISSION = ALBEDO * bounce_light * (0.6 + 1.1 * v_shelter)
 		* bounce_gain((INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz);
 	// low sun: the sky over the open sward (blades see ~70 % of it, the roots less)
-	EMISSION += ALBEDO * ground_fill * 0.7 * (1.0 - 0.7 * v_shelter) * mix(0.5, 1.0, v_ao);
+	EMISSION += ALBEDO * ground_fill * 0.7 * (1.0 - 0.7 * v_shelter) * mix(0.75, 1.0, v_ao);
 }
 
 void light() {

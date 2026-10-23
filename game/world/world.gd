@@ -593,7 +593,7 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat
 ## ambient, crushed by SSAO, and went black. Shaders that opt in (masonry) add albedo x this.
-const GROUND_FILL := 0.35
+const GROUND_FILL := 0.6
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
