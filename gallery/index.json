@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261018-0103-fox-front.jpg",
-  "time": "2026-10-18T01:03:36Z",
-  "caption": "The fox at the edge of Hesper's firelight after the look pass: red mask, longer narrower muzzle with dark sides, eyeshine, buff ear insides, only a narrow cream throat strip; still small in frame, legs and brush hidden behind the breach slab, fur reads smooth plastic.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0103-fox-side.jpg",
-  "time": "2026-10-18T01:03:36Z",
-  "caption": "Side lens on the sitting fox: head and chest profile read as a fox now, but a breach slab hides the body and the brush seems to stand up behind it instead of curling round the paws.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-0231-foxcrust.jpg",
   "time": "2026-10-18T02:31:34Z",
   "caption": "The fox at night bowed nose-down over the crust Hesper tossed it on the keep floor; the pose reads, but it stands on dark rubble slabs that hide its legs and the crust, and its coat is a flat saturated orange.",
@@ -897,6 +885,12 @@
   "file": "20261022-2346-osric-hat.jpg",
   "time": "2026-10-22T23:46:13Z",
   "caption": "Osric at dusk with his reshaped felt hat: the crown now tapers into a pinched, slumped dome and the brim snaps down front and back instead of a straight-sided bucket; his face is still mostly shadow and the crown still stands a touch tall.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-0110-osric-cape.jpg",
+  "time": "2026-10-23T01:10:00Z",
+  "caption": "Osric at 17:10 after the wool-cape weathering pass: only a faint sun-faded grey reads across the top of the cape, the damp hem and mud flecks are out of frame, and the cape still reads as one smooth sheet with a bucket-ish hat and a shadowed face.",
   "verdict": "fail"
  }
 ]

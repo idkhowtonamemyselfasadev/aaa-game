@@ -4373,9 +4373,13 @@ Content hours playable: 3.4
    darkened up to 28 % (damp, fbm-broken), the last 3.5 % of the hem rubbed paler (x1.35), and mud
    flecks (vnoise 55x30) within 16 % of the hem in fbm patches. Hat/hood/veil untouched (no
    `weathered`). In the gallery shot the cape read as one even sheet. Bots neighbour pedlar walk
-   henfox pass. Shot `osric osriccape 90 17.1 face`: the first try was killed at the 30 min
-   background-task limit (run shots with a 2 h timeout); re-run in progress. NEXT: judge that shot,
-   then the hat crown ~1 cm lower and its pale brim edge, the thumb stub (close hand shot at noon),
+   henfox pass. Shot `osric osriccape 90 17.1 face` (Forward+, ~65 min; the first try was killed
+   at the 30 min background-task limit: run shots with a 2 h timeout), verdict FAIL, gallery
+   *-osric-cape.jpg: next to *-osric-hat.jpg only a faint grey fade shows across the cape's top;
+   the hem is out of this framing and the cape still reads as one smooth sheet. The flatness is
+   more geometry/lighting than albedo: try stronger fold_ao/normal relief and a full-figure shot
+   (e.g. `osric` without `face`) that shows the hem. (python3 PIL is broken on the cloud box: use
+   ImageMagick `convert` for gallery JPEGs.) NEXT: that, then the hat crown ~1 cm lower and its pale brim edge, the thumb stub (close hand shot at noon),
    the orange-red patches on the right-hand wall stones, fox fur re-shoot, Wat's lantern `watlamp3`.
 00000000000000000000000000000000000000000000000000000000000000000000000. (23:30 10-22) Osric's felt hat reshaped (bot-verified, shot `osricface7`).
    garb._felt(): crown top narrows to 0.80 of the band (was 0.86) with a soft belly through the wall
