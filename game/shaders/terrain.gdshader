@@ -668,8 +668,8 @@ void fragment() {
 		if (bare > 0.001) {
 			float fade_g = 1.0 - smoothstep(0.006, 0.03, fp);
 			float dusty = smoothstep(0.35, 0.7, fbm(wpos * 1.3 + 71.0));
-			vec3 dry = vec3(0.17, 0.135, 0.095);      // sun-dried dust (linear)
-			vec3 packed = vec3(0.085, 0.066, 0.045);  // trodden loam
+			vec3 dry = vec3(0.19, 0.152, 0.108);      // sun-dried dust (linear)
+			vec3 packed = vec3(0.118, 0.093, 0.065);  // trodden loam (dry packed soil ~0.12)
 			vec3 bc = mix(packed, dry, dusty) * (0.88 + 0.24 * micro);
 			float bh = micro * 0.003;
 			// the path: packed hard in the middle where the feet go, dust at its shoulders

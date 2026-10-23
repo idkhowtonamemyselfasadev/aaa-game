@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261018-0734-foxside.jpg",
-  "time": "2026-10-18T07:34:27Z",
-  "caption": "Side-on, the brush lies low along the ground behind the sat fox instead of sweeping up; the lens still sits high in rubble with a salmon brick wall behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0906-cottage-door.jpg",
-  "time": "2026-10-18T09:06:46Z",
-  "caption": "The cottage door bay close up: individually laid riven slates with lichen, hewn rafter tails, plank door with iron straps; the oak reads flat grey and the rafter tails are cut square to the slope instead of plumb.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-0906-cottage.jpg",
   "time": "2026-10-18T09:06:46Z",
   "caption": "Harrowmere's first cottage from the green in morning light: slate roof with eave moss, oak frame, limewashed daub, stone chimney; the chimney stones read as stark black/white blocks, the oak is flat grey, no smoke or path yet.",
@@ -897,6 +885,12 @@
   "file": "20261023-1128-osric-groundfill2.jpg",
   "time": "2026-10-23T11:28:00Z",
   "caption": "Osric's yard at 07:12 with the low-sun ground fill raised: the foreground seed heads and the sward by the wall read brighter, but the earth round the path stones and the cottage's lower wall are still near black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-1235-osric-earth.jpg",
+  "time": "2026-10-23T12:35:00Z",
+  "caption": "Osric's yard at 07:12 with paler trodden earth behind the path stones; the stones and the shaded foreground are still near black.",
   "verdict": "fail"
  }
 ]
