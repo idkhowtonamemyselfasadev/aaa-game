@@ -7,7 +7,7 @@ extends Node3D
 ## shadows rock along the road with the walker's stride. `lit` (0..1) is set by the carrier.
 
 const SCALE := 0.8          # of the post lantern
-const LAMP := Color(1.0, 0.56, 0.27)
+const LAMP := Color(1.0, 0.64, 0.36)   # candle through horn: 0.56/0.27 painted stones 3 m off a red-orange
 const HORN_GAIN := 0.5      # the post's horn glow blew out to flat orange at knee height
 
 var lit := 0.0
@@ -91,8 +91,10 @@ func _ready() -> void:
 	lamp = OmniLight3D.new()
 	lamp.name = "Lamp"
 	lamp.light_color = LAMP
-	lamp.omni_range = 8.0
-	lamp.omni_attenuation = 0.9
+	# a candle falls off fast: at 0.9 / 8 m the yard wall 2-4 m off took nearly the light his
+	# coat did and its stones' near faces read as orange-red paint patches (lightdbg shot)
+	lamp.omni_range = 6.0
+	lamp.omni_attenuation = 1.6
 	lamp.shadow_enabled = true
 	lamp.shadow_bias = 0.03
 	lamp.light_size = 0.03
