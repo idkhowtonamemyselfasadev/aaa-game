@@ -1450,7 +1450,18 @@ func _gfx_test() -> void:
 		return _combat_done(false, "render scale did not switch to FSR 2")
 	if saved[0] != 3 or absf(saved[1] - 0.7) > 0.01 or not saved[2] or reread[0] != 3 or absf(reread[1] - 0.7) > 0.01:
 		return _combat_done(false, "picture settings not saved/reloaded (or sound section lost)")
-	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded")
+	# the camera opens up for a low sun: x1 at noon, more at 07:00 and 17:00, night unchanged
+	var wx: Weather = _world.weather
+	wx.force(0.0)
+	var expo := {}
+	for h in [12.0, 7.2, 16.8, 23.0]:
+		_world.time_of_day = h
+		_world._apply_time()
+		expo[h] = e.tonemap_exposure
+	print("BOT gfx: exposure noon %.2f 07:12 %.2f 16:48 %.2f night %.2f" % [expo[12.0], expo[7.2], expo[16.8], expo[23.0]])
+	if absf(expo[12.0] - 0.85) > 0.03 or expo[7.2] < 1.1 or expo[7.2] > 1.3 or absf(expo[7.2] - expo[16.8]) > 0.03 or absf(expo[23.0] - 1.6) > 0.01:
+		return _combat_done(false, "low-sun exposure wrong")
+	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure")
 
 ## Hesper keeps her day: tends the lid in the morning, gathers under the oaks (leaving the
 ## keep through the breach), eats in the shade, shelters under a crown in the rain, dozes

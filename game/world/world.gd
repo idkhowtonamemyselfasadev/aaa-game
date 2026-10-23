@@ -407,6 +407,18 @@ func _apply_clouds(delta: float) -> void:
 	if tm:
 		tm.set_shader_parameter("puddle_sky", haze)
 
+## Exposure gain for a low sun (1.0 at noon .. 1.5): sqrt of the noon key over this hour's
+## key, where key = sun energy x its height (light on level ground) + skylight luminance.
+## Reads sun/ambient as _apply_time has just set them (before weather dims them: a cloudy
+## frame has its own exposure lift in _apply_weather).
+const NOON_KEY := 2.0
+func low_sun_gain() -> float:
+	var e := env.environment
+	var sun_h := maxf(sun.global_transform.basis.z.y, 0.15) if sun.visible else 0.15
+	var amb := e.ambient_light_color
+	var key := sun.light_energy * sun_h + e.ambient_light_energy * (0.3 * amb.r + 0.59 * amb.g + 0.11 * amb.b)
+	return clampf(sqrt(NOON_KEY / maxf(key, 0.05)), 1.0, 1.5)
+
 func _apply_time() -> void:
 	# Full day: sunrise 06:00, noon peak sun_peak_deg, sunset 18:00; the moon opposes the sun.
 	var t := time_of_day / 24.0
@@ -479,7 +491,11 @@ func _apply_time() -> void:
 		# volumetrics only for local ground haze; distance haze is the depth fog (a dense
 		# volume ends at volumetric_fog_length and leaves a visible band on far ridges)
 		env.environment.volumetric_fog_density = lerpf(0.0025, 0.0007, day)
-		env.environment.tonemap_exposure = lerpf(1.6, 0.85, day)
+		# A camera opens up when the sun is low: 0.85 was set for noon, so at 07:00/17:00
+		# (sun ~8 deg, the yard in the cottage's shade) the frame went near black under a bright
+		# sky. Key = light reaching the land (sun on the ground + skylight); half-compensate
+		# (sqrt) toward the noon key, capped at x1.5, faded out into the night ramp.
+		env.environment.tonemap_exposure = lerpf(1.6, 0.85 * lerpf(1.0, low_sun_gain(), day), day)
 		# fog takes the sky's mood: warm haze by day, dark blue at night, no self-glow at night
 		env.environment.fog_light_color = Color(0.05, 0.07, 0.11).lerp(Color(0.73, 0.6, 0.5), day)
 		env.environment.volumetric_fog_albedo = Color(0.6, 0.7, 0.9).lerp(Color(0.9, 0.8, 0.7), day)
