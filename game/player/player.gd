@@ -60,6 +60,8 @@ const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
 const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
+const HAND_MOVE := 0.18               # seconds for a hand to reach to its next hold
+const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
 const MANTLE_TIME := 0.6
 var climbing := false
 var climb_normal := Vector3.ZERO      # the face's outward normal under the hands
@@ -71,6 +73,11 @@ var mantle_t := -1.0                  # seconds into a haul-up, -1 when not mant
 var _mantle_from := Vector3.ZERO
 var _mantle_to := Vector3.ZERO
 var _lunge_t := -1.0
+var hand_moves := 0                   # times a hand let go of one hold for the next (bots read this)
+var _hold := [Vector3.ZERO, Vector3.ZERO]       # world holds under the left and right hand
+var _hold_from := [Vector3.ZERO, Vector3.ZERO]
+var _mantle_hands := false
+var _hold_t := [1.0, 1.0]             # 0..1 through a hand's move to its next hold, 1 = planted
 var _regrab_t := 0.0                  # after letting go the hands cannot catch again for a moment
 var _jumped := false                  # airborne from a jump (only a jump catches a face)
 
@@ -659,6 +666,9 @@ func _start_climb(n: Vector3) -> void:
 	climbs += 1
 	_lunge_t = -1.0
 	velocity = Vector3.ZERO
+	for i in 2:
+		_hold_t[i] = 1.0
+		_hold[i] = _find_hold(i, 0.12 if i == 0 else -0.08)
 	if crumple != null:
 		crumple.active = true
 
@@ -674,6 +684,7 @@ func _start_mantle(top: Vector3, n: Vector3) -> void:
 	if combat != null and combat.is_drawn():
 		combat.restore()
 	_set_lock(null)
+	_mantle_hands = climbing                   # hands already on holds press on them as it rises
 	climbing = false
 	climb_normal = n
 	mantle_t = 0.0
@@ -754,6 +765,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	climb_rate = moved.length() / maxf(delta, 1e-4)
 	body.rotation.y = lerp_angle(body.rotation.y, atan2(face.x, face.z), 1.0 - exp(-14.0 * delta))
 	_pose_climb()
+	_place_hands(delta, moved)
 	if stamina <= 0.0:
 		stamina = 0.0
 		_let_go(0.6, 1.2)                      # the grip gives out
@@ -782,6 +794,7 @@ func _mantle_tick(delta: float) -> void:
 		crumple.hip = 1.3 * k
 		crumple.knee = 1.6 * k
 		crumple.spine = 0.45 * k
+		crumple.plant = (1.0 - smoothstep(0.25, 0.55, u)) if _mantle_hands else 0.0   # the hands press on the lip, then come away
 	_hold_still_anim()
 	if u >= 1.0:
 		mantle_t = -1.0
@@ -800,6 +813,56 @@ func _pose_climb() -> void:
 	crumple.spine = 0.08
 	crumple.stride = 0.42 * sin(ph)
 
+## Where a hand wants to hold: a reach above its shoulder, ahead along the way the body is
+## going, found on the face by a ray so it sits on a real stone. `lift` staggers the hands.
+func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
+	var n := climb_normal
+	var face := -Vector3(n.x, 0.0, n.z).normalized()
+	var right := face.cross(Vector3.UP).normalized()
+	var sh: Vector3 = crumple.shoulder[i] if crumple != null and crumple.shoulder[i] != Vector3.ZERO else global_position + Vector3.UP * 1.42
+	var p := sh + Vector3.UP * (0.26 + lift) + right * (0.07 if i == 1 else -0.07) + ahead
+	# rough masonry: a stone end can stand proud of the face or a joint run deep into it, so
+	# feel a few spots round the reach and take the first one that is a face
+	for off: Vector2 in [Vector2.ZERO, Vector2(0.0, -0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0), Vector2(0.0, 0.08), Vector2(0.0, -0.16)]:
+		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
+		var hit := _ray(o, o - n * 1.8)
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25:
+			return hit["position"]
+	# no stone there (over the lip): hold the face's plane level with the hand
+	return p - n * (p - (global_position - n * CLIMB_GAP)).dot(n)
+
+## Hand over hand: each hand stays on its hold while the body moves; when the body has
+## climbed past it, the hand lets go and reaches to the next hold, only while the other one
+## grips (both together if a hold is out of reach). Drives Crumple's two-bone reach.
+func _place_hands(delta: float, moved: Vector3) -> void:
+	if crumple == null:
+		return
+	var n := climb_normal
+	var up_dir := (Vector3.UP - n * n.y).normalized()
+	var go := moved - n * moved.dot(n)
+	var ahead := go.normalized() * 0.1 if go.length() > 1e-4 else Vector3.ZERO
+	for i in 2:
+		var other := 1 - i
+		if _hold_t[i] < 1.0:
+			_hold_t[i] = minf(_hold_t[i] + delta / HAND_MOVE, 1.0)
+			continue
+		var want := _find_hold(i, 0.0)
+		var far: float = (_hold[i] as Vector3).distance_to(want)
+		var sh: Vector3 = crumple.shoulder[i]
+		var out_of_reach: bool = sh != Vector3.ZERO and sh.distance_to(_hold[i]) > 0.46
+		if (far > HAND_STEP and _hold_t[other] >= 1.0) or out_of_reach:
+			_hold_from[i] = _hold[i]
+			_hold[i] = _find_hold(i, 0.0, ahead)
+			_hold_t[i] = 0.0
+			hand_moves += 1
+	crumple.plant = minf(crumple.plant + delta * 6.0, 1.0)
+	crumple.hand_wall = n
+	for i in 2:
+		var u := smoothstep(0.0, 1.0, _hold_t[i])
+		var at: Vector3 = (_hold_from[i] as Vector3).lerp(_hold[i], u) + n * 0.12 * sin(PI * u)
+		# the wrist sits a hand's length below the fingers' grip and a palm off the stone
+		crumple.hand_target[i] = at + n * 0.04 - up_dir * 0.07
+
 func _hold_still_anim() -> void:
 	if anim_tree != null:
 		_blend = 0.0
@@ -815,6 +878,7 @@ func _clear_climb_pose() -> void:
 	crumple.hip = 0.0
 	crumple.knee = 0.0
 	crumple.spine = 0.0
+	crumple.plant = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:

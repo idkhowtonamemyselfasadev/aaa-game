@@ -32,6 +32,12 @@ var grip_turn := 1.0         # (bots) and its second bone . the hand's length (b
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
+var plant := 0.0             # 0..1: both wrists reach for hand_target (holds on a climbing face)
+var hand_target := [Vector3.ZERO, Vector3.ZERO]   # world wrist targets, left then right
+var hand_wall := Vector3.FORWARD # world: the face's outward normal; the palms turn to it
+var hand_curl := 0.4         # the fingers half close over the stone they hold
+var shoulder := [Vector3.ZERO, Vector3.ZERO]      # world shoulder joints as posed, before the reach
+var hand_err := [0.0, 0.0]   # (bots) m from each wrist to its target after the reach
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
@@ -70,6 +76,16 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
+	var sides := ["Left", "Right"]
+	for i in 2:
+		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
+		if sb >= 0:
+			shoulder[i] = skel.global_transform * skel.get_bone_global_pose(sb).origin
+	if plant > 0.0:
+		# last of all, after the spine has moved the shoulders: the hands go to their holds
+		for i in 2:
+			_reach(skel, sides[i], hand_target[i], plant)
+			_grip(skel, sides[i], hand_curl * plant)
 
 const GRIP_CURL := [1.25, 1.2, 0.8]   # radians per finger joint, knuckle to tip, at a full fist
 const THUMB_CURL := [0.55, 0.6, 0.5]
@@ -130,6 +146,66 @@ func _grip(skel: Skeleton3D, side: String, g: float) -> void:
 		var a3 := skel.get_bone_global_pose(m3).origin
 		grip_fold = (a2 - a1).normalized().dot(palm)
 		grip_turn = (a3 - a2).normalized().dot(dir)
+
+## Two-bone reach: the upper arm and forearm turn so the wrist lands on `target` (world), the
+## elbow bowed out, down and off the face like a climber's; then the hand turns so the fingers
+## point up the face and the palm lies on it. `w` blends from the posed wrist to the target.
+func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
+	var ua := skel.find_bone("mixamorig_%sArm" % side)
+	var fa := skel.find_bone("mixamorig_%sForeArm" % side)
+	var hd := skel.find_bone("mixamorig_%sHand" % side)
+	var ch := skel.find_bone("mixamorig_Spine2")
+	var mid := skel.find_bone("mixamorig_%sHandMiddle1" % side)
+	if ua < 0 or fa < 0 or hd < 0 or ch < 0:
+		return
+	var inv := skel.global_transform.affine_inverse()
+	var up := (inv.basis * Vector3.UP).normalized()
+	var wall := (inv.basis * hand_wall).normalized()
+	var s := skel.get_bone_global_pose(ua).origin
+	var e := skel.get_bone_global_pose(fa).origin
+	var h := skel.get_bone_global_pose(hd).origin
+	var a := s.distance_to(e)
+	var b := e.distance_to(h)
+	var t := h.lerp(inv * target, w)
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	var out := s - skel.get_bone_global_pose(ch).origin
+	out = (out - up * out.dot(up)).normalized()
+	var pole := out * 0.8 - up * 0.6 + wall * 0.35
+	pole = (pole - dn * pole.dot(dn)).normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var e_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ua, e - s, e_new - s)
+	e = skel.get_bone_global_pose(fa).origin
+	h = skel.get_bone_global_pose(hd).origin
+	_swing(skel, fa, h - e, t - e)
+	h = skel.get_bone_global_pose(hd).origin
+	hand_err[0 if side == "Left" else 1] = h.distance_to(inv * target) * skel.global_basis.get_scale().x
+	if mid < 0 or w < 0.5:
+		return
+	# fingers up the face, tipped a little into it so they hook over the stone above
+	var want := (up - wall * up.dot(wall)).normalized() - wall * 0.25
+	_swing(skel, hd, skel.get_bone_global_pose(mid).origin - h, want)
+	var idx := skel.find_bone("mixamorig_%sHandIndex1" % side)
+	var pin := skel.find_bone("mixamorig_%sHandPinky1" % side)
+	if idx < 0 or pin < 0:
+		return
+	var dir := (skel.get_bone_global_pose(mid).origin - h).normalized()
+	var across := skel.get_bone_global_pose(idx).origin - skel.get_bone_global_pose(pin).origin
+	across = (across - dir * across.dot(dir)).normalized()
+	var palm := across.cross(dir) * (1.0 if side == "Right" else -1.0)
+	var flat := -wall - dir * (-wall).dot(dir)
+	palm = palm - dir * palm.dot(dir)
+	if flat.length() > 1e-3 and palm.length() > 1e-3:
+		_swing(skel, hd, palm, flat)
+
+## Turns a bone (skeleton-space rotation, pivoting at its joint) so `from` points along `to`.
+func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
+	var ax := from.cross(to)
+	if ax.length() < 1e-6:
+		return
+	_bend(skel, skel.get_bone_name(b), ax.normalized(), from.angle_to(to))
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 func _bend(skel: Skeleton3D, bone_name: String, axis_skel: Vector3, angle: float) -> void:
