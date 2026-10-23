@@ -518,10 +518,11 @@ func _felt() -> ArrayMesh:
 		var slump := 0.007 * sin(a + 2.2)
 		if v < 0.3:
 			# the top: a low dome from the middle out to the crown's rounded shoulder, the
-			# crease pinched down along the middle line (its floor still 2 cm over the hood)
+			# crease pinched down along the middle line (its floor still 1 cm over the hood; the
+			# crown sat 1 cm higher until 10-23 and stood up off his head like a stovepipe)
 			var t := v / 0.3
 			k = 0.80 * sin(t * PI * 0.5)
-			y = 2.13 - 0.026 * t * t - 0.02 * exp(-pow(sa * k / 0.3, 2.0)) * (1.0 - t * t * 0.8)
+			y = 2.12 - 0.026 * t * t - 0.02 * exp(-pow(sa * k / 0.3, 2.0)) * (1.0 - t * t * 0.8)
 			y += slump * t - 0.014 * pinch * t * t
 			k *= 1.0 - 0.10 * pinch * t * t
 		elif v < 0.62:
@@ -529,7 +530,7 @@ func _felt() -> ArrayMesh:
 			# a soft belly through the middle, so it reads as a worn felt crown, not a bucket
 			var t := (v - 0.3) / 0.32
 			k = lerpf(0.80, 1.0, t) + 0.03 * sin(t * PI)
-			y = lerpf(2.104 + slump - 0.014 * pinch, 1.995, t)
+			y = lerpf(2.094 + slump - 0.014 * pinch, 1.995, t)
 			k *= 1.0 - 0.10 * pinch * (1.0 - t) * (1.0 - t)
 		else:
 			# the brim: out ~6 cm and gone soft, snapped down at the front and back and flatter

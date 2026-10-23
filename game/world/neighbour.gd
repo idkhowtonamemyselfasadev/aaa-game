@@ -138,9 +138,10 @@ func _dress() -> void:
 		"hood": [Color(0.035, 0.032, 0.028), Color(0.15, 0.14, 0.12), 0.4],
 		# weathered near-black felt, near-neutral: any warmth read orange-brown in the dawn light
 		"hat": [Color(0.03, 0.03, 0.029), Color(0.15, 0.145, 0.135), 0.3],
-		"mantle": [Color(0.05, 0.046, 0.04), Color(0.24, 0.22, 0.18), 0.35],
-		# a touch darker: the undyed fleece-grey read bright against the dusk
-		"robe": [Color(0.10, 0.09, 0.078), Color(0.38, 0.355, 0.31), 0.4],
+		# darker oiled wool: at 0.24 the cape read pale grey and flat against the field at dusk
+		"mantle": [Color(0.045, 0.041, 0.036), Color(0.19, 0.172, 0.142), 0.35],
+		# darker again: the undyed fleece-grey read bright against the dusk (0.38 too)
+		"robe": [Color(0.09, 0.081, 0.07), Color(0.32, 0.298, 0.26), 0.4],
 		"sash": [Color(0.12, 0.10, 0.065), Color(0.42, 0.36, 0.24), 0.3],
 		"wraps": [Color(0.09, 0.085, 0.075), Color(0.40, 0.38, 0.34), 0.4],
 	}
