@@ -33,11 +33,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (11:00 10-23) **Brighter shaded ground at a low sun** (bot-verified; shot `osricfill2` pending at commit time).
+- (11:00 10-23) **Brighter shaded ground at a low sun** (bot-verified, shot `osricfill2`).
   world.gd GROUND_FILL 0.35 -> 0.6 (ground_fill now 0.215 at 07:12 and 16:48, still 0 at noon and
   night); grass.gdshader's root factor on the fill mix(0.5,1,v_ao) -> mix(0.75,1,v_ao) so the base
   of the sward is not crushed. gfx bot window 0.08..0.2 -> 0.15..0.3. Bots pass: gfx walk trample.
-  NEXT: judge `osric osricfill2 90 7.2` against *-osric-groundfill.jpg; then the night yard-wall shot
+  Shot `osric osricfill2 90 7.2` (Forward+, ~25 min, verdict FAIL, gallery *-osric-groundfill2.jpg):
+  next to *-osric-groundfill.jpg the foreground seed heads and the sward by the wall are a little
+  brighter, but the bare earth round the path stones and the wall foot stay near black. That earth is
+  terrain (ALBEDO x ground_fill x n.y x AO): its dark albedo/AO, not the fill strength, is now the
+  limit. NEXT: check terrain's yard/path albedo and AO there (maybe a floor on AO for the fill term),
+  then the night yard-wall shot
   (verify 808a6d8), Edda's idle re-shoot, the thumb stub, fox fur re-shoot, Wat's lantern `watlamp3`.
 - (10:00 10-23) **Low-sun skylight on open ground** (bot-verified; shot `osricfill` pending at commit time).
   world.gd _apply_bounce(): new `ground_fill` global (project.godot) = ambient colour x energy x
