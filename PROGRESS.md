@@ -33,13 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (13:00 10-23) **Low-sun skylight on the door stones and wall tops** (bot-verified; shot `osricfill4` pending at commit time).
+- (13:00 10-23) **Low-sun skylight on the door stones and wall tops** (bot-verified, shot `osricfill4`).
   masonry.gdshader now reads the `ground_fill` global and adds ALBEDO x ground_fill x
   smoothstep(0.5, 0.9, n.y) x AO as EMISSION, as terrain and grass already did: the door stones'
   walked tops and the dry-stone wall tops in a cottage's shade no longer stay black next to the
   lifted earth at 07:00/17:00 (0 at noon, night and with SDFGI). Bots pass: gfx doorstones
-  yardpath walk. NEXT: verify in `osric osricfill4 90 7.2` next to *-osric-earth.jpg, then the
-  night yard-wall shot (verify 808a6d8), Edda's idle re-shoot, the thumb stub, fox fur re-shoot,
+  yardpath walk. Shot `osric osricfill4 90 7.2` (Forward+, ~45 min, verdict FAIL, gallery
+  *-osric-doorstones.jpg): next to *-osric-earth.jpg the four path slabs now read as pale worn
+  stone and the wall coping is lighter; the earth between the slabs, the wall foot and the
+  frame's exposure in the shade are still dark, and Osric reads pale against the dark doorway.
+  NEXT: the stone_gap.gdshader dirt patches round each slab (likely the black band between the
+  stones: give them ground_fill too), then the night yard-wall shot (verify 808a6d8), Edda's idle re-shoot, the thumb stub, fox fur re-shoot,
   Wat's lantern `watlamp3`.
 - (12:00 10-23) **Paler trodden earth in the yard and on the tracks** (bot-verified, shot `osricfill3`).
   terrain.gdshader YardGround bare earth: packed loam 0.085/0.066/0.045 -> 0.118/0.093/0.065 (dry

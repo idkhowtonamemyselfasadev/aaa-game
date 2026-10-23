@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-0906-cottage.jpg",
-  "time": "2026-10-18T09:06:46Z",
-  "caption": "Harrowmere's first cottage from the green in morning light: slate roof with eave moss, oak frame, limewashed daub, stone chimney; the chimney stones read as stark black/white blocks, the oak is flat grey, no smoke or path yet.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-0952-stonecottage.jpg",
   "time": "2026-10-18T09:52:00Z",
   "caption": "The stone cottage (shot before it moved across the green to stand beside the timber house): rubble walls, slate roof, chimney with smoke, against the low sun; the walls read too regular and brick-like from here and the stones too rounded.",
@@ -891,6 +885,12 @@
   "file": "20261023-1235-osric-earth.jpg",
   "time": "2026-10-23T12:35:00Z",
   "caption": "Osric's yard at 07:12 with paler trodden earth behind the path stones; the stones and the shaded foreground are still near black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-1350-osric-doorstones.jpg",
+  "time": "2026-10-23T13:50:00Z",
+  "caption": "Osric's yard at 07:12: the door stones now read as pale worn slabs and the wall tops are lifted by the low-sun skylight, but the earth between the stones, Osric's pale figure and the frame's overall exposure in the cottage's shade are still too dark.",
   "verdict": "fail"
  }
 ]
