@@ -37,6 +37,9 @@ uniform vec3 lime_algae : source_color = vec3(0.3, 0.34, 0.2);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
 global uniform vec3 bounce_light;
+// low-sun skylight on open level ground (World._apply_bounce; 0 at noon, night and with SDFGI):
+// the door stones' walked tops and the wall tops get it as the terrain and grass round them do
+global uniform vec3 ground_fill;
 // Hesper's cookfire (Hearth): xyz = the fire's foot, w = 1 when there is one. The stones
 // over and round it are smoke-blackened: a soot plume up the face behind the fire, widening
 // as it climbs, and a scorched skirt on the stones near the ring.
@@ -287,4 +290,7 @@ void fragment() {
 	// inside the keep the floor stones and rubble tops face the lit inner wall
 	facing *= mix(1.0, bounce_gain(wp), clamp(n.y, 0.0, 1.0));
 	EMISSION = ALBEDO * bounce_light * facing * AO;
+	// low sun: the open sky over a level top, unoccluded by SSAO (which crushed the door
+	// stones to black in the cottage's shade while the earth round them was lifted)
+	EMISSION += ALBEDO * ground_fill * smoothstep(0.5, 0.9, n.y) * AO;
 }
