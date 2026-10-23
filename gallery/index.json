@@ -898,5 +898,11 @@
   "time": "2026-10-23T14:55:00Z",
   "caption": "Osric's yard at 07:12: the dirt cracks round the path slabs are a touch browner instead of black, but the shaded foreground, the wall foot and Osric's dark coat still sink, so the frame reads underexposed.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261023-1548-climb.jpg",
+  "time": "2026-10-23T15:48:14Z",
+  "caption": "The hero climbing the watchtower keep's outer face at 10:30, arms up on the stones: climbing now works, but the pose is a stiff procedural reach with no hands planted on the stones, the cape hangs dead straight and the masonry reads too clean and blocky.",
+  "verdict": "fail"
  }
 ]

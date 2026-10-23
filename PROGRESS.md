@@ -49,7 +49,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   knees/hips up under the body. A drawn staff snaps back onto the back on a grab (no sheathe
   animation yet). New bot `climb` (keep outer face, ~3.2 m stretch): walking in does not grab,
   a jump catches, climbs ~3.7 m, hauls up onto the crown and stands; grip fails with 4 stamina;
-  dodge lets go; fails if faster than 1.5x CLIMB_SPEED. New shot spot `climb`.
+  dodge lets go; fails if faster than 1.5x CLIMB_SPEED. New shot spot `climb`. Shot `climb climb1 60
+  10.5 fixfps` (Forward+, ~20 min, verdict FAIL, gallery *-climb.jpg): the hero hangs on the keep face
+  with the arms up and reads as climbing, but the pose is stiff, no hands sit on the stones, the cape
+  hangs dead straight off the wall and the masonry is too clean/blocky. NEXT: a real climb clip + hand
+  IK, cape pushed off the face, then glide.
   Bots pass: climb ruin walk ridge combat dodge death flinch soldier cottage drywall yardwall.
 - (14:00 10-23) **Low-sun skylight in the dirt round the door stones** (bot-verified, shot `osricfill5`).
   stone_gap.gdshader now reads the `ground_fill` global and adds loam x ground_fill x
