@@ -47,6 +47,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   not go hold to hold (>= 4 steps, >= 10 planted samples), an ankle is > 5 cm off its target, or
   a toe hold is not on the stone. Reads: 16 steps, ankle error 0 mm, toe holds 0 mm off the
   stone. shot.gd: `climb ... side` puts the camera along the face level with the hips.
+  Bots pass: climb ruin walk death flinch combat dodge. Shot `climb climb3 60 10.5 fixfps side`
+  (Forward+, ~23 min, verdict FAIL, gallery *-climb-feet.jpg): one knee is drawn up with the foot
+  on a stone below, so the legs no longer dangle. Still wrong: the red cloth hangs dead straight
+  off the wall, the masonry is blocky and clean, and the camera ends up behind the hero so the
+  hands are hidden. NEXT: the cape/cloth pushed off the face and swinging with the climb, a
+  camera further round to the side (tan * 3 and rad * 1.2), then glide.
+  (Note: `GODOT=` given to tools/bots.sh or shots.sh must be relative to game/, e.g.
+  `GODOT=../.tools/godot`, or leave it unset; `.tools/godot` silently runs nothing.)
 - (16:30 10-23) **Hands on the stones while climbing** (bot-verified `climb`; shot `climb2`, verdict below/gallery).
   crumple.gd: new two-bone reach run last (after the spine bends): `plant` 0..1 blends each wrist
   to `hand_target[i]` (world); the elbow solves analytically with a pole bowed out, down and off

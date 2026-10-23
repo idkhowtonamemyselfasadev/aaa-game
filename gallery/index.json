@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1138-drywall-back.jpg",
-  "time": "2026-10-18T11:38:02Z",
-  "caption": "The new dry-stone garth wall round the yard behind the stone cottage, late afternoon from beyond the back corner; rubble coursing and cope read, but the backlit foreground grass is flat and dark.",
-  "verdict": "pass"
- },
- {
   "file": "20261018-1138-drywall-gate.jpg",
   "time": "2026-10-18T11:38:02Z",
   "caption": "The garth wall's east gateway between two upright stoops at 11 h (first version); the face stones are too evenly coursed and pale with dark joints, so it reads a little brick-like (made more irregular after this shot).",
@@ -891,6 +885,12 @@
   "file": "20261023-1639-climb-hands.jpg",
   "time": "2026-10-23T16:39:47Z",
   "caption": "The hero on the keep face with the hands now planted on the stones, elbows bowed out like a climber's; from below the hands hide behind the hat, the cape still hangs dead straight and the masonry reads too clean and blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-1734-climb-feet.jpg",
+  "time": "2026-10-23T17:34:16Z",
+  "caption": "The hero climbing the keep face from the side: one knee is drawn up and the foot is planted on a stone below. The red cloth still hangs dead straight off the wall, the masonry is too blocky and clean, and the camera sits too far behind to show the hands.",
   "verdict": "fail"
  }
 ]
