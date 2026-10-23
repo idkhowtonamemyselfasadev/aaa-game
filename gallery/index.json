@@ -1,896 +1,896 @@
 [
- {
-  "file": "20261018-0405-foxseat.jpg",
-  "time": "2026-10-18T04:05:00Z",
-  "caption": "The fox sat on swept keep floor just in from the breach, whole body, forelegs and brush in view at last; still a flat saturated orange coat with smooth fur and wall stones lit like flat panels.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0442-foxcrust.jpg",
-  "time": "2026-10-18T04:42:55Z",
-  "caption": "The fox stood at Hesper's crust at 22:30 on the new floor seat; still wrong: its head is buried in the breach rubble, the coat glows a flat saturated red with no fur breakup, and the firelit wall reads as salmon brick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0544-foxcrust.jpg",
-  "time": "2026-10-18T05:44:00Z",
-  "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0720-foxside.jpg",
-  "time": "2026-10-18T07:20:00Z",
-  "caption": "The fox sat at the edge of Hesper's firelight from the side with its new dense, sculpted body: smooth flanks and a round haunch instead of facets; still wrong: the brush sweeps up behind it instead of curling round the paws, and the keep wall reads salmon brick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0720-foxcrust.jpg",
-  "time": "2026-10-18T07:20:00Z",
-  "caption": "The fox at Hesper's crust with the smoother body mesh; still wrong: nearly head-on with bright eyeshine straight into the lens, the coat is a flat ginger with no guard-hair breakup, and the brick wall behind is salmon.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0734-foxcurl.jpg",
-  "time": "2026-10-18T07:34:27Z",
-  "caption": "The sat fox's brush now lies on the turf and curls round its haunch toward the forepaws; the coat still reads smooth and flat-lit, and rubble slabs crowd the lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0734-foxside.jpg",
-  "time": "2026-10-18T07:34:27Z",
-  "caption": "Side-on, the brush lies low along the ground behind the sat fox instead of sweeping up; the lens still sits high in rubble with a salmon brick wall behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0906-cottage.jpg",
-  "time": "2026-10-18T09:06:46Z",
-  "caption": "Harrowmere's first cottage from the green in morning light: slate roof with eave moss, oak frame, limewashed daub, stone chimney; the chimney stones read as stark black/white blocks, the oak is flat grey, no smoke or path yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0906-cottage-door.jpg",
-  "time": "2026-10-18T09:06:46Z",
-  "caption": "The cottage door bay close up: individually laid riven slates with lichen, hewn rafter tails, plank door with iron straps; the oak reads flat grey and the rafter tails are cut square to the slope instead of plumb.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0952-stonecottage.jpg",
-  "time": "2026-10-18T09:52:00Z",
-  "caption": "The stone cottage (shot before it moved across the green to stand beside the timber house): rubble walls, slate roof, chimney with smoke, against the low sun; the walls read too regular and brick-like from here and the stones too rounded.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0952-stonecottage_close2.jpg",
-  "time": "2026-10-18T09:52:00Z",
-  "caption": "At the cottage door: rubble stones in lime pointing, tarred door, leaded window and graded slates; the shaded facade is flat, the eaves board reads ragged and the stones are still pillow-rounded.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-0952-stonecottage_dusk.jpg",
-  "time": "2026-10-18T09:52:00Z",
-  "caption": "At night the cottage windows glow warm through the leaded panes under the stars; part of the roof catches a pale moon sheen and nobody lives here yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1138-drywall-back.jpg",
-  "time": "2026-10-18T11:38:02Z",
-  "caption": "The new dry-stone garth wall round the yard behind the stone cottage, late afternoon from beyond the back corner; rubble coursing and cope read, but the backlit foreground grass is flat and dark.",
-  "verdict": "pass"
- },
- {
-  "file": "20261018-1138-drywall-gate.jpg",
-  "time": "2026-10-18T11:38:02Z",
-  "caption": "The garth wall's east gateway between two upright stoops at 11 h (first version); the face stones are too evenly coursed and pale with dark joints, so it reads a little brick-like (made more irregular after this shot).",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1200-gate-wide.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "The oak five-bar field gate hung shut between the garth wall's stoops behind the stone cottage at 11 h; still wrong: the oak reads pale silver-white and flat at this distance and the wall stones are pale blocks with flat moss tops.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1200-gate-ajar.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "Close on the field gate swung half open into the yard (it swings away from the hero and falls shut with a creak and a knock); still wrong: bars and brace read too pale and smooth, wall faces are light rectangular blocks, no track worn through the gateway.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1230-yardwall_noon.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "From inside Harrowmere's new yard at noon: dry-stone walls with copes run from the timber house to the stone cottage, the cart gateway open between them; the stones lie in too-even brick-like rows, the moss is flat lime patches and the copes barely read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1230-yardwall_close.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1330-garth-noon.jpg",
-  "time": "2026-10-18T13:30:00Z",
-  "caption": "From the yard side at 12.5 h: Harrowmere's dry-stone walls are now a cool grey gritstone with grey lichen, and moss only on the tops and shaded faces; still wrong: the garth wall's stones are rounded blocks in level rows and grass fills the foreground.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1330-gate-grey.jpg",
-  "time": "2026-10-18T13:30:00Z",
-  "caption": "The field gate between its moss-capped stoops at noon, the garth wall now grey rather than cream; still wrong: the wall stones read as pale pillowed rectangles in brick-like rows, the cope tops carry flat lime moss and the cottage stones beside it are still cream.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1456-hens-garth.jpg",
-  "time": "2026-10-18T14:56:43Z",
-  "caption": "Three of the garth's five hens (brown, buff, cuckoo) pottering on the scratched-short turf behind the stone cottage at 11:00; still wrong: the bare ground reads as dark straw streaks rather than dusty scratched earth, and the plumage is smooth with little feather breakup.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1456-hens-meadow.jpg",
-  "time": "2026-10-18T14:56:43Z",
-  "caption": "The same hens before the garth was scratched short: lost in knee-high meadow grass, which is why the yard now grows only a patchy short sward.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1600-garth-earth.jpg",
-  "time": "2026-10-18T16:02:34Z",
-  "caption": "The hens' garth is now scratched down to dry bare earth with grit, dust-bath hollows and surviving tufts; still wrong: the claw-rake fans read as dark arrow marks (softened after this shot), the ground is flat grey-brown in the cottage's shade, and the cottage stones are still cream pillows.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1716-henhouse.jpg",
-  "time": "2026-10-18T17:16:00Z",
-  "caption": "The new oak hen house in the garth at 11 h with a hen climbing its ladder to the pop-hole; still wrong: boards read pale silver and flat, the nest box reads as a bare shelf, the garth dust shows smooth pale ovals.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1825-henhouse2.jpg",
-  "time": "2026-10-18T18:25:08Z",
-  "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1925-stonecottage.jpg",
-  "time": "2026-10-18T19:25:07Z",
-  "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-2015-cottagerubble.jpg",
-  "time": "2026-10-18T20:15:30Z",
-  "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-2114-cottage-rubble.jpg",
-  "time": "2026-10-18T21:14:55Z",
-  "caption": "Stone cottage rubble after the cut/mortar tuning at 15.5 h: stones now fill their beds with narrower, lighter joints, but the facade is backlit in flat shade, the stones still read as rounded grey cobbles with pale tops, and the slate roof's lichen flecks read as noise.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-2216-cottage.jpg",
-  "time": "2026-10-18T22:16:17Z",
-  "caption": "Stone cottage door at 9.5 h after the rubble/slate pass: stones now vary in value and the slate lichen is in broad patches, but the wall stones still read as rounded blue-grey cobbles, the facade sits in sky-lit shade, and the lichen bands along the slate tails.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0015-cottage-sunside.jpg",
-  "time": "2026-10-19T00:15:48Z",
-  "caption": "Stone cottage side wall at 9.5 h after the crisp-facet pass: rubble faces are now flat split planes with sharp arrises, but the stones still read as separate pale tiles on a wide dark mortar bed, the wall is still in shade, and the roof moss is bright green.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0015-cottage-wide.jpg",
-  "time": "2026-10-19T00:15:48Z",
-  "caption": "Stone cottage from the green at 15.5 h, backlit through haze with the yard walls in front: a believable farmstead silhouette, but the facade is flat shade and the place is empty of people.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0115-cottage-sunny.jpg",
-  "time": "2026-10-19T01:15:00Z",
-  "caption": "Stone cottage gable in late-morning sun with tighter rubble joints and darker roof moss: the far courses read as real walling, but near stones still float on pale beige mortar and the slates look pillowy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0246-whitecottage-wide.jpg",
-  "time": "2026-10-19T02:46:13Z",
-  "caption": "The new limewashed cottage on the green beside the timber house, against the afternoon sun; its joints still drew a white-brick grid here (since fixed) and the walls lack splash grime at this range.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0246-whitecottage-gable.jpg",
-  "time": "2026-10-19T02:46:13Z",
-  "caption": "The white cottage's gable close up: the lime now runs unbroken over stones and joints, but flaked patches read as dark holes and the stepped gable courses showed below the verge (tabling added after this shot).",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0414-waterbutt.jpg",
-  "time": "2026-10-19T04:14:52Z",
-  "caption": "The white cottage's new oak water butt under the eaves with the bench by the door: the cask reads as staved oak with rusted hoops, but the water surface is a matte grey-brown disc with no reflection and the limewash still reads as white brick blocks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0414-waterbutt-rain.jpg",
-  "time": "2026-10-19T04:14:52Z",
-  "caption": "The water butt in rain at 14:00: grey overcast light suits the place, but no rain streaks or rings are visible at this range and the barrel's inside reads empty and dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0450-whitecottage-wide.jpg",
-  "time": "2026-10-19T04:50:00Z",
-  "caption": "The limewashed cottage on the green at 15:00 beside the timber house, its walls now one white lime skin over rubble (the barrel here is a duplicate butt since replaced by the other session's); the slate roof still reads flat and dark and the stack's blocks still show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0450-limewash-gable.jpg",
-  "time": "2026-10-19T04:50:00Z",
-  "caption": "The white cottage's sunlit gable after the proud-lime pass: the rubble shows only as soft bumps under the coat with small pale flakes; the plane is still a little too even and the lens frames mostly blank wall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0555-waterbutt.jpg",
-  "time": "2026-10-19T05:55:32Z",
-  "caption": "Water butt by the limewashed cottage: the rainwater now mirrors a cool sky with a dark far rim and floating leaves instead of a matte brown disc; the water is still a little flat and the shadowed yard is dim.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0700-whitecottage-gable.jpg",
-  "time": "2026-10-19T07:00:00Z",
-  "caption": "White cottage on the green at 15.0 h: its gable now ends cleanly under the verge with no stepped stones showing, but the slate roof still reads flat near-black from 15 m and the lime walls look dim beside the sunlit grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0700-whitecottage-eaves.jpg",
-  "time": "2026-10-19T07:00:00Z",
-  "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0751-leanto-wide.jpg",
-  "time": "2026-10-19T07:51:15Z",
-  "caption": "The white cottage with its new limewashed woodshed lean-to off the east gable from the meadow: reads as a real outshut, but its outer wall is a plain white block from here and the tall grass hides the woodpile and chopping block.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0751-leanto-woodpile.jpg",
-  "time": "2026-10-19T07:51:15Z",
-  "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0836-lantern-night.jpg",
-  "time": "2026-10-19T08:36:59Z",
-  "caption": "The new oak lantern post on the green at 20:36: candlelight through horn panes pools warm on the grass and throws the frame's shadow on the timber house; the panes glow as one flat bright box and the post reads a little clean.",
-  "verdict": "pass"
- },
- {
-  "file": "20261019-0836-lantern-day.jpg",
-  "time": "2026-10-19T08:36:59Z",
-  "caption": "The lantern post by day, backlit against the timber house: the post is a dark silhouette, the horn panes read milky white like paper, and the timber house roof is a flat dark plane.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0956-moths.jpg",
-  "time": "2026-10-19T09:56:19Z",
-  "caption": "Moths loop the lit lantern on the green at half past nine at night with fireflies over the meadow; the moths are small warm flecks at this distance, the horn panes still glow as one flat box and the post is too clean.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0956-moths-close.jpg",
-  "time": "2026-10-19T09:56:19Z",
-  "caption": "Close crop of the moths round the lantern and one settled on the post; they catch the candle warmly but read as specks rather than winged moths except the one nearest the camera.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1029-tracks.jpg",
-  "time": "2026-10-19T10:29:26Z",
-  "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1203-villager-lamp.jpg",
-  "time": "2026-10-19T12:03:27Z",
-  "caption": "Edda at dusk on the green, taper raised to the lantern as its candle catches; her coif reads as a pale veil hiding the face and the taper itself barely shows.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1203-villager-woodpile.jpg",
-  "time": "2026-10-19T12:03:27Z",
-  "caption": "Edda at the woodpile by the white cottage's lean-to in the morning; the house reads well but her bodice still shows the hero's grey armour plates and the hood swallows her face.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1212-trackpools.jpg",
-  "time": "2026-10-19T12:12:11Z",
-  "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1359-edda-heave.jpg",
-  "time": "2026-10-19T13:59:48Z",
-  "caption": "Edda heaves the axe up over her head at the chopping block by the lean-to; she reads small against the white wall from this 3.6 m lens and the axe is hard to pick out.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1359-edda-split.jpg",
-  "time": "2026-10-19T13:59:48Z",
-  "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1440-edda-pail.jpg",
-  "time": "2026-10-19T14:40:02Z",
-  "caption": "Edda at the water butt at 7 am with her pail hung from her right hand; the lens sits behind her so the pail barely reads, and her hair is a smooth blob.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1440-edda-night.jpg",
-  "time": "2026-10-19T14:40:02Z",
-  "caption": "Edda's cottage at 21:20 with its lamp lit now that she is in; the door leaf stands open at night and the limewash reads flat blue-grey.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1530-edda-feed.jpg",
-  "time": "2026-10-19T15:30:00Z",
-  "caption": "Edda at the garth wall at 07:55 casting grain to the hens, which crowd the yard in the foreground; the yard is in deep morning shadow, the grain does not read, and the wall hides her casting arm.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1622-eddatalk.jpg",
-  "time": "2026-10-19T16:22:00Z",
-  "caption": "Wren speaking with Edda at her woodpile, her line about Tam as a subtitle; her face is lost under the coif, the hero hides half of her and the lean-to plaster reads flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1730-feedwait.jpg",
-  "time": "2026-10-19T17:30:00Z",
-  "caption": "Morning feed: the hens lined up at the inside of the garth wall at Edda's call, her hooded figure beyond it with the grain bag; the yard foreground is backlit nearly black and the hens read small and dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1845-bench.jpg",
-  "time": "2026-10-19T18:45:00Z",
-  "caption": "Edda on her bench at 20:00 under fireflies, where she now hums; still wrong: the scene is crushed navy, her face is lost under the coif and the lantern glow paints a green-yellow smear on the wall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1845-heave.jpg",
-  "time": "2026-10-19T18:45:00Z",
-  "caption": "Edda at the block with the axe over her head at the top of the heave, the moment before her breath goes out; still wrong: seen from behind she reads small against the white wall, the woodstack is a flat pattern and the bench under the window is half lost.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2000-lantwide.jpg",
-  "time": "2026-10-19T20:00:49Z",
-  "caption": "The lantern post at 21:30 from the green: a soft, wide amber pool on the track, grass and timber house front, meadow silver-blue under the moon; the pool on the grass is still a touch red and the houses read dark and flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2000-bench.jpg",
-  "time": "2026-10-19T20:00:49Z",
-  "caption": "Edda on her bench at 20:00 with the firefly lime disc gone from the limewash; the frame is still crushed navy and her face is lost under the white coif.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2120-bat.jpg",
-  "time": "2026-10-19T21:20:00Z",
-  "caption": "The new bat hawking moths above the lit lantern on the green; it reads only as a tiny flat orange cut-out against the roof (membrane backlight/emission far too strong, lens too far), and the night frame is still crushed navy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2050-bat-roost.jpg",
-  "time": "2026-10-19T21:45:00Z",
-  "caption": "The pipistrelle hanging head down under the white cottage's woodshed boards between the rafters at 17:30, wings wrapped; still wrong: its fur glows red-orange in the shade (night candle backlight too strong by day) so it reads as a blob, not a dark brown bat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2311-doorstones-white.jpg",
-  "time": "2026-10-19T23:11:10Z",
-  "caption": "Stepping stones outside the white cottage door: the slabs are laid on the worn track but read as dark blue-grey pillowed lumps in the house shade, not pale trodden flags.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2311-doorstones-white-wide.jpg",
-  "time": "2026-10-19T23:11:10Z",
-  "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0000-bat-roost-dark.jpg",
-  "time": "2026-10-20T00:10:00Z",
-  "caption": "The pipistrelle hanging under the woodshed boards at 17:30 now reads as a dark brown bat instead of a glowing red-orange blob (fur backlight removed); still wrong: at this range it is a tiny featureless silhouette, no fur, ears or wrapped-wing shape readable.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0036-doorstones-stone.jpg",
-  "time": "2026-10-20T00:36:07Z",
-  "caption": "The stone cottage's door slabs now have no grass through them, but the track sits in deep house shade and tall tussocks crowd both sides, so the slabs still read as dark shapes.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0036-doorstones-timber.jpg",
-  "time": "2026-10-20T00:36:07Z",
-  "caption": "The timber house at late afternoon: its door slabs lie in a narrow worn strip that tall grass leans over and almost hides; the stones need to be paler and the grass beside the track shorter.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0155-doorstones-worn-stone.jpg",
-  "time": "2026-10-20T01:55:00Z",
-  "caption": "The stone cottage's door slabs now read as pale foot-worn flags and the tall tussocks have stepped back from them; still wrong: the whole doorway sits in deep blue-black shade and the near slab looks like a smooth flat tile.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0155-doorstones-worn-timber.jpg",
-  "time": "2026-10-20T01:55:00Z",
-  "caption": "The timber house's door slabs now show clear of the grass with clean walked tops; still wrong: they read as small blue-grey lumps rather than broad flat warm flags, and the house's infill panels look flat white.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0250-doorstones-flags-timber.jpg",
-  "time": "2026-10-20T02:50:00Z",
-  "caption": "The timber house's door stones now lie as broad, thin split flags across the track with clouded worn tops and dirt in their edges; still wrong: they read cool grey-white and too smooth in the late light, and the house infill looks flat white.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0250-doorstones-flags-stone.jpg",
-  "time": "2026-10-20T02:50:00Z",
-  "caption": "The stone cottage's door flags now read flat and broad underfoot; still wrong: the whole doorway sits in deep blue-black shade so the stones and the wall barely read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0330-doorstones-wet-timber.jpg",
-  "time": "2026-10-20T03:45:00Z",
-  "caption": "Timber house door flags in a storm at 16:30: the worn tops now read wet with a bright sky sheen; still fail: frame very dark, sheen a little milky, the edge pools barely show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0330-doorstones-wet-white.jpg",
-  "time": "2026-10-20T03:45:00Z",
-  "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0430-doorstones-poolskin-fail.jpg",
-  "time": "2026-10-20T04:30:00Z",
-  "caption": "White cottage door flags in rain at 13:00 with a trial opaque pool skin: the whole patch round the slabs drew as a white mirror instead of thin edge pools; the trial was reverted, only the darker wet-flag tops were kept.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0520-doorstones-pools.jpg",
-  "time": "2026-10-20T05:20:00Z",
-  "caption": "White cottage door flags soaked at 13:00: the rain pools along the slab edges are now an opaque water skin (no more white-mirror bug) showing faint sky in the hollows, but the doorway sits in deep shade and the pools still read as dark wet ground.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0706-doorbounce.jpg",
-  "time": "2026-10-20T07:06:10Z",
-  "caption": "The white cottage doorway at 13 h, now lifted out of blue-black shade by a warm yard-bounce fill; the fill still pools a little lamp-like on the nearest slabs and the grass in front stays dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0706-rainpools.jpg",
-  "time": "2026-10-20T07:06:10Z",
-  "caption": "The timber house door stones in real rain (rain 0.5 now actually falls in shots): splash rings and wet slabs, but the overcast frame is dark and murky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0735-doorstones-timber-storm.jpg",
-  "time": "2026-10-20T07:35:43Z",
-  "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0820-doorstones-storm-lifted.jpg",
-  "time": "2026-10-20T08:20:00Z",
-  "caption": "Same storm at the timber house door after the lift: the storm frame reads a good stop brighter and the flags now sit in bare dark loam with the sward cleared off the pool band; still wrong: the flags read as smooth pale lumps and the pools barely show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0949-dog-green.jpg",
-  "time": "2026-10-20T09:49:33Z",
-  "caption": "Brack, Edda's new black-and-white collie, sat on the green by the timber house; it reads as a dog but the tall meadow grass buries it and the low lens sits in the grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1059-dog-track.jpg",
-  "time": "2026-10-20T10:59:14Z",
-  "caption": "Brack sat on the white cottage's trodden track with the door behind him, now fully in view instead of buried in the meadow; still wrong: the foreground lies in deep shade and his coat reads flat and faceted.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1059-dog-night.jpg",
-  "time": "2026-10-20T10:59:14Z",
-  "caption": "Edda's cottage at 22 h with fireflies, Brack lying down in his place by the door; still wrong: he is lost in the dark at the wall foot and the frame is murky blue-black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1136-dog-sun.jpg",
-  "time": "2026-10-20T11:36:00Z",
-  "caption": "Brack lying in the sun on the trodden track before the white cottage: he reads as a low black-and-white dog lying down, but he is small, in the shade of the tall foreground grass, and the near grass is a dark wall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1158-dog-doze.jpg",
-  "time": "2026-10-20T11:58:00Z",
-  "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1237-osric.jpg",
-  "time": "2026-10-20T12:37:54Z",
-  "caption": "Osric, the new stone-cottage villager, tending his garth at 15.5 h with Edda beyond the field gate; FAIL: the foreground is in deep shade and his pale hood reads as a veil over his face.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1430-osric-face.jpg",
-  "time": "2026-10-20T14:30:22Z",
-  "caption": "Osric on his step at 07:00 with his own face for the first time: a nose and a grizzled grey beard under the hood instead of the face cloth; FAIL: the skin is a flat orange mask, the eyes glint red and the beard reads as grey bark, not hair.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1430-osric-lean.jpg",
-  "time": "2026-10-20T14:30:22Z",
-  "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1503-osric-flock.jpg",
-  "time": "2026-10-20T15:03:13Z",
-  "caption": "The hens have drifted over to peck round Osric's boots while he tends the sunlit garth; still wrong: he wears the hero's wide straw douli and a pale hood that reads as a mask, and stands stiff.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1503-osric-lean-face.jpg",
-  "time": "2026-10-20T15:03:13Z",
-  "caption": "Osric leaning on the garth wall at 9.5 h, close up: broken -- an oversized hat brim hides the bowed head entirely, the forearms are blocky stubs, and the cope stones are blurry at this range.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1540-osric-face.jpg",
-  "time": "2026-10-20T15:40:01Z",
-  "caption": "Osric at his door at 07:00 with an older, paler skin in place of the orange mask; FAIL: the beard (this frame from before the re-tune) reads as a flat white plaster patch, an eye still glints red and armour shows at the collar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1540-osric-lean.jpg",
-  "time": "2026-10-20T15:40:01Z",
-  "caption": "Osric leaning on the garth wall at 09:30, head now lifted to look out over the field, hens on the garth, the vale and peaks behind; FAIL: he is too small and side-on to read his face, and the forearm wraps are still blocky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1659-osric-felthat.jpg",
-  "time": "2026-10-20T16:59:44Z",
-  "caption": "Osric on his step at 7 h with a dark hood (no more pale ski mask) and the new felt hat, which still reads as a tall stovepipe; red eye glint, flat beard and collar armour still show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1659-edda-osric-pair.jpg",
-  "time": "2026-10-20T16:59:44Z",
-  "caption": "Edda at the garth wall and Osric in the garth turned to each other mid-exchange at 16.4 h; both are small and the dry-wall foreground is in deep shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1832-osric-felthat.jpg",
-  "time": "2026-10-20T18:32:35Z",
-  "caption": "Osric at his door at 07:00 in the reworked felt hat (low round crown with a crease, drooping 9 cm brim, sat down on a dark hood); the face is still in deep shade under the brim, the beard reads as flat grey bark and armour shows at the collar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1930-osric-facefill.jpg",
-  "time": "2026-10-20T19:30:54Z",
-  "caption": "Osric at his door at 07:00 with a stronger face fill under the felt brim: his face, nose and eyes finally show, but the lightened beard reads as a pale flat block with a ruled lower edge and a grey plate still shows under it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2045-osric-beard.jpg",
-  "time": "2026-10-20T20:45:28Z",
-  "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2140-osric-smock.jpg",
-  "time": "2026-10-20T21:40:00Z",
-  "caption": "Osric at his door at dawn in a wool smock (no more armour plates on his chest) with a beard in locks; the beard is still too yellow-brown with wood-grain-like strands and the smock a little bright.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2220-osric-ashbeard.jpg",
-  "time": "2026-10-20T22:20:00Z",
-  "caption": "Osric at his door at dawn with a cooler ash-grey beard (yellow only at the lip) and a darker wool smock; the beard still shows fine vertical streaks, the felt hat reads orange-brown and cowboy-like, and the cape looks smooth.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2340-osric-hat.jpg",
-  "time": "2026-10-20T23:40:00Z",
-  "caption": "Osric at his door at dawn: the felt hat is darker, matte and droops all round now, but still reads warm brown, and the cape is smooth and plasticky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0040-osric-coolhat.jpg",
-  "time": "2026-10-21T00:40:00Z",
-  "caption": "Osric at his door at dawn: the felt hat is a cooler dark grey-brown and the cape shows wool fibre instead of plastic, but the brim still curls up at the sides and the cape and beard carry fine vertical streaks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0210-kitemob.jpg",
-  "time": "2026-10-21T02:10:00Z",
-  "caption": "A red kite pulls up from its stoop over the meadow with four rooks mobbing it from below; the birds read, but the frame is mostly empty sky and one cloud shows a hard straight top edge.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0229-osric-brim.jpg",
-  "time": "2026-10-21T02:29:00Z",
-  "caption": "Osric at dawn by his cottage: the felt brim now droops all round like a slouch hat and the wool cape has lost its wood-grain streaks, but the beard still shows fine vertical streaks and the skin reads flat orange.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0350-pedlar.jpg",
-  "time": "2026-10-21T03:50:00Z",
-  "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0444-road.jpg",
-  "time": "2026-10-21T04:44:21Z",
-  "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-0540-kitemob.jpg",
-  "time": "2026-10-21T05:40:00Z",
-  "caption": "A red kite shrieking as it climbs away from four mobbing rooks over the meadow at 11:00; still wrong: an empty flat sky with the birds as tiny silhouettes, no landscape to anchor the frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0627-dogwoof.jpg",
-  "time": "2026-10-21T06:27:58Z",
-  "caption": "Brack the collie stands stiff-tailed on the green watching Wat the pedlar after woofing at him; the low lens sits in tall grass whose blades read as flat paper ribbons, and a flat grey wall edge intrudes at the right.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0750-pedlar-sidestep.jpg",
-  "time": "2026-10-21T07:50:00Z",
-  "caption": "Wat the pedlar walking off the green past the lantern post, bending his line round Brack sat in his road; still wrong: the lens frames him half behind the post with the dog lost in tall grass, near grass blades read as flat paper ribbons and the figures read blocky at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0840-verge.jpg",
-  "time": "2026-10-21T08:40:00Z",
-  "caption": "Wat walks the cart track toward the village with daisies and buttercups now edging the verge; the taller yarrow and knapweed of the verge ribbons are mostly drowned in the ripe grass, so the verges do not yet read as a distinct flowered strip.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-0953-verge-cropped.jpg",
-  "time": "2026-10-21T09:53:00Z",
-  "caption": "Wat walks the cart track toward the village; the verges either side of the ruts are now cropped to a short green turf so the daisies and buttercups stand over it as a clear ribbon against the ripe meadow; near-lens grass blades still read as flat ribbons and the yarrow/knapweed are sparse in frame.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-1041-rut-stones.jpg",
-  "time": "2026-10-21T10:41:00Z",
-  "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-1124-near-grass.jpg",
-  "time": "2026-10-21T11:24:34Z",
-  "caption": "Low lens in the meadow behind Brack the collie watching Wat: the near grass now shrinks into the sward close to the camera and shows rolled, ribbed blades instead of hand-sized paper ribbons; still wrong: a grey slab at the right frame edge, HUD bars on, the dog reads a little flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1250-stile.jpg",
-  "time": "2026-10-21T12:45:00Z",
-  "caption": "The new squeeze stile in the garth's back wall seen from the fell footpath: two leaning slabs with a worn path through the slot toward Osric's cottage; still wrong: the slot reads wider than a real squeeze stile, the wall courses look too regular and tiled, and the light is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1349-stile.jpg",
-  "time": "2026-10-21T13:49:50Z",
-  "caption": "The squeeze stile in the garth's back wall from the fell footpath: two leaning gritstone slabs with their tops rubbed bare by hands, a beaten path through the slot, no HUD bars; still wrong: the slabs' narrow faces read plain grey and the wall's dark joints form a regular grid.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1449-stile.jpg",
-  "time": "2026-10-21T14:49:17Z",
-  "caption": "The garth wall from the fell footpath with the new chip-and-moss hearting and uneven head joints; the joints still read as a near-black grid behind pale stones, and a figure stands in front of the stile.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1529-stile.jpg",
-  "time": "2026-10-21T15:29:00Z",
-  "caption": "The garth wall and squeeze stile from the fell footpath at mid-morning: face stones now butt on tight beds in varied greys with dark crust patches, no longer pale tiles on a black joint grid; still wrong: the stones read as too-regular rectangular blocks, the cope is a uniform green moss band and the slabs' faces are plain.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1630-stile-askew.jpg",
-  "time": "2026-10-21T16:30:00Z",
-  "caption": "The garth wall's stones now split askew with leaning head joints, thin slates and a few knocked cope stones, and the cope moss is broken into cushions; the cope still reads as a row of similar upright slabs and the near face stones are still too boxy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1754-stile-cope.jpg",
-  "time": "2026-10-21T17:54:38Z",
-  "caption": "Garth wall squeeze stile at 10:00: the cope now rises and falls in runs with leaning stones and blocky capstones instead of a row of like slabs; the near face stones on the right still read as pale boxy blocks with sharp arrises.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1831-stile-rubble.jpg",
-  "time": "2026-10-21T18:31:47Z",
-  "caption": "Garth wall by the squeeze stile at 10:00: field stones now rounded, chipped rubble in darker greys; the cope now reads as rounded mossy lumps rather than split slabs and the far-left run's faces are still flat tiles in a regular grid.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1944-osric-fell.jpg",
-  "time": "2026-10-21T19:44:00Z",
-  "caption": "Osric out past the garth's back wall at 17:00, standing on the fell footpath where his flock grazed, the stone cottage behind: a living moment, but he reads stiff and underlit in the sunset shade and his face reads as a pale mask at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2006-osric-stile.jpg",
-  "time": "2026-10-21T20:06:00Z",
-  "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2045-osric-fell-stance.jpg",
-  "time": "2026-10-21T20:45:00Z",
-  "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2140-osric-beard-before.jpg",
-  "time": "2026-10-21T21:40:00Z",
-  "caption": "Osric's face portrait at 17:00 before the fix: the 'pale strip' under his jaw is his beard, a 20 cm flat grey plate hanging down his chest; his face above it is a reddish mask.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2215-osric-beard.jpg",
-  "time": "2026-10-21T22:15:00Z",
-  "caption": "Osric's beard is now short and full, tapering to a point and shaded at the sides and underneath; still a fail: his face is a flat reddish mask with no eyes showing under the brim and the hood frames it like a helmet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2350-osric-face.jpg",
-  "time": "2026-10-21T23:50:00Z",
-  "caption": "Osric's face at 17:10 with a greyer, less ruddy skin, darker sockets and lighter brow and cheekbones; still a fail: the eyes sit in the brim's shade so the face reads as a nose and beard in a dark hood.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0030-osric-eyes.jpg",
-  "time": "2026-10-22T00:30:00Z",
-  "caption": "Osric at 17:10 with the felt hat tipped back and an eye-level fill: his eyes now show as two lit slits under the brim; still a fail: the hood is a stiff box round a small face, the beard reads pale and the cape is flat wood-grain cloth.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0200-osric-hood.jpg",
-  "time": "2026-10-22T02:00:00Z",
-  "caption": "Osric at 17:10: the beard is now dark grizzled grey with clumped locks and the cape has lost its wood-grain rings; still a fail: from the front the hood still frames the face as a squarish opening and the cape is now a plain, untextured-looking brown.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0300-osric-dust.jpg",
-  "time": "2026-10-22T03:00:00Z",
-  "caption": "Osric at the garth in late sun: his hood now hangs askew with a worn uneven rim and his wool mantle carries road dust and wear; his face still reads as a smooth mask and the mantle is still too clean-edged.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0400-osric-slide.jpg",
-  "time": "2026-10-22T04:00:00Z",
-  "caption": "Osric bent to the hen house at dusk as he drops the pop-hole slide; the sun is already down so the frame is near black, only his hat and the ladder show against the fireflies.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0431-watlamp.jpg",
-  "time": "2026-10-22T04:31:04Z",
-  "caption": "Wat the pedlar on the cart track at dusk, his horn lantern lit at his knee throwing a warm swinging pool on the ruts; still wrong: the lens catches his back not his face, the horn panes blow out flat orange, and a flower stalk cuts the foreground.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0654-henfox.jpg",
-  "time": "2026-10-22T06:54:00Z",
-  "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0654-henfoxdusk.jpg",
-  "time": "2026-10-22T06:54:00Z",
-  "caption": "Same moment at 19:54 from the garth: the hen house and ladder read against the moonlit trees, but the fox is only a red smear in the dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0700-watlamp2.jpg",
-  "time": "2026-10-22T07:00:00Z",
-  "caption": "Wat walks the cart track at dusk with his horn lantern now glowing a soft amber, fireflies over the meadow; seen from behind, the scene beyond the lantern pool is nearly black and the pool reads as a red-brown smear.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0830-foxfur.jpg",
-  "time": "2026-10-22T08:30:00Z",
-  "caption": "Fur pass on the fox at Osric's hen ladder at 17:24: the coat is now a muted ginger-brown with combed tufts and no red glow, but Osric happens to be standing in front of it, so the fur is barely seen and needs a clean night re-shot.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1000-osriclookout.jpg",
-  "time": "2026-10-22T10:00:00Z",
-  "caption": "Osric woken at 01:30, out at the gap in the yard wall with his horn lantern lit and warm light on the wall stones; but the lantern hangs at his waist instead of held up, his face is lost under the brim, and the moonlit night reads flat blue-grey rather than Wukong-dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1345-lookout2.jpg",
-  "time": "2026-10-22T13:45:00Z",
-  "caption": "Osric at the yard-wall gap at 01:30 now holds his lit horn lantern up before his chest and its warm light falls on the wall stones; but his face is still a dark smudge under the brim, his coat reads flat pale grey, and the moonlit night is flat blue.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1430-lookout3.jpg",
-  "time": "2026-10-22T14:34:00Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: its glow now lights his face and beard from below, Brack sits at his knee and only a few fireflies remain; still wrong: a dark raised fist beside his face, the whitewashed cottage glows too bright and blue for the small hours, and his coat reads flat pale grey.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1547-lookout4.jpg",
-  "time": "2026-10-22T15:47:22Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with the lantern held out to his side, fist clear of his face, under a greyer, less blue moon; still wrong: his face falls dark again, the raised open hand reads like a wave, the coat is flat pale grey.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1715-lookout6.jpg",
-  "time": "2026-10-22T17:15:46Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with his fingers now closed into a fist round the lantern bail and the lantern hanging below it; still wrong: his thumb hooks out toward his face, his face under the brim still reads dark, and the coat is flat pale grey.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-1858-lookout.jpg",
-  "time": "2026-10-22T18:58:13Z",
-  "caption": "Osric at the yard-wall gap at night: the lantern's glow now reaches his cheek and the underside of the brim, but his thumb still sticks out sideways off the bail like a hitch-hiker's and the face is still mostly shadow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2031-lookout8.jpg",
-  "time": "2026-10-22T20:31:36Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with the lantern's glow now leaning up toward his face, so his face and beard read warm under the hat brim; still wrong: a hard bright band lights the brim's underside, the coat is flat pale grey with no weave, and the right-hand wall stones show orange-red patches.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2049-lookout.jpg",
-  "time": "2026-10-22T20:49:00Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with his lantern fist after the thumb-wrap change: the hand reads as a fist, but at close range the thumb still pokes out sideways from its top, his face is a dark mask under a bucket-like hat, and the right-hand wall stones still carry orange-red patches.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2141-lookout9.jpg",
-  "time": "2026-10-22T21:41:19Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: the glow on his hat brim is dimmer and narrower than before, but a bright streak still crosses the brim's front, his face is still mostly shadow, the hat reads like a bucket and the thumb pokes up.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2246-lookout10.jpg",
-  "time": "2026-10-22T22:46:43Z",
-  "caption": "Osric holding his lantern up at the yard-wall gap at night: the bright band across his hat brim has shrunk to a small warm spot at the left edge, but his face is still mostly shadow and the hat still reads as a bucket.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2346-osric-hat.jpg",
-  "time": "2026-10-22T23:46:13Z",
-  "caption": "Osric at dusk with his reshaped felt hat: the crown now tapers into a pinched, slumped dome and the brim snaps down front and back instead of a straight-sided bucket; his face is still mostly shadow and the crown still stands a touch tall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-0110-osric-cape.jpg",
-  "time": "2026-10-23T01:10:00Z",
-  "caption": "Osric at 17:10 after the wool-cape weathering pass: only a faint sun-faded grey reads across the top of the cape, the damp hem and mud flecks are out of frame, and the cape still reads as one smooth sheet with a bucket-ish hat and a shadowed face.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-0236-osric-cape2.jpg",
-  "time": "2026-10-23T02:36:00Z",
-  "caption": "Osric full figure at 17:10 after deepening the wool cape's folds: a few vertical fold shadows now break the cape, but the whole figure still reads pale grey and flat against the dark field, the hem detail is lost at this range, and the frame is underlit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-0340-osric-dark.jpg",
-  "time": "2026-10-23T03:40:00Z",
-  "caption": "Osric at 17:10 with a darker oiled-wool cape and smock and a lower hat crown: he now sits into the field instead of reading as a pale grey cut-out, but the ochre rope girdle is now the brightest patch on him, the cape still reads flat, and the pose is stiff.",
-  "verdict": "fail"
- }
+  {
+    "file": "20261018-0442-foxcrust.jpg",
+    "time": "2026-10-18T04:42:55Z",
+    "caption": "The fox stood at Hesper's crust at 22:30 on the new floor seat; still wrong: its head is buried in the breach rubble, the coat glows a flat saturated red with no fur breakup, and the firelit wall reads as salmon brick.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0544-foxcrust.jpg",
+    "time": "2026-10-18T05:44:00Z",
+    "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0720-foxside.jpg",
+    "time": "2026-10-18T07:20:00Z",
+    "caption": "The fox sat at the edge of Hesper's firelight from the side with its new dense, sculpted body: smooth flanks and a round haunch instead of facets; still wrong: the brush sweeps up behind it instead of curling round the paws, and the keep wall reads salmon brick.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0720-foxcrust.jpg",
+    "time": "2026-10-18T07:20:00Z",
+    "caption": "The fox at Hesper's crust with the smoother body mesh; still wrong: nearly head-on with bright eyeshine straight into the lens, the coat is a flat ginger with no guard-hair breakup, and the brick wall behind is salmon.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0734-foxcurl.jpg",
+    "time": "2026-10-18T07:34:27Z",
+    "caption": "The sat fox's brush now lies on the turf and curls round its haunch toward the forepaws; the coat still reads smooth and flat-lit, and rubble slabs crowd the lens.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0734-foxside.jpg",
+    "time": "2026-10-18T07:34:27Z",
+    "caption": "Side-on, the brush lies low along the ground behind the sat fox instead of sweeping up; the lens still sits high in rubble with a salmon brick wall behind.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0906-cottage.jpg",
+    "time": "2026-10-18T09:06:46Z",
+    "caption": "Harrowmere's first cottage from the green in morning light: slate roof with eave moss, oak frame, limewashed daub, stone chimney; the chimney stones read as stark black/white blocks, the oak is flat grey, no smoke or path yet.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0906-cottage-door.jpg",
+    "time": "2026-10-18T09:06:46Z",
+    "caption": "The cottage door bay close up: individually laid riven slates with lichen, hewn rafter tails, plank door with iron straps; the oak reads flat grey and the rafter tails are cut square to the slope instead of plumb.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0952-stonecottage.jpg",
+    "time": "2026-10-18T09:52:00Z",
+    "caption": "The stone cottage (shot before it moved across the green to stand beside the timber house): rubble walls, slate roof, chimney with smoke, against the low sun; the walls read too regular and brick-like from here and the stones too rounded.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0952-stonecottage_close2.jpg",
+    "time": "2026-10-18T09:52:00Z",
+    "caption": "At the cottage door: rubble stones in lime pointing, tarred door, leaded window and graded slates; the shaded facade is flat, the eaves board reads ragged and the stones are still pillow-rounded.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-0952-stonecottage_dusk.jpg",
+    "time": "2026-10-18T09:52:00Z",
+    "caption": "At night the cottage windows glow warm through the leaded panes under the stars; part of the roof catches a pale moon sheen and nobody lives here yet.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1138-drywall-back.jpg",
+    "time": "2026-10-18T11:38:02Z",
+    "caption": "The new dry-stone garth wall round the yard behind the stone cottage, late afternoon from beyond the back corner; rubble coursing and cope read, but the backlit foreground grass is flat and dark.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261018-1138-drywall-gate.jpg",
+    "time": "2026-10-18T11:38:02Z",
+    "caption": "The garth wall's east gateway between two upright stoops at 11 h (first version); the face stones are too evenly coursed and pale with dark joints, so it reads a little brick-like (made more irregular after this shot).",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1200-gate-wide.jpg",
+    "time": "2026-10-18T12:30:00Z",
+    "caption": "The oak five-bar field gate hung shut between the garth wall's stoops behind the stone cottage at 11 h; still wrong: the oak reads pale silver-white and flat at this distance and the wall stones are pale blocks with flat moss tops.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1200-gate-ajar.jpg",
+    "time": "2026-10-18T12:30:00Z",
+    "caption": "Close on the field gate swung half open into the yard (it swings away from the hero and falls shut with a creak and a knock); still wrong: bars and brace read too pale and smooth, wall faces are light rectangular blocks, no track worn through the gateway.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1230-yardwall_noon.jpg",
+    "time": "2026-10-18T12:30:00Z",
+    "caption": "From inside Harrowmere's new yard at noon: dry-stone walls with copes run from the timber house to the stone cottage, the cart gateway open between them; the stones lie in too-even brick-like rows, the moss is flat lime patches and the copes barely read.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1230-yardwall_close.jpg",
+    "time": "2026-10-18T12:30:00Z",
+    "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1330-garth-noon.jpg",
+    "time": "2026-10-18T13:30:00Z",
+    "caption": "From the yard side at 12.5 h: Harrowmere's dry-stone walls are now a cool grey gritstone with grey lichen, and moss only on the tops and shaded faces; still wrong: the garth wall's stones are rounded blocks in level rows and grass fills the foreground.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1330-gate-grey.jpg",
+    "time": "2026-10-18T13:30:00Z",
+    "caption": "The field gate between its moss-capped stoops at noon, the garth wall now grey rather than cream; still wrong: the wall stones read as pale pillowed rectangles in brick-like rows, the cope tops carry flat lime moss and the cottage stones beside it are still cream.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1456-hens-garth.jpg",
+    "time": "2026-10-18T14:56:43Z",
+    "caption": "Three of the garth's five hens (brown, buff, cuckoo) pottering on the scratched-short turf behind the stone cottage at 11:00; still wrong: the bare ground reads as dark straw streaks rather than dusty scratched earth, and the plumage is smooth with little feather breakup.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1456-hens-meadow.jpg",
+    "time": "2026-10-18T14:56:43Z",
+    "caption": "The same hens before the garth was scratched short: lost in knee-high meadow grass, which is why the yard now grows only a patchy short sward.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1600-garth-earth.jpg",
+    "time": "2026-10-18T16:02:34Z",
+    "caption": "The hens' garth is now scratched down to dry bare earth with grit, dust-bath hollows and surviving tufts; still wrong: the claw-rake fans read as dark arrow marks (softened after this shot), the ground is flat grey-brown in the cottage's shade, and the cottage stones are still cream pillows.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1716-henhouse.jpg",
+    "time": "2026-10-18T17:16:00Z",
+    "caption": "The new oak hen house in the garth at 11 h with a hen climbing its ladder to the pop-hole; still wrong: boards read pale silver and flat, the nest box reads as a bare shelf, the garth dust shows smooth pale ovals.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1825-henhouse2.jpg",
+    "time": "2026-10-18T18:25:08Z",
+    "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-1925-stonecottage.jpg",
+    "time": "2026-10-18T19:25:07Z",
+    "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-2015-cottagerubble.jpg",
+    "time": "2026-10-18T20:15:30Z",
+    "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-2114-cottage-rubble.jpg",
+    "time": "2026-10-18T21:14:55Z",
+    "caption": "Stone cottage rubble after the cut/mortar tuning at 15.5 h: stones now fill their beds with narrower, lighter joints, but the facade is backlit in flat shade, the stones still read as rounded grey cobbles with pale tops, and the slate roof's lichen flecks read as noise.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261018-2216-cottage.jpg",
+    "time": "2026-10-18T22:16:17Z",
+    "caption": "Stone cottage door at 9.5 h after the rubble/slate pass: stones now vary in value and the slate lichen is in broad patches, but the wall stones still read as rounded blue-grey cobbles, the facade sits in sky-lit shade, and the lichen bands along the slate tails.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0015-cottage-sunside.jpg",
+    "time": "2026-10-19T00:15:48Z",
+    "caption": "Stone cottage side wall at 9.5 h after the crisp-facet pass: rubble faces are now flat split planes with sharp arrises, but the stones still read as separate pale tiles on a wide dark mortar bed, the wall is still in shade, and the roof moss is bright green.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0015-cottage-wide.jpg",
+    "time": "2026-10-19T00:15:48Z",
+    "caption": "Stone cottage from the green at 15.5 h, backlit through haze with the yard walls in front: a believable farmstead silhouette, but the facade is flat shade and the place is empty of people.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0115-cottage-sunny.jpg",
+    "time": "2026-10-19T01:15:00Z",
+    "caption": "Stone cottage gable in late-morning sun with tighter rubble joints and darker roof moss: the far courses read as real walling, but near stones still float on pale beige mortar and the slates look pillowy.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0246-whitecottage-wide.jpg",
+    "time": "2026-10-19T02:46:13Z",
+    "caption": "The new limewashed cottage on the green beside the timber house, against the afternoon sun; its joints still drew a white-brick grid here (since fixed) and the walls lack splash grime at this range.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0246-whitecottage-gable.jpg",
+    "time": "2026-10-19T02:46:13Z",
+    "caption": "The white cottage's gable close up: the lime now runs unbroken over stones and joints, but flaked patches read as dark holes and the stepped gable courses showed below the verge (tabling added after this shot).",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0414-waterbutt.jpg",
+    "time": "2026-10-19T04:14:52Z",
+    "caption": "The white cottage's new oak water butt under the eaves with the bench by the door: the cask reads as staved oak with rusted hoops, but the water surface is a matte grey-brown disc with no reflection and the limewash still reads as white brick blocks.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0414-waterbutt-rain.jpg",
+    "time": "2026-10-19T04:14:52Z",
+    "caption": "The water butt in rain at 14:00: grey overcast light suits the place, but no rain streaks or rings are visible at this range and the barrel's inside reads empty and dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0450-whitecottage-wide.jpg",
+    "time": "2026-10-19T04:50:00Z",
+    "caption": "The limewashed cottage on the green at 15:00 beside the timber house, its walls now one white lime skin over rubble (the barrel here is a duplicate butt since replaced by the other session's); the slate roof still reads flat and dark and the stack's blocks still show.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0450-limewash-gable.jpg",
+    "time": "2026-10-19T04:50:00Z",
+    "caption": "The white cottage's sunlit gable after the proud-lime pass: the rubble shows only as soft bumps under the coat with small pale flakes; the plane is still a little too even and the lens frames mostly blank wall.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0555-waterbutt.jpg",
+    "time": "2026-10-19T05:55:32Z",
+    "caption": "Water butt by the limewashed cottage: the rainwater now mirrors a cool sky with a dark far rim and floating leaves instead of a matte brown disc; the water is still a little flat and the shadowed yard is dim.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0700-whitecottage-gable.jpg",
+    "time": "2026-10-19T07:00:00Z",
+    "caption": "White cottage on the green at 15.0 h: its gable now ends cleanly under the verge with no stepped stones showing, but the slate roof still reads flat near-black from 15 m and the lime walls look dim beside the sunlit grass.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0700-whitecottage-eaves.jpg",
+    "time": "2026-10-19T07:00:00Z",
+    "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0751-leanto-wide.jpg",
+    "time": "2026-10-19T07:51:15Z",
+    "caption": "The white cottage with its new limewashed woodshed lean-to off the east gable from the meadow: reads as a real outshut, but its outer wall is a plain white block from here and the tall grass hides the woodpile and chopping block.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0751-leanto-woodpile.jpg",
+    "time": "2026-10-19T07:51:15Z",
+    "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0836-lantern-night.jpg",
+    "time": "2026-10-19T08:36:59Z",
+    "caption": "The new oak lantern post on the green at 20:36: candlelight through horn panes pools warm on the grass and throws the frame's shadow on the timber house; the panes glow as one flat bright box and the post reads a little clean.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261019-0836-lantern-day.jpg",
+    "time": "2026-10-19T08:36:59Z",
+    "caption": "The lantern post by day, backlit against the timber house: the post is a dark silhouette, the horn panes read milky white like paper, and the timber house roof is a flat dark plane.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0956-moths.jpg",
+    "time": "2026-10-19T09:56:19Z",
+    "caption": "Moths loop the lit lantern on the green at half past nine at night with fireflies over the meadow; the moths are small warm flecks at this distance, the horn panes still glow as one flat box and the post is too clean.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-0956-moths-close.jpg",
+    "time": "2026-10-19T09:56:19Z",
+    "caption": "Close crop of the moths round the lantern and one settled on the post; they catch the candle warmly but read as specks rather than winged moths except the one nearest the camera.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1029-tracks.jpg",
+    "time": "2026-10-19T10:29:26Z",
+    "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1203-villager-lamp.jpg",
+    "time": "2026-10-19T12:03:27Z",
+    "caption": "Edda at dusk on the green, taper raised to the lantern as its candle catches; her coif reads as a pale veil hiding the face and the taper itself barely shows.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1203-villager-woodpile.jpg",
+    "time": "2026-10-19T12:03:27Z",
+    "caption": "Edda at the woodpile by the white cottage's lean-to in the morning; the house reads well but her bodice still shows the hero's grey armour plates and the hood swallows her face.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1212-trackpools.jpg",
+    "time": "2026-10-19T12:12:11Z",
+    "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1359-edda-heave.jpg",
+    "time": "2026-10-19T13:59:48Z",
+    "caption": "Edda heaves the axe up over her head at the chopping block by the lean-to; she reads small against the white wall from this 3.6 m lens and the axe is hard to pick out.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1359-edda-split.jpg",
+    "time": "2026-10-19T13:59:48Z",
+    "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1440-edda-pail.jpg",
+    "time": "2026-10-19T14:40:02Z",
+    "caption": "Edda at the water butt at 7 am with her pail hung from her right hand; the lens sits behind her so the pail barely reads, and her hair is a smooth blob.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1440-edda-night.jpg",
+    "time": "2026-10-19T14:40:02Z",
+    "caption": "Edda's cottage at 21:20 with its lamp lit now that she is in; the door leaf stands open at night and the limewash reads flat blue-grey.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1530-edda-feed.jpg",
+    "time": "2026-10-19T15:30:00Z",
+    "caption": "Edda at the garth wall at 07:55 casting grain to the hens, which crowd the yard in the foreground; the yard is in deep morning shadow, the grain does not read, and the wall hides her casting arm.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1622-eddatalk.jpg",
+    "time": "2026-10-19T16:22:00Z",
+    "caption": "Wren speaking with Edda at her woodpile, her line about Tam as a subtitle; her face is lost under the coif, the hero hides half of her and the lean-to plaster reads flat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1730-feedwait.jpg",
+    "time": "2026-10-19T17:30:00Z",
+    "caption": "Morning feed: the hens lined up at the inside of the garth wall at Edda's call, her hooded figure beyond it with the grain bag; the yard foreground is backlit nearly black and the hens read small and dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1845-bench.jpg",
+    "time": "2026-10-19T18:45:00Z",
+    "caption": "Edda on her bench at 20:00 under fireflies, where she now hums; still wrong: the scene is crushed navy, her face is lost under the coif and the lantern glow paints a green-yellow smear on the wall.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-1845-heave.jpg",
+    "time": "2026-10-19T18:45:00Z",
+    "caption": "Edda at the block with the axe over her head at the top of the heave, the moment before her breath goes out; still wrong: seen from behind she reads small against the white wall, the woodstack is a flat pattern and the bench under the window is half lost.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2000-lantwide.jpg",
+    "time": "2026-10-19T20:00:49Z",
+    "caption": "The lantern post at 21:30 from the green: a soft, wide amber pool on the track, grass and timber house front, meadow silver-blue under the moon; the pool on the grass is still a touch red and the houses read dark and flat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2000-bench.jpg",
+    "time": "2026-10-19T20:00:49Z",
+    "caption": "Edda on her bench at 20:00 with the firefly lime disc gone from the limewash; the frame is still crushed navy and her face is lost under the white coif.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2120-bat.jpg",
+    "time": "2026-10-19T21:20:00Z",
+    "caption": "The new bat hawking moths above the lit lantern on the green; it reads only as a tiny flat orange cut-out against the roof (membrane backlight/emission far too strong, lens too far), and the night frame is still crushed navy.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2050-bat-roost.jpg",
+    "time": "2026-10-19T21:45:00Z",
+    "caption": "The pipistrelle hanging head down under the white cottage's woodshed boards between the rafters at 17:30, wings wrapped; still wrong: its fur glows red-orange in the shade (night candle backlight too strong by day) so it reads as a blob, not a dark brown bat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2311-doorstones-white.jpg",
+    "time": "2026-10-19T23:11:10Z",
+    "caption": "Stepping stones outside the white cottage door: the slabs are laid on the worn track but read as dark blue-grey pillowed lumps in the house shade, not pale trodden flags.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261019-2311-doorstones-white-wide.jpg",
+    "time": "2026-10-19T23:11:10Z",
+    "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0000-bat-roost-dark.jpg",
+    "time": "2026-10-20T00:10:00Z",
+    "caption": "The pipistrelle hanging under the woodshed boards at 17:30 now reads as a dark brown bat instead of a glowing red-orange blob (fur backlight removed); still wrong: at this range it is a tiny featureless silhouette, no fur, ears or wrapped-wing shape readable.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0036-doorstones-stone.jpg",
+    "time": "2026-10-20T00:36:07Z",
+    "caption": "The stone cottage's door slabs now have no grass through them, but the track sits in deep house shade and tall tussocks crowd both sides, so the slabs still read as dark shapes.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0036-doorstones-timber.jpg",
+    "time": "2026-10-20T00:36:07Z",
+    "caption": "The timber house at late afternoon: its door slabs lie in a narrow worn strip that tall grass leans over and almost hides; the stones need to be paler and the grass beside the track shorter.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0155-doorstones-worn-stone.jpg",
+    "time": "2026-10-20T01:55:00Z",
+    "caption": "The stone cottage's door slabs now read as pale foot-worn flags and the tall tussocks have stepped back from them; still wrong: the whole doorway sits in deep blue-black shade and the near slab looks like a smooth flat tile.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0155-doorstones-worn-timber.jpg",
+    "time": "2026-10-20T01:55:00Z",
+    "caption": "The timber house's door slabs now show clear of the grass with clean walked tops; still wrong: they read as small blue-grey lumps rather than broad flat warm flags, and the house's infill panels look flat white.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0250-doorstones-flags-timber.jpg",
+    "time": "2026-10-20T02:50:00Z",
+    "caption": "The timber house's door stones now lie as broad, thin split flags across the track with clouded worn tops and dirt in their edges; still wrong: they read cool grey-white and too smooth in the late light, and the house infill looks flat white.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0250-doorstones-flags-stone.jpg",
+    "time": "2026-10-20T02:50:00Z",
+    "caption": "The stone cottage's door flags now read flat and broad underfoot; still wrong: the whole doorway sits in deep blue-black shade so the stones and the wall barely read.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0330-doorstones-wet-timber.jpg",
+    "time": "2026-10-20T03:45:00Z",
+    "caption": "Timber house door flags in a storm at 16:30: the worn tops now read wet with a bright sky sheen; still fail: frame very dark, sheen a little milky, the edge pools barely show.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0330-doorstones-wet-white.jpg",
+    "time": "2026-10-20T03:45:00Z",
+    "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0430-doorstones-poolskin-fail.jpg",
+    "time": "2026-10-20T04:30:00Z",
+    "caption": "White cottage door flags in rain at 13:00 with a trial opaque pool skin: the whole patch round the slabs drew as a white mirror instead of thin edge pools; the trial was reverted, only the darker wet-flag tops were kept.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0520-doorstones-pools.jpg",
+    "time": "2026-10-20T05:20:00Z",
+    "caption": "White cottage door flags soaked at 13:00: the rain pools along the slab edges are now an opaque water skin (no more white-mirror bug) showing faint sky in the hollows, but the doorway sits in deep shade and the pools still read as dark wet ground.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0706-doorbounce.jpg",
+    "time": "2026-10-20T07:06:10Z",
+    "caption": "The white cottage doorway at 13 h, now lifted out of blue-black shade by a warm yard-bounce fill; the fill still pools a little lamp-like on the nearest slabs and the grass in front stays dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0706-rainpools.jpg",
+    "time": "2026-10-20T07:06:10Z",
+    "caption": "The timber house door stones in real rain (rain 0.5 now actually falls in shots): splash rings and wet slabs, but the overcast frame is dark and murky.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0735-doorstones-timber-storm.jpg",
+    "time": "2026-10-20T07:35:43Z",
+    "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0820-doorstones-storm-lifted.jpg",
+    "time": "2026-10-20T08:20:00Z",
+    "caption": "Same storm at the timber house door after the lift: the storm frame reads a good stop brighter and the flags now sit in bare dark loam with the sward cleared off the pool band; still wrong: the flags read as smooth pale lumps and the pools barely show.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-0949-dog-green.jpg",
+    "time": "2026-10-20T09:49:33Z",
+    "caption": "Brack, Edda's new black-and-white collie, sat on the green by the timber house; it reads as a dog but the tall meadow grass buries it and the low lens sits in the grass.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1059-dog-track.jpg",
+    "time": "2026-10-20T10:59:14Z",
+    "caption": "Brack sat on the white cottage's trodden track with the door behind him, now fully in view instead of buried in the meadow; still wrong: the foreground lies in deep shade and his coat reads flat and faceted.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1059-dog-night.jpg",
+    "time": "2026-10-20T10:59:14Z",
+    "caption": "Edda's cottage at 22 h with fireflies, Brack lying down in his place by the door; still wrong: he is lost in the dark at the wall foot and the frame is murky blue-black.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1136-dog-sun.jpg",
+    "time": "2026-10-20T11:36:00Z",
+    "caption": "Brack lying in the sun on the trodden track before the white cottage: he reads as a low black-and-white dog lying down, but he is small, in the shade of the tall foreground grass, and the near grass is a dark wall.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1158-dog-doze.jpg",
+    "time": "2026-10-20T11:58:00Z",
+    "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1237-osric.jpg",
+    "time": "2026-10-20T12:37:54Z",
+    "caption": "Osric, the new stone-cottage villager, tending his garth at 15.5 h with Edda beyond the field gate; FAIL: the foreground is in deep shade and his pale hood reads as a veil over his face.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1430-osric-face.jpg",
+    "time": "2026-10-20T14:30:22Z",
+    "caption": "Osric on his step at 07:00 with his own face for the first time: a nose and a grizzled grey beard under the hood instead of the face cloth; FAIL: the skin is a flat orange mask, the eyes glint red and the beard reads as grey bark, not hair.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1430-osric-lean.jpg",
+    "time": "2026-10-20T14:30:22Z",
+    "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1503-osric-flock.jpg",
+    "time": "2026-10-20T15:03:13Z",
+    "caption": "The hens have drifted over to peck round Osric's boots while he tends the sunlit garth; still wrong: he wears the hero's wide straw douli and a pale hood that reads as a mask, and stands stiff.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1503-osric-lean-face.jpg",
+    "time": "2026-10-20T15:03:13Z",
+    "caption": "Osric leaning on the garth wall at 9.5 h, close up: broken -- an oversized hat brim hides the bowed head entirely, the forearms are blocky stubs, and the cope stones are blurry at this range.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1540-osric-face.jpg",
+    "time": "2026-10-20T15:40:01Z",
+    "caption": "Osric at his door at 07:00 with an older, paler skin in place of the orange mask; FAIL: the beard (this frame from before the re-tune) reads as a flat white plaster patch, an eye still glints red and armour shows at the collar.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1540-osric-lean.jpg",
+    "time": "2026-10-20T15:40:01Z",
+    "caption": "Osric leaning on the garth wall at 09:30, head now lifted to look out over the field, hens on the garth, the vale and peaks behind; FAIL: he is too small and side-on to read his face, and the forearm wraps are still blocky.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1659-osric-felthat.jpg",
+    "time": "2026-10-20T16:59:44Z",
+    "caption": "Osric on his step at 7 h with a dark hood (no more pale ski mask) and the new felt hat, which still reads as a tall stovepipe; red eye glint, flat beard and collar armour still show.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1659-edda-osric-pair.jpg",
+    "time": "2026-10-20T16:59:44Z",
+    "caption": "Edda at the garth wall and Osric in the garth turned to each other mid-exchange at 16.4 h; both are small and the dry-wall foreground is in deep shade.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1832-osric-felthat.jpg",
+    "time": "2026-10-20T18:32:35Z",
+    "caption": "Osric at his door at 07:00 in the reworked felt hat (low round crown with a crease, drooping 9 cm brim, sat down on a dark hood); the face is still in deep shade under the brim, the beard reads as flat grey bark and armour shows at the collar.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-1930-osric-facefill.jpg",
+    "time": "2026-10-20T19:30:54Z",
+    "caption": "Osric at his door at 07:00 with a stronger face fill under the felt brim: his face, nose and eyes finally show, but the lightened beard reads as a pale flat block with a ruled lower edge and a grey plate still shows under it.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-2045-osric-beard.jpg",
+    "time": "2026-10-20T20:45:28Z",
+    "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-2140-osric-smock.jpg",
+    "time": "2026-10-20T21:40:00Z",
+    "caption": "Osric at his door at dawn in a wool smock (no more armour plates on his chest) with a beard in locks; the beard is still too yellow-brown with wood-grain-like strands and the smock a little bright.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-2220-osric-ashbeard.jpg",
+    "time": "2026-10-20T22:20:00Z",
+    "caption": "Osric at his door at dawn with a cooler ash-grey beard (yellow only at the lip) and a darker wool smock; the beard still shows fine vertical streaks, the felt hat reads orange-brown and cowboy-like, and the cape looks smooth.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261020-2340-osric-hat.jpg",
+    "time": "2026-10-20T23:40:00Z",
+    "caption": "Osric at his door at dawn: the felt hat is darker, matte and droops all round now, but still reads warm brown, and the cape is smooth and plasticky.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0040-osric-coolhat.jpg",
+    "time": "2026-10-21T00:40:00Z",
+    "caption": "Osric at his door at dawn: the felt hat is a cooler dark grey-brown and the cape shows wool fibre instead of plastic, but the brim still curls up at the sides and the cape and beard carry fine vertical streaks.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0210-kitemob.jpg",
+    "time": "2026-10-21T02:10:00Z",
+    "caption": "A red kite pulls up from its stoop over the meadow with four rooks mobbing it from below; the birds read, but the frame is mostly empty sky and one cloud shows a hard straight top edge.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0229-osric-brim.jpg",
+    "time": "2026-10-21T02:29:00Z",
+    "caption": "Osric at dawn by his cottage: the felt brim now droops all round like a slouch hat and the wool cape has lost its wood-grain streaks, but the beard still shows fine vertical streaks and the skin reads flat orange.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0350-pedlar.jpg",
+    "time": "2026-10-21T03:50:00Z",
+    "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0444-road.jpg",
+    "time": "2026-10-21T04:44:21Z",
+    "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261021-0540-kitemob.jpg",
+    "time": "2026-10-21T05:40:00Z",
+    "caption": "A red kite shrieking as it climbs away from four mobbing rooks over the meadow at 11:00; still wrong: an empty flat sky with the birds as tiny silhouettes, no landscape to anchor the frame.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0627-dogwoof.jpg",
+    "time": "2026-10-21T06:27:58Z",
+    "caption": "Brack the collie stands stiff-tailed on the green watching Wat the pedlar after woofing at him; the low lens sits in tall grass whose blades read as flat paper ribbons, and a flat grey wall edge intrudes at the right.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0750-pedlar-sidestep.jpg",
+    "time": "2026-10-21T07:50:00Z",
+    "caption": "Wat the pedlar walking off the green past the lantern post, bending his line round Brack sat in his road; still wrong: the lens frames him half behind the post with the dog lost in tall grass, near grass blades read as flat paper ribbons and the figures read blocky at this distance.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-0840-verge.jpg",
+    "time": "2026-10-21T08:40:00Z",
+    "caption": "Wat walks the cart track toward the village with daisies and buttercups now edging the verge; the taller yarrow and knapweed of the verge ribbons are mostly drowned in the ripe grass, so the verges do not yet read as a distinct flowered strip.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261021-0953-verge-cropped.jpg",
+    "time": "2026-10-21T09:53:00Z",
+    "caption": "Wat walks the cart track toward the village; the verges either side of the ruts are now cropped to a short green turf so the daisies and buttercups stand over it as a clear ribbon against the ripe meadow; near-lens grass blades still read as flat ribbons and the yarrow/knapweed are sparse in frame.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261021-1041-rut-stones.jpg",
+    "time": "2026-10-21T10:41:00Z",
+    "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
+    "verdict": "pass"
+  },
+  {
+    "file": "20261021-1124-near-grass.jpg",
+    "time": "2026-10-21T11:24:34Z",
+    "caption": "Low lens in the meadow behind Brack the collie watching Wat: the near grass now shrinks into the sward close to the camera and shows rolled, ribbed blades instead of hand-sized paper ribbons; still wrong: a grey slab at the right frame edge, HUD bars on, the dog reads a little flat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1250-stile.jpg",
+    "time": "2026-10-21T12:45:00Z",
+    "caption": "The new squeeze stile in the garth's back wall seen from the fell footpath: two leaning slabs with a worn path through the slot toward Osric's cottage; still wrong: the slot reads wider than a real squeeze stile, the wall courses look too regular and tiled, and the light is flat.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1349-stile.jpg",
+    "time": "2026-10-21T13:49:50Z",
+    "caption": "The squeeze stile in the garth's back wall from the fell footpath: two leaning gritstone slabs with their tops rubbed bare by hands, a beaten path through the slot, no HUD bars; still wrong: the slabs' narrow faces read plain grey and the wall's dark joints form a regular grid.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1449-stile.jpg",
+    "time": "2026-10-21T14:49:17Z",
+    "caption": "The garth wall from the fell footpath with the new chip-and-moss hearting and uneven head joints; the joints still read as a near-black grid behind pale stones, and a figure stands in front of the stile.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1529-stile.jpg",
+    "time": "2026-10-21T15:29:00Z",
+    "caption": "The garth wall and squeeze stile from the fell footpath at mid-morning: face stones now butt on tight beds in varied greys with dark crust patches, no longer pale tiles on a black joint grid; still wrong: the stones read as too-regular rectangular blocks, the cope is a uniform green moss band and the slabs' faces are plain.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1630-stile-askew.jpg",
+    "time": "2026-10-21T16:30:00Z",
+    "caption": "The garth wall's stones now split askew with leaning head joints, thin slates and a few knocked cope stones, and the cope moss is broken into cushions; the cope still reads as a row of similar upright slabs and the near face stones are still too boxy.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1754-stile-cope.jpg",
+    "time": "2026-10-21T17:54:38Z",
+    "caption": "Garth wall squeeze stile at 10:00: the cope now rises and falls in runs with leaning stones and blocky capstones instead of a row of like slabs; the near face stones on the right still read as pale boxy blocks with sharp arrises.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1831-stile-rubble.jpg",
+    "time": "2026-10-21T18:31:47Z",
+    "caption": "Garth wall by the squeeze stile at 10:00: field stones now rounded, chipped rubble in darker greys; the cope now reads as rounded mossy lumps rather than split slabs and the far-left run's faces are still flat tiles in a regular grid.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-1944-osric-fell.jpg",
+    "time": "2026-10-21T19:44:00Z",
+    "caption": "Osric out past the garth's back wall at 17:00, standing on the fell footpath where his flock grazed, the stone cottage behind: a living moment, but he reads stiff and underlit in the sunset shade and his face reads as a pale mask at this distance.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-2006-osric-stile.jpg",
+    "time": "2026-10-21T20:06:00Z",
+    "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-2045-osric-fell-stance.jpg",
+    "time": "2026-10-21T20:45:00Z",
+    "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-2140-osric-beard-before.jpg",
+    "time": "2026-10-21T21:40:00Z",
+    "caption": "Osric's face portrait at 17:00 before the fix: the 'pale strip' under his jaw is his beard, a 20 cm flat grey plate hanging down his chest; his face above it is a reddish mask.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-2215-osric-beard.jpg",
+    "time": "2026-10-21T22:15:00Z",
+    "caption": "Osric's beard is now short and full, tapering to a point and shaded at the sides and underneath; still a fail: his face is a flat reddish mask with no eyes showing under the brim and the hood frames it like a helmet.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261021-2350-osric-face.jpg",
+    "time": "2026-10-21T23:50:00Z",
+    "caption": "Osric's face at 17:10 with a greyer, less ruddy skin, darker sockets and lighter brow and cheekbones; still a fail: the eyes sit in the brim's shade so the face reads as a nose and beard in a dark hood.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0030-osric-eyes.jpg",
+    "time": "2026-10-22T00:30:00Z",
+    "caption": "Osric at 17:10 with the felt hat tipped back and an eye-level fill: his eyes now show as two lit slits under the brim; still a fail: the hood is a stiff box round a small face, the beard reads pale and the cape is flat wood-grain cloth.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0200-osric-hood.jpg",
+    "time": "2026-10-22T02:00:00Z",
+    "caption": "Osric at 17:10: the beard is now dark grizzled grey with clumped locks and the cape has lost its wood-grain rings; still a fail: from the front the hood still frames the face as a squarish opening and the cape is now a plain, untextured-looking brown.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0300-osric-dust.jpg",
+    "time": "2026-10-22T03:00:00Z",
+    "caption": "Osric at the garth in late sun: his hood now hangs askew with a worn uneven rim and his wool mantle carries road dust and wear; his face still reads as a smooth mask and the mantle is still too clean-edged.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0400-osric-slide.jpg",
+    "time": "2026-10-22T04:00:00Z",
+    "caption": "Osric bent to the hen house at dusk as he drops the pop-hole slide; the sun is already down so the frame is near black, only his hat and the ladder show against the fireflies.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0431-watlamp.jpg",
+    "time": "2026-10-22T04:31:04Z",
+    "caption": "Wat the pedlar on the cart track at dusk, his horn lantern lit at his knee throwing a warm swinging pool on the ruts; still wrong: the lens catches his back not his face, the horn panes blow out flat orange, and a flower stalk cuts the foreground.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0654-henfox.jpg",
+    "time": "2026-10-22T06:54:00Z",
+    "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0654-henfoxdusk.jpg",
+    "time": "2026-10-22T06:54:00Z",
+    "caption": "Same moment at 19:54 from the garth: the hen house and ladder read against the moonlit trees, but the fox is only a red smear in the dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0700-watlamp2.jpg",
+    "time": "2026-10-22T07:00:00Z",
+    "caption": "Wat walks the cart track at dusk with his horn lantern now glowing a soft amber, fireflies over the meadow; seen from behind, the scene beyond the lantern pool is nearly black and the pool reads as a red-brown smear.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-0830-foxfur.jpg",
+    "time": "2026-10-22T08:30:00Z",
+    "caption": "Fur pass on the fox at Osric's hen ladder at 17:24: the coat is now a muted ginger-brown with combed tufts and no red glow, but Osric happens to be standing in front of it, so the fur is barely seen and needs a clean night re-shot.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1000-osriclookout.jpg",
+    "time": "2026-10-22T10:00:00Z",
+    "caption": "Osric woken at 01:30, out at the gap in the yard wall with his horn lantern lit and warm light on the wall stones; but the lantern hangs at his waist instead of held up, his face is lost under the brim, and the moonlit night reads flat blue-grey rather than Wukong-dark.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1345-lookout2.jpg",
+    "time": "2026-10-22T13:45:00Z",
+    "caption": "Osric at the yard-wall gap at 01:30 now holds his lit horn lantern up before his chest and its warm light falls on the wall stones; but his face is still a dark smudge under the brim, his coat reads flat pale grey, and the moonlit night is flat blue.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1430-lookout3.jpg",
+    "time": "2026-10-22T14:34:00Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: its glow now lights his face and beard from below, Brack sits at his knee and only a few fireflies remain; still wrong: a dark raised fist beside his face, the whitewashed cottage glows too bright and blue for the small hours, and his coat reads flat pale grey.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1547-lookout4.jpg",
+    "time": "2026-10-22T15:47:22Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with the lantern held out to his side, fist clear of his face, under a greyer, less blue moon; still wrong: his face falls dark again, the raised open hand reads like a wave, the coat is flat pale grey.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1715-lookout6.jpg",
+    "time": "2026-10-22T17:15:46Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with his fingers now closed into a fist round the lantern bail and the lantern hanging below it; still wrong: his thumb hooks out toward his face, his face under the brim still reads dark, and the coat is flat pale grey.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-1858-lookout.jpg",
+    "time": "2026-10-22T18:58:13Z",
+    "caption": "Osric at the yard-wall gap at night: the lantern's glow now reaches his cheek and the underside of the brim, but his thumb still sticks out sideways off the bail like a hitch-hiker's and the face is still mostly shadow.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-2031-lookout8.jpg",
+    "time": "2026-10-22T20:31:36Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with the lantern's glow now leaning up toward his face, so his face and beard read warm under the hat brim; still wrong: a hard bright band lights the brim's underside, the coat is flat pale grey with no weave, and the right-hand wall stones show orange-red patches.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-2049-lookout.jpg",
+    "time": "2026-10-22T20:49:00Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with his lantern fist after the thumb-wrap change: the hand reads as a fist, but at close range the thumb still pokes out sideways from its top, his face is a dark mask under a bucket-like hat, and the right-hand wall stones still carry orange-red patches.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-2141-lookout9.jpg",
+    "time": "2026-10-22T21:41:19Z",
+    "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: the glow on his hat brim is dimmer and narrower than before, but a bright streak still crosses the brim's front, his face is still mostly shadow, the hat reads like a bucket and the thumb pokes up.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-2246-lookout10.jpg",
+    "time": "2026-10-22T22:46:43Z",
+    "caption": "Osric holding his lantern up at the yard-wall gap at night: the bright band across his hat brim has shrunk to a small warm spot at the left edge, but his face is still mostly shadow and the hat still reads as a bucket.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261022-2346-osric-hat.jpg",
+    "time": "2026-10-22T23:46:13Z",
+    "caption": "Osric at dusk with his reshaped felt hat: the crown now tapers into a pinched, slumped dome and the brim snaps down front and back instead of a straight-sided bucket; his face is still mostly shadow and the crown still stands a touch tall.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0110-osric-cape.jpg",
+    "time": "2026-10-23T01:10:00Z",
+    "caption": "Osric at 17:10 after the wool-cape weathering pass: only a faint sun-faded grey reads across the top of the cape, the damp hem and mud flecks are out of frame, and the cape still reads as one smooth sheet with a bucket-ish hat and a shadowed face.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0236-osric-cape2.jpg",
+    "time": "2026-10-23T02:36:00Z",
+    "caption": "Osric full figure at 17:10 after deepening the wool cape's folds: a few vertical fold shadows now break the cape, but the whole figure still reads pale grey and flat against the dark field, the hem detail is lost at this range, and the frame is underlit.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0340-osric-dark.jpg",
+    "time": "2026-10-23T03:40:00Z",
+    "caption": "Osric at 17:10 with a darker oiled-wool cape and smock and a lower hat crown: he now sits into the field instead of reading as a pale grey cut-out, but the ochre rope girdle is now the brightest patch on him, the cape still reads flat, and the pose is stiff.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0447-osric-sash.jpg",
+    "time": "2026-10-23T04:47:39Z",
+    "caption": "Osric at 17:10 with his rope girdle and shin wraps dulled to old grey-brown hemp and mud-greyed linen: the bright ochre band at his waist is gone, but he still reads as a stiff dark mannequin and the cape's right edge juts out sideways like a stiff flap.",
+    "verdict": "fail"
+  }
 ]

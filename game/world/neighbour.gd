@@ -142,8 +142,10 @@ func _dress() -> void:
 		"mantle": [Color(0.045, 0.041, 0.036), Color(0.19, 0.172, 0.142), 0.35],
 		# darker again: the undyed fleece-grey read bright against the dusk (0.38 too)
 		"robe": [Color(0.09, 0.081, 0.07), Color(0.32, 0.298, 0.26), 0.4],
-		"sash": [Color(0.12, 0.10, 0.065), Color(0.42, 0.36, 0.24), 0.3],
-		"wraps": [Color(0.09, 0.085, 0.075), Color(0.40, 0.38, 0.34), 0.4],
+		# old grey-brown hemp: at 0.42 ochre the girdle was the brightest patch on him at dusk
+		"sash": [Color(0.07, 0.061, 0.046), Color(0.25, 0.218, 0.162), 0.35],
+		# mud-greyed linen: at 0.40 the shin wraps lit up under the darker smock
+		"wraps": [Color(0.075, 0.07, 0.062), Color(0.31, 0.294, 0.262), 0.4],
 	}
 	garb.robe_len = 0.85
 	garb.felt_hat = true
