@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1200-gate-wide.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "The oak five-bar field gate hung shut between the garth wall's stoops behind the stone cottage at 11 h; still wrong: the oak reads pale silver-white and flat at this distance and the wall stones are pale blocks with flat moss tops.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1230-yardwall_close.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
@@ -891,6 +885,12 @@
   "file": "20261023-1938-climb-masonry.jpg",
   "time": "2026-10-23T19:38:00Z",
   "caption": "The hero climbing the keep, whose stones now vary from pale buff to dark weathered grey, with frost spalls and black-green drip stains under each course; the masonry still reads as stacked rectangular blocks and the camera still sits behind the hero.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-2022-climb-relief.jpg",
+  "time": "2026-10-23T20:22:32Z",
+  "caption": "The climbing hero on the keep from a raking angle: face stones now set proud or sunk back and some cut short under dark open joints, with crisper arrises; the camera still sits mostly behind the hero and the moss on the stone tops is a flat green.",
   "verdict": "fail"
  }
 ]
