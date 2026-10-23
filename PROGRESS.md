@@ -33,14 +33,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (14:00 10-23) **Low-sun skylight in the dirt round the door stones** (bot-verified; shot `osricfill5` pending at commit time).
+- (14:00 10-23) **Low-sun skylight in the dirt round the door stones** (bot-verified, shot `osricfill5`).
   stone_gap.gdshader now reads the `ground_fill` global and adds loam x ground_fill x
   (1 - 0.5 x wet margin) as EMISSION, like terrain, grass and masonry: the packed-loam crack decal
   round each slab no longer stays a black band between the lit slabs and the lifted earth at
   07:00/17:00 (0 at noon and night). The doorstones bot now fails if the gap material stops reading
   ground_fill. Bots pass: doorstones gfx walk yardpath (yardpath failed once in a back-to-back batch
   with "hero does not splash in the track pool", then passed 3x in a row with and without the
-  change: a timing flake, see Known bugs). Shot pending at commit time.
+  change: a timing flake, see Known bugs). Shot `osric osricfill5 90 7.2` (Forward+, ~50 min, verdict
+  FAIL, gallery *-osric-stonegap.jpg): next to *-osric-doorstones.jpg the cracks round the slabs are
+  a touch browner instead of black; the gain is small. The limit is now the frame as a whole in the
+  cottage's shade: the foreground sward, the wall foot and Osric's coat sink. NEXT: an overall
+  shade lift at a low sun (e.g. a stronger sky ambient or a SSIL/SDFGI bounce boost at 07:00/17:00,
+  not more per-shader fills), then the night yard-wall shot (verify 808a6d8), Edda's idle re-shoot,
+  the thumb stub, fox fur re-shoot, Wat's lantern `watlamp3`.
 - (13:00 10-23) **Low-sun skylight on the door stones and wall tops** (bot-verified, shot `osricfill4`).
   masonry.gdshader now reads the `ground_fill` global and adds ALBEDO x ground_fill x
   smoothstep(0.5, 0.9, n.y) x AO as EMISSION, as terrain and grass already did: the door stones'
