@@ -38,7 +38,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   bare stones 18 % -> 10 %. shot.gd `climb ... side`: after the warm-up the lens is rebuilt from
   player.body's basis (+Z into the wall): 1.1 m out from the face, 2.8 m to the hero's left,
   0.4 m above the chest, looking at the hands, so the hero is side-on and the bed tops over the
-  hands show. NEXT: judge `climb8`; then glide.
+  hands show. Shot `climb climb8 60 10.5 fixfps side` (Forward+, ~25 min), verdict FAIL, gallery
+  *-climb-side.jpg: fwd logged (0.93, 0, 0.37); the hero is still seen from the back-left quarter
+  (so the model's facing is not body +Z into the wall during the climb pose, or the lateral is
+  flipped: print the hips bone forward and aim from that), the bed tops sit above the lens so
+  the moss cannot be judged (raise the lens ~1.5 m above the hands looking down), and the keep's
+  stones read too pale and even, like plaster blocks: darken/desaturate the ruin albedo ~20 %
+  and add more per-stone value spread. NEXT: those, then glide.
 - (21:00 10-23) **Moss on the keep's beds as a living pile** (bot-verified `climb ruin walk moss`; shot `climb7`, verdict FAIL, gallery *-climb-moss.jpg).
   masonry.gdshader, ruin laid stones only: the top moss now grows in cushions and mats (fbm
   2.6/1.2/2.6 per stone, thicker toward the joints and arrises), its edges broken into tufts

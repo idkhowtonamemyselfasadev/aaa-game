@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1230-yardwall_noon.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "From inside Harrowmere's new yard at noon: dry-stone walls with copes run from the timber house to the stone cottage, the cart gateway open between them; the stones lie in too-even brick-like rows, the moss is flat lime patches and the copes barely read.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1330-garth-noon.jpg",
   "time": "2026-10-18T13:30:00Z",
   "caption": "From the yard side at 12.5 h: Harrowmere's dry-stone walls are now a cool grey gritstone with grey lichen, and moss only on the tops and shaded faces; still wrong: the garth wall's stones are rounded blocks in level rows and grass fills the foreground.",
@@ -891,6 +885,12 @@
   "file": "20261023-2126-climb-moss.jpg",
   "time": "2026-10-23T21:26:50Z",
   "caption": "The climbing hero on the keep after the moss pass: the flat green slabs on the stone tops are gone, but the moss is now too sparse to read as cushions, and the camera still sees the hero mostly from behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-2234-climb-side.jpg",
+  "time": "2026-10-23T22:34:00Z",
+  "caption": "The hero climbing the keep, re-aimed from their facing after warm-up: the frame now shows the staff, sash and hands on the stones, but the lens still sits behind the shoulder, the bed tops are above eye level so the moss cannot be seen, and the stones read pale and flat like plaster blocks.",
   "verdict": "fail"
  }
 ]
