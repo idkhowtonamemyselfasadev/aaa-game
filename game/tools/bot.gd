@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -110,6 +110,9 @@ func _ready() -> void:
 		return
 	if name == "kite":
 		_kite_test()
+		return
+	if name == "climb":
+		_climb_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -4357,6 +4360,140 @@ func _ruin_test() -> void:
 	if far > 3.4:
 		return _combat_done(false, "walked through the tower wall")
 	_combat_done(true, "walked in through the breach and the walls hold")
+
+## Climbing: walking into the keep's outer face does not grab it; a jump at it does, the
+## stick climbs the stones and the hero hauls up over the crown to stand on the wall top.
+## On a second try the grip gives out when stamina runs dry and the hero drops to the turf,
+## and a dodge lets go of the face.
+func _climb_test() -> void:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var rs := ruins.site
+	var breach := atan2(-rs.z, -rs.x)
+	var pick := INF
+	var best := -1.0
+	for k in 180:
+		var a := TAU * k / 180.0
+		if absf(wrapf(a - breach, -PI, PI)) < 1.2:
+			continue
+		var g := terrain.height_at(rs.x + cos(a) * 5.2, rs.z + sin(a) * 5.2)
+		var h := ruins.wall_top(a, 4.3) - g
+		var lo := ruins.wall_top(a - 0.06, 4.3) - g
+		var hi := ruins.wall_top(a + 0.06, 4.3) - g
+		var score := absf(h - 3.6) + absf(lo - h) + absf(hi - h)
+		if h > 2.8 and h < 4.6 and score < pick:
+			pick = score
+			best = a
+	if best < 0.0:
+		return _combat_done(false, "no stretch of the keep's outer face 3-4.5 m high")
+	var rad := Vector3(cos(best), 0, sin(best))
+	var ground := terrain.height_at(rs.x + rad.x * 6.5, rs.z + rad.z * 6.5)
+	var crown := ruins.wall_top(best, 4.3)
+	p.global_position = Vector3(rs.x + rad.x * 6.5, ground + 0.3, rs.z + rad.z * 6.5)
+	p.set_look(atan2(rad.x, rad.z), -0.2)
+	await _ticks(30)
+	print("BOT climb: face at %.2f rad, crown %.2f m above the turf" % [best, crown - ground])
+	# walk at the wall: blocked, no grab
+	var t := 0.0
+	while t < 3.0:
+		p.bot_input = _input_toward(rs)
+		await _ticks(6)
+		t += 0.1
+	var r0 := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
+	print("BOT climb: walked into the face, %.2f m from the keep's centre, climbing %s" % [r0, p.climbing])
+	if p.climbs > 0 or p.mantles > 0:
+		return _combat_done(false, "walking into a wall grabbed it")
+	if r0 > 5.6:
+		return _combat_done(false, "never reached the face (scree in the way?)")
+	var st0 := p.stamina
+	p.bot_jump = true
+	t = 0.0
+	while t < 1.5 and p.climbs == 0 and p.mantles == 0:
+		p.bot_input = _input_toward(rs)
+		await _ticks(3)
+		t += 0.05
+	print("BOT climb: jumped at the face, climbs %d mantles %d after %.2f s" % [p.climbs, p.mantles, t])
+	if p.climbs == 0 and p.mantles == 0:
+		return _combat_done(false, "a jump at the keep face did not catch hold")
+	var top_y := -INF
+	t = 0.0
+	var low_y := p.global_position.y
+	var arm_max := 0.0
+	var stride_span := Vector2(INF, -INF)
+	var rate_max := 0.0
+	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
+		p.bot_input = Vector2(0, -1)
+		await _ticks(3)
+		t += 0.05
+		top_y = maxf(top_y, p.global_position.y)
+		if p.climbing and p._lunge_t < 0.0:
+			rate_max = maxf(rate_max, p.climb_rate)
+		if p.climbing:
+			arm_max = maxf(arm_max, p.crumple.arm)
+			stride_span = Vector2(minf(stride_span.x, p.crumple.stride), maxf(stride_span.y, p.crumple.stride))
+	p.bot_input = Vector2.ZERO
+	await _ticks(30)
+	var rr := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
+	print("BOT climb: %.1f s on the face, climbed %.2f m, mantles %d, now %.2f m above the turf at r %.2f, on floor %s, stamina %.0f -> %.0f" % [t, p.climbed, p.mantles, p.global_position.y - ground, rr, p.is_on_floor(), st0, p.stamina])
+	print("BOT climb: arms up %.2f rad, reach cycle %.2f..%.2f, crumple off after %s, fastest %.2f m/s on the face" % [arm_max, stride_span.x, stride_span.y, not p.crumple.active, rate_max])
+	if rate_max > Player.CLIMB_SPEED * 1.5:
+		return _combat_done(false, "shot up the face far faster than a climb")
+	if p.mantles == 0:
+		return _combat_done(false, "never hauled up over the crown")
+	if p.global_position.y < crown - 0.9 or rr < 2.9 or rr > 4.9:
+		return _combat_done(false, "not standing on the wall top after the haul-up")
+	if not p.is_on_floor() or p.climbing:
+		return _combat_done(false, "not standing after the haul-up")
+	if p.climbs > 0 and (arm_max < 2.0 or stride_span.y - stride_span.x < 0.4):
+		return _combat_done(false, "climbing pose missing (arms not up or no hand-over-hand)")
+	if p.crumple.active:
+		return _combat_done(false, "climbing pose left on after standing up")
+	if p.stamina >= st0 and p.climbs > 0:
+		return _combat_done(false, "climbing cost no stamina")
+	# second try: out of stamina the grip fails
+	p.global_position = Vector3(rs.x + rad.x * 5.4, ground + 0.3, rs.z + rad.z * 5.4)
+	p.velocity = Vector3.ZERO
+	await _ticks(40)
+	p.bot_jump = true
+	t = 0.0
+	while t < 1.5 and not p.climbing:
+		p.bot_input = _input_toward(rs)
+		await _ticks(3)
+		t += 0.05
+	if not p.climbing:
+		return _combat_done(false, "no second catch on the face")
+	p.stamina = 4.0
+	t = 0.0
+	while t < 4.0 and p.climbing:
+		p.bot_input = Vector2(0, -1)
+		await _ticks(3)
+		t += 0.05
+	p.bot_input = Vector2.ZERO
+	await _ticks(60)
+	var g2 := terrain.height_at(p.global_position.x, p.global_position.z)
+	print("BOT climb: grip failed after %.2f s, now %.2f m above the turf, on floor %s" % [t, p.global_position.y - g2, p.is_on_floor()])
+	if p.climbing or p.mantle_t >= 0.0 or p.global_position.y > crown - 1.0:
+		return _combat_done(false, "climbed on with no stamina")
+	# third: a dodge lets go
+	p.stamina = Player.STAMINA_MAX
+	await _ticks(70)
+	p.bot_jump = true
+	t = 0.0
+	while t < 1.5 and not p.climbing:
+		p.bot_input = _input_toward(rs)
+		await _ticks(3)
+		t += 0.05
+	if not p.climbing:
+		return _combat_done(false, "no third catch on the face")
+	p.bot_input = Vector2.ZERO
+	await _ticks(10)
+	p.bot_dodge = true
+	await _ticks(10)
+	print("BOT climb: dodge on the face, climbing %s" % p.climbing)
+	if p.climbing:
+		return _combat_done(false, "dodge did not let go of the face")
+	_combat_done(true, "jumped at the keep, climbed the stones, hauled up onto the crown; the grip fails without stamina and a dodge lets go")
 
 ## Harrowmere's first house: built (slates, footing stones, frame), standing on the green
 ## clear of the start, the herd steers off it, and the hero walks from the start to its door

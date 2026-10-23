@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody3D
 ## Third-person controller: walk/run/sprint, jump, stamina, orbit camera with collision.
-## Combat, climbing and gliding land in milestone 1.
+## Combat and climbing; gliding lands later in milestone 1.
 
 const WALK_SPEED := 4.2
 const RUN_SPEED := 6.5
@@ -45,6 +45,34 @@ const DEATH_FADE_AT := 1.9            # seconds after the blow the screen starts
 const DEATH_FADE := 1.0               # seconds to full black
 const DEATH_RESPAWN_AT := 3.4         # wake at the rest point (under full black)
 const RESPAWN_FADE := 1.2             # seconds the black lifts over after waking
+
+# Climbing: jump at a steep face (a rock, a ruin wall, a cottage gable) with the stick pushed
+# into it and the hands catch hold. The stick then climbs up, down and across the face at a
+# slow, stamina-hungry pace; jump heaves up a body length in one lunge, dodge lets go. At the
+# top the hero hauls up over the lip onto the ledge. Out of stamina, the grip fails and they
+# fall. A jump at a waist-high ledge vaults straight up onto it.
+const CLIMB_SPEED := 1.35
+const CLIMB_COST := 9.0               # stamina per second while moving on the face
+const CLIMB_HOLD_COST := 1.5          # per second hanging still
+const CLIMB_LUNGE_COST := 20.0
+const CLIMB_LUNGE := 0.38             # seconds of the heave up
+const CLIMB_LUNGE_SPEED := 4.2
+const CLIMB_GAP := 0.38               # body origin off the face while climbing
+const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
+const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
+const MANTLE_TIME := 0.6
+var climbing := false
+var climb_normal := Vector3.ZERO      # the face's outward normal under the hands
+var climbs := 0                       # faces caught (bots read this)
+var mantles := 0                      # ledges hauled up onto (bots read this)
+var climbed := 0.0                    # metres moved on faces (bots read this; drives the reach cycle)
+var climb_rate := 0.0                 # m/s moved on the face last tick (bots read this)
+var mantle_t := -1.0                  # seconds into a haul-up, -1 when not mantling
+var _mantle_from := Vector3.ZERO
+var _mantle_to := Vector3.ZERO
+var _lunge_t := -1.0
+var _regrab_t := 0.0                  # after letting go the hands cannot catch again for a moment
+var _jumped := false                  # airborne from a jump (only a jump catches a face)
 
 signal died
 signal respawned
@@ -417,9 +445,14 @@ func _physics_process(delta: float) -> void:
 	if (bot_interact if use_bot_input else Input.is_action_just_pressed("interact")):
 		interacts += 1
 	bot_interact = false
-	if want_lock:
+	if want_lock and not climbing and mantle_t < 0.0:
 		toggle_lock()
 	_update_lock(delta)
+	_regrab_t -= delta
+	if climbing or mantle_t >= 0.0:
+		cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+		_climb_tick(delta, dir2, want_jump, want_dodge)
+		return
 	_update_slowmo(delta)
 	var reeling := flinch_t >= 0.0
 	if want_dodge and (not reeling or flinch_t >= FLINCH_DODGE_AT):
@@ -509,9 +542,11 @@ func _physics_process(delta: float) -> void:
 		velocity.z = 0.0
 
 	if is_on_floor():
+		_jumped = false
 		if want_jump and stamina >= 8.0:
 			velocity.y = JUMP_VEL
 			stamina -= 8.0
+			_jumped = true
 	else:
 		velocity.y -= GRAVITY * delta
 
@@ -559,10 +594,228 @@ func _physics_process(delta: float) -> void:
 		var lt := lock_target.global_position - global_position
 		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta))
 
+	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and _regrab_t <= 0.0 and wish.length() > 0.3:
+		if _try_grab(wish.normalized()):
+			return
 	move_and_slide()
 	_update_animation(delta)
 	if combat != null:
 		combat.physics_step(delta)
+
+# --- climbing ---
+
+## Casts a ray against the world (terrain, buildings, rocks; not the hero or the creatures).
+func _ray(from: Vector3, to: Vector3) -> Dictionary:
+	var q := PhysicsRayQueryParameters3D.create(from, to, 1)
+	q.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(q)
+
+## The top of a ledge just beyond a face (outward normal n), if there is a standing surface
+## within reach of the hands: casts down from above the lip, a little in from the face.
+func _ledge_top(n: Vector3, reach_up: float) -> Variant:
+	var flat := Vector3(n.x, 0.0, n.z).normalized()
+	var probe := global_position - flat * (CLIMB_GAP + 0.45)
+	var hit := _ray(probe + Vector3.UP * reach_up, probe + Vector3.UP * 0.25)
+	if hit.is_empty() or (hit["normal"] as Vector3).y < 0.65:
+		return null
+	# room to stand: nothing in the way between the lip and head height above it
+	var top: Vector3 = hit["position"]
+	if not _ray(top + Vector3.UP * 0.1, top + Vector3.UP * 1.7).is_empty():
+		return null
+	return top
+
+## In the air with the stick pushed at a steep face: catch hold, or vault a waist-high ledge.
+func _try_grab(wish: Vector3) -> bool:
+	if stamina < 4.0 or dead_t >= 0.0:
+		return false
+	var chest := _ray(global_position + Vector3.UP * 1.3, global_position + Vector3.UP * 1.3 + wish * CLIMB_REACH)
+	if not chest.is_empty():
+		var n: Vector3 = chest["normal"]
+		if absf(n.y) < CLIMB_STEEP and wish.dot(-Vector3(n.x, 0, n.z).normalized()) > 0.5:
+			var top: Variant = _ledge_top(n, 1.9)
+			if top != null:
+				_start_mantle(top, n)
+				return true
+			_start_climb((Vector3(n.x, 0.0, n.z).normalized() - wish).normalized())
+			return true
+		return false
+	var knee := _ray(global_position + Vector3.UP * 0.5, global_position + Vector3.UP * 0.5 + wish * CLIMB_REACH)
+	if not knee.is_empty():
+		var n2: Vector3 = knee["normal"]
+		if absf(n2.y) < CLIMB_STEEP and wish.dot(-Vector3(n2.x, 0, n2.z).normalized()) > 0.5:
+			var top2: Variant = _ledge_top(n2, 1.3)
+			if top2 != null:
+				_start_mantle(top2, n2)
+				return true
+	return false
+
+func _start_climb(n: Vector3) -> void:
+	_jumped = false
+	if combat != null and combat.is_drawn():
+		combat.restore()                       # the staff goes over the back to free the hands
+	_set_lock(null)
+	climbing = true
+	climb_normal = n
+	climbs += 1
+	_lunge_t = -1.0
+	velocity = Vector3.ZERO
+	if crumple != null:
+		crumple.active = true
+
+func _let_go(push: float, regrab: float) -> void:
+	climbing = false
+	_regrab_t = regrab
+	velocity = climb_normal * push
+	_lunge_t = -1.0
+	_clear_climb_pose()
+
+func _start_mantle(top: Vector3, n: Vector3) -> void:
+	_jumped = false
+	if combat != null and combat.is_drawn():
+		combat.restore()
+	_set_lock(null)
+	climbing = false
+	climb_normal = n
+	mantle_t = 0.0
+	mantles += 1
+	_mantle_from = global_position
+	_mantle_to = top + Vector3.UP * 0.02
+	velocity = Vector3.ZERO
+	body.rotation.y = atan2(-n.x, -n.z)
+	if crumple != null:
+		crumple.active = true
+
+func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool) -> void:
+	if mantle_t >= 0.0:
+		_mantle_tick(delta)
+		return
+	# feel the face with three rays at hip, chest and shoulder along the facing; rough
+	# masonry turns every stone end a different way, so the face normal is their average,
+	# eased in, and the gap is the nearest stone
+	var n := climb_normal
+	var sum := Vector3.ZERO
+	var gap := INF
+	for h: float in [0.7, 1.1, 1.5]:
+		var o := global_position + Vector3.UP * h
+		var hit := _ray(o, o - n * 1.1)
+		if hit.is_empty() or absf((hit["normal"] as Vector3).y) >= CLIMB_STEEP + 0.15:
+			continue
+		sum += hit["normal"]
+		gap = minf(gap, (o - (hit["position"] as Vector3)).dot(n))
+	if sum == Vector3.ZERO:
+		# the face runs out under the hands: haul up if there is a ledge, else drop
+		var top: Variant = _ledge_top(n, 2.1)
+		if top != null:
+			_start_mantle(top, n)
+		else:
+			_let_go(0.5, 0.4)
+		return
+	n = n.slerp(sum.normalized(), 1.0 - exp(-5.0 * delta)).normalized()
+	climb_normal = n
+	if dir2.y < -0.2 or _lunge_t >= 0.0:
+		# climbing up and the face ends below the hands: reach over the lip and haul up
+		var head := _ray(global_position + Vector3.UP * 1.85, global_position + Vector3.UP * 1.85 - n * 1.1)
+		if head.is_empty():
+			var lip: Variant = _ledge_top(n, 2.1)
+			if lip != null:
+				_start_mantle(lip, n)
+				return
+	if want_dodge:
+		_let_go(2.2, 0.6)
+		return
+	var up_dir := (Vector3.UP - n * n.y).normalized()
+	var face := -Vector3(n.x, 0.0, n.z).normalized()
+	var right := face.cross(Vector3.UP).normalized()
+	if want_jump and _lunge_t < 0.0 and stamina >= CLIMB_LUNGE_COST:
+		_lunge_t = 0.0
+		stamina -= CLIMB_LUNGE_COST
+	var v := Vector3.ZERO
+	if _lunge_t >= 0.0:
+		_lunge_t += delta
+		var lu := _lunge_t / CLIMB_LUNGE
+		v = up_dir * CLIMB_LUNGE_SPEED * sin(PI * clampf(lu, 0.0, 1.0)) * 1.4
+		if lu >= 1.0:
+			_lunge_t = -1.0
+	else:
+		var m := Vector2(dir2.x, -dir2.y)
+		if m.length() > 1.0:
+			m = m.normalized()
+		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED
+		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
+	# keep the hands on the face: close or open the gap toward CLIMB_GAP
+	v += -n * clampf((gap - CLIMB_GAP) * 6.0, -0.8, 0.8)
+	velocity = v
+	var before := global_position
+	motion_mode = MOTION_MODE_FLOATING         # no floor snap or slope slide on the stones
+	move_and_slide()
+	motion_mode = MOTION_MODE_GROUNDED
+	var moved := global_position - before
+	climbed += moved.length()
+	climb_rate = moved.length() / maxf(delta, 1e-4)
+	body.rotation.y = lerp_angle(body.rotation.y, atan2(face.x, face.z), 1.0 - exp(-14.0 * delta))
+	_pose_climb()
+	if stamina <= 0.0:
+		stamina = 0.0
+		_let_go(0.6, 1.2)                      # the grip gives out
+		return
+	if is_on_floor() and dir2.y > 0.3:
+		_let_go(0.0, 0.3)                      # climbed back down to the ground
+
+## Haul up over the lip: the body rises against the face first, then rolls forward onto the
+## ledge, knees coming up under it.
+func _mantle_tick(delta: float) -> void:
+	mantle_t += delta
+	var u := clampf(mantle_t / MANTLE_TIME, 0.0, 1.0)
+	var rise := smoothstep(0.0, 0.65, u)
+	var over := smoothstep(0.4, 1.0, u)
+	var p := _mantle_from
+	p.y = lerpf(_mantle_from.y, _mantle_to.y, rise)
+	p.x = lerpf(_mantle_from.x, _mantle_to.x, over)
+	p.z = lerpf(_mantle_from.z, _mantle_to.z, over)
+	global_position = p
+	velocity = Vector3.ZERO
+	if crumple != null:
+		var k := sin(PI * u)
+		crumple.stride = 0.0
+		crumple.arm = lerpf(2.5, 0.4, smoothstep(0.1, 0.7, u))
+		crumple.elbow = lerpf(0.8, 1.4, smoothstep(0.0, 0.5, u)) * (1.0 - smoothstep(0.6, 1.0, u))
+		crumple.hip = 1.3 * k
+		crumple.knee = 1.6 * k
+		crumple.spine = 0.45 * k
+	_hold_still_anim()
+	if u >= 1.0:
+		mantle_t = -1.0
+		_clear_climb_pose()
+
+## Arms up on the face, knees bent; the reach cycles hand over hand with the distance climbed.
+func _pose_climb() -> void:
+	_hold_still_anim()
+	if crumple == null:
+		return
+	var ph := climbed * 2.4
+	crumple.arm = 2.45
+	crumple.elbow = 0.75
+	crumple.hip = 0.55
+	crumple.knee = 0.85
+	crumple.spine = 0.08
+	crumple.stride = 0.42 * sin(ph)
+
+func _hold_still_anim() -> void:
+	if anim_tree != null:
+		_blend = 0.0
+		anim_tree.set("parameters/move/blend_position", 0.0)
+		anim_tree.set("parameters/speed/scale", 0.25)
+
+func _clear_climb_pose() -> void:
+	if crumple == null:
+		return
+	crumple.stride = 0.0
+	crumple.arm = 0.0
+	crumple.elbow = 0.0
+	crumple.hip = 0.0
+	crumple.knee = 0.0
+	crumple.spine = 0.0
+	crumple.active = false
 
 func is_invulnerable() -> bool:
 	return dodge_t >= DODGE_IFRAMES.x and dodge_t <= DODGE_IFRAMES.y
@@ -637,6 +890,10 @@ func receive_attack(attacker: Node, damage: float) -> String:
 	return "hit"
 
 func _flinch(attacker: Node) -> void:
+	if climbing or mantle_t >= 0.0:
+		climbing = false                       # knocked off the face
+		mantle_t = -1.0
+		_clear_climb_pose()
 	if combat != null:
 		combat.cancel_to_guard()
 	if dodge_t >= 0.0:

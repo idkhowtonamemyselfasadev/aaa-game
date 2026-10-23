@@ -1215,6 +1215,37 @@ func _ready() -> void:
 			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		SPOTS[spot] = [cp, tgt]
 		print("SHOT villager %s at %s" % [vg.activity, at])
+	if spot == "climb":
+		# the hero halfway up the keep's outer face, hands up on the stones, from below and
+		# off to one side so the wall, the figure and the crown above all read
+		var ruins: Ruins = world.get_node("Ruins")
+		var rs: Vector3 = ruins.site
+		var breach := atan2(-rs.z, -rs.x)
+		var best := 0.0
+		var pick := INF
+		for k in 180:
+			var a := TAU * k / 180.0
+			if absf(wrapf(a - breach, -PI, PI)) < 1.2:
+				continue
+			var g := terrain.height_at(rs.x + cos(a) * 5.2, rs.z + sin(a) * 5.2)
+			var h := ruins.wall_top(a, 4.3) - g
+			if h > 4.0 and absf(h - 5.0) < pick:
+				pick = absf(h - 5.0)
+				best = a
+		var rad := Vector3(cos(best), 0, sin(best))
+		var tan := Vector3(-rad.z, 0, rad.x)
+		var foot := rs + rad * 5.0
+		var g0 := terrain.height_at(foot.x, foot.z)
+		player.use_bot_input = true
+		player.global_position = Vector3(foot.x, g0 + 1.6, foot.z)
+		player.body.rotation.y = atan2(-rad.x, -rad.z)
+		player._start_climb(rad)
+		player.climbed = 0.6
+		var hero := player.global_position + Vector3.UP * 1.1
+		var cp := hero + rad * 4.2 + tan * 2.4
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.4
+		SPOTS[spot] = [cp, hero + Vector3.UP * 0.3]
+		print("SHOT climb at %.2f rad, face %.1f m" % [best, pick + 5.0])
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -1224,7 +1255,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "climb":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "face":

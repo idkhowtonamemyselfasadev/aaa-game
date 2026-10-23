@@ -30,6 +30,7 @@ var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if 
 var grip_tip := Vector3.ZERO # (bots) the thumb's last bone in the hand's frame: (along the hand, index-ward, palm-ward)
 var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
+var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -43,15 +44,16 @@ func _process_modification_with_delta(_delta: float) -> void:
 	var fwd := (to_skel * Vector3.BACK).normalized()
 	_bend(skel, "mixamorig_Hips", x, pelvis)
 	for side in ["Left", "Right"]:
-		_bend(skel, "mixamorig_%sUpLeg" % side, x, -hip - pelvis)
-		_bend(skel, "mixamorig_%sLeg" % side, x, knee)
+		var sg := 1.0 if side == "Left" else -1.0
+		_bend(skel, "mixamorig_%sUpLeg" % side, x, -(hip - stride * sg * 1.1) - pelvis)
+		_bend(skel, "mixamorig_%sLeg" % side, x, knee - stride * sg * 1.3)
 		var bh := back_hand if side == "Right" else 0.0
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
 		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
 		if clasp != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
-		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm, -1.0, bh), toss_arm, ts))
+		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg, -1.0, bh), toss_arm, ts))
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
