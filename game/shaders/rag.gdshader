@@ -31,6 +31,7 @@ uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark i
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
 uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
+uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, damp hem, rubbed edge, mud flecks
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
@@ -210,6 +211,21 @@ void fragment() {
 		alb *= (1.0 + 0.18 * wear * wool) * (1.0 - crease_dark * wool);
 		float dust = smoothstep(0.35, 0.85, up_n.y) * (0.45 + 0.55 * fbm(uv * 14.0 + 61.0));
 		alb = mix(alb, vec3(0.30, 0.27, 0.22), clamp(dust * 0.45 * wool, 0.0, 0.5));
+		// weathering broad enough to read at a few metres (the fine fuzz averages out there and
+		// the cape read as one even sheet): sun-faded and greyed down the top of the hang, damp
+		// and darker toward the hem, rubbed paler along the edge, and road mud flecked up from it
+	}
+	if (weathered > 0.0) {
+		float hang = clamp(UV.y / max(edge, 0.01), 0.0, 1.0);
+		float fade = (1.0 - smoothstep(0.0, 0.45, hang)) * (0.6 + 0.4 * fbm(uv * vec2(2.0, 4.0) + 71.0));
+		alb = mix(alb, vec3(dot(alb, vec3(0.33))) * vec3(1.06, 1.02, 0.96) * 1.22, fade * 0.45 * weathered);
+		float damp = smoothstep(0.45, 1.0, hang) * (0.55 + 0.45 * fbm(vec2(UV.x * 5.0, UV.y * 2.0) + 83.0));
+		alb *= 1.0 - 0.28 * damp * weathered;
+		float rub = (1.0 - smoothstep(0.0, 0.035, to_hem)) * (0.5 + 0.5 * vnoise(vec2(UV.x * 40.0, seed)));
+		alb = mix(alb, alb * 1.35 + vec3(0.02), rub * 0.6 * weathered);
+		float fleck = smoothstep(0.62, 0.8, vnoise(uv * vec2(55.0, 30.0) + 91.0))
+				* smoothstep(0.16, 0.02, to_hem) * smoothstep(0.3, 0.6, fbm(vec2(UV.x * 6.0, 3.0) + seed));
+		alb = mix(alb, vec3(0.085, 0.07, 0.05), clamp(fleck * 0.8 * weathered, 0.0, 0.8));
 	}
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, mix(0.7, 0.55, clamp(wool, 0.0, 1.0)) + mix(0.3, 0.45, clamp(wool, 0.0, 1.0)) * COLOR.r, fold_ao);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));

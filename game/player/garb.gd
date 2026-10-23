@@ -136,6 +136,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# fulled wool has no grain down the hang: near-round fuzz, not wood-grain streaks
 		mm.set_shader_parameter("fuzz_ratio", 0.9)
 		mm.set_shader_parameter("weave_scale", 180.0)
+		mm.set_shader_parameter("weathered", 1.0)
 	# wider than the Hollow's so it covers the Vanguard's shoulder plates
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
@@ -147,6 +148,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		skm.set_shader_parameter("wool", 1.0)
 		skm.set_shader_parameter("fold_ao", 1.0)
 		skm.set_shader_parameter("hem_band", 1.0)
+		skm.set_shader_parameter("weathered", 0.6)
 		# no flutter: it sits close over the plates
 		skm.set_shader_parameter("rigid", 1.0)
 		chest.add_child(sk)
