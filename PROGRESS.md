@@ -33,6 +33,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (23:30 10-23) **Keep stones darker and greyer; climb lens from the face normal** (bot-verified `climb ruin walk moss`).
+  masonry.gdshader, ruin stones: per-stone value spread 0.70-1.18 -> 0.56-1.18 (x0.9), then 30 %
+  desaturated and x0.8 overall with a faint per-stone warm/cool cast (fract(tint * 37.3)), so the
+  keep stops reading as pale plaster blocks. shot.gd `climb ... side`: the lens is built from
+  player.climb_normal (the measured face) instead of the body basis: 0.6 m out from the hero,
+  2.6 m along the face, 1.5 m above the chest, looking down at the hands so the bed tops show;
+  it also prints the Mixamo hips forward vs into-face for diagnosis. A first shot died on a
+  GDScript parse error (`out` shadowed) and fell back to GL after 50 min: always run
+  `.tools/godot --headless --path game --check-only --script res://tools/shot.gd` before a shot.
+  Shot `climb climb9 60 10.5 fixfps side` re-run after the commit; see the gallery entry if any.
 - (22:00 10-23) **Keep moss loosened; climb shot re-aimed from the hero's real facing** (bot-verified `climb ruin walk moss`; shot `climb8` pending at commit time).
   masonry.gdshader, ruin beds: cushion threshold 0.36-0.62 -> 0.25-0.5, tuft floor 0.55 -> 0.75,
   bare stones 18 % -> 10 %. shot.gd `climb ... side`: after the warm-up the lens is rebuilt from

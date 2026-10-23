@@ -146,7 +146,12 @@ void fragment() {
 	// as laid stones, not as one even buff sheet of tiles
 	float ruin = (1.0 - field) * (1.0 - lw) * (1.0 - trod) * (1.0 - slab);
 	float sv = fract(tint * 23.71);
-	base *= mix(1.0, 0.7 + 0.48 * sv * sv * (3.0 - 2.0 * sv), ruin * 0.85);
+	base *= mix(1.0, 0.56 + 0.62 * sv * sv * (3.0 - 2.0 * sv), ruin * 0.9);
+	// the keep read as pale plaster blocks: the whole ruin is darker and greyer (old gritstone
+	// under centuries of weather), each stone with its own faint warm or cool cast
+	float sh = fract(tint * 37.3);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))), ruin * 0.3);
+	base *= mix(vec3(1.0), vec3(0.8) * mix(vec3(1.05, 1.0, 0.92), vec3(0.95, 0.99, 1.05), sh), ruin);
 	// spalls: frost has flaked the weathered skin off in shallow scallops, leaving fresher,
 	// warmer, rougher stone a few mm down inside a sharp dark rim; most near the arrises and on
 	// the faces out in the rain

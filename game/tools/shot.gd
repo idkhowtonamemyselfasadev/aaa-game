@@ -1514,12 +1514,22 @@ func _ready() -> void:
 		# square to the hero's left, a little out from the face and a touch above the hips so
 		# the bed tops over the hands show their moss
 		var lens := get_viewport().get_camera_3d()
-		var hb2 := player.body.global_basis
-		var fwd := Vector3(hb2.z.x, 0, hb2.z.z).normalized()
-		var lft := fwd.cross(Vector3.UP).normalized()
+		# aim from the measured face normal, not the body basis (the model's own facing in the
+		# climb pose is not body +Z): along the face, a little out and well above the hands,
+		# looking down so the hero is side-on and the bed tops (their moss) show
+		var cn := player.climb_normal
+		if cn.length() < 0.5:
+			cn = -player.body.global_basis.z
+		var face_out := Vector3(cn.x, 0, cn.z).normalized()
+		var fwd := -face_out
+		var lft := face_out.cross(Vector3.UP).normalized()
 		var hp := player.global_position + Vector3.UP * 1.3
-		lens.global_position = hp - fwd * 1.1 + lft * 2.8 + Vector3.UP * 0.4
-		lens.look_at(hp + fwd * 0.3 + Vector3.UP * 0.3)
+		lens.global_position = hp + face_out * 0.6 + lft * 2.6 + Vector3.UP * 1.5
+		lens.look_at(hp + Vector3.UP * 0.2 - face_out * 0.15)
+		var hsk2 := player.find_child("Skeleton3D", true, false) as Skeleton3D
+		if hsk2 != null and hsk2.find_bone("mixamorig_Hips") >= 0:
+			var hz := (hsk2.global_basis * hsk2.get_bone_global_pose(hsk2.find_bone("mixamorig_Hips")).basis).z
+			print("SHOT climb hips fwd %s vs into-face %s" % [Vector3(hz.x, 0, hz.z).normalized(), fwd])
 		print("SHOT climb re-aim fwd %s lens %s" % [fwd, lens.global_position])
 		for i in 3:
 			await get_tree().process_frame
