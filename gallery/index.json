@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1230-yardwall_close.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "Afternoon from outside the yard: the stone cottage and the wall top are backlit into near-black silhouettes and the wall vanishes in the shadowed grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1230-yardwall_noon.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "From inside Harrowmere's new yard at noon: dry-stone walls with copes run from the timber house to the stone cottage, the cart gateway open between them; the stones lie in too-even brick-like rows, the moss is flat lime patches and the copes barely read.",
@@ -891,6 +885,12 @@
   "file": "20261023-2022-climb-relief.jpg",
   "time": "2026-10-23T20:22:32Z",
   "caption": "The climbing hero on the keep from a raking angle: face stones now set proud or sunk back and some cut short under dark open joints, with crisper arrises; the camera still sits mostly behind the hero and the moss on the stone tops is a flat green.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-2126-climb-moss.jpg",
+  "time": "2026-10-23T21:26:50Z",
+  "caption": "The climbing hero on the keep after the moss pass: the flat green slabs on the stone tops are gone, but the moss is now too sparse to read as cushions, and the camera still sees the hero mostly from behind.",
   "verdict": "fail"
  }
 ]
