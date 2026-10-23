@@ -8,6 +8,7 @@ render_mode blend_mix, depth_draw_never, cull_disabled;
 
 #include "res://shaders/weather.gdshaderinc"
 global uniform vec3 bounce_light;
+global uniform vec3 ground_fill;   // low-sun skylight on open ground (World._apply_bounce)
 uniform vec3 loam : source_color = vec3(0.13, 0.095, 0.065);
 uniform vec3 loam_dry : source_color = vec3(0.24, 0.19, 0.13);
 
@@ -55,4 +56,7 @@ void fragment() {
 	float hole = step(0.5, pool);
 	ALPHA = clamp(max(dirt * 0.85, margin * 0.6), 0.0, 1.0) * (1.0 - hole);
 	EMISSION = c * bounce_light * 0.4;
+	// the open sky at 07:00/17:00 lights the loam like the earth round it, so the crack round
+	// each slab does not stay a black band beside the lifted track (0 at noon and night)
+	EMISSION += c * ground_fill * (1.0 - 0.5 * margin);
 }

@@ -3698,6 +3698,12 @@ func _doorstones_test() -> void:
 		return _combat_done(false, "dirt/pool patches missing round the slabs")
 	var ga := gaps.mesh.get_aabb()
 	print("BOT doorstones: gap patches %d verts, aabb %s" % [gaps.mesh.surface_get_array_len(0), ga.size])
+	# the loam in the crack takes the low-sun skylight like the track round it
+	var gm := gaps.material_override as ShaderMaterial
+	if gm == null:
+		gm = gaps.mesh.surface_get_material(0) as ShaderMaterial
+	if gm == null or not gm.shader.code.contains("ground_fill"):
+		return _combat_done(false, "dirt gaps do not take the low-sun ground fill")
 	# the opaque pool skins: a fine ring round each slab, each vertex's edge distance in COLOR.r
 	var pools := ds.get_node_or_null("Pools") as MeshInstance3D
 	if pools == null or pools.mesh.get_surface_count() != 1:
