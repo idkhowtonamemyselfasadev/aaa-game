@@ -38,7 +38,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   ambient luminance; gain = sqrt(NOON_KEY 2.0 / key) clamped 1.0..1.5, applied by day to the
   0.85 exposure and faded into the night ramp (tonemap_exposure = lerp(1.6, 0.85*lerp(1, gain,
   day), day)). Noon is unchanged (0.85); 07:12 and 16:48 go to 1.24 (x1.46); night stays 1.6.
-  The gfx bot now checks noon/07:12/16:48/night exposure. Shot pending at commit time.
+  The gfx bot now checks noon/07:12/16:48/night exposure. Shot `osric osricidle2 90 7.2`
+  (Forward+, ~45 min, verdict FAIL, gallery *-osric-morning.jpg): next to *-osric-idle.jpg the wall
+  stones, Osric's cape and the path stones now read and the sky holds; the foreground grass and
+  yard floor in the cottage's shade are still too dark. NEXT: lift the shaded ground (grass/terrain
+  bounce like masonry's bounce_light), idle life for Edda and Wat, the night yard-wall shot
+  (verify 808a6d8), the thumb stub, fox fur re-shoot, Wat's lantern `watlamp3`.
 - (07:10 10-23) **Osric's idle weight shift** (bot-verified, shot `osricidle`).
   neighbour.gd: new `idle` (eases in over IDLE_IN 1.2 s when he stands still, visible, not
   noticing/talking, not on the fell) and `_pose_idle()`: a body roll about the feet of +-0.018 rad
