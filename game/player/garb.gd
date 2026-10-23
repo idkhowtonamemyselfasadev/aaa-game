@@ -775,14 +775,16 @@ func _drape() -> ArrayMesh:
 			var ridge := sin(phi)
 			ridge = signf(ridge) * pow(absf(ridge), 0.65)
 			var fine := sin(a * 19.0 + 1.3 + v * 2.0) * smoothstep(0.5, 1.0, v)
-			var depth := smoothstep(0.05, 1.0, v)
-			var fold := 1.0 + depth * (0.085 * ridge + 0.022 * fine)
+			# deep enough to throw real shade at a few metres: at 0.085 / from 5 % down the cape
+			# read as one smooth sheet in the gallery shots
+			var depth := smoothstep(0.02, 0.8, v)
+			var fold := 1.0 + depth * (0.12 * ridge + 0.03 * fine)
 			# the hem hangs lower at the back; ridges carry it a little lower than the valleys
-			var hem := lerpf(1.44, 1.29, (1.0 - cos(a)) * 0.5) - 0.022 * ridge - 0.008 * fine
+			var hem := lerpf(1.44, 1.29, (1.0 - cos(a)) * 0.5) - 0.03 * ridge - 0.01 * fine
 			# a slight roll at the collar where the cloth gathers round the neck
 			var collar := 1.0 + 0.10 * (1.0 - smoothstep(0.0, 0.12, v))
 			var y := lerpf(1.72, hem, v)
-			var cav := mix_cav(ridge, fine, depth)
+			var cav := pow(mix_cav(ridge, fine, depth), 1.5)
 			st.set_color(Color(cav, cav, cav))
 			st.set_uv(Vector2(u, v))
 			st.add_vertex(Vector3(sin(a) * rx * fold * collar, y, -0.045 + cos(a) * rz * fold * collar))

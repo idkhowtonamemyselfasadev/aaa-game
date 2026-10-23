@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-0231-foxcrust.jpg",
-  "time": "2026-10-18T02:31:34Z",
-  "caption": "The fox at night bowed nose-down over the crust Hesper tossed it on the keep floor; the pose reads, but it stands on dark rubble slabs that hide its legs and the crust, and its coat is a flat saturated orange.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-0405-foxseat.jpg",
   "time": "2026-10-18T04:05:00Z",
   "caption": "The fox sat on swept keep floor just in from the breach, whole body, forelegs and brush in view at last; still a flat saturated orange coat with smooth fur and wall stones lit like flat panels.",
@@ -891,6 +885,12 @@
   "file": "20261023-0110-osric-cape.jpg",
   "time": "2026-10-23T01:10:00Z",
   "caption": "Osric at 17:10 after the wool-cape weathering pass: only a faint sun-faded grey reads across the top of the cape, the damp hem and mud flecks are out of frame, and the cape still reads as one smooth sheet with a bucket-ish hat and a shadowed face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-0236-osric-cape2.jpg",
+  "time": "2026-10-23T02:36:00Z",
+  "caption": "Osric full figure at 17:10 after deepening the wool cape's folds: a few vertical fold shadows now break the cape, but the whole figure still reads pale grey and flat against the dark field, the hem detail is lost at this range, and the frame is underlit.",
   "verdict": "fail"
  }
 ]
