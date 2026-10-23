@@ -1454,14 +1454,21 @@ func _gfx_test() -> void:
 	var wx: Weather = _world.weather
 	wx.force(0.0)
 	var expo := {}
+	var fill := {}
+	e.sdfgi_enabled = false   # headless has no llvmpipe adapter name; check the software path
 	for h in [12.0, 7.2, 16.8, 23.0]:
 		_world.time_of_day = h
 		_world._apply_time()
 		expo[h] = e.tonemap_exposure
+		fill[h] = _world.ground_fill.y
 	print("BOT gfx: exposure noon %.2f 07:12 %.2f 16:48 %.2f night %.2f" % [expo[12.0], expo[7.2], expo[16.8], expo[23.0]])
 	if absf(expo[12.0] - 0.85) > 0.03 or expo[7.2] < 1.1 or expo[7.2] > 1.3 or absf(expo[7.2] - expo[16.8]) > 0.03 or absf(expo[23.0] - 1.6) > 0.01:
 		return _combat_done(false, "low-sun exposure wrong")
-	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure")
+	# open ground gets the low-sun skylight at 07:00/17:00 only (none at noon or night)
+	print("BOT gfx: ground fill noon %.3f 07:12 %.3f 16:48 %.3f night %.3f" % [fill[12.0], fill[7.2], fill[16.8], fill[23.0]])
+	if fill[12.0] > 0.001 or fill[23.0] > 0.001 or fill[7.2] < 0.08 or fill[7.2] > 0.2 or absf(fill[7.2] - fill[16.8]) > 0.01:
+		return _combat_done(false, "low-sun ground fill wrong")
+	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure and ground fill")
 
 ## Hesper keeps her day: tends the lid in the morning, gathers under the oaks (leaving the
 ## keep through the breach), eats in the shade, shelters under a crown in the rain, dozes

@@ -593,6 +593,8 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat
 ## ambient, crushed by SSAO, and went black. Shaders that opt in (masonry) add albedo x this.
+const GROUND_FILL := 0.35
+var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
 	var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
@@ -605,12 +607,22 @@ func _apply_bounce(e: Environment) -> void:
 	b += e.ambient_light_color * e.ambient_light_energy * 0.12
 	# the hero's face fill follows the same shade light (GI or not: SDFGI cannot see under
 	# the brim at its probe size either)
+	# a low sun lights level ground hardly at all, and the sky dome (not the grazing sun) is
+	# what keeps the shaded yard readable at 07:00/17:00; the flat ambient under SSAO crushed
+	# it near black, so open ground gets an unoccluded skylight term that grows as the sun
+	# sinks (0 at 25 deg and above, fading out with the sun at twilight)
+	var low_k := (1.0 - clampf(sun_h / sin(deg_to_rad(25.0)), 0.0, 1.0)) \
+			* clampf(sun.light_energy / 1.5, 0.0, 1.0) if sun.visible else 0.0
+	var gf := e.ambient_light_color * e.ambient_light_energy * GROUND_FILL * low_k
+	ground_fill = Vector3(gf.r, gf.g, gf.b)
 	face_shade = b * 4.0
 	if player and player.garb:
 		player.garb.light_face(face_shade)
 	if e.sdfgi_enabled:
 		b = Color(0, 0, 0)
+		ground_fill = Vector3.ZERO
 	RenderingServer.global_shader_parameter_set("bounce_light", Vector3(b.r, b.g, b.b))
+	RenderingServer.global_shader_parameter_set("ground_fill", ground_fill)
 
 ## Sky material writes restart its radiance bake: only write a value that really changed.
 func _set_sky(sky: PhysicalSkyMaterial, prop: String, v: Variant) -> void:

@@ -227,6 +227,10 @@ bounce_light={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+ground_fill={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
 bounce_zone={
 "type": "vec4",
 "value": Vector4(0, 0, 0, 0)
