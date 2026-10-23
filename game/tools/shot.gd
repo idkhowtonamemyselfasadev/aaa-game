@@ -1244,6 +1244,9 @@ func _ready() -> void:
 		var hero := player.global_position + Vector3.UP * 1.1
 		var cp := hero + rad * 4.2 + tan * 2.4
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.4
+		if "side" in args:
+			# along the face from one side, level with the hips: hands and feet on the stones
+			cp = hero + rad * 1.9 + tan * 2.3 + Vector3.DOWN * 0.2
 		SPOTS[spot] = [cp, hero + Vector3.UP * 0.3]
 		print("SHOT climb at %.2f rad, face %.1f m" % [best, pick + 5.0])
 	if spot != "player" and SPOTS.has(spot):

@@ -38,6 +38,10 @@ var hand_wall := Vector3.FORWARD # world: the face's outward normal; the palms t
 var hand_curl := 0.4         # the fingers half close over the stone they hold
 var shoulder := [Vector3.ZERO, Vector3.ZERO]      # world shoulder joints as posed, before the reach
 var hand_err := [0.0, 0.0]   # (bots) m from each wrist to its target after the reach
+var foot_plant := 0.0        # 0..1: both ankles reach for foot_target (toe holds on the face)
+var foot_target := [Vector3.ZERO, Vector3.ZERO]   # world ankle targets, left then right
+var hip_joint := [Vector3.ZERO, Vector3.ZERO]     # world hip joints as posed, before the reach
+var foot_err := [0.0, 0.0]   # (bots) m from each ankle to its target after the reach
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
@@ -81,6 +85,13 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
 		if sb >= 0:
 			shoulder[i] = skel.global_transform * skel.get_bone_global_pose(sb).origin
+	for i in 2:
+		var hb := skel.find_bone("mixamorig_%sUpLeg" % sides[i])
+		if hb >= 0:
+			hip_joint[i] = skel.global_transform * skel.get_bone_global_pose(hb).origin
+	if foot_plant > 0.0:
+		for i in 2:
+			_reach_leg(skel, sides[i], foot_target[i], foot_plant)
 	if plant > 0.0:
 		# last of all, after the spine has moved the shoulders: the hands go to their holds
 		for i in 2:
@@ -199,6 +210,47 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
 	palm = palm - dir * palm.dot(dir)
 	if flat.length() > 1e-3 and palm.length() > 1e-3:
 		_swing(skel, hd, palm, flat)
+
+## Two-bone leg reach: the thigh and shin turn so the ankle lands on `target` (world), the
+## knee bowed into the face and a little out like a climber's frog; then the foot turns so the
+## toes dig into the face, a touch downward, standing on the stone's edge.
+func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
+	var ul := skel.find_bone("mixamorig_%sUpLeg" % side)
+	var lg := skel.find_bone("mixamorig_%sLeg" % side)
+	var ft := skel.find_bone("mixamorig_%sFoot" % side)
+	var hp := skel.find_bone("mixamorig_Hips")
+	var toe := skel.find_bone("mixamorig_%sToeBase" % side)
+	if ul < 0 or lg < 0 or ft < 0 or hp < 0:
+		return
+	var inv := skel.global_transform.affine_inverse()
+	var up := (inv.basis * Vector3.UP).normalized()
+	var wall := (inv.basis * hand_wall).normalized()
+	var s := skel.get_bone_global_pose(ul).origin
+	var k := skel.get_bone_global_pose(lg).origin
+	var f := skel.get_bone_global_pose(ft).origin
+	var a := s.distance_to(k)
+	var b := k.distance_to(f)
+	var t := f.lerp(inv * target, w)
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	var out := s - skel.get_bone_global_pose(hp).origin
+	out = (out - up * out.dot(up) - wall * out.dot(wall)).normalized()
+	var pole := -wall * 0.75 + out * 0.55 + up * 0.15
+	pole = (pole - dn * pole.dot(dn)).normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ul, k - s, k_new - s)
+	k = skel.get_bone_global_pose(lg).origin
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, lg, f - k, t - k)
+	f = skel.get_bone_global_pose(ft).origin
+	foot_err[0 if side == "Left" else 1] = f.distance_to(inv * target) * skel.global_basis.get_scale().x
+	if toe < 0 or w < 0.5:
+		return
+	# toes into the face, tipped down onto the stone's edge
+	var want := (-wall * 0.85 - up * 0.5).normalized()
+	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, want)
 
 ## Turns a bone (skeleton-space rotation, pivoting at its joint) so `from` points along `to`.
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:

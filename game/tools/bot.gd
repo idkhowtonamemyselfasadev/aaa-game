@@ -4426,6 +4426,10 @@ func _climb_test() -> void:
 	var off_max := 0.0
 	var planted_n := 0
 	var moves0 := p.hand_moves
+	var fmoves0 := p.foot_moves
+	var ferr_max := 0.0
+	var foff_max := 0.0
+	var fplanted_n := 0
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
 		await _ticks(3)
@@ -4449,12 +4453,31 @@ func _climb_test() -> void:
 					q.exclude = [p.get_rid()]
 					var hh := p.get_world_3d().direct_space_state.intersect_ray(q)
 					off_max = maxf(off_max, 0.3 if hh.is_empty() else hp.distance_to(hh["position"]))
+			if p.crumple.foot_plant >= 0.99:
+				for i in 2:
+					if p._foot_t[i] < 1.0:
+						continue
+					fplanted_n += 1
+					ferr_max = maxf(ferr_max, p.crumple.foot_err[i])
+					var fp: Vector3 = p._foot[i]
+					var fn: Vector3 = p.climb_normal
+					var fq := PhysicsRayQueryParameters3D.create(fp + fn * 0.3, fp - fn * 0.3)
+					fq.exclude = [p.get_rid()]
+					var fh := p.get_world_3d().direct_space_state.intersect_ray(fq)
+					foff_max = maxf(foff_max, 0.3 if fh.is_empty() else fp.distance_to(fh["position"]))
 	p.bot_input = Vector2.ZERO
 	await _ticks(30)
 	var rr := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
 	print("BOT climb: %.1f s on the face, climbed %.2f m, mantles %d, now %.2f m above the turf at r %.2f, on floor %s, stamina %.0f -> %.0f" % [t, p.climbed, p.mantles, p.global_position.y - ground, rr, p.is_on_floor(), st0, p.stamina])
 	print("BOT climb: arms up %.2f rad, reach cycle %.2f..%.2f, crumple off after %s, fastest %.2f m/s on the face" % [arm_max, stride_span.x, stride_span.y, not p.crumple.active, rate_max])
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])
+	print("BOT climb: feet stepped hold to hold %d times, ankle off its target at most %.3f m, toe holds off the stone at most %.3f m (%d planted samples)" % [p.foot_moves - fmoves0, ferr_max, foff_max, fplanted_n])
+	if p.climbs > 0 and (fplanted_n < 10 or p.foot_moves - fmoves0 < 4):
+		return _combat_done(false, "the feet did not go hold to hold up the face")
+	if ferr_max > 0.05:
+		return _combat_done(false, "a planted ankle did not reach its toe hold")
+	if foff_max > 0.06:
+		return _combat_done(false, "a toe hold is not on the stone")
 	if p.climbs > 0 and (planted_n < 10 or p.hand_moves - moves0 < 4):
 		return _combat_done(false, "the hands did not go hold to hold up the face")
 	if err_max > 0.05:

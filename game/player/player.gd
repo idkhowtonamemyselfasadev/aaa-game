@@ -62,6 +62,8 @@ const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to cat
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
 const HAND_MOVE := 0.18               # seconds for a hand to reach to its next hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
+const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
+const FOOT_STEP := 0.24               # a toe hold this far from where the foot wants to be is left
 const MANTLE_TIME := 0.6
 var climbing := false
 var climb_normal := Vector3.ZERO      # the face's outward normal under the hands
@@ -78,6 +80,10 @@ var _hold := [Vector3.ZERO, Vector3.ZERO]       # world holds under the left and
 var _hold_from := [Vector3.ZERO, Vector3.ZERO]
 var _mantle_hands := false
 var _hold_t := [1.0, 1.0]             # 0..1 through a hand's move to its next hold, 1 = planted
+var foot_moves := 0                   # times a foot stepped from one hold to the next (bots read this)
+var _foot := [Vector3.ZERO, Vector3.ZERO]       # world toe holds under the left and right foot
+var _foot_from := [Vector3.ZERO, Vector3.ZERO]
+var _foot_t := [1.0, 1.0]             # 0..1 through a foot's step to its next hold, 1 = standing on it
 var _regrab_t := 0.0                  # after letting go the hands cannot catch again for a moment
 var _jumped := false                  # airborne from a jump (only a jump catches a face)
 
@@ -669,6 +675,8 @@ func _start_climb(n: Vector3) -> void:
 	for i in 2:
 		_hold_t[i] = 1.0
 		_hold[i] = _find_hold(i, 0.12 if i == 0 else -0.08)
+		_foot_t[i] = 1.0
+		_foot[i] = _find_foot_hold(i, -0.06 if i == 0 else 0.1)
 	if crumple != null:
 		crumple.active = true
 
@@ -766,6 +774,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	body.rotation.y = lerp_angle(body.rotation.y, atan2(face.x, face.z), 1.0 - exp(-14.0 * delta))
 	_pose_climb()
 	_place_hands(delta, moved)
+	_place_feet(delta, moved)
 	if stamina <= 0.0:
 		stamina = 0.0
 		_let_go(0.6, 1.2)                      # the grip gives out
@@ -795,6 +804,7 @@ func _mantle_tick(delta: float) -> void:
 		crumple.knee = 1.6 * k
 		crumple.spine = 0.45 * k
 		crumple.plant = (1.0 - smoothstep(0.25, 0.55, u)) if _mantle_hands else 0.0   # the hands press on the lip, then come away
+		crumple.foot_plant = (1.0 - smoothstep(0.1, 0.4, u)) if _mantle_hands else 0.0  # the feet push off their holds first
 	_hold_still_anim()
 	if u >= 1.0:
 		mantle_t = -1.0
@@ -863,6 +873,53 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 		# the wrist sits a hand's length below the fingers' grip and a palm off the stone
 		crumple.hand_target[i] = at + n * 0.04 - up_dir * 0.07
 
+## Where a foot wants to stand: on the face below its hip, found by a ray so the toes sit on
+## a real stone. `lift` staggers the feet.
+func _find_foot_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
+	var n := climb_normal
+	var face := -Vector3(n.x, 0.0, n.z).normalized()
+	var right := face.cross(Vector3.UP).normalized()
+	var hp: Vector3 = crumple.hip_joint[i] if crumple != null and crumple.hip_joint[i] != Vector3.ZERO else global_position + Vector3.UP * 0.95
+	var p := hp + Vector3.UP * (-0.55 + lift) + right * (0.06 if i == 1 else -0.06) + ahead
+	for off: Vector2 in [Vector2.ZERO, Vector2(0.0, 0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0), Vector2(0.0, -0.08), Vector2(0.0, 0.16)]:
+		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
+		var hit := _ray(o, o - n * 1.8)
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25:
+			return hit["position"]
+	return p - n * (p - (global_position - n * CLIMB_GAP)).dot(n)
+
+## Foot over foot, like the hands: each foot stands on its toe hold while the body moves and
+## steps up to the next once the body has gone past it, only while the other foot stands.
+func _place_feet(delta: float, moved: Vector3) -> void:
+	if crumple == null:
+		return
+	var n := climb_normal
+	var up_dir := (Vector3.UP - n * n.y).normalized()
+	var go := moved - n * moved.dot(n)
+	# a long step: the feet push the body up the face, so each one goes well past where it
+	# wants to be and stands there while the body rises over it
+	var ahead := go.normalized() * 0.26 if go.length() > 1e-4 else Vector3.ZERO
+	for i in 2:
+		var other := 1 - i
+		if _foot_t[i] < 1.0:
+			_foot_t[i] = minf(_foot_t[i] + delta / FOOT_MOVE, 1.0)
+			continue
+		var want := _find_foot_hold(i, 0.0)
+		var far: float = (_foot[i] as Vector3).distance_to(want)
+		var hp: Vector3 = crumple.hip_joint[i]
+		var out_of_reach: bool = hp != Vector3.ZERO and hp.distance_to(_foot[i]) > 0.86
+		if (far > FOOT_STEP and _foot_t[other] >= 1.0) or out_of_reach:
+			_foot_from[i] = _foot[i]
+			_foot[i] = _find_foot_hold(i, 0.0, ahead)
+			_foot_t[i] = 0.0
+			foot_moves += 1
+	crumple.foot_plant = minf(crumple.foot_plant + delta * 5.0, 1.0)
+	for i in 2:
+		var u := smoothstep(0.0, 1.0, _foot_t[i])
+		var at: Vector3 = (_foot_from[i] as Vector3).lerp(_foot[i], u) + n * 0.15 * sin(PI * u)
+		# the ankle sits a foot's length off the stone the toes stand on, a little above them
+		crumple.foot_target[i] = at + n * 0.12 + up_dir * 0.07
+
 func _hold_still_anim() -> void:
 	if anim_tree != null:
 		_blend = 0.0
@@ -879,6 +936,7 @@ func _clear_climb_pose() -> void:
 	crumple.knee = 0.0
 	crumple.spine = 0.0
 	crumple.plant = 0.0
+	crumple.foot_plant = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:
