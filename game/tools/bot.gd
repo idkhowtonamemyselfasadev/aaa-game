@@ -4320,6 +4320,9 @@ func _ruin_test() -> void:
 	print("BOT ruin: %d curtain stones weathered dark (aged)" % ruins.aged_count)
 	if ruins.aged_count < 300:
 		return _combat_done(false, "curtain stones not flagged as weathered")
+	print("BOT ruin: %d keep face stones set proud/sunk, %d cut short of their course" % [ruins.proud_count, ruins.short_count])
+	if ruins.proud_count < 80 or ruins.short_count < 80:
+		return _combat_done(false, "the keep's faces should not be one smooth drum")
 	print("BOT ruin: %d grass tufts in the low wall joints" % ruins.joint_tufts)
 	if ruins.joint_tufts < 60:
 		return _combat_done(false, "no grass in the low wall joints")

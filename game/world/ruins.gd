@@ -19,6 +19,9 @@ extends Node3D
 
 const VARIANTS := 16
 const BEVEL := 0.06
+## the keep's own laid face stones: crisper arrises than the field-worn rubble and the
+## curtain (their chips still bite through them)
+const KEEP_BEVEL := 0.032
 
 var site := Vector3.ZERO
 var block_count := 0
@@ -26,6 +29,12 @@ var _terrain: Terrain
 var _rng := RandomNumberGenerator.new()
 var _dims: Array[Vector3] = []          # per variant: full size of the block mesh
 var _per: Array = []                    # per variant: [Transform3D, Color]
+var _per_k: Array = []                  # the same for the keep's laid stones (KEEP_BEVEL meshes)
+## per-stone setting of the keep's faces (proud/sunk, short beds) on its own stream, so the
+## main stream and with it the whole layout of the ruin stay as they were
+var _set_rng := RandomNumberGenerator.new()
+var proud_count := 0
+var short_count := 0
 ## the stone meshes (one per variant, sized _dims), shared with the village (Cottage)
 var block_meshes: Array[ArrayMesh] = []
 var block_dims: Array[Vector3]:
@@ -62,15 +71,19 @@ func _ready() -> void:
 	# the keep's sunlit inner face lights its floor and rubble (see bounce.gdshaderinc)
 	RenderingServer.global_shader_parameter_set("bounce_zone", Vector4(site.x, site.z, 3.4, 5.0))
 	_rng.seed = seed
+	_set_rng.seed = seed + 4
 	_sweep_hearth()
 	var meshes: Array[ArrayMesh] = []
+	var keep_meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# lengths spread 0.4-1.5 m so a closer or a long stretcher gets a stone of its own
 		# proportions (its bevels and chips are not squashed or stretched out of shape)
 		var d := Vector3(lerpf(0.4, 1.5, (v + _rng.randf()) / VARIANTS), _rng.randf_range(0.3, 0.5), _rng.randf_range(0.5, 0.65))
 		_dims.append(d)
 		meshes.append(_block_mesh(d, v))
+		keep_meshes.append(_block_mesh(d, v, KEEP_BEVEL))
 		_per.append([])
+		_per_k.append([])
 	_body = StaticBody3D.new()
 	_body.name = "RuinCollision"
 	add_child(_body)
@@ -87,6 +100,7 @@ func _ready() -> void:
 	_plinth()
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
+		_multimesh(keep_meshes[v], _per_k[v], "Stones_K%d" % v)
 	block_meshes = meshes
 	ivy = Ivy.new()
 	ivy.name = "Ivy"
@@ -169,6 +183,17 @@ func _tower() -> void:
 				if r != 3.75 and arc * r < 0.62 and _rng.randf() < 0.6:
 					bd = depth * 1.4                  # a header bonding into the core
 					radial += (-0.12 if r > 4.0 else 0.12)
+				if li != 1 and not crest:
+					# the face is not one smooth drum: a stone in four or five set 3-6 cm proud
+					# of its neighbours or sunk back, and one in four cut short of its course so
+					# a dark open joint shows over it (its bed stays on the course below)
+					var u := _set_rng.randf()
+					if u < 0.22:
+						radial += (1.0 if _set_rng.randf() < 0.55 else -1.0) * _set_rng.randf_range(0.03, 0.06)
+						proud_count += 1
+					if _set_rng.randf() < 0.25 and bh > 0.26:
+						bh *= _set_rng.randf_range(0.8, 0.92)
+						short_count += 1
 				p += Vector3(cos(a), 0, sin(a)) * radial
 				p.y = y + bh * 0.5 + _rng.randf_range(0.0, gap_v * 0.4)
 				var tilt := Vector3(_rng.randfn() * 0.012, _rng.randfn() * 0.02, _rng.randfn() * 0.012)
@@ -613,7 +638,8 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 	if laid == 0.0 and not collide and _is_swept(p) and Vector2(p.x - site.x, p.z - site.z).length() > 1.7:
 		swept_count += 1          # after the rng draws, so the rest of the keep is unchanged
 		return
-	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, _aged)])
+	var per: Array = _per_k if laid > 0.0 and _aged == 0.0 else _per
+	per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), _rng.randf(), laid, _aged)])
 	block_count += 1
 	if _aged > 0.0:
 		aged_count += 1
