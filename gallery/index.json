@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1200-gate-ajar.jpg",
-  "time": "2026-10-18T12:30:00Z",
-  "caption": "Close on the field gate swung half open into the yard (it swings away from the hero and falls shut with a creak and a knock); still wrong: bars and brace read too pale and smooth, wall faces are light rectangular blocks, no track worn through the gateway.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1200-gate-wide.jpg",
   "time": "2026-10-18T12:30:00Z",
   "caption": "The oak five-bar field gate hung shut between the garth wall's stoops behind the stone cottage at 11 h; still wrong: the oak reads pale silver-white and flat at this distance and the wall stones are pale blocks with flat moss tops.",
@@ -891,6 +885,12 @@
   "file": "20261023-1834-climb-robe.jpg",
   "time": "2026-10-23T18:34:20Z",
   "caption": "The climbing hero's red robe panel now drags toward the drawn-up knee instead of hanging dead plumb; at this range the figure is small and the keep masonry still reads blocky and clean.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261023-1938-climb-masonry.jpg",
+  "time": "2026-10-23T19:38:00Z",
+  "caption": "The hero climbing the keep, whose stones now vary from pale buff to dark weathered grey, with frost spalls and black-green drip stains under each course; the masonry still reads as stacked rectangular blocks and the camera still sits behind the hero.",
   "verdict": "fail"
  }
 ]

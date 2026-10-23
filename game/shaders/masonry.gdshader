@@ -139,7 +139,21 @@ void fragment() {
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * 0.84, dim * 0.6);
 	// rubble: each split stone its own value and a faint warm (iron) or cool (blue) cast
 	base = mix(base, base * (0.72 + 0.5 * fract(tint * 91.7)) * mix(vec3(1.04, 1.0, 0.94), vec3(0.95, 0.99, 1.05), fract(tint * 17.9)), dim);
+	// the ruin's dressed stones (keep and curtain): a wider value range block to block -- some
+	// stones came off a darker, harder bed, some sun-bleached on the old crown -- so a face reads
+	// as laid stones, not as one even buff sheet of tiles
+	float ruin = (1.0 - field) * (1.0 - lw) * (1.0 - trod) * (1.0 - slab);
+	float sv = fract(tint * 23.71);
+	base *= mix(1.0, 0.7 + 0.48 * sv * sv * (3.0 - 2.0 * sv), ruin * 0.85);
+	// spalls: frost has flaked the weathered skin off in shallow scallops, leaving fresher,
+	// warmer, rougher stone a few mm down inside a sharp dark rim; most near the arrises and on
+	// the faces out in the rain
+	float spn = fbm(wp * 3.6 + tint * 19.0) + edge * 0.12 + (1.0 - jnt) * 0.08;
+	float spall = smoothstep(0.66, 0.69, spn) * ruin * (1.0 - smoothstep(0.6, 0.9, n.y));
+	float sp_rim = smoothstep(0.63, 0.665, spn) * (1.0 - smoothstep(0.665, 0.7, spn)) * ruin * (1.0 - smoothstep(0.6, 0.9, n.y));
+	base = mix(base, base * vec3(1.16, 1.06, 0.92) + vec3(0.03, 0.02, 0.0), spall * 0.8);
 	vec3 col = base * (0.9 + s * 0.2);
+	col *= 1.0 - sp_rim * 0.35;
 	// worn arrises: paler, rubbed smooth on the keep's sheltered stones; on the laid tops and
 	// on the curtain they weather dark with grime instead (only the odd fresh chip stays pale)
 	float fresh = smoothstep(0.72, 0.8, vn(wp * 6.0 + tint * 9.0));
@@ -149,6 +163,12 @@ void fragment() {
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(n.y));
 	float streak = smoothstep(0.55, 0.85, fbm(vec3(wp.x * 7.0, wp.y * 0.35, wp.z * 7.0) + 3.0));
 	col *= 1.0 - streak * side * 0.4;
+	// ...and on the ruin, black-green algae runs from under every stone's lip: water drips off
+	// the course above and runs down the top of each face, fading as it dries lower down
+	float lip = smoothstep(0.0, 0.5, jnt) * (1.0 - smoothstep(0.5, 1.0, jnt));
+	float drip = smoothstep(0.45, 0.8, fbm(vec3(wp.x * 11.0, wp.y * 0.9, wp.z * 11.0) + tint * 5.0 + 41.0));
+	float run_dn = drip * side * ruin * (0.55 + 0.45 * lip);
+	col = mix(col, col * vec3(0.5, 0.52, 0.44), run_dn * 0.6);
 	// lichen rosettes: yellow and grey-green crusts
 	float l1 = smoothstep(0.7 - aged * 0.06, 0.76 - aged * 0.06, fbm(wp * 4.0 + 21.0));
 	float l2 = smoothstep(0.68 - aged * 0.1, 0.74 - aged * 0.1, fbm(wp * 3.2 + 47.0));
@@ -256,7 +276,7 @@ void fragment() {
 	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
 	mossw = max(mossw, lowj * 0.6);
-	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12, soot * 0.97);
+	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12 + spall * 0.05, soot * 0.97);
 	rough = mix(rough, 0.48, polish);
 	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
 	// door stones in the rain: the rubbed sandstone soaks a deep wet buff, and a skin of water
@@ -276,13 +296,21 @@ void fragment() {
 	// soot is dead matte: no sheen of the fire on it; the wet top's broad glisten is held
 	// down (water's own reflectance is low, ~2%) so only the glassy film catches the light
 	SPECULAR = 0.4 * (1.0 - soot * 0.95) * (1.0 - wet_top * (1.0 - film) * 0.35);
-	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.02, 0.006, mossw) * mix(1.0, 0.45, lw) * (1.0 - film * 0.85));
+	// the spall's sunk floor: tilt the normal across its rim (the gradient of the spall field) so
+	// each scallop catches the light on one side and shades on the other
+	float se = 0.01;
+	vec3 sg = vec3(fbm((wp + vec3(se, 0, 0)) * 3.6 + tint * 19.0), fbm((wp + vec3(0, se, 0)) * 3.6 + tint * 19.0),
+	               fbm((wp + vec3(0, 0, se)) * 3.6 + tint * 19.0)) - fbm(wp * 3.6 + tint * 19.0);
+	sg /= se;
+	float rim_w = smoothstep(0.62, 0.67, spn) * (1.0 - smoothstep(0.67, 0.72, spn)) * ruin * (1.0 - mossw);
+	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(mix(0.02, 0.034, ruin), 0.006, mossw) * mix(1.0, 0.45, lw) * (1.0 - film * 0.85)
+	                    + (sg - n * dot(sg, n)) * rim_w * 0.09);
 	if (film > 0.01 && weather_rain > 0.01) {
 		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05 * film;
 		pn = normalize(pn + vec3(-sl.x, 0.0, -sl.y));
 	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field));
+	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field)) * (1.0 - sp_rim * 0.3);
 	ALBEDO *= v_cloud;
 	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops
 	// (they see the sky, which the ambient already covers); joints and pits get less
