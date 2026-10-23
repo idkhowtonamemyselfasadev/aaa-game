@@ -58,6 +58,8 @@ const SHADE_CYCLE := 15.0        # s between raising a hand to the brim against 
 const ROUSE_OUT := 11.0          # s from the barking waking him to his door opening (boots, lantern)
 const LOOKOUT_HOLD := 26.0       # s stood at the gap with the lantern up, then back in
 const LIFT_IN := 0.9             # s to raise the lantern / lower it
+const IDLE_IN := 1.2             # s to ease into (or out of) his idle weight shift
+const IDLE_ROLL := 9.0           # s for his weight to go from one foot to the other and back
 
 var cottage: StoneCottage
 var lean := 0.0                  # 0 upright .. 1 forearms on the wall
@@ -66,6 +68,9 @@ var stiles := 0                  # times he squeezed through the stile, either w
 var gaze := 0.0                  # 0 .. 1 standing on the fell side, looking up where the flock was
 var shades := 0                  # times he raised a hand to the brim on the fell (bots)
 var _gt := 0.0                   # seconds into his stance on the fell (sway, scan, shading)
+var idle := 0.0                  # 0 .. 1 stood still with nothing in hand (step, yard, the gap)
+var _it := 0.0                   # seconds of idle time (weight shift, breath, looking about)
+var roll := 0.0                  # the body's current lean onto one foot, rad (bots)
 var latch := 0.0                 # 0 arm down .. 1 the hand on the slide's handle
 var shuts := 0                   # times he dropped the slide at dusk (bots)
 var opens := 0                   # and lifted it at first light
@@ -370,6 +375,10 @@ func _physics_process(delta: float) -> void:
 			shades += 1
 	else:
 		_gt = 0.0
+	# stood about with nothing to do: never quite still (the fell has its own sway)
+	var still := state == STAND and visible and not noticing and talking <= 0.0 and gaze <= 0.0
+	idle = move_toward(idle, 1.0 if still else 0.0, delta / IDLE_IN)
+	_it += delta
 	super._physics_process(delta)
 
 ## Woken: the door opens after ROUSE_OUT s and he walks to the gap with the lantern lit at his
@@ -475,8 +484,11 @@ func _pose() -> void:
 	super._pose()
 	if crumple == null:
 		return
+	roll = 0.0
 	if gaze > 0.0:
 		_pose_fell()
+	if idle > 0.0:
+		_pose_idle()
 	if lift > 0.0:
 		# the lantern held up and out before him at the height of his chin, to throw its light
 		# down the dark beyond the wall; the head a little forward under the brim, peering
@@ -536,4 +548,32 @@ func _pose_fell() -> void:
 		crumple.flick_out = 0.0
 	# weight from one foot to the other: a slow roll of the whole body about the feet
 	var sway := sin(_gt * TAU / 7.5) * g
+	roll += 0.022 * sway
 	model.transform = model.transform.rotated_local(Vector3.BACK, 0.022 * sway)
+
+## Stood still in the yard, on his step or at the gap: an old man's weight going slowly from one
+## foot to the other (the hip dropping on the free side, the knee giving), a breath lifting the
+## chest, and the head turning now and then to look about. Muted while he leans on the wall or
+## reaches for the slide; kept, smaller, with the lantern up (he holds it out, so less roll).
+func _pose_idle() -> void:
+	var w := idle * idle * (3.0 - 2.0 * idle)
+	w *= 1.0 - lean
+	w *= 1.0 - 0.9 * latch
+	w *= 1.0 - 0.5 * lift
+	if w <= 0.0:
+		return
+	# a lean that lingers on each foot and crosses over quickly: sin shaped toward a square
+	var ph := sin(_it * TAU / IDLE_ROLL)
+	var side := signf(ph) * pow(absf(ph), 0.6)
+	var r := 0.018 * side * w
+	roll += r
+	model.transform = model.transform.rotated_local(Vector3.BACK, r)
+	# the free knee gives as the weight leaves it, lowering the hips a touch at the crossover
+	crumple.knee += 0.04 * w * (1.0 - absf(side))
+	crumple.hip += 0.02 * w * (1.0 - absf(side))
+	# breath, slow and shallow (old lungs): the chest up, the head with it
+	var br := sin(_it * TAU / 4.6)
+	crumple.spine -= 0.012 * br * w
+	crumple.neck += 0.01 * br * w
+	# looking about: two slow turns that never line up, so it does not read as a loop
+	crumple.head_turn += w * (0.18 * sin(_it * TAU / 13.0 + 0.7) + 0.08 * sin(_it * TAU / 5.3))

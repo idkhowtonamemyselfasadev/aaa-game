@@ -4799,6 +4799,20 @@ func _neighbour_test() -> void:
 			print("BOT neighbour slide at dusk: all in %s, shut %.2f, his drops %d, house drops %d" % [_world.hens.all_in(), hh.shut, v.shuts, hh.drops])
 			if not _world.hens.all_in() or hh.shut < 0.99 or v.shuts < 1:
 				return _combat_done(false, "he left the hen house open to the fox")
+			# stood on his step he is never quite still: his weight goes foot to foot, he looks about
+			var r_lo := 1.0
+			var r_hi := -1.0
+			var t_lo := 1.0
+			var t_hi := -1.0
+			for i in 12:
+				await _hold_hour(20.0, 60)
+				r_lo = minf(r_lo, v.roll)
+				r_hi = maxf(r_hi, v.roll)
+				t_lo = minf(t_lo, v.crumple.head_turn)
+				t_hi = maxf(t_hi, v.crumple.head_turn)
+			print("BOT neighbour idle on the step: idle %.2f, roll %.3f..%.3f rad, head %.2f..%.2f" % [v.idle, r_lo, r_hi, t_lo, t_hi])
+			if v.idle < 0.95 or r_hi - r_lo < 0.02 or r_hi - r_lo > 0.05 or t_hi - t_lo < 0.15:
+				return _combat_done(false, "he stands stiff as a post on his step")
 	if fg.angle != 0.0 and absf(fg.angle) > 0.05:
 		await _hold_hour(20.0, 300)
 	print("BOT neighbour gate after: angle %.2f, opens %d, shuts %d" % [fg.angle, fg.opens - o0, fg.shuts])
