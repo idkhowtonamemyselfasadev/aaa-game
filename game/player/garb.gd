@@ -131,6 +131,9 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mm.set_shader_parameter("fold_ao", 1.0)
 	mm.set_shader_parameter("hem_band", 1.0)
 	mm.set_shader_parameter("tongues", 3.0)
+	# below the shoulders the cape falls plumb, so a stoop or a lean no longer cocks its back
+	# out behind like a stiff flap
+	mm.set_shader_parameter("plumb", 1.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
 		# fulled wool has no grain down the hang: near-round fuzz, not wood-grain streaks

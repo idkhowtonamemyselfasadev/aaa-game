@@ -1,11 +1,5 @@
 [
   {
-    "file": "20261018-0442-foxcrust.jpg",
-    "time": "2026-10-18T04:42:55Z",
-    "caption": "The fox stood at Hesper's crust at 22:30 on the new floor seat; still wrong: its head is buried in the breach rubble, the coat glows a flat saturated red with no fur breakup, and the firelit wall reads as salmon brick.",
-    "verdict": "fail"
-  },
-  {
     "file": "20261018-0544-foxcrust.jpg",
     "time": "2026-10-18T05:44:00Z",
     "caption": "The fox nose-down at Hesper's crust on clear keep floor, head out of the plinth stones at last; still nearly head-on with eyeshine into the lens, a faceted low-poly body and a salmon-brick wall behind.",
@@ -891,6 +885,12 @@
     "file": "20261023-0447-osric-sash.jpg",
     "time": "2026-10-23T04:47:39Z",
     "caption": "Osric at 17:10 with his rope girdle and shin wraps dulled to old grey-brown hemp and mud-greyed linen: the bright ochre band at his waist is gone, but he still reads as a stiff dark mannequin and the cape's right edge juts out sideways like a stiff flap.",
+    "verdict": "fail"
+  },
+  {
+    "file": "20261023-0637-osric-hang.jpg",
+    "time": "2026-10-23T06:37:30Z",
+    "caption": "Osric at dusk: his wool cape now falls plumb down his stooped back instead of jutting out behind like a stiff pointed flap; still a stiff dark figure with his face a dark mask under the brim.",
     "verdict": "fail"
   }
 ]

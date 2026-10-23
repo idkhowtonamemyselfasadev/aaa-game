@@ -42,6 +42,9 @@ uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
 
+uniform float plumb = 0.0;         // > 0 (a cape): below hang_top the cloth falls toward world down, not the bone's -Y
+uniform float hang_top = 1.62;     // model-space height the hang pivots at (where the cape leaves the shoulders)
+uniform vec3 hang_body = vec3(0.245, 0.22, -0.015); // the torso under it (model space): x/z radii, z centre
 varying float hem_w;
 
 float hash(vec2 p) {
@@ -98,6 +101,22 @@ void vertex() {
 	// fold first, so the near one carries it round
 	fold_panel(VERTEX, NORMAL, fold2);
 	fold_panel(VERTEX, NORMAL, fold);
+	// a cape on a stooped or leaning chest: rigid to the bone its back flared out behind like a
+	// stiff flap; below the shoulders let it fall along world down instead, each point by its
+	// drop from the pivot, then rest it on the torso (an ellipse) where that would sink it in
+	if (plumb > 0.0) {
+		float drop = max(hang_top - VERTEX.y, 0.0);
+		vec3 dn = normalize(inverse(mat3(MODEL_MATRIX)) * vec3(0.0, -1.0, 0.0));
+		vec3 p = VERTEX + plumb * (dn - vec3(0.0, -1.0, 0.0)) * drop;
+		vec2 q = vec2(p.x / hang_body.x, (p.z - hang_body.z) / hang_body.y);
+		float e = length(q);
+		vec2 q0 = vec2(VERTEX.x / hang_body.x, (VERTEX.z - hang_body.z) / hang_body.y);
+		if (e < 1.0 && length(q0) >= 1.0 && e > 0.001) {
+			p.x *= 1.0 / e;
+			p.z = hang_body.z + (p.z - hang_body.z) / e;
+		}
+		VERTEX = p;
+	}
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;
