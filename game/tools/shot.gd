@@ -1508,6 +1508,21 @@ func _ready() -> void:
 		print("SHOT face at %s, camera %s" % [fc, cam.global_position])
 		for i in 3:
 			await get_tree().process_frame
+	if spot == "climb" and "side" in args:
+		# re-aim after the warm-up from the hero's actual facing (the climb eases the body to
+		# the averaged stone normal, so -rad at setup left the lens behind the shoulder):
+		# square to the hero's left, a little out from the face and a touch above the hips so
+		# the bed tops over the hands show their moss
+		var lens := get_viewport().get_camera_3d()
+		var hb2 := player.body.global_basis
+		var fwd := Vector3(hb2.z.x, 0, hb2.z.z).normalized()
+		var lft := fwd.cross(Vector3.UP).normalized()
+		var hp := player.global_position + Vector3.UP * 1.3
+		lens.global_position = hp - fwd * 1.1 + lft * 2.8 + Vector3.UP * 0.4
+		lens.look_at(hp + fwd * 0.3 + Vector3.UP * 0.3)
+		print("SHOT climb re-aim fwd %s lens %s" % [fwd, lens.global_position])
+		for i in 3:
+			await get_tree().process_frame
 	if spot == "osric" and "face" in args and cam != null:
 		# the portrait aimed after the warm-up, from where his face is in the pose he holds
 		# (leaning, the head drops forward over the cope): 3/4 from the front, just under eye level

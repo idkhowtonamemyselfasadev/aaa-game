@@ -33,6 +33,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (22:00 10-23) **Keep moss loosened; climb shot re-aimed from the hero's real facing** (bot-verified `climb ruin walk moss`; shot `climb8` pending at commit time).
+  masonry.gdshader, ruin beds: cushion threshold 0.36-0.62 -> 0.25-0.5, tuft floor 0.55 -> 0.75,
+  bare stones 18 % -> 10 %. shot.gd `climb ... side`: after the warm-up the lens is rebuilt from
+  player.body's basis (+Z into the wall): 1.1 m out from the face, 2.8 m to the hero's left,
+  0.4 m above the chest, looking at the hands, so the hero is side-on and the bed tops over the
+  hands show. NEXT: judge `climb8`; then glide.
 - (21:00 10-23) **Moss on the keep's beds as a living pile** (bot-verified `climb ruin walk moss`; shot `climb7`, verdict FAIL, gallery *-climb-moss.jpg).
   masonry.gdshader, ruin laid stones only: the top moss now grows in cushions and mats (fbm
   2.6/1.2/2.6 per stone, thicker toward the joints and arrises), its edges broken into tufts

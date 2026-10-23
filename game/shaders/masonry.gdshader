@@ -203,11 +203,12 @@ void fragment() {
 	// the ruin's beds: moss in cushions and mats, thickest against the back arris and in the
 	// joints where soil lodges, a few stones bare where it never took or peeled off in a dry
 	// summer; the cushions' ragged edges break into separate tufts
-	float mcush = smoothstep(0.36, 0.62, fbm(wp * vec3(2.6, 1.2, 2.6) + tint * 9.0 + 53.0)
+	// (0.36-0.62 / tuft floor 0.55 / 18 % bare cut it to nothing that read in a shot)
+	float mcush = smoothstep(0.25, 0.5, fbm(wp * vec3(2.6, 1.2, 2.6) + tint * 9.0 + 53.0)
 	                         + (1.0 - smoothstep(0.0, 0.4, jnt)) * 0.25 + edge * 0.12);
 	float tuft = smoothstep(0.25, 0.75, vn(wp * 24.0 + 3.0));
-	float mbare = step(0.18, fract(tint * 13.37));
-	topm *= mix(1.0, mix(0.05, 1.0, mcush * mix(0.55, 1.0, tuft)) * mix(0.1, 1.0, mbare), ruin * laid);
+	float mbare = step(0.1, fract(tint * 13.37));
+	topm *= mix(1.0, mix(0.05, 1.0, mcush * mix(0.75, 1.0, tuft)) * mix(0.1, 1.0, mbare), ruin * laid);
 	float mossw = topm
 	            + low * smoothstep(0.55 - aged * 0.12, 0.75 - aged * 0.1, fbm(wp * 2.2 + 5.0)) * (1.0 - edge * 0.5 * (1.0 - aged));
 	// field walls: the low moss keeps to the shaded faces and the joints, not the open faces
