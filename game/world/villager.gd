@@ -47,6 +47,7 @@ const LIGHT_LEN := 3.5           # s with the taper up at the lantern before it 
 const STOOP_DOWN := 0.9
 const STOOP_HOLD := 1.4
 const STOOP_UP := 1.1
+const IDLE_IN := 1.2             # s to ease into (or out of) the idle weight shift
 const TALK_R := 2.8              # the hero can speak to her inside this
 const NAME_AT := 4.5             # the HUD names her inside this, once
 const GREET_R := 9.5             # she and Osric pass a word inside this (over the garth wall)
@@ -173,6 +174,12 @@ var _answer := ""                # the mate's answer, due in _answer_in s
 var _answer_in := -1.0
 var _ex_i := {}
 
+var idle := 0.0                  # 0 .. 1 stood still with nothing to do (step, green, a stand)
+var _it := 0.0                   # seconds of idle time (weight shift, breath, looking about)
+var roll := 0.0                  # the body's current lean onto one foot, rad (bots)
+var idle_roll := 0.014           # rad the weight shift leans the body (an old man's is wider)
+var idle_cycle := 7.0            # s for the weight to go from one foot to the other and back
+var idle_breath := 4.0           # s a breath
 var sit := 0.0                   # 0 standing .. 1 sat on the bench
 var stoop := 0.0                 # 0 upright .. 1 bent to the pail / the logs
 var reach := 0.0                 # 0 arm down .. 1 the taper up at the lantern
@@ -530,6 +537,8 @@ func _physics_process(delta: float) -> void:
 	if feed != null:
 		feed.update(delta, state == STAND and activity == "feed" and not noticing, activity == "feed" and state != IN)
 	_update_light(delta)
+	idle = move_toward(idle, 1.0 if _idle_still() else 0.0, delta / IDLE_IN)
+	_it += delta
 	_pose()
 	_update_animation(delta)
 	var pg = player.get("garb") if player != null else null
@@ -852,6 +861,41 @@ func _pose() -> void:
 	var bob := _hip_h * (1.0 - cos(0.75 * p * 0.5)) * 0.5 + 0.06 * p
 	var down := lerpf(bob, _hip_h - SEAT_H - 0.05, s)
 	model.transform = _model_rest.translated(Vector3.DOWN * down)
+	roll = 0.0
+	if idle > 0.0:
+		_pose_idle()
+
+## Stood about with nothing in hand: on the step, at a stand on the road, watching the green.
+func _idle_still() -> bool:
+	return state == STAND and visible and not noticing and talking <= 0.0 and greeting <= 0.0 \
+			and sit < 0.05 and stoop < 0.05 and reach < 0.05 and not (chop != null and chop.holding) \
+			and not (feed != null and feed.weight > 0.05)
+
+## Never quite still when stood about: the weight going slowly from one foot to the other (the
+## knee giving on the free side), a breath lifting the chest, and the head turning now and then
+## to look about. Kept off while she works, sits or reaches (_idle_still); Neighbour mutes it more.
+func _idle_weight() -> float:
+	return idle * idle * (3.0 - 2.0 * idle)
+
+func _pose_idle() -> void:
+	var w := _idle_weight()
+	if w <= 0.0:
+		return
+	# a lean that lingers on each foot and crosses over quickly: sin shaped toward a square
+	var ph := sin(_it * TAU / idle_cycle)
+	var side := signf(ph) * pow(absf(ph), 0.6)
+	var r := idle_roll * side * w
+	roll += r
+	model.transform = model.transform.rotated_local(Vector3.BACK, r)
+	# the free knee gives as the weight leaves it, lowering the hips a touch at the crossover
+	crumple.knee += 0.04 * w * (1.0 - absf(side))
+	crumple.hip += 0.02 * w * (1.0 - absf(side))
+	# breath: the chest up, the head with it
+	var br := sin(_it * TAU / idle_breath)
+	crumple.spine -= 0.012 * br * w
+	crumple.neck += 0.01 * br * w
+	# looking about: two slow turns that never line up, so it does not read as a loop
+	crumple.head_turn += w * (0.18 * sin(_it * TAU / 13.0 + 0.7) + 0.08 * sin(_it * TAU / 5.3))
 
 # --- look and animation (the hero's: Player._skin, Player._setup_animation) ---
 

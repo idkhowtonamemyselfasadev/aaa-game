@@ -95,6 +95,10 @@ const EX := {
 func _init() -> void:
 	exchanges = {}
 	who = "Wat"
+	idle_roll = 0.012                # a road-hardened man on his staff: a smaller, quicker shift
+	idle_cycle = 6.0
+	idle_breath = 3.6
+	_it = 5.0                        # out of step with the others when they stand together
 	who_title = "Pedlar on the fell road"
 	intro = [
 		"Wat Pennock. Needles, salt, thread, a tin cup that won't rust before Lammas. Buy nothing, then, but don't stand on my feet.",

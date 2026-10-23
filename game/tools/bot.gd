@@ -5055,6 +5055,9 @@ func _pedlar_test() -> void:
 		var dog_closest := 99.0
 		var dog_pass := 99.0
 		var sd0 := pd.sidesteps
+		var idle_hi := 0.0
+		var roll_lo := 1.0
+		var roll_hi := -1.0
 		for i in 30000:
 			_world.time_of_day = h
 			await get_tree().physics_frame
@@ -5076,8 +5079,15 @@ func _pedlar_test() -> void:
 				var m: Villager = pd.mate
 				var a := m.global_position.direction_to(pd.global_position)
 				faced = minf(faced, absf(wrapf(atan2(a.x, a.z) - m.body.rotation.y, -PI, PI)))
+			if pd.idle > 0.95:
+				idle_hi = pd.idle
+				roll_lo = minf(roll_lo, pd.roll)
+				roll_hi = maxf(roll_hi, pd.roll)
 			if pd.journeys > j0:
 				break
+		print("BOT pedlar idle on his stands: idle %.2f, roll %.3f..%.3f rad" % [idle_hi, roll_lo, roll_hi])
+		if idle_hi < 0.95 or roll_hi - roll_lo < 0.015 or roll_hi - roll_lo > 0.04:
+			return _combat_done(false, "the pedlar stands stiff as a post on his stands")
 		print("BOT pedlar %.1f h (%s): %d ticks, journeys %d, stands %d, warps %d, greeted %s, Edda %s / Osric %s, mate turned to him off %.2f rad" % [h, "back" if leg[1] else "out", ticks, pd.journeys - j0, pd.stops - s0, pd.warps - w0, pd.greeted.keys(), e.activity, o.activity, faced])
 		print("BOT pedlar dog: closest %.1f m, woofs %d (%d sounded), warns %d, trotted out %.1f m, eyes on him off %.2f rad, state after %d" % [dog_closest, dg.woofs - wf0, _world.foley.played.get("dog_woof", 0) - fw0, dg.warns - wn0, dog_out, dog_eye, dg.state])
 		print("BOT pedlar walks past the dog no closer than %.2f m, sidesteps %d" % [dog_pass, pd.sidesteps - sd0])
@@ -5152,6 +5162,21 @@ func _villager_test() -> void:
 			return _combat_done(false, "she never got to her %s" % st[1])
 		if (st[1] == "water" or st[1] == "wood") and v.stoops - s0 < 2:
 			return _combat_done(false, "she stands idle at the %s" % st[1])
+		if st[1] == "wake":
+			# on her step in the first hour she is never quite still: foot to foot, looking about
+			var r_lo := 1.0
+			var r_hi := -1.0
+			var t_lo := 1.0
+			var t_hi := -1.0
+			for i in 12:
+				await _ticks(60)
+				r_lo = minf(r_lo, v.roll)
+				r_hi = maxf(r_hi, v.roll)
+				t_lo = minf(t_lo, v.crumple.head_turn)
+				t_hi = maxf(t_hi, v.crumple.head_turn)
+			print("BOT villager idle on the step: idle %.2f, roll %.3f..%.3f rad, head %.2f..%.2f" % [v.idle, r_lo, r_hi, t_lo, t_hi])
+			if v.idle < 0.95 or r_hi - r_lo < 0.015 or r_hi - r_lo > 0.04 or t_hi - t_lo < 0.15:
+				return _combat_done(false, "she stands stiff as a post on her step")
 		if st[1] == "water":
 			var pl: WaterButt = v.home.pail
 			var grip := pl.global_position + Vector3.UP * WhiteCottage.pail_grip()
