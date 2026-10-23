@@ -1088,6 +1088,10 @@ func _ready() -> void:
 			nb.lift = 1.0
 			nb.hand_lantern.lit = 1.0
 			nb.cottage._rouse_t = 600.0
+			if "lightdebug" in args:
+				# which light paints what: the hand lantern green, the cottage window lamp blue
+				nb.hand_lantern.lamp.light_color = Color(0, 1, 0)
+				nb.cottage.lamp.light_color = Color(0, 0.3, 1)
 			var dgl = world.get("dog")
 			if dgl != null:
 				dgl.place_attend()      # Brack sat at his knee
