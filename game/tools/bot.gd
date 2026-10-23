@@ -4430,6 +4430,9 @@ func _climb_test() -> void:
 	var ferr_max := 0.0
 	var foff_max := 0.0
 	var fplanted_n := 0
+	var drag_span := Vector2(INF, -INF)
+	var clear_min := INF
+	var swing_f_max := 0.0
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
 		await _ticks(3)
@@ -4438,6 +4441,10 @@ func _climb_test() -> void:
 		if p.climbing and p._lunge_t < 0.0:
 			rate_max = maxf(rate_max, p.climb_rate)
 		if p.climbing:
+			drag_span = Vector2(minf(drag_span.x, p.garb.lateral), maxf(drag_span.y, p.garb.lateral))
+			if p.garb.wall_n != Vector3.ZERO:
+				clear_min = minf(clear_min, p.garb.front_clear)
+			swing_f_max = maxf(swing_f_max, p.garb._swing_f)
 			arm_max = maxf(arm_max, p.crumple.arm)
 			stride_span = Vector2(minf(stride_span.x, p.crumple.stride), maxf(stride_span.y, p.crumple.stride))
 			if p.crumple.plant >= 0.99:
@@ -4472,6 +4479,13 @@ func _climb_test() -> void:
 	print("BOT climb: arms up %.2f rad, reach cycle %.2f..%.2f, crumple off after %s, fastest %.2f m/s on the face" % [arm_max, stride_span.x, stride_span.y, not p.crumple.active, rate_max])
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])
 	print("BOT climb: feet stepped hold to hold %d times, ankle off its target at most %.3f m, toe holds off the stone at most %.3f m (%d planted samples)" % [p.foot_moves - fmoves0, ferr_max, foff_max, fplanted_n])
+	print("BOT climb: robe hems dragged %.3f..%.3f m to the side by the knees, front panel out %.2f rad at most, its hem %.3f m off the face at least" % [drag_span.x, drag_span.y, swing_f_max, clear_min])
+	if p.climbs > 0 and drag_span.y - drag_span.x < 0.03:
+		return _combat_done(false, "the robe hangs dead still while the knees step up the face")
+	if p.climbs > 0 and clear_min < 0.02:
+		return _combat_done(false, "the front robe panel swings into the stones")
+	if p.garb.posed_legs or p.garb.wall_n != Vector3.ZERO:
+		return _combat_done(false, "the robe still follows the climb after standing up")
 	if p.climbs > 0 and (fplanted_n < 10 or p.foot_moves - fmoves0 < 4):
 		return _combat_done(false, "the feet did not go hold to hold up the face")
 	if ferr_max > 0.05:

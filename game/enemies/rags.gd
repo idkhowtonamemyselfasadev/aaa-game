@@ -35,7 +35,16 @@ var hang := 0.0
 var fold_front := Vector2(1000.0, 0.0)   # (distance down the panel, angle) of its knee fold
 var fold_back := Vector2(1000.0, 0.0)
 var fold_front2 := Vector2(1000.0, 0.0)  # where the front panel meets the ground and pools
-var tip := 0.0                           # the pelvis's forward tilt (rad), for the bots     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
+var tip := 0.0                           # the pelvis's forward tilt (rad), for the bots
+## A climber on a face: the legs are read as posed after the skeleton's modifiers (the climb
+## pose bends them past the clip), a knee drawn up drags the hems toward its side, and the
+## front panel swings out only as far as the face lets it (`wall_n`/`wall_p`: the face's
+## outward normal and a point on it, world; zero = no face).
+var posed_legs := false
+var wall_n := Vector3.ZERO
+var wall_p := Vector3.ZERO
+var lateral := 0.0                       # the knee drag (m, body +X = the wearer's left), for the bots
+var front_clear := INF                   # the front hem's gap to the face (m), for the bots     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -303,6 +312,35 @@ func _hang_panels(fwd: float, bwd: float, k: float) -> void:
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold2", fold_front2)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
 
+## The most the front panel may swing out (rad) before its hem meets the face, kept 4 cm
+## off it; `front_clear` is the hem's gap at the swing it returns.
+func _wall_swing() -> float:
+	var rot := _front.rotation.x
+	_front.rotation.x = 0.0
+	var down := -_front.global_basis.y
+	var fz := _front.global_basis.z
+	var o := _front.global_position
+	_front.rotation.x = rot
+	var ln: float = _front.get_meta("len", 1.0)
+	var gap := (o - wall_p).dot(wall_n)
+	var hem := func(s: float) -> float:
+		return gap + (down * cos(s) + fz * sin(s)).dot(wall_n) * ln
+	var s := _swing_f
+	var lo := -0.3
+	if hem.call(s) >= 0.04:
+		front_clear = hem.call(s)
+		return s
+	# bisect between a swing that clears and one that does not
+	var hi := s
+	for _i in 10:
+		var mid := (lo + hi) * 0.5
+		if hem.call(mid) >= 0.04:
+			lo = mid
+		else:
+			hi = mid
+	front_clear = hem.call(lo)
+	return lo
+
 var _joints := {}
 
 ## A bone's joint in world space as posed after the skeleton's modifiers.
@@ -354,6 +392,22 @@ func _physics_process(delta: float) -> void:
 		var ang := atan2(rd.z, -rd.y)
 		fwd = maxf(fwd, ang)
 		bwd = maxf(bwd, -ang)
+	var drag := 0.0
+	if posed_legs:
+		# the climb pose's legs, as the modifiers left them, against the body's frame
+		var up := _body.global_basis.y.normalized()
+		var ahead := _body.global_basis.z.normalized()
+		fwd = 0.0
+		bwd = 0.0
+		var rise := [0.0, 0.0]
+		for i in 2:
+			var d := _joint(_legs[i][1]) - _joint(_legs[i][0])
+			var ang := atan2(d.dot(ahead), -d.dot(up))
+			fwd = maxf(fwd, ang)
+			bwd = maxf(bwd, -ang)
+			rise[i] = d.dot(up)
+		# the higher knee lifts the cloth over its thigh and the hems slide toward that side
+		drag = clampf((rise[0] - rise[1]) * 0.35, -0.09, 0.09)
 	fwd = maxf(fwd - swing_slack, 0.0)
 	bwd = maxf(bwd - swing_slack, 0.0)
 	var k := minf(delta * 14.0, 1.0)
@@ -362,6 +416,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), k)
 		_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)
+	if wall_n != Vector3.ZERO:
+		_swing_f = minf(_swing_f, _wall_swing())
 	peak_swing = maxf(peak_swing, maxf(_swing_f, _swing_b))
 	_front.rotation.x = -_swing_f
 	_back.rotation.x = _swing_b
@@ -374,6 +430,10 @@ func _physics_process(delta: float) -> void:
 	var local := _body.global_basis.inverse() * vel
 	var target := Vector3(-local.x, 0.0, -local.z) * 0.035
 	target.y = absf(local.z) * 0.006
+	target.x += drag
+	# climbing: the hems lag a stride up the face, then settle past when it stops
+	target.y -= clampf(local.y, -2.0, 2.0) * 0.02 * float(posed_legs)
+	lateral = drag
 	# a damped spring: a little overshoot when the body stops or turns
 	_vel += ((target - _trail) * 55.0 - _vel * 7.0) * delta
 	_trail = (_trail + _vel * delta).limit_length(0.12)

@@ -679,6 +679,8 @@ func _start_climb(n: Vector3) -> void:
 		_foot[i] = _find_foot_hold(i, -0.06 if i == 0 else 0.1)
 	if crumple != null:
 		crumple.active = true
+	if garb != null:
+		garb.posed_legs = true                 # the robe follows the climb pose's legs
 
 func _let_go(push: float, regrab: float) -> void:
 	climbing = false
@@ -703,6 +705,9 @@ func _start_mantle(top: Vector3, n: Vector3) -> void:
 	body.rotation.y = atan2(-n.x, -n.z)
 	if crumple != null:
 		crumple.active = true
+	if garb != null:
+		garb.posed_legs = true
+		garb.wall_n = Vector3.ZERO             # rolling over the lip: the face is behind the knees
 
 func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool) -> void:
 	if mantle_t >= 0.0:
@@ -771,6 +776,10 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	var moved := global_position - before
 	climbed += moved.length()
 	climb_rate = moved.length() / maxf(delta, 1e-4)
+	if garb != null and gap < INF:
+		# the front panel swings out over the knees only as far as the stones let it
+		garb.wall_n = n
+		garb.wall_p = before - n * gap
 	body.rotation.y = lerp_angle(body.rotation.y, atan2(face.x, face.z), 1.0 - exp(-14.0 * delta))
 	_pose_climb()
 	_place_hands(delta, moved)
@@ -927,6 +936,9 @@ func _hold_still_anim() -> void:
 		anim_tree.set("parameters/speed/scale", 0.25)
 
 func _clear_climb_pose() -> void:
+	if garb != null:
+		garb.posed_legs = false
+		garb.wall_n = Vector3.ZERO
 	if crumple == null:
 		return
 	crumple.stride = 0.0
