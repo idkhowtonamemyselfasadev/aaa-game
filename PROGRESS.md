@@ -41,6 +41,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   ALBEDO x ground_fill x 0.7 x (1 - 0.7 shelter) x mix(0.5, 1, v_ao). Reads 0 at noon/night, 0.126
   at 07:12 and 16:48 (flat ground's bounce share was ~0.06). The gfx bot now checks it (with SDFGI
   forced off, since headless reports SDFGI on). Bots pass: gfx walk trample villager.
+  Shot `osric osricfill 90 7.2` (Forward+, ~30 min, verdict FAIL, gallery *-osric-groundfill.jpg):
+  next to *-osric-morning.jpg the sward by the wall reads green and the yard floor is a shade
+  lighter; the foreground path stones' surround and the grass roots are still too dark. NEXT: raise
+  GROUND_FILL 0.35 -> ~0.6 and drop grass's root factor mix(0.5,1,v_ao) -> mix(0.75,1,v_ao), re-shoot
+  the same frame; then the night yard-wall shot (verify 808a6d8), the thumb stub, fox fur
+  re-shoot, Wat's lantern `watlamp3`.
 - (09:30 10-23) **Edda and Wat are never stock-still either** (bot-verified, shot `eddaidle`).
   Osric's idle weight shift moved into Villager: `idle`/`_it`/`roll`, `_idle_still()` (STAND, visible,
   not noticing/talking/greeting, not sat, stooped, reaching, holding the axe or casting grain) and
