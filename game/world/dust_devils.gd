@@ -32,6 +32,8 @@ var _rng := RandomNumberGenerator.new()
 var _mat: ShaderMaterial
 var _mmi: MultiMeshInstance3D
 var _grass_mat: ShaderMaterial   # the grass whips round the foot (grass.gdshader `whirl`)
+var _whoosh: AudioStreamPlayer3D   # the roar of the whirl: dry hiss and grit, swelling as it turns
+var whoosh_gain := 0.0             # linear gain of the whoosh this frame (bots read)
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
@@ -67,6 +69,78 @@ func _ready() -> void:
 	_mmi.custom_aabb = AABB(Vector3(-12, -1, -12), Vector3(24, HEIGHT + 4.0, 24))
 	_mmi.visible = false
 	add_child(_mmi)
+	_whoosh = AudioStreamPlayer3D.new()
+	_whoosh.name = "Whoosh"
+	_whoosh.stream = _make_whoosh(mrng)
+	_whoosh.unit_size = 9.0
+	_whoosh.max_distance = 90.0
+	_whoosh.attenuation_filter_cutoff_hz = 5000.0   # from far off only the low roar carries
+	_whoosh.attenuation_filter_db = -14.0
+	_whoosh.bus = &"Ambience"
+	_whoosh.position = Vector3(0, 2.0, 0)
+	_whoosh.volume_db = -80.0
+	_mmi.add_child(_whoosh)
+
+## The whoosh follows the whirl's strength; stopped (not just silent) while none is up.
+func _sound() -> void:
+	whoosh_gain = env if active else 0.0
+	if whoosh_gain <= 0.001:
+		if _whoosh.playing:
+			_whoosh.stop()
+		return
+	if not _whoosh.playing:
+		_whoosh.play(randf() * 5.0)
+	_whoosh.volume_db = -3.0 + linear_to_db(whoosh_gain)
+
+## A 6 s loop: a dry hiss band-passed through a sweep that rises and falls with the turning
+## column (~0.7 Hz, the near side passing), a low buffet underneath, and a patter of grit and
+## straw ticks thrown off the skirt.
+func _make_whoosh(rng: RandomNumberGenerator) -> AudioStreamWAV:
+	const RATE := 22050
+	var n := RATE * 6
+	var fade := RATE / 2
+	var x := PackedFloat32Array()
+	x.resize(n + fade)
+	var lp := 0.0
+	var bp1 := 0.0
+	var bp2 := 0.0
+	var br := 0.0
+	var tick := 0.0
+	for i in n + fade:
+		var t := float(i) / RATE
+		var w := rng.randf() * 2.0 - 1.0
+		# the swirl: a sweep that rises as the near side of the funnel comes round
+		var swirl := 0.5 + 0.5 * sin(TAU * 0.7 * t + 1.6 * sin(TAU * 0.13 * t))
+		var cut := 0.05 + 0.16 * swirl
+		bp1 += cut * (w - bp1)
+		bp2 += cut * (bp1 - bp2)
+		var hiss := (bp1 - bp2) * (0.5 + 0.7 * swirl)
+		# low buffet: brown noise, slow swell
+		br = br * 0.996 + w * 0.05
+		lp += 0.03 * (br - lp)
+		# grit: random sharp ticks, more on the swells
+		if rng.randf() < 0.0012 * (0.4 + swirl):
+			tick = rng.randf_range(0.3, 1.0)
+		tick *= 0.985
+		x[i] = hiss * 1.4 + lp * 1.6 * (0.6 + 0.4 * swirl) + w * tick * 0.35
+	# seamless loop: cross-fade the tail into the head, normalise to 16-bit
+	for i in fade:
+		var k := float(i) / fade
+		x[i] = x[i] * k + x[n + i] * (1.0 - k)
+	var peak := 0.0001
+	for i in n:
+		peak = maxf(peak, absf(x[i]))
+	var b := PackedByteArray()
+	b.resize(n * 2)
+	for i in n:
+		b.encode_s16(i * 2, int(clampf(x[i] * 0.89 / peak, -1.0, 1.0) * 32767.0))
+	var s := AudioStreamWAV.new()
+	s.format = AudioStreamWAV.FORMAT_16_BITS
+	s.mix_rate = RATE
+	s.data = b
+	s.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	s.loop_end = n
+	return s
 
 func _strength() -> float:
 	var th = _world.get("thermals")
@@ -113,6 +187,7 @@ func _process(delta: float) -> void:
 	var s := _strength()
 	if _grass_mat:
 		_grass_mat.set_shader_parameter("whirl", Vector4(pos.x, pos.z, 4.5, env) if active else Vector4.ZERO)
+	_sound()
 	if not active:
 		env = 0.0
 		_mmi.visible = false

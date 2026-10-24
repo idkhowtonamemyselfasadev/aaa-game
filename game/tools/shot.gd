@@ -1295,7 +1295,9 @@ func _ready() -> void:
 		await get_tree().process_frame
 		var dd: DustDevils = world.dust_devils
 		var hp := player.global_position
-		if dd.spawn_near(hp, 22.0, 34.0):
+		# `near`: 11-15 m off, close enough to see the spin streaks and the grass swirl
+		var close := "near" in args
+		if dd.spawn_near(hp, 11.0 if close else 22.0, 15.0 if close else 34.0):
 			dd.age = 8.0
 			# 5 m behind the hero and 1.5 m to the hero's right, so the hero stands in frame left of the whirl
 			var back := Vector3(hp.x - dd.pos.x, 0, hp.z - dd.pos.z).normalized()

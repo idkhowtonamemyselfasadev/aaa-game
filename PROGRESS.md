@@ -33,6 +33,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (13:40 10-24) **Dust devils spin visibly and roar when near** (bot-verified `dust`; shot `devil5 near`, see the gallery/next entry).
+  dust_devil.gdshader: every billboard is now built in world space and smeared along the
+  tangent of its circle (rising a little), shortened where the motion runs toward/away from the
+  camera: funnel dust x2.2 in the throat to x1.3 at the top, skirt x1.25, straw flecks x7 and
+  thin (0.55) with a bright head and fading tail; the puff noise is combed along the smear so
+  smeared puffs show striations, densest at the leading edge. dust_devils.gd: new `Whoosh`
+  AudioStreamPlayer3D (Ambience bus, unit 9 m, max 90 m, highs cut far off) 2 m up the foot,
+  a synthesized 6 s loop (band-passed hiss swept at ~0.7 Hz as the near side comes round, low
+  brown-noise buffet, grit ticks), volume follows env, stopped while no whirl is up;
+  `whoosh_gain` for bots. Bot `dust` asserts the whoosh plays at full and stops after the slump.
+  shot.gd: `devil` spot takes `near` (whirl 11-15 m off) for close looks at the streaks and the
+  grass swirl.
 - (12:30 10-24) **Dust devils read as dust: wider funnel, dark soil skirt, grass whips round the foot** (bot-verified `dust thermal walk`; shot `devil3`, verdict FAIL, gallery *-dust-devil3.jpg and *-dust-devil3-close.jpg).
   dust_devil.gdshader: funnel radius 0.3..2.2 -> 0.6..4.0 m, puffs 0.9..2.8 m, alpha 0.34 in the
   throat fading to 0.14 at the top (was a flat 0.13); skirt out to 3.6-5.4 m, up to 1.8 m tall,

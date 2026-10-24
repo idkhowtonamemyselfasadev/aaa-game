@@ -21,6 +21,7 @@ varying float v_alpha;
 varying vec3 v_col;
 varying float v_kind;
 varying float v_id;
+varying float v_streak;          // how far this billboard is smeared along its spin (1 = round)
 
 void vertex() {
 	float kind = INSTANCE_CUSTOM.a;
@@ -71,8 +72,24 @@ void vertex() {
 	v_alpha = alpha * env;
 	v_kind = kind;
 	v_id = a0;
-	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], vec4(centre, 1.0));
-	VERTEX *= size;
+	// spin streaks: each billboard is drawn smeared along the way it is whirling (the tangent
+	// of its circle, rising a little), so the funnel reads as spinning even in a still frame.
+	// The smear shortens where the motion runs toward or away from the camera.
+	vec3 tang = normalize(vec3(-sin(a), kind < 0.25 ? 0.05 : 0.22, cos(a)));
+	vec3 ts = tang - view * dot(tang, view);
+	float tl = length(ts);
+	vec3 cam_r = INV_VIEW_MATRIX[0].xyz;
+	vec3 sx = tl > 0.05 ? ts / tl : cam_r;
+	vec3 sy = normalize(cross(view, sx));
+	// funnel dust smears most in the tight, fast throat; flecks become thin streaks
+	float t_h = h / max(H, 0.01);
+	float smear = kind < 0.25 ? 1.25 : (kind < 0.75 ? mix(2.2, 1.3, t_h) : 7.0);
+	float thin = kind < 0.75 ? mix(0.75, 0.9, t_h) : 0.55;
+	float stretch = mix(1.0, smear, tl * env);
+	v_streak = kind < 0.75 ? stretch : 1.0 + (stretch - 1.0) * 0.5;
+	vec3 wpos = centre + (sx * VERTEX.x * stretch + sy * VERTEX.y * thin) * size;
+	MODELVIEW_MATRIX = VIEW_MATRIX;
+	VERTEX = wpos;
 }
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -90,15 +107,23 @@ void fragment() {
 	float a;
 	if (v_kind < 0.75) {
 		// a ragged soft puff, not a disc
-		float n = vnoise(UV * 4.0 + v_id * 7.0 + TIME * 0.3) * 0.6 + vnoise(UV * 9.0 - v_id * 3.0) * 0.4;
+		// the noise is combed along the smear (UV.x runs with the spin), so a smeared puff
+		// shows fine striations of dust dragged round the column rather than a blob
+		float comb = v_streak;
+		vec2 nu = vec2(UV.x * 4.0 / comb, UV.y * 4.0 * mix(1.0, 2.2, smoothstep(1.0, 2.0, comb)));
+		float n = vnoise(nu + v_id * 7.0 + vec2(TIME * 0.9, 0.0)) * 0.6
+			+ vnoise(vec2(UV.x * 9.0 / comb, UV.y * 9.0 * mix(1.0, 2.6, smoothstep(1.0, 2.0, comb))) - v_id * 3.0) * 0.4;
 		a = smoothstep(1.0, 0.1, d2) * smoothstep(0.25, 0.75, n);
+		// a smeared puff thins toward its trailing end, the leading edge densest
+		a *= mix(1.0, smoothstep(-0.2, 0.6, q.x + 0.4), smoothstep(1.2, 2.2, comb) * 0.6);
 		// soft where the puff cuts into the ground and the grass
 		float dz = texture(depth_tex, SCREEN_UV).r;
 		vec4 vp = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, dz, 1.0);
 		float scene = -vp.z / vp.w;
 		a *= clamp((scene + VERTEX.z) / 0.6, 0.0, 1.0);
 	} else {
-		a = step(d2, 0.7);
+		// a fleck streaks along its spin: bright head, fading tail
+		a = step(d2, 0.7) * mix(1.0, smoothstep(-1.0, 0.6, q.x), smoothstep(1.0, 2.0, v_streak));
 	}
 	ALBEDO = v_col;
 	ALPHA = clamp(v_alpha * a, 0.0, 1.0);

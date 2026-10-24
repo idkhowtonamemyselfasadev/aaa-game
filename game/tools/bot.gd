@@ -1049,6 +1049,10 @@ func _dust_test() -> void:
 	var wh: Vector4 = gmat.get_shader_parameter("whirl")
 	if wh.w < 0.9 or Vector2(wh.x - dd.pos.x, wh.y - dd.pos.z).length() > 0.5:
 		return _combat_done(false, "the grass does not whip round the whirl's foot (%s)" % wh)
+	var woo: AudioStreamPlayer3D = mmi.get_node("Whoosh")
+	print("BOT dust: whoosh playing %s, gain %.2f, %.1f s loop, %.1f m from the foot" % [woo.playing, dd.whoosh_gain, (woo.stream as AudioStreamWAV).loop_end / 22050.0, woo.global_position.distance_to(dd.pos)])
+	if not woo.playing or dd.whoosh_gain < 0.9 or (woo.stream as AudioStreamWAV).loop_mode != AudioStreamWAV.LOOP_FORWARD:
+		return _combat_done(false, "the whirl makes no sound at full strength")
 	# a front rolls in: it slumps within a few seconds and no new one stands up
 	wx.cloud = 1.0
 	wx.rain = 0.8
@@ -1057,6 +1061,8 @@ func _dust_test() -> void:
 	var wh_after: Vector4 = gmat.get_shader_parameter("whirl")
 	if not after_front and wh_after.w > 0.0:
 		return _combat_done(false, "the grass still whirls after the whirl slumped")
+	if not after_front and (woo.playing or dd.whoosh_gain > 0.0):
+		return _combat_done(false, "the whoosh plays on after the whirl slumped")
 	var front_spawn := dd.spawn_near(p)
 	wx.cloud = 0.0
 	wx.rain = 0.0
