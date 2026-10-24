@@ -44,7 +44,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   frequency change, so no phase jumps). Bot `glide` storm segment: 3 s with the stick let go at
   wind 1: carried 3.31 m/s downwind beyond the airspeed (calm drift 0.54), bank rocked -0.04..0.08
   rad (at time_scale 4 the quick component aliases; in play it rocks more), sink eased to 1.06, cloth
-  gust 0.92. NEXT: judge the glide shot; a stowed furled glider on the back; cape/hair flutter in
+  gust 0.92. Shot `glide glide1 60 10.5 fixfps` (Forward+, ~27 min, calm air), verdict FAIL,
+  gallery 20261024-0150-glide1.jpg: the wing reads as a real swept glider, sized right against the
+  body, banked level, rigging visible; but the canopy is one flat even brown (patches, battens and
+  sun-bleached tips lost at range: push the value contrast and the batten ridges), the hero hangs
+  stiff and straight under it (swing the legs back, trail the cape), and the meadow below is sparse.
+  NEXT: a stowed furled glider on the back; cape/hair flutter in
   the airflow; a glide launch spot (the keep's crown); thermals/updrafts over sun-warmed rock so the
   wind is something to read, not only a push.
 - (00:30 10-24) **Gliding** (bot-verified `glide climb walk dodge flinch death heavy`; shot `glide1`, verdict FAIL).
