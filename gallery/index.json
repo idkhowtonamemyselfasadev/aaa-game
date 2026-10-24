@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-0956-moths-close.jpg",
-  "time": "2026-10-19T09:56:19Z",
-  "caption": "Close crop of the moths round the lantern and one settled on the post; they catch the candle warmly but read as specks rather than winged moths except the one nearest the camera.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0956-moths.jpg",
-  "time": "2026-10-19T09:56:19Z",
-  "caption": "Moths loop the lit lantern on the green at half past nine at night with fireflies over the meadow; the moths are small warm flecks at this distance, the horn panes still glow as one flat box and the post is too clean.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1029-tracks.jpg",
   "time": "2026-10-19T10:29:26Z",
   "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
@@ -897,6 +885,12 @@
   "file": "20261024-2040-near-copse-village.jpg",
   "time": "2026-10-24T20:40:00Z",
   "caption": "From the village garth a new oak copse now stands in the right-hand middle ground in front of the far wood, but its crowns are still thin and see-through, more acacia than oak, and the meadow is one olive tone.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-2259-crownfill-village.jpg",
+  "time": "2026-10-24T22:59:14Z",
+  "caption": "From the village the near copses and far woods now read as full, dense oak crowns instead of see-through acacias; the crowns still sit a little flat-topped and dark-uniform, and the meadow is one olive tone.",
   "verdict": "fail"
  }
 ]
