@@ -3038,6 +3038,9 @@ func _weather_test() -> void:
 		return _combat_done(false, "cloud deck did not drift faster in the front's wind")
 	if cl.global_position.distance_to(cam.global_position) > 0.5:
 		return _combat_done(false, "cloud dome does not ride on the camera")
+	print("BOT weather dome: radius %.0f m drawn, camera far %.0f m" % [cl.drawn_radius(), cam.far])
+	if cl.drawn_radius() > cam.far * 0.85:
+		return _combat_done(false, "cloud dome reaches past the camera's far plane (clouds clipped dead ahead)")
 	if cl.shadow_strength > 0.05:
 		return _combat_done(false, "cloud shadows still cast under the full rain deck (%.2f)" % cl.shadow_strength)
 	if t < 40.0:

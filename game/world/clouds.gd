@@ -30,6 +30,10 @@ func _ready() -> void:
 	extra_cull_margin = 16384.0
 	gi_mode = GeometryInstance3D.GI_MODE_DISABLED
 
+## The dome's radius as drawn (after fitting it inside the camera's far plane).
+func drawn_radius() -> float:
+	return radius * scale.x
+
 ## Shadow strength 0..1 and the direction toward the sun for the cloud shadows on the land.
 func set_shadow(sun_dir: Vector3, strength: float) -> void:
 	shadow_strength = strength
@@ -43,6 +47,10 @@ func update(delta: float, cloud: float, wind: float, light_dir: Vector3, light_c
 	var cam := get_viewport().get_camera_3d()
 	if cam:
 		global_position = cam.global_position
+		# keep the whole dome inside the camera's far plane: a dome past it is clipped where it
+		# lies straight ahead, leaving a cloudless band with hard vertical seams either side.
+		# The shader projects each view ray onto the deck, so the dome's size never shows.
+		scale = Vector3.ONE * minf(1.0, cam.far * 0.8 / radius)
 	_drift += _wind_dir * drift_speed * (1.0 + 3.0 * wind) * delta
 	cover = lerpf(fair_cover, 1.0, cloud)
 	thick = smoothstep(0.4, 1.0, cloud)
