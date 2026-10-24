@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1716-henhouse.jpg",
-  "time": "2026-10-18T17:16:00Z",
-  "caption": "The new oak hen house in the garth at 11 h with a hen climbing its ladder to the pop-hole; still wrong: boards read pale silver and flat, the nest box reads as a bare shelf, the garth dust shows smooth pale ovals.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1825-henhouse2.jpg",
   "time": "2026-10-18T18:25:08Z",
   "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
@@ -891,6 +885,12 @@
   "file": "20261024-0340-glide-stowed.jpg",
   "time": "2026-10-24T03:40:00Z",
   "caption": "The folded glider rides across the hero's back as a cord-bound canvas roll with bamboo ends; it sits too high above the sash, the staff crosses over it and its pale batten bands glare (lowered and dulled after the shot, not re-shot).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0430-thermal-keep.jpg",
+  "time": "2026-10-24T04:30:00Z",
+  "caption": "The hero circles under the glider in the thermal over the keep's knoll at 14:00, heading toward the sun over the dry vale; the wing and the light hold up, but the rising chaff that marks the column is invisible at this range and the meadow below is sparse.",
   "verdict": "fail"
  }
 ]

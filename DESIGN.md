@@ -115,7 +115,8 @@ Each ability is taught by Act I and used in every subsequent shrine/dungeon.
 | *Fuse (Bind variant)* | Attach object to weapon/shield/arrow | Element arrows | Core to combat variety | with Bind |
 
 Traversal: climb any surface (stamina-limited, rain slows), glide (Caelum's glider, Act II
-start; stamina), swim, Stag mount (whistle; fast on roads).
+start; stamina; rides the weather's wind and the thermals that rise off sun-warmed rock by day,
+marked by rising chaff and circling kites, dead at night and under a front), swim, Stag mount (whistle; fast on roads).
 
 ---
 

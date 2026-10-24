@@ -104,6 +104,7 @@ var glided := 0.0                     # metres flown under it (bots read this)
 var glide_landings := 0               # touchdowns under the open wing (bots read this)
 var glide_sink := 0.0                 # m/s down last tick (bots read this)
 var glide_drift := Vector3.ZERO       # m/s the wind is carrying the wing (bots read this)
+var glide_lift := 0.0                 # m/s of thermal air under the wing last tick (bots read this)
 var glide_wind := -1.0                # bots/shots: force the wind 0..1 (< 0 reads the weather)
 var _glide_t := 0.0
 var glider: Glider
@@ -701,19 +702,26 @@ func _glide_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	var hv := Vector3(velocity.x, 0.0, velocity.z).move_toward(facing * spd + glide_drift, GLIDE_ACCEL * delta)
 	velocity.x = hv.x
 	velocity.z = hv.z
-	var buffet := (sin(gt * 3.3) * 0.6 + sin(gt * 7.9 + 1.1) * 0.4) * w * (0.4 + 0.6 * gust)
+	# rising air off sun-warmed rock: the core lifts the wing, the ring round it sinks, and the
+	# edge of a column is rough
+	var th = get_parent().get("thermals") if get_parent() else null
+	glide_lift = th.lift_at(global_position) if th else 0.0
+	var rough := clampf(absf(glide_lift) / Thermals.LIFT, 0.0, 1.0)
+	var buffet := (sin(gt * 3.3) * 0.6 + sin(gt * 7.9 + 1.1) * 0.4) * maxf(w * (0.4 + 0.6 * gust), rough * 0.5)
 	# bank into the turn, rocked by the buffet and leant a touch against a crosswind
 	var bank_to := clampf(turn / maxf(GLIDE_TURN * delta, 1e-4), -1.0, 1.0) * 0.32 + buffet * 0.18 \
 		- glide_drift.dot(body.global_basis.x) * 0.015
 	glider.bank = lerpf(glider.bank, bank_to, 1.0 - exp(-4.0 * delta))
-	glider.gust = w * gust
-	if velocity.y > 0.0:
-		velocity.y -= GRAVITY * delta          # still rising off the jump
+	glider.gust = maxf(w * gust, rough * 0.6)
+	var vy_to := -GLIDE_SINK + 0.7 * w * gust + glide_lift
+	if velocity.y > vy_to:
+		velocity.y = maxf(velocity.y - GRAVITY * delta, vy_to)   # still rising off the jump
 	else:
-		# the wing bites hard and arrests the fall; a gust lifts it and the sink eases
-		velocity.y = move_toward(velocity.y, -GLIDE_SINK + 0.7 * w * gust, 30.0 * delta)
+		# the wing bites hard and arrests the fall; rising air lifts it more gently
+		velocity.y = move_toward(velocity.y, vy_to, (30.0 if velocity.y < -GLIDE_SINK else 4.0) * delta)
 	glide_sink = -velocity.y
-	stamina = maxf(stamina - GLIDE_COST * delta, 0.0)
+	# riding a core the arms only hold the bar: it tires them less
+	stamina = maxf(stamina - GLIDE_COST * delta * (1.0 - 0.6 * clampf(glide_lift / Thermals.LIFT, 0.0, 1.0)), 0.0)
 	if stamina <= 0.0 or ((want_jump or want_dodge) and _glide_t > 0.25):
 		_end_glide(true)                       # let go: fall free
 	elif wish.length() > 0.3 and _regrab_t <= 0.0:

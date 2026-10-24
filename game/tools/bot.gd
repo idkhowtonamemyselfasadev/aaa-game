@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -116,6 +116,8 @@ func _ready() -> void:
 		return
 	if name == "glide":
 		_glide_test()
+	if name == "thermal":
+		_thermal_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -850,6 +852,94 @@ func _glide_test() -> void:
 	if not roll.visible:
 		return _combat_done(false, "the folded wing did not go back on the back")
 	_combat_done(true, "opened in the air, flew and sank slowly, banked round, rode a storm downwind, let go, caught the air again and touched down")
+
+## Thermals: on a clear afternoon a glider circling over the keep's knoll climbs, the same
+## circling in still air away from any column sinks, the kites wheel over the columns, chaff
+## rises in them, and by night or under a front the columns are dead.
+func _thermal_test() -> void:
+	var p := _player
+	var th: Thermals = _world.thermals
+	var wx: Weather = _world.weather
+	var hz := roundi(60.0 / Engine.time_scale)
+	_world.time_of_day = 14.0
+	wx.cloud = 0.0
+	wx.rain = 0.0
+	wx.wind = 0.0
+	wx.wet = 0.0
+	await _ticks(4)
+	print("BOT thermal: %d columns %s, strength %.2f at 14:00, lean %s" % [th.columns.size(), th.columns, th.strength, th.lean])
+	if th.columns.size() < 3 or th.strength < 0.6:
+		return _combat_done(false, "no live thermals on a clear afternoon")
+	var keep: Vector4 = th.columns[0]
+	var birds: Birds = _world.get_node("Birds")
+	for b in birds._kites:
+		var dmin := INF
+		for col in th.columns:
+			dmin = minf(dmin, Vector2(col.x - b.off.x, col.z - b.off.z).length())
+		print("BOT thermal: kite circling %.0f m round a point %.1f m off a column, %.0f m up" % [b.ring, dmin, b.pos.y - _world.terrain.height_at(b.pos.x, b.pos.z)])
+		if dmin > 1.0 or b.ring > 30.0:
+			return _combat_done(false, "the kites do not wheel over the thermals")
+	var mmi: MultiMeshInstance3D = th.get_node("Thermal0")
+	print("BOT thermal: chaff column shown %s, %d motes" % [mmi.visible, mmi.multimesh.instance_count])
+	if not mmi.visible:
+		return _combat_done(false, "no chaff rises in the thermal")
+	# circle tight in the keep's column, then the same away from every column
+	var climbs: Array[float] = []
+	var costs: Array[float] = []
+	for at in [Vector3(keep.x, keep.y, keep.z), Vector3(keep.x + 70.0, 0.0, keep.z - 50.0)]:
+		var base: float = _world.terrain.height_at(at.x, at.z)
+		p.global_position = Vector3(at.x, base + 22.0, at.z)
+		p.velocity = Vector3.ZERO
+		p.stamina = Player.STAMINA_MAX
+		await _ticks(2)
+		p.bot_jump = true
+		await _ticks(2)
+		if not p.gliding:
+			return _combat_done(false, "the glider did not open over the column")
+		for k in hz:
+			p.bot_input = _input_toward(p.global_position - p.body.global_basis.x * 5.0)
+			await _ticks(1)
+		var y0 := p.global_position.y
+		var s0 := p.stamina
+		var lift := 0.0
+		for k in hz * 6:
+			p.bot_input = _input_toward(p.global_position - p.body.global_basis.x * 5.0)
+			await _ticks(1)
+			lift += p.glide_lift / (hz * 6)
+			if not p.gliding:
+				break
+		var dy := p.global_position.y - y0
+		climbs.append(dy)
+		costs.append(s0 - p.stamina)
+		print("BOT thermal: circled 6 s at %s: %+.1f m, mean lift %.2f m/s, stamina -%.0f, gliding %s" % [at, dy, lift, s0 - p.stamina, p.gliding])
+		if not p.gliding:
+			return _combat_done(false, "the glide ended while circling")
+		p.bot_input = Vector2.ZERO
+		p.bot_jump = true
+		await _ticks(2)
+	if climbs[0] < 2.0:
+		return _combat_done(false, "circling in the thermal does not climb")
+	if climbs[1] > -6.0:
+		return _combat_done(false, "away from the thermals the wing does not sink")
+	if costs[0] >= costs[1] - 3.0:
+		return _combat_done(false, "riding the core tires the arms as much as flying")
+	# a front rolls in: cloud, rain and wind kill the columns; by night they are dead
+	wx.cloud = 1.0
+	wx.rain = 0.8
+	wx.wind = 0.7
+	await _ticks(2)
+	var storm: float = th.strength
+	var storm_lift: float = th.lift_at(Vector3(keep.x, keep.y + 20.0, keep.z))
+	wx.cloud = 0.0
+	wx.rain = 0.0
+	wx.wind = 0.0
+	_world.time_of_day = 1.0
+	await _ticks(2)
+	var night_lift: float = th.lift_at(Vector3(keep.x, keep.y + 20.0, keep.z))
+	print("BOT thermal: under a front strength %.2f (lift %.2f), at 01:00 strength %.2f (lift %.2f), chaff shown %s" % [storm, storm_lift, th.strength, night_lift, mmi.visible])
+	if storm > 0.1 or th.strength > 0.0 or night_lift != 0.0 or mmi.visible:
+		return _combat_done(false, "the thermals do not die under a front or at night")
+	_combat_done(true, "circled up %.1f m in the keep's thermal, sank %.1f m away from it, kites over the columns, dead under a front and at night" % [climbs[0], -climbs[1]])
 
 ## Camera-relative stick input that walks the hero toward a world point.
 func _input_toward(at: Vector3) -> Vector2:

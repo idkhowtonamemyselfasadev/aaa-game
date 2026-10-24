@@ -21,6 +21,7 @@ var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the 
 var training_post: TrainingPost
 var soldier: HollowSoldier
 var weather: Weather
+var thermals: Thermals
 var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
@@ -234,6 +235,11 @@ func _ready() -> void:
 	soundscape.weather = weather
 	soundscape.birds = get_node_or_null("Birds")
 	add_child(soundscape)
+	# warm air rising off the keep's knoll and the sunny crags: the glider climbs in it
+	thermals = Thermals.new()
+	thermals.name = "Thermals"
+	thermals.terrain_path = NodePath("../Terrain")
+	add_child(thermals)
 	# staff swishes, impacts, parry clangs, dodges and footfalls
 	foley = Foley.new()
 	foley.name = "Foley"

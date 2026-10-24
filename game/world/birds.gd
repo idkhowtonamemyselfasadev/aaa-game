@@ -78,6 +78,7 @@ class Bird:
 	var prey = null           # kites: the Flock it stoops at
 	var mob = null            # rooks: the kite it is chasing
 	var call_t := 0.0         # kites: seconds to its next whistle
+	var ring := 45.0          # kites: soaring circle radius (m; tighter over a thermal)
 
 class Flock:
 	var site := 0
@@ -516,12 +517,12 @@ func _wings(b: Bird, beat_hz: float, amp: float, dt: float) -> void:
 func _soar_point(b: Bird) -> Vector3:
 	var dir := 1.0 if int(b.off.x) % 2 == 0 else -1.0
 	var c := Vector3(b.off.x, _terrain.height_at(b.off.x, b.off.z) + b.off.y, b.off.z)
-	var r := 45.0 + sin(b.phase * 0.37) * 12.0
+	var r := b.ring + sin(b.phase * 0.37) * b.ring * 0.27
 	var a := b.phase * dir
 	return c + Vector3(cos(a) * r, sin(b.phase * 0.8) * 4.0, sin(a) * r)
 
 func _update_kite(b: Bird, dt: float, tod) -> void:
-	b.phase += dt * 0.16
+	b.phase += dt * 7.2 / b.ring     # ~7 m/s round whatever circle it holds
 	var day: bool = tod == null or (tod > 7.5 and tod < 17.5)
 	_kite_voice(b, dt, tod)
 	match b.hunt:

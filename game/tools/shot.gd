@@ -1226,6 +1226,9 @@ func _ready() -> void:
 			if a.begins_with("at="):
 				var xz := a.substr(3).split(",")
 				gfrom = Vector3(float(xz[0]), 0, float(xz[1]))
+			elif a.begins_with("to="):
+				var tz := a.substr(3).split(",")
+				gto = Vector3(float(tz[0]), 0, float(tz[1]))
 			elif a.begins_with("alt="):
 				galt = float(a.substr(4))
 			elif a.begins_with("pitch="):
