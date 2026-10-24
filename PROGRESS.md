@@ -49,6 +49,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   `bed` bot's hero got nudged on his spawn spot and the bedded herd bolted instead of staring.
   Now `bed` passes and `herd` passes too, including its trodden-lane check (8/8 spots; it failed
   4/8 on the unchanged base under load). Bots: all 58 pass (two background batches of 29).
+  Shot `glide woods4 40 14.0 fixfps at=-150,-22 to=-237,28 alt=14 pitch=-0.02 yaw=2.3` (Forward+,
+  ~25 min), verdict FAIL, gallery *-meadow-thinned-air.jpg: next to *-outer-woods-air2.jpg the
+  dotted lone trees across the middle ground are gone; it now reads as open field with a few
+  clumps and a dark wood edge on the right. Still failing: oak crowns thin/acacia-like from above,
+  the meadow is one flat olive tone, and the east side of the village has no near wood edge.
 - (18:00 10-24) **The outer oaks now stand in six real woods round the vale** (bot-verified, all 58 routes; shot `woods3`, see the gallery).
   New diagnostic `game/tools/tree_map.tscn` (`godot --headless res://tools/tree_map.tscn -- out.png [x,z]`;
   a SceneTree `-s` script hangs on world load, use the scene): a top-down PNG of every oak (first

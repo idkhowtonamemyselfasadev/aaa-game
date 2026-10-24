@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-0836-lantern-day.jpg",
-  "time": "2026-10-19T08:36:59Z",
-  "caption": "The lantern post by day, backlit against the timber house: the post is a dark silhouette, the horn panes read milky white like paper, and the timber house roof is a flat dark plane.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0836-lantern-night.jpg",
-  "time": "2026-10-19T08:36:59Z",
-  "caption": "The new oak lantern post on the green at 20:36: candlelight through horn panes pools warm on the grass and throws the frame's shadow on the timber house; the panes glow as one flat bright box and the post reads a little clean.",
-  "verdict": "pass"
- },
- {
   "file": "20261019-0956-moths-close.jpg",
   "time": "2026-10-19T09:56:19Z",
   "caption": "Close crop of the moths round the lantern and one settled on the post; they catch the candle warmly but read as specks rather than winged moths except the one nearest the camera.",
@@ -897,6 +885,12 @@
   "file": "20261024-1800-outer-woods-air2-crop.jpg",
   "time": "2026-10-24T18:00:00Z",
   "caption": "Crop on the right half: the crowns now merge into one dark canopy mass instead of separate lone trees; the wood edge is soft and the crowns still look thin and acacia-like up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1930-meadow-thinned-air.jpg",
+  "time": "2026-10-24T19:30:00Z",
+  "caption": "The vale from the glider after the lone meadow oaks were thinned (compare 1800-outer-woods-air2): the middle ground is now open field with a few clumps and a dark wood edge on the right, not savanna; the oak crowns still read thin and acacia-like from above and the meadow is a flat olive.",
   "verdict": "fail"
  }
 ]
