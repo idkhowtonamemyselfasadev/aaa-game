@@ -8,6 +8,7 @@ render_mode cull_back;
 // tubes: around 0..1, along). All detail is procedural.
 
 uniform float open = 1.0;
+uniform float gust = 0.0;    // wind working the cloth: the ripple grows
 uniform vec3 canvas : source_color = vec3(0.50, 0.40, 0.27);   // oiled hemp, sun-browned
 uniform vec3 canvas_patch : source_color = vec3(0.36, 0.22, 0.14); // ox-blood dyed repairs
 uniform vec3 bamboo : source_color = vec3(0.47, 0.36, 0.20);
@@ -63,7 +64,7 @@ void vertex() {
 		// slack cloth crumpling while it is gathered
 		float t = TIME;
 		float ripple = sin(t * 9.0 - UV.y * 7.0 + s * 4.0) * 0.6 + sin(t * 13.7 + s * 11.0) * 0.4;
-		VERTEX.y += ripple * billow * aft * 0.012 * o;
+		VERTEX.y += ripple * billow * aft * (0.012 + 0.03 * gust) * o;
 		VERTEX.y += (vnoise(vec2(s * 30.0, UV.y * 9.0)) - 0.5) * 0.08 * (1.0 - o);
 	}
 }

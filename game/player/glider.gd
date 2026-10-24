@@ -26,6 +26,7 @@ const FURL_TIME := 0.4
 var want_open := false
 var open := 0.0               # 0 furled .. 1 spread
 var bank := 0.0               # radians the wing rolls into a turn
+var gust := 0.0               # 0 still air .. 1 a storm gust working the cloth
 var _mesh: MeshInstance3D
 var _mat: ShaderMaterial
 
@@ -49,6 +50,7 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 	_mat.set_shader_parameter("open", open)
+	_mat.set_shader_parameter("gust", gust)
 	_mesh.transform = bar_transform()
 
 ## The wing pivots on the bar: it rolls into the turn and pitches a touch nose-up.

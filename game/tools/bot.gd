@@ -771,6 +771,43 @@ func _glide_test() -> void:
 		return _combat_done(false, "the glider does not turn at a glider's pace")
 	if bank < 0.15:
 		return _combat_done(false, "the wing does not bank into the turn")
+	# a storm: with the stick let go the wind carries the wing downwind, gusts rock it and
+	# lift it for a moment, and the cloth works harder
+	var calm_drift := p.glide_drift.length()
+	p.glide_wind = 1.0
+	p.bot_input = Vector2.ZERO
+	await _ticks(hz)
+	var wp0 := p.global_position
+	var wdir := Player.GLIDE_WIND_DIR.normalized()
+	var air := 0.0
+	var bmin := 9.0
+	var bmax := -9.0
+	var smin := 9.0
+	var gmax := 0.0
+	for k in hz * 3:
+		await _ticks(1)
+		var f := p.body.global_basis.z
+		f.y = 0.0
+		air += f.normalized().dot(wdir) * Player.GLIDE_SPEED * 0.75 / hz
+		bmin = minf(bmin, p.glider.bank)
+		bmax = maxf(bmax, p.glider.bank)
+		smin = minf(smin, p.glide_sink)
+		gmax = maxf(gmax, p.glider.gust)
+		if not p.gliding:
+			break
+	var carried := ((p.global_position - wp0).dot(wdir) - air) / 3.0
+	print("BOT glide: storm, carried downwind %.2f m/s beyond the airspeed (calm drift %.2f), bank rocked %.2f..%.2f rad, sink eased to %.2f m/s, cloth gust %.2f" % [carried, calm_drift, bmin, bmax, smin, gmax])
+	p.glide_wind = -1.0
+	if not p.gliding:
+		return _combat_done(false, "the glide ended in the storm")
+	if carried < 2.0 or calm_drift > 1.0:
+		return _combat_done(false, "the wind does not carry the wing (or carries it in still air)")
+	if bmax - bmin < 0.06:
+		return _combat_done(false, "the gusts do not rock the wing")
+	if smin > 1.45:
+		return _combat_done(false, "the gusts never lift the wing")
+	if gmax < 0.5:
+		return _combat_done(false, "the cloth is not worked by the storm")
 	# let go, fall, catch the air again
 	p.bot_input = Vector2.ZERO
 	p.bot_jump = true
@@ -798,7 +835,7 @@ func _glide_test() -> void:
 		return _combat_done(false, "the glide never came down under the wing")
 	if p.glider.open > 0.01 or p.crumple.plant > 0.0:
 		return _combat_done(false, "the wing or the grip stayed up after landing")
-	_combat_done(true, "opened in the air, flew and sank slowly, banked round, let go, caught the air again and touched down")
+	_combat_done(true, "opened in the air, flew and sank slowly, banked round, rode a storm downwind, let go, caught the air again and touched down")
 
 ## Camera-relative stick input that walks the hero toward a world point.
 func _input_toward(at: Vector3) -> Vector2:
