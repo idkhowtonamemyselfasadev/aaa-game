@@ -155,13 +155,15 @@ func _ready() -> void:
 		_deer.append(d)
 	_write_instances()
 
-## An open, level patch of meadow 45-90 m from the start, clear of trees and rocks.
+## An open, level patch of meadow 60-100 m from the start, clear of trees and rocks: deer
+## keep well off the village (with the lone meadow oaks thinned, 45 m out read as clear
+## ground and the herd grazed and bedded at the cottages' back fence).
 func _pick_site() -> Vector3:
 	var best := Vector3(-50, 0, 45)
 	var best_s := -INF
 	for k in 64:
 		var a := _rng.randf() * TAU
-		var r := _rng.randf_range(45.0, 90.0)
+		var r := _rng.randf_range(60.0, 100.0)
 		var c := Vector3(cos(a) * r, 0, sin(a) * r)
 		var s := _terrain.normal_at(c.x, c.z).y * 20.0 + minf(_clear_at(c), 20.0)
 		if s > best_s:

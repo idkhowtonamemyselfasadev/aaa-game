@@ -55,7 +55,7 @@ func _ready() -> void:
 		bins[b] += 1
 		if i >= flora.outer_tree_start:
 			obins[b] += 1
-	print("MAP trees %d (outer from %d) ruin %s" % [flora.tree_positions.size(), flora.outer_tree_start, flora.ruin_site])
+	print("MAP trees %d (outer from %d, %d lone thinned) ruin %s" % [flora.tree_positions.size(), flora.outer_tree_start, flora.thinned_lone, flora.ruin_site])
 	for b in 16:
 		print("MAP bearing %5.1f deg (atan2 x,z): all %3d outer %3d" % [b * 22.5, bins[b], obins[b]])
 	get_tree().quit()

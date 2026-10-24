@@ -44,6 +44,7 @@ var _cards: Array = []                       # leaf cards of the tree being buil
 var tree_xforms: Array[Transform3D] = []     # per tree, same order as tree_positions
 var tree_variant: Array[int] = []
 var outer_tree_start := 0                    # tree_positions[outer_tree_start..] are the outer woods
+var thinned_lone := 0                        # first-pass lone oaks dropped off the open meadow
 var _tree_meshes: Array[ArrayMesh] = []
 
 ## Rain shelter under the oak crowns, for rain/drops/splashes/soak/wet ground:
@@ -151,19 +152,54 @@ func _scatter_trees() -> void:
 		var s := _rng.randf_range(1.05, 1.55)
 		var b := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s * _rng.randf_range(0.9, 1.1), s))
 		var tv := _rng.randi() % tree_variants
-		per[tv].append(Transform3D(b, p))
 		tree_xforms.append(Transform3D(b, p))
 		tree_variant.append(tv)
+	_thin_lone_oaks()
+	for i in tree_positions.size():
+		var xf := tree_xforms[i]
+		per[tree_variant[i]].append(xf)
 		var cs := CollisionShape3D.new()
 		var cyl := CylinderShape3D.new()
-		cyl.radius = 0.45 * s
+		cyl.radius = 0.45 * xf.basis.x.length()
 		cyl.height = 4.0
 		cs.shape = cyl
-		cs.position = p + Vector3.UP * 2.0
+		cs.position = xf.origin + Vector3.UP * 2.0
 		body.add_child(cs)
 	for v in tree_variants:
 		_multimesh(meshes[v], per[v], "Oaks_%d" % v)
 	_bake_shelter(per)
+
+## The first pass scatters its oaks one per ~500 m2 over the whole vale, so the inner vale
+## read as savanna/parkland: lone trees dotted over every field. Keep the oaks that stand in
+## a clump (2+ others within LONE_R) and the keeper's oaks by the ruin; of the lone ones keep
+## only about one in LONE_KEEP (a field oak here and there), chosen by a position hash so the
+## shared RNG stream -- and with it every boulder, shrub and moss seed after it -- is untouched.
+const LONE_R := 15.0
+const LONE_KEEP := 5
+func _thin_lone_oaks() -> void:
+	var n := tree_positions.size()
+	var keep: Array[bool] = []
+	for i in n:
+		var p := tree_positions[i]
+		var near := 0
+		for j in n:
+			if j != i and Vector2(tree_positions[j].x - p.x, tree_positions[j].z - p.z).length() < LONE_R:
+				near += 1
+		var by_ruin := Vector2(p.x - ruin_site.x, p.z - ruin_site.z).length() < 45.0
+		var h := absi(int(floor(p.x * 7.31)) * 73856093 ^ int(floor(p.z * 5.17)) * 19349663)
+		keep.append(near >= 2 or by_ruin or h % LONE_KEEP == 0)
+	var tp: Array[Vector3] = []
+	var tx: Array[Transform3D] = []
+	var tv: Array[int] = []
+	for i in n:
+		if keep[i]:
+			tp.append(tree_positions[i])
+			tx.append(tree_xforms[i])
+			tv.append(tree_variant[i])
+	thinned_lone = n - tp.size()
+	tree_positions = tp
+	tree_xforms = tx
+	tree_variant = tv
 
 ## Run after the understory and the moss bake so every earlier placement (boulders, shrubs,
 ## moss, roots) keeps its seed. Own RNG. The first pass spreads its oaks thinly over the
