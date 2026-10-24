@@ -10,7 +10,7 @@ extends Node3D
 
 @export var terrain_path: NodePath
 @export var tree_count: int = 260
-## Second, closer-set pass of oaks in the groves 95-245 m out, so the far side of the vale
+## Second pass of oaks packed into six woods 110-215 m out, so the far side of the vale
 ## reads as woodland edges rather than lone trees on felt (see _scatter_outer_woods).
 @export var outer_tree_count: int = 240
 @export var rock_count: int = 420
@@ -166,16 +166,53 @@ func _scatter_trees() -> void:
 	_bake_shelter(per)
 
 ## Run after the understory and the moss bake so every earlier placement (boulders, shrubs,
-## moss, roots) keeps its seed. Own RNG; trees here sit 6 m apart (the first pass keeps 9 m),
-## lean toward the grove cores and mix in smaller, younger oaks, so the groves 95-245 m out
-## close into woodland with a ragged edge. They join tree_positions (appended, so the first
-## pass keeps its indices) for herds, birds, insects, the keeper and the soundscape; they
-## get roots, collision, moss collars and rain shelter like the rest.
+## moss, roots) keeps its seed. Own RNG. The first pass spreads its oaks thinly over the
+## whole vale (a top-down plot showed lone trees everywhere and no patch dense enough to
+## read as woodland), so this pass packs its oaks into OUTER_WOODS real woods 100-225 m out,
+## one per 60-degree sector so every view across the vale has a wood edge in it: each a
+## ragged blob 24-34 m across its noisy rim, oaks 6 m apart, young ones at the rim and old
+## ones in the core. They join tree_positions (appended, so the first pass keeps its
+## indices) for herds, birds, insects, the keeper and the soundscape; they get roots,
+## collision, moss collars and rain shelter like the rest.
+const OUTER_WOODS := 6
+var wood_centres: Array[Vector3] = []   # bots/tools: the middle of each outer wood
+var wood_radii: Array[float] = []
+
+func _pick_woods(r: RandomNumberGenerator) -> void:
+	for k in OUTER_WOODS:
+		var a0 := TAU * k / OUTER_WOODS + 0.35
+		var best := Vector3.ZERO
+		var best_s := -INF
+		for i in 70:
+			var a := a0 + r.randf_range(0.0, TAU / OUTER_WOODS * 0.8)
+			var rad := r.randf_range(110.0, 215.0)
+			var x := cos(a) * rad
+			var z := sin(a) * rad
+			if _blocked(x, z, 24.0) or Vector2(x - ruin_site.x, z - ruin_site.z).length() < 75.0:
+				continue
+			var slope := 1.0 - _terrain.normal_at(x, z, 6.0).y
+			if slope > 0.22:
+				continue
+			# grove noise high, gentle ground, and some room from the first pass's groves
+			var sc := _grove.get_noise_2d(x, z) - slope * 2.0 + r.randf() * 0.2
+			if sc > best_s:
+				best_s = sc
+				best = Vector3(x, _terrain.height_at(x, z), z)
+		if best_s > -INF:
+			wood_centres.append(best)
+			wood_radii.append(r.randf_range(24.0, 34.0))
+
 func _scatter_outer_woods() -> void:
 	if outer_tree_count <= 0 or _tree_meshes.is_empty():
 		return
 	var r := RandomNumberGenerator.new()
 	r.seed = seed * 13 + 5
+	_pick_woods(r)
+	if wood_centres.is_empty():
+		return
+	var rim := FastNoiseLite.new()
+	rim.seed = seed + 29
+	rim.frequency = 1.0 / 22.0
 	outer_tree_start = tree_positions.size()
 	var per: Array = []
 	for v in tree_variants:
@@ -185,20 +222,25 @@ func _scatter_outer_woods() -> void:
 	body.name = "OuterWoodsCollision"
 	add_child(body)
 	var tries := 0
-	while added.size() < outer_tree_count and tries < outer_tree_count * 60:
+	while added.size() < outer_tree_count and tries < outer_tree_count * 80:
 		tries += 1
-		var x := r.randf_range(-245.0, 245.0)
-		var z := r.randf_range(-245.0, 245.0)
-		var rad := Vector2(x, z).length()
-		if rad < 95.0 or _blocked(x, z, 6.0):
+		var w := tries % wood_centres.size()
+		var wc := wood_centres[w]
+		var wr := wood_radii[w] * 1.35
+		var off := Vector2(r.randf_range(-wr, wr), r.randf_range(-wr, wr))
+		var x := wc.x + off.x
+		var z := wc.z + off.y
+		# ragged rim: the edge swings 0.55..1.45 of the radius with the noise
+		var edge := wood_radii[w] * (1.0 + 0.45 * clampf(rim.get_noise_2d(x, z) / 0.6, -1.0, 1.0))
+		var d := off.length() / edge
+		if d > 1.0 or _blocked(x, z, 6.0):
 			continue
 		# the keep's knoll stays open ground: the keeper's day runs between it and its own oaks
 		if Vector2(x - ruin_site.x, z - ruin_site.z).length() < 42.0:
 			continue
-		var g := _grove.get_noise_2d(x, z) * 0.5 + 0.5
 		var slope := 1.0 - _terrain.normal_at(x, z).y
-		# wider than the first pass's grove mask (0.45..0.75), so groves grow skirts
-		if slope > 0.32 or r.randf() > smoothstep(0.38, 0.62, g) * 0.95:
+		# the outer skirt thins out: lone young oaks stand off the wood's edge
+		if slope > 0.32 or (d > 0.8 and r.randf() < 0.6):
 			continue
 		var ok := true
 		for q in tree_positions:
@@ -212,9 +254,10 @@ func _scatter_outer_woods() -> void:
 					break
 		if not ok:
 			continue
+		var g := 1.0 - d
 		var p := Vector3(x, _terrain.height_at(x, z) - 0.25, z)
-		# young oaks at the grove skirts, old ones in the cores
-		var s := lerpf(r.randf_range(0.7, 1.05), r.randf_range(1.05, 1.5), smoothstep(0.45, 0.7, g))
+		# young oaks at the rim, old ones in the core
+		var s := lerpf(r.randf_range(0.7, 1.05), r.randf_range(1.1, 1.55), smoothstep(0.15, 0.6, g))
 		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s, s * r.randf_range(0.9, 1.12), s))
 		var tv := r.randi() % tree_variants
 		var xf := Transform3D(b, p)
