@@ -740,6 +740,14 @@ func _glide_test() -> void:
 	var p0 := p.global_position
 	var sink := 0.0
 	var err := 0.0
+	var thigh_lo := INF
+	var thigh_hi := -INF
+	var thigh_sum := 0.0
+	var thigh_n := 0
+	var trail_back := 0.0
+	var panel_back := 0.0
+	var flap := 0.0
+	var ground_trail := -p.garb._trail.z
 	for k in hz * 4:
 		p.bot_input = Vector2(0, -1)
 		await _ticks(1)
@@ -749,6 +757,20 @@ func _glide_test() -> void:
 		if k > hz * 3 / 2:
 			sink = maxf(sink, p.glide_sink)
 			err = maxf(err, maxf(p.crumple.hand_err[0], p.crumple.hand_err[1]))
+			# the thighs against the body's frame (+ forward of plumb), the robe's trail
+			var up := p.body.global_basis.y.normalized()
+			var ahead := p.body.global_basis.z.normalized()
+			for i in 2:
+				var leg: PackedInt32Array = p.garb._legs[i]
+				var d := p.garb._joint(leg[1]) - p.garb._joint(leg[0])
+				var ang := atan2(d.dot(ahead), -d.dot(up))
+				thigh_lo = minf(thigh_lo, ang)
+				thigh_hi = maxf(thigh_hi, ang)
+				thigh_sum += ang
+				thigh_n += 1
+			trail_back = maxf(trail_back, -p.garb._trail.z)
+			panel_back = maxf(panel_back, p.garb._swing_b)
+			flap = maxf(flap, p.garb.flap)
 		if not p.gliding:
 			break
 	var inv := p.body.global_transform.affine_inverse()
@@ -771,6 +793,14 @@ func _glide_test() -> void:
 		return _combat_done(false, "the hands do not hold the crossbar")
 	if p.stamina >= st0 - 10.0:
 		return _combat_done(false, "gliding costs no stamina")
+	var thigh_mean := thigh_sum / maxf(thigh_n, 1.0)
+	print("BOT glide: thighs %.2f rad off plumb on average (%.2f..%.2f, - is behind), robe hem trailing %.2f m back (%.2f before the jump), back panel out %.2f rad, cloth flap %.2f" % [thigh_mean, thigh_lo, thigh_hi, trail_back, ground_trail, panel_back, flap])
+	if thigh_mean > -0.12:
+		return _combat_done(false, "the legs do not trail back in flight")
+	if thigh_hi - thigh_lo < 0.08:
+		return _combat_done(false, "the legs hang stock-still under the wing")
+	if trail_back < 0.18 or panel_back < 0.3 or flap < 0.5:
+		return _combat_done(false, "the robe does not stream back in the airflow")
 	# bank round: hold the stick to the hero's right for 1.5 s
 	var yaw0 := p.body.rotation.y
 	var bank := 0.0
@@ -851,6 +881,8 @@ func _glide_test() -> void:
 		return _combat_done(false, "the wing or the grip stayed up after landing")
 	if not roll.visible:
 		return _combat_done(false, "the folded wing did not go back on the back")
+	if p.garb.stream > 0.0 or p.garb.flap > 0.0 or p.garb.posed_legs or p.crumple.stride != 0.0:
+		return _combat_done(false, "the robe or the legs stayed in flight after landing")
 	_combat_done(true, "opened in the air, flew and sank slowly, banked round, rode a storm downwind, let go, caught the air again and touched down")
 
 ## Thermals: on a clear afternoon a glider circling over the keep's knoll climbs, the same

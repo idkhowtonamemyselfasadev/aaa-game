@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1825-henhouse2.jpg",
-  "time": "2026-10-18T18:25:08Z",
-  "caption": "The hen house after its look pass: creosote-brown boards worn silver on the grain, a tarred roof with a fascia edge, a proper nest box with a thick lid, and the dust baths now ragged patchy scrapes; still wrong: the garth sits in flat dull shade at 11 h, the dry-stone wall behind reads as dark even slabs, and the hen at the pop-hole is lost in the dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1925-stonecottage.jpg",
   "time": "2026-10-18T19:25:07Z",
   "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
@@ -891,6 +885,12 @@
   "file": "20261024-0430-thermal-keep.jpg",
   "time": "2026-10-24T04:30:00Z",
   "caption": "The hero circles under the glider in the thermal over the keep's knoll at 14:00, heading toward the sun over the dry vale; the wing and the light hold up, but the rising chaff that marks the column is invisible at this range and the meadow below is sparse.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0515-glide-legs.jpg",
+  "time": "2026-10-24T05:15:00Z",
+  "caption": "The hero glides over the vale with both legs trailing back, knees bent, and the madder robe panels streaming out behind in the airflow; the canopy still reads as stiff flat cards from this angle and the straw hat and sash rim look flat-shaded.",
   "verdict": "fail"
  }
 ]

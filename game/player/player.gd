@@ -755,9 +755,22 @@ func _glide_pose(delta: float) -> void:
 	var g := Glider.grips()
 	for i in 2:
 		crumple.hand_target[i] = glider.global_transform * glider.bar_transform() * (g[i] as Vector3)
-	crumple.knee = lerpf(crumple.knee, 0.45, 1.0 - exp(-6.0 * delta))
-	crumple.hip = lerpf(crumple.hip, 0.12, 1.0 - exp(-6.0 * delta))
-	crumple.spine = lerpf(crumple.spine, -0.08, 1.0 - exp(-6.0 * delta))
+	# the faster the air goes by, the further the legs trail back with the shins folded, the
+	# back arching into it; they swing loose like a pendulum and kick when a gust or the edge of
+	# a thermal shakes the wing
+	var air := clampf((Vector3(velocity.x, 0.0, velocity.z) - glide_drift).length() / GLIDE_SPEED, 0.0, 1.0)
+	var k := 1.0 - exp(-3.0 * delta)
+	crumple.leg_aim = minf(crumple.leg_aim + delta * 3.0, 1.0)
+	crumple.knee = lerpf(crumple.knee, 0.45 + 0.3 * air, k)
+	crumple.hip = lerpf(crumple.hip, 0.12 - 0.44 * air, k)
+	crumple.spine = lerpf(crumple.spine, -0.08 - 0.08 * air, k)
+	var gt := _glide_t + float(glides) * 2.9
+	crumple.stride = 0.07 * sin(gt * 2.1) + 0.03 * sin(gt * 3.7 + 1.1) \
+		+ glider.gust * 0.11 * sin(gt * 6.3)
+	if garb != null:
+		garb.posed_legs = true                 # the robe panels follow the trailing legs
+		garb.stream = lerpf(garb.stream, air, k)
+		garb.flap = garb.stream * (0.7 + 0.6 * glider.gust)
 
 func _end_glide(clear_pose: bool) -> void:
 	gliding = false
@@ -765,12 +778,20 @@ func _end_glide(clear_pose: bool) -> void:
 	glider.bank = 0.0
 	glider.gust = 0.0
 	glide_drift = Vector3.ZERO
+	if garb != null:
+		garb.stream = 0.0
+		garb.flap = 0.0
+		if clear_pose:
+			garb.posed_legs = false            # (onto a face the climb keeps them posed)
+	if crumple != null:
+		crumple.leg_aim = 0.0
 	if clear_pose and crumple != null:
 		crumple.plant = 0.0
 		crumple.hand_curl = 0.4
 		crumple.knee = 0.0
 		crumple.hip = 0.0
 		crumple.spine = 0.0
+		crumple.stride = 0.0
 		crumple.active = false
 
 # --- climbing ---

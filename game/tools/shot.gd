@@ -1222,6 +1222,7 @@ func _ready() -> void:
 		var gto := Vector3(-60, 0, 60)
 		var galt := 16.0
 		var gpitch := -0.22
+		var gyaw := 0.55                       # lens bearing off dead astern (rad); ~1.4 for side-on
 		for a in args:
 			if a.begins_with("at="):
 				var xz := a.substr(3).split(",")
@@ -1233,6 +1234,8 @@ func _ready() -> void:
 				galt = float(a.substr(4))
 			elif a.begins_with("pitch="):
 				gpitch = float(a.substr(6))
+			elif a.begins_with("yaw="):
+				gyaw = float(a.substr(4))
 		var gdir := (gto - gfrom).normalized()
 		player.use_bot_input = true
 		player.global_position = gfrom + Vector3.UP * (terrain.height_at(gfrom.x, gfrom.z) + galt)
@@ -1240,7 +1243,7 @@ func _ready() -> void:
 		player.velocity = gdir * Player.GLIDE_SPEED
 		player._glide_tick(0.0, Vector2.ZERO, true, false)
 		player.glider.open = 1.0
-		var yc := atan2(gdir.x, gdir.z) + PI + 0.55
+		var yc := atan2(gdir.x, gdir.z) + PI + gyaw
 		player.set_look(yc, gpitch)
 		# the stick holds the heading (camera-relative), so the hero flies on past the lens
 		var cf := Vector3(-sin(yc), 0, -cos(yc))

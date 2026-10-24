@@ -30,6 +30,8 @@ var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if 
 var grip_tip := Vector3.ZERO # (bots) the thumb's last bone in the hand's frame: (along the hand, index-ward, palm-ward)
 var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
+var leg_aim := 0.0           # 0..1: first hang both legs straight and plumb (the body's down, a touch apart),
+							 # whatever stance the clip had, so hip/knee/stride bend from an even start
 var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 var plant := 0.0             # 0..1: both wrists reach for hand_target (holds on a climbing face)
@@ -55,6 +57,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_bend(skel, "mixamorig_Hips", x, pelvis)
 	for side in ["Left", "Right"]:
 		var sg := 1.0 if side == "Left" else -1.0
+		if leg_aim > 0.0:
+			_hang_leg(skel, side, (-up + x * sg * 0.1).normalized())
 		_bend(skel, "mixamorig_%sUpLeg" % side, x, -(hip - stride * sg * 1.1) - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, knee - stride * sg * 1.3)
 		var bh := back_hand if side == "Right" else 0.0
@@ -251,6 +255,19 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	# toes into the face, tipped down onto the stone's edge
 	var want := (-wall * 0.85 - up * 0.5).normalized()
 	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, want)
+
+## Swings the thigh, then the shin, toward `down` (skeleton space) by leg_aim: a straight leg
+## hanging from the hip.
+func _hang_leg(skel: Skeleton3D, side: String, down: Vector3) -> void:
+	var ul := skel.find_bone("mixamorig_%sUpLeg" % side)
+	var lg := skel.find_bone("mixamorig_%sLeg" % side)
+	var ft := skel.find_bone("mixamorig_%sFoot" % side)
+	if ul < 0 or lg < 0 or ft < 0:
+		return
+	var th := skel.get_bone_global_pose(lg).origin - skel.get_bone_global_pose(ul).origin
+	_swing(skel, ul, th, th.normalized().slerp(down, leg_aim))
+	var sh := skel.get_bone_global_pose(ft).origin - skel.get_bone_global_pose(lg).origin
+	_swing(skel, lg, sh, sh.normalized().slerp(down, leg_aim))
 
 ## Turns a bone (skeleton-space rotation, pivoting at its joint) so `from` points along `to`.
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:

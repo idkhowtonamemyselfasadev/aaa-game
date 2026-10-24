@@ -41,6 +41,8 @@ var tip := 0.0                           # the pelvis's forward tilt (rad), for 
 ## front panel swings out only as far as the face lets it (`wall_n`/`wall_p`: the face's
 ## outward normal and a point on it, world; zero = no face).
 var posed_legs := false
+var stream := 0.0                        # 0..1 airflow past the body (gliding): the hems stream back and lift
+var flap := 0.0                          # 0..1 how hard the cloth works in that airflow
 var wall_n := Vector3.ZERO
 var wall_p := Vector3.ZERO
 var lateral := 0.0                       # the knee drag (m, body +X = the wearer's left), for the bots
@@ -410,6 +412,8 @@ func _physics_process(delta: float) -> void:
 		drag = clampf((rise[0] - rise[1]) * 0.35, -0.09, 0.09)
 	fwd = maxf(fwd - swing_slack, 0.0)
 	bwd = maxf(bwd - swing_slack, 0.0)
+	# in the air the back panel streams out behind over the trailing legs
+	bwd = maxf(bwd, stream * 0.42)
 	var k := minf(delta * 14.0, 1.0)
 	if hang > 0.0:
 		_hang_panels(fwd, bwd, k)
@@ -434,7 +438,10 @@ func _physics_process(delta: float) -> void:
 	# climbing: the hems lag a stride up the face, then settle past when it stops
 	target.y -= clampf(local.y, -2.0, 2.0) * 0.02 * float(posed_legs)
 	lateral = drag
+	# under the glider the air lifts the hems a little and lets them stream further back
+	target.y += stream * 0.05
 	# a damped spring: a little overshoot when the body stops or turns
 	_vel += ((target - _trail) * 55.0 - _vel * 7.0) * delta
-	_trail = (_trail + _vel * delta).limit_length(0.12)
+	_trail = (_trail + _vel * delta).limit_length(lerpf(0.12, 0.3, stream))
 	set_param("sway", _trail)
+	set_param("flap", flap)

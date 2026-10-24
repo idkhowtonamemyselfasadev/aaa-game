@@ -23,6 +23,7 @@ uniform float ember = 1.0;
 uniform float hit_flash = 0.0;
 uniform float dissolve = 0.0;
 uniform vec3 sway = vec3(0.0);
+uniform float flap = 0.0;          // 0..1 airflow past the body (gliding): quick waves run down to the hem
 uniform float time_offset = 0.0;
 uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = Hollow rags)
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
@@ -154,6 +155,9 @@ void vertex() {
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;
+	// in the air the cloth works hard: short waves run from the seam down and out to the hem
+	flutter += flap * (sin(tt * 9.0 - UV.y * 12.0 + UV.x * 5.0 + seed) * 0.022
+			+ sin(tt * 15.0 - UV.y * 21.0 + UV.x * 11.0 + seed * 1.7) * 0.009);
 	VERTEX += NORMAL * flutter * w;
 	VERTEX += sway * w;
 	// a side gore's front end (UV.x 0) rides out with the front panel, its back end with the
