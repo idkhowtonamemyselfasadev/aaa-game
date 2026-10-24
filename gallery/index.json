@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-0450-whitecottage-wide.jpg",
-  "time": "2026-10-19T04:50:00Z",
-  "caption": "The limewashed cottage on the green at 15:00 beside the timber house, its walls now one white lime skin over rubble (the barrel here is a duplicate butt since replaced by the other session's); the slate roof still reads flat and dark and the stack's blocks still show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0555-waterbutt.jpg",
-  "time": "2026-10-19T05:55:32Z",
-  "caption": "Water butt by the limewashed cottage: the rainwater now mirrors a cool sky with a dark far rim and floating leaves instead of a matte brown disc; the water is still a little flat and the shadowed yard is dim.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0700-whitecottage-eaves.jpg",
   "time": "2026-10-19T07:00:00Z",
   "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
@@ -897,6 +885,18 @@
   "file": "20261024-1320-dust-devil5-close.jpg",
   "time": "2026-10-24T13:20:00Z",
   "caption": "Crop on the whirl: the throat shows horizontal streaks of dust dragged round the column, so it reads as spinning rather than smoke; the top still dissolves into a soft haze and few straw flecks show.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1425-dust-devil6.jpg",
+  "time": "2026-10-24T14:25:00Z",
+  "caption": "A dust devil 12 m off the hero with dead leaves and chaff now whirling round and flung out of the column; the hero still looks stylized and the skirt hides in the tall grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1425-dust-devil6-close.jpg",
+  "time": "2026-10-24T14:25:00Z",
+  "caption": "Crop on the whirl: brown tumbling leaves read clearly against the sky and the bowl keeps a firmer right edge; the top still melts into a soft haze against the cloud.",
   "verdict": "fail"
  }
 ]
