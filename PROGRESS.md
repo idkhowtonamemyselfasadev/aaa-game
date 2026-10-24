@@ -33,7 +33,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (03:20 10-24) **Furled glider stowed on the back** (bot-verified `glide climb walk`; shot `stowroll` pending at commit time).
+- (03:20 10-24) **Furled glider stowed on the back** (bot-verified `glide climb walk`; shot `stowroll`, verdict FAIL, gallery *-glide-stowed.jpg).
   glider.gd: build_stowed_mesh() rolls the canvas (glider.gdshader, open=1, own material) round
   four bamboo poles (folded spar + battens, ends staggered 4-15 cm past the cloth), radius 5 cm x
   0.64 m, lumpy spiral bunching, cinched at three two-turn cord bindings, twisted shut at the ends,
@@ -42,8 +42,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   roll's ends stuck out the side) at body (0, 1.165, -0.305); in the idle it sits at
   (0.13, 1.21, -0.32), axis 18 deg off square. _process shows it only while the wing is folded
   (open <= 0.01). Bot `glide` now checks the roll is on the back before launch, hidden with the
-  wing open and back after landing. NEXT: look at the shot (roll vs cape hem at y~1.27 and the
-  staff), re-shoot the lowered linen panel from above, cape/hair flutter in the airflow, a launch
+  wing open and back after landing. Shot `staff stowroll 60 10.5` (Forward+, ~20 min): the roll
+  reads as a bound canvas bundle with bamboo ends, but sat mid-back well above the sash, the staff
+  crossed over it, and the batten ridges made pale bands. After the shot: STOW_AT 1.165/-0.305 ->
+  1.115/-0.335 (posed (0.15, 1.17, -0.36)) and the roll's canvas uses the dull underside (COLOR.a 1,
+  no ridges); bot glide passes, NOT re-shot. NEXT: re-shoot `staff` to check the roll on the sash
+  with the staff under it, re-shoot the lowered linen panel from above, cape/hair flutter in the airflow, a launch
   spot on the keep's crown, thermals over sun-warmed rock.
 - (02:20 10-24) **Glider canopy reads as sewn cloth** (bot-verified `glide climb walk`; shot `glide2`, verdict FAIL, gallery *-glide-canvas.jpg).
   glider.gdshader canvas: per-panel bolt tone (floor(span*8) hashed: undyed linen 0.56/0.47/0.33,

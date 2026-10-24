@@ -34,7 +34,7 @@ var stowed: MeshInstance3D    # the furled roll on the back, shown while the win
 ## Furled, the wing rides across the small of the back on the sash: the battens and the
 ## folded spar rolled up in the canvas, bound with cord, tucked over the staff and under the
 ## cape's hem. Body space at rest; the roll's axis runs across the back (X).
-const STOW_AT := Vector3(0.0, 1.165, -0.305)
+const STOW_AT := Vector3(0.0, 1.115, -0.335)   # posed it lands ~5 cm higher, on the sash
 const STOW_LEN := 0.64
 const STOW_R := 0.05
 const STOW_BONE := "mixamorig_Spine2"   # with the staff: the hips and low spine turn ~40° in the idle
@@ -209,7 +209,8 @@ static func build_stowed_mesh() -> ArrayMesh:
 				var n := dx.cross(da).normalized()
 				if n.dot(Vector3(0, p.y, p.z)) < 0.0:
 					n = -n
-				st.set_color(Color(CANVAS, 0.0, 0.5 + x, 0.0))
+				# (alpha 1: the rolled cloth shows its duller back, no pale batten ridges)
+				st.set_color(Color(CANVAS, 0.0, 0.5 + x, 1.0))
 				# round the roll: one turn is ~0.3 m of cloth; start past the tarred binding
 				st.set_uv(Vector2(x + 0.9, 0.35 + a * STOW_R))
 				st.set_normal(n)
