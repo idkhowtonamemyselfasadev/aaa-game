@@ -11,7 +11,7 @@ extends Node3D
 @export var seed := 4242
 
 const PUFFS := 500           # dust motes (skirt and funnel)
-const FLECKS := 90           # straw and leaf bits whirled up the column
+const FLECKS := 170          # straw flecks, dead leaves and chaff clumps whirled up the column
 const HEIGHT := 11.0         # m: where the funnel frays out
 const MIN_STRENGTH := 0.5    # Thermals.strength needed for a whirl to stand up
 const SPEED := 1.3           # m/s of drift (downwind plus a wander)
