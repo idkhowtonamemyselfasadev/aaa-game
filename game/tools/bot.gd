@@ -791,6 +791,31 @@ func _glide_test() -> void:
 		return _combat_done(false, "the furled roll stays on the back with the wing open")
 	if err > 0.06:
 		return _combat_done(false, "the hands do not hold the crossbar")
+	# the sail is an airfoil: deepest belly ~a third back, puffed between battens, tips washed out
+	var lead0 := Glider._canvas_point(0.0, 0.0)
+	var tail0 := Glider._canvas_point(0.0, 1.0)
+	var belly := 0.0
+	var belly_c := 0.0
+	for ci in 21:
+		var cc := ci / 20.0
+		var chord_y := lerpf(lead0.y, tail0.y, cc)
+		var dy := Glider._canvas_point(0.0, cc).y - chord_y
+		if dy > belly:
+			belly = dy
+			belly_c = cc
+	var mid_s := 1.0 / (Glider.RIBS - 1)   # halfway between the keel batten and the next
+	var puff := Glider._canvas_point(mid_s, 0.45).y - lerpf(Glider._canvas_point(0.0, 0.45).y, Glider._canvas_point(2.0 * mid_s, 0.45).y, 0.5)
+	var twist_root := Glider._canvas_point(0.0, 1.0).y - Glider._canvas_point(0.0, 0.0).y
+	var twist_tip := Glider._canvas_point(1.0, 1.0).y - Glider._canvas_point(1.0, 0.0).y
+	print("BOT glide: canopy belly %.3f m (%.0f %% of the root chord) at %.2f chord, panel puff %.3f m, trailing edge vs nose root %.3f tip %.3f, fill %.2f" % [belly, 100.0 * belly / Glider.ROOT_CHORD, belly_c, puff, twist_root, twist_tip, p.glider.fill])
+	if belly < 0.1 * Glider.ROOT_CHORD or belly_c < 0.2 or belly_c > 0.5:
+		return _combat_done(false, "the canopy is a flat card, not a cambered sail")
+	if puff < 0.05:
+		return _combat_done(false, "the cloth does not puff up between the battens")
+	if twist_tip <= twist_root + 0.03:
+		return _combat_done(false, "the tips are not washed out")
+	if p.glider.fill < 0.6:
+		return _combat_done(false, "the air at gliding speed does not fill the panels")
 	if p.stamina >= st0 - 10.0:
 		return _combat_done(false, "gliding costs no stamina")
 	var thigh_mean := thigh_sum / maxf(thigh_n, 1.0)

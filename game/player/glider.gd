@@ -4,7 +4,8 @@ extends Node3D
 ## cloth-wrapped crossbar. Built procedurally in body space (the body faces +Z, the hands on
 ## the bar). One mesh; COLOR.r selects the material in glider.gdshader (0 bamboo, 0.5 cord and
 ## wrap, 1 canvas), COLOR.g is the canvas's billow between ribs (0 at a rib, 1 mid-panel),
-## COLOR.b the span position 0..1 (tip to tip). It unfurls from the middle out when opened.
+## COLOR.b the span position 0..1 (tip to tip); the canvas's UV2 = (chord 0..1 from the nose,
+## span -1..1). It unfurls from the middle out when opened.
 
 const SPAN := 3.3
 const ROOT_CHORD := 1.45
@@ -16,6 +17,8 @@ const NOSE_Z := 0.62
 const BAR_Y := 1.79           # the crossbar the hands hold
 const BAR_HALF := 0.3
 const BAR_Z := 0.12
+const CAMBER := 0.11          # of the chord: how deep the sail bellies
+const BILLOW := 0.085         # m the cloth puffs up between two battens
 const RIBS := 9               # battens across the span (odd: one on the keel)
 const BAMBOO := 0.0
 const CORD := 0.5
@@ -27,6 +30,7 @@ var want_open := false
 var open := 0.0               # 0 furled .. 1 spread
 var bank := 0.0               # radians the wing rolls into a turn
 var gust := 0.0               # 0 still air .. 1 a storm gust working the cloth
+var fill := 1.0               # 0 slack .. 1 the air at gliding speed pressing the panels full
 var _mesh: MeshInstance3D
 var _mat: ShaderMaterial
 var stowed: MeshInstance3D    # the furled roll on the back, shown while the wing is folded
@@ -85,6 +89,7 @@ func _process(delta: float) -> void:
 		return
 	_mat.set_shader_parameter("open", open)
 	_mat.set_shader_parameter("gust", gust)
+	_mat.set_shader_parameter("fill", fill)
 	_mesh.transform = bar_transform()
 
 ## The wing pivots on the bar: it rolls into the turn and pitches a touch nose-up.
@@ -102,18 +107,23 @@ static func _chord(s: float) -> float:
 	return lerpf(ROOT_CHORD, TIP_CHORD, pow(absf(s), 1.3))
 
 static func _canvas_point(s: float, c: float) -> Vector3:
-	# c in 0..1 from the leading edge back; the cloth billows up between ribs, more aft
+	# c in 0..1 from the leading edge back. The sail is an airfoil, not a card: it bellies up
+	# to its deepest a third of the way back, flattens and droops toward the trailing edge,
+	# twists nose-down toward the tips (washout), and puffs up between the battens
 	var p := _lead(s)
 	var ch := _chord(s)
+	var a := absf(s)
 	var rib := (s * 0.5 + 0.5) * (RIBS - 1)
 	var panel := sin(PI * fposmod(rib, 1.0))
-	var camber := sin(PI * minf(c * 1.25, 1.0)) * 0.07 * ch
-	var billow := panel * 0.065 * sin(PI * clampf(c * 1.1, 0.0, 1.0))
+	var camber := sin(PI * pow(c, 0.72)) * CAMBER * ch * (1.0 - 0.35 * a)
+	var billow := panel * BILLOW * pow(sin(PI * clampf(c * 1.08, 0.0, 1.0)), 0.8)
+	var washout := a * a * c * ch * 0.16
 	p.z -= c * ch
-	p.y += camber + billow - c * 0.05
-	# the trailing edge scallops between the ribs
+	p.y += camber + billow + washout - c * c * 0.07
+	# the trailing edge scallops between the ribs, the slack cloth there sagging a little
 	if c > 0.999:
 		p.z += panel * 0.07
+		p.y -= panel * 0.015
 	return p
 
 static func build_mesh() -> ArrayMesh:
@@ -142,6 +152,7 @@ static func build_mesh() -> ArrayMesh:
 					var rib := (s * 0.5 + 0.5) * (RIBS - 1)
 					st.set_color(Color(CANVAS, sin(PI * fposmod(rib, 1.0)), s * 0.5 + 0.5, float(side)))
 					st.set_uv(Vector2(p.x, c * _chord(s)))
+					st.set_uv2(Vector2(c, s))
 					st.set_normal(n)
 					st.add_vertex(p)
 	# bamboo leading-edge spar, just under the cloth's front hem
@@ -213,6 +224,7 @@ static func build_stowed_mesh() -> ArrayMesh:
 				st.set_color(Color(CANVAS, 0.0, 0.5 + x, 1.0))
 				# round the roll: one turn is ~0.3 m of cloth; start past the tarred binding
 				st.set_uv(Vector2(x + 0.9, 0.35 + a * STOW_R))
+				st.set_uv2(Vector2.ZERO)
 				st.set_normal(n)
 				st.add_vertex(p)
 	# end caps: the cloth twisted shut round the bamboo
@@ -225,6 +237,7 @@ static func build_stowed_mesh() -> ArrayMesh:
 			for v: Vector3 in tri:
 				st.set_color(Color(CANVAS, 0.0, 0.5 + v.x, 0.0))
 				st.set_uv(Vector2(v.x + 0.9, 0.5 + 0.02 * j))
+				st.set_uv2(Vector2.ZERO)
 				st.set_normal(Vector3(sg, 0, 0))
 				st.add_vertex(v)
 	# the bundled bamboo: the folded spar halves and a few battens, ends cut at staggered lengths
@@ -274,5 +287,6 @@ static func _tube(st: SurfaceTool, pts: Array, r: float, mat: float, seg := 8) -
 				var p: Vector3 = rg[0]
 				st.set_color(Color(mat, 0.0, clampf(p.x / SPAN + 0.5, 0.0, 1.0), 0.0))
 				st.set_uv(Vector2(float(q[1]) / seg, rg[3]))
+				st.set_uv2(Vector2.ZERO)
 				st.set_normal(n)
 				st.add_vertex(p + n * r)

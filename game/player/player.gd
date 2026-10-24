@@ -760,6 +760,7 @@ func _glide_pose(delta: float) -> void:
 	# a thermal shakes the wing
 	var air := clampf((Vector3(velocity.x, 0.0, velocity.z) - glide_drift).length() / GLIDE_SPEED, 0.0, 1.0)
 	var k := 1.0 - exp(-3.0 * delta)
+	glider.fill = lerpf(glider.fill, clampf(air * 1.4 - 0.2, 0.0, 1.0), k)
 	crumple.leg_aim = minf(crumple.leg_aim + delta * 3.0, 1.0)
 	crumple.knee = lerpf(crumple.knee, 0.45 + 0.3 * air, k)
 	crumple.hip = lerpf(crumple.hip, 0.12 - 0.44 * air, k)
@@ -777,6 +778,7 @@ func _end_glide(clear_pose: bool) -> void:
 	glider.want_open = false
 	glider.bank = 0.0
 	glider.gust = 0.0
+	glider.fill = 0.4                         # the next unfurl starts slack and fills
 	glide_drift = Vector3.ZERO
 	if garb != null:
 		garb.stream = 0.0

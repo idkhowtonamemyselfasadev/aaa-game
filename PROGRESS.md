@@ -33,6 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (06:00 10-24) **Glider canopy is a cambered sail, not a card** (bot-verified `glide climb walk thermal dodge`; shot `canopy1`, verdict see gallery).
+  glider.gd _canvas_point(): airfoil camber CAMBER 0.11 x chord peaking ~40 % back (sin(pi c^0.72),
+  easing 35 % to the tips; was 0.07 peaking mid-chord), panel billow BILLOW 0.085 m (was 0.065)
+  shaped pow(sin, 0.8) so it carries further aft, washout (trailing edge raised a^2 x c x 0.16
+  chord: tips twisted nose-down), the aft chord droops c^2 x 7 cm, and the trailing-edge scallops
+  sag 1.5 cm mid-panel. Canvas carries UV2 = (chord 0..1, span). glider.gdshader: new `fill`
+  uniform: short of gliding speed the panels sag between the battens (puff x slack x 0.1) and luff
+  harder aft; player._glide_pose eases glider.fill to clamp(air x 1.4 - 0.2) and _end_glide resets
+  it to 0.4 so each unfurl fills. Bot glide now checks: root belly 0.176 m (12 % chord) at 0.40
+  chord, panel puff 0.091 m, trailing edge vs nose root -0.07 / tip +0.02 (washout), fill 1.0 in
+  flight.
 - (05:15 10-24) **Legs trail and the robe streams in flight** (bot-verified `glide climb walk thermal death dodge flinch`; shot `glidelegs`, verdict FAIL, gallery *-glide-legs.jpg).
   crumple.gd: new `leg_aim` (0..1) + _hang_leg(): before the hip/knee/stride bends, each thigh and
   shin swing toward the body's plumb down (0.1 splayed out), so the idle clip's staggered stance
