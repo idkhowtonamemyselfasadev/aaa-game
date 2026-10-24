@@ -74,7 +74,7 @@ static func _canvas_point(s: float, c: float) -> Vector3:
 	var rib := (s * 0.5 + 0.5) * (RIBS - 1)
 	var panel := sin(PI * fposmod(rib, 1.0))
 	var camber := sin(PI * minf(c * 1.25, 1.0)) * 0.07 * ch
-	var billow := panel * 0.045 * sin(PI * clampf(c * 1.1, 0.0, 1.0))
+	var billow := panel * 0.065 * sin(PI * clampf(c * 1.1, 0.0, 1.0))
 	p.z -= c * ch
 	p.y += camber + billow - c * 0.05
 	# the trailing edge scallops between the ribs

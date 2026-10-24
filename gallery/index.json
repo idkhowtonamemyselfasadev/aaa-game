@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261018-1456-hens-meadow.jpg",
-  "time": "2026-10-18T14:56:43Z",
-  "caption": "The same hens before the garth was scratched short: lost in knee-high meadow grass, which is why the yard now grows only a patchy short sward.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-1600-garth-earth.jpg",
-  "time": "2026-10-18T16:02:34Z",
-  "caption": "The hens' garth is now scratched down to dry bare earth with grit, dust-bath hollows and surviving tufts; still wrong: the claw-rake fans read as dark arrow marks (softened after this shot), the ground is flat grey-brown in the cottage's shade, and the cottage stones are still cream pillows.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1716-henhouse.jpg",
   "time": "2026-10-18T17:16:00Z",
   "caption": "The new oak hen house in the garth at 11 h with a hen climbing its ladder to the pop-hole; still wrong: boards read pale silver and flat, the nest box reads as a bare shelf, the garth dust shows smooth pale ovals.",
@@ -891,6 +879,12 @@
   "file": "20261024-0150-glide1.jpg",
   "time": "2026-10-24T01:50:00Z",
   "caption": "The hero under Caelum's hemp-and-bamboo glider over the Vale at 10:30: the wing reads as a real swept glider at the right scale against the body, but the canopy is a flat even brown with its patches and battens lost at this range, the hero hangs stiffly straight down, and the meadow below is sparse and soft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0220-glide-canvas.jpg",
+  "time": "2026-10-24T02:20:00Z",
+  "caption": "The hero gliding high over the vale: the canopy now reads as sewn cloth, with panels from different bolts, pale rubbed batten ridges, a dark tarred leading edge and a stitched ox-blood patch, but the undyed panel glares near white in the sun (since toned down) and the figure under the wing is still a small, stiff silhouette.",
   "verdict": "fail"
  }
 ]

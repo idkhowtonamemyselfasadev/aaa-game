@@ -76,30 +76,61 @@ void fragment() {
 	float trans = 0.0;
 	if (layer > 0.75) {
 		vec2 p = cuv;
+		// each panel between two battens was cut from a different bolt: undyed replacement
+		// linen, the old sun-browned hemp, a heavily oiled near-umber one
+		float pi = floor(span * 8.0);
+		float ph = hash(vec2(pi, 3.1));
+		vec3 bolt = canvas;
+		bolt = mix(bolt, vec3(0.56, 0.47, 0.33), step(0.72, ph));
+		bolt = mix(bolt, vec3(0.31, 0.23, 0.15), step(ph, 0.28));
+		bolt *= 0.9 + 0.2 * hash(vec2(pi, 8.7));
 		// plain-woven hemp: threads in both directions, slubs, oil soaked unevenly
 		float weave = (sin(p.x * 900.0) * 0.5 + 0.5) * (sin(p.y * 900.0) * 0.5 + 0.5);
 		float slub = vnoise(vec2(p.x * 40.0, p.y * 400.0)) * vnoise(vec2(p.x * 420.0, p.y * 35.0));
 		float oil = fbm(p * 3.1);
-		alb = canvas * (0.78 + 0.3 * oil) * (0.92 + 0.12 * weave) * (0.95 + 0.15 * slub);
-		// seams: a doubled, stitched strip down each rib
-		float rib = 1.0 - billow;
-		float seam = smoothstep(0.985, 0.998, rib);
-		float stitch = step(0.5, fract(p.y * 55.0)) * smoothstep(0.96, 0.99, rib) * (1.0 - seam);
-		alb *= 1.0 - seam * 0.28 - stitch * 0.18;
-		// patches: squares of dyed cloth sewn over old tears
-		vec2 cell = floor(p * vec2(2.2, 3.0));
-		vec2 f = fract(p * vec2(2.2, 3.0));
-		float has = step(0.86, hash(cell + 7.0));
-		float inside = has * step(0.18, f.x) * step(f.x, 0.72) * step(0.22, f.y) * step(f.y, 0.7);
-		float rim = has * (1.0 - inside) * step(0.15, f.x) * step(f.x, 0.75) * step(0.19, f.y) * step(f.y, 0.73);
-		alb = mix(alb, canvas_patch * (0.85 + 0.3 * oil), inside);
-		alb *= 1.0 - rim * 0.3;
+		alb = bolt * (0.72 + 0.4 * oil) * (0.92 + 0.12 * weave) * (0.95 + 0.15 * slub);
+		// old oil and rain stains: blotches with a darker tide line at their rim
+		float st = fbm(p * 1.3 + vec2(pi * 0.37, 0.0));
+		float blot = smoothstep(0.56, 0.6, st);
+		float tide = smoothstep(0.54, 0.565, st) * (1.0 - smoothstep(0.575, 0.6, st));
+		alb *= 1.0 - blot * 0.22 - tide * 0.3;
+		// the cloth sags into the batten lines and is rubbed pale where it rides over each
+		// batten; a doubled, stitched seam strip either side
+		// (metres from the nearest batten: they sit every SPAN / 8 = 0.4125 m across)
+		float d = abs(fract(p.x / 0.4125 + 0.5) - 0.5) * 0.4125;
+		float ridge = 1.0 - smoothstep(0.008, 0.014, d);
+		float seam = smoothstep(0.012, 0.016, d) * (1.0 - smoothstep(0.028, 0.032, d));
+		float stitch = step(0.5, fract(p.y * 55.0)) * smoothstep(0.034, 0.037, d) * (1.0 - smoothstep(0.041, 0.044, d));
+		alb *= mix(0.68, 1.0, smoothstep(0.01, 0.16, d));
+		alb *= 1.0 - seam * 0.4 - stitch * 0.35;
+		alb = mix(alb, alb * 1.55 + vec3(0.05, 0.04, 0.02), ridge * (1.0 - under));
+		// the leading edge bound in a tarred hemp tape, the trailing hem turned and sewn
+		float bind = 1.0 - smoothstep(0.05, 0.065, p.y);
+		alb = mix(alb, vec3(0.13, 0.10, 0.07) * (0.8 + 0.4 * oil), bind);
+		// patches: dyed or undyed cloth sewn over old tears, sizes vary, dark stitched rims
+		vec2 cell = floor(p * vec2(2.4, 3.2));
+		vec2 f = fract(p * vec2(2.4, 3.2));
+		float hc = hash(cell + 7.0);
+		float has = step(0.74, hc);
+		vec2 lo = vec2(0.12, 0.16) + 0.14 * vec2(hash(cell + 2.0), hash(cell + 5.0));
+		vec2 hi = vec2(0.6, 0.62) + 0.3 * vec2(hash(cell + 9.0), hash(cell + 4.0));
+		float inside = has * step(lo.x, f.x) * step(f.x, hi.x) * step(lo.y, f.y) * step(f.y, hi.y);
+		float rim = has * (1.0 - inside) * step(lo.x - 0.035, f.x) * step(f.x, hi.x + 0.035)
+				* step(lo.y - 0.035, f.y) * step(f.y, hi.y + 0.035);
+		vec3 pc = mix(canvas_patch, vec3(0.70, 0.62, 0.48), step(0.9, hc));
+		alb = mix(alb, pc * (0.8 + 0.4 * oil), inside);
+		alb *= 1.0 - rim * 0.55;
+		// a sun disc in red ochre, painted long ago on the keel panels, flaking and faded
+		float dr = length((p - vec2(0.0, 0.62)) * vec2(1.0, 1.15));
+		float ring = smoothstep(0.035, 0.0, abs(dr - 0.36)) + smoothstep(0.2, 0.17, dr) * 0.85;
+		ring *= smoothstep(0.3, 0.55, fbm(p * 9.0)) * (1.0 - under * 0.6);
+		alb = mix(alb, vec3(0.42, 0.11, 0.06) * (0.8 + 0.3 * oil), ring * 0.75);
 		// weather: soot and sun-bleach toward the tips, grime along the trailing edge
 		float edge_dirt = smoothstep(0.7, 1.6, p.y) * fbm(p * 6.0);
-		alb *= 1.0 - 0.35 * edge_dirt;
-		alb = mix(alb, alb * vec3(1.1, 1.06, 0.98), smoothstep(0.6, 1.0, abs(span * 2.0 - 1.0)) * 0.4);
-		rough = mix(0.62, 0.86, oil) - seam * 0.1;
-		bump = weave * 0.25 + slub * 0.4 + seam * 0.8 + stitch * 0.4 + rim * 0.6;
+		alb *= 1.0 - 0.4 * edge_dirt;
+		alb = mix(alb, alb * vec3(1.12, 1.07, 0.98), smoothstep(0.6, 1.0, abs(span * 2.0 - 1.0)) * 0.45);
+		rough = mix(0.58, 0.88, oil) - seam * 0.1 - ridge * 0.15 - bind * 0.2 + ring * 0.1;
+		bump = weave * 0.25 + slub * 0.4 + ridge * 1.2 + seam * 0.5 + stitch * 0.5 + rim * 0.9 + bind * 0.6 + tide * 0.3;
 		trans = 1.0;
 		if (under > 0.5) {
 			alb *= 0.82;   // the underside shows the cloth's less-oiled back
