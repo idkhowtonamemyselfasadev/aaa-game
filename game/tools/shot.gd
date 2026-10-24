@@ -1288,6 +1288,23 @@ func _ready() -> void:
 			cp = hero + rad * 0.7 + tan * 3.0 + Vector3.DOWN * 0.5
 		SPOTS[spot] = [cp, hero + Vector3.UP * (0.5 if "side" in args else 0.3)]
 		print("SHOT climb at %.2f rad, face %.1f m" % [best, pick + 5.0])
+	if spot == "devil":
+		# a dust devil standing up on the dry meadow 22-34 m off the hero, seen from beside the hero
+		world.weather.force(0.0)
+		world.weather.wet = 0.0
+		await get_tree().process_frame
+		var dd: DustDevils = world.dust_devils
+		var hp := player.global_position
+		if dd.spawn_near(hp, 22.0, 34.0):
+			dd.age = 8.0
+			# 5 m behind the hero and 1.5 m to the hero's right, so the hero stands in frame left of the whirl
+			var back := Vector3(hp.x - dd.pos.x, 0, hp.z - dd.pos.z).normalized()
+			var right := back.cross(Vector3.UP)
+			SPOTS[spot] = [hp + back * 5.0 + right * 1.5, dd.pos]
+			print("SHOT devil at %s, %.0f m" % [dd.pos, Vector2(dd.pos.x - hp.x, dd.pos.z - hp.z).length()])
+		else:
+			print("SHOT devil: none stood up (thermal strength %.2f)" % world.thermals.strength)
+			SPOTS[spot] = [hp, hp + Vector3(20, 0, 0)]
 	if spot != "player" and SPOTS.has(spot):
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
@@ -1300,6 +1317,9 @@ func _ready() -> void:
 		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "climb":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
+		if spot == "devil":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
+			look.y = terrain.height_at(look.x, look.z) + 3.5
 		if spot == "face":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.8
 			look.y = terrain.height_at(look.x, look.z) + 1.75

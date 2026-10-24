@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -118,6 +118,9 @@ func _ready() -> void:
 		_glide_test()
 	if name == "thermal":
 		_thermal_test()
+		return
+	if name == "dust":
+		_dust_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -1002,6 +1005,61 @@ func _thermal_test() -> void:
 	if storm > 0.1 or th.strength > 0.0 or night_lift != 0.0 or mmi.visible:
 		return _combat_done(false, "the thermals do not die under a front or at night")
 	_combat_done(true, "circled up %.1f m in the keep's thermal, sank %.1f m away from it, kites over the columns, dead under a front and at night" % [climbs[0], -climbs[1]])
+
+## Dust devils: on a clear, still afternoon a whirl stands up on dry open ground near the
+## hero, wanders (downwind on the whole), builds and slumps, keeps off slopes/pools/houses,
+## and none stand up under a front or by night.
+func _dust_test() -> void:
+	var dd: DustDevils = _world.dust_devils
+	var wx: Weather = _world.weather
+	var hz := roundi(60.0 / Engine.time_scale)
+	_world.time_of_day = 14.5
+	wx.cloud = 0.0
+	wx.rain = 0.0
+	wx.wind = 0.0
+	wx.wet = 0.0
+	await _ticks(4)
+	var p := _player.global_position
+	if not dd.spawn_near(p):
+		return _combat_done(false, "no dust devil stands up on a clear afternoon (thermal strength %.2f)" % _world.thermals.strength)
+	var start := dd.pos
+	print("BOT dust: whirl at %s, %.0f m from the hero, life %.0f s" % [start, Vector2(start.x - p.x, start.z - p.z).length(), dd.life])
+	var peak := 0.0
+	var bad := 0
+	for k in hz * 12:
+		await _ticks(1)
+		peak = maxf(peak, dd.env)
+		if dd.active and not dd.dry_open(dd.pos.x, dd.pos.z):
+			bad += 1
+	var moved := Vector2(dd.pos.x - start.x, dd.pos.z - start.z)
+	var down := moved.normalized().dot(Vector2(Player.GLIDE_WIND_DIR.x, Player.GLIDE_WIND_DIR.z).normalized())
+	var mmi: MultiMeshInstance3D = dd.get_node("Whirl")
+	print("BOT dust: after 12 s active %s, env peak %.2f, moved %.1f m (downwind %.2f), %d frames off dry ground, shown %s, %d motes, foot %.2f m off the ground" % [dd.active, peak, moved.length(), down, bad, mmi.visible, mmi.multimesh.instance_count, dd.pos.y - _world.terrain.height_at(dd.pos.x, dd.pos.z)])
+	if not dd.active or peak < 0.95 or not mmi.visible:
+		return _combat_done(false, "the whirl did not build to full")
+	if moved.length() < 4.0:
+		return _combat_done(false, "the whirl stands still")
+	if bad > 0:
+		return _combat_done(false, "the whirl wandered off the dry open meadow")
+	if down < 0.0:
+		return _combat_done(false, "the whirl wandered upwind")
+	if absf(dd.pos.y - _world.terrain.height_at(dd.pos.x, dd.pos.z)) > 0.05:
+		return _combat_done(false, "the whirl's foot is off the ground")
+	# a front rolls in: it slumps within a few seconds and no new one stands up
+	wx.cloud = 1.0
+	wx.rain = 0.8
+	await _ticks(hz * 5)
+	var after_front := dd.active
+	var front_spawn := dd.spawn_near(p)
+	wx.cloud = 0.0
+	wx.rain = 0.0
+	_world.time_of_day = 1.0
+	await _ticks(4)
+	var night_spawn := dd.spawn_near(p)
+	print("BOT dust: under a front still up %s, new one %s; at 01:00 new one %s" % [after_front, front_spawn, night_spawn])
+	if after_front or front_spawn or night_spawn:
+		return _combat_done(false, "dust devils under a front or at night")
+	_combat_done(true, "a whirl stood up %.0f m off, built to full, wandered %.1f m over dry meadow, slumped when the front came; none at night" % [Vector2(start.x - p.x, start.z - p.z).length(), moved.length()])
 
 ## Camera-relative stick input that walks the hero toward a world point.
 func _input_toward(at: Vector3) -> Vector2:

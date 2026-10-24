@@ -285,7 +285,8 @@ Hour budget changes require editing §5 and the matching PROGRESS.md counter.
 ## 8. The living world (as important as the look)
 
 - **Time and weather:** full day/night cycle with changing light; weather fronts that roll in
-  (rain, fog, storms) with wind that drives grass and tree sway; wet surfaces in rain.
+  (rain, fog, storms) with wind that drives grass and tree sway; wet surfaces in rain; on hot still
+  afternoons thermals rise off sun-warmed rock and dust devils wander over the dry meadow.
 - **Wildlife:** herds (sheep, deer) that graze, drift and flee as a group; predators (wolves)
   that hunt them at dusk; birds that scatter when the player approaches; insects and moths
   in lamplight; campfires draw wildlife at night.

@@ -22,6 +22,7 @@ var training_post: TrainingPost
 var soldier: HollowSoldier
 var weather: Weather
 var thermals: Thermals
+var dust_devils: DustDevils
 var clouds: CloudLayer
 var trample: Trample
 var herd: Herd
@@ -240,6 +241,11 @@ func _ready() -> void:
 	thermals.name = "Thermals"
 	thermals.terrain_path = NodePath("../Terrain")
 	add_child(thermals)
+	# on a hot still afternoon a whirl of dust and chaff wanders over the dry meadow
+	dust_devils = DustDevils.new()
+	dust_devils.name = "DustDevils"
+	dust_devils.terrain_path = NodePath("../Terrain")
+	add_child(dust_devils)
 	# staff swishes, impacts, parry clangs, dodges and footfalls
 	foley = Foley.new()
 	foley.name = "Foley"
