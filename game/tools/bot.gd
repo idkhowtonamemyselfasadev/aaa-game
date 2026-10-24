@@ -5125,7 +5125,7 @@ func _herd_test() -> void:
 		lay_max = maxf(lay_max, best)
 		if best > 0.5:
 			lane += 1
-	print("BOT herd lane: %d herd trail points live, grass laid at %d/8 spots 6-27 m behind the herd (max %.2f)" % [tr.active_herd_points(), lane, lay_max])
+	print("BOT herd lane: %d herd trail points live, grass laid at %d/8 spots 6-27 m behind the herd (max %.2f), herd at %s fleeing %s" % [tr.active_herd_points(), lane, lay_max, herd.centre().round(), herd._flee_dir.snapped(Vector3.ONE * 0.01)])
 	if tr.active_herd_points() < 15 or lane < 5:
 		return _combat_done(false, "the fleeing herd left no trodden lane in the grass")
 	t = 0.0

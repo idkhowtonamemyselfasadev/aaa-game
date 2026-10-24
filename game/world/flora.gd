@@ -238,6 +238,45 @@ func _pick_woods(r: RandomNumberGenerator) -> void:
 			wood_centres.append(best)
 			wood_radii.append(r.randf_range(24.0, 34.0))
 
+## The six outer woods stand 110-215 m out, so from the village the middle ground 60-110 m
+## read as bare field on every side. NEAR_WOODS smaller copses go in there, one per
+## 120-degree sector, each set between the outer woods' bearings (the widest gap to the
+## nearest outer wood scores best) so the view out of the village layers a near wood edge
+## over a far one. Own RNG, picked and planted after the outer woods, so those are untouched.
+const NEAR_WOODS := 3
+@export var near_tree_count: int = 66
+var near_tree_start := -1
+
+func _pick_near_woods(r: RandomNumberGenerator) -> Array:
+	var cs: Array[Vector3] = []
+	var rs: Array[float] = []
+	for k in NEAR_WOODS:
+		var a0 := TAU * k / NEAR_WOODS + 1.1
+		var best := Vector3.ZERO
+		var best_s := -INF
+		for i in 90:
+			var a := a0 + r.randf_range(0.0, TAU / NEAR_WOODS * 0.85)
+			var rad := r.randf_range(64.0, 100.0)
+			var x := cos(a) * rad
+			var z := sin(a) * rad
+			if _blocked(x, z, 20.0) or Vector2(x - ruin_site.x, z - ruin_site.z).length() < 70.0:
+				continue
+			var slope := 1.0 - _terrain.normal_at(x, z, 6.0).y
+			if slope > 0.2:
+				continue
+			# bearing gap to the nearest outer wood (radians): fill the open sectors first
+			var gap := PI
+			for c in wood_centres:
+				gap = minf(gap, absf(angle_difference(a, atan2(c.z, c.x))))
+			var sc := gap * 1.5 + _grove.get_noise_2d(x, z) * 0.5 - slope * 2.0 + r.randf() * 0.15
+			if sc > best_s:
+				best_s = sc
+				best = Vector3(x, _terrain.height_at(x, z), z)
+		if best_s > -INF:
+			cs.append(best)
+			rs.append(r.randf_range(14.0, 19.0))
+	return [cs, rs]
+
 func _scatter_outer_woods() -> void:
 	if outer_tree_count <= 0 or _tree_meshes.is_empty():
 		return
@@ -250,29 +289,60 @@ func _scatter_outer_woods() -> void:
 	rim.seed = seed + 29
 	rim.frequency = 1.0 / 22.0
 	outer_tree_start = tree_positions.size()
+	var added := _plant_woods(r, rim, wood_centres, wood_radii, outer_tree_count, "OuterOaks", 42.0)
+	if near_tree_count > 0:
+		var nr := RandomNumberGenerator.new()
+		nr.seed = seed * 17 + 9
+		var picked := _pick_near_woods(nr)
+		near_tree_start = tree_positions.size()
+		for i in picked[0].size():
+			wood_centres.append(picked[0][i])
+			wood_radii.append(picked[1][i])
+		if not picked[0].is_empty():
+			added.append_array(_plant_woods(nr, rim, picked[0], picked[1], near_tree_count, "NearOaks", 45.0, true))
+	_build_roots(added, 11, "Outer")
+	for xf in added:
+		var s := xf.basis.get_scale().x
+		var tr := 0.5 * s
+		_moss_ring(Vector2(xf.origin.x, xf.origin.z), tr + 0.4 * s, tr + 2.8 * s, 1.0)
+	RenderingServer.global_shader_parameter_set("moss_map", ImageTexture.create_from_image(moss))
+	# re-bake the crown shelter over every pass
+	var all: Array = []
+	for v in tree_variants:
+		all.append([])
+	for i in tree_xforms.size():
+		all[tree_variant[i]].append(tree_xforms[i])
+	_bake_shelter(all)
+
+## Plant `count` oaks into the given woods (ragged noisy rims, young oaks at the skirts, old
+## ones in the core), appending them to tree_positions with collision; returns the xforms.
+func _plant_woods(r: RandomNumberGenerator, rim: FastNoiseLite, centres: Array[Vector3], radii: Array[float], count: int, tag: String, keep_clear: float, dry := false) -> Array[Transform3D]:
 	var per: Array = []
 	for v in tree_variants:
 		per.append([])
 	var added: Array[Transform3D] = []
 	var body := StaticBody3D.new()
-	body.name = "OuterWoodsCollision"
+	body.name = tag + "Collision"
 	add_child(body)
 	var tries := 0
-	while added.size() < outer_tree_count and tries < outer_tree_count * 80:
+	while added.size() < count and tries < count * 80:
 		tries += 1
-		var w := tries % wood_centres.size()
-		var wc := wood_centres[w]
-		var wr := wood_radii[w] * 1.35
+		var w := tries % centres.size()
+		var wc := centres[w]
+		var wr := radii[w] * 1.35
 		var off := Vector2(r.randf_range(-wr, wr), r.randf_range(-wr, wr))
 		var x := wc.x + off.x
 		var z := wc.z + off.y
 		# ragged rim: the edge swings 0.55..1.45 of the radius with the noise
-		var edge := wood_radii[w] * (1.0 + 0.45 * clampf(rim.get_noise_2d(x, z) / 0.6, -1.0, 1.0))
+		var edge := radii[w] * (1.0 + 0.45 * clampf(rim.get_noise_2d(x, z) / 0.6, -1.0, 1.0))
 		var d := off.length() / edge
 		if d > 1.0 or _blocked(x, z, 6.0):
 			continue
+		# near the village the copses sit in the low ground: keep their boles out of the rain pools
+		if dry and _terrain.pond_at(x, z) > 0.15:
+			continue
 		# the keep's knoll stays open ground: the keeper's day runs between it and its own oaks
-		if Vector2(x - ruin_site.x, z - ruin_site.z).length() < 42.0:
+		if Vector2(x - ruin_site.x, z - ruin_site.z).length() < keep_clear:
 			continue
 		var slope := 1.0 - _terrain.normal_at(x, z).y
 		# the outer skirt thins out: lone young oaks stand off the wood's edge
@@ -310,20 +380,8 @@ func _scatter_outer_woods() -> void:
 		cs.position = p + Vector3.UP * 2.0
 		body.add_child(cs)
 	for v in tree_variants:
-		_multimesh(_tree_meshes[v], per[v], "OuterOaks_%d" % v)
-	_build_roots(added, 11, "Outer")
-	for xf in added:
-		var s := xf.basis.get_scale().x
-		var tr := 0.5 * s
-		_moss_ring(Vector2(xf.origin.x, xf.origin.z), tr + 0.4 * s, tr + 2.8 * s, 1.0)
-	RenderingServer.global_shader_parameter_set("moss_map", ImageTexture.create_from_image(moss))
-	# re-bake the crown shelter over both passes
-	var all: Array = []
-	for v in tree_variants:
-		all.append([])
-	for i in tree_xforms.size():
-		all[tree_variant[i]].append(tree_xforms[i])
-	_bake_shelter(all)
+		_multimesh(_tree_meshes[v], per[v], "%s_%d" % [tag, v])
+	return added
 
 func _build_tree(v: int) -> ArrayMesh:
 	var r := RandomNumberGenerator.new()

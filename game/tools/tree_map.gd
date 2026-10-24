@@ -1,5 +1,5 @@
 extends Node
-## Top-down map of the vale's oaks (first pass green, outer woods red) over the terrain
+## Top-down map of the vale's oaks (first pass green, outer woods red, near copses yellow) over the terrain
 ## heights, with the glide and devil shot lenses drawn in, plus a histogram of oaks by
 ## bearing from a viewpoint. Usage: godot --headless res://tools/tree_map.tscn -- out.png [x,z]
 var world: Node3D
@@ -28,6 +28,8 @@ func _ready() -> void:
 	for i in flora.tree_positions.size():
 		var p: Vector3 = flora.tree_positions[i]
 		var c := Color(1, 0.1, 0.1) if i >= flora.outer_tree_start else Color(0.1, 0.9, 0.2)
+		if flora.near_tree_start >= 0 and i >= flora.near_tree_start:
+			c = Color(1, 0.85, 0.1)
 		var q: Vector2i = to_px.call(p.x, p.z)
 		for dx in range(-1, 2):
 			for dy in range(-1, 2):
@@ -55,7 +57,7 @@ func _ready() -> void:
 		bins[b] += 1
 		if i >= flora.outer_tree_start:
 			obins[b] += 1
-	print("MAP trees %d (outer from %d, %d lone thinned) ruin %s" % [flora.tree_positions.size(), flora.outer_tree_start, flora.thinned_lone, flora.ruin_site])
+	print("MAP trees %d (outer from %d, near from %d, %d lone thinned) ruin %s" % [flora.tree_positions.size(), flora.outer_tree_start, flora.near_tree_start, flora.thinned_lone, flora.ruin_site])
 	for b in 16:
 		print("MAP bearing %5.1f deg (atan2 x,z): all %3d outer %3d" % [b * 22.5, bins[b], obins[b]])
 	get_tree().quit()
