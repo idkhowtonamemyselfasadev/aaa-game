@@ -1045,11 +1045,18 @@ func _dust_test() -> void:
 		return _combat_done(false, "the whirl wandered upwind")
 	if absf(dd.pos.y - _world.terrain.height_at(dd.pos.x, dd.pos.z)) > 0.05:
 		return _combat_done(false, "the whirl's foot is off the ground")
+	var gmat: ShaderMaterial = (_world.get_node("Grass") as GrassField).material
+	var wh: Vector4 = gmat.get_shader_parameter("whirl")
+	if wh.w < 0.9 or Vector2(wh.x - dd.pos.x, wh.y - dd.pos.z).length() > 0.5:
+		return _combat_done(false, "the grass does not whip round the whirl's foot (%s)" % wh)
 	# a front rolls in: it slumps within a few seconds and no new one stands up
 	wx.cloud = 1.0
 	wx.rain = 0.8
 	await _ticks(hz * 5)
 	var after_front := dd.active
+	var wh_after: Vector4 = gmat.get_shader_parameter("whirl")
+	if not after_front and wh_after.w > 0.0:
+		return _combat_done(false, "the grass still whirls after the whirl slumped")
 	var front_spawn := dd.spawn_near(p)
 	wx.cloud = 0.0
 	wx.rain = 0.0

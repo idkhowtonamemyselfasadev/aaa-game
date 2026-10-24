@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-0246-whitecottage-wide.jpg",
-  "time": "2026-10-19T02:46:13Z",
-  "caption": "The new limewashed cottage on the green beside the timber house, against the afternoon sun; its joints still drew a white-brick grid here (since fixed) and the walls lack splash grime at this range.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0414-waterbutt-rain.jpg",
-  "time": "2026-10-19T04:14:52Z",
-  "caption": "The water butt in rain at 14:00: grey overcast light suits the place, but no rain streaks or rings are visible at this range and the barrel's inside reads empty and dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0414-waterbutt.jpg",
   "time": "2026-10-19T04:14:52Z",
   "caption": "The white cottage's new oak water butt under the eaves with the bench by the door: the cask reads as staved oak with rusted hoops, but the water surface is a matte grey-brown disc with no reflection and the limewash still reads as white brick blocks.",
@@ -897,6 +885,18 @@
   "file": "20261024-1115-glide-meadow-close.jpg",
   "time": "2026-10-24T11:15:00Z",
   "caption": "Crop of the lower-left meadow: metre-wide tussocks with dark gaps and bleached tops; at this crop the mottling is a bit uniform and speckly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1230-dust-devil3.jpg",
+  "time": "2026-10-24T12:30:00Z",
+  "caption": "Same devil framing as devil2: the dust devil ~30 m out now reads as a tall tan column of churned soil with a dense dark skirt at the foot instead of a faint wisp; the hero is still stylized and the straw post odd.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1230-dust-devil3-close.jpg",
+  "time": "2026-10-24T12:30:00Z",
+  "caption": "Crop on the whirl: soft billowing funnel flaring toward the top with a soil-dark base; still reads a bit like smoke, needs visible spin streaks and more debris.",
   "verdict": "fail"
  }
 ]

@@ -10,7 +10,7 @@ extends Node3D
 @export var terrain_path: NodePath
 @export var seed := 4242
 
-const PUFFS := 260           # dust motes (skirt and funnel)
+const PUFFS := 500           # dust motes (skirt and funnel)
 const FLECKS := 90           # straw and leaf bits whirled up the column
 const HEIGHT := 11.0         # m: where the funnel frays out
 const MIN_STRENGTH := 0.5    # Thermals.strength needed for a whirl to stand up
@@ -25,19 +25,26 @@ var next_in := 0.0            # s until the next one may stand up
 var spawned := 0              # whirls so far (bots read)
 var _vel := Vector3.ZERO
 var _wander := 0.0
+var _blocked := 0.0            # s it has been hemmed in without a way on
 var _terrain: Terrain
 var _world: Node
 var _rng := RandomNumberGenerator.new()
 var _mat: ShaderMaterial
 var _mmi: MultiMeshInstance3D
+var _grass_mat: ShaderMaterial   # the grass whips round the foot (grass.gdshader `whirl`)
 
 func _ready() -> void:
 	_terrain = get_node(terrain_path)
 	_world = get_parent()
+	var grass := _world.get_node_or_null("Grass") as GrassField
+	if grass:
+		_grass_mat = grass.material
 	_rng.seed = seed
 	next_in = _rng.randf_range(20.0, 60.0)
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1, 1)
+	var mrng := RandomNumberGenerator.new()   # own stream: mote count never shifts the spawns
+	mrng.seed = seed + 1
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true
@@ -47,8 +54,8 @@ func _ready() -> void:
 		mm.set_instance_transform(m, Transform3D.IDENTITY)
 		# angle, height phase, radius share, kind (< 0.25 ground skirt, < 0.75 funnel dust,
 		# above that a fleck; the flecks sit at the top of the range)
-		var kind := _rng.randf() * 0.75 if m < PUFFS else _rng.randf_range(0.76, 1.0)
-		mm.set_instance_custom_data(m, Color(_rng.randf() * TAU, _rng.randf(), _rng.randf(), kind))
+		var kind := mrng.randf() * 0.75 if m < PUFFS else mrng.randf_range(0.76, 1.0)
+		mm.set_instance_custom_data(m, Color(mrng.randf() * TAU, mrng.randf(), mrng.randf(), kind))
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/dust_devil.gdshader")
 	_mat.set_shader_parameter("height", HEIGHT)
@@ -57,7 +64,7 @@ func _ready() -> void:
 	_mmi.multimesh = mm
 	_mmi.material_override = _mat
 	_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_mmi.custom_aabb = AABB(Vector3(-8, -1, -8), Vector3(16, HEIGHT + 4.0, 16))
+	_mmi.custom_aabb = AABB(Vector3(-12, -1, -12), Vector3(24, HEIGHT + 4.0, 24))
 	_mmi.visible = false
 	add_child(_mmi)
 
@@ -96,6 +103,7 @@ func spawn_near(p: Vector3, near := 18.0, far := 60.0) -> bool:
 			life = _rng.randf_range(25.0, 45.0)
 			_wander = _rng.randf() * TAU
 			_vel = Vector3.ZERO
+			_blocked = 0.0
 			spawned += 1
 			_mat.set_shader_parameter("seed", _rng.randf() * 50.0)
 			return true
@@ -103,6 +111,8 @@ func spawn_near(p: Vector3, near := 18.0, far := 60.0) -> bool:
 
 func _process(delta: float) -> void:
 	var s := _strength()
+	if _grass_mat:
+		_grass_mat.set_shader_parameter("whirl", Vector4(pos.x, pos.z, 4.5, env) if active else Vector4.ZERO)
 	if not active:
 		env = 0.0
 		_mmi.visible = false
@@ -130,9 +140,12 @@ func _process(delta: float) -> void:
 	var nxt := pos + _vel * delta
 	if dry_open(nxt.x + _vel.x * 3.0, nxt.z + _vel.z * 3.0):
 		pos = Vector3(nxt.x, _terrain.height_at(nxt.x, nxt.z), nxt.z)
+		_blocked = 0.0
 	else:
 		_wander += PI * 0.5 * delta * 4.0
-		if age < life - 4.0 and _rng.randf() < delta * 0.5:
+		_vel *= maxf(0.0, 1.0 - delta * 2.0)     # it stalls and turns before it gives up
+		_blocked += delta
+		if age < life - 4.0 and _blocked > 5.0:
 			age = life - 4.0             # hemmed in: it dies where it stands
 	_mmi.visible = true
 	_mmi.global_position = pos

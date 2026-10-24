@@ -19,6 +19,7 @@ uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
 uniform vec2 wind_dir = vec2(0.8, 0.6);
 uniform float wind_strength = 0.35;
 uniform float gust_strength = 0.55;
+uniform vec4 whirl = vec4(0.0);   // a dust devil's foot (dust_devils.gd): x, z, reach m, strength 0..1
 uniform float fade_start = 48.0;
 uniform float fade_end = 64.0;
 // short sward under-layer (INSTANCE_CUSTOM.y = 1, grass.gd _build_sward): own close fade
@@ -86,6 +87,18 @@ void vertex() {
 	bend *= stand;
 	vec3 wv = vec3(wd.x, 0.0, wd.y) * bend + vec3(flutter * v_h, 0.0, flutter * 0.6 * v_h) * stand;
 	wv.y -= bend * 0.35 * v_h;   // keep blade length roughly constant when bent
+	if (whirl.w > 0.001) {
+		// a dust devil's foot: the blades whip round it and lean in toward the core
+		vec2 rel = origin.xz - whirl.xy;
+		float dist = length(rel);
+		float k = whirl.w * (1.0 - smoothstep(whirl.z * 0.25, whirl.z, dist)) * stand;
+		if (k > 0.001) {
+			vec2 rd = rel / max(dist, 0.01);
+			vec2 sw = (vec2(-rd.y, rd.x) * 0.8 - rd * 0.35) * k * (0.7 + 0.3 * sin(t * 9.0 + v_var * 31.0)) * 0.6 * v_h * v_h;
+			wv.xz += sw;
+			wv.y -= length(sw) * 0.35 * v_h;
+		}
+	}
 	wv *= mix(1.0, 0.28, v_sward);   // a 0.2 m blade sways a fraction of a 0.6 m one
 	if (tl.z > 0.001) {
 		// trodden blades fold over at the root (fresh ones nearly flat, ~83 deg), the

@@ -14,6 +14,7 @@ uniform float light = 1.0;
 uniform float seed = 0.0;
 uniform vec3 dust : source_color = vec3(0.62, 0.55, 0.44);
 uniform vec3 straw : source_color = vec3(0.50, 0.42, 0.27);
+uniform vec3 soil : source_color = vec3(0.40, 0.33, 0.24);   // the dense skirt: dry earth, not mist
 uniform sampler2D depth_tex : hint_depth_texture, filter_linear;
 
 varying float v_alpha;
@@ -34,24 +35,25 @@ void vertex() {
 	if (kind < 0.25) {
 		// skirt: dust rolled out of the foot, low, spreading as it ages
 		f = fract(INSTANCE_CUSTOM.g + TIME * 0.35 + seed);
-		r = mix(0.4, 2.6 + 1.2 * b, f);
-		h = 0.15 + 0.9 * f * b;
-		size = mix(0.6, 1.5, f);
-		alpha = 0.16 * smoothstep(0.0, 0.15, f) * (1.0 - f);
+		r = mix(0.5, 3.6 + 1.8 * b, f);
+		h = 0.2 + 1.6 * f * b;
+		size = mix(1.0, 2.6, f);
+		alpha = 0.34 * smoothstep(0.0, 0.12, f) * pow(1.0 - f, 0.7);
 	} else if (kind < 0.75) {
 		// funnel: dust spun up the column, most of it low; the funnel flares near the top
 		f = fract(INSTANCE_CUSTOM.g + TIME * 0.22 + seed * 0.37);
 		h = H * pow(f, 1.6);
 		float t = h / max(H, 0.01);
-		r = (0.3 + 1.9 * pow(t, 1.4)) * (0.55 + 0.6 * b);
-		size = mix(0.45, 1.6, t);
-		alpha = 0.13 * smoothstep(0.0, 0.08, f) * pow(1.0 - t, 0.8);
+		// a dense, opaque throat in the bottom metres, a wide frayed bowl at the top
+		r = (0.6 + 3.4 * pow(t, 1.3)) * (0.55 + 0.6 * b);
+		size = mix(0.9, 2.8, t);
+		alpha = mix(0.34, 0.14, t) * smoothstep(0.0, 0.06, f) * pow(1.0 - t, 0.6);
 	} else {
 		// flecks: straw and leaf bits riding the whole height
 		f = fract(INSTANCE_CUSTOM.g + TIME * 0.16 + seed * 0.61);
 		h = H * 1.05 * f;
 		float t = h / max(H, 0.01);
-		r = (0.45 + 1.6 * t) * (0.6 + 0.6 * b);
+		r = (0.7 + 3.0 * t) * (0.6 + 0.6 * b);
 		size = mix(0.035, 0.07, fract(kind * 13.7));
 		alpha = 0.95 * smoothstep(0.0, 0.05, f) * (1.0 - smoothstep(0.8, 1.0, f));
 	}
@@ -64,7 +66,7 @@ void vertex() {
 	// lit by hand: shade side vs sun side of the column, and dust glows with the sun behind it
 	float side = 0.5 + 0.5 * dot(normalize(vec3(cos(a), 0.3, sin(a))), sun_dir);
 	float back = pow(max(dot(view, sun_dir), 0.0), 4.0);
-	vec3 base = kind < 0.75 ? dust : straw;
+	vec3 base = kind < 0.25 ? soil : (kind < 0.75 ? mix(soil, dust, smoothstep(0.0, 2.5, h)) : straw);
 	v_col = base * (0.42 + light * (0.45 + 0.4 * side)) + vec3(1.0, 0.9, 0.7) * back * light * (kind < 0.75 ? 0.45 : 0.15);
 	v_alpha = alpha * env;
 	v_kind = kind;
