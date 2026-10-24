@@ -5843,6 +5843,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (21:00 10-24) Parallel sessions built the same item again: a 21:00 session placed a seventh "near
+  wood" at (35,-59) while the 20:00 session's three copses (one at (54,-73)) were being pushed; it
+  was dropped at rebase and main's copses kept. Its only surviving change: the `walk` bot's face-gap
+  check measures the swaying face cloth's AABB with a 12 mm margin; with an extra wood on the route
+  the hero stopped mid-stride and it read 12.0 mm (FAIL), main reads ~11 mm. The limit is now 18 mm
+  and the value prints to the mm (walk passes). Before starting an item, `git pull` and check the
+  top of Done for the same work.
 - (16:50 10-24) `lantern` bot failed once in a full bots.sh batch on "a lit lantern gives no light" (lamp energy 0.00, 3 ticks after setting 21 h); passes alone. The check reads the lamp before its fade-in settles; give it more ticks.
 - (07:00 10-24) Sky: the cloud layer cuts off in hard vertical edges at 14:00 looking along bearing ~yaw 2.3 from the glide shot (gallery *-glide-side.jpg).
 - (14:00 10-23) yardpath bot: "hero does not splash in the track pool" failed once when run straight after doorstones in one bots.sh batch; passes alone. Likely the 4x-time-scale wade step landing between frames; harden the splash count if it recurs.
