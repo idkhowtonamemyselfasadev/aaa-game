@@ -720,6 +720,15 @@ func _glide_test() -> void:
 	await _ticks(4)
 	if p.gliding or p.is_on_floor():
 		return _combat_done(false, "the glider opened by itself or the hero never left the ground")
+	var roll := p.glider.stowed
+	if roll == null or not roll.is_visible_in_tree():
+		return _combat_done(false, "no furled glider rides on the back")
+	var rinv := p.body.global_transform.affine_inverse()
+	var rp := rinv * roll.global_position
+	var rx := (rinv.basis * roll.global_basis.x).normalized()
+	print("BOT glide: furled roll on the back at %s (body space), axis %s" % [rp, rx])
+	if rp.z > -0.22 or rp.y < 0.95 or rp.y > 1.35 or absf(rx.x) < 0.85:
+		return _combat_done(false, "the furled glider is not across the small of the back")
 	p.bot_jump = true
 	await _ticks(2)
 	print("BOT glide: jumped in the air, gliding %s, glides %d" % [p.gliding, p.glides])
@@ -753,6 +762,9 @@ func _glide_test() -> void:
 		return _combat_done(false, "the glider does not settle to a slow sink")
 	if p.glider.open < 0.99:
 		return _combat_done(false, "the wing never spread fully")
+	print("BOT glide: wing open %.2f, roll shown %s" % [p.glider.open, roll.visible])
+	if roll.visible:
+		return _combat_done(false, "the furled roll stays on the back with the wing open")
 	if err > 0.06:
 		return _combat_done(false, "the hands do not hold the crossbar")
 	if p.stamina >= st0 - 10.0:
@@ -835,6 +847,8 @@ func _glide_test() -> void:
 		return _combat_done(false, "the glide never came down under the wing")
 	if p.glider.open > 0.01 or p.crumple.plant > 0.0:
 		return _combat_done(false, "the wing or the grip stayed up after landing")
+	if not roll.visible:
+		return _combat_done(false, "the folded wing did not go back on the back")
 	_combat_done(true, "opened in the air, flew and sank slowly, banked round, rode a storm downwind, let go, caught the air again and touched down")
 
 ## Camera-relative stick input that walks the hero toward a world point.

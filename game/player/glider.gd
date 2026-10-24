@@ -29,6 +29,15 @@ var bank := 0.0               # radians the wing rolls into a turn
 var gust := 0.0               # 0 still air .. 1 a storm gust working the cloth
 var _mesh: MeshInstance3D
 var _mat: ShaderMaterial
+var stowed: MeshInstance3D    # the furled roll on the back, shown while the wing is folded
+
+## Furled, the wing rides across the small of the back on the sash: the battens and the
+## folded spar rolled up in the canvas, bound with cord, tucked over the staff and under the
+## cape's hem. Body space at rest; the roll's axis runs across the back (X).
+const STOW_AT := Vector3(0.0, 1.165, -0.305)
+const STOW_LEN := 0.64
+const STOW_R := 0.05
+const STOW_BONE := "mixamorig_Spine2"   # with the staff: the hips and low spine turn ~40° in the idle
 
 func _ready() -> void:
 	_mesh = MeshInstance3D.new()
@@ -40,6 +49,29 @@ func _ready() -> void:
 	add_child(_mesh)
 	visible = false
 
+## Hangs the furled roll on the upper spine, square with the staff it is tucked over. `body` faces +Z.
+func stow_on(skel: Skeleton3D, body: Node3D) -> void:
+	var bone := skel.find_bone(STOW_BONE)
+	if bone < 0:
+		return
+	var att := BoneAttachment3D.new()
+	att.name = "GliderSlot"
+	skel.add_child(att)
+	att.bone_name = STOW_BONE
+	stowed = MeshInstance3D.new()
+	stowed.name = "GliderStowed"
+	stowed.mesh = build_stowed_mesh()
+	var m := ShaderMaterial.new()
+	m.shader = _mat.shader
+	m.set_shader_parameter("open", 1.0)
+	stowed.material_override = m
+	att.add_child(stowed)
+	# slung a touch low on the left, where the staff's foot crosses under it
+	var b := Basis(Vector3.BACK, -0.06) * Basis(Vector3.RIGHT, 0.08)
+	var want := body.global_transform * Transform3D(b, STOW_AT)
+	var bone_rest := skel.global_transform * skel.get_bone_global_rest(bone)
+	stowed.transform = bone_rest.affine_inverse() * want
+
 ## Wrist targets on the crossbar (body space), left then right.
 static func grips() -> Array:
 	return [Vector3(BAR_HALF * 0.8, BAR_Y - 0.03, BAR_Z), Vector3(-BAR_HALF * 0.8, BAR_Y - 0.03, BAR_Z)]
@@ -47,6 +79,8 @@ static func grips() -> Array:
 func _process(delta: float) -> void:
 	open = move_toward(open, 1.0 if want_open else 0.0, delta / (OPEN_TIME if want_open else FURL_TIME))
 	visible = open > 0.01
+	if stowed != null:
+		stowed.visible = not visible
 	if not visible:
 		return
 	_mat.set_shader_parameter("open", open)
@@ -133,6 +167,83 @@ static func build_mesh() -> ArrayMesh:
 		for c: Vector2 in [Vector2(0.62, 0.02), Vector2(0.62, 0.75), Vector2(0.95, 0.1)]:
 			_tube(st, [Vector3(sg * BAR_HALF, BAR_Y, BAR_Z), _canvas_point(sg * c.x, c.y) + Vector3(0, -0.012, 0)], 0.0035, CORD, 4)
 	_tube(st, [Vector3(0, BAR_Y, BAR_Z), _canvas_point(0.0, 0.05) + Vector3(0, -0.02, 0)], 0.012, BAMBOO)
+	st.generate_tangents()
+	return st.commit()
+
+## The furled roll: canvas wound round the bundled battens, lumpy where the cloth bunched,
+## cinched in at three cord bindings and gathered closed at the ends, with the bamboo poking
+## out of both ends and two cord loops down to the sash. Centred on the origin, axis along X.
+## The canvas UV runs in metres (across = round the roll from a sewn-edge offset, back = along)
+## so the shader's panels, patches and stains land on it at their true size.
+static func build_stowed_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var half := STOW_LEN * 0.5
+	var binds: Array[float] = [-0.21, 0.0, 0.21]
+	var nx := 40
+	var na := 20
+	var rad := func(x: float, a: float) -> float:
+		var t := x / half
+		var cinch := 0.0
+		for bx in binds:
+			cinch = maxf(cinch, exp(-pow((x - bx) / 0.022, 2.0)))
+		var r := STOW_R * (1.0 - 0.16 * cinch)
+		# the cloth bunches: a slow spiral bulge and a few creased lumps
+		r += 0.006 * sin(a * 3.0 + x * 9.0) + 0.004 * sin(a * 7.0 - x * 23.0)
+		r += 0.0035 * sin(a * 2.0 + 1.3) * sin(x * 31.0)
+		# gathered toward the ends
+		r *= 1.0 - 0.55 * pow(smoothstep(0.82, 1.0, absf(t)), 1.5)
+		return r
+	var pt := func(x: float, a: float) -> Vector3:
+		var r: float = rad.call(x, a)
+		return Vector3(x, cos(a) * r, sin(a) * r)
+	for i in nx:
+		for j in na:
+			var quad := [[i, j], [i + 1, j], [i + 1, j + 1], [i, j], [i + 1, j + 1], [i, j + 1]]
+			for q in quad:
+				var x := -half + STOW_LEN * float(q[0]) / nx
+				var a := TAU * float(q[1]) / na
+				var p: Vector3 = pt.call(x, a)
+				var dx: Vector3 = (pt.call(x + 0.004, a) as Vector3) - (pt.call(x - 0.004, a) as Vector3)
+				var da: Vector3 = (pt.call(x, a + 0.05) as Vector3) - (pt.call(x, a - 0.05) as Vector3)
+				var n := dx.cross(da).normalized()
+				if n.dot(Vector3(0, p.y, p.z)) < 0.0:
+					n = -n
+				st.set_color(Color(CANVAS, 0.0, 0.5 + x, 0.0))
+				# round the roll: one turn is ~0.3 m of cloth; start past the tarred binding
+				st.set_uv(Vector2(x + 0.9, 0.35 + a * STOW_R))
+				st.set_normal(n)
+				st.add_vertex(p)
+	# end caps: the cloth twisted shut round the bamboo
+	for sg: float in [-1.0, 1.0]:
+		var c := Vector3(sg * (half + 0.012), 0, 0)
+		for j in na:
+			var a0 := TAU * float(j) / na
+			var a1 := TAU * float(j + 1) / na
+			var tri := [c, pt.call(sg * half, a1), pt.call(sg * half, a0)] if sg > 0.0 else [c, pt.call(sg * half, a0), pt.call(sg * half, a1)]
+			for v: Vector3 in tri:
+				st.set_color(Color(CANVAS, 0.0, 0.5 + v.x, 0.0))
+				st.set_uv(Vector2(v.x + 0.9, 0.5 + 0.02 * j))
+				st.set_normal(Vector3(sg, 0, 0))
+				st.add_vertex(v)
+	# the bundled bamboo: the folded spar halves and a few battens, ends cut at staggered lengths
+	var poles := [[0.0, 0.0, 0.017, 0.11, 0.07], [0.018, 0.012, 0.012, 0.15, 0.04],
+			[-0.016, 0.014, 0.009, 0.06, 0.13], [0.006, -0.019, 0.008, 0.09, 0.1]]
+	for pl: Array in poles:
+		_tube(st, [Vector3(-half - float(pl[4]), pl[1], pl[0]), Vector3(half + float(pl[3]), pl[1], pl[0])], pl[2], BAMBOO, 7)
+	# three cord bindings, two turns each, sunk into the cinched cloth
+	for bx in binds:
+		for turn: float in [-0.007, 0.007]:
+			var ring: Array = []
+			for k in 17:
+				var a := TAU * k / 16.0
+				var r: float = rad.call(bx + turn, a) + 0.003
+				ring.append(Vector3(bx + turn, cos(a) * r, sin(a) * r))
+			_tube(st, ring, 0.0035, CORD, 5)
+	# two cord loops from the outer bindings down under the sash (the roll's front-bottom)
+	for bx: float in [binds[0], binds[2]]:
+		_tube(st, [Vector3(bx, -STOW_R * 0.6, STOW_R * 0.7), Vector3(bx, -STOW_R - 0.02, STOW_R + 0.006),
+				Vector3(bx * 0.95, -STOW_R - 0.06, STOW_R + 0.012)], 0.0035, CORD, 5)
 	st.generate_tangents()
 	return st.commit()
 

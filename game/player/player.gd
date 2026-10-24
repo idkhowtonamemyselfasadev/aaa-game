@@ -187,6 +187,9 @@ func _ready() -> void:
 	glider = Glider.new()
 	glider.name = "Glider"
 	body.add_child(glider)
+	var gskel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if gskel != null:
+		glider.stow_on(gskel, body)
 	_skin()
 	_dress()
 	soak = Soak.new()
