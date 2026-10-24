@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-0414-waterbutt.jpg",
-  "time": "2026-10-19T04:14:52Z",
-  "caption": "The white cottage's new oak water butt under the eaves with the bench by the door: the cask reads as staved oak with rusted hoops, but the water surface is a matte grey-brown disc with no reflection and the limewash still reads as white brick blocks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0450-limewash-gable.jpg",
-  "time": "2026-10-19T04:50:00Z",
-  "caption": "The white cottage's sunlit gable after the proud-lime pass: the rubble shows only as soft bumps under the coat with small pale flakes; the plane is still a little too even and the lens frames mostly blank wall.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0450-whitecottage-wide.jpg",
   "time": "2026-10-19T04:50:00Z",
   "caption": "The limewashed cottage on the green at 15:00 beside the timber house, its walls now one white lime skin over rubble (the barrel here is a duplicate butt since replaced by the other session's); the slate roof still reads flat and dark and the stack's blocks still show.",
@@ -897,6 +885,18 @@
   "file": "20261024-1230-dust-devil3-close.jpg",
   "time": "2026-10-24T12:30:00Z",
   "caption": "Crop on the whirl: soft billowing funnel flaring toward the top with a soil-dark base; still reads a bit like smoke, needs visible spin streaks and more debris.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1320-dust-devil5.jpg",
+  "time": "2026-10-24T13:20:00Z",
+  "caption": "A dust devil 12 m off the hero (devil spot, near): a tan whirling column rising from the track, now with visible spin striations; its skirt is hidden by the tall grass and the hero still looks stylized.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1320-dust-devil5-close.jpg",
+  "time": "2026-10-24T13:20:00Z",
+  "caption": "Crop on the whirl: the throat shows horizontal streaks of dust dragged round the column, so it reads as spinning rather than smoke; the top still dissolves into a soft haze and few straw flecks show.",
   "verdict": "fail"
  }
 ]
