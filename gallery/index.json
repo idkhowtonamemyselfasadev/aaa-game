@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261019-0700-whitecottage-eaves.jpg",
-  "time": "2026-10-19T07:00:00Z",
-  "caption": "Close sunny view along the white cottage's eaves wall: the lime reads as one skin over soft rubble bumps, but the slates are pillowy rounded tiles and the leaded window sits on a too-thin flat sill.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0700-whitecottage-gable.jpg",
-  "time": "2026-10-19T07:00:00Z",
-  "caption": "White cottage on the green at 15.0 h: its gable now ends cleanly under the verge with no stepped stones showing, but the slate roof still reads flat near-black from 15 m and the lime walls look dim beside the sunlit grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-0751-leanto-wide.jpg",
-  "time": "2026-10-19T07:51:15Z",
-  "caption": "The white cottage with its new limewashed woodshed lean-to off the east gable from the meadow: reads as a real outshut, but its outer wall is a plain white block from here and the tall grass hides the woodpile and chopping block.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0751-leanto-woodpile.jpg",
   "time": "2026-10-19T07:51:15Z",
   "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
@@ -897,6 +879,18 @@
   "file": "20261024-1425-dust-devil6-close.jpg",
   "time": "2026-10-24T14:25:00Z",
   "caption": "Crop on the whirl: brown tumbling leaves read clearly against the sky and the bowl keeps a firmer right edge; the top still melts into a soft haze against the cloud.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1650-outer-woods-air.jpg",
+  "time": "2026-10-24T16:50:00Z",
+  "caption": "Glide view over the vale after 240 more oaks were added in the outer groves: hardly different from the 11:15 frame; the far floor still reads as scattered lone trees, and the hero still looks stylized.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1650-outer-woods-ground.jpg",
+  "time": "2026-10-24T16:50:00Z",
+  "caption": "Ground view past the dust devil: the middle distance still shows open meadow with lone oaks, no woodland edge; the new outer woods don't read in this framing.",
   "verdict": "fail"
  }
 ]
