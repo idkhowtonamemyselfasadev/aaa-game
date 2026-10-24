@@ -419,6 +419,24 @@ void fragment() {
 	vec3 turf_near = mix(mix(turf_a, thatch_a, 0.5) * 0.8, thatch, b2.x * (0.4 + 0.6 * thatchw));
 	turf_near = mix(turf_near, mix(live, thatch, thatchw * 0.6), b1.x);
 	vec3 turf = mix(turf_far, turf_near, fade_b);
+	// ---- far meadow: past the blade clumps (grass.gd draws ~64 m) the sward still has to
+	// read as rough grassland from the glider, not smooth olive felt: tussocks about a metre
+	// across with dark gaps between, seed-heads bleaching the tops in broad drifts, and long
+	// wind-combed bands. The tufts fade out by pixel size so nothing shimmers.
+	float far_w = smoothstep(0.03, 0.12, fp);
+	if (far_w > 0.001) {
+		float tus = vnoise(wpos * 1.1 + vec3(0.0, 0.0, 7.7)) * 0.7 + vnoise(wpos * 2.6 + 4.2) * 0.3;
+		float tus_fade = 1.0 - smoothstep(0.35, 0.9, fp);
+		float tuft = smoothstep(0.35, 0.75, tus);
+		float seed = smoothstep(0.5, 0.8, fbm(wpos * 0.045 + 13.0) + (meso - 0.5) * 0.3);
+		vec3 tops = mix(mix(turf_a, turf_b, 0.6), thatch_b, 0.25 + 0.5 * seed);
+		vec3 gaps = mix(turf_a, thatch_a, 0.4) * 0.55;
+		vec3 far_col = mix(turf_far, mix(gaps, tops, tuft), tus_fade * 0.8);
+		far_col = mix(far_col, far_col * vec3(1.1, 1.05, 0.9) + thatch_b * 0.06, seed * 0.6);
+		float band = vnoise(vec3(dot(xz, vec2(0.8, 0.6)) * 0.12, 0.0, dot(xz, vec2(-0.6, 0.8)) * 0.02));
+		far_col *= 0.9 + 0.2 * band;
+		turf = mix(turf, far_col, far_w);
+	}
 	float turf_h = mix(0.5, max(b1.y, b2.y * 0.7), fade_b) * 0.004;
 
 	// ---- trodden lane: the hero's track lays the sward flat along the walk ----

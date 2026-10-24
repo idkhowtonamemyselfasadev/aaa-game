@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-0246-whitecottage-gable.jpg",
-  "time": "2026-10-19T02:46:13Z",
-  "caption": "The white cottage's gable close up: the lime now runs unbroken over stones and joints, but flaked patches read as dark holes and the stepped gable courses showed below the verge (tabling added after this shot).",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0246-whitecottage-wide.jpg",
   "time": "2026-10-19T02:46:13Z",
   "caption": "The new limewashed cottage on the green beside the timber house, against the afternoon sun; its joints still drew a white-brick grid here (since fixed) and the walls lack splash grime at this range.",
@@ -891,6 +885,18 @@
   "file": "20261024-1110-dust-devil-close.jpg",
   "time": "2026-10-24T11:10:00Z",
   "caption": "Crop of the whirl: a pale narrow funnel with a little skirt at its foot; it needs to be two to three times wider and denser, with a darker, more opaque base.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1115-glide-meadow.jpg",
+  "time": "2026-10-24T11:15:00Z",
+  "caption": "Same glide framing as legs2: the meadow beyond the grass clumps now reads as rough tussocky grassland with tan seed-head drifts instead of smooth olive felt; still thin trees and no tall grass past 64 m.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1115-glide-meadow-close.jpg",
+  "time": "2026-10-24T11:15:00Z",
+  "caption": "Crop of the lower-left meadow: metre-wide tussocks with dark gaps and bleached tops; at this crop the mottling is a bit uniform and speckly.",
   "verdict": "fail"
  }
 ]
