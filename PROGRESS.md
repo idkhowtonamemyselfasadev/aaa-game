@@ -47,7 +47,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   gust 0.92. NEXT: judge the glide shot; a stowed furled glider on the back; cape/hair flutter in
   the airflow; a glide launch spot (the keep's crown); thermals/updrafts over sun-warmed rock so the
   wind is something to read, not only a push.
-- (00:30 10-24) **Gliding** (bot-verified `glide climb walk dodge flinch death heavy`; shot `glide1` pending at commit time).
+- (00:30 10-24) **Gliding** (bot-verified `glide climb walk dodge flinch death heavy`; shot `glide1`, verdict FAIL).
   New game/player/glider.gd + shaders/glider.gdshader: a procedural swept wing (3.3 m span, 1.45 m root
   chord tapering to 0.55, 0.42 m sweep, 0.42 m arch droop) of oiled hemp with camber and billow
   between 9 battens, scalloped trailing edge, stitched rib seams, ox-blood repair patches, sun-bleached
@@ -64,6 +64,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   fell 15 cm short). Bot `glide`: opens in the air, 25.8 m across in 4 s, sink 1.70 m/s, wrists on the
   bar, stamina 99 -> 77, banks 160 deg in 1.5 s, let go falls free, reopens, lands under the wing.
   Shot spot `glide [at=x,z]` (follow camera behind-left-above, hero 16 m over the vale).
+  Shot `glide glide1 40 10.5 fixfps` (Forward+, ~10 min), verdict FAIL, gallery *-glide.jpg: the wing
+  reads as a real glider with rigging, bank and the hero hanging under the bar, but the canopy is one
+  flat even brown sheet (patches/seams/battens too faint at this distance: raise their contrast, add
+  a panel-to-panel tone change and visible batten ridges on the top face), and the hero is only a
+  few metres over the hill rising ahead (start higher or from at= a ridge edge).
   NOTE: bots run at Engine.time_scale 4 and the physics delta scales with it (one tick = 1/15 s game
   time); new bot routes must time things in hz = 60 / time_scale ticks per game second.
   NEXT: judge `glide1` (bank sign, canopy scale against the body, legs), a stowed furled glider on the

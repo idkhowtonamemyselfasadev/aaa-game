@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1330-garth-noon.jpg",
-  "time": "2026-10-18T13:30:00Z",
-  "caption": "From the yard side at 12.5 h: Harrowmere's dry-stone walls are now a cool grey gritstone with grey lichen, and moss only on the tops and shaded faces; still wrong: the garth wall's stones are rounded blocks in level rows and grass fills the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-1330-gate-grey.jpg",
   "time": "2026-10-18T13:30:00Z",
   "caption": "The field gate between its moss-capped stoops at noon, the garth wall now grey rather than cream; still wrong: the wall stones read as pale pillowed rectangles in brick-like rows, the cope tops carry flat lime moss and the cottage stones beside it are still cream.",
@@ -897,6 +891,12 @@
   "file": "20261024-0035-climb-dark.jpg",
   "time": "2026-10-24T00:35:00Z",
   "caption": "The hero on the keep from above along the face: the stone tops now show their moss and the faces in shade read darker and greyer, but the sunlit faces still look pale and soft, the hero is still seen from behind, and the moss reads as a dull flat green from this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0037-glide.jpg",
+  "time": "2026-10-24T00:37:00Z",
+  "caption": "The hero gliding over the vale under Caelum's new hemp-and-bamboo glider, rigging cords and bank visible, the village and snow peaks ahead; the canopy still reads as one flat even brown sheet (patches, seams and battens too faint) and the hero hangs only a few metres over the rising hill.",
   "verdict": "fail"
  }
 ]
