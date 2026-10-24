@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-2216-cottage.jpg",
-  "time": "2026-10-18T22:16:17Z",
-  "caption": "Stone cottage door at 9.5 h after the rubble/slate pass: stones now vary in value and the slate lichen is in broad patches, but the wall stones still read as rounded blue-grey cobbles, the facade sits in sky-lit shade, and the lichen bands along the slate tails.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0015-cottage-sunside.jpg",
   "time": "2026-10-19T00:15:48Z",
   "caption": "Stone cottage side wall at 9.5 h after the crisp-facet pass: rubble faces are now flat split planes with sharp arrises, but the stones still read as separate pale tiles on a wide dark mortar bed, the wall is still in shade, and the roof moss is bright green.",
@@ -891,6 +885,18 @@
   "file": "20261024-0822-glide-sky.jpg",
   "time": "2026-10-24T08:22:00Z",
   "caption": "Same glide framing as the last shot after the camera far-plane fix: the cloud deck now runs unbroken across the sky with no seams; the trailing legs below the robe still read as a pale grey smear and the hero is small in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0915-glide-legs2.jpg",
+  "time": "2026-10-24T09:15:00Z",
+  "caption": "Same framing as glide-sky: the hero's trailing legs now read as dark hemp thigh bindings and road-soiled shin wraps instead of a pale grey smear; the hero is still small in frame and the meadow below is thin.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0915-glide-legs2-close.jpg",
+  "time": "2026-10-24T09:15:00Z",
+  "caption": "Close crop of the trailing legs under the madder robe panel: worn brown cloth, no grey smear; at this distance the wrap spirals and the bare feet are still mushy.",
   "verdict": "fail"
  }
 ]

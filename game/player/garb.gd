@@ -11,6 +11,10 @@ const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
 const OCHRE := [Color(0.16, 0.10, 0.035), Color(0.58, 0.40, 0.17), 0.2]
 const LINEN := [Color(0.17, 0.15, 0.12), Color(0.60, 0.55, 0.46), 0.3]
+## The leg bindings: road-soiled linen on the shins, and a dark faded hemp over the thighs, so
+## the legs read as worn cloth in full sun (clean linen lit from above read as a pale smear).
+const SHIN_LINEN := [Color(0.10, 0.088, 0.07), Color(0.42, 0.37, 0.29), 0.45]
+const HEMP := [Color(0.05, 0.045, 0.04), Color(0.26, 0.23, 0.19), 0.4]
 const STRAW := [Color(0.20, 0.15, 0.075), Color(0.66, 0.53, 0.31), 0.15]
 
 var hat: MeshInstance3D
@@ -182,12 +186,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			gores.append(g)
 	tint = palette.get("sash", OCHRE)
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
-	tint = palette.get("wraps", LINEN)
 	for side in ["Left", "Right"]:
-		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.14, 0.93, 0.01, 8.0)
-		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
-		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.90, 0.012, 9.0)
+		tint = palette.get("wraps", SHIN_LINEN)
+		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.06, 0.93, 0.01, 8.0)
 		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
+		tint = palette.get("wraps", LINEN)
+		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
+		tint = palette.get("wraps", HEMP)
+		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.97, 0.012, 9.0)
 	if basket:
 		_basket()
 	tint = []
