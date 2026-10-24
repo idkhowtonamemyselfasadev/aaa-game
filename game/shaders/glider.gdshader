@@ -88,7 +88,9 @@ void fragment() {
 		float pi = floor(span * 8.0);
 		float ph = hash(vec2(pi, 3.1));
 		vec3 bolt = canvas;
-		bolt = mix(bolt, vec3(0.56, 0.47, 0.33), step(0.72, ph));
+		// (the linen is grey-brown with grime, not white: from below it was reading as paper)
+		float linen = step(0.72, ph);
+		bolt = mix(bolt, vec3(0.45, 0.38, 0.27), linen);
 		bolt = mix(bolt, vec3(0.31, 0.23, 0.15), step(ph, 0.28));
 		bolt *= 0.9 + 0.2 * hash(vec2(pi, 8.7));
 		// plain-woven hemp: threads in both directions, slubs, oil soaked unevenly
@@ -138,7 +140,8 @@ void fragment() {
 		alb = mix(alb, alb * vec3(1.12, 1.07, 0.98), smoothstep(0.6, 1.0, abs(span * 2.0 - 1.0)) * 0.45);
 		rough = mix(0.58, 0.88, oil) - seam * 0.1 - ridge * 0.15 - bind * 0.2 + ring * 0.1;
 		bump = weave * 0.25 + slub * 0.4 + ridge * 1.2 + seam * 0.5 + stitch * 0.5 + rim * 0.9 + bind * 0.6 + tide * 0.3;
-		trans = 1.0;
+		// thinner unoiled linen lets less of the sun's warmth through than the oiled hemp
+		trans = mix(1.0, 0.55, linen) * (1.0 - bind);
 		if (under > 0.5) {
 			alb *= 0.82;   // the underside shows the cloth's less-oiled back
 		}

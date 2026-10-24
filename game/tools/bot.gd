@@ -898,6 +898,11 @@ func _glide_test() -> void:
 		await _ticks(hz / 10)
 		t += 0.1
 	await _ticks(hz / 2)
+	# the furl (0.4 s) runs on render frames, which lag the physics ticks at 4x time scale
+	var fold_wait := 0.0
+	while fold_wait < 1.0 and (p.glider.open > 0.01 or p.crumple.plant > 0.0):
+		await _ticks(hz / 10)
+		fold_wait += 0.1
 	var above := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
 	print("BOT glide: came down after %.1f s, landings %d, on floor %s, %.2f m above the turf, wing open %.2f, total flown %.0f m, stamina %.0f" % [t, p.glide_landings, p.is_on_floor(), above, p.glider.open, p.glided, p.stamina])
 	if p.gliding or not p.is_on_floor() or p.glide_landings != 1:

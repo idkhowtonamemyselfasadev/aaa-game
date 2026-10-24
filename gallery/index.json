@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261018-2015-cottagerubble.jpg",
-  "time": "2026-10-18T20:15:30Z",
-  "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261018-2114-cottage-rubble.jpg",
-  "time": "2026-10-18T21:14:55Z",
-  "caption": "Stone cottage rubble after the cut/mortar tuning at 15.5 h: stones now fill their beds with narrower, lighter joints, but the facade is backlit in flat shade, the stones still read as rounded grey cobbles with pale tops, and the slate roof's lichen flecks read as noise.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-2216-cottage.jpg",
   "time": "2026-10-18T22:16:17Z",
   "caption": "Stone cottage door at 9.5 h after the rubble/slate pass: stones now vary in value and the slate lichen is in broad patches, but the wall stones still read as rounded blue-grey cobbles, the facade sits in sky-lit shade, and the lichen bands along the slate tails.",
@@ -891,6 +879,12 @@
   "file": "20261024-0615-glide-canopy.jpg",
   "time": "2026-10-24T06:15:04Z",
   "caption": "The hero gliding over the dry vale at 14:00: the canopy now arches and its panels belly up between the battens instead of reading as a flat card, but the pale linen panels glow near-white from below and the lens caught him from astern, not the side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0742-glide-side.jpg",
+  "time": "2026-10-24T07:42:10Z",
+  "caption": "Caelum's glider from the front quarter at 14:00: the wing arches and the panels belly between the battens, the linen bolts are duller but still read pale in full sun; the sky's cloud layer ends in hard vertical seams and the trailing legs smear grey.",
   "verdict": "fail"
  }
 ]
