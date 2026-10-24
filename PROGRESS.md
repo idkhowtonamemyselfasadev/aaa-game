@@ -64,7 +64,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   it also prints the Mixamo hips forward vs into-face for diagnosis. A first shot died on a
   GDScript parse error (`out` shadowed) and fell back to GL after 50 min: always run
   `.tools/godot --headless --path game --check-only --script res://tools/shot.gd` before a shot.
-  Shot `climb climb9 60 10.5 fixfps side` re-run after the commit; see the gallery entry if any.
+  Shot `climb climb9 60 10.5 fixfps side` (Forward+, ~30 min), verdict FAIL, gallery *-climb-dark.jpg:
+  the bed tops and their moss now show from above and the shaded faces read darker and greyer,
+  but sunlit faces still look pale and soft, the moss is a dull flat green at this range, and
+  the hero is still seen from behind. Log: hips fwd (0.42, 0, 0.91) vs into-face (0.93, 0, 0.37):
+  the model's hips are turned ~35 deg off the face during the climb pose (fix in crumple/player
+  so the pelvis squares to the wall), and a lens out from the face can only show the back: for a
+  side profile put the lens almost in the face plane (out <= 0.3 m, along 2.5 m). NEXT: square
+  the hips to the wall, sunlit ruin faces another ~15 % darker with stronger lichen blotches,
+  then glide. (PIL is broken on the cloud box; use `convert` for gallery JPEGs.)
 - (22:00 10-23) **Keep moss loosened; climb shot re-aimed from the hero's real facing** (bot-verified `climb ruin walk moss`; shot `climb8` pending at commit time).
   masonry.gdshader, ruin beds: cushion threshold 0.36-0.62 -> 0.25-0.5, tuft floor 0.55 -> 0.75,
   bare stones 18 % -> 10 %. shot.gd `climb ... side`: after the warm-up the lens is rebuilt from
