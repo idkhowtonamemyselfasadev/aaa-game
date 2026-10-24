@@ -10,6 +10,9 @@ extends Node3D
 
 @export var terrain_path: NodePath
 @export var tree_count: int = 260
+## Second, closer-set pass of oaks in the groves 95-245 m out, so the far side of the vale
+## reads as woodland edges rather than lone trees on felt (see _scatter_outer_woods).
+@export var outer_tree_count: int = 240
 @export var rock_count: int = 420
 @export var tree_variants: int = 4
 @export var rock_variants: int = 6
@@ -40,6 +43,8 @@ var _variant_perches: Array = []             # per variant: upper-crown twig tip
 var _cards: Array = []                       # leaf cards of the tree being built (see _emit_leaves)
 var tree_xforms: Array[Transform3D] = []     # per tree, same order as tree_positions
 var tree_variant: Array[int] = []
+var outer_tree_start := 0                    # tree_positions[outer_tree_start..] are the outer woods
+var _tree_meshes: Array[ArrayMesh] = []
 
 ## Rain shelter under the oak crowns, for rain/drops/splashes/soak/wet ground:
 ## a SHELTER_RES^2 map over SHELTER_SIZE m centred on the origin, R = how much rain the
@@ -69,10 +74,11 @@ func _ready() -> void:
 		leaf_material.set_shader_parameter("nmap_depth", 0.85)
 	ruin_site = pick_ruin_site(_terrain)
 	_scatter_trees()
-	_build_roots()
+	_build_roots(tree_xforms)
 	_scatter_rocks()
 	_bake_moss()
 	_scatter_understory()
+	_scatter_outer_woods()
 
 ## Places that must stay walkable: village floor and the road toward the east ridge.
 func _blocked(x: float, z: float, margin: float) -> bool:
@@ -113,7 +119,7 @@ static func pick_ruin_site(t: Terrain) -> Vector3:
 # ---------------------------------------------------------------- trees
 
 func _scatter_trees() -> void:
-	var meshes: Array[ArrayMesh] = []
+	var meshes := _tree_meshes
 	for v in tree_variants:
 		meshes.append(_build_tree(v))
 	var per: Array = []
@@ -159,6 +165,87 @@ func _scatter_trees() -> void:
 		_multimesh(meshes[v], per[v], "Oaks_%d" % v)
 	_bake_shelter(per)
 
+## Run after the understory and the moss bake so every earlier placement (boulders, shrubs,
+## moss, roots) keeps its seed. Own RNG; trees here sit 6 m apart (the first pass keeps 9 m),
+## lean toward the grove cores and mix in smaller, younger oaks, so the groves 95-245 m out
+## close into woodland with a ragged edge. They join tree_positions (appended, so the first
+## pass keeps its indices) for herds, birds, insects, the keeper and the soundscape; they
+## get roots, collision, moss collars and rain shelter like the rest.
+func _scatter_outer_woods() -> void:
+	if outer_tree_count <= 0 or _tree_meshes.is_empty():
+		return
+	var r := RandomNumberGenerator.new()
+	r.seed = seed * 13 + 5
+	outer_tree_start = tree_positions.size()
+	var per: Array = []
+	for v in tree_variants:
+		per.append([])
+	var added: Array[Transform3D] = []
+	var body := StaticBody3D.new()
+	body.name = "OuterWoodsCollision"
+	add_child(body)
+	var tries := 0
+	while added.size() < outer_tree_count and tries < outer_tree_count * 60:
+		tries += 1
+		var x := r.randf_range(-245.0, 245.0)
+		var z := r.randf_range(-245.0, 245.0)
+		var rad := Vector2(x, z).length()
+		if rad < 95.0 or _blocked(x, z, 6.0):
+			continue
+		# the keep's knoll stays open ground: the keeper's day runs between it and its own oaks
+		if Vector2(x - ruin_site.x, z - ruin_site.z).length() < 42.0:
+			continue
+		var g := _grove.get_noise_2d(x, z) * 0.5 + 0.5
+		var slope := 1.0 - _terrain.normal_at(x, z).y
+		# wider than the first pass's grove mask (0.45..0.75), so groves grow skirts
+		if slope > 0.32 or r.randf() > smoothstep(0.38, 0.62, g) * 0.95:
+			continue
+		var ok := true
+		for q in tree_positions:
+			if absf(q.x - x) < 6.0 and absf(q.z - z) < 6.0 and Vector2(q.x - x, q.z - z).length() < 6.0:
+				ok = false
+				break
+		if ok:
+			for q in rock_positions:
+				if absf(q.x - x) < 4.0 and absf(q.z - z) < 4.0:
+					ok = false
+					break
+		if not ok:
+			continue
+		var p := Vector3(x, _terrain.height_at(x, z) - 0.25, z)
+		# young oaks at the grove skirts, old ones in the cores
+		var s := lerpf(r.randf_range(0.7, 1.05), r.randf_range(1.05, 1.5), smoothstep(0.45, 0.7, g))
+		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s, s * r.randf_range(0.9, 1.12), s))
+		var tv := r.randi() % tree_variants
+		var xf := Transform3D(b, p)
+		per[tv].append(xf)
+		added.append(xf)
+		tree_positions.append(p)
+		tree_xforms.append(xf)
+		tree_variant.append(tv)
+		var cs := CollisionShape3D.new()
+		var cyl := CylinderShape3D.new()
+		cyl.radius = 0.45 * s
+		cyl.height = 4.0
+		cs.shape = cyl
+		cs.position = p + Vector3.UP * 2.0
+		body.add_child(cs)
+	for v in tree_variants:
+		_multimesh(_tree_meshes[v], per[v], "OuterOaks_%d" % v)
+	_build_roots(added, 11, "Outer")
+	for xf in added:
+		var s := xf.basis.get_scale().x
+		var tr := 0.5 * s
+		_moss_ring(Vector2(xf.origin.x, xf.origin.z), tr + 0.4 * s, tr + 2.8 * s, 1.0)
+	RenderingServer.global_shader_parameter_set("moss_map", ImageTexture.create_from_image(moss))
+	# re-bake the crown shelter over both passes
+	var all: Array = []
+	for v in tree_variants:
+		all.append([])
+	for i in tree_xforms.size():
+		all[tree_variant[i]].append(tree_xforms[i])
+	_bake_shelter(all)
+
 func _build_tree(v: int) -> ArrayMesh:
 	var r := RandomNumberGenerator.new()
 	r.seed = seed * 31 + v
@@ -202,11 +289,11 @@ func _build_tree(v: int) -> ArrayMesh:
 const ROOT_CHUNK := 64.0
 var root_tips: Array[Vector3] = []   # bots: where each root goes under
 
-func _build_roots() -> void:
+func _build_roots(xfs: Array[Transform3D], salt := 3, tag := "") -> void:
 	var r := RandomNumberGenerator.new()
-	r.seed = seed * 7 + 3
+	r.seed = seed * 7 + salt
 	var chunks := {}
-	for xf in tree_xforms:
+	for xf in xfs:
 		var s := xf.basis.get_scale().x
 		var c := xf.origin
 		var key := Vector2i(floori(c.x / ROOT_CHUNK), floori(c.z / ROOT_CHUNK))
@@ -227,7 +314,7 @@ func _build_roots() -> void:
 		st.index()
 		st.generate_tangents()
 		var mi := MeshInstance3D.new()
-		mi.name = "OakRoots_%d_%d" % [key.x, key.y]
+		mi.name = "OakRoots%s_%d_%d" % [tag, key.x, key.y]
 		mi.mesh = st.commit()
 		if bark_material:
 			mi.material_override = bark_material
