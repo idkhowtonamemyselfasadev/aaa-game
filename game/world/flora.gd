@@ -123,6 +123,10 @@ func _scatter_trees() -> void:
 	var meshes := _tree_meshes
 	for v in tree_variants:
 		meshes.append(_build_tree(v))
+	var leaf_tris := 0
+	for m in meshes:
+		leaf_tris += m.surface_get_array_len(1) / 3
+	print("flora: oak crowns %d leaf cards over %d variants, %d of them crown fill" % [leaf_tris / 2, tree_variants, fill_cards])
 	var per: Array = []
 	for v in tree_variants:
 		per.append([])
@@ -397,6 +401,7 @@ func _build_tree(v: int) -> ArrayMesh:
 	var lean := Vector3(r.randf_range(-0.15, 0.15), 1.0, r.randf_range(-0.15, 0.15)).normalized()
 	_cards.clear()
 	_branch(r, Vector3.ZERO, lean, trunk_h, r.randf_range(0.42, 0.55), 0, 0.0)
+	_fill_crown(v)
 	_emit_leaves(1.0)
 	var mesh := ArrayMesh.new()
 	_bark.generate_tangents()
@@ -730,6 +735,55 @@ func _leaf_cluster(r: RandomNumberGenerator, c: Vector3, d: Vector3, sway: float
 		_crown = Vector2(maxf(_crown.x, Vector2(centre.x, centre.z).length() + size * 0.4), minf(_crown.y, centre.y))
 		var tile := r.randi() % 4
 		_cards.append([centre, bx.x * size, bx.y * size, Vector2((tile % 2) * 0.5, (tile / 2) * 0.5), sway, r.randf()])
+
+## Crown fill: the branch walk leaves holes in the crown's skin (between the forks the sky
+## shows through and from 60 m out an oak read as a see-through acacia). Probe the fitted
+## crown ellipsoid's upper skin on a Fibonacci sphere and, wherever no card centre lies
+## within FILL_GAP, hang a small sprig clump just inside the skin. Own RNG, and _crown is
+## left as the branches set it, so tree shapes, perches and the rain shelter are unchanged.
+const FILL_DIRS := 140
+const FILL_GAP := 0.95
+var fill_cards := 0   # bots/tools: shell cards added over all variants
+
+func _fill_crown(v: int) -> void:
+	if _cards.is_empty():
+		return
+	var r := RandomNumberGenerator.new()
+	r.seed = seed * 53 + v
+	var keep := _crown
+	var lo := Vector3(INF, INF, INF)
+	var hi := -lo
+	for cd in _cards:
+		lo = lo.min(cd[0])
+		hi = hi.max(cd[0])
+	var cen := (lo + hi) * 0.5
+	var rad := ((hi - lo) * 0.5).max(Vector3(0.3, 0.3, 0.3))
+	rad.x = maxf(rad.x, rad.z)
+	rad.z = rad.x
+	var centres: Array[Vector3] = []
+	for cd in _cards:
+		centres.append(cd[0])
+	var before := _cards.size()
+	var golden := PI * (3.0 - sqrt(5.0))
+	for i in FILL_DIRS:
+		var y := 1.0 - (i + 0.5) / FILL_DIRS * 2.0
+		# the underside stays open: you look up into the limbs, not at a ball
+		if y < -0.3:
+			continue
+		var ring := sqrt(1.0 - y * y)
+		var dir := Vector3(cos(golden * i) * ring, y, sin(golden * i) * ring)
+		var p := cen + dir * rad * r.randf_range(0.74, 0.9)
+		var near := INF
+		for c in centres:
+			near = minf(near, c.distance_squared_to(p))
+		if near < FILL_GAP * FILL_GAP:
+			continue
+		# a leafy spray on a hidden twig, pointing out of the crown and a little up
+		var out := (dir + Vector3.UP * 0.35).normalized()
+		_leaf_cluster(r, p - out * 0.45, out, 1.0, r.randi_range(4, 6))
+		centres.append(p)
+	fill_cards += _cards.size() - before
+	_crown = keep
 
 ## Write the collected leaf cards. The crown is treated as an ellipsoid fitted round the
 ## card centres: vertex normals point out of it (soft volume lighting, per corner so the

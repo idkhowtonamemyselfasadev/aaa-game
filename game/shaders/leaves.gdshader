@@ -67,7 +67,14 @@ void fragment() {
 	float iv = fract(sin(dot(v_inst.xz, vec2(12.9898, 78.233))) * 43758.5453);
 	vec3 col = t.rgb * tint * mix(0.85, 1.15, v_phase) * mix(vec3(0.9, 1.0, 0.9), vec3(1.15, 1.0, 0.8), iv);
 	ALBEDO = col;
-	ALPHA = t.a;
+	// alpha-tested cards thin out with distance: each mip averages the leaf alpha with the
+	// gaps, so past ~40 m most texels fall under the 0.5 cut and a crown went see-through.
+	// Scale alpha up by the mip level being sampled so the coverage holds (Golus).
+	vec2 tsz = vec2(textureSize(leaf_tex, 0));
+	vec2 ddx = dFdx(UV * tsz);
+	vec2 ddy = dFdy(UV * tsz);
+	float mip = max(0.0, 0.5 * log2(max(dot(ddx, ddx), dot(ddy, ddy))));
+	ALPHA = t.a * (1.0 + mip * 0.25);
 	NORMAL_MAP = texture(leaf_nrm, UV).rgb;
 	NORMAL_MAP_DEPTH = nmap_depth;
 	// inner crown: leaves under other leaves see little sky or sun (darker, a touch bluer
