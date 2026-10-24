@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-0751-leanto-woodpile.jpg",
-  "time": "2026-10-19T07:51:15Z",
-  "caption": "Into the lean-to's open end: split logs stacked in warm tan rows under the pent roof, a chopping block with an axe and uncut rounds out front; the block's bark sides read too pale, the floor under the roof is a black void and the axe is a plain dark stick.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-0836-lantern-day.jpg",
   "time": "2026-10-19T08:36:59Z",
   "caption": "The lantern post by day, backlit against the timber house: the post is a dark silhouette, the horn panes read milky white like paper, and the timber house roof is a flat dark plane.",
@@ -891,6 +885,18 @@
   "file": "20261024-1650-outer-woods-ground.jpg",
   "time": "2026-10-24T16:50:00Z",
   "caption": "Ground view past the dust devil: the middle distance still shows open meadow with lone oaks, no woodland edge; the new outer woods don't read in this framing.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1800-outer-woods-air2.jpg",
+  "time": "2026-10-24T18:00:00Z",
+  "caption": "Same glide framing as 16:50 after the outer oaks were packed into six woods: a dark closed wood now fills the right middle distance, but the centre (the inner vale round the village, first-pass lone oaks) still reads as parkland and the hero still looks stylized.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1800-outer-woods-air2-crop.jpg",
+  "time": "2026-10-24T18:00:00Z",
+  "caption": "Crop on the right half: the crowns now merge into one dark canopy mass instead of separate lone trees; the wood edge is soft and the crowns still look thin and acacia-like up close.",
   "verdict": "fail"
  }
 ]

@@ -47,6 +47,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   extra cost. Bots: all 58 pass (`insects` failed once in the batch on a firefly at 0.07 m vs the
   0.1 floor, passed alone; unrelated). The full batch takes >30 min now: split it into two
   background runs or it hits the background-task limit.
+  Shot `glide woods3 40 14.0 fixfps at=-150,-22 to=-237,28 alt=14 pitch=-0.02 yaw=2.3` (Forward+,
+  ~25 min), verdict FAIL, gallery *-outer-woods-air2.jpg (+ crop): wood 1 now shows as one dark
+  closed canopy in the right middle distance where lone trees stood, but this lens looks east from
+  the keep over the village, so most of the frame is the inner vale 40-110 m round the village,
+  where only first-pass lone oaks stand (woods 0 and 5 are ~290 m off, near the horizon). NEXT: the
+  first pass is what reads as savanna: thin its lone oaks on the open meadow (keep the rookery
+  grove, the keeper's oaks and the shelter oaks the bots use) and/or move one or two woods into
+  60-110 m so every lens from the village has a wood edge in its middle ground; the crowns also
+  read thin and acacia-like from above (denser leaf cards or a crown-fill impostor past 80 m).
 - (16:50 10-24) **Outer woods: 240 more oaks in the groves 95-245 m out** (bot-verified, all 58 routes; shots `woods1`/`woods2`, verdict FAIL, gallery *-outer-woods-air.jpg and *-outer-woods-ground.jpg).
   flora.gd: new `_scatter_outer_woods()` runs last in _ready (own RNG seed*13+5, so boulders,
   shrubs, moss and roots from the first pass keep their seeds): 6 m spacing (first pass 9 m), a
@@ -4961,6 +4970,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+000000000000000000000000000000000000000000000000000000000000000000000000000. (18:00 10-24) Woods packed (see Done). NEXT: thin the first pass's lone oaks on the open
+   meadow near the village / bring a wood into 60-110 m so the middle ground reads as field and wood
+   edge, not parkland; fuller oak crowns from the air; then the tall-grass impostor band 64-150 m,
+   kites over the keep from the ground; the hero's look remains the biggest Wukong-gate failure.
 00000000000000000000000000000000000000000000000000000000000000000000000000. (02:00 10-23) Wool cape folds deepened (bot-verified, shot `osriccape2`).
    garb._drape(): fold amplitude 0.085 -> 0.12 (fine 0.022 -> 0.03), fold depth now ramps in from
    2 % to 80 % down the cape (was 5 % to 100 %), hem scallop 0.022 -> 0.03, and the fold cavity
