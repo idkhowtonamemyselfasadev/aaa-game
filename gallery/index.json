@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261018-1925-stonecottage.jpg",
-  "time": "2026-10-18T19:25:07Z",
-  "caption": "Stone cottage front at noon, now walled in grey split-stone coursed rubble on uneven beds with dressed quoins; still fails: stones read as rounded tiles with an even pale mortar outline, and the facade sits in flat shade.",
-  "verdict": "fail"
- },
- {
   "file": "20261018-2015-cottagerubble.jpg",
   "time": "2026-10-18T20:15:30Z",
   "caption": "Stone cottage front at noon after the rubble pass: stones now split polygons with deep shadowed joints and snecks instead of rounded tiles; still fails: cuts too deep so too much dark mortar shows between pale stones, and the facade sits in flat shade.",
@@ -891,6 +885,12 @@
   "file": "20261024-0515-glide-legs.jpg",
   "time": "2026-10-24T05:15:00Z",
   "caption": "The hero glides over the vale with both legs trailing back, knees bent, and the madder robe panels streaming out behind in the airflow; the canopy still reads as stiff flat cards from this angle and the straw hat and sash rim look flat-shaded.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-0615-glide-canopy.jpg",
+  "time": "2026-10-24T06:15:04Z",
+  "caption": "The hero gliding over the dry vale at 14:00: the canopy now arches and its panels belly up between the battens instead of reading as a flat card, but the pale linen panels glow near-white from below and the lens caught him from astern, not the side.",
   "verdict": "fail"
  }
 ]
