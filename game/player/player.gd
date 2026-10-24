@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody3D
 ## Third-person controller: walk/run/sprint, jump, stamina, orbit camera with collision.
-## Combat and climbing; gliding lands later in milestone 1.
+## Combat, climbing and gliding.
 
 const WALK_SPEED := 4.2
 const RUN_SPEED := 6.5
@@ -87,6 +87,23 @@ var _foot_t := [1.0, 1.0]             # 0..1 through a foot's step to its next h
 var _regrab_t := 0.0                  # after letting go the hands cannot catch again for a moment
 var _jumped := false                  # airborne from a jump (only a jump catches a face)
 
+# Gliding: jump again in the air and the hero snaps Caelum's glider open overhead. It sinks
+# slowly and flies on along the facing, the stick banking it round; jump or dodge lets go,
+# landing or catching a face folds it, and it eats stamina until the arms give out.
+const GLIDE_SPEED := 7.6              # m/s airspeed with the stick held
+const GLIDE_SINK := 1.7               # m/s settled descent
+const GLIDE_TURN := 1.9               # rad/s the most the facing swings round
+const GLIDE_ACCEL := 5.0
+const GLIDE_COST := 5.5               # stamina per second under the wing
+const GLIDE_MIN_STAMINA := 6.0
+var gliding := false
+var glides := 0                       # times the glider was opened (bots read this)
+var glided := 0.0                     # metres flown under it (bots read this)
+var glide_landings := 0               # touchdowns under the open wing (bots read this)
+var glide_sink := 0.0                 # m/s down last tick (bots read this)
+var _glide_t := 0.0
+var glider: Glider
+
 signal died
 signal respawned
 signal dodged(perfect: bool)
@@ -163,6 +180,9 @@ func _ready() -> void:
 	_setup_animation()
 	_attach_staff()
 	_setup_crumple()
+	glider = Glider.new()
+	glider.name = "Glider"
+	body.add_child(glider)
 	_skin()
 	_dress()
 	soak = Soak.new()
@@ -281,6 +301,12 @@ func _setup_animation() -> void:
 
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:
+		return
+	if gliding:
+		# hanging under the wing: the legs trail loose, no stride
+		_blend = lerpf(_blend, 0.0, 1.0 - exp(-8.0 * delta))
+		anim_tree.set("parameters/move/blend_position", _blend)
+		anim_tree.set("parameters/speed/scale", 0.6)
 		return
 	if dodge_t >= 0.0:
 		# dash-step: the run stride at a high cadence; the hop back plays the walk in reverse
@@ -467,6 +493,9 @@ func _physics_process(delta: float) -> void:
 		_climb_tick(delta, dir2, want_jump, want_dodge)
 		return
 	_update_slowmo(delta)
+	if gliding or (want_jump and _can_glide()):
+		_glide_tick(delta, dir2, want_jump, want_dodge)
+		return
 	var reeling := flinch_t >= 0.0
 	if want_dodge and (not reeling or flinch_t >= FLINCH_DODGE_AT):
 		_try_dodge(dir2)
@@ -614,6 +643,103 @@ func _physics_process(delta: float) -> void:
 	_update_animation(delta)
 	if combat != null:
 		combat.physics_step(delta)
+
+# --- gliding ---
+
+func _can_glide() -> bool:
+	return not is_on_floor() and not climbing and mantle_t < 0.0 and dodge_t < 0.0 \
+		and flinch_t < 0.0 and stamina >= GLIDE_MIN_STAMINA and glider != null \
+		and not (combat != null and (combat.is_attacking() or combat.is_charging()))
+
+func _glide_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool) -> void:
+	if not gliding:
+		gliding = true
+		glides += 1
+		_glide_t = 0.0
+		want_jump = false
+		glider.want_open = true
+		if combat != null:
+			combat.cancel_to_guard()
+		add_shake(0.12)                        # the cloth cracks open and takes the weight
+	_glide_t += delta
+	cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+	var fwd := -cam_pivot.global_transform.basis.z
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var right := cam_pivot.global_transform.basis.x
+	right.y = 0.0
+	right = right.normalized()
+	var wish := right * dir2.x + fwd * -dir2.y
+	if wish.length() > 1.0:
+		wish = wish.normalized()
+	# the stick turns the facing at a glider's pace and the wing banks into the turn
+	var turn := 0.0
+	if wish.length() > 0.1:
+		var dyaw := wrapf(atan2(wish.x, wish.z) - body.rotation.y, -PI, PI)
+		turn = clampf(dyaw, -GLIDE_TURN * delta, GLIDE_TURN * delta)
+		body.rotation.y += turn
+	glider.bank = lerpf(glider.bank, clampf(turn / maxf(GLIDE_TURN * delta, 1e-4), -1.0, 1.0) * 0.32, 1.0 - exp(-4.0 * delta))
+	var facing := body.global_basis.z
+	facing.y = 0.0
+	facing = facing.normalized()
+	var spd := GLIDE_SPEED if wish.length() > 0.1 else GLIDE_SPEED * 0.75
+	var hv := Vector3(velocity.x, 0.0, velocity.z).move_toward(facing * spd, GLIDE_ACCEL * delta)
+	velocity.x = hv.x
+	velocity.z = hv.z
+	if velocity.y > 0.0:
+		velocity.y -= GRAVITY * delta          # still rising off the jump
+	else:
+		velocity.y = move_toward(velocity.y, -GLIDE_SINK, 30.0 * delta)   # the wing bites hard and arrests the fall
+	glide_sink = -velocity.y
+	stamina = maxf(stamina - GLIDE_COST * delta, 0.0)
+	if stamina <= 0.0 or ((want_jump or want_dodge) and _glide_t > 0.25):
+		_end_glide(true)                       # let go: fall free
+	elif wish.length() > 0.3 and _regrab_t <= 0.0:
+		var cl := crumple.hand_curl if crumple != null else 0.4
+		if crumple != null:
+			crumple.hand_curl = 0.4
+		if _try_grab(wish.normalized()):
+			_end_glide(false)                  # flown onto a face: the hands take the stone
+			return
+		if crumple != null:
+			crumple.hand_curl = cl
+	var was := global_position
+	move_and_slide()
+	glided += (global_position - was).length()
+	if gliding and is_on_floor():
+		glide_landings += 1
+		_end_glide(true)
+	elif gliding:
+		_glide_pose(delta)                     # after the move, so the fists sit on the bar where it is now
+	_update_animation(delta)
+
+## Both fists on the crossbar overhead (the wing's bank tips the bar), the legs hanging with
+## the knees a little bent, the chest drawn up between the arms.
+func _glide_pose(delta: float) -> void:
+	if crumple == null:
+		return
+	crumple.active = true
+	crumple.plant = minf(crumple.plant + delta * 7.0, 1.0)
+	crumple.hand_curl = 1.0
+	crumple.hand_wall = -body.global_basis.z
+	var g := Glider.grips()
+	for i in 2:
+		crumple.hand_target[i] = glider.global_transform * glider.bar_transform() * (g[i] as Vector3)
+	crumple.knee = lerpf(crumple.knee, 0.45, 1.0 - exp(-6.0 * delta))
+	crumple.hip = lerpf(crumple.hip, 0.12, 1.0 - exp(-6.0 * delta))
+	crumple.spine = lerpf(crumple.spine, -0.08, 1.0 - exp(-6.0 * delta))
+
+func _end_glide(clear_pose: bool) -> void:
+	gliding = false
+	glider.want_open = false
+	glider.bank = 0.0
+	if clear_pose and crumple != null:
+		crumple.plant = 0.0
+		crumple.hand_curl = 0.4
+		crumple.knee = 0.0
+		crumple.hip = 0.0
+		crumple.spine = 0.0
+		crumple.active = false
 
 # --- climbing ---
 
@@ -1024,6 +1150,8 @@ func receive_attack(attacker: Node, damage: float) -> String:
 	return "hit"
 
 func _flinch(attacker: Node) -> void:
+	if gliding:
+		_end_glide(true)                       # struck out of the air: the wing folds
 	if climbing or mantle_t >= 0.0:
 		climbing = false                       # knocked off the face
 		mantle_t = -1.0

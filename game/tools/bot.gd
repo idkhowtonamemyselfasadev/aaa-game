@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -113,6 +113,9 @@ func _ready() -> void:
 		return
 	if name == "climb":
 		_climb_test()
+		return
+	if name == "glide":
+		_glide_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -702,6 +705,100 @@ func _soldier_test() -> void:
 	if not gone:
 		return _combat_done(false, "dead soldier was never removed")
 	_combat_done(true, "noticed, stalked, telegraphed thrust hit, dodged on the glint, killed, crumbled")
+
+## Glide: high over the vale a jump in the air snaps the glider open; it settles to a slow sink
+## and flies on along the facing, the stick banks it round, jump lets go into a free fall,
+## a second jump catches the air again, and touching down folds it with the hands let go.
+func _glide_test() -> void:
+	var p := _player
+	var terrain: Terrain = _world.get_node("Terrain")
+	var start := p.global_position
+	var hz := roundi(60.0 / Engine.time_scale)     # physics ticks per game second
+	p.global_position = start + Vector3.UP * 90.0
+	p.velocity = Vector3.ZERO
+	p.set_look(p.body.rotation.y + PI, -0.2)
+	await _ticks(4)
+	if p.gliding or p.is_on_floor():
+		return _combat_done(false, "the glider opened by itself or the hero never left the ground")
+	p.bot_jump = true
+	await _ticks(2)
+	print("BOT glide: jumped in the air, gliding %s, glides %d" % [p.gliding, p.glides])
+	if not p.gliding:
+		return _combat_done(false, "a jump in the air did not open the glider")
+	var st0 := p.stamina
+	var p0 := p.global_position
+	var sink := 0.0
+	var err := 0.0
+	for k in hz * 4:
+		p.bot_input = Vector2(0, -1)
+		await _ticks(1)
+		if k % hz == 0:
+			var gp := p.global_position
+			print("BOT glide t%d: y %.1f (turf %.1f) vy %.2f h %.2f stamina %.0f gliding %s floor %s" % [k, gp.y, terrain.height_at(gp.x, gp.z), p.velocity.y, Vector2(p.velocity.x, p.velocity.z).length(), p.stamina, p.gliding, p.is_on_floor()])
+		if k > hz * 3 / 2:
+			sink = maxf(sink, p.glide_sink)
+			err = maxf(err, maxf(p.crumple.hand_err[0], p.crumple.hand_err[1]))
+		if not p.gliding:
+			break
+	var inv := p.body.global_transform.affine_inverse()
+	print("BOT glide: shoulders %s %s, wrist targets %s %s (body space)" % [inv * (p.crumple.shoulder[0] as Vector3), inv * (p.crumple.shoulder[1] as Vector3), inv * (p.crumple.hand_target[0] as Vector3), inv * (p.crumple.hand_target[1] as Vector3)])
+	var flown := Vector2(p.global_position.x - p0.x, p.global_position.z - p0.z).length()
+	var drop := p0.y - p.global_position.y
+	print("BOT glide: 4 s under the wing, %.1f m across, %.1f m down, settled sink %.2f m/s, wing open %.2f, wrist off the bar %.3f m, stamina %.0f -> %.0f" % [flown, drop, sink, p.glider.open, err, st0, p.stamina])
+	if not p.gliding:
+		return _combat_done(false, "the glide ended early (hit something?)")
+	if flown < 22.0:
+		return _combat_done(false, "the glider barely moves forward")
+	if sink < 1.2 or sink > 2.2:
+		return _combat_done(false, "the glider does not settle to a slow sink")
+	if p.glider.open < 0.99:
+		return _combat_done(false, "the wing never spread fully")
+	if err > 0.06:
+		return _combat_done(false, "the hands do not hold the crossbar")
+	if p.stamina >= st0 - 10.0:
+		return _combat_done(false, "gliding costs no stamina")
+	# bank round: hold the stick to the hero's right for 1.5 s
+	var yaw0 := p.body.rotation.y
+	var bank := 0.0
+	for k in hz * 3 / 2:
+		var r := -p.body.global_basis.x
+		p.bot_input = _input_toward(p.global_position + r * 5.0)
+		await _ticks(1)
+		bank = maxf(bank, absf(p.glider.bank))
+	var turned := absf(wrapf(p.body.rotation.y - yaw0, -PI, PI))
+	print("BOT glide: banked round %.0f deg in 1.5 s, wing banked %.2f rad" % [rad_to_deg(turned), bank])
+	if turned < deg_to_rad(80.0) or turned > deg_to_rad(175.0):
+		return _combat_done(false, "the glider does not turn at a glider's pace")
+	if bank < 0.15:
+		return _combat_done(false, "the wing does not bank into the turn")
+	# let go, fall, catch the air again
+	p.bot_input = Vector2.ZERO
+	p.bot_jump = true
+	await _ticks(hz)
+	var fall := -p.velocity.y
+	print("BOT glide: let go, falling %.1f m/s, gliding %s, plant %.2f" % [fall, p.gliding, p.crumple.plant])
+	if p.gliding or fall < 5.0 or p.crumple.plant > 0.0:
+		return _combat_done(false, "letting go did not drop the hero free")
+	p.bot_jump = true
+	await _ticks(2)
+	if not p.gliding or p.glides != 2:
+		return _combat_done(false, "a second jump in the air did not reopen the glider")
+	# drop down near the turf under the open wing and fly it in to land
+	var gp := p.global_position
+	p.global_position = Vector3(gp.x, terrain.height_at(gp.x, gp.z) + 9.0, gp.z)
+	var t := 0.0
+	while t < 60.0 and p.gliding:
+		p.bot_input = Vector2(0, -1)
+		await _ticks(hz / 10)
+		t += 0.1
+	await _ticks(hz / 2)
+	var above := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
+	print("BOT glide: came down after %.1f s, landings %d, on floor %s, %.2f m above the turf, wing open %.2f, total flown %.0f m, stamina %.0f" % [t, p.glide_landings, p.is_on_floor(), above, p.glider.open, p.glided, p.stamina])
+	if p.gliding or not p.is_on_floor() or p.glide_landings != 1:
+		return _combat_done(false, "the glide never came down under the wing")
+	if p.glider.open > 0.01 or p.crumple.plant > 0.0:
+		return _combat_done(false, "the wing or the grip stayed up after landing")
+	_combat_done(true, "opened in the air, flew and sank slowly, banked round, let go, caught the air again and touched down")
 
 ## Camera-relative stick input that walks the hero toward a world point.
 func _input_toward(at: Vector3) -> Vector2:

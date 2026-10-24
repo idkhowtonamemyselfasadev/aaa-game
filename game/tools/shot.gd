@@ -1215,6 +1215,30 @@ func _ready() -> void:
 			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		SPOTS[spot] = [cp, tgt]
 		print("SHOT villager %s at %s" % [vg.activity, at])
+	if spot == "glide":
+		# the hero under the open glider high over the vale, seen by the follow camera from
+		# behind and a little to one side and above, the valley floor and the far ridges ahead
+		var gfrom := Vector3(60, 0, -140)
+		var gto := Vector3(-60, 0, 60)
+		for a in args:
+			if a.begins_with("at="):
+				var xz := a.substr(3).split(",")
+				gfrom = Vector3(float(xz[0]), 0, float(xz[1]))
+		var gdir := (gto - gfrom).normalized()
+		player.use_bot_input = true
+		player.global_position = gfrom + Vector3.UP * (terrain.height_at(gfrom.x, gfrom.z) + 16.0)
+		player.body.rotation.y = atan2(gdir.x, gdir.z)
+		player.velocity = gdir * Player.GLIDE_SPEED
+		player._glide_tick(0.0, Vector2.ZERO, true, false)
+		player.glider.open = 1.0
+		var yc := atan2(gdir.x, gdir.z) + PI + 0.55
+		player.set_look(yc, -0.22)
+		# the stick holds the heading (camera-relative), so the hero flies on past the lens
+		var cf := Vector3(-sin(yc), 0, -cos(yc))
+		var cr := Vector3(cos(yc), 0, -sin(yc))
+		player.bot_input = Vector2(gdir.dot(cr), -gdir.dot(cf))
+		player.spring.spring_length = 4.6
+		print("SHOT glide from %s heading %s" % [player.global_position, gdir])
 	if spot == "climb":
 		# the hero halfway up the keep's outer face, hands up on the stones, from below and
 		# off to one side so the wall, the figure and the crown above all read
