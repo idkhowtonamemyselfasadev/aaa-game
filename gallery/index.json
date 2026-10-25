@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-1212-trackpools.jpg",
-  "time": "2026-10-19T12:12:11Z",
-  "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1359-edda-heave.jpg",
-  "time": "2026-10-19T13:59:48Z",
-  "caption": "Edda heaves the axe up over her head at the chopping block by the lean-to; she reads small against the white wall from this 3.6 m lens and the axe is hard to pick out.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1359-edda-split.jpg",
   "time": "2026-10-19T13:59:48Z",
   "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
@@ -897,6 +885,12 @@
   "file": "20261025-0430-lobes-village.jpg",
   "time": "2026-10-25T04:30:00Z",
   "caption": "Village view with lobed oak crowns: the right-hand oaks now show paler domed caps over darker skirts and fuller canopies, but the far woods are still one soft green mass and the domes read only faintly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-0551-lobes2-village.jpg",
+  "time": "2026-10-25T05:51:24Z",
+  "caption": "Village view with stronger lobed oak crowns: the right-hand oaks now break into several shaded domes with dark creases; crowns still dull olive and the left wood reads as one dark mass.",
   "verdict": "fail"
  }
 ]
