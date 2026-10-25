@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-2000-bench.jpg",
-  "time": "2026-10-19T20:00:49Z",
-  "caption": "Edda on her bench at 20:00 with the firefly lime disc gone from the limewash; the frame is still crushed navy and her face is lost under the white coif.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-2000-lantwide.jpg",
   "time": "2026-10-19T20:00:49Z",
   "caption": "The lantern post at 21:30 from the green: a soft, wide amber pool on the track, grass and timber house front, meadow silver-blue under the moon; the pool on the grass is still a touch red and the houses read dark and flat.",
@@ -891,6 +885,12 @@
   "file": "20261025-1347-plate-hero.jpg",
   "time": "2026-10-25T13:47:56Z",
   "caption": "Hero at noon after the armour-wear rework (satin lacquer, chips thinned, rim wear from the normal map); at this range the change barely shows and the torso still reads as pale linen wraps and a brown mantle, not dark lamellar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1420-armwrap-hero.jpg",
+  "time": "2026-10-25T14:20:00Z",
+  "caption": "Hero at noon by the training post: the forearm wraps now read as road-soiled linen, not pale cuffs; the chest and shoulder plates and the bare hand still read pale grey-tan and the face is too small to read.",
   "verdict": "fail"
  }
 ]

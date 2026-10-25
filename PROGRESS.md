@@ -36,7 +36,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (13:00 10-25) **Hero's forearm wraps road-soiled**: garb.gd forearm bindings use a new ARM_LINEN
   (light 0.44/0.39/0.31, soot 0.4) instead of clean LINEN (0.60/0.55/0.46), which read as two pale bright
   cuffs on the torso at noon (the 12:00 shots showed the pale on the torso was mostly garb, not the plates).
-  NPC palettes unchanged (LINEN stays in the dye list). See the shot verdict below.
+  NPC palettes unchanged (LINEN stays in the dye list). Shot `hero armwrap 40 12` (Forward+, ~30 min) judged: the
+  wraps now read as darker cloth; the chest/shoulder plates and the bare right hand still read pale grey-tan at
+  noon, so the red-lacquer diagnostic is the next step for the torso. Verdict FAIL, gallery *-armwrap-hero.jpg.
+  Bots walk, combat PASS.
 - (12:00 10-25) **Hero's armour wear follows real edges**: hero.gdshader re-partitions the Vanguard
   texture. A texel is "plate" if any tan lies within ~6 texels (8 taps), so the painted chips and their
   anti-aliased borders count as plate -- before, those borders fell between the plate and scratch masks
@@ -5145,7 +5148,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 0. (13:00 10-25) Forearm wraps darkened (see Done). NEXT for the hero's look: the face skin reads smooth and
    young and the brow band is featureless (pores, brow-ridge shade, coarser brow hair, cheek shading); the
-   sash knot from the hero's right side; if the chest still reads pale, the red-lacquer diagnostic shot
+   sash knot from the hero's right side; the chest/shoulders still read pale grey: the red-lacquer diagnostic shot
    (lacquer pure red in player.gd `_skin()`, shot `hero`, revert); tall-grass impostor band 64-150 m; kites
    over the keep. Shots: 40 warm-up frames.
 0. (12:00 10-25) Armour edge wear redone (see Done) but unproven on screen. NEXT: a diagnostic shot to
