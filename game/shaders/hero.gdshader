@@ -14,7 +14,7 @@ uniform float normal_depth = 1.0;
 // cinnabar lacquer, the blue-grey fittings and helmet mask blackened iron, and the glossy visor
 // glass a matte indigo face cloth.
 uniform float restyle = 1.0;
-uniform vec3 lacquer : source_color = vec3(0.052, 0.036, 0.029);
+uniform vec3 lacquer : source_color = vec3(0.082, 0.054, 0.041);
 uniform vec3 hide : source_color = vec3(0.26, 0.16, 0.085);
 uniform vec3 cinnabar : source_color = vec3(0.30, 0.055, 0.035);
 uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
@@ -104,8 +104,10 @@ void fragment() {
 		float r_o = roughness;
 		o = mix(o, lac, region);
 		// satin, not gloss: glossy black mirrors the noon sky and reads pale grey, its bevels
-		// glinting like painted outlines; rubbed rims go matter still
-		r_o = mix(r_o, 0.6 + 0.14 * mott + 0.14 * bevel, region);
+		// glinting like painted outlines; rubbed rims go matter still. At 0.6 the field was
+		// so matte that the plates' curvature caught no sky and the torso read as one black
+		// mass at 6-8 m: a little more sheen on the field, the rims kept matte
+		r_o = mix(r_o, 0.46 + 0.12 * mott + 0.26 * bevel, region);
 		o = mix(o, hide * (0.32 + 0.22 * mott), scratch);
 		r_o = mix(r_o, 0.8, scratch);
 		o = mix(o, cinnabar * (0.75 + 0.4 * mott), red_m);
@@ -145,7 +147,7 @@ void fragment() {
 	ALBEDO = alb;
 	ROUGHNESS = rough;
 	METALLIC = metal;
-	SPECULAR = 0.5 - 0.18 * plate_spec;
+	SPECULAR = 0.5 - 0.1 * plate_spec;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth;
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-2120-bat.jpg",
-  "time": "2026-10-19T21:20:00Z",
-  "caption": "The new bat hawking moths above the lit lantern on the green; it reads only as a tiny flat orange cut-out against the roof (membrane backlight/emission far too strong, lens too far), and the night frame is still crushed navy.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-2311-doorstones-white-wide.jpg",
   "time": "2026-10-19T23:11:10Z",
   "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
@@ -891,6 +885,18 @@
   "file": "20261025-1626-hood-hero.jpg",
   "time": "2026-10-25T16:26:22Z",
   "caption": "Hero at noon with the hood darkened from pale slate-blue to greyed wool and a slightly lifted lacquer; the armour still reads as one near-black mass at range and the face is lost under the hood.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1725-sheen-hero.jpg",
+  "time": "2026-10-25T17:25:24Z",
+  "caption": "Hero at noon with warmer black-brown lacquer and more sheen on the plate fields: the torso now reads dark brown with faint shoulder-plate shading, but the plates still merge at this range and the face is lost in the hood's shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1725-sheen-crop.jpg",
+  "time": "2026-10-25T17:25:24Z",
+  "caption": "Before (left, 16:26) and after (right): the lacquer is a step warmer and the shoulder plate catches a little sky; plate separation is still weak.",
   "verdict": "fail"
  }
 ]
