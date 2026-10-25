@@ -33,7 +33,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (01:10 10-25) **Oak crown colour variety** (bot-verified; shot `crowncast` pending at commit time).
+- (01:10 10-25) **Oak crown colour variety** (bot-verified; shot `crowncast`).
   leaves.gdshader: each tree (hash of its position) draws one of three leaf casts -- 40 % deep
   blue-green (x0.86/1.0/0.9), 35 % fresh yellow-green (x1.1/1.12/0.7), 25 % olive-bronze
   (x1.2/1.0/0.68) -- times its own brightness 0.84-1.12 (was one faint warm/cool lerp). New sunlit
@@ -41,6 +41,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   toward a paler yellow-green (x1.16/1.14/0.78, gain `skin_gain`), so the crown top reads domed and
   lit over a darker core. Uniforms `tree_var` (oaks 1, ferns 0.35) and `skin_gain` (oaks 0.7,
   shrubs 0.4, ferns 0). Bots pass: walk ridge understory glide.
+  Shot `village crowncast 40 14.0` (Forward+, ~70 min), verdict FAIL, gallery *-crowncast-village.jpg:
+  same lens as *-fields-village.jpg; the near copses read fresher green with paler tops and the
+  right-hand wood shows a few distinct crowns, but the change is subtle: past ~80 m the woods are
+  still mostly one dark green and the crowns sit flat-topped.
 - (00:00 10-25) **Meadow field patchwork** (shot `fields`; bots trample dust glide pass, herd flaky see bugs).
   New shaders/field_patch.gdshaderinc, shared by terrain.gdshader and grass.gdshader so blades and
   ground agree: ~46 m warped Voronoi fields (warp 14 m + 4 m), each one kind -- 40 % grazed pasture
@@ -5044,9 +5048,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (01:10 10-25) Crown casts + sunlit skin in (see Done). NEXT: judge shot `village crowncast 40 14.0`
-   against *-fields-village.jpg (if the casts are too loud or too faint, tune the three cast vectors in
-   leaves.gdshader); then the fields past 80 m (stronger tint with distance), rounder domed crown
+0. (01:10 10-25) Crown casts + sunlit skin in (see Done). Shot `crowncast` judged: too subtle.
+   NEXT: roughly double the cast spread (e.g. yellow-green x1.2/1.22/0.6, bronze x1.32/1.0/0.55, deep
+   x0.78/0.95/0.88) and skin_gain 0.7 -> 1.0, and re-shoot the same lens; then the fields past 80 m (stronger tint with distance), rounder domed crown
    geometry, the tall-grass impostor band 64-150 m, kites over the keep; the hero's look remains the
    biggest Wukong-gate failure.
 0. (00:50 10-25) Field patchwork in (see Done). NEXT: make the fields read past 80 m (stronger tint
