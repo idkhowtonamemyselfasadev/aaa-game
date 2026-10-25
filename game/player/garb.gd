@@ -7,6 +7,9 @@ extends HollowRags
 ## but clean dyed cloth: no ash, no burns, no ember.
 
 const INDIGO := [Color(0.030, 0.034, 0.048), Color(0.15, 0.16, 0.21), 0.25]
+## The hero's hood: indigo wool sun-faded and road-worn to a greyed slate blue (the fresh-dyed
+## INDIGO read as a flat near-black box round the face at noon).
+const HOOD_INDIGO := [Color(0.048, 0.052, 0.066), Color(0.25, 0.26, 0.30), 0.25]
 const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
 # a dyed-and-worn ochre: the bright 0.58/0.40/0.17 read as a flat yellow belt in full sun
@@ -91,13 +94,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	for side in ["Left", "Right"]:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side), skel.find_bone("mixamorig_%sFoot" % side)]))
-	tint = palette.get("hood", INDIGO)
+	tint = palette.get("hood", HOOD_INDIGO)
 	# the hero's hood is sewn, not torn like the Hollow's cowl: a straight turned and stitched
 	# hem where it falls over the mantle
 	var hood := _piece(_hood(), 0.0, 0.0, 0.0, 1.2)
 	var hdm := hood.material_override as ShaderMaterial
 	hdm.set_shader_parameter("wool", 1.0)
 	hdm.set_shader_parameter("hem_band", 1.0)
+	hdm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(hood)
 	if beard:
 		veil = _beard()
@@ -457,7 +461,7 @@ const HOOD_W := 0.09     # the opening's half width from the eyes down
 const HOOD_H_PEAK := 0.098  # a bearded wearer's peaked arch: its point a centimetre higher
 
 func _hood() -> ArrayMesh:
-	return _grid(func(u: float, v: float) -> Vector3:
+	return _grid_ao(func(u: float, v: float) -> Vector3:
 		var gap_l := _hood_gap(v, 1.0)
 		var gap_r := _hood_gap(v, -1.0)
 		if u > HOOD_ROLL and u < 1.0 - HOOD_ROLL:
@@ -476,7 +480,65 @@ func _hood() -> ArrayMesh:
 		var top_v := (2.09 - HOOD_YC - (HOOD_H_PEAK if beard else HOOD_H)) / 0.43
 		var rr := 0.0105 * (1.0 + 0.25 * sin(v * 31.0 + 1.3) + 0.12 * sin(v * 77.0)) \
 				* smoothstep(top_v - 0.02, top_v + 0.07, v)
-		return p + n * rr * (1.0 - cos(phi)) - t * rr * sin(phi), 64, 40)
+		return p + n * rr * (1.0 - cos(phi)) - t * rr * sin(phi),
+		func(u: float, v: float) -> float:
+			return 1.0 - _hood_fold(_hood_angle(u, v), v) * 0.75, 64, 40)
+
+## The angle round the head of hood grid point (u, v) (the rolls take their edge's angle).
+func _hood_angle(u: float, v: float) -> float:
+	var gap_l := _hood_gap(v, 1.0)
+	var gap_r := _hood_gap(v, -1.0)
+	if u <= HOOD_ROLL:
+		return gap_l
+	if u >= 1.0 - HOOD_ROLL:
+		return TAU - gap_r
+	return lerpf(gap_l, TAU - gap_r, (u - HOOD_ROLL) / (1.0 - 2.0 * HOOD_ROLL))
+
+## The hero's hood drape at angle `a`, `v` down: a few uneven folds that start round the ears
+## and deepen down into the shoulder flare (shallower toward the face opening), with tight
+## rumples on the crown where the hat presses the wool down: the ridge signal, + out.
+func _hood_fold_ridge(a: float, v: float) -> float:
+	var w := pow(cos(a) * 0.5 + 0.5, 2.0)
+	var phi := a * 6.0 + 0.9 * sin(a * 2.1 + 0.4) + 0.5 * sin(a * 4.7 + 1.9) + v * 1.2
+	var ridge := sin(phi)
+	ridge = signf(ridge) * pow(absf(ridge), 0.6)
+	var depth := smoothstep(0.42, 0.95, v) * (1.0 - 0.7 * w)
+	var crown := sin(a * 9.0 + v * 7.0 + 0.6) * exp(-pow((v - 0.3) / 0.08, 2.0)) * 0.35
+	return ridge * depth + crown
+
+## The fold cavity 0..1 at (a, v) (0 on a ridge or open cloth), for the hood's fold AO.
+func _hood_fold(a: float, v: float) -> float:
+	if beard:
+		return 0.0
+	var w := pow(cos(a) * 0.5 + 0.5, 2.0)
+	var depth := smoothstep(0.42, 0.95, v) * (1.0 - 0.7 * w)
+	var r := _hood_fold_ridge(a, v)
+	# the valleys between the folds sit in shade; the crown rumples only a little
+	return clampf(0.5 * depth * (1.0 - r) + 0.15 * maxf(-r, 0.0) * (1.0 - depth), 0.0, 1.0)
+
+## _grid with a per-vertex cavity term in COLOR.r (1 open, 0 deep in a fold), for fold_ao.
+func _grid_ao(f: Callable, g: Callable, nu: int, nv: int) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in nv + 1:
+		for i in nu + 1:
+			var u := float(i) / nu
+			var v := float(j) / nv
+			var c: float = g.call(u, v)
+			st.set_color(Color(c, c, c))
+			st.set_uv(Vector2(u, v))
+			st.add_vertex(f.call(u, v))
+	for j in nv:
+		for i in nu:
+			var a := j * (nu + 1) + i
+			var b := a + 1
+			var c := a + nu + 1
+			var d := c + 1
+			st.add_index(a); st.add_index(b); st.add_index(c)
+			st.add_index(b); st.add_index(d); st.add_index(c)
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
 
 ## The hood surface at angle `a` round the head (0 = the front) and `v` from crown to throat.
 func _hood_at(a: float, v: float) -> Vector3:
@@ -509,6 +571,13 @@ func _hood_at(a: float, v: float) -> Vector3:
 		r *= 1.0 + 0.035 * sin(a * 5.0 + 1.3 + v * 3.0) * smoothstep(0.3, 0.9, v) \
 				+ 0.018 * sin(a * 11.0 + 0.4) * smoothstep(0.5, 1.0, v)
 		cz -= 0.025 * (1.0 - smoothstep(0.0, 0.3, v)) * (0.5 - 0.5 * cos(a))
+	else:
+		# the hero's sewn hood still hangs as wool, not a box: drawn in a little under the
+		# jaw at the sides, then breaking into a few uneven drape folds over the shoulders
+		var sd := sin(a) * sin(a)
+		r *= 1.0 - 0.05 * sd * exp(-pow((v - 0.62) / 0.13, 2.0))
+		r *= 1.0 + 0.045 * _hood_fold_ridge(a, v) * (0.6 + 0.4 * smoothstep(0.5, 1.0, v)) \
+				* (1.0 - 0.75 * exp(-pow((v - 0.3) / 0.08, 2.0)))
 	return Vector3(sin(a) * (0.168 * r + cheek), 2.09 - v * 0.43 + lift,
 			cz + cos(a) * (0.192 * r + fwd + cheek))
 
@@ -541,12 +610,28 @@ func _hood_gap(v: float, s := 1.0) -> float:
 func _hat() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
 		var a := u * TAU
-		var r := 0.37 * v
+		# the cone runs to RIM_V; past it the brim's edge is bound in a rolled band of split
+		# cane that turns down and back under (a bare cut edge read as a paper cone)
+		var t := minf(v / HAT_RIM_V, 1.0)
+		var r := 0.37 * t
 		# a straight cone, a slightly fuller crown and a soft downturn over the last 15 %
-		var y := 2.155 - 0.14 * v - 0.012 * sin(v * PI) - 0.03 * smoothstep(0.85, 1.0, v)
+		var y := 2.155 - 0.14 * t - 0.012 * sin(t * PI) - 0.03 * smoothstep(0.85, 1.0, t)
+		# a small raised peak at the crown where the plaits are gathered and tied off
+		y += 0.022 * pow(1.0 - minf(t / 0.13, 1.0), 2.0)
+		# the bamboo frame's 16 spokes stand through the weave as faint ribs
+		y += 0.0028 * pow(absf(cos(a * 8.0)), 10.0) * smoothstep(0.1, 0.3, t)
 		# the plaited rim is a touch uneven
-		r *= 1.0 + 0.006 * sin(a * 11.0) * v
-		return Vector3(sin(a) * r, y, -0.03 + cos(a) * r), 48, 12)
+		var wob := 1.0 + 0.006 * sin(a * 11.0) * t
+		r *= wob
+		if v > HAT_RIM_V:
+			var phi := (v - HAT_RIM_V) / (1.0 - HAT_RIM_V) * 1.25 * PI
+			var rr := 0.0065 * (1.0 + 0.15 * sin(a * 23.0))
+			# round the edge from the top surface, down past its outer face and back underneath
+			r += rr * sin(phi)
+			y += rr * (cos(phi) - 1.0)
+		return Vector3(sin(a) * r, y, -0.03 + cos(a) * r), 48, 18)
+
+const HAT_RIM_V := 0.84
 
 ## An old man's felt hat worn over the hood: a round crown with a crease pinched down its
 ## top front to back, walls a little out of true, and a narrow soft brim that droops at the

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-1440-edda-pail.jpg",
-  "time": "2026-10-19T14:40:02Z",
-  "caption": "Edda at the water butt at 7 am with her pail hung from her right hand; the lens sits behind her so the pail barely reads, and her hair is a smooth blob.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1530-edda-feed.jpg",
   "time": "2026-10-19T15:30:00Z",
   "caption": "Edda at the garth wall at 07:55 casting grain to the hens, which crowd the yard in the foreground; the yard is in deep morning shadow, the grain does not read, and the wall hides her casting arm.",
@@ -891,6 +885,12 @@
   "file": "20261025-0748-sashknot-hero.jpg",
   "time": "2026-10-25T07:48:38Z",
   "caption": "The hero at noon by the training post with the sash now a muted, creased cloth band (wound twice, knot and tails on the far hip) instead of a flat bright-yellow ring; the indigo hood still reads as a flat box and the straw hat as a plain cone.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-0828-hoodface.jpg",
+  "time": "2026-10-25T08:28:41Z",
+  "caption": "Head-and-shoulders of the hero at noon: the hood is now faded slate-blue wool with drape folds and shaded valleys over the shoulders, and the straw hat has a tied crown peak and a rolled, bound rim; the hat still reads too bright and smooth a yellow, and the face looks doll-like.",
   "verdict": "fail"
  }
 ]
