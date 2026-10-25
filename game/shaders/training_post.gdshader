@@ -7,7 +7,7 @@ render_mode cull_disabled;
 // carry a per-stalk tone in COLOR.b and their layer depth in COLOR.a; UV.x across, UV.y
 // metres along, UV2.x 0..1 along.
 
-uniform vec3 oak_grey : source_color = vec3(0.44, 0.41, 0.36);
+uniform vec3 oak_grey : source_color = vec3(0.37, 0.33, 0.275);
 uniform vec3 oak_dark : source_color = vec3(0.17, 0.15, 0.12);
 uniform vec3 iron : source_color = vec3(0.17, 0.16, 0.15);
 uniform vec3 rust : source_color = vec3(0.36, 0.17, 0.08);
@@ -63,14 +63,20 @@ void fragment() {
 		// damp near the ground with a little dark moss at the foot; the cut top shows end
 		// grain (growth rings round an off-centre pith, radial checks) bleached pale
 		float g = fbm(vec2(around * 30.0, h * 1.2));
-		float fine = vnoise(vec2(around * 160.0, h * 4.0));
+		float fine = vnoise(vec2(around * 110.0, h * 7.0));
+		// adze marks: shallow scoops across each hewn face, a hand-span apart, the chop line
+		// at the bottom of each scoop catching a dark edge
+		float face = around * 7.0;
+		float sc = fract(h * 7.5 + 0.35 * vnoise(vec2(floor(face) * 3.1, h * 2.0)) + floor(face) * 0.37);
+		float scoop = sc * sc;
+		float chop = smoothstep(0.06, 0.0, sc) * smoothstep(0.35, 0.6, vnoise(vec2(around * 20.0, h * 6.0)));
 		float crack = smoothstep(0.035, 0.0, abs(fbm(vec2(around * 7.0, h * 0.5)) - 0.5)) ;
 		crack *= smoothstep(0.3, 0.6, vnoise(vec2(around * 5.0, h * 2.5)));
 		// long silver streaks where rain runs down the grain, browner in the hollows
 		float streak = vnoise(vec2(around * 55.0, h * 0.6));
 		alb = oak_grey * (0.7 + 0.5 * g) * (0.82 + 0.3 * fine) * (0.85 + 0.25 * streak);
 		alb = mix(alb, alb * vec3(1.08, 0.95, 0.80), (1.0 - g) * 0.5);
-		float top = smoothstep(1.68, 1.70, obj.y);
+		float top = smoothstep(1.70, 1.712, obj.y);
 		if (top > 0.0) {
 			vec2 c = obj.xz - vec2(0.012, -0.008);
 			float r = length(c) + fbm(c * 40.0) * 0.012;
@@ -85,6 +91,10 @@ void fragment() {
 			crack = mix(crack, chk, top);
 			g = mix(g, ring, top);
 		}
+		// the hewn checks (geometry carries their depth; COLOR.g is how deep in we are)
+		float split = smoothstep(0.15, 0.7, stk.x);
+		crack = max(crack, split);
+		alb *= 1.0 - chop * 0.3;
 		alb = mix(alb, oak_dark, crack * 0.85);
 		// rust washed down out of the iron band in streaks and runs below it
 		float below = 1.56 - obj.y;
@@ -97,8 +107,8 @@ void fragment() {
 		float moss = smoothstep(0.62, 0.8, fbm(vec2(around * 12.0, h * 9.0)) + damp * 0.4) * smoothstep(0.5, 0.2, h);
 		alb = mix(alb, vec3(0.085, 0.10, 0.045), moss * 0.75);
 		rough = 0.82 + 0.1 * fine;
-		bump = g * 0.5 + fine * 0.3 - crack * 1.2;
-		ao = 1.0 - crack * 0.6;
+		bump = g * 0.5 + fine * 0.25 - crack * 1.2 + (scoop * 0.9 - chop * 0.6) * (1.0 - top);
+		ao = (1.0 - crack * 0.6) * (1.0 - split * 0.35) * (1.0 - chop * 0.2);
 	} else if (layer < 0.5) {
 		// hand-forged iron band, weathered to a brown-grey oxide: flat hammer facets (planar
 		// tilts per peen blow), the high spots of the facets worn back to dull grey iron by
@@ -125,10 +135,10 @@ void fragment() {
 		float edge = 1.0 - smoothstep(0.0, 0.006, min(h - 1.56, 1.62 - h)); // band edges
 		float r = fbm(vec2(around * 30.0, h * 70.0));
 		float pit = smoothstep(0.55, 0.75, fbm(vec2(around * 90.0, h * 160.0)));
-		vec3 oxide = mix(vec3(0.20, 0.15, 0.12), vec3(0.30, 0.17, 0.09), r);
-		vec3 bloom = vec3(0.44, 0.21, 0.07);
-		vec3 bare = vec3(0.34, 0.31, 0.27);
-		float wear = smoothstep(0.72, 0.98, hi * (0.6 + 0.6 * vnoise(vec2(around * 8.0, h * 30.0))));
+		vec3 oxide = mix(vec3(0.105, 0.085, 0.07), vec3(0.17, 0.095, 0.05), r);
+		vec3 bloom = vec3(0.30, 0.14, 0.05);
+		vec3 bare = vec3(0.19, 0.18, 0.17);
+		float wear = smoothstep(0.82, 1.0, hi * (0.6 + 0.6 * vnoise(vec2(around * 8.0, h * 30.0))));
 		alb = mix(oxide, bloom, smoothstep(0.55, 0.8, r) * (1.0 - hi) * 0.8);
 		alb = mix(alb, vec3(0.09, 0.075, 0.065), max(edge * 0.6, pit * 0.5));
 		alb = mix(alb, bare, wear * (1.0 - edge));

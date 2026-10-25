@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261020-0250-doorstones-flags-stone.jpg",
-  "time": "2026-10-20T02:50:00Z",
-  "caption": "The stone cottage's door flags now read flat and broad underfoot; still wrong: the whole doorway sits in deep blue-black shade so the stones and the wall barely read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0250-doorstones-flags-timber.jpg",
-  "time": "2026-10-20T02:50:00Z",
-  "caption": "The timber house's door stones now lie as broad, thin split flags across the track with clouded worn tops and dirt in their edges; still wrong: they read cool grey-white and too smooth in the late light, and the house infill looks flat white.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0330-doorstones-wet-timber.jpg",
   "time": "2026-10-20T03:45:00Z",
   "caption": "Timber house door flags in a storm at 16:30: the worn tops now read wet with a bright sky sheen; still fail: frame very dark, sheen a little milky, the edge pools barely show.",
@@ -885,6 +873,18 @@
   "file": "20261025-2025-facefill-crop.jpg",
   "time": "2026-10-25T20:25:29Z",
   "caption": "Face crop: warm skin and an eye now read inside the hood instead of a black slit; the skin is still smooth and the eye small at this range.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-2125-hewnpost.jpg",
+  "time": "2026-10-25T21:25:00Z",
+  "caption": "Practice post at noon beside the hero: now a hewn, tapered oak post with a rounded top under a dark iron band and a lashed straw bundle; the meadow still lacks depth haze and the hero reads small and dull.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-2125-hewnpost-crop.jpg",
+  "time": "2026-10-25T21:25:00Z",
+  "caption": "Post top x4, first pass (left) vs darkened iron (right): adze flats, drying checks and a rain-rounded top replace the turned cylinder; the band is still a touch light in full sun.",
   "verdict": "fail"
  }
 ]

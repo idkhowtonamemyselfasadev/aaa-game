@@ -1,7 +1,9 @@
 class_name TrainingPost
 extends StaticBody3D
 ## A weathered oak practice post set in the ground, its middle bound in a thick straw bundle
-## lashed with three rope rings and an iron band under the chamfered top. Built in code as a
+## lashed with three rope rings and an iron band under the weathered top. The oak is hewn,
+## not turned: seven adzed flats with worn-round arrises, tapering a little to the top, split
+## by drying checks, its top rounded off by rain and chipped by blows. Built in code as a
 ## lathe with per-vertex irregularity; training_post.gdshader adds the surface detail
 ## (COLOR.r: 0 oak, 0.33 iron, 0.66 straw, 1 rope). Staff hits rock it in its socket.
 
@@ -12,6 +14,8 @@ const STRAW_R := 0.185
 const STRAW_LO := 0.62
 const STRAW_HI := 1.40
 const SEG := 36
+const OAK_SEG := 112          # the oak needs the finer ring for its checks
+const FLATS := 7
 const OAK := 0.0
 const IRON := 0.33
 const STRAW := 0.66
@@ -110,9 +114,13 @@ static func _rows() -> Array:
 	r.append([HEIGHT - 0.102, POST_R + 0.005, IRON, 0.002])
 	r.append([HEIGHT - 0.10, POST_R, IRON, 0.0])
 	r.append([HEIGHT - 0.10, POST_R, OAK, 0.012])
-	r.append([HEIGHT - 0.03, POST_R * 0.98, OAK, 0.012])
-	r.append([HEIGHT, POST_R * 0.72, OAK, 0.006])
-	r.append([HEIGHT + 0.005, 0.0, OAK, 0.0])
+	# the top: worn round by rain, not sawn square -- a soft shoulder into a low dome
+	r.append([HEIGHT - 0.045, POST_R * 0.985, OAK, 0.012])
+	r.append([HEIGHT - 0.02, POST_R * 0.93, OAK, 0.010])
+	r.append([HEIGHT - 0.006, POST_R * 0.80, OAK, 0.008])
+	r.append([HEIGHT + 0.004, POST_R * 0.55, OAK, 0.006])
+	r.append([HEIGHT + 0.009, POST_R * 0.25, OAK, 0.003])
+	r.append([HEIGHT + 0.010, 0.0, OAK, 0.0])
 	return r
 
 static func build_mesh() -> ArrayMesh:
@@ -142,11 +150,36 @@ static func build_mesh() -> ArrayMesh:
 	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, build_stalks().commit_to_arrays())
 	return am
 
+## The hewn section's outline at angle ang, as a factor on the radius: seven adze flats
+## (unequal, as hewn by eye) whose arrises have weathered round, and the drying checks --
+## long splits down the grain, widest and deepest at the top where the end grain dries.
+## Returns [factor, check depth 0..1].
+static func hewn(ang: float, h: float) -> Array:
+	var a := fposmod(ang + 0.31, TAU)
+	var face := a / TAU * FLATS
+	var k := floori(face)
+	# uneven faces: each flat's centre wanders a little
+	var u := fposmod(face, 1.0) - 0.5 + 0.12 * sin(float(k) * 2.7)
+	var poly := cos(PI / FLATS) / cos(clampf(u, -0.5, 0.5) * TAU / FLATS)
+	var f := lerpf(1.0, poly, 0.75) * 1.035
+	# checks: [angle, top of the split, bottom, depth (fraction of R), half-width (rad)]
+	var chk := 0.0
+	for c in [[0.9, 1.80, 0.95, 0.20, 0.035], [3.3, 1.80, 1.30, 0.14, 0.028], [4.9, 0.55, -0.2, 0.12, 0.025], [2.1, 0.45, 0.05, 0.08, 0.02]]:
+		var span := clampf((h - float(c[2])) / (float(c[1]) - float(c[2])), 0.0, 1.0)
+		if span <= 0.0:
+			continue
+		var da := absf(wrapf(ang - float(c[0]) - 0.01 * sin(h * 9.0), -PI, PI))
+		var w: float = float(c[4]) * (0.35 + 0.65 * span)
+		chk = maxf(chk, smoothstep(w, 0.0, da) * sqrt(span))
+		f -= float(c[3]) * smoothstep(w, 0.0, da) * sqrt(span)
+	return [f, chk]
+
 static func _band(st: SurfaceTool, rows: Array, base: int) -> int:
 	var mat: float = rows[0][2]
+	var seg := OAK_SEG if mat == OAK else SEG
 	for row in rows:
-		for s in SEG + 1:
-			var t := float(s) / SEG
+		for s in seg + 1:
+			var t := float(s) / seg
 			var ang := t * TAU
 			var h: float = row[0]
 			var rough: float = row[3]
@@ -155,19 +188,26 @@ static func _band(st: SurfaceTool, rows: Array, base: int) -> int:
 			if mat == STRAW:
 				wob += 0.6 * _n(cos(ang) * 9.0 + h * 21.0, sin(ang) * 9.0)
 			var rad: float = row[1] + rough * wob
+			var chk := 0.0
 			if mat == OAK:
-				# the post leans and bows a little; old timber is never straight
-				rad += 0.006 * sin(ang * 2.0 + h * 1.7)
-			st.set_color(Color(mat, 0, 0))
+				# hewn faces and checks, a taper to the top, and a little bow: old timber is
+				# never straight
+				var hw := hewn(ang, h)
+				var taper := 1.05 - 0.07 * clampf(h / HEIGHT, 0.0, 1.0)
+				rad = rad * float(hw[0]) * taper + 0.006 * sin(ang * 2.0 + h * 1.7)
+				chk = hw[1]
+			elif mat == IRON:
+				rad += 0.004   # sits proud of the hewn corners
+			st.set_color(Color(mat, chk, 0))
 			st.set_uv(Vector2(t, h))
 			st.add_vertex(Vector3(cos(ang) * rad, h, sin(ang) * rad))
 	for r in rows.size() - 1:
-		for s in SEG:
-			var a := base + r * (SEG + 1) + s
-			var b := a + SEG + 1
+		for s in seg:
+			var a := base + r * (seg + 1) + s
+			var b := a + seg + 1
 			st.add_index(a); st.add_index(a + 1); st.add_index(b)
 			st.add_index(a + 1); st.add_index(b + 1); st.add_index(b)
-	return base + rows.size() * (SEG + 1)
+	return base + rows.size() * (seg + 1)
 
 ## One rope lashing round the bundle at height h: a ring that wanders up and down (it was
 ## pulled tight by hand) and bites into the stalks, a knot, and two tails hanging from it.
