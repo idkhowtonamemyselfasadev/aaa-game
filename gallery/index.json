@@ -892,5 +892,11 @@
   "time": "2026-10-25T14:20:00Z",
   "caption": "Hero at noon by the training post: the forearm wraps now read as road-soiled linen, not pale cuffs; the chest and shoulder plates and the bare hand still read pale grey-tan and the face is too small to read.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261025-1527-lacq-hero.jpg",
+  "time": "2026-10-25T15:27:00Z",
+  "caption": "Hero at noon by the training post after recalibrating the armour masks: the chest, shoulder and arm plates now read as dark lacquered lamellar instead of pale grey-tan; the lacquer is close to flat black at this range, the pale hood dominates, and the face is too small to read.",
+  "verdict": "fail"
  }
 ]
