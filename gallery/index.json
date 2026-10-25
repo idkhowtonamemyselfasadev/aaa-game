@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-1730-feedwait.jpg",
-  "time": "2026-10-19T17:30:00Z",
-  "caption": "Morning feed: the hens lined up at the inside of the garth wall at Edda's call, her hooded figure beyond it with the grain bag; the yard foreground is backlit nearly black and the hens read small and dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1845-bench.jpg",
   "time": "2026-10-19T18:45:00Z",
   "caption": "Edda on her bench at 20:00 under fireflies, where she now hums; still wrong: the scene is crushed navy, her face is lost under the coif and the lantern glow paints a green-yellow smear on the wall.",
@@ -897,6 +891,12 @@
   "file": "20261025-1216-eyes-face.jpg",
   "time": "2026-10-25T12:16:53Z",
   "caption": "Hero at noon: the eyes now sit narrower with a smaller iris tucked under a lash-shadowed upper lid and a duller white, no longer doll-like; still wrong: the face reads smooth and young, and the chest plate's pale edge wear looks painted on.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1250-eyelash-face.jpg",
+  "time": "2026-10-25T12:50:13Z",
+  "caption": "Hero at noon: the eyes now sit as narrower almond eyes under a dark upper lash line with a smaller iris and duller whites instead of round doll eyes; still wrong: the chest plate's pale edge wear looks painted on and the brow above the eyes is a featureless band.",
   "verdict": "fail"
  }
 ]

@@ -127,9 +127,9 @@ void fragment() {
 	float lid = 1.0 - smoothstep(0.0, 0.006, de);
 	// (an old man's lids are hooded and dull, not pink: the red rims read as glinting red eyes)
 	alb = mix(alb, mix(lid_col, alb * 0.7, 0.6 * age), 0.55 * lid);
-	float lash = 1.0 - smoothstep(0.0, 0.0011, de);
-	// the upper lash line is heavier than the lower
+	// the upper lash line is heavier and wider than the lower
 	float upper = step(eyes.y - 0.001, p.y);
+	float lash = 1.0 - smoothstep(0.0, mix(0.0011, 0.0017, upper), de);
 	alb = mix(alb, vec3(0.03, 0.02, 0.018), lash * mix(0.5, 0.95, upper));
 	// brows: coarse dark hair in an arc above each eye, thicker at the inner end
 	float bx = abs(p.x) - 0.031;
