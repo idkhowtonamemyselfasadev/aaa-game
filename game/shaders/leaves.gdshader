@@ -31,7 +31,7 @@ uniform vec3 backlight = vec3(0.95, 1.1, 0.42);
 uniform float fwd_gain = 2.2;
 // per-tree leaf cast strength and sunlit-skin lift (oaks 1/1; flora.gd sets ferns lower)
 uniform float tree_var = 1.0;
-uniform float skin_gain = 0.7;
+uniform float skin_gain = 1.0;
 
 varying float v_phase;
 varying float v_occ;
@@ -72,8 +72,11 @@ void fragment() {
 	// tree_var (oaks 1, ferns lower): each tree draws one of three leaf casts -- a deep
 	// blue-green, a fresh yellow-green, an olive going bronze -- plus its own brightness,
 	// so a wood reads as many crowns from 100 m, not one dark green mass
-	vec3 cast_t = iv < 0.4 ? vec3(0.86, 1.0, 0.9) : (iv < 0.75 ? vec3(1.1, 1.12, 0.7) : vec3(1.2, 1.0, 0.68));
-	vec3 cast_v = mix(vec3(1.0), cast_t * mix(0.84, 1.12, iv2), tree_var);
+	vec3 cast_t = iv < 0.4 ? vec3(0.78, 0.95, 0.88) : (iv < 0.75 ? vec3(1.2, 1.22, 0.6) : vec3(1.32, 1.0, 0.55));
+	// past ~60 m the mips and the haze average a crown toward the wood's mean, so the casts
+	// open up a little more with distance to keep the crowns apart
+	float far_k = 1.0 + 0.35 * smoothstep(60.0, 180.0, length(VERTEX));
+	vec3 cast_v = mix(vec3(1.0), cast_t * mix(0.8, 1.14, iv2), clamp(tree_var * far_k, 0.0, 1.35));
 	vec3 col = t.rgb * tint * mix(0.85, 1.15, v_phase) * cast_v;
 	// sunlit skin: the outer, upward-facing leaves of the crown are young growth, paler and
 	// yellower than the shaded core, which rounds the crown's top into a dome
