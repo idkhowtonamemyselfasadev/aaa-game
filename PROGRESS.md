@@ -33,6 +33,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (12:00 10-25) **Hero's armour wear follows real edges**: hero.gdshader re-partitions the Vanguard
+  texture. A texel is "plate" if any tan lies within ~6 texels (8 taps), so the painted chips and their
+  anti-aliased borders count as plate -- before, those borders fell between the plate and scratch masks
+  and showed raw pale tan (the painted-on outlines), and a partial plate mask bled tan into the lacquer
+  (brown plates). Chips are thinned (no tan within 1.5 texels), some stay lacquered (noise), and the rest
+  are dark hide (hide x0.32-0.54, was x0.7-1.3). Raised rims/bevels from the normal map (|n.xy| 0.22-0.5)
+  are rubbed thin toward hide x0.42 and matte. The real cause of the "pale" look: lacquer roughness
+  0.38-0.58 mirrored the noon sky (plates read pale grey, bevels glinted like painted outlines); now
+  satin 0.6-0.88 with SPECULAR 0.32 on plates. cloth_body (Hesper) uses the plate
+  region too. Shots `hero plate 40 12` / `hero plate2 40 12` (Forward+, ~25 min each): the two look almost
+  identical at 3.2 m -- what reads pale on the torso there is mostly garb (forearm LINEN wraps, the mantle's
+  rubbed edge), so the change is not yet visually proven. Verdict FAIL, gallery *-plate-hero.jpg. Bots walk,
+  combat PASS.
 - (12:50 10-25) Upper lash line widened: skin.gdshader lash width 0.0011 -> 0.0017 above the eye centre (lower
   stays 0.0011), so the lid edge reads as a dark line over the narrowed eye. (A parallel session landed the same
   eye.gdshader change at 12:16; its values were kept.) Shot `face eyelash 90 12` (Forward+, ~40 min) judged:
@@ -5126,11 +5139,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (12:00 10-25) Armour edge wear redone (see Done) but unproven on screen. NEXT: a diagnostic shot to
+   tell hero.gdshader from garb on the torso (temporarily set `lacquer` to pure red in player.gd `_skin()`,
+   shot `face`, revert) -- then darken whatever reads pale (likely the LINEN forearm wraps, 0.60 light, and
+   the mantle `weathered` rubbed edge); then the face skin reads smooth and young (pores,
+   cheek/brow shading); the sash knot from the hero's right side; tall-grass impostor band 64-150 m;
+   kites over the keep.
 0. (12:50 10-25) Eyes done (two sessions overlapped on it; see Done). NEXT for the hero's look: the chest plate's
    pale edge wear looks painted on (thin, darker worn-metal highlights that follow real edges/raised rims, not
    pale blotches); the face skin reads smooth and young and the brow band is featureless (pores, brow-ridge
    shade, coarser brow hair, cheek shading); the sash knot from the hero's right side; tall-grass impostor band
    64-150 m; kites over the keep. Use 40 warm-up frames for shots so they fit the 30 min background limit.
+0. (11:00 10-25) Eyes narrowed + lash shadow (see Done), verdict FAIL, gallery *-eyes-face.jpg: eyes now read
+   as tucked under the lid, not doll-like. NEXT: the chest plate's pale edge wear looks painted on (make it
+   follow real edges/raised rims, darker and thinner); the face skin reads smooth and young (add pores,
+   cheek/brow shading); the sash knot from the hero's right side; tall-grass impostor band 64-150 m; kites
+   over the keep.
 0. (10:10 10-25) Face cloth rewound + heavier upper lids (see Done). Verify with shot `face veilfold 90 12`
    DONE (38 min, Forward+), verdict FAIL, gallery *-veilfold-face.jpg: the cloth now reads as darker wool
    with vertical folds, set apart from the hood; the wound edge reads only faintly. NEXT: the eyes still read

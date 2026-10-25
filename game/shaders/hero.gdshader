@@ -39,32 +39,60 @@ float h_noise(vec2 p) {
 			   mix(h_hash(i + vec2(0, 1)), h_hash(i + vec2(1, 1)), f.x), f.y);
 }
 
+float tan_of(vec3 c) {
+	float lum = dot(c, vec3(0.3, 0.59, 0.11));
+	float warm = c.r - c.b;
+	return smoothstep(0.18, 0.3, warm) * smoothstep(0.24, 0.4, lum)
+			* (1.0 - smoothstep(0.35, 0.5, c.r - c.g));
+}
+
 void fragment() {
 	vec3 alb = texture(albedo_tex, UV).rgb * albedo_col.rgb;
 	float rough = roughness;
 	float metal = 0.0;
+	float plate_spec = 0.0;
 	float patch_n = h_noise(UV * 22.0) * 0.6 + h_noise(UV * 61.0) * 0.4;
 	if (restyle > 0.0) {
 		vec3 src = alb;
 		float lum = dot(src, vec3(0.3, 0.59, 0.11));
 		float warm = src.r - src.b;
-		// tan plates: bright and warm; their painted scratches are mid brown
-		float tan_m = smoothstep(0.18, 0.3, warm) * smoothstep(0.32, 0.5, lum)
-				* (1.0 - smoothstep(0.35, 0.5, src.r - src.g));
-		float scratch = smoothstep(0.08, 0.16, warm) * smoothstep(0.1, 0.2, lum) * (1.0 - tan_m)
-				* (1.0 - smoothstep(0.3, 0.45, src.r - src.g));
+		// tan plates: bright and warm; their painted chips are dark brown
+		float tan_m = tan_of(src);
 		float red_m = smoothstep(0.3, 0.45, src.r - src.g) * smoothstep(0.25, 0.4, src.r);
 		float iron_m = smoothstep(0.02, 0.07, src.b - src.r) * smoothstep(0.15, 0.3, lum);
+		// the chips sit inside the plates: a texel is plate if any tan lies within ~6 texels
+		// (so a chip and its anti-aliased border both count, never the raw tan in between),
+		// and a chip only where no tan lies within ~1.5 texels (thins the painted chips)
+		vec2 tx = 1.0 / vec2(textureSize(albedo_tex, 0));
+		float near = tan_m;
+		float region = tan_m;
+		for (int i = 0; i < 8; i++) {
+			float a = float(i) * 0.785398;
+			vec2 d = vec2(cos(a), sin(a)) * tx;
+			near = max(near, tan_of(texture(albedo_tex, UV + d * 1.5).rgb * albedo_col.rgb));
+			region = max(region, tan_of(texture(albedo_tex, UV + d * 6.0).rgb * albedo_col.rgb));
+		}
+		region *= 1.0 - red_m;
+		plate_spec = region * restyle * (1.0 - cloth_body);
+		// a few chips never went through the lacquer: the rest are worn down to dark hide
+		float scratch = region * (1.0 - near) * smoothstep(0.2, 0.45, h_noise(UV * 160.0 + 3.0));
+		// raised rims and bevels (where the normal map tilts hard) are rubbed thin and polished
+		vec2 nxy = texture(normal_tex, UV).xy * 2.0 - 1.0;
+		float bevel = smoothstep(0.22, 0.5, length(nxy)) * region * (1.0 - scratch);
+		bevel *= smoothstep(0.3, 0.7, h_noise(UV * 70.0 + 11.0)) * 0.8 + 0.2;
 		// lacquer: near black, faintly mottled, a little rubbed through on raised wear
 		float mott = h_noise(UV * 140.0) * 0.5 + h_noise(UV * 37.0) * 0.5;
 		vec3 lac = lacquer * (0.8 + 0.45 * mott);
 		lac = mix(lac, hide * 0.6, smoothstep(0.72, 0.9, h_noise(UV * 90.0 + 7.0)) * 0.5);
+		lac = mix(lac, hide * 0.42, bevel * 0.55);
 		vec3 o = src;
 		float r_o = roughness;
-		o = mix(o, lac, tan_m);
-		r_o = mix(r_o, 0.38 + 0.2 * mott, tan_m);
-		o = mix(o, hide * (0.7 + 0.6 * mott), scratch);
-		r_o = mix(r_o, 0.85, scratch);
+		o = mix(o, lac, region);
+		// satin, not gloss: glossy black mirrors the noon sky and reads pale grey, its bevels
+		// glinting like painted outlines; rubbed rims go matter still
+		r_o = mix(r_o, 0.6 + 0.14 * mott + 0.14 * bevel, region);
+		o = mix(o, hide * (0.32 + 0.22 * mott), scratch);
+		r_o = mix(r_o, 0.8, scratch);
 		o = mix(o, cinnabar * (0.75 + 0.4 * mott), red_m);
 		r_o = mix(r_o, 0.45, red_m);
 		vec3 iron = vec3(0.075, 0.072, 0.07) * (0.7 + 0.6 * mott) + vec3(0.06, 0.035, 0.02) * smoothstep(0.6, 0.85, mott);
@@ -80,7 +108,7 @@ void fragment() {
 			vec3 cl = mix(w, ln, iron_m);
 			cl = mix(cl, vec3(0.20, 0.12, 0.08) * (0.8 + 0.4 * mott), red_m * 0.7);
 			cl = mix(cl, w * 0.75, scratch * 0.5);
-			float body_m = clamp(tan_m + iron_m + red_m + scratch, 0.0, 1.0);
+			float body_m = clamp(region + iron_m + red_m, 0.0, 1.0);
 			o = mix(o, cl, cloth_body * body_m);
 			r_o = mix(r_o, 0.93, cloth_body * body_m);
 			metal *= 1.0 - cloth_body;
@@ -102,7 +130,7 @@ void fragment() {
 	ALBEDO = alb;
 	ROUGHNESS = rough;
 	METALLIC = metal;
-	SPECULAR = 0.5;
+	SPECULAR = 0.5 - 0.18 * plate_spec;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth;
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light

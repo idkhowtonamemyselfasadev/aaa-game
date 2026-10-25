@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-1845-bench.jpg",
-  "time": "2026-10-19T18:45:00Z",
-  "caption": "Edda on her bench at 20:00 under fireflies, where she now hums; still wrong: the scene is crushed navy, her face is lost under the coif and the lantern glow paints a green-yellow smear on the wall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1845-heave.jpg",
-  "time": "2026-10-19T18:45:00Z",
-  "caption": "Edda at the block with the axe over her head at the top of the heave, the moment before her breath goes out; still wrong: seen from behind she reads small against the white wall, the woodstack is a flat pattern and the bench under the window is half lost.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-2000-bench.jpg",
   "time": "2026-10-19T20:00:49Z",
   "caption": "Edda on her bench at 20:00 with the firefly lime disc gone from the limewash; the frame is still crushed navy and her face is lost under the white coif.",
@@ -897,6 +885,12 @@
   "file": "20261025-1250-eyelash-face.jpg",
   "time": "2026-10-25T12:50:13Z",
   "caption": "Hero at noon: the eyes now sit as narrower almond eyes under a dark upper lash line with a smaller iris and duller whites instead of round doll eyes; still wrong: the chest plate's pale edge wear looks painted on and the brow above the eyes is a featureless band.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1347-plate-hero.jpg",
+  "time": "2026-10-25T13:47:56Z",
+  "caption": "Hero at noon after the armour-wear rework (satin lacquer, chips thinned, rim wear from the normal map); at this range the change barely shows and the torso still reads as pale linen wraps and a brown mantle, not dark lamellar.",
   "verdict": "fail"
  }
 ]
