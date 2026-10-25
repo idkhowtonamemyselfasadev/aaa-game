@@ -4,8 +4,8 @@ shader_type spatial;
 // local +Z; the lids (skin.gdshader) cut the visible part.
 
 uniform vec3 iris_col : source_color = vec3(0.16, 0.085, 0.04);
-uniform float iris_r = 0.56;   // angular radius of the iris (rad): ~6 mm on a 12.5 mm ball
-uniform float pupil_r = 0.2;
+uniform float iris_r = 0.48;   // angular radius of the iris (rad): ~5.5 mm on a 12.5 mm ball (0.56 read doll-eyed)
+uniform float pupil_r = 0.17;
 // the white's brightness against the default grey-buff (a deep brim wants it cleaner)
 uniform float sclera_gain = 1.0;
 // the eye's side of the face: -1 at -x, 1 at +x (the nose lies toward -side in local x)
@@ -26,7 +26,7 @@ void vertex() {
 void fragment() {
 	float ang = acos(clamp(ln.z, -1.0, 1.0));
 	float az = atan(ln.y, ln.x);
-	vec3 sclera = vec3(0.33, 0.29, 0.26) * sclera_gain;   // a shaded eye white is grey-buff, not paper
+	vec3 sclera = vec3(0.27, 0.235, 0.21) * sclera_gain;   // a shaded eye white is grey-buff, not paper
 	// faint vessels toward the corners and a little shadow under the upper lid
 	float vessel = smoothstep(0.92, 1.0, hash(vec2(floor(az * 9.0), floor(ang * 30.0))));
 	sclera = mix(sclera, vec3(0.6, 0.3, 0.26), 0.25 * vessel * smoothstep(0.7, 1.2, ang));
@@ -43,6 +43,9 @@ void fragment() {
 	// limbal ring: the iris edge darkens
 	alb *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 0.07, abs(ang - iris_r)));
 	alb = mix(vec3(0.01), alb, smoothstep(pupil_r - 0.02, pupil_r + 0.02, ang));
+	// the upper lashes and the lid rim cast a dark band across the top of the ball, so the
+	// iris tucks under the lid instead of floating in a white ring
+	alb *= 1.0 - 0.7 * smoothstep(0.12, 0.36, ln.y);
 	ALBEDO = alb;
 	// the upper lid and the brow throw the top of the ball into shadow; the corners recede
 	AO = mix(1.0, 0.35, smoothstep(-0.1, 0.45, ln.y)) * mix(1.0, 0.45, smoothstep(0.8, 1.3, ang))
