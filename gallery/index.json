@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-0330-doorstones-wet-timber.jpg",
-  "time": "2026-10-20T03:45:00Z",
-  "caption": "Timber house door flags in a storm at 16:30: the worn tops now read wet with a bright sky sheen; still fail: frame very dark, sheen a little milky, the edge pools barely show.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0330-doorstones-wet-white.jpg",
   "time": "2026-10-20T03:45:00Z",
   "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
@@ -885,6 +879,18 @@
   "file": "20261025-2125-hewnpost-crop.jpg",
   "time": "2026-10-25T21:25:00Z",
   "caption": "Post top x4, first pass (left) vs darkened iron (right): adze flats, drying checks and a rain-rounded top replace the turned cylinder; the band is still a touch light in full sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-2226-skinform-herocu.jpg",
+  "time": "2026-10-25T22:26:00Z",
+  "caption": "Hero at the 2 m lens at noon with the hewn oak post in the foreground: the post now reads as adzed timber under an iron band, but the face is still a small patch in the hood and the plain meadow lacks depth haze.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-2226-skinform-crop.jpg",
+  "time": "2026-10-25T22:26:00Z",
+  "caption": "Face x5, before (left) vs after (right): deeper sockets, a lighter brow bone and sun-mottled cheeks give the face some bony structure, but at this range it still reads soft.",
   "verdict": "fail"
  }
 ]

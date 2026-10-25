@@ -110,21 +110,29 @@ void fragment() {
 				+ exp(-pow(p.x / 0.012, 2.0) - pow((p.y - 1.912) / 0.012, 2.0));
 		float veins = 0.6 + 0.4 * vnoise(vec2(p.x * 1500.0, p.y * 700.0));
 		alb = mix(alb, alb * vec3(1.2, 0.86, 0.82), 0.4 * age * clamp(ruddy, 0.0, 1.0) * veins);
-		// the form an old face has under a hat: the sockets sunk in darker, thinner skin, the
-		// temples hollow, the brow bone and the cheekbones a shade lighter where they catch the
-		// light (a uniform albedo read as a flat mask with no eyes at a few metres)
-		float sock = 0.0;
-		for (int i = 0; i < 2; i++) {
-			vec2 c = i == 0 ? eyes.xy : eyes.zw;
-			sock = max(sock, exp(-pow((p.x - c.x) / 0.022, 2.0) - pow((p.y - c.y + 0.002) / 0.012, 2.0)));
-		}
-		alb *= mix(1.0, 0.62, age * sock);
-		float bone = exp(-pow((p.y - 1.993) / 0.006, 2.0)) * (1.0 - smoothstep(0.035, 0.06, abs(p.x)))
-				+ exp(-pow((abs(p.x) - 0.046) / 0.012, 2.0) - pow((p.y - 1.952) / 0.008, 2.0));
-		alb *= 1.0 + 0.16 * age * clamp(bone, 0.0, 1.0);
-		float temple = smoothstep(0.05, 0.075, abs(p.x)) * smoothstep(1.955, 1.975, p.y);
-		alb *= mix(1.0, 0.8, age * temple);
 	}
+	// the form a face has under a hat, an old one most: the sockets sunk in darker, thinner
+	// skin, the temples hollow, the brow bone and the cheekbones a shade lighter where they
+	// catch the light (a uniform albedo read as a smooth, young mask at the 2 m lens)
+	float sock = 0.0;
+	for (int i = 0; i < 2; i++) {
+		vec2 c = i == 0 ? eyes.xy : eyes.zw;
+		sock = max(sock, exp(-pow((p.x - c.x) / 0.022, 2.0) - pow((p.y - c.y + 0.002) / 0.012, 2.0)));
+	}
+	alb *= mix(1.0, 1.0 - mix(0.2, 0.38, age), sock);
+	float bone = exp(-pow((p.y - 1.993) / 0.006, 2.0)) * (1.0 - smoothstep(0.035, 0.06, abs(p.x)))
+			+ exp(-pow((abs(p.x) - 0.046) / 0.012, 2.0) - pow((p.y - 1.952) / 0.008, 2.0));
+	bone = clamp(bone, 0.0, 1.0);
+	alb *= 1.0 + mix(0.1, 0.16, age) * bone;
+	float temple = smoothstep(0.05, 0.075, abs(p.x)) * smoothstep(1.955, 1.975, p.y);
+	alb *= mix(1.0, 1.0 - mix(0.1, 0.2, age), temple);
+	// years of road sun: a mottled weathering at a scale the lens resolves (pores do not),
+	// darker and redder across the cheekbones and the bridge of the nose where it burns
+	float weather = vnoise(p * 140.0 + 21.0) * 0.6 + vnoise(p * 48.0 + 5.0) * 0.4;
+	alb *= mix(1.0, 0.86 + 0.26 * weather, 1.0 - age);   // (the age path has its own)
+	float burn = clamp(exp(-pow((abs(p.x) - 0.044) / 0.016, 2.0) - pow((p.y - 1.952) / 0.009, 2.0))
+			+ exp(-pow(p.x / 0.008, 2.0) - pow((p.y - 1.965) / 0.012, 2.0)), 0.0, 1.0);
+	alb = mix(alb, alb * vec3(1.02, 0.84, 0.78), 0.4 * burn * (1.0 - age));
 	// lids: darker, slightly purple skin in a band round each opening; lash line at the edge
 	float lid = 1.0 - smoothstep(0.0, 0.006, de);
 	// (an old man's lids are hooded and dull, not pink: the red rims read as glinting red eyes)
@@ -142,6 +150,9 @@ void fragment() {
 	alb = mix(alb, vec3(0.035, 0.026, 0.02), brow * (0.55 + 0.45 * hair));
 	float rough = mix(0.52, 0.4, lid) + 0.1 * n;
 	rough = mix(rough, 0.7, brow);
+	// a little sweat and skin oil on the brow bone and the bridge of the nose: the sheen that
+	// shows the bone under the skin
+	rough -= 0.14 * bone * (1.0 - brow) * (1.0 - age);
 	// skin relief as a bump on the view-space normal (surface-gradient bump mapping)
 	float h = skin_relief(p, de);
 	alb *= 1.0 + clamp(h / 0.00028, -1.0, 0.3) * 0.25;
