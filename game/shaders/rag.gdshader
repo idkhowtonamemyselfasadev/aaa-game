@@ -29,6 +29,7 @@ uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = H
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
+uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
 uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
@@ -82,6 +83,25 @@ float weave(vec2 wv) {
 	float weft = 0.5 + 0.5 * sin((wv.y - jitter) * 6.2832);
 	float over = step(0.5, fract(floor(wv.x) * 0.5 + floor(wv.y) * 0.5));
 	return mix(warp, weft, over);
+}
+
+// a straw hat's plait: flat split-cane strips laid in a 2/2 twill on the diagonal, the
+// diagonal flipping every 5 strips down the cone (a herringbone), each strip a rounded ridge
+// with a dark gap at its edges. x: height (0 gap .. 1 crest), y: the top strip's id
+vec2 plait(vec2 p) {
+	float band = floor(p.y * 0.2);
+	float dir = mod(band, 2.0) < 1.0 ? 1.0 : -1.0;
+	p += (vnoise(p * 0.21 + 5.0) - 0.5) * 0.35;
+	vec2 q = vec2(p.x + dir * p.y, p.x - dir * p.y) * 0.7071;
+	vec2 cell = floor(q);
+	float over = step(2.0, mod(cell.x - cell.y, 4.0));
+	float t = mix(fract(q.x), fract(q.y), over);
+	float id = mix(cell.x, cell.y, over) + band * 31.0 + over * 0.5;
+	float h = pow(sin(t * 3.14159), 0.45);
+	// the strip under dips where it passes beneath, and the herringbone seam sits low
+	h *= mix(0.78, 1.0, over);
+	h *= smoothstep(1.0, 0.86, abs(fract(p.y * 0.2) - 0.5) * 2.0) * 0.3 + 0.7;
+	return vec2(h, id);
 }
 
 void fold_panel(inout vec3 v, inout vec3 n, vec2 f) {
@@ -203,6 +223,15 @@ void fragment() {
 	float thread = mix(0.5, weave(wv), fine);
 	float tx = (weave(wv + vec2(0.15, 0.0)) - weave(wv)) * fine;
 	float ty = (weave(wv + vec2(0.0, 0.15)) - weave(wv)) * fine;
+	float strip_tone = 0.0;
+	if (straw > 0.0) {
+		vec2 pl = plait(wv);
+		thread = mix(0.5, pl.x, fine);
+		tx = (plait(wv + vec2(0.12, 0.0)).x - pl.x) * fine * 1.6;
+		ty = (plait(wv + vec2(0.0, 0.12)).x - pl.x) * fine * 1.6;
+		// each strip split from a different cane: some paler, some greyer and darker
+		strip_tone = fract(sin(pl.y * 12.9898) * 43758.5453) - 0.5;
+	}
 	// bandage: each turn's edge laps over the last, with a shadowed crease under the lap
 	float band = 1.0;
 	if (wrap_turns > 0.0) {
@@ -284,6 +313,20 @@ void fragment() {
 				* smoothstep(0.16, 0.02, to_hem) * smoothstep(0.3, 0.6, fbm(vec2(UV.x * 6.0, 3.0) + seed));
 		alb = mix(alb, vec3(0.085, 0.07, 0.05), clamp(fleck * 0.8 * weathered, 0.0, 0.8));
 	}
+	if (straw > 0.0) {
+		vec3 sn = mat3(INV_VIEW_MATRIX) * NORMAL;
+		alb *= 1.0 + 0.32 * strip_tone * straw;
+		alb *= mix(1.0, 0.55 + 0.45 * thread, straw);
+		// sun-bleached to a silvery grey-tan in broad patches where the cone faces the sky
+		float sun = smoothstep(0.2, 0.8, sn.y) * smoothstep(0.38, 0.62, fbm(uv * vec2(6.0, 5.0) + 51.0));
+		alb = mix(alb, vec3(dot(alb, vec3(0.33))) * vec3(1.05, 1.0, 0.9) * 1.12, sun * 0.6 * straw);
+		// rain-weathered grey and mildew dark in blotches, worst toward the rim
+		float weath = smoothstep(0.55, 0.75, fbm(uv * vec2(9.0, 7.0) + 63.0)) * mix(0.4, 1.0, UV.y);
+		alb = mix(alb, vec3(0.16, 0.15, 0.13), weath * 0.45 * straw);
+		// the rim darkened by hands and sweat where it is taken off and put on
+		float grip = smoothstep(0.7, 0.95, UV.y) * (0.5 + 0.5 * fbm(vec2(UV.x * 7.0, 2.0) + seed));
+		alb *= 1.0 - 0.3 * grip * straw;
+	}
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, mix(0.7, 0.55, clamp(wool, 0.0, 1.0)) + mix(0.3, 0.45, clamp(wool, 0.0, 1.0)) * COLOR.r, fold_ao);
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
@@ -295,7 +338,7 @@ void fragment() {
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve * 1.1)) * 2.5;
 	}
 	if (!FRONT_FACING) alb *= 0.55;
-	float rough = mix(0.93 - 0.06 * thread, 0.99, felt);
+	float rough = mix(mix(0.93 - 0.06 * thread, 0.99, felt), 0.72 - 0.1 * thread, straw);
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
@@ -305,7 +348,7 @@ void fragment() {
 	METALLIC = 0.0;
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
-	NORMAL_MAP_DEPTH = 0.8;
+	NORMAL_MAP_DEPTH = mix(0.8, 1.4, straw);
 	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band) * mix(1.0, COLOR.r, fold_ao);
 	AO_LIGHT_AFFECT = 0.3;
 	// a tightly plaited straw hat is opaque: no light through its underside

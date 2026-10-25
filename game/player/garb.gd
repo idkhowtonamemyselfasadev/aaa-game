@@ -19,7 +19,8 @@ const LINEN := [Color(0.17, 0.15, 0.12), Color(0.60, 0.55, 0.46), 0.3]
 ## the legs read as worn cloth in full sun (clean linen lit from above read as a pale smear).
 const SHIN_LINEN := [Color(0.10, 0.088, 0.07), Color(0.42, 0.37, 0.29), 0.45]
 const HEMP := [Color(0.05, 0.045, 0.04), Color(0.26, 0.23, 0.19), 0.4]
-const STRAW := [Color(0.20, 0.15, 0.075), Color(0.66, 0.53, 0.31), 0.15]
+# an old, weathered douli: the fresh-straw 0.66/0.53/0.31 read as a bright yellow cone at noon
+const STRAW := [Color(0.15, 0.12, 0.072), Color(0.52, 0.43, 0.28), 0.15]
 
 var hat: MeshInstance3D
 var veil: MeshInstance3D
@@ -133,6 +134,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		else:
 			hm.set_shader_parameter("weave_scale", 150.0)
 			hm.set_shader_parameter("aspect", 0.35)
+			hm.set_shader_parameter("straw", 1.0)
 		# worn pushed back a little on the hood, so the eye line shows under the front brim even
 		# with the idle stance's head bowed
 		var crown := Vector3(0.0, 2.10, -0.03)
