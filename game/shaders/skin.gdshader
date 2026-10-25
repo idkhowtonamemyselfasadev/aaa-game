@@ -39,7 +39,7 @@ float almond(vec2 p, vec2 c, float side) {
 	float t = clamp(d.x * side / eye_size.x, -1.0, 1.0);   // -1 inner corner .. 1 outer
 	d.y -= 0.0012 * t;
 	float sh = pow(max(1.0 - t * t, 0.0), 0.75);
-	float top = eye_size.y * sh * 0.92;   // a relaxed upper lid over the top of the iris
+	float top = eye_size.y * sh * 0.84;   // a relaxed, slightly heavy upper lid over the top of the iris (0.92 read wide-eyed)
 	float bot = -eye_size.y * sh * 0.8;
 	float inside_x = abs(d.x) - eye_size.x;
 	return max(inside_x, max(d.y - top, bot - d.y));

@@ -10,6 +10,9 @@ const INDIGO := [Color(0.030, 0.034, 0.048), Color(0.15, 0.16, 0.21), 0.25]
 ## The hero's hood: indigo wool sun-faded and road-worn to a greyed slate blue (the fresh-dyed
 ## INDIGO read as a flat near-black box round the face at noon).
 const HOOD_INDIGO := [Color(0.048, 0.052, 0.066), Color(0.25, 0.26, 0.30), 0.25]
+## The hero's face cloth: the same wool a shade darker and damper than the hood (breath, sweat
+## and road dust): in the hood's value it read as a pale flat blue sheet under the face fill.
+const VEIL := [Color(0.032, 0.034, 0.042), Color(0.165, 0.172, 0.20), 0.3]
 const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
 # a dyed-and-worn ochre: the bright 0.58/0.40/0.17 read as a flat yellow belt in full sun
@@ -117,6 +120,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		scarf.transform = Transform3D(Basis.from_scale(Vector3(0.97, 1.0, 0.96)), Vector3(0.0, -0.012, -0.0014))
 		head.add_child(scarf)
 	else:
+		tint = palette.get("veil", tint if palette.has("hood") else VEIL)
 		veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
 		var vm := veil.material_override as ShaderMaterial
 		vm.set_shader_parameter("wool", 1.0)
@@ -688,8 +692,8 @@ func _felt() -> ArrayMesh:
 ## under the chin, hanging a little slack at the front; with the hat's shade only the eye line
 ## shows between it and the hood.
 func _veil() -> ArrayMesh:
-	var nu := 40
-	var nv := 12
+	var nu := 56
+	var nv := 26
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for j in nv + 1:
@@ -702,23 +706,37 @@ func _veil() -> ArrayMesh:
 			var a := lerpf(-1.65, 1.65, u)
 			var front := cos(a)
 			# soft folds hang from the nose bridge, deepening toward the chin and splitting a
-			# little where the cloth bunches at the sides under the hood
+			# little where the cloth bunches at the sides under the hood (a 6 mm relief read as
+			# a flat sheet: the ridges stand ~1.5 cm out now, the valleys sink half that so
+			# they never cut into the jaw)
 			var phi := a * 7.0 + 0.8 * sin(a * 2.7 + 0.4) + 0.4 * sin(a * 6.3 + 1.1)
 			var ridge := sin(phi)
 			ridge = signf(ridge) * pow(absf(ridge), 0.7)
+			var rr := ridge if ridge > 0.0 else ridge * 0.5
 			var fine := sin(a * 17.0 + 0.6 + v * 3.0) * smoothstep(0.4, 1.0, v)
 			var depth := smoothstep(0.1, 1.0, v)
+			# it is wound twice: the outer turn's upper edge crosses the face on a slant (high
+			# under the left cheek, low at the right jaw) and stands a layer proud, with a
+			# shadowed crease just above it where the cloth beneath bunches
+			var edge := 0.46 + 0.16 * sin(a * 0.9 + 0.3)
+			var outer := smoothstep(edge - 0.035, edge + 0.01, v)
+			var crease := exp(-pow((v - edge + 0.03) / 0.035, 2.0))
+			# the cloth is pulled from the nose bridge back toward the ears: shallow creases
+			# run back across the cheeks, slanting down toward the nape
+			var pull := sin(v * PI * 6.0 + absf(a) * 2.2) * smoothstep(0.35, 1.1, absf(a)) * (1.0 - 0.6 * depth)
 			# the lower edge sags only a little under the chin, so it stays tucked behind the
 			# hood's front edge (1.746) instead of hanging a point below it
-			var y := 1.929 - v * (0.229 + 0.015 * maxf(front, 0.0) * front) - 0.01 * ridge * depth
+			var y := 1.929 - v * (0.229 + 0.015 * maxf(front, 0.0) * front) - 0.022 * rr * depth
 			# the top edge rides up over the bridge of the nose and sags into a soft dip under
 			# each cheekbone before running back flat under the hood, instead of a ruled line
 			var top := 1.0 - smoothstep(0.0, 0.35, v)
 			y += top * (0.004 * pow(maxf(front, 0.0), 14.0) \
 					- 0.008 * exp(-pow((absf(a) - 0.5) / 0.22, 2.0)) \
 					+ 0.002 * sin(a * 5.0 + 0.9))
-			var r := 1.0 + 0.06 * v * front + depth * (0.05 * ridge + 0.012 * fine)
+			var r := 1.0 + 0.06 * v * front + depth * (0.085 * rr + 0.016 * fine) \
+					+ 0.04 * outer - 0.012 * crease + 0.012 * pull
 			var cav := mix_cav(ridge, fine, depth)
+			cav *= (1.0 - 0.55 * crease) * (1.0 - 0.18 * maxf(-pull, 0.0))
 			st.set_color(Color(cav, cav, cav))
 			st.set_uv(Vector2(u, v))
 			st.add_vertex(Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r))
