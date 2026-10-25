@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261019-2311-doorstones-white-wide.jpg",
-  "time": "2026-10-19T23:11:10Z",
-  "caption": "The white cottage front with the new door slabs on the track: tall grass hides most of them and the ones that show read as small dark lumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2311-doorstones-white.jpg",
-  "time": "2026-10-19T23:11:10Z",
-  "caption": "Stepping stones outside the white cottage door: the slabs are laid on the worn track but read as dark blue-grey pillowed lumps in the house shade, not pale trodden flags.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0000-bat-roost-dark.jpg",
-  "time": "2026-10-20T00:10:00Z",
-  "caption": "The pipistrelle hanging under the woodshed boards at 17:30 now reads as a dark brown bat instead of a glowing red-orange blob (fur backlight removed); still wrong: at this range it is a tiny featureless silhouette, no fur, ears or wrapped-wing shape readable.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0036-doorstones-stone.jpg",
-  "time": "2026-10-20T00:36:07Z",
-  "caption": "The stone cottage's door slabs now have no grass through them, but the track sits in deep house shade and tall tussocks crowd both sides, so the slabs still read as dark shapes.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0036-doorstones-timber.jpg",
   "time": "2026-10-20T00:36:07Z",
   "caption": "The timber house at late afternoon: its door slabs lie in a narrow worn strip that tall grass leans over and almost hides; the stones need to be paler and the grass beside the track shorter.",
@@ -897,6 +873,18 @@
   "file": "20261025-1725-sheen-crop.jpg",
   "time": "2026-10-25T17:25:24Z",
   "caption": "Before (left, 16:26) and after (right): the lacquer is a step warmer and the shoulder plate catches a little sky; plate separation is still weak.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1831-crease-hero.jpg",
+  "time": "2026-10-25T18:31:05Z",
+  "caption": "Hero at noon with dark creases between the lacquered plates and the texture's baked plate shading carried into the lacquer: the road, fields and farmhouse read as a place, but at this range the plates still merge and the face is lost in the hood's shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1831-crease-crop.jpg",
+  "time": "2026-10-25T18:31:05Z",
+  "caption": "Before (left, 17:25) and after (right): the plate creases are only faintly visible at 6-8 m; the thigh and knee plates gained a little shape, the torso barely changed.",
   "verdict": "fail"
  }
 ]

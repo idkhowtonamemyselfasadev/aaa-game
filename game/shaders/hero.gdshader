@@ -100,6 +100,15 @@ void fragment() {
 		// rubbed rims a step lighter than the field, so each plate's shape reads at range (at
 		// 0.034 lacquer and 0.55 rub the torso read as one flat black mass at noon)
 		lac = mix(lac, hide * 0.48, bevel * 0.7);
+		// plate separation: the dark ring round each plate's outer edge (plate on one side
+		// only) and the soft border of the grooves between sub-plates go a deep crease, and
+		// the texture's baked shading on the plates carries into the lacquer -- with a flat
+		// field and the grooves worn to (lighter) hide, the plates merged into one mass at 6-8 m
+		float crease = clamp(region * (1.0 - tan_m) * (1.0 - inside)
+				+ region * inside * clamp(near - tan_m, 0.0, 1.0), 0.0, 1.0);
+		lac *= mix(1.0, pow(clamp(lum / 0.31, 0.55, 1.12), 1.5), tan_m);
+		lac *= 1.0 - 0.55 * crease;
+		scratch *= 1.0 - crease;
 		vec3 o = src;
 		float r_o = roughness;
 		o = mix(o, lac, region);
