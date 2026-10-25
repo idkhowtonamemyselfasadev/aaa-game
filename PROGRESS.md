@@ -33,7 +33,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (04:30 10-25) **Domed oak crowns: five lobes per tree** (bot-verified; shot `lobes` pending at commit).
+- (04:30 10-25) **Domed oak crowns: five lobes per tree** (bot-verified; shot `lobes`).
   flora.gd: `_crown_lobes()` splits each oak's leaf cards into LOBES=5 sub-crowns (k-means on the
   card centres, radius = 85th-percentile distance). `_fill_crown` now also fills each lobe's upper
   skin (LOBE_DIRS=36, gap 0.8 m, 3-5 cards a sprig), so the crown is a heap of domes, not one
@@ -41,6 +41,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   vs. the whole crown) and COLOR.b (crown depth) adds a lobe crease term (deep in a lobe / on its
   underside), so every sub-crown gets a lit cap over a shaded skirt. Bots pass: walk ridge
   understory glide.
+  Shot `village lobes 40 14.0` (Forward+, ~27 min; the background wrapper hit its 30 min limit
+  just after the PNG was saved), verdict FAIL, gallery *-lobes-village.jpg: fuller, paler crowns
+  with lit caps on the right-hand oaks; domes still faint and far woods one green.
+  (python3 PIL is broken on the cloud box; make gallery JPEGs with ImageMagick `convert`.)
 - (03:00 10-25) **Stronger oak crown casts** (bot-verified; shot `crowncast2`).
   leaves.gdshader: casts roughly doubled -- deep x0.78/0.95/0.88, yellow-green x1.2/1.22/0.6,
   bronze x1.32/1.0/0.55, brightness 0.80-1.14 -- and the cast strength now ramps x1.0 -> x1.35
@@ -5064,8 +5068,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (04:30 10-25) Lobed crowns in (see Done). NEXT: judge shot `village lobes 40 14.0` against
-   *-crowncast2-village.jpg; if the domes still don't read, raise LOBE_NORMAL toward 0.8 and the
+0. (04:30 10-25) Lobed crowns in (see Done). Shot `lobes` judged: domes faint. NEXT: raise LOBE_NORMAL toward 0.8 and the
    crease weight; then the fields past 80 m (stronger tint with distance), the tall-grass impostor
    band 64-150 m, kites over the keep; the hero's look remains the biggest Wukong-gate failure.
 0. (03:00 10-25) Crown casts doubled (see Done); still subtle. NEXT: the colour alone won't

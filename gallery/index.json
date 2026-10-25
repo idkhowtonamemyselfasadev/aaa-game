@@ -892,5 +892,11 @@
   "time": "2026-10-25T03:42:00Z",
   "caption": "Village view with doubled per-tree crown casts: the right-hand wood now shows yellow-green and darker crowns side by side, but the woods past 80 m are still mostly one green and the crowns sit flat-topped.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261025-0430-lobes-village.jpg",
+  "time": "2026-10-25T04:30:00Z",
+  "caption": "Village view with lobed oak crowns: the right-hand oaks now show paler domed caps over darker skirts and fuller canopies, but the far woods are still one soft green mass and the domes read only faintly.",
+  "verdict": "fail"
  }
 ]
