@@ -812,7 +812,7 @@ func _fill_crown(v: int) -> void:
 const LOBES := 5
 const LOBE_DIRS := 36
 const LOBE_GAP := 0.8
-const LOBE_NORMAL := 0.6   # how much a card's normal follows its lobe vs. the whole crown
+const LOBE_NORMAL := 0.8   # how much a card's normal follows its lobe vs. the whole crown
 var _lobes: Array = []
 
 func _crown_lobes(r: RandomNumberGenerator) -> Array:
@@ -893,8 +893,8 @@ func _emit_leaves(occ_gain: float) -> void:
 				lobe = li
 		if lobe >= 0:
 			var ld: Vector3 = (centre - (_lobes[lobe][0] as Vector3)) / float(_lobes[lobe][1])
-			var crease := clampf(1.0 - ld.length(), 0.0, 1.0) * 0.5 + clampf(-ld.y, 0.0, 1.0) * 0.45
-			occ = clampf(maxf(occ, crease * occ_gain) * 0.7 + crease * occ_gain * 0.3, 0.0, 1.0)
+			var crease := clampf(1.0 - ld.length(), 0.0, 1.0) * 0.65 + clampf(-ld.y, 0.0, 1.0) * 0.6
+			occ = clampf(maxf(occ, crease * occ_gain) * 0.55 + crease * occ_gain * 0.45, 0.0, 1.0)
 		var vs: Array = []
 		for cc in corners:
 			var pos: Vector3 = centre + cd[1] * 0.5 * cc[0] + cd[2] * 0.5 * cc[1]
@@ -903,7 +903,7 @@ func _emit_leaves(occ_gain: float) -> void:
 			if lobe >= 0:
 				var ln := (pos - (_lobes[lobe][0] as Vector3)).normalized()
 				en = en.lerp(ln, LOBE_NORMAL).normalized()
-			en = en.lerp(Vector3.UP, 0.25).normalized()
+			en = en.lerp(Vector3.UP, 0.18).normalized()
 			vs.append([pos, uv, en])
 		for idx in [0, 1, 2, 0, 2, 3]:
 			var vv: Array = vs[idx]
