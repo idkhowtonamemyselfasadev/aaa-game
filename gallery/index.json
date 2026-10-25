@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261020-0036-doorstones-timber.jpg",
-  "time": "2026-10-20T00:36:07Z",
-  "caption": "The timber house at late afternoon: its door slabs lie in a narrow worn strip that tall grass leans over and almost hides; the stones need to be paler and the grass beside the track shorter.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0155-doorstones-worn-stone.jpg",
-  "time": "2026-10-20T01:55:00Z",
-  "caption": "The stone cottage's door slabs now read as pale foot-worn flags and the tall tussocks have stepped back from them; still wrong: the whole doorway sits in deep blue-black shade and the near slab looks like a smooth flat tile.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0155-doorstones-worn-timber.jpg",
   "time": "2026-10-20T01:55:00Z",
   "caption": "The timber house's door slabs now show clear of the grass with clean walked tops; still wrong: they read as small blue-grey lumps rather than broad flat warm flags, and the house's infill panels look flat white.",
@@ -885,6 +873,18 @@
   "file": "20261025-1831-crease-crop.jpg",
   "time": "2026-10-25T18:31:05Z",
   "caption": "Before (left, 17:25) and after (right): the plate creases are only faintly visible at 6-8 m; the thigh and knee plates gained a little shape, the torso barely changed.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1929-facefill-face.jpg",
+  "time": "2026-10-25T19:29:23Z",
+  "caption": "Hero's face at noon with the meadow's ground bounce now lighting the skin under the hat brim: eyes and cheeks read inside the hood, but the skin is still smooth and young and the dark armour merges into one mass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1929-facefill-crop.jpg",
+  "time": "2026-10-25T19:29:23Z",
+  "caption": "Before (left, 12:50, older armour) and after (right): the face band now carries warm bounce fill under the brim so the eyes and cheekbones read; the sockets and tucked edges keep their shade.",
   "verdict": "fail"
  }
 ]

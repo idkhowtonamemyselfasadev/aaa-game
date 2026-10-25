@@ -1,6 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled;
 #include "res://shaders/wet.gdshaderinc"
+#include "res://shaders/figure_fill.gdshaderinc"
 // The hero's face band between the hood and the face cloth: weathered, sun-browned skin with
 // subsurface scattering, a brow shadow and darker lids round the eyes. The eye openings are
 // cut out by an almond-shaped discard (body-space, so the lids follow the mesh) and the
@@ -13,6 +14,7 @@ uniform vec4 eyes = vec4(-0.031, 1.968, 0.031, 1.968);
 uniform vec2 eye_size = vec2(0.0135, 0.0037);
 uniform float brow_y = 1.990;
 uniform float low_tuck = 0.72;   // UV.y where the lower edge starts sinking into shade
+uniform float face_fill = 1.4;  // ground bounce under the brim (the body garb gets 1.0)
 uniform float age = 0.0;         // 0 a working adult .. 1 an old man: paler, greyer, liver
                                  // spots, deeper lines, the colour only in the cheeks and nose
 
@@ -166,6 +168,11 @@ void fragment() {
 	AO = mix(0.55, 1.0, smoothstep(0.0, 0.009, de)) * mix(0.8, 1.0, smoothstep(0.0, 0.006, -by))
 			* mix(0.15, 1.0, tuck);
 	AO_LIGHT_AFFECT = 0.8;
+	// the meadow's bounce up under the hat brim and into the hood opening, as the garb gets
+	// it: without it the face band, shaded by the brim, read darker than the body round it
+	// and was lost in the hood. The sockets and tucked edges keep most of their shade.
+	EMISSION = figure_fill(alb, wn, wp) * face_fill * mix(0.25, 1.0, tuck)
+			* mix(0.5, 1.0, smoothstep(0.0, 0.009, de));
 	SSS_STRENGTH = 0.35;
 	SSS_TRANSMITTANCE_COLOR = vec4(0.9, 0.3, 0.2, 1.0);
 	SSS_TRANSMITTANCE_DEPTH = 0.08;
