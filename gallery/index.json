@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261019-2000-lantwide.jpg",
-  "time": "2026-10-19T20:00:49Z",
-  "caption": "The lantern post at 21:30 from the green: a soft, wide amber pool on the track, grass and timber house front, meadow silver-blue under the moon; the pool on the grass is still a touch red and the houses read dark and flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-2120-bat.jpg",
   "time": "2026-10-19T21:20:00Z",
   "caption": "The new bat hawking moths above the lit lantern on the green; it reads only as a tiny flat orange cut-out against the roof (membrane backlight/emission far too strong, lens too far), and the night frame is still crushed navy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-2050-bat-roost.jpg",
-  "time": "2026-10-19T21:45:00Z",
-  "caption": "The pipistrelle hanging head down under the white cottage's woodshed boards between the rafters at 17:30, wings wrapped; still wrong: its fur glows red-orange in the shade (night candle backlight too strong by day) so it reads as a blob, not a dark brown bat.",
   "verdict": "fail"
  },
  {
@@ -897,6 +885,12 @@
   "file": "20261025-1527-lacq-hero.jpg",
   "time": "2026-10-25T15:27:00Z",
   "caption": "Hero at noon by the training post after recalibrating the armour masks: the chest, shoulder and arm plates now read as dark lacquered lamellar instead of pale grey-tan; the lacquer is close to flat black at this range, the pale hood dominates, and the face is too small to read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1626-hood-hero.jpg",
+  "time": "2026-10-25T16:26:22Z",
+  "caption": "Hero at noon with the hood darkened from pale slate-blue to greyed wool and a slightly lifted lacquer; the armour still reads as one near-black mass at range and the face is lost under the hood.",
   "verdict": "fail"
  }
 ]

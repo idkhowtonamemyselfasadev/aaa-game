@@ -33,6 +33,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (16:26 10-25) **Hero's hood darkened, lacquer lifted**: garb.gd HOOD_INDIGO light 0.25/0.26/0.30 -> 0.19/0.195/0.215
+  (dark 0.040/0.042/0.050), VEIL kept a step below it (0.14/0.143/0.158): the slate hood was the brightest, bluest thing
+  on him once the armour went dark. hero.gdshader `lacquer` 0.034/0.024/0.020 -> 0.052/0.036/0.029, bevel rub
+  hide*0.42 x0.55 -> hide*0.48 x0.7. Shot `hero lacq2 40 12` (Forward+, ~30 min), before/after crop judged: the hood
+  now reads as greyed dark wool, not a pale blue box; the plates gained only faint rim lines at the shoulder, the
+  torso still reads near-black at this range. Verdict FAIL, gallery *-hood-hero.jpg. Bots walk, combat, villager PASS.
 - (15:30 10-25) **Hero's armour masks recalibrated -- the real cause of the pale torso**: replaying hero.gdshader's
   masks over the Vanguard texture offline (python, extracted from vanguard.glb) showed the thresholds were set as if
   for sRGB values. In linear space (x albedo_col 0.8) the tan plates sit at ~(0.46, 0.27, 0.145), lum 0.31, so
@@ -5160,6 +5166,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (16:26 10-25) Hood darkened + lacquer lifted (see Done). NEXT for the hero's look: the plates still merge into one
+   near-black mass at 6-8 m -- try a warmer, lighter lacquer (~0.08/0.05/0.04, black-brown, not black) or a stronger
+   specular sheen (roughness 0.6 -> 0.45 on the field, keep rims matte) so plate curvature catches the sky; the face
+   is lost in the hood's shade (raise the face fill or open the hood arch); check villagers (cloth_body) with shot
+   `villager`; then face skin pores, the sash knot from the right, tall-grass impostor band 64-150 m, kites over the keep.
 0. (15:30 10-25) Armour masks fixed (see Done). NEXT for the hero's look: the lacquer reads as near flat black at
    noon -- lift `lacquer` a touch (~0.05/0.035/0.028) or strengthen the bevel/rim wear so the plate shapes read; the
    hood is now the brightest thing on him (darken/desaturate the slate wool a step); check villagers (cloth_body)

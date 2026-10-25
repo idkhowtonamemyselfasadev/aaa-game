@@ -14,7 +14,7 @@ uniform float normal_depth = 1.0;
 // cinnabar lacquer, the blue-grey fittings and helmet mask blackened iron, and the glossy visor
 // glass a matte indigo face cloth.
 uniform float restyle = 1.0;
-uniform vec3 lacquer : source_color = vec3(0.034, 0.024, 0.020);
+uniform vec3 lacquer : source_color = vec3(0.052, 0.036, 0.029);
 uniform vec3 hide : source_color = vec3(0.26, 0.16, 0.085);
 uniform vec3 cinnabar : source_color = vec3(0.30, 0.055, 0.035);
 uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
@@ -97,7 +97,9 @@ void fragment() {
 		float mott = h_noise(UV * 140.0) * 0.5 + h_noise(UV * 37.0) * 0.5;
 		vec3 lac = lacquer * (0.8 + 0.45 * mott);
 		lac = mix(lac, hide * 0.6, smoothstep(0.72, 0.9, h_noise(UV * 90.0 + 7.0)) * 0.5);
-		lac = mix(lac, hide * 0.42, bevel * 0.55);
+		// rubbed rims a step lighter than the field, so each plate's shape reads at range (at
+		// 0.034 lacquer and 0.55 rub the torso read as one flat black mass at noon)
+		lac = mix(lac, hide * 0.48, bevel * 0.7);
 		vec3 o = src;
 		float r_o = roughness;
 		o = mix(o, lac, region);

@@ -8,11 +8,12 @@ extends HollowRags
 
 const INDIGO := [Color(0.030, 0.034, 0.048), Color(0.15, 0.16, 0.21), 0.25]
 ## The hero's hood: indigo wool sun-faded and road-worn to a greyed slate blue (the fresh-dyed
-## INDIGO read as a flat near-black box round the face at noon).
-const HOOD_INDIGO := [Color(0.048, 0.052, 0.066), Color(0.25, 0.26, 0.30), 0.25]
+## INDIGO read as a flat near-black box round the face at noon; the 0.25/0.26/0.30 slate then
+## read as the brightest, bluest thing on him once the armour went dark).
+const HOOD_INDIGO := [Color(0.040, 0.042, 0.050), Color(0.19, 0.195, 0.215), 0.3]
 ## The hero's face cloth: the same wool a shade darker and damper than the hood (breath, sweat
 ## and road dust): in the hood's value it read as a pale flat blue sheet under the face fill.
-const VEIL := [Color(0.032, 0.034, 0.042), Color(0.165, 0.172, 0.20), 0.3]
+const VEIL := [Color(0.028, 0.029, 0.034), Color(0.14, 0.143, 0.158), 0.35]
 const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
 # a dyed-and-worn ochre: the bright 0.58/0.40/0.17 read as a flat yellow belt in full sun
