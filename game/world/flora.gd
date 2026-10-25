@@ -782,8 +782,81 @@ func _fill_crown(v: int) -> void:
 		var out := (dir + Vector3.UP * 0.35).normalized()
 		_leaf_cluster(r, p - out * 0.45, out, 1.0, r.randi_range(4, 6))
 		centres.append(p)
+	# lobe domes: an oak crown is a heap of rounded sub-crowns, one per main limb. Fill the
+	# upper skin of each lobe too, so every lobe reads as its own lit dome from 80 m out.
+	for lb in _crown_lobes(r):
+		var lc: Vector3 = lb[0]
+		var lr: float = lb[1]
+		for i in LOBE_DIRS:
+			var y := 1.0 - (i + 0.5) / LOBE_DIRS * 2.0
+			if y < 0.05:
+				continue
+			var ring := sqrt(1.0 - y * y)
+			var dir := Vector3(cos(golden * i) * ring, y, sin(golden * i) * ring)
+			var p := lc + dir * lr * r.randf_range(0.8, 0.95)
+			var near := INF
+			for c in centres:
+				near = minf(near, c.distance_squared_to(p))
+			if near < LOBE_GAP * LOBE_GAP:
+				continue
+			var out := (dir + Vector3.UP * 0.25).normalized()
+			_leaf_cluster(r, p - out * 0.4, out, 1.0, r.randi_range(3, 5))
+			centres.append(p)
 	fill_cards += _cards.size() - before
 	_crown = keep
+
+## Split the crown's cards into LOBES sub-crowns (k-means on the card centres, upper half
+## weighted) and return [[centre, radius], ...]; radius = 85th-percentile card distance.
+## Deterministic for a given RNG. Used by the fill (dome skins) and by _emit_leaves (each
+## card's normal points out of its own lobe, so the crown shades as several domes).
+const LOBES := 5
+const LOBE_DIRS := 36
+const LOBE_GAP := 0.8
+const LOBE_NORMAL := 0.6   # how much a card's normal follows its lobe vs. the whole crown
+var _lobes: Array = []
+
+func _crown_lobes(r: RandomNumberGenerator) -> Array:
+	var n := _cards.size()
+	if n < LOBES * 6:
+		_lobes = []
+		return _lobes
+	var cs: Array[Vector3] = []
+	for k in LOBES:
+		cs.append(_cards[(k * n) / LOBES + r.randi() % maxi(n / LOBES, 1)][0])
+	var asg := PackedInt32Array()
+	asg.resize(n)
+	for _it in 8:
+		var sum: Array[Vector3] = []
+		var cnt := PackedInt32Array()
+		cnt.resize(LOBES)
+		for k in LOBES:
+			sum.append(Vector3.ZERO)
+		for i in n:
+			var p: Vector3 = _cards[i][0]
+			var best := 0
+			var bd := INF
+			for k in LOBES:
+				var d := p.distance_squared_to(cs[k])
+				if d < bd:
+					bd = d
+					best = k
+			asg[i] = best
+			sum[best] += p
+			cnt[best] += 1
+		for k in LOBES:
+			if cnt[k] > 0:
+				cs[k] = sum[k] / cnt[k]
+	_lobes = []
+	for k in LOBES:
+		var ds: Array[float] = []
+		for i in n:
+			if asg[i] == k:
+				ds.append((_cards[i][0] as Vector3).distance_to(cs[k]))
+		if ds.size() < 4:
+			continue
+		ds.sort()
+		_lobes.append([cs[k], maxf(ds[int(ds.size() * 0.85)], 0.8)])
+	return _lobes
 
 ## Write the collected leaf cards. The crown is treated as an ellipsoid fitted round the
 ## card centres: vertex normals point out of it (soft volume lighting, per corner so the
@@ -809,11 +882,28 @@ func _emit_leaves(occ_gain: float) -> void:
 		var q := (centre - cen) / rad
 		var occ := clampf(1.0 - q.length(), 0.0, 1.0)
 		occ = clampf(occ * 1.25 + clampf(-q.y, 0.0, 1.0) * 0.35, 0.0, 1.0) * occ_gain
+		# nearest lobe (by its own radius): cards deep in a lobe or in the creases between
+		# lobes go darker, so each sub-crown has a lit cap over a shaded skirt
+		var lobe := -1
+		var lq := INF
+		for li in _lobes.size():
+			var dq: float = (centre - (_lobes[li][0] as Vector3)).length() / float(_lobes[li][1])
+			if dq < lq:
+				lq = dq
+				lobe = li
+		if lobe >= 0:
+			var ld: Vector3 = (centre - (_lobes[lobe][0] as Vector3)) / float(_lobes[lobe][1])
+			var crease := clampf(1.0 - ld.length(), 0.0, 1.0) * 0.5 + clampf(-ld.y, 0.0, 1.0) * 0.45
+			occ = clampf(maxf(occ, crease * occ_gain) * 0.7 + crease * occ_gain * 0.3, 0.0, 1.0)
 		var vs: Array = []
 		for cc in corners:
 			var pos: Vector3 = centre + cd[1] * 0.5 * cc[0] + cd[2] * 0.5 * cc[1]
 			var uv: Vector2 = cd[3] + Vector2((cc[0] * 0.5 + 0.5) * 0.5, (0.5 - cc[1] * 0.5) * 0.5)
-			var en := ((pos - cen) / (rad * rad)).normalized().lerp(Vector3.UP, 0.25).normalized()
+			var en := ((pos - cen) / (rad * rad)).normalized()
+			if lobe >= 0:
+				var ln := (pos - (_lobes[lobe][0] as Vector3)).normalized()
+				en = en.lerp(ln, LOBE_NORMAL).normalized()
+			en = en.lerp(Vector3.UP, 0.25).normalized()
 			vs.append([pos, uv, en])
 		for idx in [0, 1, 2, 0, 2, 3]:
 			var vv: Array = vs[idx]
@@ -822,6 +912,7 @@ func _emit_leaves(occ_gain: float) -> void:
 			_leaves.set_uv(vv[1])
 			_leaves.add_vertex(vv[0])
 	_cards.clear()
+	_lobes = []
 
 ## 1024x1024 atlas, 4 tiles; each tile is an oak spray: 3-5 shoots fanning from the base,
 ## each a twig ending in a rosette of small lobed leaves (~12 cm on a 1.5 m card, oak size),
