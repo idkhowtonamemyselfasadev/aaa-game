@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261019-1029-tracks.jpg",
-  "time": "2026-10-19T10:29:26Z",
-  "caption": "Beaten-earth footpaths now fork across the green to the lantern post and the timber house and white cottage doors; the morning light is still flat and grey and the timber house reads plain, so not yet Wukong.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1203-villager-lamp.jpg",
   "time": "2026-10-19T12:03:27Z",
   "caption": "Edda at dusk on the green, taper raised to the lantern as its candle catches; her coif reads as a pale veil hiding the face and the taper itself barely shows.",
@@ -891,6 +885,12 @@
   "file": "20261024-2259-crownfill-village.jpg",
   "time": "2026-10-24T22:59:14Z",
   "caption": "From the village the near copses and far woods now read as full, dense oak crowns instead of see-through acacias; the crowns still sit a little flat-topped and dark-uniform, and the meadow is one olive tone.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-0052-fields-village.jpg",
+  "time": "2026-10-25T00:52:00Z",
+  "caption": "Village at 14:00 with the new field patchwork: greener cropped pasture and gold hay strips now break the meadow round the cottage, but the middle ground past 80 m still reads mostly one olive-tan and the oak crowns one dark green.",
   "verdict": "fail"
  }
 ]

@@ -13,6 +13,7 @@ global uniform vec3 ground_fill;   // low-sun skylight on open ground (World._ap
 #include "res://shaders/weather.gdshaderinc"
 #include "res://shaders/foliage_light.gdshaderinc"
 #include "res://shaders/trample.gdshaderinc"
+#include "res://shaders/field_patch.gdshaderinc"
 uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
 uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
 uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
@@ -52,6 +53,7 @@ float n2(vec2 p) {
 varying float v_shelter; // rain the oak crowns catch above this clump
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 varying float v_scorch;  // singed by the hearth (static wall tufts, INSTANCE_CUSTOM.z)
+varying vec3 v_field;   // field kind under this clump (field_patch.gdshaderinc)
 varying float v_laid;    // 0 standing .. 1 laid flat by the hero (trample.gdshaderinc)
 
 void vertex() {
@@ -64,6 +66,10 @@ void vertex() {
 	v_sward = INSTANCE_CUSTOM.y;
 	v_scorch = INSTANCE_CUSTOM.z;
 	v_seed = UV.x;
+	// grazed pasture: the tall grass there is cropped to ~60 %, hay fields stand a touch taller
+	v_field = field_patch(origin.xz) * (1.0 - smoothstep(0.1, 0.5, v_shelter));
+	VERTEX.y *= mix(1.0, 0.6, v_field.x * (1.0 - v_sward)) * (1.0 + 0.12 * v_field.y);
+	iw = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	// distance fade: sink and thin the blade as it reaches the draw distance
 	float d = distance(iw, CAMERA_POSITION_WORLD);
 	float fade = 1.0 - mix(smoothstep(fade_start, fade_end, d),
@@ -147,6 +153,7 @@ void fragment() {
 	float edge = smoothstep(0.78, 1.0, ac);
 	col *= 1.0 + near_d * (0.22 * rib - 0.07 * vein + 0.12 * edge) * (1.0 - v_seed);
 	rough = mix(rough, 0.68, near_d * rib * 0.5);
+	col *= field_tint(v_field);
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);

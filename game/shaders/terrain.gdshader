@@ -17,6 +17,7 @@ global uniform vec3 ground_fill;   // low-sun skylight on open ground (World._ap
 
 #include "res://shaders/weather.gdshaderinc"
 #include "res://shaders/trample.gdshaderinc"
+#include "res://shaders/field_patch.gdshaderinc"
 uniform vec3 turf_a   : source_color = vec3(0.20, 0.22, 0.08);   // shaded live sward
 uniform vec3 turf_b   : source_color = vec3(0.46, 0.47, 0.18);   // sunlit live blade
 uniform vec3 thatch_a : source_color = vec3(0.30, 0.24, 0.10);   // matted dead grass
@@ -437,6 +438,13 @@ void fragment() {
 		far_col *= 0.9 + 0.2 * band;
 		turf = mix(turf, far_col, far_w);
 	}
+	// ---- field patchwork: grazed pasture, hay left long, rough fallow (field_patch.gdshaderinc),
+	// and soft rush standing dark blue-green in the wet hollows; faded under the oak crowns
+	vec3 fw = field_patch(xz) * (1.0 - canopy);
+	turf *= field_tint(fw);
+	float rush = smoothstep(0.14, 0.32, hollow + (meso - 0.5) * 0.18) * (1.0 - canopy) * (1.0 - rockw);
+	vec3 rush_c = vec3(0.11, 0.14, 0.07) * (0.8 + 0.4 * micro);
+	turf = mix(turf, mix(rush_c, rush_c * vec3(1.5, 1.35, 0.9), smoothstep(0.55, 0.8, micro)), rush * 0.75);
 	float turf_h = mix(0.5, max(b1.y, b2.y * 0.7), fade_b) * 0.004;
 
 	// ---- trodden lane: the hero's track lays the sward flat along the walk ----
