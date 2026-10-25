@@ -644,6 +644,11 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.6) * 3.2, pp]
+	if spot == "herocu":
+		# the hero at ~2 m, chest up, three-quarter from the front: the range cutscenes see him at
+		var pp := player.global_position
+		var fwd := player.body.global_transform.basis.z
+		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.5) * 2.0, pp]
 	if spot == "face":
 		# head-and-shoulders of the idle player from the front-left: hat, hood, face cloth
 		var pp := player.global_position
@@ -1322,6 +1327,9 @@ func _ready() -> void:
 		if spot == "devil":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 3.5
+		if spot == "herocu":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.65
+			look.y = terrain.height_at(look.x, look.z) + 1.4
 		if spot == "face":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.8
 			look.y = terrain.height_at(look.x, look.z) + 1.75

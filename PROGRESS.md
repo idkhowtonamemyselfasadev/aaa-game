@@ -33,6 +33,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (20:25 10-25) **2 m hero close-up lens**: new shot spot `herocu` (hero at ~2 m, chest up, 3/4 front, lens 1.65 m
+  looking at 1.4 m), the range cutscenes see him at. (This session also wrote the face fill, but the 19:29 session
+  landed the same fix first; theirs is kept.) Shot `herocu facefill 40 12` (Forward+, ~22 min, taken with fill x1.0
+  before the merge) judged with a x4 crop: warm skin and an eye read inside the hood at 2 m. Verdict FAIL (blocky
+  training post in the left foreground, face skin smooth), gallery *-facefill-herocu.jpg / *-facefill-crop.jpg.
+  Bots walk, combat, villager PASS. After the rebase, combat once FAILed ("short sward did not stream in") when run
+  straight after walk in one bots.sh call, then PASSed on its own: a grass-streaming timing flake to watch.
 - (19:29 10-25) **Face fill under the brim** (58/58 bots pass): skin.gdshader now takes `figure_fill` (the meadow's ground bounce,
   as the hero body/garb/staff already did) as EMISSION, scaled by a new `face_fill` uniform (1.4), held down to 25%
   on the tucked band edges and 50% in the eye sockets. Before, the face band was the only part of the figure with
@@ -5187,6 +5194,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (20:25 10-25) Face fill in (see Done). NEXT: the `herocu` lens at noon frames the training post in the left
+   foreground and it reads blocky (a straight cylinder with a flat stone-like band) -- give it a worn, tapered,
+   split-wood post and a rope-bound straw dummy, or rotate `herocu` to keep it out; then face skin pores / brow
+   shading at the `face` lens, villagers (cloth_body) with shot `villager`, sash knot from the right, tall-grass
+   impostor band 64-150 m, kites over the keep.
 0. (19:29 10-25) Face fill in (see Done). NEXT: re-shoot `hero` (3.2 m) to confirm the face now reads at range (if
    not, raise `face_fill` to ~2.0 or open the hood arch); villagers (cloth_body + the new face fill) with shot
    `villager`; face skin pores / brow-ridge shading; the sash knot from the right; tall-grass impostor band
