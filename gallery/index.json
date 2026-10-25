@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-1203-villager-lamp.jpg",
-  "time": "2026-10-19T12:03:27Z",
-  "caption": "Edda at dusk on the green, taper raised to the lantern as its candle catches; her coif reads as a pale veil hiding the face and the taper itself barely shows.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1203-villager-woodpile.jpg",
-  "time": "2026-10-19T12:03:27Z",
-  "caption": "Edda at the woodpile by the white cottage's lean-to in the morning; the house reads well but her bodice still shows the hero's grey armour plates and the hood swallows her face.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1212-trackpools.jpg",
   "time": "2026-10-19T12:12:11Z",
   "caption": "After rain the trodden track up to the lantern post holds a chain of dark pools down its packed middle; from this steep angle they read as wet mud rather than water (too little sky sheen) and the light is flat, so not yet Wukong.",
@@ -897,6 +885,12 @@
   "file": "20261025-0226-crowncast-village.jpg",
   "time": "2026-10-25T02:26:00Z",
   "caption": "Village at 14:00 with per-tree leaf casts and a sunlit crown skin: the near copses are fresher green with paler tops and the right-hand wood shows a few different crowns, but from 80 m the woods still read mostly one dark green and the crowns are flat-topped.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-0342-crowncast2-village.jpg",
+  "time": "2026-10-25T03:42:00Z",
+  "caption": "Village view with doubled per-tree crown casts: the right-hand wood now shows yellow-green and darker crowns side by side, but the woods past 80 m are still mostly one green and the crowns sit flat-topped.",
   "verdict": "fail"
  }
 ]
