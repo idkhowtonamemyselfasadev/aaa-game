@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-1359-edda-split.jpg",
-  "time": "2026-10-19T13:59:48Z",
-  "caption": "The blow: Edda bent through the stroke, axe down on the block; the split halves are hidden behind her and a stale duplicate axe (fixed since) still shows.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1440-edda-night.jpg",
-  "time": "2026-10-19T14:40:02Z",
-  "caption": "Edda's cottage at 21:20 with its lamp lit now that she is in; the door leaf stands open at night and the limewash reads flat blue-grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1440-edda-pail.jpg",
   "time": "2026-10-19T14:40:02Z",
   "caption": "Edda at the water butt at 7 am with her pail hung from her right hand; the lens sits behind her so the pail barely reads, and her hair is a smooth blob.",
@@ -897,6 +885,12 @@
   "file": "20261025-0621-fieldsfar-village.jpg",
   "time": "2026-10-25T06:21:00Z",
   "caption": "Village view with field tints raised at distance: the middle ground past 80 m now breaks into green pasture, gold hay and brown fallow patches instead of one olive-tan; crowns still dull olive and the hero is not in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-0748-sashknot-hero.jpg",
+  "time": "2026-10-25T07:48:38Z",
+  "caption": "The hero at noon by the training post with the sash now a muted, creased cloth band (wound twice, knot and tails on the far hip) instead of a flat bright-yellow ring; the indigo hood still reads as a flat box and the straw hat as a plain cone.",
   "verdict": "fail"
  }
 ]

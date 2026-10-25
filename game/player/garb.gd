@@ -9,7 +9,8 @@ extends HollowRags
 const INDIGO := [Color(0.030, 0.034, 0.048), Color(0.15, 0.16, 0.21), 0.25]
 const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
-const OCHRE := [Color(0.16, 0.10, 0.035), Color(0.58, 0.40, 0.17), 0.2]
+# a dyed-and-worn ochre: the bright 0.58/0.40/0.17 read as a flat yellow belt in full sun
+const OCHRE := [Color(0.14, 0.088, 0.034), Color(0.48, 0.33, 0.15), 0.25]
 const LINEN := [Color(0.17, 0.15, 0.12), Color(0.60, 0.55, 0.46), 0.3]
 ## The leg bindings: road-soiled linen on the shins, and a dark faded hemp over the thighs, so
 ## the legs read as worn cloth in full sun (clean linen lit from above read as a pale smear).
@@ -185,7 +186,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			hips.add_child(g)
 			gores.append(g)
 	tint = palette.get("sash", OCHRE)
-	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
+	_knotted_sash(hips)
 	for side in ["Left", "Right"]:
 		tint = palette.get("wraps", SHIN_LINEN)
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.06, 0.93, 0.01, 8.0)
@@ -912,3 +913,113 @@ static func mix_cav(ridge: float, fine: float, depth: float) -> float:
 	var c := 0.5 + 0.5 * ridge
 	c = lerpf(1.0, 0.45 + 0.55 * c, depth) * (1.0 - 0.08 * maxf(-fine, 0.0) * depth)
 	return c
+
+
+## The sash as tied cloth, not a smooth ring: a band wound twice round the waist (the outer
+## turn's edge crossing it on a slant, bunched into creases across the band), a lumpy knot at
+## the left hip and two tails hanging from it that flutter like the robe's hems.
+## COLOR.r is the crease cavity (fold_ao).
+const SASH_KNOT_A := -0.95
+func _knotted_sash(hips: Node3D) -> void:
+	var band := _piece(_cgrid(_sash_band, 56, 8), 0.0, 0.0, 0.0, 0.25)
+	var bm := band.material_override as ShaderMaterial
+	bm.set_shader_parameter("rigid", 1.0)
+	bm.set_shader_parameter("fold_ao", 1.0)
+	band.name = "Sash"
+	hips.add_child(band)
+	var knot := _piece(_cgrid(_sash_knot, 16, 10), 0.0, 0.0, 1.0, 1.0)
+	var km := knot.material_override as ShaderMaterial
+	km.set_shader_parameter("rigid", 1.0)
+	km.set_shader_parameter("fold_ao", 1.0)
+	knot.name = "SashKnot"
+	hips.add_child(knot)
+	for t in [[0.0, 0.34, 0.075], [1.0, 0.27, 0.065]]:
+		var tail := _piece(_cgrid(_sash_tail.bind(t[0], t[1], t[2]), 6, 14), 0.0, 0.06, 2.0 + t[0], t[1] / t[2])
+		var tm := tail.material_override as ShaderMaterial
+		tm.set_shader_parameter("fold_ao", 1.0)
+		tm.set_shader_parameter("hem_band", 1.0)
+		tail.name = "SashTail"
+		hips.add_child(tail)
+
+## A grid whose callable returns [position, cavity]; the cavity goes to COLOR.
+func _cgrid(f: Callable, nu: int, nv: int) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in nv + 1:
+		for i in nu + 1:
+			var u := float(i) / nu
+			var v := float(j) / nv
+			var r: Array = f.call(u, v)
+			var c: float = r[1]
+			st.set_color(Color(c, c, c))
+			st.set_uv(Vector2(u, v))
+			st.add_vertex(r[0])
+	for j in nv:
+		for i in nu:
+			var a := j * (nu + 1) + i
+			st.add_index(a); st.add_index(a + 1); st.add_index(a + nu + 1)
+			st.add_index(a + 1); st.add_index(a + nu + 2); st.add_index(a + nu + 1)
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
+
+func _sash_ring(a: float, y: float, out: float) -> Vector3:
+	return Vector3(sin(a) * (0.258 + out), y + 0.03 * sin(a), 0.005 + cos(a) * (0.222 + out))
+
+func _sash_band(u: float, v: float) -> Array:
+	var a := u * TAU
+	# the outer turn's lower edge runs on a slant round the waist; above it the cloth stands
+	# one layer (7 mm) proud, with a soft rolled lip where it ends
+	var edge := 0.42 + 0.22 * sin(a * 0.5 + 0.6)
+	var lip := smoothstep(edge - 0.08, edge + 0.02, 1.0 - v)
+	var roll := 0.004 * exp(-pow((1.0 - v - edge) / 0.05, 2.0))
+	# creases across the band where the cloth bunches as it is pulled tight, uneven in pitch,
+	# fanning out from the knot
+	var phi := a * 11.0 + 1.4 * sin(a * 2.7 + 0.4) + 0.8 * sin(a * 6.3)
+	var crease := sin(phi + (v - 0.5) * 1.6 * cos(a - SASH_KNOT_A))
+	crease = signf(crease) * pow(absf(crease), 0.6)
+	var near_knot := exp(-pow(wrapf(a - SASH_KNOT_A, -PI, PI) / 0.9, 2.0))
+	var depth := 0.0035 + 0.004 * near_knot
+	# the band bellies between its edges and tucks in at top and bottom
+	var belly := 0.008 * sin(v * PI)
+	var out := 0.007 * lip + roll + belly + depth * crease
+	var cav := clampf(0.62 + 0.38 * crease, 0.0, 1.0) * lerpf(0.75, 1.0, sin(v * PI)) * lerpf(0.8, 1.0, lip)
+	return [_sash_ring(a, 1.245 - v * 0.15, out), cav]
+
+func _knot_centre() -> Vector3:
+	return _sash_ring(SASH_KNOT_A, 1.165, 0.03)
+
+func _sash_outward() -> Vector3:
+	return Vector3(sin(SASH_KNOT_A) / 0.258, 0.0, cos(SASH_KNOT_A) / 0.222).normalized()
+
+func _sash_knot(u: float, v: float) -> Array:
+	# a squashed, lumpy ball pulled tight: wider across the band than tall, flattened against
+	# the body, with the turns of the knot as lobes round it
+	var th := u * TAU
+	var ph := v * PI
+	var n := _sash_outward()
+	var t := Vector3.UP.cross(n).normalized()
+	var lobe := 1.0 + 0.18 * sin(th * 3.0 + 0.5) * sin(ph) + 0.1 * sin(th * 5.0 + ph * 2.0)
+	var dir := t * cos(th) * sin(ph) * 0.05 + Vector3.UP * cos(ph) * 0.036 + n * sin(th) * sin(ph) * 0.032
+	var p := _knot_centre() + dir * lobe
+	# its back half sits into the band, never behind the waist
+	if sin(th) < 0.0:
+		p -= n * sin(th) * sin(ph) * 0.012
+	var cav := clampf(0.55 + 0.45 * (lobe - 0.85) / 0.35, 0.3, 1.0)
+	return [p, cav]
+
+func _sash_tail(u: float, v: float, side: float, ln: float, w: float) -> Array:
+	# a ribbon of the same cloth from under the knot, hanging down the hip and turning a little
+	# as it falls; the two splay apart and the shorter one lies in front
+	var n := _sash_outward()
+	var t := Vector3.UP.cross(n).normalized()
+	var splay := lerpf(-0.35, 0.3, side)
+	var twist := (0.5 + 0.4 * side) * v
+	var across := (t * cos(twist) + n * sin(twist)) * (u - 0.5) * w * lerpf(1.0, 0.85, v)
+	var down := Vector3.DOWN * v * ln + t * sin(splay) * v * ln * 0.45
+	# falls clear of the robe: out off the hip, the front tail a hair further out
+	var off := n * (0.012 + 0.012 * side + 0.035 * v * (1.0 - v) + 0.01 * v)
+	var wave := n * 0.008 * sin(v * 7.0 + side * 2.0) * v
+	var p := _knot_centre() + Vector3.DOWN * 0.02 + down + across + off + wave
+	var cav := lerpf(0.7, 1.0, 1.0 - absf(u - 0.5) * 1.2) * lerpf(0.75, 1.0, smoothstep(0.0, 0.15, v))
+	return [p, cav]
