@@ -5119,8 +5119,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (10:10 10-25) Face cloth rewound + heavier upper lids (see Done). Verify with shot `face veilfold 90 12`
-   (render >30 min on the cloud box); then iris/sclera in eye.gdshader if still doll-like, the sash knot from
-   the hero's right side, the tall-grass impostor band 64-150 m, kites over the keep.
+   DONE (38 min, Forward+), verdict FAIL, gallery *-veilfold-face.jpg: the cloth now reads as darker wool
+   with vertical folds, set apart from the hood; the wound edge reads only faintly. NEXT: the eyes still read
+   round and doll-like (try iris_r 0.56 -> 0.48, sclera 0.33 -> 0.27, and a lash-line shadow on the upper
+   lid); the chest plate's pale edge wear looks painted on; the sash knot from the hero's right side, the tall-grass impostor band 64-150 m, kites over the keep.
 0. (09:20 10-25) Straw hat plaited (see Done). NEXT for the hero's look: the face reads doll-like --
    eye_size in skin.gdshader is already narrow (0.0135 x 0.0037), so look at eye.gdshader's iris/sclera
    (iris too big and dark, sclera too bright?) and the brow shade / upper-lid overhang; the face cloth

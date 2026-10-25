@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261019-1530-edda-feed.jpg",
-  "time": "2026-10-19T15:30:00Z",
-  "caption": "Edda at the garth wall at 07:55 casting grain to the hens, which crowd the yard in the foreground; the yard is in deep morning shadow, the grain does not read, and the wall hides her casting arm.",
-  "verdict": "fail"
- },
- {
-  "file": "20261019-1622-eddatalk.jpg",
-  "time": "2026-10-19T16:22:00Z",
-  "caption": "Wren speaking with Edda at her woodpile, her line about Tam as a subtitle; her face is lost under the coif, the hero hides half of her and the lean-to plaster reads flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261019-1730-feedwait.jpg",
   "time": "2026-10-19T17:30:00Z",
   "caption": "Morning feed: the hens lined up at the inside of the garth wall at Edda's call, her hooded figure beyond it with the grain bag; the yard foreground is backlit nearly black and the hens read small and dark.",
@@ -897,6 +885,12 @@
   "file": "20261025-0923-hatstraw.jpg",
   "time": "2026-10-25T09:23:25Z",
   "caption": "The hero's straw hat now reads as a weathered herringbone plait of split cane, a muted brown with sun-greyed patches instead of a smooth bright-yellow cone; the face still reads doll-like (wide round eyes) and the face cloth flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-1038-veilfold-face.jpg",
+  "time": "2026-10-25T10:38:00Z",
+  "caption": "Hero at noon: the face cloth is now darker damp wool with vertical folds that set it apart from the slate hood; still wrong: the eyes read round and doll-like and the chest plate's pale edge wear looks painted on.",
   "verdict": "fail"
  }
 ]
