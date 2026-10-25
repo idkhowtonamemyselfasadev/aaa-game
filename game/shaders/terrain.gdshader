@@ -440,8 +440,10 @@ void fragment() {
 	}
 	// ---- field patchwork: grazed pasture, hay left long, rough fallow (field_patch.gdshaderinc),
 	// and soft rush standing dark blue-green in the wet hollows; faded under the oak crowns
+	// (tint raised up to 1.9x as the pixel footprint grows past ~6 cm: ~50 m out at 720p,
+	// full by ~150 m, so the fields still read as a patchwork from the village and the hill)
 	vec3 fw = field_patch(xz) * (1.0 - canopy);
-	turf *= field_tint(fw);
+	turf *= field_tint_k(fw, 1.0 + 0.9 * smoothstep(0.06, 0.3, fp));
 	float rush = smoothstep(0.14, 0.32, hollow + (meso - 0.5) * 0.18) * (1.0 - canopy) * (1.0 - rockw);
 	vec3 rush_c = vec3(0.11, 0.14, 0.07) * (0.8 + 0.4 * micro);
 	turf = mix(turf, mix(rush_c, rush_c * vec3(1.5, 1.35, 0.9), smoothstep(0.55, 0.8, micro)), rush * 0.75);

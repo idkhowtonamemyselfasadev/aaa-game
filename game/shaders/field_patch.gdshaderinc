@@ -45,8 +45,18 @@ vec3 field_patch(vec2 xz) {
 }
 
 // Albedo ratio for a field kind (multiplied in, so the texture detail under it survives).
+// k scales the departure from the plain sward: 1 up close; the callers raise it with
+// distance, since haze and the blending of many blades into one pixel wash the kinds
+// together past ~60 m. Far off the kinds also part in value, not just hue (pale hay,
+// dark grazed grass), which is what survives the aerial perspective.
+vec3 field_tint_k(vec3 fw, float k) {
+	float far = clamp(k - 1.0, 0.0, 1.0);
+	vec3 past = vec3(0.80, 0.97, 0.74) * (1.0 - 0.10 * far);
+	vec3 hay = vec3(1.16, 1.06, 0.84) * (1.0 + 0.10 * far);
+	vec3 rough = vec3(0.88, 0.80, 0.70) * (1.0 - 0.04 * far);
+	return max(vec3(0.2), vec3(1.0) + k * (fw.x * (past - 1.0) + fw.y * (hay - 1.0) + fw.z * (rough - 1.0)));
+}
+
 vec3 field_tint(vec3 fw) {
-	return vec3(1.0) + fw.x * (vec3(0.80, 0.97, 0.74) - 1.0)
-		+ fw.y * (vec3(1.16, 1.06, 0.84) - 1.0)
-		+ fw.z * (vec3(0.88, 0.80, 0.70) - 1.0);
+	return field_tint_k(fw, 1.0);
 }

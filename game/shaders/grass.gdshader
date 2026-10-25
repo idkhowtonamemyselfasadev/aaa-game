@@ -153,7 +153,8 @@ void fragment() {
 	float edge = smoothstep(0.78, 1.0, ac);
 	col *= 1.0 + near_d * (0.22 * rib - 0.07 * vein + 0.12 * edge) * (1.0 - v_seed);
 	rough = mix(rough, 0.68, near_d * rib * 0.5);
-	col *= field_tint(v_field);
+	// stronger toward the far clumps so they meet the ground's distance-raised tint
+	col *= field_tint_k(v_field, 1.0 + 0.9 * smoothstep(20.0, 64.0, length(VERTEX)));
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
 	// laid-over blades show their paler, silvery backs: a trodden trail reads lighter
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
