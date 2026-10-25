@@ -39,11 +39,16 @@ float h_noise(vec2 p) {
 			   mix(h_hash(i + vec2(0, 1)), h_hash(i + vec2(1, 1)), f.x), f.y);
 }
 
+// The masks are set on the texture's linear values (x albedo_col 0.8): the tan plates sit at
+// ~(0.46, 0.27, 0.145), lum ~0.31; the red stripes ~(0.19, 0.0, 0.0); the blue-grey fittings
+// ~(0.05, 0.07, 0.07), lum 0.04-0.08; the dark chips and cloth below lum 0.05. (Thresholds set
+// as if sRGB left the plates half converted -- lacquer over raw tan read pale brown-grey -- and
+// never caught the stripes or the fittings, which stayed raw red and pale blue.)
 float tan_of(vec3 c) {
 	float lum = dot(c, vec3(0.3, 0.59, 0.11));
 	float warm = c.r - c.b;
-	return smoothstep(0.18, 0.3, warm) * smoothstep(0.24, 0.4, lum)
-			* (1.0 - smoothstep(0.35, 0.5, c.r - c.g));
+	return smoothstep(0.1, 0.2, warm) * smoothstep(0.12, 0.22, lum)
+			* (1.0 - smoothstep(0.3, 0.4, c.r - c.g));
 }
 
 void fragment() {
@@ -58,24 +63,32 @@ void fragment() {
 		float warm = src.r - src.b;
 		// tan plates: bright and warm; their painted chips are dark brown
 		float tan_m = tan_of(src);
-		float red_m = smoothstep(0.3, 0.45, src.r - src.g) * smoothstep(0.25, 0.4, src.r);
-		float iron_m = smoothstep(0.02, 0.07, src.b - src.r) * smoothstep(0.15, 0.3, lum);
+		float red_m = smoothstep(0.08, 0.14, src.r - src.g) * (1.0 - smoothstep(0.05, 0.1, src.g));
+		float iron_m = smoothstep(0.008, 0.02, src.b - src.r) * smoothstep(0.025, 0.05, lum);
 		// the chips sit inside the plates: a texel is plate if any tan lies within ~6 texels
 		// (so a chip and its anti-aliased border both count, never the raw tan in between),
 		// and a chip only where no tan lies within ~1.5 texels (thins the painted chips)
 		vec2 tx = 1.0 / vec2(textureSize(albedo_tex, 0));
 		float near = tan_m;
 		float region = tan_m;
+		float mid[8];
 		for (int i = 0; i < 8; i++) {
 			float a = float(i) * 0.785398;
 			vec2 d = vec2(cos(a), sin(a)) * tx;
 			near = max(near, tan_of(texture(albedo_tex, UV + d * 1.5).rgb * albedo_col.rgb));
 			region = max(region, tan_of(texture(albedo_tex, UV + d * 6.0).rgb * albedo_col.rgb));
+			mid[i] = tan_of(texture(albedo_tex, UV + d * 3.5).rgb * albedo_col.rgb);
+		}
+		// a chip has plate on both sides along some axis; the dark ring round a plate's outer
+		// edge has plate on one side only and stays lacquer (else every plate wore a hide outline)
+		float inside = 0.0;
+		for (int i = 0; i < 4; i++) {
+			inside = max(inside, min(mid[i], mid[i + 4]));
 		}
 		region *= 1.0 - red_m;
 		plate_spec = region * restyle * (1.0 - cloth_body);
 		// a few chips never went through the lacquer: the rest are worn down to dark hide
-		float scratch = region * (1.0 - near) * smoothstep(0.2, 0.45, h_noise(UV * 160.0 + 3.0));
+		float scratch = region * inside * (1.0 - near) * smoothstep(0.2, 0.45, h_noise(UV * 160.0 + 3.0));
 		// raised rims and bevels (where the normal map tilts hard) are rubbed thin and polished
 		vec2 nxy = texture(normal_tex, UV).xy * 2.0 - 1.0;
 		float bevel = smoothstep(0.22, 0.5, length(nxy)) * region * (1.0 - scratch);
