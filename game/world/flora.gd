@@ -1068,10 +1068,13 @@ func _scatter_understory() -> void:
 	fern_mat.set_shader_parameter("fill", 1.6)
 	fern_mat.set_shader_parameter("backlight", Vector3(0.62, 0.7, 0.36))
 	fern_mat.set_shader_parameter("fwd_gain", 0.7)
+	fern_mat.set_shader_parameter("tree_var", 0.35)
+	fern_mat.set_shader_parameter("skin_gain", 0.0)
 	fern_mat.set_shader_parameter("trample_gain", 1.0)
 	fern_mat.set_shader_parameter("nmap_depth", 0.0)   # fern strips carry no tangents
 	var shrub_leaf := leaf_material.duplicate() as ShaderMaterial
 	shrub_leaf.set_shader_parameter("tint", Color(1.15, 1.18, 0.95))
+	shrub_leaf.set_shader_parameter("skin_gain", 0.4)
 	var ferns: Array[ArrayMesh] = []
 	for v in 5:
 		ferns.append(_build_fern(v, fern_mat))

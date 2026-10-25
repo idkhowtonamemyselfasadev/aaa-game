@@ -29,6 +29,9 @@ uniform float trample_gain = 0.0;
 uniform vec3 backlight = vec3(0.95, 1.1, 0.42);
 // forward-scatter gain toward the sun (foliage_light); ferns (flora.gd) ~0.7
 uniform float fwd_gain = 2.2;
+// per-tree leaf cast strength and sunlit-skin lift (oaks 1/1; flora.gd sets ferns lower)
+uniform float tree_var = 1.0;
+uniform float skin_gain = 0.7;
 
 varying float v_phase;
 varying float v_occ;
@@ -65,7 +68,18 @@ void fragment() {
 	vec4 t = texture(leaf_tex, UV);
 	// per-instance and per-card variation so whole groves are not one colour
 	float iv = fract(sin(dot(v_inst.xz, vec2(12.9898, 78.233))) * 43758.5453);
-	vec3 col = t.rgb * tint * mix(0.85, 1.15, v_phase) * mix(vec3(0.9, 1.0, 0.9), vec3(1.15, 1.0, 0.8), iv);
+	float iv2 = fract(sin(dot(v_inst.xz, vec2(39.3468, 11.135))) * 24634.6345);
+	// tree_var (oaks 1, ferns lower): each tree draws one of three leaf casts -- a deep
+	// blue-green, a fresh yellow-green, an olive going bronze -- plus its own brightness,
+	// so a wood reads as many crowns from 100 m, not one dark green mass
+	vec3 cast_t = iv < 0.4 ? vec3(0.86, 1.0, 0.9) : (iv < 0.75 ? vec3(1.1, 1.12, 0.7) : vec3(1.2, 1.0, 0.68));
+	vec3 cast_v = mix(vec3(1.0), cast_t * mix(0.84, 1.12, iv2), tree_var);
+	vec3 col = t.rgb * tint * mix(0.85, 1.15, v_phase) * cast_v;
+	// sunlit skin: the outer, upward-facing leaves of the crown are young growth, paler and
+	// yellower than the shaded core, which rounds the crown's top into a dome
+	vec3 up_v = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+	float skin = (1.0 - v_occ) * smoothstep(0.05, 0.75, dot(FRONT_FACING ? NORMAL : -NORMAL, up_v)) * skin_gain;
+	col *= mix(vec3(1.0), vec3(1.16, 1.14, 0.78), skin);
 	ALBEDO = col;
 	// alpha-tested cards thin out with distance: each mip averages the leaf alpha with the
 	// gaps, so past ~40 m most texels fall under the 0.5 cut and a crown went see-through.

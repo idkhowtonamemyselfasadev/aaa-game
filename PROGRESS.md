@@ -33,6 +33,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (01:10 10-25) **Oak crown colour variety** (bot-verified; shot `crowncast` pending at commit time).
+  leaves.gdshader: each tree (hash of its position) draws one of three leaf casts -- 40 % deep
+  blue-green (x0.86/1.0/0.9), 35 % fresh yellow-green (x1.1/1.12/0.7), 25 % olive-bronze
+  (x1.2/1.0/0.68) -- times its own brightness 0.84-1.12 (was one faint warm/cool lerp). New sunlit
+  skin: outer (low crown depth), upward-facing leaves (crown normal . world up, 0.05-0.75) are lifted
+  toward a paler yellow-green (x1.16/1.14/0.78, gain `skin_gain`), so the crown top reads domed and
+  lit over a darker core. Uniforms `tree_var` (oaks 1, ferns 0.35) and `skin_gain` (oaks 0.7,
+  shrubs 0.4, ferns 0). Bots pass: walk ridge understory glide.
 - (00:00 10-25) **Meadow field patchwork** (shot `fields`; bots trample dust glide pass, herd flaky see bugs).
   New shaders/field_patch.gdshaderinc, shared by terrain.gdshader and grass.gdshader so blades and
   ground agree: ~46 m warped Voronoi fields (warp 14 m + 4 m), each one kind -- 40 % grazed pasture
@@ -5036,6 +5044,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (01:10 10-25) Crown casts + sunlit skin in (see Done). NEXT: judge shot `village crowncast 40 14.0`
+   against *-fields-village.jpg (if the casts are too loud or too faint, tune the three cast vectors in
+   leaves.gdshader); then the fields past 80 m (stronger tint with distance), rounder domed crown
+   geometry, the tall-grass impostor band 64-150 m, kites over the keep; the hero's look remains the
+   biggest Wukong-gate failure.
 0. (00:50 10-25) Field patchwork in (see Done). NEXT: make the fields read past 80 m (stronger tint
    with distance / a slightly different grass-height silhouette at the field bound), crown colour
    variety (per-tree hue + a sunlit yellow-green skin, rounder domed tops), the tall-grass impostor
