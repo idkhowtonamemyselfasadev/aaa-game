@@ -313,66 +313,111 @@ func _lean_roof(gx: float, ox: float) -> void:
 	_beam(ee, Vector3.BACK, hz * 2.0 + 0.05, Vector3(0.13, 0.025, 1), 333.0, 0.35, down)
 
 ## A split-log mesh: the log's axis along Y through the origin, `frac` of the round
-## (0.25 quarter, 0.5 half), radius r, length ln, bark faces with radial normals.
+## (0.25 quarter, 0.5 half), radius r, length ln, bark faces with radial normals. The bark
+## is subdivided along the length with a lumpy radius, and the split faces are torn: a grid
+## displaced across the face in long fibre-wise ridges (flat planes read as cut card).
+## UV.x = distance from the axis / r (0 heart .. 1 bark), for the end grain's sapwood/bark rim.
 func _log_mesh(r: float, ln: float, frac: float, v: int) -> ArrayMesh:
 	var rr := RandomNumberGenerator.new()
 	rr.seed = 9000 + v
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var segs := maxi(4, int(frac * 22.0))
+	var segs := maxi(5, int(frac * 30.0))
+	var ny := 5                                   # rings along the length
 	var a0 := rr.randf_range(0.0, TAU)
 	var arc: Array[Vector2] = []
 	for i in segs + 1:
 		var a := a0 + TAU * frac * float(i) / segs
-		arc.append(Vector2(cos(a), sin(a)) * r * rr.randf_range(0.96, 1.03))
+		arc.append(Vector2(cos(a), sin(a)) * r * rr.randf_range(0.97, 1.03))
+	var whole := frac > 0.99
+	if whole:
+		arc[segs] = arc[0]
+	# a little swelling and knottiness along the length, per arc point and ring
+	var lump: Array = []
+	for i in segs + 1:
+		var row: Array[float] = []
+		for s in ny + 1:
+			row.append(1.0 + rr.randf_range(-0.025, 0.025))
+		lump.append(row)
+	if whole:
+		lump[segs] = lump[0]
 	var hl := ln * 0.5
 	# a sloping saw cut at each end
 	var tilt := Vector2(rr.randf_range(-0.12, 0.12), rr.randf_range(-0.12, 0.12))
 	var ytop := func(p: Vector2) -> float: return hl + p.dot(tilt)
 	var ybot := func(p: Vector2) -> float: return -hl + p.dot(tilt) * 0.6
 	var cen := Vector2.ZERO
+	var bpt := func(i: int, s: int) -> Vector3:
+		var p: Vector2 = arc[i] * float(lump[i][s])
+		return Vector3(p.x, lerpf(ybot.call(arc[i]), ytop.call(arc[i]), float(s) / ny), p.y)
+	var add := func(tri: Array, fn: Vector3) -> void:
+		# tri: [pos, normal, uvx] x3, wound to face fn
+		if ((tri[1][0] as Vector3) - tri[0][0]).cross((tri[2][0] as Vector3) - tri[0][0]).dot(fn) < 0.0:
+			tri = [tri[0], tri[2], tri[1]]
+		for e in tri:
+			st.set_normal(e[1])
+			st.set_uv(Vector2(e[2], 0.0))
+			st.add_vertex(e[0])
 	# bark round the arc
 	for i in segs:
-		var p := arc[i]
-		var q := arc[i + 1]
-		var np := Vector3(p.x, 0, p.y).normalized()
-		var nq := Vector3(q.x, 0, q.y).normalized()
-		var q4 := [[Vector3(p.x, ybot.call(p), p.y), np], [Vector3(q.x, ybot.call(q), q.y), nq], [Vector3(q.x, ytop.call(q), q.y), nq], [Vector3(p.x, ytop.call(p), p.y), np]]
-		for t in [[0, 2, 1], [0, 3, 2]]:
-			var tri := [q4[t[0]], q4[t[1]], q4[t[2]]]
-			var fn: Vector3 = (np + nq).normalized()
-			if ((tri[1][0] as Vector3) - tri[0][0]).cross((tri[2][0] as Vector3) - tri[0][0]).dot(fn) < 0.0:
-				tri = [tri[0], tri[2], tri[1]]
-			for e in tri:
-				st.set_normal(e[1])
-				st.add_vertex(e[0])
-	# split faces: from the centre out to both arc ends (one plane for a half log)
-	for ends in [[cen, arc[0]], [arc[segs], cen]]:
-		var p: Vector2 = ends[0]
-		var q: Vector2 = ends[1]
-		var d := q - p
-		if d.length() < 0.001:
-			continue
-		var fn := Vector3(d.y, 0, -d.x).normalized()
-		var mid := (p + q) * 0.5
-		if fn.dot(Vector3(mid.x, 0, mid.y) - Vector3(arc[segs / 2].x, 0, arc[segs / 2].y)) < 0.0:
+		var np := Vector3(arc[i].x, 0, arc[i].y).normalized()
+		var nq := Vector3(arc[i + 1].x, 0, arc[i + 1].y).normalized()
+		var fn: Vector3 = (np + nq).normalized()
+		for s in ny:
+			var q4 := [[bpt.call(i, s), np, 1.0], [bpt.call(i + 1, s), nq, 1.0], [bpt.call(i + 1, s + 1), nq, 1.0], [bpt.call(i, s + 1), np, 1.0]]
+			add.call([q4[0], q4[2], q4[1]], fn)
+			add.call([q4[0], q4[3], q4[2]], fn)
+	# split faces: from the axis out to both arc ends, a torn grid. Displacement fades to
+	# nothing at the bark edge and the axis so the faces still meet the bark and each other.
+	var nt := 4
+	var ph := rr.randf_range(0.0, TAU)
+	for k in (0 if whole else 2):
+		var ei := 0 if k == 0 else segs
+		var outer: Vector2 = arc[ei]
+		var fn := Vector3(outer.y, 0, -outer.x).normalized()
+		var mid := Vector3(outer.x, 0, outer.y) * 0.5
+		if fn.dot(mid - Vector3(arc[segs / 2].x, 0, arc[segs / 2].y)) < 0.0:
 			fn = -fn
-		var quad := [Vector3(p.x, ybot.call(p), p.y), Vector3(q.x, ybot.call(q), q.y), Vector3(q.x, ytop.call(q), q.y), Vector3(p.x, ytop.call(p), p.y)]
-		for t in [[0, 1, 2], [0, 2, 3]]:
-			for e in _wind([quad[t[0]], quad[t[1]], quad[t[2]]], fn):
-				st.set_normal(fn)
-				st.add_vertex(e)
-	# sawn ends: fans round the centre
+		var amp := r * 0.05
+		var base: Array[float] = []
+		for t in nt + 1:
+			base.append(rr.randf_range(-0.5, 0.5))
+		var grid: Array = []
+		for s in ny + 1:
+			var row := []
+			for t in nt + 1:
+				var u := float(t) / nt
+				var edge: Vector3 = bpt.call(ei, s)
+				var ax := Vector3(0, lerpf(ybot.call(cen), ytop.call(cen), float(s) / ny), 0)
+				var p := ax.lerp(edge, u)
+				var d := sin(PI * u) * (sin(u * 7.0 + ph + k * 2.0) * 0.6 + base[t] + rr.randf_range(-0.25, 0.25))
+				# fibres tear in long runs: less change along the length at the very ends
+				if s == 0 or s == ny:
+					d *= 0.5
+				row.append(p + fn * d * amp)
+			grid.append(row)
+		for s in ny:
+			for t in nt:
+				var a: Vector3 = grid[s][t]
+				var b: Vector3 = grid[s][t + 1]
+				var c: Vector3 = grid[s + 1][t + 1]
+				var e: Vector3 = grid[s + 1][t]
+				var u0 := float(t) / nt
+				var u1 := float(t + 1) / nt
+				for tri in [[[a, u0], [b, u1], [c, u1]], [[a, u0], [c, u1], [e, u0]]]:
+					var tn: Vector3 = ((tri[1][0] as Vector3) - tri[0][0]).cross((tri[2][0] as Vector3) - tri[0][0]).normalized()
+					if tn.dot(fn) < 0.0:
+						tn = -tn
+					# soften the facets toward the face's plane
+					tn = (tn + fn).normalized()
+					add.call([[tri[0][0], tn, tri[0][1]], [tri[1][0], tn, tri[1][1]], [tri[2][0], tn, tri[2][1]]], fn)
+	# sawn ends: fans round the axis
 	for end in [1.0, -1.0]:
 		var fn := Vector3(0, end, 0)
+		var s := ny if end > 0.0 else 0
+		var c3 := Vector3(0, ytop.call(cen) if end > 0.0 else ybot.call(cen), 0)
 		for i in segs:
-			var pts: Array[Vector2] = [cen, arc[i], arc[i + 1]]
-			var tri := []
-			for p in pts:
-				tri.append(Vector3(p.x, ytop.call(p) if end > 0.0 else ybot.call(p), p.y))
-			for e in _wind(tri, fn):
-				st.set_normal(fn)
-				st.add_vertex(e)
+			add.call([[c3, fn, 0.0], [bpt.call(i, s), fn, 1.0], [bpt.call(i + 1, s), fn, 1.0]], fn)
 	var mesh := st.commit()
 	return mesh
 

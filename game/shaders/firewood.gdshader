@@ -17,6 +17,7 @@ varying vec3 onrm;
 varying vec3 wn;
 varying vec4 cust;
 varying float v_cloud;
+varying float rad;          // UV.x: 0 at the axis .. 1 at the bark
 
 float hash3(vec3 p) {
 	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
@@ -32,6 +33,7 @@ float fbm(vec3 p) { float a = 0.5, r = 0.0; for (int k = 0; k < 4; k++) { r += a
 
 void vertex() {
 	cust = INSTANCE_CUSTOM;
+	rad = UV.x;
 	op = VERTEX;
 	onrm = NORMAL;
 	vec3 wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -69,6 +71,14 @@ void fragment() {
 		endc = mix(endc, vec3(0.25, 0.21, 0.17) * mix(0.8, 1.1, stain), 0.6) * mix(0.85, 1.0, ring);
 	}
 	endc = mix(endc, vec3(0.07, 0.05, 0.035), check * 0.85);
+	// a paler sapwood band under the bark, then the bark's own dark cut edge round the rim
+	float jag = (fbm(sd * 40.0) - 0.5) * 0.04;
+	float sap = smoothstep(0.72, 0.8, rad + jag) * (1.0 - smoothstep(0.9, 0.93, rad + jag));
+	float rim = smoothstep(0.92, 0.95, rad + jag);
+	vec3 rimc = mix(vec3(0.09, 0.07, 0.05), vec3(0.2, 0.17, 0.13), fbm(sd * 30.0));
+	endc = mix(endc, endc * vec3(1.12, 1.1, 1.06), sap * 0.7);
+	endc = mix(endc, rimc, rim);
+	wood = mix(wood, rimc, rim);
 	// bark: deep fissured ridges along Y (oak) or smoother with lenticels (b)
 	float fis = fbm(vec3(ang * 3.0, op.y * 2.2, cust.r * 9.0) * vec3(4.0, 3.0, 1.0));
 	float ridge = smoothstep(0.42, 0.62, fis);
