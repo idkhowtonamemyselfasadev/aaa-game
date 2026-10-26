@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-2045-osric-beard.jpg",
-  "time": "2026-10-20T20:45:28Z",
-  "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-2140-osric-smock.jpg",
   "time": "2026-10-20T21:40:00Z",
   "caption": "Osric at his door at dawn in a wool smock (no more armour plates on his chest) with a beard in locks; the beard is still too yellow-brown with wood-grain-like strands and the smock a little bright.",
@@ -891,6 +885,18 @@
   "file": "20261026-2030-leanto-top.jpg",
   "time": "2026-10-26T20:30:16Z",
   "caption": "Edda splitting wood by the white cottage at 10 h: the lean-to's lime now rounds over its wall head in a soft shoulder instead of a crisp slab edge, but the lean-to still reads as a big blank white mass and the woodpile as pale flat pieces.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2140-lacquer-herocu.jpg",
+  "time": "2026-10-26T21:40:00Z",
+  "caption": "The hero at 2 m by the practice post at 10 h: the armour's lacquer now reads oxblood-umber instead of blue-black, but the figure is still a dark, low-contrast mass with the face lost in the hood.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2140-night-valley.jpg",
+  "time": "2026-10-26T21:40:00Z",
+  "caption": "The vale at 21 h with fireflies over the meadow: the white cottage glares pale at range in the dark and the mountains read as a flat blue cut-out with no moonlit shading.",
   "verdict": "fail"
  }
 ]

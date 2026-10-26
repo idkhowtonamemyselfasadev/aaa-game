@@ -14,9 +14,11 @@ uniform float normal_depth = 1.0;
 // cinnabar lacquer, the blue-grey fittings and helmet mask blackened iron, and the glossy visor
 // glass a matte indigo face cloth.
 uniform float restyle = 1.0;
-uniform vec3 lacquer : source_color = vec3(0.082, 0.054, 0.041);
-uniform vec3 hide : source_color = vec3(0.26, 0.16, 0.085);
-uniform vec3 cinnabar : source_color = vec3(0.30, 0.055, 0.035);
+// an oxblood-umber lacquer, not black: at 0.082/0.054/0.041 the 2 m `herocu` lens read the
+// whole torso as one dull near-black mass against the sunlit meadow
+uniform vec3 lacquer : source_color = vec3(0.125, 0.062, 0.042);
+uniform vec3 hide : source_color = vec3(0.28, 0.17, 0.088);
+uniform vec3 cinnabar : source_color = vec3(0.34, 0.06, 0.036);
 uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
 // 1: a wearer with no armour (Hesper): the plates become layered undyed wool, the iron
 // fittings (knee caps, bracers, collar) old linen bindings, the red stripes a faded russet
