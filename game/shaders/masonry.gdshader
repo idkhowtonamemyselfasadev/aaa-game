@@ -252,11 +252,11 @@ void fragment() {
 	lwc = mix(lwc, lwc * vec3(0.95, 0.94, 0.88), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));   // old coats yellowed
 	// the coat is thin over each stone's arrises and pools in the hollows between them, so the
 	// rubble's shapes ghost through the white (a flat even white read as a plastered box)
-	// (a per-stone joint term on top of this darkened whole small stones: a grey camo of blocks)
-	lwc *= 1.0 - edge * 0.05;
+	// (a per-stone joint term on top of this darkened whole small stones: a grey camo of blocks;
+	// so did a coat thinned over each stone's arrises (`edge`) -- the relief alone carries them)
 	// flaked back to the stone in ragged patches, more toward the foot and on the arrises
 	// (small, and mostly low: big patches up the wall read as dark holes in the coat)
-	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12 + edge * 0.05
+	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12
 	         - smoothstep(1.0, 2.2, ab) * 0.06;
 	float flake = smoothstep(0.715, 0.75, fn);
 	// round each flake the coats have peeled back in steps: a band of older, creamier lime

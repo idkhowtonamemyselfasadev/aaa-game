@@ -13,7 +13,7 @@ uniform float ground_y = 0.0;
 // 1: the white cottage -- the same world-space limewash as masonry.gdshader's a = 4, so the
 // coats run unbroken over stones and joints alike
 uniform float wash = 0.0;
-uniform vec3 limewash : source_color = vec3(0.74, 0.725, 0.67);
+uniform vec3 limewash : source_color = vec3(0.64, 0.62, 0.565);   // = masonry's (a mismatch read as grey stone blocks)
 uniform vec3 lime_algae : source_color = vec3(0.3, 0.34, 0.2);
 
 varying vec3 wp;
@@ -48,8 +48,8 @@ void fragment() {
 	// limewash (matches masonry.gdshader's a = 4 pattern; no flaking -- the joint behind is lime too)
 	float ab = wp.y - ground_y;
 	float coat = fbm(wp * 2.6 + 7.0);
-	vec3 lwc = limewash * (0.9 + 0.12 * coat) * (0.97 + 0.05 * vn(wp * 90.0));
-	lwc = mix(lwc, lwc * vec3(0.97, 0.97, 0.93), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));
+	vec3 lwc = limewash * (0.86 + 0.2 * coat) * (0.96 + 0.07 * vn(wp * 90.0));
+	lwc = mix(lwc, lwc * vec3(0.95, 0.94, 0.88), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(normalize(wn).y));
 	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
 	lwc *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));
@@ -60,10 +60,13 @@ void fragment() {
 	// wall's skin over the sunk stones: the same small flaked patches as masonry a = 4 (the
 	// rubble showing grey through), and a soft trowelled undulation instead of a flat plane
 	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12 - smoothstep(1.0, 2.2, ab) * 0.06;
-	float flake = smoothstep(0.71, 0.735, fn) * wash;
-	float rim = smoothstep(0.69, 0.71, fn) * (1.0 - flake) * wash;
-	vec3 under = vec3(0.45, 0.43, 0.39) * (0.85 + 0.3 * vn(wp * 30.0));
-	lwc = mix(lwc * (1.0 - rim * 0.18), under, flake);
+	float flake = smoothstep(0.715, 0.75, fn) * wash;
+	float older = smoothstep(0.69, 0.705, fn + 0.02 * (vn(wp * 40.0) - 0.5)) * (1.0 - flake) * wash;
+	float rim = smoothstep(0.7, 0.715, fn) * (1.0 - flake) * wash;
+	vec3 under = vec3(0.47, 0.44, 0.39) * (0.85 + 0.3 * vn(wp * 30.0));
+	under = mix(under, lwc * 0.85, 0.3 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
+	lwc = mix(lwc, lwc * vec3(0.95, 0.92, 0.84), older);
+	lwc = mix(lwc * (1.0 - rim * 0.16), under, flake);
 	col = mix(col, lwc, wash);
 	float bump = fbm(wp * 6.0 + 4.0);
 	vec3 e = vec3(0.01, 0.0, 0.0);
