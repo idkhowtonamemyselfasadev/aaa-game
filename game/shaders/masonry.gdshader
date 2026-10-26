@@ -32,7 +32,9 @@ uniform vec3 stone_pale : source_color = vec3(0.72, 0.7, 0.64);
 uniform vec3 stone_dark : source_color = vec3(0.43, 0.42, 0.39);
 uniform vec3 iron_stain : source_color = vec3(0.5, 0.3, 0.16);
 uniform vec3 joint_soil : source_color = vec3(0.22, 0.17, 0.12);
-uniform vec3 limewash : source_color = vec3(0.74, 0.725, 0.67);
+// old lime, not fresh paint: at 0.74 the sunlit faces clipped to flat white at noon and the
+// wall read as a blank box with no stone under it
+uniform vec3 limewash : source_color = vec3(0.64, 0.62, 0.565);
 uniform vec3 lime_algae : source_color = vec3(0.3, 0.34, 0.2);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
@@ -246,19 +248,27 @@ void fragment() {
 	// limewash: a white skin over everything above, the coats a little uneven
 	float ab = wp.y - floor_w;     // per fragment (above is per stone)
 	float coat = fbm(wp * 2.6 + 7.0);
-	vec3 lwc = limewash * (0.9 + 0.12 * coat) * (0.97 + 0.05 * vn(wp * 90.0));
-	lwc = mix(lwc, lwc * vec3(0.97, 0.97, 0.93), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));   // old coats yellowed
+	vec3 lwc = limewash * (0.86 + 0.2 * coat) * (0.96 + 0.07 * vn(wp * 90.0));
+	lwc = mix(lwc, lwc * vec3(0.95, 0.94, 0.88), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));   // old coats yellowed
+	// the coat is thin over each stone's arrises and pools in the hollows between them, so the
+	// rubble's shapes ghost through the white (a flat even white read as a plastered box)
+	// (a per-stone joint term on top of this darkened whole small stones: a grey camo of blocks)
+	lwc *= 1.0 - edge * 0.05;
 	// flaked back to the stone in ragged patches, more toward the foot and on the arrises
 	// (small, and mostly low: big patches up the wall read as dark holes in the coat)
 	float fn = fbm(wp * 3.4 + 13.0) + (1.0 - smoothstep(0.0, 1.2, ab)) * 0.12 + edge * 0.05
 	         - smoothstep(1.0, 2.2, ab) * 0.06;
-	float flake = smoothstep(0.71, 0.735, fn);
+	float flake = smoothstep(0.715, 0.75, fn);
+	// round each flake the coats have peeled back in steps: a band of older, creamier lime
+	// that sits a little lower (ragged, not a stencilled hole straight to the stone)
+	float older = smoothstep(0.69, 0.705, fn + 0.02 * (vn(wp * 40.0) - 0.5)) * (1.0 - flake);
 	// what shows is the stone under old coats: a warm pale grey with lime left in its pores,
 	// the bare stone's moss and damp barely there; the broken coat's edge casts a thin shade
 	vec3 under = mix(vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(1.05, 1.0, 0.92), vec3(0.47, 0.44, 0.39), 0.6);
 	under = mix(under, lwc * 0.85, 0.3 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
-	float rim = smoothstep(0.69, 0.71, fn) * (1.0 - flake);
-	vec3 lcol = mix(lwc * (1.0 - rim * 0.18), under, flake);
+	float rim = smoothstep(0.7, 0.715, fn) * (1.0 - flake);
+	vec3 lcol = mix(lwc, lwc * vec3(0.95, 0.92, 0.84), older);
+	lcol = mix(lcol * (1.0 - rim * 0.16), under, flake);
 	// rain runs down from the eaves and under the sills: soft grey streaks
 	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
 	lcol *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));

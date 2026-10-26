@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-1158-dog-doze.jpg",
-  "time": "2026-10-20T11:58:00Z",
-  "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1237-osric.jpg",
   "time": "2026-10-20T12:37:54Z",
   "caption": "Osric, the new stone-cottage villager, tending his garth at 15.5 h with Edda beyond the field gate; FAIL: the foreground is in deep shade and his pale hood reads as a veil over his face.",
@@ -885,6 +879,12 @@
   "file": "20261026-0633-edda-wool.jpg",
   "time": "2026-10-26T06:33:27Z",
   "caption": "Edda at the woodpile at 10 h: her sleeves now read as the kirtle's rust wool instead of pale mottled grey; the coif still reads as a pale blotchy cowl and the lean-to wall is a flat white box with sticker-like plaster patches.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0647-whitecottage.jpg",
+  "time": "2026-10-26T06:47:44Z",
+  "caption": "Edda splitting wood by the white cottage at 10 h: the limewash is now an aged, off-white lime with peeled coats and the rubble ghosting through instead of clipped flat white; still wrong: the lean-to reads as a crisp box, the flaked patches are blocky stone-shaped greys, and the chopping block and rounds read pale.",
   "verdict": "fail"
  }
 ]
