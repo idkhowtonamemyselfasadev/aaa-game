@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-1430-osric-face.jpg",
-  "time": "2026-10-20T14:30:22Z",
-  "caption": "Osric on his step at 07:00 with his own face for the first time: a nose and a grizzled grey beard under the hood instead of the face cloth; FAIL: the skin is a flat orange mask, the eyes glint red and the beard reads as grey bark, not hair.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1430-osric-lean.jpg",
   "time": "2026-10-20T14:30:22Z",
   "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
@@ -891,6 +885,12 @@
   "file": "20261026-0941-leanto.jpg",
   "time": "2026-10-26T09:41:00Z",
   "caption": "Edda at the chopping block at 10 h after burying the lean-to's quoins: the small dark triangles on the lean-to box are gone and the round tops are duller, but its big pale crisp-edged patches remain (not the quoins -- likely the rubble crowns under the skin).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1109-leanto.jpg",
+  "time": "2026-10-26T11:09:37Z",
+  "caption": "Edda at the chopping block at 10 h: the lean-to's grimy lower wall no longer breaks out in big pale patches (the lime shader flaked after griming), but two pale flakes still sit high on its shaded front end and the wall foot is one flat grime band.",
   "verdict": "fail"
  }
 ]

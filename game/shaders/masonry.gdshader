@@ -98,7 +98,7 @@ void vertex() {
 	field = step(1.5, INSTANCE_CUSTOM.a);
 	dim = clamp(INSTANCE_CUSTOM.a - 2.0, 0.0, 1.0);
 	lw = step(3.5, INSTANCE_CUSTOM.a);
-	floor_w = MODEL_MATRIX[3].y - above;
+	floor_w = MODEL_MATRIX[3].y - (lw > 0.5 ? INSTANCE_CUSTOM.r * 8.0 : above);   // limewashed: r may go below 0
 }
 
 float surf(vec3 p) {
@@ -305,14 +305,18 @@ void fragment() {
 	float deep = (1.0 - smoothstep(0.0, 0.2, jnt)) * mix(0.3, 1.0, laid) * (1.0 - up);
 	// (a field wall's joints are mostly shadow already: darkening their albedo as well made
 	// a near-black grid of them round pale stones)
-	col *= 1.0 - (jd * 0.08 + deep * mix(0.4, 0.15, field)) * mix(1.0, 0.3, lw);   // lime fills the joints
+	col *= 1.0 - (jd * 0.08 + deep * mix(0.4, 0.15, field)) * (1.0 - lw);   // lime fills the joints (and must match the skin)
 	// soil and moss lodged in the low joints
-	float lowj = deep * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
+	float lowj = deep * (1.0 - lw) * (1.0 - smoothstep(0.3, 1.8, above)) * smoothstep(0.35, 0.6, fbm(wp * 5.0 + 11.0));
 	col = mix(col, mix(joint_soil, moss_a * 0.8, smoothstep(0.45, 0.7, fbm(wp * 9.0))), lowj * 0.9);
 	mossw = max(mossw, lowj * 0.6);
 	float rough = max(mix(0.82, 0.95, mossw) - edge * 0.08 - walked * 0.12 + spall * 0.05, soot * 0.97);
 	rough = mix(rough, 0.48, polish);
-	weather_wetten(col, rough, mix(0.4, 1.0, mossw));
+	// limewashed: the stone crowns poke through the lime-mortar skin (mortar.gdshader wash),
+	// so they must shade exactly like it -- any step in roughness/sheen/AO/bump drew the
+	// crown-skin intersection as crisp pale patches on the sunlit lean-to
+	rough = mix(rough, 0.95, lw);
+	weather_wetten(col, rough, mix(mix(0.4, 1.0, mossw), 0.9, lw));
 	// door stones in the rain: the rubbed sandstone soaks a deep wet buff, and a skin of water
 	// lies in the shallow dish feet have worn in the top -- glassy, the drops ringing it --
 	// while the higher, rougher patches of the top only glisten
@@ -329,7 +333,7 @@ void fragment() {
 	ROUGHNESS = rough;
 	// soot is dead matte: no sheen of the fire on it; the wet top's broad glisten is held
 	// down (water's own reflectance is low, ~2%) so only the glassy film catches the light
-	SPECULAR = 0.4 * (1.0 - soot * 0.95) * (1.0 - wet_top * (1.0 - film) * 0.35);
+	SPECULAR = mix(0.4 * (1.0 - soot * 0.95) * (1.0 - wet_top * (1.0 - film) * 0.35), 0.3, lw);
 	// the spall's sunk floor: tilt the normal across its rim (the gradient of the spall field) so
 	// each scallop catches the light on one side and shades on the other
 	float se = 0.01;
@@ -349,8 +353,15 @@ void fragment() {
 		vec2 sl = rain_ripples(wp.xz, TIME, weather_rain) * 0.05 * film;
 		pn = normalize(pn + vec3(-sl.x, 0.0, -sl.y));
 	}
+	if (lw > 0.5) {
+		// the skin's own trowelled undulation (mortar.gdshader), not the stone's tooling
+		float lb = fbm(wp * 6.0 + 4.0);
+		vec3 lg = (vec3(fbm((wp + vec3(0.01, 0, 0)) * 6.0 + 4.0), fbm((wp + vec3(0, 0.01, 0)) * 6.0 + 4.0),
+		                fbm((wp + vec3(0, 0, 0.01)) * 6.0 + 4.0)) - lb) / 0.01;
+		pn = normalize(n - (lg - n * dot(lg, n)) * 0.012);
+	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field)) * (1.0 - sp_rim * 0.3)
+	AO = lw > 0.5 ? 0.92 : clamp(0.65 + s * 0.5, 0.0, 1.0) * (1.0 - (jd * 0.3 + deep * 0.3) * mix(1.0, 0.45, field)) * (1.0 - sp_rim * 0.3)
 	   * (1.0 - mossw * ruin * (1.0 - fib) * 0.35);
 	ALBEDO *= v_cloud;
 	// bounce: strongest on faces turned sideways/down toward the lit ground, weak on tops

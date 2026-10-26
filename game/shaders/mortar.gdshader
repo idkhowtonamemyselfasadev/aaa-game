@@ -50,12 +50,6 @@ void fragment() {
 	float coat = fbm(wp * 2.6 + 7.0);
 	vec3 lwc = limewash * (0.86 + 0.2 * coat) * (0.96 + 0.07 * vn(wp * 90.0));
 	lwc = mix(lwc, lwc * vec3(0.95, 0.94, 0.88), smoothstep(0.4, 0.8, fbm(wp * 0.7 + 3.0)));
-	float side = 1.0 - smoothstep(0.3, 0.7, abs(normalize(wn).y));
-	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
-	lwc *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));
-	float splash = 1.0 - smoothstep(0.0, 0.45 + 0.35 * fbm(wp * vec3(2.5, 0.4, 2.5) + 1.0), ab);
-	vec3 grimec = mix(vec3(0.36, 0.34, 0.29), lime_algae, smoothstep(0.4, 0.65, fbm(wp * 4.0 + 2.0)));
-	lwc = mix(lwc, grimec * (0.85 + 0.3 * coat), splash * 0.8);
 	// on the white cottage the lime core stands a hair proud of the stone faces, so it IS the
 	// wall's skin over the sunk stones: the same small flaked patches as masonry a = 4 (the
 	// rubble showing grey through), and a soft trowelled undulation instead of a flat plane
@@ -67,6 +61,14 @@ void fragment() {
 	under = mix(under, lwc * 0.85, 0.3 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
 	lwc = mix(lwc, lwc * vec3(0.95, 0.92, 0.84), older);
 	lwc = mix(lwc * (1.0 - rim * 0.16), under, flake);
+	// rain runs and splash grime over the flaked coats too, in masonry's order (laid on before
+	// the flaking, every flake in the grimed foot showed clean pale stone: the lean-to's patches)
+	float side = 1.0 - smoothstep(0.3, 0.7, abs(normalize(wn).y));
+	float runs = smoothstep(0.5, 0.82, fbm(vec3(wp.x * 6.0, wp.y * 0.22, wp.z * 6.0) + 9.0)) * side;
+	lwc *= 1.0 - runs * (0.08 + 0.14 * smoothstep(1.2, 2.6, ab));
+	float splash = 1.0 - smoothstep(0.0, 0.45 + 0.35 * fbm(wp * vec3(2.5, 0.4, 2.5) + 1.0), ab);
+	vec3 grimec = mix(vec3(0.36, 0.34, 0.29), lime_algae, smoothstep(0.4, 0.65, fbm(wp * 4.0 + 2.0)));
+	lwc = mix(lwc, grimec * (0.85 + 0.3 * coat), splash * 0.8);
 	col = mix(col, lwc, wash);
 	float bump = fbm(wp * 6.0 + 4.0);
 	vec3 e = vec3(0.01, 0.0, 0.0);

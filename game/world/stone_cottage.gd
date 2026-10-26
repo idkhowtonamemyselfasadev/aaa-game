@@ -283,7 +283,10 @@ func _place_rubble(c: Vector3, b: Basis, size: Vector3) -> void:
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
-	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
+	# (limewashed: below the floor too, so the shader's per-fragment height off the floor --
+	# the coats' flaking, splash and runs -- lines up with the mortar skin's `ground_y`; clamped
+	# at 0 each low stone counted from its own centre and its crown broke the skin's pattern)
+	var above := clampf((c.y - floor_y) / 8.0, -1.0 if limewash else 0.0, 1.0)
 	_rubble[_rng.randi() % VARIANTS].append([xf, Color(above, _rng.randf(), 1.0, 4.0 if limewash else 2.5)])
 	stone_count += 1
 
@@ -301,7 +304,7 @@ func _place(c: Vector3, b: Basis, size: Vector3, tint: float, mode := 1.0) -> vo
 		sc.x = -sc.x
 		sc.z = -sc.z
 	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c)
-	var above := clampf((c.y - floor_y) / 8.0, 0.0, 1.0)
+	var above := clampf((c.y - floor_y) / 8.0, -1.0 if mode > 3.5 else 0.0, 1.0)
 	_per[v].append([xf, Color(above, tint, 1.0, mode)])
 	stone_count += 1
 
