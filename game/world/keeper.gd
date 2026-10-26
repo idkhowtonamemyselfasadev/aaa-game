@@ -1002,6 +1002,8 @@ func _skin() -> void:
 			mat.set_shader_parameter("restyle", 1.0)
 			# no armour on her: the base body's plates and iron read as wool and linen
 			mat.set_shader_parameter("cloth_body", 1.0)
+			# her sleeves the robe's slate woad, not the default undyed grey
+			mat.set_shader_parameter("wool", Color(0.31, 0.32, 0.335))
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)

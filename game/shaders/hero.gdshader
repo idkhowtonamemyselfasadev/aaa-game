@@ -129,7 +129,8 @@ void fragment() {
 			// woven texture: a fine twill and slubs so the plates read as cloth, not paint
 			float tw = 0.5 + 0.5 * sin((UV.x + UV.y) * 1400.0);
 			float slub = h_noise(UV * vec2(300.0, 40.0));
-			vec3 w = wool * (0.78 + 0.18 * tw + 0.22 * mott) * mix(0.85, 1.1, slub);
+			// the plate mottle kept low: at 0.22 the sleeves read as pale camouflage blotches
+			vec3 w = wool * (0.86 + 0.14 * tw + 0.09 * mott) * mix(0.9, 1.06, slub);
 			vec3 ln = linen * (0.8 + 0.25 * h_noise(UV * vec2(25.0, 420.0)) + 0.1 * tw);
 			vec3 cl = mix(w, ln, iron_m);
 			cl = mix(cl, vec3(0.20, 0.12, 0.08) * (0.8 + 0.4 * mott), red_m * 0.7);

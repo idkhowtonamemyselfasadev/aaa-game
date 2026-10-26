@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-1136-dog-sun.jpg",
-  "time": "2026-10-20T11:36:00Z",
-  "caption": "Brack lying in the sun on the trodden track before the white cottage: he reads as a low black-and-white dog lying down, but he is small, in the shade of the tall foreground grass, and the near grass is a dark wall.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1158-dog-doze.jpg",
   "time": "2026-10-20T11:58:00Z",
   "caption": "Moonlit night at Edda's cottage with fireflies over the meadow; Brack asleep by the door under the bench is only a dim dark shape and the foreground is crushed black.",
@@ -885,6 +879,12 @@
   "file": "20261026-0527-valley-dusk.jpg",
   "time": "2026-10-26T05:27:20Z",
   "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0633-edda-wool.jpg",
+  "time": "2026-10-26T06:33:27Z",
+  "caption": "Edda at the woodpile at 10 h: her sleeves now read as the kirtle's rust wool instead of pale mottled grey; the coif still reads as a pale blotchy cowl and the lean-to wall is a flat white box with sticker-like plaster patches.",
   "verdict": "fail"
  }
 ]

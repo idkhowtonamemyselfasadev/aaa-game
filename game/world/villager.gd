@@ -919,6 +919,8 @@ func _skin() -> void:
 			mat.set_shader_parameter("roughness", src.roughness)
 			mat.set_shader_parameter("restyle", 1.0)
 			mat.set_shader_parameter("cloth_body", 1.0)
+			# her sleeves the kirtle's rust wool, not the default undyed grey (read pale mottled grey)
+			mat.set_shader_parameter("wool", Color(0.36, 0.18, 0.125))
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
