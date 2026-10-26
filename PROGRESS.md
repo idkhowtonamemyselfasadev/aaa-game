@@ -33,7 +33,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (09:00 10-26) **Lean-to quoins buried, round tops dulled** (code in; shot pending at commit time): the lean-to's
+- (09:00 10-26) **Lean-to quoins buried, round tops dulled** (shot `villager leanto 40 10` looked at: the dark triangles on the lean-to box are gone, round tops duller; the big pale crisp patches REMAIN): the lean-to's
   sticker-like pale patches traced to the dressed quoin blocks (StoneCottage._stone, mode 4): flat faces offset up to
   7 mm and tilted ±0.025 rad (±11 mm at a 0.9 m block's ends) cut through the 6 mm lime skin in crisp polygons, on the
   wall face and on the open front end. With `limewash` the quoins now sit within ±2 mm and tilt 0.12x as much, and
@@ -5271,9 +5271,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (09:00 10-26) Lean-to quoins buried (see Done). NEXT: look at `shots/leanto.png` (`villager leanto 40 10`) if a
-   later session has none, re-shoot; confirm the lean-to box lost its stickers and the round tops read grey-brown.
-   If the box now reads as a crisp flat plastered box: soiling/plinth up from lean_floor (mortar `ground_y` is the
+0. (09:00 10-26) Lean-to quoins buried (see Done). NEXT: the big pale crisp-edged patches on the lean-to's outer wall
+   (front end and outer face, in sun at 10 h) are NOT the quoins: test by temporarily skipping wall-4 rubble
+   (`_course(4, ...)` in white_cottage.gd `_extras`) or tinting masonry a = 4 red in a shot to see whether they are
+   rubble crowns lit brighter than the mortar skin (masonry vs mortar AO 1.0 vs 0.92, normals); if so, sink wall 4/5
+   rubble deeper under the skin (proud for limewash) or match AO/emission. Then: soiling/plinth up from lean_floor (mortar `ground_y` is the
    house floor, the lean-to foot sits lower), a slightly bellied/bevelled outer arris; then Edda's coif, dusk 7 h /
    21 h `valley`; hero small/dull at `herocu`; sash knot from the right; tall-grass impostor band; kites.
 0. (07:00 10-26) White walls de-blocked (see Done). NEXT: (a) the lean-to's outer box still has sticker-like pale
