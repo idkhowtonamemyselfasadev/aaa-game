@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261021-0210-kitemob.jpg",
-  "time": "2026-10-21T02:10:00Z",
-  "caption": "A red kite pulls up from its stoop over the meadow with four rooks mobbing it from below; the birds read, but the frame is mostly empty sky and one cloud shows a hard straight top edge.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0229-osric-brim.jpg",
-  "time": "2026-10-21T02:29:00Z",
-  "caption": "Osric at dawn by his cottage: the felt brim now droops all round like a slouch hat and the wool cape has lost its wood-grain streaks, but the beard still shows fine vertical streaks and the skin reads flat orange.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-0350-pedlar.jpg",
   "time": "2026-10-21T03:50:00Z",
   "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
@@ -885,6 +873,18 @@
   "file": "20261026-2232-hare-meadow.jpg",
   "time": "2026-10-26T22:32:29Z",
   "caption": "A brown hare sat up watching in the south-east meadow at 9 h (centre, by the mossy stone): it reads as a small brown animal in the grass, but at this lens it is only ~40 px, its ears glow pale instead of buff with black tips and its stretched forelegs look fawn-like.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2349-night21-valley.jpg",
+  "time": "2026-10-26T23:49:53Z",
+  "caption": "The Vale at 21 h after the night fix: the far mountain ring now sits dark behind the valley with moonlit ridge faces and its foot sunk into the night air instead of a flat pale-blue cut-out; the near hills now merge with it a little and the cottages still read as bare white specks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2349-hare-meadow2.jpg",
+  "time": "2026-10-26T23:49:53Z",
+  "caption": "The south-east meadow at 9 h from the new closer hare lens: the sward and stones read well, but the hare walked off its mark during warm-up, so it sits small at the bottom edge feeding and its ears still show a pale patch.",
   "verdict": "fail"
  }
 ]

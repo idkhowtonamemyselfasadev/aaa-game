@@ -611,7 +611,9 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	# affect 1.0), so a ring hazed in the dark fog colour stood black behind a glowing blue
 	# band; give it the moonlit horizon blue instead, a shade darker than that band
 	var nt := clampf(moon.light_energy / 1.25, 0.0, 1.0) if moon and moon.visible else 0.0
-	hc = hc.lerp(Color(0.045, 0.06, 0.12), nt)   # nt already falls with cloud (moon dims)
+	# (halved 10-26: at 0.045,0.06,0.12 the fully hazed ring read as a flat pale-blue cut-out,
+	# brighter than the black hills in front of it)
+	hc = hc.lerp(Color(0.02, 0.027, 0.055), nt)   # nt already falls with cloud (moon dims)
 	# under a closing deck the fog colour (lit for the near air) was brighter than the dark
 	# cloud base behind the ridges, so a storm left the fully hazed ring standing as pale
 	# flat cut-outs against the sky; the haze now sinks toward the deck's value with height
@@ -627,7 +629,7 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	var sky_est := Color(0.5, 0.47, 0.37).lerp(Color(0.62, 0.48, 0.4), _sky_low) \
 			* lerpf(0.04, 1.0, _sky_glow * _sky_glow)
 	var vc := fog_lin.lerp(sky_est, e.fog_aerial_perspective)
-	vc = vc.lerp(Color(0.045, 0.06, 0.12), nt)
+	vc = vc.lerp(Color(0.01, 0.013, 0.026), nt)   # the low ring's base sinks into the night valley
 	mat.set_shader_parameter("valley_color", Vector3(vc.r, vc.g, vc.b))
 	mat.set_shader_parameter("valley_density", CLEAR_FOG * (1.0 - c))
 	mat.set_shader_parameter("haze_top", lerpf(1.0, 0.55, smoothstep(0.35, 1.0, c)))

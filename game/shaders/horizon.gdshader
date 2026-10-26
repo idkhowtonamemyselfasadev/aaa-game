@@ -232,13 +232,19 @@ void fragment() {
 	float far = smoothstep(250.0, 1100.0, dist);
 	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.45, night * snoww);
 	SPECULAR *= 1.0 - 0.7 * night;
+	// the foothills' feet fall into the valley's night shadow (moonlight grazes the ridges,
+	// the low ring sits in the dark air over the floor), so the ring is never brighter at its
+	// base than the black hills in front of it
+	ALBEDO *= mix(1.0, mix(0.3, 1.0, smoothstep(40.0, 320.0, wpos.y)), night);
 	float y0 = max(CAMERA_POSITION_WORLD.y, 0.0);
 	float y1 = max(wpos.y, 0.0);
 	float dy = y1 - y0;
 	// mean of exp(-y / valley_h) along the ray (exact for a straight ray)
 	float hf = abs(dy) > 0.5 ? valley_h * (exp(-y0 / valley_h) - exp(-y1 / valley_h)) / dy : exp(-y0 / valley_h);
 	float tau_v = min(dist, valley_len) * valley_density * hf;
-	float tau_o = dist * haze_density * haze_scale;
+	// clear night air: the moonlit haze no longer flattens the ring into one value, so the
+	// moon's lit and shadowed faces (the engine's N.L on the bent normals) carry its form
+	float tau_o = dist * haze_density * haze_scale * mix(1.0, 0.55, night);
 	vec3 own = haze_color * mix(1.0, haze_top, smoothstep(60.0, 380.0, wpos.y));
 	vec3 fc = (own * tau_o + valley_color * tau_v) / max(tau_o + tau_v, 1e-6);
 	FOG = vec4(fc, 1.0 - exp(-(tau_o + tau_v)));

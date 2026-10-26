@@ -53,7 +53,7 @@ void vertex() {
 	int leg = int(round(COLOR.r * 4.0)) - 1;
 	bool fore = leg == 0 || leg == 1;
 	float sit = smoothstep(0.0, 1.0, alert) * (1.0 - run);
-	float pitch = 0.42 * sit;                 // the front lifts onto straight forelegs
+	float pitch = 0.32 * sit;                 // the front lifts onto straight forelegs (0.42 read fawn-like, too upright)
 	if (leg >= 0) {
 		vec3 hip = HIP[leg];
 		float ph = ph0 + TAU * GAIT_OFF[leg];
@@ -180,6 +180,6 @@ void fragment() {
 	ALBEDO *= v_cloud;
 	float ao = mix(0.55, 1.0, smoothstep(0.02, 0.18, p.y));
 	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);
-	BACKLIGHT = col * (0.08 + 0.7 * ear);
+	BACKLIGHT = col * (0.08 + 0.25 * ear);   // 0.7 made the ears a pale glowing blob
 	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25 + (flow - 0.5) * 0.3, 0.5 + (clump - 0.5) * 0.15 + (tuft - 0.5) * 0.2, 1.0));
 }
