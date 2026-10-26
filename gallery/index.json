@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-1540-osric-face.jpg",
-  "time": "2026-10-20T15:40:01Z",
-  "caption": "Osric at his door at 07:00 with an older, paler skin in place of the orange mask; FAIL: the beard (this frame from before the re-tune) reads as a flat white plaster patch, an eye still glints red and armour shows at the collar.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1540-osric-lean.jpg",
   "time": "2026-10-20T15:40:01Z",
   "caption": "Osric leaning on the garth wall at 09:30, head now lifted to look out over the field, hens on the garth, the vale and peaks behind; FAIL: he is too small and side-on to read his face, and the forearm wraps are still blocky.",
@@ -891,6 +885,12 @@
   "file": "20261026-1403-leanto-sunk.jpg",
   "time": "2026-10-26T14:03:48Z",
   "caption": "White cottage at 10 h after sinking every stone under a thicker lime skin: the stone-crown flecks are gone; the pale grey peeled patches left on the lean-to are the skin's own flaking and still read a little like stickers in shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1459-leanto-flakes.jpg",
+  "time": "2026-10-26T14:59:49Z",
+  "caption": "Edda at the woodpile by the white cottage at 10 h: the lean-to's peeled lime flakes now sit darker and recessed instead of glowing pale in shade; the lean-to still reads as a crisp white box and Edda's coif as a pale blotchy cowl.",
   "verdict": "fail"
  }
 ]

@@ -57,10 +57,12 @@ void fragment() {
 	float flake = smoothstep(0.715, 0.75, fn) * wash;
 	float older = smoothstep(0.69, 0.705, fn + 0.02 * (vn(wp * 40.0) - 0.5)) * (1.0 - flake) * wash;
 	float rim = smoothstep(0.7, 0.715, fn) * (1.0 - flake) * wash;
-	vec3 under = vec3(0.47, 0.44, 0.39) * (0.85 + 0.3 * vn(wp * 30.0));
-	under = mix(under, lwc * 0.85, 0.3 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
+	// the coat under a flake is old grimy lime a few mm down, darker than the skin round it (at
+	// 0.47 with a x0.84 dark rim and no recess, the flakes read LIGHTER than the lime in shade)
+	vec3 under = vec3(0.36, 0.34, 0.30) * (0.85 + 0.3 * vn(wp * 30.0));
+	under = mix(under, lwc * 0.7, 0.25 * smoothstep(0.3, 0.7, vn(wp * 24.0)));
 	lwc = mix(lwc, lwc * vec3(0.95, 0.92, 0.84), older);
-	lwc = mix(lwc * (1.0 - rim * 0.16), under, flake);
+	lwc = mix(lwc * (1.0 - rim * 0.06), under, flake);
 	// rain runs and splash grime over the flaked coats too, in masonry's order (laid on before
 	// the flaking, every flake in the grimed foot showed clean pale stone: the lean-to's patches)
 	float side = 1.0 - smoothstep(0.3, 0.7, abs(normalize(wn).y));
@@ -76,12 +78,18 @@ void fragment() {
 	gb /= 0.01;
 	vec3 nn = normalize(wn);
 	vec3 pn = normalize(nn - (gb - nn * dot(gb, nn)) * 0.012 * wash);
+	// the flake's edge is a 1-2 mm step down: tilt the normal across it (gradient of fn) so the
+	// lip catches light on one side and shades on the other, and the floor reads recessed
+	vec3 fg = vec3(fbm((wp + e.xyy) * 3.4 + 13.0), fbm((wp + e.yxy) * 3.4 + 13.0), fbm((wp + e.yyx) * 3.4 + 13.0)) - fbm(wp * 3.4 + 13.0);
+	fg /= 0.01;
+	float step_w = smoothstep(0.7, 0.72, fn) * (1.0 - smoothstep(0.72, 0.76, fn)) * wash;
+	pn = normalize(pn + (fg - nn * dot(fg, nn)) * 0.05 * step_w);
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	float rough = 0.95;
 	weather_wetten(col, rough, 0.9);
 	ALBEDO = col * v_cloud;
 	ROUGHNESS = rough;
 	SPECULAR = 0.3;
-	AO = mix(mix(0.55, 0.8, g), 0.92, wash);
+	AO = mix(mix(0.55, 0.8, g), mix(0.92, 0.8, flake), wash);
 	EMISSION = ALBEDO * bounce_light * mix(0.6, 1.0, wash) * AO;
 }
