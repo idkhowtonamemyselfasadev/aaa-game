@@ -237,7 +237,10 @@ func _extras() -> void:
 	var wall_top := floor_y + lean_top(ox) - RAFTER - 0.12
 	while y < wall_top - 0.06:
 		var h := minf(_course_h(), wall_top - y)
+		# the head course stands free under the inset wall plate: round its lime over
+		_skin_top = y + h >= wall_top - 0.06
 		_course(4, -LEAN_Z, LEAN_Z, y, h, true, true)
+		_skin_top = false
 		y += h
 	y = lo - 0.3
 	while true:

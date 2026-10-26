@@ -257,7 +257,7 @@ func _mortar_run(w: int, along: float, cy: float, size: Vector3, q0 := false, q1
 		# arris at a corner and both arrises at a free wall end, and the faces undulate a little
 		var c: Vector3 = wa[1]
 		var outs := signf(dir.cross(Vector3.UP).dot(Vector3(c.x, 0.0, c.z)))
-		_skin.append([Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)), c), size, q0, q1, outs, _free_end(w, -1.0), _free_end(w, 1.0)])
+		_skin.append([Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)), c), size, q0, q1, outs, _free_end(w, -1.0), _free_end(w, 1.0), _skin_top])
 		return
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
@@ -670,6 +670,10 @@ func _free_end(_w: int, _e: float) -> bool:
 
 const SKIN_R := 0.06       # radius the lime coats round a corner or free end to
 const SKIN_WAVE := 0.004   # +- undulation of the hand-laid coats
+const SKIN_TOP_R := 0.055  # radius the coats round over a free wall head (the lean-to's, under its plate)
+## Set while laying a wall's last course whose head stands free (not under a roof deck):
+## its skin rounds over both long arrises instead of ending in a crisp slab edge.
+var _skin_top := false
 
 func _skin_wave(p: Vector3) -> float:
 	return sin(p.x * 2.3 + p.y * 1.1) * 0.45 + sin(p.z * 2.9 - p.y * 1.7 + 1.3) * 0.35 + sin((p.x - p.z) * 6.1 + p.y * 3.3 + 0.4) * 0.2
@@ -732,13 +736,30 @@ func _build_skin(m: Material) -> void:
 				var dd := da0 if k == 0 else (db0 if k == segs else n1)
 				edge.append([a.lerp(b, t), n1, dd])
 			pieces.append(edge)
-		var rows := maxi(1, ceili(size.y / 0.15))
+		# row heights; a free wall head adds a quarter-round over its top: [y, inset, cos, sin]
+		var top: bool = run[7]
+		var rt := minf(SKIN_TOP_R, minf(size.y * 0.5, lc * 0.4)) if top else 0.0
+		var body := size.y - rt
+		var nb := maxi(1, ceili(body / 0.15))
+		var hy := []
+		for j in nb + 1:
+			hy.append([-size.y * 0.5 + body * j / nb, 0.0, 1.0, 0.0])
+		if rt > 0.0:
+			for k in range(1, 5):
+				var th := PI * 0.5 * k / 4.0
+				hy.append([size.y * 0.5 - rt + rt * sin(th), rt * (1.0 - cos(th)), cos(th), sin(th)])
+		var rows := hy.size() - 1
 		var loop := []
 		for pc in pieces:
 			for k in pc.size():
 				var pts := []
+				var nf: Vector2 = pc[k][1]
+				var dd: Vector2 = pc[k][2]
+				# a crisp corner's diagonal moves 1/cos further so both faces inset alike
+				var f := 1.0 / maxf(dd.dot(nf), 0.5)
 				for j in rows + 1:
-					pts.append(_skin_pt(xf, pc[k], -size.y * 0.5 + size.y * j / rows))
+					var p := _skin_pt(xf, pc[k], hy[j][0])
+					pts.append(p - xf.basis * Vector3(dd.x, 0, dd.y) * hy[j][1] * f)
 				pc[k].append(pts)
 				loop.append(pts)
 			for k in pc.size() - 1:
@@ -751,11 +772,15 @@ func _build_skin(m: Material) -> void:
 					var v01: Vector3 = pc[k][3][j + 1]
 					var v10: Vector3 = pc[k + 1][3][j]
 					var v11: Vector3 = pc[k + 1][3][j + 1]
-					_skin_quad(st, [v00, v10, v11, v01], [wn, wr, wr, wn], (wn + wr).normalized())
+					var n0: Vector3 = wn * hy[j][2] + Vector3.UP * hy[j][3]
+					var n1: Vector3 = wn * hy[j + 1][2] + Vector3.UP * hy[j + 1][3]
+					var r0: Vector3 = wr * hy[j][2] + Vector3.UP * hy[j][3]
+					var r1: Vector3 = wr * hy[j + 1][2] + Vector3.UP * hy[j + 1][3]
+					_skin_quad(st, [v00, v10, v11, v01], [n0, r0, r1, n1], (n0 + r1).normalized())
 		# caps: fans from the run's middle over the bottom and top rings
 		for j in [0, rows]:
 			var up: Vector3 = Vector3.UP if j == rows else Vector3.DOWN
-			var mid: Vector3 = xf.origin + Vector3.UP * (-size.y * 0.5 + size.y * j / rows)
+			var mid: Vector3 = xf.origin + Vector3.UP * hy[j][0]
 			for k in loop.size():
 				var pa: Vector3 = loop[k][j]
 				var pb: Vector3 = loop[(k + 1) % loop.size()][j]
