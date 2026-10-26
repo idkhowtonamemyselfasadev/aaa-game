@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261020-1503-osric-flock.jpg",
-  "time": "2026-10-20T15:03:13Z",
-  "caption": "The hens have drifted over to peck round Osric's boots while he tends the sunlit garth; still wrong: he wears the hero's wide straw douli and a pale hood that reads as a mask, and stands stiff.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1503-osric-lean-face.jpg",
-  "time": "2026-10-20T15:03:13Z",
-  "caption": "Osric leaning on the garth wall at 9.5 h, close up: broken -- an oversized hat brim hides the bowed head entirely, the forearms are blocky stubs, and the cope stones are blurry at this range.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1540-osric-face.jpg",
   "time": "2026-10-20T15:40:01Z",
   "caption": "Osric at his door at 07:00 with an older, paler skin in place of the orange mask; FAIL: the beard (this frame from before the re-tune) reads as a flat white plaster patch, an eye still glints red and armour shows at the collar.",
@@ -891,6 +879,18 @@
   "file": "20261026-1231-leanto.jpg",
   "time": "2026-10-26T12:31:00Z",
   "caption": "Edda at the chopping block at 10 h: test with the lime flaking cut off up the wall -- the two pale blobs on the lean-to's shaded front end and the flecks by the window stayed, so they come from another surface; still a fail.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1403-leanto-debug.jpg",
+  "time": "2026-10-26T14:03:48Z",
+  "caption": "Debug tint (not shipped): masonry under lime red, lime skin blue, other plaster green -- the red flecks were stone crowns breaking through the white cottage's lime skin.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1403-leanto-sunk.jpg",
+  "time": "2026-10-26T14:03:48Z",
+  "caption": "White cottage at 10 h after sinking every stone under a thicker lime skin: the stone-crown flecks are gone; the pale grey peeled patches left on the lean-to are the skin's own flaking and still read a little like stickers in shade.",
   "verdict": "fail"
  }
 ]

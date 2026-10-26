@@ -22,6 +22,7 @@ extends Node3D
 const LEN := 8.4          # outer length along local X (m)
 const DEP := 5.6          # outer depth along local Z
 const T := 0.6            # wall thickness
+const LIME_PROUD := 0.01   # limewashed walls: the lime skin's stand-off from the stones' mean face
 const EAVES := 2.7        # wall plate above the floor
 const PITCH := 0.733      # roof pitch (rad, 42 degrees)
 const DECK := 0.2         # rafters + boards between the wall plate and the slates
@@ -201,8 +202,8 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 	if limewash:
 		# the coats wrap round the quoins' outer ends too, so the corner and a free wall end
 		# (the lean-to's open front) are one lime skin, not dressed block ends poking through
-		ma -= 0.006 if q0 else 0.0
-		mb += 0.006 if q1 else 0.0
+		ma -= LIME_PROUD if q0 else 0.0
+		mb += LIME_PROUD if q1 else 0.0
 	_mortar_run(w, (ma + mb) * 0.5, y + h * 0.5, Vector3(mb - ma, h, T - 0.06))
 	s = a
 	for i in lens.size():
@@ -246,9 +247,11 @@ func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
 	if limewash:
-		# coats laid on thick over the rubble: the lime stands ~6 mm proud of the stones' mean
-		# face, so most of them sink under it and only the proud crowns show as soft bumps
-		size.z = T + 0.012
+		# coats laid on thick over the rubble: the lime stands LIME_PROUD off the stones' mean
+		# face, so every stone sinks under it (at 6 mm the crowns of the bumpy split stones and
+		# tilted quoins still broke through in pale sky-lit blobs -- a red/blue debug tint shot
+		# showed them as masonry, not skin)
+		size.z = T + LIME_PROUD * 2.0
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
 ## Place one wall stone: wall-local (along, centre height) -> cottage local.
@@ -266,12 +269,12 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 			# a split face's crown cut through the 6 mm skin in crisp pale polygons (the lean-to's
 			# big "stickers"): sit the rubble ~5 mm further back, less proud and less skewed,
 			# so only the odd lumpy crown ghosts through the lime as a soft bump
-			proud = 0.006
+			proud = 0.003
 			tilt = 0.4
-			size.z = T - 0.01
+			size.z = T - 0.016
 		if quoin:
-			# a dressed block's flat face, a hair off square, cut through the 6 mm skin in
-			# crisp pale polygons (the lean-to's "stickers"): keep the quoins just under it
+			# a dressed block's flat face, a hair off square, cut through a thin skin in
+			# crisp pale polygons (the lean-to's "stickers"): keep the quoins well under it
 			proud = 0.002
 			tilt = 0.12
 	c += dir.cross(Vector3.UP) * _rng.randf_range(-proud, proud)
@@ -359,7 +362,7 @@ func _walls() -> void:
 		for side in [-1.0, 1.0]:
 			var zc: float = side * wdep * 0.25
 			var c := Vector3(gx * (wlen * 0.5 - T * 0.5), floor_y + roof_under(zc) - 0.15 / cos(PITCH), zc)
-			_mortar.append(Transform3D(Basis(Vector3.RIGHT, PITCH * side) * Basis.from_scale(Vector3(T + 0.012 if limewash else T - 0.03, 0.3, run)), c))
+			_mortar.append(Transform3D(Basis(Vector3.RIGHT, PITCH * side) * Basis.from_scale(Vector3(T + LIME_PROUD * 2.0 if limewash else T - 0.03, 0.3, run)), c))
 
 func _chimney() -> void:
 	var x0 := -wlen * 0.5
