@@ -5299,6 +5299,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (15:45 10-26) A parallel session redid the same flake fix (without the normal step) and dropped it on rebase;
+   its shot `villager leanto4 40 10` confirmed the darker `under` + flake AO alone already fixes the pale blobs.
+   Observation from that shot for the list below: the woodpile beside the lean-to reads as flat beige/brown
+   polygons (low-poly look) -- give the split logs bark sides and end-grain faces. SESSIONS: pull first and read
+   the newest Next item before starting, two sessions overlapped on this one.
 0. (14:10 10-26) Flakes fixed (see Done). The white cottage has had ~10 sessions in a row: MOVE ON. Next, in order:
    Edda's linen coif (pale blotchy cowl at `villager` 10 h: darken/de-mottle its `hood` palette, smooth folded
    linen); the lean-to still reads as a crisp white box (soften its outer arris, plinth from the real ground);
