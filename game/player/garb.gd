@@ -71,6 +71,9 @@ var fill_gain := 1.0
 var smock := false
 ## The mantle in fulled wool (fuzz, pills, soft creases) rather than the hero's smooth cape.
 var mantle_wool := false
+## The hood in fine bleached linen (a woman's coif) rather than fulled wool: the wool's fuzz,
+## pills and crease blotches read as a pale camouflage cowl on a light cloth.
+var hood_linen := false
 ## Each elbow (left, right) in the mantle's mesh space, fed to its shader so the cape lifts
 ## over a raised arm.
 var elbow_in_cape: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
@@ -107,7 +110,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# hem where it falls over the mantle
 	var hood := _piece(_hood(), 0.0, 0.0, 0.0, 1.2)
 	var hdm := hood.material_override as ShaderMaterial
-	hdm.set_shader_parameter("wool", 1.0)
+	hdm.set_shader_parameter("wool", 0.3 if hood_linen else 1.0)
 	hdm.set_shader_parameter("hem_band", 1.0)
 	hdm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(hood)
@@ -127,7 +130,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		tint = palette.get("veil", tint if palette.has("hood") else VEIL)
 		veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
 		var vm := veil.material_override as ShaderMaterial
-		vm.set_shader_parameter("wool", 1.0)
+		vm.set_shader_parameter("wool", 0.3 if hood_linen else 1.0)
 		vm.set_shader_parameter("fold_ao", 1.0)
 	head.add_child(veil)
 	_add_face(head)
