@@ -5285,6 +5285,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (12:00 10-26) NEGATIVE RESULT, no code change: re-shot `villager leanto2 40 10` on f289721 with flaking cut off
+   above ~1.6 m in BOTH masonry and mortar (`fn -= smoothstep(0.9, 1.6, ab) * 0.2`) -- the two pale blobs on the
+   lean-to's front END face (x~1000 y~330/450) and the small pale flecks on the main wall by the right window
+   (x~805 y~355) did NOT change, so they are not (only) the `fn` flake term; change reverted. The end stones are
+   quoins whose ends sit 13.5 mm inside the mortar core's end (6 mm wrap + 7.5 mm gap), so they should not poke out
+   either. Pale + bluer + darker rim IN SHADE reads like an up-tilted normal catching sky: suspect a rubble/quoin
+   crown or the mortar run's END cap (check its normal / the run box's end faces vs `_mortar_run` size) or the
+   mortar bump (`pn`). NEXT: one DEBUG shot only: set ALBEDO = vec3(1,0,0) in masonry when lw>0.5 and
+   vec3(0,0,1) in mortar when wash>0.5 (do not commit), `villager dbg 40 10`; whichever colour the blobs take
+   settles it. Shots take ~30 min here: start it in the first 2 minutes of the session.
 0. (11:35 10-26) Rubble sunk under the lime on the white cottage (see Done; merged on top of 10:00's lean-to fix,
    bots re-run, NOT re-shot). NEXT: re-shoot `villager leanto 40 10` on current main to check both fixes together, then
    continue with the 10:00 item below.
@@ -6290,6 +6300,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (12:00 10-26) Full bots.sh now exceeds a 30-min background cap (39 passed before the kill). Of the failures, `herd` and `lantern` passed alone; `yardpath` ("hero does not splash in the track pool") FAILED ALONE too, on unchanged game code (f289721) -- now a reproducible pre-existing failure, fix next time bots matter (wade splash count at 4x time scale). Split bots.sh into two batches to stay under the cap.
 - (02:50 10-26) Parallel sessions again built the same item (valley ring haze): a 02:00 session tuned the low ring with a `haze_low` colour/density band while 02:12's integrated valley-air term (e4c517b) landed; this session's version was dropped unrendered (its shot was killed) and main's kept. No screenshots or gallery entries from this session.
 - (01:40 10-26) ~~`combat` bot FAILS on main~~ FIXED 02:50 10-26 (bot.gd `_finish` now waits up to 240 frames for the sward to reach 4 chunks / 4000 clumps; passed with 4 chunks, 6378 clumps). Was: fails on main (checked with a clean tree): "short sward did not stream in (3 chunks,
   4172 clumps)" -- bot.gd ~line 269 wants >= 4 sward chunks right at the start and on the slow cloud box only 3

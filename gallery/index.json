@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261020-1430-osric-lean.jpg",
-  "time": "2026-10-20T14:30:22Z",
-  "caption": "Osric leaning on the garth wall at 09:30 with the hens and his stone cottage behind; FAIL: his head bows so far that the hat brim hides his face, and the forearm wraps read as blocky cylinders over the cope.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1503-osric-flock.jpg",
   "time": "2026-10-20T15:03:13Z",
   "caption": "The hens have drifted over to peck round Osric's boots while he tends the sunlit garth; still wrong: he wears the hero's wide straw douli and a pale hood that reads as a mask, and stands stiff.",
@@ -891,6 +885,12 @@
   "file": "20261026-1109-leanto.jpg",
   "time": "2026-10-26T11:09:37Z",
   "caption": "Edda at the chopping block at 10 h: the lean-to's grimy lower wall no longer breaks out in big pale patches (the lime shader flaked after griming), but two pale flakes still sit high on its shaded front end and the wall foot is one flat grime band.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1231-leanto.jpg",
+  "time": "2026-10-26T12:31:00Z",
+  "caption": "Edda at the chopping block at 10 h: test with the lime flaking cut off up the wall -- the two pale blobs on the lean-to's shaded front end and the flecks by the window stayed, so they come from another surface; still a fail.",
   "verdict": "fail"
  }
 ]
