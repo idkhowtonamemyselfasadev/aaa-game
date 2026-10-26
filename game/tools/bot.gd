@@ -253,6 +253,12 @@ func _finish(ok: bool, why: String) -> void:
 	_i = _route.size() + 1
 	# grass must have streamed in around wherever the bot ended up
 	var grass := _world.get_node("Grass")
+	# the short sward streams in a frame slice at a time; on a slow box only 3 of its
+	# chunks were up when a short route ended, so give it up to ~4 s before judging it
+	var waited := 0
+	while ok and (grass.sward_chunks() < 4 or grass.sward_clumps() < 4000) and waited < 240:
+		await get_tree().process_frame
+		waited += 1
 	print("BOT grass chunks loaded: %d" % grass.loaded_chunks())
 	if ok and grass.loaded_chunks() < 10:
 		ok = false
