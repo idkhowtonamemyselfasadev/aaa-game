@@ -439,6 +439,8 @@ func _woodpile(gx: float, ox: float) -> void:
 	for v in meshes.size():
 		items.append([])
 	# the stack: rows along the end wall, two logs deep, ends toward the open front
+	# (custom a = how far back in the stack the log's front end sits, 0 front row .. 0.5 back
+	# row, metres / 0.76: firewood.gdshader shades the stack's depths; 1 = not in the stack)
 	var x0 := gx + 0.12
 	var x1 := ox - T - 0.08
 	var zb := -LEAN_Z + T + 0.2
@@ -454,7 +456,7 @@ func _woodpile(gx: float, ox: float) -> void:
 				var b := Basis(Vector3.RIGHT, PI * 0.5) * Basis(Vector3.UP, ang)
 				b = Basis.from_euler(Vector3(_rng.randf_range(-0.06, 0.06), _rng.randf_range(-0.08, 0.08), 0)) * b
 				var c := Vector3(x + w * 0.5 + _rng.randf_range(-0.02, 0.02), yl + _rng.randf_range(-0.015, 0.015), zb + row * 0.38 + _rng.randf_range(-0.04, 0.05))
-				items[v].append([Transform3D(b.scaled(Vector3.ONE * _rng.randf_range(0.9, 1.1)), c), Color(_rng.randf(), _rng.randf_range(0.1, 0.6), float(_rng.randf() < 0.3), 1.0)])
+				items[v].append([Transform3D(b.scaled(Vector3.ONE * _rng.randf_range(0.9, 1.1)), c), Color(_rng.randf(), _rng.randf_range(0.35, 0.8), float(_rng.randf() < 0.3), 0.5 - row * 0.5)])
 				logs += 1
 			x += w
 		yl += 0.125
