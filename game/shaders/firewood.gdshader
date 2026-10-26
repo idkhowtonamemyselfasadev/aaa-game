@@ -80,13 +80,15 @@ void fragment() {
 	barkc = mix(barkc, vec3(0.3, 0.34, 0.2), smoothstep(0.6, 0.75, fbm(sd * 7.0)) * season * 0.6);
 	vec3 col = wood * split + endc * end_face + barkc * bark;
 	col *= mix(0.85, 1.1, cust.r);
-	float rough = mix(0.82, 0.96, bark) - end_face * 0.04;
+	// open end grain is porous and dull: at the low, grazing angle the shots see the block and
+	// the waiting rounds from, a smoother end caught the sky's sheen and read pale grey-white
+	float rough = mix(mix(0.82, 0.96, bark), 0.98, end_face);
 	if (exposed > 0.5) {
 		weather_wetten(col, rough, 0.9);
 	}
 	ALBEDO = col * v_cloud;
 	ROUGHNESS = rough;
-	SPECULAR = 0.3;
+	SPECULAR = mix(0.3, 0.1, end_face);
 	// relief: bark fissures and the fibres of the split faces bend the light
 	float e = 0.002;
 	vec3 g;

@@ -33,6 +33,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (09:00 10-26) **Lean-to quoins buried, round tops dulled** (code in; shot pending at commit time): the lean-to's
+  sticker-like pale patches traced to the dressed quoin blocks (StoneCottage._stone, mode 4): flat faces offset up to
+  7 mm and tilted ±0.025 rad (±11 mm at a 0.9 m block's ends) cut through the 6 mm lime skin in crisp polygons, on the
+  wall face and on the open front end. With `limewash` the quoins now sit within ±2 mm and tilt 0.12x as much, and
+  `_run` extends the mortar skin 6 mm past each quoin end so corners and free wall ends are one lime skin (rng call
+  order unchanged, so the layout is identical). firewood.gdshader: end grain roughness 0.98, specular 0.1 (the pale
+  tops of the rounds/block were grazing-angle sky sheen). Bots whitehouse, leanto, villager, chop, walk pass.
 - (07:00 10-26) **White walls de-blocked**: the stone-shaped grey patches on the white cottage were the stone crowns
   that poke through the lime-mortar skin (stone_cottage.gd: limewashed mortar core stands 6 mm proud, so most of
   the wall IS mortar.gdshader with `wash` = 1). 06:50 aged masonry's lime to 0.64 but left the mortar skin at 0.74,
@@ -5264,6 +5271,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:00 10-26) Lean-to quoins buried (see Done). NEXT: look at `shots/leanto.png` (`villager leanto 40 10`) if a
+   later session has none, re-shoot; confirm the lean-to box lost its stickers and the round tops read grey-brown.
+   If the box now reads as a crisp flat plastered box: soiling/plinth up from lean_floor (mortar `ground_y` is the
+   house floor, the lean-to foot sits lower), a slightly bellied/bevelled outer arris; then Edda's coif, dusk 7 h /
+   21 h `valley`; hero small/dull at `herocu`; sash knot from the right; tall-grass impostor band; kites.
 0. (07:00 10-26) White walls de-blocked (see Done). NEXT: (a) the lean-to's outer box still has sticker-like pale
    patches and crisp arrises -- find which shader draws it (it ignored both masonry and mortar edits? check the
    STACK core in stone_cottage.gd ~line 350 / white_cottage.gd wall 4) and give it the same mortar wash, a plinth

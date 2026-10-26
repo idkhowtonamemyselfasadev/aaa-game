@@ -196,7 +196,14 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 		if take > 0.0:
 			lens[-1] += take
 			lens[-2] -= take
-	_mortar_run(w, (a + b) * 0.5, y + h * 0.5, Vector3(b - a, h, T - 0.06))
+	var ma := a
+	var mb := b
+	if limewash:
+		# the coats wrap round the quoins' outer ends too, so the corner and a free wall end
+		# (the lean-to's open front) are one lime skin, not dressed block ends poking through
+		ma -= 0.006 if q0 else 0.0
+		mb += 0.006 if q1 else 0.0
+	_mortar_run(w, (ma + mb) * 0.5, y + h * 0.5, Vector3(mb - ma, h, T - 0.06))
 	s = a
 	for i in lens.size():
 		var ln: float = lens[i]
@@ -252,10 +259,16 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 	# faces stand a little proud or sunk (rubble more than the dressed quoins), stones sit a
 	# hair off square
 	var proud := 0.018 if quoin else 0.032
+	var tilt := 1.0
 	if limewash:
 		proud *= 0.4     # the coats fill the hollows and round the faces into one skin
+		if quoin:
+			# a dressed block's flat face, a hair off square, cut through the 6 mm skin in
+			# crisp pale polygons (the lean-to's "stickers"): keep the quoins just under it
+			proud = 0.002
+			tilt = 0.12
 	c += dir.cross(Vector3.UP) * _rng.randf_range(-proud, proud)
-	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)))
+	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)) * tilt)
 	if quoin:
 		_place(c, b, size, _rng.randf_range(0.5, 0.7), 4.0 if limewash else 1.0)
 	else:
