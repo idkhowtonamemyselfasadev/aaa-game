@@ -262,6 +262,13 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 	var tilt := 1.0
 	if limewash:
 		proud *= 0.4     # the coats fill the hollows and round the faces into one skin
+		if not quoin:
+			# a split face's crown cut through the 6 mm skin in crisp pale polygons (the lean-to's
+			# big "stickers"): sit the rubble ~5 mm further back, less proud and less skewed,
+			# so only the odd lumpy crown ghosts through the lime as a soft bump
+			proud = 0.006
+			tilt = 0.4
+			size.z = T - 0.01
 		if quoin:
 			# a dressed block's flat face, a hair off square, cut through the 6 mm skin in
 			# crisp pale polygons (the lean-to's "stickers"): keep the quoins just under it

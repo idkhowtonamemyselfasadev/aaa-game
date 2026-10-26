@@ -33,6 +33,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (11:35 10-26) **White cottage rubble sunk under the lime skin** (shot `villager leanto 40 10` looked at): under
+  `limewash` the split rubble now sits ~5 mm further back (size.z = T - 0.01), proud +-6 mm, skew 0.4x, so its crowns
+  no longer cut the 6 mm mortar skin as small pale squares (main wall now one even old-lime skin; rng order
+  unchanged; the masonry lighting match is 10:00's, kept in the rebase). (Shot taken on the base before 10:00's lean-to fix, so the lean-to's own patches in it are stale; not re-shot after the rebase.) Bots whitehouse,
+  leanto, villager, chop, walk pass. Screenshots: Forward+ Vulkan under xvfb/lavapipe, ~20 min each this box.
 - (10:00 10-26) **Lean-to's pale patches traced and fixed**: a debug shot (rubble crowns tinted red, the lime-mortar
   skin blue) showed the big pale crisp-edged patches on the lean-to were in mortar.gdshader itself, not stone crowns:
   it cut its flakes AFTER laying the rain runs and splash grime, so each flake in a grimed area showed clean pale
@@ -5280,6 +5285,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (11:35 10-26) Rubble sunk under the lime on the white cottage (see Done; merged on top of 10:00's lean-to fix,
+   bots re-run, NOT re-shot). NEXT: re-shoot `villager leanto 40 10` on current main to check both fixes together, then
+   continue with the 10:00 item below.
 0. (10:00 10-26) Lean-to's low patches fixed (see Done). NEXT: two pale patches remain HIGH on the lean-to's shaded
    front end (shot `villager leanto2 40 10`, x~1000 y~330/450): crisp ragged blobs with a dark rim, LIGHTER and
    bluer (srgb ~130 vs ~107 around) -- the shape is mortar.gdshader's `flake`/`rim` (debug shot: that face is all
