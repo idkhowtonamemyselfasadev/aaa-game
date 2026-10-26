@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261020-0330-doorstones-wet-white.jpg",
-  "time": "2026-10-20T03:45:00Z",
-  "caption": "White cottage door flags just after rain at 13:00: dark glossy wet stone with water lying round the edges; still fail: the pools sit near-black with no sky reflection and the wall reads flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0430-doorstones-poolskin-fail.jpg",
-  "time": "2026-10-20T04:30:00Z",
-  "caption": "White cottage door flags in rain at 13:00 with a trial opaque pool skin: the whole patch round the slabs drew as a white mirror instead of thin edge pools; the trial was reverted, only the darker wet-flag tops were kept.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0520-doorstones-pools.jpg",
-  "time": "2026-10-20T05:20:00Z",
-  "caption": "White cottage door flags soaked at 13:00: the rain pools along the slab edges are now an opaque water skin (no more white-mirror bug) showing faint sky in the hollows, but the doorway sits in deep shade and the pools still read as dark wet ground.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0706-doorbounce.jpg",
   "time": "2026-10-20T07:06:10Z",
   "caption": "The white cottage doorway at 13 h, now lifted out of blue-black shade by a warm yard-bounce fill; the fill still pools a little lamp-like on the nearest slabs and the grass in front stays dark.",
@@ -891,6 +873,18 @@
   "file": "20261025-2226-skinform-crop.jpg",
   "time": "2026-10-25T22:26:00Z",
   "caption": "Face x5, before (left) vs after (right): deeper sockets, a lighter brow bone and sun-mottled cheeks give the face some bony structure, but at this range it still reads soft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0010-meadowhaze.jpg",
+  "time": "2026-10-26T00:10:00Z",
+  "caption": "Noon meadow at 2 m with thicker clear-day haze: the treelines 100-300 m out now sit back in the air; the hero still reads dull and the face is lost under the hat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0010-valleyhaze.jpg",
+  "time": "2026-10-26T00:10:00Z",
+  "caption": "Noon valley with the new haze: cottages and the far ring recede, but the near hills of the ring are darker than the pale valley floor in front of them (value inversion).",
   "verdict": "fail"
  }
 ]

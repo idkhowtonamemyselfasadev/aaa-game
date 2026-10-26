@@ -16,6 +16,11 @@ extends Node3D
 @onready var env: WorldEnvironment = $WorldEnvironment
 @onready var terrain: Terrain = $Terrain
 @onready var player: Player = $Player
+## Clear-day distance haze (exp). At 0.0012 the trees and hills 100-300 m out kept nearly
+## their full value and saturation at noon, so the open meadow read flat, with no depth;
+## 0.0016 puts ~20% air on the 150 m treeline and ~38% on the 300 m hills. 0.002 washed the
+## valley floor milky in front of the far ring (which tracks this density, scaled 0.4).
+const CLEAR_FOG := 0.0016
 var moon: DirectionalLight3D
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
@@ -322,7 +327,7 @@ func _build_environment() -> void:
 	e.fog_light_color = Color(0.73, 0.6, 0.5)
 	e.fog_light_energy = 0.6
 	e.fog_sun_scatter = 0.15
-	e.fog_density = 0.0012
+	e.fog_density = CLEAR_FOG
 	e.fog_aerial_perspective = 0.5
 	e.fog_sky_affect = 0.12
 	e.fog_height = -10.0
@@ -560,7 +565,7 @@ func _apply_weather(day: float) -> void:
 	# the eye opens under a storm deck: with the sun ~80% gone the scene sat a stop under,
 	# wet yards read as murk; moody, but readable
 	e.tonemap_exposure *= 1.0 + 0.24 * c * day
-	e.fog_density = lerpf(0.0012, 0.008, c)
+	e.fog_density = lerpf(CLEAR_FOG, 0.008, c)
 	e.fog_light_color = e.fog_light_color.lerp(Color(0.5, 0.53, 0.57) * lerpf(0.12, 1.0, day), c)
 	e.fog_sun_scatter = lerpf(0.15, 0.0, c)
 	# under the deck the distance haze is lit by the cloud, not by the PhysicalSky behind it
