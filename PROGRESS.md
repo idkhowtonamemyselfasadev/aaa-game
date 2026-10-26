@@ -6164,6 +6164,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (01:40 10-26) `combat` bot FAILS on main (checked with a clean tree): "short sward did not stream in (3 chunks,
+  4172 clumps)" -- bot.gd ~line 269 wants >= 4 sward chunks right at the start and on the slow cloud box only 3
+  have streamed in. Timing, not combat (hits/swings print fine). Fix: wait for sward streaming before the check,
+  or accept 3 chunks and keep the 4000-clump floor. (A parallel 01:40 session also built the noon haze; it was
+  dropped at rebase in favour of main's CLEAR_FOG 0.0016.)
 - (00:10 10-26) `valley` at noon: the far ring's low hills read darker than the hazed valley floor in front of
   them (pre-existing, see Next). PIL in the cloud box's system python is broken (`_imaging` missing); make
   gallery JPEGs with ImageMagick `convert -resize 1280x720! -quality 80`.
