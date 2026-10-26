@@ -16,11 +16,6 @@ extends Node3D
 @onready var env: WorldEnvironment = $WorldEnvironment
 @onready var terrain: Terrain = $Terrain
 @onready var player: Player = $Player
-## Clear-day distance haze (exp). At 0.0012 the trees and hills 100-300 m out kept nearly
-## their full value and saturation at noon, so the open meadow read flat, with no depth;
-## 0.0016 puts ~20% air on the 150 m treeline and ~38% on the 300 m hills. 0.002 washed the
-## valley floor milky in front of the far ring (which tracks this density, scaled 0.4).
-const CLEAR_FOG := 0.0016
 var moon: DirectionalLight3D
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
@@ -536,6 +531,13 @@ func _apply_time() -> void:
 					smoothstep(0.0, 1.0, 1.0 - clampf(sin(elev) * 5.0 + 1.0, 0.0, 1.0)))
 		_apply_weather(day)
 
+## Clear-day depth fog. At 0.0012 the trees and hills 100-300 m off stood at full contrast
+## at noon (16-30% haze), so the open meadow had no depth: 0.0024 puts ~30% on the wood
+## line at 150 m and ~50% at 300 m, ~10% at 50 m, so the village yards stay crisp. (0.0016-0.002
+## alone washed the valley milky in front of a darker far ring; the ring's valley-air term in
+## _apply_horizon_haze is what lets the scene take this density.)
+const CLEAR_FOG := 0.0024
+
 ## A weather front over the time-of-day light: cloud swallows the sun and the sky's blue,
 ## the light goes flat and grey, rain haze closes the distance, colour drains.
 func _apply_weather(day: float) -> void:
@@ -604,8 +606,17 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	# flat cut-outs against the sky; the haze now sinks toward the deck's value with height
 	# (the low rain curtain stays as bright as the valley fog in front, so no seam)
 	mat.set_shader_parameter("haze_color", Vector3(hc.r, hc.g, hc.b))
+	# valley air over the low ring: what the scene fog paints there (its light colour plus the
+	# share sampled from the bright horizon sky); clear-weather only, a storm's own dense haze
+	# already swallows the foothills
+	var vc := fog_lin.lerp(Color(0.5, 0.47, 0.37) * lerpf(0.04, 1.0, day), e.fog_aerial_perspective)
+	vc = vc.lerp(Color(0.045, 0.06, 0.12), nt)
+	mat.set_shader_parameter("valley_color", Vector3(vc.r, vc.g, vc.b))
+	mat.set_shader_parameter("valley_density", CLEAR_FOG * (1.0 - c))
 	mat.set_shader_parameter("haze_top", lerpf(1.0, 0.55, smoothstep(0.35, 1.0, c)))
-	mat.set_shader_parameter("haze_density", e.fog_density)
+	# the ring keeps its own clear-day density (its haze_scale was tuned for 0.0012), the
+	# denser valley air is a near-field thing
+	mat.set_shader_parameter("haze_density", lerpf(0.0012, 0.008, c))
 
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat

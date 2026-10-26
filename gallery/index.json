@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261020-0706-doorbounce.jpg",
-  "time": "2026-10-20T07:06:10Z",
-  "caption": "The white cottage doorway at 13 h, now lifted out of blue-black shade by a warm yard-bounce fill; the fill still pools a little lamp-like on the nearest slabs and the grass in front stays dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0706-rainpools.jpg",
-  "time": "2026-10-20T07:06:10Z",
-  "caption": "The timber house door stones in real rain (rain 0.5 now actually falls in shots): splash rings and wet slabs, but the overcast frame is dark and murky.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0735-doorstones-timber-storm.jpg",
   "time": "2026-10-20T07:35:43Z",
   "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
@@ -885,6 +873,24 @@
   "file": "20261026-0010-valleyhaze.jpg",
   "time": "2026-10-26T00:10:00Z",
   "caption": "Noon valley with the new haze: cottages and the far ring recede, but the near hills of the ring are darker than the pale valley floor in front of them (value inversion).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0212-hazevalley.jpg",
+  "time": "2026-10-26T02:12:00Z",
+  "caption": "Noon over the Vale from the hill: the valley now recedes in layers -- crisp meadow, hazed wood and village, warm hazed foothills, then snow massifs that keep their rock structure; the far wood line is still a soft beige smear and the village reads small.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261026-0212-hazevalley-cmp.jpg",
+  "time": "2026-10-26T02:12:00Z",
+  "caption": "Before (left: scene fog only, value inversion at the ring's foothills) vs after (right: valley-air layer on the far ring): the dark foothill band in front of a milky valley is gone, depth now reads in order.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261026-0212-haze-herocu.jpg",
+  "time": "2026-10-26T02:12:00Z",
+  "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
   "verdict": "fail"
  }
 ]

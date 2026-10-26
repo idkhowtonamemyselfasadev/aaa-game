@@ -33,6 +33,17 @@ uniform float haze_scale = 0.4;
 // under a storm deck: the haze over the high massifs sinks to this x haze_color (the dark
 // cloud base behind them), while the low ring keeps the valley fog's value
 uniform float haze_top = 1.0;
+// Valley air: the scene's depth fog (world.gd CLEAR_FOG, its colour with the sky-sampled
+// share) thinning with height over valley_h. Without it the low foothills 300-800 m out took
+// only the thin own haze and stood dark behind a valley floor already ~75% fogged in front
+// of them; integrated along the ray, the low ring now matches the valley while the peaks
+// (whose rays leave the dense air early) keep their own clearer haze.
+uniform vec3 valley_color = vec3(0.7, 0.6, 0.46);
+uniform float valley_density = 0.0;
+uniform float valley_h = 60.0;
+// the scene fog's own reach: the Vale tile plus the near foothills; the far massifs are
+// hazed by their own (bluer, clearer) term, as the valley air does not run 2 km deep
+uniform float valley_len = 900.0;
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -221,5 +232,14 @@ void fragment() {
 	float far = smoothstep(250.0, 1100.0, dist);
 	ALBEDO *= mix(1.0, mix(0.72, 0.5, far), night) * mix(1.0, 0.45, night * snoww);
 	SPECULAR *= 1.0 - 0.7 * night;
-	FOG = vec4(haze_color * mix(1.0, haze_top, smoothstep(60.0, 380.0, wpos.y)), 1.0 - exp(-dist * haze_density * haze_scale));
+	float y0 = max(CAMERA_POSITION_WORLD.y, 0.0);
+	float y1 = max(wpos.y, 0.0);
+	float dy = y1 - y0;
+	// mean of exp(-y / valley_h) along the ray (exact for a straight ray)
+	float hf = abs(dy) > 0.5 ? valley_h * (exp(-y0 / valley_h) - exp(-y1 / valley_h)) / dy : exp(-y0 / valley_h);
+	float tau_v = min(dist, valley_len) * valley_density * hf;
+	float tau_o = dist * haze_density * haze_scale;
+	vec3 own = haze_color * mix(1.0, haze_top, smoothstep(60.0, 380.0, wpos.y));
+	vec3 fc = (own * tau_o + valley_color * tau_v) / max(tau_o + tau_v, 1e-6);
+	FOG = vec4(fc, 1.0 - exp(-(tau_o + tau_v)));
 }
