@@ -17,6 +17,8 @@ extends Node3D
 @onready var terrain: Terrain = $Terrain
 @onready var player: Player = $Player
 var moon: DirectionalLight3D
+var _sky_low := 0.0        # 1 with the sun near the horizon (set each _apply_time)
+var _sky_glow := 1.0       # afterglow: 1 while the sun is up .. 0 at 9 deg below
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
 var soldier: HollowSoldier
@@ -440,6 +442,8 @@ func _apply_time() -> void:
 	var low := 1.0 - clampf(sin(elev) / sin(deg_to_rad(25.0)), 0.0, 1.0)   # 1 near horizon
 	# afterglow: 1 while the sun is up .. 0 at 9 degrees below the horizon
 	var afterglow := smoothstep(deg_to_rad(-9.0), deg_to_rad(0.5), elev)
+	_sky_low = low
+	_sky_glow = afterglow
 	# a sun under the horizon lights nothing directly (it used to wash the dusk meadow red);
 	# what stays is a faint rose glow from the sunset side, grazing from 1 deg up, dying with
 	# the afterglow (without it the land under the sunset went black)
@@ -609,7 +613,13 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	# valley air over the low ring: what the scene fog paints there (its light colour plus the
 	# share sampled from the bright horizon sky); clear-weather only, a storm's own dense haze
 	# already swallows the foothills
-	var vc := fog_lin.lerp(Color(0.5, 0.47, 0.37) * lerpf(0.04, 1.0, day), e.fog_aerial_perspective)
+	# The horizon sky keeps its brightness through sunset (a rose band, not a dimmed noon
+	# beige): keyed to `day` (0.35 at sunset) the estimate fell to a third, so at 18:00 the
+	# low ring stood dark grey behind the near hills, which the scene fog lit pink from the
+	# real sunset sky. Warm it with the low sun and fade it with the afterglow instead.
+	var sky_est := Color(0.5, 0.47, 0.37).lerp(Color(0.62, 0.48, 0.4), _sky_low) \
+			* lerpf(0.04, 1.0, _sky_glow * _sky_glow)
+	var vc := fog_lin.lerp(sky_est, e.fog_aerial_perspective)
 	vc = vc.lerp(Color(0.045, 0.06, 0.12), nt)
 	mat.set_shader_parameter("valley_color", Vector3(vc.r, vc.g, vc.b))
 	mat.set_shader_parameter("valley_density", CLEAR_FOG * (1.0 - c))

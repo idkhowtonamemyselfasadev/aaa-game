@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261020-0735-doorstones-timber-storm.jpg",
-  "time": "2026-10-20T07:35:43Z",
-  "caption": "Storm rain actually falling at the timber house door (rain 0.62): the wind-laid meadow clumps now stop short of the stepping stones and the sill; still wrong: the frame is underexposed, the short sward still hides the edge pools, and the flags read as pale lumps.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-0820-doorstones-storm-lifted.jpg",
-  "time": "2026-10-20T08:20:00Z",
-  "caption": "Same storm at the timber house door after the lift: the storm frame reads a good stop brighter and the flags now sit in bare dark loam with the sward cleared off the pool band; still wrong: the flags read as smooth pale lumps and the pools barely show.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-0949-dog-green.jpg",
   "time": "2026-10-20T09:49:33Z",
   "caption": "Brack, Edda's new black-and-white collie, sat on the green by the timber house; it reads as a dog but the tall meadow grass buries it and the low lens sits in the grass.",
@@ -891,6 +879,18 @@
   "file": "20261026-0212-haze-herocu.jpg",
   "time": "2026-10-26T02:12:00Z",
   "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0310-duskvalley.jpg",
+  "time": "2026-10-26T03:10:00Z",
+  "caption": "The Vale at 18:00: the low foothills now sit in the same rose valley haze as the near hills instead of standing dark grey behind them; the far band reads a little flat and milky, and the hero is not in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0310-duskvalley-cmp.jpg",
+  "time": "2026-10-26T03:10:00Z",
+  "caption": "Before/after at 18:00: left, the pink-hazed near hill stands in front of dark grey foothills (value inversion); right, the ring's valley air now follows the sunset sky.",
   "verdict": "fail"
  }
 ]
