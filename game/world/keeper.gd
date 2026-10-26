@@ -251,6 +251,9 @@ func _ready() -> void:
 	garb.robe_len = 1.1
 	garb.robe_wide = 1.3
 	garb.basket = true
+	# a slate wool smock over her chest, a fulled mantle: no base-body plates under the hem
+	garb.smock = true
+	garb.mantle_wool = true
 	# side gores close the long robe into a skirt: from the side no legs or old armour show
 	garb.skirt = true
 	add_child(garb)

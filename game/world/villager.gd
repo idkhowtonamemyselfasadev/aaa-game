@@ -259,7 +259,8 @@ func _dress() -> void:
 	# a bleached linen coif, a brown wool shawl, a kirtle of madder washed out to rust, a
 	# leather girdle, linen wraps
 	garb.palette = {
-		"hood": [Color(0.10, 0.092, 0.078), Color(0.46, 0.43, 0.37), 0.35],
+		# a linen coif gone ivory-grey with wear: at 0.46 it read as a pale camouflage cowl
+		"hood": [Color(0.085, 0.078, 0.066), Color(0.36, 0.335, 0.29), 0.3],
 		"hat": [Color(0.15, 0.12, 0.07), Color(0.50, 0.42, 0.28), 0.3],
 		"mantle": [Color(0.060, 0.042, 0.030), Color(0.30, 0.22, 0.15), 0.35],
 		"robe": [Color(0.090, 0.040, 0.030), Color(0.42, 0.20, 0.14), 0.4],
@@ -270,6 +271,10 @@ func _dress() -> void:
 	garb.robe_len = 1.1
 	garb.robe_wide = 1.25
 	garb.skirt = true
+	# the kirtle's wool up over her chest under the shawl: without it the base body's plates
+	# read as mottled pale-grey cloth at the woodpile, like a ghillie suit
+	garb.smock = true
+	garb.mantle_wool = true
 
 ## What she works with: the lamp taper and the axe at the woodpile.
 func _kit() -> void:

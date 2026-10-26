@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261020-0949-dog-green.jpg",
-  "time": "2026-10-20T09:49:33Z",
-  "caption": "Brack, Edda's new black-and-white collie, sat on the green by the timber house; it reads as a dog but the tall meadow grass buries it and the low lens sits in the grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1059-dog-night.jpg",
-  "time": "2026-10-20T10:59:14Z",
-  "caption": "Edda's cottage at 22 h with fireflies, Brack lying down in his place by the door; still wrong: he is lost in the dark at the wall foot and the frame is murky blue-black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1059-dog-track.jpg",
-  "time": "2026-10-20T10:59:14Z",
-  "caption": "Brack sat on the white cottage's trodden track with the door behind him, now fully in view instead of buried in the meadow; still wrong: the foreground lies in deep shade and his coat reads flat and faceted.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-1136-dog-sun.jpg",
   "time": "2026-10-20T11:36:00Z",
   "caption": "Brack lying in the sun on the trodden track before the white cottage: he reads as a low black-and-white dog lying down, but he is small, in the shade of the tall foreground grass, and the near grass is a dark wall.",
@@ -891,6 +873,18 @@
   "file": "20261026-0310-duskvalley-cmp.jpg",
   "time": "2026-10-26T03:10:00Z",
   "caption": "Before/after at 18:00: left, the pink-hazed near hill stands in front of dark grey foothills (value inversion); right, the ring's valley air now follows the sunset sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0527-villager.jpg",
+  "time": "2026-10-26T05:27:20Z",
+  "caption": "Edda at the woodpile at 10 h now wears her rust kirtle over the chest under the shawl and a dimmer coif instead of a mottled pale-grey body; her sleeves still read pale grey and the cottage annex is a flat white box with sticker-like plaster patches.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-0527-valley-dusk.jpg",
+  "time": "2026-10-26T05:27:20Z",
+  "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
   "verdict": "fail"
  }
 ]
