@@ -80,6 +80,7 @@ var _rubble: Array = []        # per split-stone variant: [Transform3D, Color]
 var _slates: Array = []        # per slate mesh variant: [Transform3D, Color]
 var _slate_meshes: Array[ArrayMesh] = []
 var _mortar: Array[Transform3D] = []
+var _skin: Array = []          # limewash course runs: [Transform3D (unscaled), size, round -end, round +end, outside sign, free -end, free +end]
 var _body: StaticBody3D
 var _timber_mat: Shader
 var _world: Node
@@ -204,7 +205,7 @@ func _run(w: int, a: float, b: float, y: float, h: float, q0: bool, q1: bool) ->
 		# (the lean-to's open front) are one lime skin, not dressed block ends poking through
 		ma -= LIME_PROUD if q0 else 0.0
 		mb += LIME_PROUD if q1 else 0.0
-	_mortar_run(w, (ma + mb) * 0.5, y + h * 0.5, Vector3(mb - ma, h, T - 0.06))
+	_mortar_run(w, (ma + mb) * 0.5, y + h * 0.5, Vector3(mb - ma, h, T - 0.06), q0, q1)
 	s = a
 	for i in lens.size():
 		var ln: float = lens[i]
@@ -243,7 +244,7 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 
 ## The lime-mortar core behind a course run, recessed 3 cm from both faces (deeper sank the
 ## joints into black shadow).
-func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
+func _mortar_run(w: int, along: float, cy: float, size: Vector3, q0 := false, q1 := false) -> void:
 	var wa := _wall_at(w, along, cy)
 	var dir: Vector3 = wa[0]
 	if limewash:
@@ -252,6 +253,12 @@ func _mortar_run(w: int, along: float, cy: float, size: Vector3) -> void:
 		# tilted quoins still broke through in pale sky-lit blobs -- a red/blue debug tint shot
 		# showed them as masonry, not skin)
 		size.z = T + LIME_PROUD * 2.0
+		# the run goes into the hand-laid skin mesh (_build_skin): the coats round the outer
+		# arris at a corner and both arrises at a free wall end, and the faces undulate a little
+		var c: Vector3 = wa[1]
+		var outs := signf(dir.cross(Vector3.UP).dot(Vector3(c.x, 0.0, c.z)))
+		_skin.append([Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)), c), size, q0, q1, outs, _free_end(w, -1.0), _free_end(w, 1.0)])
+		return
 	_mortar.append(Transform3D(Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_scale(size), wa[1]))
 
 ## Place one wall stone: wall-local (along, centre height) -> cottage local.
@@ -274,9 +281,12 @@ func _stone(w: int, along: float, cy: float, size: Vector3, quoin: bool) -> void
 			size.z = T - 0.016
 		if quoin:
 			# a dressed block's flat face, a hair off square, cut through a thin skin in
-			# crisp pale polygons (the lean-to's "stickers"): keep the quoins well under it
+			# crisp pale polygons (the lean-to's "stickers"): keep the quoins well under it,
+			# and ~2.5 cm in from both faces and the end, clear of the skin's rounded arris
 			proud = 0.002
 			tilt = 0.12
+			size.z = T - 0.03
+			size.x -= 0.05
 	c += dir.cross(Vector3.UP) * _rng.randf_range(-proud, proud)
 	var b := Basis(dir, Vector3.UP, dir.cross(Vector3.UP)) * Basis.from_euler(Vector3(_rng.randf_range(-0.02, 0.02), _rng.randf_range(-0.025, 0.025), _rng.randf_range(-0.02, 0.02)) * tilt)
 	if quoin:
@@ -641,6 +651,7 @@ func _build_mortar() -> void:
 		# the lime coats run over the pointing too: only a faint shadow line between stones
 		m.set_shader_parameter("wash", 1.0)
 	bm.material = m
+	_build_skin(m)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = bm
@@ -651,6 +662,132 @@ func _build_mortar() -> void:
 	mmi.name = "Mortar"
 	mmi.multimesh = mm
 	add_child(mmi)
+
+## Limewash: is wall w's end (`e` = -1 / +1 along it) a free end, open on both faces
+## (the lean-to's open front)? Its inner arris is rounded too then.
+func _free_end(_w: int, _e: float) -> bool:
+	return false
+
+const SKIN_R := 0.06       # radius the lime coats round a corner or free end to
+const SKIN_WAVE := 0.004   # +- undulation of the hand-laid coats
+
+func _skin_wave(p: Vector3) -> float:
+	return sin(p.x * 2.3 + p.y * 1.1) * 0.45 + sin(p.z * 2.9 - p.y * 1.7 + 1.3) * 0.35 + sin((p.x - p.z) * 6.1 + p.y * 3.3 + 0.4) * 0.2
+
+## The limewashed walls' lime skin as one mesh: each course run a rounded-rectangle
+## extrusion (stacked boxes made the walls perfect CG blocks with knife-sharp arrises),
+## every vertex pushed in or out a few mm by one smooth field of the cottage-local position,
+## so neighbouring runs and courses still meet.
+func _build_skin(m: Material) -> void:
+	if _skin.is_empty():
+		return
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var en := [Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0), Vector2(0, -1)]
+	for run in _skin:
+		var xf: Transform3D = run[0]
+		var size: Vector3 = run[1]
+		var la := size.x * 0.5
+		var lc := size.z * 0.5
+		var outs: float = run[4]
+		# corners counter-clockwise in (along, across): (+a,-c) (+a,+c) (-a,+c) (-a,-c)
+		var cs := [Vector2(la, -lc), Vector2(la, lc), Vector2(-la, lc), Vector2(-la, -lc)]
+		var rr := []
+		for i in 4:
+			var e := 1 if cs[i].x > 0.0 else 0
+			var q: bool = run[3] if e == 1 else run[2]
+			var free: bool = run[6] if e == 1 else run[5]
+			var outer := signf(cs[i].y) == outs
+			var r := SKIN_R if (q and outer) or (free and q) else 0.0
+			rr.append(minf(r, minf(la * 0.45, lc * 0.9)))
+		# the closed profile: [point, shading normal, displacement direction] per vertex,
+		# pieces (arcs and straight edges) kept apart so a crisp corner keeps two normals
+		var pieces := []
+		for i in 4:
+			var c: Vector2 = cs[i]
+			var r: float = rr[i]
+			var n0: Vector2 = en[(i + 3) % 4]
+			var n1: Vector2 = en[i]
+			if r > 0.0:
+				var ctr := c - Vector2(signf(c.x), signf(c.y)) * r
+				var arc := []
+				var a0 := n0.angle()
+				var da := wrapf(n1.angle() - a0, -PI, PI)
+				for k in 5:
+					var nn := Vector2.from_angle(a0 + da * k / 4.0)
+					arc.append([ctr + nn * r, nn, nn])
+				pieces.append(arc)
+			# the straight edge from this corner to the next
+			var cn: Vector2 = cs[(i + 1) % 4]
+			var rn: float = rr[(i + 1) % 4]
+			var d := (cn - c).normalized()
+			var a := c + d * r
+			var b := cn - d * rn
+			var da0: Vector2 = n1 if r > 0.0 else (n0 + n1).normalized()
+			var db0: Vector2 = n1 if rn > 0.0 else (n1 + en[(i + 1) % 4]).normalized()
+			var segs := maxi(1, ceili(a.distance_to(b) / 0.2))
+			var edge := []
+			for k in segs + 1:
+				var t := float(k) / segs
+				var dd := da0 if k == 0 else (db0 if k == segs else n1)
+				edge.append([a.lerp(b, t), n1, dd])
+			pieces.append(edge)
+		var rows := maxi(1, ceili(size.y / 0.15))
+		var loop := []
+		for pc in pieces:
+			for k in pc.size():
+				var pts := []
+				for j in rows + 1:
+					pts.append(_skin_pt(xf, pc[k], -size.y * 0.5 + size.y * j / rows))
+				pc[k].append(pts)
+				loop.append(pts)
+			for k in pc.size() - 1:
+				var nl: Vector2 = pc[k][1]
+				var nr: Vector2 = pc[k + 1][1]
+				var wn := xf.basis * Vector3(nl.x, 0, nl.y)
+				var wr := xf.basis * Vector3(nr.x, 0, nr.y)
+				for j in rows:
+					var v00: Vector3 = pc[k][3][j]
+					var v01: Vector3 = pc[k][3][j + 1]
+					var v10: Vector3 = pc[k + 1][3][j]
+					var v11: Vector3 = pc[k + 1][3][j + 1]
+					_skin_quad(st, [v00, v10, v11, v01], [wn, wr, wr, wn], (wn + wr).normalized())
+		# caps: fans from the run's middle over the bottom and top rings
+		for j in [0, rows]:
+			var up: Vector3 = Vector3.UP if j == rows else Vector3.DOWN
+			var mid: Vector3 = xf.origin + Vector3.UP * (-size.y * 0.5 + size.y * j / rows)
+			for k in loop.size():
+				var pa: Vector3 = loop[k][j]
+				var pb: Vector3 = loop[(k + 1) % loop.size()][j]
+				if pa.is_equal_approx(pb):
+					continue
+				for v in _wind([mid, pa, pb], up):
+					st.set_normal(up)
+					st.add_vertex(v)
+	var mi := MeshInstance3D.new()
+	mi.name = "LimeSkin"
+	var mesh := st.commit()
+	mesh.surface_set_material(0, m)
+	mi.mesh = mesh
+	add_child(mi)
+
+func _skin_pt(xf: Transform3D, pv: Array, y: float) -> Vector3:
+	var p2: Vector2 = pv[0]
+	var dd: Vector2 = pv[2]
+	var p := xf * Vector3(p2.x, y, p2.y)
+	return p + xf.basis * Vector3(dd.x, 0, dd.y) * _skin_wave(p) * SKIN_WAVE
+
+func _skin_quad(st: SurfaceTool, v: Array, n: Array, fn: Vector3) -> void:
+	for tri in [[0, 1, 2], [0, 2, 3]]:
+		var a: Vector3 = v[tri[0]]
+		var b: Vector3 = v[tri[1]]
+		var c: Vector3 = v[tri[2]]
+		var order := [tri[0], tri[1], tri[2]]
+		if (b - a).cross(c - a).dot(fn) > 0.0:
+			order = [tri[0], tri[2], tri[1]]
+		for i in order:
+			st.set_normal(n[i])
+			st.add_vertex(v[i])
 
 func _box(c: Vector3, size: Vector3, b := Basis.IDENTITY) -> void:
 	var cs := CollisionShape3D.new()

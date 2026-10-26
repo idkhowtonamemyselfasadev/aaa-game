@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261020-1659-osric-felthat.jpg",
-  "time": "2026-10-20T16:59:44Z",
-  "caption": "Osric on his step at 7 h with a dark hood (no more pale ski mask) and the new felt hat, which still reads as a tall stovepipe; red eye glint, flat beard and collar armour still show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1832-osric-felthat.jpg",
-  "time": "2026-10-20T18:32:35Z",
-  "caption": "Osric at his door at 07:00 in the reworked felt hat (low round crown with a crease, drooping 9 cm brim, sat down on a dark hood); the face is still in deep shade under the brim, the beard reads as flat grey bark and armour shows at the collar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-1930-osric-facefill.jpg",
-  "time": "2026-10-20T19:30:54Z",
-  "caption": "Osric at his door at 07:00 with a stronger face fill under the felt brim: his face, nose and eyes finally show, but the lightened beard reads as a pale flat block with a ruled lower edge and a grey plate still shows under it.",
-  "verdict": "fail"
- },
- {
   "file": "20261020-2045-osric-beard.jpg",
   "time": "2026-10-20T20:45:28Z",
   "caption": "Osric's beard now ends in a ragged soft point under the chin with thinning strand tips instead of a ruled rectangle; it still reads too pale and flat against the dark hood, and grey plates still show on his chest below the mantle.",
@@ -897,6 +879,12 @@
   "file": "20261026-1857-coif.jpg",
   "time": "2026-10-26T18:57:09Z",
   "caption": "Edda splitting wood by the white cottage at 10 h: her coif is now an even, dark-greyed linen with no pale camouflage blotches, but it reads darker than linen and the lean-to is still a crisp white box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-1943-leanto-arris.jpg",
+  "time": "2026-10-26T19:43:05Z",
+  "caption": "Edda splitting wood by the white cottage at 10 h: the lime skin is now one hand-laid mesh with rounded arrises at corners and the lean-to's open end, but the lean-to's flat crisp top still makes it read as a white block.",
   "verdict": "fail"
  }
 ]

@@ -218,6 +218,10 @@ func _wall_at(w: int, along: float, cy: float) -> Array:
 		return [Vector3.RIGHT, Vector3(along, cy, -LEAN_Z + T * 0.5)]
 	return super(w, along, cy)
 
+## The lean-to's outer wall stops dead at its open front: the lime rounds both arrises there.
+func _free_end(w: int, e: float) -> bool:
+	return w == 4 and e > 0.0
+
 func _extras() -> void:
 	var gx := wlen * 0.5
 	var ox := gx + LEAN_D
