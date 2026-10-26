@@ -42,6 +42,7 @@ var neighbour: Neighbour
 var pedlar: Pedlar
 var hearth: Hearth
 var fox: Fox
+var hares: Array[Hare] = []
 var dog: Dog
 var hens: Hens
 var soundscape: Soundscape
@@ -185,6 +186,12 @@ func _ready() -> void:
 	# a fox that comes in out of the dark to sit at the edge of her firelight
 	fox = Fox.new()
 	fox.setup(self)
+	# two brown hares feeding either side of the road in through the south-east meadow
+	for i in 2:
+		var hr := Hare.new()
+		hr.name = "Hare%d" % i
+		hr.setup(self, 0.3 + 0.35 * i, 12.0 if i == 0 else -14.0, 4410 + i)
+		hares.append(hr)
 	# hens keeping the garth behind the stone cottage
 	hens = Hens.new()
 	hens.setup(self)

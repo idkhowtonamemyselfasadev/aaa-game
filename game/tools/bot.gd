@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -121,6 +121,9 @@ func _ready() -> void:
 		return
 	if name == "dust":
 		_dust_test()
+		return
+	if name == "hare":
+		_hare_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -1016,6 +1019,79 @@ func _thermal_test() -> void:
 ## Dust devils: on a clear, still afternoon a whirl stands up on dry open ground near the
 ## hero, wanders (downwind on the whole), builds and slumps, keeps off slopes/pools/houses,
 ## and none stand up under a front or by night.
+## The hares: one lopes across the road by day, sits up to watch a hero coming into sight,
+## bolts flat out with jinks when he comes close and settles far off; rain sends it to its form.
+func _hare_test() -> void:
+	var tr: Terrain = _world.get_node("Terrain")
+	var hs: Array[Hare] = _world.hares
+	if hs.size() != 2:
+		return _combat_done(false, "two hares should feed in the south-east meadow (%d)" % hs.size())
+	_world.weather.force(0.0)
+	_world.time_of_day = 10.0
+	_player.global_position = Vector3(-40.0, tr.height_at(-40.0, 40.0) + 0.2, 40.0)
+	await _ticks(30)
+	var h := hs[0]
+	var side0 := h.side()
+	print("BOT hare start: state %d side %+.0f at %s, other at %s" % [h.state, side0, h.global_position, hs[1].global_position])
+	if h.state == Hare.ALERT or h.state == Hare.BOLT:
+		return _combat_done(false, "a hero 80 m off should not disturb the hares")
+	# its run across the road
+	h.cross_t = 0.0
+	h._t = 0.0
+	var crossed := false
+	var top := 0.0
+	for i in 2400:
+		_world.time_of_day = 10.0
+		await get_tree().physics_frame
+		top = maxf(top, h.speed)
+		if h.crossings > 0:
+			crossed = true
+			break
+	print("BOT hare crossing: crossed %s, side %+.0f -> %+.0f, top %.1f m/s" % [crossed, side0, h.side(), top])
+	if not crossed or h.side() == side0 or top < 2.5:
+		return _combat_done(false, "a hare should lope across the road to its other feeding ground by day")
+	# a hero comes into sight: it sits up and watches him
+	var hp0 := h.global_position + Vector3(20.0, 0, 8.0)
+	_player.global_position = Vector3(hp0.x, tr.height_at(hp0.x, hp0.z) + 0.2, hp0.z)
+	await _ticks(150)
+	var to := _player.global_position - h.global_position
+	var fwd := Vector3(-sin(h.yaw), 0, -cos(h.yaw))
+	var face := fwd.dot(Vector3(to.x, 0, to.z).normalized())
+	print("BOT hare sees him at %.1f m: state %d alert %.2f facing %.2f" % [Vector2(to.x, to.z).length(), h.state, h.alert, face])
+	if h.state != Hare.ALERT or h.alert < 0.9 or face < 0.8:
+		return _combat_done(false, "a hare should sit up and face a hero coming into sight")
+	# he walks up on it: off flat out, jinking, and it settles far off
+	var start := h.global_position
+	var near := h.global_position + Vector3(5.0, 0, 2.0)
+	_player.global_position = Vector3(near.x, tr.height_at(near.x, near.z) + 0.2, near.z)
+	await _ticks(4)
+	var bolted := h.state == Hare.BOLT
+	top = 0.0
+	var ears := 0.0
+	for i in 2000:
+		await get_tree().physics_frame
+		top = maxf(top, h.speed)
+		ears = maxf(ears, h.ears_back)
+		if h.state != Hare.BOLT:
+			break
+	var ran := Vector2(h.global_position.x - start.x, h.global_position.z - start.z).length()
+	var off := Vector2(h.global_position.x - near.x, h.global_position.z - near.z).length()
+	print("BOT hare bolt: bolted %s, top %.1f m/s, ears back %.2f, jinks %d, ran %.0f m, now %.0f m from him, state %d" % [bolted, top, ears, h.jinks, ran, off, h.state])
+	if not bolted or top < 9.0 or ears < 0.7 or h.jinks < 2 or ran < 35.0 or off < 35.0 or h.state != Hare.FEED:
+		return _combat_done(false, "a hare walked up on should bolt flat out, ears back, jinking, and settle far off")
+	# rain: squats in its form, ears flat
+	_player.global_position = Vector3(-40.0, tr.height_at(-40.0, 40.0) + 0.2, 40.0)
+	_world.weather.force(1.0)
+	await _ticks(400)
+	var formed := 0
+	for x in hs:
+		if x.state == Hare.FORM and x.ears_back > 0.9:
+			formed += 1
+	print("BOT hare rain: %d of 2 in the form" % formed)
+	if formed != 2:
+		return _combat_done(false, "rain should send the hares down into their forms")
+	_combat_done(true, "the hares feed, cross the road, sit up to watch, bolt jinking and lie up in rain")
+
 func _dust_test() -> void:
 	var dd: DustDevils = _world.dust_devils
 	var wx: Weather = _world.weather

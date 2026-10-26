@@ -295,7 +295,8 @@ Hour budget changes require editing §5 and the matching PROGRESS.md counter.
   doors, animals in pens, a farm dog -- Edda's collie Brack -- that potters on the green,
   runs out barking to meet the player and keeps her door at night and in rain).
 - **Roads:** ambient events — travellers, merchants with carts, Hollow ambushes, animals
-  crossing.
+  crossing (brown hares feed either side of the road in through the south-east meadow and
+  lope across it by day; they sit up to watch the player and bolt jinking when he comes close).
 - **Reactive world:** grass flattens under feet, footprints in mud/snow, water ripples,
   foliage brushes aside, ember particles from fires.
 - **Soundscape:** region ambience, weather, wildlife, distance-attenuated village noise.

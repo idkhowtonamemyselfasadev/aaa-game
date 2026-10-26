@@ -467,6 +467,25 @@ func _ready() -> void:
 		var pp := at + Vector3(40, 0, 40)
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT dog at %s yaw %.2f state %d lie %.2f" % [at, dg.yaw, dg.state, dg.lie])
+	if spot == "hare":
+		# a brown hare in the south-east meadow, sat up watching (or "feed": nose down in the
+		# grass; "run": bolting); low over the grass from 3.5 m, three-quarter front
+		var hr: Hare = world.hares[0]
+		var st := Hare.FEED if "feed" in args else (Hare.BOLT if "run" in args else Hare.ALERT)
+		var at := hr.global_position
+		hr.place(at, 0.6, st)
+		if st == Hare.BOLT:
+			hr.speed = 10.0
+			hr.ears_back = 0.85
+			hr.set_process(false)
+			hr._pose(0.0)
+		var fwd := Vector3(-sin(hr.yaw), 0, -cos(hr.yaw))
+		var lv := at + fwd.rotated(Vector3.UP, 0.75 if st != Hare.BOLT else 1.45) * 3.5
+		var cp := Vector3(lv.x, terrain.height_at(lv.x, lv.z) + 0.45, lv.z)
+		SPOTS[spot] = [cp, Vector3(at.x, at.y + 0.2, at.z)]
+		var pp := at + Vector3(60, 0, 60)
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
+		print("SHOT hare at %s yaw %.2f state %d" % [at, hr.yaw, hr.state])
 	if spot == "fox":
 		# the fox sat just in from the breach at the edge of Hesper's firelight, looking in at
 		# the fire: low, three-quarter from round the floor ring (Fox.lens_of)

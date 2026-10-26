@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261020-2140-osric-smock.jpg",
-  "time": "2026-10-20T21:40:00Z",
-  "caption": "Osric at his door at dawn in a wool smock (no more armour plates on his chest) with a beard in locks; the beard is still too yellow-brown with wood-grain-like strands and the smock a little bright.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2220-osric-ashbeard.jpg",
-  "time": "2026-10-20T22:20:00Z",
-  "caption": "Osric at his door at dawn with a cooler ash-grey beard (yellow only at the lip) and a darker wool smock; the beard still shows fine vertical streaks, the felt hat reads orange-brown and cowboy-like, and the cape looks smooth.",
-  "verdict": "fail"
- },
- {
-  "file": "20261020-2340-osric-hat.jpg",
-  "time": "2026-10-20T23:40:00Z",
-  "caption": "Osric at his door at dawn: the felt hat is darker, matte and droops all round now, but still reads warm brown, and the cape is smooth and plasticky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-0040-osric-coolhat.jpg",
-  "time": "2026-10-21T00:40:00Z",
-  "caption": "Osric at his door at dawn: the felt hat is a cooler dark grey-brown and the cape shows wool fibre instead of plastic, but the brim still curls up at the sides and the cape and beard carry fine vertical streaks.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-0210-kitemob.jpg",
   "time": "2026-10-21T02:10:00Z",
   "caption": "A red kite pulls up from its stoop over the meadow with four rooks mobbing it from below; the birds read, but the frame is mostly empty sky and one cloud shows a hard straight top edge.",
@@ -897,6 +873,18 @@
   "file": "20261026-2140-night-valley.jpg",
   "time": "2026-10-26T21:40:00Z",
   "caption": "The vale at 21 h with fireflies over the meadow: the white cottage glares pale at range in the dark and the mountains read as a flat blue cut-out with no moonlit shading.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2232-dusk21-valley.jpg",
+  "time": "2026-10-26T22:32:29Z",
+  "caption": "The vale at 21 h from the south-east: fireflies over the dark meadow and the cottages far off, but the mountain ring reads as a flat, too-bright pale-blue cut-out against a near-black valley, and the cottages show as bare white specks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2232-hare-meadow.jpg",
+  "time": "2026-10-26T22:32:29Z",
+  "caption": "A brown hare sat up watching in the south-east meadow at 9 h (centre, by the mossy stone): it reads as a small brown animal in the grass, but at this lens it is only ~40 px, its ears glow pale instead of buff with black tips and its stretched forelegs look fawn-like.",
   "verdict": "fail"
  }
 ]
