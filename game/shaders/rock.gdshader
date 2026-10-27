@@ -8,8 +8,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // the shaded side; a dark damp band where the stone meets the ground.
 
 #include "res://shaders/weather.gdshaderinc"
-uniform vec3 stone_a : source_color = vec3(0.36, 0.35, 0.33);
-uniform vec3 stone_b : source_color = vec3(0.19, 0.19, 0.2);
+uniform vec3 stone_a : source_color = vec3(0.33, 0.31, 0.28);   // weathered granite, a touch warm
+uniform vec3 stone_b : source_color = vec3(0.17, 0.16, 0.15);
+uniform vec3 streak_col : source_color = vec3(0.1, 0.09, 0.07);  // rain-carried dirt and algae
 uniform vec3 moss_a : source_color = vec3(0.09, 0.12, 0.04);   // deep cushion shade
 uniform vec3 moss_b : source_color = vec3(0.24, 0.27, 0.09);     // sunlit tips, olive not lime
 uniform vec3 moss_dry : source_color = vec3(0.23, 0.19, 0.11);   // dead, browned patches
@@ -41,7 +42,8 @@ void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wn = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	ly = VERTEX.y;
-	// Flora sinks each boulder 0.3 x size into the ground (world/flora.gd)
+	// Flora sinks each boulder 0.3 x size into the ground (big ones only 0.2 x, world/flora.gd;
+	// keeping 0.3 here lets the foot moss creep that bit higher on them, which reads better)
 	v_size = length(MODEL_MATRIX[0].xyz);
 	v_above = wp.y - (MODEL_MATRIX[3].y + v_size * 0.3);
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
@@ -62,7 +64,15 @@ void fragment() {
 	// (the crack term stays in the bump only; in the colour it read as marble veining)
 	float crk = 1.0 - smoothstep(0.0, 0.05, abs(fbm(wp * 2.2) - 0.5));
 	vec3 col = mix(stone_b, stone_a, smoothstep(0.0, 0.95, s + crk * 0.4 + fbm(wp * 0.7) * 0.3));
-	col *= 1.0 - crk * 0.15;
+	col *= 1.0 - crk * 0.05;
+	// broad tonal blotches so a bare face is not one even grey
+	col *= 0.85 + 0.3 * fbm(wp * 0.45 + 90.0);
+	// rain streaks: dark vertical runs washed down the steep faces from the moss and the
+	// ledges above, strongest just under the crown and fading out toward the foot
+	float steep = 1.0 - smoothstep(0.25, 0.75, abs(n.y));
+	float runs = vn(vec3(wp.x * 7.0, wp.y * 0.5, wp.z * 7.0)) * 0.7 + vn(vec3(wp.x * 19.0, wp.y * 1.2, wp.z * 19.0) + 4.0) * 0.3;
+	float streak = smoothstep(0.5, 0.8, runs) * steep * smoothstep(-0.3, 0.5, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
+	col = mix(col, streak_col, streak * 0.55);
 	// lichen: soft-edged rosettes broken by a fine speckle, not hard map-like blots
 	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
 	col = mix(col, lichen, li * 0.4);

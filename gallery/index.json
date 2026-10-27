@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-1349-stile.jpg",
-  "time": "2026-10-21T13:49:50Z",
-  "caption": "The squeeze stile in the garth's back wall from the fell footpath: two leaning gritstone slabs with their tops rubbed bare by hands, a beaten path through the slot, no HUD bars; still wrong: the slabs' narrow faces read plain grey and the wall's dark joints form a regular grid.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-1449-stile.jpg",
   "time": "2026-10-21T14:49:17Z",
   "caption": "The garth wall from the fell footpath with the new chip-and-moss hearting and uneven head joints; the joints still read as a near-black grid behind pale stones, and a figure stands in front of the stile.",
@@ -897,6 +891,12 @@
   "file": "20261027-0813-boulder-tall.jpg",
   "time": "2026-10-27T08:13:43Z",
   "caption": "Big meadow boulder now stands proud of the grass with moss in broad patches and whole faces of bare stone; still wrong: the stone is a flat pale grey and its cracks read as drawn lines.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0950-boulder-tone.jpg",
+  "time": "2026-10-27T09:55:13Z",
+  "caption": "Big meadow boulder at 15 h: the bare stone now reads warm weathered grey without drawn crack lines; still wrong: the shaded flank goes near-black, the rain streaks do not show and a faint cell pattern remains on the lit face.",
   "verdict": "fail"
  }
 ]
