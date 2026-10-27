@@ -415,10 +415,11 @@ func _window(u0: float, u1: float, v0: float, v1: float, z: float, s: float) -> 
 	# the shutter hangs a finger short of the frame all round and its planks have shrunk
 	# apart: after dusk the lamp inside shows as a thin warm line round it and through the
 	# cracks (`_lamp_light`)
-	var gap := 0.018
+	# (18 mm / 7 mm was under 2 px from the green at 12 m and TAA ate it: no rim showed)
+	var gap := 0.032
 	for i in n:
 		var a := u0 + w * i / n + (gap if i == 0 else 0.0)
-		var b := u0 + w * (i + 1) / n - (gap if i == n - 1 else 0.007)
+		var b := u0 + w * (i + 1) / n - (gap if i == n - 1 else 0.016)
 		_beam(Vector3((a + b) * 0.5, v0 + gap, dz), Vector3((a + b) * 0.5, v1 - gap, dz), b - a, 0.03, 0.75, Vector3(0, 0, s), 0.004)
 	_lamp_light(Vector3((u0 + u1) * 0.5, (v0 + v1) * 0.5, z), Vector2(w, v1 - v0), dz - s * 0.03, s)
 
@@ -427,8 +428,11 @@ func _window(u0: float, u1: float, v0: float, v1: float, z: float, s: float) -> 
 ## the stone cottages' windows get, dimmer since the shutter holds most of it in.
 func _lamp_light(c: Vector3, size: Vector2, back_z: float, s: float) -> void:
 	glow = StandardMaterial3D.new()
-	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	# lit, not unshaded: an unshaded material outputs albedo only and drops the emission,
+	# so the sheet rendered black behind the cracks (black albedo, no specular: pure glow)
 	glow.albedo_color = Color(0.0, 0.0, 0.0)
+	glow.roughness = 1.0
+	glow.metallic_specular = 0.0
 	glow.emission_enabled = true
 	glow.emission = Color(1.0, 0.58, 0.28)
 	glow.emission_energy_multiplier = 0.0
@@ -694,5 +698,5 @@ func _process(delta: float) -> void:
 	var w := get_parent()
 	var h: float = w.time_of_day if w != null and "time_of_day" in w else 12.0
 	lit = move_toward(lit, StoneCottage.lit_for(h), delta / 1.5)
-	glow.emission_energy_multiplier = lit * 2.4
+	glow.emission_energy_multiplier = lit * 5.0
 	halo_mat.set_shader_parameter("lit", lit * 0.5)

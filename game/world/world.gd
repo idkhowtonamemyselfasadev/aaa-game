@@ -509,7 +509,9 @@ func _apply_time() -> void:
 		var sky_amb := Color(0.46, 0.53, 0.66).lerp(Color(0.56, 0.46, 0.42), low)
 		# the afterglow sky still lights the land through twilight
 		# night ambient is a dim deep blue so the moon, not the fill, models the land
-		env.environment.ambient_light_color = Color(0.075, 0.105, 0.2).lerp(sky_amb, maxf(day, 0.8 * afterglow))
+		# ((0.075, 0.105, 0.2) is ~0.007-0.03 linear: the backlit near meadow and the wood
+		# line read pure black in night `valley`; lifted ~1.6x, still well under the moon key)
+		env.environment.ambient_light_color = Color(0.095, 0.13, 0.24).lerp(sky_amb, maxf(day, 0.8 * afterglow))
 		env.environment.ambient_light_energy = lerpf(1.0, 1.15, day) * ambient_scale
 		# volumetrics only for local ground haze; distance haze is the depth fog (a dense
 		# volume ends at volumetric_fog_length and leaves a visible band on far ridges)
