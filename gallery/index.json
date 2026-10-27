@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-0444-road.jpg",
-  "time": "2026-10-21T04:44:21Z",
-  "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
-  "verdict": "pass"
- },
- {
   "file": "20261021-0540-kitemob.jpg",
   "time": "2026-10-21T05:40:00Z",
   "caption": "A red kite shrieking as it climbs away from four mobbing rooks over the meadow at 11:00; still wrong: an empty flat sky with the birds as tiny silhouettes, no landscape to anchor the frame.",
@@ -885,6 +879,12 @@
   "file": "20261027-0035-hare-alert.jpg",
   "time": "2026-10-27T00:35:38Z",
   "caption": "A brown hare sat up watching in the south-east meadow, now framed at its own eye level (the shot lens had been forced 2.5 m up); black ear tips read and the ears no longer glow, but the coat is smooth and fur-less, the mossy boulder behind is a flat lime-green blob, and the near-clip test exposed bare ground in the foreground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0122-moss-boulder.jpg",
+  "time": "2026-10-27T01:22:15Z",
+  "caption": "The south-east meadow at 9 h: the mossy boulder behind the hare now reads as grey stone with dark olive moss cushions broken by bare rock instead of a flat lime-green blob with a blue rim; still wrong: the boulder silhouette is a smooth faceted slab, its bare stone tops catch a bluish-grey sky tint, and the hare's coat is fur-less.",
   "verdict": "fail"
  }
 ]

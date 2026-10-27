@@ -10,8 +10,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.36, 0.35, 0.33);
 uniform vec3 stone_b : source_color = vec3(0.19, 0.19, 0.2);
-uniform vec3 moss_a : source_color = vec3(0.16, 0.2, 0.05);
-uniform vec3 moss_b : source_color = vec3(0.3, 0.3, 0.1);
+uniform vec3 moss_a : source_color = vec3(0.09, 0.12, 0.04);   // deep cushion shade
+uniform vec3 moss_b : source_color = vec3(0.24, 0.27, 0.09);     // sunlit tips, olive not lime
+uniform vec3 moss_dry : source_color = vec3(0.23, 0.19, 0.11);   // dead, browned patches
 uniform vec3 lichen : source_color = vec3(0.55, 0.52, 0.38);
 
 varying vec3 wp;
@@ -30,6 +31,8 @@ float vn(vec3 x) {
 	return mix(mix(mix(hash3(i), hash3(i + vec3(1,0,0)), f.x), mix(hash3(i + vec3(0,1,0)), hash3(i + vec3(1,1,0)), f.x), f.y),
 	           mix(mix(hash3(i + vec3(0,0,1)), hash3(i + vec3(1,0,1)), f.x), mix(hash3(i + vec3(0,1,1)), hash3(i + vec3(1,1,1)), f.x), f.y), f.z);
 }
+// moss cushions: tight domed clumps (~5 cm) with smaller tufts on them
+float cushion(vec3 p) { return vn(p * 19.0) * 0.65 + vn(p * 47.0 + 3.1) * 0.35; }
 float fbm(vec3 p) { float a = 0.5, r = 0.0; for (int k = 0; k < 4; k++) { r += a * vn(p); p = p * 2.07 + 5.3; a *= 0.5; } return r; }
 
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
@@ -64,7 +67,6 @@ void fragment() {
 	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
 	col = mix(col, lichen, li * 0.4);
 	float mossw = smoothstep(0.35, 0.75, n.y + (fbm(wp * 1.3) - 0.5) * 0.9);
-	vec3 mc = mix(moss_a, moss_b, fbm(wp * 6.0));
 	// moss creeping up the flanks from the foot collar: higher on the shaded side, in
 	// tongues that follow the cracks and run up the damp seams, thinning to a few patches
 	float shade = clamp(dot(n.xz, MOSS_SHADE), 0.0, 1.0);
@@ -74,17 +76,31 @@ void fragment() {
 	float creep = fm * (1.0 - smoothstep(creep_h * 0.45, creep_h, v_above + (0.5 - tongue) * v_size * 0.35));
 	creep *= smoothstep(-0.75, -0.2, n.y);   // not on the overhang undersides
 	mossw = max(mossw, smoothstep(0.15, 0.55, creep));
+	// break the moss up: the stone's proud ridges and a ragged patch noise show through,
+	// so even a fully mossed top reads as moss growing on rock, not a green cap
+	float holes = fbm(wp * 3.4 + 21.0) + mossw * 0.3 - s * 0.35;
+	mossw *= smoothstep(0.3, 0.52, holes);
+	// cushions: crevices between the clumps fall dark, the domed tips catch the light
+	float cu = cushion(wp);
+	vec3 mc = mix(moss_a, moss_b, smoothstep(0.25, 0.85, cu) * (0.6 + 0.4 * fbm(wp * 6.0)));
+	mc = mix(mc, moss_dry, smoothstep(0.55, 0.8, fbm(wp * 2.1 + 40.0)) * 0.4);
+	mc *= 0.7 + 0.45 * cu;
 	col = mix(col, mc, mossw);
 	col *= mix(0.55, 1.0, smoothstep(-0.35, 0.0, ly));    // damp foot
-	float rough = mix(0.78, 0.95, mossw);
+	float rough = mix(0.78, 1.0, mossw);
 	weather_wetten(col, rough, mix(0.3, 1.0, mossw));
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.35;
-	// perturb the world normal with the detail gradient (less under the moss)
-	vec3 pn = normalize(n - (g - n * dot(g, n)) * mix(0.05, 0.015, mossw));
+	// moss is a matte felt of leaflets: almost no sheen, or the sky rims it in blue
+	SPECULAR = mix(0.25, 0.08, mossw);
+	// perturb the world normal with the detail gradient; under the moss, with the
+	// cushion domes instead
+	float ce = 0.006;
+	vec3 cg = vec3(cushion(wp + vec3(ce, 0, 0)) - cu, cushion(wp + vec3(0, ce, 0)) - cu, cushion(wp + vec3(0, 0, ce)) - cu) / ce;
+	vec3 bg = mix(g * 0.05, cg * 0.02, mossw);
+	vec3 pn = normalize(n - (bg - n * dot(bg, n)));
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.6 + s * 0.6, 0.0, 1.0);
+	AO = clamp(0.6 + s * 0.6, 0.0, 1.0) * mix(1.0, 0.65 + 0.35 * cu, mossw);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * AO;
