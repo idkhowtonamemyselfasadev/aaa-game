@@ -38,6 +38,7 @@ func _ready() -> void:
 				who.settle(world, world.time_of_day)
 		for c in [world.stone_cottage, world.white_cottage]:
 			c.lit = c._lit_now(world.time_of_day, 10.0)   # already kindled, not lighting up now
+		world.cottage.lit = StoneCottage.lit_for(world.time_of_day)
 	var player: Player = world.get_node("Player")
 	var terrain: Terrain = world.get_node("Terrain")
 	var cam: Camera3D = player.camera

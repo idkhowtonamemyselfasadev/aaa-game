@@ -519,8 +519,10 @@ func _apply_time() -> void:
 		# sky. Key = light reaching the land (sun on the ground + skylight); half-compensate
 		# (sqrt) toward the noon key, capped at x1.5, faded out into the night ramp.
 		env.environment.tonemap_exposure = lerpf(1.6, 0.85 * lerpf(1.0, low_sun_gain(), day), day)
-		# fog takes the sky's mood: warm haze by day, dark blue at night, no self-glow at night
-		env.environment.fog_light_color = Color(0.05, 0.07, 0.11).lerp(Color(0.73, 0.6, 0.5), day)
+		# fog takes the sky's mood: warm haze by day, moonlit blue-grey at night, no self-glow.
+		# (0.05, 0.07, 0.11) was ~0.004 linear: the valley 100-300 m off sank into the black
+		# sky instead of standing in a faint silver veil, so the night floor had no depth
+		env.environment.fog_light_color = Color(0.17, 0.21, 0.3).lerp(Color(0.73, 0.6, 0.5), day)
 		env.environment.volumetric_fog_albedo = Color(0.6, 0.7, 0.9).lerp(Color(0.9, 0.8, 0.7), day)
 		env.environment.volumetric_fog_emission = Color(0.03, 0.02, 0.015) * day
 		# The moonlit volumetric haze is local (128 m), so it lies in front of the sky exactly
