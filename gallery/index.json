@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-0350-pedlar.jpg",
-  "time": "2026-10-21T03:50:00Z",
-  "caption": "Wat the pedlar, creel of dyed cloth bolts on his back, on the green by the lantern post at 09:24; still wrong: his face reads as a dark mask under the hat, the staff does not show, the lens catches him from the side and Brack the dog blocks the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-0444-road.jpg",
   "time": "2026-10-21T04:44:21Z",
   "caption": "Wat the pedlar walks the new two-rut cart track through the meadow toward the village green; the rut beds are a touch too smooth and even in tone, wanting stones and scuffs.",
@@ -885,6 +879,12 @@
   "file": "20261026-2349-hare-meadow2.jpg",
   "time": "2026-10-26T23:49:53Z",
   "caption": "The south-east meadow at 9 h from the new closer hare lens: the sward and stones read well, but the hare walked off its mark during warm-up, so it sits small at the bottom edge feeding and its ears still show a pale patch.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0035-hare-alert.jpg",
+  "time": "2026-10-27T00:35:38Z",
+  "caption": "A brown hare sat up watching in the south-east meadow, now framed at its own eye level (the shot lens had been forced 2.5 m up); black ear tips read and the ears no longer glow, but the coat is smooth and fur-less, the mossy boulder behind is a flat lime-green blob, and the near-clip test exposed bare ground in the foreground.",
   "verdict": "fail"
  }
 ]

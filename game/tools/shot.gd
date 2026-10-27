@@ -1341,7 +1341,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "climb":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "climb" or spot == "hare":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "devil":
@@ -1392,6 +1392,8 @@ func _ready() -> void:
 		if world.keeper.pick_hold and spot.begins_with("keeper"):
 			# the low pick lens sits in the meadow: clip the blades within 0.9 m of it
 			free.near = 0.9
+		if spot == "hare":
+			print("SHOT hare lens %s look %s" % [pos, look])
 		if spot == "flowers":
 			free.near = 0.02
 			var cf := CameraAttributesPractical.new()
