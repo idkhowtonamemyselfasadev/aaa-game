@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-2045-osric-fell-stance.jpg",
-  "time": "2026-10-21T20:45:00Z",
-  "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-2140-osric-beard-before.jpg",
   "time": "2026-10-21T21:40:00Z",
   "caption": "Osric's face portrait at 17:00 before the fix: the 'pale strip' under his jaw is his beard, a 20 cm flat grey plate hanging down his chest; his face above it is a reddish mask.",
@@ -891,6 +885,18 @@
   "file": "20261027-1628-shutter-fireflies-night.jpg",
   "time": "2026-10-27T16:28:38Z",
   "caption": "Night village at 20:30: the timber house shutter now shows a thin warm lamplit rim and fireflies are small pin points; still wrong: a pale hard-edged snow/haze band on the far mountains and a dark, flat sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1849-firefly-glow-night.jpg",
+  "time": "2026-10-27T18:49:07Z",
+  "caption": "Night timber house: the firefly light on the near grass is now a soft warm-green glow instead of a hot lime pool; the pale ragged band under the far summits (right) is still there.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1849-horizon-debug-night.jpg",
+  "time": "2026-10-27T18:49:07Z",
+  "caption": "Diagnostic: far ring in false colour (snow red, scree green, rock blue): the dark summits are its snow and rock, and the pale band under them stays grey with the ring's own colour and fog zeroed, so scene fog causes it.",
   "verdict": "fail"
  }
 ]

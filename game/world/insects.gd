@@ -284,7 +284,8 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 			var f: Fly = _ff[lit[k]]
 			l.visible = true
 			l.global_position = f.pos
-			l.light_energy = f.glow * 0.22
+			# 0.22 made a hot lime pool on a near grass tuft in the night `cottage` view
+			l.light_energy = f.glow * 0.14
 		else:
 			l.visible = false
 
