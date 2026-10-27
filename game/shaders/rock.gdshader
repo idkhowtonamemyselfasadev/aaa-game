@@ -80,6 +80,11 @@ void fragment() {
 	// so even a fully mossed top reads as moss growing on rock, not a green cap
 	float holes = fbm(wp * 3.4 + 21.0) + mossw * 0.3 - s * 0.35;
 	mossw *= smoothstep(0.3, 0.52, holes);
+	// on the flanks the moss grows in broad patches (~1 m) with whole faces of bare stone
+	// between them, not an even speckle over every side
+	float flank = 1.0 - smoothstep(0.35, 0.75, n.y);
+	float patchn = fbm(wp * 0.85 + 60.0) + fm * 0.12;
+	mossw *= mix(1.0, smoothstep(0.44, 0.58, patchn), flank);
 	// cushions: crevices between the clumps fall dark, the domed tips catch the light
 	float cu = cushion(wp);
 	vec3 mc = mix(moss_a, moss_b, smoothstep(0.25, 0.85, cu) * (0.6 + 0.4 * fbm(wp * 6.0)));

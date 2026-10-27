@@ -1049,18 +1049,22 @@ func _scatter_rocks() -> void:
 		if _rng.randf() > want:
 			continue
 		var s := (_rng.randf_range(1.4, 3.2) if big else _rng.randf_range(0.25, 1.0))
-		var p := Vector3(x, _terrain.height_at(x, z) - s * 0.3, z)
+		# big boulders stand proud of the turf (sunk 0.2 x size, 0.75-1.1 tall) instead of
+		# sitting as squat slabs; small stones stay bedded in
+		var p := Vector3(x, _terrain.height_at(x, z) - s * (0.2 if big else 0.3), z)
 		rock_positions.append(p)
 		_rock_feet.append(Vector3(x, s, z))
 		var b := Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.4).normalized())) * Basis(Vector3.UP, _rng.randf() * TAU)
-		b = b.scaled(Vector3(s, s * _rng.randf_range(0.55, 0.9), s * _rng.randf_range(0.8, 1.2)))
+		var ys := _rng.randf_range(0.75, 1.1) if big else _rng.randf_range(0.55, 0.9)
+		b = b.scaled(Vector3(s, s * ys, s * _rng.randf_range(0.8, 1.2)))
 		per[_rng.randi() % rock_variants].append(Transform3D(b, p))
 		if s > 0.6:
 			var cs := CollisionShape3D.new()
 			var sph := SphereShape3D.new()
 			sph.radius = s * 0.6
 			cs.shape = sph
-			cs.position = p
+			# lift the sphere with the taller stone so its top still meets the rock's crown
+			cs.position = p + Vector3.UP * s * maxf(ys - 0.75, 0.0) * 0.8
 			body.add_child(cs)
 	for v in rock_variants:
 		_multimesh(meshes[v], per[v], "Rocks_%d" % v)
