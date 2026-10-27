@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261022-0200-osric-hood.jpg",
-  "time": "2026-10-22T02:00:00Z",
-  "caption": "Osric at 17:10: the beard is now dark grizzled grey with clumped locks and the cape has lost its wood-grain rings; still a fail: from the front the hood still frames the face as a squarish opening and the cape is now a plain, untextured-looking brown.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0300-osric-dust.jpg",
-  "time": "2026-10-22T03:00:00Z",
-  "caption": "Osric at the garth in late sun: his hood now hangs askew with a worn uneven rim and his wool mantle carries road dust and wear; his face still reads as a smooth mask and the mantle is still too clean-edged.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-0400-osric-slide.jpg",
   "time": "2026-10-22T04:00:00Z",
   "caption": "Osric bent to the hen house at dusk as he drops the pop-hole slide; the sun is already down so the frame is near black, only his hat and the ladder show against the fireflies.",
@@ -885,6 +873,18 @@
   "file": "20261027-1851-night-band-debug.jpg",
   "time": "2026-10-27T18:51:43Z",
   "caption": "Debug render with the mountain ring painted yellow: the pale band sits in front of the ring, a wood's canopy 60-180 m out, brighter than the night ring behind it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2040-night-band-novol.jpg",
+  "time": "2026-10-27T20:40:33Z",
+  "caption": "Debug: night village with volumetric fog switched off; the pale blue-white band over the far ridge right of the village sinks to a dim grey, so the moonlit volumetric haze is what paints it (sky goes black too).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2040-night-band-vol-half.jpg",
+  "time": "2026-10-27T20:40:33Z",
+  "caption": "Night village with the volumetric fog density halved: the pale band over the far ridge is unchanged, so it is not the fog's density but how the volumetric haze is lit (sky affect / moon in-scatter) over the low ring.",
   "verdict": "fail"
  }
 ]

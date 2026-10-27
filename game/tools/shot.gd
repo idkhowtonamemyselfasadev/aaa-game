@@ -1663,6 +1663,13 @@ func _ready() -> void:
 			for i in 3:
 				await get_tree().process_frame
 			print("SHOT bolt at %s flash %.2f strikes %d" % [at, lt.flash, lt.strikes])
+	# debug: drop the volumetric haze ("novol") or the depth fog ("nofog") to see which paints a band
+	if "novol" in args or "nofog" in args:
+		var de: Environment = world.env.environment
+		de.volumetric_fog_enabled = not "novol" in args
+		de.fog_enabled = not "nofog" in args
+		for i in 3:
+			await get_tree().process_frame
 	if spot == "mob" and cam != null:
 		var kb: Birds.Bird = (world.get_node("Birds") as Birds)._kites[0]
 		cam.fov = 34.0

@@ -33,6 +33,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (20:40 10-27) Night canopy band, diagnosis narrowed (Next 18:50 item 1; NOT fixed, no gameplay change).
+  shot.gd gained debug args `novol` / `nofog` (switch the volumetric fog / depth fog off just before capture).
+  Shots: `cottage cotband1 40 20.5` with the ring's night valley_color lifted (0.01,0.013,0.026 -> 0.018,0.026,0.058)
+  and the night foot darkening 0.3 -> 0.6 in horizon.gdshader: band unchanged (reverted). `cottage cotnovol 40 20.5
+  novol` (gallery *-night-band-novol.jpg): with volumetric fog OFF the pale blue-white band sinks to a dim grey strip
+  and the night sky goes black -> the band is painted by the volumetric fog. `cotvol12` (gallery
+  *-night-band-vol-half.jpg): night volumetric_fog_density 0.0025 -> 0.0012 left the band as bright (reverted), so it
+  is not density but how the haze is LIT over the low ring: suspect volumetric_fog_sky_affect = 1.0 at night and/or
+  the moon's volumetric_fog_energy / the haze beyond volumetric_fog_length (128 m) being applied as one flat value to
+  everything further, which shows only where the dark ring meets it. The `nofog` shot was killed by the 30 min task
+  limit (two shots in one background task is too long; run one per task). Bots walk stonehouse neighbour PASS.
 - (18:50 10-27, parallel to 18:45) Firefly pool: this session's insects.gd change (range 0.7, atten 2.4, energy x0.14)
   was dropped at rebase for main's 18:45 version (same energy). Shots `cottage cotnight5/6/7 40 20.5` (gallery *-night-canopy-band.jpg, FAIL):
   the near tuft now shows a small faint glint, not a lime pool. Bots insects walk lantern PASS.
@@ -5492,6 +5503,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (20:40 10-27) Band is the volumetric fog (see Done). NEXT, in order:
+   (1) One shot each (one per background task, ~12 min): `cottage <n> 40 20.5` with world.gd night
+   volumetric_fog_sky_affect 1.0 -> 0.3; if the band stays, try the moon DirectionalLight3D light_volumetric_fog_energy
+   (lower at night) or volumetric_fog_length 128 -> 256. Keep the night sky's blue glow (novol made it black).
+   (2) night `valley` re-shoot (`valley <name> 40 21`); (3) boulder rain streaks; (4) hero small/dull at `herocu`;
+   then more ALIVE work.
 0. (18:50 10-27) Band diagnosed further (see Done; this SUPERSEDES the 18:45 'scene fog over the lower ring' reading:
    the yellow-ring debug shows the pale band is not ring at all, it is tree crowns in front of it). NEXT, in order:
    (1) The pale night canopy band: tree crowns 60-180 m out read pale blue-white (~110,130,170 sRGB) against the
