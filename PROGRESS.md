@@ -33,6 +33,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (18:50 10-27, parallel to 18:45) Firefly pool: this session's insects.gd change (range 0.7, atten 2.4, energy x0.14)
+  was dropped at rebase for main's 18:45 version (same energy). Shots `cottage cotnight5/6/7 40 20.5` (gallery *-night-canopy-band.jpg, FAIL):
+  the near tuft now shows a small faint glint, not a lime pool. Bots insects walk lantern PASS.
+  DIAGNOSED (not fixed) the pale band over the far ridge right of the village (Next item 1): it is NOT snow and NOT
+  chimney smoke. A debug render painting the horizon ring yellow (gallery *-night-band-debug.jpg) shows the band sits
+  IN FRONT of the ring: it is the crowns of a wood 60-180 m out (flora trees at ~(-60..-180, -5..-90), crowns right on
+  the line of sight), moonlit/hazed pale blue-grey and brighter than the near-black night ring behind, so the ring's
+  silhouette draws a ruled top edge over them. Tried and reverted (no visible change at this lens): horizon.gdshader
+  couloir firn moved up / summit couloir snow; dimming chimney smoke after dark.
 - (18:45 10-27) Firefly light pool softened (Next 16:30 item 3): insects.gd firefly OmniLight energy glow x0.22 -> x0.14.
   Shot `cottage cotnight5 40 20.5` (gallery *-firefly-glow-night.jpg, FAIL): the near grass tuft glows soft warm-green,
   no lime pool. Far-mountain band (item 1) DIAGNOSED, not fixed: night snow x0.45 -> x0.26 in horizon.gdshader made
@@ -5483,13 +5492,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (18:45 10-27) Firefly pool done, horizon band diagnosed (see Done). NEXT, in order:
-   (1) Far-mountain night band: it is the SCENE fog over the lower ring, not ring albedo. In world.gd at night try
-   a lower volumetric_fog_density / larger height falloff (or volumetric_fog_sky_affect) and/or fog_height so the
-   haze fades softly up the flank instead of ending at the summit silhouette; or brighten the moonlit snow on the
-   summits (ring `night` snow factor 0.45 -> ~0.7) so the summits are not darker than the haze under them (real
-   moonlit snow is pale). One `cottage <name> 40 20.5` shot per try. (2) night `valley` re-shoot (`valley <name> 40 21`);
-   (3) boulder rain streaks; (4) hero small/dull at `herocu`; then more ALIVE work.
+0. (18:50 10-27) Band diagnosed further (see Done; this SUPERSEDES the 18:45 'scene fog over the lower ring' reading:
+   the yellow-ring debug shows the pale band is not ring at all, it is tree crowns in front of it). NEXT, in order:
+   (1) The pale night canopy band: tree crowns 60-180 m out read pale blue-white (~110,130,170 sRGB) against the
+   near-black horizon ring. Find which term lifts them: the leaf shader's moon translucency/back-light, the scene
+   depth fog's aerial-perspective sky sample (0.5) at night, or the volumetric fog (density 0.0025, sky_affect 1 at
+   night). Then either darken far canopies at night or lift the ring's night haze/valley colour (world.gd
+   _apply_horizon_haze: hc/vc lerp to ~0.02/0.01 by moon `nt`) so the ring's low flanks match what the depth fog paints
+   the wood in front. One `cottage <name> 40 20.5` shot. Debug trick that worked: temporarily end horizon.gdshader's
+   fragment with ALBEDO=0, EMISSION=vec3(wpos.y/600, dist/2500, 0)*3, FOG=vec4(0).
+   (2) night `valley` re-shoot (`valley <name> 40 21`); (3) boulder rain streaks; (4) hero small/dull at `herocu`;
+   then more ALIVE work.
 0. (16:30 10-27) Shutter rim and fireflies done (see Done). NEXT, in order:
    (1) Pale hard-edged haze/snow band on the far mountains right of the village in `cottage` night shots (still there in
    cotnight4); (2) night `valley` re-shoot (`valley <name> 40 21`) to judge the raised ambient; (3) firefly OmniLight

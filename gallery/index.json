@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261021-2140-osric-beard-before.jpg",
-  "time": "2026-10-21T21:40:00Z",
-  "caption": "Osric's face portrait at 17:00 before the fix: the 'pale strip' under his jaw is his beard, a 20 cm flat grey plate hanging down his chest; his face above it is a reddish mask.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2215-osric-beard.jpg",
-  "time": "2026-10-21T22:15:00Z",
-  "caption": "Osric's beard is now short and full, tapering to a point and shaded at the sides and underneath; still a fail: his face is a flat reddish mask with no eyes showing under the brim and the hood frames it like a helmet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-2350-osric-face.jpg",
-  "time": "2026-10-21T23:50:00Z",
-  "caption": "Osric's face at 17:10 with a greyer, less ruddy skin, darker sockets and lighter brow and cheekbones; still a fail: the eyes sit in the brim's shade so the face reads as a nose and beard in a dark hood.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0030-osric-eyes.jpg",
-  "time": "2026-10-22T00:30:00Z",
-  "caption": "Osric at 17:10 with the felt hat tipped back and an eye-level fill: his eyes now show as two lit slits under the brim; still a fail: the hood is a stiff box round a small face, the beard reads pale and the cape is flat wood-grain cloth.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-0200-osric-hood.jpg",
   "time": "2026-10-22T02:00:00Z",
   "caption": "Osric at 17:10: the beard is now dark grizzled grey with clumped locks and the cape has lost its wood-grain rings; still a fail: from the front the hood still frames the face as a squarish opening and the cape is now a plain, untextured-looking brown.",
@@ -897,6 +873,18 @@
   "file": "20261027-1849-horizon-debug-night.jpg",
   "time": "2026-10-27T18:49:07Z",
   "caption": "Diagnostic: far ring in false colour (snow red, scree green, rock blue): the dark summits are its snow and rock, and the pale band under them stays grey with the ring's own colour and fog zeroed, so scene fog causes it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1851-night-canopy-band.jpg",
+  "time": "2026-10-27T18:51:43Z",
+  "caption": "Night timber house: firefly light now a small faint glint on the near tuft; the pale band over the far ridge right of the village is still there (it is moonlit tree canopy, not snow).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1851-night-band-debug.jpg",
+  "time": "2026-10-27T18:51:43Z",
+  "caption": "Debug render with the mountain ring painted yellow: the pale band sits in front of the ring, a wood's canopy 60-180 m out, brighter than the night ring behind it.",
   "verdict": "fail"
  }
 ]
