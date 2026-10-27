@@ -16,9 +16,9 @@ instance uniform float graze = 0.0;      // 0 head up .. 1 nose in the grass
 instance uniform float ears_back = 0.0;  // 0 up .. 1 flat along the back
 instance uniform float crouch = 0.0;     // squatting low in its form
 
-uniform vec3 coat : source_color = vec3(0.36, 0.25, 0.15);        // tawny agouti brown
+uniform vec3 coat : source_color = vec3(0.32, 0.245, 0.17);       // agouti grey-brown (0.36/0.25/0.15 read orange)
 uniform vec3 coat_dark : source_color = vec3(0.13, 0.095, 0.065);  // the black-tipped guard hairs of the back
-uniform vec3 buff : source_color = vec3(0.50, 0.38, 0.24);         // the rufous-buff flanks and chest
+uniform vec3 buff : source_color = vec3(0.45, 0.365, 0.26);        // the dull fawn-buff flanks and chest
 uniform vec3 pale : source_color = vec3(0.60, 0.57, 0.50);         // belly, chin, the scut's underside: dull, never snow
 uniform vec3 tip : source_color = vec3(0.03, 0.025, 0.02);         // ear tips and the scut's top
 #ifdef SHELL
@@ -184,13 +184,15 @@ void fragment() {
 	col = mix(col, coat_dark, smoothstep(0.62, 0.85, pepper) * 0.5 * (1.0 - legm) * (1.0 - ear) * (1.0 - scut) * (1.0 - under));
 	col = mix(col, buff * 1.2, smoothstep(0.78, 0.95, vnoise(p * 210.0 + 4.0)) * 0.25 * (1.0 - legm) * (1.0 - ear));
 	float lum = dot(col, vec3(0.3, 0.55, 0.15));
-	col = mix(col, vec3(lum), 0.1);
+	col = mix(col, vec3(lum), 0.16);
 #ifdef SHELL
 	// agouti guard hairs: a pale band then a black tip on the back; the underfur shows
 	// darker at the roots, the tips catch the light
 	float gh = hash3(floor(hc) + vec3(2.0, 9.0, 4.0));
 	col *= mix(0.78, 1.08, shell_h);
-	col = mix(col, coat_dark, step(0.66, shell_h) * step(0.55, gh) * 0.6 * (1.0 - under) * (1.0 - ear) * (1.0 - legm * 0.6));
+	// the back carries a darker ticked saddle: more, blacker tips toward the spine
+	float saddle = smoothstep(0.15, 0.8, rn.y) * (1.0 - head) * (1.0 - legm);
+	col = mix(col, coat_dark, step(0.66, shell_h) * step(mix(0.55, 0.4, saddle), gh) * mix(0.5, 0.72, saddle) * (1.0 - under) * (1.0 - ear) * (1.0 - legm * 0.6));
 	col = mix(col, buff * 1.15, step(shell_h, 0.7) * step(0.6, gh) * 0.3 * (1.0 - under));
 #endif
 	float rough = 0.82;

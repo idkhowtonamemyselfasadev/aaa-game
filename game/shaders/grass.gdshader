@@ -27,10 +27,11 @@ uniform float fade_end = 64.0;
 uniform float sward_fade_start = 17.0;
 uniform float sward_fade_end = 26.0;
 // near the lens: clumps whose heart is within near_end of the camera shrink down into the
-// sward (by near_start they are a quarter size), so a low camera never looks through
-// hand-sized flat blades
-uniform float near_start = 0.45;
-uniform float near_end = 1.25;
+// sward (by near_start they are 40 % size), so a low camera never looks through
+// hand-sized flat blades. 0.45/1.25 at a quarter size left a bare ~1.2 m ring of tiny
+// blades under a 0.6 m lens (shot `hare`); clumps past ~0.7 m now stand full height
+uniform float near_start = 0.3;
+uniform float near_end = 0.75;
 uniform vec3 sward_green : source_color = vec3(0.36, 0.42, 0.14);
 // seed stems and panicles (UV.x = 1, grass.gd _build_seeding_mesh): ripe straw, some
 // heads still flushed purple-brown
@@ -115,7 +116,8 @@ void vertex() {
 	VERTEX += inverse(mat3(MODEL_MATRIX)) * wv;
 	VERTEX *= vec3(1.0, fade, 1.0);
 	float dn = distance(origin + vec3(0.0, 0.3, 0.0), CAMERA_POSITION_WORLD);
-	VERTEX *= mix(0.25, 1.0, smoothstep(near_start, near_end, dn));
+	// (the short sward never reaches the lens, so it stays full height and closes the soil there)
+	VERTEX *= mix(mix(0.4, 1.0, smoothstep(near_start, near_end, dn)), 1.0, v_sward);
 	// rolled blade: the mesh normal leans off the blade's heading (grass.gd _blade), so the
 	// blade's sideways axis is recoverable; tip the edge normals out along it so the light
 	// rolls across a keeled leaf instead of a flat ribbon (spikelets keep theirs)
