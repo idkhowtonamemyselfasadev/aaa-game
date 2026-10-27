@@ -44,6 +44,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the moon's volumetric_fog_energy / the haze beyond volumetric_fog_length (128 m) being applied as one flat value to
   everything further, which shows only where the dark ring meets it. The `nofog` shot was killed by the 30 min task
   limit (two shots in one background task is too long; run one per task). Bots walk stonehouse neighbour PASS.
+- (21:15 10-27) Pale night band over the far ridge (Next 18:50 item 1): two more causes RULED OUT, no fix yet.
+  (a) Volumetric fog: shot `cottage dbg_novol 40 20.5` with volumetric_fog_enabled=false (temporary edit, reverted;
+  gallery *-night-band-novolfog.jpg) still shows the band. (b) The ring's pale meadow foot by the Vale tile: darkening
+  its albedo x0.3 and killing its specular at night (horizon.gdshader, reverted) made no visible change (shot `band1`,
+  gallery *-night-band-foot-test.jpg). NEW LEAD: in every night shot the pale blobs sit right on top of the white
+  cottage's roof ridge and chimney (their lower edge follows the roof silhouette), so it is likely a screen-space
+  effect at that near/far depth edge (SSIL/SSAO/SSR, or glow) rather than anything in the ring. Bots walk PASS.
+  NOTE: on a fresh box the first Forward+ shot took ~30 min (shader compile), the second ~30 min too: budget 2 shots.
+  (Ran in parallel with the 20:40 session; its `cotnovol` and this session's `dbg_novol` agree: with volumetric fog
+  off the band dims to grey-blue but the speckled patch on the roof line is STILL there, so the fog brightens it but
+  the patch itself comes from something else.)
 - (18:50 10-27, parallel to 18:45) Firefly pool: this session's insects.gd change (range 0.7, atten 2.4, energy x0.14)
   was dropped at rebase for main's 18:45 version (same energy). Shots `cottage cotnight5/6/7 40 20.5` (gallery *-night-canopy-band.jpg, FAIL):
   the near tuft now shows a small faint glint, not a lime pool. Bots insects walk lantern PASS.
@@ -5509,6 +5520,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (lower at night) or volumetric_fog_length 128 -> 256. Keep the night sky's blue glow (novol made it black).
    (2) night `valley` re-shoot (`valley <name> 40 21`); (3) boulder rain streaks; (4) hero small/dull at `herocu`;
    then more ALIVE work.
+0. (21:15 10-27) Band: volumetric fog and the ring's meadow foot ruled out (see Done). NEXT, in order:
+   (Combine with the 20:40 list below: the fog brightens the patch, but `novol` shows it survives without fog.)
+   (1) One `cottage <name> 40 20.5 novol` shot (shot.gd arg from 20:40) with ssil_enabled, ssao_enabled and ssr_enabled all false at night
+   (temporary edit in world.gd after the volumetric_fog_sky_affect line). If the band goes, re-enable them one at a
+   time (SSIL first: it is the usual culprit for halos above a lit near edge against a far dark surface) and tune
+   that effect's radius/intensity at night. If the band stays, try glow off, then the tree crowns' leaf shader.
+   (2) night `valley` re-shoot; (3) boulder rain streaks; (4) hero small/dull at `herocu`; then more ALIVE work.
 0. (18:50 10-27) Band diagnosed further (see Done; this SUPERSEDES the 18:45 'scene fog over the lower ring' reading:
    the yellow-ring debug shows the pale band is not ring at all, it is tree crowns in front of it). NEXT, in order:
    (1) The pale night canopy band: tree crowns 60-180 m out read pale blue-white (~110,130,170 sRGB) against the

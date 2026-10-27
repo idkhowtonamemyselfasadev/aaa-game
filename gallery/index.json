@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261022-0400-osric-slide.jpg",
-  "time": "2026-10-22T04:00:00Z",
-  "caption": "Osric bent to the hen house at dusk as he drops the pop-hole slide; the sun is already down so the frame is near black, only his hat and the ladder show against the fireflies.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-0431-watlamp.jpg",
-  "time": "2026-10-22T04:31:04Z",
-  "caption": "Wat the pedlar on the cart track at dusk, his horn lantern lit at his knee throwing a warm swinging pool on the ruts; still wrong: the lens catches his back not his face, the horn panes blow out flat orange, and a flower stalk cuts the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-0654-henfox.jpg",
   "time": "2026-10-22T06:54:00Z",
   "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
@@ -288,21 +276,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-0915-glide-legs2.jpg",
-  "time": "2026-10-24T09:15:00Z",
-  "caption": "Same framing as glide-sky: the hero's trailing legs now read as dark hemp thigh bindings and road-soiled shin wraps instead of a pale grey smear; the hero is still small in frame and the meadow below is thin.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0915-glide-legs2-close.jpg",
   "time": "2026-10-24T09:15:00Z",
   "caption": "Close crop of the trailing legs under the madder robe panel: worn brown cloth, no grey smear; at this distance the wrap spirals and the bare feet are still mushy.",
   "verdict": "fail"
  },
  {
-  "file": "20261024-1110-dust-devil.jpg",
-  "time": "2026-10-24T11:10:00Z",
-  "caption": "Hot still afternoon on the meadow: a dust devil stands up ~30 m beyond the hero, but it reads as a thin faint wisp of smoke, not a spinning column of dust; the hero is small and the grass in front is fine.",
+  "file": "20261024-0915-glide-legs2.jpg",
+  "time": "2026-10-24T09:15:00Z",
+  "caption": "Same framing as glide-sky: the hero's trailing legs now read as dark hemp thigh bindings and road-soiled shin wraps instead of a pale grey smear; the hero is still small in frame and the meadow below is thin.",
   "verdict": "fail"
  },
  {
@@ -312,9 +294,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-1115-glide-meadow.jpg",
-  "time": "2026-10-24T11:15:00Z",
-  "caption": "Same glide framing as legs2: the meadow beyond the grass clumps now reads as rough tussocky grassland with tan seed-head drifts instead of smooth olive felt; still thin trees and no tall grass past 64 m.",
+  "file": "20261024-1110-dust-devil.jpg",
+  "time": "2026-10-24T11:10:00Z",
+  "caption": "Hot still afternoon on the meadow: a dust devil stands up ~30 m beyond the hero, but it reads as a thin faint wisp of smoke, not a spinning column of dust; the hero is small and the grass in front is fine.",
   "verdict": "fail"
  },
  {
@@ -324,9 +306,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-1230-dust-devil3.jpg",
-  "time": "2026-10-24T12:30:00Z",
-  "caption": "Same devil framing as devil2: the dust devil ~30 m out now reads as a tall tan column of churned soil with a dense dark skirt at the foot instead of a faint wisp; the hero is still stylized and the straw post odd.",
+  "file": "20261024-1115-glide-meadow.jpg",
+  "time": "2026-10-24T11:15:00Z",
+  "caption": "Same glide framing as legs2: the meadow beyond the grass clumps now reads as rough tussocky grassland with tan seed-head drifts instead of smooth olive felt; still thin trees and no tall grass past 64 m.",
   "verdict": "fail"
  },
  {
@@ -336,9 +318,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-1320-dust-devil5.jpg",
-  "time": "2026-10-24T13:20:00Z",
-  "caption": "A dust devil 12 m off the hero (devil spot, near): a tan whirling column rising from the track, now with visible spin striations; its skirt is hidden by the tall grass and the hero still looks stylized.",
+  "file": "20261024-1230-dust-devil3.jpg",
+  "time": "2026-10-24T12:30:00Z",
+  "caption": "Same devil framing as devil2: the dust devil ~30 m out now reads as a tall tan column of churned soil with a dense dark skirt at the foot instead of a faint wisp; the hero is still stylized and the straw post odd.",
   "verdict": "fail"
  },
  {
@@ -348,15 +330,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-1425-dust-devil6.jpg",
-  "time": "2026-10-24T14:25:00Z",
-  "caption": "A dust devil 12 m off the hero with dead leaves and chaff now whirling round and flung out of the column; the hero still looks stylized and the skirt hides in the tall grass.",
+  "file": "20261024-1320-dust-devil5.jpg",
+  "time": "2026-10-24T13:20:00Z",
+  "caption": "A dust devil 12 m off the hero (devil spot, near): a tan whirling column rising from the track, now with visible spin striations; its skirt is hidden by the tall grass and the hero still looks stylized.",
   "verdict": "fail"
  },
  {
   "file": "20261024-1425-dust-devil6-close.jpg",
   "time": "2026-10-24T14:25:00Z",
   "caption": "Crop on the whirl: brown tumbling leaves read clearly against the sky and the bowl keeps a firmer right edge; the top still melts into a soft haze against the cloud.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1425-dust-devil6.jpg",
+  "time": "2026-10-24T14:25:00Z",
+  "caption": "A dust devil 12 m off the hero with dead leaves and chaff now whirling round and flung out of the column; the hero still looks stylized and the skirt hides in the tall grass.",
   "verdict": "fail"
  },
  {
@@ -372,15 +360,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261024-1800-outer-woods-air2.jpg",
-  "time": "2026-10-24T18:00:00Z",
-  "caption": "Same glide framing as 16:50 after the outer oaks were packed into six woods: a dark closed wood now fills the right middle distance, but the centre (the inner vale round the village, first-pass lone oaks) still reads as parkland and the hero still looks stylized.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1800-outer-woods-air2-crop.jpg",
   "time": "2026-10-24T18:00:00Z",
   "caption": "Crop on the right half: the crowns now merge into one dark canopy mass instead of separate lone trees; the wood edge is soft and the crowns still look thin and acacia-like up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261024-1800-outer-woods-air2.jpg",
+  "time": "2026-10-24T18:00:00Z",
+  "caption": "Same glide framing as 16:50 after the outer oaks were packed into six woods: a dark closed wood now fills the right middle distance, but the centre (the inner vale round the village, first-pass lone oaks) still reads as parkland and the hero still looks stylized.",
   "verdict": "fail"
  },
  {
@@ -498,21 +486,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261025-1725-sheen-hero.jpg",
-  "time": "2026-10-25T17:25:24Z",
-  "caption": "Hero at noon with warmer black-brown lacquer and more sheen on the plate fields: the torso now reads dark brown with faint shoulder-plate shading, but the plates still merge at this range and the face is lost in the hood's shade.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-1725-sheen-crop.jpg",
   "time": "2026-10-25T17:25:24Z",
   "caption": "Before (left, 16:26) and after (right): the lacquer is a step warmer and the shoulder plate catches a little sky; plate separation is still weak.",
   "verdict": "fail"
  },
  {
-  "file": "20261025-1831-crease-hero.jpg",
-  "time": "2026-10-25T18:31:05Z",
-  "caption": "Hero at noon with dark creases between the lacquered plates and the texture's baked plate shading carried into the lacquer: the road, fields and farmhouse read as a place, but at this range the plates still merge and the face is lost in the hood's shade.",
+  "file": "20261025-1725-sheen-hero.jpg",
+  "time": "2026-10-25T17:25:24Z",
+  "caption": "Hero at noon with warmer black-brown lacquer and more sheen on the plate fields: the torso now reads dark brown with faint shoulder-plate shading, but the plates still merge at this range and the face is lost in the hood's shade.",
   "verdict": "fail"
  },
  {
@@ -522,15 +504,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261025-1929-facefill-face.jpg",
-  "time": "2026-10-25T19:29:23Z",
-  "caption": "Hero's face at noon with the meadow's ground bounce now lighting the skin under the hat brim: eyes and cheeks read inside the hood, but the skin is still smooth and young and the dark armour merges into one mass.",
+  "file": "20261025-1831-crease-hero.jpg",
+  "time": "2026-10-25T18:31:05Z",
+  "caption": "Hero at noon with dark creases between the lacquered plates and the texture's baked plate shading carried into the lacquer: the road, fields and farmhouse read as a place, but at this range the plates still merge and the face is lost in the hood's shade.",
   "verdict": "fail"
  },
  {
-  "file": "20261025-2025-facefill-herocu.jpg",
-  "time": "2026-10-25T20:25:29Z",
-  "caption": "New 2 m hero lens at noon: the face under the hood now gets the meadow bounce fill like his armour, but the frame still reads game-like (blocky training post at left, dull figure).",
+  "file": "20261025-1929-facefill-face.jpg",
+  "time": "2026-10-25T19:29:23Z",
+  "caption": "Hero's face at noon with the meadow's ground bounce now lighting the skin under the hat brim: eyes and cheeks read inside the hood, but the skin is still smooth and young and the dark armour merges into one mass.",
   "verdict": "fail"
  },
  {
@@ -540,9 +522,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261025-2125-hewnpost.jpg",
-  "time": "2026-10-25T21:25:00Z",
-  "caption": "Practice post at noon beside the hero: now a hewn, tapered oak post with a rounded top under a dark iron band and a lashed straw bundle; the meadow still lacks depth haze and the hero reads small and dull.",
+  "file": "20261025-2025-facefill-herocu.jpg",
+  "time": "2026-10-25T20:25:29Z",
+  "caption": "New 2 m hero lens at noon: the face under the hood now gets the meadow bounce fill like his armour, but the frame still reads game-like (blocky training post at left, dull figure).",
   "verdict": "fail"
  },
  {
@@ -552,15 +534,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261025-2226-skinform-herocu.jpg",
-  "time": "2026-10-25T22:26:00Z",
-  "caption": "Hero at the 2 m lens at noon with the hewn oak post in the foreground: the post now reads as adzed timber under an iron band, but the face is still a small patch in the hood and the plain meadow lacks depth haze.",
+  "file": "20261025-2125-hewnpost.jpg",
+  "time": "2026-10-25T21:25:00Z",
+  "caption": "Practice post at noon beside the hero: now a hewn, tapered oak post with a rounded top under a dark iron band and a lashed straw bundle; the meadow still lacks depth haze and the hero reads small and dull.",
   "verdict": "fail"
  },
  {
   "file": "20261025-2226-skinform-crop.jpg",
   "time": "2026-10-25T22:26:00Z",
   "caption": "Face x5, before (left) vs after (right): deeper sockets, a lighter brow bone and sun-mottled cheeks give the face some bony structure, but at this range it still reads soft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261025-2226-skinform-herocu.jpg",
+  "time": "2026-10-25T22:26:00Z",
+  "caption": "Hero at the 2 m lens at noon with the hewn oak post in the foreground: the post now reads as adzed timber under an iron band, but the face is still a small patch in the hood and the plain meadow lacks depth haze.",
   "verdict": "fail"
  },
  {
@@ -576,10 +564,10 @@
   "verdict": "fail"
  },
  {
-  "file": "20261026-0212-hazevalley.jpg",
+  "file": "20261026-0212-haze-herocu.jpg",
   "time": "2026-10-26T02:12:00Z",
-  "caption": "Noon over the Vale from the hill: the valley now recedes in layers -- crisp meadow, hazed wood and village, warm hazed foothills, then snow massifs that keep their rock structure; the far wood line is still a soft beige smear and the village reads small.",
-  "verdict": "pass"
+  "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
+  "verdict": "fail"
  },
  {
   "file": "20261026-0212-hazevalley-cmp.jpg",
@@ -588,9 +576,15 @@
   "verdict": "pass"
  },
  {
-  "file": "20261026-0212-haze-herocu.jpg",
+  "file": "20261026-0212-hazevalley.jpg",
   "time": "2026-10-26T02:12:00Z",
-  "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
+  "caption": "Noon over the Vale from the hill: the valley now recedes in layers -- crisp meadow, hazed wood and village, warm hazed foothills, then snow massifs that keep their rock structure; the far wood line is still a soft beige smear and the village reads small.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261026-0310-duskvalley-cmp.jpg",
+  "time": "2026-10-26T03:10:00Z",
+  "caption": "Before/after at 18:00: left, the pink-hazed near hill stands in front of dark grey foothills (value inversion); right, the ring's valley air now follows the sunset sky.",
   "verdict": "fail"
  },
  {
@@ -600,21 +594,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261026-0310-duskvalley-cmp.jpg",
-  "time": "2026-10-26T03:10:00Z",
-  "caption": "Before/after at 18:00: left, the pink-hazed near hill stands in front of dark grey foothills (value inversion); right, the ring's valley air now follows the sunset sky.",
+  "file": "20261026-0527-valley-dusk.jpg",
+  "time": "2026-10-26T05:27:20Z",
+  "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
   "verdict": "fail"
  },
  {
   "file": "20261026-0527-villager.jpg",
   "time": "2026-10-26T05:27:20Z",
   "caption": "Edda at the woodpile at 10 h now wears her rust kirtle over the chest under the shawl and a dimmer coif instead of a mottled pale-grey body; her sleeves still read pale grey and the cottage annex is a flat white box with sticker-like plaster patches.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-0527-valley-dusk.jpg",
-  "time": "2026-10-26T05:27:20Z",
-  "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
   "verdict": "fail"
  },
  {
@@ -726,15 +714,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261026-2349-night21-valley.jpg",
-  "time": "2026-10-26T23:49:53Z",
-  "caption": "The Vale at 21 h after the night fix: the far mountain ring now sits dark behind the valley with moonlit ridge faces and its foot sunk into the night air instead of a flat pale-blue cut-out; the near hills now merge with it a little and the cottages still read as bare white specks.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-2349-hare-meadow2.jpg",
   "time": "2026-10-26T23:49:53Z",
   "caption": "The south-east meadow at 9 h from the new closer hare lens: the sward and stones read well, but the hare walked off its mark during warm-up, so it sits small at the bottom edge feeding and its ears still show a pale patch.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261026-2349-night21-valley.jpg",
+  "time": "2026-10-26T23:49:53Z",
+  "caption": "The Vale at 21 h after the night fix: the far mountain ring now sits dark behind the valley with moonlit ridge faces and its foot sunk into the night air instead of a flat pale-blue cut-out; the near hills now merge with it a little and the cottages still read as bare white specks.",
   "verdict": "fail"
  },
  {
@@ -864,15 +852,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261027-1851-night-canopy-band.jpg",
-  "time": "2026-10-27T18:51:43Z",
-  "caption": "Night timber house: firefly light now a small faint glint on the near tuft; the pale band over the far ridge right of the village is still there (it is moonlit tree canopy, not snow).",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1851-night-band-debug.jpg",
   "time": "2026-10-27T18:51:43Z",
   "caption": "Debug render with the mountain ring painted yellow: the pale band sits in front of the ring, a wood's canopy 60-180 m out, brighter than the night ring behind it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1851-night-canopy-band.jpg",
+  "time": "2026-10-27T18:51:43Z",
+  "caption": "Night timber house: firefly light now a small faint glint on the near tuft; the pale band over the far ridge right of the village is still there (it is moonlit tree canopy, not snow).",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,18 @@
   "file": "20261027-2040-night-band-vol-half.jpg",
   "time": "2026-10-27T20:40:33Z",
   "caption": "Night village with the volumetric fog density halved: the pale band over the far ridge is unchanged, so it is not the fog's density but how the volumetric haze is lit (sky affect / moon in-scatter) over the low ring.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2134-night-band-foot-test.jpg",
+  "time": "2026-10-27T21:34:05Z",
+  "caption": "Night cottage view with the far ring's pale meadow foot darkened (reverted, no visible change); the pale band hugging the white cottage roof line remains, now suspected to be a screen-space effect at the roof's depth edge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2134-night-band-novolfog.jpg",
+  "time": "2026-10-27T21:34:05Z",
+  "caption": "Debug: night cottage view with volumetric fog switched off; the pale band over the far ridge right of the village is still there, so the volumetric haze is not its cause.",
   "verdict": "fail"
  }
 ]
