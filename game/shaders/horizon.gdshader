@@ -44,6 +44,18 @@ uniform float valley_h = 60.0;
 // the scene fog's own reach: the Vale tile plus the near foothills; the far massifs are
 // hazed by their own (bluer, clearer) term, as the valley air does not run 2 km deep
 uniform float valley_len = 900.0;
+// The engine's volumetric fog, redone here: a shader that writes FOG skips the volumetric
+// fog entirely (CUSTOM_FOG_USED in scene_forward_clustered), so the moonlit haze lay over
+// the sky (sky affect 1) and over the trees in front but not over the ring, whose dark
+// silhouette cut a ruled edge across the hazed wood line at night. world.gd mirrors the
+// environment's values: what the volume integrates to beyond volumetric_fog_length.
+uniform vec3 vol_sun = vec3(0.0);       // albedo x light colour x energy (linear)
+uniform vec3 vol_sun_dir = vec3(0.0, 1.0, 0.0);   // toward the light
+uniform vec3 vol_moon = vec3(0.0);
+uniform vec3 vol_moon_dir = vec3(0.0, 1.0, 0.0);
+uniform vec3 vol_emit = vec3(0.0);
+uniform float vol_alpha = 0.0;          // 1 - exp(-density x length)
+uniform float vol_g = 0.6;
 
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
@@ -53,6 +65,11 @@ varying vec3 wnrm;
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wnrm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+}
+
+// same phase function as volumetric_fog_process.glsl
+float hg(float c, float g) {
+	return 0.0795774715 * (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * c, 1.5);
 }
 
 float hash2(vec2 p) {
@@ -247,5 +264,11 @@ void fragment() {
 	float tau_o = dist * haze_density * haze_scale * mix(1.0, 0.55, night);
 	vec3 own = haze_color * mix(1.0, haze_top, smoothstep(60.0, 380.0, wpos.y));
 	vec3 fc = (own * tau_o + valley_color * tau_v) / max(tau_o + tau_v, 1e-6);
-	FOG = vec4(fc, 1.0 - exp(-(tau_o + tau_v)));
+	float fa = 1.0 - exp(-(tau_o + tau_v));
+	// the volumetric layer in front, blended as the engine blends it over the depth fog
+	vec3 rd = normalize(wpos - CAMERA_POSITION_WORLD);
+	vec3 vc = vol_sun * hg(dot(rd, vol_sun_dir), vol_g) + vol_moon * hg(dot(rd, vol_moon_dir), vol_g) + vol_emit;
+	float sa = 1.0 - vol_alpha;
+	float ra = fa * sa + vol_alpha;
+	FOG = vec4(ra > 0.0 ? (fc * fa * sa + vc * vol_alpha) / ra : vec3(0.0), ra);
 }

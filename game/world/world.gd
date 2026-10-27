@@ -640,6 +640,32 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 	# the ring keeps its own clear-day density (its haze_scale was tuned for 0.0012), the
 	# denser valley air is a near-field thing
 	mat.set_shader_parameter("haze_density", lerpf(0.0012, 0.008, c))
+	# the volumetric haze the ring's own FOG would otherwise skip (horizon.gdshader vol_*)
+	var alb := e.volumetric_fog_albedo.srgb_to_linear()
+	var vs := Vector3.ZERO
+	var vm := Vector3.ZERO
+	if sun.visible:
+		var l := sun.light_color.srgb_to_linear() * sun.light_energy * sun.light_volumetric_fog_energy * alb
+		vs = Vector3(l.r, l.g, l.b)
+	if moon and moon.visible:
+		var l := moon.light_color.srgb_to_linear() * moon.light_energy * moon.light_volumetric_fog_energy * alb \
+				* RING_VOL_MOON_GAIN
+		vm = Vector3(l.r, l.g, l.b)
+	var em := e.volumetric_fog_emission.srgb_to_linear() * e.volumetric_fog_emission_energy
+	mat.set_shader_parameter("vol_sun", vs)
+	mat.set_shader_parameter("vol_sun_dir", sun.global_transform.basis.z.normalized())
+	mat.set_shader_parameter("vol_moon", vm)
+	mat.set_shader_parameter("vol_moon_dir", moon.global_transform.basis.z.normalized() if moon else Vector3.UP)
+	mat.set_shader_parameter("vol_emit", Vector3(em.r, em.g, em.b))
+	mat.set_shader_parameter("vol_g", e.volumetric_fog_anisotropy)
+	mat.set_shader_parameter("vol_alpha", 1.0 - exp(-e.volumetric_fog_density * e.volumetric_fog_length)
+			if e.volumetric_fog_enabled else 0.0)
+
+## The engine's moonlit volume came out ~20x brighter than albedo x moon x phase predicts (the
+## night sky and the wood line glow blue-grey through it; 21:22 10-27 shot with gain 1 left the
+## ring's cut-out edge unchanged), so the ring's copy of it is calibrated by eye. Moon only:
+## by day the sun term stays physical (unverified against the engine).
+const RING_VOL_MOON_GAIN := 4.0
 
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat

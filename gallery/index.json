@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261022-0654-henfox.jpg",
-  "time": "2026-10-22T06:54:00Z",
-  "caption": "The fox up the hens' ladder at Osric's hen house, nose to the shut slide in failing light; the pose reads, but the scene is very dark and the fur is a smooth saturated red with no visible pelt detail or dark stockings.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-0654-henfoxdusk.jpg",
   "time": "2026-10-22T06:54:00Z",
   "caption": "Same moment at 19:54 from the garth: the hen house and ladder read against the moonlit trees, but the fox is only a red smear in the dark.",
@@ -885,6 +879,18 @@
   "file": "20261027-2134-night-band-novolfog.jpg",
   "time": "2026-10-27T21:34:05Z",
   "caption": "Debug: night cottage view with volumetric fog switched off; the pale band over the far ridge right of the village is still there, so the volumetric haze is not its cause.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2205-night-ring-haze.jpg",
+  "time": "2026-10-27T22:05:00Z",
+  "caption": "Night village: the far mountains now stand in the same moonlit haze as the wood line in front, so the ruled pale band over the ridge is gone; the massifs still read a touch flat and pale.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-2205-night-ring-haze-overbright.jpg",
+  "time": "2026-10-27T22:05:00Z",
+  "caption": "Calibration overshoot (moon haze gain 18): the band is gone but the mountain ring glows as flat pale cut-outs over a black wood; rejected for gain 4.",
   "verdict": "fail"
  }
 ]
