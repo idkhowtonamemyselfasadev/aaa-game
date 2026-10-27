@@ -67,6 +67,7 @@ var slate_count := 0
 var rise := 0.0              # ridge height above the eaves (on the deck's underside)
 var smoke: CPUParticles3D
 var lamp: OmniLight3D
+var halos: ShaderMaterial        # far glow round the lit windows
 var panes: ShaderMaterial
 var lit := 0.0
 var keeper: Node                 # who lives here (Villager): the lamp burns only while they are in
@@ -421,6 +422,8 @@ func _floor() -> void:
 func _openings() -> void:
 	panes = ShaderMaterial.new()
 	panes.shader = preload("res://shaders/pane.gdshader")
+	halos = ShaderMaterial.new()
+	halos.shader = preload("res://shaders/window_halo.gdshader")
 	for i in openings.size():
 		var o: Array = openings[i]
 		var w: int = o[0]
@@ -474,6 +477,18 @@ func _openings() -> void:
 		pane.basis = Basis(dir, Vector3.UP, dir.cross(Vector3.UP))
 		if dir.cross(Vector3.UP).dot(out) < 0.0:
 			pane.basis = Basis(Vector3.UP, PI) * pane.basis
+		# the far glow of the lamp through it (window_halo.gdshader)
+		var halo := MeshInstance3D.new()
+		halo.name = "Halo%d" % i
+		var hq := QuadMesh.new()
+		hq.size = Vector2.ONE
+		halo.mesh = hq
+		halo.material_override = halos
+		halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		halo.extra_cull_margin = 6.0
+		add_child(halo)
+		halo.position = wc + out * 0.25
+		halo.set_instance_shader_parameter("out_dir", out)
 		var sb := Basis(dir, Vector3.UP, dir.cross(Vector3.UP))
 		_place(face_c + out * 0.06 + Vector3(0, floor_y + sill - 0.06, 0), sb, Vector3(ow + 0.24, 0.12, T + 0.12), 0.45)
 		# shutters, folded back flat against the wall either side
@@ -981,5 +996,6 @@ func _process(delta: float) -> void:
 	var h: float = _world.time_of_day if "time_of_day" in _world else 12.0
 	lit = _lit_now(h, delta)
 	panes.set_shader_parameter("lit", lit)
+	halos.set_shader_parameter("lit", lit)
 	lamp.light_energy = lit * 1.6
 	lamp.visible = lit > 0.01

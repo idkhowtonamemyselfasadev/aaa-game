@@ -30,6 +30,14 @@ func _ready() -> void:
 	# (the frame above can resolve before the world's _process: without this the lenses that
 	# read the sun -- `stonehouse ... sunny` -- aimed by the scene's default 17.25 h sun)
 	world._apply_time()
+	if args.size() > 3:
+		# the folk were placed for the scene's default hour: put them where the shot's hour
+		# has them (indoors with the lamp lit after dark, out at work by day)
+		for who in [world.keeper, world.villager, world.neighbour]:
+			if who != null:
+				who.settle(world, world.time_of_day)
+		for c in [world.stone_cottage, world.white_cottage]:
+			c.lit = c._lit_now(world.time_of_day, 10.0)   # already kindled, not lighting up now
 	var player: Player = world.get_node("Player")
 	var terrain: Terrain = world.get_node("Terrain")
 	var cam: Camera3D = player.camera

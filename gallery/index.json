@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-1449-stile.jpg",
-  "time": "2026-10-21T14:49:17Z",
-  "caption": "The garth wall from the fell footpath with the new chip-and-moss hearting and uneven head joints; the joints still read as a near-black grid behind pale stones, and a figure stands in front of the stile.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-1529-stile.jpg",
   "time": "2026-10-21T15:29:00Z",
   "caption": "The garth wall and squeeze stile from the fell footpath at mid-morning: face stones now butt on tight beds in varied greys with dark crust patches, no longer pale tiles on a black joint grid; still wrong: the stones read as too-regular rectangular blocks, the cope is a uniform green moss band and the slabs' faces are plain.",
@@ -897,6 +891,12 @@
   "file": "20261027-0950-boulder-tone.jpg",
   "time": "2026-10-27T09:55:13Z",
   "caption": "Big meadow boulder at 15 h: the bare stone now reads warm weathered grey without drawn crack lines; still wrong: the shaded flank goes near-black, the rain streaks do not show and a faint cell pattern remains on the lit face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1218-night-windows.jpg",
+  "time": "2026-10-27T12:18:45Z",
+  "caption": "The Vale at 21 h from the south hill: the village now reads as warm lamp-lit windows glowing across the dark valley; still wrong: the lime walls stay pale blue-white specks and the valley floor is near-black with no form.",
   "verdict": "fail"
  }
 ]
