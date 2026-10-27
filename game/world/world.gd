@@ -665,7 +665,7 @@ func _apply_horizon_haze(e: Environment, day: float, c: float) -> void:
 ## night sky and the wood line glow blue-grey through it; 21:22 10-27 shot with gain 1 left the
 ## ring's cut-out edge unchanged), so the ring's copy of it is calibrated by eye. Moon only:
 ## by day the sun term stays physical (unverified against the engine).
-const RING_VOL_MOON_GAIN := 4.0
+const RING_VOL_MOON_GAIN := 3.0
 
 ## Light the sunlit meadow and walls throw back into the shade. SDFGI does this on a real GPU;
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat

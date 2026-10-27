@@ -886,5 +886,17 @@
   "time": "2026-10-27T22:30:00Z",
   "caption": "Debug: night cottage view with SSIL, SSAO and SSR switched off; the pale speckled band above the white cottage roof is unchanged, so screen-space effects are not its cause.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261027-2351-day-ring-check.jpg",
+  "time": "2026-10-27T23:51:00Z",
+  "caption": "Morning Vale (10:00) after the ring's own volumetric haze: the far mountains sit in the same warm air as the valley with no glow toward the sun; the far middle distance is still a touch flat and beige.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261027-2351-night-valley-ring.jpg",
+  "time": "2026-10-27T23:51:00Z",
+  "caption": "Night Vale at moon haze gain 3: the massifs keep moonlit faces under a starry sky with no pale band, but the near meadow is near-black and reads as an empty void.",
+  "verdict": "fail"
  }
 ]
