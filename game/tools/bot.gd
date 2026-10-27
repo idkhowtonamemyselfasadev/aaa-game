@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -127,6 +127,9 @@ func _ready() -> void:
 		return
 	if name == "sward":
 		_sward_test()
+		return
+	if name == "boulder":
+		_boulder_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -1024,6 +1027,77 @@ func _thermal_test() -> void:
 ## and none stand up under a front or by night.
 ## The short sward closes the soil in front of a low lens: the `hare` shot's camera (1.8 m
 ## off a sat-up hare, 0.6 m high) should look over blade mats at meadow density, not bare thatch.
+## Boulder silhouettes: every rock variant must read as fractured stone, not a smooth
+## potato -- crisp creases (a vertex position carrying two normals, where a fracture face
+## meets the weathered skin), sharp folds between neighbouring faces, and a side profile
+## whose outline kinks instead of rolling round.
+func _boulder_test() -> void:
+	var flora: Flora = _world.get_node("Flora")
+	var ok := true
+	var nv := 0
+	for c in flora.get_children():
+		if not (c is MultiMeshInstance3D and c.name.begins_with("Rocks_")):
+			continue
+		nv += 1
+		var arr: Array = c.multimesh.mesh.surface_get_arrays(0)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var ns: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+		var ix: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+		# creases: positions shared by vertices whose normals differ by > 30 deg
+		var by_pos := {}
+		for i in vs.size():
+			var key := Vector3i((vs[i] * 2000.0).round())
+			if by_pos.has(key):
+				by_pos[key].append(ns[i])
+			else:
+				by_pos[key] = [ns[i]]
+		var crease := 0
+		for key in by_pos:
+			var l: Array = by_pos[key]
+			for j in range(1, l.size()):
+				if l[0].dot(l[j]) < 0.866:
+					crease += 1
+					break
+		# folds: adjacent face pairs (by position) meeting at > 60 deg
+		var edges := {}
+		var folds := 0
+		var pairs := 0
+		for t in range(0, ix.size(), 3):
+			var a := vs[ix[t]]
+			var b := vs[ix[t + 1]]
+			var d := vs[ix[t + 2]]
+			var fn := (b - a).cross(d - a).normalized()
+			for e in [[a, b], [b, d], [d, a]]:
+				var k0 := Vector3i((e[0] * 2000.0).round())
+				var k1 := Vector3i((e[1] * 2000.0).round())
+				var key := [k0, k1] if str(k0) < str(k1) else [k1, k0]
+				var ks := str(key)
+				if edges.has(ks):
+					pairs += 1
+					if edges[ks].dot(fn) < 0.5:
+						folds += 1
+				else:
+					edges[ks] = fn
+		# side profile: outer radius per 5 deg of azimuth at mid height; count kinks
+		var prof: Array[float] = []
+		prof.resize(72)
+		prof.fill(0.0)
+		for p in vs:
+			if absf(p.y) > 0.25:
+				continue
+			var bi := int(posmod(atan2(p.z, p.x) / TAU * 72.0, 72.0))
+			prof[bi] = maxf(prof[bi], Vector2(p.x, p.z).length())
+		var kinks := 0
+		for i in 72:
+			var dd := prof[(i + 71) % 72] + prof[(i + 1) % 72] - 2.0 * prof[i]
+			if absf(dd) > 0.035:
+				kinks += 1
+		var fold_rate := float(folds) / maxf(pairs, 1)
+		print("BOT boulder %s: %d verts, %d crease points, folds %d/%d (%.3f), profile kinks %d/72" % [c.name, by_pos.size(), crease, folds, pairs, fold_rate, kinks])
+		if crease < 100 or fold_rate < 0.01 or kinks < 8:
+			ok = false
+	_finish(ok and nv > 0, "every boulder variant shows crisp fracture creases, sharp folds and a kinked profile" if ok and nv > 0 else "boulders read as smooth potatoes (need >= 100 crease points, >= 1% folds over 60 deg, >= 8 profile kinks)")
+
 func _sward_test() -> void:
 	var tr: Terrain = _world.get_node("Terrain")
 	var grass: GrassField = _world.get_node("Grass")

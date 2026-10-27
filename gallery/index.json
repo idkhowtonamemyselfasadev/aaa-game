@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261021-1041-rut-stones.jpg",
-  "time": "2026-10-21T10:41:00Z",
-  "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-1124-near-grass.jpg",
-  "time": "2026-10-21T11:24:34Z",
-  "caption": "Low lens in the meadow behind Brack the collie watching Wat: the near grass now shrinks into the sward close to the camera and shows rolled, ribbed blades instead of hand-sized paper ribbons; still wrong: a grey slab at the right frame edge, HUD bars on, the dog reads a little flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1250-stile.jpg",
-  "time": "2026-10-21T12:45:00Z",
-  "caption": "The new squeeze stile in the garth's back wall seen from the fell footpath: two leaning slabs with a worn path through the slot toward Osric's cottage; still wrong: the slot reads wider than a real squeeze stile, the wall courses look too regular and tiled, and the light is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-1349-stile.jpg",
   "time": "2026-10-21T13:49:50Z",
   "caption": "The squeeze stile in the garth's back wall from the fell footpath: two leaning gritstone slabs with their tops rubbed bare by hands, a beaten path through the slot, no HUD bars; still wrong: the slabs' narrow faces read plain grey and the wall's dark joints form a regular grid.",
@@ -897,6 +879,18 @@
   "file": "20261027-0629-sward-debug.jpg",
   "time": "2026-10-27T06:29:51Z",
   "caption": "Debug frame with the short sward tinted magenta (before the fix): it shows the bare oval 1-2 m in front of the lens where random scatter left no blade mats.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0734-boulder-fracture.jpg",
+  "time": "2026-10-27T07:34:23Z",
+  "caption": "Big meadow boulder: it now shows a flat fractured top face with crisp edges and a broken corner instead of a smooth rounded slab; still sits too low and squat, and the moss on its flanks is one even dark speckle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0734-hare-boulder.jpg",
+  "time": "2026-10-27T07:34:23Z",
+  "caption": "Sat-up hare in the meadow with the reworked boulder behind it: the stone reads lumpier, but at this distance it is still a dark low mass half-buried in grass.",
   "verdict": "fail"
  }
 ]

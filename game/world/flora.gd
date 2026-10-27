@@ -1065,8 +1065,11 @@ func _scatter_rocks() -> void:
 	for v in rock_variants:
 		_multimesh(meshes[v], per[v], "Rocks_%d" % v)
 
-## Icosphere (3 subdivisions) displaced by ridged + fbm noise, flattened underneath,
-## with a couple of planar cuts so it reads as fractured stone instead of a potato.
+## Icosphere (4 subdivisions) displaced by fbm + two ridged octaves (a broad one for the
+## mass, a tight sharp one that chips the edges), stepped along a tilted bedding axis so
+## the stone shows ledges, then sliced by planar fracture cuts. The cut faces get their
+## own smooth group, so where a fracture meets the weathered skin the edge stays crisp
+## instead of being averaged into a potato.
 func _build_rock(v: int) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = seed + 100 + v
@@ -1077,28 +1080,54 @@ func _build_rock(v: int) -> ArrayMesh:
 	ridge.frequency = 0.9
 	ridge.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	ridge.fractal_octaves = 2
+	var chip := FastNoiseLite.new()
+	chip.seed = seed + 300 + v
+	chip.frequency = 3.4
+	chip.fractal_type = FastNoiseLite.FRACTAL_RIDGED
+	chip.fractal_octaves = 2
 	var r := RandomNumberGenerator.new()
 	r.seed = seed + v
 	var cuts: Array = []
-	for i in 3:
-		cuts.append([Vector3(r.randfn(), r.randfn() * 0.5 + 0.4, r.randfn()).normalized(), r.randf_range(0.62, 0.8)])
-	var ico := _icosphere(3)
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 4:
+		cuts.append([Vector3(r.randfn(), r.randfn() * 0.5 + 0.35, r.randfn()).normalized(), r.randf_range(0.58, 0.78)])
+	# bedding: a tilted axis the stone splits along in ~0.2 steps
+	var bed := Vector3(r.randfn() * 0.35, 1.0, r.randfn() * 0.35).normalized()
+	var bed_step := r.randf_range(0.17, 0.24)
+	var ico := _icosphere(4)
 	var out := PackedVector3Array()
+	var cut_of := PackedInt32Array()
 	for p: Vector3 in ico[0]:
-		var q := p * (1.0 + n.get_noise_3dv(p) * 0.28 + ridge.get_noise_3dv(p * 1.3) * 0.12)
-		for c in cuts:
-			var cn: Vector3 = c[0]
-			var dd: float = q.dot(cn) - c[1]
-			if dd > 0.0:
-				q -= cn * dd * 0.85
+		var q := p * (1.0 + n.get_noise_3dv(p) * 0.26 + ridge.get_noise_3dv(p * 1.3) * 0.12 - chip.get_noise_3dv(p) * 0.06)
+		# ledges: pull each layer's outer skin in toward its lower edge, so every bed
+		# overhangs the one below by a little lip
+		var h := q.dot(bed) / bed_step
+		var f := h - floorf(h)
+		q *= 1.0 - 0.07 * smoothstep(0.55, 1.0, f)
+		var hit := -1
+		var deepest := 0.0
+		for ci in cuts.size():
+			var cn: Vector3 = cuts[ci][0]
+			var dd: float = q.dot(cn) - cuts[ci][1]
+			if dd > deepest:
+				deepest = dd
+				hit = ci
+		if hit >= 0:
+			var cn: Vector3 = cuts[hit][0]
+			# near-planar face, with a faint conchoidal ripple so it is not a mirror
+			q -= cn * (deepest - n.get_noise_3dv(q * 3.0) * 0.012)
 		if q.y < -0.3:
 			q.y = -0.3 + (q.y + 0.3) * 0.25
 		out.append(q)
-	for t in ico[1]:
-		st.set_smooth_group(0)
-		st.add_vertex(out[t])
+		cut_of.append(hit)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var idx: PackedInt32Array = ico[1]
+	for t in range(0, idx.size(), 3):
+		var c0 := cut_of[idx[t]]
+		var grp := c0 + 1 if c0 >= 0 and cut_of[idx[t + 1]] == c0 and cut_of[idx[t + 2]] == c0 else 0
+		st.set_smooth_group(grp)
+		for k in 3:
+			st.add_vertex(out[idx[t + k]])
 	st.index()
 	st.generate_normals()
 	var mesh := st.commit()
