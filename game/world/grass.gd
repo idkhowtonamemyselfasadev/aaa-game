@@ -191,9 +191,12 @@ func _step_sward() -> void:
 	var var_: PackedFloat32Array = _job["var"]
 	var half := _terrain.size_m * 0.5 - 2.0
 	var end := mini(_job.i + SWARD_SLICE, sward_per_chunk)
+	# jittered grid, one mat per cell: pure random scatter at this density left a quarter of
+	# 0.4 m patches empty, and a low lens framed bare soil between the mats (bot `sward`)
+	var g := ceili(sqrt(float(sward_per_chunk)))
 	for n in range(_job.i, end):
-		var x := (k.x + rng.randf()) * chunk_m
-		var z := (k.y + rng.randf()) * chunk_m
+		var x := (k.x + ((n % g) + rng.randf_range(0.1, 0.9)) / g) * chunk_m
+		var z := (k.y + ((n / g) + rng.randf_range(0.1, 0.9)) / g) * chunk_m
 		if absf(x) > half or absf(z) > half:
 			continue
 		var site := _site(x, z, rng, flora)
@@ -244,6 +247,9 @@ func _step_sward() -> void:
 	mmi.name = "Sward_%d_%d" % [k.x, k.y]
 	add_child(mmi)
 	holder.queue_free()
+	if record_sward != null:
+		for n in xf.size():
+			record_sward.append(xf[n])
 	_sward[k] = mmi
 	_job = {}
 	sward_build_ms = maxf(sward_build_ms, (Time.get_ticks_usec() - t0) / 1000.0)
@@ -251,6 +257,8 @@ func _step_sward() -> void:
 ## Bots set this to an Array to get [kind, Transform3D] of every tall clump _build_chunk places
 ## (the headless renderer does not hand multimesh transforms back).
 var record_clumps = null
+## The same for the short sward: every finished sward chunk's blade-mat transforms.
+var record_sward = null
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var flora := _find_ruin()

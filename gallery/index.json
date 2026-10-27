@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261021-0840-verge.jpg",
-  "time": "2026-10-21T08:40:00Z",
-  "caption": "Wat walks the cart track toward the village with daisies and buttercups now edging the verge; the taller yarrow and knapweed of the verge ribbons are mostly drowned in the ripe grass, so the verges do not yet read as a distinct flowered strip.",
-  "verdict": "pass"
- },
- {
-  "file": "20261021-0953-verge-cropped.jpg",
-  "time": "2026-10-21T09:53:00Z",
-  "caption": "Wat walks the cart track toward the village; the verges either side of the ruts are now cropped to a short green turf so the daisies and buttercups stand over it as a clear ribbon against the ripe meadow; near-lens grass blades still read as flat ribbons and the yarrow/knapweed are sparse in frame.",
-  "verdict": "pass"
- },
- {
   "file": "20261021-1041-rut-stones.jpg",
   "time": "2026-10-21T10:41:00Z",
   "caption": "Wat walks the cart track in; a mossy field stone now lies on the left verge and another on the right, and wheel-scoured pebbles show in the right rut, though the rut cobbles are sparse and read as dark dots rather than a stony bed; near-lens grass still flat ribbons.",
@@ -897,6 +885,18 @@
   "file": "20261027-0551-hare-thatch.jpg",
   "time": "2026-10-27T05:51:31Z",
   "caption": "Low lens on the meadow hare: the ground under the camera now reads as olive-brown matted thatch instead of a near-black patch, but it is still a flat painted floor with stroke marks and no short sward blades visible there.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0629-hare-sward.jpg",
+  "time": "2026-10-27T06:29:51Z",
+  "caption": "Low lens on the sat-up hare: the short sward now fills the ground right in front of the camera with green blades instead of a bare soil oval; blades still read a little flat-shaded and the boulder still a smooth slab.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0629-sward-debug.jpg",
+  "time": "2026-10-27T06:29:51Z",
+  "caption": "Debug frame with the short sward tinted magenta (before the fix): it shows the bare oval 1-2 m in front of the lens where random scatter left no blade mats.",
   "verdict": "fail"
  }
 ]

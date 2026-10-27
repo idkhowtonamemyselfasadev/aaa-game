@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -124,6 +124,9 @@ func _ready() -> void:
 		return
 	if name == "hare":
 		_hare_test()
+		return
+	if name == "sward":
+		_sward_test()
 		return
 	if name == "ruin":
 		_ruin_test()
@@ -1019,6 +1022,75 @@ func _thermal_test() -> void:
 ## Dust devils: on a clear, still afternoon a whirl stands up on dry open ground near the
 ## hero, wanders (downwind on the whole), builds and slumps, keeps off slopes/pools/houses,
 ## and none stand up under a front or by night.
+## The short sward closes the soil in front of a low lens: the `hare` shot's camera (1.8 m
+## off a sat-up hare, 0.6 m high) should look over blade mats at meadow density, not bare thatch.
+func _sward_test() -> void:
+	var tr: Terrain = _world.get_node("Terrain")
+	var grass: GrassField = _world.get_node("Grass")
+	var hr: Hare = _world.hares[0]
+	var at := hr.global_position
+	var fwd := Vector3(-sin(hr.yaw), 0, -cos(hr.yaw))
+	var lv := at + fwd.rotated(Vector3.UP, 0.75) * 1.8
+	var cp := Vector3(lv.x, tr.height_at(lv.x, lv.z) + 0.6, lv.z)
+	grass.record_sward = []
+	grass.fill_around(cp)
+	var all: Array = grass.record_sward
+	grass.record_sward = null
+	var look := Vector2(at.x - cp.x, at.z - cp.z).normalized()
+	var c2 := Vector2(cp.x, cp.z)
+	# bands in front of the lens (a 90-degree wedge round the view line) and a ring 8-12 m out
+	var near := [0, 0.0]
+	var mid := [0, 0.0]
+	var far := [0, 0.0]
+	for xf: Transform3D in all:
+		var d := Vector2(xf.origin.x, xf.origin.z) - c2
+		var r := d.length()
+		var front := r > 0.01 and d.normalized().dot(look) > 0.707
+		var hgt := xf.basis.y.length()
+		if front and r < 2.0:
+			near[0] += 1
+			near[1] += hgt
+		elif front and r < 4.0:
+			mid[0] += 1
+			mid[1] += hgt
+		elif r > 8.0 and r < 12.0:
+			far[0] += 1
+			far[1] += hgt
+	# a map of the ground the lens sees (rows: 0.4 m steps out along the view line, columns:
+	# 0.4 m steps across it): mats per cell, and the meadow's patch noise there
+	var side := Vector2(-look.y, look.x)
+	var empty := 0
+	for row in range(7, -1, -1):
+		var line := ""
+		var pl := ""
+		for col in range(-4, 5):
+			var cc := c2 + look * (0.6 + row * 0.4 + 0.2) + side * (col * 0.4)
+			var cnt := 0
+			for xf: Transform3D in all:
+				var o := Vector2(xf.origin.x, xf.origin.z) - cc
+				if absf(o.dot(look)) < 0.2 and absf(o.dot(side)) < 0.2:
+					cnt += 1
+			line += " %d" % cnt
+			if cnt == 0:
+				empty += 1
+			pl += " %.2f" % (grass._patch.get_noise_2d(cc.x, cc.y) * 0.5 + 0.5)
+		print("BOT sward map %.1f m:%s   patch:%s" % [0.6 + row * 0.4 + 0.2, line, pl])
+	# wedge area: a quarter circle
+	var an := PI * 4.0 / 4.0
+	var am := PI * (16.0 - 4.0) / 4.0
+	var af := PI * (144.0 - 64.0)
+	var dn: float = near[0] / an
+	var dm: float = mid[0] / am
+	var df: float = far[0] / af
+	print("BOT sward: %d mats in all; lens at %s; 0-2 m wedge %d (%.1f/m2, h x%.2f), 2-4 m %d (%.1f/m2, h x%.2f), ring 8-12 m %d (%.1f/m2, h x%.2f)" % [all.size(), cp, near[0], dn, near[1] / maxf(near[0], 1), mid[0], dm, mid[1] / maxf(mid[0], 1), far[0], df, far[1] / maxf(far[0], 1)])
+	print("BOT sward: crop %.2f verge %.2f worn %.2f at the lens foreground" % [grass._crop_at(cp.x + look.x, cp.z + look.y), YardGround.verge(cp.x + look.x, cp.z + look.y), YardGround.worn(cp.x + look.x, cp.z + look.y)])
+	print("BOT sward: %d of 72 cells in front of the lens bare" % empty)
+	if empty > 6:
+		return _combat_done(false, "%d of 72 0.4 m patches in front of the hare lens have no sward" % empty)
+	if dn < df * 0.6 or dn < 4.0:
+		return _combat_done(false, "the sward in front of the hare lens is thin (%.1f/m2 vs %.1f/m2 in the meadow)" % [dn, df])
+	_combat_done(true, "the short sward closes the soil in front of a low lens")
+
 ## The hares: one lopes across the road by day, sits up to watch a hero coming into sight,
 ## bolts flat out with jinks when he comes close and settles far off; rain sends it to its form.
 func _hare_test() -> void:
