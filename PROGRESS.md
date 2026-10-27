@@ -33,6 +33,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (22:30 10-27) Pale night band over the far ridge (Next 21:15 item 1): screen-space effects RULED OUT (the parallel 22:05 session then FIXED the band in horizon.gdshader; this entry only adds the debug args).
+  shot.gd gained debug args `nosse` (SSIL+SSAO+SSR off), `nossil`/`nossao`/`nossr`/`noglow`, and a generic
+  `hide=Node1,Node2` that hides world nodes by name (e.g. `hide=Flora`, `hide=Horizon`). Shot `cottage band_nosse 40
+  20.5 nosse` (gallery *-night-band-nosse.jpg): with SSIL, SSAO and SSR all off the pale speckled band above the white
+  cottage roof and right of its chimney is unchanged. With volumetric fog, the ring's foot and screen-space passes
+  all ruled out, the 18:50 reading (moonlit tree crowns 60-180 m out) is the remaining suspect. A `hide=Flora` shot
+  was started but killed by a worker restart. Bots walk stonehouse PASS.
 - (22:05 10-27) Night canopy band FIXED (Next 20:40 item 1). Root cause, from Godot's scene_forward_clustered.glsl:
   a shader that writes FOG (CUSTOM_FOG_USED) skips the volumetric fog entirely, so the moonlit volume hazed the sky
   (sky affect 1) and the wood line but never the horizon ring, whose dark silhouette cut a ruled edge across the hazed
@@ -5530,6 +5537,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    physical, ungained; look for a glow on the ring toward the sun. If wrong, gate vol_sun to 0 or tune.
    (2) Night ring a touch flat/pale at gain 4: try RING_VOL_MOON_GAIN 3 with a `valley <n> 40 21` shot (also the
    pending night valley re-shoot). (3) boulder rain streaks; (4) hero small/dull at `herocu`; then more ALIVE work.
+   NOTE (22:30): never start a second shot until `ps -eo comm | grep -E "godot|Xvfb"` is empty: one started while the
+   previous one was shutting down failed Vulkan with ERR_CANT_OPEN and fell back to GL. shot.gd now has `nosse`,
+   `nossil`/`nossao`/`nossr`/`noglow` and `hide=Node1,Node2` debug args.
 0. (20:40 10-27) Band is the volumetric fog (see Done). NEXT, in order:
    (1) One shot each (one per background task, ~12 min): `cottage <n> 40 20.5` with world.gd night
    volumetric_fog_sky_affect 1.0 -> 0.3; if the band stays, try the moon DirectionalLight3D light_volumetric_fog_energy

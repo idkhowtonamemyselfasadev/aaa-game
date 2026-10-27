@@ -1670,6 +1670,29 @@ func _ready() -> void:
 		de.fog_enabled = not "nofog" in args
 		for i in 3:
 			await get_tree().process_frame
+	# debug: drop the screen-space passes ("nosse" = SSIL+SSAO+SSR, or one of nossil/nossao/nossr/noglow)
+	if "nosse" in args or "nossil" in args or "nossao" in args or "nossr" in args or "noglow" in args:
+		var se: Environment = world.env.environment
+		if "nosse" in args or "nossil" in args:
+			se.ssil_enabled = false
+		if "nosse" in args or "nossao" in args:
+			se.ssao_enabled = false
+		if "nosse" in args or "nossr" in args:
+			se.ssr_enabled = false
+		if "noglow" in args:
+			se.glow_enabled = false
+		for i in 3:
+			await get_tree().process_frame
+	# debug: "hide=Flora,Horizon" hides those world nodes (by name) to find what paints a patch
+	for a in args:
+		if a.begins_with("hide="):
+			for nn in a.substr(5).split(","):
+				var hn := world.find_child(nn, true, false)
+				if hn is Node3D:
+					(hn as Node3D).visible = false
+					print("SHOT hid ", nn)
+			for i in 3:
+				await get_tree().process_frame
 	if spot == "mob" and cam != null:
 		var kb: Birds.Bird = (world.get_node("Birds") as Birds)._kites[0]
 		cam.fov = 34.0
