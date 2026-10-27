@@ -416,7 +416,7 @@ func _window(u0: float, u1: float, v0: float, v1: float, z: float, s: float) -> 
 	# apart: after dusk the lamp inside shows as a thin warm line round it and through the
 	# cracks (`_lamp_light`)
 	# (18 mm / 7 mm was under 2 px from the green at 12 m and TAA ate it: no rim showed)
-	var gap := 0.032
+	var gap := 0.024
 	for i in n:
 		var a := u0 + w * i / n + (gap if i == 0 else 0.0)
 		var b := u0 + w * (i + 1) / n - (gap if i == n - 1 else 0.016)
@@ -698,5 +698,5 @@ func _process(delta: float) -> void:
 	var w := get_parent()
 	var h: float = w.time_of_day if w != null and "time_of_day" in w else 12.0
 	lit = move_toward(lit, StoneCottage.lit_for(h), delta / 1.5)
-	glow.emission_energy_multiplier = lit * 5.0
+	glow.emission_energy_multiplier = lit * 3.5
 	halo_mat.set_shader_parameter("lit", lit * 0.5)

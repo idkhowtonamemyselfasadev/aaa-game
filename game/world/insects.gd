@@ -270,9 +270,9 @@ func _update_fireflies(delta: float, anchor: Vector3, threat: Vector3, tvel: Vec
 		f.glow = (pulse * 0.94 + 0.06) * on
 		# never a big lime blob on the lens: dim the ones drifting through the near plane
 		var dc := f.pos.distance_to(cam_pos) if cam_pos != Vector3.INF else 99.0
-		f.glow *= smoothstep(0.5, 1.6, dc)
+		f.glow *= smoothstep(0.7, 2.6, dc)
 		_ff_mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, f.pos))
-		_ff_mm.set_instance_custom_data(i, Color(f.glow, 0.07, 0.0, 0.0))
+		_ff_mm.set_instance_custom_data(i, Color(f.glow, 0.045, 0.0, 0.0))
 		if f.glow > 0.35 and f.pos.distance_squared_to(anchor) < 400.0:
 			lit.append(i)
 	# the few brightest near the camera light the grass around them

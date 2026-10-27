@@ -24,7 +24,8 @@ void fragment() {
 	vec2 q = UV * 2.0 - 1.0;
 	float d2 = dot(q, q);
 	if (d2 > 1.0) discard;
-	// hot core + soft halo, faded to zero at the quad edge
-	float core = exp(-d2 * 14.0) + 0.28 * exp(-d2 * 3.5) * (1.0 - d2);
+	// hot pin-point core + a faint tight halo, faded to zero at the quad edge
+	// (the wider 0.28 halo read as a big round disc on a fly 2-3 m from the lens)
+	float core = 1.3 * exp(-d2 * 22.0) + 0.12 * exp(-d2 * 6.0) * (1.0 - d2);
 	ALBEDO = glow_color * energy * v_int * core;
 }

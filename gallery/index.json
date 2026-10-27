@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-2006-osric-stile.jpg",
-  "time": "2026-10-21T20:06:00Z",
-  "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-2045-osric-fell-stance.jpg",
   "time": "2026-10-21T20:45:00Z",
   "caption": "Osric on the fell footpath at 17:00 with his new weathered, wind-reddened face under the brim and a soft, swaying stance; still a fail: a pale grey strip runs down from his jaw (grizzled beard/smock side-on) and his hand raised to the brim does not show from this lens.",
@@ -891,6 +885,12 @@
   "file": "20261027-1530-timber-shutter-night.jpg",
   "time": "2026-10-27T15:30:00Z",
   "caption": "The timber house at 20:30: lamplight now shows as a warm line round its shut shutter and the moonlit meadow reads grey-blue instead of black; the rim is a touch too thick and bright, the far mountains carry a pale cut-off haze band, and fireflies are oversized dots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1628-shutter-fireflies-night.jpg",
+  "time": "2026-10-27T16:28:38Z",
+  "caption": "Night village at 20:30: the timber house shutter now shows a thin warm lamplit rim and fireflies are small pin points; still wrong: a pale hard-edged snow/haze band on the far mountains and a dark, flat sky.",
   "verdict": "fail"
  }
 ]
