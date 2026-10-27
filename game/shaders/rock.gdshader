@@ -27,14 +27,18 @@ float hash3(vec3 p) {
 	p *= 17.0;
 	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
 }
+// quintic fade: the cubic one is only C1, so the finite-difference bump (surf below) showed
+// every lattice cell as a faint polygon facet under raking light
 float vn(vec3 x) {
-	vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+	vec3 i = floor(x); vec3 f = fract(x); f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
 	return mix(mix(mix(hash3(i), hash3(i + vec3(1,0,0)), f.x), mix(hash3(i + vec3(0,1,0)), hash3(i + vec3(1,1,0)), f.x), f.y),
 	           mix(mix(hash3(i + vec3(0,0,1)), hash3(i + vec3(1,0,1)), f.x), mix(hash3(i + vec3(0,1,1)), hash3(i + vec3(1,1,1)), f.x), f.y), f.z);
 }
 // moss cushions: tight domed clumps (~5 cm) with smaller tufts on them
 float cushion(vec3 p) { return vn(p * 19.0) * 0.65 + vn(p * 47.0 + 3.1) * 0.35; }
-float fbm(vec3 p) { float a = 0.5, r = 0.0; for (int k = 0; k < 4; k++) { r += a * vn(p); p = p * 2.07 + 5.3; a *= 0.5; } return r; }
+// each octave turned off the lattice axes so their cell grids do not line up into a mesh
+const mat3 OCT = mat3(vec3(0.0, 1.6, 1.2), vec3(-1.6, 0.72, -0.96), vec3(-1.2, -0.96, 1.28));
+float fbm(vec3 p) { float a = 0.5, r = 0.0; for (int k = 0; k < 4; k++) { r += a * vn(p); p = OCT * p * 1.035 + 5.3; a *= 0.5; } return r; }
 
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 

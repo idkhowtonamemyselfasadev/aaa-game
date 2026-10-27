@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261021-1754-stile-cope.jpg",
-  "time": "2026-10-21T17:54:38Z",
-  "caption": "Garth wall squeeze stile at 10:00: the cope now rises and falls in runs with leaning stones and blocky capstones instead of a row of like slabs; the near face stones on the right still read as pale boxy blocks with sharp arrises.",
-  "verdict": "fail"
- },
- {
-  "file": "20261021-1831-stile-rubble.jpg",
-  "time": "2026-10-21T18:31:47Z",
-  "caption": "Garth wall by the squeeze stile at 10:00: field stones now rounded, chipped rubble in darker greys; the cope now reads as rounded mossy lumps rather than split slabs and the far-left run's faces are still flat tiles in a regular grid.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-1944-osric-fell.jpg",
   "time": "2026-10-21T19:44:00Z",
   "caption": "Osric out past the garth's back wall at 17:00, standing on the fell footpath where his flock grazed, the stone cottage behind: a living moment, but he reads stiff and underlit in the sunset shade and his face reads as a pale mask at this distance.",
@@ -891,6 +879,12 @@
   "file": "20261027-1345-night-valley-haze.jpg",
   "time": "2026-10-27T13:45:00Z",
   "caption": "The Vale at 21 h from the south hill: the valley floor and far hills now stand in a faint moonlit blue-grey haze with layered depth instead of sinking into black; still wrong: the near meadow and wood line are near-black and the lime walls still read as pale specks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1434-boulder-noise.jpg",
+  "time": "2026-10-27T14:34:25Z",
+  "caption": "Big meadow boulder at 15 h after the noise fix: the lit stone face is now smooth weathered granite with soft blotches, no faint polygon cell pattern; still wrong: the shaded flank goes near-black and the rain streaks do not read.",
   "verdict": "fail"
  }
 ]
