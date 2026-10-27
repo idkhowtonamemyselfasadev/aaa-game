@@ -122,5 +122,9 @@ void fragment() {
 	AO = clamp(0.6 + s * 0.6, 0.0, 1.0) * mix(1.0, 0.65 + 0.35 * cu, mossw);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
-	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * AO;
+	// shade fill: the flank turned from the sun sees the open sky and the sunlit meadow, so it
+	// gets more than the top; AO only half applies (the full AO times the dark damp foot crushed
+	// the shaded flank to black). Bark takes 1.7x for the same reason.
+	float fill = 1.7 * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * (1.0 + 0.35 * shade);
+	EMISSION = ALBEDO * bounce_light * fill * mix(1.0, AO, 0.5);
 }

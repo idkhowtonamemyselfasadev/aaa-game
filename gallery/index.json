@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261021-1944-osric-fell.jpg",
-  "time": "2026-10-21T19:44:00Z",
-  "caption": "Osric out past the garth's back wall at 17:00, standing on the fell footpath where his flock grazed, the stone cottage behind: a living moment, but he reads stiff and underlit in the sunset shade and his face reads as a pale mask at this distance.",
-  "verdict": "fail"
- },
- {
   "file": "20261021-2006-osric-stile.jpg",
   "time": "2026-10-21T20:06:00Z",
   "caption": "Osric squeezing through the stile in the garth's back wall at 16:54 on his way out to the fell, the stone cottage in low sun behind: reads as a real field wall and a man using it, but he is side-on and dark against the shadowed wall, and the cope still reads as rounded lumps.",
@@ -885,6 +879,12 @@
   "file": "20261027-1434-boulder-noise.jpg",
   "time": "2026-10-27T14:34:25Z",
   "caption": "Big meadow boulder at 15 h after the noise fix: the lit stone face is now smooth weathered granite with soft blotches, no faint polygon cell pattern; still wrong: the shaded flank goes near-black and the rain streaks do not read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-1525-boulder-flank.jpg",
+  "time": "2026-10-27T15:25:43Z",
+  "caption": "Meadow boulder at 15:00: the shaded flank now shows stone grain and fractures instead of a black hole, but it is still darker than the shaded ground beside it.",
   "verdict": "fail"
  }
 ]
