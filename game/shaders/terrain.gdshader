@@ -416,8 +416,10 @@ void fragment() {
 	vec3 live = mix(turf_a, turf_b, 0.35 + 0.5 * b1.z * micro + 0.2 * micro);
 	// the sward far away: a mix of live and dead
 	vec3 turf_far = mix(mix(turf_a, turf_b, 0.45), thatch, 0.35 + 0.5 * thatchw);
-	// close: thatch strokes in the gaps, live blades on top
-	vec3 turf_near = mix(mix(turf_a, thatch_a, 0.5) * 0.8, thatch, b2.x * (0.4 + 0.6 * thatchw));
+	// close: thatch strokes in the gaps, live blades on top. The gap is the matted thatch
+	// layer, not soil: it keeps about the far blend's brightness, so the ground under a low
+	// camera never drops into a dark patch scratched with painted blade marks
+	vec3 turf_near = mix(mix(turf_a, thatch, 0.55 + 0.25 * thatchw) * 0.95, thatch, b2.x * (0.4 + 0.6 * thatchw));
 	turf_near = mix(turf_near, mix(live, thatch, thatchw * 0.6), b1.x);
 	vec3 turf = mix(turf_far, turf_near, fade_b);
 	// ---- far meadow: past the blade clumps (grass.gd draws ~64 m) the sward still has to

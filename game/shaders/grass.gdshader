@@ -128,7 +128,7 @@ void vertex() {
 		NORMAL = normalize(NORMAL + side / sl * UV2.x * 0.7 * (1.0 - v_seed));
 	}
 	// the sward is short and open to the sky: its roots are far less occluded
-	v_ao = mix(mix(0.35, 0.6, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
+	v_ao = mix(mix(0.35, 0.75, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
 	v_ao = mix(v_ao, 1.0, v_seed * 0.5);   // thin stems stand clear of the clump's shade
 	// lean normals up so clumps light like a canopy, not like flat cards
 	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
@@ -140,7 +140,7 @@ void fragment() {
 	// live sward: greener leaf under the dry seed heads, drying to straw where v_var is high
 	tip = mix(tip, mix(sward_green, tip_dry * 0.9, smoothstep(0.45, 0.95, v_var)), v_sward);
 	tip *= 0.85 + 0.3 * fract(v_var * 13.7);
-	vec3 col = mix(mix(root_col, tip * 0.45, v_sward), tip, smoothstep(0.0, 0.9, v_h));
+	vec3 col = mix(mix(root_col, tip * 0.62, v_sward), tip, smoothstep(0.0, 0.9, v_h));
 	// seed stems: green-gold low on the stem, ripening up into a straw or purple-brown head
 	vec3 head = mix(seed_straw, seed_flush, smoothstep(0.55, 0.15, fract(v_var * 7.3)));
 	head *= 0.85 + 0.3 * fract(v_var * 29.1);

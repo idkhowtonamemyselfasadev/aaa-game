@@ -892,5 +892,11 @@
   "time": "2026-10-27T03:35:09Z",
   "caption": "With the near-lens grass no longer shrunk to tiny blades, tall grass now stands in the foreground; a smaller dark patch of sparse short sward still shows between the lens and the hare.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261027-0551-hare-thatch.jpg",
+  "time": "2026-10-27T05:51:31Z",
+  "caption": "Low lens on the meadow hare: the ground under the camera now reads as olive-brown matted thatch instead of a near-black patch, but it is still a flat painted floor with stroke marks and no short sward blades visible there.",
+  "verdict": "fail"
  }
 ]

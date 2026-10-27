@@ -1571,6 +1571,10 @@ func _ready() -> void:
 			# sheet= takes the same args: an in-cloud flash with no channel
 			# bolt=<metres>[,<yaw offset deg>]: lightning ahead of the camera, frozen at its peak
 			world.weather.lightning.auto_strikes = false
+	if world.has_node("Grass") and get_viewport().get_camera_3d() != null:
+		var gf: GrassField = world.get_node("Grass")
+		gf.fill_around(get_viewport().get_camera_3d().global_position)
+		print("SHOT grass: sward %d chunks %d clumps" % [gf.sward_chunks(), gf.sward_clumps()])
 	for i in frames:
 		await get_tree().process_frame
 	if spot == "hearth" and "kindle" in args:

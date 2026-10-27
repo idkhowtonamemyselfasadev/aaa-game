@@ -65,7 +65,7 @@ func _process(_delta: float) -> void:
 
 ## Load chunks inside the radius (nearest first, up to `budget`), free those outside.
 ## The short sward streams the same way in a tighter ring, after the tall grass.
-func update_around(p: Vector3, budget: int) -> void:
+func update_around(p: Vector3, budget: int) -> int:
 	var built := _stream(_chunks, p, radius_m, budget, _build_chunk)
 	# the sward builds one chunk at a time, a slice of it per frame (no hitch while running),
 	# and starts a new one only on a frame the tall grass left free
@@ -74,6 +74,18 @@ func update_around(p: Vector3, budget: int) -> void:
 	else:
 		_stream(_sward, p, sward_m, 0, _start_sward)   # still drops far chunks
 		_step_sward()
+	return built
+
+## Streams every tall-grass and sward chunk round `p` in one go (the screenshot tool: a
+## player who walked there would find it all grown in, not still filling in after the jump).
+func fill_around(p: Vector3) -> void:
+	var idle := 0
+	for n in 4000:
+		var built := update_around(p, 64)
+		# two calls in a row that build no tall grass and start no sward chunk: the ring is full
+		idle = idle + 1 if _job.is_empty() and built == 0 else 0
+		if idle >= 2:
+			return
 
 func _stream(chunks: Dictionary, p: Vector3, radius: float, budget: int, build: Callable) -> int:
 	var c := Vector2i(floori(p.x / chunk_m), floori(p.z / chunk_m))
