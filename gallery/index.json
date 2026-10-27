@@ -886,5 +886,17 @@
   "time": "2026-10-27T01:22:15Z",
   "caption": "The south-east meadow at 9 h: the mossy boulder behind the hare now reads as grey stone with dark olive moss cushions broken by bare rock instead of a flat lime-green blob with a blue rim; still wrong: the boulder silhouette is a smooth faceted slab, its bare stone tops catch a bluish-grey sky tint, and the hare's coat is fur-less.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261027-0221-hare-fur.jpg",
+  "time": "2026-10-27T02:21:16Z",
+  "caption": "Brown hare in the meadow grass now has three fur shells, so its outline breaks into soft fuzz instead of a smooth painted skin; the coat is still one even orange-tan with no dark ticked back, and the bare ground under the low lens shows a dark decal-like patch.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261027-0221-hare-run.jpg",
+  "time": "2026-10-27T02:21:16Z",
+  "caption": "The hare bolting flat out, ears laid back, its furred outline reading against the grass; the foreground ground in front of the lens is a dark, flat patch with painted grass marks instead of dense blades.",
+  "verdict": "fail"
  }
 ]

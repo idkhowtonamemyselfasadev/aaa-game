@@ -61,6 +61,15 @@ func setup(w: Node3D, along: float, off: float, sd: int) -> void:
 	cross_t = _rng.randf_range(60.0, 200.0)
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/hare.gdshader")
+	# three fur shells over the skin (hare_shell.gdshader) so the coat reads as fur
+	var shell_sh: Shader = load("res://shaders/hare_shell.gdshader")
+	var prev: Material = _mat
+	for h in [0.34, 0.67, 1.0]:
+		var sm := ShaderMaterial.new()
+		sm.shader = shell_sh
+		sm.set_shader_parameter("shell_h", h)
+		prev.next_pass = sm
+		prev = sm
 	var mi := MeshInstance3D.new()
 	mi.name = "Body"
 	mi.mesh = build_mesh()
