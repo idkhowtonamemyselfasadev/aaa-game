@@ -671,6 +671,10 @@ const RING_VOL_MOON_GAIN := 3.0
 ## without it (software Vulkan, low quality) shaded stone in an enclosure got only the flat
 ## ambient, crushed by SSAO, and went black. Shaders that opt in (masonry) add albedo x this.
 const GROUND_FILL := 0.6
+## the moonlit night sky over open ground: the moon key only lights slopes that face it, and
+## SSAO crushed the flat night ambient on the near meadow to black while the mid-valley read
+## moonlit (valley 21:00); this unoccluded skylight keeps the near sward and hill readable
+const NIGHT_GROUND_FILL := 0.7
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
@@ -691,6 +695,9 @@ func _apply_bounce(e: Environment) -> void:
 	var low_k := (1.0 - clampf(sun_h / sin(deg_to_rad(25.0)), 0.0, 1.0)) \
 			* clampf(sun.light_energy / 1.5, 0.0, 1.0) if sun.visible else 0.0
 	var gf := e.ambient_light_color * e.ambient_light_energy * GROUND_FILL * low_k
+	if moon and moon.visible:
+		gf += e.ambient_light_color * e.ambient_light_energy * NIGHT_GROUND_FILL \
+				* clampf(moon.light_energy / 1.25, 0.0, 1.0)
 	ground_fill = Vector3(gf.r, gf.g, gf.b)
 	face_shade = b * 4.0
 	if player and player.garb:
