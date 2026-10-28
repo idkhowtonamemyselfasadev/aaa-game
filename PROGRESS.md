@@ -43,6 +43,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (1.55-1.85 s); the lying keys' arm/elbow drop to 6-8/12-14 deg so the hands rest by the hips. Now: hip joints
   0.12/0.10, feet 0.03/-0.01, hands 0.16/0.09 m. Bot `sweep` asserts it (hips within 0.06 m, feet/hands -0.06..0.25 m)
   PASS; death flinch glide climb PASS. Shot `knocked` framing is now side-on and low (camera 1.3 m up, 2.6 m out).
+  Shot `soldier lying 40 15.5 strike u=0.5 knocked knocked=0.8 clear` (Forward+, ~20 min, gallery *-knockdown-lying.jpg,
+  FAIL): the body reads flat on its back, hat at the head end, but tall straw grass buries most of it: the grass
+  should flatten under a lying body (trample code exists for walking; extend it to the body's footprint).
   NOTE for bots: read modifier-posed bones after `await skeleton.skeleton_updated`, not in the physics frame.
 - (08:40 10-28) KNOCKDOWN LANDING (Next item (1), second half). player.gd: `KNOCK_LAND` 0.42 s (the fall key) and
   `signal fell(at)`; at that frame of `_down_tick` an ImpactFX "dirt" burst spawns 0.85 m behind the heels along the
@@ -5627,7 +5630,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (09:40 10-28) Lying pose fixed (see Done). NEXT, in order: (1) `knocked=1.3` sit-up shot + read of hands/feet
+0. (09:40 10-28) Lying pose fixed (see Done). NEXT, in order: (0) flatten the grass under the lying body (trample) so it is not buried; (1) `knocked=1.3` sit-up shot + read of hands/feet
    at 1.3 s (the sit-up keys were tuned against the clip pose too; check the hands push on the sward, not air);
    (2) boulder shaded flank near-black (rock.gdshader fill); (3) hero small/dull at `herocu`; then ALIVE work
    (road travellers, birds scattering, NPC rain shelter).
