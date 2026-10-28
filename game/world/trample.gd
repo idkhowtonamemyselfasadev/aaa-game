@@ -43,7 +43,7 @@ var _hnext := 0
 var _himg: Image
 var _htex: ImageTexture
 var _hts: Array[Vector4] = []    # herd trail: x, z, age, strength
-var _htd: Array[Vector2] = []
+var _htd: Array[Vector3] = []   # run dir x, z, segment length back along it (m)
 var _htnext := 0
 var _htimg: Image
 var _httex: ImageTexture
@@ -75,7 +75,7 @@ func _ready() -> void:
 	RenderingServer.global_shader_parameter_set("hoof_prints", _htex)
 	for i in HTN:
 		_hts.append(Vector4.ZERO)
-		_htd.append(Vector2.ZERO)
+		_htd.append(Vector3.ZERO)
 	_htimg = Image.create_empty(HTN, 2, false, Image.FORMAT_RGBAF)
 	_httex = ImageTexture.create_from_image(_htimg)
 	RenderingServer.global_shader_parameter_set("herd_trail", _httex)
@@ -196,16 +196,20 @@ func add_hoof(at: Vector2, dir: Vector2, depth: float, splay: float, size: float
 ## whole fled herd's lane instead of a few metres per animal.
 ## `merge`: how near an existing point must be to be refreshed instead (a sitting animal
 ## passes a small one so its press lands under it, not on an old spot beside it).
-func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0, merge := HERD_MERGE) -> void:
+## `length`: the point is a segment reaching that far back along `dir` (a galloping deer
+## lays one every few metres covering the ground it crossed, so the herd's lane fits the
+## buffer without gaps); 0 is a round press.
+func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0, merge := HERD_MERGE, length := 0.0) -> void:
+	var dn := dir.normalized()
 	for i in HTN:
 		var t := _hts[i]
 		if t.w > 0.0 and Vector2(t.x - at.x, t.y - at.y).length() < merge:
 			_hts[i] = Vector4(t.x, t.y, minf(t.z, age), maxf(t.w, strength))
 			if t.z > age:
-				_htd[i] = dir.normalized()
+				_htd[i] = Vector3(dn.x, dn.y, maxf(_htd[i].z, length))
 			return
 	_hts[_htnext] = Vector4(at.x, at.y, age, strength)
-	_htd[_htnext] = dir.normalized()
+	_htd[_htnext] = Vector3(dn.x, dn.y, length)
 	_htnext = (_htnext + 1) % HTN
 
 ## A body thrown down onto the sward: lay the grass flat under it, from the heels at `feet`
@@ -234,10 +238,14 @@ func active_herd_points() -> int:
 ## herd_lay() in the shader (bots).
 func herd_lay_at(at: Vector3, reach := 0.85) -> float:
 	var amt := 0.0
-	for t in _hts:
+	for i in HTN:
+		var t := _hts[i]
 		if t.w <= 0.0:
 			continue
-		var d := Vector2(at.x - t.x, at.z - t.y).length()
+		var dv := Vector2(at.x - t.x, at.z - t.y)
+		var sd := Vector2(_htd[i].x, _htd[i].y)
+		var along := clampf(-dv.dot(sd), 0.0, _htd[i].z)
+		var d := (dv + sd * along).length()
 		if d > reach:
 			continue
 		var rec := smoothstep(0.0, 0.15, t.z) * (1.0 - smoothstep(0.35, 1.0, t.z / HERD_TRAIL_LIFE))
@@ -305,10 +313,11 @@ func _upload() -> void:
 	for i in HTN:
 		var t := _hts[i]
 		_htimg.set_pixel(i, 0, Color(t.x, t.y, t.z, t.w))
-		_htimg.set_pixel(i, 1, Color(_htd[i].x, _htd[i].y, 0.0, 0.0))
+		_htimg.set_pixel(i, 1, Color(_htd[i].x, _htd[i].y, _htd[i].z, 0.0))
 		if t.w > 0.0:
-			lo = Vector2(minf(lo.x, t.x), minf(lo.y, t.y))
-			hi = Vector2(maxf(hi.x, t.x), maxf(hi.y, t.y))
+			var tail := Vector2(t.x, t.y) - Vector2(_htd[i].x, _htd[i].y) * _htd[i].z
+			lo = Vector2(minf(lo.x, minf(t.x, tail.x)), minf(lo.y, minf(t.y, tail.y)))
+			hi = Vector2(maxf(hi.x, maxf(t.x, tail.x)), maxf(hi.y, maxf(t.y, tail.y)))
 	_httex.update(_htimg)
 	# + the widest plant reach (ferns 1.1 m)
 	if lo.x == INF:

@@ -1049,8 +1049,13 @@ func _ready() -> void:
 				if "moths" in args and pd.hand_lantern != null:
 					# close on the lantern at his knee: the lens 1.7 m off, level with the horn, so
 					# the moths looping it stand against the dark verge rather than the lit ruts
+					# the lantern rides a hand bone attachment that only follows the body once the
+					# skeleton has posed: read the flame after a few frames, not where it hung on the green
+					for i in 4:
+						await get_tree().process_frame
 					var lc := pd.hand_lantern.flame_center()
 					var cm := Vector2(lc.x, lc.z) + dir * 1.3 + lft * 1.1
+					print("SHOT moths: flame %s, %.2f m from the pedlar" % [lc, Vector2(lc.x - pd.global_position.x, lc.z - pd.global_position.z).length()])
 					SPOTS[spot] = [Vector3(cm.x, lc.y + 0.25, cm.y), lc + Vector3.UP * 0.05]
 		if pd.hand_lantern != null:
 			pd.hand_lantern.lit = 1.0 if Pedlar.lantern_for(world.time_of_day) else 0.0
@@ -1761,6 +1766,7 @@ func _ready() -> void:
 			if ch is HandMoths:
 				var mcam := get_viewport().get_camera_3d()
 				var fc: Vector3 = world.pedlar.hand_lantern.flame_center()
+				print("SHOT flame %s screen %s, lens %s, view %s" % [fc, mcam.unproject_position(fc), mcam.global_position, get_viewport().get_visible_rect().size])
 				for mp in (ch as HandMoths).moth_positions():
 					print("SHOT moth %.2f m from the flame, %.2f m from the lens, screen %s%s" % [mp.distance_to(fc), mp.distance_to(mcam.global_position), mcam.unproject_position(mp), " (behind)" if mcam.is_position_behind(mp) else ""])
 	var img := get_viewport().get_texture().get_image()

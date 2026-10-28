@@ -1,7 +1,8 @@
 // Plants that react to the hero (world/trample.gd writes the globals every frame).
 //   trample_body : xyz the hero's feet, w 0 no hero, 1 hero airborne, 2 hero on the ground
 //   trample_trail: 32x2 RGBA float texture, one column per footfall of the recent trail
-//                  row 0 (x, z, age s, strength 0..1), row 1 (walk dir x, z, 0, 0)
+//                  row 0 (x, z, age s, strength 0..1), row 1 (walk dir x, z, 0, 0;
+//                  herd_trail: z = segment length back along dir)
 // Grass and flowers right where the hero stands are parted aside by the legs; behind them
 // the sward stays laid over along the walk and springs back over TRAMPLE_LIFE seconds.
 global uniform vec4 trample_body;
@@ -31,12 +32,16 @@ vec3 herd_lay(vec3 root, float reach, inout vec2 lay) {
 		if (a.w <= 0.0) {
 			continue;
 		}
+		// row 1 z: the point is a segment reaching that far back along the run (a galloping
+		// deer's stride covered), so measure to the nearest point on it
+		vec3 sg = texelFetch(herd_trail, ivec2(i, 1), 0).xyz;
+		vec2 dir = sg.xy;
 		vec2 d = root.xz - a.xy;
+		d += dir * clamp(-dot(d, dir), 0.0, sg.z);
 		float r2 = dot(d, d);
 		if (r2 > reach * reach) {
 			continue;
 		}
-		vec2 dir = texelFetch(herd_trail, ivec2(i, 1), 0).xy;
 		float t = a.z / HERD_TRAIL_LIFE;
 		float rec = smoothstep(0.0, 0.15, a.z) * (1.0 - smoothstep(0.35, 1.0, t));
 		float k = (1.0 - smoothstep(reach * 0.3, reach, sqrt(r2))) * rec * a.w;

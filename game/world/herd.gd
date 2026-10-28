@@ -700,10 +700,13 @@ func _hooves(d: Deer, fwd: Vector3, moved: float) -> void:
 	# the grass along the run is combed over: hard at a gallop, a faint path at a walk
 	if d.speed > 0.6:
 		d.trail_d += moved
-		var gap := lerpf(2.2, 1.5, smoothstep(1.0, 5.0, d.speed)) * d.scale
+		# each point is a segment back over the ground covered since the last one, so a
+		# gallop lays one every ~4 m and the ten deer's lane still fits the shared buffer
+		var gap := lerpf(2.2, 4.0, smoothstep(2.0, 7.0, d.speed)) * d.scale
 		if d.trail_d >= gap:
+			var seg := minf(d.trail_d, gap + 0.6) if d.speed > 2.0 else 0.0
 			d.trail_d = 0.0
-			_trample.add_herd_point(Vector2(d.pos.x, d.pos.z), Vector2(fwd.x, fwd.z), lerpf(0.35, 1.0, smoothstep(1.0, 6.0, d.speed)))
+			_trample.add_herd_point(Vector2(d.pos.x, d.pos.z), Vector2(fwd.x, fwd.z), lerpf(0.35, 1.0, smoothstep(1.0, 6.0, d.speed)), 0.0, Trample.HERD_MERGE, seg)
 	var f2 := Vector2(fwd.x, fwd.z)
 	var side := Vector2(-fwd.z, fwd.x)
 	var L := 0.08 * d.scale
