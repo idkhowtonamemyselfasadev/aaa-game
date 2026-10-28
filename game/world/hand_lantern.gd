@@ -98,8 +98,17 @@ func _ready() -> void:
 	lamp.omni_range = 6.0
 	lamp.omni_attenuation = 1.6
 	lamp.shadow_enabled = true
-	lamp.shadow_bias = 0.03
-	lamp.light_size = 0.03
+	# the fist on the bail sits only ~0.27 m over the flame, where a point light is ~13x as
+	# hot as on the wall 3 m off: it must be shaded by the lid. The default dual-paraboloid map
+	# warps that close to the light and let the lid's shadow leak, so the fist and glove read as
+	# a glowing red blot (mothscu shot); a cube map holds the lid's shadow at that range.
+	lamp.omni_shadow_mode = OmniLight3D.SHADOW_CUBE
+	lamp.shadow_bias = 0.02
+	lamp.shadow_normal_bias = 0.6
+	# the whole horn glows, not a point: at 0.03 the base plate threw a hard round rim on the
+	# ruts. A horn-sized source softens the pool's edge into a penumbra.
+	lamp.light_size = 0.12
+	lamp.shadow_blur = 1.5
 	lamp.position = Vector3(0, 0.01, 0)
 	fp.add_child(lamp)
 	# the shadowed lamp leaves the face above the lid black (the lid and bail shade it, and
@@ -124,6 +133,16 @@ func _ready() -> void:
 ## Where the flame burns (world), for lenses and bots.
 func flame_center() -> Vector3:
 	return lamp.global_position
+
+## How far out toward the edge of the lid's shadow (cast up from the flame) a point sits, with a
+## fist's half-width `pad` added: below 1 the lid shades all of it from the lamp (bots).
+func lid_cover(p: Vector3, pad := 0.045) -> float:
+	var inv := pivot.global_transform.affine_inverse()
+	var rel := inv * p - inv * lamp.global_position
+	var lid_up := (LanternPost.LH - LanternPost.FRAME_DOWN - 0.026 - 0.085 - 0.024 - 0.01) * SCALE
+	if rel.y < lid_up:
+		return 9.0                        # not above the lid at all
+	return (Vector2(rel.x, rel.z).length() + pad) / (rel.y * LanternPost.LW * 0.5 * SCALE / lid_up)
 
 func _process(delta: float) -> void:
 	if delta <= 0.0:

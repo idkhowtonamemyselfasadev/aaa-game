@@ -6049,6 +6049,7 @@ func _pedlar_test() -> void:
 		var idle_hi := 0.0
 		var roll_lo := 1.0
 		var roll_hi := -1.0
+		var fist_cover := 0.0
 		for i in 30000:
 			_world.time_of_day = h
 			await get_tree().physics_frame
@@ -6063,6 +6064,7 @@ func _pedlar_test() -> void:
 					var ly := pd.hand_lantern.flame_center().y - pd.global_position.y
 					lamp_hi = maxf(lamp_hi, ly)
 					lamp_lo = minf(lamp_lo, ly)
+					fist_cover = maxf(fist_cover, pd.hand_lantern.lid_cover(pd.hand_lantern.get_parent().global_position))
 			dog_closest = minf(dog_closest, dg.global_position.distance_to(pd.global_position))
 			if pd.state == Villager.WALK:
 				dog_pass = minf(dog_pass, Vector2(dg.global_position.x - pd.global_position.x, dg.global_position.z - pd.global_position.z).length())
@@ -6089,6 +6091,10 @@ func _pedlar_test() -> void:
 		print("BOT pedlar lantern: lit max %.2f, flame %.2f..%.2f m above his feet, swing %.2f rad" % [lit_max, lamp_lo, lamp_hi, (pd.hand_lantern.max_sway if pd.hand_lantern else 0.0)])
 		if pd.hand_lantern == null:
 			return _combat_done(false, "the pedlar has no hand lantern")
+		if dusk:
+			print("BOT pedlar fist on the bail: out to %.2f of the lid's shadow edge (< 1 shaded)" % fist_cover)
+			if fist_cover >= 1.0:
+				return _combat_done(false, "the pedlar's fist pokes out of the lid's shadow, lit point-blank by the candle")
 		print("BOT pedlar lantern moths: most round it %d (%d while he walks), farthest looping %.2f m, horn bumps %d, fell behind %d" % [hm.max_seen, hm_walk, hm.near_max, hm.bumps - hm_b0, hm.lost - hm_l0])
 		print("BOT pedlar moth streaks: most drawn %d, longest %.3f m" % [hm_streak.x, hm_streak.y])
 		if dusk and (hm_streak.x < 2 or hm_streak.y < 0.05 or hm_streak.y > 0.12):
