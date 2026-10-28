@@ -869,6 +869,31 @@ func _ready() -> void:
 			dist = 8.0
 		SPOTS[spot] = [hc + sdh * dist, hc]
 		print("SHOT herd at %s, %d deer" % [hc, herd.deer_positions().size()])
+	if spot == "deercross":
+		# the herd walking over the cart track in single file, seen low from the verge ~13 m
+		# up the track: the herd is run on (not rendered) until the lead is just over the ruts
+		var herd: Herd = world.herd
+		herd.alert_radius = 0.0
+		herd.flee_radius = 0.0
+		herd.cross_road()
+		var far := [Vector3(1e6, 0, 1e6), 0.0]
+		var side0 := Herd.road_side(Vector2(herd.cross_from.x, herd.cross_from.z))
+		var lead_past := 3.0
+		for a in args:
+			if a.begins_with("past="):
+				lead_past = float(a.substr(5))
+		for i in 30 * 400:
+			herd._tick(1.0 / 30.0, far)
+			var an := Vector2(herd.anchor.x, herd.anchor.z)
+			if Herd.road_side(an) != side0 and (Herd.road_nearest(an)[2] as float) > lead_past:
+				break
+		var at := herd.cross_at
+		var rd: Vector2 = Herd.road_nearest(Vector2(at.x, at.z))[1]
+		var back := rd.orthogonal() * side0   # toward the side they came from
+		var cp := Vector2(at.x, at.z) - rd * 13.0 + back * 4.0
+		var cam := Vector3(cp.x, terrain.height_at(cp.x, cp.y) + 1.5, cp.y)
+		SPOTS[spot] = [cam, at + Vector3.UP * 0.8]
+		print("SHOT deercross at %s, lead %s, %d on the track, cam %s" % [at.round(), herd.anchor.round(), herd.on_road(), cam.round()])
 	if spot == "hooves":
 		# deer tracks pressed into the meadow beside the hero: a hind's walking trail
 		# crossing a galloping one, seen low from ~3 m

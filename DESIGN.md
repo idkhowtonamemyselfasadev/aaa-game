@@ -296,7 +296,9 @@ Hour budget changes require editing §5 and the matching PROGRESS.md counter.
   runs out barking to meet the player and keeps her door at night and in rain).
 - **Roads:** ambient events — travellers, merchants with carts, Hollow ambushes, animals
   crossing (brown hares feed either side of the road in through the south-east meadow and
-  lope across it by day; they sit up to watch the player and bolt jinking when he comes close).
+  lope across it by day; they sit up to watch the player and bolt jinking when he comes close;
+  the red deer herd moves its feeding ground over the cart track by day, walking across in
+  single file, lead hind first and the stag last, then grazing on the far side).
 - **Reactive world:** grass flattens under feet, footprints in mud/snow, water ripples,
   foliage brushes aside, ember particles from fires.
 - **Soundscape:** region ambience, weather, wildlife, distance-attenuated village noise.

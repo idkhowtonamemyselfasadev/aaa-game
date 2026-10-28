@@ -51,6 +51,25 @@ var _bark_q: Array = []         # [s left, deer] barks still to come in this ala
 var familiar: Node3D
 const FAMILIAR_R := 24.0
 var glances := 0                # bots read this: times a deer looked up at her
+# Crossing the road: by day, now and then, the calm herd leaves its feeding ground and walks
+# over the old road in single file, the lead hind first, heads up and wary as they step onto
+# the open track, the calves at their mothers' heels and the stag last, to graze on the far
+# side. A hero or a scare breaks the file (ALERT/FLEE as ever).
+## the cart track's centre line (YardGround.ROAD): the deer cross the first stretch, where it
+## comes in off the meadow below the village
+const ROAD := [Vector2(20.0, -27.0), Vector2(14.0, -20.0), Vector2(5.0, -11.0), Vector2(-4.0, -2.0)]
+const FILE_GAP := 2.7            # m between deer in the file
+var crossing := false
+var cross_from := Vector3.ZERO
+var cross_to := Vector3.ZERO
+var cross_at := Vector3.ZERO     # where the file goes over the ruts
+var _trail: Array = []           # the lead's footsteps this crossing (the file walks in them)
+var crossings := 0               # bots read these: crossings begun / finished
+var crossed := 0
+var on_road_max := 0             # most deer seen on the road at once (bots)
+var cross_t := 0.0               # s of calm daylight until the herd next moves over the road
+var _rank: Array = []            # deer in file order (lead first)
+var _cross_age := 0.0
 
 class Deer:
 	var pos := Vector3.ZERO
@@ -102,6 +121,7 @@ func _ready() -> void:
 	_obstacles.append_array(YardWall.outline(1.6))   # and the yard walls between the houses
 	_obstacles.append(Vector3(LanternPost.SITE.x, 0.0, LanternPost.SITE.y))   # the lantern post
 	_wander = Vector3(1, 0, 0).rotated(Vector3.UP, _rng.randf() * TAU)
+	cross_t = 240.0 + float(seed % 7) * 30.0
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/deer.gdshader")
 	_mm = MultiMesh.new()
@@ -274,12 +294,20 @@ func _tick(dt: float, th: Array) -> void:
 			if _clear_at(ahead) < 6.0 or Vector2(ahead.x, ahead.z).length() > 180.0 or _terrain.normal_at(ahead.x, ahead.z).y < 0.9:
 				_wander = _wander.rotated(Vector3.UP, _rng.randf_range(1.5, 3.0))
 			_wander = _wander.rotated(Vector3.UP, _rng.randfn(0.0, 0.05) * dt)
-			if bedded() < _deer.size() / 2:
+			var h := _hour()
+			if crossing:
+				_trek(dt)
+			elif bedded() < _deer.size() / 2:
 				anchor = _ground(anchor + _wander * 0.06 * dt)
+				if h > 6.5 and h < 19.5 and bedded() == 0:
+					cross_t -= dt
+					if cross_t <= 0.0:
+						cross_road()
 			if dist < alert_radius + 2.0 * tspd:
 				state = ALERT
 				_alert_t = 0.0
 				alert_events += 1
+				_end_cross(false)
 		ALERT:
 			_alert_t += dt
 			if dist < flee_radius + 2.0 * tspd or (tspd > 4.5 and dist < alert_radius) or _alert_t > 40.0:
@@ -348,7 +376,157 @@ func _rut(dt: float) -> void:
 	st.look_t = _rng.randf_range(4.0, 7.0)
 	roared.emit(st.pos + Vector3.UP * 1.5 * st.scale)
 
+## Nearest point of the cart track's centre line to `p` (xz), its direction there, distance.
+static func road_nearest(p: Vector2) -> Array:
+	var best := Vector2.ZERO
+	var bd := INF
+	var dir := Vector2.RIGHT
+	for i in ROAD.size() - 1:
+		var a: Vector2 = ROAD[i]
+		var b: Vector2 = ROAD[i + 1]
+		var ab := b - a
+		var q := a + ab * clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+		if p.distance_to(q) < bd:
+			bd = p.distance_to(q)
+			best = q
+			dir = ab.normalized()
+	return [best, dir, bd]
+
+## Deer standing on the track itself (within 1.6 m of its centre line).
+func on_road() -> int:
+	var n := 0
+	for d: Deer in _deer:
+		if (road_nearest(Vector2(d.pos.x, d.pos.z))[2] as float) < 1.6:
+			n += 1
+	return n
+
+## Which side of the track's crossing stretch `p` lies (+1 / -1).
+static func road_side(p: Vector2) -> float:
+	var a: Vector2 = ROAD[0]
+	var n := ((ROAD[1] as Vector2) - a).normalized().orthogonal()
+	return 1.0 if (p - a).dot(n) >= 0.0 else -1.0
+
+## Set the herd walking over the cart track now: down to where the ruts come in off the
+## meadow below the village, over them, and on to open ground 30-45 m beyond (false if no
+## clear ground over there). Bots and shots call this; the herd does it on its own by day.
+func cross_road() -> bool:
+	cross_t = _rng.randf_range(420.0, 900.0)
+	var c := centre()
+	var a: Vector2 = ROAD[0]
+	var b: Vector2 = ROAD[1]
+	var rd := (b - a).normalized()
+	var nrm := rd.orthogonal() * -road_side(Vector2(c.x, c.z))   # toward the far side
+	var best := Vector3.ZERO
+	var best_x := Vector3.ZERO
+	var best_s := -INF
+	for k in 24:
+		var x := a.lerp(b, _rng.randf_range(0.35, 0.85))
+		var q := x + nrm * _rng.randf_range(30.0, 45.0) + rd * _rng.randf_range(-12.0, 12.0)
+		var g := Vector3(q.x, 0, q.y)
+		if q.length() > 170.0 or (road_nearest(q)[2] as float) < 22.0:
+			continue
+		var s := _terrain.normal_at(q.x, q.y).y * 20.0 + minf(_clear_at(g), 14.0)
+		if s > best_s:
+			best_s = s
+			best = g
+			best_x = Vector3(x.x, 0, x.y)
+	if best_s < 18.0:
+		return false
+	crossing = true
+	_cross_age = 0.0
+	crossings += 1
+	cross_from = _ground(c)
+	cross_at = _ground(best_x)
+	cross_to = _ground(best)
+	# the file: the hind nearest the track leads, each calf straight behind its mother, the
+	# stag brings up the rear
+	var dir := (cross_at - cross_from).normalized()
+	_rank = []
+	var hs: Array = []
+	for i in hinds:
+		hs.append(_deer[i])
+	hs.sort_custom(func(p: Deer, q: Deer) -> bool: return p.pos.dot(dir) > q.pos.dot(dir))
+	for hd: Deer in hs:
+		_rank.append(hd)
+		var mi := _deer.find(hd)
+		if mi < calves:
+			_rank.append(_deer[hinds + mi])
+	for i in range(hinds + calves, _deer.size()):
+		_rank.append(_deer[i])
+	var lead: Deer = _rank[0]
+	anchor = _ground(lead.pos)
+	_trail = [anchor - dir * 0.01, anchor]
+	return true
+
+## The lead walks on at a steady 1.1 m/s, waits for the file to string out behind her and
+## steps warily onto the open track; at the new ground the file breaks up to graze.
+func _trek(dt: float) -> void:
+	_cross_age += dt
+	var past := road_side(Vector2(anchor.x, anchor.z)) != road_side(Vector2(cross_from.x, cross_from.z))
+	var goal := cross_to if past or Vector2(anchor.x - cross_at.x, anchor.z - cross_at.z).length() < 1.0 else cross_at
+	var to := goal - anchor
+	to.y = 0.0
+	# (a file held up behind a wall for minutes gives it up and grazes where it stands)
+	if (goal == cross_to and to.length() < 1.0) or _cross_age > 300.0:
+		_end_cross(true)
+		return
+	var lead: Deer = _rank[0]
+	var tail: Deer = _rank[_rank.size() - 1]
+	var lag := Vector2(lead.pos.x - anchor.x, lead.pos.z - anchor.z).length()
+	var tail_lag := tail.pos.distance_to(_file_point((_rank.size() - 1) * FILE_GAP))
+	var v := 1.1 if lag < 2.5 and tail_lag < 8.0 else 0.25
+	var rd: float = road_nearest(Vector2(anchor.x, anchor.z))[2]
+	if rd < 6.0 and not past:
+		v *= 0.5   # the lead slows at the edge of the open track, head up, looking along it
+	anchor = _ground(anchor + to.normalized() * minf(v * dt, to.length()))
+	if anchor.distance_to(_trail[_trail.size() - 1]) > 0.5:
+		_trail.append(anchor)
+		if _trail.size() > 400:
+			_trail.remove_at(0)
+	on_road_max = maxi(on_road_max, on_road())
+
+func _end_cross(arrived: bool) -> void:
+	if not crossing:
+		return
+	crossing = false
+	if arrived:
+		crossed += 1
+		_wander = cross_to - cross_at
+		_wander.y = 0.0
+		_wander = _wander.normalized()
+		for d: Deer in _deer:
+			d.step_t = _rng.randf_range(0.5, 4.0)
+			d.look_t = _rng.randf_range(2.0, 8.0)
+
+## The point `back` m behind the lead along the way she walked (past the trail's start:
+## straight on back the way the file came).
+func _file_point(back: float) -> Vector3:
+	var left := back
+	var i := _trail.size() - 1
+	var p: Vector3 = anchor
+	while i > 0:
+		var q: Vector3 = _trail[i - 1]
+		var l := Vector2(p.x - q.x, p.z - q.z).length()
+		if l >= left:
+			return _ground(p.lerp(q, left / maxf(l, 1e-4)))
+		left -= l
+		p = q
+		i -= 1
+	var d0 := (_trail[0] as Vector3) - (_trail[mini(1, _trail.size() - 1)] as Vector3)
+	d0.y = 0.0
+	return _ground(p + d0.normalized() * left)
+
+## Where deer `d` walks in the file: FILE_GAP behind the one before it on the lead's trail.
+func _file_spot(d: Deer) -> Vector3:
+	var k := _rank.find(d)
+	var p := _file_point(k * FILE_GAP)
+	if d.scale < 0.8:   # a calf trots a little to one side of its mother
+		var f := _file_point(k * FILE_GAP + 0.5) - p
+		p += Vector3(f.z, 0, -f.x).normalized() * 0.5
+	return _ground(p)
+
 func _bolt(from: Vector3) -> void:
+	_end_cross(false)
 	state = FLEE
 	flee_events += 1
 	_rim_side = 0.0
@@ -392,13 +570,26 @@ func _update_deer(d: Deer, dt: float, tp: Vector3) -> void:
 	d.bed = move_toward(d.bed, d.bed_target, (0.45 if d.bed_target > d.bed else (1.4 if state != CALM else 0.6)) * dt)
 	match state:
 		CALM:
-			if night or d.bed > 0.0:
+			if crossing and d.bed <= 0.0:
+				# walking in the file: head carried up, now and then turned to look along
+				# the road; quicker steps to close up a gap
+				d.goal = _file_spot(d)
+				d.head_target = 0.15
+				d.look_t -= dt
+				if d.look_t < 0.0:
+					d.look_t = _rng.randf_range(1.5, 4.0)
+					d.head_yaw = _rng.randf_range(-0.7, 0.7) if _rng.randf() < 0.5 else 0.0
+				var gap := Vector2(d.goal.x - d.pos.x, d.goal.z - d.pos.z).length()
+				want_speed = 0.0 if gap < 0.4 else clampf(0.6 + gap * 0.35, 0.6, 2.4)
+				target = d.goal
+			elif night or d.bed > 0.0:
 				pass
 			elif not _glance(d, dt):
 				_graze(d, dt)
-			target = d.goal
-			if d.bed <= 0.0 and Vector2(target.x - d.pos.x, target.z - d.pos.z).length() > 0.6:
-				want_speed = 0.55 if d.head_target > 0.5 else 0.9
+			if not crossing:
+				target = d.goal
+				if d.bed <= 0.0 and Vector2(target.x - d.pos.x, target.z - d.pos.z).length() > 0.6:
+					want_speed = 0.55 if d.head_target > 0.5 else 0.9
 		ALERT:
 			d.head_target = 0.0
 			target = d.pos

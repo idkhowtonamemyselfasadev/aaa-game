@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -206,6 +206,9 @@ func _ready() -> void:
 		return
 	if name == "bed":
 		_bed_test()
+		return
+	if name == "deercross":
+		_deercross_test()
 		return
 	if name == "moss":
 		_moss_test()
@@ -5497,6 +5500,63 @@ func _herd_test() -> void:
 ## Red deer at night: the herd beds down in the meadow (each deer lying in its own pressed
 ## patch of grass), springs up to stare at a hero who comes into sight, lies down again once
 ## he has gone, and is up and grazing again by dawn.
+## Deer crossing the road: by day the calm herd sets off on its own, walks over the old road
+## in single file (the lead hind first, the stag last, deer on the track itself), and settles
+## to graze on the far side, together and calm; hoof prints are pressed along the way.
+func _deercross_test() -> void:
+	var p := _player
+	var herd: Herd = _world.get_node("Herd")
+	var terrain: Terrain = _world.get_node("Terrain")
+	_world.time_of_day = 10.0
+	var c := herd.centre()
+	var rn: Array = Herd.road_nearest(Vector2(c.x, c.z))
+	var rp: Vector2 = rn[0]
+	var side0 := signf((Vector2(c.x, c.z) - rp).dot(Vector2(-rn[1].y, rn[1].x)))
+	var back := (Vector2(c.x, c.z) - rp).normalized()
+	var far := Vector2(c.x, c.z) + back * 110.0
+	p.global_position = Vector3(far.x, terrain.height_at(far.x, far.y) + 1.0, far.y)
+	print("BOT deercross: herd at (%.0f, %.0f), %.0f m from the road, hero %.0f m behind it" % [c.x, c.z, rn[2], 110.0])
+	# it goes on its own once its calm daylight runs out
+	herd.cross_t = 3.0
+	await _ticks(60 * 5)
+	if herd.crossings < 1 or not herd.crossing:
+		return _combat_done(false, "the calm herd never set off over the road (state %d)" % herd.state)
+	print("BOT deercross set off: from %s to %s (%.0f m), lead %d, stag last %s" % [herd.cross_from.round(), herd.cross_to.round(), herd.cross_from.distance_to(herd.cross_to), herd._deer.find(herd._rank[0]), str((herd._rank[herd._rank.size() - 1] as Herd.Deer).stag)])
+	var t := 0.0
+	var file_max := 0.0
+	var top := 0.0
+	var off_ground := 0.0
+	while herd.crossing and t < 320.0:
+		await _ticks(60)
+		t += 1.0
+		var dir := (herd.cross_to - herd.cross_from).normalized()
+		var lo := INF
+		var hi := -INF
+		for d: Herd.Deer in herd._deer:
+			lo = minf(lo, d.pos.dot(dir))
+			hi = maxf(hi, d.pos.dot(dir))
+			top = maxf(top, d.speed)
+			off_ground = maxf(off_ground, absf(d.pos.y - terrain.height_at(d.pos.x, d.pos.z)))
+		file_max = maxf(file_max, hi - lo)
+	var c1 := herd.centre()
+	var rn1: Array = Herd.road_nearest(Vector2(c1.x, c1.z))
+	var side1 := signf((Vector2(c1.x, c1.z) - (rn1[0] as Vector2)).dot(Vector2(-rn1[1].y, rn1[1].x)))
+	print("BOT deercross walked: %.0f s (game), file strung out to %.1f m, up to %d deer on the track at once, top speed %.1f m/s, state %d, crossed %d" % [t * Engine.time_scale, file_max, herd.on_road_max, top, herd.state, herd.crossed])
+	if herd.crossed < 1 or herd.state != Herd.CALM:
+		return _combat_done(false, "the herd never reached the far side of the road")
+	if file_max < 14.0 or herd.on_road_max < 1 or top > 3.0 or off_ground > 0.05:
+		return _combat_done(false, "the herd did not walk over the road in a file")
+	await _ticks(60 * 20)
+	var c2 := herd.centre()
+	var spread := 0.0
+	for q in herd.deer_positions():
+		spread = maxf(spread, Vector2(q.x - c2.x, q.z - c2.z).length())
+	var down := herd.deer_positions().size() - herd.heads_up()
+	print("BOT deercross settled: side %+.0f -> %+.0f of the road, %.0f m from it, spread %.1f m, %d grazing, %d hoof prints" % [side0, side1, rn1[2], spread, down, herd.hoof_prints])
+	if side1 == side0 or spread > 16.0 or down < 3 or herd.hoof_prints < 40:
+		return _combat_done(false, "the herd did not settle to graze on the far side")
+	_combat_done(true, "the herd walked over the road in single file and grazes on the far side")
+
 func _bed_test() -> void:
 	var p := _player
 	var herd: Herd = _world.get_node("Herd")
