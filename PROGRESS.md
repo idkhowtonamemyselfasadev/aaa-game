@@ -5623,8 +5623,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    this session's Forward+ `ngf0` ran alone and still overran the 3000 s default (no PNG). If that re-run is lost
    again, park the night bug and do ALIVE work.
 0. (06:00 10-28) Knockdown in (see Done). NEXT, in order:
-   (1) Look at shots/knock2 (or re-shoot `soldier knock2 40 15.5 strike u=0.5 knocked knocked=0.8 clear`, ALONE)
-   and fix the lying pose if the feet float or limbs clip; also shoot `knocked=1.3` (sit-up). Add a dust puff
+   (1) Forward+ shot `soldier knock2 40 15.5 strike u=0.5 knocked knocked=0.8 clear` (alone, looked at, gallery
+   *-knockdown.jpg, FAIL as a Wukong frame): reads as the hero flat on his back, hat at the head end, wrapped knees
+   raised, staff flung onto the path; but the tall grass buries the body and the top-down lens is dark. Frame it
+   lower/side-on on short sward; also shoot `knocked=1.3` (sit-up). Add a dust puff
    (ImpactFX "dirt") where the back lands, and a thud in foley.
    (2) Night wood: re-run `valley <n> 40 21 clear ngfill=0` ALONE in Forward+ (this session's ran beside another shot
    and fell back to GL, where the wood showed). If Forward+ also shows the wood, keep the fill near-only.

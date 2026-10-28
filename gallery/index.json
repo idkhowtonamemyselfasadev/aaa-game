@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261022-2031-lookout8.jpg",
-  "time": "2026-10-22T20:31:36Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with the lantern's glow now leaning up toward his face, so his face and beard read warm under the hat brim; still wrong: a hard bright band lights the brim's underside, the coat is flat pale grey with no weave, and the right-hand wall stones show orange-red patches.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2049-lookout.jpg",
-  "time": "2026-10-22T20:49:00Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with his lantern fist after the thumb-wrap change: the hand reads as a fist, but at close range the thumb still pokes out sideways from its top, his face is a dark mask under a bucket-like hat, and the right-hand wall stones still carry orange-red patches.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-2141-lookout9.jpg",
   "time": "2026-10-22T21:41:19Z",
   "caption": "Osric at the yard-wall gap at 01:30 with his lantern held up: the glow on his hat brim is dimmer and narrower than before, but a bright streak still crosses the brim's front, his face is still mostly shadow, the hat reads like a bucket and the thumb pokes up.",
@@ -885,6 +873,12 @@
   "file": "20261028-0548-night-valley-nomoonshadow.jpg",
   "time": "2026-10-28T05:48:35Z",
   "caption": "Night valley at 21:00 with the moon's shadow switched off: the near sward is moonlit, but the mid-valley wood and floor are still one dark wash, so the moon shadow is not the cause.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-0730-knockdown.jpg",
+  "time": "2026-10-28T07:30:00Z",
+  "caption": "The hero lies on his back with knees up after the hollow soldier's sweep, staff thrown onto the path; the body is half buried in tall grass and the top-down frame is dark, with no dust where he landed.",
   "verdict": "fail"
  },
  {
