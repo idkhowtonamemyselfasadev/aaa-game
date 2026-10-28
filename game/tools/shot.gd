@@ -891,9 +891,9 @@ func _ready() -> void:
 		var rd: Vector2 = Herd.road_nearest(Vector2(at.x, at.z))[1]
 		var back := rd.orthogonal() * side0   # toward the side they came from
 		var cp := Vector2(at.x, at.z) - rd * 13.0 + back * 4.0
-		var cam := Vector3(cp.x, terrain.height_at(cp.x, cp.y) + 1.5, cp.y)
-		SPOTS[spot] = [cam, at + Vector3.UP * 0.8]
-		print("SHOT deercross at %s, lead %s, %d on the track, cam %s" % [at.round(), herd.anchor.round(), herd.on_road(), cam.round()])
+		var dc_cam := Vector3(cp.x, terrain.height_at(cp.x, cp.y) + 1.5, cp.y)
+		SPOTS[spot] = [dc_cam, at + Vector3.UP * 0.8]
+		print("SHOT deercross at %s, lead %s, %d on the track, cam %s" % [at.round(), herd.anchor.round(), herd.on_road(), dc_cam.round()])
 	if spot == "hooves":
 		# deer tracks pressed into the meadow beside the hero: a hind's walking trail
 		# crossing a galloping one, seen low from ~3 m

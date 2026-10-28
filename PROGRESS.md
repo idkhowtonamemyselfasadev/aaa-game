@@ -5727,7 +5727,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 0. (19:00 10-28) Deer road crossing in (see Done). NEXT, in order: (0) look at the `deercross` shot if this session
    got it (gallery *-deercross.jpg), else shoot `deercross <n> 60 8.5 clear`; if the file reads too far/small, lower
-   the 13 m in shot.gd or use `past=0` so the lead is on the ruts; (1) the moth shot result (see Done/gallery);
+   the 13 m in shot.gd or use `past=0` so the lead is on the ruts; (1) the `pedlar <n> 90 19.7 road lamp moths`
+   framing is BROKEN (19:00 shot, rendered on the pre-streak code, gallery *-moths-framing-broken.jpg): the lens sat
+   low inside dark grass blades with a black slab filling the right third, and shot.gd printed every moth 19-20 m
+   from the lens at screen x ~1350-1400 (off the 1280 frame). Fix the camera placement in the `moths` branch of the
+   pedlar spot (it must be ~1.5-2 m from the horn, looking at it) before shooting the streaks. NB the `deercross`
+   shot was NOT taken in 19:00: the first try died on a shot.gd parse error (fixed, `dc_cam`) and a fresh box needs
+   `godot --headless --import` again after pulling new class_name scripts (MothStreaks) or every bot/shot fails to
+   parse; check with `godot --headless --check-only --script res://tools/shot.gd` before a 45-min render;
    (2) `knocked=1.3` sit-up shot; (3) hero small/dull at `herocu`; (4) ALIVE: a second road event (a carter, or two
    travellers meeting and talking); (5) skirt tufts straw-pale; (6) herd bot lane check is flaky (2-4/8 on HEAD
    before this session's change too): the 64-point herd trail buffer is shared by ten deer; widen the check or the

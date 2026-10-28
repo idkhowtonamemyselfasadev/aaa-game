@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261023-0708-osric-capefall.jpg",
-  "time": "2026-10-23T07:08:40Z",
-  "caption": "Osric on the fell at 17:10 from 2.3 m with his wool cape now falling close down over the shoulders and arms: the stiff pointed flap that stood out at his side is gone, but the pale armour still shows down his chest, his face is a dark mask under the brim and the pose is stiff.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-0745-osric-idle.jpg",
   "time": "2026-10-23T07:45:00Z",
   "caption": "Osric idling at his cottage door at 07:12 with his weight on one foot: the stone cottage, hill and sky read well, but he stands in deep shadow by the door and the frame is badly underexposed, so the figure is a dark silhouette.",
@@ -891,6 +885,12 @@
   "file": "20261028-1650-pedlar-dusk-moths.jpg",
   "time": "2026-10-28T16:50:00Z",
   "caption": "Wat the pedlar on the dusk cart track with his lit horn lantern pooling warm light on the ruts and fireflies over the meadow; the new moths round his lantern barely read (one faint speck by his knee) and the lens is too dark and murky for a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-1940-moths-framing-broken.jpg",
+  "time": "2026-10-28T19:40:00Z",
+  "caption": "The pedlar's dusk lantern-moth close-up came out broken: the lens sits low in dark grass blades with a black slab over the right third and the moths are 20 m off and outside the frame, so the shot framing in shot.gd must be fixed before the moths can be judged.",
   "verdict": "fail"
  }
 ]
