@@ -5745,10 +5745,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (22:10 10-28) Lantern cube shadows + soft source in (see Done). NEXT, in order: (0) LOOK at `pedlar <n> 90 19.7 road
-   lamp moths` (if this session's `lampcube` shot made the gallery, judge it there): the fist should be dark-warm, not
-   red; the pool edge soft. If the fist is still red, it is not the lamp (fist is deep in the lid shadow per the bot):
-   check the horn's glow/bloom halo (HORN_GAIN) or the glove's cinnabar mask in hero.gdshader. Moth streaks still
-   small specks; (1) `deercross <n> 60 8.5 clear` (never taken); (2) herd-lane shot after a flee; (3) `knocked=1.3`
+   lamp moths`: DONE 22:40 (gallery 20261028-2240-lampcube.jpg, FAIL, ~50 min alone). The pool's rim is now soft
+   (fixed). The fist on the bail STILL glows orange-red, lit on its camera side although the bot puts it deep in the
+   lid's shadow cone. Next suspects, in order: the model's cinnabar `red_m` mask in hero.gdshader catching the glove
+   (the sleeve and shin trim read hot red too: tone `cinnabar` down for the pedlar or map red_m to dull leather on
+   villagers); the horn's glow/bloom halo bleeding over the fist (try HORN_GAIN 0.35); or the horn panes not casting
+   shadows (cast_shadow OFF) so the light reaches the fist through the gap between horn and lid. Moths are still
+   only tiny specks; the pedlar still wears the armoured hero model's plates; (1) `deercross <n> 60 8.5 clear` (never taken); (2) herd-lane shot after a flee; (3) `knocked=1.3`
    sit-up shot; (4) hero small/dull at `herocu`; (5) ALIVE: a second road event (a carter, or two travellers meeting
    and talking); (6) skirt tufts straw-pale.
 0. (21:15 10-28) Moth framing + herd lane in (see Done). The `mothscu` shot (gallery 20261028-2115-mothscu.jpg, ~45
