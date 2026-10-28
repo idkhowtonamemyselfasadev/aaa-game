@@ -1770,6 +1770,8 @@ func _sweep_test() -> void:
 	var down_for := 0.0
 	var sk := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
 	var head := sk.find_bone("mixamorig_Head") if sk != null else -1
+	var lay_seen := false
+	var lay := {"LeftUpLeg": 9.0, "RightUpLeg": 9.0, "LeftFoot": 9.0, "RightFoot": 9.0, "LeftHand": 9.0, "RightHand": 9.0}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -1782,6 +1784,17 @@ func _sweep_test() -> void:
 		if head >= 0:
 			var hp := sk.global_transform * sk.get_bone_global_pose(head).origin
 			min_head = minf(min_head, hp.y - _world.terrain.height_at(hp.x, hp.z))
+		if sk != null and p.down_t > 0.7 and not lay_seen:
+			# lying flat: read the pose the modifiers made (the clip's guard stance underneath
+			# once rolled the body onto one hip, a foot in the ground and the other in the air)
+			lay_seen = true
+			await sk.skeleton_updated
+			for k in lay.keys():
+				var bi := sk.find_bone("mixamorig_" + k)
+				if bi >= 0:
+					var bp := sk.global_transform * sk.get_bone_global_pose(bi).origin
+					lay[k] = bp.y - _world.terrain.height_at(bp.x, bp.z)
+			print("BOT sweep: lying, over the sward: " + ", ".join(lay.keys().map(func(k): return "%s %.2f" % [k, lay[k]])))
 		if passed_over == "" and p.down_t > 0.8:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
@@ -1795,6 +1808,11 @@ func _sweep_test() -> void:
 		return _combat_done(false, "the thrown hero's head never came near the ground")
 	if passed_over != "miss":
 		return _combat_done(false, "a blow landed on the hero lying in the grass")
+	if absf(lay["LeftUpLeg"] - lay["RightUpLeg"]) > 0.06:
+		return _combat_done(false, "the hero lies rolled onto one hip")
+	for k in ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]:
+		if lay[k] < -0.06 or lay[k] > 0.25:
+			return _combat_done(false, "the lying hero's %s is %.2f m off the sward" % [k, lay[k]])
 	print("BOT sweep: back hit the ground %d time(s), %.2f m over the sward, dust bursts %d" % [falls[0], falls[1], falls[2]])
 	if falls[0] != 1 or falls[2] < 1 or absf(falls[1]) > 0.5:
 		return _combat_done(false, "the hero's landing on their back raised no single thud and dust puff at the ground")

@@ -30,6 +30,9 @@ var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if 
 var grip_tip := Vector3.ZERO # (bots) the thumb's last bone in the hand's frame: (along the hand, index-ward, palm-ward)
 var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
+var square := 0.0            # 0..1: turn the hips and chest square to the body (undo a guard stance's
+							 # twist), so a body tipped onto its back lies flat instead of rolled on one side
+var arm_aim := 0.0           # 0..1: likewise hang both arms straight at the sides before arm/elbow bend
 var leg_aim := 0.0           # 0..1: first hang both legs straight and plumb (the body's down, a touch apart),
 							 # whatever stance the clip had, so hip/knee/stride bend from an even start
 var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
@@ -54,6 +57,9 @@ func _process_modification_with_delta(_delta: float) -> void:
 	var x := (to_skel * Vector3.RIGHT).normalized()
 	var up := (to_skel * Vector3.UP).normalized()
 	var fwd := (to_skel * Vector3.BACK).normalized()
+	if square > 0.0:
+		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
+		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
 	_bend(skel, "mixamorig_Hips", x, pelvis)
 	for side in ["Left", "Right"]:
 		var sg := 1.0 if side == "Left" else -1.0
@@ -61,6 +67,9 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_hang_leg(skel, side, (-up + x * sg * 0.1).normalized())
 		_bend(skel, "mixamorig_%sUpLeg" % side, x, -(hip - stride * sg * 1.1) - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, knee - stride * sg * 1.3)
+		if arm_aim > 0.0:
+			_hang(skel, "mixamorig_%sArm" % side, "mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side,
+				(-up + x * sg * 0.3).normalized(), arm_aim)
 		var bh := back_hand if side == "Right" else 0.0
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
@@ -259,15 +268,19 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 ## Swings the thigh, then the shin, toward `down` (skeleton space) by leg_aim: a straight leg
 ## hanging from the hip.
 func _hang_leg(skel: Skeleton3D, side: String, down: Vector3) -> void:
-	var ul := skel.find_bone("mixamorig_%sUpLeg" % side)
-	var lg := skel.find_bone("mixamorig_%sLeg" % side)
-	var ft := skel.find_bone("mixamorig_%sFoot" % side)
+	_hang(skel, "mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, down, leg_aim)
+
+## The same for any two-bone limb (upper, lower, end joint) by weight w.
+func _hang(skel: Skeleton3D, upper: String, lower: String, end: String, down: Vector3, w: float) -> void:
+	var ul := skel.find_bone(upper)
+	var lg := skel.find_bone(lower)
+	var ft := skel.find_bone(end)
 	if ul < 0 or lg < 0 or ft < 0:
 		return
 	var th := skel.get_bone_global_pose(lg).origin - skel.get_bone_global_pose(ul).origin
-	_swing(skel, ul, th, th.normalized().slerp(down, leg_aim))
+	_swing(skel, ul, th, th.normalized().slerp(down, w))
 	var sh := skel.get_bone_global_pose(ft).origin - skel.get_bone_global_pose(lg).origin
-	_swing(skel, lg, sh, sh.normalized().slerp(down, leg_aim))
+	_swing(skel, lg, sh, sh.normalized().slerp(down, w))
 
 ## Turns a bone (skeleton-space rotation, pivoting at its joint) so `from` points along `to`.
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
@@ -277,6 +290,19 @@ func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	_bend(skel, skel.get_bone_name(b), ax.normalized(), from.angle_to(to))
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
+## Turns a bone about the body's up so the line from its right child joint to its left one
+## lies along the body's right axis (by `square`).
+func _square(skel: Skeleton3D, bone_name: String, left: String, right: String, x: Vector3, up: Vector3) -> void:
+	var l := skel.find_bone(left)
+	var r := skel.find_bone(right)
+	if l < 0 or r < 0:
+		return
+	var line := skel.get_bone_global_pose(l).origin - skel.get_bone_global_pose(r).origin
+	var flat := line - up * line.dot(up)
+	if flat.length() < 1e-4:
+		return
+	_bend(skel, bone_name, up, atan2(flat.cross(x).dot(up), flat.dot(x)) * square)
+
 func _bend(skel: Skeleton3D, bone_name: String, axis_skel: Vector3, angle: float) -> void:
 	if absf(angle) < 1e-4:
 		return

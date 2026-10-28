@@ -1278,10 +1278,16 @@ func _down_tick(delta: float) -> void:
 		down_t = -1.0
 		model.transform = _model_rest
 		if crumple != null:
-			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn"]:
+			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn", "leg_aim", "square", "arm_aim"]:
 				crumple.set(k, 0.0)
 			crumple.active = false
 		return
+	if crumple != null:
+		# whatever stance the blow caught (a staggered guard, a stride), hang both legs even
+		# first, so the feet land side by side on the sward instead of one heel in the ground
+		crumple.leg_aim = minf(down_t / 0.12, 1.0) * (1.0 - smoothstep(1.55, KNOCK_TIME, down_t))
+		crumple.square = crumple.leg_aim
+		crumple.arm_aim = crumple.leg_aim
 	_pose_knockdown(down_t)
 
 # t, then: pitch back (deg), hip, knee, spine, sink (m), arm, elbow -- the body thrown back
@@ -1291,9 +1297,9 @@ const KNOCK_KEYS := [
 	[0.00, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 	[0.12, -14.0, 12.0, 22.0, -12.0, 0.04, 40.0, 25.0],
 	[0.42, -84.0, 48.0, 105.0, 16.0, 0.17, 28.0, 50.0],
-	[0.52, -79.0, 54.0, 116.0, 20.0, 0.13, 22.0, 46.0],
-	[0.62, -84.0, 55.0, 120.0, 18.0, 0.17, 20.0, 45.0],
-	[1.00, -83.0, 56.0, 120.0, 20.0, 0.17, 18.0, 42.0],
+	[0.52, -79.0, 54.0, 116.0, 20.0, 0.13, 16.0, 30.0],
+	[0.62, -84.0, 55.0, 120.0, 18.0, 0.17, 8.0, 14.0],
+	[1.00, -83.0, 56.0, 120.0, 20.0, 0.17, 6.0, 12.0],
 	[1.30, -38.0, 88.0, 128.0, 48.0, 0.22, 48.0, 62.0],
 	[1.55, 0.0, 62.0, 120.0, 34.0, 0.44, 30.0, 40.0],
 	[1.85, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
