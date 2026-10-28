@@ -2072,7 +2072,12 @@ func _gfx_test() -> void:
 	print("BOT gfx: ground fill noon %.3f 07:12 %.3f 16:48 %.3f night %.3f" % [fill[12.0], fill[7.2], fill[16.8], fill[23.0]])
 	if fill[12.0] > 0.001 or fill[23.0] < 0.04 or fill[23.0] > 0.15 or fill[7.2] < 0.15 or fill[7.2] > 0.3 or absf(fill[7.2] - fill[16.8]) > 0.01:
 		return _combat_done(false, "low-sun ground fill wrong")
-	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure and ground fill")
+	# the outer oak crowns take the same open-sky fill, so at night they stay above the lit sward
+	var lm: ShaderMaterial = (_world.get_node("Flora") as Flora).leaf_material
+	var cs = lm.get_shader_parameter("crown_sky") if lm != null else null
+	if lm == null or not lm.shader.code.contains("ground_fill * crown_sky") or (cs != null and float(cs) < 0.3):
+		return _combat_done(false, "tree crowns do not take the ground fill")
+	_combat_done(true, "presets Low..Ultra apply, FSR 2 render scale, saved and reloaded, low-sun exposure, ground and crown fill")
 
 ## Hesper keeps her day: tends the lid in the morning, gathers under the oaks (leaving the
 ## keep through the breach), eats in the shade, shelters under a crown in the rain, dozes

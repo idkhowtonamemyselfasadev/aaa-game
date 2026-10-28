@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261022-1547-lookout4.jpg",
-  "time": "2026-10-22T15:47:22Z",
-  "caption": "Osric at the yard-wall gap at 01:30 with the lantern held out to his side, fist clear of his face, under a greyer, less blue moon; still wrong: his face falls dark again, the raised open hand reads like a wave, the coat is flat pale grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-1715-lookout6.jpg",
   "time": "2026-10-22T17:15:46Z",
   "caption": "Osric at the yard-wall gap at 01:30 with his fingers now closed into a fist round the lantern bail and the lantern hanging below it; still wrong: his thumb hooks out toward his face, his face under the brim still reads dark, and the coat is flat pale grey.",
@@ -885,6 +879,12 @@
   "file": "20261028-0145-night-valley-clear.jpg",
   "time": "2026-10-28T01:45:00Z",
   "caption": "Night valley at 21:00 with the sky pinned clear (cloud 0.00): the mid-valley wood still sinks into the moonlit ground, so it is the 00:48 ground fill lifting the terrain to the crowns' brightness, not a cloud; straw grass at left still reads olive-yellow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-0235-night-valley-crownfill.jpg",
+  "time": "2026-10-28T02:35:00Z",
+  "caption": "Night valley at 21:00 with the tree crowns now taking the moonlit sky fill: the near meadow reads grey-blue, but the mid-valley wood is still lost into the lifted ground.",
   "verdict": "fail"
  }
 ]

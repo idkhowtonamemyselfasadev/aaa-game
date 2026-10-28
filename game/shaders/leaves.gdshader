@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode cull_disabled, depth_draw_opaque;
 
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
+global uniform vec3 ground_fill;   // low-sun / moonlit skylight on open ground (World._apply_bounce)
 // Oak leaf sprig cards: atlas painted by flora.gd, alpha-tested; crown-shaped normals
 // (set by the mesh) for a soft canopy, back-light translucency, flutter on top of the
 // shared branch sway.
@@ -20,6 +21,7 @@ uniform float fade_dist = 380.0;
 // shade fill gain: oak crowns 0.45 (inner crown); ferns on the woodland floor more (they
 // catch the green light through the canopy as well as the bounce off the litter)
 uniform float fill = 0.45;
+uniform float crown_sky = 0.8;   // share of ground_fill the outer crown takes
 // ferns (flora.gd sets 1): fronds are pushed aside by the hero's legs and spring back;
 // 0 on the oak crowns
 uniform float trample_gain = 0.0;
@@ -113,6 +115,9 @@ void fragment() {
 	ALBEDO *= v_cloud;   // (also dims the transmission: foliage_light scales by albedo)
 	// inner crown: light scattered off the lit leaves and ground around it
 	EMISSION = ALBEDO * bounce_light * fill;
+	// outer crown: the same open-sky fill the ground takes, so at night the crowns stay a step above
+	// the moonlit sward under them instead of sinking into it
+	EMISSION += ALBEDO * ground_fill * crown_sky * (1.0 - v_occ);
 }
 
 void light() {
