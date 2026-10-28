@@ -1452,6 +1452,11 @@ func _ready() -> void:
 			world.sky_energy_scale = float(a.substr(5))
 		if a.begins_with("ambx="):
 			world.ambient_scale = float(a.substr(5))
+	if "clear" in args:
+		# pin a clear sky: the software renderer's first frames compile shaders for minutes, and
+		# those long deltas can run the clock past Weather's first clear hold, rolling a front in
+		world.weather.force(0.0)
+		world.weather.wet = 0.0
 	for a in args:
 		if a.begins_with("rain="):
 			# rain= is the rain level wanted, not the front strength: a front under ~0.6
