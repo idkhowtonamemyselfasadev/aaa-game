@@ -38,8 +38,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   terrain.gdshader and grass.gdshader scale the fill by `mix(1, ground_fill_far, smoothstep(50, 120, view dist))`, so
   the moonlit fill only lifts the near SSAO-crushed sward and the mid-valley ground returns to 23:51's darkness under
   the moonlit crowns; the dawn/dusk fill is unchanged everywhere. Bot gfx checks far share 1.00 at 07:12, 0.00 at
-  night and that the terrain shader uses it. Bots gfx walk PASS. Shot `valley nightfar 40 21 clear`: see next entry
-  (still rendering at commit time).
+  night and that the terrain shader uses it. Bots gfx walk PASS. Shot `valley nightfar 40 21 clear` FAILED: the Vulkan
+  run ended with ERR_CANT_OPEN after ~50 min (no godot/Xvfb was left from the bots), fell back to opengl3, and the
+  1 h background limit killed it; no image, so the fix is NOT visually verified yet and there is no gallery entry.
 - (02:35 10-28) Outer tree crowns take the open-sky fill (Next 01:45 item 1). leaves.gdshader now adds `ALBEDO *
   ground_fill * crown_sky * (1 - v_occ)` (crown_sky 0.8): the outer crown gets the same low-sun / moonlit skylight
   as the ground (a little more sky light on crowns at dawn/dusk too, which is physical). Bot gfx now checks the crowns
@@ -5568,7 +5569,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (03:30 10-28) Distance fade for the night ground fill is in (see Done). NEXT, in order:
-   (1) Look at shots/nightfar (or re-shoot `valley <n> 40 21 clear`) vs gallery *-night-valley-ring.jpg: the moonlit
+   (1) Re-shoot `valley <n> 40 21 clear` FIRST THING (03:30's shot failed; start it as soon as the import finishes,
+   with no bots running, and give the background task the max 2 h timeout) vs gallery *-night-valley-ring.jpg: the moonlit
    crowns must stand out over the mid-valley again. If the trees are still gone even as silhouettes, they may not be
    drawn at 150-300 m at all: `hide=Terrain` or a debug EMISSION in leaves.gdshader.
    (2) Straw grass olive-yellow at 21:00; (3) boulder rain streaks; (4) hero small/dull at `herocu`; then ALIVE work.
