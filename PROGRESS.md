@@ -5701,8 +5701,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (17:40 10-28) Moth glow in (see Done). NEXT, in order: (0) look at `shots/mothsclose.png` / gallery
-   *-pedlar-moths-close.jpg if this session got it, else re-shoot `pedlar <n> 90 19.7 road lamp moths` (Forward+ takes
+0. (17:40 10-28) Moth glow in (see Done). NEXT, in order: (0) shoot (none was taken in 17:40) `pedlar <n> 90 19.7 road lamp moths` (Forward+ takes
    30+ min here); if the moths are still specks, add a short warm motion streak (stretch the plane along velocity);
    (1) `knocked=1.3` sit-up shot; (2) hero small/dull at `herocu`; (3) ALIVE: a second road event (a carter, or two
    travellers meeting and talking) and a deer crossing the road on camera; (4) skirt tufts straw-pale.

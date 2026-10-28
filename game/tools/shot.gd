@@ -1734,10 +1734,10 @@ func _ready() -> void:
 	if spot == "pedlar" and world.pedlar.hand_lantern != null:
 		for ch in world.pedlar.hand_lantern.get_children():
 			if ch is HandMoths:
-				var cam := get_viewport().get_camera_3d()
+				var mcam := get_viewport().get_camera_3d()
 				var fc: Vector3 = world.pedlar.hand_lantern.flame_center()
 				for mp in (ch as HandMoths).moth_positions():
-					print("SHOT moth %.2f m from the flame, %.2f m from the lens, screen %s%s" % [mp.distance_to(fc), mp.distance_to(cam.global_position), cam.unproject_position(mp), " (behind)" if cam.is_position_behind(mp) else ""])
+					print("SHOT moth %.2f m from the flame, %.2f m from the lens, screen %s%s" % [mp.distance_to(fc), mp.distance_to(mcam.global_position), mcam.unproject_position(mp), " (behind)" if mcam.is_position_behind(mp) else ""])
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
