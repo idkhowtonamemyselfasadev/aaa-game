@@ -5736,9 +5736,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (21:15 10-28) Moth framing + herd lane in (see Done). NEXT, in order: (0) look at gallery *-mothscu.jpg if this
-   session got it (else shoot `pedlar <n> 60 19.7 road lamp moths` alone, SHOT_TIMEOUT=4200, check-only first);
-   if the streaks glare, drop the 0.85 in moth_streak.gdshader; (1) shoot `deercross <n> 60 8.5 clear` (never taken);
+0. (21:15 10-28) Moth framing + herd lane in (see Done). The `mothscu` shot (gallery 20261028-2115-mothscu.jpg, ~45
+   min, FAIL) frames the lantern correctly now. NEXT, in order: (0) pedlar under his own lantern: the left hand next
+   to the horn reads as glowing saturated RED (skin/glove too red, or SSS over-lit by the 0.3 m lamp; clamp the
+   lamp's energy on the carrier or desaturate the skin's subsurface colour), the light pool on the ruts has a hard
+   round rim (the lantern's base casting a disc shadow? soften with a light_size / shadow blur or drop shadows on
+   the hand lamp), face unreadable; the moths show only as small warm specks (raise the streak length/size a bit);
+   (1) shoot `deercross <n> 60 8.5 clear` (never taken);
    (2) a herd-lane shot after a flee to see the segment lane reads as combed grass, not stripes; (3) `knocked=1.3`
    sit-up shot; (4) hero small/dull at `herocu`; (5) ALIVE: a second road event (a carter, or two travellers meeting
    and talking); (6) skirt tufts straw-pale.
