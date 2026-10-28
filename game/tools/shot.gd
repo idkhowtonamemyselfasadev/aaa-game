@@ -1453,6 +1453,8 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("moonshadow="):   # the moon's shadow reach in metres (world.gd: 150)
 			world.moon.directional_shadow_max_distance = float(a.substr(11))
+		if a.begins_with("ngfill="):   # the night ground fill (world.gd NIGHT_GROUND_FILL 0.7); 0 = 23:51's look
+			world.night_ground_fill = float(a.substr(7))
 		if a.begins_with("skyx="):
 			world.sky_energy_scale = float(a.substr(5))
 		if a.begins_with("ambx="):

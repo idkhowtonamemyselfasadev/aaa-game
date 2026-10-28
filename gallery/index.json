@@ -886,5 +886,11 @@
   "time": "2026-10-28T04:50:36Z",
   "caption": "Night valley at 21:00 with the sky pinned clear after the far ground-fill fade: moonlit peaks and starry sky hold, but the mid-valley wood and floor are still a featureless dark wash (suspect the moon's 150 m shadow map).",
   "verdict": "fail"
+ },
+ {
+  "file": "20261028-0548-night-valley-nomoonshadow.jpg",
+  "time": "2026-10-28T05:48:35Z",
+  "caption": "Night valley at 21:00 with the moon's shadow switched off: the near sward is moonlit, but the mid-valley wood and floor are still one dark wash, so the moon shadow is not the cause.",
+  "verdict": "fail"
  }
 ]

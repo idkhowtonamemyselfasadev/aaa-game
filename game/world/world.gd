@@ -675,6 +675,7 @@ const GROUND_FILL := 0.6
 ## SSAO crushed the flat night ambient on the near meadow to black while the mid-valley read
 ## moonlit (valley 21:00); this unoccluded skylight keeps the near sward and hill readable
 const NIGHT_GROUND_FILL := 0.7
+var night_ground_fill := NIGHT_GROUND_FILL   # shot.gd `ngfill=` overrides it for A/B tests
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 var ground_fill_far := 1.0   # share of it the ground keeps past ~120 m (ground_fill_far global)
 func _apply_bounce(e: Environment) -> void:
@@ -698,7 +699,7 @@ func _apply_bounce(e: Environment) -> void:
 	var gf := e.ambient_light_color * e.ambient_light_energy * GROUND_FILL * low_k
 	var day_g := gf.g
 	if moon and moon.visible:
-		gf += e.ambient_light_color * e.ambient_light_energy * NIGHT_GROUND_FILL \
+		gf += e.ambient_light_color * e.ambient_light_energy * night_ground_fill \
 				* clampf(moon.light_energy / 1.25, 0.0, 1.0)
 	ground_fill = Vector3(gf.r, gf.g, gf.b)
 	# the moonlit part only answers SSAO's crush on the near sward: past ~120 m it lifted the
