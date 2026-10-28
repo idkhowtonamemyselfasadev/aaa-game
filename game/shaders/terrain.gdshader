@@ -3,6 +3,7 @@ render_mode cull_back, depth_draw_opaque;
 
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 global uniform vec3 ground_fill;   // low-sun skylight on open ground (World._apply_bounce)
+global uniform float ground_fill_far;   // share of it kept past ~120 m (the moonlit part fades)
 #include "res://shaders/bounce.gdshaderinc"
 // Procedural PBR terrain for the Vale. Layers, all generated from noise (no texture yet):
 //   turf    - live short sward: thousands of tiny blades lying in the sward, mixed through
@@ -906,5 +907,7 @@ void fragment() {
 	EMISSION += ALBEDO * bounce_light * (mix(1.0, 0.35, clamp(n.y, 0.0, 1.0))
 		+ canopy * 2.6 * vec3(0.85, 1.0, 0.7)) * AO * (1.0 - pud) * bounce_gain(wpos);
 	// low sun: the open sky over level ground, unoccluded by SSAO (less under the crowns)
-	EMISSION += ALBEDO * ground_fill * clamp(n.y, 0.0, 1.0) * (1.0 - 0.7 * canopy) * AO * (1.0 - pud);
+	// (the moonlit share only near: far off it drowned the night wood's crowns)
+	float gf_d = mix(1.0, ground_fill_far, smoothstep(50.0, 120.0, length(VERTEX)));
+	EMISSION += ALBEDO * ground_fill * gf_d * clamp(n.y, 0.0, 1.0) * (1.0 - 0.7 * canopy) * AO * (1.0 - pud);
 }

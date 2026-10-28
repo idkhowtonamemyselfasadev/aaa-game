@@ -231,6 +231,10 @@ ground_fill={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+ground_fill_far={
+"type": "float",
+"value": 1.0
+}
 bounce_zone={
 "type": "vec4",
 "value": Vector4(0, 0, 0, 0)

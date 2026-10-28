@@ -676,6 +676,7 @@ const GROUND_FILL := 0.6
 ## moonlit (valley 21:00); this unoccluded skylight keeps the near sward and hill readable
 const NIGHT_GROUND_FILL := 0.7
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
+var ground_fill_far := 1.0   # share of it the ground keeps past ~120 m (ground_fill_far global)
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
 	var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
@@ -695,10 +696,15 @@ func _apply_bounce(e: Environment) -> void:
 	var low_k := (1.0 - clampf(sun_h / sin(deg_to_rad(25.0)), 0.0, 1.0)) \
 			* clampf(sun.light_energy / 1.5, 0.0, 1.0) if sun.visible else 0.0
 	var gf := e.ambient_light_color * e.ambient_light_energy * GROUND_FILL * low_k
+	var day_g := gf.g
 	if moon and moon.visible:
 		gf += e.ambient_light_color * e.ambient_light_energy * NIGHT_GROUND_FILL \
 				* clampf(moon.light_energy / 1.25, 0.0, 1.0)
 	ground_fill = Vector3(gf.r, gf.g, gf.b)
+	# the moonlit part only answers SSAO's crush on the near sward: past ~120 m it lifted the
+	# mid-valley ground to the crowns' brightness and the night wood vanished into it, so the
+	# ground shaders fade that share out with distance (the low-sun share stays everywhere)
+	ground_fill_far = clampf(day_g / gf.g, 0.0, 1.0) if gf.g > 0.0001 else 1.0
 	face_shade = b * 4.0
 	if player and player.garb:
 		player.garb.light_face(face_shade)
@@ -707,6 +713,7 @@ func _apply_bounce(e: Environment) -> void:
 		ground_fill = Vector3.ZERO
 	RenderingServer.global_shader_parameter_set("bounce_light", Vector3(b.r, b.g, b.b))
 	RenderingServer.global_shader_parameter_set("ground_fill", ground_fill)
+	RenderingServer.global_shader_parameter_set("ground_fill_far", ground_fill_far)
 
 ## Sky material writes restart its radiance bake: only write a value that really changed.
 func _set_sky(sky: PhysicalSkyMaterial, prop: String, v: Variant) -> void:

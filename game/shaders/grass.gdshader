@@ -3,6 +3,7 @@ render_mode cull_disabled, depth_draw_opaque;
 
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
 global uniform vec3 ground_fill;   // low-sun skylight on open ground (World._apply_bounce)
+global uniform float ground_fill_far;   // share of it kept past ~120 m (the moonlit part fades)
 #include "res://shaders/bounce.gdshaderinc"
 // Grass clumps for the Vale. Blades are real geometry (procedural mesh from grass.gd); this
 // shader bends them with layered wind (gusts travel across the field), tints them per clump
@@ -177,7 +178,9 @@ void fragment() {
 	EMISSION = ALBEDO * bounce_light * (0.6 + 1.1 * v_shelter)
 		* bounce_gain((INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz);
 	// low sun: the sky over the open sward (blades see ~70 % of it, the roots less)
-	EMISSION += ALBEDO * ground_fill * 0.7 * (1.0 - 0.7 * v_shelter) * mix(0.75, 1.0, v_ao);
+	// (the moonlit share only near, as on the terrain)
+	EMISSION += ALBEDO * ground_fill * 0.7 * (1.0 - 0.7 * v_shelter) * mix(0.75, 1.0, v_ao)
+		* mix(1.0, ground_fill_far, smoothstep(50.0, 120.0, length(VERTEX)));
 }
 
 void light() {

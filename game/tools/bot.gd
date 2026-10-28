@@ -2058,12 +2058,14 @@ func _gfx_test() -> void:
 	wx.force(0.0)
 	var expo := {}
 	var fill := {}
+	var far := {}
 	e.sdfgi_enabled = false   # headless has no llvmpipe adapter name; check the software path
 	for h in [12.0, 7.2, 16.8, 23.0]:
 		_world.time_of_day = h
 		_world._apply_time()
 		expo[h] = e.tonemap_exposure
 		fill[h] = _world.ground_fill.y
+		far[h] = _world.ground_fill_far
 	print("BOT gfx: exposure noon %.2f 07:12 %.2f 16:48 %.2f night %.2f" % [expo[12.0], expo[7.2], expo[16.8], expo[23.0]])
 	if absf(expo[12.0] - 0.85) > 0.03 or expo[7.2] < 1.1 or expo[7.2] > 1.3 or absf(expo[7.2] - expo[16.8]) > 0.03 or absf(expo[23.0] - 1.6) > 0.01:
 		return _combat_done(false, "low-sun exposure wrong")
@@ -2072,6 +2074,13 @@ func _gfx_test() -> void:
 	print("BOT gfx: ground fill noon %.3f 07:12 %.3f 16:48 %.3f night %.3f" % [fill[12.0], fill[7.2], fill[16.8], fill[23.0]])
 	if fill[12.0] > 0.001 or fill[23.0] < 0.04 or fill[23.0] > 0.15 or fill[7.2] < 0.15 or fill[7.2] > 0.3 or absf(fill[7.2] - fill[16.8]) > 0.01:
 		return _combat_done(false, "low-sun ground fill wrong")
+	# the moonlit share fades out past ~120 m (it drowned the night wood); the low-sun one stays
+	print("BOT gfx: ground fill kept far 07:12 %.2f night %.2f" % [far[7.2], far[23.0]])
+	if far[7.2] < 0.99 or far[23.0] > 0.05:
+		return _combat_done(false, "far ground keeps the moonlit fill")
+	var tm := load("res://shaders/terrain.gdshader") as Shader
+	if tm == null or not tm.code.contains("ground_fill_far"):
+		return _combat_done(false, "terrain does not fade the moonlit fill")
 	# the outer oak crowns take the same open-sky fill, so at night they stay above the lit sward
 	var lm: ShaderMaterial = (_world.get_node("Flora") as Flora).leaf_material
 	var cs = lm.get_shader_parameter("crown_sky") if lm != null else null
