@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261022-1858-lookout.jpg",
-  "time": "2026-10-22T18:58:13Z",
-  "caption": "Osric at the yard-wall gap at night: the lantern's glow now reaches his cheek and the underside of the brim, but his thumb still sticks out sideways off the bail like a hitch-hiker's and the face is still mostly shadow.",
-  "verdict": "fail"
- },
- {
   "file": "20261022-2031-lookout8.jpg",
   "time": "2026-10-22T20:31:36Z",
   "caption": "Osric at the yard-wall gap at 01:30 with the lantern's glow now leaning up toward his face, so his face and beard read warm under the hat brim; still wrong: a hard bright band lights the brim's underside, the coat is flat pale grey with no weave, and the right-hand wall stones show orange-red patches.",
@@ -891,6 +885,12 @@
   "file": "20261028-0548-night-valley-nomoonshadow.jpg",
   "time": "2026-10-28T05:48:35Z",
   "caption": "Night valley at 21:00 with the moon's shadow switched off: the near sward is moonlit, but the mid-valley wood and floor are still one dark wash, so the moon shadow is not the cause.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-0738-boulder-streaks.jpg",
+  "time": "2026-10-28T07:38:00Z",
+  "caption": "Meadow boulder at 15:00: thin dark rain runs now hang down from the crown over the lit shoulder; the shaded flank still goes near-black and the silhouette is still faceted.",
   "verdict": "fail"
  }
 ]

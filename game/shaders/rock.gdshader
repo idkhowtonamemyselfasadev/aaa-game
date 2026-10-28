@@ -73,10 +73,17 @@ void fragment() {
 	col *= 0.85 + 0.3 * fbm(wp * 0.45 + 90.0);
 	// rain streaks: dark vertical runs washed down the steep faces from the moss and the
 	// ledges above, strongest just under the crown and fading out toward the foot
-	float steep = 1.0 - smoothstep(0.25, 0.75, abs(n.y));
-	float runs = vn(vec3(wp.x * 7.0, wp.y * 0.5, wp.z * 7.0)) * 0.7 + vn(vec3(wp.x * 19.0, wp.y * 1.2, wp.z * 19.0) + 4.0) * 0.3;
-	float streak = smoothstep(0.5, 0.8, runs) * steep * smoothstep(-0.3, 0.5, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
-	col = mix(col, streak_col, streak * 0.55);
+	// (rain runs down any face it cannot pool on: a rounded boulder's lit shoulder at n.y ~0.5
+	// counts, which the old 0.25-0.75 window left bare)
+	float steep = 1.0 - smoothstep(0.5, 0.88, abs(n.y));
+	// Thin runs are the noise's 0.5 crossings (a ridge line, stretched tall so it hangs as a
+	// line down the face); broad washes sit between them. The old smoothstep on raw value noise
+	// gave soft 15 cm blobs that the tonal blotches swallowed: the streaks never read.
+	float ridge = 1.0 - abs(vn(vec3(wp.x * 4.5, wp.y * 0.3, wp.z * 4.5) + 4.0) * 2.0 - 1.0);
+	float thin = smoothstep(0.74, 0.95, ridge) * (0.5 + 0.5 * vn(vec3(wp.x * 23.0, wp.y * 2.0, wp.z * 23.0)));
+	float wash = smoothstep(0.55, 0.8, vn(vec3(wp.x * 2.6, wp.y * 0.35, wp.z * 2.6) + 17.0));
+	float streak = max(thin, wash * 0.6) * steep * smoothstep(-0.3, 0.5, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
+	col = mix(col, streak_col, streak * 0.9);
 	// lichen: soft-edged rosettes broken by a fine speckle, not hard map-like blots
 	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
 	col = mix(col, lichen, li * 0.4);
