@@ -4173,6 +4173,10 @@ func _lantern_test() -> void:
 	mo.max_dist = 0.0
 	await _ticks(300)
 	print("BOT lantern: moths round the light %d (max), settled on the post %d, pane bumps %d, strayed %.2f m, dodged the bat %d" % [seen, sat, mo.bumps, mo.max_dist, mo.dodges])
+	var lsh := mo.streaks.shown()
+	print("BOT lantern: moth streaks drawn %d, longest %.3f m" % [lsh.x, lsh.y])
+	if lsh.x < 1 or lsh.y > 0.12:
+		return _combat_done(false, "the post's moths leave no warm streaks (or absurd ones)")
 	if seen < 6 or mo.bumps < 1 or sat < 1 or mo.max_dist > 1.4 or mo.max_dist < 0.15:
 		return _combat_done(false, "no believable moths round the lantern")
 	for m in mo._m:
@@ -5962,6 +5966,7 @@ func _pedlar_test() -> void:
 		var hm_b0 := hm.bumps
 		var hm_l0 := hm.lost
 		var hm_walk := 0
+		var hm_streak := Vector2.ZERO
 		e.settle(_world, h)
 		o.settle(_world, h)
 		pd.settle(_world, h)
@@ -5992,6 +5997,8 @@ func _pedlar_test() -> void:
 				lit_max = maxf(lit_max, pd.hand_lantern.lit)
 				if pd.state == Villager.WALK:
 					hm_walk = maxi(hm_walk, hm.visible_count)
+					var sh := hm.streaks.shown()
+					hm_streak = Vector2(maxf(hm_streak.x, sh.x), maxf(hm_streak.y, sh.y))
 				if pd.hand_lantern.lit > 0.5 and pd.state == Villager.WALK:
 					var ly := pd.hand_lantern.flame_center().y - pd.global_position.y
 					lamp_hi = maxf(lamp_hi, ly)
@@ -6023,6 +6030,11 @@ func _pedlar_test() -> void:
 		if pd.hand_lantern == null:
 			return _combat_done(false, "the pedlar has no hand lantern")
 		print("BOT pedlar lantern moths: most round it %d (%d while he walks), farthest looping %.2f m, horn bumps %d, fell behind %d" % [hm.max_seen, hm_walk, hm.near_max, hm.bumps - hm_b0, hm.lost - hm_l0])
+		print("BOT pedlar moth streaks: most drawn %d, longest %.3f m" % [hm_streak.x, hm_streak.y])
+		if dusk and (hm_streak.x < 2 or hm_streak.y < 0.05 or hm_streak.y > 0.12):
+			return _combat_done(false, "the lantern moths leave no warm streaks (or absurd ones)")
+		if not dusk and hm_streak.x > 0:
+			return _combat_done(false, "moth streaks drawn by day")
 		if dusk and (hm.max_seen < 3 or hm_walk < 2 or hm.bumps - hm_b0 < 1):
 			return _combat_done(false, "no moths follow the pedlar's lantern on the dusk road")
 		if not dusk and hm.max_seen > 0:

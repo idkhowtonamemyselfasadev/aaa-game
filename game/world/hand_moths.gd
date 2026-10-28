@@ -25,6 +25,7 @@ var lost := 0                   # bots: moths that fell behind the walker and ga
 var near_max := 0.0             # bots: farthest a looping moth strayed (resets with max_seen)
 var _mm: MultiMesh
 var _mat: ShaderMaterial
+var streaks: MothStreaks
 var _rng := RandomNumberGenerator.new()
 var _m: Array = []
 var _t := 0.0
@@ -67,6 +68,9 @@ func _ready() -> void:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mmi.extra_cull_margin = 8.0
 	add_child(mmi)
+	streaks = MothStreaks.new()
+	streaks.setup(COUNT)
+	add_child(streaks)
 	for i in COUNT:
 		var m := Moth.new()
 		m.gate = (float(i) + 0.5) / COUNT * 0.9
@@ -93,12 +97,14 @@ func _process(delta: float) -> void:
 	# the mesh's bounds follow the light (the node itself sits at the origin)
 	var mmi: MultiMeshInstance3D = get_child(0)
 	mmi.custom_aabb = AABB(c - Vector3.ONE * 5.0, Vector3.ONE * 10.0)
+	streaks.custom_aabb = mmi.custom_aabb
 	var rain := weather.rain if weather else 0.0
 	var wind := weather.wind if weather else 0.0
 	var on := lantern.lit if lantern.is_visible_in_tree() else 0.0
 	var want := on * (1.0 - 0.85 * rain) * (1.0 - 0.6 * wind)
 	_mat.set_shader_parameter("lamp_pos", c)
 	_mat.set_shader_parameter("lamp_lit", on)
+	streaks.set_lamp(c, on)
 	var drift := Vector3(0.8, 0.0, 0.3) * wind * 0.9
 	var jump := on - _prev_on > 0.5
 	_prev_on = on
@@ -120,16 +126,19 @@ func _process(delta: float) -> void:
 			_leave(m, c)
 		if m.state == AWAY:
 			_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * 0.0001), c + Vector3.DOWN * 50.0))
+			streaks.hide_streak(i)
 			continue
 		for s in steps:
 			_step(m, c, dt, drift)
 		if m.state == AWAY:
+			streaks.hide_streak(i)
 			continue
 		visible_count += 1
 		if m.state == CIRCLE or m.state == BUMP:
 			near_max = maxf(near_max, m.pos.distance_to(c))
 		_mm.set_instance_transform(i, Transform3D(m.basis, m.pos))
 		_mm.set_instance_custom_data(i, Color(m.phase, 0.0, float(m.kind), HALF_SPAN[m.kind]))
+		streaks.set_streak(i, m.pos, m.vel, m.kind, HALF_SPAN[m.kind])
 	max_seen = maxi(max_seen, visible_count)
 
 func _arrive(m: Moth, c: Vector3) -> void:

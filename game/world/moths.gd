@@ -23,6 +23,7 @@ var eaten := 0                  # bots: moths the bat took (bat.gd)
 var dodges := 0                 # bots: power-dives away from the bat
 var _mm: MultiMesh
 var _mat: ShaderMaterial
+var streaks: MothStreaks
 var _rng := RandomNumberGenerator.new()
 var _m: Array = []
 var _t := 0.0
@@ -71,6 +72,10 @@ func _ready() -> void:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mmi.custom_aabb = AABB(Vector3(-20, -10, -20), Vector3(40, 30, 40))
 	add_child(mmi)
+	streaks = MothStreaks.new()
+	streaks.setup(COUNT)
+	streaks.custom_aabb = mmi.custom_aabb
+	add_child(streaks)
 	for i in COUNT:
 		var m := Moth.new()
 		m.gate = (float(i) + 0.5) / COUNT * 0.95
@@ -92,6 +97,7 @@ func _process(delta: float) -> void:
 	var want := post.lit * (1.0 - 0.85 * rain) * (1.0 - 0.6 * wind)
 	_mat.set_shader_parameter("lamp_pos", post.flame_pos.global_position)
 	_mat.set_shader_parameter("lamp_lit", post.lit)
+	streaks.set_lamp(post.flame_pos.global_position, post.lit)
 	var drift := Vector3(0.8, 0.0, 0.3) * wind * 0.9
 	var jump := post.lit - _prev_lit > 0.5
 	_prev_lit = post.lit
@@ -118,6 +124,7 @@ func _process(delta: float) -> void:
 			_leave(m, c)
 		if m.state == AWAY:
 			_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * 0.0001), c + Vector3.DOWN * 50.0))
+			streaks.hide_streak(i)
 			continue
 		for s in steps:
 			_step(m, c, dt, drift)
@@ -133,6 +140,7 @@ func _process(delta: float) -> void:
 		m.rest = move_toward(m.rest, 1.0 if m.state == REST else 0.0, delta * 6.0)
 		_mm.set_instance_transform(i, Transform3D(m.basis, m.pos))
 		_mm.set_instance_custom_data(i, Color(m.phase, m.rest, float(m.kind), HALF_SPAN[m.kind]))
+		streaks.set_streak(i, m.pos, m.vel, m.kind, HALF_SPAN[m.kind], 1.0 - m.rest)
 	if OS.get_environment("MOTHDBG") != "" and Engine.get_process_frames() % 10 == 0:
 		print("MOTHS lit %.2f want %.2f visible %d first %s centre %s" % [post.lit, want, visible_count, _m[0].pos, c])
 
@@ -178,6 +186,7 @@ func snatch(i: int) -> void:
 	m.dive = 0.0
 	eaten += 1
 	_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * 0.0001), m.pos + Vector3.DOWN * 50.0))
+	streaks.hide_streak(i)
 
 ## A moth that hears the bat close folds and drops (once per stoop).
 func dodge(i: int, bat_pos: Vector3) -> void:
