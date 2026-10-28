@@ -38,7 +38,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   laid from the heels to the head along the throw direction (merge 0.2 m, strength 1), so grass, flowers and
   ferns lie combed flat under the body for the herd trail's 30 s life and stand back up after. Bot `sweep`
   asserts it (herd_lay_at under Hips/Spine2/Head >= 0.8; reads 1.00/1.00/1.00) PASS; trample herd PASS; bed
-  failed once in a batch, passed alone with and without the change (flake).
+  failed once in a batch, passed alone with and without the change (flake). Shot `soldier lying2 40 15.5 strike
+  u=0.5 knocked knocked=0.8 clear` (Forward+, ~20 min, gallery *-knockdown-pressed.jpg, FAIL): the patch under the
+  body is pressed and the hat, red sash and dust puff read, but the camera-side tufts (outside the 0.85 m reach)
+  still hide the legs, and the near soil shows a stippled dot pattern (terrain print/ground detail?).
 - (09:40 10-28) KNOCKDOWN LYING POSE (Next item (1)). The old bot bone reads were taken in the physics frame,
   i.e. the CLIP's pose before the Crumple modifier ran; reading after `skeleton_updated` shows the real lying pose
   was rolled ~40 deg onto the right hip (hip joints 0.19/0.04 m over the sward, left foot 0.19 m in the air, right
@@ -5636,7 +5639,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (10:45 10-28) Trample under the lying body in (see Done). NEXT, in order: (1) `knocked=1.3` sit-up shot + read of
+0. (10:45 10-28) Trample under the lying body in (see Done). NEXT, in order: (0) the near soil's stippled dot
+   pattern in gallery *-knockdown-pressed.jpg (find the source in terrain.gdshader); (1) `knocked=1.3` sit-up shot + read of
    hands/feet at 1.3 s; (2) boulder shaded flank near-black (rock.gdshader fill); (3) hero small/dull at `herocu`;
    then ALIVE work (road travellers, birds scattering, NPC rain shelter).
 0. (09:40 10-28) Lying pose fixed (see Done). NEXT, in order: (0) flatten the grass under the lying body (trample) so it is not buried; (1) `knocked=1.3` sit-up shot + read of hands/feet
