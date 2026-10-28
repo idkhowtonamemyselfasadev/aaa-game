@@ -1772,6 +1772,7 @@ func _sweep_test() -> void:
 	var head := sk.find_bone("mixamorig_Head") if sk != null else -1
 	var lay_seen := false
 	var lay := {"LeftUpLeg": 9.0, "RightUpLeg": 9.0, "LeftFoot": 9.0, "RightFoot": 9.0, "LeftHand": 9.0, "RightHand": 9.0}
+	var laid := {}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -1795,6 +1796,13 @@ func _sweep_test() -> void:
 					var bp := sk.global_transform * sk.get_bone_global_pose(bi).origin
 					lay[k] = bp.y - _world.terrain.height_at(bp.x, bp.z)
 			print("BOT sweep: lying, over the sward: " + ", ".join(lay.keys().map(func(k): return "%s %.2f" % [k, lay[k]])))
+			# the grass under the body is pressed flat, hips to head, not standing through it
+			var trm: Trample = _world.trample
+			for k in ["Hips", "Spine2", "Head"]:
+				var bi := sk.find_bone("mixamorig_" + k)
+				if bi >= 0:
+					laid[k] = trm.herd_lay_at(sk.global_transform * sk.get_bone_global_pose(bi).origin)
+			print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
 		if passed_over == "" and p.down_t > 0.8:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
@@ -1813,6 +1821,8 @@ func _sweep_test() -> void:
 	for k in ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]:
 		if lay[k] < -0.06 or lay[k] > 0.25:
 			return _combat_done(false, "the lying hero's %s is %.2f m off the sward" % [k, lay[k]])
+	if laid.size() < 3 or laid.values().min() < 0.8:
+		return _combat_done(false, "the grass stands up through the lying hero instead of lying pressed under them")
 	print("BOT sweep: back hit the ground %d time(s), %.2f m over the sward, dust bursts %d" % [falls[0], falls[1], falls[2]])
 	if falls[0] != 1 or falls[2] < 1 or absf(falls[1]) > 0.5:
 		return _combat_done(false, "the hero's landing on their back raised no single thud and dust puff at the ground")

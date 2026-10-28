@@ -208,6 +208,20 @@ func add_herd_point(at: Vector2, dir: Vector2, strength: float, age := 0.0, merg
 	_htd[_htnext] = dir.normalized()
 	_htnext = (_htnext + 1) % HTN
 
+## A body thrown down onto the sward: lay the grass flat under it, from the heels at `feet`
+## to the head a body's length along `dir` (the way it was thrown, so the stems lie combed
+## along the slide), with the herd's long-lived points so it stays pressed while it lies
+## there and stands up slowly after it has got up.
+func add_body(feet: Vector3, dir: Vector3, length := 1.75) -> void:
+	var d := Vector2(dir.x, dir.z)
+	if d.length() < 1e-3:
+		return
+	d = d.normalized()
+	var n := 5
+	for i in n:
+		var q := Vector2(feet.x, feet.z) + d * (length * (0.1 + 0.85 * float(i) / (n - 1)))
+		add_herd_point(q, d, 1.0, 0.0, 0.2)
+
 ## Live herd trail points (bots).
 func active_herd_points() -> int:
 	var n := 0

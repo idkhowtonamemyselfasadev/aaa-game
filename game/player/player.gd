@@ -1270,6 +1270,9 @@ func _down_tick(delta: float) -> void:
 		# the back slaps into the sward a body's length behind the heels: a low puff of dust and grass
 		var at := global_position + _flinch_dir * 0.85 + Vector3.UP * 0.12
 		ImpactFX.spawn(get_parent(), at, _flinch_dir, "dirt", 0.9)
+		var tr := get_parent().get_node_or_null("Trample") as Trample
+		if tr != null:
+			tr.add_body(global_position, _flinch_dir)
 		fell.emit(at)
 	if anim_tree != null:
 		anim_tree.set("parameters/move/blend_position", 0.0)
