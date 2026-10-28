@@ -22,6 +22,10 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	elif kind == "stone":
 		chaff_col = Color(0.42, 0.41, 0.38)
 		dust_col = Color(0.55, 0.54, 0.50, 0.45)
+	elif kind == "dirt":
+		# a body thrown down: torn grass bits and a broad, low cloud of dry soil
+		chaff_col = Color(0.45, 0.42, 0.26)
+		dust_col = Color(0.47, 0.41, 0.31, 0.55)
 	# chaff: thin stalk fragments thrown out along the swing, tumbling, falling
 	var chaff := CPUParticles3D.new()
 	chaff.name = "Chaff"
@@ -34,6 +38,12 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	chaff.spread = 38.0
 	chaff.initial_velocity_min = 1.8 * power
 	chaff.initial_velocity_max = 5.0 * power
+	if kind == "dirt":
+		chaff.amount = int(18 * power)
+		chaff.direction = Vector3.UP
+		chaff.spread = 60.0
+		chaff.initial_velocity_min = 0.8 * power
+		chaff.initial_velocity_max = 2.6 * power
 	chaff.gravity = Vector3(0, -7.5, 0)
 	chaff.damping_min = 1.5
 	chaff.damping_max = 3.0
@@ -82,6 +92,14 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dust.angle_max = 360.0
 	dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	dust.emission_sphere_radius = 0.08
+	if kind == "dirt":
+		# rolls out along the ground from under the body rather than bursting up
+		dust.amount += 8
+		dust.direction = Vector3.UP
+		dust.spread = 90.0
+		dust.flatness = 0.75
+		dust.initial_velocity_max = 2.2 * power
+		dust.emission_sphere_radius = 0.35
 	var sc := Curve.new()
 	sc.add_point(Vector2(0, 0.35))
 	sc.add_point(Vector2(0.3, 0.8))

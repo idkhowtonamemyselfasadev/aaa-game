@@ -37,6 +37,7 @@ const FLINCH_TIME := 0.5
 const FLINCH_PUSH := 0.65             # metres the blow shoves the hero
 const FLINCH_DODGE_AT := 0.24         # a dodge may break the stagger this far in
 const FLINCH_LEAN := 17.0             # degrees the upper body rocks away from the blow
+const KNOCK_LAND := 0.42              # seconds into a knockdown when the back hits the ground
 const KNOCK_TIME := 1.85              # a heavy blow's knockdown: thrown, lying, back on the feet
 const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
 const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
@@ -117,6 +118,7 @@ signal respawned
 signal dodged(perfect: bool)
 signal dash_started
 signal hurt(amount: float)
+signal fell(at: Vector3)              # a knockdown's back hits the ground (foley thud)
 signal lock_changed(target: Node3D)
 
 # Lock-on: the camera swings to frame the hero and the target, swings open toward it, and the
@@ -1264,6 +1266,11 @@ func _down_tick(delta: float) -> void:
 	move_and_slide()
 	if combat != null:
 		combat.physics_step(delta)
+	if down_t >= KNOCK_LAND and down_t - delta < KNOCK_LAND:
+		# the back slaps into the sward a body's length behind the heels: a low puff of dust and grass
+		var at := global_position + _flinch_dir * 0.85 + Vector3.UP * 0.12
+		ImpactFX.spawn(get_parent(), at, _flinch_dir, "dirt", 0.9)
+		fell.emit(at)
 	if anim_tree != null:
 		anim_tree.set("parameters/move/blend_position", 0.0)
 		anim_tree.set("parameters/speed/scale", 1.0)

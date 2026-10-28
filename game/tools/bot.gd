@@ -1770,6 +1770,13 @@ func _sweep_test() -> void:
 	var down_for := 0.0
 	var sk := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
 	var head := sk.find_bone("mixamorig_Head") if sk != null else -1
+	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
+	p.fell.connect(func(at: Vector3) -> void:
+		falls[0] += 1
+		falls[1] = at.y - _world.terrain.height_at(at.x, at.z)
+		for ch in p.get_parent().get_children():
+			if ch is ImpactFX:
+				falls[2] += 1)
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
 		if head >= 0:
@@ -1788,6 +1795,9 @@ func _sweep_test() -> void:
 		return _combat_done(false, "the thrown hero's head never came near the ground")
 	if passed_over != "miss":
 		return _combat_done(false, "a blow landed on the hero lying in the grass")
+	print("BOT sweep: back hit the ground %d time(s), %.2f m over the sward, dust bursts %d" % [falls[0], falls[1], falls[2]])
+	if falls[0] != 1 or falls[2] < 1 or absf(falls[1]) > 0.5:
+		return _combat_done(false, "the hero's landing on their back raised no single thud and dust puff at the ground")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
 		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not

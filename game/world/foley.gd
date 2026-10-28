@@ -107,6 +107,9 @@ func hook(p: Player, soldiers: Array, trample: Node) -> void:
 		if perfect:
 			_play("perfect", p.global_position + Vector3.UP, -3.0))
 	p.hurt.connect(func(_amt: float) -> void: _play("body", p.global_position + Vector3.UP * 1.1, -1.0))
+	if p.has_signal("fell"):
+		# the back hitting the ground: the body thud pitched down into a heavy, dull flop
+		p.fell.connect(func(at: Vector3) -> void: _play("body", at, 0.0, 0.62))
 	for sol: Node in soldiers:
 		if sol.has_signal("struck"):
 			sol.struck.connect(func(_r: String) -> void:
