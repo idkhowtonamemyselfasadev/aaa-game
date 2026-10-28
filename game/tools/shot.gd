@@ -1447,7 +1447,12 @@ func _ready() -> void:
 		world.env.environment.ssil_enabled = false
 	if "noglow" in args:
 		world.env.environment.glow_enabled = false
+	if "nomoonshadow" in args:
+		# is the night mid-valley lost in the moon's shadow map (150 m reach) rather than unlit?
+		world.moon.shadow_enabled = false
 	for a in args:
+		if a.begins_with("moonshadow="):   # the moon's shadow reach in metres (world.gd: 150)
+			world.moon.directional_shadow_max_distance = float(a.substr(11))
 		if a.begins_with("skyx="):
 			world.sky_energy_scale = float(a.substr(5))
 		if a.begins_with("ambx="):

@@ -33,6 +33,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (04:00 10-28) Night wood re-shoot after the far fill fade (Next 03:30 item 1; no visible change). Shot `valley nightfar
+  40 21 clear` (log: hour 21.00, cloud 0.00, fog 0.0024; gallery *-night-valley-far.jpg, FAIL): peaks and sky fine, but
+  the mid-valley wood AND floor are still one featureless dark wash, not even tree silhouettes, while 23:51's shot had a
+  moonlit floor with distinct crowns. The fill diff since 23:51 (git diff 08434b1..931839b: only ground_fill /
+  crown fill terms, now faded past 120 m) cannot remove geometry or darken the floor this much, so the regression is
+  probably run-to-run, not the fill. Suspect: the moon's directional shadow (world.gd `directional_shadow_max_distance`
+  150 m) -- the dark wash covers roughly the first 150-200 m from the lens, and the old "near meadow black at night"
+  report fits a shadow map that reads all-shadow on lavapipe. shot.gd gained debug args `nomoonshadow` and
+  `moonshadow=<m>` to test it. Bots gfx walk PASS. Shot took ~49 min.
 - (03:30 10-28) Night ground fill fades with distance (Next 02:35 item 1). world.gd `_apply_bounce` now also writes a
   `ground_fill_far` global (share of ground_fill that is the low-sun day term: 1 by day, 0 at night);
   terrain.gdshader and grass.gdshader scale the fill by `mix(1, ground_fill_far, smoothstep(50, 120, view dist))`, so
@@ -5568,6 +5577,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (04:00 10-28) Night wood still lost (see Done). NEXT, in order:
+   (1) Shot `valley <n> 40 21 clear nomoonshadow`: if the mid-valley floor and crowns come back moonlit, the moon's
+   shadow map is the culprit (try `moonshadow=400` next, then fix world.gd: larger reach / more cascades / bias, or
+   fade the moon shadow over distance). If unchanged, `hide=Terrain` to check the crowns are drawn at 150-300 m.
+   (2) Straw grass olive-yellow at 21:00 (still visible on the near left in nightfar); (3) boulder rain streaks;
+   (4) hero small/dull at `herocu`; then ALIVE work. One shot per session: they take ~45-50 min.
 0. (03:30 10-28) Distance fade for the night ground fill is in (see Done). NEXT, in order:
    (1) Re-shoot `valley <n> 40 21 clear` FIRST THING (03:30's shot failed; start it as soon as the import finishes,
    with no bots running, and give the background task the max 2 h timeout) vs gallery *-night-valley-ring.jpg: the moonlit
