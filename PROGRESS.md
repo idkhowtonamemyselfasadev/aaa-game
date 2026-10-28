@@ -38,7 +38,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   blow, 0.12 m over the ground. impact.gd gains the "dirt" kind: earthy dust_col, 8 extra puffs rolling out flat
   (flatness 0.75, emission radius 0.35 m) and 18 slower grass bits instead of the swing-thrown chaff. foley.gd plays
   the "body" hit pitched 0.62 on `fell` (heavy dull flop). Bot `sweep` now asserts one thud, a dust burst and the
-  landing point within 0.5 m of the sward (got 1, 0.17 m, PASS); foley flinch death soldier PASS.
+  landing point within 0.5 m of the sward (got 1, 0.17 m, PASS); foley flinch death soldier PASS. Shot
+  `soldier knockdust 40 15.5 strike u=0.5 knocked knocked=0.6 clear` (Forward+, ~20 min, gallery *-knockdown-dust.jpg,
+  FAIL): a faint grey-brown dust cloud shows round the body; thin, and the hero is half hidden in the tall grass.
 - (07:40 10-28) BOULDER RAIN STREAKS (Next item (3)) + night A/B shot lost. rock.gdshader streaks rebuilt: thin runs
   are the 0.5 crossings of tall-stretched value noise (ridge, xz 4.5 / y 0.3) broken by fine noise, plus broad washes
   (xz 2.6) at 0.6; the steepness window is now 1 - smoothstep(0.5, 0.88, |n.y|) (the old 0.25-0.75 window left a
