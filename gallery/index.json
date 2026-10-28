@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261023-0236-osric-cape2.jpg",
-  "time": "2026-10-23T02:36:00Z",
-  "caption": "Osric full figure at 17:10 after deepening the wool cape's folds: a few vertical fold shadows now break the cape, but the whole figure still reads pale grey and flat against the dark field, the hem detail is lost at this range, and the frame is underlit.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-0340-osric-dark.jpg",
   "time": "2026-10-23T03:40:00Z",
   "caption": "Osric at 17:10 with a darker oiled-wool cape and smock and a lower hat crown: he now sits into the field instead of reading as a pale grey cut-out, but the ochre rope girdle is now the brightest patch on him, the cape still reads flat, and the pose is stiff.",
@@ -885,6 +879,12 @@
   "file": "20261028-1135-soil-clean.jpg",
   "time": "2026-10-28T11:35:00Z",
   "caption": "The knocked-down hero in pressed grass; the near soil is now clean loam with a few leaves instead of the dashed stipple pattern, but camera-side tufts still hide the legs and the frame is dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-1240-boulder-awayfill.jpg",
+  "time": "2026-10-28T12:40:00Z",
+  "caption": "Meadow boulder at 15:00 with extra sky fill on the face turned from the sun: the flank lifts only from ~1.3% to ~1.8% brightness, still near-black next to the ~16% shaded grass; the dark is the albedo (deep moss, rain streaks, damp foot), not the light.",
   "verdict": "fail"
  }
 ]

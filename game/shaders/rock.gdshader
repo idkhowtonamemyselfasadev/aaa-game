@@ -132,6 +132,12 @@ void fragment() {
 	// shade fill: the flank turned from the sun sees the open sky and the sunlit meadow, so it
 	// gets more than the top; AO only half applies (the full AO times the dark damp foot crushed
 	// the shaded flank to black). Bark takes 1.7x for the same reason.
-	float fill = 1.7 * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * (1.0 + 0.35 * shade);
+	// The face turned from the sun looks straight into the bright half of the sky dome and the
+	// sunlit meadow, so it gets the most: the fixed MOSS_SHADE side alone left a flank facing the
+	// camera (and away from the sun) near-black at 15:00, darker than the shaded grass beside it.
+	vec3 sl = normalize(cloud_sun);
+	float away = clamp(-dot(vec3(n.x, 0.0, n.z), normalize(vec3(sl.x, 0.0, sl.z) + 1e-4)), 0.0, 1.0)
+			* smoothstep(-0.05, 0.15, sl.y);
+	float fill = 1.7 * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * (1.0 + 0.35 * shade + 1.1 * away);
 	EMISSION = ALBEDO * bounce_light * fill * mix(1.0, AO, 0.5);
 }
