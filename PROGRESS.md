@@ -5626,11 +5626,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (1) Forward+ shot `soldier knock2 40 15.5 strike u=0.5 knocked knocked=0.8 clear` (alone, looked at, gallery
    *-knockdown.jpg, FAIL as a Wukong frame): reads as the hero flat on his back, hat at the head end, wrapped knees
    raised, staff flung onto the path; but the tall grass buries the body and the top-down lens is dark. Frame it
-   lower/side-on on short sward; also shoot `knocked=1.3` (sit-up). Add a dust puff
-   (ImpactFX "dirt") where the back lands, and a thud in foley.
+   lower/side-on on short sward; also shoot `knocked=1.3` (sit-up). (Dust puff + thud: done by a parallel session, 49b62fe.)
    (2) Night wood: re-run `valley <n> 40 21 clear ngfill=0` ALONE in Forward+ (this session's ran beside another shot
    and fell back to GL, where the wood showed). If Forward+ also shows the wood, keep the fill near-only.
-   (3) Straw grass olive-yellow at 21:00; (4) boulder rain streaks; (5) hero small/dull at `herocu`; then ALIVE work.
+   (3) Straw grass olive-yellow at 21:00; (4) hero small/dull at `herocu` (boulder rain runs done in 6e665f9); then ALIVE work.
 0. (05:00 10-28) Moon shadow ruled out (see Done). NEXT, in order:
    (1) Shot `valley <n> 40 21 clear ngfill=0`: if the moonlit crowns over the mid-valley come back as in gallery
    *-night-valley-ring.jpg, the fill itself darkens the far view (look for a shader reading ground_fill without the
