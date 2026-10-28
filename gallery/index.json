@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261022-2246-lookout10.jpg",
-  "time": "2026-10-22T22:46:43Z",
-  "caption": "Osric holding his lantern up at the yard-wall gap at night: the bright band across his hat brim has shrunk to a small warm spot at the left edge, but his face is still mostly shadow and the hat still reads as a bucket.",
-  "verdict": "fail"
- },
- {
-  "file": "20261022-2346-osric-hat.jpg",
-  "time": "2026-10-22T23:46:13Z",
-  "caption": "Osric at dusk with his reshaped felt hat: the crown now tapers into a pinched, slumped dome and the brim snaps down front and back instead of a straight-sided bucket; his face is still mostly shadow and the crown still stands a touch tall.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-0110-osric-cape.jpg",
-  "time": "2026-10-23T01:10:00Z",
-  "caption": "Osric at 17:10 after the wool-cape weathering pass: only a faint sun-faded grey reads across the top of the cape, the damp hem and mud flecks are out of frame, and the cape still reads as one smooth sheet with a bucket-ish hat and a shadowed face.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-0236-osric-cape2.jpg",
   "time": "2026-10-23T02:36:00Z",
   "caption": "Osric full figure at 17:10 after deepening the wool cape's folds: a few vertical fold shadows now break the cape, but the whole figure still reads pale grey and flat against the dark field, the hem detail is lost at this range, and the frame is underlit.",
@@ -897,6 +879,12 @@
   "file": "20261028-1100-knockdown-pressed.jpg",
   "time": "2026-10-28T11:00:00Z",
   "caption": "The knocked-down hero on their back with the grass round the body now pressed flat (hat, sash and dust puff read), but the camera-side tufts outside the pressed patch still hide the legs and the foreground soil shows a stippled dot pattern.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-1135-soil-clean.jpg",
+  "time": "2026-10-28T11:35:00Z",
+  "caption": "The knocked-down hero in pressed grass; the near soil is now clean loam with a few leaves instead of the dashed stipple pattern, but camera-side tufts still hide the legs and the frame is dark.",
   "verdict": "fail"
  }
 ]

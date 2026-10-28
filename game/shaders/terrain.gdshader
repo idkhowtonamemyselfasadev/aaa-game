@@ -240,7 +240,11 @@ float fbm(vec3 p) {
 
 // Fallen blades: one short stroke per cell at a random angle (combed loosely along `comb`).
 // Returns (coverage, height, tone). Two jittered cells overlap so strokes cross.
-vec3 blades(vec2 p, float scale, vec2 comb, float seed, float spread) {
+// `fp` is the pixel footprint (m): the blade edge is never sharper than ~1.5 px, or the
+// 1-2 px wide strokes alias into dashed lines in the screen-space bump (the "stippled
+// soil" under a low camera).
+vec3 blades(vec2 p, float scale, vec2 comb, float seed, float spread, float fp) {
+	float aa = fp * scale * 1.5;
 	vec3 acc = vec3(0.0);
 	for (int k = 0; k < 2; k++) {
 		vec2 q = p * scale + vec2(float(k) * 0.5, float(k) * 0.37) + seed;
@@ -255,9 +259,13 @@ vec3 blades(vec2 p, float scale, vec2 comb, float seed, float spread) {
 		float len = 0.38 + 0.1 * r.y;
 		float taper = 1.0 - smoothstep(0.0, len, abs(along));
 		float w = 0.075 * taper + 0.006;
-		float s = (1.0 - smoothstep(w * 0.4, w, abs(across))) * step(abs(along), len);
+		float e0 = min(w * 0.4, max(w - aa, 0.0));
+		float s = (1.0 - smoothstep(e0, max(w, e0 + aa), abs(across))) * (1.0 - smoothstep(len - aa, len, abs(along)));
+		s *= min(1.0, 2.0 * w / (w + aa));   // the softened edge keeps the blade's mean cover
 		// a crease down the blade: it is a little folded, so it has a lit and a dark side
-		float h = s * (0.6 + 0.4 * taper) * (0.75 + 0.25 * sign(across));
+		// (a soft fold, not a step; flattened once the blade is under ~3 px wide)
+		float fold = clamp(across / max(w * 0.5, aa), -1.0, 1.0) * (1.0 - smoothstep(0.5, 1.0, aa / w));
+		float h = s * (0.6 + 0.4 * taper) * (0.75 + 0.25 * fold);
 		if (h > acc.y) { acc = vec3(s, h, r.z); }
 	}
 	return acc;
@@ -411,8 +419,8 @@ void fragment() {
 	// ---- turf: live blades over combed thatch ----
 	vec2 comb = normalize(vec2(0.8, 0.6) + (vec2(meso, micro) - 0.5) * 1.5);
 	float fade_b = 1.0 - smoothstep(0.01, 0.05, fp);   // blades are ~2 cm wide
-	vec3 b1 = blades(xz, 12.0, comb, 0.0, 2.2);
-	vec3 b2 = blades(xz, 17.0, comb.yx * vec2(1.0, -1.0), 5.3, 2.2);
+	vec3 b1 = blades(xz, 12.0, comb, 0.0, 2.2, fp);
+	vec3 b2 = blades(xz, 17.0, comb.yx * vec2(1.0, -1.0), 5.3, 2.2, fp);
 	vec3 thatch = mix(thatch_a, thatch_b, clamp(meso * 0.5 + micro * 0.4 + b2.z * 0.3 - 0.1, 0.0, 1.0));
 	vec3 live = mix(turf_a, turf_b, 0.35 + 0.5 * b1.z * micro + 0.2 * micro);
 	// the sward far away: a mix of live and dead
@@ -460,8 +468,8 @@ void fragment() {
 		vec3 tl = trample_lay(wpos, 0.85);
 		laid = tl.z * (1.0 - rockw) * (1.0 - smoothstep(0.025, 0.05, fp));
 		if (laid > 0.001) {
-			vec3 lb = blades(xz, 9.0, tl.xy, 2.7, 0.5);
-			vec3 lb2 = blades(xz, 13.0, tl.xy, 7.1, 0.7);
+			vec3 lb = blades(xz, 9.0, tl.xy, 2.7, 0.5, fp);
+			vec3 lb2 = blades(xz, 13.0, tl.xy, 7.1, 0.7, fp);
 			vec3 straw = mix(thatch_b, turf_b, 0.35 + 0.4 * lb.z) * (0.85 + 0.3 * micro);
 			vec3 mat = mix(mix(turf_a, thatch_a, 0.5), straw * 0.8, lb2.x);
 			mat = mix(mat, straw * 1.12, lb.x);
