@@ -5752,9 +5752,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (23:00 10-28) Pedlar dun wool in (see Done). NEXT, in order: (0) LOOK at `pedlar <n> 90 19.7 road lamp moths` if
-   this session's `dunwool` shot is not in the gallery; if the fist still glows, try HORN_GAIN 0.35 (bloom halo) and
-   then horn cast_shadow ON; moths still specks; the pedlar still wears the armoured hero model's plate shapes;
+0. (23:00 10-28) Pedlar dun wool in (see Done). NEXT, in order: (0) `dunwool` shot TAKEN 23:46 (gallery
+   20261028-2346-dunwool.jpg, FAIL, ~40 min alone): the fist now reads as a dun glove lit from below, no red blot
+   (FIXED). Still wrong: the horn panes blow out to flat white-orange (try HORN_GAIN 0.35 and a horn-grain texture),
+   the creel on his back reads as a bright red-orange grid (garb basket palette too saturated), moths still specks; the pedlar still wears the armoured hero model's plate shapes;
    (1) `deercross <n> 60 8.5 clear` (never taken); (2) herd-lane shot after a flee; (3) `knocked=1.3` sit-up shot;
    (4) hero small/dull at `herocu`; (5) ALIVE: a second road event (a carter, or two travellers meeting and
    talking); (6) skirt tufts straw-pale; (7) Osric's own wool colour (neighbour.gd, body_wool).

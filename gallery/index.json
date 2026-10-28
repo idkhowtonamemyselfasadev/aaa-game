@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261023-1031-osric-groundfill.jpg",
-  "time": "2026-10-23T10:31:00Z",
-  "caption": "Osric by his door at 07:12 with the new low-sun skylight on open ground: the sward by the wall now reads green and the yard floor is a shade lighter than in osric-morning, but the foreground path and grass roots are still too dark and he is a flat dark profile.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-1128-osric-groundfill2.jpg",
   "time": "2026-10-23T11:28:00Z",
   "caption": "Osric's yard at 07:12 with the low-sun ground fill raised: the foreground seed heads and the sward by the wall read brighter, but the earth round the path stones and the cottage's lower wall are still near black.",
@@ -879,6 +873,12 @@
   "file": "20261028-1940-moths-framing-broken.jpg",
   "time": "2026-10-28T19:40:00Z",
   "caption": "The pedlar's dusk lantern-moth close-up came out broken: the lens sits low in dark grass blades with a black slab over the right third and the moths are 20 m off and outside the frame, so the shot framing in shot.gd must be fixed before the moths can be judged.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261028-2346-dunwool.jpg",
+  "time": "2026-10-28T23:46:00Z",
+  "caption": "Pedlar at dusk under his own horn lantern: the fist on the bail now reads as a dun glove lit from below instead of a glowing red blot; the horn panes still blow out to flat white, the creel reads as a red grid and the body keeps the armour model's bulky shape.",
   "verdict": "fail"
  }
 ]
