@@ -1762,10 +1762,38 @@ func _sweep_test() -> void:
 		return _combat_done(false, "standing hero was not cut by the sweep")
 	if hi - lo < 150.0:
 		return _combat_done(false, "sweep arc too narrow")
+	# 1b) the sweep's weight throws the hero onto their back; blows pass over the body on the
+	# ground, and the hero sits up and stands again on their own
+	var max_tip := 0.0
+	var min_head := 9.0
+	var passed_over := ""
+	var down_for := 0.0
+	var sk := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var head := sk.find_bone("mixamorig_Head") if sk != null else -1
+	while p.down_t >= 0.0:
+		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if head >= 0:
+			var hp := sk.global_transform * sk.get_bone_global_pose(head).origin
+			min_head = minf(min_head, hp.y - _world.terrain.height_at(hp.x, hp.z))
+		if passed_over == "" and p.down_t > 0.8:
+			passed_over = p.receive_attack(s, 5.0)
+		down_for = p.down_t
+		await get_tree().physics_frame
+	await _ticks(2)
+	var rest_ok := p.model.transform.is_equal_approx(p._model_rest)
+	print("BOT sweep: knockdowns %d, max tip %.0f deg, head low %.2f m, blow while down -> %s, down %.2f s, back at rest %s" % [p.knockdowns, rad_to_deg(max_tip), min_head, passed_over, down_for, rest_ok])
+	if p.knockdowns != 1 or max_tip < deg_to_rad(70.0):
+		return _combat_done(false, "the sweep did not throw the hero down")
+	if head >= 0 and min_head > 0.45:
+		return _combat_done(false, "the thrown hero's head never came near the ground")
+	if passed_over != "miss":
+		return _combat_done(false, "a blow landed on the hero lying in the grass")
+	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
+		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not
 	var results := {}
 	for kind in [HollowSoldier.THRUST_MOVE, HollowSoldier.SWEEP_MOVE]:
-		while s.state != HollowSoldier.STALK and s.state != HollowSoldier.IDLE:
+		while (s.state != HollowSoldier.STALK and s.state != HollowSoldier.IDLE) or p.down_t >= 0.0:
 			await get_tree().physics_frame
 		p.health = Player.HEALTH_MAX
 		_soldier_at(s, 2.4 if kind == HollowSoldier.THRUST_MOVE else 1.9, kind)
@@ -1787,6 +1815,8 @@ func _sweep_test() -> void:
 	if results[HollowSoldier.SWEEP_MOVE] != "hit":
 		return _combat_done(false, "a strafe escaped the sweep")
 	# 3) dodge back on the glint -> the dodge verdict, no damage
+	while p.down_t >= 0.0:
+		await get_tree().physics_frame
 	await _ticks(90)
 	p.health = Player.HEALTH_MAX
 	p.stamina = Player.STAMINA_MAX

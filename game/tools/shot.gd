@@ -761,7 +761,7 @@ func _ready() -> void:
 			foe_state = HollowSoldier.STAGGER
 		elif "dead" in args:
 			foe_state = HollowSoldier.DEAD
-		if "flinch" in args or "fallen" in args:
+		if "flinch" in args or "fallen" in args or "knocked" in args:
 			# clear of the practice post, which stands at the start
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
 			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
@@ -1575,7 +1575,7 @@ func _ready() -> void:
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
 		player.set_physics_process(false)
-		if "parry" in args or "smash" in args or "flinch" in args or "fallen" in args:
+		if "parry" in args or "smash" in args or "flinch" in args or "fallen" in args or "knocked" in args:
 			_action = func(): await _heavy_action(player, foe, args)
 		if spot == "lockon":
 			# lock on from a camera looking well off to the side, let the lock swing it round
@@ -1784,6 +1784,21 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		cam.global_position = mid + side * 2.4 - player.body.global_basis.z * 0.6 + Vector3.UP * 1.9
 		cam.look_at(mid + Vector3.UP * 0.1)
 		print("SHOT fallen dead_t %.2f black %.2f" % [player.dead_t, player.screen_black()])
+	elif "knocked" in args:
+		# the soldier's sweep throws the hero onto their back (knocked=<seconds after the blow>)
+		var at := 0.8
+		for a in args:
+			if a.begins_with("knocked="):
+				at = float(a.substr(8))
+		player.receive_attack(foe, HollowSoldier.SWEEP_DAMAGE, true)
+		for i in int(at * 60.0):
+			player._physics_process(dt)
+		var mid := player.model.global_transform * Vector3(0, 0.9, 0)
+		var cam := get_viewport().get_camera_3d()
+		var side := player.body.global_basis.x
+		cam.global_position = mid + side * 2.6 + player.body.global_basis.z * 0.4 + Vector3.UP * 1.3
+		cam.look_at(mid - Vector3.UP * 0.3)
+		print("SHOT knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero
 		c._start_charge()

@@ -581,7 +581,7 @@ func _sweep_contact() -> void:
 	if not in_reach and not (_aimed and dodging):
 		return
 	_resolved = true
-	var r := _player.receive_attack(self, SWEEP_DAMAGE)
+	var r := _player.receive_attack(self, SWEEP_DAMAGE, true)   # the sweep throws the hero down
 	if r == "hit":
 		var side := body.global_basis.x
 		ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 1.0, side, "stone", 0.8)

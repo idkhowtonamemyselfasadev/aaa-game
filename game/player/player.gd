@@ -37,6 +37,9 @@ const FLINCH_TIME := 0.5
 const FLINCH_PUSH := 0.65             # metres the blow shoves the hero
 const FLINCH_DODGE_AT := 0.24         # a dodge may break the stagger this far in
 const FLINCH_LEAN := 17.0             # degrees the upper body rocks away from the blow
+const KNOCK_TIME := 1.85              # a heavy blow's knockdown: thrown, lying, back on the feet
+const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
+const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
 
 # Death: the last blow rocks the hero back, the knees go and the body pitches face-down into
 # the grass. The screen sinks to black over the still body, then the hero wakes at the last
@@ -144,6 +147,8 @@ var flinch_t := -1.0                  # seconds into the current stagger, -1 whe
 var flinches := 0                     # blows that staggered the hero (bots read this)
 var armoured_hits := 0                # blows taken through the heavy's armour (bots read this)
 var _flinch_dir := Vector3.ZERO       # world direction the blow shoves the hero
+var down_t := -1.0                    # seconds into a knockdown, -1 while on the feet
+var knockdowns := 0                   # heavy blows that threw the hero (bots read this)
 var dead_t := -1.0                    # seconds since the killing blow, -1 while alive
 var deaths := 0
 var woke_t := -1.0                    # seconds since the last respawn (the black lifting)
@@ -475,6 +480,9 @@ func _physics_process(delta: float) -> void:
 			woke_t = -1.0
 	if dead_t >= 0.0:
 		_dead_tick(delta)
+		return
+	if down_t >= 0.0:
+		_down_tick(delta)
 		return
 	var dir2 := bot_input if use_bot_input else Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var sprinting := (bot_sprint if use_bot_input else Input.is_action_pressed("sprint")) and stamina > 0.0
@@ -1175,9 +1183,12 @@ func _pose_dodge(u: float) -> void:
 	model.transform = Transform3D(Basis(), Vector3(0, -0.17 * env, 0)) * t * _model_rest
 
 ## Enemies call this when a strike would connect. Returns "parried", "perfect", "dodged" or "hit".
-func receive_attack(attacker: Node, damage: float) -> String:
+## `heavy`: a blow with the weight to throw the hero off their feet (the soldier's sweep).
+func receive_attack(attacker: Node, damage: float, heavy := false) -> String:
 	if dead_t >= 0.0:
 		return "miss"
+	if down_t >= KNOCK_GUARD.x and down_t <= KNOCK_GUARD.y:
+		return "miss"                          # flat in the grass: the swing passes over
 	if combat != null and combat.try_parry(attacker):
 		return "parried"
 	if is_invulnerable() or (dodge_t >= 0.0 and dodge_t <= PERFECT_WINDOW):
@@ -1199,6 +1210,10 @@ func receive_attack(attacker: Node, damage: float) -> String:
 	if combat != null and combat.has_hyper_armour():
 		armoured_hits += 1
 		add_shake(0.35)
+		return "hit"
+	if heavy:
+		add_shake(0.75)
+		_knockdown(attacker)
 		return "hit"
 	add_shake(0.55)
 	_flinch(attacker)
@@ -1222,6 +1237,91 @@ func _flinch(attacker: Node) -> void:
 	_flinch_dir = away.normalized() if away.length() > 1e-3 else -body.global_basis.z
 	flinch_t = 0.0
 	flinches += 1
+
+func _knockdown(attacker: Node) -> void:
+	_flinch(attacker)                      # breaks off glide/climb/swing/dodge, sets the shove
+	flinches -= 1
+	flinch_t = -1.0
+	model.transform = _model_rest
+	# turn to face the blow so the body is always thrown onto its back
+	body.rotation.y = atan2(-_flinch_dir.x, -_flinch_dir.z)
+	if crumple != null:
+		crumple.active = true
+	down_t = 0.0
+	knockdowns += 1
+
+func _down_tick(delta: float) -> void:
+	down_t += delta
+	_update_slowmo(delta)
+	_update_lock(delta)
+	cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+	# thrown along the blow while airborne, then the grass holds the body
+	var shove := _flinch_dir * (KNOCK_PUSH * 3.0 / 0.5) * maxf(1.0 - down_t / 0.5, 0.0) ** 2
+	velocity.x = shove.x
+	velocity.z = shove.z
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	move_and_slide()
+	if combat != null:
+		combat.physics_step(delta)
+	if anim_tree != null:
+		anim_tree.set("parameters/move/blend_position", 0.0)
+		anim_tree.set("parameters/speed/scale", 1.0)
+	if down_t >= KNOCK_TIME:
+		down_t = -1.0
+		model.transform = _model_rest
+		if crumple != null:
+			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn"]:
+				crumple.set(k, 0.0)
+			crumple.active = false
+		return
+	_pose_knockdown(down_t)
+
+# t, then: pitch back (deg), hip, knee, spine, sink (m), arm, elbow -- the body thrown back
+# off its feet with the back arched and arms flung forward, landing on its back with the knees
+# up, a beat flat in the grass, then a sit-up with the feet drawn in, a squat and the stand.
+const KNOCK_KEYS := [
+	[0.00, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+	[0.12, -14.0, 12.0, 22.0, -12.0, 0.04, 40.0, 25.0],
+	[0.42, -84.0, 48.0, 105.0, 16.0, 0.17, 28.0, 50.0],
+	[0.52, -79.0, 54.0, 116.0, 20.0, 0.13, 22.0, 46.0],
+	[0.62, -84.0, 55.0, 120.0, 18.0, 0.17, 20.0, 45.0],
+	[1.00, -83.0, 56.0, 120.0, 20.0, 0.17, 18.0, 42.0],
+	[1.30, -38.0, 88.0, 128.0, 48.0, 0.22, 48.0, 62.0],
+	[1.55, 0.0, 62.0, 120.0, 34.0, 0.44, 30.0, 40.0],
+	[1.85, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+]
+
+func _knock_pose(t: float) -> Array:
+	for i in range(1, KNOCK_KEYS.size()):
+		var b: Array = KNOCK_KEYS[i]
+		if t <= b[0] or i == KNOCK_KEYS.size() - 1:
+			var a: Array = KNOCK_KEYS[i - 1]
+			var u := clampf((t - a[0]) / (b[0] - a[0]), 0.0, 1.0)
+			# the fall accelerates like a dropped weight; every other span eases in and out
+			u = u * u if i == 2 else u * u * (3.0 - 2.0 * u)
+			var out := []
+			for j in range(1, a.size()):
+				out.append(lerpf(a[j], b[j], u))
+			return out
+	return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+func _pose_knockdown(t: float) -> void:
+	var k := _knock_pose(t)
+	if crumple != null:
+		crumple.hip = deg_to_rad(k[1])
+		crumple.knee = deg_to_rad(k[2])
+		crumple.spine = deg_to_rad(k[3])
+		crumple.arm = deg_to_rad(k[5])
+		crumple.elbow = deg_to_rad(k[6])
+		crumple.head_turn = deg_to_rad(25.0) * smoothstep(0.4, 0.6, t) * (1.0 - smoothstep(0.95, 1.2, t))
+	# tip back about the heels (the body faces +Z in body space)
+	var heel := Vector3(0.0, 0.0, -0.12)
+	var tip := Transform3D(Basis(), heel) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(k[0])), Vector3.ZERO) * Transform3D(Basis(), -heel)
+	model.transform = Transform3D(Basis(), Vector3(0.0, -k[4], 0.0)) * tip * _model_rest
+
+func is_down() -> bool:
+	return down_t >= 0.0
 
 ## Snap the upper body away from the blow in ~0.06 s, then let it settle back over the rest
 ## of the stagger; pivot at the hip and sink a little so the feet stay under the body.
@@ -1325,6 +1425,7 @@ func _respawn() -> void:
 	health = HEALTH_MAX
 	stamina = STAMINA_MAX
 	model.transform = _model_rest
+	down_t = -1.0
 	body.rotation.y = respawn_yaw
 	_yaw = respawn_yaw + PI                # camera behind the hero (body faces +Z)
 	_trauma = 0.0
