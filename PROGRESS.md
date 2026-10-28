@@ -7077,6 +7077,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (21:30 10-28) DUPLICATE WORK: a session started ~19:00 built the deer road crossing a second time (herd.gd crossing
+  with its own RNG, `deercross` bot + shot spot); it was dropped at rebase for main's a637833. Check `git log origin/main`
+  right after setup AND again before starting code, since sessions now overlap by an hour or more.
+- (21:30 10-28) MEMORY / SHOT TIME: the session cgroup OOM-kills Godot when two Forward+ shots run with bots at once
+  (the dusk `pedlar ... moths` render was at 11.6 GB RSS when killed; `dmesg | grep -i killed` shows it, and shots.sh
+  then just says "vulkan failed ... retrying opengl3"). A day `deercross ... fixfps` shot run ALONE with
+  SHOT_TIMEOUT=4200 then overran 70 min with nothing saved. One shot at a time, no bots while it renders, and expect
+  Forward+ day shots to need more than 70 min now.
 - (18:40 10-28) A parse error in tools/shot.gd makes shots.sh burn its whole SHOT_TIMEOUT before saying anything (the SCRIPT ERROR only shows when the run ends). Check shot.gd with `--check-only` before every shot.
 - (10:45 10-28) `bed` bot failed once ("the herd did not bed down for the night") run straight after trample in one batch; passed alone twice. Batch-order flake.
 - (07:40 10-28) Night `valley` Forward+ shots now overrun the 3000 s default SHOT_TIMEOUT on the 4-core cloud box (03:30 and 06:49 both lost); use SHOT_TIMEOUT=4200 for night valley shots.
