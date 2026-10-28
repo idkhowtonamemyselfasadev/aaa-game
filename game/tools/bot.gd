@@ -6092,6 +6092,22 @@ func _pedlar_test() -> void:
 		if pd.hand_lantern == null:
 			return _combat_done(false, "the pedlar has no hand lantern")
 		if dusk:
+			# his sleeves and glove are dun road wool, not Edda's rust (it glowed red at the bail)
+			var red_wool := 0
+			var wools := 0
+			for mi in pd.model.find_children("*", "MeshInstance3D", true, false):
+				for si in (mi as MeshInstance3D).mesh.get_surface_count():
+					var sm := (mi as MeshInstance3D).get_surface_override_material(si) as ShaderMaterial
+					if sm == null or sm.get_shader_parameter("wool") == null:
+						continue
+					wools += 1
+					var wc: Color = sm.get_shader_parameter("wool")
+					var pc: Color = sm.get_shader_parameter("patch_col")
+					if wc.r - wc.b > 0.08 or pc.r - pc.b > 0.06:
+						red_wool += 1
+			print("BOT pedlar body cloth: %d wool surfaces, %d red-dyed" % [wools, red_wool])
+			if wools == 0 or red_wool > 0:
+				return _combat_done(false, "the pedlar's sleeves are red-dyed wool (a red blot under his candle)")
 			print("BOT pedlar fist on the bail: out to %.2f of the lid's shadow edge (< 1 shaded)" % fist_cover)
 			if fist_cover >= 1.0:
 				return _combat_done(false, "the pedlar's fist pokes out of the lid's shadow, lit point-blank by the candle")

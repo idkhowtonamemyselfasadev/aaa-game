@@ -26,6 +26,7 @@ uniform vec3 face_cloth : source_color = vec3(0.028, 0.030, 0.042);
 uniform float cloth_body = 0.0;
 uniform vec3 wool : source_color = vec3(0.30, 0.29, 0.27);
 uniform vec3 linen : source_color = vec3(0.44, 0.41, 0.35);
+uniform vec3 patch_col : source_color = vec3(0.20, 0.12, 0.08);
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -135,7 +136,7 @@ void fragment() {
 			vec3 w = wool * (0.86 + 0.14 * tw + 0.09 * mott) * mix(0.9, 1.06, slub);
 			vec3 ln = linen * (0.8 + 0.25 * h_noise(UV * vec2(25.0, 420.0)) + 0.1 * tw);
 			vec3 cl = mix(w, ln, iron_m);
-			cl = mix(cl, vec3(0.20, 0.12, 0.08) * (0.8 + 0.4 * mott), red_m * 0.7);
+			cl = mix(cl, patch_col * (0.8 + 0.4 * mott), red_m * 0.7);
 			cl = mix(cl, w * 0.75, scratch * 0.5);
 			float body_m = clamp(region + iron_m + red_m, 0.0, 1.0);
 			o = mix(o, cl, cloth_body * body_m);

@@ -123,6 +123,9 @@ const CHOP_HIT := [0.4, 0.45, 0.55, 1.05, 0.08, -0.25]
 var clasp_amt := 0.85            # both arms drawn in onto the helve (Crumple.clasp)
 ## Who this is (the HUD's caption) and what they say: a neighbour (Neighbour) sets its own.
 var who := "Edda"
+# the model's sleeves and plates as wool (hero.gdshader cloth_body) and its red trim as a patch
+var body_wool := Color(0.36, 0.18, 0.125)   # Edda's kirtle rust
+var body_patch := Color(0.20, 0.12, 0.08)
 var who_title := "Cottager on Harrowmere green"
 var intro: Array = INTRO
 var lines: Dictionary = LINES
@@ -922,7 +925,8 @@ func _skin() -> void:
 			mat.set_shader_parameter("restyle", 1.0)
 			mat.set_shader_parameter("cloth_body", 1.0)
 			# her sleeves the kirtle's rust wool, not the default undyed grey (read pale mottled grey)
-			mat.set_shader_parameter("wool", Color(0.36, 0.18, 0.125))
+			mat.set_shader_parameter("wool", body_wool)
+			mat.set_shader_parameter("patch_col", body_patch)
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
