@@ -892,5 +892,11 @@
   "time": "2026-10-28T13:50:00Z",
   "caption": "Meadow boulder at 15:00 after the rock albedo fix (lighter stone, softer upper-only rain runs, lighter moss shade, damp band limited to the foot): the lit face reads as grey granite, but the mossed flank turned from the sun only rises from ~1.8% to ~2.6% brightness and is still a near-black mass beside the 16% grass.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261028-1437-boulder-flankmoss.jpg",
+  "time": "2026-10-28T14:37:00Z",
+  "caption": "Meadow boulder at 15:00 after capping flank moss at ~60% and softening its cushion darkening and AO: grey stone now shows on the shaded flank (brightness 2.6% -> 4.5%), but that face is still a dark mass next to the 14% grass, and the boulder looks stuck on the grass rather than sitting in it.",
+  "verdict": "fail"
  }
 ]

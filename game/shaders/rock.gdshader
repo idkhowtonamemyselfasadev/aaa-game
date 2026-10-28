@@ -107,11 +107,15 @@ void fragment() {
 	float flank = 1.0 - smoothstep(0.35, 0.75, n.y);
 	float patchn = fbm(wp * 0.85 + 60.0) + fm * 0.12;
 	mossw *= mix(1.0, smoothstep(0.44, 0.58, patchn), flank);
+	// steep faces hold at most ~60 % moss so grey stone shows between the patches (a flank
+	// that was all deep moss read black in the shade)
+	mossw *= mix(1.0, 0.6, smoothstep(0.5, 0.9, flank));
 	// cushions: crevices between the clumps fall dark, the domed tips catch the light
 	float cu = cushion(wp);
 	vec3 mc = mix(moss_a, moss_b, smoothstep(0.25, 0.85, cu) * (0.6 + 0.4 * fbm(wp * 6.0)));
 	mc = mix(mc, moss_dry, smoothstep(0.55, 0.8, fbm(wp * 2.1 + 40.0)) * 0.4);
-	mc *= 0.7 + 0.45 * cu;
+	// shallower cushion darkening on steep faces (0.7 floor crushed the shaded flank)
+	mc *= mix(0.7 + 0.45 * cu, 0.85 + 0.3 * cu, smoothstep(0.5, 0.9, flank));
 	col = mix(col, mc, mossw);
 	// damp foot: the bottom ~15 cm only (the old local-y ramp darkened half a big boulder's flank)
 	col *= mix(0.55, 1.0, smoothstep(-0.05, 0.15, v_above));
@@ -128,7 +132,7 @@ void fragment() {
 	vec3 bg = mix(g * 0.05, cg * 0.02, mossw);
 	vec3 pn = normalize(n - (bg - n * dot(bg, n)));
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
-	AO = clamp(0.6 + s * 0.6, 0.0, 1.0) * mix(1.0, 0.65 + 0.35 * cu, mossw);
+	AO = clamp(0.6 + s * 0.6, 0.0, 1.0) * mix(1.0, 0.8 + 0.2 * cu, mossw);
 	// a passing cloud takes the sun off the land
 	ALBEDO *= v_cloud;
 	// shade fill: the flank turned from the sun sees the open sky and the sunlit meadow, so it
