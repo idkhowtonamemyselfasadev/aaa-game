@@ -9,7 +9,7 @@ extends Node3D
 enum { AWAY, IN, CIRCLE, BUMP, SETTLE, REST, OUT }
 
 const COUNT := 9
-const HALF_SPAN := 0.021        # m: ~4 cm moths
+const HALF_SPAN := [0.021, 0.023, 0.029]  # m per kind: ~4-6 cm moths
 const FAR := 7.0                # where they come in from / go back to
 const PANE_R := 0.14            # horizontal clearance round the lantern body (LW/2 + a bit)
 
@@ -132,7 +132,7 @@ func _process(delta: float) -> void:
 				max_dist = maxf(max_dist, dc)
 		m.rest = move_toward(m.rest, 1.0 if m.state == REST else 0.0, delta * 6.0)
 		_mm.set_instance_transform(i, Transform3D(m.basis, m.pos))
-		_mm.set_instance_custom_data(i, Color(m.phase, m.rest, float(m.kind), HALF_SPAN))
+		_mm.set_instance_custom_data(i, Color(m.phase, m.rest, float(m.kind), HALF_SPAN[m.kind]))
 	if OS.get_environment("MOTHDBG") != "" and Engine.get_process_frames() % 10 == 0:
 		print("MOTHS lit %.2f want %.2f visible %d first %s centre %s" % [post.lit, want, visible_count, _m[0].pos, c])
 

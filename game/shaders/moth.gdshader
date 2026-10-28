@@ -103,7 +103,10 @@ void fragment() {
 	SPECULAR = 0.25;
 	// thin scaled wings let the candle through from behind
 	BACKLIGHT = col * 0.55;
-	// close to the flame the dusty scales catch it warmly even off the lamp's shadow rays
+	// close to the flame the dusty scales catch it warmly even off the lamp's shadow rays: a
+	// moth a hand's width from a candle is lit like the horn itself, so it shows as a warm
+	// fleck against the dusk (pale scales flare most); falls off fast past ~0.6 m
 	float d = length(v_world - lamp_pos);
-	EMISSION = col * vec3(1.0, 0.62, 0.32) * lamp_lit * 0.9 / (1.0 + d * d * 30.0);
+	float lum = dot(col, vec3(0.3, 0.55, 0.15));
+	EMISSION = (col + vec3(0.10, 0.07, 0.04)) * vec3(1.0, 0.66, 0.36) * lamp_lit * (2.4 + lum * 1.5) / (1.0 + d * d * 9.0);
 }

@@ -10,7 +10,8 @@ extends Node3D
 enum { AWAY, IN, CIRCLE, BUMP, OUT }
 
 const COUNT := 5
-const HALF_SPAN := 0.02
+# half span per kind (m): heart and dart ~40 mm, white ermine ~44 mm, large yellow underwing ~56 mm
+const HALF_SPAN := [0.021, 0.023, 0.029]
 const FAR := 4.0                # where they come in from / are lost at
 const PANE_R := 0.11            # clearance round the small lantern's horn
 const LOST := 3.5               # a moth this far behind gives up and drops away
@@ -128,7 +129,7 @@ func _process(delta: float) -> void:
 		if m.state == CIRCLE or m.state == BUMP:
 			near_max = maxf(near_max, m.pos.distance_to(c))
 		_mm.set_instance_transform(i, Transform3D(m.basis, m.pos))
-		_mm.set_instance_custom_data(i, Color(m.phase, 0.0, float(m.kind), HALF_SPAN))
+		_mm.set_instance_custom_data(i, Color(m.phase, 0.0, float(m.kind), HALF_SPAN[m.kind]))
 	max_seen = maxi(max_seen, visible_count)
 
 func _arrive(m: Moth, c: Vector3) -> void:
@@ -137,7 +138,7 @@ func _arrive(m: Moth, c: Vector3) -> void:
 	m.pos = c + Vector3(cos(a) * FAR, _rng.randf_range(-0.5, -0.2), sin(a) * FAR)
 	m.vel = (c - m.pos).normalized() * m.speed
 	m.state = IN
-	m.r = _rng.randf_range(0.16, 0.42)
+	m.r = _rng.randf_range(0.22, 0.55)
 	m.y_off = _rng.randf_range(-0.12, 0.25)
 	m.timer = _rng.randf_range(0.4, 1.5)
 
@@ -192,7 +193,7 @@ func _step(m: Moth, c: Vector3, dt: float, drift: Vector3) -> void:
 						m.hold = _rng.randf_range(0.3, 0.7)
 					else:
 						m.vel += Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-0.5, 0.7), _rng.randf_range(-1, 1)) * 1.2
-						m.r = clampf(m.r + _rng.randf_range(-0.1, 0.1), 0.14, 0.45)
+						m.r = clampf(m.r + _rng.randf_range(-0.12, 0.12), 0.18, 0.6)
 						if _rng.randf() < 0.25:
 							m.sense = -m.sense
 	m.vel = m.vel.lerp(desired, clampf(dt * 7.0, 0.0, 1.0))

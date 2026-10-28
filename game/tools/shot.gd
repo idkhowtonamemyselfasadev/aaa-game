@@ -1021,6 +1021,12 @@ func _ready() -> void:
 				var c3 := wp + dir * 3.4 + lft * 1.3
 				var cp3 := Vector3(c3.x, terrain.height_at(c3.x, c3.y) + 1.2, c3.y)
 				SPOTS[spot] = [cp3, pd.global_position + Vector3.UP * 0.75 + Vector3(lft.x, 0, lft.y) * 0.2]
+				if "moths" in args and pd.hand_lantern != null:
+					# close on the lantern at his knee: the lens 1.7 m off, level with the horn, so
+					# the moths looping it stand against the dark verge rather than the lit ruts
+					var lc := pd.hand_lantern.flame_center()
+					var cm := Vector2(lc.x, lc.z) + dir * 1.3 + lft * 1.1
+					SPOTS[spot] = [Vector3(cm.x, lc.y + 0.25, cm.y), lc + Vector3.UP * 0.05]
 		if pd.hand_lantern != null:
 			pd.hand_lantern.lit = 1.0 if Pedlar.lantern_for(world.time_of_day) else 0.0
 			pd.hand_lantern.visible = pd.hand_lantern.lit > 0.0
@@ -1725,6 +1731,13 @@ func _ready() -> void:
 		world.pause_menu.toggle()
 		for i in 2:
 			await get_tree().process_frame
+	if spot == "pedlar" and world.pedlar.hand_lantern != null:
+		for ch in world.pedlar.hand_lantern.get_children():
+			if ch is HandMoths:
+				var cam := get_viewport().get_camera_3d()
+				var fc: Vector3 = world.pedlar.hand_lantern.flame_center()
+				for mp in (ch as HandMoths).moth_positions():
+					print("SHOT moth %.2f m from the flame, %.2f m from the lens, screen %s%s" % [mp.distance_to(fc), mp.distance_to(cam.global_position), cam.unproject_position(mp), " (behind)" if cam.is_position_behind(mp) else ""])
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
