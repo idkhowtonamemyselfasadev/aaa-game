@@ -1068,6 +1068,86 @@ func _scatter_rocks() -> void:
 			body.add_child(cs)
 	for v in rock_variants:
 		_multimesh(meshes[v], per[v], "Rocks_%d" % v)
+	_skirt_rocks(meshes, per)
+
+## Seat each boulder in the turf instead of on it: trace the stone's real outline where it
+## meets the ground (its vertices within a hand's breadth of the soil, binned by bearing)
+## and stand a ragged skirt of tussocks and leafy clumps along it, rooted just under the
+## lip and leaning out, thicker on the shaded side where the ground stays damp. Tufts are
+## grouped by SKIRT_CELL so each group drops out past SKIRT_VIS like the streamed meadow.
+const SKIRT_BINS := 20
+const SKIRT_CELL := 32.0
+const SKIRT_VIS := 80.0
+var skirt_tufts := 0   # (bots)
+var skirt_rocks := 0
+var skirt_points: PackedVector3Array = []   # tuft roots (bots: headless MultiMeshes read back empty)
+
+func _skirt_rocks(meshes: Array[ArrayMesh], per: Array) -> void:
+	var grass := get_node_or_null("../Grass") as GrassField
+	if grass == null:
+		return
+	var r := RandomNumberGenerator.new()
+	r.seed = seed + 41
+	var cells := {}   # Vector2i -> [[Transform3D, kind, 0.0], ...]
+	for v in per.size():
+		var verts: PackedVector3Array = meshes[v].surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		for xf: Transform3D in per[v]:
+			var s := xf.basis.get_scale().x
+			if s < 0.6:
+				continue
+			var c := xf.origin
+			var gy := _terrain.height_at(c.x, c.z)
+			var reach := PackedFloat32Array()
+			reach.resize(SKIRT_BINS)
+			reach.fill(0.0)
+			for q in verts:
+				var w := xf * q
+				var dx := w.x - c.x
+				var dz := w.z - c.z
+				var bin := int(floor((atan2(dz, dx) / TAU + 0.5) * SKIRT_BINS)) % SKIRT_BINS
+				# only the band that actually meets the soil, so an overhanging crown does
+				# not push the skirt out into the open
+				if w.y > _terrain.height_at(w.x, w.z) + 0.12 + s * 0.06 or w.y < gy - s * 0.5:
+					continue
+				reach[bin] = maxf(reach[bin], sqrt(dx * dx + dz * dz))
+			skirt_rocks += 1
+			for b in SKIRT_BINS:
+				if reach[b] <= 0.05:
+					continue
+				var a0 := (float(b) / SKIRT_BINS - 0.5) * TAU
+				var out := Vector3(cos(a0), 0, sin(a0))
+				var shaded := out.dot(Vector3(MOSS_SHADE.x, 0, MOSS_SHADE.y)) * 0.5 + 0.5
+				var n := 1 + int(r.randf() < 0.35 + 0.5 * shaded) + int(s > 1.6 and r.randf() < 0.5)
+				for i in n:
+					var a := a0 + r.randf_range(0.0, TAU / SKIRT_BINS)
+					var o := Vector3(cos(a), 0, sin(a))
+					# rooted a few cm under the lip, the odd one a step out into the turf
+					var d := reach[b] + r.randf_range(-0.12, 0.1) + (r.randf_range(0.15, 0.45) if i == 2 else 0.0)
+					var p := c + o * d
+					if _terrain.normal_at(p.x, p.z).y < 0.8 or _terrain.pond_at(p.x, p.z) > 0.2:
+						continue
+					if r.randf() < shelter_at(p.x, p.z) * 0.6:
+						continue
+					p.y = _terrain.height_at(p.x, p.z) - 0.03
+					var kind := 1 if r.randf() < 0.6 else 0
+					var sc := r.randf_range(0.75, 1.25) * lerpf(0.9, 1.15, shaded) * clampf(0.7 + s * 0.2, 0.8, 1.15)
+					var bb := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(sc * r.randf_range(0.85, 1.25), sc * r.randf_range(0.85, 1.3), sc))
+					# pushed out by the stone: lean away from it
+					bb = Basis(Vector3(-o.z, 0, o.x), -r.randf_range(0.12, 0.35)) * bb
+					var key := Vector2i(floori(p.x / SKIRT_CELL), floori(p.z / SKIRT_CELL))
+					if not cells.has(key):
+						cells[key] = []
+					cells[key].append([Transform3D(bb, p), kind, 0.0])
+					skirt_tufts += 1
+					skirt_points.append(p)
+	for key: Vector2i in cells:
+		var node := grass.static_tufts(cells[key])
+		node.name = "RockSkirt_%d_%d" % [key.x, key.y]
+		for mmi: MultiMeshInstance3D in node.get_children():
+			mmi.visibility_range_end = SKIRT_VIS
+			mmi.visibility_range_end_margin = 10.0
+			mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		add_child(node)
 
 ## Icosphere (4 subdivisions) displaced by fbm + two ridged octaves (a broad one for the
 ## mass, a tight sharp one that chips the edges), stepped along a tilted bedding axis so

@@ -1096,7 +1096,27 @@ func _boulder_test() -> void:
 		print("BOT boulder %s: %d verts, %d crease points, folds %d/%d (%.3f), profile kinks %d/72" % [c.name, by_pos.size(), crease, folds, pairs, fold_rate, kinks])
 		if crease < 100 or fold_rate < 0.01 or kinks < 8:
 			ok = false
-	_finish(ok and nv > 0, "every boulder variant shows crisp fracture creases, sharp folds and a kinked profile" if ok and nv > 0 else "boulders read as smooth potatoes (need >= 100 crease points, >= 1% folds over 60 deg, >= 8 profile kinks)")
+	# every big boulder is seated in a skirt of tufts along its real ground outline
+	var skirts := 0
+	var hugged := 0
+	var big := 0
+	for c in flora.get_children():
+		if c.name.begins_with("RockSkirt_"):
+			skirts += 1
+	for f: Vector3 in flora._rock_feet:
+		if f.y < 1.4:
+			continue
+		big += 1
+		var near := 0
+		for o in flora.skirt_points:
+			if absf(o.x - f.x) < f.y * 1.4 and absf(o.z - f.z) < f.y * 1.4 and Vector2(o.x - f.x, o.z - f.z).length() < f.y * 1.4:
+				near += 1
+		if near >= 10:
+			hugged += 1
+	print("BOT boulder skirt: %d tufts round %d stones in %d cells, %d/%d big boulders hugged by >= 10" % [flora.skirt_tufts, flora.skirt_rocks, skirts, hugged, big])
+	if flora.skirt_rocks < 20 or flora.skirt_tufts < flora.skirt_rocks * 12 or hugged * 10 < big * 9:
+		ok = false
+	_finish(ok and nv > 0, "every boulder variant shows crisp fracture creases, sharp folds and a kinked profile" if ok and nv > 0 else "boulders read as smooth potatoes or sit on the turf without a skirt (need >= 100 crease points, >= 1% folds over 60 deg, >= 8 profile kinks)")
 
 func _sward_test() -> void:
 	var tr: Terrain = _world.get_node("Terrain")
