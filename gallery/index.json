@@ -886,5 +886,11 @@
   "time": "2026-10-28T12:40:00Z",
   "caption": "Meadow boulder at 15:00 with extra sky fill on the face turned from the sun: the flank lifts only from ~1.3% to ~1.8% brightness, still near-black next to the ~16% shaded grass; the dark is the albedo (deep moss, rain streaks, damp foot), not the light.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261028-1350-boulder-flankalb.jpg",
+  "time": "2026-10-28T13:50:00Z",
+  "caption": "Meadow boulder at 15:00 after the rock albedo fix (lighter stone, softer upper-only rain runs, lighter moss shade, damp band limited to the foot): the lit face reads as grey granite, but the mossed flank turned from the sun only rises from ~1.8% to ~2.6% brightness and is still a near-black mass beside the 16% grass.",
+  "verdict": "fail"
  }
 ]

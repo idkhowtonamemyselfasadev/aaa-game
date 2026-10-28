@@ -9,9 +9,9 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 
 #include "res://shaders/weather.gdshaderinc"
 uniform vec3 stone_a : source_color = vec3(0.33, 0.31, 0.28);   // weathered granite, a touch warm
-uniform vec3 stone_b : source_color = vec3(0.17, 0.16, 0.15);
+uniform vec3 stone_b : source_color = vec3(0.22, 0.21, 0.19);   // (0.17 is ~0.024 linear: the shaded flank read black)
 uniform vec3 streak_col : source_color = vec3(0.1, 0.09, 0.07);  // rain-carried dirt and algae
-uniform vec3 moss_a : source_color = vec3(0.09, 0.12, 0.04);   // deep cushion shade
+uniform vec3 moss_a : source_color = vec3(0.14, 0.17, 0.06);   // deep cushion shade (0.09 read black on the shaded flank)
 uniform vec3 moss_b : source_color = vec3(0.24, 0.27, 0.09);     // sunlit tips, olive not lime
 uniform vec3 moss_dry : source_color = vec3(0.23, 0.19, 0.11);   // dead, browned patches
 uniform vec3 lichen : source_color = vec3(0.55, 0.52, 0.38);
@@ -82,8 +82,9 @@ void fragment() {
 	float ridge = 1.0 - abs(vn(vec3(wp.x * 4.5, wp.y * 0.3, wp.z * 4.5) + 4.0) * 2.0 - 1.0);
 	float thin = smoothstep(0.74, 0.95, ridge) * (0.5 + 0.5 * vn(vec3(wp.x * 23.0, wp.y * 2.0, wp.z * 23.0)));
 	float wash = smoothstep(0.55, 0.8, vn(vec3(wp.x * 2.6, wp.y * 0.35, wp.z * 2.6) + 17.0));
-	float streak = max(thin, wash * 0.6) * steep * smoothstep(-0.3, 0.5, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
-	col = mix(col, streak_col, streak * 0.9);
+	float streak = max(thin, wash * 0.6) * steep * smoothstep(0.0, 0.6, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
+	// (0.6, upper face only: at 0.9 from ly -0.3 the runs blackened the whole shaded flank)
+	col = mix(col, streak_col, streak * 0.6);
 	// lichen: soft-edged rosettes broken by a fine speckle, not hard map-like blots
 	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
 	col = mix(col, lichen, li * 0.4);
@@ -112,7 +113,8 @@ void fragment() {
 	mc = mix(mc, moss_dry, smoothstep(0.55, 0.8, fbm(wp * 2.1 + 40.0)) * 0.4);
 	mc *= 0.7 + 0.45 * cu;
 	col = mix(col, mc, mossw);
-	col *= mix(0.55, 1.0, smoothstep(-0.35, 0.0, ly));    // damp foot
+	// damp foot: the bottom ~15 cm only (the old local-y ramp darkened half a big boulder's flank)
+	col *= mix(0.55, 1.0, smoothstep(-0.05, 0.15, v_above));
 	float rough = mix(0.78, 1.0, mossw);
 	weather_wetten(col, rough, mix(0.3, 1.0, mossw));
 	ALBEDO = col;
