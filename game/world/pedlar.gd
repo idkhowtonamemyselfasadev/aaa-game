@@ -304,6 +304,7 @@ func _physics_process(delta: float) -> void:
 		if _stand_t <= 0.0:
 			_go_leg(_leg + 1)
 	if hand_lantern != null:
+		hand_lantern.weather = weather
 		hand_lantern.want = 1.0 if on_road and lantern_for(h) else 0.0
 		hand_lantern.visible = on_road and (lantern_for(h) or hand_lantern.lit > 0.0)
 	_pick_mate()

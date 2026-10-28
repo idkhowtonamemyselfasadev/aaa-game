@@ -5956,6 +5956,12 @@ func _pedlar_test() -> void:
 		var lamp_hi := -INF
 		var lamp_lo := INF
 		var sway0 := pd.hand_lantern.max_sway if pd.hand_lantern else 0.0
+		var hm := pd.hand_lantern.moths
+		hm.max_seen = 0
+		hm.near_max = 0.0
+		var hm_b0 := hm.bumps
+		var hm_l0 := hm.lost
+		var hm_walk := 0
 		e.settle(_world, h)
 		o.settle(_world, h)
 		pd.settle(_world, h)
@@ -5984,6 +5990,8 @@ func _pedlar_test() -> void:
 			ticks = i
 			if pd.hand_lantern != null and pd.visible:
 				lit_max = maxf(lit_max, pd.hand_lantern.lit)
+				if pd.state == Villager.WALK:
+					hm_walk = maxi(hm_walk, hm.visible_count)
 				if pd.hand_lantern.lit > 0.5 and pd.state == Villager.WALK:
 					var ly := pd.hand_lantern.flame_center().y - pd.global_position.y
 					lamp_hi = maxf(lamp_hi, ly)
@@ -6014,6 +6022,11 @@ func _pedlar_test() -> void:
 		print("BOT pedlar lantern: lit max %.2f, flame %.2f..%.2f m above his feet, swing %.2f rad" % [lit_max, lamp_lo, lamp_hi, (pd.hand_lantern.max_sway if pd.hand_lantern else 0.0)])
 		if pd.hand_lantern == null:
 			return _combat_done(false, "the pedlar has no hand lantern")
+		print("BOT pedlar lantern moths: most round it %d (%d while he walks), farthest looping %.2f m, horn bumps %d, fell behind %d" % [hm.max_seen, hm_walk, hm.near_max, hm.bumps - hm_b0, hm.lost - hm_l0])
+		if dusk and (hm.max_seen < 3 or hm_walk < 2 or hm.bumps - hm_b0 < 1):
+			return _combat_done(false, "no moths follow the pedlar's lantern on the dusk road")
+		if not dusk and hm.max_seen > 0:
+			return _combat_done(false, "moths round an unlit lantern by day")
 		if dusk and lit_max < 0.95:
 			return _combat_done(false, "the pedlar's lantern is not lit on the dusk walk (%.2f)" % lit_max)
 		if not dusk and lit_max > 0.0:

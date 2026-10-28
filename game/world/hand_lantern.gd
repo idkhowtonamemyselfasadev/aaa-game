@@ -20,6 +20,8 @@ var face_fill := 0.0        # set by the carrier: 1 with the lantern held up at 
 var fill_rest := Vector3.ZERO  # the glow's place over the vents, in the ring's space
 var face_at := Vector3.INF  # set by the carrier: just before his face (world); the glow leans toward it
 var max_sway := 0.0         # largest swing seen (bots)
+var moths: HandMoths        # a few moths that find the light on the road after dark
+var weather: Weather        # set by the carrier: rain and wind keep the moths in the grass
 var _horn: ShaderMaterial
 var _flame: ShaderMaterial
 var _tallow: ShaderMaterial
@@ -113,6 +115,10 @@ func _ready() -> void:
 	fill.position = Vector3(0, 0.28, 0)    # up nearer the face: from 0.16 it barely reached past the brim
 	pivot.add_child(fill)
 	fill_rest = fill.position
+	moths = HandMoths.new()
+	moths.name = "Moths"
+	moths.lantern = self
+	add_child(moths)
 	_apply()
 
 ## Where the flame burns (world), for lenses and bots.
@@ -124,6 +130,7 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	lit = move_toward(lit, want, delta / 1.5)
+	moths.weather = weather
 	var p := global_position
 	if not _primed:
 		_prev = p
