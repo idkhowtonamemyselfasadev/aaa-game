@@ -1796,7 +1796,7 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		var mid := player.model.global_transform * Vector3(0, 0.9, 0)
 		var cam := get_viewport().get_camera_3d()
 		var side := player.body.global_basis.x
-		cam.global_position = mid + side * 2.6 + player.body.global_basis.z * 0.4 + Vector3.UP * 1.3
+		cam.global_position = mid + side * 2.2 + player.body.global_basis.z * 0.3 + Vector3.UP * 2.4
 		cam.look_at(mid - Vector3.UP * 0.3)
 		print("SHOT knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
 	elif "smash" in args:
