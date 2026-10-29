@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261023-1128-osric-groundfill2.jpg",
-  "time": "2026-10-23T11:28:00Z",
-  "caption": "Osric's yard at 07:12 with the low-sun ground fill raised: the foreground seed heads and the sward by the wall read brighter, but the earth round the path stones and the cottage's lower wall are still near black.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-1235-osric-earth.jpg",
   "time": "2026-10-23T12:35:00Z",
   "caption": "Osric's yard at 07:12 with paler trodden earth behind the path stones; the stones and the shaded foreground are still near black.",
@@ -879,6 +873,12 @@
   "file": "20261028-2346-dunwool.jpg",
   "time": "2026-10-28T23:46:00Z",
   "caption": "Pedlar at dusk under his own horn lantern: the fist on the bail now reads as a dun glove lit from below instead of a glowing red blot; the horn panes still blow out to flat white, the creel reads as a red grid and the body keeps the armour model's bulky shape.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-0038-horndim.jpg",
+  "time": "2026-10-29T00:38:00Z",
+  "caption": "The pedlar at dusk with his lit horn lantern: the creel now reads as dull grey-brown willow weave (fixed), but the horn panes still blow out to flat white-orange (the candle lights the pane's albedo point-blank; a cull-mask fix went in after this shot, unseen), and he still wears the hero's armour plate shapes.",
   "verdict": "fail"
  }
 ]

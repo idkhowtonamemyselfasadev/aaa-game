@@ -9,6 +9,8 @@ extends Node3D
 const SCALE := 0.8          # of the post lantern
 const LAMP := Color(1.0, 0.64, 0.36)   # candle through horn: 0.56/0.27 painted stones 3 m off a red-orange
 const HORN_GAIN := 0.32     # at 0.5 the horn still blew out to flat white-orange a metre off the lens
+## The horn panes' own render layer: the candle and the vent glow skip it (see _ready).
+const HORN_LAYER := 1 << 10
 
 var lit := 0.0
 var want := 0.0             # the carrier's wish: the flame comes up / dies over ~1.5 s
@@ -64,6 +66,10 @@ func _ready() -> void:
 	horn.mesh = horn_mesh
 	horn.material_override = _horn
 	horn.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# the candle 3-4 cm behind the pane lit its honey albedo point-blank, so even at a dimmed
+	# emission the panes blew out to flat white (horndim shot); the horn's light-through is
+	# its emission alone, and the lamp's cull mask leaves the panes out
+	horn.layers = HORN_LAYER
 	sc.add_child(horn)
 	var base_y := -LanternPost.DROP - LanternPost.LH
 	_tallow = ShaderMaterial.new()
@@ -110,6 +116,7 @@ func _ready() -> void:
 	lamp.light_size = 0.12
 	lamp.shadow_blur = 1.5
 	lamp.position = Vector3(0, 0.01, 0)
+	lamp.light_cull_mask = 0xFFFFF & ~HORN_LAYER
 	fp.add_child(lamp)
 	# the shadowed lamp leaves the face above the lid black (the lid and bail shade it, and
 	# the hat brim the rest): a soft unshadowed warm glow just over the vents lights the chin,
@@ -121,6 +128,7 @@ func _ready() -> void:
 	fill.omni_attenuation = 1.6
 	fill.shadow_enabled = false
 	fill.light_specular = 0.0     # 0.2 lit a bright specular band along the hat brim's front edge
+	fill.light_cull_mask = 0xFFFFF & ~HORN_LAYER
 	fill.position = Vector3(0, 0.28, 0)    # up nearer the face: from 0.16 it barely reached past the brim
 	pivot.add_child(fill)
 	fill_rest = fill.position

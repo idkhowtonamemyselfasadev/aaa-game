@@ -37,7 +37,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   and dims/deepens to amber under the cloudy thick patches (lantern_horn.gdshader; was a near-even 0.75-1.25 that
   read as one flat slab), the hand lantern's HORN_GAIN is 0.32 (was 0.5), and the pedlar's creel palette is old
   grey-brown willow (0.34, 0.30, 0.24) instead of fresh tan that read red-orange by lamplight. Bots pedlar,
-  lantern, walk pass.
+  lantern, walk pass. Then (00:45) the horn panes got their own render layer that the candle and the vent glow
+  cull, because the 00:38 shot showed the panes still blown out by the candle lighting their albedo point-blank
+  (unseen; bots pedlar, lantern pass).
 - (23:00 10-28) PEDLAR DUN WOOL (code + bot). Root cause of the red fist at the bail: Villager._skin hard-set
   `wool` to Edda's rust kirtle (0.36, 0.18, 0.125) for EVERY Villager subclass, so the pedlar's sleeves and
   glove (the Vanguard's restyled plates, cloth_body 1) were saturated rust and the candle at point-blank lit them
@@ -5758,9 +5760,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (00:00 10-29) Horn dimmed + laminated, creel desaturated (see Done). NEXT, in order: (0) look at the `horndim`
-   shot (gallery 20261029-*-horndim.jpg if this session got it; else shoot `pedlar <n> 90 19.7 road lamp moths`
-   ALONE): the panes should read as streaky amber, not white; if still flat, drop HORN_GAIN to 0.22 or cut the
-   horn's bloom; the creel should read as a dull grey-brown weave; (1) `deercross <n> 60 8.5 clear` (never taken);
+   shot TAKEN 00:38 (gallery 20261029-0038-horndim.jpg, FAIL, ~30 min alone): creel now dull grey-brown weave
+   (FIXED); horn panes STILL flat white-orange. Cause found after: the candle 3 cm behind the pane lit its albedo
+   point-blank. FIX IN, UNSEEN: the horn has its own render layer (HandLantern.HORN_LAYER = 1<<10) and the lamp
+   and vent glow cull it, so the panes glow by emission only. Shoot `pedlar <n> 90 19.7 road lamp moths` ALONE and
+   look; if the panes now read too dark, raise HORN_GAIN toward 0.5; the lantern post's horn (lantern_post.gd)
+   has the same point-blank problem, give it the same layer trick once this one reads right; (1) `deercross <n> 60 8.5 clear` (never taken);
    (2) herd-lane shot after a flee; (3) `knocked=1.3` sit-up shot; (4) the pedlar still wears the armoured hero
    model's plate shapes; (5) hero small/dull at `herocu`; (6) ALIVE: a second road event (a carter, or two
    travellers meeting and talking); (7) skirt tufts straw-pale; (8) Osric's own wool colour.
