@@ -40,6 +40,7 @@ var keeper: Keeper
 var villager: Villager
 var neighbour: Neighbour
 var pedlar: Pedlar
+var traveller: Traveller
 var hearth: Hearth
 var fox: Fox
 var hares: Array[Hare] = []
@@ -218,6 +219,14 @@ func _ready() -> void:
 	add_child(pedlar)
 	pedlar.settle(self, time_of_day)
 	trample.walkers.append(pedlar)
+	# Hild the wool-wife, over the fell at 14:30 the other way: she and Wat meet on the road
+	traveller = Traveller.new()
+	traveller.name = "Traveller"
+	traveller.position = white_cottage.global_position + Vector3(0, 1, 34)
+	add_child(traveller)
+	traveller.settle(self, time_of_day)
+	pedlar.road_mate = traveller
+	trample.walkers.append(traveller)
 	# Brack, her collie: potters on the green, meets the hero, sits by her door at night
 	dog = Dog.new()
 	dog.setup(self)
@@ -269,6 +278,7 @@ func _ready() -> void:
 	foley.hook_villager(villager)
 	foley.hook_villager(neighbour)
 	foley.hook_villager(pedlar)
+	foley.hook_villager(traveller)
 	foley.hook_hens(hens)
 	foley.hook_bat(lantern_post.bat)
 

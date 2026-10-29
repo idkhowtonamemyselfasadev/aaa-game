@@ -704,7 +704,7 @@ func _reset_greet() -> void:
 func _say_to_mate(line: String, answer: bool) -> float:
 	var secs := 2.4 + 0.055 * line.length()
 	greets += 1
-	spoke.emit(global_position + Vector3.UP * 1.6, who != "Edda")
+	spoke.emit(global_position + Vector3.UP * 1.6, who != "Edda" and who != "Hild")
 	if player == null:
 		return secs
 	# within earshot of either of them: the hero who hears her hears his answer too

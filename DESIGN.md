@@ -55,6 +55,10 @@ life as the new chain. She is right about the stakes and wrong about the price.
   cloth, salt and needles on his back and an ash staff, through the village at 09:00 and back
   at 14:30, a word called to Edda across the green and to Osric over his wall. Later: a trade
   window (salt, thread, a whetstone) and news of the keep that changes with the story.
+- **Hild Ashby**, a wool-wife from the fell farms carrying fleeces to the coast market (the
+  second ambient road event): over the fell at 14:30 as Wat walks back the other way, so the
+  two meet on the road, stop and pass the news face to face, then go on keeping to their
+  right. Later: buys hides and fleece off the player, and carries rumours down the coast road.
 - **Caelum**, the sky-island boy king, twelve years old and ruling a court of automatons. Arc:
   learns to come down.
 

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -179,6 +179,9 @@ func _ready() -> void:
 		return
 	if name == "pedlar":
 		_pedlar_test()
+		return
+	if name == "roadmeet":
+		_roadmeet_test()
 		return
 	if name == "villager":
 		_villager_test()
@@ -6009,6 +6012,69 @@ func _greet_test() -> void:
 	if e.heard + o.heard - h0 < 2 or saw.find("Edda") < 0 or saw.find("Osric") < 0:
 		return _combat_done(false, "the hero does not overhear them")
 	_combat_done(true, "Edda and Osric stop, turn to each other and pass a word at the garth (once a meeting), murmuring, and the hero overhears it")
+
+## Hild over the fell at 14:30 and Wat walking back the other way: they meet on the road, both
+## stop, he calls the news across, she turns to him and answers, and they go on, passing left
+## side to left side without walking through each other; both get clean through.
+func _roadmeet_test() -> void:
+	var pd: Pedlar = _world.pedlar
+	var hd: Traveller = _world.traveller
+	if pd == null or hd == null:
+		return _combat_done(false, "no pedlar or no traveller")
+	var tr: Terrain = _world.get_node("Terrain")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, 30.0) + 0.5, 30.0)
+	for v in [_world.villager, _world.neighbour, pd, hd]:
+		v.settle(_world, 14.4)
+	if hd.visible:
+		return _combat_done(false, "Hild is on the road before 14:30")
+	var j0 := pd.journeys
+	var hj0 := hd.journeys
+	var w0 := pd.warps + hd.warps
+	var g0 := hd.greets
+	var closest := 99.0
+	var met_at := -1.0
+	var met_pos := Vector3.ZERO
+	var faced := 9.0
+	var moved_mid := 0.0
+	var mid_from := Vector3.INF
+	var ticks := 0
+	for i in 40000:
+		_world.time_of_day = 14.52
+		await get_tree().physics_frame
+		ticks = i
+		if not (pd.visible and hd.visible):
+			if pd.journeys > j0 and hd.journeys > hj0:
+				break
+			continue
+		var d := Vector2(pd.global_position.x - hd.global_position.x, pd.global_position.z - hd.global_position.z).length()
+		closest = minf(closest, d)
+		if pd.greeting > 0.0 and pd.greet_to == hd:
+			if met_at < 0.0:
+				met_at = d
+				met_pos = pd.global_position
+				mid_from = hd.global_position
+			if pd.greeting < 1.5:
+				var a := hd.global_position.direction_to(pd.global_position)
+				faced = minf(faced, absf(wrapf(atan2(a.x, a.z) - hd.body.rotation.y, -PI, PI)))
+				moved_mid = maxf(moved_mid, hd.global_position.distance_to(mid_from))
+	print("BOT roadmeet: %d ticks, Wat journeys %d, Hild journeys %d, warps %d, Wat greeted %s, Hild answered %d" % [ticks, pd.journeys - j0, hd.journeys - hj0, pd.warps + hd.warps - w0, pd.greeted.keys(), hd.greets - g0])
+	print("BOT roadmeet: met %.1f m apart at %s, she turned to him off %.2f rad, drifted %.2f m mid-word, closest pass %.2f m" % [met_at, met_pos, faced, moved_mid, closest])
+	if not pd.greeted.has("Hild") or hd.greets <= g0:
+		return _combat_done(false, "Wat and Hild pass on the road without a word")
+	if met_at > Pedlar.MEET_R + 0.5:
+		return _combat_done(false, "Wat calls to Hild from %.1f m, not face to face" % met_at)
+	if faced > 0.5:
+		return _combat_done(false, "Hild does not turn to Wat when he speaks (%.2f rad off)" % faced)
+	if moved_mid > 0.4:
+		return _combat_done(false, "Hild walks on while Wat is talking to her (%.2f m)" % moved_mid)
+	if closest < 0.6:
+		return _combat_done(false, "Wat and Hild walk through each other (%.2f m)" % closest)
+	if pd.journeys <= j0 or hd.journeys <= hj0:
+		return _combat_done(false, "the road walk did not finish (Wat leg %d/%d, Hild leg %d/%d)" % [pd._leg, pd._legs.size(), hd._leg, hd._legs.size()])
+	if pd.warps + hd.warps > w0:
+		return _combat_done(false, "a walker got stuck %d times" % (pd.warps + hd.warps - w0))
+	_combat_done(true, "Hild comes over the fell at 14:30 as Wat walks back the other way; they meet on the road, stop face to face, he passes her the news and she answers, then they go on keeping to their right and pass without walking through each other")
 
 func _pedlar_test() -> void:
 	var pd: Pedlar = _world.pedlar

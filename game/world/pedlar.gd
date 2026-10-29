@@ -30,6 +30,7 @@ const BACK := 1                            # the window that walks the road the 
 const STAND_GREEN := 26.0                  # s he stands on the green
 const STAND_WALL := 14.0                   # s he stands at Osric's wall
 const CALL_R := 15.0                       # he calls a word across the green this far
+const MEET_R := 5.0                        # ...but a word with a fellow walker when they meet
 const CLEAR := 1.1                         # m he keeps between his line and the dog
 
 var journeys := 0                # walks through finished (bots)
@@ -37,6 +38,11 @@ var stops := 0                   # stands reached on the way (bots)
 var greeted := {}                # who he has passed a word with this walk -> true
 var on_road := false
 var sidesteps := 0               # times he has stepped round the dog (bots)
+var set_outs: Array = SET_OUT    # hours he sets off (a fellow traveller keeps her own)
+var back_i := BACK               # which of them walks the road the other way (-1: none)
+var stand_k := 1.0               # share of his stands' length he stops for (0: walks straight through)
+var keep_right := 0.0            # m his line keeps to the right of the road's centre
+var road_mate: Pedlar            # the other walker on the fell road: he steps round her too
 var _side_on := false
 var edda: Villager
 var osric: Villager
@@ -68,6 +74,25 @@ const EX := {
 				"Then walk faster and talk less. Mind the ford in the dark."],
 			["Two lanterns on the green tonight. Yours is the prettier.",
 				"Mine stays where it's put. Go on, Wat, before the Hollows wake."],
+		],
+	},
+	# Hild coming the other way on the afternoon road: they stop and pass the news
+	"Hild": {
+		"morning": [
+			["Hild! You're early on the road. Fleeces fetch more before noon?",
+				"They fetch the same. I just like to see your face fall when I'm there first."],
+		],
+		"day": [
+			["Hild Ashby, as I live. Is the coast market worth the walk this week?",
+				"Salt's dear and herring's cheap. And they're saying the keep's lamp was out again."],
+			["Mind the ford, Hild, it's up past the stones since the rain.",
+				"I've waded it with a fleece on my back since before you sold your first needle, Wat."],
+			["Your bundle's bigger than you are today.",
+				"It's three ewes' worth and a lamb's. Carry it for me then, if you're so taken with it."],
+		],
+		"evening": [
+			["Late for the fell, Hild. Walk back with me to Hob's?",
+				"And have the whole valley talking by morning? Keep your lantern, Wat, I know the way."],
 		],
 	},
 	"Osric": {
@@ -183,16 +208,16 @@ func settle(w: Node3D, at_hour: float) -> void:
 	on_road = false
 	_set_out.clear()
 	_last_h = at_hour
-	for i in SET_OUT.size():
-		if at_hour > SET_OUT[i] + 0.05:
+	for i in set_outs.size():
+		if at_hour > set_outs[i] + 0.05:
 			_set_out[i] = true           # already gone by today
 	state = IN
 	activity = "in"
 	path.clear()
 	_show(false)
-	for i in SET_OUT.size():
-		if absf(at_hour - SET_OUT[i]) <= 0.05:
-			set_out(i == BACK)
+	for i in set_outs.size():
+		if absf(at_hour - set_outs[i]) <= 0.05:
+			set_out(i == back_i)
 			_set_out[i] = true
 
 ## Sets off on the road through the village now (`back`: the afternoon way, north-west in).
@@ -204,13 +229,15 @@ func set_out(back: bool) -> void:
 	var lp: Vector3 = world.get("lantern_post").global_position if world.get("lantern_post") != null else _ground(GREEN)
 	var hm: Node3D = world.get("white_cottage")
 	# stands on the green looking between the lantern post and Edda's door
-	_legs.append([_ground(GREEN), STAND_GREEN, (lp + hm.global_position) * 0.5 if hm != null else lp])
+	_legs.append([_ground(GREEN), STAND_GREEN * stand_k, (lp + hm.global_position) * 0.5 if hm != null else lp])
 	for i in LEG_SC.size():
 		var g := sc.to_global(Vector3(LEG_SC[i].x, 0, LEG_SC[i].y))
 		var look = sc.to_global(Vector3(1.0, 0, -9.5)) if i == WALL_STOP else null
-		_legs.append([_ground(Vector2(g.x, g.z)), STAND_WALL if i == WALL_STOP else 0.0, look])
+		_legs.append([_ground(Vector2(g.x, g.z)), STAND_WALL * stand_k if i == WALL_STOP else 0.0, look])
 	if back:
 		_legs.reverse()
+	if keep_right != 0.0:
+		_keep_side()
 	greeted.clear()
 	on_road = true
 	activity = "road"
@@ -219,6 +246,20 @@ func set_out(back: bool) -> void:
 	_show(true)
 	_leg = 0
 	_go_leg(1)
+
+## Moves each leg's point keep_right m off to the right of the way he walks through it, so two
+## walkers coming at each other along the same road pass left side to left side.
+func _keep_side() -> void:
+	var pts: Array = []
+	for l in _legs:
+		pts.append(l[0])
+	for i in _legs.size():
+		var a: Vector3 = pts[maxi(i - 1, 0)]
+		var b: Vector3 = pts[mini(i + 1, pts.size() - 1)]
+		var f := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
+		var r := Vector3(-f.z, 0.0, f.x)
+		var q: Vector3 = pts[i] + r * keep_right
+		_legs[i][0] = _ground(Vector2(q.x, q.z))
 
 func _ground(p: Vector2) -> Vector3:
 	return Vector3(p.x, terrain.height_at(p.x, p.y), p.y)
@@ -243,7 +284,10 @@ func _go_leg(i: int) -> void:
 ## dog is ahead within a few strides and closer than CLEAR to his line, he bends his course off
 ## to the side it is not on, more the closer it lies, and comes back onto the line past it.
 func _steer(dir: Vector3) -> Vector3:
-	var dg = world.get("dog")
+	dir = _steer_round(dir, world.get("dog"))
+	return _steer_round(dir, road_mate)
+
+func _steer_round(dir: Vector3, dg: Node3D) -> Vector3:
 	if dg == null or not dg.visible:
 		return dir
 	var o: Vector3 = dg.global_position - global_position
@@ -300,10 +344,10 @@ func _physics_process(delta: float) -> void:
 		_set_out.clear()                 # a new day
 	_last_h = h
 	if not on_road:
-		for i in SET_OUT.size():
-			if h >= SET_OUT[i] and h < SET_OUT[i] + 1.0 and not _set_out.has(i):
+		for i in set_outs.size():
+			if h >= set_outs[i] and h < set_outs[i] + 1.0 and not _set_out.has(i):
 				_set_out[i] = true
-				set_out(i == BACK)
+				set_out(i == back_i)
 	elif state == STAND and greeting <= 0.0 and talking <= 0.0 and not noticing:
 		_stand_t -= delta
 		if _stand_t <= 0.0:
@@ -325,7 +369,7 @@ func _pick_mate() -> void:
 		return
 	var best: Villager = null
 	var bd := INF
-	for v in [edda, osric]:
+	for v in [edda, osric, road_mate]:
 		if v == null or v.state == IN or not v.visible:
 			continue
 		var d := global_position.distance_to(v.global_position)
@@ -337,6 +381,8 @@ func _pick_mate() -> void:
 		exchanges = {}
 		return
 	exchanges = EX.get(mate.who, {})
+	# Edda he calls to across the green; Hild he meets on the road, face to face
+	greet_r = MEET_R if mate == road_mate else CALL_R
 	if greeted.has(mate.who) or not on_road:
 		_greet_armed = false
 		_greet_t = 0.0

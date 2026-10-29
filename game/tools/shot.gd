@@ -1006,6 +1006,44 @@ func _ready() -> void:
 		var pp := at + o * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 		print("SHOT lantern at %s, lantern %s, lit %.2f" % [at, lc, lp.lit])
+	if spot == "roadmeet":
+		# Wat walking back to the meadow meets Hild coming up the cart track: both stopped
+		# mid-word on the ruts, face to face, she on her right; the lens on the verge beside
+		# them, the track running away past them toward the green
+		var pd: Pedlar = world.pedlar
+		var hd: Traveller = world.traveller
+		pd.settle(world, world.time_of_day)
+		hd.settle(world, world.time_of_day)
+		pd.set_out(true)
+		hd.set_out(false)
+		var ra: Vector2 = YardGround.ROAD[1][0]
+		var rb: Vector2 = YardGround.ROAD[2][0]
+		var dir := (rb - ra).normalized()        # up the track toward the green
+		var lft := Vector2(dir.y, -dir.x)
+		var wp := ra.lerp(rb, 0.5)
+		var hp := wp - dir * 1.9 - lft * 0.9      # she keeps to her right coming up
+		pd._place(Vector3(wp.x, terrain.height_at(wp.x, wp.y), wp.y))
+		hd._place(Vector3(hp.x, terrain.height_at(hp.x, hp.y), hp.y))
+		for v in [pd, hd]:
+			v.state = Villager.STAND
+			v.path.clear()
+			v.greeting = 999.0
+		pd.greet_to = hd
+		hd.greet_to = pd
+		pd.mate = hd
+		hd.mate = pd
+		var tw := hd.global_position - pd.global_position
+		pd.goal_yaw = atan2(tw.x, tw.z)
+		hd.goal_yaw = atan2(-tw.x, -tw.z)
+		pd.body.rotation.y = pd.goal_yaw
+		hd.body.rotation.y = hd.goal_yaw
+		var mid := (pd.global_position + hd.global_position) * 0.5
+		var side := 1.0 if "far" in args else -1.0
+		var c := Vector2(mid.x, mid.z) + lft * 4.2 * side + dir * 1.2
+		var cp := Vector3(c.x, terrain.height_at(c.x, c.y) + 1.5, c.y)
+		SPOTS[spot] = [cp, mid + Vector3.UP * 1.2]
+		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "pedlar":
 		# Wat on his stand on the green, the creel on his back: three-quarter from the front at
 		# 3.6 m ("back": from behind his shoulder, the creel and the green beyond)
@@ -1386,7 +1424,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "climb" or spot == "hare":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "roadmeet" or spot == "climb" or spot == "hare":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "devil":
