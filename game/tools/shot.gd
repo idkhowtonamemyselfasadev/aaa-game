@@ -1839,6 +1839,7 @@ func _ready() -> void:
 			print("SHOT light %s vis %s e %.3f col %s range %.2f d %.2f mask %d" % [lt.get_path(), lt.is_visible_in_tree(), lt.light_energy, lt.light_color, rng, lt.global_position.distance_to(hp), lt.light_cull_mask])
 		print("SHOT amb %s x %.3f" % [world.env.environment.ambient_light_color, world.env.environment.ambient_light_energy])
 	if spot == "roadmeet":
+		print("SHOT fill ground %s bounce %s sdfgi %s" % [world.ground_fill, RenderingServer.global_shader_parameter_get("bounce_light"), world.env.environment.sdfgi_enabled])
 		for v in [world.pedlar, world.traveller]:
 			var f: Vector3 = v.body.global_basis.z
 			var tc: Vector3 = get_viewport().get_camera_3d().global_position - v.global_position

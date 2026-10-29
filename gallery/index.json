@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261023-1734-climb-feet.jpg",
-  "time": "2026-10-23T17:34:16Z",
-  "caption": "The hero climbing the keep face from the side: one knee is drawn up and the foot is planted on a stone below. The red cloth still hangs dead straight off the wall, the masonry is too blocky and clean, and the camera sits too far behind to show the hands.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-1834-climb-robe.jpg",
-  "time": "2026-10-23T18:34:20Z",
-  "caption": "The climbing hero's red robe panel now drags toward the drawn-up knee instead of hanging dead plumb; at this range the figure is small and the keep masonry still reads blocky and clean.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-1938-climb-masonry.jpg",
   "time": "2026-10-23T19:38:00Z",
   "caption": "The hero climbing the keep, whose stones now vary from pale buff to dark weathered grey, with frost spalls and black-green drip stains under each course; the masonry still reads as stacked rectangular blocks and the camera still sits behind the hero.",
@@ -897,6 +885,12 @@
   "file": "20261029-0940-roadmeet-sunside.jpg",
   "time": "2026-10-29T09:40:00Z",
   "caption": "The same meeting from the new sun-side lens: Hild faces the camera in her hood and long rust kirtle, with the oak pasture behind. Still wrong: both figures read near-black, her face is lost in the hood's shadow, and Wat shows only his back and creel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1040-roadmeet-skyfill.jpg",
+  "time": "2026-10-29T10:40:00Z",
+  "caption": "Wat and Hild meet on the road at 16:30; with the low-sun skylight now on figures their robes read mid-brown instead of black, but torsos, hoods and faces are still too dark and Wat faces away.",
   "verdict": "fail"
  }
 ]
