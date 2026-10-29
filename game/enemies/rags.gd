@@ -12,6 +12,9 @@ const BONE_HIPS := "mixamorig_Hips"
 
 var mats: Array[ShaderMaterial] = []
 var _skel: Skeleton3D
+## How far (m) the wraps sit in from the base body's widest point: a wearer whose plates sink
+## in (hero.gdshader plate_inset) gets wraps that hug the slimmer limb, not the old armour
+var wrap_inset := 0.0
 var _body: Node3D
 var _hips_rest := Transform3D()
 var _front: Node3D
@@ -209,7 +212,7 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		var r11 := rad[ih1 * NA + (ia0 + 1 + NA) % NA]
 		var fx: float = fa - floor(fa)
 		var fy: float = fh - floor(fh)
-		var r := lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) + pad
+		var r := maxf(lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) - wrap_inset, floor_r) + pad
 		# each turn of the bandage overlaps the last: a slight step at the leading edge
 		r += 0.004 * fposmod(v * turns + u, 1.0)
 		var t := lerpf(t0, t1, v)

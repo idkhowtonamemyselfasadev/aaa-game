@@ -34,6 +34,11 @@ uniform float hose_shade = 0.55;
 // (cloth_body) the plate bevels in the normal map kept this much: at full depth the knee
 // cops and pauldron rims caught the sun like hard shells under the wool
 uniform float cloth_normal = 0.3;
+// (cloth_body) how far (m) the plates and iron fittings sink in along their normals, so a
+// villager's knee cops, pauldron humps and boot cuffs stop standing proud of the body like
+// armour under the wool; iron (knee caps, collar, bracers) sinks this much more again
+uniform float plate_inset = 0.0;
+uniform float iron_inset = 0.0;
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -59,6 +64,23 @@ float tan_of(vec3 c) {
 	float warm = c.r - c.b;
 	return smoothstep(0.1, 0.2, warm) * smoothstep(0.12, 0.22, lum)
 			* (1.0 - smoothstep(0.3, 0.4, c.r - c.g));
+}
+
+// the plate/iron masks at vertex rate, on a blurred mip so a plate's shell sinks as one
+// smooth piece and its edge tapers into the undersuit instead of tearing at the seam
+void vertex() {
+	if (cloth_body > 0.0 && plate_inset + iron_inset > 0.0) {
+		float tan_v = 0.0;
+		float iron_v = 0.0;
+		for (int i = 0; i < 5; i++) {
+			vec2 o = i == 0 ? vec2(0.0) : vec2(cos(float(i) * 1.5708), sin(float(i) * 1.5708)) * 0.006;
+			vec3 c = textureLod(albedo_tex, UV + o, 3.0).rgb * albedo_col.rgb;
+			float lum = dot(c, vec3(0.3, 0.59, 0.11));
+			tan_v += tan_of(c) * 0.2;
+			iron_v += smoothstep(0.008, 0.02, c.b - c.r) * smoothstep(0.025, 0.05, lum) * 0.2;
+		}
+		VERTEX -= NORMAL * cloth_body * (plate_inset * clamp(tan_v + iron_v, 0.0, 1.0) + iron_inset * iron_v);
+	}
 }
 
 void fragment() {

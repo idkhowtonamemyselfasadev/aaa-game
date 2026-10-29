@@ -126,6 +126,10 @@ var who := "Edda"
 # the model's sleeves and plates as wool (hero.gdshader cloth_body) and its red trim as a patch
 var body_wool := Color(0.36, 0.18, 0.125)   # Edda's kirtle rust
 var body_patch := Color(0.20, 0.12, 0.08)
+# the base body's plates and iron sink in (hero.gdshader plate_inset/iron_inset) and the wraps
+# follow, so no villager keeps the Vanguard's knee cops, shoulder humps and boot cuffs
+const PLATE_INSET := 0.02
+const IRON_INSET := 0.015
 var who_title := "Cottager on Harrowmere green"
 var intro: Array = INTRO
 var lines: Dictionary = LINES
@@ -234,6 +238,7 @@ func _ready() -> void:
 	_setup_animation()
 	garb = HeroGarb.new()
 	garb.name = "Garb"
+	garb.wrap_inset = PLATE_INSET * 0.6
 	_dress()
 	add_child(garb)
 	if skel != null:
@@ -924,6 +929,8 @@ func _skin() -> void:
 			mat.set_shader_parameter("roughness", src.roughness)
 			mat.set_shader_parameter("restyle", 1.0)
 			mat.set_shader_parameter("cloth_body", 1.0)
+			mat.set_shader_parameter("plate_inset", PLATE_INSET)
+			mat.set_shader_parameter("iron_inset", IRON_INSET)
 			# her sleeves the kirtle's rust wool, not the default undyed grey (read pale mottled grey)
 			mat.set_shader_parameter("wool", body_wool)
 			mat.set_shader_parameter("patch_col", body_patch)

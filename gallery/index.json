@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261023-1548-climb.jpg",
-  "time": "2026-10-23T15:48:14Z",
-  "caption": "The hero climbing the watchtower keep's outer face at 10:30, arms up on the stones: climbing now works, but the pose is a stiff procedural reach with no hands planted on the stones, the cape hangs dead straight and the masonry reads too clean and blocky.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-1639-climb-hands.jpg",
   "time": "2026-10-23T16:39:47Z",
   "caption": "The hero on the keep face with the hands now planted on the stones, elbows bowed out like a climber's; from below the hands hide behind the hat, the cape still hangs dead straight and the masonry reads too clean and blocky.",
@@ -885,6 +879,12 @@
   "file": "20261029-0544-roadmeet-woolhose.jpg",
   "time": "2026-10-29T05:44:00Z",
   "caption": "Wat and Hild on the cart track: their legs and waists now read as matte grey wool hose instead of glossy black plate greaves; still wrong: the armoured base body's bulky knee cops and boots keep the silhouette, and from this verge they still face away so no faces read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-0745-roadmeet-slim.jpg",
+  "time": "2026-10-29T07:45:00Z",
+  "caption": "Wat and Hild meeting on the cart track at 11:00 with the base body's plates and iron sunk 2-3.5 cm into the body and the leg wraps hugging the slimmer limb (no tearing or holes seen); still wrong: from this verge at 11:00 the sun is behind them so both read as dark backlit silhouettes, faces unreadable, and knees/boots still read heavy.",
   "verdict": "fail"
  }
 ]
