@@ -101,7 +101,7 @@ const FACE_LOW_BARE := 1.822
 ## Where the wimple's top edge passes under the chin at the front, and how far it rises at the
 ## sides of the jaw to frame the cheeks under the hood.
 const WIMPLE_CHIN := 1.834
-const WIMPLE_RISE := 0.075
+const WIMPLE_RISE := 0.1
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -774,7 +774,9 @@ func _veil(wimple := false) -> ArrayMesh:
 			st.set_color(Color(cav, cav, cav))
 			st.set_uv(Vector2(u, v))
 			# (the wimple sits closer round the jaw and throat than the face cloth over the nose)
-			var wx := 0.112 if wimple else 0.128
+			# (its top flares out at the sides of the jaw to meet the hood, closing the dark
+			# gap that showed between the cheek and the hood's inner edge)
+			var wx := (0.112 + 0.01 * (1.0 - smoothstep(0.0, 0.3, v)) * (1.0 - maxf(front, 0.0))) if wimple else 0.128
 			var wz := 0.165 if wimple else 0.175
 			st.add_vertex(Vector3(sin(a) * wx * r, y, -0.035 + front * wz * r))
 	for j in nv:
