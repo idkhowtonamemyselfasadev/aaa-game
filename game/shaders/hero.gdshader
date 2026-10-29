@@ -27,6 +27,13 @@ uniform float cloth_body = 0.0;
 uniform vec3 wool : source_color = vec3(0.30, 0.29, 0.27);
 uniform vec3 linen : source_color = vec3(0.44, 0.41, 0.35);
 uniform vec3 patch_col : source_color = vec3(0.20, 0.12, 0.08);
+// (cloth_body) the dark undersuit between the plates (legs, waist, inner arms): hose and
+// breeches of the same wool, a few shades darker -- left as the raw near-black suit it read
+// as black plate greaves and cuisses on every villager's legs
+uniform float hose_shade = 0.55;
+// (cloth_body) the plate bevels in the normal map kept this much: at full depth the knee
+// cops and pauldron rims caught the sun like hard shells under the wool
+uniform float cloth_normal = 0.3;
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -139,8 +146,13 @@ void fragment() {
 			cl = mix(cl, patch_col * (0.8 + 0.4 * mott), red_m * 0.7);
 			cl = mix(cl, w * 0.75, scratch * 0.5);
 			float body_m = clamp(region + iron_m + red_m, 0.0, 1.0);
-			o = mix(o, cl, cloth_body * body_m);
-			r_o = mix(r_o, 0.93, cloth_body * body_m);
+			// the undersuit: the same twill a few shades down, with the suit's own baked
+			// folds kept faintly so the hose still wrinkle at the knee
+			vec3 hs = wool * hose_shade * (0.86 + 0.14 * tw + 0.08 * mott) * mix(0.92, 1.05, slub);
+			hs *= mix(0.85, 1.1, clamp(lum / 0.05, 0.0, 1.0));
+			cl = mix(hs, cl, body_m);
+			o = mix(o, cl, cloth_body);
+			r_o = mix(r_o, 0.93, cloth_body);
 			metal *= 1.0 - cloth_body;
 		}
 		// the visor glass (its own UV island, top left): a matte wound face cloth
@@ -162,7 +174,7 @@ void fragment() {
 	METALLIC = metal;
 	SPECULAR = 0.5 - 0.1 * plate_spec;
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
-	NORMAL_MAP_DEPTH = normal_depth;
+	NORMAL_MAP_DEPTH = normal_depth * mix(1.0, cloth_normal, cloth_body * restyle);
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light
 	EMISSION = figure_fill(alb, wet_n, wet_p);
 	RIM = 0.15;
