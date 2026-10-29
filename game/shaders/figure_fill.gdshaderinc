@@ -14,7 +14,8 @@ vec3 figure_fill(vec3 alb, vec3 wn, vec3 wp) {
 	float up = clamp(wn.y, -1.0, 1.0);
 	// ground lobe: strongest facing down, half facing sideways, a little on the tops
 	float lobe = mix(1.35, 0.85, smoothstep(-1.0, 0.0, up)) * mix(1.0, 0.45, smoothstep(0.0, 1.0, up));
-	// sky lobe: the open dome over a figure, full on the tops, half on the sides (grass: 0.7)
-	float sky = clamp(0.5 + 0.3 * up, 0.15, 0.8);
+	// sky lobe: the open dome over a figure, full on the tops, most of it on the sides (grass:
+	// 0.7; at 0.5 a standing figure, nearly all sides, stayed a stop under the meadow at 16:30)
+	float sky = clamp(0.75 + 0.2 * up, 0.25, 0.95);
 	return alb * (bounce_light * 0.55 * lobe * bounce_gain(wp) + ground_fill * sky);
 }

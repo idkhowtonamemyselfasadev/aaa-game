@@ -349,14 +349,17 @@ void fragment() {
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = mix(0.8, 1.4, straw);
-	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band) * mix(1.0, COLOR.r, fold_ao);
+	// the fold cavity already darkens the albedo above, so AO and the fill take only part of it
+	// (taken in full three times, a villager's folded wool read near-black in low sun)
+	float fold_occ = mix(1.0, 0.45 + 0.55 * COLOR.r, fold_ao);
+	AO = mix(0.7, 1.0, thread) * mix(0.5, 1.0, band) * fold_occ;
 	AO_LIGHT_AFFECT = 0.3;
 	// a tightly plaited straw hat is opaque: no light through its underside
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
 	// the meadow's warm bounce turned a near-black felt hat orange-brown: felt takes a greyer fill
 	vec3 fill = figure_fill(alb, wet_n, wet_p);
 	fill = mix(fill, vec3(dot(fill, vec3(0.3, 0.55, 0.15))), 0.7 * felt);
-	EMISSION = ember_col * glow * 3.0 + fill * mix(1.0, COLOR.r, fold_ao);
+	EMISSION = ember_col * glow * 3.0 + fill * fold_occ;
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles
 	RIM = mix(max(0.35 * wool, 0.1), 0.06, felt);
 	RIM_TINT = 0.4;
