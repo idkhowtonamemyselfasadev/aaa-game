@@ -130,7 +130,8 @@ func _dress() -> void:
 		"robe": [Color(0.11, 0.095, 0.07), Color(0.42, 0.37, 0.28), 0.45],
 		"sash": [Color(0.09, 0.075, 0.05), Color(0.36, 0.30, 0.20), 0.3],
 		"wraps": [Color(0.08, 0.075, 0.065), Color(0.36, 0.34, 0.30), 0.45],
-		"basket": [Color(0.09, 0.06, 0.03), Color(0.42, 0.31, 0.18), 0.45],
+		# old peeled willow gone grey-brown: the fresh tan read as a red-orange grid by lantern light
+		"basket": [Color(0.065, 0.055, 0.042), Color(0.34, 0.30, 0.24), 0.45],
 	}
 	garb.robe_len = 0.8
 	garb.felt_hat = true

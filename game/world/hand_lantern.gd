@@ -8,7 +8,7 @@ extends Node3D
 
 const SCALE := 0.8          # of the post lantern
 const LAMP := Color(1.0, 0.64, 0.36)   # candle through horn: 0.56/0.27 painted stones 3 m off a red-orange
-const HORN_GAIN := 0.5      # the post's horn glow blew out to flat orange at knee height
+const HORN_GAIN := 0.32     # at 0.5 the horn still blew out to flat white-orange a metre off the lens
 
 var lit := 0.0
 var want := 0.0             # the carrier's wish: the flame comes up / dies over ~1.5 s

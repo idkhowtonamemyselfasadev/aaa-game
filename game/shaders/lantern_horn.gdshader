@@ -28,6 +28,11 @@ void fragment() {
 	// candle glow through the horn, centred on the flame, a halo where the horn is clear
 	vec2 c = UV - vec2(0.5, 0.74);
 	float glow = exp(-dot(c * vec2(1.8, 2.2), c * vec2(1.8, 2.2)) * 3.0);
-	float thru = (0.35 + 0.65 * glow) * (1.0 - soot * 0.85) * (0.75 + 0.5 * lam);
-	EMISSION = lamp * thru * lit * 1.9;
+	// the laminations and clouding thin and thicken the light: at near-even 0.75-1.25 the lit
+	// panes read as one flat white-orange slab, so the streaks swing it 0.35-1.45 and the
+	// thick cloudy patches dim it and push it deeper amber
+	float thick = cloud * 1.3;
+	float thru = (0.3 + 0.7 * glow) * (1.0 - soot * 0.85) * (0.35 + 1.1 * lam) * (1.15 - 0.6 * thick);
+	vec3 tint = mix(lamp, lamp * vec3(0.95, 0.62, 0.32), clamp(thick, 0.0, 1.0));
+	EMISSION = tint * thru * lit * 1.9;
 }
