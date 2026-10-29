@@ -92,9 +92,16 @@ const EYE_X := 0.031
 const EYE_Y := 1.968
 const EYE_R := 0.0125
 ## A wimple's height against the face cloth's: its top edge (1.929) comes down to 1.874.
-const WIMPLE_SQUEEZE := 0.76
+## how far down its own length the wimple runs (1.0 = the face cloth's full drop)
+const WIMPLE_HEM := 0.86
 ## A bearded face's lower edge (under the nose, behind the moustache).
 const FACE_LOW_BEARD := 1.872
+## A bare face (the women under their wimples) runs on down past the mouth to under the chin.
+const FACE_LOW_BARE := 1.822
+## Where the wimple's top edge passes under the chin at the front, and how far it rises at the
+## sides of the jaw to frame the cheeks under the hood.
+const WIMPLE_CHIN := 1.834
+const WIMPLE_RISE := 0.075
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
 	_skel = skel
@@ -134,17 +141,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		head.add_child(scarf)
 	else:
 		tint = palette.get("veil", tint if palette.has("hood") else VEIL)
-		veil = _piece(_veil(), 0.0, 0.0, 6.0, 0.5)
+		veil = _piece(_veil(bare_face), 0.0, 0.0, 6.0, 0.5)
 		var vm := veil.material_override as ShaderMaterial
 		vm.set_shader_parameter("wool", 0.3 if hood_linen else 1.0)
 		vm.set_shader_parameter("fold_ao", 1.0)
 		if bare_face:
-			# the wimple: squeezed down from the top so its upper edge crosses under the nose (the
-			# face's own lower edge, see FACE_LOW_BEARD) while its hem stays tucked in the collar
-			# (dropped whole, it hung out over the chest as a pale bib)
+			# the wimple (shaped in _veil): it passes under the chin and rises up the sides of the
+			# jaw into the hood, so mouth and chin show and the linen frames the face
 			veil.name = "Wimple"
-			veil.transform = Transform3D(Basis.from_scale(Vector3(1.02, WIMPLE_SQUEEZE, 1.01)),
-					Vector3(0.0, 1.70 * (1.0 - WIMPLE_SQUEEZE), 0.0))
 	head.add_child(veil)
 	_add_face(head)
 	if not hatless:
@@ -711,7 +715,10 @@ func _felt() -> ArrayMesh:
 ## A face cloth of the same indigo wool wound across the face from the bridge of the nose to
 ## under the chin, hanging a little slack at the front; with the hat's shade only the eye line
 ## shows between it and the hood.
-func _veil() -> ArrayMesh:
+## `wimple` (bare-faced women): cut off at WIMPLE_HEM down the cloth and with its folds eased out
+## toward the hem, so its lower edge is a smooth line tucked under the collar instead of a pale
+## ragged lip on the chest, and with no ride-up over the nose (the face shows there, not cloth).
+func _veil(wimple := false) -> ArrayMesh:
 	var nu := 56
 	var nv := 26
 	var st := SurfaceTool.new()
@@ -719,7 +726,7 @@ func _veil() -> ArrayMesh:
 	for j in nv + 1:
 		for i in nu + 1:
 			var u := float(i) / nu
-			var v := float(j) / nv
+			var v := float(j) / nv * (WIMPLE_HEM if wimple else 1.0)
 			# wound round past the ears and down over the throat, its lower edge tucked inside
 			# the mantle's collar (1.72) all the way round, so no pale armour neck shows between
 			# the cloth and the cape
@@ -735,6 +742,8 @@ func _veil() -> ArrayMesh:
 			var rr := ridge if ridge > 0.0 else ridge * 0.5
 			var fine := sin(a * 17.0 + 0.6 + v * 3.0) * smoothstep(0.4, 1.0, v)
 			var depth := smoothstep(0.1, 1.0, v)
+			if wimple:
+				depth *= 1.0 - 0.7 * smoothstep(0.5, WIMPLE_HEM, v)
 			# it is wound twice: the outer turn's upper edge crosses the face on a slant (high
 			# under the left cheek, low at the right jaw) and stands a layer proud, with a
 			# shadowed crease just above it where the cloth beneath bunches
@@ -750,7 +759,12 @@ func _veil() -> ArrayMesh:
 			# the top edge rides up over the bridge of the nose and sags into a soft dip under
 			# each cheekbone before running back flat under the hood, instead of a ruled line
 			var top := 1.0 - smoothstep(0.0, 0.35, v)
-			y += top * (0.004 * pow(maxf(front, 0.0), 14.0) \
+			if wimple:
+				# under the chin at the front, rising up the jaw at the sides; its hem stays in the
+				# collar (1.72) where the face cloth's would have hung out over the chest
+				var y0 := WIMPLE_CHIN + WIMPLE_RISE * smoothstep(0.9, 0.55, front)
+				y = lerpf(y0, 1.716, v / WIMPLE_HEM) - 0.022 * rr * depth
+			y += top * ((0.0 if wimple else 0.004) * pow(maxf(front, 0.0), 14.0) \
 					- 0.008 * exp(-pow((absf(a) - 0.5) / 0.22, 2.0)) \
 					+ 0.002 * sin(a * 5.0 + 0.9))
 			var r := 1.0 + 0.06 * v * front + depth * (0.085 * rr + 0.016 * fine) \
@@ -759,7 +773,10 @@ func _veil() -> ArrayMesh:
 			cav *= (1.0 - 0.55 * crease) * (1.0 - 0.18 * maxf(-pull, 0.0))
 			st.set_color(Color(cav, cav, cav))
 			st.set_uv(Vector2(u, v))
-			st.add_vertex(Vector3(sin(a) * 0.128 * r, y, -0.035 + front * 0.175 * r))
+			# (the wimple sits closer round the jaw and throat than the face cloth over the nose)
+			var wx := 0.112 if wimple else 0.128
+			var wz := 0.165 if wimple else 0.175
+			st.add_vertex(Vector3(sin(a) * wx * r, y, -0.035 + front * wz * r))
 	for j in nv:
 		for i in nu:
 			var p0 := j * (nu + 1) + i
@@ -800,7 +817,9 @@ func _add_face(head: Node3D) -> void:
 	mat.set_shader_parameter("eyes", Vector4(-EYE_X, EYE_Y, EYE_X, EYE_Y))
 	if beard or bare_face:
 		# the nose and upper lip show; only the strip under the moustache tucks into shade
-		mat.set_shader_parameter("low_tuck", 0.88)
+		mat.set_shader_parameter("low_tuck", 0.93 if bare_face else 0.88)
+		if bare_face:
+			mat.set_shader_parameter("mouth_y", 1.869)
 		# an old man's face: paler and greyer than the hero's sun-brown, which read as a flat
 		# orange mask under the warm face fill
 		mat.set_shader_parameter("age", 1.0 if beard else 0.0)
@@ -810,7 +829,7 @@ func _add_face(head: Node3D) -> void:
 		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0044))
 	face = MeshInstance3D.new()
 	face.name = "Face"
-	face.mesh = _grid(_face_point, 40, 24 if beard or bare_face else 14)
+	face.mesh = _grid(_face_point, 40, 34 if bare_face else (24 if beard else 14))
 	face.material_override = mat
 	face.layers = layer
 	head.add_child(face)
@@ -896,13 +915,23 @@ func light_face(shade: Color) -> void:
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
 	var a := lerpf(-1.0, 1.0, u)
-	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, FACE_LOW_BEARD if beard or bare_face else 1.914, v), true)
+	var low := FACE_LOW_BARE if bare_face else (FACE_LOW_BEARD if beard else 1.914)
+	var y := lerpf(2.016, low, v)
+	return _face_point_xy(sin(a) * _jaw_w(y), y, true)
+
+## Half-width of the face at height y: 9 cm across the cheekbones, narrowing down a bare face's
+## jaw to the chin.
+func _jaw_w(y: float) -> float:
+	if not bare_face:
+		return 0.09
+	return 0.09 * lerpf(1.0, 0.74, smoothstep(1.90, 1.83, y))
 
 ## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
 ## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
 ## eyeballs sit under (no socket dip).
 func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
-	var s := clampf(x / 0.09, -1.0, 1.0)
+	var jw := _jaw_w(y)
+	var s := clampf(x / jw, -1.0, 1.0)
 	var a := asin(s)
 	var z := -0.035 + cos(a) * 0.19
 	# brow ridge over the eyes, the bridge of the nose running down the middle
@@ -916,7 +945,20 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 		var under := smoothstep(1.889, 1.903, y)
 		z += (0.004 + 0.019 * pow(t, 1.4)) * exp(-pow(x / w, 2.0)) * under
 		z += 0.007 * exp(-pow((absf(x) - 0.0135) / 0.006, 2.0) - pow((y - 1.904) / 0.007, 2.0))
-		z -= 0.03 * smoothstep(1.899, 1.880, y)
+		if beard:
+			z -= 0.03 * smoothstep(1.899, 1.880, y)
+		else:
+			# a bare face: the upper lip under the nose, the mouth, a fuller lower lip, the groove
+			# under it and a rounded chin, the jaw receding a little below the cheekbones; under the
+			# chin it tucks back into the wimple
+			var mx := exp(-pow(x / 0.024, 2.0))
+			z -= 0.008 * smoothstep(1.90, 1.845, y)
+			z += 0.003 * exp(-pow((y - 1.877) / 0.005, 2.0)) * mx
+			z -= 0.003 * exp(-pow((y - 1.869) / 0.0018, 2.0)) * mx
+			z += 0.004 * exp(-pow((y - 1.862) / 0.0045, 2.0)) * mx
+			z -= 0.003 * exp(-pow((y - 1.851) / 0.004, 2.0)) * exp(-pow(x / 0.02, 2.0))
+			z += 0.005 * exp(-pow((y - 1.840) / 0.007, 2.0)) * exp(-pow(x / 0.022, 2.0))
+			z -= 0.04 * smoothstep(1.836, 1.822, y)
 	else:
 		z += 0.007 * exp(-pow(x / 0.009, 2.0)) * smoothstep(1.995, 1.95, y)
 	if sockets:
@@ -928,7 +970,7 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
 	if not beard and not bare_face:
 		z -= 0.02 * smoothstep(1.932, 1.914, y)
-	z -= 0.03 * smoothstep(0.06, 0.09, absf(x))
+	z -= 0.03 * smoothstep(jw * 0.67, jw, absf(x))
 	return Vector3(x, y, z)
 
 ## The shoulder mantle: a cape of heavy wool gathered at the neck that falls into deep,

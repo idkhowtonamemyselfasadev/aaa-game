@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261023-2126-climb-moss.jpg",
-  "time": "2026-10-23T21:26:50Z",
-  "caption": "The climbing hero on the keep after the moss pass: the flat green slabs on the stone tops are gone, but the moss is now too sparse to read as cushions, and the camera still sees the hero mostly from behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-2234-climb-side.jpg",
-  "time": "2026-10-23T22:34:00Z",
-  "caption": "The hero climbing the keep, re-aimed from their facing after warm-up: the frame now shows the staff, sash and hands on the stones, but the lens still sits behind the shoulder, the bed tops are above eye level so the moss cannot be seen, and the stones read pale and flat like plaster blocks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-0035-climb-dark.jpg",
-  "time": "2026-10-24T00:35:00Z",
-  "caption": "The hero on the keep from above along the face: the stone tops now show their moss and the faces in shade read darker and greyer, but the sunlit faces still look pale and soft, the hero is still seen from behind, and the moss reads as a dull flat green from this distance.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0037-glide.jpg",
   "time": "2026-10-24T00:37:00Z",
   "caption": "The hero gliding over the vale under Caelum's new hemp-and-bamboo glider, rigging cords and bank visible, the village and snow peaks ahead; the canopy still reads as one flat even brown sheet (patches, seams and battens too faint) and the hero hangs only a few metres over the rising hill.",
@@ -897,6 +879,12 @@
   "file": "20261029-1400-roadmeet-hildface.jpg",
   "time": "2026-10-29T14:00:00Z",
   "caption": "Hild on the road at 16:30 with her own face, eyes and nose now lit in the hood above a bleached linen wimple instead of a dark face cloth; the wimple's hem still shows as a pale ragged edge on her chest and her forearms still read as grey plate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1430-roadmeet-hildchin.jpg",
+  "time": "2026-10-29T14:30:00Z",
+  "caption": "Hild's face now runs down past a mouth with lips to a rounded chin, the linen wimple passing under it at the throat instead of masking her mouth; the face still reads long and flat-sided, a dark gap shows beside her jaw in the hood, and a pale scrap still shows at the collar.",
   "verdict": "fail"
  }
 ]

@@ -15,6 +15,7 @@ uniform vec2 eye_size = vec2(0.0135, 0.0037);
 uniform float brow_y = 1.990;
 uniform float low_tuck = 0.72;   // UV.y where the lower edge starts sinking into shade
 uniform float face_fill = 1.4;  // ground bounce under the brim (the body garb gets 1.0)
+uniform float mouth_y = 0.0;     // > 0: a bare face's mouth line at this height (lips round it)
 uniform float age = 0.0;         // 0 a working adult .. 1 an old man: paler, greyer, liver
                                  // spots, deeper lines, the colour only in the cheeks and nose
 
@@ -148,8 +149,21 @@ void fragment() {
 	float brow = (1.0 - smoothstep(brow_w * 0.6, brow_w, abs(by))) * (1.0 - smoothstep(0.016, 0.022, abs(bx + 0.002)));
 	float hair = vnoise(vec2(p.x * 2200.0 + p.y * 900.0, p.y * 350.0));
 	alb = mix(alb, vec3(0.035, 0.026, 0.02), brow * (0.55 + 0.45 * hair));
+	// a bare face's mouth: dusky rose lips either side of a dark parting line, the corners
+	// fading into the cheeks, and a soft shadow under the lower lip
+	float lips = 0.0;
+	if (mouth_y > 0.0) {
+		float mw = 1.0 - smoothstep(0.016, 0.025, abs(p.x));
+		float my = p.y - mouth_y - 0.0004 * cos(p.x * 140.0);
+		lips = mw * (exp(-pow((my - 0.0035) / 0.0032, 2.0)) * 0.8 + exp(-pow((my + 0.0045) / 0.0042, 2.0)));
+		alb = mix(alb, alb * vec3(1.02, 0.74, 0.72), 0.55 * clamp(lips, 0.0, 1.0));
+		float part = (1.0 - smoothstep(0.0004, 0.0012, abs(my))) * (1.0 - smoothstep(0.017, 0.023, abs(p.x)));
+		alb = mix(alb, vec3(0.06, 0.03, 0.025), 0.75 * part);
+		alb *= 1.0 - 0.18 * exp(-pow((my + 0.017) / 0.004, 2.0)) * (1.0 - smoothstep(0.012, 0.02, abs(p.x)));
+	}
 	float rough = mix(0.52, 0.4, lid) + 0.1 * n;
 	rough = mix(rough, 0.7, brow);
+	rough -= 0.12 * clamp(lips, 0.0, 1.0);
 	// a little sweat and skin oil on the brow bone and the bridge of the nose: the sheen that
 	// shows the bone under the skin
 	rough -= 0.14 * bone * (1.0 - brow) * (1.0 - age);
