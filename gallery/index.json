@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261023-1938-climb-masonry.jpg",
-  "time": "2026-10-23T19:38:00Z",
-  "caption": "The hero climbing the keep, whose stones now vary from pale buff to dark weathered grey, with frost spalls and black-green drip stains under each course; the masonry still reads as stacked rectangular blocks and the camera still sits behind the hero.",
-  "verdict": "fail"
- },
- {
-  "file": "20261023-2022-climb-relief.jpg",
-  "time": "2026-10-23T20:22:32Z",
-  "caption": "The climbing hero on the keep from a raking angle: face stones now set proud or sunk back and some cut short under dark open joints, with crisper arrises; the camera still sits mostly behind the hero and the moss on the stone tops is a flat green.",
-  "verdict": "fail"
- },
- {
   "file": "20261023-2126-climb-moss.jpg",
   "time": "2026-10-23T21:26:50Z",
   "caption": "The climbing hero on the keep after the moss pass: the flat green slabs on the stone tops are gone, but the moss is now too sparse to read as cushions, and the camera still sees the hero mostly from behind.",
@@ -897,6 +885,12 @@
   "file": "20261029-1110-roadmeet-softfold.jpg",
   "time": "2026-10-29T11:10:00Z",
   "caption": "Wat and Hild on the road at 16:30 with a stronger side skylight and lighter wool folds: kirtle, apron and smock now separate from the background, but arms and torsos (the base-body undersuit) still read near-black and Wat still faces away.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1215-roadmeet-sleeves.jpg",
+  "time": "2026-10-29T12:15:00Z",
+  "caption": "Wat and Hild on the road at 16:30 with their sleeves and bodices lifted to mid brown-grey wool: arms and shoulders now read as cloth instead of a black undersuit, but faces stay lost under hood and brim and Wat still faces away.",
   "verdict": "fail"
  }
 ]

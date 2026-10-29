@@ -86,7 +86,8 @@ func _init() -> void:
 	who = "Osric"
 	# his sleeves and cuffs are the same undyed fleece-grey as the smock, not Edda's rust kirtle
 	# wool (the base Villager value), which read as red cuffs under the grey cape
-	body_wool = Color(0.15, 0.14, 0.125)
+	# (lifted from 0.15: at 16:30 his arms and chest read as black undersuit under the smock)
+	body_wool = Color(0.27, 0.26, 0.235)
 	body_patch = Color(0.08, 0.075, 0.065)
 	idle_roll = 0.018                # an old man's weight shift: wider, slower, slow old lungs
 	idle_cycle = 9.0

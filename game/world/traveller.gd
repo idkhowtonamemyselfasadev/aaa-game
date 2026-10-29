@@ -46,7 +46,8 @@ func _init() -> void:
 	exchanges = {}
 	who = "Hild"
 	who_title = "Wool-wife on the coast road"
-	body_wool = Color(0.15, 0.14, 0.12)
+	# her sleeves and bodice a mid brown-grey wool (at 0.15 her arms read black beside the kirtle)
+	body_wool = Color(0.27, 0.245, 0.21)
 	body_patch = Color(0.09, 0.08, 0.07)
 	idle_roll = 0.013
 	idle_cycle = 6.6

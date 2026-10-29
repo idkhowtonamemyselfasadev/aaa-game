@@ -122,7 +122,8 @@ func _init() -> void:
 	who = "Wat"
 	# dun road wool and dull leather trim, not Edda's rust kirtle: under his own candle at the
 	# bail the rust sleeves and glove read as a glowing red blot (lampcube shot)
-	body_wool = Color(0.17, 0.15, 0.12)
+	# (lifted from 0.17: in low sun his sleeves and chest read as a black suit under the smock)
+	body_wool = Color(0.28, 0.24, 0.205)
 	body_patch = Color(0.10, 0.08, 0.06)
 	idle_roll = 0.012                # a road-hardened man on his staff: a smaller, quicker shift
 	idle_cycle = 6.0

@@ -130,6 +130,7 @@ var body_patch := Color(0.20, 0.12, 0.08)
 # follow, so no villager keeps the Vanguard's knee cops, shoulder humps and boot cuffs
 const PLATE_INSET := 0.02
 const IRON_INSET := 0.015
+const HOSE_SHADE := 0.75
 var who_title := "Cottager on Harrowmere green"
 var intro: Array = INTRO
 var lines: Dictionary = LINES
@@ -934,6 +935,9 @@ func _skin() -> void:
 			# her sleeves the kirtle's rust wool, not the default undyed grey (read pale mottled grey)
 			mat.set_shader_parameter("wool", body_wool)
 			mat.set_shader_parameter("patch_col", body_patch)
+			# hose and inner sleeves only a little darker than the wool: at the hero's 0.55
+			# the arms between the garb pieces read as a black undersuit in low sun
+			mat.set_shader_parameter("hose_shade", HOSE_SHADE)
 			if src.normal_enabled and src.normal_texture != null:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 				mat.set_shader_parameter("normal_depth", src.normal_scale)
