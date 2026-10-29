@@ -2,7 +2,7 @@ class_name Pedlar
 extends Villager
 ## Wat Pennock, a pedlar on the old road over the vale: Harrowmere's passer-by. Edda's rig and
 ## garb builder, cut as a man on the road: a dark hood under a felt hat, a weathered russet
-## cape, a long dun smock kilted to the shin, a willow creel on his back with bolts of dyed
+## cape, a long dun smock to the calf, a willow creel on his back with bolts of dyed
 ## cloth across its mouth, and an ash staff in his hand. He walks through twice a day:
 ##   09:00 up out of the south-east meadow, onto the green by the lantern post, where he stands
 ##         a while and calls a word to Edda across it; then on round the east gable of the
@@ -158,7 +158,11 @@ func _dress() -> void:
 		# old peeled willow gone grey-brown: the fresh tan read as a red-orange grid by lantern light
 		"basket": [Color(0.065, 0.055, 0.042), Color(0.34, 0.30, 0.24), 0.45],
 	}
-	garb.robe_len = 0.8
+	# a long smock to the calf with side gores, so the old knee cops and boots under it
+	# never show as armour (kilted to the shin, the plate knees read through)
+	garb.robe_len = 1.05
+	garb.robe_wide = 1.15
+	garb.skirt = true
 	garb.felt_hat = true
 	garb.beard = true
 	garb.beard_col = Color(0.25, 0.21, 0.165)

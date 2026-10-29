@@ -154,7 +154,10 @@ func _dress() -> void:
 		# mud-greyed linen: at 0.40 the shin wraps lit up under the darker smock
 		"wraps": [Color(0.075, 0.07, 0.062), Color(0.31, 0.294, 0.262), 0.4],
 	}
-	garb.robe_len = 0.85
+	# to the calf with side gores: at 0.85 the old plate knee cops showed below the hem
+	garb.robe_len = 1.05
+	garb.robe_wide = 1.15
+	garb.skirt = true
 	garb.felt_hat = true
 	# no face cloth: his own weathered face, the nose, and a grizzled grey beard
 	garb.beard = true

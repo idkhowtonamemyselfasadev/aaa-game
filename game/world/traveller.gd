@@ -74,7 +74,7 @@ func _init() -> void:
 
 func _dress() -> void:
 	# a linen coif under a dark wool hood, a grey-brown shawl, a kirtle of undyed brown wool
-	# kilted for the road, a hemp girdle, mud-greyed wraps; the fleeces in a creel on her back
+	# to the ankle, a hemp girdle, mud-greyed wraps; the fleeces in a creel on her back
 	garb.palette = {
 		"hood": [Color(0.17, 0.16, 0.14), Color(0.27, 0.255, 0.22), 0.3],
 		"hat": [Color(0.035, 0.03, 0.026), Color(0.19, 0.17, 0.145), 0.3],
@@ -86,7 +86,8 @@ func _dress() -> void:
 	}
 	garb.hatless = true
 	garb.hood_linen = true
-	garb.robe_len = 1.0
+	# a long kirtle near the ankle: kilted to the knee, the plate knees and boots read as armour
+	garb.robe_len = 1.25
 	garb.robe_wide = 1.2
 	garb.skirt = true
 	garb.smock = true
