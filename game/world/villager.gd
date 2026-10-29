@@ -244,6 +244,11 @@ func _ready() -> void:
 	garb.wrap_calm = 0.5
 	garb.mended = true
 	_dress()
+	# sleeves and mitts in the body's own wool, thigh wraps in the kirtle's
+	if not garb.palette.has("sleeves"):
+		garb.palette["sleeves"] = [body_wool * 0.3, body_wool * 1.05, 0.4]
+	if garb.skirt and not garb.palette.has("thighs") and garb.palette.has("robe"):
+		garb.palette["thighs"] = garb.palette["robe"]
 	add_child(garb)
 	if skel != null:
 		garb.build(skel, body)
