@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261024-0822-glide-sky.jpg",
-  "time": "2026-10-24T08:22:00Z",
-  "caption": "Same glide framing as the last shot after the camera far-plane fix: the cloud deck now runs unbroken across the sky with no seams; the trailing legs below the robe still read as a pale grey smear and the hero is small in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-0915-glide-legs2-close.jpg",
-  "time": "2026-10-24T09:15:00Z",
-  "caption": "Close crop of the trailing legs under the madder robe panel: worn brown cloth, no grey smear; at this distance the wrap spirals and the bare feet are still mushy.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0915-glide-legs2.jpg",
   "time": "2026-10-24T09:15:00Z",
   "caption": "Same framing as glide-sky: the hero's trailing legs now read as dark hemp thigh bindings and road-soiled shin wraps instead of a pale grey smear; the hero is still small in frame and the meadow below is thin.",
@@ -891,6 +879,18 @@
   "file": "20261029-2125-roadmeet-hildshin.jpg",
   "time": "2026-10-29T21:25:00Z",
   "caption": "Hild at the road meeting at 16:30 with lighter shin wraps (cropped below the frame here); her forearm sleeves still read as black blocks, hands as grey gloves, and the kirtle panels are patchy and flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-2230-roadmeet-hildsleeve.jpg",
+  "time": "2026-10-29T22:30:00Z",
+  "caption": "Hild at the road meeting at 16:30 with her forearm sleeves lifted to a dark brown-grey wool instead of black blocks; her fingers still read as grey gloves, the face is smooth and mask-like and the kirtle panels are patchy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-2230-roadmeet-hildfull.jpg",
+  "time": "2026-10-29T22:30:00Z",
+  "caption": "The same meeting without the chest crop: the sleeves now read as wool from elbow to wrist, but the frame still stops at her thighs, so the shin wraps go unseen, and the grey glove fingers remain.",
   "verdict": "fail"
  }
 ]
