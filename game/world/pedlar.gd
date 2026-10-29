@@ -30,7 +30,7 @@ const BACK := 1                            # the window that walks the road the 
 const STAND_GREEN := 26.0                  # s he stands on the green
 const STAND_WALL := 14.0                   # s he stands at Osric's wall
 const CALL_R := 15.0                       # he calls a word across the green this far
-const MEET_R := 5.0                        # ...but a word with a fellow walker when they meet
+const MEET_R := 3.0                        # ...but a word with a fellow walker when they meet, near enough to touch
 const CLEAR := 1.1                         # m he keeps between his line and the dog
 
 var journeys := 0                # walks through finished (bots)

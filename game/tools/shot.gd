@@ -1021,7 +1021,7 @@ func _ready() -> void:
 		var dir := (rb - ra).normalized()        # up the track toward the green
 		var lft := Vector2(dir.y, -dir.x)
 		var wp := ra.lerp(rb, 0.5)
-		var hp := wp - dir * 1.9 - lft * 0.9      # she keeps to her right coming up
+		var hp := wp - dir * 1.2 - lft * 0.8      # she keeps to her right coming up, ~1.4 m off
 		pd._place(Vector3(wp.x, terrain.height_at(wp.x, wp.y), wp.y))
 		hd._place(Vector3(hp.x, terrain.height_at(hp.x, hp.y), hp.y))
 		for v in [pd, hd]:
@@ -1038,8 +1038,15 @@ func _ready() -> void:
 		pd.body.rotation.y = pd.goal_yaw
 		hd.body.rotation.y = hd.goal_yaw
 		var mid := (pd.global_position + hd.global_position) * 0.5
-		var side := 1.0 if "far" in args else -1.0
-		var c := Vector2(mid.x, mid.z) + lft * 4.2 * side + dir * 1.2
+		# the lens square-on to the line between them, on the far verge from Hild (her verge saw
+		# them three-quarter from behind in 02:50),
+		# so both faces read in profile ("near": the other verge)
+		var tw2 := Vector2(tw.x, tw.z).normalized()
+		var perp := Vector2(tw2.y, -tw2.x)
+		if perp.dot(lft) < 0.0:
+			perp = -perp
+		var side := -1.0 if "near" in args else 1.0
+		var c := Vector2(mid.x, mid.z) + perp * 3.6 * side
 		var cp := Vector3(c.x, terrain.height_at(c.x, c.y) + 1.5, c.y)
 		SPOTS[spot] = [cp, mid + Vector3.UP * 1.2]
 		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
