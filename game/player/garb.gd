@@ -763,7 +763,10 @@ func _veil(wimple := false) -> ArrayMesh:
 				# under the chin at the front, rising up the jaw at the sides; its hem stays in the
 				# collar (1.72) where the face cloth's would have hung out over the chest
 				var y0 := WIMPLE_CHIN + WIMPLE_RISE * smoothstep(0.9, 0.55, front)
-				y = lerpf(y0, 1.716, v / WIMPLE_HEM) - 0.022 * rr * depth
+				# (at the front the hem rises behind the hood's front point (1.746): hung to 1.716
+				# there, it showed as a pale ragged scrap between the hood and the smock)
+				var hem := lerpf(1.716, 1.738, smoothstep(0.3, 0.9, front))
+				y = lerpf(y0, hem, v / WIMPLE_HEM) - 0.022 * rr * depth
 			y += top * ((0.0 if wimple else 0.004) * pow(maxf(front, 0.0), 14.0) \
 					- 0.008 * exp(-pow((absf(a) - 0.5) / 0.22, 2.0)) \
 					+ 0.002 * sin(a * 5.0 + 0.9))
@@ -1057,9 +1060,12 @@ func _smock() -> ArrayMesh:
 			var v := float(j) / nv
 			var a := u * TAU
 			var y := lerpf(1.70, 1.21, v)
-			var full := smoothstep(1.70, 1.50, y)
+			# full by 1.56: filling out only by 1.50 left the Vanguard's upper chest plate cutting
+			# through the cloth at ~1.63 as a pale crescent under the hood
+			var full := smoothstep(1.70, 1.56, y)
 			var rx := lerpf(0.135, 0.258, full)
-			var rz := lerpf(0.13, 0.222, full)
+			var ca0 := cos(a)
+			var rz := lerpf(0.13, 0.222, full) + 0.024 * exp(-pow((y - 1.60) / 0.08, 2.0)) * maxf(ca0, 0.0)
 			var zc := lerpf(-0.035, -0.008, smoothstep(1.42, 1.22, y))
 			# blousing over the girdle, then drawn in under it
 			var blouse := 1.0 + 0.035 * exp(-pow((y - 1.30) / 0.05, 2.0)) - 0.03 * smoothstep(1.26, 1.21, y)

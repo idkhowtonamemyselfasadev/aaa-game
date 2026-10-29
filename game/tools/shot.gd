@@ -1065,6 +1065,9 @@ func _ready() -> void:
 			toc.y = 0.0
 			var lf := (hf + toc.normalized()).normalized()
 			SPOTS[spot] = [fc + lf * 1.2 + Vector3.UP * 0.03, fc - Vector3.UP * 0.12]
+			if "chest" in args:
+				# head and chest: the wimple's hem, the smock's collar and the mantle's open front
+				SPOTS[spot] = [fc + lf * 1.3 - Vector3.UP * 0.1, fc - Vector3.UP * 0.26]
 		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "pedlar":

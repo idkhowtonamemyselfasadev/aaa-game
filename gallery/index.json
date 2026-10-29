@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261024-0220-glide-canvas.jpg",
-  "time": "2026-10-24T02:20:00Z",
-  "caption": "The hero gliding high over the vale: the canopy now reads as sewn cloth, with panels from different bolts, pale rubbed batten ridges, a dark tarred leading edge and a stitched ox-blood patch, but the undyed panel glares near white in the sun (since toned down) and the figure under the wing is still a small, stiff silhouette.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-0340-glide-stowed.jpg",
-  "time": "2026-10-24T03:40:00Z",
-  "caption": "The folded glider rides across the hero's back as a cord-bound canvas roll with bamboo ends; it sits too high above the sash, the staff crosses over it and its pale batten bands glare (lowered and dulled after the shot, not re-shot).",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0430-thermal-keep.jpg",
   "time": "2026-10-24T04:30:00Z",
   "caption": "The hero circles under the glider in the thermal over the keep's knoll at 14:00, heading toward the sun over the dry vale; the wing and the light hold up, but the rising chaff that marks the column is invisible at this range and the meadow below is sparse.",
@@ -885,6 +873,18 @@
   "file": "20261029-1630-roadmeet-hildround.jpg",
   "time": "2026-10-29T16:30:00Z",
   "caption": "Hild on the road at 16:30 with a rounder face: a broader jaw, fuller cheeks that round off instead of ending in a cut edge, and soft folds by the mouth; the face still reads too smooth and flat at this distance, a pale scrap still shows at the collar and her forearms still read as grey plate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1730-roadmeet-hildchest-before.jpg",
+  "time": "2026-10-29T17:30:00Z",
+  "caption": "Before: Hild at 16:30 with the Vanguard's chest plate cutting through her smock as a pale crescent and side strips under the hood.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1730-roadmeet-hildchest.jpg",
+  "time": "2026-10-29T17:30:00Z",
+  "caption": "After: the smock fills out below the collar so no plate shows on Hild's chest; a small linen scrap still shows at the throat, the face is still smooth and the forearms still read as grey gauntlets.",
   "verdict": "fail"
  }
 ]
