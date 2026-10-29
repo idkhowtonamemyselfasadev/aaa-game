@@ -922,11 +922,11 @@ func _face_point(u: float, v: float) -> Vector3:
 	return _face_point_xy(sin(a) * _jaw_w(y), y, true)
 
 ## Half-width of the face at height y: 9 cm across the cheekbones, narrowing down a bare face's
-## jaw to the chin.
+## jaw to the chin (to 6.7 cm the face read long and narrow, a horse's face in the hood).
 func _jaw_w(y: float) -> float:
 	if not bare_face:
 		return 0.09
-	return 0.09 * lerpf(1.0, 0.74, smoothstep(1.90, 1.83, y))
+	return 0.09 * lerpf(1.0, 0.8, smoothstep(1.89, 1.83, y))
 
 ## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
 ## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
@@ -961,6 +961,13 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 			z -= 0.003 * exp(-pow((y - 1.851) / 0.004, 2.0)) * exp(-pow(x / 0.02, 2.0))
 			z += 0.005 * exp(-pow((y - 1.840) / 0.007, 2.0)) * exp(-pow(x / 0.022, 2.0))
 			z -= 0.04 * smoothstep(1.836, 1.822, y)
+			# the flesh of the cheeks, full below the cheekbones and either side of the mouth,
+			# and the soft fold from the nostril wing down past the mouth corner: without them
+			# the sides fell away flat from the nose and the face read as a carved mask
+			z += 0.006 * exp(-pow((absf(x) - 0.04) / 0.02, 2.0) - pow((y - 1.912) / 0.024, 2.0))
+			var fold_x := lerpf(0.019, 0.029, clampf((1.900 - y) / 0.036, 0.0, 1.0))
+			z -= 0.0018 * exp(-pow((absf(x) - fold_x) / 0.0035, 2.0)) * smoothstep(1.904, 1.895, y) \
+					* smoothstep(1.858, 1.868, y)
 	else:
 		z += 0.007 * exp(-pow(x / 0.009, 2.0)) * smoothstep(1.995, 1.95, y)
 	if sockets:
@@ -972,7 +979,12 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
 	if not beard and not bare_face:
 		z -= 0.02 * smoothstep(1.932, 1.914, y)
-	z -= 0.03 * smoothstep(jw * 0.67, jw, absf(x))
+	# (a bare face rounds off over its whole width: the steep fall in the outer third read as a
+	# flat front with sides cut square, a mask's edge)
+	if bare_face:
+		z -= 0.03 * pow(smoothstep(jw * 0.3, jw, absf(x)), 1.3)
+	else:
+		z -= 0.03 * smoothstep(jw * 0.67, jw, absf(x))
 	return Vector3(x, y, z)
 
 ## The shoulder mantle: a cape of heavy wool gathered at the neck that falls into deep,

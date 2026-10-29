@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261024-0037-glide.jpg",
-  "time": "2026-10-24T00:37:00Z",
-  "caption": "The hero gliding over the vale under Caelum's new hemp-and-bamboo glider, rigging cords and bank visible, the village and snow peaks ahead; the canopy still reads as one flat even brown sheet (patches, seams and battens too faint) and the hero hangs only a few metres over the rising hill.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-0150-glide1.jpg",
-  "time": "2026-10-24T01:50:00Z",
-  "caption": "The hero under Caelum's hemp-and-bamboo glider over the Vale at 10:30: the wing reads as a real swept glider at the right scale against the body, but the canopy is a flat even brown with its patches and battens lost at this range, the hero hangs stiffly straight down, and the meadow below is sparse and soft.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0220-glide-canvas.jpg",
   "time": "2026-10-24T02:20:00Z",
   "caption": "The hero gliding high over the vale: the canopy now reads as sewn cloth, with panels from different bolts, pale rubbed batten ridges, a dark tarred leading edge and a stitched ox-blood patch, but the undyed panel glares near white in the sun (since toned down) and the figure under the wing is still a small, stiff silhouette.",
@@ -891,6 +879,12 @@
   "file": "20261029-1530-roadmeet-hildjaw.jpg",
   "time": "2026-10-29T15:30:00Z",
   "caption": "Hild on the road at 16:30: the linen wimple now rises up her jaw to meet the hood, closing the dark gap by her right cheek; the face still reads flat and long like a mask, a pale linen scrap shows at the collar and the arms read as grey plate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-1630-roadmeet-hildround.jpg",
+  "time": "2026-10-29T16:30:00Z",
+  "caption": "Hild on the road at 16:30 with a rounder face: a broader jaw, fuller cheeks that round off instead of ending in a cut edge, and soft folds by the mouth; the face still reads too smooth and flat at this distance, a pale scrap still shows at the collar and her forearms still read as grey plate.",
   "verdict": "fail"
  }
 ]

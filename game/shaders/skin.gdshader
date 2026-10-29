@@ -160,6 +160,17 @@ void fragment() {
 		float part = (1.0 - smoothstep(0.0004, 0.0012, abs(my))) * (1.0 - smoothstep(0.017, 0.023, abs(p.x)));
 		alb = mix(alb, vec3(0.06, 0.03, 0.025), 0.75 * part);
 		alb *= 1.0 - 0.18 * exp(-pow((my + 0.017) / 0.004, 2.0)) * (1.0 - smoothstep(0.012, 0.02, abs(p.x)));
+		// the modelling of a bare face: a soft shadow along the fold from the nostril wing past
+		// the mouth corner, a faint hollow under the cheekbone and the apples of the cheeks a
+		// little rosier and lighter where they round toward the light
+		float fx = mix(0.019, 0.029, clamp((1.900 - p.y) / 0.036, 0.0, 1.0));
+		float naso = exp(-pow((abs(p.x) - fx - 0.002) / 0.004, 2.0)) * smoothstep(1.906, 1.895, p.y)
+				* smoothstep(mouth_y - 0.012, mouth_y, p.y);
+		alb *= 1.0 - 0.16 * naso;
+		float hollow = exp(-pow((abs(p.x) - 0.062) / 0.013, 2.0) - pow((p.y - 1.928) / 0.012, 2.0));
+		alb *= 1.0 - 0.1 * hollow;
+		float apple = exp(-pow((abs(p.x) - 0.038) / 0.014, 2.0) - pow((p.y - 1.928) / 0.012, 2.0));
+		alb = mix(alb, alb * vec3(1.1, 0.95, 0.92), 0.5 * apple);
 	}
 	float rough = mix(0.52, 0.4, lid) + 0.1 * n;
 	rough = mix(rough, 0.7, brow);
