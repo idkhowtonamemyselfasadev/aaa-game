@@ -1046,7 +1046,14 @@ func _ready() -> void:
 		if perp.dot(lft) < 0.0:
 			perp = -perp
 		var side := -1.0 if "near" in args else 1.0
-		var c := Vector2(mid.x, mid.z) + perp * 3.6 * side
+		# the lens on the sun's side of their line (at 16.5 the far verge looked into the low
+		# west sun and both faces were black against it): "near"/"far" still force a verge
+		var sz: Vector3 = world.sun.global_basis.z
+		if not ("near" in args or "far" in args) and Vector2(sz.x, sz.z).dot(perp) < 0.0:
+			side = -1.0
+		# swung a little toward the sun along their line, so the lit side of the faces turns to us
+		var sw := clampf(Vector2(sz.x, sz.z).normalized().dot(tw2), -0.5, 0.5)
+		var c := Vector2(mid.x, mid.z) + (perp * side + tw2 * sw).normalized() * 3.6
 		var cp := Vector3(c.x, terrain.height_at(c.x, c.y) + 1.5, c.y)
 		SPOTS[spot] = [cp, mid + Vector3.UP * 1.2]
 		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
@@ -1831,6 +1838,11 @@ func _ready() -> void:
 			var rng := (lt as OmniLight3D).omni_range if lt is OmniLight3D else -1.0
 			print("SHOT light %s vis %s e %.3f col %s range %.2f d %.2f mask %d" % [lt.get_path(), lt.is_visible_in_tree(), lt.light_energy, lt.light_color, rng, lt.global_position.distance_to(hp), lt.light_cull_mask])
 		print("SHOT amb %s x %.3f" % [world.env.environment.ambient_light_color, world.env.environment.ambient_light_energy])
+	if spot == "roadmeet":
+		for v in [world.pedlar, world.traveller]:
+			var f: Vector3 = v.body.global_basis.z
+			var tc: Vector3 = get_viewport().get_camera_3d().global_position - v.global_position
+			print("SHOT roadmeet %s yaw %.2f goal %.2f faces-lens %.2f" % [v.name, v.body.rotation.y, v.goal_yaw, Vector2(f.x, f.z).normalized().dot(Vector2(tc.x, tc.z).normalized())])
 	print("SHOT state: hour %.2f cloud %.2f rain %.2f wind %.2f wet %.2f sun %.2f fog %.4f fogcol %s canopy %.2f drips %d" % [world.time_of_day, we.cloud, we.rain, we.wind, we.wet, world.sun.light_energy, world.env.environment.fog_density, world.env.environment.fog_light_color, we.canopy_water, we.canopy_drips])
 	get_tree().quit(0 if err == OK else 1)
 
