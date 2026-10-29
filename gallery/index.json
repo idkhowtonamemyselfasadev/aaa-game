@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261024-0915-glide-legs2.jpg",
-  "time": "2026-10-24T09:15:00Z",
-  "caption": "Same framing as glide-sky: the hero's trailing legs now read as dark hemp thigh bindings and road-soiled shin wraps instead of a pale grey smear; the hero is still small in frame and the meadow below is thin.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1110-dust-devil-close.jpg",
   "time": "2026-10-24T11:10:00Z",
   "caption": "Crop of the whirl: a pale narrow funnel with a little skirt at its foot; it needs to be two to three times wider and denser, with a darker, more opaque base.",
@@ -891,6 +885,18 @@
   "file": "20261029-2230-roadmeet-hildfull.jpg",
   "time": "2026-10-29T22:30:00Z",
   "caption": "The same meeting without the chest crop: the sleeves now read as wool from elbow to wrist, but the frame still stops at her thighs, so the shin wraps go unseen, and the grey glove fingers remain.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-2330-roadmeet-hildhands.jpg",
+  "time": "2026-10-29T23:30:00Z",
+  "caption": "Hild at the road meeting: her fingers now come out of the wool mitts as bare ruddy skin instead of a grey plate glove; the kirtle's front panel below the sash is still patchy rust/dark blocks and the face still reads smooth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-2330-roadmeet-hildfull2.jpg",
+  "time": "2026-10-29T23:30:00Z",
+  "caption": "New full-length framing of Hild: her long kirtle and shins read as even dark wool with no pale blotches, but Wat and his creel block the lens line (framing swung to the verge side for next time).",
   "verdict": "fail"
  }
 ]

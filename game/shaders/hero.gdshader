@@ -39,6 +39,11 @@ uniform float cloth_normal = 0.3;
 // armour under the wool; iron (knee caps, collar, bracers) sinks this much more again
 uniform float plate_inset = 0.0;
 uniform float iron_inset = 0.0;
+// villagers' bare fingers: the base body's finger vertices carry COLOR.g 0 (Villager._hand_marked);
+// without the mask (the hero, the keeper) COLOR is white and nothing changes
+uniform float bare_hands = 0.0;
+uniform vec3 hand_skin : source_color = vec3(0.30, 0.225, 0.19);
+varying float v_finger;
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -69,6 +74,7 @@ float tan_of(vec3 c) {
 // the plate/iron masks at vertex rate, on a blurred mip so a plate's shell sinks as one
 // smooth piece and its edge tapers into the undersuit instead of tearing at the seam
 void vertex() {
+	v_finger = bare_hands * (1.0 - COLOR.g);
 	if (cloth_body > 0.0 && plate_inset + iron_inset > 0.0) {
 		float tan_v = 0.0;
 		float iron_v = 0.0;
@@ -193,6 +199,17 @@ void fragment() {
 		metal *= 1.0 - visor;
 		alb = mix(src, o, restyle);
 		rough = mix(roughness, r_o, restyle);
+	}
+	if (v_finger > 0.001) {
+		// work-worn skin: ruddier at the knuckles and tips (the glove's baked shading picks
+		// them out), a little grime in the creases; satin, not wool-matte
+		float glum = dot(texture(albedo_tex, UV).rgb * albedo_col.rgb, vec3(0.3, 0.59, 0.11));
+		float fold = clamp(glum / 0.08, 0.6, 1.15);
+		vec3 sk = hand_skin * (0.9 + 0.2 * h_noise(UV * 180.0)) * fold;
+		sk = mix(sk, sk * vec3(1.12, 0.92, 0.88), smoothstep(0.4, 0.8, h_noise(UV * 55.0 + 5.0)) * 0.6);
+		alb = mix(alb, sk, v_finger);
+		rough = mix(rough, 0.62, v_finger);
+		metal *= 1.0 - v_finger;
 	}
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;

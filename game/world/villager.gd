@@ -254,6 +254,14 @@ func _ready() -> void:
 	if garb.skirt and not garb.palette.has("thighs") and garb.palette.has("robe"):
 		garb.palette["thighs"] = garb.palette["robe"]
 	add_child(garb)
+	# bare fingers out of the mitts in the face's skin, not the base body's grey glove
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var hm := mi as MeshInstance3D
+		for s in hm.get_surface_override_material_count():
+			var sm := hm.get_surface_override_material(s) as ShaderMaterial
+			if sm != null:
+				sm.set_shader_parameter("hand_skin", garb.skin_col)
+				sm.set_shader_parameter("bare_hands", 1.0)
 	if skel != null:
 		garb.build(skel, body)
 		garb.swing_slack = 0.3
@@ -932,10 +940,54 @@ func _pose_idle() -> void:
 
 # --- look and animation (the hero's: Player._skin, Player._setup_animation) ---
 
+## The base body's mesh with its fingers marked (COLOR.g 0 on the fingers, 1 elsewhere) so
+## hero.gdshader can give villagers bare hands: the fingers share their UV strip with the
+## torso, so no UV rect can pick them out. Built once, shared by every villager.
+static var _hand_meshes := {}
+
+func _hand_marked(m: MeshInstance3D) -> Mesh:
+	if _hand_meshes.has(m.mesh.resource_path + m.name):
+		return _hand_meshes[m.mesh.resource_path + m.name]
+	var fingers := {}
+	if skel != null and m.skin != null:
+		for k in m.skin.get_bind_count():
+			var bb := m.skin.get_bind_bone(k)
+			if bb < 0:
+				bb = skel.find_bone(m.skin.get_bind_name(k))
+			var n := skel.get_bone_name(bb) if bb >= 0 else ""
+			if n.contains("Hand") and not n.ends_with("Hand"):
+				fingers[k] = true
+	var out := ArrayMesh.new()
+	for s in m.mesh.get_surface_count():
+		var arr := m.mesh.surface_get_arrays(s)
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+		var wts: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+		var per := bones.size() / maxi(verts.size(), 1)
+		var col := PackedColorArray()
+		col.resize(verts.size())
+		for v in verts.size():
+			var w := 0.0
+			for k in per:
+				if fingers.has(bones[v * per + k]):
+					w += wts[v * per + k]
+			col[v] = Color(1, 1.0 - smoothstep(0.3, 0.7, w), 1, 1)
+		arr[Mesh.ARRAY_COLOR] = col
+		# the glb's custom channels come back as floats the format no longer names: drop them
+		for c in [Mesh.ARRAY_CUSTOM0, Mesh.ARRAY_CUSTOM1, Mesh.ARRAY_CUSTOM2, Mesh.ARRAY_CUSTOM3]:
+			arr[c] = null
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr, [], {},
+				Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS if per == 8 else 0)
+		out.surface_set_material(s, m.mesh.surface_get_material(s))
+	_hand_meshes[m.mesh.resource_path + m.name] = out
+	return out
+
 func _skin() -> void:
 	var shader := preload("res://shaders/hero.gdshader")
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
+		if m.skin != null:
+			m.mesh = _hand_marked(m)
 		for s in m.mesh.get_surface_count():
 			var src := m.mesh.surface_get_material(s) as BaseMaterial3D
 			if src == null:

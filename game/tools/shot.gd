@@ -1068,6 +1068,11 @@ func _ready() -> void:
 			if "chest" in args:
 				# head and chest: the wimple's hem, the smock's collar and the mantle's open front
 				SPOTS[spot] = [fc + lf * 1.3 - Vector3.UP * 0.1, fc - Vector3.UP * 0.26]
+			elif "full" in args:
+				# head to foot: the kirtle's front panel below the sash and the shin wraps under the hem
+				# (from the verge side: on her front line at 2.8 m Wat and his creel stand in the way)
+				var lv := (hf * 0.25 + toc.normalized()).normalized()
+				SPOTS[spot] = [fc + lv * 2.8 - Vector3.UP * 0.6, fc - Vector3.UP * 0.82]
 		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "pedlar":
