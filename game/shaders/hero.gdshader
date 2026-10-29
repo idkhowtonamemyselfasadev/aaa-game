@@ -164,6 +164,12 @@ void fragment() {
 			// the plate mottle kept low: at 0.22 the sleeves read as pale camouflage blotches
 			vec3 w = wool * (0.86 + 0.14 * tw + 0.09 * mott) * mix(0.9, 1.06, slub);
 			vec3 ln = linen * (0.8 + 0.25 * h_noise(UV * vec2(25.0, 420.0)) + 0.1 * tw);
+			// the bindings follow the fittings' blurred outline: the texel-sharp iron mask
+			// left ragged pale blotches on the forearms and shins (grey camouflage at 1.5 m)
+			vec3 sb = textureLod(albedo_tex, UV, 3.0).rgb * albedo_col.rgb;
+			float iron_b = smoothstep(0.006, 0.022, sb.b - sb.r)
+					* smoothstep(0.022, 0.05, dot(sb, vec3(0.3, 0.59, 0.11)));
+			iron_m = mix(iron_m, iron_b, cloth_body);
 			vec3 cl = mix(w, ln, iron_m);
 			cl = mix(cl, patch_col * (0.8 + 0.4 * mott), red_m * 0.7);
 			cl = mix(cl, w * 0.75, scratch * 0.5);

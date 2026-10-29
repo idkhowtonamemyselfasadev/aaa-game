@@ -69,6 +69,11 @@ var skin_col := Color(0.33, 0.27, 0.24)
 ## The face fill's strength against the hero's: a deep felt brim and a dark hood over an old
 ## face shade it far more than the hero's douli does (an NPC copies the hero's fill each frame).
 var fill_gain := 1.0
+## 0..1: how far the wraps' dark/light tones draw together (villagers: calm, even wool bands)
+var wrap_calm := 0.0
+## a darned kirtle, not a Hollow's rags: no moth holes or burnt edges in the panels and gores
+## (their cut-outs showed the legs as pale grey patches ringed in soot)
+var mended := false
 ## A smock of the robe cloth over the whole torso, from the collar under the mantle down under
 ## the sash, so another wearer (an NPC without armour) shows wool on the chest, never the
 ## Vanguard's plates under the mantle's hem and in its open front.
@@ -222,17 +227,28 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	tint = palette.get("sash", OCHRE)
 	_knotted_sash(hips)
 	for side in ["Left", "Right"]:
-		tint = palette.get("wraps", SHIN_LINEN)
+		tint = _calm(palette.get("wraps", SHIN_LINEN))
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.06, 0.93, 0.01, 8.0)
 		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
-		tint = palette.get("wraps", ARM_LINEN)
+		tint = _calm(palette.get("wraps", ARM_LINEN))
 		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.008, 6.0)
-		tint = palette.get("wraps", HEMP)
+		tint = _calm(palette.get("wraps", HEMP))
 		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.97, 0.012, 9.0)
 	if basket:
 		_basket()
+	if mended:
+		for rm in mats:
+			rm.set_shader_parameter("holes", 0.0)
 	tint = []
 	_last_pos = body.global_position
+
+## A wrap's dark and light tones drawn toward their mean by wrap_calm: the full spread mottled
+## the villagers' shin and forearm wraps into pale-grey and black blotches like plate greaves.
+func _calm(t: Array) -> Array:
+	if wrap_calm <= 0.0:
+		return t
+	var mid: Color = (t[0] as Color).lerp(t[1], 0.5)
+	return [(t[0] as Color).lerp(mid, wrap_calm), (t[1] as Color).lerp(mid, wrap_calm), t[2] * (1.0 - wrap_calm)]
 
 func _physics_process(delta: float) -> void:
 	super(delta)

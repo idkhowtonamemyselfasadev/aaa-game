@@ -131,6 +131,7 @@ var body_patch := Color(0.20, 0.12, 0.08)
 const PLATE_INSET := 0.02
 const IRON_INSET := 0.015
 const HOSE_SHADE := 0.75
+const BINDING := Color(0.40, 0.36, 0.30)
 var who_title := "Cottager on Harrowmere green"
 var intro: Array = INTRO
 var lines: Dictionary = LINES
@@ -240,6 +241,8 @@ func _ready() -> void:
 	garb = HeroGarb.new()
 	garb.name = "Garb"
 	garb.wrap_inset = PLATE_INSET * 0.6
+	garb.wrap_calm = 0.5
+	garb.mended = true
 	_dress()
 	add_child(garb)
 	if skel != null:
@@ -940,6 +943,9 @@ func _skin() -> void:
 			# her sleeves the kirtle's rust wool, not the default undyed grey (read pale mottled grey)
 			mat.set_shader_parameter("wool", body_wool)
 			mat.set_shader_parameter("patch_col", body_patch)
+			# the bracer and greave bindings a worn wool a shade lighter than the sleeves, not
+			# bleached linen: pale patches on dark wool read as grey plate gauntlets and greaves
+			mat.set_shader_parameter("linen", body_wool.lerp(BINDING, 0.35))
 			# hose and inner sleeves only a little darker than the wool: at the hero's 0.55
 			# the arms between the garb pieces read as a black undersuit in low sun
 			mat.set_shader_parameter("hose_shade", HOSE_SHADE)
