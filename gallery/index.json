@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261024-0742-glide-side.jpg",
-  "time": "2026-10-24T07:42:10Z",
-  "caption": "Caelum's glider from the front quarter at 14:00: the wing arches and the panels belly between the battens, the linen bolts are duller but still read pale in full sun; the sky's cloud layer ends in hard vertical seams and the trailing legs smear grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-0822-glide-sky.jpg",
   "time": "2026-10-24T08:22:00Z",
   "caption": "Same glide framing as the last shot after the camera far-plane fix: the cloud deck now runs unbroken across the sky with no seams; the trailing legs below the robe still read as a pale grey smear and the hero is small in frame.",
@@ -891,6 +885,12 @@
   "file": "20261029-2020-roadmeet-hildwrap.jpg",
   "time": "2026-10-29T20:20:00Z",
   "caption": "Hild's forearm and shin wraps now read as solid cloth bands: the black-and-grey camouflage blotches (undersuit poking through) are gone; the wraps are still near-black against her smock and her hands still read as grey gauntlets (rendered before 85f57b8's mitts were rebased in).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261029-2125-roadmeet-hildshin.jpg",
+  "time": "2026-10-29T21:25:00Z",
+  "caption": "Hild at the road meeting at 16:30 with lighter shin wraps (cropped below the frame here); her forearm sleeves still read as black blocks, hands as grey gloves, and the kirtle panels are patchy and flat.",
   "verdict": "fail"
  }
 ]

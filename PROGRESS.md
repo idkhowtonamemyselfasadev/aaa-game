@@ -33,6 +33,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (21:25 10-29) Item (1) of the 20:20 list: Hild's (traveller.gd) and Wat/Osric's (neighbour.gd) shin/foot wraps
+  lifted a step, 0.075..0.31 -> 0.115..0.42 (wrap_calm 0.5 still halves the spread), so they no longer read near-
+  black against the smock. Shot hildshin (`roadmeet hildshin 20 16.5 clear hild chest`, Forward+, ~13 min; gallery
+  20261029-2125-roadmeet-hildshin.jpg, FAIL): the chest framing crops the shins, so the lift is unverified there;
+  the forearm sleeves (mitts rebased in) still read as BLACK blocks from elbow to wrist, the fingers as grey glove,
+  and the kirtle's front panel is patchy (dark/rust blocks). Bots villager, roadmeet, neighbour, hildnods PASS.
+  Content hours unchanged (visual work only).
 - (20:20 10-29) [rebased onto 85f57b8's sleeves + mitts; its sleeve pad 0.022 -> 0.012 so the
   forearm clearance is unchanged now that wrap_inset is 0] The black/grey blotches on villagers' forearms and shins were the base body poking THROUGH the
   wraps: rags.gd `_wrap` fits each wrap to the outermost rest-pose vertex per cell, minus `wrap_inset`, plus pad.
@@ -5917,6 +5924,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (21:25 10-29) Shin wraps lifted (see Done). NEXT, in order: (0) Hild's forearm sleeves read pure black in
+   hildshin: check which palette `sleeves` gets for Traveller/Pedlar (villager.gd fills it from body_wool*0.3..1.05;
+   Hild's body_wool may be very dark or `sleeves` lit only by the dark tone): lift to ~body_wool*0.6..1.3;
+   (1) a full-length Hild shot (`roadmeet ... hild` without `chest`) to judge the shin wraps and the kirtle's patchy
+   front panel; (2) the grey glove fingers (mitt to HandMiddle2/3); then 19:50's list from its item (3).
 0. (20:20 10-29) wrap_inset 0 on villagers (see Done), stacked on 19:50's sleeves + mitts. My hildwrap shot was
    rendered BEFORE the rebase (no mitts): retake `roadmeet <n> 20 16.5 clear hild chest` first. NEXT, in order:
    (0) that retake: check the shins and the thigh patches 19:50 saw under the kirtle (wrap_inset 0 adds 12 mm

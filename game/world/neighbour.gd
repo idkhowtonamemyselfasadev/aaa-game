@@ -153,7 +153,7 @@ func _dress() -> void:
 		# old grey-brown hemp: at 0.42 ochre the girdle was the brightest patch on him at dusk
 		"sash": [Color(0.07, 0.061, 0.046), Color(0.25, 0.218, 0.162), 0.35],
 		# mud-greyed linen: at 0.40 the shin wraps lit up under the darker smock
-		"wraps": [Color(0.075, 0.07, 0.062), Color(0.31, 0.294, 0.262), 0.4],
+		"wraps": [Color(0.115, 0.108, 0.095), Color(0.42, 0.40, 0.356), 0.4],
 	}
 	# to the calf with side gores: at 0.85 the old plate knee cops showed below the hem
 	garb.robe_len = 1.05
