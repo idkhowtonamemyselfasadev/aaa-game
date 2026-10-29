@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -182,6 +182,8 @@ func _ready() -> void:
 		return
 	if name == "roadmeet":
 		_roadmeet_test()
+	if name == "hildnods":
+		_hildnods_test()
 		return
 	if name == "villager":
 		_villager_test()
@@ -6075,6 +6077,65 @@ func _roadmeet_test() -> void:
 	if pd.warps + hd.warps > w0:
 		return _combat_done(false, "a walker got stuck %d times" % (pd.warps + hd.warps - w0))
 	_combat_done(true, "Hild comes over the fell at 14:30 as Wat walks back the other way; they meet on the road, stop face to face, he passes her the news and she answers, then they go on keeping to their right and pass without walking through each other")
+
+## Hild on her afternoon walk does not pass Edda or Osric without a word: she stops near her
+## line, turns to them, calls hers, they answer, and she goes on; Wat still gets his meeting.
+func _hildnods_test() -> void:
+	var hd: Traveller = _world.traveller
+	var pd: Pedlar = _world.pedlar
+	if hd == null or pd == null:
+		return _combat_done(false, "no traveller or no pedlar")
+	var tr: Terrain = _world.get_node("Terrain")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(30.0, tr.height_at(30.0, 30.0) + 0.5, 30.0)
+	for v in [_world.villager, _world.neighbour, pd, hd]:
+		v.settle(_world, 14.4)
+	var hj0 := hd.journeys
+	var w0 := hd.warps
+	var answers := {}
+	var a0 := {"Edda": _world.villager.greets, "Osric": _world.neighbour.greets}
+	var nod_d := {}
+	var faced := {}
+	var drift := 0.0
+	var from := Vector3.INF
+	var ticks := 0
+	for i in 40000:
+		_world.time_of_day = 14.6
+		await get_tree().physics_frame
+		ticks = i
+		if hd.journeys > hj0 and pd.journeys > 0:
+			break
+		if not hd.visible or hd.greeting <= 0.0 or hd.greet_to == null or hd.greet_to == pd:
+			from = Vector3.INF
+			continue
+		var n: Villager = hd.greet_to
+		if from == Vector3.INF:
+			from = hd.global_position
+			nod_d[n.who] = hd.global_position.distance_to(n.global_position)
+		drift = maxf(drift, hd.global_position.distance_to(from))
+		if hd.greeting < 1.5:
+			var a := hd.global_position.direction_to(n.global_position)
+			faced[n.who] = minf(faced.get(n.who, 9.0), absf(wrapf(atan2(a.x, a.z) - hd.body.rotation.y, -PI, PI)))
+	answers["Edda"] = _world.villager.greets - a0["Edda"]
+	answers["Osric"] = _world.neighbour.greets - a0["Osric"]
+	print("BOT hildnods: %d ticks, Hild journeys %d, warps %d, greeted %s, word at %s m, faced %s, drift %.2f m, answers %s, Wat greeted %s" % [ticks, hd.journeys - hj0, hd.warps - w0, hd.greeted.keys(), nod_d, faced, drift, answers, pd.greeted.keys()])
+	var nodded: Array = []
+	for who in ["Edda", "Osric"]:
+		if hd.greeted.has(who):
+			nodded.append(who)
+			if faced.get(who, 9.0) > 0.5:
+				return _combat_done(false, "Hild does not turn to %s when she calls (%.2f rad off)" % [who, faced.get(who, 9.0)])
+	if nodded.is_empty():
+		return _combat_done(false, "Hild walks through the village without a word to Edda or Osric")
+	if not hd.greeted.has("Wat"):
+		return _combat_done(false, "Hild's nods cost Wat his word on the road")
+	if drift > 0.4:
+		return _combat_done(false, "Hild walks on mid-word (%.2f m)" % drift)
+	if hd.journeys <= hj0:
+		return _combat_done(false, "Hild's walk did not finish (leg %d/%d)" % [hd._leg, hd._legs.size()])
+	if hd.warps > w0:
+		return _combat_done(false, "Hild got stuck %d times" % (hd.warps - w0))
+	_combat_done(true, "Hild stops for a word with %s on her way through, turned to them, gets her answer and goes on; Wat still gets his meeting on the road" % " and ".join(nodded))
 
 func _pedlar_test() -> void:
 	var pd: Pedlar = _world.pedlar

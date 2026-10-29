@@ -5,8 +5,42 @@ extends Pedlar
 ## the fell from the north-west at 14:30, the hour Wat walks back the other way, so the two of
 ## them meet on the road through the village: whoever sees the other first slows, Wat calls the
 ## news across, she answers, and they go on, keeping to their right so they pass left side to
-## left side. She does not stand about in the village (she has a market to make); she nods to
-## the hero if he comes close and can be spoken to like the others. Bots read `journeys`.
+## left side. She does not stand about in the village (she has a market to make), but she
+## does not walk past a neighbour without a word: when Edda or Osric is out of doors near her
+## line (Edda about her round, Osric on his wall) she stops, calls a word across, gets an answer
+## and goes on, once each per walk; Wat coming the other way always has the first claim on her.
+## She nods to the hero if he comes close and can be spoken to like the others. Bots read
+## `journeys` and `greeted`.
+
+const NOD_R := 7.5                         # she passes a word with a neighbour this near her line
+const WAT_FIRST := 14.0                    # ...unless Wat is this near: she keeps herself for him
+## What she calls to a neighbour in passing, by the hour, and what they say back.
+const HILD_EX := {
+	"Edda": {
+		"morning": [
+			["Morning, Edda! Anything for the coast?", "Only my love to the sea, Hild, and mind it doesn't spill."],
+		],
+		"day": [
+			["Edda! Is that lantern of yours still leaning?", "It's leaned since your mother walked this road. Go on with you."],
+			["Wat's on the road behind me, Edda, talking to the sheep.", "Then the sheep have my sympathy. Safe down, Hild."],
+		],
+		"evening": [
+			["Light it early tonight, Edda. There's weather on the fell.", "I always light it early. It's the rest of you that's late."],
+		],
+	},
+	"Osric": {
+		"morning": [
+			["Morning, Osric. Still on that wall?", "Still here, lass. The wall and me, we've an understanding."],
+		],
+		"day": [
+			["Osric! Your ewe with the limp is down by the ford.", "Is she now. She'll come up when she's hungry, like the rest of us."],
+			["Three ewes' worth on my back, Osric. Want to lift it?", "I lifted my share of fleeces, Hild. Forty years of them. You carry on."],
+		],
+		"evening": [
+			["You'll catch your death on that wall, old man.", "Then it'll find me leaning, and comfortable."],
+		],
+	},
+}
 
 func _init() -> void:
 	exchanges = {}
@@ -75,8 +109,30 @@ func settle(w: Node3D, at_hour: float) -> void:
 	super.settle(w, at_hour)
 	road_mate = w.get("pedlar")
 
-## She answers Wat; she does not open on anyone herself.
+## Wat she answers (he opens on her); Edda and Osric she opens on herself, in passing.
 func _pick_mate() -> void:
-	mate = road_mate
-	exchanges = {}
-	_greet_armed = false
+	if greeting > 0.0:
+		return
+	if road_mate != null and road_mate.visible and global_position.distance_to(road_mate.global_position) < WAT_FIRST:
+		mate = road_mate
+		exchanges = {}
+		_greet_armed = false
+		return
+	var best: Villager = null
+	var bd := INF
+	for v in [edda, osric]:
+		if v == null or v.state == IN or not v.visible or greeted.has(v.who):
+			continue
+		var d := global_position.distance_to(v.global_position)
+		if d < bd:
+			bd = d
+			best = v
+	mate = best
+	if mate == null or not on_road:
+		exchanges = {}
+		_greet_armed = false
+		return
+	exchanges = HILD_EX.get(mate.who, {})
+	greet_r = NOD_R
+	part_r = NOD_R + 4.0
+	_greet_armed = true
