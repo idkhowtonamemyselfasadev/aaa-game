@@ -234,9 +234,9 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# grey the forearm wraps and the base body's gloves read as grey plate gauntlets
 		tint = palette.get("sleeves", _calm(palette.get("wraps", ARM_LINEN)))
 		# a villager's sleeve stands fuller off the arm: at the bandage's 8 mm the base body's
-		# bracers and dark undersuit showed through in blotches
+		# bracers and dark undersuit showed through in blotches (12 mm here + no wrap_inset on villagers)
 		var sl := palette.has("sleeves")
-		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.022 if sl else 0.008, 6.0)
+		_wrap("mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side, 0.22, 0.97, 0.012 if sl else 0.008, 6.0)
 		if sl:
 			_wrap("mixamorig_%sHand" % side, "mixamorig_%sHandMiddle1" % side, 0.0, 0.85, 0.014, 3.0)
 		# under a long kirtle the thigh wraps take its wool: pale grey ones showed as plate

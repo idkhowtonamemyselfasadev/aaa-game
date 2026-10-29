@@ -240,7 +240,10 @@ func _ready() -> void:
 	_setup_animation()
 	garb = HeroGarb.new()
 	garb.name = "Garb"
-	garb.wrap_inset = PLATE_INSET * 0.6
+	# the wraps keep their full fitted clearance: inset by PLATE_INSET * 0.6 (12 mm) against a pad
+	# of 8-10 mm, the undersuit (which does not sink, only the plates do) stood 2-4 mm proud of
+	# them and showed through as black and grey blotches on every villager's forearms and shins
+	garb.wrap_inset = 0.0
 	garb.wrap_calm = 0.5
 	garb.mended = true
 	_dress()

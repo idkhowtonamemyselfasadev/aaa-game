@@ -886,5 +886,11 @@
   "time": "2026-10-29T19:50:00Z",
   "caption": "Hild's forearms now wear solid wool sleeves and mitts instead of grey gauntlets; fingers still grey glove, sleeves a touch too dark, pale thigh-plate patches still show through the side of the kirtle.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261029-2020-roadmeet-hildwrap.jpg",
+  "time": "2026-10-29T20:20:00Z",
+  "caption": "Hild's forearm and shin wraps now read as solid cloth bands: the black-and-grey camouflage blotches (undersuit poking through) are gone; the wraps are still near-black against her smock and her hands still read as grey gauntlets (rendered before 85f57b8's mitts were rebased in).",
+  "verdict": "fail"
  }
 ]
