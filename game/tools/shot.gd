@@ -1056,6 +1056,15 @@ func _ready() -> void:
 		var c := Vector2(mid.x, mid.z) + (perp * side + tw2 * sw).normalized() * 3.6
 		var cp := Vector3(c.x, terrain.height_at(c.x, c.y) + 1.5, c.y)
 		SPOTS[spot] = [cp, mid + Vector3.UP * 1.2]
+		if "hild" in args:
+			# a head-and-shoulders portrait of Hild at 1.2 m, halfway between her front and the
+			# verge lens: her face, the wimple under her chin, the hood round it
+			var fc: Vector3 = (hd.garb.face.global_transform * hd.garb.face.get_aabb()).get_center()
+			var hf := Vector3(sin(hd.goal_yaw), 0, cos(hd.goal_yaw))
+			var toc := cp - fc
+			toc.y = 0.0
+			var lf := (hf + toc.normalized()).normalized()
+			SPOTS[spot] = [fc + lf * 1.2 + Vector3.UP * 0.03, fc - Vector3.UP * 0.12]
 		var pp := mid + Vector3(dir.x, 0, dir.y) * 30.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.1, pp.z)
 	if spot == "pedlar":

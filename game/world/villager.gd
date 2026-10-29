@@ -286,6 +286,11 @@ func _dress() -> void:
 	garb.smock = true
 	garb.mantle_wool = true
 	garb.hood_linen = true
+	# her own face down past the nose, framed by a bleached linen wimple under the chin
+	# instead of the hero's dark face cloth (her face was a dark slot in the hood at 16:30)
+	garb.bare_face = true
+	garb.palette["veil"] = [Color(0.27, 0.26, 0.23), Color(0.46, 0.44, 0.40), 0.3]
+	garb.skin_col = Color(0.30, 0.225, 0.19)
 
 ## What she works with: the lamp taper and the axe at the woodpile.
 func _kit() -> void:

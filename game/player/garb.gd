@@ -59,6 +59,10 @@ var gores: Array[MeshInstance3D] = []
 ## upper lip, and a grey beard and moustache (beard.gdshader on the face cloth's shape) cover
 ## the jaw and the throat down into the mantle's collar.
 var beard := false
+## A woman's bare face instead of the face cloth: the face runs on down past the nose as the
+## bearded one does, and a pale linen wimple (the face cloth's shape, dropped under the nose)
+## wraps the chin and the throat down into the mantle's collar.
+var bare_face := false
 var beard_col := Color(0.36, 0.35, 0.33)
 ## A bearded face's skin (an old man's: the age path greys it further in skin.gdshader).
 var skin_col := Color(0.33, 0.27, 0.24)
@@ -87,6 +91,8 @@ const CAPE_LINE := 0.5
 const EYE_X := 0.031
 const EYE_Y := 1.968
 const EYE_R := 0.0125
+## A wimple's height against the face cloth's: its top edge (1.929) comes down to 1.874.
+const WIMPLE_SQUEEZE := 0.76
 ## A bearded face's lower edge (under the nose, behind the moustache).
 const FACE_LOW_BEARD := 1.872
 
@@ -132,6 +138,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		var vm := veil.material_override as ShaderMaterial
 		vm.set_shader_parameter("wool", 0.3 if hood_linen else 1.0)
 		vm.set_shader_parameter("fold_ao", 1.0)
+		if bare_face:
+			# the wimple: squeezed down from the top so its upper edge crosses under the nose (the
+			# face's own lower edge, see FACE_LOW_BEARD) while its hem stays tucked in the collar
+			# (dropped whole, it hung out over the chest as a pale bib)
+			veil.name = "Wimple"
+			veil.transform = Transform3D(Basis.from_scale(Vector3(1.02, WIMPLE_SQUEEZE, 1.01)),
+					Vector3(0.0, 1.70 * (1.0 - WIMPLE_SQUEEZE), 0.0))
 	head.add_child(veil)
 	_add_face(head)
 	if not hatless:
@@ -785,25 +798,25 @@ func _add_face(head: Node3D) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://shaders/skin.gdshader")
 	mat.set_shader_parameter("eyes", Vector4(-EYE_X, EYE_Y, EYE_X, EYE_Y))
-	if beard:
+	if beard or bare_face:
 		# the nose and upper lip show; only the strip under the moustache tucks into shade
 		mat.set_shader_parameter("low_tuck", 0.88)
 		# an old man's face: paler and greyer than the hero's sun-brown, which read as a flat
 		# orange mask under the warm face fill
-		mat.set_shader_parameter("age", 1.0)
+		mat.set_shader_parameter("age", 1.0 if beard else 0.0)
 		mat.set_shader_parameter("skin_col", skin_col)
 		mat.set_shader_parameter("lid_col", Color(0.26, 0.19, 0.16))
 		# a little more open: the 7 mm slit vanished under the brow at a few metres
 		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0044))
 	face = MeshInstance3D.new()
 	face.name = "Face"
-	face.mesh = _grid(_face_point, 40, 24 if beard else 14)
+	face.mesh = _grid(_face_point, 40, 24 if beard or bare_face else 14)
 	face.material_override = mat
 	face.layers = layer
 	head.add_child(face)
 	var emat := ShaderMaterial.new()
 	emat.shader = preload("res://shaders/eye.gdshader")
-	if beard:
+	if beard or bare_face:
 		# deep in the felt brim's shade the grey-buff white went to the skin's value and the
 		# eye vanished: a cleaner white keeps it reading as an eye at a few metres
 		emat.set_shader_parameter("sclera_gain", 1.27)
@@ -843,7 +856,7 @@ func _add_face(head: Node3D) -> void:
 	fill.light_specular = 0.12
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
-	if beard:
+	if beard or bare_face:
 		# the brow and the brim keep the broad fill off the sockets: a tiny light a hand in
 		# front of the eyes, out of reach of the beard and the hood, lifts only the eye line
 		# (its energy follows the fill's, see villager.gd)
@@ -883,7 +896,7 @@ func light_face(shade: Color) -> void:
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
 	var a := lerpf(-1.0, 1.0, u)
-	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, FACE_LOW_BEARD if beard else 1.914, v), true)
+	return _face_point_xy(sin(a) * 0.09, lerpf(2.016, FACE_LOW_BEARD if beard or bare_face else 1.914, v), true)
 
 ## The face surface at (x, y): a rounded front (0.19 m deep, 0.09 m wide) with the brow ridge,
 ## the nose bridge, the sockets and the cheekbones; `sockets` false gives the surface the
@@ -894,7 +907,7 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	var z := -0.035 + cos(a) * 0.19
 	# brow ridge over the eyes, the bridge of the nose running down the middle
 	z += 0.006 * exp(-pow((y - 1.992) / 0.008, 2.0)) * (1.0 - smoothstep(0.05, 0.075, absf(x)))
-	if beard:
+	if beard or bare_face:
 		# a whole nose: the bridge narrow between the eyes, widening and standing out to a
 		# rounded tip over the moustache, with the nostril wings either side of it; under it
 		# the lip runs back behind the moustache
@@ -913,7 +926,7 @@ func _face_point_xy(x: float, y: float, sockets: bool) -> Vector3:
 	# cheekbones forward under the outer eye corners, then the lower edge tucks back under the
 	# face cloth and the sides under the hood
 	z += 0.003 * exp(-pow((absf(x) - 0.045) / 0.015, 2.0)) * smoothstep(1.965, 1.945, y)
-	if not beard:
+	if not beard and not bare_face:
 		z -= 0.02 * smoothstep(1.932, 1.914, y)
 	z -= 0.03 * smoothstep(0.06, 0.09, absf(x))
 	return Vector3(x, y, z)

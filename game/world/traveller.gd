@@ -96,6 +96,10 @@ func _dress() -> void:
 	garb.basket = true
 	garb.basket_wares = true
 	garb.skin_col = Color(0.27, 0.205, 0.175)
+	# her own face down past the nose, framed by a bleached linen wimple under the chin
+	# instead of the hero's dark face cloth (her face was a dark slot in the hood at 16:30)
+	garb.bare_face = true
+	garb.palette["veil"] = [Color(0.27, 0.26, 0.23), Color(0.46, 0.44, 0.40), 0.3]
 	garb.fill_gain = 1.4
 
 ## A walking staff in her right hand; no lantern (she is off the road by dusk).
