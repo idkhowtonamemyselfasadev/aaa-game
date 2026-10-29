@@ -104,6 +104,9 @@ func _ready() -> void:
 	horn.mesh = _horn_mesh()
 	horn.material_override = _horn
 	horn.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# its own render layer, culled by the lamp: the candle a few cm behind the pane lit its
+	# albedo point-blank and blew it out flat white (as on the pedlar's hand lantern)
+	horn.layers = HandLantern.HORN_LAYER
 	pivot.add_child(horn)
 	# the candle on its pricket, and its flame
 	var base_y := -DROP - LH
@@ -140,6 +143,7 @@ func _ready() -> void:
 	lamp.shadow_enabled = true
 	lamp.shadow_bias = 0.03
 	lamp.light_size = 0.03
+	lamp.light_cull_mask = 0xFFFFF & ~HandLantern.HORN_LAYER
 	flame_pos.add_child(lamp)
 	lamp.position = Vector3(0, 0.01, 0)
 	# the post stops the hero

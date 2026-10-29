@@ -84,6 +84,10 @@ var hold_lift := false           # shots: keep the lantern up
 func _init() -> void:
 	exchanges = {}                   # Edda opens; he answers
 	who = "Osric"
+	# his sleeves and cuffs are the same undyed fleece-grey as the smock, not Edda's rust kirtle
+	# wool (the base Villager value), which read as red cuffs under the grey cape
+	body_wool = Color(0.15, 0.14, 0.125)
+	body_patch = Color(0.08, 0.075, 0.065)
 	idle_roll = 0.018                # an old man's weight shift: wider, slower, slow old lungs
 	idle_cycle = 9.0
 	idle_breath = 4.6

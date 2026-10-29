@@ -5740,6 +5740,22 @@ func _neighbour_test() -> void:
 	print("BOT neighbour face: %s over the jaw, face %.3f..%.3f m, eyes %d" % [g.veil.name if g.veil else "nothing", fb.position.y, fb.end.y, g.eyes.size()])
 	if g.veil == null or g.veil.name != "Beard" or g.face == null or fb.position.y > 1.88 or g.eyes.size() != 2:
 		return _combat_done(false, "Osric has no beard or no nose")
+	# his sleeves and cuffs are undyed fleece-grey wool, not Edda's rust kirtle
+	var red_wool := 0
+	var wools := 0
+	for mi in v.model.find_children("*", "MeshInstance3D", true, false):
+		for si in (mi as MeshInstance3D).mesh.get_surface_count():
+			var sm := (mi as MeshInstance3D).get_surface_override_material(si) as ShaderMaterial
+			if sm == null or sm.get_shader_parameter("wool") == null:
+				continue
+			wools += 1
+			var wc: Color = sm.get_shader_parameter("wool")
+			var pc: Color = sm.get_shader_parameter("patch_col")
+			if wc.r - wc.b > 0.08 or pc.r - pc.b > 0.06:
+				red_wool += 1
+	print("BOT neighbour body cloth: %d wool surfaces, %d red-dyed" % [wools, red_wool])
+	if wools == 0 or red_wool > 0:
+		return _combat_done(false, "Osric's sleeves are Edda's rust-red kirtle wool")
 	var o0 := fg.opens
 	var stages := [[6.9, "wake", 0], [7.5, "eggs", 700], [9.0, "lean", 200], [11.0, "tend", 700], [12.5, "in", 0], [14.0, "lean", 200], [17.1, "fell", 0], [19.2, "shut", 0], [20.0, "step", 0]]
 	for st in stages:
