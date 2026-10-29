@@ -7178,6 +7178,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (04:00 10-29) DUPLICATE WORK again: a 04:00 session built the same roadmeet MEET_R 3 + profile lens increment and
+  was dropped at rebase for main's 3cd901b (its `roadmeet2` shot from the -lft verge matched main's; bots roadmeet,
+  greet, neighbour, walk passed on it). Its one finding kept: `pedlar` bot FLAKY on HEAD 3ec7c3e (before either
+  roadmeet change): "the pedlar's fist pokes out of the lid's shadow" in ~2 of 3 runs (fist cover 1.1-1.5, pass
+  < 1). It is real, not a sampling artefact: probing lid_cover on process_frame (after HandLantern re-hangs) gave
+  1.3-1.5 every run. Spikes are brief (1-2 ticks) on legs 6 and 10, pivot yaw ~-0.35 rad, no sidesteps. Hanging
+  the pivot plumb above the hand (world-up offset instead of the wrist-local (0, 0.08, 0.025)) was WORSE (2.5-3.5),
+  so the hand marker's local axes are what keeps the bail over the fist. Next ideas: damp _sway when the hand
+  accelerates hard, or widen the lid a little, then re-look at a dusk `pedlar` shot.
 - (21:30 10-28) DUPLICATE WORK: a session started ~19:00 built the deer road crossing a second time (herd.gd crossing
   with its own RNG, `deercross` bot + shot spot); it was dropped at rebase for main's a637833. Check `git log origin/main`
   right after setup AND again before starting code, since sessions now overlap by an hour or more.
