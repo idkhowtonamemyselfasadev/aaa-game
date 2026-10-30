@@ -6034,6 +6034,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    `fellbell <n> 20 12.0` (taken this session, see gallery if they landed); (1) the masonry shader's weak sky-ambient
    in shade (give field stones a share of `ground_fill`/bounce on side faces like the turf), since the fold is in
    shade most of the afternoon; (2) thistles at the post foot; then the 07:50 list's items below.
+   SHOTS TAKEN (Forward+, 12:00; gallery 20261030-0820-foldnoon/-postnoon, both FAIL): `foldnoon` -- the ring reads
+   at last: slate-grey coursed rubble, lit tops, a clear gateway (so the 15:00 near-black was only shade). Still
+   wrong: the great stone reads as a dark leaning blade/slab, the overall light is flat. `postnoon` -- the bell
+   reads (verdigris), but the post is in the great stone's shadow even at noon and goes blue-black (timber shader
+   has the same weak sky-ambient as masonry: fix both together, item (1)), and the close-up lens sits inside tall
+   grass whose flat straw ribbons fill the frame: in shot.gd's `fellbell` close-up, clear the sward round the lens
+   (or raise the lens above the blades) and frame from the lit downhill side.
 0. (07:50 10-30) Fold stones = shadow, not shader (see Done). NEXT: (0) find what shades the fold at 15:00 (print a
    ray from fold_centre toward the sun in shot.gd: tree canopy? the fell crest?) and retake at an hour the sun is
    on it (e.g. 11:00-13:00) before touching albedo again; (1) in shade the masonry shader still goes much darker
