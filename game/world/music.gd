@@ -5,8 +5,8 @@ extends Node
 ## headed for full volume:
 ##  - "day":    Mystical Theme (Alexandr Zhelanov) out in Harrowmere Vale by daylight;
 ##  - "night":  Without (Alexandr Zhelanov), quieter, from dusk to first light;
-##  - "hearth": near Hesper's cookfire in the keep, Without again, closer and warmer
-##              (a theme of its own is still wanted, see AUDIO.md);
+##  - "hearth": near Hesper's cookfire in the keep, Lazy Day (FoxSynergy): lute, flute and
+##              a warm bass, a little softer after dark ("hearth_night");
 ##  - "combat": Battle in the Winter (Johan Brodd) the moment a Hollow Soldier stirs or the
 ##              hero locks on, held for HOLD s after the last enemy settles;
 ##  - a victory stinger, the last bars of Heroes Theme (Alexandr Zhelanov), when a fight ends
@@ -20,11 +20,13 @@ const TRACKS := {
 	"mystical": "vale_day_mystical_theme.ogg",
 	"without": "vale_night_without.ogg",
 	"battle": "combat_battle_in_the_winter.ogg",
+	"lazyday": "hearth_lazy_day.ogg",
 }
-const CUES := {                # cue -> [track, trim dB]; hearth and night share a track
+const CUES := {                # cue -> [track, trim dB]; the hearth by night is the same tune, softer
 	"day": ["mystical", -4.0],
 	"night": ["without", -8.0],
-	"hearth": ["without", -5.0],
+	"hearth": ["lazyday", -6.0],
+	"hearth_night": ["lazyday", -9.0],
 	"combat": ["battle", -3.0],
 }
 const STINGER := "victory_heroes_theme_end.ogg"
@@ -49,7 +51,7 @@ var _hold := 0.0
 var _fight_kills := 0
 var _foes := {}               # enemy -> was it stirred last frame
 var _duck := 0.0              # 0..1
-var _trim := {}               # track -> dB, eased so night -> hearth just swells
+var _trim := {}               # track -> dB, eased so the hearth tune just settles at dusk
 
 func _ready() -> void:
 	for c: String in TRACKS:
@@ -136,12 +138,13 @@ func _fighting(_delta: float) -> bool:
 func _vale_cue() -> String:
 	var pl := world.get_node_or_null("Player") as Node3D if world else null
 	var k = world.get("keeper") if world else null
+	var h: float = world.time_of_day if world and "time_of_day" in world else 12.0
+	var night := h < 5.5 or h >= 20.5
 	if pl != null and k != null and k.hearth_at != Vector3.ZERO:
 		var d := Vector2(pl.global_position.x - k.hearth_at.x, pl.global_position.z - k.hearth_at.z).length()
 		if d < HEARTH_R:
-			return "hearth"
-	var h: float = world.time_of_day if world and "time_of_day" in world else 12.0
-	return "night" if h < 5.5 or h >= 20.5 else "day"
+			return "hearth_night" if night else "hearth"
+	return "night" if night else "day"
 
 func _anyone_talking() -> bool:
 	if world == null:

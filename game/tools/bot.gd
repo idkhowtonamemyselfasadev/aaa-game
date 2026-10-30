@@ -2172,10 +2172,17 @@ func _music_test() -> void:
 	# by Hesper's fire
 	var hp := k.hearth_at + Vector3(2.0, 0, 0)
 	p.global_position = Vector3(hp.x, hp.y + 0.6, hp.z)
-	await _ticks(30)
-	print("BOT music: by the hearth cue %s" % m.cue)
-	if m.cue != "hearth":
-		return _combat_done(false, "no hearth cue by Hesper's fire")
+	await _ticks(60 * 4)
+	var hearth_pl: AudioStreamPlayer = m.get_node("Track_lazyday")
+	print("BOT music: by the hearth at night cue %s, hearth %.2f (%.1f dB) night %.2f" % [m.cue, m.gains["lazyday"], hearth_pl.volume_db, m.gains["without"]])
+	if m.cue != "hearth_night" or m.gains["lazyday"] < 0.99 or m.gains["without"] > 0.0 or not hearth_pl.playing:
+		return _combat_done(false, "the hearth theme did not take over by Hesper's fire at night")
+	var night_db := hearth_pl.volume_db
+	_world.time_of_day = 12.0
+	await _ticks(60 * 3)
+	print("BOT music: by the hearth at noon cue %s, %.1f dB (night %.1f dB)" % [m.cue, hearth_pl.volume_db, night_db])
+	if m.cue != "hearth" or hearth_pl.volume_db < night_db + 2.0:
+		return _combat_done(false, "hearth theme not warmer by day")
 	# a line on screen ducks the score
 	k.talking = 3.0
 	await _ticks(10)
@@ -2211,7 +2218,7 @@ func _music_test() -> void:
 	print("BOT music: after the stinger battle %.2f, %s %.2f" % [m.gains["battle"], m.cue, m.gains[Music.CUES[m.cue][0]]])
 	if m.gains["battle"] > 0.0 or m.gains[Music.CUES[m.cue][0]] < 0.99:
 		return _combat_done(false, "vale theme did not return after the fight")
-	_combat_done(true, "day/night/hearth cues crossfade, combat comes in and lingers, victory stinger, dialogue duck")
+	_combat_done(true, "day/night cues crossfade, the hearth has its own theme (softer at night), combat comes in and lingers, victory stinger, dialogue duck")
 
 ## The picture panel: each preset sets its passes, the quality slider and render scale in
 ## the pause menu drive them (FSR 2 below native), and both are kept in settings.cfg.

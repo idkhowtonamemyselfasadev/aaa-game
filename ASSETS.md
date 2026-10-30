@@ -116,6 +116,7 @@ with YouTube Content ID (checked by search, 2026-10-30; recheck in (e)).
 | music/vale_night_without.ogg | Without | https://opengameart.org/content/without | Alexandr Zhelanov | **CC BY 3.0** | 2026-10-30 |
 | music/combat_battle_in_the_winter.ogg | Battle in the winter | https://opengameart.org/content/battle-in-the-winter | Johan Brodd (jobromedia) | **CC BY 3.0** (also offered as OGA-BY 3.0 / GPL 3.0; used under CC BY 3.0) | 2026-10-30 |
 | music/victory_heroes_theme_end.ogg | Heroes Theme (last 8.3 s) | https://opengameart.org/content/heroes-theme | Alexandr Zhelanov | **CC BY 3.0** | 2026-10-30 |
+| music/hearth_lazy_day.ogg | Lazy Day (v0.9) | https://opengameart.org/content/lazy-day | FoxSynergy | **CC BY 3.0** (Debian edgar-data copyright + OGA page via search; tags lute, flute, warm, village; added 2026-10-30 23:00, loudnorm -16.5 LUFS, peak -1.4 dBFS) | 2026-10-30 |
 
 ## Procedural (no license needed)
 - Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
