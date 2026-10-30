@@ -39,6 +39,7 @@ uniform vec3 lime_algae : source_color = vec3(0.3, 0.34, 0.2);
 // sun- and sky-light thrown back by the meadow and the sunlit walls (World._apply_bounce;
 // zero when SDFGI runs). Ambient-like, so it fills the shade instead of going black.
 global uniform vec3 bounce_light;
+global uniform vec3 sky_floor;     // sky-dome floor for shaded faces, kept with SDFGI (World._apply_bounce)
 // low-sun skylight on open level ground (World._apply_bounce; 0 at noon, night and with SDFGI):
 // the door stones' walked tops and the wall tops get it as the terrain and grass round them do
 global uniform vec3 ground_fill;
@@ -376,7 +377,11 @@ void fragment() {
 	float away = clamp(-dot(vec3(n.x, 0.0, n.z), normalize(vec3(sl.x, 0.0, sl.z) + 1e-4)), 0.0, 1.0)
 			* smoothstep(-0.05, 0.15, sl.y);
 	facing *= 1.0 + 0.9 * away * (1.0 - clamp(n.y, 0.0, 1.0));
-	EMISSION = ALBEDO * bounce_light * facing * AO;
+	// field stones out on the open fell look into the whole sky dome like rock.gdshader's
+	// boulders: the same floor (weaker -- a wall stone is half-hidden by its neighbours), only
+	// on field walls, so a keep's or cottage's walls do not glow indoors
+	vec3 floor_l = sky_floor * 0.75 * mix(1.0, 0.6, clamp(n.y, 0.0, 1.0)) * (0.6 + 0.8 * away) * field;
+	EMISSION = ALBEDO * max(bounce_light * facing, floor_l) * AO;
 	// low sun: the open sky over a level top, unoccluded by SSAO (which crushed the door
 	// stones to black in the cottage's shade while the earth round them was lifted)
 	EMISSION += ALBEDO * ground_fill * smoothstep(0.5, 0.9, n.y) * AO;

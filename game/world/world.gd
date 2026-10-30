@@ -699,6 +699,8 @@ const GROUND_FILL := 0.6
 const NIGHT_GROUND_FILL := 0.7
 ## share of the sky ambient a shaded rock face keeps as a floor (rock.gdshader `sky_floor`)
 const SKY_FLOOR := 3.0
+## hue of the light thrown up off the sunlit meadow (sky_floor's warm share)
+const SKY_FLOOR_WARM := Color(0.62, 0.56, 0.38)
 var night_ground_fill := NIGHT_GROUND_FILL   # shot.gd `ngfill=` overrides it for A/B tests
 var sky_floor := Vector3.ZERO   # last value written to the sky_floor global
 var bounce_light := Vector3.ZERO   # last value written to the bounce_light global
@@ -741,6 +743,10 @@ func _apply_bounce(e: Environment) -> void:
 	# (3.0: at 1.0 it stayed under the 14:00 bounce fill and changed nothing; halved with
 	# SDFGI, whose own GI it adds to -- unverified on a real GPU)
 	var sf := e.ambient_light_color * e.ambient_light_energy * SKY_FLOOR * (0.5 if e.sdfgi_enabled else 1.0)
+	# a quarter of it comes off the lit sward, not the blue dome: at the pure sky tint the
+	# shaded flanks read a touch blue beside the warm grass (SKY_FLOOR_WARM keeps the luminance)
+	var sl := sf.get_luminance()
+	sf = sf.lerp(SKY_FLOOR_WARM * (sl / maxf(SKY_FLOOR_WARM.get_luminance(), 0.001)), 0.25)
 	sky_floor = Vector3(sf.r, sf.g, sf.b)
 	RenderingServer.global_shader_parameter_set("sky_floor", sky_floor)
 	if e.sdfgi_enabled:

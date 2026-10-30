@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261025-0551-lobes2-village.jpg",
-  "time": "2026-10-25T05:51:24Z",
-  "caption": "Village view with stronger lobed oak crowns: the right-hand oaks now break into several shaded domes with dark creases; crowns still dull olive and the left wood reads as one dark mass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-0621-fieldsfar-village.jpg",
-  "time": "2026-10-25T06:21:00Z",
-  "caption": "Village view with field tints raised at distance: the middle ground past 80 m now breaks into green pasture, gold hay and brown fallow patches instead of one olive-tan; crowns still dull olive and the hero is not in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-0748-sashknot-hero.jpg",
-  "time": "2026-10-25T07:48:38Z",
-  "caption": "The hero at noon by the training post with the sash now a muted, creased cloth band (wound twice, knot and tails on the far hip) instead of a flat bright-yellow ring; the indigo hood still reads as a flat box and the straw hat as a plain cone.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-0828-hoodface.jpg",
   "time": "2026-10-25T08:28:41Z",
   "caption": "Head-and-shoulders of the hero at noon: the hood is now faded slate-blue wool with drape folds and shaded valleys over the shoulders, and the straw hat has a tied crown peak and a rolled, bound rim; the hat still reads too bright and smooth a yellow, and the face looks doll-like.",
@@ -897,6 +879,18 @@
   "file": "20261030-1220-boulderbefore.jpg",
   "time": "2026-10-30T12:50:00Z",
   "caption": "The same boulder before this session's change, for comparison: the face turned from the sun is near-black, darker than the shaded grass beside it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1330-foldfloor.jpg",
+  "time": "2026-10-30T13:30:00Z",
+  "caption": "The old fold at noon with the sky floor on its field stones: the shaded wall faces read as grey rubble instead of black; the stones are still blocky slabs and the light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1330-boulderwarm.jpg",
+  "time": "2026-10-30T13:30:00Z",
+  "caption": "A meadow boulder at 14:00 with the warmed sky floor: the shaded flank is neutral grey granite instead of a blue cast; the stone still sits in a flat, lifeless meadow.",
   "verdict": "fail"
  }
 ]
