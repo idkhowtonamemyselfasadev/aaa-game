@@ -892,5 +892,11 @@
   "time": "2026-10-30T13:30:00Z",
   "caption": "A meadow boulder at 14:00 with the warmed sky floor: the shaded flank is neutral grey granite instead of a blue cast; the stone still sits in a flat, lifeless meadow.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261030-1430-lumpfold.jpg",
+  "time": "2026-10-30T14:30:00Z",
+  "caption": "The old fold at noon: its field stones are now irregular lumps with knocked-off corners instead of squared slabs; still too bluish-grey and small, and the light is flat.",
+  "verdict": "fail"
  }
 ]

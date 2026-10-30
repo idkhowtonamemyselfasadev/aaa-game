@@ -269,7 +269,7 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 	for v in 6:
 		var d := Vector3(lerpf(0.7, 1.15, (v + rng.randf()) / 6.0), rng.randf_range(0.34, 0.48), FOLD_W * 2.0)
 		dims.append(d)
-		meshes.append(ruins._block_mesh(d, 80 + v, minf(rng.randf_range(0.11, 0.14), d.y * 0.5 - 0.02), rng.randf_range(1.7, 2.1)))
+		meshes.append(ruins._block_mesh(d, 80 + v, minf(rng.randf_range(0.11, 0.14), d.y * 0.5 - 0.02), rng.randf_range(1.7, 2.1), 1.0))
 		per.append([])
 	var c2 := fold_centre()
 	var ga := _gate_angle()

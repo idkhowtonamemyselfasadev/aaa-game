@@ -654,13 +654,21 @@ func _place(p: Vector3, b: Basis, size: Vector3, above: float, collide: bool, v:
 ## A cut stone of size d: a subdivided box rounded off by BEVEL, its arrises and corners
 ## chipped with noise, faces slightly dished/bulged.
 ## bevel and rough default to the ruins' dressed stone; a field wall passes a bigger bevel
-## and rougher chips for rounder, more broken rubble.
-func _block_mesh(d: Vector3, v: int, bevel := BEVEL, rough := 1.0) -> ArrayMesh:
+## and rougher chips for rounder, more broken rubble. lump > 0 (field rubble) pulls each of
+## the eight corners in or out at random and swells the faces, so the stone is an irregular
+## lump rather than a squared block.
+func _block_mesh(d: Vector3, v: int, bevel := BEVEL, rough := 1.0, lump := 0.0) -> ArrayMesh:
 	var n := FastNoiseLite.new()
 	n.seed = seed + 50 + v
 	n.frequency = 4.0
 	n.fractal_octaves = 3
 	var h := d * 0.5
+	var corners: Array[Vector3] = []
+	var crng := RandomNumberGenerator.new()
+	crng.seed = seed + 900 + v
+	for i in 8:
+		# mostly inward: corners knocked off, a few faces left long
+		corners.append(Vector3(crng.randf_range(-0.32, 0.1), crng.randf_range(-0.28, 0.12), crng.randf_range(-0.22, 0.08)) * lump)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for axis in 3:
@@ -679,6 +687,8 @@ func _block_mesh(d: Vector3, v: int, bevel := BEVEL, rough := 1.0) -> ArrayMesh:
 					p[u_ax] = us[iu]
 					p[v_ax] = vs[iv]
 					var sp := _shape(p, h, n, bevel, rough)
+					if lump > 0.0:
+						sp = _lump(sp, h, corners, n, lump)
 					jg[sp] = _joint(p, h)
 					row.append(sp)
 				grid.append(row)
@@ -705,6 +715,22 @@ func _block_mesh(d: Vector3, v: int, bevel := BEVEL, rough := 1.0) -> ArrayMesh:
 	if material:
 		mesh.surface_set_material(0, material)
 	return mesh
+
+## Field rubble: shifts a shaped vertex by the trilinear blend of the eight corner offsets
+## (scaled by the half-size, so a corner moves a share of the stone) and swells the faces
+## outward by a low-frequency bulge that dies at the corners. A function of position only,
+## so faces still share their arris vertices.
+func _lump(q: Vector3, h: Vector3, corners: Array[Vector3], n: FastNoiseLite, lump: float) -> Vector3:
+	var t := (q / h).clamp(-Vector3.ONE, Vector3.ONE) * 0.5 + Vector3.ONE * 0.5
+	var off := Vector3.ZERO
+	for i in 8:
+		var w := (t.x if i & 1 else 1.0 - t.x) * (t.y if i & 2 else 1.0 - t.y) * (t.z if i & 4 else 1.0 - t.z)
+		off += corners[i] * w
+	var cq := q + Vector3(sign(q.x), sign(q.y), sign(q.z)) * h * off
+	var r := (q / h).abs()
+	var mid := (1.0 - r.x * r.x) * (1.0 - r.y * r.y) + (1.0 - r.y * r.y) * (1.0 - r.z * r.z) + (1.0 - r.x * r.x) * (1.0 - r.z * r.z)
+	var swell := (0.04 + 0.03 * n.get_noise_3dv(q * 0.5 + Vector3(5, 2, 7))) * lump * minf(h.x, minf(h.y, h.z)) * 2.0
+	return cq + q.normalized() * swell * clampf(mid, 0.0, 1.0)
 
 ## Vertex colour r: how far a point lies from the stone's end and bed arrises (0 on the end
 ## and bed faces, 1 at >= 15 cm in on the face), so the shader can sink the joints into
