@@ -662,8 +662,8 @@ func _ready() -> void:
 			# the ruined fold ring from down the slope outside it, the post at its gateway
 			var fc2 := FellBell.fold_centre()
 			var fc := Vector3(fc2.x, terrain.height_at(fc2.x, fc2.y), fc2.y)
-			cp = fc + down * 6.5 - sd * 3.0
-			cp.y = maxf(terrain.height_at(cp.x, cp.z), fc.y) + 2.0
+			cp = fc + down * 7.5 - sd * 3.5
+			cp.y = maxf(terrain.height_at(cp.x, cp.z), fc.y) + 3.0
 			look = fc + Vector3.UP * 0.3
 			print("SHOT fellbell fold: %d stones" % b.fold_stones)
 		SPOTS[spot] = [cp, look]

@@ -9,7 +9,7 @@ extends Node3D
 ## swing, so the hero hears it from down the slope before seeing it. While the quest is at its
 ## first step the HUD offers "Take" beside the post; taken, the bell and collar go with the hero.
 ## Round the post lie the bones of the fold itself (`_fold`): a ring of dry-stone wall butted
-## against the great stone, tumbled to one to three courses with breaches and its fallen stones
+## against the great stone, tumbled to one to four courses with breaches and its fallen stones
 ## spilt in the turf, the post standing as the broken gateway's jamb.
 ## Bots read `rings`, `taken`, `max_swing` and `fold_stones`.
 
@@ -64,9 +64,9 @@ static func _gate_angle() -> float:
 	var d := foot_xz() - fold_centre()
 	return atan2(d.y, d.x)
 
-## How much of the wall still stands at angle `a` on the ring: 0 a breach .. 1 three courses.
+## How much of the wall still stands at angle `a` on the ring: 0 a breach .. 1 four courses.
 static func _standing(a: float) -> float:
-	return clampf(0.55 + 0.35 * sin(a * 3.0 + 1.3) + 0.25 * sin(a * 7.0 + 0.4) + 0.12 * sin(a * 13.0 + 2.2), 0.0, 1.0)
+	return clampf(0.68 + 0.35 * sin(a * 3.0 + 1.3) + 0.25 * sin(a * 7.0 + 0.4) + 0.12 * sin(a * 13.0 + 2.2), 0.0, 1.0)
 
 ## True when (x, z) lies on the fold's tumbled wall plus `margin` (grass and flowers keep off).
 static func on_fold(x: float, z: float, margin: float = 0.0) -> bool:
@@ -179,7 +179,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	if ruins != null:
 		_fold(terrain, ruins)
 
-## The old fold: field rubble laid round the ring in up to three courses, each stone a single
+## The old fold: field rubble laid round the ring in up to four courses, each stone a single
 ## through-stone the wall's width, the courses fallen where `_standing` is low and their stones
 ## lying tilted and half sunk in the turf on either side; a cope stone on edge here and there
 ## where the wall stands full. Ruins' chipped block meshes at twice size, scaled down, in the
@@ -213,26 +213,26 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 		# the gateway's jambs fall lowest: the stones nearest the post are mostly gone
 		var to_gate := minf(absf(angle_difference(a, ga + FOLD_GATE)), absf(angle_difference(a, ga - FOLD_GATE)))
 		stand *= clampf(to_gate / 0.35, 0.25, 1.0)
-		var courses := int(round(stand * 3.0 + rng.randf_range(-0.3, 0.3)))
+		var courses := int(round(stand * 4.0 + rng.randf_range(-0.3, 0.3)))
 		var y := gy - 0.08                 # the foundation course sits in the turf
 		var dir := Vector3(tang.x, 0, tang.y)
 		var out := Vector3(radial.x, 0, radial.y)
 		for k in courses:
-			var h := rng.randf_range(0.18, 0.25) * (1.0 - k * 0.08)
-			var size := Vector3(rng.randf_range(0.42, 0.56), h, FOLD_W * rng.randf_range(0.85, 1.0) * (1.0 - k * 0.1))
+			var h := rng.randf_range(0.18, 0.25) * (1.0 - k * 0.06)
+			var size := Vector3(rng.randf_range(0.42, 0.56), h, FOLD_W * rng.randf_range(0.85, 1.0) * (1.0 - k * 0.08))
 			var b := Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out)
 			b = b * Basis(Vector3.FORWARD, rng.randf_range(-0.06, 0.06)) * Basis(Vector3.UP, rng.randf_range(-0.12, 0.12))
 			var cen := Vector3(p2.x, y + h * 0.5, p2.y) + dir * rng.randf_range(-0.05, 0.05) + out * rng.randf_range(-0.04, 0.04)
 			_fold_stone(rng, per, dims, cen, b, size, cen.y - gy, 1.0)
 			y += h * 0.96
-		if courses == 3 and rng.randf() < 0.5:
+		if courses == 4 and rng.randf() < 0.6:
 			# a cope stone on edge, leaning along the wall
 			var size := Vector3(0.16, rng.randf_range(0.26, 0.32), FOLD_W * 0.7)
 			var b := Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out) * Basis(Vector3.FORWARD, rng.randf_range(-0.25, 0.25))
 			_fold_stone(rng, per, dims, Vector3(p2.x, y + size.y * 0.45, p2.y), b, size, y - gy, 1.0)
 			y += size.y * 0.9
 		# the fallen courses lie spilt on either side, tilted, half sunk
-		for k in 3 - courses:
+		for k in 4 - courses:
 			if rng.randf() < 0.3:
 				continue
 			var side := 1.0 if rng.randf() < 0.6 else -1.0   # more fell outward, down the slope
