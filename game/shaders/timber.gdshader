@@ -80,8 +80,8 @@ void fragment() {
 		col = mix(col, moss_col * mix(0.7, 1.2, vn(op * 40.0)), m);
 		// crottle: round crusted rosettes with pale rims, on the grey wood only
 		float r = fbm(op * vec3(55.0, 30.0, 55.0)) + (fbm(op * vec3(6.0, 2.0, 6.0)) - 0.5) * 0.35;
-		float crust = smoothstep(0.62, 0.66, r) * lichen * (1.0 - m * 0.8) * 0.85;
-		col = mix(col, lichen_col * mix(0.75, 1.1, vn(op * 160.0)) * (1.0 - smoothstep(0.69, 0.74, r) * 0.3), crust);
+		float crust = smoothstep(0.66, 0.69, r) * lichen * (1.0 - m * 0.8) * 0.85;
+		col = mix(col, lichen_col * mix(0.75, 1.1, vn(op * 160.0)) * (1.0 - smoothstep(0.71, 0.75, r) * 0.3), crust);
 		rough = mix(rough, 0.95, max(m, crust));
 	}
 	weather_wetten(col, rough, 0.8);

@@ -106,6 +106,8 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	tm.set_shader_parameter("oak_dark", Color(0.075, 0.068, 0.055))
 	# crottle and moss on its weather side and up from the turf
 	tm.set_shader_parameter("lichen", 1.0)
+	# warm grey-ochre crust, not the pale blue-white it read as in the stone's shade
+	tm.set_shader_parameter("lichen_col", Color(0.52, 0.5, 0.36))
 	tm.set_shader_parameter("weather_dir", Vector3(-WIND_DIR.x, 0.0, -WIND_DIR.y))
 	tm.set_shader_parameter("foot_y", -(POST_H - 0.25) * 0.5)
 	cm.surface_set_material(0, tm)
@@ -206,7 +208,7 @@ func _post_mesh() -> ArrayMesh:
 		var taper := lerpf(1.0, 0.8, t) * (1.0 + rng.randf_range(-0.03, 0.03))
 		var twist := sin(t * 2.3 + 0.6) * 0.06
 		var off := Vector2(sin(t * 3.1) * 0.006, cos(t * 2.4 + 1.0) * 0.005)
-		var depth := smoothstep(0.55, 0.95, t) * 0.024
+		var depth := smoothstep(0.55, 0.95, t) * 0.03
 		var pts: Array[Vector3] = []
 		for k in SIDES:
 			var a := ang[k] + twist
@@ -215,8 +217,10 @@ func _post_mesh() -> ArrayMesh:
 			if k == SPLIT_FACE:
 				var a2 := ang[(k + 1) % SIDES] + twist + (TAU if k + 1 == SIDES else 0.0)
 				var c2 := Vector2(cos(a2), sin(a2)) * rad[(k + 1) % SIDES] * taper + off
-				var e1 := c.lerp(c2, 0.44)
-				var e2 := c.lerp(c2, 0.53)
+				# the check gapes ~12% of the face at the head and closes to a hairline
+				var gape := 0.004 + smoothstep(0.55, 0.95, t) * 0.058
+				var e1 := c.lerp(c2, 0.485 - gape)
+				var e2 := c.lerp(c2, 0.485 + gape)
 				var mid := c.lerp(c2, 0.485)
 				var fl := mid - mid.normalized() * depth
 				pts.append(Vector3(e1.x, y, e1.y))

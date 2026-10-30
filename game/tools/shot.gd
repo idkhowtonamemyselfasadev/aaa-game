@@ -666,6 +666,15 @@ func _ready() -> void:
 			cp.y = maxf(terrain.height_at(cp.x, cp.z), fc.y) + 3.0
 			look = fc + Vector3.UP * 0.3
 			print("SHOT fellbell fold: %d stones" % b.fold_stones)
+			if "plain" in args:
+				# diagnostic: the fold stones in a flat grey StandardMaterial3D, to tell the masonry
+				# shader's shading from the geometry/normals when they read near-black
+				var pm := StandardMaterial3D.new()
+				pm.albedo_color = Color(0.5, 0.5, 0.5)
+				pm.roughness = 0.9
+				for ch in b.get_children():
+					if ch is MultiMeshInstance3D and ch.name.begins_with("Fold_"):
+						ch.material_override = pm
 		SPOTS[spot] = [cp, look]
 		print("SHOT fellbell at %s" % at)
 	if spot == "wander":

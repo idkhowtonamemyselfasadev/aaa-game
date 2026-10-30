@@ -886,5 +886,17 @@
   "time": "2026-10-30T06:35:14Z",
   "caption": "The fell bell on its post, now a hewn eight-sided oak quarter: the facets read, but the post is too dark in the great stone's shade, the lichen reads as pale spots and the check split doesn't show.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261030-0750-foldlift.jpg",
+  "time": "2026-10-30T07:29:04Z",
+  "caption": "The old fold at 15:00 after lifting the field-stone value range: almost no change, the stones still read blue-black because the whole site stands in cast shadow and gets only cool sky ambient",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0750-foldplain.jpg",
+  "time": "2026-10-30T07:29:04Z",
+  "caption": "Diagnostic: the fold stones in plain 0.5 grey also read flat sky-blue with no sun term, proving the near-black is cast shadow plus low masonry albedo/AO, not broken normals",
+  "verdict": "fail"
  }
 ]
