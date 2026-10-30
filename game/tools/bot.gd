@@ -1945,12 +1945,18 @@ func _sweep_test() -> void:
 func _sound_test() -> void:
 	var ss: Soundscape = _world.soundscape
 	var wx: Weather = _world.weather
-	print("BOT sound: synthesised in %d ms" % ss.build_ms)
-	for k in ["WindBed", "LeavesBed", "RainBed", "CricketsBed"]:
-		var bed: AudioStreamPlayer = ss.get_node(k)
-		var st: AudioStreamWAV = bed.stream
-		if st == null or st.data.size() < 20000 or st.loop_mode != AudioStreamWAV.LOOP_FORWARD:
-			return _combat_done(false, "%s has no looping stream" % k)
+	print("BOT sound: built in %d ms, recorded %s" % [ss.build_ms, str(ss.recorded)])
+	# owner 0b: the weather beds, thunder and songbirds must be recordings, not synthesis
+	for k in ["WindBed", "LeavesBed", "RainBed", "RainHeavyBed", "CricketsBed"]:
+		if not ss.has_node(k):
+			return _combat_done(false, "%s missing" % k)
+		var st := ss.get_node(k).stream as AudioStreamOggVorbis
+		if st == null or not st.loop or st.get_length() < 10.0:
+			return _combat_done(false, "%s is not a looping recording" % k)
+	if not ss.recorded.get("thunder", false) or ss._thunder_near.size() < 3 or ss._thunder_far.size() < 3:
+		return _combat_done(false, "thunder is not 3+ recorded cracks and 3+ distant rolls")
+	if not ss.recorded.get("birds", false) or ss._songs.size() < 5:
+		return _combat_done(false, "songbird calls are not 5+ recordings")
 	wx.force(0.0)
 	_world.time_of_day = 6.5
 	var c0 := ss.calls
@@ -1971,8 +1977,8 @@ func _sound_test() -> void:
 	wx.force(1.0)
 	await _ticks(60 * 4)
 	var storm: Dictionary = ss.levels.duplicate()
-	print("BOT sound storm: rain %.2f wind %.2f, weather rain %.2f wind %.2f" % [storm.rain, storm.wind, wx.rain, wx.wind])
-	if storm.rain < 0.8 or storm.wind <= dawn.wind or storm.birds > 0.2:
+	print("BOT sound storm: rain %.2f heavy %.2f wind %.2f, weather rain %.2f wind %.2f" % [storm.rain, storm.rain_heavy, storm.wind, wx.rain, wx.wind])
+	if storm.rain < 0.8 or storm.rain_heavy < 0.8 or dawn.rain_heavy > 0.01 or storm.wind <= dawn.wind or storm.birds > 0.2:
 		return _combat_done(false, "storm not louder than the calm, or birds singing through it")
 	var k0 := ss.claps
 	wx.lightning.strike()

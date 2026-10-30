@@ -9,7 +9,7 @@ audit every third-party file's license.
 | Item | State |
 |---|---|
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
-| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00: all combat, footstep and fire sounds (except Hesper's tinder `blow`) plus gate creak and wood chop are recorded samples (`game/audio/sfx/`, 69 files, 1.1 MB). Remaining: `blow`, all animal/bird calls, wind/rain/insect/thunder beds, dust devil, voices, grain, fell bell — see "Replaced" below |
+| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). Remaining: `blow`, the animal calls (deer, fox, collie, hens, bat), rooks' caws, kite, wheatears, dust devil, voices, grain, fell bell — see "Replaced" below |
 | (c) Music: tracks + music system | not started (Music bus + pause-menu slider already exist) |
 | (d) Headless verification + peak levels | not started |
 | (e) Copyright audit + in-game Credits screen | not started |
@@ -56,12 +56,26 @@ Ogg Vorbis, peak <= -2 dBFS after encoding (checked with ffmpeg astats). Sources
 | hearth crackle (loop) | 1 | Dynamicell campfire, 4 takes crossfaded into a seamless 18 s loop |
 | hearth flint | 1 | flint and steel (Benboncan, CC BY 3.0) |
 
+Weather and songbirds (2026-10-30 20:00), loaded by `soundscape.gd` (`_rec_or`, `Samples`); each layer keeps its
+synthesised stand-in only if its file is missing, and `Soundscape.recorded` says which layers are recordings:
+
+| Layer | Files | Recording |
+|---|---|---|
+| wind bed | weather/wind_loop (90 s) | felix.blume open wind (CC0); pitch now bends only +-2 % with strength |
+| leaves bed | weather/leaves_loop (13 s) | felix.blume wind, high-passed (CC0) |
+| rain bed | weather/rain_loop (58 s) | Corsica_S forest rain (CC BY) |
+| heavy rain bed (new) | weather/rain_heavy_loop (44 s) | D W heavy rain (CC BY); fades in above rain 0.45, full at 1.0 |
+| crickets bed | weather/crickets_loop (45 s) | Lisa Redfern crickets at night (PD) |
+| thunder | weather/thunder_near_1..3, thunder_far_1..3 | RHumphries thunderstorm (CC BY): three cracks, three low-passed distant rolls |
+| songbird calls (positional, from the oaks) | birds/song_1..6 (4 s each) | single calls cut from kvgarlic and sonidosreales245 woodland recordings (CC0) |
+
 Bots: `foley` fails unless the priority-1 names are recorded `AudioStreamOggVorbis` sets of 3+; `hearth` fails
-unless the crackle is a looping recorded stream and the flint is recorded.
+unless the crackle is a looping recorded stream and the flint is recorded; `sound` fails unless the five beds are
+looping recordings, thunder is 3+3 recordings and the songbird calls are 5+ recordings.
 
 ## Every sound in the game
 
-All 63 sound names below are **synthesised** (noise + oscillators, built in GDScript at load).
+As audited 2026-10-30 18:00, all 63 sound names below were **synthesised** (see "Replaced" above for what is now recorded).
 There are **no sample files in the repo**. Verdict for every one: **replace** (owner: synthesised
 sound does not sound real). Priority 1 = worst offenders, replace first.
 

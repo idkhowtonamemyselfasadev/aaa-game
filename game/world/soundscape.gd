@@ -1,6 +1,9 @@
 class_name Soundscape
 extends Node3D
-## The vale's layered soundscape, synthesised at load (no sample files): a wind bed that
+## The vale's layered soundscape. Wind, leaves, rain (light + heavy), crickets, thunder and
+## the songbirds' calls are recorded CC0 / CC-BY field recordings (res://audio/sfx/weather/,
+## /birds/, credited in ASSETS.md); the rooks' and kites' calls are still synthesised at load,
+## and every layer falls back to its synthesised stand-in if its file is missing. A wind bed that
 ## swells with the weather, a rain hiss with drop patter, a dawn/dusk-weighted birdsong of
 ## whistles, trills and two-note calls from the oak groves, crickets in the night grass,
 ## rook caws + wing clatter when a flock scatters, the red kites' thin whistle from high over
@@ -23,9 +26,10 @@ var build_ms := 0         # synthesis time at load (bots)
 
 var _rng := RandomNumberGenerator.new()
 var _beds := {}           # name -> AudioStreamPlayer
-var _songs: Array[AudioStreamWAV] = []
-var _thunder_near: AudioStreamWAV
-var _thunder_far: AudioStreamWAV
+var _songs: Array = []          # AudioStream: recorded bird calls, else synthesised
+var _thunder_near: Array = []   # recorded cracks, else one synthesised
+var _thunder_far: Array = []    # recorded distant rolls, else one synthesised
+var recorded := {}              # layer -> true when it plays a recording (bots)
 var _caw: AudioStreamWAV
 var _kite_songs: Array[AudioStreamWAV] = []   # soaring calls
 var _kite_harsh: AudioStreamWAV
@@ -40,14 +44,26 @@ var _last_mob := 0
 func _ready() -> void:
 	_rng.seed = 7741
 	var t0 := Time.get_ticks_msec()
-	_bed("wind", _make_wind(), -6.0)
-	_bed("leaves", _make_leaves(), -10.0)
-	_bed("rain", _make_rain(), -4.0)
-	_bed("crickets", _make_crickets(), -14.0)
-	for k in 6:
-		_songs.append(_make_song(k))
-	_thunder_near = _make_thunder(true)
-	_thunder_far = _make_thunder(false)
+	# recorded beds are levelled by their RMS (wind -23, leaves -20, rain -21, heavy rain -25,
+	# crickets -21 dBFS) so each sits where the old synthesised layer did
+	_bed("wind", _rec_or("wind_loop", _make_wind), -6.0, -8.0)
+	_bed("leaves", _rec_or("leaves_loop", _make_leaves), -10.0, -16.0)
+	_bed("rain", _rec_or("rain_loop", _make_rain), -4.0, -7.0)
+	var heavy := Samples.load_loop("weather", "rain_heavy_loop")
+	if heavy:
+		_bed("rain_heavy", heavy, 0.0, -6.0)
+	_bed("crickets", _rec_or("crickets_loop", _make_crickets), -14.0, -17.0)
+	_songs = Samples.load_set("birds", "song")
+	recorded["birds"] = _songs.size() > 0
+	if _songs.is_empty():
+		for k in 6:
+			_songs.append(_make_song(k))
+	_thunder_near = Samples.load_set("weather", "thunder_near")
+	_thunder_far = Samples.load_set("weather", "thunder_far")
+	recorded["thunder"] = _thunder_near.size() > 0 and _thunder_far.size() > 0
+	if not recorded["thunder"]:
+		_thunder_near = [_make_thunder(true)]
+		_thunder_far = [_make_thunder(false)]
 	_caw = _make_caws()
 	for k in 2:
 		_kite_songs.append(_make_kite(false, k))
@@ -98,6 +114,7 @@ func _process(delta: float) -> void:
 		"wind": w,
 		"leaves": clampf(0.35 + 0.65 * wind, 0.0, 1.0) * (0.5 + 0.5 * gust),
 		"rain": smoothstep(0.02, 0.8, rain),
+		"rain_heavy": smoothstep(0.45, 1.0, rain),
 		"crickets": crick,
 		"birds": song,
 	}
@@ -105,7 +122,9 @@ func _process(delta: float) -> void:
 		var p: AudioStreamPlayer = _beds[k]
 		var g: float = levels[k]
 		p.volume_db = p.get_meta("base") + linear_to_db(maxf(g, 0.0001))
-		p.pitch_scale = 1.0 + (0.12 * (w - 0.4) if k == "wind" else 0.0)
+		# the synthesised wind was pitched up with strength; a recording only a touch
+		var bend := 0.04 if recorded.get(k, false) else 0.12
+		p.pitch_scale = 1.0 + (bend * (w - 0.4) if k == "wind" else 0.0)
 	_next_call -= delta
 	if _next_call <= 0.0:
 		_next_call = lerpf(9.0, 2.0, song) * _rng.randf_range(0.6, 1.4)
@@ -154,7 +173,7 @@ func _bird_call(song: float) -> void:
 	var p := _free_voice()
 	p.stream = _songs[_rng.randi() % _songs.size()]
 	p.global_position = best
-	p.pitch_scale = _rng.randf_range(0.93, 1.08)
+	p.pitch_scale = _rng.randf_range(0.95, 1.05)
 	p.volume_db = -9.0 + linear_to_db(clampf(song, 0.2, 1.0)) + _rng.randf_range(-4.0, 1.0)
 	p.play()
 	calls += 1
@@ -200,9 +219,11 @@ func _rook_scatter() -> void:
 func _on_thunder(strength: float, dist: float) -> void:
 	var near := dist < 900.0
 	var p := AudioStreamPlayer.new()   # non-positional: thunder fills the whole valley
-	p.stream = _thunder_near if near else _thunder_far
+	var takes: Array = _thunder_near if near else _thunder_far
+	p.stream = takes[_rng.randi() % takes.size()]
 	p.volume_db = linear_to_db(clampf(strength, 0.15, 1.0)) - clampf(dist / 400.0, 0.0, 12.0) + 2.0
-	p.pitch_scale = _rng.randf_range(0.85, 1.1)
+	# a recording keeps its own pitch (+-5 %); the synthesised clap was varied more
+	p.pitch_scale = _rng.randf_range(0.95, 1.05) if recorded["thunder"] else _rng.randf_range(0.85, 1.1)
 	p.bus = &"Ambience"
 	add_child(p)
 	p.play()
@@ -211,10 +232,19 @@ func _on_thunder(strength: float, dist: float) -> void:
 
 # ---------------------------------------------------------------- synthesis helpers
 
-func _bed(nm: String, s: AudioStreamWAV, base_db: float) -> void:
+## The recorded loop res://audio/sfx/weather/<file>.ogg, or the synthesised stand-in.
+func _rec_or(file: String, synth: Callable) -> AudioStream:
+	var s := Samples.load_loop("weather", file)
+	return s if s else synth.call()
+
+## A looping bed; `rec_db` is its base level when the stream is a recording.
+func _bed(nm: String, s: AudioStream, base_db: float, rec_db := 0.0) -> void:
 	var p := AudioStreamPlayer.new()
-	p.name = nm.capitalize() + "Bed"
+	p.name = nm.capitalize().replace(" ", "") + "Bed"
 	p.stream = s
+	recorded[nm] = s is AudioStreamOggVorbis
+	if recorded[nm]:
+		base_db = rec_db
 	p.set_meta("base", base_db)
 	p.volume_db = -80.0
 	p.autoplay = true

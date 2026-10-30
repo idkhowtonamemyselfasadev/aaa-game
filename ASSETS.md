@@ -57,6 +57,28 @@ Benboncan, AGFX, Erdie and Dynamicell (all via Freesound, CC BY 3.0).
 | fire/crackle_loop | fire_fire.1..3 + fire_large, crossfaded into an 18 s loop | https://freesound.org/people/Dynamicell/sounds/17548/ | Dynamicell | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
 | fire/flint_1 | fire_flint_and_steel | https://freesound.org/people/Benboncan/sounds/66457/ | Benboncan | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
 
+### Weather beds, thunder and songbirds (added 2026-10-30 20:00)
+
+Cut with ffmpeg + numpy from longer recordings in three GitHub repositories that list a
+per-file source and license; mono 44.1 kHz Ogg Vorbis q4, beds made into seamless loops with an
+equal-power crossfade, rain run through a gentle compressor, peaks <= -1.5 dBFS (thunder) and
+<= -4 dBFS (beds). freesound.org and soundbible.com could not be reached from the cloud box
+(WebFetch: host not resolvable), so licenses are as stated by those repositories, checked
+2026-10-30; item (e) must re-open each source page. The CC BY ones must appear in the Credits:
+Corsica_S, D W, RHumphries (all via Freesound, CC BY). Nothing CC BY-SA was taken (blanket's
+pink/white noise and every unlisted file in those repos were skipped).
+
+| File(s) | Original | Source page | Author | License | Fetched via |
+|---|---|---|---|---|---|
+| weather/wind_loop (s 20-110, high-passed 40 Hz) | Wind | https://freesound.org/people/felix.blume/sounds/139337/ | felix.blume | CC0 1.0 | github.com/Muges/ambientsounds `wind.ogg` (readme lists source + license per file) |
+| weather/leaves_loop (whole take, high-passed 220 Hz) | Wind | https://freesound.org/people/felix.blume/sounds/217506/ | felix.blume (edit Porrumentzio) | CC0 1.0 | github.com/Vistaus/blanket `SOUNDS_LICENSING.md` (wind.ogg) |
+| weather/rain_loop (s 5-65) | Forest Rain | https://freesound.org/people/Corsica_S/sounds/169031/ | Corsica_S | **CC BY** (credit required) | github.com/Muges/ambientsounds `forest-rain.ogg` |
+| weather/rain_heavy_loop (s 2-48) | Heavy Rain | https://freesound.org/people/D%20W/sounds/136971/ | D W | **CC BY** (credit required) | github.com/Muges/ambientsounds `heavy-rain.ogg` |
+| weather/thunder_near_1..3 (claps at 42 s, 83 s, 154 s), thunder_far_1..3 (56 s, 97 s, 15 s, low-passed 650 Hz) | Thunderstorm | https://freesound.org/people/RHumphries/sounds/2523/ | RHumphries | **CC BY** (credit required) | github.com/Muges/ambientsounds `thunderstorm.ogg` |
+| weather/crickets_loop (s 1-48, high-passed 1.5 kHz) | Crickets Chirping At Night | https://soundbible.com/2083-Crickets-Chirping-At-Night.html | Lisa Redfern | Public Domain | github.com/Vistaus/blanket `SOUNDS_LICENSING.md` (summer-night.ogg) |
+| birds/song_1..3 (4 s around single calls at 40, 64, 94 s; high-passed 900 Hz) | Birds | https://freesound.org/people/kvgarlic/sounds/156826/ | kvgarlic (edit Porrumentzio) | CC0 1.0 | github.com/Vistaus/blanket `SOUNDS_LICENSING.md` (birds.ogg) |
+| birds/song_4..6 (4 s around calls at 46, 70, 101 s; high-passed 900 Hz) | forestday bw 66 | https://freesound.org/people/sonidosreales245/sounds/517042/ | sonidosreales245 | CC0 1.0 | github.com/abetusk/noixer `assets/` (README: sounds chosen CC0 from Freesound, table lists this file) |
+
 ## Procedural (no license needed)
 - Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.
