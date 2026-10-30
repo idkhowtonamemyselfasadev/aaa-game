@@ -153,7 +153,8 @@ func _dress() -> void:
 		"hood": [Color(0.04, 0.036, 0.03), Color(0.19, 0.17, 0.14), 0.4],
 		"hat": [Color(0.035, 0.03, 0.026), Color(0.19, 0.17, 0.145), 0.3],
 		"mantle": [Color(0.075, 0.04, 0.026), Color(0.33, 0.20, 0.13), 0.4],
-		"robe": [Color(0.11, 0.095, 0.07), Color(0.42, 0.37, 0.28), 0.45],
+		# road-dulled dun: at 0.42 light the skirt under the creel read as a pale flat sheet
+		"robe": [Color(0.10, 0.085, 0.064), Color(0.34, 0.295, 0.225), 0.45],
 		"sash": [Color(0.09, 0.075, 0.05), Color(0.36, 0.30, 0.20), 0.3],
 		"wraps": [Color(0.08, 0.075, 0.065), Color(0.36, 0.34, 0.30), 0.45],
 		# old peeled willow gone grey-brown: the fresh tan read as a red-orange grid by lantern light

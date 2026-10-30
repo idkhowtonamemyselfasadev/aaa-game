@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261024-1115-glide-meadow-close.jpg",
-  "time": "2026-10-24T11:15:00Z",
-  "caption": "Crop of the lower-left meadow: metre-wide tussocks with dark gaps and bleached tops; at this crop the mottling is a bit uniform and speckly.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1115-glide-meadow.jpg",
   "time": "2026-10-24T11:15:00Z",
   "caption": "Same glide framing as legs2: the meadow beyond the grass clumps now reads as rough tussocky grassland with tan seed-head drifts instead of smooth olive felt; still thin trees and no tall grass past 64 m.",
@@ -891,6 +885,12 @@
   "file": "20261030-0015-roadmeet-hildkept.jpg",
   "time": "2026-10-30T00:15:00Z",
   "caption": "Hild and Wat meet on the fell road, full length: her kirtle's front panel now reads as one even dark wool instead of rust and dark blocks, and the creel is out of the lens; still small in frame, faces unreadable, and the hips show a rust sleeve edge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0150-roadmeet-watdun.jpg",
+  "time": "2026-10-30T01:50:00Z",
+  "caption": "Hild and Wat meet on the fell road: Wat's kilted smock now reads as darker road-dun wool instead of a pale flat linen sheet; still small in frame with unreadable faces, and his chest and arms read as plated armour shapes under the creel.",
   "verdict": "fail"
  }
 ]
