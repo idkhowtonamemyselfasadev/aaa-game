@@ -36,6 +36,7 @@ var max_swing := 0.0             # largest swing seen, rad (bots)
 var fold_stones := 0             # stones laid or spilt in the fold (bots)
 var through_stones := 0          # through-stones across the fold's wall (bots)
 var post_top := Vector3.ZERO     # world: where the collar wraps (shots, bots)
+var perches: Array[Vector3] = [] # world: wall tops where two or more courses stand, and the post's head (Wheatears)
 var _pivot: Node3D
 var _collar: MeshInstance3D
 var _sound: AudioStreamPlayer3D
@@ -173,6 +174,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	bell.scale = Vector3.ONE * BELL_SCALE
 	_pivot.add_child(bell)
 	post_top = post.to_global(_pivot.position)
+	perches.append(post.to_global(Vector3(0, POST_H - 0.01, 0)))
 	_sound = AudioStreamPlayer3D.new()
 	_sound.name = "Knock"
 	_sound.max_distance = HEAR_R
@@ -322,6 +324,7 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 			var qy := terrain.height_at(q.x, q.y)
 			_fold_stone(rng, per, dims, Vector3(q.x, qy + size.y * 0.15, q.y), b, size, 0.0, 0.0)
 		if courses >= 2:
+			perches.append(Vector3(p2.x, y, p2.y))
 			var cs := CollisionShape3D.new()
 			var bx := BoxShape3D.new()
 			bx.size = Vector3(0.7, y - gy + 0.08, FOLD_W)

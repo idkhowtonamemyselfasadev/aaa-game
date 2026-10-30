@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -195,6 +195,9 @@ func _ready() -> void:
 		return
 	if name == "flockbell":
 		_flockbell_test()
+		return
+	if name == "wheatear":
+		_wheatear_test()
 		return
 	if name == "bat":
 		_bat_test()
@@ -5778,6 +5781,70 @@ func _breadquest_test() -> void:
 	if _player.health_max != Player.HEALTH_MAX + Quests.BREAD_VIGOR or _player.health != _player.health_max:
 		return _combat_done(false, "no oatcake reward")
 	_combat_done(true, "loaf given after the intro, carried to Hesper, her word brought back: quest complete, vitality %.0f" % _player.health_max)
+
+## The fold's wheatears: with the hero well off they keep to the fold's wall tops and the post's
+## head, bobbing, dropping into the turf to feed and flitting stone to stone; walked at, the
+## nearest chacks from its stone, then flies off low to a stone well clear of him; they are
+## gone into the wall at night and out again by morning.
+func _wheatear_test() -> void:
+	var w: Wheatears = _world.wheatears
+	var b: FellBell = _world.fell_bell
+	var tr: Terrain = _world.get_node("Terrain")
+	if w == null or w.perches.size() < 6:
+		return _combat_done(false, "no wheatears / too few perches on the fold (%d)" % (0 if w == null else w.perches.size()))
+	_world.weather.force(0.0)
+	_world.time_of_day = 10.0
+	var fc2 := FellBell.fold_centre()
+	var away := Vector2(fc2.x, fc2.y) + (fc2 - Vector2(FellBell.ROCK.x, FellBell.ROCK.z)).normalized() * 30.0
+	_player.global_position = Vector3(away.x, tr.height_at(away.x, away.y) + 0.3, away.y)
+	await _ticks(60 * 60)
+	var fc := Vector3(fc2.x, 0, fc2.y)
+	var far := 0.0
+	for p: Vector3 in w.bird_positions():
+		far = maxf(far, Vector2(p.x - fc.x, p.z - fc.z).length())
+	print("BOT wheatear alone 60 s: bobs %d, drops %d, flits %d, flushes %d, farthest %.1f m from the fold's centre, states %s" % [w.bobs, w.drops, w.flits, w.flushes, far, w.states()])
+	if w.bobs < 10 or w.drops < 1 or w.flits < 3:
+		return _combat_done(false, "the birds sat lifeless on the fold")
+	if w.flushes > 0:
+		return _combat_done(false, "flushed with nobody near")
+	if far > FellBell.FOLD_R + 4.5:
+		return _combat_done(false, "a bird strayed off the fold")
+	# walk straight at the nearest bird on its stone
+	var tgt := Vector3.INF
+	for k in 30:
+		var st := w.states()
+		var ps := w.bird_positions()
+		for i in st.size():
+			if st[i] == Wheatears.PERCH and (tgt == Vector3.INF or ps[i].distance_to(_player.global_position) < tgt.distance_to(_player.global_position)):
+				tgt = ps[i]
+		if tgt != Vector3.INF:
+			break
+		await _ticks(30)
+	if tgt == Vector3.INF:
+		return _combat_done(false, "no bird on a stone to walk at")
+	var c0 := w.chacks
+	var f0 := w.flushes
+	var walked := await _walk_to(Vector2(tgt.x, tgt.z), 1.0, 1500)
+	await _ticks(120)
+	var pp := _player.global_position
+	var near := INF
+	for p: Vector3 in w.bird_positions():
+		near = minf(near, Vector2(p.x - pp.x, p.z - pp.z).length())
+	print("BOT wheatear walked at (%.1f, %.1f): arrived %s, chacks %d, flushes %d, nearest bird now %.1f m, states %s" % [tgt.x, tgt.z, walked, w.chacks - c0, w.flushes - f0, near, w.states()])
+	if w.flushes - f0 < 1 or w.chacks - c0 < 1:
+		return _combat_done(false, "the bird sat tight as the hero walked up to it")
+	if near < Wheatears.SCARE:
+		return _combat_done(false, "a bird stayed within %.1f m of the hero" % near)
+	# night: into the wall
+	_world.time_of_day = 22.0
+	await _ticks(10)
+	if w.visible:
+		return _combat_done(false, "wheatears out at night")
+	_world.time_of_day = 7.0
+	await _ticks(10)
+	if not w.visible:
+		return _combat_done(false, "no wheatears in the morning")
+	_combat_done(true, "bobbing and feeding on the fold, chacked and flew from the hero, roosted at night")
 
 ## The Last of the Flock, start to finish on foot: Osric's intro, then he asks for his
 ## bellwether's bell (quest begun); there is no "Take" at the post before that. From his spot

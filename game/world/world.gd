@@ -40,6 +40,7 @@ var keeper: Keeper
 var villager: Villager
 var neighbour: Neighbour
 var fell_bell: FellBell
+var wheatears: Wheatears
 var pedlar: Pedlar
 var traveller: Traveller
 var hearth: Hearth
@@ -224,6 +225,13 @@ func _ready() -> void:
 	fell_bell.build(terrain, get_node("Ruins") as Ruins)
 	fell_bell.player = player
 	fell_bell.weather = weather
+	# the fold's wheatears, bobbing on its wall tops and the post's head
+	wheatears = Wheatears.new()
+	wheatears.name = "Wheatears"
+	add_child(wheatears)
+	wheatears.build(terrain, fell_bell.perches)
+	wheatears.player = player
+	wheatears.weather = weather
 	# Wat the pedlar, through on the fell road twice a day, a word for each of them
 	pedlar = Pedlar.new()
 	pedlar.name = "Pedlar"

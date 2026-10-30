@@ -679,6 +679,13 @@ func _ready() -> void:
 			cp.y = maxf(terrain.height_at(cp.x, cp.z), fc.y) + 3.0
 			look = fc + Vector3.UP * 0.3
 			print("SHOT fellbell fold: %d stones" % b.fold_stones)
+			world.wheatears.seat_for_shot(cp, 2.0)
+			if "birds" in args:
+				# close on the cock on his wall top, low beside the wall, the great stone behind him
+				var wp: Vector3 = world.wheatears.bird_positions()[0]
+				var outw := Vector3(wp.x - fc.x, 0, wp.z - fc.z).normalized()
+				cp = wp + outw * 1.1 + outw.cross(Vector3.UP) * 0.6 + Vector3.UP * 0.12
+				look = wp + Vector3.UP * 0.07
 			if "plain" in args:
 				# diagnostic: the fold stones in a flat grey StandardMaterial3D, to tell the masonry
 				# shader's shading from the geometry/normals when they read near-black
@@ -1891,6 +1898,10 @@ func _ready() -> void:
 				print("SHOT flame %s screen %s, lens %s, view %s" % [fc, mcam.unproject_position(fc), mcam.global_position, get_viewport().get_visible_rect().size])
 				for mp in (ch as HandMoths).moth_positions():
 					print("SHOT moth %.2f m from the flame, %.2f m from the lens, screen %s%s" % [mp.distance_to(fc), mp.distance_to(mcam.global_position), mcam.unproject_position(mp), " (behind)" if mcam.is_position_behind(mp) else ""])
+	if spot == "fellbell" and world.wheatears != null:
+		var wcam := get_viewport().get_camera_3d()
+		for wp in world.wheatears.bird_positions():
+			print("SHOT wheatear %.1f m from the lens, screen %s%s" % [wp.distance_to(wcam.global_position), wcam.unproject_position(wp), " (behind)" if wcam.is_position_behind(wp) else ""])
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
