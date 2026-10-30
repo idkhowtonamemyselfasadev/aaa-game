@@ -49,7 +49,8 @@ func build(terrain: Terrain) -> void:
 	var lean_axis := Vector3(away.y, 0, -away.x)
 	var post := Node3D.new()
 	post.name = "Post"
-	post.basis = Basis(lean_axis, 0.17)
+	# its hanging side (+z) turned down the slope, toward whoever comes up from the stile
+	post.basis = Basis(lean_axis, 0.17) * Basis(Vector3.UP, atan2(away.x, away.y))
 	add_child(post)
 	var cm := CylinderMesh.new()
 	cm.top_radius = POST_R * 0.78
@@ -60,6 +61,10 @@ func build(terrain: Terrain) -> void:
 	var tm := ShaderMaterial.new()
 	tm.shader = preload("res://shaders/timber.gdshader")
 	tm.set_shader_parameter("seed", 13.7)
+	# out on the fell for forty years: darker and greener than the cottage timbers
+	tm.set_shader_parameter("oak_silver", Color(0.27, 0.26, 0.225))
+	tm.set_shader_parameter("oak_brown", Color(0.16, 0.13, 0.09))
+	tm.set_shader_parameter("oak_dark", Color(0.06, 0.055, 0.045))
 	cm.material = tm
 	var mi := MeshInstance3D.new()
 	mi.name = "Oak"
@@ -69,15 +74,15 @@ func build(terrain: Terrain) -> void:
 	post.add_child(mi)
 	# the split top: a splinter standing proud of one side of the broken head
 	var sp := CylinderMesh.new()
-	sp.top_radius = 0.008
-	sp.bottom_radius = POST_R * 0.45
-	sp.height = 0.14
+	sp.top_radius = 0.012
+	sp.bottom_radius = POST_R * 0.4
+	sp.height = 0.07
 	sp.radial_segments = 5
 	sp.rings = 1
 	sp.material = tm
 	var smi := MeshInstance3D.new()
 	smi.mesh = sp
-	smi.position = Vector3(POST_R * 0.35, POST_H + 0.06, -POST_R * 0.2)
+	smi.position = Vector3(POST_R * 0.35, POST_H + 0.02, -POST_R * 0.25)
 	smi.rotation = Vector3(0.12, 0.0, -0.1)
 	post.add_child(smi)
 	var body := StaticBody3D.new()
