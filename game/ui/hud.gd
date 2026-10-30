@@ -106,7 +106,7 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	var hp := player.health / player.health_max
-	var st := player.stamina / Player.STAMINA_MAX
+	var st := player.stamina / player.stamina_max
 	var cur := Vector2(hp, st)
 	if cur != _last or hp < 1.0 or st < 1.0:
 		_calm = 0.0
@@ -344,7 +344,7 @@ func _draw_bars() -> void:
 	_bar(Rect2(x, y, w, maxf(7.0 * s, 5.0)), player.health / player.health_max, _hp_lag,
 		Color(0.62, 0.11, 0.09), Color(0.86, 0.72, 0.55))
 	var st_w := w * 0.82
-	_bar(Rect2(x, y + maxf(16.0 * s, 11.0), st_w, maxf(5.0 * s, 4.0)), player.stamina / Player.STAMINA_MAX, _st_lag,
+	_bar(Rect2(x, y + maxf(16.0 * s, 11.0), st_w, maxf(5.0 * s, 4.0)), player.stamina / player.stamina_max, _st_lag,
 		Color(0.93, 0.80, 0.50), Color(0.55, 0.50, 0.42))
 
 func _bar(r: Rect2, v: float, lag: float, fill: Color, lost: Color) -> void:

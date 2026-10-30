@@ -136,6 +136,7 @@ var _flick_t := 0.0
 var stamina := STAMINA_MAX
 var health := HEALTH_MAX
 var health_max := HEALTH_MAX    # grows with quest rewards (Quests)
+var stamina_max := STAMINA_MAX  # grows with quest rewards too
 var dodge_t := -1.0                   # seconds into the current dodge, -1 when not dodging
 var dodges := 0
 var perfect_dodges := 0
@@ -616,7 +617,7 @@ func _physics_process(delta: float) -> void:
 	elif attacking or dodging or charging or reeling:
 		pass                                   # no recovery mid-swing, mid-dodge, charging or reeling
 	else:
-		stamina = minf(stamina + 12.0 * delta, STAMINA_MAX)
+		stamina = minf(stamina + 12.0 * delta, stamina_max)
 
 	if reeling:
 		pass                                   # rocked back: the facing holds
@@ -1198,7 +1199,7 @@ func receive_attack(attacker: Node, damage: float, heavy := false) -> String:
 		if dodge_t <= PERFECT_WINDOW and not _dodge_rewarded:
 			_dodge_rewarded = true
 			perfect_dodges += 1
-			stamina = minf(stamina + PERFECT_REFUND, STAMINA_MAX)
+			stamina = minf(stamina + PERFECT_REFUND, stamina_max)
 			_start_slowmo()
 			DodgeFX.spawn(get_parent(), global_position + Vector3.UP * 1.0, _dodge_dir)
 			dodged.emit(true)
@@ -1440,7 +1441,7 @@ func _respawn() -> void:
 	global_position = respawn_point
 	velocity = Vector3.ZERO
 	health = health_max
-	stamina = STAMINA_MAX
+	stamina = stamina_max
 	model.transform = _model_rest
 	down_t = -1.0
 	body.rotation.y = respawn_yaw

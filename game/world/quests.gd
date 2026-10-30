@@ -10,11 +10,22 @@ extends Node
 ## has never climbed after it since her husband went up and did not come down. Hesper's
 ## answer is a message; carried back down, it closes the quest, and Edda's oatcakes put heart
 ## in the hero (+15 vitality).
+##
+## The Last of the Flock (Osric's side thread, Act I): after his introduction Osric asks the
+## hero to look for the bell his bellwether wore, the last ewe of his flock, lost up the fell
+## in the snow the winter the keep went dark. It hangs by its rotten collar from the old fold
+## post under the great grey stone up the fell (FellBell), clonking when the wind swings it;
+## taken down and brought to him, it closes the quest, and the shepherd's way of walking a
+## fell stays with the hero (+15 stamina).
 
 signal changed(id: String, stage: int)
 
 const BREAD := "bread"
 const BREAD_VIGOR := 15.0
+const FLOCK := "flock"
+const FLOCK_WIND := 15.0
+## The bell's own "speaker" for its quest step (FellBell takes it with this key).
+const BELL := "Bell"
 ## Per quest: its title, and per stage the objective while at it (stage 0 = not begun; the last
 ## stage is "done" and has no objective). `talk` maps a stage to [speaker, line, next stage].
 const DEFS := {
@@ -32,6 +43,21 @@ const DEFS := {
 			2: ["Edda", "Nothing come down. That's what she told me last year, and the year before. Here, take these oatcakes. Walking that hill wants feeding.", 3],
 		},
 		"reward": "Edda's oatcakes: vitality +15",
+	},
+	FLOCK: {
+		"title": "The Last of the Flock",
+		"objectives": [
+			"",
+			"Find the bellwether's bell at the old fold post under the great stone up the fell",
+			"Bring the bell down to Osric",
+			"",
+		],
+		"talk": {
+			0: ["Osric", "You've young knees. Up the fell, under the big grey stone, there's the last post of my fold. Moss, my bellwether, wore a bell. She went up in the snow the winter the keep went dark. Bring me down what's left, would you?", 1],
+			1: [BELL, "A cast bronze bell, green in the mouth, hung by a collar gone to black leather on the last post of the fold. It still knocks when the wind takes it. You lift it off.", 2],
+			2: ["Osric", "That's her note. I'd know it in my sleep, and I've heard it in my sleep. Sit a while on the wall, then. You walk a fell like a shepherd now: slow on the steep, and never stopping.", 3],
+		},
+		"reward": "The shepherd's pace: stamina +15",
 	},
 }
 
@@ -97,3 +123,6 @@ func _reward(id: String) -> void:
 	if id == BREAD:
 		p.health_max += BREAD_VIGOR
 		p.health = p.health_max
+	elif id == FLOCK:
+		p.stamina_max += FLOCK_WIND
+		p.stamina = p.stamina_max

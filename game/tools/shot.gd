@@ -643,6 +643,23 @@ func _ready() -> void:
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.75
 		SPOTS[spot] = [cp, at.lerp(pp, 0.3) + Vector3.UP * 1.3]
 		print("SHOT talk %s at %s" % [kp.activity, at])
+	if spot == "fellbell":
+		# Osric's bellwether's bell on the last fold post under the great stone, the quest at its
+		# first step (the Take prompt up); `wide` stands back to show the stone and the vale below
+		var b: FellBell = world.fell_bell
+		var ql: Quests = player.get_node("Quests")
+		ql.stage[Quests.FLOCK] = 1
+		var at := b.post_top
+		var down := Vector3(FellBell.TOWARD.x - at.x, 0, FellBell.TOWARD.y - at.z).normalized()
+		var sd := down.cross(Vector3.UP)
+		var pp := at + down * 1.1 + sd * 0.5
+		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
+		player.body.rotation.y = atan2(at.x - pp.x, at.z - pp.z)
+		var cp := at + down * 1.0 - sd * 0.75 if not "wide" in args else at + down * 5.5 - sd * 2.5
+		cp.y = at.y + (0.05 if not "wide" in args else 1.2)
+		var look := at + Vector3.DOWN * 0.18 if not "wide" in args else at - down * 2.5 + Vector3.UP * 0.4
+		SPOTS[spot] = [cp, look]
+		print("SHOT fellbell at %s" % at)
 	if spot == "wander":
 		# Hesper on her afternoon meadow walk, the deer grazing on beyond her
 		var kp: Keeper = world.keeper
@@ -1461,7 +1478,7 @@ func _ready() -> void:
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
-		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "roadmeet" or spot == "climb" or spot == "hare":
+		if spot == "keeper" or spot == "talk" or spot == "wander" or spot == "keeperback" or spot == "keeperside" or spot == "hearth" or spot == "fox" or spot == "cottage" or spot == "stonehouse" or spot == "drywall" or spot == "yardwall" or spot == "hens" or spot == "lantern" or spot == "villager" or spot == "doorstones" or spot == "dog" or spot == "osric" or spot == "pedlar" or spot == "roadmeet" or spot == "climb" or spot == "hare" or spot == "fellbell":
 			pos.y = (s[0] as Vector3).y
 			look.y = (s[1] as Vector3).y
 		if spot == "devil":

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -192,6 +192,9 @@ func _ready() -> void:
 		_eddatalk_test()
 	if name == "breadquest":
 		_breadquest_test()
+		return
+	if name == "flockbell":
+		_flockbell_test()
 		return
 	if name == "bat":
 		_bat_test()
@@ -5775,6 +5778,109 @@ func _breadquest_test() -> void:
 	if _player.health_max != Player.HEALTH_MAX + Quests.BREAD_VIGOR or _player.health != _player.health_max:
 		return _combat_done(false, "no oatcake reward")
 	_combat_done(true, "loaf given after the intro, carried to Hesper, her word brought back: quest complete, vitality %.0f" % _player.health_max)
+
+## The Last of the Flock, start to finish on foot: Osric's intro, then he asks for his
+## bellwether's bell (quest begun); there is no "Take" at the post before that. From his spot
+## outside the stile the hero walks up the fell to the great stone, hears the bell knocking in
+## the wind on the way, takes it off the post (stage 2, the bell gone from the post), walks
+## back down and gives it to Osric: quest complete, stamina +15 and refilled.
+func _flockbell_test() -> void:
+	var n: Neighbour = _world.neighbour
+	var b: FellBell = _world.fell_bell
+	var hud: Hud = _player.get_node("Hud")
+	var q: Quests = _player.get_node_or_null("Quests")
+	var tr: Terrain = _world.get_node("Terrain")
+	if q == null or b == null:
+		return _combat_done(false, "no quest log / no bell")
+	_world.weather.force(0.0)
+	_world.time_of_day = 9.0
+	n.settle(_world, 9.0)
+	await _ticks(10)
+	# the post before the quest: no prompt
+	_player.global_position = Vector3(b.post_top.x + 1.0, tr.height_at(b.post_top.x + 1.0, b.post_top.z) + 0.3, b.post_top.z)
+	await _ticks(30)
+	var r0 := b.rings
+	_player.bot_interact = true
+	await _ticks(30)
+	if b.taken or q.stage_of(Quests.FLOCK) != 0 or hud.prompt_key != "" and hud.prompt_verb == "Take":
+		return _combat_done(false, "the bell could be taken before Osric asked")
+	# Osric at the wall: his intro, then the ask
+	var side := n.global_position + Vector3(1.4, 0, 0).rotated(Vector3.UP, n.body.rotation.y)
+	_player.global_position = Vector3(side.x, tr.height_at(side.x, side.z) + 0.3, side.z)
+	await _ticks(60)
+	for i in 3:
+		_player.bot_interact = true
+		await _ticks(90)
+		print("BOT flockbell Osric %d: '%s' stage %d" % [i, n.last_line, q.stage_of(Quests.FLOCK)])
+	if q.stage_of(Quests.FLOCK) != 1:
+		return _combat_done(false, "Osric did not ask for the bell after his intro")
+	await _ticks(2)
+	print("BOT flockbell hud: '%s' banner '%s'" % [hud.quest_shown, q.banner_title])
+	if hud.quest_shown != q.objective(Quests.FLOCK) or not q.banner_title.begins_with("Quest begun"):
+		return _combat_done(false, "no objective / banner on the Hud")
+	# from his fell spot outside the stile, on foot up to the post
+	var start := n._at(Neighbour.FELL[0])
+	_player.global_position = Vector3(start.x, tr.height_at(start.x, start.z) + 0.3, start.z)
+	_world.weather.force(0.7)
+	await _ticks(20)
+	var walked := await _walk_to(Vector2(b.post_top.x, b.post_top.z), 1.2, 6000)
+	print("BOT flockbell up the fell: arrived %s, %.1f m from the post, rings %d (heard on the way %d), max swing %.2f rad" % [walked, Vector2(_player.global_position.x - b.post_top.x, _player.global_position.z - b.post_top.z).length(), b.rings, b.rings - r0, b.max_swing])
+	if not walked:
+		return _combat_done(false, "could not walk up the fell to the post")
+	if b.rings - r0 < 3:
+		return _combat_done(false, "the bell did not knock in the wind")
+	await _ticks(5)
+	print("BOT flockbell prompt '%s %s'" % [hud.prompt_key, hud.prompt_verb])
+	if hud.prompt_verb != "Take":
+		return _combat_done(false, "no Take prompt at the post")
+	_player.bot_interact = true
+	await _ticks(10)
+	print("BOT flockbell take: '%s' stage %d taken %s hud '%s'" % [hud.say_line, q.stage_of(Quests.FLOCK), b.taken, hud.quest_shown])
+	if not b.taken or q.stage_of(Quests.FLOCK) != 2 or hud.quest_shown != q.objective(Quests.FLOCK):
+		return _combat_done(false, "taking the bell did not move the quest")
+	var rt := b.rings
+	await _ticks(120)
+	if b.rings != rt:
+		return _combat_done(false, "the taken bell still knocks on the post")
+	# back down to the stile, then to Osric
+	walked = await _walk_to(Vector2(start.x, start.z), 1.5, 6000)
+	if not walked:
+		return _combat_done(false, "could not walk back down")
+	_world.weather.force(0.0)
+	_player.global_position = Vector3(side.x, tr.height_at(side.x, side.z) + 0.3, side.z)
+	_player.stamina = 20.0
+	await _ticks(60)
+	_player.bot_interact = true
+	await _ticks(10)
+	print("BOT flockbell return: '%s' done %s, stamina %.0f/%.0f, banner '%s'" % [n.last_line, q.done(Quests.FLOCK), _player.stamina, _player.stamina_max, q.banner_title])
+	if not q.done(Quests.FLOCK) or not q.banner_title.begins_with("Quest complete"):
+		return _combat_done(false, "the quest did not close")
+	if _player.stamina_max != Player.STAMINA_MAX + Quests.FLOCK_WIND or _player.stamina < _player.stamina_max - 1.0:
+		return _combat_done(false, "no stamina reward")
+	_combat_done(true, "asked after the intro, walked up the fell to the knocking bell, took it, brought it down: quest complete, stamina %.0f" % _player.stamina_max)
+
+## Walks the hero (camera yaw 0) toward `to` until within `r`; jumps when stuck. False on timeout.
+func _walk_to(to: Vector2, r: float, max_ticks: int) -> bool:
+	var last := _player.global_position
+	var stuck := 0
+	for i in max_ticks:
+		var p := _player.global_position
+		var d := to - Vector2(p.x, p.z)
+		if d.length() < r:
+			_player.bot_input = Vector2.ZERO
+			return true
+		_player.bot_input = d.normalized()
+		if (p - last).length() < 0.01:
+			stuck += 1
+			if stuck > 36:
+				_player.bot_jump = true
+				stuck = 0
+		else:
+			stuck = 0
+		last = p
+		await get_tree().physics_frame
+	_player.bot_input = Vector2.ZERO
+	return false
 
 ## Holds the clock at hour h for n physics ticks (a long walk must not run past the slot).
 func _hold_hour(h: float, n: int) -> void:

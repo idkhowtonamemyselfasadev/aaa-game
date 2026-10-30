@@ -39,6 +39,7 @@ var lantern_post: LanternPost
 var keeper: Keeper
 var villager: Villager
 var neighbour: Neighbour
+var fell_bell: FellBell
 var pedlar: Pedlar
 var traveller: Traveller
 var hearth: Hearth
@@ -216,6 +217,13 @@ func _ready() -> void:
 	# the two of them pass a word when they meet out of doors
 	villager.mate = neighbour
 	neighbour.mate = villager
+	# the last of Osric's flock: his bellwether's bell on the old fold post up the fell
+	fell_bell = FellBell.new()
+	fell_bell.name = "FellBell"
+	add_child(fell_bell)
+	fell_bell.build(terrain)
+	fell_bell.player = player
+	fell_bell.weather = weather
 	# Wat the pedlar, through on the fell road twice a day, a word for each of them
 	pedlar = Pedlar.new()
 	pedlar.name = "Pedlar"
