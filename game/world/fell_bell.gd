@@ -180,6 +180,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	_sound.max_distance = HEAR_R
 	_sound.unit_size = 9.0
 	_sound.volume_db = -7.0
+	_sound.bus = &"SFX"
 	_sound.attenuation_filter_cutoff_hz = 6000.0
 	_pivot.add_child(_sound)
 	for f: float in [742.0, 768.0, 731.0]:

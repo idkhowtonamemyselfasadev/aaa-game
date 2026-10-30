@@ -45,6 +45,21 @@ ALIVE (as important as the look): a full day/night cycle with changing light, we
 
 ---
 
+# OWNER PRIORITY: AUDIO
+
+(Written 2026-10-30 after the owner played the build; outranks the PROGRESS.md Next list and
+all scenery polish until done. Progress is tracked in AUDIO.md.)
+
+The owner played it: some sounds are awful and there is no music. Synthesised sounds (noise + oscillators) do not sound real; stop synthesising audio. Work in this order, one finished increment per session, and keep these items at the top of the PROGRESS.md Next list:
+(a) AUDIT: list every sound in the game (game/world/foley.gd, soundscape.gd, hearth.gd, wheatears.gd, fell_bell.gd, dust_devils.gd, anything else with AudioStream) in AUDIO.md: what it is, where it plays, synthesised or recorded, and a verdict. Treat every synthesised sound as needing replacement, worst offenders first: combat (staff swishes, impacts, parry clang, heavy slam, dodge), footsteps, fire crackle, birds/animal calls, wind/rain.
+(b) REPLACE with real recorded CC0 or CC-BY samples (Freesound.org CC0/CC-BY with the author credited, Kenney audio packs, OpenGameArt CC0/CC-BY, Sonniss-style free bundles only if the license allows redistribution in a public repo). Download as .ogg (convert with ffmpeg if needed), keep each file small, put them under game/audio/sfx/<group>/, record every one in ASSETS.md with source URL, author and license. Use 3 to 5 variations per frequent sound with random pitch (+-5 %) and volume jitter so nothing repeats robotically. Mix properly: buses for SFX, Ambience, Wildlife, Music, Voice; no sound clipping or harsh above the rest; combat hits must sound heavy and meaty (Wukong-style), with a low thump layer under the impact.
+(c) MUSIC: add a real soundtrack. Use CC0 or CC-BY music (OpenGameArt, Free Music Archive CC-BY, Kevin MacLeod / incompetech CC-BY, Pixabay is NOT allowed), credited in ASSETS.md, as .ogg under game/audio/music/. Fitting tone: mythic, melancholy, orchestral/folk with Chinese/Celtic-like woodwinds and strings, not chiptune or EDM. Build a music system: an exploration track for Harrowmere Vale by day and a quieter one at night, a village/hearth theme near Hesper's cottage, a combat track that crossfades in when an enemy locks on or aggroes and fades out a few seconds after the fight, and a stinger on victory. Smooth crossfades (2-4 s), music ducks slightly under dialogue, never two tracks at full volume. Add Music and SFX volume sliders to the options/settings if a menu exists, otherwise a simple pause-menu slider.
+(d) Verify audio headlessly where possible (bots check the right streams start/stop and crossfade; check peak levels of the files with ffmpeg so nothing clips), and write in PROGRESS.md which sounds were replaced.
+(e) COPYRIGHT AUDIT (last item, and a standing rule after it): go through EVERY third-party file in the repo (models, textures, sounds, music, fonts, shaders, code snippets) and prove each one is free to use, redistribute and stream: check its license on the source page with WebFetch and record source URL, author, license and the date checked in ASSETS.md. Allowed: CC0 / public domain first, CC-BY or OFL only with the credit shown in the game's credits, Mixamo per its license. NOT allowed: anything 'all rights reserved', non-commercial (CC-BY-NC), no-derivatives (ND), share-alike (SA) music, unclear or missing license, ripped/fan content, or anything from another game, film or band. Music must also be safe for YouTube/Twitch (the owner streams): prefer CC0 music, and drop any track or artist known to be registered with YouTube Content ID. Remove or replace any file that fails and note it in PROGRESS.md. Add an in-game Credits screen (from the pause/title menu and after the ending) listing every CC-BY/OFL credit. Every later session: never add a file without its license recorded first.
+After (a)-(e) are done, the next priority is combat content: the Ashen Knight slice boss (3 phases with a mechanic change per phase) and more enemy variety, before any further scenery polish. Remove this section once AUDIO.md shows every item done, but move the (e) copyright rule into the working rules permanently.
+
+---
+
 # ROLE
 
 You are the lead developer, art director, combat designer and producer of a AAA-quality

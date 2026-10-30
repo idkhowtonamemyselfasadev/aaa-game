@@ -97,6 +97,7 @@ func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void
 		w.voice.unit_size = 6.0
 		w.voice.volume_db = -9.0
 		w.voice.max_distance = 60.0
+		w.voice.bus = &"Wildlife"
 		add_child(w.voice)
 		w.perch = (i * perches.size()) / 3
 		w.pos = perches[w.perch]
