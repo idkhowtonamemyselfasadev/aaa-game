@@ -133,14 +133,15 @@ void fragment() {
 	// showing through only where it flaked
 	float skin = smoothstep(0.3, 0.6, fbm(wp * 1.7 + tint * 5.0 + 17.0));
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.66, 0.66, 0.63), aged * mix(0.45, 0.8, skin));
-	// field stone: a cool grey gritstone, darker, the beds only faintly showing
+	// field stone: a grey gritstone, darker, the beds only faintly showing, warmed toward the
+	// lichened granite of the fell's boulders (a cool 0.86/0.87/0.85 read blue-grey at noon)
 	// (each stone its own value, 0.66-1.02 -- lower read near-black on the fell in any light: a field wall's stones came off different fells, and
 	// an even grey face reads as pale tiles on the dark joint grid)
 	float fv = fract(tint * 53.1);
-	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.86, 0.87, 0.85) * (0.66 + 0.36 * fv * fv * (3.0 - 2.0 * fv)), field * 0.8);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.92, 0.87, 0.78) * (0.66 + 0.36 * fv * fv * (3.0 - 2.0 * fv)), field * 0.8);
 	// and a dark grey-black crust (old lichen, soot of the weather) over broad patches of its face
 	float fcr = smoothstep(0.45, 0.72, fbm(wp * 2.8 + tint * 11.0 + 61.0));
-	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.6, 0.61, 0.58), field * fcr * 0.6);
+	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * vec3(0.62, 0.6, 0.55), field * fcr * 0.6);
 	base = mix(base, vec3(dot(base, vec3(0.3, 0.4, 0.3))) * 0.84, dim * 0.6);
 	// rubble: each split stone its own value and a faint warm (iron) or cool (blue) cast
 	base = mix(base, base * (0.72 + 0.5 * fract(tint * 91.7)) * mix(vec3(1.04, 1.0, 0.94), vec3(0.95, 0.99, 1.05), fract(tint * 17.9)), dim);

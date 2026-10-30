@@ -34,6 +34,7 @@ var rings := 0                   # knocks of the clapper (bots)
 var taken := false
 var max_swing := 0.0             # largest swing seen, rad (bots)
 var fold_stones := 0             # stones laid or spilt in the fold (bots)
+var through_stones := 0          # through-stones across the fold's wall (bots)
 var post_top := Vector3.ZERO     # world: where the collar wraps (shots, bots)
 var _pivot: Node3D
 var _collar: MeshInstance3D
@@ -267,7 +268,7 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 	var per: Array = []
 	var meshes: Array[ArrayMesh] = []
 	for v in 6:
-		var d := Vector3(lerpf(0.7, 1.15, (v + rng.randf()) / 6.0), rng.randf_range(0.34, 0.48), FOLD_W * 2.0)
+		var d := Vector3(lerpf(1.0, 1.65, (v + rng.randf()) / 6.0), rng.randf_range(0.4, 0.6), FOLD_W * 2.0)
 		dims.append(d)
 		meshes.append(ruins._block_mesh(d, 80 + v, minf(rng.randf_range(0.11, 0.14), d.y * 0.5 - 0.02), rng.randf_range(1.7, 2.1), 1.0))
 		per.append([])
@@ -277,7 +278,7 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 	body.name = "FoldCollision"
 	add_child(body)
 	var circ := TAU * FOLD_R
-	var n := int(circ / 0.5)
+	var n := int(circ / 0.68)
 	for i in n:
 		var a := ga + FOLD_GATE + (TAU - 2.0 * FOLD_GATE) * (float(i) + 0.5) / n
 		var radial := Vector2(cos(a), sin(a))
@@ -293,8 +294,12 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 		var dir := Vector3(tang.x, 0, tang.y)
 		var out := Vector3(radial.x, 0, radial.y)
 		for k in courses:
-			var h := rng.randf_range(0.18, 0.25) * (1.0 - k * 0.06)
-			var size := Vector3(rng.randf_range(0.42, 0.56), h, FOLD_W * rng.randf_range(0.85, 1.0) * (1.0 - k * 0.08))
+			var h := rng.randf_range(0.2, 0.3) * (1.0 - k * 0.06)
+			var size := Vector3(rng.randf_range(0.55, 0.8), h, FOLD_W * rng.randf_range(0.85, 1.0) * (1.0 - k * 0.08))
+			if k == 1 and courses >= 2 and rng.randf() < 0.4:
+				# a through-stone: one long flat stone across the wall, its ends standing proud of both faces
+				size = Vector3(rng.randf_range(0.4, 0.5), h * 0.8, FOLD_W * rng.randf_range(1.35, 1.55))
+				through_stones += 1
 			var b := Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out)
 			b = b * Basis(Vector3.FORWARD, rng.randf_range(-0.06, 0.06)) * Basis(Vector3.UP, rng.randf_range(-0.12, 0.12))
 			var cen := Vector3(p2.x, y + h * 0.5, p2.y) + dir * rng.randf_range(-0.05, 0.05) + out * rng.randf_range(-0.04, 0.04)
@@ -312,14 +317,14 @@ func _fold(terrain: Terrain, ruins: Ruins) -> void:
 				continue
 			var side := 1.0 if rng.randf() < 0.6 else -1.0   # more fell outward, down the slope
 			var q := p2 + radial * side * rng.randf_range(0.55, 1.4) + tang * rng.randf_range(-0.3, 0.3)
-			var size := Vector3(rng.randf_range(0.4, 0.55), rng.randf_range(0.18, 0.24), rng.randf_range(0.35, 0.55))
+			var size := Vector3(rng.randf_range(0.5, 0.75), rng.randf_range(0.2, 0.28), rng.randf_range(0.4, 0.6))
 			var b := Basis(Vector3.UP, rng.randf() * TAU) * Basis(Vector3.RIGHT, rng.randf_range(-0.5, 0.5)) * Basis(Vector3.FORWARD, rng.randf_range(-0.4, 0.4))
 			var qy := terrain.height_at(q.x, q.y)
 			_fold_stone(rng, per, dims, Vector3(q.x, qy + size.y * 0.15, q.y), b, size, 0.0, 0.0)
 		if courses >= 2:
 			var cs := CollisionShape3D.new()
 			var bx := BoxShape3D.new()
-			bx.size = Vector3(0.52, y - gy + 0.08, FOLD_W)
+			bx.size = Vector3(0.7, y - gy + 0.08, FOLD_W)
 			cs.shape = bx
 			cs.transform = Transform3D(Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out), Vector3(p2.x, (gy + y) * 0.5, p2.y) - global_position)
 			body.add_child(cs)
