@@ -6002,6 +6002,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    step's speaker / the bell post; (3) the fold itself: a ring of tumbled dry-stone wall round the post (DryWall
    or Ruins stones) so the spot reads as a ruined fold from down the slope, plus thistles; (4) a picked-up bell
    could hang at the hero's belt until given; then the 03:45 list from its item (3) (pull the talk lens out of walls).
+   SHOTS: bellcu (Forward+, 10:30): the bell hung on the post's far side (hidden) and the post read as a pale clean
+   pipe with a pencil tip -> fixed (hanging side turned downhill, darker oak, blunt top). bellcu2 (gallery
+   *-fellbell.jpg, FAIL): bell visible on its strap, but tiny in frame, and the post overshot to a smooth near-black
+   pole. FIRST, before (0): lift the post's oak_silver to ~0.36 with lichen/moss on its weather side, pull the
+   `fellbell` lens in to ~0.6 m at bell height, and consider a ~15% larger bell.
 0. (03:45 10-30) Quest log in (see Done). NEXT, in order: (0) the two other Harrowmere Threads: Osric's strayed
    ewe (find it in the meadow herd lane, walk it back: needs a follow behaviour on one herd animal) and Edda's
    lantern (needs Kindle; until then a taper fetched from her hearth on a rain night); (1) a quest-log save in
