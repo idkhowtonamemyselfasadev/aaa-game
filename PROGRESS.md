@@ -6127,7 +6127,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 0. (17:00 10-30) Song flight + wing fold/tail done (see Done). NEXT: (0) look at shots/wv_after (model view,
    `godot --display-driver x11 --rendering-driver vulkan res://tools/wheatear_view.gd -- ../shots/x.png` under
-   xvfb-run, needs >10 min on the cloud box -- a 600 s timeout killed it this session) for the flank wing and the
+   xvfb-run; this session it sat 40+ min / 64 CPU-min without saving a frame both times and was killed -- check
+   whether it hangs (print per frame) before trusting it; NO screenshot was taken this session, no gallery entry) for the flank wing and the
    parachute V; (1) retake `fellbell <n> 20 10.0 fold birds` (still unshot since the re-seat removal); (2) a shot
    option that freezes the cock mid-parachute against the sky; then more ALIVE on the fell spots: grass wind visible
    in stills, insects in frame; thistles at the post foot.
