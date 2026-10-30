@@ -33,6 +33,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (08:20 10-30) WHY THE FOLD IS IN SHADOW, ANSWERED. New `game/tools/sun_check.gd` (headless: `.tools/godot
+  --headless --path game -s res://tools/sun_check.gd -- [x z [ring_r]]`, defaults to the old fold) marches from six
+  points on a ring toward the sun every hour 07-18 and names the first blocker (fell / oak crown / boulder). The
+  fold sits on the east face under the fell crest: from 15:00 the FELL ITSELF (2-4 m upslope) shades its west arc
+  and the great stone its north side; 13:00-14:00 an oak at (-139, 107) shades the west arc; 08:00-11:00 an oak at
+  (-116, 91) shades the south/west arc. Only ~12:00 is the ring broadly sunlit. So every fold/post shot should be
+  taken at 12.0, and 15:00 shots will always show it in shade (by design: it is a lee fold under the crest).
 - (07:50 10-30) FOLD STONES DIAGNOSED, POST DETAIL. masonry.gdshader field stone: value range 0.5-0.98 -> 0.66-1.02,
   grey 0.8 -> 0.86, the dark crust 0.52/0.7 -> 0.6/0.6 (also lifts the village DryWall a little). timber.gdshader
   crottle thresholds 0.62/0.66 -> 0.66/0.69 (fewer, smaller rosettes); fell_bell.gd post lichen_col warm
@@ -6023,6 +6030,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (08:20 10-30) Shade answered (see Done). NEXT: (0) look at the 12:00 shots `fellbell <n> 20 12.0 fold` and
+   `fellbell <n> 20 12.0` (taken this session, see gallery if they landed); (1) the masonry shader's weak sky-ambient
+   in shade (give field stones a share of `ground_fill`/bounce on side faces like the turf), since the fold is in
+   shade most of the afternoon; (2) thistles at the post foot; then the 07:50 list's items below.
 0. (07:50 10-30) Fold stones = shadow, not shader (see Done). NEXT: (0) find what shades the fold at 15:00 (print a
    ray from fold_centre toward the sun in shot.gd: tree canopy? the fell crest?) and retake at an hour the sun is
    on it (e.g. 11:00-13:00) before touching albedo again; (1) in shade the masonry shader still goes much darker
