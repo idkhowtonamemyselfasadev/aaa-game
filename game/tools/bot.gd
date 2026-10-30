@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -77,6 +77,9 @@ func _ready() -> void:
 		return
 	if name == "mix":
 		_mix_test()
+		return
+	if name == "music":
+		_music_test()
 		return
 	if name == "gfx":
 		_gfx_test()
@@ -2132,6 +2135,83 @@ func _mix_test() -> void:
 	if not paused or get_tree().paused or absf(sfx_db + 6.02) > 0.1 or not mute or absf(saved - 0.5) > 0.01:
 		return _combat_done(false, "pause menu volumes did not apply or save")
 	_combat_done(true, "layers routed, keep reverb in/out, pause menu volumes apply and save")
+
+## The score: the vale cue fades in, day crossfades to night with equal power (never two
+## tracks at full), Hesper's hearth takes over by her fire, a stirring soldier brings the
+## combat track in fast, it lingers, a kill ends it on the victory stinger and the vale theme
+## comes back after; a line on screen ducks the score.
+func _music_test() -> void:
+	var p := _player
+	var m: Music = _world.music
+	var s: HollowSoldier = _world.soldier
+	var k: Keeper = _world.keeper
+	_world.time_of_day = 10.0
+	var away := s.global_position + (p.global_position - s.global_position).normalized() * 60.0
+	var hd := Vector2(away.x - k.hearth_at.x, away.z - k.hearth_at.z).length()
+	if hd < Music.HEARTH_R + 4.0:
+		away = s.global_position + (s.global_position - k.hearth_at).normalized() * 60.0
+	p.global_position = Vector3(away.x, _world.get_node("Terrain").height_at(away.x, away.z) + 0.5, away.z)
+	await _ticks(60 * 4)
+	var day_pl: AudioStreamPlayer = m.get_node("Track_mystical")
+	print("BOT music: cue %s, gains %s, day track playing %s at %.1f s, %.1f dB" % [m.cue, str(m.gains), day_pl.playing and not day_pl.stream_paused, day_pl.get_playback_position(), day_pl.volume_db])
+	if m.cue != "day" or m.gains["mystical"] < 0.99 or not day_pl.playing or day_pl.get_playback_position() < 1.0:
+		return _combat_done(false, "the day theme did not fade in")
+	# night falls: an equal-power crossfade, mid-way neither track is near full
+	_world.time_of_day = 21.0
+	await _ticks(90)
+	var a: float = m.gains["mystical"]
+	var b: float = m.gains["without"]
+	var pw := pow(sin(a * PI * 0.5), 2) + pow(sin(b * PI * 0.5), 2)
+	print("BOT music: mid-crossfade day %.2f night %.2f, power sum %.2f" % [a, b, pw])
+	if a < 0.2 or a > 0.8 or b < 0.2 or b > 0.8 or absf(pw - 1.0) > 0.08:
+		return _combat_done(false, "day/night crossfade not smooth")
+	await _ticks(60 * 3)
+	print("BOT music: cue %s, day %.2f (paused %s) night %.2f" % [m.cue, m.gains["mystical"], day_pl.stream_paused, m.gains["without"]])
+	if m.cue != "night" or m.gains["mystical"] > 0.0 or not day_pl.stream_paused or m.gains["without"] < 0.99:
+		return _combat_done(false, "night theme did not take over")
+	# by Hesper's fire
+	var hp := k.hearth_at + Vector3(2.0, 0, 0)
+	p.global_position = Vector3(hp.x, hp.y + 0.6, hp.z)
+	await _ticks(30)
+	print("BOT music: by the hearth cue %s" % m.cue)
+	if m.cue != "hearth":
+		return _combat_done(false, "no hearth cue by Hesper's fire")
+	# a line on screen ducks the score
+	k.talking = 3.0
+	await _ticks(10)
+	var duck := m.ducked
+	await _ticks(60 * 3)
+	p.global_position = Vector3(away.x, _world.get_node("Terrain").height_at(away.x, away.z) + 0.5, away.z)
+	_world.time_of_day = 10.0
+	await _ticks(60 * 4)
+	print("BOT music: ducked under her line %s, back out cue %s" % [duck, m.cue])
+	if not duck or m.cue != "day":
+		return _combat_done(false, "score did not duck under dialogue")
+	# the fight: walk at the soldier until it stirs
+	var waited := 0.0
+	while s.state == HollowSoldier.IDLE and waited < 25.0:
+		var to := s.global_position - p.global_position
+		p.bot_input = Vector2(to.x, to.z).normalized()
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	await _ticks(int(60 * Music.FADE_COMBAT) + 10)
+	print("BOT music: soldier state %d after %.1f s, cue %s, battle %.2f day %.2f, fights %d" % [s.state, waited, m.cue, m.gains["battle"], m.gains["mystical"], m.fights])
+	if m.cue != "combat" or m.gains["battle"] < 0.99 or m.fights != 1:
+		return _combat_done(false, "combat track did not come in when the soldier stirred")
+	s._die(Vector3(0, 0, 1))
+	await _ticks(60 * 2)
+	var held := m.cue == "combat"
+	await _ticks(int(60 * Music.HOLD))
+	var stg: AudioStreamPlayer = m.get_node("Stinger")
+	print("BOT music: held after the kill %s, then cue %s, stingers %d (playing %s), battle %.2f day %.2f" % [held, m.cue, m.stingers, stg.playing, m.gains["battle"], m.gains["mystical"]])
+	if not held or m.cue == "combat" or m.stingers != 1 or not stg.playing or m.gains["mystical"] > 0.05:
+		return _combat_done(false, "fight did not end on the victory stinger")
+	await _ticks(60 * 12)
+	print("BOT music: after the stinger battle %.2f, %s %.2f" % [m.gains["battle"], m.cue, m.gains[Music.CUES[m.cue][0]]])
+	if m.gains["battle"] > 0.0 or m.gains[Music.CUES[m.cue][0]] < 0.99:
+		return _combat_done(false, "vale theme did not return after the fight")
+	_combat_done(true, "day/night/hearth cues crossfade, combat comes in and lingers, victory stinger, dialogue duck")
 
 ## The picture panel: each preset sets its passes, the quality slider and render scale in
 ## the pause menu drive them (FSR 2 below native), and both are kept in settings.cfg.

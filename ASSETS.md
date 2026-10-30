@@ -95,6 +95,28 @@ named) and its textures (CC BY-SA) were skipped.
 | animals/cluck_1..4, squawk_1..3 | `mobs_mc_chicken_buck.1..3`, `mobs_mc_chicken_hurt` | https://freesound.org/people/evsecrets/sounds/346961/ | evsecrets | CC0 1.0 | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
 | animals/crunch_1..3 | `mobs_mc_animal_eat_generic` | https://freesound.org/people/InspectorJ/sounds/429591/ | InspectorJ | **CC BY 3.0** (credit required) | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
 
+## Music (`game/audio/music/`, added 2026-10-30 22:00)
+
+Taken from Ubuntu's `edgar-data` 1.37 package (archive.ubuntu.com, noble/universe; extracted
+from its `edgar.pak`), whose Debian `copyright` file credits each track by author and license.
+Each license was then re-checked against the original OpenGameArt page through web search on
+2026-10-30 (opengameart.org itself is not reachable from the cloud box; item (e) re-opens
+each page). Re-encoded with ffmpeg: loudnorm to -16..-17 LUFS, true peak <= -1.4 dBFS, 44.1 kHz
+Ogg Vorbis q4; the stinger is cut from the last 8.3 s of Heroes Theme with a 0.6 s fade-in
+(a modification, allowed by CC BY). All **CC BY 3.0: credit required** in the Credits screen.
+Rejected from the same package: "A Wintertale" (Johan Brodd; Debian says CC BY 3.0 but its OGA
+page lists CC BY-SA 3.0 / GPL 3.0 -- share-alike music is not allowed), "Hope" (Szymon
+Matuszewski; license not confirmable), every CC BY-SA track (Pant0don, grindhold, xXUnderTowerXx,
+Eliot Corley, Matthew Pablo "Undead Rising"). None of the used artists is known to register
+with YouTube Content ID (checked by search, 2026-10-30; recheck in (e)).
+
+| File | Track | Source page | Author | License | Checked |
+|---|---|---|---|---|---|
+| music/vale_day_mystical_theme.ogg | Mystical Theme | https://opengameart.org/content/mystical-theme | Alexandr Zhelanov | **CC BY 3.0** | 2026-10-30 |
+| music/vale_night_without.ogg | Without | https://opengameart.org/content/without | Alexandr Zhelanov | **CC BY 3.0** | 2026-10-30 |
+| music/combat_battle_in_the_winter.ogg | Battle in the winter | https://opengameart.org/content/battle-in-the-winter | Johan Brodd (jobromedia) | **CC BY 3.0** (also offered as OGA-BY 3.0 / GPL 3.0; used under CC BY 3.0) | 2026-10-30 |
+| music/victory_heroes_theme_end.ogg | Heroes Theme (last 8.3 s) | https://opengameart.org/content/heroes-theme | Alexandr Zhelanov | **CC BY 3.0** | 2026-10-30 |
+
 ## Procedural (no license needed)
 - Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.

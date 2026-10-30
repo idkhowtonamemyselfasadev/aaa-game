@@ -51,6 +51,7 @@ var hens: Hens
 var soundscape: Soundscape
 var foley: Foley
 var audio_mix: AudioMix
+var music: Music
 var pause_menu: PauseMenu
 var graphics: GraphicsQuality
 var grade: ShaderMaterial         # final film grade + grain (ColorRect under the HUD)
@@ -257,6 +258,11 @@ func _ready() -> void:
 	audio_mix.name = "AudioMix"
 	audio_mix.world = self
 	add_child(audio_mix)
+	# the score: vale by day / by night, Hesper's hearth, the fight and its victory stinger
+	music = Music.new()
+	music.name = "Music"
+	music.world = self
+	add_child(music)
 	# the picture preset and FSR 2 render scale (after the Environment is built)
 	graphics = GraphicsQuality.new()
 	graphics.name = "Graphics"
