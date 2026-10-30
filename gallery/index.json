@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261024-1320-dust-devil5.jpg",
-  "time": "2026-10-24T13:20:00Z",
-  "caption": "A dust devil 12 m off the hero (devil spot, near): a tan whirling column rising from the track, now with visible spin striations; its skirt is hidden by the tall grass and the hero still looks stylized.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1425-dust-devil6-close.jpg",
   "time": "2026-10-24T14:25:00Z",
   "caption": "Crop on the whirl: brown tumbling leaves read clearly against the sky and the bowl keeps a firmer right edge; the top still melts into a soft haze against the cloud.",
@@ -885,6 +879,18 @@
   "file": "20261030-0446-fellbell.jpg",
   "time": "2026-10-30T04:46:06Z",
   "caption": "Osric's lost bellwether bell hangs by its leather collar from the last fold post under the great grey stone, quest corner and Take prompt up; still wrong: the bell is tiny in frame, the post reads as a smooth near-black pole, and there is no ruined fold round it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0541-foldring.jpg",
+  "time": "2026-10-30T05:41:46Z",
+  "caption": "The fell bell's post at the broken gateway of Osric's old fold: a ring of tumbled dry-stone wall butted against the great stone, fallen stones in the turf; still too low and dark in the backlight, a second boulder cuts through the ring, and the hero still reads stylised.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0541-bellcu.jpg",
+  "time": "2026-10-30T05:41:46Z",
+  "caption": "Close on the bellwether's bell, a size bigger and readable as verdigrised bronze on its strap, the post crusted with small lichen flecks; the post still reads as a smooth dark pole in shade and the grass blades are flat cards.",
   "verdict": "fail"
  }
 ]
