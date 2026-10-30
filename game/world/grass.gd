@@ -134,7 +134,7 @@ func _site(x: float, z: float, rng: RandomNumberGenerator, flora: Node) -> Vecto
 	if keep < 1.9 or (keep < 4.6 and (keep > 3.0 or rng.randf() > 0.1 + 0.35 * smoothstep(2.3, 2.9, keep))):
 		return Vector3(-1, 0, 0)
 	# Harrowmere's first house: no meadow through its footing (a fringe stands under the eaves)
-	if Cottage.inside(x, z, -0.4) or StoneCottage.inside(x, z, -0.4) or WhiteCottage.covers(x, z, -0.4) or LanternPost.near(x, z, -0.02) or DryWall.near(x, z, -0.12) or YardWall.near(x, z, -0.12) or DoorStones.under(x, z, 0.03) or RutStones.under(x, z, -0.02):
+	if Cottage.inside(x, z, -0.4) or StoneCottage.inside(x, z, -0.4) or WhiteCottage.covers(x, z, -0.4) or LanternPost.near(x, z, -0.02) or DryWall.near(x, z, -0.12) or FellBell.on_fold(x, z, -0.1) or YardWall.near(x, z, -0.12) or DoorStones.under(x, z, 0.03) or RutStones.under(x, z, -0.02):
 		return Vector3(-1, 0, 0)
 	# woodland floor: deep under the oak crowns the meadow gives way to ferns and litter,
 	# with only thin, shorter shade grass

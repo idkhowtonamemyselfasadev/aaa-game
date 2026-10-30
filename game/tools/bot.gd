@@ -5792,6 +5792,13 @@ func _flockbell_test() -> void:
 	var tr: Terrain = _world.get_node("Terrain")
 	if q == null or b == null:
 		return _combat_done(false, "no quest log / no bell")
+	# the ruined fold round the post: laid and spilt stones, its wall off the path up
+	var fc := FellBell.fold_centre()
+	print("BOT flockbell fold: %d stones, ring %.1f m from the post" % [b.fold_stones, Vector2(b.post_top.x, b.post_top.z).distance_to(fc)])
+	if b.fold_stones < 40:
+		return _combat_done(false, "no ruined fold round the post")
+	if FellBell.on_fold(b.post_top.x, b.post_top.z, 0.3):
+		return _combat_done(false, "the fold wall stands over the post's gateway")
 	_world.weather.force(0.0)
 	_world.time_of_day = 9.0
 	n.settle(_world, 9.0)

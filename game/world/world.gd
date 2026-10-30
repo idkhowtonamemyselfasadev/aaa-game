@@ -221,7 +221,7 @@ func _ready() -> void:
 	fell_bell = FellBell.new()
 	fell_bell.name = "FellBell"
 	add_child(fell_bell)
-	fell_bell.build(terrain)
+	fell_bell.build(terrain, get_node("Ruins") as Ruins)
 	fell_bell.player = player
 	fell_bell.weather = weather
 	# Wat the pedlar, through on the fell road twice a day, a word for each of them

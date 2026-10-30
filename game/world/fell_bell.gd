@@ -8,7 +8,10 @@ extends Node3D
 ## strap, swinging as a damped pendulum pushed by the wind and knocking at the ends of its
 ## swing, so the hero hears it from down the slope before seeing it. While the quest is at its
 ## first step the HUD offers "Take" beside the post; taken, the bell and collar go with the hero.
-## Bots read `rings`, `taken` and `max_swing`.
+## Round the post lie the bones of the fold itself (`_fold`): a ring of dry-stone wall butted
+## against the great stone, tumbled to one to three courses with breaches and its fallen stones
+## spilt in the turf, the post standing as the broken gateway's jamb.
+## Bots read `rings`, `taken`, `max_swing` and `fold_stones`.
 
 const ROCK := Vector3(-113.49, 0.0, 101.33)   # the great stone (Flora's boulder at (x, size, z))
 const ROCK_SIZE := 3.14
@@ -16,9 +19,13 @@ const TOWARD := Vector2(-33.8, 34.1)          # Osric's spot on the fell side: t
 const POST_H := 1.05
 const POST_R := 0.07
 const DROP := 0.13                            # m of strap from the wrap to the bell's canon
+const BELL_SCALE := 1.15                      # the lathe profile is a small ewe's bell; a wether's is bigger
 const TAKE_R := 1.8
 const HEAR_R := 70.0
 const RATE := 22050
+const FOLD_R := 3.2                           # the fold's ring radius at the wall's centre line (m)
+const FOLD_W := 0.6                           # the wall's width
+const FOLD_GATE := 0.42                       # half the gateway's angle either side of the post (rad)
 const WIND_DIR := Vector2(0.8, 0.6)           # the meadow wind (Weather)
 
 var player: Player
@@ -26,6 +33,7 @@ var weather: Weather
 var rings := 0                   # knocks of the clapper (bots)
 var taken := false
 var max_swing := 0.0             # largest swing seen, rad (bots)
+var fold_stones := 0             # stones laid or spilt in the fold (bots)
 var post_top := Vector3.ZERO     # world: where the collar wraps (shots, bots)
 var _pivot: Node3D
 var _collar: MeshInstance3D
@@ -39,10 +47,39 @@ var _seen_interacts := 0
 var _t := 0.0
 var _rng := RandomNumberGenerator.new()
 
-func build(terrain: Terrain) -> void:
+## The post's foot in world xz (the stone's near side, toward Osric's fell spot).
+static func foot_xz() -> Vector2:
+	var away := (TOWARD - Vector2(ROCK.x, ROCK.z)).normalized()
+	return Vector2(ROCK.x, ROCK.z) + away * (ROCK_SIZE * 0.75 + 1.3)
+
+## The fold's centre: off to the side of the post and a little up toward the stone, so the post
+## stands on the ring at its gateway and the path up from the stile comes in clear of the wall.
+static func fold_centre() -> Vector2:
+	var away := (TOWARD - Vector2(ROCK.x, ROCK.z)).normalized()
+	var side := Vector2(away.y, -away.x)
+	return foot_xz() + (side * 0.8 - away * 0.6) * FOLD_R
+
+## The post's angle on the fold ring.
+static func _gate_angle() -> float:
+	var d := foot_xz() - fold_centre()
+	return atan2(d.y, d.x)
+
+## How much of the wall still stands at angle `a` on the ring: 0 a breach .. 1 three courses.
+static func _standing(a: float) -> float:
+	return clampf(0.55 + 0.35 * sin(a * 3.0 + 1.3) + 0.25 * sin(a * 7.0 + 0.4) + 0.12 * sin(a * 13.0 + 2.2), 0.0, 1.0)
+
+## True when (x, z) lies on the fold's tumbled wall plus `margin` (grass and flowers keep off).
+static func on_fold(x: float, z: float, margin: float = 0.0) -> bool:
+	var c := fold_centre()
+	var p := Vector2(x, z)
+	if absf(p.distance_to(c) - FOLD_R) > FOLD_W * 0.5 + margin:
+		return false
+	return absf(angle_difference((p - c).angle(), _gate_angle())) > FOLD_GATE - margin / FOLD_R
+
+func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	_rng.seed = 4417
 	var away := (TOWARD - Vector2(ROCK.x, ROCK.z)).normalized()
-	var foot2 := Vector2(ROCK.x, ROCK.z) + away * (ROCK_SIZE * 0.75 + 1.3)
+	var foot2 := foot_xz()
 	var foot := Vector3(foot2.x, terrain.height_at(foot2.x, foot2.y), foot2.y)
 	global_position = foot
 	# the post leans a little downhill, away from the stone, as an old post does
@@ -62,9 +99,13 @@ func build(terrain: Terrain) -> void:
 	tm.shader = preload("res://shaders/timber.gdshader")
 	tm.set_shader_parameter("seed", 13.7)
 	# out on the fell for forty years: darker and greener than the cottage timbers
-	tm.set_shader_parameter("oak_silver", Color(0.27, 0.26, 0.225))
-	tm.set_shader_parameter("oak_brown", Color(0.16, 0.13, 0.09))
-	tm.set_shader_parameter("oak_dark", Color(0.06, 0.055, 0.045))
+	tm.set_shader_parameter("oak_silver", Color(0.36, 0.35, 0.31))
+	tm.set_shader_parameter("oak_brown", Color(0.2, 0.165, 0.115))
+	tm.set_shader_parameter("oak_dark", Color(0.075, 0.068, 0.055))
+	# crottle and moss on its weather side and up from the turf
+	tm.set_shader_parameter("lichen", 1.0)
+	tm.set_shader_parameter("weather_dir", Vector3(-WIND_DIR.x, 0.0, -WIND_DIR.y))
+	tm.set_shader_parameter("foot_y", -(POST_H - 0.25) * 0.5)
 	cm.material = tm
 	var mi := MeshInstance3D.new()
 	mi.name = "Oak"
@@ -122,7 +163,8 @@ func build(terrain: Terrain) -> void:
 	bell.name = "Bell"
 	bell.mesh = _bell_mesh()
 	bell.material_override = bronze
-	bell.position.y = -DROP - 0.09
+	bell.position.y = -DROP - 0.09 * BELL_SCALE
+	bell.scale = Vector3.ONE * BELL_SCALE
 	_pivot.add_child(bell)
 	post_top = post.to_global(_pivot.position)
 	_sound = AudioStreamPlayer3D.new()
@@ -134,6 +176,109 @@ func build(terrain: Terrain) -> void:
 	_pivot.add_child(_sound)
 	for f: float in [742.0, 768.0, 731.0]:
 		_knocks.append(_make_knock(f))
+	if ruins != null:
+		_fold(terrain, ruins)
+
+## The old fold: field rubble laid round the ring in up to three courses, each stone a single
+## through-stone the wall's width, the courses fallen where `_standing` is low and their stones
+## lying tilted and half sunk in the turf on either side; a cope stone on edge here and there
+## where the wall stands full. Ruins' chipped block meshes at twice size, scaled down, in the
+## masonry shader's aged field-stone dress (as DryWall). Box colliders where two or more
+## courses stand; a single course is stepped over.
+func _fold(terrain: Terrain, ruins: Ruins) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 9031
+	var dims: Array[Vector3] = []
+	var per: Array = []
+	var meshes: Array[ArrayMesh] = []
+	for v in 6:
+		var d := Vector3(lerpf(0.7, 1.15, (v + rng.randf()) / 6.0), rng.randf_range(0.34, 0.48), FOLD_W * 2.0)
+		dims.append(d)
+		meshes.append(ruins._block_mesh(d, 80 + v, minf(rng.randf_range(0.11, 0.14), d.y * 0.5 - 0.02), rng.randf_range(1.7, 2.1)))
+		per.append([])
+	var c2 := fold_centre()
+	var ga := _gate_angle()
+	var body := StaticBody3D.new()
+	body.name = "FoldCollision"
+	add_child(body)
+	var circ := TAU * FOLD_R
+	var n := int(circ / 0.5)
+	for i in n:
+		var a := ga + FOLD_GATE + (TAU - 2.0 * FOLD_GATE) * (float(i) + 0.5) / n
+		var radial := Vector2(cos(a), sin(a))
+		var tang := Vector2(-radial.y, radial.x)
+		var p2 := c2 + radial * FOLD_R
+		var gy := terrain.height_at(p2.x, p2.y)
+		var stand := _standing(a)
+		# the gateway's jambs fall lowest: the stones nearest the post are mostly gone
+		var to_gate := minf(absf(angle_difference(a, ga + FOLD_GATE)), absf(angle_difference(a, ga - FOLD_GATE)))
+		stand *= clampf(to_gate / 0.35, 0.25, 1.0)
+		var courses := int(round(stand * 3.0 + rng.randf_range(-0.3, 0.3)))
+		var y := gy - 0.08                 # the foundation course sits in the turf
+		var dir := Vector3(tang.x, 0, tang.y)
+		var out := Vector3(radial.x, 0, radial.y)
+		for k in courses:
+			var h := rng.randf_range(0.18, 0.25) * (1.0 - k * 0.08)
+			var size := Vector3(rng.randf_range(0.42, 0.56), h, FOLD_W * rng.randf_range(0.85, 1.0) * (1.0 - k * 0.1))
+			var b := Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out)
+			b = b * Basis(Vector3.FORWARD, rng.randf_range(-0.06, 0.06)) * Basis(Vector3.UP, rng.randf_range(-0.12, 0.12))
+			var cen := Vector3(p2.x, y + h * 0.5, p2.y) + dir * rng.randf_range(-0.05, 0.05) + out * rng.randf_range(-0.04, 0.04)
+			_fold_stone(rng, per, dims, cen, b, size, cen.y - gy, 1.0)
+			y += h * 0.96
+		if courses == 3 and rng.randf() < 0.5:
+			# a cope stone on edge, leaning along the wall
+			var size := Vector3(0.16, rng.randf_range(0.26, 0.32), FOLD_W * 0.7)
+			var b := Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out) * Basis(Vector3.FORWARD, rng.randf_range(-0.25, 0.25))
+			_fold_stone(rng, per, dims, Vector3(p2.x, y + size.y * 0.45, p2.y), b, size, y - gy, 1.0)
+			y += size.y * 0.9
+		# the fallen courses lie spilt on either side, tilted, half sunk
+		for k in 3 - courses:
+			if rng.randf() < 0.3:
+				continue
+			var side := 1.0 if rng.randf() < 0.6 else -1.0   # more fell outward, down the slope
+			var q := p2 + radial * side * rng.randf_range(0.55, 1.4) + tang * rng.randf_range(-0.3, 0.3)
+			var size := Vector3(rng.randf_range(0.4, 0.55), rng.randf_range(0.18, 0.24), rng.randf_range(0.35, 0.55))
+			var b := Basis(Vector3.UP, rng.randf() * TAU) * Basis(Vector3.RIGHT, rng.randf_range(-0.5, 0.5)) * Basis(Vector3.FORWARD, rng.randf_range(-0.4, 0.4))
+			var qy := terrain.height_at(q.x, q.y)
+			_fold_stone(rng, per, dims, Vector3(q.x, qy + size.y * 0.15, q.y), b, size, 0.0, 0.0)
+		if courses >= 2:
+			var cs := CollisionShape3D.new()
+			var bx := BoxShape3D.new()
+			bx.size = Vector3(0.52, y - gy + 0.08, FOLD_W)
+			cs.shape = bx
+			cs.transform = Transform3D(Basis(out.cross(Vector3.UP).normalized() * -1.0, Vector3.UP, out), Vector3(p2.x, (gy + y) * 0.5, p2.y) - global_position)
+			body.add_child(cs)
+	for v in meshes.size():
+		if per[v].is_empty():
+			continue
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_custom_data = true
+		mm.mesh = meshes[v]
+		mm.instance_count = per[v].size()
+		for j in per[v].size():
+			mm.set_instance_transform(j, per[v][j][0])
+			mm.set_instance_custom_data(j, per[v][j][1])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = "Fold_%d" % v
+		mmi.multimesh = mm
+		add_child(mmi)
+
+## One rubble stone of `size` (laid m) at world `c`: the nearest-sized variant, scaled down.
+func _fold_stone(rng: RandomNumberGenerator, per: Array, dims: Array[Vector3], c: Vector3, b: Basis, size: Vector3, above: float, laid: float) -> void:
+	var v := rng.randi() % dims.size()
+	for t in 2:
+		var o := rng.randi() % dims.size()
+		if absf(dims[o].x - size.x * 2.0) < absf(dims[v].x - size.x * 2.0):
+			v = o
+	var d: Vector3 = dims[v]
+	var sc := Vector3(size.x / d.x, size.y / d.y, size.z / d.z)
+	if rng.randf() < 0.5:
+		sc.x = -sc.x
+		sc.z = -sc.z
+	var xf := Transform3D(b.orthonormalized() * Basis.from_scale(sc), c - global_position)
+	per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), rng.randf(), laid, 2.0)])
+	fold_stones += 1
 
 ## A ribbon round the post: two turns, climbing 2 cm a turn, 2.2 cm wide.
 func _wrap_mesh(y0: float) -> ArrayMesh:

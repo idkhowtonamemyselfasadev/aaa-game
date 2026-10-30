@@ -655,9 +655,17 @@ func _ready() -> void:
 		var pp := at + down * 1.1 + sd * 0.5
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.05, pp.z)
 		player.body.rotation.y = atan2(at.x - pp.x, at.z - pp.z)
-		var cp := at + down * 1.0 - sd * 0.75 if not "wide" in args else at + down * 5.5 - sd * 2.5
-		cp.y = at.y + (0.05 if not "wide" in args else 1.2)
-		var look := at + Vector3.DOWN * 0.18 if not "wide" in args else at - down * 2.5 + Vector3.UP * 0.4
+		var cp := at + down * 0.5 - sd * 0.35 if not "wide" in args else at + down * 5.5 - sd * 2.5
+		cp.y = at.y + (-0.1 if not "wide" in args else 1.2)
+		var look := at + Vector3.DOWN * 0.2 if not "wide" in args else at - down * 2.5 + Vector3.UP * 0.4
+		if "fold" in args:
+			# the ruined fold ring from down the slope outside it, the post at its gateway
+			var fc2 := FellBell.fold_centre()
+			var fc := Vector3(fc2.x, terrain.height_at(fc2.x, fc2.y), fc2.y)
+			cp = fc + down * 6.5 - sd * 3.0
+			cp.y = maxf(terrain.height_at(cp.x, cp.z), fc.y) + 2.0
+			look = fc + Vector3.UP * 0.3
+			print("SHOT fellbell fold: %d stones" % b.fold_stones)
 		SPOTS[spot] = [cp, look]
 		print("SHOT fellbell at %s" % at)
 	if spot == "wander":
