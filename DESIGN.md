@@ -207,7 +207,8 @@ spear wound back to the right.
 ### Side arcs (8 h)
 - **Idris's Debt** (4 quests, 2.5 h): the bandit general's raiders in Vellmarsh; trust/betrayal choice.
 - **Oru's Daughter** (3 quests, 2 h): track the Hollow daughter through the marsh and Depths.
-- **Sefi's Towers** (4 quests, 1.5 h): one memory per tower; ending choice.
+- **Sefi's Towers** (4 quests, 1.2 h): one memory per tower; ending choice.
+- **Harrowmere Threads** (3 quests, 0.3 h): short vale errands that open the villagers' arcs. *Bread for the Keep* (Edda sends a loaf up to Hesper; Hesper's word comes back down; reward: vitality +15) is built; Edda's lantern (Kindle) and Osric's strayed ewe follow.
 - **Pell Remembers** (3 quests, 2 h): recover memory-shards; determines epilogue line.
 (Caelum appears in M6/M11 only; his court is cut with the sky layer.)
 

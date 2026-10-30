@@ -633,6 +633,12 @@ func _ready() -> void:
 		kp.talking = 1.0e6
 		var hud: Hud = player.get_node("Hud")
 		hud.say("Hesper", Keeper.INTRO[1], 1.0e6)
+		if "quest" in args:
+			# mid-errand: the loaf handed over, her word for Edda on the subtitle, the next
+			# objective in the quest corner
+			var ql: Quests = player.get_node("Quests")
+			ql.stage[Quests.BREAD] = 2
+			hud.say("Hesper", Quests.DEFS[Quests.BREAD]["talk"][1][1], 1.0e6)
 		var cp := pp - to_k * 2.4 + to_k.cross(Vector3.UP) * 1.45
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.75
 		SPOTS[spot] = [cp, at.lerp(pp, 0.3) + Vector3.UP * 1.3]

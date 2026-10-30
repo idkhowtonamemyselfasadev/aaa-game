@@ -67,6 +67,10 @@ func _ready() -> void:
 	trample = Trample.new()
 	trample.name = "Trample"
 	trample.player = player
+	# the quest log rides on the hero beside the Hud
+	var quests := Quests.new()
+	quests.name = "Quests"
+	player.add_child(quests)
 	add_child(trample)
 	moon = DirectionalLight3D.new()
 	moon.name = "Moon"

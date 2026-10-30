@@ -751,6 +751,11 @@ func _say_to_mate(line: String, answer: bool) -> float:
 	return secs
 
 func _next_line() -> String:
+	var quests = player.get_node_or_null("Quests") if player != null else null
+	if quests != null:
+		var q: String = quests.line_for(who, _intro_i >= intro.size())
+		if q != "":
+			return q
 	if _intro_i < intro.size():
 		_intro_i += 1
 		return intro[_intro_i - 1]

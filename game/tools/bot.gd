@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -190,6 +190,8 @@ func _ready() -> void:
 		return
 	if name == "eddatalk":
 		_eddatalk_test()
+	if name == "breadquest":
+		_breadquest_test()
 		return
 	if name == "bat":
 		_bat_test()
@@ -5676,7 +5678,8 @@ func _eddatalk_test() -> void:
 		if hud.say_line != v.last_line or hud.say_speaker != "Edda" or not hud.saying():
 			return _combat_done(false, "her line did not show as a subtitle")
 		await _ticks(90)
-	if v.talks != 3 or heard[0] != Villager.INTRO[0] or heard[1] != Villager.INTRO[1] or not (heard[2] in Villager.LINES["wood"]):
+	var offer: String = Quests.DEFS[Quests.BREAD]["talk"][0][1]
+	if v.talks != 3 or heard[0] != Villager.INTRO[0] or heard[1] != Villager.INTRO[1] or heard[2] != offer:
 		return _combat_done(false, "lines out of order: %s" % [heard])
 	var d := _player.global_position - v.global_position
 	var face := absf(wrapf(atan2(d.x, d.z) - v.body.rotation.y, -PI, PI))
@@ -5704,7 +5707,74 @@ func _eddatalk_test() -> void:
 	await _ticks(20)
 	if v.talks != n0:
 		return _combat_done(false, "she answered from inside the house")
-	_combat_done(true, "intro x2 then a wood line, subtitled, facing him; an eat line sat on the bench; silent indoors")
+	_combat_done(true, "intro x2 then the loaf for the keep, subtitled, facing him; an eat line sat on the bench; silent indoors")
+
+## Bread for the Keep, start to finish: Edda's intro, then she gives the loaf (quest begun, the
+## Hud shows the objective and a banner); Hesper in the keep takes it and gives her word; back
+## on the green Edda hears it and the quest closes with +15 vitality, healed to the new full.
+## Speaking to Hesper before the loaf, or to Edda again mid-errand, does not move the quest.
+func _breadquest_test() -> void:
+	var v: Villager = _world.villager
+	var k: Keeper = _world.keeper
+	var hud: Hud = _player.get_node("Hud")
+	var q: Quests = _player.get_node_or_null("Quests")
+	var tr: Terrain = _world.get_node("Terrain")
+	if q == null:
+		return _combat_done(false, "no quest log on the hero")
+	_world.weather.force(0.0)
+	_world.time_of_day = 9.0
+	v.settle(_world, 9.0)
+	k.settle(_world, 9.0)
+	await _ticks(10)
+	# Hesper first: nothing to carry, so no step
+	var kp := k.global_position + Vector3(0, 0, 1.8).rotated(Vector3.UP, k.body.rotation.y)
+	_player.global_position = Vector3(kp.x, tr.height_at(kp.x, kp.z) + 0.3, kp.z)
+	await _ticks(40)
+	_player.bot_interact = true
+	await _ticks(90)
+	print("BOT breadquest early Hesper: '%s' stage %d" % [k.last_line, q.stage_of(Quests.BREAD)])
+	if q.stage_of(Quests.BREAD) != 0:
+		return _combat_done(false, "Hesper moved the quest before the loaf")
+	# Edda: two intro lines, then the loaf
+	var pp := v.global_position + Vector3(0, 0, 1.7).rotated(Vector3.UP, v.body.rotation.y + 0.6)
+	_player.global_position = Vector3(pp.x, tr.height_at(pp.x, pp.z) + 0.3, pp.z)
+	await _ticks(60)
+	for i in 3:
+		_player.bot_interact = true
+		await _ticks(90)
+		print("BOT breadquest Edda %d: '%s' stage %d" % [i, v.last_line, q.stage_of(Quests.BREAD)])
+	if q.stage_of(Quests.BREAD) != 1 or q.active() != Quests.BREAD:
+		return _combat_done(false, "Edda did not give the loaf after her intro")
+	await _ticks(2)
+	print("BOT breadquest hud: '%s' banner '%s' (%.1f s)" % [hud.quest_shown, q.banner_title, q.banner_t])
+	if hud.quest_shown != q.objective(Quests.BREAD) or not q.banner_title.begins_with("Quest begun"):
+		return _combat_done(false, "no objective / banner on the Hud")
+	_player.bot_interact = true
+	await _ticks(90)
+	if q.stage_of(Quests.BREAD) != 1:
+		return _combat_done(false, "Edda moved the quest again mid-errand")
+	# up to the keep
+	kp = k.global_position + Vector3(0, 0, 1.8).rotated(Vector3.UP, k.body.rotation.y)
+	_player.global_position = Vector3(kp.x, tr.height_at(kp.x, kp.z) + 0.3, kp.z)
+	await _ticks(40)
+	_player.bot_interact = true
+	await _ticks(90)
+	print("BOT breadquest Hesper: '%s' stage %d, hud '%s'" % [k.last_line, q.stage_of(Quests.BREAD), hud.quest_shown])
+	if q.stage_of(Quests.BREAD) != 2 or hud.quest_shown != q.objective(Quests.BREAD):
+		return _combat_done(false, "Hesper did not take the loaf")
+	# back down to the green
+	pp = v.global_position + Vector3(0, 0, 1.7).rotated(Vector3.UP, v.body.rotation.y + 0.6)
+	_player.global_position = Vector3(pp.x, tr.height_at(pp.x, pp.z) + 0.3, pp.z)
+	_player.health = 40.0
+	await _ticks(60)
+	_player.bot_interact = true
+	await _ticks(10)
+	print("BOT breadquest return: '%s' done %s, vitality %.0f/%.0f, banner '%s', hud '%s'" % [v.last_line, q.done(Quests.BREAD), _player.health, _player.health_max, q.banner_title, hud.quest_shown])
+	if not q.done(Quests.BREAD) or q.active() != "" or hud.quest_shown != "":
+		return _combat_done(false, "the quest did not close")
+	if _player.health_max != Player.HEALTH_MAX + Quests.BREAD_VIGOR or _player.health != _player.health_max:
+		return _combat_done(false, "no oatcake reward")
+	_combat_done(true, "loaf given after the intro, carried to Hesper, her word brought back: quest complete, vitality %.0f" % _player.health_max)
 
 ## Holds the clock at hour h for n physics ticks (a long walk must not run past the slot).
 func _hold_hour(h: float, n: int) -> void:

@@ -135,6 +135,7 @@ var _flick_t := 0.0
 
 var stamina := STAMINA_MAX
 var health := HEALTH_MAX
+var health_max := HEALTH_MAX    # grows with quest rewards (Quests)
 var dodge_t := -1.0                   # seconds into the current dodge, -1 when not dodging
 var dodges := 0
 var perfect_dodges := 0
@@ -1438,7 +1439,7 @@ func _respawn() -> void:
 	woke_t = 0.0
 	global_position = respawn_point
 	velocity = Vector3.ZERO
-	health = HEALTH_MAX
+	health = health_max
 	stamina = STAMINA_MAX
 	model.transform = _model_rest
 	down_t = -1.0

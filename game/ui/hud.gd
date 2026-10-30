@@ -34,6 +34,8 @@ var say_speaker := ""                   # the spoken line on screen (bots read i
 var say_line := ""
 var _say_t := 0.0
 var _say_a := 0.0
+var _quest: Control
+var quest_shown := ""                   # the objective line drawn top-left (bots read it)
 
 func _ready() -> void:
 	layer = 5
@@ -68,6 +70,12 @@ func _ready() -> void:
 	_talk.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_talk.draw.connect(_draw_talk)
 	add_child(_talk)
+	_quest = Control.new()
+	_quest.name = "Quest"
+	_quest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quest.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_quest.draw.connect(_draw_quest)
+	add_child(_quest)
 
 ## A place names itself while the hero stands at it: call every frame he is there; it fades in,
 ## and out again shortly after the calls stop.
@@ -97,7 +105,7 @@ func saying() -> bool:
 func _process(delta: float) -> void:
 	if player == null:
 		return
-	var hp := player.health / Player.HEALTH_MAX
+	var hp := player.health / player.health_max
 	var st := player.stamina / Player.STAMINA_MAX
 	var cur := Vector2(hp, st)
 	if cur != _last or hp < 1.0 or st < 1.0:
@@ -133,6 +141,12 @@ func _process(delta: float) -> void:
 		_prompt_a = pa
 		_say_a = sa
 		_talk.queue_redraw()
+	var ql = player.get_node_or_null("Quests")
+	var qa: String = ql.active() if ql != null else ""
+	var want_q: String = ql.objective(qa) if qa != "" else ""
+	if want_q != quest_shown or (ql != null and ql.banner_t > 0.0):
+		quest_shown = want_q
+		_quest.queue_redraw()
 	var va := player.screen_black()
 	if va != veil_alpha or va > 0.0:
 		veil_alpha = va
@@ -189,6 +203,46 @@ func _draw_caption() -> void:
 	var ry := cy + 12.0 * s
 	_cap.draw_line(Vector2((vs.x - rw) * 0.5, ry), Vector2((vs.x + rw) * 0.5, ry), Color(0.62, 0.48, 0.3, 0.6 * a), maxf(1.0, s))
 	_cap.draw_string(font, Vector2((vs.x - lw) * 0.5, ry + lsize * 1.45), caption_line, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0.78, 0.72, 0.62, 0.85 * a))
+
+## Quest: the active quest's title in brass small caps over its objective in bone-white, top
+## left, small and quiet; a banner (begun / complete, with the objective or the reward) rides
+## high in the centre for a few seconds when a step opens or closes a quest.
+func _draw_quest() -> void:
+	var ql = player.get_node_or_null("Quests")
+	if ql == null:
+		return
+	var vs := _quest.get_viewport_rect().size
+	var s := vs.y / 1080.0
+	var font := ThemeDB.fallback_font
+	var qa: String = ql.active()
+	if qa != "":
+		var x := 42.0 * s
+		var y := 58.0 * s
+		var tsize := int(17.0 * s)
+		var osize := int(21.0 * s)
+		var t := " ".join(ql.title(qa).to_upper().split(""))
+		var ow := font.get_string_size(quest_shown, HORIZONTAL_ALIGNMENT_LEFT, -1, osize).x
+		for i in 4:   # feathered dark band behind the text
+			_quest.draw_rect(Rect2(x - (18.0 - i * 4.0) * s, y - tsize * 1.5, ow + (36.0 - i * 8.0) * s, tsize * 1.5 + osize * 1.6), Color(0.01, 0.01, 0.008, 0.08))
+		_quest.draw_string(font, Vector2(x, y), t, HORIZONTAL_ALIGNMENT_LEFT, -1, tsize, Color(0.74, 0.58, 0.36, 0.9))
+		_quest.draw_line(Vector2(x, y + 7.0 * s), Vector2(x + 46.0 * s, y + 7.0 * s), Color(0.62, 0.48, 0.3, 0.6), maxf(1.0, s))
+		_quest.draw_string(font, Vector2(x, y + osize * 1.35), quest_shown, HORIZONTAL_ALIGNMENT_LEFT, -1, osize, Color(0.88, 0.83, 0.72, 0.92))
+	if ql.banner_t > 0.0:
+		var a := clampf(ql.banner_t / 0.8, 0.0, 1.0) * clampf((6.0 - ql.banner_t) / 0.5, 0.0, 1.0)
+		var bsize := int(30.0 * s)
+		var lsize := int(20.0 * s)
+		var bt: String = ql.banner_title
+		var bl: String = ql.banner_line
+		var bw := font.get_string_size(bt, HORIZONTAL_ALIGNMENT_LEFT, -1, bsize).x
+		var lw := font.get_string_size(bl, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize).x
+		var cy := vs.y * 0.2
+		var w := maxf(bw, lw) + 140.0 * s
+		var band := Rect2((vs.x - w) * 0.5, cy - bsize * 1.3, w, bsize * 1.3 + lsize * 2.2)
+		for i in 6:
+			_quest.draw_rect(band.grow_individual(-i * w * 0.06, 0, -i * w * 0.06, 0), Color(0.01, 0.01, 0.008, 0.07 * a))
+		_quest.draw_string(font, Vector2((vs.x - bw) * 0.5, cy), bt, HORIZONTAL_ALIGNMENT_LEFT, -1, bsize, Color(0.9, 0.85, 0.74, 0.95 * a))
+		_quest.draw_line(Vector2((vs.x - bw * 0.7) * 0.5, cy + 12.0 * s), Vector2((vs.x + bw * 0.7) * 0.5, cy + 12.0 * s), Color(0.62, 0.48, 0.3, 0.6 * a), maxf(1.0, s))
+		_quest.draw_string(font, Vector2((vs.x - lw) * 0.5, cy + 12.0 * s + lsize * 1.45), bl, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize, Color(0.78, 0.72, 0.62, 0.85 * a))
 
 ## Talk: the key hint is a small brass-rimmed keycap and a verb, low and centred; a spoken line
 ## is a subtitle near the bottom edge -- the speaker's name in brass small caps, the words in
@@ -287,7 +341,7 @@ func _draw_bars() -> void:
 	var x := 64.0 * s
 	var y := vs.y - 92.0 * s
 	var w := 360.0 * s
-	_bar(Rect2(x, y, w, maxf(7.0 * s, 5.0)), player.health / Player.HEALTH_MAX, _hp_lag,
+	_bar(Rect2(x, y, w, maxf(7.0 * s, 5.0)), player.health / player.health_max, _hp_lag,
 		Color(0.62, 0.11, 0.09), Color(0.86, 0.72, 0.55))
 	var st_w := w * 0.82
 	_bar(Rect2(x, y + maxf(16.0 * s, 11.0), st_w, maxf(5.0 * s, 4.0)), player.stamina / Player.STAMINA_MAX, _st_lag,

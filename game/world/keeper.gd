@@ -727,6 +727,11 @@ func _update_talk(delta: float) -> void:
 		hud.say("Hesper", line, talking)
 
 func _next_line() -> String:
+	var quests = player.get_node_or_null("Quests") if player != null else null
+	if quests != null and sit < 0.5 and activity != "sleep":
+		var q: String = quests.line_for("Hesper")
+		if q != "":
+			return q
 	if warm > 0.5:
 		return _pool_line("warm")
 	if sit >= 0.5 or activity == "sleep":
