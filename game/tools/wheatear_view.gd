@@ -1,6 +1,6 @@
 extends SceneTree
 ## Model check for the fold's wheatears: cock, hen and youngster perched, plus the cock in flight
-## (rump flash), under a plain sun. Usage: godot res://tools/wheatear_view.gd -- out.png [yaw_deg]
+## (rump flash) and parachuting down from his song flight, under a plain sun. Usage: godot res://tools/wheatear_view.gd -- out.png [yaw_deg]
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var out := args[0] if args.size() > 0 else "../shots/wheatear_view.png"
@@ -34,21 +34,22 @@ func _init() -> void:
 	maker.free()
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/wheatear.gdshader")
-	var hens := [0.0, 1.0, 1.4, 0.0]
-	var poses := [Vector4(0, 1, -0.1, 1), Vector4(0, 1, 0.5, 1), Vector4(0, 1, -0.1, 1), Vector4(0.6, 0, 0, 0)]
-	for i in 4:
+	var hens := [0.0, 1.0, 1.4, 0.0, 0.0]
+	var poses := [Vector4(0, 1, -0.1, 1), Vector4(0, 1, 0.5, 1), Vector4(0, 1, -0.1, 1), Vector4(0.6, 0, 0, 0), Vector4(0.85, 1, -0.3, 0)]
+	for i in 5:
 		var mi := MeshInstance3D.new()
 		mi.mesh = mesh
 		mi.material_override = mat
 		root.add_child(mi)
-		var y := yaw if i < 3 else PI   # the flier seen from behind and above: the white rump
-		mi.global_transform = Transform3D(Basis(Vector3.UP, y) * Basis(Vector3.RIGHT, 0.22 if i < 3 else 0.0) * Basis.from_scale(Wheatears.SHAPE * Wheatears.SCALE), Vector3(-0.27 + i * 0.18, 0.0 if i < 3 else 0.08, 0))
+		var y := yaw if i < 3 else (PI if i == 3 else yaw + 0.6)   # the flier seen from behind and above: the white rump
+		var pitch := 0.22 if i < 3 else (0.0 if i == 3 else 0.45)
+		mi.global_transform = Transform3D(Basis(Vector3.UP, y) * Basis(Vector3.RIGHT, pitch) * Basis.from_scale(Wheatears.SHAPE * Wheatears.SCALE), Vector3(-0.34 + i * 0.17, 0.0 if i < 3 else 0.1, 0))
 		mi.set_instance_shader_parameter("hen", hens[i])
 		mi.set_instance_shader_parameter("pose", poses[i])
 	var cam := Camera3D.new()
 	cam.fov = 30
 	root.add_child(cam)
-	cam.look_at_from_position(Vector3(0, 0.25, 0.75), Vector3(0, 0.06, 0))
+	cam.look_at_from_position(Vector3(0, 0.27, 0.95), Vector3(0, 0.06, 0))
 	for i in 8:
 		await process_frame
 	var img := get_root().get_texture().get_image()

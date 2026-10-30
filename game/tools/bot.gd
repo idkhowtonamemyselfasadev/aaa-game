@@ -5802,9 +5802,11 @@ func _wheatear_test() -> void:
 	var far := 0.0
 	for p: Vector3 in w.bird_positions():
 		far = maxf(far, Vector2(p.x - fc.x, p.z - fc.z).length())
-	print("BOT wheatear alone 60 s: bobs %d, drops %d, flits %d, flushes %d, farthest %.1f m from the fold's centre, states %s" % [w.bobs, w.drops, w.flits, w.flushes, far, w.states()])
+	print("BOT wheatear alone 60 s: bobs %d, drops %d, flits %d, songs %d, flushes %d, farthest %.1f m from the fold's centre, states %s" % [w.bobs, w.drops, w.flits, w.songs, w.flushes, far, w.states()])
 	if w.bobs < 10 or w.drops < 1 or w.flits < 3:
 		return _combat_done(false, "the birds sat lifeless on the fold")
+	if w.songs < 1:
+		return _combat_done(false, "the cock never went up in his song flight")
 	if w.flushes > 0:
 		return _combat_done(false, "flushed with nobody near")
 	if far > FellBell.FOLD_R + 4.5:
@@ -5844,7 +5846,7 @@ func _wheatear_test() -> void:
 	await _ticks(10)
 	if not w.visible:
 		return _combat_done(false, "no wheatears in the morning")
-	_combat_done(true, "bobbing and feeding on the fold, chacked and flew from the hero, roosted at night")
+	_combat_done(true, "bobbing, feeding and song-flighting on the fold, chacked and flew from the hero, roosted at night")
 
 ## The Last of the Flock, start to finish on foot: Osric's intro, then he asks for his
 ## bellwether's bell (quest begun); there is no "Take" at the post before that. From his spot

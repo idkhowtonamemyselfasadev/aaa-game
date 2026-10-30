@@ -6,11 +6,13 @@ extends Node3D
 ## pecks after a grub, and flits low to another stone. When the hero comes close the nearest
 ## one "chacks" from its stone (two pebbles knocked together), then flies off low and fast,
 ## flashing its white rump, to a stone on the far side of the fold. They sit tight in the
-## rain and go to roost in the wall's chinks at dusk.
+## rain and go to roost in the wall's chinks at dusk. Now and then, with nobody near, the cock
+## goes up in his song flight: a steep fluttering climb to ten metres over his stone, a scratchy
+## warble at the top, and a parachute down on raised wings onto the same stone.
 ## Geometry: Birds' rook mesh at a third of the size, its pose (and plumage: cock or hen) set per
 ## bird through instance uniforms in wheatear.gdshader.
 
-enum { PERCH, FLIT, GROUND }
+enum { PERCH, FLIT, GROUND, SONG }
 
 const SCALE := 0.34              # rook mesh 0.47 m beak to tail -> a 16 cm wheatear
 const SHAPE := Vector3(1.08, 1.1, 0.8)   # dumpier than a rook: short-tailed, round-headed, upright
@@ -28,12 +30,14 @@ var drops := 0
 var bobs := 0
 var chacks := 0
 var flits := 0
+var songs := 0
 var hold := false               # shots: sit tight whoever comes
 var _rng := RandomNumberGenerator.new()
 var _birds: Array = []
 var _prev := Vector3.INF
 var _t := 0.0
 var _calls: Array[AudioStreamWAV] = []
+var _song: AudioStreamWAV
 
 class W:
 	var mi: MeshInstance3D
@@ -60,6 +64,10 @@ class W:
 	var hop_t := 0.0
 	var phase := 0.0             # wing beat
 	var look := 0.0              # the way it faces on its stone
+	var cock := false
+	var song_t := 0.0            # the cock's next song flight
+	var song_f := 0.0            # seconds into the song flight
+	var drift := Vector3.ZERO    # where over the stone he tops out
 
 func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void:
 	terrain = t
@@ -69,6 +77,7 @@ func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void
 		return
 	for k in 3:
 		_calls.append(_make_chack(k))
+	_song = _make_song()
 	var maker := Birds.new()
 	var mesh: ArrayMesh = maker._build_bird_mesh()
 	maker.free()
@@ -96,6 +105,8 @@ func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void
 		w.timer = _rng.randf_range(2.0, 9.0)
 		w.bob_t = _rng.randf_range(0.5, 3.0)
 		w.phase = _rng.randf() * TAU
+		w.cock = i == 0
+		w.song_t = _rng.randf_range(8.0, 25.0)
 		_birds.append(w)
 	_write_all()
 
@@ -159,7 +170,7 @@ func _process(delta: float) -> void:
 	var scare := SCARE + spd * 1.2
 	for w: W in _birds:
 		var d := Vector2(w.pos.x - tp.x, w.pos.z - tp.z).length()
-		if w.state != FLIT and d < scare and not hold:
+		if w.state != FLIT and w.state != SONG and d < scare and not hold:
 			_flush(w, tp, scare)
 		match w.state:
 			PERCH:
@@ -168,6 +179,8 @@ func _process(delta: float) -> void:
 				_ground(w, dt)
 			FLIT:
 				_fly(w, dt)
+			SONG:
+				_song_flight(w, dt)
 	_write_all()
 
 ## Away from the hero: the nearest stone well clear of him, else the farthest one.
@@ -231,6 +244,16 @@ func _perch(w: W, dt: float, wet: float, d: float, tp: Vector3) -> void:
 	if d >= WARN:
 		w.yaw = lerp_angle(w.yaw, w.look, dt * 6.0)
 	w.peck = 0.15 * sin(_t * 1.7 + w.look) - 0.1
+	if w.cock and not hold:
+		w.song_t -= dt
+		if w.song_t < 0.0 and wet < 0.3 and d > WARN * 1.5:
+			w.song_t = _rng.randf_range(25.0, 60.0)
+			w.state = SONG
+			w.song_f = 0.0
+			var a := _rng.randf() * TAU
+			w.drift = Vector3(cos(a), 0.0, sin(a)) * _rng.randf_range(0.8, 2.0)
+			songs += 1
+			return
 	w.timer -= dt * (1.0 - wet * 0.8)      # sits tight in the rain
 	if w.timer < 0.0:
 		w.timer = _rng.randf_range(4.0, 12.0)
@@ -323,6 +346,56 @@ func _fly(w: W, dt: float) -> void:
 		w.to_perch = -1
 		w.vel = Vector3.ZERO
 
+## The song flight: up 1.6 s on whirring wings, 1.2 s fluttering at the top in full song, then
+## 2.8 s parachuting down on raised wings, swaying, onto the stone he left.
+const CLIMB := 1.6
+const TOP := 1.2
+const FALL := 2.8
+const HIGH := 9.5
+
+func _song_flight(w: W, dt: float) -> void:
+	w.song_f += dt
+	var base := perches[w.perch]
+	var top := base + w.drift + Vector3(0.0, HIGH, 0.0)
+	var old := w.pos
+	w.fold = move_toward(w.fold, 0.0, dt * 14.0)
+	w.peck = move_toward(w.peck, -0.3, dt * 4.0)
+	if w.song_f < CLIMB:
+		var f := w.song_f / CLIMB
+		w.pos = base.lerp(top, 1.0 - (1.0 - f) * (1.0 - f))
+		w.phase += 19.0 * TAU * dt
+		w.flap = sin(w.phase) * 1.0 + 0.15
+		w.legs = move_toward(w.legs, 0.0, dt * 8.0)
+	elif w.song_f < CLIMB + TOP:
+		if w.song_f - dt < CLIMB:
+			w.voice.global_position = top
+			w.voice.stream = _song
+			w.voice.pitch_scale = _rng.randf_range(0.97, 1.03)
+			w.voice.play()
+		var f := (w.song_f - CLIMB) / TOP
+		w.pos = top + Vector3(0.0, sin(f * PI) * 0.6, 0.0)
+		w.phase += 22.0 * TAU * dt
+		w.flap = sin(w.phase) * 0.55 + 0.45
+	else:
+		var f := clampf((w.song_f - CLIMB - TOP) / FALL, 0.0, 1.0)
+		var e := f * f * (3.0 - 2.0 * f)
+		var sway := Vector3(cos(w.yaw), 0.0, -sin(w.yaw)) * sin(f * TAU * 1.5) * 0.35 * (1.0 - f)
+		w.pos = top.lerp(base, e) + sway
+		# wings held up in a V, a shiver at the tips, legs let down for the stone
+		w.flap = move_toward(w.flap, 0.85 + 0.08 * sin(_t * 31.0), dt * 6.0)
+		w.legs = move_toward(w.legs, 1.0, dt * 3.0)
+		if f >= 1.0:
+			w.pos = base
+			w.state = PERCH
+			w.bob = 1.0
+			w.timer = _rng.randf_range(4.0, 12.0)
+			w.vel = Vector3.ZERO
+			return
+	w.vel = (w.pos - old) / maxf(dt, 0.001)
+	var hv := Vector2(w.vel.x, w.vel.z)
+	if hv.length() > 0.3:
+		w.yaw = lerp_angle(w.yaw, atan2(-hv.x, -hv.y), dt * 6.0)
+
 func _call(w: W) -> void:
 	chacks += 1
 	w.voice.global_position = w.pos
@@ -335,9 +408,12 @@ func _write_all() -> void:
 		var pitch := 0.0
 		if w.state == FLIT and w.vel.length() > 0.5:
 			pitch = clampf(atan2(w.vel.y, Vector2(w.vel.x, w.vel.z).length()), -0.6, 0.7) * 0.5
+		elif w.state == SONG:
+			# nose up into the climb, near upright fluttering at the top and parachuting down
+			pitch = 0.95 if w.song_f < CLIMB else (0.75 if w.song_f < CLIMB + TOP else 0.45)
 		# the bob: body tips forward and the tail cocks up (pitch nose-down about the feet)
 		pitch -= sin(w.bob * PI) * 0.45
-		if w.state != FLIT:
+		if w.state != FLIT and w.state != SONG:
 			pitch += 0.22                # stands up tall on its legs
 		var b := Basis(Vector3.UP, w.yaw) * Basis(Vector3.RIGHT, pitch) * Basis.from_scale(SHAPE * SCALE)
 		w.mi.global_transform = Transform3D(b, w.pos)
@@ -389,6 +465,74 @@ func _make_chack(kind: int) -> AudioStreamWAV:
 	data.resize(n * 2)
 	for i in n:
 		data.encode_s16(i * 2, int(clampf(x[i], -1.0, 1.0) * 32000.0))
+	var s := AudioStreamWAV.new()
+	s.format = AudioStreamWAV.FORMAT_16_BITS
+	s.mix_rate = RATE
+	s.stereo = false
+	s.data = data
+	return s
+
+## The song: ~2.4 s of scratchy warble -- quick whistled slurs (2.4-6 kHz, warbling), dry
+## pebble clicks and short buzzy rasps strung together without a gap, a wheatear's chatter.
+func _make_song() -> AudioStreamWAV:
+	const RATE := 22050
+	var n := int(RATE * 2.5)
+	var x := PackedFloat32Array()
+	x.resize(n)
+	var r := RandomNumberGenerator.new()
+	r.seed = 907
+	var t := 0.04
+	while t < 2.3:
+		var kind := r.randi() % 5
+		var dur := r.randf_range(0.05, 0.12)
+		var s0 := int(t * RATE)
+		var m := int(dur * RATE)
+		var amp := r.randf_range(0.18, 0.32)
+		if kind <= 2:
+			# a whistled slur with a fast warble on it
+			var f0 := r.randf_range(2400.0, 5200.0)
+			var f1 := clampf(f0 + r.randf_range(-1800.0, 1800.0), 2200.0, 6200.0)
+			var wr := r.randf_range(40.0, 90.0)
+			var ph := 0.0
+			for i in m:
+				if s0 + i >= n:
+					break
+				var u := float(i) / m
+				ph += TAU * (lerpf(f0, f1, u) + sin(TAU * wr * i / RATE) * 300.0) / RATE
+				x[s0 + i] += sin(ph) * amp * sin(PI * u)
+		elif kind == 3:
+			# a rasp: buzzy noise gated at ~120 Hz, bright
+			var prev := 0.0
+			for i in m:
+				if s0 + i >= n:
+					break
+				var u := float(i) / m
+				var nz := r.randf_range(-1.0, 1.0)
+				var hp := nz - prev
+				prev = nz
+				var gate := 0.5 + 0.5 * sin(TAU * 120.0 * i / RATE)
+				x[s0 + i] += hp * gate * amp * 0.6 * sin(PI * u)
+		else:
+			# a dry click, a pebble tapped
+			var y1 := 0.0
+			var y2 := 0.0
+			var a1 := 2.0 * 0.92 * cos(TAU * 4200.0 / RATE)
+			m = int(RATE * 0.03)
+			for i in m:
+				if s0 + i >= n:
+					break
+				var u := r.randf_range(-1.0, 1.0) * exp(-float(i) / (RATE * 0.005))
+				var o := u + a1 * y1 - 0.8464 * y2
+				y2 = y1
+				y1 = o
+				x[s0 + i] += o * 0.1 + u * amp * 0.5
+			dur = 0.04
+		t += dur + r.randf_range(0.0, 0.035)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	for i in n:
+		var fade := minf(1.0, float(n - i) / (RATE * 0.05))
+		data.encode_s16(i * 2, int(clampf(x[i] * fade, -1.0, 1.0) * 32000.0))
 	var s := AudioStreamWAV.new()
 	s.format = AudioStreamWAV.FORMAT_16_BITS
 	s.mix_rate = RATE

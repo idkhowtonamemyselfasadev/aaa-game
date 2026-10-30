@@ -44,6 +44,15 @@ void vertex() {
 		p = rot_z(p, a);
 		n = rot_z(n, a);
 		v = sh + p - vec3(0.0, 0.01, 0.0) * fold;
+		// the shoulder sits inside the body loft: lay the folded wing out on the flank, the tips
+		// closing in over the rump as the body narrows to the tail root
+		v.x += side * fold * mix(0.03, 0.012, smoothstep(0.02, 0.17, v.z));
+	}
+	// the tail: a wider fan with a shallow tent down its middle, so it reads edge-on too
+	if (COLOR.g < 0.25 && COLOR.b < 0.5 && VERTEX.z > 0.099 && VERTEX.y < 0.14 && COLOR.a < 0.5) {
+		float tz = smoothstep(0.10, 0.27, VERTEX.z);
+		v.x *= 1.0 + 0.4 * tz;
+		v.y -= abs(v.x) * 0.3 * tz;
 	}
 	if (COLOR.a > 0.5) {
 		// legs tuck up under the tail in flight
@@ -86,7 +95,7 @@ void fragment() {
 		col = wing * mix(1.0, 1.9 + h, smoothstep(0.03, 0.08, abs(p.z - 0.01)) * (1.0 - smoothstep(0.4, 0.6, v_col.r)) * 0.5);
 	} else if (p.z > 0.095 && p.y < 0.14 && n.y > 0.5 && v_col.b < 0.5) {
 		// the tail fan: white at the base, the black bar across the end and down the middle
-		float u = abs(p.x) / max(0.045 * (p.z - 0.10) / 0.17, 0.004);
+		float u = abs(p.x) / max(0.063 * (p.z - 0.10) / 0.17, 0.004);
 		float tbar = smoothstep(0.205, 0.215, p.z);
 		float mid = 1.0 - smoothstep(0.18, 0.3, u);
 		col = mix(white, wing, max(tbar, mid * smoothstep(0.12, 0.14, p.z)));
