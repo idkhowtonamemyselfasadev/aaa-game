@@ -26,6 +26,7 @@ uniform vec3 sway = vec3(0.0);
 uniform float flap = 0.0;          // 0..1 airflow past the body (gliding): quick waves run down to the hem
 uniform float time_offset = 0.0;
 uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = Hollow rags)
+uniform float stain_amt = 1.0;     // rust stains and grime streaks (a kept kirtle: low, they read as patched blocks)
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
@@ -282,11 +283,11 @@ void fragment() {
 	// (slub runs in bands across the hang: on fulled wool it read as wood-grain rings, so wool
 	// takes a blotchy, near-round mottle instead)
 	float mottle = fbm(uv * vec2(7.0, 6.0) + 17.0) - 0.5;
-	float tone = clamp(0.35 + 0.45 * grime + 0.2 * mix(slub, 0.5 + mottle, clamp(wool, 0.0, 1.0)), 0.0, 1.0);
+	float tone = clamp(0.35 + 0.45 * mix(0.5, grime, stain_amt) + 0.2 * mix(slub, 0.5 + mottle, clamp(wool, 0.0, 1.0)), 0.0, 1.0);
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
 	// old dye and rust stains in blotches
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
-	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6);
+	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6 * stain_amt);
 	alb *= 0.86 + 0.14 * thread;
 	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
 	// worn wool: rubbed thin and faded in broad patches, darker and greasier in the crease

@@ -248,6 +248,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	if mended:
 		for rm in mats:
 			rm.set_shader_parameter("holes", 0.0)
+			# and kept clean: the rust stains and grime streaks broke the kirtle's front panel
+			# into dark and rust blocks below the sash
+			rm.set_shader_parameter("stain_amt", 0.25)
+			rm.set_shader_parameter("soot_amt", 0.35)
 	tint = []
 	_last_pos = body.global_position
 

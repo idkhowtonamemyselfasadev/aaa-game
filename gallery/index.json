@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261024-1110-dust-devil-close.jpg",
-  "time": "2026-10-24T11:10:00Z",
-  "caption": "Crop of the whirl: a pale narrow funnel with a little skirt at its foot; it needs to be two to three times wider and denser, with a darker, more opaque base.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-1110-dust-devil.jpg",
-  "time": "2026-10-24T11:10:00Z",
-  "caption": "Hot still afternoon on the meadow: a dust devil stands up ~30 m beyond the hero, but it reads as a thin faint wisp of smoke, not a spinning column of dust; the hero is small and the grass in front is fine.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1115-glide-meadow-close.jpg",
   "time": "2026-10-24T11:15:00Z",
   "caption": "Crop of the lower-left meadow: metre-wide tussocks with dark gaps and bleached tops; at this crop the mottling is a bit uniform and speckly.",
@@ -897,6 +885,12 @@
   "file": "20261029-2330-roadmeet-hildfull2.jpg",
   "time": "2026-10-29T23:30:00Z",
   "caption": "New full-length framing of Hild: her long kirtle and shins read as even dark wool with no pale blotches, but Wat and his creel block the lens line (framing swung to the verge side for next time).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0015-roadmeet-hildkept.jpg",
+  "time": "2026-10-30T00:15:00Z",
+  "caption": "Hild and Wat meet on the fell road, full length: her kirtle's front panel now reads as one even dark wool instead of rust and dark blocks, and the creel is out of the lens; still small in frame, faces unreadable, and the hips show a rust sleeve edge.",
   "verdict": "fail"
  }
 ]
