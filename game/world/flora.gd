@@ -1034,7 +1034,8 @@ func _scatter_rocks() -> void:
 	outcrop.seed = seed + 5
 	outcrop.frequency = 1.0 / 45.0
 	var tries := 0
-	while rock_positions.size() < rock_count and tries < rock_count * 40:
+	var placed := 0   # counts stones cleared off the old fold too, so the RNG stream is unchanged
+	while placed < rock_count and tries < rock_count * 40:
 		tries += 1
 		var x := _rng.randf_range(-250.0, 250.0)
 		var z := _rng.randf_range(-250.0, 250.0)
@@ -1052,12 +1053,17 @@ func _scatter_rocks() -> void:
 		# big boulders stand proud of the turf (sunk 0.2 x size, 0.75-1.1 tall) instead of
 		# sitting as squat slabs; small stones stay bedded in
 		var p := Vector3(x, _terrain.height_at(x, z) - s * (0.2 if big else 0.3), z)
-		rock_positions.append(p)
-		_rock_feet.append(Vector3(x, s, z))
+		placed += 1
 		var b := Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.4).normalized())) * Basis(Vector3.UP, _rng.randf() * TAU)
 		var ys := _rng.randf_range(0.75, 1.1) if big else _rng.randf_range(0.55, 0.9)
 		b = b.scaled(Vector3(s, s * ys, s * _rng.randf_range(0.8, 1.2)))
-		per[_rng.randi() % rock_variants].append(Transform3D(b, p))
+		var vi := _rng.randi() % rock_variants
+		# the fold's wall was built from the fell's stones: none stands through it
+		if FellBell.clears_fold(x, z, s):
+			continue
+		rock_positions.append(p)
+		_rock_feet.append(Vector3(x, s, z))
+		per[vi].append(Transform3D(b, p))
 		if s > 0.6:
 			var cs := CollisionShape3D.new()
 			var sph := SphereShape3D.new()

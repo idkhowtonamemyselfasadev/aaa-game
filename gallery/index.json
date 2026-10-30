@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261024-1425-dust-devil6-close.jpg",
-  "time": "2026-10-24T14:25:00Z",
-  "caption": "Crop on the whirl: brown tumbling leaves read clearly against the sky and the bowl keeps a firmer right edge; the top still melts into a soft haze against the cloud.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-1425-dust-devil6.jpg",
-  "time": "2026-10-24T14:25:00Z",
-  "caption": "A dust devil 12 m off the hero with dead leaves and chaff now whirling round and flung out of the column; the hero still looks stylized and the skirt hides in the tall grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-1650-outer-woods-air.jpg",
-  "time": "2026-10-24T16:50:00Z",
-  "caption": "Glide view over the vale after 240 more oaks were added in the outer groves: hardly different from the 11:15 frame; the far floor still reads as scattered lone trees, and the hero still looks stylized.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1650-outer-woods-ground.jpg",
   "time": "2026-10-24T16:50:00Z",
   "caption": "Ground view past the dust devil: the middle distance still shows open meadow with lone oaks, no woodland edge; the new outer woods don't read in this framing.",
@@ -891,6 +873,18 @@
   "file": "20261030-0541-bellcu.jpg",
   "time": "2026-10-30T05:41:46Z",
   "caption": "Close on the bellwether's bell, a size bigger and readable as verdigrised bronze on its strap, the post crusted with small lichen flecks; the post still reads as a smooth dark pole in shade and the grass blades are flat cards.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0635-foldclear.jpg",
+  "time": "2026-10-30T06:35:14Z",
+  "caption": "The old fold from down the slope at 15:00: the stray boulder no longer stands through the ring's east side, but the field stones still read near-black and the wall is low.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0635-hewnpost.jpg",
+  "time": "2026-10-30T06:35:14Z",
+  "caption": "The fell bell on its post, now a hewn eight-sided oak quarter: the facets read, but the post is too dark in the great stone's shade, the lichen reads as pale spots and the check split doesn't show.",
   "verdict": "fail"
  }
 ]

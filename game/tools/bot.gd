@@ -5799,6 +5799,15 @@ func _flockbell_test() -> void:
 		return _combat_done(false, "no ruined fold round the post")
 	if FellBell.on_fold(b.post_top.x, b.post_top.z, 0.3):
 		return _combat_done(false, "the fold wall stands over the post's gateway")
+	# no Flora boulder stands through the wall (the great stone it butts against stays)
+	var fl := _world.get_node("Flora")
+	var great := false
+	for f: Vector3 in fl._rock_feet:
+		if FellBell.clears_fold(f.x, f.z, f.y):
+			return _combat_done(false, "a boulder of %.1f m stands through the fold wall at (%.1f, %.1f)" % [f.y, f.x, f.z])
+		great = great or Vector2(f.x - FellBell.ROCK.x, f.z - FellBell.ROCK.z).length() < 0.5
+	if not great:
+		return _combat_done(false, "the great stone itself is gone")
 	_world.weather.force(0.0)
 	_world.time_of_day = 9.0
 	n.settle(_world, 9.0)

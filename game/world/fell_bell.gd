@@ -76,6 +76,13 @@ static func on_fold(x: float, z: float, margin: float = 0.0) -> bool:
 		return false
 	return absf(angle_difference((p - c).angle(), _gate_angle())) > FOLD_GATE - margin / FOLD_R
 
+## True when a Flora stone of size `s` at (x, z) would stand through the fold's wall: the
+## wall was cleared of the fell's stones when it was built (the great stone itself stays).
+static func clears_fold(x: float, z: float, s: float) -> bool:
+	if Vector2(x - ROCK.x, z - ROCK.z).length() < 0.5:
+		return false
+	return absf(Vector2(x, z).distance_to(fold_centre()) - FOLD_R) < FOLD_W * 0.5 + s * 0.75
+
 func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	_rng.seed = 4417
 	var away := (TOWARD - Vector2(ROCK.x, ROCK.z)).normalized()
@@ -89,12 +96,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	# its hanging side (+z) turned down the slope, toward whoever comes up from the stile
 	post.basis = Basis(lean_axis, 0.17) * Basis(Vector3.UP, atan2(away.x, away.y))
 	add_child(post)
-	var cm := CylinderMesh.new()
-	cm.top_radius = POST_R * 0.78
-	cm.bottom_radius = POST_R
-	cm.height = POST_H + 0.25
-	cm.radial_segments = 9
-	cm.rings = 4
+	var cm := _post_mesh()
 	var tm := ShaderMaterial.new()
 	tm.shader = preload("res://shaders/timber.gdshader")
 	tm.set_shader_parameter("seed", 13.7)
@@ -106,7 +108,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	tm.set_shader_parameter("lichen", 1.0)
 	tm.set_shader_parameter("weather_dir", Vector3(-WIND_DIR.x, 0.0, -WIND_DIR.y))
 	tm.set_shader_parameter("foot_y", -(POST_H - 0.25) * 0.5)
-	cm.material = tm
+	cm.surface_set_material(0, tm)
 	var mi := MeshInstance3D.new()
 	mi.name = "Oak"
 	mi.mesh = cm
@@ -178,6 +180,74 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 		_knocks.append(_make_knock(f))
 	if ruins != null:
 		_fold(terrain, ruins)
+
+## The post: an oak quarter hewn eight-sided with an adze, never true -- each face its own
+## width and a little off square, the faces wandering as the axe followed the grain, tapering
+## to the broken head; a check split opens down the weather face from the head and closes
+## two fifths of the way down. Flat-shaded facets, 0.25 m of it below the turf, centred on its
+## height like the CylinderMesh it replaced.
+func _post_mesh() -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 6113
+	const SIDES := 8
+	const RINGS := 6
+	const SPLIT_FACE := 5            # faces +x side after the post's 0.4 rad turn: the weather side
+	var h := POST_H + 0.25
+	var ang: Array[float] = []
+	var rad: Array[float] = []
+	for k in SIDES:
+		ang.append((k + rng.randf_range(-0.12, 0.12)) * TAU / SIDES)
+		rad.append(POST_R * rng.randf_range(0.93, 1.06))
+	# each ring: the octagon's corners plus three split points on SPLIT_FACE (edge, floor, edge)
+	var rings: Array = []
+	for r in RINGS + 1:
+		var t := float(r) / RINGS
+		var y := -h * 0.5 + h * t
+		var taper := lerpf(1.0, 0.8, t) * (1.0 + rng.randf_range(-0.03, 0.03))
+		var twist := sin(t * 2.3 + 0.6) * 0.06
+		var off := Vector2(sin(t * 3.1) * 0.006, cos(t * 2.4 + 1.0) * 0.005)
+		var depth := smoothstep(0.55, 0.95, t) * 0.024
+		var pts: Array[Vector3] = []
+		for k in SIDES:
+			var a := ang[k] + twist
+			var c := Vector2(cos(a), sin(a)) * rad[k] * taper + off
+			pts.append(Vector3(c.x, y, c.y))
+			if k == SPLIT_FACE:
+				var a2 := ang[(k + 1) % SIDES] + twist + (TAU if k + 1 == SIDES else 0.0)
+				var c2 := Vector2(cos(a2), sin(a2)) * rad[(k + 1) % SIDES] * taper + off
+				var e1 := c.lerp(c2, 0.44)
+				var e2 := c.lerp(c2, 0.53)
+				var mid := c.lerp(c2, 0.485)
+				var fl := mid - mid.normalized() * depth
+				pts.append(Vector3(e1.x, y, e1.y))
+				pts.append(Vector3(fl.x, y, fl.y))
+				pts.append(Vector3(e2.x, y, e2.y))
+		rings.append(pts)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n: int = (rings[0] as Array).size()
+	for r in RINGS:
+		var lo: Array = rings[r]
+		var hi: Array = rings[r + 1]
+		for k in n:
+			var k2 := (k + 1) % n
+			_flat_tri(st, lo[k], hi[k2], lo[k2])
+			_flat_tri(st, lo[k], hi[k], hi[k2])
+	# the broken head: a shallow ragged cone, its crown off-centre where the splinter stands
+	var top: Array = rings[RINGS]
+	var crown := Vector3(POST_R * 0.2, h * 0.5 + 0.012, -POST_R * 0.15)
+	for k in n:
+		var a: Vector3 = top[k]
+		var b: Vector3 = top[(k + 1) % n]
+		_flat_tri(st, a, crown, b)
+	return st.commit()
+
+static func _flat_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+	# (b - a) x (c - a) points out; Godot's front faces are clockwise from the front, so a, c, b
+	var nrm := (b - a).cross(c - a).normalized()
+	for v: Vector3 in [a, c, b]:
+		st.set_normal(nrm)
+		st.add_vertex(v)
 
 ## The old fold: field rubble laid round the ring in up to four courses, each stone a single
 ## through-stone the wall's width, the courses fallen where `_standing` is low and their stones
