@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-0226-crowncast-village.jpg",
-  "time": "2026-10-25T02:26:00Z",
-  "caption": "Village at 14:00 with per-tree leaf casts and a sunlit crown skin: the near copses are fresher green with paler tops and the right-hand wood shows a few different crowns, but from 80 m the woods still read mostly one dark green and the crowns are flat-topped.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-0342-crowncast2-village.jpg",
   "time": "2026-10-25T03:42:00Z",
   "caption": "Village view with doubled per-tree crown casts: the right-hand wood now shows yellow-green and darker crowns side by side, but the woods past 80 m are still mostly one green and the crowns sit flat-topped.",
@@ -891,6 +885,18 @@
   "file": "20261030-1010-boulder.jpg",
   "time": "2026-10-30T10:10:00Z",
   "caption": "A meadow boulder at 14:00 with the lighter granite albedo: reads as stone now, but the sunlit face is flat and chalky with too little tonal detail.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1114-boulder.jpg",
+  "time": "2026-10-30T11:14:15Z",
+  "caption": "A meadow boulder at 14:00: the sunlit face now carries broad blotches, a hand-sized mottle and shaded fissures instead of one chalky sheet; the shaded side is still near-black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1114-bouldercu.jpg",
+  "time": "2026-10-30T11:14:15Z",
+  "caption": "Close crop of the same boulder: the lit face reads as weathered, stained granite with moss in its hollows; the shadow side is still a black mass.",
   "verdict": "fail"
  }
 ]

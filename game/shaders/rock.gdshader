@@ -11,7 +11,7 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // (0.33/0.22 sRGB is only ~0.09/0.04 linear, basalt-dark: the great stone up the fell read as a
 // black slab even at noon. Weathered upland granite is ~0.15-0.2 linear.)
 uniform vec3 stone_a : source_color = vec3(0.40, 0.38, 0.34);   // weathered granite, a touch warm
-uniform vec3 stone_b : source_color = vec3(0.30, 0.29, 0.26);
+uniform vec3 stone_b : source_color = vec3(0.28, 0.28, 0.27);   // a cooler grey so the two tones read apart in sun
 uniform vec3 streak_col : source_color = vec3(0.1, 0.09, 0.07);  // rain-carried dirt and algae
 uniform vec3 moss_a : source_color = vec3(0.14, 0.17, 0.06);   // deep cushion shade (0.09 read black on the shaded flank)
 uniform vec3 moss_b : source_color = vec3(0.24, 0.27, 0.09);     // sunlit tips, olive not lime
@@ -72,8 +72,18 @@ void fragment() {
 	float crk = 1.0 - smoothstep(0.0, 0.05, abs(fbm(wp * 2.2) - 0.5));
 	vec3 col = mix(stone_b, stone_a, smoothstep(0.0, 0.95, s + crk * 0.4 + fbm(wp * 0.7) * 0.3));
 	col *= 1.0 - crk * 0.05;
-	// broad tonal blotches so a bare face is not one even grey
-	col *= 0.85 + 0.3 * fbm(wp * 0.45 + 90.0);
+	// broad tonal blotches so a bare face is not one even grey (0.85 + 0.3 left the sunlit face
+	// of a meadow boulder one flat chalky sheet at 14:00), plus a hand-sized mottle on top
+	col *= 0.72 + 0.5 * fbm(wp * 0.45 + 90.0);
+	col *= 0.88 + 0.24 * fbm(wp * 2.6 + 44.0);
+	// fissures shade the stone in a soft wide band (a weathered groove holds shadow and grime);
+	// the narrow crk above drew marble veins when darkened, this one is 2-3x wider and graded
+	float fis = 1.0 - smoothstep(0.0, 0.14, abs(fbm(wp * 2.2) - 0.5));
+	col *= 1.0 - fis * fis * 0.3;
+	// granite grain: feldspar and mica speckle, faded out where a pixel covers more than ~1 cm
+	// so it never aliases into shimmer on a distant stone
+	float gfade = 1.0 - smoothstep(0.004, 0.012, length(fwidth(wp)));
+	col *= 1.0 + (vn(wp * 70.0) - 0.5) * 0.28 * gfade;
 	// rain streaks: dark vertical runs washed down the steep faces from the moss and the
 	// ledges above, strongest just under the crown and fading out toward the foot
 	// (rain runs down any face it cannot pool on: a rounded boulder's lit shoulder at n.y ~0.5
