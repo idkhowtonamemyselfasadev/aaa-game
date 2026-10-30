@@ -658,6 +658,19 @@ func _ready() -> void:
 		var cp := at + down * 0.5 - sd * 0.35 if not "wide" in args else at + down * 5.5 - sd * 2.5
 		cp.y = at.y + (-0.1 if not "wide" in args else 1.2)
 		var look := at + Vector3.DOWN * 0.2 if not "wide" in args else at - down * 2.5 + Vector3.UP * 0.4
+		if not "wide" in args and not "fold" in args:
+			# the hero's fresh track up to the post: the sward under the close lens lies trodden
+			# (its standing straw ribbons filled the frame), then lift the lens a little over it
+			var tr := PackedVector3Array()
+			for o in [Vector3(6.0, 0, -0.6), Vector3(2.6, 0, -0.4), Vector3(0.5, 0, -0.35), Vector3(0.15, 0, -0.1)]:
+				var q: Vector3 = at + down * o.x + sd * o.z
+				tr.append(Vector3(q.x, terrain.height_at(q.x, q.z), q.z))
+			tr.append(player.global_position)
+			world.trample.seed_trail(tr, 1.2, 0.1)
+			world.trample.frozen = true
+			cp = at + down * 0.75 - sd * 0.4
+			cp.y = at.y + 0.05
+			look = at + Vector3.DOWN * 0.3
 		if "fold" in args:
 			# the ruined fold ring from down the slope outside it, the post at its gateway
 			var fc2 := FellBell.fold_centre()

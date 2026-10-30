@@ -369,6 +369,13 @@ void fragment() {
 	float facing = mix(1.0, 0.5, clamp(n.y, 0.0, 1.0));
 	// inside the keep the floor stones and rubble tops face the lit inner wall
 	facing *= mix(1.0, bounce_gain(wp), clamp(n.y, 0.0, 1.0));
+	// a side face turned from the sun looks into the bright half of the sky dome and the lit
+	// meadow (rock.gdshader's `away`): without it a fold stone in a crest's shade went
+	// blue-black at noon while the sward round it stayed lit
+	vec3 sl = normalize(cloud_sun);
+	float away = clamp(-dot(vec3(n.x, 0.0, n.z), normalize(vec3(sl.x, 0.0, sl.z) + 1e-4)), 0.0, 1.0)
+			* smoothstep(-0.05, 0.15, sl.y);
+	facing *= 1.0 + 0.9 * away * (1.0 - clamp(n.y, 0.0, 1.0));
 	EMISSION = ALBEDO * bounce_light * facing * AO;
 	// low sun: the open sky over a level top, unoccluded by SSAO (which crushed the door
 	// stones to black in the cottage's shade while the earth round them was lifted)

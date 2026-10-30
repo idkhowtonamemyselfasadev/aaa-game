@@ -33,6 +33,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (09:20 10-30) SKY-DOME FILL ON SHADED STONE AND TIMBER, POST CLOSE-UP CLEARED. masonry.gdshader and
+  timber.gdshader now take rock.gdshader's `away` term: a side face turned from the sun (it looks into the bright
+  half of the sky dome and the lit meadow) gets up to 1.9x the `bounce_light` shade fill (masonry only on side
+  faces, tops unchanged). Lifts the fold stones and the fell bell's post in the crest/great stone's shade, and
+  the shaded sides of every cottage/gate/hen-house timber and dry wall a little (no-SDFGI path only; with SDFGI
+  bounce_light is 0 as before). shot.gd `fellbell` close-up: seeds a frozen trample trail (the hero's track up
+  to the post) under the lens so the sward lies trodden instead of filling the frame with straw ribbons, and the
+  lens stands 0.75 m downhill at post-top height. fell_bell.gd post oak_silver 0.36 -> 0.47, oak_brown 0.2 -> 0.27
+  (0.36 sRGB is ~0.11 linear: the post read blue-black whatever the fill). SHOTS (Forward+, 12:00, gallery
+  20261030-0920-postsilver/-foldsky, both FAIL): post reads as silvered faceted oak over trodden sward, bell visible;
+  the fold stones are only a shade lighter. Still wrong: the great stone is a black featureless mass in both.
+  Bots flockbell, drywall, yardwall, walk, cottage pass.
 - (08:20 10-30) WHY THE FOLD IS IN SHADOW, ANSWERED. New `game/tools/sun_check.gd` (headless: `.tools/godot
   --headless --path game -s res://tools/sun_check.gd -- [x z [ring_r]]`, defaults to the old fold) marches from six
   points on a ring toward the sun every hour 07-18 and names the first blocker (fell / oak crown / boulder). The
@@ -6030,6 +6042,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:20 10-30) Post/fill done (see Done). NEXT: (0) the great stone: it reads as a black slab even at noon --
+   check its material (rock.gdshader? albedo, moss coverage) and whether its own shadow side faces every lens;
+   give it the lit-meadow `away` fill or a paler lichened albedo; (1) thistles at the post foot; (2) the post still
+   has a cool blue cast in shade (timber SPECULAR 0.35 picking up the sky; try 0.25 for silvered oak); then the
+   08:20 list below.
 0. (08:20 10-30) Shade answered (see Done). NEXT: (0) look at the 12:00 shots `fellbell <n> 20 12.0 fold` and
    `fellbell <n> 20 12.0` (taken this session, see gallery if they landed); (1) the masonry shader's weak sky-ambient
    in shade (give field stones a share of `ground_fill`/bounce on side faces like the turf), since the fold is in

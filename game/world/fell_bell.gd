@@ -100,9 +100,10 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	var tm := ShaderMaterial.new()
 	tm.shader = preload("res://shaders/timber.gdshader")
 	tm.set_shader_parameter("seed", 13.7)
-	# out on the fell for forty years: darker and greener than the cottage timbers
-	tm.set_shader_parameter("oak_silver", Color(0.36, 0.35, 0.31))
-	tm.set_shader_parameter("oak_brown", Color(0.2, 0.165, 0.115))
+	# out on the fell for forty years: silvered like the cottage timbers, a little greener (0.36
+	# read blue-black in the great stone's noon shade)
+	tm.set_shader_parameter("oak_silver", Color(0.47, 0.455, 0.41))
+	tm.set_shader_parameter("oak_brown", Color(0.27, 0.225, 0.16))
 	tm.set_shader_parameter("oak_dark", Color(0.075, 0.068, 0.055))
 	# crottle and moss on its weather side and up from the turf
 	tm.set_shader_parameter("lichen", 1.0)

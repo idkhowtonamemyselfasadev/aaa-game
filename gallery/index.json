@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261024-1800-outer-woods-air2.jpg",
-  "time": "2026-10-24T18:00:00Z",
-  "caption": "Same glide framing as 16:50 after the outer oaks were packed into six woods: a dark closed wood now fills the right middle distance, but the centre (the inner vale round the village, first-pass lone oaks) still reads as parkland and the hero still looks stylized.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-1930-meadow-thinned-air.jpg",
-  "time": "2026-10-24T19:30:00Z",
-  "caption": "The vale from the glider after the lone meadow oaks were thinned (compare 1800-outer-woods-air2): the middle ground is now open field with a few clumps and a dark wood edge on the right, not savanna; the oak crowns still read thin and acacia-like from above and the meadow is a flat olive.",
-  "verdict": "fail"
- },
- {
-  "file": "20261024-2040-near-copse-village.jpg",
-  "time": "2026-10-24T20:40:00Z",
-  "caption": "From the village garth a new oak copse now stands in the right-hand middle ground in front of the far wood, but its crowns are still thin and see-through, more acacia than oak, and the meadow is one olive tone.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-2259-crownfill-village.jpg",
   "time": "2026-10-24T22:59:14Z",
   "caption": "From the village the near copses and far woods now read as full, dense oak crowns instead of see-through acacias; the crowns still sit a little flat-topped and dark-uniform, and the meadow is one olive tone.",
@@ -897,6 +879,18 @@
   "file": "20261030-0820-postnoon.jpg",
   "time": "2026-10-30T08:25:00Z",
   "caption": "The fell bell's post at 12:00: the verdigris bell reads, but the post stands in the great stone's shadow and goes blue-black, and the lens sits in tall grass whose flat straw ribbons fill the frame",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0920-postsilver.jpg",
+  "time": "2026-10-30T09:20:00Z",
+  "caption": "The fell bell's post at noon now reads as silvered, faceted grey oak over trodden sward instead of a blue-black pipe in straw ribbons; the great stone behind is still a featureless black mass and the light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0920-foldsky.jpg",
+  "time": "2026-10-30T09:20:00Z",
+  "caption": "The old fold at noon with the new sky-dome fill on shaded stone side faces: a touch lighter, the ring reads; the great stone still reads as a dark slab and the ground is flat-lit.",
   "verdict": "fail"
  }
 ]

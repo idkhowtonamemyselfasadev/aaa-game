@@ -95,5 +95,10 @@ void fragment() {
 	vec3 pn = normalize(n - (gw - n * dot(gw, n)) * 0.0014);
 	NORMAL = normalize((VIEW_MATRIX * vec4(pn, 0.0)).xyz);
 	AO = 1.0 - smoothstep(-0.1, -0.5, g) * 0.4;
-	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * AO;
+	// the face turned from the sun sees the bright sky dome and the lit meadow (as masonry and
+	// rock): the fell bell's post in the great stone's noon shade went blue-black without it
+	vec3 sl = normalize(cloud_sun);
+	float away = clamp(-dot(vec3(n.x, 0.0, n.z), normalize(vec3(sl.x, 0.0, sl.z) + 1e-4)), 0.0, 1.0)
+			* smoothstep(-0.05, 0.15, sl.y);
+	EMISSION = ALBEDO * bounce_light * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * (1.0 + 0.9 * away) * AO;
 }
