@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-0828-hoodface.jpg",
-  "time": "2026-10-25T08:28:41Z",
-  "caption": "Head-and-shoulders of the hero at noon: the hood is now faded slate-blue wool with drape folds and shaded valleys over the shoulders, and the straw hat has a tied crown peak and a rolled, bound rim; the hat still reads too bright and smooth a yellow, and the face looks doll-like.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-0923-hatstraw.jpg",
   "time": "2026-10-25T09:23:25Z",
   "caption": "The hero's straw hat now reads as a weathered herringbone plait of split cane, a muted brown with sun-greyed patches instead of a smooth bright-yellow cone; the face still reads doll-like (wide round eyes) and the face cloth flat.",
@@ -897,6 +891,12 @@
   "file": "20261030-1430-lumpfold.jpg",
   "time": "2026-10-30T14:30:00Z",
   "caption": "The old fold at noon: its field stones are now irregular lumps with knocked-off corners instead of squared slabs; still too bluish-grey and small, and the light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1520-bigfold.jpg",
+  "time": "2026-10-30T15:20:00Z",
+  "caption": "The old fold at noon with bigger, warmer field stones and through-stones: the ring reads as a real tumbled wall now, but the stones still look cool grey with chalky lit edges and the light is flat.",
   "verdict": "fail"
  }
 ]

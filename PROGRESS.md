@@ -6095,7 +6095,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (15:20 10-30) Fold stones bigger/warmer + through-stones (see Done). NEXT: (0) look at gallery
-   20261030-1520-bigfold (if it landed) and judge the warmer tint on DryWall/yard walls too (`drywall` shot);
+   20261030-1520-bigfold (FAIL: the ring reads, still cool grey with chalky lit arrises -- tone the field stones' edge
+   highlight down) and judge the warmer tint on DryWall/yard walls too (`drywall` shot);
    (1) thistles at the fell bell's post foot; (2) post close-up for timber SPECULAR 0.25; (3) owner's GPU SDFGI
    glow check; then ALIVE work NOW (wind in grass on the fell spots, birds/insects in frame) -- the owner's gate
    says the meadow shots look lifeless, and many sessions have gone into stone tone: prefer ALIVE next.
