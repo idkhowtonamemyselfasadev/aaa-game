@@ -8,13 +8,16 @@ global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bou
 // the shaded side; a dark damp band where the stone meets the ground.
 
 #include "res://shaders/weather.gdshaderinc"
-uniform vec3 stone_a : source_color = vec3(0.33, 0.31, 0.28);   // weathered granite, a touch warm
-uniform vec3 stone_b : source_color = vec3(0.22, 0.21, 0.19);   // (0.17 is ~0.024 linear: the shaded flank read black)
+// (0.33/0.22 sRGB is only ~0.09/0.04 linear, basalt-dark: the great stone up the fell read as a
+// black slab even at noon. Weathered upland granite is ~0.15-0.2 linear.)
+uniform vec3 stone_a : source_color = vec3(0.40, 0.38, 0.34);   // weathered granite, a touch warm
+uniform vec3 stone_b : source_color = vec3(0.30, 0.29, 0.26);
 uniform vec3 streak_col : source_color = vec3(0.1, 0.09, 0.07);  // rain-carried dirt and algae
 uniform vec3 moss_a : source_color = vec3(0.14, 0.17, 0.06);   // deep cushion shade (0.09 read black on the shaded flank)
 uniform vec3 moss_b : source_color = vec3(0.24, 0.27, 0.09);     // sunlit tips, olive not lime
 uniform vec3 moss_dry : source_color = vec3(0.23, 0.19, 0.11);   // dead, browned patches
 uniform vec3 lichen : source_color = vec3(0.55, 0.52, 0.38);
+uniform vec3 crust : source_color = vec3(0.56, 0.56, 0.5);     // pale grey crustose lichen on old big stones
 
 varying vec3 wp;
 varying vec3 wn;
@@ -84,10 +87,17 @@ void fragment() {
 	float wash = smoothstep(0.55, 0.8, vn(vec3(wp.x * 2.6, wp.y * 0.35, wp.z * 2.6) + 17.0));
 	float streak = max(thin, wash * 0.6) * steep * smoothstep(0.0, 0.6, ly) * (0.6 + 0.4 * fbm(wp * 1.1 + 33.0));
 	// (0.6, upper face only: at 0.9 from ly -0.3 the runs blackened the whole shaded flank)
-	col = mix(col, streak_col, streak * 0.6);
+	col = mix(col, streak_col, streak * 0.5);
 	// lichen: soft-edged rosettes broken by a fine speckle, not hard map-like blots
 	float li = smoothstep(0.64, 0.84, fbm(wp * 3.0 + 11.0)) * (0.55 + 0.45 * fbm(wp * 14.0 + 3.0));
 	col = mix(col, lichen, li * 0.4);
+	// old big stones (the fell's great stones) carry broad pale crusts of grey lichen on the
+	// faces the rain washes clean: in drifts round the crown and down the weather side, so a
+	// 3 m stone reads as lichened grey granite against the turf, not a dark mass
+	float old = smoothstep(1.6, 2.8, v_size);
+	float cr = smoothstep(0.5, 0.68, fbm(wp * 1.6 + 71.0)) * (0.6 + 0.4 * fbm(wp * 9.0 + 5.0));
+	cr *= smoothstep(-0.4, 0.3, n.y) * smoothstep(0.1, 0.5, v_above);
+	col = mix(col, crust * (0.9 + 0.2 * fbm(wp * 4.0)), cr * old * 0.5);
 	float mossw = smoothstep(0.35, 0.75, n.y + (fbm(wp * 1.3) - 0.5) * 0.9);
 	// moss creeping up the flanks from the foot collar: higher on the shaded side, in
 	// tongues that follow the cracks and run up the damp seams, thinning to a few patches

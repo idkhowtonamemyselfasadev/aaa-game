@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261024-2259-crownfill-village.jpg",
-  "time": "2026-10-24T22:59:14Z",
-  "caption": "From the village the near copses and far woods now read as full, dense oak crowns instead of see-through acacias; the crowns still sit a little flat-topped and dark-uniform, and the meadow is one olive tone.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-0052-fields-village.jpg",
-  "time": "2026-10-25T00:52:00Z",
-  "caption": "Village at 14:00 with the new field patchwork: greener cropped pasture and gold hay strips now break the meadow round the cottage, but the middle ground past 80 m still reads mostly one olive-tan and the oak crowns one dark green.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-0226-crowncast-village.jpg",
   "time": "2026-10-25T02:26:00Z",
   "caption": "Village at 14:00 with per-tree leaf casts and a sunlit crown skin: the near copses are fresher green with paler tops and the right-hand wood shows a few different crowns, but from 80 m the woods still read mostly one dark green and the crowns are flat-topped.",
@@ -891,6 +879,18 @@
   "file": "20261030-0920-foldsky.jpg",
   "time": "2026-10-30T09:20:00Z",
   "caption": "The old fold at noon with the new sky-dome fill on shaded stone side faces: a touch lighter, the ring reads; the great stone still reads as a dark slab and the ground is flat-lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1010-greatstone.jpg",
+  "time": "2026-10-30T10:10:00Z",
+  "caption": "The great stone up the fell at noon now reads as lichened grey granite with a moss crown over the ruined fold instead of a black slab; its lower shaded flank and the fold stones are still very dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1010-boulder.jpg",
+  "time": "2026-10-30T10:10:00Z",
+  "caption": "A meadow boulder at 14:00 with the lighter granite albedo: reads as stone now, but the sunlit face is flat and chalky with too little tonal detail.",
   "verdict": "fail"
  }
 ]
