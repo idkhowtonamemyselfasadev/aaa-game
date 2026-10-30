@@ -2001,7 +2001,12 @@ func _foley_test() -> void:
 	var c: StaffCombat = p.combat
 	var wx: Weather = _world.weather
 	wx.force(0.0)
-	print("BOT foley: synthesised in %d ms" % f.build_ms)
+	print("BOT foley: built in %d ms, recorded %s" % [f.build_ms, str(f.recorded)])
+	# priority-1 sounds must come from the recorded samples, 3+ variants each, not synthesis
+	for nm: String in ["swish", "whoom", "stone", "wood", "body", "boom", "clang", "slam", "dodge", "step_grass", "step_grit", "step_wet", "step_stone"]:
+		if int(f.recorded.get(nm, 0)) < 3 or not (f._s[nm][0] is AudioStreamOggVorbis):
+			_finish(false, "foley '%s' is not recorded (%d variants)" % [nm, int(f.recorded.get(nm, 0))])
+			return
 	await _ticks(10)
 	# the light string on the practice post: a swish per swing, straw thuds on contact
 	var t := 0.0
@@ -2312,6 +2317,8 @@ func _hearth_test() -> void:
 	print("BOT hearth bounce glow %.2f; flame brightness %.2f just after it caught, %.2f at 21 h" % [hr.bounce.light_energy, young_gain, hr.flame_gain])
 	if young_gain > 0.6 or hr.flame_gain < 0.99:
 		return _combat_done(false, "young flames should burn dimmer than the evening blaze")
+	if not (hr.crackle.stream is AudioStreamOggVorbis and (hr.crackle.stream as AudioStreamOggVorbis).loop) or not (hr.flint.stream is AudioStreamOggVorbis):
+		return _combat_done(false, "the fire's crackle and flint should be the recorded samples (looping crackle)")
 	if hr.level < 0.95 or hr.light.light_energy < 0.8 or not hr.bounce.visible or hr.bounce.light_energy < 0.3 or not hr.flames.emitting or not hr.crackle.playing or moths.size() < Hearth.MOTHS or far > 1.8 or low < 0.2:
 		return _combat_done(false, "the fire should blaze at night with moths round it")
 	# 22 h: sat down for the night but still up to the blaze, turned to it, hands held out

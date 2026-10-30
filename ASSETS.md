@@ -7,6 +7,56 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 |------|------|--------|---------|
 | `game/player/models/vanguard.glb` | Rigged humanoid "Vanguard" (Mixamo character) with Idle/Walk/Run/TPose clips, 2.1 MB | Mixamo, via the three.js repo (`examples/models/gltf/Soldier.glb`) | Mixamo license (royalty-free use in games) |
 
+## Recorded sound effects (`game/audio/sfx/`)
+
+Added 2026-10-30 (owner priority 0b-b). All files were converted to mono 44.1 kHz Ogg Vorbis
+(q4; the fire loop q3), leading/trailing silence trimmed, peak-normalised to -3 dBFS, some
+trimmed, faded, pitched or low-passed as noted. Paths are relative to `game/audio/sfx/`.
+
+**License check (2026-10-30):** freesound.org, kenney.nl and opengameart.org are refused by
+this cloud box's network proxy, so the source pages could not be opened with WebFetch. The
+license shown is the one stated per file by the upstream repository the file was taken from
+("Fetched via"). The Kenney packs are CC0 per kenney.nl (its RPG Audio page reads "licensed
+under CC0 1.0 Universal", seen in search results 2026-10-30). Item (e) of the audio priority
+must re-open every Freesound source page and confirm the license before release. The CC BY 3.0 files
+must be credited in the in-game Credits screen (item e):
+Benboncan, AGFX, Erdie and Dynamicell (all via Freesound, CC BY 3.0).
+
+| File(s) | Original | Source page | Author | License | Fetched via |
+|---|---|---|---|---|---|
+| combat/swish_1, whoom_1 (pitched 0.72) | broomstick whoosh 3 (quiet) | https://freesound.org/people/Sadiquecat/sounds/816262/ | Sadiquecat | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/swish_2 | fast simple chop 5 | https://freesound.org/people/dave.des/sounds/127197/ | dave.des | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/swish_3 | whoosh | https://freesound.org/people/MeanRaccoon/sounds/830856/ | MeanRaccoon | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/swish_4 | swoosh v2 | https://freesound.org/people/migoreng1/sounds/786514/ | migoreng1 | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/swish_5 | whoosh | https://freesound.org/people/CVLTIV8R/sounds/810485/ | CVLTIV8R | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/whoom_2, perfect_1 (reversed) | woosh | https://freesound.org/people/florianreichelt/sounds/683096/ | florianreichelt | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/whoom_3 | swoosh | https://freesound.org/people/Halgrimm/sounds/169867/ | Halgrimm | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/spear_1 | swipe | https://freesound.org/people/LilMati/sounds/702773/ | LilMati | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/spear_2 | whoosh | https://freesound.org/people/deleted_user_6479820/sounds/393811/ | (deleted user) | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/spear_3 | quick woosh | https://freesound.org/people/florianreichelt/sounds/683101/ | florianreichelt | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/straw_1, straw_2 | impactSoft_heavy_000/001 | https://kenney.nl/assets/impact-sounds | Kenney | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/body_1, body_2 | impactPunch_heavy_000/001 | https://kenney.nl/assets/impact-sounds | Kenney | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/body_3 | impact | https://freesound.org/people/DeVern/sounds/524817/ | DeVern | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/boom_1 | lowFrequency_explosion_001 (first 0.7 s) | https://kenney.nl/assets/sci-fi-sounds | Kenney | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/boom_2, slam_3 (+ gravel layer) | dramatic hit (first 1.2 / 1.4 s) | https://freesound.org/people/qubodup/sounds/222517/ | qubodup | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/boom_3, slam_2 | cinematic impact | https://freesound.org/people/deleted_user_3277771/sounds/177242/ | (deleted user) | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/slam_1 | Michael Bay hit (first 1.6 s) | https://freesound.org/people/Kinoton/sounds/347561/ | Kinoton | CC0 1.0 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/sfx/` (LICENSES.md + manifest.json state CC0, per-sound check 2026-10-12) |
+| combat/straw_3 | DropLeather | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| combat/wood_4, village/chop_1 | Chop | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| combat/clang_1, clang_2 | metalPot2/3 | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| combat/dodge_1..3 | cloth1..3 | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| steps/step_grass_1..5 | footstep00/02/05/06/07 (lowpassed 7 kHz) | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| village/creak_1..3 | creak1..3 | https://kenney.nl/assets/rpg-audio | Kenney | CC0 1.0 | github.com/mminer/ggj2022 `Assets/Audio/Game SFX/` (Kenney RPG Audio, per issue #7) |
+| combat/clang_3 | default_dug_metal.1 (wood and metal SFX) | https://opengameart.org/users/qubodup | Iwan Gabovitch (qubodup) | CC0 1.0 | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| combat/stone_1..3 | default_dig_cracky.1..3 | https://freesound.org/people/Benboncan/sounds/71823/ | Benboncan | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| combat/wood_1..3, village/chop_2, village/thud_1 | default_dig_choppy.1..3 | https://freesound.org/people/Sheyvan/sounds/476113/ | Sheyvan | CC0 1.0 | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| steps/step_grit_1..3 | default_sand_footstep.1..3 | https://freesound.org/people/worthahep88/sounds/319224/ | worthahep88 | CC0 1.0 | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| steps/step_grit_4, combat/slam_3 (debris layer, gravel_dug.3) | default_gravel_dug.2 / .3 | https://freesound.org/people/lolamadeus/sounds/179341/ | lolamadeus | CC0 1.0 | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| steps/step_wet_1..3 (+ the splash in step_stone_wet) | default_water_footstep.1..3 | https://freesound.org/people/AGFX/packs/1253/ | AGFX | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| steps/step_stone_1..3 (+ step_stone_wet_1..3) | default_hard_footstep.1..3 | https://freesound.org/people/Erdie/sounds/41579/ | Erdie | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| fire/crackle_loop | fire_fire.1..3 + fire_large, crossfaded into an 18 s loop | https://freesound.org/people/Dynamicell/sounds/17548/ | Dynamicell | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+| fire/flint_1 | fire_flint_and_steel | https://freesound.org/people/Benboncan/sounds/66457/ | Benboncan | **CC BY 3.0** (credit required) | github.com/luanti-org/minetest_game `mods/*/sounds` (per-file credits in mods/*/README.md + license.txt) |
+
 ## Procedural (no license needed)
 - Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.

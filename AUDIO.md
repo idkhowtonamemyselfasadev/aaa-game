@@ -9,7 +9,7 @@ audit every third-party file's license.
 | Item | State |
 |---|---|
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
-| (b) Replace with recorded CC0/CC-BY samples | not started — see "Sourcing" below |
+| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00: all combat, footstep and fire sounds (except Hesper's tinder `blow`) plus gate creak and wood chop are recorded samples (`game/audio/sfx/`, 69 files, 1.1 MB). Remaining: `blow`, all animal/bird calls, wind/rain/insect/thunder beds, dust devil, voices, grain, fell bell — see "Replaced" below |
 | (c) Music: tracks + music system | not started (Music bus + pause-menu slider already exist) |
 | (d) Headless verification + peak levels | not started |
 | (e) Copyright audit + in-game Credits screen | not started |
@@ -28,6 +28,36 @@ Mix problems found in the audit:
 - **No Music at all** — the Music bus is empty.
 - Every stream is a 22.05 kHz (wind/thunder 11.025 kHz) mono AudioStreamWAV built from noise
   and oscillators at load; nothing has a real recorded transient or room.
+
+## Replaced with recordings (2026-10-30 19:00)
+
+Loaded by `game/world/samples.gd` (`Samples.load_set(group, name)` probes `res://audio/sfx/<group>/<name>_N.ogg`);
+`Foley.RECORDED` lists the names, and the synthesised stand-in stays only where no set exists. Every play keeps
+the old +-5 % pitch and -1.5..+1 dB volume jitter, picks a random variant. Each blow now also plays a
+quiet recorded low thump (`boom`) under the impact, a full boom from power 1.5 up. Files are mono 44.1 kHz
+Ogg Vorbis, peak <= -2 dBFS after encoding (checked with ffmpeg astats). Sources and licenses: ASSETS.md.
+
+| Name | Variants | Recording |
+|---|---|---|
+| swish | 5 | Freesound CC0 stick/broom whooshes |
+| whoom | 3 | broomstick whoosh pitched down + two long woosh/swoosh |
+| spear | 3 | swipe/whoosh (CC0) |
+| straw | 3 | Kenney impactSoft_heavy x2 + leather drop |
+| stone | 3 | pick on stone (Benboncan, CC BY 3.0) |
+| wood | 4 | chopping wood (Sheyvan CC0) + Kenney Chop |
+| body | 3 | Kenney impactPunch_heavy x2 + DeVern impact |
+| boom | 3 | low-frequency explosion head, dramatic hit, cinematic impact (low thump layer) |
+| clang | 3 | Kenney metal pot x2 + qubodup metal hit |
+| slam | 3 | cinematic hits, one with a gravel debris layer |
+| dodge | 3 | Kenney cloth |
+| perfect | 1 | reversed woosh (swell) |
+| step_grass / grit / wet / stone / stone_wet | 5 / 4 / 3 / 3 / 3 | Kenney footsteps; sand + gravel; water footsteps (AGFX); hard footsteps (Erdie); hard + splash |
+| creak / chop / thud | 3 / 2 / 1 | Kenney creaks; Kenney chop + chopping wood; chopping wood pitched down |
+| hearth crackle (loop) | 1 | Dynamicell campfire, 4 takes crossfaded into a seamless 18 s loop |
+| hearth flint | 1 | flint and steel (Benboncan, CC BY 3.0) |
+
+Bots: `foley` fails unless the priority-1 names are recorded `AudioStreamOggVorbis` sets of 3+; `hearth` fails
+unless the crackle is a looping recorded stream and the flint is recorded.
 
 ## Every sound in the game
 
@@ -125,5 +155,11 @@ with WebFetch/WebSearch (rule 0b-e) before anything is committed. Leads found so
   Freesound, with a LICENSES.md / manifest): mostly UI/motion-graphics sounds, but has
   Kenney Impact Sounds `impactPunch_heavy`, `impactSoft_heavy` and some cinematic impacts —
   candidates for the body/boom layers once each Freesound ID is checked.
-- Next: look for GitHub mirrors of Kenney "Impact Sounds" and "RPG Audio" (CC0: footsteps,
+- **Used (19:00 10-30):** github.com/mminer/ggj2022 (part of Kenney RPG Audio, CC0), github.com/luanti-org/minetest_game
+  (per-file credits; only CC0 and CC BY 3.0 files taken, none of its CC BY-SA ones), Barty-Bart/motion-graphics (CC0).
+  WebFetch also cannot reach freesound.org / kenney.nl, so licenses are as stated by those repos; (e) must re-check.
+- Still to find: animal and bird recordings (red deer, fox, collie, hens, rooks, red kite, wheatear, dawn chorus),
+  wind / rain / night-insect / thunder beds. Leads: Luanti games with mobs and weather on GitHub (check each file's
+  credit: CC0 or CC BY only, never CC BY-SA), Godot demo projects.
+- Earlier note: look for GitHub mirrors of Kenney "Impact Sounds" and "RPG Audio" (CC0: footsteps,
   cloth, wood/metal impacts) and of CC0 Freesound field recordings (wind, rain, birds).

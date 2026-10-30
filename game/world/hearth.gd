@@ -588,7 +588,9 @@ func _build_sound() -> void:
 	s.loop_end = m
 	crackle = AudioStreamPlayer3D.new()
 	crackle.name = "Crackle"
-	crackle.stream = s
+	# a recorded campfire (ASSETS.md) when present; the synthesised loop above otherwise
+	var rec := Samples.load_loop("fire", "crackle_loop")
+	crackle.stream = rec if rec else s
 	crackle.bus = &"SFX"
 	crackle.unit_size = 2.5
 	crackle.max_distance = 35.0
@@ -643,7 +645,8 @@ func _build_strike_sounds() -> void:
 		x[scrape + i] += e * (sin(TAU * 3150.0 * t) * 0.6 + sin(TAU * 4710.0 * t + 1.0) * 0.4 + sin(TAU * 6930.0 * t + 2.0) * 0.25)
 		if i < RATE * 0.006:
 			x[scrape + i] += (_rng.randf() * 2.0 - 1.0) * (1.0 - i / (RATE * 0.006))
-	flint = _one_shot("Flint", _wav(x, RATE, 0.85), -9.0)
+	var rec := Samples.load_set("fire", "flint")
+	flint = _one_shot("Flint", rec[0] if not rec.is_empty() else _wav(x, RATE, 0.85), -9.0)
 	# the catch: two soft breaths into the tinder (lowpassed noise swelling and dying) and the
 	# low whump of the flame taking on the second
 	n = RATE * 3

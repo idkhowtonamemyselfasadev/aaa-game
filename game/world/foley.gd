@@ -1,8 +1,9 @@
 class_name Foley
 extends Node3D
-## Close-up sounds of the fight and the body, synthesised at load like the Soundscape (no
-## sample files): staff swishes timed to each strike (a light whip, a deep whoom on the
-## heavy), impacts by what was struck (straw post, the Hollows' ashen stone, wood), a ringing
+## Close-up sounds of the fight and the body. Recorded CC0 / CC-BY samples (game/audio/sfx,
+## listed in ASSETS.md) replace the synthesised stand-ins wherever a set exists (`RECORDED`;
+## bots read `recorded`); the rest are still synthesised at load. Staff swishes are timed to
+## each strike (a light whip, a deep whoom on the heavy), impacts by what was struck (straw post, the Hollows' ashen stone, wood), a ringing
 ## clang on a parry, a soil-and-grit thump when the heavy meets the ground, a cloth whoosh
 ## on a dodge and a low swelling breath on a perfect one, a dull blow when the hero is
 ## struck, the soldier's spear hissing through its thrust, and footfalls on grass, on the
@@ -20,6 +21,14 @@ var weather: Weather
 var played := {}          # sound name -> times played (bots)
 var build_ms := 0
 var hero_steps := 0       # footfalls of the hero alone (bots)
+var recorded := {}        # sound name -> number of recorded variants loaded (bots)
+
+## Sample group -> the sound names whose recorded variants replace the synthesised ones.
+const RECORDED := {
+	"combat": ["swish", "whoom", "spear", "straw", "stone", "wood", "body", "boom", "clang", "slam", "dodge", "perfect"],
+	"steps": ["step_grass", "step_grit", "step_wet", "step_stone", "step_stone_wet"],
+	"village": ["creak", "chop", "thud"],
+}
 
 var _rng := RandomNumberGenerator.new()
 var _s := {}              # sound name -> Array[AudioStreamWAV] variants
@@ -71,6 +80,12 @@ func _ready() -> void:
 	_s["bat_grumble"] = [_make_bat(Bat.GRUMBLE, 1.0), _make_bat(Bat.GRUMBLE, 0.92)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
 	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
+	for g: String in RECORDED:
+		for nm: String in RECORDED[g]:
+			var vs := Samples.load_set(g, nm)
+			if not vs.is_empty():
+				_s[nm] = vs
+				recorded[nm] = vs.size()
 	for i in 7:
 		var q := AudioStreamPlayer3D.new()
 		q.unit_size = 10.0
@@ -234,8 +249,8 @@ func _on_hit(target: Node, point: Vector3, power: float) -> void:
 	var kind = target.get("impact_kind")
 	var nm: String = kind if kind in ["straw", "stone", "wood"] else "wood"
 	_play(nm, point, -3.0 + 4.0 * (power - 1.0), lerpf(1.08, 0.85, clampf((power - 1.0) / 2.0, 0.0, 1.0)))
-	if power >= 1.5:   # the big blows carry a low boom under the crack
-		_play("boom", point, -8.0 + 3.0 * power)
+	# every blow carries a low thump under the crack (weight); the big ones a full boom
+	_play("boom", point, -8.0 + 3.0 * power if power >= 1.5 else -15.0 + 6.0 * (power - 1.0))
 
 func _on_footfall(w: Node3D, at: Vector3, speed: float) -> void:
 	var nm := "step_" + surface_at(at)
