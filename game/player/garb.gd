@@ -224,6 +224,21 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			(g.material_override as ShaderMaterial).set_shader_parameter("gore", 1.0)
 			hips.add_child(g)
 			gores.append(g)
+	if smock:
+		# the smock's skirt below the sash in the same fulled, road-worn wool as its body: plain
+		# rag cloth read as a flat pale linen sheet hanging down Wat's front
+		var below: Array[MeshInstance3D] = []
+		below.append(_front.get_child(0) as MeshInstance3D)
+		below.append(_back.get_child(0) as MeshInstance3D)
+		below.append_array(gores)
+		for m in below:
+			var bm := m.material_override as ShaderMaterial
+			# softer than the smock's: down the long panels the full crease field and the
+			# streaked fuzz read as bark (dark vertical runnels), so near-round fuzz as on the mantle
+			bm.set_shader_parameter("wool", 0.6)
+			bm.set_shader_parameter("fuzz_ratio", 0.9)
+			bm.set_shader_parameter("weave_scale", 180.0)
+			bm.set_shader_parameter("weathered", 0.4)
 	tint = palette.get("sash", OCHRE)
 	_knotted_sash(hips)
 	for side in ["Left", "Right"]:

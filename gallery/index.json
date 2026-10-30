@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261024-1115-glide-meadow.jpg",
-  "time": "2026-10-24T11:15:00Z",
-  "caption": "Same glide framing as legs2: the meadow beyond the grass clumps now reads as rough tussocky grassland with tan seed-head drifts instead of smooth olive felt; still thin trees and no tall grass past 64 m.",
-  "verdict": "fail"
- },
- {
   "file": "20261024-1230-dust-devil3-close.jpg",
   "time": "2026-10-24T12:30:00Z",
   "caption": "Crop on the whirl: soft billowing funnel flaring toward the top with a soil-dark base; still reads a bit like smoke, needs visible spin streaks and more debris.",
@@ -891,6 +885,12 @@
   "file": "20261030-0150-roadmeet-watdun.jpg",
   "time": "2026-10-30T01:50:00Z",
   "caption": "Hild and Wat meet on the fell road: Wat's kilted smock now reads as darker road-dun wool instead of a pale flat linen sheet; still small in frame with unreadable faces, and his chest and arms read as plated armour shapes under the creel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-0235-roadmeet-watwool.jpg",
+  "time": "2026-10-30T02:35:00Z",
+  "caption": "Hild and Wat on the fell road: Wat's smock skirt now hangs as dun fulled road wool with a sun-faded top and damp hem instead of a flat pale linen sheet, Hild's kirtle stays even dark wool; still small in frame, faces unreadable, rust edge at her hip.",
   "verdict": "fail"
  }
 ]
