@@ -1908,6 +1908,8 @@ func _ready() -> void:
 			var rng := (lt as OmniLight3D).omni_range if lt is OmniLight3D else -1.0
 			print("SHOT light %s vis %s e %.3f col %s range %.2f d %.2f mask %d" % [lt.get_path(), lt.is_visible_in_tree(), lt.light_energy, lt.light_color, rng, lt.global_position.distance_to(hp), lt.light_cull_mask])
 		print("SHOT amb %s x %.3f" % [world.env.environment.ambient_light_color, world.env.environment.ambient_light_energy])
+	if spot == "boulder":
+		print("SHOT rock fill bounce %s sky_floor %s sdfgi %s" % [world.bounce_light, world.sky_floor, world.env.environment.sdfgi_enabled])
 	if spot == "roadmeet":
 		print("SHOT fill ground %s bounce %s sdfgi %s" % [world.ground_fill, RenderingServer.global_shader_parameter_get("bounce_light"), world.env.environment.sdfgi_enabled])
 		for v in [world.pedlar, world.traveller]:

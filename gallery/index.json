@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261025-0342-crowncast2-village.jpg",
-  "time": "2026-10-25T03:42:00Z",
-  "caption": "Village view with doubled per-tree crown casts: the right-hand wood now shows yellow-green and darker crowns side by side, but the woods past 80 m are still mostly one green and the crowns sit flat-topped.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-0430-lobes-village.jpg",
-  "time": "2026-10-25T04:30:00Z",
-  "caption": "Village view with lobed oak crowns: the right-hand oaks now show paler domed caps over darker skirts and fuller canopies, but the far woods are still one soft green mass and the domes read only faintly.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-0551-lobes2-village.jpg",
   "time": "2026-10-25T05:51:24Z",
   "caption": "Village view with stronger lobed oak crowns: the right-hand oaks now break into several shaded domes with dark creases; crowns still dull olive and the left wood reads as one dark mass.",
@@ -897,6 +885,18 @@
   "file": "20261030-1114-bouldercu.jpg",
   "time": "2026-10-30T11:14:15Z",
   "caption": "Close crop of the same boulder: the lit face reads as weathered, stained granite with moss in its hollows; the shadow side is still a black mass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1220-boulderfloor.jpg",
+  "time": "2026-10-30T12:50:00Z",
+  "caption": "A meadow boulder at 14:00 with the new sky-dome floor: the shaded flank now reads as cool grey granite with its cracks and moss instead of a black mass; it is a touch blue and the scene's light is still flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261030-1220-boulderbefore.jpg",
+  "time": "2026-10-30T12:50:00Z",
+  "caption": "The same boulder before this session's change, for comparison: the face turned from the sun is near-black, darker than the shaded grass beside it.",
   "verdict": "fail"
  }
 ]

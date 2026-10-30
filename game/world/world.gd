@@ -697,7 +697,11 @@ const GROUND_FILL := 0.6
 ## SSAO crushed the flat night ambient on the near meadow to black while the mid-valley read
 ## moonlit (valley 21:00); this unoccluded skylight keeps the near sward and hill readable
 const NIGHT_GROUND_FILL := 0.7
+## share of the sky ambient a shaded rock face keeps as a floor (rock.gdshader `sky_floor`)
+const SKY_FLOOR := 3.0
 var night_ground_fill := NIGHT_GROUND_FILL   # shot.gd `ngfill=` overrides it for A/B tests
+var sky_floor := Vector3.ZERO   # last value written to the sky_floor global
+var bounce_light := Vector3.ZERO   # last value written to the bounce_light global
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 var ground_fill_far := 1.0   # share of it the ground keeps past ~120 m (ground_fill_far global)
 func _apply_bounce(e: Environment) -> void:
@@ -731,10 +735,19 @@ func _apply_bounce(e: Environment) -> void:
 	face_shade = b * 4.0
 	if player and player.garb:
 		player.garb.light_face(face_shade)
+	# the shaded flank of a big stone looks into the open sky dome: SDFGI's coarse probes see
+	# little of it there and the no-GI bounce alone left the rock darker than the shaded grass
+	# beside it, so rock gets this floor (kept with SDFGI, unlike bounce_light)
+	# (3.0: at 1.0 it stayed under the 14:00 bounce fill and changed nothing; halved with
+	# SDFGI, whose own GI it adds to -- unverified on a real GPU)
+	var sf := e.ambient_light_color * e.ambient_light_energy * SKY_FLOOR * (0.5 if e.sdfgi_enabled else 1.0)
+	sky_floor = Vector3(sf.r, sf.g, sf.b)
+	RenderingServer.global_shader_parameter_set("sky_floor", sky_floor)
 	if e.sdfgi_enabled:
 		b = Color(0, 0, 0)
 		ground_fill = Vector3.ZERO
-	RenderingServer.global_shader_parameter_set("bounce_light", Vector3(b.r, b.g, b.b))
+	bounce_light = Vector3(b.r, b.g, b.b)
+	RenderingServer.global_shader_parameter_set("bounce_light", bounce_light)
 	RenderingServer.global_shader_parameter_set("ground_fill", ground_fill)
 	RenderingServer.global_shader_parameter_set("ground_fill_far", ground_fill_far)
 

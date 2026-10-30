@@ -231,6 +231,10 @@ ground_fill={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+sky_floor={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
 ground_fill_far={
 "type": "float",
 "value": 1.0

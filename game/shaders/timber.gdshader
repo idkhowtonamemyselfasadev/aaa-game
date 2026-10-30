@@ -87,7 +87,8 @@ void fragment() {
 	weather_wetten(col, rough, 0.8);
 	ALBEDO = col * v_cloud;
 	ROUGHNESS = rough;
-	SPECULAR = 0.35;
+	// silvered oak is matte: 0.35 caught the blue sky and gave the post a cool cast in shade
+	SPECULAR = 0.25;
 	vec3 n = normalize(wn);
 	float e = 0.003;
 	vec3 gg = vec3(grain(op + vec3(e, 0, 0)) - g, grain(op + vec3(0, e, 0)) - g, grain(op + vec3(0, 0, e)) - g) / e;

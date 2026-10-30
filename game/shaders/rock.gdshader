@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode cull_back;
 
 global uniform vec3 bounce_light;  // shade fill without SDFGI (World._apply_bounce)
+global uniform vec3 sky_floor;     // sky-dome floor for shaded faces, kept with SDFGI (World._apply_bounce)
 // Mossy boulders. World-space 3D noise (no triplanar seams): strata bands, cracks and
 // pitting in the normal, lichen spots, and moss on up-facing surfaces whose edge breaks
 // up with noise; moss creeping up the flanks from the foot collar (moss_map), higher on
@@ -165,5 +166,7 @@ void fragment() {
 	float away = clamp(-dot(vec3(n.x, 0.0, n.z), normalize(vec3(sl.x, 0.0, sl.z) + 1e-4)), 0.0, 1.0)
 			* smoothstep(-0.05, 0.15, sl.y);
 	float fill = 1.7 * mix(1.0, 0.5, clamp(n.y, 0.0, 1.0)) * (1.0 + 0.35 * shade + 1.1 * away);
-	EMISSION = ALBEDO * bounce_light * fill * mix(1.0, AO, 0.5);
+	// the floor: a face turned from the sun never drops below what the open sky dome gives it
+	vec3 floor_l = sky_floor * mix(1.0, 0.6, clamp(n.y, 0.0, 1.0)) * (0.6 + 0.8 * away);
+	EMISSION = ALBEDO * max(bounce_light * fill, floor_l) * mix(1.0, AO, 0.5);
 }
