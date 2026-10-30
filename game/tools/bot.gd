@@ -530,8 +530,8 @@ func _bat_test() -> void:
 	print("BOT bat: voice -- %d calls on the wing, %d buzzes for %d stoops, %d grumbles at the roost (quiet there by day %s); Foley played call %d, buzz %d, grumble %d" % [b.calls, b.buzzes, b.stoops, b.grumbles, grumbled, f.played.get("bat_call", 0), f.played.get("bat_buzz", 0), f.played.get("bat_grumble", 0)])
 	if not grumbled or b.calls < 3 or b.buzzes != b.stoops:
 		return _combat_done(false, "the bat is silent, or calls from the roost, or stoops without a feeding buzz")
-	if f.played.get("bat_call", 0) < 1 or f.played.get("bat_buzz", 0) < 1 or f.played.get("bat_grumble", 0) < 1:
-		return _combat_done(false, "the bat's chirps never reach the Foley")
+	if f.played.get("bat_call", 0) + f.played.get("bat_buzz", 0) + f.played.get("bat_grumble", 0) > 0:
+		return _combat_done(false, "the Foley still plays a voice for the bat (it is meant to be silent)")
 	weather.force(1.0)
 	await _ticks(900)
 	var storm := b.state != Bat.ROOST
@@ -2012,6 +2012,11 @@ func _foley_test() -> void:
 	for nm: String in ["swish", "whoom", "stone", "wood", "body", "boom", "clang", "slam", "dodge", "step_grass", "step_grit", "step_wet", "step_stone"]:
 		if int(f.recorded.get(nm, 0)) < 3 or not (f._s[nm][0] is AudioStreamOggVorbis):
 			_finish(false, "foley '%s' is not recorded (%d variants)" % [nm, int(f.recorded.get(nm, 0))])
+			return
+	# the collie, the hens and the fox's crunch are recordings too (2+ variants)
+	for nm: String in ["dog_bark", "dog_woof", "cluck", "squawk", "crunch"]:
+		if int(f.recorded.get(nm, 0)) < 2 or not (f._s[nm][0] is AudioStreamOggVorbis):
+			_finish(false, "animal voice '%s' is not recorded (%d variants)" % [nm, int(f.recorded.get(nm, 0))])
 			return
 	await _ticks(10)
 	# the light string on the practice post: a swish per swing, straw thuds on contact

@@ -28,6 +28,7 @@ const RECORDED := {
 	"combat": ["swish", "whoom", "spear", "straw", "stone", "wood", "body", "boom", "clang", "slam", "dodge", "perfect"],
 	"steps": ["step_grass", "step_grit", "step_wet", "step_stone", "step_stone_wet"],
 	"village": ["creak", "chop", "thud"],
+	"animals": ["dog_bark", "dog_woof", "cluck", "squawk", "crunch"],
 }
 
 var _rng := RandomNumberGenerator.new()
@@ -75,9 +76,6 @@ func _ready() -> void:
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
 	_s["roar"] = [_make_roar(1.0), _make_roar(0.88)]
-	_s["bat_call"] = [_make_bat(Bat.CALL, 1.0), _make_bat(Bat.CALL, 1.06), _make_bat(Bat.CALL, 0.95)]
-	_s["bat_buzz"] = [_make_bat(Bat.BUZZ, 1.0), _make_bat(Bat.BUZZ, 0.97)]
-	_s["bat_grumble"] = [_make_bat(Bat.GRUMBLE, 1.0), _make_bat(Bat.GRUMBLE, 0.92)]
 	_s["gallop"] = [_make_gallop(false), _make_gallop(false), _make_gallop(false)]
 	_s["gallop_wet"] = [_make_gallop(true), _make_gallop(true)]
 	for g: String in RECORDED:
@@ -182,20 +180,10 @@ func hook_hens(h: Node) -> void:
 		# the pop-hole slide: a hollow wooden clap as it drops onto the sill, a knock as it's propped
 		hh.knocked.connect(func(at: Vector3, pw: float) -> void: _play("wood", at, lerpf(-16.0, -4.0, pw), lerpf(1.25, 0.9, pw)))
 
-## The bat at the lantern: its thin chirping trill on the loop, the click-rattle closing to a
-## buzz as it stoops, and a dry grumble from the woodshed eaves as it stretches by day. All
-## faint and high, so they only carry a few metres (the wildlife pool's distance filter
-## takes them off first).
-func hook_bat(b: Node) -> void:
-	if b == null or not b.has_signal("chirped"):
-		return
-	b.chirped.connect(func(at: Vector3, kind: int) -> void:
-		if kind == Bat.CALL:
-			_play_wild("bat_call", at, -17.0, 2.0, false)
-		elif kind == Bat.BUZZ:
-			_play_wild("bat_buzz", at, -19.0, 1.6, false)
-		else:
-			_play_wild("bat_grumble", at, -20.0, 1.2, false))
+## The bat at the lantern stays silent: a pipistrelle's calls are near-ultrasonic and the
+## synthesised chirps sounded fake (owner audio rule), so nothing is played for it.
+func hook_bat(_b: Node) -> void:
+	pass
 
 ## The garth's field gate: a dry creak of iron eyes turning on the crooks, a knock as it shuts.
 func hook_gate(g: Node) -> void:
@@ -640,51 +628,6 @@ func _make_creak(pt: float) -> AudioStreamWAV:
 		func(k: float) -> float: return smoothstep(0.0, 0.12, k) * (1.0 - smoothstep(0.7, 1.0, k)) * (0.75 + 0.25 * sin(k * 37.0)),
 		[[1250.0 * pt, 9.0, 1.0], [2600.0 * pt, 11.0, 0.6], [4300.0, 8.0, 0.25], [330.0, 3.0, 0.3]], 0.15, 0.7)
 	return _wav(x, 0.6)
-
-## A bat's voice, pitched down into what the ear catches of it: each syllable a few-ms
-## sine swept steeply down (the FM sweep of a pipistrelle call) with a little second
-## harmonic. CALL: a trill of 3-5 syllables ~45 ms apart, each with a short hooked tail.
-## BUZZ: search clicks every ~70 ms closing to a 6 ms terminal buzz as it reaches the moth.
-## GRUMBLE: a ragged run of lower, rasping chirps at uneven spacing.
-func _make_bat(kind: int, pt: float) -> AudioStreamWAV:
-	var out := PackedFloat32Array()
-	out.resize(int(0.5 * RATE))
-	var t := 0.01
-	if kind == Bat.CALL:
-		for i in _rng.randi_range(3, 5):
-			_chirp(out, t, 0.014, 10200.0 * pt, 5200.0 * pt, 1.0 - 0.12 * i, 0.0)
-			_chirp(out, t + 0.016, 0.006, 5600.0 * pt, 6400.0 * pt, 0.35, 0.0)
-			t += _rng.randf_range(0.04, 0.052)
-	elif kind == Bat.BUZZ:
-		var gap := 0.07
-		while t < 0.42:
-			var k := t / 0.42
-			_chirp(out, t, lerpf(0.005, 0.0025, k), 9000.0 * pt, 6200.0 * pt, lerpf(0.5, 1.0, k), 0.0)
-			t += gap
-			gap = maxf(gap * 0.8, 0.006)
-	else:
-		for i in _rng.randi_range(5, 8):
-			_chirp(out, t, _rng.randf_range(0.012, 0.022), _rng.randf_range(6500.0, 8000.0) * pt, 3600.0 * pt, _rng.randf_range(0.6, 1.0), 0.5)
-			t += _rng.randf_range(0.022, 0.06)
-	out.resize(mini(out.size(), int((t + 0.03) * RATE)))
-	return _wav(out, 0.7)
-
-## Adds one swept syllable into `out` at `t0` s: a sine falling `f0` -> `f1` (exponential
-## sweep) under a Hann window, a weak second harmonic, and `rasp` of noise riding it.
-func _chirp(out: PackedFloat32Array, t0: float, dur: float, f0: float, f1: float, amp: float, rasp: float) -> void:
-	var n := int(dur * RATE)
-	var s0 := int(t0 * RATE)
-	var ph := 0.0
-	for i in n:
-		if s0 + i >= out.size():
-			return
-		var k := float(i) / n
-		var f := minf(f0 * pow(f1 / f0, k), RATE * 0.45)
-		ph += TAU * f / RATE
-		var w := 0.5 - 0.5 * cos(TAU * k)
-		var v := sin(ph) + (0.18 * sin(2.0 * ph) if 2.0 * f < RATE * 0.45 else 0.0)
-		v *= 1.0 - rasp + rasp * _rng.randf_range(-1.0, 1.0) * 1.4
-		out[s0 + i] += v * w * amp
 
 ## The stag's rut roar: a long deep groan swelling up and falling away, pushed through a
 ## lowered larynx (closely packed low formants), rough with period doubling, then two short

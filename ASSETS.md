@@ -79,6 +79,22 @@ pink/white noise and every unlisted file in those repos were skipped).
 | birds/song_1..3 (4 s around single calls at 40, 64, 94 s; high-passed 900 Hz) | Birds | https://freesound.org/people/kvgarlic/sounds/156826/ | kvgarlic (edit Porrumentzio) | CC0 1.0 | github.com/Vistaus/blanket `SOUNDS_LICENSING.md` (birds.ogg) |
 | birds/song_4..6 (4 s around calls at 46, 70, 101 s; high-passed 900 Hz) | forestday bw 66 | https://freesound.org/people/sonidosreales245/sounds/517042/ | sonidosreales245 | CC0 1.0 | github.com/abetusk/noixer `assets/` (README: sounds chosen CC0 from Freesound, table lists this file) |
 
+### Collie, hens and the fox's crunch (added 2026-10-30 21:00)
+
+Cut/normalised with ffmpeg (loudnorm -18 LUFS, limiter, peaks <= -3.7 dBFS), mono 44.1 kHz
+Ogg Vorbis q5 under `game/audio/sfx/animals/`. Barks pitched down 6-10 % (woofs 18-20 % and
+low-passed) so the small terrier reads as a working collie. freesound.org is still not
+resolvable from the cloud box, so licenses are as stated by the repositories (checked
+2026-10-30); item (e) must re-open each source page. Credit needed: **Anton** (CC BY 3.0),
+**InspectorJ** (CC BY 3.0). Nothing CC BY-SA taken; dogblocks' other breeds (sources not
+named) and its textures (CC BY-SA) were skipped.
+
+| File(s) | Original | Source page | Author | License | Fetched via |
+|---|---|---|---|---|---|
+| animals/dog_bark_1..4, dog_woof_1..2 | terrier barks (`dogblocks_ft.1/2/5/14`, `.4/.6`) | https://freesound.org/people/Anton/sounds/157322/ | Anton | **CC BY 3.0** (credit required) | github.com/HybridDog/dogblocks README.md ("CC by 3.0 sounds: terrier ... Anton 157322"); VoxeLibre mobs_mc LICENSE-media.md also lists these |
+| animals/cluck_1..4, squawk_1..3 | `mobs_mc_chicken_buck.1..3`, `mobs_mc_chicken_hurt` | https://freesound.org/people/evsecrets/sounds/346961/ | evsecrets | CC0 1.0 | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
+| animals/crunch_1..3 | `mobs_mc_animal_eat_generic` | https://freesound.org/people/InspectorJ/sounds/429591/ | InspectorJ | **CC BY 3.0** (credit required) | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
+
 ## Procedural (no license needed)
 - Lantern post: `game/world/lantern_post.gd` (oak post, braced arm, wrought-iron lantern, horn panes, tallow candle; meshes built in code) with `game/shaders/lantern.gdshader`, `lantern_horn.gdshader`, `flame.gdshader` (original, procedural).
 - `game/world/terrain.gd` — heightfield terrain from FastNoiseLite.

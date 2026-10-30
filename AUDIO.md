@@ -9,7 +9,7 @@ audit every third-party file's license.
 | Item | State |
 |---|---|
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
-| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). Remaining: `blow`, the animal calls (deer, fox, collie, hens, bat), rooks' caws, kite, wheatears, dust devil, voices, grain, fell bell — see "Replaced" below |
+| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). **collie, hens, fox crunch done; bat voice dropped** 2026-10-30 21:00 (`game/audio/sfx/animals`). Remaining: `blow`, the deer (bark/roar/gallop), fox bark/yelp, rooks' caws, kite, wheatears, dust devil, voices, grain, fell bell — see "Replaced" below |
 | (c) Music: tracks + music system | not started (Music bus + pause-menu slider already exist) |
 | (d) Headless verification + peak levels | not started |
 | (e) Copyright audit + in-game Credits screen | not started |
@@ -68,6 +68,18 @@ synthesised stand-in only if its file is missing, and `Soundscape.recorded` says
 | crickets bed | weather/crickets_loop (45 s) | Lisa Redfern crickets at night (PD) |
 | thunder | weather/thunder_near_1..3, thunder_far_1..3 | RHumphries thunderstorm (CC BY): three cracks, three low-passed distant rolls |
 | songbird calls (positional, from the oaks) | birds/song_1..6 (4 s each) | single calls cut from kvgarlic and sonidosreales245 woodland recordings (CC0) |
+
+Collie, hens, fox crunch (2026-10-30 21:00), `Foley.RECORDED["animals"]`, files in `game/audio/sfx/animals`:
+
+| Name | Variants | Recording |
+|---|---|---|
+| dog_bark / dog_woof | 4 / 2 | Anton terrier barks (CC BY 3.0) pitched down to collie size |
+| cluck / squawk | 4 / 3 | evsecrets chicken (CC0): real hen clucks; the hurt squawk at three pitches |
+| crunch | 3 | InspectorJ animal eating (CC BY 3.0) |
+| bat_call / buzz / grumble | — | **dropped**: real pipistrelle calls are near-ultrasonic; the bat is now silent and the synthesis code is gone |
+
+Still synthesised (no CC0/CC-BY source reachable yet): deer bark, roar, gallop(_wet); fox bark/yelp; rooks; kite;
+wheatears; voices (grunt, hum, murmur, call); grain; fell bell; Hesper's blow; dust devil whoosh.
 
 Bots: `foley` fails unless the priority-1 names are recorded `AudioStreamOggVorbis` sets of 3+; `hearth` fails
 unless the crackle is a looping recorded stream and the flint is recorded; `sound` fails unless the five beds are
@@ -172,8 +184,6 @@ with WebFetch/WebSearch (rule 0b-e) before anything is committed. Leads found so
 - **Used (19:00 10-30):** github.com/mminer/ggj2022 (part of Kenney RPG Audio, CC0), github.com/luanti-org/minetest_game
   (per-file credits; only CC0 and CC BY 3.0 files taken, none of its CC BY-SA ones), Barty-Bart/motion-graphics (CC0).
   WebFetch also cannot reach freesound.org / kenney.nl, so licenses are as stated by those repos; (e) must re-check.
-- Still to find: animal and bird recordings (red deer, fox, collie, hens, rooks, red kite, wheatear, dawn chorus),
-  wind / rain / night-insect / thunder beds. Leads: Luanti games with mobs and weather on GitHub (check each file's
-  credit: CC0 or CC BY only, never CC BY-SA), Godot demo projects.
+- Still to find: red deer (bark, roar, gallop), fox bark/scream, rooks, red kite, wheatear. Checked and rejected 2026-10-30 21:00: remvze/moodist (no per-file licenses, Pixabay mixed in), Skandarella/animalworld ("Creative Commons" with no per-file license), ElCeejo/animalia (no sound credits), jenius-apps/ambie (no animals). Used: VoxeLibre/VoxeLibre mobs_mc (per-file LICENSE-media.md; its wolf/horse/bat files are other candidates), HybridDog/dogblocks.
 - Earlier note: look for GitHub mirrors of Kenney "Impact Sounds" and "RPG Audio" (CC0: footsteps,
   cloth, wood/metal impacts) and of CC0 Freesound field recordings (wind, rain, birds).
