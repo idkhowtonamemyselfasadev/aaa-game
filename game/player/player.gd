@@ -1188,12 +1188,12 @@ func _pose_dodge(u: float) -> void:
 
 ## Enemies call this when a strike would connect. Returns "parried", "perfect", "dodged" or "hit".
 ## `heavy`: a blow with the weight to throw the hero off their feet (the soldier's sweep).
-func receive_attack(attacker: Node, damage: float, heavy := false) -> String:
+func receive_attack(attacker: Node, damage: float, heavy := false, unblockable := false) -> String:
 	if dead_t >= 0.0:
 		return "miss"
 	if down_t >= KNOCK_GUARD.x and down_t <= KNOCK_GUARD.y:
 		return "miss"                          # flat in the grass: the swing passes over
-	if combat != null and combat.try_parry(attacker):
+	if not unblockable and combat != null and combat.try_parry(attacker):
 		return "parried"
 	if is_invulnerable() or (dodge_t >= 0.0 and dodge_t <= PERFECT_WINDOW):
 		if dodge_t <= PERFECT_WINDOW and not _dodge_rewarded:

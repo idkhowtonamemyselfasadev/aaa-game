@@ -64,6 +64,13 @@ var _thrusts_in_row := 0
 var _arc_prev := 0.0
 var t := 0.0
 var health := HEALTH_MAX
+## Tuning a heavier Hollow (the Ashen Knight) changes these instead of the consts above.
+var health_max := HEALTH_MAX
+var poise_max := POISE
+var tempo := 1.0               # time scale of the whole brain: a faster phase winds up sooner
+var damage_mul := 1.0
+var unblockable := false       # strikes the hero's heavy cannot deflect
+var glint_col := Color(1.0, 0.82, 0.6)
 var poise := 0.0
 var parried_count := 0
 var _stagger_len := STAGGER_T
@@ -163,7 +170,7 @@ func return_to_post() -> void:
 		return
 	global_position = _home
 	velocity = Vector3.ZERO
-	health = HEALTH_MAX
+	health = health_max
 	poise = 0.0
 	_pose = GUARD
 	_update_glint(0.0)
@@ -319,7 +326,7 @@ func take_hit(_point: Vector3, dir: Vector3, power: float, hitstop: float) -> vo
 		_die(d.normalized())
 		return
 	var armoured := (state == WINDUP and t > WINDUP_T * 0.35) or state == STRIKE
-	if not armoured or poise >= POISE:
+	if not armoured or poise >= poise_max:
 		poise = 0.0
 		staggers += 1
 		_knock = d.normalized() * (1.6 + 1.4 * power)
@@ -361,7 +368,7 @@ func _physics_process(delta: float) -> void:
 		if anim_tree:
 			anim_tree.set("parameters/speed/scale", 0.0)
 		return
-	t += delta
+	t += delta * tempo
 	poise = maxf(poise - 8.0 * delta, 0.0)
 	var to := Vector3.ZERO
 	var dist := INF
@@ -581,7 +588,7 @@ func _sweep_contact() -> void:
 	if not in_reach and not (_aimed and dodging):
 		return
 	_resolved = true
-	var r := _player.receive_attack(self, SWEEP_DAMAGE, true)   # the sweep throws the hero down
+	var r := _player.receive_attack(self, SWEEP_DAMAGE * damage_mul, true, unblockable)   # the sweep throws the hero down
 	if r == "hit":
 		var side := body.global_basis.x
 		ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 1.0, side, "stone", 0.8)
@@ -596,7 +603,7 @@ func _resolve_strike() -> void:
 	# a hero who was in the thrust's line as it launched is "caught" even if a dodge has
 	# already carried them out of it: receive_attack decides perfect / dodged / hit
 	if _aimed or _in_cone():
-		r = _player.receive_attack(self, DAMAGE)
+		r = _player.receive_attack(self, DAMAGE * damage_mul, false, unblockable)
 		if r == "hit":
 			ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 1.15, body.global_basis.z, "stone", 0.7)
 	last_result = r
@@ -627,7 +634,7 @@ func _update_glint(a: float) -> void:
 	var along := HollowSpear.LENGTH * 0.5 - HollowSpear.BLADE * (1.0 - a) * 0.6 - 0.04
 	_glint.position = Vector3(0, along, 0)
 	_glint.scale = Vector3.ONE * (0.4 + 0.9 * a)
-	((_glint.mesh as QuadMesh).material as StandardMaterial3D).albedo_color = Color(1.0, 0.82, 0.6, a)
+	((_glint.mesh as QuadMesh).material as StandardMaterial3D).albedo_color = Color(glint_col.r, glint_col.g, glint_col.b, a)
 
 static var _star: ImageTexture
 

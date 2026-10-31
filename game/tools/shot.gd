@@ -829,7 +829,10 @@ func _ready() -> void:
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
 			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
 		var pp := player.global_position
-		var foe: HollowSoldier = world.soldier
+		# "knight" in the args: the Ashen Knight stands in for the soldier (the soldier is moved off)
+		var foe: HollowSoldier = world.knight if "knight" in args else world.soldier
+		if "knight" in args:
+			world.soldier.global_position += Vector3(0, 0, 60)
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
@@ -1719,7 +1722,7 @@ func _ready() -> void:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot
 		player.use_bot_input = true
-		var foe: HollowSoldier = world.soldier
+		var foe: HollowSoldier = world.knight if "knight" in args else world.soldier
 		var dt := 1.0 / 60.0
 		foe.set_physics_process(false)
 		player.combat._begin_draw()
@@ -1742,6 +1745,25 @@ func _ready() -> void:
 			foe._physics_process(dt)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
+		if "knight" in args and ("surge" in args or "p3" in args):
+			# surge: the knight down on its knee as the ring of fire bursts (phase 2 -> 3);
+			# p3: phase 3, the ground under the hero erupting. Fire is held back so it bursts
+			# a few frames before the capture (run with fixfps).
+			var k: AshenKnight = foe
+			k._set_phase(2)
+			if "surge" in args:
+				k._begin_surge()
+				for i in 62:
+					k._physics_process(dt)
+			else:
+				k._set_phase(3)
+				var f := k.spawn_flame(player.global_position + (player.global_position - foe.global_position).normalized() * 0.4)
+				f.t = 0.0
+			var hold := (frames - 7) / 30.0
+			for c in world.get_children():
+				if c is AshFlame:
+					(c as AshFlame).t -= hold
+			print("SHOT knight phase %d surge %.2f flames %d" % [k.phase, k._surge, k.flames_spawned])
 		player.set_physics_process(false)
 		if "parry" in args or "smash" in args or "flinch" in args or "fallen" in args or "knocked" in args:
 			_action = func(): await _heavy_action(player, foe, args)

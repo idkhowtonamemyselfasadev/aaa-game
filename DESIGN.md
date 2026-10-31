@@ -170,6 +170,7 @@ spear wound back to the right.
 | Boss | Where | P1 | P2 | P3 | P4 | P5 |
 |------|-------|----|----|----|----|----|
 | **Ashen Knight** (D1) | Ashen Priory | Shield + sword, parryable | Drops shield, two-hander, unblockables | Sets arena alight; Kindle to clear safe lanes | — | — |
+| *Ashen Knight, slice version (built 2026-10-31)* | the lower meadow of Harrowmere Vale | Glaive (thrust + sweep), parryable; an ember guard turns light strikes aside while it stalks, heavies or punishes on its recovery break through | Surge at 66% (kneel, ring of fire, cannot be hurt), then faster red-glint unblockables: dodge only | Surge at 33%, then the ground under the hero smoulders and erupts every 4 s (roll out or through); fastest tempo | — | — |
 | **The Drowned Choir** (D2) | Cistern | 3 singers, each a shield for the others | Arena floods; fight on Bind-rafts | One giant singer; Recall its tidal waves | — | — |
 | **Warden Ashka** (final) | Ember | Duel, Ward stance tutorial-mirror | Takes lantern; no abilities | Pell returns it; all abilities | Ember itself fights; arena collapses | Chain-ascent chase, QTE-free climb duel |
 | **Warden Ashka** fights at the end of **D3 Chain Shaft**. | | | | | | |

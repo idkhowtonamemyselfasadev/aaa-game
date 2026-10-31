@@ -35,6 +35,10 @@ var say_line := ""
 var _say_t := 0.0
 var _say_a := 0.0
 var _quest: Control
+var _boss_ui: Control
+var boss_shown: Node3D = null            # the boss whose bar is up (bots read it)
+var boss_alpha := 0.0
+var _boss_lag := 1.0
 var quest_shown := ""                   # the objective line drawn top-left (bots read it)
 
 func _ready() -> void:
@@ -76,6 +80,12 @@ func _ready() -> void:
 	_quest.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_quest.draw.connect(_draw_quest)
 	add_child(_quest)
+	_boss_ui = Control.new()
+	_boss_ui.name = "Boss"
+	_boss_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_boss_ui.draw.connect(_draw_boss)
+	add_child(_boss_ui)
 
 ## A place names itself while the hero stands at it: call every frame he is there; it fades in,
 ## and out again shortly after the calls stop.
@@ -147,6 +157,7 @@ func _process(delta: float) -> void:
 	if want_q != quest_shown or (ql != null and ql.banner_t > 0.0):
 		quest_shown = want_q
 		_quest.queue_redraw()
+	_update_boss(delta)
 	var va := player.screen_black()
 	if va != veil_alpha or va > 0.0:
 		veil_alpha = va
@@ -357,3 +368,55 @@ func _bar(r: Rect2, v: float, lag: float, fill: Color, lost: Color) -> void:
 	var fr := Rect2(r.position, Vector2(r.size.x * v, r.size.y))
 	_bars.draw_rect(fr, Color(fill, 0.92 * a))
 	_bars.draw_rect(Rect2(fr.position, Vector2(fr.size.x, maxf(1.0, r.size.y * 0.3))), Color(fill.lightened(0.35), 0.6 * a))
+
+## A boss's bar: its name in spaced small caps over a long thin ember bar, low in the centre.
+## Comes up when a boss stirs near the hero, stays through its phases and falls away after.
+func _update_boss(delta: float) -> void:
+	var want: Node3D = null
+	for b in get_tree().get_nodes_in_group("boss"):
+		var n := b as Node3D
+		if n == null or not is_instance_valid(n):
+			continue
+		var stirred: bool = "state" in n and n.state != HollowSoldier.IDLE
+		if stirred and n.global_position.distance_to(player.global_position) < 40.0:
+			want = n
+	if want != null:
+		if want != boss_shown:
+			_boss_lag = want.health_fraction()
+		boss_shown = want
+	var alive: bool = boss_shown != null and is_instance_valid(boss_shown) and not boss_shown.is_dead()
+	var up: bool = want != null and alive
+	var ba := move_toward(boss_alpha, 1.0 if up else 0.0, delta * (2.0 if up else 0.5))
+	if boss_shown != null and is_instance_valid(boss_shown):
+		var f: float = boss_shown.health_fraction() if not boss_shown.is_dead() else 0.0
+		_boss_lag = f if f > _boss_lag else move_toward(_boss_lag, f, delta * 0.25)
+	elif ba <= 0.0:
+		boss_shown = null
+	if ba != boss_alpha or ba > 0.0:
+		boss_alpha = ba
+		_boss_ui.queue_redraw()
+
+func _draw_boss() -> void:
+	if boss_alpha <= 0.001 or boss_shown == null or not is_instance_valid(boss_shown):
+		return
+	var vs := _boss_ui.get_viewport_rect().size
+	var s := vs.y / 1080.0
+	var a := boss_alpha
+	var w := 760.0 * s
+	var r := Rect2((vs.x - w) * 0.5, vs.y - 118.0 * s, w, maxf(8.0 * s, 5.0))
+	var font := ThemeDB.fallback_font
+	var tsize := int(24.0 * s)
+	var title := " ".join(String(boss_shown.NAME).to_upper().split(""))
+	_boss_ui.draw_string(font, Vector2(r.position.x, r.position.y - 12.0 * s), title, HORIZONTAL_ALIGNMENT_LEFT, -1, tsize, Color(0.9, 0.85, 0.74, 0.92 * a))
+	var f: float = boss_shown.health_fraction() if not boss_shown.is_dead() else 0.0
+	_boss_ui.draw_rect(r.grow(1.5), Color(0.02, 0.02, 0.02, 0.7 * a))
+	_boss_ui.draw_rect(r.grow(1.5), Color(0.55, 0.45, 0.30, 0.55 * a), false, 1.0)
+	_boss_ui.draw_rect(Rect2(r.position, Vector2(r.size.x * _boss_lag, r.size.y)), Color(0.86, 0.72, 0.55, 0.5 * a))
+	var fill := Color(0.78, 0.26, 0.06) if boss_shown.get("phase") != 3 else Color(0.95, 0.38, 0.08)
+	var fr := Rect2(r.position, Vector2(r.size.x * f, r.size.y))
+	_boss_ui.draw_rect(fr, Color(fill, 0.92 * a))
+	_boss_ui.draw_rect(Rect2(fr.position, Vector2(fr.size.x, maxf(1.0, r.size.y * 0.3))), Color(fill.lightened(0.35), 0.6 * a))
+	# notches at the phase thresholds
+	for at in AshenKnight.PHASE_AT:
+		var x: float = r.position.x + r.size.x * at
+		_boss_ui.draw_line(Vector2(x, r.position.y - 2.0 * s), Vector2(x, r.end.y + 2.0 * s), Color(0.9, 0.82, 0.66, 0.7 * a), maxf(1.0, 1.5 * s))

@@ -22,6 +22,8 @@ var _sky_glow := 1.0       # afterglow: 1 while the sun is up .. 0 at 9 deg belo
 var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the horizon at twilight
 var training_post: TrainingPost
 var soldier: HollowSoldier
+var knight: AshenKnight
+const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 var weather: Weather
 var thermals: Thermals
 var dust_devils: DustDevils
@@ -120,6 +122,13 @@ func _ready() -> void:
 	soldier.plant(terrain)
 	soldier.face(p)
 	trample.walkers.append(soldier)   # the Hollow tramples the sward and leaves prints too
+	# the Ashen Knight: the vale's boss, keeping a vigil far down the meadow past the soldier
+	knight = AshenKnight.new()
+	knight.position = Vector3(p.x + KNIGHT_AT.x, 0.0, p.z + KNIGHT_AT.y)
+	add_child(knight)
+	knight.plant(terrain)
+	knight.face(p)
+	trample.walkers.append(knight)
 	# a stone cottage across the green north of it, its door turned toward the start too
 	stone_cottage = StoneCottage.new()
 	stone_cottage.name = "StoneCottage"

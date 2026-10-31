@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -56,6 +56,9 @@ func _ready() -> void:
 		return
 	if name == "soldier":
 		_soldier_test()
+		return
+	if name == "knight":
+		_knight_test()
 		return
 	if name == "lockon":
 		_lockon_test()
@@ -748,6 +751,178 @@ func _soldier_test() -> void:
 	if not gone:
 		return _combat_done(false, "dead soldier was never removed")
 	_combat_done(true, "noticed, stalked, telegraphed thrust hit, dodged on the glint, killed, crumbled")
+
+## Ashen Knight: the three phases. P1 turns light strikes aside on the shaft while it stalks
+## (a heavy gets through) and can be parried; at 2/3 health it surges (ring of fire, can't be
+## hurt) and rises with red, unblockable blows; at 1/3 it surges again and the ground under the
+## hero erupts every few seconds (a roll on the smoulder passes through). Then it dies.
+func _knight_test() -> void:
+	var p := _player
+	var k: AshenKnight = _world.knight
+	var s: HollowSoldier = _world.soldier
+	s.process_mode = Node.PROCESS_MODE_DISABLED     # the soldier keeps out of the duel
+	await _ticks(10)
+	var hud = p.get_node_or_null("HUD")
+	var gd := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
+	print("BOT knight: %.1f m from the start, state %d, health %.0f, phase %d" % [gd, k.state, k.health, k.phase])
+	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:
+		return _combat_done(false, "knight should wait idle at full health in phase 1")
+	# walk up until it notices
+	p.global_position = k.global_position + (p.global_position - k.global_position).normalized() * 14.0
+	var waited := 0.0
+	while k.state == HollowSoldier.IDLE and waited < 15.0:
+		var to := k.global_position - p.global_position
+		p.bot_input = Vector2(to.x, to.z).normalized()
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	if k.state == HollowSoldier.IDLE:
+		return _combat_done(false, "knight never noticed the hero")
+	await _ticks(20)
+	if hud != null:
+		print("BOT knight: boss bar '%s' alpha %.2f" % [hud.boss_shown.NAME if hud.boss_shown else "", hud.boss_alpha])
+		if hud.boss_shown != k or hud.boss_alpha < 0.2:
+			return _combat_done(false, "no boss bar when the knight stirred")
+	# 1) guard: light strikes from the front while it stalks are turned aside; a heavy is not
+	var h0 := k.health
+	k.state = HollowSoldier.STALK
+	k.t = 0.0
+	k.take_hit(k.global_position + Vector3.UP * 1.2, -k.body.global_basis.z, 1.0, 0.0)
+	var g1 := k.guarded
+	var after_light := k.health
+	k._freeze = 0.0
+	k.state = HollowSoldier.STALK
+	k.take_hit(k.global_position + Vector3.UP * 1.2, -k.body.global_basis.z, 2.4, 0.0)
+	print("BOT knight: P1 light strike guarded %d (health %.0f -> %.0f), heavy -> %.0f" % [g1, h0, after_light, k.health])
+	if g1 < 1 or after_light != h0 or k.health >= h0:
+		return _combat_done(false, "phase 1 guard did not turn the light strike / let the heavy through")
+	if k.unblockable:
+		return _combat_done(false, "phase 1 blows should be parryable")
+	# the parry contract: a heavy raised in the window deflects a normal blow but not an
+	# unblockable one (phase 2+ passes unblockable = true)
+	var c = p.combat
+	var hp_before := p.health
+	c.state = c.CHARGING
+	c.charge_t = 0.05
+	c.hitstop = 0.0
+	var ru: String = p.receive_attack(k, 1.0, false, true)
+	c.state = c.CHARGING
+	c.charge_t = 0.05
+	c.hitstop = 0.0
+	var rb: String = p.receive_attack(k, 1.0, false, false)
+	print("BOT knight: parry window vs unblockable -> %s, vs normal -> %s" % [ru, rb])
+	if ru == "parried" or rb != "parried":
+		return _combat_done(false, "unblockable blows were deflected or normal ones were not")
+	p.health = hp_before
+	await _ticks(90)
+	# 2) beat it down to the first threshold with the string + heavies; watch the surge
+	p.health = Player.HEALTH_MAX
+	var t := 0.0
+	var phase_hp := {}
+	var surged_hits := 0
+	var p2_hits := 0
+	var p2_strikes0 := -1
+	var dodged_flame := false
+	var stood_flame := false
+	var flame_tested := 0
+	while not k.is_dead() and t < 150.0:
+		var to := k.global_position - p.global_position
+		var flat := Vector2(to.x, to.z)
+		if k.phase >= 2 and p2_strikes0 < 0:
+			p2_strikes0 = k.strikes
+		# phase 3: let the first eruption catch the hero standing, roll out of the next
+		var live: AshFlame = null
+		for f in k.flames:
+			if is_instance_valid(f) and f.result == "":
+				live = f
+		if live != null and flame_tested < 2:
+			p.bot_input = Vector2.ZERO
+			p.bot_attack = false
+			p.bot_heavy = false
+			if flame_tested == 1 and live.t > AshFlame.WARN - 0.12 and p.dodge_t < 0.0:
+				p.bot_input = Vector2(1, 0)
+				p.bot_dodge = true
+			while is_instance_valid(live) and live.result == "":
+				await get_tree().physics_frame
+				t += get_physics_process_delta_time()
+				if flame_tested == 1 and is_instance_valid(live) and live.t > AshFlame.WARN - 0.12 and p.dodge_t < 0.0:
+					p.bot_input = Vector2(1, 0)
+					p.bot_dodge = true
+			p.bot_input = Vector2.ZERO
+			var r: String = live.result if is_instance_valid(live) else "?"
+			print("BOT knight: P3 eruption %d -> %s" % [flame_tested + 1, r])
+			if flame_tested == 0:
+				stood_flame = r == "hit"
+			else:
+				dodged_flame = r == "perfect" or r == "dodged" or r == "miss"   # rolled through or clear
+			flame_tested += 1
+			continue
+		var wl := HollowSoldier.SWEEP_WINDUP_T if k.move_kind == HollowSoldier.SWEEP_MOVE else HollowSoldier.WINDUP_T
+		if k.state == HollowSoldier.WINDUP and k.t > wl - 0.06 * k.tempo and p.dodge_t < 0.0:
+			# roll on the glint, as a player would (sideways, away from the cut)
+			p.bot_attack = false
+			p.bot_heavy = false
+			var side := Vector3(to.z, 0, -to.x).normalized()
+			p.bot_input = Vector2(side.x, side.z)
+			p.bot_dodge = true
+		elif k.state == HollowSoldier.WINDUP or k.state == HollowSoldier.STRIKE:
+			p.bot_attack = false
+			p.bot_heavy = false
+			p.bot_input = Vector2.ZERO
+		elif flat.length() > 2.2:
+			p.bot_input = flat.normalized()
+			p.bot_heavy = false
+		else:
+			p.bot_input = Vector2.ZERO
+			if not p.combat.is_attacking():
+				p.body.rotation.y = atan2(to.x, to.z)
+			# heavies into the guard, the string into its recovery
+			if k.state == HollowSoldier.RECOVER or k.state == HollowSoldier.STAGGER or k.phase >= 2:
+				p.bot_heavy = false
+				p.bot_attack = true
+			else:
+				p.bot_heavy = int(t * 2.0) % 3 != 2
+		if k.surging() and not phase_hp.has(k.phase):
+			phase_hp[k.phase] = k.health
+			var hh := k.health
+			k.take_hit(k.global_position + Vector3.UP, -k.body.global_basis.z, 3.0, 0.0)
+			if k.health < hh:
+				surged_hits += 1
+			print("BOT knight: surge into phase %d at health %.0f (%.0f%%), tempo %.1f, unblockable %s" % [k.phase, hh, hh / k.health_max * 100.0, k.tempo, k.unblockable])
+		if k.phase == 2 and k.last_result == "hit" and k.strikes > p2_strikes0:
+			p2_hits += 1
+		if p.health < 40.0:
+			p.health = Player.HEALTH_MAX      # the bot tests the knight, not survival
+		if p.stamina < 25.0:
+			p.stamina = p.stamina_max
+		if int(t / 10.0) != int((t + get_physics_process_delta_time()) / 10.0):
+			print("BOT knight: t %.0f s, phase %d, health %.0f, hits taken %d, state %d, hero hp %.0f st %.0f" % [t, k.phase, k.health, k.hits_taken, k.state, p.health, p.stamina])
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	p.bot_heavy = false
+	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results)])
+	if k.surges < 2 or k.blasts < 2:
+		return _combat_done(false, "knight did not surge into both later phases")
+	if surged_hits > 0:
+		return _combat_done(false, "knight could be hurt while it surged")
+	var p2: float = phase_hp.get(2, 0.0) / k.health_max
+	var p3: float = phase_hp.get(3, 0.0) / k.health_max
+	if p2 > AshenKnight.PHASE_AT[0] + 0.01 or p2 < AshenKnight.PHASE_AT[1] or p3 > AshenKnight.PHASE_AT[1] + 0.01:
+		return _combat_done(false, "phases started at the wrong health (%.2f, %.2f)" % [p2, p3])
+	if k.flames_spawned < 2:
+		return _combat_done(false, "phase 3 never set the ground alight")
+	if not stood_flame:
+		return _combat_done(false, "standing in an eruption did not hurt the hero")
+	if not dodged_flame:
+		return _combat_done(false, "a roll on the smoulder did not pass through the eruption")
+	if not k.is_dead():
+		return _combat_done(false, "the hero could not kill the knight")
+	# unblockable: a parry-window heavy in phase 2+ must not deflect (checked on a fresh knight state)
+	await _ticks(30)
+	if hud != null:
+		print("BOT knight: boss bar after death alpha %.2f" % hud.boss_alpha)
+	_combat_done(true, "guarded P1, surge into unblockable P2, surge into burning P3, eruptions hit/dodged, killed")
 
 ## Glide: high over the vale a jump in the air snaps the glider open; it settles to a slow sink
 ## and flies on along the facing, the stick banks it round, jump lets go into a free fall,
