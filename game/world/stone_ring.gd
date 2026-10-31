@@ -23,6 +23,8 @@ var fallen := 0
 var scorches := 0         # burnt-ground decals (bots)
 var _per: Array = []
 var _terrain: Terrain
+## The ring's centre for the meadow mask (Grass._site), INF until a ring is built.
+static var burn_centre := Vector3.INF
 
 ## Lay the ring round `c` (world xz), its entrance toward `toward` (world xz).
 func build(c: Vector2, toward: Vector2) -> void:
@@ -30,6 +32,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 	_terrain = get_node(terrain_path)
 	facing = (toward - c).normalized()
 	centre = Vector3(c.x, _terrain.height_at(c.x, c.y), c.y)
+	burn_centre = centre
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# rough, lumpy field stone with a few broken faces: weathered sarsens, not dressed blocks
@@ -133,6 +136,19 @@ func _collider(body: StaticBody3D, at: Vector3, b: Basis, size: Vector3) -> void
 	cs.shape = box
 	cs.transform = Transform3D(b, at - global_position)
 	body.add_child(cs)
+
+## How burnt the turf is at (x, z): 1 over the old burn round the knight's post, easing to 0
+## just inside the stones, so the meadow inside the ring is a thin stubble over ash and the
+## scorch decals read (Grass._site drops most of its clumps here).
+static func burnt(x: float, z: float) -> float:
+	if burn_centre == Vector3.INF:
+		return 0.0
+	var r := Vector2(x - burn_centre.x, z - burn_centre.z).length()
+	return 1.0 - smoothstep(RADIUS - 4.0, RADIUS - 0.6, r)
+
+func _exit_tree() -> void:
+	if burn_centre == centre:
+		burn_centre = Vector3.INF
 
 ## Whether (x, z) lies inside the ring (bots; the music could key off it later).
 func inside(x: float, z: float) -> bool:

@@ -789,6 +789,23 @@ func _knight_test() -> void:
 	print("BOT knight: %d scorch decals inside the ring" % ring.scorches)
 	if ring.scorches < 4:
 		return _combat_done(false, "the stone ring has no burnt ground (%d scorches)" % ring.scorches)
+	# the burnt turf: the meadow mask keeps only a thin stubble inside the ring
+	var gf: GrassField = _world.get_node("Grass")
+	var flora := gf._find_ruin()
+	var mrng := RandomNumberGenerator.new()
+	mrng.seed = 77
+	var grown := [0, 0]
+	for i in 400:
+		var a := mrng.randf() * TAU
+		var rin := sqrt(mrng.randf()) * (StoneRing.RADIUS - 4.0)
+		var rout := StoneRing.RADIUS + 4.0 + mrng.randf() * 6.0
+		if gf._site(ring.centre.x + cos(a) * rin, ring.centre.z + sin(a) * rin, mrng, flora).x >= 0.0:
+			grown[0] += 1
+		if gf._site(ring.centre.x + cos(a) * rout, ring.centre.z + sin(a) * rout, mrng, flora).x >= 0.0:
+			grown[1] += 1
+	print("BOT knight: meadow sites grown inside the burn %d/400, outside the ring %d/400" % grown)
+	if grown[1] < 40 or grown[0] > grown[1] * 0.2:
+		return _combat_done(false, "the grass inside the knight's ring is not thinned to stubble")
 	if ring.stones.size() < 7 or ring.fallen < 1 or off_c > 0.5 or gate_clear < 2.5 or not ring.inside(k.global_position.x, k.global_position.z):
 		return _combat_done(false, "the knight's stone ring is missing, off-centre or blocks its entrance")
 	# walk up until it notices
