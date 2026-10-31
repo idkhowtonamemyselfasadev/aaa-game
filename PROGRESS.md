@@ -6388,8 +6388,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    CHAMBER) from the follow-through into guard instead of snapping. Known residue: a dodge-cancel from the end of
    string swing 2 (yaw -16) still grazes the chest mid-blend (pre-existing: it did with the old guard too).
    New shot mode: `hero <name> 30 15 guard` (portrait with the staff drawn). Bots combat dodge soldier lockon heavy
-   sweep flinch death knight warden hounds PASS. NEXT, in order: (a) judge the guard shot (see below; if the
-   staff tip digs into the ground or the left hand looks wrong, tune GUARD with pose_check); (b) the `hounds`
+   sweep flinch death knight warden hounds PASS. NEXT, in order: (a) GUARD SEEN (21:31, gallery 2130, FAIL on
+   framing): the yoke is gone, the shaft runs low and diagonal with the butt behind the right hip; but the hero is
+   in shade, the straw post crowds the left, the shaft's middle hides behind the arm -- reshoot from the sun side,
+   further left of the hero's facing (e.g. rotate the `guard` camera to -0.9 rad) so the whole staff shows; (b) the `hounds`
    framing (crouched hound to the foreground); thornier ruff; (c) re-shoot the warden portrait; (d) `bash` shot
    mode; (e) re-shoot ring + knight p3. 0b re-check: freesound still unreachable (curl 000, 21:00 10-31).
 0. (20:00 10-31) **Hound coat streaks + pacing DONE (seen, gallery 2035, FAIL on framing)**. NEXT, in order: (a) the
