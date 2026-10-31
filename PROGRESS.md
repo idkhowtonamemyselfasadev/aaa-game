@@ -33,6 +33,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(09:00 10-31) The Ashen Knight wears armour (Next knight item (b)/(1)).** New `game/enemies/knight_armour.gd`
+  (`KnightArmour`) builds, in code, a closed great helm (egg dome, near-vertical cheeks drawn in at the jaw, a forged
+  keel down the face, a sight slit across the eyes, neck guard flared at the back), a two-lame gorget and two
+  layered pauldrons (domed cap + two overlapping lames with rolled lips, 7 rivets per lame, an oiled leather strap
+  across the cap). Pieces are built in body space around the bones' rest positions (probed: Head 1.82 m, Neck 1.78,
+  Arm +-0.24 at 1.72 on the 1.16-scaled Vanguard rig, no HeadTop_End bone) and hung on Head / Spine2 /
+  L+R Shoulder bone attachments named `Armour*`. New `shaders/armour.gdshader`: fire-blackened heat-scaled plate
+  (blue-black to bruised brown), edges/ridges (COLOR.g) rubbed back to bare grey steel, rust in the low spots, dents,
+  hairline cracks that glow with the body's ember and get hotter per phase (`heat` 0/0.5/1 from `_set_phase`), leather
+  and rivet layers; it shares the soldier's `dissolve`/`hit_flash`/`ember_col` params (armour mats appended to
+  `_mats`), so it flashes on hits and crumbles to ash with the body. The soldier's hood is hidden (helm instead),
+  the rags are re-tinted to a burnt oxblood surcoat (cloth_dark/light, soot 0.55) and a broad single-edged glaive
+  head with a back spike is fitted over the leaf blade (`fit_glaive`, rides the spear). Eruption fire ramp warmed
+  (less pink at the tip: blue channel to ~0, mid 0.75/0.26/0.02). Bot `knight` now also checks armour pieces >= 5
+  and the hood hidden: PASS (2 of 3 runs; one run failed "a roll on the smoulder did not pass through the eruption",
+  see Known bugs); `soldier` PASS.
 - **(08:00 10-31) The Ashen Knight's eruptions burst as a column of flame, not a white blob (Next knight item (0),
   the column).** `AshFlame`'s fire is now 30 upright flame tongues (Y-billboarded quads 0.5 x 1.5 m, base-anchored,
   on a procedural teardrop texture whose edges are torn by height-stretched noise, hot core up the middle) rising from
@@ -6272,6 +6288,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:00 10-31) Knight armour DONE (helm, gorget, pauldrons, oxblood surcoat, glaive head). NEXT, in order:
+   (a) look at the armour in a closer/lit shot if this session's `soldierface knightface 30 15 knight lit` verdict
+   below says it needs tuning (helm size/position, pauldron fit when the arms rise); maybe a breastplate with a cracked
+   hole over the ember and greaves; (b) re-shoot `soldier knight_p3 30 15 knight p3 fixfps` to check the warmed
+   column tip and the scorch; (c) the arena (burnt chapel yard / standing-stone ring at KNIGHT_AT); (d) enemy variety
+   (Briar Hound, Hollow shield variant). 0b audio: only the freesound/opengameart/kenney source-page re-check is
+   left (freesound.org still refused by the proxy, re-tested 09:00).
 0. (08:00 10-31) Eruption column DONE (flame tongues + crown smoke). NEXT, in order: (a) re-shoot `soldier knight_p3 30
    15 knight p3 fixfps` with the raised camera and check the scorch reads (if the practice post is in frame, move the
    fight sideways in shot.gd); warm the column tip (ramp end more orange/red, less pink); (b) the knight's armour
@@ -8012,6 +8035,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (09:00 10-31) `knight` bot flaky ~1 in 4: "a roll on the smoulder did not pass through the eruption" (passed on the
+  two re-runs and on the stashed HEAD); the roll timing against the eruption is random -- widen the roll check window.
 - (22:00 10-30) `wheatear` bot is flaky when three Godots run in parallel: once a bird sat exactly 3.0 m from the
   hero (threshold 3.0) -> FAIL; passes alone (nearest 7.0 m). Full suite this session: 67/68 PASS in parallel, the
   68th PASS on re-run.

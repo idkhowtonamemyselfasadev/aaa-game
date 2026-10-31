@@ -46,6 +46,7 @@ var flame_results: Array[String] = []
 var _surge := -1.0
 var _blasted := false
 var _flame_t := 0.0
+var armour: KnightArmour
 
 func _ready() -> void:
 	health_max = KNIGHT_HP
@@ -60,7 +61,26 @@ func _ready() -> void:
 	_set_skin("ash_light", Color(0.30, 0.28, 0.26))
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06))
 	_ember_light.omni_range = 3.4
+	_dress()
 	add_to_group("boss")
+
+## Armour over the ash body: the soldier's hood comes off for a closed helm, pauldrons and a
+## gorget go on, the grey rags turn to a burnt oxblood surcoat and the leaf blade becomes a
+## broad glaive head.
+func _dress() -> void:
+	for att in skel.get_children():
+		if att is BoneAttachment3D and (att as BoneAttachment3D).bone_name == HollowRags.BONE_HEAD:
+			att.visible = false
+	rags.set_param("cloth_dark", Color(0.10, 0.025, 0.02))
+	rags.set_param("cloth_light", Color(0.27, 0.07, 0.045))
+	rags.set_param("soot_amt", 0.55)
+	armour = KnightArmour.new()
+	armour.name = "Armour"
+	add_child(armour)
+	armour.build(skel, body)
+	armour.fit_glaive(spear, HollowSpear.LENGTH * 0.5 - HollowSpear.BLADE)
+	_mats.append_array(armour.mats)
+	_set_skin("heat", 0.0)
 
 ## The hero woke at the rest point: the knight stands whole again, in its first form.
 func return_to_post() -> void:
@@ -118,6 +138,7 @@ func _set_phase(n: int) -> void:
 	damage_mul = 1.0 + 0.15 * (n - 1)
 	glint_col = Color(1.0, 0.82, 0.6) if n == 1 else Color(1.0, 0.22, 0.1)
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06) if n == 1 else Color(1.0, 0.16, 0.04))
+	_set_skin("heat", (n - 1) * 0.5)
 
 func _begin_surge() -> void:
 	_set_phase(phase + 1)

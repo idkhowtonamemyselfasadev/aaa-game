@@ -767,6 +767,15 @@ func _knight_test() -> void:
 	var hud = p.get_node_or_null("HUD")
 	var gd := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
 	print("BOT knight: %.1f m from the start, state %d, health %.0f, phase %d" % [gd, k.state, k.health, k.phase])
+	# its armour: helm, gorget, two pauldrons and the glaive head, and no soldier's hood showing
+	var hood_shown := false
+	for att in k.skel.get_children():
+		if att is BoneAttachment3D and att.bone_name == HollowRags.BONE_HEAD and att.visible \
+				and not String(att.name).begins_with("Armour"):
+			hood_shown = true
+	print("BOT knight: armour pieces %d, hood hidden %s" % [k.armour.pieces, not hood_shown])
+	if k.armour.pieces < 5 or hood_shown:
+		return _combat_done(false, "the knight is missing its armour or still wears the soldier's hood")
 	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:
 		return _combat_done(false, "knight should wait idle at full health in phase 1")
 	# walk up until it notices
