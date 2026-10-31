@@ -892,5 +892,11 @@
   "time": "2026-10-31T07:45:00Z",
   "caption": "Phase 3 of the Ashen Knight: an eruption bursting under the hero, now captured at the burst. Still wrong: the flame column is an over-bright additive blob that whites out the frame and hides the new scorch decal, and the knight still has no armour of its own.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261031-0830-knight-column.jpg",
+  "time": "2026-10-31T08:30:00Z",
+  "caption": "The Ashen Knight's phase-3 eruption is now a narrow column of flame tongues with dark smoke instead of a white blob; still wrong: the low camera hides the scorch in the grass, the practice post blocks the hero, and the knight is still a re-tinted soldier.",
+  "verdict": "fail"
  }
 ]

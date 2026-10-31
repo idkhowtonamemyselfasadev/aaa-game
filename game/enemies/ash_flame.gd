@@ -26,6 +26,7 @@ var _smoke: CPUParticles3D
 var _light: OmniLight3D
 
 static var _soft: ImageTexture
+static var _tongue: ImageTexture
 static var _scorch_tex: ImageTexture
 static var _ember_tex: ImageTexture
 
@@ -49,35 +50,53 @@ func _ready() -> void:
 	_light.light_energy = 0.0
 	_light.position.y = 0.6
 	add_child(_light)
-	_fire = _emitter(70, 0.7, Vector2(0.35, 0.75), Color(1.0, 0.62, 0.22), 3.0)
+	# the column: a narrow, tall sheaf of flame tongues (upright, Y-billboarded, stretched
+	# noise-edged teardrops) rather than soft discs, so it reads as fire and never whites out
+	_fire = _emitter(30, 0.6, Vector2(0.7, 1.15), Color(1.0, 0.6, 0.22), 1.2, true)
 	_fire.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_fire.emission_sphere_radius = RADIUS * 0.6
-	_fire.initial_velocity_min = 3.5
-	_fire.initial_velocity_max = 6.5
-	_fire.gravity = Vector3(0, 2.0, 0)
+	_fire.emission_sphere_radius = RADIUS * 0.28
+	_fire.initial_velocity_min = 4.0
+	_fire.initial_velocity_max = 7.5
+	_fire.spread = 7.0
+	_fire.damping_min = 0.5
+	_fire.damping_max = 1.2
+	_fire.gravity = Vector3(0, 3.0, 0)
+	_fire.angle_min = 0.0
+	_fire.angle_max = 0.0
+	_fire.explosiveness = 0.55
+	var sc := Curve.new()
+	sc.add_point(Vector2(0.0, 0.55))
+	sc.add_point(Vector2(0.25, 1.0))
+	sc.add_point(Vector2(1.0, 0.35))
+	_fire.scale_amount_curve = sc
 	var g := Gradient.new()
-	g.set_color(0, Color(1.0, 0.85, 0.5, 1.0))
-	g.set_color(1, Color(0.12, 0.08, 0.06, 0.0))
-	g.add_point(0.35, Color(1.0, 0.42, 0.1, 0.9))
-	g.add_point(0.7, Color(0.4, 0.12, 0.04, 0.5))
+	g.set_color(0, Color(1.0, 0.82, 0.45, 1.0))
+	g.set_color(1, Color(0.25, 0.06, 0.02, 0.0))
+	g.add_point(0.3, Color(1.0, 0.45, 0.1, 0.9))
+	g.add_point(0.65, Color(0.55, 0.14, 0.03, 0.45))
 	_fire.color_ramp = g
-	_sparks = _emitter(90, 1.4, Vector2(0.025, 0.05), Color(1.0, 0.6, 0.25), 6.0)
+	_sparks = _emitter(45, 1.3, Vector2(0.025, 0.05), Color(1.0, 0.6, 0.25), 4.0)
 	_sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_sparks.emission_sphere_radius = RADIUS * 0.5
-	_sparks.initial_velocity_min = 4.0
-	_sparks.initial_velocity_max = 9.0
-	_sparks.spread = 35.0
+	_sparks.emission_sphere_radius = RADIUS * 0.3
+	_sparks.initial_velocity_min = 5.0
+	_sparks.initial_velocity_max = 10.0
+	_sparks.spread = 22.0
 	_sparks.gravity = Vector3(0, -6.0, 0)
-	_smoke = _emitter(40, 2.4, Vector2(0.6, 1.4), Color(0.16, 0.15, 0.14, 0.55), 0.0)
+	# dark, oily smoke boiling off the crown of the column a beat after the burst
+	_smoke = _emitter(28, 2.6, Vector2(0.9, 1.8), Color(0.07, 0.06, 0.055, 0.8), 0.0)
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_smoke.emission_sphere_radius = RADIUS * 0.7
-	_smoke.initial_velocity_min = 1.2
-	_smoke.initial_velocity_max = 2.4
-	_smoke.gravity = Vector3(0.3, 0.6, 0)
+	_smoke.emission_sphere_radius = 0.45
+	_smoke.position.y = 2.2
+	_smoke.explosiveness = 0.3
+	_smoke.spread = 25.0
+	_smoke.initial_velocity_min = 0.8
+	_smoke.initial_velocity_max = 1.8
+	_smoke.gravity = Vector3(0.35, 0.7, 0)
 	var gs := Gradient.new()
-	gs.set_color(0, Color(0.2, 0.18, 0.16, 0.0))
-	gs.set_color(1, Color(0.2, 0.19, 0.18, 0.0))
-	gs.add_point(0.2, Color(0.18, 0.16, 0.15, 0.5))
+	gs.set_color(0, Color(0.08, 0.06, 0.05, 0.0))
+	gs.set_color(1, Color(0.16, 0.15, 0.14, 0.0))
+	gs.add_point(0.15, Color(0.07, 0.06, 0.05, 0.8))
+	gs.add_point(0.6, Color(0.12, 0.11, 0.1, 0.45))
 	_smoke.color_ramp = gs
 	# heat over the smoulder: a thin trickle of ember motes lifting off the fissures
 	_motes = _emitter(26, 1.3, Vector2(0.015, 0.035), Color(1.0, 0.55, 0.2), 4.0)
@@ -95,7 +114,7 @@ func _ready() -> void:
 	_motes.position.y = 0.05
 	_motes.emitting = true
 
-func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float) -> CPUParticles3D:
+func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float, tongue := false) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
 	p.amount = n
 	p.lifetime = life
@@ -117,11 +136,15 @@ func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float) -> CP
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	if glow > 0.0:
 		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y if tongue else BaseMaterial3D.BILLBOARD_PARTICLES
+	m.billboard_keep_scale = true
 	m.vertex_color_use_as_albedo = true
-	m.albedo_texture = _soft_texture()
+	m.albedo_texture = _tongue_texture() if tongue else _soft_texture()
 	m.albedo_color = Color(col.r * maxf(glow, 1.0) * 0.5, col.g * maxf(glow, 1.0) * 0.5, col.b * maxf(glow, 1.0) * 0.5, col.a) if glow > 0.0 else col
 	q.material = m
+	if tongue:
+		q.size = Vector2(0.5, 1.5)
+		q.center_offset = Vector3(0, 0.55, 0)
 	p.mesh = q
 	p.position.y = 0.2
 	add_child(p)
@@ -141,7 +164,9 @@ func _process(delta: float) -> void:
 	if result == "":
 		_burst()
 	var b := t - WARN
-	_light.light_energy = 6.0 * exp(-b * 3.0) + (1.2 * (1.0 - b / BURN) if b < BURN else 0.0)
+	if b > 0.12 and not _smoke.emitting and b < 0.5:
+		_smoke.emitting = true
+	_light.light_energy = 3.5 * exp(-b * 3.0) + (1.2 * (1.0 - b / BURN) if b < BURN else 0.0)
 	# the fissures cool to dull red then black; the scorch itself lingers and fades last
 	_ring.emission_energy = 6.0 * exp(-b * 2.2)
 	_ring.modulate = Color(1, 1, 1, clampf((LIFE - b) / 1.2, 0.0, 1.0))
@@ -153,7 +178,6 @@ func _burst() -> void:
 	_motes.emitting = false
 	_fire.emitting = true
 	_sparks.emitting = true
-	_smoke.emitting = true
 	burst.emit(global_position)
 	if player == null or player.is_dead():
 		return
@@ -175,6 +199,35 @@ static func _soft_texture() -> ImageTexture:
 			img.set_pixel(x, y, Color(1, 1, 1, v * v))
 	_soft = ImageTexture.create_from_image(img)
 	return _soft
+
+## One flame tongue: a teardrop, widest a third of the way up and licking to a point, its
+## edges torn by stretched noise; a hot core runs up the middle. White, so the ramp colours it.
+static func _tongue_texture() -> ImageTexture:
+	if _tongue != null:
+		return _tongue
+	var w := 64
+	var h := 160
+	var nz := FastNoiseLite.new()
+	nz.seed = 23
+	nz.frequency = 0.06
+	nz.fractal_octaves = 3
+	var img := Image.create(w, h, true, Image.FORMAT_RGBA8)
+	for y in h:
+		var v := 1.0 - (y + 0.5) / h            # 0 at the base, 1 at the tip
+		var width := pow(sin(clampf(v * 0.92 + 0.08, 0.0, 1.0) * PI), 0.8) * (1.0 - v * 0.55) * 0.95
+		for x in w:
+			var u := (x + 0.5) / w * 2.0 - 1.0
+			# noise stretched along the height, so the edge tears into licks, not blobs
+			var n := nz.get_noise_2d(x * 2.2, y * 0.45)
+			var d := absf(u + n * 0.35 * v) / maxf(width + n * 0.25, 0.01)
+			var a := 1.0 - smoothstep(0.55, 1.0, d)
+			a *= smoothstep(0.0, 0.08, v) * (1.0 - smoothstep(0.75, 1.0, v) * 0.6)
+			var core := (1.0 - smoothstep(0.0, 0.5, d)) * (1.0 - v)
+			var c := 0.75 + 0.25 * core
+			img.set_pixel(x, y, Color(c, c, c, clampf(a * (0.65 + 0.35 * core), 0.0, 1.0)))
+	img.generate_mipmaps()
+	_tongue = ImageTexture.create_from_image(img)
+	return _tongue
 
 ## The char: near-black burnt turf, densest in the middle, its edge eaten ragged by noise so it
 ## reads as a scorch and never as a drawn circle. Ashy grey flecks break up the black.

@@ -850,6 +850,11 @@ func _ready() -> void:
 			if "fallen" in args:
 				# frame the body where it falls (forward along its facing, toward the soldier)
 				SPOTS[spot] = [pp + side * 3.0 + line * 0.2, pp + line * 0.8]
+			if "knight" in args and "p3" in args:
+				# the eruption under the hero: low and close from the side, so the scorch, the
+				# column and the knight beyond all read in one frame
+				var focus := pp.lerp(fp, 0.25)
+				SPOTS[spot] = [focus + side * 4.2 - line * 1.4, focus]
 		elif spot == "lockon":
 			pass                                  # the follow camera, swung by the lock
 		elif "lit" in args:
@@ -1518,6 +1523,10 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "soldier" and "knight" in args and "p3" in args:
+			# 0.9 m (08:00 10-31) put the scorch behind the meadow grass: look down on it instead
+			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
+			look.y = terrain.height_at(look.x, look.z) + 0.9
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y
