@@ -3,7 +3,9 @@ extends Node
 ## The score, on the Music bus. One looping player per cue, each with a gain eased toward its
 ## target so cues crossfade (equal-power, 3 s; combat comes in faster) and only one is ever
 ## headed for full volume:
-##  - "day":    Mystical Theme (Alexandr Zhelanov) out in Harrowmere Vale by daylight;
+##  - "day":    out in Harrowmere Vale by daylight, a rotation of three Alexandr Zhelanov
+##              pieces (Mystical Theme, Medicine, Decision): as one nears its end the next
+##              crossfades in, and the one that finished rewinds for its next turn;
 ##  - "night":  Without (Alexandr Zhelanov), quieter, from dusk to first light;
 ##  - "hearth": near Hesper's cookfire in the keep, Lazy Day (FoxSynergy): lute, flute and
 ##              a warm bass, a little softer after dark ("hearth_night");
@@ -18,17 +20,20 @@ extends Node
 const DIR := "res://audio/music/"
 const TRACKS := {
 	"mystical": "vale_day_mystical_theme.ogg",
+	"medicine": "vale_day_medicine.ogg",
+	"decision": "vale_day_decision.ogg",
 	"without": "vale_night_without.ogg",
 	"battle": "combat_battle_in_the_winter.ogg",
 	"lazyday": "hearth_lazy_day.ogg",
 }
 const CUES := {                # cue -> [track, trim dB]; the hearth by night is the same tune, softer
-	"day": ["mystical", -4.0],
+	"day": ["@day", 0.0],     # resolved through DAY_ROTATION
 	"night": ["without", -8.0],
 	"hearth": ["lazyday", -6.0],
 	"hearth_night": ["lazyday", -9.0],
 	"combat": ["battle", -3.0],
 }
+const DAY_ROTATION := [["mystical", -4.0], ["medicine", -3.5], ["decision", -5.0]]   # [track, trim dB]
 const STINGER := "victory_heroes_theme_end.ogg"
 const FADE := 3.0             # s for a full crossfade between vale cues
 const FADE_COMBAT := 1.6      # s for the fight to come in
@@ -43,6 +48,8 @@ var gains := {}               # track -> 0..1 (bots)
 var ducked := false
 var stingers := 0
 var fights := 0
+var day_i := 0                # which DAY_ROTATION piece is the day theme now (bots)
+var day_turns := 0            # how many times the day theme has handed over (bots)
 
 var _players := {}
 var _stinger: AudioStreamPlayer
@@ -96,8 +103,9 @@ func _physics_process(scaled: float) -> void:
 	var talk := _anyone_talking()
 	ducked = talk
 	_duck = move_toward(_duck, 1.0 if talk else 0.0, delta / 0.6)
-	var track: String = CUES[cue][0]
-	_trim[track] = move_toward(_trim[track], CUES[cue][1], delta * 2.0)
+	_rotate_day()
+	var track := track_of(cue)
+	_trim[track] = move_toward(_trim[track], trim_of(cue), delta * 2.0)
 	for c: String in _players:
 		var target := 1.0 if c == track and _stinger_left <= 0.0 else 0.0
 		var rate := 1.0 / (FADE_COMBAT if cue == "combat" else FADE)   # the fight cuts in fast both ways
@@ -106,7 +114,10 @@ func _physics_process(scaled: float) -> void:
 		var g: float = gains[c]
 		if g <= 0.0:
 			if pl.playing:
-				pl.stream_paused = true
+				if c != track_of("day") and _in_rotation(c):
+					pl.stop()            # a day piece that handed over starts from the top next turn
+				else:
+					pl.stream_paused = true
 			continue
 		if not pl.playing or pl.stream_paused:
 			if pl.stream_paused:
@@ -116,6 +127,33 @@ func _physics_process(scaled: float) -> void:
 		# equal power: the two sides of a crossfade sum to constant loudness, never both full
 		pl.volume_db = linear_to_db(maxf(sin(g * PI * 0.5), 0.0001)) + _trim[c] + DUCK_DB * _duck
 	_stinger.volume_db = -3.0 + DUCK_DB * _duck
+
+func track_of(c: String) -> String:
+	var t: String = CUES[c][0]
+	return DAY_ROTATION[day_i][0] if t == "@day" else t
+
+func trim_of(c: String) -> float:
+	return DAY_ROTATION[day_i][1] if CUES[c][0] == "@day" else CUES[c][1]
+
+func _in_rotation(t: String) -> bool:
+	for r in DAY_ROTATION:
+		if r[0] == t:
+			return true
+	return false
+
+## The day theme hands over to the next piece FADE s before it would loop, so the vale by day
+## runs through ~9 minutes of music before anything repeats.
+func _rotate_day() -> void:
+	if cue != "day":
+		return
+	var t := track_of("day")
+	var pl: AudioStreamPlayer = _players[t]
+	if gains[t] < 0.99 or not pl.playing or pl.stream_paused:
+		return
+	if pl.get_playback_position() >= pl.stream.get_length() - FADE - 0.25:
+		day_i = (day_i + 1) % DAY_ROTATION.size()
+		day_turns += 1
+		_trim[track_of("day")] = trim_of("day")
 
 ## True while any living enemy near the hero has stirred (stalking, winding up, striking,
 ## reeling) or the hero has locked on to one. Counts the ones that crumble mid-fight.

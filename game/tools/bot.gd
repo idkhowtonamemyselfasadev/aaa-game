@@ -2215,10 +2215,31 @@ func _music_test() -> void:
 	if not held or m.cue == "combat" or m.stingers != 1 or not stg.playing or m.gains["mystical"] > 0.05:
 		return _combat_done(false, "fight did not end on the victory stinger")
 	await _ticks(60 * 12)
-	print("BOT music: after the stinger battle %.2f, %s %.2f" % [m.gains["battle"], m.cue, m.gains[Music.CUES[m.cue][0]]])
-	if m.gains["battle"] > 0.0 or m.gains[Music.CUES[m.cue][0]] < 0.99:
+	print("BOT music: after the stinger battle %.2f, %s %.2f" % [m.gains["battle"], m.cue, m.gains[m.track_of(m.cue)]])
+	if m.gains["battle"] > 0.0 or m.gains[m.track_of(m.cue)] < 0.99:
 		return _combat_done(false, "vale theme did not return after the fight")
-	_combat_done(true, "day/night cues crossfade, the hearth has its own theme (softer at night), combat comes in and lingers, victory stinger, dialogue duck")
+	# the day theme rotates: near the end of a piece the next crossfades in and the old one rewinds
+	var seen := []
+	for i in Music.DAY_ROTATION.size():
+		var cur := m.track_of("day")
+		seen.append(cur)
+		var cpl: AudioStreamPlayer = m.get_node("Track_" + cur)
+		cpl.seek(cpl.stream.get_length() - Music.FADE - 1.0)
+		await _ticks(int(60 * 2.5))
+		var nxt := m.track_of("day")
+		var a2: float = m.gains[cur]
+		var b2: float = m.gains[nxt]
+		print("BOT music: day piece %s -> %s, mid-handover %.2f / %.2f, turns %d" % [cur, nxt, a2, b2, m.day_turns])
+		if nxt == cur or a2 > 0.9 or b2 < 0.1 or absf(pow(sin(a2 * PI * 0.5), 2) + pow(sin(b2 * PI * 0.5), 2) - 1.0) > 0.08:
+			return _combat_done(false, "day theme did not hand over smoothly to the next piece")
+		await _ticks(60 * 3)
+		var npl: AudioStreamPlayer = m.get_node("Track_" + nxt)
+		if m.gains[nxt] < 0.99 or cpl.playing or not npl.playing or npl.get_playback_position() > 6.0:
+			return _combat_done(false, "next day piece did not start from the top / old one did not rewind")
+	print("BOT music: day rotation %s, back to %s" % [str(seen), m.track_of("day")])
+	if seen.size() != 3 or m.track_of("day") != seen[0]:
+		return _combat_done(false, "day rotation did not cycle through all three pieces")
+	_combat_done(true, "day/night cues crossfade, the day theme rotates through three pieces, the hearth has its own theme (softer at night), combat comes in and lingers, victory stinger, dialogue duck")
 
 ## The picture panel: each preset sets its passes, the quality slider and render scale in
 ## the pause menu drive them (FSR 2 below native), and both are kept in settings.cfg.

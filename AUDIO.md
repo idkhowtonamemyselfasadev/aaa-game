@@ -10,7 +10,7 @@ audit every third-party file's license.
 |---|---|
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
 | (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). **collie, hens, fox crunch done; bat voice dropped** 2026-10-30 21:00 (`game/audio/sfx/animals`). Remaining: `blow`, the deer (bark/roar/gallop), fox bark/yelp, rooks' caws, kite, wheatears, dust devil, voices, grain, fell bell — see "Replaced" below |
-| (c) Music: tracks + music system | **first pass done** 2026-10-30 22:00: `game/world/music.gd` + 4 CC BY 3.0 files in `game/audio/music/` (see "Music" below). **hearth theme done** 2026-10-30 23:00 (Lazy Day, FoxSynergy, CC BY 3.0). Still wanted: 1-2 more vale tracks to rotate (candidates in the same edgar-data package, CC BY 3.0 Zhelanov: Medicine, Steeps of Destiny, Decision) |
+| (c) Music: tracks + music system | **first pass done** 2026-10-30 22:00: `game/world/music.gd` + 4 CC BY 3.0 files in `game/audio/music/` (see "Music" below). **hearth theme done** 2026-10-30 23:00 (Lazy Day, FoxSynergy, CC BY 3.0). **day rotation done** 2026-10-31 00:00: the day cue cycles Mystical Theme -> Medicine -> Decision (all Zhelanov, CC BY 3.0), ~9 min before a repeat. Spare candidate: Steeps of Destiny (epic, CC BY 3.0, same package) for a boss/dungeon later |
 | (d) Headless verification + peak levels | music: bot `music` + file peaks done 2026-10-30 22:00; SFX sets still to sweep |
 | (e) Copyright audit + in-game Credits screen | not started |
 
@@ -37,7 +37,7 @@ perfect-dodge slow-mo), equal-power crossfades so two tracks are never both at f
 
 | Cue | When | Track | Trim | Fade |
 |---|---|---|---|---|
-| day | Harrowmere Vale, 05:30-20:30 | Mystical Theme — Alexandr Zhelanov | -4 dB | 3 s |
+| day | Harrowmere Vale, 05:30-20:30 | rotation: Mystical Theme (-4 dB) -> Medicine (-3.5 dB) -> Decision (-5 dB), all Alexandr Zhelanov; the next piece crossfades in 3 s before the current one would loop, the finished one rewinds | per piece | 3 s |
 | night | 20:30-05:30 | Without — Alexandr Zhelanov | -8 dB | 3 s |
 | hearth | within 16 m of Hesper's fire by day | Lazy Day — FoxSynergy (lute, flute, warm bass) | -6 dB | 3 s |
 | hearth_night | the same, 20:30-05:30 | Lazy Day, settling softer | -9 dB | 3 s (trim eased 2 dB/s) |
@@ -49,7 +49,8 @@ Paused tracks keep their position. File levels (ffmpeg ebur128): -15.4..-16.9 LU
 nothing clips. Bot `music` proves: day fades in and plays; day->night crossfade at the mid point is 0.50/0.50
 with power sum 1.00; night takes over and the day track pauses; hearth theme takes over by the fire at night (night track out), and is >= 2 dB warmer at noon; duck under a line;
 combat comes in within 1.6 s of the soldier stirring with the day track out; held after the kill, then the
-stinger plays and the day theme returns.
+stinger plays and the day theme returns; the day theme hands over piece to piece (mid-handover power sum 1.00), each
+next piece starts from the top, the old one stops, and the rotation cycles all three and back.
 
 ## Replaced with recordings (2026-10-30 19:00)
 
