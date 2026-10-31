@@ -1,10 +1,12 @@
 class_name AshFlame
 extends Node3D
 ## One eruption of the Ashen Knight's burning ground (phase 3). The ground under the hero
-## starts to glow: a ring of embers smoulders in the turf and tightens for WARN s (the tell:
+## starts to glow: a ragged scorch with glowing fissures spreads through the turf and tightens for WARN s (the tell:
 ## step or roll out of it), then a column of flame and sparks bursts up out of it and scorches
 ## anything still standing inside RADIUS. Dodge i-frames pass through it like any strike; the
 ## heavy cannot deflect fire. Frees itself when the last smoke has gone.
+
+signal burst(at: Vector3)
 
 const WARN := 1.15
 const RADIUS := 1.7
@@ -16,31 +18,30 @@ var source: Node              # the knight (receive_attack's attacker)
 var player: Player
 var t := 0.0
 var result := ""              # "" until the burst resolves, then hit / perfect / dodged / miss
-var _ring: MeshInstance3D
-var _ring_mat: StandardMaterial3D
+var _ring: Decal
+var _motes: CPUParticles3D
 var _fire: CPUParticles3D
 var _sparks: CPUParticles3D
 var _smoke: CPUParticles3D
 var _light: OmniLight3D
 
 static var _soft: ImageTexture
-static var _ring_tex: ImageTexture
+static var _scorch_tex: ImageTexture
+static var _ember_tex: ImageTexture
 
 func _ready() -> void:
-	_ring = MeshInstance3D.new()
-	var q := PlaneMesh.new()
-	q.size = Vector2(RADIUS * 2.4, RADIUS * 2.4)
-	_ring_mat = StandardMaterial3D.new()
-	_ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_ring_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	_ring_mat.albedo_texture = _ring_texture()
-	_ring_mat.albedo_color = Color(1.0, 0.4, 0.1, 0.0)
-	_ring_mat.render_priority = 1
-	q.material = _ring_mat
-	_ring.mesh = q
-	_ring.position.y = 0.06
-	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# the tell is a Decal so it hugs the real turf (slopes, tussocks, stones) instead of a flat
+	# card floating over it: a charred scorch with glowing fissures and ember specks
+	_ring = Decal.new()
+	_ring.size = Vector3(RADIUS * 2.25, 1.6, RADIUS * 2.25)
+	_ring.texture_albedo = _scorch_texture()
+	_ring.texture_emission = _ember_texture()
+	_ring.emission_energy = 0.0
+	_ring.albedo_mix = 1.0
+	_ring.modulate = Color(1, 1, 1, 0.0)
+	_ring.upper_fade = 0.25
+	_ring.lower_fade = 0.25
+	_ring.rotation.y = randf() * TAU
 	add_child(_ring)
 	_light = OmniLight3D.new()
 	_light.light_color = Color(1.0, 0.5, 0.18)
@@ -78,6 +79,21 @@ func _ready() -> void:
 	gs.set_color(1, Color(0.2, 0.19, 0.18, 0.0))
 	gs.add_point(0.2, Color(0.18, 0.16, 0.15, 0.5))
 	_smoke.color_ramp = gs
+	# heat over the smoulder: a thin trickle of ember motes lifting off the fissures
+	_motes = _emitter(26, 1.3, Vector2(0.015, 0.035), Color(1.0, 0.55, 0.2), 4.0)
+	_motes.one_shot = false
+	_motes.explosiveness = 0.0
+	_motes.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
+	_motes.emission_ring_axis = Vector3.UP
+	_motes.emission_ring_radius = RADIUS * 0.85
+	_motes.emission_ring_inner_radius = RADIUS * 0.2
+	_motes.emission_ring_height = 0.05
+	_motes.initial_velocity_min = 0.4
+	_motes.initial_velocity_max = 1.1
+	_motes.spread = 25.0
+	_motes.gravity = Vector3(0.15, 0.5, 0.0)
+	_motes.position.y = 0.05
+	_motes.emitting = true
 
 func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
@@ -116,23 +132,29 @@ func _process(delta: float) -> void:
 	if t < WARN:
 		# the smoulder brightens and the ring draws in: the closer to the burst the hotter
 		var u := t / WARN
-		_ring_mat.albedo_color = Color(1.0, 0.38 + 0.2 * u, 0.1, 0.25 + 0.75 * u * u + 0.1 * sin(t * 30.0))
-		_ring.scale = Vector3.ONE * lerpf(1.15, 1.0, u)
+		# the char spreads fast, the fissures heat slowly then flicker hard just before the burst
+		_ring.modulate = Color(1, 1, 1, minf(u * 3.0, 1.0))
+		_ring.emission_energy = 0.4 + 3.2 * u * u + (0.5 + 1.5 * u) * sin(t * 23.0) * 0.25
+		_ring.scale = Vector3.ONE * lerpf(1.12, 1.0, u)
 		_light.light_energy = 0.4 + 1.6 * u * u
 		return
 	if result == "":
 		_burst()
 	var b := t - WARN
 	_light.light_energy = 6.0 * exp(-b * 3.0) + (1.2 * (1.0 - b / BURN) if b < BURN else 0.0)
-	_ring_mat.albedo_color = Color(1.0, 0.35, 0.08, maxf(1.0 - b / 1.6, 0.0))
+	# the fissures cool to dull red then black; the scorch itself lingers and fades last
+	_ring.emission_energy = 6.0 * exp(-b * 2.2)
+	_ring.modulate = Color(1, 1, 1, clampf((LIFE - b) / 1.2, 0.0, 1.0))
 	if t > WARN + LIFE:
 		queue_free()
 
 func _burst() -> void:
 	result = "miss"
+	_motes.emitting = false
 	_fire.emitting = true
 	_sparks.emitting = true
 	_smoke.emitting = true
+	burst.emit(global_position)
 	if player == null or player.is_dead():
 		return
 	var d := player.global_position - global_position
@@ -154,25 +176,73 @@ static func _soft_texture() -> ImageTexture:
 	_soft = ImageTexture.create_from_image(img)
 	return _soft
 
-## A ragged ring of embers: brightest at the rim, a faint glow inside, broken up by noise so
-## it reads as burning turf and not a drawn circle.
-static func _ring_texture() -> ImageTexture:
-	if _ring_tex != null:
-		return _ring_tex
+## The char: near-black burnt turf, densest in the middle, its edge eaten ragged by noise so it
+## reads as a scorch and never as a drawn circle. Ashy grey flecks break up the black.
+static func _scorch_texture() -> ImageTexture:
+	if _scorch_tex != null:
+		return _scorch_tex
 	var n := 256
-	var noise := FastNoiseLite.new()
-	noise.seed = 41
-	noise.frequency = 0.06
+	var lo := FastNoiseLite.new()
+	lo.seed = 41
+	lo.frequency = 0.022
+	lo.fractal_octaves = 4
+	var hi := FastNoiseLite.new()
+	hi.seed = 7
+	hi.frequency = 0.18
 	var img := Image.create(n, n, true, Image.FORMAT_RGBA8)
 	for y in n:
 		for x in n:
 			var p := Vector2(x + 0.5, y + 0.5) / n * 2.0 - Vector2.ONE
-			var r := p.length() * 1.2
-			var k := noise.get_noise_2d(x, y) * 0.5 + 0.5
-			var rim := exp(-pow((r - 0.95) / 0.07, 2.0)) * (0.5 + 0.8 * k)
-			var inner := (0.12 + 0.35 * k * k) * (1.0 - smoothstep(0.7, 1.0, r))
-			var v := clampf(rim + inner, 0.0, 1.0)
-			img.set_pixel(x, y, Color(1, 1, 1, v))
+			var k := lo.get_noise_2d(x, y)
+			var r := p.length() + k * 0.28
+			var a := 1.0 - smoothstep(0.55, 0.92, r)
+			var f := hi.get_noise_2d(x, y)
+			a *= 0.75 + 0.25 * f
+			var ash := smoothstep(0.35, 0.7, f) * 0.5
+			var c := Color(0.045, 0.032, 0.024).lerp(Color(0.32, 0.3, 0.28), ash)
+			img.set_pixel(x, y, Color(c.r, c.g, c.b, clampf(a, 0.0, 1.0)))
 	img.generate_mipmaps()
-	_ring_tex = ImageTexture.create_from_image(img)
-	return _ring_tex
+	_scorch_tex = ImageTexture.create_from_image(img)
+	return _scorch_tex
+
+## The heat: glowing fissures (cell edges of a cellular noise) through the char, hottest in a
+## broken band near the edge, plus scattered ember specks. Black where nothing burns.
+static func _ember_texture() -> ImageTexture:
+	if _ember_tex != null:
+		return _ember_tex
+	var n := 256
+	var lo := FastNoiseLite.new()
+	lo.seed = 41
+	lo.frequency = 0.022
+	lo.fractal_octaves = 4
+	var cell := FastNoiseLite.new()
+	cell.seed = 13
+	cell.noise_type = FastNoiseLite.TYPE_CELLULAR
+	cell.frequency = 0.045
+	cell.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
+	cell.fractal_type = FastNoiseLite.FRACTAL_NONE
+	var gap := FastNoiseLite.new()
+	gap.seed = 99
+	gap.frequency = 0.035
+	var speck := FastNoiseLite.new()
+	speck.seed = 5
+	speck.frequency = 0.4
+	var img := Image.create(n, n, true, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var p := Vector2(x + 0.5, y + 0.5) / n * 2.0 - Vector2.ONE
+			var r := p.length() + lo.get_noise_2d(x, y) * 0.28
+			var inside := 1.0 - smoothstep(0.6, 0.85, r)
+			var e := cell.get_noise_2d(x, y)            # ~ -1 on the cell edges
+			var crack := 1.0 - smoothstep(-1.0, -0.82, e)
+			var band := exp(-pow((r - 0.62) / 0.14, 2.0)) * 0.9 + 0.3
+			var broken := smoothstep(-0.15, 0.25, gap.get_noise_2d(x, y))
+			var v := crack * band * broken * inside
+			v += smoothstep(0.55, 0.8, speck.get_noise_2d(x, y)) * inside * 0.8
+			v = clampf(v, 0.0, 1.0)
+			# hot cores run yellow-orange, the thin edges dull red
+			var c := Color(0.55, 0.06, 0.01).lerp(Color(1.0, 0.5, 0.12), v)
+			img.set_pixel(x, y, Color(c.r * v, c.g * v, c.b * v, 1.0))
+	img.generate_mipmaps()
+	_ember_tex = ImageTexture.create_from_image(img)
+	return _ember_tex

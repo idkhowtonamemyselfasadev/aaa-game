@@ -305,7 +305,8 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier], trample)
+	foley.hook(player, [soldier, knight], trample)
+	foley.hook_knight(knight)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_dog(dog)

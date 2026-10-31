@@ -1758,7 +1758,7 @@ func _ready() -> void:
 			else:
 				k._set_phase(3)
 				var f := k.spawn_flame(player.global_position + (player.global_position - foe.global_position).normalized() * 0.4)
-				f.t = 0.0
+				f.t = AshFlame.WARN   # with the hold below it burst 7 frames before the capture
 			var hold := (frames - 7) / 30.0
 			for c in world.get_children():
 				if c is AshFlame:

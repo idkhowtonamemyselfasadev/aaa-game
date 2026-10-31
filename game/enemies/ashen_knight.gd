@@ -28,6 +28,12 @@ const TEMPO := [1.0, 1.2, 1.3]
 const NAME := "The Ashen Knight"
 
 signal phase_changed(phase: int)
+## a light blow turned aside by the ember guard (foley: a ringing clang on the shaft)
+signal guarded_blow(point: Vector3)
+## the surge's ring of fire bursting round the kneeling knight
+signal blasted(at: Vector3)
+## one phase-3 eruption bursting under the hero
+signal flame_burst(at: Vector3)
 
 var phase := 1
 var guarded := 0                 # light strikes turned aside (bots)
@@ -87,6 +93,7 @@ func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> voi
 		_freeze = hitstop * 0.6
 		_flash = 0.15
 		ImpactFX.spawn(get_parent(), point, dir, "metal", 1.2)
+		guarded_blow.emit(point)
 		if _player != null:
 			_player.add_shake(0.25)
 		# the turned blow opens the hero up: it answers quickly
@@ -167,6 +174,7 @@ func _blast() -> void:
 	blast_result = "miss"
 	var c := global_position
 	ImpactFX.spawn(get_parent(), c + Vector3.UP * 1.1, body.global_basis.z, "stone", 2.4)
+	blasted.emit(c)
 	for i in 7:
 		var a := TAU * i / 7.0 + body.rotation.y
 		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6, false)
@@ -190,4 +198,5 @@ func _flame_at(at: Vector3, harms: bool) -> AshFlame:
 	f.global_position = at
 	if harms:
 		flames.append(f)
+		f.burst.connect(func(p: Vector3) -> void: flame_burst.emit(p))
 	return f

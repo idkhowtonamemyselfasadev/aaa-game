@@ -761,6 +761,8 @@ func _knight_test() -> void:
 	var k: AshenKnight = _world.knight
 	var s: HollowSoldier = _world.soldier
 	s.process_mode = Node.PROCESS_MODE_DISABLED     # the soldier keeps out of the duel
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
 	await _ticks(10)
 	var hud = p.get_node_or_null("HUD")
 	var gd := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
@@ -941,6 +943,13 @@ func _knight_test() -> void:
 	print("BOT knight: music phase cuts %d, per phase %s" % [mu.phase_cuts - cuts0, str(music_ok)])
 	if mu.phase_cuts - cuts0 < 2 or music_ok.get(2, [false, false]) != [true, true] or music_ok.get(3, [false, false]) != [true, true]:
 		return _combat_done(false, "the score did not drop under each surge and come back at the phase's section")
+	# the knight's foley: guard clangs, surge whooshes, blast slams, eruption whumps, spear strikes
+	var dp := {}
+	for nm in ["clang", "whoom", "slam", "boom", "spear"]:
+		dp[nm] = int(fol.played.get(nm, 0)) - int(played0.get(nm, 0))
+	print("BOT knight: foley %s (recorded clang %d slam %d whoom %d)" % [str(dp), fol.recorded.get("clang", 0), fol.recorded.get("slam", 0), fol.recorded.get("whoom", 0)])
+	if dp.clang < k.guarded or dp.slam < k.blasts + 1 or dp.whoom < k.surges + 1 or dp.spear < 1:
+		return _combat_done(false, "the knight's guard/surge/blast/eruption/strike sounds did not all play")
 	# unblockable: a parry-window heavy in phase 2+ must not deflect (checked on a fresh knight state)
 	await _ticks(30)
 	if hud != null:

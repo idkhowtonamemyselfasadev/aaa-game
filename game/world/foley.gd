@@ -136,6 +136,25 @@ func _process(delta: float) -> void:
 			_play(e[1], at, e[3], e[4])
 
 ## Gives the red deer herd its voice: alarm barks, galloping hooves and the stag's roar.
+## The Ashen Knight, from recorded sets only: a turned blow rings off its shaft (the parry
+## clang a shade lower, a thump under it), the surge draws in with a deep slowed whoosh, the
+## ring of fire lands as a ground slam with a full boom, and each eruption whumps up out of
+## the turf (the heavy whoosh pitched down over a soft slam).
+func hook_knight(k: Node) -> void:
+	if k == null:
+		return
+	k.guarded_blow.connect(func(at: Vector3) -> void:
+		_play("clang", at, -1.0, 0.88)
+		_play("boom", at, -14.0))
+	k.phase_changed.connect(func(_n: int) -> void:
+		_play("whoom", (k as Node3D).global_position + Vector3.UP * 1.2, 2.0, 0.5))
+	k.blasted.connect(func(at: Vector3) -> void:
+		_play("slam", at + Vector3.UP * 0.3, 2.0, 0.78)
+		_play("boom", at + Vector3.UP * 0.5, -2.0, 0.85))
+	k.flame_burst.connect(func(at: Vector3) -> void:
+		_play("whoom", at + Vector3.UP * 0.6, 0.0, 0.62)
+		_play("slam", at, -9.0, 1.15))
+
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):
 		return
