@@ -878,8 +878,8 @@ func _ready() -> void:
 			var d := (sunward * 2.0 - line).normalized()
 			SPOTS[spot] = [fp + d * 2.3, fp]
 			# turn the foe 3/4 to the lens (it faced the hero, showing the camera its back)
-			var cam := fp + d * 2.3
-			foe.face(cam.lerp(pp, 0.35))
+			var lens := fp + d * 2.3
+			foe.face(lens.lerp(pp, 0.35))
 		else:
 			SPOTS[spot] = [fp - line * 2.4 + side * 1.0, fp]
 	if spot == "ferns":

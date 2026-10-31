@@ -6331,6 +6331,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    and knight p3; (d) more variety: Briar Hound (quadruped, fast lunges, packs of 2) -- needs a CC0/CC-BY rigged dog
    or wolf model (check license first) or a procedural one; (e) a shield bash move for the warden when the hero
    crowds it (staggers the hero, unparryable but dodgeable).
+   SHOT FIX (16:50): the 15:17 "knight 3/4 to the lens" commit left `shot.gd` with a PARSE ERROR (`var cam`
+   declared twice in `_ready`), so EVERY shot failed (Vulkan parse fail, then a silent ~45 min opengl3 retry that
+   also produced nothing). Renamed to `lens`; `--check-only` is clean. No screenshot this session (the run was
+   lost to that bug). Before a long shot, run `.tools/godot --headless --path game --check-only -s
+   res://tools/shot.gd` first.
 0. (15:00 10-31) **Knight "lit" camera fixed + burn tweaks DONE (code + bots)**: `shot.gd` soldierface "lit" put the
    camera on the light's travel side (`+light`), i.e. the sun behind the knight -- the cause of every backlit knight
    shot; it now stands on the sun side (`-light`, same convention as the hero portrait). Burn: char noise freq 0.35 ->
