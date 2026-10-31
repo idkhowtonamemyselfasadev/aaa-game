@@ -886,5 +886,11 @@
   "time": "2026-10-31T06:05:00Z",
   "caption": "The Ashen Knight's phase 3 in the meadow: boss bar with phase notches, the ember-ring warning before an eruption under the hero. Still wrong: the ring reads as a flat orange circle, not burning turf, and the knight is a recoloured soldier with no armour of its own.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261031-0745-ashenknight-eruption.jpg",
+  "time": "2026-10-31T07:45:00Z",
+  "caption": "Phase 3 of the Ashen Knight: an eruption bursting under the hero, now captured at the burst. Still wrong: the flame column is an over-bright additive blob that whites out the frame and hides the new scorch decal, and the knight still has no armour of its own.",
+  "verdict": "fail"
  }
 ]
