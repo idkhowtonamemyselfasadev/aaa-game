@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -60,6 +60,13 @@ func _ready() -> void:
 	# the shield warden keeps to its post unless it is the one under test
 	if name != "warden" and _world.warden != null:
 		_world.warden.process_mode = Node.PROCESS_MODE_DISABLED
+	# the Briar Hounds likewise keep to their ground unless they are under test
+	if name != "hounds":
+		for h in _world.hounds:
+			h.process_mode = Node.PROCESS_MODE_DISABLED
+	if name == "hounds":
+		_hounds_test()
+		return
 	if name == "knight":
 		_knight_test()
 		return
@@ -1130,6 +1137,129 @@ func _warden_test() -> void:
 	if not is_instance_valid(w.targe) or off > 0.3 or off < -0.1:
 		return _combat_done(false, "the targe did not drop to the ground when the warden fell")
 	_combat_done(true, "targe on the forearm, frontal blows turned, heavy broke the ward, flank landed, killed, targe dropped")
+
+## The Briar Hound pair: idle on their own ground clear of the other foes; walk up and both
+## come and circle; stand still and one lunges and bites while its mate keeps circling (never
+## both in the air at once); dodge a lunge as it launches; then fight both to death.
+func _hounds_test() -> void:
+	var p := _player
+	var hs: Array = _world.hounds
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	_world.knight.process_mode = Node.PROCESS_MODE_DISABLED
+	var a: BriarHound = hs[0]
+	var b: BriarHound = hs[1]
+	var c := a.global_position
+	var near := minf(c.distance_to(_world.soldier.global_position), minf(c.distance_to(_world.warden.global_position), c.distance_to(_world.knight.global_position)))
+	var slope: float = absf(_world.terrain.height_at(c.x + 3.0, c.z) - _world.terrain.height_at(c.x - 3.0, c.z)) / 6.0
+	print("BOT hounds: pack %.1f m from the start, nearest other foe %.1f m, slope %.2f, states %d/%d, %d tris" % [c.distance_to(p.global_position), near, slope, a.state, b.state, a._mi.mesh.get_faces().size() / 3])
+	if near < 16.0 or a.state != BriarHound.IDLE or b.state != BriarHound.IDLE:
+		return _combat_done(false, "the hounds should wait idle on their own ground, clear of the other foes")
+	# walk in from 11 m
+	var start := c + Vector3(-11.0, 0, -2.0)
+	p.global_position = Vector3(start.x, _world.terrain.height_at(start.x, start.z) + 0.1, start.z)
+	p.health = Player.HEALTH_MAX
+	await _ticks(10)
+	var t := 0.0
+	while t < 6.0 and (a.state == BriarHound.IDLE or b.state == BriarHound.IDLE):
+		var to := a.global_position - p.global_position
+		p.bot_input = Vector2(to.x, to.z).normalized()
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT hounds: noticed after %.1f s, states %d/%d" % [t, a.state, b.state])
+	if a.state == BriarHound.IDLE or b.state == BriarHound.IDLE:
+		return _combat_done(false, "walking up did not rouse both hounds")
+	# stand still: they circle, then lunge one at a time
+	var h0 := p.health
+	var both_air := 0
+	var circled := 0.0
+	var ang0 := atan2(b.global_position.x - p.global_position.x, b.global_position.z - p.global_position.z)
+	t = 0.0
+	while t < 10.0 and (a.bites + b.bites) < 2:
+		if a.state == BriarHound.STRIKE and b.state == BriarHound.STRIKE:
+			both_air += 1
+		if p.health < 40.0:
+			p.health = Player.HEALTH_MAX
+		if b.state == BriarHound.STALK:
+			var ang := atan2(b.global_position.x - p.global_position.x, b.global_position.z - p.global_position.z)
+			circled = maxf(circled, absf(wrapf(ang - ang0, -PI, PI)))
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	print("BOT hounds: stood %.1f s -> lunges %d+%d, bites %d+%d, both airborne frames %d, mate circled %.0f deg, health %.0f -> %.0f, flinches %d" % [t, a.lunges, b.lunges, a.bites, b.bites, both_air, rad_to_deg(circled), h0, p.health, p.flinches])
+	if a.bites + b.bites < 1:
+		return _combat_done(false, "no hound bit a hero standing still")
+	if both_air > 0:
+		return _combat_done(false, "both hounds lunged at once")
+	if circled < deg_to_rad(20.0):
+		return _combat_done(false, "the hounds did not circle")
+	# dodge a lunge as it launches (sideways)
+	p.health = Player.HEALTH_MAX
+	var dodged := false
+	t = 0.0
+	while t < 12.0 and not dodged:
+		for h: BriarHound in hs:
+			if h.state == BriarHound.WINDUP and h.t > BriarHound.WINDUP_T - 0.06:
+				var to := h.global_position - p.global_position
+				var side := Vector2(to.z, -to.x).normalized()
+				var b0 := h.bites
+				var hp0 := p.health
+				p.bot_input = side
+				p.bot_dodge = true
+				await _ticks(2)
+				p.bot_dodge = false
+				p.bot_input = Vector2.ZERO
+				while h.state == BriarHound.WINDUP or h.state == BriarHound.STRIKE:
+					await get_tree().physics_frame
+				print("BOT hounds: dodged a lunge -> %s, bites %d -> %d, health %.0f -> %.0f, perfect dodges %d, hound state %d" % [h.last_result, b0, h.bites, hp0, p.health, p.perfect_dodges, h.state])
+				if h.bites > b0:
+					return _combat_done(false, "a dodge at the launch did not clear the lunge")
+				dodged = true
+				break
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if not dodged:
+		return _combat_done(false, "no lunge came to dodge")
+	# fight both
+	t = 0.0
+	while not (a.is_dead() and b.is_dead()) and t < 60.0:
+		# chasing circling hounds is futile: hold ground, punish the one sprawled after a lunge
+		var tgt: BriarHound = a if not a.is_dead() else b
+		if not b.is_dead() and b.global_position.distance_to(p.global_position) < tgt.global_position.distance_to(p.global_position):
+			tgt = b
+		for h: BriarHound in hs:
+			if not h.is_dead() and (h.state == BriarHound.RECOVER or h.state == BriarHound.STAGGER) and h.global_position.distance_to(p.global_position) < 3.6:
+				tgt = h
+		var to := tgt.global_position - p.global_position
+		p.stamina = Player.STAMINA_MAX
+		var open := tgt.state == BriarHound.RECOVER or tgt.state == BriarHound.STAGGER
+		if open and OS.has_environment("HOUND_DEBUG"):
+			var cp: Array = tgt.hurt_capsule()
+			var tip: Vector3 = p.combat.tip_position()
+			var cl := Geometry3D.get_closest_point_to_segment(tip, cp[0], cp[1])
+			print("dbg t %.2f st %d ht %.2f d %.2f atk %s hitact %s tip %s tipdist %.2f" % [t, tgt.state, tgt.t, Vector2(to.x, to.z).length(), p.combat.is_attacking(), p.combat.hit_active, tip - p.global_position, tip.distance_to(cl)])
+		if Vector2(to.x, to.z).length() > (2.2 if open else 6.0):
+			p.bot_input = Vector2(to.x, to.z).normalized()
+		else:
+			p.bot_input = Vector2.ZERO
+			if not p.combat.is_attacking():
+				p.body.rotation.y = atan2(to.x, to.z)
+			p.bot_attack = true
+		if p.health < 30.0:
+			p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT hounds: fight %.1f s, staggers %d+%d, hits taken %d+%d, lunges %d+%d, bites %d+%d, dead %s/%s" % [t, a.staggers, b.staggers, a.hits_taken, b.hits_taken, a.lunges, b.lunges, a.bites, b.bites, a.is_dead(), b.is_dead()])
+	if not (a.is_dead() and b.is_dead()):
+		return _combat_done(false, "the hero could not kill both hounds")
+	await _ticks(90)
+	var lie: float = a._mi.rotation.z
+	print("BOT hounds: lying on its side, roll %.2f rad, %.2f m off the ground" % [lie, a.global_position.y - _world.terrain.height_at(a.global_position.x, a.global_position.z)])
+	if absf(lie) < 1.2:
+		return _combat_done(false, "a dead hound did not fall onto its side")
+	var played: Dictionary = _world.foley.played
+	print("BOT hounds: sounds woof %d, whoom %d, crunch %d, bark %d" % [played.get("dog_woof", 0), played.get("whoom", 0), played.get("crunch", 0), played.get("dog_bark", 0)])
+	_combat_done(true, "pack idle on its ground, roused together, circled, lunged one at a time, bit, a dodge cleared a lunge, both killed")
 
 ## Crowd the warden three times: stand still (bashed, staggered), raise a parry as the board
 ## lands (the parry does not take, still bashed), dodge out late in the coil (dodged).

@@ -87,6 +87,8 @@ var t := 0.0                 # seconds into the current attack / transition
 var idle_t := 0.0
 var queued := false
 var hit_active := false
+var dip := 0.0                 # rad the swing plane tips forward-down onto a low foe (a hound)
+const LOW_DIP := 0.55          # full tip toward a low target in front
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
 var swings := 0              # attacks started (bots read this)
@@ -505,6 +507,8 @@ func physics_step(delta: float) -> void:
 				state = SHEATHED
 			_age_trail(delta)
 			return
+	var want_dip := LOW_DIP if is_attacking() and _low_target_ahead() else 0.0
+	dip = lerpf(dip, want_dip, 1.0 - exp(-12.0 * delta))
 	staff.transform = _place_hands(pose)
 	_twist.twist = deg_to_rad(pose[3])
 	if hit_active:
@@ -629,6 +633,12 @@ func _staff_xform(pose: Array) -> Transform3D:
 func _solve(pose: Array) -> Array:
 	var d := dir_of(pose[0], pose[1])
 	var p: Vector3 = pose[2]
+	if dip > 0.001:
+		# tip the whole swing forward and down about the chest so it meets a low foe
+		var rb := Basis(Vector3.RIGHT, dip)
+		var piv := Vector3(0, 1.3, 0)
+		d = rb * d
+		p = piv + rb * (p - piv)
 	var tw := deg_to_rad(pose[3])
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
@@ -659,6 +669,18 @@ func _measure_grip() -> float:
 		var hp := skel.global_transform * skel.get_bone_global_pose(b).origin
 		e = maxf(e, hp.distance_to((side[1] as Node3D).global_position))
 	return e
+
+## A living low foe (one that sets `low_target`, e.g. a Briar Hound) close in front.
+func _low_target_ahead() -> bool:
+	var face := player.body.global_basis.z
+	for target in player.get_tree().get_nodes_in_group("hittable"):
+		if target.get("low_target") != true:
+			continue
+		var to: Vector3 = (target as Node3D).global_position - player.global_position
+		to.y = 0.0
+		if to.length() < 3.4 and face.angle_to(to) < 1.3:
+			return true
+	return false
 
 func tip_position() -> Vector3:
 	return staff.global_transform * Vector3(0, Staff.LENGTH * 0.5, 0)

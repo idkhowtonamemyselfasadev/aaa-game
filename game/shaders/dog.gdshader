@@ -24,6 +24,7 @@ instance uniform float doze = 0.0;       // lying, 0 head up .. 1 asleep, chin d
 uniform vec3 coat : source_color = vec3(0.045, 0.040, 0.037);     // weathered black, a little brown in the sun
 uniform vec3 coat_dark : source_color = vec3(0.028, 0.025, 0.024); // the saddle
 uniform vec3 pale : source_color = vec3(0.58, 0.55, 0.50);         // the white: blaze, ruff, chest, feet, tail tip -- dulled by the yard
+uniform vec3 eye_col : source_color = vec3(0.85, 0.9, 0.45);   // tapetum colour (a Briar Hound's smoulders ember-red)
 uniform vec3 stocking : source_color = vec3(0.30, 0.22, 0.14);     // tan points over the eyes and on the cheeks
 
 varying vec3 v_rest;
@@ -231,7 +232,7 @@ void fragment() {
 	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);
 	// eyeshine: the tapetum throws the firelight back toward the fire (and a lens near it)
 	if (v_col.a > 0.4 && v_col.a < 0.6) {
-		EMISSION += vec3(0.85, 0.9, 0.45) * eyeshine * 2.4 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+		EMISSION += eye_col * eyeshine * 2.4 * pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
 	}
 	BACKLIGHT = col * (0.08 + 0.67 * ear);
 	NORMAL_MAP = normalize(vec3(0.5 + (strand - 0.5) * 0.25, 0.5 + (clump - 0.5) * 0.15, 1.0));

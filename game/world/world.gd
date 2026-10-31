@@ -24,9 +24,11 @@ var training_post: TrainingPost
 var soldier: HollowSoldier
 var knight: AshenKnight
 var warden: HollowWarden
+var hounds: Array[BriarHound] = []
 var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
+const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
 var weather: Weather
 var thermals: Thermals
 var dust_devils: DustDevils
@@ -132,6 +134,18 @@ func _ready() -> void:
 	warden.plant(terrain)
 	warden.face(p)
 	trample.walkers.append(warden)
+	# the Briar Hounds: a pair nosing about the meadow's east side; they circle opposite ways
+	for i in 2:
+		var h := BriarHound.new()
+		h.name = "BriarHound%d" % i
+		h.position = Vector3(p.x + HOUNDS_AT.x + 1.6 * i, 0.0, p.z + HOUNDS_AT.y - 1.1 * i)
+		h.orbit = 1.0 if i == 0 else -1.0
+		add_child(h)
+		h.plant(terrain)
+		h.face(p)
+		hounds.append(h)
+	hounds[0].mate = hounds[1]
+	hounds[1].mate = hounds[0]
 	# the Ashen Knight: the vale's boss, keeping a vigil far down the meadow past the soldier
 	knight = AshenKnight.new()
 	knight.position = Vector3(p.x + KNIGHT_AT.x, 0.0, p.z + KNIGHT_AT.y)
@@ -325,6 +339,7 @@ func _ready() -> void:
 	foley.hook(player, [soldier, knight, warden], trample)
 	foley.hook_knight(knight)
 	foley.hook_warden(warden)
+	foley.hook_hounds(hounds)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_dog(dog)

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261025-1831-crease-hero.jpg",
-  "time": "2026-10-25T18:31:05Z",
-  "caption": "Hero at noon with dark creases between the lacquered plates and the texture's baked plate shading carried into the lacquer: the road, fields and farmhouse read as a place, but at this range the plates still merge and the face is lost in the hood's shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-1929-facefill-face.jpg",
-  "time": "2026-10-25T19:29:23Z",
-  "caption": "Hero's face at noon with the meadow's ground bounce now lighting the skin under the hat brim: eyes and cheeks read inside the hood, but the skin is still smooth and young and the dark armour merges into one mass.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-2025-facefill-crop.jpg",
   "time": "2026-10-25T20:25:29Z",
   "caption": "Face crop: warm skin and an eye now read inside the hood instead of a black slit; the skin is still smooth and the eye small at this range.",
@@ -897,6 +885,12 @@
   "file": "20261031-1515-knightface.jpg",
   "time": "2026-10-31T15:15:00Z",
   "caption": "The Ashen Knight close up with the camera finally on the sun side: the meadow and the hero are front-lit and the ember-cracked helm and oxblood surcoat read, but the knight is turned to the hero so we see its dark back, and the boss bar covers its legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-1836-hounds.jpg",
+  "time": "2026-10-31T18:36:00Z",
+  "caption": "The Briar Hound pair on the meadow east side: one crouched mid-tell in front of the hero, but it reads as a dark blob sunk in the tall grass and its mate is out of frame; needs pressed grass under the hounds and a closer, lower camera.",
   "verdict": "fail"
  }
 ]

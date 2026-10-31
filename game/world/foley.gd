@@ -160,6 +160,21 @@ func hook_knight(k: Node) -> void:
 ## The Hollow Warden's targe, from recorded sets only: a blocked blow is the wood hit pitched
 ## down with a quiet iron ring over it; the ward knocked aside cracks with the wood hit, the
 ## clang low under it and a body thump.
+## The Briar Hounds, from recorded sets only: the crouch is the terrier's gruff woof slowed
+## into a low snarl, the launch a quick whoosh, a bite that lands the crunch over a body
+## thump, and a hound knocked down or killed yelps (the bark pitched down).
+func hook_hounds(hs: Array) -> void:
+	for h: Node in hs:
+		if not h.has_signal("snarled"):
+			continue
+		h.snarled.connect(func(at: Vector3) -> void: _play("dog_woof", at, -2.0, 0.6))
+		h.leapt.connect(func(at: Vector3) -> void: _play("whoom", at, -9.0, 1.35))
+		h.yelped.connect(func(at: Vector3) -> void: _play("dog_bark", at, -6.0, 0.8))
+		h.struck.connect(func(r: String) -> void:
+			if r == "hit":
+				_play("crunch", (h as Node3D).global_position + Vector3.UP * 0.7, 0.0, 0.7)
+				_play("body", (h as Node3D).global_position + Vector3.UP * 0.7, -4.0, 0.85))
+
 func hook_warden(w: Node) -> void:
 	if w == null or not w.has_signal("shield_blocked"):
 		return
