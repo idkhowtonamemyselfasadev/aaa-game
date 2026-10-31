@@ -45,17 +45,23 @@ const HEAVY := { "dur": 0.84, "hit": [0.22, 0.54], "lunge": 4.0, "lunge_at": 0.0
 	[0.12, 3.0, 143.0, Vector3(-0.15, 1.70, 0.03), 9.0],
 	[0.40, 4.0, -40.0, Vector3(-0.21, 1.23, 0.61), -55.0, -0.26],
 	[0.70, 2.0, -38.0, Vector3(-0.14, 1.35, 0.30), -3.0],
-	[1.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]]}
+	[0.86, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
+	[1.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]]}
 
-# Guard: staff across the chest, tip forward-left and a little low.  [yaw°, pitch°, P, twist°]
-const GUARD := [35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]
+# Guard: a diagonal mid guard -- rear hand low at the right flank, front hand at the belt,
+# tip forward-left and down at knee-to-hip height (was held at shoulder height like a yoke).  [yaw°, pitch°, P, twist°]
+const GUARD := [45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]
+# Chest-high pass the arms ease through on the way back down to GUARD, so the shaft swings
+# out in front of the body instead of cutting through the chest (tools/pose_check.py).
+const CHAMBER := [35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]
 
 # Each attack: duration (s), strike window (t0, t1 normalised), lunge m/s during the strike,
 # body spin (rad over the clip), keys [t, yaw°, pitch°, P, twist°, grip slide m (optional)].
 # Body space: +Z forward, +X is the hero's left, so yaw -90 points out to the right.
 const STRING := [
 	{ "dur": 0.62, "hit": [0.30, 0.55], "lunge": 2.5, "spin": 0.0, "keys": [
-		[0.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
+		[0.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03],
+		[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: staff up to the chest
 		[0.28, -131.0, 10.0, Vector3(-0.13, 1.57, 0.08), 24.0, 0.11],
 		[0.52, 95.0, -6.0, Vector3(0.31, 1.47, 0.24), 37.0],
 		[1.00, 41.0, -12.0, Vector3(0.07, 1.28, 0.35), 4.0, -0.03]]},
@@ -75,7 +81,8 @@ const STRING := [
 		[0.30, -95.0, 2.0, Vector3(-0.62, 1.43, 0.09), -38.0, -0.30],    # staff runs out through the hands
 		[0.75, -98.0, 4.0, Vector3(-0.64, 1.57, 0.13), -34.0, -0.30],
 		[0.86, -98.0, 4.0, Vector3(-0.30, 1.55, 0.18), -34.0, 0.04],
-		[1.00, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]]},
+		[0.94, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
+		[1.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]]},
 ]
 
 var player: Player
@@ -108,7 +115,7 @@ var last_power := 0.0        # power of the last hit that landed (bots read this
 var _slammed := false
 var _raise_from: Array = GUARD
 var _prev_u := -1.0          # normalised swing time at the last contact test
-const RECOVER_TIME := 0.16
+const RECOVER_TIME := 0.26
 var _recover := 0.0          # remaining blend from a cancelled swing back to guard
 var _from_pose: Array = GUARD
 
@@ -451,7 +458,7 @@ func physics_step(delta: float) -> void:
 		READY:
 			if _recover > 0.0:
 				_recover = maxf(_recover - delta, 0.0)
-				var k: Array = [[0.0] + _from_pose, [1.0] + GUARD]
+				var k: Array = [[0.0] + _from_pose, [0.55] + CHAMBER, [1.0] + GUARD]
 				pose = _pose_at(k, 1.0 - _recover / RECOVER_TIME)
 			idle_t += delta
 			if idle_t > SHEATHE_AFTER:
@@ -492,6 +499,9 @@ func physics_step(delta: float) -> void:
 				elif queued:
 					_start((step + 1) % STRING.size())
 				else:
+					# the string ends: settle from the follow-through down into the low guard
+					_from_pose = _pose_at(_atk["keys"], 1.0)
+					_recover = RECOVER_TIME
 					state = READY
 					idle_t = 0.0
 					step = -1

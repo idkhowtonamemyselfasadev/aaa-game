@@ -736,6 +736,14 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.6) * 3.2, pp]
+		if "guard" in args:
+			# "guard": the same portrait with the staff drawn and held in the mid guard
+			player.use_bot_input = true
+			player.combat._begin_draw()
+			for i in 40:
+				player.combat.physics_step(1.0 / 60.0)
+			player.combat.idle_t = -1.0e6
+			print("SHOT hero guard, staff drawn %s" % player.combat.is_drawn())
 	if spot == "herocu":
 		# the hero at ~2 m, chest up, three-quarter from the front: the range cutscenes see him at
 		var pp := player.global_position
