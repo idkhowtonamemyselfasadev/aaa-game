@@ -743,6 +743,12 @@ func _ready() -> void:
 			for i in 40:
 				player.combat.physics_step(1.0 / 60.0)
 			player.combat.idle_t = -1.0e6
+			# camera on the sun side, 0.9 rad to the left of the hero's facing, so the whole
+			# diagonal shaft (tip forward-left) shows clear of the arms and the hero is lit
+			var light: Vector3 = -world.sun.global_transform.basis.z
+			var to_cam := Vector3(-light.x, 0, -light.z).normalized()
+			player.body.rotation.y = atan2(to_cam.x, to_cam.z) + 0.9
+			SPOTS[spot] = [pp + to_cam * 3.0 + Vector3.UP * 0.1, pp + Vector3.UP * 0.05]
 			print("SHOT hero guard, staff drawn %s" % player.combat.is_drawn())
 	if spot == "herocu":
 		# the hero at ~2 m, chest up, three-quarter from the front: the range cutscenes see him at

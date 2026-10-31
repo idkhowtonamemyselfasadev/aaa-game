@@ -624,6 +624,23 @@ func _dodge_test() -> void:
 	if c.is_attacking() or p.dodge_t < 0.0:
 		return _combat_done(false, "dodge did not cancel the swing")
 	await _ticks(40)
+	if c._recover > 0.0 or c._recover_keys.size() < 3:
+		return _combat_done(false, "the cancel did not pick a recovery path and settle into guard")
+	# 2b) the ease back to guard from ANY cancel point keeps the shaft out of the chest
+	var worst := 9.0
+	var worst_at := ""
+	var clips: Array = StaffCombat.STRING + [StaffCombat.HEAVY]
+	for ci in clips.size():
+		for i in 41:
+			var fp: Array = StaffCombat._pose_at_static(clips[ci]["keys"], i / 40.0)
+			var path: Array = StaffCombat.best_recover_path(fp)
+			var g := StaffCombat.path_clearance(path)
+			if g < worst:
+				worst = g
+				worst_at = "clip %d u %.3f" % [ci, i / 40.0]
+	print("BOT dodge: worst cancel-recovery clearance %.2f torso radii (%s)" % [worst, worst_at])
+	if worst < 0.6:
+		return _combat_done(false, "cancel recovery swings the staff through the chest")
 	# 3) perfect dodge: the blow lands 0.08 s into the dodge
 	p.stamina = 50.0
 	p.bot_input = Vector2(0, 1)

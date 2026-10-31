@@ -118,6 +118,7 @@ var _prev_u := -1.0          # normalised swing time at the last contact test
 const RECOVER_TIME := 0.26
 var _recover := 0.0          # remaining blend from a cancelled swing back to guard
 var _from_pose: Array = GUARD
+var _recover_keys: Array = []  # the path picked by _begin_recover (keys [t] + pose)
 
 var _back_slot: Node3D
 var _back_xform: Transform3D
@@ -238,7 +239,14 @@ func heavy() -> void:
 func _start_charge(from: Array = []) -> void:
 	if player.stamina <= 0.0:
 		return
-	_raise_from = from if from.size() > 0 else (_from_pose if _recover > 0.0 else GUARD)
+	if from.size() > 0:
+		_raise_from = from
+	elif _recover > 0.0 and _recover_keys.size() > 1:
+		# raise from where the ease back to guard has got to, not from where it began
+		_raise_from = _pose_at(_recover_keys, 1.0 - _recover / RECOVER_TIME)
+		_raise_from[0] = wrapf(_raise_from[0], -180.0, 180.0)
+	else:
+		_raise_from = GUARD
 	_recover = 0.0
 	state = CHARGING
 	step = -1
@@ -328,7 +336,7 @@ func cancel_to_guard() -> void:
 		_from_pose = _pose_at(_atk["keys"], clampf(t / float(_atk["dur"]), 0.0, 1.0))
 	else:
 		return
-	_recover = RECOVER_TIME
+	_begin_recover()
 	state = READY
 	step = -1
 	queued = false
@@ -403,16 +411,7 @@ func _start(i: int) -> void:
 
 ## Body-space pose of the current attack at normalised time u.
 func _pose_at(keys: Array, u: float) -> Array:
-	var k := 0
-	while k < keys.size() - 2 and u > float(keys[k + 1][0]):
-		k += 1
-	var a: Array = keys[k]
-	var b: Array = keys[k + 1]
-	var f := clampf((u - float(a[0])) / maxf(float(b[0]) - float(a[0]), 1e-4), 0.0, 1.0)
-	f = f * f * (3.0 - 2.0 * f)
-	var sa: float = a[5] if a.size() > 5 else 0.0
-	var sb: float = b[5] if b.size() > 5 else 0.0
-	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f)]
+	return _pose_at_static(keys, u)
 
 static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 	var y := deg_to_rad(yaw_deg)
@@ -458,8 +457,9 @@ func physics_step(delta: float) -> void:
 		READY:
 			if _recover > 0.0:
 				_recover = maxf(_recover - delta, 0.0)
-				var k: Array = [[0.0] + _from_pose, [0.55] + CHAMBER, [1.0] + GUARD]
-				pose = _pose_at(k, 1.0 - _recover / RECOVER_TIME)
+				pose = _pose_at(_recover_keys, 1.0 - _recover / RECOVER_TIME)
+				if _recover <= 0.0:
+					pose = GUARD   # drop any +-360 yaw the path wrapped through
 			idle_t += delta
 			if idle_t > SHEATHE_AFTER:
 				staff.reparent(_back_slot, true)
@@ -501,7 +501,7 @@ func physics_step(delta: float) -> void:
 				else:
 					# the string ends: settle from the follow-through down into the low guard
 					_from_pose = _pose_at(_atk["keys"], 1.0)
-					_recover = RECOVER_TIME
+					_begin_recover()
 					state = READY
 					idle_t = 0.0
 					step = -1
@@ -663,6 +663,87 @@ func _solve(pose: Array) -> Array:
 	var d2 := axis.normalized()
 	var b := Basis(Quaternion(Vector3.UP, d2)) if d2.y > -0.99 else Basis(Vector3.RIGHT, PI)
 	return [Transform3D(b, hr - d2 * (HAND_R + slide)), hr, hl]
+
+## Starts the ease from `_from_pose` back down to GUARD. A straight blend from a pose with the
+## shaft out to the side swings the butt through the chest (a dodge out of string swing 2
+## did), so it scores a few candidate paths -- turning the shaft either way round, with or
+## without dipping/lifting the tip or pushing the hands out first -- by their worst torso
+## clearance and takes the clearest (tools/pose_check.py's model; checked offline: worst
+## clearance over every cancel point 0.63 torso radii, was 0.01).
+func _begin_recover() -> void:
+	_recover = RECOVER_TIME
+	_recover_keys = best_recover_path(_from_pose)
+
+static func best_recover_path(from: Array) -> Array:
+	var f: Array = from.duplicate()
+	if f.size() < 5:
+		f.append(0.0)
+	var best: Array = []
+	var best_gap := -1.0
+	for wrap in [0.0, -360.0, 360.0]:
+		var ch: Array = CHAMBER.duplicate()
+		ch[0] += wrap
+		var gu: Array = GUARD.duplicate()
+		gu[0] += wrap
+		for via in ["", "fwd", -55.0, -30.0, 30.0, 55.0]:
+			var keys: Array = [[0.0] + f]
+			var fp: Vector3 = f[2]
+			if via is String and via == "fwd":
+				keys.append([0.3, f[0], f[1], Vector3(fp.x * 0.5, fp.y, maxf(fp.z, 0.55)), f[3], 0.0])
+			elif not via is String:
+				keys.append([0.3, lerpf(f[0], ch[0], 0.4), via, Vector3(fp.x * 0.5, 1.35, maxf(fp.z, 0.45)), f[3], 0.0])
+			keys.append([0.62] + ch)
+			keys.append([1.0] + gu)
+			var g := path_clearance(keys)
+			if g > best_gap + 0.01:   # ties keep the earlier (plainer) path
+				best_gap = g
+				best = keys
+	return best
+
+## Worst torso clearance (torso radii, 1.0 = touching) along a key path, 24 samples.
+static func path_clearance(keys: Array) -> float:
+	var worst := 9.0
+	for j in range(1, 25):
+		var pz: Array = _pose_at_static(keys, j / 24.0)
+		worst = minf(worst, torso_clearance(pz))
+	return worst
+
+static func _pose_at_static(keys: Array, u: float) -> Array:
+	var k := 0
+	while k < keys.size() - 2 and u > float(keys[k + 1][0]):
+		k += 1
+	var a: Array = keys[k]
+	var b: Array = keys[k + 1]
+	var f := clampf((u - float(a[0])) / maxf(float(b[0]) - float(a[0]), 1e-4), 0.0, 1.0)
+	f = f * f * (3.0 - 2.0 * f)
+	var sa: float = a[5] if a.size() > 5 else 0.0
+	var sb: float = b[5] if b.size() > 5 else 0.0
+	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f)]
+
+## The staff's clearance from the chest/head for one pose, body space, no dip (same model
+## as tools/pose_check.py: chest ellipse 0.17 x 0.12 m for y 0.9-1.5, head ellipsoid above).
+static func torso_clearance(pose: Array) -> float:
+	var d := dir_of(pose[0], pose[1])
+	var p: Vector3 = pose[2]
+	var tw := deg_to_rad(pose[3])
+	var slide: float = pose[4] if pose.size() > 4 else 0.0
+	var sl := SHOULDER.rotated(Vector3.UP, tw)
+	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
+	var hr := _clamp_reach(p + d * (HAND_R + slide), sr)
+	var hl := _clamp_reach(p + d * (HAND_L + slide), sl)
+	var ax := hl - hr
+	var a := ax.normalized() if ax.length() > 1e-4 else d
+	var c := hr - a * (HAND_R + slide)
+	var e0 := c - a * 0.93
+	var e1 := c + a * 0.93
+	var best := 9.0
+	for i in 41:
+		var x := e0.lerp(e1, i / 40.0)
+		if x.y >= 0.9 and x.y <= 1.5:
+			best = minf(best, Vector2(x.x / 0.17, (x.z + 0.02) / 0.12).length())
+		elif x.y > 1.5 and x.y <= 1.8:
+			best = minf(best, Vector3(x.x / 0.11, (x.z - 0.01) / 0.12, (x.y - 1.66) / 0.14).length())
+	return best
 
 static func _clamp_reach(h: Vector3, shoulder: Vector3) -> Vector3:
 	var v := h - shoulder
