@@ -815,6 +815,16 @@ func _knight_test() -> void:
 		return _combat_done(false, "unblockable blows were deflected or normal ones were not")
 	p.health = hp_before
 	await _ticks(90)
+	var mu: Music = _world.music
+	await _ticks(60)
+	var bpl: AudioStreamPlayer = mu.get_node("Track_steeps")
+	print("BOT knight: music cue '%s', steeps gain %.2f at %.1f s, battle gain %.2f" % [mu.cue, mu.gains["steeps"], bpl.get_playback_position(), mu.gains["battle"]])
+	if mu.cue != "boss" or mu.gains["steeps"] < 0.9 or mu.gains["battle"] > 0.05 or not bpl.playing:
+		return _combat_done(false, "the knight's own music did not take over from the combat cue")
+	if bpl.get_playback_position() > 10.0:
+		return _combat_done(false, "the boss cue did not start from the top")
+	var music_ok := {}           # phase -> [dipped, resumed at the section]
+	var cuts0 := mu.phase_cuts
 	# 2) beat it down to the first threshold with the string + heavies; watch the surge
 	p.health = Player.HEALTH_MAX
 	var t := 0.0
@@ -889,6 +899,16 @@ func _knight_test() -> void:
 			if k.health < hh:
 				surged_hits += 1
 			print("BOT knight: surge into phase %d at health %.0f (%.0f%%), tempo %.1f, unblockable %s" % [k.phase, hh, hh / k.health_max * 100.0, k.tempo, k.unblockable])
+		if mu.phase_cuts > cuts0 and not music_ok.has(k.phase):
+			music_ok[k.phase] = [false, false]
+		if music_ok.has(k.phase):
+			var mo: Array = music_ok[k.phase]
+			if mu._cut > 0.0 and mu.gains["steeps"] < Music.CUT_GAIN + 0.05:
+				mo[0] = true
+			if mo[0] and not mo[1] and mu._cut <= 0.0 and mu.gains["steeps"] > 0.9:
+				var at: float = Music.PHASE_AT[k.phase - 1]
+				mo[1] = bpl.get_playback_position() >= at - 0.1
+				print("BOT knight: score back in for phase %d at %.1f s (section %.1f), gain %.2f" % [k.phase, bpl.get_playback_position(), at, mu.gains["steeps"]])
 		if k.phase == 2 and k.last_result == "hit" and k.strikes > p2_strikes0:
 			p2_hits += 1
 		if p.health < 40.0:
@@ -918,6 +938,9 @@ func _knight_test() -> void:
 		return _combat_done(false, "a roll on the smoulder did not pass through the eruption")
 	if not k.is_dead():
 		return _combat_done(false, "the hero could not kill the knight")
+	print("BOT knight: music phase cuts %d, per phase %s" % [mu.phase_cuts - cuts0, str(music_ok)])
+	if mu.phase_cuts - cuts0 < 2 or music_ok.get(2, [false, false]) != [true, true] or music_ok.get(3, [false, false]) != [true, true]:
+		return _combat_done(false, "the score did not drop under each surge and come back at the phase's section")
 	# unblockable: a parry-window heavy in phase 2+ must not deflect (checked on a fresh knight state)
 	await _ticks(30)
 	if hud != null:

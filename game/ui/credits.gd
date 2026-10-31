@@ -15,7 +15,7 @@ const ROLL_SPEED := 38.0     # px/s when rolling after the ending
 ## [heading, [[line, sub-line], ...]]. The sub-line names the source and the license.
 const SECTIONS := [
 	["Music  (CC BY 3.0, creativecommons.org/licenses/by/3.0)", [
-		["\"Mystical Theme\", \"Without\", \"Medicine\", \"Decision\", \"Heroes Theme\" (end, edited)  by Alexandr Zhelanov", "opengameart.org/users/alexandr-zhelanov"],
+		["\"Mystical Theme\", \"Without\", \"Medicine\", \"Decision\", \"Steeps of Destiny\", \"Heroes Theme\" (end, edited)  by Alexandr Zhelanov", "opengameart.org/users/alexandr-zhelanov"],
 		["\"Battle in the winter\"  by Johan Brodd (jobromedia)", "opengameart.org/content/battle-in-the-winter"],
 		["\"Lazy Day\"  by FoxSynergy", "opengameart.org/content/lazy-day"],
 	]],

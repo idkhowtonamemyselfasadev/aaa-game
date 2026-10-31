@@ -11,6 +11,11 @@ extends Node
 ##              a warm bass, a little softer after dark ("hearth_night");
 ##  - "combat": Battle in the Winter (Johan Brodd) the moment a Hollow Soldier stirs or the
 ##              hero locks on, held for HOLD s after the last enemy settles;
+##  - "boss":   Steeps of Destiny (Alexandr Zhelanov) instead of the soldiers' cue while the
+##              Ashen Knight is stirred. Each fight starts from the top (the slow build); when
+##              the knight surges into a new phase the score drops away under the burst for
+##              the surge and slams back in at a harder section of the piece (PHASE_AT), so
+##              the phase change is heard as well as seen;
 ##  - a victory stinger, the last bars of Heroes Theme (Alexandr Zhelanov), when a fight ends
 ##    with an enemy crumbled; the vale cue waits under it and comes back after.
 ## Paused cues keep their place, so a theme picks up where it left off. While anyone's line
@@ -25,6 +30,7 @@ const TRACKS := {
 	"without": "vale_night_without.ogg",
 	"battle": "combat_battle_in_the_winter.ogg",
 	"lazyday": "hearth_lazy_day.ogg",
+	"steeps": "boss_steeps_of_destiny.ogg",
 }
 const CUES := {                # cue -> [track, trim dB]; the hearth by night is the same tune, softer
 	"day": ["@day", 0.0],     # resolved through DAY_ROTATION
@@ -32,7 +38,11 @@ const CUES := {                # cue -> [track, trim dB]; the hearth by night is
 	"hearth": ["lazyday", -6.0],
 	"hearth_night": ["lazyday", -9.0],
 	"combat": ["battle", -3.0],
+	"boss": ["steeps", -2.5],
 }
+const PHASE_AT := [0.0, 35.4, 87.8]   # s into Steeps of Destiny each knight phase comes back in at
+const CUT_GAIN := 0.22        # how far the boss cue drops while the knight surges (0..1)
+const CUT_FADE := 0.3         # s to drop away; it swells back in over FADE_COMBAT
 const DAY_ROTATION := [["mystical", -4.0], ["medicine", -2.5], ["decision", -5.0]]   # [track, trim dB]
 const STINGER := "victory_heroes_theme_end.ogg"
 const FADE := 3.0             # s for a full crossfade between vale cues
@@ -50,6 +60,8 @@ var stingers := 0
 var fights := 0
 var day_i := 0                # which DAY_ROTATION piece is the day theme now (bots)
 var day_turns := 0            # how many times the day theme has handed over (bots)
+var phase_cuts := 0           # knight phase changes the score answered (bots)
+var boss_phase := 0           # the phase the boss cue is playing for (bots)
 
 var _players := {}
 var _stinger: AudioStreamPlayer
@@ -59,6 +71,11 @@ var _fight_kills := 0
 var _foes := {}               # enemy -> was it stirred last frame
 var _duck := 0.0              # 0..1
 var _trim := {}               # track -> dB, eased so the hearth tune just settles at dusk
+var _boss_fight := false      # a boss is among the stirred enemies (held with the cue)
+var _cut := 0.0               # s left of a phase cut (the score held down under a surge)
+var _cut_seek := -1.0         # where the boss cue resumes when the cut ends
+var _boss: Node               # the boss last seen stirred
+var _start_at := {}           # track -> s to start from the next time it plays from stopped
 
 func _ready() -> void:
 	for c: String in TRACKS:
@@ -90,11 +107,24 @@ func _physics_process(scaled: float) -> void:
 		_hold = HOLD
 	else:
 		_hold = maxf(_hold - delta, 0.0)
-	var want := "combat" if _hold > 0.0 else _vale_cue()
-	if want == "combat" and cue != "combat":
+	var want := _vale_cue()
+	if _hold > 0.0:
+		want = "boss" if _boss_fight else "combat"
+	var was_fight := cue == "combat" or cue == "boss"
+	var is_fight := want == "combat" or want == "boss"
+	if want == "boss" and cue != "boss":
+		# a fresh fight with the knight starts from the slow build, at its current phase
+		var bp: AudioStreamPlayer = _players["steeps"]
+		bp.stop()
+		gains["steeps"] = 0.0
+		_cut = 0.0
+		_cut_seek = -1.0
+		boss_phase = _boss.phase if _boss != null and is_instance_valid(_boss) and "phase" in _boss else 1
+		_start_at["steeps"] = PHASE_AT[clampi(boss_phase - 1, 0, PHASE_AT.size() - 1)]
+	if is_fight and not was_fight:
 		fights += 1
 		_fight_kills = 0
-	elif cue == "combat" and want != "combat" and _fight_kills > 0:
+	elif was_fight and not is_fight and _fight_kills > 0:
 		_stinger.play()
 		stingers += 1
 		_stinger_left = _stinger.stream.get_length()
@@ -106,9 +136,19 @@ func _physics_process(scaled: float) -> void:
 	_rotate_day()
 	var track := track_of(cue)
 	_trim[track] = move_toward(_trim[track], trim_of(cue), delta * 2.0)
+	if _cut > 0.0:
+		_cut = maxf(_cut - delta, 0.0)
+		if _cut <= 0.0 and _cut_seek >= 0.0:
+			var bp: AudioStreamPlayer = _players["steeps"]
+			if bp.playing:
+				bp.seek(_cut_seek)
+			_cut_seek = -1.0
 	for c: String in _players:
 		var target := 1.0 if c == track and _stinger_left <= 0.0 else 0.0
-		var rate := 1.0 / (FADE_COMBAT if cue == "combat" else FADE)   # the fight cuts in fast both ways
+		var rate := 1.0 / (FADE_COMBAT if cue == "combat" or cue == "boss" else FADE)   # the fight cuts in fast both ways
+		if c == "steeps" and _cut > 0.0:
+			target = minf(target, CUT_GAIN)
+			rate = 1.0 / CUT_FADE
 		gains[c] = move_toward(gains[c], target, delta * rate)
 		var pl: AudioStreamPlayer = _players[c]
 		var g: float = gains[c]
@@ -123,7 +163,8 @@ func _physics_process(scaled: float) -> void:
 			if pl.stream_paused:
 				pl.stream_paused = false
 			else:
-				pl.play()
+				pl.play(_start_at.get(c, 0.0))
+				_start_at.erase(c)
 		# equal power: the two sides of a crossfade sum to constant loudness, never both full
 		pl.volume_db = linear_to_db(maxf(sin(g * PI * 0.5), 0.0001)) + _trim[c] + DUCK_DB * _duck
 	_stinger.volume_db = -3.0 + DUCK_DB * _duck
@@ -161,7 +202,9 @@ func _fighting(_delta: float) -> bool:
 	var pl := world.get_node_or_null("Player") as Node3D if world else null
 	if pl == null:
 		return false
-	var any: bool = "lock_target" in pl and pl.lock_target != null
+	var lt = pl.get("lock_target")
+	var any: bool = lt != null
+	var boss := lt != null and is_instance_valid(lt) and (lt as Node).is_in_group("boss")
 	for e in get_tree().get_nodes_in_group("enemy"):
 		var dead: bool = e.has_method("is_dead") and e.is_dead()
 		var stirred := false
@@ -171,7 +214,28 @@ func _fighting(_delta: float) -> bool:
 			_fight_kills += 1
 		_foes[e] = stirred
 		any = any or stirred
+		if (e as Node).is_in_group("boss"):
+			if not e.is_connected("phase_changed", _on_boss_phase):
+				e.phase_changed.connect(_on_boss_phase)
+			if stirred:
+				boss = true
+				_boss = e
+	if any:
+		_boss_fight = boss
 	return any
+
+## The knight surged into a new phase: hold the score down under the burst, then bring it
+## back in at the harder section that belongs to the phase.
+func _on_boss_phase(p: int) -> void:
+	if cue != "boss" or p < 2 or p == boss_phase:
+		return
+	boss_phase = p
+	phase_cuts += 1
+	_cut = AshenKnight.SURGE_T / AshenKnight.TEMPO[p - 1]
+	var bp: AudioStreamPlayer = _players["steeps"]
+	# never jump backwards: a long phase that already reached the section plays on
+	var at: float = PHASE_AT[clampi(p - 1, 0, PHASE_AT.size() - 1)]
+	_cut_seek = at if not bp.playing or bp.get_playback_position() < at else -1.0
 
 func _vale_cue() -> String:
 	var pl := world.get_node_or_null("Player") as Node3D if world else null
