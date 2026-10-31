@@ -141,6 +141,9 @@ global uniform vec4 hoof_box;
 // g = path distance / 2, b = that path's wear (village tracks fade out), over the square at yard_box.xy of side yard_box.z (0 = none)
 global uniform sampler2D yard_mask : filter_linear, repeat_disable;
 global uniform vec4 yard_box;
+// the Ashen Knight's burnt ring (StoneRing): xy = centre xz, z = radius of the old burn, w = 1 on
+// (0 = none). Grey ash round its post, black char patches, a ragged scorched brown rim.
+global uniform vec4 burn_ring;
 const int HOOF_N = 256;
 const float HOOF_LIFE = 150.0;
 
@@ -840,6 +843,27 @@ void fragment() {
 	col *= mix(1.0, 0.84 + 0.16 * cav, (1.0 - rockw) * max(fade_b, canopy * litw * fade_l));
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
 	rough = mix(rough, 0.96, bare);   // dry dust: no sheen at all
+	// ---- the knight's burnt ring: ash, char and a singed rim (decals barely showed on turf) ----
+	if (burn_ring.w > 0.5) {
+		float br = length(xz - burn_ring.xy);
+		float edge = burn_ring.z * (1.0 + (meso - 0.5) * 0.35) + (micro - 0.5) * 0.9;
+		float burnt = 1.0 - smoothstep(edge - 2.5, edge, br);
+		float singe = (1.0 - smoothstep(edge - 0.5, edge + 1.8, br)) * (1.0 - burnt);
+		if (burnt + singe > 0.0) {
+			float n1 = fbm(wpos * 0.35 + vec3(17.0, 0.0, 5.0));
+			float n2 = fbm(wpos * 2.3);
+			// pale grey wood-ash, darker where it lies thin over soil, black char in blotches
+			vec3 ash = mix(vec3(0.16, 0.15, 0.14), vec3(0.34, 0.32, 0.30), smoothstep(0.35, 0.75, n2));
+			float charw = smoothstep(0.48, 0.62, n1 + (n2 - 0.5) * 0.25);
+			vec3 burn_col = mix(ash, vec3(0.025, 0.022, 0.02), charw);
+			// a few embers' worth of rust-brown where the turf only scorched
+			vec3 scorched = mix(col * vec3(0.55, 0.42, 0.30), vec3(0.12, 0.08, 0.05), 0.4);
+			col = mix(col, scorched, clamp(singe * 0.9 + burnt * 0.3, 0.0, 1.0));
+			col = mix(col, burn_col, burnt * (1.0 - rockw));
+			rough = mix(rough, mix(0.97, 0.88, charw), burnt);
+			bare = max(bare, burnt);
+		}
+	}
 	// the oak crowns keep the ground beneath them drier: no pools, few drops
 	float wet_here = weather_wet * (1.0 - SHELTER_DRY * shel);
 	wetten_by(col, rough, 1.0 - 0.6 * rockw, wet_here);

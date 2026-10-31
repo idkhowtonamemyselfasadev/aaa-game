@@ -151,6 +151,10 @@ yard_box={
 "type": "vec4",
 "value": Vector4(0, 0, 0, 0)
 }
+burn_ring={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
 herd_trail={
 "type": "sampler2D",
 "value": ""

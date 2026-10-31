@@ -20,6 +20,7 @@ var centre := Vector3.ZERO
 var facing := Vector2(0, -1)    # xz direction from the centre out through the entrance
 var stones: Array[Vector3] = []     # world foot of each standing stone (bots)
 var fallen := 0
+var burn_ring := Vector4.ZERO   # what the terrain shader was told (bots)
 var scorches := 0         # burnt-ground decals (bots)
 var _per: Array = []
 var _terrain: Terrain
@@ -33,6 +34,9 @@ func build(c: Vector2, toward: Vector2) -> void:
 	facing = (toward - c).normalized()
 	centre = Vector3(c.x, _terrain.height_at(c.x, c.y), c.y)
 	burn_centre = centre
+	# the terrain shader draws the ash, char and singed rim (terrain.gdshader burn_ring)
+	burn_ring = Vector4(centre.x, centre.z, RADIUS - 2.0, 1.0)
+	RenderingServer.global_shader_parameter_set("burn_ring", burn_ring)
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
 		# rough, lumpy field stone with a few broken faces: weathered sarsens, not dressed blocks
@@ -149,6 +153,7 @@ static func burnt(x: float, z: float) -> float:
 func _exit_tree() -> void:
 	if burn_centre == centre:
 		burn_centre = Vector3.INF
+		RenderingServer.global_shader_parameter_set("burn_ring", Vector4.ZERO)
 
 ## Whether (x, z) lies inside the ring (bots; the music could key off it later).
 func inside(x: float, z: float) -> bool:
