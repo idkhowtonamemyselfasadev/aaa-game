@@ -6316,7 +6316,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    not flat at range, and new `StoneRing.singed(x, z)` crops grass clumps to 35 % height over a band reaching
    ~2 m past the burn so the meadow steps down to the ash. Bots `knight`, `sward` PASS. 0b re-check: freesound /
    opengameart / kenney still unreachable (curl 000, 15:00 10-31).
-   KNIGHT CLOSE-UP (`soldierface knightface 30 15 knight lit`) rendering at commit time; verdict follows.
+   KNIGHT CLOSE-UP SEEN (15:15, gallery 1515, FAIL): the sun-side camera works (meadow and hero front-lit, the
+   ember-cracked helm and oxblood surcoat read), but the knight faced the hero so the lens saw its dark back, and the
+   boss bar sits over its legs. `shot.gd` now turns the foe 3/4 to the lens in "lit" (committed; reshoot started
+   15:17 was still rendering at session end -- re-run it first thing). Consider hiding the HUD boss bar for portraits.
    NEXT, in order: (a) re-shoot the ring `ring ring 30 15` to see the burn tweaks; (b) re-shoot knight p3;
    (c) enemy variety (Briar Hound, Hollow shield variant).
 0. (14:00 10-31) **Dry-ash burn DONE and SEEN** (gallery 1450): reads as dry, warm ash with soil and a ragged edge.
