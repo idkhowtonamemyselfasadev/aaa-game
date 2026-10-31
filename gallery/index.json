@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-2025-facefill-herocu.jpg",
-  "time": "2026-10-25T20:25:29Z",
-  "caption": "New 2 m hero lens at noon: the face under the hood now gets the meadow bounce fill like his armour, but the frame still reads game-like (blocky training post at left, dull figure).",
-  "verdict": "fail"
- },
- {
   "file": "20261025-2125-hewnpost-crop.jpg",
   "time": "2026-10-25T21:25:00Z",
   "caption": "Post top x4, first pass (left) vs darkened iron (right): adze flats, drying checks and a rain-rounded top replace the turned cylinder; the band is still a touch light in full sun.",
@@ -897,6 +891,12 @@
   "file": "20261031-2035-hounds.jpg",
   "time": "2026-10-31T20:35:00Z",
   "caption": "The near Briar Hound's coat now reads as streaky grizzled guard hair over smoke-grey (no more leopard speckles) as it lopes past the hero; still wrong: the crouched mate is lost in the far grass, the hounds' silhouettes are smooth (no thorny ruff) and the hero's guard holds the staff high like a yoke.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-2130-guard.jpg",
+  "time": "2026-10-31T21:31:00Z",
+  "caption": "The hero's new mid guard: staff held low and diagonal across the body instead of yoked over the shoulders; still wrong: the hero is in shade, the straw post crowds the frame and the shaft's middle hides behind the arm.",
   "verdict": "fail"
  }
 ]
