@@ -6370,7 +6370,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (19:00 10-31) **Hound readability DONE (coat + grass + camera; code + bots)**. NEXT, in order: (a) judge the
-   `hounds` shot (see gallery 1900 if it rendered); if they still do not read, a thornier silhouette (ruff spikes);
+   HOUNDS SEEN (19:25, gallery 1925, FAIL but much better): both hounds read as grey animals and the runner's lane
+   of pressed grass shows. Still wrong: the 0.75 grizzle at `p*190` comes out as blotchy white leopard SPECKLES (make it
+   streaky fine guard hair: stretch the noise along the body, e.g. vnoise(p * vec3(260,260,60)), smaller amplitude),
+   and the hero's staff still looks slung across the shoulders (the hand-stepped draw in the hounds block may not have
+   finished: step more frames or set the combat state directly). Then reshoot `hounds hounds 30 15`; a thornier ruff;
    (b) re-shoot the warden portrait under Vulkan with nothing else running (`soldierface wardenface 30 15 warden lit`);
    (c) `bash` shot mode; (d) re-shoot ring + knight p3; (e) tune hound pressure (COOLDOWN 1.6 s may be relentless).
 0. (18:00 10-31) **Briar Hounds DONE (code + bots; seen, FAIL on readability)**. NEXT, in order: (a) make the hounds
