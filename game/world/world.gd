@@ -23,6 +23,7 @@ var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the 
 var training_post: TrainingPost
 var soldier: HollowSoldier
 var knight: AshenKnight
+var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 var weather: Weather
 var thermals: Thermals
@@ -129,6 +130,13 @@ func _ready() -> void:
 	knight.plant(terrain)
 	knight.face(p)
 	trample.walkers.append(knight)
+	# its vigil: a broken ring of standing stones round the post, the gap toward the start
+	stone_ring = StoneRing.new()
+	stone_ring.name = "StoneRing"
+	stone_ring.ruins_path = NodePath("../Ruins")
+	stone_ring.terrain_path = NodePath("../Terrain")
+	add_child(stone_ring)
+	stone_ring.build(Vector2(knight.position.x, knight.position.z), Vector2(p.x, p.z))
 	# a stone cottage across the green north of it, its door turned toward the start too
 	stone_cottage = StoneCottage.new()
 	stone_cottage.name = "StoneCottage"

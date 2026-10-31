@@ -797,6 +797,17 @@ func _ready() -> void:
 		var to_cam := Vector3(-light.x, 0, -light.z).normalized().rotated(Vector3.UP, 0.6)
 		SPOTS[spot] = [post + to_cam * 2.1 + Vector3.UP * 1.35, post + Vector3.UP * 0.95]
 	var dodge_u := -1.0
+	if spot == "ring":
+		# the Ashen Knight's stone ring from just outside its entrance, the knight at its post
+		# in the middle, the hero walking in through the gap
+		var ring: StoneRing = world.stone_ring
+		var f3 := Vector3(ring.facing.x, 0, ring.facing.y)
+		var gate := ring.centre + f3 * (StoneRing.RADIUS + 1.5)
+		player.global_position = Vector3(gate.x, terrain.height_at(gate.x, gate.z) + 0.05, gate.z)
+		player.body.rotation.y = atan2(-f3.x, -f3.z)
+		var rcam := ring.centre + f3 * (StoneRing.RADIUS + 6.5) + f3.cross(Vector3.UP) * 2.0
+		rcam.y = terrain.height_at(rcam.x, rcam.z) + 2.4
+		SPOTS[spot] = [rcam, ring.centre + Vector3.UP * 1.4]
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
 		dodge_u = 0.35

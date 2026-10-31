@@ -778,6 +778,16 @@ func _knight_test() -> void:
 		return _combat_done(false, "the knight is missing its armour or still wears the soldier's hood")
 	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:
 		return _combat_done(false, "knight should wait idle at full health in phase 1")
+	# its arena: a ring of standing stones round the post, the entrance gap toward the start
+	var ring: StoneRing = _world.stone_ring
+	var gate := Vector2(ring.centre.x, ring.centre.z) + ring.facing * StoneRing.RADIUS
+	var gate_clear := INF
+	for st in ring.stones:
+		gate_clear = minf(gate_clear, Vector2(st.x, st.z).distance_to(gate))
+	var off_c := Vector2(ring.centre.x - k.global_position.x, ring.centre.z - k.global_position.z).length()
+	print("BOT knight: stone ring %d stones (%d fallen), centre %.1f m off the knight, entrance clear %.1f m, knight inside %s" % [ring.stones.size(), ring.fallen, off_c, gate_clear, ring.inside(k.global_position.x, k.global_position.z)])
+	if ring.stones.size() < 7 or ring.fallen < 1 or off_c > 0.5 or gate_clear < 2.5 or not ring.inside(k.global_position.x, k.global_position.z):
+		return _combat_done(false, "the knight's stone ring is missing, off-centre or blocks its entrance")
 	# walk up until it notices
 	p.global_position = k.global_position + (p.global_position - k.global_position).normalized() * 14.0
 	var waited := 0.0
@@ -860,14 +870,23 @@ func _knight_test() -> void:
 			p.bot_input = Vector2.ZERO
 			p.bot_attack = false
 			p.bot_heavy = false
-			if flame_tested == 1 and live.t > AshFlame.WARN - 0.12 and p.dodge_t < 0.0:
-				p.bot_input = Vector2(1, 0)
+			# the roll (camera-relative sideways): started ~0.2 s before the burst so its
+			# i-frames cover it, and re-asked every frame in case hitstop or a flinch ate the
+			# first press; stamina topped up so an empty bar cannot swallow it
+			var roll := Vector2(1, 0)
+			var rolled := false
+			if flame_tested == 1:
+				p.stamina = p.stamina_max
+			if flame_tested == 1 and live.t > AshFlame.WARN - 0.2 and p.dodge_t < 0.0:
+				p.bot_input = roll
 				p.bot_dodge = true
 			while is_instance_valid(live) and live.result == "":
 				await get_tree().physics_frame
 				t += get_physics_process_delta_time()
-				if flame_tested == 1 and is_instance_valid(live) and live.t > AshFlame.WARN - 0.12 and p.dodge_t < 0.0:
-					p.bot_input = Vector2(1, 0)
+				if flame_tested == 1 and is_instance_valid(live) and p.dodge_t >= 0.0 and live.t > AshFlame.WARN - 0.2:
+					rolled = true
+				if flame_tested == 1 and not rolled and is_instance_valid(live) and live.t > AshFlame.WARN - 0.2 and p.dodge_t < 0.0:
+					p.bot_input = roll
 					p.bot_dodge = true
 			p.bot_input = Vector2.ZERO
 			var r: String = live.result if is_instance_valid(live) else "?"
