@@ -6257,6 +6257,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    with an entry that triggers the fight; (3) boss music DONE 06:00 10-31 (Steeps of Destiny + phase cut);
    (4) sounds for the guard clang (existing metal impact set), the surge roar/whoosh and the fire eruptions (needs a
    CC0/CC-BY fire-burst recording; license first); (5) then more enemy variety (Briar Hound, Hollow shield variant).
+   (0, first) The eruption warning ring is a flat orange drawn circle (shot 06:05): make it a ragged, broken-up
+   smoulder decal hugging the ground (smaller, darker, ember specks + heat shimmer), and fix the shot timing in
+   shot.gd's "p3" path (the burst had not happened yet at capture; the hold maths is off by ~1 s). Screenshots on this
+   box take ~45 min each: one per session, and run `--check-only` on shot.gd first.
 0. (04:00 10-31) **OWNER PRIORITY 0b: AUDIO FIRST.** (a)-(d) DONE. (e) Credits screen DONE, upstream license audit DONE.
    LEFT for (e): re-open each freesound.org / opengameart.org / kenney.nl source page with WebFetch once the
    environment's network policy allows those domains (they fail DNS from the cloud box; ASSETS.md "Copyright audit"

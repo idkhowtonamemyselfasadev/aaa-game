@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261025-1250-eyelash-face.jpg",
-  "time": "2026-10-25T12:50:13Z",
-  "caption": "Hero at noon: the eyes now sit as narrower almond eyes under a dark upper lash line with a smaller iris and duller whites instead of round doll eyes; still wrong: the chest plate's pale edge wear looks painted on and the brow above the eyes is a featureless band.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-1347-plate-hero.jpg",
-  "time": "2026-10-25T13:47:56Z",
-  "caption": "Hero at noon after the armour-wear rework (satin lacquer, chips thinned, rim wear from the normal map); at this range the change barely shows and the torso still reads as pale linen wraps and a brown mantle, not dark lamellar.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-1420-armwrap-hero.jpg",
   "time": "2026-10-25T14:20:00Z",
   "caption": "Hero at noon by the training post: the forearm wraps now read as road-soiled linen, not pale cuffs; the chest and shoulder plates and the bare hand still read pale grey-tan and the face is too small to read.",
@@ -891,6 +879,12 @@
   "file": "20261030-1600-wheatears.jpg",
   "time": "2026-10-30T16:00:00Z",
   "caption": "Crop of the same frame: the cock's grey back, mask, white brow and dark tail and the buff hen read as real small birds on the stones; still wrong: no visible closed wing on the flank, tail edge-on like a stick, feather detail soft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-0605-ashenknight-p3.jpg",
+  "time": "2026-10-31T06:05:00Z",
+  "caption": "The Ashen Knight's phase 3 in the meadow: boss bar with phase notches, the ember-ring warning before an eruption under the hero. Still wrong: the ring reads as a flat orange circle, not burning turf, and the knight is a recoloured soldier with no armour of its own.",
   "verdict": "fail"
  }
 ]
