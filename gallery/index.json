@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-2125-hewnpost.jpg",
-  "time": "2026-10-25T21:25:00Z",
-  "caption": "Practice post at noon beside the hero: now a hewn, tapered oak post with a rounded top under a dark iron band and a lashed straw bundle; the meadow still lacks depth haze and the hero reads small and dull.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-2226-skinform-crop.jpg",
   "time": "2026-10-25T22:26:00Z",
   "caption": "Face x5, before (left) vs after (right): deeper sockets, a lighter brow bone and sun-mottled cheeks give the face some bony structure, but at this range it still reads soft.",
@@ -897,6 +891,12 @@
   "file": "20261031-2230-guard.jpg",
   "time": "2026-10-31T22:30:00Z",
   "caption": "Hero in the low mid guard, re-shot from the sun side: lit, whole staff visible, no yoke -- but from this near-frontal angle the shaft reads level across the hips rather than diagonal, the face under the hat is a dark blank and the straw post still crowds the right.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-2300-guard3.jpg",
+  "time": "2026-10-31T23:45:00Z",
+  "caption": "Hero in the mid guard from the raised sun-side lens: lit and the whole staff shows, but with only -12 deg of pitch the shaft still reads as a level bar across the belly and the face is a blank grey cloth.",
   "verdict": "fail"
  }
 ]

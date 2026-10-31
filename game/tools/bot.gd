@@ -641,6 +641,48 @@ func _dodge_test() -> void:
 	print("BOT dodge: worst cancel-recovery clearance %.2f torso radii (%s)" % [worst, worst_at])
 	if worst < 0.6:
 		return _combat_done(false, "cancel recovery swings the staff through the chest")
+	# 2c) a fresh string pressed part-way through any ease starts from that pose (no snap to
+	# GUARD) and its blend into the chamber/wind-up keeps the shaft out of the chest
+	var open_base := StaffCombat.path_clearance(StaffCombat.STRING[0]["keys"])
+	var worst_open := 9.0
+	var open_at := ""
+	for ci in clips.size():
+		for i in 21:
+			var fp2: Array = StaffCombat._pose_at_static(clips[ci]["keys"], i / 20.0)
+			var path2: Array = StaffCombat.best_recover_path(fp2)
+			for j in range(1, 10):
+				var mid: Array = StaffCombat._pose_at_static(path2, j / 10.0)
+				var atk: Dictionary = StaffCombat.string_open_from(path2, j / 10.0)
+				var k0: Array = atk["keys"][0]
+				if (k0[3] as Vector3).distance_to(mid[2] as Vector3) > 1e-4:
+					return _combat_done(false, "the opening swing did not start from the ease pose")
+				var g2 := StaffCombat.path_clearance(atk["keys"])
+				if g2 < worst_open:
+					worst_open = g2
+					open_at = "clip %d u %.2f ease %.1f" % [ci, i / 20.0, j / 10.0]
+	print("BOT dodge: opening swing from mid-ease worst clearance %.2f (plain opener %.2f) at %s" % [worst_open, open_base, open_at])
+	if worst_open < minf(0.6, open_base - 0.05):
+		return _combat_done(false, "a string started mid-ease swings the staff through the chest")
+	# live: end a swing, press light mid-ease, and the first frame must match the ease pose
+	await _ticks(30)
+	print("BOT dodge: before live opener state %d stamina %.0f" % [c.state, p.stamina])
+	p.stamina = 100.0
+	c.state = StaffCombat.READY
+	c.idle_t = 0.0
+	c.step = -1
+	c._from_pose = StaffCombat._pose_at_static(StaffCombat.STRING[1]["keys"], 1.0)
+	c._begin_recover()
+	await _ticks(6)
+	var ease_pose: Array = c._pose_at(c._recover_keys, 1.0 - c._recover / StaffCombat.RECOVER_TIME)
+	c.light()
+	if not c.is_attacking():
+		return _combat_done(false, "light mid-ease did not start a swing (state %d, recover %.2f, stamina %.0f)" % [c.state, c._recover, p.stamina])
+	var open_pose: Array = c._pose_at(c.current_attack()["keys"], 0.0)
+	var dp: float = (open_pose[2] as Vector3).distance_to(ease_pose[2] as Vector3)
+	print("BOT dodge: live light mid-ease, first key %.3f m from the ease pose" % dp)
+	if dp > 0.01:
+		return _combat_done(false, "the opening swing snapped instead of starting from the ease pose")
+	await _ticks(60)
 	# 3) perfect dodge: the blow lands 0.08 s into the dodge
 	p.stamina = 50.0
 	p.bot_input = Vector2(0, 1)

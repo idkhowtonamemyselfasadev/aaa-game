@@ -397,6 +397,10 @@ func _start(i: int) -> void:
 		return
 	player.stamina = maxf(player.stamina - float(COST[i]), 0.0)
 	_atk = STRING[i]
+	if i == 0 and _recover > 0.0 and _recover_keys.size() > 1:
+		# a fresh string pressed mid-ease starts from where the arms have got to, not a snap to GUARD
+		_atk = string_open_from(_recover_keys, 1.0 - _recover / RECOVER_TIME)
+	_recover = 0.0
 	_power = POWER[i]
 	_hit_this_swing.clear()
 	_prev_u = -1.0
@@ -408,6 +412,38 @@ func _start(i: int) -> void:
 	state = ATTACKING
 	swings += 1
 	swing_started.emit(i)
+
+## STRING[0] opened from part-way (`u`) through a recovery `path` (from best_recover_path):
+## the arms run on along the rest of that path up to its chamber key -- squeezed into the
+## opener's first 0.10 -- then into the wind-up as usual. A straight cut from an early ease
+## pose to the chamber swung the shaft through the chest (bot dodge 2c: clearance 0.05).
+static func string_open_from(path: Array, u: float) -> Dictionary:
+	const CH_T := 0.62     # the chamber key's time in best_recover_path
+	var open_t: float = STRING[0]["keys"][1][0]
+	var ch_yaw := float(CHAMBER[0])
+	for k in path:
+		if absf(float(k[0]) - CH_T) < 1e-4:
+			ch_yaw = float(k[1])
+	var off := ch_yaw - float(CHAMBER[0])   # the +-360 the path wrapped through
+	var cur: Array = _pose_at_static(path, u)
+	if cur.size() < 5:
+		cur.append(0.0)
+	cur[0] = float(cur[0]) - off
+	var keys: Array = [[0.0] + cur]
+	if u < CH_T:
+		for k in path:
+			var kt := float(k[0])
+			if kt > u + 1e-4 and kt < CH_T - 1e-4:
+				var nk: Array = (k as Array).duplicate()
+				nk[0] = open_t * (kt - u) / (CH_T - u)
+				nk[1] = float(nk[1]) - off
+				keys.append(nk)
+	var src: Array = STRING[0]["keys"]
+	for i in range(1, src.size()):
+		keys.append(src[i])
+	var atk: Dictionary = STRING[0].duplicate()
+	atk["keys"] = keys
+	return atk
 
 ## Body-space pose of the current attack at normalised time u.
 func _pose_at(keys: Array, u: float) -> Array:
@@ -700,11 +736,13 @@ static func best_recover_path(from: Array) -> Array:
 				best = keys
 	return best
 
-## Worst torso clearance (torso radii, 1.0 = touching) along a key path, 24 samples.
+## Worst torso clearance (torso radii, 1.0 = touching) along a key path. 24 samples missed
+## narrow dips where the shaft sweeps past the chest fast (a 0.05 graze between two samples).
+const CLEAR_SAMPLES := 120
 static func path_clearance(keys: Array) -> float:
 	var worst := 9.0
-	for j in range(1, 25):
-		var pz: Array = _pose_at_static(keys, j / 24.0)
+	for j in range(1, CLEAR_SAMPLES + 1):
+		var pz: Array = _pose_at_static(keys, j / float(CLEAR_SAMPLES))
 		worst = minf(worst, torso_clearance(pz))
 	return worst
 
