@@ -155,6 +155,20 @@ func hook_knight(k: Node) -> void:
 		_play("whoom", at + Vector3.UP * 0.6, 0.0, 0.62)
 		_play("slam", at, -9.0, 1.15))
 
+## The Hollow Warden's targe, from recorded sets only: a blocked blow is the wood hit pitched
+## down with a quiet iron ring over it; the ward knocked aside cracks with the wood hit, the
+## clang low under it and a body thump.
+func hook_warden(w: Node) -> void:
+	if w == null or not w.has_signal("shield_blocked"):
+		return
+	w.shield_blocked.connect(func(at: Vector3) -> void:
+		_play("wood", at, 0.0, 0.72)
+		_play("clang", at, -15.0, 0.7))
+	w.shield_broken.connect(func(at: Vector3) -> void:
+		_play("wood", at, 2.0, 0.6)
+		_play("clang", at, -8.0, 0.62)
+		_play("body", at, -4.0, 0.8))
+
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):
 		return

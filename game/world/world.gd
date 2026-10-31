@@ -23,8 +23,10 @@ var sky_sun: DirectionalLight3D   # drives the PhysicalSky only; held above the 
 var training_post: TrainingPost
 var soldier: HollowSoldier
 var knight: AshenKnight
+var warden: HollowWarden
 var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
+const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
 var weather: Weather
 var thermals: Thermals
 var dust_devils: DustDevils
@@ -123,6 +125,13 @@ func _ready() -> void:
 	soldier.plant(terrain)
 	soldier.face(p)
 	trample.walkers.append(soldier)   # the Hollow tramples the sward and leaves prints too
+	# a second Hollow with a targe, further down and off to the west: it turns frontal blows
+	warden = HollowWarden.new()
+	warden.position = Vector3(p.x + WARDEN_AT.x, 0.0, p.z + WARDEN_AT.y)
+	add_child(warden)
+	warden.plant(terrain)
+	warden.face(p)
+	trample.walkers.append(warden)
 	# the Ashen Knight: the vale's boss, keeping a vigil far down the meadow past the soldier
 	knight = AshenKnight.new()
 	knight.position = Vector3(p.x + KNIGHT_AT.x, 0.0, p.z + KNIGHT_AT.y)
@@ -313,8 +322,9 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier, knight], trample)
+	foley.hook(player, [soldier, knight, warden], trample)
 	foley.hook_knight(knight)
+	foley.hook_warden(warden)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_dog(dog)

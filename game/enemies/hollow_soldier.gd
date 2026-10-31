@@ -71,6 +71,11 @@ var tempo := 1.0               # time scale of the whole brain: a faster phase w
 var damage_mul := 1.0
 var unblockable := false       # strikes the hero's heavy cannot deflect
 var glint_col := Color(1.0, 0.82, 0.6)
+## Variants (the shield warden) hold a different guard while idle/stalking and can kick the
+## body back from the hips (a blocked blow); both default to the soldier's.
+var guard_pose: Array = GUARD
+var lean_kick := 0.0
+var engage_delay := 0.25      # s inside ENGAGE before it winds up (a warden holds its ward longer)
 var poise := 0.0
 var parried_count := 0
 var _stagger_len := STAGGER_T
@@ -384,7 +389,7 @@ func _physics_process(delta: float) -> void:
 	var sink := 0.0
 	match state:
 		IDLE:
-			_pose = GUARD
+			_pose = guard_pose
 			ember = 0.8 + 0.2 * sin(t * 1.7)
 			var back := _home - global_position
 			back.y = 0.0
@@ -394,7 +399,7 @@ func _physics_process(delta: float) -> void:
 			if dist < NOTICE:
 				_enter(STALK)
 		STALK:
-			_pose = GUARD
+			_pose = guard_pose
 			ember = 1.0 + 0.15 * sin(t * 4.0)
 			_turn_to(to, delta, 5.0)
 			if dist > GIVE_UP or (global_position - _home).length() > GIVE_UP:
@@ -402,7 +407,7 @@ func _physics_process(delta: float) -> void:
 			elif dist > ENGAGE:
 				# close in, slowing as the gap shrinks so it does not overrun
 				move = to.normalized() * STALK_SPEED * clampf((dist - ENGAGE) / 1.5 + 0.35, 0.35, 1.0)
-			elif t > 0.25 and _facing(to) > 0.85:
+			elif t > engage_delay and _facing(to) > 0.85:
 				windups += 1
 				_from = _pose
 				move_kind = _choose(dist)
@@ -445,7 +450,7 @@ func _physics_process(delta: float) -> void:
 		RECOVER when move_kind == SWEEP_MOVE:
 			var u := clampf(t / SWEEP_RECOVER_T, 0.0, 1.0)
 			var f := smoothstep(0.35, 1.0, u)
-			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, GUARD[0], f)), GUARD, f)
+			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, GUARD[0], f)), guard_pose, f)
 			lean = 0.1 * (1.0 - smoothstep(0.2, 0.9, u))
 			sink = 0.14 * (1.0 - u)
 			ember = 1.4 - 0.4 * u
@@ -454,7 +459,7 @@ func _physics_process(delta: float) -> void:
 		WINDUP:
 			var u := clampf(t / WINDUP_T, 0.0, 1.0)
 			_turn_to(to, delta, 3.0 * (1.0 - u))   # tracks early, commits late
-			_pose = _lerp_pose(GUARD, DRAWN, minf(u * 1.6, 1.0))
+			_pose = _lerp_pose(guard_pose, DRAWN, minf(u * 1.6, 1.0))
 			lean = -0.13 * smoothstep(0.0, 0.6, u)
 			sink = 0.07 * smoothstep(0.0, 0.6, u)
 			ember = 1.0 + 3.2 * smoothstep(0.15, 0.85, u)
@@ -482,7 +487,7 @@ func _physics_process(delta: float) -> void:
 				_enter(RECOVER)
 		RECOVER:
 			var u := clampf(t / RECOVER_T, 0.0, 1.0)
-			_pose = _lerp_pose(THRUST, GUARD, smoothstep(0.35, 1.0, u))
+			_pose = _lerp_pose(THRUST, guard_pose, smoothstep(0.35, 1.0, u))
 			lean = 0.16 * (1.0 - smoothstep(0.2, 0.9, u))
 			sink = 0.09 * (1.0 - u)
 			ember = 1.4 - 0.4 * u
@@ -491,7 +496,7 @@ func _physics_process(delta: float) -> void:
 		STAGGER:
 			var u := clampf(t / _stagger_len, 0.0, 1.0)
 			_update_glint(0.0)
-			_pose = _lerp_pose(_from, [30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], minf(u * 3.0, 1.0)) if u < 0.5 else _lerp_pose([30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], GUARD, (u - 0.5) * 2.0)
+			_pose = _lerp_pose(_from, [30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], minf(u * 3.0, 1.0)) if u < 0.5 else _lerp_pose([30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], guard_pose, (u - 0.5) * 2.0)
 			lean = -0.22 * _recoil * sin(PI * minf(u * 1.4, 1.0))
 			sink = 0.05
 			move = _knock * (1.0 - u) * (1.0 - u) * 2.2
@@ -504,7 +509,8 @@ func _physics_process(delta: float) -> void:
 	_place(_pose)
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
-	_lean(lean, sink)
+	lean_kick = move_toward(lean_kick, 0.0, delta * 1.2)
+	_lean(lean - lean_kick, sink)
 	max_ember = maxf(max_ember, ember)
 	_set_skin("ember", ember)
 	_set_skin("root_pos", global_position)

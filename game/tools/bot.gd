@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -57,8 +57,14 @@ func _ready() -> void:
 	if name == "soldier":
 		_soldier_test()
 		return
+	# the shield warden keeps to its post unless it is the one under test
+	if name != "warden" and _world.warden != null:
+		_world.warden.process_mode = Node.PROCESS_MODE_DISABLED
 	if name == "knight":
 		_knight_test()
+		return
+	if name == "warden":
+		_warden_test()
 		return
 	if name == "lockon":
 		_lockon_test()
@@ -1011,6 +1017,117 @@ func _knight_test() -> void:
 ## Glide: high over the vale a jump in the air snaps the glider open; it settles to a slow sink
 ## and flies on along the facing, the stick banks it round, jump lets go into a free fall,
 ## a second jump catches the air again, and touching down folds it with the hands let go.
+## Hollow Warden: the targe rides its left forearm; blows from in front land on it (no harm,
+## guard meter fills); a heavy knocks it aside (reels, arm hangs low, open to punish); blows
+## from behind always land; and a hero who mixes a light string and heavies kills it.
+func _warden_test() -> void:
+	var p := _player
+	var w: HollowWarden = _world.warden
+	var s: HollowSoldier = _world.soldier
+	s.process_mode = Node.PROCESS_MODE_DISABLED
+	_world.knight.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var gd := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
+	var sd := Vector2(w.global_position.x - s.global_position.x, w.global_position.z - s.global_position.z).length()
+	print("BOT warden: %.1f m from the start, %.1f m from the soldier, state %d, health %.0f" % [gd, sd, w.state, w.health])
+	if w.state != HollowSoldier.IDLE or sd < HollowSoldier.NOTICE + 4.0:
+		return _combat_done(false, "warden should wait idle, well clear of the soldier's fight")
+	# the targe on the left forearm, face to the front
+	var hand := w.skel.global_transform * w.skel.get_bone_global_pose(w.skel.find_bone("mixamorig_LeftHand")).origin
+	var tg := w.targe.global_transform
+	var face := tg.basis.z.normalized().dot(w.body.global_basis.z)
+	print("BOT warden: targe %.2f m from the left hand, face dot front %.2f, %d tris" % [tg.origin.distance_to(hand), face, w.targe.mesh.get_faces().size() / 3])
+	if tg.origin.distance_to(hand) > 0.45 or face < 0.5:
+		return _combat_done(false, "the targe is not strapped to the left forearm facing front")
+	# put it 2.4 m in front of the hero, stalking
+	_soldier_at(w, 2.4, -1)
+	await _ticks(2)
+	# 1) a light blow from in front lands on the targe: no harm, meter fills
+	var h0 := w.health
+	var pt := w.global_position + Vector3.UP * 1.2
+	var to_w := (w.global_position - p.global_position).normalized()
+	w.take_hit(pt, to_w, 1.0, 0.06)
+	print("BOT warden: front light -> blocks %d, health %.0f -> %.0f, guard %.1f, impact %s" % [w.blocks, h0, w.health, w.guard, w.impact_kind])
+	if w.blocks != 1 or w.health != h0 or w.guard < 0.9 or w.impact_kind != "wood":
+		return _combat_done(false, "a light blow from in front was not turned on the targe")
+	# 2) a heavy breaks the ward: reels, half damage, the targe hangs low
+	await _ticks(8)
+	w._enter(HollowSoldier.STALK)
+	w.take_hit(pt, to_w, 2.4, 0.15)
+	print("BOT warden: front heavy -> breaks %d, state %d, health %.0f, warding %s" % [w.guard_breaks, w.state, w.health, w.warding()])
+	if w.guard_breaks != 1 or w.state != HollowSoldier.STAGGER or w.health >= h0 or w.warding():
+		return _combat_done(false, "a heavy did not break the warden's ward")
+	var hb := w.health
+	var stg := w.staggers
+	w.take_hit(pt, to_w, 1.0, 0.06)
+	print("BOT warden: light into the broken ward -> health %.0f -> %.0f" % [hb, w.health])
+	if w.health >= hb:
+		return _combat_done(false, "the warden was not open after its ward broke")
+	# 3) wait for the ward to come back up, then a light blow from behind lands
+	while w._ward_down > 0.0 or w.state == HollowSoldier.STAGGER:
+		await get_tree().physics_frame
+	w._enter(HollowSoldier.STALK)
+	var bk := w.global_position - w.body.global_basis.z * 2.0
+	p.global_position = Vector3(bk.x, _world.terrain.height_at(bk.x, bk.z) + 0.05, bk.z)
+	var hf := w.health
+	var bl := w.blocks
+	w.take_hit(pt, w.body.global_basis.z, 1.0, 0.06)
+	print("BOT warden: light from behind -> health %.0f -> %.0f, blocks %d" % [hf, w.health, w.blocks])
+	if w.health >= hf or w.blocks != bl:
+		return _combat_done(false, "a blow from behind was turned by the targe")
+	if fol.played.get("wood", 0) <= played0.get("wood", 0):
+		return _combat_done(false, "the targe made no sound")
+	# 4) the fight, played: light strings into the targe, a heavy when the string is turned
+	w.health = w.health_max
+	w.guard = 0.0
+	_soldier_at(w, 2.6, -1)
+	p.health = Player.HEALTH_MAX
+	var t := 0.0
+	var blocks0 := w.blocks
+	var breaks0 := w.guard_breaks
+	var hold := 0.0
+	while not w.is_dead() and t < 60.0:
+		var to := w.global_position - p.global_position
+		var flat := Vector2(to.x, to.z)
+		p.stamina = Player.STAMINA_MAX
+		if flat.length() > 2.2:
+			p.bot_input = flat.normalized()
+			p.bot_attack = false
+		else:
+			p.bot_input = Vector2.ZERO
+			if not p.combat.is_attacking():
+				p.body.rotation.y = atan2(to.x, to.z)
+			# a light string batters the ward; every few seconds try a charged heavy through it
+			if hold > 0.0 or (w.warding() and w.blocks - blocks0 >= 4 and int(t) % 6 == 0):
+				p.bot_attack = false
+				p.bot_heavy = hold < 0.6
+				hold += get_physics_process_delta_time()
+				if hold > 1.4:
+					hold = 0.0
+			else:
+				p.bot_attack = true
+		if p.health < 30.0:
+			p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	p.bot_attack = false
+	p.bot_heavy = false
+	print("BOT warden: fight %.1f s, blocks %d, ward breaks %d, staggers %d, strikes %d, dead %s" % [t, w.blocks - blocks0, w.guard_breaks - breaks0, w.staggers, w.strikes, w.is_dead()])
+	if not w.is_dead():
+		return _combat_done(false, "the hero could not kill the warden")
+	if w.blocks - blocks0 < 1 or w.guard_breaks - breaks0 < 1:
+		return _combat_done(false, "the played fight never met the targe and broke it")
+	await _ticks(60)
+	var tgp := w.targe.global_position if is_instance_valid(w.targe) else Vector3.ZERO
+	var off: float = tgp.y - _world.terrain.height_at(tgp.x, tgp.z)
+	print("BOT warden: targe dropped, %.2f m above the ground" % off)
+	if not is_instance_valid(w.targe) or off > 0.3 or off < -0.1:
+		return _combat_done(false, "the targe did not drop to the ground when the warden fell")
+	_combat_done(true, "targe on the forearm, frontal blows turned, heavy broke the ward, flank landed, killed, targe dropped")
+
 func _glide_test() -> void:
 	var p := _player
 	var terrain: Terrain = _world.get_node("Terrain")
