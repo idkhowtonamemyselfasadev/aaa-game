@@ -6289,8 +6289,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (09:00 10-31) Knight armour DONE (helm, gorget, pauldrons, oxblood surcoat, glaive head). NEXT, in order:
-   (a) look at the armour in a closer/lit shot if this session's `soldierface knightface 30 15 knight lit` verdict
-   below says it needs tuning (helm size/position, pauldron fit when the arms rise); maybe a breastplate with a cracked
+   (a) LOOK AT THE ARMOUR FIRST: this session's shot `soldierface knightface 30 15 knight lit` was killed by the
+   30-min background limit with no image (the armour is UNSEEN). Run it with run_in_background and timeout 3600000,
+   do nothing else heavy meanwhile, then tune helm size/position (h = 0.28 above the Head bone, rx 0.47h, rz 0.55h)
+   and pauldron fit when the arms rise; maybe a breastplate with a cracked
    hole over the ember and greaves; (b) re-shoot `soldier knight_p3 30 15 knight p3 fixfps` to check the warmed
    column tip and the scorch; (c) the arena (burnt chapel yard / standing-stone ring at KNIGHT_AT); (d) enemy variety
    (Briar Hound, Hollow shield variant). 0b audio: only the freesound/opengameart/kenney source-page re-check is
