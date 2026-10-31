@@ -45,7 +45,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   draws in with the heavy whoosh slowed to half pitch; the ring of fire lands as a slowed ground slam with a full boom;
   each eruption whumps up (whoosh pitched down over a soft slam); the knight's own glaive strikes now play the spear
   sound (it was never hooked into Foley). Bot `knight` checks the counts (clang >= guarded, slam/whoom per surge/blast,
-  spear) -- PASS; regression soldier, mix, foley, lockon PASS. Content hours +0.1.
+  spear) -- PASS; regression soldier, mix, foley, lockon PASS. Screenshot (Vulkan/lavapipe under xvfb, ~45 min): the burst
+  is captured now, but the flame column is over-bright (gallery 0745, fail). Content hours +0.1.
 - **(06:00 10-31) The Ashen Knight's own score (Next knight item (3)).** New track `game/audio/music/boss_steeps_of_destiny.ogg`
   (Steeps of Destiny, Alexandr Zhelanov, CC BY 3.0; extracted from Ubuntu edgar-data's `edgar.pak` with a 20-line
   python reader -- format: u32 FAT offset + u32 count at the end, 268-byte entries name[256] + u32 size + u32 packed
@@ -6272,7 +6273,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    CC0/CC-BY fire-burst recording; license first); (5) then more enemy variety (Briar Hound, Hollow shield variant).
    (0) DONE 07:00 10-31 (scorch Decal + p3 shot timing). (4) guard clang / surge whoosh / blast + eruption whump DONE
    07:00 from the existing recorded sets; a real fire-burst recording (CC0/CC-BY, license first) would still be better
-   for the eruptions. NEXT: (1) the knight's armour. Screenshots on this box take ~45 min each: one per session, and
+   for the eruptions. NEXT, first: the eruption column itself (shot 07:45 `soldier knight_p3 30 15 knight p3 fixfps`,
+   timing now right): it is a soft additive blob that whites out half the frame and hides the scorch -- use flame-tongue
+   textures (stretched, velocity-aligned noise quads) instead of soft discs, cut the glow factor (3.0 -> ~1.2) and the
+   count, make it a narrower, taller column with dark smoke at its crown, and frame the shot lower/closer so the
+   scorch reads. Then (1) the knight's armour. Screenshots on this box take ~45 min each: one per session, and
    run `--check-only` on shot.gd first.
 0. (04:00 10-31) **OWNER PRIORITY 0b: AUDIO FIRST.** (a)-(d) DONE. (e) Credits screen DONE, upstream license audit DONE.
    LEFT for (e): re-open each freesound.org / opengameart.org / kenney.nl source page with WebFetch once the
