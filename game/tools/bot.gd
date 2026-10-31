@@ -1318,9 +1318,12 @@ func _dust_test() -> void:
 	if wh.w < 0.9 or Vector2(wh.x - dd.pos.x, wh.y - dd.pos.z).length() > 0.5:
 		return _combat_done(false, "the grass does not whip round the whirl's foot (%s)" % wh)
 	var woo: AudioStreamPlayer3D = mmi.get_node("Whoosh")
-	print("BOT dust: whoosh playing %s, gain %.2f, %.1f s loop, %.1f m from the foot" % [woo.playing, dd.whoosh_gain, (woo.stream as AudioStreamWAV).loop_end / 22050.0, woo.global_position.distance_to(dd.pos)])
-	if not woo.playing or dd.whoosh_gain < 0.9 or (woo.stream as AudioStreamWAV).loop_mode != AudioStreamWAV.LOOP_FORWARD:
+	var wogg := woo.stream as AudioStreamOggVorbis
+	print("BOT dust: whoosh playing %s, gain %.2f, recorded loop %s (%.1f s), %.1f m from the foot" % [woo.playing, dd.whoosh_gain, wogg != null and wogg.loop, woo.stream.get_length(), woo.global_position.distance_to(dd.pos)])
+	if not woo.playing or dd.whoosh_gain < 0.9:
 		return _combat_done(false, "the whirl makes no sound at full strength")
+	if wogg == null or not wogg.loop:
+		return _combat_done(false, "the whirl's whoosh is not a looping recording")
 	# a front rolls in: it slumps within a few seconds and no new one stands up
 	wx.cloud = 1.0
 	wx.rain = 0.8
@@ -2016,8 +2019,13 @@ func _foley_test() -> void:
 		if int(f.recorded.get(nm, 0)) < 3 or not (f._s[nm][0] is AudioStreamOggVorbis):
 			_finish(false, "foley '%s' is not recorded (%d variants)" % [nm, int(f.recorded.get(nm, 0))])
 			return
-	# the collie, the hens and the fox's crunch are recordings too (2+ variants)
-	for nm: String in ["dog_bark", "dog_woof", "cluck", "squawk", "crunch"]:
+	# synthesised voices are gone: no stream at all until a real recording exists
+	for nm: String in Foley.SILENT:
+		if f._s.has(nm):
+			_finish(false, "voice '%s' is still synthesised" % nm)
+			return
+	# the collie, the hens, the fox's crunch, the grain and Edda's grunt are recordings too (2+ variants)
+	for nm: String in ["dog_bark", "dog_woof", "cluck", "squawk", "crunch", "grain", "grunt"]:
 		if int(f.recorded.get(nm, 0)) < 2 or not (f._s[nm][0] is AudioStreamOggVorbis):
 			_finish(false, "animal voice '%s' is not recorded (%d variants)" % [nm, int(f.recorded.get(nm, 0))])
 			return
@@ -2421,6 +2429,8 @@ func _hearth_test() -> void:
 	print("BOT hearth basket: on her back walking in %s, on her back kneeling %s; flint sounds %d for %d strikes, catch sounds %d" % [basket_walk, basket_kneel, hr.flint_sounds, hr.strikes, hr.blow_sounds])
 	if not basket_walk or basket_kneel:
 		return _combat_done(false, "the basket should come off her back before she kneels at the fire")
+	if not (hr.blow.stream is AudioStreamOggVorbis):
+		return _combat_done(false, "Hesper's breath into the tinder is not a recording")
 	if hr.flint_sounds != hr.strikes or hr.blow_sounds != 1:
 		return _combat_done(false, "each flint strike should click, and the catch should sound once")
 	# evening: blazing
@@ -6377,8 +6387,8 @@ func _greet_test() -> void:
 			return _combat_done(false, "they keep on talking (%d lines in one meeting)" % lines)
 		if not both or faced > 0.6:
 			return _combat_done(false, "they do not turn to each other")
-		if fl != null and m1 - m0 < 2:
-			return _combat_done(false, "no murmur of voices")
+		if fl != null and m1 - m0 != 0:
+			return _combat_done(false, "a synthesised murmur still plays (voices stay silent until recorded)")
 	# the hero standing off a few metres hears it on the HUD
 	e.settle(_world, 16.4)
 	o.settle(_world, 16.4)
@@ -6402,7 +6412,7 @@ func _greet_test() -> void:
 	print("BOT greet overheard: %d lines, HUD showed %s, hero %.1f m from Edda" % [e.heard + o.heard - h0, saw, _player.global_position.distance_to(e.global_position)])
 	if e.heard + o.heard - h0 < 2 or saw.find("Edda") < 0 or saw.find("Osric") < 0:
 		return _combat_done(false, "the hero does not overhear them")
-	_combat_done(true, "Edda and Osric stop, turn to each other and pass a word at the garth (once a meeting), murmuring, and the hero overhears it")
+	_combat_done(true, "Edda and Osric stop, turn to each other and pass a word at the garth (once a meeting), and the hero overhears it")
 
 ## Hild over the fell at 14:30 and Wat walking back the other way: they meet on the road, both
 ## stop, he calls the news across, she turns to him and answers, and they go on, passing left
@@ -6790,7 +6800,7 @@ func _villager_test() -> void:
 		_world.time_of_day = 20.0
 		await get_tree().physics_frame
 	print("BOT villager hums on the bench: %d (heard %d)" % [v.hums - h0, _world.foley.played.get("hum", 0)])
-	if v.hums - h0 < 1 or _world.foley.played.get("hum", 0) < 1:
+	if v.hums - h0 < 1 or _world.foley.played.get("hum", 0) != 0:
 		return _combat_done(false, "she does not hum on the bench")
 	_world.time_of_day = 20.8
 	await _ticks(600)
@@ -6927,7 +6937,7 @@ func _feed_test() -> void:
 	print("BOT feed call: %d calls (heard %d), first %.1f m from the garth, %d hens waiting at the wall before the grain" % [f.calls, _world.foley.played.get("call", 0), call_d, wall_wait])
 	if arrived < 0 or v.activity != "feed":
 		return _combat_done(false, "she never got to the garth wall")
-	if f.calls < 2 or _world.foley.played.get("call", 0) < 2:
+	if f.calls < 2 or _world.foley.played.get("call", 0) != 0:
 		return _combat_done(false, "she did not call the hens as she came")
 	if wall_wait < 4:
 		return _combat_done(false, "the hens did not gather at the wall at her call")

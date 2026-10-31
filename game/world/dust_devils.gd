@@ -71,7 +71,8 @@ func _ready() -> void:
 	add_child(_mmi)
 	_whoosh = AudioStreamPlayer3D.new()
 	_whoosh.name = "Whoosh"
-	_whoosh.stream = _make_whoosh(mrng)
+	var rec := Samples.load_loop("weather", "dust_devil_loop")   # recorded gusting wind (ASSETS.md)
+	_whoosh.stream = rec if rec else _make_whoosh(mrng)
 	_whoosh.unit_size = 9.0
 	_whoosh.max_distance = 90.0
 	_whoosh.attenuation_filter_cutoff_hz = 5000.0   # from far off only the low roar carries

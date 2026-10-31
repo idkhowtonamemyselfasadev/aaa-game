@@ -101,8 +101,18 @@ Collie, hens, fox crunch (2026-10-30 21:00), `Foley.RECORDED["animals"]`, files 
 | crunch | 3 | InspectorJ animal eating (CC BY 3.0) |
 | bat_call / buzz / grumble | — | **dropped**: real pipistrelle calls are near-ultrasonic; the bat is now silent and the synthesis code is gone |
 
+Village and weather extras (2026-10-31 01:00), all OpenClonk CC BY 3.0 (see ASSETS.md):
+
+| Name | Where | Variants | Recording |
+|---|---|---|---|
+| grain | `foley.gd`, Edda scattering feed over the garth wall | 3 | shall555 digging in soil, pitched up and high-passed into a seed patter |
+| grunt | `foley.gd`, Edda heaving a round onto the block | 3 | bennychico11 farmer grunts |
+| blow | `hearth.gd`, Hesper's two breaths into the tinder and the flame taking | 1 | Ringwaul breath gusts + CGEffex fire inflame |
+| dust devil whoosh | `dust_devils.gd` (bus Ambience), looping, gain follows the whirl | 1 loop, 52 s | ERH wind loop, high-passed |
+| call, hum, murmur, murmur_low | `foley.gd` | — | **dropped** (silent, `Foley.SILENT`): no real voice recording yet; the synthesis code is gone. The schedules still run, they just make no sound |
+
 Still synthesised (no CC0/CC-BY source reachable yet): deer bark, roar, gallop(_wet); fox bark/yelp; rooks; kite;
-wheatears; voices (grunt, hum, murmur, call); grain; fell bell; Hesper's blow; dust devil whoosh.
+wheatears; fell bell.
 
 Bots: `foley` fails unless the priority-1 names are recorded `AudioStreamOggVorbis` sets of 3+; `hearth` fails
 unless the crackle is a looping recorded stream and the flint is recorded; `sound` fails unless the five beds are

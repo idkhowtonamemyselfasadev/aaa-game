@@ -95,6 +95,24 @@ named) and its textures (CC BY-SA) were skipped.
 | animals/cluck_1..4, squawk_1..3 | `mobs_mc_chicken_buck.1..3`, `mobs_mc_chicken_hurt` | https://freesound.org/people/evsecrets/sounds/346961/ | evsecrets | CC0 1.0 | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
 | animals/crunch_1..3 | `mobs_mc_animal_eat_generic` | https://freesound.org/people/InspectorJ/sounds/429591/ | InspectorJ | **CC BY 3.0** (credit required) | github.com/VoxeLibre/VoxeLibre `mods/ENTITIES/mobs_mc/LICENSE-media.md` |
 
+### Grain, Edda's grunt, Hesper's breath and the dust devil (added 2026-10-31 01:00)
+
+All from OpenClonk (github.com/openclonk/openclonk, `planet/Sound.ocg`; Ubuntu package
+openclonk-data). Its `planet/Sound.ocg/authors.txt` states "If not stated otherwise, the sound
+effects are licensed under the CC Attribution 3.0 license" and names each file's author and
+Freesound source (checked on GitHub with WebFetch 2026-10-31). freesound.org is still not
+resolvable from the cloud box, so item (e) must re-open each Freesound page. Cut/normalised
+with ffmpeg, mono Ogg Vorbis, peaks <= -2.4 dBFS. Credit needed (all **CC BY 3.0**):
+**Stephen Hall (shall555)**, **bennychico11**, **Ringwaul (OpenClonk team)**, **CGEffex**, **ERH**.
+
+| File(s) | Original | Source page | Author | License | Fetched via |
+|---|---|---|---|---|---|
+| village/grain_1..3 | `Clonk.ocg/Action.ocg/Dig.ocg/Dig2/4/3.wav` (pitched up 25 %, high-passed: seed pattering on the yard) | https://freesound.org/people/shall555/sounds/72199/ | Stephen Hall (shall555) | **CC BY 3.0** | openclonk authors.txt |
+| village/grunt_1..3 | `Clonk.ocg/Skin.ocg/Farmer.ocg/Hurt1/2.ogg` (3rd = Hurt1 pitched down 6 %) | https://freesound.org/people/bennychico11/sounds/80438/ | bennychico11 | **CC BY 3.0** | openclonk authors.txt |
+| fire/blow_1 (two breaths) | `Objects.ocg/Windbag.ocg/Charge.ogg` x2, low-passed | https://github.com/openclonk/openclonk/tree/master/planet/Sound.ocg | Ringwaul (OpenClonk team) | **CC BY 3.0** | openclonk authors.txt |
+| fire/blow_1 (the flame taking) | `Fire.ocg/Inflame.ogg` | https://freesound.org/people/CGEffex/sounds/94102/ | CGEffex | **CC BY 3.0** | openclonk authors.txt |
+| weather/dust_devil_loop | `Environment.ocg/WindLoop.ogg` (high-passed 180 Hz) | https://freesound.org/people/ERH/sounds/34338/ | ERH | **CC BY 3.0** | openclonk authors.txt |
+
 ## Music (`game/audio/music/`, added 2026-10-30 22:00)
 
 Taken from Ubuntu's `edgar-data` 1.37 package (archive.ubuntu.com, noble/universe; extracted

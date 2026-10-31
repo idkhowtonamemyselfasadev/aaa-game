@@ -24,10 +24,15 @@ var hero_steps := 0       # footfalls of the hero alone (bots)
 var recorded := {}        # sound name -> number of recorded variants loaded (bots)
 
 ## Sample group -> the sound names whose recorded variants replace the synthesised ones.
+## Voices with no real recording yet stay silent rather than synthesised (owner, 2026-10-30):
+## Edda's hen call and humming, and the murmur of two villagers passing a word. Bots check
+## these have no stream at all.
+const SILENT := ["call", "hum", "murmur", "murmur_low"]
+
 const RECORDED := {
 	"combat": ["swish", "whoom", "spear", "straw", "stone", "wood", "body", "boom", "clang", "slam", "dodge", "perfect"],
 	"steps": ["step_grass", "step_grit", "step_wet", "step_stone", "step_stone_wet"],
-	"village": ["creak", "chop", "thud"],
+	"village": ["creak", "chop", "thud", "grain", "grunt"],
 	"animals": ["dog_bark", "dog_woof", "cluck", "squawk", "crunch"],
 }
 
@@ -66,12 +71,6 @@ func _ready() -> void:
 	_s["dog_bark"] = [_make_dog_bark(1.0), _make_dog_bark(0.93), _make_dog_bark(1.07)]
 	_s["dog_woof"] = [_make_dog_woof(1.0), _make_dog_woof(0.95)]
 	_s["crunch"] = [_make_crunch(), _make_crunch(), _make_crunch()]
-	_s["grain"] = [_make_grain(), _make_grain(), _make_grain()]
-	_s["call"] = [_make_call(1.0, 3), _make_call(1.04, 4), _make_call(0.97, 3)]
-	_s["grunt"] = [_make_grunt(1.0), _make_grunt(1.05), _make_grunt(0.95)]
-	_s["murmur"] = [_make_murmur(1.0, 5), _make_murmur(1.04, 7), _make_murmur(0.97, 6)]
-	_s["murmur_low"] = [_make_murmur(0.62, 5), _make_murmur(0.6, 6), _make_murmur(0.65, 7)]
-	_s["hum"] = [_make_hum(1.0, 0), _make_hum(0.97, 1), _make_hum(1.02, 2)]
 	_s["cluck"] = [_make_cluck(1.0, 1), _make_cluck(1.06, 2), _make_cluck(0.94, 3), _make_cluck(1.1, 2)]
 	_s["squawk"] = [_make_squawk(1.0), _make_squawk(1.08), _make_squawk(0.93)]
 	_s["creak"] = [_make_creak(1.0), _make_creak(0.86), _make_creak(1.12)]
@@ -472,150 +471,6 @@ func _make_crunch() -> AudioStreamWAV:
 		var snap := exp(-k * 60.0)
 		x[i] = hp * (grain * 0.8 + snap * 1.2) * smoothstep(0.0, 0.01, k) + chew * 0.6 * sin(PI * k)
 	return _wav(x)
-
-## A handful of grain cast out: a soft dry rush as it leaves the hand, then a thin patter of
-## grains -- dense tiny ticks of bright noise thinning out over half a second.
-func _make_grain() -> AudioStreamWAV:
-	var dur := 0.55
-	var n := int(dur * RATE)
-	var x := PackedFloat32Array()
-	x.resize(n)
-	var hp := 0.0
-	var prev := 0.0
-	var tick := 0.0
-	for i in n:
-		var k := float(i) / n
-		var w := _rng.randf() * 2.0 - 1.0
-		hp = 0.55 * (hp + w - prev)
-		prev = w
-		if _rng.randf() < lerpf(0.03, 0.002, k):
-			tick = _rng.randf_range(0.3, 1.0)
-		tick *= 0.8
-		var rush := exp(-k * 9.0) * smoothstep(0.0, 0.04, k)
-		x[i] = hp * (tick * 0.9 + rush * 0.35)
-	return _wav(x, 0.5)
-
-## Edda calling the hens as she comes with the bag: "chook-chook-chook" in a woman's voice,
-## lightly sung -- each a breathy "ch" of bright noise, a short rounded "oo" (low F1/F2)
-## stopped hard on the "k" with a little click, quick and level, the last held longer and
-## lifted then let fall.
-func _make_call(pt: float, count: int) -> AudioStreamWAV:
-	var gap := 0.21
-	var out := PackedFloat32Array()
-	out.resize(int((gap * count + 0.45) * RATE))
-	for c in count:
-		var last := c == count - 1
-		var at := int((c * gap + _rng.randf_range(0.0, 0.015)) * RATE)
-		# the "ch": 45 ms of high-passed hiss
-		var ch := int(0.045 * RATE)
-		var prev := 0.0
-		var hp := 0.0
-		for i in ch:
-			var w := _rng.randf() * 2.0 - 1.0
-			hp = 0.4 * (hp + w - prev)
-			prev = w
-			var k := float(i) / ch
-			if at + i < out.size():
-				out[at + i] += hp * 0.5 * smoothstep(0.0, 0.3, k) * (1.0 - 0.5 * k)
-		var d := 0.3 if last else 0.11
-		var f0 := 300.0 * pt * (1.0 + 0.04 * c)
-		var y := _voice(d,
-			func(k: float) -> float: return f0 * ((1.0 + 0.12 * sin(PI * minf(k * 1.6, 1.0)) - 0.1 * k) if last else (1.03 - 0.06 * k)),
-			func(k: float) -> float: return smoothstep(0.0, 0.08, k) * (1.0 - smoothstep(0.82 if not last else 0.7, 1.0, k)),
-			[[380.0 * pt, 5.0, 1.0], [880.0 * pt, 6.0, 0.5], [2500.0 * pt, 8.0, 0.08]], 0.12, 0.05)
-		var vs := at + ch - int(0.008 * RATE)
-		for i in y.size():
-			if vs + i < out.size():
-				out[vs + i] += y[i] * 0.9
-		# the "k": a tiny release click after the stop
-		var kc := vs + y.size() + int(0.025 * RATE)
-		for i in int(0.012 * RATE):
-			if kc + i < out.size():
-				out[kc + i] += (_rng.randf() * 2.0 - 1.0) * 0.25 * exp(-float(i) / (0.002 * RATE))
-	return _wav(out, 0.8)
-
-## Edda's effort at the block as the axe comes down: a breath pushed out through an open
-## throat ("hah") -- a puff of aspiration, then a short, low, roughened vowel that drops in
-## pitch and is cut off as the bit lands.
-func _make_grunt(pt: float) -> AudioStreamWAV:
-	var pre := int(0.05 * RATE)
-	var y := _voice(0.22,
-		func(k: float) -> float: return pt * lerpf(250.0, 175.0, pow(k, 0.8)),
-		func(k: float) -> float: return smoothstep(0.0, 0.12, k) * exp(-maxf(k - 0.25, 0.0) * 5.0) * (1.0 - smoothstep(0.85, 1.0, k)),
-		[[680.0 * pt, 5.0, 1.0], [1180.0 * pt, 6.0, 0.45], [2750.0 * pt, 8.0, 0.07]], 0.4, 0.25)
-	var out := PackedFloat32Array()
-	out.resize(pre + y.size())
-	# the "h": lowpassed breath noise rising into the vowel
-	var lo := 0.0
-	for i in pre + int(0.06 * RATE):
-		lo += 0.18 * ((_rng.randf() * 2.0 - 1.0) - lo)
-		var k := float(i) / pre
-		out[i] += lo * 0.6 * smoothstep(0.0, 1.0, k) * (1.0 - smoothstep(1.0, 2.2, k))
-	for i in y.size():
-		out[pre + i] += y[i]
-	return _wav(out, 0.6)
-
-## Edda humming on the bench: a closed-mouth "mm" (one low nasal formant, the upper ones
-## nearly gone) wandering through a slow folk phrase -- notes slurred into each other, a
-## gentle vibrato coming in as each is held, a soft breath between the two halves.
-func _make_hum(pt: float, tune: int) -> AudioStreamWAV:
-	var tunes := [
-		[[0, 0.5], [2, 0.35], [3, 0.7], [2, 0.35], [0, 0.4], [-2, 0.9]],
-		[[-2, 0.4], [0, 0.4], [3, 0.5], [5, 0.8], [3, 0.4], [2, 0.4], [0, 1.0]],
-		[[3, 0.6], [2, 0.3], [0, 0.4], [2, 0.6], [-2, 0.5], [0, 1.1]],
-	]
-	var notes: Array = tunes[tune % tunes.size()]
-	var total := 0.0
-	for n: Array in notes:
-		total += n[1]
-	var base := 205.0 * pt
-	var pitch := func(k: float) -> float:
-		var t := k * total
-		var at := 0.0
-		for i in notes.size():
-			var d: float = notes[i][1]
-			if t < at + d or i == notes.size() - 1:
-				var u := clampf((t - at) / d, 0.0, 1.0)
-				var prev: float = notes[maxi(i - 1, 0)][0]
-				# slur up from the last note over the first ~70 ms, then vibrato as it holds
-				var st := lerpf(prev, float(notes[i][0]), smoothstep(0.0, minf(0.07 / d, 0.5), u))
-				var vib := 0.18 * smoothstep(0.3, 0.8, u) * sin(TAU * 5.2 * t)
-				return base * pow(2.0, (st + vib) / 12.0)
-			at += d
-		return base
-	var env := func(k: float) -> float:
-		var t := k * total
-		var half := total * 0.5
-		return smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(total - 0.5, total, t)) * (1.0 - 0.6 * exp(-pow((t - half) / 0.06, 2.0)))
-	var x := _voice(total, pitch, env,
-		[[250.0 * pt, 4.0, 1.0], [1050.0, 6.0, 0.06], [2300.0, 8.0, 0.02]], 0.03, 0.0)
-	return _wav(x, 0.55)
-
-## Two neighbours talking, heard from across a yard: no words, just the run of it -- quick
-## syllables on shifting vowels (each its own formant pair), a falling line with a lift at
-## the stresses, little gaps between words and a longer one mid-phrase. `pt` sets the voice
-## (~0.6 an old man's), `syl` how many syllables.
-func _make_murmur(pt: float, syl: int) -> AudioStreamWAV:
-	var vowels := [[700.0, 1200.0], [500.0, 1750.0], [350.0, 2200.0], [450.0, 900.0], [380.0, 1000.0]]
-	var out := PackedFloat32Array()
-	out.resize(int(0.05 * RATE))
-	for i in syl:
-		var d := _rng.randf_range(0.11, 0.21)
-		var v: Array = vowels[_rng.randi() % vowels.size()]
-		var stress := 1.0 if i % 3 == 0 else 0.7
-		var line := 1.0 - 0.18 * float(i) / syl
-		var base := 210.0 * pt * line * (1.06 if stress > 0.9 else 1.0)
-		var x := _voice(d, func(k: float) -> float: return base * (1.0 + 0.05 * sin(PI * k)),
-			func(k: float) -> float: return stress * sin(PI * k) * sin(PI * k),
-			[[v[0] * lerpf(1.0, 1.15, pt - 0.6), 5.0, 1.0], [v[1], 7.0, 0.35], [2600.0, 9.0, 0.06]], 0.06, 0.15 if pt < 0.8 else 0.0)
-		out.append_array(x)
-		var gap := 0.03 if _rng.randf() < 0.6 else 0.09
-		if i == syl / 2:
-			gap = 0.22
-		var g := PackedFloat32Array()
-		g.resize(int(gap * RATE))
-		out.append_array(g)
-	return _wav(out, 0.5)
 
 ## A gate's hinge creak: rusty eyes dragging round their crooks in stick-slip -- a slow,
 ## uneven train of grinding clicks that runs together into a rising, wavering squeal and

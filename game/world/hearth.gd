@@ -666,7 +666,8 @@ func _build_strike_sounds() -> void:
 			var u := t - 1.55
 			var env := (1.0 - exp(-u * 18.0)) * exp(-u * 2.2)
 			x[i] += env * (sin(TAU * (62.0 + 30.0 * exp(-u * 6.0)) * u) * 0.9 + lp * 1.6)
-	blow = _one_shot("Blow", _wav(x, RATE, 0.8), -6.0)
+	var brec := Samples.load_set("fire", "blow")
+	blow = _one_shot("Blow", brec[0] if not brec.is_empty() else _wav(x, RATE, 0.8), -6.0)
 
 # ---------------------------------------------------------------- run
 
