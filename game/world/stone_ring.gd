@@ -20,6 +20,7 @@ var centre := Vector3.ZERO
 var facing := Vector2(0, -1)    # xz direction from the centre out through the entrance
 var stones: Array[Vector3] = []     # world foot of each standing stone (bots)
 var fallen := 0
+var scorches := 0         # burnt-ground decals (bots)
 var _per: Array = []
 var _terrain: Terrain
 
@@ -92,6 +93,38 @@ func build(c: Vector2, toward: Vector2) -> void:
 		stones.append(foot)
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
+	_scorch_ground(rng)
+
+## The knight's fires have burnt the ground inside the ring many times over: a wide old burn of
+## grey ash round its post and a scatter of fresher black scorches where earlier challengers
+## fell. Decals, so they lie on the real turf and darken the grass stems standing in them.
+func _scorch_ground(rng: RandomNumberGenerator) -> void:
+	var tex := AshFlame._scorch_texture()
+	var marks := [[Vector2.ZERO, 9.5, Color(0.62, 0.58, 0.54, 0.55)]]
+	for k in 6:
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(2.5, RADIUS - 2.5)
+		marks.append([Vector2(cos(a), sin(a)) * r, rng.randf_range(2.4, 4.4),
+				Color(1, 1, 1, rng.randf_range(0.7, 0.95))])
+	for m in marks:
+		var at: Vector2 = m[0]
+		var sz: float = m[1]
+		var d := Decal.new()
+		d.name = "Scorch"
+		d.size = Vector3(sz, 1.4, sz)
+		d.normal_fade = 0.55             # only up-facing ground: not the hero's legs or stone faces
+		d.texture_albedo = tex
+		d.modulate = m[2]
+		d.albedo_mix = 1.0
+		d.upper_fade = 0.3
+		d.lower_fade = 0.3
+		d.cull_mask = 0xFFFFF & ~2       # not on the knight (layer 2) standing in it
+		var wx := centre.x + at.x
+		var wz := centre.z + at.y
+		d.position = Vector3(wx, _terrain.height_at(wx, wz), wz) - global_position
+		d.rotation.y = rng.randf() * TAU
+		add_child(d)
+		scorches += 1
 
 func _collider(body: StaticBody3D, at: Vector3, b: Basis, size: Vector3) -> void:
 	var cs := CollisionShape3D.new()

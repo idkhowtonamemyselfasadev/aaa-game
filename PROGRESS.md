@@ -33,6 +33,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(11:00 10-31) The knight's helm is a great helm, its pauldrons sit on the arms, and the ring's ground is burnt
+  (Next item 0 (a)).** `knight_armour.gd`: helm widened/deepened (rx 0.47h -> 0.56h, rz 0.55h -> 0.64h), taller
+  (crown +0.10h, rim down to 0.72h below the Head bone), a flat crown (the dome profile rises almost square into the
+  walls instead of an egg) and a brim that flares all round (most at the nape); pauldrons dropped 4 cm and moved 2.5 cm
+  out along the arm, lames ~6 % larger; glaive head broader (belly 0.115 -> 0.15) and thicker (0.016 -> 0.022).
+  `stone_ring.gd`: `_scorch_ground` lays 7 Decals (the eruption scorch texture): one wide 9.5 m old grey-ash burn round
+  the knight's post and 6 fresher black scorches 2.4-4.4 m across, random spin; `normal_fade` 0.55 so they only take
+  on up-facing turf (not the hero's legs or the stones' faces), the knight's layer excluded. Bot `knight` checks
+  scorches >= 4: PASS (armour 5, ring 9 stones/2 fallen, 7 scorches); `soldier` PASS. freesound.org/opengameart.org
+  still refused by the proxy (403, re-tested 11:00).
 - **(09:00 10-31) The Ashen Knight wears armour (Next knight item (b)/(1)).** New `game/enemies/knight_armour.gd`
   (`KnightArmour`) builds, in code, a closed great helm (egg dome, near-vertical cheeks drawn in at the jaw, a forged
   keel down the face, a sight slit across the eyes, neck guard flared at the back), a two-lame gorget and two
@@ -6288,6 +6298,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (11:00 10-31) Armour fixes + burnt ring ground DONE (see Done 11:00). Ring shot `ring ring 30 15` running at commit time.
+   NEXT, in order: (a) tune from the ring shot (stone size/lean, masonry crust, scorch strength); (b) re-shoot the
+   knight close up (`soldierface knightface 30 15 knight lit`) with a camera on the sun side so steel is not black, to
+   check the bigger helm and lowered pauldrons; (c) re-shoot knight p3; (d) enemy variety (Briar Hound, Hollow shield
+   variant). 0b audio: only the freesound/opengameart/kenney source-page re-check is left (proxy 403).
 0. (10:00 10-31) **Knight arena first pass DONE (code + bot; NOT yet seen in a screenshot)**: `game/world/stone_ring.gd`
    lays a broken ring of 9 weathered standing stones (2 fallen inward, 1 snapped stump, all colliding) r 10.5 m round
    the knight's post, the entrance gap facing back up the meadow toward the start; the knight notices the hero (12 m)

@@ -786,6 +786,9 @@ func _knight_test() -> void:
 		gate_clear = minf(gate_clear, Vector2(st.x, st.z).distance_to(gate))
 	var off_c := Vector2(ring.centre.x - k.global_position.x, ring.centre.z - k.global_position.z).length()
 	print("BOT knight: stone ring %d stones (%d fallen), centre %.1f m off the knight, entrance clear %.1f m, knight inside %s" % [ring.stones.size(), ring.fallen, off_c, gate_clear, ring.inside(k.global_position.x, k.global_position.z)])
+	print("BOT knight: %d scorch decals inside the ring" % ring.scorches)
+	if ring.scorches < 4:
+		return _combat_done(false, "the stone ring has no burnt ground (%d scorches)" % ring.scorches)
 	if ring.stones.size() < 7 or ring.fallen < 1 or off_c > 0.5 or gate_clear < 2.5 or not ring.inside(k.global_position.x, k.global_position.z):
 		return _combat_done(false, "the knight's stone ring is missing, off-centre or blocks its entrance")
 	# walk up until it notices

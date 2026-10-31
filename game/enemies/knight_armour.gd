@@ -55,12 +55,12 @@ func fit_glaive(spear: Node3D, shaft_end: float) -> MeshInstance3D:
 	for i in n + 1:
 		var f := float(i) / n
 		var y := y0 + f * length
-		var belly := 0.115 * sin(pow(f, 0.8) * PI) * (1.0 - 0.25 * f) + 0.03 * (1.0 - f)
+		var belly := 0.15 * sin(pow(f, 0.8) * PI) * (1.0 - 0.25 * f) + 0.03 * (1.0 - f)
 		var lean := -0.05 * f * f          # the spine curves back toward the tip
 		spine.append(Vector3(lean, y, 0))
 		edge.append(Vector3(lean + belly, y + 0.03 * f, 0))
 	# the blade: a lens section, thick at the spine, a fine edge
-	var th := 0.016
+	var th := 0.022
 	for i in n:
 		for s in [-1.0, 1.0]:
 			var a := spine[i]
@@ -118,19 +118,21 @@ func _hang(bone: String, mesh: ArrayMesh) -> void:
 func _helm(head: Vector3, top: Vector3) -> ArrayMesh:
 	var h := maxf(top.y - head.y, 0.14)
 	var c := Vector3(head.x, head.y, head.z + 0.03)
-	var rx := h * 0.47
-	var rz := h * 0.55
-	var y_top := top.y + h * 0.04
-	var y_bot := head.y - h * 0.6
+	var rx := h * 0.56
+	var rz := h * 0.64
+	var y_top := top.y + h * 0.10
+	var y_bot := head.y - h * 0.72
 	var slit_v := 0.40
 	return _grid(func(u: float, v: float) -> Array:
 		var a := u * TAU                        # 0 = straight ahead
 		var front := cos(a)
 		var y := lerpf(y_top, y_bot, v)
 		# the dome rounds over the crown, then the sides fall nearly straight
-		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.32, 1.0), 2.0), 0.0, 1.0))
+		# a flat crown: the top plate rises almost square into the walls
+		var dome := pow(clampf(minf(v / 0.16, 1.0), 0.0, 1.0), 0.28) * (1.0 - 0.06 * smoothstep(0.16, 0.0, v - 0.1))
 		var jaw := 1.0 - 0.10 * smoothstep(0.6, 0.85, v) * maxf(front, 0.0)
-		var flare := 1.0 + 0.30 * smoothstep(0.78, 1.0, v) * (0.4 + 0.6 * maxf(-front, 0.0))
+		# the brim: the lower rim flares out all round, most at the back over the nape
+		var flare := 1.0 + 0.38 * smoothstep(0.80, 1.0, v) * (0.55 + 0.45 * maxf(-front, 0.0))
 		var r := dome * jaw * flare
 		# the keel: a sharp ridge down the face from brow to chin
 		var keel := exp(-pow(sin(a) / 0.09, 2.0)) * maxf(front, 0.0) * smoothstep(0.1, 0.35, v)
@@ -161,11 +163,11 @@ func _gorget(neck: Vector3) -> ArrayMesh:
 func _pauldron(arm: Vector3, sx: float) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var c := arm + Vector3(-sx * 0.02, 0.03, -0.01)
+	var c := arm + Vector3(sx * 0.025, -0.01, -0.01)   # down off the collar, out over the arm
 	var pole := Vector3(sx * 0.55, 1.0, 0.0).normalized()
 	var out := Vector3(sx * 1.0, -0.55, 0.0).normalized()
 	var fwd := Vector3(0, 0, 1)
-	var bands := [[0.0, 0.78, 0.155], [0.66, 1.08, 0.163], [0.98, 1.38, 0.172]]
+	var bands := [[0.0, 0.78, 0.165], [0.66, 1.08, 0.174], [0.98, 1.38, 0.184]]
 	for b in bands:
 		var t0: float = b[0]
 		var t1: float = b[1]
@@ -203,7 +205,7 @@ func _pauldron(arm: Vector3, sx: float) -> ArrayMesh:
 		var pts := []
 		for f in [f0, f1]:
 			var dir := (pole * cos(f) + fwd * sin(f)).normalized()
-			pts.append(c + dir * 0.162)
+			pts.append(c + dir * 0.172)
 		var w := out * 0.022
 		_quad(st, pts[0] - w, pts[1] - w, pts[1] + w, pts[0] + w, 0.0, LEATHER)
 	st.generate_normals()
