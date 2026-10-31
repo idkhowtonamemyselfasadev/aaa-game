@@ -6298,8 +6298,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (11:00 10-31) Armour fixes + burnt ring ground DONE (see Done 11:00). Ring shot `ring ring 30 15` running at commit time.
-   NEXT, in order: (a) tune from the ring shot (stone size/lean, masonry crust, scorch strength); (b) re-shoot the
+0. (11:00 10-31) Armour fixes + burnt ring ground DONE (see Done 11:00). RING SEEN (11:20, `ring ring 30 15`,
+   gallery 1120, FAIL): the ring and the entrance gap read in warm low sun, but the stones came out as thin dark posts
+   (now enlarged: h 2.8-4.0, w 1.3-1.9, d 0.6-0.9 m, UNSEEN; bot knight PASS), the scorch decals are invisible
+   under the tall grass, and the knight is a speck at 10 m+.
+   NEXT, in order: (a) thin/shorten the grass inside the ring (burnt stubble; check grass.gd for an exclusion
+   mask) so the scorches show, then re-shoot `ring ring 30 15` and check the enlarged stones; (b) re-shoot the
    knight close up (`soldierface knightface 30 15 knight lit`) with a camera on the sun side so steel is not black, to
    check the bigger helm and lowered pauldrons; (c) re-shoot knight p3; (d) enemy variety (Briar Hound, Hollow shield
    variant). 0b audio: only the freesound/opengameart/kenney source-page re-check is left (proxy 403).

@@ -51,9 +51,9 @@ func build(c: Vector2, toward: Vector2) -> void:
 		var r := RADIUS + rng.randf_range(-0.5, 0.5)
 		var q := c + Vector2(cos(a), sin(a)) * r
 		var inward := (c - q).normalized()
-		var h := rng.randf_range(2.1, 3.3)
-		var w := rng.randf_range(0.8, 1.15)
-		var d := rng.randf_range(0.45, 0.65)
+		var h := rng.randf_range(2.8, 4.0)
+		var w := rng.randf_range(1.3, 1.9)
+		var d := rng.randf_range(0.6, 0.9)
 		var kind := 0      # 0 standing, 1 fallen inward, 2 snapped stump
 		if i == 3 or i == 8:
 			kind = 1
