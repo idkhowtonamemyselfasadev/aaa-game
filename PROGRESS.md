@@ -6294,7 +6294,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    as they reach the gap. Bot `knight` checks the ring (count, centred, entrance clear, knight inside). The knight
    bot's eruption-roll check was flaky before this change too (3 baseline runs: 2 fails); the bot now tops up stamina
    and re-asks the roll from 0.2 s before the burst until it starts: 3/3 passes. New shot spot `ring`.
-   NEXT, in order: (a) look at the armour shot (see below) and the ring: `ring ring 30 15` (one ~45 min shot per
+   ARMOUR SEEN (10:40, `soldierface knightface 30 15 knight lit`): the helm, pauldrons and oxblood surcoat give a boss
+   silhouette, but the "lit" camera still came out backlit (steel reads black); the helm is too small and round (a cap,
+   not a great helm: raise rx/rz to ~0.56h/0.64h, add a flat crown and a brim flare), the pauldron rides high like a
+   hump (drop it ~4 cm and push it out along the arm), the glaive head is thin at this distance.
+   NEXT, in order: (a) apply those armour fixes, then shoot the ring: `ring ring 30 15` (one ~45 min shot per
    session); tune stone size/lean/material (masonry a=1 weathered crust) and add scorched turf / ash inside the ring;
    (b) re-shoot knight p3; (c) enemy variety (Briar Hound, Hollow shield variant). 0b audio: only the
    freesound/opengameart/kenney source-page re-check is left.

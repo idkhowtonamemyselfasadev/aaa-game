@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261025-1420-armwrap-hero.jpg",
-  "time": "2026-10-25T14:20:00Z",
-  "caption": "Hero at noon by the training post: the forearm wraps now read as road-soiled linen, not pale cuffs; the chest and shoulder plates and the bare hand still read pale grey-tan and the face is too small to read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261025-1527-lacq-hero.jpg",
-  "time": "2026-10-25T15:27:00Z",
-  "caption": "Hero at noon by the training post after recalibrating the armour masks: the chest, shoulder and arm plates now read as dark lacquered lamellar instead of pale grey-tan; the lacquer is close to flat black at this range, the pale hood dominates, and the face is too small to read.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-1626-hood-hero.jpg",
   "time": "2026-10-25T16:26:22Z",
   "caption": "Hero at noon with the hood darkened from pale slate-blue to greyed wool and a slightly lifted lacquer; the armour still reads as one near-black mass at range and the face is lost under the hood.",
@@ -897,6 +885,12 @@
   "file": "20261031-0830-knight-column.jpg",
   "time": "2026-10-31T08:30:00Z",
   "caption": "The Ashen Knight's phase-3 eruption is now a narrow column of flame tongues with dark smoke instead of a white blob; still wrong: the low camera hides the scorch in the grass, the practice post blocks the hero, and the knight is still a re-tinted soldier.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-1040-knight-armour.jpg",
+  "time": "2026-10-31T10:40:00Z",
+  "caption": "First look at the Ashen Knight's armour: the helm, pauldrons and burnt oxblood surcoat give it a boss silhouette with the ember burning through the chest; still wrong: the frame is backlit so the steel reads as black, the helm is a small round cap, the pauldron sits like a hump and the glaive looks thin.",
   "verdict": "fail"
  }
 ]
