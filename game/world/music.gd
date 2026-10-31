@@ -33,7 +33,7 @@ const CUES := {                # cue -> [track, trim dB]; the hearth by night is
 	"hearth_night": ["lazyday", -9.0],
 	"combat": ["battle", -3.0],
 }
-const DAY_ROTATION := [["mystical", -4.0], ["medicine", -3.5], ["decision", -5.0]]   # [track, trim dB]
+const DAY_ROTATION := [["mystical", -4.0], ["medicine", -2.5], ["decision", -5.0]]   # [track, trim dB]
 const STINGER := "victory_heroes_theme_end.ogg"
 const FADE := 3.0             # s for a full crossfade between vale cues
 const FADE_COMBAT := 1.6      # s for the fight to come in

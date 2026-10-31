@@ -1,12 +1,12 @@
 class_name PauseMenu
 extends CanvasLayer
 ## Esc pauses the world and opens a small dark panel: a sound section with one slider per
-## mix layer (master, ambience, wildlife, effects, music), a picture section (quality preset
+## mix layer (master, ambience, wildlife, effects, voices, music), a picture section (quality preset
 ## Low..Ultra and the FSR 2 render scale), saved as they move, and Resume.
 ## Drawn in the HUD's language: near-black lacquer with a thin worn-brass edge.
 
 const ROWS := [["Master", "Master"], ["Ambience", "Ambience"], ["Wildlife", "Wildlife"],
-	["Effects", "SFX"], ["Music", "Music"]]
+	["Effects", "SFX"], ["Voices", "Voice"], ["Music", "Music"]]
 const BRASS := Color(0.62, 0.5, 0.3)
 const INK := Color(0.86, 0.82, 0.74)
 const LABEL_W := 110.0       # both sections' columns line up

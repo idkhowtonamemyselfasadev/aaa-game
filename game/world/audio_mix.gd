@@ -1,19 +1,22 @@
 class_name AudioMix
 extends Node
-## The mix: buses built at load (Master > Ambience > Wildlife, Master > SFX, Master > Music)
-## so the player can set each layer on its own, plus the space the hero stands in. Inside
+## The mix: buses built at load (Master > Ambience > Wildlife, Master > SFX, Master > Music,
+## Master > Voice for spoken lines) so the player can set each layer on its own. A
+## transparent hard limiter sits last on Master (ceiling -1 dBFS) so a thunderclap over a
+## heavy slam over the battle track can never clip the output, plus the space the hero stands in. Inside
 ## the ruined keep the close sounds -- footfalls on the grit, staff swings and strikes,
 ## parries -- ring off the stone in a short tight reverb, and the open-air ambience (wind,
 ## leaves, birds) drops a little and loses its top behind the walls; out on the meadow the
 ## reverb fades away again. Volumes are 0..1 per bus, kept in user://settings.cfg.
 
 const SETTINGS := "user://settings.cfg"
-const BUSES := ["Master", "Music", "Ambience", "Wildlife", "SFX"]
+const BUSES := ["Master", "Music", "Ambience", "Wildlife", "SFX", "Voice"]
+const CEILING_DB := -1.0     # Master limiter ceiling (the files themselves peak <= -1.5 dBTP)
 const KEEP_R := 3.6          # keep floor radius (as Foley.surface_at)
 const KEEP_FADE := 1.8       # m outside the floor over which the walls stop mattering
 
 var world: Node3D
-var volumes := {"Master": 1.0, "Music": 0.8, "Ambience": 0.9, "Wildlife": 1.0, "SFX": 1.0}
+var volumes := {"Master": 1.0, "Music": 0.8, "Ambience": 0.9, "Wildlife": 1.0, "SFX": 1.0, "Voice": 1.0}
 var enclosure := 0.0         # 0 open meadow .. 1 inside the keep (bots read it)
 
 var _ruin := Vector3.INF
@@ -36,6 +39,14 @@ func build_buses() -> void:
 	AudioServer.set_bus_send(AudioServer.get_bus_index("Ambience"), "Master")
 	AudioServer.set_bus_send(AudioServer.get_bus_index("Wildlife"), "Ambience")
 	AudioServer.set_bus_send(AudioServer.get_bus_index("SFX"), "Master")
+	AudioServer.set_bus_send(AudioServer.get_bus_index("Voice"), "Master")
+	var master := AudioServer.get_bus_index("Master")
+	if limiter() == null:
+		var lim := AudioEffectHardLimiter.new()
+		lim.ceiling_db = CEILING_DB
+		lim.pre_gain_db = 0.0
+		lim.release = 0.1
+		AudioServer.add_bus_effect(master, lim)
 	var sfx := AudioServer.get_bus_index("SFX")
 	if AudioServer.get_bus_effect_count(sfx) == 0:
 		var v := AudioEffectReverb.new()
@@ -56,6 +67,15 @@ func build_buses() -> void:
 		AudioServer.add_bus_effect(amb, lp)
 	_amb_lp = AudioServer.get_bus_effect(amb, 0) as AudioEffectLowPassFilter
 	_apply_space()
+
+## The Master limiter, or null before build_buses (bots read its ceiling).
+func limiter() -> AudioEffectHardLimiter:
+	var master := AudioServer.get_bus_index("Master")
+	for i in AudioServer.get_bus_effect_count(master):
+		var e := AudioServer.get_bus_effect(master, i)
+		if e is AudioEffectHardLimiter:
+			return e
+	return null
 
 func _process(delta: float) -> void:
 	var target := 0.0

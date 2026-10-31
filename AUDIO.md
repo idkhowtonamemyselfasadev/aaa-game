@@ -11,18 +11,19 @@ audit every third-party file's license.
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
 | (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). **collie, hens, fox crunch done; bat voice dropped** 2026-10-30 21:00 (`game/audio/sfx/animals`). **all done 2026-10-31 02:00**: every remaining name is a recording (grain, grunt, blow, dust devil 01:00; rook wings, fell bell 02:00) or dropped to silence (voices; deer, fox, rook caws, kite, wheatear) — see "Replaced" below |
 | (c) Music: tracks + music system | **first pass done** 2026-10-30 22:00: `game/world/music.gd` + 4 CC BY 3.0 files in `game/audio/music/` (see "Music" below). **hearth theme done** 2026-10-30 23:00 (Lazy Day, FoxSynergy, CC BY 3.0). **day rotation done** 2026-10-31 00:00: the day cue cycles Mystical Theme -> Medicine -> Decision (all Zhelanov, CC BY 3.0), ~9 min before a repeat. Spare candidate: Steeps of Destiny (epic, CC BY 3.0, same package) for a boss/dungeon later |
-| (d) Headless verification + peak levels | music: bot `music` + file peaks done 2026-10-30 22:00; SFX sets still to sweep |
+| (d) Headless verification + peak levels | **done** 2026-10-31 03:00: `tools/audio_peaks.sh` sweeps all 117 files (true peak + LUFS, fails above -1 dBTP): all pass after Medicine was re-encoded 1 dB down (was -0.9 dBTP). Voice bus added; hard limiter (ceiling -1 dBFS) last on Master. Bots `mix` `music` `sound` `foley` `hearth` check streams, crossfades, routing, limiter |
 | (e) Copyright audit + in-game Credits screen | not started |
 
 ## The mix as it stands
 
 Built at load by `game/world/audio_mix.gd`: buses Master > Ambience > Wildlife, Master > SFX,
-Master > Music. Volumes per bus saved in `user://settings.cfg`; the pause menu
-(`game/ui/pause_menu.gd`) has Master / Ambience / Wildlife / Effects / Music sliders. Inside
+Master > Music, Master > Voice; a hard limiter (-1 dBFS) last on Master. Volumes per bus saved in `user://settings.cfg`; the pause menu
+(`game/ui/pause_menu.gd`) has Master / Ambience / Wildlife / Effects / Voices / Music sliders. Inside
 the ruined keep the SFX bus gets a short stone reverb and Ambience a low-pass.
 
 Mix problems found in the audit:
-- **No Voice bus** (needed for dialogue / NPC murmurs and for ducking music under dialogue).
+- (fixed 2026-10-31 03:00) **No Voice bus** — `Voice` (Master > Voice) now exists with a "Voices" pause-menu slider, ready for recorded lines; music already ducks under dialogue.
+- (added 2026-10-31 03:00) **Nothing stopped the summed mix clipping** — an `AudioEffectHardLimiter` (ceiling -1 dBFS, release 0.1 s) now sits last on Master.
 - (fixed 2026-10-30) **Wheatear voices (`wheatears.gd`) and the fell bell knock (`fell_bell.gd`) set no bus**, so
   they play straight into Master and ignore the Wildlife / Effects sliders. Now routed to Wildlife and SFX.
 - (fixed 2026-10-30 22:00) **No Music at all** — the Music bus now carries the score (`music.gd`).
@@ -232,3 +233,11 @@ with WebFetch/WebSearch (rule 0b-e) before anything is committed. Leads found so
 - Still to find: red deer (bark, roar, gallop), fox bark/scream, rooks, red kite, wheatear. Checked and rejected 2026-10-30 21:00: remvze/moodist (no per-file licenses, Pixabay mixed in), Skandarella/animalworld ("Creative Commons" with no per-file license), ElCeejo/animalia (no sound credits), jenius-apps/ambie (no animals). Used: VoxeLibre/VoxeLibre mobs_mc (per-file LICENSE-media.md; its wolf/horse/bat files are other candidates), HybridDog/dogblocks.
 - Earlier note: look for GitHub mirrors of Kenney "Impact Sounds" and "RPG Audio" (CC0: footsteps,
   cloth, wood/metal impacts) and of CC0 Freesound field recordings (wind, rain, birds).
+
+## Level sweep (2026-10-31 03:00, `tools/audio_peaks.sh`)
+
+117 files. Loudest true peaks: music/vale_day_decision -1.2, hearth_lazy_day -1.4, combat_battle -1.4,
+thunder_near_1..3 -1.5..-1.7, clang_2 -2.0 dBTP; every SFX file at or below -1.5 dBTP. Music integrated
+loudness -15..-18 LUFS (balanced by per-track trims in `music.gd`). vale_day_medicine was -0.9 dBTP: re-encoded
+1 dB down (Vorbis q2, now -1.6 dBTP) and its trim raised -3.5 -> -2.5 dB so it plays as loud as before.
+Rerun the sweep after adding any audio file.

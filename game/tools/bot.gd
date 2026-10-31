@@ -2088,20 +2088,27 @@ func _mix_test() -> void:
 	var f: Foley = _world.foley
 	var sc: Soundscape = _world.soundscape
 	var rs: Vector3 = _world.get_node("Flora").ruin_site
-	# the layers exist and route as Master > Ambience > Wildlife, Master > SFX, Master > Music
+	# the layers exist and route as Master > Ambience > Wildlife, Master > SFX, Master > Music, Master > Voice
 	var miss := []
 	for b: String in AudioMix.BUSES:
 		if AudioServer.get_bus_index(b) == -1:
 			miss.append(b)
-	var sends := "%s %s %s" % [AudioServer.get_bus_send(AudioServer.get_bus_index("Wildlife")),
-		AudioServer.get_bus_send(AudioServer.get_bus_index("Ambience")), AudioServer.get_bus_send(AudioServer.get_bus_index("SFX"))]
-	print("BOT mix: buses %d, missing %s, sends Wildlife/Ambience/SFX -> %s" % [AudioServer.bus_count, str(miss), sends])
-	if not miss.is_empty() or sends != "Ambience Master Master":
+	var sends := "%s %s %s %s" % [AudioServer.get_bus_send(AudioServer.get_bus_index("Wildlife")),
+		AudioServer.get_bus_send(AudioServer.get_bus_index("Ambience")), AudioServer.get_bus_send(AudioServer.get_bus_index("SFX")),
+		AudioServer.get_bus_send(AudioServer.get_bus_index("Voice"))]
+	print("BOT mix: buses %d, missing %s, sends Wildlife/Ambience/SFX/Voice -> %s" % [AudioServer.bus_count, str(miss), sends])
+	if not miss.is_empty() or sends != "Ambience Master Master Master":
 		return _combat_done(false, "bus layout wrong")
+	var lim := mix.limiter()
+	var master := AudioServer.get_bus_index("Master")
+	var last_ok := lim != null and AudioServer.get_bus_effect(master, AudioServer.get_bus_effect_count(master) - 1) == lim
+	print("BOT mix: master limiter %s, ceiling %s dB, last on Master %s, enabled %s" % [lim != null, lim.ceiling_db if lim else 0.0, last_ok, AudioServer.is_bus_effect_enabled(master, AudioServer.get_bus_effect_count(master) - 1)])
+	if not last_ok or lim.ceiling_db > -0.99 or not AudioServer.is_bus_effect_enabled(master, AudioServer.get_bus_effect_count(master) - 1):
+		return _combat_done(false, "no limiter at the end of Master")
 	var wrong := 0
 	for n in f.get_children() + sc.get_children():
 		if n is AudioStreamPlayer3D or n is AudioStreamPlayer:
-			if not (String(n.bus) in ["SFX", "Wildlife", "Ambience"]):
+			if not (String(n.bus) in ["SFX", "Wildlife", "Ambience", "Voice"]):
 				wrong += 1
 	print("BOT mix: %d players on Master directly" % wrong)
 	if wrong > 0:
@@ -2130,6 +2137,8 @@ func _mix_test() -> void:
 	var paused := get_tree().paused
 	(pm.sliders["SFX"] as HSlider).value = 0.5
 	(pm.sliders["Music"] as HSlider).value = 0.0
+	(pm.sliders["Voice"] as HSlider).value = 0.25
+	var voice_db := AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Voice"))
 	var sfx_db := AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX"))
 	var mute := AudioServer.is_bus_mute(AudioServer.get_bus_index("Music"))
 	pm.toggle()
@@ -2139,7 +2148,11 @@ func _mix_test() -> void:
 	print("BOT mix menu: paused %s, unpaused %s, SFX %.1f dB, music muted %s, saved sfx %.2f" % [paused, not get_tree().paused, sfx_db, mute, saved])
 	mix.set_volume("SFX", 1.0)
 	mix.set_volume("Music", 0.8)
+	mix.set_volume("Voice", 1.0)
 	mix.save_settings()
+	print("BOT mix menu: Voices slider -> %.1f dB" % voice_db)
+	if absf(voice_db + 12.04) > 0.1:
+		return _combat_done(false, "Voices slider did not apply")
 	if not paused or get_tree().paused or absf(sfx_db + 6.02) > 0.1 or not mute or absf(saved - 0.5) > 0.01:
 		return _combat_done(false, "pause menu volumes did not apply or save")
 	_combat_done(true, "layers routed, keep reverb in/out, pause menu volumes apply and save")
