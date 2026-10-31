@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-1831-crease-crop.jpg",
-  "time": "2026-10-25T18:31:05Z",
-  "caption": "Before (left, 17:25) and after (right): the plate creases are only faintly visible at 6-8 m; the thigh and knee plates gained a little shape, the torso barely changed.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-1831-crease-hero.jpg",
   "time": "2026-10-25T18:31:05Z",
   "caption": "Hero at noon with dark creases between the lacquered plates and the texture's baked plate shading carried into the lacquer: the road, fields and farmhouse read as a place, but at this range the plates still merge and the face is lost in the hood's shade.",
@@ -891,6 +885,12 @@
   "file": "20261031-1330-ring.jpg",
   "time": "2026-10-31T13:30:00Z",
   "caption": "The knight's stone ring: the burnt ground finally shows inside the sarsens, but it reads as a bluish wet slab or puddle with a too-clean round edge rather than dry ash and charred stubble.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-1450-ring.jpg",
+  "time": "2026-10-31T14:50:00Z",
+  "caption": "The knight's stone ring: the burn now reads as dry warm grey-brown ash with soil showing and a ragged edge instead of a wet slab, but the centre char patch still looks like a dark hole, the meadow still stops fairly sharply at the ash, and the knight is a speck at this range.",
   "verdict": "fail"
  }
 ]

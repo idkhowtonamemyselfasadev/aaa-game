@@ -147,8 +147,13 @@ func _collider(body: StaticBody3D, at: Vector3, b: Basis, size: Vector3) -> void
 static func burnt(x: float, z: float) -> float:
 	if burn_centre == Vector3.INF:
 		return 0.0
-	var r := Vector2(x - burn_centre.x, z - burn_centre.z).length()
-	return 1.0 - smoothstep(RADIUS - 4.0, RADIUS - 0.6, r)
+	var d := Vector2(x - burn_centre.x, z - burn_centre.z)
+	var r := d.length()
+	# a ragged edge (lobes and fingers, like the terrain shader's ash) so the stubble does not
+	# stop on a clean circle
+	var a := d.angle()
+	var wob := sin(a * 3.0 + 1.3) * 0.9 + sin(a * 7.0 + 4.1) * 0.6 + sin(a * 13.0 + 0.7) * 0.35
+	return 1.0 - smoothstep(RADIUS - 4.5 + wob, RADIUS - 0.8 + wob, r)
 
 func _exit_tree() -> void:
 	if burn_centre == centre:

@@ -844,24 +844,41 @@ void fragment() {
 	float rough = mix(mix(0.92, 0.8, b1.x * fade_b * (1.0 - litw)), 0.75, rockw);
 	rough = mix(rough, 0.96, bare);   // dry dust: no sheen at all
 	// ---- the knight's burnt ring: ash, char and a singed rim (decals barely showed on turf) ----
+	// (dry, warm grey-brown wood-ash with clods and cinders; first pass read as a cool wet slab)
+	float burn_w = 0.0;
 	if (burn_ring.w > 0.5) {
-		float br = length(xz - burn_ring.xy);
-		float edge = burn_ring.z * (1.0 + (meso - 0.5) * 0.35) + (micro - 0.5) * 0.9;
-		float burnt = 1.0 - smoothstep(edge - 2.5, edge, br);
-		float singe = (1.0 - smoothstep(edge - 0.5, edge + 1.8, br)) * (1.0 - burnt);
+		vec2 bd = xz - burn_ring.xy;
+		float br = length(bd);
+		// a ragged, fingered edge: broad lobes plus tongues of ash running out into the turf
+		float lobes = fbm(wpos * 0.22 + vec3(41.0, 0.0, 9.0));
+		float fingers = vnoise(vec3(atan(bd.y, bd.x) * 3.2, 0.0, br * 0.35) + 7.0);
+		float edge = burn_ring.z * (1.0 + (lobes - 0.5) * 0.45) + (fingers - 0.45) * 2.4 + (micro - 0.5) * 0.9;
+		float burnt = 1.0 - smoothstep(edge - 2.0, edge, br);
+		float singe = (1.0 - smoothstep(edge - 0.5, edge + 2.2, br)) * (1.0 - burnt);
 		if (burnt + singe > 0.0) {
 			float n1 = fbm(wpos * 0.35 + vec3(17.0, 0.0, 5.0));
 			float n2 = fbm(wpos * 2.3);
-			// pale grey wood-ash, darker where it lies thin over soil, black char in blotches
-			vec3 ash = mix(vec3(0.16, 0.15, 0.14), vec3(0.34, 0.32, 0.30), smoothstep(0.35, 0.75, n2));
-			float charw = smoothstep(0.48, 0.62, n1 + (n2 - 0.5) * 0.25);
-			vec3 burn_col = mix(ash, vec3(0.025, 0.022, 0.02), charw);
-			// a few embers' worth of rust-brown where the turf only scorched
-			vec3 scorched = mix(col * vec3(0.55, 0.42, 0.30), vec3(0.12, 0.08, 0.05), 0.4);
+			float n3 = vnoise(wpos * 7.0 + 11.0);
+			// warm grey-brown wood-ash, darker where it lies thin over soil, black char in blotches
+			vec3 ash = mix(vec3(0.17, 0.15, 0.125), vec3(0.31, 0.28, 0.235), smoothstep(0.35, 0.75, n2));
+			ash = mix(ash, earth * 0.75, smoothstep(0.55, 0.8, n3) * 0.5);   // soil showing through
+			float charw = smoothstep(0.5, 0.64, n1 + (n2 - 0.5) * 0.25);
+			vec3 burn_col = mix(ash, vec3(0.03, 0.026, 0.022), charw);
+			// cinders: a speckle of black lumps and a few pale bone-white flakes
+			float cind = step(0.78, vnoise(wpos * 31.0));
+			float flake = step(0.86, vnoise(wpos * 23.0 + 5.0)) * (1.0 - charw);
+			burn_col = mix(burn_col, vec3(0.02, 0.018, 0.016), cind * 0.85);
+			burn_col = mix(burn_col, vec3(0.45, 0.42, 0.38), flake * 0.6);
+			// coarse relief: clods and cinder lumps so the low sun picks out the surface
+			float bh = (vnoise(wpos * 4.5) - 0.5) * 0.02 + (n3 - 0.5) * 0.01 + cind * 0.004 - charw * 0.004;
+			// rust-brown where the turf only scorched
+			vec3 scorched = mix(col * vec3(0.55, 0.42, 0.30), vec3(0.13, 0.085, 0.05), 0.45);
 			col = mix(col, scorched, clamp(singe * 0.9 + burnt * 0.3, 0.0, 1.0));
 			col = mix(col, burn_col, burnt * (1.0 - rockw));
-			rough = mix(rough, mix(0.97, 0.88, charw), burnt);
+			h = mix(h, bh, burnt * (1.0 - rockw));
+			rough = mix(rough, mix(0.98, 0.92, charw), burnt);
 			bare = max(bare, burnt);
+			burn_w = burnt * (1.0 - rockw);
 		}
 	}
 	// the oak crowns keep the ground beneath them drier: no pools, few drops
@@ -906,7 +923,7 @@ void fragment() {
 	}
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = mix(mix(0.25, 0.3, rockw), 0.25, pud);
+	SPECULAR = mix(mix(mix(0.25, 0.3, rockw), 0.08, burn_w), 0.25, pud);
 	AO = mix(mix(0.85 + 0.15 * cav, 1.0, rockw), 1.0, pud);
 	AO_LIGHT_AFFECT = 0.3;
 	// the water surface is level: drop the slope and the fine bump under it
