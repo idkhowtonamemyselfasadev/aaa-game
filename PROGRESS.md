@@ -6392,8 +6392,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (22:00 10-31) **Cancel recovery path picker DONE (code + bots dodge combat heavy sweep lockon flinch death knight
-   warden hounds soldier PASS)**. NEXT, in order: (a) judge the `hero guard2 30 15 guard` shot (sun-side camera) if it
-   is in the gallery, else re-shoot it; (b) a starting string swing from mid-ease still snaps to GUARD (key 0 of swing
+   warden hounds soldier PASS)**. NEXT, in order: (a) GUARD2 SEEN (gallery 2230, FAIL): lit and the whole staff shows, but the
+   camera ended near-frontal so the shaft reads level across the hips -- swing the `guard` camera further (+1.3 rad)
+   and higher; the face under the hat is a dark blank (needs a face/eye fill light or a less occluding cloth); (b) a starting string swing from mid-ease still snaps to GUARD (key 0 of swing
    1): start it from the current ease pose like the heavy now does; (c) the `hounds` framing; thornier ruff;
    (d) re-shoot the warden portrait; (e) `bash` shot mode; (f) re-shoot ring + knight p3. 0b-e: freesound /
    opengameart / kenney still need re-opening once the domains are allowed.
