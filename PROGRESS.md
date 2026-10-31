@@ -6307,8 +6307,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    cannot darken), so `terrain.gdshader` now has a `burn_ring` global (xy centre, z radius 8.5 m, w on) set by
    `StoneRing.build`: grey wood-ash round the knight's post, black char blotches (fbm), and a ragged rust-brown singed
    rim; rough 0.88-0.97. Bot `knight` checks the global is set at the ring centre: PASS (full 3-phase fight, killed).
-   Shot `ring ring 30 15`: see the 13:00 Done entry for the verdict.
-   NEXT, in order: (a) knight close-up from the sun side (`soldierface knightface 30 15 knight lit`); (b) re-shoot
+   RING SEEN (13:30, gallery 1330, FAIL): the burn finally shows between the sarsens, but it reads as a bluish wet
+   slab / puddle: too cool and smooth, too even a round edge, the tall grass stops dead at it.
+   NEXT, in order: (a) make it read as dry ash: warm the ash toward brown-grey (~0.30/0.27/0.23), add coarse
+   relief to `h` (clods, cinders) so the bump catches light, drop SPECULAR to ~0.1 there, push the edge noise harder
+   (meso amplitude 0.35 -> 0.6, fingers of ash into the turf) and let a sparse burnt stubble through Grass._site near
+   the edge; re-shoot `ring ring 30 15`; (b) knight close-up from the sun side (`soldierface knightface 30 15 knight lit`); (b) re-shoot
    knight p3; (c) enemy variety (Briar Hound, Hollow shield variant). 0b audio: only the
    freesound/opengameart/kenney source-page re-check is left (proxy 403).
 0. (12:00 10-31) **Burnt stubble inside the knight's ring DONE (code + bot)**: `StoneRing.burnt(x, z)` (1 over the old

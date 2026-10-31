@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-1725-sheen-hero.jpg",
-  "time": "2026-10-25T17:25:24Z",
-  "caption": "Hero at noon with warmer black-brown lacquer and more sheen on the plate fields: the torso now reads dark brown with faint shoulder-plate shading, but the plates still merge at this range and the face is lost in the hood's shade.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-1831-crease-crop.jpg",
   "time": "2026-10-25T18:31:05Z",
   "caption": "Before (left, 17:25) and after (right): the plate creases are only faintly visible at 6-8 m; the thigh and knee plates gained a little shape, the torso barely changed.",
@@ -891,6 +885,12 @@
   "file": "20261031-1234-ring.jpg",
   "time": "2026-10-31T12:34:52Z",
   "caption": "The Ashen Knight's stone ring in low sun: the stones now stand as broad, tall sarsens and the tall grass inside is gone, but the floor still reads as green turf because the scorch decals don't show, and the knight is small at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-1330-ring.jpg",
+  "time": "2026-10-31T13:30:00Z",
+  "caption": "The knight's stone ring: the burnt ground finally shows inside the sarsens, but it reads as a bluish wet slab or puddle with a too-clean round edge rather than dry ash and charred stubble.",
   "verdict": "fail"
  }
 ]
