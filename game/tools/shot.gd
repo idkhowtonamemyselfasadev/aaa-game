@@ -925,6 +925,10 @@ func _ready() -> void:
 		player.combat._begin_draw()
 		for i in 30:
 			player.combat.physics_step(1.0 / 60.0)
+		# the warm-up runs longer than SHEATHE_AFTER (5 s) with no input: without this the
+		# staff went back across the shoulders before the frame was taken (19:25 10-31)
+		player.combat.idle_t = -1.0e6
+		print("SHOT hounds staff drawn %s" % player.combat.is_drawn())
 		var light: Vector3 = -world.sun.global_transform.basis.z
 		var sunward := Vector3(-light.x, 0, -light.z).normalized()
 		var mid := (hp + pa + pb) / 3.0

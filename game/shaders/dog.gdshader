@@ -216,7 +216,12 @@ void fragment() {
 	float clump = vnoise(p * 55.0);
 	col *= mix(0.78, 1.12, strand) * mix(0.88, 1.08, clump);
 	// grizzle: pale-tipped guard hairs on the back and brush
-	col = mix(col, grizzle_col, smoothstep(0.75 - 0.25 * step(0.5, grizzle), 0.95, vnoise(p * 190.0)) * grizzle * (1.0 - legm * 0.6) * (1.0 - head * 0.5));
+	// (streaks, not speckles: the noise is stretched along the body (z) so each pale tip lies
+	// in a fine run of guard hair, gathered into the broad clumps the coat parts into; strongest
+	// along the back, thinning down the flanks)
+	float gh = vnoise(vec3(p.x * 330.0, p.y * 260.0, p.z * 38.0)) * 0.7 + clump * 0.3;
+	float gback = mix(0.45, 1.0, smoothstep(-0.3, 0.6, rn.y));
+	col = mix(col, grizzle_col, smoothstep(0.58 - 0.08 * step(0.5, grizzle), 0.9, gh) * grizzle * 0.7 * gback * (1.0 - legm * 0.6) * (1.0 - head * 0.5));
 	float rough = 0.62;
 	float spec = 0.35;
 	if (v_col.a > 0.4 && v_col.a < 0.6) {

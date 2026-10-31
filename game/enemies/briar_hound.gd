@@ -32,8 +32,9 @@ const RECOVER_T := 0.95      # sprawled after a lunge: the punish window
 const STAGGER_T := 0.5
 const PARRIED_T := 1.3
 const DAMAGE := 14.0
-const PACK_GAP := 0.9        # s between one hound's lunge and its mate's crouch
-const COOLDOWN := 1.6        # s a hound circles before it may lunge again
+const PACK_GAP := 1.25       # s between one hound's lunge and its mate's crouch (0.9 gave the hero no breath)
+const COOLDOWN := 2.3        # s a hound circles before it may lunge again (+ up to COOL_JITTER)
+const COOL_JITTER := 0.7    # so the pair never falls into a metronome rhythm (1.6 s flat was relentless)
 const PRESS := 0.2           # trail age of the bed it holds pressed under itself (full lay)
 const LANE := 2.4            # m of run between the lane segments it combs into the meadow
 const LANE_AGE := 16.0       # a lane segment starts this old: already standing back up, gone in ~14 s
@@ -279,7 +280,7 @@ func _physics_process(delta: float) -> void:
 					if state != STRIKE:
 						return            # parried: already rolling
 			if t >= STRIKE_T:
-				_cool = COOLDOWN
+				_cool = COOLDOWN + randf() * COOL_JITTER
 				_enter(RECOVER)
 		RECOVER:
 			# sprawled, scrabbling round to face him again: open
