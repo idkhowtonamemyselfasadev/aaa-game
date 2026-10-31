@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-2125-hewnpost-crop.jpg",
-  "time": "2026-10-25T21:25:00Z",
-  "caption": "Post top x4, first pass (left) vs darkened iron (right): adze flats, drying checks and a rain-rounded top replace the turned cylinder; the band is still a touch light in full sun.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-2125-hewnpost.jpg",
   "time": "2026-10-25T21:25:00Z",
   "caption": "Practice post at noon beside the hero: now a hewn, tapered oak post with a rounded top under a dark iron band and a lashed straw bundle; the meadow still lacks depth haze and the hero reads small and dull.",
@@ -897,6 +891,12 @@
   "file": "20261031-2130-guard.jpg",
   "time": "2026-10-31T21:31:00Z",
   "caption": "The hero's new mid guard: staff held low and diagonal across the body instead of yoked over the shoulders; still wrong: the hero is in shade, the straw post crowds the frame and the shaft's middle hides behind the arm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261031-2230-guard.jpg",
+  "time": "2026-10-31T22:30:00Z",
+  "caption": "Hero in the low mid guard, re-shot from the sun side: lit, whole staff visible, no yoke -- but from this near-frontal angle the shaft reads level across the hips rather than diagonal, the face under the hat is a dark blank and the straw post still crowds the right.",
   "verdict": "fail"
  }
 ]
