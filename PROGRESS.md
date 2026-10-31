@@ -6302,8 +6302,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    burn, easing to 0 just inside the stones) feeds `Grass._site`, which drops ~93 % of tall clumps and sward there, so
    the scorch decals lie on bare ash with a thin stubble. Bot `knight` samples the meadow mask: 32/400 sites grow
    inside the burn vs 398/400 outside (PASS); bots `knight`, `sward` PASS. Shot `ring ring 30 15` started this session.
-   NEXT, in order: (a) look at `ring` (if not seen this session, re-shoot it first) for the scorches and the enlarged
-   stones; (b) knight close-up from the sun side (`soldierface knightface 30 15 knight lit`); (c) re-shoot knight p3;
+   RING SEEN (12:40, gallery, FAIL): the enlarged stones now read as broad sarsens and the tall grass inside is gone,
+   but the floor is still uniform green turf: the scorch decals do not show at all on the terrain (check whether the
+   terrain shader/material accepts decals, e.g. no `render_mode` blocking them, or the 1.4 m decal height misses the
+   ground; else add a 'burnt' term to the terrain shader keyed to StoneRing.burn_centre).
+   NEXT, in order: (a) make the burnt ground show (see above), re-shoot `ring ring 30 15`; (b) knight close-up from the sun side (`soldierface knightface 30 15 knight lit`); (c) re-shoot knight p3;
    (d) enemy variety (Briar Hound, Hollow shield variant). 0b audio: only the freesound/opengameart/kenney
    source-page re-check is left (proxy 403).
 0. (11:00 10-31) Armour fixes + burnt ring ground DONE (see Done 11:00). RING SEEN (11:20, `ring ring 30 15`,
