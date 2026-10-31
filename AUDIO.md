@@ -9,7 +9,7 @@ audit every third-party file's license.
 | Item | State |
 |---|---|
 | (a) Audit every sound | **done** 2026-10-30 18:00 (this file); the two un-bussed players were routed (wheatears -> Wildlife, fell bell -> SFX) |
-| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). **collie, hens, fox crunch done; bat voice dropped** 2026-10-30 21:00 (`game/audio/sfx/animals`). Remaining: `blow`, the deer (bark/roar/gallop), fox bark/yelp, rooks' caws, kite, wheatears, dust devil, voices, grain, fell bell — see "Replaced" below |
+| (b) Replace with recorded CC0/CC-BY samples | **priority 1 done** 2026-10-30 19:00 (combat, footsteps, fire except `blow`, gate creak, wood chop); **weather + songbirds done** 2026-10-30 20:00 (wind, leaves, light + heavy rain, crickets, 3 near + 3 far thunder, 6 songbird calls; `game/audio/sfx/weather`, `/birds`, 2.9 MB). **collie, hens, fox crunch done; bat voice dropped** 2026-10-30 21:00 (`game/audio/sfx/animals`). **all done 2026-10-31 02:00**: every remaining name is a recording (grain, grunt, blow, dust devil 01:00; rook wings, fell bell 02:00) or dropped to silence (voices; deer, fox, rook caws, kite, wheatear) — see "Replaced" below |
 | (c) Music: tracks + music system | **first pass done** 2026-10-30 22:00: `game/world/music.gd` + 4 CC BY 3.0 files in `game/audio/music/` (see "Music" below). **hearth theme done** 2026-10-30 23:00 (Lazy Day, FoxSynergy, CC BY 3.0). **day rotation done** 2026-10-31 00:00: the day cue cycles Mystical Theme -> Medicine -> Decision (all Zhelanov, CC BY 3.0), ~9 min before a repeat. Spare candidate: Steeps of Destiny (epic, CC BY 3.0, same package) for a boss/dungeon later |
 | (d) Headless verification + peak levels | music: bot `music` + file peaks done 2026-10-30 22:00; SFX sets still to sweep |
 | (e) Copyright audit + in-game Credits screen | not started |
@@ -111,8 +111,20 @@ Village and weather extras (2026-10-31 01:00), all OpenClonk CC BY 3.0 (see ASSE
 | dust devil whoosh | `dust_devils.gd` (bus Ambience), looping, gain follows the whirl | 1 loop, 52 s | ERH wind loop, high-passed |
 | call, hum, murmur, murmur_low | `foley.gd` | — | **dropped** (silent, `Foley.SILENT`): no real voice recording yet; the synthesis code is gone. The schedules still run, they just make no sound |
 
-Still synthesised (no CC0/CC-BY source reachable yet): deer bark, roar, gallop(_wet); fox bark/yelp; rooks; kite;
-wheatears; fell bell.
+Last pass (2026-10-31 02:00): **nothing is synthesised any more.** Every sound name is either a recording or silent.
+
+| Name | Where | Variants | Recording |
+|---|---|---|---|
+| rook wing clatter | `soundscape.gd` `_rook_scatter` (Wildlife), the nearest rook when a flock lifts off | 3 | OpenClonk bat flutter (ala, CC BY 3.0), pitched down 15 % |
+| fell bell knock | `fell_bell.gd` (SFX), each hard turn of the swinging bell | 3 | OpenClonk metal bucket hits (ala, CC BY 3.0), one pitched up 8 % |
+| bark, roar, gallop, gallop_wet | `foley.gd`, red deer | — | **dropped** (silent, `Foley.SILENT`): no CC0/CC-BY red deer or hoof recording reachable (searched VoxeLibre, Veloren [GPL/CC BY-SA, rejected], OpenClonk, minetest_game) |
+| fox_bark, fox_yelp | `foley.gd`, the fox | — | **dropped** (silent, same reason) |
+| rook caws, kite whistle (soaring + harsh) | `soundscape.gd` | — | **dropped**: the caw and kite synthesis and the kite's voice are gone; birds.gd still runs the behaviour |
+| wheatear chack + song | `wheatears.gd` | — | **dropped**: synthesis and the per-bird voices removed; `chacks` still counts the alarm |
+
+Synthesis code that remains is only a fallback for a missing file (foley, hearth, soundscape beds, dust devil);
+with the repo's files present none of it plays. Bots `foley` (SILENT names have no stream), `fox`, `herd`, `kite`
+(behaviour fires, nothing sounds), `sound` (wing clatter recorded), `flockbell` (bell knocks are recorded Ogg).
 
 Bots: `foley` fails unless the priority-1 names are recorded `AudioStreamOggVorbis` sets of 3+; `hearth` fails
 unless the crackle is a looping recorded stream and the flint is recorded; `sound` fails unless the five beds are

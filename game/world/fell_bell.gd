@@ -22,7 +22,6 @@ const DROP := 0.13                            # m of strap from the wrap to the 
 const BELL_SCALE := 1.15                      # the lathe profile is a small ewe's bell; a wether's is bigger
 const TAKE_R := 1.8
 const HEAR_R := 70.0
-const RATE := 22050
 const FOLD_R := 3.2                           # the fold's ring radius at the wall's centre line (m)
 const FOLD_W := 0.6                           # the wall's width
 const FOLD_GATE := 0.42                       # half the gateway's angle either side of the post (rad)
@@ -40,7 +39,7 @@ var perches: Array[Vector3] = [] # world: wall tops where two or more courses st
 var _pivot: Node3D
 var _collar: MeshInstance3D
 var _sound: AudioStreamPlayer3D
-var _knocks: Array[AudioStreamWAV] = []
+var _knocks: Array = []   # recorded metal clonks (village/bell_*, ASSETS.md)
 var _swing := Vector2.ZERO       # (about the wind's cross axis, about the wind axis) rad
 var _swing_v := Vector2.ZERO
 var _prev_v := Vector2.ZERO
@@ -183,8 +182,7 @@ func build(terrain: Terrain, ruins: Ruins = null) -> void:
 	_sound.bus = &"SFX"
 	_sound.attenuation_filter_cutoff_hz = 6000.0
 	_pivot.add_child(_sound)
-	for f: float in [742.0, 768.0, 731.0]:
-		_knocks.append(_make_knock(f))
+	_knocks = Samples.load_set("village", "bell")
 	if ruins != null:
 		_fold(terrain, ruins)
 
@@ -480,34 +478,6 @@ func _lathe(st: SurfaceTool, prof: Array, seg: int, side: float, inside: float) 
 				st.set_uv(Vector2(inside, p.y / 0.081))
 				st.add_vertex(dir * p.x + Vector3.UP * p.y)
 
-## A cast sheep bell's knock: a dry clapper tick, then a short bright inharmonic ring (the
-## bronze's partials at about 1, 2.4, 3.9 and 5.4 times the hum, the high ones dying first).
-func _make_knock(f: float) -> AudioStreamWAV:
-	var n := int(1.1 * RATE)
-	var b := PackedByteArray()
-	b.resize(n * 2)
-	var parts := [[1.0, 1.0, 3.2], [2.41, 0.6, 5.5], [3.89, 0.35, 9.0], [5.37, 0.2, 14.0]]
-	var x := PackedFloat32Array()
-	x.resize(n)
-	var peak := 0.0001
-	for i in n:
-		var t := float(i) / RATE
-		var v := 0.0
-		for p: Array in parts:
-			v += sin(TAU * f * p[0] * t + p[0]) * p[1] * exp(-t * p[2])
-		v *= 1.0 - exp(-t * 900.0)
-		if t < 0.006:
-			v += _rng.randf_range(-1.0, 1.0) * (1.0 - t / 0.006) * 0.8
-		x[i] = v
-		peak = maxf(peak, absf(v))
-	for i in n:
-		b.encode_s16(i * 2, int(clampf(x[i] / peak * 0.85, -1.0, 1.0) * 32767.0))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = RATE
-	s.data = b
-	return s
-
 func _physics_process(delta: float) -> void:
 	_t += delta
 	_since += delta
@@ -540,7 +510,7 @@ func _update_swing(delta: float) -> void:
 func _knock(lean: float) -> void:
 	_since = 0.0
 	rings += 1
-	if player == null or player.global_position.distance_to(post_top) > HEAR_R:
+	if _knocks.is_empty() or player == null or player.global_position.distance_to(post_top) > HEAR_R:
 		return
 	_sound.stream = _knocks[_rng.randi() % _knocks.size()]
 	_sound.volume_db = -14.0 + clampf(lean / 0.25, 0.0, 1.0) * 9.0

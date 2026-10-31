@@ -4,11 +4,13 @@ extends Node3D
 ## a youngster that keep to Osric's old fold under the great stone. Each sits up on a wall top or
 ## the bell post's head, bobbing and flirting its tail, drops into the turf for a few hops and
 ## pecks after a grub, and flits low to another stone. When the hero comes close the nearest
-## one "chacks" from its stone (two pebbles knocked together), then flies off low and fast,
+## one "chacks" from its stone, then flies off low and fast,
 ## flashing its white rump, to a stone on the far side of the fold. They sit tight in the
 ## rain and go to roost in the wall's chinks at dusk. Now and then, with nobody near, the cock
-## goes up in his song flight: a steep fluttering climb to ten metres over his stone, a scratchy
-## warble at the top, and a parachute down on raised wings onto the same stone.
+## goes up in his song flight: a steep fluttering climb to ten metres over his stone, a
+## hover at the top, and a parachute down on raised wings onto the same stone. Their chack and
+## song are silent until a real CC0 / CC-BY recording is found (owner, 2026-10-30: no
+## synthesised calls); `chacks` still counts the alarm for bots.
 ## Geometry: Birds' rook mesh at a third of the size, its pose (and plumage: cock or hen) set per
 ## bird through instance uniforms in wheatear.gdshader.
 
@@ -36,12 +38,9 @@ var _rng := RandomNumberGenerator.new()
 var _birds: Array = []
 var _prev := Vector3.INF
 var _t := 0.0
-var _calls: Array[AudioStreamWAV] = []
-var _song: AudioStreamWAV
 
 class W:
 	var mi: MeshInstance3D
-	var voice: AudioStreamPlayer3D
 	var pos := Vector3.ZERO
 	var vel := Vector3.ZERO
 	var yaw := 0.0
@@ -75,9 +74,6 @@ func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void
 	_rng.seed = seed_v
 	if perches.size() < 2:
 		return
-	for k in 3:
-		_calls.append(_make_chack(k))
-	_song = _make_song()
 	var maker := Birds.new()
 	var mesh: ArrayMesh = maker._build_bird_mesh()
 	maker.free()
@@ -93,12 +89,6 @@ func build(t: Terrain, fold_perches: Array[Vector3], seed_v: int = 4417) -> void
 		add_child(w.mi)
 		# 0 the cock, 1 the hen, 2 this year's young one (hen-plumaged, paler)
 		w.mi.set_instance_shader_parameter("hen", 0.0 if i == 0 else (1.0 if i == 1 else 1.4))
-		w.voice = AudioStreamPlayer3D.new()
-		w.voice.unit_size = 6.0
-		w.voice.volume_db = -9.0
-		w.voice.max_distance = 60.0
-		w.voice.bus = &"Wildlife"
-		add_child(w.voice)
 		w.perch = (i * perches.size()) / 3
 		w.pos = perches[w.perch]
 		w.yaw = _rng.randf() * TAU
@@ -368,11 +358,6 @@ func _song_flight(w: W, dt: float) -> void:
 		w.flap = sin(w.phase) * 1.0 + 0.15
 		w.legs = move_toward(w.legs, 0.0, dt * 8.0)
 	elif w.song_f < CLIMB + TOP:
-		if w.song_f - dt < CLIMB:
-			w.voice.global_position = top
-			w.voice.stream = _song
-			w.voice.pitch_scale = _rng.randf_range(0.97, 1.03)
-			w.voice.play()
 		var f := (w.song_f - CLIMB) / TOP
 		w.pos = top + Vector3(0.0, sin(f * PI) * 0.6, 0.0)
 		w.phase += 22.0 * TAU * dt
@@ -399,10 +384,6 @@ func _song_flight(w: W, dt: float) -> void:
 
 func _call(w: W) -> void:
 	chacks += 1
-	w.voice.global_position = w.pos
-	w.voice.stream = _calls[_rng.randi() % _calls.size()]
-	w.voice.pitch_scale = _rng.randf_range(0.94, 1.06)
-	w.voice.play()
 
 func _write_all() -> void:
 	for w: W in _birds:
@@ -419,124 +400,3 @@ func _write_all() -> void:
 		var b := Basis(Vector3.UP, w.yaw) * Basis(Vector3.RIGHT, pitch) * Basis.from_scale(SHAPE * SCALE)
 		w.mi.global_transform = Transform3D(b, w.pos)
 		w.mi.set_instance_shader_parameter("pose", Vector4(w.flap, w.legs, w.peck, w.fold))
-
-# ---------------------------------------------------------------- voice
-
-## "weet-chack" / "chack-chack": hard clicks of two struck pebbles (decaying resonant noise bursts
-## at ~3.4 and ~5.6 kHz), the first call led by a thin rising whistle.
-func _make_chack(kind: int) -> AudioStreamWAV:
-	const RATE := 22050
-	var n := int(RATE * 0.42)
-	var x := PackedFloat32Array()
-	x.resize(n)
-	var r := RandomNumberGenerator.new()
-	r.seed = 61 + kind
-	var t0 := 0.0
-	if kind == 0:
-		# the whistle: 2.6 -> 3.5 kHz over 90 ms
-		var ph := 0.0
-		for i in int(RATE * 0.09):
-			var t := float(i) / RATE
-			ph += TAU * lerpf(2600.0, 3500.0, t / 0.09) / RATE
-			x[i] += sin(ph) * 0.35 * sin(PI * t / 0.09)
-		t0 = 0.13
-	var clicks := 2 if kind != 2 else 3
-	for c in clicks:
-		var s0 := int((t0 + c * 0.11) * RATE)
-		var y1 := 0.0
-		var y2 := 0.0
-		var z1 := 0.0
-		var z2 := 0.0
-		for i in int(RATE * 0.04):
-			if s0 + i >= n:
-				break
-			var env := exp(-float(i) / (RATE * 0.006))
-			var u := r.randf_range(-1.0, 1.0) * env
-			# two two-pole resonators
-			var a1 := 2.0 * 0.93 * cos(TAU * 3400.0 / RATE)
-			var b1 := 2.0 * 0.9 * cos(TAU * 5600.0 / RATE)
-			var o1 := u + a1 * y1 - 0.93 * 0.93 * y2
-			y2 = y1
-			y1 = o1
-			var o2 := u + b1 * z1 - 0.81 * z2
-			z2 = z1
-			z1 = o2
-			x[s0 + i] += o1 * 0.09 + o2 * 0.06 + u * 0.25
-	var data := PackedByteArray()
-	data.resize(n * 2)
-	for i in n:
-		data.encode_s16(i * 2, int(clampf(x[i], -1.0, 1.0) * 32000.0))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = RATE
-	s.stereo = false
-	s.data = data
-	return s
-
-## The song: ~2.4 s of scratchy warble -- quick whistled slurs (2.4-6 kHz, warbling), dry
-## pebble clicks and short buzzy rasps strung together without a gap, a wheatear's chatter.
-func _make_song() -> AudioStreamWAV:
-	const RATE := 22050
-	var n := int(RATE * 2.5)
-	var x := PackedFloat32Array()
-	x.resize(n)
-	var r := RandomNumberGenerator.new()
-	r.seed = 907
-	var t := 0.04
-	while t < 2.3:
-		var kind := r.randi() % 5
-		var dur := r.randf_range(0.05, 0.12)
-		var s0 := int(t * RATE)
-		var m := int(dur * RATE)
-		var amp := r.randf_range(0.18, 0.32)
-		if kind <= 2:
-			# a whistled slur with a fast warble on it
-			var f0 := r.randf_range(2400.0, 5200.0)
-			var f1 := clampf(f0 + r.randf_range(-1800.0, 1800.0), 2200.0, 6200.0)
-			var wr := r.randf_range(40.0, 90.0)
-			var ph := 0.0
-			for i in m:
-				if s0 + i >= n:
-					break
-				var u := float(i) / m
-				ph += TAU * (lerpf(f0, f1, u) + sin(TAU * wr * i / RATE) * 300.0) / RATE
-				x[s0 + i] += sin(ph) * amp * sin(PI * u)
-		elif kind == 3:
-			# a rasp: buzzy noise gated at ~120 Hz, bright
-			var prev := 0.0
-			for i in m:
-				if s0 + i >= n:
-					break
-				var u := float(i) / m
-				var nz := r.randf_range(-1.0, 1.0)
-				var hp := nz - prev
-				prev = nz
-				var gate := 0.5 + 0.5 * sin(TAU * 120.0 * i / RATE)
-				x[s0 + i] += hp * gate * amp * 0.6 * sin(PI * u)
-		else:
-			# a dry click, a pebble tapped
-			var y1 := 0.0
-			var y2 := 0.0
-			var a1 := 2.0 * 0.92 * cos(TAU * 4200.0 / RATE)
-			m = int(RATE * 0.03)
-			for i in m:
-				if s0 + i >= n:
-					break
-				var u := r.randf_range(-1.0, 1.0) * exp(-float(i) / (RATE * 0.005))
-				var o := u + a1 * y1 - 0.8464 * y2
-				y2 = y1
-				y1 = o
-				x[s0 + i] += o * 0.1 + u * amp * 0.5
-			dur = 0.04
-		t += dur + r.randf_range(0.0, 0.035)
-	var data := PackedByteArray()
-	data.resize(n * 2)
-	for i in n:
-		var fade := minf(1.0, float(n - i) / (RATE * 0.05))
-		data.encode_s16(i * 2, int(clampf(x[i] * fade, -1.0, 1.0) * 32000.0))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = RATE
-	s.stereo = false
-	s.data = data
-	return s

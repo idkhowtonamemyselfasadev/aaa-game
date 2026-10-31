@@ -113,6 +113,20 @@ with ffmpeg, mono Ogg Vorbis, peaks <= -2.4 dBFS. Credit needed (all **CC BY 3.0
 | fire/blow_1 (the flame taking) | `Fire.ocg/Inflame.ogg` | https://freesound.org/people/CGEffex/sounds/94102/ | CGEffex | **CC BY 3.0** | openclonk authors.txt |
 | weather/dust_devil_loop | `Environment.ocg/WindLoop.ogg` (high-passed 180 Hz) | https://freesound.org/people/ERH/sounds/34338/ | ERH | **CC BY 3.0** | openclonk authors.txt |
 
+### Rook wings and the fell bell (added 2026-10-31 02:00)
+
+Also OpenClonk (github.com/openclonk/openclonk, `planet/Sound.ocg`, cloned from GitHub
+2026-10-31). `authors.txt` lists both under **ala** (OpenClonk team: "Animals/Bat: Chirp,
+Flutter1&2&3, Noise1&2&3" and "Hits/BucketHit*"), with no other license stated, so the file's
+default applies: **CC BY 3.0, credit required** (credit: **ala / OpenClonk team**). Both are
+real recordings (spectrograms checked: irregular wing beats over a natural noise floor; a
+struck metal bucket with tonal partials). Mono Ogg Vorbis q4, 44.1 kHz.
+
+| File(s) | Original | Source page | Author | License | Fetched via |
+|---|---|---|---|---|---|
+| birds/wings_1..3 | `Animals.ocg/Bat.ocg/Flutter1/2/3.wav` (pitched down 15 %, high-passed 150 Hz, peak -8 dBFS): the clatter of a rook flock lifting off | https://github.com/openclonk/openclonk/tree/master/planet/Sound.ocg/Animals.ocg/Bat.ocg | ala (OpenClonk team) | **CC BY 3.0** | openclonk authors.txt |
+| village/bell_1..3 | `Hits.ocg/BucketHit1/2.wav` (3rd = BucketHit1 pitched up 8 %; high-passed 200 Hz, peak -6 dBFS): the fell bell's clonk | https://github.com/openclonk/openclonk/tree/master/planet/Sound.ocg/Hits.ocg | ala (OpenClonk team) | **CC BY 3.0** | openclonk authors.txt |
+
 ## Music (`game/audio/music/`, added 2026-10-30 22:00)
 
 Taken from Ubuntu's `edgar-data` 1.37 package (archive.ubuntu.com, noble/universe; extracted

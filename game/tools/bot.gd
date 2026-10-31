@@ -1996,16 +1996,16 @@ func _sound_test() -> void:
 	if ss.claps == k0:
 		return _combat_done(false, "no thunder after a lightning strike")
 	var birds: Node = _world.get_node("Birds")
-	var r0 := ss.caws
+	var r0 := ss.wing_bursts
 	for fl in birds._flocks:
 		if fl.state != 1:   # not already in the air
 			birds.scatter(fl, _player.global_position)
 			break
 	await _ticks(10)
-	print("BOT sound: rook caws %d" % (ss.caws - r0))
-	if ss.caws == r0:
-		return _combat_done(false, "no caws when a rook flock scattered")
-	_combat_done(true, "soundscape follows clock and weather, thunder and rook calls fire")
+	print("BOT sound: rook wing clatter %d, recorded %s" % [ss.wing_bursts - r0, str(ss.recorded.get("wings", false))])
+	if ss.wing_bursts == r0 or not ss.recorded.get("wings", false):
+		return _combat_done(false, "no recorded wing clatter when a rook flock scattered")
+	_combat_done(true, "soundscape follows clock and weather, thunder and rook wings fire")
 
 func _foley_test() -> void:
 	var p := _player
@@ -2632,6 +2632,9 @@ func _fox_test() -> void:
 	var hr: Hearth = _world.hearth
 	var tr: Terrain = _world.get_node("Terrain")
 	_world.weather.force(0.0)
+	# its barks and yelp are silent until a real recording exists; count the calls it makes
+	var fox_calls := {"yelp": 0, "bark": 0}
+	fx.barked.connect(func(_at: Vector3, alarm: bool) -> void: fox_calls["yelp" if alarm else "bark"] += 1)
 	var far := k.site + k.to_v * 60.0
 	_player.global_position = Vector3(far.x, tr.height_at(far.x, far.z) + 0.2, far.z)
 	_world.time_of_day = 12.0
@@ -2727,14 +2730,16 @@ func _fox_test() -> void:
 	if not bolted or top < 5.0 or fx.state != Fox.AWAY or fx.visible or fx.shy_t <= 0.0:
 		return _combat_done(false, "a hero walking up should send the fox off into the dark")
 	var fl = _world.get("foley")
-	var yelps: int = fl.played.get("fox_yelp", 0) if fl else -1
-	print("BOT fox yelp as it bolted: %d (barks %d)" % [yelps, fx.barks])
+	var yelps: int = fox_calls["yelp"]
+	print("BOT fox yelp as it bolted: %d (barks %d), sounded %d (silent: no recording)" % [yelps, fx.barks, int(fl.played.get("fox_yelp", 0))])
 	if yelps < 1:
 		return _combat_done(false, "a bolting fox should yelp")
+	if fl.played.has("fox_yelp") or fl.played.has("fox_bark"):
+		return _combat_done(false, "the fox's calls should be silent, not synthesised")
 	# out in the dark it barks now and then from round its den
 	fx._bark_t = 0.5
 	await _ticks(60)
-	var calls: int = fl.played.get("fox_bark", 0)
+	var calls: int = fox_calls["bark"]
 	print("BOT fox night bark from the dark: %d" % calls)
 	if calls < 1:
 		return _combat_done(false, "the fox should bark from the dark at night")
@@ -2749,11 +2754,11 @@ func _fox_test() -> void:
 	print("BOT fox 5:30: state %d visible %s (fire %.2f)" % [fx.state, fx.visible, hr.level])
 	if fx.state != Fox.AWAY:
 		return _combat_done(false, "the fox should not come at first light")
-	var before: int = fl.played.get("fox_bark", 0)
+	var before: int = fox_calls["bark"]
 	_world.time_of_day = 12.0
 	fx._bark_t = 0.5
 	await _ticks(60)
-	if fl.played.get("fox_bark", 0) != before:
+	if fox_calls["bark"] != before:
 		return _combat_done(false, "no fox barks by day")
 	_combat_done(true, "a fox comes to sit at the edge of Hesper's firelight after dark, eats the crust she tosses it, and bolts from the hero")
 
@@ -3854,16 +3859,16 @@ func _kite_test() -> void:
 	_player.global_position = Vector3(0, terrain.height_at(0, 0) + 1.0, 0)
 	_world.time_of_day = 11.0
 	await _ticks(120)
-	# a soaring kite whistles, and the soundscape plays it from up where the kite is
-	var ss: Soundscape = _world.soundscape
-	var sc0 := ss.kite_calls
+	# a soaring kite calls from up where it is (silent until a real recording exists)
+	var sc0 := birds.kite_calls
 	birds._kites[0].call_t = 0.0
 	await _ticks(10)
-	var voice: AudioStreamPlayer3D = ss._kite_voice
-	var up := voice.global_position.y - terrain.height_at(voice.global_position.x, voice.global_position.z)
-	print("BOT kite call: %d soaring call(s), voice %.0f m up, %.1f s long" % [ss.kite_calls - sc0, up, voice.stream.get_length() if voice.stream else 0.0])
-	if ss.kite_calls == sc0 or up < 40.0 or voice.stream == ss._kite_harsh:
-		return _combat_done(false, "a soaring kite did not whistle from the sky")
+	var up := birds.kite_call_at.y - terrain.height_at(birds.kite_call_at.x, birds.kite_call_at.z)
+	print("BOT kite call: %d soaring call(s), %.0f m up (silent: no recording)" % [birds.kite_calls - sc0, up])
+	if birds.kite_calls == sc0 or up < 40.0 or birds.kite_call_harsh:
+		return _combat_done(false, "a soaring kite did not call from the sky")
+	if "_kite_voice" in _world.soundscape:
+		return _combat_done(false, "the kite's call should be silent, not synthesised")
 	var k: Birds.Bird = null
 	for kk: Birds.Bird in birds._kites:
 		var c0: int = birds.census()["ground"]
@@ -3895,13 +3900,13 @@ func _kite_test() -> void:
 	var caws0 := birds.mob_caws
 	var climb_lo := k.pos.y
 	var harsh := 0
-	var heard := ss.kite_calls
+	var heard := birds.kite_calls
 	while k.hunt == Birds.MOBBED and t < 40.0:
 		await _ticks(10)
 		t += 10.0 / 60.0
-		if ss.kite_calls != heard:
-			heard = ss.kite_calls
-			if voice.stream == ss._kite_harsh:
+		if birds.kite_calls != heard:
+			heard = birds.kite_calls
+			if birds.kite_call_harsh:
 				harsh += 1
 	print("BOT kite harsh: the mobbed kite shrieked %d times in %.1f s" % [harsh, t])
 	if harsh == 0:
@@ -5527,6 +5532,9 @@ func _herd_test() -> void:
 	var p := _player
 	var herd: Herd = _world.get_node("Herd")
 	var terrain: Terrain = _world.get_node("Terrain")
+	# barks, hooves and roars are silent until real recordings exist; count what the herd does
+	var bounds := {"n": 0}
+	herd.galloped.connect(func(_at: Vector3) -> void: bounds["n"] += 1)
 	var c := herd.centre()
 	var away := Vector3(c.x, 0, c.z).normalized()
 	if away.length() < 0.5:
@@ -5583,9 +5591,11 @@ func _herd_test() -> void:
 		return _combat_done(false, "the herd did not gallop away from the hero")
 	# ... with an alarm bark as they went and their hooves drumming the turf
 	var fl: Foley = _world.foley
-	print("BOT herd voices: %d barks, played bark %d gallop %d (synth %d ms)" % [herd.barks, int(fl.played.get("bark", 0)), int(fl.played.get("gallop", 0)) + int(fl.played.get("gallop_wet", 0)), fl.build_ms])
-	if herd.barks < 1 or int(fl.played.get("bark", 0)) < 1 or int(fl.played.get("gallop", 0)) + int(fl.played.get("gallop_wet", 0)) < 6:
+	print("BOT herd voices: %d barks, %d gallop bounds, sounded bark %d gallop %d (silent: no recording)" % [herd.barks, bounds["n"], int(fl.played.get("bark", 0)), int(fl.played.get("gallop", 0)) + int(fl.played.get("gallop_wet", 0))])
+	if herd.barks < 1 or bounds["n"] < 6:
 		return _combat_done(false, "the herd bolted without an alarm bark or hoofbeats")
+	if fl.played.has("bark") or fl.played.has("gallop") or fl.played.has("gallop_wet"):
+		return _combat_done(false, "the herd's bark and hooves should be silent, not synthesised")
 	# the stag runs with his hinds, not left behind
 	var sc := herd.centre()
 	var stag_gap := -1.0
@@ -5642,7 +5652,7 @@ func _herd_test() -> void:
 	herd.roar_t = 0.0
 	await _ticks(30)
 	print("BOT herd rut: roars at noon %d, at 19 h %d, played roar %d" % [noon, herd.roars - r0 - noon, int(_world.foley.played.get("roar", 0))])
-	if noon != 0 or herd.roars - r0 - noon < 1 or int(_world.foley.played.get("roar", 0)) < 1:
+	if noon != 0 or herd.roars - r0 - noon < 1 or _world.foley.played.has("roar"):
 		return _combat_done(false, "the stag did not roar at dusk (or roared at noon)")
 	_combat_done(true, "deer graze, look up at a hero in sight, bolt barking from a charge with drumming hooves, settle far off; the stag roars at dusk")
 
@@ -6052,6 +6062,8 @@ func _flockbell_test() -> void:
 		return _combat_done(false, "could not walk up the fell to the post")
 	if b.rings - r0 < 3:
 		return _combat_done(false, "the bell did not knock in the wind")
+	if b._knocks.size() < 3 or not (b._knocks[0] is AudioStreamOggVorbis) or not (b._sound.stream is AudioStreamOggVorbis):
+		return _combat_done(false, "the bell's knock is not a recording")
 	await _ticks(5)
 	print("BOT flockbell prompt '%s %s'" % [hud.prompt_key, hud.prompt_verb])
 	if hud.prompt_verb != "Take":
