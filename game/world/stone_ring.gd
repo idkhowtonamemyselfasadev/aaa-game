@@ -155,6 +155,17 @@ static func burnt(x: float, z: float) -> float:
 	var wob := sin(a * 3.0 + 1.3) * 0.9 + sin(a * 7.0 + 4.1) * 0.6 + sin(a * 13.0 + 0.7) * 0.35
 	return 1.0 - smoothstep(RADIUS - 4.5 + wob, RADIUS - 0.8 + wob, r)
 
+## How singed the meadow is at (x, z): reaches ~2 m further out than `burnt`, so the clumps
+## that do grow there come up short (Grass crops them) and the tall meadow steps down to the
+## ash instead of standing as a wall at its edge.
+static func singed(x: float, z: float) -> float:
+	if burn_centre == Vector3.INF:
+		return 0.0
+	var d := Vector2(x - burn_centre.x, z - burn_centre.z)
+	var a := d.angle()
+	var wob := sin(a * 3.0 + 1.3) * 0.9 + sin(a * 7.0 + 4.1) * 0.6 + sin(a * 13.0 + 0.7) * 0.35
+	return 1.0 - smoothstep(RADIUS - 4.0 + wob, RADIUS + 1.6 + wob, d.length())
+
 func _exit_tree() -> void:
 	if burn_centre == centre:
 		burn_centre = Vector3.INF

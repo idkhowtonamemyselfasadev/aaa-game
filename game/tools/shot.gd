@@ -871,7 +871,9 @@ func _ready() -> void:
 		elif "lit" in args:
 			# soldierface lit: swing the camera round toward the light-travel side (lit side at
 			# midday; at a low evening sun the frame can still come out backlit)
-			var sunward := Vector3(light.x, 0, light.z).normalized()
+			# (`light` is the travel direction: the sun itself lies along -light, so the
+			# camera stands there; the old +light put the sun behind the knight)
+			var sunward := Vector3(-light.x, 0, -light.z).normalized()
 			var d := (sunward * 2.0 - line).normalized()
 			SPOTS[spot] = [fp + d * 2.3, fp]
 		else:

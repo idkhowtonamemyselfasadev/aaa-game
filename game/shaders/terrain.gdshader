@@ -856,13 +856,14 @@ void fragment() {
 		float burnt = 1.0 - smoothstep(edge - 2.0, edge, br);
 		float singe = (1.0 - smoothstep(edge - 0.5, edge + 2.2, br)) * (1.0 - burnt);
 		if (burnt + singe > 0.0) {
-			float n1 = fbm(wpos * 0.35 + vec3(17.0, 0.0, 5.0));
+			float n1 = fbm(wpos * 0.7 + vec3(17.0, 0.0, 5.0));   // was 0.35: one big char blotch read as a hole
 			float n2 = fbm(wpos * 2.3);
 			float n3 = vnoise(wpos * 7.0 + 11.0);
 			// warm grey-brown wood-ash, darker where it lies thin over soil, black char in blotches
 			vec3 ash = mix(vec3(0.17, 0.15, 0.125), vec3(0.31, 0.28, 0.235), smoothstep(0.35, 0.75, n2));
 			ash = mix(ash, earth * 0.75, smoothstep(0.55, 0.8, n3) * 0.5);   // soil showing through
-			float charw = smoothstep(0.5, 0.64, n1 + (n2 - 0.5) * 0.25);
+			ash *= mix(0.78, 1.05, lobes);   // broad drifts of thicker / thinner ash so it is not flat at range
+			float charw = smoothstep(0.57, 0.68, n1 + (n2 - 0.5) * 0.3);
 			vec3 burn_col = mix(ash, vec3(0.03, 0.026, 0.022), charw);
 			// cinders: a speckle of black lumps and a few pale bone-white flakes
 			float cind = step(0.78, vnoise(wpos * 31.0));

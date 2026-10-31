@@ -224,6 +224,8 @@ func _step_sward() -> void:
 		# the cart track's verges: cropped short and green so the verge flowers stand over it
 		var vg := YardGround.verge(x, z)
 		crop *= lerpf(1.0, 0.6, vg)
+		# the knight's ring: the clumps left at the burn's edge are singed short
+		crop *= lerpf(1.0, 0.35, StoneRing.singed(x, z))
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		basis = Basis(Quaternion(Vector3.UP, nrm.lerp(Vector3.UP, 0.3).normalized())) * basis
 		basis = basis.scaled(Vector3(s, s * lerpf(0.7, 1.3, rng.randf()) * lerpf(0.45, 1.0, crop), s))
