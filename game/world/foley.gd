@@ -120,6 +120,8 @@ func hook(p: Player, soldiers: Array, trample: Node) -> void:
 	for sol: Node in soldiers:
 		if sol.has_signal("struck"):
 			sol.struck.connect(func(_r: String) -> void:
+				if sol is HollowWarden and (sol as HollowWarden).move_kind == HollowWarden.BASH_MOVE:
+					return                     # the shield bash has its own sound (hook_warden)
 				_play("spear", (sol as Node3D).global_position + Vector3.UP * 1.3, -6.0))
 	if trample and trample.has_signal("footfall"):
 		trample.footfall.connect(_on_footfall)
@@ -168,6 +170,17 @@ func hook_warden(w: Node) -> void:
 		_play("wood", at, 2.0, 0.6)
 		_play("clang", at, -8.0, 0.62)
 		_play("body", at, -4.0, 0.8))
+	# the bash: the board hauled back is a low, slow whoosh; landing, the wood hit deep with a
+	# body thump under it (the hero shoved); missed, a quick whoosh past
+	w.bash_windup.connect(func(at: Vector3) -> void:
+		_play("whoom", at, -10.0, 0.55))
+	w.shield_bashed.connect(func(at: Vector3, r: String) -> void:
+		if r == "hit":
+			_play("wood", at, 1.0, 0.58)
+			_play("body", at, -1.0, 0.85)
+			_play("slam", at, -14.0, 1.3)
+		else:
+			_play("whoom", at, -6.0, 0.8))
 
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):

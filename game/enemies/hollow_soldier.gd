@@ -412,6 +412,14 @@ func _physics_process(delta: float) -> void:
 				_from = _pose
 				move_kind = _choose(dist)
 				_enter(WINDUP)
+		WINDUP, STRIKE, RECOVER when move_kind > SWEEP_MOVE:
+			# a variant's own move (the warden's shield bash): it poses itself and hands back
+			# [move, lean, sink, ember]
+			var r: Array = _special_tick(delta, to, dist)
+			move = r[0]
+			lean = r[1]
+			sink = r[2]
+			ember = r[3]
 		WINDUP when move_kind == SWEEP_MOVE:
 			var u := clampf(t / SWEEP_WINDUP_T, 0.0, 1.0)
 			# the coiled sweep keeps tracking almost to the release: it is built to catch a strafe
@@ -530,6 +538,12 @@ func _physics_process(delta: float) -> void:
 		_blend = lerpf(_blend, minf(hs, Player.ANIM_RUN_SPEED), 1.0 - exp(-8.0 * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
 		anim_tree.set("parameters/speed/scale", clampf(hs / Player.ANIM_WALK_SPEED, 0.7, 1.4) if hs > 0.2 else 1.0)
+
+## Variants override this to run a move of their own (move_kind > SWEEP_MOVE) through
+## WINDUP/STRIKE/RECOVER; it sets _pose and returns [move, lean, sink, ember].
+func _special_tick(_delta: float, _to: Vector3, _dist: float) -> Array:
+	_enter(STALK)
+	return [Vector3.ZERO, 0.0, 0.0, 1.0]
 
 func _enter(s: int) -> void:
 	state = s

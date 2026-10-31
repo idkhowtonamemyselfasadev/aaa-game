@@ -1079,6 +1079,9 @@ func _warden_test() -> void:
 		return _combat_done(false, "a blow from behind was turned by the targe")
 	if fol.played.get("wood", 0) <= played0.get("wood", 0):
 		return _combat_done(false, "the targe made no sound")
+	# 3b) the shield bash: a hero who crowds the ward gets the board, staggered, little harm
+	if not await _warden_bash(w):
+		return
 	# 4) the fight, played: light strings into the targe, a heavy when the string is turned
 	w.health = w.health_max
 	w.guard = 0.0
@@ -1115,7 +1118,7 @@ func _warden_test() -> void:
 	p.bot_input = Vector2.ZERO
 	p.bot_attack = false
 	p.bot_heavy = false
-	print("BOT warden: fight %.1f s, blocks %d, ward breaks %d, staggers %d, strikes %d, dead %s" % [t, w.blocks - blocks0, w.guard_breaks - breaks0, w.staggers, w.strikes, w.is_dead()])
+	print("BOT warden: fight %.1f s, blocks %d, ward breaks %d, staggers %d, strikes %d (bashes %d, landed %d), hero flinches %d, dead %s" % [t, w.blocks - blocks0, w.guard_breaks - breaks0, w.staggers, w.strikes, w.bashes, w.bash_hits, p.flinches, w.is_dead()])
 	if not w.is_dead():
 		return _combat_done(false, "the hero could not kill the warden")
 	if w.blocks - blocks0 < 1 or w.guard_breaks - breaks0 < 1:
@@ -1127,6 +1130,78 @@ func _warden_test() -> void:
 	if not is_instance_valid(w.targe) or off > 0.3 or off < -0.1:
 		return _combat_done(false, "the targe did not drop to the ground when the warden fell")
 	_combat_done(true, "targe on the forearm, frontal blows turned, heavy broke the ward, flank landed, killed, targe dropped")
+
+## Crowd the warden three times: stand still (bashed, staggered), raise a parry as the board
+## lands (the parry does not take, still bashed), dodge out late in the coil (dodged).
+func _warden_bash(w: HollowWarden) -> bool:
+	var p := _player
+	var fol: Foley = _world.foley
+	var b0 := w.bashes
+	var wood0: int = fol.played.get("wood", 0)
+	var tries := ["still", "parry", "dodge"]
+	var got := []
+	# staff in hand, so a heavy press goes straight into the charge (the deflect window)
+	w.process_mode = Node.PROCESS_MODE_DISABLED
+	p.combat._begin_draw()
+	while not p.combat.is_drawn() or p.combat.state != StaffCombat.READY:
+		await get_tree().physics_frame
+	w.process_mode = Node.PROCESS_MODE_INHERIT
+	for k in tries:
+		p.health = Player.HEALTH_MAX
+		p.stamina = Player.STAMINA_MAX
+		w.guard = 0.0
+		w._ward_down = 0.0
+		_soldier_at(w, 1.2, -1)
+		p.body.rotation.y = atan2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z)
+		var fl0 := p.flinches
+		var pa0: int = p.combat.parries
+		var h0 := p.health
+		var waited := 0.0
+		while w.move_kind != HollowWarden.BASH_MOVE or w.state == HollowSoldier.STALK:
+			await get_tree().physics_frame
+			waited += get_physics_process_delta_time()
+			if waited > 3.0:
+				print("BOT warden: no bash after %.1f s crowding (state %d, dist %.2f)" % [waited, w.state, w.global_position.distance_to(p.global_position)])
+				_combat_done(false, "the warden never bashed a hero crowding its ward")
+				return false
+		var ct := 0.0
+		var parry_open := false
+		while w.state == HollowSoldier.WINDUP:
+			ct += get_physics_process_delta_time()
+			if k == "parry":
+				p.bot_heavy = ct > HollowWarden.BASH_WINDUP_T - 0.12   # the charge (deflect window) opens just before the board lands
+				if p.combat.can_parry():
+					parry_open = true
+			elif k == "dodge" and ct > HollowWarden.BASH_WINDUP_T - 0.1 and p.dodge_t < 0.0:
+				p.bot_input = Vector2(0, -1)
+				p.bot_dodge = true
+			await get_tree().physics_frame
+		while w.state == HollowSoldier.STRIKE:
+			if k == "parry" and p.combat.can_parry():
+				parry_open = true
+			await get_tree().physics_frame
+		p.bot_heavy = false
+		p.bot_input = Vector2.ZERO
+		print("BOT warden: bash (%s) after %.2f s crowding -> %s, flinches +%d, parries +%d, deflect window open %s, health %.0f -> %.0f" % [k, waited, w.last_result, p.flinches - fl0, p.combat.parries - pa0, parry_open, h0, p.health])
+		got.append(w.last_result)
+		if k != "dodge" and (w.last_result != "hit" or p.flinches - fl0 != 1 or p.health >= h0 or h0 - p.health > 12.0):
+			_combat_done(false, "the bash should stagger the hero for a little harm (%s)" % k)
+			return false
+		if k == "parry" and (p.combat.parries != pa0 or not parry_open):
+			_combat_done(false, "the bash was parried")
+			return false
+		if k == "dodge" and w.last_result != "dodged" and w.last_result != "perfect":
+			_combat_done(false, "a dodge did not slip the bash")
+			return false
+		while w.state == HollowSoldier.RECOVER or p.flinch_t >= 0.0 or p.dodge_t >= 0.0:
+			await get_tree().physics_frame
+		p.combat.cancel_to_guard()
+		await _ticks(10)
+	if w.bashes - b0 != 3 or fol.played.get("wood", 0) <= wood0:
+		_combat_done(false, "bash count or sound wrong")
+		return false
+	w.force_move = -1
+	return true
 
 func _glide_test() -> void:
 	var p := _player
