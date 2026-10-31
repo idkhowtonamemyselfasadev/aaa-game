@@ -2,7 +2,7 @@ class_name PauseMenu
 extends CanvasLayer
 ## Esc pauses the world and opens a small dark panel: a sound section with one slider per
 ## mix layer (master, ambience, wildlife, effects, voices, music), a picture section (quality preset
-## Low..Ultra and the FSR 2 render scale), saved as they move, and Resume.
+## Low..Ultra and the FSR 2 render scale), saved as they move, Credits and Resume.
 ## Drawn in the HUD's language: near-black lacquer with a thin worn-brass edge.
 
 const ROWS := [["Master", "Master"], ["Ambience", "Ambience"], ["Wildlife", "Wildlife"],
@@ -18,6 +18,8 @@ var quality_slider: HSlider  # bots read it
 var scale_slider: HSlider
 var open := false
 var sliders := {}            # bus -> HSlider (bots read it)
+var credits: Credits         # the Credits screen, opened from here (bots read it)
+var credits_button: Button
 
 var _root: Control
 var _mouse_before := Input.MOUSE_MODE_VISIBLE
@@ -98,6 +100,22 @@ func _ready() -> void:
 			graphics.set_render_scale(v)
 		return "%d%%" % roundi(v * 100.0) if v < 0.995 else "Native")
 	col.add_child(_rule())
+	credits = Credits.new()
+	credits.name = "Credits"
+	add_child(credits)
+	credits.closed.connect(func() -> void:
+		if open:
+			_root.visible = true
+			credits_button.grab_focus())
+	credits_button = Button.new()
+	credits_button.text = "Credits"
+	credits_button.flat = true
+	credits_button.add_theme_color_override("font_color", INK)
+	credits_button.add_theme_color_override("font_hover_color", BRASS.lightened(0.3))
+	credits_button.pressed.connect(func() -> void:
+		_root.visible = false
+		credits.show_screen())
+	col.add_child(credits_button)
 	var resume := Button.new()
 	resume.text = "Resume"
 	resume.flat = true
@@ -139,7 +157,7 @@ func _rule() -> ColorRect:
 	return r
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") and not credits.open:
 		toggle()
 		get_viewport().set_input_as_handled()
 

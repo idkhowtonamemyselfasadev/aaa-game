@@ -42,6 +42,9 @@ func _ready() -> void:
 	var player: Player = world.get_node("Player")
 	var terrain: Terrain = world.get_node("Terrain")
 	var cam: Camera3D = player.camera
+	if spot == "credits":   # the Credits screen over the village view (not paused, so frames run)
+		world.pause_menu.credits.show_screen()
+		spot = "village"
 	if spot == "tree" or spot == "rocks":
 		# frame the nearest tree / boulder to the village edge, from the village side
 		var flora: Flora = world.get_node("Flora")

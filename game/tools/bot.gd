@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -80,6 +80,9 @@ func _ready() -> void:
 		return
 	if name == "music":
 		_music_test()
+		return
+	if name == "credits":
+		_credits_test()
 		return
 	if name == "gfx":
 		_gfx_test()
@@ -2156,6 +2159,56 @@ func _mix_test() -> void:
 	if not paused or get_tree().paused or absf(sfx_db + 6.02) > 0.1 or not mute or absf(saved - 0.5) > 0.01:
 		return _combat_done(false, "pause menu volumes did not apply or save")
 	_combat_done(true, "layers routed, keep reverb in/out, pause menu volumes apply and save")
+
+## Credits: every CC BY / OFL author named in ASSETS.md appears on the Credits screen; the
+## pause menu's Credits button opens it over a paused world, Back returns to the menu, and
+## `roll()` (for after the ending) scrolls it by itself.
+func _credits_test() -> void:
+	var f := FileAccess.open(ProjectSettings.globalize_path("res://").path_join("../ASSETS.md"), FileAccess.READ)
+	if f == null:
+		return _combat_done(false, "ASSETS.md not readable")
+	var body := Credits.text()
+	var authors := {}
+	var missing := []
+	for line in f.get_as_text().split("\n"):
+		var cells := line.split("|")
+		if cells.size() < 7 or not ("CC BY" in line or "OFL" in line) or "CC BY-SA" in line:
+			continue
+		# tables: | File | Original/Track | Source page | Author | License | ... |
+		var author := cells[4].strip_edges().replace("**", "")
+		var key := author.split(" (")[0].split(" (edit")[0].strip_edges()
+		if key == "" or key == "Author":
+			continue
+		authors[key] = true
+		if not (key in body):
+			missing.append(key)
+	print("BOT credits: %d CC BY authors in ASSETS.md, missing on screen %s" % [authors.size(), str(missing)])
+	if authors.size() < 15 or not missing.is_empty():
+		return _combat_done(false, "Credits screen misses CC BY authors")
+	var pm: PauseMenu = _world.pause_menu
+	pm.toggle()
+	pm.credits_button.pressed.emit()
+	await get_tree().process_frame
+	var shown := pm.credits.open and pm.credits.visible and get_tree().paused
+	var lines := 0
+	for c in pm.credits.scroll.get_child(0).get_children():
+		lines += 1 if c is Label else 0
+	pm.credits.close()
+	await get_tree().process_frame
+	var back_to_menu := pm.open and not pm.credits.open
+	pm.toggle()
+	print("BOT credits: opened from pause %s (%d lines), Back -> menu %s, unpaused after %s" % [shown, lines, back_to_menu, not get_tree().paused])
+	if not shown or lines < 30 or not back_to_menu or get_tree().paused:
+		return _combat_done(false, "Credits screen did not open/close from the pause menu")
+	pm.credits.roll()
+	for i in 120:
+		await get_tree().process_frame
+	var y := pm.credits.scroll.scroll_vertical
+	pm.credits.close()
+	print("BOT credits: after the ending it rolls by itself, %d px in 120 frames" % y)
+	if y < 20:
+		return _combat_done(false, "Credits roll did not scroll")
+	_combat_done(true, "all CC BY authors credited, Credits opens from pause, Back returns, roll scrolls")
 
 ## The score: the vale cue fades in, day crossfades to night with equal power (never two
 ## tracks at full), Hesper's hearth takes over by her fire, a stirring soldier brings the

@@ -7,6 +7,35 @@ CC-BY, OFL, or Mixamo-licensed content is allowed (public repo). Nothing over 50
 |------|------|--------|---------|
 | `game/player/models/vanguard.glb` | Rigged humanoid "Vanguard" (Mixamo character) with Idle/Walk/Run/TPose clips, 2.1 MB | Mixamo, via the three.js repo (`examples/models/gltf/Soldier.glb`) | Mixamo license (royalty-free use in games) |
 
+## Copyright audit (owner rule 0b-e) -- status 2026-10-31 04:00
+
+Every third-party file in the repo, by group, with what was checked and where. "Upstream" =
+the per-file credit/license file of the repository or package the file was taken from, read
+on 2026-10-31. **Blocked**: freesound.org, opengameart.org and kenney.nl do not resolve from
+the cloud box (WebFetch: `getaddrinfo ENOTFOUND`, curl: no connection), so the original source
+pages could not be opened; those rows stay "upstream-verified, source page pending" until a
+session with those domains allowed re-opens them. Nothing found so far fails the rules.
+
+| Group | Files | Checked against (2026-10-31) | Result |
+|---|---|---|---|
+| Combat whooshes/impacts (Freesound CC0 + Kenney CC0) | combat/swish_*, whoom_*, perfect_1, spear_*, straw_1-2, body_*, boom_*, slam_1-2 | github.com/Barty-Bart/motion-graphics `skills/sound-effects/LICENSES.md` (git clone): "all CC0 1.0 ... only sounds whose page shows CC0 were used, verified per sound on 12 Oct 2026"; lists DeVern 524817, MeanRaccoon 830856, CVLTIV8R 810485, deleted_user_6479820 393811 etc. | pass (CC0); source pages pending |
+| Kenney RPG Audio (CC0) | combat/straw_3, wood_4, clang_1-2, dodge_1-3, steps/step_grass_*, village/creak_*, chop_1 | via github.com/mminer/ggj2022; kenney.nl not reachable | pass (Kenney packs are CC0); source page pending |
+| minetest_game sounds | combat/clang_3, stone_*, wood_1-3, steps/step_grit_*, step_wet_*, step_stone_*, fire/crackle_loop, flint_1, village/chop_2, thud_1 | github.com/luanti-org/minetest_game `mods/default/README.md` + `license.txt`, `mods/fire/README.md` + `license.txt` (git clone): Benboncan 71823 `default_dig_cracky` CC BY 3.0; Erdie 41579 `default_hard_footstep` CC BY 3.0; AGFX pack 1253 `default_water_footstep` CC BY 3.0; Sheyvan 476113 `default_dig_choppy` CC0; worthahep88 319224 `default_sand_footstep` CC0; lolamadeus 179341 `default_gravel_dug` CC0; qubodup `default_dug_metal` CC0; Dynamicell 17548 `fire_fire`/`fire_large` CC BY 3.0; Benboncan 66457 `fire_flint_and_steel` CC BY 3.0 | pass; CC BY credited on the Credits screen |
+| Weather beds | weather/wind_loop, rain_loop, rain_heavy_loop, thunder_* | github.com/Muges/ambientsounds `readme.md`: Heavy Rain by D W (CC BY), Forest Rain by Corsica_S (CC BY), Thunderstorm by RHumphries (CC BY), Wind by felix.blume (CC0) | pass; CC BY credited |
+| Blanket sounds | weather/leaves_loop, crickets_loop, birds/song_1-3 | raw.githubusercontent.com Vistaus/blanket `SOUNDS_LICENSING.md`: Wind felix.blume CC0, Birds kvgarlic CC0, Summer night Lisa Redfern (soundbible.com) Public Domain | pass |
+| noixer | birds/song_4-6 | abetusk/noixer `README.md`: "chosen to be under a CC0 license", birds = sonidosreales245 517042 | pass |
+| dogblocks / VoxeLibre | animals/dog_*, cluck_*, squawk_*, crunch_* | HybridDog/dogblocks `README.md` (terrier, Anton 157322, CC BY 3.0); VoxeLibre `mobs_mc/LICENSE-media.md` (evsecrets 346961 chicken; InspectorJ 429591 `animal_eat_generic` CC BY 3.0) | pass; CC BY credited |
+| OpenClonk | village/grain_*, grunt_*, bell_*, fire/blow_1, weather/dust_devil_loop, birds/wings_* | openclonk `planet/Sound.ocg/authors.txt`: default CC BY 3.0; ERH WindLoop, CGEffex Inflame, bennychico11 Farmer Hurt1&2, Stephen Hall Dig1-5, Ringwaul Windbag, ala Bat Flutter + BucketHit | pass; CC BY credited |
+| Music | game/audio/music/*.ogg (7) | Ubuntu `edgar-data` 1.37-1build2 (apt-get download), `usr/share/doc/edgar-data/copyright`: Decision, Heroes Theme, Medicine, Mystical Theme, Without = Alexandr Zhelanov CC-BY-3.0; Battle in the winter = Johan Brodd CC-BY-3.0; Lazy Day v0.9 = FoxSynergy CC-BY-3.0. Content ID: web search 2026-10-31 found no reported claims on Zhelanov's OGA tracks; none of the three artists is known to register with Content ID | pass (CC BY, not SA); OGA pages pending |
+| Character | game/player/models/vanguard.glb + 2 textures | Mixamo character via three.js `examples/models/gltf/Soldier.glb`; Mixamo license allows use in games | pass (Mixamo); Adobe FAQ page not reachable from the box, recheck |
+| Shaders / includes | game/shaders/*.gdshader, *.gdshaderinc | written for this project (git history), no third-party snippets | pass (original) |
+| Fonts | none (Godot's built-in default font, MIT/OFL with the engine) | -- | pass |
+| Engine | Godot 4.7.2 (not in the repo, fetched by tools/cloud-setup.sh) | MIT | credited on the Credits screen |
+
+The in-game **Credits** screen (`game/ui/credits.gd`, pause menu > Credits; `Credits.roll()`
+for after the ending) lists every CC BY author above; bot `credits` parses this file and fails
+if a CC BY author in a table here is missing from the screen.
+
 ## Recorded sound effects (`game/audio/sfx/`)
 
 Added 2026-10-30 (owner priority 0b-b). All files were converted to mono 44.1 kHz Ogg Vorbis
@@ -166,8 +195,8 @@ with YouTube Content ID (checked by search, 2026-10-30; recheck in (e)).
 - Watchtower ruin (chipped cut-stone blocks, keep, curtain wall, fallen stones): `game/world/ruins.gd` + `game/shaders/masonry.gdshader` — original, procedural.
 - Ivy on the keep (climbing stems, lobed leaf blades, painted veins): `game/world/ivy.gd` + `game/shaders/ivy.gdshader` — original, procedural.
 - Red deer herd (hinds and calves): `game/world/herd.gd` (lofted body/neck/head/legs/ears mesh, herd behaviour) + `game/shaders/deer.gdshader` (gait/grazing pose, coat markings, hair detail) — original, procedural. Model check: `game/tools/deer_view.gd`.
-- The fold's wheatears (cock, hen, youngster: perch, bob, feed, flush; "chack" calls synthesised from resonant noise clicks at load): `game/world/wheatears.gd` (rook mesh from `birds.gd`, rescaled) + `game/shaders/wheatear.gdshader` (pose + plumage) — original, procedural.
-- Soundscape (wind, leaf rustle, rain, crickets, six birdsong phrases, rook caws + wing clatter, near/far thunder): synthesised at load in `game/world/soundscape.gd` from noise and oscillators — original, no sample files.
-- Hesper's cookfire (sooted ring stones, charred oak logs with glowing crazed char, ash bed, flame/smoke textures, sparks, moths, crackle loop): `game/world/hearth.gd` + `game/shaders/hearth.gdshader` — original, procedural; the crackle is synthesised from noise at load.
+- The fold's wheatears (cock, hen, youngster: perch, bob, feed, flush; silent since 2026-10-31, no recording yet): `game/world/wheatears.gd` (rook mesh from `birds.gd`, rescaled) + `game/shaders/wheatear.gdshader` (pose + plumage) — original, procedural.
+- Soundscape mixer `game/world/soundscape.gd` (code only; every sound it plays is a recorded file listed above).
+- Hesper's cookfire (sooted ring stones, charred oak logs with glowing crazed char, ash bed, flame/smoke textures, sparks, moths, crackle loop): `game/world/hearth.gd` + `game/shaders/hearth.gdshader` — original, procedural; the crackle is the recorded `fire/crackle_loop` above.
 - Harrowmere cottage (dry-stone footing from the ruin stone meshes, hewn oak frame, limewashed wattle-and-daub, plank door with iron straps, mullioned window, riven slate roof laid slate by slate, stone ridge and chimney): `game/world/cottage.gd` + `game/shaders/cottage.gdshader` — original, procedural.
 - Harrowmere stone cottage (coursed rubble walls in the ruin stone, quoins, oak lintels/door/frames/shutters, graded riven slates, stone ridge, chimney stack + smoke, leaded window panes): `game/world/stone_cottage.gd` + `game/shaders/mortar.gdshader`, `slate.gdshader`, `timber.gdshader`, `pane.gdshader` — original, procedural.

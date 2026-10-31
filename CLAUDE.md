@@ -30,6 +30,11 @@ better every single night and leave it in a state the next session can pick up b
 - Commits: author `browser <browser@users.noreply.github.com>`, no co-author or
   "generated with" trailers.
 - Do not ask questions. Decide and go.
+- Copyright (standing rule, from owner priority 0b-e): never add a third-party file without first
+  checking its license on the source page and recording source URL, author, license and date checked
+  in ASSETS.md. Allowed: CC0/public domain, CC-BY or OFL with the credit added to the in-game Credits
+  screen (`game/ui/credits.gd`), Mixamo per its license. Not allowed: all rights reserved, NC, ND,
+  share-alike music, unclear license, ripped/fan content. Music must be safe for YouTube/Twitch.
 
 ---
 
