@@ -45,8 +45,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   hit, +1 flinch, 100 -> 92; heavy held so the deflect window is open: still hit, 0 parries; late dodge: dodged)
   and the played fight still breaks the ward (2) and kills it: PASS. `soldier`, `knight`, `sweep`, `foley`,
   `combat` PASS. The bash has not been seen in a shot yet. SHOT: `soldierface wardenface 30 15 warden lit` ran
-  50 min under Vulkan/lavapipe without saving a frame (bots ran alongside for part of it) and was killed before
-  the GL fallback; the warden is still unseen. Next session: start that shot FIRST, alone, nothing else running.
+  50 min without saving a frame and was killed: the cause was the duplicate-variable parse error in shot.gd
+  that another session fixed in 3026907 (pulled at the end of this one). The warden is still unseen; next
+  session start that shot first.
 - **(16:00 10-31) Enemy variety: the Hollow Warden, a shield variant (Next 0 (c)).** `game/enemies/hollow_warden.gd`
   (extends HollowSoldier) carries `HollowTarge` (`targe.gd` + `targe.gdshader`, all procedural, ~3.3k tris): a domed
   0.58 m plank board faced with tooled, blade-gashed, ash-caked hide, an iron boss with a short spike, 24 iron studs
