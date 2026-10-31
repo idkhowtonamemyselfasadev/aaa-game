@@ -26,6 +26,10 @@ uniform vec3 coat_dark : source_color = vec3(0.028, 0.025, 0.024); // the saddle
 uniform vec3 pale : source_color = vec3(0.58, 0.55, 0.50);         // the white: blaze, ruff, chest, feet, tail tip -- dulled by the yard
 uniform vec3 eye_col : source_color = vec3(0.85, 0.9, 0.45);   // tapetum colour (a Briar Hound's smoulders ember-red)
 uniform vec3 stocking : source_color = vec3(0.30, 0.22, 0.14);     // tan points over the eyes and on the cheeks
+uniform float grizzle = 0.3;                                       // how many pale-tipped guard hairs on the back and brush
+uniform vec3 grizzle_col : source_color = vec3(0.13, 0.11, 0.1);
+uniform float sheen = 0.3;                                         // rim sheen of the long coat
+uniform float patchy = 0.5;                                        // the collie's sun-bleached brown patches
 
 varying vec3 v_rest;
 varying vec4 v_col;
@@ -181,7 +185,7 @@ void fragment() {
 	col = mix(col, coat_dark, smoothstep(0.4, 0.9, rn.y) * (1.0 - head) * (1.0 - legm) * 0.6);
 	// broad patches where the coat lies differently, a brown cast where the sun has bleached it
 	col *= mix(0.8, 1.15, vnoise(p * 9.0 + vec3(3.1, 0.0, 7.7)));
-	col = mix(col, vec3(0.08, 0.06, 0.045), smoothstep(0.55, 0.85, vnoise(p * 4.0 + 1.7)) * 0.5);
+	col = mix(col, vec3(0.08, 0.06, 0.045), smoothstep(0.55, 0.85, vnoise(p * 4.0 + 1.7)) * patchy);
 	// the white: a full ruff round the neck, the chest and belly, all four feet and lower legs
 	float ruff = smoothstep(-0.22, -0.27, p.z) * smoothstep(-0.36, -0.32, p.z) * (1.0 - head)
 		* smoothstep(0.35, 0.0, rn.y + 0.25 * vnoise(p * 30.0));
@@ -212,7 +216,7 @@ void fragment() {
 	float clump = vnoise(p * 55.0);
 	col *= mix(0.78, 1.12, strand) * mix(0.88, 1.08, clump);
 	// grizzle: pale-tipped guard hairs on the back and brush
-	col = mix(col, vec3(0.13, 0.11, 0.1), smoothstep(0.75, 0.95, vnoise(p * 190.0)) * 0.3 * (1.0 - legm) * (1.0 - head));
+	col = mix(col, grizzle_col, smoothstep(0.75 - 0.25 * step(0.5, grizzle), 0.95, vnoise(p * 190.0)) * grizzle * (1.0 - legm * 0.6) * (1.0 - head * 0.5));
 	float rough = 0.62;
 	float spec = 0.35;
 	if (v_col.a > 0.4 && v_col.a < 0.6) {
@@ -226,7 +230,7 @@ void fragment() {
 	ROUGHNESS = mix(rough, 0.35, wet);
 	SPECULAR = spec;
 	float rim = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.5);
-	ALBEDO += vec3(0.12, 0.11, 0.1) * rim * 0.3 * (1.0 - wet) * (1.0 - legm * 0.7);   // sheen on the long black coat
+	ALBEDO += vec3(0.12, 0.11, 0.1) * rim * sheen * (1.0 - wet) * (1.0 - legm * 0.7);   // sheen on the long black coat
 	ALBEDO *= v_cloud;
 	float ao = mix(0.55, 1.0, smoothstep(0.05, 0.35, p.y));
 	EMISSION = ALBEDO * bounce_light * mix(1.1, 0.6, clamp(rn.y, 0.0, 1.0)) * ao * bounce_gain(v_world);

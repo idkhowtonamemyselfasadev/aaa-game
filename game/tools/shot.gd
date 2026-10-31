@@ -892,7 +892,7 @@ func _ready() -> void:
 		var a: BriarHound = hs[0]
 		var b: BriarHound = hs[1]
 		var pa := hp + Vector3(3.6, 0, 0.9)
-		var pb := hp + Vector3(-2.6, 0, 3.4)
+		var pb := hp + Vector3(-1.2, 0, 2.6)
 		a.global_position = Vector3(pa.x, terrain.height_at(pa.x, pa.z), pa.z)
 		b.global_position = Vector3(pb.x, terrain.height_at(pb.x, pb.z), pb.z)
 		a.face(hp)
@@ -910,12 +910,25 @@ func _ready() -> void:
 		b._graze = 0.35
 		b._eyes = 0.3
 		for h: BriarHound in hs:
+			h._yaw = h.rotation.y
 			h._pose(0.0)
+			h.press_grass()           # the bed under the crouched one; the runner's lane below
 			h.process_mode = Node.PROCESS_MODE_DISABLED
+		var tr: Trample = world.get_node_or_null("Trample")
+		if tr:
+			var back := (pb - (pb - hp).cross(Vector3.UP).normalized() * 3.0)
+			var rd := pb - back
+			tr.add_herd_point(Vector2(pb.x, pb.z), Vector2(rd.x, rd.z), 1.0, 2.0, 0.3, rd.length())
+			tr.add_herd_point(Vector2(back.x, back.z), Vector2(rd.x, rd.z), 1.0, 5.0, 0.3, rd.length())
+		# the hero squares up to the crouched one, staff drawn
+		player.use_bot_input = true
+		player.combat._begin_draw()
+		for i in 30:
+			player.combat.physics_step(1.0 / 60.0)
 		var light: Vector3 = -world.sun.global_transform.basis.z
 		var sunward := Vector3(-light.x, 0, -light.z).normalized()
-		var mid := hp.lerp(pa, 0.45)
-		var hcam := mid + sunward * 5.2 + Vector3(0, 1.2, 0)
+		var mid := (hp + pa + pb) / 3.0
+		var hcam := mid + sunward * 4.6 + Vector3(0, 1.0, 0)
 		SPOTS[spot] = [hcam, mid + Vector3(0, 0.5, 0)]
 	if spot == "ferns":
 		# the densest fern drift (most ferns within 5 m), framed with its oak behind it
@@ -1580,8 +1593,8 @@ func _ready() -> void:
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z) + 0.9
 		if spot == "hounds":
-			pos.y = terrain.height_at(pos.x, pos.z) + 1.6
-			look.y = terrain.height_at(look.x, look.z) + 0.55
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.25
+			look.y = terrain.height_at(look.x, look.z) + 0.6
 		if spot == "post":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.35
 			look.y = (s[1] as Vector3).y

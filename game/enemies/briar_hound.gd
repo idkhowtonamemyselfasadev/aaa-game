@@ -34,6 +34,9 @@ const PARRIED_T := 1.3
 const DAMAGE := 14.0
 const PACK_GAP := 0.9        # s between one hound's lunge and its mate's crouch
 const COOLDOWN := 1.6        # s a hound circles before it may lunge again
+const PRESS := 0.2           # trail age of the bed it holds pressed under itself (full lay)
+const LANE := 2.4            # m of run between the lane segments it combs into the meadow
+const LANE_AGE := 16.0       # a lane segment starts this old: already standing back up, gone in ~14 s
 
 signal struck(result: String)
 signal snarled(at: Vector3)  # the crouch before a lunge
@@ -73,6 +76,10 @@ var _graze := 0.0
 var _eyes := 0.0
 var _mi: MeshInstance3D
 var _mat: ShaderMaterial
+var _trample: Trample
+var _lane_at := Vector3.INF
+var _press_at := Vector3.INF
+var pressed := 0             # grass points it has laid (bots)
 
 func _ready() -> void:
 	add_to_group("hittable")
@@ -88,11 +95,16 @@ func _ready() -> void:
 	add_child(col)
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/dog.gdshader")
-	# a char-grey coat with a darker saddle, ash-pale points, an ember tapetum
-	_mat.set_shader_parameter("coat", Color(0.085, 0.078, 0.072))
-	_mat.set_shader_parameter("coat_dark", Color(0.035, 0.032, 0.03))
-	_mat.set_shader_parameter("pale", Color(0.24, 0.22, 0.2))
-	_mat.set_shader_parameter("stocking", Color(0.13, 0.08, 0.05))
+	# a smoke-grey coat grizzled with ash-pale guard hairs (it reads against the dark meadow,
+	# not as a black hole in it), a sooty saddle, pale points, rust-brown brows, an ember tapetum
+	_mat.set_shader_parameter("coat", Color(0.2, 0.185, 0.165))
+	_mat.set_shader_parameter("coat_dark", Color(0.075, 0.068, 0.06))
+	_mat.set_shader_parameter("pale", Color(0.44, 0.41, 0.37))
+	_mat.set_shader_parameter("stocking", Color(0.24, 0.13, 0.07))
+	_mat.set_shader_parameter("grizzle", 0.75)
+	_mat.set_shader_parameter("grizzle_col", Color(0.5, 0.47, 0.42))
+	_mat.set_shader_parameter("sheen", 1.0)
+	_mat.set_shader_parameter("patchy", 0.0)
 	_mat.set_shader_parameter("eye_col", Color(1.0, 0.32, 0.08))
 	_mi = MeshInstance3D.new()
 	_mi.name = "Body"
@@ -104,6 +116,7 @@ func _ready() -> void:
 
 func plant(t_: Terrain) -> void:
 	terrain = t_
+	_trample = get_parent().get_node_or_null("Trample") as Trample
 	global_position = _ground(global_position)
 	_home = global_position
 
@@ -303,6 +316,8 @@ func _physics_process(delta: float) -> void:
 	_speed = lerpf(_speed, spd, 1.0 - exp(-10.0 * delta))
 	_graze = lerpf(_graze, graze, 1.0 - exp(-6.0 * delta))
 	_eyes = lerpf(_eyes, eyes, 1.0 - exp(-8.0 * delta))
+	if state != STRIKE:
+		press_grass()
 	_pose(delta)
 
 func _pose(delta: float) -> void:
@@ -311,6 +326,33 @@ func _pose(delta: float) -> void:
 	_mi.set_instance_shader_parameter("speed", _speed / SCALE)
 	_mi.set_instance_shader_parameter("graze", _graze)
 	_mi.set_instance_shader_parameter("eyeshine", _eyes + _flash)
+
+## The meadow shows where it runs (a lane of combed-over grass, one long segment per LANE m,
+## laid already half-risen so a fight does not spend the herd trail's 64 points) and lies
+## flat in a bed round it where it crouches, sprawls, noses about or lies dead.
+func press_grass() -> void:
+	if _trample == null:
+		return
+	var p := global_position
+	var sp := _speed
+	if sp > 1.0:
+		if _lane_at == Vector3.INF:
+			_lane_at = p
+		var run := Vector2(p.x - _lane_at.x, p.z - _lane_at.z)
+		if run.length() >= LANE:
+			_trample.add_herd_point(Vector2(p.x, p.z), run, 1.0, LANE_AGE, 0.3, run.length())
+			_lane_at = p
+			pressed += 1
+		_press_at = Vector3.INF
+		return
+	_lane_at = p
+	var fwd := Vector2(-sin(_yaw), -cos(_yaw))
+	# the bed: from the haunches to the chest, as long as the body (a body point each end)
+	var c := Vector2(p.x, p.z) + fwd * 0.45 * SCALE * 0.5
+	_trample.add_herd_point(c, fwd, 1.0, PRESS, 0.35, 0.55 * SCALE)
+	if _press_at == Vector3.INF or p.distance_to(_press_at) > 0.3:
+		pressed += 1
+	_press_at = p
 
 func _bite(close: bool) -> void:
 	var r := "miss"
@@ -343,6 +385,7 @@ func _die_tick(delta: float) -> void:
 	_mi.position = Vector3(0, 0.3 * SCALE * 0.5 * smoothstep(0.0, 1.0, k) - 0.05, 0)
 	_speed = lerpf(_speed, 0.0, 1.0 - exp(-8.0 * delta))
 	_eyes = lerpf(_eyes, 0.0, 1.0 - exp(-2.0 * delta))
+	press_grass()
 	_pose(delta)
 	if t > 2.0:
 		set_physics_process(false)

@@ -1257,6 +1257,13 @@ func _hounds_test() -> void:
 	print("BOT hounds: lying on its side, roll %.2f rad, %.2f m off the ground" % [lie, a.global_position.y - _world.terrain.height_at(a.global_position.x, a.global_position.z)])
 	if absf(lie) < 1.2:
 		return _combat_done(false, "a dead hound did not fall onto its side")
+	var tr: Trample = _world.get_node("Trample")
+	var bed := tr.herd_lay_at(a.global_position, 0.85)
+	print("BOT hounds: grass points laid %d+%d, lay under the dead hound %.2f, herd points live %d/%d" % [a.pressed, b.pressed, bed, tr.active_herd_points(), Trample.HTN])
+	if a.pressed + b.pressed < 6 or bed < 0.6:
+		return _combat_done(false, "the hounds did not press the meadow grass (lane while running, bed under a body)")
+	if tr.active_herd_points() > 48:
+		return _combat_done(false, "the hounds' lanes spend too much of the herd trail")
 	var played: Dictionary = _world.foley.played
 	print("BOT hounds: sounds woof %d, whoom %d, crunch %d, bark %d" % [played.get("dog_woof", 0), played.get("whoom", 0), played.get("crunch", 0), played.get("dog_bark", 0)])
 	_combat_done(true, "pack idle on its ground, roused together, circled, lunged one at a time, bit, a dodge cleared a lunge, both killed")
