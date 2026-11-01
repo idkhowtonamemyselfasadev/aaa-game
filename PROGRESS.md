@@ -39,7 +39,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   and axis error < 4 deg: tip 1.00 m -> 0.66 m high, clearance 1.62, axis error 0. pose_check: all poses reachable.
   Bot dodge 2b/2c re-checked every cancel recovery + mid-ease opener against the new guard (worst 0.61 / 0.64, the
   same as before: the worst points are mid-swing, not at the guard). Bots dodge combat heavy sweep soldier lockon
-  flinch PASS. Shot `hero guard4 30 15 guard`: see Next 0 for the verdict.
+  flinch PASS. Shot `hero guard4 30 15 guard` SEEN (gallery 0030): diagonal shaft reads; still FAIL on the hero's proportions and blank face.
 - **(22:00 10-31) Cancel recovery clears the body (Next 0 known residue).** A dodge-cancel eased from the
   cancelled pose -> CHAMBER -> GUARD in a straight blend; with the shaft out to the side (end of string swing 2,
   yaw -100) the butt swept round through the chest (offline sweep of every cancel point with pose_check's model:
@@ -6398,6 +6398,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (00:00 11-01) **Low guard DONE (code + bots + pose_check; SEEN, gallery 0030, FAIL overall)**: the shaft finally
+   reads as a diagonal with the tip at knee height. NEXT, in order: (a) the hero reads squat/toy-like in the guard
+   portrait (big hat, short legs, bulky torso layers): measure proportions against a 1.8 m human (head ~1/7.5 of the
+   height, leg length ~0.47) and fix the rig scale / garb bulk; (b) the face is a blank grey cloth at 3 m: lower the
+   face cloth below the nose or brighten the eye band (FaceFill) so the eyes read; (c) the `hounds` framing; thornier
+   ruff; (d) re-shoot the warden portrait; (e) `bash` shot mode; (f) re-shoot ring + knight p3. 0b-e: freesound /
+   opengameart / kenney still need re-opening once the domains are allowed.
 0. (23:00 10-31) **Opener from mid-ease DONE (code + bots dodge combat heavy sweep soldier lockon flinch PASS)**.
    `combat.gd` `_start(0)` pressed while `_recover > 0` now builds the opener with `string_open_from(path, u)`: the
    arms run on along the rest of the picked recovery path up to its chamber key (squeezed into the opener's first

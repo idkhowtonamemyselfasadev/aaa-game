@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261025-2226-skinform-crop.jpg",
-  "time": "2026-10-25T22:26:00Z",
-  "caption": "Face x5, before (left) vs after (right): deeper sockets, a lighter brow bone and sun-mottled cheeks give the face some bony structure, but at this range it still reads soft.",
-  "verdict": "fail"
- },
- {
   "file": "20261025-2226-skinform-herocu.jpg",
   "time": "2026-10-25T22:26:00Z",
   "caption": "Hero at the 2 m lens at noon with the hewn oak post in the foreground: the post now reads as adzed timber under an iron band, but the face is still a small patch in the hood and the plain meadow lacks depth haze.",
@@ -897,6 +891,12 @@
   "file": "20261031-2300-guard3.jpg",
   "time": "2026-10-31T23:45:00Z",
   "caption": "Hero in the mid guard from the raised sun-side lens: lit and the whole staff shows, but with only -12 deg of pitch the shaft still reads as a level bar across the belly and the face is a blank grey cloth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0030-guard4.jpg",
+  "time": "2026-11-01T00:30:00Z",
+  "caption": "Hero in the new low guard: the staff now reads as a clear diagonal, tip down to knee height -- but the figure still looks squat and toy-like, the face is a blank grey cloth and the straw post crowds the right.",
   "verdict": "fail"
  }
 ]
