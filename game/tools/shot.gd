@@ -857,8 +857,8 @@ func _ready() -> void:
 		var pp := player.global_position
 		# "knight" in the args: the Ashen Knight stands in for the soldier (the soldier is moved off)
 		# "warden": the shield warden stands in the same way
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else world.soldier)
-		if "knight" in args or "warden" in args:
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else world.soldier))
+		if "knight" in args or "warden" in args or "hewer" in args:
 			world.soldier.global_position += Vector3(0, 0, 60)
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
@@ -1818,7 +1818,7 @@ func _ready() -> void:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot
 		player.use_bot_input = true
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else world.soldier)
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else world.soldier))
 		var dt := 1.0 / 60.0
 		foe.set_physics_process(false)
 		player.combat._begin_draw()
@@ -1828,6 +1828,11 @@ func _ready() -> void:
 		if sw:
 			foe.move_kind = HollowSoldier.SWEEP_MOVE
 		var dur := {HollowSoldier.WINDUP: HollowSoldier.SWEEP_WINDUP_T if sw else HollowSoldier.WINDUP_T, HollowSoldier.STRIKE: HollowSoldier.SWEEP_T if sw else HollowSoldier.STRIKE_T, HollowSoldier.STAGGER: HollowSoldier.STAGGER_T, HollowSoldier.DEAD: 2.4}
+		if foe is HollowHewer and not sw:
+			# hewer: the chop (raise + a 0.3 s hitch + glint, then the fall)
+			foe.move_kind = HollowHewer.CHOP_MOVE
+			dur[HollowSoldier.WINDUP] = HollowHewer.RAISE_T + 0.3 + HollowHewer.GLINT_T
+			dur[HollowSoldier.STRIKE] = HollowHewer.CHOP_T
 		if foe_state == HollowSoldier.STAGGER:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:

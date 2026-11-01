@@ -24,10 +24,12 @@ var training_post: TrainingPost
 var soldier: HollowSoldier
 var knight: AshenKnight
 var warden: HollowWarden
+var hewer: HollowHewer
 var hounds: Array[BriarHound] = []
 var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
+const HEWER_AT := Vector2(-20.0, 46.0)   # the axe hewer, further down the meadow's west side
 const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
 var weather: Weather
 var thermals: Thermals
@@ -134,6 +136,13 @@ func _ready() -> void:
 	warden.plant(terrain)
 	warden.face(p)
 	trample.walkers.append(warden)
+	# a third Hollow with a long felling axe, past the warden toward the wood's edge
+	hewer = HollowHewer.new()
+	hewer.position = Vector3(p.x + HEWER_AT.x, 0.0, p.z + HEWER_AT.y)
+	add_child(hewer)
+	hewer.plant(terrain)
+	hewer.face(p)
+	trample.walkers.append(hewer)
 	# the Briar Hounds: a pair nosing about the meadow's east side; they circle opposite ways
 	for i in 2:
 		var h := BriarHound.new()
@@ -336,7 +345,8 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier, knight, warden], trample)
+	foley.hook(player, [soldier, knight, warden, hewer], trample)
+	foley.hook_hewer(hewer)
 	foley.hook_knight(knight)
 	foley.hook_warden(warden)
 	foley.hook_hounds(hounds)

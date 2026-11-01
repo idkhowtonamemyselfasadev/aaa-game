@@ -158,6 +158,11 @@ Archers, Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archety
 **Become** forms), 4 world bosses. Wildlife (§8) is not an enemy class but predators will
 fight anything nearby, including Hollow.
 
+Built so far in the slice (Harrowmere Vale): spear Soldier, shield Warden (targe ward + bash),
+axe **Hewer** (2026-11-01: overhead chop after a raise + random hitch + glint, the raise is
+armoured against light strikes, a missed chop buries the bit for a punish window; crowded, it
+sweeps), Briar Hound pair, and the Ashen Knight slice boss.
+
 Spear Soldier moveset (each move has one right answer that the others punish): **thrust**
 (at spear length; narrow line — strafe, sidestep, dodge on the glint or parry) and **sweep**
 (when crowded inside the point or after two thrusts; low wide right-to-left arc with a long

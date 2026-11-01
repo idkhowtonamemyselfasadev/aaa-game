@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-0527-valley-dusk.jpg",
-  "time": "2026-10-26T05:27:20Z",
-  "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0527-villager.jpg",
   "time": "2026-10-26T05:27:20Z",
   "caption": "Edda at the woodpile at 10 h now wears her rust kirtle over the chest under the shawl and a dimmer coif instead of a mottled pale-grey body; her sleeves still read pale grey and the cottage annex is a flat white box with sticker-like plaster patches.",
@@ -891,6 +885,12 @@
   "file": "20261101-0739-face8.jpg",
   "time": "2026-11-01T07:39:27Z",
   "caption": "Hero close-up after the face cloth was dropped under the nose: the hood now frames a face with a nose, cheekbones and eyes instead of a grey block, but the skin reads as a smooth orange mannequin and the cloth front is a flat dark panel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-1141-hewer.jpg",
+  "time": "2026-11-01T11:41:56Z",
+  "caption": "The new Hollow Hewer (left) holds its felling axe overhead at the top of the chop with the glint on the bit; GL quick frame, the figure is backlit and dark and the axe head reads small.",
   "verdict": "fail"
  }
 ]

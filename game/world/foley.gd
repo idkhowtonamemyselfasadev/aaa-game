@@ -122,6 +122,8 @@ func hook(p: Player, soldiers: Array, trample: Node) -> void:
 			sol.struck.connect(func(_r: String) -> void:
 				if sol is HollowWarden and (sol as HollowWarden).move_kind == HollowWarden.BASH_MOVE:
 					return                     # the shield bash has its own sound (hook_warden)
+				if sol is HollowHewer and (sol as HollowHewer).move_kind == HollowHewer.CHOP_MOVE:
+					return                     # the chop has its own sound (hook_hewer)
 				_play("spear", (sol as Node3D).global_position + Vector3.UP * 1.3, -6.0))
 	if trample and trample.has_signal("footfall"):
 		trample.footfall.connect(_on_footfall)
@@ -196,6 +198,28 @@ func hook_warden(w: Node) -> void:
 			_play("slam", at, -14.0, 1.3)
 		else:
 			_play("whoom", at, -6.0, 0.8))
+
+## The Hollow Hewer's axe, from recorded sets only: the raise is the heavy whoosh slowed right
+## down with a low grunt; a chop that lands is the ground slam pitched up over a body thump and
+## a crunch; a missed chop bites the turf (the wood chop deep, a thud under it).
+func hook_hewer(hw: Node) -> void:
+	if hw == null or not hw.has_signal("chopped"):
+		return
+	hw.raised.connect(func(at: Vector3) -> void:
+		_play("whoom", at, -9.0, 0.5)
+		_play("grunt", at + Vector3.DOWN * 0.6, -10.0, 0.7))
+	hw.chopped.connect(func(at: Vector3, r: String) -> void:
+		var hero := player.global_position + Vector3.UP * 1.0 if player else at
+		_play("whoom", at + Vector3.UP * 1.2, -4.0, 0.75)
+		if r == "hit":
+			_play("slam", hero, 0.0, 1.1)
+			_play("body", hero, -1.0, 0.8)
+			_play("boom", hero, -10.0, 0.9)
+		elif r == "parried":
+			_play("clang", hero, -2.0, 0.8)
+		else:
+			_play("chop", at, 0.0, 0.7)
+			_play("thud", at, -3.0, 0.75))
 
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):
