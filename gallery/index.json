@@ -886,5 +886,11 @@
   "time": "2026-11-01T04:02:00Z",
   "caption": "The hero's face cloth now ends inside the hood's lower edge instead of hanging a dark tail onto the breastplate; still wrong: the armour reads dark and flat and the hood is a plain grey shell.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261101-0400-guard6.jpg",
+  "time": "2026-11-01T04:40:00Z",
+  "caption": "The hero in the low guard after the sash was cut to a hand's breadth (11 cm) and the face cloth tucked: the waist reads as a belt, not a girdle, but the hood still reads as a dark grey block from this angle, the figure is squat over hidden legs and the staff's bright red lacquer looks toy-like.",
+  "verdict": "fail"
  }
 ]

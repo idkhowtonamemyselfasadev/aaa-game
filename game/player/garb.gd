@@ -1187,6 +1187,9 @@ static func mix_cav(ridge: float, fine: float, depth: float) -> float:
 ## the left hip and two tails hanging from it that flutter like the robe's hems.
 ## COLOR.r is the crease cavity (fold_ao).
 const SASH_KNOT_A := -0.95
+## The band's height: a hand's breadth (11 cm), its outer turn slanting only 1.8 cm round the
+## hips, so it reads as a cloth belt and not a girdle cutting the torso in half (was 15 cm + 3 cm).
+const SASH_H := 0.11
 func _knotted_sash(hips: Node3D) -> void:
 	var band := _piece(_cgrid(_sash_band, 56, 8), 0.0, 0.0, 0.0, 0.25)
 	var bm := band.material_override as ShaderMaterial
@@ -1231,7 +1234,7 @@ func _cgrid(f: Callable, nu: int, nv: int) -> ArrayMesh:
 	return st.commit()
 
 func _sash_ring(a: float, y: float, out: float) -> Vector3:
-	return Vector3(sin(a) * (0.258 + out), y + 0.03 * sin(a), 0.005 + cos(a) * (0.222 + out))
+	return Vector3(sin(a) * (0.258 + out), y + 0.018 * sin(a), 0.005 + cos(a) * (0.222 + out))
 
 func _sash_band(u: float, v: float) -> Array:
 	var a := u * TAU
@@ -1251,10 +1254,10 @@ func _sash_band(u: float, v: float) -> Array:
 	var belly := 0.008 * sin(v * PI)
 	var out := 0.007 * lip + roll + belly + depth * crease
 	var cav := clampf(0.62 + 0.38 * crease, 0.0, 1.0) * lerpf(0.75, 1.0, sin(v * PI)) * lerpf(0.8, 1.0, lip)
-	return [_sash_ring(a, 1.245 - v * 0.15, out), cav]
+	return [_sash_ring(a, 1.245 - v * SASH_H, out), cav]
 
 func _knot_centre() -> Vector3:
-	return _sash_ring(SASH_KNOT_A, 1.165, 0.03)
+	return _sash_ring(SASH_KNOT_A, 1.245 - SASH_H * 0.5 - 0.005, 0.03)
 
 func _sash_outward() -> Vector3:
 	return Vector3(sin(SASH_KNOT_A) / 0.258, 0.0, cos(SASH_KNOT_A) / 0.222).normalized()
