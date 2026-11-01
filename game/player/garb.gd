@@ -815,7 +815,12 @@ func _veil(wimple := false) -> ArrayMesh:
 			var pull := sin(v * PI * 6.0 + absf(a) * 2.2) * smoothstep(0.35, 1.1, absf(a)) * (1.0 - 0.6 * depth)
 			# the lower edge sags only a little under the chin, so it stays tucked behind the
 			# hood's front edge (1.746) instead of hanging a point below it
-			var y := 1.929 - v * (0.229 + 0.015 * maxf(front, 0.0) * front) - 0.022 * rr * depth
+			# (unbearded face cloths stop short at the front: run to 1.66 there, the cloth's dark
+			# tail hung below the hood's pale front point onto the breastplate (gallery 0230 `face`);
+			# now its front hem sits ~1.72, inside the mantle collar, the folds easing out toward it)
+			var tuck := 0.0 if (beard or wimple) else smoothstep(0.15, 0.85, front)
+			var y := 1.929 - v * (0.229 + 0.015 * maxf(front, 0.0) * front - 0.062 * tuck) \
+					- 0.022 * rr * depth * (1.0 - 0.6 * tuck * smoothstep(0.7, 1.0, v))
 			# the top edge rides up over the bridge of the nose and sags into a soft dip under
 			# each cheekbone before running back flat under the hood, instead of a ruled line
 			var top := 1.0 - smoothstep(0.0, 0.35, v)
@@ -844,6 +849,8 @@ func _veil(wimple := false) -> ArrayMesh:
 			# under the chin the cloth is drawn back toward the throat instead of hanging forward
 			# as a flat apron from the nose to the collar
 			var chin := 0.0 if wimple else 0.016 * smoothstep(0.35, 0.75, v) * maxf(front, 0.0)
+			# and the shortened hem is drawn in against the throat, behind the hood's front point
+			chin += 0.014 * tuck * smoothstep(0.7, 1.0, v) * maxf(front, 0.0)
 			var tx := 1.0 if beard else jaw_taper(y)
 			st.add_vertex(Vector3(sin(a) * wx * r * tx, y, -0.035 + front * wz * r - chin))
 	for j in nv:
