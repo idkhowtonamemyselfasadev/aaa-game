@@ -202,6 +202,30 @@ func hook_warden(w: Node) -> void:
 ## The Hollow Hewer's axe, from recorded sets only: the raise is the heavy whoosh slowed right
 ## down with a low grunt; a chop that lands is the ground slam pitched up over a body thump and
 ## a crunch; a missed chop bites the turf (the wood chop deep, a thud under it).
+## The Ashen Archer, from recorded sets only: the draw creaks the stave, the loose is the
+## string's slap (a short pitched-up wood knock) under the shaft's hiss (the spear whoosh
+## pitched up), the arrow thunks into the turf, a hit lands the body blow, a parry rings.
+func hook_archer(ar: Node) -> void:
+	if ar == null or not ar.has_signal("loosed"):
+		return
+	ar.drew.connect(func(at: Vector3) -> void:
+		_play("creak", at, -14.0, 1.6))
+	ar.loosed.connect(func(at: Vector3, _a: Node) -> void:
+		_play("wood", at, -8.0, 1.7)
+		_play("spear", at, -6.0, 1.25))
+	ar.arrow_landed.connect(_on_arrow_landed)
+
+func _on_arrow_landed(at: Vector3, r: String) -> void:
+	match r:
+		"hit":
+			_play("body", at, -2.0, 1.0)
+		"parried":
+			_play("clang", at, -4.0, 1.15)
+		"ground":
+			_play("thud", at, -6.0, 1.3)
+		_:
+			_play("spear", at, -10.0, 1.4)
+
 func hook_hewer(hw: Node) -> void:
 	if hw == null or not hw.has_signal("chopped"):
 		return

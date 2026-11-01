@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -67,8 +67,13 @@ func _ready() -> void:
 	# the axe hewer likewise stands its post unless it is under test
 	if name != "hewer" and _world.hewer != null:
 		_world.hewer.process_mode = Node.PROCESS_MODE_DISABLED
+	if name != "archer" and _world.archer != null:
+		_world.archer.process_mode = Node.PROCESS_MODE_DISABLED
 	if name == "hewer":
 		_hewer_test()
+		return
+	if name == "archer":
+		_archer_test()
 		return
 	if name == "hounds":
 		_hounds_test()
@@ -1452,6 +1457,149 @@ func _hewer_place_at_release(w: HollowHewer, n: int, d: float) -> void:
 	var at := _player.global_position - f.normalized() * d
 	w.global_position = Vector3(at.x, _world.terrain.height_at(at.x, at.z) + 0.05, at.z)
 	w._home = w.global_position
+
+## Ashen Archer: idle at its post clear of the other Hollows with the bow in its left hand;
+## from 10 m it raises, draws to the jaw, holds a random beat, glints and looses: a standing
+## hero is hit; a hero who runs across the aim on the glint is missed; a roll as the arrow
+## arrives lets it pass; at 4 m it walks backward to keep its distance; crowded at 1.6 m it
+## clubs with the stave; and it dies to the staff like the others.
+func _archer_test() -> void:
+	var p := _player
+	var w: HollowArcher = _world.archer
+	for n in [_world.soldier, _world.knight, _world.warden, _world.hewer]:
+		n.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var near := INF
+	for n in [_world.soldier, _world.warden, _world.knight, _world.hewer]:
+		near = minf(near, Vector2(w.global_position.x - n.global_position.x, w.global_position.z - n.global_position.z).length())
+	var gd := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
+	print("BOT archer: %.1f m from the start, %.1f m from the nearest Hollow, state %d, health %.0f" % [gd, near, w.state, w.health])
+	if w.state != HollowSoldier.IDLE or near < w.notice + 2.0 or gd < w.notice + 2.0:
+		return _combat_done(false, "the archer should wait idle, clear of the start and the other Hollows")
+	var bg := w.bow.global_position.distance_to(w._grip_l.global_position)
+	print("BOT archer: bow grip %.2f m from the left hand, spear mesh %s" % [bg, w.spear.mesh])
+	if bg > 0.12 or w.spear.mesh != null:
+		return _combat_done(false, "the bow is not in the left hand (or the spear still shows)")
+	# 1) standing still at 10 m: raise, draw, hold, glint, loose -> hit
+	_soldier_at(w, 10.0, HollowArcher.SHOT_MOVE)
+	p.health = Player.HEALTH_MAX
+	var n0 := w.shots
+	var wound := 0.0
+	var glint_seen := false
+	var max_span := 0.0
+	var max_draw := 0.0
+	var tt := 0.0
+	while w.shots == n0 and tt < 6.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if w.drawing():
+			wound = w.t
+			if w._glint != null and w._glint.visible:
+				glint_seen = true
+			max_span = maxf(max_span, w._grip_l.global_position.distance_to(w._grip_r.global_position))
+			max_draw = maxf(max_draw, w.bow.draw)
+	print("BOT archer: drew for %.2f s (hold %.2f), glint %s, hands %.2f m apart at full draw, bow draw %.2f" % [wound, w.last_hold, glint_seen, max_span, max_draw])
+	if wound < HollowArcher.RAISE_T + HollowArcher.DRAW_T + HollowArcher.HOLD_MIN + HollowArcher.GLINT_T - 0.05 or not glint_seen or max_span < 0.5 or max_draw < 0.9:
+		return _combat_done(false, "the shot did not raise, draw to the jaw and glint before the loose")
+	var arrow := w.last_arrow
+	tt = 0.0
+	while w.last_arrow_result == "" and tt < 3.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	print("BOT archer: stood -> %s, health %.0f (arrow %s)" % [w.last_arrow_result, p.health, arrow])
+	if w.last_arrow_result != "hit" or p.health >= Player.HEALTH_MAX:
+		return _combat_done(false, "a standing hero at 10 m was not hit")
+	while w.state != HollowSoldier.STALK or p.flinch_t >= 0.0:
+		await get_tree().physics_frame
+	await _ticks(30)
+	# 2) running across the aim on the glint: the arrow goes behind
+	p.health = Player.HEALTH_MAX
+	_soldier_at(w, 10.0, HollowArcher.SHOT_MOVE)
+	var n1 := w.shots
+	while w.shots == n1 and not (w.drawing() and w.t >= w.shot_windup() - HollowArcher.GLINT_T):
+		await get_tree().physics_frame
+	var to := w.global_position - p.global_position
+	var side := Vector3(to.z, 0, -to.x).normalized()
+	p.bot_input = Vector2(side.x, side.z)
+	while w.shots == n1:
+		await get_tree().physics_frame
+	tt = 0.0
+	while w.last_arrow_result == "" and tt < 3.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT archer: strafed on the glint -> %s, health %.0f" % [w.last_arrow_result, p.health])
+	if w.last_arrow_result == "hit" or w.last_arrow_result == "":
+		return _combat_done(false, "a hero running across the aim on the glint was still hit")
+	while w.state != HollowSoldier.STALK:
+		await get_tree().physics_frame
+	await _ticks(30)
+	# 3) a roll as the arrow arrives lets it pass
+	p.health = Player.HEALTH_MAX
+	p.stamina = p.stamina_max
+	_soldier_at(w, 10.0, HollowArcher.SHOT_MOVE)
+	var n2 := w.shots
+	while w.shots == n2:
+		await get_tree().physics_frame
+	var a2 := w.last_arrow
+	while is_instance_valid(a2) and a2.result == "" and a2.point().distance_to(p.global_position + Vector3.UP * 1.0) > 2.2:
+		await get_tree().physics_frame
+	to = w.global_position - p.global_position
+	p.bot_input = Vector2(-to.x, -to.z).normalized()
+	p.bot_dodge = true
+	tt = 0.0
+	while w.last_arrow_result == "" and tt < 2.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT archer: rolled as it arrived -> %s, health %.0f" % [w.last_arrow_result, p.health])
+	if w.last_arrow_result != "dodged" and w.last_arrow_result != "perfect":
+		return _combat_done(false, "a roll timed on the arrow's arrival did not let it pass")
+	while w.state != HollowSoldier.STALK:
+		await get_tree().physics_frame
+	Engine.time_scale = 1.0
+	await _ticks(40)
+	# 4) at 4 m it walks backward to keep its distance
+	_soldier_at(w, 4.0, -1)
+	var b0 := w.backsteps
+	var d0 := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
+	await _ticks(60)
+	var d1 := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
+	print("BOT archer: crowded at %.1f m -> %.1f m after 1 s, backed %.2f m, state %d" % [d0, d1, w.backsteps - b0, w.state])
+	if d1 < d0 + 0.8 or w.backsteps - b0 < 0.8:
+		return _combat_done(false, "the archer did not back off to keep its distance")
+	# 5) crowded at 1.6 m it clubs with the stave
+	p.health = Player.HEALTH_MAX
+	_soldier_at(w, 1.6, -1)
+	w.t = 1.0
+	tt = 0.0
+	while w.state != HollowSoldier.WINDUP and tt < 2.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	print("BOT archer: crowded at 1.6 m -> state %d, move %d (stave %d)" % [w.state, w.move_kind, HollowSoldier.SWEEP_MOVE])
+	if w.move_kind != HollowSoldier.SWEEP_MOVE:
+		return _combat_done(false, "the archer did not club with the stave when crowded")
+	await _wait_strike_done(w, w.strikes)
+	print("BOT archer: stave swing -> %s" % w.last_result)
+	# 6) it dies to the staff
+	p.health = Player.HEALTH_MAX
+	w.force_move = -1
+	tt = 0.0
+	while not w.is_dead() and tt < 20.0:
+		w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 2.5, 0.0)
+		w._freeze = 0.0
+		await _ticks(20)
+		tt += 0.33
+	var heard := []
+	for nm in ["creak", "wood", "spear", "body", "thud"]:
+		if fol.played.get(nm, 0) > played0.get(nm, 0):
+			heard.append(nm)
+	print("BOT archer: dead %s after %.1f s of blows; foley heard %s" % [w.is_dead(), tt, heard])
+	if not w.is_dead() or not heard.has("creak") or not heard.has("spear"):
+		return _combat_done(false, "the archer did not die to the staff, or its draw/loose made no sound")
+	_combat_done(true, "the archer draws with a tell, hits a standing hero, misses a strafing one, lets a roll pass, backs off, clubs when crowded and dies")
 
 static func _seg_dist(pt: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab := b - a

@@ -859,10 +859,12 @@ func _ready() -> void:
 		var pp := player.global_position
 		# "knight" in the args: the Ashen Knight stands in for the soldier (the soldier is moved off)
 		# "warden": the shield warden stands in the same way
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else world.soldier))
-		if "knight" in args or "warden" in args or "hewer" in args:
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else world.soldier)))
+		if "knight" in args or "warden" in args or "hewer" in args or "archer" in args:
 			world.soldier.global_position += Vector3(0, 0, 60)
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
+		if "archer" in args:
+			fp = pp + Vector3(-5.5, 0, 1.0)      # an archer draws from a stand-off, not at spear length
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
 		foe.face(pp)
@@ -1830,7 +1832,7 @@ func _ready() -> void:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot
 		player.use_bot_input = true
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else world.soldier))
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else world.soldier)))
 		var dt := 1.0 / 60.0
 		foe.set_physics_process(false)
 		player.combat._begin_draw()
@@ -1846,6 +1848,12 @@ func _ready() -> void:
 			dur[HollowSoldier.WINDUP] = HollowHewer.RAISE_T + 0.3 + HollowHewer.GLINT_T
 			dur[HollowSoldier.STRIKE] = HollowHewer.CHOP_T
 			dur[HollowSoldier.RECOVER] = HollowHewer.STUCK_T
+		if foe is HollowArcher and not sw:
+			# archer: the shot (raise + draw + a 0.4 s hold + glint, then the loose)
+			foe.move_kind = HollowArcher.SHOT_MOVE
+			dur[HollowSoldier.WINDUP] = foe.shot_windup()
+			dur[HollowSoldier.STRIKE] = HollowArcher.LOOSE_T
+			dur[HollowSoldier.RECOVER] = HollowArcher.RELOAD_T
 		if foe_state == HollowSoldier.STAGGER:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:

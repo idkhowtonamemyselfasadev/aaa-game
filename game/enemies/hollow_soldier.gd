@@ -76,6 +76,8 @@ var glint_col := Color(1.0, 0.82, 0.6)
 ## body back from the hips (a blocked blow); both default to the soldier's.
 var guard_pose: Array = GUARD
 var lean_kick := 0.0
+var notice := NOTICE           # wakes when the hero comes this near (an archer sees farther)
+var give_up := GIVE_UP
 var engage_delay := 0.25      # s inside ENGAGE before it winds up (a warden holds its ward longer)
 var poise := 0.0
 var parried_count := 0
@@ -397,22 +399,17 @@ func _physics_process(delta: float) -> void:
 			if back.length() > 0.6:
 				move = back.normalized() * STALK_SPEED * 0.7
 				_turn_to(back, delta, 4.0)
-			if dist < NOTICE:
+			if dist < notice:
 				_enter(STALK)
 		STALK:
 			_pose = guard_pose
 			ember = 1.0 + 0.15 * sin(t * 4.0)
 			_turn_to(to, delta, 5.0)
-			if dist > GIVE_UP or (global_position - _home).length() > GIVE_UP:
+			if dist > give_up or (global_position - _home).length() > give_up:
 				_enter(IDLE)
-			elif dist > ENGAGE:
-				# close in, slowing as the gap shrinks so it does not overrun
-				move = to.normalized() * STALK_SPEED * clampf((dist - ENGAGE) / 1.5 + 0.35, 0.35, 1.0)
-			elif t > engage_delay and _facing(to) > 0.85:
-				windups += 1
-				_from = _pose
-				move_kind = _choose(dist)
-				_enter(WINDUP)
+			else:
+				move = _stalk(to, dist)
+
 		WINDUP, STRIKE, RECOVER when move_kind > SWEEP_MOVE:
 			# a variant's own move (the warden's shield bash): it poses itself and hands back
 			# [move, lean, sink, ember]
@@ -539,6 +536,23 @@ func _physics_process(delta: float) -> void:
 		_blend = lerpf(_blend, minf(hs, Player.ANIM_RUN_SPEED), 1.0 - exp(-8.0 * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
 		anim_tree.set("parameters/speed/scale", clampf(hs / Player.ANIM_WALK_SPEED, 0.7, 1.4) if hs > 0.2 else 1.0)
+
+## STALK's footwork once the hero is in range: close in to ENGAGE, then wind up. Variants that
+## keep their distance (the archer) override it; returns the move velocity.
+func _stalk(to: Vector3, dist: float) -> Vector3:
+	if dist > ENGAGE:
+		# close in, slowing as the gap shrinks so it does not overrun
+		return to.normalized() * STALK_SPEED * clampf((dist - ENGAGE) / 1.5 + 0.35, 0.35, 1.0)
+	if t > engage_delay and _facing(to) > 0.85:
+		_begin_attack(dist)
+	return Vector3.ZERO
+
+func _begin_attack(dist: float) -> void:
+	windups += 1
+	_from = _pose
+	move_kind = _choose(dist)
+	_enter(WINDUP)
+
 
 ## Variants override this to run a move of their own (move_kind > SWEEP_MOVE) through
 ## WINDUP/STRIKE/RECOVER; it sets _pose and returns [move, lean, sink, ember].

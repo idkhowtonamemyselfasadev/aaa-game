@@ -161,7 +161,11 @@ fight anything nearby, including Hollow.
 Built so far in the slice (Harrowmere Vale): spear Soldier, shield Warden (targe ward + bash),
 axe **Hewer** (2026-11-01: overhead chop after a raise + random hitch + glint, the raise is
 armoured against light strikes, a missed chop buries the bit for a punish window; crowded, it
-sweeps), Briar Hound pair, and the Ashen Knight slice boss.
+sweeps), **Ashen Archer** (2026-11-01: keeps its distance and backs away from a closing hero;
+side-on draw to the jaw, a random hold, a glint that freezes the aim, then an arrow at where the
+hero's chest was -- run across the aim on the glint, roll as it arrives or parry it; crowded, it
+clubs with the bow stave; the reload is the punish window), Briar Hound pair, and the Ashen
+Knight slice boss.
 
 Spear Soldier moveset (each move has one right answer that the others punish): **thrust**
 (at spear length; narrow line — strafe, sidestep, dodge on the glint or parry) and **sweep**
