@@ -38,7 +38,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the two still separate by a shade; new `_cheek_crease(a, v)`: a soft valley ~0.42 rad behind each side of the face
   opening's rolled hem, eye line to jaw, fed into the hood's fold ridge (a ~4 mm dip in the geometry) and its fold
   AO (vertex cavity), so the hood's front is no longer one flat lit wall. Hero-only (bearded cowls unchanged). Bots
-  walk facelight villager pedlar greet combat PASS. Shot `hero guard7 30 15 guard`: rendering (see Next 0).
+  walk facelight villager pedlar greet combat PASS. Shot `hero guard7 30 15 guard` SEEN (gallery 0640, FAIL): at 3 m the change barely shows; the head still reads as a grey block.
 - **(03:00 11-01) Face cloth tail tucked (Next 0 (a)).** `garb.gd` `_veil()`: for unbearded, non-wimple wearers
   the cloth's front runs 6.2 cm shorter (`tuck`, smoothstep over the front 0.15..0.85), so its front hem sits
   ~1.72 m inside the mantle collar instead of ~1.66 m out over the breastplate below the hood's pale front point
@@ -6422,9 +6422,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (06:00 11-01) **Hood lighter/warmer + cheek crease DONE (code + bots PASS; shot guard7 pending)**. NEXT, in order:
-   (a) the figure reads squat over legs hidden in tall grass: try the `hero` shot on the path; (b) the `hounds`
-   framing; thornier ruff; (c) re-shoot the warden portrait; (d) `bash` shot mode; (e) re-shoot ring + knight p3.
+0. (06:00 11-01) **Hood lighter/warmer + cheek crease DONE (code + bots PASS; SEEN, gallery 0640 `guard7`, FAIL)**: the warmer wool and the
+   crease barely show at the guard camera's 3 m; the grey block is mostly the face cloth's flat front filling the
+   hood opening. NEXT, in order: (a) break up the face cloth's front: drop it below the nose so the cheeks and eyes
+   show skin, or give it a diagonal wrap fold and a darker underside; check with a close `face` shot, then `guard`;
+   (b) the figure reads squat over legs hidden in tall grass: try the `hero` shot on the path; (c) the `hounds`
+   framing; thornier ruff; (d) re-shoot the warden portrait; (e) `bash` shot mode; (f) re-shoot ring + knight p3.
    0b-e: freesound / opengameart / kenney still unreachable (proxy connect_rejected, 06:00 11-01) -- the
    environment's network allowlist must add those domains before the last page re-check can happen.
 0. (05:00 11-01) **Staff lacquer to oxblood DONE (code + bots walk combat heavy dodge PASS; SEEN, gallery 0500
