@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-0212-hazevalley.jpg",
-  "time": "2026-10-26T02:12:00Z",
-  "caption": "Noon over the Vale from the hill: the valley now recedes in layers -- crisp meadow, hazed wood and village, warm hazed foothills, then snow massifs that keep their rock structure; the far wood line is still a soft beige smear and the village reads small.",
-  "verdict": "pass"
- },
- {
-  "file": "20261026-0310-duskvalley-cmp.jpg",
-  "time": "2026-10-26T03:10:00Z",
-  "caption": "Before/after at 18:00: left, the pink-hazed near hill stands in front of dark grey foothills (value inversion); right, the ring's valley air now follows the sunset sky.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0310-duskvalley.jpg",
   "time": "2026-10-26T03:10:00Z",
   "caption": "The Vale at 18:00: the low foothills now sit in the same rose valley haze as the near hills instead of standing dark grey behind them; the far band reads a little flat and milky, and the hero is not in frame.",
@@ -891,6 +879,12 @@
   "file": "20261101-0400-guard6.jpg",
   "time": "2026-11-01T04:40:00Z",
   "caption": "The hero in the low guard after the sash was cut to a hand's breadth (11 cm) and the face cloth tucked: the waist reads as a belt, not a girdle, but the hood still reads as a dark grey block from this angle, the figure is squat over hidden legs and the staff's bright red lacquer looks toy-like.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0548-staffox.jpg",
+  "time": "2026-11-01T05:48:47Z",
+  "caption": "Hero in the mid guard at 15:00: the staff is now a deep oxblood lacquer with worn wood showing near the grips instead of a toy-bright red; the hood still reads as a grey block and the figure is lost in tall grass.",
   "verdict": "fail"
  }
 ]

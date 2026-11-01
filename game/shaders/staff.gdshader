@@ -4,8 +4,10 @@ shader_type spatial;
 // Hero staff: COLOR.r picks the layer (0 lacquered wood, 0.5 worn bronze, 1 cloth wrap).
 // UV.x = around the shaft (0..1), UV.y = metres along it. All detail is procedural.
 
-uniform vec3 lacquer : source_color = vec3(0.30, 0.075, 0.045);
-uniform vec3 wood_under : source_color = vec3(0.42, 0.24, 0.13);
+// oxblood lacquer (was a saturated 0.30/0.075/0.045 red that read as a toy) over a
+// weathered ash-brown wood that shows through where hands and knocks wore it away
+uniform vec3 lacquer : source_color = vec3(0.205, 0.062, 0.045);
+uniform vec3 wood_under : source_color = vec3(0.36, 0.25, 0.16);
 uniform vec3 bronze : source_color = vec3(0.86, 0.66, 0.34);
 uniform vec3 tarnish : source_color = vec3(0.30, 0.25, 0.15);
 uniform vec3 cloth : source_color = vec3(0.46, 0.38, 0.27);
@@ -52,14 +54,36 @@ void fragment() {
 	float metal;
 	float bump = 0.0;
 	if (layer < 0.25) {
-		// lacquered wood: long grain streaks, lacquer worn through to the wood where hands go
+		// lacquered wood: long grain streaks under a deep oxblood lacquer, worn through to the
+		// wood where the hands sit (rear hand 0.48 m from the butt, the reversed grip's mirror
+		// at 1.38 m), rubbed at the cloth grip's edges and scuffed next to the bronze caps
 		float grain = fbm(vec2(around * 24.0, along * 1.6)) * 0.6 + vnoise(vec2(around * 90.0, along * 3.0)) * 0.4;
-		float wear = smoothstep(0.55, 0.8, fbm(vec2(around * 8.0, along * 7.0)) + 0.25 * (1.0 - abs(along - 0.93) * 1.6));
-		alb = lacquer * (0.75 + 0.5 * grain);
-		alb = mix(alb, wood_under * (0.7 + 0.5 * grain), wear * 0.6);
-		rough = mix(0.22, 0.55, wear) + 0.08 * grain;
+		float hands = exp(-pow((along - 0.48) / 0.075, 2.0))
+				+ 0.7 * exp(-pow((along - 1.38) / 0.07, 2.0))
+				+ 0.45 * exp(-pow((along - 0.725) / 0.02, 2.0))
+				+ 0.45 * exp(-pow((along - 1.135) / 0.02, 2.0))
+				+ 0.5 * exp(-pow((along - 0.18) / 0.03, 2.0))
+				+ 0.5 * exp(-pow((along - 1.68) / 0.03, 2.0));
+		// the palm side rubs most: one side of the shaft wears more than the other
+		float palm = 0.65 + 0.35 * cos((around - 0.3) * 6.2831853);
+		float breakup = fbm(vec2(around * 14.0, along * 22.0));
+		float wear = smoothstep(0.42, 0.78, hands * palm * 0.9 + breakup * 0.55 - 0.12);
+		// small chips and knocks along the length, sharp-edged
+		float chips = smoothstep(0.83, 0.88, vnoise(vec2(around * 40.0, along * 55.0)) * 0.7 + breakup * 0.45);
+		wear = max(wear, chips);
+		// lacquer is uneven: thicker, darker in pools along the grain, a faint amber where thin
+		float pool = fbm(vec2(around * 5.0, along * 2.2));
+		vec3 lac = lacquer * (0.8 + 0.4 * grain) * mix(0.85, 1.12, pool);
+		lac = mix(lac, lac * vec3(1.25, 1.1, 0.9), smoothstep(0.55, 0.75, grain) * 0.4);
+		// the bared wood is darkened by hand grime at the centre of the patch
+		vec3 bare = wood_under * (0.65 + 0.55 * grain) * mix(1.0, 0.7, smoothstep(0.6, 1.2, hands));
+		alb = mix(lac, bare, wear);
+		rough = mix(0.28, 0.6, wear) + 0.08 * grain;
 		metal = 0.0;
-		bump = grain * 0.15;
+		bump = grain * 0.15 - wear * 0.35;
+		// glossy lacquer coat over the intact parts only
+		CLEARCOAT = 0.5 * (1.0 - wear);
+		CLEARCOAT_ROUGHNESS = 0.45 + 0.2 * breakup;
 	} else if (layer < 0.75) {
 		// worn bronze: tarnish settles in pits, high spots polished bright
 		float pits = fbm(vec2(around * 30.0, along * 140.0));
