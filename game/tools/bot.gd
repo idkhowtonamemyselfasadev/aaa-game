@@ -1689,6 +1689,79 @@ func _archer_test() -> void:
 	print("BOT archer: post %.2f m above where it was set; retreats worse than straight %d of 6, mean gain %+.2f m, climbed %.2f m" % [w.stand_gain, worse, gained / 6.0, w.retreat_climb])
 	if worse > 0 or w.retreat_climb <= 0.0:
 		return _combat_done(false, "the archer's retreat did not take the higher way")
+	# 4c) line of sight: a wall (invisible test collider, layer 1) between them
+	p.health = Player.HEALTH_MAX
+	p.velocity = Vector3.ZERO
+	_soldier_at(w, 10.0, -1)
+	await _ticks(2)
+	var ss0 := w.sidesteps
+	var a0 := w.global_position
+	var wall := StaticBody3D.new()
+	wall.name = "BotWall"
+	var wcs := CollisionShape3D.new()
+	var wbox := BoxShape3D.new()
+	wbox.size = Vector3(2.4, 4.0, 0.4)
+	wcs.shape = wbox
+	wall.add_child(wcs)
+	_world.add_child(wall)
+	var wmid := p.global_position.lerp(w.global_position, 0.5)
+	wall.global_position = Vector3(wmid.x, tr.height_at(wmid.x, wmid.z) + 1.5, wmid.z)
+	wall.look_at(p.global_position + Vector3.UP * 1.5, Vector3.UP)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var shut0 := w.clear_line(w.global_position, w._chest_target())
+	var drew_blind := false
+	var drew_clear := false
+	var lateral := 0.0
+	w.t = 1.0
+	tt = 0.0
+	while tt < 6.0 and not drew_clear:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if w.state == HollowSoldier.WINDUP and w.move_kind == HollowArcher.SHOT_MOVE:
+			if w.clear_line(w.global_position, w._chest_target()):
+				drew_clear = true
+			else:
+				drew_blind = true
+	var to_h := (p.global_position - a0)
+	to_h.y = 0.0
+	lateral = absf((w.global_position - a0).dot(Vector3.UP.cross(to_h.normalized())))
+	print("BOT archer: wall between -> line clear at start %s, sidesteps %d (ever %d), %.2f m to the side, drew clear %s after %.1f s, drew blind %s" % [shut0, w.sidesteps - ss0, w.sidesteps, lateral, drew_clear, tt, drew_blind])
+	if shut0 or drew_blind or not drew_clear or w.sidesteps == 0 or lateral < 1.0:
+		wall.queue_free()
+		return _combat_done(false, "the archer drew through a wall, or did not step out to a clear line")
+	# ... and when the wall slides into the line during the draw, it lowers the bow before the glint
+	var bd0 := w.blocked_draws
+	var shots0 := w.shots
+	var wm2 := p.global_position.lerp(w.global_position, 0.5)
+	wall.global_position = Vector3(wm2.x, tr.height_at(wm2.x, wm2.z) + 1.5, wm2.z)
+	wall.look_at(p.global_position + Vector3.UP * 1.5, Vector3.UP)
+	tt = 0.0
+	while tt < 1.5 and w.blocked_draws == bd0 and w.shots == shots0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	print("BOT archer: cover mid-draw -> lowered %d after %.2f s, loosed %d, state %d" % [w.blocked_draws - bd0, tt, w.shots - shots0, w.state])
+	if w.blocked_draws <= bd0 or w.shots != shots0:
+		wall.queue_free()
+		return _combat_done(false, "the archer loosed into a wall instead of lowering the bow")
+	# ... and an arrow loosed into the wall buries itself in it instead of passing through
+	var from_a := w.global_position + Vector3.UP * 1.5
+	var dir_a := (p.global_position + Vector3.UP * 1.2 - from_a).normalized()
+	var arr := HollowArrow.loose(_world, from_a, dir_a * HollowArrow.SPEED, w)
+	tt = 0.0
+	while tt < 1.0 and arr.result == "":
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	var past := (arr.global_position - from_a).dot(dir_a)
+	var wall_d := (wall.global_position - from_a).dot(dir_a)
+	await _ticks(10)
+	var still := is_instance_valid(arr) and arr._stuck >= 0.0
+	print("BOT archer: arrow at the wall -> %s, stopped %.2f m along (wall at %.2f), stuck %s, health %.0f, knocks %d" % [arr.result, past, wall_d, still, p.health, fol.played.get("wood", 0)])
+	if arr.result != "wall" or past > wall_d + 0.6 or not still or p.health < Player.HEALTH_MAX:
+		wall.queue_free()
+		return _combat_done(false, "an arrow passed through a wall")
+	wall.queue_free()
+	await get_tree().physics_frame
 	# 5) crowded at 1.6 m it clubs with the stave
 	p.health = Player.HEALTH_MAX
 	_soldier_at(w, 1.6, -1)
@@ -1718,7 +1791,7 @@ func _archer_test() -> void:
 	print("BOT archer: dead %s after %.1f s of blows; foley heard %s" % [w.is_dead(), tt, heard])
 	if not w.is_dead() or not heard.has("creak") or not heard.has("spear"):
 		return _combat_done(false, "the archer did not die to the staff, or its draw/loose made no sound")
-	_combat_done(true, "the archer draws with a tell, hits a standing hero, misses a strafing one, lets a roll pass, backs off, clubs when crowded and dies")
+	_combat_done(true, "the archer draws with a tell, hits a standing hero, misses a strafing one, lets a roll pass, backs off, never looses through cover, clubs when crowded and dies")
 
 static func _seg_dist(pt: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab := b - a

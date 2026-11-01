@@ -223,6 +223,10 @@ func _on_arrow_landed(at: Vector3, r: String) -> void:
 			_play("clang", at, -4.0, 1.15)
 		"ground":
 			_play("thud", at, -6.0, 1.3)
+		"wall":
+			# the head biting into timber or stone: a hard wooden knock with a little thud
+			_play("wood", at, -7.0, 1.2)
+			_play("thud", at, -12.0, 1.6)
 		"snapped":
 			# the shaft breaking under the rolling body: a dry, high wood crack
 			_play("wood", at, -9.0, 1.9)

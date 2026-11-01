@@ -20,7 +20,7 @@ const SNAP_AFTER := 0.06         # s into a roll before a lodged shaft snaps on 
 const SNAP_KEEP := 0.55          # share of the shaft (from the nock) that breaks off and falls
 const BROKEN_LIFE := 6.0         # s the snapped half lies in the grass
 
-## where the arrow ended its flight: result is "hit", "parried", "dodged", "perfect", "ground"
+## where the arrow ended its flight: result is "hit", "parried", "dodged", "perfect", "ground", "wall"
 signal landed(point: Vector3, result: String)
 
 var vel := Vector3.ZERO
@@ -41,6 +41,7 @@ var in_hero := -1.0              # >= 0: stuck in the hero this long
 var frozen := false              # shots: physics stopped, the streak is redrawn for the lens
 var broken := false              # a roll snapped the lodged shaft: this is the fletched half
 var lying := false               # the snapped half has come to rest on the turf
+var solid_hits := 0              # bots: times it struck a wall, trunk or rock
 var snaps := 0                   # bots: times this arrow snapped (0 or 1)
 
 func _process(_delta: float) -> void:
@@ -141,6 +142,8 @@ func _physics_process(delta: float) -> void:
 			_meet_hero(p1)
 			if result == "hit":
 				return
+	if _hit_solid(p0, p1):
+		return
 	if _terrain != null and _terrain.has_method("height_at"):
 		var g: float = _terrain.height_at(p1.x, p1.z)
 		if p1.y <= g + 0.02:
@@ -155,6 +158,34 @@ func _physics_process(delta: float) -> void:
 			landed.emit(Vector3(p1.x, g, p1.z), "ground")
 			if tr != null and tr.has_method("add_herd_point"):
 				tr.add_herd_point(Vector2(p1.x, p1.z), Vector2(vel.x, vel.z).normalized(), 0.35, 0.2, 0.15, 0.0)
+
+## A wall, a trunk or a rock across this step's path: the arrow buries its point there and
+## stands out of it at its angle (a parried one just drops). The turf is left to height_at.
+func _hit_solid(p0: Vector3, p1: Vector3) -> bool:
+	if not is_inside_tree() or p0.is_equal_approx(p1):
+		return false
+	var q := PhysicsRayQueryParameters3D.create(p0, p1, 1)
+	if archer is CollisionObject3D:
+		q.exclude = [(archer as CollisionObject3D).get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty() or hit.collider == _terrain:
+		return false
+	var at: Vector3 = hit.position
+	var n: Vector3 = hit.normal
+	_trail_pts.clear()
+	_trail_mesh.clear_surfaces()
+	if result == "parried":
+		vel = vel.bounce(n) * 0.2
+		return false
+	var d := vel.normalized()
+	global_position = at + d * 0.06 - d * HollowBow.ARROW_LEN * 0.5
+	_stuck = 0.0
+	ImpactFX.spawn(get_parent(), at, n, "pierce", 0.3)
+	if result == "":
+		result = "wall"
+	solid_hits += 1
+	landed.emit(at, "wall")
+	return true
 
 func _meet_hero(at: Vector3) -> void:
 	var r := _player.receive_attack(self, damage, false, false)

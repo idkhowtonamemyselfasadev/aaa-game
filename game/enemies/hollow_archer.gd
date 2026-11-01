@@ -47,6 +47,10 @@ const SUN_HOURS := [8.0, 10.0, 12.0, 14.0, 16.0]   # day hours it scores its pos
 const SUN_W := 3.0               # score for a post in sun all day (vs 1.0 per metre of height)
 const CROWN_DEPTH := 9.0         # m of leaves above the lowest leaves of an oak crown
 const UPHILL_W := 1.6            # score per metre of climb (vs 1.0 for heading straight away)
+const LOS_EYE := 1.5              # m above its feet the line of sight is cast from (the bow hand)
+const LOS_STEPS := [1.6, -1.6, 3.2, -3.2, 4.8, -4.8]   # m sideways it tries for a clear line
+const LOS_RETHINK := 0.5          # s between searches for a clear spot
+const LOS_LOSE_T := 0.35          # s the line may stay shut mid-draw before it lowers the bow
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
 # shaft-rig poses for the carry (bow held across the body, upper limb up and forward)
@@ -79,6 +83,62 @@ var retreat_dir := Vector3.ZERO  # the way it is backing (smoothed, world xz)
 var sun_lit := 1.0               # share of SUN_HOURS its post stands in sun (bots)
 var _flora: Flora
 var obstacles: Array[Vector3] = []   # tree and rock centres it keeps its post and its retreat clear of
+var sidesteps := 0               # bots: times it moved off to find a clear line on the hero
+var blocked_draws := 0           # bots: draws it lowered because the hero went behind cover
+var los_clear := true            # the line to the hero's chest was clear at the last check
+var _los_spot := Vector3.INF     # where it is walking to get a clear line (INF: none)
+var _los_think := 0.0
+var _seeking := false            # walking off to a clear spot since the line last shut
+var _los_shut := 0.0             # s the line has been shut during this draw
+
+## True when nothing solid (turf, a wall, a trunk, a rock) stands between a bow held at
+## `from` and `target`.
+func clear_line(from: Vector3, target: Vector3) -> bool:
+	if not is_inside_tree():
+		return true
+	var q := PhysicsRayQueryParameters3D.create(from + Vector3.UP * LOS_EYE, target, 1)
+	q.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(q).is_empty()
+
+## The nearest spot to the side (across the line to the hero) with a clear line on the
+## hero's chest that it can walk to without going through anything; INF when none.
+func _find_clear_spot(to: Vector3) -> Vector3:
+	var p := global_position
+	var across := Vector3.UP.cross(to.normalized()).normalized()
+	var target := _chest_target()
+	for off in LOS_STEPS:
+		var q: Vector3 = p + across * float(off)
+		if terrain:
+			q.y = terrain.height_at(q.x, q.z)
+		if (q - _home).length() > give_up - 2.0 or _clearance(q) < 1.4:
+			continue
+		var w := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.9, q + Vector3.UP * 0.9, 1)
+		w.exclude = [get_rid()]
+		if not get_world_3d().direct_space_state.intersect_ray(w).is_empty():
+			continue                           # a wall or trunk between here and there
+		if clear_line(q, target):
+			return q
+	return Vector3.INF
+
+## With the line on the hero shut: strafe to a clear spot, or close in round the corner.
+func _seek_line(to: Vector3, dist: float) -> Vector3:
+	_los_think -= get_physics_process_delta_time()
+	if _los_think <= 0.0 or _los_spot == Vector3.INF:
+		_los_think = LOS_RETHINK
+		var s := _find_clear_spot(to)
+		if s != Vector3.INF and not _seeking:
+			sidesteps += 1
+			_seeking = true
+		_los_spot = s
+	if _los_spot != Vector3.INF:
+		var d := _los_spot - global_position
+		d.y = 0.0
+		if d.length() > 0.25:
+			return d.normalized() * STALK_SPEED
+		return Vector3.ZERO
+	if dist > BACK_OFF + 1.0:
+		return to.normalized() * STALK_SPEED * 0.8
+	return Vector3.ZERO
 
 func _clearance(q: Vector3) -> float:
 	var m := INF
@@ -218,9 +278,13 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 	if dist < SHOVE_IN and ready:
 		_begin_attack(dist)
 		return Vector3.ZERO
+	los_clear = clear_line(global_position, _chest_target())
+	if los_clear:
+		_los_spot = Vector3.INF
+		_seeking = false
 	if dist < BACK_OFF:
 		# back away facing the hero; draw anyway if it has been backing a while (pinned)
-		if t > 2.4 and ready and dist > SHOVE_IN + 0.6:
+		if t > 2.4 and ready and dist > SHOVE_IN + 0.6 and los_clear:
 			_begin_attack(dist)
 			return Vector3.ZERO
 		var dt := get_physics_process_delta_time()
@@ -235,6 +299,8 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 	retreat_dir = Vector3.ZERO
 	if dist > SHOOT_MAX:
 		return to.normalized() * STALK_SPEED * 0.8
+	if not los_clear:
+		return _seek_line(to, dist)
 	if ready:
 		_begin_attack(dist)
 	return Vector3.ZERO
@@ -275,6 +341,17 @@ func _special_tick(delta: float, to: Vector3, _dist: float) -> Array:
 			var g := clampf((t - RAISE_T - DRAW_T - _hold) / GLINT_T, 0.0, 1.0)
 			if g <= 0.0:
 				_aim_point = _chest_target()
+				# the hero stepped behind something before the glint: hold, then lower the bow
+				if clear_line(global_position, _aim_point):
+					_los_shut = 0.0
+				else:
+					_los_shut += delta
+					if _los_shut > LOS_LOSE_T:
+						_los_shut = 0.0
+						blocked_draws += 1
+						bow.arrow_on = true
+						_enter(STALK)
+						return [move, 0.0, 0.0, 1.0]
 			# side-on: the body yaws past the hero so the twisted chest (left shoulder) points at it
 			var aim_dir := _aim_point - global_position
 			aim_dir.y = 0.0
@@ -342,7 +419,7 @@ func _loose() -> void:
 func _on_arrow_landed(at: Vector3, r: String, a: HollowArrow) -> void:
 	if a == last_arrow and last_arrow_result == "":
 		last_arrow_result = r
-		last_result = r if r != "ground" else "miss"
+		last_result = r if r != "ground" and r != "wall" else "miss"
 		if r == "hit":
 			shot_hits += 1
 		struck.emit(last_result)
