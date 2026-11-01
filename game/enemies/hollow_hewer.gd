@@ -59,6 +59,7 @@ var axe: Axe
 var chops := 0
 var chop_hits := 0
 var bites := 0                   # chops that buried the bit (missed)
+var grass_pressed := 0           # bites that laid the sward flat round the bit
 var raise_hits := 0              # blows taken during the raise that did not stop it
 var last_hitch := 0.0
 var _chops_in_row := 0
@@ -80,8 +81,12 @@ func _ready() -> void:
 	_rng.seed = 7311
 	# a paler, wood-ash grey, the rags a faded moss-brown woodsman's smock
 	_set_skin("ash_light", Color(0.40, 0.38, 0.35))
-	rags.set_param("cloth_dark", Color(0.075, 0.08, 0.05))
-	rags.set_param("cloth_light", Color(0.27, 0.27, 0.18))
+	rags.set_param("cloth_dark", Color(0.07, 0.06, 0.04))
+	rags.set_param("cloth_light", Color(0.25, 0.21, 0.13))
+	# the hood is fulled woodsman's wool, creased, rubbed and mud-flecked, not a smooth sack
+	if not rags.mats.is_empty():
+		rags.mats[0].set_shader_parameter("wool", 1.0)
+		rags.mats[0].set_shader_parameter("weathered", 0.8)
 	# the spear's shaft stays as the invisible rig the hands IK to; the axe rides on it
 	spear.visible = true
 	spear.mesh = null
@@ -235,9 +240,28 @@ func _resolve_chop() -> void:
 		# the bit bites into the turf: clods and dust kicked forward, splinters off the helve
 		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.05, Vector3.UP + body.global_basis.z * 0.5, "turf", 1.5)
 		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.25, Vector3.DOWN + body.global_basis.z * 0.4, "wood", 0.6)
+		_press_grass(at)
 	last_result = r
 	chopped.emit(at, r)
 	struck.emit(r)
+
+## The buried bit and the helve above it flatten the sward: a short combed lane from under
+## the hands out past the bit (pressed outward, the way the axe drove in), held while the
+## hewer wrenches and standing up slowly after, so the head shows instead of drowning in grass.
+func _press_grass(at: Vector3) -> void:
+	var tr := get_parent().get_node_or_null("Trample")
+	if tr == null or not tr.has_method("add_herd_point"):
+		return
+	var f := body.global_basis.z
+	var d := Vector2(f.x, f.z)
+	if d.length() < 1e-3:
+		return
+	d = d.normalized()
+	var tip := Vector2(at.x, at.z) + d * 0.3
+	# a lane from the bit back toward the hands, plus a round press over the head itself
+	tr.add_herd_point(tip, d, 1.0, 0.2, 0.15, 0.9)
+	tr.add_herd_point(Vector2(at.x, at.z), d, 1.0, 0.2, 0.15, 0.0)
+	grass_pressed += 1
 
 ## The hewer's wield (the invisible shaft its hands IK to) leans and sinks with the body, so
 ## the chop's bottom poses are authored in the bent-over frame and the hands stay in reach.

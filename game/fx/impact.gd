@@ -125,13 +125,15 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		dust.emission_sphere_radius = 0.35
 	elif kind == "turf":
 		# a low haze that creeps out from the cut and settles, never a bright puff
-		dust.amount = int(8 * power) + 4
-		dust.lifetime = 1.5
-		dust.direction = (dir * 0.4 + Vector3.UP * 0.5).normalized()
-		dust.spread = 80.0
-		dust.flatness = 0.6
-		dust.initial_velocity_max = 1.3 * power
-		dust.emission_sphere_radius = 0.2
+		# kept low and short so the buried bit still shows through it
+		dust.amount = int(6 * power) + 3
+		dust.lifetime = 0.9
+		dust.direction = (dir * 0.6 + Vector3.UP * 0.25).normalized()
+		dust.spread = 70.0
+		dust.flatness = 0.85
+		dust.initial_velocity_max = 0.9 * power
+		dust.gravity = Vector3(0, -0.6, 0)
+		dust.emission_sphere_radius = 0.15
 	var sc := Curve.new()
 	sc.add_point(Vector2(0, 0.35))
 	sc.add_point(Vector2(0.3, 0.8))
@@ -145,7 +147,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dg.add_point(0.15, dust_col)
 	dust.color_ramp = dg
 	var dq := QuadMesh.new()
-	dq.size = Vector2(0.7, 0.7)
+	dq.size = Vector2(0.45, 0.45) if kind == "turf" else Vector2(0.7, 0.7)
 	var dm := StandardMaterial3D.new()
 	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	dm.albedo_texture = _soft_tex()

@@ -1294,6 +1294,14 @@ func _hewer_test() -> void:
 	print("BOT hewer: bite pose: bit edge %.2f m above the turf, %.2f m ahead, spine pitched %.0f deg" % [edge.y - gy, fwd, spine])
 	if stuck and (edge.y - gy > 0.25 or fwd < 0.5 or spine < 25.0):
 		return _combat_done(false, "the hewer does not bend over a bit buried in the turf")
+	# the sward round the buried bit is laid flat, so the head shows instead of drowning in grass
+	var tr2 := w.get_parent().get_node_or_null("Trample")
+	if stuck and tr2 != null:
+		var lay_bit: float = tr2.herd_lay_at(edge)
+		var lay_mid: float = tr2.herd_lay_at(edge - w.body.global_basis.z * 0.4)
+		print("BOT hewer: grass round the bit laid %.2f, under the helve %.2f (presses %d)" % [lay_bit, lay_mid, w.grass_pressed])
+		if w.grass_pressed < 1 or lay_bit < 0.6 or lay_mid < 0.4:
+			return _combat_done(false, "the grass stands up through the buried bit")
 	var hs := w.health
 	var stg := w.staggers
 	w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.0, 0.0)
