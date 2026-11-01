@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-0212-haze-herocu.jpg",
-  "time": "2026-10-26T02:12:00Z",
-  "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-0212-hazevalley-cmp.jpg",
-  "time": "2026-10-26T02:12:00Z",
-  "caption": "Before (left: scene fog only, value inversion at the ring's foothills) vs after (right: valley-air layer on the far ring): the dark foothill band in front of a milky valley is gone, depth now reads in order.",
-  "verdict": "pass"
- },
- {
   "file": "20261026-0212-hazevalley.jpg",
   "time": "2026-10-26T02:12:00Z",
   "caption": "Noon over the Vale from the hill: the valley now recedes in layers -- crisp meadow, hazed wood and village, warm hazed foothills, then snow massifs that keep their rock structure; the far wood line is still a soft beige smear and the village reads small.",
@@ -891,6 +879,12 @@
   "file": "20261101-0230-face.jpg",
   "time": "2026-11-01T02:39:00Z",
   "caption": "The hero's head after the jaw taper: hood and face cloth now narrow from the temples to the throat so it reads as a head with eyes, not a grey box; still wrong: the face cloth's dark tail hangs below the hood's pale ragged collar over the breastplate, and the skin reads doll-smooth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0300-face.jpg",
+  "time": "2026-11-01T04:02:00Z",
+  "caption": "The hero's face cloth now ends inside the hood's lower edge instead of hanging a dark tail onto the breastplate; still wrong: the armour reads dark and flat and the hood is a plain grey shell.",
   "verdict": "fail"
  }
 ]
