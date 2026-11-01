@@ -163,7 +163,7 @@ func _meet_hero(at: Vector3) -> void:
 	match r:
 		"hit":
 			_player.add_shake(0.3)
-			ImpactFX.spawn(get_parent(), at, vel.normalized(), "wood", 0.5)
+			ImpactFX.spawn(get_parent(), at, vel.normalized(), "pierce", 0.5)
 			_stick_in_hero()
 		"parried":
 			# the staff turns it: thrown off upward and aside, spinning end over end
@@ -253,7 +253,9 @@ func _fall_broken(delta: float) -> void:
 		d = d.normalized()
 		var x := Vector3.UP.cross(d).normalized()
 		global_basis = Basis(x, d, Vector3.UP).rotated(d, randf_range(-0.4, 0.4)).orthonormalized()
-		global_position.y = g + 0.012
+		# the terrain mesh is a grid that cuts the chords of height_at's curve, and the low
+		# sward sits on it: rest on the blades a few cm up rather than sink out of sight
+		global_position.y = g + 0.04
 		lying = true
 		_stuck = 0.0
 		landed.emit(global_position, "litter")

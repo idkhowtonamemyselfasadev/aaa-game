@@ -149,7 +149,7 @@ static func arrow_mesh() -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var around := 6
-	var r := 0.0045
+	var r := 0.005   # a 10 mm war-arrow shaft (thin enough to read as a shaft, thick enough to hold a pixel at 15 m)
 	var tip_y := ARROW_LEN
 	var head_y := ARROW_LEN - 0.07
 	# shaft
@@ -159,12 +159,13 @@ static func arrow_mesh() -> ArrayMesh:
 		var p := [Vector3(cos(a0) * r, 0.0, sin(a0) * r), Vector3(cos(a1) * r, 0.0, sin(a1) * r)]
 		var q := [p[0] + Vector3(0, head_y, 0), p[1] + Vector3(0, head_y, 0)]
 		for v in [p[0], q[1], q[0], p[0], p[1], q[1]]:
-			st.set_color(Color(0.55, 0.43, 0.28))
+			# pale planed ash, a touch warmer toward the head (sRGB, see vertex_color_is_srgb)
+			st.set_color(Color(0.78, 0.68, 0.50) if v.y < head_y * 0.5 else Color(0.72, 0.60, 0.42))
 			st.add_vertex(v)
 		# the iron bodkin: a socket and a four-sided point
 		var s0 := [Vector3(cos(a0) * r * 1.5, head_y, sin(a0) * r * 1.5), Vector3(cos(a1) * r * 1.5, head_y, sin(a1) * r * 1.5)]
 		for v in [s0[0], Vector3(0, tip_y, 0), s0[1]]:
-			st.set_color(Color(0.16, 0.15, 0.14))
+			st.set_color(Color(0.30, 0.28, 0.26))
 			st.add_vertex(v)
 	# fletching: three vanes, ~0.12 m, a little in front of the nock
 	for k in 3:
@@ -175,12 +176,18 @@ static func arrow_mesh() -> ArrayMesh:
 		var v2 := Vector3(0, 0.05, 0) + o * 0.016
 		var v3 := Vector3(0, 0.12, 0) + o * 0.006
 		for v in [v0, v1, v2, v2, v1, v3]:
-			st.set_color(Color(0.48, 0.47, 0.44) if k > 0 else Color(0.22, 0.20, 0.18))
+			# two pale grey-goose hen feathers and a barred brown cock feather
+			st.set_color(Color(0.86, 0.84, 0.79) if k > 0 else Color(0.42, 0.33, 0.24))
 			st.add_vertex(v)
 	st.generate_normals()
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 0.6
+	mat.vertex_color_is_srgb = true
+	mat.roughness = 0.55
+	# a faint rim so the thin shaft keeps an edge against dark cloth / shade
+	mat.rim_enabled = true
+	mat.rim = 0.35
+	mat.rim_tint = 0.6
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	st.set_material(mat)
 	_arrow_mesh = st.commit()

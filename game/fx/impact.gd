@@ -21,6 +21,10 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	var dust_col := Color(0.5, 0.44, 0.34, 0.5)
 	if kind == "wood":
 		chaff_col = Color(0.40, 0.33, 0.24)
+	elif kind == "pierce":
+		# an arrow driven into cloth and flesh: a few dark threads and splinters, a faint grey breath
+		chaff_col = Color(0.16, 0.13, 0.10)
+		dust_col = Color(0.30, 0.28, 0.25, 0.22)
 	elif kind == "stone":
 		chaff_col = Color(0.42, 0.41, 0.38)
 		dust_col = Color(0.55, 0.54, 0.50, 0.45)
@@ -59,6 +63,11 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		chaff.spread = 60.0
 		chaff.initial_velocity_min = 0.8 * power
 		chaff.initial_velocity_max = 2.6 * power
+	if kind == "pierce":
+		chaff.amount = int(16 * power) + 2
+		chaff.spread = 25.0
+		chaff.initial_velocity_min = 0.8 * power
+		chaff.initial_velocity_max = 2.4 * power
 	chaff.gravity = Vector3(0, -7.5, 0)
 	chaff.damping_min = 1.5
 	chaff.damping_max = 3.0
@@ -66,7 +75,10 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	chaff.angular_velocity_max = 720.0
 	chaff.angle_min = 0.0
 	chaff.angle_max = 360.0
-	if kind != "turf":
+	if kind == "pierce":
+		chaff.scale_amount_min = 0.4
+		chaff.scale_amount_max = 0.9
+	elif kind != "turf":
 		chaff.scale_amount_min = 0.5
 		chaff.scale_amount_max = 1.3
 	chaff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
@@ -77,6 +89,9 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	var cm := StandardMaterial3D.new()
 	cm.albedo_color = chaff_col
 	cm.roughness = 0.8
+	if kind == "pierce":
+		cm.vertex_color_is_srgb = true
+		cm.metallic_specular = 0.1
 	if kind == "turf":
 		# ragged soil crumbs: an alpha-scissored lumpy blot instead of a sliver
 		cm.albedo_texture = _clump_tex()
@@ -91,8 +106,8 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	q.material = cm
 	chaff.mesh = q
 	var cg := Gradient.new()
-	cg.set_color(0, Color(1.1, 1.05, 1.0) if kind != "turf" else Color(1.0, 1.0, 1.0))
-	cg.set_color(1, Color(0.7, 0.68, 0.62) if kind != "turf" else Color(0.55, 0.62, 0.45))  # some crumbs keep a grass tint
+	cg.set_color(0, Color(1.0, 1.0, 1.0) if kind in ["turf", "pierce"] else Color(1.1, 1.05, 1.0))
+	cg.set_color(1, Color(0.55, 0.62, 0.45) if kind == "turf" else (Color(0.8, 0.8, 0.8) if kind == "pierce" else Color(0.7, 0.68, 0.62)))  # some crumbs keep a grass tint
 	chaff.color_initial_ramp = cg
 	add_child(chaff)
 	chaff.emitting = true
@@ -123,6 +138,12 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		dust.flatness = 0.75
 		dust.initial_velocity_max = 2.2 * power
 		dust.emission_sphere_radius = 0.35
+	elif kind == "pierce":
+		# a small, quick grey breath at the wound, never a bright puff
+		dust.amount = 3
+		dust.lifetime = 0.6
+		dust.initial_velocity_max = 0.5
+		dust.emission_sphere_radius = 0.04
 	elif kind == "turf":
 		# a low haze that creeps out from the cut and settles, never a bright puff
 		# kept low and short so the buried bit still shows through it
@@ -147,7 +168,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dg.add_point(0.15, dust_col)
 	dust.color_ramp = dg
 	var dq := QuadMesh.new()
-	dq.size = Vector2(0.45, 0.45) if kind == "turf" else Vector2(0.7, 0.7)
+	dq.size = Vector2(0.45, 0.45) if kind == "turf" else (Vector2(0.25, 0.25) if kind == "pierce" else Vector2(0.7, 0.7))
 	var dm := StandardMaterial3D.new()
 	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	dm.albedo_texture = _soft_tex()

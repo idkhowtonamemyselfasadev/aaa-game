@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-1231-leanto.jpg",
-  "time": "2026-10-26T12:31:00Z",
-  "caption": "Edda at the chopping block at 10 h: test with the lime flaking cut off up the wall -- the two pale blobs on the lean-to's shaded front end and the flecks by the window stayed, so they come from another surface; still a fail.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-1403-leanto-debug.jpg",
-  "time": "2026-10-26T14:03:48Z",
-  "caption": "Debug tint (not shipped): masonry under lime red, lime skin blue, other plaster green -- the red flecks were stone crowns breaking through the white cottage's lime skin.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-1403-leanto-sunk.jpg",
   "time": "2026-10-26T14:03:48Z",
   "caption": "White cottage at 10 h after sinking every stone under a thicker lime skin: the stone-crown flecks are gone; the pale grey peeled patches left on the lean-to are the skin's own flaking and still read a little like stickers in shade.",
@@ -897,6 +885,18 @@
   "file": "20261101-1832-arrowsnap.jpg",
   "time": "2026-11-01T18:32:00Z",
   "caption": "GL frame: the fletched half of an arrow the hero rolled on lies across a patch of pressed-flat sward; the shaft reads only as a dark hairline in this light and the pale wood-chip hit FX still float above the grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-1915-arrowpale.jpg",
+  "time": "2026-11-01T19:15:00Z",
+  "caption": "An archer's arrow standing in the hero's chest now reads as pale ash with grey-goose fletching instead of a dark hairline; GL compatibility frame, flat light, the field still lacks Wukong-grade density.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-1915-arrowsnap.jpg",
+  "time": "2026-11-01T19:15:00Z",
+  "caption": "The fletched half of a snapped arrow lies on the pressed grass and is visible at last (it used to sink below the terrain grid); GL frame, the half is small and the near grass clumps are flat-lit.",
   "verdict": "fail"
  }
 ]
