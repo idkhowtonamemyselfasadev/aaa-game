@@ -13,6 +13,10 @@ extends HollowSoldier
 ##    than the hero runs: it can be caught), and draws again once it has room.
 ##  STAVE. Crowded inside SHOVE_IN it swings the bow stave like a club (the soldier's flat
 ##    sweep, shorter and weaker), then backs off again.
+##  HIGH GROUND. It takes its post on the highest turf near where it was set (a knoll it
+##    can see the meadow from), and when it backs off it bends its retreat uphill: of the
+##    ways that lead away from the hero it takes the one that climbs, so a hero chasing it
+##    runs uphill into its next draw.
 ##  RELOAD. After the loose it lowers the bow and reaches for the next arrow: the punish
 ##    window for a hero who closed in during the draw.
 
@@ -34,6 +38,12 @@ const SHOT_DAMAGE := 18.0
 const STAVE_REACH := 1.9
 const AIM_TWIST := -55.0         # degrees the chest turns side-on to draw (left shoulder to the hero)
 const BOW_ARM := 0.62            # m from the left shoulder to the bow hand at full extension
+const STAND_REACH := 8.0         # m from where it was set that it looks for a knoll to stand on
+const STAND_MIN_GAIN := 0.15     # a knoll must be at least this much higher to be worth the move
+const RETREAT_FAN := [0.0, -0.5, 0.5, -0.95, 0.95]  # radians off straight-away it weighs when backing
+const RETREAT_LOOK := 2.0        # m ahead it samples the turf for each way
+const STAND_CLEAR := 4.5         # m its post keeps from any tree or rock (trunk, roots and the line of sight)
+const UPHILL_W := 1.6            # score per metre of climb (vs 1.0 for heading straight away)
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
 # shaft-rig poses for the carry (bow held across the body, upper limb up and forward)
@@ -59,6 +69,17 @@ var _draw := 0.0
 var _aim_pitch := 0.0            # degrees above level to the hero's chest
 var _aim_point := Vector3.ZERO   # the world point the arrow flies at (frozen on the glint)
 var _rng := RandomNumberGenerator.new()
+var terrain: Terrain
+var stand_gain := 0.0            # m its post stands above the turf where it was set
+var retreat_climb := 0.0         # m it has climbed while backing off (bots)
+var retreat_dir := Vector3.ZERO  # the way it is backing (smoothed, world xz)
+var obstacles: Array[Vector3] = []   # tree and rock centres it keeps its post and its retreat clear of
+
+func _clearance(q: Vector3) -> float:
+	var m := INF
+	for o in obstacles:
+		m = minf(m, Vector2(o.x - q.x, o.z - q.z).length())
+	return m
 
 func _ready() -> void:
 	health_max = ARCHER_HP
@@ -87,6 +108,62 @@ func _ready() -> void:
 	bow.arrow_on = true
 	_place(guard_pose)
 
+## Set on the turf, then move its post to the highest ground within STAND_REACH: the knoll
+## it watches from and comes back to.
+func plant(t_: Terrain) -> void:
+	super.plant(t_)
+	terrain = t_
+	var flora: Flora = get_parent().get_node_or_null("Flora") if get_parent() else null
+	if flora:
+		obstacles.append_array(flora.tree_positions)
+		obstacles.append_array(flora.rock_positions)
+	var p := global_position
+	var h0 := t_.height_at(p.x, p.z)
+	var best := Vector3(p.x, h0, p.z)
+	var best_s := h0
+	for ri in range(1, 5):
+		var r := STAND_REACH * ri / 4.0
+		for ai in 16:
+			var a := TAU * ai / 16.0
+			var q := Vector3(p.x + sin(a) * r, 0.0, p.z + cos(a) * r)
+			q.y = t_.height_at(q.x, q.z)
+			# flat enough to stand and draw on, and a little weight on staying near
+			if t_.normal_at(q.x, q.z).y < 0.94 or _clearance(q) < STAND_CLEAR:
+				continue
+			var sc := q.y - 0.02 * r
+			if sc > best_s:
+				best_s = sc
+				best = q
+	if best.y - h0 >= STAND_MIN_GAIN:
+		global_position = best + Vector3.UP * 0.05
+		_home = global_position
+		stand_gain = best.y - h0
+
+## Which way to back off from the hero (world xz, unit): of a fan of ways that lead away, the
+## one that climbs most per step, weighed against heading straight away and against straying
+## past its tether.
+func _retreat_way(to: Vector3) -> Vector3:
+	var away := -to.normalized()
+	if terrain == null:
+		return away
+	var p := global_position
+	var h := terrain.height_at(p.x, p.z)
+	var best := away
+	var best_s := -INF
+	for a in RETREAT_FAN:
+		var d := away.rotated(Vector3.UP, a)
+		var q := p + d * RETREAT_LOOK
+		var climb := terrain.height_at(q.x, q.z) - h
+		var sc := cos(a) + UPHILL_W * climb
+		if (q - _home).length() > give_up - 2.0:
+			sc -= 2.0
+		if _clearance(q) < 1.4:
+			sc -= 3.0                          # not backward into a trunk or a rock
+		if sc > best_s:
+			best_s = sc
+			best = d
+	return best
+
 func return_to_post() -> void:
 	super.return_to_post()
 	_aim_k = 0.0
@@ -106,8 +183,16 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 		if t > 2.4 and ready and dist > SHOVE_IN + 0.6:
 			_begin_attack(dist)
 			return Vector3.ZERO
-		backsteps += BACK_SPEED * get_physics_process_delta_time()
-		return -to.normalized() * BACK_SPEED
+		var dt := get_physics_process_delta_time()
+		backsteps += BACK_SPEED * dt
+		var way := _retreat_way(to)
+		retreat_dir = way if retreat_dir == Vector3.ZERO else retreat_dir.lerp(way, minf(dt * 4.0, 1.0)).normalized()
+		if terrain:
+			var p := global_position
+			var q := p + retreat_dir * BACK_SPEED * dt
+			retreat_climb += maxf(terrain.height_at(q.x, q.z) - terrain.height_at(p.x, p.z), 0.0)
+		return retreat_dir * BACK_SPEED
+	retreat_dir = Vector3.ZERO
 	if dist > SHOOT_MAX:
 		return to.normalized() * STALK_SPEED * 0.8
 	if ready:

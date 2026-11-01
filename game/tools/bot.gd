@@ -1476,6 +1476,10 @@ func _archer_test() -> void:
 		near = minf(near, Vector2(w.global_position.x - n.global_position.x, w.global_position.z - n.global_position.z).length())
 	var gd := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
 	print("BOT archer: %.1f m from the start, %.1f m from the nearest Hollow, state %d, health %.0f" % [gd, near, w.state, w.health])
+	var clr := w._clearance(w._home)
+	print("BOT archer: post %.2f m above where it was set, %.1f m clear of the nearest tree/rock (%d known)" % [w.stand_gain, clr, w.obstacles.size()])
+	if w.obstacles.is_empty() or clr < HollowArcher.STAND_CLEAR - 0.01:
+		return _combat_done(false, "the archer's post should stand clear of trees and rocks")
 	if w.state != HollowSoldier.IDLE or near < w.notice + 2.0 or gd < w.notice + 2.0:
 		return _combat_done(false, "the archer should wait idle, clear of the start and the other Hollows")
 	var bg := w.bow.global_position.distance_to(w._grip_l.global_position)
@@ -1645,6 +1649,39 @@ func _archer_test() -> void:
 	print("BOT archer: crowded at %.1f m -> %.1f m after 1 s, backed %.2f m, state %d" % [d0, d1, w.backsteps - b0, w.state])
 	if d1 < d0 + 0.8 or w.backsteps - b0 < 0.8:
 		return _combat_done(false, "the archer did not back off to keep its distance")
+	# 4b) it backs uphill: from every side, its retreat ends at least as high as walking straight away
+	var tr: Terrain = _world.terrain
+	var worse := 0
+	var gained := 0.0
+	var centre := w.global_position
+	for k in 6:
+		var ang := TAU * k / 6.0
+		var hp := centre + Vector3(sin(ang), 0, cos(ang)) * 4.0
+		p.global_position = Vector3(hp.x, tr.height_at(hp.x, hp.z) + 0.05, hp.z)
+		p.velocity = Vector3.ZERO
+		w.global_position = Vector3(centre.x, tr.height_at(centre.x, centre.z) + 0.05, centre.z)
+		w._home = w.global_position
+		w.velocity = Vector3.ZERO
+		w.retreat_dir = Vector3.ZERO
+		w.face(p.global_position)
+		w.force_move = -1
+		w._enter(HollowSoldier.STALK)
+		await _ticks(2)
+		var s0 := w.global_position
+		var away := Vector3(s0.x - p.global_position.x, 0, s0.z - p.global_position.z).normalized()
+		await _ticks(45)
+		var s1 := w.global_position
+		var run := Vector2(s1.x - s0.x, s1.z - s0.z).length()
+		var st := s0 + away * run
+		var h_s := tr.height_at(st.x, st.z)
+		var h_w := tr.height_at(s1.x, s1.z)
+		gained += h_w - h_s
+		if h_w < h_s - 0.03:
+			worse += 1
+		print("BOT archer: retreat %d: %.2f m back, ended %.2f m vs straight-away %.2f m (%+.2f)" % [k, run, h_w, h_s, h_w - h_s])
+	print("BOT archer: post %.2f m above where it was set; retreats worse than straight %d of 6, mean gain %+.2f m, climbed %.2f m" % [w.stand_gain, worse, gained / 6.0, w.retreat_climb])
+	if worse > 0 or w.retreat_climb <= 0.0:
+		return _combat_done(false, "the archer's retreat did not take the higher way")
 	# 5) crowded at 1.6 m it clubs with the stave
 	p.health = Player.HEALTH_MAX
 	_soldier_at(w, 1.6, -1)

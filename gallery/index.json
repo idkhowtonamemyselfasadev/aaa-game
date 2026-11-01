@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-1403-leanto-sunk.jpg",
-  "time": "2026-10-26T14:03:48Z",
-  "caption": "White cottage at 10 h after sinking every stone under a thicker lime skin: the stone-crown flecks are gone; the pale grey peeled patches left on the lean-to are the skin's own flaking and still read a little like stickers in shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-1459-leanto-flakes.jpg",
-  "time": "2026-10-26T14:59:49Z",
-  "caption": "Edda at the woodpile by the white cottage at 10 h: the lean-to's peeled lime flakes now sit darker and recessed instead of glowing pale in shade; the lean-to still reads as a crisp white box and Edda's coif as a pale blotchy cowl.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-1637-woodpile.jpg",
   "time": "2026-10-26T16:37:40Z",
   "caption": "Edda splitting wood by the white cottage's lean-to at 10 h; the stacked logs now have lumpy subdivided bark and torn split faces, but the stack still reads as pale flat beige chips in the lean-to's shade and the lean-to wall is still a crisp white box.",
@@ -897,6 +885,12 @@
   "file": "20261101-1915-arrowsnap.jpg",
   "time": "2026-11-01T19:15:00Z",
   "caption": "The fletched half of a snapped arrow lies on the pressed grass and is visible at last (it used to sink below the terrain grid); GL frame, the half is small and the near grass clumps are flat-lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-2012-knoll.jpg",
+  "time": "2026-11-01T20:12:41Z",
+  "caption": "The Ashen Archer on its new post, a knoll at the wood's edge clear of the trunks, seen from the hero's flank down the slope; GL frame, and the archer is lost in the wood's shadow and the long grass.",
   "verdict": "fail"
  }
 ]

@@ -858,6 +858,14 @@ func _ready() -> void:
 			# clear of the practice post, which stands at the start
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
 			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
+		if "knoll" in args:
+			# the archer on its post: the hero 9 m down the slope from it, looking up the rise
+			var post: Vector3 = world.archer._home
+			var nrm := terrain.normal_at(post.x, post.z, 3.0)
+			var down := Vector3(nrm.x, 0, nrm.z)
+			down = down.normalized() if down.length() > 0.01 else Vector3(0, 0, -1)
+			var at := post + down * 9.0
+			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
 		var pp := player.global_position
 		# "knight" in the args: the Ashen Knight stands in for the soldier (the soldier is moved off)
 		# "warden": the shield warden stands in the same way
@@ -867,6 +875,8 @@ func _ready() -> void:
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
 		if "archer" in args:
 			fp = pp + Vector3(-5.5, 0, 1.0)      # an archer draws from a stand-off, not at spear length
+		if "knoll" in args:
+			fp = world.archer._home
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
 		foe.face(pp)
@@ -891,6 +901,9 @@ func _ready() -> void:
 			if "lodged" in args:
 				# the arrow standing in the hero: close on the hero's flank, the archer beyond
 				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]
+			if "knoll" in args:
+				# low behind the hero's shoulder, looking up the rise at the archer on its post
+				SPOTS[spot] = [pp - line * 2.0 + side * 3.4 + Vector3.UP * 0.9, pp.lerp(fp, 0.7) + Vector3.UP * 1.1]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
