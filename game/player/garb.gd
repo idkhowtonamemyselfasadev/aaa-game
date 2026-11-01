@@ -157,6 +157,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		var vm := veil.material_override as ShaderMaterial
 		vm.set_shader_parameter("wool", 0.3 if hood_linen else 1.0)
 		vm.set_shader_parameter("fold_ao", 1.0)
+		if not bare_face:
+			vm.set_shader_parameter("edge_wear", 1.0)
 		if bare_face:
 			# the wimple (shaped in _veil): it passes under the chin and rises up the sides of the
 			# jaw into the hood, so mouth and chin show and the linen frames the face
@@ -827,9 +829,17 @@ func _veil(wimple := false) -> ArrayMesh:
 			# it is wound twice: the outer turn's upper edge crosses the face on a slant (high
 			# under the left cheek, low at the right jaw) and stands a layer proud, with a
 			# shadowed crease just above it where the cloth beneath bunches
-			var edge := 0.46 + 0.16 * sin(a * 0.9 + 0.3)
+			# (11-01 09:00: the face cloth's front read as a flat dark panel from the guard camera:
+			# the outer turn now crosses on a real diagonal, high under the left cheek, low at the
+			# right jaw, with two shallow wrap folds running parallel under its edge and its edge
+			# rubbed paler where the hand tugs it -- COLOR.g, rag.gdshader's edge_wear)
+			var edge := 0.47 + 0.10 * sin(a * 0.9 + 0.3) + 0.17 * a
 			var outer := smoothstep(edge - 0.035, edge + 0.01, v)
 			var crease := exp(-pow((v - edge + 0.03) / 0.035, 2.0))
+			var wrap := 0.0 if (beard or wimple) else sin(clampf((v - edge) / 0.30, 0.0, 1.0) * PI * 2.0) \
+					* outer * smoothstep(-0.2, 0.6, front)
+			var worn := 0.0 if (beard or wimple) else exp(-pow((v - edge - 0.004) / 0.018, 2.0)) \
+					* smoothstep(-0.3, 0.5, front)
 			# the cloth is pulled from the nose bridge back toward the ears: shallow creases
 			# run back across the cheeks, slanting down toward the nape
 			var pull := sin(v * PI * 6.0 + absf(a) * 2.2) * smoothstep(0.35, 1.1, absf(a)) * (1.0 - 0.6 * depth)
@@ -858,10 +868,10 @@ func _veil(wimple := false) -> ArrayMesh:
 					- 0.008 * exp(-pow((absf(a) - 0.5) / 0.22, 2.0)) \
 					+ 0.002 * sin(a * 5.0 + 0.9))
 			var r := 1.0 + 0.06 * v * front + depth * (0.085 * rr + 0.016 * fine) \
-					+ 0.04 * outer - 0.012 * crease + 0.012 * pull
+					+ 0.04 * outer - 0.012 * crease + 0.012 * pull + 0.009 * wrap
 			var cav := mix_cav(ridge, fine, depth)
-			cav *= (1.0 - 0.55 * crease) * (1.0 - 0.18 * maxf(-pull, 0.0))
-			st.set_color(Color(cav, cav, cav))
+			cav *= (1.0 - 0.55 * crease) * (1.0 - 0.18 * maxf(-pull, 0.0)) * (1.0 - 0.22 * maxf(-wrap, 0.0))
+			st.set_color(Color(cav, worn, cav))
 			st.set_uv(Vector2(u, v))
 			# (the wimple sits closer round the jaw and throat than the face cloth over the nose)
 			# (its top flares out at the sides of the jaw to meet the hood, closing the dark

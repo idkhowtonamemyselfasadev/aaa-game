@@ -142,13 +142,14 @@ void fragment() {
 		// resolves, the nose tip and cheek apples darker and redder where wind and sun burn them,
 		// and a few days' dark stubble where the jaw and upper lip meet the face cloth
 		float l = dot(alb, vec3(0.3, 0.59, 0.11));
-		alb = mix(alb, vec3(l) * vec3(1.05, 1.0, 0.95), 0.3 * rough_skin);
+		alb = mix(alb, vec3(l) * vec3(1.05, 1.0, 0.95), 0.38 * rough_skin);
+		// (11-01 09:00: the 0.8..1.16 blotch range read as a red rash at 1 m: halved)
 		float bl = vnoise(p * 95.0 + 31.0) * 0.55 + vnoise(p * 210.0 + 2.0) * 0.45;
-		alb *= mix(1.0, 0.8 + 0.36 * bl, rough_skin);
+		alb *= mix(1.0, 0.9 + 0.18 * bl, rough_skin);
 		float tip = exp(-pow(p.x / 0.011, 2.0) - pow((p.y - 1.916) / 0.010, 2.0));
 		alb = mix(alb, alb * vec3(0.98, 0.72, 0.66), 0.55 * tip * rough_skin);
 		float apple = exp(-pow((abs(p.x) - 0.04) / 0.013, 2.0) - pow((p.y - 1.935) / 0.011, 2.0));
-		alb = mix(alb, alb * vec3(1.0, 0.8, 0.76), 0.35 * apple * rough_skin);
+		alb = mix(alb, alb * vec3(1.0, 0.86, 0.82), 0.25 * apple * rough_skin);
 		float jaw = smoothstep(1.912, 1.898, p.y) + smoothstep(0.052, 0.07, abs(p.x)) * smoothstep(1.94, 1.915, p.y);
 		float stub = smoothstep(0.45, 0.8, vnoise(p * 1600.0 + 9.0)) * clamp(jaw, 0.0, 1.0);
 		alb = mix(alb, alb * vec3(0.55, 0.5, 0.48), 0.6 * stub * rough_skin);

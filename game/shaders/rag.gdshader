@@ -29,6 +29,7 @@ uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = H
 uniform float stain_amt = 1.0;     // rust stains and grime streaks (a kept kirtle: low, they read as patched blocks)
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
+uniform float edge_wear = 0.0;     // > 0: COLOR.g is a rubbed, sun-faded edge (the face cloth's outer turn)
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
@@ -329,6 +330,9 @@ void fragment() {
 		alb *= 1.0 - 0.3 * grip * straw;
 	}
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, mix(0.7, 0.55, clamp(wool, 0.0, 1.0)) + mix(0.3, 0.45, clamp(wool, 0.0, 1.0)) * COLOR.r, fold_ao);
+	// a rubbed edge: the nap worn flat and paler, dust caught in it (only where COLOR.g says so)
+	alb = mix(alb, alb * 1.55 + vec3(0.025, 0.022, 0.018), clamp(COLOR.g * edge_wear, 0.0, 1.0)
+			* (0.65 + 0.35 * vnoise(vec2(UV.x * 60.0, UV.y * 9.0))));
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
 	// singed edges glow faintly where the ember's heat reaches the tear
 	float singe = (1.0 - smoothstep(0.0, 0.012, to_hem)) * step(0.5, fbm(vec2(UV.x * 23.0, seed)));
