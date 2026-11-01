@@ -34,7 +34,7 @@ var veil: MeshInstance3D
 var face: MeshInstance3D
 var eyes: Array[MeshInstance3D] = []
 var fill: OmniLight3D
-## A bearded wearer's tiny catch fill at eye level (see `_add_face`); null on the hero.
+## A tiny catch fill at eye level (see `_add_face`), on every wearer.
 var eye_fill: OmniLight3D
 ## Per-piece colour overrides for another wearer (an NPC): keys hood, hat, mantle, robe, sash,
 ## wraps -> [dark, light, soot] like the constants below. Empty: the hero's own dyes.
@@ -687,9 +687,10 @@ func _hat() -> ArrayMesh:
 		# the cone runs to RIM_V; past it the brim's edge is bound in a rolled band of split
 		# cane that turns down and back under (a bare cut edge read as a paper cone)
 		var t := minf(v / HAT_RIM_V, 1.0)
-		var r := 0.37 * t
-		# a straight cone, a slightly fuller crown and a soft downturn over the last 15 %
-		var y := 2.155 - 0.14 * t - 0.012 * sin(t * PI) - 0.03 * smoothstep(0.85, 1.0, t)
+		var r := HAT_R * t
+		# a straight cone (the old 0.37 m one's slope, so it still sits on the hood the same),
+		# a slightly fuller crown and a soft downturn over the last 15 %
+		var y := 2.155 - HAT_SLOPE * HAT_R * t - 0.012 * sin(t * PI) - 0.026 * smoothstep(0.85, 1.0, t)
 		# a small raised peak at the crown where the plaits are gathered and tied off
 		y += 0.022 * pow(1.0 - minf(t / 0.13, 1.0), 2.0)
 		# the bamboo frame's 16 spokes stand through the weave as faint ribs
@@ -706,6 +707,11 @@ func _hat() -> ArrayMesh:
 		return Vector3(sin(a) * r, y, -0.03 + cos(a) * r), 48, 18)
 
 const HAT_RIM_V := 0.84
+## The douli's brim radius (m) and its cone's fall per metre out. At 0.37 (a 0.74 m hat, 40 %
+## of the hero's height) it read as a toy's parasol over a squat body in the guard portrait;
+## a working douli is 0.5-0.6 m across, so 0.29 (0.58 m) keeps a man's proportions.
+const HAT_R := 0.29
+const HAT_SLOPE := 0.14 / 0.37
 
 ## An old man's felt hat worn over the hood: a round crown with a crease pinched down its
 ## top front to back, walls a little out of true, and a narrow soft brim that droops at the
@@ -876,6 +882,10 @@ func _add_face(head: Node3D) -> void:
 		mat.set_shader_parameter("lid_col", Color(0.26, 0.19, 0.16))
 		# a little more open: the 7 mm slit vanished under the brow at a few metres
 		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0044))
+	else:
+		# the hero's eyes in the face cloth's slot: the 3.7 mm lid opening closed to a dark line
+		# at 3 m and the eye band read as a blank grey cloth
+		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0042))
 	face = MeshInstance3D.new()
 	face.name = "Face"
 	face.mesh = _grid(_face_point, 40, 34 if bare_face else (24 if beard else 14))
@@ -888,6 +898,8 @@ func _add_face(head: Node3D) -> void:
 		# deep in the felt brim's shade the grey-buff white went to the skin's value and the
 		# eye vanished: a cleaner white keeps it reading as an eye at a few metres
 		emat.set_shader_parameter("sclera_gain", 1.27)
+	else:
+		emat.set_shader_parameter("sclera_gain", 1.12)
 	var sphere := SphereMesh.new()
 	sphere.radius = EYE_R
 	sphere.height = EYE_R * 2.0
@@ -924,21 +936,21 @@ func _add_face(head: Node3D) -> void:
 	fill.light_specular = 0.12
 	fill.position = Vector3(0.05, 1.93, 0.42)
 	head.add_child(fill)
-	if beard or bare_face:
-		# the brow and the brim keep the broad fill off the sockets: a tiny light a hand in
-		# front of the eyes, out of reach of the beard and the hood, lifts only the eye line
-		# (its energy follows the fill's, see villager.gd)
-		eye_fill = OmniLight3D.new()
-		eye_fill.name = "EyeFill"
-		eye_fill.light_color = fill.light_color
-		eye_fill.light_energy = 0.0
-		eye_fill.omni_range = 0.16
-		eye_fill.omni_attenuation = 1.0
-		eye_fill.shadow_enabled = false
-		eye_fill.light_cull_mask = layer
-		eye_fill.light_specular = 0.08
-		eye_fill.position = Vector3(0.0, EYE_Y - 0.004, _face_point_xy(0.0, EYE_Y, false).z + 0.11)
-		head.add_child(eye_fill)
+	# every wearer (the hero too: under the douli his eye band read as a blank grey cloth at 3 m)
+	# the brow and the brim keep the broad fill off the sockets: a tiny light a hand in
+	# front of the eyes, out of reach of the beard and the hood, lifts only the eye line
+	# (its energy follows the fill's, see villager.gd)
+	eye_fill = OmniLight3D.new()
+	eye_fill.name = "EyeFill"
+	eye_fill.light_color = fill.light_color
+	eye_fill.light_energy = 0.0
+	eye_fill.omni_range = 0.16
+	eye_fill.omni_attenuation = 1.0
+	eye_fill.shadow_enabled = false
+	eye_fill.light_cull_mask = layer
+	eye_fill.light_specular = 0.08
+	eye_fill.position = Vector3(0.0, EYE_Y - 0.004, _face_point_xy(0.0, EYE_Y, false).z + 0.11)
+	head.add_child(eye_fill)
 
 ## Midday shade light (see `light_face`): the fill's noon energy was tuned against it.
 const NOON_SHADE := 1.16
@@ -960,6 +972,9 @@ func light_face(shade: Color) -> void:
 	# at night the moonlit shade is blue-grey and the face went grey-lavender: keep more of the
 	# skin's own warmth as the light falls
 	fill.light_color = hue.lerp(Color(1.0, 0.86, 0.74), lerpf(0.62, 0.4, clampf(k, 0.0, 1.0)))
+	if eye_fill != null:
+		eye_fill.light_energy = fill.light_energy * 0.5
+		eye_fill.light_color = fill.light_color
 
 ## A point of the face band: UV.x across the face, UV.y from the brow down to the nose bridge.
 func _face_point(u: float, v: float) -> Vector3:
