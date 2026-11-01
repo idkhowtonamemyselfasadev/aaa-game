@@ -6410,14 +6410,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (02:00 11-01) **Hood + face cloth jaw taper DONE (code + bots walk facelight villager pedlar greet PASS; shot
-   pending -- lavapipe took >15 min per frame set this session)**. `garb.gd` `jaw_taper(y)`: the hood and the face
+0. (02:00 11-01) **Hood + face cloth jaw taper DONE (code + bots walk facelight villager pedlar greet PASS; SEEN, gallery
+   0230 `face`, FAIL overall but the box is gone: the head narrows to the jaw and the eyes read)**. `garb.gd` `jaw_taper(y)`: the hood and the face
    cloth draw in sideways together (13 % at 1.81 m, gaussian over ~5 cm) so the head narrows from the temples down
    the jaw to the throat instead of the hood running plumb from brim to collar (the grey box of gallery 0130); the
    same x scale on both pieces per height keeps the cloth inside the hood. The face cloth is also drawn back 1.6 cm
    under the chin instead of hanging forward as a flat apron. Bearded wearers keep their own cowl shape. NEXT, in
-   order: (a) shoot `face` + `hero <n> 30 15 guard` and judge the silhouette (if still boxy: raise JAW_TAPER toward
-   0.18 and round the hood's crown under the brim); the torso bulk (sash height 0.23 m, idle knee bend);
+   order: (a) the face cloth's dark tail hangs below the hood's pale ragged lower edge onto the breastplate (seen
+   in the `face` shot): tuck it under the hood/mantle collar or shorten it; re-shoot `hero <n> 30 15 guard` at 3 m; the torso bulk (sash height 0.23 m, idle knee bend);
    (b) the `hounds` framing; thornier ruff; (c) re-shoot the warden portrait; (d) `bash` shot mode; (e) re-shoot
    ring + knight p3. 0b-e: freesound / opengameart / kenney still unreachable.
 0. (01:00 11-01) **Hat to man size + eye fill DONE (code + bots; shot guard5 below if it landed)**. NEXT, in

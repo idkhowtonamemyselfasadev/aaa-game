@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-0010-valleyhaze.jpg",
-  "time": "2026-10-26T00:10:00Z",
-  "caption": "Noon valley with the new haze: cottages and the far ring recede, but the near hills of the ring are darker than the pale valley floor in front of them (value inversion).",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0212-haze-herocu.jpg",
   "time": "2026-10-26T02:12:00Z",
   "caption": "Hero at 2 m at noon: the wood line behind him now sits back in light haze; the hero himself still reads small and dull and the face is a patch in the hood.",
@@ -891,6 +885,12 @@
   "file": "20261101-0130-guard5.jpg",
   "time": "2026-11-01T01:30:00Z",
   "caption": "The hero's douli cut to a man's 0.58 m: he no longer reads as a toy under a parasol, but the hood and face cloth still read as a flat grey box round the head and the torso is bulky over hidden legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0230-face.jpg",
+  "time": "2026-11-01T02:39:00Z",
+  "caption": "The hero's head after the jaw taper: hood and face cloth now narrow from the temples to the throat so it reads as a head with eyes, not a grey box; still wrong: the face cloth's dark tail hangs below the hood's pale ragged collar over the breastplate, and the skin reads doll-smooth.",
   "verdict": "fail"
  }
 ]
