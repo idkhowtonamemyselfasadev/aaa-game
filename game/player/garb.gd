@@ -10,10 +10,12 @@ const INDIGO := [Color(0.030, 0.034, 0.048), Color(0.15, 0.16, 0.21), 0.25]
 ## The hero's hood: indigo wool sun-faded and road-worn to a greyed slate blue (the fresh-dyed
 ## INDIGO read as a flat near-black box round the face at noon; the 0.25/0.26/0.30 slate then
 ## read as the brightest, bluest thing on him once the armour went dark).
-const HOOD_INDIGO := [Color(0.040, 0.042, 0.050), Color(0.19, 0.195, 0.215), 0.3]
+## Then lifted and warmed (11-01 06:00): the cool 0.19/0.195/0.215 grey, with the face cloth
+## under it, read as one dark grey block from the guard camera; road dust in the nap browns it.
+const HOOD_INDIGO := [Color(0.050, 0.047, 0.050), Color(0.245, 0.232, 0.228), 0.3]
 ## The hero's face cloth: the same wool a shade darker and damper than the hood (breath, sweat
 ## and road dust): in the hood's value it read as a pale flat blue sheet under the face fill.
-const VEIL := [Color(0.028, 0.029, 0.034), Color(0.14, 0.143, 0.158), 0.35]
+const VEIL := [Color(0.034, 0.032, 0.034), Color(0.165, 0.157, 0.156), 0.35]
 const MANTLE := [Color(0.045, 0.036, 0.030), Color(0.24, 0.20, 0.16), 0.3]
 const MADDER := [Color(0.085, 0.032, 0.022), Color(0.40, 0.17, 0.10), 0.35]
 # a dyed-and-worn ochre: the bright 0.58/0.40/0.17 read as a flat yellow belt in full sun
@@ -578,7 +580,19 @@ func _hood_fold_ridge(a: float, v: float) -> float:
 	ridge = signf(ridge) * pow(absf(ridge), 0.6)
 	var depth := smoothstep(0.42, 0.95, v) * (1.0 - 0.7 * w)
 	var crown := sin(a * 9.0 + v * 7.0 + 0.6) * exp(-pow((v - 0.3) / 0.08, 2.0)) * 0.35
-	return ridge * depth + crown
+	return ridge * depth + crown - 0.9 * _cheek_crease(a, v)
+
+## A long soft crease 0..1 down each cheek a few centimetres behind the face opening's rolled
+## hem, from the eye line to the jaw, where the drawn-forward cowl buckles against the side of
+## the head: without it the front of the hood was one flat lit wall and read as a grey block
+## from the guard camera (gallery 0400, 0548).
+func _cheek_crease(a: float, v: float) -> float:
+	if beard:
+		return 0.0
+	var d := minf(a - _hood_gap(v, 1.0), TAU - _hood_gap(v, -1.0) - a)
+	var dc := 0.42 + 0.06 * sin(v * 9.0 + 0.8)
+	return exp(-pow((d - dc) / 0.11, 2.0)) * smoothstep(0.26, 0.40, v) \
+			* (1.0 - smoothstep(0.78, 0.95, v))
 
 ## The fold cavity 0..1 at (a, v) (0 on a ridge or open cloth), for the hood's fold AO.
 func _hood_fold(a: float, v: float) -> float:
@@ -588,7 +602,8 @@ func _hood_fold(a: float, v: float) -> float:
 	var depth := smoothstep(0.42, 0.95, v) * (1.0 - 0.7 * w)
 	var r := _hood_fold_ridge(a, v)
 	# the valleys between the folds sit in shade; the crown rumples only a little
-	return clampf(0.5 * depth * (1.0 - r) + 0.15 * maxf(-r, 0.0) * (1.0 - depth), 0.0, 1.0)
+	return clampf(0.5 * depth * (1.0 - r) + 0.15 * maxf(-r, 0.0) * (1.0 - depth)
+			+ 0.6 * _cheek_crease(a, v), 0.0, 1.0)
 
 ## _grid with a per-vertex cavity term in COLOR.r (1 open, 0 deep in a fold), for fold_ao.
 func _grid_ao(f: Callable, g: Callable, nu: int, nv: int) -> ArrayMesh:
