@@ -18,6 +18,8 @@ uniform float face_fill = 1.4;  // ground bounce under the brim (the body garb g
 uniform float mouth_y = 0.0;     // > 0: a bare face's mouth line at this height (lips round it)
 uniform float age = 0.0;         // 0 a working adult .. 1 an old man: paler, greyer, liver
                                  // spots, deeper lines, the colour only in the cheeks and nose
+uniform float rough_skin = 0.0;  // 1: a road-worn young face (the hero): blotchier, less
+                                 // saturated, a darker redder nose tip, stubble at the jaw
 
 varying vec3 mp;
 
@@ -134,6 +136,24 @@ void fragment() {
 	float burn = clamp(exp(-pow((abs(p.x) - 0.044) / 0.016, 2.0) - pow((p.y - 1.952) / 0.009, 2.0))
 			+ exp(-pow(p.x / 0.008, 2.0) - pow((p.y - 1.965) / 0.012, 2.0)), 0.0, 1.0);
 	alb = mix(alb, alb * vec3(1.02, 0.84, 0.78), 0.4 * burn * (1.0 - age));
+	if (rough_skin > 0.0) {
+		// a face that lives outdoors (gallery 0739 `face8` read as a smooth orange mannequin):
+		// the sun-brown pulled toward a greyer olive, uneven blotches at the scale the 2 m lens
+		// resolves, the nose tip and cheek apples darker and redder where wind and sun burn them,
+		// and a few days' dark stubble where the jaw and upper lip meet the face cloth
+		float l = dot(alb, vec3(0.3, 0.59, 0.11));
+		alb = mix(alb, vec3(l) * vec3(1.05, 1.0, 0.95), 0.3 * rough_skin);
+		float bl = vnoise(p * 95.0 + 31.0) * 0.55 + vnoise(p * 210.0 + 2.0) * 0.45;
+		alb *= mix(1.0, 0.8 + 0.36 * bl, rough_skin);
+		float tip = exp(-pow(p.x / 0.011, 2.0) - pow((p.y - 1.916) / 0.010, 2.0));
+		alb = mix(alb, alb * vec3(0.98, 0.72, 0.66), 0.55 * tip * rough_skin);
+		float apple = exp(-pow((abs(p.x) - 0.04) / 0.013, 2.0) - pow((p.y - 1.935) / 0.011, 2.0));
+		alb = mix(alb, alb * vec3(1.0, 0.8, 0.76), 0.35 * apple * rough_skin);
+		float jaw = smoothstep(1.912, 1.898, p.y) + smoothstep(0.052, 0.07, abs(p.x)) * smoothstep(1.94, 1.915, p.y);
+		float stub = smoothstep(0.45, 0.8, vnoise(p * 1600.0 + 9.0)) * clamp(jaw, 0.0, 1.0);
+		alb = mix(alb, alb * vec3(0.55, 0.5, 0.48), 0.6 * stub * rough_skin);
+		alb *= mix(1.0, 0.86, clamp(jaw, 0.0, 1.0) * rough_skin);   // the shadow of the stubble field
+	}
 	// lids: darker, slightly purple skin in a band round each opening; lash line at the edge
 	float lid = 1.0 - smoothstep(0.0, 0.006, de);
 	// (an old man's lids are hooded and dull, not pink: the red rims read as glinting red eyes)

@@ -33,6 +33,15 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(08:00 11-01) Hero's skin weathered instead of a smooth orange mask (Next 0 (a)).** `skin.gdshader`: new
+  `rough_skin` path (hero only): the sun-brown pulled 30 % toward a greyer olive, blotches at 95/210 scale
+  (0.8..1.16), a darker, redder nose tip (y 1.916) and cheek apples, a few days' stubble speckle above the face
+  cloth edge (VEIL_TOP 1.899) and on the jaw sides, with a slight shadow over the stubble field. `garb.gd` hero
+  branch: `skin_col` 0.30/0.235/0.205 (was the shader default 0.34/0.255/0.21), `face_fill` 1.15 (was 1.4: the
+  flat warm emission glowed the face instead of letting light model it). Shader compiles and renders under
+  Vulkan (standalone test); bots walk facelight villager greet PASS. **NOT SEEN**: the `face face9 60 15.0 fixfps`
+  shot hit the 3000 s Vulkan timeout and the GL fallback saved nothing (box very slow this hour) -- next session
+  must shoot it first and tune.
 - **(07:00 11-01) Face cloth dropped under the nose (Next 0 (a)).** `garb.gd`: new `VEIL_TOP` 1.899 (was the nose
   bridge, 1.929) for unbearded face cloths, hem unchanged; the hero's skin band now runs down to `FACE_LOW_HERO`
   1.884 (24 rows) with the whole nose the bearded/bare faces already had, plus cheek flesh under the cheekbones;
@@ -6429,6 +6438,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (08:00 11-01) **Weathered skin DONE in code (bots PASS), NOT SEEN** (shot timed out). NEXT, in order: (a) shoot
+   `face face9 60 15.0 fixfps` alone (no bots alongside) and judge the skin: if blotches/stubble read as dirt,
+   halve `rough_skin` blotch range; if too dark, face_fill back toward 1.25; (b) the face cloth's front is a flat
+   dark panel: a diagonal wrap fold and lighter worn edge; (c) `guard` camera check; (d) `hero` shot on the path;
+   (e) `hounds` framing; (f) warden portrait; (g) `bash` shot mode; (h) ring + knight p3. 0b-e: freesound /
+   opengameart / kenney still unreachable (curl 000, 08:00 11-01).
 0. (07:00 11-01) **Face cloth under the nose DONE (code + bots; SEEN gallery 0739 `face8`, FAIL)**. NEXT, in order:
    (a) the skin reads as a smooth orange mannequin: cut skin_col saturation (toward 0.30/0.24/0.21), add pore/
    blotch variation and a darker, redder nose tip and cheek, a little stubble on the upper lip edge above the cloth;

@@ -931,6 +931,12 @@ func _add_face(head: Node3D) -> void:
 		mat.set_shader_parameter("eye_size", Vector2(0.0135, 0.0042))
 		# the band now runs down past the nose: shade only its last strip into the cloth
 		mat.set_shader_parameter("low_tuck", 0.84)
+		# a weathered, less saturated sun-brown than the shader's default (it read as a smooth
+		# orange mask, gallery 0739 `face8`), and less flat warm fill under the brim so the
+		# light models the face instead of glowing it
+		mat.set_shader_parameter("skin_col", Color(0.30, 0.235, 0.205))
+		mat.set_shader_parameter("rough_skin", 1.0)
+		mat.set_shader_parameter("face_fill", 1.15)
 	face = MeshInstance3D.new()
 	face.name = "Face"
 	face.mesh = _grid(_face_point, 40, 34 if bare_face else 24)
