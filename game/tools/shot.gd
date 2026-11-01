@@ -850,6 +850,8 @@ func _ready() -> void:
 			foe_state = HollowSoldier.STAGGER
 		elif "dead" in args:
 			foe_state = HollowSoldier.DEAD
+		elif "recover" in args:
+			foe_state = HollowSoldier.RECOVER
 		if "flinch" in args or "fallen" in args or "knocked" in args:
 			# clear of the practice post, which stands at the start
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
@@ -1833,6 +1835,7 @@ func _ready() -> void:
 			foe.move_kind = HollowHewer.CHOP_MOVE
 			dur[HollowSoldier.WINDUP] = HollowHewer.RAISE_T + 0.3 + HollowHewer.GLINT_T
 			dur[HollowSoldier.STRIKE] = HollowHewer.CHOP_T
+			dur[HollowSoldier.RECOVER] = HollowHewer.STUCK_T
 		if foe_state == HollowSoldier.STAGGER:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:
@@ -1840,10 +1843,17 @@ func _ready() -> void:
 		else:
 			foe.windups += 1
 			foe._enter(HollowSoldier.WINDUP)
-			if foe_state == HollowSoldier.STRIKE:
+			if foe_state == HollowSoldier.STRIKE or foe_state == HollowSoldier.RECOVER:
 				foe.t = float(dur[HollowSoldier.WINDUP])
+		var rolled_clear := false
 		for i in 600:
 			foe._physics_process(dt)
+			if "bite" in args and not rolled_clear and foe.state == HollowSoldier.STRIKE:
+				# bite: the hero has rolled clear as the axe falls, so the bit buries in the turf
+				rolled_clear = true
+				foe._aimed = false
+				var off: Vector3 = player.global_position + foe.body.global_basis.x * 1.7
+				player.global_position = Vector3(off.x, (world.get_node("Terrain") as Terrain).height_at(off.x, off.z) + 0.05, off.z)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
 		if "knight" in args and ("surge" in args or "p3" in args):

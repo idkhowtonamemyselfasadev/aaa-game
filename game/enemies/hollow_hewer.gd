@@ -31,6 +31,7 @@ const CHOP_DAMAGE := 32.0
 const STUCK_T := 0.75            # s the bit stays buried after the chop
 const FREE_T := 0.7              # s to wrench it free and come back to guard
 const AXE_SCALE := 1.35          # the felling axe scaled up to a long two-hand helve (~1 m)
+const HEW_SWEEP_REACH := 1.9   # the axe's flat cut reaches ~0.7 m less than the spear's
 const AXE_GRIP := HAND_R - 0.08  # the knob 8 cm below the rear hand, on the spear's axis
 
 # axe poses in body space: [yaw°, pitch°, haft centre, twist°, slide, reach]
@@ -63,6 +64,7 @@ func _ready() -> void:
 	poise_max = HEWER_POISE
 	guard_pose = HEW_GUARD
 	engage_delay = 0.35
+	sweep_reach = HEW_SWEEP_REACH
 	super._ready()
 	name = "HollowHewer"
 	_rng.seed = 7311
@@ -88,7 +90,8 @@ func return_to_post() -> void:
 func _choose(dist: float) -> int:
 	var k := force_move
 	if k < 0:
-		k = SWEEP_MOVE if dist < SWEEP_CLOSE or _chops_in_row >= 2 else CHOP_MOVE
+		# crowded inside the axe's reach, or tired of chopping with the hero close enough for the cut
+		k = SWEEP_MOVE if dist < sweep_reach or (_chops_in_row >= 2 and dist < sweep_reach + SWEEP_STEP * 0.5) else CHOP_MOVE
 	if k == SWEEP_MOVE:
 		_chops_in_row = 0
 	else:
@@ -215,7 +218,9 @@ func _resolve_chop() -> void:
 	_bite_at = at
 	if _bitten:
 		bites += 1
-		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.05, Vector3.DOWN + body.global_basis.z * 0.4, "wood", 1.3)
+		# the bit bites into the turf: clods and dust kicked forward, splinters off the helve
+		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.05, Vector3.UP + body.global_basis.z * 0.5, "dirt", 1.5)
+		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.25, Vector3.DOWN + body.global_basis.z * 0.4, "wood", 0.6)
 	last_result = r
 	chopped.emit(at, r)
 	struck.emit(r)

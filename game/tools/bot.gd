@@ -1345,6 +1345,35 @@ func _hewer_test() -> void:
 		return _combat_done(false, "the hitch at the top of the raise does not vary")
 	if fol.played.get("chop", 0) <= played0.get("chop", 0) or fol.played.get("slam", 0) <= played0.get("slam", 0):
 		return _combat_done(false, "the chop made no sound (bite or hit)")
+	# 5b) the axe's flat cut is shorter than the spear's: from 3.1 m it whistles short (a spear
+	# sweep, stride and all, would reach), from 2.2 m it throws the hero down. The hewer is set
+	# at that range the frame the cut is released (the hewer walks in to its own range first).
+	await _ticks(30)
+	p.health = Player.HEALTH_MAX
+	_soldier_at(w, 2.4, HollowSoldier.SWEEP_MOVE)
+	var n4 := w.strikes
+	await _hewer_place_at_release(w, n4, 3.1)
+	await _wait_strike_done(w, n4)
+	var far_r := w.last_result
+	while w.state != HollowSoldier.STALK:
+		await get_tree().physics_frame
+	await _ticks(20)
+	_soldier_at(w, 2.4, HollowSoldier.SWEEP_MOVE)
+	var n5 := w.strikes
+	await _hewer_place_at_release(w, n5, 2.2)
+	await _wait_strike_done(w, n5)
+	var near_r := w.last_result
+	print("BOT hewer: axe sweep reach %.1f m (spear %.1f): from 3.1 m -> %s, from 2.2 m -> %s" % [w.sweep_reach, HollowSoldier.SWEEP_REACH, far_r, near_r])
+	if far_r != "miss" or near_r != "hit":
+		return _combat_done(false, "the axe sweep should fall short at 3.1 m and land at 2.2 m")
+	# hold the hewer still while the hero gets up (it would chop the downed hero again)
+	while w.state != HollowSoldier.STALK:
+		await get_tree().physics_frame
+	w.process_mode = Node.PROCESS_MODE_DISABLED
+	while p.down_t >= 0.0:
+		await get_tree().physics_frame
+	p.health = Player.HEALTH_MAX
+	w.process_mode = Node.PROCESS_MODE_INHERIT
 	# 6) the fight, played: roll on the glint, punish the stuck axe and recoveries
 	var axe := w.axe
 	await _ticks(60)
@@ -1376,6 +1405,8 @@ func _hewer_test() -> void:
 			p.bot_attack = w.state == HollowSoldier.RECOVER or w.state == HollowSoldier.STAGGER or w.state == HollowSoldier.STALK
 		if p.health < 30.0:
 			p.health = Player.HEALTH_MAX
+		if OS.has_environment("BOT_DEBUG") and fmod(t, 3.0) < get_physics_process_delta_time():
+			print("BOT hewer dbg: t %.1f state %d kind %d dist %.2f hp %.0f hero down %.2f dodge %.2f pos %s yaw %.2f lock %s climb %s glide %s vel %s" % [t, w.state, w.move_kind, flat.length(), w.health, p.down_t, p.dodge_t, str(p.global_position), p._yaw, str(p.lock_target), p.climbing, p.gliding, str(p.velocity)])
 		await get_tree().physics_frame
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
@@ -1390,6 +1421,16 @@ func _hewer_test() -> void:
 	if not is_instance_valid(axe) or off > 0.4:
 		return _combat_done(false, "the axe did not fall when the hewer crumbled")
 	_combat_done(true, "axe in both hands, chop after raise+hitch+glint knocks down, raise armoured, glint roll buries the bit, early roll spent, parried, killed, axe dropped")
+
+func _hewer_place_at_release(w: HollowHewer, n: int, d: float) -> void:
+	while w.strikes == n:
+		await get_tree().physics_frame
+	# slide the hewer (not the hero: its input is camera-relative) back along its facing
+	var f := w.body.global_basis.z
+	f.y = 0.0
+	var at := _player.global_position - f.normalized() * d
+	w.global_position = Vector3(at.x, _world.terrain.height_at(at.x, at.z) + 0.05, at.z)
+	w._home = w.global_position
 
 static func _seg_dist(pt: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab := b - a

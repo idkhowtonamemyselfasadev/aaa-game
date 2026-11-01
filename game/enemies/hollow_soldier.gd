@@ -60,6 +60,7 @@ var state := IDLE
 var move_kind := THRUST_MOVE
 var force_move := -1           # bots/shots: pin the next attack (-1 = choose)
 var sweeps := 0
+var sweep_reach := SWEEP_REACH   # hero centre within this when the blade passes (a shorter weapon cuts less)
 var _thrusts_in_row := 0
 var _arc_prev := 0.0
 var t := 0.0
@@ -588,7 +589,7 @@ func _in_arc() -> bool:
 		return false
 	var l := _hero_local()
 	var b := rad_to_deg(atan2(l.x, l.z))
-	return Vector2(l.x, l.z).length() < SWEEP_REACH + 0.4 and b > SWEEP_FROM and b < SWEEP_TO and absf(l.y) < 1.2
+	return Vector2(l.x, l.z).length() < sweep_reach + 0.4 and b > SWEEP_FROM and b < SWEEP_TO and absf(l.y) < 1.2
 
 ## The cut lands when the blade's bearing passes the hero's and the hero is inside its reach;
 ## a hero who was in the arc as it launched and is mid-dodge gets the dodge verdict instead.
@@ -603,7 +604,7 @@ func _sweep_contact() -> void:
 	_arc_prev = now
 	if not passed:
 		return
-	var in_reach := Vector2(l.x, l.z).length() < SWEEP_REACH and absf(l.y) < 1.2
+	var in_reach := Vector2(l.x, l.z).length() < sweep_reach and absf(l.y) < 1.2
 	var dodging := _player.dodge_t >= 0.0 and _player.dodge_t <= Player.DODGE_TIME
 	if not in_reach and not (_aimed and dodging):
 		return
