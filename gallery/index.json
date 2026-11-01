@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-0310-duskvalley.jpg",
-  "time": "2026-10-26T03:10:00Z",
-  "caption": "The Vale at 18:00: the low foothills now sit in the same rose valley haze as the near hills instead of standing dark grey behind them; the far band reads a little flat and milky, and the hero is not in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0527-valley-dusk.jpg",
   "time": "2026-10-26T05:27:20Z",
   "caption": "The Vale at 18 h: warm sky and snow peaks hold up, but the far valley floor washes into a flat pale-grey band with cut-out tree silhouettes in front of the dark ridge.",
@@ -891,6 +885,12 @@
   "file": "20261101-0640-guard7.jpg",
   "time": "2026-11-01T06:40:00Z",
   "caption": "Hero in the mid guard at 15:00 after the hood was warmed and creased down the cheeks: barely visible at this range -- the head still reads as a grey block because the face cloth covers the whole front, and the figure is lost in tall grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0739-face8.jpg",
+  "time": "2026-11-01T07:39:27Z",
+  "caption": "Hero close-up after the face cloth was dropped under the nose: the hood now frames a face with a nose, cheekbones and eyes instead of a grey block, but the skin reads as a smooth orange mannequin and the cloth front is a flat dark panel.",
   "verdict": "fail"
  }
 ]
