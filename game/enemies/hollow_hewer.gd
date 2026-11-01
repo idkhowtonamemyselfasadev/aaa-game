@@ -37,7 +37,17 @@ const AXE_GRIP := HAND_R - 0.08  # the knob 8 cm below the rear hand, on the spe
 # axe poses in body space: [yaw°, pitch°, haft centre, twist°, slide, reach]
 const HEW_GUARD := [10.0, 22.0, Vector3(0.06, 1.32, 0.62), 4.0, 0.0, 0.48]
 const RAISED := [-4.0, 104.0, Vector3(-0.02, 2.24, -0.12), -12.0, 0.0, 0.52]
-const CHOPPED := [0.0, -52.0, Vector3(0.0, 0.62, 1.0), 8.0, 0.0, 0.58]
+# CHOPPED and BITE are authored in the LEANED frame (the hewer's wield leans with its body,
+# see _lean): solved offline so both hands stay inside arm reach and the bit edge lands on the
+# turf ~0.85 m ahead with the helve ~42 deg below level (old CHOPPED clamped both hands and
+# left the axe lying level across the body).
+const CHOPPED := [0.0, -8.0, Vector3(0.0, 1.19, 0.95), 8.0, 0.0, 0.64]
+const CHOP_LEAN := 0.66          # rad the spine pitches forward at the bottom of the chop (~38 deg)
+const CHOP_SINK := 0.32          # m the knees give at the bottom of the chop
+const BITE := [0.0, -4.0, Vector3(0.0, 1.28, 0.98), 8.0, 0.0, 0.64]
+const BITE_LEAN := 0.70          # bent right over the buried bit (~40 deg)
+const BITE_SINK := 0.34
+const BITE_Z := 0.9              # m ahead of the feet where the bit edge buries
 
 ## the axe heaved overhead (foley: a slow heavy whoosh and a grunt of effort)
 signal raised(point: Vector3)
@@ -161,8 +171,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			var u := clampf(t / CHOP_T, 0.0, 1.0)
 			_update_glint(0.0)
 			_pose = _lerp_pose(RAISED, CHOPPED, minf(u * 1.5, 1.0) * minf(u * 1.5, 1.0))
-			lean = -0.12 + 0.52 * smoothstep(0.0, 0.6, u)
-			sink = 0.04 + 0.2 * smoothstep(0.2, 0.7, u)
+			lean = -0.12 + (CHOP_LEAN + 0.12) * smoothstep(0.0, 0.6, u)
+			sink = 0.04 + (CHOP_SINK - 0.04) * smoothstep(0.2, 0.7, u)
 			ember = 4.0 - 1.2 * u
 			move = body.global_basis.z * (CHOP_LUNGE / CHOP_T) * 2.0 * (1.0 - u) * clampf((dist - 0.9) / 0.4, 0.0, 1.0)
 			if not _resolved and u >= CHOP_AT:
@@ -174,20 +184,24 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		RECOVER:
 			var stuck_t := STUCK_T if _bitten else 0.15
 			if t < stuck_t:
-				# bent over the buried bit, wrenching at the helve
-				var w := sin(t * 23.0) * 2.0 * float(_bitten)
-				var p := CHOPPED.duplicate()
-				p[0] = CHOPPED[0] + w
-				p[3] = CHOPPED[3] - w
+				# bent over the buried bit, hands low on the helve, wrenching at it
+				var k := smoothstep(0.0, 0.12, t) * float(_bitten)
+				var w := sin(t * 23.0) * 2.5 * k
+				var p := _lerp_pose(CHOPPED, BITE, k)
+				p[1] = float(p[1]) + w
+				p[3] = float(p[3]) - w
 				_pose = p
-				lean = 0.4
-				sink = 0.24
+				lean = lerpf(CHOP_LEAN, BITE_LEAN, k) + sin(t * 23.0) * 0.025 * k
+				sink = lerpf(CHOP_SINK, BITE_SINK, k)
 				ember = 1.5
 			else:
 				var u := clampf((t - stuck_t) / FREE_T, 0.0, 1.0)
-				_pose = _lerp_pose(CHOPPED, guard_pose, u)
-				lean = 0.4 * (1.0 - smoothstep(0.0, 0.9, u))
-				sink = 0.24 * (1.0 - u)
+				var low: Array = BITE if _bitten else CHOPPED
+				var l0 := BITE_LEAN if _bitten else CHOP_LEAN
+				var s0 := BITE_SINK if _bitten else CHOP_SINK
+				_pose = _lerp_pose(low, guard_pose, u)
+				lean = l0 * (1.0 - smoothstep(0.0, 0.9, u))
+				sink = s0 * (1.0 - u)
 				ember = 1.4 - 0.4 * u
 				if u >= 1.0:
 					_bitten = false
@@ -211,7 +225,7 @@ func _resolve_chop() -> void:
 			_player.add_shake(0.4)
 			ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 1.0, -body.global_basis.y + body.global_basis.z * 0.3, "stone", 1.0)
 	_bitten = r != "hit" and r != "parried"
-	var at := global_position + body.global_basis.z * 1.55
+	var at := global_position + body.global_basis.z * BITE_Z
 	var terr := get_parent().get_node_or_null("Terrain")
 	if terr != null and terr.has_method("height_at"):
 		at.y = terr.height_at(at.x, at.z)
@@ -224,6 +238,13 @@ func _resolve_chop() -> void:
 	last_result = r
 	chopped.emit(at, r)
 	struck.emit(r)
+
+## The hewer's wield (the invisible shaft its hands IK to) leans and sinks with the body, so
+## the chop's bottom poses are authored in the bent-over frame and the hands stay in reach.
+func _lean(rad: float, sink: float) -> void:
+	super._lean(rad, sink)
+	if _wield != null and state != DEAD:
+		_wield.transform = model.transform * _model_rest.affine_inverse()
 
 ## The axe rides the invisible shaft: knob below the rear hand, helve along the shaft, the bit
 ## turned to lead the swing (down and forward in the chop's plane, round the arc in a sweep).

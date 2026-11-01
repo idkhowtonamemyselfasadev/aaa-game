@@ -1281,6 +1281,19 @@ func _hewer_test() -> void:
 	var rolled := w.last_result
 	await _ticks(3)
 	var stuck := w.stuck()
+	# the bite pose: bent over, the bit edge down on the turf ahead of the feet
+	while w.stuck() and w.t < 0.25:
+		await get_tree().physics_frame
+	var edge := w.axe.to_global(Vector3(0, Axe.HEAD_Y, Axe.EDGE_Z))
+	var gy := w.global_position.y
+	var terr := w.get_parent().get_node_or_null("Terrain")
+	if terr != null and terr.has_method("height_at"):
+		gy = terr.height_at(edge.x, edge.z)
+	var fwd := (edge - w.global_position).dot(w.body.global_basis.z)
+	var spine := rad_to_deg(w.model.global_basis.y.angle_to(Vector3.UP))
+	print("BOT hewer: bite pose: bit edge %.2f m above the turf, %.2f m ahead, spine pitched %.0f deg" % [edge.y - gy, fwd, spine])
+	if stuck and (edge.y - gy > 0.25 or fwd < 0.5 or spine < 25.0):
+		return _combat_done(false, "the hewer does not bend over a bit buried in the turf")
 	var hs := w.health
 	var stg := w.staggers
 	w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.0, 0.0)

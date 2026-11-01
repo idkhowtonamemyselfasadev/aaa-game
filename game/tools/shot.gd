@@ -887,8 +887,9 @@ func _ready() -> void:
 			if "bite" in args:
 				# the bit buries ~1 m in front of the hewer: frame that patch of turf from the
 				# hewer's lit flank, low, with the hewer filling the left of the frame
-				var bite_at := fp - line * 1.0    # `line` runs hero -> foe: the bit lands toward the hero
-				SPOTS[spot] = [bite_at + side * 2.6 - line * 0.4, bite_at]
+				var bite_at := fp - line * HollowHewer.BITE_Z    # `line` runs hero -> foe: the bit lands toward the hero
+				var look := fp.lerp(bite_at, 0.55) + Vector3.UP * 0.55    # the bent back and the bit together
+				SPOTS[spot] = [bite_at + side * 3.0 - line * 0.6 + Vector3.UP * 0.4, look]
 		elif spot == "lockon":
 			pass                                  # the follow camera, swung by the lock
 		elif "lit" in args:
@@ -1620,8 +1621,8 @@ func _ready() -> void:
 			look.y = terrain.height_at(look.x, look.z) + 0.9
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
-			pos.y = terrain.height_at(pos.x, pos.z) + 2.7    # above the meadow grass, which hides the turf lower down
-			look.y = terrain.height_at(look.x, look.z) + 0.2
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)
+			look.y = terrain.height_at(look.x, look.z) + 0.5
 		if spot == "hounds":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.25
 			look.y = terrain.height_at(look.x, look.z) + 0.6
