@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-0941-leanto.jpg",
-  "time": "2026-10-26T09:41:00Z",
-  "caption": "Edda at the chopping block at 10 h after burying the lean-to's quoins: the small dark triangles on the lean-to box are gone and the round tops are duller, but its big pale crisp-edged patches remain (not the quoins -- likely the rubble crowns under the skin).",
-  "verdict": "fail"
- },
- {
   "file": "20261026-1109-leanto.jpg",
   "time": "2026-10-26T11:09:37Z",
   "caption": "Edda at the chopping block at 10 h: the lean-to's grimy lower wall no longer breaks out in big pale patches (the lime shader flaked after griming), but two pale flakes still sit high on its shaded front end and the wall foot is one flat grime band.",
@@ -897,6 +891,12 @@
   "file": "20261101-1623-archer.jpg",
   "time": "2026-11-01T16:23:51Z",
   "caption": "The new Ashen Archer (left, red hood) at full draw, bow arm out at the hero; GL quick frame, the archer stands in the house's shadow so the bow and draw are hard to read, still needs a Forward+ look.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-1720-arrowlodged.jpg",
+  "time": "2026-11-01T17:20:00Z",
+  "caption": "An Ashen Archer's arrow lodged in the hero's chest after a hit, fletching out, the archer at the left edge; GL quick frame, the impact dust puff is too bright and pale, and the in-flight streak still does not read in the side-on flight frame.",
   "verdict": "fail"
  }
 ]

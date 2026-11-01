@@ -1505,12 +1505,34 @@ func _archer_test() -> void:
 		return _combat_done(false, "the shot did not raise, draw to the jaw and glint before the loose")
 	var arrow := w.last_arrow
 	tt = 0.0
+	var streak := 0.0
 	while w.last_arrow_result == "" and tt < 3.0:
 		await get_tree().physics_frame
 		tt += get_physics_process_delta_time()
+		if is_instance_valid(arrow) and arrow.result == "":
+			streak = maxf(streak, arrow.streak_length())
 	print("BOT archer: stood -> %s, health %.0f (arrow %s)" % [w.last_arrow_result, p.health, arrow])
 	if w.last_arrow_result != "hit" or p.health >= Player.HEALTH_MAX:
 		return _combat_done(false, "a standing hero at 10 m was not hit")
+	# the flight left a streak a few metres long; the arrow now rides the hero's back slot
+	await get_tree().physics_frame
+	if not is_instance_valid(arrow) or arrow.in_hero < 0.0 or arrow.get_parent() == null or arrow.get_parent().name != "BackSlot":
+		return _combat_done(false, "the arrow that struck did not lodge in the hero")
+	var tip := arrow.point()
+	var pp := p.global_position
+	var spine_d := Vector2(tip.x - pp.x, tip.z - pp.z).length()
+	print("BOT archer: streak %.2f m in flight; lodged tip %.2f m off the spine at %.2f m up, nock %.2f m up" % [streak, spine_d, tip.y - pp.y, arrow.tail().y - pp.y])
+	if streak < 1.2 or streak > 5.0:
+		return _combat_done(false, "the arrow's flight streak is missing or too long")
+	if spine_d > 0.25 or tip.y - pp.y < 0.85 or tip.y - pp.y > 1.55:
+		return _combat_done(false, "the lodged arrow's point is not in the torso")
+	var t_in := 0.0
+	while is_instance_valid(arrow) and t_in < HollowArrow.IN_HERO_LIFE + 1.0:
+		await get_tree().physics_frame
+		t_in += get_physics_process_delta_time()
+	if is_instance_valid(arrow):
+		return _combat_done(false, "the lodged arrow never came out")
+	print("BOT archer: the lodged arrow came out after %.2f s" % t_in)
 	while w.state != HollowSoldier.STALK or p.flinch_t >= 0.0:
 		await get_tree().physics_frame
 	await _ticks(30)

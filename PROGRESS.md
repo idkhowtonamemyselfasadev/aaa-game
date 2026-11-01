@@ -37,6 +37,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(17:00 11-01) Archer arrows: a flight streak and arrows that lodge in the hero.** `game/enemies/arrow.gd`: a
+  loosed arrow trails a thin, camera-facing ribbon through its nock's last 0.11 s (~2-3 m at 30 m/s), pale grey
+  and soft-edged (`shaders/arrow_trail.gdshader`, unshaded, never glowing), so the arrow reads at range; the
+  streak fades out when the arrow buries or is parried. An arrow that hits now lodges in the torso where it
+  struck (nearest spine point clamped to 1.05-1.42 m, the point 0.12 m past the body surface) and rides the
+  hero's Spine2 `BackSlot` for 2.6 s, swaying with the flinch, then comes out. Bot `archer` adds: streak
+  1.2-5 m in flight (got 2.0), arrow parented to BackSlot with the tip inside the torso, freed after the stay.
+  `shot.gd` archer modes `flight` / `lodged` step the loosed arrow by hand and frame it.
 - **(13:00 11-01) Hewer bite burst: soil, not a glowing smear + bite shot framing.** `ImpactFX` kind `turf`
   (the hewer's buried bit now uses it; `dirt` stays for bodies thrown down): dark soil crumbs (0.20/0.15/0.10,
   some keep a grass tint) as alpha-scissored lumpy blots from a noise mask (`_clump_tex`), thrown up and forward,
@@ -6468,6 +6476,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (17:00 11-01) **Arrow streak + lodged arrow DONE (bots archer soldier hewer combat PASS; GL frames `soldier
+   arrow_flight 20 15.0 archer u=0.99 flight` and `... lodged` SEEN, gallery 1720 `arrowlodged` FAIL: GL; the lodged arrow reads, the impact puff is too pale/bright and the flight frame still does not show the streak side-on).** NEXT, in order: (0) make the in-flight arrow read in the `flight` frame (camera nearer the arrow, or a slightly stronger/wider streak near the nock); (a) a Forward+ look at the
+   draw (`soldier archer_draw 30 15.0 archer u=0.75`) for the stance and the bow's scale; (b) the archer prefers
+   higher ground / cover (pick a stand on a rise near ARCHER_AT); (c) a lodged arrow should break off / drop when
+   the hero rolls (now it just stays its 2.6 s), and several hits should leave several arrows (works, untested);
+   (d) the hewer `bite` reframe and the hero list from 09:00; (e) next enemy: Hollow Wisps (fodder).
+   0b-e: freesound / opengameart / kenney still unreachable.
 0. (16:00 11-01) **Enemy variety: Ashen Archer DONE (bot `archer` PASS; regression bots soldier warden hewer knight
    hounds walk combat sweep lockon foley music sound mix credits PASS; GL quick shot `soldier archer_draw 20 15.0
    archer u=0.75` SEEN, gallery 1623 `archer`, FAIL: GL, the archer in the house shadow; the side-on draw and bow arm read).** `game/enemies/hollow_archer.gd` (extends HollowSoldier), `game/world/bow.gd`

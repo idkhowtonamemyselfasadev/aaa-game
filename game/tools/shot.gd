@@ -852,7 +852,7 @@ func _ready() -> void:
 			foe_state = HollowSoldier.DEAD
 		elif "recover" in args:
 			foe_state = HollowSoldier.RECOVER
-		if "flinch" in args or "fallen" in args or "knocked" in args:
+		if "flinch" in args or "fallen" in args or "knocked" in args or "lodged" in args:
 			# clear of the practice post, which stands at the start
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
 			player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.05, at.z)
@@ -886,6 +886,12 @@ func _ready() -> void:
 				# column and the knight beyond all read in one frame
 				var focus := pp.lerp(fp, 0.25)
 				SPOTS[spot] = [focus + side * 4.2 - line * 1.4, focus]
+			if "lodged" in args:
+				# the arrow standing in the hero: close on the hero's flank, the archer beyond
+				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]
+			if "flight" in args:
+				# the arrow in the air between them: square on to the flight line, a little back
+				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
 			if "bite" in args:
 				# the bit buries ~1 m in front of the hewer: frame that patch of turf from the
 				# hewer's lit flank, low, with the hewer filling the left of the frame
@@ -1898,6 +1904,32 @@ func _ready() -> void:
 				if c is AshFlame:
 					(c as AshFlame).t -= hold
 			print("SHOT knight phase %d surge %.2f flames %d" % [k.phase, k._surge, k.flames_spawned])
+		if foe is HollowArcher and ("flight" in args or "lodged" in args):
+			# flight: the loosed arrow ~4 m short of the hero, its streak behind it;
+			# lodged: the arrow has struck and stands in the hero's torso
+			var arr: HollowArrow = foe.last_arrow
+			if arr == null:
+				foe.t = float(dur[HollowSoldier.WINDUP])
+				for i in 120:
+					foe._physics_process(dt)
+					if foe.last_arrow != null:
+						break
+				arr = foe.last_arrow
+			if arr != null:
+				arr.set_physics_process(false)
+				for i in 240:
+					if not is_instance_valid(arr):
+						break
+					arr._physics_process(dt)
+					if "flight" in args and arr.point().distance_to(player.global_position + Vector3.UP * 1.2) < 2.2:
+						break
+					if "lodged" in args and arr.in_hero >= 0.0:
+						for k in 20:
+							player._physics_process(dt)
+						break
+				if is_instance_valid(arr):
+					arr.frozen = true
+					print("SHOT arrow result '%s' in_hero %.2f streak %.2f m at %s" % [arr.result, arr.in_hero, arr.streak_length(), arr.point()])
 		player.set_physics_process(false)
 		if "parry" in args or "smash" in args or "flinch" in args or "fallen" in args or "knocked" in args:
 			_action = func(): await _heavy_action(player, foe, args)
