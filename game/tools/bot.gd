@@ -1533,6 +1533,59 @@ func _archer_test() -> void:
 	if is_instance_valid(arrow):
 		return _combat_done(false, "the lodged arrow never came out")
 	print("BOT archer: the lodged arrow came out after %.2f s" % t_in)
+	# 1b) two arrows that strike in turn both lodge; a roll snaps them and the halves drop
+	while p.flinch_t >= 0.0:
+		await get_tree().physics_frame
+	p.health = Player.HEALTH_MAX
+	var lodged := []
+	for k in 2:
+		while p.flinch_t >= 0.0:
+			await get_tree().physics_frame
+		var hp := p.global_position + Vector3.UP * 1.25
+		var src := hp + (w.global_position - p.global_position).normalized() * 6.0
+		src.y = hp.y + 0.15
+		var ak := HollowArrow.loose(p.get_parent(), src, (hp - src).normalized() * HollowArrow.SPEED, w)
+		tt = 0.0
+		while is_instance_valid(ak) and ak.result == "" and tt < 1.5:
+			await get_tree().physics_frame
+			tt += get_physics_process_delta_time()
+		if is_instance_valid(ak) and ak.in_hero >= 0.0:
+			lodged.append(ak)
+	print("BOT archer: %d of 2 arrows lodged at once" % lodged.size())
+	if lodged.size() < 2:
+		return _combat_done(false, "two arrows in turn did not both stay in the hero")
+	while p.flinch_t >= 0.0:
+		await get_tree().physics_frame
+	p.stamina = p.stamina_max
+	p.bot_input = Vector2(0, 1)
+	p.bot_dodge = true
+	await _ticks(12)
+	p.bot_input = Vector2.ZERO
+	var snapped := 0
+	for ak in lodged:
+		if is_instance_valid(ak) and ak.broken and ak.in_hero < 0.0 and ak.get_parent() == p.get_parent():
+			snapped += 1
+	print("BOT archer: rolled with two arrows in -> %d snapped off (dodges %d)" % [snapped, p.dodges])
+	if snapped < 2:
+		return _combat_done(false, "a roll did not snap the lodged arrows off")
+	tt = 0.0
+	var all_down := false
+	while tt < 2.0 and not all_down:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		all_down = true
+		for ak in lodged:
+			if is_instance_valid(ak) and not ak.lying:
+				all_down = false
+	var worst := 0.0
+	for ak in lodged:
+		if is_instance_valid(ak):
+			var g: float = _world.terrain.height_at(ak.global_position.x, ak.global_position.z)
+			worst = maxf(worst, maxf(absf(ak.global_position.y - g), ak.streak_length()))
+			worst = maxf(worst, absf(ak.global_basis.y.normalized().y) * 0.1)
+	print("BOT archer: broken halves down %s in %.2f s, worst off-ground/streak %.3f, played snap %d" % [all_down, tt, worst, fol.played.get("wood", 0)])
+	if not all_down or worst > 0.06:
+		return _combat_done(false, "the snapped halves did not fall and lie in the grass")
 	while w.state != HollowSoldier.STALK or p.flinch_t >= 0.0:
 		await get_tree().physics_frame
 	await _ticks(30)

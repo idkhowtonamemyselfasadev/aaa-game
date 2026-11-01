@@ -16,6 +16,9 @@ const TRAIL_LIFE := 0.11         # s of tail positions kept: ~3 m of streak at f
 const TRAIL_W := 0.032           # m across the streak
 const IN_HERO_LIFE := 2.6        # s an arrow that struck stays stuck in the hero
 const BURY := 0.12               # m the point sinks past the body surface (~to the spine)
+const SNAP_AFTER := 0.06         # s into a roll before a lodged shaft snaps on the ground
+const SNAP_KEEP := 0.55          # share of the shaft (from the nock) that breaks off and falls
+const BROKEN_LIFE := 6.0         # s the snapped half lies in the grass
 
 ## where the arrow ended its flight: result is "hit", "parried", "dodged", "perfect", "ground"
 signal landed(point: Vector3, result: String)
@@ -36,6 +39,9 @@ var _trail_mesh: ImmediateMesh
 var _trail_pts: Array = []       # [age, tail position]
 var in_hero := -1.0              # >= 0: stuck in the hero this long
 var frozen := false              # shots: physics stopped, the streak is redrawn for the lens
+var broken := false              # a roll snapped the lodged shaft: this is the fletched half
+var lying := false               # the snapped half has come to rest on the turf
+var snaps := 0                   # bots: times this arrow snapped (0 or 1)
 
 func _process(_delta: float) -> void:
 	if frozen:
@@ -98,11 +104,16 @@ func streak_length() -> float:
 
 func _physics_process(delta: float) -> void:
 	_age += delta
-	_update_trail(delta, _stuck < 0.0 and in_hero < 0.0 and result != "parried")
+	_update_trail(delta, _stuck < 0.0 and in_hero < 0.0 and result != "parried" and not broken)
 	if in_hero >= 0.0:
 		in_hero += delta
 		if in_hero > IN_HERO_LIFE:
 			queue_free()
+		elif _player != null and _player.dodge_t >= SNAP_AFTER:
+			_snap()
+		return
+	if broken:
+		_fall_broken(delta)
 		return
 	if _stuck >= 0.0:
 		_stuck += delta
@@ -190,6 +201,66 @@ func _stick_in_hero() -> void:
 		get_parent().remove_child(self)
 		slot.add_child(self)
 		global_transform = g
+
+## The hero rolled on the lodged arrow: the shaft breaks a hand above the wound, the head
+## stays buried (gone from view), and the fletched half drops off spinning into the grass.
+func _snap() -> void:
+	var g := global_transform
+	var world := _player.get_parent()
+	get_parent().remove_child(self)
+	world.add_child(self)
+	global_transform = g
+	in_hero = -1.0
+	broken = true
+	snaps += 1
+	# keep only the nock end of the mesh: shrink along the shaft about the nock
+	var keep := HollowBow.ARROW_LEN * SNAP_KEEP
+	_mesh.scale = Vector3(1.0, SNAP_KEEP, 1.0)
+	_mesh.position = Vector3(0, -keep * 0.5, 0)
+	# re-centre the node on what is left so it pivots on the broken half's middle
+	var shift := global_basis.y.normalized() * (-(HollowBow.ARROW_LEN - keep) * 0.5)
+	global_position += shift
+	var roll_v := Vector3.ZERO
+	if _player.has_method("get_real_velocity"):
+		roll_v = _player.get_real_velocity()
+	var side := global_basis.x.normalized() * (0.6 if randf() < 0.5 else -0.6)
+	vel = -roll_v * 0.25 + side + Vector3.UP * 1.6
+	_spin = (global_basis.z.normalized() * 14.0 + Vector3(randf() - 0.5, 0, randf() - 0.5) * 6.0)
+	_age = 0.0
+	landed.emit(global_position, "snapped")
+
+func _fall_broken(delta: float) -> void:
+	if lying:
+		_stuck += delta
+		if _stuck > BROKEN_LIFE:
+			queue_free()
+		return
+	if _age > LIFE:
+		queue_free()
+		return
+	vel.y -= 9.8 * delta
+	global_position += vel * delta
+	global_basis = global_basis.rotated(_spin.normalized(), _spin.length() * delta).orthonormalized()
+	if _terrain == null or not _terrain.has_method("height_at"):
+		return
+	var g: float = _terrain.height_at(global_position.x, global_position.z)
+	if global_position.y <= g + 0.025:
+		# lie in the grass: shaft level along its last heading, rolled a little
+		var d := global_basis.y.normalized()
+		d.y = 0.0
+		if d.length() < 1e-3:
+			d = Vector3.FORWARD
+		d = d.normalized()
+		var x := Vector3.UP.cross(d).normalized()
+		global_basis = Basis(x, d, Vector3.UP).rotated(d, randf_range(-0.4, 0.4)).orthonormalized()
+		global_position.y = g + 0.012
+		lying = true
+		_stuck = 0.0
+		landed.emit(global_position, "litter")
+		# its weight bends the blades under it so the shaft lies on, not hidden in, the sward
+		var tr := get_parent().get_node_or_null("Trample")
+		if tr != null and tr.has_method("add_herd_point"):
+			tr.add_herd_point(Vector2(global_position.x + d.x * 0.18, global_position.z + d.z * 0.18), Vector2(d.x, d.z), 0.7, 0.0, 0.15, 0.35)
 
 # --- the flight streak: a camera-facing ribbon through the tail's recent positions ---
 

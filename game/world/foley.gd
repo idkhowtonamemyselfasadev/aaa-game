@@ -223,6 +223,11 @@ func _on_arrow_landed(at: Vector3, r: String) -> void:
 			_play("clang", at, -4.0, 1.15)
 		"ground":
 			_play("thud", at, -6.0, 1.3)
+		"snapped":
+			# the shaft breaking under the rolling body: a dry, high wood crack
+			_play("wood", at, -9.0, 1.9)
+		"litter":
+			_play("wood", at, -20.0, 2.2)
 		_:
 			_play("spear", at, -10.0, 1.4)
 

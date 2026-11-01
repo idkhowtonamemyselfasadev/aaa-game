@@ -852,6 +852,8 @@ func _ready() -> void:
 			foe_state = HollowSoldier.DEAD
 		elif "recover" in args:
 			foe_state = HollowSoldier.RECOVER
+		if "snapped" in args and not "lodged" in args:
+			args.append("lodged")
 		if "flinch" in args or "fallen" in args or "knocked" in args or "lodged" in args:
 			# clear of the practice post, which stands at the start
 			var at := player.global_position + Vector3(3.0, 0, -6.0)
@@ -1926,6 +1928,28 @@ func _ready() -> void:
 					if "lodged" in args and arr.in_hero >= 0.0:
 						for k in 20:
 							player._physics_process(dt)
+						if "snapped" in args:
+							# the hero rolls on it: the shaft snaps and the fletched half drops
+							player.dodge_t = HollowArrow.SNAP_AFTER + 0.01
+							for k in 180:
+								arr._physics_process(dt)
+								if arr.lying:
+									break
+							player.dodge_t = -1.0
+							var ap := arr.global_position
+							var ln := Vector3(foe.global_position.x - ap.x, 0, foe.global_position.z - ap.z).normalized()
+							var sd := ln.cross(Vector3.UP)
+							# the roll has carried the hero on, away from the archer, past the half
+							var rp := ap - ln * 2.4 + sd * 0.6
+							player.global_position = Vector3(rp.x, terrain.height_at(rp.x, rp.z) + 0.05, rp.z)
+							var vc := get_viewport().get_camera_3d()
+							if vc != null:
+								var cp := ap - sd * 1.1 + ln * 0.3
+								cp.y = terrain.height_at(cp.x, cp.z) + 1.15
+								vc.global_position = cp
+								vc.look_at(ap)
+								print("SHOT snapped lens %s %s -> screen %s" % [vc.name, vc.global_position, vc.unproject_position(ap)])
+							print("SHOT snapped broken %s lying %s at %s" % [arr.broken, arr.lying, ap])
 						break
 				if is_instance_valid(arr):
 					arr.frozen = true
