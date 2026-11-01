@@ -219,7 +219,7 @@ func _resolve_chop() -> void:
 	if _bitten:
 		bites += 1
 		# the bit bites into the turf: clods and dust kicked forward, splinters off the helve
-		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.05, Vector3.UP + body.global_basis.z * 0.5, "dirt", 1.5)
+		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.05, Vector3.UP + body.global_basis.z * 0.5, "turf", 1.5)
 		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.25, Vector3.DOWN + body.global_basis.z * 0.4, "wood", 0.6)
 	last_result = r
 	chopped.emit(at, r)

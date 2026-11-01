@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-0633-edda-wool.jpg",
-  "time": "2026-10-26T06:33:27Z",
-  "caption": "Edda at the woodpile at 10 h: her sleeves now read as the kirtle's rust wool instead of pale mottled grey; the coif still reads as a pale blotchy cowl and the lean-to wall is a flat white box with sticker-like plaster patches.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-0647-whitecottage.jpg",
-  "time": "2026-10-26T06:47:44Z",
-  "caption": "Edda splitting wood by the white cottage at 10 h: the limewash is now an aged, off-white lime with peeled coats and the rubble ghosting through instead of clipped flat white; still wrong: the lean-to reads as a crisp box, the flaked patches are blocky stone-shaped greys, and the chopping block and rounds read pale.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0820-whitewall.jpg",
   "time": "2026-10-26T08:20:14Z",
   "caption": "Edda at the chopping block: the white cottage's walls are now one even old-lime skin with the rubble ghosting through, but the lean-to box still has sticker-like patches and the sawn rounds read pale.",
@@ -891,6 +879,12 @@
   "file": "20261101-1217-hewer-bite.jpg",
   "time": "2026-11-01T12:17:51Z",
   "caption": "The hewer bent over its buried axe after the hero rolled clear (GL quick frame); the new turf burst reads as a flat over-bright smear on the ground and the camera framing is off.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-1312-hewerbite.jpg",
+  "time": "2026-11-01T13:12:10Z",
+  "caption": "GL frame looking down on the Hewer's missed chop: the turf burst is now a soft, shaded brown haze with dark soil crumbs instead of a pale glowing smear; the hewer still stands upright instead of bent over the buried bit, and the frame is GL, dark and shadowed.",
   "verdict": "fail"
  }
 ]

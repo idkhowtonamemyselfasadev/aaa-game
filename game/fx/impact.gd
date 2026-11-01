@@ -5,6 +5,8 @@ extends Node3D
 ## Frees itself when done.
 
 static var _dust_tex: Texture2D
+static var _crumb_tex: Texture2D
+static var _haze_tex: Texture2D
 
 static func spawn(parent: Node, pos: Vector3, swing_dir: Vector3, kind: String, power: float) -> ImpactFX:
 	var fx := ImpactFX.new()
@@ -26,6 +28,11 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		# a body thrown down: torn grass bits and a broad, low cloud of dry soil
 		chaff_col = Color(0.45, 0.42, 0.26)
 		dust_col = Color(0.47, 0.41, 0.31, 0.55)
+	elif kind == "turf":
+		# a blade buried in the meadow: dark moist soil clods (not the pale chaff of a body
+		# thrown down) and a thin, shaded haze of fine soil that hugs the ground
+		chaff_col = Color(0.20, 0.15, 0.10)
+		dust_col = Color(0.33, 0.29, 0.23, 0.30)
 	# chaff: thin stalk fragments thrown out along the swing, tumbling, falling
 	var chaff := CPUParticles3D.new()
 	chaff.name = "Chaff"
@@ -38,6 +45,14 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	chaff.spread = 38.0
 	chaff.initial_velocity_min = 1.8 * power
 	chaff.initial_velocity_max = 5.0 * power
+	if kind == "turf":
+		chaff.amount = int(22 * power)
+		chaff.direction = (dir * 0.5 + Vector3.UP).normalized()
+		chaff.spread = 45.0
+		chaff.initial_velocity_min = 1.2 * power
+		chaff.initial_velocity_max = 3.0 * power
+		chaff.scale_amount_min = 0.7
+		chaff.scale_amount_max = 1.8
 	if kind == "dirt":
 		chaff.amount = int(18 * power)
 		chaff.direction = Vector3.UP
@@ -51,16 +66,24 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	chaff.angular_velocity_max = 720.0
 	chaff.angle_min = 0.0
 	chaff.angle_max = 360.0
-	chaff.scale_amount_min = 0.5
-	chaff.scale_amount_max = 1.3
+	if kind != "turf":
+		chaff.scale_amount_min = 0.5
+		chaff.scale_amount_max = 1.3
 	chaff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	chaff.emission_sphere_radius = 0.06
 	chaff.particle_flag_rotate_y = false
 	var q := QuadMesh.new()
-	q.size = Vector2(0.12, 0.013) if kind == "straw" else Vector2(0.03, 0.012)
+	q.size = Vector2(0.12, 0.013) if kind == "straw" else (Vector2(0.04, 0.034) if kind == "turf" else Vector2(0.03, 0.012))
 	var cm := StandardMaterial3D.new()
 	cm.albedo_color = chaff_col
 	cm.roughness = 0.8
+	if kind == "turf":
+		# ragged soil crumbs: an alpha-scissored lumpy blot instead of a sliver
+		cm.albedo_texture = _clump_tex()
+		cm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		cm.alpha_scissor_threshold = 0.5
+		cm.roughness = 0.95
+		cm.metallic_specular = 0.2
 	cm.cull_mode = BaseMaterial3D.CULL_DISABLED
 	cm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	cm.billboard_keep_scale = true
@@ -68,8 +91,8 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	q.material = cm
 	chaff.mesh = q
 	var cg := Gradient.new()
-	cg.set_color(0, Color(1.1, 1.05, 1.0))
-	cg.set_color(1, Color(0.7, 0.68, 0.62))
+	cg.set_color(0, Color(1.1, 1.05, 1.0) if kind != "turf" else Color(1.0, 1.0, 1.0))
+	cg.set_color(1, Color(0.7, 0.68, 0.62) if kind != "turf" else Color(0.55, 0.62, 0.45))  # some crumbs keep a grass tint
 	chaff.color_initial_ramp = cg
 	add_child(chaff)
 	chaff.emitting = true
@@ -100,6 +123,15 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		dust.flatness = 0.75
 		dust.initial_velocity_max = 2.2 * power
 		dust.emission_sphere_radius = 0.35
+	elif kind == "turf":
+		# a low haze that creeps out from the cut and settles, never a bright puff
+		dust.amount = int(8 * power) + 4
+		dust.lifetime = 1.5
+		dust.direction = (dir * 0.4 + Vector3.UP * 0.5).normalized()
+		dust.spread = 80.0
+		dust.flatness = 0.6
+		dust.initial_velocity_max = 1.3 * power
+		dust.emission_sphere_radius = 0.2
 	var sc := Curve.new()
 	sc.add_point(Vector2(0, 0.35))
 	sc.add_point(Vector2(0.3, 0.8))
@@ -122,6 +154,13 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	dm.billboard_keep_scale = true
 	dm.roughness = 1.0
+	# no specular sheen: a billboard facing the lens catches the sun's highlight as a flat glow
+	dm.metallic_specular = 0.0
+	if kind == "turf" or kind == "dirt":
+		# light the haze as a soft volume (half-lambert-ish via backlight) and break its edge up
+		dm.albedo_texture = _clump_tex(true)
+		dm.backlight_enabled = true
+		dm.backlight = Color(0.25, 0.22, 0.18)
 	dm.shadow_to_opacity = false
 	dm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 	dm.proximity_fade_enabled = true
@@ -140,6 +179,38 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		var tw := create_tween()
 		tw.tween_property(flash, "light_energy", 0.0, 0.12)
 	get_tree().create_timer(2.0, false).timeout.connect(queue_free)
+
+## A lumpy blot: radial falloff broken up by value noise. soft=true gives a feathered
+## smoke puff (for dust), false a hard-edged crumb mask (for alpha-scissored clods).
+static func _clump_tex(soft := false) -> Texture2D:
+	if not soft and _crumb_tex != null:
+		return _crumb_tex
+	if soft and _haze_tex != null:
+		return _haze_tex
+	var n := FastNoiseLite.new()
+	n.seed = 7 if soft else 3
+	n.frequency = 0.09 if soft else 0.16
+	n.fractal_octaves = 3
+	var sz := 64
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	for y in sz:
+		for x in sz:
+			var d := Vector2(x - sz * 0.5 + 0.5, y - sz * 0.5 + 0.5).length() / (sz * 0.5)
+			var v := n.get_noise_2d(x, y) * 0.5 + 0.5
+			var a: float
+			if soft:
+				a = clampf(1.0 - d, 0.0, 1.0)
+				a = a * a * (0.45 + 0.75 * v)
+			else:
+				a = 1.0 if d < 0.55 + 0.45 * (v - 0.5) * 2.0 * 0.6 else 0.0
+			var shade := 0.85 + 0.3 * v
+			img.set_pixel(x, y, Color(shade, shade, shade, clampf(a, 0.0, 1.0)))
+	var t := ImageTexture.create_from_image(img)
+	if soft:
+		_haze_tex = t
+	else:
+		_crumb_tex = t
+	return t
 
 static func _soft_tex() -> Texture2D:
 	if _dust_tex == null:

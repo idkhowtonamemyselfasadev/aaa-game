@@ -884,6 +884,11 @@ func _ready() -> void:
 				# column and the knight beyond all read in one frame
 				var focus := pp.lerp(fp, 0.25)
 				SPOTS[spot] = [focus + side * 4.2 - line * 1.4, focus]
+			if "bite" in args:
+				# the bit buries ~1 m in front of the hewer: frame that patch of turf from the
+				# hewer's lit flank, low, with the hewer filling the left of the frame
+				var bite_at := fp - line * 1.0    # `line` runs hero -> foe: the bit lands toward the hero
+				SPOTS[spot] = [bite_at + side * 2.6 - line * 0.4, bite_at]
 		elif spot == "lockon":
 			pass                                  # the follow camera, swung by the lock
 		elif "lit" in args:
@@ -1613,6 +1618,10 @@ func _ready() -> void:
 			# 0.9 m (08:00 10-31) put the scorch behind the meadow grass: look down on it instead
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z) + 0.9
+		if spot == "soldier" and "bite" in args:
+			# look down at the buried bit and its turf burst, the hewer's arms above
+			pos.y = terrain.height_at(pos.x, pos.z) + 2.7    # above the meadow grass, which hides the turf lower down
+			look.y = terrain.height_at(look.x, look.z) + 0.2
 		if spot == "hounds":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.25
 			look.y = terrain.height_at(look.x, look.z) + 0.6
@@ -1852,7 +1861,12 @@ func _ready() -> void:
 				# bite: the hero has rolled clear as the axe falls, so the bit buries in the turf
 				rolled_clear = true
 				foe._aimed = false
-				var off: Vector3 = player.global_position + foe.body.global_basis.x * 1.7
+				# roll away from the lens so the hero never steps into the frame's foreground
+				var away: Vector3 = foe.body.global_basis.x
+				var lens_at: Vector3 = (SPOTS[spot] as Array)[0]
+				if away.dot(lens_at - player.global_position) > 0.0:
+					away = -away
+				var off: Vector3 = player.global_position + away * 1.7
 				player.global_position = Vector3(off.x, (world.get_node("Terrain") as Terrain).height_at(off.x, off.z) + 0.05, off.z)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
