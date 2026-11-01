@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261025-2226-skinform-herocu.jpg",
-  "time": "2026-10-25T22:26:00Z",
-  "caption": "Hero at the 2 m lens at noon with the hewn oak post in the foreground: the post now reads as adzed timber under an iron band, but the face is still a small patch in the hood and the plain meadow lacks depth haze.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-0010-meadowhaze.jpg",
-  "time": "2026-10-26T00:10:00Z",
-  "caption": "Noon meadow at 2 m with thicker clear-day haze: the treelines 100-300 m out now sit back in the air; the hero still reads dull and the face is lost under the hat.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-0010-valleyhaze.jpg",
   "time": "2026-10-26T00:10:00Z",
   "caption": "Noon valley with the new haze: cottages and the far ring recede, but the near hills of the ring are darker than the pale valley floor in front of them (value inversion).",
@@ -897,6 +885,12 @@
   "file": "20261101-0030-guard4.jpg",
   "time": "2026-11-01T00:30:00Z",
   "caption": "Hero in the new low guard: the staff now reads as a clear diagonal, tip down to knee height -- but the figure still looks squat and toy-like, the face is a blank grey cloth and the straw post crowds the right.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-0130-guard5.jpg",
+  "time": "2026-11-01T01:30:00Z",
+  "caption": "The hero's douli cut to a man's 0.58 m: he no longer reads as a toy under a parasol, but the hood and face cloth still read as a flat grey box round the head and the torso is bulky over hidden legs.",
   "verdict": "fail"
  }
 ]
