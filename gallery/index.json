@@ -886,5 +886,11 @@
   "time": "2026-11-01T21:45:00Z",
   "caption": "The Ashen Archer now waits on a sunlit rise at the wood's edge and reads clearly against the meadow; the hero in the foreground is still a dark silhouette in the oak shadow and the archer is small in frame.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261101-2230-arrowflight.jpg",
+  "time": "2026-11-01T22:30:00Z",
+  "caption": "An Ashen Archer's arrow in flight, framed square-on: grey-goose fletching, pale ash shaft and iron head cross the tree line toward the hero. Still wrong: GL render, the hero has their back to the shot, and the streak is faint against the pale sky.",
+  "verdict": "fail"
  }
 ]

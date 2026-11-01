@@ -1936,7 +1936,7 @@ func _ready() -> void:
 					if not is_instance_valid(arr):
 						break
 					arr._physics_process(dt)
-					if "flight" in args and arr.point().distance_to(player.global_position + Vector3.UP * 1.2) < 2.2:
+					if "flight" in args and arr.point().distance_to(player.global_position + Vector3.UP * 1.2) < 1.5:
 						break
 					if "lodged" in args and arr.in_hero >= 0.0:
 						for k in 20:
@@ -1964,6 +1964,24 @@ func _ready() -> void:
 								print("SHOT snapped lens %s %s -> screen %s" % [vc.name, vc.global_position, vc.unproject_position(ap)])
 							print("SHOT snapped broken %s lying %s at %s" % [arr.broken, arr.lying, ap])
 						break
+				if "flight" in args and is_instance_valid(arr) and arr.in_hero < 0.0:
+					# frame the arrow itself: square on to its line from 1.6 m on the sun side and
+					# 0.45 m under it so it crosses the tree line, not the meadow; looking 0.7 m
+					# ahead puts it left of centre, the streak trailing off left, the hero right
+					# (a 5 mm shaft is a 3 px line at 2.2 m: it read as a far-off speck)
+					var vc := get_viewport().get_camera_3d()
+					var fl := Vector3(arr.vel.x, 0, arr.vel.z).normalized()
+					var sd := fl.cross(Vector3.UP)
+					var sun_l: Vector3 = -world.sun.global_transform.basis.z
+					if sd.dot(Vector3(-sun_l.x, 0, -sun_l.z)) < 0.0:
+						sd = -sd
+					var ap := arr.global_position
+					if vc != null:
+						var cp := ap + sd * 1.6
+						cp.y = maxf(ap.y - 0.45, terrain.height_at(cp.x, cp.z) + 0.6)
+						vc.global_position = cp
+						vc.look_at(ap + fl * 0.7)
+						print("SHOT flight lens %s -> screen %s" % [vc.global_position, vc.unproject_position(ap)])
 				if is_instance_valid(arr):
 					arr.frozen = true
 					print("SHOT arrow result '%s' in_hero %.2f streak %.2f m at %s" % [arr.result, arr.in_hero, arr.streak_length(), arr.point()])
@@ -2130,6 +2148,13 @@ func _ready() -> void:
 		var wcam := get_viewport().get_camera_3d()
 		for wp in world.wheatears.bird_positions():
 			print("SHOT wheatear %.1f m from the lens, screen %s%s" % [wp.distance_to(wcam.global_position), wcam.unproject_position(wp), " (behind)" if wcam.is_position_behind(wp) else ""])
+	if spot == "soldier" and "flight" in args:
+		var fcam := get_viewport().get_camera_3d()
+		for ch in world.get_children():
+			if ch is HollowArrow and is_instance_valid(ch):
+				var ah := ch as HollowArrow
+				print("SHOT capture hero %s screen %s, lens fov %.0f size %s, cams %s" % [player.global_position, fcam.unproject_position(player.global_position + Vector3.UP), fcam.fov, get_viewport().get_visible_rect().size, fcam.get_path()])
+				print("SHOT capture lens %s: arrow %s %.1f m, screen %s%s, frozen %s" % [fcam.global_position, ah.global_position, ah.global_position.distance_to(fcam.global_position), fcam.unproject_position(ah.global_position), " (behind)" if fcam.is_position_behind(ah.global_position) else "", ah.frozen])
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
