@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261026-1637-woodpile.jpg",
-  "time": "2026-10-26T16:37:40Z",
-  "caption": "Edda splitting wood by the white cottage's lean-to at 10 h; the stacked logs now have lumpy subdivided bark and torn split faces, but the stack still reads as pale flat beige chips in the lean-to's shade and the lean-to wall is still a crisp white box.",
-  "verdict": "fail"
- },
- {
-  "file": "20261026-1743-woodpile.jpg",
-  "time": "2026-10-26T17:43:20Z",
-  "caption": "Edda splitting wood by the white cottage at 10 h: the lean-to's woodpile now has grey-brown bark and darker seasoned wood instead of near-white streaks, but its split faces still read light tan in side-on sun and the lean-to is still a crisp white box.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-1857-coif.jpg",
   "time": "2026-10-26T18:57:09Z",
   "caption": "Edda splitting wood by the white cottage at 10 h: her coif is now an even, dark-greyed linen with no pale camouflage blotches, but it reads darker than linen and the lean-to is still a crisp white box.",
@@ -891,6 +879,12 @@
   "file": "20261101-2012-knoll.jpg",
   "time": "2026-11-01T20:12:41Z",
   "caption": "The Ashen Archer on its new post, a knoll at the wood's edge clear of the trunks, seen from the hero's flank down the slope; GL frame, and the archer is lost in the wood's shadow and the long grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261101-2145-knollsun.jpg",
+  "time": "2026-11-01T21:45:00Z",
+  "caption": "The Ashen Archer now waits on a sunlit rise at the wood's edge and reads clearly against the meadow; the hero in the foreground is still a dark silhouette in the oak shadow and the archer is small in frame.",
   "verdict": "fail"
  }
 ]

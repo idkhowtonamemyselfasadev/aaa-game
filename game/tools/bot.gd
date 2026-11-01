@@ -1480,6 +1480,13 @@ func _archer_test() -> void:
 	print("BOT archer: post %.2f m above where it was set, %.1f m clear of the nearest tree/rock (%d known)" % [w.stand_gain, clr, w.obstacles.size()])
 	if w.obstacles.is_empty() or clr < HollowArcher.STAND_CLEAR - 0.01:
 		return _combat_done(false, "the archer's post should stand clear of trees and rocks")
+	var lit_near := 0.0
+	for k in 8:
+		var a := TAU * k / 8.0
+		lit_near += w.sunlight(w._home + Vector3(sin(a), 0.0, cos(a)) * 6.0) / 8.0
+	print("BOT archer: post in sun %.0f%% of the day (ground 6 m round it %.0f%%)" % [w.sun_lit * 100.0, lit_near * 100.0])
+	if w.sun_lit < 0.6:
+		return _combat_done(false, "the archer's post should stand in sun most of the day, out of the oaks' shadow")
 	if w.state != HollowSoldier.IDLE or near < w.notice + 2.0 or gd < w.notice + 2.0:
 		return _combat_done(false, "the archer should wait idle, clear of the start and the other Hollows")
 	var bg := w.bow.global_position.distance_to(w._grip_l.global_position)

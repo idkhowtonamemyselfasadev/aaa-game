@@ -38,11 +38,14 @@ const SHOT_DAMAGE := 18.0
 const STAVE_REACH := 1.9
 const AIM_TWIST := -55.0         # degrees the chest turns side-on to draw (left shoulder to the hero)
 const BOW_ARM := 0.62            # m from the left shoulder to the bow hand at full extension
-const STAND_REACH := 8.0         # m from where it was set that it looks for a knoll to stand on
+const STAND_REACH := 16.0        # m from where it was set that it looks for a sunny knoll to stand on
 const STAND_MIN_GAIN := 0.15     # a knoll must be at least this much higher to be worth the move
 const RETREAT_FAN := [0.0, -0.5, 0.5, -0.95, 0.95]  # radians off straight-away it weighs when backing
 const RETREAT_LOOK := 2.0        # m ahead it samples the turf for each way
 const STAND_CLEAR := 4.5         # m its post keeps from any tree or rock (trunk, roots and the line of sight)
+const SUN_HOURS := [8.0, 10.0, 12.0, 14.0, 16.0]   # day hours it scores its post's sunlight at
+const SUN_W := 3.0               # score for a post in sun all day (vs 1.0 per metre of height)
+const CROWN_DEPTH := 9.0         # m of leaves above the lowest leaves of an oak crown
 const UPHILL_W := 1.6            # score per metre of climb (vs 1.0 for heading straight away)
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
@@ -73,6 +76,8 @@ var terrain: Terrain
 var stand_gain := 0.0            # m its post stands above the turf where it was set
 var retreat_climb := 0.0         # m it has climbed while backing off (bots)
 var retreat_dir := Vector3.ZERO  # the way it is backing (smoothed, world xz)
+var sun_lit := 1.0               # share of SUN_HOURS its post stands in sun (bots)
+var _flora: Flora
 var obstacles: Array[Vector3] = []   # tree and rock centres it keeps its post and its retreat clear of
 
 func _clearance(q: Vector3) -> float:
@@ -108,21 +113,24 @@ func _ready() -> void:
 	bow.arrow_on = true
 	_place(guard_pose)
 
-## Set on the turf, then move its post to the highest ground within STAND_REACH: the knoll
-## it watches from and comes back to.
+## Set on the turf, then move its post to the highest, sunniest ground within STAND_REACH:
+## the knoll it watches from and comes back to, out of the oaks' shadow so it reads against
+## the sky.
 func plant(t_: Terrain) -> void:
 	super.plant(t_)
 	terrain = t_
 	var flora: Flora = get_parent().get_node_or_null("Flora") if get_parent() else null
+	_flora = flora
 	if flora:
 		obstacles.append_array(flora.tree_positions)
 		obstacles.append_array(flora.rock_positions)
 	var p := global_position
 	var h0 := t_.height_at(p.x, p.z)
 	var best := Vector3(p.x, h0, p.z)
-	var best_s := h0
-	for ri in range(1, 5):
-		var r := STAND_REACH * ri / 4.0
+	var best_s := h0 + SUN_W * sunlight(best)
+	var s0 := best_s
+	for ri in range(1, 9):
+		var r := STAND_REACH * ri / 8.0
 		for ai in 16:
 			var a := TAU * ai / 16.0
 			var q := Vector3(p.x + sin(a) * r, 0.0, p.z + cos(a) * r)
@@ -130,14 +138,46 @@ func plant(t_: Terrain) -> void:
 			# flat enough to stand and draw on, and a little weight on staying near
 			if t_.normal_at(q.x, q.z).y < 0.94 or _clearance(q) < STAND_CLEAR:
 				continue
-			var sc := q.y - 0.02 * r
+			var sc := q.y - 0.02 * r + SUN_W * sunlight(q)
 			if sc > best_s:
 				best_s = sc
 				best = q
-	if best.y - h0 >= STAND_MIN_GAIN:
+	if best_s - s0 >= STAND_MIN_GAIN:
 		global_position = best + Vector3.UP * 0.05
 		_home = global_position
 		stand_gain = best.y - h0
+	sun_lit = sunlight(_home)
+
+## Share of SUN_HOURS a figure standing at `q` is in sun: from its chest, march toward the
+## sun of each hour (the world's arc: up at 06:00, peak sun_peak_deg at noon) and count it
+## shaded if the ray passes through an oak crown (between its lowest leaves and CROWN_DEPTH
+## above) or into the turf. The Long Dusk sun is low, so oak shadows reach 20 m and more.
+func sunlight(q: Vector3) -> float:
+	if _flora == null or terrain == null:
+		return 1.0
+	var peak := 28.0
+	var wl := get_parent()
+	if wl and "sun_peak_deg" in wl:
+		peak = wl.sun_peak_deg
+	var lit := 0
+	for hr: float in SUN_HOURS:
+		var elev := deg_to_rad(peak) * sin((hr - 6.0) / 12.0 * PI)
+		var az := hr / 24.0 * TAU + PI * 0.5
+		var d := Basis.from_euler(Vector3(-elev, az, 0.0)).z    # toward the sun
+		var o := q + Vector3.UP * 1.4
+		var shaded := false
+		var t := 1.0
+		while t < 60.0 and not shaded:
+			var x := o + d * t
+			var lo := _flora.leaf_height_at(x.x, x.z)
+			if lo > -999.0 and x.y > lo - 0.5 and x.y < lo + CROWN_DEPTH and _flora.shelter_at(x.x, x.z) > 0.3:
+				shaded = true
+			elif x.y < terrain.height_at(x.x, x.z):
+				shaded = true
+			t += 1.0
+		if not shaded:
+			lit += 1
+	return float(lit) / SUN_HOURS.size()
 
 ## Which way to back off from the hero (world xz, unit): of a fan of ways that lead away, the
 ## one that climbs most per step, weighed against heading straight away and against straying
