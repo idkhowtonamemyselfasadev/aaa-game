@@ -652,8 +652,18 @@ func _hood_at(a: float, v: float) -> Vector3:
 		r *= 1.0 - 0.05 * sd * exp(-pow((v - 0.62) / 0.13, 2.0))
 		r *= 1.0 + 0.045 * _hood_fold_ridge(a, v) * (0.6 + 0.4 * smoothstep(0.5, 1.0, v)) \
 				* (1.0 - 0.75 * exp(-pow((v - 0.3) / 0.08, 2.0)))
-	return Vector3(sin(a) * (0.168 * r + cheek), 2.09 - v * 0.43 + lift,
+	var y := 2.09 - v * 0.43 + lift
+	return Vector3(sin(a) * (0.168 * r + cheek) * (1.0 if beard else jaw_taper(y)), y,
 			cz + cos(a) * (0.192 * r + fwd + cheek))
+
+## How much the hood and the face cloth draw in sideways at height y: the skull is widest at the
+## temples and narrows down the jaw to the throat before the cloth spreads over the shoulders.
+## Without it the hood's sides ran plumb from the hat brim to the collar and the head read as a
+## flat grey box (gallery 0130). Applied to both pieces as the same x scale per height, so the
+## face cloth stays inside the hood wherever it was before.
+const JAW_TAPER := 0.13
+static func jaw_taper(y: float) -> float:
+	return 1.0 - JAW_TAPER * exp(-pow((y - 1.81) / 0.055, 2.0))
 
 ## Half-angle of the face opening at `v`: an elliptic arch over the eyes, straight sides
 ## down the cheeks, then a gap round the face cloth closing at the throat -- narrower than the
@@ -831,7 +841,11 @@ func _veil(wimple := false) -> ArrayMesh:
 			# gap that showed between the cheek and the hood's inner edge)
 			var wx := (0.112 + 0.01 * (1.0 - smoothstep(0.0, 0.3, v)) * (1.0 - maxf(front, 0.0))) if wimple else 0.128
 			var wz := 0.165 if wimple else 0.175
-			st.add_vertex(Vector3(sin(a) * wx * r, y, -0.035 + front * wz * r))
+			# under the chin the cloth is drawn back toward the throat instead of hanging forward
+			# as a flat apron from the nose to the collar
+			var chin := 0.0 if wimple else 0.016 * smoothstep(0.35, 0.75, v) * maxf(front, 0.0)
+			var tx := 1.0 if beard else jaw_taper(y)
+			st.add_vertex(Vector3(sin(a) * wx * r * tx, y, -0.035 + front * wz * r - chin))
 	for j in nv:
 		for i in nu:
 			var p0 := j * (nu + 1) + i
