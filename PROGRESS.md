@@ -6411,7 +6411,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (01:00 11-01) **Hat to man size + eye fill DONE (code + bots; shot guard5 below if it landed)**. NEXT, in
-   order: (a) judge `hero guard5 30 15 guard` against guard4: if he still reads squat, shorten the robe panels'
+   order: (a) GUARD5 SEEN (gallery 0130, FAIL): the smaller hat helps a lot, but the hood + face cloth read as a
+   flat grey BOX round the head (square silhouette, no eye read at this range) -- round the hood's crown/sides and
+   break up the veil's flat front; the torso still reads bulky: shorten the robe panels'
    visual bulk at the hips (sash 0.23 m tall) or the idle stance's knee bend (knees 0.30 m forward at Idle); (b) fix
    the pre-existing `pedlar` bot fail (fist 1.36 out of the lid's shadow edge); (c) the `hounds` framing; thornier
    ruff; (d) re-shoot the warden portrait; (e) `bash` shot mode; (f) re-shoot ring + knight p3. 0b-e: freesound /
