@@ -6416,7 +6416,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (03:00 11-01) **Face cloth tail tucked DONE (code + bots)**. FACE2 shot (`face face2 30 10`): NOT YET SEEN at commit time -- if no gallery 0300 `face` entry follows, re-shoot it first. NEXT, in order: (a) the torso
+0. (03:00 11-01) **Face cloth tail tucked DONE (code + bots)**. FACE2 SEEN (gallery 0300 `face`, FAIL overall): the dark tail is gone -- the cloth ends inside the hood's lower edge; the armour reads dark/flat in this frame and the hood is a plain grey shell. NEXT, in order: (a) the torso
    bulk (sash height 0.23 m, idle knee bend); re-shoot `hero <n> 30 15 guard` at 3 m; (b) the `hounds` framing;
    thornier ruff; (c) re-shoot the warden portrait; (d) `bash` shot mode; (e) re-shoot ring + knight p3. 0b-e:
    freesound / opengameart / kenney still unreachable (curl 000, 03:00 11-01). Lesson: do NOT run bots while a
