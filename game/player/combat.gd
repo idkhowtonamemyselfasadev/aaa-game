@@ -46,11 +46,11 @@ const HEAVY := { "dur": 0.84, "hit": [0.22, 0.54], "lunge": 4.0, "lunge_at": 0.0
 	[0.40, 4.0, -40.0, Vector3(-0.21, 1.23, 0.61), -55.0, -0.26],
 	[0.70, 2.0, -38.0, Vector3(-0.14, 1.35, 0.30), -3.0],
 	[0.86, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
-	[1.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]]}
+	[1.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03]]}
 
 # Guard: a diagonal mid guard -- rear hand low at the right flank, front hand at the belt,
-# tip forward-left and down at knee-to-hip height (was held at shoulder height like a yoke).  [yaw°, pitch°, P, twist°]
-const GUARD := [45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]
+# tip forward-left and down at knee height (pitch -28: at -12 it read as a level bar across the belly).  [yaw°, pitch°, P, twist°]
+const GUARD := [60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03]
 # Chest-high pass the arms ease through on the way back down to GUARD, so the shaft swings
 # out in front of the body instead of cutting through the chest (tools/pose_check.py).
 const CHAMBER := [35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]
@@ -60,7 +60,7 @@ const CHAMBER := [35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03]
 # Body space: +Z forward, +X is the hero's left, so yaw -90 points out to the right.
 const STRING := [
 	{ "dur": 0.62, "hit": [0.30, 0.55], "lunge": 2.5, "spin": 0.0, "keys": [
-		[0.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03],
+		[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 		[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: staff up to the chest
 		[0.28, -131.0, 10.0, Vector3(-0.13, 1.57, 0.08), 24.0, 0.11],
 		[0.52, 95.0, -6.0, Vector3(0.31, 1.47, 0.24), 37.0],
@@ -82,7 +82,7 @@ const STRING := [
 		[0.75, -98.0, 4.0, Vector3(-0.64, 1.57, 0.13), -34.0, -0.30],
 		[0.86, -98.0, 4.0, Vector3(-0.30, 1.55, 0.18), -34.0, 0.04],
 		[0.94, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
-		[1.00, 45.0, -12.0, Vector3(0.08, 1.15, 0.36), -24.0, -0.03]]},
+		[1.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03]]},
 ]
 
 var player: Player
