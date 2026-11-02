@@ -2014,6 +2014,15 @@ func _wisps_test() -> void:
 		return _combat_done(false, "the wisps do not wheel in the smoke over the fire")
 	if fheat < 0.9:
 		return _combat_done(false, "the fire did not feed the wisps brighter (%.2f)" % fheat)
+	# the fire-fed heart stays under its rest caps (Forward+ blew the old values out to cream discs)
+	var hf := 0.0
+	var hv := 0.0
+	for w: HollowWisp in ws:
+		hf = maxf(hf, w.heart_fill)
+		hv = maxf(hv, w.heart_vein)
+	print("BOT wisps: heart over the fire fill %.2f (cap %.2f), veins %.2f (cap %.2f)" % [hf, HollowWisp.HEART_FILL_CAP, hv, HollowWisp.HEART_VEIN_CAP])
+	if hf > HollowWisp.HEART_FILL_CAP + 0.01 or hv > HollowWisp.HEART_VEIN_CAP + 0.01:
+		return _combat_done(false, "a fire-fed heart burns past its rest caps")
 	# the hero comes in to the fire: they wake and fight there, solid again
 	var near_fire := fp + Vector3(c.x - fp.x, 0, c.z - fp.z).normalized() * 7.0
 	p.global_position = Vector3(near_fire.x, _world.terrain.height_at(near_fire.x, near_fire.z) + 0.1, near_fire.z)

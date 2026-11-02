@@ -62,6 +62,10 @@ void fragment() {
 	METALLIC = 0.0;
 	SPECULAR = 0.35;
 	float g = max(vein, pore * 0.45 * (1.0 - 0.75 * charred));
+	// the fill burns through the cracks; the crust plates between stay dark, so even a hot
+	// heart keeps a broken, veined face instead of a flat disc
+	float crack = smoothstep(0.42, 0.66, n);
+	float glow_through = mix(0.08, 1.0, crack * crack) * (1.0 - 0.6 * smoothstep(0.35, 0.7, flats));
 	float flick = 0.8 + 0.2 * sin(TIME * 7.0 + n * 20.0);
-	EMISSION = ember * g * heat * flick + vec3(1.0, 0.5, 0.16) * fill * (0.35 + 0.65 * n) * flick;
+	EMISSION = ember * g * heat * flick + vec3(1.0, 0.5, 0.16) * fill * glow_through * flick;
 }

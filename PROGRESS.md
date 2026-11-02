@@ -37,6 +37,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(06:00 11-02) Wisp hearts no longer blow out.** `hollow_wisp.gd`: the heart's `fill` and vein `heat` are capped at
+  rest and over a fire (HEART_FILL_CAP 0.55, HEART_VEIN_CAP 1.8; were 0.66 / 2.2 at the fire); only the flare (heat past
+  FLARE_KNEE 1.6) lifts them further (flare peak now fill 0.97 / veins 3.48, was 1.24 / 4.48). `wisp_char.gdshader`: the
+  fill now burns through the cracks only (`glow_through`: 8 % on the crust plates, full in the cracks, flats dimmed), so
+  a hot heart keeps a broken veined face. Bot `wisps` checks both caps over the fire (PASS).
 - **(02:00 11-02) Hollow Wisps, the first fodder enemy.** `game/enemies/hollow_wisp.gd` + `game/shaders/wisp_char.gdshader`:
   a fist-sized coal heart (noise-displaced sphere, glowing veins) in a ring of 7 faceted charred shards, a smoke veil and
   sparks, an amber omni light. A knot of three (`world.wisps`, WISPS_AT -26,72) drifts idle, wakes at 11 m, circles at

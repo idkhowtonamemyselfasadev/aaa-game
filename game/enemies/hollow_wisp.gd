@@ -56,6 +56,9 @@ const FIRE_HOVER := 2.3       # m over the fire bed they wheel, in the smoke abo
 const FIRE_RING := 0.95       # m out from the smoke column
 const FIRE_SPEED := 3.4       # m/s drifting to / from the fire
 const FIRE_HEAT := 1.15       # heat it burns at, fed by the fire
+const FLARE_KNEE := 1.6       # heat above which the heart may burn past its rest caps
+const HEART_FILL_CAP := 0.55  # heart glow-through when not flaring
+const HEART_VEIN_CAP := 1.8   # heart vein emission when not flaring
 const SHARDS := 7
 const SHARD_R := 0.5
 
@@ -80,6 +83,8 @@ var hits_taken := 0
 var parried_count := 0
 var last_result := ""
 var max_heat := 0.0
+var heart_fill := 0.0         # last heart `fill` sent to the shader (bots read it)
+var heart_vein := 0.0         # last heart `heat` sent to the shader
 var _player: Player
 var _home := Vector3.ZERO
 var _cool := 0.0
@@ -709,8 +714,13 @@ func _visuals(_delta: float) -> void:
 		_shard_mats[i].set_shader_parameter("heat", 0.15 + _heat * 0.2)
 	# the crust stays dark between the veins even at the flare's peak, so it reads as a coal,
 	# not a white ball (the first frame blew it out to a featureless fireball)
-	_heart_mat.set_shader_parameter("fill", 0.45 + _heat * 0.18)
-	_heart_mat.set_shader_parameter("heat", 1.4 + _heat * 0.7)
+	# capped at rest and over a fire (Forward+ glow plus the fire's own light blew the old
+	# values out to flat cream discs); only the flare (heat past FLARE_KNEE) lifts it further
+	var over := maxf(_heat - FLARE_KNEE, 0.0)
+	heart_fill = minf(0.45 + _heat * 0.18, HEART_FILL_CAP) + over * 0.15
+	heart_vein = minf(1.4 + _heat * 0.7, HEART_VEIN_CAP) + over * 0.6
+	_heart_mat.set_shader_parameter("fill", heart_fill)
+	_heart_mat.set_shader_parameter("heat", heart_vein)
 	_heart.scale = Vector3.ONE * (0.9 + 0.12 * _heat / 4.4 + 0.03 * sin(now * 13.0))
 	_light.light_energy = (0.7 + _heat * 0.55) * (1.0 - 0.3 * douse)
 	_light.omni_range = 4.0 + _heat * 0.6
