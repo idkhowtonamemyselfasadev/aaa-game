@@ -828,11 +828,24 @@ func _ready() -> void:
 		if side.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
 			side = -side
 		var dist := 2.6 if "close" in args else 4.6
-		var cam := post + f3 * dist * 0.8 + side * dist * 0.6
-		cam.y = terrain.height_at(cam.x, cam.z) + (1.5 if "close" in args else 1.2)
-		SPOTS[spot] = [cam, post + Vector3.UP * (1.55 if "close" in args else 1.3) + f3 * 0.4]
+		var scam := post + f3 * dist * 0.8 + side * dist * 0.6
+		scam.y = terrain.height_at(scam.x, scam.z) + (1.5 if "close" in args else 1.2)
+		SPOTS[spot] = [scam, post + Vector3.UP * (1.55 if "close" in args else 1.3) + f3 * 0.4]
 		if "awake" in args:
 			sn.wake()
+		if "slam" in args:
+			# slam: the hero 3.4 m off, the statue already loose: it plants, heaves the glaive
+			# and brings it down (~2.5 s to the impact; ~75 frames at 30 fps for the hold,
+			# ~85 for the crack and shock), seen side-on from the sun side, wider
+			hp = post + f3 * 3.4
+			player.global_position = Vector3(hp.x, terrain.height_at(hp.x, hp.z) + 0.05, hp.z)
+			sn.dormant = false
+			sn.force_move = StoneSentinel.SLAM_MOVE
+			sn._enter(HollowSoldier.STALK)
+			var mid := post + f3 * 1.9
+			scam = mid + side * 5.2 + f3 * 1.2
+			scam.y = terrain.height_at(scam.x, scam.z) + 1.4
+			SPOTS[spot] = [scam, mid + Vector3.UP * 1.0]
 	var dodge_u := -1.0
 	if spot == "ring":
 		# the Ashen Knight's stone ring from just outside its entrance, the knight at its post

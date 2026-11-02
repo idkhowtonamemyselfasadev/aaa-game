@@ -1297,6 +1297,10 @@ func _sentinel_test() -> void:
 	print("BOT sentinel: stood -> %s for %.1f damage (a soldier's thrust %.1f)" % [w.last_result, dmg, HollowSoldier.DAMAGE])
 	if w.last_result != "hit" or dmg < HollowSoldier.DAMAGE * 1.2:
 		return _combat_done(false, "the sentinel's thrust did not land hard on a standing hero")
+	# 4b-4e) the glaive slam
+	var slam_ok := await _sentinel_slam_test(w)
+	if not slam_ok:
+		return
 	w.force_move = -1
 	# 5) the hero runs: it walks back to its post, turns, mends and stands still again
 	p.health = Player.HEALTH_MAX
@@ -1334,6 +1338,99 @@ func _sentinel_test() -> void:
 	if w.state != HollowSoldier.DEAD or stone_n < 4:
 		return _combat_done(false, "the sentinel did not fall to blows from behind (or its stone foley is silent)")
 	_combat_done(true, "the Stone Sentinel stands as a statue, wakes close, shrugs off frontal blows, hits hard, mends at its post and falls")
+
+## The glaive slam: the blade throws down a hero under it (and the shock spares them); a hero
+## standing back in the ring is thrown down by the shock; a jump or a roll lets it pass; the
+## stone face is open in the long recovery.
+func _sentinel_slam_test(w: StoneSentinel) -> bool:
+	var p := _player
+	var fol: Foley = _world.foley
+	# 4b) standing in the blade's line: the blade lands heavy, the shock spares them
+	var r := await _one_slam(w, StoneSentinel.SLAM_Z, "")
+	var dmg: float = r[0]
+	print("BOT sentinel: slam on a hero %.2f m off -> blade %s for %.1f, knocked down %s, shock %s, crack %s, ring front %.1f m" % [StoneSentinel.SLAM_Z, w.last_result, dmg, r[2], r[1], w.last_crack != null, w.last_crack.front if w.last_crack else 0.0])
+	if w.last_result != "hit" or dmg < StoneSentinel.SLAM_DAMAGE * 1.2 or not r[2] or r[1] != "miss" or w.last_crack == null:
+		_combat_done(false, "the glaive slam did not throw down a hero under it (or the shock struck twice)")
+		return false
+	# the recovery is open: a blow on its front tells in full
+	var fh := w.full_hits
+	var heave_ok := w.slams >= 1
+	await _ticks(5)
+	if w.state == HollowSoldier.RECOVER and w.move_kind == StoneSentinel.SLAM_MOVE:
+		var to_w := w.global_position - p.global_position
+		to_w.y = 0.0
+		w.take_hit(w.global_position + Vector3.UP * 1.2, to_w.normalized(), 0.2, 0.0)
+	print("BOT sentinel: front blow in the slam's recovery -> full hits %d -> %d" % [fh, w.full_hits])
+	if not heave_ok or w.full_hits != fh + 1:
+		_combat_done(false, "the slam's recovery does not leave the stone face open")
+		return false
+	# 4c) standing back in the ring, out of the blade's line: the statue plants, heaves, and the shock throws them down
+	r = await _one_slam(w, 3.4, "")
+	print("BOT sentinel: hero hanging back at 3.4 m -> chose slam %s, blade %s, shock %s for %.1f, knocked down %s" % [r[3], w.last_result, r[1], r[0], r[2]])
+	if not r[3] or w.last_result != "miss" or r[1] != "hit" or r[0] < GroundCrack.DAMAGE * 0.9 or not r[2]:
+		_combat_done(false, "the slam's shock ring did not throw down a hero standing back in it")
+		return false
+	# 4d) the same, but a jump timed on the slam lets the shock run under the hero
+	r = await _one_slam(w, 3.4, "jump")
+	print("BOT sentinel: jumped the shock at 3.4 m -> %s, damage %.1f" % [r[1], r[0]])
+	if r[1] != "jumped" or r[0] > 0.0:
+		_combat_done(false, "jumping the shock ring did not clear it")
+		return false
+	# 4e) a roll into it passes through on the i-frames
+	r = await _one_slam(w, 3.4, "dodge")
+	print("BOT sentinel: rolled through the shock at 3.4 m -> %s, damage %.1f" % [r[1], r[0]])
+	if not (r[1] in ["dodged", "perfect"]) or r[0] > 0.0:
+		_combat_done(false, "a roll did not pass through the shock ring")
+		return false
+	var slam_n := int(fol.played.get("slam", 0))
+	print("BOT sentinel: slams %d, ring results %s, slam sounds %d, crack texture %s" % [w.slams, str(w.ring_results), slam_n, GroundCrack.crack_texture().get_size()])
+	if slam_n < 4:
+		_combat_done(false, "the slam is silent")
+		return false
+	return true
+
+## One slam with the hero `d` m ahead of the sentinel; `act` "jump"/"dodge" as the shock comes.
+## Returns [damage, shock result, knocked down, chose slam by itself].
+func _one_slam(w: StoneSentinel, d: float, act: String) -> Array:
+	var p := _player
+	w.process_mode = Node.PROCESS_MODE_DISABLED
+	p.health = Player.HEALTH_MAX
+	while p.down_t >= 0.0:
+		await get_tree().physics_frame
+	await _ticks(10)
+	_soldier_at(w, d, StoneSentinel.SLAM_MOVE if d < HollowSoldier.ENGAGE else -1)
+	w._since_slam = 0
+	w.t = 0.0
+	var crack0 := w.last_crack
+	var rings0 := w.ring_results.size()
+	var n0 := w.slams
+	w.process_mode = Node.PROCESS_MODE_INHERIT
+	var tt := 0.0
+	var chose := false
+	var downed := false
+	while (w.ring_results.size() == rings0) and tt < 8.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if w.state == HollowSoldier.WINDUP and w.move_kind == StoneSentinel.SLAM_MOVE:
+			chose = true
+		downed = downed or p.down_t >= 0.0
+		var c := w.last_crack
+		if act != "" and c != null and c != crack0 and is_instance_valid(c):
+			var flat := Vector2(p.global_position.x - c.global_position.x, p.global_position.z - c.global_position.z).length()
+			if act == "jump" and c.front > flat - 1.5:
+				p.bot_jump = true
+				act = ""
+			elif act == "dodge" and c.front > flat - 0.7:
+				p.bot_input = Vector2(0, 1)     # into the shock, toward the statue
+				p.bot_dodge = true
+				act = ""
+	p.bot_input = Vector2.ZERO
+	await _ticks(4)
+	downed = downed or p.down_t >= 0.0
+	var res := w.ring_results[w.ring_results.size() - 1] if w.ring_results.size() > rings0 else "none"
+	if w.slams == n0:
+		res = "no slam"
+	return [Player.HEALTH_MAX - p.health, res, downed, chose]
 
 ## Moves the hero to `d` m in front of the sentinel's post (in its facing), still.
 func _sentinel_at(w: StoneSentinel, d: float) -> void:

@@ -272,8 +272,9 @@ func hook_hewer(hw: Node) -> void:
 			_play("thud", at, -3.0, 0.75))
 
 ## The Stone Sentinel: a deep grinding crack as the statue wakes, a dull chip off the granite
-## when a blow lands on its front, a low settle as it goes still at its post again. All from
-## the recorded stone impacts, pitched down.
+## when a blow lands on its front, a low settle as it goes still at its post again; the glaive
+## slam heaves with a slow whoosh and lands as a ground slam with a boom. All from the recorded
+## stone impacts, slams and whooshes, pitched down.
 func hook_sentinel(sn: Node) -> void:
 	if sn == null or not sn.has_signal("awakened"):
 		return
@@ -282,6 +283,28 @@ func hook_sentinel(sn: Node) -> void:
 		_play("slam", at + Vector3.UP * 0.4, -12.0, 0.6))
 	sn.chipped.connect(func(at: Vector3) -> void: _play("stone", at, -5.0, 0.8))
 	sn.petrified.connect(func() -> void: _play("stone", (sn as Node3D).global_position + Vector3.UP, -12.0, 0.5))
+	if not sn.has_signal("slammed"):
+		return
+	# the glaive slam: a slow deep whoosh as it goes up, then the stone blade into the turf as a
+	# ground slam with the full boom and a cracking stone layer, the shock a low thud as it runs
+	sn.heaved.connect(func(at: Vector3) -> void:
+		_play("whoom", at, -8.0, 0.45)
+		_play("stone", at, -14.0, 0.5))
+	sn.slammed.connect(func(at: Vector3, r: String) -> void:
+		_play("whoom", at + Vector3.UP * 1.5, -3.0, 0.6)
+		if r == "parried":
+			_play("clang", at + Vector3.UP * 1.0, -1.0, 0.7)
+			_play("stone", at + Vector3.UP * 1.0, -4.0, 0.7)
+			return
+		_play("slam", at, 3.0, 0.72)
+		_play("boom", at, 0.0, 0.7)
+		_play("stone", at, -2.0, 0.6)
+		if r == "hit" and player != null:
+			_play("body", player.global_position + Vector3.UP, -1.0, 0.8))
+	sn.shock.connect(func(r: String) -> void:
+		if r == "hit" and player != null:
+			_play("thud", player.global_position, -2.0, 0.6)
+			_play("body", player.global_position + Vector3.UP * 0.5, -3.0, 0.85))
 
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):

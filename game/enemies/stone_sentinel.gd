@@ -12,6 +12,14 @@ extends HollowSoldier
 ##    recovery after a blow, when the whole body is open.
 ##  STONE WEIGHT. It is slow (TEMPO) but every blow lands harder (DAMAGE_MUL); a poise break
 ##    needs a lot of staff.
+##  GLAIVE SLAM. Its own move, every third attack or when the hero hangs back out of glaive
+##    reach: it heaves the glaive overhead in both hands, holds it there with the rune blazing
+##    and grit sifting off the arms (the glint runs up the blade in the hold), then brings it
+##    straight down into the turf SLAM_Z ahead. The blade throws down anyone under it (a parry
+##    turns it); the ground splits in a star of cracks and a shock runs out as a ring of dust to
+##    GroundCrack.RING_R, throwing down a hero standing anywhere in it. Jump the ring, roll
+##    through it, or be out of reach. The glaive stays bitten in the turf for a long, open
+##    recovery: the best punish the statue ever gives.
 ##  MENDING. If the hero runs, it walks back to its post, turns to its old facing and stands
 ##    still again, the cracks closing: back at full strength, a statue once more.
 
@@ -24,6 +32,22 @@ const TEMPO := 0.82
 const DAMAGE_MUL := 1.35
 const MEND_RATE := 60.0          # hp/s while it stands at its post again
 const RUNE := Color(0.55, 0.82, 1.0)
+const SLAM_MOVE := 2
+const SLAM_RAISE_T := 0.8        # brain-time s to heave the glaive overhead (x 1/TEMPO real)
+const SLAM_HOLD_T := 0.38        # held overhead, the glint running up the blade
+const SLAM_T := 0.26
+const SLAM_AT := 0.62            # normalised strike time the blade meets the turf
+const SLAM_RECOVER_T := 1.7      # bitten in the turf, then wrenched free
+const SLAM_Z := 1.75             # m ahead of the feet where the glaive comes down
+const SLAM_HALF := 0.75          # half-width of the blade's line
+const SLAM_DAMAGE := 30.0
+const SLAM_ENGAGE := 4.6         # a hero hanging back inside this (but past ENGAGE) gets the slam
+const SLAM_SQUARE := 0.7        # brain-time s it squares up to a hero hanging back before it heaves
+const SLAM_EVERY := 2            # attacks between slams when the hero keeps close
+# glaive poses in body space: [yaw°, pitch°, centre, twist°, slide, reach] (solved offline:
+# hands inside arm reach, the blade up and back over the helm / its edge in the turf ahead)
+const HEAVED := [-10.0, 108.0, Vector3(0.0, 2.5, -0.05), -8.0, 0.1, 0.64]
+const SLAMMED := [-7.0, -31.0, Vector3(0.0, 1.05, 0.92), 5.0, 0.12, 0.65]
 
 ## woke: the first shudder (foley: stone grinding)
 signal awakened(at: Vector3)
@@ -31,6 +55,12 @@ signal awakened(at: Vector3)
 signal chipped(point: Vector3)
 ## stood still at its post again
 signal petrified
+## the glaive heaved overhead (foley: a slow heavy whoosh, stone grinding)
+signal heaved(point: Vector3)
+## the glaive came down: point where it bit the turf, result the blade's verdict on the hero
+signal slammed(point: Vector3, result: String)
+## the shock ring reached (or missed) the hero: hit / perfect / dodged / jumped / miss
+signal shock(result: String)
 
 var dormant := true
 var waking := -1.0               # s into the wake, -1 when not waking
@@ -41,6 +71,12 @@ var petrifies := 0
 var armour: KnightArmour
 var _home_yaw := 0.0
 var _grit: CPUParticles3D
+var _terrain: Terrain
+var slams := 0
+var slam_hits := 0
+var last_crack: GroundCrack
+var ring_results: Array[String] = []
+var _since_slam := 0
 
 func _ready() -> void:
 	health_max = SENTINEL_HP
@@ -117,6 +153,7 @@ func _make_grit() -> CPUParticles3D:
 
 func plant(terrain: Terrain) -> void:
 	super.plant(terrain)
+	_terrain = terrain
 	_home_yaw = body.rotation.y
 
 func face(point: Vector3) -> void:
@@ -143,13 +180,8 @@ func wake() -> void:
 	t = 0.0
 	_grit.restart()
 	_grit.emitting = true
+	GroundCrack.crack_texture()     # build the crack star now, inside the wake, not at the first slam
 	awakened.emit(global_position)
-
-func _enter(s: int) -> void:
-	if s == STALK and dormant:
-		wake()
-		return
-	super._enter(s)
 
 func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> void:
 	if state == DEAD:
@@ -172,6 +204,138 @@ func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> voi
 	else:
 		full_hits += 1
 	super.take_hit(point, dir, power, hitstop)
+
+# --- the glaive slam ---
+
+## Every SLAM_EVERY-th attack is the slam (the hero cannot read it by distance alone).
+func _choose(dist: float) -> int:
+	if force_move == SLAM_MOVE or (force_move < 0 and _since_slam >= SLAM_EVERY):
+		_since_slam = 0
+		return SLAM_MOVE
+	_since_slam += 1
+	return super._choose(dist)
+
+## A hero hanging back just out of glaive reach does not get to wait it out: once the statue
+## has squared up for a moment it heaves the glaive and sends the shock out to them.
+func _stalk(to: Vector3, dist: float) -> Vector3:
+	if dist > ENGAGE and dist < SLAM_ENGAGE and (force_move < 0 or force_move == SLAM_MOVE):
+		# stone does not chase a hero dancing at the edge of its reach: it plants and squares up
+		if t > SLAM_SQUARE and _facing(to) > 0.9:
+			windups += 1
+			_from = _pose
+			_since_slam = 0
+			move_kind = SLAM_MOVE
+			_enter(WINDUP)
+		return Vector3.ZERO
+	return super._stalk(to, dist)
+
+func _enter(s: int) -> void:
+	if s == STALK and dormant:
+		wake()
+		return
+	if s == WINDUP and move_kind == SLAM_MOVE:
+		_aimed = false
+		heaved.emit(global_position + Vector3.UP * 2.4)
+	super._enter(s)
+
+func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
+	var move := Vector3.ZERO
+	var lean := 0.0
+	var sink := 0.0
+	var ember := 1.0
+	match state:
+		WINDUP:
+			var hold_at := SLAM_RAISE_T
+			var u := clampf(t / hold_at, 0.0, 1.0)
+			var h := clampf((t - hold_at) / SLAM_HOLD_T, 0.0, 1.0)
+			# squares up while heaving, then commits: the hold no longer turns
+			_turn_to(to, delta, 4.0 * (1.0 - u * u))
+			var heave := _lerp_pose(_from, HEAVED, u)
+			# a straining tremble in the hold
+			heave[1] += sin(t * 41.0) * 1.2 * h
+			_pose = heave
+			lean = -0.12 * smoothstep(0.0, 1.0, u) - 0.03 * h
+			sink = 0.06 * u
+			ember = 1.0 + 3.6 * smoothstep(0.2, 1.0, u) + 0.6 * h
+			_update_glint(smoothstep(0.0, 0.35, h) * (1.0 - smoothstep(0.85, 1.0, h)))
+			if h > 0.55 and _in_slam_line():
+				_aimed = true
+			if h >= 1.0:
+				_resolved = false
+				strikes += 1
+				slams += 1
+				_from = _pose
+				_enter(STRIKE)
+		STRIKE:
+			var u := clampf(t / SLAM_T, 0.0, 1.0)
+			_update_glint(0.0)
+			_pose = _lerp_pose(HEAVED, SLAMMED, minf(u / SLAM_AT, 1.0))
+			lean = lerpf(-0.15, 0.32, smoothstep(0.0, SLAM_AT, u))
+			sink = lerpf(0.06, 0.22, smoothstep(0.0, SLAM_AT, u))
+			ember = 4.6 - 1.6 * u
+			move = body.global_basis.z * 1.6 * (1.0 - u) * clampf((dist - 1.1) / 0.5, 0.0, 1.0)
+			if not _resolved and u >= SLAM_AT:
+				_resolved = true
+				_resolve_slam()
+			if u >= 1.0:
+				_from = _pose
+				_enter(RECOVER)
+		RECOVER:
+			var u := clampf(t / SLAM_RECOVER_T, 0.0, 1.0)
+			# bitten in the turf for half the recovery, then a heave and back to guard
+			var f := smoothstep(0.5, 1.0, u)
+			_pose = _lerp_pose(SLAMMED, guard_pose, f)
+			lean = 0.32 * (1.0 - f) - 0.08 * sin(PI * f)
+			sink = 0.22 * (1.0 - f)
+			ember = 1.5 - 0.5 * u
+			if u >= 1.0:
+				_enter(STALK)
+	return [move, lean, sink, ember]
+
+## The hero stands in the line the blade comes down on.
+func _in_slam_line() -> bool:
+	if _player == null:
+		return false
+	var l := _hero_local()
+	return l.z > 0.3 and l.z < SLAM_Z + 0.75 and absf(l.x) < SLAM_HALF and absf(l.y) < 1.3
+
+## Where the glaive bites: SLAM_Z ahead, on the turf.
+func slam_point() -> Vector3:
+	var p := global_position + body.global_basis.z * SLAM_Z
+	if _terrain != null:
+		p.y = _terrain.height_at(p.x, p.z)
+	return p
+
+## The blade lands on a hero in its line (heavy: thrown down; a parry turns it and there is
+## no shock at all); then the ground splits and the shock runs out.
+func _resolve_slam() -> void:
+	var r := "miss"
+	if _player != null and not _player.is_dead() and (_aimed or _in_slam_line()):
+		r = _player.receive_attack(self, SLAM_DAMAGE * damage_mul, true, false)
+		if r == "hit":
+			slam_hits += 1
+			ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 0.9, -body.global_basis.y, "stone", 1.1)
+	last_result = r
+	var at := slam_point()
+	if r != "parried":
+		ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.6)
+		var c := GroundCrack.new()
+		c.source = self
+		c.player = _player
+		c.terrain = _terrain
+		c.spare_player = r == "hit"
+		get_parent().add_child(c)
+		c.global_position = at
+		c.rotation.y = body.rotation.y
+		c.rang.connect(func(res: String) -> void:
+			ring_results.append(res)
+			shock.emit(res))
+		last_crack = c
+		if _player != null:
+			var d := (_player.global_position - at).length()
+			_player.add_shake(0.55 * clampf(1.0 - d / 12.0, 0.0, 1.0))
+	slammed.emit(at, r)
+	struck.emit(r)
 
 func _hero_in_front() -> bool:
 	if _player == null:
