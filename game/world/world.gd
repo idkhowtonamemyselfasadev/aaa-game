@@ -27,12 +27,14 @@ var warden: HollowWarden
 var hewer: HollowHewer
 var archer: HollowArcher
 var hounds: Array[BriarHound] = []
+var wisps: Array[HollowWisp] = []
 var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
 const HEWER_AT := Vector2(-20.0, 46.0)   # the axe hewer, further down the meadow's west side
 const ARCHER_AT := Vector2(32.0, 70.0)   # the ashen archer, past the knight's ring on the east side
 const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
+const WISPS_AT := Vector2(-26.0, 72.0)   # a knot of three Hollow Wisps, drifting past the hewer toward the wood
 var weather: Weather
 var thermals: Thermals
 var dust_devils: DustDevils
@@ -164,6 +166,18 @@ func _ready() -> void:
 		hounds.append(h)
 	hounds[0].mate = hounds[1]
 	hounds[1].mate = hounds[0]
+	# a knot of Hollow Wisps: burnt-out Hollow hearts drifting over the turf, taking turns to dart
+	for i in 3:
+		var w := HollowWisp.new()
+		w.name = "HollowWisp%d" % i
+		var a := TAU * i / 3.0
+		w.position = Vector3(p.x + WISPS_AT.x + cos(a) * 2.4, 0.0, p.z + WISPS_AT.y + sin(a) * 2.4)
+		w.orbit = 1.0 if i != 1 else -1.0
+		add_child(w)
+		w.plant(terrain)
+		wisps.append(w)
+	for w in wisps:
+		w.kin = wisps.duplicate()
 	# the Ashen Knight: the vale's boss, keeping a vigil far down the meadow past the soldier
 	knight = AshenKnight.new()
 	knight.position = Vector3(p.x + KNIGHT_AT.x, 0.0, p.z + KNIGHT_AT.y)
@@ -360,6 +374,7 @@ func _ready() -> void:
 	foley.hook_knight(knight)
 	foley.hook_warden(warden)
 	foley.hook_hounds(hounds)
+	foley.hook_wisps(wisps)
 	foley.hook_herd(herd)
 	foley.hook_fox(fox)
 	foley.hook_dog(dog)

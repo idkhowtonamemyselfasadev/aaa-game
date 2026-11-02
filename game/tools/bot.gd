@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -69,6 +69,12 @@ func _ready() -> void:
 		_world.hewer.process_mode = Node.PROCESS_MODE_DISABLED
 	if name != "archer" and _world.archer != null:
 		_world.archer.process_mode = Node.PROCESS_MODE_DISABLED
+	if name != "wisps":
+		for w in _world.wisps:
+			w.process_mode = Node.PROCESS_MODE_DISABLED
+	if name == "wisps":
+		_wisps_test()
+		return
 	if name == "hewer":
 		_hewer_test()
 		return
@@ -1931,6 +1937,172 @@ static func _seg_dist(pt: Vector3, a: Vector3, b: Vector3) -> float:
 ## The Briar Hound pair: idle on their own ground clear of the other foes; walk up and both
 ## come and circle; stand still and one lunges and bites while its mate keeps circling (never
 ## both in the air at once); dodge a lunge as it launches; then fight both to death.
+## Hollow Wisps: idle on their own ground, wake on approach, circle, flare then dart one at a
+## time, a dart sears a hero standing still, a roll on the flare's peak clears it, and the
+## knot dies to the staff, each dropping its shards into the grass.
+func _wisps_test() -> void:
+	var p := _player
+	var ws: Array = _world.wisps
+	for n in [_world.soldier, _world.knight, _world.warden, _world.hewer, _world.archer]:
+		if n != null:
+			n.process_mode = Node.PROCESS_MODE_DISABLED
+	var c: Vector3 = Vector3.ZERO
+	for w: HollowWisp in ws:
+		c += w.global_position / ws.size()
+	var near := 1e9
+	for n in [_world.soldier, _world.warden, _world.knight, _world.hewer, _world.archer, _world.hounds[0]]:
+		near = minf(near, c.distance_to(n.global_position))
+	var gy: float = _world.terrain.height_at(c.x, c.z)
+	print("BOT wisps: knot of %d %.1f m from the start, nearest other foe %.1f m, heart %.2f m over the turf, states %s" % [ws.size(), c.distance_to(p.global_position), near, ws[0].global_position.y - _world.terrain.height_at(ws[0].global_position.x, ws[0].global_position.z), str(ws.map(func(w): return w.state))])
+	if ws.size() != 3 or near < 16.0:
+		return _combat_done(false, "the knot should be three wisps clear of the other foes")
+	for w: HollowWisp in ws:
+		if w.state != HollowWisp.IDLE:
+			return _combat_done(false, "the wisps should drift idle before the hero comes")
+	await _ticks(60)
+	var drift := 0.0
+	for w: HollowWisp in ws:
+		var h: float = w.global_position.y - _world.terrain.height_at(w.global_position.x, w.global_position.z)
+		if h < 0.9 or h > 1.8:
+			return _combat_done(false, "an idle wisp hangs %.2f m over the turf (want ~1.3)" % h)
+		drift = maxf(drift, Vector2(w.global_position.x - w._home.x, w.global_position.z - w._home.z).length())
+	print("BOT wisps: idle drift up to %.2f m from home" % drift)
+	if drift < 0.1:
+		return _combat_done(false, "idle wisps do not drift")
+	var start := c + Vector3(-10.0, 0, -6.0)
+	p.global_position = Vector3(start.x, _world.terrain.height_at(start.x, start.z) + 0.1, start.z)
+	p.health = Player.HEALTH_MAX
+	await _ticks(10)
+	var t := 0.0
+	var all_up := func() -> bool:
+		for w: HollowWisp in ws:
+			if w.state == HollowWisp.IDLE:
+				return false
+		return true
+	while t < 6.0 and not all_up.call():
+		var to := c - p.global_position
+		p.bot_input = Vector2(to.x, to.z).normalized()
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	print("BOT wisps: noticed after %.1f s, %.1f m off" % [t, Vector2(c.x - p.global_position.x, c.z - p.global_position.z).length()])
+	if not all_up.call():
+		return _combat_done(false, "walking up did not wake the knot")
+	# stand: they circle and take turns
+	var h0 := p.health
+	var two_at_once := 0
+	var flared_peak := 0.0
+	var sears := 0
+	t = 0.0
+	while t < 12.0 and sears < 2:
+		var busy := 0
+		sears = 0
+		for w: HollowWisp in ws:
+			if w.state == HollowWisp.WINDUP or w.state == HollowWisp.STRIKE:
+				busy += 1
+			if w.state == HollowWisp.WINDUP:
+				flared_peak = maxf(flared_peak, w.heat())
+			sears += w.sears
+		if busy > 1:
+			two_at_once += 1
+		if p.health < 40.0:
+			p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	var darts := 0
+	for w: HollowWisp in ws:
+		darts += w.darts
+	print("BOT wisps: stood %.1f s -> darts %d, sears %d, two flaring/darting at once %d frames, flare heat %.2f, health %.0f -> %.0f, flinches %d" % [t, darts, sears, two_at_once, flared_peak, h0, p.health, p.flinches])
+	if sears < 1:
+		return _combat_done(false, "no dart seared a hero standing still")
+	if two_at_once > 0:
+		return _combat_done(false, "two wisps flared or darted at once")
+	if flared_peak < 3.0:
+		return _combat_done(false, "the flare tell is too dim (heat %.2f)" % flared_peak)
+	# roll sideways on the flare's peak
+	p.health = Player.HEALTH_MAX
+	var dodged := false
+	t = 0.0
+	while t < 12.0 and not dodged:
+		for w: HollowWisp in ws:
+			if w.state == HollowWisp.WINDUP and w.t > HollowWisp.GATHER_T - 0.08:
+				var to: Vector3 = w.global_position - p.global_position
+				var side := Vector2(to.z, -to.x).normalized()
+				var s0: int = w.sears
+				var hp0 := p.health
+				p.bot_input = side
+				p.bot_dodge = true
+				await _ticks(2)
+				p.bot_dodge = false
+				p.bot_input = Vector2.ZERO
+				while w.state == HollowWisp.WINDUP or w.state == HollowWisp.STRIKE:
+					await get_tree().physics_frame
+				print("BOT wisps: rolled on the flare -> %s, sears %d -> %d, health %.0f -> %.0f, perfect dodges %d" % [w.last_result, s0, w.sears, hp0, p.health, p.perfect_dodges])
+				if w.sears > s0:
+					return _combat_done(false, "a roll on the flare's peak did not clear the dart")
+				dodged = true
+				break
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if not dodged:
+		return _combat_done(false, "no dart came to roll from")
+	# fight the knot: punish the slack one, otherwise swing at the nearest in reach
+	t = 0.0
+	var swings_at_slack := 0
+	var alive := func() -> int:
+		var n := 0
+		for w: HollowWisp in ws:
+			if not w.is_dead():
+				n += 1
+		return n
+	while alive.call() > 0 and t < 60.0:
+		var tgt: HollowWisp = null
+		var best := 1e9
+		for w: HollowWisp in ws:
+			if w.is_dead():
+				continue
+			var d := w.global_position.distance_to(p.global_position) - (3.0 if w.state == HollowWisp.RECOVER or w.state == HollowWisp.STAGGER else 0.0)
+			if d < best:
+				best = d
+				tgt = w
+		var to: Vector3 = tgt.global_position - p.global_position
+		p.stamina = Player.STAMINA_MAX
+		var open := tgt.state == HollowWisp.RECOVER or tgt.state == HollowWisp.STAGGER
+		if Vector2(to.x, to.z).length() > 1.9:
+			p.bot_input = Vector2(to.x, to.z).normalized()
+		else:
+			p.bot_input = Vector2.ZERO
+			if not p.combat.is_attacking():
+				p.body.rotation.y = atan2(to.x, to.z)
+				if open:
+					swings_at_slack += 1
+			p.bot_attack = true
+		if p.health < 30.0:
+			p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	p.bot_attack = false
+	p.bot_input = Vector2.ZERO
+	var hits := 0
+	for w: HollowWisp in ws:
+		hits += w.hits_taken
+	print("BOT wisps: fight %.1f s, %d left, %d blows landed, swings at a slack wisp %d" % [t, alive.call(), hits, swings_at_slack])
+	if alive.call() > 0:
+		return _combat_done(false, "the knot outlasted 60 s of staff work")
+	await _ticks(150)
+	var down := 0
+	for w: HollowWisp in ws:
+		if w.shards_down():
+			down += 1
+		else:
+			for i in w._shards.size():
+				var sh: MeshInstance3D = w._shards[i]
+				print("BOT dbg shard top %s v %s y %.2f ground %.2f" % [sh.top_level, w._shard_vel[i], sh.global_position.y, _world.terrain.height_at(sh.global_position.x, sh.global_position.z)])
+	print("BOT wisps: shards in the grass for %d of 3, hittable left %d" % [down, ws.filter(func(w): return w.is_in_group("hittable")).size()])
+	if down < 3:
+		return _combat_done(false, "a snuffed wisp's shards did not come to rest in the grass")
+	return _combat_done(true, "the wisp knot woke, took turns to flare and dart, a roll cleared the dart, and the staff put all three out")
+
 func _hounds_test() -> void:
 	var p := _player
 	var hs: Array = _world.hounds

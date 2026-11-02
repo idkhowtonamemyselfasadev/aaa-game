@@ -165,7 +165,11 @@ sweeps), **Ashen Archer** (2026-11-01: keeps its distance and backs away from a 
 side-on draw to the jaw, a random hold, a glint that freezes the aim, then an arrow at where the
 hero's chest was -- run across the aim on the glint, roll as it arrives or parry it; crowded, it
 clubs with the bow stave; the reload is the punish window), Briar Hound pair, and the Ashen
-Knight slice boss.
+Knight slice boss, and (2026-11-02) a knot of three **Hollow Wisps** (fodder:
+a burning heart in a ring of charred shards; they circle the hero and take turns -- the shards
+snap in and the heart flares white-hot (the tell), then a straight dart at the hero's chest;
+step across or roll on the flare's peak, the heavy parries it; after a dart it hangs low and dim,
+the punish window; two light strikes put one out).
 
 Spear Soldier moveset (each move has one right answer that the others punish): **thrust**
 (at spear length; narrow line — strafe, sidestep, dodge on the glint or parry) and **sweep**

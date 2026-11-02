@@ -177,6 +177,23 @@ func hook_hounds(hs: Array) -> void:
 				_play("crunch", (h as Node3D).global_position + Vector3.UP * 0.7, 0.0, 0.7)
 				_play("body", (h as Node3D).global_position + Vector3.UP * 0.7, -4.0, 0.85))
 
+## Hollow Wisps: the flare is a low drawn-in whoosh, the dart a quick high one; a sear lands
+## as a soft body thump with a deep boom under it; snuffed, a dull boom and a stone crack.
+func hook_wisps(ws: Array) -> void:
+	for w: Node in ws:
+		if not w.has_signal("flared"):
+			continue
+		w.flared.connect(func(at: Vector3) -> void: _play("whoom", at, -15.0, 0.62))
+		w.darted.connect(func(at: Vector3) -> void: _play("whoom", at, -8.0, 1.5))
+		w.snuffed.connect(func(at: Vector3) -> void:
+			_play("boom", at, -9.0, 1.3)
+			_play("stone", at, -8.0, 1.25))
+		w.struck.connect(func(r: String) -> void:
+			if r == "hit":
+				var at := (w as Node3D).global_position
+				_play("body", at, -4.0, 1.1)
+				_play("boom", at, -14.0, 1.2))
+
 func hook_warden(w: Node) -> void:
 	if w == null or not w.has_signal("shield_blocked"):
 		return

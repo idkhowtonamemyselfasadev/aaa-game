@@ -980,6 +980,39 @@ func _ready() -> void:
 		var mid := (hp + pa + pb) / 3.0
 		var hcam := mid + sunward * 4.6 + Vector3(0, 1.0, 0)
 		SPOTS[spot] = [hcam, mid + Vector3(0, 0.5, 0)]
+	if spot == "wisps":
+		# wisps: the knot round the hero -- the near one at the peak of its flare (shards
+		# snapped in, the heart white-hot), its kin drifting loose behind; from the sun side
+		var ws: Array = world.wisps
+		var c: Vector3 = ws[0]._home
+		var hp := c + Vector3(-3.0, 0, -2.0)
+		player.global_position = Vector3(hp.x, terrain.height_at(hp.x, hp.z) + 0.05, hp.z)
+		var spots := [hp + Vector3(1.0, 0, 2.6), hp + Vector3(-1.4, 0, 3.6), hp + Vector3(1.9, 0, 4.6)]
+		for i in ws.size():
+			var w: HollowWisp = ws[i]
+			var q: Vector3 = spots[i]
+			w.global_position = Vector3(q.x, terrain.height_at(q.x, q.z) + (1.45 if i == 0 else 1.3 + 0.15 * i), q.z)
+			w._heat = 4.2 if i == 0 else 0.8
+			w._gather = 1.0 if i == 0 else 0.0
+			w.state = HollowWisp.WINDUP if i == 0 else HollowWisp.STALK
+			w._visuals(0.0)
+			w.process_mode = Node.PROCESS_MODE_DISABLED
+			for ch in w.get_children():
+				if ch is CPUParticles3D:
+					ch.process_mode = Node.PROCESS_MODE_ALWAYS
+					ch.preprocess = 1.5
+		var pa: Vector3 = spots[0]
+		player.body.rotation.y = atan2(pa.x - hp.x, pa.z - hp.z)
+		player.use_bot_input = true
+		player.combat._begin_draw()
+		for i in 30:
+			player.combat.physics_step(1.0 / 60.0)
+		player.combat.idle_t = -1.0e6
+		# over the hero's right shoulder, looking into the knot
+		var fwd := Vector3(0, 0, 1)
+		var mid := hp + Vector3(0.4, 0, 3.4)
+		SPOTS[spot] = [hp - fwd * 2.3 + Vector3(-0.9, 0, 0), mid]
+		print("SHOT wisps hero %s wisps %s lens %s" % [player.global_position, ws.map(func(w): return w.global_position), SPOTS[spot][0]])
 	if spot == "ferns":
 		# the densest fern drift (most ferns within 5 m), framed with its oak behind it
 		var flora: Flora = world.get_node("Flora")
@@ -1646,6 +1679,9 @@ func _ready() -> void:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)
 			look.y = terrain.height_at(look.x, look.z) + 0.5
+		if spot == "wisps":
+			pos.y = terrain.height_at(pos.x, pos.z) + 1.45
+			look.y = terrain.height_at(look.x, look.z) + 1.25
 		if spot == "hounds":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.25
 			look.y = terrain.height_at(look.x, look.z) + 0.6
