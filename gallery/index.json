@@ -892,5 +892,11 @@
   "time": "2026-11-02T16:53:00Z",
   "caption": "The Ashen Knight 1.7 m up in its new ember leap over the meadow (GL frame); it reads as floating: the legs hang straight with no tuck and the glaive is upright at its side instead of heaved overhead.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261102-1741-knight-leap-tuck.jpg",
+  "time": "2026-11-02T17:41:00Z",
+  "caption": "The Ashen Knight at the top of its ember leap, knees tucked under it and the glaive heaved over its helm with the blade laid back; still a GL-compat frame (dark sky, flat distant mountains), and the cape hangs stiff instead of streaming.",
+  "verdict": "fail"
  }
 ]

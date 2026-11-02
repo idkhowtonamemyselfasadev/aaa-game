@@ -51,7 +51,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   SLAMMED; flight lean is now forward (0.12 -> 0.34) instead of back. Bot `knightleap` now samples bones inside
   `skeleton_updated` (modifier poses are only visible there) and checks: standing feet 0.99 m under the hips / knees
   0.14 m fore -> mid-air 0.38 m / 0.45 m; hands 0.29 m above the head (was -0.66 m). Regressions knight sentinel
-  soldier PASS. shot.gd `knight leap` frame moved closer and lower, looking up into the arc.
+  soldier PASS. shot.gd `knight leap` frame moved closer and lower, looking up into the arc. GL frame (~9 min)
+  SEEN, gallery `knight-leap-tuck` FAIL overall but the pose now reads as a real leap (knees up, glaive overhead,
+  blade back); still wrong: the cape hangs stiff in the air (should stream back/up), GL sky/mountains.
 - **(16:30 11-02) Ashen Knight's ember leap (Next 0 (0c): the boss gets a move of its own; bot `knightleap` PASS).**
   Audit of (0c): the 3 phases with a mechanic change each were already built (P1 ember guard turns light strikes,
   P2 surge + unblockable red glint, P3 eruptions under the hero every 4.2 s) with music phase cuts; the gap was that
@@ -6659,8 +6661,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (17:20 11-02) **Knight leap pose DONE (bot `knightleap` PASS: tuck + heave measured).** NEXT, in order: (0) look at
-   the GL frame `soldier ../shots/X.png 40 16.5 fixfps knight leap u=0.5` if this session's render did not land
-   (see Done 17:20); a scorch decal where the blade bites; (0a) more enemy variety (owner priority after 0b): a ranged
+   the cape/tabard streaming up and back in the air (rags.gd sim gets the leap's velocity?); a scorch decal where the blade bites; (0a) more enemy variety (owner priority after 0b): a ranged
    caster or a fast flanker that pairs with the soldiers; (0b) Forward+ frame of `sentinel awake` at dusk and the
    sunlit `slam`; a recorded stone-grinding loop when freesound is reachable; (0c) a Sentinel pair at the Shrine of
    Binding; (1) Forward+ frame of `wisps wisps_cower`; (2) archer peek frame, `flight` fixes, hewer `bite` reframe.
