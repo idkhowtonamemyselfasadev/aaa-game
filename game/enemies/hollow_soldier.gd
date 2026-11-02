@@ -155,6 +155,7 @@ func _ready() -> void:
 	# grey hemp rags over the old armour; they flare and burn away with the skin
 	rags = HollowRags.new()
 	rags.name = "Rags"
+	_cut_rags(rags)
 	add_child(rags)
 	rags.build(skel, body)
 	_mats.append_array(rags.mats)
@@ -211,6 +212,10 @@ func _skin() -> void:
 				mat.set_shader_parameter("normal_tex", src.normal_texture)
 			m.set_surface_override_material(s, mat)
 			_mats.append(mat)
+
+## Subclasses change the cut of the rags here, before they are built.
+func _cut_rags(_r: HollowRags) -> void:
+	pass
 
 func _set_skin(param: String, v: Variant) -> void:
 	for m in _mats:

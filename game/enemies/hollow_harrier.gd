@@ -69,13 +69,23 @@ func _ready() -> void:
 	super._ready()
 	name = "HollowHarrier"
 	_rng.seed = 5113
-	# a cold, bone-pale ash and a dark peat-brown reiver's hood, so it reads apart at a glance
+	# narrow in the shoulders and chest: a runner, not a spearman
+	model.scale = Vector3(0.98, 1.08, 0.95)
+	_model_rest = model.transform
+	# a cold, bone-pale ash and a dark peat-brown reiver's coif, so it reads apart at a glance
 	_set_skin("ash_light", Color(0.47, 0.46, 0.44))
-	rags.set_param("cloth_dark", Color(0.035, 0.03, 0.025))
-	rags.set_param("cloth_light", Color(0.17, 0.14, 0.10))
+	rags.set_param("cloth_dark", Color(0.075, 0.06, 0.042))
+	rags.set_param("cloth_light", Color(0.31, 0.25, 0.17))
 	if not rags.mats.is_empty():
 		rags.mats[0].set_shader_parameter("weathered", 0.9)
 	_place(guard_pose)
+
+## No cowl and no mantle: a fitted coif with knotted tails and a short kilt-length tabard, so
+## its outline at range is a lean, bare-shouldered runner beside the hooded spearmen.
+func _cut_rags(r: HollowRags) -> void:
+	r.cowl = false
+	r.mantle = false
+	r.hem = 0.62
 
 func return_to_post() -> void:
 	super.return_to_post()

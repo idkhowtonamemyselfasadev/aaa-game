@@ -58,6 +58,11 @@ var peak_back := 0.0                     # widest back-panel swing in the air (r
 var wall_n := Vector3.ZERO
 var wall_p := Vector3.ZERO
 var lateral := 0.0                       # the knee drag (m, body +X = the wearer's left), for the bots
+## Cut of the rags, set before build(): the harrier runs light in a fitted coif, no mantle,
+## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
+var cowl := true
+var mantle := true
+var hem := 1.0                           # tabard length scale
 var front_clear := INF                   # the front hem's gap to the face (m), for the bots     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
 
 func build(skel: Skeleton3D, body: Node3D) -> void:
@@ -71,11 +76,19 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	for side in ["Left", "Right"]:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side), skel.find_bone("mixamorig_%sFoot" % side)]))
-	head.add_child(_piece(_hood(), 0.0, 0.10, 0.0, 1.2))
-	chest.add_child(_piece(_mantle(), 0.35, 0.22, 0.35, 1.0))
+	if cowl:
+		head.add_child(_piece(_hood(), 0.0, 0.10, 0.0, 1.2))
+	else:
+		# a fitted hemp coif bound round the old helm, the visor left bare, two knotted
+		# tails hanging down the nape
+		head.add_child(_piece(_coif(), 0.0, 0.06, 0.0, 1.0))
+		for side in [-1.0, 1.0]:
+			head.add_child(_piece(_tail(side), 0.0, 0.25, 3.0 + side, 0.15))
+	if mantle:
+		chest.add_child(_piece(_mantle(), 0.35, 0.22, 0.35, 1.0))
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
-	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30, 0.40, 0.68, 0.9, 1.0)
-	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.32, 0.42, 0.76, -0.9, 2.0)
+	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30, lerpf(0.30, 0.40, hem), 0.68 * hem, 0.9, 1.0)
+	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.32, lerpf(0.32, 0.42, hem), 0.76 * hem, -0.9, 2.0)
 	# bandage wraps bound over the old greaves and vambraces, fitted to the armour underneath
 	for side in ["Left", "Right"]:
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.14, 0.93, 0.01, 8.0)
@@ -243,6 +256,28 @@ func _hood() -> ArrayMesh:
 		r *= 1.0 + 0.03 * sin(a * 7.0) * v
 		var cz := -0.045 - 0.06 * pow(1.0 - v, 3.0)
 		return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43, cz + cos(a) * 0.192 * r), 28, 16)
+
+## The harrier's coif: hugs the helm (head verts span x +-0.105, y 1.64..1.98, z -0.17..0.13
+## at the soldier's scale), open over the visor, closing snug round the throat.
+func _coif() -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var gap := 0.5 + 0.3 * smoothstep(0.1, 0.4, v) - 0.55 * smoothstep(0.78, 1.0, v)
+		var a := lerpf(gap, TAU - gap, u)
+		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.3, 1.0), 2.0), 0.0, 1.0))
+		# egg-shaped like the skull under it: fullest at the brow, drawn in under the jaw to the
+		# neck, with a loose fold of collar at the very bottom
+		var r := dome * (1.0 - 0.26 * smoothstep(0.5, 0.9, v) + 0.1 * smoothstep(0.9, 1.0, v))
+		r *= 1.0 + 0.03 * sin(a * 9.0 + v * 4.0) * v
+		var cz := -0.02 - 0.03 * smoothstep(0.5, 1.0, v)
+		return Vector3(sin(a) * 0.122 * r, 2.0 - v * 0.38, cz + cos(a) * 0.158 * r), 28, 14)
+
+## One knotted tail of the coif, hung from the nape down the upper back.
+func _tail(side: float) -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var w := lerpf(0.055, 0.03, v)
+		var x := side * (0.025 + 0.04 * v) + (u - 0.5) * w
+		var z := -0.175 - 0.07 * v + 0.012 * sin(v * 7.0 + side)
+		return Vector3(x, 1.82 - v * 0.30, z), 4, 10)
 
 func _mantle() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:

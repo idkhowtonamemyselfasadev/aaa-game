@@ -892,5 +892,11 @@
   "time": "2026-11-02T22:20:00Z",
   "caption": "The new Hollow Harrier crouched at the hero's back with the spear low and the glint at its point (GL frame): the crouch reads, but it is lost in shade and the practice post crowds the foreground; reframe from the lit side.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261102-2317-harrier-lean.jpg",
+  "time": "2026-11-02T23:17:55Z",
+  "caption": "The Hollow Harrier's new lean cut in its crouch: fitted hemp coif over the helm, bare narrow pale shoulders, short brown kilt, spear low with the glint at the point; the coif is still a smooth sack with no visible wrap turns or tails from this side, and this is a GL fallback frame, not Forward+.",
+  "verdict": "fail"
  }
 ]

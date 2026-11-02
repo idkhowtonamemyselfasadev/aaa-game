@@ -949,6 +949,10 @@ func _ready() -> void:
 			if "knoll" in args:
 				# low behind the hero's shoulder, looking up the rise at the archer on its post
 				SPOTS[spot] = [pp - line * 2.0 + side * 3.4 + Vector3.UP * 0.9, pp.lerp(fp, 0.7) + Vector3.UP * 1.1]
+			if "harrier" in args and "close" in args:
+				# the harrier's crouch at the hero's back: close on its lit flank, front three-quarter,
+				# low, so the coif, the bare shoulders and the low spear read against the hero
+				SPOTS[spot] = [fp + side * 2.7 - line * 0.9 + Vector3.UP * 0.3, fp.lerp(pp, 0.2) + Vector3.UP * 0.95]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
