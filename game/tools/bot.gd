@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "kindler"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "kindler", "harrier"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -73,6 +73,12 @@ func _ready() -> void:
 	# the axe hewer likewise stands its post unless it is under test
 	if name != "hewer" and _world.hewer != null:
 		_world.hewer.process_mode = Node.PROCESS_MODE_DISABLED
+	# the Harrier runs with the hewer and likewise keeps its ground unless it is under test
+	if name != "harrier" and _world.harrier != null:
+		_world.harrier.process_mode = Node.PROCESS_MODE_DISABLED
+	if name == "harrier":
+		_harrier_test()
+		return
 	if name != "sentinel" and _world.sentinel != null:
 		_world.sentinel.process_mode = Node.PROCESS_MODE_DISABLED
 	if name == "sentinel":
@@ -1828,6 +1834,105 @@ func _kindler_test() -> void:
 	if whoom < 3 or boom < 1:
 		return _combat_done(false, "the chant/kindle/break sounds did not play")
 	_combat_done(true, "kindler hangs back, chants and kindles the warden (x%.2f faster, x%.2f harder), a blow breaks the chant, alone it fights, its death douses the flame" % [HollowSoldier.KINDLE_TEMPO, HollowSoldier.KINDLE_DMG])
+
+## Harrier: it rings a hero who stands still and darts in from behind on a crouch + glint;
+## the dart overruns into a punish window; a hero who keeps facing it still gets darted from
+## the flank after CIRCLE_MAX; a roll on the glint beats the dart.
+func _harrier_test() -> void:
+	var p := _player
+	var h: HollowHarrier = _world.harrier
+	for n in [_world.soldier, _world.knight, _world.warden, _world.hewer, _world.archer, _world.sentinel]:
+		n.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var hd := Vector2(h.global_position.x - _world.hewer.global_position.x, h.global_position.z - _world.hewer.global_position.z).length()
+	var gd := Vector2(h.global_position.x - p.global_position.x, h.global_position.z - p.global_position.z).length()
+	print("BOT harrier: %.1f m from the start, %.1f m from the hewer, state %d, health %.0f" % [gd, hd, h.state, h.health])
+	if h.state != HollowSoldier.IDLE or hd > h.notice or gd < h.notice + 2.0:
+		return _combat_done(false, "the harrier should wait idle by the hewer, clear of the start")
+	# 1) the hero stands still facing ahead; the harrier starts 6 m in front of them
+	_soldier_at(h, 6.0, -1)
+	var fwd0 := p.body.global_basis.z
+	var frames := 0
+	var min_r := INF
+	var max_r := 0.0
+	var crouch_t := 0.0
+	var glint := false
+	var max_sink := 0.0
+	var hp0 := p.health
+	while h.darts == 0 and frames < 600:
+		await get_tree().physics_frame
+		frames += 1
+		var r := Vector2(h.global_position.x - p.global_position.x, h.global_position.z - p.global_position.z).length()
+		if h.state == HollowSoldier.STALK and h.circle_t > 0.2:
+			min_r = minf(min_r, r)
+			max_r = maxf(max_r, r)
+		if h.crouching():
+			crouch_t += get_physics_process_delta_time()
+			glint = glint or (h._glint != null and h._glint.visible)
+			max_sink = maxf(max_sink, h.model.position.y * -1.0)
+	print("BOT harrier: ran %.1f m round the ring (r %.1f..%.1f m) in %d frames; crouched %.2f s, glint %s, sink %.2f m; dart from %.0f deg off the hero's back (flank darts %d)" % [h.circled, min_r, max_r, frames, crouch_t, glint, max_sink, h.last_behind, h.flank_darts])
+	if h.darts != 1 or h.circled < 4.0 or h.last_behind > HollowHarrier.BEHIND_DEG or h.flank_darts != 0:
+		return _combat_done(false, "the harrier did not circle round behind the hero before darting")
+	if min_r < HollowHarrier.ORBIT_R - 1.4 or max_r > HollowHarrier.RING_FAR + 0.5:
+		return _combat_done(false, "the harrier did not hold its ring while circling")
+	if crouch_t < HollowHarrier.TELL_T - 0.05 or not glint or max_sink < 0.15:
+		return _combat_done(false, "no readable crouch + glint before the dart")
+	while h.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	print("BOT harrier: dart -> %s, hero health %.0f -> %.0f, hero forward unchanged %s" % [h.last_result, hp0, p.health, p.body.global_basis.z.dot(fwd0) > 0.95])
+	if h.last_result != "hit" or p.health >= hp0:
+		return _combat_done(false, "the dart from behind did not land on a hero who stood still")
+	# 2) the overrun: it stumbles on past, open, and a single light blow staggers it
+	var ov := h.overrunning()
+	var gap := Vector2(h.global_position.x - p.global_position.x, h.global_position.z - p.global_position.z).length()
+	h.take_hit(h.global_position + Vector3.UP * 1.2, (h.global_position - p.global_position).normalized(), 1.0, 0.05)
+	print("BOT harrier: overrunning %s at %.1f m, one blow -> state %d (health %.0f)" % [ov, gap, h.state, h.health])
+	if not ov or h.state != HollowSoldier.STAGGER:
+		return _combat_done(false, "the overrun was not a punish window")
+	# 3) a hero who keeps turning to face it: it still darts, from the flank, after CIRCLE_MAX
+	p.health = Player.HEALTH_MAX
+	_soldier_at(h, 6.0, -1)
+	var d0 := h.darts
+	var tt := 0.0
+	while h.darts == d0 and tt < HollowHarrier.CIRCLE_MAX + 4.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		var to := h.global_position - p.global_position
+		p.body.rotation.y = atan2(to.x, to.z)
+		p.health = Player.HEALTH_MAX
+	print("BOT harrier: faced all the way -> darted after %.1f s, %.0f deg off the back, flank darts %d" % [tt, h.last_behind, h.flank_darts])
+	if h.darts == d0 or h.flank_darts != 1 or tt < HollowHarrier.CIRCLE_MAX - 0.3:
+		return _combat_done(false, "facing the harrier should hold it off until CIRCLE_MAX, then it darts from the flank")
+	while h.state == HollowSoldier.STRIKE or h.state == HollowSoldier.RECOVER:
+		await get_tree().physics_frame
+	# 4) a roll on the glint beats the dart
+	p.health = Player.HEALTH_MAX
+	_soldier_at(h, 6.0, -1)
+	d0 = h.darts
+	var rolled := false
+	tt = 0.0
+	while h.darts == d0 and tt < 10.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if h.crouching() and h.t > HollowHarrier.TELL_T - 0.08 and not rolled:
+			rolled = true
+			p.stamina = p.stamina_max
+			p.bot_input = Vector2(1, 0)
+			p.bot_dodge = true
+	while h.state == HollowSoldier.STRIKE:
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	print("BOT harrier: rolled on the glint -> %s (perfect dodges %d)" % [h.last_result, p.perfect_dodges])
+	if h.last_result == "hit":
+		return _combat_done(false, "a roll on the glint did not beat the dart")
+	var cr := int(fol.played.get("step_grit", 0)) - int(played0.get("step_grit", 0))
+	var wh := int(fol.played.get("dodge", 0)) - int(played0.get("dodge", 0))
+	print("BOT harrier: foley crouch scuffs +%d, dart whooshes (+ hero rolls) +%d" % [cr, wh])
+	if cr < 3 or wh < 3:
+		return _combat_done(false, "the crouch/dart sounds did not play")
+	_combat_done(true, "harrier rings the hero, darts from behind on a crouch + glint, overruns into a punish window, darts from the flank on a hero who faces it, and a roll on the glint beats it")
 
 func _hewer_test() -> void:
 	var p := _player

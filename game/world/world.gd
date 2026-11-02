@@ -26,6 +26,7 @@ var knight: AshenKnight
 var warden: HollowWarden
 var hewer: HollowHewer
 var kindler: HollowKindler
+var harrier: HollowHarrier
 var sentinel: StoneSentinel
 var sentinel_plinth: SentinelPlinth
 var archer: HollowArcher
@@ -36,6 +37,7 @@ const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
 const KINDLER_AT := Vector2(-11.0, 42.0)   # a Hollow Kindler hanging back behind the warden
 const HEWER_AT := Vector2(-20.0, 46.0)   # the axe hewer, further down the meadow's west side
+const HARRIER_AT := Vector2(-26.0, 51.0)   # a Hollow Harrier running with the hewer: it circles to the hero's back
 const ARCHER_AT := Vector2(32.0, 70.0)   # the ashen archer, past the knight's ring on the east side
 const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
 const SENTINEL_AT := Vector2(-2.0, 66.0)  # a Stone Sentinel, a guardian statue standing alone past the knight's ring
@@ -159,6 +161,13 @@ func _ready() -> void:
 	hewer.plant(terrain)
 	hewer.face(p)
 	trample.walkers.append(hewer)
+	# running with the hewer, a lean reiver Hollow: it rings the hero and comes in from behind
+	harrier = HollowHarrier.new()
+	harrier.position = Vector3(p.x + HARRIER_AT.x, 0.0, p.z + HARRIER_AT.y)
+	add_child(harrier)
+	harrier.plant(terrain)
+	harrier.face(p)
+	trample.walkers.append(harrier)
 	# an old guardian statue standing alone down the meadow: it wakes only if the hero comes close
 	sentinel = StoneSentinel.new()
 	sentinel.position = Vector3(p.x + SENTINEL_AT.x, 0.0, p.z + SENTINEL_AT.y)
@@ -398,8 +407,9 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier, knight, warden, hewer, sentinel, kindler], trample)
+	foley.hook(player, [soldier, knight, warden, hewer, sentinel, kindler, harrier], trample)
 	foley.hook_kindler(kindler)
+	foley.hook_harrier(harrier)
 	foley.hook_hewer(hewer)
 	foley.hook_sentinel(sentinel)
 	foley.hook_archer(archer)

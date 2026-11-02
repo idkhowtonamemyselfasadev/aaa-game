@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261027-0629-sward-debug.jpg",
-  "time": "2026-10-27T06:29:51Z",
-  "caption": "Debug frame with the short sward tinted magenta (before the fix): it shows the bare oval 1-2 m in front of the lens where random scatter left no blade mats.",
-  "verdict": "fail"
- },
- {
-  "file": "20261027-0734-boulder-fracture.jpg",
-  "time": "2026-10-27T07:34:23Z",
-  "caption": "Big meadow boulder: it now shows a flat fractured top face with crisp edges and a broken corner instead of a smooth rounded slab; still sits too low and squat, and the moss on its flanks is one even dark speckle.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0734-hare-boulder.jpg",
   "time": "2026-10-27T07:34:23Z",
   "caption": "Sat-up hare in the meadow with the reworked boulder behind it: the stone reads lumpier, but at this distance it is still a dark low mass half-buried in grass.",
@@ -897,6 +885,12 @@
   "file": "20261102-2044-knight-char.jpg",
   "time": "2026-11-02T20:44:34Z",
   "caption": "The Ashen Knight's leap scorch 8 s on (GL frame): the grass and soil inside the bite are now charred black in a ragged burnt star with sooted stubble; the practice post still crowds the foreground and the frame is not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-2220-harrier-crouch.jpg",
+  "time": "2026-11-02T22:20:00Z",
+  "caption": "The new Hollow Harrier crouched at the hero's back with the spear low and the glint at its point (GL frame): the crouch reads, but it is lost in shade and the practice post crowds the foreground; reframe from the lit side.",
   "verdict": "fail"
  }
 ]

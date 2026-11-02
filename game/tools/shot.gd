@@ -904,8 +904,8 @@ func _ready() -> void:
 		var pp := player.global_position
 		# "knight" in the args: the Ashen Knight stands in for the soldier (the soldier is moved off)
 		# "warden": the shield warden stands in the same way
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else world.soldier)))
-		if "knight" in args or "warden" in args or "hewer" in args or "archer" in args:
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else (world.harrier if "harrier" in args else world.soldier))))
+		if "knight" in args or "warden" in args or "hewer" in args or "archer" in args or "harrier" in args:
 			world.soldier.global_position += Vector3(0, 0, 60)
 		var fp := pp + (Vector3(-3.4, 0, 0.6) if spot != "lockon" else Vector3(-1.2, 0, 4.6))
 		if "archer" in args:
@@ -918,6 +918,9 @@ func _ready() -> void:
 		foe._home = foe.global_position
 		foe.face(pp)
 		player.body.rotation.y = atan2(fp.x - pp.x, fp.z - pp.z)
+		if "harrier" in args:
+			# the harrier crouched at the hero's back: the hero faces away from it
+			player.body.rotation.y += PI
 		var light: Vector3 = -world.sun.global_transform.basis.z
 		var line := Vector3(fp.x - pp.x, 0, fp.z - pp.z).normalized()
 		var side := line.cross(Vector3.UP)
@@ -1997,7 +2000,7 @@ func _ready() -> void:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot
 		player.use_bot_input = true
-		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else world.soldier)))
+		var foe: HollowSoldier = world.knight if "knight" in args else (world.warden if "warden" in args else (world.hewer if "hewer" in args else (world.archer if "archer" in args else (world.harrier if "harrier" in args else world.soldier))))
 		var dt := 1.0 / 60.0
 		foe.set_physics_process(false)
 		player.combat._begin_draw()
@@ -2019,6 +2022,12 @@ func _ready() -> void:
 			dur[HollowSoldier.WINDUP] = foe.shot_windup()
 			dur[HollowSoldier.STRIKE] = HollowArcher.LOOSE_T
 			dur[HollowSoldier.RECOVER] = HollowArcher.RELOAD_T
+		if foe is HollowHarrier and not sw:
+			# harrier: the crouch at the hero's back, then the dart
+			foe.move_kind = HollowHarrier.DART_MOVE
+			dur[HollowSoldier.WINDUP] = HollowHarrier.TELL_T
+			dur[HollowSoldier.STRIKE] = HollowHarrier.DART_T
+			dur[HollowSoldier.RECOVER] = HollowHarrier.OVERRUN_T
 		if foe_state == HollowSoldier.STAGGER:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:

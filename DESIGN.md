@@ -153,7 +153,7 @@ mid-string that changes animation by stance. Spells (cooldown + mana):
 | **Cloak of Embers** | 6 s damage shield that detonates | Greywold world boss |
 
 ### Enemy roster (surface)
-Hollow Wisps (fodder), Hollow Soldiers (shield/spear/axe variants), Briar Hounds, Ashen
+Hollow Wisps (fodder), Hollow Soldiers (shield/spear/axe variants), Hollow Harriers (flankers), Briar Hounds, Ashen
 Archers, Hollow Kindlers (support casters), Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archetype, grant
 **Become** forms), 4 world bosses. Wildlife (§8) is not an enemy class but predators will
 fight anything nearby, including Hollow.
@@ -167,7 +167,11 @@ flame it lit, and alone it fights weakly with the spear -- the lesson: read the 
 kill the caster first),
 axe **Hewer** (2026-11-01: overhead chop after a raise + random hitch + glint, the raise is
 armoured against light strikes, a missed chop buries the bit for a punish window; crowded, it
-sweeps), **Ashen Archer** (2026-11-01: keeps its distance and backs away from a closing hero;
+sweeps), a **Hollow Harrier** running with the Hewer (2026-11-02: the flanker; it runs a
+4.2 m ring round the hero toward their back, drops into a low crouch with a glint once within
+50 deg of it -- or after 4.5 s if the hero keeps turning to face it -- and darts 5 m in 0.3 s;
+a dart overruns into a 0.6 s stumble, the punish window, then it hops back to the ring; light,
+a blow knocks it off its line -- the lesson: never let anything stand behind you), **Ashen Archer** (2026-11-01: keeps its distance and backs away from a closing hero;
 side-on draw to the jaw, a random hold, a glint that freezes the aim, then an arrow at where the
 hero's chest was -- run across the aim on the glint, roll as it arrives or parry it; crowded, it
 clubs with the bow stave; the reload is the punish window), Briar Hound pair, and the Ashen

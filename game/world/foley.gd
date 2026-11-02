@@ -275,6 +275,18 @@ func hook_kindler(k: Node) -> void:
 	k.chant_broken.connect(func(at: Vector3) -> void:
 		_play("whoom", at, -12.0, 1.3))
 
+## The Harrier: a scuff of grit and a short grunt as it drops into the crouch, a fast
+## whoosh as it darts (the thrust itself sounds through the soldiers' struck hook).
+func hook_harrier(h: Node) -> void:
+	if h == null or not h.has_signal("darted"):
+		return
+	h.crouched.connect(func(at: Vector3) -> void:
+		_play("step_grit", at, -8.0, 0.85)
+		_play("grunt", at + Vector3.UP * 1.0, -14.0, 1.25))
+	h.darted.connect(func(at: Vector3) -> void:
+		_play("dodge", at, -6.0, 1.15)
+		_play("whoom", at, -12.0, 1.4))
+
 func hook_hewer(hw: Node) -> void:
 	if hw == null or not hw.has_signal("chopped"):
 		return
