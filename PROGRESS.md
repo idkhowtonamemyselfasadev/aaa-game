@@ -48,7 +48,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   other state and on `return_to_post`, so the cloth slaps down on landing (spring overshoot). Bot `knightleap` new
   check: stream 1.00, fall 0.95, hems lifted 0.15 m, back tabard out 0.70 rad in the air; 0.00 / 0.00 m after
   landing. The hero's garb (same base class) also lifts a touch while gliding down; `glide` PASS unchanged numbers.
-  Regressions knight soldier glide PASS.
+  Regressions knight soldier glide PASS. GL frame `soldier ../shots/kleap_cloth.png 40 16.5 fixfps knight leap u=0.78`
+  (~20 min) SEEN, gallery `knight-leap-cloth` FAIL overall (GL sky/mountains) but the back tabard now clearly flares
+  out behind in the descent; the front panel barely reads from this side.
 - **(17:20 11-02) Ashen Knight's leap pose (Next 0 (0): legs tuck, glaive heaved overhead; bot `knightleap` PASS).**
   New `game/enemies/leg_tuck.gd` (LegTuck, a SkeletonModifier3D like SpineTwist): bends both legs on top of the
   animation -- thighs swing forward about the body's side axis (`hip`), shins fold back (`knee`). The knight owns one

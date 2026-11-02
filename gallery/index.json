@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-0335-hare-foreground.jpg",
-  "time": "2026-10-27T03:35:09Z",
-  "caption": "With the near-lens grass no longer shrunk to tiny blades, tall grass now stands in the foreground; a smaller dark patch of sparse short sward still shows between the lens and the hare.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0551-hare-thatch.jpg",
   "time": "2026-10-27T05:51:31Z",
   "caption": "Low lens on the meadow hare: the ground under the camera now reads as olive-brown matted thatch instead of a near-black patch, but it is still a flat painted floor with stroke marks and no short sward blades visible there.",
@@ -897,6 +891,12 @@
   "file": "20261102-1741-knight-leap-tuck.jpg",
   "time": "2026-11-02T17:41:00Z",
   "caption": "The Ashen Knight at the top of its ember leap, knees tucked under it and the glaive heaved over its helm with the blade laid back; still a GL-compat frame (dark sky, flat distant mountains), and the cape hangs stiff instead of streaming.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-1830-knight-leap-cloth.jpg",
+  "time": "2026-11-02T18:30:00Z",
+  "caption": "The Ashen Knight coming down out of its ember leap, knees tucked, the oxblood back tabard flared out behind on the air; still wrong: GL fallback sky and chalky mountains, the front panel barely reads, no scorch where the glaive will bite.",
   "verdict": "fail"
  }
 ]
