@@ -1260,6 +1260,13 @@ func _sentinel_test() -> void:
 	print("BOT sentinel: plinth %d blocks + %d spalls, capstone %.2f m over the turf, statue's feet %.2f m over the capstone, %.2f m off its centre" % [pl.block_count, pl.spalls, pl.top_y - gy, w.global_position.y - pl.top_y, Vector2(w.global_position.x - pl.centre.x, w.global_position.z - pl.centre.z).length()])
 	if pl.block_count < 12 or pl.top_y - gy < 0.4 or absf(w.global_position.y - pl.top_y) > 0.12 or not SentinelPlinth.under(w.global_position.x, w.global_position.z, -0.5):
 		return _combat_done(false, "the statue does not stand up on a carved plinth")
+	# the inscription on the plinth's front face, dark while it sleeps
+	var insc := pl.rune_face
+	var insc_face := insc.global_basis.z.dot(w.body.global_basis.z) if insc else 0.0
+	var insc_out := (insc.global_position - Vector3(w.global_position.x, insc.global_position.y, w.global_position.z)).dot(w.body.global_basis.z) if insc else 0.0
+	print("BOT sentinel: plinth inscription %s, faces the statue's way %.2f, %.2f m out in front, %.2f m under the capstone, glow %.2f" % [insc != null, insc_face, insc_out, pl.top_y - insc.global_position.y if insc else 0.0, pl.rune_glow])
+	if insc == null or insc_face < 0.95 or insc_out < SentinelPlinth.UP_HALF - 0.05 or pl.rune_glow > 0.05 or SentinelPlinth.rune_texture().get_size() != Vector2(384, 96):
+		return _combat_done(false, "no dark rune inscription on the plinth's front face")
 	var post := w._home
 	var post_yaw := w._home_yaw
 	# 1) at 9 m (well inside a Hollow's notice) it does not stir
@@ -1283,6 +1290,10 @@ func _sentinel_test() -> void:
 	print("BOT sentinel: hero at 5 m -> woke after %.2f s, shook %.3f m, came loose after %.2f s, state %d, rune %.2f" % [wake_at, max_shake, tt - wake_at, w.state, w.max_ember])
 	if w.wakes != 1 or w.dormant or max_shake < 0.005 or tt - wake_at < StoneSentinel.WAKE_T * 0.9 or w.state != HollowSoldier.STALK or w.max_ember < 1.0:
 		return _combat_done(false, "the statue did not wake (shudder, rune) for a hero at 5 m")
+	var kindle := pl.rune_glow
+	print("BOT sentinel: plinth inscription kindled to %.2f with the wake (emission %.2f, light %.2f)" % [kindle, pl._rune_mat.emission_energy_multiplier, pl._rune_light.light_energy])
+	if kindle < 0.4 or not pl._rune_light.visible:
+		return _combat_done(false, "the plinth's rune did not kindle with the statue's chest rune")
 	# 3) a blow on its front chips; the same blow from behind tells in full
 	w.process_mode = Node.PROCESS_MODE_DISABLED
 	var to_w := w.global_position - p.global_position
@@ -1334,6 +1345,13 @@ func _sentinel_test() -> void:
 	print("BOT sentinel: back on its post %.2f m over the capstone (stepped down to %.2f m under it in the fight)" % [w.global_position.y - pl.top_y, pl.top_y - _sentinel_low])
 	if absf(w.global_position.y - pl.top_y) > 0.15 or pl.top_y - _sentinel_low < 0.3:
 		return _combat_done(false, "the sentinel did not step down off its plinth and climb back onto it")
+	var cool := 0.0
+	while pl.rune_glow > 0.01 and cool < 4.0:
+		await get_tree().physics_frame
+		cool += get_physics_process_delta_time()
+	print("BOT sentinel: plinth inscription cooled dark %.1f s after it stood still (glow %.2f)" % [cool, pl.rune_glow])
+	if pl.rune_glow > 0.01 or cool < 0.5:
+		return _combat_done(false, "the plinth's rune did not cool slowly once the statue was stone again")
 	# 6) struck while dormant it wakes too; then blows from behind bring it down
 	_sentinel_at(w, 8.0)
 	w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.0, 0.0)
@@ -1407,6 +1425,27 @@ func _sentinel_slam_test(w: StoneSentinel) -> bool:
 		lay = tr.herd_lay_at(lc.global_position + Vector3(1.7, 0, 0))
 	var fd := lc.get_node_or_null("FrontDust") as CPUParticles3D if lc else null
 	print("BOT sentinel: grass points laid round the pit %d, lay 1.7 m out %.2f, front dust ring %.2f m, still emitting %s" % [lc.blasted if lc else 0, lay, fd.emission_ring_radius if fd else 0.0, fd.emitting if fd else true])
+	var puff := lc.get_node_or_null("Puff") as CPUParticles3D if lc else null
+	var pm := (puff.mesh as QuadMesh).material as StandardMaterial3D if puff else null
+	print("BOT sentinel: pit sunlit %.2f -> dust self-light %.2f (shade %.2f, sun %.2f), puff soft-edged %s, %.2f m up" % [lc.exposure if lc else -1.0, lc.glow if lc else -1.0, GroundCrack.DUST_GLOW_E, GroundCrack.DUST_GLOW_SUN, pm.proximity_fade_enabled if pm else false, puff.position.y if puff else 0.0])
+	if lc == null or pm == null or not pm.proximity_fade_enabled or absf(pm.emission_energy_multiplier - lc.glow) > 0.001 \
+			or absf(lc.glow - lerpf(GroundCrack.DUST_GLOW_E, GroundCrack.DUST_GLOW_SUN, lc.exposure)) > 0.001 or puff.position.y < 0.3:
+		_combat_done(false, "the slam dust ignores the light at the pit or its puff cards cut hard into the turf")
+		return false
+	var hour_was: float = _world.time_of_day
+	_world.time_of_day = 12.5
+	await _ticks(3)
+	var ex_noon := lc._sun_exposure()
+	var shel: float = _world.get_node("Flora").shelter_at(lc.global_position.x, lc.global_position.z)
+	_world.time_of_day = 23.5
+	await _ticks(3)
+	var ex_night := lc._sun_exposure()
+	_world.time_of_day = hour_was
+	await _ticks(2)
+	print("BOT sentinel: pit sunlit at 12:30 %.2f (crown overhead %.2f), at 23:30 %.2f (bot hour %.1f)" % [ex_noon, shel, ex_night, hour_was])
+	if ex_night > 0.01 or ex_noon < 0.28:   # a thick cloud over the pit floors it at 0.3
+		_combat_done(false, "the slam dust's sun exposure does not follow the day")
+		return false
 	if lc == null or lc.blasted < 30 or lay < 0.3 or fd == null or fd.emitting or fd.emission_ring_radius < GroundCrack.RING_R - 0.8:
 		_combat_done(false, "the slam leaves the grass standing round the pit or raises no dust ring along the shock")
 		return false

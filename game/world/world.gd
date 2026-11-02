@@ -162,6 +162,7 @@ func _ready() -> void:
 	sentinel_plinth.name = "SentinelPlinth"
 	sentinel_plinth.ruins_path = NodePath("../Ruins")
 	sentinel_plinth.terrain_path = NodePath("../Terrain")
+	sentinel_plinth.sentinel = sentinel
 	add_child(sentinel_plinth)
 	sentinel.set_post_height(sentinel_plinth.build(sentinel.global_position, sentinel.body.global_rotation.y))
 	# a fourth Hollow with a yew bow, standing off past the knight's ring: it keeps its distance

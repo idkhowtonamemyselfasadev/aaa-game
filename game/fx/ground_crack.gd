@@ -28,6 +28,8 @@ var _chips: CPUParticles3D
 var _puff: CPUParticles3D
 var _front_dust: CPUParticles3D  # laid along the shock front as it runs: the ring that reads
 var blasted := 0                 # grass points laid flat round the pit (bots)
+var exposure := 0.0              # 0 deep shade / night .. 1 open midday sun at the pit (bots)
+var glow := DUST_GLOW_E          # the dust's self-light after exposure (bots)
 
 static var _crack_tex: ImageTexture
 static var _soft: ImageTexture
@@ -52,6 +54,15 @@ func _ready() -> void:
 	for p in [_chips, _puff, _dust, _front_dust]:
 		(p as CPUParticles3D).emitting = true
 	_blast_grass.call_deferred()   # the sentinel places us after add_child
+	_light_dust.call_deferred()
+
+## Once placed: dust self-light by how sunlit the pit is (shade keeps the glow, sun drops it).
+func _light_dust() -> void:
+	exposure = _sun_exposure()
+	glow = lerpf(DUST_GLOW_E, DUST_GLOW_SUN, exposure)
+	for p in [_puff, _dust, _front_dust]:
+		var m := ((p as CPUParticles3D).mesh as QuadMesh).material as StandardMaterial3D
+		m.emission_energy_multiplier = glow
 
 ## Lay the sward flat round the pit, the stems combed outward away from the blow, so the
 ## crack star is not hidden in standing grass and the ground shows where the shock went.
@@ -158,8 +169,9 @@ func _make_chips() -> CPUParticles3D:
 func _make_puff() -> CPUParticles3D:
 	var p := _dust_base(44, 2.2)
 	p.name = "Puff"
+	p.position = Vector3(0, 0.4, 0)
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 0.3
+	p.emission_sphere_radius = 0.45
 	p.direction = Vector3(0, 1, 0)
 	p.spread = 70.0
 	p.initial_velocity_min = 0.6
@@ -222,7 +234,30 @@ func _make_front_dust() -> CPUParticles3D:
 ## emission (DUST_GLOW) so a ring raised in tree or cliff shade still reads as pale earth
 ## against the dark sward instead of vanishing (13:15 11-02 frame: lost in shade).
 const DUST_GLOW := Color(0.62, 0.60, 0.56)
-const DUST_GLOW_E := 0.32
+const DUST_GLOW_E := 0.32      # in shade, at dusk, at night
+const DUST_GLOW_SUN := 0.1     # in full sun the light does the work; more reads chalk white (14:00 11-02 frame)
+
+## How sunlit the pit is: the sun's height and strength, a cloud over it, and the oak crowns
+## along the ray toward the sun (the flora shelter map, sampled where a crown ~7 m up would
+## throw its shadow onto this spot).
+func _sun_exposure() -> float:
+	var sun := get_node_or_null("../Sun") as DirectionalLight3D
+	if sun == null or not sun.visible:
+		return 0.0
+	var to_sun := sun.global_basis.z.normalized()
+	var e := clampf(sun.light_energy / 3.0, 0.0, 1.0) * smoothstep(0.0, 0.25, to_sun.y)
+	var clouds := get_node_or_null("../Clouds") as CloudLayer
+	if clouds != null:
+		e *= remap(clouds.shade_at(global_position), 0.45, 1.0, 0.3, 1.0)
+	var flora := get_node_or_null("../Flora")
+	if flora != null and flora.has_method("shelter_at") and to_sun.y > 0.05:
+		var reach := 7.0 / maxf(to_sun.y, 0.25)
+		var h := Vector2(to_sun.x, to_sun.z).normalized() * reach
+		var crown := 0.0
+		for f in [0.6, 1.0, 1.4]:
+			crown = maxf(crown, float(flora.shelter_at(global_position.x + h.x * f, global_position.z + h.y * f)))
+		e *= 1.0 - smoothstep(0.1, 0.6, crown)
+	return clampf(e, 0.0, 1.0)
 
 func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
@@ -247,6 +282,10 @@ func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	m.vertex_color_use_as_albedo = true
 	m.albedo_texture = _soft_texture()
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# soft particles: a camera-facing card cut off by the turf left a hard-floored pale
+	# half-dome over the pit (14:00 11-02 frame); fade each card out where it meets ground
+	m.proximity_fade_enabled = true
+	m.proximity_fade_distance = 0.35
 	q.material = m
 	p.mesh = q
 	var g := Gradient.new()

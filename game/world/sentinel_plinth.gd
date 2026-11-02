@@ -29,6 +29,15 @@ var _per: Array = []
 var _cut := {}          # size -> dressed block mesh cut to it
 var _cut_per := {}      # size -> instances
 var _terrain: Terrain
+var sentinel: StoneSentinel  # world.gd: the inscription kindles with its chest rune
+var rune_glow := 0.0         # 0 dark .. 1 kindled (bots)
+var rune_face: MeshInstance3D
+var _rune_mat: StandardMaterial3D
+var _rune_light: OmniLight3D
+
+const RUNE_W := 0.66          # the inscription band on the upper course's front face
+const RUNE_H := 0.16
+const RUNE_ENERGY := 2.4      # emission at full kindle (the statue's chest burns 1.6+)
 ## Plan of the plinth for the grass mask: centre xz, yaw; INF until built.
 static var plan_centre := Vector2.INF
 static var plan_yaw := 0.0
@@ -126,7 +135,100 @@ func build(c: Vector3, yaw: float) -> float:
 		_multimesh(_cut[key], _cut_per[key], "Plinth_%d" % ci)
 		ci += 1
 	_collider(t1)
+	_inscription(b, t1)
 	return top_y
+
+## Three angular runes cut into the front face of the upper course, the side the statue
+## looks out over: dark grooves while it sleeps, kindling the pale blue of its chest rune
+## as it wakes and going dark again when it stands still on its post once more.
+func _inscription(b: Basis, t1: float) -> void:
+	var q := QuadMesh.new()
+	q.size = Vector2(RUNE_W, RUNE_H)
+	_rune_mat = StandardMaterial3D.new()
+	var tex := rune_texture()
+	_rune_mat.albedo_texture = tex
+	_rune_mat.albedo_color = Color(0.09, 0.085, 0.08, 0.82)   # the groove's shadow
+	_rune_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_rune_mat.roughness = 1.0
+	_rune_mat.emission_enabled = true
+	_rune_mat.emission = StoneSentinel.RUNE
+	_rune_mat.emission_texture = tex
+	_rune_mat.emission_energy_multiplier = 0.0
+	q.material = _rune_mat
+	rune_face = MeshInstance3D.new()
+	rune_face.name = "Inscription"
+	rune_face.mesh = q
+	rune_face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var at := Vector3(centre.x, t1 + STEP * 0.5, centre.z) + b.z * (UP_HALF + 0.007)
+	rune_face.transform = Transform3D(b, at - global_position)
+	add_child(rune_face)
+	_rune_light = OmniLight3D.new()
+	_rune_light.light_color = StoneSentinel.RUNE
+	_rune_light.omni_range = 1.3
+	_rune_light.light_energy = 0.0
+	_rune_light.shadow_enabled = false
+	_rune_light.position = Vector3(0, 0, 0.22)
+	rune_face.add_child(_rune_light)
+
+func _process(delta: float) -> void:
+	if sentinel == null or rune_face == null:
+		return
+	var want := 0.0
+	if not sentinel.dormant:
+		want = 0.75 + 0.1 * sin(Time.get_ticks_msec() * 0.0021)
+		if sentinel.waking >= 0.0:
+			# lags the chest a beat: the light runs down out of the statue into its stone
+			want *= smoothstep(0.3, 1.0, sentinel.waking / StoneSentinel.WAKE_T)
+	# kindles fast with the wake, cools slowly once it is stone again
+	var rate := 3.0 if want > rune_glow else 0.6
+	rune_glow = move_toward(rune_glow, want, rate * delta)
+	_rune_mat.emission_energy_multiplier = RUNE_ENERGY * rune_glow
+	_rune_light.light_energy = 0.35 * rune_glow
+	_rune_light.visible = rune_glow > 0.01
+
+static var _rune_tex: ImageTexture
+
+## Three glyphs side by side: staves, chevrons and a ring, cut as grooves with soft
+## (worn) edges. White where the groove is; alpha is the cut.
+static func rune_texture() -> ImageTexture:
+	if _rune_tex != null:
+		return _rune_tex
+	var w := 384
+	var h := 96
+	var segs: Array = []
+	# each glyph lives in a 1 x 1 cell (u right, v down), placed at x offsets 0, 1, 2
+	var glyphs := [
+		[[0.5, 0.1, 0.5, 0.9], [0.5, 0.35, 0.22, 0.12], [0.5, 0.35, 0.78, 0.12], [0.5, 0.62, 0.25, 0.85]],
+		[[0.3, 0.1, 0.3, 0.9], [0.7, 0.1, 0.7, 0.9], [0.3, 0.5, 0.7, 0.3], [0.3, 0.7, 0.7, 0.5]],
+		[[0.5, 0.1, 0.5, 0.9], [0.2, 0.55, 0.5, 0.25], [0.8, 0.55, 0.5, 0.25], [0.5, 0.9, 0.78, 0.68]],
+	]
+	for g in 3:
+		for sg in glyphs[g]:
+			# three cells across the RUNE_W x RUNE_H band
+			segs.append([Vector2(g + sg[0], sg[1]), Vector2(g + sg[2], sg[3])])
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 404
+	for y in h:
+		for x in w:
+			var p := Vector2((x + 0.5) / w * 3.0, (y + 0.5) / h)
+			var d := 10.0
+			for sg in segs:
+				var a: Vector2 = sg[0]
+				var bb: Vector2 = sg[1]
+				var ab := bb - a
+				var t := clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+				d = minf(d, p.distance_to(a + ab * t))
+			# a dot over the middle glyph's arms
+			d = minf(d, absf(p.distance_to(Vector2(1.5, 0.12)) - 0.045))
+			# worn: the groove's width wanders a little
+			var wid := 0.055 + 0.012 * sin(p.x * 23.0 + p.y * 17.0)
+			var cut := 1.0 - smoothstep(wid * 0.55, wid, d)
+			cut *= 0.85 + 0.15 * rng.randf()
+			img.set_pixel(x, y, Color(1, 1, 1, cut))
+	img.generate_mipmaps()
+	_rune_tex = ImageTexture.create_from_image(img)
+	return _rune_tex
 
 ## The corner piece that split away: tipped on its edge, half sunk in the turf.
 func _fallen_corner(at: Vector3, yaw_s: float, size: Vector3, rng: RandomNumberGenerator) -> void:
