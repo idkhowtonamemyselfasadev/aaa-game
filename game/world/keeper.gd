@@ -139,9 +139,10 @@ const KINDLE_STRIKES := 5       # flint strikes before the tinder catches
 const KINDLE_EVERY := 0.85      # s between strikes
 const FEAR_R := 7.0             # a Hollow Wisp this near her fire (m, flat) sends her to the wall
 const FEAR_HOLD := 6.0          # s she stays there after the last one has gone off
-const COWER_ARM := 1.5          # shielding her face: the right upper arm up before her...
-const COWER_ELBOW := 1.6        # ...the forearm folded up in front of her face...
-const COWER_OUT := -0.9         # ...and drawn in across it
+const COWER_ARM := 1.8          # shielding her face: the right upper arm raised before her...
+const COWER_ELBOW := 0.9        # ...the forearm half folded...
+const COWER_OUT := 0.5          # ...the elbow out to her right, before the cheek...
+const COWER_ACROSS := -1.8      # ...and the upper arm rolled in, so the forearm lies level across her face
 const COWER_TURN := 0.35        # her head turned a little away from the glare
 const COWER_LOOK := 0.3         # but lifted to the knot wheeling up over the flames
 const KINDLE_NURSE := 9.0       # s at least she stays down after it catches, until the flames show
@@ -951,6 +952,8 @@ func _update_scrap(delta: float) -> void:
 		crumple.flick = up * (1.0 - back)
 		crumple.flick_arm = lerpf(2.2, 1.45, out)
 		crumple.flick_elbow = lerpf(1.7, 0.1, out)
+		crumple.flick_out = 0.0
+		crumple.flick_across = 0.0
 		if _scrap != null and _scrap_air < 0.0 and t >= FLICK_UP + FLICK_OUT * 0.5:
 			_scrap.reparent(world)
 			_scrap_from = _scrap.global_position
@@ -1050,6 +1053,7 @@ func _pose_sit() -> void:
 		crumple.flick_arm = COWER_ARM
 		crumple.flick_elbow = COWER_ELBOW
 		crumple.flick_out = COWER_OUT if cw > 0.0 else 0.0
+		crumple.flick_across = COWER_ACROSS if cw > 0.0 else 0.0
 	# the bent knees lower the hips: keep the feet on the ground (thigh and shin each half the
 	# hip height; the shin leans forward as far as the thigh, so the feet stay under her)
 	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5)

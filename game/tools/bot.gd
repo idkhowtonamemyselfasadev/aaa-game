@@ -2040,6 +2040,11 @@ func _wisps_test() -> void:
 		return _combat_done(false, "Hesper did not back away from the wisps over her fire")
 	if fx.state != Fox.WARY or fxd < 8.0 or not fx.path.is_empty():
 		return _combat_done(false, "the fox did not wait the wisps out at the gateway")
+	# her shielding arm: the right hand up before her face and across it, the forearm lying flat
+	var shield: Dictionary = await _shield_arm(kp)
+	print("BOT wisps: shield hand %.2f m across the face (toward her left), %.2f m above/below the eyes, %.2f m before the face (elbow %.2f); forearm tilt %.0f deg off level" % [shield.across, shield.rise, shield.ahead, shield.elbow_ahead, shield.tilt])
+	if shield.across < SHIELD_ACROSS or absf(shield.rise) > 0.12 or shield.ahead < 0.1 or shield.elbow_ahead < 0.06 or shield.tilt > 25.0:
+		return _combat_done(false, "Hesper's right forearm is not across her face")
 	# the knot goes off (no fire to draw it): she settles back to her bed, the fox creeps in
 	for w: HollowWisp in ws:
 		w.fires = []
@@ -8783,3 +8788,30 @@ func _feed_test() -> void:
 	if v.visits.get("wood", 0) < 1 or v.warps > 0 or f.bag.visible:
 		return _combat_done(false, "she did not get back to the woodpile")
 	_combat_done(true, "Edda calls the hens as she comes, they gather at the wall, she casts grain over it and they run to it and eat it up")
+
+const SHIELD_ACROSS := -0.06 # m: the right wrist no further than this short of the head's centre line (the hand
+                             # then covers her left half of the face, the forearm the right)
+
+## Hesper's shielding arm in her model's frame (she faces -Z in it: her toes point that way), read
+## from the bones as Crumple posed them: how far the right wrist sits past the head's centre toward her left side, above the eyes, in front of the face, and how far the
+## forearm tilts from level (a forearm across the face lies flat; one folded straight up reads 90).
+func _shield_arm(kp: Keeper) -> Dictionary:
+	if kp.crumple.probe.is_empty():
+		kp.crumple.probe = PackedStringArray(["mixamorig_Head", "mixamorig_RightHand", "mixamorig_RightForeArm", "mixamorig_LeftArm", "mixamorig_RightArm"])
+		await get_tree().process_frame
+		await get_tree().process_frame
+	var sk := kp.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var bf := kp.model.global_transform.basis.orthonormalized()
+	var p := func(n: String) -> Vector3:
+		var o: Vector3 = kp.crumple.probed.get(n, sk.get_bone_global_pose(sk.find_bone(n)).origin)
+		return bf.inverse() * (sk.global_transform * o - kp.model.global_position)
+	var head: Vector3 = p.call("mixamorig_Head")
+	var hand: Vector3 = p.call("mixamorig_RightHand")
+	var fore: Vector3 = p.call("mixamorig_RightForeArm")
+	var ls: Vector3 = p.call("mixamorig_LeftArm")
+	var rs: Vector3 = p.call("mixamorig_RightArm")
+	var left := Vector3(signf(ls.x - rs.x), 0, 0)
+	var f := hand - fore
+	print("BOT wisps: (model frame) head %s hand %s elbow %s lsh %s rsh %s" % [head, hand, fore, ls, rs])
+	return {"across": (hand - head).dot(left), "rise": hand.y - (head.y + 0.08), "ahead": head.z - hand.z,
+		"elbow_ahead": head.z - fore.z, "tilt": rad_to_deg(asin(clampf(absf(f.y) / maxf(f.length(), 1e-4), 0.0, 1.0)))}

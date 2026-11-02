@@ -23,6 +23,10 @@ var flick := 0.0             # 0..1: the right arm taken over by flick_arm/flick
 var flick_arm := 0.0
 var flick_elbow := 0.0
 var flick_out := 0.0         # radians: the flicked arm swung out to the right about the body's up axis
+var flick_across := 0.0      # radians: the flicked upper arm rolled about the body's forward axis, so a
+							 # forearm folded up before the face is laid across it (a shielding arm)
+var probe := PackedStringArray() # (bots) bones whose skeleton-space origins are recorded after the bends
+var probed := {}             # (bots) bone name -> its skeleton-space origin as posed by this modifier
 var grip := 0.0              # 0..1: the right hand's fingers close into a fist (round a bail or a helve)
 var grip_fold := 0.0         # (bots) the closed hand as posed: the middle finger's first bone . the palm's normal
 var grip_thumb := 0.0        # (bots) the thumb's second bone . the palm's normal (folded over the fingers)
@@ -86,6 +90,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_bend(skel, "mixamorig_RightForeArm", x, -(flick_elbow - elbow) * flick)
 			if flick_out != 0.0:
 				_bend(skel, "mixamorig_RightArm", up, -flick_out * flick)
+			if flick_across != 0.0:
+				_bend(skel, "mixamorig_RightArm", fwd, flick_across * flick)
 	if grip > 0.0:
 		_grip(skel, "Right", grip)
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
@@ -110,6 +116,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 		for i in 2:
 			_reach(skel, sides[i], hand_target[i], plant)
 			_grip(skel, sides[i], hand_curl * plant)
+	for n in probe:
+		var pb := skel.find_bone(n)
+		if pb >= 0:
+			probed[n] = skel.get_bone_global_pose(pb).origin
 
 const GRIP_CURL := [1.25, 1.2, 0.8]   # radians per finger joint, knuckle to tip, at a full fist
 const THUMB_CURL := [0.55, 0.6, 0.5]
