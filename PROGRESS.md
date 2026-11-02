@@ -6497,7 +6497,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (forced front, doused knot) and `close` (lens ~2.5 m off the flaring one). GL frame `wisps
    wisps_rain_close 20 17 fixfps rain close` SEEN, gallery `wisps-rain` FAIL: the wet meadow, puddles and rain
    streaks read well, but the steam barely shows, the flaring heart is still a bright ball, the shards read as
-   flat orange flakes and the `close` lens sits in front of the hero (out of frame). NEXT, in order: (0) pull the
+   flat orange flakes and the `close` lens sits in front of the hero (out of frame). Dry night frame
+   `wisps_dry_close 20 19.5 fixfps close` (opengl3 fallback after the Vulkan run was cut short) SEEN: the veined
+   coals read well against the dark turf and light the grass orange, hero again out of frame. NEXT, in order: (0) pull the
    `close` lens back 1 m behind the hero's shoulder; thicker/brighter steam; darker char on the shards; a faint glow card so a dim wisp reads at 10 m; (0b) wisps gather round a
    campfire at night (owner ALIVE list); a real recorded hiss when freesound is reachable;
    (0c) Forward+ frame of the archer peeking from cover; (1) `flight` frame fixes; (d) hewer `bite` reframe;
