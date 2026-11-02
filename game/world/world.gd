@@ -26,6 +26,7 @@ var knight: AshenKnight
 var warden: HollowWarden
 var hewer: HollowHewer
 var sentinel: StoneSentinel
+var sentinel_plinth: SentinelPlinth
 var archer: HollowArcher
 var hounds: Array[BriarHound] = []
 var wisps: Array[HollowWisp] = []
@@ -156,6 +157,13 @@ func _ready() -> void:
 	sentinel.plant(terrain)
 	sentinel.face(p)
 	trample.walkers.append(sentinel)
+	# its post: a carved two-step plinth, so at range it reads as a monument, not a man in a field
+	sentinel_plinth = SentinelPlinth.new()
+	sentinel_plinth.name = "SentinelPlinth"
+	sentinel_plinth.ruins_path = NodePath("../Ruins")
+	sentinel_plinth.terrain_path = NodePath("../Terrain")
+	add_child(sentinel_plinth)
+	sentinel.set_post_height(sentinel_plinth.build(sentinel.global_position, sentinel.body.global_rotation.y))
 	# a fourth Hollow with a yew bow, standing off past the knight's ring: it keeps its distance
 	archer = HollowArcher.new()
 	archer.position = Vector3(p.x + ARCHER_AT.x, 0.0, p.z + ARCHER_AT.y)

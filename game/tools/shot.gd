@@ -827,10 +827,10 @@ func _ready() -> void:
 		var side := f3.cross(Vector3.UP)
 		if side.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
 			side = -side
-		var dist := 2.6 if "close" in args else 4.6
+		var dist := 2.6 if "close" in args else (12.0 if "far" in args else 4.6)
 		var scam := post + f3 * dist * 0.8 + side * dist * 0.6
 		scam.y = terrain.height_at(scam.x, scam.z) + (1.5 if "close" in args else 1.2)
-		SPOTS[spot] = [scam, post + Vector3.UP * (1.55 if "close" in args else 1.3) + f3 * 0.4]
+		SPOTS[spot] = [scam, post + Vector3.UP * (1.55 if "close" in args else (0.7 if "far" in args else 1.3)) + f3 * 0.4]
 		if "awake" in args:
 			sn.wake()
 		if "slam" in args:

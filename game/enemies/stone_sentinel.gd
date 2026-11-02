@@ -156,6 +156,11 @@ func plant(terrain: Terrain) -> void:
 	_terrain = terrain
 	_home_yaw = body.rotation.y
 
+## Stand it on its plinth's capstone (world y): its post, where it goes still again.
+func set_post_height(y: float) -> void:
+	global_position.y = y + 0.03
+	_home = global_position
+
 func face(point: Vector3) -> void:
 	super.face(point)
 	_home_yaw = body.rotation.y
@@ -363,7 +368,10 @@ func _physics_process(delta: float) -> void:
 			# home: turn back to the old facing, mend, and go still
 			body.rotation.y = lerp_angle(body.rotation.y, _home_yaw, 1.0 - exp(-2.5 * delta))
 			health = move_toward(health, health_max, MEND_RATE * delta)
-			if not dormant and absf(angle_difference(body.rotation.y, _home_yaw)) < 0.05 and health >= health_max:
+			if not dormant:
+				# the last shuffle into the middle of the capstone (flat stone: no collider in the way)
+				global_position += back * (1.0 - exp(-3.0 * delta))
+			if not dormant and absf(angle_difference(body.rotation.y, _home_yaw)) < 0.05 and health >= health_max and back.length() < 0.1:
 				dormant = true
 				petrifies += 1
 				petrified.emit()

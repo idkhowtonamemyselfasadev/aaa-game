@@ -1226,6 +1226,8 @@ func _warden_test() -> void:
 ## parries; and a hero who rolls on the glint and punishes the stuck axe kills it.
 ## Stone Sentinel: a statue that stays still until the hero is close, chips on the front,
 ## takes full blows from behind, hits hard, mends and goes still at its post again, dies.
+var _sentinel_low := INF
+
 func _sentinel_test() -> void:
 	var p := _player
 	var w: StoneSentinel = _world.sentinel
@@ -1252,6 +1254,14 @@ func _sentinel_test() -> void:
 	print("BOT sentinel: armour pieces %d, rag pieces showing %d" % [w.armour.pieces, rag_seen])
 	if rag_seen > 0 or w.armour.pieces < 4:
 		return _combat_done(false, "the statue still wears cloth or lacks its stone helm/pauldrons/glaive")
+	# it stands on its plinth, up on the capstone, the turf round it clear
+	var pl: SentinelPlinth = _world.sentinel_plinth
+	var gy: float = _world.terrain.height_at(w.global_position.x, w.global_position.z)
+	print("BOT sentinel: plinth %d blocks + %d spalls, capstone %.2f m over the turf, statue's feet %.2f m over the capstone, %.2f m off its centre" % [pl.block_count, pl.spalls, pl.top_y - gy, w.global_position.y - pl.top_y, Vector2(w.global_position.x - pl.centre.x, w.global_position.z - pl.centre.z).length()])
+	if pl.block_count < 12 or pl.top_y - gy < 0.4 or absf(w.global_position.y - pl.top_y) > 0.12 or not SentinelPlinth.under(w.global_position.x, w.global_position.z, -0.5):
+		return _combat_done(false, "the statue does not stand up on a carved plinth")
+	var post := w._home
+	var post_yaw := w._home_yaw
 	# 1) at 9 m (well inside a Hollow's notice) it does not stir
 	_sentinel_at(w, 9.0)
 	await _ticks(90)
@@ -1304,6 +1314,8 @@ func _sentinel_test() -> void:
 	w.force_move = -1
 	# 5) the hero runs: it walks back to its post, turns, mends and stands still again
 	p.health = Player.HEALTH_MAX
+	w._home = post             # the strike tests moved its post to the test ground
+	w._home_yaw = post_yaw
 	var home := w._home
 	var away := (p.global_position - home)
 	away.y = 0.0
@@ -1314,10 +1326,14 @@ func _sentinel_test() -> void:
 	while not w.dormant and tt < 25.0:
 		await get_tree().physics_frame
 		tt += get_physics_process_delta_time()
+		_sentinel_low = minf(_sentinel_low, w.global_position.y)
 	spd = w.anim_tree.get("parameters/speed/scale")
 	print("BOT sentinel: hero 30 m off -> still again after %.1f s, %.2f m from its post, facing off %.2f rad, health %.0f/%.0f, anim speed %.2f, petrifies %d" % [tt, (w.global_position - home).length(), absf(angle_difference(w.body.rotation.y, w._home_yaw)), w.health, w.health_max, spd, w.petrifies])
-	if not w.dormant or w.health < w.health_max or w.petrifies != 1 or spd != 0.0:
+	if not w.dormant or w.health < w.health_max or w.petrifies != 1 or spd != 0.0 or Vector2(w.global_position.x - home.x, w.global_position.z - home.z).length() > 0.12:
 		return _combat_done(false, "the sentinel did not go back to its post, mend and stand still")
+	print("BOT sentinel: back on its post %.2f m over the capstone (stepped down to %.2f m under it in the fight)" % [w.global_position.y - pl.top_y, pl.top_y - _sentinel_low])
+	if absf(w.global_position.y - pl.top_y) > 0.15 or pl.top_y - _sentinel_low < 0.3:
+		return _combat_done(false, "the sentinel did not step down off its plinth and climb back onto it")
 	# 6) struck while dormant it wakes too; then blows from behind bring it down
 	_sentinel_at(w, 8.0)
 	w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.0, 0.0)
