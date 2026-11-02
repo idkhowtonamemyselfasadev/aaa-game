@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-2349-hare-meadow2.jpg",
-  "time": "2026-10-26T23:49:53Z",
-  "caption": "The south-east meadow at 9 h from the new closer hare lens: the sward and stones read well, but the hare walked off its mark during warm-up, so it sits small at the bottom edge feeding and its ears still show a pale patch.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-2349-night21-valley.jpg",
   "time": "2026-10-26T23:49:53Z",
   "caption": "The Vale at 21 h after the night fix: the far mountain ring now sits dark behind the valley with moonlit ridge faces and its foot sunk into the night air instead of a flat pale-blue cut-out; the near hills now merge with it a little and the cottages still read as bare white specks.",
@@ -897,6 +891,12 @@
   "file": "20261102-0800-wisps-cower.jpg",
   "time": "2026-11-02T10:10:00Z",
   "caption": "Hesper backed against the keep wall from the Hollow Wisps, her right forearm now raised to her face (GL fallback frame; Vulkan failed): the lens sees her from behind, her hands are chalk white and the knot is out of frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-1150-sentinel-slam.jpg",
+  "time": "2026-11-02T11:50:00Z",
+  "caption": "The Stone Sentinel's glaive slam just landed (GL frame): blade bitten in the turf, the hero thrown by the shock; but the dust reads as sparse yellow blobs, the shock ring does not read as a ring, and the crack decal is invisible (decals need Forward+, and the tall grass hides the ground).",
   "verdict": "fail"
  }
 ]

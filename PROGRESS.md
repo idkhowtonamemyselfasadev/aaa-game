@@ -55,6 +55,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   spared; front blow in recovery full; hero at 3.4 m -> chose slam itself, blade miss, shock hit 16 + knockdown; jump ->
   "jumped" 0 damage; roll into it -> "perfect" 0 damage; PASS. Regression bots combat soldier sweep warden hewer foley
   knight PASS. shot.gd `sentinel ... slam` (hero at 3.4 m, statue loose and slamming; ~85 frames at 30 fps for the impact).
+  GL frame `sentinel slam_impact 88 15.0 fixfps slam` SEEN, gallery `sentinel-slam` FAIL: the blade lands in the turf
+  and the hero is thrown by the shock, but the dust is a few sparse yellow-lit blobs (needs more, greyer, lower, smaller
+  puffs, and the ring dust must read as a ring), and the crack decal is not visible (GL compat draws no decals; in
+  Forward+ check the grass hides it -- flatten/trample the grass round the pit via `trample`).
 - **(08:00 11-02) Stone Sentinel, the next enemy (owner priority: combat content + enemy variety).**
   New `game/enemies/stone_sentinel.gd` (`StoneSentinel extends HollowSoldier`): the Vanguard rig carved in granite
   (new `stone` uniform in hollow.gdshader: speckled grey granite with dark mica flecks, rain-streaked grime, pale
@@ -6566,7 +6570,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (12:00 11-02) **Sentinel glaive slam DONE (bot `sentinel` PASS; see Done).** NEXT, in order: (0) Forward+ frame of
-   `sentinel sn_slam 88 15.0 fixfps slam` to judge the crack decal and dust ring under real light (and a ~70-frame one of
+   `sentinel sn_slam 88 15.0 fixfps slam` to judge the crack decal and dust ring under real light; denser, greyer,
+   lower dust and a ring that reads; flatten the grass round the pit so the cracks show (and a ~70-frame one of
    the heave); give the statue a carved plinth (Ruins blocks) so it reads as a statue at range, and a stone grinding loop
    while it walks; (0b) a Sentinel pair at the Shrine of Binding's way down once the shrine is built; (1) Forward+ frame of
    `wisps wisps_cower 30 22.0 fixfps fire cower` (lens from in front of Hesper); (2) archer peek frame, `flight` frame
