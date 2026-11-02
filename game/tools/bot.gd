@@ -1796,6 +1796,7 @@ func _archer_test() -> void:
 	await get_tree().physics_frame
 	var cov0 := w.covers
 	var shots_c := w.shots
+	w.wall_cover_on = false                    # trunk cover alone here; walls are 4e
 	# as if it has just loosed: the reload ends into the stalk
 	w.move_kind = HollowArcher.SHOT_MOVE
 	w._enter(HollowSoldier.RECOVER)
@@ -1821,10 +1822,76 @@ func _archer_test() -> void:
 				drew_hidden = true
 	print("BOT archer: trunk 2.5 m aside -> hid %s (covers %d) %.2f m from the trunk, waited %.2f s out of the line %s, stepped out and drew clear %s after %.1f s, drew blind %s, loosed %d" % [hid, w.covers - cov0, hide_d, w.cover_hidden, hid_shut, drew_out, tt, drew_hidden, w.shots - shots_c])
 	w.obstacles.erase(pole_o)
+	w.wall_cover_on = true
 	pole.queue_free()
 	await get_tree().physics_frame
 	if not hid or w.covers <= cov0 or not hid_shut or w.cover_hidden < HollowArcher.COVER_WAIT_MIN - 0.05 or not drew_out or drew_hidden:
 		return _combat_done(false, "the archer did not hide behind the trunk between shots, or did not step out to draw")
+	# 4e) cover behind a wall: no trunk or rock counts (obstacles emptied), a cottage-like wall
+	# (test box, layer 1) stands 2.5 m to its side square to the hero; after the loose it hides
+	# hard behind it out of the line, waits, then steps out and draws clear
+	p.health = Player.HEALTH_MAX
+	p.velocity = Vector3.ZERO
+	_soldier_at(w, 10.0, -1)
+	await _ticks(2)
+	var saved_obs := w.obstacles.duplicate()
+	w.obstacles.clear()
+	var bw := StaticBody3D.new()
+	bw.name = "BotCottageWall"
+	var bcs := CollisionShape3D.new()
+	var bbox := BoxShape3D.new()
+	bbox.size = Vector3(2.4, 3.0, 0.4)
+	bcs.shape = bbox
+	bw.add_child(bcs)
+	_world.add_child(bw)
+	var wdir := (w.global_position - p.global_position)
+	wdir.y = 0.0
+	var wside := Vector3.UP.cross(wdir.normalized())
+	var wq := w.global_position + wside * 2.5
+	for sg in [1.0, -1.0]:
+		var cand: Vector3 = w.global_position + wside * 2.5 * sg
+		var rq := PhysicsRayQueryParameters3D.create(w.global_position + Vector3.UP * 0.9, Vector3(cand.x, w.global_position.y + 0.9, cand.z) + wdir.normalized() * 1.2, 1)
+		rq.exclude = [w.get_rid()]
+		if _world.get_world_3d().direct_space_state.intersect_ray(rq).is_empty():
+			wq = cand
+			break
+	bw.global_position = Vector3(wq.x, tr.height_at(wq.x, wq.z) + 1.4, wq.z)
+	bw.look_at(bw.global_position - wdir, Vector3.UP)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var wc0 := w.wall_covers
+	var cov_w0 := w.covers
+	var shots_w := w.shots
+	w.move_kind = HollowArcher.SHOT_MOVE
+	w._enter(HollowSoldier.RECOVER)
+	w.t = HollowArcher.RELOAD_T - 0.05
+	var whid := false
+	var whid_shut := true
+	var wdrew_out := false
+	var wdrew_hidden := false
+	var whide_d := 0.0
+	tt = 0.0
+	while tt < 8.0 and not wdrew_out:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if w.in_cover:
+			whid = true
+			whide_d = Vector2(w.global_position.x - wq.x, w.global_position.z - wq.z).length()
+			if not whid:
+				print("BOT archer:   hiding behind %s" % w.cover_by)
+			if w.clear_line(w.global_position, w._chest_target()):
+				whid_shut = false
+		if w.state == HollowSoldier.WINDUP and w.move_kind == HollowArcher.SHOT_MOVE:
+			if w.clear_line(w.global_position, w._chest_target()):
+				wdrew_out = true
+			else:
+				wdrew_hidden = true
+	print("BOT archer: wall 2.5 m aside, no trunks -> hid %s (wall covers %d, covers %d, behind %s) %.2f m from the test wall centre, waited %.2f s out of the line %s, stepped out and drew clear %s after %.1f s, drew blind %s, loosed %d" % [whid, w.wall_covers - wc0, w.covers - cov_w0, w.cover_by, whide_d, w.cover_hidden, whid_shut, wdrew_out, tt, wdrew_hidden, w.shots - shots_w])
+	w.obstacles = saved_obs
+	bw.queue_free()
+	await get_tree().physics_frame
+	if not whid or w.wall_covers <= wc0 or w.cover_by == "" or not whid_shut or w.cover_hidden < HollowArcher.COVER_WAIT_MIN - 0.05 or not wdrew_out or wdrew_hidden:
+		return _combat_done(false, "the archer did not hide behind the wall between shots, or did not step out to draw")
 	# 5) crowded at 1.6 m it clubs with the stave
 	p.health = Player.HEALTH_MAX
 	_soldier_at(w, 1.6, -1)
@@ -1854,7 +1921,7 @@ func _archer_test() -> void:
 	print("BOT archer: dead %s after %.1f s of blows; foley heard %s" % [w.is_dead(), tt, heard])
 	if not w.is_dead() or not heard.has("creak") or not heard.has("spear"):
 		return _combat_done(false, "the archer did not die to the staff, or its draw/loose made no sound")
-	_combat_done(true, "the archer draws with a tell, hits a standing hero, misses a strafing one, lets a roll pass, backs off, never looses through cover, hides behind a trunk between shots, clubs when crowded and dies")
+	_combat_done(true, "the archer draws with a tell, hits a standing hero, misses a strafing one, lets a roll pass, backs off, never looses through cover, hides behind a trunk or a wall between shots, clubs when crowded and dies")
 
 static func _seg_dist(pt: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab := b - a

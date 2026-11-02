@@ -23,6 +23,9 @@ extends HollowSoldier
 ##    arrow walking to the far side of it, out of the hero's line, waits there a beat
 ##    (COVER_WAIT_MIN..MAX), then steps out to the side to draw. A hero who rushes the cover
 ##    while it hides gets there with the bow down; one who flanks it is seen and drawn on.
+##    Cottage walls, dry-stone walls and banks count too: it probes a ring of spots round
+##    itself for one hard behind something solid (WALL_HUG) that shuts the hero's line, and
+##    takes whichever cover, trunk or wall, is the shorter walk.
 
 const ARCHER_HP := 70.0
 const ARCHER_POISE := 22.0
@@ -60,6 +63,10 @@ const COVER_BEHIND := 1.15        # m beyond the trunk/rock centre it stands to 
 const COVER_FAN := [0.0, 0.45, -0.45, 0.9, -0.9]   # radians round the trunk off straight-behind
 const COVER_WAIT_MIN := 1.0       # s it waits in cover before stepping out
 const COVER_WAIT_MAX := 2.0
+const WALL_RINGS := [1.5, 2.25, 3.0, 3.75, 4.5, 5.5, 6.5]   # m out it probes for a spot behind a wall
+const WALL_SPOKES := 20           # spots per ring
+const WALL_HUG := 2.2             # m: the solid that hides it must stand this close toward the hero
+const WALL_ROOM := 0.45           # m of free space it needs round the spot (its body)
 const COVER_GO_T := 3.5           # s it may take to reach cover before it gives up on it
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
@@ -102,6 +109,10 @@ var _seeking := false            # walking off to a clear spot since the line la
 var _los_shut := 0.0             # s the line has been shut during this draw
 var covers := 0                  # bots: times it reached cover and hid
 var in_cover := false            # standing hidden behind a trunk or rock right now
+var wall_covers := 0               # bots: times the cover was a wall/house/bank, not a trunk or rock
+var cover_by := ""                # bots: the name of the solid the wall probe hid behind
+var wall_cover_on := true        # bots switch the wall probe off to test trunk cover alone
+var cover_is_wall := false        # the current cover spot came from the wall probe
 var cover_hidden := 0.0          # bots: s of the last wait in cover with the line shut
 var _want_cover := false         # set by the loose: look for cover before the next draw
 var _cover_spot := Vector3.INF
@@ -187,7 +198,57 @@ func _find_cover(to: Vector3) -> Vector3:
 			best = q
 			best_d = od
 			break
+	cover_is_wall = false
+	var wq := _find_wall_cover(to, minf(best_d, COVER_REACH)) if wall_cover_on else Vector3.INF
+	if wq != Vector3.INF:
+		cover_is_wall = true
+		return wq
 	return best
+
+func _ray_hit(a: Vector3, b: Vector3) -> Dictionary:
+	var w := PhysicsRayQueryParameters3D.create(a, b, 1)
+	w.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(w)
+
+## A spot within `reach` hard behind anything solid on layer 1 (a cottage, a wall, a bank)
+## that shuts the hero's line and can be walked to straight; INF when none nearer than
+## `reach`. Rings are probed inside out, so the first hit is the shortest walk.
+func _find_wall_cover(to: Vector3, reach: float) -> Vector3:
+	if not is_inside_tree():
+		return Vector3.INF
+	var p := global_position
+	var target := _chest_target()
+	var away := Vector3(-to.x, 0.0, -to.z).normalized()
+	for r in WALL_RINGS:
+		if float(r) >= reach:
+			break
+		for i in WALL_SPOKES:
+			# spokes from straight away from the hero outwards, alternating sides
+			var k := (i + 1) / 2
+			var sgn := 1.0 if i % 2 == 0 else -1.0
+			var a := sgn * float(k) * TAU / float(WALL_SPOKES)
+			var q: Vector3 = p + away.rotated(Vector3.UP, a) * float(r)
+			if terrain:
+				q.y = terrain.height_at(q.x, q.z)
+			if (q - _home).length() > give_up - 2.0 or _clearance(q) < 1.0:
+				continue
+			var waist := Vector3.UP * 0.9
+			var step := q - p
+			step.y = 0.0
+			var past := q + step.normalized() * WALL_ROOM
+			past.y = q.y
+			if not _ray_hit(p + waist, past + waist).is_empty():
+				continue                       # through a wall, or no room to stand
+			var eye := q + Vector3.UP * LOS_EYE
+			var hug := _ray_hit(eye, target)
+			if hug.is_empty():
+				continue                       # in plain sight there
+			var hd: float = (hug.position - eye).length()
+			if hd > WALL_HUG or hd < WALL_ROOM:
+				continue                       # nothing close to hide behind, or nose to the wall
+			cover_by = str(hug.collider.name) if hug.collider else ""
+			return q
+	return Vector3.INF
 
 ## After the loose: walk to cover, wait out of the line, then let the stalk step out and
 ## draw. Returns null when it is done with cover (or found none).
@@ -211,6 +272,8 @@ func _take_cover(to: Vector3) -> Variant:
 			return d.normalized() * STALK_SPEED * 1.2
 		in_cover = true
 		covers += 1
+		if cover_is_wall:
+			wall_covers += 1
 		cover_hidden = 0.0
 		_cover_t = _rng.randf_range(COVER_WAIT_MIN, COVER_WAIT_MAX)
 	# hidden: wait, unless the hero has come round into sight
