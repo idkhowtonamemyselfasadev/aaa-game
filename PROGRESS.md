@@ -6527,8 +6527,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (08:00 11-02) **Shielding arm across her face DONE** (bot `wisps` measures it; see Done). NEXT, in order: (0) judge
-   the Forward+ `wisps wisps_cower_fp 30 22.0 fixfps fire cower` frame (see the verdict below this list's first item);
-   her pale hands; heart crust too pale, the fire's smoke a dark blob, Hesper cold blue under the fire (Forward+);
+   the cower frame: `wisps wisps_cower_fp 30 22.0 fixfps fire cower` (10:09 11-02) fell back to GL (vulkan failed
+   with ERR_CANT_OPEN); SEEN, gallery `wisps-cower` FAIL: the raised right hand is at her face, but the lens sees her
+   from behind/over the shoulder (shot.gd's `cower` lens: check her model faces -Z, so the lens must go along -body
+   forward, and widen it to take in the knot over the fire); her hands chalk white; heart crust too pale, the fire's smoke a dark blob, Hesper cold blue under the fire (Forward+);
    (0b) a recorded shout/whimper and wisp hiss when freesound is reachable; (0c) Forward+ frame of the archer peeking
    from cover; (1) `flight` frame fixes; (d) hewer `bite` reframe; (e) next enemy: Stone Sentinel (shrine guard).
    0b-e: freesound still unreachable.

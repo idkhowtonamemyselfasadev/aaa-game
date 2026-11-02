@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-2232-hare-meadow.jpg",
-  "time": "2026-10-26T22:32:29Z",
-  "caption": "A brown hare sat up watching in the south-east meadow at 9 h (centre, by the mossy stone): it reads as a small brown animal in the grass, but at this lens it is only ~40 px, its ears glow pale instead of buff with black tips and its stretched forelegs look fawn-like.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-2349-hare-meadow2.jpg",
   "time": "2026-10-26T23:49:53Z",
   "caption": "The south-east meadow at 9 h from the new closer hare lens: the sward and stones read well, but the hare walked off its mark during warm-up, so it sits small at the bottom edge feeding and its ears still show a pale patch.",
@@ -897,6 +891,12 @@
   "file": "20261102-0810-hesper-cower.jpg",
   "time": "2026-11-02T08:10:00Z",
   "caption": "Hesper backed against the keep's inner face with both hands up, warding off the Hollow Wisps wheeling over her fire (GL fallback): the fear reads, but the frame is very dark, her hands read pale as gloves, the right forearm never crosses her face and the knot itself is out of frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-0800-wisps-cower.jpg",
+  "time": "2026-11-02T10:10:00Z",
+  "caption": "Hesper backed against the keep wall from the Hollow Wisps, her right forearm now raised to her face (GL fallback frame; Vulkan failed): the lens sees her from behind, her hands are chalk white and the knot is out of frame.",
   "verdict": "fail"
  }
 ]
