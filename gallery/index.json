@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-2232-dusk21-valley.jpg",
-  "time": "2026-10-26T22:32:29Z",
-  "caption": "The vale at 21 h from the south-east: fireflies over the dark meadow and the cottages far off, but the mountain ring reads as a flat, too-bright pale-blue cut-out against a near-black valley, and the cottages show as bare white specks.",
-  "verdict": "fail"
- },
- {
   "file": "20261026-2232-hare-meadow.jpg",
   "time": "2026-10-26T22:32:29Z",
   "caption": "A brown hare sat up watching in the south-east meadow at 9 h (centre, by the mossy stone): it reads as a small brown animal in the grass, but at this lens it is only ~40 px, its ears glow pale instead of buff with black tips and its stretched forelegs look fawn-like.",
@@ -885,6 +879,12 @@
   "file": "20261102-0500-wisps-fire.jpg",
   "time": "2026-11-02T05:35:06Z",
   "caption": "Night: the Hollow Wisp knot drawn in off the meadow, wheeling in the smoke over Hesper's fire while she dozes beside it (GL frame) -- the coals still read as big bright balls and the ivy is flat yellow; Hesper does not react to them yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-0555-wisps-fire-fp.jpg",
+  "time": "2026-11-02T05:54:44Z",
+  "caption": "Forward+ night frame of the wisp knot wheeling over Hesper's fire: the keep's firelit stone and the night sky read well, but the wisp hearts blow out to flat cream discs with no veins, the fire's smoke is a dark blob and Hesper is lit cold blue.",
   "verdict": "fail"
  }
 ]

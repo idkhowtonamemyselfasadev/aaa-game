@@ -6498,8 +6498,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    Also fixed: a snuffed wisp's shard that stopped within 1 mm of the turf kept its velocity (bot shard check flaked).
    shot.gd `wisps ... fire`: the knot over the hearth, lens 3.1 m across the keep floor, low, looking up. Frame: three
    coals wheeling in the smoke over the flames, Hesper dozing by the fire, the inner face and night sky -- reads well,
-   but the coals read as big bright balls lit by the fire in GL, ivy flat yellow. NEXT, in order: (0) Forward+ frame of
-   `wisps ... fire` (started this session, see Screenshot note); (0a) Hesper and the fox should react to wisps over
+   but the coals read as big bright balls lit by the fire in GL, ivy flat yellow. Forward+ frame `wisps wisps_fire_fp 30 22.0 fixfps
+   fire` SEEN (~20 min), gallery `wisps-fire-fp` FAIL: firelit keep stone and night sky good, but the three hearts blow
+   out to flat cream discs with no veins (heart `fill`/`heat` emission too hot under Forward+ glow + the fire's light;
+   cap them, e.g. fill <= 0.55 and heat <= 1.8 when not flaring, and check the Glow card at 3 m), the fire's smoke is a
+   dark blob and Hesper reads cold blue. NEXT, in order: (0) fix the heart blow-out in Forward+ and re-shoot `wisps ...
+   fire`; (0a) Hesper and the fox should react to wisps over
    the fire (she wakes and backs to the wall / shields her face; the fox does not come in while they wheel);
    a real recorded hiss when freesound is reachable; (0c) Forward+ frame of the archer peeking from cover;
    (1) `flight` frame fixes; (d) hewer `bite` reframe; (e) next enemy: Stone Sentinel (shrine guard).
