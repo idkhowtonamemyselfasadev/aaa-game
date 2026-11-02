@@ -26,6 +26,8 @@ var _decal: Decal
 var _dust: CPUParticles3D
 var _chips: CPUParticles3D
 var _puff: CPUParticles3D
+var _front_dust: CPUParticles3D  # laid along the shock front as it runs: the ring that reads
+var blasted := 0                 # grass points laid flat round the pit (bots)
 
 static var _crack_tex: ImageTexture
 static var _soft: ImageTexture
@@ -45,13 +47,40 @@ func _ready() -> void:
 	add_child(_puff)
 	_dust = _make_ring_dust()
 	add_child(_dust)
-	for p in [_chips, _puff, _dust]:
+	_front_dust = _make_front_dust()
+	add_child(_front_dust)
+	for p in [_chips, _puff, _dust, _front_dust]:
 		(p as CPUParticles3D).emitting = true
+	_blast_grass.call_deferred()   # the sentinel places us after add_child
+
+## Lay the sward flat round the pit, the stems combed outward away from the blow, so the
+## crack star is not hidden in standing grass and the ground shows where the shock went.
+func _blast_grass() -> void:
+	var tr := get_node_or_null("../Trample") as Trample
+	if tr == null:
+		return
+	var c := Vector2(global_position.x, global_position.z)
+	tr.add_herd_point(c, Vector2(1, 0).rotated(randf() * TAU), 1.0, 0.0, 0.15)
+	blasted += 1
+	for ring: Array in [[0.85, 7, 1.0], [1.7, 11, 0.8], [2.6, 14, 0.5]]:
+		var r: float = ring[0]
+		var k: int = ring[1]
+		var off := randf() * TAU
+		for i in k:
+			var d := Vector2.from_angle(off + TAU * i / k)
+			tr.add_herd_point(c + d * r, d, ring[2], 0.0, 0.15)
+			blasted += 1
 
 func _physics_process(delta: float) -> void:
 	var prev := front
 	t += delta
 	front = minf(t * RING_SPEED, RING_R + 0.5)
+	if _front_dust.emitting:
+		if front >= RING_R:
+			_front_dust.emitting = false
+		else:
+			_front_dust.emission_ring_radius = maxf(front, 0.7)
+			_front_dust.emission_ring_inner_radius = maxf(front - 0.25, 0.5)
 	if result == "" and front > prev:
 		_check_ring(prev)
 	var u := clampf((t - 2.5) / (LIFE - 2.5), 0.0, 1.0)
@@ -127,23 +156,23 @@ func _make_chips() -> CPUParticles3D:
 
 ## A heavy grey-brown puff out of the pit itself.
 func _make_puff() -> CPUParticles3D:
-	var p := _dust_base(26, 1.8)
+	var p := _dust_base(44, 2.2)
 	p.name = "Puff"
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	p.emission_sphere_radius = 0.3
 	p.direction = Vector3(0, 1, 0)
 	p.spread = 70.0
-	p.initial_velocity_min = 0.8
-	p.initial_velocity_max = 2.4
-	p.damping_min = 2.0
-	p.damping_max = 3.5
-	p.scale_amount_min = 0.7
-	p.scale_amount_max = 1.6
+	p.initial_velocity_min = 0.6
+	p.initial_velocity_max = 1.9
+	p.damping_min = 2.5
+	p.damping_max = 4.0
+	p.scale_amount_min = 0.5
+	p.scale_amount_max = 1.3
 	return p
 
 ## The shock: a ring of dust thrown low and outward that keeps pace with the ring's front.
 func _make_ring_dust() -> CPUParticles3D:
-	var p := _dust_base(90, 1.4)
+	var p := _dust_base(120, 1.5)
 	p.name = "RingDust"
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
 	p.emission_ring_axis = Vector3.UP
@@ -151,16 +180,42 @@ func _make_ring_dust() -> CPUParticles3D:
 	p.emission_ring_inner_radius = 0.45
 	p.emission_ring_height = 0.05
 	p.direction = Vector3(0, 1, 0)
-	p.spread = 25.0
-	p.initial_velocity_min = 0.3
-	p.initial_velocity_max = 0.9
+	p.spread = 15.0
+	p.initial_velocity_min = 0.15
+	p.initial_velocity_max = 0.5
 	# thrown outward hard, then the air takes it
 	p.radial_accel_min = 26.0
 	p.radial_accel_max = 32.0
 	p.damping_min = 9.0
 	p.damping_max = 12.0
-	p.scale_amount_min = 0.5
-	p.scale_amount_max = 1.1
+	p.scale_amount_min = 0.4
+	p.scale_amount_max = 0.9
+	return p
+
+## Dust kicked up off the turf right where the shock front is, emitted on a ring whose radius
+## follows `front` each frame (world coords: each puff stays where it was raised), so the run
+## of the shock leaves a widening, low, hugging band of dust you can read as a ring.
+func _make_front_dust() -> CPUParticles3D:
+	var p := _dust_base(280, 1.3)
+	p.name = "FrontDust"
+	p.one_shot = false
+	p.explosiveness = 0.0
+	p.position = Vector3(0, 0.08, 0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
+	p.emission_ring_axis = Vector3.UP
+	p.emission_ring_radius = 0.7
+	p.emission_ring_inner_radius = 0.5
+	p.emission_ring_height = 0.04
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 20.0
+	p.initial_velocity_min = 0.25
+	p.initial_velocity_max = 0.8
+	p.radial_accel_min = 2.0
+	p.radial_accel_max = 4.0
+	p.damping_min = 2.5
+	p.damping_max = 4.0
+	p.scale_amount_min = 0.35
+	p.scale_amount_max = 0.8
 	return p
 
 func _dust_base(n: int, life: float) -> CPUParticles3D:
@@ -175,7 +230,7 @@ func _dust_base(n: int, life: float) -> CPUParticles3D:
 	p.angle_min = 0.0
 	p.angle_max = 360.0
 	var q := QuadMesh.new()
-	q.size = Vector2(0.75, 0.75)
+	q.size = Vector2(0.6, 0.6)
 	var m := StandardMaterial3D.new()
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -186,9 +241,10 @@ func _dust_base(n: int, life: float) -> CPUParticles3D:
 	q.material = m
 	p.mesh = q
 	var g := Gradient.new()
-	g.set_color(0, Color(0.47, 0.42, 0.35, 0.0))
-	g.add_point(0.08, Color(0.47, 0.42, 0.35, 0.5))
-	g.set_color(g.get_point_count() - 1, Color(0.55, 0.52, 0.47, 0.0))
+	# grey-brown earth dust, paling and thinning as it hangs
+	g.offsets = PackedFloat32Array([0.0, 0.06, 0.45, 1.0])
+	g.colors = PackedColorArray([Color(0.40, 0.38, 0.35, 0.0), Color(0.40, 0.38, 0.35, 0.55),
+		Color(0.47, 0.46, 0.44, 0.32), Color(0.52, 0.51, 0.50, 0.0)])
 	p.color_ramp = g
 	var c := Curve.new()
 	c.add_point(Vector2(0, 0.45))

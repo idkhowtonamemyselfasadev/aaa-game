@@ -1382,6 +1382,18 @@ func _sentinel_slam_test(w: StoneSentinel) -> bool:
 	if not (r[1] in ["dodged", "perfect"]) or r[0] > 0.0:
 		_combat_done(false, "a roll did not pass through the shock ring")
 		return false
+	# the sward round the pit lies flat, and the shock front raised a ring of dust out to its edge
+	var lc := w.last_crack
+	await _ticks(45)   # let the front run out to its edge
+	var lay := 0.0
+	var tr := _world.trample as Trample
+	if lc != null and tr != null:
+		lay = tr.herd_lay_at(lc.global_position + Vector3(1.7, 0, 0))
+	var fd := lc.get_node_or_null("FrontDust") as CPUParticles3D if lc else null
+	print("BOT sentinel: grass points laid round the pit %d, lay 1.7 m out %.2f, front dust ring %.2f m, still emitting %s" % [lc.blasted if lc else 0, lay, fd.emission_ring_radius if fd else 0.0, fd.emitting if fd else true])
+	if lc == null or lc.blasted < 30 or lay < 0.3 or fd == null or fd.emitting or fd.emission_ring_radius < GroundCrack.RING_R - 0.8:
+		_combat_done(false, "the slam leaves the grass standing round the pit or raises no dust ring along the shock")
+		return false
 	var slam_n := int(fol.played.get("slam", 0))
 	print("BOT sentinel: slams %d, ring results %s, slam sounds %d, crack texture %s" % [w.slams, str(w.ring_results), slam_n, GroundCrack.crack_texture().get_size()])
 	if slam_n < 4:
