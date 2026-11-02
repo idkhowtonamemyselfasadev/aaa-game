@@ -169,7 +169,8 @@ Knight slice boss, and (2026-11-02) a knot of three **Hollow Wisps** (fodder:
 a burning heart in a ring of charred shards; they circle the hero and take turns -- the shards
 snap in and the heart flares white-hot (the tell), then a straight dart at the hero's chest;
 step across or roll on the flare's peak, the heavy parries it; after a dart it hangs low and dim,
-the punish window; two light strikes put one out).
+the punish window; two light strikes put one out; at night a blazing fire draws the idle
+knot across the meadow to wheel in its smoke, so they can be met at Hesper's hearth after dark).
 
 Spear Soldier moveset (each move has one right answer that the others punish): **thrust**
 (at spear length; narrow line — strafe, sidestep, dodge on the glint or parry) and **sweep**

@@ -980,7 +980,38 @@ func _ready() -> void:
 		var mid := (hp + pa + pb) / 3.0
 		var hcam := mid + sunward * 4.6 + Vector3(0, 1.0, 0)
 		SPOTS[spot] = [hcam, mid + Vector3(0, 0.5, 0)]
-	if spot == "wisps":
+	if spot == "wisps" and "fire" in args:
+		# night: the knot drawn in off the meadow, wheeling in the smoke over Hesper's fire,
+		# seen from the lid across the keep floor (the `hearth` lens, aimed higher)
+		var kp: Keeper = world.keeper
+		kp.settle(world, world.time_of_day)
+		var hp: Vector3 = world.hearth.global_position
+		var ws: Array = world.wisps
+		var away := hp + Vector3(90.0, 0, 90.0)
+		player.global_position = Vector3(away.x, terrain.height_at(away.x, away.z) + 0.05, away.z)
+		for i in ws.size():
+			var w: HollowWisp = ws[i]
+			var a := TAU * i / ws.size() + w._ang
+			w.global_position = hp + Vector3(sin(a) * HollowWisp.FIRE_RING, HollowWisp.FIRE_HOVER, cos(a) * HollowWisp.FIRE_RING)
+			w.drawn_to = world.hearth
+			w.at_fire = true
+			w._heat = HollowWisp.FIRE_HEAT
+			w._hover = HollowWisp.FIRE_HOVER
+			w._ghost(true)
+			for ch in w.get_children():
+				if ch is CPUParticles3D:
+					ch.preprocess = 1.5
+		var kn: Vector3 = kp._spots["kindle"][0]
+		var mid := (hp + kn) * 0.5
+		var outw := Vector3(mid.x - kp.site.x, 0, mid.z - kp.site.z).normalized()
+		# across the floor from the fire, back against the wall foot, low, looking up into
+		# the smoke so the fire, the keep's inner face and the wheeling knot share the frame
+		var back := Vector3(kp.site.x + outw.x * 0.55 - hp.x, 0, kp.site.z + outw.z * 0.55 - hp.z).normalized()
+		var cp := hp + back * 3.1
+		cp.y = hp.y + 1.25
+		SPOTS[spot] = [cp, Vector3(hp.x, hp.y + 1.45, hp.z)]
+		print("SHOT wisps fire %s wisps %s lens %s" % [hp, ws.map(func(w): return w.global_position), cp])
+	elif spot == "wisps":
 		# wisps: the knot round the hero -- the near one at the peak of its flare (shards
 		# snapped in, the heart white-hot), its kin drifting loose behind; from the sun side
 		var ws: Array = world.wisps
@@ -1692,7 +1723,7 @@ func _ready() -> void:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)
 			look.y = terrain.height_at(look.x, look.z) + 0.5
-		if spot == "wisps":
+		if spot == "wisps" and not "fire" in args:
 			pos.y = terrain.height_at(pos.x, pos.z) + (1.9 if "close" in args else 1.45)
 			look.y = terrain.height_at(look.x, look.z) + 1.25
 		if spot == "hounds":

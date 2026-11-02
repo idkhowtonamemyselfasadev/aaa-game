@@ -1969,11 +1969,94 @@ func _wisps_test() -> void:
 	print("BOT wisps: idle drift up to %.2f m from home" % drift)
 	if drift < 0.1:
 		return _combat_done(false, "idle wisps do not drift")
+	# night: Hesper's fire blazing draws the idle knot over to wheel in the smoke above it
+	var fire: Hearth = _world.hearth
+	var fp: Vector3 = fire.global_position
+	var fd := Vector2(fp.x - c.x, fp.z - c.z).length()
+	var hour0: float = _world.time_of_day
+	var fside := Vector3(fp.z - c.z, 0, -(fp.x - c.x)).normalized()
+	var park := (fp + c) * 0.5 + fside * 70.0
+	p.global_position = Vector3(park.x, _world.terrain.height_at(park.x, park.z) + 0.1, park.z)
+	_world.weather.force(0.0)
+	_world.time_of_day = 21.5
+	await _ticks(10)
+	var t := 0.0
+	print("BOT wisps: fire %.1f m from the knot (reach %.0f), level %.2f at 21:30, hero parked %.0f m off" % [fd, HollowWisp.FIRE_REACH, fire.level, park.distance_to(fp)])
+	if fd > HollowWisp.FIRE_REACH:
+		return _combat_done(false, "Hesper's fire is out of the wisps' reach")
+	var at_all := func() -> bool:
+		for w: HollowWisp in ws:
+			if not w.at_fire or w.state != HollowWisp.IDLE:
+				return false
+		return true
+	var t_arrive := -1.0
+	var top_y := -1e9
+	while t < fd / HollowWisp.FIRE_SPEED + 40.0:
+		for w: HollowWisp in ws:
+			top_y = maxf(top_y, w.global_position.y - _world.terrain.height_at(w.global_position.x, w.global_position.z))
+		if at_all.call() and t_arrive < 0.0:
+			t_arrive = t
+		if t_arrive >= 0.0 and t > t_arrive + 6.0:
+			break
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if t_arrive < 0.0:
+		return _combat_done(false, "the wisps never came to the fire (%s)" % str(ws.map(func(w): return "%.1f m" % Vector2(w.global_position.x - fp.x, w.global_position.z - fp.z).length())))
+	var over := 0.0
+	var ring := 0.0
+	var fheat := 0.0
+	for w: HollowWisp in ws:
+		over += (w.global_position.y - fp.y) / ws.size()
+		ring = maxf(ring, Vector2(w.global_position.x - fp.x, w.global_position.z - fp.z).length())
+		fheat += w.heat() / ws.size()
+	print("BOT wisps: at the fire after %.1f s (rode up to %.1f m high on the way), wheeling %.2f m over the bed, ring <= %.2f m, heat %.2f, ghosting %s" % [t_arrive, top_y, over, ring, fheat, ws[0].collision_mask == 0])
+	if over < 1.6 or over > 3.2 or ring > 1.7:
+		return _combat_done(false, "the wisps do not wheel in the smoke over the fire")
+	if fheat < 0.9:
+		return _combat_done(false, "the fire did not feed the wisps brighter (%.2f)" % fheat)
+	# the hero comes in to the fire: they wake and fight there, solid again
+	var near_fire := fp + Vector3(c.x - fp.x, 0, c.z - fp.z).normalized() * 7.0
+	p.global_position = Vector3(near_fire.x, _world.terrain.height_at(near_fire.x, near_fire.z) + 0.1, near_fire.z)
+	await _ticks(20)
+	for w: HollowWisp in ws:
+		if w.state == HollowWisp.IDLE or w.collision_mask != 1:
+			return _combat_done(false, "a wisp at the fire did not wake for the hero (state %d mask %d)" % [w.state, w.collision_mask])
+	print("BOT wisps: woke at the fire for the hero 7 m off: states %s" % str(ws.map(func(w): return w.state)))
+	# the hero leaves: they give up and the fire draws them back
+	p.global_position = Vector3(park.x, _world.terrain.height_at(park.x, park.z) + 0.1, park.z)
+	var visits0: int = ws[0].fire_visits
+	t = 0.0
+	while t < 30.0 and not at_all.call():
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if not at_all.call():
+		return _combat_done(false, "the wisps did not go back to the fire after the hero left")
+	print("BOT wisps: hero left -> back over the fire after %.1f s (visits %d -> %d)" % [t, visits0, ws[0].fire_visits])
+	# towards dawn the fire falls to embers: they drift home to their ground and are solid again
+	_world.time_of_day = 6.2
+	await _ticks(5)
+	t = 0.0
+	var home_all := func() -> bool:
+		for w: HollowWisp in ws:
+			if w.drawn_to != null or w._homing or w.collision_mask != 1:
+				return false
+		return true
+	while t < fd / HollowWisp.FIRE_SPEED + 30.0 and not home_all.call():
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	var far_home := 0.0
+	for w: HollowWisp in ws:
+		far_home = maxf(far_home, Vector2(w.global_position.x - w._home.x, w.global_position.z - w._home.z).length())
+	print("BOT wisps: fire at %.2f by 06:12 -> home after %.1f s, up to %.1f m from home, solid %s" % [fire.level, t, far_home, ws[0].collision_mask == 1])
+	if not home_all.call() or far_home > 4.0:
+		return _combat_done(false, "the wisps did not drift home when the fire burnt low")
+	_world.time_of_day = hour0
+	await _ticks(30)
 	var start := c + Vector3(-10.0, 0, -6.0)
 	p.global_position = Vector3(start.x, _world.terrain.height_at(start.x, start.z) + 0.1, start.z)
 	p.health = Player.HEALTH_MAX
 	await _ticks(10)
-	var t := 0.0
+	t = 0.0
 	var all_up := func() -> bool:
 		for w: HollowWisp in ws:
 			if w.state == HollowWisp.IDLE:

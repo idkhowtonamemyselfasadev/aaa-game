@@ -263,6 +263,9 @@ func _ready() -> void:
 	# her cookfire on the keep floor beside her bed, kept by the clock
 	hearth = Hearth.new()
 	hearth.setup(self, keeper.hearth_at)
+	# a blazing fire after dark draws the Hollow Wisps over to wheel in its smoke
+	for w in wisps:
+		w.fires = [hearth]
 	# a fox that comes in out of the dark to sit at the edge of her firelight
 	fox = Fox.new()
 	fox.setup(self)

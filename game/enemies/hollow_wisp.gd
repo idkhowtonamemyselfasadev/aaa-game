@@ -14,6 +14,11 @@ extends CharacterBody3D
 ##  RAIN. A downpour beats them down: the coal gutters dim and low, steam boils off it instead
 ##    of smoke, the sparks drown, its crackle sputters quiet, and the flare takes longer to
 ##    build (DOUSE_FLARE) and sears weaker -- fighting a knot in the rain is easier.
+##  FIRE. At night a burning fire within FIRE_REACH of its ground draws an idle knot like moths:
+##    the wisps drift over to it (ghosting through walls and boughs, riding high), circle slowly
+##    in the smoke over the flames and burn brighter there, feeding. Rain, the fire burning low
+##    or the hero coming near ends it: woken they fight where they are; otherwise they drift
+##    back to their ground. Coming home late to a fire with embers wheeling over it is a tell.
 ## Fragile: two light strikes put it out. Killed, the heart bursts into sparks and ash and the
 ## shards drop into the grass.
 
@@ -45,6 +50,12 @@ const DOUSE_FLARE := 0.45     # the flare takes up to this much longer in a down
 const DOUSE_HEAT := 0.45      # and burns up to this much dimmer
 const DOUSE_DMG := 0.3        # and the sear is up to this much weaker
 const DOUSE_SINK := 0.25      # m lower it hangs, beaten down
+const FIRE_REACH := 180.0     # m from its ground a burning fire still draws it (the keep is ~158 m off)
+const FIRE_DRAW := 0.35       # a fire burning at least this hot (hearth level) draws them
+const FIRE_HOVER := 2.3       # m over the fire bed they wheel, in the smoke above the flames
+const FIRE_RING := 0.95       # m out from the smoke column
+const FIRE_SPEED := 3.4       # m/s drifting to / from the fire
+const FIRE_HEAT := 1.15       # heat it burns at, fed by the fire
 const SHARDS := 7
 const SHARD_R := 0.5
 
@@ -91,6 +102,11 @@ var steam_puffs := 0          # bursts of steam off a dart in rain (bots)
 var steam_level := 0.0        # steam off the coal, 0..1 (alpha on the emitter)
 var spark_level := 1.0        # how much of the spark trickle survives the rain
 var _gather_len := GATHER_T
+var fires: Array = []         # fires that may draw it (World sets: Hesper's hearth)
+var drawn_to: Node3D = null   # the fire it is wheeling over / drifting to, or null (bots)
+var at_fire := false          # wheeling over it now, not still on the way (bots)
+var fire_visits := 0          # nights it has come to a fire (bots)
+var _homing := false          # drifting back to its ground from a fire, still ghosting
 var _steam: CPUParticles3D
 var _steam_puff: CPUParticles3D
 var _crackle: AudioStreamPlayer3D
@@ -395,6 +411,10 @@ func return_to_post() -> void:
 	_cool = _rng.randf_range(0.0, COOL_JITTER)
 	global_position = _home
 	visible = true
+	drawn_to = null
+	at_fire = false
+	_homing = false
+	_ghost(false)
 	for i in _shards.size():
 		var s := _shards[i]
 		s.top_level = false
@@ -440,6 +460,40 @@ func parried(dir: Vector3, hitstop: float) -> void:
 	_knock = Vector3(dir.x, 0, dir.z).normalized() * 4.5 + Vector3.UP * 0.4
 	_stagger_len = PARRIED_T
 	_enter(STAGGER)
+
+## How hot a fire burns for a wisp (0 out .. 1 blazing); its rain is checked separately.
+static func fire_level(f: Node3D) -> float:
+	if f == null or not is_instance_valid(f):
+		return 0.0
+	var l = f.get("level")
+	return float(l) if l != null else 0.0
+
+## The burning fire within reach of its ground that draws it tonight, or null.
+func _drawing_fire() -> Node3D:
+	if douse > 0.15:
+		return null
+	var best: Node3D = null
+	var best_d := FIRE_REACH
+	for f in fires:
+		if fire_level(f) < (FIRE_DRAW * 0.7 if f == drawn_to else FIRE_DRAW):
+			continue
+		var d := Vector2(f.global_position.x - _home.x, f.global_position.z - _home.z).length()
+		if d < best_d:
+			best_d = d
+			best = f
+	return best
+
+## Ghosting (no collision) while it drifts to and from a fire over walls and boughs.
+func _ghost(on: bool) -> void:
+	collision_mask = 0 if on else 1
+
+## The hero came near: it fights from wherever it is (by the fire too), solid again.
+func _wake() -> void:
+	drawn_to = null
+	at_fire = false
+	_homing = false
+	_ghost(false)
+	_enter(STALK)
 
 func _enter(s: int) -> void:
 	state = s
@@ -492,15 +546,49 @@ func _physics_process(delta: float) -> void:
 	var hover_to := HOVER
 	match state:
 		IDLE:
-			# drifting slow loops over its ground, bobbing
-			var w := _home + Vector3(sin(t * 0.31 + _ang) * 2.2, 0.0, cos(t * 0.23 + _ang * 1.7) * 2.2)
-			want = (w - global_position) * 0.6
-			want.y = 0.0
-			want = want.limit_length(0.8)
+			var fire := _drawing_fire()
+			if fire != drawn_to:
+				if fire != null:
+					fire_visits += 1
+				elif drawn_to != null:
+					_homing = true
+				drawn_to = fire
+				at_fire = false
+			if fire != null:
+				# drawn like a moth: over to the fire, then wheeling slow in the smoke above it
+				_ghost(true)
+				var fp := fire.global_position
+				var a := t * 0.55 * orbit + _ang
+				var spot := fp + Vector3(sin(a), 0.0, cos(a)) * (FIRE_RING + 0.25 * sin(t * 0.4 + _ang))
+				var flat := Vector2(spot.x - global_position.x, spot.z - global_position.z)
+				want = Vector3(flat.x, 0.0, flat.y) * 1.2
+				want = want.limit_length(FIRE_SPEED)
+				at_fire = flat.length() < 1.2
+				# rides high on the way (over walls), sinks into the smoke over the flames
+				var over := fp.y + FIRE_HOVER + 0.25 * sin(t * 0.7 + _ang * 2.0)
+				# (3.2 m over the turf across the meadow; up to the fire's height only on the last 12 m)
+				var climb := smoothstep(12.0, 3.0, flat.length())
+				hover_to = lerpf(maxf(3.2, minf(over - _ground_y(global_position), 3.2)), over - _ground_y(global_position), climb)
+				heat_to = lerpf(0.6, FIRE_HEAT, smoothstep(FIRE_DRAW, 1.0, fire_level(fire))) if at_fire else 0.7
+			elif _homing:
+				# the fire burnt low: drift back to its ground, high, still ghosting
+				var flat := Vector2(_home.x - global_position.x, _home.z - global_position.z)
+				want = Vector3(flat.x, 0.0, flat.y).normalized() * FIRE_SPEED if flat.length() > 0.1 else Vector3.ZERO
+				hover_to = 3.2 if flat.length() > 3.0 else HOVER
+				if flat.length() < 2.0:
+					_homing = false
+					_ghost(false)
+			else:
+				# drifting slow loops over its ground, bobbing
+				var w := _home + Vector3(sin(t * 0.31 + _ang) * 2.2, 0.0, cos(t * 0.23 + _ang * 1.7) * 2.2)
+				want = (w - global_position) * 0.6
+				want.y = 0.0
+				want = want.limit_length(0.8)
 			if dist < NOTICE:
-				_enter(STALK)
+				_wake()
 		STALK:
 			if dist > GIVE_UP or _player == null or _player.is_dead():
+				_homing = Vector2(_home.x - global_position.x, _home.z - global_position.z).length() > 6.0
 				_enter(IDLE)
 			else:
 				# hang ORBIT out and drift round the hero
@@ -686,6 +774,10 @@ func _die_tick(delta: float) -> void:
 				v = Vector3.ZERO
 			_shard_vel[i] = v
 			s.global_position = p
+		elif v != Vector3.ZERO:
+			# came to rest within a hair of the turf without crossing it: settle it
+			_shard_vel[i] = Vector3.ZERO
+			s.global_position = Vector3(p.x, gy, p.z)
 		# the veins cool to black
 		_shard_mats[i].set_shader_parameter("heat", maxf(0.9 * exp(-t * 0.6), 0.0))
 	if t > 8.0:
