@@ -54,6 +54,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   (soldier 22); hero 30 m off -> still again at its post, full health, anim speed 0; struck as a statue -> wakes;
   10 blows from behind kill it; 5 stone sounds. All other bots disable it unless under test. shot.gd `sentinel
   [awake] [close]` frames the statue 3/4 from the sun side with the hero 6.5 m off.
+  Regression bots combat soldier hewer knight foley walk PASS. hollow.gdshader + armour.gdshader compile under
+  Vulkan (shader_check). NO SCREENSHOT this session: the GL quick look `sentinel sentinel_gl 20 16.0 fixfps` hit its
+  20 min timeout with nothing saved (first render on a fresh box, shader cache cold), so the statue's look is
+  UNJUDGED -- the first job next session is a frame of it.
 - **(08:00 11-02) Hesper's shielding arm across her face.** The 07:00 cower pose looked right on paper but measured
   wrong: with COWER_ARM 1.5 / ELBOW 1.6 / OUT -0.9 the wrist sat 0.30 m out to her right, 0.26 m below her eyes and
   0.14 m BEHIND her face. `crumple.gd` gains `flick_across` (the flicked upper arm rolled about the body's forward
