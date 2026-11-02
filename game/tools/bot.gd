@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "kindler"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -58,8 +58,14 @@ func _ready() -> void:
 		_soldier_test()
 		return
 	# the shield warden keeps to its post unless it is the one under test
-	if name != "warden" and _world.warden != null:
+	if name != "warden" and name != "kindler" and _world.warden != null:
 		_world.warden.process_mode = Node.PROCESS_MODE_DISABLED
+	# the Kindler hangs back behind the warden unless it is under test
+	if name != "kindler" and _world.kindler != null:
+		_world.kindler.process_mode = Node.PROCESS_MODE_DISABLED
+	if name == "kindler":
+		_kindler_test()
+		return
 	# the Briar Hounds likewise keep to their ground unless they are under test
 	if name != "hounds":
 		for h in _world.hounds:
@@ -1721,6 +1727,107 @@ func _sentinel_at(w: StoneSentinel, d: float) -> void:
 	p.global_position = Vector3(at.x, _world.terrain.height_at(at.x, at.z) + 0.1, at.z)
 	p.velocity = Vector3.ZERO
 	p.bot_input = Vector2.ZERO
+
+## Kindler: it waits idle behind the warden; with the warden fighting the hero it hangs back,
+## chants (spear raised, ember stream) and kindles the warden (faster, harder); a blow breaks
+## the chant; with no ally it closes in and fights with the spear; killed, its flame gutters.
+func _kindler_test() -> void:
+	var p := _player
+	var k: HollowKindler = _world.kindler
+	var w: HollowWarden = _world.warden
+	for n in [_world.soldier, _world.knight, _world.hewer]:
+		n.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var gd := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
+	var wd := k.global_position.distance_to(w.global_position)
+	var sd := Vector2(k.global_position.x - _world.soldier.global_position.x, k.global_position.z - _world.soldier.global_position.z).length()
+	print("BOT kindler: %.1f m from the start, %.1f m from the warden, %.1f m from the soldier, state %d, health %.0f" % [gd, wd, sd, k.state, k.health])
+	if k.state != HollowSoldier.IDLE or wd > HollowKindler.KINDLE_R - 3.0 or sd < HollowSoldier.NOTICE + 2.0:
+		return _combat_done(false, "the kindler should wait idle near the warden, clear of the soldier")
+	# 1) the warden fights the hero at 2.6 m, the kindler 7.5 m off: it hangs back and chants
+	_soldier_at(w, 2.6, -1)
+	_soldier_at(k, 7.5, -1)
+	k.force_move = -1
+	var chant_t := 0.0
+	var max_stream := false
+	var max_pitch := 0.0
+	var min_gap := INF
+	var frames := 0
+	while k.kindles == 0 and frames < 600:
+		p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		frames += 1
+		min_gap = minf(min_gap, Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length())
+		if k.chanting():
+			chant_t += get_physics_process_delta_time() * k.tempo
+			max_stream = max_stream or k._stream.emitting
+			max_pitch = maxf(max_pitch, float(k._pose[1]))
+	print("BOT kindler: chants %d, kindles %d after %d frames; chant %.2f s, stream %s, spear pitch %.0f deg, nearest %.1f m; warden kindled %.1f s, damage x%.2f, sparks %s" % [k.chants, k.kindles, frames, chant_t, max_stream, max_pitch, min_gap, w.kindled, w.damage_mul, w._kindle_sparks != null and w._kindle_sparks.emitting])
+	if k.kindles != 1 or chant_t < HollowKindler.CHANT_T - 0.1 or not max_stream or max_pitch < 60.0:
+		return _combat_done(false, "the kindler did not chant (spear raised, ember stream) and kindle the warden")
+	if w.kindled <= 0.0 or absf(w.damage_mul - HollowSoldier.KINDLE_DMG) > 0.01 or w.kindle_count != 1 or not w._kindle_sparks.emitting:
+		return _combat_done(false, "the warden did not catch the kindle")
+	if min_gap < HollowKindler.CROWD:
+		return _combat_done(false, "the kindler walked into the fight instead of hanging back")
+	# kindled, the warden's brain runs KINDLE_TEMPO faster
+	var t0 := w.t
+	var st0 := w.state
+	await get_tree().physics_frame
+	var rate := (w.t - t0) / get_physics_process_delta_time() if w.state == st0 else HollowSoldier.KINDLE_TEMPO
+	print("BOT kindler: warden brain rate x%.2f" % rate)
+	if absf(rate - HollowSoldier.KINDLE_TEMPO) > 0.05:
+		return _combat_done(false, "the kindled warden is not faster")
+	# 2) the next chant is broken by a blow
+	var c0 := k.chants
+	frames = 0
+	while not (k.chanting() and k.t > 0.4) and frames < 600:
+		p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		frames += 1
+	if not k.chanting():
+		return _combat_done(false, "no second chant within 10 s (cooldown %.1f)" % k._cool)
+	var kn := k.kindles
+	k.take_hit(k.global_position + Vector3.UP * 1.3, (k.global_position - p.global_position).normalized(), 1.0, 0.05)
+	print("BOT kindler: chant %d hit -> broken %d, state %d, stream %s" % [k.chants, k.chants_broken, k.state, k._stream.emitting])
+	if k.chants_broken != 1 or k.state != HollowSoldier.STAGGER or k._stream.emitting:
+		return _combat_done(false, "a blow did not break the chant")
+	var waited := 0.0
+	while waited < HollowKindler.CHANT_T:
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	if k.kindles != kn:
+		return _combat_done(false, "a broken chant still kindled its ally")
+	# 3) alone (the warden out of the fight) it closes in and fights with the spear
+	w.process_mode = Node.PROCESS_MODE_DISABLED
+	_soldier_at(k, 4.5, -1)
+	var wu0 := k.windups
+	var ch0 := k.chants
+	frames = 0
+	while k.windups == wu0 and frames < 400:
+		p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		frames += 1
+	print("BOT kindler: alone -> windups %d (move %d), chants %d" % [k.windups - wu0, k.move_kind, k.chants - ch0])
+	if k.windups == wu0 or k.chants != ch0 or k.move_kind > HollowSoldier.SWEEP_MOVE:
+		return _combat_done(false, "alone, the kindler did not fight with the spear")
+	# 4) killed, every flame it lit gutters out
+	w.process_mode = Node.PROCESS_MODE_INHERIT
+	w.kindle(5.0)
+	k.lit.append(w)
+	var dm := w.damage_mul
+	k.take_hit(k.global_position + Vector3.UP * 1.2, Vector3.FORWARD, 20.0, 0.05)
+	await _ticks(3)
+	print("BOT kindler: killed (dead %s) -> warden kindled %.1f, damage x%.2f (was x%.2f), sparks %s" % [k.is_dead(), w.kindled, w.damage_mul, dm, w._kindle_sparks.emitting])
+	if not k.is_dead() or w.kindled > 0.0 or absf(w.damage_mul - 1.0) > 0.01 or w._kindle_sparks.emitting:
+		return _combat_done(false, "the kindler's death did not douse the warden")
+	var whoom := int(fol.played.get("whoom", 0)) - int(played0.get("whoom", 0))
+	var boom := int(fol.played.get("boom", 0)) - int(played0.get("boom", 0))
+	print("BOT kindler: foley whoom +%d, boom +%d" % [whoom, boom])
+	if whoom < 3 or boom < 1:
+		return _combat_done(false, "the chant/kindle/break sounds did not play")
+	_combat_done(true, "kindler hangs back, chants and kindles the warden (x%.2f faster, x%.2f harder), a blow breaks the chant, alone it fights, its death douses the flame" % [HollowSoldier.KINDLE_TEMPO, HollowSoldier.KINDLE_DMG])
 
 func _hewer_test() -> void:
 	var p := _player

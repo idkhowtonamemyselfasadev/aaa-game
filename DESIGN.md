@@ -154,11 +154,17 @@ mid-string that changes animation by stance. Spells (cooldown + mana):
 
 ### Enemy roster (surface)
 Hollow Wisps (fodder), Hollow Soldiers (shield/spear/axe variants), Briar Hounds, Ashen
-Archers, Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archetype, grant
+Archers, Hollow Kindlers (support casters), Stone Sentinels (shrine guards), Marsh Drowned, Elites (one per archetype, grant
 **Become** forms), 4 world bosses. Wildlife (§8) is not an enemy class but predators will
 fight anything nearby, including Hollow.
 
 Built so far in the slice (Harrowmere Vale): spear Soldier, shield Warden (targe ward + bash),
+a **Hollow Kindler** behind the Warden (2026-11-02: a support caster; it hangs back 5.5-9 m
+behind whichever Hollow is fighting the hero, raises its spear like a standard and pours an
+ember stream into the ally for 1.7 s; finished, the ally burns white-hot for 12 s, winding up
+1.3x faster and hitting 1.25x harder; any blow breaks the open chant, killing it douses every
+flame it lit, and alone it fights weakly with the spear -- the lesson: read the raised spear and
+kill the caster first),
 axe **Hewer** (2026-11-01: overhead chop after a raise + random hitch + glint, the raise is
 armoured against light strikes, a missed chop buries the bit for a punish window; crowded, it
 sweeps), **Ashen Archer** (2026-11-01: keeps its distance and backs away from a closing hero;

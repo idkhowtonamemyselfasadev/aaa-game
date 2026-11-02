@@ -25,6 +25,7 @@ var soldier: HollowSoldier
 var knight: AshenKnight
 var warden: HollowWarden
 var hewer: HollowHewer
+var kindler: HollowKindler
 var sentinel: StoneSentinel
 var sentinel_plinth: SentinelPlinth
 var archer: HollowArcher
@@ -33,6 +34,7 @@ var wisps: Array[HollowWisp] = []
 var stone_ring: StoneRing
 const KNIGHT_AT := Vector2(14.0, 52.0)   # offset from the start
 const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's west side
+const KINDLER_AT := Vector2(-11.0, 42.0)   # a Hollow Kindler hanging back behind the warden
 const HEWER_AT := Vector2(-20.0, 46.0)   # the axe hewer, further down the meadow's west side
 const ARCHER_AT := Vector2(32.0, 70.0)   # the ashen archer, past the knight's ring on the east side
 const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
@@ -143,6 +145,13 @@ func _ready() -> void:
 	warden.plant(terrain)
 	warden.face(p)
 	trample.walkers.append(warden)
+	# behind the warden a hearth-priest Hollow: it hangs back and kindles whoever fights the hero
+	kindler = HollowKindler.new()
+	kindler.position = Vector3(p.x + KINDLER_AT.x, 0.0, p.z + KINDLER_AT.y)
+	add_child(kindler)
+	kindler.plant(terrain)
+	kindler.face(p)
+	trample.walkers.append(kindler)
 	# a third Hollow with a long felling axe, past the warden toward the wood's edge
 	hewer = HollowHewer.new()
 	hewer.position = Vector3(p.x + HEWER_AT.x, 0.0, p.z + HEWER_AT.y)
@@ -389,7 +398,8 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier, knight, warden, hewer, sentinel], trample)
+	foley.hook(player, [soldier, knight, warden, hewer, sentinel, kindler], trample)
+	foley.hook_kindler(kindler)
 	foley.hook_hewer(hewer)
 	foley.hook_sentinel(sentinel)
 	foley.hook_archer(archer)

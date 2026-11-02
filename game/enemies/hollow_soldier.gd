@@ -32,6 +32,8 @@ const DAMAGE := 22.0
 const POISE := 30.0
 const DMG_PER_POWER := 13.0
 const GRAVITY := 22.0
+const KINDLE_TEMPO := 1.3      # a Kindler's flame: winds up and strikes this much faster
+const KINDLE_DMG := 1.25       # ... and hits this much harder
 const SWEEP_CLOSE := 2.1      # closer than this the point is useless: sweep instead
 const SWEEP_WINDUP_T := 0.95
 const SWEEP_T := 0.36
@@ -72,6 +74,11 @@ var tempo := 1.0               # time scale of the whole brain: a faster phase w
 var damage_mul := 1.0
 var unblockable := false       # strikes the hero's heavy cannot deflect
 var glint_col := Color(1.0, 0.82, 0.6)
+var kindled := 0.0             # s left burning from a Kindler's chant (faster, harder, white-hot)
+var kindle_count := 0          # bots: times it was kindled
+var _kindle_boost := false     # damage_mul carries the kindle factor
+var _kindle_glow := 0.0        # 0..1 eased in and out
+var _kindle_sparks: CPUParticles3D
 ## Variants (the shield warden) hold a different guard while idle/stalking and can kick the
 ## body back from the hips (a blocked blow); both default to the soldier's.
 var guard_pose: Array = GUARD
@@ -176,6 +183,7 @@ func plant(terrain: Terrain) -> void:
 func return_to_post() -> void:
 	if state == DEAD:
 		return
+	douse()
 	global_position = _home
 	velocity = Vector3.ZERO
 	health = health_max
@@ -376,7 +384,12 @@ func _physics_process(delta: float) -> void:
 		if anim_tree:
 			anim_tree.set("parameters/speed/scale", 0.0)
 		return
-	t += delta * tempo
+	if kindled > 0.0:
+		kindled = maxf(kindled - delta, 0.0)
+		if kindled <= 0.0:
+			douse()
+	_kindle_glow = move_toward(_kindle_glow, 1.0 if kindled > 0.0 else 0.0, delta * 2.0)
+	t += delta * tempo * (KINDLE_TEMPO if kindled > 0.0 else 1.0)
 	poise = maxf(poise - 8.0 * delta, 0.0)
 	var to := Vector3.ZERO
 	var dist := INF
@@ -518,6 +531,7 @@ func _physics_process(delta: float) -> void:
 	lean_kick = move_toward(lean_kick, 0.0, delta * 1.2)
 	_lean(lean - lean_kick, sink)
 	max_ember = maxf(max_ember, ember)
+	ember *= 1.0 + 0.9 * _kindle_glow
 	_set_skin("ember", ember)
 	_set_skin("root_pos", global_position)
 	_set_skin("root_fwd", body.global_basis.z)
@@ -694,6 +708,7 @@ var _fall_dir := Vector3.ZERO
 var _spear_rest := Basis()
 
 func _die(dir: Vector3) -> void:
+	douse()
 	state = DEAD
 	t = 0.0
 	_fall_dir = dir
@@ -770,6 +785,58 @@ func _die_tick(delta: float) -> void:
 		_ash.emitting = false
 	if t > 5.0:
 		queue_free()
+
+## A Hollow Kindler's chant caught: for `secs` it burns white-hot, sparks streaming off it,
+## and winds up KINDLE_TEMPO faster and hits KINDLE_DMG harder.
+func kindle(secs: float) -> void:
+	if state == DEAD:
+		return
+	if not _kindle_boost:
+		_kindle_boost = true
+		damage_mul *= KINDLE_DMG
+	kindled = maxf(kindled, secs)
+	kindle_count += 1
+	if _kindle_sparks == null:
+		_kindle_sparks = CPUParticles3D.new()
+		_kindle_sparks.name = "KindleSparks"
+		_kindle_sparks.amount = 40
+		_kindle_sparks.lifetime = 0.9
+		_kindle_sparks.local_coords = false
+		_kindle_sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		_kindle_sparks.emission_box_extents = Vector3(0.25, 0.45, 0.2)
+		_kindle_sparks.position = Vector3(0, 1.15, 0.05)
+		_kindle_sparks.direction = Vector3.UP
+		_kindle_sparks.spread = 25.0
+		_kindle_sparks.initial_velocity_min = 0.6
+		_kindle_sparks.initial_velocity_max = 1.6
+		_kindle_sparks.gravity = Vector3(0, 0.8, 0)
+		_kindle_sparks.scale_amount_min = 0.4
+		_kindle_sparks.scale_amount_max = 1.0
+		var q := QuadMesh.new()
+		q.size = Vector2(0.035, 0.035)
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		m.vertex_color_use_as_albedo = true
+		q.material = m
+		_kindle_sparks.mesh = q
+		var g := Gradient.new()
+		g.set_color(0, Color(1.0, 0.85, 0.55, 1.0))
+		g.set_color(1, Color(0.8, 0.2, 0.02, 0.0))
+		_kindle_sparks.color_ramp = g
+		body.add_child(_kindle_sparks)
+	_kindle_sparks.emitting = true
+
+## The flame goes out (time up, or the Kindler that lit it died).
+func douse() -> void:
+	if _kindle_boost:
+		_kindle_boost = false
+		damage_mul /= KINDLE_DMG
+	kindled = 0.0
+	if _kindle_sparks != null:
+		_kindle_sparks.emitting = false
 
 func is_dead() -> bool:
 	return state == DEAD

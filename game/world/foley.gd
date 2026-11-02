@@ -261,6 +261,20 @@ func _on_arrow_landed(at: Vector3, r: String) -> void:
 		_:
 			_play("spear", at, -10.0, 1.4)
 
+## The Hollow Kindler, from recorded sets only: the chant is the heavy whoosh slowed right
+## down into a long low draw of air; the ally catching is a soft boom pitched up under a quick
+## whoosh (a fire taking); a broken chant is the stone hit with the whoosh cut short.
+func hook_kindler(k: Node) -> void:
+	if k == null or not k.has_signal("chant_started"):
+		return
+	k.chant_started.connect(func(at: Vector3, _a: Node) -> void:
+		_play("whoom", at, -9.0, 0.45))
+	k.kindled_ally.connect(func(at: Vector3, _a: Node) -> void:
+		_play("boom", at, -12.0, 1.35)
+		_play("whoom", at, -6.0, 0.8))
+	k.chant_broken.connect(func(at: Vector3) -> void:
+		_play("whoom", at, -12.0, 1.3))
+
 func hook_hewer(hw: Node) -> void:
 	if hw == null or not hw.has_signal("chopped"):
 		return
