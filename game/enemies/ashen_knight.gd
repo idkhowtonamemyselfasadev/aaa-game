@@ -136,6 +136,10 @@ func return_to_post() -> void:
 	_surge = -1.0
 	_leap_cool = 0.0
 	leap_lift = 0.0
+	if rags != null:
+		rags.stream = 0.0
+		rags.flap = 0.0
+		rags.air_y = 0.0
 	_flame_t = 0.0
 	for f in flames:
 		if is_instance_valid(f):
@@ -317,6 +321,11 @@ func leap_bite() -> Vector3:
 	return b
 
 func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
+	# the surcoat and tabards only take the air in the leap's flight
+	if rags != null and not (move_kind == LEAP_MOVE and state == STRIKE):
+		rags.stream = 0.0
+		rags.flap = 0.0
+		rags.air_y = 0.0
 	if move_kind != LEAP_MOVE:
 		return super._special_tick(delta, to, dist)
 	var move := Vector3.ZERO
@@ -361,6 +370,12 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			move = (rest / left) if u < 1.0 else Vector3.ZERO
 			move = move.limit_length(span.length() / LEAP_T * tempo * 1.6)
 			leap_lift = LEAP_H * sin(PI * u)
+			# the air tears past: the tabards stream back on the way up and flare up off the
+			# legs on the way down (rags reads the rise and fall off the model), then slap down
+			if rags != null:
+				rags.stream = smoothstep(0.0, 0.12, u) * (1.0 - smoothstep(0.9, 1.0, u))
+				rags.flap = rags.stream * (0.6 + 0.4 * rags.fall)
+				rags.air_y = LEAP_H * PI * cos(PI * u) * tempo / LEAP_T if u < 1.0 else 0.0
 			# up with the glaive heaved overhead, then down blade first
 			if u < 0.6:
 				_pose = _lerp_pose(_from, LEAP_HEAVE, clampf(u / LEAP_HEAVED_U, 0.0, 1.0))

@@ -46,6 +46,15 @@ var tip := 0.0                           # the pelvis's forward tilt (rad), for 
 var posed_legs := false
 var stream := 0.0                        # 0..1 airflow past the body (gliding): the hems stream back and lift
 var flap := 0.0                          # 0..1 how hard the cloth works in that airflow
+## 0..1 how hard the wearer is coming down through the air (stream x fall speed): the air
+## pushes up under the cloth, both panels flare out and the hems lift (a leap's descent)
+var fall := 0.0
+## Vertical speed (m/s) the wearer's model moves at on top of the body node (a leap's arc the
+## model rides while the body stays on the ground), added to the body's own
+var air_y := 0.0
+var rise := 0.0                          # 0..1 the same going up: the hems are dragged down a little
+var peak_lift := 0.0                     # highest hem lift so far (m, sway y), for the bots
+var peak_back := 0.0                     # widest back-panel swing in the air (rad), for the bots
 var wall_n := Vector3.ZERO
 var wall_p := Vector3.ZERO
 var lateral := 0.0                       # the knee drag (m, body +X = the wearer's left), for the bots
@@ -415,8 +424,20 @@ func _physics_process(delta: float) -> void:
 		drag = clampf((rise[0] - rise[1]) * 0.35, -0.09, 0.09)
 	fwd = maxf(fwd - swing_slack, 0.0)
 	bwd = maxf(bwd - swing_slack, 0.0)
-	# in the air the back panel streams out behind over the trailing legs
-	bwd = maxf(bwd, stream * 0.42)
+	# the body's motion through the air (the model rides any lift, so it is in here too)
+	var p := _body.global_position
+	var vel := (p - _last_pos) / delta
+	_last_pos = p
+	if vel.length() > 20.0:
+		vel = Vector3.ZERO  # a teleport (return to post), not motion
+	var local := _body.global_basis.inverse() * (vel + _body.global_basis.y.normalized() * air_y)
+	var fk := minf(delta * 10.0, 1.0)
+	fall = lerpf(fall, stream * clampf(-local.y / 6.0, 0.0, 1.0), fk)
+	rise = lerpf(rise, stream * clampf(local.y / 6.0, 0.0, 1.0), fk)
+	# in the air the back panel streams out behind over the trailing legs; coming down the
+	# air under the cloth flares both panels out and up
+	bwd = maxf(bwd, stream * 0.42 + fall * 0.4)
+	fwd = maxf(fwd, fall * 0.5)
 	var k := minf(delta * 14.0, 1.0)
 	if hang > 0.0:
 		_hang_panels(fwd, bwd, k)
@@ -428,13 +449,9 @@ func _physics_process(delta: float) -> void:
 	peak_swing = maxf(peak_swing, maxf(_swing_f, _swing_b))
 	_front.rotation.x = -_swing_f
 	_back.rotation.x = _swing_b
+	if stream > 0.0:
+		peak_back = maxf(peak_back, _swing_b)
 	# the hems trail the body's motion and swing past when it stops
-	var p := _body.global_position
-	var vel := (p - _last_pos) / delta
-	_last_pos = p
-	if vel.length() > 20.0:
-		vel = Vector3.ZERO  # a teleport (return to post), not motion
-	var local := _body.global_basis.inverse() * vel
 	var target := Vector3(-local.x, 0.0, -local.z) * 0.035
 	target.y = absf(local.z) * 0.006
 	target.x += drag
@@ -443,8 +460,11 @@ func _physics_process(delta: float) -> void:
 	lateral = drag
 	# under the glider the air lifts the hems a little and lets them stream further back
 	target.y += stream * 0.05
+	# coming down the hems lift on the air; going up they drag a little below the seam
+	target.y += fall * 0.17 - rise * 0.04
 	# a damped spring: a little overshoot when the body stops or turns
 	_vel += ((target - _trail) * 55.0 - _vel * 7.0) * delta
 	_trail = (_trail + _vel * delta).limit_length(lerpf(0.12, 0.3, stream))
+	peak_lift = maxf(peak_lift, _trail.y)
 	set_param("sway", _trail)
 	set_param("flap", flap)

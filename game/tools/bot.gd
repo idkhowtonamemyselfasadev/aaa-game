@@ -1184,7 +1184,13 @@ func _knightleap_test() -> void:
 		await _ticks(2)
 		var stand_legs: Vector3 = seen[0]
 		var air_legs := Vector3(99, -99, -99)
+		k.rags.peak_lift = 0.0
+		k.rags.peak_back = 0.0
+		var peak_fall := 0.0
+		var peak_stream := 0.0
 		while k.leaps_landed() == n0 and waited < 6.0:
+			peak_fall = maxf(peak_fall, k.rags.fall)
+			peak_stream = maxf(peak_stream, k.rags.stream)
 			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP:
 				crouch_seen = true
 			max_lift = maxf(max_lift, k.leap_lift)
@@ -1226,7 +1232,13 @@ func _knightleap_test() -> void:
 			print("BOT knightleap: after landing state %d (recover %s), hero down %s" % [k.state, open, p.is_down()])
 			if not open:
 				return _combat_done(false, "the knight is not left open after the leap lands")
-		await _ticks(40)
+		await _ticks(20)
+		print("BOT knightleap: cloth in the air: stream %.2f, fall %.2f, hems lifted %.2f m, back tabard out %.2f rad; after landing stream %.2f, hem lift %.2f m" % [peak_stream, peak_fall, k.rags.peak_lift, k.rags.peak_back, k.rags.stream, k.rags._trail.y])
+		if peak_stream < 0.8 or peak_fall < 0.4 or k.rags.peak_lift < 0.08 or k.rags.peak_back < 0.5:
+			return _combat_done(false, "the knight's tabards hang stiff through the leap")
+		if k.rags.stream > 0.0 or k.rags._trail.y > 0.06:
+			return _combat_done(false, "the tabards are still streaming after the landing")
+		await _ticks(20)
 	if res.get("stand", "") != "hit":
 		return _combat_done(false, "standing where it lands did not throw the hero down")
 	if not (res.get("roll", "") in ["perfect", "dodged", "miss"]):
