@@ -1010,6 +1010,28 @@ func _ready() -> void:
 		var cp := hp + back * 3.1
 		cp.y = hp.y + 1.25
 		SPOTS[spot] = [cp, Vector3(hp.x, hp.y + 1.45, hp.z)]
+		if "cower" in args:
+			# Hesper backed to the wall from them, arm up before her face: seen from over the
+			# lid on the far side of the keep centre, so she and the knot over the fire share it
+			var cs: Vector3 = kp._spots["cower"][0]
+			kp._place(cs)
+			kp.path.clear()
+			kp.activity = "cower"
+			kp.state = Keeper.STAND
+			kp.sit = 0.0
+			kp.warm = 0.0
+			kp.cower = 1.0
+			kp._fear_t = Keeper.FEAR_HOLD
+			var tf := Vector3(hp.x - cs.x, 0, hp.z - cs.z)
+			kp.body.rotation.y = atan2(tf.x, tf.z)
+			kp.goal_yaw = kp.body.rotation.y
+			# in front of her, a little toward the fire and the keep centre, at her eye height,
+			# so her face and the raised arm catch the firelight
+			var tf2 := tf.normalized()
+			var o2 := Vector3(kp.site.x - cs.x, 0, kp.site.z - cs.z).normalized()
+			cp = cs + (tf2 * 0.75 + o2 * 0.65).normalized() * 2.1
+			cp.y = cs.y + 1.05
+			SPOTS[spot] = [cp, Vector3(cs.x, cs.y + 1.35, cs.z)]
 		print("SHOT wisps fire %s wisps %s lens %s" % [hp, ws.map(func(w): return w.global_position), cp])
 	elif spot == "wisps":
 		# wisps: the knot round the hero -- the near one at the peak of its flare (shards

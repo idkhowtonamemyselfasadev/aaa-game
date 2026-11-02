@@ -2023,6 +2023,44 @@ func _wisps_test() -> void:
 	print("BOT wisps: heart over the fire fill %.2f (cap %.2f), veins %.2f (cap %.2f)" % [hf, HollowWisp.HEART_FILL_CAP, hv, HollowWisp.HEART_VEIN_CAP])
 	if hf > HollowWisp.HEART_FILL_CAP + 0.01 or hv > HollowWisp.HEART_VEIN_CAP + 0.01:
 		return _combat_done(false, "a fire-fed heart burns past its rest caps")
+	# Hesper gets up and backs to the wall away from them, arm up before her face; the fox will
+	# not sit by the fire while they wheel: it waits them out in the curtain gateway
+	var kp: Keeper = _world.keeper
+	var fx: Fox = _world.fox
+	t = 0.0
+	while t < 20.0 and not (kp.activity == "cower" and kp.state == Keeper.STAND and kp.cower > 0.95 \
+			and fx.state == Fox.WARY and fx.path.is_empty()):
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	var kd := Vector2(kp.global_position.x - fp.x, kp.global_position.z - fp.z).length()
+	var cs: Vector3 = kp._spots["cower"][0]
+	var fxd := Vector2(fx.global_position.x - fp.x, fx.global_position.z - fp.z).length()
+	print("BOT wisps: Hesper %s (state %d, scares %d) %.2f m from the fire, %.2f m off her wall spot, arm up %.2f, sees %d; fox %s state %d waits %d, %.1f m from the fire" % [kp.activity, kp.state, kp.scares, kd, Vector2(kp.global_position.x - cs.x, kp.global_position.z - cs.z).length(), kp.cower, kp.wisps_near, "visible" if fx.visible else "hidden", fx.state, fx.waits, fxd])
+	if kp.activity != "cower" or kp.cower < 0.95 or kd < 3.5:
+		return _combat_done(false, "Hesper did not back away from the wisps over her fire")
+	if fx.state != Fox.WARY or fxd < 8.0 or not fx.path.is_empty():
+		return _combat_done(false, "the fox did not wait the wisps out at the gateway")
+	# the knot goes off (no fire to draw it): she settles back to her bed, the fox creeps in
+	for w: HollowWisp in ws:
+		w.fires = []
+	t = 0.0
+	while t < 60.0 and not (kp.activity == "sleep" and kp.sit > 0.95 and fx.state == Fox.SIT and fx.sit > 0.95):
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	print("BOT wisps: knot gone -> after %.1f s Hesper %s sit %.2f arm %.2f, fox state %d sit %.2f, wisps near %d" % [t, kp.activity, kp.sit, kp.cower, fx.state, fx.sit, kp.wisps_near])
+	if kp.activity != "sleep" or kp.sit < 0.95 or kp.cower > 0.05:
+		return _combat_done(false, "Hesper did not go back to her bed after the wisps left")
+	if fx.state != Fox.SIT:
+		return _combat_done(false, "the fox did not come back in to its seat after the wisps left")
+	for w: HollowWisp in ws:
+		w.fires = [fire]
+	t = 0.0
+	while t < 40.0 and not at_all.call():
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	if not at_all.call():
+		return _combat_done(false, "the wisps did not come back to the fire")
+	print("BOT wisps: back over the fire after %.1f s" % t)
 	# the hero comes in to the fire: they wake and fight there, solid again
 	var near_fire := fp + Vector3(c.x - fp.x, 0, c.z - fp.z).normalized() * 7.0
 	p.global_position = Vector3(near_fire.x, _world.terrain.height_at(near_fire.x, near_fire.z) + 0.1, near_fire.z)

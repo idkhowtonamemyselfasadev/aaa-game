@@ -55,6 +55,11 @@ const LINES := {
 		"I sweep it so whoever opens it will know we did not forget.",
 		"There was a bell for the keeper's hour. I ring it in my head now. Saves the rope.",
 	],
+	"cower": [
+		"Stay back from them, child. They come for the fire, not for me. I tell myself that every night.",
+		"Burnt-out hearts. They remember sitting at a hearth once. That is the worst of it.",
+		"Not in here. If you must put them out, draw them out onto the turf first.",
+	],
 	"tend_night": [
 		"See the ember in the grooves? It wakes at night, like an old dog dreaming.",
 		"Go and sleep, child. The lid is not going anywhere. That is rather its whole trouble.",
@@ -132,6 +137,13 @@ const FLICK_BACK := 1.1         # s settling back to her hands-out pose
 const SCRAP_FLIGHT := 0.75      # s in the air
 const KINDLE_STRIKES := 5       # flint strikes before the tinder catches
 const KINDLE_EVERY := 0.85      # s between strikes
+const FEAR_R := 7.0             # a Hollow Wisp this near her fire (m, flat) sends her to the wall
+const FEAR_HOLD := 6.0          # s she stays there after the last one has gone off
+const COWER_ARM := 1.5          # shielding her face: the right upper arm up before her...
+const COWER_ELBOW := 1.6        # ...the forearm folded up in front of her face...
+const COWER_OUT := -0.9         # ...and drawn in across it
+const COWER_TURN := 0.35        # her head turned a little away from the glare
+const COWER_LOOK := 0.3         # but lifted to the knot wheeling up over the flames
 const KINDLE_NURSE := 9.0       # s at least she stays down after it catches, until the flames show
 
 signal activity_changed(name: String)
@@ -211,6 +223,10 @@ var _scrap_from := Vector3.ZERO
 var _scrap_to := Vector3.ZERO
 var _scrap_air := -1.0          # s in flight (negative: not flying)
 var flick_hold := -1.0          # shots: hold the throw at this many s in (negative: free)
+var wisps_near := 0             # Hollow Wisps within FEAR_R of her fire now (bots)
+var cower := 0.0                # 0..1 her arm up before her face, backed to the wall
+var scares := 0                 # times the wisps have put her to the wall (bots)
+var _fear_t := 0.0              # s she keeps to the wall yet
 
 func _ready() -> void:
 	collision_layer = 4
@@ -357,6 +373,17 @@ func settle(w: Node3D, at_hour: float) -> void:
 	var kp: Vector3 = hl[1]
 	var to_fire := Vector3(hearth_at.x - kp.x, 0, hearth_at.z - kp.z)
 	_spots["kindle"] = [kp, atan2(to_fire.x, to_fire.z)]
+	# backed against the inner face round from the fire, 0.9 rad off the breach (no further, or
+	# she would be out of it), on her bed's side so her way there round the plinth does not
+	# take her through the flames; facing the fire
+	var best := Vector3.ZERO
+	var bed: Vector3 = _spots["sleep"][0]
+	for sg in [1.0, -1.0]:
+		var q := site + to_v.rotated(Vector3.UP, 0.9 * sg) * 2.45
+		if best == Vector3.ZERO or q.distance_to(bed) < best.distance_to(bed):
+			best = q
+	var to_f2 := Vector3(hearth_at.x - best.x, 0, hearth_at.z - best.z)
+	_spots["cower"] = [best, atan2(to_f2.x, to_f2.z)]
 	if not _oaks.is_empty():
 		var o := _oaks[0]
 		var away := Vector3(o.x - site.x, 0, o.z - site.z).normalized()
@@ -504,6 +531,16 @@ func _physics_process(delta: float) -> void:
 		want = "shelter"
 	elif activity == "shelter" and weather != null and weather.rain > RAIN_SHELTER * 0.5:
 		want = "shelter"                       # wait for it to ease off properly
+	# Hollow Wisps wheeling over her fire (or fighting the hero by it): she gets up and backs
+	# to the wall away from them, an arm up before her face, until a while after they go
+	var ws = world.get("wisps")
+	wisps_near = HollowWisp.count_near(ws, hearth_at, FEAR_R) if ws != null else 0
+	if wisps_near > 0 and _ring(global_position) <= 1:
+		_fear_t = FEAR_HOLD
+	else:
+		_fear_t = maxf(_fear_t - delta, 0.0)
+	if _fear_t > 0.0:
+		want = "cower"
 	if want != activity:
 		_begin(want)
 	elif state == STAND and activity == "gather":
@@ -529,7 +566,7 @@ func _physics_process(delta: float) -> void:
 			if path.is_empty():
 				_arrive()
 		else:
-			var sp := SHELTER_SPEED if activity == "shelter" else WALK_SPEED
+			var sp := SHELTER_SPEED if (activity == "shelter" or activity == "cower") else WALK_SPEED
 			v = d.normalized() * sp
 			goal_yaw = atan2(d.x, d.z)
 			# boulders and oak boles: if she is making no headway, sidestep round them
@@ -549,6 +586,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_warm(delta)
 	_update_scrap(delta)
+	_update_cower(delta)
 	body.rotation.y = lerp_angle(body.rotation.y, goal_yaw, 1.0 - exp(-4.0 * delta))
 	var sit_goal := 1.0 if (state == SIT and activity == "sleep") else 0.0
 	sit = move_toward(sit, sit_goal, delta / 2.2)
@@ -583,6 +621,8 @@ func _begin(a: String) -> void:
 	else:
 		var s: Array = _spots.get(_spot_of(a), _spots["tend"])
 		_route(s[0])
+	if a == "cower":
+		scares += 1
 	if a == "kindle":
 		_kindle_t = -1.0
 		_strikes = 0
@@ -678,8 +718,8 @@ func _arrive() -> void:
 ## names her.
 func _update_notice() -> void:
 	noticing = false
-	if player == null or state == SIT or sit > 0.05:
-		return
+	if player == null or state == SIT or sit > 0.05 or activity == "cower":
+		return                               # cowering she keeps her eyes on the wisps
 	if talking > 0.0:
 		noticing = true                      # holds still and keeps facing him mid-line
 		return
@@ -727,6 +767,8 @@ func _update_talk(delta: float) -> void:
 		hud.say("Hesper", line, talking)
 
 func _next_line() -> String:
+	if activity == "cower":
+		return _pool_line("cower")
 	var quests = player.get_node_or_null("Quests") if player != null else null
 	if quests != null and sit < 0.5 and activity != "sleep":
 		var q: String = quests.line_for("Hesper")
@@ -865,6 +907,19 @@ func _update_warm(delta: float) -> void:
 		var e := warm * warm * (3.0 - 2.0 * warm)
 		goal_yaw = lerp_angle(_spots["sleep"][1], atan2(to_f.x, to_f.z), WARM_TURN * e)
 
+## Backed to the wall, she turns to keep the wisps in sight and puts her arm up before her
+## face while they are still over the fire; once they have gone it comes down, and she
+## waits out FEAR_HOLD before going back to what she was doing.
+func _update_cower(delta: float) -> void:
+	var there := activity == "cower" and state == STAND
+	if there:
+		var ws = world.get("wisps")
+		var c: Vector3 = HollowWisp.centre_near(ws, hearth_at, FEAR_R) if ws != null else hearth_at
+		var to := Vector3(c.x - global_position.x, 0, c.z - global_position.z)
+		if to.length() > 0.1:
+			goal_yaw = atan2(to.x, to.z)
+	cower = move_toward(cower, 1.0 if (there and wisps_near > 0) else 0.0, delta / (0.6 if there else 1.2))
+
 ## Once a night, while she sits up warming her hands and the fox sits at the edge of the
 ## light, she tosses it a crust across the floor; it gets up for it (Fox.take_scrap).
 func _update_scrap(delta: float) -> void:
@@ -981,6 +1036,20 @@ func _pose_sit() -> void:
 	crumple.arm = lerpf(lerpf(PICK_ARM * p, 0.75, e), WARM_ARM, w)
 	crumple.elbow = lerpf(lerpf(PICK_ELBOW * p, 1.1, e), WARM_ELBOW, w)
 	crumple.head_turn = 0.25 * e * (1.0 - w)
+	# cowering from the wisps: shoulders hunched, head up to them but turned from the glare, the right
+	# forearm up across her face and the left hand drawn in to her chest
+	var cw := cower * cower * (3.0 - 2.0 * cower)
+	if cw > 0.0:
+		crumple.spine += 0.18 * cw
+		crumple.neck = lerpf(crumple.neck, COWER_LOOK, cw)
+		crumple.head_turn += COWER_TURN * cw
+		crumple.arm = lerpf(crumple.arm, 0.55, cw)
+		crumple.elbow = lerpf(crumple.elbow, 1.5, cw)
+	if _flick_t < 0.0:
+		crumple.flick = cw
+		crumple.flick_arm = COWER_ARM
+		crumple.flick_elbow = COWER_ELBOW
+		crumple.flick_out = COWER_OUT if cw > 0.0 else 0.0
 	# the bent knees lower the hips: keep the feet on the ground (thigh and shin each half the
 	# hip height; the shin leans forward as far as the thigh, so the feet stay under her)
 	var bob := _hip_h * (1.0 - cos(STOOP_KNEE) * 0.5 - 0.5)

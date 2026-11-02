@@ -16,13 +16,16 @@ extends Node3D
 ## noses and scrabbles at the dropped slide. The hens squawk on their perch, Brack across the
 ## green sits up at Edda's door and gives tongue, and the fox drops off the ladder and is away
 ## back out through the stile at a run. With the slide propped (or rain on) it does not come.
+## Hollow Wisps wheeling over the fire keep it out: on its way in, or up off its seat (or its
+## crust), it goes back out to the curtain gateway and stands there watching them, and only
+## creeps back in to its seat a while after the last has gone off.
 ## Bots read `state`, `sit`, `visits`, `bolts`, `sit_at`, `den`, `eaten`, `prowls`, `tries`,
 ## `scrabbles`, `fled`, `pitch`.
 
 signal barked(at: Vector3, alarm: bool)   # its night call from the dark, or a yelp as it bolts
 signal crunched(at: Vector3)              # a bite into Hesper's crust
 
-enum { AWAY, COME, SIT, GO, BOLT, EAT, PROWL }
+enum { AWAY, COME, SIT, GO, BOLT, EAT, PROWL, WARY }
 
 const TROT := 2.3          # m/s on its way in and out
 const CREEP := 0.7         # m/s over the last few metres to its seat
@@ -42,6 +45,8 @@ const ROUND := [Vector2(-1.5, -9.3), Vector2(-2.6, -9.6), Vector2(-3.7, -9.65), 
 const LADDER_IN := 1.45    # ladder u where it steps up (past the foot, on the dust)
 const LADDER_TOP := 0.34   # and where it stops, forepaws by the sill and nose to the slide
 const CLIMB := 0.75        # ladder u per second, up (down is quicker)
+const WISP_R := 7.0        # Hollow Wisps this near the fire (m, flat) keep it out
+const WARY_HOLD := 7.0     # s after the last has gone before it comes back in
 const TRY_T := 6.0         # s at the slide at most when nothing scares it off
 
 var world: Node3D
@@ -94,6 +99,11 @@ var _flee := false
 var _dog_barks0 := 0
 var _next_scrabble := 0.9
 var hold := false           # shots: held in its pose
+var wary_at := Vector3.ZERO # where it waits out the wisps: the curtain gateway, looking in
+var waits := 0              # times the wisps have kept it out (bots)
+var wisps_near := 0         # Hollow Wisps over the fire now (bots)
+var _clear_t := 0.0
+var _quick := false         # this frame's head turn is a quick wary glance (twice the rate)
 
 func setup(w: Node3D) -> void:
 	world = w
@@ -109,6 +119,7 @@ func setup(w: Node3D) -> void:
 	sit_at = _ground(seat_of(site))
 	# its lying-up place out in the long grass, off to one side of the keep's gateway
 	den = _ground(site + tv.rotated(Vector3.UP, 1.25) * 34.0)
+	wary_at = _ground(keeper._spots["gate_in"][0])
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/fox.gdshader")
 	_mi = MeshInstance3D.new()
@@ -211,6 +222,8 @@ func _process(delta: float) -> void:
 	var near := Vector2(hp.x - global_position.x, hp.z - global_position.z).length()
 	var shy := visible and near < SHY_R + 1.5 * minf(hs, 8.0)
 	shy_t = maxf(shy_t - dt, 0.0)
+	var ws = world.get("wisps")
+	wisps_near = HollowWisp.count_near(ws, hearth.global_position, WISP_R) if ws != null else 0
 	_call(dt, h)
 	match state:
 		AWAY:
@@ -230,6 +243,8 @@ func _process(delta: float) -> void:
 				_bolt()
 			elif not _wanted(h) or _prowl_wanted(h, hp):
 				_leave()
+			elif wisps_near > 0:
+				_go_wary()
 			elif _walk(dt, TROT if path.size() > 1 else CREEP):
 				state = SIT
 				_look_t = _rng.randf_range(3.0, 6.0)
@@ -247,12 +262,24 @@ func _process(delta: float) -> void:
 				_bolt()
 			elif not _wanted(h) or _prowl_wanted(h, hp):
 				_leave()
+			elif wisps_near > 0:
+				_go_wary()
 		EAT:
 			_update_eat(dt)
 			if shy:
 				_bolt()
 			elif not _wanted(h):
 				_leave()
+			elif wisps_near > 0:
+				_go_wary()
+		WARY:
+			if shy:
+				_bolt()
+			elif not _wanted(h) or _prowl_wanted(h, hp):
+				_leave()
+				path = [_ground(keeper._spots["gate_out"][0]), den]
+			else:
+				_update_wary(dt)
 		PROWL:
 			if hold:
 				pass
@@ -277,7 +304,8 @@ func _process(delta: float) -> void:
 		graze = move_toward(graze, 0.0, dt / 0.5)
 	if state != PROWL:
 		pitch = move_toward(pitch, 0.0, dt / 0.3)
-	head_yaw = lerpf(head_yaw, _head_goal, 1.0 - exp(-3.0 * dt))
+	head_yaw = lerpf(head_yaw, _head_goal, 1.0 - exp(-(6.0 if _quick else 3.0) * dt))
+	_quick = false
 	_phase = fposmod(_phase + dt * (speed / 0.95 if speed < 3.0 else speed / 1.6), 1.0)
 	global_rotation = Vector3(pitch, yaw, 0)
 	_mi.set_instance_shader_parameter("phase", _phase)
@@ -360,6 +388,7 @@ func _update_eat(dt: float) -> void:
 			var tk := keeper.global_position - global_position
 			var at_her := wrapf(atan2(-tk.x, -tk.z) - yaw, -PI, PI)
 			_head_goal = clampf(at_her, -1.0, 1.0)
+			_quick = true
 			glance = maxf(glance, absf(head_yaw) * signf(head_yaw * at_her))
 		return
 	if _shake_t >= 0.0:
@@ -598,6 +627,49 @@ func place_at_slide() -> void:
 	head_yaw = 0.2
 	_head_goal = 0.2
 	hold = true
+
+## Off its seat (or on its way in) and back out to the gateway, to wait the wisps out.
+func _go_wary() -> void:
+	_drop_scrap()
+	state = WARY
+	waits += 1
+	_clear_t = 0.0
+	sit = minf(sit, 0.6)
+	var site := keeper.site
+	var r := Vector2(global_position.x - site.x, global_position.z - site.z).length()
+	path.clear()
+	if r < Keeper.KEEP_R + 0.4:
+		path.append(_ground(keeper._spots["breach_out"][0]))
+	if r < Keeper.CURTAIN_R + 1.0:
+		path.append(wary_at)
+	else:
+		# still out on the meadow: on in as far as the gateway
+		path = _way_in().slice(0, 3)
+		_trim_path()
+
+## Stood in the gateway, side-on to go, head turned to the light over the fire; back in to its
+## seat once they have been gone WARY_HOLD.
+func _update_wary(dt: float) -> void:
+	if not path.is_empty():
+		sit = move_toward(sit, 0.0, dt / 0.4)
+		_walk(dt, TROT)
+		_head_goal = 0.0
+		return
+	speed = move_toward(speed, 0.0, 3.0 * dt)
+	var c := HollowWisp.centre_near(world.get("wisps"), hearth.global_position, WISP_R) if wisps_near > 0 \
+			else hearth.global_position
+	var to := Vector3(c.x - global_position.x, 0, c.z - global_position.z)
+	var face := atan2(-to.x, -to.z)
+	# body half turned to the keep (ready to be off), the head the rest of the way round
+	yaw = lerp_angle(yaw, face + 0.6, 2.0 * dt)
+	_head_goal = clampf(wrapf(face - yaw, -PI, PI), -0.9, 0.9)
+	if wisps_near > 0:
+		_clear_t = 0.0
+	else:
+		_clear_t += dt
+		if _clear_t > WARY_HOLD:
+			state = COME
+			path = [_ground(keeper._spots["breach_out"][0]), sit_at]
 
 func _bolt() -> void:
 	_drop_scrap()

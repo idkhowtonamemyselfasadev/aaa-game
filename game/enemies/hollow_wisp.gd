@@ -408,6 +408,27 @@ func heart() -> Vector3:
 func heat() -> float:
 	return _heat
 
+## How many living wisps of `ws` are within `r` m (flat) of `at`: Hesper and the fox read it
+## to tell when the knot is over her fire.
+static func count_near(ws: Array, at: Vector3, r: float) -> int:
+	var n := 0
+	for w in ws:
+		if is_instance_valid(w) and not w.is_dead() and w.process_mode != Node.PROCESS_MODE_DISABLED \
+				and Vector2(w.global_position.x - at.x, w.global_position.z - at.z).length() < r:
+			n += 1
+	return n
+
+## Where they are, on average (Hesper and the fox look at it), or `at` if none is near.
+static func centre_near(ws: Array, at: Vector3, r: float) -> Vector3:
+	var c := Vector3.ZERO
+	var n := 0
+	for w in ws:
+		if is_instance_valid(w) and not w.is_dead() and w.process_mode != Node.PROCESS_MODE_DISABLED \
+				and Vector2(w.global_position.x - at.x, w.global_position.z - at.z).length() < r:
+			c += w.global_position
+			n += 1
+	return c / n if n > 0 else at
+
 ## The hero woke at a rest point: the knot is back, rekindled, on its ground.
 func return_to_post() -> void:
 	health = HEALTH_MAX
