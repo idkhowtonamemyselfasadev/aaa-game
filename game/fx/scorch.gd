@@ -22,6 +22,13 @@ var _coals: CPUParticles3D
 var _smoke: CPUParticles3D
 var _light: OmniLight3D
 
+## Burn slots the grass shader chars (burn.gdshaderinc burn_0..3): the scorch in each.
+static var _slots: Array = [null, null, null, null]
+## What each slot last handed the shader (global_shader_parameter_get is editor-only; bots).
+static var burn_vals: Array[Vector4] = [Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO]
+var _slot := -1
+const CHAR_R := SIZE * 0.55  # m: the grass burnt down out to about the decal's black char
+
 static var _burn_tex: ImageTexture
 static var _glow_tex: ImageTexture
 static var _spark_tex: ImageTexture
@@ -55,6 +62,44 @@ func _ready() -> void:
 	_light.position = Vector3(0, 0.35, 0)
 	add_child(_light)
 	_blast_grass.call_deferred()   # the knight places us after add_child
+	# take a burn slot (the oldest live burn gives its slot up when all four are taken)
+	for i in 4:
+		if _slots[i] == null or not is_instance_valid(_slots[i]):
+			_slot = i
+			break
+	if _slot < 0:
+		var oldest := 0
+		for i in 4:
+			if (_slots[i] as Scorch).t > (_slots[oldest] as Scorch).t:
+				oldest = i
+		(_slots[oldest] as Scorch)._slot = -1
+		_slot = oldest
+	_slots[_slot] = self
+
+func _exit_tree() -> void:
+	if _slot >= 0 and _slots[_slot] == self:
+		_slots[_slot] = null
+		RenderingServer.global_shader_parameter_set("burn_%d" % _slot, Vector4.ZERO)
+		burn_vals[_slot] = Vector4.ZERO
+	_slot = -1
+
+## How charred (0..1) the grass is at `p` from this burn: CPU mirror of _burn_one() in
+## burn.gdshaderinc without the mottling (bots).
+func grass_char_at(p: Vector3) -> float:
+	var b := _burn_vec()
+	var d := Vector2(p.x - b.x, p.z - b.y)
+	var r := d.length()
+	if b.w <= 0.0 or r > b.z:
+		return 0.0
+	var a := atan2(d.y, d.x)
+	var reach := b.z * (0.62 + 0.22 * sin(a * 11.0 + b.x * 3.1) + 0.12 * sin(a * 5.0 - b.y * 1.7))
+	return b.w * (1.0 - smoothstep(reach * 0.55, reach, r))
+
+## This burn as the shader sees it: x, z, radius, char. The blades blacken over the first
+## half second (the flash of the bite) and stand charred as long as the decal's char lasts.
+func _burn_vec() -> Vector4:
+	var c := smoothstep(0.0, 0.5, t) * char_alpha
+	return Vector4(global_position.x, global_position.z, CHAR_R / 0.84, c)
 
 ## The blast of the bite lays the sward flat round the burn, combed outward, so the scorch
 ## is not lost under standing meadow grass.
@@ -93,6 +138,9 @@ func _process(delta: float) -> void:
 	var u := clampf((t - GLOW_T) / (LIFE - GLOW_T), 0.0, 1.0)
 	char_alpha = 1.0 - u * u
 	_decal.modulate.a = char_alpha
+	if _slot >= 0:
+		burn_vals[_slot] = _burn_vec()
+		RenderingServer.global_shader_parameter_set("burn_%d" % _slot, burn_vals[_slot])
 	if t > LIFE + 0.5:
 		queue_free()
 

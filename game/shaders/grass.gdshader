@@ -15,6 +15,7 @@ global uniform float ground_fill_far;   // share of it kept past ~120 m (the moo
 #include "res://shaders/foliage_light.gdshaderinc"
 #include "res://shaders/trample.gdshaderinc"
 #include "res://shaders/field_patch.gdshaderinc"
+#include "res://shaders/burn.gdshaderinc"
 uniform vec3 tip_dry   : source_color = vec3(0.78, 0.62, 0.30);
 uniform vec3 tip_green : source_color = vec3(0.50, 0.50, 0.20);
 uniform vec3 root_col  : source_color = vec3(0.16, 0.13, 0.05);
@@ -56,6 +57,7 @@ varying float v_shelter; // rain the oak crowns catch above this clump
 varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 varying float v_scorch;  // singed by the hearth (static wall tufts, INSTANCE_CUSTOM.z)
 varying vec3 v_field;   // field kind under this clump (field_patch.gdshaderinc)
+varying float v_burnt;   // burnt down by the Ashen Knight's glaive (burn.gdshaderinc)
 varying float v_laid;    // 0 standing .. 1 laid flat by the hero (trample.gdshaderinc)
 
 void vertex() {
@@ -67,6 +69,12 @@ void vertex() {
 	v_var = INSTANCE_CUSTOM.x;
 	v_sward = INSTANCE_CUSTOM.y;
 	v_scorch = INSTANCE_CUSTOM.z;
+	// burnt down where the Ashen Knight's glaive bit (burn.gdshaderinc): stubble a third
+	// the height, charred black (the singe tint below)
+	float burnt = burn_at(origin.xz);
+	v_scorch = max(v_scorch, burnt);
+	v_burnt = burnt;
+	VERTEX.y *= mix(1.0, 0.35, burnt);
 	v_seed = UV.x;
 	// grazed pasture: the tall grass there is cropped to ~60 %, hay fields stand a touch taller
 	v_field = field_patch(origin.xz) * (1.0 - smoothstep(0.1, 0.5, v_shelter));
@@ -163,10 +171,13 @@ void fragment() {
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
 	// singed by the fire: brittle dark brown, tips sooted, little light through them
 	col = mix(col, vec3(0.07, 0.05, 0.03) * (0.7 + 0.6 * v_var) * mix(1.0, 0.55, v_h), v_scorch * 0.85);
+	// burnt stubble: sooted near-black all the way up, a little grey ash on the tips, dull
+	col = mix(col, mix(vec3(0.018, 0.015, 0.013), vec3(0.09, 0.085, 0.08), smoothstep(0.6, 1.0, v_h) * fract(v_var * 17.3)), v_burnt * 0.97);
+	rough = mix(rough, 0.95, v_burnt);
 	weather_wetten_sheltered(col, rough, 0.85, v_shelter);
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = 0.35;
+	SPECULAR = mix(0.35, 0.1, v_burnt);
 	// thin edges let more sun through than the ribbed middle
 	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * v_scorch) * (0.85 + 0.3 * smoothstep(0.4, 1.0, abs(v_across)));   // transmission tint (foliage_light)
 	AO = v_ao;

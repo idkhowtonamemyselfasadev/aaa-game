@@ -1242,6 +1242,16 @@ func _knightleap_test() -> void:
 			print("BOT knightleap: after landing state %d (recover %s), hero down %s" % [k.state, open, p.is_down()])
 			if not open:
 				return _combat_done(false, "the knight is not left open after the leap lands")
+			# the grass inside the burn is burnt down: the shader's burn slot carries it
+			while is_instance_valid(sc) and sc.t < 0.6:
+				await _ticks(1)
+			var c0 := sc.grass_char_at(sc.global_position)
+			var c_edge := sc.grass_char_at(sc.global_position + Vector3(Scorch.CHAR_R * 0.4, 0, 0))
+			var c_out := sc.grass_char_at(sc.global_position + Vector3(Scorch.SIZE, 0, 0))
+			var slot_v: Vector4 = Scorch.burn_vals[sc._slot] if sc._slot >= 0 else Vector4.ZERO
+			print("BOT knightleap: grass char at the bite %.2f, part-way out %.2f, beyond the star %.2f; burn slot %d = %s" % [c0, c_edge, c_out, sc._slot, slot_v])
+			if c0 < 0.9 or c_edge < 0.5 or c_out > 0.0 or slot_v.w < 0.9:
+				return _combat_done(false, "the grass inside the scorch is not charred")
 		await _ticks(20)
 		print("BOT knightleap: cloth in the air: stream %.2f, fall %.2f, hems lifted %.2f m, back tabard out %.2f rad; after landing stream %.2f, hem lift %.2f m" % [peak_stream, peak_fall, k.rags.peak_lift, k.rags.peak_back, k.rags.stream, k.rags._trail.y])
 		if peak_stream < 0.8 or peak_fall < 0.4 or k.rags.peak_lift < 0.08 or k.rags.peak_back < 0.5:
@@ -1259,6 +1269,7 @@ func _knightleap_test() -> void:
 	var sc2: Scorch = k.last_scorch
 	if sc2 != null and is_instance_valid(sc2):
 		var mid := Scorch.GLOW_T + 0.5 - sc2.t
+		var slot2 := sc2._slot
 		while sc2.t < Scorch.GLOW_T + 0.5:
 			await get_tree().process_frame
 		var cooled := sc2.heat
@@ -1274,6 +1285,12 @@ func _knightleap_test() -> void:
 		print("BOT knightleap: scorch heat %.3f at %.1f s (light off %s, waited %.1f), sparks after %.1f s %s, char alpha %.2f, freed %s" % [cooled, Scorch.GLOW_T + 0.5, light_off, mid, Scorch.EMBER_T + 0.5, sparking, a_late, not is_instance_valid(sc2)])
 		if cooled > 0.02 or sparking or a_late < 0.5 or is_instance_valid(sc2):
 			return _combat_done(false, "the scorch does not cool, stop sparking and fade away")
+		# its burn slot is cleared (or handed to a newer burn), so the grass stands up green again
+		var held = Scorch._slots[slot2] if slot2 >= 0 else null
+		var left: Vector4 = Scorch.burn_vals[slot2] if slot2 >= 0 else Vector4.ZERO
+		print("BOT knightleap: burn slot %d after the char faded: %s (held by a newer burn %s)" % [slot2, left, held != null])
+		if slot2 < 0 or (held == null and left.w > 0.0):
+			return _combat_done(false, "the faded scorch left the grass charred")
 	else:
 		return _combat_done(false, "the last leap left no scorch")
 	var dp := {}

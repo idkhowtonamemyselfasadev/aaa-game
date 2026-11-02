@@ -19,6 +19,7 @@ global uniform float ground_fill_far;   // share of it kept past ~120 m (the moo
 #include "res://shaders/weather.gdshaderinc"
 #include "res://shaders/trample.gdshaderinc"
 #include "res://shaders/field_patch.gdshaderinc"
+#include "res://shaders/burn.gdshaderinc"
 uniform vec3 turf_a   : source_color = vec3(0.20, 0.22, 0.08);   // shaded live sward
 uniform vec3 turf_b   : source_color = vec3(0.46, 0.47, 0.18);   // sunlit live blade
 uniform vec3 thatch_a : source_color = vec3(0.30, 0.24, 0.10);   // matted dead grass
@@ -922,9 +923,17 @@ void fragment() {
 	if (pud > 0.0) {
 		rip += wade_ripples(xz) * (1.0 - smoothstep(0.012, 0.06, fp));
 	}
+	// the Ashen Knight's leap burns (burn.gdshaderinc): black char with grey ash flecks,
+	// renderer-proof under the decal (which adds the cracks and their glow)
+	float kchar = burn_at(xz);
+	if (kchar > 0.0) {
+		vec3 ch = mix(vec3(0.02, 0.017, 0.015), vec3(0.11, 0.105, 0.1), smoothstep(0.62, 0.8, micro));
+		col = mix(col, ch, kchar * 0.92);
+		rough = mix(rough, 0.97, kchar);
+	}
 	ALBEDO = col;
 	ROUGHNESS = rough;
-	SPECULAR = mix(mix(mix(0.25, 0.3, rockw), 0.08, burn_w), 0.25, pud);
+	SPECULAR = mix(mix(mix(mix(0.25, 0.3, rockw), 0.08, burn_w), 0.25, pud), 0.06, kchar);
 	AO = mix(mix(0.85 + 0.15 * cav, 1.0, rockw), 1.0, pud);
 	AO_LIGHT_AFFECT = 0.3;
 	// the water surface is level: drop the slope and the fine bump under it

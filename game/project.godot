@@ -119,6 +119,22 @@ scaling_3d/mode=0
 
 [shader_globals]
 
+burn_0={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+burn_1={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+burn_2={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+burn_3={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
 trample_body={
 "type": "vec4",
 "value": Vector4(0, 0, 0, 0)

@@ -2074,6 +2074,10 @@ func _ready() -> void:
 				cp.y = terrain.height_at(cp.x, cp.z) + 2.3
 				cam.global_position = cp
 				cam.look_at(bt.lerp(kl.global_position, 0.2) + Vector3.UP * 0.25)
+				if "cooled" in args:
+					# cooled: 8 s on, the cracks gone dark and the char left black
+					for i in 80:
+						kl.last_scorch._process(0.1)
 				print("SHOT knight scorch at %s heat %.2f, camera %s" % [bt, kl.last_scorch.heat, cp])
 			print("SHOT knight leap state %d t %.2f lift %.2f" % [kl.state, kl.t, kl.leap_lift])
 		if "knight" in args and ("surge" in args or "p3" in args):

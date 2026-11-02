@@ -892,5 +892,11 @@
   "time": "2026-11-02T19:30:00Z",
   "caption": "The Ashen Knight's glaive bitten into the turf after its ember leap: the meadow grass blasted flat in a ring round the bite, ember glow and sparks lifting off it; still wrong: GL fallback frame, the black char barely shows through the laid grass (the stems should scorch too), and the practice post crowds the framing.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261102-2044-knight-char.jpg",
+  "time": "2026-11-02T20:44:34Z",
+  "caption": "The Ashen Knight's leap scorch 8 s on (GL frame): the grass and soil inside the bite are now charred black in a ragged burnt star with sooted stubble; the practice post still crowds the foreground and the frame is not Forward+.",
+  "verdict": "fail"
  }
 ]
