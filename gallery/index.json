@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261027-0551-hare-thatch.jpg",
-  "time": "2026-10-27T05:51:31Z",
-  "caption": "Low lens on the meadow hare: the ground under the camera now reads as olive-brown matted thatch instead of a near-black patch, but it is still a flat painted floor with stroke marks and no short sward blades visible there.",
-  "verdict": "fail"
- },
- {
-  "file": "20261027-0629-hare-sward.jpg",
-  "time": "2026-10-27T06:29:51Z",
-  "caption": "Low lens on the sat-up hare: the short sward now fills the ground right in front of the camera with green blades instead of a bare soil oval; blades still read a little flat-shaded and the boulder still a smooth slab.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0629-sward-debug.jpg",
   "time": "2026-10-27T06:29:51Z",
   "caption": "Debug frame with the short sward tinted magenta (before the fix): it shows the bare oval 1-2 m in front of the lens where random scatter left no blade mats.",
@@ -897,6 +885,12 @@
   "file": "20261102-1830-knight-leap-cloth.jpg",
   "time": "2026-11-02T18:30:00Z",
   "caption": "The Ashen Knight coming down out of its ember leap, knees tucked, the oxblood back tabard flared out behind on the air; still wrong: GL fallback sky and chalky mountains, the front panel barely reads, no scorch where the glaive will bite.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-1930-knight-scorch.jpg",
+  "time": "2026-11-02T19:30:00Z",
+  "caption": "The Ashen Knight's glaive bitten into the turf after its ember leap: the meadow grass blasted flat in a ring round the bite, ember glow and sparks lifting off it; still wrong: GL fallback frame, the black char barely shows through the laid grass (the stems should scorch too), and the practice post crowds the framing.",
   "verdict": "fail"
  }
 ]

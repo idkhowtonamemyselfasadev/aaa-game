@@ -2055,9 +2055,26 @@ func _ready() -> void:
 			kl.set_physics_process(true)
 			for i in 400:
 				kl._physics_process(dt)
-				if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:
+				if "scorched" in args:
+					# on through the landing: bent over the bitten glaive, the burn fresh
+					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.RECOVER and kl.t >= foe_u * AshenKnight.LEAP_RECOVER_T:
+						break
+				elif kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:
 					break
 			kl.set_physics_process(false)
+			if "scorched" in args and kl.last_scorch != null:
+				# low on the burn from the lit side, the knight stooped over it beyond
+				var bt := kl.last_scorch.global_position
+				var kd := Vector3(kl.global_position.x - bt.x, 0, kl.global_position.z - bt.z).normalized()
+				var sd := kd.cross(Vector3.UP)
+				var sl: Vector3 = -world.sun.global_transform.basis.z
+				if sd.dot(Vector3(-sl.x, 0, -sl.z)) < 0.0:
+					sd = -sd
+				var cp := bt + sd * 2.4 - kd * 1.4
+				cp.y = terrain.height_at(cp.x, cp.z) + 2.3
+				cam.global_position = cp
+				cam.look_at(bt.lerp(kl.global_position, 0.2) + Vector3.UP * 0.25)
+				print("SHOT knight scorch at %s heat %.2f, camera %s" % [bt, kl.last_scorch.heat, cp])
 			print("SHOT knight leap state %d t %.2f lift %.2f" % [kl.state, kl.t, kl.leap_lift])
 		if "knight" in args and ("surge" in args or "p3" in args):
 			# surge: the knight down on its knee as the ring of fire bursts (phase 2 -> 3);

@@ -1228,6 +1228,16 @@ func _knightleap_test() -> void:
 			return _combat_done(false, "the leap did not come down by the hero (bite %.2f m off, feet %.2f m)" % [land_err, feet_gap])
 		if kind == "stand":
 			await _ticks(3)
+			var sc: Scorch = k.last_scorch
+			if sc == null or not is_instance_valid(sc):
+				return _combat_done(false, "the leap's landing left no scorch in the turf")
+			var sc_off := Vector2(sc.global_position.x - k.leap_bite().x, sc.global_position.z - k.leap_bite().z).length()
+			var sc_dy := absf(sc.global_position.y - _world.terrain.height_at(sc.global_position.x, sc.global_position.z))
+			var heat0 := sc.heat
+			var sparks0 := (sc.get_node("Sparks") as CPUParticles3D).emitting
+			print("BOT knightleap: scorch %.2f m from the bite, %.2f m off the turf, heat %.2f, sparks %s, grass laid %d" % [sc_off, sc_dy, heat0, sparks0, sc.blasted])
+			if sc_off > 0.05 or sc_dy > 0.05 or heat0 < 0.9 or not sparks0 or sc.blasted < 20:
+				return _combat_done(false, "the scorch is not a hot burn at the bite")
 			var open := k.state == HollowSoldier.RECOVER
 			print("BOT knightleap: after landing state %d (recover %s), hero down %s" % [k.state, open, p.is_down()])
 			if not open:
@@ -1245,6 +1255,27 @@ func _knightleap_test() -> void:
 		return _combat_done(false, "a roll as it lands did not pass through the leap")
 	if res.get("parry", "") == "parried":
 		return _combat_done(false, "a heavy parried the unblockable leap")
+	# the last burn cools, stops sparking, fades and is gone inside its life
+	var sc2: Scorch = k.last_scorch
+	if sc2 != null and is_instance_valid(sc2):
+		var mid := Scorch.GLOW_T + 0.5 - sc2.t
+		while sc2.t < Scorch.GLOW_T + 0.5:
+			await get_tree().process_frame
+		var cooled := sc2.heat
+		var light_off := not (sc2.get_node("Glow") as OmniLight3D).visible
+		while is_instance_valid(sc2) and sc2.t < Scorch.EMBER_T + 0.5:
+			await get_tree().process_frame
+		var sparking := is_instance_valid(sc2) and (sc2.get_node("Sparks") as CPUParticles3D).emitting
+		var a_late := sc2.char_alpha if is_instance_valid(sc2) else 0.0
+		var waited2 := 0.0
+		while is_instance_valid(sc2) and waited2 < Scorch.LIFE + 2.0:
+			await get_tree().process_frame
+			waited2 += get_process_delta_time()
+		print("BOT knightleap: scorch heat %.3f at %.1f s (light off %s, waited %.1f), sparks after %.1f s %s, char alpha %.2f, freed %s" % [cooled, Scorch.GLOW_T + 0.5, light_off, mid, Scorch.EMBER_T + 0.5, sparking, a_late, not is_instance_valid(sc2)])
+		if cooled > 0.02 or sparking or a_late < 0.5 or is_instance_valid(sc2):
+			return _combat_done(false, "the scorch does not cool, stop sparking and fade away")
+	else:
+		return _combat_done(false, "the last leap left no scorch")
 	var dp := {}
 	for nm in ["whoom", "slam", "boom"]:
 		dp[nm] = int(fol.played.get(nm, 0)) - int(played0.get(nm, 0))

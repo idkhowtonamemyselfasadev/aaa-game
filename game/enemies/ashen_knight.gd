@@ -85,6 +85,7 @@ var leap_from := Vector3.ZERO
 var leap_to := Vector3.ZERO      # where its feet land (the bite is LEAP_BITE beyond)
 var leap_lift := 0.0             # current height of the arc (hurt capsule and model ride it)
 var _leap_cool := 0.0
+var last_scorch: Scorch          # the burn the last leap left in the turf (bots)
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var _terrain_ref: Terrain
 
@@ -200,6 +201,8 @@ func _set_phase(n: int) -> void:
 	glint_col = Color(1.0, 0.82, 0.6) if n == 1 else Color(1.0, 0.22, 0.1)
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06) if n == 1 else Color(1.0, 0.16, 0.04))
 	_set_skin("heat", (n - 1) * 0.5)
+	if n >= 2:
+		Scorch.burn_texture()   # build the burn now, in the surge, not at the first landing
 
 func _begin_surge() -> void:
 	_set_phase(phase + 1)
@@ -443,6 +446,11 @@ func _resolve_leap() -> void:
 	if _player != null:
 		_player.add_shake(0.55)
 	ImpactFX.spawn(get_parent(), b + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.8)
+	# the ember-hot edge scorches the turf where it bit: a burnt star with glowing cracks
+	var sc := Scorch.new()
+	get_parent().add_child(sc)
+	sc.global_position = b
+	last_scorch = sc
 	# the ember shakes loose as the blade bites: a ring of fire flares up round the impact
 	for i in 5:
 		var a := TAU * i / 5.0 + body.rotation.y + 0.3
