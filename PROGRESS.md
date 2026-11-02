@@ -46,7 +46,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   after add_child, a first try blasted the world origin) lays 33 herd-trail points (pit + rings at 0.85/1.7/2.6 m,
   combed radially outward, strength 1/0.8/0.5, 30 s to stand up) so the crack star is not hidden in the sward.
   Bot `sentinel` step 4f: 33 points laid, lay 0.80 at 1.7 m, front dust reached 4.29 m and stopped; PASS.
-  Regression trample herd combat PASS.
+  Regression trample herd combat PASS. Frame `sentinel sn_ring 98 15.0 fixfps slam`: Vulkan failed again
+  (ERR_CANT_OPEN), GL fallback SEEN, gallery `sentinel-ring` FAIL: the flattened sward shows as a dark ring round
+  the pit, but the dust ring is near-invisible in the tree shade (make it brighter/denser or partly unshaded, test in
+  sun) and the statue is chalk white in GL.
 - **(12:00 11-02) Stone Sentinel's glaive slam + ground-crack shock ring (Next sentinel item (0a); combat content).**
   stone_sentinel.gd `SLAM_MOVE` (2) through the soldier's `_special_tick` hook: every 3rd attack (`SLAM_EVERY` 2 between),
   or at once when the hero hangs back between ENGAGE 2.7 m and `SLAM_ENGAGE` 4.6 m (it plants instead of stepping in,
@@ -6579,7 +6582,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
-0. (13:00 11-02) **Slam dust ring + grass blast DONE (bot `sentinel` PASS).** NEXT, in order: (0) the statue's carved
+0. (13:00 11-02) **Slam dust ring + grass blast DONE (bot `sentinel` PASS).** NEXT, in order: (0) the dust ring is lost in shade
+   (GL frame): denser, paler, slightly self-lit dust and a sunlit reframe; (0a) the statue's carved
    plinth (Ruins blocks) so it reads as a statue at range; a recorded stone-grinding loop while it walks (needs
    freesound/opengameart reachable); (0b) a Sentinel pair at the Shrine of Binding's way down once the shrine is
    built; (1) Forward+ frame of `wisps wisps_cower 30 22.0 fixfps fire cower` (lens from in front of Hesper);
