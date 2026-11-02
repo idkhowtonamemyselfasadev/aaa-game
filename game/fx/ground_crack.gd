@@ -196,7 +196,7 @@ func _make_ring_dust() -> CPUParticles3D:
 ## follows `front` each frame (world coords: each puff stays where it was raised), so the run
 ## of the shock leaves a widening, low, hugging band of dust you can read as a ring.
 func _make_front_dust() -> CPUParticles3D:
-	var p := _dust_base(280, 1.3)
+	var p := _dust_base(420, 1.5, 0.85)
 	p.name = "FrontDust"
 	p.one_shot = false
 	p.explosiveness = 0.0
@@ -214,11 +214,17 @@ func _make_front_dust() -> CPUParticles3D:
 	p.radial_accel_max = 4.0
 	p.damping_min = 2.5
 	p.damping_max = 4.0
-	p.scale_amount_min = 0.35
-	p.scale_amount_max = 0.8
+	p.scale_amount_min = 0.45
+	p.scale_amount_max = 0.95
 	return p
 
-func _dust_base(n: int, life: float) -> CPUParticles3D:
+## `card` is the quad size. The dust is lit per vertex but also carries a faint pale
+## emission (DUST_GLOW) so a ring raised in tree or cliff shade still reads as pale earth
+## against the dark sward instead of vanishing (13:15 11-02 frame: lost in shade).
+const DUST_GLOW := Color(0.62, 0.60, 0.56)
+const DUST_GLOW_E := 0.32
+
+func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.amount = n
@@ -230,8 +236,11 @@ func _dust_base(n: int, life: float) -> CPUParticles3D:
 	p.angle_min = 0.0
 	p.angle_max = 360.0
 	var q := QuadMesh.new()
-	q.size = Vector2(0.6, 0.6)
+	q.size = Vector2(card, card)
 	var m := StandardMaterial3D.new()
+	m.emission_enabled = true
+	m.emission = DUST_GLOW
+	m.emission_energy_multiplier = DUST_GLOW_E
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
@@ -243,8 +252,8 @@ func _dust_base(n: int, life: float) -> CPUParticles3D:
 	var g := Gradient.new()
 	# grey-brown earth dust, paling and thinning as it hangs
 	g.offsets = PackedFloat32Array([0.0, 0.06, 0.45, 1.0])
-	g.colors = PackedColorArray([Color(0.40, 0.38, 0.35, 0.0), Color(0.40, 0.38, 0.35, 0.55),
-		Color(0.47, 0.46, 0.44, 0.32), Color(0.52, 0.51, 0.50, 0.0)])
+	g.colors = PackedColorArray([Color(0.55, 0.52, 0.48, 0.0), Color(0.58, 0.55, 0.51, 0.68),
+		Color(0.64, 0.62, 0.59, 0.42), Color(0.68, 0.67, 0.65, 0.0)])
 	p.color_ramp = g
 	var c := Curve.new()
 	c.add_point(Vector2(0, 0.45))

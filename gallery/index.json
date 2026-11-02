@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-0335-hare-coat.jpg",
-  "time": "2026-10-27T03:35:09Z",
-  "caption": "The brown hare sat up in the meadow now wears a grey-brown agouti coat with a darker ticked back instead of an even orange-tan; the ground right under the low lens is still a dark sparse patch.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0335-hare-foreground.jpg",
   "time": "2026-10-27T03:35:09Z",
   "caption": "With the near-lens grass no longer shrunk to tiny blades, tall grass now stands in the foreground; a smaller dark patch of sparse short sward still shows between the lens and the hare.",
@@ -885,6 +879,12 @@
   "file": "20261102-1400-sentinel-plinth-far.jpg",
   "time": "2026-11-02T14:00:00Z",
   "caption": "From 12 m down the meadow the Sentinel now reads as a statue on a plinth, not a man in a field; the plinth is a dark lump in shade and the frame is the dim GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-1400-sentinel-dust.jpg",
+  "time": "2026-11-02T15:06:00Z",
+  "caption": "The Stone Sentinel's slam at noon: the pale dust ring now reads clearly running out over the sward with the hero thrown down, but in full sun it is too white and glowy, a pale half-dome card sits at the pit and the statue is chalk white in GL.",
   "verdict": "fail"
  }
 ]
