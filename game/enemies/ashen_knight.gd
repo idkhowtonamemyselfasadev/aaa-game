@@ -14,6 +14,14 @@ extends HollowSoldier
 ##     turf under the hero smoulders, then erupts (AshFlame), so the hero has to keep moving
 ##     while the knight presses at its fastest.
 ## Between phases it cannot be hurt while it surges. A dead hero resets it to phase 1.
+## EMBER LEAP (its own move, phases 2 and 3): a hero who backs off out of glaive reach (to
+## run the eruptions, or to heal) does not get to wait it out. The knight drops into a deep
+## crouch with the ember flaring and the glint on the blade, locks onto where the hero stands,
+## and springs: a long arc through the air with the glaive heaved overhead, coming down blade
+## first so the edge bites the turf where the hero was. The landing throws down anyone in the
+## blade's line or inside LEAP_R of the bite (unblockable: roll as it lands, not before) and a
+## ring of fire flares up round the impact. Then it is bent double over the bitten glaive for
+## a long recovery: the punish window for a hero who rolled through.
 
 const KNIGHT_HP := 540.0
 const KNIGHT_POISE := 62.0
@@ -26,6 +34,21 @@ const SURGE_DAMAGE := 20.0
 const FLAME_EVERY := 4.2
 const TEMPO := [1.0, 1.2, 1.3]
 const NAME := "The Ashen Knight"
+const LEAP_MOVE := 2
+const LEAP_MIN := 5.0            # hero farther than this (and nearer than LEAP_MAX) gets the leap
+const LEAP_MAX := 11.0
+const LEAP_COOL := 5.5           # brain-time s between leaps
+const LEAP_SQUARE := 0.35        # s it squares up to a hero hanging back before it crouches
+const LEAP_CROUCH_T := 0.8       # brain-time s coiling down (the tell)
+const LEAP_LOCK := 0.8           # fraction of the crouch at which it fixes the landing
+const LEAP_T := 0.62             # brain-time s in the air
+const LEAP_H := 1.7              # m the arc rises at its top
+const LEAP_RECOVER_T := 1.5
+const LEAP_R := 2.0              # m round the bite that the landing throws down
+const LEAP_DAMAGE := 28.0
+const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes down (the slam's)
+# glaive poses borrowed from the Stone Sentinel's slam (same glaive, same build of body)
+const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
 
 signal phase_changed(phase: int)
 ## a light blow turned aside by the ember guard (foley: a ringing clang on the shaft)
@@ -34,6 +57,10 @@ signal guarded_blow(point: Vector3)
 signal blasted(at: Vector3)
 ## one phase-3 eruption bursting under the hero
 signal flame_burst(at: Vector3)
+## the ember leap: springing off (foley: a heavy whoosh, a grunt of armour)
+signal leapt(at: Vector3)
+## the ember leap came down: where the blade bit, and the verdict on the hero
+signal leap_landed(at: Vector3, result: String)
 
 var phase := 1
 var guarded := 0                 # light strikes turned aside (bots)
@@ -47,6 +74,13 @@ var _surge := -1.0
 var _blasted := false
 var _flame_t := 0.0
 var armour: KnightArmour
+var leaps := 0
+var leap_results: Array[String] = []
+var leap_from := Vector3.ZERO
+var leap_to := Vector3.ZERO      # where its feet land (the bite is LEAP_BITE beyond)
+var leap_lift := 0.0             # current height of the arc (hurt capsule and model ride it)
+var _leap_cool := 0.0
+var _terrain_ref: Terrain
 
 func _ready() -> void:
 	health_max = KNIGHT_HP
@@ -89,11 +123,23 @@ func return_to_post() -> void:
 		return
 	_set_phase(1)
 	_surge = -1.0
+	_leap_cool = 0.0
+	leap_lift = 0.0
 	_flame_t = 0.0
 	for f in flames:
 		if is_instance_valid(f):
 			f.queue_free()
 	flames.clear()
+
+func plant(terrain: Terrain) -> void:
+	_terrain_ref = terrain
+	super.plant(terrain)
+
+func hurt_capsule() -> Array:
+	var c := super.hurt_capsule()
+	c[0] += Vector3.UP * leap_lift
+	c[1] += Vector3.UP * leap_lift
+	return c
 
 func health_fraction() -> float:
 	return clampf(health / health_max, 0.0, 1.0)
@@ -175,6 +221,7 @@ func _physics_process(delta: float) -> void:
 		if _surge >= SURGE_T or state != STAGGER:
 			_surge = -1.0
 		return
+	_leap_cool = maxf(_leap_cool - delta * tempo, 0.0)
 	if phase == 3 and state != IDLE and _player != null and not _player.is_dead():
 		_flame_t += delta
 		if _flame_t >= FLAME_EVERY:
@@ -221,3 +268,139 @@ func _flame_at(at: Vector3, harms: bool) -> AshFlame:
 		flames.append(f)
 		f.burst.connect(func(p: Vector3) -> void: flame_burst.emit(p))
 	return f
+
+# --- the ember leap ---
+
+## A hero hanging back past glaive reach in phase 2 or 3 gets the leap once it has squared up.
+func _stalk(to: Vector3, dist: float) -> Vector3:
+	if can_leap(dist) and (force_move < 0 or force_move == LEAP_MOVE):
+		_turn_to(to, get_physics_process_delta_time(), 6.0)
+		if t > LEAP_SQUARE and _facing(to) > 0.9:
+			windups += 1
+			_from = _pose
+			move_kind = LEAP_MOVE
+			_aimed = false
+			_enter(WINDUP)
+			return Vector3.ZERO
+		return to.normalized() * STALK_SPEED * 0.35
+	return super._stalk(to, dist)
+
+func leaps_landed() -> int:
+	return leap_results.size()
+
+func can_leap(dist: float) -> bool:
+	return phase >= 2 and _leap_cool <= 0.0 and dist > LEAP_MIN and dist < LEAP_MAX and _surge < 0.0
+
+func _ground(p: Vector3) -> float:
+	return _terrain_ref.height_at(p.x, p.z) if _terrain_ref != null else p.y
+
+## Where the blade bites on landing.
+func leap_bite() -> Vector3:
+	var b := leap_to + body.global_basis.z * LEAP_BITE
+	b.y = _ground(b)
+	return b
+
+func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
+	if move_kind != LEAP_MOVE:
+		return super._special_tick(delta, to, dist)
+	var move := Vector3.ZERO
+	var lean := 0.0
+	var sink := 0.0
+	var ember := 1.0
+	match state:
+		WINDUP:
+			var u := clampf(t / LEAP_CROUCH_T, 0.0, 1.0)
+			# tracks the hero through the crouch, then the landing is fixed
+			if u < LEAP_LOCK:
+				_turn_to(to, delta, 7.0)
+				var tgt := _player.global_position if _player != null else global_position
+				var off := tgt - global_position
+				off.y = 0.0
+				var reach := clampf(off.length() - LEAP_BITE, 0.5, LEAP_MAX - LEAP_BITE)
+				leap_to = global_position + off.normalized() * reach if off.length() > 1e-3 else global_position
+			_pose = _lerp_pose(_from, CROUCHED, smoothstep(0.0, 0.7, u))
+			_pose[1] += sin(t * 44.0) * 1.0 * smoothstep(0.6, 0.9, u)
+			lean = 0.26 * smoothstep(0.0, 0.7, u)
+			sink = 0.34 * smoothstep(0.0, 0.7, u)
+			ember = 1.0 + 4.0 * smoothstep(0.2, 0.9, u)
+			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
+			if u >= 1.0:
+				_resolved = false
+				strikes += 1
+				leaps += 1
+				leap_from = global_position
+				_leap_cool = LEAP_COOL
+				_from = _pose
+				leapt.emit(global_position + Vector3.UP * 1.0)
+				_enter(STRIKE)
+		STRIKE:
+			var u := clampf(t / LEAP_T, 0.0, 1.0)
+			var span := leap_to - leap_from
+			span.y = 0.0
+			# a steady carry over the ground (brain-time T, so divide by the real airtime)
+			var rest := leap_to - global_position
+			rest.y = 0.0
+			var left := maxf((LEAP_T - t) / tempo, get_physics_process_delta_time())
+			move = (rest / left) if u < 1.0 else Vector3.ZERO
+			move = move.limit_length(span.length() / LEAP_T * tempo * 1.6)
+			leap_lift = LEAP_H * sin(PI * u)
+			# up with the glaive heaved overhead, then down blade first
+			if u < 0.6:
+				_pose = _lerp_pose(_from, StoneSentinel.HEAVED, smoothstep(0.0, 0.5, u / 0.6))
+			else:
+				_pose = _lerp_pose(StoneSentinel.HEAVED, StoneSentinel.SLAMMED, smoothstep(0.0, 1.0, (u - 0.6) / 0.4))
+			lean = lerpf(-0.18, 0.34, smoothstep(0.55, 1.0, u))
+			sink = -leap_lift + 0.22 * smoothstep(0.85, 1.0, u)
+			ember = 5.0 - 1.0 * u
+			_update_glint(smoothstep(0.35, 0.55, u) * (1.0 - smoothstep(0.75, 0.88, u)))
+			if u >= 1.0:
+				leap_lift = 0.0
+				# the blade bites ahead of where the feet actually came down
+				leap_to = Vector3(global_position.x, leap_to.y, global_position.z)
+				if not _resolved:
+					_resolved = true
+					_resolve_leap()
+				_from = _pose
+				_enter(RECOVER)
+		RECOVER:
+			var u := clampf(t / LEAP_RECOVER_T, 0.0, 1.0)
+			# bent over the bitten glaive, then wrenches it free
+			var f := smoothstep(0.55, 1.0, u)
+			_pose = _lerp_pose(StoneSentinel.SLAMMED, guard_pose, f)
+			lean = 0.34 * (1.0 - f) - 0.08 * sin(PI * f)
+			sink = 0.24 * (1.0 - f)
+			ember = 2.2 - 1.0 * u
+			if u >= 1.0:
+				_enter(STALK)
+	return [move, lean, sink, ember]
+
+## The hero stands in the blade's line ahead of the landing, or inside LEAP_R of the bite.
+func _in_leap_reach() -> bool:
+	if _player == null:
+		return false
+	var b := leap_bite()
+	var d := _player.global_position - b
+	if Vector2(d.x, d.z).length() < LEAP_R and absf(d.y) < 1.6:
+		return true
+	var l := _hero_local()
+	return l.z > 0.3 and l.z < LEAP_BITE + 0.75 and absf(l.x) < 0.8 and absf(l.y) < 1.4
+
+func _resolve_leap() -> void:
+	var r := "miss"
+	var b := leap_bite()
+	if _player != null and not _player.is_dead() and (_aimed or _in_leap_reach()):
+		r = _player.receive_attack(self, LEAP_DAMAGE * damage_mul, true, true)
+		if r == "hit":
+			ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 0.9, Vector3.DOWN, "stone", 1.2)
+	if _player != null:
+		_player.add_shake(0.55)
+	ImpactFX.spawn(get_parent(), b + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.8)
+	# the ember shakes loose as the blade bites: a ring of fire flares up round the impact
+	for i in 5:
+		var a := TAU * i / 5.0 + body.rotation.y + 0.3
+		var f := _flame_at(b + Vector3(sin(a), 0, cos(a)) * 1.5, false)
+		f.t = AshFlame.WARN - 0.02
+	last_result = r
+	leap_results.append(r)
+	leap_landed.emit(b, r)
+	struck.emit(r)

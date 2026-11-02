@@ -912,6 +912,8 @@ func _ready() -> void:
 			fp = pp + Vector3(-5.5, 0, 1.0)      # an archer draws from a stand-off, not at spear length
 		if "knoll" in args:
 			fp = world.archer._home
+		if "knight" in args and "leap" in args:
+			fp = pp + Vector3(-7.6, 0, 1.2)      # the ember leap springs from out of glaive reach
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
 		foe.face(pp)
@@ -933,6 +935,10 @@ func _ready() -> void:
 				# column and the knight beyond all read in one frame
 				var focus := pp.lerp(fp, 0.25)
 				SPOTS[spot] = [focus + side * 4.2 - line * 1.4, focus]
+			if "knight" in args and "leap" in args:
+				# the knight high in its arc between them: square on to the leap, back far enough
+				# to hold the whole arc and the hero under it
+				SPOTS[spot] = [mid + side * 6.2 - line * 0.6 + Vector3.UP * 0.2, mid + Vector3.UP * 1.1]
 			if "lodged" in args:
 				# the arrow standing in the hero: close on the hero's flank, the archer beyond
 				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]
@@ -2037,6 +2043,21 @@ func _ready() -> void:
 				player.global_position = Vector3(off.x, (world.get_node("Terrain") as Terrain).height_at(off.x, off.z) + 0.05, off.z)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
+		if "knight" in args and "leap" in args:
+			# leap: phase 2, the knight sprung from 7.7 m off, caught at u= of its airtime
+			var kl: AshenKnight = foe
+			kl._set_phase(2)
+			kl._leap_cool = 0.0
+			kl._player = player
+			kl.state = HollowSoldier.STALK
+			kl.t = 1.0
+			kl.set_physics_process(true)
+			for i in 400:
+				kl._physics_process(dt)
+				if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:
+					break
+			kl.set_physics_process(false)
+			print("SHOT knight leap state %d t %.2f lift %.2f" % [kl.state, kl.t, kl.leap_lift])
 		if "knight" in args and ("surge" in args or "p3" in args):
 			# surge: the knight down on its knee as the ring of fire bursts (phase 2 -> 3);
 			# p3: phase 3, the ground under the hero erupting. Fire is held back so it bursts

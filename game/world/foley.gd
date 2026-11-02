@@ -158,6 +158,15 @@ func hook_knight(k: Node) -> void:
 	k.flame_burst.connect(func(at: Vector3) -> void:
 		_play("whoom", at + Vector3.UP * 0.6, 0.0, 0.62)
 		_play("slam", at, -9.0, 1.15))
+	# the ember leap: a deep whoosh and a grunt of armour as it springs, the blade into the turf
+	# as a full ground slam with the boom under it (a sweep's thump if the hero rolled clear)
+	if k.has_signal("leapt"):
+		k.leapt.connect(func(at: Vector3) -> void:
+			_play("whoom", at, -1.0, 0.55)
+			_play("grunt", at + Vector3.UP * 0.6, -8.0, 0.8))
+		k.leap_landed.connect(func(at: Vector3, _r: String) -> void:
+			_play("slam", at, 3.0, 0.7)
+			_play("boom", at, 0.0, 0.75))
 
 ## The Hollow Warden's targe, from recorded sets only: a blocked blow is the wood hit pitched
 ## down with a quiet iron ring over it; the ward knocked aside cracks with the wood hit, the

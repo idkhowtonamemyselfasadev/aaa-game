@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -91,6 +91,9 @@ func _ready() -> void:
 		return
 	if name == "knight":
 		_knight_test()
+		return
+	if name == "knightleap":
+		_knightleap_test()
 		return
 	if name == "warden":
 		_warden_test()
@@ -1008,7 +1011,12 @@ func _knight_test() -> void:
 					p.bot_dodge = true
 			p.bot_input = Vector2.ZERO
 			var r: String = live.result if is_instance_valid(live) else "?"
-			print("BOT knight: P3 eruption %d -> %s" % [flame_tested + 1, r])
+			print("BOT knight: P3 eruption %d -> %s (rolled %s, down %s, dodge_t %.2f)" % [flame_tested + 1, r, rolled, p.is_down(), p.dodge_t])
+			if flame_tested == 1 and not rolled and r == "hit":
+				# the hero was reeling or down from a knight blow and never got the roll off:
+				# not a test of the eruption, try the next one
+				print("BOT knight: the roll never started (down %s, flinch %.2f) -- testing the next eruption" % [p.is_down(), p.flinch_t])
+				continue
 			if flame_tested == 0:
 				stood_flame = r == "hit"
 			else:
@@ -1016,7 +1024,19 @@ func _knight_test() -> void:
 			flame_tested += 1
 			continue
 		var wl := HollowSoldier.SWEEP_WINDUP_T if k.move_kind == HollowSoldier.SWEEP_MOVE else HollowSoldier.WINDUP_T
-		if k.state == HollowSoldier.WINDUP and k.t > wl - 0.06 * k.tempo and p.dodge_t < 0.0:
+		var leaping := k.move_kind == AshenKnight.LEAP_MOVE
+		if leaping and k.state == HollowSoldier.STRIKE and k.t > AshenKnight.LEAP_T - 0.12 and p.dodge_t < 0.0:
+			# the ember leap: roll as it comes down, not on the crouch
+			p.bot_attack = false
+			p.bot_heavy = false
+			var lside := Vector3(to.z, 0, -to.x).normalized()
+			p.bot_input = Vector2(lside.x, lside.z)
+			p.bot_dodge = true
+		elif leaping and (k.state == HollowSoldier.WINDUP or k.state == HollowSoldier.STRIKE):
+			p.bot_attack = false
+			p.bot_heavy = false
+			p.bot_input = Vector2.ZERO
+		elif k.state == HollowSoldier.WINDUP and k.t > wl - 0.06 * k.tempo and p.dodge_t < 0.0:
 			# roll on the glint, as a player would (sideways, away from the cut)
 			p.bot_attack = false
 			p.bot_heavy = false
@@ -1069,7 +1089,7 @@ func _knight_test() -> void:
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	p.bot_heavy = false
-	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results)])
+	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results)])
 	if k.surges < 2 or k.blasts < 2:
 		return _combat_done(false, "knight did not surge into both later phases")
 	if surged_hits > 0:
@@ -1101,6 +1121,109 @@ func _knight_test() -> void:
 	if hud != null:
 		print("BOT knight: boss bar after death alpha %.2f" % hud.boss_alpha)
 	_combat_done(true, "guarded P1, surge into unblockable P2, surge into burning P3, eruptions hit/dodged, killed")
+
+## Ashen Knight's ember leap: in phase 1 a hero hanging back 8 m off is walked down, never
+## leapt at; in phase 2 the knight crouches, springs and comes down blade first where the
+## hero stood (standing there: thrown down; it lands near the hero, not on top); a roll as it
+## lands passes through; a parry-window heavy cannot turn it; and the landing leaves it open.
+func _knightleap_test() -> void:
+	var p := _player
+	var k: AshenKnight = _world.knight
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var away := (p.global_position - k.global_position)
+	away.y = 0.0
+	away = away.normalized()
+	# 1) phase 1: no leap, it walks in
+	p.global_position = k.global_position + away * 8.0
+	p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+	k.state = HollowSoldier.STALK
+	k.t = 0.0
+	var start_d := 8.0
+	for i in 120:
+		await get_tree().physics_frame
+	var d1 := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
+	print("BOT knightleap: phase 1, hero %.1f m off -> leaps %d, now %.1f m off, state %d" % [start_d, k.leaps, d1, k.state])
+	if k.leaps > 0:
+		return _combat_done(false, "the knight leapt in phase 1")
+	if d1 > start_d - 0.8:
+		return _combat_done(false, "the phase-1 knight did not walk in on a hero hanging back")
+	# 2) phase 2, hero standing 8 m off: crouch, spring, come down where the hero stood
+	var trials := [["stand", false], ["roll", true], ["parry", false]]
+	var res := {}
+	for tr in trials:
+		var kind: String = tr[0]
+		k._set_phase(2)
+		k._leap_cool = 0.0
+		k.state = HollowSoldier.STALK
+		k.t = 0.0
+		k.move_kind = HollowSoldier.THRUST_MOVE
+		p.health = Player.HEALTH_MAX
+		p.stamina = p.stamina_max
+		while p.is_down():
+			await get_tree().physics_frame
+		var dir := (p.global_position - k.global_position)
+		dir.y = 0.0
+		dir = dir.normalized()
+		p.global_position = k.global_position + dir * 8.0
+		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+		await _ticks(2)
+		var hero_at := p.global_position
+		var n0 := k.leaps_landed()
+		var crouch_seen := false
+		var max_lift := 0.0
+		var waited := 0.0
+		var rolled := false
+		var parry_up := false
+		while k.leaps_landed() == n0 and waited < 6.0:
+			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP:
+				crouch_seen = true
+			max_lift = maxf(max_lift, k.leap_lift)
+			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.STRIKE:
+				if kind == "roll" and not rolled and k.t > AshenKnight.LEAP_T - 0.12:
+					p.stamina = p.stamina_max
+					var side := Vector3(dir.z, 0, -dir.x)
+					p.bot_input = Vector2(side.x, side.z)
+					p.bot_dodge = true
+					rolled = p.dodge_t >= 0.0
+				if kind == "parry" and k.t > AshenKnight.LEAP_T - 0.08 and not parry_up:
+					parry_up = true
+					p.combat.state = p.combat.CHARGING
+					p.combat.charge_t = 0.05
+			await get_tree().physics_frame
+			waited += get_physics_process_delta_time()
+		p.bot_input = Vector2.ZERO
+		var r: String = k.leap_results[-1] if k.leap_results.size() > 0 else "none"
+		var land_err := Vector2(k.leap_bite().x - hero_at.x, k.leap_bite().z - hero_at.z).length()
+		var feet_gap := Vector2(k.global_position.x - hero_at.x, k.global_position.z - hero_at.z).length()
+		print("BOT knightleap: %s -> %s (crouch %s, top of arc %.2f m, bite %.2f m from where the hero stood, feet %.2f m off, state %d)" % [kind, r, crouch_seen, max_lift, land_err, feet_gap, k.state])
+		res[kind] = r
+		if not crouch_seen or max_lift < 1.0:
+			return _combat_done(false, "no crouch and arc before the leap (%s)" % kind)
+		if kind == "stand" and (land_err > 1.2 or feet_gap < 0.9):
+			return _combat_done(false, "the leap did not come down by the hero (bite %.2f m off, feet %.2f m)" % [land_err, feet_gap])
+		if kind == "stand":
+			await _ticks(3)
+			var open := k.state == HollowSoldier.RECOVER
+			print("BOT knightleap: after landing state %d (recover %s), hero down %s" % [k.state, open, p.is_down()])
+			if not open:
+				return _combat_done(false, "the knight is not left open after the leap lands")
+		await _ticks(40)
+	if res.get("stand", "") != "hit":
+		return _combat_done(false, "standing where it lands did not throw the hero down")
+	if not (res.get("roll", "") in ["perfect", "dodged", "miss"]):
+		return _combat_done(false, "a roll as it lands did not pass through the leap")
+	if res.get("parry", "") == "parried":
+		return _combat_done(false, "a heavy parried the unblockable leap")
+	var dp := {}
+	for nm in ["whoom", "slam", "boom"]:
+		dp[nm] = int(fol.played.get(nm, 0)) - int(played0.get(nm, 0))
+	print("BOT knightleap: foley %s" % str(dp))
+	if dp.whoom < 3 or dp.slam < 3:
+		return _combat_done(false, "the leap's take-off and landing sounds did not play")
+	_combat_done(true, "no leap in phase 1, crouch + arc + landing by the hero in phase 2, standing hit, roll passed, parry refused")
 
 ## Glide: high over the vale a jump in the air snaps the glider open; it settles to a slow sink
 ## and flies on along the facing, the stick banks it round, jump lets go into a free fall,
