@@ -19,6 +19,10 @@ extends HollowSoldier
 ##    runs uphill into its next draw.
 ##  RELOAD. After the loose it lowers the bow and reaches for the next arrow: the punish
 ##    window for a hero who closed in during the draw.
+##  COVER. If a trunk or a rock stands within COVER_REACH after the loose, it nocks the next
+##    arrow walking to the far side of it, out of the hero's line, waits there a beat
+##    (COVER_WAIT_MIN..MAX), then steps out to the side to draw. A hero who rushes the cover
+##    while it hides gets there with the bow down; one who flanks it is seen and drawn on.
 
 const ARCHER_HP := 70.0
 const ARCHER_POISE := 22.0
@@ -51,6 +55,12 @@ const LOS_EYE := 1.5              # m above its feet the line of sight is cast f
 const LOS_STEPS := [1.6, -1.6, 3.2, -3.2, 4.8, -4.8]   # m sideways it tries for a clear line
 const LOS_RETHINK := 0.5          # s between searches for a clear spot
 const LOS_LOSE_T := 0.35          # s the line may stay shut mid-draw before it lowers the bow
+const COVER_REACH := 7.0         # m from where it loosed it looks for a trunk or rock to hide behind
+const COVER_BEHIND := 1.15        # m beyond the trunk/rock centre it stands to hide
+const COVER_FAN := [0.0, 0.45, -0.45, 0.9, -0.9]   # radians round the trunk off straight-behind
+const COVER_WAIT_MIN := 1.0       # s it waits in cover before stepping out
+const COVER_WAIT_MAX := 2.0
+const COVER_GO_T := 3.5           # s it may take to reach cover before it gives up on it
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
 # shaft-rig poses for the carry (bow held across the body, upper limb up and forward)
@@ -90,6 +100,12 @@ var _los_spot := Vector3.INF     # where it is walking to get a clear line (INF:
 var _los_think := 0.0
 var _seeking := false            # walking off to a clear spot since the line last shut
 var _los_shut := 0.0             # s the line has been shut during this draw
+var covers := 0                  # bots: times it reached cover and hid
+var in_cover := false            # standing hidden behind a trunk or rock right now
+var cover_hidden := 0.0          # bots: s of the last wait in cover with the line shut
+var _want_cover := false         # set by the loose: look for cover before the next draw
+var _cover_spot := Vector3.INF
+var _cover_t := 0.0              # s walking to cover, then s left to wait in it
 
 ## True when nothing solid (turf, a wall, a trunk, a rock) stands between a bow held at
 ## `from` and `target`.
@@ -139,6 +155,86 @@ func _seek_line(to: Vector3, dist: float) -> Vector3:
 	if dist > BACK_OFF + 1.0:
 		return to.normalized() * STALK_SPEED * 0.8
 	return Vector3.ZERO
+
+## A spot on the far side of a trunk or rock within COVER_REACH, out of the hero's line, that
+## it can walk to straight; INF when none.
+func _find_cover(to: Vector3) -> Vector3:
+	var p := global_position
+	var hero := p + to
+	var target := _chest_target()
+	var best := Vector3.INF
+	var best_d := INF
+	for o in obstacles:
+		var od := Vector2(o.x - p.x, o.z - p.z).length()
+		if od > COVER_REACH or od >= best_d:
+			continue
+		var behind := Vector3(o.x - hero.x, 0.0, o.z - hero.z)
+		if behind.length() < 2.0 or behind.length() > SHOOT_MAX + 2.0:
+			continue
+		behind = behind.normalized()
+		for a in COVER_FAN:
+			var q: Vector3 = o + behind.rotated(Vector3.UP, a) * COVER_BEHIND
+			if terrain:
+				q.y = terrain.height_at(q.x, q.z)
+			if (q - _home).length() > give_up - 2.0 or _clearance_except(q, o) < 1.0:
+				continue
+			var w := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.9, q + Vector3.UP * 0.9, 1)
+			w.exclude = [get_rid()]
+			if not get_world_3d().direct_space_state.intersect_ray(w).is_empty():
+				continue                       # would have to walk through it
+			if clear_line(q, target):
+				continue                       # not hidden there
+			best = q
+			best_d = od
+			break
+	return best
+
+## After the loose: walk to cover, wait out of the line, then let the stalk step out and
+## draw. Returns null when it is done with cover (or found none).
+func _take_cover(to: Vector3) -> Variant:
+	var dt := get_physics_process_delta_time()
+	if _cover_spot == Vector3.INF:
+		_cover_spot = _find_cover(to)
+		_cover_t = 0.0
+		in_cover = false
+		if _cover_spot == Vector3.INF:
+			_want_cover = false
+			return null
+	if not in_cover:
+		var d := _cover_spot - global_position
+		d.y = 0.0
+		_cover_t += dt
+		if _cover_t > COVER_GO_T:
+			_end_cover()
+			return null
+		if d.length() > 0.3:
+			return d.normalized() * STALK_SPEED * 1.2
+		in_cover = true
+		covers += 1
+		cover_hidden = 0.0
+		_cover_t = _rng.randf_range(COVER_WAIT_MIN, COVER_WAIT_MAX)
+	# hidden: wait, unless the hero has come round into sight
+	if los_clear:
+		_end_cover()
+		return null
+	cover_hidden += dt
+	_cover_t -= dt
+	if _cover_t <= 0.0:
+		_end_cover()
+		return null
+	return Vector3.ZERO
+
+func _end_cover() -> void:
+	_want_cover = false
+	in_cover = false
+	_cover_spot = Vector3.INF
+
+func _clearance_except(q: Vector3, skip: Vector3) -> float:
+	var m := INF
+	for o in obstacles:
+		if o != skip:
+			m = minf(m, Vector2(o.x - q.x, o.z - q.z).length())
+	return m
 
 func _clearance(q: Vector3) -> float:
 	var m := INF
@@ -297,6 +393,10 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 			retreat_climb += maxf(terrain.height_at(q.x, q.z) - terrain.height_at(p.x, p.z), 0.0)
 		return retreat_dir * BACK_SPEED
 	retreat_dir = Vector3.ZERO
+	if _want_cover:
+		var c: Variant = _take_cover(to)
+		if c != null:
+			return c
 	if dist > SHOOT_MAX:
 		return to.normalized() * STALK_SPEED * 0.8
 	if not los_clear:
@@ -427,6 +527,10 @@ func _on_arrow_landed(at: Vector3, r: String, a: HollowArrow) -> void:
 
 ## A blow that staggers or parries it spoils the draw: the arrow is dropped back to the carry.
 func _enter(s: int) -> void:
+	if s == STALK and state == RECOVER and move_kind == SHOT_MOVE:
+		_want_cover = true                     # after the loose: find cover before the next draw
+	else:
+		_end_cover()
 	if s == STAGGER or s == DEAD or (s == STALK and state != RECOVER):
 		_aim_k = 0.0
 		_draw = 0.0
