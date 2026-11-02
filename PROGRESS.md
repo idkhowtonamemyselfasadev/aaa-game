@@ -50,7 +50,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   1.35 m under the capstone in the fight, walked back up the ramp and went still 0.00 m over the capstone); the bot now
   restores the post after the strike tests (`_soldier_at` moves it). It used to go still 0.59 m off the centre (the
   soldier's 0.6 m home radius, at the capstone's edge): now it shuffles the last bit into the middle and only
-  petrifies within 0.1 m. PASS. shot.gd `sentinel ... far` (lens 12 m out).
+  petrifies within 0.1 m. The plinth's blocks are cut to size (`Ruins._block_mesh` per size, bevel <= 2.8 cm,
+  rough 0.55) so they read as squared granite; the first try used the shared rubble meshes and looked like a pile
+  of pillows. GL frames (Vulkan failed again) SEEN: `sn_plinth2` FAIL (squared blocks read, but the plinth sits in deep
+  shade, the lens is behind the statue, statue chalk white in GL); `sn_plinth_far` FAIL as a Wukong shot, but at 12 m
+  it now clearly reads as a statue on a plinth, which was the goal. Gallery `sentinel-plinth`, `sentinel-plinth-far`. shot.gd `sentinel ... far` (lens 12 m out).
 - **(13:00 11-02) Sentinel slam: a dust ring that runs with the shock, greyer dust, sward blasted flat (Next 0 (0)).**
   ground_crack.gd: new `FrontDust` emitter (280, life 1.3, continuous) on a ring whose radius follows the shock's
   `front` every physics frame (inner = front - 0.25), world coords, so the run leaves a widening low band of dust
