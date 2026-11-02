@@ -41,7 +41,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   rest and over a fire (HEART_FILL_CAP 0.55, HEART_VEIN_CAP 1.8; were 0.66 / 2.2 at the fire); only the flare (heat past
   FLARE_KNEE 1.6) lifts them further (flare peak now fill 0.97 / veins 3.48, was 1.24 / 4.48). `wisp_char.gdshader`: the
   fill now burns through the cracks only (`glow_through`: 8 % on the crust plates, full in the cracks, flats dimmed), so
-  a hot heart keeps a broken veined face. Bot `wisps` checks both caps over the fire (PASS).
+  a hot heart keeps a broken veined face. Bot `wisps` checks both caps over the fire (PASS). Forward+ frame
+  `wisps wisps_fire_fp2 30 22.0 fixfps fire` SEEN, gallery `wisps-fire-fp2` FAIL: hearts now read as cracked coals with
+  fire in the seams (fixed), but the crust plates still look pale grey (darken albedo/specular on the heart, maybe
+  SPECULAR 0.15), the fire's smoke is a dark blob and Hesper reads cold blue.
 - **(02:00 11-02) Hollow Wisps, the first fodder enemy.** `game/enemies/hollow_wisp.gd` + `game/shaders/wisp_char.gdshader`:
   a fist-sized coal heart (noise-displaced sphere, glowing veins) in a ring of 7 faceted charred shards, a smoke veil and
   sparks, an amber omni light. A knot of three (`world.wisps`, WISPS_AT -26,72) drifts idle, wakes at 11 m, circles at
@@ -6507,8 +6510,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    fire` SEEN (~20 min), gallery `wisps-fire-fp` FAIL: firelit keep stone and night sky good, but the three hearts blow
    out to flat cream discs with no veins (heart `fill`/`heat` emission too hot under Forward+ glow + the fire's light;
    cap them, e.g. fill <= 0.55 and heat <= 1.8 when not flaring, and check the Glow card at 3 m), the fire's smoke is a
-   dark blob and Hesper reads cold blue. NEXT, in order: (0) fix the heart blow-out in Forward+ and re-shoot `wisps ...
-   fire`; (0a) Hesper and the fox should react to wisps over
+   dark blob and Hesper reads cold blue. NEXT, in order: (0) heart blow-out FIXED 06:00 11-02; still: heart crust too pale, fire smoke
+   a dark blob, Hesper cold blue under the fire (Forward+); (0a) Hesper and the fox should react to wisps over
    the fire (she wakes and backs to the wall / shields her face; the fox does not come in while they wheel);
    a real recorded hiss when freesound is reachable; (0c) Forward+ frame of the archer peeking from cover;
    (1) `flight` frame fixes; (d) hewer `bite` reframe; (e) next enemy: Stone Sentinel (shrine guard).
