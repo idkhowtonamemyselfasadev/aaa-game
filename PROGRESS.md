@@ -6644,8 +6644,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (16:30 11-02) **Ashen Knight ember leap DONE (bot `knightleap` PASS).** NEXT, in order: (0) look at the
-   leap frame (`soldier ../shots/X.png 40 16.5 fixfps knight leap u=0.5`, GL ~25+ min) -- see Done for whether this
-   session's frame landed; a scorch decal where the blade bites; (0a) more enemy variety (owner priority after 0b):
+   leap's pose: GL frame `soldier ../shots/X.png 40 16.5 fixfps knight leap u=0.5` (9 min this time) SEEN, gallery
+   `knight-leap` FAIL: the knight is 1.7 m up mid-arc but reads as floating -- legs hang straight (tuck the knees:
+   bend the leg bones / play a jump pose in the air) and at u=0.5 the glaive is upright at its side, not heaved
+   overhead (reach HEAVED by u 0.35, not 0.6); a slight forward pitch of the body in flight; then reframe closer;
+   a scorch decal where the blade bites; (0a) more enemy variety (owner priority after 0b):
    a ranged caster or a fast flanker that pairs with the soldiers; (0b) Forward+ frame of `sentinel awake` at dusk and
    the sunlit `slam` (see 15:20 entry); a recorded stone-grinding loop when freesound is reachable (still blocked
    16:30 11-02: proxy 403); (0c) a Sentinel pair at the Shrine of Binding; (1) Forward+ frame of `wisps wisps_cower`;
