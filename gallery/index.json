@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261026-2349-night21-valley.jpg",
-  "time": "2026-10-26T23:49:53Z",
-  "caption": "The Vale at 21 h after the night fix: the far mountain ring now sits dark behind the valley with moonlit ridge faces and its foot sunk into the night air instead of a flat pale-blue cut-out; the near hills now merge with it a little and the cottages still read as bare white specks.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0035-hare-alert.jpg",
   "time": "2026-10-27T00:35:38Z",
   "caption": "A brown hare sat up watching in the south-east meadow, now framed at its own eye level (the shot lens had been forced 2.5 m up); black ear tips read and the ears no longer glow, but the coat is smooth and fur-less, the mossy boulder behind is a flat lime-green blob, and the near-clip test exposed bare ground in the foreground.",
@@ -897,6 +891,12 @@
   "file": "20261102-1150-sentinel-slam.jpg",
   "time": "2026-11-02T11:50:00Z",
   "caption": "The Stone Sentinel's glaive slam just landed (GL frame): blade bitten in the turf, the hero thrown by the shock; but the dust reads as sparse yellow blobs, the shock ring does not read as a ring, and the crack decal is invisible (decals need Forward+, and the tall grass hides the ground).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261102-1250-sentinel-ring.jpg",
+  "time": "2026-11-02T12:50:00Z",
+  "caption": "Stone Sentinel's glaive bitten into the turf after the slam (GL frame): the sward now lies flat in a dark ring round the pit, but the new dust ring is lost in the tree shade (too dark, too thin) and the statue still reads chalk white.",
   "verdict": "fail"
  }
 ]
