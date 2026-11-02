@@ -1019,9 +1019,10 @@ func _ready() -> void:
 		if "rain" in args:
 			world.weather.force(1.0)
 		if "close" in args:
-			# tight over the shoulder: the flaring one ~2.5 m off the lens, its kin beyond
+			# tight over the shoulder, ~1 m behind it so the hero is in frame: the flaring one
+			# ~3.3 m off the lens, its kin beyond
 			mid = hp + Vector3(0.6, 0, 3.2)
-			SPOTS[spot] = [hp + Vector3(-0.35, 0, 0.35), mid]
+			SPOTS[spot] = [hp + Vector3(-1.0, 0, -1.7), mid]
 		else:
 			SPOTS[spot] = [hp - fwd * 2.3 + Vector3(-0.9, 0, 0), mid]
 		print("SHOT wisps hero %s wisps %s lens %s" % [player.global_position, ws.map(func(w): return w.global_position), SPOTS[spot][0]])
@@ -1692,7 +1693,7 @@ func _ready() -> void:
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)
 			look.y = terrain.height_at(look.x, look.z) + 0.5
 		if spot == "wisps":
-			pos.y = terrain.height_at(pos.x, pos.z) + 1.45
+			pos.y = terrain.height_at(pos.x, pos.z) + (1.9 if "close" in args else 1.45)
 			look.y = terrain.height_at(look.x, look.z) + 1.25
 		if spot == "hounds":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.25

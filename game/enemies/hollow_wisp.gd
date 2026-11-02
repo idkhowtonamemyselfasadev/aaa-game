@@ -103,6 +103,8 @@ var _shard_vel: Array[Vector3] = []
 var _shard_spin: Array[Vector3] = []
 var _shard_size: Array[float] = []
 var _light: OmniLight3D
+var _glow: MeshInstance3D
+var _glow_mat: StandardMaterial3D
 var _smoke: CPUParticles3D
 var _sparks: CPUParticles3D
 var _burst: CPUParticles3D
@@ -152,7 +154,9 @@ func _ready() -> void:
 	for i in SHARDS:
 		var m := ShaderMaterial.new()
 		m.shader = sh
-		m.set_shader_parameter("heat", 0.6)
+		m.set_shader_parameter("heat", 0.3)
+		m.set_shader_parameter("vein_w", 0.028)
+		m.set_shader_parameter("charred", 1.0)
 		m.set_shader_parameter("seed", Vector3(i * 7.3, _rng.randf() * 30.0, i * 1.9))
 		var s := MeshInstance3D.new()
 		s.name = "Shard%d" % i
@@ -173,6 +177,27 @@ func _ready() -> void:
 	_light.light_energy = 0.9
 	_light.shadow_enabled = false
 	add_child(_light)
+	# a faint heat glow round the coal that only comes in with distance (it fades out inside
+	# ~2.5 m), so a dim, guttering wisp still reads as a point of fire across the meadow
+	_glow_mat = StandardMaterial3D.new()
+	_glow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_glow_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_glow_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	_glow_mat.no_depth_test = false
+	_glow_mat.albedo_texture = _soft_texture()
+	_glow_mat.albedo_color = Color(1.0, 0.42, 0.12, 0.25)
+	_glow_mat.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	_glow_mat.distance_fade_min_distance = 2.5
+	_glow_mat.distance_fade_max_distance = 9.0
+	var gq := QuadMesh.new()
+	gq.size = Vector2(1.1, 1.1)
+	_glow = MeshInstance3D.new()
+	_glow.name = "Glow"
+	_glow.mesh = gq
+	_glow.material_override = _glow_mat
+	_glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_glow)
 	# smoke trailing off it (world space, so it streams behind a dart)
 	_smoke = _emitter(32, 1.8, Vector2(0.5, 1.0), Color(0.075, 0.068, 0.062, 0.6), false)
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
@@ -222,9 +247,9 @@ func _ready() -> void:
 	_ash.color_ramp = gs
 	_ash.scale_amount_curve = sc
 	# rain: steam boiling off the coal (pale, rising fast, gone quickly) and a puff on a dart
-	_steam = _emitter(40, 1.1, Vector2(0.35, 0.8), Color(0.62, 0.62, 0.6, 0.32), false)
+	_steam = _emitter(64, 1.3, Vector2(0.5, 1.15), Color(0.7, 0.7, 0.68, 0.5), false)
 	_steam.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_steam.emission_sphere_radius = 0.18
+	_steam.emission_sphere_radius = 0.24
 	_steam.initial_velocity_min = 0.4
 	_steam.initial_velocity_max = 0.9
 	_steam.gravity = Vector3(0.05, 1.1, 0.0)
@@ -235,10 +260,16 @@ func _ready() -> void:
 	var gst := Gradient.new()
 	gst.set_color(0, Color(0.7, 0.7, 0.68, 0.0))
 	gst.set_color(1, Color(0.8, 0.8, 0.78, 0.0))
-	gst.add_point(0.15, Color(0.72, 0.72, 0.7, 0.4))
-	gst.add_point(0.55, Color(0.76, 0.76, 0.74, 0.18))
+	gst.add_point(0.12, Color(0.8, 0.8, 0.78, 0.62))
+	gst.add_point(0.55, Color(0.84, 0.84, 0.82, 0.3))
 	_steam.color_ramp = gst
-	_steam_puff = _emitter(24, 1.4, Vector2(0.5, 1.1), Color(0.62, 0.62, 0.6, 0.4), false)
+	# steam is unshaded: in a dark downpour a lit plume went near-black and vanished; a pale,
+	# self-lit grey keeps the white boil-off reading against the wet turf
+	for e in [_steam]:
+		var sm3: StandardMaterial3D = (e.mesh as QuadMesh).material
+		sm3.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		sm3.albedo_color = Color(0.5, 0.5, 0.49, 0.5)
+	_steam_puff = _emitter(36, 1.6, Vector2(0.7, 1.5), Color(0.7, 0.7, 0.68, 0.55), false)
 	_steam_puff.one_shot = true
 	_steam_puff.explosiveness = 0.9
 	_steam_puff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
@@ -249,6 +280,9 @@ func _ready() -> void:
 	_steam_puff.gravity = Vector3(0.05, 0.9, 0.0)
 	_steam_puff.scale_amount_curve = stc
 	_steam_puff.color_ramp = gst
+	var spm: StandardMaterial3D = (_steam_puff.mesh as QuadMesh).material
+	spm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	spm.albedo_color = Color(0.5, 0.5, 0.49, 0.55)
 	# a burning coal crackles (the recorded fire crackle, pitched up small); rain sputters it
 	_crackle = AudioStreamPlayer3D.new()
 	_crackle.name = "Crackle"
@@ -584,7 +618,7 @@ func _visuals(_delta: float) -> void:
 		s.position = p
 		# each splinter points along its path, tumbling slowly
 		s.basis = Basis(ax, a * 0.6 + i).rotated(Vector3.RIGHT, now * 0.7 + i).scaled(Vector3.ONE * _shard_size[i])
-		_shard_mats[i].set_shader_parameter("heat", 0.35 + _heat * 0.45)
+		_shard_mats[i].set_shader_parameter("heat", 0.15 + _heat * 0.2)
 	# the crust stays dark between the veins even at the flare's peak, so it reads as a coal,
 	# not a white ball (the first frame blew it out to a featureless fireball)
 	_heart_mat.set_shader_parameter("fill", 0.45 + _heat * 0.18)
@@ -592,6 +626,9 @@ func _visuals(_delta: float) -> void:
 	_heart.scale = Vector3.ONE * (0.9 + 0.12 * _heat / 4.4 + 0.03 * sin(now * 13.0))
 	_light.light_energy = (0.7 + _heat * 0.55) * (1.0 - 0.3 * douse)
 	_light.omni_range = 4.0 + _heat * 0.6
+	var ga := clampf(0.1 + _heat * 0.05, 0.1, 0.32) * (1.0 - 0.35 * douse)
+	_glow_mat.albedo_color = Color(1.0, 0.42, 0.12, ga)
+	_glow.scale = Vector3.ONE * (0.85 + 0.1 * _heat)
 	# rain: the smoke turns to steam, the sparks drown, the crackle sputters
 	_steam.emitting = douse > 0.05
 	steam_level = clampf(douse * 1.2, 0.0, 1.0)
@@ -610,6 +647,7 @@ func _die(dir: Vector3) -> void:
 	t = 0.0
 	remove_from_group("hittable")
 	_heart.visible = false
+	_glow.visible = false
 	_smoke.emitting = false
 	_sparks.emitting = false
 	_steam.emitting = false

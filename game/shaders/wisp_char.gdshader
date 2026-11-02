@@ -8,6 +8,8 @@ render_mode cull_back;
 uniform float heat = 0.6;
 uniform float fill = 0.0;
 uniform float lump = 0.0;
+uniform float vein_w = 0.055;
+uniform float charred = 0.0;     // 1 = a dead-black charred splinter (shards), 0 = the coal
 uniform vec3 seed = vec3(0.0);
 uniform vec3 ember : source_color = vec3(1.0, 0.36, 0.08);
 
@@ -47,17 +49,19 @@ void vertex() {
 
 void fragment() {
 	float n = fbm(lp * 1.7);
-	float vein = 1.0 - smoothstep(0.0, 0.055, abs(n - 0.5));
+	float vein = 1.0 - smoothstep(0.0, vein_w, abs(n - 0.5));
 	float pore = smoothstep(0.6, 0.78, fbm(lp * 4.3 + 3.1));
 	float flats = fbm(lp * 6.0);
 	vec3 soot = mix(vec3(0.03, 0.028, 0.026), vec3(0.13, 0.12, 0.11), flats * flats);
 	// heat-scorched rims go rusty brown near the veins
-	soot = mix(soot, vec3(0.16, 0.07, 0.03), vein * 0.35);
+	soot = mix(soot, vec3(0.16, 0.07, 0.03), vein * 0.35 * (1.0 - 0.7 * charred));
+	// shards: blacker, glossier char (cracked charcoal sheen), so they read as burnt splinters
+	soot *= 1.0 - 0.55 * charred;
 	ALBEDO = soot;
-	ROUGHNESS = 0.86 - 0.18 * pore;
+	ROUGHNESS = 0.86 - 0.18 * pore - 0.3 * charred * flats;
 	METALLIC = 0.0;
 	SPECULAR = 0.35;
-	float g = max(vein, pore * 0.45);
+	float g = max(vein, pore * 0.45 * (1.0 - 0.75 * charred));
 	float flick = 0.8 + 0.2 * sin(TIME * 7.0 + n * 20.0);
 	EMISSION = ember * g * heat * flick + vec3(1.0, 0.5, 0.16) * fill * (0.35 + 0.65 * n) * flick;
 }
