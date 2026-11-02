@@ -811,6 +811,28 @@ func _ready() -> void:
 		var light: Vector3 = -world.sun.global_transform.basis.z
 		var to_cam := Vector3(-light.x, 0, -light.z).normalized().rotated(Vector3.UP, 0.6)
 		SPOTS[spot] = [post + to_cam * 2.1 + Vector3.UP * 1.35, post + Vector3.UP * 0.95]
+	if spot == "sentinel":
+		# sentinel [awake] [close]: the Stone Sentinel on its post, the hero 6.5 m off on its
+		# facing; a 3/4 view from the sun side, low, the statue filling the right of the frame.
+		# `awake`: it wakes as the frames run (shudder, grit, the rune kindling)
+		var sn: StoneSentinel = world.sentinel
+		var post: Vector3 = sn._home
+		var f3 := sn.body.global_basis.z
+		f3.y = 0.0
+		f3 = f3.normalized()
+		var hp := post + f3 * 6.5
+		player.global_position = Vector3(hp.x, terrain.height_at(hp.x, hp.z) + 0.05, hp.z)
+		player.body.rotation.y = atan2(-f3.x, -f3.z)
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var side := f3.cross(Vector3.UP)
+		if side.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
+			side = -side
+		var dist := 2.6 if "close" in args else 4.6
+		var cam := post + f3 * dist * 0.8 + side * dist * 0.6
+		cam.y = terrain.height_at(cam.x, cam.z) + (1.5 if "close" in args else 1.2)
+		SPOTS[spot] = [cam, post + Vector3.UP * (1.55 if "close" in args else 1.3) + f3 * 0.4]
+		if "awake" in args:
+			sn.wake()
 	var dodge_u := -1.0
 	if spot == "ring":
 		# the Ashen Knight's stone ring from just outside its entrance, the knight at its post

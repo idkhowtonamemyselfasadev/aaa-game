@@ -25,6 +25,7 @@ var soldier: HollowSoldier
 var knight: AshenKnight
 var warden: HollowWarden
 var hewer: HollowHewer
+var sentinel: StoneSentinel
 var archer: HollowArcher
 var hounds: Array[BriarHound] = []
 var wisps: Array[HollowWisp] = []
@@ -34,6 +35,7 @@ const WARDEN_AT := Vector2(-6.0, 36.0)   # the shield warden, off the meadow's w
 const HEWER_AT := Vector2(-20.0, 46.0)   # the axe hewer, further down the meadow's west side
 const ARCHER_AT := Vector2(32.0, 70.0)   # the ashen archer, past the knight's ring on the east side
 const HOUNDS_AT := Vector2(26.0, 30.0)   # the Briar Hound pair, running the meadow's east side
+const SENTINEL_AT := Vector2(-2.0, 66.0)  # a Stone Sentinel, a guardian statue standing alone past the knight's ring
 const WISPS_AT := Vector2(-26.0, 72.0)   # a knot of three Hollow Wisps, drifting past the hewer toward the wood
 var weather: Weather
 var thermals: Thermals
@@ -147,6 +149,13 @@ func _ready() -> void:
 	hewer.plant(terrain)
 	hewer.face(p)
 	trample.walkers.append(hewer)
+	# an old guardian statue standing alone down the meadow: it wakes only if the hero comes close
+	sentinel = StoneSentinel.new()
+	sentinel.position = Vector3(p.x + SENTINEL_AT.x, 0.0, p.z + SENTINEL_AT.y)
+	add_child(sentinel)
+	sentinel.plant(terrain)
+	sentinel.face(p)
+	trample.walkers.append(sentinel)
 	# a fourth Hollow with a yew bow, standing off past the knight's ring: it keeps its distance
 	archer = HollowArcher.new()
 	archer.position = Vector3(p.x + ARCHER_AT.x, 0.0, p.z + ARCHER_AT.y)
@@ -371,8 +380,9 @@ func _ready() -> void:
 	foley.world = self
 	foley.weather = weather
 	add_child(foley)
-	foley.hook(player, [soldier, knight, warden, hewer], trample)
+	foley.hook(player, [soldier, knight, warden, hewer, sentinel], trample)
 	foley.hook_hewer(hewer)
+	foley.hook_sentinel(sentinel)
 	foley.hook_archer(archer)
 	foley.hook_knight(knight)
 	foley.hook_warden(warden)

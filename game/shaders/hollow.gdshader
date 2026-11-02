@@ -14,6 +14,9 @@ uniform vec3 ember_col : source_color = vec3(1.0, 0.36, 0.08);
 uniform float ember = 1.0;
 uniform float hit_flash = 0.0;
 uniform float dissolve = 0.0;
+// 1 = a Stone Sentinel: carved, weathered granite with lichen and moss instead of ash; the
+// fissures hold moss, not fire, and only the chest rune (ember) glows
+uniform float stone = 0.0;
 uniform vec3 root_pos;            // world position of the feet
 uniform vec3 root_fwd = vec3(0.0, 0.0, 1.0);
 
@@ -100,9 +103,25 @@ void fragment() {
 	float soot = max(crack_big * 0.5, chest * 0.5) + crack * 0.3;
 	alb = mix(alb, vec3(0.05, 0.045, 0.04), clamp(soot, 0.0, 0.85));
 	float fis = max(crack, crack_big * 0.85);
+	if (stone > 0.0) {
+		vec3 wn0 = mat3(INV_VIEW_MATRIX) * NORMAL;
+		float up = clamp(wn0.y, 0.0, 1.0);
+		float speck = hash(floor(UV * 1400.0));
+		float grain = fbm(UV * 90.0 + 1.3);
+		vec3 granite = mix(vec3(0.16, 0.158, 0.152), vec3(0.50, 0.49, 0.46),
+				clamp(lum * 1.1 * (0.55 + 0.9 * grain), 0.0, 1.0));
+		granite *= 0.84 + 0.3 * speck;
+		granite = mix(granite, vec3(0.07, 0.066, 0.062), step(0.94, speck) * 0.75);   // dark mica flecks
+		granite *= mix(0.78, 1.05, grime);                                              // rain-streaked grime
+		float lich = smoothstep(0.52, 0.74, fbm(UV * 17.0 + 2.3)) * (0.3 + 0.7 * up);
+		granite = mix(granite, vec3(0.50, 0.52, 0.37) * (0.8 + 0.4 * n), lich * 0.7);
+		float moss = smoothstep(0.5, 0.78, fbm(UV * 11.0 + 9.1)) * smoothstep(0.1, 0.7, up);
+		granite = mix(granite, vec3(0.085, 0.12, 0.045) * (0.8 + 0.5 * n), clamp(moss * 0.8 + fis * 0.7, 0.0, 0.9));
+		alb = mix(alb, granite, stone);
+	}
 	// the limbs only smoulder; the ember's light pours out of the chest, and the tell
 	// (ember > 1) mostly brightens the chest
-	float body_glow = fis * 0.035 * (0.6 + 0.4 * ember) * crack_big;
+	float body_glow = fis * 0.035 * (0.6 + 0.4 * ember) * crack_big * (1.0 - stone);
 	float chest_glow = fis * chest * 1.2 * ember + chest * 0.18 * ember * smoothstep(0.45, 0.9, n);
 	float glow = body_glow + chest_glow + fis * hit_flash * 0.6;
 	// ash flakes: a dissolve front that eats the body from the noise field, edges burning
@@ -111,7 +130,7 @@ void fragment() {
 		if (d < dissolve) discard;
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve)) * 2.5;
 	}
-	float rough = mix(0.82, 0.95, n) - crack * 0.1;
+	float rough = mix(mix(0.82, 0.95, n) - crack * 0.1, mix(0.78, 0.93, n), stone);
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);

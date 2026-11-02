@@ -17,6 +17,7 @@ uniform float ember = 0.0;      // the body's ember (HollowSoldier, pulses with 
 uniform float heat = 0.0;       // the knight's phase: 0, 0.5, 1
 uniform float dissolve = 0.0;   // crumbles with the body on death
 uniform float hit_flash = 0.0;
+uniform float stone = 0.0;      // 1 = carved granite (the Stone Sentinel's helm, pauldrons, glaive)
 
 varying float layer;
 varying float edge;
@@ -92,6 +93,22 @@ void fragment() {
 		rough = 0.45;
 		metal = 0.8;
 		bump = pits;
+	}
+	if (stone > 0.0) {
+		float g = fbm(opos * 38.0);
+		float sp = hash(floor(opos * 420.0));
+		vec3 granite = mix(vec3(0.19, 0.188, 0.18), vec3(0.48, 0.47, 0.44), g) * (0.84 + 0.3 * sp);
+		granite = mix(granite, vec3(0.07, 0.066, 0.062), step(0.94, sp) * 0.7);
+		float lich = smoothstep(0.55, 0.76, fbm(opos * 12.0 + 2.0));
+		granite = mix(granite, vec3(0.49, 0.51, 0.36) * (0.8 + 0.4 * g), lich * 0.7);
+		float moss = smoothstep(0.6, 0.82, fbm(opos * 8.0 + 5.3));
+		granite = mix(granite, vec3(0.085, 0.12, 0.045), moss * 0.75);
+		granite = mix(granite, vec3(0.6, 0.59, 0.55), smoothstep(0.55, 0.95, edge) * 0.35);   // worn edges
+		alb = mix(alb, granite, stone);
+		rough = mix(rough, 0.86 + 0.08 * g, stone);
+		metal = mix(metal, 0.0, stone);
+		bump = mix(bump, g * 0.6 + sp * 0.15, stone);
+		glow *= 1.0 - stone * 0.6;
 	}
 	if (dissolve > 0.0) {
 		float d = fbm(opos * 5.0 + 1.7);

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -67,6 +67,11 @@ func _ready() -> void:
 	# the axe hewer likewise stands its post unless it is under test
 	if name != "hewer" and _world.hewer != null:
 		_world.hewer.process_mode = Node.PROCESS_MODE_DISABLED
+	if name != "sentinel" and _world.sentinel != null:
+		_world.sentinel.process_mode = Node.PROCESS_MODE_DISABLED
+	if name == "sentinel":
+		_sentinel_test()
+		return
 	if name != "archer" and _world.archer != null:
 		_world.archer.process_mode = Node.PROCESS_MODE_DISABLED
 	if name != "wisps":
@@ -1219,6 +1224,125 @@ func _warden_test() -> void:
 ## raise shrugs off a light blow; a roll on the glint beats the chop and buries the bit (open:
 ## a light blow staggers it); a roll on the raise is spent too early; a heavy on the glint
 ## parries; and a hero who rolls on the glint and punishes the stuck axe kills it.
+## Stone Sentinel: a statue that stays still until the hero is close, chips on the front,
+## takes full blows from behind, hits hard, mends and goes still at its post again, dies.
+func _sentinel_test() -> void:
+	var p := _player
+	var w: StoneSentinel = _world.sentinel
+	for n in [_world.soldier, _world.knight, _world.warden, _world.hewer, _world.archer]:
+		n.process_mode = Node.PROCESS_MODE_DISABLED
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	var gd := Vector2(w.global_position.x - p.global_position.x, w.global_position.z - p.global_position.z).length()
+	var near := INF
+	for n in [_world.soldier, _world.warden, _world.knight, _world.hewer, _world.archer]:
+		near = minf(near, Vector2(w.global_position.x - n.global_position.x, w.global_position.z - n.global_position.z).length())
+	for wi in _world.wisps:
+		near = minf(near, Vector2(w.global_position.x - wi.global_position.x, w.global_position.z - wi.global_position.z).length())
+	var spd: float = w.anim_tree.get("parameters/speed/scale")
+	print("BOT sentinel: %.1f m from the start, %.1f m from the nearest Hollow, state %d, dormant %s, anim speed %.2f, health %.0f" % [gd, near, w.state, w.dormant, spd, w.health])
+	if w.state != HollowSoldier.IDLE or not w.dormant or spd != 0.0 or near < HollowSoldier.NOTICE + 2.0:
+		return _combat_done(false, "the sentinel should stand still as a statue, clear of the other Hollows")
+	# the rags are off, the stone armour on
+	var rag_seen := 0
+	for mi in w.skel.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).material_override in w.rags.mats and (mi as MeshInstance3D).is_visible_in_tree():
+			rag_seen += 1
+	print("BOT sentinel: armour pieces %d, rag pieces showing %d" % [w.armour.pieces, rag_seen])
+	if rag_seen > 0 or w.armour.pieces < 4:
+		return _combat_done(false, "the statue still wears cloth or lacks its stone helm/pauldrons/glaive")
+	# 1) at 9 m (well inside a Hollow's notice) it does not stir
+	_sentinel_at(w, 9.0)
+	await _ticks(90)
+	print("BOT sentinel: hero at 9 m for 1.5 s -> dormant %s, wakes %d" % [w.dormant, w.wakes])
+	if not w.dormant or w.wakes != 0:
+		return _combat_done(false, "the statue woke for a hero 9 m off")
+	# 2) at 5 m it wakes: the shudder, then it comes on with the rune lit
+	_sentinel_at(w, 5.0)
+	var tt := 0.0
+	var max_shake := 0.0
+	while w.waking < 0.0 and tt < 1.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	var wake_at := tt
+	while w.waking >= 0.0 and tt < 4.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		max_shake = maxf(max_shake, w.body.position.length())
+	print("BOT sentinel: hero at 5 m -> woke after %.2f s, shook %.3f m, came loose after %.2f s, state %d, rune %.2f" % [wake_at, max_shake, tt - wake_at, w.state, w.max_ember])
+	if w.wakes != 1 or w.dormant or max_shake < 0.005 or tt - wake_at < StoneSentinel.WAKE_T * 0.9 or w.state != HollowSoldier.STALK or w.max_ember < 1.0:
+		return _combat_done(false, "the statue did not wake (shudder, rune) for a hero at 5 m")
+	# 3) a blow on its front chips; the same blow from behind tells in full
+	w.process_mode = Node.PROCESS_MODE_DISABLED
+	var to_w := w.global_position - p.global_position
+	to_w.y = 0.0
+	var h0 := w.health
+	w.take_hit(w.global_position + Vector3.UP * 1.2, to_w.normalized(), 1.0, 0.0)
+	var front := h0 - w.health
+	w.body.rotation.y += PI
+	h0 = w.health
+	w.take_hit(w.global_position + Vector3.UP * 1.2, to_w.normalized(), 1.0, 0.0)
+	var back := h0 - w.health
+	print("BOT sentinel: light blow on the front -> %.1f damage (chips %d), from behind -> %.1f (full hits %d)" % [front, w.chips, back, w.full_hits])
+	if front <= 0.0 or front > back * 0.4 or w.chips < 1 or w.full_hits < 1:
+		return _combat_done(false, "the stone skin does not turn frontal blows (or a blow from behind is not full)")
+	w.process_mode = Node.PROCESS_MODE_INHERIT
+	# 4) its thrust lands hard on a hero who stands
+	p.health = Player.HEALTH_MAX
+	_soldier_at(w, 2.4, HollowSoldier.THRUST_MOVE)
+	var n0 := w.strikes
+	await _wait_strike_done(w, n0)
+	var dmg := Player.HEALTH_MAX - p.health
+	print("BOT sentinel: stood -> %s for %.1f damage (a soldier's thrust %.1f)" % [w.last_result, dmg, HollowSoldier.DAMAGE])
+	if w.last_result != "hit" or dmg < HollowSoldier.DAMAGE * 1.2:
+		return _combat_done(false, "the sentinel's thrust did not land hard on a standing hero")
+	w.force_move = -1
+	# 5) the hero runs: it walks back to its post, turns, mends and stands still again
+	p.health = Player.HEALTH_MAX
+	var home := w._home
+	var away := (p.global_position - home)
+	away.y = 0.0
+	var far := home + away.normalized() * 30.0
+	p.global_position = Vector3(far.x, _world.terrain.height_at(far.x, far.z) + 0.1, far.z)
+	p.velocity = Vector3.ZERO
+	tt = 0.0
+	while not w.dormant and tt < 25.0:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+	spd = w.anim_tree.get("parameters/speed/scale")
+	print("BOT sentinel: hero 30 m off -> still again after %.1f s, %.2f m from its post, facing off %.2f rad, health %.0f/%.0f, anim speed %.2f, petrifies %d" % [tt, (w.global_position - home).length(), absf(angle_difference(w.body.rotation.y, w._home_yaw)), w.health, w.health_max, spd, w.petrifies])
+	if not w.dormant or w.health < w.health_max or w.petrifies != 1 or spd != 0.0:
+		return _combat_done(false, "the sentinel did not go back to its post, mend and stand still")
+	# 6) struck while dormant it wakes too; then blows from behind bring it down
+	_sentinel_at(w, 8.0)
+	w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.0, 0.0)
+	print("BOT sentinel: struck as a statue -> waking %s, wakes %d" % [w.waking >= 0.0, w.wakes])
+	if w.waking < 0.0 or w.wakes != 2:
+		return _combat_done(false, "a blow on the statue did not wake it")
+	while w.waking >= 0.0:
+		await get_tree().physics_frame
+	var blows := 0
+	while w.state != HollowSoldier.DEAD and blows < 40:
+		w.body.rotation.y = atan2(-(p.global_position - w.global_position).x, -(p.global_position - w.global_position).z)
+		w.take_hit(w.global_position + Vector3.UP * 1.2, -w.body.global_basis.z, 1.6, 0.0)
+		blows += 1
+		await _ticks(3)
+	await _ticks(60)
+	var stone_n := int(fol.played.get("stone", 0)) - int(played0.get("stone", 0))
+	print("BOT sentinel: %d blows from behind -> state %d, stone sounds played %d" % [blows, w.state, stone_n])
+	if w.state != HollowSoldier.DEAD or stone_n < 4:
+		return _combat_done(false, "the sentinel did not fall to blows from behind (or its stone foley is silent)")
+	_combat_done(true, "the Stone Sentinel stands as a statue, wakes close, shrugs off frontal blows, hits hard, mends at its post and falls")
+
+## Moves the hero to `d` m in front of the sentinel's post (in its facing), still.
+func _sentinel_at(w: StoneSentinel, d: float) -> void:
+	var p := _player
+	var at := w._home + w.body.global_basis.z * d
+	p.global_position = Vector3(at.x, _world.terrain.height_at(at.x, at.z) + 0.1, at.z)
+	p.velocity = Vector3.ZERO
+	p.bot_input = Vector2.ZERO
+
 func _hewer_test() -> void:
 	var p := _player
 	var w: HollowHewer = _world.hewer

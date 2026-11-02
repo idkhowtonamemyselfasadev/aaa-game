@@ -271,6 +271,18 @@ func hook_hewer(hw: Node) -> void:
 			_play("chop", at, 0.0, 0.7)
 			_play("thud", at, -3.0, 0.75))
 
+## The Stone Sentinel: a deep grinding crack as the statue wakes, a dull chip off the granite
+## when a blow lands on its front, a low settle as it goes still at its post again. All from
+## the recorded stone impacts, pitched down.
+func hook_sentinel(sn: Node) -> void:
+	if sn == null or not sn.has_signal("awakened"):
+		return
+	sn.awakened.connect(func(at: Vector3) -> void:
+		_play("stone", at + Vector3.UP * 1.2, -2.0, 0.55)
+		_play("slam", at + Vector3.UP * 0.4, -12.0, 0.6))
+	sn.chipped.connect(func(at: Vector3) -> void: _play("stone", at, -5.0, 0.8))
+	sn.petrified.connect(func() -> void: _play("stone", (sn as Node3D).global_position + Vector3.UP, -12.0, 0.5))
+
 func hook_herd(h: Node) -> void:
 	if h == null or not h.has_signal("barked"):
 		return
