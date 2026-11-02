@@ -2046,6 +2046,55 @@ func _wisps_test() -> void:
 		t += get_physics_process_delta_time()
 	if not dodged:
 		return _combat_done(false, "no dart came to roll from")
+	# a downpour: the coals gutter (dimmer, lower, steam not smoke) and flare slower
+	var dry_heat := 0.8                 # a dry wisp circling burns at heat 0.8, hangs at HOVER
+	var dry_hover := HollowWisp.HOVER
+	_world.weather.force(1.0)
+	t = 0.0
+	var flare_len := 0.0
+	var flare_from := -1.0
+	var puffs0 := 0
+	for w: HollowWisp in ws:
+		puffs0 += w.steam_puffs
+	var wet_heat := 0.0
+	var wet_hover := 0.0
+	var samples := 0
+	while t < 14.0 and flare_len <= 0.0:
+		for w: HollowWisp in ws:
+			if w.douse < 0.95:
+				continue
+			if w.state == HollowWisp.STALK:
+				wet_heat += w.heat()
+				wet_hover += w.global_position.y - _world.terrain.height_at(w.global_position.x, w.global_position.z)
+				samples += 1
+			if w.state == HollowWisp.WINDUP and flare_from < 0.0 and w.t < 0.05:
+				flare_from = t
+			elif flare_from >= 0.0 and w.state == HollowWisp.STRIKE and flare_len <= 0.0:
+				flare_len = t - flare_from
+		if p.health < 40.0:
+			p.health = Player.HEALTH_MAX
+		await get_tree().physics_frame
+		t += get_physics_process_delta_time()
+	var puffs := 0
+	for w: HollowWisp in ws:
+		puffs += w.steam_puffs
+	wet_heat /= maxf(samples, 1)
+	wet_hover /= maxf(samples, 1)
+	var w0: HollowWisp = ws[0]
+	print("BOT wisps: rain -> douse %.2f, stalk heat %.2f (dry %.2f), hover %.2f m (dry %.2f), flare %.2f s (dry %.2f), steam on %s ratio %.2f, sparks ratio %.2f, steam puffs %d, crackle %.1f dB playing %s" % [w0.douse, wet_heat, dry_heat, wet_hover, dry_hover, flare_len, HollowWisp.GATHER_T, w0._steam.emitting, w0.steam_level, w0.spark_level, puffs - puffs0, w0._crackle.volume_db, w0._crackle.playing])
+	if samples == 0 or wet_heat > dry_heat * 0.75:
+		return _combat_done(false, "rain did not gutter the wisps' heat")
+	if wet_hover > dry_hover - 0.12:
+		return _combat_done(false, "rain did not beat the wisps down lower")
+	if flare_len < HollowWisp.GATHER_T * 1.3:
+		return _combat_done(false, "a doused wisp flared as fast as a dry one (%.2f s)" % flare_len)
+	if not w0._steam.emitting or w0.spark_level > 0.3:
+		return _combat_done(false, "a doused wisp still throws sparks and no steam")
+	_world.weather.force(0.0)
+	await _ticks(240)
+	print("BOT wisps: dried -> douse %.2f, steam on %s" % [w0.douse, w0._steam.emitting])
+	if w0.douse > 0.05:
+		return _combat_done(false, "the wisps never dried off after the rain")
 	# fight the knot: punish the slack one, otherwise swing at the nearest in reach
 	t = 0.0
 	var swings_at_slack := 0
@@ -2101,7 +2150,7 @@ func _wisps_test() -> void:
 	print("BOT wisps: shards in the grass for %d of 3, hittable left %d" % [down, ws.filter(func(w): return w.is_in_group("hittable")).size()])
 	if down < 3:
 		return _combat_done(false, "a snuffed wisp's shards did not come to rest in the grass")
-	return _combat_done(true, "the wisp knot woke, took turns to flare and dart, a roll cleared the dart, and the staff put all three out")
+	return _combat_done(true, "the wisp knot woke, took turns to flare and dart, a roll cleared the dart, rain guttered them, and the staff put all three out")
 
 func _hounds_test() -> void:
 	var p := _player

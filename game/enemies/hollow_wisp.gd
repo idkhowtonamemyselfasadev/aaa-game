@@ -11,6 +11,9 @@ extends CharacterBody3D
 ##  DART. It flies straight at where the hero's chest was when the flare peaked and sears on
 ##    contact. Step across the line or roll on the flare's peak; the heavy parries it.
 ##  SLACK. After a dart it hangs low and dim for RECOVER_T, shards drooping: the punish window.
+##  RAIN. A downpour beats them down: the coal gutters dim and low, steam boils off it instead
+##    of smoke, the sparks drown, its crackle sputters quiet, and the flare takes longer to
+##    build (DOUSE_FLARE) and sears weaker -- fighting a knot in the rain is easier.
 ## Fragile: two light strikes put it out. Killed, the heart bursts into sparks and ash and the
 ## shards drop into the grass.
 
@@ -38,6 +41,10 @@ const PARRIED_T := 1.2
 const PACK_GAP := 0.7         # s after a kin's dart before the next may flare
 const COOLDOWN := 1.8         # s it circles after a dart (+ up to COOL_JITTER)
 const COOL_JITTER := 1.4
+const DOUSE_FLARE := 0.45     # the flare takes up to this much longer in a downpour
+const DOUSE_HEAT := 0.45      # and burns up to this much dimmer
+const DOUSE_DMG := 0.3        # and the sear is up to this much weaker
+const DOUSE_SINK := 0.25      # m lower it hangs, beaten down
 const SHARDS := 7
 const SHARD_R := 0.5
 
@@ -78,6 +85,15 @@ var _gather := 0.0            # 0 loose .. 1 shards pulled in
 var _droop := 0.0
 var _hover := HOVER
 var _rng := RandomNumberGenerator.new()
+var weather: Weather
+var douse := 0.0              # 0 dry .. 1 guttering in a downpour (smoothed rain)
+var steam_puffs := 0          # bursts of steam off a dart in rain (bots)
+var steam_level := 0.0        # steam off the coal, 0..1 (alpha on the emitter)
+var spark_level := 1.0        # how much of the spark trickle survives the rain
+var _gather_len := GATHER_T
+var _steam: CPUParticles3D
+var _steam_puff: CPUParticles3D
+var _crackle: AudioStreamPlayer3D
 var _heart: MeshInstance3D
 var _heart_mat: ShaderMaterial
 var _shards: Array[MeshInstance3D] = []
@@ -205,8 +221,48 @@ func _ready() -> void:
 	_ash.gravity = Vector3(0.15, 0.25, 0)
 	_ash.color_ramp = gs
 	_ash.scale_amount_curve = sc
+	# rain: steam boiling off the coal (pale, rising fast, gone quickly) and a puff on a dart
+	_steam = _emitter(40, 1.1, Vector2(0.35, 0.8), Color(0.62, 0.62, 0.6, 0.32), false)
+	_steam.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	_steam.emission_sphere_radius = 0.18
+	_steam.initial_velocity_min = 0.4
+	_steam.initial_velocity_max = 0.9
+	_steam.gravity = Vector3(0.05, 1.1, 0.0)
+	var stc := Curve.new()
+	stc.add_point(Vector2(0.0, 0.3))
+	stc.add_point(Vector2(1.0, 1.0))
+	_steam.scale_amount_curve = stc
+	var gst := Gradient.new()
+	gst.set_color(0, Color(0.7, 0.7, 0.68, 0.0))
+	gst.set_color(1, Color(0.8, 0.8, 0.78, 0.0))
+	gst.add_point(0.15, Color(0.72, 0.72, 0.7, 0.4))
+	gst.add_point(0.55, Color(0.76, 0.76, 0.74, 0.18))
+	_steam.color_ramp = gst
+	_steam_puff = _emitter(24, 1.4, Vector2(0.5, 1.1), Color(0.62, 0.62, 0.6, 0.4), false)
+	_steam_puff.one_shot = true
+	_steam_puff.explosiveness = 0.9
+	_steam_puff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	_steam_puff.emission_sphere_radius = 0.25
+	_steam_puff.spread = 180.0
+	_steam_puff.initial_velocity_min = 0.5
+	_steam_puff.initial_velocity_max = 1.6
+	_steam_puff.gravity = Vector3(0.05, 0.9, 0.0)
+	_steam_puff.scale_amount_curve = stc
+	_steam_puff.color_ramp = gst
+	# a burning coal crackles (the recorded fire crackle, pitched up small); rain sputters it
+	_crackle = AudioStreamPlayer3D.new()
+	_crackle.name = "Crackle"
+	_crackle.stream = load("res://audio/sfx/fire/crackle_loop.ogg")
+	_crackle.bus = &"SFX"
+	_crackle.unit_size = 1.2
+	_crackle.max_distance = 14.0
+	_crackle.volume_db = -14.0
+	_crackle.pitch_scale = 1.35 + _rng.randf() * 0.15
+	add_child(_crackle)
 	_home = global_position
 	_cool = _rng.randf_range(0.0, COOL_JITTER)
+	if weather == null and get_parent() != null:
+		weather = get_parent().get("weather") as Weather
 
 func _emitter(n: int, life: float, size: Vector2, col: Color, glow: bool) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
@@ -385,6 +441,10 @@ func _physics_process(delta: float) -> void:
 		return
 	t += delta
 	_cool -= delta
+	var wet_to := 0.0
+	if weather != null:
+		wet_to = clampf((weather.rain - 0.1) / 0.6, 0.0, 1.0)
+	douse = move_toward(douse, wet_to, delta / 3.0)
 	_flash = maxf(_flash - delta * 4.0, 0.0)
 	var to := Vector3.ZERO
 	var dist := 1e9
@@ -420,11 +480,12 @@ func _physics_process(delta: float) -> void:
 				want = want.limit_length(DRIFT)
 				heat_to = 0.8
 				if _cool <= 0.0 and dist > DART_MIN and dist < DART_MAX and not _kin_busy():
+					_gather_len = GATHER_T * (1.0 + DOUSE_FLARE * douse)
 					_enter(WINDUP)
 					flared.emit(global_position)
 		WINDUP:
 			# the flare: shards snap in, the heart goes white-hot, it draws back and up
-			var u := clampf(t / GATHER_T, 0.0, 1.0)
+			var u := clampf(t / _gather_len, 0.0, 1.0)
 			want = Vector3(-to.x, 0, -to.z).normalized() * 0.7 * (1.0 - u)
 			heat_to = 0.8 + 3.6 * u * u
 			gather_to = smoothstep(0.0, 0.6, u)
@@ -436,6 +497,12 @@ func _physics_process(delta: float) -> void:
 				_dart_speed = (l + DART_OVER) / DART_T
 				_resolved = false
 				darts += 1
+				if douse > 0.3:
+					# rain on the white-hot coal flashes to steam as it goes
+					_steam_puff.global_position = global_position
+					_steam_puff.restart()
+					_steam_puff.emitting = true
+					steam_puffs += 1
 				_enter(STRIKE)
 				darted.emit(global_position)
 		STRIKE:
@@ -474,7 +541,9 @@ func _physics_process(delta: float) -> void:
 				_cool = maxf(_cool, 0.6)
 				_enter(STALK if _player != null else IDLE)
 	# height: settle toward the hover over the turf (a dart flies its own straight line)
+	heat_to *= 1.0 - DOUSE_HEAT * douse
 	if hover_to >= 0.0:
+		hover_to -= DOUSE_SINK * douse
 		_hover = lerpf(_hover, hover_to, 1.0 - exp(-4.0 * delta))
 		var gy := _ground_y(global_position) + _hover + sin(Time.get_ticks_msec() * 0.0021 + _ang) * 0.06
 		want.y = (gy - global_position.y) * 5.0
@@ -492,7 +561,7 @@ func _physics_process(delta: float) -> void:
 	_visuals(delta)
 
 func _sear() -> void:
-	var r := _player.receive_attack(self, DAMAGE, false, false)
+	var r := _player.receive_attack(self, DAMAGE * (1.0 - DOUSE_DMG * douse), false, false)
 	if r == "hit":
 		sears += 1
 		ImpactFX.spawn(get_parent(), global_position, _aim, "stone", 0.5)
@@ -521,8 +590,20 @@ func _visuals(_delta: float) -> void:
 	_heart_mat.set_shader_parameter("fill", 0.45 + _heat * 0.18)
 	_heart_mat.set_shader_parameter("heat", 1.4 + _heat * 0.7)
 	_heart.scale = Vector3.ONE * (0.9 + 0.12 * _heat / 4.4 + 0.03 * sin(now * 13.0))
-	_light.light_energy = 0.7 + _heat * 0.55
+	_light.light_energy = (0.7 + _heat * 0.55) * (1.0 - 0.3 * douse)
 	_light.omni_range = 4.0 + _heat * 0.6
+	# rain: the smoke turns to steam, the sparks drown, the crackle sputters
+	_steam.emitting = douse > 0.05
+	steam_level = clampf(douse * 1.2, 0.0, 1.0)
+	spark_level = 1.0 - 0.85 * douse
+	_steam.color = Color(1, 1, 1, steam_level)
+	_smoke.color = Color(1, 1, 1, 1.0 - 0.7 * douse)
+	_sparks.color = Color(1, 1, 1, spark_level)
+	if _crackle != null:
+		if not _crackle.playing and _crackle.is_inside_tree():
+			_crackle.play(_rng.randf() * 4.0)
+		_crackle.volume_db = -14.0 + 2.5 * minf(_heat / 4.4, 1.0) - 9.0 * douse
+		_crackle.pitch_scale = lerpf(1.4, 1.15, douse)
 
 func _die(dir: Vector3) -> void:
 	state = DEAD
@@ -531,6 +612,9 @@ func _die(dir: Vector3) -> void:
 	_heart.visible = false
 	_smoke.emitting = false
 	_sparks.emitting = false
+	_steam.emitting = false
+	if _crackle != null:
+		_crackle.stop()
 	_burst.restart()
 	_burst.emitting = true
 	_ash.restart()

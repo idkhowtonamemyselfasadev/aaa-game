@@ -993,6 +993,11 @@ func _ready() -> void:
 			var q: Vector3 = spots[i]
 			w.global_position = Vector3(q.x, terrain.height_at(q.x, q.z) + (1.45 if i == 0 else 1.3 + 0.15 * i), q.z)
 			w._heat = 4.2 if i == 0 else 0.8
+			if "rain" in args:
+				# a doused knot: guttering coals, steam boiling off, sparks drowned
+				w.douse = 1.0
+				w._heat *= 1.0 - HollowWisp.DOUSE_HEAT
+				w.global_position.y -= HollowWisp.DOUSE_SINK
 			w._gather = 1.0 if i == 0 else 0.0
 			w.state = HollowWisp.WINDUP if i == 0 else HollowWisp.STALK
 			w._visuals(0.0)
@@ -1011,7 +1016,14 @@ func _ready() -> void:
 		# over the hero's right shoulder, looking into the knot
 		var fwd := Vector3(0, 0, 1)
 		var mid := hp + Vector3(0.4, 0, 3.4)
-		SPOTS[spot] = [hp - fwd * 2.3 + Vector3(-0.9, 0, 0), mid]
+		if "rain" in args:
+			world.weather.force(1.0)
+		if "close" in args:
+			# tight over the shoulder: the flaring one ~2.5 m off the lens, its kin beyond
+			mid = hp + Vector3(0.6, 0, 3.2)
+			SPOTS[spot] = [hp + Vector3(-0.35, 0, 0.35), mid]
+		else:
+			SPOTS[spot] = [hp - fwd * 2.3 + Vector3(-0.9, 0, 0), mid]
 		print("SHOT wisps hero %s wisps %s lens %s" % [player.global_position, ws.map(func(w): return w.global_position), SPOTS[spot][0]])
 	if spot == "ferns":
 		# the densest fern drift (most ferns within 5 m), framed with its oak behind it
