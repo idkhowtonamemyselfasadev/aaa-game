@@ -48,7 +48,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   and the pit puff is raised to 0.4 m / 0.45 m sphere, so camera-facing cards no longer cut a hard-floored pale
   half-dome into the turf. Bot `sentinel` PASS with new checks: inscription faces the statue's way (1.00), 0.83 m out,
   dark asleep, kindled 0.84 with the wake, cooled dark 1.0 s after it stood still; dust self-light matches exposure,
-  puff soft-edged; exposure 0.30 at 12:30 (a cloud over the pit that run) and 0.00 at 23:30.
+  puff soft-edged; exposure 0.30 at 12:30 (a cloud over the pit that run) and 0.00 at 23:30. NOT SEEN: no
+  screenshot saved this session (both GL runs timed out at 1500 s), so the look is unjudged and there is no gallery entry.
 - **(14:00 11-02) Sentinel slam dust that reads in shade (Next 0 (0)).** ground_crack.gd: all slam dust paler
   (0.58/0.55/0.51 at alpha 0.68 -> 0.68 grey; was 0.40 at 0.55) and carries a faint pale emission (`DUST_GLOW`
   0.62/0.60/0.56 x `DUST_GLOW_E` 0.32) on top of per-vertex light, so a ring raised in tree shade stays pale earth over the
@@ -6624,7 +6625,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 
 ## Next (milestone 1 — vertical slice, in order)
 0. (15:20 11-02) **Plinth rune + sunlit slam dust DONE (bot `sentinel` PASS).** NEXT, in order: (0) Forward+ frame
-   of `sentinel awake` at dusk to judge the rune's glow under real light (GL frames this session: see Done);
+   of `sentinel awake` at dusk to judge the rune's glow under real light (NO frames this session: both GL runs
+   `sentinel sn_sun12 98 12.0 fixfps slam` and `sentinel sn_rune 75 18.6 fixfps awake` hit a 1500 s timeout
+   after the sward streamed in, nothing saved -- GL shots now need > 25 min; use timeout 2400+, ONE shot per session);
+   also take the sunlit `slam` frame to confirm the dust is no longer chalk white and the half-dome is gone;
    a recorded stone-grinding loop while it walks (needs freesound/opengameart reachable); (0b) a Sentinel pair at
    the Shrine of Binding's way down once the shrine is built; (0c) the Ashen Knight's 3 phases with a mechanic change
    each (owner priority after 0b) -- audit what exists and fill gaps; (1) Forward+ frame of `wisps wisps_cower 30 22.0
