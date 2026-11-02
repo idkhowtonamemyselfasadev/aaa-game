@@ -6494,8 +6494,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    alpha (CPUParticles3D has no amount_ratio) and brings in a pale steam emitter plus a steam puff on each dart.
    Each wisp now carries a quiet positional crackle (the recorded fire `crackle_loop.ogg` pitched 1.35-1.5, SFX
    bus, -14 dB, 14 m) that sputters 9 dB down and lower in rain; no new files. shot.gd `wisps` takes `rain`
-   (forced front, doused knot) and `close` (lens ~2.5 m off the flaring one). NEXT, in order: (0) look at the
-   `close`/`rain` frames and tune; a faint glow card so a dim wisp reads at 10 m; (0b) wisps gather round a
+   (forced front, doused knot) and `close` (lens ~2.5 m off the flaring one). GL frame `wisps
+   wisps_rain_close 20 17 fixfps rain close` SEEN, gallery `wisps-rain` FAIL: the wet meadow, puddles and rain
+   streaks read well, but the steam barely shows, the flaring heart is still a bright ball, the shards read as
+   flat orange flakes and the `close` lens sits in front of the hero (out of frame). NEXT, in order: (0) pull the
+   `close` lens back 1 m behind the hero's shoulder; thicker/brighter steam; darker char on the shards; a faint glow card so a dim wisp reads at 10 m; (0b) wisps gather round a
    campfire at night (owner ALIVE list); a real recorded hiss when freesound is reachable;
    (0c) Forward+ frame of the archer peeking from cover; (1) `flight` frame fixes; (d) hewer `bite` reframe;
    (e) next enemy: Stone Sentinel (shrine guard). 0b-e: freesound still unreachable (curl 000, 03:00 11-02).
