@@ -1177,10 +1177,20 @@ func _knightleap_test() -> void:
 		var waited := 0.0
 		var rolled := false
 		var parry_up := false
+		# bone poses carry the modifiers (tuck, arm IK) only inside skeleton_updated
+		var seen := [Vector3.ZERO]
+		var grab := func() -> void: seen[0] = _knight_legs(k)
+		k.skel.skeleton_updated.connect(grab)
+		await _ticks(2)
+		var stand_legs: Vector3 = seen[0]
+		var air_legs := Vector3(99, -99, -99)
 		while k.leaps_landed() == n0 and waited < 6.0:
 			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP:
 				crouch_seen = true
 			max_lift = maxf(max_lift, k.leap_lift)
+			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.STRIKE and absf(k.t / AshenKnight.LEAP_T - 0.5) < 0.08:
+				var l: Vector3 = seen[0]
+				air_legs = Vector3(minf(air_legs.x, l.x), maxf(air_legs.y, l.y), maxf(air_legs.z, l.z))
 			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.STRIKE:
 				if kind == "roll" and not rolled and k.t > AshenKnight.LEAP_T - 0.12:
 					p.stamina = p.stamina_max
@@ -1195,11 +1205,17 @@ func _knightleap_test() -> void:
 			await get_tree().physics_frame
 			waited += get_physics_process_delta_time()
 		p.bot_input = Vector2.ZERO
+		k.skel.skeleton_updated.disconnect(grab)
 		var r: String = k.leap_results[-1] if k.leap_results.size() > 0 else "none"
 		var land_err := Vector2(k.leap_bite().x - hero_at.x, k.leap_bite().z - hero_at.z).length()
 		var feet_gap := Vector2(k.global_position.x - hero_at.x, k.global_position.z - hero_at.z).length()
 		print("BOT knightleap: %s -> %s (crouch %s, top of arc %.2f m, bite %.2f m from where the hero stood, feet %.2f m off, state %d)" % [kind, r, crouch_seen, max_lift, land_err, feet_gap, k.state])
 		res[kind] = r
+		print("BOT knightleap: legs standing feet %.2f m under the hips, knees %.2f m fore; mid-air feet %.2f m under, knees %.2f m fore; hands %.2f m above the head" % [stand_legs.x, stand_legs.y, air_legs.x, air_legs.y, air_legs.z])
+		if air_legs.x > stand_legs.x * 0.7 or air_legs.y < 0.2:
+			return _combat_done(false, "the knight's legs hang straight in the air (feet %.2f m under the hips)" % air_legs.x)
+		if air_legs.z < 0.0:
+			return _combat_done(false, "the glaive is not heaved overhead at the top of the leap")
 		if not crouch_seen or max_lift < 1.0:
 			return _combat_done(false, "no crouch and arc before the leap (%s)" % kind)
 		if kind == "stand" and (land_err > 1.2 or feet_gap < 0.9):
@@ -1224,6 +1240,22 @@ func _knightleap_test() -> void:
 	if dp.whoom < 3 or dp.slam < 3:
 		return _combat_done(false, "the leap's take-off and landing sounds did not play")
 	_combat_done(true, "no leap in phase 1, crouch + arc + landing by the hero in phase 2, standing hit, roll passed, parry refused")
+
+## The knight's legs and hands in its body frame: x = feet (mean) below the hips, y = knees
+## (mean) ahead of the hips, z = the higher hand above the head bone.
+func _knight_legs(k: AshenKnight) -> Vector3:
+	var sk := k.skel
+	if sk == null:
+		return Vector3.ZERO
+	var inv := k.body.global_basis.orthonormalized().inverse()
+	var at := func(nm: String) -> Vector3:
+		return inv * (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin)
+	var hips: Vector3 = at.call("Hips")
+	var feet: Vector3 = (at.call("LeftFoot") + at.call("RightFoot")) * 0.5
+	var knees: Vector3 = (at.call("LeftLeg") + at.call("RightLeg")) * 0.5
+	var head: Vector3 = at.call("Head")
+	var hand := maxf(at.call("LeftHand").y, at.call("RightHand").y)
+	return Vector3(hips.y - feet.y, knees.z - hips.z, hand - head.y)
 
 ## Glide: high over the vale a jump in the air snaps the glider open; it settles to a slow sink
 ## and flies on along the facing, the stick banks it round, jump lets go into a free fall,

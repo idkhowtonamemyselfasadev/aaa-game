@@ -938,7 +938,8 @@ func _ready() -> void:
 			if "knight" in args and "leap" in args:
 				# the knight high in its arc between them: square on to the leap, back far enough
 				# to hold the whole arc and the hero under it
-				SPOTS[spot] = [mid + side * 6.2 - line * 0.6 + Vector3.UP * 0.2, mid + Vector3.UP * 1.1]
+				# (closer and a little low, looking up into the tuck and the heaved glaive)
+				SPOTS[spot] = [mid + side * 4.6 - line * 0.4 + Vector3.UP * 0.05, mid + Vector3.UP * 1.6]
 			if "lodged" in args:
 				# the arrow standing in the hero: close on the hero's flank, the archer beyond
 				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]

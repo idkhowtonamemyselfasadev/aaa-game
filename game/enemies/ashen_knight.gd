@@ -49,6 +49,11 @@ const LEAP_DAMAGE := 28.0
 const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes down (the slam's)
 # glaive poses borrowed from the Stone Sentinel's slam (same glaive, same build of body)
 const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
+## leap heave: both hands up over the helm, the blade laid back behind the head
+const LEAP_HEAVE := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
+const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
+const TUCK_KNEE := 1.75           # rad the shins fold back
 
 signal phase_changed(phase: int)
 ## a light blow turned aside by the ember guard (foley: a ringing clang on the shaft)
@@ -80,6 +85,7 @@ var leap_from := Vector3.ZERO
 var leap_to := Vector3.ZERO      # where its feet land (the bite is LEAP_BITE beyond)
 var leap_lift := 0.0             # current height of the arc (hurt capsule and model ride it)
 var _leap_cool := 0.0
+var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var _terrain_ref: Terrain
 
 func _ready() -> void:
@@ -96,6 +102,11 @@ func _ready() -> void:
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06))
 	_ember_light.omni_range = 3.4
 	_dress()
+	if skel != null:
+		tuck = LegTuck.new()
+		tuck.name = "LegTuck"
+		tuck.side = body
+		skel.add_child(tuck)
 	add_to_group("boss")
 
 ## Armour over the ash body: the soldier's hood comes off for a closed helm, pauldrons and a
@@ -204,6 +215,10 @@ func _begin_surge() -> void:
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
+	if not (move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
+		_set_tuck(0.0, 0.0)
+		if _wield != null:
+			_wield.position.y = 0.0
 	if state == DEAD or _freeze > 0.0:
 		return
 	if _surge >= 0.0:
@@ -215,6 +230,7 @@ func _physics_process(delta: float) -> void:
 		# down on one knee, head bowed into the burst
 		var k := sin(PI * u)
 		_lean(0.32 * k, 0.42 * k)
+		_set_tuck(0.9 * k, 1.7 * k)
 		if not _blasted and _surge >= SURGE_BLAST:
 			_blasted = true
 			_blast()
@@ -322,6 +338,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_pose[1] += sin(t * 44.0) * 1.0 * smoothstep(0.6, 0.9, u)
 			lean = 0.26 * smoothstep(0.0, 0.7, u)
 			sink = 0.34 * smoothstep(0.0, 0.7, u)
+			_set_tuck(0.85 * smoothstep(0.0, 0.7, u), 1.6 * smoothstep(0.0, 0.7, u))
 			ember = 1.0 + 4.0 * smoothstep(0.2, 0.9, u)
 			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
 			if u >= 1.0:
@@ -346,10 +363,15 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			leap_lift = LEAP_H * sin(PI * u)
 			# up with the glaive heaved overhead, then down blade first
 			if u < 0.6:
-				_pose = _lerp_pose(_from, StoneSentinel.HEAVED, smoothstep(0.0, 0.5, u / 0.6))
+				_pose = _lerp_pose(_from, LEAP_HEAVE, clampf(u / LEAP_HEAVED_U, 0.0, 1.0))
 			else:
-				_pose = _lerp_pose(StoneSentinel.HEAVED, StoneSentinel.SLAMMED, smoothstep(0.0, 1.0, (u - 0.6) / 0.4))
-			lean = lerpf(-0.18, 0.34, smoothstep(0.55, 1.0, u))
+				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, smoothstep(0.0, 1.0, (u - 0.6) / 0.4))
+			# knees drive up off the crouch, tucked through the top, legs reach down to land
+			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
+			var c := 1.0 - smoothstep(0.0, 0.18, u)
+			_set_tuck(lerpf(0.85 * c, TUCK_HIP, k), lerpf(1.6 * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u))
+			# pitched into the leap, then over onto the blade
+			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u))
 			sink = -leap_lift + 0.22 * smoothstep(0.85, 1.0, u)
 			ember = 5.0 - 1.0 * u
 			_update_glint(smoothstep(0.35, 0.55, u) * (1.0 - smoothstep(0.75, 0.88, u)))
@@ -369,10 +391,21 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_pose = _lerp_pose(StoneSentinel.SLAMMED, guard_pose, f)
 			lean = 0.34 * (1.0 - f) - 0.08 * sin(PI * f)
 			sink = 0.24 * (1.0 - f)
+			_set_tuck(0.55 * (1.0 - f), 1.1 * (1.0 - f))
 			ember = 2.2 - 1.0 * u
 			if u >= 1.0:
+				_set_tuck(0.0, 0.0)
 				_enter(STALK)
+	# the glaive's wield frame lives on the body, the model rides the sink: carry the grips
+	# with it so the hands stay on the haft through the crouch and the whole arc
+	if _wield != null:
+		_wield.position.y = -sink
 	return [move, lean, sink, ember]
+
+func _set_tuck(h: float, k: float) -> void:
+	if tuck != null:
+		tuck.hip = h
+		tuck.knee = k
 
 ## The hero stands in the blade's line ahead of the landing, or inside LEAP_R of the bite.
 func _in_leap_reach() -> bool:
