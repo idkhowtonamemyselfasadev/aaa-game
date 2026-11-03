@@ -65,7 +65,7 @@ func _ready() -> void:
 	_stream = CPUParticles3D.new()
 	_stream.name = "EmberStream"
 	_stream.top_level = true
-	_stream.amount = 70
+	_stream.amount = 120
 	_stream.lifetime = 1.0
 	_stream.emitting = false
 	_stream.local_coords = false
@@ -76,7 +76,7 @@ func _ready() -> void:
 	_stream.scale_amount_min = 0.5
 	_stream.scale_amount_max = 1.3
 	var q := QuadMesh.new()
-	q.size = Vector2(0.07, 0.07)
+	q.size = Vector2(0.1, 0.1)   # (0.07 vanished past 6 m; the stream is the tell to break)
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

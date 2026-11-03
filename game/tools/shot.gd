@@ -918,6 +918,15 @@ func _ready() -> void:
 		foe._home = foe.global_position
 		foe.face(pp)
 		player.body.rotation.y = atan2(fp.x - pp.x, fp.z - pp.z)
+		if "kindler" in args:
+			# the Kindler hangs back 6 m behind the warden's off shoulder, facing it to chant
+			var kl_line := Vector3(fp.x - pp.x, 0, fp.z - pp.z).normalized()
+			var kl_side := kl_line.cross(Vector3.UP)
+			var kp := fp + kl_line * 5.4 + kl_side * 2.6
+			world.kindler.set_physics_process(false)
+			world.kindler.global_position = Vector3(kp.x, terrain.height_at(kp.x, kp.z) + 0.05, kp.z)
+			world.kindler._home = world.kindler.global_position
+			world.kindler.face(fp)
 		if "harrier" in args:
 			# the harrier crouched at the hero's back: the hero faces away from it
 			player.body.rotation.y += PI
@@ -957,6 +966,19 @@ func _ready() -> void:
 				# tight on the harrier's head from its flank, a little behind: the wound coif's
 				# uneven turns, the loose end at the temple and the knotted tails down the nape
 				SPOTS[spot] = [fp + side * 1.05 + line * 0.45 + Vector3.UP * 1.6, fp + Vector3.UP * 1.5]
+			if "kindler" in args:
+				# over the hero's shoulder at the kindled warden, the Kindler mid-chant beyond it
+				# with its ember stream pouring in; a little off-axis so the stream reads across
+				# (09:00 11-03: over the shoulder put the hero in silhouette over half the frame and
+				# the Kindler tiny by the cottage; now square on to the warden->Kindler line from
+				# the sun side, the hero at the left edge, both Hollows and the stream across)
+				var kq: Vector3 = world.kindler.global_position
+				var kline := Vector3(kq.x - fp.x, 0, kq.z - fp.z).normalized()
+				var kside := kline.cross(Vector3.UP)
+				if kside.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
+					kside = -kside
+				var kmid := fp.lerp(kq, 0.5)
+				SPOTS[spot] = [kmid + kside * 4.6 - kline * 1.0, kmid - kline * 0.3]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
@@ -1794,6 +1816,9 @@ func _ready() -> void:
 			# 0.9 m (08:00 10-31) put the scorch behind the meadow grass: look down on it instead
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z) + 0.9
+		if spot == "soldier" and "kindler" in args:
+			pos.y = terrain.height_at(pos.x, pos.z) + 2.0
+			look.y = terrain.height_at(look.x, look.z) + 1.2
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)
@@ -2061,6 +2086,26 @@ func _ready() -> void:
 				player.global_position = Vector3(off.x, (world.get_node("Terrain") as Terrain).height_at(off.x, off.z) + 0.05, off.z)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
+		if "kindler" in args:
+			# kindler: the warden already burning white-hot, the Kindler at u= of a fresh chant
+			# into it (spear raised, ember stream flowing); particles run on through the warm-up
+			var kn: HollowKindler = world.kindler
+			foe.kindle(HollowKindler.KINDLE_T)
+			kn._player = player
+			kn.target = foe
+			kn._from = kn._pose
+			kn.move_kind = HollowKindler.KINDLE_MOVE
+			kn._enter(HollowSoldier.WINDUP)
+			for i in 400:
+				kn._physics_process(dt)
+				if not kn.chanting() or kn.t >= foe_u * HollowKindler.CHANT_T:
+					break
+			kn._stream.preprocess = 0.6
+			kn._stream.restart()
+			if foe._kindle_sparks != null:
+				foe._kindle_sparks.preprocess = 0.8
+				foe._kindle_sparks.restart()
+			print("SHOT kindler chanting %s t %.2f stream %s, warden kindled %.1f" % [kn.chanting(), kn.t, kn._stream.emitting, foe.kindled])
 		if "knight" in args and "leap" in args:
 			# leap: phase 2, the knight sprung from 7.7 m off, caught at u= of its airtime
 			var kl: AshenKnight = foe
