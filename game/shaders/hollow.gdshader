@@ -24,6 +24,10 @@ uniform vec3 root_fwd = vec3(0.0, 0.0, 1.0);
 // longer lights the head and neck up as "chest" (11-03 18:00: the crouched harrier's nape
 // burned like a bald skull from behind)
 uniform mat4 chest_unpose = mat4(1.0);
+// (11-03 19:30) the chest's forward axis as posed (world); zero = no facing test. The unpose is
+// rigid with the chest, so skin far from it (nape, lower back) can swing into the band in a
+// deep crouch: only skin whose normal faces this way may glow as chest
+uniform vec3 chest_fwd = vec3(0.0);
 
 varying vec3 wpos;
 
@@ -106,7 +110,11 @@ void fragment() {
 	vec2 flat_rel = rel.xz;
 	float front = dot(normalize(flat_rel + root_fwd.xz * 0.001), root_fwd.xz);
 	float torso = 1.0 - smoothstep(0.16, 0.30, length(flat_rel));
-	float chest = exp(-pow((h - 1.30) / 0.17, 2.0)) * torso * smoothstep(-0.2, 0.6, front);
+	float facing = 1.0;
+	if (dot(chest_fwd, chest_fwd) > 0.5) {
+		facing = smoothstep(-0.15, 0.35, dot(normalize(mat3(INV_VIEW_MATRIX) * NORMAL), chest_fwd));
+	}
+	float chest = exp(-pow((h - 1.30) / 0.17, 2.0)) * torso * smoothstep(-0.2, 0.6, front) * facing;
 	vec3 alb = mix(ash_dark, ash_light, clamp(lum * 1.2 * (0.6 + 0.7 * n), 0.0, 1.0));
 	// ash settles unevenly: broad sooty blotches and a darker underside keep it off chalk-white
 	float blot = smoothstep(0.38, 0.72, fbm(UV * 3.0 + 8.3));

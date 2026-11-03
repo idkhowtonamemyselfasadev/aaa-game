@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261028-0048-night-valley-near-fill.jpg",
-  "time": "2026-10-28T00:48:58Z",
-  "caption": "Night Vale at 21:00: the near meadow and hill slope now read as grey-blue moonlit sward with blade detail instead of black; the mid-valley wood is flat and dark (passing cloud on the moon?) and the frame overall is still murky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-0145-night-valley-clear.jpg",
-  "time": "2026-10-28T01:45:00Z",
-  "caption": "Night valley at 21:00 with the sky pinned clear (cloud 0.00): the mid-valley wood still sinks into the moonlit ground, so it is the 00:48 ground fill lifting the terrain to the crowns' brightness, not a cloud; straw grass at left still reads olive-yellow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-0235-night-valley-crownfill.jpg",
-  "time": "2026-10-28T02:35:00Z",
-  "caption": "Night valley at 21:00 with the tree crowns now taking the moonlit sky fill: the near meadow reads grey-blue, but the mid-valley wood is still lost into the lifted ground.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-0450-night-valley-far.jpg",
   "time": "2026-10-28T04:50:36Z",
   "caption": "Night valley at 21:00 with the sky pinned clear after the far ground-fill fade: moonlit peaks and starry sky hold, but the mid-valley wood and floor are still a featureless dark wash (suspect the moon's 150 m shadow map).",
@@ -891,6 +873,18 @@
   "file": "20261103-1840-harrier-coif-rear.jpg",
   "time": "2026-11-03T18:40:00Z",
   "caption": "Crouched harrier from behind (GL frame): helm lugs no longer poke through the coif and the neck is bound, but an orange-lit patch remains on the nape (likely the ember light, unculled in GL) and the knot does not read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1950-harrier-nape-clean.jpg",
+  "time": "2026-11-03T19:50:00Z",
+  "caption": "Crouched harrier from behind mid wind-up (GL frame): the orange glow on the nape is gone (the chest band no longer follows the crouch onto the back), but a thin ember sliver still shows at the lower-back edge and the frame is GL, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1950-hollow-tell-front.jpg",
+  "time": "2026-11-03T19:50:00Z",
+  "caption": "Hollow spearman winding up, seen from the front (GL frame): the chest still smoulders through broken cracks during the tell after the facing fix; backlit and GL-only, so the burn has no bloom.",
   "verdict": "fail"
  }
 ]

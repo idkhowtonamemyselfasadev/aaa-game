@@ -114,6 +114,7 @@ var spear: HollowSpear
 var anim_tree: AnimationTree
 var skel: Skeleton3D
 var _chest_bone := -1
+var _chest_fwd := Vector3.FORWARD
 var _model_rest: Transform3D
 var _mats: Array[ShaderMaterial] = []
 var soak: Soak
@@ -230,8 +231,17 @@ func _chest_unpose() -> Projection:
 		if _chest_bone < 0:
 			return Projection.IDENTITY
 	var now := skel.global_transform * skel.get_bone_global_pose(_chest_bone)
-	var rest := skel.global_transform * skel.get_bone_global_rest(_chest_bone)
-	return Projection(rest * now.affine_inverse())
+	# (11-03 19:30) the rest frame is taken through the model's REST transform, not its current
+	# one: the crouch's sink and lean live in model.transform, so measuring "rest" through it
+	# dropped and tilted the band with the body
+	var skel_in_model := model.global_transform.affine_inverse() * skel.global_transform
+	var rest := (model.get_parent() as Node3D).global_transform * _model_rest * skel_in_model \
+			* skel.get_bone_global_rest(_chest_bone)
+	var unpose := rest * now.affine_inverse()
+	# the chest's facing as posed: the band only lights skin that faces this way, so points the
+	# unpose swings into the band from behind (nape, lower back of a crouch) stay dark
+	_chest_fwd = (unpose.basis.inverse() * body.global_basis.z).normalized()
+	return Projection(unpose)
 
 func _set_skin(param: String, v: Variant) -> void:
 	for m in _mats:
@@ -557,6 +567,7 @@ func _physics_process(delta: float) -> void:
 	_set_skin("root_pos", global_position)
 	_set_skin("root_fwd", body.global_basis.z)
 	_set_skin("chest_unpose", _chest_unpose())
+	_set_skin("chest_fwd", _chest_fwd)
 	_ember_light.light_energy = 0.3 * ember
 	velocity.x = move.x
 	velocity.z = move.z
