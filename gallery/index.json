@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-0813-boulder-tall.jpg",
-  "time": "2026-10-27T08:13:43Z",
-  "caption": "Big meadow boulder now stands proud of the grass with moss in broad patches and whole faces of bare stone; still wrong: the stone is a flat pale grey and its cracks read as drawn lines.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-0950-boulder-tone.jpg",
   "time": "2026-10-27T09:55:13Z",
   "caption": "Big meadow boulder at 15 h: the bare stone now reads warm weathered grey without drawn crack lines; still wrong: the shaded flank goes near-black, the rain streaks do not show and a faint cell pattern remains on the lit face.",
@@ -897,6 +891,12 @@
   "file": "20261103-0008-harrier-coif.jpg",
   "time": "2026-11-03T00:08:52Z",
   "caption": "Hollow Harrier crouched with its coif now wound in spiral strips and a knotted tail at the nape; the even thin turns make the head read like a clay pot, and GL-compatibility lighting is flat (no Forward+ frame).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0106-harrier-coif-uneven.jpg",
+  "time": "2026-11-03T01:06:21Z",
+  "caption": "GL frame from behind the Hollow Harrier's shoulder: the coif's turns now run wide and narrow with dark laps, but the head still reads as a smooth pot, the camera sits too high and close, and the loose end and nape tails are hidden behind the shoulder.",
   "verdict": "fail"
  }
 ]

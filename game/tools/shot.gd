@@ -953,6 +953,10 @@ func _ready() -> void:
 				# the harrier's crouch at the hero's back: close on its lit flank, front three-quarter,
 				# low, so the coif, the bare shoulders and the low spear read against the hero
 				SPOTS[spot] = [fp + side * 2.7 - line * 0.9 + Vector3.UP * 0.3, fp.lerp(pp, 0.2) + Vector3.UP * 0.95]
+			if "harrier" in args and "coif" in args:
+				# tight on the harrier's head from its flank, a little behind: the wound coif's
+				# uneven turns, the loose end at the temple and the knotted tails down the nape
+				SPOTS[spot] = [fp + side * 1.05 + line * 0.45 + Vector3.UP * 1.6, fp + Vector3.UP * 1.5]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]

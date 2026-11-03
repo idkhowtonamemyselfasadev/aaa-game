@@ -29,6 +29,7 @@ uniform float soot_amt = 1.0;      // how much soot/grime darkens the hem (1 = H
 uniform float stain_amt = 1.0;     // rust stains and grime streaks (a kept kirtle: low, they read as patched blocks)
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
+uniform float wrap_jitter = 0.0;   // > 0: the turns wound unevenly (wide and narrow strips), matching rags.gd _wrap_s()
 uniform float edge_wear = 0.0;     // > 0: COLOR.g is a rubbed, sun-faded edge (the face cloth's outer turn)
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
@@ -237,9 +238,22 @@ void fragment() {
 	// bandage: each turn's edge laps over the last, with a shadowed crease under the lap
 	float band = 1.0;
 	if (wrap_turns > 0.0) {
-		float b = fract(UV.y * wrap_turns + UV.x + vnoise(vec2(UV.x * 5.0, UV.y * 3.0) + seed) * 0.08);
-		band = smoothstep(0.0, 0.08, b) * (0.85 + 0.15 * smoothstep(0.98, 0.9, b));
-		ty += (smoothstep(0.92, 1.0, b) - smoothstep(0.0, 0.06, b)) * 0.6;
+		float s0 = UV.y * wrap_turns + UV.x;
+		// uneven winding: a monotone warp of the turn coordinate (same as rags.gd _wrap_s), so
+		// some strips run wide and some narrow, and each one wanders a little along its length
+		float sw = s0 + wrap_jitter * (0.2 * sin(s0 * 2.3 + seed) + 0.07 * sin(s0 * 5.1 + seed * 1.7));
+		float b = fract(sw + vnoise(vec2(UV.x * 5.0, UV.y * 3.0) + seed) * 0.08);
+		if (wrap_jitter > 0.0) {
+			// a proud, frayed lip: loose threads stand off the edge and the crease under it is
+			// deep; the strip face is a touch paler where it is rubbed proud
+			float fray = vnoise(vec2(UV.x * 140.0, floor(sw) * 7.0 + seed)) * 0.07 * wrap_jitter;
+			b = fract(b + fray);
+			band = mix(0.55, 1.0, smoothstep(0.0, 0.13, b)) * (0.88 + 0.22 * smoothstep(0.7, 0.97, b));
+			ty += (smoothstep(0.88, 1.0, b) - smoothstep(0.0, 0.1, b)) * 1.1;
+		} else {
+			band = smoothstep(0.0, 0.08, b) * (0.85 + 0.15 * smoothstep(0.98, 0.9, b));
+			ty += (smoothstep(0.92, 1.0, b) - smoothstep(0.0, 0.06, b)) * 0.6;
+		}
 	}
 	// turned hem: a doubled band above the edge, a shadow line where the fold-over is sewn
 	// and a soft rounded lip at the very edge

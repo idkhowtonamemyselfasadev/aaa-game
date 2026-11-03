@@ -1881,6 +1881,44 @@ func _harrier_test() -> void:
 	print("BOT harrier: coif wound %.0f turns; %d tails down to y %.2f, splayed %.2f m, off the back %.3f..%.3f m" % [coif_turns, tails.size(), tip_y, spread, min_gap, max_gap])
 	if coif_turns < 3.0 or tails.size() != 2 or tip_y > 1.45 or spread < 0.1 or min_gap < 0.0 or max_gap > 0.08:
 		return _combat_done(false, "the harrier's coif should be wound in strips, its two tails long, splayed and clear of the back")
+	# 0b) wound unevenly by hand: strip widths along one meridian differ by > 40 %, each lip
+	# steps out, and a loose end hangs free of the coif past the cheek-guard
+	var jit: float = h.rags.mats[0].get_shader_parameter("wrap_jitter")
+	var widths: Array = []
+	var prev := 0.0
+	for i in 2000:
+		var s0 := float(i) / 2000.0 * coif_turns
+		var k := floorf(HollowRags._wrap_s(s0, jit, 0.0))
+		if i > 0 and k != floorf(HollowRags._wrap_s(float(i - 1) / 2000.0 * coif_turns, jit, 0.0)):
+			widths.append(s0 - prev)
+			prev = s0
+	var wmin := 99.0
+	var wmax := 0.0
+	for w in widths.slice(0, widths.size()):
+		wmin = minf(wmin, w)
+		wmax = maxf(wmax, w)
+	var loose: MeshInstance3D = null
+	for mi in h.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).material_override == h.rags.mats[3]:
+			loose = mi
+	var coif_mi: MeshInstance3D = null
+	for mi in h.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).material_override == h.rags.mats[0]:
+			coif_mi = mi
+	var cv: PackedVector3Array = coif_mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var lv: PackedVector3Array = loose.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] if loose != null else PackedVector3Array()
+	var low := INF
+	var free_gap := 0.0
+	for v in lv:
+		low = minf(low, v.y)
+		if v.y < 1.76:
+			var near := INF
+			for c in cv:
+				near = minf(near, c.distance_to(v))
+			free_gap = maxf(free_gap, near)
+	print("BOT harrier: coif jitter %.1f, strip widths %.2f..%.2f turns over %d turns; loose end down to y %.2f, %.3f m off the coif" % [jit, wmin, wmax, widths.size(), low, free_gap])
+	if jit <= 0.0 or widths.size() < 3 or wmax < wmin * 1.4 or loose == null or low > 1.74 or free_gap < 0.015:
+		return _combat_done(false, "the harrier's coif should be wound unevenly, with a loose end hanging free")
 	if h.state != HollowSoldier.IDLE or hd > h.notice or gd < h.notice + 2.0:
 		return _combat_done(false, "the harrier should wait idle by the hewer, clear of the start")
 	# 1) the hero stands still facing ahead; the harrier starts 6 m in front of them

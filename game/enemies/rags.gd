@@ -85,12 +85,18 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# tails hanging down the nape
 		var coif := _piece(_coif(), 0.0, 0.06, 0.0, 1.0)
 		# wound on in strips round the helm like the bandages: overlapping turns, each lip a
-		# little proud of the last (the shader's wrap bands)
-		(coif.material_override as ShaderMaterial).set_shader_parameter("wrap_turns", COIF_TURNS)
-		(coif.material_override as ShaderMaterial).set_shader_parameter("tongues", 10.0)
+		# little proud of the last (the shader's wrap bands), wound unevenly by hand
+		var cm := coif.material_override as ShaderMaterial
+		cm.set_shader_parameter("wrap_turns", COIF_TURNS)
+		cm.set_shader_parameter("wrap_jitter", 1.0)
+		cm.set_shader_parameter("seed", 0.0)          # the mesh's laps use the same warp (_wrap_s)
+		cm.set_shader_parameter("tongues", 10.0)
 		head.add_child(coif)
 		for side in [-1.0, 1.0]:
 			head.add_child(_piece(_tail(side), 0.0, 0.25, 3.0 + side, 0.15))
+		# the strip's last turn left loose: its end tucked under at the temple and hanging
+		# free past the left cheek-guard
+		head.add_child(_piece(_loose_end(), 0.0, 0.3, 7.0, 0.3))
 	if mantle:
 		chest.add_child(_piece(_mantle(), 0.35, 0.22, 0.35, 1.0))
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
@@ -276,7 +282,31 @@ func _coif() -> ArrayMesh:
 		var r := dome * (1.0 - 0.26 * smoothstep(0.5, 0.9, v) + 0.1 * smoothstep(0.9, 1.0, v))
 		r *= 1.0 + 0.03 * sin(a * 9.0 + v * 4.0) * v
 		var cz := -0.02 - 0.03 * smoothstep(0.5, 1.0, v)
-		return Vector3(sin(a) * 0.122 * r, 2.0 - v * 0.38, cz + cos(a) * 0.158 * r), 28, 14)
+		# each turn of strip laps over the last: a proud step at its lip (strips of uneven
+		# width, the shader's warp), and the strip sags a little between the lips where it was
+		# wound slack; none of it on the crown, where the dome closes
+		var sw := _wrap_s(v * COIF_TURNS + u, 1.0, 0.0)
+		var f := fposmod(sw, 1.0)
+		var slack := 0.3 + 0.7 * fposmod(sin(floorf(sw) * 12.9898) * 43758.5453, 1.0)
+		var lap := (0.011 * f - 0.006 * slack * sin(f * PI)) * smoothstep(0.08, 0.25, v)
+		r += lap / 0.14
+		return Vector3(sin(a) * 0.122 * r, 2.0 - v * 0.38, cz + cos(a) * 0.158 * r), 56, 40)
+
+## The coif's turn coordinate, warped so the strips are wound unevenly: wide and narrow turns
+## that wander along their length. Monotone (|d warp| < 1); rag.gdshader does the same sum.
+static func _wrap_s(s0: float, jitter: float, sd: float) -> float:
+	return s0 + jitter * (0.2 * sin(s0 * 2.3 + sd) + 0.07 * sin(s0 * 5.1 + sd * 1.7))
+
+## The coif strip's loose end: tucked under the last turn at the left temple, then a short
+## frayed tongue that hangs down and a little out past the cheek-guard.
+func _loose_end() -> ArrayMesh:
+	return _grid(func(u: float, v: float) -> Vector3:
+		var w := lerpf(0.045, 0.034, v)
+		var a := 1.15 + (u - 0.5) * w / 0.13       # round the skull at the wearer's left temple
+		var hang := v * 0.16
+		var out := 0.006 + 0.03 * v * v           # peels off the coif as it hangs
+		var r := 1.1 + out / 0.13                 # in the coif's own ellipse, clear of its laps
+		return Vector3(sin(a) * 0.122 * r, 1.86 - hang, -0.02 + cos(a) * 0.158 * r + 0.01 * sin(v * 5.0)), 4, 10)
 
 ## One knotted tail of the coif, hung from the nape down the upper back.
 func _tail(side: float) -> ArrayMesh:
