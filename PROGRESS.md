@@ -6766,8 +6766,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    the thread pours from the spear point to the warden and both are in frame, but at 16:00 a long cast shadow
    drowns the foreground and both Hollows to silhouettes, and a lantern-post lamp hangs into the top-left corner.
    Audio 0b-e open item unchanged: freesound.org is still blocked by the proxy (403) this session.
-   NEXT, in order: (0) re-render at 14.5 (`kfront4`, running at commit time) and, if still shaded, nudge the lens
-   off the lantern post / tree shadow; (0a) harrier coif side-on reframe + break the pot silhouette; (0b) Forward+
+   Follow-up frame `kfront4` at 14.5 SEEN, gallery `kindler-daylight` FAIL but much better: all in daylight, thread
+   reads spear tip -> warden along the rut road; the hood hides the Kindler's face (lens only 0.30 toward its
+   front because the sun is 0.97 to the side), the lantern-post lamp still hangs into the top-left.
+   NEXT, in order: (0) `kfront`: raise lens.fwd to ~0.6 when the sun is side-on (accept some face shade), and step
+   the lens sideways if a lantern post is within 3 m of it (or render at an hour/spot without the post); (0a) harrier coif side-on reframe + break the pot silhouette; (0b) Forward+
    frame of `soldier X 40 16.5 fixfps knight leap scorched cooled u=0.35`, `sentinel awake` at dusk, the sunlit
    `slam`; a Sentinel pair at the Shrine of Binding; (1) Forward+ frame of `wisps wisps_cower`; (2) archer peek
    frame, `flight` fixes, hewer `bite` reframe.

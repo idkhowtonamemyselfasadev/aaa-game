@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-1849-firefly-glow-night.jpg",
-  "time": "2026-10-27T18:49:07Z",
-  "caption": "Night timber house: the firefly light on the near grass is now a soft warm-green glow instead of a hot lime pool; the pale ragged band under the far summits (right) is still there.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1849-horizon-debug-night.jpg",
   "time": "2026-10-27T18:49:07Z",
   "caption": "Diagnostic: far ring in false colour (snow red, scree green, rock blue): the dark summits are its snow and rock, and the pale band under them stays grey with the ring's own colour and fog zeroed, so scene fog causes it.",
@@ -891,6 +885,12 @@
   "file": "20261103-0620-kindler-sunside.jpg",
   "time": "2026-11-03T06:20:00Z",
   "caption": "The Kindler shot reframed from the sunlit side and backed off: the ember thread now pours from the raised spear point down to the warden, both readable in one frame; still wrong: at 16:00 a long cast shadow drowns the foreground and both Hollows into silhouette, and a lantern-post lamp hangs into the top-left corner.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0700-kindler-daylight.jpg",
+  "time": "2026-11-03T07:00:00Z",
+  "caption": "Same Kindler shot at 14:30: both Hollows and the kindled warden stand in daylight with the ember thread pouring from the spear tip down to the warden along the rut road; still wrong: the Kindler's hood hides its face from this side-on lens, a lantern-post lamp hangs into the top-left, and the Hollows' cloth still reads coarse.",
   "verdict": "fail"
  }
 ]
