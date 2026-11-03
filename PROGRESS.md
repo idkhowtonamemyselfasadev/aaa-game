@@ -6780,7 +6780,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    `rag.gdshader` mirrors via new uniforms `pleats` (fold shading now follows the geometry, shaded tilt reduced) and
    `side_tear` (frayed bites in the side edges, deeper toward the hem). The hem is cut unevenly (up to 10 % shorter,
    one side longer, never past `len`, so knee/ground clearances hold) and the outer columns bite in/bulge out.
-   GL frame `kfront12`: see the gallery note below. Audio 0b-e open item unchanged: freesound.org / opengameart.org /
+   GL frames `kfront12` (pleats read but regular and deep, like corrugated card) and `kfront13` (per-pleat depth
+   swell, 3-15 mm, 40 columns, valley darkening cut to 0.12) SEEN, gallery `warden-pleats` FAIL: the tabard now
+   hangs in soft uneven folds with a torn left edge, but the shoulder mantle reads as a stiff box and GL draws
+   square sparks. Next look item after the Forward+ attempt: give `_mantle()` the same drape (pleats over the
+   shoulders, ragged edge). Audio 0b-e open item unchanged: freesound.org / opengameart.org /
    kenney.nl still unreachable (curl 000) this session.
    NEXT, in order: (0) one Forward+ attempt of `soldier kfront12 20 13.5 fixfps warden kindler kfront u=0.75`;
    (0a) render the reframed `harrier coif` and break the pot silhouette; (0b) Forward+ frame of `soldier X 40 16.5
