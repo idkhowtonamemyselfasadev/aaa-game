@@ -79,7 +79,15 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		_legs.append(PackedInt32Array([skel.find_bone("mixamorig_%sUpLeg" % side),
 				skel.find_bone("mixamorig_%sLeg" % side), skel.find_bone("mixamorig_%sFoot" % side)]))
 	if cowl:
-		head.add_child(_piece(_hood(), 0.0, 0.10, 0.0, 1.2))
+		# the cowl drapes in gathered folds that deepen from the crown to the shoulders, and
+		# its brim (the edges round the face) is torn and frayed like the mantle's front
+		var h_seed := 0.0 + mats.size() * 3.7     # the seed _piece gives its material
+		var h_n := hood_folds(h_seed)
+		var hp := _piece(_cowl(h_seed, h_n), 0.0, 0.10, 0.0, 1.2)
+		var hm := hp.material_override as ShaderMaterial
+		hm.set_shader_parameter("pleats", h_n)
+		hm.set_shader_parameter("side_tear", 0.035)
+		head.add_child(hp)
 	else:
 		# a fitted hemp coif bound round the old helm, the visor left bare, two knotted
 		# tails hanging down the nape
@@ -299,16 +307,46 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	_attach(bone).add_child(piece)
 	wraps += 1
 
-func _hood() -> ArrayMesh:
+## The deep cowl: a dome over the crown that opens round the face and flares out over the
+## shoulders. It hangs in gathered drape folds (`pleat_phase()` over `n` folds across the hood,
+## which rag.gdshader shades through uniform `pleats` = n): barely a ripple on the crown where
+## the cloth is stretched over the skull, deepening toward the hem where it falls free, and
+## pressed shallow at the back of the neck. The brim round the face rolls over into a thick
+## lip that sags a little over the brow, and the hem is cut unevenly by hand.
+func _cowl(mseed: float, n: float) -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
 		# open at the front: the face sits in the dark of the cowl, which closes at the throat
 		var gap := 0.22 + 0.42 * smoothstep(0.12, 0.4, v) - 0.5 * smoothstep(0.72, 1.0, v)
 		var a := lerpf(gap, TAU - gap, u)
-		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.34, 1.0), 2.0), 0.0, 1.0))
-		var r := dome * (1.0 + 0.45 * smoothstep(0.7, 1.0, v))
-		r *= 1.0 + 0.03 * sin(a * 7.0) * v
-		var cz := -0.045 - 0.06 * pow(1.0 - v, 3.0)
-		return Vector3(sin(a) * 0.168 * r, 2.09 - v * 0.43, cz + cos(a) * 0.192 * r), 28, 16)
+		# a hand-cut hem: never more than ~2 cm short, so it still tucks under the mantle collar
+		var cut := 1.0 - 0.035 * (0.5 + 0.5 * sin(a * 2.7 + mseed)) \
+				- 0.02 * (0.5 + 0.5 * sin(a * 9.0 + mseed * 1.9))
+		var vv := v * lerpf(1.0, cut, smoothstep(0.5, 1.0, v))
+		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(vv / 0.34, 1.0), 2.0), 0.0, 1.0))
+		var r := dome * (1.0 + 0.45 * smoothstep(0.7, 1.0, vv))
+		r *= 1.0 + 0.03 * sin(a * 7.0) * vv
+		if n > 0.0:
+			# drape folds, each its own depth, biased outward so no valley sinks onto the head
+			var ph := pleat_phase(u, v, n, mseed)
+			var fh := sin(ph * TAU) + 0.35 * sin(ph * TAU * 2.0 + 1.3)
+			var swell := 0.55 + 0.45 * sin(ph * TAU * 0.41 + mseed * 2.3) * sin(ph * 0.9 + mseed)
+			var amp := lerpf(0.003, 0.085, smoothstep(0.15, 0.95, vv)) * swell
+			# pressed flat where the cowl lies on the back of the neck
+			amp *= 1.0 - 0.45 * smoothstep(0.2, 0.9, vv) * pow(maxf(-cos(a), 0.0), 2.0)
+			r += amp * (0.5 * fh + 0.55)
+			# the brim: a rolled lip of doubled cloth round the face opening
+			var lip := 1.0 - smoothstep(0.0, 0.07, minf(u, 1.0 - u))
+			r += 0.06 * lip * dome
+		var cz := -0.045 - 0.06 * pow(1.0 - vv, 3.0)
+		# the brim sags forward over the brow where the cloth has nothing under it
+		var brow := (1.0 - smoothstep(0.0, 0.18, minf(u, 1.0 - u))) * smoothstep(0.05, 0.2, vv) \
+				* (1.0 - smoothstep(0.3, 0.55, vv))
+		var y := 2.09 - vv * 0.43 - 0.012 * brow
+		return Vector3(sin(a) * 0.168 * r, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
+
+## How many drape folds hang across the cowl (9..12), from its material seed.
+static func hood_folds(mseed: float) -> float:
+	return 9.0 + 3.0 * fposmod(sin(mseed * 39.425) * 43758.5453, 1.0)
 
 ## The harrier's coif: hugs the helm (head verts span x +-0.105, y 1.64..1.98, z -0.17..0.13
 ## at the soldier's scale), open over the visor, closing snug round the throat.
