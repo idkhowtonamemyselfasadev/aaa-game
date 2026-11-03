@@ -337,11 +337,23 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 			# the brim: a rolled lip of doubled cloth round the face opening
 			var lip := 1.0 - smoothstep(0.0, 0.07, minf(u, 1.0 - u))
 			r += 0.06 * lip * dome
-		var cz := -0.045 - 0.06 * pow(1.0 - vv, 3.0)
+		# the crown is not a dome: the cloth gathers into a slumped peak pulled back over the
+		# skull, the tip drooping behind, with a couple of creases running down from it
+		var pk := 1.0 - smoothstep(0.0, 0.34, vv)
+		var back := maxf(-cos(a), 0.0)
+		r *= 1.0 + 0.22 * pk * pk * back * smoothstep(0.02, 0.1, vv)
+		var crease := 0.0
+		for c in [[PI - 0.85 + 0.2 * sin(mseed), 1.0], [PI + 0.7 + 0.15 * cos(mseed * 1.7), 0.8],
+				[0.9 * PI + 0.3 * sin(mseed * 2.3), 0.6]]:
+			var da: float = wrapf(a - float(c[0]) - 0.25 * vv, -PI, PI)
+			# a sharp ridge with a shallow hollow beside it, strongest just below the peak
+			crease += float(c[1]) * (exp(-da * da / 0.012) - 0.45 * exp(-pow(da - 0.16, 2.0) / 0.02))
+		r += 0.05 * crease * smoothstep(0.04, 0.14, vv) * (1.0 - smoothstep(0.32, 0.55, vv))
+		var cz := -0.045 - 0.06 * pow(1.0 - vv, 3.0) - 0.075 * pk * pk
 		# the brim sags forward over the brow where the cloth has nothing under it
 		var brow := (1.0 - smoothstep(0.0, 0.18, minf(u, 1.0 - u))) * smoothstep(0.05, 0.2, vv) \
 				* (1.0 - smoothstep(0.3, 0.55, vv))
-		var y := 2.09 - vv * 0.43 - 0.012 * brow
+		var y := 2.09 - vv * 0.43 - 0.012 * brow - 0.025 * pk * pk * pk + 0.012 * pk * (1.0 - pk) * 4.0 * (1.0 - back)
 		return Vector3(sin(a) * 0.168 * r, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
 
 ## How many drape folds hang across the cowl (9..12), from its material seed.

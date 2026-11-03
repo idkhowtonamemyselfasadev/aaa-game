@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261027-2134-night-band-novolfog.jpg",
-  "time": "2026-10-27T21:34:05Z",
-  "caption": "Debug: night cottage view with volumetric fog switched off; the pale band over the far ridge right of the village is still there, so the volumetric haze is not its cause.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-2205-night-ring-haze.jpg",
   "time": "2026-10-27T22:05:00Z",
   "caption": "Night village: the far mountains now stand in the same moonlit haze as the wood line in front, so the ruled pale band over the ridge is gone; the massifs still read a touch flat and pale.",
-  "verdict": "fail"
- },
- {
-  "file": "20261027-2205-night-ring-haze-overbright.jpg",
-  "time": "2026-10-27T22:05:00Z",
-  "caption": "Calibration overshoot (moon haze gain 18): the band is gone but the mountain ring glows as flat pale cut-outs over a black wood; rejected for gain 4.",
   "verdict": "fail"
  },
  {
@@ -897,6 +885,12 @@
   "file": "20261103-1309-warden-cowl.jpg",
   "time": "2026-11-03T13:09:44Z",
   "caption": "Kindled warden close-up: the Hollow cowl now has a thick rolled brim round the face, drape folds deepening to the shoulders and a torn edge; the crown is still a smooth dome and GL draws square sparks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1406-warden-crown.jpg",
+  "time": "2026-11-03T14:06:41Z",
+  "caption": "Kindled warden close-up: the cowl crown now gathers into a slumped peak pulled back over the skull with creases running down from it instead of a smooth dome; still a GL frame with square spark sprites.",
   "verdict": "fail"
  }
 ]
