@@ -61,6 +61,8 @@ var lateral := 0.0                       # the knee drag (m, body +X = the weare
 ## Cut of the rags, set before build(): the harrier runs light in a fitted coif, no mantle,
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
+const COIF_TURNS := 5.0                  # turns of strip wound round the harrier's coif
+const TAIL_LEN := 0.44                   # the coif's knotted tails, nape to tip (m)
 var mantle := true
 var hem := 1.0                           # tabard length scale
 var front_clear := INF                   # the front hem's gap to the face (m), for the bots     # [cloth_dark, cloth_light, soot] for the next pieces; empty = grey hemp
@@ -81,7 +83,12 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	else:
 		# a fitted hemp coif bound round the old helm, the visor left bare, two knotted
 		# tails hanging down the nape
-		head.add_child(_piece(_coif(), 0.0, 0.06, 0.0, 1.0))
+		var coif := _piece(_coif(), 0.0, 0.06, 0.0, 1.0)
+		# wound on in strips round the helm like the bandages: overlapping turns, each lip a
+		# little proud of the last (the shader's wrap bands)
+		(coif.material_override as ShaderMaterial).set_shader_parameter("wrap_turns", COIF_TURNS)
+		(coif.material_override as ShaderMaterial).set_shader_parameter("tongues", 10.0)
+		head.add_child(coif)
 		for side in [-1.0, 1.0]:
 			head.add_child(_piece(_tail(side), 0.0, 0.25, 3.0 + side, 0.15))
 	if mantle:
@@ -274,10 +281,16 @@ func _coif() -> ArrayMesh:
 ## One knotted tail of the coif, hung from the nape down the upper back.
 func _tail(side: float) -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
-		var w := lerpf(0.055, 0.03, v)
-		var x := side * (0.025 + 0.04 * v) + (u - 0.5) * w
-		var z := -0.175 - 0.07 * v + 0.012 * sin(v * 7.0 + side)
-		return Vector3(x, 1.82 - v * 0.30, z), 4, 10)
+		# a fat knot at the nape, then a strip that tapers and splays out over the shoulder
+		# blades so the pair shows past the neck from the side; it lies a couple of cm off the
+		# back, which (bot `harrier` measures it) bulges from z -0.16 at the nape to -0.21 at
+		# the shoulder blades and back in to -0.19 lower down
+		var knot := 0.025 * (1.0 - smoothstep(0.0, 0.12, v))
+		var w := lerpf(0.06, 0.028, v) + knot
+		var x := side * (0.03 + 0.10 * v) + (u - 0.5) * w
+		var z := -0.185 - 0.05 * smoothstep(0.0, 0.6, v) + 0.02 * smoothstep(0.7, 1.0, v) \
+				- knot + 0.008 * sin(v * 7.0 + side)
+		return Vector3(x, 1.83 - v * TAIL_LEN, z), 4, 14)
 
 func _mantle() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:

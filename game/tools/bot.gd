@@ -1849,6 +1849,38 @@ func _harrier_test() -> void:
 	var hd := Vector2(h.global_position.x - _world.hewer.global_position.x, h.global_position.z - _world.hewer.global_position.z).length()
 	var gd := Vector2(h.global_position.x - p.global_position.x, h.global_position.z - p.global_position.z).length()
 	print("BOT harrier: %.1f m from the start, %.1f m from the hewer, state %d, health %.0f" % [gd, hd, h.state, h.health])
+	# 0) the coif is wound in strips and its two tails hang clear of the back, splayed past the neck
+	var coif_turns: float = h.rags.mats[0].get_shader_parameter("wrap_turns")
+	var tails: Array = []
+	# the pieces hang off the skeleton's bone attachments; the tails are the two after the coif
+	for mi in h.find_children("*", "MeshInstance3D", true, false):
+		var mo: Material = (mi as MeshInstance3D).material_override
+		if mo != null and (mo == h.rags.mats[1] or mo == h.rags.mats[2]):
+			tails.append(mi)
+	var body_pts := PackedVector3Array()
+	for bm in h.model.find_children("*", "MeshInstance3D", true, false):
+		var xf: Transform3D = h.body.global_transform.affine_inverse() * (bm as MeshInstance3D).global_transform
+		for sidx in (bm as MeshInstance3D).mesh.get_surface_count():
+			for v in (bm as MeshInstance3D).mesh.surface_get_arrays(sidx)[Mesh.ARRAY_VERTEX]:
+				body_pts.append(xf * v)
+	var min_gap := INF
+	var max_gap := 0.0
+	var spread := 0.0
+	var tip_y := INF
+	for t in tails:
+		for v in (t as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+			tip_y = minf(tip_y, v.y)
+			spread = maxf(spread, absf(v.x))
+			var back := -INF
+			for b in body_pts:
+				if absf(b.x - v.x) < 0.03 and absf(b.y - v.y) < 0.03 and b.z < 0.0:
+					back = maxf(back, -b.z)
+			if back > -INF:
+				min_gap = minf(min_gap, -v.z - back)
+				max_gap = maxf(max_gap, -v.z - back)
+	print("BOT harrier: coif wound %.0f turns; %d tails down to y %.2f, splayed %.2f m, off the back %.3f..%.3f m" % [coif_turns, tails.size(), tip_y, spread, min_gap, max_gap])
+	if coif_turns < 3.0 or tails.size() != 2 or tip_y > 1.45 or spread < 0.1 or min_gap < 0.0 or max_gap > 0.08:
+		return _combat_done(false, "the harrier's coif should be wound in strips, its two tails long, splayed and clear of the back")
 	if h.state != HollowSoldier.IDLE or hd > h.notice or gd < h.notice + 2.0:
 		return _combat_done(false, "the harrier should wait idle by the hewer, clear of the start")
 	# 1) the hero stands still facing ahead; the harrier starts 6 m in front of them
