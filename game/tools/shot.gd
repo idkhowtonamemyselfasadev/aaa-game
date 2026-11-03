@@ -985,7 +985,22 @@ func _ready() -> void:
 					# to the burning warden at the frame edge
 					# (04:45 11-03: 2.2 toward the warden + 3.4 aside was square on to its profile and
 					# read as its back; now 3.8 toward the warden + 1.9 aside, ~27 deg off its face)
-					SPOTS[spot] = [kq - kline * 3.8 + kside * 1.9, kq.lerp(fp, 0.12) + Vector3.UP * 1.6]
+					# (05:45 11-03: that put the Kindler backlit, face in shade, warden out of frame.
+					# Now the lens swings round toward the sun inside the Kindler's front half --
+					# sun over the camera's shoulder when the hour allows, square side-on with the
+					# sun at 90 deg when the sun is behind it -- and backs off to 5.6 m looking a
+					# third of the way to the warden, so the burning warden takes the frame edge)
+					var kfwd := -kline                                      # Kindler -> warden
+					var ksun := Vector3(-light.x, 0, -light.z).normalized() # ground toward the sun
+					var kdir: Vector3
+					if ksun.dot(kfwd) > 0.0:
+						kdir = (kfwd * 0.75 + ksun * 0.9).normalized()
+						if kdir.dot(kfwd) < 0.45:
+							kdir = (kfwd * 0.45 + kside * 0.89).normalized()
+					else:
+						kdir = (kfwd * 0.3 + kside * 0.95).normalized()
+					print("SHOT kfront sun.fwd %.2f sun.side %.2f lens.fwd %.2f lens.sun %.2f" % [ksun.dot(kfwd), ksun.dot(kside), kdir.dot(kfwd), kdir.dot(ksun)])
+					SPOTS[spot] = [kq + kdir * 5.6, kq.lerp(fp, 0.33) + Vector3.UP * 1.6]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
