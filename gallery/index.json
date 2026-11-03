@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-1849-horizon-debug-night.jpg",
-  "time": "2026-10-27T18:49:07Z",
-  "caption": "Diagnostic: far ring in false colour (snow red, scree green, rock blue): the dark summits are its snow and rock, and the pale band under them stays grey with the ring's own colour and fog zeroed, so scene fog causes it.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1851-night-band-debug.jpg",
   "time": "2026-10-27T18:51:43Z",
   "caption": "Debug render with the mountain ring painted yellow: the pale band sits in front of the ring, a wood's canopy 60-180 m out, brighter than the night ring behind it.",
@@ -891,6 +885,12 @@
   "file": "20261103-0700-kindler-daylight.jpg",
   "time": "2026-11-03T07:00:00Z",
   "caption": "Same Kindler shot at 14:30: both Hollows and the kindled warden stand in daylight with the ember thread pouring from the spear tip down to the warden along the rut road; still wrong: the Kindler's hood hides its face from this side-on lens, a lantern-post lamp hangs into the top-left, and the Hollows' cloth still reads coarse.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0714-kindler-postclear.jpg",
+  "time": "2026-11-03T07:14:35Z",
+  "caption": "Hollow Kindler at 14:30 with the lantern post swung out of frame and its ember thread pouring from the spear tip; still wrong: it reads from behind with the hood hiding its face, the kindled warden is off the right edge, and a cottage shadow blacks out the bottom third.",
   "verdict": "fail"
  }
 ]

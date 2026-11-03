@@ -998,9 +998,25 @@ func _ready() -> void:
 						if kdir.dot(kfwd) < 0.45:
 							kdir = (kfwd * 0.45 + kside * 0.89).normalized()
 					else:
-						kdir = (kfwd * 0.3 + kside * 0.95).normalized()
-					print("SHOT kfront sun.fwd %.2f sun.side %.2f lens.fwd %.2f lens.sun %.2f" % [ksun.dot(kfwd), ksun.dot(kside), kdir.dot(kfwd), kdir.dot(ksun)])
-					SPOTS[spot] = [kq + kdir * 5.6, kq.lerp(fp, 0.33) + Vector3.UP * 1.6]
+						# (07:15 11-03: 0.3 toward its front left the hood hiding the face; 0.6 shows
+						# the face under the hood at the cost of some shade on it)
+						kdir = (kfwd * 0.6 + kside * 0.8).normalized()
+					# keep the lens clear of the lantern post on the green: its lamp hung into the
+					# top-left corner of the 06:20 frames. Swing round the Kindler in 8 deg steps
+					# (staying inside its front half) until the camera is >= 3.5 m off the post.
+					var kpost := Vector3(LanternPost.SITE.x, 0, LanternPost.SITE.y)
+					var kbase := kdir
+					for kstep in [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5]:
+						var ktry: Vector3 = kbase.rotated(Vector3.UP, deg_to_rad(8.0 * kstep))
+						if ktry.dot(kfwd) < 0.35:
+							continue
+						var kcam: Vector3 = kq + ktry * 5.6
+						kdir = ktry
+						if Vector2(kcam.x - kpost.x, kcam.z - kpost.z).length() >= 3.5:
+							break
+					var kcam_at: Vector3 = kq + kdir * 5.6
+					print("SHOT kfront sun.fwd %.2f sun.side %.2f lens.fwd %.2f lens.sun %.2f post %.1f m" % [ksun.dot(kfwd), ksun.dot(kside), kdir.dot(kfwd), kdir.dot(ksun), Vector2(kcam_at.x - kpost.x, kcam_at.z - kpost.z).length()])
+					SPOTS[spot] = [kcam_at, kq.lerp(fp, 0.33) + Vector3.UP * 1.6]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
