@@ -1758,6 +1758,8 @@ func _kindler_test() -> void:
 	k.force_move = -1
 	var chant_t := 0.0
 	var max_stream := false
+	var max_trail := 0.0
+	var trail_len := 0.0
 	var max_pitch := 0.0
 	var min_gap := INF
 	var frames := 0
@@ -1769,6 +1771,9 @@ func _kindler_test() -> void:
 		if k.chanting():
 			chant_t += get_physics_process_delta_time() * k.tempo
 			max_stream = max_stream or k._stream.emitting
+			if k._trail.visible and k._trail_a > max_trail:
+				max_trail = k._trail_a
+				trail_len = k._trail.global_basis.y.length()
 			max_pitch = maxf(max_pitch, float(k._pose[1]))
 	print("BOT kindler: chants %d, kindles %d after %d frames; chant %.2f s, stream %s, spear pitch %.0f deg, nearest %.1f m; warden kindled %.1f s, damage x%.2f, sparks %s" % [k.chants, k.kindles, frames, chant_t, max_stream, max_pitch, min_gap, w.kindled, w.damage_mul, w._kindle_sparks != null and w._kindle_sparks.emitting])
 	if k.kindles != 1 or chant_t < HollowKindler.CHANT_T - 0.1 or not max_stream or max_pitch < 60.0:
@@ -1777,6 +1782,14 @@ func _kindler_test() -> void:
 		return _combat_done(false, "the warden did not catch the kindle")
 	if min_gap < HollowKindler.CROWD:
 		return _combat_done(false, "the kindler walked into the fight instead of hanging back")
+	var wk := (k._stream.global_position - (w.global_position + Vector3.UP * 1.25)).length()
+	print("BOT kindler: ember thread peak %.2f, %.2f m long (stream mouth to warden %.2f m)" % [max_trail, trail_len, wk])
+	if max_trail < 0.9 or absf(trail_len - wk) > 1.5:
+		return _combat_done(false, "the ember thread did not stretch from the spear to the warden during the chant")
+	for i in 20:
+		await get_tree().physics_frame
+	if k._trail.visible:
+		return _combat_done(false, "the ember thread did not fade after the chant")
 	# kindled, the warden's brain runs KINDLE_TEMPO faster
 	var t0 := w.t
 	var st0 := w.state

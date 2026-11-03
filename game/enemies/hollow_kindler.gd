@@ -48,6 +48,26 @@ var lit: Array[HollowSoldier] = []   # allies it kindled that still burn
 var target: HollowSoldier            # the ally of the current chant
 var _cool := 1.0
 var _stream: CPUParticles3D
+var _trail: MeshInstance3D   # a faint hot thread under the motes, so the stream reads as one ribbon
+var _trail_a := 0.0
+
+const TRAIL_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+uniform float strength = 0.0;
+uniform vec4 hot : source_color = vec4(1.0, 0.62, 0.22, 1.0);
+void fragment() {
+	// UV.y runs the length (0 at the top = the Kindler's spear); clumps pour down it to the ally
+	float along = UV.y;
+	float flow = fract(along * 9.0 - TIME * 3.2);
+	float clump = 0.55 + 0.45 * smoothstep(0.0, 0.25, flow) * (1.0 - smoothstep(0.45, 1.0, flow));
+	// soft round edge: brightest where the side faces the eye
+	float rim = pow(clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0), 2.0);
+	float ends = smoothstep(0.0, 0.08, along) * smoothstep(1.0, 0.85, along);
+	ALBEDO = hot.rgb * 1.6;
+	ALPHA = strength * clump * rim * ends * 0.4;   // (0.55 read as a laser line in the 16.5 GL frame)
+}
+"""
 
 func _ready() -> void:
 	health_max = KINDLER_HP
@@ -70,8 +90,8 @@ func _ready() -> void:
 	_stream.emitting = false
 	_stream.local_coords = false
 	_stream.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_stream.emission_sphere_radius = 0.12
-	_stream.spread = 6.0
+	_stream.emission_sphere_radius = 0.06   # (0.12 + spread 6 scattered it into loose sparks on screen)
+	_stream.spread = 3.0
 	_stream.gravity = Vector3(0, 0.6, 0)
 	_stream.scale_amount_min = 0.5
 	_stream.scale_amount_max = 1.3
@@ -93,6 +113,26 @@ func _ready() -> void:
 	g.add_point(0.8, Color(1.0, 0.4, 0.08, 0.8))
 	_stream.color_ramp = g
 	add_child(_stream)
+	_trail = MeshInstance3D.new()
+	_trail.name = "EmberTrail"
+	_trail.top_level = true
+	var cy := CylinderMesh.new()
+	cy.top_radius = 0.022
+	cy.bottom_radius = 0.022
+	cy.height = 1.0
+	cy.radial_segments = 6
+	cy.rings = 1
+	cy.cap_top = false
+	cy.cap_bottom = false
+	var sm := ShaderMaterial.new()
+	var sh := Shader.new()
+	sh.code = TRAIL_SHADER
+	sm.shader = sh
+	cy.material = sm
+	_trail.mesh = cy
+	_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_trail.visible = false
+	add_child(_trail)
 
 func return_to_post() -> void:
 	super.return_to_post()
@@ -138,6 +178,25 @@ func _physics_process(delta: float) -> void:
 		_stream.initial_velocity_max = STREAM_SPEED * 1.05
 		_stream.lifetime = clampf(d.length() / STREAM_SPEED, 0.15, 2.0)
 		_stream.emitting = clampf(t / CHANT_T, 0.0, 1.0) > 0.15
+		_place_trail(from, to_c, smoothstep(0.15, 0.5, clampf(t / CHANT_T, 0.0, 1.0)))
+	elif _trail != null and _trail.visible:
+		_trail_a = maxf(_trail_a - delta * 4.0, 0.0)
+		(_trail.mesh.material as ShaderMaterial).set_shader_parameter("strength", _trail_a)
+		_trail.visible = _trail_a > 0.0
+
+## stretch the thread from the spear (top) to the ally's chest (bottom); a = 0..1 strength
+func _place_trail(from: Vector3, to_c: Vector3, a: float) -> void:
+	var d := to_c - from
+	var l := d.length()
+	if l < 0.05:
+		return
+	var y := -d / l    # cylinder +Y points back up the stream to the spear
+	var x := y.cross(Vector3.UP if absf(y.y) < 0.95 else Vector3.RIGHT).normalized()
+	var z := x.cross(y)
+	_trail.global_transform = Transform3D(Basis(x, y * l, z), from.lerp(to_c, 0.5))
+	_trail_a = a
+	(_trail.mesh.material as ShaderMaterial).set_shader_parameter("strength", a)
+	_trail.visible = a > 0.0
 
 func _stalk(to: Vector3, dist: float) -> Vector3:
 	var ally := pick_ally() if dist > CROWD else null
