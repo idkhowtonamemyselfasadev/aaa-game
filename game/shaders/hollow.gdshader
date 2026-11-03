@@ -88,7 +88,12 @@ void fragment() {
 	vec2 cuv = UV * 44.0 + vec2(fbm(UV * 9.0), fbm(UV * 9.0 + 5.2)) * 1.6;
 	float e = fissure(cuv);
 	float wide = fissure(UV * 14.0 + 11.0);
-	float crack = 1.0 - smoothstep(0.008, 0.035, e);
+	// the fine fissures only open in patches (round joints and old blows), fading out between
+	// them, so the skin reads as weathered stone, not an even honeycomb shell
+	float patch = smoothstep(0.42, 0.66, fbm(UV * 6.0 + 4.4));
+	// each seam thins out and breaks along its length, so no cell outline closes into a hexagon
+	float run = smoothstep(0.3, 0.62, fbm(UV * 70.0 + 1.9));
+	float crack = (1.0 - smoothstep(0.004, 0.006 + 0.026 * run, e)) * run * mix(0.12, 1.0, patch);
 	float crack_big = (1.0 - smoothstep(0.01, 0.045, wide)) * smoothstep(0.45, 0.7, fbm(UV * 5.0 + 7.7));
 	// chest: a band at sternum height on the front of the torso
 	vec3 rel = wpos - root_pos;
@@ -97,10 +102,12 @@ void fragment() {
 	float front = dot(normalize(flat_rel + root_fwd.xz * 0.001), root_fwd.xz);
 	float torso = 1.0 - smoothstep(0.16, 0.30, length(flat_rel));
 	float chest = exp(-pow((h - 1.30) / 0.17, 2.0)) * torso * smoothstep(-0.2, 0.6, front);
-	vec3 alb = mix(ash_dark, ash_light, clamp(lum * 1.35 * (0.65 + 0.7 * n), 0.0, 1.0));
-	alb *= mix(0.75, 1.05, grime);
-	// scorched soot around the fissures and the chest
-	float soot = max(crack_big * 0.5, chest * 0.5) + crack * 0.3;
+	vec3 alb = mix(ash_dark, ash_light, clamp(lum * 1.2 * (0.6 + 0.7 * n), 0.0, 1.0));
+	// ash settles unevenly: broad sooty blotches and a darker underside keep it off chalk-white
+	float blot = smoothstep(0.38, 0.72, fbm(UV * 3.0 + 8.3));
+	alb *= mix(0.68, 1.0, grime) * mix(1.0, 0.62, blot);
+	// scorched soot in the fissures (dark seams, not pale lines) and round the chest
+	float soot = max(crack_big * 0.55, chest * 0.5) + crack * 0.6;
 	alb = mix(alb, vec3(0.05, 0.045, 0.04), clamp(soot, 0.0, 0.85));
 	float fis = max(crack, crack_big * 0.85);
 	if (stone > 0.0) {

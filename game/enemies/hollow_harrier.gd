@@ -72,8 +72,8 @@ func _ready() -> void:
 	# narrow in the shoulders and chest: a runner, not a spearman
 	model.scale = Vector3(0.98, 1.08, 0.95)
 	_model_rest = model.transform
-	# a cold, bone-pale ash and a dark peat-brown reiver's coif, so it reads apart at a glance
-	_set_skin("ash_light", Color(0.47, 0.46, 0.44))
+	# a cold, dull grey ash (bone-pale read as chalk up close) and a dark peat-brown reiver's coif, so it reads apart at a glance
+	_set_skin("ash_light", Color(0.37, 0.365, 0.355))
 	rags.set_param("cloth_dark", Color(0.075, 0.06, 0.042))
 	rags.set_param("cloth_light", Color(0.31, 0.25, 0.17))
 	if not rags.mats.is_empty():
