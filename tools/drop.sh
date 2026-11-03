@@ -16,7 +16,11 @@ if [ -z "${AAA_DROP_KEY:-}" ] || [ -z "${AAA_DROP_HOST:-}" ]; then
 fi
 [ $# -ge 1 ] || { echo "usage: tools/drop.sh <file-or-dir>..."; exit 2; }
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-printf '%s\n' "$AAA_DROP_KEY" > "$tmp/key"; chmod 600 "$tmp/key"
+case "$AAA_DROP_KEY" in   # full key text, or the same as one line of base64
+  -----*) printf '%s\n' "$AAA_DROP_KEY" > "$tmp/key" ;;
+  *)      printf '%s' "$AAA_DROP_KEY" | base64 -d > "$tmp/key" 2>/dev/null ;;
+esac
+chmod 600 "$tmp/key"
 sftpb() { sftp -q -b - -i "$tmp/key" -o BatchMode=yes -o ConnectTimeout=20 \
                -o StrictHostKeyChecking=accept-new "$AAA_DROP_HOST"; }
 rc=0
