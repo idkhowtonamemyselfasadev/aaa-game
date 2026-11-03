@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-2205-night-ring-haze.jpg",
-  "time": "2026-10-27T22:05:00Z",
-  "caption": "Night village: the far mountains now stand in the same moonlit haze as the wood line in front, so the ruled pale band over the ridge is gone; the massifs still read a touch flat and pale.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-2230-night-band-nosse.jpg",
   "time": "2026-10-27T22:30:00Z",
   "caption": "Debug: night cottage view with SSIL, SSAO and SSR switched off; the pale speckled band above the white cottage roof is unchanged, so screen-space effects are not its cause.",
@@ -891,6 +885,12 @@
   "file": "20261103-1406-warden-crown.jpg",
   "time": "2026-11-03T14:06:41Z",
   "caption": "Kindled warden close-up: the cowl crown now gathers into a slumped peak pulled back over the skull with creases running down from it instead of a smooth dome; still a GL frame with square spark sprites.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1543-harrier-coif-knot.jpg",
+  "time": "2026-11-03T15:43:57Z",
+  "caption": "The crouched harrier's hand-wound coif close up: uneven strip laps, a strip over the crown and a tie-off knot break the old smooth pot shape; still a GL frame, and the white ember-cracked armour and small head read busy.",
   "verdict": "fail"
  }
 ]

@@ -1954,6 +1954,32 @@ func _harrier_test() -> void:
 	print("BOT harrier: coif jitter %.1f, strip widths %.2f..%.2f turns over %d turns; loose end down to y %.2f, %.3f m off the coif" % [jit, wmin, wmax, widths.size(), low, free_gap])
 	if jit <= 0.0 or widths.size() < 3 or wmax < wmin * 1.4 or loose == null or low > 1.74 or free_gap < 0.015:
 		return _combat_done(false, "the harrier's coif should be wound unevenly, with a loose end hanging free")
+	# 0c) not a pot: the coif's two sides differ (a tie-off knot bunched on the back of the
+	# head, wound lopsided), and a strip crossing the skull lifts the crown above the turns
+	# the mesh's vertex order is not kept, so compare the back quarters slice by slice: how
+	# far the right rear (x < 0) stands out past the left rear at the same height
+	var asym := 0.0
+	var knot_y := 0.0
+	for k in 12:
+		var y0 := 1.78 + k * 0.02
+		var rr := 0.0
+		var rl := 0.0
+		for c in cv:
+			if absf(c.y - y0) < 0.01 and c.z < -0.02:
+				var rad := Vector2(c.x, c.z + 0.02).length()
+				if c.x < 0.0:
+					rr = maxf(rr, rad)
+				else:
+					rl = maxf(rl, rad)
+		if rr - rl > asym:
+			asym = rr - rl
+			knot_y = y0
+	var crown := -INF
+	for c in cv:
+		crown = maxf(crown, c.y)
+	print("BOT harrier: coif's right rear stands %.3f m past its left (knot at y %.2f); crown at y %.3f" % [asym, knot_y, crown])
+	if asym < 0.018 or knot_y < 1.8 or crown < 2.005:
+		return _combat_done(false, "the harrier's coif should be knotted and lopsided, a strip crossing its crown, not a smooth pot")
 	if h.state != HollowSoldier.IDLE or hd > h.notice or gd < h.notice + 2.0:
 		return _combat_done(false, "the harrier should wait idle by the hewer, clear of the start")
 	# 1) the hero stands still facing ahead; the harrier starts 6 m in front of them

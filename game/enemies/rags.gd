@@ -62,6 +62,8 @@ var lateral := 0.0                       # the knee drag (m, body +X = the weare
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
 const COIF_TURNS := 5.0                  # turns of strip wound round the harrier's coif
+const COIF_KNOT := 0.038                 # how proud the tie-off knot stands off the coif (m)
+const COIF_KNOT_V := 0.3                 # its height on the coif (0 crown .. 1 throat)
 const TAIL_LEN := 0.44                   # the coif's knotted tails, nape to tip (m)
 var mantle := true
 var hem := 1.0                           # tabard length scale
@@ -380,7 +382,23 @@ func _coif() -> ArrayMesh:
 		var slack := 0.3 + 0.7 * fposmod(sin(floorf(sw) * 12.9898) * 43758.5453, 1.0)
 		var lap := (0.011 * f - 0.006 * slack * sin(f * PI)) * smoothstep(0.08, 0.25, v)
 		r += lap / 0.14
-		return Vector3(sin(a) * 0.122 * r, 2.0 - v * 0.38, cz + cos(a) * 0.158 * r), 56, 40)
+		# not a pot: wound lopsided by hand, fuller over the wearer's right ear and pulled in
+		# over the left where the strip was drawn tight
+		r *= 1.0 - 0.05 * sin(a + 0.4) * smoothstep(0.15, 0.45, v) * (1.0 - smoothstep(0.7, 0.95, v))
+		# one strip crosses over the skull from the brow to the nape, lying proud of the turns
+		# under it with a hard edge, so the profile of the crown steps instead of arcing
+		var y := 2.0 - v * 0.38
+		var cross := (1.0 - smoothstep(0.16, 0.24, absf(a - PI - 0.12))) * (1.0 - smoothstep(0.5, 0.7, v))
+		r += 0.013 * cross * smoothstep(0.03, 0.12, v) / 0.14
+		y += 0.012 * (1.0 - smoothstep(0.0, 0.12, v))      # its thickness over the apex
+		# the ends tied off in a bunched knot high on the back of the head, right of centre
+		var ka := a - (PI + 0.75)                  # x < 0: the wearer's right
+		var kv := (v - COIF_KNOT_V) / 0.09
+		var knot := exp(-(ka * ka / 0.09 + kv * kv))
+		knot *= 1.0 + 0.3 * sin(a * 23.0 + v * 31.0)        # crumpled, not a smooth ball
+		r += COIF_KNOT * knot / 0.14
+		y += 0.012 * knot
+		return Vector3(sin(a) * 0.122 * r, y, cz + cos(a) * 0.158 * r), 56, 40)
 
 ## The coif's turn coordinate, warped so the strips are wound unevenly: wide and narrow turns
 ## that wander along their length. Monotone (|d warp| < 1); rag.gdshader does the same sum.

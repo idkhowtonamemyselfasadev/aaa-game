@@ -1903,8 +1903,16 @@ func _ready() -> void:
 			# level with the wound head, wherever the crouch has put it (its Head bone)
 			var hsk: Skeleton3D = world.harrier.model.find_children("*", "Skeleton3D", true, false)[0]
 			var hhead: Vector3 = hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_Head")).origin
-			pos.y = hhead.y + 0.12
-			look.y = hhead.y + 0.1
+			# (15:00 11-03: framing off the harrier's stand put the head at the bottom edge,
+			# seen from above: the crouch carries the head well off fp. Now both ends hang off
+			# the Head bone itself, from the body's own basis: +Z its front, +X the wearer's left.
+			# `rear` swings round to the right rear quarter, onto the tie-off knot)
+			var hb: Basis = world.harrier.global_transform.basis
+			var hfwd := Vector3(hb.z.x, 0, hb.z.z).normalized()
+			var hleft := Vector3(hb.x.x, 0, hb.x.z).normalized()
+			var hoff := (hfwd * 0.55 + hleft * 0.85) if not "rear" in args else (-hfwd * 0.7 - hleft * 0.75)
+			look = hhead + Vector3.UP * 0.06
+			pos = hhead + hoff.normalized() * 1.05 + Vector3.UP * 0.1
 			print("SHOT coif head at %.2f m over the turf" % (hhead.y - terrain.height_at(hhead.x, hhead.z)))
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
@@ -2173,6 +2181,19 @@ func _ready() -> void:
 				player.global_position = Vector3(off.x, (world.get_node("Terrain") as Terrain).height_at(off.x, off.z) + 0.05, off.z)
 			if foe.state == foe_state and foe.t >= foe_u * float(dur[foe_state]):
 				break
+		if "harrier" in args and "coif" in args and cam != null:
+			# the hand-stepped crouch has moved and turned the head since the lens was set:
+			# re-aim on the Head bone now, from the body's own basis (+Z front, +X its left)
+			var csk: Skeleton3D = foe.model.find_children("*", "Skeleton3D", true, false)[0]
+			var chead: Vector3 = csk.global_transform * csk.get_bone_global_pose(csk.find_bone("mixamorig_Head")).origin
+			var cb: Basis = foe.body.global_basis
+			var cfwd := Vector3(cb.z.x, 0, cb.z.z).normalized()
+			var cleft := Vector3(cb.x.x, 0, cb.x.z).normalized()
+			# (15:40 11-03: +Z put the lens behind the crouched harrier's shoulder: its face is -Z)
+			var coff := (-cfwd * 0.55 - cleft * 0.85) if not "rear" in args else (cfwd * 0.7 + cleft * 0.75)
+			cam.global_position = chead + coff.normalized() * 1.05 + Vector3.UP * 0.1
+			cam.look_at(chead + Vector3.UP * 0.06)
+			print("SHOT coif re-aimed on the head at %s" % chead)
 		if "kindler" in args:
 			# kindler: the warden already burning white-hot, the Kindler at u= of a fresh chant
 			# into it (spear raised, ember stream flowing); particles run on through the warm-up
