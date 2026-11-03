@@ -26,6 +26,10 @@ better every single night and leave it in a state the next session can pick up b
   big downloads. GitHub still rejects files over 100 MB and chokes on huge repos, so keep git
   under ~5 GB: big assets stay git-ignored on disk, and ASSETS.md + a fetch script record
   where each one comes from so a fresh checkout can download them again.
+  Big files that can NOT be downloaded again (baked lighting, generated/processed assets,
+  renders you want to keep): upload them with `tools/drop.sh <file-or-dir>` before the session
+  ends. They go to the owner's long-term store (500 GB cap; 50 GB per night until it is fetched)
+  and are not readable from this box afterwards. If it says the env vars are missing, carry on.
 - Every session: read PROGRESS.md first, do the next item on the milestone, run shots +
   bots, update PROGRESS.md (content-hours counter, done, next, bugs), commit. The
   session script pushes afterwards; do not push yourself.
