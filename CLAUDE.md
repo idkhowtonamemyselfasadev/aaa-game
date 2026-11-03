@@ -48,6 +48,16 @@ LOOK (Black Myth: Wukong, not Zelda; Zelda is the reference only for exploration
 
 ALIVE (as important as the look): a full day/night cycle with changing light, weather fronts that roll in (rain, fog, storms, wind that moves grass and trees), wildlife with real behaviour (herds that graze and flee, predators that hunt, birds that scatter when you approach, insects in the light), NPCs with daily schedules (wake, work, eat, sleep, shelter from rain, react to the player and to the time of day), villages with sound and movement, ambient events on the roads (travellers, merchants, fights, animals crossing), a reactive world (grass flattens, footprints, water ripples, foliage brushes, campfires attract wildlife at night), a layered soundscape (region ambience, weather, wildlife, distance-based village noise). Every screenshot gate now asks two questions: could this be a Black Myth: Wukong screenshot, and does a 10-second clip here look like a living place? If either answer is no, that is the next task.
 
+BOSSES (added 2026-11-03, TOP PRIORITY: start this next session, before any more wildlife or wall/stone polish): bosses must be HUGE, spectacular fights, and every boss GROWS over the fight. Rules for every boss and world boss:
+- Size: a boss starts well above human size (Ashen Knight ~2.5x the hero) and grows at each phase change, ending around 2–2.5x its starting size. The final phase should fill the screen.
+- Phase change = a growth moment, never an instant pop: boss is invulnerable, roars, the arena shakes (camera shake, dust falling, a short hit-stop flash), and the mesh scales up smoothly over ~2 s while armour cracks/embers burst out. Hitboxes, hurtboxes, footstep loudness, attack reach and shockwave radius all scale with it.
+- Bigger means heavier: each phase is a bit slower to move but hits harder and covers more ground (slams with shockwave rings, sweeping swings, stomps that leave burning hazard zones), and adds 1–2 new attacks plus the mechanic change already listed in DESIGN.md.
+- Every attack has a clear, readable wind-up. Hard but fair; perfect dodge/parry must still work at every size.
+- Camera: lock-on frames the boss at every size (pull back and lift as it grows) and never clips into it. Boss health bar with name and phase notches.
+- Intro: in-engine camera reveal with the name card, then the fight starts.
+- Build it as a reusable boss system (state machine Idle → Telegraph → Attack → Recover, plus Grow; phases defined as data: scale, attack pool, mechanic) so every later boss uses it.
+- First deliverable: the **Ashen Knight**, fully playable in its 3 phases with the growth moments, real animations (no T-pose, no sliding), shots of all three sizes looked at, and a bot that beats it. Then update DESIGN.md's boss table with the size per phase for every boss.
+
 ---
 
 # OWNER PRIORITY: AUDIO
