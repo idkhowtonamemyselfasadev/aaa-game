@@ -98,7 +98,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# free past the left cheek-guard
 		head.add_child(_piece(_loose_end(), 0.0, 0.3, 7.0, 0.3))
 	if mantle:
-		chest.add_child(_piece(_mantle(), 0.35, 0.22, 0.35, 1.0))
+		var m_seed := 0.35 + mats.size() * 3.7     # the seed _piece gives its material
+		var m_n := mantle_folds(m_seed)
+		var mp := _piece(_mantle(m_seed, m_n), 0.35, 0.22, 0.35, 1.0)
+		var mm := mp.material_override as ShaderMaterial
+		mm.set_shader_parameter("pleats", m_n)
+		mm.set_shader_parameter("side_tear", 0.03)
+		chest.add_child(mp)
 	hips.add_child(_piece(_sash(), 0.0, 0.0, 0.0, 0.25))
 	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30, lerpf(0.30, 0.40, hem), 0.68 * hem, 0.9, 1.0)
 	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.32, lerpf(0.32, 0.42, hem), 0.76 * hem, -0.9, 2.0)
@@ -356,18 +362,41 @@ func _tail(side: float) -> ArrayMesh:
 				- knot + 0.008 * sin(v * 7.0 + side)
 		return Vector3(x, 1.83 - v * TAIL_LEN, z), 4, 14)
 
-func _mantle() -> ArrayMesh:
+## The shoulder mantle: rests tight on the shoulders and drapes from them in soft, uneven folds
+## that fan out and deepen toward a hand-cut hem; it sags lower over the chest and between the
+## shoulder blades where nothing holds it up. The fold phase is `pleat_phase()` over `n` folds
+## round the whole cape, so rag.gdshader (uniform `pleats` = n) shades the same folds.
+func _mantle(mseed: float, n: float) -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
 		var gap := 0.4
 		var a := lerpf(gap, TAU - gap, u)
-		var k := pow(v, 0.42)
+		# a hand-cut hem: dips and rises unevenly round the cape, one or two deeper scallops
+		var cut := 1.0 - 0.07 * (0.5 + 0.5 * sin(a * 2.3 + mseed)) \
+				- 0.035 * (0.5 + 0.5 * sin(a * 11.0 + mseed * 2.0))
+		var vv := v * cut
+		var k := pow(vv, 0.42)
 		var rx := lerpf(0.135, 0.375, k)
 		var rz := lerpf(0.135, 0.31, k)
-		var fold := 1.0 + 0.07 * v * sin(a * 9.0)
-		# the hem hangs lower at the back
-		var hem := lerpf(1.43, 1.30, (1.0 - cos(a)) * 0.5)
-		var y := lerpf(1.71, hem, v)
-		return Vector3(sin(a) * rx * fold, y, -0.045 + cos(a) * rz * fold), 40, 14)
+		# held up by the shoulders (|sin a| -> 1), free over the chest and the back
+		var sh := pow(absf(sin(a)), 2.0)
+		# drape folds: gathered small at the collar, fanning out and deepening to the hem, each
+		# fold its own depth, and pressed shallow where the cloth lies on the shoulder; biased
+		# outward so the valleys never sink into the armour underneath
+		var ph := pleat_phase(u, v, n, mseed)
+		var fh := sin(ph * TAU) + 0.35 * sin(ph * TAU * 2.0 + 1.3)
+		var swell := 0.55 + 0.45 * sin(ph * TAU * 0.37 + mseed * 2.3) * sin(ph * 1.1 + mseed)
+		var amp := lerpf(0.002, 0.028, smoothstep(0.0, 0.9, vv)) * (1.0 - 0.6 * sh) * swell
+		var d := amp * (0.5 * fh + 0.55)
+		# the hem kicks out a little where it hangs free
+		d += 0.012 * vv * vv * vv * (1.0 - sh)
+		# the hem hangs lower at the back, and sags over the chest between the shoulders
+		var hem := lerpf(1.43, 1.30, (1.0 - cos(a)) * 0.5) - 0.035 * (1.0 - sh) * (0.5 + 0.5 * cos(a))
+		var y := lerpf(1.71, hem, vv)
+		return Vector3(sin(a) * (rx + d), y, -0.045 + cos(a) * (rz + d)), 72, 20)
+
+## How many drape folds hang round the mantle (14..18), from its material seed.
+static func mantle_folds(mseed: float) -> float:
+	return 14.0 + 4.0 * fposmod(sin(mseed * 78.233) * 43758.5453, 1.0)
 
 func _sash() -> ArrayMesh:
 	return _grid(func(u: float, v: float) -> Vector3:
