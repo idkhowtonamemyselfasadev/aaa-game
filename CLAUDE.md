@@ -3,9 +3,12 @@
 This repo is one long autonomous build. You get one session per night. Make the game
 better every single night and leave it in a state the next session can pick up blind.
 
-- Engine: **Godot 4.7.2** at `~/.local/bin/godot` (already installed, export templates in
-  `~/claude/platformer-game/tools/templates.tpz`). Project lives in `game/`. UE5 is NOT
-  available on this machine; ignore the UE5 option in the prompt below.
+- Engine: **any engine you want** (owner direction 2026-11-03). Godot 4.7.2 is installed at
+  `~/.local/bin/godot` (export templates in `~/claude/platformer-game/tools/templates.tpz`) and
+  the current game in `game/` is built on it. You may install and switch to another engine
+  (Unreal, Unity, O3DE, anything) if you can install it yourself without sudo and it clearly
+  makes the game better. A switch means porting everything, so plan it in PROGRESS.md first,
+  port in steps, and never leave the game unplayable.
 - Renderer: Forward+ (Vulkan) for SDFGI/volumetrics if it works headless; fall back to
   Mobile/opengl3 only if Vulkan fails under headless Weston. Verify in milestone 0 and
   write the answer in PROGRESS.md.
@@ -18,8 +21,11 @@ better every single night and leave it in a state the next session can pick up b
   prove content is completable.
 - Assets: only CC0 or CC-BY (Poly Haven, Kenney, ambientCG, Sketchfab CC0, Mixamo per its
   license) because this repo is public. Record every asset in ASSETS.md. Generate
-  textures/meshes procedurally when it looks as good. No asset over 50 MB; keep the repo
-  under 2 GB total.
+  textures/meshes procedurally when it looks as good. Size (owner direction 2026-11-03): go big. HARD CAP
+  500 GB for the whole project on disk, assets and engine included; check with `du` before
+  big downloads. GitHub still rejects files over 100 MB and chokes on huge repos, so keep git
+  under ~5 GB: big assets stay git-ignored on disk, and ASSETS.md + a fetch script record
+  where each one comes from so a fresh checkout can download them again.
 - Every session: read PROGRESS.md first, do the next item on the milestone, run shots +
   bots, update PROGRESS.md (content-hours counter, done, next, bugs), commit. The
   session script pushes afterwards; do not push yourself.
