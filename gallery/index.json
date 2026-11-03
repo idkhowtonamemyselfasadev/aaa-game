@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261027-1434-boulder-noise.jpg",
-  "time": "2026-10-27T14:34:25Z",
-  "caption": "Big meadow boulder at 15 h after the noise fix: the lit stone face is now smooth weathered granite with soft blotches, no faint polygon cell pattern; still wrong: the shaded flank goes near-black and the rain streaks do not read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261027-1525-boulder-flank.jpg",
-  "time": "2026-10-27T15:25:43Z",
-  "caption": "Meadow boulder at 15:00: the shaded flank now shows stone grain and fractures instead of a black hole, but it is still darker than the shaded ground beside it.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1530-timber-shutter-night.jpg",
   "time": "2026-10-27T15:30:00Z",
   "caption": "The timber house at 20:30: lamplight now shows as a warm line round its shut shutter and the moonlit meadow reads grey-blue instead of black; the rim is a touch too thick and bright, the far mountains carry a pale cut-off haze band, and fireflies are oversized dots.",
@@ -897,6 +885,18 @@
   "file": "20261103-0438-kindler-sag.jpg",
   "time": "2026-11-03T04:38:14Z",
   "caption": "The Hollow Kindler mid-chant at 17:00 (GL frame): the ember thread now hangs in a soft wavering arc instead of a laser line, but the motes still flew straight above it (fixed after the frame: they now fall along the same arc), the thread leaves its chest not the spear tip, and the Kindler still shows its back.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0450-kindler-spear.jpg",
+  "time": "2026-11-03T04:50:00Z",
+  "caption": "The Hollow Kindler mid-chant from its front quarter (GL frame, 17:00): the ember thread now leaves the point of the raised spear about 3 m up, but the motes arced high above the thread (a sign error in their launch, fixed and re-rendered in the next shot).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0512-kindler-pour.jpg",
+  "time": "2026-11-03T05:12:00Z",
+  "caption": "After the fix: the motes now pour down the same hanging thread from the spear point to the kindled ally off-frame; still wrong: the Kindler stands backlit in shadow so its face does not read, the warden it kindles is out of shot, and the sky is blotchy.",
   "verdict": "fail"
  }
 ]

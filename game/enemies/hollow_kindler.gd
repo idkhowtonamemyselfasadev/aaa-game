@@ -180,16 +180,21 @@ func _physics_process(delta: float) -> void:
 			lit.remove_at(i)
 	super._physics_process(delta)
 	if chanting() and target != null and is_instance_valid(target):
-		var from := global_position + Vector3.UP * 1.3 + body.global_basis.z * 0.35
+		# the stream pours from the raised spear's point, not the chest (11-03 frame: from the
+		# chest it read as a beam out of the body, the spear an unrelated prop)
+		var from := spear_tip()
 		var to_c := target.global_position + Vector3.UP * 1.25
 		var d := to_c - from
 		_stream.global_position = from
-		# the motes fall along the same hanging arc as the thread: a gravity that dips them
-		# sag metres at mid-flight, launched a little upward so they still land on the ally
+		# the motes fall along the same hanging arc as the thread: they dip sag metres below
+		# the straight line at mid-flight and still land on the ally
 		var fly := clampf(d.length() / STREAM_SPEED, 0.15, 2.0)
 		var g := 8.0 * clampf(d.length() * 0.05, 0.05, 0.45) / (fly * fly)
-		var v := d / fly + Vector3.UP * g * fly * 0.5
-		_stream.gravity = Vector3.DOWN * g
+		# (11-03: launched UP against a DOWN pull the path bulged sag metres ABOVE the line,
+		# motes flying over the hanging thread; a hanging arc is the opposite: a pull UP and a
+		# launch dipped down by g*T/2, so mid-flight they sit sag metres below the line)
+		var v := d / fly - Vector3.UP * g * fly * 0.5
+		_stream.gravity = Vector3.UP * g
 		_stream.direction = v.normalized()
 		_stream.initial_velocity_min = v.length() * 0.97
 		_stream.initial_velocity_max = v.length() * 1.03
@@ -200,6 +205,12 @@ func _physics_process(delta: float) -> void:
 		_trail_a = maxf(_trail_a - delta * 4.0, 0.0)
 		(_trail.mesh.material as ShaderMaterial).set_shader_parameter("strength", _trail_a)
 		_trail.visible = _trail_a > 0.0
+
+## world position of the spear point (falls back to above the chest if the spear is gone)
+func spear_tip() -> Vector3:
+	if spear != null and is_instance_valid(spear) and spear.get_parent() == _wield:
+		return spear.to_global(spear.tip_local())
+	return global_position + Vector3.UP * 1.3 + body.global_basis.z * 0.35
 
 ## stretch the thread from the spear (top) to the ally's chest (bottom); a = 0..1 strength
 func _place_trail(from: Vector3, to_c: Vector3, a: float) -> void:

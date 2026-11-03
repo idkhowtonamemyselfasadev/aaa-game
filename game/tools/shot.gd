@@ -983,7 +983,9 @@ func _ready() -> void:
 					# from the Kindler's front quarter on the sun side: its face and raised spear
 					# toward the lens, the sagging thread running off past the camera's shoulder
 					# to the burning warden at the frame edge
-					SPOTS[spot] = [kq - kline * 2.2 + kside * 3.4 + Vector3.UP * 0.2, kq.lerp(fp, 0.3) + Vector3.UP * 1.45]
+					# (04:45 11-03: 2.2 toward the warden + 3.4 aside was square on to its profile and
+					# read as its back; now 3.8 toward the warden + 1.9 aside, ~27 deg off its face)
+					SPOTS[spot] = [kq - kline * 3.8 + kside * 1.9, kq.lerp(fp, 0.12) + Vector3.UP * 1.6]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]
@@ -1822,8 +1824,8 @@ func _ready() -> void:
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
 			look.y = terrain.height_at(look.x, look.z) + 0.9
 		if spot == "soldier" and "kindler" in args:
-			pos.y = terrain.height_at(pos.x, pos.z) + 2.0
-			look.y = terrain.height_at(look.x, look.z) + 1.2
+			pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if "kfront" in args else 2.0)
+			look.y = terrain.height_at(look.x, look.z) + (1.75 if "kfront" in args else 1.2)
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)

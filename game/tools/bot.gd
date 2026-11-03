@@ -1761,6 +1761,9 @@ func _kindler_test() -> void:
 	var max_trail := 0.0
 	var trail_len := 0.0
 	var trail_sag := 0.0
+	var tip_gap := 0.0    # stream mouth vs the spear point, worst frame of the chant
+	var mouth_h := 0.0    # stream mouth above the Kindler's feet
+	var mote_dip := 0.0   # how far the motes hang below the straight line at mid-flight
 	var max_pitch := 0.0
 	var min_gap := INF
 	var frames := 0
@@ -1776,6 +1779,15 @@ func _kindler_test() -> void:
 				max_trail = k._trail_a
 				trail_len = k._trail.global_basis.y.length()
 				trail_sag = k.sag_m
+			if k._stream.emitting:
+				tip_gap = maxf(tip_gap, k._stream.global_position.distance_to(k.spear_tip()))
+				mouth_h = maxf(mouth_h, k._stream.global_position.y - k.global_position.y)
+				# a mote's mid-flight height vs the straight spear->ally line: it must hang below
+				var ft := k._stream.lifetime * 0.5
+				var vel: Vector3 = k._stream.direction * (k._stream.initial_velocity_min + k._stream.initial_velocity_max) * 0.5
+				var mid_p: Vector3 = k._stream.global_position + vel * ft + k._stream.gravity * ft * ft * 0.5
+				var line_mid: Vector3 = k._stream.global_position.lerp(w.global_position + Vector3.UP * 1.25, 0.5)
+				mote_dip = line_mid.y - mid_p.y
 			max_pitch = maxf(max_pitch, float(k._pose[1]))
 	print("BOT kindler: chants %d, kindles %d after %d frames; chant %.2f s, stream %s, spear pitch %.0f deg, nearest %.1f m; warden kindled %.1f s, damage x%.2f, sparks %s" % [k.chants, k.kindles, frames, chant_t, max_stream, max_pitch, min_gap, w.kindled, w.damage_mul, w._kindle_sparks != null and w._kindle_sparks.emitting])
 	if k.kindles != 1 or chant_t < HollowKindler.CHANT_T - 0.1 or not max_stream or max_pitch < 60.0:
@@ -1786,6 +1798,12 @@ func _kindler_test() -> void:
 		return _combat_done(false, "the kindler walked into the fight instead of hanging back")
 	var wk := (k._stream.global_position - (w.global_position + Vector3.UP * 1.25)).length()
 	print("BOT kindler: ember thread peak %.2f, %.2f m long (stream mouth to warden %.2f m), sags %.2f m" % [max_trail, trail_len, wk, trail_sag])
+	print("BOT kindler: stream mouth %.2f m from the spear point, %.2f m above the feet" % [tip_gap, mouth_h])
+	print("BOT kindler: motes dip %.2f m below the line at mid-flight (thread sags %.2f m)" % [mote_dip, trail_sag])
+	if absf(mote_dip - trail_sag) > 0.12:
+		return _combat_done(false, "the ember motes do not follow the thread's hanging arc")
+	if tip_gap > 0.3 or mouth_h < 2.2:
+		return _combat_done(false, "the ember stream does not pour from the raised spear point")
 	if trail_sag < 0.1 or trail_sag > 0.5:
 		return _combat_done(false, "the ember thread does not hang (laser-straight or drooping too far)")
 	if max_trail < 0.9 or absf(trail_len - wk) > 1.5:
