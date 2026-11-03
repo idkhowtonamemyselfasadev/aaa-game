@@ -380,6 +380,11 @@ static func lock_point(t: Node3D) -> Vector3:
 	var cap: Array = t.hurt_capsule()
 	return (cap[0] as Vector3).lerp(cap[1], 0.72)
 
+## How big a lock target is (1 = human sized); bosses that grow report their size_scale.
+static func lock_size(t: Node3D) -> float:
+	var s = t.get("size_scale")
+	return maxf(float(s), 1.0) if s != null else 1.0
+
 func _lockable(t: Node) -> bool:
 	return is_instance_valid(t) and t.is_inside_tree() and t.is_in_group("hittable") and t.has_method("hurt_capsule")
 
@@ -460,9 +465,15 @@ func _update_lock(delta: float) -> void:
 			return
 	# over-the-shoulder: the camera slides further right so the hero stands left of frame and
 	# the target is not hidden behind them; aim is solved from the camera's real position
-	spring.spring_length = move_toward(spring.spring_length, 5.0, delta * 2.0)
+	# a giant (a boss that grows) is framed whole: the arm pulls back and the aim drops from
+	# its chest toward its middle so the camera lifts to look up at it instead of into it
+	var big := lock_size(lock_target)
+	spring.spring_length = move_toward(spring.spring_length, 5.0 + 1.7 * (big - 1.0), delta * (2.0 + big))
 	camera.position.x = move_toward(camera.position.x, CAM_SIDE_LOCKED, delta * 1.5)
 	var aim := lock_point(lock_target)
+	if big > 1.2:
+		var cap: Array = lock_target.hurt_capsule()
+		aim = (cap[0] as Vector3).lerp(cap[1], lerpf(0.72, 0.42, clampf((big - 1.2) / 3.0, 0.0, 1.0)))
 	var pivot := global_position + cam_pivot.position
 	var reach := spring.get_hit_length()
 	if reach < 0.05:
@@ -472,7 +483,7 @@ func _update_lock(delta: float) -> void:
 	var flat := Vector2(to.x, to.z).length()
 	var want_yaw := atan2(-to.x, -to.z)
 	# look down past the hero at the target; closer targets need a steeper angle to fit both
-	var want_pitch := clampf(atan2(to.y, maxf(flat, 0.5)) - 0.1 - 0.25 / maxf(flat, 1.0), -0.45, 0.12)
+	var want_pitch := clampf(atan2(to.y, maxf(flat, 0.5)) - 0.1 - 0.25 / maxf(flat, 1.0), -0.45, 0.12 + 0.08 * (big - 1.0))
 	var k := 1.0 - exp(-10.0 * delta)
 	_yaw = lerp_angle(_yaw, want_yaw, k)
 	_pitch = lerpf(_pitch, want_pitch, k)

@@ -200,6 +200,21 @@ spear wound back to the right.
 | **Warden Ashka** fights at the end of **D3 Chain Shaft**. | | | | | | |
 | World bosses ×4 | one per region | 3 phases each | | | | |
 
+**Boss size per phase** (owner rule 2026-11-03: every boss starts ~2.5x the hero and grows at
+each phase change to ~2-2.5x its starting size; the change is a 2 s growth moment, invulnerable,
+arena shaking; reach, hitboxes, shockwaves and stride scale with it; each size strides slower,
+hits harder, covers more ground). Sizes are body scale x hero height (hero ~1.8 m). Built on
+`BossGrowth` (`game/enemies/boss_growth.gd`): phases as data (scale, tempo, damage, attack pool,
+mechanic).
+
+| Boss | P1 | P2 | P3 | P4 | P5 | End / start |
+|------|----|----|----|----|----|-------------|
+| Ashen Knight, slice (built) | 2.5x (~4.6 m) | 3.7x (~6.7 m) | 5.3x (~9.6 m) | — | — | 2.1x |
+| Ashen Knight (D1) | 2.5x | 3.6x | 5.3x | — | — | 2.1x |
+| Drowned Choir (D2) | 3 singers at 2.5x | 3.4x (on the flood) | one giant singer 6x | — | — | 2.4x |
+| Warden Ashka (final) | 2.5x | 3.2x | 4x | 5x | 6x (fills the shaft) | 2.4x |
+| World bosses ×4 | 2.5x | 3.5x | 5.5x | — | — | 2.2x |
+
 ---
 
 ## 5. Content budget (~30 h)

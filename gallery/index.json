@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261028-0450-night-valley-far.jpg",
-  "time": "2026-10-28T04:50:36Z",
-  "caption": "Night valley at 21:00 with the sky pinned clear after the far ground-fill fade: moonlit peaks and starry sky hold, but the mid-valley wood and floor are still a featureless dark wash (suspect the moon's 150 m shadow map).",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-0548-night-valley-nomoonshadow.jpg",
-  "time": "2026-10-28T05:48:35Z",
-  "caption": "Night valley at 21:00 with the moon's shadow switched off: the near sward is moonlit, but the mid-valley wood and floor are still one dark wash, so the moon shadow is not the cause.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-0730-knockdown.jpg",
   "time": "2026-10-28T07:30:00Z",
   "caption": "The hero lies on his back with knees up after the hollow soldier's sweep, staff thrown onto the path; the body is half buried in tall grass and the top-down frame is dark, with no dust where he landed.",
@@ -885,6 +873,18 @@
   "file": "20261103-1950-hollow-tell-front.jpg",
   "time": "2026-11-03T19:50:00Z",
   "caption": "Hollow spearman winding up, seen from the front (GL frame): the chest still smoulders through broken cracks during the tell after the facing fix; backlit and GL-only, so the burn has no bloom.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2045-knight-size-p1.jpg",
+  "time": "2026-11-03T20:45:00Z",
+  "caption": "The Ashen Knight at its phase-1 size (~2.5x the hero) beside the hero, boss bar with phase notches (GL quick-look): the size reads but it is a GL frame, not at its stone ring, and the knight's ember skin is dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2045-knight-size-p3.jpg",
+  "time": "2026-11-03T20:45:00Z",
+  "caption": "The Ashen Knight at its phase-3 size (~5.3x the hero) towering over the small hero (GL quick-look): the giant reads, but the camera is too close to compare sizes cleanly and there is no growth FX in frame.",
   "verdict": "fail"
  }
 ]

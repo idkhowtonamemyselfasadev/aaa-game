@@ -988,6 +988,14 @@ func _knight_test() -> void:
 	var p2_strikes0 := -1
 	var dodged_flame := false
 	var stood_flame := false
+	var grow_seen := {}          # phase -> the sizes the growth went through
+	var grow_done := {}          # phase -> size once the surge ended
+	var grow_shake := 0.0
+	var size0 := k.size_scale
+	var cap0: float = k.hurt_capsule()[2]
+	print("BOT knight: size %.2f (~%.1fx the hero), hurt radius %.2f m, capsule %.2f m tall" % [size0, size0 * 1.16, cap0, k._col_cap.height])
+	if absf(size0 - AshenKnight.PHASES[0]["scale"]) > 0.01 or size0 * 1.16 < 2.3:
+		return _combat_done(false, "the knight does not start well above human size")
 	var flame_tested := 0
 	while not k.is_dead() and t < 150.0:
 		var to := k.global_position - p.global_position
@@ -1024,6 +1032,10 @@ func _knight_test() -> void:
 			p.bot_input = Vector2.ZERO
 			var r: String = live.result if is_instance_valid(live) else "?"
 			print("BOT knight: P3 eruption %d -> %s (rolled %s, down %s, dodge_t %.2f)" % [flame_tested + 1, r, rolled, p.is_down(), p.dodge_t])
+			if flame_tested == 0 and r != "hit" and p.is_down():
+				# a knight blow had the hero on the ground as it burst: not a test of standing in it
+				print("BOT knight: the hero was down when it burst -- testing the next eruption")
+				continue
 			if flame_tested == 1 and not rolled and r == "hit":
 				# the hero was reeling or down from a knight blow and never got the roll off:
 				# not a test of the eruption, try the next one
@@ -1048,7 +1060,7 @@ func _knight_test() -> void:
 			p.bot_attack = false
 			p.bot_heavy = false
 			p.bot_input = Vector2.ZERO
-		elif k.state == HollowSoldier.WINDUP and k.t > wl - 0.06 * k.tempo and p.dodge_t < 0.0:
+		elif k.state == HollowSoldier.WINDUP and k.t > wl - maxf(0.06 * k.tempo, 1.2 * get_physics_process_delta_time() * k.tempo) and p.dodge_t < 0.0:
 			# roll on the glint, as a player would (sideways, away from the cut)
 			p.bot_attack = false
 			p.bot_heavy = false
@@ -1059,7 +1071,7 @@ func _knight_test() -> void:
 			p.bot_attack = false
 			p.bot_heavy = false
 			p.bot_input = Vector2.ZERO
-		elif flat.length() > 2.2:
+		elif flat.length() > 1.1 + float(k.hurt_capsule()[2]):
 			p.bot_input = flat.normalized()
 			p.bot_heavy = false
 		else:
@@ -1072,6 +1084,11 @@ func _knight_test() -> void:
 				p.bot_attack = true
 			else:
 				p.bot_heavy = int(t * 2.0) % 3 != 2
+		if k.surging() and k.growth.growing():
+			grow_seen[k.phase] = k.growth.samples.duplicate()
+			grow_shake = maxf(grow_shake, p._trauma)
+		if not k.surging() and grow_seen.has(k.phase) and not grow_done.has(k.phase):
+			grow_done[k.phase] = k.size_scale
 		if k.surging() and not phase_hp.has(k.phase):
 			phase_hp[k.phase] = k.health
 			var hh := k.health
@@ -1097,6 +1114,7 @@ func _knight_test() -> void:
 			p.stamina = p.stamina_max
 		if int(t / 10.0) != int((t + get_physics_process_delta_time()) / 10.0):
 			print("BOT knight: t %.0f s, phase %d, health %.0f, hits taken %d, state %d, hero hp %.0f st %.0f" % [t, k.phase, k.health, k.hits_taken, k.state, p.health, p.stamina])
+			print("BOT knight:   gap %.2f m (hurt r %.2f), hero y %.2f knight y %.2f, down %s, attacking %s, move %d" % [flat.length(), float(k.hurt_capsule()[2]), p.global_position.y, k.global_position.y, p.is_down(), p.combat.is_attacking(), k.move_kind])
 		await get_tree().physics_frame
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
@@ -1104,6 +1122,25 @@ func _knight_test() -> void:
 	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results)])
 	if k.surges < 2 or k.blasts < 2:
 		return _combat_done(false, "knight did not surge into both later phases")
+	# every surge was a growth moment: smooth, never a pop, ending at the phase's size
+	for ph in [2, 3]:
+		var sm: Array = grow_seen.get(ph, [])
+		var want: float = AshenKnight.PHASES[ph - 1]["scale"]
+		var steps := 0.0
+		for i in range(1, sm.size()):
+			steps = maxf(steps, absf(sm[i] - sm[i - 1]))
+		var mid: float = sm[sm.size() / 2] if sm.size() > 0 else 0.0
+		print("BOT knight: growth into phase %d: %d ticks, %.2f -> mid %.2f -> %.2f (want %.2f), largest step %.3f" % [ph, sm.size(), sm[0] if sm.size() > 0 else 0.0, mid, grow_done.get(ph, 0.0), want, steps])
+		# not a pop: no tick moves faster than the eased curve's peak slope (1.875 / GROW_T)
+		var dt := get_physics_process_delta_time()
+		var max_step: float = (want - float(AshenKnight.PHASES[ph - 2]["scale"])) * 1.875 * dt / BossGrowth.GROW_T * 1.1
+		print("BOT knight:   ticks wanted >= %d, step allowed %.3f" % [int(0.9 * BossGrowth.GROW_T / dt), max_step])
+		if sm.size() < int(0.9 * BossGrowth.GROW_T / dt) or steps > max_step or absf(float(grow_done.get(ph, 0.0)) - want) > 0.01:
+			return _combat_done(false, "phase %d growth was missing, a pop, or ended at the wrong size" % ph)
+	var endk: float = AshenKnight.PHASES[2]["scale"] / size0
+	print("BOT knight: final size %.2fx the start (%.1fx the hero), shake peak %.2f, dust bursts %d, hurt radius %.2f m" % [endk, AshenKnight.PHASES[2]["scale"] * 1.16, grow_shake, k.growth.dust_puffs, float(k.hurt_capsule()[2])])
+	if endk < 1.9 or endk > 2.6 or grow_shake < 0.3 or k.growth.dust_puffs < 10:
+		return _combat_done(false, "the knight did not grow ~2x with the arena shaking")
 	if surged_hits > 0:
 		return _combat_done(false, "knight could be hurt while it surged")
 	var p2: float = phase_hp.get(2, 0.0) / k.health_max
@@ -1148,12 +1185,13 @@ func _knightleap_test() -> void:
 	var away := (p.global_position - k.global_position)
 	away.y = 0.0
 	away = away.normalized()
-	# 1) phase 1: no leap, it walks in
-	p.global_position = k.global_position + away * 8.0
+	# 1) phase 1: no leap, it walks in (distances scale with the giant's size, BossGrowth)
+	var ks1 := k.size_scale
+	p.global_position = k.global_position + away * 8.0 * ks1
 	p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
 	k.state = HollowSoldier.STALK
 	k.t = 0.0
-	var start_d := 8.0
+	var start_d := 8.0 * ks1
 	for i in 120:
 		await get_tree().physics_frame
 	var d1 := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
@@ -1168,6 +1206,9 @@ func _knightleap_test() -> void:
 	for tr in trials:
 		var kind: String = tr[0]
 		k._set_phase(2)
+		k.set_size_scale(k.growth.scale_of(2))
+		var ks := k.size_scale
+		k._home = k.global_position     # each leap carries the giant ~20 m: it must not give up and walk home
 		k._leap_cool = 0.0
 		k.state = HollowSoldier.STALK
 		k.t = 0.0
@@ -1179,7 +1220,7 @@ func _knightleap_test() -> void:
 		var dir := (p.global_position - k.global_position)
 		dir.y = 0.0
 		dir = dir.normalized()
-		p.global_position = k.global_position + dir * 8.0
+		p.global_position = k.global_position + dir * 8.0 * ks
 		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
 		await _ticks(2)
 		var hero_at := p.global_position
@@ -1230,13 +1271,13 @@ func _knightleap_test() -> void:
 		print("BOT knightleap: %s -> %s (crouch %s, top of arc %.2f m, bite %.2f m from where the hero stood, feet %.2f m off, state %d)" % [kind, r, crouch_seen, max_lift, land_err, feet_gap, k.state])
 		res[kind] = r
 		print("BOT knightleap: legs standing feet %.2f m under the hips, knees %.2f m fore; mid-air feet %.2f m under, knees %.2f m fore; hands %.2f m above the head" % [stand_legs.x, stand_legs.y, air_legs.x, air_legs.y, air_legs.z])
-		if air_legs.x > stand_legs.x * 0.7 or air_legs.y < 0.2:
+		if air_legs.x > stand_legs.x * 0.7 or air_legs.y < 0.2 * ks:
 			return _combat_done(false, "the knight's legs hang straight in the air (feet %.2f m under the hips)" % air_legs.x)
 		if air_legs.z < 0.0:
 			return _combat_done(false, "the glaive is not heaved overhead at the top of the leap")
-		if not crouch_seen or max_lift < 1.0:
+		if not crouch_seen or max_lift < 1.0 * ks:
 			return _combat_done(false, "no crouch and arc before the leap (%s)" % kind)
-		if kind == "stand" and (land_err > 1.2 or feet_gap < 0.9):
+		if kind == "stand" and (land_err > 1.2 * ks or feet_gap < 0.9 * ks):
 			return _combat_done(false, "the leap did not come down by the hero (bite %.2f m off, feet %.2f m)" % [land_err, feet_gap])
 		if kind == "stand":
 			await _ticks(3)
@@ -1258,7 +1299,11 @@ func _knightleap_test() -> void:
 			while is_instance_valid(sc) and sc.t < 0.6:
 				await _ticks(1)
 			var c0 := sc.grass_char_at(sc.global_position)
-			var c_edge := sc.grass_char_at(sc.global_position + Vector3(Scorch.CHAR_R * 0.4, 0, 0))
+			# the star's points reach out unevenly: part-way out along its longest point
+			var c_edge := 0.0
+			for ai in 8:
+				var ea := TAU * ai / 8.0
+				c_edge = maxf(c_edge, sc.grass_char_at(sc.global_position + Vector3(cos(ea), 0, sin(ea)) * Scorch.CHAR_R * 0.4))
 			var c_out := sc.grass_char_at(sc.global_position + Vector3(Scorch.SIZE, 0, 0))
 			var slot_v: Vector4 = Scorch.burn_vals[sc._slot] if sc._slot >= 0 else Vector4.ZERO
 			print("BOT knightleap: grass char at the bite %.2f, part-way out %.2f, beyond the star %.2f; burn slot %d = %s" % [c0, c_edge, c_out, sc._slot, slot_v])

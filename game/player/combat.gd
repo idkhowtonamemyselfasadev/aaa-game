@@ -587,7 +587,7 @@ func _detect_hits(u: float) -> void:
 		if target in _hit_this_swing or not target.has_method("hurt_capsule"):
 			continue
 		var cap: Array = target.hurt_capsule()
-		if (cap[0] as Vector3).distance_to(player.global_position) > 4.0:
+		if (cap[0] as Vector3).distance_to(player.global_position) > 4.0 + float(cap[2]) * 2.0:
 			continue
 		for k in segs.size():
 			var a: Vector3 = segs[k][0]

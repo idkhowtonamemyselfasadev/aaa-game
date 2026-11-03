@@ -127,6 +127,13 @@ var _ember_light: OmniLight3D
 var _glint: MeshInstance3D
 var _ash: CPUParticles3D
 var rags: HollowRags
+## Uniform size of the whole body (1 = a soldier). A boss grows by raising it: the model,
+## glaive, collision capsule, hurt capsule, reach, stride and ember light all scale with it.
+## Reach checks are made in the body's own (scaled) frame, so they grow on their own.
+var size_scale := 1.0
+var _col_cap: CapsuleShape3D
+var _col: CollisionShape3D
+var _ember_range := 2.6
 
 func _ready() -> void:
 	add_to_group("hittable")
@@ -141,6 +148,8 @@ func _ready() -> void:
 	col.shape = cap
 	col.position.y = 0.925
 	add_child(col)
+	_col = col
+	_col_cap = cap
 	body = Node3D.new()
 	body.name = "Body"
 	add_child(body)
@@ -176,6 +185,18 @@ func _ready() -> void:
 		(mi as MeshInstance3D).layers = 2
 	body.add_child(_ember_light)
 	_home = global_position
+
+## Sets the body's size (see size_scale). Called every frame while a boss grows.
+func set_size_scale(s: float) -> void:
+	size_scale = s
+	if body != null:
+		body.scale = Vector3.ONE * s
+	if _col_cap != null:
+		_col_cap.radius = 0.36 * s
+		_col_cap.height = 1.85 * s
+		_col.position.y = 0.925 * s
+	if _ember_light != null:
+		_ember_light.omni_range = _ember_range * s
 
 func plant(terrain: Terrain) -> void:
 	var p := global_position
@@ -355,7 +376,8 @@ func _lean(rad: float, sink: float) -> void:
 # --- hittable contract ---
 
 func hurt_capsule() -> Array:
-	return [global_position + Vector3.UP * 0.3, global_position + Vector3.UP * 1.65, 0.34]
+	var s := size_scale
+	return [global_position + Vector3.UP * 0.3 * s, global_position + Vector3.UP * 1.65 * s, 0.34 * s]
 
 func take_hit(_point: Vector3, dir: Vector3, power: float, hitstop: float) -> void:
 	if state == DEAD:
@@ -376,7 +398,7 @@ func take_hit(_point: Vector3, dir: Vector3, power: float, hitstop: float) -> vo
 	if not armoured or poise >= poise_max:
 		poise = 0.0
 		staggers += 1
-		_knock = d.normalized() * (1.6 + 1.4 * power)
+		_knock = d.normalized() * (1.6 + 1.4 * power) / sqrt(size_scale)   # a giant barely rocks back
 		_from = _pose
 		_stagger_len = STAGGER_T
 		_recoil = 1.0
@@ -489,7 +511,7 @@ func _physics_process(delta: float) -> void:
 			sink = 0.14
 			ember = 4.2 - 1.5 * u
 			# the stride closes the gap but stops short of walking into the hero
-			move = body.global_basis.z * (SWEEP_STEP / SWEEP_T) * 2.0 * (1.0 - u) * clampf((dist - 1.15) / 0.5, 0.0, 1.0)
+			move = body.global_basis.z * (SWEEP_STEP / SWEEP_T) * 2.0 * (1.0 - u) * clampf((dist - (1.15 + 0.45 * (size_scale - 1.0))) / 0.5, 0.0, 1.0)
 			if u >= 1.0:
 				if not _resolved:
 					_resolved = true
@@ -565,7 +587,7 @@ func _physics_process(delta: float) -> void:
 	ember *= 1.0 + 0.9 * _kindle_glow
 	_set_skin("ember", ember)
 	_set_skin("root_pos", global_position)
-	_set_skin("root_fwd", body.global_basis.z)
+	_set_skin("root_fwd", body.global_basis.z.normalized())
 	_set_skin("chest_unpose", _chest_unpose())
 	_set_skin("chest_fwd", _chest_fwd)
 	_ember_light.light_energy = 0.3 * ember
@@ -577,7 +599,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
 	if anim_tree:
-		var hs := Vector2(velocity.x, velocity.z).length()
+		# a bigger body covers more ground per stride: the clips play at the scaled speed
+		var hs := Vector2(velocity.x, velocity.z).length() / size_scale
 		if state == STRIKE or state == STAGGER:
 			hs = minf(hs, 0.8)      # the lunge is a planted thrust, not a run
 		_blend = lerpf(_blend, minf(hs, Player.ANIM_RUN_SPEED), 1.0 - exp(-8.0 * delta))
@@ -587,9 +610,11 @@ func _physics_process(delta: float) -> void:
 ## STALK's footwork once the hero is in range: close in to ENGAGE, then wind up. Variants that
 ## keep their distance (the archer) override it; returns the move velocity.
 func _stalk(to: Vector3, dist: float) -> Vector3:
-	if dist > ENGAGE:
-		# close in, slowing as the gap shrinks so it does not overrun
-		return to.normalized() * STALK_SPEED * clampf((dist - ENGAGE) / 1.5 + 0.35, 0.35, 1.0)
+	var engage := ENGAGE * size_scale
+	if dist > engage:
+		# close in, slowing as the gap shrinks so it does not overrun; a bigger body strides
+		# slower but longer (sqrt: heavier steps, more ground)
+		return to.normalized() * STALK_SPEED * sqrt(size_scale) * clampf((dist - engage) / (1.5 * size_scale) + 0.35, 0.35, 1.0)
 	if t > engage_delay and _facing(to) > 0.85:
 		_begin_attack(dist)
 	return Vector3.ZERO
@@ -614,7 +639,7 @@ func _enter(s: int) -> void:
 func _facing(to: Vector3) -> float:
 	if to.length() < 1e-3:
 		return 1.0
-	return body.global_basis.z.dot(to.normalized())
+	return body.global_basis.z.normalized().dot(to.normalized())
 
 func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 	if dir.length() < 1e-3 or rate <= 0.0:
@@ -632,7 +657,7 @@ func _in_cone() -> bool:
 func _choose(dist: float) -> int:
 	var k := force_move
 	if k < 0:
-		k = SWEEP_MOVE if dist < SWEEP_CLOSE or _thrusts_in_row >= 2 else THRUST_MOVE
+		k = SWEEP_MOVE if dist < SWEEP_CLOSE * size_scale or _thrusts_in_row >= 2 else THRUST_MOVE
 	if k == SWEEP_MOVE:
 		_thrusts_in_row = 0
 	return k

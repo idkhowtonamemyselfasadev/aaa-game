@@ -914,6 +914,16 @@ func _ready() -> void:
 			fp = world.archer._home
 		if "knight" in args and "leap" in args:
 			fp = pp + Vector3(-7.6, 0, 1.2)      # the ember leap springs from out of glaive reach
+		# g1 / g2 / g3: the knight at its phase-1/2/3 size (BossGrowth), standing off from the hero
+		var giant := 0
+		for gi in [1, 2, 3]:
+			if "knight" in args and ("g%d" % gi) in args:
+				giant = gi
+		if giant > 0:
+			var gk: AshenKnight = world.knight
+			gk._set_phase(giant)
+			gk.set_size_scale(gk.growth.scale_of(giant))
+			fp = pp + Vector3(-1.0, 0, 0.18) * (1.6 + 1.25 * gk.size_scale)
 		foe.global_position = Vector3(fp.x, terrain.height_at(fp.x, fp.z) + 0.05, fp.z)
 		foe._home = foe.global_position
 		foe.face(pp)
@@ -963,6 +973,11 @@ func _ready() -> void:
 				# to hold the whole arc and the hero under it
 				# (closer and a little low, looking up into the tuck and the heaved glaive)
 				SPOTS[spot] = [mid + side * 4.6 - line * 0.4 + Vector3.UP * 0.05, mid + Vector3.UP * 1.6]
+			if giant > 0:
+				# the giant whole, the hero small at its feet: wide from the lit side, low,
+				# looking up a little, pulled back as it grows
+				var gs: float = world.knight.size_scale
+				SPOTS[spot] = [mid + side * (3.0 + 2.6 * gs) - line * (0.6 + 0.4 * gs) + Vector3.UP * 0.9, mid + Vector3.UP * (1.0 * gs)]
 			if "lodged" in args:
 				# the arrow standing in the hero: close on the hero's flank, the archer beyond
 				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]

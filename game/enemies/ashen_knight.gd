@@ -14,6 +14,11 @@ extends HollowSoldier
 ##     turf under the hero smoulders, then erupts (AshFlame), so the hero has to keep moving
 ##     while the knight presses at its fastest.
 ## Between phases it cannot be hurt while it surges. A dead hero resets it to phase 1.
+## GROWTH (owner rule 2026-11-03, BossGrowth): it stands ~2.5x the hero in phase 1 and every
+## surge is a growth moment: invulnerable, the arena shaking, dust thrown up, the body heaving
+## up to its next size over 2 s. Phase 3 ends ~2.1x the starting size (~5.3x the hero).
+## Reach, hurt capsule, stride, the blast ring, the leap and its bite all scale with it; each
+## size is a little slower to stride, hits harder and covers more ground.
 ## EMBER LEAP (its own move, phases 2 and 3): a hero who backs off out of glaive reach (to
 ## run the eruptions, or to heal) does not get to wait it out. The knight drops into a deep
 ## crouch with the ember flaring and the glint on the blade, locks onto where the hero stands,
@@ -27,12 +32,21 @@ const KNIGHT_HP := 540.0
 const KNIGHT_POISE := 62.0
 const PHASE_AT := [0.66, 0.33]   # health fraction that starts phase 2, phase 3
 const GUARD_BREAK := 1.5         # a hit this strong breaks the guard (the heavies; not the string)
-const SURGE_T := 2.2             # s on its knee, burning (brain time)
+const SURGE_T := 2.4             # s on its knee, burning and growing (brain time)
 const SURGE_BLAST := 0.95        # s into the surge the ring of fire bursts
 const SURGE_R := 4.2
 const SURGE_DAMAGE := 20.0
 const FLAME_EVERY := 4.2
-const TEMPO := [1.0, 1.2, 1.3]
+const TEMPO := [1.0, 0.95, 0.9]   # bigger = heavier: longer wind-ups and recoveries  # (= PHASES[i].tempo; music.gd reads this)
+## The phases as data (BossGrowth). scale: body size (1 = a soldier, the hero ~0.92).
+const PHASES := [
+	{"scale": 2.2, "tempo": 1.0, "damage": 1.0, "attacks": ["thrust", "sweep"],
+		"mechanic": "ember guard: light strikes are turned aside while it stalks"},
+	{"scale": 3.2, "tempo": 0.95, "damage": 1.35, "attacks": ["thrust", "sweep", "ember leap"],
+		"mechanic": "unblockable red glint; a hero hanging back gets the leap"},
+	{"scale": 4.6, "tempo": 0.9, "damage": 1.7, "attacks": ["thrust", "sweep", "ember leap", "eruptions"],
+		"mechanic": "the turf under the hero smoulders and erupts every 4 s"},
+]
 const NAME := "The Ashen Knight"
 const LEAP_MOVE := 2
 const LEAP_MIN := 5.0            # hero farther than this (and nearer than LEAP_MAX) gets the leap
@@ -88,6 +102,8 @@ var _leap_cool := 0.0
 var last_scorch: Scorch          # the burn the last leap left in the turf (bots)
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var _terrain_ref: Terrain
+var growth := BossGrowth.new(PHASES)
+var grow_peak_shake := 0.0       # bots
 
 func _ready() -> void:
 	health_max = KNIGHT_HP
@@ -101,7 +117,7 @@ func _ready() -> void:
 	_set_skin("ash_dark", Color(0.06, 0.055, 0.052))
 	_set_skin("ash_light", Color(0.30, 0.28, 0.26))
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06))
-	_ember_light.omni_range = 3.4
+	_ember_range = 3.4
 	_dress()
 	if skel != null:
 		tuck = LegTuck.new()
@@ -109,6 +125,7 @@ func _ready() -> void:
 		tuck.side = body
 		skel.add_child(tuck)
 	add_to_group("boss")
+	set_size_scale(growth.scale_of(1))
 
 ## Armour over the ash body: the soldier's hood comes off for a closed helm, pauldrons and a
 ## gorget go on, the grey rags turn to a burnt oxblood surcoat and the leaf blade becomes a
@@ -134,6 +151,8 @@ func return_to_post() -> void:
 	if state == DEAD:
 		return
 	_set_phase(1)
+	growth.stop()
+	set_size_scale(growth.scale_of(1))
 	_surge = -1.0
 	_leap_cool = 0.0
 	leap_lift = 0.0
@@ -162,6 +181,16 @@ func health_fraction() -> float:
 
 func surging() -> bool:
 	return _surge >= 0.0
+
+## A giant reaches farther in every direction: world distances tuned for the original
+## knight (size 1) scale by this.
+func _reach_k() -> float:
+	return size_scale
+
+func set_size_scale(s: float) -> void:
+	super.set_size_scale(s)
+	give_up = GIVE_UP * sqrt(s)
+	notice = NOTICE * sqrt(s)
 
 func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> void:
 	if state == DEAD:
@@ -195,9 +224,10 @@ func _hero_in_front() -> bool:
 
 func _set_phase(n: int) -> void:
 	phase = n
-	tempo = TEMPO[n - 1]
+	var pd: Dictionary = growth.phase_data(n)
+	tempo = pd["tempo"]
 	unblockable = n >= 2
-	damage_mul = 1.0 + 0.15 * (n - 1)
+	damage_mul = pd["damage"]
 	glint_col = Color(1.0, 0.82, 0.6) if n == 1 else Color(1.0, 0.22, 0.1)
 	_set_skin("ember_col", Color(1.0, 0.32, 0.06) if n == 1 else Color(1.0, 0.16, 0.04))
 	_set_skin("heat", (n - 1) * 0.5)
@@ -218,10 +248,25 @@ func _begin_surge() -> void:
 	_recoil = 1.5
 	state = STAGGER
 	t = 0.0
+	# the growth moment: a white flash and a short hit-stop on the hero, then the heave
+	growth.start(size_scale, phase)
+	_flash = 1.0
+	if _player != null:
+		_player.add_shake(0.7)
+		if _player.combat != null:
+			_player.combat.hitstop = maxf(_player.combat.hitstop, 0.12)
+	ImpactFX.spawn(get_parent(), global_position + Vector3.UP * 1.25 * size_scale, body.global_basis.z.normalized(), "stone", 2.0 + size_scale * 0.4)
 	phase_changed.emit(phase)
 
 func _physics_process(delta: float) -> void:
+	# in the air the giant clears the ring stones (its collision stays on the ground): fly
+	# free of them, held to the turf height, and take back its collision as it lands
+	var flying := move_kind == LEAP_MOVE and state == STRIKE and _surge < 0.0
+	collision_mask = 0 if flying else (1 | 2)
 	super._physics_process(delta)
+	if flying and state == STRIKE:
+		global_position.y = _ground(global_position) + 0.05
+		velocity.y = 0.0
 	if not (move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
@@ -230,6 +275,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if _surge >= 0.0:
 		_surge += delta * tempo
+		if growth.growing():
+			set_size_scale(growth.tick(delta, self, _player, 0.6 * size_scale))
 		var u := clampf(_surge / SURGE_T, 0.0, 1.0)
 		var e := 2.0 + 5.0 * smoothstep(0.0, SURGE_BLAST / SURGE_T, u) * (1.0 - smoothstep(0.6, 1.0, u))
 		_set_skin("ember", e + 0.4 * sin(_surge * 40.0))
@@ -243,6 +290,9 @@ func _physics_process(delta: float) -> void:
 			_blast()
 		if _surge >= SURGE_T or state != STAGGER:
 			_surge = -1.0
+			if growth.growing():
+				growth.stop()
+				set_size_scale(growth.to_scale)
 		return
 	_leap_cool = maxf(_leap_cool - delta * tempo, 0.0)
 	if phase == 3 and state != IDLE and _player != null and not _player.is_dead():
@@ -264,17 +314,19 @@ func _blast() -> void:
 	blasts += 1
 	blast_result = "miss"
 	var c := global_position
-	ImpactFX.spawn(get_parent(), c + Vector3.UP * 1.1, body.global_basis.z, "stone", 2.4)
+	var k := _reach_k()
+	ImpactFX.spawn(get_parent(), c + Vector3.UP * 1.1 * k, body.global_basis.z.normalized(), "stone", 2.4 + k * 0.4)
 	blasted.emit(c)
-	for i in 7:
-		var a := TAU * i / 7.0 + body.rotation.y
-		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6, false)
+	var ring_n := 7 + int(round((k - 1.0) * 3.0))
+	for i in ring_n:
+		var a := TAU * i / ring_n + body.rotation.y
+		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6 * k, false)
 		f.t = AshFlame.WARN - 0.02   # bursts at once: the ring itself is the blast's fire
 	if _player == null or _player.is_dead():
 		return
 	var d := _player.global_position - c
 	_player.add_shake(0.6)
-	if Vector2(d.x, d.z).length() < SURGE_R and absf(d.y) < 2.0:
+	if Vector2(d.x, d.z).length() < SURGE_R * k and absf(d.y) < 2.0 * k:
 		blast_result = _player.receive_attack(self, SURGE_DAMAGE, true, true)
 
 func spawn_flame(at: Vector3) -> AshFlame:
@@ -296,6 +348,11 @@ func _flame_at(at: Vector3, harms: bool) -> AshFlame:
 
 ## A hero hanging back past glaive reach in phase 2 or 3 gets the leap once it has squared up.
 func _stalk(to: Vector3, dist: float) -> Vector3:
+	# hard but fair: a hero it threw down gets back up before the next blow is wound up
+	if _player != null and _player.is_down():
+		_turn_to(to, get_physics_process_delta_time(), 3.0)
+		t = 0.0
+		return Vector3.ZERO
 	if can_leap(dist) and (force_move < 0 or force_move == LEAP_MOVE):
 		_turn_to(to, get_physics_process_delta_time(), 6.0)
 		if t > LEAP_SQUARE and _facing(to) > 0.9:
@@ -312,7 +369,8 @@ func leaps_landed() -> int:
 	return leap_results.size()
 
 func can_leap(dist: float) -> bool:
-	return phase >= 2 and _leap_cool <= 0.0 and dist > LEAP_MIN and dist < LEAP_MAX and _surge < 0.0
+	var k := _reach_k()
+	return phase >= 2 and _leap_cool <= 0.0 and dist > LEAP_MIN * k and dist < LEAP_MAX * k and _surge < 0.0
 
 func _ground(p: Vector3) -> float:
 	return _terrain_ref.height_at(p.x, p.z) if _terrain_ref != null else p.y
@@ -344,7 +402,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				var tgt := _player.global_position if _player != null else global_position
 				var off := tgt - global_position
 				off.y = 0.0
-				var reach := clampf(off.length() - LEAP_BITE, 0.5, LEAP_MAX - LEAP_BITE)
+				var lk := _reach_k()
+				var reach := clampf(off.length() - LEAP_BITE * lk, 0.5, (LEAP_MAX - LEAP_BITE) * lk)
 				leap_to = global_position + off.normalized() * reach if off.length() > 1e-3 else global_position
 			_pose = _lerp_pose(_from, CROUCHED, smoothstep(0.0, 0.7, u))
 			_pose[1] += sin(t * 44.0) * 1.0 * smoothstep(0.6, 0.9, u)
@@ -372,13 +431,13 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			var left := maxf((LEAP_T - t) / tempo, get_physics_process_delta_time())
 			move = (rest / left) if u < 1.0 else Vector3.ZERO
 			move = move.limit_length(span.length() / LEAP_T * tempo * 1.6)
-			leap_lift = LEAP_H * sin(PI * u)
+			leap_lift = LEAP_H * size_scale * sin(PI * u)
 			# the air tears past: the tabards stream back on the way up and flare up off the
 			# legs on the way down (rags reads the rise and fall off the model), then slap down
 			if rags != null:
 				rags.stream = smoothstep(0.0, 0.12, u) * (1.0 - smoothstep(0.9, 1.0, u))
 				rags.flap = rags.stream * (0.6 + 0.4 * rags.fall)
-				rags.air_y = LEAP_H * PI * cos(PI * u) * tempo / LEAP_T if u < 1.0 else 0.0
+				rags.air_y = LEAP_H * size_scale * PI * cos(PI * u) * tempo / LEAP_T if u < 1.0 else 0.0   # world m/s (rags divides by the body scale)
 			# up with the glaive heaved overhead, then down blade first
 			if u < 0.6:
 				_pose = _lerp_pose(_from, LEAP_HEAVE, clampf(u / LEAP_HEAVED_U, 0.0, 1.0))
@@ -390,7 +449,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_set_tuck(lerpf(0.85 * c, TUCK_HIP, k), lerpf(1.6 * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u))
 			# pitched into the leap, then over onto the blade
 			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u))
-			sink = -leap_lift + 0.22 * smoothstep(0.85, 1.0, u)
+			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u)   # model space (scaled)
 			ember = 5.0 - 1.0 * u
 			_update_glint(smoothstep(0.35, 0.55, u) * (1.0 - smoothstep(0.75, 0.88, u)))
 			if u >= 1.0:
@@ -431,7 +490,7 @@ func _in_leap_reach() -> bool:
 		return false
 	var b := leap_bite()
 	var d := _player.global_position - b
-	if Vector2(d.x, d.z).length() < LEAP_R and absf(d.y) < 1.6:
+	if Vector2(d.x, d.z).length() < LEAP_R * _reach_k() and absf(d.y) < 1.6 * _reach_k():
 		return true
 	var l := _hero_local()
 	return l.z > 0.3 and l.z < LEAP_BITE + 0.75 and absf(l.x) < 0.8 and absf(l.y) < 1.4
@@ -444,8 +503,8 @@ func _resolve_leap() -> void:
 		if r == "hit":
 			ImpactFX.spawn(get_parent(), _player.global_position + Vector3.UP * 0.9, Vector3.DOWN, "stone", 1.2)
 	if _player != null:
-		_player.add_shake(0.55)
-	ImpactFX.spawn(get_parent(), b + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.8)
+		_player.add_shake(0.55 + 0.08 * size_scale)
+	ImpactFX.spawn(get_parent(), b + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.8 + 0.3 * size_scale)
 	# the ember-hot edge scorches the turf where it bit: a burnt star with glowing cracks
 	var sc := Scorch.new()
 	get_parent().add_child(sc)
@@ -454,7 +513,7 @@ func _resolve_leap() -> void:
 	# the ember shakes loose as the blade bites: a ring of fire flares up round the impact
 	for i in 5:
 		var a := TAU * i / 5.0 + body.rotation.y + 0.3
-		var f := _flame_at(b + Vector3(sin(a), 0, cos(a)) * 1.5, false)
+		var f := _flame_at(b + Vector3(sin(a), 0, cos(a)) * 1.5 * _reach_k(), false)
 		f.t = AshFlame.WARN - 0.02
 	last_result = r
 	leap_results.append(r)
