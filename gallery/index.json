@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-1345-night-valley-haze.jpg",
-  "time": "2026-10-27T13:45:00Z",
-  "caption": "The Vale at 21 h from the south hill: the valley floor and far hills now stand in a faint moonlit blue-grey haze with layered depth instead of sinking into black; still wrong: the near meadow and wood line are near-black and the lime walls still read as pale specks.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1434-boulder-noise.jpg",
   "time": "2026-10-27T14:34:25Z",
   "caption": "Big meadow boulder at 15 h after the noise fix: the lit stone face is now smooth weathered granite with soft blotches, no faint polygon cell pattern; still wrong: the shaded flank goes near-black and the rain streaks do not read.",
@@ -897,6 +891,12 @@
   "file": "20261103-0315-kindler-thread.jpg",
   "time": "2026-11-03T03:15:41Z",
   "caption": "The Hollow Kindler mid-chant at 16:30 pouring a tight ember stream with a hot thread under it into the kindled Warden (GL frame): the stream finally reads as one ribbon across the meadow, but the thread looks laser-straight and both Hollows still stand in shade with their backs half to the lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0438-kindler-sag.jpg",
+  "time": "2026-11-03T04:38:14Z",
+  "caption": "The Hollow Kindler mid-chant at 17:00 (GL frame): the ember thread now hangs in a soft wavering arc instead of a laser line, but the motes still flew straight above it (fixed after the frame: they now fall along the same arc), the thread leaves its chest not the spear tip, and the Kindler still shows its back.",
   "verdict": "fail"
  }
 ]

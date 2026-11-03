@@ -979,6 +979,11 @@ func _ready() -> void:
 					kside = -kside
 				var kmid := fp.lerp(kq, 0.5)
 				SPOTS[spot] = [kmid + kside * 4.6 - kline * 1.0, kmid - kline * 0.3]
+				if "kfront" in args:
+					# from the Kindler's front quarter on the sun side: its face and raised spear
+					# toward the lens, the sagging thread running off past the camera's shoulder
+					# to the burning warden at the frame edge
+					SPOTS[spot] = [kq - kline * 2.2 + kside * 3.4 + Vector3.UP * 0.2, kq.lerp(fp, 0.3) + Vector3.UP * 1.45]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]

@@ -50,12 +50,23 @@ var _cool := 1.0
 var _stream: CPUParticles3D
 var _trail: MeshInstance3D   # a faint hot thread under the motes, so the stream reads as one ribbon
 var _trail_a := 0.0
+var sag_m := 0.0   # how far the thread hangs at its middle, metres (read by the bot)
 
 const TRAIL_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
 uniform float strength = 0.0;
 uniform vec4 hot : source_color = vec4(1.0, 0.62, 0.22, 1.0);
+// sag: world-down in the thread's local x/z (metres, set per frame); it hangs like a heavy
+// rope of embers and wavers sideways, so it never reads as a laser line
+uniform vec2 sag = vec2(0.0);
+void vertex() {
+	float t = 0.5 - VERTEX.y;              // 0 at the spear, 1 at the ally
+	float arc = 4.0 * t * (1.0 - t);
+	vec2 side = length(sag) > 0.001 ? normalize(vec2(-sag.y, sag.x)) : vec2(1.0, 0.0);
+	float w = sin(t * 9.4 - TIME * 4.5) * 0.6 + sin(t * 17.0 + TIME * 2.3) * 0.4;
+	VERTEX.xz += sag * arc + side * w * 0.05 * arc + sag * w * 0.15 * arc;
+}
 void fragment() {
 	// UV.y runs the length (0 at the top = the Kindler's spear); clumps pour down it to the ally
 	float along = UV.y;
@@ -121,7 +132,7 @@ func _ready() -> void:
 	cy.bottom_radius = 0.022
 	cy.height = 1.0
 	cy.radial_segments = 6
-	cy.rings = 1
+	cy.rings = 18   # enough segments for the sag + waver to bend smoothly
 	cy.cap_top = false
 	cy.cap_bottom = false
 	var sm := ShaderMaterial.new()
@@ -173,10 +184,16 @@ func _physics_process(delta: float) -> void:
 		var to_c := target.global_position + Vector3.UP * 1.25
 		var d := to_c - from
 		_stream.global_position = from
-		_stream.direction = d.normalized()
-		_stream.initial_velocity_min = STREAM_SPEED * 0.9
-		_stream.initial_velocity_max = STREAM_SPEED * 1.05
-		_stream.lifetime = clampf(d.length() / STREAM_SPEED, 0.15, 2.0)
+		# the motes fall along the same hanging arc as the thread: a gravity that dips them
+		# sag metres at mid-flight, launched a little upward so they still land on the ally
+		var fly := clampf(d.length() / STREAM_SPEED, 0.15, 2.0)
+		var g := 8.0 * clampf(d.length() * 0.05, 0.05, 0.45) / (fly * fly)
+		var v := d / fly + Vector3.UP * g * fly * 0.5
+		_stream.gravity = Vector3.DOWN * g
+		_stream.direction = v.normalized()
+		_stream.initial_velocity_min = v.length() * 0.97
+		_stream.initial_velocity_max = v.length() * 1.03
+		_stream.lifetime = fly
 		_stream.emitting = clampf(t / CHANT_T, 0.0, 1.0) > 0.15
 		_place_trail(from, to_c, smoothstep(0.15, 0.5, clampf(t / CHANT_T, 0.0, 1.0)))
 	elif _trail != null and _trail.visible:
@@ -195,7 +212,11 @@ func _place_trail(from: Vector3, to_c: Vector3, a: float) -> void:
 	var z := x.cross(y)
 	_trail.global_transform = Transform3D(Basis(x, y * l, z), from.lerp(to_c, 0.5))
 	_trail_a = a
-	(_trail.mesh.material as ShaderMaterial).set_shader_parameter("strength", a)
+	var mat := _trail.mesh.material as ShaderMaterial
+	# hangs ~5 % of its length (a 6 m pour dips ~0.3 m), in the thread's local x/z
+	sag_m = clampf(l * 0.05, 0.05, 0.45)
+	mat.set_shader_parameter("sag", Vector2(x.dot(Vector3.DOWN), z.dot(Vector3.DOWN)) * sag_m)
+	mat.set_shader_parameter("strength", a)
 	_trail.visible = a > 0.0
 
 func _stalk(to: Vector3, dist: float) -> Vector3:
