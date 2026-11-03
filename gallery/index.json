@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261027-2040-night-band-novol.jpg",
-  "time": "2026-10-27T20:40:33Z",
-  "caption": "Debug: night village with volumetric fog switched off; the pale blue-white band over the far ridge right of the village sinks to a dim grey, so the moonlit volumetric haze is what paints it (sky goes black too).",
-  "verdict": "fail"
- },
- {
-  "file": "20261027-2040-night-band-vol-half.jpg",
-  "time": "2026-10-27T20:40:33Z",
-  "caption": "Night village with the volumetric fog density halved: the pale band over the far ridge is unchanged, so it is not the fog's density but how the volumetric haze is lit (sky affect / moon in-scatter) over the low ring.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-2134-night-band-foot-test.jpg",
   "time": "2026-10-27T21:34:05Z",
   "caption": "Night cottage view with the far ring's pale meadow foot darkened (reverted, no visible change); the pale band hugging the white cottage roof line remains, now suspected to be a screen-space effect at the roof's depth edge.",
