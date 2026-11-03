@@ -764,6 +764,7 @@ static func _star_texture() -> ImageTexture:
 
 var _fall_dir := Vector3.ZERO
 var _spear_rest := Basis()
+var _spear_scale := Vector3.ONE   # the dropped weapon keeps its size (the giant's glaive is scaled up)
 
 func _die(dir: Vector3) -> void:
 	douse()
@@ -829,11 +830,13 @@ func _die_tick(delta: float) -> void:
 		if flat.length() < 0.1:
 			flat = _fall_dir
 		_spear_rest = Basis(Quaternion(Vector3.UP, flat.normalized()))
+		_spear_scale = spear.global_basis.get_scale()
 	if spear.get_parent() != _wield:
 		# the spear topples flat onto the ground
 		var ground := global_position.y + 0.025
 		spear.global_position.y = maxf(spear.global_position.y - delta * 3.0, ground)
-		spear.global_basis = spear.global_basis.slerp(_spear_rest, minf(delta * 5.0, 1.0))
+		var rot := spear.global_basis.orthonormalized().slerp(_spear_rest, minf(delta * 5.0, 1.0))
+		spear.global_basis = rot.scaled_local(_spear_scale)
 	_set_skin("ember", 1.6 * (1.0 - u))
 	_set_skin("dissolve", smoothstep(0.35, 1.0, u) * 1.02)
 	_ember_light.light_energy = 0.6 * (1.0 - u)

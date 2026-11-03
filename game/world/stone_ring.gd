@@ -1,7 +1,7 @@
 class_name StoneRing
 extends Node3D
 ## The Ashen Knight's vigil: a broken ring of standing stones far down the meadow, older than
-## the village. Nine tall weathered uprights (the ruins' split-stone mesh, stood on end and
+## the village. A dozen tall weathered uprights (the ruins' split-stone mesh, stood on end and
 ## stretched) lean a little on a circle round the knight's post; two have fallen inward and
 ## one is a stump. The gap in the ring faces back up the meadow toward the start, so the hero
 ## walks in through the old entrance, and the knight notices them just as they cross it.
@@ -11,8 +11,10 @@ extends Node3D
 @export var terrain_path: NodePath
 @export var seed: int = 5150
 
-const RADIUS := 10.5
-const COUNT := 11            # slots round the circle; the entrance takes two of them
+## Wide enough for the giant: the knight grows to ~9.6 m at phase 3 and its stomp wave runs
+## ~18 m, so the ring is ~32 m across and its stones stand head-high to the phase-1 giant.
+const RADIUS := 16.0
+const COUNT := 15            # slots round the circle; the entrance takes two of them
 const VARIANTS := 4
 const SINK := 0.35           # metres each upright is set below the low side of the turf
 
@@ -35,7 +37,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 	centre = Vector3(c.x, _terrain.height_at(c.x, c.y), c.y)
 	burn_centre = centre
 	# the terrain shader draws the ash, char and singed rim (terrain.gdshader burn_ring)
-	burn_ring = Vector4(centre.x, centre.z, RADIUS - 2.0, 1.0)
+	burn_ring = Vector4(centre.x, centre.z, RADIUS - 3.5, 1.0)
 	RenderingServer.global_shader_parameter_set("burn_ring", burn_ring)
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:
@@ -55,19 +57,19 @@ func build(c: Vector2, toward: Vector2) -> void:
 		if absf(off) < TAU / COUNT * 0.9:
 			continue
 		a += rng.randf_range(-0.06, 0.06)
-		var r := RADIUS + rng.randf_range(-0.5, 0.5)
+		var r := RADIUS + rng.randf_range(-0.7, 0.7)
 		var q := c + Vector2(cos(a), sin(a)) * r
 		var inward := (c - q).normalized()
-		var h := rng.randf_range(2.8, 4.0)
-		var w := rng.randf_range(1.3, 1.9)
-		var d := rng.randf_range(0.6, 0.9)
+		var h := rng.randf_range(4.2, 6.2)
+		var w := rng.randf_range(1.9, 2.8)
+		var d := rng.randf_range(0.9, 1.3)
 		var kind := 0      # 0 standing, 1 fallen inward, 2 snapped stump
-		if i == 3 or i == 8:
+		if i == 3 or i == 9 or i == 12:
 			kind = 1
-		elif i == 6:
+		elif i == 6 or i == 10:
 			kind = 2
 		if kind == 2:
-			h = rng.randf_range(0.9, 1.2)
+			h = rng.randf_range(1.2, 1.8)
 		# the broad face toward the centre: local x along the circle, z toward the middle
 		var yaw := atan2(inward.x, inward.y) + rng.randf_range(-0.15, 0.15)
 		var b := Basis(Vector3.UP, yaw)
@@ -107,11 +109,11 @@ func build(c: Vector2, toward: Vector2) -> void:
 ## fell. Decals, so they lie on the real turf and darken the grass stems standing in them.
 func _scorch_ground(rng: RandomNumberGenerator) -> void:
 	var tex := AshFlame._scorch_texture()
-	var marks := [[Vector2.ZERO, 9.5, Color(0.62, 0.58, 0.54, 0.55)]]
-	for k in 6:
+	var marks := [[Vector2.ZERO, 14.0, Color(0.62, 0.58, 0.54, 0.55)]]
+	for k in 9:
 		var a := rng.randf() * TAU
 		var r := rng.randf_range(2.5, RADIUS - 2.5)
-		marks.append([Vector2(cos(a), sin(a)) * r, rng.randf_range(2.4, 4.4),
+		marks.append([Vector2(cos(a), sin(a)) * r, rng.randf_range(3.0, 5.5),
 				Color(1, 1, 1, rng.randf_range(0.7, 0.95))])
 	for m in marks:
 		var at: Vector2 = m[0]

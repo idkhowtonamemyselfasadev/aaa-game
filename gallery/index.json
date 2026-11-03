@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261028-0825-knockdown-dust.jpg",
-  "time": "2026-10-28T08:25:00Z",
-  "caption": "The hero thrown on their back by the soldier's sweep at 15:30: a faint low cloud of soil dust now rises round the body where they landed, but it is thin and greyish and the hero is half lost in dark tall grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-0940-knockdown-lying.jpg",
   "time": "2026-10-28T09:40:00Z",
   "caption": "Side-on, low look at the hero thrown on their back by the soldier's sweep: they now lie square and flat with the hat at the head end, but the tall straw grass still buries most of the body and does not flatten under it.",
@@ -897,6 +891,12 @@
   "file": "20261103-2236-knight-stomp-wave.jpg",
   "time": "2026-11-03T22:36:00Z",
   "caption": "Phase-3 stomp: a dust wall racing out over the meadow to the hero and the stamped ground burning under the giant; GL frame, the burning patch reads as a dark disc with a dome of flame, not yet a convincing ground fire.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2322-ring-arena.jpg",
+  "time": "2026-11-03T23:22:24Z",
+  "caption": "The Ashen Knight's stone ring widened to ~32 m with 4-6 m uprights so the growing giant has room; GL fallback frame (Forward+ ran out of memory), the ash floor reads too dark and flat.",
   "verdict": "fail"
  }
 ]

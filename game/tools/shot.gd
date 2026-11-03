@@ -852,11 +852,12 @@ func _ready() -> void:
 		# in the middle, the hero walking in through the gap
 		var ring: StoneRing = world.stone_ring
 		var f3 := Vector3(ring.facing.x, 0, ring.facing.y)
+		world.knight.intro_enabled = false   # the arena itself, not the reveal
 		var gate := ring.centre + f3 * (StoneRing.RADIUS + 1.5)
 		player.global_position = Vector3(gate.x, terrain.height_at(gate.x, gate.z) + 0.05, gate.z)
 		player.body.rotation.y = atan2(-f3.x, -f3.z)
 		var rcam := ring.centre + f3 * (StoneRing.RADIUS + 6.5) + f3.cross(Vector3.UP) * 2.0
-		rcam.y = terrain.height_at(rcam.x, rcam.z) + 2.4
+		rcam.y = terrain.height_at(rcam.x, rcam.z) + 3.4
 		SPOTS[spot] = [rcam, ring.centre + Vector3.UP * 1.4]
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
