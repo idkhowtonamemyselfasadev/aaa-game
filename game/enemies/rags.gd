@@ -176,8 +176,11 @@ func _panel(parent: Node3D, top: Vector3, w0: float, w1: float, length: float, b
 		# broad and rounded, valleys narrower (matches rag.gdshader's pleat profile)
 		var ph := pleat_phase(u, v, n_pl, mseed)
 		var fh := sin(ph * TAU) + 0.35 * sin(ph * TAU * 2.0 + 1.3)
-		z += dir * lerpf(0.004, 0.024, smoothstep(0.0, 0.8, vv)) * fh
-		return Vector3(x * dir, -vv * length, z), 28, 22)
+		# each pleat hangs a different depth (slow swell across the panel), and the folds fan
+		# out and soften lower down, so it never reads as corrugated
+		var amp := 0.55 + 0.45 * sin(ph * TAU * 0.37 + mseed * 2.3) * sin(ph * 1.1 + mseed)
+		z += dir * lerpf(0.003, 0.015, smoothstep(0.0, 0.8, vv)) * fh * amp
+		return Vector3(x * dir, -vv * length, z), 40, 22)
 	var piece := _piece(mesh, 0.25, 0.18, sd, length / w1)
 	var pm := piece.material_override as ShaderMaterial
 	pm.set_shader_parameter("pleats", n_pl)

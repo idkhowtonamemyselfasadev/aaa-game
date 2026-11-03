@@ -326,7 +326,8 @@ void fragment() {
 		float fs = sin(ph * TAU);
 		float fold_h = (fs + 0.35 * sin(ph * TAU * 2.0 + 1.3)) * depth;
 		float fd = (cos(ph * TAU) * TAU + 0.35 * TAU * 2.0 * cos(ph * TAU * 2.0 + 1.3)) * depth * nf;
-		hemp_dark = smoothstep(-0.2, -1.0, fs) * depth * 0.38;
+		// (a pleated panel's real folds already shade their valleys: darken them only lightly)
+		hemp_dark = smoothstep(-0.2, -1.0, fs) * depth * mix(0.38, 0.12, pl);
 		// pulled creases under the seam: short and diagonal, fading out a quarter way down
 		vec2 cq = vec2(uv.x * 14.0 + uv.y * 9.0, uv.y * 4.0) + seed * 2.1;
 		float c0 = vnoise(cq);
