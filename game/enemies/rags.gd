@@ -154,18 +154,49 @@ func _panel(parent: Node3D, top: Vector3, w0: float, w1: float, length: float, b
 	pivot.position = top
 	parent.add_child(pivot)
 	var dir := signf(bow)
+	# the material's seed (_piece adds mats.size() * 3.7): the shader's fold shading and the
+	# side tears run off the same phase as the pleats baked here
+	var mseed := sd + mats.size() * 3.7
+	var n_pl := pleat_count(mseed)
 	var mesh := _grid(func(u: float, v: float) -> Vector3:
-		var x := (u - 0.5) * lerpf(w0, w1, v)
+		# a hand-cut, uneven hem: one side hangs longer, the edge dips and rises (never past
+		# `length`, so the knee/ground clearances computed from it still hold)
+		var cut := 1.0 - 0.07 * (0.5 + 0.5 * sin(u * PI * 1.3 + mseed)) \
+				- 0.03 * (0.5 + 0.5 * sin(u * 9.0 + mseed * 2.0))
+		var vv := v * cut
+		var x := (u - 0.5) * lerpf(w0, w1, vv)
+		# ragged side edges: the outer columns bite in and bulge out, more toward the hem
+		var e := pow(absf(u - 0.5) * 2.0, 6.0) * vv
+		x *= 1.0 + e * (0.07 * sin(v * 17.0 + mseed) + 0.04 * sin(v * 41.0 + mseed * 3.0))
 		var s := x / 0.2
-		# wraps round the hips at the top, hangs flatter lower down; soft vertical folds
-		var z := -dir * (0.06 * (1.0 - v * 0.6)) * s * s
-		z += dir * 0.012 * sin(u * PI * 5.0 + sd) * (0.3 + v)
-		z += dir * 0.025 * v
-		return Vector3(x * dir, -v * length, z), 12, 18)
-	pivot.add_child(_piece(mesh, 0.25, 0.18, sd, length / w1))
+		# wraps round the hips at the top, hangs flatter lower down
+		var z := -dir * (0.06 * (1.0 - vv * 0.6)) * s * s
+		z += dir * 0.025 * vv
+		# real pleats: gathered at the sash, opening and deepening toward the hem, crowns
+		# broad and rounded, valleys narrower (matches rag.gdshader's pleat profile)
+		var ph := pleat_phase(u, v, n_pl, mseed)
+		var fh := sin(ph * TAU) + 0.35 * sin(ph * TAU * 2.0 + 1.3)
+		z += dir * lerpf(0.004, 0.024, smoothstep(0.0, 0.8, vv)) * fh
+		return Vector3(x * dir, -vv * length, z), 28, 22)
+	var piece := _piece(mesh, 0.25, 0.18, sd, length / w1)
+	var pm := piece.material_override as ShaderMaterial
+	pm.set_shader_parameter("pleats", n_pl)
+	pm.set_shader_parameter("side_tear", 0.035)
+	pivot.add_child(piece)
 	pivot.set_meta("len", length)
 	pivot.set_meta("w1", w1)
+	pivot.set_meta("pleats", n_pl)
 	return pivot
+
+## How many pleats a tabard panel hangs in (4..5.5 across), from its material seed; the shader
+## uses the same count (uniform `pleats`).
+static func pleat_count(mseed: float) -> float:
+	return 4.0 + 1.5 * fposmod(sin(mseed * 12.9898) * 43758.5453, 1.0)
+
+## The pleats' phase across a panel: wandering a little down the hang so they are not ruled
+## lines. Must match rag.gdshader's `pleat_phase()`.
+static func pleat_phase(u: float, v: float, n: float, mseed: float) -> float:
+	return u * n + 0.22 * sin(v * 2.3 + mseed * 1.7) + 0.12 * sin(u * 7.0 + v * 1.1 + mseed)
 
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its
 ## radius fitted per height and angle to the skinned armour underneath so nothing pokes through.

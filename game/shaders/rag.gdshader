@@ -36,6 +36,8 @@ uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited ca
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
 uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
 uniform float hemp = 0.0;          // > 0: coarse open-weave hemp sacking: slubbed threads, drape folds, darns, fray
+uniform float pleats = 0.0;        // > 0: a tabard panel with this many pleats baked into its mesh (rags.gd pleat_phase)
+uniform float side_tear = 0.0;     // > 0: the panel's side edges are torn too (bites deepening toward the hem)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, damp hem, rubbed edge, mud flecks
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
@@ -106,6 +108,10 @@ vec2 plait(vec2 p) {
 	h *= mix(0.78, 1.0, over);
 	h *= smoothstep(1.0, 0.86, abs(fract(p.y * 0.2) - 0.5) * 2.0) * 0.3 + 0.7;
 	return vec2(h, id);
+}
+
+float pleat_phase(vec2 t) {
+	return t.x * pleats + 0.22 * sin(t.y * 2.3 + seed * 1.7) + 0.12 * sin(t.x * 7.0 + t.y * 1.1 + seed);
 }
 
 void fold_panel(inout vec3 v, inout vec3 n, vec2 f) {
@@ -216,6 +222,13 @@ void fragment() {
 	float edge = 1.0 - tear * clamp(tongue, 0.0, 1.0) - fray;
 	float to_hem = edge - UV.y;
 	if (to_hem < 0.0) discard;
+	// torn side edges: bites and frayed tongues, shallow at the seam, deeper toward the hem
+	if (side_tear > 0.0) {
+		float d_side = min(UV.x, 1.0 - UV.x);
+		float bite = fbm(vec2(UV.y * 9.0 + step(0.5, UV.x) * 17.0, seed * 1.3)) * 1.5 - 0.35;
+		float sfray = vnoise(vec2(UV.y * 140.0, seed + step(0.5, UV.x) * 5.0)) * 0.006;
+		if (d_side < side_tear * clamp(bite, 0.0, 1.0) * smoothstep(0.05, 0.5, UV.y) + sfray) discard;
+	}
 	// moth holes and burns
 	float hn = fbm(uv * 6.0 + 2.3);
 	if (holes > 0.0 && hn > 0.78 - holes * 0.12 && UV.y > 0.12) discard;
@@ -304,6 +317,11 @@ void fragment() {
 		float depth = mix(0.35, 1.0, smoothstep(0.0, 0.7, hang));
 		float nf = 4.0 + 1.5 * hash(vec2(seed, 7.0));
 		float ph = uv.x * nf + (fbm(vec2(uv.x * 2.0, uv.y * 0.6) + seed) - 0.5) * 2.4;
+		// a pleated panel: the shading follows the folds baked into the mesh (the geometry
+		// carries the normal, so the shaded tilt stays light)
+		float pl = step(0.001, pleats);
+		ph = mix(ph, pleat_phase(UV), pl);
+		nf = mix(nf, pleats, pl);
 		// a fold profile: broad rounded crowns, narrower valleys
 		float fs = sin(ph * TAU);
 		float fold_h = (fs + 0.35 * sin(ph * TAU * 2.0 + 1.3)) * depth;
@@ -315,7 +333,7 @@ void fragment() {
 		float pull = 1.0 - smoothstep(0.05, 0.3, hang);
 		float cdx = (vnoise(cq + vec2(0.05, 0.0)) - c0) * 20.0 * pull;
 		hemp_dark += smoothstep(0.4, 0.2, c0) * pull * 0.2;
-		tx = tx * 0.7 + (fd * 0.02 + cdx * 0.5) * hm;
+		tx = tx * 0.7 + (fd * mix(0.02, 0.006, pl) + cdx * 0.5) * hm;
 		ty = ty * 0.7 + cdx * 0.3 * hm;
 		// slubs: about one thread in ten is spun thick and uneven, a little paler or darker,
 		// thinning in and out along its length; faded by its own size so it never shimmers
