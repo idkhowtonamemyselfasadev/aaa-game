@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-2351-day-ring-check.jpg",
-  "time": "2026-10-27T23:51:00Z",
-  "caption": "Morning Vale (10:00) after the ring's own volumetric haze: the far mountains sit in the same warm air as the valley with no glow toward the sun; the far middle distance is still a touch flat and beige.",
-  "verdict": "pass"
- },
- {
   "file": "20261027-2351-night-valley-ring.jpg",
   "time": "2026-10-27T23:51:00Z",
   "caption": "Night Vale at moon haze gain 3: the massifs keep moonlit faces under a starry sky with no pale band, but the near meadow is near-black and reads as an empty void.",
@@ -891,6 +885,12 @@
   "file": "20261103-1614-harrier-ash-cracks.jpg",
   "time": "2026-11-03T16:14:15Z",
   "caption": "Harrier up close: the ash-stone skin is now dull grey with sooty blotches and broken, irregular dark seams instead of a chalk-white honeycomb; still GL only, and the chest glow is busy during the tell.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1722-hollow-tell-chest.jpg",
+  "time": "2026-11-03T17:22:13Z",
+  "caption": "A Hollow Soldier mid wind-up: the chest tell is now dark ash with a few broken burning cracks and a soft underglow instead of a lit honeycomb; GL quick-look only, no Forward+ fog/bloom.",
   "verdict": "fail"
  }
 ]

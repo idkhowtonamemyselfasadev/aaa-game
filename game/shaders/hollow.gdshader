@@ -129,7 +129,18 @@ void fragment() {
 	// the limbs only smoulder; the ember's light pours out of the chest, and the tell
 	// (ember > 1) mostly brightens the chest
 	float body_glow = fis * 0.035 * (0.6 + 0.4 * ember) * crack_big * (1.0 - stone);
-	float chest_glow = fis * chest * 1.2 * ember + chest * 0.18 * ember * smoothstep(0.45, 0.9, n);
+	// (11-03) the tell used to multiply the fine fissures by ember (up to 4.2), so every cell
+	// outline in the chest band burned white and the band read as a lit honeycomb. Now the
+	// seams themselves cap at the resting glow; the tell's extra heat wells up as a soft
+	// blotchy bloom under the skin, bleeding a little round the wide cracks only
+	float tell = max(ember - 1.0, 0.0);
+	float seam_e = min(ember, 1.3);
+	float bleed = (1.0 - smoothstep(0.0, 0.08, wide)) * smoothstep(0.4, 0.7, fbm(UV * 5.0 + 7.7));
+	float heat = smoothstep(0.3, 0.85, fbm(UV * 7.0 + 2.6));
+	// the wide seams break along their length too, so the big cells never close into a lit web
+	float run_big = mix(0.15, 1.0, smoothstep(0.38, 0.62, fbm(UV * 22.0 + 5.1)));
+	float chest_glow = chest * (max(crack * 0.7, crack_big * run_big) * 1.2 * seam_e
+			+ bleed * run_big * 0.2 * tell + heat * heat * (0.12 * seam_e + 0.13 * tell));
 	float glow = body_glow + chest_glow + fis * hit_flash * 0.6;
 	// ash flakes: a dissolve front that eats the body from the noise field, edges burning
 	if (dissolve > 0.0) {
