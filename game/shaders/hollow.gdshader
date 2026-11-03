@@ -19,6 +19,11 @@ uniform float dissolve = 0.0;
 uniform float stone = 0.0;
 uniform vec3 root_pos;            // world position of the feet
 uniform vec3 root_fwd = vec3(0.0, 0.0, 1.0);
+// world -> where the point would be if the chest bone stood at its rest pose (identity = off).
+// The chest band is measured there, so a crouch that drops the head to sternum height no
+// longer lights the head and neck up as "chest" (11-03 18:00: the crouched harrier's nape
+// burned like a bald skull from behind)
+uniform mat4 chest_unpose = mat4(1.0);
 
 varying vec3 wpos;
 
@@ -96,7 +101,7 @@ void fragment() {
 	float crack = (1.0 - smoothstep(0.004, 0.006 + 0.026 * run, e)) * run * mix(0.12, 1.0, patch);
 	float crack_big = (1.0 - smoothstep(0.01, 0.045, wide)) * smoothstep(0.45, 0.7, fbm(UV * 5.0 + 7.7));
 	// chest: a band at sternum height on the front of the torso
-	vec3 rel = wpos - root_pos;
+	vec3 rel = (chest_unpose * vec4(wpos, 1.0)).xyz - root_pos;
 	float h = rel.y;
 	vec2 flat_rel = rel.xz;
 	float front = dot(normalize(flat_rel + root_fwd.xz * 0.001), root_fwd.xz);

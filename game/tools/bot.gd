@@ -1977,6 +1977,30 @@ func _harrier_test() -> void:
 	var crown := -INF
 	for c in cv:
 		crown = maxf(crown, c.y)
+	# 0d) (18:00 11-03) the back of the helm must not show through the coif: a rear frame
+	# found the ash skull bare from the crown to the nape where the coif is drawn in toward
+	# the throat. Every helm point behind the ears, slice by slice and by bearing, must sit
+	# inside the coif's own shell there (its ellipse, x/0.122 and (z+0.02)/0.158)
+	var poke := 0
+	var worst := 0.0
+	var seen := 0
+	for b in body_pts:
+		if b.y < 1.7 or b.y > 1.97 or b.z > -0.04 or absf(b.x) > 0.13:
+			continue
+		seen += 1
+		var bq := Vector2(b.x / 0.122, (b.z + 0.02) / 0.158)
+		var shell := 0.0
+		for c in cv:
+			if absf(c.y - b.y) < 0.012:
+				var cq := Vector2(c.x / 0.122, (c.z + 0.02) / 0.158)
+				if absf(angle_difference(cq.angle(), bq.angle())) < 0.12:
+					shell = maxf(shell, cq.length())
+		if shell > 0.0 and bq.length() > shell:
+			poke += 1
+			worst = maxf(worst, (bq.length() - shell) * 0.14)
+	print("BOT harrier: %d of %d helm points behind the ears poke through the coif (worst %.3f m)" % [poke, seen, worst])
+	if seen < 20 or poke > seen / 50:
+		return _combat_done(false, "the back of the harrier's helm shows through its coif")
 	print("BOT harrier: coif's right rear stands %.3f m past its left (knot at y %.2f); crown at y %.3f" % [asym, knot_y, crown])
 	if asym < 0.018 or knot_y < 1.8 or crown < 2.005:
 		return _combat_done(false, "the harrier's coif should be knotted and lopsided, a strip crossing its crown, not a smooth pot")

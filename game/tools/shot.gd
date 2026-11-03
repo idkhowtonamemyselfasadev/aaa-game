@@ -2184,13 +2184,15 @@ func _ready() -> void:
 		if "harrier" in args and "coif" in args and cam != null:
 			# the hand-stepped crouch has moved and turned the head since the lens was set:
 			# re-aim on the Head bone now, from the body's own basis (+Z front, +X its left)
+			# (18:00 11-03: in the crouch the head is turned ~90 deg off the body basis: +cfwd+cleft framed
+			# the bare back-left of the skull, +cfwd-cleft the visor; the knot quarter is -cfwd+cleft)
 			var csk: Skeleton3D = foe.model.find_children("*", "Skeleton3D", true, false)[0]
 			var chead: Vector3 = csk.global_transform * csk.get_bone_global_pose(csk.find_bone("mixamorig_Head")).origin
 			var cb: Basis = foe.body.global_basis
 			var cfwd := Vector3(cb.z.x, 0, cb.z.z).normalized()
 			var cleft := Vector3(cb.x.x, 0, cb.x.z).normalized()
 			# (15:40 11-03: +Z put the lens behind the crouched harrier's shoulder: its face is -Z)
-			var coff := (-cfwd * 0.55 - cleft * 0.85) if not "rear" in args else (cfwd * 0.7 + cleft * 0.75)
+			var coff := (-cfwd * 0.55 - cleft * 0.85) if not "rear" in args else (-cfwd * 0.7 + cleft * 0.75)
 			cam.global_position = chead + coff.normalized() * 1.05 + Vector3.UP * 0.1
 			cam.look_at(chead + Vector3.UP * 0.06)
 			print("SHOT coif re-aimed on the head at %s" % chead)

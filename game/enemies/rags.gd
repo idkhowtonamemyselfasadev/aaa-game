@@ -62,7 +62,7 @@ var lateral := 0.0                       # the knee drag (m, body +X = the weare
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
 const COIF_TURNS := 5.0                  # turns of strip wound round the harrier's coif
-const COIF_KNOT := 0.038                 # how proud the tie-off knot stands off the coif (m)
+const COIF_KNOT := 0.05                  # how proud the tie-off knot stands off the coif (m)
 const COIF_KNOT_V := 0.3                 # its height on the coif (0 crown .. 1 throat)
 const TAIL_LEN := 0.44                   # the coif's knotted tails, nape to tip (m)
 var mantle := true
@@ -107,6 +107,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# the strip's last turn left loose: its end tucked under at the temple and hanging
 		# free past the left cheek-guard
 		head.add_child(_piece(_loose_end(), 0.0, 0.3, 7.0, 0.3))
+		# (18:00 11-03) the neck bound in the same hemp: the crouch pitches the head far
+		# forward and bared the ash neck between coif and collar, where the tell burned like
+		# a bald skull from behind
+		_wrap("mixamorig_Neck", "mixamorig_Head", -0.1, 1.05, 0.01, 4.0)
 	if mantle:
 		var m_seed := 0.35 + mats.size() * 3.7     # the seed _piece gives its material
 		var m_n := mantle_folds(m_seed)
@@ -371,8 +375,16 @@ func _coif() -> ArrayMesh:
 		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(v / 0.3, 1.0), 2.0), 0.0, 1.0))
 		# egg-shaped like the skull under it: fullest at the brow, drawn in under the jaw to the
 		# neck, with a loose fold of collar at the very bottom
-		var r := dome * (1.0 - 0.26 * smoothstep(0.5, 0.9, v) + 0.1 * smoothstep(0.9, 1.0, v))
+		# (18:00 11-03: drawn in all round, the back of the helm stood up to 3.5 cm proud of the
+		# coif and the bare ash skull showed from behind: only the jaw and the sides draw in,
+		# the back falls straight down the occiput to the nape)
+		var jaw := smoothstep(-0.25, 0.6, cos(a))
+		var r := dome * (1.0 - 0.26 * jaw * smoothstep(0.5, 0.9, v) + 0.1 * smoothstep(0.9, 1.0, v))
 		r *= 1.0 + 0.03 * sin(a * 9.0 + v * 4.0) * v
+		# stretched over the old helm's rear lugs behind the ears (the left one stands ~3 cm
+		# proud of the skull's ellipse, the right barely): the strips ride over them
+		var lug_v := exp(-pow((v - 0.6) / 0.17, 2.0))
+		r += lug_v * (0.26 * exp(-pow(a - 2.2, 2.0) / 0.12) + 0.06 * exp(-pow(a - (TAU - 2.2), 2.0) / 0.12))
 		var cz := -0.02 - 0.03 * smoothstep(0.5, 1.0, v)
 		# each turn of strip laps over the last: a proud step at its lip (strips of uneven
 		# width, the shader's warp), and the strip sags a little between the lips where it was
@@ -388,6 +400,11 @@ func _coif() -> ArrayMesh:
 		# one strip crosses over the skull from the brow to the nape, lying proud of the turns
 		# under it with a hard edge, so the profile of the crown steps instead of arcing
 		var y := 2.0 - v * 0.38
+		# a curtain of hemp let down over the nape: the crouch pitches the head well forward
+		# and opened a gap between coif and collar where the bare ash neck burned in the tell
+		var nape := smoothstep(0.1, -0.7, cos(a)) * smoothstep(0.6, 1.0, v)
+		y -= 0.13 * nape
+		r += 0.12 * nape * smoothstep(0.8, 1.0, v)
 		var cross := (1.0 - smoothstep(0.16, 0.24, absf(a - PI - 0.12))) * (1.0 - smoothstep(0.5, 0.7, v))
 		r += 0.013 * cross * smoothstep(0.03, 0.12, v) / 0.14
 		y += 0.012 * (1.0 - smoothstep(0.0, 0.12, v))      # its thickness over the apex
@@ -395,6 +412,14 @@ func _coif() -> ArrayMesh:
 		var ka := a - (PI + 0.75)                  # x < 0: the wearer's right
 		var kv := (v - COIF_KNOT_V) / 0.09
 		var knot := exp(-(ka * ka / 0.09 + kv * kv))
+		# (18:00 11-03: one soft bump read as nothing from behind) a square knot is a hard
+		# core with the two ends pulled out of it: two short splayed lobes, one up and toward
+		# the crown, one down toward the nape, so the tie-off breaks the head's outline
+		var la := ka - 0.3
+		var lb := ka + 0.26
+		var lobe_a := exp(-(la * la / 0.025 + pow(kv + 0.9, 2.0) / 0.45))
+		var lobe_b := exp(-(lb * lb / 0.03 + pow(kv - 1.0, 2.0) / 0.5))
+		knot = maxf(knot, 0.75 * maxf(lobe_a, lobe_b))
 		knot *= 1.0 + 0.3 * sin(a * 23.0 + v * 31.0)        # crumpled, not a smooth ball
 		r += COIF_KNOT * knot / 0.14
 		y += 0.012 * knot

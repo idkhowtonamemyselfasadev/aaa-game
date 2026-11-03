@@ -113,6 +113,7 @@ var model: Node3D
 var spear: HollowSpear
 var anim_tree: AnimationTree
 var skel: Skeleton3D
+var _chest_bone := -1
 var _model_rest: Transform3D
 var _mats: Array[ShaderMaterial] = []
 var soak: Soak
@@ -217,6 +218,20 @@ func _skin() -> void:
 ## Subclasses change the cut of the rags here, before they are built.
 func _cut_rags(_r: HollowRags) -> void:
 	pass
+
+## World -> rest-pose map of the chest bone (Spine2), for the skin shader's chest band: a
+## point rigid with the chest goes back to where it sits standing at rest, so the band stays
+## on the sternum through a crouch or lunge and never lights a head dropped to that height.
+func _chest_unpose() -> Projection:
+	if skel == null:
+		return Projection.IDENTITY
+	if _chest_bone < 0:
+		_chest_bone = skel.find_bone("mixamorig_Spine2")
+		if _chest_bone < 0:
+			return Projection.IDENTITY
+	var now := skel.global_transform * skel.get_bone_global_pose(_chest_bone)
+	var rest := skel.global_transform * skel.get_bone_global_rest(_chest_bone)
+	return Projection(rest * now.affine_inverse())
 
 func _set_skin(param: String, v: Variant) -> void:
 	for m in _mats:
@@ -541,6 +556,7 @@ func _physics_process(delta: float) -> void:
 	_set_skin("ember", ember)
 	_set_skin("root_pos", global_position)
 	_set_skin("root_fwd", body.global_basis.z)
+	_set_skin("chest_unpose", _chest_unpose())
 	_ember_light.light_energy = 0.3 * ember
 	velocity.x = move.x
 	velocity.z = move.z
