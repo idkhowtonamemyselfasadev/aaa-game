@@ -322,6 +322,7 @@ func _ready() -> void:
 	rags.set_param("cloth_dark", Color(0.08, 0.045, 0.035))
 	rags.set_param("cloth_light", Color(0.30, 0.17, 0.12))
 	if not rags.mats.is_empty():
+		rags.mats[0].set_shader_parameter("hemp", 0.0)  # the wool cloak is not sacking
 		rags.mats[0].set_shader_parameter("wool", 0.7)
 		rags.mats[0].set_shader_parameter("weathered", 0.9)
 	model.scale = Vector3(1.0, 1.04, 1.0)    # leaner than the spearmen

@@ -85,6 +85,7 @@ func _ready() -> void:
 	rags.set_param("cloth_light", Color(0.25, 0.21, 0.13))
 	# the hood is fulled woodsman's wool, creased, rubbed and mud-flecked, not a smooth sack
 	if not rags.mats.is_empty():
+		rags.mats[0].set_shader_parameter("hemp", 0.0)  # the wool cloak is not sacking
 		rags.mats[0].set_shader_parameter("wool", 1.0)
 		rags.mats[0].set_shader_parameter("weathered", 0.8)
 	# the spear's shaft stays as the invisible rig the hands IK to; the axe rides on it

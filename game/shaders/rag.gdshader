@@ -35,6 +35,7 @@ uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark i
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
 uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre sheen, grey-brown stains
 uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
+uniform float hemp = 0.0;          // > 0: coarse open-weave hemp sacking: slubbed threads, drape folds, darns, fray
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, damp hem, rubbed edge, mud flecks
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
@@ -291,6 +292,45 @@ void fragment() {
 		crease_dark = smoothstep(0.42, 0.3, c0) * 0.25 + smoothstep(0.45, 0.25, d0) * 0.1;
 		thread = mix(thread, 0.5 + (thread - 0.5) * 0.6, wool);
 	}
+	// coarse hemp sacking (a Hollow's hood and tabard): the cloth hangs in soft drape folds
+	// running down from where it is fastened, deepening toward the hem, with small pulled
+	// creases bunched under the seam; single thick slubbed threads run through the weave as
+	// lines you can see at a few metres, and the open weave shows dark between the threads
+	float hemp_dark = 0.0;
+	float hemp_line = 0.0;
+	float hm = hemp * step(wrap_turns, 0.0) * (1.0 - rigid);
+	if (hm > 0.0) {
+		float hang = clamp(UV.y, 0.0, 1.0);
+		float depth = mix(0.35, 1.0, smoothstep(0.0, 0.7, hang));
+		float nf = 4.0 + 1.5 * hash(vec2(seed, 7.0));
+		float ph = uv.x * nf + (fbm(vec2(uv.x * 2.0, uv.y * 0.6) + seed) - 0.5) * 2.4;
+		// a fold profile: broad rounded crowns, narrower valleys
+		float fs = sin(ph * TAU);
+		float fold_h = (fs + 0.35 * sin(ph * TAU * 2.0 + 1.3)) * depth;
+		float fd = (cos(ph * TAU) * TAU + 0.35 * TAU * 2.0 * cos(ph * TAU * 2.0 + 1.3)) * depth * nf;
+		hemp_dark = smoothstep(-0.2, -1.0, fs) * depth * 0.38;
+		// pulled creases under the seam: short and diagonal, fading out a quarter way down
+		vec2 cq = vec2(uv.x * 14.0 + uv.y * 9.0, uv.y * 4.0) + seed * 2.1;
+		float c0 = vnoise(cq);
+		float pull = 1.0 - smoothstep(0.05, 0.3, hang);
+		float cdx = (vnoise(cq + vec2(0.05, 0.0)) - c0) * 20.0 * pull;
+		hemp_dark += smoothstep(0.4, 0.2, c0) * pull * 0.2;
+		tx = tx * 0.7 + (fd * 0.02 + cdx * 0.5) * hm;
+		ty = ty * 0.7 + cdx * 0.3 * hm;
+		// slubs: about one thread in ten is spun thick and uneven, a little paler or darker,
+		// thinning in and out along its length; faded by its own size so it never shimmers
+		vec2 tv = uv * weave_scale;
+		float lfine = 1.0 - smoothstep(0.8, 2.2, length(fwidth(tv)));
+		float hx = hash(vec2(floor(tv.x), seed));
+		float hy = hash(vec2(seed, floor(tv.y)));
+		float sx = step(0.9, hx) * smoothstep(0.35, 0.75, vnoise(vec2(floor(tv.x), tv.y * 0.04)));
+		float sy = step(0.9, hy) * smoothstep(0.35, 0.75, vnoise(vec2(tv.x * 0.04, floor(tv.y))));
+		hemp_line = (sx * (hx > 0.95 ? 1.0 : -1.0) + sy * (hy > 0.95 ? 1.0 : -1.0)) * lfine;
+		// the open weave: tiny dark pores between threads, read as a darker average further off
+		float pore = smoothstep(0.32, 0.45, abs(fract(tv.x) - 0.5)) * smoothstep(0.32, 0.45, abs(fract(tv.y) - 0.5));
+		hemp_dark += mix(0.06, pore * 0.5, fine);
+		thread = mix(thread, thread * (1.0 - pore * 0.6), hm);
+	}
 	float slub = vnoise(vec2(uv.x * 4.0, uv.y * 140.0));
 	// grime: streaks running down from the seams, soot climbing up from the hem
 	float grime = fbm(uv * vec2(3.0, 0.8) + 9.1);
@@ -303,6 +343,23 @@ void fragment() {
 	// old dye and rust stains in blotches
 	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
 	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6 * stain_amt);
+	if (hm > 0.0) {
+		alb *= 1.0 - hemp_dark * hm;
+		alb *= 1.0 + 0.22 * hemp_line * hm;
+		// a darned patch here and there: a squarish block of tighter, darker cloth with a
+		// stitched rim (the Hollows mended their kit once)
+		vec2 pc = floor(uv * vec2(3.0, 2.0) + seed * 0.37);
+		vec2 pf = fract(uv * vec2(3.0, 2.0) + seed * 0.37);
+		float has_patch = step(0.88, hash(pc + 13.0)) * step(0.15, UV.y);
+		// hand-cut, not square: the patch edge wanders and its corners are rounded off
+		vec2 pd = abs(pf - 0.5) + (vnoise(uv * 18.0 + pc * 7.0) - 0.5) * 0.05;
+		pd = max(pd - 0.06, 0.0) + 0.06 * smoothstep(0.0, 0.06, pd);
+		float in_patch = has_patch * (1.0 - smoothstep(0.26, 0.28, max(pd.x, pd.y * 1.2)));
+		float rim = has_patch * (1.0 - smoothstep(0.0, 0.012, abs(max(pd.x, pd.y * 1.2) - 0.27)));
+		alb = mix(alb, alb * vec3(0.86, 0.82, 0.78) * (0.9 + 0.2 * fbm(uv * 30.0 + pc)), in_patch * 0.6 * hm);
+		alb *= 1.0 - rim * 0.3 * hm * step(0.5, fract(max(pf.x, pf.y) * 40.0));
+		ty += rim * 0.6 * hm;
+	}
 	alb *= 0.86 + 0.14 * thread;
 	alb *= 1.0 + wool * (0.22 * fuzz + 0.12 * pill);
 	// worn wool: rubbed thin and faded in broad patches, darker and greasier in the crease

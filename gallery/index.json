@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-1851-night-canopy-band.jpg",
-  "time": "2026-10-27T18:51:43Z",
-  "caption": "Night timber house: firefly light now a small faint glint on the near tuft; the pale band over the far ridge right of the village is still there (it is moonlit tree canopy, not snow).",
-  "verdict": "fail"
- },
- {
   "file": "20261027-2040-night-band-novol.jpg",
   "time": "2026-10-27T20:40:33Z",
   "caption": "Debug: night village with volumetric fog switched off; the pale blue-white band over the far ridge right of the village sinks to a dim grey, so the moonlit volumetric haze is what paints it (sky goes black too).",
@@ -897,6 +891,12 @@
   "file": "20261103-0930-kindler-warden.jpg",
   "time": "2026-11-03T09:30:00Z",
   "caption": "Kindler close-up with the hero moved behind the lens: the white-hot kindled warden with glowing cracks fills the foreground and the Kindler chants behind it, the ember thread joining spear tip to warden; still wrong: the warden's sackcloth hood and tabard read flat and coarse at this range, and the GL frame shows square spark sprites.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-1025-warden-hemp.jpg",
+  "time": "2026-11-03T10:25:29Z",
+  "caption": "Kindled warden up close in the meadow: its hood, mantle and tabard now hang in irregular drape folds with visible slubbed hemp threads and soft darns instead of flat sacking; still wrong: the tabard and sash panels are flat-cut geometry with straight silhouettes, and GL draws square spark sprites.",
   "verdict": "fail"
  }
 ]

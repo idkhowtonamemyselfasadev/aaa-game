@@ -158,6 +158,7 @@ func _ready() -> void:
 	_cut_rags(rags)
 	add_child(rags)
 	rags.build(skel, body)
+	rags.set_param("hemp", 1.0)  # coarse sacking: drape folds, slubs, darns (rag.gdshader)
 	_mats.append_array(rags.mats)
 	soak = Soak.new()          # the rain darkens the ash skin, rags and spear shaft
 	soak.name = "Soak"
