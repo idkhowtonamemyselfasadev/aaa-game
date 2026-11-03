@@ -923,6 +923,17 @@ func _ready() -> void:
 			var kl_line := Vector3(fp.x - pp.x, 0, fp.z - pp.z).normalized()
 			var kl_side := kl_line.cross(Vector3.UP)
 			var kp := fp + kl_line * 5.4 + kl_side * 2.6
+			if "kfront" in args:
+				# (08:15 11-03: the body does face the warden (dot 1.00), but from that stand the
+				# sun sat behind it at 13:00-14:30, so its front was shade and its lit back read
+				# as the face. For the close-up it stands on the far side of the warden from the
+				# sun, a little off the sun line, so it chants into the light.)
+				var ks: Vector3 = -world.sun.global_transform.basis.z
+				var ks_g := Vector3(-ks.x, 0, -ks.z).normalized()      # ground toward the sun
+				var ks_side := ks_g.cross(Vector3.UP)
+				if ks_side.dot(pp - fp) > 0.0:
+					ks_side = -ks_side                                  # step away from the hero
+				kp = fp - ks_g * 5.4 + ks_side * 2.2
 			world.kindler.set_physics_process(false)
 			world.kindler.global_position = Vector3(kp.x, terrain.height_at(kp.x, kp.z) + 0.05, kp.z)
 			world.kindler._home = world.kindler.global_position
@@ -965,7 +976,10 @@ func _ready() -> void:
 			if "harrier" in args and "coif" in args:
 				# tight on the harrier's head from its flank, a little behind: the wound coif's
 				# uneven turns, the loose end at the temple and the knotted tails down the nape
-				SPOTS[spot] = [fp + side * 1.05 + line * 0.45 + Vector3.UP * 1.6, fp + Vector3.UP * 1.5]
+				# (08:15 11-03: from behind the shoulder hid the loose end and the tails, and the
+				# head read as a pot. Now from its left front quarter, a touch wider, at eye level,
+				# so the temple tuck, the uneven laps and one tail past the neck share the frame)
+				SPOTS[spot] = [fp + side * 1.25 - line * 0.55 + Vector3.UP * 1.6, fp + side * 0.05 + Vector3.UP * 1.5]
 			if "kindler" in args:
 				# over the hero's shoulder at the kindled warden, the Kindler mid-chant beyond it
 				# with its ember stream pouring in; a little off-axis so the stream reads across
@@ -990,7 +1004,19 @@ func _ready() -> void:
 					# sun over the camera's shoulder when the hour allows, square side-on with the
 					# sun at 90 deg when the sun is behind it -- and backs off to 5.6 m looking a
 					# third of the way to the warden, so the burning warden takes the frame edge)
-					var kfwd := -kline                                      # Kindler -> warden
+					# (08:15 11-03: kfwd was the Kindler -> warden line, but the 07:15 frame still read
+					# from behind at lens.fwd 0.71, so the body does not square to that line at the
+					# shot moment. Use the Kindler body's own facing (+Z, as spear_tip()/face() do),
+					# flattened; fall back to the warden line if the basis is degenerate.)
+					var kbz: Vector3 = world.kindler.body.global_basis.z
+					var kfwd := Vector3(kbz.x, 0, kbz.z)
+					if kfwd.length() < 0.1:
+						kfwd = -kline
+					kfwd = kfwd.normalized()
+					print("SHOT kfront body.fwd vs warden line %.2f" % kfwd.dot(-kline))
+					kside = kfwd.cross(Vector3.UP)
+					if kside.dot(Vector3(-light.x, 0, -light.z)) < 0.0:
+						kside = -kside
 					var ksun := Vector3(-light.x, 0, -light.z).normalized() # ground toward the sun
 					var kdir: Vector3
 					if ksun.dot(kfwd) > 0.0:
@@ -1857,6 +1883,13 @@ func _ready() -> void:
 		if spot == "soldier" and "kindler" in args:
 			pos.y = terrain.height_at(pos.x, pos.z) + (1.5 if "kfront" in args else 2.0)
 			look.y = terrain.height_at(look.x, look.z) + (1.75 if "kfront" in args else 1.2)
+		if spot == "soldier" and "harrier" in args and "coif" in args:
+			# level with the wound head, wherever the crouch has put it (its Head bone)
+			var hsk: Skeleton3D = world.harrier.model.find_children("*", "Skeleton3D", true, false)[0]
+			var hhead: Vector3 = hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_Head")).origin
+			pos.y = hhead.y + 0.12
+			look.y = hhead.y + 0.1
+			print("SHOT coif head at %.2f m over the turf" % (hhead.y - terrain.height_at(hhead.x, hhead.z)))
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)

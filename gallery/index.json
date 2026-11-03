@@ -892,5 +892,11 @@
   "time": "2026-11-03T07:14:35Z",
   "caption": "Hollow Kindler at 14:30 with the lantern post swung out of frame and its ember thread pouring from the spear tip; still wrong: it reads from behind with the hood hiding its face, the kindled warden is off the right edge, and a cottage shadow blacks out the bottom third.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261103-0810-kindler-sunfront.jpg",
+  "time": "2026-11-03T08:10:20Z",
+  "caption": "The Hollow Kindler now chants into the sun, front-lit, with its face under the hood and the ember stream pouring from its spear tip; but the hero fills the right third and the burning warden is off the right edge.",
+  "verdict": "fail"
  }
 ]
