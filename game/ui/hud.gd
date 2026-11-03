@@ -39,6 +39,8 @@ var _boss_ui: Control
 var boss_shown: Node3D = null            # the boss whose bar is up (bots read it)
 var boss_alpha := 0.0
 var _boss_lag := 1.0
+var _letterbox: Control
+var letterbox := 0.0                     # 0..1, cinematic bars (a boss reveal); bots read it
 var quest_shown := ""                   # the objective line drawn top-left (bots read it)
 
 func _ready() -> void:
@@ -86,6 +88,12 @@ func _ready() -> void:
 	_boss_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_boss_ui.draw.connect(_draw_boss)
 	add_child(_boss_ui)
+	_letterbox = Control.new()
+	_letterbox.name = "Letterbox"
+	_letterbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_letterbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_letterbox.draw.connect(_draw_letterbox)
+	add_child(_letterbox)
 
 ## A place names itself while the hero stands at it: call every frame he is there; it fades in,
 ## and out again shortly after the calls stop.
@@ -158,6 +166,12 @@ func _process(delta: float) -> void:
 		quest_shown = want_q
 		_quest.queue_redraw()
 	_update_boss(delta)
+	var lb := 0.0
+	for c in get_tree().get_nodes_in_group("cinematic"):
+		lb = maxf(lb, float(c.get("bars")))
+	if lb != letterbox:
+		letterbox = lb
+		_letterbox.queue_redraw()
 	var va := player.screen_black()
 	if va != veil_alpha or va > 0.0:
 		veil_alpha = va
@@ -378,6 +392,8 @@ func _update_boss(delta: float) -> void:
 		if n == null or not is_instance_valid(n):
 			continue
 		var stirred: bool = "state" in n and n.state != HollowSoldier.IDLE
+		if n.has_method("intro_playing") and n.intro_playing():
+			stirred = false                 # the bar comes up when the reveal hands over
 		if stirred and n.global_position.distance_to(player.global_position) < 40.0:
 			want = n
 	if want != null:
@@ -395,6 +411,15 @@ func _update_boss(delta: float) -> void:
 	if ba != boss_alpha or ba > 0.0:
 		boss_alpha = ba
 		_boss_ui.queue_redraw()
+
+## Cinematic bars, top and bottom, sliding in from the edges.
+func _draw_letterbox() -> void:
+	if letterbox <= 0.001:
+		return
+	var vs := _letterbox.get_viewport_rect().size
+	var h := vs.y * BossIntro.BARS * letterbox
+	_letterbox.draw_rect(Rect2(0.0, 0.0, vs.x, h), Color.BLACK)
+	_letterbox.draw_rect(Rect2(0.0, vs.y - h, vs.x, h), Color.BLACK)
 
 func _draw_boss() -> void:
 	if boss_alpha <= 0.001 or boss_shown == null or not is_instance_valid(boss_shown):

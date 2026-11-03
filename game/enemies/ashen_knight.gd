@@ -49,6 +49,7 @@ const PHASES := [
 ]
 const NAME := "The Ashen Knight"
 const LEAP_MOVE := 2
+const INTRO_MOVE := 3            # the reveal (BossIntro): it stands, turns, heaves and roars
 const LEAP_MIN := 5.0            # hero farther than this (and nearer than LEAP_MAX) gets the leap
 const LEAP_MAX := 11.0
 const LEAP_COOL := 5.5           # brain-time s between leaps
@@ -65,6 +66,8 @@ const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes dow
 const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
 ## leap heave: both hands up over the helm, the blade laid back behind the head
 const LEAP_HEAVE := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+## the reveal's roar: the glaive brandished skyward on its right, blade up, both hands high
+const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
 const TUCK_KNEE := 1.75           # rad the shins fold back
@@ -80,6 +83,8 @@ signal flame_burst(at: Vector3)
 signal leapt(at: Vector3)
 ## the ember leap came down: where the blade bit, and the verdict on the hero
 signal leap_landed(at: Vector3, result: String)
+## the reveal's roar: the glaive heaved overhead, the ember blazing (foley: a deep boom)
+signal roared(at: Vector3)
 
 var phase := 1
 var guarded := 0                 # light strikes turned aside (bots)
@@ -103,6 +108,15 @@ var last_scorch: Scorch          # the burn the last leap left in the turf (bots
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var _terrain_ref: Terrain
 var growth := BossGrowth.new(PHASES)
+## INTRO (BossIntro): the first time the hero walks in it does not just start: the camera cranes
+## up the giant, it squares up and heaves the glaive overhead with the ember roaring, then the
+## fight begins. Once per run; a hero coming back after a death goes straight to the fight.
+var intro_enabled := true
+var intro_seen := false
+var intro: BossIntro
+var intros := 0                  # bots
+var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
+var _heave_now := 0.0
 var grow_peak_shake := 0.0       # bots
 
 func _ready() -> void:
@@ -192,8 +206,37 @@ func set_size_scale(s: float) -> void:
 	give_up = GIVE_UP * sqrt(s)
 	notice = NOTICE * sqrt(s)
 
+func intro_playing() -> bool:
+	return intro != null and is_instance_valid(intro) and intro.is_playing()
+
+## Waking at the hero for the first time starts the reveal instead of the stalk.
+func _enter(s: int) -> void:
+	if s == STALK and state == IDLE and intro_enabled and not intro_seen and _player != null \
+			and not _player.is_dead() and move_kind != INTRO_MOVE:
+		_begin_intro()
+		return
+	super._enter(s)
+
+func _begin_intro() -> void:
+	intros += 1
+	_from = _pose
+	move_kind = INTRO_MOVE
+	super._enter(WINDUP)
+	intro = BossIntro.play(self, _player)
+	intro.finished.connect(_end_intro)
+
+func _end_intro(_skipped: bool) -> void:
+	intro_seen = true
+	intro = null
+	if state == WINDUP and move_kind == INTRO_MOVE:
+		_from = _pose
+		move_kind = THRUST_MOVE
+		super._enter(STALK)
+
 func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> void:
 	if state == DEAD:
+		return
+	if intro_playing():
 		return
 	if _surge >= 0.0:
 		# the burst of the ember throws the blow off: a dull spark, no harm done
@@ -387,6 +430,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		rags.stream = 0.0
 		rags.flap = 0.0
 		rags.air_y = 0.0
+	if move_kind == INTRO_MOVE:
+		return _intro_tick(delta, to)
 	if move_kind != LEAP_MOVE:
 		return super._special_tick(delta, to, dist)
 	var move := Vector3.ZERO
@@ -478,6 +523,35 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 	if _wield != null:
 		_wield.position.y = -sink
 	return [move, lean, sink, ember]
+
+## The reveal's beat, timed off the intro camera: it lifts its head and squares up to the hero
+## while the camera cranes up it, then sets its feet, heaves the glaive up over the helm with
+## the ember flaring hot (the roar) and brings it back down into its guard for the hand-off.
+func _intro_tick(delta: float, to: Vector3) -> Array:
+	var it := intro.t if intro != null and is_instance_valid(intro) else BossIntro.T
+	_turn_to(to, delta, 2.5)
+	var r0 := BossIntro.CRANE_T + 0.1
+	var up := smoothstep(r0, r0 + 0.45, it) * (1.0 - smoothstep(BossIntro.ROAR_END - 0.2, BossIntro.T - 0.15, it))
+	if intro != null and intro.skipped:
+		up = move_toward(_heave_now, 0.0, delta * 2.5)   # a skip lets the glaive back down
+	_heave_now = up
+	intro_heave = maxf(intro_heave, up)
+	_pose = _lerp_pose(guard_pose, INTRO_ROAR, up)
+	# the roar: the heave shudders, the chest thrown back, the ember blazing
+	_pose[1] += sin(it * 38.0) * 1.5 * up
+	var lean := -0.16 * up
+	var sink := 0.06 * smoothstep(r0 - 0.4, r0, it) * (1.0 - up)   # sets its feet before the heave
+	var ember := 1.0 + 5.0 * up + 0.6 * sin(it * 23.0) * up
+	_update_glint(0.0)
+	if not has_meta("roared") and it >= r0 + 0.35:
+		set_meta("roared", true)
+		roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
+		ImpactFX.spawn(get_parent(), global_position + Vector3.UP * 0.1, Vector3.UP, "dirt", 1.4 + 0.3 * size_scale)
+		if _player != null:
+			_player.add_shake(0.5)
+	if _wield != null:
+		_wield.position.y = -sink
+	return [Vector3.ZERO, lean, sink, ember]
 
 func _set_tuck(h: float, k: float) -> void:
 	if tuck != null:

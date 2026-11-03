@@ -160,6 +160,12 @@ func hook_knight(k: Node) -> void:
 		_play("slam", at, -9.0, 1.15))
 	# the ember leap: a deep whoosh and a grunt of armour as it springs, the blade into the turf
 	# as a full ground slam with the boom under it (a sweep's thump if the hero rolled clear)
+	if k.has_signal("roared"):
+		# the reveal's roar: no recorded roar yet, so the deep whoosh slowed right down under a boom
+		k.roared.connect(func(at: Vector3) -> void:
+			_play("whoom", at, 4.0, 0.38)
+			_play("boom", at, 0.0, 0.6)
+			_play("grunt", at, -4.0, 0.55))
 	if k.has_signal("leapt"):
 		k.leapt.connect(func(at: Vector3) -> void:
 			_play("whoom", at, -1.0, 0.55)

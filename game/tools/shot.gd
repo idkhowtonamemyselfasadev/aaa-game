@@ -2139,6 +2139,38 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT dodge t %.3f" % player.dodge_t)
+	if spot == "ring" and "intro" in args:
+		# intro [it=1.0]: the knight's camera reveal (BossIntro), stepped by hand to `it` seconds,
+		# seen through the reveal's own lens with the letterbox drawn
+		var iu := 1.0
+		for a in args:
+			if a.begins_with("it="):
+				iu = float(a.substr(3))
+		var kk: AshenKnight = world.knight
+		var gate := player.global_position
+		var kin := gate.lerp(kk.global_position, 0.42)   # the hero a few steps inside the ring
+		player.global_position = Vector3(kin.x, terrain.height_at(kin.x, kin.z) + 0.05, kin.z)
+		player.use_bot_input = true
+		kk._player = player
+		kk.set_physics_process(false)
+		kk._begin_intro()
+		var bi: BossIntro = kk.intro
+		bi.set_physics_process(false)
+		var dt := 1.0 / 60.0
+		for i in int(iu * 60.0):
+			bi.t += dt
+			bi.bars = smoothstep(0.0, 0.5, bi.t) * (1.0 - smoothstep(BossIntro.ROAR_END, BossIntro.T, bi.t))
+			kk._physics_process(dt)
+			player._physics_process(dt)
+			bi._frame(bi.t)
+		bi.cam.make_current()
+		cam = bi.cam
+		var hud = player.get_node_or_null("Hud")
+		if hud != null:
+			hud.letterbox = bi.bars
+			hud._letterbox.queue_redraw()
+		get_tree().paused = true
+		print("SHOT intro t %.2f cam %s lift %.1f heave %.2f bars %.2f" % [bi.t, bi.cam.global_position, bi.max_lift, kk._heave_now, bi.bars])
 	if foe_u >= 0.0:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot

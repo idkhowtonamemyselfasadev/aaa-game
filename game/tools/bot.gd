@@ -873,7 +873,7 @@ func _knight_test() -> void:
 	var fol: Foley = _world.foley
 	var played0: Dictionary = fol.played.duplicate()
 	await _ticks(10)
-	var hud = p.get_node_or_null("HUD")
+	var hud = p.get_node_or_null("Hud")
 	var gd := Vector2(k.global_position.x - p.global_position.x, k.global_position.z - p.global_position.z).length()
 	print("BOT knight: %.1f m from the start, state %d, health %.0f, phase %d" % [gd, k.state, k.health, k.phase])
 	# its armour: helm, gorget, two pauldrons and the glaive head, and no soldier's hood showing
@@ -922,6 +922,8 @@ func _knight_test() -> void:
 	if ring.stones.size() < 7 or ring.fallen < 1 or off_c > 0.5 or gate_clear < 2.5 or not ring.inside(k.global_position.x, k.global_position.z):
 		return _combat_done(false, "the knight's stone ring is missing, off-centre or blocks its entrance")
 	# walk up until it notices
+	var yaw0: float = p._yaw
+	var pitch0: float = p._pitch
 	p.global_position = k.global_position + (p.global_position - k.global_position).normalized() * 14.0
 	var waited := 0.0
 	while k.state == HollowSoldier.IDLE and waited < 15.0:
@@ -932,6 +934,51 @@ func _knight_test() -> void:
 	p.bot_input = Vector2.ZERO
 	if k.state == HollowSoldier.IDLE:
 		return _combat_done(false, "knight never noticed the hero")
+	# the reveal (BossIntro): the camera cranes up the giant, the hero stands, no bar yet, the
+	# knight cannot be hurt and roars with the glaive overhead, then the hero's camera takes over
+	if not k.intro_playing() or k.intros != 1:
+		return _combat_done(false, "waking the knight did not start its camera reveal")
+	var hero_cam: Camera3D = p.camera
+	var pos0 := p.global_position
+	var bar_early := 0.0
+	var lb_peak := 0.0
+	var cam_other := false
+	var hp_i := k.health
+	var lift_mid := 0.0
+	var it := 0.0
+	while k.intro_playing() and it < 8.0:
+		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
+		if it > 0.3 and it < 1.0:
+			k.take_hit(k.global_position + Vector3.UP * 2.0, Vector3.FORWARD, 3.0, 0.0)
+		if hud != null:
+			lb_peak = maxf(lb_peak, hud.letterbox)
+			if k.intro.t < BossIntro.ROAR_END:
+				bar_early = maxf(bar_early, hud.boss_alpha)
+		lift_mid = maxf(lift_mid, k.intro.max_lift)
+		if get_viewport().get_camera_3d() != hero_cam:
+			cam_other = true
+		await get_tree().physics_frame
+		it += get_physics_process_delta_time()
+	p.bot_input = Vector2.ZERO
+	var drift := Vector2(p.global_position.x - pos0.x, p.global_position.z - pos0.z).length()
+	print("BOT knight: reveal %.1f s, intro cam current %s, letterbox peak %.2f, bar before hand-off %.2f, hero drift %.2f m, knight health %.0f -> %.0f, roar heave %.2f, crane top %.1f m (knight %.1f m tall), state %d, hero cam back %s" % [it, cam_other, lb_peak, bar_early, drift, hp_i, k.health, k.intro_heave, lift_mid, (k.hurt_capsule()[1] as Vector3).y - k.global_position.y + float(k.hurt_capsule()[2]), k.state, get_viewport().get_camera_3d() == hero_cam])
+	if it < BossIntro.T - 0.3 or it > BossIntro.T + 0.5 or not cam_other or lb_peak < 0.9 or bar_early > 0.05:
+		return _combat_done(false, "the reveal did not run its shots/letterbox, or the bar came up early")
+	if lift_mid < 1.5:
+		return _combat_done(false, "the reveal camera never craned up the giant")
+	if drift > 0.35 or k.health != hp_i or k.intro_heave < 0.9 or not k.has_meta("roared"):
+		return _combat_done(false, "the hero moved, the knight was hurt or it never roared in the reveal")
+	if k.state != HollowSoldier.STALK or p.cinematic or get_viewport().get_camera_3d() != hero_cam or not k.intro_seen:
+		return _combat_done(false, "the fight did not start with the hero's camera after the reveal")
+	# the reveal hands over with the hero's camera turned on the knight; this bot steers in
+	# world axes (bot_input is camera-relative), so put the camera back where it was
+	var cam_fwd := -Basis.from_euler(Vector3(0.0, p._yaw, 0.0)).z
+	var to_k := (k.global_position - p.global_position).normalized()
+	print("BOT knight: hand-off camera facing the knight %.2f" % cam_fwd.dot(Vector3(to_k.x, 0, to_k.z).normalized()))
+	if cam_fwd.dot(Vector3(to_k.x, 0, to_k.z).normalized()) < 0.8:
+		return _combat_done(false, "the reveal did not hand over with the camera on the knight")
+	p._yaw = yaw0
+	p._pitch = pitch0
 	await _ticks(20)
 	if hud != null:
 		print("BOT knight: boss bar '%s' alpha %.2f" % [hud.boss_shown.NAME if hud.boss_shown else "", hud.boss_alpha])
@@ -1084,6 +1131,11 @@ func _knight_test() -> void:
 				p.bot_attack = true
 			else:
 				p.bot_heavy = int(t * 2.0) % 3 != 2
+			# a fresh phase: hold off until its score section is back in, or a fast string can
+			# beat phase 2 before the music check ever sees it resume
+			if music_ok.has(k.phase) and not (music_ok[k.phase] as Array)[1]:
+				p.bot_attack = false
+				p.bot_heavy = false
 		if k.surging() and k.growth.growing():
 			grow_seen[k.phase] = k.growth.samples.duplicate()
 			grow_shake = maxf(grow_shake, p._trauma)

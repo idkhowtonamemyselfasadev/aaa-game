@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261028-0730-knockdown.jpg",
-  "time": "2026-10-28T07:30:00Z",
-  "caption": "The hero lies on his back with knees up after the hollow soldier's sweep, staff thrown onto the path; the body is half buried in tall grass and the top-down frame is dark, with no dust where he landed.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-0738-boulder-streaks.jpg",
   "time": "2026-10-28T07:38:00Z",
   "caption": "Meadow boulder at 15:00: thin dark rain runs now hang down from the crown over the lit shoulder; the shaded flank still goes near-black and the silhouette is still faceted.",
@@ -885,6 +879,18 @@
   "file": "20261103-2045-knight-size-p3.jpg",
   "time": "2026-11-03T20:45:00Z",
   "caption": "The Ashen Knight at its phase-3 size (~5.3x the hero) towering over the small hero (GL quick-look): the giant reads, but the camera is too close to compare sizes cleanly and there is no growth FX in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2134-knight-reveal-crane.jpg",
+  "time": "2026-11-03T21:34:14Z",
+  "caption": "Boss reveal, first shot: the lens low at the Ashen Knight's feet as it cranes up the giant; GL frame, no letterbox in this render, and the knight is a dark backlit silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2134-knight-reveal-roar.jpg",
+  "time": "2026-11-03T21:34:14Z",
+  "caption": "Boss reveal, roar beat: letterboxed, the giant brandishes its glaive skyward with the ember blazing at its shoulders; still GL, backlit against the sun, and the arms do not rise high enough for a roar.",
   "verdict": "fail"
  }
 ]

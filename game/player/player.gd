@@ -171,6 +171,10 @@ var bot_interact := false
 var interacts := 0                      # interact presses so far (talkers compare against it)
 var _heavy_was := false
 var use_bot_input := false
+## A cinematic (a boss reveal) holds the camera elsewhere: the hero stands, no input reaches
+## the body, and an attack/jump/interact press only asks the cinematic to skip.
+var cinematic := false
+var _cine_skip := false
 
 @onready var cam_pivot: Node3D = $CamPivot
 @onready var spring: SpringArm3D = $CamPivot/SpringArm3D
@@ -361,6 +365,8 @@ func _process(delta: float) -> void:
 	camera.v_offset = s * (sin(_shake_t * 73.0 + 0.6) * 0.6 + sin(_shake_t * 113.0 + 2.9) * 0.4)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if cinematic:
+		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if lock_target != null:
 			# locked: the mouse no longer steers the camera; a sharp sideways flick switches target
@@ -372,6 +378,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		_yaw -= event.relative.x * 0.0025
 		_pitch = clampf(_pitch - event.relative.y * 0.0025, -1.2, 0.6)
+
+## True once if a skip was asked for since the last call (BossIntro reads it).
+func cinematic_skip_pressed() -> bool:
+	var k := _cine_skip
+	_cine_skip = false
+	return k
 
 # --- lock-on ---
 
@@ -515,6 +527,16 @@ func _physics_process(delta: float) -> void:
 	if (bot_interact if use_bot_input else Input.is_action_just_pressed("interact")):
 		interacts += 1
 	bot_interact = false
+	if cinematic:
+		_cine_skip = _cine_skip or want_attack or want_jump or want_heavy or want_dodge
+		dir2 = Vector2.ZERO
+		sprinting = false
+		want_jump = false
+		want_attack = false
+		want_dodge = false
+		want_heavy = false
+		heavy_down = false
+		want_lock = false
 	if want_lock and not climbing and mantle_t < 0.0:
 		toggle_lock()
 	_update_lock(delta)
