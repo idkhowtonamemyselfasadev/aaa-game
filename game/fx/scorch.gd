@@ -13,6 +13,22 @@ const SIZE := 2.8           # m across the burnt star
 const GLOW_E := 3.2         # decal emission energy when fresh
 
 var t := 0.0
+## Set before add_child. size_k: the burn scales with the giant that made it (1 = the phase-1
+## knight's). hazard_t > 0 makes it a BURNING ZONE (the phase-3 stomp): it stays on fire for
+## hazard_t s, flames licking up off the char, and burns the hero standing in it (HAZARD_DMG
+## every HAZARD_EVERY s after a short grace, unblockable; a roll does not help, stepping out
+## does), then cools like any scorch.
+var size_k := 1.0
+var hazard_t := 0.0
+var player: Player
+var source: Node
+var burns := 0              # bots: times it burnt the hero
+var _in_t := -1.0           # s the hero has stood in the fire (-1 = outside)
+var _bite_at := 0.0
+var _flames: CPUParticles3D
+const HAZARD_DMG := 7.0
+const HAZARD_EVERY := 0.8
+const HAZARD_GRACE := 0.35
 var heat := 1.0             # 1 fresh .. 0 cold (bots)
 var char_alpha := 1.0       # the burn's opacity (bots)
 var blasted := 0            # grass points laid flat round the burn (bots)
@@ -36,7 +52,7 @@ static var _spark_tex: ImageTexture
 func _ready() -> void:
 	_decal = Decal.new()
 	_decal.name = "Burn"
-	_decal.size = Vector3(SIZE, 1.2, SIZE)
+	_decal.size = Vector3(SIZE * size_k, 1.2 * sqrt(size_k), SIZE * size_k)
 	_decal.texture_albedo = burn_texture()
 	_decal.texture_emission = glow_texture()
 	_decal.emission_energy = GLOW_E
@@ -61,6 +77,15 @@ func _ready() -> void:
 	_light.shadow_enabled = false
 	_light.position = Vector3(0, 0.35, 0)
 	add_child(_light)
+	if size_k != 1.0:
+		_light.omni_range *= size_k
+		for p in [_coals, _sparks]:
+			(p as CPUParticles3D).emission_sphere_radius *= size_k
+			(p as CPUParticles3D).amount = int((p as CPUParticles3D).amount * size_k)
+	if hazard_t > 0.0:
+		_flames = _make_flames()
+		add_child(_flames)
+		_flames.emitting = true
 	_blast_grass.call_deferred()   # the knight places us after add_child
 	# take a burn slot (the oldest live burn gives its slot up when all four are taken)
 	for i in 4:
@@ -99,7 +124,7 @@ func grass_char_at(p: Vector3) -> float:
 ## half second (the flash of the bite) and stand charred as long as the decal's char lasts.
 func _burn_vec() -> Vector4:
 	var c := smoothstep(0.0, 0.5, t) * char_alpha
-	return Vector4(global_position.x, global_position.z, CHAR_R / 0.84, c)
+	return Vector4(global_position.x, global_position.z, CHAR_R * size_k / 0.84, c)
 
 ## The blast of the bite lays the sward flat round the burn, combed outward, so the scorch
 ## is not lost under standing meadow grass.
@@ -116,33 +141,96 @@ func _blast_grass() -> void:
 		var off := randf() * TAU
 		for i in k:
 			var d := Vector2.from_angle(off + TAU * i / k)
-			tr.add_herd_point(c + d * r, d, ring[2], 0.0, 0.15)
+			tr.add_herd_point(c + d * r * size_k, d, ring[2], 0.0, 0.15)
 			blasted += 1
+
+## Radius (m) of the fire that burns the hero in a burning zone.
+func hazard_r() -> float:
+	return CHAR_R * size_k * 0.8
+
+func burning() -> bool:
+	return hazard_t > 0.0 and t < hazard_t
 
 func _process(delta: float) -> void:
 	t += delta
+	_hazard_tick(delta)
+	# a burning zone holds its heat while it burns, then the clock runs as for any scorch
+	var tc := maxf(t - hazard_t, 0.0) if hazard_t > 0.0 else t
 	# heat: holds a beat, then cools off on an ease-out curve
-	var g := clampf((t - 0.6) / (GLOW_T - 0.6), 0.0, 1.0)
+	var g := clampf((tc - 0.6) / (GLOW_T - 0.6), 0.0, 1.0)
 	heat = (1.0 - g) * (1.0 - g)
 	_decal.emission_energy = GLOW_E * heat
 	# the glow reddens as it cools (ember orange -> dull red)
 	_decal.modulate = Color(1.0, lerpf(0.35, 1.0, heat), lerpf(0.25, 1.0, heat), char_alpha)
 	_light.light_energy = 1.1 * heat * (0.85 + 0.15 * sin(t * 13.0) * sin(t * 7.3))
 	_light.visible = heat > 0.01
-	if _sparks.emitting and t > EMBER_T:
+	if _sparks.emitting and tc > EMBER_T:
 		_sparks.emitting = false
-	if _coals.emitting and t > EMBER_T * 0.5:
+	if _coals.emitting and tc > EMBER_T * 0.5:
 		_coals.emitting = false
-	if _smoke.emitting and t > GLOW_T + 3.0:
+	if _smoke.emitting and tc > GLOW_T + 3.0:
 		_smoke.emitting = false
-	var u := clampf((t - GLOW_T) / (LIFE - GLOW_T), 0.0, 1.0)
+	var u := clampf((tc - GLOW_T) / (LIFE - GLOW_T), 0.0, 1.0)
 	char_alpha = 1.0 - u * u
 	_decal.modulate.a = char_alpha
 	if _slot >= 0:
 		burn_vals[_slot] = _burn_vec()
 		RenderingServer.global_shader_parameter_set("burn_%d" % _slot, burn_vals[_slot])
-	if t > LIFE + 0.5:
+	if tc > LIFE + 0.5:
 		queue_free()
+
+func _hazard_tick(delta: float) -> void:
+	if hazard_t <= 0.0:
+		return
+	if _flames != null and _flames.emitting and t > hazard_t:
+		_flames.emitting = false
+	if not burning() or player == null or player.is_dead():
+		_in_t = -1.0
+		return
+	var d := player.global_position - global_position
+	if Vector2(d.x, d.z).length() > hazard_r() or absf(d.y) > 1.5:
+		_in_t = -1.0
+		return
+	if _in_t < 0.0:
+		_in_t = 0.0
+		_bite_at = HAZARD_GRACE      # first bite after the grace, then every HAZARD_EVERY s
+	_in_t += delta
+	if _in_t >= _bite_at:
+		_bite_at += HAZARD_EVERY
+		var r := player.receive_attack(source if source != null else self, HAZARD_DMG, false, true)
+		if r == "hit":
+			burns += 1
+
+## A burning zone's fire: low tongues of flame licking up off the char all over it.
+func _make_flames() -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.name = "Flames"
+	p.amount = int(60 * size_k)
+	p.lifetime = 0.7
+	p.randomness = 0.5
+	p.local_coords = false
+	p.position = Vector3(0, 0.05, 0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = hazard_r() * 0.85
+	p.direction = Vector3.UP
+	p.spread = 12.0
+	p.initial_velocity_min = 0.8
+	p.initial_velocity_max = 2.0
+	p.gravity = Vector3(0, 1.5, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.4
+	var sc := Curve.new()
+	sc.add_point(Vector2(0.0, 0.4))
+	sc.add_point(Vector2(0.3, 1.0))
+	sc.add_point(Vector2(1.0, 0.2))
+	p.scale_amount_curve = sc
+	p.mesh = _glow_quad(0.32, Color(1.0, 0.5, 0.15), 3.0)
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.15, 0.6, 1.0])
+	g.colors = PackedColorArray([Color(1, 0.85, 0.5, 0.0), Color(1, 0.65, 0.25, 0.9),
+		Color(0.9, 0.3, 0.05, 0.5), Color(0.3, 0.08, 0.0, 0.0)])
+	p.color_ramp = g
+	return p
 
 # --- particles ---
 

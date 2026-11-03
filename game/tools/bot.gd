@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "kindler", "harrier"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -106,6 +106,9 @@ func _ready() -> void:
 		return
 	if name == "knightleap":
 		_knightleap_test()
+		return
+	if name == "knightstomp":
+		_knightstomp_test()
 		return
 	if name == "warden":
 		_warden_test()
@@ -1096,7 +1099,25 @@ func _knight_test() -> void:
 			continue
 		var wl := HollowSoldier.SWEEP_WINDUP_T if k.move_kind == HollowSoldier.SWEEP_MOVE else HollowSoldier.WINDUP_T
 		var leaping := k.move_kind == AshenKnight.LEAP_MOVE
-		if leaping and k.state == HollowSoldier.STRIKE and k.t > AshenKnight.LEAP_T - 0.12 and p.dodge_t < 0.0:
+		var stomping := k.move_kind == AshenKnight.STOMP_MOVE and (k.state == HollowSoldier.WINDUP or k.state == HollowSoldier.STRIKE)
+		var wave := k.last_wave
+		var wave_live := wave != null and is_instance_valid(wave) and wave.result == ""
+		if wave_live:
+			# the stomp's ground wave: wait for the front, roll through it as it arrives
+			p.bot_attack = false
+			p.bot_heavy = false
+			p.bot_input = Vector2.ZERO
+			var whd := Vector2(p.global_position.x - wave.global_position.x, p.global_position.z - wave.global_position.z).length()
+			if wave.r > whd - 0.9 and p.dodge_t < 0.0:
+				var wside := Vector3(to.z, 0, -to.x).normalized()
+				p.bot_input = Vector2(wside.x, wside.z)
+				p.bot_dodge = true
+		elif stomping:
+			# the knee is up: stop swinging and get set for the wave
+			p.bot_attack = false
+			p.bot_heavy = false
+			p.bot_input = Vector2.ZERO
+		elif leaping and k.state == HollowSoldier.STRIKE and k.t > AshenKnight.LEAP_T - 0.12 and p.dodge_t < 0.0:
 			# the ember leap: roll as it comes down, not on the crouch
 			p.bot_attack = false
 			p.bot_heavy = false
@@ -1171,7 +1192,7 @@ func _knight_test() -> void:
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	p.bot_heavy = false
-	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results)])
+	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s, stomps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results), k.stomps, str(k.stomp_results)])
 	if k.surges < 2 or k.blasts < 2:
 		return _combat_done(false, "knight did not surge into both later phases")
 	# every surge was a growth moment: smooth, never a pop, ending at the phase's size
@@ -1412,6 +1433,159 @@ func _knightleap_test() -> void:
 
 ## The knight's legs and hands in its body frame: x = feet (mean) below the hips, y = knees
 ## (mean) ahead of the hips, z = the higher hand above the head bone.
+## Ashen Knight stomp (phases 2-3): a hero crowding it gets the knee raised high (the tell), the
+## boot stamped down and a shockwave racing out over the ground: standing in its path throws
+## the hero down, a roll as the front arrives passes through, a hero beyond its reach is
+## untouched, the wave runs farther at the bigger phase-3 size, and in phase 3 the stamped
+## ground stays burning (burns a hero who stands in it, not one who steps out) and then cools.
+func _knightstomp_test() -> void:
+	var p := _player
+	var k: AshenKnight = _world.knight
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	var fol: Foley = _world.foley
+	var played0: Dictionary = fol.played.duplicate()
+	await _ticks(10)
+	# the choice: a hero crowding it gets the stomp in phase 2+, never in phase 1 or on cooldown
+	k.force_move = -1
+	k._set_phase(1)
+	var c1 := k._choose(2.0 * k.size_scale)
+	k._set_phase(2)
+	k._stomp_cool = 0.0
+	var c2 := k._choose(2.0 * k.size_scale)
+	k._stomp_cool = 3.0
+	var c3 := k._choose(2.0 * k.size_scale)
+	print("BOT knightstomp: choice phase 1 %d, phase 2 %d, on cooldown %d (stomp = %d)" % [c1, c2, c3, AshenKnight.STOMP_MOVE])
+	if c1 == AshenKnight.STOMP_MOVE or c2 != AshenKnight.STOMP_MOVE or c3 == AshenKnight.STOMP_MOVE:
+		return _combat_done(false, "the knight's stomp choice is wrong")
+	var trials := [["stand", 2, 2.0], ["roll", 2, 2.0], ["far", 2, -1.0], ["stand", 3, 2.0]]
+	var res := {}
+	var reach := {}
+	for tr in trials:
+		var kind: String = tr[0]
+		var ph: int = tr[1]
+		k._set_phase(ph)
+		k.set_size_scale(k.growth.scale_of(ph))
+		var ks := k.size_scale
+		k._home = k.global_position
+		k._stomp_cool = 0.0
+		k._leap_cool = 99.0
+		k._flame_t = -999.0          # no phase-3 eruptions under the hero during this test
+		k.state = HollowSoldier.STALK
+		k.t = 0.0
+		p.health = Player.HEALTH_MAX
+		p.stamina = p.stamina_max
+		while p.is_down():
+			await get_tree().physics_frame
+		var dir := k.body.global_basis.z
+		dir.y = 0.0
+		dir = dir.normalized()
+		var off: float = tr[2] * ks if tr[2] > 0.0 else AshenKnight.STOMP_R * ks + 3.0
+		p.global_position = k.global_position + dir * off
+		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+		var hero_at := p.global_position
+		await _ticks(2)
+		# the stomp starts where it stands (its choice is checked on its own below)
+		k._from = k._pose
+		k.move_kind = AshenKnight.STOMP_MOVE
+		k._enter(HollowSoldier.WINDUP)
+		var n0 := k.stomp_results.size()
+		var s0 := k.stomps
+		var seen := [Vector3.ZERO]
+		var grab := func() -> void: seen[0] = _knight_feet(k)
+		k.skel.skeleton_updated.connect(grab)
+		var max_raise := 0.0
+		var rolled := false
+		var waited := 0.0
+		var hp0 := p.health
+		while k.stomp_results.size() == n0 and waited < 8.0:
+			if kind == "far":
+				p.global_position = hero_at      # holds its ground out past the wave's reach
+			if k.move_kind == AshenKnight.STOMP_MOVE and k.state == HollowSoldier.WINDUP:
+				max_raise = maxf(max_raise, (seen[0] as Vector3).x)
+			var w := k.last_wave
+			if kind == "roll" and not rolled and k.stomps > s0 and w != null and is_instance_valid(w):
+				var hd := Vector2(p.global_position.x - w.global_position.x, p.global_position.z - w.global_position.z).length()
+				if w.r > hd - 0.9:
+					p.stamina = p.stamina_max
+					var side := Vector3(dir.z, 0, -dir.x)
+					p.bot_input = Vector2(side.x, side.z)
+					p.bot_dodge = true
+					rolled = p.dodge_t >= 0.0
+			await get_tree().physics_frame
+			waited += get_physics_process_delta_time()
+		p.bot_input = Vector2.ZERO
+		k.skel.skeleton_updated.disconnect(grab)
+		var r: String = k.stomp_results[-1] if k.stomp_results.size() > n0 else "none"
+		var w2 := k.last_wave
+		var mr := w2.max_r if w2 != null and is_instance_valid(w2) else 0.0
+		reach[ph] = maxf(reach.get(ph, 0.0), mr)
+		print("BOT knightstomp: phase %d %s at %.1f m -> %s (stomps %d, boot raised %.2f m over the standing foot, wave reach %.1f m, hero hp %.0f -> %.0f, knight state %d)" % [ph, kind, off, r, k.stomps - s0, max_raise, mr, hp0, p.health, k.state])
+		res["%s%d" % [kind, ph]] = r
+		if k.stomps - s0 != 1:
+			return _combat_done(false, "the knight did not stomp (%s)" % kind)
+		if max_raise < 0.35 * ks:
+			return _combat_done(false, "the stomp's knee is not raised for a readable tell (%.2f m)" % max_raise)
+		if kind == "far" and p.health < hp0:
+			return _combat_done(false, "the wave hurt a hero beyond its reach")
+		if ph == 3 and kind == "stand":
+			var hz := k.last_hazard
+			if hz == null or not is_instance_valid(hz) or not hz.burning():
+				return _combat_done(false, "the phase-3 stomp left no burning ground")
+			while p.is_down():
+				await get_tree().physics_frame
+			# into the fire: it burns (on its far side from the giant)
+			p.global_position = hz.global_position + Vector3.UP * 0.1
+			var b0 := hz.burns
+			var hp1 := p.health
+			k.process_mode = Node.PROCESS_MODE_DISABLED   # only the fire, not the giant standing over it
+			await _ticks(150)
+			k.process_mode = Node.PROCESS_MODE_INHERIT
+			var b1 := hz.burns
+			print("BOT knightstomp: burning ground r %.2f m: hero stood in it -> burns %d, hp %.0f -> %.0f" % [hz.hazard_r(), b1 - b0, hp1, p.health])
+			if b1 - b0 < 1 or p.health >= hp1:
+				return _combat_done(false, "the burning ground did not burn a hero standing in it")
+			# out of it: no more burns, and it burns out and cools
+			p.global_position = hz.global_position + dir * (hz.hazard_r() + 2.0)
+			p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+			await _ticks(30)
+			var b2 := hz.burns
+			var guard := 0
+			while is_instance_valid(hz) and hz.burning() and guard < 2000:
+				await get_tree().physics_frame
+				guard += 1
+			print("BOT knightstomp: stepped out -> burns since %d; burning %s after %d frames" % [hz.burns - b2, is_instance_valid(hz) and hz.burning(), guard])
+			if hz.burns != b2:
+				return _combat_done(false, "the burning ground burnt a hero who stepped out")
+			if is_instance_valid(hz) and hz.burning():
+				return _combat_done(false, "the burning ground never burnt out")
+		await _ticks(30)
+	print("BOT knightstomp: results %s; wave reach P2 %.1f m, P3 %.1f m" % [res, reach.get(2, 0.0), reach.get(3, 0.0)])
+	if res.get("stand2", "") != "hit" or res.get("stand3", "") != "hit":
+		return _combat_done(false, "standing in the wave's path did not throw the hero down")
+	if not (res.get("roll2", "") in ["perfect", "dodged"]):
+		return _combat_done(false, "a roll as the front arrived did not pass through it")
+	if res.get("far2", "") != "miss":
+		return _combat_done(false, "the wave reached a hero beyond its range")
+	if reach.get(3, 0.0) <= reach.get(2, 0.0) * 1.2:
+		return _combat_done(false, "the phase-3 wave does not cover more ground")
+	var heard: int = fol.played.get("slam", 0) - played0.get("slam", 0)
+	if heard < 4:
+		return _combat_done(false, "the stomp is silent (slam played %d)" % heard)
+	_combat_done(true, "the stomp tells, stamps, sends a wave you roll through, and burns the ground in phase 3")
+
+## Right boot's height above the left (x), body-local; for the stomp's raised knee.
+func _knight_feet(k: AshenKnight) -> Vector3:
+	var sk := k.skel
+	if sk == null:
+		return Vector3.ZERO
+	var inv := k.body.global_basis.orthonormalized().inverse()
+	var at := func(nm: String) -> Vector3:
+		return inv * (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin)
+	var l: Vector3 = at.call("LeftFoot")
+	var r: Vector3 = at.call("RightFoot")
+	return Vector3(r.y - l.y, r.z - l.z, 0.0)
+
 func _knight_legs(k: AshenKnight) -> Vector3:
 	var sk := k.skel
 	if sk == null:

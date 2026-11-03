@@ -173,6 +173,11 @@ func hook_knight(k: Node) -> void:
 		k.leap_landed.connect(func(at: Vector3, _r: String) -> void:
 			_play("slam", at, 3.0, 0.7)
 			_play("boom", at, 0.0, 0.75))
+	# the stomp: the boot into the turf as a ground slam pitched right down, the boom under it
+	if k.has_signal("stomped"):
+		k.stomped.connect(func(at: Vector3) -> void:
+			_play("slam", at, 4.0, 0.55)
+			_play("boom", at, 2.0, 0.55))
 
 ## The Hollow Warden's targe, from recorded sets only: a blocked blow is the wood hit pitched
 ## down with a quiet iron ring over it; the ward knocked aside cracks with the wood hit, the

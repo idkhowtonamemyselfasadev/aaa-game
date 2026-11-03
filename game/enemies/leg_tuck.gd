@@ -8,18 +8,24 @@ const LEGS := [["mixamorig_LeftUpLeg", "mixamorig_LeftLeg"], ["mixamorig_RightUp
 
 var hip := 0.0               # radians the thighs swing forward
 var knee := 0.0              # radians the shins fold back from the thigh line
+var lift_hip := 0.0          # one leg only (lift_leg): the stomp's knee raised high
+var lift_knee := 0.0
+var lift_leg := 1            # index into LEGS (1 = right)
 var side: Node3D             # node whose +X is the bend axis and +Z is forward (the Body)
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
-	if skel == null or (absf(hip) < 1e-4 and absf(knee) < 1e-4):
+	if skel == null or (absf(hip) < 1e-4 and absf(knee) < 1e-4 and absf(lift_hip) < 1e-4 and absf(lift_knee) < 1e-4):
 		return
 	var axis_world := side.global_basis.x if side != null else Vector3.RIGHT
 	var axis_skel := (skel.global_basis.orthonormalized().inverse() * axis_world).normalized()
-	for leg in LEGS:
+	for i in LEGS.size():
+		var leg: Array = LEGS[i]
+		var lh := lift_hip if i == lift_leg else 0.0
+		var lk := lift_knee if i == lift_leg else 0.0
 		# rotating "down" about +X by +a swings it toward -Z, so forward is -a
-		_bend(skel, leg[0], axis_skel, -hip)
-		_bend(skel, leg[1], axis_skel, knee)
+		_bend(skel, leg[0], axis_skel, -(hip + lh))
+		_bend(skel, leg[1], axis_skel, knee + lk)
 
 func _bend(skel: Skeleton3D, bone: String, axis_skel: Vector3, angle: float) -> void:
 	var b := skel.find_bone(bone)

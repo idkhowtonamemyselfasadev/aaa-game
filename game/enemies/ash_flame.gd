@@ -3,7 +3,7 @@ extends Node3D
 ## One eruption of the Ashen Knight's burning ground (phase 3). The ground under the hero
 ## starts to glow: a ragged scorch with glowing fissures spreads through the turf and tightens for WARN s (the tell:
 ## step or roll out of it), then a column of flame and sparks bursts up out of it and scorches
-## anything still standing inside RADIUS. Dodge i-frames pass through it like any strike; the
+## anything still standing inside radius. Dodge i-frames pass through it like any strike; the
 ## heavy cannot deflect fire. Frees itself when the last smoke has gone.
 
 signal burst(at: Vector3)
@@ -16,6 +16,7 @@ const LIFE := 3.6
 
 var source: Node              # the knight (receive_attack's attacker)
 var player: Player
+var radius := RADIUS         # m: set before add_child (the knight scales it with its size)
 var t := 0.0
 var result := ""              # "" until the burst resolves, then hit / perfect / dodged / miss
 var _ring: Decal
@@ -34,7 +35,7 @@ func _ready() -> void:
 	# the tell is a Decal so it hugs the real turf (slopes, tussocks, stones) instead of a flat
 	# card floating over it: a charred scorch with glowing fissures and ember specks
 	_ring = Decal.new()
-	_ring.size = Vector3(RADIUS * 2.25, 1.6, RADIUS * 2.25)
+	_ring.size = Vector3(radius * 2.25, 1.6, radius * 2.25)
 	_ring.texture_albedo = _scorch_texture()
 	_ring.texture_emission = _ember_texture()
 	_ring.emission_energy = 0.0
@@ -54,7 +55,7 @@ func _ready() -> void:
 	# noise-edged teardrops) rather than soft discs, so it reads as fire and never whites out
 	_fire = _emitter(30, 0.6, Vector2(0.7, 1.15), Color(1.0, 0.6, 0.22), 1.2, true)
 	_fire.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_fire.emission_sphere_radius = RADIUS * 0.28
+	_fire.emission_sphere_radius = radius * 0.28
 	_fire.initial_velocity_min = 4.0
 	_fire.initial_velocity_max = 7.5
 	_fire.spread = 7.0
@@ -77,7 +78,7 @@ func _ready() -> void:
 	_fire.color_ramp = g
 	_sparks = _emitter(45, 1.3, Vector2(0.025, 0.05), Color(1.0, 0.6, 0.25), 4.0)
 	_sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_sparks.emission_sphere_radius = RADIUS * 0.3
+	_sparks.emission_sphere_radius = radius * 0.3
 	_sparks.initial_velocity_min = 5.0
 	_sparks.initial_velocity_max = 10.0
 	_sparks.spread = 22.0
@@ -104,8 +105,8 @@ func _ready() -> void:
 	_motes.explosiveness = 0.0
 	_motes.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
 	_motes.emission_ring_axis = Vector3.UP
-	_motes.emission_ring_radius = RADIUS * 0.85
-	_motes.emission_ring_inner_radius = RADIUS * 0.2
+	_motes.emission_ring_radius = radius * 0.85
+	_motes.emission_ring_inner_radius = radius * 0.2
 	_motes.emission_ring_height = 0.05
 	_motes.initial_velocity_min = 0.4
 	_motes.initial_velocity_max = 1.1
@@ -182,7 +183,7 @@ func _burst() -> void:
 	if player == null or player.is_dead():
 		return
 	var d := player.global_position - global_position
-	if Vector2(d.x, d.z).length() < RADIUS and absf(d.y) < 2.0:
+	if Vector2(d.x, d.z).length() < radius and absf(d.y) < 2.0:
 		result = player.receive_attack(source if source != null else self, DAMAGE, true, true)
 		if result == "hit":
 			player.add_shake(0.5)

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261028-0738-boulder-streaks.jpg",
-  "time": "2026-10-28T07:38:00Z",
-  "caption": "Meadow boulder at 15:00: thin dark rain runs now hang down from the crown over the lit shoulder; the shaded flank still goes near-black and the silhouette is still faceted.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-0825-knockdown-dust.jpg",
   "time": "2026-10-28T08:25:00Z",
   "caption": "The hero thrown on their back by the soldier's sweep at 15:30: a faint low cloud of soil dust now rises round the body where they landed, but it is thin and greyish and the hero is half lost in dark tall grass.",
@@ -891,6 +885,18 @@
   "file": "20261103-2134-knight-reveal-roar.jpg",
   "time": "2026-11-03T21:34:14Z",
   "caption": "Boss reveal, roar beat: letterboxed, the giant brandishes its glaive skyward with the ember blazing at its shoulders; still GL, backlit against the sun, and the arms do not rise high enough for a roar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2236-knight-stomp-tell.jpg",
+  "time": "2026-11-03T22:36:00Z",
+  "caption": "Phase-2 Ashen Knight with the right knee raised high for the stomp, the hero small in front; GL frame, the giant is backlit so the lifted leg reads only as a silhouette and the body leans back stiffly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-2236-knight-stomp-wave.jpg",
+  "time": "2026-11-03T22:36:00Z",
+  "caption": "Phase-3 stomp: a dust wall racing out over the meadow to the hero and the stamped ground burning under the giant; GL frame, the burning patch reads as a dark disc with a dome of flame, not yet a convincing ground fire.",
   "verdict": "fail"
  }
 ]

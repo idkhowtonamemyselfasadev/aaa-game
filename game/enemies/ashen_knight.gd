@@ -42,9 +42,9 @@ const TEMPO := [1.0, 0.95, 0.9]   # bigger = heavier: longer wind-ups and recove
 const PHASES := [
 	{"scale": 2.2, "tempo": 1.0, "damage": 1.0, "attacks": ["thrust", "sweep"],
 		"mechanic": "ember guard: light strikes are turned aside while it stalks"},
-	{"scale": 3.2, "tempo": 0.95, "damage": 1.35, "attacks": ["thrust", "sweep", "ember leap"],
+	{"scale": 3.2, "tempo": 0.95, "damage": 1.35, "attacks": ["thrust", "sweep", "ember leap", "stomp"],
 		"mechanic": "unblockable red glint; a hero hanging back gets the leap"},
-	{"scale": 4.6, "tempo": 0.9, "damage": 1.7, "attacks": ["thrust", "sweep", "ember leap", "eruptions"],
+	{"scale": 4.6, "tempo": 0.9, "damage": 1.7, "attacks": ["thrust", "sweep", "ember leap", "stomp", "burning ground", "eruptions"],
 		"mechanic": "the turf under the hero smoulders and erupts every 4 s"},
 ]
 const NAME := "The Ashen Knight"
@@ -66,11 +66,31 @@ const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes dow
 const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
 ## leap heave: both hands up over the helm, the blade laid back behind the head
 const LEAP_HEAVE := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+## the stomp's boot hit the ground (foley: a ground slam with the boom under it)
+signal stomped(at: Vector3)
 ## the reveal's roar: the glaive brandished skyward on its right, blade up, both hands high
 const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
 const TUCK_KNEE := 1.75           # rad the shins fold back
+## STOMP (phases 2 and 3, its answer to a hero crowding its shins): the weight goes onto the
+## left leg, the right knee comes up high to the chest and hangs there shuddering (the tell),
+## then the boot comes down and a shockwave of torn turf races out across the ground. Roll
+## through the front as it reaches you. In phase 3 the stamped ground stays on fire.
+const STOMP_MOVE := 4
+const STOMP_RAISE_T := 0.55       # brain-time s to lift the knee
+const STOMP_HOLD_T := 0.5         # held up, shuddering
+const STOMP_T := 0.14             # the boot coming down
+const STOMP_RECOVER_T := 1.0
+const STOMP_HIP := 1.45           # rad the right thigh comes up
+const STOMP_KNEE := 1.55          # rad the shin folds under it
+const STOMP_CLOSE := 2.6          # m (x size): a hero this close in phase 2+ gets the stomp
+const STOMP_COOL := 6.0           # brain-time s between stomps
+const STOMP_R := 4.0              # m (x size): how far the wave runs
+const STOMP_SPEED := 4.2          # m/s (x sqrt size): how fast the front travels
+const STOMP_DAMAGE := 22.0
+const STOMP_FOOT := Vector3(-0.13, 0.0, 0.12)   # body-local: where the right boot lands
+const HAZARD_T := 6.0             # s the phase-3 stomp's ground stays burning
 
 signal phase_changed(phase: int)
 ## a light blow turned aside by the ember guard (foley: a ringing clang on the shaft)
@@ -118,6 +138,11 @@ var intros := 0                  # bots
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
 var grow_peak_shake := 0.0       # bots
+var stomps := 0                  # bots
+var stomp_results: Array[String] = []
+var last_wave: Shockwave         # bots
+var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
+var _stomp_cool := 0.0
 
 func _ready() -> void:
 	health_max = KNIGHT_HP
@@ -169,6 +194,7 @@ func return_to_post() -> void:
 	set_size_scale(growth.scale_of(1))
 	_surge = -1.0
 	_leap_cool = 0.0
+	_stomp_cool = 0.0
 	leap_lift = 0.0
 	if rags != null:
 		rags.stream = 0.0
@@ -310,7 +336,10 @@ func _physics_process(delta: float) -> void:
 	if flying and state == STRIKE:
 		global_position.y = _ground(global_position) + 0.05
 		velocity.y = 0.0
-	if not (move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
+	if tuck != null and not (move_kind == STOMP_MOVE and state in [WINDUP, STRIKE, RECOVER]):
+		tuck.lift_hip = 0.0
+		tuck.lift_knee = 0.0
+	if not (move_kind in [LEAP_MOVE, STOMP_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
 			_wield.position.y = 0.0
@@ -338,6 +367,7 @@ func _physics_process(delta: float) -> void:
 				set_size_scale(growth.to_scale)
 		return
 	_leap_cool = maxf(_leap_cool - delta * tempo, 0.0)
+	_stomp_cool = maxf(_stomp_cool - delta * tempo, 0.0)
 	if phase == 3 and state != IDLE and _player != null and not _player.is_dead():
 		_flame_t += delta
 		if _flame_t >= FLAME_EVERY:
@@ -378,6 +408,7 @@ func spawn_flame(at: Vector3) -> AshFlame:
 
 func _flame_at(at: Vector3, harms: bool) -> AshFlame:
 	var f := AshFlame.new()
+	f.radius = AshFlame.RADIUS * sqrt(size_scale / growth.scale_of(1))
 	f.source = self
 	f.player = _player if harms else null
 	get_parent().add_child(f)
@@ -408,6 +439,13 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 		return to.normalized() * STALK_SPEED * 0.35
 	return super._stalk(to, dist)
 
+## A hero crowding its shins in phase 2+ gets the stomp (when it is ready).
+func _choose(dist: float) -> int:
+	if force_move == STOMP_MOVE or (force_move < 0 and phase >= 2 and _stomp_cool <= 0.0 \
+			and dist < STOMP_CLOSE * size_scale):
+		return STOMP_MOVE
+	return super._choose(dist)
+
 func leaps_landed() -> int:
 	return leap_results.size()
 
@@ -432,6 +470,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		rags.air_y = 0.0
 	if move_kind == INTRO_MOVE:
 		return _intro_tick(delta, to)
+	if move_kind == STOMP_MOVE:
+		return _stomp_tick(delta, to)
 	if move_kind != LEAP_MOVE:
 		return super._special_tick(delta, to, dist)
 	var move := Vector3.ZERO
@@ -553,6 +593,104 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
 
+## The stomp: weight over onto the left leg as the right knee comes up to the chest, held
+## there shuddering with the ember flaring (the tell), the boot driven down, the ground wave.
+func _stomp_tick(delta: float, to: Vector3) -> Array:
+	var lean := 0.0
+	var sink := 0.0
+	var ember := 1.0
+	var lift := 0.0
+	match state:
+		WINDUP:
+			var hold := STOMP_RAISE_T + STOMP_HOLD_T
+			# it keeps turning onto the hero while the knee comes up, not once it hangs there
+			if t < STOMP_RAISE_T:
+				_turn_to(to, delta, 4.0)
+			var u := smoothstep(0.0, STOMP_RAISE_T, t)
+			lift = u
+			# up a touch onto the standing leg and back over it, the glaive drawn in
+			lean = -0.12 * u
+			sink = -0.04 * u
+			_pose = _lerp_pose(_from, guard_pose, u)
+			var shud := smoothstep(STOMP_RAISE_T * 0.8, STOMP_RAISE_T, t)
+			lift += 0.03 * sin(t * 47.0) * shud
+			ember = 1.0 + 3.0 * u
+			if t >= hold:
+				_resolved = false
+				strikes += 1
+				_from = _pose
+				_enter(STRIKE)
+		STRIKE:
+			var u := clampf(t / STOMP_T, 0.0, 1.0)
+			# driven down: accelerating, the body following it over and down
+			lift = 1.0 - u * u
+			lean = lerpf(-0.12, 0.16, u)
+			sink = lerpf(-0.04, 0.12, u * u)
+			ember = 4.0 + 2.0 * u
+			if u >= 1.0:
+				if not _resolved:
+					_resolved = true
+					_stomp_land()
+				_from = _pose
+				_enter(RECOVER)
+		RECOVER:
+			var u := clampf(t / STOMP_RECOVER_T, 0.0, 1.0)
+			var f := smoothstep(0.3, 1.0, u)
+			# the jolt comes up through it (a small bounce off the stamped leg), then it settles
+			lean = 0.16 * (1.0 - f)
+			sink = 0.12 * (1.0 - f) + 0.03 * sin(PI * clampf(u / 0.3, 0.0, 1.0))
+			ember = 6.0 - 5.0 * f
+			if u >= 1.0:
+				_enter(STALK)
+	if tuck != null:
+		tuck.lift_leg = 1
+		tuck.lift_hip = STOMP_HIP * lift
+		tuck.lift_knee = STOMP_KNEE * lift
+	if _wield != null:
+		_wield.position.y = -sink
+	return [Vector3.ZERO, lean, sink, ember]
+
+func stomp_foot() -> Vector3:
+	var p := body.to_global(STOMP_FOOT)
+	p.y = _ground(p)
+	return p
+
+## The boot hits the ground: the shockwave runs out from it; in phase 3 the ground it stamped
+## stays on fire.
+func _stomp_land() -> void:
+	stomps += 1
+	_stomp_cool = STOMP_COOL
+	var at := stomp_foot()
+	var k := size_scale / growth.scale_of(1)
+	stomped.emit(at)
+	ImpactFX.spawn(get_parent(), at + Vector3.UP * 0.1, Vector3.UP, "dirt", 2.0 + 0.3 * size_scale)
+	if _player != null:
+		_player.add_shake(0.5 + 0.08 * size_scale)
+	var w := Shockwave.new()
+	w.source = self
+	w.player = _player
+	w.terrain = _terrain_ref
+	w.max_r = STOMP_R * size_scale
+	w.speed = STOMP_SPEED * sqrt(size_scale) * tempo
+	w.damage = STOMP_DAMAGE * damage_mul
+	w.ember = phase >= 3
+	get_parent().add_child(w)
+	w.global_position = at
+	w.passed.connect(func(r: String) -> void:
+		stomp_results.append(r)
+		last_result = r
+		struck.emit(r))
+	last_wave = w
+	if phase >= 3:
+		var sc := Scorch.new()
+		sc.size_k = k
+		sc.hazard_t = HAZARD_T
+		sc.player = _player
+		sc.source = self
+		get_parent().add_child(sc)
+		sc.global_position = at
+		last_hazard = sc
+
 func _set_tuck(h: float, k: float) -> void:
 	if tuck != null:
 		tuck.hip = h
@@ -581,6 +719,7 @@ func _resolve_leap() -> void:
 	ImpactFX.spawn(get_parent(), b + Vector3.UP * 0.1, Vector3.DOWN, "dirt", 1.8 + 0.3 * size_scale)
 	# the ember-hot edge scorches the turf where it bit: a burnt star with glowing cracks
 	var sc := Scorch.new()
+	sc.size_k = size_scale / growth.scale_of(1)
 	get_parent().add_child(sc)
 	sc.global_position = b
 	last_scorch = sc

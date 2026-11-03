@@ -2263,6 +2263,34 @@ func _ready() -> void:
 				foe._kindle_sparks.preprocess = 0.8
 				foe._kindle_sparks.restart()
 			print("SHOT kindler chanting %s t %.2f stream %s, warden kindled %.1f" % [kn.chanting(), kn.t, kn._stream.emitting, foe.kindled])
+		if "knight" in args and "stomp" in args:
+			# stomp (with g2/g3): the knee up at u= of the raise+hold; "wave": on past the stamp,
+			# the shockwave caught wt= s out (default 0.5)
+			var ksm: AshenKnight = foe
+			ksm._player = player
+			ksm.intro_seen = true
+			ksm._flame_t = -999.0
+			ksm.state = HollowSoldier.STALK
+			ksm._from = ksm._pose
+			ksm.move_kind = AshenKnight.STOMP_MOVE
+			ksm._enter(HollowSoldier.WINDUP)
+			var wt := 0.5
+			for a2 in args:
+				if a2.begins_with("wt="):
+					wt = float(a2.substr(3))
+			for i in 600:
+				ksm._physics_process(dt)
+				if "wave" in args:
+					if ksm.last_wave != null and is_instance_valid(ksm.last_wave):
+						if ksm.last_wave.t >= wt:
+							break
+						ksm.last_wave._process(dt)
+				elif ksm.state == HollowSoldier.WINDUP and ksm.t >= foe_u * (AshenKnight.STOMP_RAISE_T + AshenKnight.STOMP_HOLD_T):
+					break
+			ksm.set_physics_process(false)
+			if ksm.last_wave != null and is_instance_valid(ksm.last_wave):
+				ksm.last_wave.set_process(false)
+			print("SHOT knight stomp state %d t %.2f lift %.2f wave %s" % [ksm.state, ksm.t, ksm.tuck.lift_hip if ksm.tuck else 0.0, ksm.last_wave.r if ksm.last_wave != null and is_instance_valid(ksm.last_wave) else -1.0])
 		if "knight" in args and "leap" in args:
 			# leap: phase 2, the knight sprung from 7.7 m off, caught at u= of its airtime
 			var kl: AshenKnight = foe
