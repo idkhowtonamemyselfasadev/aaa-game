@@ -1036,13 +1036,29 @@ func _ready() -> void:
 						var ktry: Vector3 = kbase.rotated(Vector3.UP, deg_to_rad(8.0 * kstep))
 						if ktry.dot(kfwd) < 0.35:
 							continue
-						var kcam: Vector3 = kq + ktry * 5.6
+						var kcam: Vector3 = kq + ktry * 7.4
 						kdir = ktry
 						if Vector2(kcam.x - kpost.x, kcam.z - kpost.z).length() >= 3.5:
 							break
-					var kcam_at: Vector3 = kq + kdir * 5.6
+					var kcam_at: Vector3 = kq + kdir * 7.4    # (09:25 11-03: 5.6 left the warden off the right edge)
 					print("SHOT kfront sun.fwd %.2f sun.side %.2f lens.fwd %.2f lens.sun %.2f post %.1f m" % [ksun.dot(kfwd), ksun.dot(kside), kdir.dot(kfwd), kdir.dot(ksun), Vector2(kcam_at.x - kpost.x, kcam_at.z - kpost.z).length()])
-					SPOTS[spot] = [kcam_at, kq.lerp(fp, 0.33) + Vector3.UP * 1.6]
+					# (09:10 11-03: the 08:10 frame had the hero standing between the lens and the
+					# warden, filling the right third with the warden off the edge. Put the hero
+					# behind the camera, 2.4 m back along the view line and a little to the warden's
+					# side, re-face the warden at it, and look 45% of the way to the warden so the
+					# burning warden takes the right of the frame instead of the hero.)
+					var klook: Vector3 = kq.lerp(fp, 0.5)
+					var kview := Vector3(klook.x - kcam_at.x, 0, klook.z - kcam_at.z).normalized()
+					var kright := kview.cross(Vector3.UP)
+					if kright.dot(fp - kq) < 0.0:
+						kright = -kright
+					var khero: Vector3 = kcam_at - kview * 2.4 + kright * 0.8
+					player.global_position = Vector3(khero.x, terrain.height_at(khero.x, khero.z) + 0.05, khero.z)
+					player.body.rotation.y = atan2(fp.x - khero.x, fp.z - khero.z)
+					foe.face(player.global_position)
+					var kpp := player.global_position - kcam_at
+					print("SHOT kfront hero %.1f m behind the lens (dot %.2f)" % [kpp.length(), Vector3(kpp.x, 0, kpp.z).normalized().dot(kview)])
+					SPOTS[spot] = [kcam_at, klook + Vector3.UP * 1.6]
 			if "flight" in args:
 				# the arrow in the air between them: square on to the flight line, a little back
 				SPOTS[spot] = [mid + side * 4.2 + Vector3.UP * 0.1, mid + Vector3.UP * 1.3]

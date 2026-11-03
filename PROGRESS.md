@@ -37,6 +37,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(09:30 11-03) Kindler close-up composed: hero moved behind the lens, burning warden and Kindler share the frame (bots `kindler` `warden` `harrier` PASS).**
 - **(08:10 11-03) Kindler close-up front-lit: it now chants into the sun (bots `kindler` `harrier` `warden` PASS).**
   Diagnosis: the Kindler body DOES face the warden (shot log `body.fwd vs warden line 1.00`; a headless bone check
   confirmed the Vanguard's toes point along body +Z despite the PI model turn). The "reads from behind" was light:
@@ -6771,6 +6772,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:30 11-03) **`kfront` hero out of the lens DONE.** `shot.gd` `kfront` now puts the hero 2.4 m behind the camera
+   (0.8 m toward the warden's side), re-faces the warden at it, backs the lens off to 7.4 m (was 5.6) and looks halfway
+   Kindler -> warden; shot log prints `SHOT kfront hero N m behind the lens`. GL frames `soldier kfront8`/`kfront9 20
+   13.5 fixfps warden kindler kfront u=0.75` SEEN: kfront8 (5.6 m) had no hero but the warden still off the right edge
+   behind a fence post; kfront9 (7.4 m) has the kindled warden with glowing cracks large in the right foreground and the
+   Kindler chanting behind with the thread joining them -- gallery `kindler-warden` FAIL only because the warden's
+   sackcloth hood/tabard reads flat and coarse up close (and GL draws square spark sprites). Audio 0b-e open item
+   unchanged: freesound.org / opengameart.org / kenney.nl still refused by the proxy.
+   NEXT, in order: (0) Hollow cloth up close: give the warden/Kindler hood + tabard a real woven-cloth normal/roughness
+   (procedural weave + fray, folds) so the close-up stops reading as flat sacking; one Forward+ attempt of `kfront9`;
+   (0a) render the reframed `harrier coif` and break the pot silhouette; (0b) Forward+ frame of `soldier X 40 16.5
+   fixfps knight leap scorched cooled u=0.35`, `sentinel awake` at dusk, the sunlit `slam`; a Sentinel pair at the
+   Shrine of Binding; (1) Forward+ frame of `wisps wisps_cower`; (2) archer peek frame, `flight` fixes, hewer `bite`.
 0. (08:10 11-03) **Kindler front-lit DONE (see Done).** NEXT, in order: (0) `kfront`: put the hero out of the lens
    (step the hero 3 m aside off the camera line, or swing the lens 25-30 deg so the warden enters the frame edge
    and the hero falls behind the camera), then one Forward+ attempt of it; (0a) render the reframed `harrier coif`

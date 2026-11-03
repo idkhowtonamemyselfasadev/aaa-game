@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261027-1851-night-band-debug.jpg",
-  "time": "2026-10-27T18:51:43Z",
-  "caption": "Debug render with the mountain ring painted yellow: the pale band sits in front of the ring, a wood's canopy 60-180 m out, brighter than the night ring behind it.",
-  "verdict": "fail"
- },
- {
   "file": "20261027-1851-night-canopy-band.jpg",
   "time": "2026-10-27T18:51:43Z",
   "caption": "Night timber house: firefly light now a small faint glint on the near tuft; the pale band over the far ridge right of the village is still there (it is moonlit tree canopy, not snow).",
@@ -897,6 +891,12 @@
   "file": "20261103-0810-kindler-sunfront.jpg",
   "time": "2026-11-03T08:10:20Z",
   "caption": "The Hollow Kindler now chants into the sun, front-lit, with its face under the hood and the ember stream pouring from its spear tip; but the hero fills the right third and the burning warden is off the right edge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261103-0930-kindler-warden.jpg",
+  "time": "2026-11-03T09:30:00Z",
+  "caption": "Kindler close-up with the hero moved behind the lens: the white-hot kindled warden with glowing cracks fills the foreground and the Kindler chants behind it, the ember thread joining spear tip to warden; still wrong: the warden's sackcloth hood and tabard read flat and coarse at this range, and the GL frame shows square spark sprites.",
   "verdict": "fail"
  }
 ]
