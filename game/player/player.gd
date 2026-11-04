@@ -101,6 +101,9 @@ var climbs := 0                       # faces caught (bots read this)
 var mantles := 0                      # ledges hauled up onto (bots read this)
 var wall_jumps := 0                   # kicks off a face (bots read this)
 var _wj_t := -1.0                     # s since the kick off a face (-1: none)
+var false_drops := 0                  # catches that let go at once, the face gone under the hands (bots read this)
+var refused_grabs := 0                # catches refused: a loose stone, not a face, met the reach (bots read this)
+var _climb_t := 0.0                   # s on the current face
 var _wj_yaw := Vector2.ZERO           # (from, to) body yaw of the twist off the face
 var climbed := 0.0                    # metres moved on faces (bots read this; drives the reach cycle)
 var climb_rate := 0.0                 # m/s moved on the face last tick (bots read this)
@@ -1215,6 +1218,27 @@ func _ledge_top(n: Vector3, reach_up: float) -> Variant:
 		return null
 	return top
 
+## How many of the climb's hip/chest/shoulder rays meet one steep face along -n from here.
+## A loose stone in a scree heap can meet the chest's reach ray on its own; a face that can be
+## climbed meets at least two of the three about as far off as each other (a stone with a
+## post behind it gives hits at two depths, not one face), so the hands only close on that.
+func _face_rays(n: Vector3) -> int:
+	var flat := Vector3(n.x, 0.0, n.z).normalized()
+	var depths: Array[float] = []
+	for h: float in [0.7, 1.1, 1.5]:
+		var o := global_position + Vector3.UP * h
+		var hit := _ray(o, o - flat * (CLIMB_REACH + 0.45))
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.15:
+			depths.append((o - (hit["position"] as Vector3)).dot(flat))
+	var best := 0
+	for a in depths:
+		var k := 0
+		for b in depths:
+			if absf(a - b) < 0.4:
+				k += 1
+		best = maxi(best, k)
+	return best
+
 ## In the air with the stick pushed at a steep face: catch hold, or vault a waist-high ledge.
 func _try_grab(wish: Vector3) -> bool:
 	if stamina < 4.0 or dead_t >= 0.0:
@@ -1227,7 +1251,11 @@ func _try_grab(wish: Vector3) -> bool:
 			if top != null:
 				_start_mantle(top, n)
 				return true
-			_start_climb((Vector3(n.x, 0.0, n.z).normalized() - wish).normalized())
+			var cn := (Vector3(n.x, 0.0, n.z).normalized() - wish).normalized()
+			if _face_rays(cn) < 2:
+				refused_grabs += 1
+				return false
+			_start_climb(cn)
 			return true
 		return false
 	var knee := _ray(global_position + Vector3.UP * 0.5, global_position + Vector3.UP * 0.5 + wish * CLIMB_REACH)
@@ -1241,7 +1269,11 @@ func _try_grab(wish: Vector3) -> bool:
 			# no top within reach: a tall face whose foot juts out (a battered wall, a
 			# leaning crag) meets the shins before the chest; catch it all the same
 			if _jumped:
-				_start_climb((Vector3(n2.x, 0.0, n2.z).normalized() - wish).normalized())
+				var cn2 := (Vector3(n2.x, 0.0, n2.z).normalized() - wish).normalized()
+				if _face_rays(cn2) < 2:
+					refused_grabs += 1
+					return false
+				_start_climb(cn2)
 				return true
 	return false
 
@@ -1256,6 +1288,7 @@ func _start_climb(n: Vector3) -> void:
 	climbing = true
 	climb_normal = n
 	climbs += 1
+	_climb_t = 0.0
 	_lunge_t = -1.0
 	velocity = Vector3.ZERO
 	for i in 2:
@@ -1344,6 +1377,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	# feel the face with three rays at hip, chest and shoulder along the facing; rough
 	# masonry turns every stone end a different way, so the face normal is their average,
 	# eased in, and the gap is the nearest stone
+	_climb_t += delta
 	var n := climb_normal
 	var sum := Vector3.ZERO
 	var gap := INF
@@ -1360,6 +1394,8 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		if top != null:
 			_start_mantle(top, n)
 		else:
+			if _climb_t < 0.2:
+				false_drops += 1
 			_let_go(0.5, 0.4)
 		return
 	n = n.slerp(sum.normalized(), 1.0 - exp(-5.0 * delta)).normalized()

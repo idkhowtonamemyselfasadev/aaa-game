@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -181,6 +181,9 @@ func _ready() -> void:
 		return
 	if name == "jump":
 		_jump_test()
+		return
+	if name == "scree":
+		_scree_test()
 		return
 	if name == "glide":
 		_glide_test()
@@ -623,6 +626,78 @@ func _combat_done(ok: bool, why: String) -> void:
 ## Jump: tap = short hop, hold = full jump; coyote time off a ledge, a buffered press fires on
 ## touchdown, a sprint leap carries further than a run leap, the legs tuck on the rise, the
 ## knees give on landing (deeper after a real drop), and only a real height hurts.
+## Scree: a loose stone at chest height (the heaps at the keep's foot) meets the jump's
+## reach ray on its own; the hands must not close on it (a catch that drops at once), while
+## a real face beside it is still caught and held.
+func _scree_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	var base := p.global_position
+	# side-on to the hero's facing: clear of the practice post ahead of the spawn
+	var fwd := Vector3(cos(p.body.rotation.y), 0, -sin(p.body.rotation.y))
+	var bodies := []
+	for k in 2:
+		var sb := StaticBody3D.new()
+		var cs := CollisionShape3D.new()
+		var bx := BoxShape3D.new()
+		# 0: a lone 0.45 m stone at chest height; 1: a 4 m face of a wall
+		bx.size = Vector3(0.45, 0.32, 0.24) if k == 0 else Vector3(3.0, 4.0, 0.6)
+		cs.shape = bx
+		sb.add_child(cs)
+		_world.add_child(sb)
+		sb.global_position = base + fwd * (0.67 if k == 0 else 0.9) + Vector3.UP * (1.45 if k == 0 else 2.0)
+		sb.look_at(sb.global_position + fwd, Vector3.UP)
+		sb.visible = false
+		bodies.append(sb)
+	bodies[1].get_child(0).disabled = true
+	var results := []
+	for k in 2:
+		bodies[k].get_child(0).disabled = false
+		bodies[1 - k].get_child(0).disabled = true
+		await _ticks(4)
+		p.global_position = base
+		p.velocity = Vector3.ZERO
+		p.stamina = p.stamina_max
+		for i in 60:
+			await get_tree().physics_frame
+			if p.is_on_floor():
+				break
+		var c0 := p.climbs + p.mantles
+		var f0 := p.false_drops
+		var r0 := p.refused_grabs
+		p.bot_jump = true
+		p.bot_jump_hold = true
+		var held := 0.0
+		var t := 0.0
+		while t < 1.6:
+			p.bot_input = Vector2(0, -1) if p.climbing else _input_toward(base + fwd * 3.0)
+			await get_tree().physics_frame
+			t += 1.0 / 60.0
+			if p.climbing:
+				held += 1.0 / 60.0
+				if k == 1 and held > 0.5:
+					break
+		p.bot_jump_hold = false
+		p.bot_input = Vector2.ZERO
+		print("BOT scree: %s: catches %d, dropped at once %d, refused %d, held %.2f s" % [["lone stone", "wall face"][k], p.climbs + p.mantles - c0, p.false_drops - f0, p.refused_grabs - r0, held])
+		results.append([p.climbs + p.mantles - c0, p.false_drops - f0, p.refused_grabs - r0, held])
+		if p.climbing:
+			p.bot_dodge = true
+			await _ticks(10)
+		await _ticks(40)
+	for sb in bodies:
+		sb.queue_free()
+	if results[0][0] > 0:
+		return _combat_done(false, "the hands caught a lone stone at chest height (a false catch)")
+	if results[0][2] == 0:
+		return _combat_done(false, "the jump never reached the lone stone (test set-up)")
+	if results[1][0] == 0 or results[1][3] < 0.5:
+		return _combat_done(false, "a real wall face was not caught and held")
+	if results[1][1] > 0:
+		return _combat_done(false, "the wall face dropped the hero at once")
+	_combat_done(true, "a loose stone is refused, a wall face is caught")
+
 func _jump_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0                    # the 0.12 s windows need real-time ticks
@@ -8653,6 +8728,8 @@ func _climb_test() -> void:
 		return _combat_done(false, "shot up the face far faster than a climb")
 	if p.mantles == 0:
 		return _combat_done(false, "never hauled up over the crown")
+	if p.false_drops > 0:
+		return _combat_done(false, "a catch let go at once (%d): the face was not under the hands" % p.false_drops)
 	if p.global_position.y < crown - 0.9 or rr < 2.9 or rr > 4.9:
 		return _combat_done(false, "not standing on the wall top after the haul-up")
 	if not p.is_on_floor() or p.climbing:

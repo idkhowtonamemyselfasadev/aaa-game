@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261029-0544-roadmeet-woolhose.jpg",
-  "time": "2026-10-29T05:44:00Z",
-  "caption": "Wat and Hild on the cart track: their legs and waists now read as matte grey wool hose instead of glossy black plate greaves; still wrong: the armoured base body's bulky knee cops and boots keep the silhouette, and from this verge they still face away so no faces read.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-0745-roadmeet-slim.jpg",
   "time": "2026-10-29T07:45:00Z",
   "caption": "Wat and Hild meeting on the cart track at 11:00 with the base body's plates and iron sunk 2-3.5 cm into the body and the leg wraps hugging the slimmer limb (no tearing or holes seen); still wrong: from this verge at 11:00 the sun is behind them so both read as dark backlit silhouettes, faces unreadable, and knees/boots still read heavy.",
@@ -897,6 +891,12 @@
   "file": "20261104-0756-wallkick-flight.jpg",
   "time": "2026-11-04T07:56:13Z",
   "caption": "Kick off the keep face 0.25 s in (GL): twisted round to face the flight, knees gathering, staff on the back. The leap reads, but it is a procedural pose over the clip with no mocap.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0825-wallkick-scree.jpg",
+  "time": "2026-11-04T08:25:00Z",
+  "caption": "The hero 0.15 s into a kick off the keep's face above the scree heap (GL quick look); loose stones like these no longer give a false catch, but the kick still reads as an upright stand with raised arms, not legs driving off the stones.",
   "verdict": "fail"
  }
 ]
