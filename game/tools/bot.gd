@@ -744,9 +744,21 @@ func _pivot_test() -> void:
 		var back := 0.0
 		var flat := 0.0
 		var sole_max := 0.0
+		var lead_max := 0.0
+		p.crumple.probe = PackedStringArray(["mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg"])
+		p.crumple.probed = {}
 		for i in 60:
 			p.bot_input = Vector2(0, mag)
 			await get_tree().physics_frame
+			if p.pivot_t >= 0.0 and p.crumple.probed.size() == 4:
+				# how far the shoulder line has wound round ahead of the hip line (skeleton space, about up)
+				var up: Vector3 = (p.crumple.frame.inverse() * Vector3.UP).normalized()
+				var sh: Vector3 = p.crumple.probed["mixamorig_LeftArm"] - p.crumple.probed["mixamorig_RightArm"]
+				var hp: Vector3 = p.crumple.probed["mixamorig_LeftUpLeg"] - p.crumple.probed["mixamorig_RightUpLeg"]
+				sh -= up * sh.dot(up)
+				hp -= up * hp.dot(up)
+				var ang := atan2(hp.cross(sh).dot(up), hp.dot(sh)) * signf(p._pivot_turn)
+				lead_max = maxf(lead_max, ang)
 			var turned := absf(wrapf(p.body.rotation.y - yaw0, -PI, PI))
 			if turned < last - 0.02:
 				backsteps += 1
@@ -761,7 +773,10 @@ func _pivot_test() -> void:
 				flat = maxf(flat, p.crumple.sole_flat)
 		var face := p.body.global_basis.z.dot(-run_dir)
 		await _ticks(20)
-		results.append([p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, face, p.crumple.leg_aim, p.pivot_t])
+		p.crumple.probe = PackedStringArray()
+		var upper_left := absf(p.crumple.chest_twist) + absf(p.crumple.arm_sweep) + absf(p.crumple.clasp) + absf(p.crumple.head_turn)
+		print("BOT pivot upper body: twist peak %.2f (turn sign %+.0f), head peak %.2f, head half-turned at u %.2f, body at u %.2f, shoulders wound ahead of the hips %.2f rad, left over %.3f" % [p.pivot_twist_peak, signf(p._pivot_turn), p.pivot_head_peak, p.pivot_head_lead, p.pivot_body_lead, lead_max, upper_left])
+		results.append([p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, face, p.crumple.leg_aim, p.pivot_t, p.pivot_twist_peak * signf(p._pivot_turn), p.pivot_head_lead, p.pivot_body_lead, lead_max, upper_left])
 		print("BOT pivot: stick %.1f at %.1f m/s: pivots %d, back to speed in %.2f s, skid %.2f m, yaw backsteps %d, knee %.2f, dip %.2f, lean back %.3f, sole %.2f, facing %.2f, after leg_aim %.2f" % [mag, v_run, p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, flat, face, p.crumple.leg_aim])
 		p.bot_input = Vector2.ZERO
 		await _ticks(60)
@@ -784,6 +799,14 @@ func _pivot_test() -> void:
 		return _combat_done(false, "the pivot pose lingers after (%.2f)" % r[8])
 	if (results[1] as Array)[0] != 0:
 		return _combat_done(false, "a walk pivots like a run")
+	if r[10] < 0.4:
+		return _combat_done(false, "the chest does not wind into the turn (%.2f)" % r[10])
+	if r[11] <= 0.0 or r[11] >= r[12]:
+		return _combat_done(false, "the head does not lead the body round (head u %.2f, body u %.2f)" % [r[11], r[12]])
+	if r[13] < 0.15:
+		return _combat_done(false, "the shoulders do not wind ahead of the hips on the skeleton (%.2f rad)" % r[13])
+	if r[14] > 0.0:
+		return _combat_done(false, "the pivot's upper-body twist lingers after (%.3f)" % r[14])
 	_combat_done(true, "reversing at a run plants, skids, spins over the planted foot and drives off the other way; a walk turns as before")
 
 func _combat_done(ok: bool, why: String) -> void:

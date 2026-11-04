@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261029-1400-roadmeet-hildface.jpg",
-  "time": "2026-10-29T14:00:00Z",
-  "caption": "Hild on the road at 16:30 with her own face, eyes and nose now lit in the hood above a bleached linen wimple instead of a dark face cloth; the wimple's hem still shows as a pale ragged edge on her chest and her forearms still read as grey plate.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-1430-roadmeet-hildchin.jpg",
-  "time": "2026-10-29T14:30:00Z",
-  "caption": "Hild's face now runs down past a mouth with lips to a rounded chin, the linen wimple passing under it at the throat instead of masking her mouth; the face still reads long and flat-sided, a dark gap shows beside her jaw in the hood, and a pale scrap still shows at the collar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-1530-roadmeet-hildjaw.jpg",
-  "time": "2026-10-29T15:30:00Z",
-  "caption": "Hild on the road at 16:30: the linen wimple now rises up her jaw to meet the hood, closing the dark gap by her right cheek; the face still reads flat and long like a mask, a pale linen scrap shows at the collar and the arms read as grey plate.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-1630-roadmeet-hildround.jpg",
   "time": "2026-10-29T16:30:00Z",
   "caption": "Hild on the road at 16:30 with a rounder face: a broader jaw, fuller cheeks that round off instead of ending in a cut edge, and soft folds by the mouth; the face still reads too smooth and flat at this distance, a pale scrap still shows at the collar and her forearms still read as grey plate.",
@@ -897,6 +879,18 @@
   "file": "20261104-1430-run-pivot.jpg",
   "time": "2026-11-04T14:30:00Z",
   "caption": "GL quick-look: the hero 0.17 s into the new run pivot, spinning over the planted foot; the lens sits behind the run line and the cottage shadow covers the body, so the crouch and the lead leg cannot be read, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1530-pivot-midspin.jpg",
+  "time": "2026-11-04T15:30:00Z",
+  "caption": "GL quick-look: the hero mid run-pivot (0.17 s after the plant), chest wound round ahead of the hips and both arms flung wide across the turn, now lit and framed by the new pivotlens; the legs are lost in the tall grass and it is not a Forward+ frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1530-pivot-plant.jpg",
+  "time": "2026-11-04T15:30:00Z",
+  "caption": "GL quick-look: the plant of the run pivot from behind, head and shoulders already turning toward the new line while the hips still face the old one; tall grass hides the skid foot, not Forward+.",
   "verdict": "fail"
  }
 ]

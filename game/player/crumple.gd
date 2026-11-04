@@ -34,6 +34,8 @@ var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if 
 var grip_tip := Vector3.ZERO # (bots) the thumb's last bone in the hand's frame: (along the hand, index-ward, palm-ward)
 var grip_turn := 1.0         # (bots) and its second bone . the hand's length (below 0: folded back to the wrist)
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
+var chest_twist := 0.0       # radians about the body's up, spread over the spine (+ turns the chest to the left)
+var arm_sweep := 0.0         # radians: both upper arms swung round the body's up (+ to the left), a fling across
 var square := 0.0            # 0..1: turn the hips and chest square to the body (undo a guard stance's
 							 # twist), so a body tipped onto its back lies flat instead of rolled on one side
 var arm_aim := 0.0           # 0..1: likewise hang both arms straight at the sides before arm/elbow bend
@@ -85,6 +87,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
 		if clasp != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
+		if arm_sweep != 0.0:
+			_bend(skel, "mixamorig_%sArm" % side, up, arm_sweep)
 		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg, -1.0, bh), toss_arm, ts))
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
@@ -102,6 +106,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)
+	if chest_twist != 0.0:
+		_bend(skel, "mixamorig_Spine", up, chest_twist * 0.25)
+		_bend(skel, "mixamorig_Spine1", up, chest_twist * 0.35)
+		_bend(skel, "mixamorig_Spine2", up, chest_twist * 0.4)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
 	var sides := ["Left", "Right"]

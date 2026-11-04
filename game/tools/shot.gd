@@ -2308,6 +2308,19 @@ func _ready() -> void:
 		var jh := player.global_position.y - terrain.height_at(player.global_position.x, player.global_position.z)
 		var back := Vector3(jstart.x, 0, jstart.z) + Vector3(0, terrain.height_at(jstart.x, jstart.z) + jh, 0)
 		player.global_position = back
+		if "pivotlens" in args:
+			# pivotlens: a low front-3/4 lens on the frozen hero itself, on the sun side, so the
+			# skid, the planted leg and the shoulders winding round all face the camera in light
+			var plight: Vector3 = -world.sun.global_transform.basis.z
+			var pside := Vector3(0, 0, 1) if -plight.z > 0.0 else Vector3(0, 0, -1)
+			if "flip" in args:
+				pside = -pside
+			var pc := back + pside * 3.0 + Vector3(-1.4, 0, 0)
+			pc.y = terrain.height_at(pc.x, pc.z) + 1.25
+			var pcam := get_viewport().get_camera_3d()
+			pcam.global_position = pc
+			pcam.look_at(back + Vector3.UP * 0.85)
+			print("SHOT pivotlens cam %s hero %s side %s" % [pc, back, pside])
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])

@@ -1000,6 +1000,10 @@ func _pivot_step(delta: float, wish: Vector3, busy: bool) -> void:
 	pivot_t = 0.0
 	pivots += 1
 	pivot_skid = 0.0
+	pivot_twist_peak = 0.0
+	pivot_head_peak = 0.0
+	pivot_head_lead = 0.0
+	pivot_body_lead = 0.0
 	_pivot_v0 = hv
 	_pivot_p0 = global_position
 	_pivot_from = body.rotation.y
@@ -1019,8 +1023,21 @@ func _pivot_velocity(goal: Vector3) -> Vector3:
 func _end_pivot() -> void:
 	pivot_t = -1.0
 
+var _pivot_posed := false
+var pivot_twist_peak := 0.0            # (bots) largest signed chest twist of the last pivot
+var pivot_head_peak := 0.0             # (bots) largest signed head turn of the last pivot
+var pivot_head_lead := 0.0             # (bots) u at which the head turn passed half its peak
+var pivot_body_lead := 0.0             # (bots) u at which the body yaw passed half its turn
+
 func _pivot_pose() -> void:
 	if pivot_t < 0.0 or crumple == null or _jp > 0.0 or dead_t >= 0.0 or down_t >= 0.0:
+		if _pivot_posed and crumple != null:
+			# hand the upper body back clean to whatever poses next
+			crumple.chest_twist = 0.0
+			crumple.arm_sweep = 0.0
+			crumple.clasp = 0.0
+			crumple.head_turn = 0.0
+			_pivot_posed = false
 		return
 	var u := pivot_t / PIVOT_TIME
 	var env := smoothstep(0.0, 0.14, u) * (1.0 - smoothstep(0.72, 1.0, u))
@@ -1042,6 +1059,27 @@ func _pivot_pose() -> void:
 	crumple.elbow = 0.55 * env
 	crumple.ankle = 0.0
 	crumple.sole_flat = env                # the soles grip flat through the skid
+	# the upper body leads the turn: the head snaps round to the new line first, the shoulders
+	# wind round ahead of the hips (the arms flung out wide and swept across), then the chest
+	# unwinds a touch past square as the hips come through onto the drive leg
+	var spin := smoothstep(PIVOT_SPIN.x, PIVOT_SPIN.y, u)
+	var head := sg * 0.75 * smoothstep(0.08, 0.3, u) * (1.0 - smoothstep(0.42, 0.78, u))
+	var wind := sg * (0.55 * smoothstep(0.12, 0.36, u) * (1.0 - smoothstep(0.4, 0.74, u)) \
+		- 0.12 * smoothstep(0.62, 0.78, u) * (1.0 - smoothstep(0.82, 1.0, u)))
+	crumple.head_turn = head
+	crumple.chest_twist = wind
+	# the arms trail behind the turn at the plant, then whip through across the body with it
+	crumple.arm_sweep = sg * lerpf(-0.35, 0.55, smoothstep(0.18, 0.5, u)) * env * (1.0 - smoothstep(0.6, 0.95, u))
+	crumple.clasp = -0.55 * smoothstep(0.0, 0.18, u) * (1.0 - smoothstep(0.45, 0.85, u))
+	_pivot_posed = true
+	if absf(wind) > absf(pivot_twist_peak):
+		pivot_twist_peak = wind
+	if absf(head) > absf(pivot_head_peak):
+		pivot_head_peak = head
+	if pivot_head_lead == 0.0 and absf(head) >= 0.375:
+		pivot_head_lead = u
+	if pivot_body_lead == 0.0 and spin >= 0.5:
+		pivot_body_lead = u
 	if garb != null:
 		garb.posed_legs = true
 	_pose_dip = dip * env
