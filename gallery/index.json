@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261029-2330-roadmeet-hildfull2.jpg",
-  "time": "2026-10-29T23:30:00Z",
-  "caption": "New full-length framing of Hild: her long kirtle and shins read as even dark wool with no pale blotches, but Wat and his creel block the lens line (framing swung to the verge side for next time).",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0015-roadmeet-hildkept.jpg",
-  "time": "2026-10-30T00:15:00Z",
-  "caption": "Hild and Wat meet on the fell road, full length: her kirtle's front panel now reads as one even dark wool instead of rust and dark blocks, and the creel is out of the lens; still small in frame, faces unreadable, and the hips show a rust sleeve edge.",
-  "verdict": "fail"
- },
- {
   "file": "20261030-0150-roadmeet-watdun.jpg",
   "time": "2026-10-30T01:50:00Z",
   "caption": "Hild and Wat meet on the fell road: Wat's kilted smock now reads as darker road-dun wool instead of a pale flat linen sheet; still small in frame with unreadable faces, and his chest and arms read as plated armour shapes under the creel.",
@@ -897,6 +885,12 @@
   "file": "20261104-2224-giant-turn-square.jpg",
   "time": "2026-11-04T22:24:56Z",
   "caption": "The giant squared up after the turn, feet set apart and planted (GL frame; still backlit and dark, no Forward+ lighting).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-2320-knight-turn-lead.jpg",
+  "time": "2026-11-04T23:20:00Z",
+  "caption": "The Ashen Knight (2.2x) mid-turn on the spot, helm and chest swung ahead toward where it is turning (GL frame; backlit, the head lead is hard to read from this lens).",
   "verdict": "fail"
  }
 ]

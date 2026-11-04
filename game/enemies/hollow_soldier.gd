@@ -124,6 +124,10 @@ var _grip_r: Node3D
 var _grip_l: Node3D
 var _ik: TwoBoneIK3D
 var _twist: SpineTwist
+var _lead_twist: SpineTwist            # head and chest lead a turn: yawed toward where the body is turning
+var turn_lead := 0.0             # radians of that lead (head ~ all of it, chest ~ a third)
+var lead_peak := 0.0             # bots: largest |turn_lead| since reset
+var _turn_gap := 0.0             # yaw still to turn this tick (set by _turn_to in IDLE/STALK)
 var _ember_light: OmniLight3D
 var _glint: MeshInstance3D
 var _ash: CPUParticles3D
@@ -335,6 +339,15 @@ func _setup_spear() -> void:
 		_ik.set_pole_node(i, _ik.get_path_to(arms[i][2]))
 	_ik.influence = 1.0
 	_twist.influence = 1.0
+	# the lead yaws the upper chest, neck and head; it runs before the arm IK so the hands
+	# still close on the spear from the turned shoulders
+	_lead_twist = SpineTwist.new()
+	_lead_twist.name = "TurnLead"
+	_lead_twist.up = body
+	_lead_twist.bones = LEAD_BONES
+	_lead_twist.share = LEAD_SHARE
+	skel.add_child(_lead_twist)
+	skel.move_child(_lead_twist, _ik.get_index())
 	_place(GUARD)
 
 func _place(pose: Array) -> void:
@@ -463,6 +476,7 @@ func _physics_process(delta: float) -> void:
 	var move := Vector3.ZERO
 	var ember := 1.0
 	var lean := 0.0
+	_turn_gap = 0.0
 	var sink := 0.0
 	match state:
 		IDLE:
@@ -591,6 +605,7 @@ func _physics_process(delta: float) -> void:
 	if bot_move != Vector3.ZERO:
 		move = bot_move
 		body.rotation.y = atan2(bot_move.x, bot_move.z)
+	_update_turn_lead(delta)
 	_place(_pose)
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
@@ -640,6 +655,25 @@ const TURN_STILL := 0.3          # m/s (any size): below this a turn is on the s
 const TURN_FROM := 0.8           # rad/s of yaw where the stepping starts
 const TURN_FULL := 2.5           # rad/s more for full steps
 const TURN_STEP_RATE := 4.0      # rad/s cap of a turn on the spot at 1x cadence
+
+const LEAD_BONES := ["mixamorig_Spine1", "mixamorig_Spine2", "mixamorig_Neck", "mixamorig_Head"]
+const LEAD_SHARE := [0.12, 0.18, 0.30, 0.40]   # the head turns furthest, the chest a little
+const LEAD_K := 0.7              # lead per radian still to turn
+const LEAD_MAX := 0.85           # rad (~49 deg at the head, ~15 deg at the chest)
+const LEAD_RATE := 12.0          # 1/s at 1x cadence: the eyes go first, quicker than the feet
+const LEAD_SETTLE := 6.0         # 1/s back to square once the body has caught up
+
+## The head and chest lead a turn: they swing toward where the body is turning before the
+## feet have stepped it round, then settle back square as the body catches up. A big body
+## looks round slower (its own cadence), never snapping its head.
+func _update_turn_lead(delta: float) -> void:
+	var goal := clampf(_turn_gap * LEAD_K, -LEAD_MAX, LEAD_MAX) if state in [IDLE, STALK] else 0.0
+	var rate := (LEAD_RATE if absf(goal) > absf(turn_lead) else LEAD_SETTLE) * natural_cadence()
+	turn_lead = lerpf(turn_lead, goal, 1.0 - exp(-rate * delta))
+	lead_peak = maxf(lead_peak, absf(turn_lead))
+	if _lead_twist != null:
+		_lead_twist.twist = turn_lead
+		_lead_twist.influence = _twist.influence if _twist != null else 1.0
 
 ## Standing and turning (IDLE/STALK, not posed by an attack): ramps turn_shuffle from the yaw rate.
 func _update_turn_shuffle(delta: float, hs: float) -> void:
@@ -712,6 +746,8 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 		return
 	var want := lerp_angle(body.rotation.y, atan2(dir.x, dir.z), 1.0 - exp(-rate * delta))
 	var hs := Vector2(velocity.x, velocity.z).length()
+	if state in [IDLE, STALK]:
+		_turn_gap = angle_difference(body.rotation.y, atan2(dir.x, dir.z))
 	if state in [IDLE, STALK] and hs < TURN_STILL:
 		# on the spot the body only comes round as fast as its feet can step it round: a soldier
 		# ~230 deg/s, the phase-3 giant under half that (heavy, but it still keeps a circling hero)

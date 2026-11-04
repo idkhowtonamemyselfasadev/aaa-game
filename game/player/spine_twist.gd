@@ -6,6 +6,8 @@ extends SkeletonModifier3D
 const BONES := ["mixamorig_Spine", "mixamorig_Spine1", "mixamorig_Spine2"]
 const SHARE := [0.25, 0.35, 0.40]
 
+var bones: Array = BONES     # a turn lead uses the chest, neck and head instead
+var share: Array = SHARE
 var twist := 0.0             # radians, positive turns the chest toward the hero's left
 var up: Node3D               # node whose +Y is the twist axis (the player's Body)
 
@@ -15,12 +17,12 @@ func _process_modification_with_delta(_delta: float) -> void:
 		return
 	var axis_world := up.global_basis.y if up != null else Vector3.UP
 	var axis_skel := (skel.global_basis.orthonormalized().inverse() * axis_world).normalized()
-	for i in BONES.size():
-		var b := skel.find_bone(BONES[i])
+	for i in bones.size():
+		var b := skel.find_bone(bones[i])
 		if b < 0:
 			continue
 		var parent := skel.get_bone_parent(b)
 		var pb := skel.get_bone_global_pose(parent).basis.orthonormalized() if parent >= 0 else Basis()
 		var local_axis := (pb.inverse() * axis_skel).normalized()
-		var q := Quaternion(local_axis, twist * float(SHARE[i]))
+		var q := Quaternion(local_axis, twist * float(share[i]))
 		skel.set_bone_pose_rotation(b, q * skel.get_bone_pose_rotation(b))

@@ -1231,6 +1231,16 @@ func _foe_turn_test() -> void:
 		var f0 := e.body.global_basis.z
 		e.bot_face = f0.rotated(Vector3.UP, deg_to_rad(120.0))
 		e.shuffle_peak = 0.0
+		e.lead_peak = 0.0
+		var hb := skel.find_bone("mixamorig_Head")
+		var head_yaw := func() -> float:
+			var hz: Vector3 = e.body.global_basis.inverse() * (skel.global_basis * skel.get_bone_global_pose(hb).basis).z
+			return atan2(hz.x, hz.z)
+		await skel.skeleton_updated
+		var head0: float = head_yaw.call()
+		var lead_signed := 0.0
+		var head_lead := 0.0
+		var body_at_lead := 0.0
 		var lift := 0.0
 		var lifted := 0
 		var both_up := 0
@@ -1249,14 +1259,22 @@ func _foe_turn_test() -> void:
 				both_up += 1
 			if e.turn_shuffle > 0.3:
 				ts_peak = maxf(ts_peak, e.anim_tree.get("parameters/speed/scale"))
+			if e.turn_lead > lead_signed:
+				lead_signed = e.turn_lead
+				await skel.skeleton_updated     # bone poses carry the modifiers only inside it
+				head_lead = maxf(head_lead, angle_difference(head0, head_yaw.call()))
+			if e.turn_lead > 0.5 and body_at_lead == 0.0:
+				body_at_lead = f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)
 		var faced := e.body.global_basis.z.normalized().dot(e.bot_face.normalized())
 		var drift := Vector2(e.global_position.x - start.x, e.global_position.z - start.z).length()
 		await _ticks(100)
 		var after := e.turn_shuffle
 		var blend_after: float = e._blend
+		var lead_after := absf(e.turn_lead)
+		print("BOT foeturn: lead peak %.2f rad (head turned %.2f rad ahead of the body, body %.2f rad round when it passed 0.5), after %.3f" % [lead_signed, head_lead, body_at_lead, lead_after])
 		e.bot_face = Vector3.ZERO
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence()])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
 		if o[1] < 0.5:
@@ -1271,6 +1289,14 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: wandered %.2f m off its spot in the turn" % [o[0], o[6]])
 		if o[7] > 0.05:
 			return _combat_done(false, "size %.1f: still stepping once squared up (%.2f)" % [o[0], o[7]])
+		if o[10] < 0.4:
+			return _combat_done(false, "size %.1f: the head and chest do not lead the turn (lead %.2f)" % [o[0], o[10]])
+		if o[11] < 0.3:
+			return _combat_done(false, "size %.1f: the head bone does not turn ahead of the body (%.2f rad)" % [o[0], o[11]])
+		if o[12] > 0.7:
+			return _combat_done(false, "size %.1f: the head only leads once the body is well round (%.2f rad)" % [o[0], o[12]])
+		if o[13] > 0.03:
+			return _combat_done(false, "size %.1f: the head does not settle square once turned (%.3f)" % [o[0], o[13]])
 		if o[8] > 1.35 * o[9] + 0.01:
 			return _combat_done(false, "size %.1f: the steps are quicker than the body's cadence (%.2f vs %.2f)" % [o[0], o[8], o[9]])
 	_combat_done(true, "the soldier and the knight at every size step round on the spot when they turn")
