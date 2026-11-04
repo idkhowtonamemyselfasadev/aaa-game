@@ -2483,6 +2483,30 @@ func _ready() -> void:
 		cam.global_position = sc
 		cam.look_at(rr.centre + Vector3.UP * 0.9 * sz)
 		print("SHOT ring stride size %.2f at %.2f m/s" % [sz, sv])
+	if spot == "ring" and "turn" in args:
+		# ring turn [sz=4.6]: the knight at size sz standing side-on in the ring, turning on the spot
+		# to face the gate (bot_face, 90 deg); the frame count sets how far into the turn it is
+		var rk: AshenKnight = world.knight
+		var rr: StoneRing = world.stone_ring
+		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
+		var rside := rf.cross(Vector3.UP)
+		var sz := 4.6
+		for a in args:
+			if a.begins_with("sz="):
+				sz = float(a.substr(3))
+		rk.set_size_scale(sz)
+		rk.notice = -1.0
+		rk.state = HollowSoldier.IDLE
+		rk.global_position = Vector3(rr.centre.x, terrain.height_at(rr.centre.x, rr.centre.z) + 0.05, rr.centre.z)
+		rk._home = rk.global_position
+		rk.face(rk.global_position + rside * 5.0)
+		rk._prev_yaw = rk.body.rotation.y
+		rk.bot_face = rf
+		var sc := rr.centre + rf * (3.0 + 2.2 * sz) + rside * 1.2 * sz
+		sc.y = terrain.height_at(sc.x, sc.z) + 0.2 * sz
+		cam.global_position = sc
+		cam.look_at(rr.centre + Vector3.UP * 0.55 * sz)
+		print("SHOT ring turn size %.2f" % sz)
 	if spot == "ring" and "surge" in args:
 		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
 		# ticks in: the armour seams spitting fire and grit shaken off the stones behind it,

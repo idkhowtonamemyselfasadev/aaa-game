@@ -135,6 +135,10 @@ var size_scale := 1.0
 ## Bots: a world velocity that overrides the brain's footwork (the gait is measured with it).
 var bot_move := Vector3.ZERO
 var bot_cadence_k := 1.0
+var bot_face := Vector3.ZERO     # bots: IDLE turns on the spot toward this (world dir) when set
+var turn_shuffle := 0.0          # 0..1 stepping round on the spot while the body turns
+var shuffle_peak := 0.0          # bots: highest turn_shuffle since reset
+var _prev_yaw := 0.0
 var _col_cap: CapsuleShape3D
 var _col: CollisionShape3D
 var _ember_range := 2.6
@@ -469,6 +473,8 @@ func _physics_process(delta: float) -> void:
 			if back.length() > 0.6:
 				move = back.normalized() * STALK_SPEED * 0.7
 				_turn_to(back, delta, 4.0)
+			elif bot_face != Vector3.ZERO:
+				_turn_to(bot_face, delta, 5.0)
 			if dist < notice:
 				_enter(STALK)
 		STALK:
@@ -615,11 +621,37 @@ func _physics_process(delta: float) -> void:
 		var goal := gait_blend(hs)
 		if goal < Player.ANIM_WALK_SPEED:
 			goal = minf(hs / (Player.WALK_STRIDE_SPEED * STRIDE_BUILD * natural_cadence()), 1.0) * Player.ANIM_WALK_SPEED
-		_blend = lerpf(_blend, goal, 1.0 - exp(-8.0 * delta))
+		# turning on the spot: the feet step round (short walk steps at the body's own cadence)
+		# instead of the whole figure spinning on two still, sliding soles
+		_update_turn_shuffle(delta, hs)
+		goal = maxf(goal, turn_shuffle * Player.ANIM_WALK_SPEED * TURN_STEP_REACH)
+		_blend = lerpf(_blend, goal, 1.0 - exp(-(14.0 if turn_shuffle > 0.05 else 8.0) * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
 		# cadence from the stride the clip mix covers (the hero's calibration, bot `foestride`):
 		# the old hs / 1.9 (clamped 0.7-1.4) let the planted foot ride forward up to 4 m/s on the giant
-		anim_tree.set("parameters/speed/scale", clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else 1.0)
+		var ts := clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else 1.0
+		if turn_shuffle > 0.02 and hs * size_scale < TURN_STILL:
+			ts = lerpf(ts, TURN_STEP_CADENCE * natural_cadence(), minf(turn_shuffle * 3.0, 1.0))
+		anim_tree.set("parameters/speed/scale", ts)
+
+const TURN_STEP_REACH := 0.5     # of the walk's reach: short steps round, not a stride
+const TURN_STEP_CADENCE := 1.3   # x the body's natural cadence: quick little steps
+const TURN_STILL := 0.3          # m/s (any size): below this a turn is on the spot
+const TURN_FROM := 0.8           # rad/s of yaw where the stepping starts
+const TURN_FULL := 2.5           # rad/s more for full steps
+const TURN_STEP_RATE := 4.0      # rad/s cap of a turn on the spot at 1x cadence
+
+## Standing and turning (IDLE/STALK, not posed by an attack): ramps turn_shuffle from the yaw rate.
+func _update_turn_shuffle(delta: float, hs: float) -> void:
+	var yaw := body.rotation.y
+	var rate := absf(angle_difference(_prev_yaw, yaw)) / maxf(delta, 1e-4)
+	_prev_yaw = yaw
+	var standing := hs * size_scale < TURN_STILL and is_on_floor() and state in [IDLE, STALK]
+	# measured against the body's own cadence: the giant's slow turn is still a full step round
+	var sh := clampf((rate / natural_cadence() - TURN_FROM) / TURN_FULL, 0.0, 1.0) if standing else 0.0
+	# rises quick (the first step goes as the turn starts), settles over the last step
+	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 2.5))
+	shuffle_peak = maxf(shuffle_peak, turn_shuffle)
 
 ## Blend position for a ground speed (per unit size): the walk point held up to WALK_TOP, then
 ## a short band to the run point, so a quick stalk is never an unsynced walk/run mix.
@@ -678,7 +710,14 @@ func _facing(to: Vector3) -> float:
 func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 	if dir.length() < 1e-3 or rate <= 0.0:
 		return
-	body.rotation.y = lerp_angle(body.rotation.y, atan2(dir.x, dir.z), 1.0 - exp(-rate * delta))
+	var want := lerp_angle(body.rotation.y, atan2(dir.x, dir.z), 1.0 - exp(-rate * delta))
+	var hs := Vector2(velocity.x, velocity.z).length()
+	if state in [IDLE, STALK] and hs < TURN_STILL:
+		# on the spot the body only comes round as fast as its feet can step it round: a soldier
+		# ~230 deg/s, the phase-3 giant under half that (heavy, but it still keeps a circling hero)
+		var cap := TURN_STEP_RATE * natural_cadence() * delta
+		want = body.rotation.y + clampf(angle_difference(body.rotation.y, want), -cap, cap)
+	body.rotation.y = want
 
 func _in_cone() -> bool:
 	if _player == null:

@@ -886,5 +886,17 @@
   "time": "2026-11-04T22:00:00Z",
   "caption": "The giant's legs passing under it a third of a second later, the planted boot still on the burnt turf; GL only, facing in the shot does not follow its walk yet.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261104-2224-giant-turn-step.jpg",
+  "time": "2026-11-04T22:24:56Z",
+  "caption": "The phase-3 Ashen Knight (4.6x) turning on the spot: a boot comes off the turf as it steps round instead of spinning on still soles (GL frame; backlit, the armour reads dark).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-2224-giant-turn-square.jpg",
+  "time": "2026-11-04T22:24:56Z",
+  "caption": "The giant squared up after the turn, feet set apart and planted (GL frame; still backlit and dark, no Forward+ lighting).",
+  "verdict": "fail"
  }
 ]
