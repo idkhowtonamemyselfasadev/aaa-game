@@ -8705,7 +8705,81 @@ func _climb_test() -> void:
 	print("BOT climb: dodge on the face, climbing %s" % p.climbing)
 	if p.climbing:
 		return _combat_done(false, "dodge did not let go of the face")
-	_combat_done(true, "jumped at the keep, climbed the stones, hauled up onto the crown; the grip fails without stamina and a dodge lets go")
+	# fourth and fifth: jump with the stick pulled back kicks off the face, out and up, the body
+	# twisting round to face the flight; a kick to the side leaps along the stones; both are
+	# jumps (the jump attack is open off them)
+	for leg in 2:
+		p.stamina = Player.STAMINA_MAX
+		p.velocity = Vector3.ZERO
+		p.global_position = Vector3(rs.x + rad.x * 6.0, ground + 0.3, rs.z + rad.z * 6.0)
+		await _ticks(70)
+		p.bot_jump = true
+		t = 0.0
+		while t < 1.5 and not p.climbing:
+			p.bot_input = _input_toward(rs)
+			await _ticks(3)
+			t += 0.05
+		if not p.climbing:
+			return _combat_done(false, "no catch on the face before the kick-off")
+		t = 0.0
+		while t < 0.2 and p.climbing:
+			p.bot_input = Vector2.ZERO               # settle on the holds (the keep is low: up would haul over)
+			await _ticks(3)
+			t += 0.05
+		if not p.climbing:
+			return _combat_done(false, "fell off the face before the kick-off")
+		var y0 := p.global_position.y
+		var r_face := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
+		var climbs0 := p.climbs
+		var wj0 := p.wall_jumps
+		var kick := Vector2(0, 1) if leg == 0 else Vector2(1, 0.2)
+		var face_xz := Vector3(-rad.x, 0, -rad.z)
+		p.bot_input = kick
+		p.bot_jump = true
+		p.bot_jump_hold = true
+		await _ticks(3)
+		p.bot_input = Vector2.ZERO
+		if p.climbing or p.wall_jumps != wj0 + 1:
+			return _combat_done(false, "jump with the stick %s did not kick off the face" % ["back", "aside"][leg])
+		var up_max := 0.0
+		var r_max := r_face
+		var lat_max := 0.0
+		var yaw_mid := 0.0
+		var glided := false
+		var p0 := p.global_position
+		t = 0.0
+		while t < 3.0 and not (p.is_on_floor() and t > 0.05):
+			await _ticks(1)
+			t += 1.0 / 60.0
+			up_max = maxf(up_max, p.jump_apex)
+			r_max = maxf(r_max, Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length())
+			var d := p.global_position - p0
+			lat_max = maxf(lat_max, absf(d.dot(face_xz.cross(Vector3.UP).normalized())))
+			if p._wj_t >= Player.WALL_JUMP_TWIST and yaw_mid == 0.0:
+				yaw_mid = p.body.global_transform.basis.z.dot(face_xz)
+			if p.air_attack_ok():
+				glided = true                          # a jump: the air attack is there off the kick
+		p.bot_jump_hold = false
+		print("BOT climb: kick %s off the face: rose %.2f m, out to %.2f m from the face (r %.2f -> %.2f), %.2f m along it, facing the stones %.2f after the twist, jump attack open %s, regrabbed %s, landed after %.2f bot s" % [["back", "aside"][leg], up_max, r_max - r_face, r_face, r_max, lat_max, yaw_mid, glided, p.climbs > climbs0, t])
+		if up_max < 0.7:
+			return _combat_done(false, "the kick off the face does not rise")
+		if leg == 0 and r_max - r_face < 1.6:
+			return _combat_done(false, "the kick back does not carry the hero off the face")
+		if leg == 1 and lat_max < 1.2:
+			return _combat_done(false, "the kick aside does not leap along the face")
+		if p.climbs > climbs0:
+			return _combat_done(false, "the hands caught the face again straight after the kick")
+		if leg == 0 and yaw_mid > -0.5:
+			return _combat_done(false, "the body did not twist round off the face (still facing the stones)")
+		if not glided:
+			return _combat_done(false, "the kick off the face is not a jump (no jump attack off it)")
+		if not p.is_on_floor():
+			return _combat_done(false, "never landed after the kick off the face")
+		var settle := 0.0
+		while settle < 4.0 and not p.is_on_floor():
+			await _ticks(6)
+			settle += 0.1
+	_combat_done(true, "jumped at the keep, climbed the stones, hauled up onto the crown; the grip fails without stamina, a dodge lets go, a jump with the stick back kicks off the face, twisting round, and one aside leaps along it")
 
 ## Harrowmere's first house: built (slates, footing stones, frame), standing on the green
 ## clear of the start, the herd steers off it, and the hero walks from the start to its door

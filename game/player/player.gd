@@ -83,6 +83,13 @@ const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
 const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
+# Jump off a face: jump with the stick pulled away from the stones (down/back, or hard to a side)
+# kicks off it: up, out and toward the stick, the body twisting round to face the way it flies
+const WALL_JUMP_UP := 7.0
+const WALL_JUMP_OUT := 4.2             # m/s straight off the face at a full pull back
+const WALL_JUMP_SIDE := 3.4            # m/s along the face at a full sideways push
+const WALL_JUMP_COST := 14.0
+const WALL_JUMP_TWIST := 0.32          # s of the turn from facing the stones to facing the flight
 const HAND_MOVE := 0.18               # seconds for a hand to reach to its next hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
 const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
@@ -92,6 +99,9 @@ var climbing := false
 var climb_normal := Vector3.ZERO      # the face's outward normal under the hands
 var climbs := 0                       # faces caught (bots read this)
 var mantles := 0                      # ledges hauled up onto (bots read this)
+var wall_jumps := 0                   # kicks off a face (bots read this)
+var _wj_t := -1.0                     # s since the kick off a face (-1: none)
+var _wj_yaw := Vector2.ZERO           # (from, to) body yaw of the twist off the face
 var climbed := 0.0                    # metres moved on faces (bots read this; drives the reach cycle)
 var climb_rate := 0.0                 # m/s moved on the face last tick (bots read this)
 var mantle_t := -1.0                  # seconds into a haul-up, -1 when not mantling
@@ -723,6 +733,7 @@ func _physics_process(delta: float) -> void:
 		if _air_t >= 0.0:
 			_touch_down()
 		_jumped = false
+		_wj_t = -1.0
 		_coyote_t = 0.0
 	else:
 		if _air_t < 0.0:
@@ -736,6 +747,8 @@ func _physics_process(delta: float) -> void:
 		_air_last_y = global_position.y
 		if not _jumped:
 			_coyote_t += delta
+		if _wj_t >= 0.0:
+			_wj_t += delta
 		var g := GRAVITY
 		if velocity.y < 0.0:
 			g *= FALL_GRAVITY
@@ -816,6 +829,10 @@ func _physics_process(delta: float) -> void:
 		if tgt != Vector3.INF:
 			var to := tgt - global_position
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.z), 1.0 - exp(-6.0 * delta))
+	elif _wj_t >= 0.0 and _wj_t < WALL_JUMP_TWIST:
+		# off a face: the body twists round from the stones to the flight, eased in and out
+		var tw := smoothstep(0.0, WALL_JUMP_TWIST, _wj_t)
+		body.rotation.y = lerp_angle(_wj_yaw.x, _wj_yaw.y, tw)
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
@@ -942,6 +959,16 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		arm = maxf(arm, 1.5 * line * (1.0 - crouch) + 0.2 * crouch)   # thrown up past the shoulders
 		elbow = lerpf(elbow, 0.75, line * (1.0 - crouch))   # elbows bent, not reaching like a sleepwalker
 		spine -= 0.06 * line * (1.0 - crouch)  # the chest opens up on the drive
+		if _wj_t >= 0.0 and _wj_t < 0.24:
+			# kicked off a face: the chest arches back away from the stones, the arms fling out
+			# off the holds and the legs stay driven straight out of the kick before they gather
+			var wk := 1.0 - smoothstep(0.08, 0.24, _wj_t)
+			spine = lerpf(spine, -0.32, wk)
+			arm = lerpf(arm, 1.9, wk)
+			elbow = lerpf(elbow, 0.35, wk)
+			hip = lerpf(hip, 0.15, wk)
+			knee = lerpf(knee, 0.12, wk)
+			ankle = lerpf(ankle, 0.7, wk)
 		if crouch > 0.0:
 			var a0 := acos(clampf(1.0 - PUSH_DIP * crouch / 0.9, -1.0, 1.0))
 			# drawn down by the crouch and by what the capsule has already risen, so the
@@ -1248,6 +1275,48 @@ func _let_go(push: float, regrab: float) -> void:
 	_lunge_t = -1.0
 	_clear_climb_pose()
 
+## Kick off the face: the hands let go, the legs drive the body out and up toward the stick
+## (straight back off the stones, or a leap along them), the body twisting round in the first
+## third of a second to face the way it flies. It is a jump: the glider opens off it, the jump
+## attack and the plunge work from it, a release of the button cuts it short, and the hands
+## cannot catch the same face for a moment.
+func _wall_jump(dir2: Vector2, right: Vector3) -> void:
+	var n := Vector3(climb_normal.x, 0.0, climb_normal.z).normalized()
+	var away := clampf(dir2.y, 0.0, 1.0)
+	var side := clampf(dir2.x, -1.0, 1.0)
+	var out := n * WALL_JUMP_OUT * maxf(away, 0.65) + right * WALL_JUMP_SIDE * side
+	climbing = false
+	_lunge_t = -1.0
+	_regrab_t = 0.45
+	stamina -= WALL_JUMP_COST
+	velocity = out + Vector3.UP * WALL_JUMP_UP
+	global_position += n * 0.1               # clear of the rough stones (a jutting lip would eat the rise)
+	# the climb pose is not wiped: the jump pose eases out of it, so the knees that were on
+	# the holds are the knees that drive the kick
+	if garb != null:
+		garb.posed_legs = false
+		garb.wall_n = Vector3.ZERO
+	if crumple != null:
+		crumple.plant = 0.0
+		crumple.foot_plant = 0.0
+	_jumped = true
+	_coyote_t = 99.0
+	_buffer_t = 99.0
+	jumps += 1
+	wall_jumps += 1
+	jump_apex = 0.0
+	_jump_y0 = global_position.y
+	_jump_from_sprint = false
+	land_t = -1.0
+	_air_swung = false
+	# no turf to crouch on: the take-off is drawn from the push line, legs driving off the stones
+	_air_t = PUSH_CROUCH
+	_air_top = global_position.y
+	_air_last_y = global_position.y
+	var fly := Vector3(out.x, 0.0, out.z)
+	_wj_yaw = Vector2(body.rotation.y, atan2(fly.x, fly.z))
+	_wj_t = 0.0
+
 func _start_mantle(top: Vector3, n: Vector3) -> void:
 	_jumped = false
 	if combat != null and combat.is_drawn():
@@ -1309,6 +1378,9 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	var face := -Vector3(n.x, 0.0, n.z).normalized()
 	var right := face.cross(Vector3.UP).normalized()
+	if want_jump and _lunge_t < 0.0 and (dir2.y > 0.35 or absf(dir2.x) > 0.7) and stamina >= WALL_JUMP_COST:
+		_wall_jump(dir2, right)
+		return
 	if want_jump and _lunge_t < 0.0 and stamina >= CLIMB_LUNGE_COST:
 		_lunge_t = 0.0
 		stamina -= CLIMB_LUNGE_COST

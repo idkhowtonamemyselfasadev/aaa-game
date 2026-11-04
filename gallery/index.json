@@ -886,5 +886,17 @@
   "time": "2026-11-04T06:24:19Z",
   "caption": "Jump 0.1 s in (GL): legs driven straight, an arm thrown up with the elbow bent, before the tuck. The pose reads, but it is a procedural layer over the clip with no mocap take-off, and the hero is backlit and small.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261104-0756-wallkick-push.jpg",
+  "time": "2026-11-04T07:56:13Z",
+  "caption": "Kick off the keep face 0.1 s in (GL): hands flung up off the holds as the body starts to twist away. Still reads upright from this lens; no planted-sole kick, and the hero is small in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0756-wallkick-flight.jpg",
+  "time": "2026-11-04T07:56:13Z",
+  "caption": "Kick off the keep face 0.25 s in (GL): twisted round to face the flight, knees gathering, staff on the back. The leap reads, but it is a procedural pose over the clip with no mocap.",
+  "verdict": "fail"
  }
 ]

@@ -859,6 +859,43 @@ func _ready() -> void:
 		var rcam := ring.centre + f3 * (StoneRing.RADIUS + 6.5) + f3.cross(Vector3.UP) * 2.0
 		rcam.y = terrain.height_at(rcam.x, rcam.z) + 3.4
 		SPOTS[spot] = [rcam, ring.centre + Vector3.UP * 1.4]
+	var kick_t := -1.0
+	var kick_face := Vector3.ZERO
+	if spot == "wallkick":
+		# wallkick [kt=0.15] [aside]: the hero caught on the keep's outer face, then a jump with the
+		# stick pulled back (aside: pushed right) kicks off it; frozen kt s after the press, seen
+		# side-on along the face from the sunlit side
+		kick_t = 0.15
+		for a in args:
+			if a.begins_with("kt="):
+				kick_t = float(a.substr(3))
+		var kr: Ruins = world.get_node("Ruins")
+		var ks := kr.site
+		var breach := atan2(-ks.z, -ks.x)
+		var pick := INF
+		var best := -1.0
+		for k in 180:
+			var a := TAU * k / 180.0
+			if absf(wrapf(a - breach, -PI, PI)) < 1.2:
+				continue
+			var g := terrain.height_at(ks.x + cos(a) * 5.2, ks.z + sin(a) * 5.2)
+			var h := kr.wall_top(a, 4.3) - g
+			var score := absf(h - 3.6) + absf(kr.wall_top(a - 0.06, 4.3) - g - h) + absf(kr.wall_top(a + 0.06, 4.3) - g - h)
+			if h > 2.8 and h < 4.6 and score < pick:
+				pick = score
+				best = a
+		kick_face = Vector3(cos(best), 0, sin(best))
+		var at := ks + kick_face * 5.1           # against the face, past the scree at its foot
+		player.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.3, at.z)
+		player.set_look(atan2(kick_face.x, kick_face.z), -0.2)
+		var kl: Vector3 = -world.sun.global_transform.basis.z
+		var tang := kick_face.cross(Vector3.UP)
+		if tang.dot(Vector3(-kl.x, 0, -kl.z)) < 0.0:
+			tang = -tang
+		var kc := ks + kick_face * 7.2 + tang * 4.6
+		kc.y = terrain.height_at(kc.x, kc.z) + 1.5
+		var kf := ks + kick_face * 6.6
+		SPOTS[spot] = [kc, Vector3(kf.x, terrain.height_at(kf.x, kf.z) + 1.3, kf.z)]
 	var jump_t := -1.0
 	if spot == "jump":
 		# jump [jt=0.3] [sprint] [drop] [land=0.06]: a running jump to world +X frozen jt s after
@@ -2151,6 +2188,45 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT impact hits %d step %d" % [c.hits, c.step])
+	if kick_t >= 0.0:
+		Engine.max_physics_steps_per_frame = 1
+		Engine.time_scale = 1.0
+		player.use_bot_input = true
+		RenderingServer.render_loop_enabled = false
+		for i in 90:
+			await get_tree().physics_frame
+		var rs2: Vector3 = world.get_node("Ruins").site
+		for i in 240:
+			if i % 50 == 0 and player.is_on_floor():
+				player.bot_jump = true             # (again, if the first leap fell short)
+			var to := rs2 - player.global_position
+			to.y = 0.0
+			var f := -player.cam_pivot.global_basis.z
+			f.y = 0.0
+			var r := player.cam_pivot.global_basis.x
+			r.y = 0.0
+			player.bot_input = Vector2(to.dot(r.normalized()), -to.dot(f.normalized())).normalized()
+			await get_tree().physics_frame
+			if player.climbing:
+				break
+		player.bot_input = Vector2.ZERO
+		for i in 20:
+			await get_tree().physics_frame
+		print("SHOT wallkick climbing %s mantles %d mantle_t %.2f climbs %d y %.2f" % [player.climbing, player.mantles, player.mantle_t, player.climbs, player.global_position.y])
+		player.bot_input = Vector2(1, 0.2) if "aside" in args else Vector2(0, 1)
+		player.bot_jump = true
+		player.bot_jump_hold = true
+		var kt := 0.0
+		for i in 600:
+			await get_tree().physics_frame
+			kt += 1.0 / 60.0
+			if i == 1:
+				player.bot_input = Vector2.ZERO
+			if kt >= kick_t:
+				break
+		get_tree().paused = true
+		RenderingServer.render_loop_enabled = true
+		print("SHOT wallkick t %.3f kicks %d wj_t %.2f y %.2f yaw %.2f knee %.2f hip %.2f" % [kt, player.wall_jumps, player._wj_t, player.global_position.y, player.body.rotation.y, player.crumple.knee, player.crumple.hip])
 	if jump_t >= 0.0:
 		Engine.max_physics_steps_per_frame = 1
 		Engine.time_scale = 1.0
