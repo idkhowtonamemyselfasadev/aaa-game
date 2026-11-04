@@ -2159,10 +2159,24 @@ func _ready() -> void:
 			player.bot_jump = true
 		player.bot_jump_hold = true
 		var t := 0.0
+		# press=<t> with light/heavy: the jump attack or the plunge pressed that far into the jump
+		var press_t := -1.0
+		for a in args:
+			if a.begins_with("press="):
+				press_t = float(a.substr(6))
+		var pressed := -1
 		for i in 600:
 			if not "drop" in args:
 				player.bot_input = Vector2(1, 0)
 				player.bot_sprint = spr
+			if press_t >= 0.0 and pressed < 0 and t >= press_t:
+				pressed = i
+				if "heavy" in args:
+					player.bot_heavy = true
+				else:
+					player.bot_attack = true
+			if pressed >= 0 and i > pressed + 2:
+				player.bot_heavy = false
 			await get_tree().physics_frame
 			t += 1.0 / 60.0
 			if land < 0.0 and t >= jump_t:

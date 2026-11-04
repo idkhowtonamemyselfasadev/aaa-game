@@ -139,6 +139,7 @@ Hollows still standing return to their posts at full health. No currency or XP i
 | Stance | Fantasy | Light string (L×4) | Heavy (hold) | Special |
 |--------|---------|--------------------|--------------|---------|
 | **Ward** (default) | Balanced, mobile | thrust, sweep, overhead, spin | Rising overhead smash, hold to charge 3 tiers (stamina 16/22/28, power 1.8/2.4/3.2); **parry** window on the raise (0.25 s): a deflect staggers the attacker 1.3 s and banks tier 1; a blow on the charge breaks it, only the released downswing is armoured | Perfect dodge → 1.5 s time-dilation |
+| *(all stances, in the air)* | Jump attacks | light in the air (once per jump): the overhead arc brought down from the apex, carrying the hero in onto a foe ahead (stamina 10, power 1.35) | **Plunge**: heavy in the air with >= 0.7 m clear below: a 0.16 s hang with the staff overhead (the tell), then straight down at 21 m/s; the landing strikes every foe within 2.2-4.5 m (radius and power 1.6-3.2 grow with the height fallen), stamina 18, armoured through the drop, soaks half the fall damage | Crane will extend these (air-dodge, longer air strings) |
 | **Pillar** | Heavy, grounded | slow arcs, each with hyper-armour | Ground slam, AoE knockdown; charges through hits (hyper-armour while charging) | Charging while being hit builds Focus faster |
 | **Crane** | Fast, aerial | quick 2-hit flurries, launches | Dive strike from mid-air, long reach | Air-dodge; light attacks keep you airborne |
 

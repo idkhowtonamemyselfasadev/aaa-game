@@ -195,6 +195,7 @@ var jumps := 0                          # (bots) jumps taken
 var landings := 0                       # (bots) touchdowns, and the last one's fall
 var hard_landings := 0
 var last_drop := 0.0
+var _air_swung := false                 # a jump attack already thrown this time in the air
 var jump_apex := 0.0                    # (bots) height of the last jump's top above its take-off
 var _jump_y0 := 0.0
 signal landed(at: Vector3, hard: bool)
@@ -606,6 +607,8 @@ func _physics_process(delta: float) -> void:
 			combat.heavy()
 	var attacking := combat != null and combat.is_attacking()
 	var charging := combat != null and combat.is_charging()
+	var plunging := combat != null and combat.is_plunging()
+	var air_move := combat != null and combat.legs_free()
 
 	cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
 	var fwd := -cam_pivot.global_transform.basis.z
@@ -663,6 +666,9 @@ func _physics_process(delta: float) -> void:
 			wish = face
 			speed = atk["lunge"]
 		sprinting = false
+	elif plunging:
+		speed = 0.0
+		sprinting = false
 	elif charging:
 		# planted under the raised staff: a slow shuffle to line it up
 		speed = minf(speed, CHARGE_SPEED)
@@ -678,14 +684,24 @@ func _physics_process(delta: float) -> void:
 	if attacking and combat.current_attack().has("lunge_at"):
 		accel = ACCEL * 4.0                    # the heavy's step-in is one decisive stride
 	var airborne := not is_on_floor() and not dodging
-	if airborne and not attacking:
+	if airborne and (not attacking or air_move):
 		# carried by the take-off: the stick bends the arc, it does not reverse it; a sprint
 		# leap keeps its speed rather than braking to the run's
 		var hv := Vector2(velocity.x, velocity.z)
 		var cap := maxf(speed, hv.length())
 		target = wish * cap
 		accel = AIR_ACCEL if wish.length() > 0.1 else AIR_DRAG
-	if not dodging and not reeling:
+		if air_move and combat.is_air_attack() and combat.t < 0.36 and not combat.target_in_reach(0.95) \
+				and combat.magnet_target(3.6, 1.0) != Vector3.INF:
+			# the jump attack carries the hero in onto a foe ahead, as the staff comes over
+			target = body.global_transform.basis.z * maxf(cap, 3.2)
+			accel = AIR_ACCEL * 3.0
+	if plunging:
+		# the hang: drift on, slowing; then straight down on the spot
+		var damp := 6.0 if combat.plunge_t < StaffCombat.PLUNGE_HANG else 30.0
+		velocity.x = move_toward(velocity.x, 0.0, damp * delta * maxf(absf(velocity.x), 1.0))
+		velocity.z = move_toward(velocity.z, 0.0, damp * delta * maxf(absf(velocity.z), 1.0))
+	elif not dodging and not reeling:
 		velocity.x = move_toward(velocity.x, target.x, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
 
@@ -722,10 +738,17 @@ func _physics_process(delta: float) -> void:
 		elif _jumped and not jump_held:
 			g *= JUMP_CUT_GRAVITY                  # let go early: the hop is cut short
 		velocity.y -= g * delta
+		if plunging:
+			if combat.plunge_t < StaffCombat.PLUNGE_HANG:
+				velocity.y = move_toward(velocity.y, 0.0, 40.0 * delta)   # held at the top: the tell
+			else:
+				velocity.y = -StaffCombat.PLUNGE_SPEED
+		elif air_move and combat.t < 0.2 and velocity.y < 0.0:
+			velocity.y = maxf(velocity.y, -1.2)    # the jump attack hangs a beat over the apex
 		if _jumped:
 			jump_apex = maxf(jump_apex, global_position.y - _jump_y0)
 	var can_leave := ((is_on_floor() and not teleported) or (_coyote_t <= COYOTE and not _jumped)) \
-		and not (landing and _land_hard) and not dodging and not reeling and not attacking and not charging
+		and not (landing and _land_hard) and not dodging and not reeling and not attacking and not charging and not plunging
 	if _buffer_t <= JUMP_BUFFER and can_leave and stamina >= 8.0:
 		_buffer_t = 99.0
 		velocity.y = JUMP_VEL
@@ -755,7 +778,7 @@ func _physics_process(delta: float) -> void:
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
-	elif attacking or dodging or charging or reeling:
+	elif attacking or dodging or charging or reeling or plunging:
 		pass                                   # no recovery mid-swing, mid-dodge, charging or reeling
 	else:
 		stamina = minf(stamina + 12.0 * delta, stamina_max)
@@ -797,16 +820,29 @@ func _physics_process(delta: float) -> void:
 		var lt := lock_target.global_position - global_position
 		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta))
 
-	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and _regrab_t <= 0.0 and wish.length() > 0.3:
+	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and not plunging and _regrab_t <= 0.0 and wish.length() > 0.3:
 		if _try_grab(wish.normalized()):
 			return
 	move_and_slide()
 	_update_animation(delta)
-	_jump_pose(delta, attacking or charging or dodging or reeling)
+	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
 	if combat != null:
 		combat.physics_step(delta)
 
 # --- jumping ---
+
+## A light press now throws the jump attack: up off a jump (or falling a while), not winged or on a wall.
+func air_attack_ok() -> bool:
+	return not is_on_floor() and _air_t >= 0.0 and (_jumped or _air_t > 0.15) and not gliding \
+		and not climbing and mantle_t < 0.0 and not _air_swung and dodge_t < 0.0
+
+func note_air_attack() -> void:
+	_air_swung = true
+
+## A heavy press now plunges: in the air with clear air under the feet.
+func plunge_ok() -> bool:
+	return not is_on_floor() and _air_t >= 0.0 and not gliding and not climbing and mantle_t < 0.0 \
+		and dodge_t < 0.0 and _clear_below(StaffCombat.PLUNGE_MIN)
 
 ## True when nothing solid lies within `h` m below the feet.
 func _clear_below(h: float) -> bool:
@@ -816,11 +852,15 @@ func _touch_down() -> void:
 	var drop := _air_top - global_position.y
 	var was_jump := _jumped or _air_t > 0.15
 	_air_t = -1.0
+	_air_swung = false
+	var plunged := combat != null and combat.is_plunging()
+	if plunged:
+		combat.plunge_land(drop)
 	if not was_jump and drop < 0.35:
 		return                                 # a bump on a slope, not a landing
 	landings += 1
 	last_drop = drop
-	_land_hard = drop >= HARD_DROP
+	_land_hard = drop >= HARD_DROP or plunged   # a plunge always lands in the deep crouch
 	_land_dur = LAND_HARD if _land_hard else LAND_SOFT
 	land_t = 0.0
 	if _land_hard:
@@ -829,6 +869,8 @@ func _touch_down() -> void:
 	landed.emit(global_position, _land_hard)
 	if drop > FALL_HURT and dead_t < 0.0:
 		var dmg := health_max * clampf((drop - FALL_HURT) / (FALL_LETHAL - FALL_HURT), 0.0, 1.0)
+		if plunged and drop < FALL_LETHAL:
+			dmg *= 0.5                         # driven down on purpose: the staff takes half of it
 		health = maxf(health - dmg, 0.0)
 		hurt.emit(dmg)
 		if health <= 0.0:
@@ -841,7 +883,7 @@ func _touch_down() -> void:
 ## drop, with the chest folding over them and the arms swinging down for balance.
 var _jp := 0.0                          # 0..1 how much the jump pose owns the legs
 var _tuck := 0.0
-func _jump_pose(delta: float, busy: bool) -> void:
+func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	if crumple == null or gliding or climbing or mantle_t >= 0.0 or dead_t >= 0.0 or down_t >= 0.0:
 		return
 	var air := _air_t >= 0.0 and (_jumped or _air_t > 0.15) and not busy
@@ -892,6 +934,10 @@ func _jump_pose(delta: float, busy: bool) -> void:
 		arm = (0.5 if _land_hard else 0.2) * env
 		elbow = 0.5 * env
 		_tuck = 0.0
+	if armed:
+		arm = 0.0                              # the staff's IK owns the arms
+		elbow = 0.0
+		spine *= 0.5
 	crumple.active = true
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)

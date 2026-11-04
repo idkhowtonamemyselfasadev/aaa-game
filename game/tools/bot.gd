@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -118,6 +118,9 @@ func _ready() -> void:
 		return
 	if name == "heavy":
 		_heavy_test()
+		return
+	if name == "airstrike":
+		_airstrike_test()
 		return
 	if name == "sweep":
 		_sweep_test()
@@ -768,6 +771,142 @@ func _jump_test() -> void:
 	if p.deaths != d0 + 1:
 		return _combat_done(false, "a 30 m drop did not kill")
 	_combat_done(true, "tap/hold heights, coyote, buffer, sprint leap, landings and fall damage")
+
+## Jump attack + plunging attack on the practice post: a light at the top of a jump strikes
+## down into it (once per jump), a heavy at the top of a jump drops the hero in a slam that
+## strikes it, a plunge from 6 m hits harder and wider, and a 12 m plunge soaks half the fall.
+func _airstrike_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	var post: TrainingPost = _world.training_post
+	var terrain: Terrain = _world.get_node("Terrain")
+	Engine.time_scale = 1.0
+	await _ticks(20)
+	var away := p.global_position - post.global_position
+	away.y = 0.0
+	away = away.normalized() if away.length() > 0.1 else Vector3.BACK
+	var place := func(dist: float, up: float) -> void:
+		for i in 120:
+			if not c.is_attacking() and not c.is_plunging():
+				break
+			await get_tree().physics_frame
+		var at := post.global_position + away * dist
+		at.y = terrain.height_at(at.x, at.z) + 0.05 + up
+		p.global_position = at
+		p.velocity = Vector3.ZERO
+		p.stamina = p.stamina_max
+		p.health = p.health_max
+		p.body.rotation.y = atan2(-away.x, -away.z)
+		for i in 200:
+			await get_tree().physics_frame
+			if up <= 0.0 and p.is_on_floor() and p.land_t < 0.0 and not c.is_attacking():
+				break
+			if up > 0.0 and i > 2:
+				break
+		p.body.rotation.y = atan2(-away.x, -away.z)
+	var to_apex := func() -> void:
+		p.bot_jump = true
+		p.bot_jump_hold = true
+		await _ticks(3)
+		for i in 60:
+			await get_tree().physics_frame
+			if p.velocity.y < 1.2:
+				break
+		p.bot_jump_hold = false
+	# draw the staff first so the light goes straight into the air arc
+	await place.call(1.9, 0.0)
+	p.bot_attack = true
+	await _ticks(2)
+	while c.is_attacking() or c.state == StaffCombat.DRAWING:
+		await get_tree().physics_frame
+	await place.call(1.9, 0.0)
+	# 1) jump attack
+	var h0 := post.hits
+	await to_apex.call()
+	var y_press := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
+	p.bot_attack = true
+	await _ticks(2)
+	var started := c.is_air_attack()
+	var hit_air := false
+	var second := false
+	var tip_min := 99.0
+	for i in 90:
+		await get_tree().physics_frame
+		if c.hit_active:
+			var tp := c.tip_position()
+			tip_min = minf(tip_min, Vector2(tp.x - post.global_position.x, tp.z - post.global_position.z).length())
+		if post.hits > h0 and not p.is_on_floor():
+			hit_air = true
+		if i == 12:
+			p.bot_attack = true                    # a second press in the same jump: no second air swing
+		if c.air_attacks > 1:
+			second = true
+		if p.is_on_floor() and not c.is_attacking():
+			break
+	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
+	if not started or post.hits <= h0:
+		return _combat_done(false, "a light at the top of a jump did not strike down into the post")
+	if second:
+		return _combat_done(false, "a second jump attack was thrown in the same jump")
+	# 2) jump + heavy: a low plunge
+	await place.call(1.6, 0.0)
+	h0 = post.hits
+	await to_apex.call()
+	var y0 := p.global_position.y
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	var plunging := c.is_plunging()
+	var hang_y := p.global_position.y
+	var vmin := 0.0
+	for i in 120:
+		await get_tree().physics_frame
+		vmin = minf(vmin, p.velocity.y)
+		if c.plunge_t < StaffCombat.PLUNGE_HANG:
+			hang_y = minf(hang_y, p.global_position.y)
+		if c.plunges > 0:
+			break
+	var low_pow := c.last_power
+	print("BOT airstrike: jump plunge -> plunging %s, hang dropped %.2f m, fastest fall %.1f m/s, plunges %d, post hits %d -> %d, power %.2f" % [plunging, y0 - hang_y, vmin, c.plunges, h0, post.hits, low_pow])
+	if not plunging or c.plunges != 1 or post.hits <= h0:
+		return _combat_done(false, "a heavy at the top of a jump did not plunge onto the post")
+	if vmin > -StaffCombat.PLUNGE_SPEED + 1.0 or y0 - hang_y > 0.35:
+		return _combat_done(false, "the plunge does not hang then drive straight down")
+	for i in 90:
+		await get_tree().physics_frame
+		if not c.is_attacking():
+			break
+	if c.is_attacking() or c.is_plunging():
+		return _combat_done(false, "the hero never rose out of the plunge")
+	# 3) from 6 m: harder and wider, no harm
+	await place.call(1.4, 6.0)
+	h0 = post.hits
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	for i in 200:
+		await get_tree().physics_frame
+		if c.plunges > 1:
+			break
+	print("BOT airstrike: 6 m plunge -> plunges %d, post hits %d -> %d, power %.2f (low %.2f), health %.0f" % [c.plunges, h0, post.hits, c.last_power, low_pow, p.health])
+	if c.plunges != 2 or post.hits <= h0 or c.last_power < low_pow + 0.8 or p.health < p.health_max:
+		return _combat_done(false, "a plunge from 6 m did not strike harder, or it hurt")
+	# 4) 12 m: the plunge takes half the fall
+	await place.call(6.0, 12.0)
+	p.bot_heavy = true
+	await _ticks(2)
+	p.bot_heavy = false
+	for i in 300:
+		await get_tree().physics_frame
+		if c.plunges > 2:
+			break
+	await _ticks(3)
+	var lost := p.health_max - p.health
+	var full := p.health_max * clampf((p.last_drop - Player.FALL_HURT) / (Player.FALL_LETHAL - Player.FALL_HURT), 0.0, 1.0)
+	print("BOT airstrike: 12 m plunge (drop %.2f) -> lost %.0f of a plain fall's %.0f" % [p.last_drop, lost, full])
+	if c.plunges != 3 or lost <= 0.0 or absf(lost - full * 0.5) > 1.5:
+		return _combat_done(false, "a 12 m plunge did not soak half the fall damage")
+	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")
 
 func _ticks(n: int) -> void:
 	for i in n:

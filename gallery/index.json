@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261028-1350-boulder-flankalb.jpg",
-  "time": "2026-10-28T13:50:00Z",
-  "caption": "Meadow boulder at 15:00 after the rock albedo fix (lighter stone, softer upper-only rain runs, lighter moss shade, damp band limited to the foot): the lit face reads as grey granite, but the mossed flank turned from the sun only rises from ~1.8% to ~2.6% brightness and is still a near-black mass beside the 16% grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-1437-boulder-flankmoss.jpg",
-  "time": "2026-10-28T14:37:00Z",
-  "caption": "Meadow boulder at 15:00 after capping flank moss at ~60% and softening its cushion darkening and AO: grey stone now shows on the shaded flank (brightness 2.6% -> 4.5%), but that face is still a dark mass next to the 14% grass, and the boulder looks stuck on the grass rather than sitting in it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-1540-boulder-skirt.jpg",
-  "time": "2026-10-28T15:40:00Z",
-  "caption": "The meadow boulder now stands in a skirt of tussocks rooted along its foot, so its base is broken by grass instead of a hard line on the turf; the skirt tufts are straw-pale and the shaded flank is still near-black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-1650-pedlar-dusk-moths.jpg",
-  "time": "2026-10-28T16:50:00Z",
-  "caption": "Wat the pedlar on the dusk cart track with his lit horn lantern pooling warm light on the ruts and fireflies over the meadow; the new moths round his lantern barely read (one faint speck by his knee) and the lens is too dark and murky for a Wukong frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-1940-moths-framing-broken.jpg",
   "time": "2026-10-28T19:40:00Z",
   "caption": "The pedlar's dusk lantern-moth close-up came out broken: the lens sits low in dark grass blades with a black slab over the right third and the moths are 20 m off and outside the frame, so the shot framing in shot.gd must be fixed before the moths can be judged.",
@@ -897,6 +873,18 @@
   "file": "20261104-0122-growth-ring.jpg",
   "time": "2026-11-04T01:22:56Z",
   "caption": "1.3 s into the growth: the ring of fire up round the swelling knight, small orange sparks off its armour, cracks glowing on the plate (GL frame; the surge's stone-chip burst still reads as pale snow over the helm).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0244-jumpattack-overhead.jpg",
+  "time": "2026-11-04T02:44:17Z",
+  "caption": "The new jump attack at its top: the staff hauled straight overhead with the legs tucked, about to come down on the practice post (GL frame; procedural pose, no mocap clip, figure small in frame).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0244-plunge-impact.jpg",
+  "time": "2026-11-04T02:44:17Z",
+  "caption": "The new plunging attack at impact: the ferrule driven into the turf beside the post, hands high on the shaft (GL frame; the body still reads fairly upright and the soil burst is not caught in this frozen frame).",
   "verdict": "fail"
  }
 ]

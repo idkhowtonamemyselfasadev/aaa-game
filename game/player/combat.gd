@@ -13,8 +13,9 @@ signal hit_landed(target: Node, point: Vector3, power: float)
 signal parried(attacker: Node)
 signal charge_tier(tier: int)
 signal slammed(at: Vector3, power: float)
+signal plunged(at: Vector3, power: float, radius: float)
 
-enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED }
+enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED, PLUNGING }
 
 const DRAW_TIME := 0.22
 const SHEATHE_AFTER := 5.0
@@ -85,6 +86,42 @@ const STRING := [
 		[1.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03]]},
 ]
 
+# Jump attack (light in the air, once per jump): the overhead arc of string hit 3 brought
+# down from the top of the jump. The rise of it holds the hero a beat at the apex so the
+# blow reads; the body keeps its momentum and the legs keep their tuck.
+const AIR_COST := 10.0
+const AIR_POWER := 1.35
+const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0, "air": true, "keys": [
+	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
+	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
+	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
+	[0.36, -20.0, 106.0, Vector3(0.15, 1.98, 0.09), -14.0],          # overhead, back arched
+	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
+	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
+# Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),
+# then the hero drives straight down, ferrule first, and the landing bursts out round them.
+# Power and radius grow with the height fallen; the landing soaks half the fall damage.
+const PLUNGE_HANG := 0.18     # s held at the top: staff up (0.08 s), held, then swung down from 0.11 s
+const PLUNGE_SPEED := 21.0    # m/s straight down after the hang
+const PLUNGE_COST := 18.0
+const PLUNGE_MIN := 0.7       # m of clear air below needed (lower: a plain heavy waits for the ground)
+const PLUNGE_DOWN := [10.0, -70.0, Vector3(-0.20, 1.20, 0.30), -55.0, -0.05]
+const PLUNGE_RISE := { "dur": 0.62, "hit": [2.0, 2.0], "lunge": 0.0, "spin": 0.0, "legs": true, "keys": [
+	[0.00, 10.0, -70.0, Vector3(-0.20, 1.20, 0.30), -55.0, -0.05],   # ferrule in the turf
+	[0.30, 10.0, -66.0, Vector3(-0.20, 1.18, 0.32), -55.0, -0.05],   # held a beat in the crouch
+	[0.62, 2.0, -38.0, Vector3(-0.14, 1.35, 0.30), -3.0],
+	[0.84, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],
+	[1.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03]]}
+static func plunge_power(drop: float) -> float:
+	return 1.6 + clampf(drop / 4.0, 0.0, 1.6)
+static func plunge_radius(drop: float) -> float:
+	return 2.2 + minf(drop * 0.3, 2.3)
+var plunge_t := 0.0          # s into the plunge
+var _air_draw_t := -1.0      # s into a draw blended under an air move (-1: none)
+var plunges := 0             # plunges landed (bots read this)
+var air_attacks := 0         # jump attacks started (bots read this)
+var last_plunge_hits := 0    # foes the last landing struck (bots read this)
+
 var player: Player
 var staff: Staff
 var skel: Skeleton3D
@@ -96,6 +133,7 @@ var queued := false
 var hit_active := false
 var dip := 0.0                 # rad the swing plane tips forward-down onto a low foe (a hound)
 const LOW_DIP := 0.55          # full tip toward a low target in front
+const AIR_DIP := 0.42          # the jump attack's strike tips down from the apex
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
 var swings := 0              # attacks started (bots read this)
@@ -204,17 +242,34 @@ func is_attacking() -> bool:
 func is_charging() -> bool:
 	return state == CHARGING
 
+func is_plunging() -> bool:
+	return state == PLUNGING
+
+## The swing in progress leaves the legs to the jump/landing pose (a jump attack, the plunge's rise).
+func legs_free() -> bool:
+	return state == ATTACKING and (_atk.get("air", false) or _atk.get("legs", false))
+
+func is_air_attack() -> bool:
+	return state == ATTACKING and _atk.get("air", false)
+
 func current_attack() -> Dictionary:
 	return _atk
 
 ## The released heavy is committed from the moment it starts down until the strike has passed:
 ## a blow landing then is taken without breaking the swing.
 func has_hyper_armour() -> bool:
+	if state == PLUNGING or (state == ATTACKING and _atk == PLUNGE_RISE and t < 0.25):
+		return true
 	return state == ATTACKING and _atk == HEAVY and t / float(_atk["dur"]) < float(_atk["hit"][1])
 
 ## Heavy pressed: start raising the staff (drawing it first if slung). During a light swing
 ## it cuts in once the strike has passed, otherwise it waits for the swing to finish.
 func heavy() -> void:
+	if state == PLUNGING or (state == ATTACKING and _atk == PLUNGE_RISE):
+		return
+	if player.plunge_ok() and state in [SHEATHED, SHEATHING, DRAWING, READY, ATTACKING, CHARGING]:
+		_start_plunge()
+		return
 	match state:
 		SHEATHED, SHEATHING:
 			_begin_draw()
@@ -314,6 +369,11 @@ func _release() -> void:
 
 ## Light attack pressed: draw if needed, start or queue the next hit of the string.
 func light() -> void:
+	if state in [READY, SHEATHED, SHEATHING, DRAWING] and player.air_attack_ok():
+		_start_air()
+		return
+	if state == PLUNGING:
+		return
 	match state:
 		SHEATHED, SHEATHING:
 			_begin_draw()
@@ -350,6 +410,7 @@ var _drop_rest := Basis()
 var _drop_v := 0.0
 
 func drop() -> void:
+	_air_draw_t = -1.0
 	cancel_to_guard()
 	_heavy_queued = false
 	queued = false
@@ -370,6 +431,7 @@ func drop() -> void:
 
 ## Back on the hero's back after a rest.
 func restore() -> void:
+	_air_draw_t = -1.0
 	staff.reparent(_back_slot, false)
 	staff.transform = _back_xform
 	_set_influence(0.0)
@@ -412,6 +474,122 @@ func _start(i: int) -> void:
 	state = ATTACKING
 	swings += 1
 	swing_started.emit(i)
+
+## Light in the air: the overhead arc brought down from the top of the jump.
+func _start_air() -> void:
+	if player.stamina <= 0.0:
+		return
+	player.stamina = maxf(player.stamina - AIR_COST, 0.0)
+	player.note_air_attack()
+	_snatch_draw()
+	_atk = AIR_LIGHT
+	_recover = 0.0
+	_power = AIR_POWER
+	_hit_this_swing.clear()
+	_prev_u = -1.0
+	step = -1
+	t = 0.0
+	_spun = 0.0
+	queued = false
+	_heavy_queued = false
+	idle_t = 0.0
+	state = ATTACKING
+	swings += 1
+	air_attacks += 1
+	swing_started.emit(-2)
+
+## Heavy in the air: from any pose (a slung staff is drawn straight into the hands), the staff
+## goes up overhead for the hang, then the hero drops on the spot below.
+func _start_plunge() -> void:
+	if player.stamina <= 0.0:
+		return
+	player.stamina = maxf(player.stamina - PLUNGE_COST, 0.0)
+	if _snatch_draw():
+		_raise_from = GUARD
+	elif state == CHARGING:
+		_raise_from = _charge_pose()
+	elif state == ATTACKING:
+		_raise_from = _pose_at(_atk["keys"], clampf(t / float(_atk["dur"]), 0.0, 1.0))
+	elif _recover > 0.0 and _recover_keys.size() > 1:
+		_raise_from = _pose_at(_recover_keys, 1.0 - _recover / RECOVER_TIME)
+		_raise_from[0] = wrapf(_raise_from[0], -180.0, 180.0)
+	else:
+		_raise_from = GUARD
+	_recover = 0.0
+	state = PLUNGING
+	plunge_t = 0.0
+	step = -1
+	t = 0.0
+	queued = false
+	_heavy_queued = false
+	hit_active = false
+	idle_t = 0.0
+	swings += 1
+	swing_started.emit(-3)
+
+## In the air there is no time for a separate draw: a slung staff is pulled off the back and
+## blended into the hands over DRAW_TIME while the move itself runs. True if it was slung.
+func _snatch_draw() -> bool:
+	_air_draw_t = -1.0
+	if state != SHEATHED and state != SHEATHING and state != DRAWING:
+		return false
+	if staff.get_parent() != _wield:
+		staff.reparent(_wield, true)
+	_from_xform = staff.transform
+	_air_draw_t = 0.0
+	_set_influence(0.0)
+	return true
+
+func _plunge_pose() -> Array:
+	var up := smoothstep(0.0, 0.08, plunge_t)
+	var pose := _pose_at([[0.0] + _raise_from, [1.0] + RAISED], up)
+	var down := smoothstep(0.11, 0.21, plunge_t)
+	if down > 0.0:
+		pose = _pose_at([[0.0] + RAISED, [1.0] + PLUNGE_DOWN], down)
+	return pose
+
+## The plunge meets the ground (the player calls this on touchdown): every foe inside the
+## burst is struck outward, the turf bursts, the camera takes it, then the hero rises.
+func plunge_land(drop: float) -> void:
+	if state != PLUNGING:
+		return
+	var power := plunge_power(drop)
+	var radius := plunge_radius(drop)
+	var at := player.global_position + Vector3.UP * 0.05
+	var front := at + player.body.global_basis.z * 0.55
+	plunges += 1
+	last_plunge_hits = 0
+	_power = power
+	for target in player.get_tree().get_nodes_in_group("hittable"):
+		if not target.has_method("hurt_capsule") or not target.has_method("take_hit"):
+			continue
+		var cap: Array = target.hurt_capsule()
+		var a: Vector3 = cap[0]
+		var b: Vector3 = cap[1]
+		var lo := a if a.y < b.y else b
+		if lo.y > at.y + 2.5 or maxf(a.y, b.y) < at.y - 1.0:
+			continue
+		var out := Vector3(lo.x - at.x, 0.0, lo.z - at.z)
+		if out.length() > radius + float(cap[2]):
+			continue
+		var dir := out.normalized() if out.length() > 0.05 else player.body.global_basis.z
+		var point := Vector3(lo.x, at.y + 0.6, lo.z) - dir * float(cap[2])
+		last_plunge_hits += 1
+		_land_hit(target, point, dir)
+	hitstop = HITSTOP * power * (1.0 if last_plunge_hits > 0 else 0.5)
+	ImpactFX.spawn(player.get_parent(), front, Vector3.DOWN, "stone", 1.0 + 0.5 * power)
+	player.add_shake(0.25 + 0.15 * power)
+	slammed.emit(front, 0.8 + 0.4 * power)
+	plunged.emit(at, power, radius)
+	# the impact pose now, whatever the swing had reached: the hit-stop freezes on it
+	staff.transform = _place_hands(PLUNGE_DOWN)
+	_twist.twist = deg_to_rad(PLUNGE_DOWN[3])
+	_atk = PLUNGE_RISE
+	_hit_this_swing.clear()
+	_prev_u = -1.0
+	_slammed = true
+	t = 0.0
+	state = ATTACKING
 
 ## STRING[0] opened from part-way (`u`) through a recovery `path` (from best_recover_path):
 ## the arms run on along the rest of that path up to its chamber key -- squeezed into the
@@ -486,6 +664,8 @@ func physics_step(delta: float) -> void:
 				idle_t = 0.0
 				if _heavy_queued:
 					_start_charge()
+				elif queued and player.air_attack_ok():
+					_start_air()
 				elif queued:
 					_start(0)
 			_age_trail(delta)
@@ -513,6 +693,11 @@ func physics_step(delta: float) -> void:
 			if (not heavy_held and charge_t >= MIN_CHARGE) or charge_t >= CHARGE_MAX:
 				_release()
 				pose = _pose_at(_atk["keys"], 0.0)
+		PLUNGING:
+			plunge_t += delta
+			idle_t = 0.0
+			pose = _plunge_pose()
+			hit_active = false
 		ATTACKING:
 			var atk: Dictionary = _atk
 			var dur: float = atk["dur"]
@@ -554,8 +739,17 @@ func physics_step(delta: float) -> void:
 			_age_trail(delta)
 			return
 	var want_dip := LOW_DIP if is_attacking() and _low_target_ahead() else 0.0
+	if is_air_attack() and t / float(_atk["dur"]) > 0.4:
+		want_dip = AIR_DIP                     # from above, the whole arc tips down onto the foe
 	dip = lerpf(dip, want_dip, 1.0 - exp(-12.0 * delta))
 	staff.transform = _place_hands(pose)
+	if _air_draw_t >= 0.0:
+		_air_draw_t += delta
+		var f := clampf(_air_draw_t / DRAW_TIME, 0.0, 1.0)
+		staff.transform = _from_xform.interpolate_with(staff.transform, f)
+		_set_influence(f)
+		if f >= 1.0:
+			_air_draw_t = -1.0
 	_twist.twist = deg_to_rad(pose[3])
 	if hit_active:
 		_detect_hits(t / float(_atk["dur"]))

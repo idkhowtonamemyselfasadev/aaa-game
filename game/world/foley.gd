@@ -451,11 +451,15 @@ func hook_villager(v: Node) -> void:
 ## The staff's swish starts just before the strike window so its peak meets the blow.
 func _on_swing(step: int) -> void:
 	var c := player.combat
-	var atk: Dictionary = StaffCombat.HEAVY if step < 0 else StaffCombat.STRING[step]
+	if step == -3:
+		# the plunge: the staff whooms up overhead in the hang, the landing is its own slam
+		_pending.append([StaffCombat.PLUNGE_HANG * 0.5, "whoom", func() -> Vector3: return c.tip_position(), -5.0, _rng.randf_range(0.82, 0.9)])
+		return
+	var atk: Dictionary = StaffCombat.AIR_LIGHT if step == -2 else (StaffCombat.HEAVY if step < 0 else StaffCombat.STRING[step])
 	var lead := float(atk.dur) * float(atk.hit[0]) * 0.8
-	var heavy := step < 0
+	var heavy := step == -1
 	var nm := "whoom" if heavy else "swish"
-	var db := -4.0 if heavy else -7.0 + 2.0 * (float(StaffCombat.POWER[step]) - 1.0)
+	var db := -4.0 if heavy else (-5.5 if step == -2 else -7.0 + 2.0 * (float(StaffCombat.POWER[step]) - 1.0))
 	_pending.append([lead, nm, func() -> Vector3: return c.tip_position(), db, _rng.randf_range(0.92, 1.08)])
 
 func _on_hit(target: Node, point: Vector3, power: float) -> void:
