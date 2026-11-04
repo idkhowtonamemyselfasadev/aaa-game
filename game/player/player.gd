@@ -407,7 +407,9 @@ func _update_animation(delta: float) -> void:
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	if not is_on_floor() and (_jumped or _air_t > 0.15):
 		hspeed = 0.0                             # in the air the jump pose owns the legs: no stride
-	_blend = lerpf(_blend, minf(hspeed, ANIM_RUN_SPEED), 1.0 - exp(-10.0 * delta))
+	# turning on the spot: short steps (the walk at a third of its reach, quick cadence)
+	var goal := maxf(minf(hspeed, ANIM_RUN_SPEED), turn_shuffle * ANIM_WALK_SPEED * 0.45)
+	_blend = lerpf(_blend, goal, 1.0 - exp(-10.0 * delta))
 	anim_tree.set("parameters/move/blend_position", _blend)
 	# Between blend points cadence follows speed/blend, so feet don't skate.
 	var ts := 1.0
@@ -415,6 +417,8 @@ func _update_animation(delta: float) -> void:
 		ts = hspeed / ANIM_RUN_SPEED
 	elif hspeed > 0.2 and hspeed < ANIM_WALK_SPEED:
 		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
+	if turn_shuffle > 0.05 and hspeed < 0.6:
+		ts = lerpf(ts, 1.25, turn_shuffle)
 	if combat != null and combat.hitstop > 0.0:
 		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
@@ -885,8 +889,65 @@ func _physics_process(delta: float) -> void:
 	_put_off_foes()
 	_update_animation(delta)
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
+	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
 	if combat != null:
 		combat.physics_step(delta)
+
+# --- locomotion weight: the body leans into what the feet are doing ---
+## Pivoting at the soles, the whole figure tips forward into a start (the push of the first
+## strides), back against a stop (the heels digging in), and banks into the inside of a turn,
+## as much as the speed times the turn rate asks for. Both ride an under-damped spring, so a
+## stop rocks back, overshoots forward over the planted feet and settles. Standing and turning
+## on the spot, the feet shuffle round with short steps instead of the body pivoting on frozen
+## soles.
+const LEAN_ACCEL := 0.024              # rad of forward pitch per m/s^2 along the facing
+const LEAN_RUN := 0.035                # rad held forward at full sprint (the chest over the stride)
+const LEAN_MAX := 0.17                 # ~10 deg either way
+const BANK_K := 0.045                  # rad of roll per m/s^2 of sideways (centripetal) push
+const BANK_MAX := 0.2                  # ~11 deg
+const LEAN_W := 13.0                   # spring stiffness (rad/s): weight shifts in ~0.12 s
+const LEAN_ZETA := 0.42                # under-damped: one visible overshoot, then still
+var lean := Vector2.ZERO               # x: pitch (+ forward), y: roll (+ toward the body's right)
+var _lean_v := Vector2.ZERO
+var _lean_hv := Vector2.ZERO           # last tick's ground velocity
+var _lean_yaw := 0.0
+var _pose_dip := 0.0                   # what the jump/landing pose sank the model this tick
+var lean_peak := Vector2.ZERO          # (bots) most forward / most back pitch seen
+var turn_shuffle := 0.0                # 0..1 stepping on the spot while the body turns
+func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
+	var hv := Vector2(velocity.x, velocity.z)
+	var yaw := body.rotation.y
+	var yaw_rate := wrapf(yaw - _lean_yaw, -PI, PI) / maxf(delta, 1e-4)
+	var acc := (hv - _lean_hv) / maxf(delta, 1e-4)
+	_lean_hv = hv
+	_lean_yaw = yaw
+	var want := Vector2.ZERO
+	if not calm and not owned and combat != null and combat.hitstop <= 0.0:
+		var face := body.global_transform.basis.z
+		var f2 := Vector2(face.x, face.z)
+		var a_fwd := acc.dot(f2)
+		var spd := hv.length()
+		want.x = clampf(a_fwd * LEAN_ACCEL + LEAN_RUN * clampf((spd - RUN_SPEED * 0.6) / (SPRINT_SPEED - RUN_SPEED * 0.6), 0.0, 1.0),
+			-LEAN_MAX, LEAN_MAX)
+		# centripetal push: speed x turn rate (turning left = yaw up = lean left, toward -roll)
+		want.y = clampf(-spd * clampf(yaw_rate, -6.0, 6.0) * BANK_K, -BANK_MAX, BANK_MAX)
+	# spring-damper toward the wanted lean, integrated in two half steps for stability
+	for i in 2:
+		var h := delta * 0.5
+		var a := (want - lean) * LEAN_W * LEAN_W - _lean_v * 2.0 * LEAN_ZETA * LEAN_W
+		_lean_v += a * h
+		lean += _lean_v * h
+	lean.x = clampf(lean.x, -LEAN_MAX * 1.2, LEAN_MAX * 1.2)
+	lean.y = clampf(lean.y, -BANK_MAX * 1.2, BANK_MAX * 1.2)
+	lean_peak = Vector2(maxf(lean_peak.x, lean.x), minf(lean_peak.y, lean.x))
+	# standing and turning: shuffle steps (read by _update_animation next tick)
+	var standing := is_on_floor() and hv.length() < 0.6 and not owned and not calm
+	var sh := clampf((absf(yaw_rate) - 1.2) / 3.0, 0.0, 1.0) if standing else 0.0
+	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 3.0))
+	if owned:
+		return                                 # the dodge / flinch pose writes the model itself
+	var tip := Basis(Vector3.RIGHT, lean.x) * Basis(Vector3.BACK, lean.y)
+	model.transform = Transform3D(Basis(), Vector3(0, -_pose_dip, 0)) * Transform3D(tip, Vector3.ZERO) * _model_rest
 
 # --- jumping ---
 
@@ -978,6 +1039,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	if push:
 		_jp = 1.0                             # the take-off owns the legs from its first frame
 	_jp = move_toward(_jp, want, delta * (14.0 if want > _jp else 8.0))
+	_pose_dip = 0.0
 	if _jp <= 0.0:
 		if crumple.leg_aim > 0.0:
 			_clear_jump_pose()
@@ -1087,6 +1149,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		garb.posed_legs = true
 	if not busy:
 		model.transform = Transform3D(Basis(), Vector3(0, -dip, 0)) * _model_rest
+		_pose_dip = dip
 
 func _clear_jump_pose() -> void:
 	if _jp > 0.0 and model != null:

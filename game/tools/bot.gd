@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -184,6 +184,9 @@ func _ready() -> void:
 		return
 	if name == "jump":
 		_jump_test()
+		return
+	if name == "lean":
+		_lean_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -621,6 +624,96 @@ func _bat_test() -> void:
 	if not back_out:
 		return _combat_done(false, "the bat never comes out again once the rain has passed")
 	_combat_done(true, "the bat hawks the moths at the lantern after dark")
+
+## Lean: a start tips the hero forward into the push, a stop rocks back against the heels,
+## overshoots forward over the planted feet and settles still; a turn at a run banks into
+## the inside of the turn; squaring up to a target behind on the spot shuffles the feet.
+func _lean_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(40)
+	if absf(p.lean.x) > 0.01 or absf(p.lean.y) > 0.01:
+		return _combat_done(false, "the hero leans while standing still (%.3f, %.3f)" % [p.lean.x, p.lean.y])
+	# 1) start: forward lean while the run builds
+	var start_peak := 0.0
+	for i in 30:
+		p.bot_input = Vector2(0, -1)
+		await get_tree().physics_frame
+		start_peak = maxf(start_peak, p.lean.x)
+	for i in 60:
+		p.bot_input = Vector2(0, -1)
+		await get_tree().physics_frame
+	var cruise := p.lean.x
+	# 2) turn hard right at a run: bank to the right (the model's up tips toward the body's right)
+	var bank := 0.0
+	var bank_dot := 0.0
+	for i in 40:
+		p.bot_input = Vector2(1, 0)
+		await get_tree().physics_frame
+		if p.lean.y > bank:
+			bank = p.lean.y
+			var right_w := p.body.global_basis * Vector3(-1, 0, 0)
+			bank_dot = p.model.global_basis.y.normalized().dot(right_w.normalized())
+	for i in 50:
+		p.bot_input = Vector2(1, 0)
+		await get_tree().physics_frame
+	# 3) stop: back, then an overshoot forward, then still
+	p.bot_input = Vector2.ZERO
+	var back := 0.0
+	var back_i := -1
+	var over := 0.0
+	for i in 90:
+		await get_tree().physics_frame
+		if p.lean.x < back:
+			back = p.lean.x
+			back_i = i
+		if back_i >= 0 and i > back_i:
+			over = maxf(over, p.lean.x)
+	var rest := absf(p.lean.x) + absf(p.lean.y)
+	print("BOT lean: start %.3f rad, cruise %.3f, bank %.3f (up.right %.3f), stop back %.3f, overshoot %.3f, rest %.4f" % [start_peak, cruise, bank, bank_dot, back, over, rest])
+	if start_peak < 0.08:
+		return _combat_done(false, "no forward lean into the start (%.3f rad)" % start_peak)
+	if bank < 0.06 or bank_dot < 0.05:
+		return _combat_done(false, "no bank into the right turn (%.3f rad, up.right %.3f)" % [bank, bank_dot])
+	if back > -0.06:
+		return _combat_done(false, "no lean back against the stop (%.3f rad)" % back)
+	if over < 0.01:
+		return _combat_done(false, "the stop does not rock forward over the planted feet after (%.3f)" % over)
+	if rest > 0.01:
+		return _combat_done(false, "the lean does not settle once stopped (%.4f)" % rest)
+	# 4) turn on the spot: lock onto the practice post behind the hero; the feet shuffle round
+	var post: Node3D = null
+	for t in get_tree().get_nodes_in_group("hittable"):
+		if not t.is_in_group("enemy") and p._lockable(t) and (post == null or t.global_position.distance_to(p.global_position) < post.global_position.distance_to(p.global_position)):
+			post = t
+	if post == null:
+		return _combat_done(false, "no practice post to lock onto")
+	var to := post.global_position - p.global_position
+	p.body.rotation.y = atan2(to.x, to.z) + PI    # facing away
+	await _ticks(20)
+	p._set_lock(post)
+	var shuffle := 0.0
+	var blend := 0.0
+	var drift := p.global_position
+	for i in 50:
+		await get_tree().physics_frame
+		shuffle = maxf(shuffle, p.turn_shuffle)
+		blend = maxf(blend, p._blend)
+	var moved := Vector2(p.global_position.x - drift.x, p.global_position.z - drift.z).length()
+	var facing := p.body.global_basis.z.dot(Vector3(to.x, 0, to.z).normalized())
+	await _ticks(60)
+	p._set_lock(null)
+	print("BOT lean: turn on the spot shuffle %.2f, stride blend %.2f, moved %.2f m, facing %.2f, after %.2f" % [shuffle, blend, moved, facing, p.turn_shuffle])
+	if shuffle < 0.5 or blend < 0.3:
+		return _combat_done(false, "turning on the spot does not step the feet round (shuffle %.2f blend %.2f)" % [shuffle, blend])
+	if moved > 0.15:
+		return _combat_done(false, "the turn on the spot walks the hero off (%.2f m)" % moved)
+	if p.turn_shuffle > 0.05:
+		return _combat_done(false, "the feet keep shuffling once squared up (%.2f)" % p.turn_shuffle)
+	_combat_done(true, "the hero leans into starts, banks into turns, rocks back and settles on a stop, and steps round on the spot")
 
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])

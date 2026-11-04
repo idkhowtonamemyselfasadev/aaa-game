@@ -2246,11 +2246,21 @@ func _ready() -> void:
 		var jstart := player.global_position
 		if "drop" in args:
 			player.global_position += Vector3.UP * 4.0
-		else:
+		elif not "fromrest" in args:
 			for i in 60:
 				player.bot_input = Vector2(1, 0)
 				player.bot_sprint = spr
 				await get_tree().physics_frame
+		# nojump: only run (with fromrest from a standstill), stopat=<t> lets go of the stick,
+		# turnat=<t> swings it 90 deg: the start / stop / turn lean frames
+		var stop_at := -1.0
+		var turn_at := -1.0
+		for a in args:
+			if a.begins_with("stopat="):
+				stop_at = float(a.substr(7))
+			if a.begins_with("turnat="):
+				turn_at = float(a.substr(7))
+		if not "drop" in args and not "nojump" in args:
 			player.bot_jump = true
 		player.bot_jump_hold = true
 		var t := 0.0
@@ -2263,6 +2273,10 @@ func _ready() -> void:
 		for i in 600:
 			if not "drop" in args:
 				player.bot_input = Vector2(1, 0)
+				if turn_at >= 0.0 and t >= turn_at:
+					player.bot_input = Vector2(0, 1)
+				if stop_at >= 0.0 and t >= stop_at:
+					player.bot_input = Vector2.ZERO
 				player.bot_sprint = spr
 			if press_t >= 0.0 and pressed < 0 and t >= press_t:
 				pressed = i
@@ -2287,6 +2301,7 @@ func _ready() -> void:
 		var back := Vector3(jstart.x, 0, jstart.z) + Vector3(0, terrain.height_at(jstart.x, jstart.z) + jh, 0)
 		player.global_position = back
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
+		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT jump t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
 	if dodge_u >= 0.0:
 		Engine.max_physics_steps_per_frame = 1
