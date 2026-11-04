@@ -21,6 +21,7 @@ const GIVE_UP := 22.0
 const ENGAGE := 2.7            # starts the wind-up inside this distance
 const REACH := 3.1             # thrust connects within this (body-space forward)
 const STALK_SPEED := 2.1
+const STRIDE_BUILD := 1.06     # the model's scale along the stride (model.scale.z) against the hero's 1.0
 const WINDUP_T := 0.78
 const STRIKE_T := 0.24
 const STRIKE_AT := 0.35        # normalised strike time the blow resolves
@@ -131,6 +132,9 @@ var rags: HollowRags
 ## glaive, collision capsule, hurt capsule, reach, stride and ember light all scale with it.
 ## Reach checks are made in the body's own (scaled) frame, so they grow on their own.
 var size_scale := 1.0
+## Bots: a world velocity that overrides the brain's footwork (the gait is measured with it).
+var bot_move := Vector3.ZERO
+var bot_cadence_k := 1.0
 var _col_cap: CapsuleShape3D
 var _col: CollisionShape3D
 var _ember_range := 2.6
@@ -578,6 +582,9 @@ func _physics_process(delta: float) -> void:
 		DEAD:
 			_die_tick(delta)
 			return
+	if bot_move != Vector3.ZERO:
+		move = bot_move
+		body.rotation.y = atan2(bot_move.x, bot_move.z)
 	_place(_pose)
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
@@ -603,9 +610,36 @@ func _physics_process(delta: float) -> void:
 		var hs := Vector2(velocity.x, velocity.z).length() / size_scale
 		if state == STRIKE or state == STAGGER:
 			hs = minf(hs, 0.8)      # the lunge is a planted thrust, not a run
-		_blend = lerpf(_blend, minf(hs, Player.ANIM_RUN_SPEED), 1.0 - exp(-8.0 * delta))
+		# a big body's natural cadence is slower (pendulum legs: ~1/sqrt(size)), so below a full
+		# walk it keeps that cadence and shortens the stride instead of shuffling quick little steps
+		var goal := gait_blend(hs)
+		if goal < Player.ANIM_WALK_SPEED:
+			goal = minf(hs / (Player.WALK_STRIDE_SPEED * STRIDE_BUILD * natural_cadence()), 1.0) * Player.ANIM_WALK_SPEED
+		_blend = lerpf(_blend, goal, 1.0 - exp(-8.0 * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
-		anim_tree.set("parameters/speed/scale", clampf(hs / Player.ANIM_WALK_SPEED, 0.7, 1.4) if hs > 0.2 else 1.0)
+		# cadence from the stride the clip mix covers (the hero's calibration, bot `foestride`):
+		# the old hs / 1.9 (clamped 0.7-1.4) let the planted foot ride forward up to 4 m/s on the giant
+		anim_tree.set("parameters/speed/scale", clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else 1.0)
+
+## Blend position for a ground speed (per unit size): the walk point held up to WALK_TOP, then
+## a short band to the run point, so a quick stalk is never an unsynced walk/run mix.
+static func gait_blend(v: float) -> float:
+	if v <= Player.ANIM_WALK_SPEED:
+		return minf(v, Player.ANIM_WALK_SPEED)
+	if v <= Player.WALK_TOP:
+		return Player.ANIM_WALK_SPEED
+	return lerpf(Player.ANIM_WALK_SPEED, Player.ANIM_RUN_SPEED, smoothstep(Player.WALK_TOP, Player.JOG_FROM, v))
+
+## The clip rate a body of this size walks at: a soldier 1x, the phase-3 giant ~0.47x.
+func natural_cadence() -> float:
+	return 1.0 / sqrt(maxf(size_scale, 1.0))
+
+## m/s (per unit size) the planted foot travels back at 1x cadence for the clip mix as it is now.
+## The model stands STRIDE_BUILD x the hero's along the stride.
+func clip_stride_speed() -> float:
+	var w := clampf((_blend - Player.ANIM_WALK_SPEED) / (Player.ANIM_RUN_SPEED - Player.ANIM_WALK_SPEED), 0.0, 1.0)
+	var under := clampf(_blend / Player.ANIM_WALK_SPEED, 0.05, 1.0)   # idle -> walk: the stride shrinks
+	return lerpf(Player.WALK_STRIDE_SPEED * under, Player.RUN_STRIDE_SPEED, w) * STRIDE_BUILD
 
 ## STALK's footwork once the hero is in range: close in to ENGAGE, then wind up. Variants that
 ## keep their distance (the archer) override it; returns the move velocity.

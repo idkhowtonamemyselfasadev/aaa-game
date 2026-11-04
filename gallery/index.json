@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261029-2125-roadmeet-hildshin.jpg",
-  "time": "2026-10-29T21:25:00Z",
-  "caption": "Hild at the road meeting at 16:30 with lighter shin wraps (cropped below the frame here); her forearm sleeves still read as black blocks, hands as grey gloves, and the kirtle panels are patchy and flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-2230-roadmeet-hildsleeve.jpg",
-  "time": "2026-10-29T22:30:00Z",
-  "caption": "Hild at the road meeting at 16:30 with her forearm sleeves lifted to a dark brown-grey wool instead of black blocks; her fingers still read as grey gloves, the face is smooth and mask-like and the kirtle panels are patchy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-2230-roadmeet-hildfull.jpg",
-  "time": "2026-10-29T22:30:00Z",
-  "caption": "The same meeting without the chest crop: the sleeves now read as wool from elbow to wrist, but the frame still stops at her thighs, so the shin wraps go unseen, and the grey glove fingers remain.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-2330-roadmeet-hildhands.jpg",
-  "time": "2026-10-29T23:30:00Z",
-  "caption": "Hild at the road meeting: her fingers now come out of the wool mitts as bare ruddy skin instead of a grey plate glove; the kirtle's front panel below the sash is still patchy rust/dark blocks and the face still reads smooth.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-2330-roadmeet-hildfull2.jpg",
   "time": "2026-10-29T23:30:00Z",
   "caption": "New full-length framing of Hild: her long kirtle and shins read as even dark wool with no pale blotches, but Wat and his creel block the lens line (framing swung to the verge side for next time).",
@@ -897,6 +873,18 @@
   "file": "20261104-2100-stride.jpg",
   "time": "2026-11-04T21:00:00Z",
   "caption": "The hero mid-run with the struck foot pinned by the new contact lock: a long open stride, but the GL frame leaves the legs in shade and the camera is 3/4 behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-2200-giantstride.jpg",
+  "time": "2026-11-04T22:00:00Z",
+  "caption": "The phase-3 Ashen Knight (4.6x) mid-stride at its full stalk with the new slow giant cadence and calibrated feet; GL frame, the lens sees it 3/4 from behind and nothing nearby sells its 8 m height.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-2200-giantpass.jpg",
+  "time": "2026-11-04T22:00:00Z",
+  "caption": "The giant's legs passing under it a third of a second later, the planted boot still on the burnt turf; GL only, facing in the shot does not follow its walk yet.",
   "verdict": "fail"
  }
 ]

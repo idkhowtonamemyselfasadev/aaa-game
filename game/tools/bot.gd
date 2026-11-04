@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -199,6 +199,9 @@ func _ready() -> void:
 		return
 	if name == "stride":
 		_stride_test()
+		return
+	if name == "foestride":
+		_foe_stride_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -1113,6 +1116,83 @@ func _stride_test() -> void:
 		if o[1] > cap:
 			return _combat_done(false, "the planted foot skates %.4f m/tick at a %s (%.1f m/s; want <= %.3f)" % [o[1], o[0], o[3], cap])
 	_combat_done(true, "the planted foot holds still on the turf at a walk, a run and a sprint")
+
+## Foe gait: the Hollow Soldier and the Ashen Knight at each of its three sizes are walked at
+## the speeds their brains use (bot_move overrides the footwork) and the weight-bearing foot's
+## slip is measured while it is flat on the turf, in metres per tick and per body size.
+func _foe_stride_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	await _ticks(20)
+	var cases := []
+	for v in [0.7, 1.47, 2.1]:
+		cases.append([so, 1.0, v])
+	for i in 3:
+		var sc: float = AshenKnight.PHASES[i]["scale"]
+		var top := HollowSoldier.STALK_SPEED * sqrt(sc)
+		for v in ([top * 0.35, top] if i == 0 else [HollowSoldier.STALK_SPEED * 0.35, top * 0.35, top]):
+			cases.append([k, sc, v])
+	var out := []
+	for c in cases:
+		var e: HollowSoldier = c[0]
+		var sc: float = c[1]
+		var spd: float = c[2]
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		e.set_size_scale(sc)
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		e.bot_cadence_k = float(OS.get_environment("FOE_CAD")) if OS.has_environment("FOE_CAD") else 1.0
+		await _ticks(90)                             # back to a standstill: both feet planted
+		var skel: Skeleton3D = e.skel
+		var fi := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+		var rest_h := 0.0
+		for b in fi:
+			rest_h += ((skel.global_transform * skel.get_bone_global_pose(b).origin).y - e.global_position.y) * 0.5
+		var flat := [0.0, 0]
+		var along := 0.0
+		var prev = null
+		var vv := 0.0
+		var ts := 0.0
+		for i in 240:
+			var dir := Vector3(0, 0, -1) if (i / 80) % 2 == 0 else Vector3(0, 0, 1)
+			e.bot_move = dir * spd
+			await get_tree().physics_frame
+			var a: Vector3 = skel.global_transform * skel.get_bone_global_pose(fi[0]).origin
+			var b: Vector3 = skel.global_transform * skel.get_bone_global_pose(fi[1]).origin
+			var now := [a if a.y < b.y else b, 0 if a.y < b.y else 1, e.global_position]
+			var pv = prev
+			prev = now
+			if i % 80 < 40 or pv == null or pv[1] != now[1]:
+				continue
+			var d: Vector3 = (now[0] as Vector3) - (pv[0] as Vector3)
+			var sk := Vector2(d.x, d.z).length()
+			if OS.has_environment("BOT_DEBUG"):
+				var la: Vector3 = e.body.global_transform.affine_inverse() * a
+				var lb: Vector3 = e.body.global_transform.affine_inverse() * b
+				print("   i %d L %+.3f %.3f %+.3f R %+.3f %.3f %+.3f stance %d slip %.4f d %+.4f %+.4f" % [i, la.x, la.y, la.z, lb.x, lb.y, lb.z, now[1], sk, d.x, d.z])
+			if ((now[0] as Vector3).y - e.global_position.y - rest_h) / sc > 0.006:
+				continue
+			flat[0] += sk
+			flat[1] += 1
+			along += d.dot(dir)
+			vv = Vector2(e.velocity.x, e.velocity.z).length()
+			ts = e.anim_tree.get("parameters/speed/scale")
+		e.bot_move = Vector3.ZERO
+		var m := _mean(flat)
+		print("BOT foestride: %s size %.1f at %.2f m/s (cadence %.2f, blend %.2f): flat foot slips %.4f m/tick (%.4f per size), along the walk %+.4f, over %d ticks" % ["knight" if e == k else "soldier", sc, vv, ts, e._blend, m, m / sc, along / maxf(flat[1], 1.0), flat[1]])
+		out.append([e == k, sc, vv, m / sc, flat[1]])
+	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
+	for o in out:
+		if o[4] < 6:
+			return _combat_done(false, "too few flat-foot ticks (size %.1f at %.2f m/s)" % [o[1], o[2]])
+		if o[3] > 0.006:   # 0.0085 before the 11-04 22:00 calibration
+			return _combat_done(false, "a foe's planted foot skates %.4f m/tick per size (size %.1f at %.2f m/s; want <= 0.006)" % [o[3], o[1], o[2]])
+	_combat_done(true, "the soldier's and the knight's planted feet hold still at every size and pace")
 
 ## The two feet (body space) from the crumple probe, or [] if not probed this tick.
 func _feet_body(p, skel: Skeleton3D, names: PackedStringArray) -> Array:

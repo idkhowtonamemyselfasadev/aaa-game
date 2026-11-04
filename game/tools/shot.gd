@@ -2457,6 +2457,32 @@ func _ready() -> void:
 		cam.look_at(kp + Vector3.UP * 1.25 * ek.size_scale)
 		print("SHOT reel rt %.2f size %.2f state %d bow %.2f roll %.2f" % [rt, ek.size_scale, ek.state, ek.head.bow, ek.head.roll])
 		print("SHOT reel cam %s cur %s knight %s fwd %s hero %s" % [cam.global_position, get_viewport().get_camera_3d().global_position, kp, ek.body.global_basis.z, player.global_position])
+	if spot == "ring" and "stride" in args:
+		# ring stride [sz=4.6] [v=4.5]: the knight at size sz walking across the ring at v m/s
+		# (bot_move), seen side-on from the gate; the frame count sets the stride phase
+		var rk: AshenKnight = world.knight
+		var rr: StoneRing = world.stone_ring
+		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
+		var rside := rf.cross(Vector3.UP)
+		var sz := 4.6
+		var sv := -1.0
+		for a in args:
+			if a.begins_with("sz="):
+				sz = float(a.substr(3))
+			if a.begins_with("v="):
+				sv = float(a.substr(2))
+		if sv < 0.0:
+			sv = HollowSoldier.STALK_SPEED * sqrt(sz)
+		rk.set_size_scale(sz)
+		rk.notice = -1.0
+		var kst := rr.centre - rside * 4.0
+		rk.global_position = Vector3(kst.x, terrain.height_at(kst.x, kst.z) + 0.05, kst.z)
+		rk.bot_move = rside * sv
+		var sc := rr.centre + rf * (4.0 + 2.6 * sz)
+		sc.y = terrain.height_at(sc.x, sc.z) + 0.25 * sz
+		cam.global_position = sc
+		cam.look_at(rr.centre + Vector3.UP * 0.9 * sz)
+		print("SHOT ring stride size %.2f at %.2f m/s" % [sz, sv])
 	if spot == "ring" and "surge" in args:
 		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
 		# ticks in: the armour seams spitting fire and grit shaken off the stones behind it,
