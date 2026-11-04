@@ -137,6 +137,17 @@ var intro: BossIntro
 var intros := 0                  # bots
 var crowned_count := 0           # bots: crown strikes that rocked it
 const CROWN_STAGGER := 1.3       # s the giant reels after a plunge through its helm
+const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already knocked down in the hit-stop
+## The crown reel's glaive: the hands lose it and it droops, blade into the turf, leaned on.
+const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
+var head: HeadBow                # bows the head onto the chest in the crown reel and the surge
+var _crown_reel := false
+var crown_bow_peak := 0.0        # bots: deepest head bow of the last crown reel (rad)
+var crown_sink_peak := 0.0       # bots: deepest buckle of the knees in it
+var crown_lift_back := 0.0       # bots: how far the head was thrown back as it shook the blow off
+var crown_hits_kept := 0         # bots: blows landed in the reel that did not cut it short
+var _head_bow := 0.0
+var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
 var grow_peak_shake := 0.0       # bots
@@ -165,6 +176,10 @@ func _ready() -> void:
 		tuck.name = "LegTuck"
 		tuck.side = body
 		skel.add_child(tuck)
+		head = HeadBow.new()
+		head.name = "HeadBow"
+		head.side = body
+		skel.add_child(head)
 	add_to_group("boss")
 	set_size_scale(growth.scale_of(1))
 
@@ -284,7 +299,20 @@ func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> voi
 		if state == STALK:
 			t = maxf(t, 0.25)
 		return
-	super.take_hit(point, dir, power, hitstop)
+	if _crown_reel and state == STAGGER:
+		# the reel is the punish window: blows land in full but do not restart it as a plain flinch
+		var keep_t := t
+		var keep_from: Array = _from
+		super.take_hit(point, dir, power, hitstop)
+		if state != DEAD:
+			crown_hits_kept += 1
+			state = STAGGER
+			t = keep_t
+			_from = keep_from
+			_stagger_len = CROWN_STAGGER
+			_knock = Vector3.ZERO
+	else:
+		super.take_hit(point, dir, power, hitstop)
 	if state != DEAD and phase < 3 and health <= health_max * PHASE_AT[phase - 1]:
 		_begin_surge()
 
@@ -306,7 +334,54 @@ func crowned(_point: Vector3) -> void:
 	_recoil = 1.4
 	_flash = 1.0
 	state = STAGGER
-	t = 0.0
+	_crown_reel = true
+	crown_bow_peak = 0.0
+	crown_sink_peak = 0.0
+	crown_lift_back = 0.0
+	# start a beat in, already knocked down: the hit-stop freezes the head on the chest
+	t = CROWN_IMPACT_U * CROWN_STAGGER
+	_crown_tick(0.0, true)
+
+## The crown reel, frame by frame (u = 0..1 over CROWN_STAGGER). Knocked down: the head snaps
+## onto the chest, the knees buckle, the chest folds over them and the hands let the glaive
+## droop blade-first into the turf. Dazed: the helm lolls side to side, the ember gutters.
+## Shaking it off: the head jerks side to side, throws back past upright and settles, the
+## knees drive straight, the glaive comes back up to the guard.
+func _crown_tick(delta: float, snap := false) -> void:
+	var u := clampf(t / CROWN_STAGGER, 0.0, 1.0)
+	var down := smoothstep(0.0, CROWN_IMPACT_U, u) * (1.0 - smoothstep(0.52, 0.92, u))
+	var hold := smoothstep(0.0, CROWN_IMPACT_U, u) * (1.0 - smoothstep(0.42, 0.62, u))
+	var shake := smoothstep(0.5, 0.6, u) * (1.0 - smoothstep(0.78, 0.9, u))
+	var back := sin(PI * clampf((u - 0.66) / 0.3, 0.0, 1.0))
+	# the blow drives the head lower than it rests in the daze: an overshoot at the impact
+	var hit := 1.0 - smoothstep(CROWN_IMPACT_U, 0.24, u)
+	var bow := 0.78 * down + 0.22 * hit - 0.24 * back
+	var roll := 0.2 * sin((u - CROWN_IMPACT_U) * TAU * 1.5) * hold * smoothstep(0.1, 0.22, u) \
+		+ 0.13 * sin(u * TAU * 7.5) * shake
+	if snap:
+		_head_bow = bow
+		_head_roll = roll
+	else:
+		# the head carries its own weight: a little lag on top of the curve, never a jump
+		var k := 1.0 - exp(-30.0 * delta)
+		_head_bow = lerpf(_head_bow, bow, k)
+		_head_roll = lerpf(_head_roll, roll, k)
+	if head != null:
+		head.bow = _head_bow
+		head.roll = _head_roll
+	var sink := 0.21 * down + 0.05 * hit
+	_set_tuck(0.62 * down + 0.1 * hit, 1.22 * down + 0.2 * hit)
+	_lean(0.27 * down + 0.06 * hit + 0.04 * sin(u * TAU * 1.5) * hold, sink)
+	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
+	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
+		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
+	_place(gp)
+	var e := 0.55 + 0.25 * sin(u * 60.0) * hold if u < 0.55 else lerpf(0.6, 1.8, smoothstep(0.55, 0.8, u)) - 0.6 * smoothstep(0.85, 1.0, u)
+	_set_skin("ember", e)
+	_ember_light.light_energy = 0.3 * e
+	crown_bow_peak = maxf(crown_bow_peak, _head_bow)
+	crown_sink_peak = maxf(crown_sink_peak, sink)
+	crown_lift_back = minf(crown_lift_back, _head_bow)
 
 func _hero_in_front() -> bool:
 	if _player == null:
@@ -372,6 +447,17 @@ func _physics_process(delta: float) -> void:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
 			_wield.position.y = 0.0
+	if _crown_reel and (state != STAGGER or _surge >= 0.0):
+		_crown_reel = false
+	if _crown_reel and state != DEAD:
+		_crown_tick(0.0 if _freeze > 0.0 else delta)
+	elif head != null and _surge < 0.0:
+		# out of the reel the head eases back to the animation's carriage
+		var k := 1.0 - exp(-10.0 * delta)
+		_head_bow = lerpf(_head_bow, 0.0, k)
+		_head_roll = lerpf(_head_roll, 0.0, k)
+		head.bow = _head_bow
+		head.roll = _head_roll
 	if state == DEAD or _freeze > 0.0:
 		return
 	if _surge >= 0.0:
@@ -388,6 +474,11 @@ func _physics_process(delta: float) -> void:
 		var k := sin(PI * u)
 		_lean(0.32 * k, 0.42 * k)
 		_set_tuck(0.9 * k, 1.7 * k)
+		if head != null:
+			_head_bow = lerpf(_head_bow, 0.5 * k, 1.0 - exp(-12.0 * delta))
+			_head_roll = lerpf(_head_roll, 0.0, 1.0 - exp(-12.0 * delta))
+			head.bow = _head_bow
+			head.roll = _head_roll
 		if not _blasted and _surge >= SURGE_BLAST:
 			_blasted = true
 			_blast()

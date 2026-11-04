@@ -2374,6 +2374,46 @@ func _ready() -> void:
 		cam.look_at(kp + Vector3.UP * (ctop - kp.y) * 0.8)
 		get_tree().paused = true
 		print("SHOT crown ct %d size %.2f crowns %d vaults %d hero %s knight state %d" % [ct, ck.size_scale, player.combat.crown_strikes, player.vaults, player.global_position - kp, ck.state])
+	if spot == "ring" and "reel" in args:
+		# ring reel [rt=S] [p2] [front]: the knight's crown reel S seconds in (the head knocked
+		# onto the chest at 0, lolling at 0.4, shaking it off at 0.85, thrown back at 1.05), the
+		# hero stood off out of frame, seen from the knight's flank-front, low, against the sky
+		var rt := 0.3
+		for a in args:
+			if a.begins_with("rt="):
+				rt = float(a.substr(3))
+		var ek: AshenKnight = world.knight
+		var er: StoneRing = world.stone_ring
+		var ef := Vector3(er.facing.x, 0, er.facing.y)
+		var eside := ef.cross(Vector3.UP)
+		ek.intro_seen = true
+		if "p2" in args:
+			ek._set_phase(2)
+			ek.set_size_scale(ek.growth.scale_of(2))
+		ek.face(ek.global_position + ef * 5.0)
+		player.use_bot_input = true
+		player.global_position = ek.global_position - ef * 14.0
+		player.global_position.y = terrain.height_at(player.global_position.x, player.global_position.z) + 0.1
+		ek._player = player
+		ek.state = HollowSoldier.IDLE
+		ek.crowned(ek.global_position + Vector3.UP * 5.0)
+		ek.set_physics_process(false)
+		var edt := 1.0 / 60.0
+		for i in int(round((rt - AshenKnight.CROWN_IMPACT_U * AshenKnight.CROWN_STAGGER) / edt)):
+			ek._physics_process(edt)
+		var kp := ek.global_position
+		# frame off the body's own facing (the ring's facing is not where its chest points)
+		ef = ek.body.global_basis.z
+		ef.y = 0.0
+		ef = ef.normalized()
+		eside = ef.cross(Vector3.UP)
+		var side_k := -1.0 if "flip" in args else 1.0
+		var ep := kp + eside * side_k * (2.6 if "front" in args else 6.0) * ek.size_scale / 2.2 + ef * (7.0 if "front" in args else 2.0) * ek.size_scale / 2.2
+		ep.y = terrain.height_at(ep.x, ep.z) + 1.0
+		cam.global_position = ep
+		cam.look_at(kp + Vector3.UP * 1.25 * ek.size_scale)
+		print("SHOT reel rt %.2f size %.2f state %d bow %.2f roll %.2f" % [rt, ek.size_scale, ek.state, ek.head.bow, ek.head.roll])
+		print("SHOT reel cam %s cur %s knight %s fwd %s hero %s" % [cam.global_position, get_viewport().get_camera_3d().global_position, kp, ek.body.global_basis.z, player.global_position])
 	if spot == "ring" and "surge" in args:
 		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
 		# ticks in: the armour seams spitting fire and grit shaken off the stones behind it,

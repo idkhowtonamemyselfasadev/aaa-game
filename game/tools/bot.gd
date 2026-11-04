@@ -1932,6 +1932,29 @@ func _crown_test() -> void:
 			return _combat_done(false, "the hero did not get off the giant onto the turf (%s)" % kind)
 		if kind == "crown" and (c.crown_strikes != c0 + 1 or k.crowned_count != kc0 + 1 or not stag or p.vaults != v0 + 1 or c.last_crown != k):
 			return _combat_done(false, "a plunge onto the helm was not a crown strike at size %.2f" % k.size_scale)
+		if kind == "crown":
+			# the reel itself: head knocked onto the chest, knees buckled, thrown back as it shakes it off
+			var kept0 := k.crown_hits_kept
+			var t_hit := -1.0
+			var t_after := -1.0
+			for i in 120:
+				if k.state != HollowSoldier.STAGGER:
+					break
+				if i == 20:
+					# a follow-up blow in the punish window lands without cutting the reel short
+					t_hit = k.t
+					k.take_hit(k.global_position + Vector3.UP * 2.0, k.body.global_basis.z, 1.0, 0.05)
+				await get_tree().physics_frame
+				if i == 20:
+					t_after = k.t
+			print("BOT crown:   a blow in the reel at t %.2f kept it (%d), t after %.2f, stagger len %.2f" % [t_hit, k.crown_hits_kept - kept0, t_after, k._stagger_len])
+			if k.crown_hits_kept != kept0 + 1 or t_after < t_hit:
+				return _combat_done(false, "a blow in the crown reel restarted it as a plain flinch")
+			print("BOT crown:   reel: head bowed %.2f rad, knees buckled %.2f m, head thrown back %.2f rad, back to %s, head now %.3f" % [k.crown_bow_peak, k.crown_sink_peak, k.crown_lift_back, k.state, k.head.bow])
+			if k.crown_bow_peak < 0.8 or k.crown_sink_peak < 0.18 or k.crown_lift_back > -0.1:
+				return _combat_done(false, "the crown reel did not bow the head, buckle the knees and shake it off")
+			if k.state == HollowSoldier.STAGGER:
+				return _combat_done(false, "the crown reel never ended")
 		if kind == "beside" and (c.crown_strikes != c0 or c.plunges != pl0 + 1 or hp0 - k.health <= 0.0):
 			return _combat_done(false, "a plunge beside the knight did not land as a plain plunge")
 		if kind == "drop" and (p.foe_slides <= s0 or c.crown_strikes != c0):
