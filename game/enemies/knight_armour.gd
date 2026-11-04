@@ -15,6 +15,9 @@ const RIVET := 1.0
 
 var mats: Array[ShaderMaterial] = []
 var pieces := 0          # meshes hung (bots)
+## Where the plate splits when the knight grows: [node riding the bone, local point, local
+## outward direction] at the pauldron rims, the gorget and the helm's neck guard.
+var seams: Array = []
 var _skel: Skeleton3D
 var _body: Node3D
 var _mat: ShaderMaterial
@@ -30,12 +33,29 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	var top := _bone_pos("mixamorig_HeadTop_End")
 	if top == Vector3.ZERO:
 		top = head + Vector3(0, 0.28, 0)   # the Vanguard rig has no head-top bone
-	_hang("mixamorig_Head", _helm(head, top))
-	_hang("mixamorig_Spine2", _gorget(neck))
+	var helm := _hang("mixamorig_Head", _helm(head, top))
+	var gor := _hang("mixamorig_Spine2", _gorget(neck))
+	if helm != null:
+		seams.append([helm, head + Vector3(0, -0.06, -0.12), Vector3(0, -0.2, -1)])   # neck guard
+		seams.append([helm, head + Vector3(0, 0.02, 0.13), Vector3(0, 0.1, 1)])       # the sight slit
+	if gor != null:
+		seams.append([gor, neck + Vector3(0, -0.04, 0.15), Vector3(0, 0.3, 1)])
+		seams.append([gor, neck + Vector3(0.14, -0.05, 0.03), Vector3(1, 0.4, 0.2)])
+		seams.append([gor, neck + Vector3(-0.14, -0.05, 0.03), Vector3(-1, 0.4, 0.2)])
 	for side in ["Left", "Right"]:
 		var sx := 1.0 if side == "Left" else -1.0
 		var arm := _bone_pos("mixamorig_%sArm" % side)
-		_hang("mixamorig_%sShoulder" % side, _pauldron(arm, sx))
+		var pa := _hang("mixamorig_%sShoulder" % side, _pauldron(arm, sx))
+		if pa != null:
+			# between the cap and the lames, and under the lowest lame's rim
+			seams.append([pa, arm + Vector3(sx * 0.15, 0.08, 0.06), Vector3(sx, 0.6, 0.3)])
+			seams.append([pa, arm + Vector3(sx * 0.19, -0.04, -0.05), Vector3(sx, -0.1, -0.4)])
+
+## World position and outward direction of seam `i` as the body now stands.
+func seam_at(i: int) -> Array:
+	var sm: Array = seams[i % seams.size()]
+	var n: Node3D = sm[0]
+	return [n.global_transform * (sm[1] as Vector3), (n.global_basis * (sm[2] as Vector3)).normalized()]
 
 func set_ember(v: float) -> void:
 	_mat.set_shader_parameter("ember", v)
@@ -93,10 +113,10 @@ func _bone_pos(bone: String) -> Vector3:
 	return (_body.global_transform.affine_inverse() * _skel.global_transform
 			* _skel.get_bone_global_rest(i)).origin
 
-func _hang(bone: String, mesh: ArrayMesh) -> void:
+func _hang(bone: String, mesh: ArrayMesh) -> Node3D:
 	var i := _skel.find_bone(bone)
 	if i < 0:
-		return
+		return null
 	var att := BoneAttachment3D.new()
 	att.bone_name = bone
 	att.name = "Armour" + bone.trim_prefix("mixamorig_")
@@ -112,6 +132,7 @@ func _hang(bone: String, mesh: ArrayMesh) -> void:
 	mi.layers = 2          # the knight's own ember light skips its body
 	off.add_child(mi)
 	pieces += 1
+	return off
 
 ## Closed great helm round the skull: an egg dome, near-vertical cheeks drawn in under the jaw,
 ## a forged keel down the face, a sight slit across the eyes and a neck guard flared at the back.

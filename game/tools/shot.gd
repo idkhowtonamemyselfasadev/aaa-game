@@ -2228,6 +2228,28 @@ func _ready() -> void:
 			hud._letterbox.queue_redraw()
 		get_tree().paused = true
 		print("SHOT intro t %.2f cam %s lift %.1f heave %.2f bars %.2f" % [bi.t, bi.cam.global_position, bi.max_lift, kk._heave_now, bi.bars])
+	if spot == "ring" and "surge" in args:
+		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
+		# ticks in: the armour seams spitting fire and grit shaken off the stones behind it,
+		# seen from inside the ring a few steps in front of the gate
+		var st := 24
+		for a in args:
+			if a.begins_with("st="):
+				st = int(a.substr(3))
+		var rk: AshenKnight = world.knight
+		var rr: StoneRing = world.stone_ring
+		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
+		var rside := rf.cross(Vector3.UP)
+		rk.face(rk.global_position + rf * 5.0 + rside * 2.0)
+		rk._begin_surge()
+		var sdt := 1.0 / 30.0
+		for i in st:
+			rk._physics_process(sdt)
+		var sc := rr.centre + rf * 11.0 + rside * 3.0
+		sc.y = terrain.height_at(sc.x, sc.z) + 1.2
+		cam.global_position = sc
+		cam.look_at(rr.centre + Vector3.UP * 3.4)
+		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
 	if foe_u >= 0.0:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot
@@ -2391,8 +2413,14 @@ func _ready() -> void:
 			var k: AshenKnight = foe
 			k._set_phase(2)
 			if "surge" in args:
+				# st=N: physics ticks into the surge before the warm-up frames (default 62: the
+				# blast just gone; ~10-30 catches the growth with the seams spitting fire)
+				var st := 62
+				for a in args:
+					if a.begins_with("st="):
+						st = int(a.substr(3))
 				k._begin_surge()
-				for i in 62:
+				for i in st:
 					k._physics_process(dt)
 			else:
 				k._set_phase(3)

@@ -42,7 +42,7 @@ const SECTIONS := [
 	["With thanks  (CC0 / public domain, no credit required)", [
 		["Kenney (Impact Sounds, RPG Audio, Sci-fi Sounds), qubodup, Sheyvan, worthahep88, lolamadeus, evsecrets", ""],
 		["felix.blume, kvgarlic, sonidosreales245, Porrumentzio, Lisa Redfern (soundbible.com)", ""],
-		["Sadiquecat, dave.des, MeanRaccoon, migoreng1, CVLTIV8R, florianreichelt, Halgrimm, LilMati, DeVern, Kinoton", ""],
+		["Sadiquecat, dave.des, MeanRaccoon, migoreng1, CVLTIV8R, florianreichelt, Halgrimm, LilMati, DeVern, Kinoton, Darsycho", ""],
 	]],
 	["Made with", [
 		["Godot Engine  (MIT license, godotengine.org/license)", ""],

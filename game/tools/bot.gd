@@ -1369,6 +1369,9 @@ func _knight_test() -> void:
 	print("BOT knight: final size %.2fx the start (%.1fx the hero), shake peak %.2f, dust bursts %d, hurt radius %.2f m" % [endk, AshenKnight.PHASES[2]["scale"] * 1.16, grow_shake, k.growth.dust_puffs, float(k.hurt_capsule()[2])])
 	if endk < 1.9 or endk > 2.6 or grow_shake < 0.3 or k.growth.dust_puffs < 10:
 		return _combat_done(false, "the knight did not grow ~2x with the arena shaking")
+	print("BOT knight: growth fx: %d seam ember bursts (%d seams), %d stones shed grit (%d crowns)" % [k.growth.ember_bursts, k.growth.seam_n, k.growth.grit_falls, StoneRing.crowns.size()])
+	if k.growth.seam_n < 6 or k.growth.ember_bursts < 20 or k.growth.grit_falls < 8:
+		return _combat_done(false, "the growth did not split the armour seams or shake grit off the stones")
 	if surged_hits > 0:
 		return _combat_done(false, "knight could be hurt while it surged")
 	var p2: float = phase_hp.get(2, 0.0) / k.health_max
@@ -1393,6 +1396,10 @@ func _knight_test() -> void:
 	print("BOT knight: foley %s (recorded clang %d slam %d whoom %d)" % [str(dp), fol.recorded.get("clang", 0), fol.recorded.get("slam", 0), fol.recorded.get("whoom", 0)])
 	if dp.clang < k.guarded or dp.slam < k.blasts + 1 or dp.whoom < k.surges + 1 or dp.spear < 1:
 		return _combat_done(false, "the knight's guard/surge/blast/eruption/strike sounds did not all play")
+	var roars := int(fol.played.get("giant_roar", 0)) - int(played0.get("giant_roar", 0))
+	print("BOT knight: giant roars %d (recorded variants %d)" % [roars, fol.recorded.get("giant_roar", 0)])
+	if fol.recorded.get("giant_roar", 0) < 3 or roars < k.surges:
+		return _combat_done(false, "the knight did not roar (recorded) at each growth")
 	# unblockable: a parry-window heavy in phase 2+ must not deflect (checked on a fresh knight state)
 	await _ticks(30)
 	if hud != null:

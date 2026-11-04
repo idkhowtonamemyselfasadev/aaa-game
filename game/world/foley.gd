@@ -35,6 +35,7 @@ const RECORDED := {
 	"steps": ["step_grass", "step_grit", "step_wet", "step_stone", "step_stone_wet"],
 	"village": ["creak", "chop", "thud", "grain", "grunt"],
 	"animals": ["dog_bark", "dog_woof", "cluck", "squawk", "crunch"],
+	"boss": ["giant_roar"],
 }
 
 var _rng := RandomNumberGenerator.new()
@@ -158,7 +159,12 @@ func hook_knight(k: Node) -> void:
 	k.guarded_blow.connect(func(at: Vector3) -> void:
 		_play("clang", at, -1.0, 0.88)
 		_play("boom", at, -14.0))
+	# a giant's roar: a recorded troll roar pitched down by the body's size (deeper as it grows)
+	var roar_pitch := func() -> float:
+		return clampf(0.8 * sqrt(2.2 / maxf(float(k.get("size_scale")), 0.5)), 0.55, 0.85)
 	k.phase_changed.connect(func(_n: int) -> void:
+		var hp := (k as Node3D).global_position + Vector3.UP * 1.2 * float(k.get("size_scale"))
+		_play("giant_roar", hp, 6.0, roar_pitch.call())
 		_play("whoom", (k as Node3D).global_position + Vector3.UP * 1.2, 2.0, 0.5))
 	k.blasted.connect(func(at: Vector3) -> void:
 		_play("slam", at + Vector3.UP * 0.3, 2.0, 0.78)
@@ -169,9 +175,10 @@ func hook_knight(k: Node) -> void:
 	# the ember leap: a deep whoosh and a grunt of armour as it springs, the blade into the turf
 	# as a full ground slam with the boom under it (a sweep's thump if the hero rolled clear)
 	if k.has_signal("roared"):
-		# the reveal's roar: no recorded roar yet, so the deep whoosh slowed right down under a boom
+		# the reveal's roar: the recorded roar pitched down, the deep whoosh slowed under a boom
 		k.roared.connect(func(at: Vector3) -> void:
-			_play("whoom", at, 4.0, 0.38)
+			_play("giant_roar", at, 6.0, roar_pitch.call())
+			_play("whoom", at, -2.0, 0.38)
 			_play("boom", at, 0.0, 0.6)
 			_play("grunt", at, -4.0, 0.55))
 	if k.has_signal("leapt"):

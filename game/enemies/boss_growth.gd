@@ -18,6 +18,9 @@ extends RefCounted
 
 const GROW_T := 2.0      # real seconds the body takes to reach its new size
 const DUST_EVERY := 0.16 # s between dust bursts thrown up round its feet
+const EMBER_EVERY := 0.09   # s between seams splitting open (EmberBurst), busiest mid-growth
+const GRIT_EVERY := 0.22    # s between stones shedding grit from their crowns (GritFall)
+const GRIT_REACH := 34.0    # m: stones farther from the boss than this stay still
 
 var phases: Array = []
 var from_scale := 1.0
@@ -25,7 +28,17 @@ var to_scale := 1.0
 var t := -1.0            # s into the growth, -1 when not growing
 var dust_puffs := 0      # bots: bursts spawned during growths
 var samples: Array[float] = []   # bots: the size at each tick of the last growth
+var ember_bursts := 0   # bots: seams that spat fire during growths
+var grit_falls := 0     # bots: stones that shed grit during growths
+## The boss sets these: seam_fn(i) -> [world pos, outward dir] of armour seam i (seam_n of
+## them); grit_from: [[top, width, height], ...] of the arena's standing stones.
+var seam_fn := Callable()
+var seam_n := 0
+var grit_from: Array = []
 var _dust_t := 0.0
+var _ember_t := 0.0
+var _grit_t := 0.0
+var _grit_used: Dictionary = {}
 
 func _init(p: Array) -> void:
 	phases = p
@@ -41,6 +54,9 @@ func start(cur: float, n: int) -> void:
 	to_scale = scale_of(n)
 	t = 0.0
 	_dust_t = 0.0
+	_ember_t = 0.0
+	_grit_t = 0.1
+	_grit_used.clear()
 	samples.clear()
 
 func growing() -> bool:
@@ -74,6 +90,33 @@ func tick(delta: float, boss: Node3D, player: Player, foot_r: float) -> float:
 		var r := foot_r * randf_range(0.9, 2.2)
 		var at := boss.global_position + Vector3(cos(a), 0.05, sin(a)) * r
 		ImpactFX.spawn(boss.get_parent(), at, Vector3.UP, "dirt", 1.4 + s * 0.2)
+	var heave := sin(PI * clampf(t / GROW_T, 0.0, 1.0))
+	# the plate can't hold the body swelling under it: seams split and spit fire
+	_ember_t -= delta * (0.5 + heave)
+	if _ember_t <= 0.0 and seam_fn.is_valid() and seam_n > 0 and boss.get_parent() != null:
+		_ember_t = EMBER_EVERY
+		ember_bursts += 1
+		var sm: Array = seam_fn.call(randi() % seam_n)
+		EmberBurst.spawn(boss.get_parent(), sm[0], sm[1], s)
+	# the ground heaves under the standing stones: grit and dust shaken off their crowns
+	_grit_t -= delta
+	if _grit_t <= 0.0 and not grit_from.is_empty() and boss.get_parent() != null:
+		_grit_t = GRIT_EVERY
+		var pick := -1
+		var best := INF
+		for k in 4:
+			var j := randi() % grit_from.size()
+			var top: Vector3 = grit_from[j][0]
+			var d := Vector2(top.x - boss.global_position.x, top.z - boss.global_position.z).length()
+			var score := d + (40.0 if _grit_used.has(j) else 0.0) + randf() * 6.0
+			if d < GRIT_REACH and score < best:
+				best = score
+				pick = j
+		if pick >= 0:
+			_grit_used[pick] = true
+			grit_falls += 1
+			var c: Array = grit_from[pick]
+			GritFall.spawn(boss.get_parent(), c[0], float(c[1]), float(c[2]))
 	if t >= GROW_T:
 		t = -1.0
 		return to_scale

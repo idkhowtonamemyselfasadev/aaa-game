@@ -182,6 +182,8 @@ func _dress() -> void:
 	armour.build(skel, body)
 	armour.fit_glaive(spear, HollowSpear.LENGTH * 0.5 - HollowSpear.BLADE)
 	_mats.append_array(armour.mats)
+	growth.seam_fn = armour.seam_at
+	growth.seam_n = armour.seams.size()
 	_set_skin("heat", 0.0)
 
 ## The hero woke at the rest point: the knight stands whole again, in its first form.
@@ -318,6 +320,7 @@ func _begin_surge() -> void:
 	state = STAGGER
 	t = 0.0
 	# the growth moment: a white flash and a short hit-stop on the hero, then the heave
+	growth.grit_from = StoneRing.crowns
 	growth.start(size_scale, phase)
 	_flash = 1.0
 	if _player != null:
@@ -352,6 +355,8 @@ func _physics_process(delta: float) -> void:
 		var u := clampf(_surge / SURGE_T, 0.0, 1.0)
 		var e := 2.0 + 5.0 * smoothstep(0.0, SURGE_BLAST / SURGE_T, u) * (1.0 - smoothstep(0.6, 1.0, u))
 		_set_skin("ember", e + 0.4 * sin(_surge * 40.0))
+		# the hairline cracks in the plate split wide and blaze while the body swells under it
+		_set_skin("heat", (phase - 1) * 0.5 + 0.9 * sin(PI * u))
 		_ember_light.light_energy = 0.45 * e
 		# down on one knee, head bowed into the burst
 		var k := sin(PI * u)
@@ -362,6 +367,7 @@ func _physics_process(delta: float) -> void:
 			_blast()
 		if _surge >= SURGE_T or state != STAGGER:
 			_surge = -1.0
+			_set_skin("heat", (phase - 1) * 0.5)
 			if growth.growing():
 				growth.stop()
 				set_size_scale(growth.to_scale)

@@ -28,6 +28,9 @@ var _per: Array = []
 var _terrain: Terrain
 ## The ring's centre for the meadow mask (Grass._site), INF until a ring is built.
 static var burn_centre := Vector3.INF
+## Top of every upright still standing, [top: Vector3, width: float, height: float]: a boss's
+## growth shakes grit off them (BossGrowth.grit_from).
+static var crowns: Array = []
 
 ## Lay the ring round `c` (world xz), its entrance toward `toward` (world xz).
 func build(c: Vector2, toward: Vector2) -> void:
@@ -36,6 +39,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 	facing = (toward - c).normalized()
 	centre = Vector3(c.x, _terrain.height_at(c.x, c.y), c.y)
 	burn_centre = centre
+	crowns.clear()
 	# the terrain shader draws the ash, char and singed rim (terrain.gdshader burn_ring)
 	burn_ring = Vector4(centre.x, centre.z, RADIUS - 3.5, 1.0)
 	RenderingServer.global_shader_parameter_set("burn_ring", burn_ring)
@@ -94,6 +98,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 			var lb := b.rotated(b.x, -lean).rotated(b.z, rng.randf_range(-0.05, 0.05))
 			var mid := foot + lb.y * (h * 0.5 - SINK)
 			xf = Transform3D(lb * Basis.from_scale(size), mid)
+			crowns.append([mid + lb.y * (h * 0.5 - 0.05), w, h - SINK])
 			_collider(body, mid, lb, size)
 		var v := rng.randi() % VARIANTS
 		# masonry custom data: r = height above ground / 8 m (0: grounded), g = random,

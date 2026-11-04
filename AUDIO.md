@@ -57,6 +57,8 @@ next piece starts from the top, the old one stops, and the rotation cycles all t
 
 ## Replaced with recordings (2026-10-30 19:00)
 
+(2026-11-04 01:25) Added `boss/giant_roar_1..4` (Darsycho, CC0, OpenGameArt "Big scary troll sounds", recorded voice): the Ashen Knight's reveal roar and its roar at each growth, pitched 0.80 / 0.66 / 0.55 by size, under the slowed whoosh. Peaks -8.1 / -4.4 / -4.6 / -3.1 dBFS. The reveal no longer fakes its roar from a slowed whoosh + grunt alone.
+
 Loaded by `game/world/samples.gd` (`Samples.load_set(group, name)` probes `res://audio/sfx/<group>/<name>_N.ogg`);
 `Foley.RECORDED` lists the names, and the synthesised stand-in stays only where no set exists. Every play keeps
 the old +-5 % pitch and -1.5..+1 dB volume jitter, picks a random variant. Each blow now also plays a
