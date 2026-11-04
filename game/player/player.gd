@@ -90,6 +90,11 @@ const WALL_JUMP_OUT := 4.2             # m/s straight off the face at a full pul
 const WALL_JUMP_SIDE := 3.4            # m/s along the face at a full sideways push
 const WALL_JUMP_COST := 14.0
 const WALL_JUMP_TWIST := 0.32          # s of the turn from facing the stones to facing the flight
+# the kick is pushed, not floated: the body first coils in against the stones on the holds
+# (knees drawn up, hips sunk to the face, soles flat on their stones) for a few frames, then
+# the legs drive straight out of the face while the soles are still on it
+const WALL_KICK_COIL := 0.1            # s of the coil on the face before the push
+const WALL_KICK_PUSH := 0.11           # s the soles stay on the stones as the legs straighten
 const HAND_MOVE := 0.18               # seconds for a hand to reach to its next hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
 const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
@@ -101,6 +106,10 @@ var climbs := 0                       # faces caught (bots read this)
 var mantles := 0                      # ledges hauled up onto (bots read this)
 var wall_jumps := 0                   # kicks off a face (bots read this)
 var _wj_t := -1.0                     # s since the kick off a face (-1: none)
+var _wk_coil := -1.0                  # s into the coil before a kick off a face (-1: none)
+var _wk_dir := Vector2.ZERO           # the stick the kick was asked with
+var kick_coils := 0                   # coils on the face before a kick (bots read this)
+var kick_sole_err := 0.0              # (bots) worst m from an ankle to its stone through the coil + push
 var false_drops := 0                  # catches that let go at once, the face gone under the hands (bots read this)
 var refused_grabs := 0                # catches refused: a loose stone, not a face, met the reach (bots read this)
 var _climb_t := 0.0                   # s on the current face
@@ -744,6 +753,8 @@ func _physics_process(delta: float) -> void:
 		if _air_t >= 0.0:
 			_touch_down()
 		_jumped = false
+		if _wj_t >= 0.0 and crumple != null:
+			crumple.foot_plant = 0.0
 		_wj_t = -1.0
 		_coyote_t = 0.0
 	else:
@@ -760,6 +771,7 @@ func _physics_process(delta: float) -> void:
 			_coyote_t += delta
 		if _wj_t >= 0.0:
 			_wj_t += delta
+			_kick_push()
 		var g := GRAVITY
 		if velocity.y < 0.0:
 			g *= FALL_GRAVITY
@@ -1347,6 +1359,7 @@ func _start_climb(n: Vector3) -> void:
 
 func _let_go(push: float, regrab: float) -> void:
 	climbing = false
+	_wk_coil = -1.0
 	_regrab_t = regrab
 	velocity = climb_normal * push
 	_lunge_t = -1.0
@@ -1371,11 +1384,11 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 	# the climb pose is not wiped: the jump pose eases out of it, so the knees that were on
 	# the holds are the knees that drive the kick
 	if garb != null:
-		garb.posed_legs = false
-		garb.wall_n = Vector3.ZERO
+		garb.wall_n = Vector3.ZERO             # (the robe keeps following the legs through the push)
 	if crumple != null:
-		crumple.plant = 0.0
-		crumple.foot_plant = 0.0
+		crumple.plant = 0.0                    # the hands come off the holds as the legs drive
+		crumple.foot_plant = 1.0               # the soles stay on their stones: _kick_push lets them go
+	_wk_coil = -1.0
 	_jumped = true
 	_coyote_t = 99.0
 	_buffer_t = 99.0
@@ -1394,6 +1407,60 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 	_wj_yaw = Vector2(body.rotation.y, atan2(fly.x, fly.z))
 	_wj_t = 0.0
 
+## The coil before a kick off a face: the hands keep their holds and pull, the feet stay on
+## their stones with the soles flat to the face, and the hips sink in and down toward the
+## stones as the knees fold up under the chest, loading the legs for the push.
+func _kick_coil(delta: float, n: Vector3, gap: float, right: Vector3) -> void:
+	_wk_coil += delta
+	var u := clampf(_wk_coil / WALL_KICK_COIL, 0.0, 1.0)
+	var up_dir := (Vector3.UP - n * n.y).normalized()
+	# drawn in to a hand's breadth off the stones and a little down onto the bent legs
+	var v := -n * clampf((gap - (CLIMB_GAP - 0.1)) * 10.0, -1.2, 1.2) - up_dir * 0.9 * (1.0 - u)
+	velocity = v
+	var before := global_position
+	motion_mode = MOTION_MODE_FLOATING
+	move_and_slide()
+	motion_mode = MOTION_MODE_GROUNDED
+	stamina -= CLIMB_HOLD_COST * delta
+	_hold_still_anim()
+	if crumple != null:
+		var c := smoothstep(0.0, 1.0, u)
+		crumple.arm = 2.45
+		crumple.elbow = lerpf(0.75, 1.25, c)   # the arms bend, pulling the chest to the stones
+		crumple.hip = lerpf(0.55, 1.15, c)     # the knees come up under the chest
+		crumple.knee = lerpf(0.85, 1.75, c)
+		crumple.spine = lerpf(0.08, 0.22, c)
+		crumple.stride = lerpf(crumple.stride, 0.0, c)
+		crumple.ankle = 0.0
+		crumple.sole_flat = 0.0
+		# the hands hold where they are; the feet stay on their stones (no step in a coil)
+		crumple.plant = 1.0
+		crumple.foot_plant = 1.0
+		for i in 2:
+			_hold_t[i] = 1.0
+			_foot_t[i] = 1.0
+		_place_hands(0.0, global_position - before)
+		for i in 2:
+			crumple.foot_target[i] = (_foot[i] as Vector3) + n * 0.12 + up_dir * 0.07
+		_note_sole_err()
+	if _wk_coil >= WALL_KICK_COIL:
+		_wall_jump(_wk_dir, right)
+
+## After the kick: the soles stay on their stones while the legs straighten out of the coil,
+## then let go of the face as the body flies clear.
+func _kick_push() -> void:
+	if crumple == null or crumple.foot_plant <= 0.0:
+		return
+	crumple.foot_plant = 1.0 - smoothstep(WALL_KICK_PUSH * 0.55, WALL_KICK_PUSH, _wj_t)
+	if _wj_t < WALL_KICK_PUSH * 0.55:
+		_note_sole_err()
+	if crumple.foot_plant <= 0.0 and garb != null:
+		garb.posed_legs = false
+
+func _note_sole_err() -> void:
+	for i in 2:
+		kick_sole_err = maxf(kick_sole_err, crumple.foot_err[i])
+
 func _start_mantle(top: Vector3, n: Vector3) -> void:
 	_jumped = false
 	if combat != null and combat.is_drawn():
@@ -1401,6 +1468,7 @@ func _start_mantle(top: Vector3, n: Vector3) -> void:
 	_set_lock(null)
 	_mantle_hands = climbing                   # hands already on holds press on them as it rises
 	climbing = false
+	_wk_coil = -1.0
 	climb_normal = n
 	mantle_t = 0.0
 	mantles += 1
@@ -1458,8 +1526,14 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	var face := -Vector3(n.x, 0.0, n.z).normalized()
 	var right := face.cross(Vector3.UP).normalized()
+	if _wk_coil >= 0.0:
+		_kick_coil(delta, n, gap, right)
+		return
 	if want_jump and _lunge_t < 0.0 and (dir2.y > 0.35 or absf(dir2.x) > 0.7) and stamina >= WALL_JUMP_COST:
-		_wall_jump(dir2, right)
+		_wk_coil = 0.0
+		_wk_dir = dir2
+		kick_coils += 1
+		_kick_coil(delta, n, gap, right)
 		return
 	if want_jump and _lunge_t < 0.0 and stamina >= CLIMB_LUNGE_COST:
 		_lunge_t = 0.0

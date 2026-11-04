@@ -893,8 +893,12 @@ func _ready() -> void:
 		if tang.dot(Vector3(-kl.x, 0, -kl.z)) < 0.0:
 			tang = -tang
 		var kc := ks + kick_face * 7.2 + tang * 4.6
-		kc.y = terrain.height_at(kc.x, kc.z) + 1.5
 		var kf := ks + kick_face * 6.6
+		if "near" in args:
+			# near: truly side-on, level with the hero, so the legs and soles read at 720p
+			kc = ks + kick_face * 6.0 + tang * 3.0
+			kf = ks + kick_face * 5.9
+		kc.y = terrain.height_at(kc.x, kc.z) + 1.5
 		SPOTS[spot] = [kc, Vector3(kf.x, terrain.height_at(kf.x, kf.z) + 1.3, kf.z)]
 	var jump_t := -1.0
 	if spot == "jump":

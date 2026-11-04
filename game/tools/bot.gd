@@ -8924,13 +8924,25 @@ func _climb_test() -> void:
 		var wj0 := p.wall_jumps
 		var kick := Vector2(0, 1) if leg == 0 else Vector2(1, 0.2)
 		var face_xz := Vector3(-rad.x, 0, -rad.z)
+		var coils0 := p.kick_coils
+		p.kick_sole_err = 0.0
 		p.bot_input = kick
 		p.bot_jump = true
 		p.bot_jump_hold = true
-		await _ticks(3)
+		# the kick is pushed: a coil on the holds first (still on the face, soles on the stones)
+		var coil_ticks := 0
+		var gap0 := _face_gap(p)
+		var gap_min := gap0
+		while coil_ticks < 30 and p.wall_jumps == wj0:
+			await _ticks(1)
+			if p.wall_jumps == wj0:
+				coil_ticks += 1
+				gap_min = minf(gap_min, _face_gap(p))
 		p.bot_input = Vector2.ZERO
 		if p.climbing or p.wall_jumps != wj0 + 1:
 			return _combat_done(false, "jump with the stick %s did not kick off the face" % ["back", "aside"][leg])
+		if p.kick_sole_err > 0.12:
+			return _combat_done(false, "the soles slide off their stones in the coil and push (%.3f m)" % p.kick_sole_err)
 		var up_max := 0.0
 		var r_max := r_face
 		var lat_max := 0.0
@@ -8951,6 +8963,12 @@ func _climb_test() -> void:
 				glided = true                          # a jump: the air attack is there off the kick
 		p.bot_jump_hold = false
 		print("BOT climb: kick %s off the face: rose %.2f m, out to %.2f m from the face (r %.2f -> %.2f), %.2f m along it, facing the stones %.2f after the twist, jump attack open %s, regrabbed %s, landed after %.2f bot s" % [["back", "aside"][leg], up_max, r_max - r_face, r_face, r_max, lat_max, yaw_mid, glided, p.climbs > climbs0, t])
+		var coil_s := coil_ticks * Engine.time_scale / 60.0
+		print("BOT climb: kick %s coiled %.3f s on the holds (drawn in %.2f m to the stones), soles off their stones by at most %.3f m through the coil and push" % [["back", "aside"][leg], coil_s, gap0 - gap_min, p.kick_sole_err])
+		if p.kick_coils != coils0 + 1 or coil_s < 0.06:
+			return _combat_done(false, "the kick off the face has no coil on the holds before the push")
+		if coil_s > 0.17:
+			return _combat_done(false, "the coil before the kick is slow (%.3f s): the jump feels late" % coil_s)
 		if up_max < 0.7:
 			return _combat_done(false, "the kick off the face does not rise")
 		if leg == 0 and r_max - r_face < 1.6:
@@ -8970,6 +8988,17 @@ func _climb_test() -> void:
 			await _ticks(6)
 			settle += 0.1
 	_combat_done(true, "jumped at the keep, climbed the stones, hauled up onto the crown; the grip fails without stamina, a dodge lets go, a jump with the stick back kicks off the face, twisting round, and one aside leaps along it")
+
+## m from the hero's chest to the face along the climb normal (INF when no face is there)
+func _face_gap(p: Player) -> float:
+	var n := p.climb_normal
+	var o := p.global_position + Vector3.UP * 1.1
+	var q := PhysicsRayQueryParameters3D.create(o, o - n * 1.5)
+	q.exclude = [p.get_rid()]
+	var hit := p.get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		return INF
+	return (o - (hit["position"] as Vector3)).dot(n)
 
 ## Harrowmere's first house: built (slates, footing stones, frame), standing on the green
 ## clear of the start, the herd steers off it, and the hero walks from the start to its door
