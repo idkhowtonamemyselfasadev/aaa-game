@@ -121,6 +121,13 @@ var _air_draw_t := -1.0      # s into a draw blended under an air move (-1: none
 var plunges := 0             # plunges landed (bots read this)
 var air_attacks := 0         # jump attacks started (bots read this)
 var last_plunge_hits := 0    # foes the last landing struck (bots read this)
+## A plunge that lands on a boss's head or shoulders (the hero dropped from a stone onto the
+## giant) is a CROWN STRIKE: it hits CROWN_K times harder, always rocks the boss back into a
+## long stagger (unless it is surging), and the hero vaults off its shoulders to the ground.
+const CROWN_K := 1.6
+const CROWN_TOP := 0.62      # the hero touched down above this fraction of the boss's height
+var crown_strikes := 0       # (bots)
+var last_crown: Node = null  # (bots) the boss the last crown strike landed on
 
 var player: Player
 var staff: Staff
@@ -589,9 +596,23 @@ func plunge_land(drop: float) -> void:
 			continue
 		var dir := out.normalized() if out.length() > 0.05 else player.body.global_basis.z
 		var point := Vector3(lo.x, at.y + 0.6, lo.z) - dir * float(cap[2])
+		var hi := a if a.y >= b.y else b
+		var crown: bool = target.is_in_group("boss") and out.length() < float(cap[2]) + 0.9 \
+			and at.y >= lo.y + (hi.y + float(cap[2]) - lo.y) * CROWN_TOP
 		last_plunge_hits += 1
-		_land_hit(target, point, dir)
+		if crown:
+			# struck down through the helm: the blow lands at the crown, not at the hero's feet
+			point = Vector3(at.x, at.y - 0.25, at.z)
+			dir = Vector3.DOWN.lerp(player.body.global_basis.z, 0.35).normalized()
+			_power = power * CROWN_K
+			_land_hit(target, point, dir)
+			_power = power
+			_crown(target, point, out)
+		else:
+			_land_hit(target, point, dir)
 	hitstop = HITSTOP * power * (1.0 if last_plunge_hits > 0 else 0.5)
+	if last_crown_frame == Engine.get_physics_frames():
+		hitstop *= 1.5
 	ImpactFX.spawn(player.get_parent(), front, Vector3.DOWN, "stone", 1.0 + 0.5 * power)
 	_plunge_marks(at, radius)
 	player.add_shake(0.25 + 0.15 * power)
@@ -606,6 +627,30 @@ func plunge_land(drop: float) -> void:
 	_slammed = true
 	t = 0.0
 	state = ATTACKING
+
+var last_crown_frame := -1
+
+## The crown strike's extra: the boss reels (its own `crowned`), metal rings off the helm, a
+## second heavier shake, and the hero is handed a leap off the shoulders, away from the head.
+func _crown(target: Node, point: Vector3, out: Vector3) -> void:
+	crown_strikes += 1
+	last_crown = target
+	last_crown_frame = Engine.get_physics_frames()
+	if target.has_method("crowned"):
+		target.crowned(point)
+	ImpactFX.spawn(player.get_parent(), point, Vector3.UP, "metal", 2.2)
+	player.add_shake(0.35)
+	var away := -out if out.length() > 0.05 else -player.body.global_basis.z
+	player.vault_off(Vector3(away.x, 0.0, away.z).normalized(), true)
+
+## The vault off a crown strike cuts the plunge's rise short: the hero leaves in the air pose.
+func end_plunge_rise() -> void:
+	if state == ATTACKING and _atk == PLUNGE_RISE:
+		_from_pose = _pose_at(_atk["keys"], 0.62)
+		_begin_recover()
+		state = READY
+		idle_t = 0.0
+		step = -1
 
 ## STRING[0] opened from part-way (`u`) through a recovery `path` (from best_recover_path):
 ## the arms run on along the rest of that path up to its chamber key -- squeezed into the

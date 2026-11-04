@@ -2333,6 +2333,47 @@ func _ready() -> void:
 			hud._letterbox.queue_redraw()
 		get_tree().paused = true
 		print("SHOT intro t %.2f cam %s lift %.1f heave %.2f bars %.2f" % [bi.t, bi.cam.global_position, bi.max_lift, kk._heave_now, bi.bars])
+	if spot == "ring" and "crown" in args:
+		# ring crown [ct=N] [p2]: the hero dropped 3 m over the knight's helm, a heavy pressed (the
+		# plunge), stepped by hand N physics ticks (~16: the crown strike's hit-stop; ~34: the vault
+		# off the shoulders), seen from the knight's flank, low, the helm against the sky
+		var ct := 16
+		for a in args:
+			if a.begins_with("ct="):
+				ct = int(a.substr(3))
+		var ck: AshenKnight = world.knight
+		var cr: StoneRing = world.stone_ring
+		var cf := Vector3(cr.facing.x, 0, cr.facing.y)
+		var cside := cf.cross(Vector3.UP)
+		ck.intro_seen = true
+		ck._player = player
+		if "p2" in args:
+			ck._set_phase(2)
+			ck.set_size_scale(ck.growth.scale_of(2))
+		ck.face(ck.global_position + cf * 5.0)
+		ck.set_physics_process(false)
+		var cc: Array = ck.hurt_capsule()
+		var ctop: float = maxf(cc[0].y, cc[1].y) + float(cc[2])
+		player.use_bot_input = true
+		player.global_position = ck.global_position + Vector3(0.12, ctop - ck.global_position.y + 3.0, 0.08)
+		player.body.rotation.y = atan2(cf.x, cf.z)
+		player.velocity = Vector3.ZERO
+		var cdt := 1.0 / 60.0
+		for i in 3:
+			player._physics_process(cdt)
+		player.bot_heavy = true
+		for i in ct:
+			if i == 2:
+				player.bot_heavy = false
+			ck._physics_process(cdt)
+			player._physics_process(cdt)
+		var kp := ck.global_position
+		var cp := kp + cside * 7.5 * ck.size_scale / 2.2 - cf * 2.5
+		cp.y = terrain.height_at(cp.x, cp.z) + 1.4
+		cam.global_position = cp
+		cam.look_at(kp + Vector3.UP * (ctop - kp.y) * 0.8)
+		get_tree().paused = true
+		print("SHOT crown ct %d size %.2f crowns %d vaults %d hero %s knight state %d" % [ct, ck.size_scale, player.combat.crown_strikes, player.vaults, player.global_position - kp, ck.state])
 	if spot == "ring" and "surge" in args:
 		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
 		# ticks in: the armour seams spitting fire and grit shaken off the stones behind it,

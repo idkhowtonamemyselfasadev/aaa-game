@@ -135,6 +135,8 @@ var intro_enabled := true
 var intro_seen := false
 var intro: BossIntro
 var intros := 0                  # bots
+var crowned_count := 0           # bots: crown strikes that rocked it
+const CROWN_STAGGER := 1.3       # s the giant reels after a plunge through its helm
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
 var grow_peak_shake := 0.0       # bots
@@ -285,6 +287,26 @@ func take_hit(point: Vector3, dir: Vector3, power: float, hitstop: float) -> voi
 	super.take_hit(point, dir, power, hitstop)
 	if state != DEAD and phase < 3 and health <= health_max * PHASE_AT[phase - 1]:
 		_begin_surge()
+
+## The hero dropped onto its helm with a plunge (StaffCombat crown strike): unless it is
+## surging, waking or in the air, the giant reels a long beat, head bowed, whatever its poise.
+func crowned(_point: Vector3) -> void:
+	if state == DEAD or _surge >= 0.0 or intro_playing():
+		return
+	if move_kind == LEAP_MOVE and state == STRIKE:
+		return
+	crowned_count += 1
+	staggers += 1
+	poise = 0.0
+	_update_glint(0.0)
+	_set_tuck(0.0, 0.0)
+	_from = _pose
+	_knock = Vector3.ZERO
+	_stagger_len = CROWN_STAGGER
+	_recoil = 1.4
+	_flash = 1.0
+	state = STAGGER
+	t = 0.0
 
 func _hero_in_front() -> bool:
 	if _player == null:

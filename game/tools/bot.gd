@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -103,6 +103,9 @@ func _ready() -> void:
 		return
 	if name == "knight":
 		_knight_test()
+		return
+	if name == "crown":
+		_crown_test()
 		return
 	if name == "knightleap":
 		_knightleap_test()
@@ -1852,6 +1855,93 @@ func _knightleap_test() -> void:
 ## the hero down, a roll as the front arrives passes through, a hero beyond its reach is
 ## untouched, the wave runs farther at the bigger phase-3 size, and in phase 3 the stamped
 ## ground stays burning (burns a hero who stands in it, not one who steps out) and then cools.
+## A plunge from above onto the Ashen Knight's helm is a crown strike at every size: it hits
+## harder than a plunge beside it, the giant reels, and the hero vaults off to the turf.
+## A plain drop onto its head (no plunge) puts the hero off it too.
+func _crown_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	var k: AshenKnight = _world.knight
+	var terrain: Terrain = _world.terrain
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	Engine.time_scale = 1.0
+	await _ticks(10)
+	var trials := [["crown", 1, 0.15], ["crown", 2, 0.3], ["beside", 1, -1.0], ["drop", 1, 0.1]]
+	var dmg := {}
+	for tr in trials:
+		var kind: String = tr[0]
+		var ph: int = tr[1]
+		for i in 200:
+			if not c.is_attacking() and not c.is_plunging() and p.is_on_floor() and p.land_t < 0.0:
+				break
+			await get_tree().physics_frame
+		k._set_phase(ph)
+		k.set_size_scale(k.growth.scale_of(ph))
+		k.health = k.health_max
+		k.poise = 0.0
+		k._leap_cool = 99.0
+		k._stomp_cool = 99.0
+		k._flame_t = -999.0
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		p.health = p.health_max
+		p.stamina = p.stamina_max
+		var cap: Array = k.hurt_capsule()
+		var top: float = maxf(cap[0].y, cap[1].y) + float(cap[2])
+		var off: float = tr[2]
+		var at: Vector3 = k.global_position + Vector3(off, 0.0, off * 0.5)
+		if kind == "beside":
+			at = k.global_position + k.body.global_basis.z.normalized() * (float(cap[2]) + 1.4)
+			at.y = terrain.height_at(at.x, at.z) + 3.5
+		else:
+			at.y = top + 3.0
+		await _ticks(1)
+		p.global_position = at
+		p.velocity = Vector3.ZERO
+		await _ticks(3)
+		var c0 := c.crown_strikes
+		var kc0 := k.crowned_count
+		var v0 := p.vaults
+		var s0 := p.foe_slides
+		var hp0 := k.health
+		var pl0 := c.plunges
+		if kind != "drop":
+			p.bot_heavy = true
+			await _ticks(2)
+			p.bot_heavy = false
+		var stag := false
+		var settled := false
+		var peak := -INF
+		for i in 300:
+			await get_tree().physics_frame
+			peak = maxf(peak, p.global_position.y - at.y)
+			if k.state == HollowSoldier.STAGGER:
+				stag = true
+			if i > 20 and p.is_on_floor() and absf(p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)) < 0.4 \
+					and (kind == "drop" or c.plunges > pl0) and not c.is_plunging():
+				settled = true
+				break
+		var d := Vector2(p.global_position.x - k.global_position.x, p.global_position.z - k.global_position.z).length()
+		dmg[kind + str(ph)] = hp0 - k.health
+		print("BOT crown: %s at size %.2f (top %.1f m) -> plunges %d, crown %d, reeled %s (crowned %d), damage %.0f, vaults %d, slides %d, hero on turf %s at %.1f m, hero health %.0f/%.0f" % [kind, k.size_scale, top - k.global_position.y, c.plunges - pl0, c.crown_strikes - c0, stag, k.crowned_count - kc0, hp0 - k.health, p.vaults - v0, p.foe_slides - s0, settled, d, p.health, p.health_max])
+		print("BOT crown:   highest the hero rose over the drop point: %.2f m" % peak)
+		if peak > 1.5:
+			return _combat_done(false, "the vault flung the hero high into the air (%.1f m)" % peak)
+		if not settled or d < float(cap[2]) + 0.3:
+			return _combat_done(false, "the hero did not get off the giant onto the turf (%s)" % kind)
+		if kind == "crown" and (c.crown_strikes != c0 + 1 or k.crowned_count != kc0 + 1 or not stag or p.vaults != v0 + 1 or c.last_crown != k):
+			return _combat_done(false, "a plunge onto the helm was not a crown strike at size %.2f" % k.size_scale)
+		if kind == "beside" and (c.crown_strikes != c0 or c.plunges != pl0 + 1 or hp0 - k.health <= 0.0):
+			return _combat_done(false, "a plunge beside the knight did not land as a plain plunge")
+		if kind == "drop" and (p.foe_slides <= s0 or c.crown_strikes != c0):
+			return _combat_done(false, "a plain drop onto the helm was not put off it")
+		if p.health < p.health_max:
+			return _combat_done(false, "the drop onto the giant hurt the hero")
+	if dmg["crown1"] <= dmg["beside1"] * 1.3:
+		return _combat_done(false, "the crown strike did not hit harder than a plunge beside the knight")
+	_combat_done(true, "crown strike at sizes 1 and 2, plain plunge beside, drop put off")
+
 func _knightstomp_test() -> void:
 	var p := _player
 	var k: AshenKnight = _world.knight

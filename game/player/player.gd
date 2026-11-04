@@ -209,6 +209,14 @@ var _land_hard := false
 var _land_plunge := false             # the landing was a plunge: deepest crouch, chest over the knees
 var _land_dur := LAND_SOFT
 var jumps := 0                          # (bots) jumps taken
+## A leap off a foe's back, waiting out the hit-stop: a crown strike vaults the hero off the
+## boss's shoulders; standing on any foe's head slides the hero off it the same way, smaller.
+const VAULT_OUT := 5.5
+const VAULT_UP := 6.0
+var _vault := Vector3.ZERO
+var _vault_big := false
+var vaults := 0                         # (bots) leaps off a foe
+var foe_slides := 0                     # (bots) times the hero was put off a foe's head
 var landings := 0                       # (bots) touchdowns, and the last one's fall
 var hard_landings := 0
 var last_drop := 0.0
@@ -847,7 +855,22 @@ func _physics_process(delta: float) -> void:
 	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and not plunging and _regrab_t <= 0.0 and wish.length() > 0.3:
 		if _try_grab(wish.normalized()):
 			return
+	if _vault != Vector3.ZERO and (combat == null or combat.hitstop <= 0.0):
+		var k := 1.0 if _vault_big else 0.6
+		velocity = _vault * VAULT_OUT * k + Vector3.UP * VAULT_UP * k
+		_vault = Vector3.ZERO
+		vaults += 1 if _vault_big else 0
+		_jumped = true
+		_coyote_t = 99.0
+		_buffer_t = 99.0
+		land_t = -1.0
+		_air_t = -1.0                          # off the foe next frame: a fresh flight, no touchdown now
+		jump_apex = 0.0
+		_jump_y0 = global_position.y
+		if combat != null:
+			combat.end_plunge_rise()
 	move_and_slide()
+	_put_off_foes()
 	_update_animation(delta)
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
 	if combat != null:
@@ -862,6 +885,27 @@ func air_attack_ok() -> bool:
 
 func note_air_attack() -> void:
 	_air_swung = true
+
+func vault_off(away: Vector3, big: bool) -> void:
+	if _vault == Vector3.ZERO or big:
+		_vault = away
+		_vault_big = big
+
+## Nobody stands on a foe: a hero on a soldier's head or a giant's shoulders is put off it
+## (unless a crown strike's vault is already waiting).
+func _put_off_foes() -> void:
+	if _vault != Vector3.ZERO or not is_on_floor() or (combat != null and combat.is_plunging()):
+		return
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		var o := col.get_collider() as Node3D
+		if o != null and o.is_in_group("enemy") and col.get_normal().y > 0.3:
+			var away := global_position - o.global_position
+			away.y = 0.0
+			away = away.normalized() if away.length() > 0.05 else -body.global_basis.z
+			foe_slides += 1
+			vault_off(away, false)
+			return
 
 ## A heavy press now plunges: in the air with clear air under the feet.
 func plunge_ok() -> bool:
