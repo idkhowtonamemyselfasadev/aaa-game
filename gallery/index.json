@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261029-2020-roadmeet-hildwrap.jpg",
-  "time": "2026-10-29T20:20:00Z",
-  "caption": "Hild's forearm and shin wraps now read as solid cloth bands: the black-and-grey camouflage blotches (undersuit poking through) are gone; the wraps are still near-black against her smock and her hands still read as grey gauntlets (rendered before 85f57b8's mitts were rebased in).",
-  "verdict": "fail"
- },
- {
   "file": "20261029-2125-roadmeet-hildshin.jpg",
   "time": "2026-10-29T21:25:00Z",
   "caption": "Hild at the road meeting at 16:30 with lighter shin wraps (cropped below the frame here); her forearm sleeves still read as black blocks, hands as grey gloves, and the kirtle panels are patchy and flat.",
@@ -897,6 +891,12 @@
   "file": "20261104-1929-runstride.jpg",
   "time": "2026-11-04T19:29:29Z",
   "caption": "The run with the lengthened stride (StrideWarp 1.25x): a long open stride with the planted foot held still on the turf; GL frame, the lens is still 3/4 from behind and the legs sit in shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-2100-stride.jpg",
+  "time": "2026-11-04T21:00:00Z",
+  "caption": "The hero mid-run with the struck foot pinned by the new contact lock: a long open stride, but the GL frame leaves the legs in shade and the camera is 3/4 behind.",
   "verdict": "fail"
  }
 ]
