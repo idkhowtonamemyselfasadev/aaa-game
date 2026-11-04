@@ -2248,9 +2248,14 @@ func _ready() -> void:
 			player.global_position += Vector3.UP * 4.0
 		elif not "fromrest" in args:
 			for i in 60:
-				player.bot_input = Vector2(1, 0)
+				player.bot_input = _stick_for(player, Vector3(1, 0, 0))
 				player.bot_sprint = spr
 				await get_tree().physics_frame
+		# pivotat=<t>: the stick thrown back to world -X at a run (the plant-and-spin pivot)
+		var pivot_at := -1.0
+		for a in args:
+			if a.begins_with("pivotat="):
+				pivot_at = float(a.substr(8))
 		# nojump: only run (with fromrest from a standstill), stopat=<t> lets go of the stick,
 		# turnat=<t> swings it 90 deg: the start / stop / turn lean frames
 		var stop_at := -1.0
@@ -2272,9 +2277,12 @@ func _ready() -> void:
 		var pressed := -1
 		for i in 600:
 			if not "drop" in args:
-				player.bot_input = Vector2(1, 0)
+				# world-space: the camera rig follows the hero, so a fixed stick would curve the run
+				player.bot_input = _stick_for(player, Vector3(1, 0, 0))
 				if turn_at >= 0.0 and t >= turn_at:
-					player.bot_input = Vector2(0, 1)
+					player.bot_input = _stick_for(player, Vector3(0, 0, 1))
+				if pivot_at >= 0.0 and t >= pivot_at:
+					player.bot_input = _stick_for(player, Vector3(-1, 0, 0))
 				if stop_at >= 0.0 and t >= stop_at:
 					player.bot_input = Vector2.ZERO
 				player.bot_sprint = spr
@@ -2302,6 +2310,7 @@ func _ready() -> void:
 		player.global_position = back
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
+		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])
 		print("SHOT jump t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
 	if dodge_u >= 0.0:
 		Engine.max_physics_steps_per_frame = 1
@@ -2992,3 +3001,12 @@ func _rr(a: float, b: float) -> float:
 ## A spread of headings for staged birds.
 func _rng_yaw(k: int) -> float:
 	return fmod(k * 2.39, TAU)
+
+## The bot stick that drives the hero along a world direction, whatever way the camera rig faces.
+func _stick_for(player: Player, dir: Vector3) -> Vector2:
+	var b: Basis = player.cam_pivot.global_transform.basis
+	var f := -b.z
+	f.y = 0.0
+	var r := b.x
+	r.y = 0.0
+	return Vector2(dir.dot(r.normalized()), -dir.dot(f.normalized()))

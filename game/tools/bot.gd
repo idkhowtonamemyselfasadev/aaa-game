@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -187,6 +187,9 @@ func _ready() -> void:
 		return
 	if name == "lean":
 		_lean_test()
+		return
+	if name == "pivot":
+		_pivot_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -714,6 +717,74 @@ func _lean_test() -> void:
 	if p.turn_shuffle > 0.05:
 		return _combat_done(false, "the feet keep shuffling once squared up (%.2f)" % p.turn_shuffle)
 	_combat_done(true, "the hero leans into starts, banks into turns, rocks back and settles on a stop, and steps round on the spot")
+
+## Pivot: reversing the stick at a run plants a foot, skids, spins 180 deg over it while low and
+## drives off the other way, faster than the old lerped arc; a walk turns round as before.
+func _pivot_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var results := []
+	for mag in [1.0, 0.5]:
+		for i in 70:
+			p.bot_input = Vector2(0, -mag)
+			await get_tree().physics_frame
+		var run_dir := Vector3(p.velocity.x, 0, p.velocity.z).normalized()
+		var n0 := p.pivots
+		var v_run := Vector3(p.velocity.x, 0, p.velocity.z).length()
+		var yaw0 := p.body.rotation.y
+		var last := 0.0
+		var backsteps := 0
+		var t_back := -1.0
+		var knee := 0.0
+		var dip := 0.0
+		var back := 0.0
+		var flat := 0.0
+		var sole_max := 0.0
+		for i in 60:
+			p.bot_input = Vector2(0, mag)
+			await get_tree().physics_frame
+			var turned := absf(wrapf(p.body.rotation.y - yaw0, -PI, PI))
+			if turned < last - 0.02:
+				backsteps += 1
+			last = maxf(last, turned)
+			var along := -Vector3(p.velocity.x, 0, p.velocity.z).dot(run_dir)
+			if t_back < 0.0 and along > 0.8 * v_run * (0.85 if mag > 0.9 else 0.9):
+				t_back = (i + 1) / 60.0
+			if p.pivot_t >= 0.0:
+				knee = maxf(knee, p.crumple.knee)
+				dip = maxf(dip, p._pose_dip)
+				back = minf(back, p.lean.x)
+				flat = maxf(flat, p.crumple.sole_flat)
+		var face := p.body.global_basis.z.dot(-run_dir)
+		await _ticks(20)
+		results.append([p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, face, p.crumple.leg_aim, p.pivot_t])
+		print("BOT pivot: stick %.1f at %.1f m/s: pivots %d, back to speed in %.2f s, skid %.2f m, yaw backsteps %d, knee %.2f, dip %.2f, lean back %.3f, sole %.2f, facing %.2f, after leg_aim %.2f" % [mag, v_run, p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, flat, face, p.crumple.leg_aim])
+		p.bot_input = Vector2.ZERO
+		await _ticks(60)
+	var r: Array = results[0]
+	if r[0] != 1:
+		return _combat_done(false, "reversing at a run did not pivot once (%d)" % r[0])
+	if r[1] < 0.0 or r[1] > 0.7:
+		return _combat_done(false, "the pivot is slow back to speed (%.2f s)" % r[1])
+	if r[2] < 0.3 or r[2] > 1.6:
+		return _combat_done(false, "the skid along the old line is %.2f m (want 0.3-1.6)" % r[2])
+	if r[3] > 0:
+		return _combat_done(false, "the body spins back and forth through the pivot (%d)" % r[3])
+	if r[4] < 0.3 or r[5] < 0.08:
+		return _combat_done(false, "the hero does not sink over the planted foot (knee %.2f dip %.2f)" % [r[4], r[5]])
+	if r[6] > -0.05:
+		return _combat_done(false, "no rock back against the skid (%.3f)" % r[6])
+	if r[7] < 0.95:
+		return _combat_done(false, "the pivot does not end facing the new way (%.2f)" % r[7])
+	if r[8] > 0.0 or r[9] >= 0.0:
+		return _combat_done(false, "the pivot pose lingers after (%.2f)" % r[8])
+	if (results[1] as Array)[0] != 0:
+		return _combat_done(false, "a walk pivots like a run")
+	_combat_done(true, "reversing at a run plants, skids, spins over the planted foot and drives off the other way; a walk turns as before")
 
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])

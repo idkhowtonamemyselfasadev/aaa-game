@@ -419,6 +419,8 @@ func _update_animation(delta: float) -> void:
 		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
 	if turn_shuffle > 0.05 and hspeed < 0.6:
 		ts = lerpf(ts, 1.25, turn_shuffle)
+	if pivot_t >= 0.0:
+		ts = 0.5                               # the planted legs are posed: the clip's arms slow
 	if combat != null and combat.hitstop > 0.0:
 		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
@@ -717,6 +719,7 @@ func _physics_process(delta: float) -> void:
 	if landing and _land_hard:
 		speed = minf(speed, WALK_SPEED * 0.6)  # the knees soak a real drop: a slow first step
 		sprinting = false
+	_pivot_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	var target := wish * speed
 	var accel := ACCEL
 	if attacking and combat.current_attack().has("lunge_at"):
@@ -739,6 +742,10 @@ func _physics_process(delta: float) -> void:
 		var damp := 6.0 if combat.plunge_t < StaffCombat.PLUNGE_HANG else 30.0
 		velocity.x = move_toward(velocity.x, 0.0, damp * delta * maxf(absf(velocity.x), 1.0))
 		velocity.z = move_toward(velocity.z, 0.0, damp * delta * maxf(absf(velocity.z), 1.0))
+	elif pivot_t >= 0.0:
+		var pv := _pivot_velocity(wish * speed)
+		velocity.x = pv.x
+		velocity.z = pv.z
 	elif not dodging and not reeling:
 		velocity.x = move_toward(velocity.x, target.x, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
@@ -860,6 +867,9 @@ func _physics_process(delta: float) -> void:
 		# off a face: the body twists round from the stones to the flight, eased in and out
 		var tw := smoothstep(0.0, WALL_JUMP_TWIST, _wj_t)
 		body.rotation.y = lerp_angle(_wj_yaw.x, _wj_yaw.y, tw)
+	elif pivot_t >= 0.0:
+		# the plant holds the old facing, then the body spins over the planted foot
+		body.rotation.y = _pivot_from + _pivot_turn * smoothstep(PIVOT_SPIN.x, PIVOT_SPIN.y, pivot_t / PIVOT_TIME)
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
@@ -889,6 +899,7 @@ func _physics_process(delta: float) -> void:
 	_put_off_foes()
 	_update_animation(delta)
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
+	_pivot_pose()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
 	if combat != null:
 		combat.physics_step(delta)
@@ -931,6 +942,8 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 			-LEAN_MAX, LEAN_MAX)
 		# centripetal push: speed x turn rate (turning left = yaw up = lean left, toward -roll)
 		want.y = clampf(-spd * clampf(yaw_rate, -6.0, 6.0) * BANK_K, -BANK_MAX, BANK_MAX)
+		if pivot_t >= 0.0:
+			want.y *= 0.25                     # spun over a planted foot, not banked round a curve
 	# spring-damper toward the wanted lean, integrated in two half steps for stability
 	for i in 2:
 		var h := delta * 0.5
@@ -948,6 +961,90 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 		return                                 # the dodge / flinch pose writes the model itself
 	var tip := Basis(Vector3.RIGHT, lean.x) * Basis(Vector3.BACK, lean.y)
 	model.transform = Transform3D(Basis(), Vector3(0, -_pose_dip, 0)) * Transform3D(tip, Vector3.ZERO) * _model_rest
+
+# --- the run pivot: plant, spin, drive ---
+## Reversing the stick at a run no longer swings the hero round a wide lerped arc. The foot on
+## the outside of the turn is thrown ahead and planted; the hero skids down onto it with the
+## knees bent and the chest held up (the lean spring rocks the body back against the brake),
+## spins 180 degrees over that foot while still low, and drives off the other leg into the new
+## direction with the chest forward. A turn left plants the right foot, and the other way round.
+const PIVOT_TIME := 0.44               # s from the plant to the first full stride the other way
+const PIVOT_MIN_SPEED := 4.6           # m/s along the facing: a jog or faster
+const PIVOT_DOT := -0.55               # the stick at least ~123 deg from the facing
+const PIVOT_BRAKE := 0.42              # u at which the skid has bled off the old speed
+const PIVOT_SPIN := Vector2(0.22, 0.66) # u over which the body spins round
+const PIVOT_DRIVE := 0.5               # u from which the legs drive the other way
+const PIVOT_DIP := 0.16                # m the hips sink over the planted foot
+var pivot_t := -1.0                    # s into a pivot (-1 none)
+var pivots := 0                        # (bots)
+var pivot_skid := 0.0                  # (bots) m slid along the old line during the last pivot
+var _pivot_from := 0.0
+var _pivot_turn := 0.0                 # signed radians the body spins (+: to the hero's left)
+var _pivot_v0 := Vector3.ZERO          # ground velocity at the plant
+var _pivot_p0 := Vector3.ZERO
+
+func _pivot_step(delta: float, wish: Vector3, busy: bool) -> void:
+	if pivot_t >= 0.0:
+		pivot_t += delta
+		var old := _pivot_v0.normalized()
+		pivot_skid = maxf(pivot_skid, (global_position - _pivot_p0).dot(old))
+		if pivot_t >= PIVOT_TIME or busy or not is_on_floor() or climbing or gliding:
+			_end_pivot()
+		return
+	if busy or climbing or gliding or lock_target != null or not is_on_floor() or _jp > 0.05 or wish.length() < 0.5:
+		return
+	var face := body.global_basis.z
+	var hv := Vector3(velocity.x, 0.0, velocity.z)
+	if hv.dot(face) < PIVOT_MIN_SPEED or wish.normalized().dot(face) > PIVOT_DOT:
+		return
+	pivot_t = 0.0
+	pivots += 1
+	pivot_skid = 0.0
+	_pivot_v0 = hv
+	_pivot_p0 = global_position
+	_pivot_from = body.rotation.y
+	var turn := wrapf(atan2(wish.x, wish.z) - _pivot_from, -PI, PI)
+	if absf(turn) > PI * 0.97:
+		turn = PI                              # dead behind: round to the left over the right foot
+	_pivot_turn = turn
+
+## Ground velocity through the pivot: the old run bleeds off along its line as the planted foot
+## skids, then the drive leg pushes off along the stick.
+func _pivot_velocity(goal: Vector3) -> Vector3:
+	var u := pivot_t / PIVOT_TIME
+	var brake := 1.0 - smoothstep(0.0, PIVOT_BRAKE, u)
+	var drive := smoothstep(PIVOT_DRIVE, 1.0, u)
+	return _pivot_v0 * brake * brake + goal * drive * 0.85
+
+func _end_pivot() -> void:
+	pivot_t = -1.0
+
+func _pivot_pose() -> void:
+	if pivot_t < 0.0 or crumple == null or _jp > 0.0 or dead_t >= 0.0 or down_t >= 0.0:
+		return
+	var u := pivot_t / PIVOT_TIME
+	var env := smoothstep(0.0, 0.14, u) * (1.0 - smoothstep(0.72, 1.0, u))
+	var sg := signf(_pivot_turn)           # + plants the right leg (stride + carries it forward)
+	# the plant leg is thrown ahead into the skid; over the spin the other comes through to drive
+	var lead := lerpf(0.42, -0.3, smoothstep(PIVOT_SPIN.x, PIVOT_SPIN.y + 0.1, u))
+	var sink := sin(PI * clampf(u / 0.75, 0.0, 1.0)) * (1.0 - 0.4 * smoothstep(0.5, 1.0, u))
+	var dip := PIVOT_DIP * sink
+	var a := acos(clampf(1.0 - dip / 0.9, -1.0, 1.0))
+	# chest held up against the brake, then over the knees on the drive
+	var spine := lerpf(-0.06, 0.3, smoothstep(PIVOT_DRIVE - 0.1, 0.9, u))
+	crumple.active = true
+	crumple.leg_aim = env
+	crumple.hip = a * 1.15 * env
+	crumple.knee = a * 2.0 * env
+	crumple.stride = lead * sg * env
+	crumple.spine = spine * env
+	crumple.arm = lerpf(0.5, 0.25, smoothstep(0.3, 0.8, u)) * env   # the arms come out for balance
+	crumple.elbow = 0.55 * env
+	crumple.ankle = 0.0
+	crumple.sole_flat = env                # the soles grip flat through the skid
+	if garb != null:
+		garb.posed_legs = true
+	_pose_dip = dip * env
 
 # --- jumping ---
 
