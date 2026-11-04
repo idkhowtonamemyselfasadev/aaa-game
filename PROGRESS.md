@@ -7105,7 +7105,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 0. (14:00 11-04) **RUN PIVOT DONE (bot `pivot` NEW PASS).** NEXT: (a) look at GL/Forward+ frames of it
    (`jump X 20 15.0 fixfps nojump close pivotat=0.3 jt=0.36/0.45/0.55/0.66`) and fix what reads stiff (the arms
-   come from the run clip at half cadence; a real pivot throws the arms across the turn); (b) planted-foot stop
+   come from the run clip at half cadence; a real pivot throws the arms across the turn);
+   14:30 GL frames (`... nojump clear close pivotat=0.3 jt=0.38/0.47/0.58`): the body visibly spins round between
+   frames, but the `close` lens ends up BEHIND the run line and the hero stands in the cottage's shadow, so the
+   crouch, the lead leg and the skid cannot be judged; without `clear` the practice post hides the hero. Fix the
+   lens first: put it on world +/-Z of the pivot point itself (the hero is carried back to the run's start, so the
+   lens must aim at jstart, and the run must turn there), with the sun behind the camera; (b) planted-foot stop
    (one leg ahead with the knee bent, per-leg, not both); (c) start driving off one leg; (d) turn shuffle foot
    placement; then the 12:20 items below.
 0. (13:00 11-04) **LOCOMOTION WEIGHT DONE (bot `lean` NEW PASS; `jump` `dodge` `combat` `flinch` `walk` `climb` `crown` `knight` PASS).**
