@@ -859,6 +859,19 @@ func _ready() -> void:
 		var rcam := ring.centre + f3 * (StoneRing.RADIUS + 6.5) + f3.cross(Vector3.UP) * 2.0
 		rcam.y = terrain.height_at(rcam.x, rcam.z) + 3.4
 		SPOTS[spot] = [rcam, ring.centre + Vector3.UP * 1.4]
+	var jump_t := -1.0
+	if spot == "jump":
+		# jump [jt=0.3] [sprint] [drop] [land=0.06]: a running jump to world +X frozen jt s after
+		# the press (or, with land=, that far into the landing; drop: a 4 m fall, hard landing)
+		jump_t = 0.3
+		for a in args:
+			if a.begins_with("jt="):
+				jump_t = float(a.substr(3))
+		var pp := player.global_position
+		var light: Vector3 = -world.sun.global_transform.basis.z
+		var side := Vector3(0, 0, 1) if -light.z > 0.0 else Vector3(0, 0, -1)
+		var mid := pp + Vector3(1.8 if not "drop" in args else 0.0, 0, 0)
+		SPOTS[spot] = [mid + side * 4.2 + Vector3(0.4, 0, 0), mid]
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
 		dodge_u = 0.35
@@ -1906,8 +1919,8 @@ func _ready() -> void:
 		var s: Array = SPOTS[spot]
 		var pos: Vector3 = s[0]
 		var look: Vector3 = s[1]
-		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or foe_u >= 0.0 else 2.5)
-		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 or foe_u >= 0.0 else 2.5)
+		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
 		if spot == "soldier" and "knight" in args and "p3" in args:
 			# 0.9 m (08:00 10-31) put the scorch behind the meadow grass: look down on it instead
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1
@@ -2123,6 +2136,49 @@ func _ready() -> void:
 		get_tree().paused = true
 		RenderingServer.render_loop_enabled = true
 		print("SHOT impact hits %d step %d" % [c.hits, c.step])
+	if jump_t >= 0.0:
+		Engine.max_physics_steps_per_frame = 1
+		Engine.time_scale = 1.0
+		player.use_bot_input = true
+		RenderingServer.render_loop_enabled = false
+		for i in 30:
+			await get_tree().physics_frame
+		var land := -1.0
+		for a in args:
+			if a.begins_with("land="):
+				land = float(a.substr(5))
+		var spr := "sprint" in args
+		var jstart := player.global_position
+		if "drop" in args:
+			player.global_position += Vector3.UP * 4.0
+		else:
+			for i in 60:
+				player.bot_input = Vector2(1, 0)
+				player.bot_sprint = spr
+				await get_tree().physics_frame
+			player.bot_jump = true
+		player.bot_jump_hold = true
+		var t := 0.0
+		for i in 600:
+			if not "drop" in args:
+				player.bot_input = Vector2(1, 0)
+				player.bot_sprint = spr
+			await get_tree().physics_frame
+			t += 1.0 / 60.0
+			if land < 0.0 and t >= jump_t:
+				break
+			if land >= 0.0 and player.land_t >= land:
+				break
+		get_tree().paused = true
+		RenderingServer.render_loop_enabled = true
+		# carried back to where the run began, so the side-on lens set up there frames the leap
+		# (same height over the turf; the pose is already frozen)
+		var jd := player.global_position - jstart
+		var jh := player.global_position.y - terrain.height_at(player.global_position.x, player.global_position.z)
+		var back := Vector3(jstart.x, 0, jstart.z) + Vector3(0, terrain.height_at(jstart.x, jstart.z) + jh, 0)
+		player.global_position = back
+		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
+		print("SHOT jump t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
 	if dodge_u >= 0.0:
 		Engine.max_physics_steps_per_frame = 1
 		player.use_bot_input = true

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261028-0940-knockdown-lying.jpg",
-  "time": "2026-10-28T09:40:00Z",
-  "caption": "Side-on, low look at the hero thrown on their back by the soldier's sweep: they now lie square and flat with the hat at the head end, but the tall straw grass still buries most of the body and does not flatten under it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-1100-knockdown-pressed.jpg",
-  "time": "2026-10-28T11:00:00Z",
-  "caption": "The knocked-down hero on their back with the grass round the body now pressed flat (hat, sash and dust puff read), but the camera-side tufts outside the pressed patch still hide the legs and the foreground soil shows a stippled dot pattern.",
-  "verdict": "fail"
- },
- {
   "file": "20261028-1135-soil-clean.jpg",
   "time": "2026-10-28T11:35:00Z",
   "caption": "The knocked-down hero in pressed grass; the near soil is now clean loam with a few leaves instead of the dashed stipple pattern, but camera-side tufts still hide the legs and the frame is dark.",
@@ -897,6 +885,18 @@
   "file": "20261103-2322-ring-arena.jpg",
   "time": "2026-11-03T23:22:24Z",
   "caption": "The Ashen Knight's stone ring widened to ~32 m with 4-6 m uprights so the growing giant has room; GL fallback frame (Forward+ ran out of memory), the ash floor reads too dark and flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0117-jump-apex.jpg",
+  "time": "2026-11-04T01:17:39Z",
+  "caption": "The hero at the top of a held running jump over the meadow (GL frame): knees tucked, robe flared; the air pose is still a procedural squat with splayed hands, no mocap clip.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0117-jump-rise.jpg",
+  "time": "2026-11-04T01:17:39Z",
+  "caption": "Rising out of a running jump, 0.7 m up, legs gathering under the hips (GL frame); reads as a jump but stiff, the arms only swing forward.",
   "verdict": "fail"
  }
 ]

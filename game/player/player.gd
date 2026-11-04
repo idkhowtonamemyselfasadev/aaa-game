@@ -10,6 +10,22 @@ const SPRINT_SPEED := 9.0
 const ACCEL := 14.0
 const JUMP_VEL := 7.5
 const GRAVITY := 22.0
+# Jump: pressed up to JUMP_BUFFER before touchdown it still fires on landing; up to COYOTE
+# after running off an edge it still leaves from the ground. Let go early and gravity bites
+# harder (tap = a short hop ~0.6 m, hold = the full ~1.3 m). The way down is a little heavier
+# than the way up, so the arc never floats. In the air the stick steers, but only gently.
+const COYOTE := 0.12
+const JUMP_BUFFER := 0.12
+const JUMP_CUT_GRAVITY := 2.6        # x GRAVITY while rising with the button released
+const FALL_GRAVITY := 1.3            # x GRAVITY on the way down
+const AIR_ACCEL := 5.5               # m/s^2 of steering in the air (ACCEL on the ground)
+const AIR_DRAG := 1.5                # m/s^2 lost in the air with the stick let go
+const SPRINT_JUMP_BOOST := 1.6       # m/s added along the run when a sprint leaves the ground
+const LAND_SOFT := 0.2               # s of knee give on an ordinary landing
+const LAND_HARD := 0.45              # s crouched after a real drop (slowed, cannot jump)
+const HARD_DROP := 2.2               # m fallen that makes a landing hard
+const FALL_HURT := 7.0               # m fallen before the ground starts to hurt
+const FALL_LETHAL := 22.0            # m fallen that kills outright
 const TURN_SPEED := 12.0
 const STAMINA_MAX := 100.0
 const HEALTH_MAX := 100.0
@@ -164,6 +180,24 @@ var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
 var bot_sprint := false
 var bot_jump := false
+var bot_jump_hold := false              # bots: the jump button held down (variable height)
+var _coyote_t := 99.0                   # s since the feet left the ground (not by a jump)
+var _buffer_t := 99.0                   # s since jump was pressed and not yet used
+var _air_t := -1.0                      # s airborne (-1 on the ground)
+var _air_top := 0.0                     # highest y this time in the air
+var _air_last_y := 0.0
+var _prev_pos := Vector3.ZERO
+var _jump_from_sprint := false
+var land_t := -1.0                      # s into a landing (-1 none)
+var _land_hard := false
+var _land_dur := LAND_SOFT
+var jumps := 0                          # (bots) jumps taken
+var landings := 0                       # (bots) touchdowns, and the last one's fall
+var hard_landings := 0
+var last_drop := 0.0
+var jump_apex := 0.0                    # (bots) height of the last jump's top above its take-off
+var _jump_y0 := 0.0
+signal landed(at: Vector3, hard: bool)
 var bot_attack := false
 var bot_lock := false
 var bot_heavy := false                  # heavy button held (bots)
@@ -336,8 +370,8 @@ func _update_animation(delta: float) -> void:
 		anim_tree.set("parameters/speed/scale", -1.7 if _dodge_back else 1.9)
 		return
 	var hspeed := Vector2(velocity.x, velocity.z).length()
-	if not is_on_floor():
-		hspeed = minf(hspeed, ANIM_WALK_SPEED)   # no jump clip yet: hold a stride
+	if not is_on_floor() and (_jumped or _air_t > 0.15):
+		hspeed = 0.0                             # in the air the jump pose owns the legs: no stride
 	_blend = lerpf(_blend, minf(hspeed, ANIM_RUN_SPEED), 1.0 - exp(-10.0 * delta))
 	anim_tree.set("parameters/move/blend_position", _blend)
 	# Between blend points cadence follows speed/blend, so feet don't skate.
@@ -515,6 +549,7 @@ func _physics_process(delta: float) -> void:
 	var sprinting := (bot_sprint if use_bot_input else Input.is_action_pressed("sprint")) and stamina > 0.0
 	var want_jump := bot_jump if use_bot_input else Input.is_action_just_pressed("jump")
 	bot_jump = false
+	var jump_held := bot_jump_hold if use_bot_input else Input.is_action_pressed("jump")
 	var want_attack := bot_attack if use_bot_input else Input.is_action_just_pressed("attack_light")
 	bot_attack = false
 	var want_dodge := bot_dodge if use_bot_input else Input.is_action_just_pressed("dodge")
@@ -546,9 +581,19 @@ func _physics_process(delta: float) -> void:
 		_climb_tick(delta, dir2, want_jump, want_dodge)
 		return
 	_update_slowmo(delta)
-	if gliding or (want_jump and _can_glide()):
+	# a press in the air opens the wing only clear of the ground and past coyote time;
+	# nearer the ground it waits as a buffered jump for the touchdown
+	if gliding or (want_jump and _coyote_t > COYOTE and _can_glide() and _clear_below(1.6)):
+		if not gliding:
+			_air_t = -1.0
+			land_t = -1.0
+			_clear_jump_pose()
 		_glide_tick(delta, dir2, want_jump, want_dodge)
 		return
+	if want_jump:
+		_buffer_t = 0.0
+	else:
+		_buffer_t += delta
 	var reeling := flinch_t >= 0.0
 	if want_dodge and (not reeling or flinch_t >= FLINCH_DODGE_AT):
 		_try_dodge(dir2)
@@ -624,10 +669,22 @@ func _physics_process(delta: float) -> void:
 		sprinting = false
 	elif combat != null and combat.is_drawn():
 		speed = minf(speed, RUN_SPEED)   # weapon out: no sprint
+	var landing := land_t >= 0.0
+	if landing and _land_hard:
+		speed = minf(speed, WALK_SPEED * 0.6)  # the knees soak a real drop: a slow first step
+		sprinting = false
 	var target := wish * speed
 	var accel := ACCEL
 	if attacking and combat.current_attack().has("lunge_at"):
 		accel = ACCEL * 4.0                    # the heavy's step-in is one decisive stride
+	var airborne := not is_on_floor() and not dodging
+	if airborne and not attacking:
+		# carried by the take-off: the stick bends the arc, it does not reverse it; a sprint
+		# leap keeps its speed rather than braking to the run's
+		var hv := Vector2(velocity.x, velocity.z)
+		var cap := maxf(speed, hv.length())
+		target = wish * cap
+		accel = AIR_ACCEL if wish.length() > 0.1 else AIR_DRAG
 	if not dodging and not reeling:
 		velocity.x = move_toward(velocity.x, target.x, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
@@ -636,14 +693,65 @@ func _physics_process(delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 
-	if is_on_floor():
+	# set down somewhere else (respawn, a bot): the old floor reading is stale, no ledge to leave
+	var teleported := global_position.distance_to(_prev_pos) > 4.0
+	_prev_pos = global_position
+	if teleported:
+		_coyote_t = 99.0
+		_air_top = global_position.y
+	if is_on_floor() and not teleported:
+		if _air_t >= 0.0:
+			_touch_down()
 		_jumped = false
-		if want_jump and stamina >= 8.0:
-			velocity.y = JUMP_VEL
-			stamina -= 8.0
-			_jumped = true
+		_coyote_t = 0.0
 	else:
-		velocity.y -= GRAVITY * delta
+		if _air_t < 0.0:
+			_air_t = 0.0
+			_air_top = global_position.y
+			_air_last_y = global_position.y
+		_air_t += delta
+		if absf(global_position.y - _air_last_y) > 4.0:
+			_air_top = global_position.y           # teleported (respawn, a bot): not a fall
+		_air_top = maxf(_air_top, global_position.y)
+		_air_last_y = global_position.y
+		if not _jumped:
+			_coyote_t += delta
+		var g := GRAVITY
+		if velocity.y < 0.0:
+			g *= FALL_GRAVITY
+		elif _jumped and not jump_held:
+			g *= JUMP_CUT_GRAVITY                  # let go early: the hop is cut short
+		velocity.y -= g * delta
+		if _jumped:
+			jump_apex = maxf(jump_apex, global_position.y - _jump_y0)
+	var can_leave := ((is_on_floor() and not teleported) or (_coyote_t <= COYOTE and not _jumped)) \
+		and not (landing and _land_hard) and not dodging and not reeling and not attacking and not charging
+	if _buffer_t <= JUMP_BUFFER and can_leave and stamina >= 8.0:
+		_buffer_t = 99.0
+		velocity.y = JUMP_VEL
+		stamina -= 8.0
+		_jumped = true
+		_coyote_t = 99.0
+		jumps += 1
+		jump_apex = 0.0
+		_jump_y0 = global_position.y
+		land_t = -1.0
+		_jump_from_sprint = sprinting and wish.length() > 0.3
+		if wish.length() > 0.3:
+			# the take-off pushes off toward the stick: a standing jump at a wall reaches it
+			var hv0 := Vector2(velocity.x, velocity.z)
+			var hw := Vector2(wish.x, wish.z) * speed
+			if hv0.length() < hw.length():
+				hv0 = hv0.lerp(hw, 0.6)
+				velocity.x = hv0.x
+				velocity.z = hv0.y
+		if _jump_from_sprint:
+			var hv := Vector3(velocity.x, 0.0, velocity.z)
+			var along := hv.normalized() if hv.length() > 0.5 else wish.normalized()
+			velocity += along * SPRINT_JUMP_BOOST
+		if _air_t < 0.0:
+			_air_t = 0.0
+			_air_top = global_position.y
 
 	if sprinting and wish.length() > 0.1:
 		stamina = maxf(stamina - 18.0 * delta, 0.0)
@@ -694,8 +802,124 @@ func _physics_process(delta: float) -> void:
 			return
 	move_and_slide()
 	_update_animation(delta)
+	_jump_pose(delta, attacking or charging or dodging or reeling)
 	if combat != null:
 		combat.physics_step(delta)
+
+# --- jumping ---
+
+## True when nothing solid lies within `h` m below the feet.
+func _clear_below(h: float) -> bool:
+	return _ray(global_position + Vector3.UP * 0.1, global_position + Vector3.DOWN * h).is_empty()
+
+func _touch_down() -> void:
+	var drop := _air_top - global_position.y
+	var was_jump := _jumped or _air_t > 0.15
+	_air_t = -1.0
+	if not was_jump and drop < 0.35:
+		return                                 # a bump on a slope, not a landing
+	landings += 1
+	last_drop = drop
+	_land_hard = drop >= HARD_DROP
+	_land_dur = LAND_HARD if _land_hard else LAND_SOFT
+	land_t = 0.0
+	if _land_hard:
+		hard_landings += 1
+		add_shake(clampf(0.15 + 0.04 * drop, 0.0, 0.6))
+	landed.emit(global_position, _land_hard)
+	if drop > FALL_HURT and dead_t < 0.0:
+		var dmg := health_max * clampf((drop - FALL_HURT) / (FALL_LETHAL - FALL_HURT), 0.0, 1.0)
+		health = maxf(health - dmg, 0.0)
+		hurt.emit(dmg)
+		if health <= 0.0:
+			_clear_jump_pose()
+			_die(self)
+
+## The body in the air and on landing, laid over the clip by the crumple modifier: the legs
+## gather up under the hips on the rise (the leading knee higher), hang and reach for the
+## ground as the fall gathers speed, then the knees give on touchdown, deeper after a real
+## drop, with the chest folding over them and the arms swinging down for balance.
+var _jp := 0.0                          # 0..1 how much the jump pose owns the legs
+var _tuck := 0.0
+func _jump_pose(delta: float, busy: bool) -> void:
+	if crumple == null or gliding or climbing or mantle_t >= 0.0 or dead_t >= 0.0 or down_t >= 0.0:
+		return
+	var air := _air_t >= 0.0 and (_jumped or _air_t > 0.15) and not busy
+	if land_t >= 0.0:
+		land_t += delta
+		if land_t >= _land_dur:
+			land_t = -1.0
+	var landing := land_t >= 0.0 and not busy and not air
+	var want := 1.0 if (air or landing) else 0.0
+	_jp = move_toward(_jp, want, delta * (14.0 if want > _jp else 8.0))
+	if _jp <= 0.0:
+		if crumple.leg_aim > 0.0:
+			_clear_jump_pose()
+		return
+	var k := 1.0 - exp(-18.0 * delta)
+	var hip := 0.0
+	var knee := 0.0
+	var spine := 0.0
+	var arm := 0.0
+	var elbow := 0.0
+	var stride := 0.0
+	var dip := 0.0
+	if air:
+		# up: a rising tuck (fast in, held over the apex); down: the legs open to reach
+		var t_in := _air_t if _jumped else 0.0
+		_tuck = lerpf(_tuck, clampf(t_in / 0.22, 0.0, 1.0) if _jumped else 0.25, k)
+		var reach := clampf(-velocity.y / 9.0, 0.0, 1.0)
+		var tk := _tuck * (1.0 - 0.7 * reach)
+		hip = 0.95 * tk + 0.28 * reach
+		knee = 1.35 * tk + 0.3 * reach
+		spine = 0.12 * tk - 0.05 * reach
+		arm = 0.55 * tk + 0.35 * reach          # arms come up and forward, then out for balance
+		elbow = 0.6 * tk + 0.4
+		stride = 0.22 * tk if _jumped else 0.0  # lead knee higher, the other arm forward
+		if _jump_from_sprint:
+			stride = 0.42 * tk                  # a running leap: a long split stride
+	elif landing:
+		var u := land_t / _land_dur
+		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
+		var env := sin(PI * minf(u / 0.3, 1.0) * 0.5) * (1.0 - smoothstep(0.3, 1.0, u))
+		var depth := 0.3 if _land_hard else 0.1
+		dip = depth * env
+		# legs folding so the feet stay put under the lowered hips (2 x 0.45 m segments)
+		var a := acos(clampf(1.0 - dip / 0.9, -1.0, 1.0))
+		hip = a * 1.15
+		knee = a * 2.0
+		spine = (0.45 if _land_hard else 0.18) * env
+		arm = (0.5 if _land_hard else 0.2) * env
+		elbow = 0.5 * env
+		_tuck = 0.0
+	crumple.active = true
+	crumple.leg_aim = _jp
+	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
+	crumple.knee = lerpf(crumple.knee, knee * _jp, k)
+	crumple.spine = lerpf(crumple.spine, spine * _jp, k)
+	crumple.arm = lerpf(crumple.arm, arm * _jp, k)
+	crumple.elbow = lerpf(crumple.elbow, elbow * _jp, k)
+	crumple.stride = lerpf(crumple.stride, stride * _jp, k)
+	if garb != null:
+		garb.posed_legs = true
+	if not busy:
+		model.transform = Transform3D(Basis(), Vector3(0, -dip, 0)) * _model_rest
+
+func _clear_jump_pose() -> void:
+	_jp = 0.0
+	_tuck = 0.0
+	if crumple == null:
+		return
+	crumple.leg_aim = 0.0
+	crumple.hip = 0.0
+	crumple.knee = 0.0
+	crumple.spine = 0.0
+	crumple.arm = 0.0
+	crumple.elbow = 0.0
+	crumple.stride = 0.0
+	crumple.active = false
+	if garb != null:
+		garb.posed_legs = false
 
 # --- gliding ---
 
@@ -886,10 +1110,18 @@ func _try_grab(wish: Vector3) -> bool:
 			if top2 != null:
 				_start_mantle(top2, n2)
 				return true
+			# no top within reach: a tall face whose foot juts out (a battered wall, a
+			# leaning crag) meets the shins before the chest; catch it all the same
+			if _jumped:
+				_start_climb((Vector3(n2.x, 0.0, n2.z).normalized() - wish).normalized())
+				return true
 	return false
 
 func _start_climb(n: Vector3) -> void:
 	_jumped = false
+	_air_t = -1.0
+	land_t = -1.0
+	_clear_jump_pose()
 	if combat != null and combat.is_drawn():
 		combat.restore()                       # the staff goes over the back to free the hands
 	_set_lock(null)
@@ -1257,6 +1489,9 @@ func receive_attack(attacker: Node, damage: float, heavy := false, unblockable :
 	return "hit"
 
 func _flinch(attacker: Node) -> void:
+	if _jp > 0.0:
+		_clear_jump_pose()                     # struck in the air or mid-landing
+	land_t = -1.0
 	if gliding:
 		_end_glide(true)                       # struck out of the air: the wing folds
 	if climbing or mantle_t >= 0.0:
@@ -1477,6 +1712,9 @@ func _respawn() -> void:
 	stamina = stamina_max
 	model.transform = _model_rest
 	down_t = -1.0
+	_air_t = -1.0
+	land_t = -1.0
+	_clear_jump_pose()
 	body.rotation.y = respawn_yaw
 	_yaw = respawn_yaw + PI                # camera behind the hero (body faces +Z)
 	_trauma = 0.0

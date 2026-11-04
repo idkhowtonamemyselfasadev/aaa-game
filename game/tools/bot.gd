@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -175,6 +175,9 @@ func _ready() -> void:
 		return
 	if name == "climb":
 		_climb_test()
+		return
+	if name == "jump":
+		_jump_test()
 		return
 	if name == "glide":
 		_glide_test()
@@ -613,6 +616,158 @@ func _bat_test() -> void:
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])
 	get_tree().quit(0 if ok else 1)
+
+## Jump: tap = short hop, hold = full jump; coyote time off a ledge, a buffered press fires on
+## touchdown, a sprint leap carries further than a run leap, the legs tuck on the rise, the
+## knees give on landing (deeper after a real drop), and only a real height hurts.
+func _jump_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0                    # the 0.12 s windows need real-time ticks
+	await _ticks(30)
+	var base := p.global_position
+	var ground := func() -> void:
+		p.global_position = base
+		p.velocity = Vector3.ZERO
+		p.stamina = p.stamina_max
+		p.health = p.health_max
+		for i in 120:
+			await get_tree().physics_frame
+			if p.is_on_floor() and p.land_t < 0.0:
+				break
+		await _ticks(4)
+	# 1) tap vs hold
+	var apex := []
+	var tuck := 0.0
+	var dip := 0.0
+	for hold in [false, true]:
+		await ground.call()
+		var j0 := p.jumps
+		p.bot_jump = true
+		p.bot_jump_hold = hold
+		await _ticks(1)
+		if not hold:
+			p.bot_jump_hold = false
+		for i in 120:
+			await get_tree().physics_frame
+			if hold:
+				tuck = maxf(tuck, p.crumple.knee)
+			dip = maxf(dip, -p.model.transform.origin.y + p._model_rest.origin.y)
+			if p.is_on_floor() and i > 3:
+				break
+		for i in 20:
+			await get_tree().physics_frame
+			dip = maxf(dip, -p.model.transform.origin.y + p._model_rest.origin.y)
+		p.bot_jump_hold = false
+		if p.jumps != j0 + 1:
+			return _combat_done(false, "the jump press did not jump (hold %s)" % hold)
+		apex.append(p.jump_apex)
+	print("BOT jump: tap apex %.2f m, hold apex %.2f m, rising knee tuck %.2f rad, landing dip %.3f m" % [apex[0], apex[1], tuck, dip])
+	if apex[0] > 0.85 or apex[1] < 1.15 or apex[1] - apex[0] < 0.4:
+		return _combat_done(false, "jump height does not follow the hold (tap %.2f, hold %.2f)" % apex)
+	if tuck < 0.8:
+		return _combat_done(false, "the legs do not tuck on the rise")
+	if dip < 0.05:
+		return _combat_done(false, "the knees do not give on landing")
+	# 2) coyote: fall off (lifted 1 m from the ground), press 0.07 s later: still a jump
+	await ground.call()
+	p.global_position = base + Vector3.UP * 1.0
+	await _ticks(4)
+	var j1 := p.jumps
+	p.bot_jump = true
+	p.bot_jump_hold = true
+	await _ticks(2)
+	p.bot_jump_hold = false
+	print("BOT jump: coyote press after %.2f s of fall -> jumps %d vy %.2f" % [4.0 / 60.0, p.jumps - j1, p.velocity.y])
+	if p.jumps != j1 + 1 or p.velocity.y <= 0.0:
+		return _combat_done(false, "no coyote jump just after leaving the ground")
+	# 3) late press in the air near the ground: not a jump now, but fires on touchdown (buffer)
+	await ground.call()
+	p.global_position = base + Vector3.UP * 1.2
+	await _ticks(2)
+	var terrain: Terrain = _world.get_node("Terrain")
+	for i in 60:
+		await get_tree().physics_frame
+		var hz := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
+		if hz < 0.35 and p.velocity.y < 0.0:
+			break
+	var j2 := p.jumps
+	p.bot_jump = true
+	await _ticks(1)
+	var vy_press := p.velocity.y
+	var fired_at := -1
+	for i in 30:
+		await get_tree().physics_frame
+		if p.jumps > j2:
+			fired_at = i
+			break
+	print("BOT jump: late press vy %.2f (gliding %s), buffered jump fired %d ticks later" % [vy_press, p.gliding, fired_at])
+	if vy_press > 0.0 or p.gliding:
+		return _combat_done(false, "a press after coyote time jumped in the air or opened the glider near the ground")
+	if fired_at < 0 or fired_at > 8:
+		return _combat_done(false, "the buffered press did not fire on touchdown")
+	# 4) run vs sprint leap distance (flat stretch toward the camera's forward)
+	var dist := []
+	for spr in [false, true]:
+		await ground.call()
+		p.set_look(0.0, -0.2)
+		for i in 90:
+			p.bot_input = Vector2(0, -1)
+			p.bot_sprint = spr
+			await get_tree().physics_frame
+		var a := p.global_position
+		var j3 := p.jumps
+		p.bot_jump = true
+		p.bot_jump_hold = true
+		var air_ticks := 0
+		for i in 120:
+			p.bot_input = Vector2(0, -1)
+			p.bot_sprint = spr
+			await get_tree().physics_frame
+			if p.jumps > j3:
+				air_ticks += 1
+			if p.jumps > j3 and p.is_on_floor() and air_ticks > 3:
+				break
+		p.bot_jump_hold = false
+		p.bot_input = Vector2.ZERO
+		p.bot_sprint = false
+		dist.append(Vector2(p.global_position.x - a.x, p.global_position.z - a.z).length())
+	print("BOT jump: run leap %.2f m, sprint leap %.2f m" % dist)
+	if dist[1] < dist[0] + 0.6 or dist[0] < 3.0:
+		return _combat_done(false, "a sprint leap does not carry further than a run leap")
+	# 5) a 4 m drop: hard landing, no harm; a 14 m drop hurts; from 30 m it kills
+	await ground.call()
+	var hl := p.hard_landings
+	p.global_position = base + Vector3.UP * 4.0
+	var hdip := 0.0
+	for i in 120:
+		await get_tree().physics_frame
+		hdip = maxf(hdip, -p.model.transform.origin.y + p._model_rest.origin.y)
+		if p.hard_landings > hl and p.land_t < 0.0:
+			break
+	print("BOT jump: 4 m drop %.2f -> hard landings +%d, health %.0f, dip %.3f m" % [p.last_drop, p.hard_landings - hl, p.health, hdip])
+	if p.hard_landings != hl + 1 or p.health < p.health_max or hdip < 0.15:
+		return _combat_done(false, "a 4 m drop is not a hard, harmless landing with a deep crouch")
+	await ground.call()
+	p.global_position = base + Vector3.UP * 14.0
+	for i in 200:
+		await get_tree().physics_frame
+		if p.is_on_floor() and p._air_t < 0.0 and i > 5:
+			break
+	var h14 := p.health
+	print("BOT jump: 14 m drop %.2f -> health %.0f" % [p.last_drop, h14])
+	if h14 >= p.health_max or h14 <= 0.0:
+		return _combat_done(false, "a 14 m drop should hurt but not kill")
+	await ground.call()
+	var d0 := p.deaths
+	p.global_position = base + Vector3.UP * 30.0
+	for i in 300:
+		await get_tree().physics_frame
+		if p.deaths > d0:
+			break
+	print("BOT jump: 30 m drop -> deaths +%d" % (p.deaths - d0))
+	if p.deaths != d0 + 1:
+		return _combat_done(false, "a 30 m drop did not kill")
+	_combat_done(true, "tap/hold heights, coyote, buffer, sprint leap, landings and fall damage")
 
 func _ticks(n: int) -> void:
 	for i in n:
@@ -1506,7 +1661,8 @@ func _knightstomp_test() -> void:
 			var w := k.last_wave
 			if kind == "roll" and not rolled and k.stomps > s0 and w != null and is_instance_valid(w):
 				var hd := Vector2(p.global_position.x - w.global_position.x, p.global_position.z - w.global_position.z).length()
-				if w.r > hd - 0.9:
+				# the front moves in render frames (~1.3 m a step at bot speed): roll a step early
+				if w.r > hd - 1.8:
 					p.stamina = p.stamina_max
 					var side := Vector3(dir.z, 0, -dir.x)
 					p.bot_input = Vector2(side.x, side.z)

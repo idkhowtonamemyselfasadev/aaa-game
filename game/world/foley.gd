@@ -114,6 +114,14 @@ func hook(p: Player, soldiers: Array, trample: Node) -> void:
 		if perfect:
 			_play("perfect", p.global_position + Vector3.UP, -3.0))
 	p.hurt.connect(func(_amt: float) -> void: _play("body", p.global_position + Vector3.UP * 1.1, -1.0))
+	if p.has_signal("landed"):
+		# touchdown: both soles at once, louder than a stride; a real drop adds a dull body thud
+		p.landed.connect(func(at: Vector3, hard: bool) -> void:
+			var nm := "step_" + surface_at(at)
+			_play(nm, at + Vector3.UP * 0.05, -5.0 if hard else -9.0, 0.9)
+			_play(nm, at + Vector3.UP * 0.05, -8.0 if hard else -12.0, 1.0)
+			if hard:
+				_play("body", at + Vector3.UP * 0.4, -6.0, 0.7))
 	if p.has_signal("fell"):
 		# the back hitting the ground: the body thud pitched down into a heavy, dull flop
 		p.fell.connect(func(at: Vector3) -> void: _play("body", at, 0.0, 0.62))
