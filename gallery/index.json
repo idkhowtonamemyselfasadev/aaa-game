@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261029-1730-roadmeet-hildchest-before.jpg",
-  "time": "2026-10-29T17:30:00Z",
-  "caption": "Before: Hild at 16:30 with the Vanguard's chest plate cutting through her smock as a pale crescent and side strips under the hood.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-1730-roadmeet-hildchest.jpg",
-  "time": "2026-10-29T17:30:00Z",
-  "caption": "After: the smock fills out below the collar so no plate shows on Hild's chest; a small linen scrap still shows at the throat, the face is still smooth and the forearms still read as grey gauntlets.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-1900-roadmeet-hildbind.jpg",
   "time": "2026-10-29T19:00:00Z",
   "caption": "Hild at 16:30 after the villagers' kirtles lost their moth holes and their limb wraps calmed: sleeves read as even wool, but black-and-grey blotches remain on her forearms and the shin below the kirtle (likely base body poking through the wrap shells).",
@@ -897,6 +885,18 @@
   "file": "20261104-1623-stop-rollover.jpg",
   "time": "2026-11-04T16:23:14Z",
   "caption": "Planted stop at 0.27 s (GL): the weight rolls over the front foot and the back foot comes up; still wrong: back-lit, hero seen from behind, not a side-on profile yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1752-start-drive.jpg",
+  "time": "2026-11-04T17:52:00Z",
+  "caption": "Driving start at 0.20 s (GL): the back leg drives off its toes, the right knee is thrown up and ahead, the opposite arm punches through, chest over the feet; still wrong: seen 3/4 from behind and in shade, so the toe contact and the face cannot be judged.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1752-start-load.jpg",
+  "time": "2026-11-04T17:52:00Z",
+  "caption": "Driving start at 0.10 s (GL): the hips load as the hero turns onto the line; still wrong: back-lit and from behind, the drive leg is hidden by the robe.",
   "verdict": "fail"
  }
 ]

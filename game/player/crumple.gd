@@ -57,6 +57,10 @@ var settle := 0              # after `ground`: 1 the left leg, 2 the right one i
 							 # (two-bone, in its own plane) until its ankle is settle_lift over its rest
 							 # height: a back foot reaching the turf on the ball of the foot
 var settle_lift := 0.06      # m
+var ground_toe := 0          # with `ground`: 1 the left, 2 the right foot's toes (not the lower ankle)
+							 # are what is set on the turf: a drive foot pushing off its toes, heel up
+var clip_ahead := 0.0        # (read) m the right foot stands ahead of the left in the clip's own pose,
+							 # before any bend here: which stride phase the run clip is in
 var ground_drop := 0.0       # (bots) m the hips stand below their rest height once grounded
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 var plant := 0.0             # 0..1: both wrists reach for hand_target (holds on a climbing face)
@@ -79,6 +83,11 @@ func _process_modification_with_delta(_delta: float) -> void:
 	var x := (to_skel * Vector3.RIGHT).normalized()
 	var up := (to_skel * Vector3.UP).normalized()
 	var fwd := (to_skel * Vector3.BACK).normalized()
+	var clf := skel.find_bone("mixamorig_LeftFoot")
+	var crf := skel.find_bone("mixamorig_RightFoot")
+	if clf >= 0 and crf >= 0:
+		clip_ahead = (skel.get_bone_global_pose(crf).origin - skel.get_bone_global_pose(clf).origin).dot(fwd) \
+			* skel.global_basis.get_scale().x
 	if square > 0.0:
 		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
 		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
@@ -341,6 +350,20 @@ func _ground(skel: Skeleton3D, up: Vector3) -> void:
 		return
 	var rest := minf(skel.get_bone_global_rest(lf).origin.dot(up), skel.get_bone_global_rest(rf).origin.dot(up))
 	var low := minf(skel.get_bone_global_pose(lf).origin.dot(up), skel.get_bone_global_pose(rf).origin.dot(up))
+	if ground_toe > 0:
+		var tb := skel.find_bone("mixamorig_%sToeBase" % ("Left" if ground_toe == 1 else "Right"))
+		var tl := skel.find_bone("mixamorig_LeftToeBase")
+		var tr := skel.find_bone("mixamorig_RightToeBase")
+		if tb >= 0 and tl >= 0 and tr >= 0:
+			# the rig's two rest toes do not stand level: the lower one is the turf
+			rest = minf(skel.get_bone_global_rest(tl).origin.dot(up), skel.get_bone_global_rest(tr).origin.dot(up))
+			low = skel.get_bone_global_pose(tb).origin.dot(up)
+			# the other foot never goes into the turf: while it is still the lower, it is the contact
+			var ot := tr if ground_toe == 1 else tl
+			var of := rf if ground_toe == 1 else lf
+			var rest_a := minf(skel.get_bone_global_rest(lf).origin.dot(up), skel.get_bone_global_rest(rf).origin.dot(up))
+			low = minf(low, skel.get_bone_global_pose(ot).origin.dot(up) + 0.0)
+			low = minf(low, skel.get_bone_global_pose(of).origin.dot(up) - (rest_a - rest))
 	var d := (rest - low) * ground
 	skel.set_bone_pose_position(hb, skel.get_bone_pose_position(hb) + up * d)
 	ground_drop = (skel.get_bone_global_rest(hb).origin.dot(up) - skel.get_bone_global_pose(hb).origin.dot(up)) \
@@ -361,6 +384,14 @@ func _settle_leg(skel: Skeleton3D, side: String, up: Vector3) -> void:
 	var f := skel.get_bone_global_pose(ft).origin
 	var want := skel.get_bone_global_rest(ft).origin.dot(up) + settle_lift / maxf(sc, 1e-6)
 	var over := (f.dot(up) - want) * ground
+	# the toes are what reach the turf: bring the foot down until they touch (not past the rest
+	# height of the ankle), however far the posed angle points them
+	var tl := skel.find_bone("mixamorig_LeftToeBase")
+	var tr := skel.find_bone("mixamorig_RightToeBase")
+	if tl >= 0 and tr >= 0:
+		var rest_t := minf(skel.get_bone_global_rest(tl).origin.dot(up), skel.get_bone_global_rest(tr).origin.dot(up))
+		var toe_over := skel.get_bone_global_pose(toe).origin.dot(up) - rest_t
+		over = minf(toe_over, f.dot(up) - skel.get_bone_global_rest(ft).origin.dot(up)) * ground
 	if over <= 0.0:
 		return
 	var toe_dir := skel.get_bone_global_pose(toe).origin - f
@@ -368,6 +399,16 @@ func _settle_leg(skel: Skeleton3D, side: String, up: Vector3) -> void:
 	var b := k.distance_to(f)
 	var t := f - up * over
 	var d := t - s
+	var reach := (a + b) * 0.985
+	if d.length() > reach:
+		# out of reach from the hip: the foot comes in under the body at that height (a shorter
+		# stance), rather than hanging in the air short of the turf
+		var dv := d.dot(up)
+		var dh := d - up * dv
+		var hl := sqrt(maxf(reach * reach - dv * dv, 0.0))
+		if dh.length() > 1e-5:
+			t = s + up * dv + dh.normalized() * hl
+			d = t - s
 	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
 	var dn := d.normalized()
 	var pole := (k - s) - dn * (k - s).dot(dn)

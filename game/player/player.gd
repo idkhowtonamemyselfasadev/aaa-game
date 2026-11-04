@@ -379,7 +379,9 @@ func _setup_animation() -> void:
 	var root := AnimationNodeBlendTree.new()
 	root.add_node("move", space, Vector2(0, 0))
 	root.add_node("speed", AnimationNodeTimeScale.new(), Vector2(200, 0))
-	root.connect_node("speed", 0, "move")
+	root.add_node("seek", AnimationNodeTimeSeek.new(), Vector2(100, 0))
+	root.connect_node("seek", 0, "move")
+	root.connect_node("speed", 0, "seek")
 	root.connect_node("output", 0, "speed")
 	anim_tree = AnimationTree.new()
 	anim_tree.name = "AnimationTree"
@@ -409,7 +411,16 @@ func _update_animation(delta: float) -> void:
 		hspeed = 0.0                             # in the air the jump pose owns the legs: no stride
 	# turning on the spot: short steps (the walk at a third of its reach, quick cadence)
 	var goal := maxf(minf(hspeed, ANIM_RUN_SPEED), turn_shuffle * ANIM_WALK_SPEED * 0.45)
-	_blend = lerpf(_blend, goal, 1.0 - exp(-10.0 * delta))
+	var blend_k := 10.0
+	if start_t >= 0.0 and start_t > START_TIME * 0.15:
+		goal = ANIM_RUN_SPEED                  # the legs are posed: put the clip on the run alone
+		blend_k = 20.0
+		if not _start_seeked and start_t >= START_TIME * START_SEEK_U:
+			# the stride phase where the driven knee's foot is just coming through ahead
+			_start_seeked = true
+			var t0 := RUN_RIGHT_CROSS if start_swing > 0.0 else RUN_LEFT_CROSS
+			anim_tree.set("parameters/seek/seek_request", fposmod(t0 + START_SEEK_LEAD, RUN_CLIP_LEN))
+	_blend = lerpf(_blend, goal, 1.0 - exp(-blend_k * delta))
 	anim_tree.set("parameters/move/blend_position", _blend)
 	# Between blend points cadence follows speed/blend, so feet don't skate.
 	var ts := 1.0
@@ -423,6 +434,8 @@ func _update_animation(delta: float) -> void:
 		ts = 0.5                               # the planted legs are posed: the clip's arms slow
 	elif stop_t >= 0.0:
 		ts = 0.6                               # likewise through the planted stop
+	elif start_t >= 0.0:
+		ts = 1.0                               # the posed step hides the clip until the seek
 	if combat != null and combat.hitstop > 0.0:
 		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
@@ -723,8 +736,11 @@ func _physics_process(delta: float) -> void:
 		sprinting = false
 	_pivot_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	_stop_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
+	_start_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	var target := wish * speed
 	var accel := ACCEL
+	if start_t >= 0.0 and start_t < START_TIME * 0.8:
+		accel = ACCEL * START_BOOST            # the drive leg throws the body into the first stride
 	if attacking and combat.current_attack().has("lunge_at"):
 		accel = ACCEL * 4.0                    # the heavy's step-in is one decisive stride
 	var airborne := not is_on_floor() and not dodging
@@ -908,6 +924,7 @@ func _physics_process(delta: float) -> void:
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
 	_pivot_pose()
 	_stop_pose()
+	_start_pose()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
 	if combat != null:
 		combat.physics_step(delta)
@@ -969,10 +986,13 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 		return                                 # the dodge / flinch pose writes the model itself
 	# through a planted stop the feet stay where they struck: the rock back and forward is taken
 	# at the hip joints (the trunk leans over still legs), not by tipping the whole figure
-	var pitch := lean.x * (1.0 - _stop_env)
+	var pitch := lean.x * (1.0 - _stop_env) * (1.0 - _start_env)
 	if crumple != null and _stop_posed:
 		crumple.pelvis = lean.x * _stop_env
-	var tip := Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, lean.y)
+	elif crumple != null and _start_posed:
+		crumple.pelvis = lean.x * _start_env
+	# the driving start pushes straight off the toes: the bank comes in after the first stride
+	var tip := Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, lean.y * (1.0 - _start_env) * (1.0 - _stop_env))
 	model.transform = Transform3D(Basis(), Vector3(0, -_pose_dip, 0)) * Transform3D(tip, Vector3.ZERO) * _model_rest
 
 # --- the run pivot: plant, spin, drive ---
@@ -1146,7 +1166,7 @@ func _stop_step(delta: float, wish: Vector3, busy: bool) -> void:
 	_stop_p0 = global_position
 	_stop_w = 1.0
 	_stop_cancel = false
-	stop_lead = _foot_ahead()
+	stop_lead = -1.0 if OS.has_environment("FORCE_LEFT") else _foot_ahead()
 
 ## +1 when the right foot is further forward along the body's facing in the pose as drawn, -1
 ## for the left: the foot already reaching out in the stride is the one that plants.
@@ -1223,6 +1243,124 @@ func _stop_pose() -> void:
 	_pose_dip = 0.0
 	_stop_env = env
 	stop_dip_peak = maxf(stop_dip_peak, crumple.ground_drop)
+
+# --- the driving start: off one leg into the first stride ---
+## Pushing the stick hard from a standstill no longer slides the hero up to speed on the run
+## clip. The hips sink a touch to load, the chest tips over the feet, then one leg drives: it
+## straightens behind the body and pushes off its toes (the heel comes up, the toes stay on the
+## turf) while the other knee is thrown up and forward and the opposite arm punches through.
+## The run clip is hurried round underneath so that when the pose hands the legs back, the clip
+## is already striding with that knee's foot ahead: no scissor of the legs at the hand-off.
+## Turning off the line, the leg on the outside of the turn drives; straight ahead they alternate.
+const START_TIME := 0.45               # s from the push to the clip owning the legs again
+const START_MAX_SPEED := 1.2           # m/s: only from (nearly) standing
+const START_STICK := 0.75              # stick at least this far: a walk eases off as before
+const START_BOOST := 1.35              # x ACCEL over the drive
+var start_t := -1.0                    # s into a driving start (-1 none)
+var starts := 0                        # (bots)
+var start_swing := 1.0                 # +1 the right knee is driven up (the left leg pushes), -1 the left
+var start_handoff := 0.0               # (bots) clip_ahead x the swing side when the pose let go
+var _start_posed := false
+var _start_env := 0.0
+var _start_seeked := false
+var _start_cool := 0.0                 # s before another start may fire
+var starts_enabled := true             # (bots) off where a test's scripted approach predates the start
+const START_SEEK_U := 0.5              # u at which the run clip is seeked under the posed legs
+const START_SEEK_LEAD := 0.05          # s past the crossing: the foot already a little ahead
+# the Run clip (0.70 s): t at which each foot comes through level with the other going ahead
+# (measured from the clip; the right foot is furthest ahead at 0.53 s, the left at 0.20 s)
+const RUN_CLIP_LEN := 0.7
+const RUN_RIGHT_CROSS := 0.35
+const RUN_LEFT_CROSS := 0.01
+
+func _start_step(delta: float, wish: Vector3, busy: bool) -> void:
+	_start_cool = maxf(_start_cool - delta, 0.0)
+	if start_t >= 0.0:
+		start_t += delta
+		if start_t >= START_TIME or busy or not is_on_floor() or climbing or gliding or pivot_t >= 0.0 \
+				or stop_t >= 0.0 or wish.length() < 0.3:
+			if crumple != null and start_t >= START_TIME:
+				start_handoff = crumple.clip_ahead * start_swing
+			start_t = -1.0
+			_start_cool = 0.6
+		return
+	if not starts_enabled or busy or climbing or gliding or pivot_t >= 0.0 or stop_t >= 0.0 or lock_target != null \
+			or not is_on_floor() or _jp > 0.05 or wish.length() < START_STICK:
+		return
+	if Vector2(velocity.x, velocity.z).length() > START_MAX_SPEED or _blend > ANIM_WALK_SPEED * 0.6:
+		return
+	if is_on_wall() or _start_cool > 0.0:
+		return                                 # pressed against a face, or just had one: no new push
+	start_t = 0.0
+	starts += 1
+	start_handoff = 0.0
+	_start_seeked = false
+	var turn := wrapf(atan2(wish.x, wish.z) - body.rotation.y, -PI, PI)
+	if absf(turn) > 0.5:
+		start_swing = -1.0 if turn > 0.0 else 1.0   # stepping off left: the right leg pushes, the left knee drives
+	else:
+		start_swing = 1.0 if starts % 2 == 1 else -1.0
+
+func _start_pose() -> void:
+	if start_t < 0.0 or pivot_t >= 0.0 or stop_t >= 0.0 or crumple == null or _jp > 0.0 or dead_t >= 0.0 or down_t >= 0.0:
+		if _start_posed and crumple != null and (pivot_t >= 0.0 or stop_t >= 0.0):
+			_start_env = 0.0                   # the pivot / stop pose has the legs now: leave its values
+			_start_posed = false
+			crumple.arm_aim = 0.0
+			crumple.ground_toe = 0
+		elif _start_posed and crumple != null:
+			crumple.arm_aim = 0.0
+			crumple.hip_lr = Vector2.ZERO
+			crumple.knee_lr = Vector2.ZERO
+			crumple.ankle_lr = Vector2.ZERO
+			crumple.arm_lr = Vector2.ZERO
+			crumple.pelvis = 0.0
+			crumple.ground = 0.0
+			crumple.ground_toe = 0
+			_start_env = 0.0
+			_start_posed = false
+			if pivot_t < 0.0 and stop_t < 0.0 and _jp <= 0.0 and not climbing and mantle_t < 0.0 \
+					and dead_t < 0.0 and down_t < 0.0:
+				_clear_jump_pose()
+		return
+	var u := start_t / START_TIME
+	var env := smoothstep(0.0, 0.08, u) * (1.0 - smoothstep(0.58, 1.0, u))
+	# a short load (both knees give, the hips drop), then the drive
+	var load := sin(PI * clampf(u / 0.32, 0.0, 1.0))
+	var d := smoothstep(0.08, 0.5, u)
+	var th_d := lerpf(0.06, -0.42, d)                   # drive thigh: swept back behind the hips
+	var kn_d := lerpf(0.12, 0.06, d) + 0.22 * load      # loaded, then straight through the push
+	var an_d := 1.0 * smoothstep(0.1, 0.42, u)          # off the toes: the heel comes up
+	var th_s := lerpf(0.06, 0.95, d)                    # swing thigh: the knee thrown up and ahead
+	var kn_s := lerpf(0.12, 1.3, smoothstep(0.05, 0.42, u)) + 0.1 * load
+	var an_s := -0.18 * d                               # toes pulled up under the shin
+	var r := start_swing > 0.0                          # the right knee drives, the left leg pushes
+	crumple.active = true
+	crumple.leg_aim = env
+	crumple.hip = 0.0
+	crumple.knee = 0.0
+	crumple.stride = 0.0
+	crumple.ankle = 0.0
+	crumple.sole_flat = env
+	crumple.hip_lr = (Vector2(th_d, th_s) if r else Vector2(th_s, th_d)) * env
+	crumple.knee_lr = (Vector2(kn_d, kn_s) if r else Vector2(kn_s, kn_d)) * env
+	crumple.ankle_lr = (Vector2(an_d, an_s) if r else Vector2(an_s, an_d)) * env
+	# the arm opposite the driven knee punches forward, the other drives back; elbows bent to run
+	var pump := smoothstep(0.05, 0.45, u)
+	crumple.arm_aim = env                               # the clip's arms are hidden (it is seeked mid-start)
+	crumple.arm_lr = (Vector2(0.75, -0.5) if r else Vector2(-0.5, 0.75)) * pump * env
+	crumple.arm = 0.0
+	crumple.elbow = lerpf(0.5, 1.15, pump) * env
+	crumple.spine = (0.06 * load + 0.16 * d) * env      # chest over the feet, curled into the push
+	_start_posed = true
+	if garb != null:
+		garb.posed_legs = true
+	# the legs set the height: the drive foot's toes stay on the turf
+	crumple.ground = env
+	crumple.ground_toe = 1 if r else 2
+	crumple.settle = 0
+	_pose_dip = 0.0
+	_start_env = env
 
 # --- jumping ---
 
@@ -1448,6 +1586,7 @@ func _clear_jump_pose() -> void:
 	crumple.arm_lr = Vector2.ZERO
 	crumple.pelvis = 0.0
 	crumple.ground = 0.0
+	crumple.ground_toe = 0
 	crumple.settle = 0
 	crumple.active = false
 	if garb != null:

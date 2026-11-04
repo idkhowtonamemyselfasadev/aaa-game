@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -193,6 +193,9 @@ func _ready() -> void:
 		return
 	if name == "stop":
 		_stop_test()
+		return
+	if name == "start":
+		_start_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -926,6 +929,134 @@ func _stop_test() -> void:
 	if v_after < 5.0:
 		return _combat_done(false, "the hero does not run on after a cut-short stop (%.1f m/s)" % v_after)
 	_combat_done(true, "letting go at a run plants the front foot heel first, folds the back knee, drops the hips and halts in a short skid; a walk just stops; the stick cuts it short")
+
+## Start: pushing the stick hard from a standstill drives off one leg: the drive foot's toes stay
+## on the turf with its heel up, the other knee comes up and ahead, the hero is at a run quickly,
+## and the run clip is striding with the driven knee's foot ahead when the pose lets go (no
+## scissor of the legs at the hand-off). A walk eases off as before.
+func _start_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var skel: Skeleton3D = p.crumple.get_skeleton()
+	var feet := PackedStringArray(["mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_LeftToeBase", "mixamorig_RightToeBase"])
+	p.crumple.probe = feet
+	p.crumple.active = true
+	await _ticks(10)
+	p.crumple.active = false
+	if p.crumple.probed.size() != 4:
+		return _combat_done(false, "the feet could not be probed standing")
+	var rest_h := 0.0
+	var rest_toe := 0.0
+	for k in 2:
+		rest_h += ((skel.global_transform * (p.crumple.probed[feet[k]] as Vector3)).y - p.global_position.y) * 0.5
+		rest_toe += ((skel.global_transform * (p.crumple.probed[feet[k + 2]] as Vector3)).y - p.global_position.y) * 0.5
+	if OS.has_environment("BOT_CALIB"):
+		var ap := p.model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		print("CALIB run length %.3f" % ap.get_animation("Run").length)
+		p.crumple.active = true
+		for k in 60:
+			p.anim_tree.set("parameters/move/blend_position", p.ANIM_RUN_SPEED)
+			p.anim_tree.set("parameters/speed/scale", 0.0)
+			p.anim_tree.set("parameters/seek/seek_request", k * ap.get_animation("Run").length / 60.0)
+			p._blend = p.ANIM_RUN_SPEED
+			p.set_physics_process(false)
+			await get_tree().physics_frame
+			await get_tree().process_frame
+			print("CALIB t %.3f ahead %+.3f" % [k * ap.get_animation("Run").length / 60.0, p.crumple.clip_ahead])
+		return _combat_done(true, "calib")
+	var results := []
+	for trial in [[1.0, 0.0], [1.0, 0.0], [1.0, 0.9], [0.5, 0.0]]:
+		var mag: float = trial[0]
+		var side: float = trial[1]
+		p.bot_input = Vector2.ZERO
+		p.velocity = Vector3.ZERO
+		await _ticks(60)                          # standing still, clip back at idle
+		var n0 := p.starts
+		var t_run := -1.0
+		var toe_err := 0.0
+		var heel := 0.0
+		var swing_h := 0.0
+		var jump := 0.0                           # largest per-tick foot jump (body space) at the hand-off
+		var run_step := 0.0                       # largest per-tick foot move in the steady run after
+		var prev := []
+		var handoff := 0.0
+		var swing := 0.0
+		for i in 80:
+			p.bot_input = Vector2(sin(side), -cos(side)) * mag
+			if p.start_t < 0.0 and i > 2:
+				p.crumple.active = true               # keep probing once the pose has let go
+			await get_tree().physics_frame
+			var hv := Vector2(p.velocity.x, p.velocity.z).length()
+			if t_run < 0.0 and hv >= 5.0:
+				t_run = (i + 1) / 60.0
+			if p.starts > n0:
+				swing = p.start_swing
+			if p.crumple.probed.size() != 4:
+				continue
+			if not p.crumple.active:
+				prev = []                             # the modifier was off this tick: its probe is stale
+				continue
+			var inv := p.body.global_transform.affine_inverse()
+			var now := []
+			for k in 4:
+				now.append(inv * (skel.global_transform * (p.crumple.probed[feet[k]] as Vector3)))
+			var su := p.start_t / p.START_TIME if p.start_t >= 0.0 else 9.0
+			if OS.has_environment("BOT_DEBUG") and i < 45:
+				var tl: Vector3 = skel.global_transform * (p.crumple.probed[feet[2]] as Vector3)
+				var tr: Vector3 = skel.global_transform * (p.crumple.probed[feet[3]] as Vector3)
+				print("  i %d su %.2f clip %+.3f blend %.2f toeL %+.3f toeR %+.3f env %.2f gt %d lean %s" % [i, su, p.crumple.clip_ahead, p._blend, tl.y - p.global_position.y - rest_toe, tr.y - p.global_position.y - rest_toe, p._start_env, p.crumple.ground_toe, str(p.lean)])
+			if p.start_t >= 0.0 and su > 0.35 and su < 0.6:
+				var di := 0 if swing > 0.0 else 1     # the drive leg: the left when the right knee drives
+				var wt: Vector3 = skel.global_transform * (p.crumple.probed[feet[di + 2]] as Vector3)
+				var wa: Vector3 = skel.global_transform * (p.crumple.probed[feet[di]] as Vector3)
+				var ws: Vector3 = skel.global_transform * (p.crumple.probed[feet[1 - di]] as Vector3)
+				toe_err = maxf(toe_err, absf(wt.y - p.global_position.y - rest_toe))
+				heel = maxf(heel, wa.y - p.global_position.y - rest_h)
+				swing_h = maxf(swing_h, ws.y - p.global_position.y - rest_h)
+			if prev.size() == 4:
+				var mv := 0.0
+				for k in 2:
+					mv = maxf(mv, ((now[k] as Vector3) - (prev[k] as Vector3)).length())
+				if su > 0.55 and su < 9.0 or (su == 9.0 and i < 45 and p.starts > n0):
+					jump = maxf(jump, mv)
+					if OS.has_environment("BOT_DEBUG"):
+						print("   mv i %d su %.2f %.3f" % [i, su, mv])
+				elif su == 9.0 and i >= 55:
+					run_step = maxf(run_step, mv)
+			prev = now
+			if p.starts > n0 and p.start_t < 0.0 and handoff == 0.0:
+				handoff = p.start_handoff if p.start_handoff != 0.0 else -99.0
+		p.crumple.active = false
+		var left := p.crumple.hip_lr.length() + p.crumple.knee_lr.length() + p.crumple.ankle_lr.length() + p.crumple.arm_lr.length() + absf(p.crumple.pelvis) + p.crumple.ground + float(p.crumple.ground_toe)
+		print("BOT start: stick %.1f at %.1f rad: starts %d, swing %+.0f, at 5 m/s in %.2f s, drive toes %.3f m off the turf, drive ankle %+.3f m (heel up), swing ankle %+.3f m, hand-off clip ahead x swing %+.3f m, foot jump at hand-off %.3f m/tick (steady run %.3f), left over %.3f" % [mag, side, p.starts - n0, swing, t_run, toe_err, heel, swing_h, handoff, jump, run_step, left])
+		results.append([p.starts - n0, t_run, toe_err, heel, swing_h, handoff, jump, run_step, left, swing])
+	p.bot_input = Vector2.ZERO
+	p.crumple.probe = PackedStringArray()
+	for k in 3:
+		var r: Array = results[k]
+		if r[0] != 1:
+			return _combat_done(false, "a hard push from rest did not drive off a leg (%d)" % r[0])
+		if r[1] < 0.0 or r[1] > 0.55:
+			return _combat_done(false, "the start takes %.2f s to reach 5 m/s" % r[1])
+		if r[2] > 0.05:
+			return _combat_done(false, "the drive foot's toes leave or sink into the turf (%.3f m)" % r[2])
+		if r[3] < 0.04 or r[3] > 0.18:
+			return _combat_done(false, "the drive heel does not come up off the toes (%+.3f m, want 0.04-0.18)" % r[3])
+		if r[4] < 0.15:
+			return _combat_done(false, "the swing knee is not driven up (its ankle %+.3f m)" % r[4])
+		if r[5] <= 0.0:
+			return _combat_done(false, "the run clip hands back the other leg ahead (%+.3f m): the legs scissor" % r[5])
+		if r[6] > maxf(r[7] * 1.6, 0.05):
+			return _combat_done(false, "a foot jumps %.3f m in a tick at the hand-off (steady run %.3f)" % [r[6], r[7]])
+		if r[8] > 1e-3:
+			return _combat_done(false, "the start pose lingers after (%.3f)" % r[8])
+	if (results[3] as Array)[0] != 0:
+		return _combat_done(false, "a walk drives a run start")
+	_combat_done(true, "a hard push from rest drives off one leg, toes on the turf and heel up, the other knee thrown ahead; the run clip takes over in step; a walk eases off")
 
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])
@@ -2323,6 +2454,7 @@ func _knightstomp_test() -> void:
 		k._enter(HollowSoldier.WINDUP)
 		var n0 := k.stomp_results.size()
 		var s0 := k.stomps
+		var old_wave = k.last_wave              # the last trial's ring: not this stomp's
 		var seen := [Vector3.ZERO]
 		var grab := func() -> void: seen[0] = _knight_feet(k)
 		k.skel.skeleton_updated.connect(grab)
@@ -2336,7 +2468,7 @@ func _knightstomp_test() -> void:
 			if k.move_kind == AshenKnight.STOMP_MOVE and k.state == HollowSoldier.WINDUP:
 				max_raise = maxf(max_raise, (seen[0] as Vector3).x)
 			var w := k.last_wave
-			if kind == "roll" and not rolled and k.stomps > s0 and w != null and is_instance_valid(w):
+			if kind == "roll" and not rolled and k.stomps > s0 and w != null and is_instance_valid(w) and w != old_wave:
 				var hd := Vector2(p.global_position.x - w.global_position.x, p.global_position.z - w.global_position.z).length()
 				# the front moves in render frames (~1.3 m a step at bot speed): roll a step early
 				if w.r > hd - 1.8:
@@ -9036,6 +9168,7 @@ func _climb_test() -> void:
 	var crown := ruins.wall_top(best, 4.3)
 	p.global_position = Vector3(rs.x + rad.x * 6.5, ground + 0.3, rs.z + rad.z * 6.5)
 	p.set_look(atan2(rad.x, rad.z), -0.2)
+	p.starts_enabled = false                   # the face and holds below were picked for the old run-in
 	await _ticks(30)
 	print("BOT climb: face at %.2f rad, crown %.2f m above the turf" % [best, crown - ground])
 	# walk at the wall: blocked, no grab
