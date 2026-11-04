@@ -200,6 +200,7 @@ var woke_t := -1.0                    # seconds since the last respawn (the blac
 var respawn_point := Vector3.ZERO     # set by the world: the last rest point
 var respawn_yaw := 0.0
 var crumple: Crumple                  # bone-level bends of the death fall (knees, spine, arms)
+var stride_warp: StrideWarp           # lengthens the run clip's stride at pace (no foot skate)
 var _shin := 0.45                     # knee height at rest, measured from the skeleton
 var bot_dodge := false
 var bot_input := Vector2.ZERO           # bots drive this instead of Input
@@ -253,7 +254,11 @@ var _cine_skip := false
 
 # Locomotion: 1D blend idle -> walk -> run on horizontal speed, played faster when sprinting.
 const ANIM_WALK_SPEED := 1.9            # m/s the Walk clip's stride covers at 1x
-const ANIM_RUN_SPEED := 6.0             # m/s the Run clip's stride covers at 1x
+const ANIM_RUN_SPEED := 6.0             # m/s: the Run clip's point on the blend space
+# m/s the Run clip's planted foot really travels back at 1x (measured 11-04 on the `stop` bot:
+# at 6.5 m/s and 1.08x the flat foot slid forward 1.74 m/s, so the clip covers 4.40 m/s)
+const RUN_STRIDE_SPEED := 4.4
+const RUN_STRIDE_K := 1.25              # the stride is lengthened this much at a run (StrideWarp)
 var anim_tree: AnimationTree
 var _blend := 0.0
 
@@ -358,6 +363,11 @@ func _setup_crumple() -> void:
 	skel.add_child(crumple)                    # last modifier: runs after the arm IK
 	crumple.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
 	crumple.active = false
+	stride_warp = StrideWarp.new()
+	stride_warp.name = "StrideWarp"
+	skel.add_child(stride_warp)
+	skel.move_child(stride_warp, 0)            # first modifier: it lengthens the clip's own stride
+	stride_warp.frame = crumple.frame
 	var knee := skel.find_bone("mixamorig_LeftLeg")
 	if knee >= 0:
 		var kp := skel.global_transform * skel.get_bone_global_rest(knee).origin
@@ -391,9 +401,24 @@ func _setup_animation() -> void:
 	anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 	anim_tree.active = true
 
+var _warp := 0.0                       # 0..1 how much of the stride warp is on
+
+func _update_warp(delta: float, on: bool) -> void:
+	var warp := smoothstep(ANIM_WALK_SPEED, ANIM_RUN_SPEED, _blend) if on else 0.0
+	if crumple != null and crumple.active:
+		warp *= 1.0 - clampf(crumple.leg_aim, 0.0, 1.0)
+	if not is_on_floor() or climbing or gliding or dodge_t >= 0.0 or pivot_t >= 0.0 or stop_t >= 0.0 or start_t >= 0.0:
+		warp = 0.0                             # a posed step owns the legs: let go at its own pace
+		_warp = move_toward(_warp, 0.0, delta * 15.0)
+	_warp = move_toward(_warp, warp, delta * 6.0)
+	if stride_warp != null:
+		stride_warp.k = lerpf(1.0, RUN_STRIDE_K, _warp)
+
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:
 		return
+	if gliding or dodge_t >= 0.0:
+		_update_warp(delta, false)
 	if gliding:
 		# hanging under the wing: the legs trail loose, no stride
 		_blend = lerpf(_blend, 0.0, 1.0 - exp(-8.0 * delta))
@@ -433,8 +458,11 @@ func _update_animation(delta: float) -> void:
 	anim_tree.set("parameters/move/blend_position", _blend)
 	# Between blend points cadence follows speed/blend, so feet don't skate.
 	var ts := 1.0
+	# the run: the stride is lengthened (StrideWarp) and the cadence set so the planted foot
+	# travels back exactly as fast as the body goes forward; faded out under any posed legs
+	_update_warp(delta, true)
 	if hspeed > ANIM_RUN_SPEED:
-		ts = hspeed / ANIM_RUN_SPEED
+		ts = hspeed / lerpf(ANIM_RUN_SPEED, RUN_STRIDE_SPEED * RUN_STRIDE_K, _warp)
 	elif hspeed > 0.2 and hspeed < ANIM_WALK_SPEED:
 		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
 	if turn_shuffle > 0.05 and hspeed < 0.6:

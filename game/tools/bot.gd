@@ -896,7 +896,7 @@ func _stop_test() -> void:
 			await get_tree().physics_frame
 			if t_rest < 0.0 and Vector2(p.velocity.x, p.velocity.z).length() < 0.05:
 				t_rest = (i + 1) / 60.0
-			if p.stop_t >= 0.0 and p.crumple.probed.size() == 4:
+			if p.stop_t >= 0.0 and p.crumple.probed.size() == 4 and p.crumple.leg_aim > 0.5:
 				var fwd := p.body.global_basis.z
 				var wl: Vector3 = skel.global_transform * (p.crumple.probed["mixamorig_LeftFoot"] as Vector3)
 				var wr: Vector3 = skel.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3)
@@ -916,23 +916,85 @@ func _stop_test() -> void:
 		print("BOT stop: stick %.1f at %.1f m/s: stops %d, lead %+.0f (foot ahead at release %+.0f), at rest in %.2f s, slid %.2f m, feet %.2f m apart, front ankle %+.3f m, back ankle %+.3f m (its toes %+.3f) off rest, knees front %.2f back %.2f, dip %.3f, left over %.3f" % [mag, v_run, p.stops - n0, p.stop_lead, ahead, t_rest, moved, gap, front_h, back_lift, back_toe, knees.x, knees.y, p.stop_dip_peak, left])
 		results.append([p.stops - n0, t_rest, moved, gap, front_h, back_lift, knees, p.stop_dip_peak, left, p.stop_lead * ahead, back_toe])
 		await _ticks(30)
-	# a stop cut short: the stick comes back
-	for i in 90:
+	# a stop cut short: the stick comes back, early (front foot out), mid-brake and late (feet
+	# coming together); the run clip must take the legs back in step: no foot jumps further in
+	# a tick through the fade than it does in a steady run
+	var fnames := PackedStringArray(["mixamorig_LeftFoot", "mixamorig_RightFoot"])
+	var cuts := []
+	for cut in [10, 18, 26]:
+		p.crumple.probe = fnames
+		p.crumple.probed = {}
+		var fprev := []
+		var run_step := 0.0
+		var sprev = null
+		var run_skate := [0.0, 0]
+		var flat_skate := [0.0, 0]
+		for i in 90:
+			p.bot_input = Vector2(0, -1)
+			p.crumple.active = true
+			await get_tree().physics_frame
+			var fnow := _feet_body(p, skel, fnames)
+			if i >= 60 and fnow.size() == 2 and fprev.size() == 2:
+				run_step = maxf(run_step, _feet_jump(fnow, fprev))
+			fprev = fnow
+			var snow = _stance_foot(p, skel, fnames)
+			var sk := _skate(snow, sprev)
+			if OS.has_environment("BOT_DEBUG") and i >= 60 and snow != null:
+				var sd := 0.0
+				if sprev != null and sk >= 0.0:
+					sd = ((snow[0] as Vector3) - (sprev[0] as Vector3)).dot(Vector3(p.velocity.x, 0, p.velocity.z).normalized())
+				print("   run i %d foot %d h %+.3f slip %.3f along %+.3f v %.2f ts %.2f blend %.2f" % [i, snow[1], (snow[0] as Vector3).y - p.global_position.y - rest_h, sk, sd, Vector2(p.velocity.x, p.velocity.z).length(), p.anim_tree.get("parameters/speed/scale"), p._blend])
+			if i >= 60 and sk >= 0.0:
+				run_skate[0] += sk
+				run_skate[1] += 1
+				if (snow[0] as Vector3).y - p.global_position.y - rest_h < 0.005:
+					flat_skate[0] += sk                # the foot flat on the turf: must hold still
+					flat_skate[1] += 1
+			sprev = snow
+		p.bot_input = Vector2.ZERO
+		var n0 := p.stops
+		for i in cut:
+			await get_tree().physics_frame
+		var was := p.stop_t
+		var lead := p.stop_lead
+		var gone := -1.0
+		var hand_jump := 0.0
+		var t_end := -1
+		var handoff := -99.0
+		fprev = []
+		sprev = null
+		var hand_skate := [0.0, 0]
 		p.bot_input = Vector2(0, -1)
-		await get_tree().physics_frame
-	p.bot_input = Vector2.ZERO
-	await _ticks(10)
-	var was := p.stop_t
-	var gone := -1.0
-	p.bot_input = Vector2(0, -1)
-	for i in 40:
-		await get_tree().physics_frame
-		if gone < 0.0 and p.stop_t < 0.0 and p.crumple.hip_lr.length() < 1e-4:
-			gone = (i + 1) / 60.0
-	var v_after := Vector3(p.velocity.x, 0, p.velocity.z).length()
-	p.bot_input = Vector2.ZERO
+		for i in 40:
+			if p.stop_t < 0.0:
+				p.crumple.active = true               # keep probing once the pose has let go
+			await get_tree().physics_frame
+			if i == 1:
+				handoff = p.crumple.clip_ahead * lead     # right after the seek: the clip's legs vs the pose's
+			if p.stop_t < 0.0 and t_end < 0:
+				t_end = i
+			if gone < 0.0 and p.stop_t < 0.0 and p.crumple.hip_lr.length() < 1e-4:
+				gone = (i + 1) / 60.0
+			var fnow := _feet_body(p, skel, fnames)
+			if fnow.size() == 2 and fprev.size() == 2 and (t_end < 0 or i < t_end + 12):
+				hand_jump = maxf(hand_jump, _feet_jump(fnow, fprev))
+				var snow = _stance_foot(p, skel, fnames)
+				var sk := _skate(snow, sprev)
+				if sk >= 0.0:
+					hand_skate[0] += sk
+					hand_skate[1] += 1
+				sprev = snow
+				if OS.has_environment("BOT_DEBUG"):
+					print("   sc cut %d i %d st %.2f mv %.3f clip %+.3f blend %.2f leg_aim %.2f" % [cut, i, p.stop_t, _feet_jump(fnow, fprev), p.crumple.clip_ahead, p._blend, p.crumple.leg_aim])
+			fprev = fnow
+		var v_after := Vector3(p.velocity.x, 0, p.velocity.z).length()
+		print("BOT run: planted foot slips %.4f m/tick over %d flat ticks at %.1f m/s (stride warp %.2f)" % [_mean(flat_skate), flat_skate[1], v_after, p.stride_warp.k])
+		print("BOT stop: cut short at %.2f s (stops %d, lead %+.0f): legs back in %.2f s, clip lead foot ahead %+.3f m as it takes over, foot jump %.3f m/tick (steady run %.3f), stance foot slip %.3f m/tick (steady run %.3f), running at %.1f m/s after" % [was, p.stops - n0, lead, gone, handoff, hand_jump, run_step, _mean(hand_skate), _mean(run_skate), v_after])
+		cuts.append([was, gone, v_after, hand_jump, run_step, p.stops - n0, _mean(hand_skate), _mean(run_skate), _mean(flat_skate), flat_skate[1], handoff])
+		p.bot_input = Vector2.ZERO
+		p.crumple.active = false
+		await _ticks(60)
 	p.crumple.probe = PackedStringArray()
-	print("BOT stop: cut short at %.2f s: legs back in %.2f s, running at %.1f m/s after" % [was, gone, v_after])
 	var r: Array = results[0]
 	if r[0] != 1:
 		return _combat_done(false, "letting go at a run did not plant a stop (%d)" % r[0])
@@ -958,13 +1020,49 @@ func _stop_test() -> void:
 		return _combat_done(false, "the stop pose lingers after (%.3f)" % r[8])
 	if (results[1] as Array)[0] != 0:
 		return _combat_done(false, "a walk plants a run stop")
-	if was < 0.0:
-		return _combat_done(false, "no stop to cut short")
-	if gone < 0.0 or gone > 0.25:
-		return _combat_done(false, "the legs do not let go when the stick comes back (%.2f s)" % gone)
-	if v_after < 5.0:
-		return _combat_done(false, "the hero does not run on after a cut-short stop (%.1f m/s)" % v_after)
+	for c in cuts:
+		if c[5] != 1 or c[0] < 0.0:
+			return _combat_done(false, "no stop to cut short")
+		if c[1] < 0.0 or c[1] > 0.25:
+			return _combat_done(false, "the legs do not let go when the stick comes back (%.2f s)" % c[1])
+		if c[2] < 5.0:
+			return _combat_done(false, "the hero does not run on after a cut-short stop (%.1f m/s)" % c[2])
+		if c[9] < 4 or c[8] > 0.012:
+			return _combat_done(false, "the run's planted foot skates %.4f m/tick over %d flat ticks (want <= 0.012; 0.031 before the stride warp)" % [c[8], c[9]])
+		if c[3] > maxf(c[4] * 1.35, 0.05):
+			return _combat_done(false, "a foot jumps %.3f m in a tick when a stop cut short at %.2f s hands back to the run (steady run %.3f)" % [c[3], c[0], c[4]])
 	_combat_done(true, "letting go at a run plants the front foot heel first, folds the back knee, drops the hips and halts in a short skid; a walk just stops; the stick cuts it short")
+
+## The two feet (body space) from the crumple probe, or [] if not probed this tick.
+func _feet_body(p, skel: Skeleton3D, names: PackedStringArray) -> Array:
+	if p.crumple.probed.size() < names.size():
+		return []
+	var inv: Transform3D = p.body.global_transform.affine_inverse()
+	var out := []
+	for nm in names:
+		out.append(inv * (skel.global_transform * (p.crumple.probed[nm] as Vector3)))
+	return out
+
+## The lower foot's world position (the one bearing weight), or null if not probed.
+func _stance_foot(p, skel: Skeleton3D, names: PackedStringArray):
+	if p.crumple.probed.size() < names.size():
+		return null
+	var a: Vector3 = skel.global_transform * (p.crumple.probed[names[0]] as Vector3)
+	var b: Vector3 = skel.global_transform * (p.crumple.probed[names[1]] as Vector3)
+	return [a if a.y < b.y else b, 0 if a.y < b.y else 1]
+
+## Horizontal slip of the weight-bearing foot between two ticks (same foot both ticks), or -1.
+func _skate(now, prev) -> float:
+	if now == null or prev == null or now[1] != prev[1]:
+		return -1.0
+	var d: Vector3 = (now[0] as Vector3) - (prev[0] as Vector3)
+	return Vector2(d.x, d.z).length()
+
+func _mean(acc: Array) -> float:
+	return acc[0] / maxf(acc[1], 1.0)
+
+func _feet_jump(a: Array, b: Array) -> float:
+	return maxf(((a[0] as Vector3) - (b[0] as Vector3)).length(), ((a[1] as Vector3) - (b[1] as Vector3)).length())
 
 ## Start: pushing the stick hard from a standstill drives off one leg: the drive foot's toes stay
 ## on the turf with its heel up, the other knee comes up and ahead, the hero is at a run quickly,
