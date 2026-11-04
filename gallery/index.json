@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261028-1940-moths-framing-broken.jpg",
-  "time": "2026-10-28T19:40:00Z",
-  "caption": "The pedlar's dusk lantern-moth close-up came out broken: the lens sits low in dark grass blades with a black slab over the right third and the moths are 20 m off and outside the frame, so the shot framing in shot.gd must be fixed before the moths can be judged.",
-  "verdict": "fail"
- },
- {
-  "file": "20261028-2346-dunwool.jpg",
-  "time": "2026-10-28T23:46:00Z",
-  "caption": "Pedlar at dusk under his own horn lantern: the fist on the bail now reads as a dun glove lit from below instead of a glowing red blot; the horn panes still blow out to flat white, the creel reads as a red grid and the body keeps the armour model's bulky shape.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-0038-horndim.jpg",
-  "time": "2026-10-29T00:38:00Z",
-  "caption": "The pedlar at dusk with his lit horn lantern: the creel now reads as dull grey-brown willow weave (fixed), but the horn panes still blow out to flat white-orange (the candle lights the pane's albedo point-blank; a cull-mask fix went in after this shot, unseen), and he still wears the hero's armour plate shapes.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-0140-horncull.jpg",
-  "time": "2026-10-29T01:40:00Z",
-  "caption": "The pedlar at dusk: his horn lantern panes now glow warm amber with the candle flame visible inside instead of blowing out flat white (fixed); still wrong: he wears the armoured hero model's plate shapes and his face is unreadable under the brim.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-0250-roadmeet.jpg",
   "time": "2026-10-29T02:50:11Z",
   "caption": "Second road event: Hild the wool-wife and Wat the pedlar stopped face to face on the cart track mid-word, creels on their backs; still wrong: the lens sees them three-quarter from behind (no faces), they stand 2.6 m apart, and the armoured base body reads through on their legs.",
@@ -897,6 +873,18 @@
   "file": "20261104-0502-plunge-dust.jpg",
   "time": "2026-11-04T05:02:26Z",
   "caption": "The hero 0.3 s after a plunge from 4 m: a low dust ring bursts out round the deep crouch; GL frame, backlit in the cottage's shadow, and the crack star is hidden under the standing grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0552-ring-clear-sky.jpg",
+  "time": "2026-11-04T05:52:20Z",
+  "caption": "The Ashen Knight starting to grow from inside its stone ring, the sky above it now clear: the column of pale 'snow' specks was fog being added over the keep's additive thermal chaff. Still a GL frame; the knight's heave is only a knee pose.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0552-surge-side.jpg",
+  "time": "2026-11-04T05:52:20Z",
+  "caption": "New low flank view one second into the phase-2 growth: charred ash flakes drift up dark against the sky and the ring of fire stands round the knight. GL frame taken before the flame shader's fog fix; the flames still look like flat sprites.",
   "verdict": "fail"
  }
 ]

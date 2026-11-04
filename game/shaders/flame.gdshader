@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabled;
+render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 // A small candle flame (world/lantern_post.gd): a camera-facing teardrop (turns about Y
 // only, so it stays upright), blue at the root, a pale core, an orange skin, licking and
 // leaning as it flickers. `lit` 0..1 fades it out.

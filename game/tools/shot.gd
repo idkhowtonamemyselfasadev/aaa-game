@@ -2273,7 +2273,25 @@ func _ready() -> void:
 		sc.y = terrain.height_at(sc.x, sc.z) + 1.2
 		cam.global_position = sc
 		cam.look_at(rr.centre + Vector3.UP * 3.4)
+		if "side" in args:
+			# from the knight's flank, low, looking up at its chest: the burst against the sky
+			var kp := rk.global_position
+			var sp := kp + rside * 9.0 * rk.size_scale / 2.2 + rf * 3.0
+			sp.y = terrain.height_at(sp.x, sp.z) + 0.9
+			cam.global_position = sp
+			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
+		for a in args:
+			if a.begins_with("hide="):
+				for nm in a.substr(5).split(","):
+					var hn := world.get_node_or_null(NodePath(nm))
+					if hn != null:
+						hn.visible = false
+						hn.process_mode = Node.PROCESS_MODE_DISABLED
+		var names := []
+		for ch in world.get_children():
+			names.append(ch.name)
+		print("SHOT world children ", names)
 	if foe_u >= 0.0:
 		# step the soldier and the hero's draw by hand (awaiting physics frames with the
 		# render loop off stalls under Vulkan here), then hold everything still for the shot

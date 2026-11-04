@@ -3,7 +3,9 @@ shader_type spatial;
 // column on its own radius and phase, leaning downwind with height, and only catches the eye
 // as a sunlit glint, brightest with the sun behind it. The instance transforms are identity;
 // INSTANCE_CUSTOM: r = start angle, g = height phase 0..1, b = radius share, a = kind.
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+// fog_disabled: with blend_add the fog colour is ADDED over every quad, so far motes showed as pale
+// square specks whatever their albedo (a column of "snow" over the boss ring, 04:20 11-04)
 
 uniform float radius = 9.0;              // core radius at the ground (m)
 uniform float top = 75.0;                 // the column dies here (m above the ground)
