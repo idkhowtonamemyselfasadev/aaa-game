@@ -751,12 +751,40 @@ func _pivot_test() -> void:
 		var flat := 0.0
 		var sole_max := 0.0
 		var lead_max := 0.0
-		p.crumple.probe = PackedStringArray(["mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg"])
+		p.crumple.probe = PackedStringArray(["mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot"])
 		p.crumple.probed = {}
+		var pskel: Skeleton3D = p.crumple.get_skeleton()
+		var fprev := []
+		var hand_jump := 0.0
+		var run_step := 0.0
+		var t_end := -1
+		var handoff := 0.0
 		for i in 60:
 			p.bot_input = Vector2(0, mag)
+			if p.pivots > n0 and p.pivot_t < 0.0:
+				p.crumple.active = true               # keep probing once the pose has let go
 			await get_tree().physics_frame
-			if p.pivot_t >= 0.0 and p.crumple.probed.size() == 4:
+			if p.pivots > n0 and p.pivot_t < 0.0 and t_end < 0:
+				t_end = i
+				handoff = p.pivot_handoff if p.pivot_handoff != 0.0 else -99.0
+			if p.crumple.probed.size() == 6 and p.crumple.active:
+				var inv := p.body.global_transform.affine_inverse()
+				var fnow := []
+				for nm in ["mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+					fnow.append(inv * (pskel.global_transform * (p.crumple.probed[nm] as Vector3)))
+				if fprev.size() == 2:
+					var mv := maxf(((fnow[0] as Vector3) - (fprev[0] as Vector3)).length(), ((fnow[1] as Vector3) - (fprev[1] as Vector3)).length())
+					var pu := p.pivot_t / p.PIVOT_TIME if p.pivot_t >= 0.0 else 9.0
+					if OS.has_environment("BOT_DEBUG") and mag > 0.9:
+						print("   pv i %d pu %.2f mv %.3f clip %+.3f blend %.2f leg_aim %.2f L %s R %s" % [i, pu, mv, p.crumple.clip_ahead, p._blend, p.crumple.leg_aim, str(fnow[0]), str(fnow[1])])
+					if (pu > 0.72 and pu < 9.0) or (t_end >= 0 and i < t_end + 10):
+						hand_jump = maxf(hand_jump, mv)
+					elif t_end >= 0 and i >= t_end + 18:
+						run_step = maxf(run_step, mv)
+				fprev = fnow
+			else:
+				fprev = []
+			if p.pivot_t >= 0.0 and p.crumple.probed.size() >= 4:
 				# how far the shoulder line has wound round ahead of the hip line (skeleton space, about up)
 				var up: Vector3 = (p.crumple.frame.inverse() * Vector3.UP).normalized()
 				var sh: Vector3 = p.crumple.probed["mixamorig_LeftArm"] - p.crumple.probed["mixamorig_RightArm"]
@@ -782,7 +810,9 @@ func _pivot_test() -> void:
 		p.crumple.probe = PackedStringArray()
 		var upper_left := absf(p.crumple.chest_twist) + absf(p.crumple.arm_sweep) + absf(p.crumple.clasp) + absf(p.crumple.head_turn)
 		print("BOT pivot upper body: twist peak %.2f (turn sign %+.0f), head peak %.2f, head half-turned at u %.2f, body at u %.2f, shoulders wound ahead of the hips %.2f rad, left over %.3f" % [p.pivot_twist_peak, signf(p._pivot_turn), p.pivot_head_peak, p.pivot_head_lead, p.pivot_body_lead, lead_max, upper_left])
-		results.append([p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, face, p.crumple.leg_aim, p.pivot_t, p.pivot_twist_peak * signf(p._pivot_turn), p.pivot_head_lead, p.pivot_body_lead, lead_max, upper_left])
+		p.crumple.active = false
+		print("BOT pivot hand-off: drive (free knee up) %.2f, clip free foot ahead %+.3f m, foot jump at hand-off %.3f m/tick (steady run %.3f)" % [p.pivot_drive_peak, handoff, hand_jump, run_step])
+		results.append([p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, face, p.crumple.leg_aim, p.pivot_t, p.pivot_twist_peak * signf(p._pivot_turn), p.pivot_head_lead, p.pivot_body_lead, lead_max, upper_left, handoff, hand_jump, run_step, p.pivot_drive_peak])
 		print("BOT pivot: stick %.1f at %.1f m/s: pivots %d, back to speed in %.2f s, skid %.2f m, yaw backsteps %d, knee %.2f, dip %.2f, lean back %.3f, sole %.2f, facing %.2f, after leg_aim %.2f" % [mag, v_run, p.pivots - n0, t_back, p.pivot_skid, backsteps, knee, dip, back, flat, face, p.crumple.leg_aim])
 		p.bot_input = Vector2.ZERO
 		await _ticks(60)
@@ -813,6 +843,12 @@ func _pivot_test() -> void:
 		return _combat_done(false, "the shoulders do not wind ahead of the hips on the skeleton (%.2f rad)" % r[13])
 	if r[14] > 0.0:
 		return _combat_done(false, "the pivot's upper-body twist lingers after (%.3f)" % r[14])
+	if r[15] <= 0.0:
+		return _combat_done(false, "the run clip hands back the planted leg ahead after the pivot (%+.3f m): the legs scissor" % r[15])
+	if r[16] > maxf(r[17] * 1.35, 0.05):
+		return _combat_done(false, "a foot jumps %.3f m in a tick at the pivot's hand-off (steady run %.3f)" % [r[16], r[17]])
+	if r[18] < 0.5:
+		return _combat_done(false, "the pivot does not drive the free knee through (%.2f)" % r[18])
 	_combat_done(true, "reversing at a run plants, skids, spins over the planted foot and drives off the other way; a walk turns as before")
 
 ## Stop: letting go of the stick at a run plants the foot that was ahead: it is thrown further

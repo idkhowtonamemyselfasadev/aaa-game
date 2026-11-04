@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261029-1900-roadmeet-hildbind.jpg",
-  "time": "2026-10-29T19:00:00Z",
-  "caption": "Hild at 16:30 after the villagers' kirtles lost their moth holes and their limb wraps calmed: sleeves read as even wool, but black-and-grey blotches remain on her forearms and the shin below the kirtle (likely base body poking through the wrap shells).",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-1950-roadmeet-hildarms-before.jpg",
-  "time": "2026-10-29T19:20:00Z",
-  "caption": "Before: Hild's forearms and hands read as grey mottled plate gauntlets with black blotches; pale patches on the kirtle below the girdle.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-1950-roadmeet-hildarms.jpg",
-  "time": "2026-10-29T19:50:00Z",
-  "caption": "Hild's forearms now wear solid wool sleeves and mitts instead of grey gauntlets; fingers still grey glove, sleeves a touch too dark, pale thigh-plate patches still show through the side of the kirtle.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-2020-roadmeet-hildwrap.jpg",
   "time": "2026-10-29T20:20:00Z",
   "caption": "Hild's forearm and shin wraps now read as solid cloth bands: the black-and-grey camouflage blotches (undersuit poking through) are gone; the wraps are still near-black against her smock and her hands still read as grey gauntlets (rendered before 85f57b8's mitts were rebased in).",
@@ -897,6 +879,18 @@
   "file": "20261104-1752-start-load.jpg",
   "time": "2026-11-04T17:52:00Z",
   "caption": "Driving start at 0.10 s (GL): the hips load as the hero turns onto the line; still wrong: back-lit and from behind, the drive leg is hidden by the robe.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1818-pivot-drive.jpg",
+  "time": "2026-11-04T18:18:11Z",
+  "caption": "Run pivot at u 0.73 (GL): the hero comes out of the spin crouched over the planted leg, free knee driving through; legs sit in shade so the knee punch is hard to judge, GL not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1818-pivot-handoff.jpg",
+  "time": "2026-11-04T18:18:11Z",
+  "caption": "Run pivot hand-off (GL): body pitched into the new line, back leg pushing off as the run clip takes over in step; legs still dark on dark turf, needs a Forward+ side frame.",
   "verdict": "fail"
  }
 ]

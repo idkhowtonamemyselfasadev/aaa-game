@@ -420,6 +420,15 @@ func _update_animation(delta: float) -> void:
 			_start_seeked = true
 			var t0 := RUN_RIGHT_CROSS if start_swing > 0.0 else RUN_LEFT_CROSS
 			anim_tree.set("parameters/seek/seek_request", fposmod(t0 + START_SEEK_LEAD, RUN_CLIP_LEN))
+	if pivot_t >= 0.0 and pivot_t > PIVOT_TIME * PIVOT_RUN_U:
+		goal = ANIM_RUN_SPEED                  # the drive is posed: the run alone waits under the legs
+		blend_k = 20.0
+		if not _pivot_seeked and pivot_t >= PIVOT_TIME * PIVOT_SEEK_U:
+			# put the stride where the drive leg's partner (the foot NOT planted) is coming through
+			# ahead, so the clip takes over the very step the pose is in, not a scissor of the legs
+			_pivot_seeked = true
+			var t1 := RUN_LEFT_CROSS if _pivot_turn > 0.0 else RUN_RIGHT_CROSS
+			anim_tree.set("parameters/seek/seek_request", fposmod(t1 + PIVOT_SEEK_LEAD, RUN_CLIP_LEN))
 	_blend = lerpf(_blend, goal, 1.0 - exp(-blend_k * delta))
 	anim_tree.set("parameters/move/blend_position", _blend)
 	# Between blend points cadence follows speed/blend, so feet don't skate.
@@ -431,7 +440,11 @@ func _update_animation(delta: float) -> void:
 	if turn_shuffle > 0.05 and hspeed < 0.6:
 		ts = lerpf(ts, 1.25, turn_shuffle)
 	if pivot_t >= 0.0:
-		ts = 0.5                               # the planted legs are posed: the clip's arms slow
+		# the planted legs are posed: the clip's arms slow; once seeked, the run's cadence picks
+		# up over the pose's fade so the stride comes out from under the drive at running pace
+		ts = 0.5
+		if _pivot_seeked:
+			ts = lerpf(0.5, 1.0, smoothstep(0.72, 1.0, pivot_t / PIVOT_TIME))
 	elif stop_t >= 0.0:
 		ts = 0.6                               # likewise through the planted stop
 	elif start_t >= 0.0:
@@ -1015,6 +1028,11 @@ var _pivot_from := 0.0
 var _pivot_turn := 0.0                 # signed radians the body spins (+: to the hero's left)
 var _pivot_v0 := Vector3.ZERO          # ground velocity at the plant
 var _pivot_p0 := Vector3.ZERO
+var _pivot_seeked := false
+var pivot_handoff := 0.0               # (bots) clip_ahead x the free foot's side when the pose let go
+const PIVOT_RUN_U := 0.45              # u from which the clip is put on the run alone
+const PIVOT_SEEK_U := 0.5              # u at which the run clip is seeked under the posed drive
+const PIVOT_SEEK_LEAD := -0.02          # s past the free foot's crossing: furthest ahead mid-fade
 
 func _pivot_step(delta: float, wish: Vector3, busy: bool) -> void:
 	if pivot_t >= 0.0:
@@ -1037,6 +1055,9 @@ func _pivot_step(delta: float, wish: Vector3, busy: bool) -> void:
 	pivot_head_peak = 0.0
 	pivot_head_lead = 0.0
 	pivot_body_lead = 0.0
+	pivot_handoff = 0.0
+	pivot_drive_peak = 0.0
+	_pivot_seeked = false
 	_pivot_v0 = hv
 	_pivot_p0 = global_position
 	_pivot_from = body.rotation.y
@@ -1054,6 +1075,8 @@ func _pivot_velocity(goal: Vector3) -> Vector3:
 	return _pivot_v0 * brake * brake + goal * drive * 0.85
 
 func _end_pivot() -> void:
+	if crumple != null and pivot_t >= PIVOT_TIME:
+		pivot_handoff = crumple.clip_ahead * -signf(_pivot_turn)
 	pivot_t = -1.0
 
 var _pivot_posed := false
@@ -1061,6 +1084,7 @@ var pivot_twist_peak := 0.0            # (bots) largest signed chest twist of th
 var pivot_head_peak := 0.0             # (bots) largest signed head turn of the last pivot
 var pivot_head_lead := 0.0             # (bots) u at which the head turn passed half its peak
 var pivot_body_lead := 0.0             # (bots) u at which the body yaw passed half its turn
+var pivot_drive_peak := 0.0            # (bots) largest weight of the posed drive (free knee up)
 
 func _pivot_pose() -> void:
 	if pivot_t < 0.0 or crumple == null or _jp > 0.0 or dead_t >= 0.0 or down_t >= 0.0:
@@ -1070,6 +1094,9 @@ func _pivot_pose() -> void:
 			crumple.arm_sweep = 0.0
 			crumple.clasp = 0.0
 			crumple.head_turn = 0.0
+			crumple.hip_lr = Vector2.ZERO
+			crumple.knee_lr = Vector2.ZERO
+			crumple.ankle_lr = Vector2.ZERO
 			_pivot_posed = false
 		return
 	var u := pivot_t / PIVOT_TIME
@@ -1087,6 +1114,21 @@ func _pivot_pose() -> void:
 	crumple.hip = a * 1.15 * env
 	crumple.knee = a * 2.0 * env
 	crumple.stride = lead * sg * env
+	# the drive: the planted leg (now behind) sweeps back and pushes off its toes, while the free
+	# knee is punched up and through, so the fade hands the legs to the (seeked) run clip mid-swing
+	# instead of lifting a planted foot 0.3 m in five ticks
+	var dv := smoothstep(PIVOT_DRIVE - 0.02, 0.84, u) * env
+	var th_p := -0.32 * dv
+	var kn_p := 0.08 * dv
+	var an_p := 0.85 * dv                  # heel up: off the ball of the foot
+	var th_f := 0.62 * dv
+	var kn_f := 1.05 * dv
+	var an_f := -0.15 * dv                 # toes pulled up under the shin
+	var rp := sg > 0.0                     # the right leg planted
+	crumple.hip_lr = Vector2(th_f, th_p) if rp else Vector2(th_p, th_f)
+	crumple.knee_lr = Vector2(kn_f, kn_p) if rp else Vector2(kn_p, kn_f)
+	crumple.ankle_lr = Vector2(an_f, an_p) if rp else Vector2(an_p, an_f)
+	pivot_drive_peak = maxf(pivot_drive_peak, dv)
 	crumple.spine = spine * env
 	crumple.arm = lerpf(0.5, 0.25, smoothstep(0.3, 0.8, u)) * env   # the arms come out for balance
 	crumple.elbow = 0.55 * env
