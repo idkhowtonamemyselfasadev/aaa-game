@@ -421,6 +421,8 @@ func _update_animation(delta: float) -> void:
 		ts = lerpf(ts, 1.25, turn_shuffle)
 	if pivot_t >= 0.0:
 		ts = 0.5                               # the planted legs are posed: the clip's arms slow
+	elif stop_t >= 0.0:
+		ts = 0.6                               # likewise through the planted stop
 	if combat != null and combat.hitstop > 0.0:
 		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
@@ -720,6 +722,7 @@ func _physics_process(delta: float) -> void:
 		speed = minf(speed, WALK_SPEED * 0.6)  # the knees soak a real drop: a slow first step
 		sprinting = false
 	_pivot_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
+	_stop_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	var target := wish * speed
 	var accel := ACCEL
 	if attacking and combat.current_attack().has("lunge_at"):
@@ -746,6 +749,10 @@ func _physics_process(delta: float) -> void:
 		var pv := _pivot_velocity(wish * speed)
 		velocity.x = pv.x
 		velocity.z = pv.z
+	elif stop_t >= 0.0 and not _stop_cancel:
+		var sv := _stop_velocity()
+		velocity.x = sv.x
+		velocity.z = sv.z
 	elif not dodging and not reeling:
 		velocity.x = move_toward(velocity.x, target.x, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
@@ -900,6 +907,7 @@ func _physics_process(delta: float) -> void:
 	_update_animation(delta)
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
 	_pivot_pose()
+	_stop_pose()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
 	if combat != null:
 		combat.physics_step(delta)
@@ -959,7 +967,12 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 3.0))
 	if owned:
 		return                                 # the dodge / flinch pose writes the model itself
-	var tip := Basis(Vector3.RIGHT, lean.x) * Basis(Vector3.BACK, lean.y)
+	# through a planted stop the feet stay where they struck: the rock back and forward is taken
+	# at the hip joints (the trunk leans over still legs), not by tipping the whole figure
+	var pitch := lean.x * (1.0 - _stop_env)
+	if crumple != null and _stop_posed:
+		crumple.pelvis = lean.x * _stop_env
+	var tip := Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, lean.y)
 	model.transform = Transform3D(Basis(), Vector3(0, -_pose_dip, 0)) * Transform3D(tip, Vector3.ZERO) * _model_rest
 
 # --- the run pivot: plant, spin, drive ---
@@ -1083,6 +1096,133 @@ func _pivot_pose() -> void:
 	if garb != null:
 		garb.posed_legs = true
 	_pose_dip = dip * env
+
+# --- the planted stop: one foot thrown ahead, the weight caught over it ---
+## Letting go of the stick at a run no longer coasts the hero to a halt on even feet. The foot
+## that was already ahead in the stride is thrown further out and struck heel first, the leg
+## braced with the knee a little bent; the back knee folds and its heel lifts onto the ball of
+## the foot, the hips drop over the gap and the chest is held up against the brake (the lean
+## spring rocks the body back), the arm opposite the front leg swings forward for balance.
+## Then the weight rolls over the front foot, the back foot steps up beside it and the body
+## rises and settles. Pushing the stick again lets go at once: the legs ease back in ~0.15 s.
+const STOP_TIME := 0.55                # s from the release to standing square
+const STOP_MIN_SPEED := 4.6            # m/s along the facing: a jog or faster
+const STOP_BRAKE := 0.45               # u at which the skid has bled off the run
+var stop_t := -1.0                     # s into a planted stop (-1 none)
+var stops := 0                         # (bots)
+var stop_slide := 0.0                  # (bots) m slid along the run line during the last stop
+var stop_lead := 0.0                   # +1 the right foot is thrown ahead, -1 the left
+var stop_dip_peak := 0.0               # (bots) deepest the hips sank in the last stop
+var _stop_v0 := Vector3.ZERO
+var _stop_p0 := Vector3.ZERO
+var _stop_w := 1.0                     # eases to 0 when the stick comes back mid-stop
+var _stop_cancel := false
+var _stop_posed := false
+var _stop_env := 0.0                   # how much of the lean is taken at the hips, not the soles
+
+func _stop_step(delta: float, wish: Vector3, busy: bool) -> void:
+	if stop_t >= 0.0:
+		if not _stop_cancel:
+			stop_t += delta
+			stop_slide = maxf(stop_slide, (global_position - _stop_p0).dot(_stop_v0.normalized()))
+			if wish.length() > 0.5:
+				_stop_cancel = true
+		if _stop_cancel:
+			_stop_w = move_toward(_stop_w, 0.0, delta * 7.0)
+		if stop_t >= STOP_TIME or _stop_w <= 0.0 or busy or not is_on_floor() or climbing or gliding or pivot_t >= 0.0:
+			stop_t = -1.0
+		return
+	if busy or climbing or gliding or pivot_t >= 0.0 or not is_on_floor() or _jp > 0.05 or wish.length() > 0.2:
+		return
+	var face := body.global_basis.z
+	var hv := Vector3(velocity.x, 0.0, velocity.z)
+	if hv.dot(face) < STOP_MIN_SPEED:
+		return
+	stop_t = 0.0
+	stops += 1
+	stop_slide = 0.0
+	stop_dip_peak = 0.0
+	_stop_v0 = hv
+	_stop_p0 = global_position
+	_stop_w = 1.0
+	_stop_cancel = false
+	stop_lead = _foot_ahead()
+
+## +1 when the right foot is further forward along the body's facing in the pose as drawn, -1
+## for the left: the foot already reaching out in the stride is the one that plants.
+func _foot_ahead() -> float:
+	var skel := crumple.get_skeleton() if crumple != null else null
+	if skel == null:
+		return 1.0
+	var l := skel.find_bone("mixamorig_LeftFoot")
+	var r := skel.find_bone("mixamorig_RightFoot")
+	if l < 0 or r < 0:
+		return 1.0
+	var fwd := (crumple.frame.inverse() * Vector3.BACK).normalized()
+	var d := (skel.get_bone_global_pose(r).origin - skel.get_bone_global_pose(l).origin).dot(fwd)
+	return 1.0 if d >= 0.0 else -1.0
+
+## The run bleeds off along its line over the first part of the stop (~0.6 m from a run).
+func _stop_velocity() -> Vector3:
+	var b := 1.0 - smoothstep(0.0, STOP_BRAKE, stop_t / STOP_TIME)
+	return _stop_v0 * b * b
+
+func _stop_pose() -> void:
+	if stop_t < 0.0 or pivot_t >= 0.0 or crumple == null or _jp > 0.0 or dead_t >= 0.0 or down_t >= 0.0:
+		if _stop_posed and crumple != null:
+			crumple.hip_lr = Vector2.ZERO
+			crumple.knee_lr = Vector2.ZERO
+			crumple.ankle_lr = Vector2.ZERO
+			crumple.arm_lr = Vector2.ZERO
+			crumple.pelvis = 0.0
+			crumple.ground = 0.0
+			crumple.settle = 0
+			_stop_env = 0.0
+			_stop_posed = false
+			if pivot_t < 0.0 and _jp <= 0.0:
+				_clear_jump_pose()
+		return
+	var u := stop_t / STOP_TIME
+	var env := smoothstep(0.0, 0.12, u) * (1.0 - smoothstep(0.62, 1.0, u)) * _stop_w
+	# how far the front leg is out: thrown in the first frames, held through the brake, then
+	# the back foot steps up beside it
+	var reach := smoothstep(0.0, 0.14, u) * (1.0 - smoothstep(0.45, 0.9, u))
+	# the knee soaks the strike: a bump peaking a third of the way through
+	var absorb := sin(PI * clampf((u - 0.08) / 0.5, 0.0, 1.0))
+	var th_f := 0.1 + 0.36 * reach + 0.1 * absorb       # front thigh ahead of plumb
+	var kn_f := 0.08 + 0.26 * reach + 0.2 * absorb      # braced, the knee giving a little
+	var th_b := 0.1 - 0.38 * reach                      # back thigh behind
+	var kn_b := 0.1 + 0.5 * reach                       # folded, the heel up
+	# heel strike: the front toes up as it lands, rolling flat by a third of the way in
+	var an_f := -0.28 * reach * (1.0 - smoothstep(0.15, 0.4, u))
+	var an_b := 0.8 * reach                             # onto the ball of the back foot
+	var r := stop_lead > 0.0                            # the right foot is the front one
+	crumple.active = true
+	crumple.leg_aim = env
+	crumple.hip = 0.0
+	crumple.knee = 0.0
+	crumple.stride = 0.0
+	crumple.ankle = 0.0
+	crumple.sole_flat = env
+	crumple.hip_lr = (Vector2(th_b, th_f) if r else Vector2(th_f, th_b)) * env
+	crumple.knee_lr = (Vector2(kn_b, kn_f) if r else Vector2(kn_f, kn_b)) * env
+	crumple.ankle_lr = (Vector2(an_b, an_f) if r else Vector2(an_f, an_b)) * env
+	# the arm opposite the front leg swings forward, the other back; both lift a touch for balance
+	crumple.arm_lr = (Vector2(0.45, -0.25) if r else Vector2(-0.25, 0.45)) * reach * env
+	crumple.arm = 0.2 * absorb * env
+	crumple.elbow = 0.45 * env
+	# chest held up against the brake, then rolling forward over the front foot, then still
+	crumple.spine = (-0.1 * smoothstep(0.0, 0.15, u) * (1.0 - smoothstep(0.25, 0.45, u)) \
+		+ 0.12 * smoothstep(0.3, 0.5, u) * (1.0 - smoothstep(0.6, 0.95, u))) * env
+	_stop_posed = true
+	if garb != null:
+		garb.posed_legs = true
+	# the legs set the height: the hips are moved so the lower ankle stays on the turf
+	crumple.ground = env
+	crumple.settle = 1 if r else 2              # the back foot reaches down onto its ball
+	_pose_dip = 0.0
+	_stop_env = env
+	stop_dip_peak = maxf(stop_dip_peak, crumple.ground_drop)
 
 # --- jumping ---
 
@@ -1302,6 +1442,13 @@ func _clear_jump_pose() -> void:
 	crumple.stride = 0.0
 	crumple.ankle = 0.0
 	crumple.sole_flat = 0.0
+	crumple.hip_lr = Vector2.ZERO
+	crumple.knee_lr = Vector2.ZERO
+	crumple.ankle_lr = Vector2.ZERO
+	crumple.arm_lr = Vector2.ZERO
+	crumple.pelvis = 0.0
+	crumple.ground = 0.0
+	crumple.settle = 0
 	crumple.active = false
 	if garb != null:
 		garb.posed_legs = false

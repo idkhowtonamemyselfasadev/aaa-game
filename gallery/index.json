@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261029-1630-roadmeet-hildround.jpg",
-  "time": "2026-10-29T16:30:00Z",
-  "caption": "Hild on the road at 16:30 with a rounder face: a broader jaw, fuller cheeks that round off instead of ending in a cut edge, and soft folds by the mouth; the face still reads too smooth and flat at this distance, a pale scrap still shows at the collar and her forearms still read as grey plate.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-1730-roadmeet-hildchest-before.jpg",
   "time": "2026-10-29T17:30:00Z",
   "caption": "Before: Hild at 16:30 with the Vanguard's chest plate cutting through her smock as a pale crescent and side strips under the hood.",
@@ -891,6 +885,18 @@
   "file": "20261104-1530-pivot-plant.jpg",
   "time": "2026-11-04T15:30:00Z",
   "caption": "GL quick-look: the plant of the run pivot from behind, head and shoulders already turning toward the new line while the hips still face the old one; tall grass hides the skid foot, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1623-stop-brace.jpg",
+  "time": "2026-11-04T16:23:14Z",
+  "caption": "Planted stop at 0.17 s (GL): front leg thrown out and braced, back heel up on the ball of the foot, arms out for balance; still wrong: the lens sees the hero from behind in shade, so the heel strike cannot be judged.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-1623-stop-rollover.jpg",
+  "time": "2026-11-04T16:23:14Z",
+  "caption": "Planted stop at 0.27 s (GL): the weight rolls over the front foot and the back foot comes up; still wrong: back-lit, hero seen from behind, not a side-on profile yet.",
   "verdict": "fail"
  }
 ]

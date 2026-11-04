@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -190,6 +190,9 @@ func _ready() -> void:
 		return
 	if name == "pivot":
 		_pivot_test()
+		return
+	if name == "stop":
+		_stop_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -808,6 +811,121 @@ func _pivot_test() -> void:
 	if r[14] > 0.0:
 		return _combat_done(false, "the pivot's upper-body twist lingers after (%.3f)" % r[14])
 	_combat_done(true, "reversing at a run plants, skids, spins over the planted foot and drives off the other way; a walk turns as before")
+
+## Stop: letting go of the stick at a run plants the foot that was ahead: it is thrown further
+## out heel first with the leg braced, the back knee folds onto the ball of the foot, the hips
+## drop, the hero halts within ~0.6 m and the pose leaves nothing behind; a walk just stops;
+## pushing the stick again mid-stop lets the legs go at once and runs on.
+func _stop_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var skel: Skeleton3D = p.crumple.get_skeleton()
+	var feet := PackedStringArray(["mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_LeftToeBase", "mixamorig_RightToeBase"])
+	# the ankle's rest height over the floor, standing
+	p.crumple.probe = feet
+	p.crumple.active = true                     # the modifier only runs (and probes) while active
+	await _ticks(10)
+	p.crumple.active = false
+	if p.crumple.probed.size() != 4:
+		return _combat_done(false, "the feet could not be probed standing")
+	var rest_h := 0.0
+	var rest_toe := 0.0
+	for k in 2:
+		rest_h += ((skel.global_transform * (p.crumple.probed[feet[k]] as Vector3)).y - p.global_position.y) * 0.5
+		rest_toe += ((skel.global_transform * (p.crumple.probed[feet[k + 2]] as Vector3)).y - p.global_position.y) * 0.5
+	var results := []
+	for mag in [1.0, 0.5]:
+		for i in 90:
+			p.bot_input = Vector2(0, -mag)
+			await get_tree().physics_frame
+		var n0 := p.stops
+		var ahead := p._foot_ahead()
+		var v_run := Vector3(p.velocity.x, 0, p.velocity.z).length()
+		var t_rest := -1.0
+		var gap := 0.0
+		var front_h := 0.0
+		var back_lift := 0.0
+		var back_toe := 0.0
+		var knees := Vector2.ZERO
+		var p0 := p.global_position
+		p.bot_input = Vector2.ZERO
+		for i in 60:
+			await get_tree().physics_frame
+			if t_rest < 0.0 and Vector2(p.velocity.x, p.velocity.z).length() < 0.05:
+				t_rest = (i + 1) / 60.0
+			if p.stop_t >= 0.0 and p.crumple.probed.size() == 4:
+				var fwd := p.body.global_basis.z
+				var wl: Vector3 = skel.global_transform * (p.crumple.probed["mixamorig_LeftFoot"] as Vector3)
+				var wr: Vector3 = skel.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3)
+				var wf := wr if p.stop_lead > 0.0 else wl
+				var wb := wl if p.stop_lead > 0.0 else wr
+				var g := (wf - wb).dot(fwd)
+				if g > gap:
+					gap = g
+					front_h = wf.y - p.global_position.y - rest_h
+					back_lift = wb.y - p.global_position.y - rest_h
+					var tb: Vector3 = skel.global_transform * (p.crumple.probed["mixamorig_LeftToeBase" if p.stop_lead > 0.0 else "mixamorig_RightToeBase"] as Vector3)
+					back_toe = tb.y - p.global_position.y - rest_toe
+					knees = Vector2(p.crumple.knee_lr.y, p.crumple.knee_lr.x) if p.stop_lead > 0.0 else p.crumple.knee_lr
+		var moved := Vector2(p.global_position.x - p0.x, p.global_position.z - p0.z).length()
+		await _ticks(20)
+		var left := p.crumple.leg_aim + p.crumple.hip_lr.length() + p.crumple.knee_lr.length() + p.crumple.ankle_lr.length() + p.crumple.arm_lr.length() + absf(p.crumple.pelvis) + p.crumple.ground + absf(p._pose_dip)
+		print("BOT stop: stick %.1f at %.1f m/s: stops %d, lead %+.0f (foot ahead at release %+.0f), at rest in %.2f s, slid %.2f m, feet %.2f m apart, front ankle %+.3f m, back ankle %+.3f m (its toes %+.3f) off rest, knees front %.2f back %.2f, dip %.3f, left over %.3f" % [mag, v_run, p.stops - n0, p.stop_lead, ahead, t_rest, moved, gap, front_h, back_lift, back_toe, knees.x, knees.y, p.stop_dip_peak, left])
+		results.append([p.stops - n0, t_rest, moved, gap, front_h, back_lift, knees, p.stop_dip_peak, left, p.stop_lead * ahead, back_toe])
+		await _ticks(30)
+	# a stop cut short: the stick comes back
+	for i in 90:
+		p.bot_input = Vector2(0, -1)
+		await get_tree().physics_frame
+	p.bot_input = Vector2.ZERO
+	await _ticks(10)
+	var was := p.stop_t
+	var gone := -1.0
+	p.bot_input = Vector2(0, -1)
+	for i in 40:
+		await get_tree().physics_frame
+		if gone < 0.0 and p.stop_t < 0.0 and p.crumple.hip_lr.length() < 1e-4:
+			gone = (i + 1) / 60.0
+	var v_after := Vector3(p.velocity.x, 0, p.velocity.z).length()
+	p.bot_input = Vector2.ZERO
+	p.crumple.probe = PackedStringArray()
+	print("BOT stop: cut short at %.2f s: legs back in %.2f s, running at %.1f m/s after" % [was, gone, v_after])
+	var r: Array = results[0]
+	if r[0] != 1:
+		return _combat_done(false, "letting go at a run did not plant a stop (%d)" % r[0])
+	if r[9] < 0.0:
+		return _combat_done(false, "the stop plants the foot that was behind")
+	if r[1] < 0.0 or r[1] > 0.6:
+		return _combat_done(false, "the stop takes %.2f s to come to rest" % r[1])
+	if r[2] < 0.3 or r[2] > 1.2:
+		return _combat_done(false, "the stop slides %.2f m (want 0.3-1.2)" % r[2])
+	if r[3] < 0.3:
+		return _combat_done(false, "the front foot is not thrown ahead (%.2f m)" % r[3])
+	if absf(r[4]) > 0.07:
+		return _combat_done(false, "the front foot floats or sinks (%+.3f m)" % r[4])
+	if r[5] < 0.02 or r[5] > 0.14:
+		return _combat_done(false, "the back heel does not lift onto the ball of the foot (%+.3f m, want 0.02-0.14)" % r[5])
+	if absf(r[10]) > 0.05:
+		return _combat_done(false, "the back foot's toes do not touch the turf (%+.3f m)" % r[10])
+	if (r[6] as Vector2).y <= (r[6] as Vector2).x + 0.05:
+		return _combat_done(false, "the back knee does not fold more than the braced front one (%s)" % str(r[6]))
+	if r[7] < 0.07:
+		return _combat_done(false, "the hips do not drop over the stop (%.3f)" % r[7])
+	if r[8] > 1e-3:
+		return _combat_done(false, "the stop pose lingers after (%.3f)" % r[8])
+	if (results[1] as Array)[0] != 0:
+		return _combat_done(false, "a walk plants a run stop")
+	if was < 0.0:
+		return _combat_done(false, "no stop to cut short")
+	if gone < 0.0 or gone > 0.25:
+		return _combat_done(false, "the legs do not let go when the stick comes back (%.2f s)" % gone)
+	if v_after < 5.0:
+		return _combat_done(false, "the hero does not run on after a cut-short stop (%.1f m/s)" % v_after)
+	_combat_done(true, "letting go at a run plants the front foot heel first, folds the back knee, drops the hips and halts in a short skid; a walk just stops; the stick cuts it short")
 
 func _combat_done(ok: bool, why: String) -> void:
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])

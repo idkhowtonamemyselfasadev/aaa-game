@@ -2308,14 +2308,15 @@ func _ready() -> void:
 		var jh := player.global_position.y - terrain.height_at(player.global_position.x, player.global_position.z)
 		var back := Vector3(jstart.x, 0, jstart.z) + Vector3(0, terrain.height_at(jstart.x, jstart.z) + jh, 0)
 		player.global_position = back
-		if "pivotlens" in args:
+		if "pivotlens" in args or "stoplens" in args:
 			# pivotlens: a low front-3/4 lens on the frozen hero itself, on the sun side, so the
 			# skid, the planted leg and the shoulders winding round all face the camera in light
 			var plight: Vector3 = -world.sun.global_transform.basis.z
 			var pside := Vector3(0, 0, 1) if -plight.z > 0.0 else Vector3(0, 0, -1)
 			if "flip" in args:
 				pside = -pside
-			var pc := back + pside * 3.0 + Vector3(-1.4, 0, 0)
+			# stoplens: the same, but a touch ahead of the hero (the stop faces on along +X)
+			var pc := back + pside * 3.0 + Vector3(0.7 if "stoplens" in args else -1.4, 0, 0)
 			pc.y = terrain.height_at(pc.x, pc.z) + 1.25
 			var pcam := get_viewport().get_camera_3d()
 			pcam.global_position = pc
@@ -2324,6 +2325,7 @@ func _ready() -> void:
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])
+		print("SHOT stop t %.3f stops %d lead %+.0f hip_lr %s knee_lr %s dip %.3f" % [player.stop_t, player.stops, player.stop_lead, player.crumple.hip_lr, player.crumple.knee_lr, player._pose_dip])
 		print("SHOT jump t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
 	if dodge_u >= 0.0:
 		Engine.max_physics_steps_per_frame = 1

@@ -46,6 +46,18 @@ var ankle := 0.0             # radians, positive points the toes down (a push-of
 var sole_flat := 0.0         # 0..1: the feet turned back by what the hip/knee/stride bends tipped
 							 # them, so a folded leg keeps its sole flat on the ground
 var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
+var hip_lr := Vector2.ZERO   # radians on top of hip, per leg (x left, y right): one thigh ahead, one behind
+var knee_lr := Vector2.ZERO  # likewise on top of knee (a braced front leg, a folded back one)
+var ankle_lr := Vector2.ZERO # likewise on top of ankle, after sole_flat (- toes up on a heel strike,
+							 # + toes down: a back heel lifted onto the ball of the foot)
+var arm_lr := Vector2.ZERO   # likewise on top of arm (a counter-swing)
+var ground := 0.0            # 0..1: after the leg bends, the hips are moved up or down so the lower
+							 # ankle sits at its rest height (a posed stance stays on the turf)
+var settle := 0              # after `ground`: 1 the left leg, 2 the right one is bent down at the knee
+							 # (two-bone, in its own plane) until its ankle is settle_lift over its rest
+							 # height: a back foot reaching the turf on the ball of the foot
+var settle_lift := 0.06      # m
+var ground_drop := 0.0       # (bots) m the hips stand below their rest height once grounded
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 var plant := 0.0             # 0..1: both wrists reach for hand_target (holds on a climbing face)
 var hand_target := [Vector3.ZERO, Vector3.ZERO]   # world wrist targets, left then right
@@ -75,9 +87,12 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var sg := 1.0 if side == "Left" else -1.0
 		if leg_aim > 0.0:
 			_hang_leg(skel, side, (-up + x * sg * 0.1).normalized())
-		_bend(skel, "mixamorig_%sUpLeg" % side, x, -(hip - stride * sg * 1.1) - pelvis)
-		_bend(skel, "mixamorig_%sLeg" % side, x, knee - stride * sg * 1.3)
-		_bend(skel, "mixamorig_%sFoot" % side, x, ankle - sole_flat * (knee - hip - 0.2 * stride * sg))
+		var li := 0 if side == "Left" else 1
+		var th := hip - stride * sg * 1.1 + hip_lr[li]
+		var kn := knee - stride * sg * 1.3 + knee_lr[li]
+		_bend(skel, "mixamorig_%sUpLeg" % side, x, -th - pelvis)
+		_bend(skel, "mixamorig_%sLeg" % side, x, kn)
+		_bend(skel, "mixamorig_%sFoot" % side, x, ankle + ankle_lr[li] - sole_flat * (kn - th))
 		if arm_aim > 0.0:
 			_hang(skel, "mixamorig_%sArm" % side, "mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side,
 				(-up + x * sg * 0.3).normalized(), arm_aim)
@@ -89,7 +104,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
 		if arm_sweep != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, up, arm_sweep)
-		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg, -1.0, bh), toss_arm, ts))
+		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg + arm_lr[0 if side == "Left" else 1], -1.0, bh), toss_arm, ts))
 		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
@@ -112,6 +127,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_bend(skel, "mixamorig_Spine2", up, chest_twist * 0.4)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
+	if ground > 0.0:
+		_ground(skel, up)
+		if settle > 0:
+			_settle_leg(skel, "Left" if settle == 1 else "Right", up)
 	var sides := ["Left", "Right"]
 	for i in 2:
 		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
@@ -311,6 +330,58 @@ func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	if ax.length() < 1e-6:
 		return
 	_bend(skel, skel.get_bone_name(b), ax.normalized(), from.angle_to(to))
+
+## Moves the root (the hips, and all above and below them) along up so the lower of the two
+## ankles stands at its rest height: the stance's legs decide how low the body sits.
+func _ground(skel: Skeleton3D, up: Vector3) -> void:
+	var hb := skel.find_bone("mixamorig_Hips")
+	var lf := skel.find_bone("mixamorig_LeftFoot")
+	var rf := skel.find_bone("mixamorig_RightFoot")
+	if hb < 0 or lf < 0 or rf < 0 or skel.get_bone_parent(hb) >= 0:
+		return
+	var rest := minf(skel.get_bone_global_rest(lf).origin.dot(up), skel.get_bone_global_rest(rf).origin.dot(up))
+	var low := minf(skel.get_bone_global_pose(lf).origin.dot(up), skel.get_bone_global_pose(rf).origin.dot(up))
+	var d := (rest - low) * ground
+	skel.set_bone_pose_position(hb, skel.get_bone_pose_position(hb) + up * d)
+	ground_drop = (skel.get_bone_global_rest(hb).origin.dot(up) - skel.get_bone_global_pose(hb).origin.dot(up)) \
+		* skel.global_basis.get_scale().x
+
+## Two-bone: the thigh and shin turn, keeping the knee's bend plane, so the ankle comes straight
+## down to settle_lift over its rest height (by `ground`); the foot keeps its posed angle.
+func _settle_leg(skel: Skeleton3D, side: String, up: Vector3) -> void:
+	var ul := skel.find_bone("mixamorig_%sUpLeg" % side)
+	var lg := skel.find_bone("mixamorig_%sLeg" % side)
+	var ft := skel.find_bone("mixamorig_%sFoot" % side)
+	var toe := skel.find_bone("mixamorig_%sToeBase" % side)
+	if ul < 0 or lg < 0 or ft < 0 or toe < 0:
+		return
+	var sc := skel.global_basis.get_scale().x
+	var s := skel.get_bone_global_pose(ul).origin
+	var k := skel.get_bone_global_pose(lg).origin
+	var f := skel.get_bone_global_pose(ft).origin
+	var want := skel.get_bone_global_rest(ft).origin.dot(up) + settle_lift / maxf(sc, 1e-6)
+	var over := (f.dot(up) - want) * ground
+	if over <= 0.0:
+		return
+	var toe_dir := skel.get_bone_global_pose(toe).origin - f
+	var a := s.distance_to(k)
+	var b := k.distance_to(f)
+	var t := f - up * over
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	var pole := (k - s) - dn * (k - s).dot(dn)
+	if pole.length() < 1e-5:
+		return
+	pole = pole.normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ul, k - s, k_new - s)
+	k = skel.get_bone_global_pose(lg).origin
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, lg, f - k, t - k)
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, toe_dir)
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 ## Turns a bone about the body's up so the line from its right child joint to its left one
