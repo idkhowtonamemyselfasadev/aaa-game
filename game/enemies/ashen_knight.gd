@@ -327,7 +327,11 @@ func _begin_surge() -> void:
 		_player.add_shake(0.7)
 		if _player.combat != null:
 			_player.combat.hitstop = maxf(_player.combat.hitstop, 0.12)
-	ImpactFX.spawn(get_parent(), global_position + Vector3.UP * 1.25 * size_scale, body.global_basis.z.normalized(), "stone", 2.0 + size_scale * 0.4)
+	# the body bursts its plate: a dark breath of ash and charred flakes round the chest (capped
+	# speed, it hangs round the giant), and a hot spit of embers up out of the gorget
+	var chest := global_position + Vector3.UP * 1.25 * size_scale
+	ImpactFX.spawn(get_parent(), chest, body.global_basis.z.normalized(), "ash", 1.2 + size_scale * 0.35)
+	EmberBurst.spawn(get_parent(), chest + Vector3.UP * 0.35 * size_scale, (body.global_basis.z.normalized() + Vector3.UP).normalized(), size_scale * 0.9)
 	phase_changed.emit(phase)
 
 func _physics_process(delta: float) -> void:

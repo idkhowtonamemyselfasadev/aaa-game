@@ -7,6 +7,8 @@ extends Node3D
 static var _dust_tex: Texture2D
 static var _crumb_tex: Texture2D
 static var _haze_tex: Texture2D
+## how many bursts of each kind have been spawned (bots read it)
+static var spawned := {}
 
 static func spawn(parent: Node, pos: Vector3, swing_dir: Vector3, kind: String, power: float) -> ImpactFX:
 	var fx := ImpactFX.new()
@@ -14,6 +16,7 @@ static func spawn(parent: Node, pos: Vector3, swing_dir: Vector3, kind: String, 
 	parent.add_child(fx)
 	fx.global_position = pos
 	fx._build(swing_dir.normalized(), kind, power)
+	spawned[kind] = int(spawned.get(kind, 0)) + 1
 	return fx
 
 func _build(dir: Vector3, kind: String, power: float) -> void:
@@ -37,6 +40,10 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		# thrown down) and a thin, shaded haze of fine soil that hugs the ground
 		chaff_col = Color(0.20, 0.15, 0.10)
 		dust_col = Color(0.33, 0.29, 0.23, 0.30)
+	if kind == "ash":
+		# a boss bursting its armour: charred flakes and a dark breath of ash round the body
+		chaff_col = Color(0.11, 0.09, 0.08)
+		dust_col = Color(0.14, 0.12, 0.11, 0.75)
 	# chaff: thin stalk fragments thrown out along the swing, tumbling, falling
 	var chaff := CPUParticles3D.new()
 	chaff.name = "Chaff"
@@ -68,7 +75,17 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		chaff.spread = 25.0
 		chaff.initial_velocity_min = 0.8 * power
 		chaff.initial_velocity_max = 2.4 * power
-	chaff.gravity = Vector3(0, -7.5, 0)
+	if kind == "ash":
+		# flakes, not chips: capped speed so a giant's burst hangs round it instead of
+		# fountaining 15 m up, thrown out all round, drifting down slowly
+		chaff.amount = int(clampf(26.0 * power, 20.0, 90.0))
+		chaff.lifetime = 2.2
+		chaff.direction = Vector3.UP
+		chaff.spread = 80.0
+		chaff.initial_velocity_min = 0.8
+		chaff.initial_velocity_max = minf(2.2 * sqrt(power), 5.5)
+		chaff.emission_sphere_radius = 0.35 * power
+	chaff.gravity = Vector3(0, -2.2 if kind == "ash" else -7.5, 0)
 	chaff.damping_min = 1.5
 	chaff.damping_max = 3.0
 	chaff.angular_velocity_min = -720.0
@@ -82,18 +99,19 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		chaff.scale_amount_min = 0.5
 		chaff.scale_amount_max = 1.3
 	chaff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	chaff.emission_sphere_radius = 0.06
+	if kind != "ash":
+		chaff.emission_sphere_radius = 0.06
 	chaff.particle_flag_rotate_y = false
 	var q := QuadMesh.new()
-	q.size = Vector2(0.12, 0.013) if kind == "straw" else (Vector2(0.04, 0.034) if kind == "turf" else Vector2(0.03, 0.012))
+	q.size = Vector2(0.07, 0.05) if kind == "ash" else (Vector2(0.12, 0.013) if kind == "straw" else (Vector2(0.04, 0.034) if kind == "turf" else Vector2(0.03, 0.012)))
 	var cm := StandardMaterial3D.new()
 	cm.albedo_color = chaff_col
 	cm.roughness = 0.8
 	if kind == "pierce":
 		cm.vertex_color_is_srgb = true
 		cm.metallic_specular = 0.1
-	if kind == "turf":
-		# ragged soil crumbs: an alpha-scissored lumpy blot instead of a sliver
+	if kind == "turf" or kind == "ash":
+		# ragged soil crumbs / charred flakes: an alpha-scissored lumpy blot instead of a sliver
 		cm.albedo_texture = _clump_tex()
 		cm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 		cm.alpha_scissor_threshold = 0.5
@@ -106,8 +124,8 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	q.material = cm
 	chaff.mesh = q
 	var cg := Gradient.new()
-	cg.set_color(0, Color(1.0, 1.0, 1.0) if kind in ["turf", "pierce"] else Color(1.1, 1.05, 1.0))
-	cg.set_color(1, Color(0.55, 0.62, 0.45) if kind == "turf" else (Color(0.8, 0.8, 0.8) if kind == "pierce" else Color(0.7, 0.68, 0.62)))  # some crumbs keep a grass tint
+	cg.set_color(0, Color(1.0, 1.0, 1.0) if kind in ["turf", "pierce", "ash"] else Color(1.1, 1.05, 1.0))
+	cg.set_color(1, Color(0.55, 0.62, 0.45) if kind == "turf" else (Color(0.7, 0.66, 0.62) if kind == "ash" else (Color(0.8, 0.8, 0.8) if kind == "pierce" else Color(0.7, 0.68, 0.62))))  # some crumbs keep a grass tint
 	chaff.color_initial_ramp = cg
 	add_child(chaff)
 	chaff.emitting = true
@@ -144,6 +162,17 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		dust.lifetime = 0.6
 		dust.initial_velocity_max = 0.5
 		dust.emission_sphere_radius = 0.04
+	elif kind == "ash":
+		# a dark rolling breath round the body, slow, rising a little on the heat
+		dust.amount = int(clampf(8.0 * power, 10.0, 32.0))
+		dust.lifetime = 2.0
+		dust.direction = Vector3.UP
+		dust.spread = 90.0
+		dust.flatness = 0.4
+		dust.initial_velocity_min = 0.5
+		dust.initial_velocity_max = minf(1.2 * sqrt(power), 3.0)
+		dust.gravity = Vector3(0, 0.25, 0)
+		dust.emission_sphere_radius = 0.4 * power
 	elif kind == "turf":
 		# a low haze that creeps out from the cut and settles, never a bright puff
 		# kept low and short so the buried bit still shows through it
@@ -168,7 +197,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dg.add_point(0.15, dust_col)
 	dust.color_ramp = dg
 	var dq := QuadMesh.new()
-	dq.size = Vector2(0.45, 0.45) if kind == "turf" else (Vector2(0.25, 0.25) if kind == "pierce" else Vector2(0.7, 0.7))
+	dq.size = Vector2(0.65, 0.65) * power if kind == "ash" else (Vector2(0.45, 0.45) if kind == "turf" else (Vector2(0.25, 0.25) if kind == "pierce" else Vector2(0.7, 0.7)))
 	var dm := StandardMaterial3D.new()
 	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	dm.albedo_texture = _soft_tex()
@@ -179,7 +208,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dm.roughness = 1.0
 	# no specular sheen: a billboard facing the lens catches the sun's highlight as a flat glow
 	dm.metallic_specular = 0.0
-	if kind == "turf" or kind == "dirt":
+	if kind == "turf" or kind == "dirt" or kind == "ash":
 		# light the haze as a soft volume (half-lambert-ish via backlight) and break its edge up
 		dm.albedo_texture = _clump_tex(true)
 		dm.backlight_enabled = true

@@ -1341,6 +1341,7 @@ func _knight_test() -> void:
 	if absf(size0 - AshenKnight.PHASES[0]["scale"]) > 0.01 or size0 * 1.16 < 2.3:
 		return _combat_done(false, "the knight does not start well above human size")
 	var flame_tested := 0
+	var ash0 := int(ImpactFX.spawned.get("ash", 0))
 	while not k.is_dead() and t < 150.0:
 		var to := k.global_position - p.global_position
 		var flat := Vector2(to.x, to.z)
@@ -1539,6 +1540,10 @@ func _knight_test() -> void:
 	print("BOT knight: giant roars %d (recorded variants %d)" % [roars, fol.recorded.get("giant_roar", 0)])
 	if fol.recorded.get("giant_roar", 0) < 3 or roars < k.surges:
 		return _combat_done(false, "the knight did not roar (recorded) at each growth")
+	var ash_n := int(ImpactFX.spawned.get("ash", 0)) - ash0
+	print("BOT knight: ash bursts %d (one per surge)" % ash_n)
+	if ash_n < k.surges:
+		return _combat_done(false, "a surge did not burst into ash and embers")
 	# unblockable: a parry-window heavy in phase 2+ must not deflect (checked on a fresh knight state)
 	await _ticks(30)
 	if hud != null:
