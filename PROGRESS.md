@@ -37,6 +37,14 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (11:40 11-04) Duplicate session: this session built the same crown reel in parallel with the 11:04 one, which
+  pushed first. Theirs is kept (bot `crown` PASS on it). Mine was dropped and stays only on a local branch. One
+  finding worth keeping: in a headless bot, `Skeleton3D.get_bone_global_pose()` does NOT include SkeletonModifier3D
+  output (HeadBow/LegTuck/SpineTwist/IK). To prove a modifier really moved a bone, read a BoneAttachment3D on that
+  bone instead (e.g. the knight's `ArmourHead` node's `global_basis.y`). Measured that way, a 0.85 rad bow + 0.3
+  lean tipped the helm from 0.12 to 0.98 (sine, forward). The `crown` bot checks the knobs (`crown_bow_peak`), not
+  the drawn skeleton. GL frames of the reel at hour 15 from the knight's front are a backlit silhouette: the buckle
+  and the glaive on the turf read, the head roll is hard to see. Frame it with the sun behind the lens.
 - (10:00 11-04) Crown reel pose (bots `crown` `knight` PASS). New `enemies/head_bow.gd` (HeadBow SkeletonModifier3D:
   `bow` drops Spine2/Neck/Head forward 0.2/0.45/0.35 of it about the Body's side axis, `roll` lolls them sideways).
   `AshenKnight._crown_tick` drives CROWN_STAGGER (1.3 s) by hand on top of the soldier's STAGGER: starts at
