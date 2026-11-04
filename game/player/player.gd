@@ -259,6 +259,15 @@ const ANIM_RUN_SPEED := 6.0             # m/s: the Run clip's point on the blend
 # at 6.5 m/s and 1.08x the flat foot slid forward 1.74 m/s, so the clip covers 4.40 m/s)
 const RUN_STRIDE_SPEED := 4.4
 const RUN_STRIDE_K := 1.25              # the stride is lengthened this much at a run (StrideWarp)
+# Gaits (11-04 21:00, bot `stride`): the Walk and Run clips are not phase-synced, so a mix of the
+# two skates (measured 1.5-2.4 m/s of slip at 3.9-5.5 m/s). The walk now holds to WALK_TOP and
+# hands over to the run clip across a short band; a slower jog is the run clip with its stride
+# SHORTENED (StrideWarp k < 1) and its cadence set from that stride, a faster run lengthens it.
+const WALK_STRIDE_SPEED := 1.68         # m/s the Walk clip's planted foot travels back at 1x (measured)
+const WALK_TOP := 2.6                   # m/s: the walk clip alone up to here
+const JOG_FROM := 3.3                   # m/s: the run clip alone from here
+const SPRINT_STRIDE_K := 1.25         # a sprint bounds: the stride lengthens again, the cadence less
+const JOG_K := 0.82                     # the run clip's stride x this at JOG_FROM (a short jog)
 var anim_tree: AnimationTree
 var _blend := 0.0
 
@@ -402,17 +411,25 @@ func _setup_animation() -> void:
 	anim_tree.active = true
 
 var _warp := 0.0                       # 0..1 how much of the stride warp is on
+var foot_lock_on := true               # (bots) the StrideWarp contact lock may be switched off
 
 func _update_warp(delta: float, on: bool) -> void:
-	var warp := smoothstep(ANIM_WALK_SPEED, ANIM_RUN_SPEED, _blend) if on else 0.0
+	var warp := clampf((_blend - ANIM_WALK_SPEED) / (ANIM_RUN_SPEED - ANIM_WALK_SPEED), 0.0, 1.0) if on else 0.0
+	# the contact lock: on while the clip strides on the turf (any gait), off under posed legs
+	var lock := 1.0 if foot_lock_on and on and Vector2(velocity.x, velocity.z).length() > 0.5 else 0.0
 	if crumple != null and crumple.active:
 		warp *= 1.0 - clampf(crumple.leg_aim, 0.0, 1.0)
+		lock *= 1.0 - clampf(crumple.leg_aim * 2.0, 0.0, 1.0)
 	if not is_on_floor() or climbing or gliding or dodge_t >= 0.0 or pivot_t >= 0.0 or stop_t >= 0.0 or start_t >= 0.0:
 		warp = 0.0                             # a posed step owns the legs: let go at its own pace
+		lock = 0.0
 		_warp = move_toward(_warp, 0.0, delta * 15.0)
+	if combat != null and (combat.is_attacking() or combat.is_plunging()):
+		lock = 0.0                             # a lunge slides the feet on purpose
 	_warp = move_toward(_warp, warp, delta * 6.0)
 	if stride_warp != null:
-		stride_warp.k = lerpf(1.0, RUN_STRIDE_K, _warp)
+		stride_warp.k = lerpf(1.0, run_stride_k(Vector2(velocity.x, velocity.z).length()), _warp)
+		stride_warp.lock = move_toward(stride_warp.lock, lock, delta * 8.0)
 
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:
@@ -435,7 +452,7 @@ func _update_animation(delta: float) -> void:
 	if not is_on_floor() and (_jumped or _air_t > 0.15):
 		hspeed = 0.0                             # in the air the jump pose owns the legs: no stride
 	# turning on the spot: short steps (the walk at a third of its reach, quick cadence)
-	var goal := maxf(minf(hspeed, ANIM_RUN_SPEED), turn_shuffle * ANIM_WALK_SPEED * 0.45)
+	var goal := maxf(gait_blend(hspeed), turn_shuffle * ANIM_WALK_SPEED * 0.45)
 	var blend_k := 10.0
 	if start_t >= 0.0 and start_t > START_TIME * 0.15:
 		goal = ANIM_RUN_SPEED                  # the legs are posed: put the clip on the run alone
@@ -461,10 +478,8 @@ func _update_animation(delta: float) -> void:
 	# the run: the stride is lengthened (StrideWarp) and the cadence set so the planted foot
 	# travels back exactly as fast as the body goes forward; faded out under any posed legs
 	_update_warp(delta, true)
-	if hspeed > ANIM_RUN_SPEED:
-		ts = hspeed / lerpf(ANIM_RUN_SPEED, RUN_STRIDE_SPEED * RUN_STRIDE_K, _warp)
-	elif hspeed > 0.2 and hspeed < ANIM_WALK_SPEED:
-		ts = maxf(hspeed / ANIM_WALK_SPEED, 0.6)
+	if hspeed > 0.2:
+		ts = maxf(hspeed / clip_stride_speed(), 0.6)
 	if turn_shuffle > 0.05 and hspeed < 0.6:
 		ts = lerpf(ts, 1.25, turn_shuffle)
 	if pivot_t >= 0.0:
@@ -480,6 +495,28 @@ func _update_animation(delta: float) -> void:
 	if combat != null and combat.hitstop > 0.0:
 		ts = 0.0                               # hit-stop: the whole body freezes in the contact
 	anim_tree.set("parameters/speed/scale", ts)
+
+## Blend position for a ground speed: walk point held to WALK_TOP, a short band to the run point.
+func gait_blend(v: float) -> float:
+	if v <= ANIM_WALK_SPEED:
+		return v
+	if v <= WALK_TOP:
+		return ANIM_WALK_SPEED
+	return lerpf(ANIM_WALK_SPEED, ANIM_RUN_SPEED, smoothstep(WALK_TOP, JOG_FROM, v))
+
+## The run clip's stride scale (StrideWarp k) at a ground speed: short at a jog, long at a run.
+func run_stride_k(v: float) -> float:
+	if v > RUN_SPEED:
+		return lerpf(RUN_STRIDE_K, SPRINT_STRIDE_K, smoothstep(RUN_SPEED, SPRINT_SPEED, v))
+	return lerpf(JOG_K, RUN_STRIDE_K, smoothstep(JOG_FROM, RUN_SPEED, v))
+
+## m/s the stance foot travels back at 1x cadence for the clip mix and the warp as they are now.
+func clip_stride_speed() -> float:
+	var w := clampf((_blend - ANIM_WALK_SPEED) / (ANIM_RUN_SPEED - ANIM_WALK_SPEED), 0.0, 1.0)
+	var under := clampf(_blend / ANIM_WALK_SPEED, 0.05, 1.0)   # idle -> walk: the stride shrinks
+	var base := lerpf(WALK_STRIDE_SPEED * under, RUN_STRIDE_SPEED, w)
+	var k := stride_warp.k if stride_warp != null else 1.0
+	return base * k
 
 # --- camera shake: trauma decays; offset ~ trauma^2 on two incommensurate sines per axis ---
 var _trauma := 0.0

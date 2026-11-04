@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -196,6 +196,9 @@ func _ready() -> void:
 		return
 	if name == "start":
 		_start_test()
+		return
+	if name == "stride":
+		_stride_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -1033,6 +1036,84 @@ func _stop_test() -> void:
 			return _combat_done(false, "a foot jumps %.3f m in a tick when a stop cut short at %.2f s hands back to the run (steady run %.3f)" % [c[3], c[0], c[4]])
 	_combat_done(true, "letting go at a run plants the front foot heel first, folds the back knee, drops the hips and halts in a short skid; a walk just stops; the stick cuts it short")
 
+## Stride: at a steady walk, run and sprint the foot flat on the turf holds still (the cadence
+## and the stride warp match the clip's stride to the ground speed at every gait).
+func _stride_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var skel: Skeleton3D = p.crumple.get_skeleton()
+	var fnames := PackedStringArray(["mixamorig_LeftFoot", "mixamorig_RightFoot"])
+	p.crumple.probe = fnames
+	p.crumple.active = true
+	await _ticks(10)
+	if OS.has_environment("BOT_DEBUG"):
+		print("   skel scale %s" % str(skel.global_basis.get_scale()))
+	var rest_h := 0.0
+	for k in 2:
+		rest_h += ((skel.global_transform * (p.crumple.probed[fnames[k]] as Vector3)).y - p.global_position.y) * 0.5
+	var out := []
+	var gaits := [["walk", 0.5, false], ["run", 1.0, false], ["sprint", 1.0, true]]
+	if OS.has_environment("STRIDE_SWEEP"):
+		p.foot_lock_on = false
+		gaits = []
+		for m in [0.2, 0.35, 0.5, 0.6, 0.65, 0.75, 0.85, 1.0]:
+			if OS.has_environment("STRIDE_LOCK"):
+				p.foot_lock_on = true
+			gaits.append(["stick %.2f" % m, m, false])
+		gaits.append(["sprint", 1.0, true])
+	for gait in gaits:
+		var flat := [0.0, 0]
+		var along := 0.0
+		var worst := 0.0
+		var sprev = null
+		var dir := Vector2(0, -1)
+		var v := 0.0
+		var ts := 0.0
+		for i in 270:
+			if i % 90 == 0:
+				dir = Vector2(0, -1) if (i / 90) % 2 == 0 else Vector2(0, 1)   # turn back now and then: stay on the meadow
+			p.bot_input = dir * float(gait[1])
+			p.bot_sprint = gait[2]
+			p.stamina = p.stamina_max
+			p.crumple.active = true
+			await get_tree().physics_frame
+			var snow = _stance_foot(p, skel, fnames)
+			var sk := _skate(snow, sprev)
+			var sprev_pos = sprev[0] if sprev != null else null
+			sprev = snow
+			if i % 90 < 45 or sk < 0.0:
+				continue                         # let the gait settle after each turn
+			if p.pivot_t >= 0.0 or p.stop_t >= 0.0 or p.start_t >= 0.0:
+				continue
+			v = Vector2(p.velocity.x, p.velocity.z).length()
+			ts = p.anim_tree.get("parameters/speed/scale")
+			if OS.has_environment("BOT_DEBUG"):
+				print("   %s i %d h %+.3f slip %.3f v %.2f ts %.2f blend %.2f warp %.2f lock %.2f corr %.3f pins %s" % [gait[0], i, (snow[0] as Vector3).y - p.global_position.y - rest_h, sk, v, ts, p._blend, p.stride_warp.k, p.stride_warp.lock, p.stride_warp.corrected, str(p.stride_warp._pin_w)])
+			if (snow[0] as Vector3).y - p.global_position.y - rest_h < 0.005:
+				flat[0] += sk
+				flat[1] += 1
+				worst = maxf(worst, sk)
+				if sprev_pos != null:
+					along += ((snow[0] as Vector3) - (sprev_pos as Vector3)).dot(Vector3(p.velocity.x, 0, p.velocity.z).normalized())
+		print("BOT stride: %s at %.1f m/s (cadence %.2f, blend %.2f, warp %.2f): flat foot slips %.4f m/tick mean, %.4f worst, over %d ticks (signed along the run %+.4f)" % [gait[0], v, ts, p._blend, p.stride_warp.k, _mean(flat), worst, flat[1], along / maxf(flat[1], 1.0)])
+		out.append([gait[0], _mean(flat), flat[1], v])
+		p.bot_input = Vector2.ZERO
+		p.bot_sprint = false
+		await _ticks(60)
+	p.crumple.active = false
+	p.crumple.probe = PackedStringArray()
+	for o in out:
+		if o[2] < 6:
+			return _combat_done(false, "too few flat-foot ticks at a %s (%d)" % [o[0], o[2]])
+		var cap := 0.015 if o[0] == "sprint" else 0.012   # sprint: 0.024 before the lock; the strike tick still slips
+		if o[1] > cap:
+			return _combat_done(false, "the planted foot skates %.4f m/tick at a %s (%.1f m/s; want <= %.3f)" % [o[1], o[0], o[3], cap])
+	_combat_done(true, "the planted foot holds still on the turf at a walk, a run and a sprint")
+
 ## The two feet (body space) from the crumple probe, or [] if not probed this tick.
 func _feet_body(p, skel: Skeleton3D, names: PackedStringArray) -> Array:
 	if p.crumple.probed.size() < names.size():
@@ -1681,7 +1762,7 @@ func _dodge_test() -> void:
 	# live: end a swing, press light mid-ease, and the first frame must match the ease pose
 	await _ticks(30)
 	print("BOT dodge: before live opener state %d stamina %.0f" % [c.state, p.stamina])
-	p.stamina = 100.0
+	p.stamina = p.stamina_max
 	c.state = StaffCombat.READY
 	c.idle_t = 0.0
 	c.step = -1
