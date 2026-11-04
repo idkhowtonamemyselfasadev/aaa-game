@@ -548,6 +548,21 @@ func _plunge_pose() -> Array:
 		pose = _pose_at([[0.0] + RAISED, [1.0] + PLUNGE_DOWN], down)
 	return pose
 
+var last_plunge_crack: GroundCrack   # the turf the last plunge split (bots read this)
+
+## Where the ferrule went in, the turf splits in a crack star sized to the burst, the sward is
+## laid flat outward and a low ring of dust runs out to the burst's edge: the same marks the
+## Stone Sentinel's glaive leaves, without its shock (the burst already did the striking).
+func _plunge_marks(at: Vector3, radius: float) -> void:
+	var c := GroundCrack.new()
+	c.harmless = true
+	c.ring_r = radius
+	c.size_k = clampf(radius / GroundCrack.RING_R * 1.15, 0.55, 1.1)
+	player.get_parent().add_child(c)
+	c.global_position = at - Vector3.UP * 0.05
+	c.rotation.y = player.body.global_rotation.y
+	last_plunge_crack = c
+
 ## The plunge meets the ground (the player calls this on touchdown): every foe inside the
 ## burst is struck outward, the turf bursts, the camera takes it, then the hero rises.
 func plunge_land(drop: float) -> void:
@@ -578,6 +593,7 @@ func plunge_land(drop: float) -> void:
 		_land_hit(target, point, dir)
 	hitstop = HITSTOP * power * (1.0 if last_plunge_hits > 0 else 0.5)
 	ImpactFX.spawn(player.get_parent(), front, Vector3.DOWN, "stone", 1.0 + 0.5 * power)
+	_plunge_marks(at, radius)
 	player.add_shake(0.25 + 0.15 * power)
 	slammed.emit(front, 0.8 + 0.4 * power)
 	plunged.emit(at, power, radius)

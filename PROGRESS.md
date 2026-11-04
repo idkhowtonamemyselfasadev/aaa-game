@@ -37,6 +37,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- **(04:20 11-04) Plunge landing leaves its marks + deepest crouch (bots `airstrike` `jump` `sentinel` PASS).**
+  `fx/ground_crack.gd` gained `harmless` (no shock check: the ring just runs out), `ring_r` (per-instance shock
+  radius, replaces the const in the run/check) and `size_k` (crack-star decal and grass-laying rings scale). The
+  Sentinel's use is unchanged. `combat.gd` `_plunge_marks()` spawns a harmless GroundCrack on every plunge landing:
+  crack star sized to the burst (size_k = radius/4.4 x 1.15, clamped 0.55-1.1), the sward laid flat outward, chips,
+  a pit puff and a low dust ring that runs out to the burst radius (2.2-4.5 m by height); `last_plunge_crack` for
+  bots. `player.gd` `_land_plunge`: a plunge landing sinks 0.42 m (hard landing 0.30) with the chest folded 0.62
+  over the knees. `bot airstrike` now checks the marks (crack present, harmless, ring = plunge_radius(drop), >= 20
+  grass points laid, deep crouch). `shot.gd` `jump` spot: new `clear` arg moves the hero 7 m off the practice post
+  and raises the lens to 2.6 m 3/4 (`jump X 20 15.0 fixfps drop clear heavy press=0.1 land=0.08`).
+  GL frames `plunge_c0.08` / `plunge_c0.3` SEEN, gallery `plunge-dust` FAIL: the low dust ring bursts out round the
+  crouched hero and reads; but the lens looks into the sun with the hero in the cottage's shadow, the figure is
+  small, and the crack star is hidden by standing grass at 0.3 s (the sward laying is herd-point based and slow
+  to show). Fix next: put the `clear` lens on the sun side (or another hour) and shift the spot onto the mown road
+  verge where the decal shows. Forward+ not attempted (time). Screenshots: xvfb + Mesa installed, GL works.
 - **(03:15 11-04) Boss surge burst: ash and embers, not snow (bots `knight` `knightleap` `knightstomp` `combat`
   `heavy` `airstrike` `soldier` `sentinel` PASS; `knightstomp` failed once on "a roll as the front arrived did not
   pass through it" and passed on two reruns, with and without this change: timing-flaky).** `fx/impact.gd`: new
@@ -6985,10 +7000,15 @@ huge and growing each phase; (2) JUMPING + AAA ANIMATION on hero, enemies, bosse
 (3) leftover audio items (AUDIO.md, 0b-e).
 GRADED MOVE LIST (rough / good / AAA; first pass 20:45 11-03, honest, from bots + past frames, not yet a frame
 sequence review): hero idle/walk/run blend: good; hero start/stop/turn-in-place: rough (none); hero jump: rough
-(00:30 11-04: real jump with coyote/buffer/variable height + procedural tuck/reach/land poses; GL frames only, no mocap clip yet); hero dodge roll: good; hero jump attack: rough (02:40 11-04: procedural overhead-to-down arc with tucked legs, GL frames only); hero plunge: rough (hang + drop + ferrule-in-the-turf impact pose, GL frames only, body lands too upright); hero light string: good; hero heavy smash: good; hero hit react /
+(00:30 11-04: real jump with coyote/buffer/variable height + procedural tuck/reach/land poses; GL frames only, no mocap clip yet); hero dodge roll: good; hero jump attack: rough (02:40 11-04: procedural overhead-to-down arc with tucked legs, GL frames only); hero plunge: rough (hang + drop + ferrule-in-the-turf impact pose; 04:20 11-04: lands 0.42 m deep with the chest folded over, crack star + dust ring + flattened sward at the landing; GL frames only); hero light string: good; hero heavy smash: good; hero hit react /
 knock-down: rough; hero climb/glide: rough; foot IK on slopes: rough (none); Hollow stalk/thrust/sweep: good;
 Hollow stagger/death crumble: good; Ashen Knight surge/growth: rough (scale-up + FX: seams spit sparks, cracks
 blaze, grit off the stones, recorded roar; the body is still only a knee pose, no heave/roar animation); Ashen Knight intro roar (glaive heave): rough (pose lerp + shudder, no head/arm follow-through yet); Ashen Knight ember leap: good; Ashen Knight stomp (knee-up tell, stamp, wave): rough (first pass 22:40 11-03: one-leg lift + lean only, no hip shift over the standing leg, GL silhouette only); giant stride at size: rough (unverified for sliding).
+0. (04:20 11-04) **PLUNGE MARKS + DEEP CROUCH DONE.** NEXT for jumping/air combat: (a) reframe `clear` (sun behind the lens, onto short turf so the crack shows), then Forward+ frames of the
+   plunge landing (`jump X 20 15.0 fixfps drop clear heavy press=0.1 land=0.08` / `land=0.3`) and of the jump at a
+   closer front 3/4 lens; (c) take-off anticipation; (d) jump off a climbing face; (e) recorded CC0 landing thud;
+   (f) plunge onto the Ashen Knight's head/shoulders from a stone. Boss: (c1b) pale speck column over the helm in
+   the surge, (c2) stomp polish, (e) Forward+ boss frames, (f) foot IK.
 0. (03:15 11-04) **Surge ash burst DONE.** NEXT for the boss: (c1b) find the emitter of the pale speck column above
    the helm in `ring X 10 10.0 fixfps surge st=6` (disable BossGrowth dirt bursts / GritFall one at a time) and darken
    or cap it; frame the ash from a side with sky behind it (it is lost against the armour from the gate); then the

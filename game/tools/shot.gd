@@ -868,10 +868,20 @@ func _ready() -> void:
 			if a.begins_with("jt="):
 				jump_t = float(a.substr(3))
 		var pp := player.global_position
+		if "clear" in args:
+			# clear: off the practice post, onto open turf, with a raised 3/4 lens that sees the
+			# crack star and the dust ring round a plunge's landing
+			pp += Vector3(-7.0, 0, 0)
+			pp.y = terrain.height_at(pp.x, pp.z) + 0.05
+			player.global_position = pp
 		var light: Vector3 = -world.sun.global_transform.basis.z
 		var side := Vector3(0, 0, 1) if -light.z > 0.0 else Vector3(0, 0, -1)
 		var mid := pp + Vector3(1.8 if not "drop" in args else 0.0, 0, 0)
 		SPOTS[spot] = [mid + side * 4.2 + Vector3(0.4, 0, 0), mid]
+		if "clear" in args:
+			var jcam := mid + side * 5.2 + Vector3(2.2, 0, 0)
+			jcam.y = terrain.height_at(jcam.x, jcam.z) + 2.6
+			SPOTS[spot] = [jcam, mid + Vector3.UP * 0.5]
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
 		dodge_u = 0.35

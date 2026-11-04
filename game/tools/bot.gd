@@ -872,6 +872,13 @@ func _airstrike_test() -> void:
 		return _combat_done(false, "a heavy at the top of a jump did not plunge onto the post")
 	if vmin > -StaffCombat.PLUNGE_SPEED + 1.0 or y0 - hang_y > 0.35:
 		return _combat_done(false, "the plunge does not hang then drive straight down")
+	var pc := c.last_plunge_crack
+	await _ticks(3)
+	var pc_ok := pc != null and is_instance_valid(pc) and pc.harmless and pc.blasted >= 20 \
+		and absf(pc.ring_r - StaffCombat.plunge_radius(p.last_drop)) < 0.01 and pc.result != "hit"
+	print("BOT airstrike: plunge marks -> crack %s, ring %.2f m, grass laid %d, size %.2f, deep crouch %s" % [pc != null, pc.ring_r if pc else 0.0, pc.blasted if pc else 0, pc.size_k if pc else 0.0, p._land_plunge])
+	if not pc_ok or not p._land_plunge:
+		return _combat_done(false, "the plunge left no crack star / dust ring, or it struck the hero")
 	for i in 90:
 		await get_tree().physics_frame
 		if not c.is_attacking():

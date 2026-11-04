@@ -19,6 +19,9 @@ var source: Node               # receive_attack's attacker (the sentinel)
 var player: Player
 var terrain: Terrain
 var spare_player := false      # the glaive already struck (or the hero was parrying): no second blow
+var harmless := false          # the hero's own plunge: the marks and the dust, no shock to take
+var ring_r := RING_R           # m this shock runs out (the hero's plunge: its burst radius)
+var size_k := 1.0              # crack star / chip scale (set before add_child)
 var t := 0.0
 var result := ""               # "" until the ring reaches the hero: hit / perfect / dodged / jumped / miss
 var front := 0.0
@@ -36,7 +39,7 @@ static var _soft: ImageTexture
 
 func _ready() -> void:
 	_decal = Decal.new()
-	_decal.size = Vector3(3.6, 1.4, 3.6)
+	_decal.size = Vector3(3.6 * size_k, 1.4, 3.6 * size_k)
 	_decal.texture_albedo = crack_texture()
 	_decal.albedo_mix = 1.0
 	_decal.upper_fade = 0.3
@@ -74,7 +77,7 @@ func _blast_grass() -> void:
 	tr.add_herd_point(c, Vector2(1, 0).rotated(randf() * TAU), 1.0, 0.0, 0.15)
 	blasted += 1
 	for ring: Array in [[0.85, 7, 1.0], [1.7, 11, 0.8], [2.6, 14, 0.5]]:
-		var r: float = ring[0]
+		var r: float = ring[0] * size_k
 		var k: int = ring[1]
 		var off := randf() * TAU
 		for i in k:
@@ -85,15 +88,19 @@ func _blast_grass() -> void:
 func _physics_process(delta: float) -> void:
 	var prev := front
 	t += delta
-	front = minf(t * RING_SPEED, RING_R + 0.5)
+	front = minf(t * RING_SPEED, ring_r + 0.5)
 	if _front_dust.emitting:
-		if front >= RING_R:
+		if front >= ring_r:
 			_front_dust.emitting = false
 		else:
 			_front_dust.emission_ring_radius = maxf(front, 0.7)
 			_front_dust.emission_ring_inner_radius = maxf(front - 0.25, 0.5)
 	if result == "" and front > prev:
-		_check_ring(prev)
+		if harmless:
+			if front >= ring_r:
+				result = "miss"
+		else:
+			_check_ring(prev)
 	var u := clampf((t - 2.5) / (LIFE - 2.5), 0.0, 1.0)
 	_decal.modulate = Color(1, 1, 1, 1.0 - u * u)
 	if t > LIFE + 0.5:
@@ -105,8 +112,8 @@ func _check_ring(_prev: float) -> void:
 		return
 	var d := player.global_position - global_position
 	var flat := Vector2(d.x, d.z).length()
-	if flat > RING_R or absf(d.y) > 1.8:
-		if front >= RING_R:
+	if flat > ring_r or absf(d.y) > 1.8:
+		if front >= ring_r:
 			result = "miss"
 			rang.emit(result)
 		return

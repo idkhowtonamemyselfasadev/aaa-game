@@ -190,6 +190,7 @@ var _prev_pos := Vector3.ZERO
 var _jump_from_sprint := false
 var land_t := -1.0                      # s into a landing (-1 none)
 var _land_hard := false
+var _land_plunge := false             # the landing was a plunge: deepest crouch, chest over the knees
 var _land_dur := LAND_SOFT
 var jumps := 0                          # (bots) jumps taken
 var landings := 0                       # (bots) touchdowns, and the last one's fall
@@ -861,6 +862,7 @@ func _touch_down() -> void:
 	landings += 1
 	last_drop = drop
 	_land_hard = drop >= HARD_DROP or plunged   # a plunge always lands in the deep crouch
+	_land_plunge = plunged
 	_land_dur = LAND_HARD if _land_hard else LAND_SOFT
 	land_t = 0.0
 	if _land_hard:
@@ -925,12 +927,14 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
 		var env := sin(PI * minf(u / 0.3, 1.0) * 0.5) * (1.0 - smoothstep(0.3, 1.0, u))
 		var depth := 0.3 if _land_hard else 0.1
+		if _land_plunge:
+			depth = 0.42                       # driven in: the knees fold deep over the ferrule
 		dip = depth * env
 		# legs folding so the feet stay put under the lowered hips (2 x 0.45 m segments)
 		var a := acos(clampf(1.0 - dip / 0.9, -1.0, 1.0))
 		hip = a * 1.15
 		knee = a * 2.0
-		spine = (0.45 if _land_hard else 0.18) * env
+		spine = (0.62 if _land_plunge else 0.45 if _land_hard else 0.18) * env
 		arm = (0.5 if _land_hard else 0.2) * env
 		elbow = 0.5 * env
 		_tuck = 0.0
