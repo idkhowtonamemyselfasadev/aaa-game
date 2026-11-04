@@ -16,6 +16,9 @@ const GRAVITY := 22.0
 # than the way up, so the arc never floats. In the air the stick steers, but only gently.
 const COYOTE := 0.12
 const JUMP_BUFFER := 0.12
+const PUSH_CROUCH := 0.05             # s of the take-off drawn sunk in the crouch it pushed from
+const PUSH_LINE := 0.15               # s by which the extended push line has gathered into the tuck
+const PUSH_DIP := 0.17                # m the hips are drawn low on the take-off frame
 const JUMP_CUT_GRAVITY := 2.6        # x GRAVITY while rising with the button released
 const FALL_GRAVITY := 1.3            # x GRAVITY on the way down
 const AIR_ACCEL := 5.5               # m/s^2 of steering in the air (ACCEL on the ground)
@@ -895,6 +898,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			land_t = -1.0
 	var landing := land_t >= 0.0 and not busy and not air
 	var want := 1.0 if (air or landing) else 0.0
+	var push := air and _jumped and _air_t < PUSH_CROUCH
+	if push:
+		_jp = 1.0                             # the take-off owns the legs from its first frame
 	_jp = move_toward(_jp, want, delta * (14.0 if want > _jp else 8.0))
 	if _jp <= 0.0:
 		if crumple.leg_aim > 0.0:
@@ -908,10 +914,19 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var elbow := 0.0
 	var stride := 0.0
 	var dip := 0.0
+	var ankle := 0.0
+	var flat := 0.0
 	if air:
+		# take-off: the jump leaves at once, but the body shows the push that made it: the
+		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
+		# over the knees), the legs then drive out straight with the toes pointed and the arms
+		# thrown up, and only then gather into the rising tuck
+		var t_air := _air_t if _jumped else 1.0
+		var crouch := 1.0 - smoothstep(0.0, PUSH_CROUCH, t_air)
+		var line := 1.0 - smoothstep(PUSH_CROUCH, PUSH_LINE, t_air)   # the extended push line
 		# up: a rising tuck (fast in, held over the apex); down: the legs open to reach
-		var t_in := _air_t if _jumped else 0.0
-		_tuck = lerpf(_tuck, clampf(t_in / 0.22, 0.0, 1.0) if _jumped else 0.25, k)
+		var t_in := maxf(t_air - PUSH_CROUCH, 0.0) if _jumped else 0.0
+		_tuck = lerpf(_tuck, clampf(t_in / 0.2, 0.0, 1.0) if _jumped else 0.25, k)
 		var reach := clampf(-velocity.y / 9.0, 0.0, 1.0)
 		var tk := _tuck * (1.0 - 0.7 * reach)
 		hip = 0.95 * tk + 0.28 * reach
@@ -922,6 +937,22 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		stride = 0.22 * tk if _jumped else 0.0  # lead knee higher, the other arm forward
 		if _jump_from_sprint:
 			stride = 0.42 * tk                  # a running leap: a long split stride
+		# toes trail pointed through the rise, then come up level as the legs reach for the ground
+		ankle = 0.75 * line * (1.0 - crouch) + 0.25 * tk * (1.0 - reach) - 0.35 * (knee - hip) * reach
+		arm = maxf(arm, 1.5 * line * (1.0 - crouch) + 0.2 * crouch)   # thrown up past the shoulders
+		elbow = lerpf(elbow, 0.75, line * (1.0 - crouch))   # elbows bent, not reaching like a sleepwalker
+		spine -= 0.06 * line * (1.0 - crouch)  # the chest opens up on the drive
+		if crouch > 0.0:
+			var a0 := acos(clampf(1.0 - PUSH_DIP * crouch / 0.9, -1.0, 1.0))
+			# drawn down by the crouch and by what the capsule has already risen, so the
+			# soles are still on the turf they push from
+			dip = (PUSH_DIP + clampf(global_position.y - _jump_y0, 0.0, 0.3)) * crouch
+			hip = lerpf(hip, a0 * 1.15, crouch)
+			knee = lerpf(knee, a0 * 2.0, crouch)
+			spine = lerpf(spine, 0.32, crouch)
+			arm = lerpf(arm, -0.45, crouch)     # arms swung back behind the hips, ready to throw
+			ankle *= 1.0 - crouch
+			flat = crouch
 	elif landing:
 		var u := land_t / _land_dur
 		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
@@ -937,6 +968,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		spine = (0.62 if _land_plunge else 0.45 if _land_hard else 0.18) * env
 		arm = (0.5 if _land_hard else 0.2) * env
 		elbow = 0.5 * env
+		flat = 1.0                             # the soles stay flat on the turf as the knees give
 		_tuck = 0.0
 	if armed:
 		arm = 0.0                              # the staff's IK owns the arms
@@ -950,12 +982,29 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	crumple.arm = lerpf(crumple.arm, arm * _jp, k)
 	crumple.elbow = lerpf(crumple.elbow, elbow * _jp, k)
 	crumple.stride = lerpf(crumple.stride, stride * _jp, k)
+	crumple.ankle = lerpf(crumple.ankle, ankle * _jp, k)
+	crumple.sole_flat = lerpf(crumple.sole_flat, flat * _jp, k)
+	if push:
+		# the push frames are drawn as posed, not eased in: the crouch only lasts a frame or two
+		crumple.hip = hip
+		crumple.knee = knee
+		crumple.spine = spine
+		crumple.arm = arm
+		crumple.elbow = elbow
+		crumple.ankle = ankle
+		crumple.sole_flat = flat
+	elif landing:
+		# on the turf the soles are a contact, not a pose: they meet the ground flat at once
+		crumple.ankle = 0.0
+		crumple.sole_flat = _jp
 	if garb != null:
 		garb.posed_legs = true
 	if not busy:
 		model.transform = Transform3D(Basis(), Vector3(0, -dip, 0)) * _model_rest
 
 func _clear_jump_pose() -> void:
+	if _jp > 0.0 and model != null:
+		model.transform = _model_rest          # the take-off/landing dip goes with the pose
 	_jp = 0.0
 	_tuck = 0.0
 	if crumple == null:
@@ -967,6 +1016,8 @@ func _clear_jump_pose() -> void:
 	crumple.arm = 0.0
 	crumple.elbow = 0.0
 	crumple.stride = 0.0
+	crumple.ankle = 0.0
+	crumple.sole_flat = 0.0
 	crumple.active = false
 	if garb != null:
 		garb.posed_legs = false

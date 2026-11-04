@@ -39,6 +39,10 @@ var square := 0.0            # 0..1: turn the hips and chest square to the body 
 var arm_aim := 0.0           # 0..1: likewise hang both arms straight at the sides before arm/elbow bend
 var leg_aim := 0.0           # 0..1: first hang both legs straight and plumb (the body's down, a touch apart),
 							 # whatever stance the clip had, so hip/knee/stride bend from an even start
+var ankle := 0.0             # radians, positive points the toes down (a push-off, a reach for the
+							 # ground); negative lifts them
+var sole_flat := 0.0         # 0..1: the feet turned back by what the hip/knee/stride bends tipped
+							 # them, so a folded leg keeps its sole flat on the ground
 var stride := 0.0            # radians: climbing reach, + raises the left arm and right leg, - the other pair
 var frame := Basis()         # the skeleton's rest orientation in body space (set by Player)
 var plant := 0.0             # 0..1: both wrists reach for hand_target (holds on a climbing face)
@@ -71,6 +75,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 			_hang_leg(skel, side, (-up + x * sg * 0.1).normalized())
 		_bend(skel, "mixamorig_%sUpLeg" % side, x, -(hip - stride * sg * 1.1) - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, knee - stride * sg * 1.3)
+		_bend(skel, "mixamorig_%sFoot" % side, x, ankle - sole_flat * (knee - hip - 0.2 * stride * sg))
 		if arm_aim > 0.0:
 			_hang(skel, "mixamorig_%sArm" % side, "mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side,
 				(-up + x * sg * 0.3).normalized(), arm_aim)

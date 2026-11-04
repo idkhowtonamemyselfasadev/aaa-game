@@ -642,24 +642,43 @@ func _jump_test() -> void:
 	var apex := []
 	var tuck := 0.0
 	var dip := 0.0
+	var push_knee := 0.0
+	var push_drop := 0.0
+	var push_rise := 0.0
+	var push_sole := 0.0
+	var point := 0.0
+	var land_sole := 0.0
 	for hold in [false, true]:
 		await ground.call()
 		var j0 := p.jumps
 		p.bot_jump = true
 		p.bot_jump_hold = hold
 		await _ticks(1)
+		if hold:
+			# the take-off frame is drawn sunk in the crouch it pushed from, soles flat
+			push_knee = p.crumple.knee
+			push_drop = -p.model.transform.origin.y + p._model_rest.origin.y
+			push_rise = p.global_position.y - p._jump_y0
+			push_sole = absf(p.crumple.ankle) + (1.0 - p.crumple.sole_flat)
 		if not hold:
 			p.bot_jump_hold = false
+		var deepest := 0.0
 		for i in 120:
 			await get_tree().physics_frame
 			if hold:
 				tuck = maxf(tuck, p.crumple.knee)
+				if p._air_t > 0.06 and p._air_t < 0.12:
+					point = maxf(point, p.crumple.ankle)
 			dip = maxf(dip, -p.model.transform.origin.y + p._model_rest.origin.y)
 			if p.is_on_floor() and i > 3:
 				break
 		for i in 20:
 			await get_tree().physics_frame
-			dip = maxf(dip, -p.model.transform.origin.y + p._model_rest.origin.y)
+			var d := -p.model.transform.origin.y + p._model_rest.origin.y
+			dip = maxf(dip, d)
+			if hold and d > deepest:
+				deepest = d
+				land_sole = absf(p.crumple.ankle) + (1.0 - p.crumple.sole_flat)
 		p.bot_jump_hold = false
 		if p.jumps != j0 + 1:
 			return _combat_done(false, "the jump press did not jump (hold %s)" % hold)
@@ -671,6 +690,13 @@ func _jump_test() -> void:
 		return _combat_done(false, "the legs do not tuck on the rise")
 	if dip < 0.05:
 		return _combat_done(false, "the knees do not give on landing")
+	print("BOT jump: take-off frame knee %.2f rad, drawn down %.3f m (capsule up %.3f), sole tilt %.3f; toes pointed %.2f rad on the drive; landing sole tilt %.3f" % [push_knee, push_drop, push_rise, push_sole, point, land_sole])
+	if push_knee < 0.6 or push_drop < push_rise + 0.1:
+		return _combat_done(false, "the take-off frame is not drawn in a crouch with the soles down")
+	if push_sole > 0.1 or land_sole > 0.15:
+		return _combat_done(false, "the soles do not stay flat in the push or the landing")
+	if point < 0.35:
+		return _combat_done(false, "the toes do not point on the drive")
 	# 2) coyote: fall off (lifted 1 m from the ground), press 0.07 s later: still a jump
 	await ground.call()
 	p.global_position = base + Vector3.UP * 1.0

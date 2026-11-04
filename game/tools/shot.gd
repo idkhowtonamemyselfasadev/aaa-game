@@ -882,6 +882,11 @@ func _ready() -> void:
 			var jcam := mid + side * 5.2 + Vector3(2.2, 0, 0)
 			jcam.y = terrain.height_at(jcam.x, jcam.z) + 2.6
 			SPOTS[spot] = [jcam, mid + Vector3.UP * 0.5]
+		if "close" in args:
+			# close: a near side-on lens on the take-off spot itself (the hero is carried back
+			# there once frozen), for the push-off and landing poses; flip takes the other side
+			var cs := -side if "flip" in args else side
+			SPOTS[spot] = [pp + cs * 3.3 + Vector3(0.5, 0, 0), pp + Vector3(0.2, 0, 0)]
 	if spot == "dodge":
 		# dodge [u=0.35]: dash-step to world +X frozen mid-dash, side-on from the sun side
 		dodge_u = 0.35

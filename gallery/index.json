@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261029-0250-roadmeet.jpg",
-  "time": "2026-10-29T02:50:11Z",
-  "caption": "Second road event: Hild the wool-wife and Wat the pedlar stopped face to face on the cart track mid-word, creels on their backs; still wrong: the lens sees them three-quarter from behind (no faces), they stand 2.6 m apart, and the armoured base body reads through on their legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261029-0450-roadmeet-profile.jpg",
-  "time": "2026-10-29T04:50:14Z",
-  "caption": "Wat and Hild stopped mid-word on the cart track, now seen side-on about 1.4 m apart and turned to each other, creels on their backs, the village behind; still wrong: the sun behind them leaves their faces dark, and the armoured base body reads as plate on both.",
-  "verdict": "fail"
- },
- {
   "file": "20261029-0544-roadmeet-woolhose.jpg",
   "time": "2026-10-29T05:44:00Z",
   "caption": "Wat and Hild on the cart track: their legs and waists now read as matte grey wool hose instead of glossy black plate greaves; still wrong: the armoured base body's bulky knee cops and boots keep the silhouette, and from this verge they still face away so no faces read.",
@@ -885,6 +873,18 @@
   "file": "20261104-0552-surge-side.jpg",
   "time": "2026-11-04T05:52:20Z",
   "caption": "New low flank view one second into the phase-2 growth: charred ash flakes drift up dark against the sky and the ring of fire stands round the knight. GL frame taken before the flame shader's fog fix; the flames still look like flat sprites.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0624-jump-push.jpg",
+  "time": "2026-11-04T06:24:19Z",
+  "caption": "Jump take-off, 1/60 s after the press (GL): the hero is drawn low with the soles still on the turf, pushing out of a crouch. The lens is from behind rather than the side, and the feet are too dark to check the toes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261104-0624-jump-line.jpg",
+  "time": "2026-11-04T06:24:19Z",
+  "caption": "Jump 0.1 s in (GL): legs driven straight, an arm thrown up with the elbow bent, before the tuck. The pose reads, but it is a procedural layer over the clip with no mocap take-off, and the hero is backlit and small.",
   "verdict": "fail"
  }
 ]
