@@ -2968,7 +2968,7 @@ func _knight_test() -> void:
 				print("BOT knight: score back in for phase %d at %.1f s (section %.1f), gain %.2f" % [k.phase, bpl.get_playback_position(), at, mu.gains["steeps"]])
 		if k.phase == 2 and k.last_result == "hit" and k.strikes > p2_strikes0:
 			p2_hits += 1
-		if p.health < 40.0:
+		if p.health < 60.0:                  # a phase-3 blow + its burning ground can take ~50
 			p.health = Player.HEALTH_MAX      # the bot tests the knight, not survival
 		if p.stamina < 25.0:
 			p.stamina = p.stamina_max
@@ -6369,6 +6369,8 @@ func _flinch_test() -> void:
 	var s: HollowSoldier = _world.soldier
 	var c: StaffCombat = p.combat
 	await _ticks(10)
+	Engine.time_scale = 1.0                 # sample the stagger tick by tick
+	p.flinch_steps_on = OS.get_environment("FLINCH_OLD") == ""
 	# draw first so the raise starts on time
 	p.bot_heavy = true
 	await _ticks(2)
@@ -6398,11 +6400,41 @@ func _flinch_test() -> void:
 	# still holding heavy and mashing light: nothing may start while reeling
 	var sw := c.swings
 	var max_lean := 0.0
+	# the feet through the stagger: the lower foot of each tick (the one bearing weight) should
+	# not travel against the shove (forward strides skating backward: the old moonwalk)
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var fb := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+	var prev := [Vector3.ZERO, Vector3.ZERO]
+	var slip := 0.0
+	var slip_n := 0
+	var ticks := 0
+	var head_back := 0.0
+	p.crumple.probe = PackedStringArray(["mixamorig_Head", "mixamorig_Hips", "mixamorig_LeftFoot", "mixamorig_RightFoot"])
+	var offs := []
 	while p.flinch_t >= 0.0 and p.flinch_t < Player.FLINCH_TIME * 0.9:
 		p.bot_attack = true
-		max_lean = maxf(max_lean, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		max_lean = maxf(max_lean, maxf(absf(p.crumple.pelvis), absf(p.crumple.spine)))
 		await get_tree().physics_frame
+		var pr: Dictionary = p.crumple.probed
+		var cur := [skel.global_transform * (pr.get("mixamorig_LeftFoot", Vector3.ZERO) as Vector3), skel.global_transform * (pr.get("mixamorig_RightFoot", Vector3.ZERO) as Vector3)]
+		var off: Vector3 = p.body.global_basis.inverse() * (skel.global_basis * ((pr.get("mixamorig_Head", Vector3.ZERO) as Vector3) - (pr.get("mixamorig_Hips", Vector3.ZERO) as Vector3)))
+		offs.append(off)
+		if ticks > 0:
+			var lo := 0 if cur[0].y < cur[1].y else 1
+			if absf(cur[0].y - cur[1].y) > 0.03 and cur[lo].y - p.global_position.y < 0.16:
+				var d: Vector3 = cur[lo] - prev[lo]
+				slip += Vector2(d.x, d.z).length()
+				slip_n += 1
+		prev = cur
+		ticks += 1
 	p.bot_heavy = false
+	for o in offs:
+		head_back = maxf(head_back, Vector2(o.x - offs[-1].x, o.z - offs[-1].z).length())
+	print("BOT flinch: chest %.2f rad, neck %.2f, twist %.2f, head moved %.2f m off the hips, planted foot slip %.3f m/tick over %d ticks" % [p.flinch_chest_peak, p.flinch_head_peak, p.flinch_twist_peak, head_back, slip / maxf(slip_n, 1), slip_n])
+	if head_back < 0.06 or absf(p.flinch_head_peak) < 0.15:
+		return _combat_done(false, "the head does not react to the blow")
+	if slip_n < 8 or slip / slip_n > 0.015:
+		return _combat_done(false, "the planted foot skates through the stagger")
 	await _ticks(20)
 	var pushed := (p.global_position - start)
 	var away := (p.global_position - s.global_position)
@@ -6411,7 +6443,7 @@ func _flinch_test() -> void:
 		return _combat_done(false, "an attack started while reeling")
 	if Vector2(pushed.x, pushed.z).length() < 0.4:
 		return _combat_done(false, "the blow did not shove the hero back")
-	if max_lean < deg_to_rad(10.0):
+	if max_lean < 0.1:
 		return _combat_done(false, "no visible hit reaction")
 	# 2) dodge out of a stagger once FLINCH_DODGE_AT has passed (direct hit, no soldier timing)
 	await _ticks(10)
@@ -6445,7 +6477,21 @@ func _flinch_test() -> void:
 	print("BOT flinch: hit on the downswing -> %s, armoured %d, flinches %d -> %d, swing kept %s" % [r, p.armoured_hits, f0, p.flinches, kept])
 	if p.armoured_hits != 1 or p.flinches != f0 or not kept:
 		return _combat_done(false, "the heavy's downswing was not armoured")
-	_combat_done(true, "late charge broken by the thrust, hero shoved and locked out, dodge breaks the stagger, heavy downswing armoured")
+	# 4) a blow from the right: the chest turns off it (right shoulder driven back), head further
+	while c.is_attacking() or p.flinch_t >= 0.0:
+		await get_tree().physics_frame
+	await _ticks(20)
+	var src := Node3D.new()
+	_world.add_child(src)
+	src.global_position = p.global_position - p.body.global_basis.x * 2.0 + Vector3.UP
+	p.receive_attack(src, 1.0)
+	while p.flinch_t >= 0.0:
+		await get_tree().physics_frame
+	src.queue_free()
+	print("BOT flinch: blow from the right -> twist %.2f rad (- turns right), active after %s" % [p.flinch_twist_peak, p.crumple.active])
+	if p.flinch_twist_peak > -0.15:
+		return _combat_done(false, "a blow from the side does not turn the chest off it")
+	_combat_done(true, "late charge broken by the thrust, hero shoved and locked out, steps back without skating, head and chest react, dodge breaks the stagger, heavy downswing armoured, side blow turns the chest")
 
 ## Death: the soldier's thrust on a hero at 10 vitality kills them; the body falls, the soldier
 ## stands down, the screen goes black, the hero wakes at the rest point whole and can fight,

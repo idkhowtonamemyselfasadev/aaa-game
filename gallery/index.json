@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261030-1114-bouldercu.jpg",
-  "time": "2026-10-30T11:14:15Z",
-  "caption": "Close crop of the same boulder: the lit face reads as weathered, stained granite with moss in its hollows; the shadow side is still a black mass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-1220-boulderfloor.jpg",
-  "time": "2026-10-30T12:50:00Z",
-  "caption": "A meadow boulder at 14:00 with the new sky-dome floor: the shaded flank now reads as cool grey granite with its cracks and moss instead of a black mass; it is a touch blue and the scene's light is still flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-1220-boulderbefore.jpg",
-  "time": "2026-10-30T12:50:00Z",
-  "caption": "The same boulder before this session's change, for comparison: the face turned from the sun is near-black, darker than the shaded grass beside it.",
-  "verdict": "fail"
- },
- {
   "file": "20261030-1330-foldfloor.jpg",
   "time": "2026-10-30T13:30:00Z",
   "caption": "The old fold at noon with the sky floor on its field stones: the shaded wall faces read as grey rubble instead of black; the stones are still blocky slabs and the light is flat.",
@@ -894,9 +876,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261105-0930-stepdown-off.jpg",
-  "time": "2026-11-05T09:30:00Z",
-  "caption": "Two steps later both boots are planted on the turf below the course and the hips are let down to the root; the shade and the plain test blocks keep it far from a Wukong frame, GL frame.",
+  "file": "20261105-1040-stagger-3.jpg",
+  "time": "2026-11-05T10:40:00Z",
+  "caption": "0.05 s into a stagger from the Hollow soldier's thrust: the hero's chest caves round the blow and the head drops while the hips give back; the cloak hides most of the body line and this is a GL quick-look, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1040-stagger-12.jpg",
+  "time": "2026-11-05T10:40:00Z",
+  "caption": "0.2 s into the stagger: the hero has stepped back about a metre on real backward steps (no skating) and is rebounding upright; the reaction is readable but modest at this distance.",
   "verdict": "fail"
  }
 ]

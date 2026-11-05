@@ -1124,6 +1124,9 @@ func _ready() -> void:
 		if spot == "soldier":
 			var back := 4.8 if "flinch" in args or "fallen" in args else 3.6
 			SPOTS[spot] = [mid + side * back - line * 0.4, mid]
+			if "flinch" in args and "close" in args:
+				# (animation review) close on the hero, side-on to the blow's line
+				SPOTS[spot] = [pp + side * 2.7 - line * 0.5, pp - line * 0.25]
 			if "fallen" in args:
 				# frame the body where it falls (forward along its facing, toward the soldier)
 				SPOTS[spot] = [pp + side * 3.0 + line * 0.2, pp + line * 0.8]
@@ -3134,9 +3137,16 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		print("SHOT parry parries %d tier %d" % [c.parries, c.tier])
 	elif "flinch" in args:
 		# the thrust gets through: the hero rocks back from it at the peak of the stagger
+		if "facefoe" in args:
+			var tf: Vector3 = foe.global_position - player.global_position
+			player.body.rotation.y = atan2(tf.x, tf.z)   # squared up to the soldier (the body faces +Z)
 		player.receive_attack(foe, HollowSoldier.DAMAGE)
 		ImpactFX.spawn(player.get_parent(), player.global_position + Vector3.UP * 1.15, foe.body.global_basis.z, "stone", 0.7)
-		for i in 6:
+		var fticks := 6
+		for a in args:
+			if a.begins_with("ft="):
+				fticks = int(a.substr(3))      # physics ticks into the stagger (a frame sequence)
+		for i in fticks:
 			player._physics_process(dt)
 		print("SHOT flinch t %.3f flinches %d" % [player.flinch_t, player.flinches])
 	elif "fallen" in args:

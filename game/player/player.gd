@@ -503,6 +503,18 @@ func _update_animation(delta: float) -> void:
 		anim_tree.set("parameters/move/blend_position", _blend)
 		anim_tree.set("parameters/speed/scale", -1.7 if _dodge_back else 1.9)
 		return
+	if flinch_t >= 0.0 and is_on_floor() and flinch_steps_on:
+		# shoved by the blow: the walk played backwards at the shove's own pace, so the feet
+		# take stagger steps back under the body instead of skating forward strides
+		_update_warp(delta, false)
+		var hv := Vector3(velocity.x, 0.0, velocity.z)
+		_blend = lerpf(_blend, ANIM_WALK_SPEED, 1.0 - exp(-25.0 * delta))
+		anim_tree.set("parameters/move/blend_position", _blend)
+		var fs := maxf(hv.length() / clip_stride_speed(), 0.35)
+		if hv.dot(body.global_basis.z) > 0.3 * hv.length():
+			fs = -fs                           # struck from behind: stumbling forward, the walk runs on
+		anim_tree.set("parameters/speed/scale", 0.0 if combat != null and combat.hitstop > 0.0 else -fs)
+		return
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	if not is_on_floor() and (_jumped or _air_t > 0.15):
 		hspeed = 0.0                             # in the air the jump pose owns the legs: no stride
@@ -1074,6 +1086,7 @@ func _physics_process(delta: float) -> void:
 	_pivot_pose()
 	_stop_pose()
 	_start_pose()
+	_flinch_layer()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
 	_update_turn_lead(delta)
 	if combat != null:
@@ -2573,8 +2586,12 @@ func _flinch(attacker: Node) -> void:
 	_flinch_dir = away.normalized() if away.length() > 1e-3 else -body.global_basis.z
 	flinch_t = 0.0
 	flinches += 1
+	flinch_head_peak = 0.0
+	flinch_chest_peak = 0.0
+	flinch_twist_peak = 0.0
 
 func _knockdown(attacker: Node) -> void:
+	_clear_flinch_layer()
 	_flinch(attacker)                      # breaks off glide/climb/swing/dodge, sets the shove
 	flinches -= 1
 	flinch_t = -1.0
@@ -2673,26 +2690,89 @@ func _pose_knockdown(t: float) -> void:
 func is_down() -> bool:
 	return down_t >= 0.0
 
-## Snap the upper body away from the blow in ~0.06 s, then let it settle back over the rest
-## of the stagger; pivot at the hip and sink a little so the feet stay under the body.
+## The stagger's whole-figure part: only a sink into the knees. The upper body's reaction is
+## taken at the joints (`_flinch_layer`), so the feet stay where the stagger steps put them.
 func _pose_flinch(u: float) -> void:
-	var env := u / 0.12 if u < 0.12 else 1.0 - smoothstep(0.12, 1.0, u)
-	env = sin(env * PI * 0.5)
-	var push := body.global_basis.inverse() * _flinch_dir
-	var axis := Vector3.UP.cross(push)
-	if axis.length() < 1e-3:
-		axis = Vector3.RIGHT
-	# a little twist off the blow's side, so it does not read as a stiff bow
-	var twist := deg_to_rad(9.0) * env * signf(push.x if absf(push.x) > 0.05 else 1.0)
-	var hip := Vector3(0, 0.95, 0)
-	var b := Basis(axis.normalized(), deg_to_rad(FLINCH_LEAN) * env) * Basis(Vector3.UP, twist)
-	var t := Transform3D(Basis(), hip) * Transform3D(b, Vector3.ZERO) * Transform3D(Basis(), -hip)
-	model.transform = Transform3D(Basis(), Vector3(0, -0.09 * env, 0)) * t * _model_rest
+	model.transform = Transform3D(Basis(), Vector3(0, -0.07 * _flinch_hit(u), 0)) * _model_rest
+
+## Impact envelope of a stagger (u = flinch_t / FLINCH_TIME): snaps to 1 in ~0.05 s, then
+## gives back over the rest of the stagger.
+func _flinch_hit(u: float) -> float:
+	if u < 0.0:
+		return 0.0
+	return sin(minf(u / 0.1, 1.0) * PI * 0.5) * (1.0 - smoothstep(0.1, 0.7, u))
+
+var _flinch_posed := false
+var flinch_steps_on := true            # (bots) the stagger's backward steps may be switched off
+
+func _clear_flinch_layer() -> void:
+	if not _flinch_posed or crumple == null:
+		return
+	for k in ["pelvis", "spine", "neck", "head_turn", "chest_twist", "arm", "elbow", "knee", "hip", "ground"]:
+		crumple.set(k, 0.0)
+	crumple.arm_lr = Vector2.ZERO
+	_flinch_posed = false
+var flinch_head_peak := 0.0            # (bots) largest neck whip (rad, signed: + head back) of the last stagger
+var flinch_chest_peak := 0.0           # (bots) largest chest crunch (spine + pelvis, rad, + forward)
+var flinch_twist_peak := 0.0           # (bots) largest chest twist off the blow (rad, signed)
+
+## The hit reaction at the joints, layered on the clip (Crumple): the hips are thrown back from
+## the blow while the chest rounds over where it landed and the head snaps the other way (the
+## whiplash, 0.02 s behind the chest), the arms fly up off the body and the chest twists away
+## from a blow on one side; then everything rebounds a little past rest and settles.
+func _flinch_layer() -> void:
+	if flinch_t < 0.0 or crumple == null or dead_t >= 0.0 or down_t >= 0.0:
+		if _flinch_posed and crumple != null:
+			_clear_flinch_layer()
+			if _jp <= 0.0 and pivot_t < 0.0 and stop_t < 0.0 and start_t < 0.0 and dead_t < 0.0 and down_t < 0.0:
+				crumple.active = false
+		return
+	var u := flinch_t / FLINCH_TIME
+	if not _flinch_posed:
+		flinch_head_peak = 0.0
+		flinch_chest_peak = 0.0
+		flinch_twist_peak = 0.0
+	_flinch_posed = true
+	var a := _flinch_hit(u)
+	var h := _flinch_hit(u - 0.04)        # the head lags the chest: whiplash
+	var r := sin(PI * clampf((u - 0.4) / 0.5, 0.0, 1.0))   # the rebound past rest
+	var e := smoothstep(0.0, 0.06, u) * (1.0 - smoothstep(0.8, 1.0, u))
+	var push := body.global_basis.inverse() * _flinch_dir   # body faces +Z, +X is its left
+	push.y = 0.0
+	if push.length() > 1e-3:
+		push = push.normalized()
+	var front := maxf(-push.z, 0.0)        # struck from ahead: thrown back
+	var rear := maxf(push.z, 0.0)          # struck from behind: thrown forward
+	var side := push.x                     # + shoved to the left: the blow came from the right
+	crumple.active = true
+	# front: hips back, chest rounds over the blow, head snaps forward then whips back on the rebound
+	# rear: pitched forward from the hips, the head flung back
+	crumple.pelvis = (-0.32 * front + 0.26 * rear) * a + (0.07 * front - 0.05 * rear) * r
+	crumple.spine = (0.2 * front + 0.12 * rear) * a - 0.06 * front * r
+	crumple.neck = (-0.32 * front + 0.38 * rear) * h + (0.14 * front - 0.1 * rear) * r
+	# the chest turns off a blow on one side (its struck shoulder driven back), the head goes further
+	crumple.chest_twist = -0.38 * side * a + 0.08 * side * r
+	crumple.head_turn = -0.45 * side * h + 0.12 * side * r
+	# the arms fly up and out off the body, the struck side's higher; the elbows give
+	crumple.arm = (0.55 * front - 0.35 * rear) * a
+	crumple.arm_lr = Vector2(0.25 * maxf(-side, 0.0), 0.25 * maxf(side, 0.0)) * a
+	crumple.elbow = 0.55 * a + 0.1 * r
+	# a give in both knees, the hips kept over the lower foot
+	crumple.knee = 0.22 * a
+	crumple.hip = 0.12 * a
+	crumple.ground = e
+	if absf(crumple.neck) > absf(flinch_head_peak):
+		flinch_head_peak = crumple.neck
+	if absf(crumple.spine + crumple.pelvis) > absf(flinch_chest_peak):
+		flinch_chest_peak = crumple.spine + crumple.pelvis
+	if absf(crumple.chest_twist) > absf(flinch_twist_peak):
+		flinch_twist_peak = crumple.chest_twist
 
 func is_dead() -> bool:
 	return dead_t >= 0.0
 
 func _die(attacker: Node) -> void:
+	_clear_flinch_layer()
 	_flinch(attacker)                      # the blow's direction and the broken-off swing
 	flinches -= 1
 	flinch_t = -1.0
