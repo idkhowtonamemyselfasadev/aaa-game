@@ -5133,6 +5133,11 @@ func _glide_test() -> void:
 	print("BOT glide: furled roll on the back at %s (body space), axis %s" % [rp, rx])
 	if rp.z > -0.22 or rp.y < 0.95 or rp.y > 1.35 or absf(rx.x) < 0.85:
 		return _combat_done(false, "the furled glider is not across the small of the back")
+	# kept inside the hips' width: a longer roll read from behind as a bar jutting out at the elbows
+	var rw := roll.mesh.get_aabb().size.x
+	print("BOT glide: furled roll %.2f m across (cap 0.56)" % rw)
+	if rw > 0.56:
+		return _combat_done(false, "the furled glider juts out past the hips")
 	p.bot_jump = true
 	await _ticks(2)
 	print("BOT glide: jumped in the air, gliding %s, glides %d" % [p.gliding, p.glides])

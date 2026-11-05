@@ -37,10 +37,12 @@ var stowed: MeshInstance3D    # the furled roll on the back, shown while the win
 
 ## Furled, the wing rides across the small of the back on the sash: the battens and the
 ## folded spar rolled up in the canvas, bound with cord, tucked over the staff and under the
-## cape's hem. Body space at rest; the roll's axis runs across the back (X).
-const STOW_AT := Vector3(0.0, 1.115, -0.335)   # posed it lands ~5 cm higher, on the sash
-const STOW_LEN := 0.64
-const STOW_R := 0.05
+## cape's hem. Body space at rest; the roll's axis runs across the back (X). Kept within the
+## hips' width (+ a few cm of cut bamboo): longer, from behind it read as a bar jutting out
+## sideways at both elbows (a frame in 11-05 was taken for the staff arm held out).
+const STOW_AT := Vector3(0.0, 1.115, -0.343)   # posed it lands ~5 cm higher, on the sash
+const STOW_LEN := 0.44
+const STOW_R := 0.058
 const STOW_BONE := "mixamorig_Spine2"   # with the staff: the hips and low spine turn ~40° in the idle
 
 func _ready() -> void:
@@ -190,7 +192,7 @@ static func build_stowed_mesh() -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var half := STOW_LEN * 0.5
-	var binds: Array[float] = [-0.21, 0.0, 0.21]
+	var binds: Array[float] = [-0.145, 0.0, 0.145]
 	var nx := 40
 	var na := 20
 	var rad := func(x: float, a: float) -> float:
@@ -241,8 +243,8 @@ static func build_stowed_mesh() -> ArrayMesh:
 				st.set_normal(Vector3(sg, 0, 0))
 				st.add_vertex(v)
 	# the bundled bamboo: the folded spar halves and a few battens, ends cut at staggered lengths
-	var poles := [[0.0, 0.0, 0.017, 0.11, 0.07], [0.018, 0.012, 0.012, 0.15, 0.04],
-			[-0.016, 0.014, 0.009, 0.06, 0.13], [0.006, -0.019, 0.008, 0.09, 0.1]]
+	var poles := [[0.0, 0.0, 0.017, 0.035, 0.025], [0.018, 0.012, 0.012, 0.055, 0.015],
+			[-0.016, 0.014, 0.009, 0.02, 0.05], [0.006, -0.019, 0.008, 0.03, 0.04]]
 	for pl: Array in poles:
 		_tube(st, [Vector3(-half - float(pl[4]), pl[1], pl[0]), Vector3(half + float(pl[3]), pl[1], pl[0])], pl[2], BAMBOO, 7)
 	# three cord bindings, two turns each, sunk into the cinched cloth
