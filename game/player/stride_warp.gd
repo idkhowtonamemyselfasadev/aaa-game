@@ -15,6 +15,7 @@ var drop := 0.0              # (bots) m the hips were lowered this tick (skeleto
 var lock := 0.0              # 0..1 how much of the contact lock is on (Player: grounded, striding)
 const LOCK_H := 1.5          # skeleton units (cm) over the stance level that count as on the turf
 const LOCK_MAX := 16.0       # skeleton units (cm): a bigger error lets go (a turn, a teleport)
+var lock_max := LOCK_MAX     # skeleton units: along the line, a pin held further off is dragged
 ## Lateral lock: the pin also holds the foot across the body's line (the hip abducts/adducts to
 ## put it back), not only along it. Foes in a stagger: their backward walk carries the stance
 ## boot sideways ~1 cm a tick while the body is shoved straight back.
@@ -34,7 +35,10 @@ const LOCK_H_FALL := 4.0     # cm over the stance level: a foot coming down is p
 ## world motion and fall rate, and the pin's weight grows from 0 to 1 as the foot comes down,
 ## so the boot arrives slowing instead of still swinging and then stopping dead in one tick.
 var strike_ease := false
+var strike_by_time := OS.get_environment("STRIKE_HEIGHTONLY") == ""   # the approach weight also grows with the ticks left (env: the before)
 const APPROACH_H := 10.0     # cm over the stance level where the approach begins
+const APPROACH_END_H := 6.0  # cm: at a sprint the approach is fully held by here (a foot can drop the last 5 cm in one tick)
+var approach_fast := 0.0     # 0..1 (Player: 0 at a run, 1 at a sprint): how much the approach ends early
 const APPROACH_TICKS := 3.0  # the prediction looks at most this many ticks ahead
 const STRIKE_DECEL := 0.5    # the clip foot slows to the strike: it covers this much of its straight run
 var _approach := [false, false]
@@ -172,11 +176,28 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 			var v: Vector3 = c_world - (c_last as Vector3)
 			v.y = 0.0
 			var pred: Vector3 = c_world + v * n * STRIKE_DECEL
-			_pin[i] = pred if not _approach[i] or _pin[i] == null else (_pin[i] as Vector3).lerp(pred, 0.5)
+			var w_end := lerpf(LOCK_H, APPROACH_END_H, approach_fast) if strike_by_time else LOCK_H
+			var w := clampf((_ground + APPROACH_H - float(h[i])) / (APPROACH_H - w_end), 0.0, 1.0)
+			if strike_by_time:
+				# weigh by the ticks left to the strike too: a fast foot covers the last cm in one
+				# tick, so a height ramp alone leaves it half-held on the tick before it lands
+				w = maxf(w, clampf(1.0 - (n - 0.5) / (APPROACH_TICKS - 0.5), 0.0, 1.0))
+			var w_prev: float = float(_pin_w[i]) if _approach[i] else 0.0
+			# refine the predicted point less as the pin takes hold: moving a held pin moves the boot
+			var refine := 0.5 * (1.0 - w_prev * w_prev) if strike_by_time else 0.5
+			_pin[i] = pred if not _approach[i] or _pin[i] == null else (_pin[i] as Vector3).lerp(pred, refine)
 			_approach[i] = true
-			var w := clampf((_ground + APPROACH_H - float(h[i])) / (APPROACH_H - LOCK_H), 0.0, 1.0)
 			_pin_w[i] = w * w * (3.0 - 2.0 * w)
 			strike_eased = maxf(strike_eased, _pin_w[i])
+		elif _approach[i] and not down and strike_by_time and float(h[i]) <= float(h_last[i]) + 0.05 \
+				and h[i] < _ground + APPROACH_H:
+			pass                                         # hovering over the strike: hold the eased pin
+		elif _approach[i] and not down and strike_by_time:
+			_approach[i] = false                         # it rose again (a skip, a hop): let the pin fade
+			_pin_w[i] = move_toward(_pin_w[i], 0.0, delta * 18.0)
+			if _pin_w[i] <= 0.0:
+				_pin[i] = null
+				continue
 		elif _approach[i] and not down:
 			_approach[i] = false                         # it rose again (a skip, a hop): drop it
 			_pin[i] = null
@@ -216,9 +237,9 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 			_pin_w[i] = 0.0
 			_approach[i] = false
 			continue
-		if absf(e) > LOCK_MAX:
+		if absf(e) > lock_max:
 			# held too far from the clip's foot: drag the pin along (a slow slide, never a snap)
-			e = signf(e) * LOCK_MAX
+			e = signf(e) * lock_max
 			_pin[i] = xf * (foot + fwd * e)
 		var d: Vector3 = foot - skel.get_bone_global_pose(hb[i]).origin
 		var r := maxf(-d.dot(up), 30.0)

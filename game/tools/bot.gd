@@ -1278,8 +1278,9 @@ func _stride_test() -> void:
 		if o[1] > cap:
 			return _combat_done(false, "the planted foot skates %.4f m/tick at a %s (%.1f m/s; want <= %.3f)" % [o[1], o[0], o[3], cap])
 		# worst single tick (11-05 17:30, modifiers on physics + strike ease): walk 0.091 -> 0.004,
-		# run 0.035 -> 0.011, sprint 0.076 -> 0.051 (the sprint strike tick)
-		var wcap := 0.065 if o[0] == "sprint" else (0.025 if o[0] == "run" else 0.02)
+		# run 0.035 -> 0.011, sprint 0.076 -> 0.051 (the sprint strike tick); 11-05 19:30, the sprint
+		# approach weighed by the ticks left and fully held 6 cm up: sprint 0.051 -> 0.039
+		var wcap := 0.045 if o[0] == "sprint" else (0.025 if o[0] == "run" else 0.02)
 		if not OS.has_environment("STRIDE_SWEEP") and o[4] > wcap:
 			return _combat_done(false, "the planted foot jumps %.4f m in one tick at a %s (want <= %.3f)" % [o[4], o[0], wcap])
 	_combat_done(true, "the planted foot holds still on the turf at a walk, a run and a sprint")

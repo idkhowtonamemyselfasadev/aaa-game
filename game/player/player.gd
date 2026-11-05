@@ -481,6 +481,7 @@ func _update_warp(delta: float, on: bool) -> void:
 		stride_warp.lock = move_toward(stride_warp.lock, lock, delta * 8.0)
 		stride_warp.lock_lateral = foot_lock_lateral
 		stride_warp.strike_ease = foot_strike_ease
+		stride_warp.approach_fast = clampf((Vector2(velocity.x, velocity.z).length() - RUN_SPEED) / (SPRINT_SPEED - RUN_SPEED), 0.0, 1.0)
 
 ## Foot IK on uneven ground (StrideWarp ground feet): on while the hero stands or strides on
 ## the floor; off in the air, on a wall, under the wing, and under posed legs (Crumple).

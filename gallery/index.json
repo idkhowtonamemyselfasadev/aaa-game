@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261031-1234-ring.jpg",
-  "time": "2026-10-31T12:34:52Z",
-  "caption": "The Ashen Knight's stone ring in low sun: the stones now stand as broad, tall sarsens and the tall grass inside is gone, but the floor still reads as green turf because the scorch decals don't show, and the knight is small at this distance.",
-  "verdict": "fail"
- },
- {
   "file": "20261031-1330-ring.jpg",
   "time": "2026-10-31T13:30:00Z",
   "caption": "The knight's stone ring: the burnt ground finally shows inside the sarsens, but it reads as a bluish wet slab or puddle with a too-clean round edge rather than dry ash and charred stubble.",
@@ -879,6 +873,12 @@
   "file": "20261105-1745-sprint-stride.jpg",
   "time": "2026-11-05T17:45:35Z",
   "caption": "GL quick look: the hero mid-sprint with the planted boot held (skeleton modifiers now run once per physics tick); still 3/4 from behind with the legs in the cottage shade, not a Forward+ frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1930-sprint-strike.jpg",
+  "time": "2026-11-05T19:30:00Z",
+  "caption": "GL quick look: the hero mid-sprint leaning into the stride with the staff slung (the sprint's landing boot now eases onto its strike point, worst slip 0.051 -> 0.039 m/tick); the lens sits behind the hero and the long grass hides the feet, not a Forward+ frame.",
   "verdict": "fail"
  }
 ]
