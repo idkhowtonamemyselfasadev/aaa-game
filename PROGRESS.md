@@ -10500,6 +10500,7 @@ blaze, grit off the stones, recorded roar; 07:10 11-05: choreographed in beats: 
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (18:30 11-05) ~~`knightstomp` roll flake~~ PASS after the shockwave front moved onto the physics tick (first run; re-check over a few more runs).
 - (17:30 11-05) bot `knightstomp` FAILS on this cloud box, also on the untouched 16:30 HEAD (git stash): "a roll as
   the front arrived did not pass through it". Not caused by the modifier change; look into the roll timing vs the shockwave.
 - (08:30 11-05) Bot `footik` stage 2 (walking the hillside) is flaky ON THE UNTOUCHED CODE too (git stash, 3 runs alone: 0.003 / 0.046 / 0.032 m, limit 0.03): the 07:20 slope-aware follow is phase-dependent; fix next time the feet are worked on.
