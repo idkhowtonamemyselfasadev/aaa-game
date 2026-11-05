@@ -2751,16 +2751,35 @@ func _knight_test() -> void:
 	var neck_fore := -99.0     # and most while slumped / coiled
 	var nb := k.skel.find_bone("mixamorig_Neck")
 	var hb := k.skel.find_bone("mixamorig_Hips")
-	var it := 0.0
-	while k.intro_playing() and it < 8.0:
+	var rhb := k.skel.find_bone("mixamorig_RightHand")
+	var lhb := k.skel.find_bone("mixamorig_LeftHand")
+	var grip := [0.0]          # worst hand-to-haft-hold distance in the heave/roar (m / size)
+	var neck := [99.0, -99.0]  # the neck's forward offset over the hips: least (roar), most (slump)
+	# read the bones once the modifiers (spine bend, arm IK) have run, not the clip's pose
+	var grip_probe := func() -> void:
+		if k.intro == null or not is_instance_valid(k.intro):
+			return
 		if nb >= 0 and hb >= 0:
 			var nw := k.skel.global_transform * k.skel.get_bone_global_pose(nb).origin
 			var hw := k.skel.global_transform * k.skel.get_bone_global_pose(hb).origin
 			var fwd := k.body.global_basis.z
 			fwd.y = 0.0
 			var off := (nw - hw).dot(fwd.normalized()) / k.size_scale
-			neck_back = minf(neck_back, off)
-			neck_fore = maxf(neck_fore, off)
+			neck[0] = minf(neck[0], off)
+			neck[1] = maxf(neck[1], off)
+		if rhb < 0 or lhb < 0:
+			return
+		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
+			return
+		var rw := k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin
+		var lw := k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin
+		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position)) / k.size_scale
+		if OS.get_environment("GRIPDBG") != "":
+			print("GRIP t %.2f %.3f" % [k.intro.t, g])
+		grip[0] = maxf(grip[0], g)
+	k.skel.skeleton_updated.connect(grip_probe)
+	var it := 0.0
+	while k.intro_playing() and it < 8.0:
 		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
 		if it > 0.3 and it < 1.0:
 			k.take_hit(k.global_position + Vector3.UP * 2.0, Vector3.FORWARD, 3.0, 0.0)
@@ -2779,6 +2798,10 @@ func _knight_test() -> void:
 		await get_tree().physics_frame
 		it += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
+	k.skel.skeleton_updated.disconnect(grip_probe)
+	var grip_gap: float = grip[0]
+	neck_back = neck[0]
+	neck_fore = neck[1]
 	var drift := Vector2(p.global_position.x - pos0.x, p.global_position.z - pos0.z).length()
 	print("BOT knight: reveal %.1f s, intro cam current %s, letterbox peak %.2f, bar before hand-off %.2f, hero drift %.2f m, knight health %.0f -> %.0f, roar heave %.2f, crane top %.1f m (knight %.1f m tall), state %d, hero cam back %s" % [it, cam_other, lb_peak, bar_early, drift, hp_i, k.health, k.intro_heave, lift_mid, (k.hurt_capsule()[1] as Vector3).y - k.global_position.y + float(k.hurt_capsule()[2]), k.state, get_viewport().get_camera_3d() == hero_cam])
 	if it < BossIntro.T - 0.3 or it > BossIntro.T + 0.5 or not cam_other or lb_peak < 0.9 or bar_early > 0.05:
@@ -2792,7 +2815,10 @@ func _knight_test() -> void:
 	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
 	print("BOT knight: reveal spine: hunched %.2f rad, arched back %.2f rad; neck over the hips %.2f .. %.2f m (per size)" % [k.intro_hunch_peak, k.intro_arch_peak, neck_back, neck_fore])
-	if k.intro_arch_peak > -0.25 or k.intro_hunch_peak < 0.1 or neck_fore - neck_back < 0.12:
+	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar" % grip_gap)
+	if grip_gap > 0.09:
+		return _combat_done(false, "the roar's arch pulls the hands off the glaive (%.3f m)" % grip_gap)
+	if k.intro_arch_peak > -0.45 or k.intro_hunch_peak < 0.1 or neck_fore - neck_back < 0.25 or neck_back > -0.12:
 		return _combat_done(false, "the reveal's roar does not arch the back (spine %.2f, neck swing %.2f m)" % [k.intro_arch_peak, neck_fore - neck_back])
 	if drift > 0.35 or k.health != hp_i or k.intro_heave < 0.9 or not k.has_meta("roared"):
 		return _combat_done(false, "the hero moved, the knight was hurt or it never roared in the reveal")

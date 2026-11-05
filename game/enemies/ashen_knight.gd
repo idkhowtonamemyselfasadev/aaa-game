@@ -79,6 +79,9 @@ signal stomped(at: Vector3)
 ## body: standing, its point hovered ~0.15 m over the ground at the first size)
 const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
 const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
+## how much of the reveal's spine arch the glaive pose is swung back with (about SPINE_BASE)
+const ROAR_CARRY := 0.9
+const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
 const TUCK_KNEE := 1.75           # rad the shins fold back
@@ -822,10 +825,14 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# only a little is the whole-body tilt about the feet, which tipped the legs with it
 	var lean := 0.1 * dormant + 0.08 * gather - 0.07 * up - 0.03 * roar + 0.06 * follow \
 		+ 0.012 * sin(it * 47.0) * roar
-	var arch := 0.14 * dormant + 0.2 * gather - 0.34 * up - 0.12 * roar + 0.1 * follow \
+	var arch := 0.14 * dormant + 0.2 * gather - 0.44 * up - 0.14 * roar + 0.1 * follow \
 		+ 0.02 * sin(it * 41.0) * roar
 	_intro_arch = lerpf(_intro_arch, arch, 1.0 - exp(-14.0 * delta))
 	_pose_arch(_intro_arch)
+	# the glaive goes back with the chest in the heave and the roar (the hands would otherwise
+	# be left reaching for a haft the arched shoulders have pulled away from); asleep and in the
+	# gather it stays where it is, the point in the turf / drawn low
+	_pose = _arch_pose(_pose, _intro_arch * ROAR_CARRY * up)
 	intro_arch_peak = minf(intro_arch_peak, _intro_arch)
 	intro_hunch_peak = maxf(intro_hunch_peak, _intro_arch)
 	# legs: knees soft asleep, deep in the gather, straight in the heave, a settle dip after
@@ -843,6 +850,20 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
+
+## Swing a glaive pose about the spine's base by `a` rad about the body's right (back = negative),
+## as the arched chest carries the hands: both the hold point and the shaft's direction turn.
+static func _arch_pose(pose: Array, a: float) -> Array:
+	if absf(a) < 0.0005:
+		return pose
+	var b := Basis(Vector3.RIGHT, a)
+	var c: Vector3 = pose[2]
+	var d := b * StaffCombat.dir_of(pose[0], pose[1])
+	var out := pose.duplicate()
+	out[2] = SPINE_BASE + b * (c - SPINE_BASE)
+	out[0] = rad_to_deg(atan2(d.x, d.z))
+	out[1] = rad_to_deg(asin(clampf(d.y, -1.0, 1.0)))
+	return out
 
 ## The reveal's spine bend through the joint layer (the soldier's stagger Crumple, idle outside a
 ## stagger). It runs before the arm IK, so the hands stay closed on the glaive as the chest moves.
