@@ -15,6 +15,11 @@ var drop := 0.0              # (bots) m the hips were lowered this tick (skeleto
 var lock := 0.0              # 0..1 how much of the contact lock is on (Player: grounded, striding)
 const LOCK_H := 1.5          # skeleton units (cm) over the stance level that count as on the turf
 const LOCK_MAX := 16.0       # skeleton units (cm): a bigger error lets go (a turn, a teleport)
+## Lateral lock: the pin also holds the foot across the body's line (the hip abducts/adducts to
+## put it back), not only along it. Foes in a stagger: their backward walk carries the stance
+## boot sideways ~1 cm a tick while the body is shoved straight back.
+var lock_lateral := false
+var lateral_corrected := 0.0 # (bots) largest sideways correction this tick (m, skeleton units)
 var _ground := 0.0           # the stance level: the lowest the lower ankle has been lately (cm)
 var _ground_set := false
 var _h_prev := [0.0, 0.0]    # each ankle's height last tick (cm): a falling foot is caught early
@@ -62,6 +67,7 @@ var _gy := [0.0, 0.0]            # each foot's ground height in the world, eased
 func _process_modification_with_delta(_delta: float) -> void:
 	drop = 0.0
 	corrected = 0.0
+	lateral_corrected = 0.0
 	var skel := get_skeleton()
 	if skel == null:
 		return
@@ -163,6 +169,32 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 		_bend(skel, hb[i], x, -da)                       # swing the thigh to put the foot back on its pin
 		_bend(skel, fb[i], x, da)                        # the sole keeps its pitch
 		corrected = maxf(corrected, absf(e * float(_pin_w[i]) * lock))
+		if lock_lateral:
+			_lock_across(skel, i, hb[i], fb[i], x, up, inv)
+
+## The sideways half of the contact lock: the leg swings out or in at the hip (about the line
+## from the hip to the foot's own forward) so the pinned boot stays where it struck across the
+## body's line too; the sole is turned back by the same rotation so it keeps its angle.
+func _lock_across(skel: Skeleton3D, i: int, hb: int, fb: int, x: Vector3, up: Vector3, inv: Transform3D) -> void:
+	var foot := skel.get_bone_global_pose(fb).origin
+	var el: float = ((inv * (_pin[i] as Vector3)) - foot).dot(x)
+	if absf(el) > LOCK_MAX * 2.0:
+		return                                           # not this foot's pin any more: leave it
+	el = clampf(el, -LOCK_MAX, LOCK_MAX) * float(_pin_w[i]) * lock
+	if absf(el) < 1e-3:
+		return
+	var d := foot - skel.get_bone_global_pose(hb).origin
+	if -d.dot(up) < 20.0:
+		return                                           # a leg folded up: no abduction to speak of
+	var target := d + x * el
+	var axis := d.cross(target)
+	if axis.length() < 1e-6:
+		return
+	axis = axis.normalized()
+	var ang := d.angle_to(target)
+	_bend(skel, hb, axis, ang)                           # the thigh swings out or in
+	_bend(skel, fb, axis, -ang)                          # the sole keeps its angle
+	lateral_corrected = maxf(lateral_corrected, absf(el))
 
 func _bend(skel: Skeleton3D, b: int, axis_skel: Vector3, angle: float) -> void:
 	if absf(angle) < 1e-5:

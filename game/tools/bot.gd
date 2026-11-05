@@ -12044,6 +12044,7 @@ func _foe_flinch_test() -> void:
 	s.reel_on = OS.get_environment("REEL_OLD") == ""
 	s.reel_pivot_on = OS.get_environment("REEL_NOPIVOT") == ""
 	s.reel_lock_on = OS.get_environment("REEL_NOLOCK") == ""
+	s.reel_lateral_on = OS.get_environment("REEL_NOLATERAL") == ""
 	var skel := s.skel
 	if s.crumple == null or skel == null:
 		return _combat_done(false, "the soldier has no reel modifier")
@@ -12139,6 +12140,9 @@ func _foe_flinch_test() -> void:
 		# mid-stagger (0.12-0.3 s) the stance boot is pinned (REEL_NOLOCK: up to 0.041 m a tick)
 		if s.reel_lock_on and x.mid > 0.02:
 			return _combat_done(false, "the stance boot skates mid-stagger in the %s case (%.3f m/tick)" % [x.case, x.mid])
+		# the lock holds the boot across the legs' line too (REEL_NOLATERAL: 0.009 front, 0.006 side)
+		if s.reel_lock_on and s.reel_lateral_on and x.slip_n >= 5 and x.slip > 0.006:
+			return _combat_done(false, "the stance boot drifts sideways through the %s stagger (%.3f m/tick)" % [x.case, x.slip])
 	# the legs swing round into a side shove on the planted boot (REEL_NOPIVOT, about the root: 0.017 m a tick)
 	if s.reel_pivot_on and (r.turn_slip > 0.014 or r.pivot < 0.05):
 		return _combat_done(false, "the legs' turn into the side shove skates the planted boot (%.3f m/tick, pivot %.2f m)" % [r.turn_slip, r.pivot])
