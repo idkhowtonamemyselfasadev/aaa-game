@@ -157,6 +157,8 @@ var _reel_yaw := 0.0             # rad: the hips and legs turned to back off alo
 const REEL_YAW_MAX := 1.1        # rad: the rest of a side shove is taken by the chest counter-twist
 var reel_head_peak := 0.0        # (bots) largest neck whip of the last stagger (rad, + head back)
 var reel_chest_peak := 0.0       # (bots) largest spine + pelvis of the last stagger (rad, + forward)
+var reel_pivot_on := true        # (bots) off: the legs' reel turn spins about the root, as before 11-05 13:30
+var reel_pivot_shift := 0.0      # (bots) m the body was carried round the planted boot by the reel's leg turn
 var reel_twist_peak := 0.0       # (bots) largest chest twist of the last stagger (rad, + to the left)
 var pivot_shift := Vector3.ZERO  # bots: net m the body has been swung round planted feet
 const PIVOT_REACH := 0.11        # m per unit size: the most the body's middle orbits off the pivot foot
@@ -633,7 +635,9 @@ func _physics_process(delta: float) -> void:
 			# tipped about them (that swung the planted feet ~0.2 m)
 			lean = (0.0 if _reel_layer_on() else -0.22) * _recoil * sin(PI * minf(u * 1.4, 1.0))
 			sink = 0.05
-			move = _reel_steer(_knock * (1.0 - u) * (1.0 - u) * 2.2)
+			move = _knock * (1.0 - u) * (1.0 - u) * 2.2   # steered along the legs after `_reel_layer` turns them
+			if not reel_pivot_on:
+				move = _reel_steer(move)              # (bots) the old order: last tick's leg yaw
 			ember = 1.6
 			if u >= 1.0:
 				_enter(STALK)
@@ -645,6 +649,8 @@ func _physics_process(delta: float) -> void:
 		body.rotation.y = atan2(bot_move.x, bot_move.z)
 	_update_turn_lead(delta)
 	_reel_layer()
+	if state == STAGGER and bot_move == Vector3.ZERO:
+		move = _reel_steer(move) if reel_pivot_on else move      # this tick's leg yaw: a tick late, the shove ran 15 deg off the stepping legs
 	_place(_pose)
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
@@ -877,7 +883,9 @@ func _reel_layer() -> void:
 	var back := atan2(-push.x, -push.z)
 	var fore := atan2(push.x, push.z)
 	var goal := clampf(back if absf(back) <= absf(fore) else fore, -REEL_YAW_MAX, REEL_YAW_MAX)
-	_reel_yaw = goal * smoothstep(0.0, 0.1, t) * (1.0 - smoothstep(0.7 * L, L, t))
+	var yaw := goal * smoothstep(0.0, 0.1, t) * (1.0 - smoothstep(0.7 * L, L, t))
+	_reel_pivot(yaw - _reel_yaw)
+	_reel_yaw = yaw
 	var twist := (-0.34 * side * a + 0.07 * side * r) * k
 	crumple.chest_twist = twist - 0.55 * _reel_yaw
 	crumple.head_turn = (-0.4 * side * h + 0.1 * side * r) * k - 0.35 * _reel_yaw
@@ -890,6 +898,28 @@ func _reel_layer() -> void:
 		reel_chest_peak = crumple.spine + crumple.pelvis
 	if absf(twist) > absf(reel_twist_peak):
 		reel_twist_peak = twist                # the blow's own twist, not the counter to the legs' turn
+
+## The legs swing round into a side shove (and back out of it) on the planted foot, not about the
+## root between the feet (that skated the standing boot ~2.5 cm a tick through the turn): the
+## body is carried round the lower boot by the turn step d, as `_pivot_orbit` does for a turn.
+func _reel_pivot(d: float) -> void:
+	if absf(d) < 1e-5 or skel == null or not reel_pivot_on:
+		return
+	var feet := []
+	for b in ["mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+		var i := skel.find_bone(b)
+		if i < 0:
+			return
+		feet.append(skel.global_transform * skel.get_bone_global_pose(i).origin)
+	var f: Vector3 = feet[0] if feet[0].y < feet[1].y else feet[1]
+	var r := Vector3(f.x - global_position.x, 0.0, f.z - global_position.z)
+	if r.length() > 0.6 * size_scale:
+		return
+	var orbit := r - r.rotated(Vector3.UP, d)
+	if orbit.length() > 1e-5 and orbit.length() < 0.2 * size_scale:
+		var before := global_position
+		move_and_collide(orbit)
+		reel_pivot_shift += (global_position - before).length()
 
 ## The shove carried along the line the legs back off on (they are turned by `_reel_yaw`): a body
 ## shoved from a side turns and stumbles back over its own feet rather than sliding across them.

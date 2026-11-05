@@ -12042,6 +12042,7 @@ func _foe_flinch_test() -> void:
 	await _ticks(10)
 	Engine.time_scale = 1.0
 	s.reel_on = OS.get_environment("REEL_OLD") == ""
+	s.reel_pivot_on = OS.get_environment("REEL_NOPIVOT") == ""
 	var skel := s.skel
 	if s.crumple == null or skel == null:
 		return _combat_done(false, "the soldier has no reel modifier")
@@ -12063,6 +12064,12 @@ func _foe_flinch_test() -> void:
 		var ticks := 0
 		var offs := []
 		var root0 := s.global_position
+		var root_prev := root0
+		var yaw_prev := 0.0
+		var turn_slip := 0.0
+		var turn_n := 0
+		var loc_prev := [Vector3.ZERO, Vector3.ZERO]
+		var skel_prev := skel.global_transform
 		while s.state == HollowSoldier.STAGGER:
 			await get_tree().physics_frame
 			var pr: Dictionary = s.crumple.probed
@@ -12080,9 +12087,23 @@ func _foe_flinch_test() -> void:
 					var d: Vector3 = cur[lo] - prev[lo]
 					slip += Vector2(d.x, d.z).length()
 					slip_n += 1
+					if absf(s._reel_yaw - yaw_prev) > 0.02:
+						turn_slip += Vector2(d.x, d.z).length()
+						turn_n += 1
 					if OS.get_environment("REEL_DEBUG") != "":
-						print("  t %.3f low %d slip %.3f yaw %.2f v %.2f" % [s.t, lo, Vector2(d.x, d.z).length(), s._reel_yaw, Vector2(s.velocity.x, s.velocity.z).length()])
+						print("  t %.3f low %d slip %.3f yaw %.2f v %.2f d %s body %s" % [s.t, lo, Vector2(d.x, d.z).length(), s._reel_yaw, Vector2(s.velocity.x, s.velocity.z).length(), Vector2(d.x, d.z), Vector2(s.global_position.x - root_prev.x, s.global_position.z - root_prev.z)])
+			if OS.get_environment("REEL_DEBUG") != "" and ticks > 0:
+				var lo2 := 0 if cur[0].y < cur[1].y else 1
+				var bn: String = ["mixamorig_LeftFoot", "mixamorig_RightFoot"][lo2]
+				var loc: Vector3 = pr[bn]
+				var rig: Vector3 = skel.global_transform * loc_prev[lo2] - skel_prev * loc_prev[lo2]
+				var clip: Vector3 = skel.global_transform * loc - skel.global_transform * loc_prev[lo2]
+				print("    rig %s clip %s" % [Vector2(rig.x, rig.z), Vector2(clip.x, clip.z)])
+			loc_prev = [pr["mixamorig_LeftFoot"], pr["mixamorig_RightFoot"]]
+			skel_prev = skel.global_transform
 			prev = cur
+			yaw_prev = s._reel_yaw
+			root_prev = s.global_position
 			ticks += 1
 			if ticks > 200:
 				break
@@ -12090,12 +12111,13 @@ func _foe_flinch_test() -> void:
 		for o in offs:
 			head_move = maxf(head_move, Vector2(o.x - offs[-1].x, o.z - offs[-1].z).length())
 		var pushed := s.global_position - root0
-		var res := {"case": case[0], "chest": s.reel_chest_peak, "neck": s.reel_head_peak, "twist": s.reel_twist_peak, "head": head_move, "slip": slip / maxf(slip_n, 1), "slip_n": slip_n, "pushed": Vector2(pushed.x, pushed.z).length(), "active": s.crumple.active}
-		print("BOT foeflinch %s: chest %.2f rad, neck %.2f, twist %.2f, head moved %.2f m off the hips, planted foot slip %.3f m/tick over %d ticks, pushed %.2f m, reel still on %s" % [case[0], res.chest, res.neck, res.twist, res.head, res.slip, res.slip_n, res.pushed, res.active])
+		var res := {"case": case[0], "chest": s.reel_chest_peak, "neck": s.reel_head_peak, "twist": s.reel_twist_peak, "head": head_move, "slip": slip / maxf(slip_n, 1), "slip_n": slip_n, "turn_slip": turn_slip / maxf(turn_n, 1), "pivot": s.reel_pivot_shift, "pushed": Vector2(pushed.x, pushed.z).length(), "active": s.crumple.active}
+		print("BOT foeflinch %s: chest %.2f rad, neck %.2f, twist %.2f, head moved %.2f m off the hips, planted foot slip %.3f m/tick over %d ticks (%.3f while the legs turn, carried round the boot %.2f m), pushed %.2f m, reel still on %s" % [case[0], res.chest, res.neck, res.twist, res.head, res.slip, res.slip_n, res.turn_slip, res.pivot, res.pushed, res.active])
 		results.append(res)
 		s.reel_chest_peak = 0.0
 		s.reel_head_peak = 0.0
 		s.reel_twist_peak = 0.0
+		s.reel_pivot_shift = 0.0
 		await _ticks(30)
 	if not s.reel_on:
 		return _combat_done(true, "old lean measured (REEL_OLD)")
@@ -12110,4 +12132,7 @@ func _foe_flinch_test() -> void:
 			return _combat_done(false, "the planted foot skates through the %s stagger" % x.case)
 		if x.active:
 			return _combat_done(false, "the reel layer stayed on after the stagger")
+	# the legs swing round into a side shove on the planted boot (REEL_NOPIVOT, about the root: 0.017 m a tick)
+	if s.reel_pivot_on and (r.turn_slip > 0.014 or r.pivot < 0.05):
+		return _combat_done(false, "the legs' turn into the side shove skates the planted boot (%.3f m/tick, pivot %.2f m)" % [r.turn_slip, r.pivot])
 	_combat_done(true, "the soldier reels at the joints and steps the shove off")
