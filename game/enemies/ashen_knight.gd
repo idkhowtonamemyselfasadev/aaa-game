@@ -66,6 +66,11 @@ const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes dow
 const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
 ## leap heave: both hands up over the helm, the blade laid back behind the head
 const LEAP_HEAVE := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+## the surge's coil: the glaive planted point-down beside the right knee, both hands on the
+## shaft, leaned on (a shorter crown-reel slump, the blade into the turf)
+const SURGE_LEAN := [20.0, -58.0, Vector3(0.12, 1.02, 0.46), 10.0, 0.1, 0.62]
+## the surge burst: the knight flung up off its knee roaring (foley: the recorded giant roar)
+signal surge_roared(at: Vector3)
 ## the stomp's boot hit the ground (foley: a ground slam with the boom under it)
 signal stomped(at: Vector3)
 ## the reveal's roar: the glaive brandished skyward on its right, blade up, both hands high
@@ -151,6 +156,10 @@ var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
 var grow_peak_shake := 0.0       # bots
+var surge_kneel_peak := 0.0      # bots: deepest kneel of the surges (0..1)
+var surge_heave_peak := 0.0      # bots: how far the burst heaved the glaive up (0..1)
+var surge_bow_peak := 0.0        # bots: head bowed into the coil (rad)
+var surge_lift_back := 0.0       # bots: head flung back in the roar (rad, negative)
 var stomps := 0                  # bots
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
@@ -470,15 +479,7 @@ func _physics_process(delta: float) -> void:
 		# the hairline cracks in the plate split wide and blaze while the body swells under it
 		_set_skin("heat", (phase - 1) * 0.5 + 0.9 * sin(PI * u))
 		_ember_light.light_energy = 0.45 * e
-		# down on one knee, head bowed into the burst
-		var k := sin(PI * u)
-		_lean(0.32 * k, 0.42 * k)
-		_set_tuck(0.9 * k, 1.7 * k)
-		if head != null:
-			_head_bow = lerpf(_head_bow, 0.5 * k, 1.0 - exp(-12.0 * delta))
-			_head_roll = lerpf(_head_roll, 0.0, 1.0 - exp(-12.0 * delta))
-			head.bow = _head_bow
-			head.roll = _head_roll
+		_surge_body(delta)
 		if not _blasted and _surge >= SURGE_BLAST:
 			_blasted = true
 			_blast()
@@ -503,6 +504,57 @@ func _physics_process(delta: float) -> void:
 		elif f.result != "" and not f.has_meta("counted"):
 			f.set_meta("counted", true)
 			flame_results.append(f.result)
+
+## The surge's body, in beats (brain s): the blow that broke it rocks it back (0-0.3); it
+## folds down onto its right knee, hunched over the glaive planted point-down to lean on, the
+## head bowed and the shudder building with the ember (the coil, to SURGE_BLAST); the burst
+## throws it up and back: chest out, head flung back roaring, the glaive heaved skyward while
+## the body swells to its new size and it rises off the knee (to ~1.8); then the head comes
+## down onto the hero, the glaive back into guard and the weight settles (to SURGE_T).
+func _surge_body(delta: float) -> void:
+	var s := _surge
+	var recoil := sin(PI * clampf(s / 0.3, 0.0, 1.0))
+	var coil := smoothstep(0.1, 0.85, s)
+	var burst := smoothstep(SURGE_BLAST - 0.05, SURGE_BLAST + 0.2, s)
+	var rise := smoothstep(SURGE_BLAST + 0.05, 1.7, s)
+	var settle := smoothstep(1.75, SURGE_T - 0.05, s)
+	var kneel := coil * (1.0 - rise)
+	var roar := burst * (1.0 - settle)
+	# the coil shudders harder toward the burst; the roar shakes through the arms and head
+	var shud := smoothstep(0.4, SURGE_BLAST, s) * (1.0 - burst)
+	var p1 := _lerp_pose(_from, SURGE_LEAN, smoothstep(0.1, 0.7, s))
+	var p2 := _lerp_pose(p1, INTRO_ROAR, burst)
+	_pose = _lerp_pose(p2, guard_pose, settle)
+	_pose[1] += sin(s * 38.0) * 2.0 * roar + sin(s * 53.0) * 1.2 * shud
+	_place(_pose)
+	var lean := -0.12 * recoil * (1.0 - coil) + 0.36 * kneel - 0.24 * roar + 0.01 * sin(s * 47.0) * shud
+	# a weight settle as it straightens: the body overshoots a touch low, then stands
+	var sink := 0.42 * kneel + 0.05 * sin(PI * settle)
+	_lean(lean, sink)
+	if _wield != null:
+		_wield.position.y = -sink
+	# down onto the right knee: both legs fold, the right thigh drops back under the hip so the
+	# knee goes to the turf while the left shin stays upright over its planted foot
+	_set_tuck(1.0 * kneel, 1.55 * kneel)
+	if tuck != null:
+		tuck.lift_leg = 1
+		tuck.lift_hip = -0.8 * kneel
+		tuck.lift_knee = 0.3 * kneel
+	surge_kneel_peak = maxf(surge_kneel_peak, kneel)
+	surge_heave_peak = maxf(surge_heave_peak, burst * (1.0 - settle))
+	if head != null:
+		var goal := 0.55 * coil * (1.0 - burst) - 0.55 * roar
+		var rl := 0.06 * sin(s * 31.0) * roar
+		var k := 1.0 - exp(-14.0 * delta)
+		_head_bow = lerpf(_head_bow, goal, k)
+		_head_roll = lerpf(_head_roll, rl, k)
+		head.bow = _head_bow
+		head.roll = _head_roll
+		surge_bow_peak = maxf(surge_bow_peak, _head_bow)
+		surge_lift_back = minf(surge_lift_back, _head_bow)
+	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
+		set_meta("surge_roar_%d" % surges, true)
+		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
 
 ## The ember bursts: a ring of fire round the kneeling knight, hurling down whoever stands in
 ## it (unblockable; a dodge passes through). The second surge leaves the ground smouldering.

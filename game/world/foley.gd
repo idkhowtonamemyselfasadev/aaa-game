@@ -162,9 +162,11 @@ func hook_knight(k: Node) -> void:
 	# a giant's roar: a recorded troll roar pitched down by the body's size (deeper as it grows)
 	var roar_pitch := func() -> float:
 		return clampf(0.8 * sqrt(2.2 / maxf(float(k.get("size_scale")), 0.5)), 0.55, 0.85)
+	# the surge draws in on the whoosh; it roars as the burst flings it up off its knee
+	if k.has_signal("surge_roared"):
+		k.surge_roared.connect(func(at: Vector3) -> void:
+			_play("giant_roar", at, 6.0, roar_pitch.call()))
 	k.phase_changed.connect(func(_n: int) -> void:
-		var hp := (k as Node3D).global_position + Vector3.UP * 1.2 * float(k.get("size_scale"))
-		_play("giant_roar", hp, 6.0, roar_pitch.call())
 		_play("whoom", (k as Node3D).global_position + Vector3.UP * 1.2, 2.0, 0.5))
 	k.blasted.connect(func(at: Vector3) -> void:
 		_play("slam", at + Vector3.UP * 0.3, 2.0, 0.78)

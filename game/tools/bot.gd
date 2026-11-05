@@ -2861,6 +2861,11 @@ func _knight_test() -> void:
 		return _combat_done(false, "the growth did not split the armour seams or shake grit off the stones")
 	if surged_hits > 0:
 		return _combat_done(false, "knight could be hurt while it surged")
+	# the surge's body: folds onto its knee head bowed over the planted glaive, then the burst
+	# flings it up and back roaring with the glaive heaved skyward (not a knee dip and back)
+	print("BOT knight: surge body: kneel peak %.2f, head bowed %.2f rad, flung back %.2f rad, glaive heave %.2f" % [k.surge_kneel_peak, k.surge_bow_peak, k.surge_lift_back, k.surge_heave_peak])
+	if k.surge_kneel_peak < 0.85 or k.surge_bow_peak < 0.4 or k.surge_lift_back > -0.4 or k.surge_heave_peak < 0.9:
+		return _combat_done(false, "the surge did not coil onto the knee and burst up roaring")
 	var p2: float = phase_hp.get(2, 0.0) / k.health_max
 	var p3: float = phase_hp.get(3, 0.0) / k.health_max
 	if p2 > AshenKnight.PHASE_AT[0] + 0.01 or p2 < AshenKnight.PHASE_AT[1] or p3 > AshenKnight.PHASE_AT[1] + 0.01:
