@@ -2282,12 +2282,19 @@ func _ready() -> void:
 				if turn_at >= 0.0 and t >= turn_at:
 					player.bot_input = _stick_for(player, Vector3(0, 0, 1))
 				if "spotturn" in args:
-					# standing: the body squares up 160 deg round at turnat (stepped, head first)
+					# standing: the body squares up 160 deg round at turnat (stepped, head first) and
+					# ends square to the stoplens/pivotlens lens (sun side of the run line, +/-Z, a
+					# touch toward +X), so the head arrives at the camera first; body +Z is the face
+					var sl: Vector3 = -world.sun.global_transform.basis.z
+					var lz := 1.0 if -sl.z > 0.0 else -1.0
+					if "flip" in args:
+						lz = -lz
+					var lens_yaw := atan2(0.7, 3.0 * lz)
 					player.bot_input = Vector2.ZERO
 					if t == 0.0:
-						player.body.rotation.y = PI * 0.5      # side-on to the lens, facing +X
+						player.body.rotation.y = lens_yaw - deg_to_rad(160.0)
 					if t >= maxf(turn_at, 0.0) and is_nan(player.bot_square_yaw):
-						player.bot_square_yaw = player.body.rotation.y + deg_to_rad(160.0)
+						player.bot_square_yaw = lens_yaw
 				if pivot_at >= 0.0 and t >= pivot_at:
 					player.bot_input = _stick_for(player, Vector3(-1, 0, 0))
 				if stop_at >= 0.0 and t >= stop_at:
@@ -2971,6 +2978,7 @@ func _ready() -> void:
 				var ah := ch as HollowArrow
 				print("SHOT capture hero %s screen %s, lens fov %.0f size %s, cams %s" % [player.global_position, fcam.unproject_position(player.global_position + Vector3.UP), fcam.fov, get_viewport().get_visible_rect().size, fcam.get_path()])
 				print("SHOT capture lens %s: arrow %s %.1f m, screen %s%s, frozen %s" % [fcam.global_position, ah.global_position, ah.global_position.distance_to(fcam.global_position), fcam.unproject_position(ah.global_position), " (behind)" if fcam.is_position_behind(ah.global_position) else "", ah.frozen])
+	_print_facing(world, player)
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
@@ -3082,3 +3090,41 @@ func _stick_for(player: Player, dir: Vector3) -> Vector2:
 	var r := b.x
 	r.y = 0.0
 	return Vector2(dir.dot(r.normalized()), -dir.dot(f.normalized()))
+
+## Facing check at capture: which way each figure's body and feet point vs the lens that
+## renders the frame (+1 = faces the camera, -1 = its back to it, 0 = side-on).
+func _print_facing(world: Node3D, player: Player) -> void:
+	var c := get_viewport().get_camera_3d()
+	if c == null:
+		return
+	var figs := {"hero": player}
+	if world.get("knight") != null:
+		figs["knight"] = world.knight
+	for k in figs:
+		var f: Node3D = figs[k]
+		if f == null or not is_instance_valid(f) or not f.is_inside_tree():
+			continue
+		var b: Node3D = f.get("body")
+		var sk := f.find_child("Skeleton3D", true, false) as Skeleton3D
+		var to_cam := c.global_position - f.global_position
+		to_cam.y = 0.0
+		to_cam = to_cam.normalized()
+		var bz := b.global_basis.z
+		bz.y = 0.0
+		var toe_dot := NAN
+		if sk != null and sk.find_bone("mixamorig_LeftToeBase") >= 0:
+			var t := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftToeBase")).origin
+			var a := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftFoot")).origin
+			var td := t - a
+			td.y = 0.0
+			toe_dot = td.normalized().dot(to_cam)
+		for sk2 in f.find_children("*", "Skeleton3D", true, false):
+			var s3 := sk2 as Skeleton3D
+			var hb := s3.find_bone("mixamorig_Head")
+			var hz := (s3.global_basis * s3.get_bone_global_pose(hb).basis).z if hb >= 0 else Vector3.ZERO
+			hz.y = 0.0
+			print("SHOT facing   skel %s vis %s basis.z.cam %.2f head.z.cam %.2f" % [f.get_path_to(s3), s3.is_visible_in_tree(), Vector3(s3.global_basis.z.x, 0, s3.global_basis.z.z).normalized().dot(to_cam), hz.normalized().dot(to_cam)])
+		if k == "hero":
+			var m: Node3D = f.get("model")
+			print("SHOT facing   model.z.cam %.2f model %s" % [Vector3(m.global_basis.z.x, 0, m.global_basis.z.z).normalized().dot(to_cam), m.transform.basis.get_euler()])
+		print("SHOT facing %s yaw %.2f body+Z.cam %.2f toe.cam %.2f lens %s (%s)" % [k, b.rotation.y, bz.normalized().dot(to_cam), toe_dot, c.global_position, c.get_path()])

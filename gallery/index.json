@@ -886,5 +886,17 @@
   "time": "2026-11-05T01:30:00Z",
   "caption": "0.26 s into the stepped turn: the hood and face are already in profile ahead of the shoulders (head lead reads); GL, shaded, and the turn goes away from the lens though the yaw says it should face it.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261105-0221-spotturn-lead.jpg",
+  "time": "2026-11-05T02:21:46Z",
+  "caption": "Hero's standing turn toward the lens, mid-turn: the hooded head already looks at the camera while the torso is still side-on (GL frame); the hero stands in the cottage's shade and the idle staff arm juts out stiffly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0221-ring-knight-facing.jpg",
+  "time": "2026-11-05T02:21:46Z",
+  "caption": "The phase-3 Ashen Knight after turning on the spot to face the gate lens: facing confirmed by bone check, but at noon from the gate it is backlit and reads as a dark silhouette (GL frame).",
+  "verdict": "fail"
  }
 ]
