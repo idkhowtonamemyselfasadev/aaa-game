@@ -55,6 +55,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   walk's stance foot lifts before the shove has slowed: needs a contact lock on foes or a cadence that eases with
   the shove) and the first tick (0.028, the knock's onset before the walk has blended in). `soldier` failed once in
   a batch run ("could not kill the soldier") and passed on both reruns with and without this change: a flake.
+  GL frames `soldier X 20 11.0 fixfps stagger blowside close u=0.06/0.2/0.45`: the legs' swing into the stumble and
+  the chest's counter-twist read as a stumble, not a pirouette; the boots are hidden in tall grass and the soldier
+  drifts toward the frame edge by u=0.45, so the pivot is NOT verified by eye (next: add `nograss` to the lens and
+  follow the soldier). Screenshots: GL quick-look only this session (Forward+ not attempted).
 - (12:30 11-05) **FOE HIT REACTION AT THE JOINTS (new bot `foeflinch` PASS; `soldier` `combat` `sweep` `heavy` `lockon`
   `flinch` `warden` `hewer` `sentinel` `knight` `crown` `foeturn` `foestride` `stepup` `footik` PASS).** `HollowSoldier`
   gets a Crumple modifier ("Reel") placed BEFORE the arm IK (so the hands re-close on the spear after the chest bends)
