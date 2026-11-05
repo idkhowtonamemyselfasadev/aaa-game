@@ -40,6 +40,8 @@ var block_meshes: Array[ArrayMesh] = []
 var block_dims: Array[Vector3]:
 	get: return _dims
 var _body: StaticBody3D
+var plinth_risers: Array = []   # bots: tallest riser walking onto the shrine plinth, 16 directions
+var footing_count := 0           # bots: footing stones laid on the plinth's downhill side
 var seal: ShrineSeal
 var ivy: Ivy
 var _crown_n: FastNoiseLite
@@ -519,8 +521,7 @@ func _fallen() -> void:
 		_place(p, b, s, 0.0, true, v)
 
 ## Two worn courses of curved step stones round the shrine lid. The stones are instanced like
-## the walls but do not collide; one low frustum collider ramps over both steps so the hero
-## walks up onto the lid (the controller has no step-up).
+## the walls; each course collides as one drum, so the hero steps up them (StepUp).
 func _plinth() -> void:
 	var lo := INF
 	var hi := -INF
@@ -554,26 +555,90 @@ func _plinth() -> void:
 			y += ch
 			c += 1
 	var lid_top := t2 + 0.12
-	# collider: a frustum from the lower step's outer edge up onto the lid
-	var pts := PackedVector3Array()
-	for k in 24:
-		var a := TAU * k / 24.0
-		var dv := Vector3(cos(a), 0, sin(a))
-		var go := _terrain.height_at(site.x + dv.x * 3.0, site.z + dv.z * 3.0)
-		var gm := _terrain.height_at(site.x + dv.x * 1.5, site.z + dv.z * 1.5)
-		pts.append(site + dv * 3.0 + Vector3.UP * (go - 0.4 - site.y))
-		pts.append(site + dv * 1.5 + Vector3.UP * (maxf(t1, gm + 0.03) - site.y))
-		pts.append(site + dv * 0.75 + Vector3.UP * (lid_top - site.y))
-	var shape := ConvexPolygonShape3D.new()
-	shape.points = pts
-	var cs := CollisionShape3D.new()
-	cs.name = "Plinth"
-	cs.shape = shape
-	_body.add_child(cs)                  # points are world space (Ruins sits at the origin)
+	_plinth_footing(base, t1)
+	# colliders: one drum per course (the lower tread, the upper tread, the lid) so a foot
+	# meets real risers and the walkers' step-up (StepUp) climbs them course by course
+	for d in [[1.72, t1], [1.24, t2], [ShrineSeal.LID_R + 0.02, lid_top]]:
+		var cyl := CylinderShape3D.new()
+		cyl.radius = d[0]
+		cyl.height = float(d[1]) - base
+		var cs := CollisionShape3D.new()
+		cs.name = "PlinthCourse"
+		cs.shape = cyl
+		cs.position = Vector3(site.x, (base + float(d[1])) * 0.5, site.z)
+		_body.add_child(cs)              # world space (Ruins sits at the origin)
 	seal = ShrineSeal.new()
 	seal.name = "ShrineSeal"
 	add_child(seal)
 	seal.build(site, lid_top)
+
+## Where the floor falls away, the lower tread stands proud of the turf by more than a stride
+## can step (up to ~0.7 m on the downhill side): there a footing course of the same curved
+## stones is laid out round it, each footing a step below the one inside it, the way a plinth
+## set into a slope is built up. Each footing stone collides. Its own rng state, so the rest of
+## the keep is laid exactly as before. `plinth_risers` (bots): the tallest riser met walking in
+## from the turf in each of 16 directions.
+const FOOT_STEP := 0.3
+const FOOT_DEPTH := 0.46
+func _plinth_footing(base: float, t1: float) -> void:
+	var keep := _rng.state
+	_rng.seed = 7171
+	var outer := 1.72
+	var count := int(round(TAU * (outer + FOOT_DEPTH) / 0.55))
+	for i in count:
+		var a := TAU * (i + 0.5) / count + 0.2
+		# outward course by course: each footing steps down from the one inside it toward the
+		# turf at its own outer edge, until the turf is within a step
+		var level := t1
+		for c in range(1, 5):
+			var g := INF
+			for f in [0.0, 0.5, 1.0, 1.4]:
+				var r: float = outer + FOOT_DEPTH * (c - 1 + float(f))
+				g = minf(g, _terrain.height_at(site.x + cos(a) * r, site.z + sin(a) * r))
+			if level - g <= FOOT_STEP:
+				break
+			var top := (level + g) * 0.5 if level - g <= FOOT_STEP * 2.0 else level - FOOT_STEP
+			var r := outer + FOOT_DEPTH * (c - 0.5)
+			var bottom := minf(base, g - 0.15) if c == 1 else g - 0.15
+			var p := Vector3(site.x + cos(a) * r, (bottom + top) * 0.5, site.z + sin(a) * r)
+			p.y -= absf(_rng.randfn()) * 0.015
+			var w := TAU * r / count - 0.03
+			_place_ring(p, a, Vector3(w, top - bottom - 0.012, FOOT_DEPTH), Vector3(_rng.randfn() * 0.02, _rng.randfn() * 0.02, _rng.randfn() * 0.02), 0.0, true)
+			footing_count += 1
+			level = top
+	_rng.state = keep
+	plinth_risers = []
+	for k in 16:
+		var a := TAU * k / 16.0
+		var chain := [t1]
+		for c in range(1, 5):
+			var r := outer + FOOT_DEPTH * (c - 0.5)
+			var q := Vector3(site.x + cos(a) * r, t1 + 1.0, site.z + sin(a) * r)
+			# a foot's width: the joints between footing stones are not holes to a sole
+			var tg := Vector3(-sin(a), 0.0, cos(a)) * 0.07
+			var hit := maxf(_ray_top(q), maxf(_ray_top(q + tg), _ray_top(q - tg)))
+			if hit < chain[-1] - 0.02:
+				chain.append(hit)
+			if absf(hit - _terrain.height_at(q.x, q.z)) < 0.005:
+				break                    # on the turf: the slope beyond is walked, not stepped
+		var m := 0.0
+		for j in chain.size() - 1:
+			m = maxf(m, float(chain[j]) - float(chain[j + 1]))
+		plinth_risers.append(m)
+
+## The top of whatever collides under `from` (the footing stones' box colliders are only in
+## the server once the tree is in, so this reads the shapes directly).
+func _ray_top(from: Vector3) -> float:
+	var best := _terrain.height_at(from.x, from.z)
+	for cs in _body.get_children():
+		if cs is CollisionShape3D and cs.shape is BoxShape3D:
+			var lx: Vector3 = (cs as CollisionShape3D).transform.affine_inverse() * from
+			var hs: Vector3 = (cs.shape as BoxShape3D).size * 0.5
+			if absf(lx.x) < hs.x and absf(lx.z) < hs.z:
+				var top := ((cs as CollisionShape3D).transform * Vector3(lx.x, hs.y, lx.z)).y
+				if top < from.y:
+					best = maxf(best, top)
+	return best
 
 ## Hesper's swept floor round her cookfire: no spalls or loose slabs on the ash ring, where
 ## she kneels to light it, or between there and the open floor toward the lid (the side the

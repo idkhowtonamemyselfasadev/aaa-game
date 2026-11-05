@@ -726,6 +726,21 @@ func _ready() -> void:
 		SPOTS[spot] = [rs + to_v * 2.0 + side * 0.9, rs - to_v * 0.2]
 		var pp := rs + to_v * 1.2 - side * 1.0
 		player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.6, pp.z)
+		if "footing" in args:
+			# from the downhill side, where the footing courses step the plinth down to the turf
+			var lo := INF
+			var best := 0.0
+			for k in 32:
+				var a := TAU * k / 32.0
+				var g: float = terrain.height_at(rs.x + cos(a) * 2.6, rs.z + sin(a) * 2.6)
+				if g < lo:
+					lo = g
+					best = a
+			var dv := Vector3(cos(best), 0, sin(best))
+			var sd := dv.cross(Vector3.UP)
+			SPOTS[spot] = [rs + dv * 5.2 + sd * 1.8, rs + dv * 1.7]
+			pp = rs + dv * 1.0 - sd * 0.6
+			player.global_position = Vector3(pp.x, terrain.height_at(pp.x, pp.z) + 0.6, pp.z)
 		print("SHOT seal at %s" % rs)
 	if spot == "fireflies":
 		# low over the night meadow just beside the hero, looking out across the grass
@@ -2079,6 +2094,9 @@ func _ready() -> void:
 			var st: float = world.get_node("Ruins").seal.top_y
 			pos.y = st + 2.0
 			look.y = st - 0.1
+			if "footing" in args:
+				pos.y = terrain.height_at(pos.x, pos.z) + 1.5
+				look.y = st - 0.7
 		if spot == "ferns":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 0.3

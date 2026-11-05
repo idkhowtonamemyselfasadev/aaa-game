@@ -637,7 +637,15 @@ func _physics_process(delta: float) -> void:
 		velocity.y = -0.5
 	else:
 		velocity.y -= GRAVITY * delta
+	var y_pre := global_position.y
+	var floor_pre := is_on_floor()
+	_step_climb(delta)
 	move_and_slide()
+	if floor_pre and velocity.y < 0.5 and state != DEAD:
+		var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, size_scale)
+		if excess > 0.0:
+			_step_dip -= excess
+			body.position.y = _step_dip
 	_update_ground_feet(delta)
 	if anim_tree:
 		# a bigger body covers more ground per stride: the clips play at the scaled speed
@@ -691,6 +699,20 @@ func _update_turn_lead(delta: float) -> void:
 ## Standing and turning (IDLE/STALK, not posed by an attack): ramps turn_shuffle from the yaw rate.
 ## Foot IK on uneven ground (StrideWarp ground feet), scaled with the body: each boot on its
 ## own ground on the ring's slope, the hips settled for the lower one; off in the air and dead.
+## Step-up (StepUp, shared with the hero): a riser up to STEP_H x size is climbed; the body
+## is let down by the lift and eases up through it. `steps_up` counts them (bots).
+const STEP_H := 0.38
+var steps_up := 0
+var _step_dip := 0.0
+
+func _step_climb(delta: float) -> void:
+	var lift := StepUp.try(self, delta, STEP_H * size_scale, false) if state != DEAD else 0.0
+	if lift > 0.0:
+		steps_up += 1
+	if _step_dip < 0.0 or lift > 0.0:
+		_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, size_scale)
+		body.position.y = _step_dip
+
 func _update_ground_feet(delta: float) -> void:
 	if stride_warp == null:
 		return

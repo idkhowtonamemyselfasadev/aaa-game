@@ -190,6 +190,7 @@ var warps := 0                  # times she was lifted past an obstacle she coul
 var last_warp := Vector3.ZERO
 
 var body: Node3D
+var _step_dip := 0.0          # visible body below the root while a step-up eases out
 var model: Node3D
 var skel: Skeleton3D
 var garb: HeroGarb
@@ -584,7 +585,15 @@ func _physics_process(delta: float) -> void:
 	velocity.x = lerpf(velocity.x, v.x, 1.0 - exp(-6.0 * delta))
 	velocity.z = lerpf(velocity.z, v.z, 1.0 - exp(-6.0 * delta))
 	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+	# the shrine plinth's courses and footing are steps (StepUp, shared with the hero)
+	var y_pre := global_position.y
+	var floor_pre := is_on_floor()
+	StepUp.try(self, delta, 0.38)
 	move_and_slide()
+	if floor_pre and velocity.y < 0.5:
+		_step_dip -= StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
+	_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, 1.0)
+	body.position.y = _step_dip
 	_update_warm(delta)
 	_update_scrap(delta)
 	_update_cower(delta)

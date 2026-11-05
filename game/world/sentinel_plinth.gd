@@ -5,9 +5,9 @@ extends Node3D
 ## lower course, a narrower upper course and a chamfered capstone the statue's feet stand on;
 ## one corner of the lower course has cracked off and lies tipped in the turf beside it, with a
 ## few spalls. The stones are the ruins' dressed blocks under the same weathered masonry
-## material (lichen, moss, a dark crust), instanced and not colliding; one low frustum collider
-## ramps up over both steps so the statue can step down off its post when it wakes and walk
-## back up onto it to go still again (the controller has no step-up), and the hero can climb it.
+## material (lichen, moss, a dark crust), instanced; each course collides as one box, so the
+## statue steps down off its post when it wakes and back up onto it (StepUp) to go still
+## again, and the hero climbs it course by course.
 
 @export var ruins_path: NodePath
 @export var terrain_path: NodePath
@@ -19,11 +19,11 @@ const UP_HALF := 0.82        # half-width of the upper course
 const CAP_HALF := 0.72       # half-width of the capstone
 const STEP := 0.24           # rise of each course
 const CAP := 0.12            # capstone thickness
-const RAMP_OUT := 2.05       # the collider meets the turf this far from the centre
 
 var centre := Vector3.ZERO
 var top_y := 0.0             # the capstone's top: where the statue stands (bots)
 var block_count := 0
+var risers: Array = []       # bots: the lower course's riser over the turf all round
 var spalls := 0
 var _per: Array = []
 var _cut := {}          # size -> dressed block mesh cut to it
@@ -41,6 +41,8 @@ const RUNE_ENERGY := 2.4      # emission at full kindle (the statue's chest burn
 ## Plan of the plinth for the grass mask: centre xz, yaw; INF until built.
 static var plan_centre := Vector2.INF
 static var plan_yaw := 0.0
+## The footing blocks' footprints in the plan's frame: [centre, half extents] (grass).
+static var foot_plan: Array = []
 
 ## Lay the plinth round `c` (world), square to `yaw` (the statue's facing). Returns top_y.
 func build(c: Vector3, yaw: float) -> float:
@@ -104,6 +106,7 @@ func build(c: Vector3, yaw: float) -> float:
 				_put(meshes, dims, p, bs * Basis.from_euler(tilt), size, y - centre.y, rng)
 			y += h
 			course += 1
+	_footing(meshes, dims, base, t1, yaw)
 	# the lower course's core under the upper course (hidden but keeps the tread from reading hollow)
 	_put(meshes, dims, Vector3(centre.x, (base + t1) * 0.5 - 0.01, centre.z), b,
 			Vector3(LOW_HALF * 2.0 - LOW_DEPTH * 2.0 + 0.02, t1 - base - 0.03, LOW_HALF * 2.0 - LOW_DEPTH * 2.0 + 0.02), 0.0, rng)
@@ -134,7 +137,7 @@ func build(c: Vector3, yaw: float) -> float:
 	for key in _cut:
 		_multimesh(_cut[key], _cut_per[key], "Plinth_%d" % ci)
 		ci += 1
-	_collider(t1)
+	_collider(base, t1, t2, yaw)
 	_inscription(b, t1)
 	return top_y
 
@@ -265,28 +268,102 @@ func _put(meshes: Array[ArrayMesh], dims: Array[Vector3], p: Vector3, bas: Basis
 	_per[v].append([xf, Color(clampf(above / 8.0, 0.0, 1.0), rng.randf(), 1.0, 1.0)])
 	block_count += 1
 
-## A frustum from the turf RAMP_OUT out up onto the capstone: both steps walk as one slope.
-func _collider(t1: float) -> void:
-	var pts := PackedVector3Array()
-	for k in 24:
-		var a := TAU * k / 24.0
-		var dv := Vector3(cos(a), 0, sin(a))
-		var go := _terrain.height_at(centre.x + dv.x * RAMP_OUT, centre.z + dv.z * RAMP_OUT)
-		var gm := _terrain.height_at(centre.x + dv.x * LOW_HALF, centre.z + dv.z * LOW_HALF)
-		pts.append(centre + dv * RAMP_OUT + Vector3.UP * (go - 0.3 - centre.y))
-		pts.append(centre + dv * LOW_HALF + Vector3.UP * (maxf(t1, gm + 0.03) - centre.y))
-		pts.append(centre + dv * (CAP_HALF * 0.85) + Vector3.UP * (top_y - centre.y))
-	for i in pts.size():
-		pts[i] -= global_position
+## Where the turf falls away the lower course stands proud by more than a stride can step
+## (~0.6 m on the downhill side): there footing blocks are laid round it, each a step below
+## the course inside it, three to a side, each side owning its +along corner. They collide
+## (boxes, `_foot_boxes`, built into the plinth's body). `risers` (bots): the tallest riser met
+## walking in from the turf in each of 16 directions.
+const FOOT_STEP := 0.3
+const FOOT_DEPTH := 0.44
+var footing_count := 0
+var _foot_boxes: Array = []      # [Transform3D world, size]
+func _footing(meshes: Array[ArrayMesh], dims: Array[Vector3], base: float, t1: float, yaw: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 17
+	foot_plan = []
+	for side in 4:
+		var bs := Basis(Vector3.UP, yaw + side * PI * 0.5)
+		var out := bs.z
+		var along := bs.x
+		for c in range(1, 3):
+			var half := LOW_HALF + FOOT_DEPTH * (c - 1)
+			var span := half * 2.0 + FOOT_DEPTH
+			for i in 3:
+				var seg := span / 3.0
+				var s0 := -half + seg * (i + 0.5)
+				var mid := centre + out * (half + FOOT_DEPTH * 0.5) + along * s0
+				var g := INF
+				for o in [-0.45, 0.0, 0.45]:
+					for d in [0.0, FOOT_DEPTH * 0.5, FOOT_DEPTH, FOOT_DEPTH * 2.0]:
+						var q: Vector3 = centre + out * (LOW_HALF + float(d)) + along * (s0 + seg * float(o))
+						g = minf(g, _terrain.height_at(q.x, q.z))
+				var riser := t1 - g
+				if riser <= FOOT_STEP:
+					continue
+				var n := int(ceil(riser / FOOT_STEP)) - 1
+				if c > n:
+					continue
+				var top := t1 - riser * float(c) / float(n + 1)
+				var bottom := minf(base, g - 0.14)
+				var p := Vector3(mid.x, (bottom + top) * 0.5, mid.z)
+				p.y -= absf(rng.randfn()) * 0.01
+				var size := Vector3(seg - 0.022, top - bottom - 0.014, FOOT_DEPTH)
+				_put(meshes, dims, p, bs * Basis.from_euler(Vector3(rng.randfn() * 0.01, 0.0, rng.randfn() * 0.01)), size, bottom - centre.y, rng)
+				_foot_boxes.append([Transform3D(bs, p), Vector3(seg, top - bottom, FOOT_DEPTH)])
+				var lc := Vector2(p.x - centre.x, p.z - centre.z).rotated(yaw)
+				foot_plan.append([lc, Vector2(seg, FOOT_DEPTH) * 0.5 if side % 2 == 0 else Vector2(FOOT_DEPTH, seg) * 0.5])
+				footing_count += 1
+	var b := Basis(Vector3.UP, yaw)
+	risers = []
+	for k in 16:
+		var a := TAU * k / 16.0
+		var dv := b * Vector3(cos(a), 0.0, sin(a))
+		var sq := 1.0 / maxf(absf(cos(a)), absf(sin(a)))
+		var chain := [t1]
+		for c in range(1, 3):
+			var q := centre + dv * (LOW_HALF + FOOT_DEPTH * (c - 0.5)) * sq
+			var tp := _box_top(q)
+			if tp > -INF and tp < chain[-1] - 0.02:
+				chain.append(tp)
+		var qg := centre + dv * (LOW_HALF + FOOT_DEPTH * (chain.size() - 1) + 0.15) * sq
+		chain.append(_terrain.height_at(qg.x, qg.z))
+		var m := 0.0
+		for j in chain.size() - 1:
+			m = maxf(m, float(chain[j]) - float(chain[j + 1]))
+		risers.append(m)
+
+func _box_top(q: Vector3) -> float:
+	var best := -INF
+	for fb in _foot_boxes:
+		var xf: Transform3D = fb[0]
+		var hs: Vector3 = fb[1] * 0.5
+		var l := xf.affine_inverse() * q
+		if absf(l.x) < hs.x and absf(l.z) < hs.z:
+			best = maxf(best, (xf * Vector3(l.x, hs.y, l.z)).y)
+	return best
+
+## One box per course (lower course, upper course, capstone), square to the statue, so feet
+## meet real risers and the walkers' step-up (StepUp) climbs them course by course.
+func _collider(base: float, t1: float, t2: float, yaw: float) -> void:
 	var body := StaticBody3D.new()
 	body.name = "Body"
 	add_child(body)
-	var shape := ConvexPolygonShape3D.new()
-	shape.points = pts
-	var cs := CollisionShape3D.new()
-	cs.name = "Plinth"
-	cs.shape = shape
-	body.add_child(cs)
+	for fb in _foot_boxes:
+		var fbox := BoxShape3D.new()
+		fbox.size = fb[1] * Vector3(0.98, 1.0, 0.98)
+		var fcs := CollisionShape3D.new()
+		fcs.name = "PlinthFooting"
+		fcs.shape = fbox
+		body.add_child(fcs)
+		fcs.global_transform = fb[0]
+	for d in [[LOW_HALF, t1], [UP_HALF, t2], [CAP_HALF, top_y]]:
+		var box := BoxShape3D.new()
+		box.size = Vector3(float(d[0]) * 2.0, float(d[1]) - base, float(d[0]) * 2.0)
+		var cs := CollisionShape3D.new()
+		cs.name = "PlinthCourse"
+		cs.shape = box
+		body.add_child(cs)
+		cs.global_transform = Transform3D(Basis(Vector3.UP, yaw), Vector3(centre.x, (base + float(d[1])) * 0.5, centre.z))
 
 ## Whether (x, z) lies under the plinth's footprint grown by `margin` (grass, flowers).
 static func under(x: float, z: float, margin: float) -> bool:
@@ -294,7 +371,13 @@ static func under(x: float, z: float, margin: float) -> bool:
 		return false
 	var d := Vector2(x, z) - plan_centre
 	var l := d.rotated(plan_yaw)
-	return absf(l.x) < LOW_HALF + margin and absf(l.y) < LOW_HALF + margin
+	if absf(l.x) < LOW_HALF + margin and absf(l.y) < LOW_HALF + margin:
+		return true
+	for r in foot_plan:
+		var fl: Vector2 = l - (r[0] as Vector2)
+		if absf(fl.x) < r[1].x + margin and absf(fl.y) < r[1].y + margin:
+			return true
+	return false
 
 func _exit_tree() -> void:
 	if plan_centre == Vector2(centre.x, centre.z):

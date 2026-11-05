@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -211,6 +211,9 @@ func _ready() -> void:
 		return
 	if name == "footik":
 		_foot_ik_test()
+		return
+	if name == "stepup":
+		_step_up_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -2052,6 +2055,108 @@ func _airstrike_test() -> void:
 ## Foot IK on slopes: standing on a ~20 deg hillside each sole sits on ITS ground (the uphill
 ## foot is not buried, the downhill one does not hang), the hips settle by what the lower foot
 ## needs; on the flat nothing changes; walking up and across the slope no foot sinks in.
+## Step-up: a three-tread stair (0.2 m risers) set in front of the hero on the flat is walked
+## up course by course, the visible body easing through each lift (no pop); a 0.6 m wall is
+## not stepped; the real plinths' risers (shrine lid, Sentinel post) are all steps.
+func _step_up_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(60)
+	var space := p.get_world_3d().direct_space_state
+	var floor_y: float = p.global_position.y
+	var fh := space.intersect_ray(PhysicsRayQueryParameters3D.create(p.global_position + Vector3.UP, p.global_position + Vector3.DOWN * 2.0, 1, [p.get_rid()]))
+	if not fh.is_empty():
+		floor_y = fh.position.y
+	var fwd := Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z).normalized()
+	var side := fwd.cross(Vector3.UP)
+	const RISE := 0.2
+	const TREAD := 0.45
+	var built: Array = []
+	var box_at := func(center: Vector3, size: Vector3) -> void:
+		var sb := StaticBody3D.new()
+		var cs := CollisionShape3D.new()
+		var bx := BoxShape3D.new()
+		bx.size = size
+		cs.shape = bx
+		sb.add_child(cs)
+		_world.add_child(sb)
+		sb.global_transform = Transform3D(Basis(side, Vector3.UP, fwd), center)
+		built.append(sb)
+	for i in 3:
+		# each course runs from its riser to the far end, so the treads stack like a stair
+		var h := RISE * (i + 1)
+		var near := 1.2 + TREAD * i
+		var far := 1.2 + TREAD * 3 + 1.5
+		box_at.call(p.global_position + fwd * ((near + far) * 0.5) + Vector3.UP * (floor_y - p.global_position.y + h * 0.5 - 0.1), Vector3(2.4, h + 0.2, far - near))
+	await _ticks(5)
+	var y0 := p.global_position.y
+	var steps0: int = p.steps_up
+	var vis_jump := 0.0
+	var dip_max := 0.0
+	var last_vis: float = p.body.global_position.y
+	var start := p.global_position
+	for i in 300:
+		if (p.global_position - start).dot(fwd) > 1.2 + TREAD * 3 + 0.7:
+			break                      # on the top tread
+		p.bot_input = Vector2(fwd.x, fwd.z) * 0.6
+		await get_tree().physics_frame
+		var v: float = p.body.global_position.y
+		if OS.get_environment("STEP_DEBUG") != "" and absf(v - last_vis) > 0.02:
+			print("STEPDBG i %d root %.3f body %.3f vis %.3f dv %.3f floor %s steps %d" % [i, p.global_position.y, p.body.position.y, v, v - last_vis, p.is_on_floor(), p.steps_up])
+		vis_jump = maxf(vis_jump, absf(v - last_vis))
+		last_vis = v
+		dip_max = minf(dip_max, p.body.position.y)
+	p.bot_input = Vector2.ZERO
+	await _ticks(30)
+	var climbed := p.global_position.y - y0
+	var steps: int = p.steps_up - steps0
+	print("BOT stepup: walked up a 3 x %.2f m stair: climbed %.3f m in %d steps (last rise %.3f), visible body dipped %.3f m at most, largest visible rise in one tick %.3f m" % [RISE, climbed, steps, p.step_rise, -dip_max, vis_jump])
+	if climbed < RISE * 3 - 0.05 or steps < 3:
+		return _combat_done(false, "the hero did not walk up the stair (climbed %.2f m, %d steps)" % [climbed, steps])
+	if vis_jump > 0.06:
+		return _combat_done(false, "the step pops the visible body %.3f m in one tick" % vis_jump)
+	if dip_max > -0.05:
+		return _combat_done(false, "the step lift is not eased (body dip %.3f)" % dip_max)
+	for b in built:
+		b.queue_free()
+	built.clear()
+	# a wall: 0.6 m is not a step
+	p.global_position = Vector3(p.global_position.x, floor_y + 0.05, p.global_position.z) - fwd * 6.0
+	p.velocity = Vector3.ZERO
+	await _ticks(40)
+	var gw: float = p.global_position.y
+	box_at.call(p.global_position + fwd * 1.6 + Vector3.UP * 0.2, Vector3(2.4, 0.8, 0.6))
+	await _ticks(5)
+	var sw0: int = p.steps_up
+	var wy := -INF
+	for i in 120:
+		p.bot_input = Vector2(fwd.x, fwd.z) * 0.6
+		await get_tree().physics_frame
+		wy = maxf(wy, p.global_position.y)
+	p.bot_input = Vector2.ZERO
+	print("BOT stepup: walked into a 0.6 m wall: rose %.3f m, %d steps" % [wy - gw, p.steps_up - sw0])
+	if wy - gw > 0.08 or p.steps_up != sw0:
+		return _combat_done(false, "a 0.6 m wall was stepped up")
+	for b in built:
+		b.queue_free()
+	# the real plinths: every riser all round is a step
+	var sh: Array = (_world.get_node("Ruins") as Ruins).plinth_risers
+	var sn: Array = _world.sentinel_plinth.risers
+	var shm := -INF
+	var snm := -INF
+	for r in sh:
+		shm = maxf(shm, r)
+	for r in sn:
+		snm = maxf(snm, r)
+	print("BOT stepup: risers shrine %s sentinel %s" % [str(sh.map(func(r): return snappedf(r, 0.01))), str(sn.map(func(r): return snappedf(r, 0.01)))])
+	print("BOT stepup: shrine plinth lower riser max %.3f m (%d), Sentinel plinth lower riser max %.3f m (%d), step-up %.2f m" % [shm, sh.size(), snm, sn.size(), p.STEP_H])
+	if sh.is_empty() or sn.is_empty() or shm > p.STEP_H or snm > p.STEP_H:
+		return _combat_done(false, "a plinth riser is taller than a step")
+	_combat_done(true, "stair walked up course by course, wall held, plinth risers are steps")
+
 func _foot_ik_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
@@ -3702,11 +3807,11 @@ func _sentinel_slam_test(w: StoneSentinel) -> bool:
 		return false
 	var hour_was: float = _world.time_of_day
 	_world.time_of_day = 12.5
-	await _ticks(3)
+	await _ticks(20)                 # the sun is moved on the world's own tick: let it settle
 	var ex_noon := lc._sun_exposure()
 	var shel: float = _world.get_node("Flora").shelter_at(lc.global_position.x, lc.global_position.z)
 	_world.time_of_day = 23.5
-	await _ticks(3)
+	await _ticks(20)
 	var ex_night := lc._sun_exposure()
 	_world.time_of_day = hour_was
 	await _ticks(2)

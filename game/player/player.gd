@@ -1063,7 +1063,11 @@ func _physics_process(delta: float) -> void:
 		_jump_y0 = global_position.y
 		if combat != null:
 			combat.end_plunge_rise()
+	var y_pre := global_position.y
+	var floor_pre := is_on_floor()
+	_step_climb(delta)
 	move_and_slide()
+	_step_settle(y_pre, floor_pre, delta)
 	_put_off_foes()
 	_update_animation(delta)
 	_jump_pose(delta, (attacking and not air_move) or charging or dodging or reeling, attacking or plunging)
@@ -1074,6 +1078,41 @@ func _physics_process(delta: float) -> void:
 	_update_turn_lead(delta)
 	if combat != null:
 		combat.physics_step(delta)
+
+# --- step-up: stair treads, plinth courses, kerbs ---
+## Walking into a riser no taller than STEP_H lifts the hero onto the tread (StepUp); the
+## visible body and the camera are let down by the lift and ease up through it, so the
+## climb reads as a step taken and not a pop. `steps_up` counts them (bots).
+const STEP_H := 0.38
+var steps_up := 0
+var step_rise := 0.0           # bots: the last step's rise
+var _step_dip := 0.0           # visible body/camera below the root (m, <= 0)
+var _cam_base_y := NAN
+
+func _step_climb(delta: float) -> void:
+	if is_nan(_cam_base_y):
+		_cam_base_y = cam_pivot.position.y
+	var lift := 0.0
+	if not climbing and not gliding:
+		lift = StepUp.try(self, delta, STEP_H)
+	if lift > 0.0:
+		steps_up += 1
+		step_rise = lift
+	_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, 1.0)
+	body.position.y = _step_dip
+	cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
+
+## The lift and the slide's own ride over a lip's corner (the capsule's round bottom) both
+## raise the root: a grounded root that rose more in one tick than the slope under it would
+## lift it is let down by the excess, which then eases out (StepUp.ease_dip).
+func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
+	if not floor_pre or velocity.y > 0.5 or climbing or gliding:
+		return
+	var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
+	if excess > 0.0:
+		_step_dip -= excess
+		body.position.y = _step_dip
+		cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
 
 # --- locomotion weight: the body leans into what the feet are doing ---
 ## Pivoting at the soles, the whole figure tips forward into a start (the push of the first
