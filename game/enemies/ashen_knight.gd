@@ -160,6 +160,10 @@ var _head_bow := 0.0
 var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
+var _intro_dorm := 1.0
+var intro_bow_peak := 0.0        # bots: head bowed asleep in the reveal (rad)
+var intro_lift_back := 0.0       # bots: head flung back in the reveal's roar (rad, negative)
+var intro_gather_peak := 0.0     # bots: how deep the knees set before the heave (m)
 var grow_peak_shake := 0.0       # bots
 var surge_kneel_peak := 0.0      # bots: deepest kneel of the surges (0..1)
 var surge_heave_peak := 0.0      # bots: how far the burst heaved the glaive up (0..1)
@@ -457,7 +461,7 @@ func _physics_process(delta: float) -> void:
 	if tuck != null and not (move_kind == STOMP_MOVE and state in [WINDUP, STRIKE, RECOVER]):
 		tuck.lift_hip = 0.0
 		tuck.lift_knee = 0.0
-	if not (move_kind in [LEAP_MOVE, STOMP_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
+	if not (move_kind in [LEAP_MOVE, STOMP_MOVE, INTRO_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
 			_wield.position.y = 0.0
@@ -465,7 +469,7 @@ func _physics_process(delta: float) -> void:
 		_crown_reel = false
 	if _crown_reel and state != DEAD:
 		_crown_tick(0.0 if _freeze > 0.0 else delta)
-	elif head != null and _surge < 0.0:
+	elif head != null and _surge < 0.0 and not (move_kind == INTRO_MOVE and state == WINDUP):
 		# out of the reel the head eases back to the animation's carriage
 		var k := 1.0 - exp(-10.0 * delta)
 		_head_bow = lerpf(_head_bow, 0.0, k)
@@ -744,26 +748,74 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		_wield.position.y = -sink
 	return [move, lean, sink, ember]
 
-## The reveal's beat, timed off the intro camera: it lifts its head and squares up to the hero
-## while the camera cranes up it, then sets its feet, heaves the glaive up over the helm with
-## the ember flaring hot (the roar) and brings it back down into its guard for the hand-off.
+## The reveal's beat in body beats, timed off the intro camera (it = intro s):
+##  DORMANT (0 .. ~1.0): it stands slumped over its grounded glaive, head bowed on its chest,
+##    the ember barely alight, while the camera starts low at its boots.
+##  WAKE (~1.0 .. 2.3): the head lifts slowly onto the hero, the chest straightens, the ember
+##    gathers (the camera is craning up the body).
+##  GATHER (2.3 .. 2.95): the anticipation: it sets its feet wide, knees bending, the head dips
+##    and the glaive is drawn down and back low, coiling for the heave.
+##  HEAVE + ROAR (2.95 .. 3.9): knees drive straight, the glaive is thrown up skyward, the chest
+##    out and the head flung back roaring; the roar shakes through the arms and the helm.
+##  FOLLOW-THROUGH (3.9 .. T): the head comes down onto the hero first, the glaive follows past
+##    the guard a touch low and rises back into it, the weight settles with a small dip.
 func _intro_tick(delta: float, to: Vector3) -> Array:
 	var it := intro.t if intro != null and is_instance_valid(intro) else BossIntro.T
-	_turn_to(to, delta, 2.5)
-	var r0 := BossIntro.CRANE_T + 0.1
-	var up := smoothstep(r0, r0 + 0.45, it) * (1.0 - smoothstep(BossIntro.ROAR_END - 0.2, BossIntro.T - 0.15, it))
-	if intro != null and intro.skipped:
-		up = move_toward(_heave_now, 0.0, delta * 2.5)   # a skip lets the glaive back down
+	var skip := intro != null and is_instance_valid(intro) and intro.skipped
+	# it only squares up once it has woken
+	_turn_to(to, delta, 2.5 * smoothstep(0.8, 1.8, it))
+	var r0 := BossIntro.CRANE_T + 0.15
+	var wake := smoothstep(0.9, 2.3, it)
+	var gather := smoothstep(2.25, r0, it) * (1.0 - smoothstep(r0 - 0.05, r0 + 0.2, it))
+	var up := smoothstep(r0 - 0.05, r0 + 0.35, it) * (1.0 - smoothstep(BossIntro.ROAR_END - 0.15, BossIntro.T - 0.25, it))
+	var roar := smoothstep(r0 + 0.15, r0 + 0.35, it) * (1.0 - smoothstep(BossIntro.ROAR_END - 0.25, BossIntro.ROAR_END + 0.05, it))
+	var down_u := clampf((it - (BossIntro.ROAR_END - 0.15)) / (BossIntro.T - BossIntro.ROAR_END - 0.1), 0.0, 1.0)
+	var follow := sin(PI * down_u)          # the overshoot past the guard on the way down
+	var settle := sin(PI * clampf((it - BossIntro.ROAR_END - 0.2) / 0.55, 0.0, 1.0))
+	# it slumps into the dormant stance over the first beat (no snap from whatever it was doing)
+	var dormant := (1.0 - wake) * smoothstep(0.0, 0.4, it)
+	if skip:
+		# a skip lets it straight down into the guard: no beats, eased from where it was
+		up = move_toward(_heave_now, 0.0, delta * 2.5)
+		wake = 1.0
+		dormant = move_toward(_intro_dorm, 0.0, delta * 2.5)
+		gather = 0.0
+		roar = 0.0
+		follow = 0.0
+		settle = 0.0
 	_heave_now = up
+	_intro_dorm = dormant
 	intro_heave = maxf(intro_heave, up)
-	_pose = _lerp_pose(guard_pose, INTRO_ROAR, up)
-	# the roar: the heave shudders, the chest thrown back, the ember blazing
-	_pose[1] += sin(it * 38.0) * 1.5 * up
-	var lean := -0.16 * up
-	var sink := 0.06 * smoothstep(r0 - 0.4, r0, it) * (1.0 - up)   # sets its feet before the heave
-	var ember := 1.0 + 5.0 * up + 0.6 * sin(it * 23.0) * up
+	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
+	# and back in the gather, heaved to the sky, then down past the guard and back up into it
+	var base := _lerp_pose(_from, guard_pose, smoothstep(0.0, 0.4, it))
+	var rest := _lerp_pose(_lerp_pose(base, SURGE_LEAN, dormant), CROUCHED, 0.6 * gather + 0.35 * follow)
+	_pose = _lerp_pose(rest, INTRO_ROAR, up)
+	_pose[1] += sin(it * 38.0) * 2.0 * roar + sin(it * 7.0) * 1.5 * dormant
+	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the
+	# gather, flung back in the roar with a shaking roll, comes down onto the hero first
+	var bow := 0.62 * dormant - 0.08 * sin(PI * clampf((it - 1.6) / 0.9, 0.0, 1.0)) + 0.16 * gather \
+		- 0.62 * roar + 0.14 * follow
+	var roll := 0.07 * sin(it * 29.0) * roar + 0.05 * sin(it * 1.7) * dormant
+	if head != null:
+		# the head leads the body: a quicker follow in the roar than in the wake
+		var kh := 1.0 - exp(-(9.0 + 9.0 * roar) * delta)
+		_head_bow = lerpf(_head_bow, bow, kh)
+		_head_roll = lerpf(_head_roll, roll, kh)
+		head.bow = _head_bow
+		head.roll = _head_roll
+	intro_bow_peak = maxf(intro_bow_peak, _head_bow)
+	intro_lift_back = minf(intro_lift_back, _head_bow)
+	# chest: hunched asleep, coiled forward in the gather, thrown back in the roar
+	var lean := 0.14 * dormant + 0.12 * gather - 0.14 * up - 0.05 * roar + 0.08 * follow \
+		+ 0.012 * sin(it * 47.0) * roar
+	# legs: knees soft asleep, deep in the gather, straight in the heave, a settle dip after
+	var sink := 0.06 * dormant + 0.2 * gather + 0.07 * settle
+	_set_tuck(0.12 * dormant + 0.42 * gather + 0.14 * settle, 0.24 * dormant + 0.84 * gather + 0.28 * settle)
+	intro_gather_peak = maxf(intro_gather_peak, sink)
+	var ember := 0.35 + 0.9 * wake + 5.0 * up + 0.6 * sin(it * 23.0) * up
 	_update_glint(0.0)
-	if not has_meta("roared") and it >= r0 + 0.35:
+	if not has_meta("roared") and it >= r0 + 0.3:
 		set_meta("roared", true)
 		roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
 		ImpactFX.spawn(get_parent(), global_position + Vector3.UP * 0.1, Vector3.UP, "dirt", 1.4 + 0.3 * size_scale)

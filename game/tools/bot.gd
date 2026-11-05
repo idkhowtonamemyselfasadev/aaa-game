@@ -2766,6 +2766,9 @@ func _knight_test() -> void:
 		return _combat_done(false, "the reveal did not run its shots/letterbox, or the bar came up early")
 	if lift_mid < 1.5:
 		return _combat_done(false, "the reveal camera never craned up the giant")
+	print("BOT knight: reveal body: head bowed asleep %.2f rad, flung back %.2f rad, knees set %.2f m before the heave" % [k.intro_bow_peak, k.intro_lift_back, k.intro_gather_peak])
+	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
+		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
 	if drift > 0.35 or k.health != hp_i or k.intro_heave < 0.9 or not k.has_meta("roared"):
 		return _combat_done(false, "the hero moved, the knight was hurt or it never roared in the reveal")
 	if k.state != HollowSoldier.STALK or p.cinematic or get_viewport().get_camera_3d() != hero_cam or not k.intro_seen:

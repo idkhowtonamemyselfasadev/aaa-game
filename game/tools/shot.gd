@@ -2494,6 +2494,19 @@ func _ready() -> void:
 			kk._physics_process(dt)
 			player._physics_process(dt)
 			bi._frame(bi.t)
+		if "body" in args:
+			# intro body: a fixed front 3/4 lens on the whole giant (judge the beats, not the shot)
+			var kf := player.global_position - kk.global_position
+			kf.y = 0.0
+			kf = kf.normalized()
+			var ks := kf.cross(Vector3.UP)
+			var bp := kk.global_position + kf * 3.4 * kk.size_scale + ks * (-2.2 if "flip" in args else 2.2) * kk.size_scale
+			bp.y = terrain.height_at(bp.x, bp.z) + 0.75 * kk.size_scale
+			bi.cam.h_offset = 0.0
+			bi.cam.v_offset = 0.0
+			bi.cam.global_position = bp
+			bi.cam.look_at(kk.global_position + Vector3.UP * 1.0 * kk.size_scale)
+			(bi.cam.attributes as CameraAttributesPractical).dof_blur_far_enabled = false
 		bi.cam.make_current()
 		cam = bi.cam
 		var hud = player.get_node_or_null("Hud")
