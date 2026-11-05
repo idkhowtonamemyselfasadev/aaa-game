@@ -180,7 +180,13 @@ func _lock_across(skel: Skeleton3D, i: int, hb: int, fb: int, x: Vector3, up: Ve
 	var el: float = ((inv * (_pin[i] as Vector3)) - foot).dot(x)
 	if absf(el) > LOCK_MAX * 2.0:
 		return                                           # not this foot's pin any more: leave it
-	el = clampf(el, -LOCK_MAX, LOCK_MAX) * float(_pin_w[i]) * lock
+	if absf(el) > LOCK_MAX:
+		# held too far across: drag the pin along with the clip's foot (a slow slide, never the
+		# 16 cm pop of letting go once the error passes twice the cap)
+		el = signf(el) * LOCK_MAX
+		var pin: Vector3 = inv * (_pin[i] as Vector3)
+		_pin[i] = inv.affine_inverse() * (pin - x * (pin - foot).dot(x) + x * el)
+	el *= float(_pin_w[i]) * lock
 	if absf(el) < 1e-3:
 		return
 	var d := foot - skel.get_bone_global_pose(hb).origin

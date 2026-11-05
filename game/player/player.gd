@@ -454,6 +454,7 @@ func _setup_animation() -> void:
 
 var _warp := 0.0                       # 0..1 how much of the stride warp is on
 var foot_lock_on := true               # (bots) the StrideWarp contact lock may be switched off
+var foot_lock_lateral := OS.get_environment("HERO_NOLATERAL") == ""   # the lock also holds the boot across the legs' line (env HERO_NOLATERAL: the before)
 
 func _update_warp(delta: float, on: bool) -> void:
 	var warp := clampf((_blend - ANIM_WALK_SPEED) / (ANIM_RUN_SPEED - ANIM_WALK_SPEED), 0.0, 1.0) if on else 0.0
@@ -472,6 +473,7 @@ func _update_warp(delta: float, on: bool) -> void:
 	if stride_warp != null:
 		stride_warp.k = lerpf(1.0, run_stride_k(Vector2(velocity.x, velocity.z).length()), _warp)
 		stride_warp.lock = move_toward(stride_warp.lock, lock, delta * 8.0)
+		stride_warp.lock_lateral = foot_lock_lateral
 
 ## Foot IK on uneven ground (StrideWarp ground feet): on while the hero stands or strides on
 ## the floor; off in the air, on a wall, under the wing, and under posed legs (Crumple).

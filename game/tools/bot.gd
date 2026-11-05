@@ -1272,7 +1272,9 @@ func _stride_test() -> void:
 	for o in out:
 		if o[2] < 6:
 			return _combat_done(false, "too few flat-foot ticks at a %s (%d)" % [o[0], o[2]])
-		var cap := 0.015 if o[0] == "sprint" else 0.012   # sprint: 0.024 before the lock; the strike tick still slips
+		# sprint: 0.024 before the lock, 0.013 before the lateral lock (HERO_NOLATERAL), the strike tick still slips;
+		# run: 0.008 before the lateral lock
+		var cap := 0.012 if o[0] == "sprint" else (0.0075 if o[0] == "run" else 0.012)
 		if o[1] > cap:
 			return _combat_done(false, "the planted foot skates %.4f m/tick at a %s (%.1f m/s; want <= %.3f)" % [o[1], o[0], o[3], cap])
 	_combat_done(true, "the planted foot holds still on the turf at a walk, a run and a sprint")
