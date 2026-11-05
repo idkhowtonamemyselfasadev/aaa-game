@@ -886,5 +886,17 @@
   "time": "2026-11-05T07:10:00Z",
   "caption": "The knight risen at its phase-2 size, glaive levelled back into guard with the fire still burning; the fallen stone in front reads blocky and the figure is backlit, GL frame.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261105-0930-stepdown-edge.jpg",
+  "time": "2026-11-05T09:30:00Z",
+  "caption": "The hero stepping off a 0.3 m masonry course: one boot still on the tread, the other set down on the turf with no fall; the lens sits behind instead of side-on and the hero is in tree shade, GL frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0930-stepdown-off.jpg",
+  "time": "2026-11-05T09:30:00Z",
+  "caption": "Two steps later both boots are planted on the turf below the course and the hips are let down to the root; the shade and the plain test blocks keep it far from a Wukong frame, GL frame.",
+  "verdict": "fail"
  }
 ]

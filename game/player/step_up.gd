@@ -65,16 +65,85 @@ static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true) 
 	why = ""
 	return rise + CLEAR
 
-## Eases the visible body's dip (<= 0, m) back up to the root: about a step's rise over the
-## time of a stride (~0.25 s), never faster than the walker could lift its hips at its pace
-## (a run up a stair climbs quicker than a walk), so the hips rise with the step and not in
-## one tick. `size` slows a giant's lift in proportion.
+## Eases the visible body's offset from the root back to it: a dip (< 0, after a step up) about a
+## step's rise over the time of a stride (~0.25 s), never faster than the walker could lift its
+## hips at its pace (a run up a stair climbs quicker than a walk), so the hips rise with the step
+## and not in one tick; a hold (> 0, after a step down) lets the hips down a little quicker, as
+## the leading leg reaches for the lower tread and takes the weight. `size` slows a giant in
+## proportion.
+const DOWN_K := 1.4
+
 static func ease_dip(dip: float, speed: float, delta: float, size: float) -> float:
-	if dip >= 0.0:
+	if dip == 0.0:
 		return 0.0
-	var rate := minf(-dip * 7.0, (0.9 + 0.45 * speed / size) * sqrt(size))
-	dip = minf(dip + maxf(rate, 0.15 * sqrt(size)) * delta, 0.0)
-	return 0.0 if dip > -0.002 else dip
+	var m := absf(dip)
+	var k := DOWN_K if dip > 0.0 else 1.0
+	var rate := minf(m * 7.0 * k, (0.9 + 0.45 * speed / size) * sqrt(size) * k)
+	m = maxf(m - maxf(rate, 0.15 * sqrt(size)) * delta, 0.0)
+	return 0.0 if m < 0.002 else signf(dip) * m
+
+## Step-down, called right after move_and_slide: a walker that was on its floor and walked off a
+## tread edge, a kerb or a plinth course no deeper than `max_h` is set down on the lower tread at
+## once (no fall, no landing) and kept on its floor; a ledge deeper than that is a real drop and
+## is left to fall. Returns how far the visible body should be held above the root (>= 0, m):
+## the root's whole drop this tick less what the slope under it accounts for, so the caller can
+## let the hips down through the step with ease_dip instead of popping them down.
+static var steps_down := 0      # bots: every step taken down, any walker
+static var last_down_hz := 0.0  # bots: how far the last step down slid the root off the edge (m)
+
+static func step_down(cb: CharacterBody3D, y_pre: float, delta: float, max_h: float, size: float) -> float:
+	if cb.velocity.y > 0.5:
+		return 0.0                      # a jump, a vault: not a step
+	var snapped := 0.0
+	if not cb.is_on_floor():
+		# the lower tread, under the body's axis (the round bottom may still hang on the edge)
+		var o := cb.global_position
+		var fell := maxf(y_pre - o.y, 0.0)
+		var q := PhysicsRayQueryParameters3D.create(o + Vector3.UP * 0.3 * size, o + Vector3.DOWN * (max_h - fell + 0.03), cb.collision_mask, [cb.get_rid()])
+		var hit := cb.get_world_3d().direct_space_state.intersect_ray(q)
+		var wall_y := cos(cb.floor_max_angle)
+		if hit.is_empty() or (hit.normal as Vector3).y < wall_y:
+			return 0.0                  # nothing within a step below (a ledge: let it fall), or a steep face
+		# down onto it, sliding the round bottom off the tread edge it hangs on
+		var xf := cb.global_transform
+		var motion := Vector3.DOWN * (o.y - (hit.position as Vector3).y + 0.02)
+		var landed := false
+		for k in 4:
+			var col := KinematicCollision3D.new()
+			if not cb.test_move(xf, motion, col, 0.001):
+				xf.origin += motion
+				break
+			xf.origin += col.get_travel()
+			if col.get_normal().y >= wall_y:
+				landed = true
+				break
+			motion = col.get_remainder().slide(col.get_normal())
+			if motion.length() < 0.002:
+				break
+		var hz := Vector2(xf.origin.x - o.x, xf.origin.z - o.z).length()
+		if not landed or hz > 0.2 * size:
+			return 0.0                  # it would not settle on the tread: leave it to the fall
+		cb.global_position = xf.origin
+		cb.velocity.y = 0.0
+		cb.apply_floor_snap()
+		snapped = o.y - xf.origin.y
+		if snapped + fell > MIN_RISE:
+			steps_down += 1
+		last_down_hz = hz
+	var dy := y_pre - cb.global_position.y
+	if dy <= 0.004 * size:
+		return 0.0
+	return maxf(dy - _slope_allow(cb, delta, size), 0.0)
+
+static func _slope_allow(cb: CharacterBody3D, delta: float, size: float) -> float:
+	var speed := Vector2(cb.velocity.x, cb.velocity.z).length()
+	var o := cb.global_position
+	var q := PhysicsRayQueryParameters3D.create(o + Vector3.UP * 0.3 * size, o + Vector3.DOWN * 0.6 * size, cb.collision_mask, [cb.get_rid()])
+	var hit := cb.get_world_3d().direct_space_state.intersect_ray(q)
+	var ny := 1.0
+	if not hit.is_empty():
+		ny = clampf((hit.normal as Vector3).y, 0.3, 1.0)
+	return speed * delta * sqrt(1.0 - ny * ny) / ny * 1.15 + 0.004 * size
 
 ## How much of a grounded root's rise this tick (`dy`, the lift and the slide together) is a
 ## riser or a lip rather than the ground's own slope: the slope is read by a ray straight down
@@ -83,12 +152,4 @@ static func ease_dip(dip: float, speed: float, delta: float, size: float) -> flo
 static func lip_excess(cb: CharacterBody3D, dy: float, delta: float, size: float) -> float:
 	if dy <= 0.004 * size:
 		return 0.0
-	var speed := Vector2(cb.velocity.x, cb.velocity.z).length()
-	var o := cb.global_position
-	var q := PhysicsRayQueryParameters3D.create(o + Vector3.UP * 0.3 * size, o + Vector3.DOWN * 0.6 * size, cb.collision_mask, [cb.get_rid()])
-	var hit := cb.get_world_3d().direct_space_state.intersect_ray(q)
-	var ny := 1.0
-	if not hit.is_empty():
-		ny = clampf((hit.normal as Vector3).y, 0.3, 1.0)
-	var allow := speed * delta * sqrt(1.0 - ny * ny) / ny * 1.15 + 0.004 * size
-	return maxf(dy - allow, 0.0)
+	return maxf(dy - _slope_allow(cb, delta, size), 0.0)

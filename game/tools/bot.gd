@@ -2120,6 +2120,46 @@ func _step_up_test() -> void:
 		return _combat_done(false, "the step pops the visible body %.3f m in one tick" % vis_jump)
 	if dip_max > -0.05:
 		return _combat_done(false, "the step lift is not eased (body dip %.3f)" % dip_max)
+	# and back down: off each tread edge the hero is set down on the lower tread (never airborne,
+	# no landing), the hips held above the root and let down through the step, no pop
+	var top_y := p.global_position.y
+	var down0: int = StepUp.steps_down
+	var land0: int = p.landings
+	var air_ticks := 0
+	var hold_max := 0.0
+	vis_jump = 0.0
+	last_vis = p.body.global_position.y
+	var holds := 0                     # each step down: the hips held up and let down once
+	var held := false
+	for i in 400:
+		if (p.global_position - start).dot(fwd) < -0.5:
+			break                      # back on the flat below the stair
+		p.bot_input = Vector2(-fwd.x, -fwd.z) * 0.6
+		await get_tree().physics_frame
+		var v: float = p.body.global_position.y
+		if OS.get_environment("STEP_DEBUG") != "" and absf(v - last_vis) > 0.01:
+			print("STEPDBG down i %d root %.3f body %.3f vis %.3f dv %.3f floor %s down %d" % [i, p.global_position.y, p.body.position.y, v, v - last_vis, p.is_on_floor(), StepUp.steps_down])
+		if not p.is_on_floor():
+			air_ticks += 1
+		vis_jump = maxf(vis_jump, absf(v - last_vis))
+		last_vis = v
+		hold_max = maxf(hold_max, p.body.position.y)
+		if p.body.position.y > 0.05 and not held:
+			holds += 1
+		held = p.body.position.y > 0.03 if held else p.body.position.y > 0.05
+	p.bot_input = Vector2.ZERO
+	await _ticks(30)
+	var descended := top_y - p.global_position.y
+	var downs: int = holds
+	print("BOT stepup: walked down it: descended %.3f m in %d eased steps (%d set down off an edge, last slid %.3f m), %d ticks off the floor, %d landings, hips held %.3f m above the root at most, largest visible drop in one tick %.3f m, body offset now %.3f" % [descended, downs, StepUp.steps_down - down0, StepUp.last_down_hz, air_ticks, p.landings - land0, hold_max, vis_jump, p.body.position.y])
+	if descended < RISE * 3 - 0.06 or StepUp.steps_down - down0 < 1:
+		return _combat_done(false, "the hero did not step down the stair (descended %.2f m, %d set down)" % [descended, StepUp.steps_down - down0])
+	if air_ticks > 2 or p.landings != land0:
+		return _combat_done(false, "stepping down is a fall (%d ticks airborne, %d landings)" % [air_ticks, p.landings - land0])
+	if vis_jump > 0.06:
+		return _combat_done(false, "the step down drops the visible body %.3f m in one tick" % vis_jump)
+	if hold_max < 0.05 or absf(p.body.position.y) > 0.005:
+		return _combat_done(false, "the step down is not eased (hold %.3f, left at %.3f)" % [hold_max, p.body.position.y])
 	for b in built:
 		b.queue_free()
 	built.clear()
@@ -2155,7 +2195,7 @@ func _step_up_test() -> void:
 	print("BOT stepup: shrine plinth lower riser max %.3f m (%d), Sentinel plinth lower riser max %.3f m (%d), step-up %.2f m" % [shm, sh.size(), snm, sn.size(), p.STEP_H])
 	if sh.is_empty() or sn.is_empty() or shm > p.STEP_H or snm > p.STEP_H:
 		return _combat_done(false, "a plinth riser is taller than a step")
-	_combat_done(true, "stair walked up course by course, wall held, plinth risers are steps")
+	_combat_done(true, "stair walked up and down course by course, eased both ways, wall held, plinth risers are steps")
 
 func _foot_ik_test() -> void:
 	var p := _player

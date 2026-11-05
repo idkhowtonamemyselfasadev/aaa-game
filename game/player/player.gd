@@ -1086,7 +1086,7 @@ func _physics_process(delta: float) -> void:
 const STEP_H := 0.38
 var steps_up := 0
 var step_rise := 0.0           # bots: the last step's rise
-var _step_dip := 0.0           # visible body/camera below the root (m, <= 0)
+var _step_dip := 0.0           # visible body/camera off the root (m: < 0 below after a step up, > 0 held above after a step down)
 var _cam_base_y := NAN
 
 func _step_climb(delta: float) -> void:
@@ -1109,8 +1109,10 @@ func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
 	if not floor_pre or velocity.y > 0.5 or climbing or gliding:
 		return
 	var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
-	if excess > 0.0:
-		_step_dip -= excess
+	# off a tread edge or a kerb: set down on the lower tread (no fall), the hips held and let down
+	excess -= StepUp.step_down(self, y_pre, delta, STEP_H, 1.0) if not _jumped else 0.0
+	if excess != 0.0:
+		_step_dip = clampf(_step_dip - excess, -STEP_H - 0.05, STEP_H + 0.05)
 		body.position.y = _step_dip
 		cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
 

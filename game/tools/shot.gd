@@ -815,7 +815,40 @@ func _ready() -> void:
 			blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy + 0.06, pp.z) + f * (0.06 + 0.4))
 			player.add_collision_exception_with(blk)
 			eye = pp + sd * 1.6 + f * 0.25 + Vector3.UP * 0.3
-		SPOTS[spot] = [eye, pp + Vector3.UP * 0.25 + along * 0.15 if "step" in args else pp + Vector3.UP * 0.45]
+		if "stepdown" in args:
+			# step-down: the hero walks along the turf off the end of a 0.3 m masonry course (two
+			# courses of 0.15 m, so it steps down twice), seen side-on at hip height
+			var f := along
+			var sd := f.cross(Vector3.UP)
+			for c in 2:
+				var blk := StaticBody3D.new()
+				var cs := CollisionShape3D.new()
+				var bx := BoxShape3D.new()
+				var ln := 2.4 - 0.45 * c
+				bx.size = Vector3(1.2, 0.15 * (c + 1) + 0.3, ln)
+				cs.shape = bx
+				blk.add_child(cs)
+				var mi := MeshInstance3D.new()
+				var bm := BoxMesh.new()
+				bm.size = bx.size
+				mi.mesh = bm
+				var rn := world.get_node_or_null("Ruins")
+				if rn != null and rn.get("material") != null:
+					mi.material_override = rn.material
+				blk.add_child(mi)
+				world.add_child(blk)
+				var gy := terrain.height_at(pp.x, pp.z)
+				# both courses end ahead of the hero: the top one 0.55 m on, the lower 1.0 m on
+				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.3 + bx.size.y * 0.5, pp.z) + f * (0.55 + 0.45 * c - ln * 0.5))
+			player.global_position = pp + Vector3.UP * 0.35
+			player.use_bot_input = true
+			player.set_meta("shot_walk", f)
+			eye = pp + f * 0.9 + sd * 3.4 + Vector3.UP * 0.6
+			SPOTS[spot] = [eye, pp + f * 0.9 + Vector3.UP * 0.5]
+		elif "step" in args:
+			SPOTS[spot] = [eye, pp + Vector3.UP * 0.25 + along * 0.15]
+		else:
+			SPOTS[spot] = [eye, pp + Vector3.UP * 0.45]
 		print("SHOT slope at %s, %.1f deg, ik %s" % [pp, rad_to_deg(acos(n.y)), player.foot_ground_on])
 	if spot == "face":
 		# head-and-shoulders of the idle player from the front-left: hat, hood, face cloth
@@ -2904,7 +2937,11 @@ func _ready() -> void:
 		gf.fill_around(get_viewport().get_camera_3d().global_position)
 		print("SHOT grass: sward %d chunks %d clumps" % [gf.sward_chunks(), gf.sward_clumps()])
 	for i in frames:
+		if player.has_meta("shot_walk"):
+			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * 0.5
 		await get_tree().process_frame
+	if player.has_meta("shot_walk"):
+		print("SHOT stepdown root %.3f body off %.3f floor %s set down %d" % [player.global_position.y, player.body.position.y, player.is_on_floor(), StepUp.steps_down])
 	if spot == "hearth" and "kindle" in args:
 		# which side of her the lens sees: her model forward (+Z) against the lens direction
 		var kb: Node3D = world.keeper.body

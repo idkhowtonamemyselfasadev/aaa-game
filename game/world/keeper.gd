@@ -591,7 +591,7 @@ func _physics_process(delta: float) -> void:
 	StepUp.try(self, delta, 0.38)
 	move_and_slide()
 	if floor_pre and velocity.y < 0.5:
-		_step_dip -= StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
+		_step_dip -= StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0) - StepUp.step_down(self, y_pre, delta, 0.38, 1.0)
 	_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, 1.0)
 	body.position.y = _step_dip
 	_update_warm(delta)

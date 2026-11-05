@@ -643,8 +643,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if floor_pre and velocity.y < 0.5 and state != DEAD:
 		var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, size_scale)
-		if excess > 0.0:
-			_step_dip -= excess
+		excess -= StepUp.step_down(self, y_pre, delta, STEP_H * size_scale, size_scale)
+		if excess != 0.0:
+			_step_dip = clampf(_step_dip - excess, -(STEP_H + 0.05) * size_scale, (STEP_H + 0.05) * size_scale)
 			body.position.y = _step_dip
 	_update_ground_feet(delta)
 	if anim_tree:
@@ -709,7 +710,7 @@ func _step_climb(delta: float) -> void:
 	var lift := StepUp.try(self, delta, STEP_H * size_scale, false) if state != DEAD else 0.0
 	if lift > 0.0:
 		steps_up += 1
-	if _step_dip < 0.0 or lift > 0.0:
+	if _step_dip != 0.0 or lift > 0.0:
 		_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, size_scale)
 		body.position.y = _step_dip
 
