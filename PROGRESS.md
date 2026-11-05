@@ -37,7 +37,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
-- (18:30 11-05) **FOE MODIFIERS ON THE PHYSICS TICK + GENTLE PIN RELEASE + SHOCKWAVE ON PHYSICS.** HollowSoldier sets
+- (18:30 11-05) **FOE MODIFIERS ON THE PHYSICS TICK + GENTLE PIN RELEASE + SHOCKWAVE ON PHYSICS (24 bots PASS: soldier knight foestride foeturn footik stepup foeflinch sentinel hewer warden archer kindler harrier knightleap knightstomp crown airstrike lockon combat dodge heavy sweep death hounds; no screenshots this session, numbers only).** HollowSoldier sets
   `skel.modifier_callback_mode_process = PHYSICS` (env FOE_IDLEMOD=1 for the before). On HEAD `foeflinch` was FLAKY,
   not broken: three runs gave right-case mid-stagger 0.091 / 0.003 / 0.003 m/tick (idle frames ran the modifiers 0 or 2
   times a tick). With physics mode the run is deterministic at 0.029 (fails the 0.02 cap): a SW debug print showed the
