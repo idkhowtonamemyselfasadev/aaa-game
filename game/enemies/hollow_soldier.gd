@@ -143,6 +143,11 @@ var bot_face := Vector3.ZERO     # bots: IDLE turns on the spot toward this (wor
 var turn_shuffle := 0.0          # 0..1 stepping round on the spot while the body turns
 var shuffle_peak := 0.0          # bots: highest turn_shuffle since reset
 var _prev_yaw := 0.0
+## Pivot foot (the hero's StrideWarp, contact lock and stride warp off): in a turn on the spot
+## the inside foot stays planted and the body swings round over it; the outside foot steps.
+var stride_warp: StrideWarp
+var pivot_shift := Vector3.ZERO  # bots: net m the body has been swung round planted feet
+const PIVOT_REACH := 0.11        # m per unit size: the most the body's middle orbits off the pivot foot
 var _col_cap: CapsuleShape3D
 var _col: CollisionShape3D
 var _ember_range := 2.6
@@ -304,6 +309,12 @@ func _setup_animation() -> void:
 	anim_tree.tree_root = root
 	anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 	anim_tree.active = true
+	if skel != null:
+		stride_warp = StrideWarp.new()
+		stride_warp.name = "StrideWarp"
+		skel.add_child(stride_warp)
+		skel.move_child(stride_warp, 0)        # first modifier: on the clip's own legs
+		stride_warp.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
 
 ## Spear in a body-space Wield node; both hands IK onto its grips, the chest twists with it.
 func _setup_spear() -> void:
@@ -686,6 +697,7 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 	# rises quick (the first step goes as the turn starts), settles over the last step
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 2.5))
 	shuffle_peak = maxf(shuffle_peak, turn_shuffle)
+	_update_pivot_foot(delta, standing)
 
 ## Blend position for a ground speed (per unit size): the walk point held up to WALK_TOP, then
 ## a short band to the run point, so a quick stalk is never an unsynced walk/run mix.
@@ -752,8 +764,38 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 		# on the spot the body only comes round as fast as its feet can step it round: a soldier
 		# ~230 deg/s, the phase-3 giant under half that (heavy, but it still keeps a circling hero)
 		var cap := TURN_STEP_RATE * natural_cadence() * delta
-		want = body.rotation.y + clampf(angle_difference(body.rotation.y, want), -cap, cap)
+		var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
+		_pivot_orbit(d)
+		want = body.rotation.y + d
 	body.rotation.y = want
+
+## Swings the body round the planted pivot foot by the yaw step d (the hero's Player._step_capped):
+## about the pin's sideways offset only, so a 120 deg turn moves a soldier ~0.2 m, not a stroll.
+func _pivot_orbit(d: float) -> void:
+	if stride_warp == null:
+		return
+	if stride_warp.pivot <= 0.0 and absf(d) > 1e-4:
+		stride_warp.pivot_side = 0 if d > 0.0 else 1   # turning left (yaw up): plant the left foot
+	if stride_warp.pivot_pin == null or stride_warp.pivot <= 0.0:
+		return
+	var side := body.global_basis.x
+	side = Vector3(side.x, 0.0, side.z).normalized()
+	var reach := PIVOT_REACH * size_scale
+	var off := clampf((stride_warp.pivot_pin - global_position).dot(side), -reach, reach)
+	var r := -side * off
+	var orbit := (r.rotated(Vector3.UP, d) - r) * stride_warp.pivot
+	if orbit.length() > 1e-5 and orbit.length() < 0.2 * size_scale:
+		var before := global_position
+		move_and_collide(orbit)
+		pivot_shift += global_position - before
+
+## The pivot foot is planted while the feet step round on the spot, and let go once square.
+func _update_pivot_foot(delta: float, standing: bool) -> void:
+	if stride_warp == null:
+		return
+	var want := 1.0 if standing and turn_shuffle > 0.05 else 0.0
+	var rate := (10.0 if want > stride_warp.pivot else 5.0) * natural_cadence()
+	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * rate)
 
 func _in_cone() -> bool:
 	if _player == null:

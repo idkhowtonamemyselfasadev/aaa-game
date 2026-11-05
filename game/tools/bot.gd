@@ -1376,7 +1376,11 @@ func _foe_turn_test() -> void:
 		for j in 2:
 			rest[j] = (skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y
 		var start := e.global_position
+		e.pivot_shift = Vector3.ZERO
 		var f0 := e.body.global_basis.z
+		var piv := [0.0, 0.0, 0.0, -1, 0]   # pin drift xz, pin drift y, other foot travel, side, ticks planted
+		var piv_o0 := Vector3.INF
+		var piv_sink := [0.0]
 		e.bot_face = f0.rotated(Vector3.UP, deg_to_rad(120.0))
 		e.shuffle_peak = 0.0
 		e.lead_peak = 0.0
@@ -1405,6 +1409,20 @@ func _foe_turn_test() -> void:
 				lifted += 1
 			if up == 2:
 				both_up += 1
+			var sw: StrideWarp = e.stride_warp
+			if sw != null and sw.pivot_pin != null and sw.pivot > 0.97:
+				await skel.skeleton_updated
+				if sw.pivot_pin == null or sw.pivot < 0.97:
+					continue                     # the release blend: the foot is let go back to the clip
+				var dv: Vector3 = sw.pivot_ankle - sw.pivot_pin
+				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length() / sc)
+				piv[1] = maxf(piv[1], absf(dv.y) / sc)
+				if piv_o0 == Vector3.INF:
+					piv_o0 = sw.pivot_other
+					piv[3] = sw.pivot_side
+				piv[2] = maxf(piv[2], Vector2(sw.pivot_other.x - piv_o0.x, sw.pivot_other.z - piv_o0.z).length() / sc)
+				piv[4] += 1
+				piv_sink[0] = maxf(piv_sink[0], sw.pivot_sink)
 			if e.turn_shuffle > 0.3:
 				ts_peak = maxf(ts_peak, e.anim_tree.get("parameters/speed/scale"))
 			if e.turn_lead > lead_signed:
@@ -1414,7 +1432,9 @@ func _foe_turn_test() -> void:
 			if e.turn_lead > 0.5 and body_at_lead == 0.0:
 				body_at_lead = f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)
 		var faced := e.body.global_basis.z.normalized().dot(e.bot_face.normalized())
-		var drift := Vector2(e.global_position.x - start.x, e.global_position.z - start.z).length()
+		var moved := e.global_position - start
+		var swung := Vector2(e.pivot_shift.x, e.pivot_shift.z).length()
+		var drift := Vector2(moved.x - e.pivot_shift.x, moved.z - e.pivot_shift.z).length()
 		await _ticks(100)
 		var after := e.turn_shuffle
 		var blend_after: float = e._blend
@@ -1422,7 +1442,9 @@ func _foe_turn_test() -> void:
 		print("BOT foeturn: lead peak %.2f rad (head turned %.2f rad ahead of the body, body %.2f rad round when it passed 0.5), after %.3f" % [lead_signed, head_lead, body_at_lead, lead_after])
 		e.bot_face = Vector3.ZERO
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after])
+		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
+		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
 		if o[1] < 0.5:
@@ -1445,6 +1467,19 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: the head only leads once the body is well round (%.2f rad)" % [o[0], o[12]])
 		if o[13] > 0.03:
 			return _combat_done(false, "size %.1f: the head does not settle square once turned (%.3f)" % [o[0], o[13]])
+		var pv: Array = o[14]
+		if pv[4] < 10:
+			return _combat_done(false, "size %.1f: no pivot foot planted in the turn (%d ticks)" % [o[0], pv[4]])
+		if pv[3] != 0:
+			return _combat_done(false, "size %.1f: a left turn planted the right foot" % o[0])
+		if pv[0] > 0.03 or pv[1] > 0.03:
+			return _combat_done(false, "size %.1f: the pivot foot slides %.3f per size (y %.3f)" % [o[0], pv[0], pv[1]])
+		if pv[2] < 0.08:
+			return _combat_done(false, "size %.1f: the outside foot does not step round (%.2f per size)" % [o[0], pv[2]])
+		if o[15] < 0.03 * o[0] or o[15] > 0.3 * o[0]:
+			return _combat_done(false, "size %.1f: the body swings %.2f m round the pivot (want a short orbit)" % [o[0], o[15]])
+		if o[16]:
+			return _combat_done(false, "size %.1f: the pivot foot is still pinned once squared up" % o[0])
 		if o[8] > 1.35 * o[9] + 0.01:
 			return _combat_done(false, "size %.1f: the steps are quicker than the body's cadence (%.2f vs %.2f)" % [o[0], o[8], o[9]])
 	_combat_done(true, "the soldier and the knight at every size step round on the spot when they turn")

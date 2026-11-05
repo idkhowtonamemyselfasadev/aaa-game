@@ -30,6 +30,9 @@ var pivot_side := 0          # 0 the left foot, 1 the right foot
 var pivot_pin = null         # world ankle pin (Vector3) while pivoting, else null
 var pivot_ankle := Vector3.ZERO  # (bots) world pivot ankle as posed this tick
 var pivot_other := Vector3.ZERO  # (bots) world other ankle as posed this tick
+var pivot_sink := 0.0            # (bots) skeleton units the hips settled onto the pivot leg this tick
+const PIVOT_SINK_MAX := 8.0      # skeleton units (cm)
+var pivot_short := 0.0           # (bots) skeleton units the leg could not reach to the pin this tick
 
 func _process_modification_with_delta(_delta: float) -> void:
 	drop = 0.0
@@ -165,6 +168,23 @@ func _pivot_leg(skel: Skeleton3D) -> void:
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
 	var keep := skel.get_bone_global_pose(ft).basis
 	var s := skel.get_bone_global_pose(ul).origin
+	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
+	# settle onto the pivot leg instead, by just what it needs to reach (capped, a few cm)
+	var reach_l := (s.distance_to(skel.get_bone_global_pose(lg).origin) + skel.get_bone_global_pose(lg).origin.distance_to(skel.get_bone_global_pose(ft).origin)) * 0.99
+	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(inv * (pivot_pin as Vector3), pivot)
+	var dd := tp - s
+	pivot_sink = 0.0
+	if dd.length() > reach_l:
+		var du := dd.dot(up)
+		var h := -du - sqrt(maxf(du * du - dd.length_squared() + reach_l * reach_l, 0.0))
+		h = clampf(h, 0.0, PIVOT_SINK_MAX)
+		var hips := skel.find_bone("mixamorig_Hips")
+		if hips >= 0 and h > 0.0:
+			var hp := skel.get_bone_parent(hips)
+			var pbh := skel.get_bone_global_pose(hp).basis if hp >= 0 else Basis()
+			skel.set_bone_pose_position(hips, skel.get_bone_pose_position(hips) - pbh.inverse() * (up * h))
+			pivot_sink = h
+			s = skel.get_bone_global_pose(ul).origin
 	var k := skel.get_bone_global_pose(lg).origin
 	var f := skel.get_bone_global_pose(ft).origin
 	var a := s.distance_to(k)
@@ -172,6 +192,7 @@ func _pivot_leg(skel: Skeleton3D) -> void:
 	var t := f.lerp(inv * (pivot_pin as Vector3), pivot)
 	var d := t - s
 	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	pivot_short = d.length() - dl
 	var dn := d.normalized()
 	# the knee keeps the clip's bend plane (forward over the toes)
 	var pole := (k - s) - dn * (k - s).dot(dn)
