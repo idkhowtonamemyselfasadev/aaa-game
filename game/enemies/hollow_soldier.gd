@@ -157,6 +157,7 @@ var _reel_yaw := 0.0             # rad: the hips and legs turned to back off alo
 const REEL_YAW_MAX := 1.1        # rad: the rest of a side shove is taken by the chest counter-twist
 var reel_head_peak := 0.0        # (bots) largest neck whip of the last stagger (rad, + head back)
 var reel_chest_peak := 0.0       # (bots) largest spine + pelvis of the last stagger (rad, + forward)
+var reel_lock_on := true         # (bots) off: no contact lock in a stagger, as before 11-05 14:30
 var reel_pivot_on := true        # (bots) off: the legs' reel turn spins about the root, as before 11-05 13:30
 var reel_pivot_shift := 0.0      # (bots) m the body was carried round the planted boot by the reel's leg turn
 var reel_twist_peak := 0.0       # (bots) largest chest twist of the last stagger (rad, + to the left)
@@ -764,6 +765,11 @@ func _update_ground_feet(delta: float) -> void:
 	stride_warp.ground_scale = size_scale
 	var w := 1.0 if is_on_floor() and state != DEAD else 0.0
 	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
+	# staggered: the stance boot is pinned where it struck (the hero's contact lock), so the
+	# shove's backward stagger steps plant instead of skating while the walk's cadence and the
+	# shove's pace disagree (the 4x backward walk lifted its stance foot before the shove slowed)
+	var lk := 1.0 if reel_lock_on and _reel_posed and is_on_floor() else 0.0
+	stride_warp.lock = move_toward(stride_warp.lock, lk, delta * (30.0 if lk > stride_warp.lock else 8.0))
 
 func _update_turn_shuffle(delta: float, hs: float) -> void:
 	var yaw := body.rotation.y

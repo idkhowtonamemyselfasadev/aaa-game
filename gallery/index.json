@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261030-1430-lumpfold.jpg",
-  "time": "2026-10-30T14:30:00Z",
-  "caption": "The old fold at noon: its field stones are now irregular lumps with knocked-off corners instead of squared slabs; still too bluish-grey and small, and the light is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-1520-bigfold.jpg",
-  "time": "2026-10-30T15:20:00Z",
-  "caption": "The old fold at noon with bigger, warmer field stones and through-stones: the ring reads as a real tumbled wall now, but the stones still look cool grey with chalky lit edges and the light is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-1600-wheatclose.jpg",
-  "time": "2026-10-30T16:00:00Z",
-  "caption": "The new wheatears on the old fold's wall tops at 10:00, cock (grey, black mask) on the cope stone left of centre, hen beyond; still wrong: they are small and easy to miss in a still, the folded black wing barely shows, and the lens meant to frame the cock close landed on the wall instead.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-1600-wheatears.jpg",
-  "time": "2026-10-30T16:00:00Z",
-  "caption": "Crop of the same frame: the cock's grey back, mask, white brow and dark tail and the buff hen read as real small birds on the stones; still wrong: no visible closed wing on the flank, tail edge-on like a stick, feather detail soft.",
-  "verdict": "fail"
- },
- {
   "file": "20261031-0605-ashenknight-p3.jpg",
   "time": "2026-10-31T06:05:00Z",
   "caption": "The Ashen Knight's phase 3 in the meadow: boss bar with phase notches, the ember-ring warning before an eruption under the hero. Still wrong: the ring reads as a flat orange circle, not burning turf, and the knight is a recoloured soldier with no armour of its own.",
@@ -897,6 +873,18 @@
   "file": "20261105-1330-reelside-unwind.jpg",
   "time": "2026-11-05T13:30:00Z",
   "caption": "GL quick-look: mid-unwind of the side stagger, the soldier squaring back up toward the hero; still wrong: the grass hides the feet, the fixed lens lets the soldier drift out of frame, and the conical hood reads blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1415-reellock-u0.35.jpg",
+  "time": "2026-11-05T14:15:24Z",
+  "caption": "A Hollow soldier mid-stumble from a side blow (0.17 s in): the stance boot is now pinned by the contact lock while it backs off the shove; GL quick-look, still in the cottage's shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1415-reellock-u0.5.jpg",
+  "time": "2026-11-05T14:15:24Z",
+  "caption": "The same stumble at 0.25 s: legs stepped back under the body on bare turf, chest counter-twisted; needs a sunlit Forward+ frame and the soldier drifts to the frame edge.",
   "verdict": "fail"
  }
 ]
