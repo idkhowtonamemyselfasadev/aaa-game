@@ -12052,6 +12052,7 @@ func _foe_flinch_test() -> void:
 	s.reel_pivot_on = OS.get_environment("REEL_NOPIVOT") == ""
 	s.reel_lock_on = OS.get_environment("REEL_NOLOCK") == ""
 	s.reel_lateral_on = OS.get_environment("REEL_NOLATERAL") == ""
+	s.reel_release_on = OS.get_environment("REEL_NORELEASE") == ""
 	var skel := s.skel
 	if s.crumple == null or skel == null:
 		return _combat_done(false, "the soldier has no reel modifier")

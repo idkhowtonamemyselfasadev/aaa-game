@@ -133,9 +133,10 @@ func _apply_ring() -> void:
 		p.emission_ring_radius = r
 		p.emission_ring_inner_radius = maxf(r - BAND * 0.5, 0.0)
 
-func _process(delta: float) -> void:
-	t += delta
-	var c := global_position
+## The front and its hit test run on the physics tick, with the hero's movement and roll
+## (on render frames the front advanced 0, 1 or 2 steps per tick, so a roll timed to it
+## passed or was caught depending on the frame rate); the churned band is drawn per frame.
+func _physics_process(delta: float) -> void:
 	if _done_t < 0.0:
 		var r0 := r
 		r = minf(r + speed * delta, max_r)
@@ -150,6 +151,12 @@ func _process(delta: float) -> void:
 				passed.emit(result)
 	else:
 		_done_t += delta
+	if _done_t > LIFE_AFTER:
+		queue_free()
+
+func _process(delta: float) -> void:
+	t += delta
+	var c := global_position
 	# the churned band: dark torn earth, fading out behind the front and as it dies
 	var fade := 1.0 - clampf(_done_t / 0.6, 0.0, 1.0) if _done_t >= 0.0 else 1.0
 	var spread := clampf(r / max_r, 0.0, 1.0)
@@ -173,8 +180,6 @@ func _process(delta: float) -> void:
 		_im.surface_end()
 	if ember:
 		_light.light_energy = 2.5 * fade * (1.0 - 0.6 * spread)
-	if _done_t > LIFE_AFTER:
-		queue_free()
 
 ## The front swept from r0 to r1 this frame: a hero on the ground in that band is thrown down.
 func _check(r0: float, r1: float) -> void:

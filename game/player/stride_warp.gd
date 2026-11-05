@@ -19,6 +19,11 @@ const LOCK_MAX := 16.0       # skeleton units (cm): a bigger error lets go (a tu
 ## put it back), not only along it. Foes in a stagger: their backward walk carries the stance
 ## boot sideways ~1 cm a tick while the body is shoved straight back.
 var lock_lateral := false
+## Gentle release (opt-in): as the heel lifts, the pin fades so the shown boot moves at most
+## release_speed (skeleton units per second, 0 = off) toward the clip foot, but always lets go
+## within ~1/RELEASE_MIN_RATE s. Foes in a stagger hold pins ~9 cm off their clip feet.
+var release_speed := 0.0
+const RELEASE_MIN_RATE := 5.0
 var lateral_corrected := 0.0 # (bots) largest sideways correction this tick (m, skeleton units)
 var _ground := 0.0           # the stance level: the lowest the lower ankle has been lately (cm)
 var _ground_set := false
@@ -191,7 +196,15 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 				_pin[i] = c_world.lerp(_pin[i] as Vector3, float(_pin_w[i]) * lock)
 			_pin_w[i] = 1.0                              # back on the turf (a wobble at the strike)
 		elif not down and _pin[i] != null:
-			_pin_w[i] = move_toward(_pin_w[i], 0.0, delta * 18.0)   # heel up: let go over a few ticks
+			var rate := delta * 18.0                     # heel up: let go over a few ticks
+			if release_speed > 0.0:
+				# a pin held far from the clip's foot (a shove outrunning the steps) would throw
+				# the boot that whole error in ~3 ticks: let go no faster than release_speed
+				var ev: Vector3 = (inv * (_pin[i] as Vector3)) - foot
+				var err := absf(ev.dot(fwd)) if not lock_lateral else Vector2(ev.dot(fwd), ev.dot(x)).length()
+				if err * lock > 1e-3:
+					rate = clampf(release_speed * delta / (err * lock), delta * RELEASE_MIN_RATE, rate)
+			_pin_w[i] = move_toward(_pin_w[i], 0.0, rate)
 			if _pin_w[i] <= 0.0:
 				_pin[i] = null
 		if _pin[i] == null:
