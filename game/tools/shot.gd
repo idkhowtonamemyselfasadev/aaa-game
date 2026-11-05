@@ -1124,6 +1124,9 @@ func _ready() -> void:
 		if spot == "soldier":
 			var back := 4.8 if "flinch" in args or "fallen" in args else 3.6
 			SPOTS[spot] = [mid + side * back - line * 0.4, mid]
+			if "stagger" in args and "close" in args:
+				# (animation review) close on the soldier, side-on to the blow's line
+				SPOTS[spot] = [fp + side * 3.0 - line * 0.6, fp - line * 0.2]
 			if "flinch" in args and "close" in args:
 				# (animation review) close on the hero, side-on to the blow's line
 				SPOTS[spot] = [pp + side * 2.7 - line * 0.5, pp - line * 0.25]
@@ -2703,7 +2706,16 @@ func _ready() -> void:
 			dur[HollowSoldier.STRIKE] = HollowHarrier.DART_T
 			dur[HollowSoldier.RECOVER] = HollowHarrier.OVERRUN_T
 		if foe_state == HollowSoldier.STAGGER:
-			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 1.0, 0.0)
+			# blowfront: driven straight back from the hero; blowside: from its right; reelold: the
+			# old rigid lean instead of the joint reaction (for a before/after)
+			var bd := Vector3(1, 0, 0)
+			if "blowfront" in args:
+				bd = -foe.body.global_basis.z.normalized()
+			elif "blowside" in args:
+				bd = foe.body.global_basis.x.normalized()
+			if "reelold" in args:
+				foe.reel_on = false
+			foe.take_hit(foe.global_position + Vector3.UP, bd, 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 20.0, 0.0)
 		else:

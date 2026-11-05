@@ -886,5 +886,17 @@
   "time": "2026-11-05T10:40:00Z",
   "caption": "0.2 s into the stagger: the hero has stepped back about a metre on real backward steps (no skating) and is rebounding upright; the reaction is readable but modest at this distance.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261105-1230-soldier-reel-impact.jpg",
+  "time": "2026-11-05T12:30:30Z",
+  "caption": "A Hollow soldier 0.07 s after a blow from ahead: the chest caves round it, the head is thrown forward and the spear knocked up, reacting at the joints instead of tipping as one rigid piece; GL quick-look in cottage shade, no Forward+ frame yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1230-soldier-reel-step.jpg",
+  "time": "2026-11-05T12:30:30Z",
+  "caption": "The same stagger at 0.15 s: the shove walked off in a real backward step into a wide stance while the spear comes back to guard; flat GL light, and the cloak hides the hip throw.",
+  "verdict": "fail"
  }
 ]

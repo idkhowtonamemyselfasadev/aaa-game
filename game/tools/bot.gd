@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -338,6 +338,9 @@ func _ready() -> void:
 		return
 	if name == "flinch":
 		_flinch_test()
+		return
+	if name == "foeflinch":
+		_foe_flinch_test()
 		return
 	if name == "death":
 		_death_test()
@@ -12028,3 +12031,83 @@ func _shield_arm(kp: Keeper) -> Dictionary:
 	print("BOT wisps: (model frame) head %s hand %s elbow %s lsh %s rsh %s" % [head, hand, fore, ls, rs])
 	return {"across": (hand - head).dot(left), "rise": hand.y - (head.y + 0.08), "ahead": head.z - hand.z,
 		"elbow_ahead": head.z - fore.z, "tilt": rad_to_deg(asin(clampf(absf(f.y) / maxf(f.length(), 1e-4), 0.0, 1.0)))}
+
+## Foe hit reaction: a Hollow soldier staggered by a blow reacts at the joints (Crumple before
+## the arm IK) instead of tipping its whole model about the hips: from ahead the trunk is thrown
+## back while the head whips, from a side the chest twists off the blow, and the planted foot
+## does not skate (the walk runs backwards with the shove). REEL_OLD=1 measures the old lean.
+func _foe_flinch_test() -> void:
+	var p := _player
+	var s: HollowSoldier = _world.soldier
+	await _ticks(10)
+	Engine.time_scale = 1.0
+	s.reel_on = OS.get_environment("REEL_OLD") == ""
+	var skel := s.skel
+	if s.crumple == null or skel == null:
+		return _combat_done(false, "the soldier has no reel modifier")
+	s.crumple.probe = PackedStringArray(["mixamorig_Head", "mixamorig_Hips", "mixamorig_LeftFoot", "mixamorig_RightFoot"])
+	var results := []
+	for case in [["front", 0.0], ["right", 1.0]]:
+		_soldier_at(s, 2.6, HollowSoldier.THRUST_MOVE)
+		await _ticks(3)
+		var fwd := s.body.global_basis.z.normalized()
+		var right := -s.body.global_basis.x.normalized()   # +X is the body's left
+		var dir: Vector3 = -fwd if case[1] == 0.0 else (-right)   # blow from the right drives it left
+		var n0 := s.staggers
+		s.take_hit(s.global_position + Vector3.UP * 1.2, dir, 1.0, 0.0)
+		if s.staggers != n0 + 1 or s.state != HollowSoldier.STAGGER:
+			return _combat_done(false, "the blow did not stagger the soldier (%s)" % case[0])
+		var prev := [Vector3.ZERO, Vector3.ZERO]
+		var slip := 0.0
+		var slip_n := 0
+		var ticks := 0
+		var offs := []
+		var root0 := s.global_position
+		while s.state == HollowSoldier.STAGGER:
+			await get_tree().physics_frame
+			var pr: Dictionary = s.crumple.probed
+			if pr.is_empty():
+				# the old lean: the modifier is off and records nothing, so read the posed skeleton
+				for b in ["mixamorig_Head", "mixamorig_Hips", "mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+					pr[b] = skel.get_bone_global_pose(skel.find_bone(b)).origin
+			var lf: Vector3 = skel.global_transform * (pr["mixamorig_LeftFoot"] as Vector3)
+			var rf: Vector3 = skel.global_transform * (pr["mixamorig_RightFoot"] as Vector3)
+			var cur := [lf, rf]
+			offs.append(s.body.global_basis.inverse() * (skel.global_basis * ((pr["mixamorig_Head"] as Vector3) - (pr["mixamorig_Hips"] as Vector3))))
+			if ticks > 0:
+				var lo := 0 if cur[0].y < cur[1].y else 1
+				if absf(cur[0].y - cur[1].y) > 0.03 and cur[lo].y - s.global_position.y < 0.16:
+					var d: Vector3 = cur[lo] - prev[lo]
+					slip += Vector2(d.x, d.z).length()
+					slip_n += 1
+					if OS.get_environment("REEL_DEBUG") != "":
+						print("  t %.3f low %d slip %.3f yaw %.2f v %.2f" % [s.t, lo, Vector2(d.x, d.z).length(), s._reel_yaw, Vector2(s.velocity.x, s.velocity.z).length()])
+			prev = cur
+			ticks += 1
+			if ticks > 200:
+				break
+		var head_move := 0.0
+		for o in offs:
+			head_move = maxf(head_move, Vector2(o.x - offs[-1].x, o.z - offs[-1].z).length())
+		var pushed := s.global_position - root0
+		var res := {"case": case[0], "chest": s.reel_chest_peak, "neck": s.reel_head_peak, "twist": s.reel_twist_peak, "head": head_move, "slip": slip / maxf(slip_n, 1), "slip_n": slip_n, "pushed": Vector2(pushed.x, pushed.z).length(), "active": s.crumple.active}
+		print("BOT foeflinch %s: chest %.2f rad, neck %.2f, twist %.2f, head moved %.2f m off the hips, planted foot slip %.3f m/tick over %d ticks, pushed %.2f m, reel still on %s" % [case[0], res.chest, res.neck, res.twist, res.head, res.slip, res.slip_n, res.pushed, res.active])
+		results.append(res)
+		s.reel_chest_peak = 0.0
+		s.reel_head_peak = 0.0
+		s.reel_twist_peak = 0.0
+		await _ticks(30)
+	if not s.reel_on:
+		return _combat_done(true, "old lean measured (REEL_OLD)")
+	var f: Dictionary = results[0]
+	var r: Dictionary = results[1]
+	if f.chest > -0.08 or absf(f.neck) < 0.15 or f.head < 0.05:
+		return _combat_done(false, "a blow from ahead does not throw the trunk back and whip the head")
+	if r.twist > -0.15:
+		return _combat_done(false, "a blow from the right does not twist the chest off it")
+	for x in results:
+		if x.slip_n >= 5 and x.slip > 0.02:
+			return _combat_done(false, "the planted foot skates through the %s stagger" % x.case)
+		if x.active:
+			return _combat_done(false, "the reel layer stayed on after the stagger")
+	_combat_done(true, "the soldier reels at the joints and steps the shove off")

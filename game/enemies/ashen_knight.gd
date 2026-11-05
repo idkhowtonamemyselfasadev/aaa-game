@@ -147,6 +147,11 @@ const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already kno
 const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
 var head: HeadBow                # bows the head onto the chest in the crown reel and the surge
 var _crown_reel := false
+
+## The crown reel and the growth surge choreograph the whole body themselves: the plain hit
+## reaction at the joints stands aside for them.
+func _reel_owned() -> bool:
+	return _crown_reel or _surge >= 0.0
 var crown_bow_peak := 0.0        # bots: deepest head bow of the last crown reel (rad)
 var crown_sink_peak := 0.0       # bots: deepest buckle of the knees in it
 var crown_lift_back := 0.0       # bots: how far the head was thrown back as it shook the blow off

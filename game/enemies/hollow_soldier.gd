@@ -146,6 +146,18 @@ var _prev_yaw := 0.0
 ## Pivot foot (the hero's StrideWarp, contact lock and stride warp off): in a turn on the spot
 ## the inside foot stays planted and the body swings round over it; the outside foot steps.
 var stride_warp: StrideWarp
+## The stagger at the joints (the hero's `_flinch_layer`, on a Crumple before the arm IK): the
+## hips thrown back off the blow, the chest caving round it, the head whipping, a side blow
+## twisting the chest, the knees giving; the shove walked off in backward steps.
+var crumple: Crumple
+var reel_on := true              # (bots) off: the old rigid lean of the whole model about the hips
+var _reel_dir := Vector3.ZERO    # world: the way the blow drove the body (flat, unit)
+var _reel_posed := false
+var _reel_yaw := 0.0             # rad: the hips and legs turned to back off along a shove from a side
+const REEL_YAW_MAX := 1.1        # rad: the rest of a side shove is taken by the chest counter-twist
+var reel_head_peak := 0.0        # (bots) largest neck whip of the last stagger (rad, + head back)
+var reel_chest_peak := 0.0       # (bots) largest spine + pelvis of the last stagger (rad, + forward)
+var reel_twist_peak := 0.0       # (bots) largest chest twist of the last stagger (rad, + to the left)
 var pivot_shift := Vector3.ZERO  # bots: net m the body has been swung round planted feet
 const PIVOT_REACH := 0.11        # m per unit size: the most the body's middle orbits off the pivot foot
 var _col_cap: CapsuleShape3D
@@ -360,6 +372,14 @@ func _setup_spear() -> void:
 	_lead_twist.share = LEAD_SHARE
 	skel.add_child(_lead_twist)
 	skel.move_child(_lead_twist, _ik.get_index())
+	# the hit reaction at the joints (`_reel_layer`); before the arm IK, so the hands stay
+	# closed on the spear while the chest caves and twists under them
+	crumple = Crumple.new()
+	crumple.name = "Reel"
+	skel.add_child(crumple)
+	skel.move_child(crumple, _ik.get_index())
+	crumple.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
+	crumple.active = false
 	_place(GUARD)
 
 func _place(pose: Array) -> void:
@@ -404,7 +424,7 @@ func _lean(rad: float, sink: float) -> void:
 	var hip := Vector3(0, 0.95, 0)
 	var tr := Transform3D(Basis(Vector3.RIGHT, rad), Vector3.ZERO)
 	tr = Transform3D(Basis(), hip) * tr * Transform3D(Basis(), -hip)
-	model.transform = Transform3D(Basis(), Vector3(0, -sink, 0)) * tr * _model_rest
+	model.transform = Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.ZERO) * Transform3D(Basis(), Vector3(0, -sink, 0)) * tr * _model_rest
 
 # --- hittable contract ---
 
@@ -435,6 +455,8 @@ func take_hit(_point: Vector3, dir: Vector3, power: float, hitstop: float) -> vo
 		_from = _pose
 		_stagger_len = STAGGER_T
 		_recoil = 1.0
+		_reel_dir = d.normalized()
+		_reel_posed = false
 		state = STAGGER
 		t = 0.0
 
@@ -454,6 +476,8 @@ func parried(dir: Vector3, hitstop: float) -> void:
 	_from = _pose
 	_stagger_len = PARRIED_T
 	_recoil = 1.8
+	_reel_dir = _knock.normalized() if _knock.length() > 1e-3 else -body.global_basis.z.normalized()
+	_reel_posed = false
 	state = STAGGER
 	t = 0.0
 
@@ -605,9 +629,11 @@ func _physics_process(delta: float) -> void:
 			var u := clampf(t / _stagger_len, 0.0, 1.0)
 			_update_glint(0.0)
 			_pose = _lerp_pose(_from, [30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], minf(u * 3.0, 1.0)) if u < 0.5 else _lerp_pose([30.0, -18.0, Vector3(0.15, 1.0, 0.55), 18.0], guard_pose, (u - 0.5) * 2.0)
-			lean = -0.22 * _recoil * sin(PI * minf(u * 1.4, 1.0))
+			# with the joint reaction the trunk is thrown back at the hips, not the whole model
+			# tipped about them (that swung the planted feet ~0.2 m)
+			lean = (0.0 if _reel_layer_on() else -0.22) * _recoil * sin(PI * minf(u * 1.4, 1.0))
 			sink = 0.05
-			move = _knock * (1.0 - u) * (1.0 - u) * 2.2
+			move = _reel_steer(_knock * (1.0 - u) * (1.0 - u) * 2.2)
 			ember = 1.6
 			if u >= 1.0:
 				_enter(STALK)
@@ -618,6 +644,7 @@ func _physics_process(delta: float) -> void:
 		move = bot_move
 		body.rotation.y = atan2(bot_move.x, bot_move.z)
 	_update_turn_lead(delta)
+	_reel_layer()
 	_place(_pose)
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
@@ -669,6 +696,17 @@ func _physics_process(delta: float) -> void:
 		var ts := clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else 1.0
 		if turn_shuffle > 0.02 and hs * size_scale < TURN_STILL:
 			ts = lerpf(ts, TURN_STEP_CADENCE * natural_cadence(), minf(turn_shuffle * 3.0, 1.0))
+		if _reel_posed:
+			# shoved by the blow: the walk played backwards at the shove's own pace, so the feet
+			# take stagger steps back under the body instead of skating forward strides
+			var hv := Vector3(velocity.x, 0.0, velocity.z)
+			_blend = lerpf(_blend, Player.ANIM_WALK_SPEED, 1.0 - exp(-25.0 * delta))
+			anim_tree.set("parameters/move/blend_position", _blend)
+			var fs := maxf(hv.length() / size_scale / clip_stride_speed(), 0.35)
+			var legs_fwd := body.global_basis.orthonormalized() * Vector3(sin(_reel_yaw), 0.0, cos(_reel_yaw))
+			if hv.dot(legs_fwd) > 0.3 * hv.length():
+				fs = -fs                       # driven from behind: stumbling forward, the walk runs on
+			ts = -fs
 		anim_tree.set("parameters/speed/scale", ts)
 
 const TURN_STEP_REACH := 0.5     # of the walk's reach: short steps round, not a stride
@@ -781,6 +819,94 @@ func _special_tick(_delta: float, _to: Vector3, _dist: float) -> Array:
 func _enter(s: int) -> void:
 	state = s
 	t = 0.0
+
+## Variants whose own choreography owns the body in a STAGGER (the knight's crown reel and
+## surge) return true, and the hit reaction stands aside.
+func _reel_owned() -> bool:
+	return false
+
+func _reel_layer_on() -> bool:
+	return reel_on and crumple != null and state == STAGGER and _reel_dir != Vector3.ZERO and not _reel_owned()
+
+func _clear_reel() -> void:
+	if crumple == null:
+		return
+	for k in ["pelvis", "spine", "neck", "head_turn", "chest_twist", "knee", "hip", "ground"]:
+		crumple.set(k, 0.0)
+	crumple.active = false
+	_reel_posed = false
+	_reel_yaw = 0.0
+
+## The stagger at the joints, layered on the clip: struck from ahead the hips are thrown back
+## while the chest rounds over the blow and the head snaps forward (0.025 s behind the chest,
+## the whiplash), then everything rebounds a little past rest; from behind the trunk pitches
+## forward and the head is flung back; from a side the chest twists off the struck shoulder.
+## The knees give and the hips are kept over the lower foot. A giant rocks less (size^-0.35).
+func _reel_layer() -> void:
+	if not _reel_layer_on():
+		if _reel_posed:
+			_clear_reel()
+		if state != STAGGER:
+			_reel_dir = Vector3.ZERO
+		return
+	if not _reel_posed:
+		reel_head_peak = 0.0
+		reel_chest_peak = 0.0
+		reel_twist_peak = 0.0
+	_reel_posed = true
+	var L := _stagger_len
+	var a := _reel_hit(t, L)
+	var h := _reel_hit(t - 0.025, L)
+	var r := sin(PI * clampf((t - 0.3 * L) / (0.5 * L), 0.0, 1.0))
+	var e := smoothstep(0.0, 0.04, t) * (1.0 - smoothstep(0.8 * L, L, t))
+	var k := minf(_recoil, 1.5) * pow(size_scale, -0.35)
+	var push := body.global_basis.inverse() * _reel_dir   # body faces +Z, +X is its left
+	push.y = 0.0
+	if push.length() > 1e-3:
+		push = push.normalized()
+	var front := maxf(-push.z, 0.0)
+	var rear := maxf(push.z, 0.0)
+	var side := push.x
+	crumple.active = true
+	crumple.pelvis = ((-0.3 * front + 0.24 * rear) * a + (0.07 * front - 0.05 * rear) * r) * k
+	crumple.spine = ((0.18 * front + 0.1 * rear) * a - 0.06 * front * r) * k
+	crumple.neck = ((-0.3 * front + 0.36 * rear) * h + (0.13 * front - 0.1 * rear) * r) * k
+	# a shove from a side: the hips and legs swing round so the stagger steps back along it (a
+	# body shoved sideways turns and stumbles; walking backward square-on its feet would skate
+	# across the turf), the chest and head counter-turned to keep the hero in front
+	var back := atan2(-push.x, -push.z)
+	var fore := atan2(push.x, push.z)
+	var goal := clampf(back if absf(back) <= absf(fore) else fore, -REEL_YAW_MAX, REEL_YAW_MAX)
+	_reel_yaw = goal * smoothstep(0.0, 0.1, t) * (1.0 - smoothstep(0.7 * L, L, t))
+	var twist := (-0.34 * side * a + 0.07 * side * r) * k
+	crumple.chest_twist = twist - 0.55 * _reel_yaw
+	crumple.head_turn = (-0.4 * side * h + 0.1 * side * r) * k - 0.35 * _reel_yaw
+	crumple.knee = 0.2 * a * minf(k, 1.0)
+	crumple.hip = 0.1 * a * minf(k, 1.0)
+	crumple.ground = e
+	if absf(crumple.neck) > absf(reel_head_peak):
+		reel_head_peak = crumple.neck
+	if absf(crumple.spine + crumple.pelvis) > absf(reel_chest_peak):
+		reel_chest_peak = crumple.spine + crumple.pelvis
+	if absf(twist) > absf(reel_twist_peak):
+		reel_twist_peak = twist                # the blow's own twist, not the counter to the legs' turn
+
+## The shove carried along the line the legs back off on (they are turned by `_reel_yaw`): a body
+## shoved from a side turns and stumbles back over its own feet rather than sliding across them.
+func _reel_steer(v: Vector3) -> Vector3:
+	if not _reel_posed or absf(_reel_yaw) < 1e-3 or v.length() < 1e-4:
+		return v
+	var b := body.global_basis.orthonormalized()
+	var legs := b * Vector3(sin(_reel_yaw), 0.0, cos(_reel_yaw))
+	var flat := Vector3(v.x, 0.0, v.z)
+	var dir := -legs if flat.dot(legs) < 0.0 else legs
+	return dir * flat.length() + Vector3(0.0, v.y, 0.0)
+
+## Impact envelope at time t (s) of a stagger L s long: snaps in over 0.06 s, gives back by 0.6 L.
+static func _reel_hit(t: float, L: float) -> float:
+	if t < 0.0:
+		return 0.0
+	return sin(minf(t / 0.06, 1.0) * PI * 0.5) * (1.0 - smoothstep(0.06, 0.6 * L, t))
 
 func _facing(to: Vector3) -> float:
 	if to.length() < 1e-3:
