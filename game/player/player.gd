@@ -418,6 +418,7 @@ func _setup_crumple() -> void:
 	skel.add_child(stride_warp)
 	skel.move_child(stride_warp, 0)            # first modifier: it lengthens the clip's own stride
 	stride_warp.frame = crumple.frame
+	stride_warp.ground_body = self
 	var knee := skel.find_bone("mixamorig_LeftLeg")
 	if knee >= 0:
 		var kp := skel.global_transform * skel.get_bone_global_rest(knee).origin
@@ -472,9 +473,22 @@ func _update_warp(delta: float, on: bool) -> void:
 		stride_warp.k = lerpf(1.0, run_stride_k(Vector2(velocity.x, velocity.z).length()), _warp)
 		stride_warp.lock = move_toward(stride_warp.lock, lock, delta * 8.0)
 
+## Foot IK on uneven ground (StrideWarp ground feet): on while the hero stands or strides on
+## the floor; off in the air, on a wall, under the wing, and under posed legs (Crumple).
+var foot_ground_on := true              # (bots) the ground feet may be switched off
+
+func _update_ground_feet(delta: float) -> void:
+	if stride_warp == null:
+		return
+	var w := 1.0 if foot_ground_on and is_on_floor() and not climbing and not gliding and dead_t < 0.0 else 0.0
+	if crumple != null and crumple.active:
+		w *= 1.0 - clampf(crumple.leg_aim, 0.0, 1.0)
+	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
+
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:
 		return
+	_update_ground_feet(delta)
 	if gliding or dodge_t >= 0.0:
 		_update_warp(delta, false)
 	if gliding:

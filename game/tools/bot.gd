@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -208,6 +208,9 @@ func _ready() -> void:
 		return
 	if name == "heroturn":
 		_hero_turn_test()
+		return
+	if name == "footik":
+		_foot_ik_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -1500,6 +1503,12 @@ func _stance_foot(p, skel: Skeleton3D, names: PackedStringArray):
 		return null
 	var a: Vector3 = skel.global_transform * (p.crumple.probed[names[0]] as Vector3)
 	var b: Vector3 = skel.global_transform * (p.crumple.probed[names[1]] as Vector3)
+	# in the clip's own frame: take off what the ground feet lifted each foot onto its ground
+	# (bumpy turf), so the lower foot is the one the clip stands on, not the one over a dip
+	var sw = p.stride_warp
+	if sw != null:
+		a.y -= float(sw.ground_off[0]) * sw.ground_w
+		b.y -= float(sw.ground_off[1]) * sw.ground_w
 	return [a if a.y < b.y else b, 0 if a.y < b.y else 1]
 
 ## Horizontal slip of the weight-bearing foot between two ticks (same foot both ticks), or -1.
@@ -2039,6 +2048,152 @@ func _airstrike_test() -> void:
 	if c.plunges != 3 or lost <= 0.0 or absf(lost - full * 0.5) > 1.5:
 		return _combat_done(false, "a 12 m plunge did not soak half the fall damage")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")
+
+## Foot IK on slopes: standing on a ~20 deg hillside each sole sits on ITS ground (the uphill
+## foot is not buried, the downhill one does not hang), the hips settle by what the lower foot
+## needs; on the flat nothing changes; walking up and across the slope no foot sinks in.
+func _foot_ik_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var sw: StrideWarp = p.stride_warp
+	var terrain = _world.terrain
+	var space := p.get_world_3d().direct_space_state
+	var fb := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+	# a foot's ankle height over the real ground right under it, by a fresh ray
+	var sole_true := func(f: int) -> float:
+		var a: Vector3 = skel.global_transform * skel.get_bone_global_pose(fb[f]).origin
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(a + Vector3.UP * 0.8, a + Vector3.DOWN * 0.8, 1, [p.get_rid()]))
+		return a.y - (hit.position.y if not hit.is_empty() else -INF)
+	# 1) flat: the clip's own stance
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(60)
+	await skel.skeleton_updated
+	var flat_drop := sw.ground_drop
+	var ankle := minf(sw.ground_anim[0], sw.ground_anim[1])
+	# the walk on the flat: how low the clip itself takes an ankle under the stance height
+	var flat_walk := -1.0
+	for i in 70:
+		p.bot_input = Vector2(1, 0) * 0.5
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		if i > 15 and p.is_on_floor():
+			for f in 2:
+				flat_walk = maxf(flat_walk, ankle - sw.ground_sole[f])
+	p.bot_input = Vector2.ZERO
+	# 2) find a bare hillside: ground ~16-24 deg, nothing but the terrain under a 1 m disc
+	var spot := Vector3.INF
+	var down := Vector3.ZERO
+	for ring in range(70, 260, 6):
+		for k in 48:
+			var a := TAU * k / 48.0
+			var x := cos(a) * ring
+			var z := sin(a) * ring
+			var n: Vector3 = terrain.normal_at(x, z, 0.6)
+			if n.y < 0.88 or n.y > 0.93:
+				continue
+			var ok := true
+			for o in [Vector2.ZERO, Vector2(0.6, 0), Vector2(-0.6, 0), Vector2(0, 0.6), Vector2(0, -0.6)]:
+				var y: float = terrain.height_at(x + o.x, z + o.y)
+				var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(x + o.x, y + 3.0, z + o.y), Vector3(x + o.x, y - 1.0, z + o.y), 1))
+				if hit.is_empty() or absf(hit.position.y - y) > 0.03:
+					ok = false
+					break
+			if ok:
+				spot = Vector3(x, terrain.height_at(x, z) + 0.05, z)
+				down = Vector3(n.x, 0, n.z).normalized()
+				break
+		if spot != Vector3.INF:
+			break
+	if spot == Vector3.INF:
+		return _combat_done(false, "no bare hillside found")
+	var slope_deg := rad_to_deg(acos(terrain.normal_at(spot.x, spot.z, 0.6).y))
+	# stand across the slope (the feet side by side, one uphill of the other)
+	var stand := func(on: bool) -> Array:
+		p.foot_ground_on = on
+		p.global_position = spot
+		p.velocity = Vector3.ZERO
+		p.body.rotation.y = atan2(down.cross(Vector3.UP).x, down.cross(Vector3.UP).z)
+		await _ticks(70)
+		await skel.skeleton_updated
+		var err := 0.0
+		var bury := 0.0
+		for i in 2:
+			var st: float = sole_true.call(i)
+			err = maxf(err, absf(st - sw.ground_anim[i]))
+			bury = maxf(bury, ankle - st)
+		return [err, bury, sw.ground_drop, absf(sw.ground_off[0] - sw.ground_off[1])]
+	var off_r: Array = await stand.call(false)
+	var on_r: Array = await stand.call(true)
+	print("BOT footik: hillside %.1f deg at (%.0f, %.0f); flat stance ankle %.3f m, hips drop %.3f" % [slope_deg, spot.x, spot.z, ankle, flat_drop])
+	print("BOT footik: standing across it, IK off: sole error %.3f m, buried %.3f m | IK on: error %.3f, buried %.3f, hips settle %.3f, feet %.3f m apart in height" % [off_r[0], off_r[1], on_r[0], on_r[1], on_r[2], on_r[3]])
+	# 3) walk up, then along the slope: no foot sinks into the turf
+	var worst := -1.0
+	var ticks := 0
+	for leg in [[-down, 70], [down.cross(Vector3.UP), 70]]:
+		var dir: Vector3 = leg[0]
+		for i in int(leg[1]):
+			p.bot_input = Vector2(dir.x, dir.z).normalized() * 0.5   # camera yaw 0: world x/z
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			if p.is_on_floor():
+				ticks += 1
+				for f in 2:
+					if sw.ground_w > 0.99 and sw.ground_anim[f] < ankle + 0.04:   # the foot on (or at) the turf
+						var e := absf(float(sole_true.call(f)) - sw.ground_anim[f])
+						if e > worst and OS.get_environment("FOOTIK_DEBUG") != "":
+							print("dbg i%d f%d anim %.3f true %.3f off %.3f/%.3f" % [i, f, sw.ground_anim[f], sole_true.call(f), sw.ground_off[0], sw.ground_off[1]])
+						worst = maxf(worst, e)
+	p.bot_input = Vector2.ZERO
+	print("BOT footik: walking up and across it, each foot keeps the clip's height over its own ground within %.3f m over %d ticks (the clip dips an ankle %.3f under the stance on the flat)" % [worst, ticks, flat_walk])
+	# 4) a Hollow soldier at size 1 and the knight at its phase-1 and phase-3 size, on the same slope
+	var foes := []
+	var kn: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	p.global_position = spot + down.cross(Vector3.UP) * 25.0 + Vector3.UP * 3.0
+	for c in [[so, 1.0], [kn, float(AshenKnight.PHASES[0]["scale"])], [kn, float(AshenKnight.PHASES[2]["scale"])]]:
+		var e: HollowSoldier = c[0]
+		for other in [kn, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		e.set_size_scale(c[1])
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		e.bot_face = down.cross(Vector3.UP)
+		var at := spot - down * 2.0 * float(c[1])
+		e.global_position = Vector3(at.x, terrain.height_at(at.x, at.z) + 0.1, at.z)
+		e._home = e.global_position
+		e.velocity = Vector3.ZERO
+		await _ticks(90)
+		var esk: Skeleton3D = e.skel
+		await esk.skeleton_updated
+		var esw: StrideWarp = e.stride_warp
+		var efb := [esk.find_bone("mixamorig_LeftFoot"), esk.find_bone("mixamorig_RightFoot")]
+		var err := 0.0
+		for f in 2:
+			var a: Vector3 = esk.global_transform * esk.get_bone_global_pose(efb[f]).origin
+			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(a + Vector3.UP * 2.0, a + Vector3.DOWN * 2.0, 1, [e.get_rid()]))
+			if not hit.is_empty():
+				err = maxf(err, absf((a.y - hit.position.y) - esw.ground_anim[f]) / float(c[1]))
+		foes.append([e.name, c[1], err, esw.ground_drop, esw.ground_w])
+		print("BOT footik: %s at size %.1f on the slope: sole error %.3f m per size, hips settle %.3f m (weight %.2f)" % [e.name, c[1], err, esw.ground_drop, esw.ground_w])
+	for f in foes:
+		if f[2] > 0.02 or f[4] < 0.99:
+			return _combat_done(false, "%s at size %.1f: a boot is %.3f m per size off its ground (weight %.2f)" % [f[0], f[1], f[2], f[4]])
+	if off_r[0] < 0.04:
+		return _combat_done(false, "the hillside is too gentle to prove anything (sole error %.3f without IK)" % off_r[0])
+	if on_r[0] > 0.025:
+		return _combat_done(false, "a sole is %.3f m off its ground standing on the slope" % on_r[0])
+	if on_r[2] < 0.02 or on_r[2] > 0.3:
+		return _combat_done(false, "the hips settle %.3f m on the slope" % on_r[2])
+	if flat_drop > 0.02:
+		return _combat_done(false, "the hips settle %.3f m on the flat" % flat_drop)
+	if worst > 0.02 or ticks < 100:
+		return _combat_done(false, "walking the slope a foot is %.3f m off its ground (%d ticks on the floor)" % [worst, ticks])
+	_combat_done(true, "footik: soles on the hillside, hips settled, nothing buried")
 
 func _ticks(n: int) -> void:
 	for i in n:

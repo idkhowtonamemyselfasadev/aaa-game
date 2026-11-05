@@ -756,6 +756,26 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp + fwd.rotated(Vector3.UP, 0.5) * 2.0, pp]
+	if spot == "slope":
+		# foot IK: the hero standing across the 22 deg hillside the `footik` bot uses, seen from
+		# in front at shin height so the uphill and the downhill boot read at their own ground
+		# (args: noik = the clip's flat stance, for comparison; side = from downhill)
+		var sp := Vector3(34.0, 0, -81.0)
+		for a in args:
+			if a.begins_with("at="):
+				var xz := a.substr(3).split(",")
+				sp = Vector3(float(xz[0]), 0, float(xz[1]))
+		var n: Vector3 = terrain.normal_at(sp.x, sp.z, 0.6)
+		var dn := Vector3(n.x, 0, n.z).normalized()
+		var along := dn.cross(Vector3.UP)
+		player.global_position = Vector3(sp.x, terrain.height_at(sp.x, sp.z) + 0.05, sp.z)
+		player.velocity = Vector3.ZERO
+		player.body.rotation.y = atan2(along.x, along.z)
+		player.foot_ground_on = not ("noik" in args)
+		var pp := player.global_position
+		var eye := pp + (dn * 2.2 + Vector3.UP * 0.2 if "side" in args else along * 2.0 + dn * 0.3 + Vector3.UP * 0.45)
+		SPOTS[spot] = [eye, pp + Vector3.UP * 0.45]
+		print("SHOT slope at %s, %.1f deg, ik %s" % [pp, rad_to_deg(acos(n.y)), player.foot_ground_on])
 	if spot == "face":
 		# head-and-shoulders of the idle player from the front-left: hat, hood, face cloth
 		var pp := player.global_position
@@ -1977,6 +1997,9 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
+		if spot == "slope":
+			pos = s[0]                           # the lens as framed (shin height), not 2.5 m up
+			look = s[1]
 		if spot == "soldier" and "knight" in args and "p3" in args:
 			# 0.9 m (08:00 10-31) put the scorch behind the meadow grass: look down on it instead
 			pos.y = terrain.height_at(pos.x, pos.z) + 2.1

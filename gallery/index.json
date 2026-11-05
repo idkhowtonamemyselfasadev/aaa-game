@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261030-0820-postnoon.jpg",
-  "time": "2026-10-30T08:25:00Z",
-  "caption": "The fell bell's post at 12:00: the verdigris bell reads, but the post stands in the great stone's shadow and goes blue-black, and the lens sits in tall grass whose flat straw ribbons fill the frame",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0920-postsilver.jpg",
-  "time": "2026-10-30T09:20:00Z",
-  "caption": "The fell bell's post at noon now reads as silvered, faceted grey oak over trodden sward instead of a blue-black pipe in straw ribbons; the great stone behind is still a featureless black mass and the light is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0920-foldsky.jpg",
-  "time": "2026-10-30T09:20:00Z",
-  "caption": "The old fold at noon with the new sky-dome fill on shaded stone side faces: a touch lighter, the ring reads; the great stone still reads as a dark slab and the ground is flat-lit.",
-  "verdict": "fail"
- },
- {
   "file": "20261030-1010-greatstone.jpg",
   "time": "2026-10-30T10:10:00Z",
   "caption": "The great stone up the fell at noon now reads as lichened grey granite with a moss crown over the ruined fold instead of a black slab; its lower shaded flank and the fold stones are still very dark.",
@@ -891,6 +873,18 @@
   "file": "20261105-0514-knight-pivot.jpg",
   "time": "2026-11-05T05:14:20Z",
   "caption": "The Ashen Knight (phase-1 size) mid-turn on the spot, stepping round on a planted foot; GL frame, backlit at 15:00 so the knight is a silhouette and the plant can't be judged closely.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0620-slope-ik.jpg",
+  "time": "2026-11-05T06:20:00Z",
+  "caption": "The hero standing across a 23 deg hillside with the new foot IK: hips settled, both boots meet the turf at their own height; GL frame from the front along the contour, so the difference is subtle and the lighting is not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0620-slope-noik.jpg",
+  "time": "2026-11-05T06:20:00Z",
+  "caption": "The same spot without foot IK for comparison: the clip stands as on flat ground and the far boot hangs over the downhill side; GL frame.",
   "verdict": "fail"
  }
 ]

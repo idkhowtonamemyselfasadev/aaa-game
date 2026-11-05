@@ -33,6 +33,27 @@ var pivot_other := Vector3.ZERO  # (bots) world other ankle as posed this tick
 var pivot_sink := 0.0            # (bots) skeleton units the hips settled onto the pivot leg this tick
 const PIVOT_SINK_MAX := 8.0      # skeleton units (cm)
 var pivot_short := 0.0           # (bots) skeleton units the leg could not reach to the pin this tick
+## Ground feet (foot IK on slopes, steps, stones): the clip is authored on flat ground at the
+## body's floor level. Each tick a ray finds the real ground under each ankle; the hips settle
+## by what the lower foot needs to reach its ground, each leg is bent (two-bone IK, knee in the
+## clip's plane) to put its foot on its own ground, and a planted sole is tilted onto the slope.
+var ground_w := 0.0              # 0..1 weight (owner: grounded and on its feet)
+var ground_body: Node3D = null   # the owner: its origin is the floor the clip stands on; excluded from rays
+var ground_scale := 1.0          # the owner's body size (a growing boss): limits and snaps scale with it
+var ground_off := [0.0, 0.0]     # world m each foot's ground sits above (+) or below the floor, eased
+var ground_n := [Vector3.UP, Vector3.UP]   # each foot's ground normal, eased
+var ground_drop := 0.0           # (bots) world m the hips settled for the lower foot this tick
+var ground_anim := [0.0, 0.0]    # (bots) world m each ankle sat over the floor in the clip this tick
+var ground_sole := [0.0, 0.0]    # (bots) world m each ankle sits over the ground under it after the IK
+const GROUND_MAX := 0.42         # m (x the owner's scale): a bigger step is not a slope, leave it
+const GROUND_RATE := 45.0        # 1/s: the feet follow the ground under them this fast (a kerb in ~3 ticks)
+const GROUND_SNAP := 0.035       # m (x scale) a tick: less than this is the slope, followed at once
+const GROUND_HIPS_RATE := 10.0   # 1/s: the hips settle slower than the feet (no bob on a rough slope)
+const GROUND_TILT_MAX := 0.6     # rad: a sole tilts at most this far onto the slope
+var _ground_t := -1.0
+var _drop := 0.0               # world m, the hips' settle, eased
+var _ground_pf := -1
+var _gy := [0.0, 0.0]            # each foot's ground height in the world, eased (a planted foot's is fixed)
 
 func _process_modification_with_delta(_delta: float) -> void:
 	drop = 0.0
@@ -44,6 +65,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_warp_stride(skel)
 	_lock_feet(skel, _delta)
 	_pivot_leg(skel)
+	_ground_feet(skel, _delta)
 
 func _warp_stride(skel: Skeleton3D) -> void:
 	var to_skel := frame.inverse()
@@ -216,3 +238,117 @@ func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	if ax.length() < 1e-6:
 		return
 	_bend(skel, b, ax.normalized(), from.angle_to(to))
+
+## Two-bone IK on one leg: the ankle to `t` (skeleton space), the knee kept in the clip's bend
+## plane, the foot's skeleton-space orientation kept as `keep`.
+func _leg_to(skel: Skeleton3D, ul: int, lg: int, ft: int, t: Vector3, keep: Basis, fwd: Vector3) -> void:
+	var s := skel.get_bone_global_pose(ul).origin
+	var k := skel.get_bone_global_pose(lg).origin
+	var f := skel.get_bone_global_pose(ft).origin
+	var a := s.distance_to(k)
+	var b := k.distance_to(f)
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	var pole := (k - s) - dn * (k - s).dot(dn)
+	if pole.length() < 1e-3:
+		pole = fwd - dn * fwd.dot(dn)
+	pole = pole.normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ul, k - s, k_new - s)
+	k = skel.get_bone_global_pose(lg).origin
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, lg, f - k, s + dn * dl - k)
+	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
+	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
+
+func _ground_feet(skel: Skeleton3D, delta: float) -> void:
+	ground_drop = 0.0
+	if ground_body == null or not ground_body.is_inside_tree():
+		return
+	var xf := skel.global_transform
+	var inv := xf.affine_inverse()
+	var sc: float = ground_scale
+	var floor_y: float = ground_body.global_position.y
+	var sides := ["Left", "Right"]
+	var ul := [0, 0]
+	var lg := [0, 0]
+	var ft := [0, 0]
+	for i in 2:
+		ul[i] = skel.find_bone("mixamorig_%sUpLeg" % sides[i])
+		lg[i] = skel.find_bone("mixamorig_%sLeg" % sides[i])
+		ft[i] = skel.find_bone("mixamorig_%sFoot" % sides[i])
+		if ul[i] < 0 or lg[i] < 0 or ft[i] < 0:
+			return
+	# the ground under each ankle (a fresh landing eases in from the floor, no pop)
+	# eased once per physics tick (the clip is posed on physics ticks; the modifier's own delta
+	# is the render frame's and may come several times a tick, or not at all)
+	var pf := Engine.get_physics_frames()
+	var dt := 0.0 if pf == _ground_pf else 1.0 / float(Engine.physics_ticks_per_second)
+	if _ground_t < 0.0:
+		dt = 1.0
+	_ground_pf = pf
+	_ground_t = 0.0
+	var space := ground_body.get_world_3d().direct_space_state
+	var excl: Array[RID] = []
+	if ground_body is CollisionObject3D:
+		excl.append((ground_body as CollisionObject3D).get_rid())
+	var lim := GROUND_MAX * sc
+	var anim_h := [0.0, 0.0]
+	for i in 2:
+		var a: Vector3 = xf * skel.get_bone_global_pose(ft[i]).origin
+		anim_h[i] = a.y - floor_y
+		var q := PhysicsRayQueryParameters3D.create(Vector3(a.x, floor_y + lim + 0.3 * sc, a.z), Vector3(a.x, floor_y - lim - 0.3 * sc, a.z), 1, excl)
+		var hit := space.intersect_ray(q)
+		var gy := floor_y
+		var n := Vector3.UP
+		if not hit.is_empty():
+			gy = (hit.position as Vector3).y
+			n = hit.normal as Vector3
+			if n.y < 0.5:
+				n = Vector3.UP                  # a wall face, not a footing
+		# eased in the WORLD: the ground under a planted foot does not move as the body climbs
+		# a slope's small change per tick is followed exactly; a jump (a kerb, a stone) is eased
+		var r := 1.0 - exp(-GROUND_RATE * dt)
+		var jump := gy - float(_gy[i])
+		_gy[i] = gy if absf(jump) <= GROUND_SNAP * sc and dt > 0.0 and dt < 1.0 else lerpf(float(_gy[i]), gy, r)
+		ground_off[i] = clampf(float(_gy[i]) - floor_y, -lim, lim)
+		ground_n[i] = (ground_n[i] as Vector3).lerp(n, r).normalized()
+	ground_anim = anim_h.duplicate()
+	var w := clampf(ground_w, 0.0, 1.0)
+	if w <= 0.0:
+		_drop = 0.0
+		for i in 2:
+			ground_sole[i] = anim_h[i] - float(ground_off[i])
+		return
+	var up_s: Vector3 = inv.basis * Vector3.UP                # 1 world m up, in skeleton units
+	var fwd := (frame.inverse() * Vector3.BACK).normalized()
+	# the hips settle by what the lower ground needs (the clip's floor is the body's origin)
+	var want := maxf(0.0, -minf(float(ground_off[0]), float(ground_off[1]))) * w
+	_drop = lerpf(_drop, want, 1.0 - exp(-GROUND_HIPS_RATE * dt)) if want < _drop else want   # down at once, up eased
+	var drop := _drop
+	var hips := skel.find_bone("mixamorig_Hips")
+	if hips >= 0 and drop > 0.0:
+		var hp := skel.get_bone_parent(hips)
+		var pbh := skel.get_bone_global_pose(hp).basis if hp >= 0 else Basis()
+		skel.set_bone_pose_position(hips, skel.get_bone_pose_position(hips) - pbh.inverse() * (up_s * drop))
+	ground_drop = drop
+	for i in 2:
+		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
+		var lift := float(ground_off[i]) * w + drop
+		var keep := skel.get_bone_global_pose(ft[i]).basis
+		# a planted sole lies on the slope; a foot swinging high keeps the clip's angle
+		var plant := clampf(1.0 - (float(anim_h[i]) / sc - 0.12) / 0.14, 0.0, 1.0) * w
+		var n: Vector3 = ground_n[i]
+		var tilt := Vector3.UP.angle_to(n)
+		if plant > 0.0 and tilt > 1e-3:
+			var ax_w := Vector3.UP.cross(n).normalized()
+			var ax_s := (inv.basis * ax_w).normalized()
+			keep = Basis(ax_s, minf(tilt, GROUND_TILT_MAX) * plant) * keep
+		if absf(lift) < 1e-4 and plant <= 0.0:
+			continue
+		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift
+		_leg_to(skel, ul[i], lg[i], ft[i], t, keep, fwd)
+	for i in 2:
+		ground_sole[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y - floor_y - float(ground_off[i])

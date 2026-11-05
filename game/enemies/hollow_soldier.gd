@@ -315,6 +315,7 @@ func _setup_animation() -> void:
 		skel.add_child(stride_warp)
 		skel.move_child(stride_warp, 0)        # first modifier: on the clip's own legs
 		stride_warp.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
+		stride_warp.ground_body = self
 
 ## Spear in a body-space Wield node; both hands IK onto its grips, the chest twists with it.
 func _setup_spear() -> void:
@@ -637,6 +638,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
+	_update_ground_feet(delta)
 	if anim_tree:
 		# a bigger body covers more ground per stride: the clips play at the scaled speed
 		var hs := Vector2(velocity.x, velocity.z).length() / size_scale
@@ -687,6 +689,15 @@ func _update_turn_lead(delta: float) -> void:
 		_lead_twist.influence = _twist.influence if _twist != null else 1.0
 
 ## Standing and turning (IDLE/STALK, not posed by an attack): ramps turn_shuffle from the yaw rate.
+## Foot IK on uneven ground (StrideWarp ground feet), scaled with the body: each boot on its
+## own ground on the ring's slope, the hips settled for the lower one; off in the air and dead.
+func _update_ground_feet(delta: float) -> void:
+	if stride_warp == null:
+		return
+	stride_warp.ground_scale = size_scale
+	var w := 1.0 if is_on_floor() and state != DEAD else 0.0
+	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
+
 func _update_turn_shuffle(delta: float, hs: float) -> void:
 	var yaw := body.rotation.y
 	var rate := absf(angle_difference(_prev_yaw, yaw)) / maxf(delta, 1e-4)
