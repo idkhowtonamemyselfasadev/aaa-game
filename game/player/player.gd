@@ -1021,12 +1021,16 @@ func _physics_process(delta: float) -> void:
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
 		_turn_gap = angle_difference(body.rotation.y, yaw)
-		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
+		body.rotation.y = _step_capped(lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta), delta)
+	elif not is_nan(bot_square_yaw):
+		# (shots) a scripted square-up to a world yaw, stepped like the locked one
+		_turn_gap = angle_difference(body.rotation.y, bot_square_yaw)
+		body.rotation.y = _step_capped(lerp_angle(body.rotation.y, bot_square_yaw, 1.0 - exp(-8.0 * delta)), delta)
 	elif lock_target != null:
 		# standing while locked: square up to the target
 		var lt := lock_target.global_position - global_position
 		_turn_gap = angle_difference(body.rotation.y, atan2(lt.x, lt.z))
-		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta))
+		body.rotation.y = _step_capped(lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta)), delta)
 
 	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and not plunging and _regrab_t <= 0.0 and wish.length() > 0.3:
 		if _try_grab(wish.normalized()):
@@ -1078,6 +1082,19 @@ var _lean_yaw := 0.0
 var _pose_dip := 0.0                   # what the jump/landing pose sank the model this tick
 var lean_peak := Vector2.ZERO          # (bots) most forward / most back pitch seen
 var turn_shuffle := 0.0                # 0..1 stepping on the spot while the body turns
+const TURN_STEP_RATE := 6.0            # rad/s: on the spot the body comes round only as fast as the feet step it
+const TURN_STILL := 0.6                # m/s: below this the hero is turning on the spot, not running a curve
+var bot_square_yaw := NAN             # (shots) square up to this yaw standing, as if locked
+var turn_rate_peak := 0.0              # (bots) fastest on-the-spot turn seen, rad/s
+## On the spot the turn is what the shuffle can step (~345 deg/s, a 180 in ~0.5 s): the head
+## lead and the stepping feet get time to read instead of a near-snap. Running curves are free.
+func _step_capped(want: float, delta: float) -> float:
+	if Vector2(velocity.x, velocity.z).length() >= TURN_STILL or not is_on_floor():
+		return want
+	var cap := TURN_STEP_RATE * delta
+	var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
+	turn_rate_peak = maxf(turn_rate_peak, absf(d) / maxf(delta, 1e-4))
+	return body.rotation.y + d
 func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var hv := Vector2(velocity.x, velocity.z)
 	var yaw := body.rotation.y

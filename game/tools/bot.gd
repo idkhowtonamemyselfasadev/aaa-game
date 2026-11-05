@@ -755,6 +755,7 @@ func _hero_turn_test() -> void:
 	var head0: float = head_local.call()
 	if absf(p.turn_lead) > 0.001:
 		return _combat_done(false, "the head is turned while standing still (%.3f)" % p.turn_lead)
+	var shuf := [0.0]
 	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
 	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
 		var peak := 0.0
@@ -765,6 +766,7 @@ func _hero_turn_test() -> void:
 			p.bot_input = stick
 			await get_tree().physics_frame
 			await skel.skeleton_updated
+			shuf[0] = maxf(shuf[0], p.turn_shuffle)
 			var g: float = goal_yaw.call()
 			var by := p.body.rotation.y
 			var hy: float = by + angle_difference(head0, head_local.call())
@@ -789,6 +791,7 @@ func _hero_turn_test() -> void:
 	p.body.rotation.y = atan2(to.x, to.z) + PI - 0.3    # facing away, so the turn has a side
 	await _ticks(20)
 	p.lead_peak = 0.0
+	p.turn_rate_peak = 0.0
 	p._set_lock(post)
 	var post_yaw := func() -> float:
 		var d := post.global_position - p.global_position
@@ -796,7 +799,10 @@ func _hero_turn_test() -> void:
 	var spot: Array = await measure.call(post_yaw, 60, Vector2.ZERO)
 	await _ticks(40)
 	var spot_after := absf(p.turn_lead)
+	var spot_rate := p.turn_rate_peak
+	var spot_shuffle: float = shuf[0]
 	p._set_lock(null)
+	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
 	# 2) a hard right turn at a run
 	for i in 70:
@@ -828,6 +834,12 @@ func _hero_turn_test() -> void:
 		return _combat_done(false, "on the spot the head does not reach the post before the body (ahead %.2f, %d vs %d)" % [spot[1], spot[2], spot[3]])
 	if spot_after > 0.02:
 		return _combat_done(false, "the head stays turned once squared up (%.3f)" % spot_after)
+	if spot_rate > p.TURN_STEP_RATE + 0.05 or spot_rate < p.TURN_STEP_RATE * 0.8:
+		return _combat_done(false, "the turn on the spot is not stepped at the cap (%.2f rad/s)" % spot_rate)
+	if spot_shuffle < 0.6:
+		return _combat_done(false, "the feet do not step round the turn on the spot (shuffle %.2f)" % spot_shuffle)
+	if spot[3] < 14:
+		return _combat_done(false, "the turn on the spot is still a snap (square at tick %d)" % spot[3])
 	if run[0] > -0.15:
 		return _combat_done(false, "the head does not lead a right turn at a run (lead %.2f, want < 0)" % run[0])
 	if run[1] < 0.1 or run[2] < 0 or run[3] < 0 or run[2] > run[3]:

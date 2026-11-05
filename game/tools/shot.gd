@@ -2281,6 +2281,13 @@ func _ready() -> void:
 				player.bot_input = _stick_for(player, Vector3(1, 0, 0))
 				if turn_at >= 0.0 and t >= turn_at:
 					player.bot_input = _stick_for(player, Vector3(0, 0, 1))
+				if "spotturn" in args:
+					# standing: the body squares up 160 deg round at turnat (stepped, head first)
+					player.bot_input = Vector2.ZERO
+					if t == 0.0:
+						player.body.rotation.y = PI * 0.5      # side-on to the lens, facing +X
+					if t >= maxf(turn_at, 0.0) and is_nan(player.bot_square_yaw):
+						player.bot_square_yaw = player.body.rotation.y + deg_to_rad(160.0)
 				if pivot_at >= 0.0 and t >= pivot_at:
 					player.bot_input = _stick_for(player, Vector3(-1, 0, 0))
 				if stop_at >= 0.0 and t >= stop_at:

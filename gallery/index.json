@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261030-0235-roadmeet-watwool.jpg",
-  "time": "2026-10-30T02:35:00Z",
-  "caption": "Hild and Wat on the fell road: Wat's smock skirt now hangs as dun fulled road wool with a sun-faded top and damp hem instead of a flat pale linen sheet, Hild's kirtle stays even dark wool; still small in frame, faces unreadable, rust edge at her hip.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0345-talk-breadquest.jpg",
-  "time": "2026-10-30T03:45:00Z",
-  "caption": "First quest: Bread for the Keep's objective corner and Hesper's quest line as a subtitle read cleanly; but the talk lens at 09:30 sits inside the keep's ivy wall, so the frame is flat ivy cards, not Hesper.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0446-fellbell.jpg",
-  "time": "2026-10-30T04:46:06Z",
-  "caption": "Osric's lost bellwether bell hangs by its leather collar from the last fold post under the great grey stone, quest corner and Take prompt up; still wrong: the bell is tiny in frame, the post reads as a smooth near-black pole, and there is no ruined fold round it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0541-foldring.jpg",
-  "time": "2026-10-30T05:41:46Z",
-  "caption": "The fell bell's post at the broken gateway of Osric's old fold: a ring of tumbled dry-stone wall butted against the great stone, fallen stones in the turf; still too low and dark in the backlight, a second boulder cuts through the ring, and the hero still reads stylised.",
-  "verdict": "fail"
- },
- {
   "file": "20261030-0541-bellcu.jpg",
   "time": "2026-10-30T05:41:46Z",
   "caption": "Close on the bellwether's bell, a size bigger and readable as verdigrised bronze on its strap, the post crusted with small lichen flecks; the post still reads as a smooth dark pole in shade and the grass blades are flat cards.",
@@ -897,6 +873,18 @@
   "file": "20261105-0014-hero-turn-60.jpg",
   "time": "2026-11-05T00:14:02Z",
   "caption": "The same turn 0.1 s in: the body has caught up with the head; GL, shaded and seen from behind, so the lead cannot be judged on the face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0130-spot-turn-24.jpg",
+  "time": "2026-11-05T01:30:00Z",
+  "caption": "Standing turn stepped at 6 rad/s, 0.14 s in: the hero steps round 3/4 to the lens, one foot lifting; GL frame, hero in tree shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0130-spot-turn-36.jpg",
+  "time": "2026-11-05T01:30:00Z",
+  "caption": "0.26 s into the stepped turn: the hood and face are already in profile ahead of the shoulders (head lead reads); GL, shaded, and the turn goes away from the lens though the yaw says it should face it.",
   "verdict": "fail"
  }
 ]
