@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -205,6 +205,9 @@ func _ready() -> void:
 		return
 	if name == "foeturn":
 		_foe_turn_test()
+		return
+	if name == "heroturn":
+		_hero_turn_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -732,6 +735,110 @@ func _lean_test() -> void:
 	if p.turn_shuffle > 0.05:
 		return _combat_done(false, "the feet keep shuffling once squared up (%.2f)" % p.turn_shuffle)
 	_combat_done(true, "the hero leans into starts, banks into turns, rocks back and settles on a stop, and steps round on the spot")
+
+## Hero turn lead: the head and chest swing toward where the hero is turning before the body
+## comes round (on the spot while locked, and in a run turn), settle square after, and keep out
+## of the pivot (which turns the head itself).
+func _hero_turn_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
+	p.velocity = Vector3.ZERO
+	await _ticks(40)
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var hb := skel.find_bone("mixamorig_Head")
+	var head_local := func() -> float:
+		var hz: Vector3 = p.body.global_basis.inverse() * (skel.global_basis * skel.get_bone_global_pose(hb).basis).z
+		return atan2(hz.x, hz.z)
+	await skel.skeleton_updated
+	var head0: float = head_local.call()
+	if absf(p.turn_lead) > 0.001:
+		return _combat_done(false, "the head is turned while standing still (%.3f)" % p.turn_lead)
+	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
+	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
+		var peak := 0.0
+		var ahead := 0.0
+		var head_in := -1
+		var body_in := -1
+		for i in ticks:
+			p.bot_input = stick
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			var g: float = goal_yaw.call()
+			var by := p.body.rotation.y
+			var hy: float = by + angle_difference(head0, head_local.call())
+			if absf(p.turn_lead) > absf(peak):
+				peak = p.turn_lead
+			var gap_b := absf(angle_difference(by, g))
+			var gap_h := absf(angle_difference(hy, g))
+			ahead = maxf(ahead, gap_b - gap_h)
+			if head_in < 0 and gap_h < 0.5:
+				head_in = i
+			if body_in < 0 and gap_b < 0.5:
+				body_in = i
+		return [peak, ahead, head_in, body_in]
+	# 1) on the spot: lock onto the practice post behind the hero
+	var post: Node3D = null
+	for t in get_tree().get_nodes_in_group("hittable"):
+		if not t.is_in_group("enemy") and p._lockable(t) and (post == null or t.global_position.distance_to(p.global_position) < post.global_position.distance_to(p.global_position)):
+			post = t
+	if post == null:
+		return _combat_done(false, "no practice post to lock onto")
+	var to := post.global_position - p.global_position
+	p.body.rotation.y = atan2(to.x, to.z) + PI - 0.3    # facing away, so the turn has a side
+	await _ticks(20)
+	p.lead_peak = 0.0
+	p._set_lock(post)
+	var post_yaw := func() -> float:
+		var d := post.global_position - p.global_position
+		return atan2(d.x, d.z)
+	var spot: Array = await measure.call(post_yaw, 60, Vector2.ZERO)
+	await _ticks(40)
+	var spot_after := absf(p.turn_lead)
+	p._set_lock(null)
+	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
+	# 2) a hard right turn at a run
+	for i in 70:
+		p.bot_input = Vector2(0, -1)
+		await get_tree().physics_frame
+	var yaw_run := p.body.rotation.y
+	var right_yaw := func() -> float:
+		return yaw_run - PI * 0.5
+	var run: Array = await measure.call(right_yaw, 40, Vector2(1, 0))
+	for i in 30:
+		p.bot_input = Vector2(1, 0)
+		await get_tree().physics_frame
+	var run_after := absf(p.turn_lead)
+	print("BOT heroturn: run turn right: lead %.2f rad, head up to %.2f rad ahead, head in at tick %d, body at %d, after %.4f" % [run[0], run[1], run[2], run[3], run_after])
+	# 3) a pivot owns the head itself: the lead keeps out
+	var n0 := p.pivots
+	var pivot_lead := 0.0
+	for i in 50:
+		p.bot_input = Vector2(-1, 0)
+		await get_tree().physics_frame
+		if p.pivot_t >= 0.0:
+			pivot_lead = maxf(pivot_lead, absf(p.turn_lead))
+	p.bot_input = Vector2.ZERO
+	await _ticks(60)
+	print("BOT heroturn: pivots %d, lead during the pivot %.3f, rest %.4f" % [p.pivots - n0, pivot_lead, absf(p.turn_lead)])
+	if absf(spot[0]) < 0.4:
+		return _combat_done(false, "on the spot the head does not lead the turn (lead %.2f)" % spot[0])
+	if spot[1] < 0.25 or spot[2] < 0 or spot[3] < 0 or spot[2] >= spot[3]:
+		return _combat_done(false, "on the spot the head does not reach the post before the body (ahead %.2f, %d vs %d)" % [spot[1], spot[2], spot[3]])
+	if spot_after > 0.02:
+		return _combat_done(false, "the head stays turned once squared up (%.3f)" % spot_after)
+	if run[0] > -0.15:
+		return _combat_done(false, "the head does not lead a right turn at a run (lead %.2f, want < 0)" % run[0])
+	if run[1] < 0.1 or run[2] < 0 or run[3] < 0 or run[2] > run[3]:
+		return _combat_done(false, "at a run the head does not come round before the body (ahead %.2f, %d vs %d)" % [run[1], run[2], run[3]])
+	if run_after > 0.02:
+		return _combat_done(false, "the head stays turned after the run turn (%.3f)" % run_after)
+	if p.pivots - n0 < 1:
+		return _combat_done(false, "no pivot on the reversed stick")
+	if pivot_lead > 0.12:
+		return _combat_done(false, "the turn lead fights the pivot's own head turn (%.3f)" % pivot_lead)
+	_combat_done(true, "the hero's head and chest lead a turn on the spot and at a run, settle square, and keep out of the pivot")
 
 ## Pivot: reversing the stick at a run plants a foot, skids, spins 180 deg over it while low and
 ## drives off the other way, faster than the old lerped arc; a walk turns round as before.

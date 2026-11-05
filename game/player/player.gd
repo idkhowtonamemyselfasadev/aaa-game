@@ -281,6 +281,7 @@ func _ready() -> void:
 	_setup_animation()
 	_attach_staff()
 	_setup_crumple()
+	_setup_turn_lead()
 	glider = Glider.new()
 	glider.name = "Glider"
 	body.add_child(glider)
@@ -362,6 +363,46 @@ func _attach_staff() -> void:
 	combat.name = "Combat"
 	add_child(combat)
 	combat.setup(self, staff, skel)
+
+## The head and chest lead a turn (same rig as the Hollow foes): a SpineTwist on the upper
+## chest, neck and head, placed before the arm IK so a drawn staff stays in both hands.
+const LEAD_BONES := ["mixamorig_Spine1", "mixamorig_Spine2", "mixamorig_Neck", "mixamorig_Head"]
+const LEAD_SHARE := [0.10, 0.16, 0.32, 0.42]   # the head turns furthest, the chest a little
+const LEAD_K := 0.75             # lead per radian still to turn
+const LEAD_MAX := 0.8            # rad (~44 deg at the head, ~13 deg at the chest)
+const LEAD_RATE := 20.0          # 1/s: the eyes go first, quicker than the body's TURN_SPEED
+const LEAD_SETTLE := 7.0         # 1/s back to square once the body has caught up
+var turn_lead := 0.0             # radians, positive toward the hero's left (SpineTwist sign)
+var lead_peak := 0.0             # (bots) largest |turn_lead| since reset
+var _turn_gap := 0.0             # yaw still to turn this tick (set by the facing code)
+var _lead_twist: SpineTwist
+
+func _setup_turn_lead() -> void:
+	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skel == null:
+		return
+	_lead_twist = SpineTwist.new()
+	_lead_twist.name = "TurnLead"
+	_lead_twist.up = body
+	_lead_twist.bones = LEAD_BONES
+	_lead_twist.share = LEAD_SHARE
+	skel.add_child(_lead_twist)
+	var ik := skel.get_node_or_null("ArmIK")
+	if ik != null:
+		skel.move_child(_lead_twist, ik.get_index())
+
+## Eases turn_lead toward the yaw still to turn; it settles back square, slower, as the body
+## catches up. Off (eases to 0) whenever another pose owns the spine.
+func _update_turn_lead(delta: float) -> void:
+	var free := dead_t < 0.0 and down_t < 0.0 and not climbing and not gliding and pivot_t < 0.0
+	var goal := clampf(_turn_gap * LEAD_K, -LEAD_MAX, LEAD_MAX) if free else 0.0
+	var rate := LEAD_RATE if absf(goal) > absf(turn_lead) else LEAD_SETTLE
+	turn_lead = lerpf(turn_lead, goal, 1.0 - exp(-rate * delta))
+	if absf(turn_lead) < 1e-4:
+		turn_lead = 0.0
+	lead_peak = maxf(lead_peak, absf(turn_lead))
+	if _lead_twist != null:
+		_lead_twist.twist = turn_lead
 
 func _setup_crumple() -> void:
 	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -673,6 +714,9 @@ func _physics_process(delta: float) -> void:
 		woke_t += delta
 		if woke_t > RESPAWN_FADE:
 			woke_t = -1.0
+	if dead_t >= 0.0 or down_t >= 0.0 or climbing or mantle_t >= 0.0:
+		_turn_gap = 0.0
+		_update_turn_lead(delta)             # a turn caught mid-lead eases square
 	if dead_t >= 0.0:
 		_dead_tick(delta)
 		return
@@ -722,6 +766,8 @@ func _physics_process(delta: float) -> void:
 			_air_t = -1.0
 			land_t = -1.0
 			_clear_jump_pose()
+		_turn_gap = 0.0
+		_update_turn_lead(delta)
 		_glide_tick(delta, dir2, want_jump, want_dodge)
 		return
 	if want_jump:
@@ -935,6 +981,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		stamina = minf(stamina + 12.0 * delta, stamina_max)
 
+	_turn_gap = 0.0
 	if reeling:
 		pass                                   # rocked back: the facing holds
 	elif dodging:
@@ -973,10 +1020,12 @@ func _physics_process(delta: float) -> void:
 		body.rotation.y = _pivot_from + _pivot_turn * smoothstep(PIVOT_SPIN.x, PIVOT_SPIN.y, pivot_t / PIVOT_TIME)
 	elif wish.length() > 0.1:
 		var yaw := atan2(wish.x, wish.z)
+		_turn_gap = angle_difference(body.rotation.y, yaw)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, TURN_SPEED * delta)
 	elif lock_target != null:
 		# standing while locked: square up to the target
 		var lt := lock_target.global_position - global_position
+		_turn_gap = angle_difference(body.rotation.y, atan2(lt.x, lt.z))
 		body.rotation.y = lerp_angle(body.rotation.y, atan2(lt.x, lt.z), 1.0 - exp(-8.0 * delta))
 
 	if _jumped and not is_on_floor() and not dodging and not reeling and not attacking and not charging and not plunging and _regrab_t <= 0.0 and wish.length() > 0.3:
@@ -1004,6 +1053,7 @@ func _physics_process(delta: float) -> void:
 	_stop_pose()
 	_start_pose()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
+	_update_turn_lead(delta)
 	if combat != null:
 		combat.physics_step(delta)
 
