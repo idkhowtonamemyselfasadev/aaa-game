@@ -53,6 +53,10 @@ const GROUND_TILT_MAX := 0.6     # rad: a sole tilts at most this far onto the s
 var _ground_t := -1.0
 var _drop := 0.0               # world m, the hips' settle, eased
 var _ground_pf := -1
+var toe_lift := [0.0, 0.0]        # (bots) world m each foot was lifted so its toes clear a rising edge
+const TOE_TIP := 0.55            # the toe tip ray sits this far past the ball (x the ankle-to-ball reach)
+const TOE_TOL := 0.006           # m (x scale): a rise smaller than this under the toes is the slope's own curve
+var _gxz := [Vector3.ZERO, Vector3.ZERO]   # each ankle's world x/z last tick (the slope's own rise under a moving foot)
 var _gy := [0.0, 0.0]            # each foot's ground height in the world, eased (a planted foot's is fixed)
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -275,7 +279,9 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	var ul := [0, 0]
 	var lg := [0, 0]
 	var ft := [0, 0]
+	var tb := [-1, -1]
 	for i in 2:
+		tb[i] = skel.find_bone("mixamorig_%sToeBase" % sides[i])
 		ul[i] = skel.find_bone("mixamorig_%sUpLeg" % sides[i])
 		lg[i] = skel.find_bone("mixamorig_%sLeg" % sides[i])
 		ft[i] = skel.find_bone("mixamorig_%sFoot" % sides[i])
@@ -308,11 +314,42 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 			n = hit.normal as Vector3
 			if n.y < 0.5:
 				n = Vector3.UP                  # a wall face, not a footing
+		# toe rays: the ball of the foot and the toe tip ahead of it. Where the ground under them
+		# rises above the slope the ankle stands on (a stair edge, a kerb, a root, a stone), the
+		# foot is lifted onto it so the toes never dip into it: the ball takes the weight on the
+		# step, the heel hangs over the lower ground, as a foot does on a stair edge.
+		toe_lift[i] = 0.0
+		if tb[i] >= 0:
+			var ball: Vector3 = xf * skel.get_bone_global_pose(tb[i]).origin
+			var reach := Vector3(ball.x - a.x, 0.0, ball.z - a.z)
+			for tp in [ball, ball + reach * TOE_TIP]:
+				var tq := PhysicsRayQueryParameters3D.create(Vector3(tp.x, floor_y + lim + 0.3 * sc, tp.z), Vector3(tp.x, floor_y - lim - 0.3 * sc, tp.z), 1, excl)
+				var th := space.intersect_ray(tq)
+				if th.is_empty():
+					continue
+				var tn := th.normal as Vector3
+				if tn.y < 0.5:
+					continue                    # the riser's face: the tread's own ray decides
+				# where the ankle's slope would put the ground under this toe point
+				var dxz := Vector3(tp.x - a.x, 0.0, tp.z - a.z)
+				var plane_y := gy - (n.x * dxz.x + n.z * dxz.z) / maxf(n.y, 0.5)
+				var excess := (th.position as Vector3).y - plane_y - TOE_TOL * sc
+				toe_lift[i] = maxf(float(toe_lift[i]), excess)
+			gy += minf(float(toe_lift[i]), lim)
 		# eased in the WORLD: the ground under a planted foot does not move as the body climbs
 		# a slope's small change per tick is followed exactly; a jump (a kerb, a stone) is eased
 		var r := 1.0 - exp(-GROUND_RATE * dt)
 		var jump := gy - float(_gy[i])
-		_gy[i] = gy if absf(jump) <= GROUND_SNAP * sc and dt > 0.0 and dt < 1.0 else lerpf(float(_gy[i]), gy, r)
+		# what the slope alone gives for how far this foot moved since last tick: a swinging foot
+		# crosses a hillside fast and its ground rises with it, that is followed at once; only the
+		# rest (a kerb, a stone, a stair edge) is eased
+		var gn: Vector3 = ground_n[i]
+		var mv: Vector3 = Vector3(a.x, 0.0, a.z) - (_gxz[i] as Vector3)
+		var slope_rise := -(gn.x * mv.x + gn.z * mv.z) / maxf(gn.y, 0.5)
+		if mv.length() > 0.5 * sc:
+			slope_rise = 0.0                    # a teleport, not a stride
+		_gxz[i] = Vector3(a.x, 0.0, a.z)
+		_gy[i] = gy if absf(jump - slope_rise) <= GROUND_SNAP * sc and dt > 0.0 and dt < 1.0 else lerpf(float(_gy[i]), gy, r)
 		ground_off[i] = clampf(float(_gy[i]) - floor_y, -lim, lim)
 		ground_n[i] = (ground_n[i] as Vector3).lerp(n, r).normalized()
 	ground_anim = anim_h.duplicate()

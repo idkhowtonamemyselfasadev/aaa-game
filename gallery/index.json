@@ -886,5 +886,11 @@
   "time": "2026-11-05T06:20:00Z",
   "caption": "The same spot without foot IK for comparison: the clip stands as on flat ground and the far boot hangs over the downhill side; GL frame.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261105-0804-toestep.jpg",
+  "time": "2026-11-05T08:04:16Z",
+  "caption": "Toe IK test: a boot stands on top of a 16 cm masonry block with nothing sunk into it; the lens is not side-on so the ball-on-edge read is unverified, and the GL quick-look lighting and test block are not shipping quality.",
+  "verdict": "fail"
  }
 ]

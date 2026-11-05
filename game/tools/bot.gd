@@ -2083,6 +2083,66 @@ func _foot_ik_test() -> void:
 			for f in 2:
 				flat_walk = maxf(flat_walk, ankle - sw.ground_sole[f])
 	p.bot_input = Vector2.ZERO
+	# 1b) a stair edge under the toes: standing still on the flat, a 16 cm step is set so its edge
+	# runs between each ankle and the ball of its foot. The toes must stand on the step, not in it.
+	p.velocity = Vector3.ZERO
+	await _ticks(50)
+	await skel.skeleton_updated
+	var tbn := [skel.find_bone("mixamorig_LeftToeBase"), skel.find_bone("mixamorig_RightToeBase")]
+	var ball_h := func(f: int) -> float:
+		var b: Vector3 = skel.global_transform * skel.get_bone_global_pose(tbn[f]).origin
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(b + Vector3.UP * 0.8, b + Vector3.DOWN * 0.8, 1, [p.get_rid()]))
+		return b.y - (hit.position.y if not hit.is_empty() else -INF)
+	var ball_flat := minf(ball_h.call(0), ball_h.call(1))
+	var fwd_w: Vector3 = p.body.global_basis.z
+	fwd_w = Vector3(fwd_w.x, 0, fwd_w.z).normalized()
+	var side_w := fwd_w.cross(Vector3.UP)
+	var floor_y: float = p.global_position.y
+	var fh := space.intersect_ray(PhysicsRayQueryParameters3D.create(p.global_position + Vector3.UP, p.global_position + Vector3.DOWN * 2.0, 1, [p.get_rid()]))
+	if not fh.is_empty():
+		floor_y = fh.position.y
+	const STEP_H := 0.16
+	var st_off := [0.0, 0.0, 0.0]
+	var st_on := [0.0, 0.0, 0.0]
+	var edge := 0.0
+	for f in 2:
+		# one foot at a time: a narrow step whose edge runs between that ankle and its ball
+		p.foot_ground_on = true
+		await _ticks(20)
+		await skel.skeleton_updated
+		var a: Vector3 = skel.global_transform * skel.get_bone_global_pose(fb[f]).origin
+		var b: Vector3 = skel.global_transform * skel.get_bone_global_pose(tbn[f]).origin
+		var mid := (a + b) * 0.5
+		var step := StaticBody3D.new()
+		var shp := CollisionShape3D.new()
+		var bx := BoxShape3D.new()
+		bx.size = Vector3(0.16, STEP_H, 0.6)
+		shp.shape = bx
+		step.add_child(shp)
+		_world.add_child(step)
+		step.global_transform = Transform3D(Basis(side_w, Vector3.UP, fwd_w), Vector3(mid.x, floor_y + STEP_H * 0.5, mid.z) + fwd_w * 0.3)
+		p.add_collision_exception_with(step)
+		edge = maxf(edge, (b - a).dot(fwd_w) * 0.5)
+		for on in [false, true]:
+			p.foot_ground_on = on
+			p.velocity = Vector3.ZERO
+			await _ticks(40)
+			await skel.skeleton_updated
+			var r: Array = st_on if on else st_off
+			r[0] = maxf(r[0], ball_flat - float(ball_h.call(f)))
+			r[1] = maxf(r[1], sw.ground_drop)
+			r[2] = maxf(r[2], sw.toe_lift[f])
+		step.queue_free()
+	p.foot_ground_on = true
+	await _ticks(30)
+	print("BOT footik: stair edge %.2f m under each foot's toes in turn (%.3f m ahead of the ankle; ball %.3f m over the flat): IK off the toes bury %.3f m | IK on: bury %.3f m, toe lift %.3f m, hips settle %.3f" % [STEP_H, edge, ball_flat, st_off[0], st_on[0], st_on[2], st_on[1]])
+	var soft := OS.get_environment("FOOTIK_SOFT") != ""
+	if st_off[0] < 0.1 and not soft:
+		return _combat_done(false, "the step did not reach under the toes (bury %.3f without IK)" % st_off[0])
+	if st_on[0] > 0.015 and not soft:
+		return _combat_done(false, "the toes dip %.3f m into a stair edge" % st_on[0])
+	if st_on[1] > 0.03 and not soft:
+		return _combat_done(false, "the hips settle %.3f m on a step up" % st_on[1])
 	# 2) find a bare hillside: ground ~16-24 deg, nothing but the terrain under a 1 m disc
 	var spot := Vector3.INF
 	var down := Vector3.ZERO

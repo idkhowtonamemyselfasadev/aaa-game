@@ -765,6 +765,8 @@ func _ready() -> void:
 			if a.begins_with("at="):
 				var xz := a.substr(3).split(",")
 				sp = Vector3(float(xz[0]), 0, float(xz[1]))
+		if "step" in args and not Array(args).any(func(a): return String(a).begins_with("at=")):
+			sp = player.global_position + Vector3(3.0, 0, -6.0)    # the footik bot's flat turf
 		var n: Vector3 = terrain.normal_at(sp.x, sp.z, 0.6)
 		var dn := Vector3(n.x, 0, n.z).normalized()
 		var along := dn.cross(Vector3.UP)
@@ -774,7 +776,31 @@ func _ready() -> void:
 		player.foot_ground_on = not ("noik" in args)
 		var pp := player.global_position
 		var eye := pp + (dn * 2.2 + Vector3.UP * 0.2 if "side" in args else along * 2.0 + dn * 0.3 + Vector3.UP * 0.45)
-		SPOTS[spot] = [eye, pp + Vector3.UP * 0.45]
+		if "step" in args:
+			# toe IK: a dressed 16 cm block of the ruins' masonry set just ahead of the ankles, so
+			# its edge runs under the balls of the feet; seen side-on at boot height
+			var blk := StaticBody3D.new()
+			var cs := CollisionShape3D.new()
+			var bx := BoxShape3D.new()
+			bx.size = Vector3(1.0, 0.16, 0.8)
+			cs.shape = bx
+			blk.add_child(cs)
+			var mi := MeshInstance3D.new()
+			var bm := BoxMesh.new()
+			bm.size = bx.size
+			mi.mesh = bm
+			var rn := world.get_node_or_null("Ruins")
+			if rn != null and rn.get("material") != null:
+				mi.material_override = rn.material
+			blk.add_child(mi)
+			world.add_child(blk)
+			var f := along
+			var sd := f.cross(Vector3.UP)
+			var gy := terrain.height_at(pp.x + f.x * 0.46, pp.z + f.z * 0.46)
+			blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy + 0.06, pp.z) + f * (0.06 + 0.4))
+			player.add_collision_exception_with(blk)
+			eye = pp + sd * 1.6 + f * 0.25 + Vector3.UP * 0.3
+		SPOTS[spot] = [eye, pp + Vector3.UP * 0.25 + along * 0.15 if "step" in args else pp + Vector3.UP * 0.45]
 		print("SHOT slope at %s, %.1f deg, ik %s" % [pp, rad_to_deg(acos(n.y)), player.foot_ground_on])
 	if spot == "face":
 		# head-and-shoulders of the idle player from the front-left: hat, hood, face cloth
