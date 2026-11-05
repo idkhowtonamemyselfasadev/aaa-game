@@ -2747,8 +2747,20 @@ func _knight_test() -> void:
 	var lift_mid := 0.0
 	var tip_lo := 99.0
 	var tip_hi := -99.0
+	var neck_back := 99.0      # the neck's forward offset over the hips (m / size), least in the roar
+	var neck_fore := -99.0     # and most while slumped / coiled
+	var nb := k.skel.find_bone("mixamorig_Neck")
+	var hb := k.skel.find_bone("mixamorig_Hips")
 	var it := 0.0
 	while k.intro_playing() and it < 8.0:
+		if nb >= 0 and hb >= 0:
+			var nw := k.skel.global_transform * k.skel.get_bone_global_pose(nb).origin
+			var hw := k.skel.global_transform * k.skel.get_bone_global_pose(hb).origin
+			var fwd := k.body.global_basis.z
+			fwd.y = 0.0
+			var off := (nw - hw).dot(fwd.normalized()) / k.size_scale
+			neck_back = minf(neck_back, off)
+			neck_fore = maxf(neck_fore, off)
 		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
 		if it > 0.3 and it < 1.0:
 			k.take_hit(k.global_position + Vector3.UP * 2.0, Vector3.FORWARD, 3.0, 0.0)
@@ -2779,6 +2791,9 @@ func _knight_test() -> void:
 	print("BOT knight: reveal body: head bowed asleep %.2f rad, flung back %.2f rad, knees set %.2f m before the heave" % [k.intro_bow_peak, k.intro_lift_back, k.intro_gather_peak])
 	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
+	print("BOT knight: reveal spine: hunched %.2f rad, arched back %.2f rad; neck over the hips %.2f .. %.2f m (per size)" % [k.intro_hunch_peak, k.intro_arch_peak, neck_back, neck_fore])
+	if k.intro_arch_peak > -0.25 or k.intro_hunch_peak < 0.1 or neck_fore - neck_back < 0.12:
+		return _combat_done(false, "the reveal's roar does not arch the back (spine %.2f, neck swing %.2f m)" % [k.intro_arch_peak, neck_fore - neck_back])
 	if drift > 0.35 or k.health != hp_i or k.intro_heave < 0.9 or not k.has_meta("roared"):
 		return _combat_done(false, "the hero moved, the knight was hurt or it never roared in the reveal")
 	if k.state != HollowSoldier.STALK or p.cinematic or get_viewport().get_camera_3d() != hero_cam or not k.intro_seen:

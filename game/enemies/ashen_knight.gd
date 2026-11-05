@@ -165,6 +165,10 @@ var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
 var _intro_dorm := 1.0
+var _intro_arch := 0.0           # the reveal's spine bend at the joints (Crumple.spine: + hunched, - arched back)
+var _intro_arched := false
+var intro_arch_peak := 0.0       # bots: deepest back arch of the roar (rad, negative)
+var intro_hunch_peak := 0.0      # bots: deepest hunch while dormant / coiled (rad)
 var intro_bow_peak := 0.0        # bots: head bowed asleep in the reveal (rad)
 var intro_lift_back := 0.0       # bots: head flung back in the reveal's roar (rad, negative)
 var intro_gather_peak := 0.0     # bots: how deep the knees set before the heave (m)
@@ -469,6 +473,9 @@ func _physics_process(delta: float) -> void:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
 			_wield.position.y = 0.0
+	if _intro_arched and not (move_kind == INTRO_MOVE and state == WINDUP):
+		_intro_arch = move_toward(_intro_arch, 0.0, delta * 1.5)
+		_pose_arch(_intro_arch)
 	if _crown_reel and (state != STAGGER or _surge >= 0.0):
 		_crown_reel = false
 	if _crown_reel and state != DEAD:
@@ -810,9 +817,17 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		head.roll = _head_roll
 	intro_bow_peak = maxf(intro_bow_peak, _head_bow)
 	intro_lift_back = minf(intro_lift_back, _head_bow)
-	# chest: hunched asleep, coiled forward in the gather, thrown back in the roar
-	var lean := 0.14 * dormant + 0.12 * gather - 0.14 * up - 0.05 * roar + 0.08 * follow \
+	# chest: hunched asleep, coiled forward in the gather, thrown back in the roar. The bend is
+	# mostly in the spine (the back arches, the shoulders go back over planted hips and legs);
+	# only a little is the whole-body tilt about the feet, which tipped the legs with it
+	var lean := 0.1 * dormant + 0.08 * gather - 0.07 * up - 0.03 * roar + 0.06 * follow \
 		+ 0.012 * sin(it * 47.0) * roar
+	var arch := 0.14 * dormant + 0.2 * gather - 0.34 * up - 0.12 * roar + 0.1 * follow \
+		+ 0.02 * sin(it * 41.0) * roar
+	_intro_arch = lerpf(_intro_arch, arch, 1.0 - exp(-14.0 * delta))
+	_pose_arch(_intro_arch)
+	intro_arch_peak = minf(intro_arch_peak, _intro_arch)
+	intro_hunch_peak = maxf(intro_hunch_peak, _intro_arch)
 	# legs: knees soft asleep, deep in the gather, straight in the heave, a settle dip after
 	var sink := 0.06 * dormant + 0.2 * gather + 0.07 * settle
 	_set_tuck(0.12 * dormant + 0.42 * gather + 0.14 * settle, 0.24 * dormant + 0.84 * gather + 0.28 * settle)
@@ -828,6 +843,21 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
+
+## The reveal's spine bend through the joint layer (the soldier's stagger Crumple, idle outside a
+## stagger). It runs before the arm IK, so the hands stay closed on the glaive as the chest moves.
+func _pose_arch(a: float) -> void:
+	if crumple == null or (state == STAGGER and _reel_layer_on()):
+		return
+	if absf(a) < 0.002 and not (move_kind == INTRO_MOVE and state == WINDUP):
+		if _intro_arched:
+			crumple.spine = 0.0
+			crumple.active = false
+			_intro_arched = false
+		return
+	crumple.active = true
+	crumple.spine = a
+	_intro_arched = true
 
 ## The stomp: weight over onto the left leg as the right knee comes up to the chest, held
 ## there shuddering with the ember flaring (the tell), the boot driven down, the ground wave.

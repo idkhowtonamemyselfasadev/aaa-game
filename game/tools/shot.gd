@@ -2504,6 +2504,9 @@ func _ready() -> void:
 			kf = kf.normalized()
 			var ks := kf.cross(Vector3.UP)
 			var bp := kk.global_position + kf * 3.4 * kk.size_scale + ks * (-2.2 if "flip" in args else 2.2) * kk.size_scale
+			if "kside" in args:
+				# kside: square off the knight's flank (judge the spine's hunch and arch in profile)
+				bp = kk.global_position + kf * 0.9 * kk.size_scale + ks * (-4.4 if "flip" in args else 4.4) * kk.size_scale
 			bp.y = terrain.height_at(bp.x, bp.z) + 0.75 * kk.size_scale
 			bi.cam.h_offset = 0.0
 			bi.cam.v_offset = 0.0
@@ -2517,6 +2520,11 @@ func _ready() -> void:
 			hud.letterbox = bi.bars
 			hud._letterbox.queue_redraw()
 		get_tree().paused = true
+		if "kside" in args:
+			for bn in ["mixamorig_Hips", "mixamorig_Neck", "mixamorig_Head", "mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+				var bw := kk.skel.global_transform * kk.skel.get_bone_global_pose(kk.skel.find_bone(bn)).origin
+				print("SHOT bone %s screen %s" % [bn, bi.cam.unproject_position(bw)])
+			print("SHOT knight forward on screen: %s -> %s" % [bi.cam.unproject_position(kk.global_position + Vector3.UP), bi.cam.unproject_position(kk.global_position + Vector3.UP + kk.body.global_basis.z)])
 		print("SHOT intro t %.2f cam %s lift %.1f heave %.2f bars %.2f" % [bi.t, bi.cam.global_position, bi.max_lift, kk._heave_now, bi.bars])
 	if spot == "ring" and "crown" in args:
 		# ring crown [ct=N] [p2]: the hero dropped 3 m over the knight's helm, a heavy pressed (the
