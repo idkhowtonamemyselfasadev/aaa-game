@@ -43,6 +43,9 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   sits 0.02-0.04 m into the ground through the whole slump (bot `knight` measures it against a ground ray at intro
   t 0.55-0.9 and fails outside -0.12 .. +0.04 m). New shot option `kface` for `ring X 20 10.0 fixfps intro body`: the
   lens off the knight's own front (before it turns onto the hero), the fix for the back-flank view noted at 20:30.
+  GL frames (`kface it=0.8/2.7/3.5`) looked at: the point now meets the dirt beside the right boot and reads planted; from
+  straight in front the roar's head throw and chest-out barely read (the helm hides the tilt): next, a stronger back
+  arch in the roar or judge it from a low 3/4 lens. Gallery: 20261105-2130-knight-dormant.jpg, -knight-roar.jpg (fail).
 - (20:30 11-05) **BOSS REVEAL ROAR IN BEATS (bots `knight` `knightleap` `knightstomp` `crown` `sentinel` PASS).**
   `AshenKnight._intro_tick` rewritten as five beats off the intro clock: DORMANT (0-1.0: glaive in the SURGE_LEAN
   planted lean, head bow 0.62, chest hunched 0.14, knees soft; eased in from the pre-intro pose over 0.4 s, no snap),
