@@ -886,5 +886,11 @@
   "time": "2026-11-05T15:30:00Z",
   "caption": "The same reel at 0.45 s: stepped 0.66 m off the line and turning back to the hero, spear dropping to guard, feet planted; still a GL frame, not a sunlit Forward+ one.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261105-1630-herorun-lateral.jpg",
+  "time": "2026-11-05T16:30:00Z",
+  "caption": "GL quick-look: the hero mid-run on open turf with the new sideways foot lock; the figure is small and backlit, its feet in its own shadow, so the planted boot cannot be judged by eye here, and this is GL compatibility, not Forward+.",
+  "verdict": "fail"
  }
 ]
