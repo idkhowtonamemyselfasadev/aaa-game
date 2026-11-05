@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261031-1330-ring.jpg",
-  "time": "2026-10-31T13:30:00Z",
-  "caption": "The knight's stone ring: the burnt ground finally shows inside the sarsens, but it reads as a bluish wet slab or puddle with a too-clean round edge rather than dry ash and charred stubble.",
-  "verdict": "fail"
- },
- {
   "file": "20261031-1450-ring.jpg",
   "time": "2026-10-31T14:50:00Z",
   "caption": "The knight's stone ring: the burn now reads as dry warm grey-brown ash with soil showing and a ragged edge instead of a wet slab, but the centre char patch still looks like a dark hole, the meadow still stops fairly sharply at the ash, and the knight is a speck at this range.",
@@ -891,6 +885,18 @@
   "file": "20261105-2014-reveal-roar.jpg",
   "time": "2026-11-05T20:14:05Z",
   "caption": "The boss reveal's roar beat: glaive heaved up, chest and head thrown back (GL frame from its back flank; the face is hidden, needs a front-lit Forward+ frame).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-2130-knight-dormant.jpg",
+  "time": "2026-11-05T21:30:00Z",
+  "caption": "The dormant boss leans on its glaive with the point now meeting the turf by its right boot (GL quick look, not Forward+); the bowed head does not read under the helm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-2130-knight-roar.jpg",
+  "time": "2026-11-05T21:30:00Z",
+  "caption": "The roar beat from the knight front: the glaive is up but the head throw and chest-out barely read from straight on; needs a stronger back arch or a lower 3/4 lens.",
   "verdict": "fail"
  }
 ]
