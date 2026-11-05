@@ -1094,7 +1094,30 @@ func _step_capped(want: float, delta: float) -> float:
 	var cap := TURN_STEP_RATE * delta
 	var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
 	turn_rate_peak = maxf(turn_rate_peak, absf(d) / maxf(delta, 1e-4))
+	if stride_warp != null:
+		if stride_warp.pivot <= 0.0 and absf(d) > 1e-3:
+			stride_warp.pivot_side = 0 if d > 0.0 else 1   # turning left (yaw up): plant the left foot
+		if stride_warp.pivot_pin != null and stride_warp.pivot > 0.0:
+			# the body comes round over the planted foot, not about its own middle
+			# about the pin's sideways offset only (a staggered stance's fore-aft offset turns
+			# under the body instead), so a 180 moves the hero ~0.2 m, not a stroll
+			var side := body.global_basis.x
+			side = Vector3(side.x, 0.0, side.z).normalized()
+			var off := clampf((stride_warp.pivot_pin - global_position).dot(side), -PIVOT_REACH, PIVOT_REACH)
+			var r := -side * off
+			var orbit := (r.rotated(Vector3.UP, d) - r) * stride_warp.pivot
+			if orbit.length() > 1e-5 and orbit.length() < 0.2:
+				move_and_collide(orbit)
+				pivot_orbit += orbit.length()
 	return body.rotation.y + d
+var pivot_orbit := 0.0                 # (bots) m the body has swung round planted feet
+const PIVOT_REACH := 0.11              # m: the most the body's middle orbits off the pivot foot
+## The planted pivot foot of a turn on the spot: in while the feet step round, out once square.
+func _update_pivot_foot(delta: float, standing: bool) -> void:
+	if stride_warp == null:
+		return
+	var want := 1.0 if standing and turn_shuffle > 0.05 else 0.0
+	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * (10.0 if want > stride_warp.pivot else 5.0))
 func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var hv := Vector2(velocity.x, velocity.z)
 	var yaw := body.rotation.y
@@ -1127,6 +1150,7 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var standing := is_on_floor() and hv.length() < 0.6 and not owned and not calm
 	var sh := clampf((absf(yaw_rate) - 1.2) / 3.0, 0.0, 1.0) if standing else 0.0
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 3.0))
+	_update_pivot_foot(delta, standing)
 	if owned:
 		return                                 # the dodge / flinch pose writes the model itself
 	# through a planted stop the feet stay where they struck: the rock back and forward is taken

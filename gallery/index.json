@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261030-0635-hewnpost.jpg",
-  "time": "2026-10-30T06:35:14Z",
-  "caption": "The fell bell on its post, now a hewn eight-sided oak quarter: the facets read, but the post is too dark in the great stone's shade, the lichen reads as pale spots and the check split doesn't show.",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0750-foldlift.jpg",
-  "time": "2026-10-30T07:29:04Z",
-  "caption": "The old fold at 15:00 after lifting the field-stone value range: almost no change, the stones still read blue-black because the whole site stands in cast shadow and gets only cool sky ambient",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0750-foldplain.jpg",
-  "time": "2026-10-30T07:29:04Z",
-  "caption": "Diagnostic: the fold stones in plain 0.5 grey also read flat sky-blue with no sun term, proving the near-black is cast shadow plus low masonry albedo/AO, not broken normals",
-  "verdict": "fail"
- },
- {
-  "file": "20261030-0820-foldnoon.jpg",
-  "time": "2026-10-30T08:25:00Z",
-  "caption": "The old fold at 12:00, the one hour the sun reaches it: the tumbled ring finally reads as slate-grey coursed rubble with lit tops and a broken gateway; the great stone still reads as a dark leaning slab and the light is flat",
-  "verdict": "fail"
- },
- {
   "file": "20261030-0820-postnoon.jpg",
   "time": "2026-10-30T08:25:00Z",
   "caption": "The fell bell's post at 12:00: the verdigris bell reads, but the post stands in the great stone's shadow and goes blue-black, and the lens sits in tall grass whose flat straw ribbons fill the frame",
@@ -897,6 +873,18 @@
   "file": "20261105-0310-turnfront.jpg",
   "time": "2026-11-05T03:10:00Z",
   "caption": "End of the stepped standing turn, face to the lens, arms relaxed and staff slung; flat GL lighting in shade, so it does not yet hold up as a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0421-pivotstep.jpg",
+  "time": "2026-11-05T04:21:00Z",
+  "caption": "Mid stepped turn from above: the inside foot stays planted while the outside foot steps round and the body swings over it; GL frame in tree shade, so the light is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0421-pivotend.jpg",
+  "time": "2026-11-05T04:21:00Z",
+  "caption": "End of the pivot turn, square to the lens with the feet still staggered before the idle settles; flat GL shade lighting, not a Forward+ frame.",
   "verdict": "fail"
  }
 ]

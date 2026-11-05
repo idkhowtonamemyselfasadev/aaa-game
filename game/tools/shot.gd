@@ -2332,9 +2332,15 @@ func _ready() -> void:
 			# stoplens: the same, but a touch ahead of the hero (the stop faces on along +X)
 			var pc := back + pside * 3.0 + Vector3(0.7 if "stoplens" in args else -1.4, 0, 0)
 			pc.y = terrain.height_at(pc.x, pc.z) + 1.25
+			var aim := back + Vector3.UP * 0.85
+			if "feetlens" in args:
+				# feetlens: closer and high, looking down onto the soles (a pivot foot, a step round)
+				pc = back + (pc - back).normalized() * 2.3
+				pc.y = terrain.height_at(pc.x, pc.z) + 2.3
+				aim = back + Vector3.UP * 0.45
 			var pcam := get_viewport().get_camera_3d()
 			pcam.global_position = pc
-			pcam.look_at(back + Vector3.UP * 0.85)
+			pcam.look_at(aim)
 			print("SHOT pivotlens cam %s hero %s side %s" % [pc, back, pside])
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])

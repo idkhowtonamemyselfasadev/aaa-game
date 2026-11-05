@@ -22,6 +22,14 @@ const LOCK_H_FALL := 4.0     # cm over the stance level: a foot coming down is p
 var _pin := [null, null]     # world pin per foot (Vector3) or null
 var _pin_w := [0.0, 0.0]     # each pin's weight, fading out once the heel lifts
 var corrected := 0.0         # (bots) largest correction this tick (m, skeleton units)
+## Pivot foot: in a turn on the spot the inside foot stays planted where it stood (two-bone IK on
+## that leg, the sole keeping the clip's angle so it spins on its ball) while Player swings the
+## body round over it; the outside foot steps the turn from the clip.
+var pivot := 0.0             # 0..1 weight (Player)
+var pivot_side := 0          # 0 the left foot, 1 the right foot
+var pivot_pin = null         # world ankle pin (Vector3) while pivoting, else null
+var pivot_ankle := Vector3.ZERO  # (bots) world pivot ankle as posed this tick
+var pivot_other := Vector3.ZERO  # (bots) world other ankle as posed this tick
 
 func _process_modification_with_delta(_delta: float) -> void:
 	drop = 0.0
@@ -32,6 +40,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if absf(k - 1.0) >= 1e-3:
 		_warp_stride(skel)
 	_lock_feet(skel, _delta)
+	_pivot_leg(skel)
 
 func _warp_stride(skel: Skeleton3D) -> void:
 	var to_skel := frame.inverse()
@@ -133,3 +142,56 @@ func _bend(skel: Skeleton3D, b: int, axis_skel: Vector3, angle: float) -> void:
 	var pb := skel.get_bone_global_pose(parent).basis.orthonormalized() if parent >= 0 else Basis()
 	var local_axis := (pb.inverse() * axis_skel).normalized()
 	skel.set_bone_pose_rotation(b, Quaternion(local_axis, angle) * skel.get_bone_pose_rotation(b))
+
+func _pivot_leg(skel: Skeleton3D) -> void:
+	if pivot <= 0.0:
+		pivot_pin = null
+		return
+	var sides := ["Left", "Right"]
+	var ul := skel.find_bone("mixamorig_%sUpLeg" % sides[pivot_side])
+	var lg := skel.find_bone("mixamorig_%sLeg" % sides[pivot_side])
+	var ft := skel.find_bone("mixamorig_%sFoot" % sides[pivot_side])
+	var of := skel.find_bone("mixamorig_%sFoot" % sides[1 - pivot_side])
+	if ul < 0 or lg < 0 or ft < 0 or of < 0:
+		return
+	var xf := skel.global_transform
+	var inv := xf.affine_inverse()
+	var up := (frame.inverse() * Vector3.UP).normalized()
+	var fwd := (frame.inverse() * Vector3.BACK).normalized()
+	if pivot_pin == null:
+		# plant it where it stands, at the stance level (the lower ankle), not mid-lift
+		var f0 := skel.get_bone_global_pose(ft).origin
+		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
+		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
+	var keep := skel.get_bone_global_pose(ft).basis
+	var s := skel.get_bone_global_pose(ul).origin
+	var k := skel.get_bone_global_pose(lg).origin
+	var f := skel.get_bone_global_pose(ft).origin
+	var a := s.distance_to(k)
+	var b := k.distance_to(f)
+	var t := f.lerp(inv * (pivot_pin as Vector3), pivot)
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	# the knee keeps the clip's bend plane (forward over the toes)
+	var pole := (k - s) - dn * (k - s).dot(dn)
+	if pole.length() < 1e-3:
+		pole = fwd - dn * fwd.dot(dn)
+	pole = pole.normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ul, k - s, k_new - s)
+	k = skel.get_bone_global_pose(lg).origin
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, lg, f - k, t - k)
+	# the sole keeps the clip's angle: it spins on the ball with the body, it does not tip
+	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
+	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
+	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
+	pivot_other = xf * skel.get_bone_global_pose(of).origin
+
+func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
+	var ax := from.cross(to)
+	if ax.length() < 1e-6:
+		return
+	_bend(skel, b, ax.normalized(), from.angle_to(to))

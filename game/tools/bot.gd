@@ -730,7 +730,8 @@ func _lean_test() -> void:
 	print("BOT lean: turn on the spot shuffle %.2f, stride blend %.2f, moved %.2f m, facing %.2f, after %.2f" % [shuffle, blend, moved, facing, p.turn_shuffle])
 	if shuffle < 0.5 or blend < 0.3:
 		return _combat_done(false, "turning on the spot does not step the feet round (shuffle %.2f blend %.2f)" % [shuffle, blend])
-	if moved > 0.15:
+	if moved > 0.26:
+		# a 180 swings the body's middle round the planted pivot foot (~2 x 0.11 m), no further
 		return _combat_done(false, "the turn on the spot walks the hero off (%.2f m)" % moved)
 	if p.turn_shuffle > 0.05:
 		return _combat_done(false, "the feet keep shuffling once squared up (%.2f)" % p.turn_shuffle)
@@ -756,6 +757,8 @@ func _hero_turn_test() -> void:
 	if absf(p.turn_lead) > 0.001:
 		return _combat_done(false, "the head is turned while standing still (%.3f)" % p.turn_lead)
 	var shuf := [0.0]
+	var piv := [0.0, 0.0, 0.0, -1, 0]   # pin drift xz, pin drift y, other foot travel, side, ticks planted
+	var piv_o0 := [Vector3.INF]
 	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
 	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
 		var peak := 0.0
@@ -767,6 +770,17 @@ func _hero_turn_test() -> void:
 			await get_tree().physics_frame
 			await skel.skeleton_updated
 			shuf[0] = maxf(shuf[0], p.turn_shuffle)
+			var sw: StrideWarp = p.stride_warp
+			if sw.pivot_pin != null and sw.pivot > 0.95:
+				var pin: Vector3 = sw.pivot_pin
+				var dv := sw.pivot_ankle - pin
+				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length())
+				piv[1] = maxf(piv[1], absf(dv.y))
+				if piv_o0[0] == Vector3.INF:
+					piv_o0[0] = sw.pivot_other
+					piv[3] = sw.pivot_side
+				piv[2] = maxf(piv[2], Vector2(sw.pivot_other.x - piv_o0[0].x, sw.pivot_other.z - piv_o0[0].z).length())
+				piv[4] += 1
 			var g: float = goal_yaw.call()
 			var by := p.body.rotation.y
 			var hy: float = by + angle_difference(head0, head_local.call())
@@ -801,8 +815,12 @@ func _hero_turn_test() -> void:
 	var spot_after := absf(p.turn_lead)
 	var spot_rate := p.turn_rate_peak
 	var spot_shuffle: float = shuf[0]
+	var spot_piv := piv.duplicate()
+	var spot_orbit: float = p.pivot_orbit
+	var pin_after: bool = p.stride_warp.pivot_pin != null
 	p._set_lock(null)
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
+	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
 	# 2) a hard right turn at a run
 	for i in 70:
@@ -828,6 +846,17 @@ func _hero_turn_test() -> void:
 	p.bot_input = Vector2.ZERO
 	await _ticks(60)
 	print("BOT heroturn: pivots %d, lead during the pivot %.3f, rest %.4f" % [p.pivots - n0, pivot_lead, absf(p.turn_lead)])
+	# turning to the post: the turn's side decides the planted foot (yaw up = a left turn = the left foot)
+	if spot_piv[4] < 8:
+		return _combat_done(false, "no planted pivot foot through the turn on the spot (%d ticks)" % spot_piv[4])
+	if spot_piv[0] > 0.03 or spot_piv[1] > 0.03:
+		return _combat_done(false, "the pivot foot slides off its plant (%.3f m, y %.3f m)" % [spot_piv[0], spot_piv[1]])
+	if spot_piv[2] < 0.15:
+		return _combat_done(false, "the outside foot does not step round the pivot (%.2f m)" % spot_piv[2])
+	if spot_orbit < 0.05:
+		return _combat_done(false, "the body does not come round over the planted foot (%.2f m)" % spot_orbit)
+	if pin_after:
+		return _combat_done(false, "the pivot foot is still pinned once squared up")
 	if absf(spot[0]) < 0.4:
 		return _combat_done(false, "on the spot the head does not lead the turn (lead %.2f)" % spot[0])
 	if spot[1] < 0.25 or spot[2] < 0 or spot[3] < 0 or spot[2] >= spot[3]:
