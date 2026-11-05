@@ -2745,6 +2745,8 @@ func _knight_test() -> void:
 	var cam_other := false
 	var hp_i := k.health
 	var lift_mid := 0.0
+	var tip_lo := 99.0
+	var tip_hi := -99.0
 	var it := 0.0
 	while k.intro_playing() and it < 8.0:
 		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
@@ -2755,6 +2757,11 @@ func _knight_test() -> void:
 			if k.intro.t < BossIntro.ROAR_END:
 				bar_early = maxf(bar_early, hud.boss_alpha)
 		lift_mid = maxf(lift_mid, k.intro.max_lift)
+		if k.intro.t > 0.55 and k.intro.t < 0.9:
+			var tip_w := k.spear.to_global(k.spear.tip_local())
+			var gy := _ground_y_at(k, tip_w)
+			tip_lo = minf(tip_lo, tip_w.y - gy)
+			tip_hi = maxf(tip_hi, tip_w.y - gy)
 		if get_viewport().get_camera_3d() != hero_cam:
 			cam_other = true
 		await get_tree().physics_frame
@@ -2766,6 +2773,9 @@ func _knight_test() -> void:
 		return _combat_done(false, "the reveal did not run its shots/letterbox, or the bar came up early")
 	if lift_mid < 1.5:
 		return _combat_done(false, "the reveal camera never craned up the giant")
+	print("BOT knight: dormant glaive tip %.2f .. %.2f m over the turf" % [tip_lo, tip_hi])
+	if tip_lo < -0.12 or tip_hi > 0.04:
+		return _combat_done(false, "the dormant knight's glaive is not planted in the turf (point %.2f .. %.2f m)" % [tip_lo, tip_hi])
 	print("BOT knight: reveal body: head bowed asleep %.2f rad, flung back %.2f rad, knees set %.2f m before the heave" % [k.intro_bow_peak, k.intro_lift_back, k.intro_gather_peak])
 	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
@@ -12159,3 +12169,11 @@ func _foe_flinch_test() -> void:
 	if s.reel_pivot_on and (r.turn_slip > 0.014 or r.pivot < 0.05):
 		return _combat_done(false, "the legs' turn into the side shove skates the planted boot (%.3f m/tick, pivot %.2f m)" % [r.turn_slip, r.pivot])
 	_combat_done(true, "the soldier reels at the joints and steps the shove off")
+
+## The terrain height under a point (rays the static world only, layer 1, from 3 m above).
+func _ground_y_at(from: Node3D, at: Vector3) -> float:
+	var q := PhysicsRayQueryParameters3D.create(Vector3(at.x, at.y + 3.0, at.z), Vector3(at.x, at.y - 6.0, at.z), 1)
+	if from is CollisionObject3D:
+		q.exclude = [(from as CollisionObject3D).get_rid()]
+	var hit := from.get_world_3d().direct_space_state.intersect_ray(q)
+	return (hit.position as Vector3).y if not hit.is_empty() else from.global_position.y

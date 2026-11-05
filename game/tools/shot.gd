@@ -2497,6 +2497,9 @@ func _ready() -> void:
 		if "body" in args:
 			# intro body: a fixed front 3/4 lens on the whole giant (judge the beats, not the shot)
 			var kf := player.global_position - kk.global_position
+			if "kface" in args:
+				# kface: the lens off the knight's own front (before it has turned onto the hero)
+				kf = kk.body.global_transform.basis.z
 			kf.y = 0.0
 			kf = kf.normalized()
 			var ks := kf.cross(Vector3.UP)

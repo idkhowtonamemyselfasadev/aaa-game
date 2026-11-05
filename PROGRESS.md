@@ -37,6 +37,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (21:30 11-05) **DORMANT GLAIVE PLANTED IN THE TURF (bot `knight` PASS, new planted-point check).** The reveal's
+  dormant beat used SURGE_LEAN, a pose set for the kneeling surge: standing, its point hovered 0.14-0.15 m over the turf
+  at size 2.2. New `AshenKnight.INTRO_REST` (SURGE_LEAN with the haft centre 0.08 lower, c.y 1.02 -> 0.94): the point now
+  sits 0.02-0.04 m into the ground through the whole slump (bot `knight` measures it against a ground ray at intro
+  t 0.55-0.9 and fails outside -0.12 .. +0.04 m). New shot option `kface` for `ring X 20 10.0 fixfps intro body`: the
+  lens off the knight's own front (before it turns onto the hero), the fix for the back-flank view noted at 20:30.
 - (20:30 11-05) **BOSS REVEAL ROAR IN BEATS (bots `knight` `knightleap` `knightstomp` `crown` `sentinel` PASS).**
   `AshenKnight._intro_tick` rewritten as five beats off the intro clock: DORMANT (0-1.0: glaive in the SURGE_LEAN
   planted lean, head bow 0.62, chest hunched 0.14, knees soft; eased in from the pre-intro pose over 0.4 s, no snap),
@@ -7602,6 +7608,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (21:30 11-05) **DORMANT GLAIVE PLANTED DONE.** NEXT: (a) a Forward+ front-lit sequence of the reveal with the new
+   `kface` lens (`ring X 20 10.0 fixfps intro body kface it=0.8/2.0/2.7/3.2/3.6/4.3`) and judge the gather's knee bend and
+   the roar head throw; (b) the 19:30 items below (right-foot sprint strike by clip phase, Forward+ hero run feet /
+   soldier reel / knight reel at sizes). BOSS/ANIMATION priority order from CLAUDE.md unchanged; audio leftovers after.
 0. (20:30 11-05) **BOSS REVEAL BEATS DONE.** NEXT: (a) a Forward+ front-lit sequence of the reveal (`ring X 20 10.0 intro
    body it=0.8/2.0/2.7/3.2/3.6/4.3`, put the lens in front of the knight's face: the `flip` lens sees its back flank) and
    judge the gather's knee bend and the roar head throw; the dormant glaive tip hovers ~0.2 m above the turf (lower

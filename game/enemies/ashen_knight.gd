@@ -74,6 +74,10 @@ signal surge_roared(at: Vector3)
 ## the stomp's boot hit the ground (foley: a ground slam with the boom under it)
 signal stomped(at: Vector3)
 ## the reveal's roar: the glaive brandished skyward on its right, blade up, both hands high
+## the reveal's dormant stance: the glaive's point driven a hand's depth into the turf ahead of
+## the right boot, both hands low on the haft, leaned on (SURGE_LEAN is set for a kneeling
+## body: standing, its point hovered ~0.15 m over the ground at the first size)
+const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
 const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
@@ -789,7 +793,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
 	# and back in the gather, heaved to the sky, then down past the guard and back up into it
 	var base := _lerp_pose(_from, guard_pose, smoothstep(0.0, 0.4, it))
-	var rest := _lerp_pose(_lerp_pose(base, SURGE_LEAN, dormant), CROUCHED, 0.6 * gather + 0.35 * follow)
+	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), CROUCHED, 0.6 * gather + 0.35 * follow)
 	_pose = _lerp_pose(rest, INTRO_ROAR, up)
 	_pose[1] += sin(it * 38.0) * 2.0 * roar + sin(it * 7.0) * 1.5 * dormant
 	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the
