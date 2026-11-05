@@ -24,6 +24,17 @@ var _ground := 0.0           # the stance level: the lowest the lower ankle has 
 var _ground_set := false
 var _h_prev := [0.0, 0.0]    # each ankle's height last tick (cm): a falling foot is caught early
 const LOCK_H_FALL := 4.0     # cm over the stance level: a foot coming down is pinned this early
+## Strike approach: a foot coming down fast (a sprint) is eased onto the point where it will
+## strike over its last few cm of descent: that point is predicted from the clip foot's own
+## world motion and fall rate, and the pin's weight grows from 0 to 1 as the foot comes down,
+## so the boot arrives slowing instead of still swinging and then stopping dead in one tick.
+var strike_ease := false
+const APPROACH_H := 10.0     # cm over the stance level where the approach begins
+const APPROACH_TICKS := 3.0  # the prediction looks at most this many ticks ahead
+const STRIKE_DECEL := 0.5    # the clip foot slows to the strike: it covers this much of its straight run
+var _approach := [false, false]
+var _c_prev = [null, null]   # each clip ankle's world position last tick (before any correction)
+var strike_eased := 0.0      # (bots) largest approach weight this tick
 var _pin := [null, null]     # world pin per foot (Vector3) or null
 var _pin_w := [0.0, 0.0]     # each pin's weight, fading out once the heel lifts
 var corrected := 0.0         # (bots) largest correction this tick (m, skeleton units)
@@ -67,6 +78,7 @@ var _gy := [0.0, 0.0]            # each foot's ground height in the world, eased
 func _process_modification_with_delta(_delta: float) -> void:
 	drop = 0.0
 	corrected = 0.0
+	strike_eased = 0.0
 	lateral_corrected = 0.0
 	var skel := get_skeleton()
 	if skel == null:
@@ -114,6 +126,8 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 	if lock <= 0.0:
 		_pin = [null, null]
 		_pin_w = [0.0, 0.0]
+		_approach = [false, false]
+		_c_prev = [null, null]
 		_ground_set = false
 		return
 	var to_skel := frame.inverse()
@@ -141,10 +155,40 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 		var falling: bool = float(h[i]) < float(h_last[i]) - 0.05
 		var down: bool = h[i] < _ground + (LOCK_H_FALL if falling else LOCK_H)
 		var foot: Vector3 = skel.get_bone_global_pose(fb[i]).origin
-		if down and _pin[i] == null:
+		var c_world: Vector3 = xf * foot
+		var c_last = _c_prev[i]
+		_c_prev[i] = c_world
+		if strike_ease and not down and falling and h[i] < _ground + APPROACH_H \
+				and (_pin[i] == null or _approach[i]) and c_last != null:
+			var dh: float = float(h_last[i]) - float(h[i])
+			# predict the strike: where the clip foot will be when it reaches the turf (it is
+			# slowing as it comes down: half the straight-line run), refined each tick
+			var n := clampf((float(h[i]) - _ground - LOCK_H * 0.5) / maxf(dh, 0.5), 0.0, APPROACH_TICKS)
+			var v: Vector3 = c_world - (c_last as Vector3)
+			v.y = 0.0
+			var pred: Vector3 = c_world + v * n * STRIKE_DECEL
+			_pin[i] = pred if not _approach[i] or _pin[i] == null else (_pin[i] as Vector3).lerp(pred, 0.5)
+			_approach[i] = true
+			var w := clampf((_ground + APPROACH_H - float(h[i])) / (APPROACH_H - LOCK_H), 0.0, 1.0)
+			_pin_w[i] = w * w * (3.0 - 2.0 * w)
+			strike_eased = maxf(strike_eased, _pin_w[i])
+		elif _approach[i] and not down:
+			_approach[i] = false                         # it rose again (a skip, a hop): drop it
+			_pin[i] = null
+			_pin_w[i] = 0.0
+			continue
+		elif down and _approach[i]:
+			_approach[i] = false                         # the strike: the eased pin becomes the stance pin
+			_pin_w[i] = 1.0
+		elif down and _pin[i] == null:
 			_pin[i] = xf * foot                          # the strike: pin it where it lands
 			_pin_w[i] = 1.0
 		elif down:
+			if float(_pin_w[i]) < 1.0:
+				# back on the turf while the old pin was letting go: re-pin where the foot is
+				# shown now (between the clip and the fading pin), not back on the stale pin,
+				# which may be 10+ cm off by now (a one-tick pop at a stop's hand-off)
+				_pin[i] = c_world.lerp(_pin[i] as Vector3, float(_pin_w[i]) * lock)
 			_pin_w[i] = 1.0                              # back on the turf (a wobble at the strike)
 		elif not down and _pin[i] != null:
 			_pin_w[i] = move_toward(_pin_w[i], 0.0, delta * 18.0)   # heel up: let go over a few ticks
@@ -157,6 +201,7 @@ func _lock_feet(skel: Skeleton3D, delta: float) -> void:
 		if absf(e) > LOCK_MAX * 2.0:
 			_pin[i] = null                               # a teleport, a snap turn: let go at once
 			_pin_w[i] = 0.0
+			_approach[i] = false
 			continue
 		if absf(e) > LOCK_MAX:
 			# held too far from the clip's foot: drag the pin along (a slow slide, never a snap)

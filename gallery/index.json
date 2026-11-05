@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261031-0830-knight-column.jpg",
-  "time": "2026-10-31T08:30:00Z",
-  "caption": "The Ashen Knight's phase-3 eruption is now a narrow column of flame tongues with dark smoke instead of a white blob; still wrong: the low camera hides the scorch in the grass, the practice post blocks the hero, and the knight is still a re-tinted soldier.",
-  "verdict": "fail"
- },
- {
-  "file": "20261031-1040-knight-armour.jpg",
-  "time": "2026-10-31T10:40:00Z",
-  "caption": "First look at the Ashen Knight's armour: the helm, pauldrons and burnt oxblood surcoat give it a boss silhouette with the ember burning through the chest; still wrong: the frame is backlit so the steel reads as black, the helm is a small round cap, the pauldron sits like a hump and the glaive looks thin.",
-  "verdict": "fail"
- },
- {
-  "file": "20261031-1120-ring.jpg",
-  "time": "2026-10-31T11:20:00Z",
-  "caption": "First look at the Ashen Knight's standing-stone ring at golden hour: the ring and the entrance gap read, but the stones are thin posts, not sarsens (enlarged afterwards, unseen), the burnt ground is hidden under the tall grass, and the knight is a speck at its post.",
-  "verdict": "fail"
- },
- {
   "file": "20261031-1234-ring.jpg",
   "time": "2026-10-31T12:34:52Z",
   "caption": "The Ashen Knight's stone ring in low sun: the stones now stand as broad, tall sarsens and the tall grass inside is gone, but the floor still reads as green turf because the scorch decals don't show, and the knight is small at this distance.",
@@ -891,6 +873,12 @@
   "file": "20261105-1630-herorun-lateral.jpg",
   "time": "2026-11-05T16:30:00Z",
   "caption": "GL quick-look: the hero mid-run on open turf with the new sideways foot lock; the figure is small and backlit, its feet in its own shadow, so the planted boot cannot be judged by eye here, and this is GL compatibility, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-1745-sprint-stride.jpg",
+  "time": "2026-11-05T17:45:35Z",
+  "caption": "GL quick look: the hero mid-sprint with the planted boot held (skeleton modifiers now run once per physics tick); still 3/4 from behind with the legs in the cottage shade, not a Forward+ frame.",
   "verdict": "fail"
  }
 ]

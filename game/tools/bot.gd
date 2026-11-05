@@ -1151,7 +1151,7 @@ func _stop_test() -> void:
 					hand_skate[1] += 1
 				sprev = snow
 				if OS.has_environment("BOT_DEBUG"):
-					print("   sc cut %d i %d st %.2f mv %.3f clip %+.3f blend %.2f leg_aim %.2f" % [cut, i, p.stop_t, _feet_jump(fnow, fprev), p.crumple.clip_ahead, p._blend, p.crumple.leg_aim])
+					print("   sc cut %d i %d st %.2f mv %.3f clip %+.3f blend %.2f leg_aim %.2f lock %.2f warp %.2f corr %.3f pins %s gw %.2f" % [cut, i, p.stop_t, _feet_jump(fnow, fprev), p.crumple.clip_ahead, p._blend, p.crumple.leg_aim, p.stride_warp.lock, p.stride_warp.k, p.stride_warp.corrected, str(p.stride_warp._pin_w), p.stride_warp.ground_w])
 			fprev = fnow
 		var v_after := Vector3(p.velocity.x, 0, p.velocity.z).length()
 		print("BOT run: planted foot slips %.4f m/tick over %d flat ticks at %.1f m/s (stride warp %.2f)" % [_mean(flat_skate), flat_skate[1], v_after, p.stride_warp.k])
@@ -1255,7 +1255,7 @@ func _stride_test() -> void:
 			v = Vector2(p.velocity.x, p.velocity.z).length()
 			ts = p.anim_tree.get("parameters/speed/scale")
 			if OS.has_environment("BOT_DEBUG"):
-				print("   %s i %d h %+.3f slip %.3f v %.2f ts %.2f blend %.2f warp %.2f lock %.2f corr %.3f pins %s" % [gait[0], i, (snow[0] as Vector3).y - p.global_position.y - rest_h, sk, v, ts, p._blend, p.stride_warp.k, p.stride_warp.lock, p.stride_warp.corrected, str(p.stride_warp._pin_w)])
+				print("   %s i %d h %+.3f slip %.3f v %.2f ts %.2f blend %.2f warp %.2f lock %.2f corr %.3f pins %s ease %.2f" % [gait[0], i, (snow[0] as Vector3).y - p.global_position.y - rest_h, sk, v, ts, p._blend, p.stride_warp.k, p.stride_warp.lock, p.stride_warp.corrected, str(p.stride_warp._pin_w), p.stride_warp.strike_eased])
 			if (snow[0] as Vector3).y - p.global_position.y - rest_h < 0.005:
 				flat[0] += sk
 				flat[1] += 1
@@ -1263,7 +1263,7 @@ func _stride_test() -> void:
 				if sprev_pos != null:
 					along += ((snow[0] as Vector3) - (sprev_pos as Vector3)).dot(Vector3(p.velocity.x, 0, p.velocity.z).normalized())
 		print("BOT stride: %s at %.1f m/s (cadence %.2f, blend %.2f, warp %.2f): flat foot slips %.4f m/tick mean, %.4f worst, over %d ticks (signed along the run %+.4f)" % [gait[0], v, ts, p._blend, p.stride_warp.k, _mean(flat), worst, flat[1], along / maxf(flat[1], 1.0)])
-		out.append([gait[0], _mean(flat), flat[1], v])
+		out.append([gait[0], _mean(flat), flat[1], v, worst])
 		p.bot_input = Vector2.ZERO
 		p.bot_sprint = false
 		await _ticks(60)
@@ -1277,6 +1277,11 @@ func _stride_test() -> void:
 		var cap := 0.012 if o[0] == "sprint" else (0.0075 if o[0] == "run" else 0.012)
 		if o[1] > cap:
 			return _combat_done(false, "the planted foot skates %.4f m/tick at a %s (%.1f m/s; want <= %.3f)" % [o[1], o[0], o[3], cap])
+		# worst single tick (11-05 17:30, modifiers on physics + strike ease): walk 0.091 -> 0.004,
+		# run 0.035 -> 0.011, sprint 0.076 -> 0.051 (the sprint strike tick)
+		var wcap := 0.065 if o[0] == "sprint" else (0.025 if o[0] == "run" else 0.02)
+		if not OS.has_environment("STRIDE_SWEEP") and o[4] > wcap:
+			return _combat_done(false, "the planted foot jumps %.4f m in one tick at a %s (want <= %.3f)" % [o[4], o[0], wcap])
 	_combat_done(true, "the planted foot holds still on the turf at a walk, a run and a sprint")
 
 ## Foe gait: the Hollow Soldier and the Ashen Knight at each of its three sizes are walked at

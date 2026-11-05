@@ -416,6 +416,11 @@ func _setup_crumple() -> void:
 	stride_warp = StrideWarp.new()
 	stride_warp.name = "StrideWarp"
 	skel.add_child(stride_warp)
+	# the modifiers run once per physics tick, right on the AnimationTree's pose (which is
+	# advanced on physics too): on idle frames they ran 0 or 2 times a tick, so the contact
+	# lock saw a foot that had not moved ("not falling") or missed the strike tick altogether
+	if OS.get_environment("HERO_IDLEMOD") == "":
+		skel.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS
 	skel.move_child(stride_warp, 0)            # first modifier: it lengthens the clip's own stride
 	stride_warp.frame = crumple.frame
 	stride_warp.ground_body = self
@@ -455,6 +460,7 @@ func _setup_animation() -> void:
 var _warp := 0.0                       # 0..1 how much of the stride warp is on
 var foot_lock_on := true               # (bots) the StrideWarp contact lock may be switched off
 var foot_lock_lateral := OS.get_environment("HERO_NOLATERAL") == ""   # the lock also holds the boot across the legs' line (env HERO_NOLATERAL: the before)
+var foot_strike_ease := OS.get_environment("HERO_NOSTRIKE") == ""   # a falling boot is eased onto its predicted strike point (env HERO_NOSTRIKE: the before)
 
 func _update_warp(delta: float, on: bool) -> void:
 	var warp := clampf((_blend - ANIM_WALK_SPEED) / (ANIM_RUN_SPEED - ANIM_WALK_SPEED), 0.0, 1.0) if on else 0.0
@@ -474,6 +480,7 @@ func _update_warp(delta: float, on: bool) -> void:
 		stride_warp.k = lerpf(1.0, run_stride_k(Vector2(velocity.x, velocity.z).length()), _warp)
 		stride_warp.lock = move_toward(stride_warp.lock, lock, delta * 8.0)
 		stride_warp.lock_lateral = foot_lock_lateral
+		stride_warp.strike_ease = foot_strike_ease
 
 ## Foot IK on uneven ground (StrideWarp ground feet): on while the hero stands or strides on
 ## the floor; off in the air, on a wall, under the wing, and under posed legs (Crumple).
