@@ -22,6 +22,7 @@ var result := ""              # "" until the burst resolves, then hit / perfect 
 var _ring: Decal
 var _motes: CPUParticles3D
 var _fire: CPUParticles3D
+var _core: CPUParticles3D
 var _sparks: CPUParticles3D
 var _smoke: CPUParticles3D
 var _light: OmniLight3D
@@ -64,7 +65,7 @@ func _ready() -> void:
 	_fire.gravity = Vector3(0, 3.0, 0)
 	_fire.angle_min = 0.0
 	_fire.angle_max = 0.0
-	_fire.explosiveness = 0.55
+	_fire.explosiveness = 0.3
 	var sc := Curve.new()
 	sc.add_point(Vector2(0.0, 0.55))
 	sc.add_point(Vector2(0.25, 1.0))
@@ -76,6 +77,34 @@ func _ready() -> void:
 	g.add_point(0.3, Color(1.0, 0.5, 0.08, 0.9))
 	g.add_point(0.65, Color(0.75, 0.26, 0.02, 0.45))
 	_fire.color_ramp = g
+	# the hot core: additive tongues alone wash out to pale streaks against a bright sky (adding
+	# orange to near-white sky gives near-white). A short, dense sheaf of mix-blended tongues in HDR
+	# white-yellow low down covers the sky behind it, so the base reads as a solid white-hot jet that
+	# blooms, with the additive orange licks streaming off its top.
+	_core = _emitter(26, 0.5, Vector2(0.75, 1.1), Color(1.0, 0.8, 0.45), 1.0, true)
+	var cm := (_core.mesh as QuadMesh).material as StandardMaterial3D
+	cm.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
+	cm.albedo_color = Color(3.0, 1.75, 0.6)
+	_core.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	_core.emission_sphere_radius = radius * 0.16
+	_core.initial_velocity_min = 2.5
+	_core.initial_velocity_max = 4.5
+	_core.spread = 5.0
+	_core.gravity = Vector3(0, 2.0, 0)
+	_core.angle_min = 0.0
+	_core.angle_max = 0.0
+	_core.explosiveness = 0.15   # a jet fed for ~0.5 s, not one puff: still roaring a second in
+	var cc := Curve.new()
+	cc.add_point(Vector2(0.0, 0.7))
+	cc.add_point(Vector2(0.3, 1.0))
+	cc.add_point(Vector2(1.0, 0.25))
+	_core.scale_amount_curve = cc
+	var cg := Gradient.new()
+	cg.set_color(0, Color(1.0, 0.95, 0.8, 0.95))
+	cg.set_color(1, Color(0.9, 0.35, 0.05, 0.0))
+	cg.add_point(0.35, Color(1.0, 0.75, 0.35, 0.85))
+	cg.add_point(0.7, Color(1.0, 0.5, 0.12, 0.4))
+	_core.color_ramp = cg
 	_sparks = _emitter(45, 1.3, Vector2(0.025, 0.05), Color(1.0, 0.6, 0.25), 4.0)
 	_sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_sparks.emission_sphere_radius = radius * 0.3
@@ -84,7 +113,7 @@ func _ready() -> void:
 	_sparks.spread = 22.0
 	_sparks.gravity = Vector3(0, -6.0, 0)
 	# dark, oily smoke boiling off the crown of the column a beat after the burst
-	_smoke = _emitter(28, 2.6, Vector2(0.9, 1.8), Color(0.07, 0.06, 0.055, 0.8), 0.0)
+	_smoke = _emitter(36, 3.0, Vector2(1.2, 2.4), Color(0.07, 0.06, 0.055, 0.8), 0.0)
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_smoke.emission_sphere_radius = 0.45
 	_smoke.position.y = 2.2
@@ -100,12 +129,13 @@ func _ready() -> void:
 	var gs := Gradient.new()
 	gs.set_color(0, Color(0.30, 0.26, 0.23, 0.0))
 	gs.set_color(1, Color(0.52, 0.50, 0.48, 0.0))
-	gs.add_point(0.15, Color(0.26, 0.23, 0.21, 0.6))
-	gs.add_point(0.6, Color(0.40, 0.38, 0.36, 0.3))
+	gs.add_point(0.12, Color(0.26, 0.23, 0.21, 0.72))
+	gs.add_point(0.6, Color(0.40, 0.38, 0.36, 0.42))
 	_smoke.color_ramp = gs
 	var sm := ShaderMaterial.new()
 	sm.shader = GritFall._dust_shader()
-	sm.set_shader_parameter("puff_tex", _soft_texture())
+	# billowy clumps (the stones' dust texture), not featureless discs, so the plume has form
+	sm.set_shader_parameter("puff_tex", ImpactFX._clump_tex(true))
 	sm.set_shader_parameter("scatter_gain", 0.35)
 	(_smoke.mesh as QuadMesh).material = sm
 	# heat over the smoulder: a thin trickle of ember motes lifting off the fissures
@@ -187,6 +217,7 @@ func _burst() -> void:
 	result = "miss"
 	_motes.emitting = false
 	_fire.emitting = true
+	_core.emitting = true
 	_sparks.emitting = true
 	burst.emit(global_position)
 	if player == null or player.is_dead():

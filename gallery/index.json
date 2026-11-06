@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261101-2145-knollsun.jpg",
-  "time": "2026-11-01T21:45:00Z",
-  "caption": "The Ashen Archer now waits on a sunlit rise at the wood's edge and reads clearly against the meadow; the hero in the foreground is still a dark silhouette in the oak shadow and the archer is small in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-2230-arrowflight.jpg",
-  "time": "2026-11-01T22:30:00Z",
-  "caption": "An Ashen Archer's arrow in flight, framed square-on: grey-goose fletching, pale ash shaft and iron head cross the tree line toward the hero. Still wrong: GL render, the hero has their back to the shot, and the streak is faint against the pale sky.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-0248-wisps.jpg",
   "time": "2026-11-02T02:48:46Z",
   "caption": "GL quick look at dusk: a Hollow Wisp at the peak of its flare (an ember-veined coal in a ring of charred shards) over the meadow past the hero; still wrong: it is small at 5 m, its two kin do not read at all, and this is GL light, not Forward+.",
@@ -897,6 +885,18 @@
   "file": "20261106-1942-surge-ringfire.jpg",
   "time": "2026-11-06T19:42:07Z",
   "caption": "The Ashen Knight's growth surge with its ring of fire: the soot off the flame columns is now lit grey smoke, no longer big black blots across the sky (GL frame); still wrong: the columns read as thin pale orange streaks with no hot core, and the shot is backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-2040-surge-firejets.jpg",
+  "time": "2026-11-06T20:40:11Z",
+  "caption": "The knight's growth-surge ring of fire 0.25 s after the burst: each column now has a white-hot core with orange licks instead of pale streaks (GL frame; Forward+ ran out of memory this session).",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261106-2040-surge-smoke.jpg",
+  "time": "2026-11-06T20:40:11Z",
+  "caption": "0.6 s after the burst the columns lick down and charcoal smoke finally shows above them; one centre puff is still a round soft blob.",
   "verdict": "fail"
  }
 ]

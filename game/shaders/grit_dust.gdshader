@@ -41,8 +41,15 @@ void fragment() {
 	// never across the lens
 	a *= smoothstep(near_fade_start, near_fade_end, v_depth);
 	// soft where it meets the turf or a stone
+	// (the Compatibility renderer stores depth as 0..1 of an OpenGL -1..1 NDC range; read raw it put
+	// every puff "behind" the ground at ~0.1 m and faded the whole plume out in GL frames)
 	float d = texture(depth_tex, SCREEN_UV).r;
-	vec4 p = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d, 1.0);
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
+	float ndc_z = d * 2.0 - 1.0;
+#else
+	float ndc_z = d;
+#endif
+	vec4 p = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, ndc_z, 1.0);
 	float scene_z = -p.z / p.w;
 	a *= clamp((scene_z - (-VERTEX.z)) / ground_fade, 0.0, 1.0);
 	ALPHA = a;

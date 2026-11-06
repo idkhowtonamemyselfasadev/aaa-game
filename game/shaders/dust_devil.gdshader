@@ -131,6 +131,9 @@ void fragment() {
 		a *= mix(1.0, smoothstep(-0.2, 0.6, q.x + 0.4), smoothstep(1.2, 2.2, comb) * 0.6);
 		// soft where the puff cuts into the ground and the grass
 		float dz = texture(depth_tex, SCREEN_UV).r;
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
+		dz = dz * 2.0 - 1.0;   // GL depth 0..1 -> NDC -1..1 (raw, it faded every puff out)
+#endif
 		vec4 vp = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, dz, 1.0);
 		float scene = -vp.z / vp.w;
 		a *= clamp((scene + VERTEX.z) / 0.6, 0.0, 1.0);
