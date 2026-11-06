@@ -2269,7 +2269,10 @@ func _ready() -> void:
 		var c: StaffCombat = player.combat
 		RenderingServer.render_loop_enabled = false   # simulate the string without drawing
 		for i in 3000:
-			if c.swings < swing_step + 1:
+			# (15:00 11-06) pressed until the wanted blow is under way: counting swings stopped one
+			# blow short (the draw's opening strike counts as a swing with step -1), so the string
+			# ended at blow 0 and the frame showed the hero back at guard
+			if c.step < swing_step:
 				player.bot_attack = true
 			await get_tree().physics_frame
 			if c.step == swing_step and c.t / float(c.STRING[swing_step]["dur"]) >= swing_u:

@@ -843,8 +843,9 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	return out
 
 const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
-const HERO_FIST_SWING := 0.012   # m: MEAN through the light string (GripRoll's feed-forward; was 0.03 with the one-tick-late fit)
-const HERO_FIST_OFF_TICKS := 45  # hand-ticks of the string with a fist > 3 cm off the axis (feed held back to spare the wrist; was 78)
+const HERO_FIST_SWING := 0.004   # m: MEAN through the light string (bisected feed share + re-keyed recoveries 15:00 11-06: 0.001; was 0.007, 0.03 with the one-tick-late fit)
+const HERO_FIST_OFF_TICKS := 8   # hand-ticks of the string with a fist > 3 cm off the axis (15:00 11-06: 4; was 35, 78 before the feed)
+const HERO_FIST_WORST := 0.06    # m: the string's worst tick (15:00 11-06: 0.050; was 0.094)
 const HERO_WRIST_MAX := 80.0     # deg: the hand's line off the forearm's
 const HERO_HAND_TURN := 50.0     # deg: a hand's turn in one tick through the string (GripRoll; was 178 with the clip's hands)
 
@@ -963,6 +964,8 @@ func _hands_test() -> void:
 			return _combat_done(false, "the fists ride off the shaft in the string (mean %.3f m off its axis)" % sgap[3])
 		if not OS.has_environment("HERO_GRIPLAG") and off_ticks > HERO_FIST_OFF_TICKS:
 			return _combat_done(false, "a fist rides > 3 cm off the shaft on %d hand-ticks of the string" % off_ticks)
+		if not OS.has_environment("HERO_GRIPLAG") and sgap[2] > HERO_FIST_WORST:
+			return _combat_done(false, "a fist rides %.3f m off the shaft on the string's worst tick" % sgap[2])
 		if c.swings - swing_n < 3:
 			return _combat_done(false, "the light string did not run (%d blows)" % (c.swings - swing_n))
 		if wrist[0] > HERO_WRIST_MAX:

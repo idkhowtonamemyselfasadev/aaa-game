@@ -22,6 +22,8 @@ const FOREARM_SHARE := 0.5   # of the hand's twist about the forearm carried by 
 ## the feed-forward never bends a wrist past this (a real wrist flexes ~70-80 deg): on the few
 ## ticks of the authored string where a fist exactly on the shaft would need more, it moves only
 ## 2/3 or 1/3 of the way, or not at all (bots: env BEND_LIMIT, deg)
+## bisection steps for the feed's share under bend_limit (env SHARE_STEPS; 0 = all or nothing)
+var share_steps := int(OS.get_environment("SHARE_STEPS")) if OS.has_environment("SHARE_STEPS") else 6
 var bend_limit := deg_to_rad(float(OS.get_environment("BEND_LIMIT")) if OS.has_environment("BEND_LIMIT") else 75.0)
 
 var _sides := []             # per hand: {hand, fore, grip (hand-local across-palm axis), sign, hs, init}
@@ -200,18 +202,33 @@ func _process_modification_with_delta(_delta: float) -> void:
 			var Hy := Basis(sol[0] as Quaternion).y
 			var P: Vector3 = skel.get_bone_global_pose(hb).origin + Basis(sol[0] as Quaternion) * (_fist_local[i] as Vector3)
 			var e := P - (o + ax_s * ax_s.dot(P - o))
-			for k in [1.0, 0.66, 0.33]:
+			# (15:00 11-06) the share is found by bisection (was the steps 1, 2/3, 1/3, none: a
+			# fist jumped 4.5 -> 9 cm off the shaft between ticks where the next step down failed)
+			var lim := maxf(bend_limit, float(sol[3]))
+			var lo := 0.0
+			var hi := 1.0
+			var lo_bend := float(sol[3])
+			var k := 1.0
+			for it in maxi(share_steps, 0) + 1:
 				_shift_wrist(skel, s, -e * weight * k)
 				var f2 := (skel.get_bone_global_pose(hb).origin - skel.get_bone_global_pose(fb).origin).normalized()
 				var bend2 := Hy.angle_to(f2)
 				if OS.has_environment("GRIP_DBG"):
 					print("  k %.2f bend %.0f" % [k, rad_to_deg(bend2)])
-				if bend2 <= maxf(bend_limit, float(sol[3])):
-					sol[3] = bend2
-					last_feed[i] = (skel.global_transform.basis * e).length() * weight * k
-					break
 				skel.set_bone_pose_rotation(ab, keep[0])
 				skel.set_bone_pose_rotation(fb, keep[1])
+				if bend2 <= lim:
+					lo = k
+					lo_bend = bend2
+					if it == 0:
+						break
+				else:
+					hi = k
+				k = (lo + hi) * 0.5
+			if lo > 0.0:
+				_shift_wrist(skel, s, -e * weight * lo)
+				sol[3] = lo_bend
+				last_feed[i] = (skel.global_transform.basis * e).length() * weight * lo
 		var Hq: Quaternion = sol[0]
 		var tq: Quaternion = sol[1]
 		var th: float = sol[2]
