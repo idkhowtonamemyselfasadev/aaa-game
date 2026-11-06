@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261101-1915-arrowsnap.jpg",
-  "time": "2026-11-01T19:15:00Z",
-  "caption": "The fletched half of a snapped arrow lies on the pressed grass and is visible at last (it used to sink below the terrain grid); GL frame, the half is small and the near grass clumps are flat-lit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-2012-knoll.jpg",
-  "time": "2026-11-01T20:12:41Z",
-  "caption": "The Ashen Archer on its new post, a knoll at the wood's edge clear of the trunks, seen from the hero's flank down the slope; GL frame, and the archer is lost in the wood's shadow and the long grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-2145-knollsun.jpg",
   "time": "2026-11-01T21:45:00Z",
   "caption": "The Ashen Archer now waits on a sunlit rise at the wood's edge and reads clearly against the meadow; the hero in the foreground is still a dark silhouette in the oak shadow and the archer is small in frame.",
@@ -897,6 +885,12 @@
   "file": "20261106-1727-reelup.jpg",
   "time": "2026-11-06T17:27:03Z",
   "caption": "The knight shaking off the crown reel and standing straight again after its settle steps; backlit silhouette, the ground under it is flat dark dirt (GL frame).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-1833-surgekneel.jpg",
+  "time": "2026-11-06T18:33:13Z",
+  "caption": "The knight down on its right knee in the growth surge, left boot now held where it stood (bot-proven); backlit silhouette, and the falling grit draws as big black lens blobs (GL frame).",
   "verdict": "fail"
  }
 ]
