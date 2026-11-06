@@ -886,5 +886,11 @@
   "time": "2026-11-06T03:28:25Z",
   "caption": "Same turn eight frames later: the boot is braking into the turf beside the planted one and sets down flat instead of tapping down; still GL lighting, lens crops above the belt.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261106-0440-turnfp20.jpg",
+  "time": "2026-11-06T04:40:00Z",
+  "caption": "Forward+ frame of the Ashen Knight (size 2.2) turning on the spot, boots planted mid-step; still wrong: the ring floor is a flat grey with cartoon black speckles and the low lens crops the knight at the shoulders.",
+  "verdict": "fail"
  }
 ]
