@@ -32,6 +32,26 @@ const THUMB_HOLD_SWING := -1.1
 const THUMB_HOLD_CURL := [0.4, 0.5, 0.45]
 const FINGERS := ["Index", "Middle", "Ring", "Pinky"]
 
+## The closed fist's centre (world): the mean of the index, middle and ring joints and tips, the
+## hollow a haft runs through when the fingers wrap it (hero and foes share the rig).
+static func fist_center(skel: Skeleton3D, side: String) -> Vector3:
+	var sum := Vector3.ZERO
+	var n := 0
+	for f in ["Index", "Middle", "Ring"]:
+		var last := -1
+		for j in 3:
+			var b := skel.find_bone("mixamorig_%sHand%s%d" % [side, f, j + 1])
+			if b < 0:
+				break
+			sum += skel.get_bone_global_pose(b).origin
+			n += 1
+			last = b
+		if last >= 0:
+			var tb := skel.get_bone_global_pose(last)
+			sum += tb.origin + tb.basis.y.normalized() * 2.0
+			n += 1
+	return skel.global_transform * (sum / maxf(n, 1))
+
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
 	if skel == null or weight <= 0.001:

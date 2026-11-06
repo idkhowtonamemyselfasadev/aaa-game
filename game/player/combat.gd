@@ -172,6 +172,15 @@ var _from_xform: Transform3D
 var _target_r: Node3D
 var _target_l: Node3D
 var _ik: TwoBoneIK3D
+## (11-06) the fists round the shaft (as the foes'): the arm IK lands the WRIST on the grip
+## point, so the staff ran beside the closed fingers; after the modifiers each closed fist's
+## centre is measured against the staff's axis and the wrist target moved (Wield space) by a
+## share of the gap, so the shaft runs through the curl. Env HERO_WRISTGRIP: the before.
+var fist_fit_on := true
+var _fist_off: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # right, left: Wield-space wrist shift
+var fist_gap: Array[float] = [0.0, 0.0]   # (bots) right, left: fist centre to the staff axis, m
+var fist_gain := 0.6           # of the measured gap taken out each tick (bots: env FIST_GAIN)
+const FIST_MAX := 0.15
 var _twist: SpineTwist
 var _blend := 0.0            # IK/twist influence, eased in on draw
 var _spun := 0.0
@@ -215,6 +224,10 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 	_set_influence(0.0)
 	# the modified pose only exists right after the modifiers ran; sample the grip there
 	_ik.modification_processed.connect(func(): last_grip_error = _measure_grip())
+	if OS.get_environment("HERO_WRISTGRIP") == "":
+		skel.skeleton_updated.connect(_fit_fists)
+	if OS.has_environment("FIST_GAIN"):
+		fist_gain = float(OS.get_environment("FIST_GAIN"))
 
 	_trail_mesh = ImmediateMesh.new()
 	_trail = MeshInstance3D.new()
@@ -923,9 +936,36 @@ func _ground_slam() -> void:
 ## Returns the staff's body-space transform.
 func _place_hands(pose: Array) -> Transform3D:
 	var r := _solve(pose)
-	_target_r.position = r[1]
-	_target_l.position = r[2]
+	_target_r.position = r[1] + _fist_off[0]
+	_target_l.position = r[2] + _fist_off[1]
 	return r[0]
+
+## The closed fist's centre (world), for bots and the shot lens.
+func fist_center(side: String) -> Vector3:
+	return HandRest.fist_center(skel, side)
+
+## After every modifier: each fist's centre to the staff's axis, and the wrist target moved by a
+## share of that gap for the next tick (the IK keeps the hand's turn, so the gap closes in a
+## few ticks and follows the poses as the hands roll round the shaft). Only with the staff in
+## both hands (not on the back, not in the draw's carry, not dropped); frozen in a hit-stop,
+## where the targets are not re-placed.
+func _fit_fists() -> void:
+	if staff == null or _wield == null or hitstop > 0.0:
+		return
+	var hr: HandRest = player.get("hand_rest")
+	var on := fist_fit_on and hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
+		and state in [READY, ATTACKING, CHARGING, PLUNGING]
+	var o := staff.global_position
+	var ax := staff.global_basis.y.normalized()
+	var inv := _wield.global_basis.inverse()
+	for i in 2:
+		var f := fist_center(["Right", "Left"][i])
+		var p := o + ax * ax.dot(f - o)
+		fist_gap[i] = f.distance_to(p)
+		if on:
+			_fist_off[i] = (_fist_off[i] - inv * (f - p) * fist_gain).limit_length(FIST_MAX)
+		else:
+			_fist_off[i] = _fist_off[i].lerp(Vector3.ZERO, 0.1)
 
 func _staff_xform(pose: Array) -> Transform3D:
 	return _solve(pose)[0]

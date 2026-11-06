@@ -842,6 +842,16 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
+const HERO_FIST_SWING := 0.03    # m: MEAN through the light string (the worst tick is the clip's hand-roll pop, see PROGRESS Known bugs)
+const HERO_WRIST_MAX := 80.0     # deg: the hand's line off the forearm's
+
+func _staff_gap(c: StaffCombat, side: String) -> float:
+	var f := c.fist_center(side)
+	var o := c.staff.global_position
+	var ax := c.staff.global_basis.y.normalized()
+	return f.distance_to(o + ax * ax.dot(f - o))
+
 func _hands_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
@@ -878,6 +888,55 @@ func _hands_test() -> void:
 				held[k] = minf(held[k], float(_hand_read(skel, ["Left", "Right"][k])["mean"]))
 			gerr = maxf(gerr, c.grip_error())
 	print("   staff drawn: mean curl L %.2f R %.2f (min over ticks), grip error %.3f m, state %d" % [held[0], held[1], gerr, c.state])
+	# 11-06: the fists round the shaft: each closed fist's centre to the staff's axis, at guard
+	# (the fit's first ticks excluded) and through a light swing
+	var sgap := [0.0, 0.0, 0.0, 0.0]    # guard R, guard L, swing worst, swing mean
+	var sn := 0
+	for i in 40:
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		if i >= 10:
+			for k in 2:
+				sgap[k] = maxf(sgap[k], _staff_gap(c, ["Right", "Left"][k]))
+	# the whole four-hit string (a press every 12 ticks queues the next blow)
+	var wrist := [0.0, 0.0]     # worst wrist bend (forearm line to the hand's line), worst hand turn in one tick, deg
+	var last_q := [Quaternion.IDENTITY, Quaternion.IDENTITY]
+	var fb := [skel.find_bone("mixamorig_RightForeArm"), skel.find_bone("mixamorig_LeftForeArm")]
+	var hbs := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
+	var swing_n := c.swings
+	for i in 130:
+		if i % 6 == 0 and i < 80:
+			c.light()
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		for k in 2:
+			var fp := skel.get_bone_global_pose(fb[k])
+			var hp := skel.get_bone_global_pose(hbs[k])
+			var fdir := (hp.origin - fp.origin).normalized()
+			wrist[0] = maxf(wrist[0], rad_to_deg(fdir.angle_to(hp.basis.y.normalized())))
+			var q := (skel.global_basis.orthonormalized() * hp.basis.orthonormalized()).get_rotation_quaternion()
+			if i > 0 and c.hitstop <= 0.0:
+				wrist[1] = maxf(wrist[1], rad_to_deg(q.angle_to(last_q[k])))
+			last_q[k] = q
+		if c.hitstop > 0.0:
+			continue
+		for k in 2:
+			var g := _staff_gap(c, ["Right", "Left"][k])
+			if OS.has_environment("STAFFGAP_DBG"):
+				var hb := skel.find_bone("mixamorig_%sHand" % ["Right", "Left"][k])
+				var hq := (skel.global_transform.basis * skel.get_bone_global_pose(hb).basis).get_rotation_quaternion()
+				var eb := skel.find_bone("mixamorig_%sForeArm" % ["Right", "Left"][k])
+				var inv := p.body.global_transform.affine_inverse()
+				var el := inv * (skel.global_transform * skel.get_bone_global_pose(eb).origin)
+				var ha := inv * (skel.global_transform * skel.get_bone_global_pose(hb).origin)
+				print("    swing %d %s %.3f u %.2f elbow %s hand %s handq %s" % [i, k, g, c.t, str(el), str(ha), str(hq)])
+			sgap[2] = maxf(sgap[2], g)
+			sgap[3] += g
+			sn += 1
+	sgap[3] /= maxf(sn, 1)
+	print("   fist to staff axis: guard R %.3f L %.3f m | light string (%d blows) worst %.3f mean %.3f | wrist shift %s, grip error %.3f" % [
+		sgap[0], sgap[1], c.swings - swing_n, sgap[2], sgap[3], str(c._fist_off), c.grip_error()])
+	print("   string: worst wrist bend %.0f deg, worst hand turn in one tick %.0f deg" % [wrist[0], wrist[1]])
 	if OS.has_environment("HERO_CLAWHANDS"):
 		return _combat_done(true, "the before (clip fingers) measured")
 	for side in ["Left", "Right"]:
@@ -890,8 +949,17 @@ func _hands_test() -> void:
 			return _combat_done(false, "%s fingers' rest curl %.2f rad off a relaxed hand (0.3-0.6)" % [side, w[2]])
 	if held[0] < 0.85 or held[1] < 0.85:
 		return _combat_done(false, "the hands do not close on the drawn staff (curl %.2f / %.2f)" % [held[0], held[1]])
-	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f)" % [
-		worst["Left"][1], worst["Right"][1], worst["Left"][2], worst["Right"][2], held[0], held[1]])
+	if not OS.has_environment("HERO_WRISTGRIP"):
+		if maxf(sgap[0], sgap[1]) > HERO_FIST_GAP:
+			return _combat_done(false, "the shaft runs beside the fists at guard (%.3f / %.3f m off its axis)" % [sgap[0], sgap[1]])
+		if sgap[3] > HERO_FIST_SWING:
+			return _combat_done(false, "the fists ride off the shaft in the string (mean %.3f m off its axis)" % sgap[3])
+		if c.swings - swing_n < 3:
+			return _combat_done(false, "the light string did not run (%d blows)" % (c.swings - swing_n))
+		if wrist[0] > HERO_WRIST_MAX:
+			return _combat_done(false, "a wrist bends %.0f deg off the forearm in the string" % wrist[0])
+	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f), fists on its axis (guard %.3f/%.3f, string mean %.3f)" % [
+		worst["Left"][1], worst["Right"][1], worst["Left"][2], worst["Right"][2], held[0], held[1], sgap[0], sgap[1], sgap[3]])
 
 ## The foes' hands (11-06): the soldier and the knight (at each size) hold the spear/glaive in both
 ## hands all fight; read on the final pose the fingers must be closed round the haft (no claw over

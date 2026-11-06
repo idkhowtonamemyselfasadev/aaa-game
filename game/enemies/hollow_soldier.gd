@@ -417,22 +417,7 @@ func _setup_spear() -> void:
 ## The closed fist's centre (world): the mean of the index, middle and ring joints and tips, the
 ## hollow the haft runs through when the fingers wrap it.
 func fist_center(side: String) -> Vector3:
-	var sum := Vector3.ZERO
-	var n := 0
-	for f in ["Index", "Middle", "Ring"]:
-		var last := -1
-		for j in 3:
-			var b := skel.find_bone("mixamorig_%sHand%s%d" % [side, f, j + 1])
-			if b < 0:
-				break
-			sum += skel.get_bone_global_pose(b).origin
-			n += 1
-			last = b
-		if last >= 0:
-			var tb := skel.get_bone_global_pose(last)
-			sum += tb.origin + tb.basis.y.normalized() * 2.0
-			n += 1
-	return skel.global_transform * (sum / maxf(n, 1))
+	return HandRest.fist_center(skel, side)
 
 ## After the modifiers: each fist's centre to the shaft's axis, and the wrist target moved by a
 ## share of that gap for the next tick (the IK keeps the hand's turn, so the gap closes in a
