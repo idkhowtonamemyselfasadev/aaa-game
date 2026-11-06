@@ -965,6 +965,10 @@ func _foe_hands_test() -> void:
 				fail = "%s x%.1f %s fingers not closed on the haft (curl %.2f)" % [e.name, sc, side, w[2]]
 			if fail == "" and w[0] < 0.1:
 				fail = "%s x%.1f %s finger bent back like a claw (%.2f)" % [e.name, sc, side, w[0]]
+			# 11-06: the fist's fingers lie together on every tick (the knight's left index used to
+			# flip 0.2 rad out of the fist on walking ticks: spread 0.58 against 0.36)
+			if fail == "" and w[1] > 0.42:
+				fail = "%s x%.1f %s fingers fan out of the fist (index-pinky %.2f rad)" % [e.name, sc, side, w[1]]
 		if fail == "" and gerr > 0.05:
 			fail = "%s x%.1f hands off their grips (%.3f m)" % [e.name, sc, gerr]
 		if fail == "" and maxf(gap[0], gap[1]) > FIST_GAP_MAX and not OS.has_environment("FOE_WRISTGRIP"):

@@ -81,7 +81,10 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
 			if b < 0:
 				break
 			var want := lerpf(float(RELAX[f][j]), float(HOLD[f][j]), h)
-			var cur := prev.signed_angle_to(_y(skel, b), hinge)
+			# (11-06) both bones projected onto the hinge's plane first: the fan sets the first bone
+			# off the hand's length ACROSS the hinge, and a plain signed angle then took that 0.1 rad
+			# as fold with a sign from rounding noise (the knight's index flipped 0.2 rad tick to tick)
+			var cur := _on_plane(prev, hinge).signed_angle_to(_on_plane(_y(skel, b), hinge), hinge)
 			_turn(skel, b, hinge, (want - cur) * w)
 			prev = _y(skel, b)
 	# 4. the thumb: its root swung in toward the palm, the joints a little curled
@@ -97,6 +100,9 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
 				_turn(skel, b, th, lerpf(float(THUMB_CURL[j]), float(THUMB_HOLD_CURL[j]), h) * w)
 		if t2 < 0:
 			return
+
+func _on_plane(v: Vector3, n: Vector3) -> Vector3:
+	return v - n * v.dot(n)
 
 ## Rotates bone b about a skeleton-space axis through its joint (the axis taken into the
 ## parent's frame, as Crumple._bend does).

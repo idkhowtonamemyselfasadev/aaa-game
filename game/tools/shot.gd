@@ -3008,8 +3008,18 @@ func _ready() -> void:
 		var bz := fo.body.global_basis.z
 		var bx := fo.body.global_basis.x * (1.0 if side == "Left" else -1.0)
 		var d := (0.6 if "fnear" in args else 0.95) * fo.size_scale   # (11-06 10:00) back out of the tabard
-		cam.global_position = hp + bx * d + bz * d * 0.7 + Vector3.UP * d * 0.3
-		cam.look_at(hp)
+		# (11-06 11:00) its own lens: the hero's follow camera re-placed itself each frame after this
+		# (the knight frame came out wide, the soldier's off-centre)
+		var hcam := Camera3D.new()
+		hcam.fov = 34.0
+		hcam.near = 0.02
+		if cam.attributes != null:
+			hcam.attributes = cam.attributes
+		world.add_child(hcam)
+		hcam.global_position = hp + bx * d + bz * d * 0.7 + Vector3.UP * d * 0.3
+		hcam.look_at(hp)
+		hcam.make_current()
+		cam = hcam
 		print("SHOT foe %s hand at %s" % [side, hp])
 		for i in 3:
 			await get_tree().process_frame
