@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261031-2230-guard.jpg",
-  "time": "2026-10-31T22:30:00Z",
-  "caption": "Hero in the low mid guard, re-shot from the sun side: lit, whole staff visible, no yoke -- but from this near-frontal angle the shaft reads level across the hips rather than diagonal, the face under the hat is a dark blank and the straw post still crowds the right.",
-  "verdict": "fail"
- },
- {
-  "file": "20261031-2300-guard3.jpg",
-  "time": "2026-10-31T23:45:00Z",
-  "caption": "Hero in the mid guard from the raised sun-side lens: lit and the whole staff shows, but with only -12 deg of pitch the shaft still reads as a level bar across the belly and the face is a blank grey cloth.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-0030-guard4.jpg",
   "time": "2026-11-01T00:30:00Z",
   "caption": "Hero in the new low guard: the staff now reads as a clear diagonal, tip down to knee height -- but the figure still looks squat and toy-like, the face is a blank grey cloth and the straw post crowds the right.",
@@ -897,6 +885,18 @@
   "file": "20261106-0113-knight-turn-squared.jpg",
   "time": "2026-11-06T01:13:14Z",
   "caption": "The knight squaring up to the gate at the end of its turn with the glaive carried across; GL compatibility lighting, flat dark armour and a bare dirt floor, not Wukong quality yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0230-turnstep-up.jpg",
+  "time": "2026-11-06T02:30:00Z",
+  "caption": "The Ashen Knight turning on the spot, seen low from the gate: its trailing boot is lifted clear of the turf mid-step in one arc. Still wrong: GL lighting, the armour reads near-black in its own shade and the lens crops the body.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0230-turnstep-down.jpg",
+  "time": "2026-11-06T02:30:00Z",
+  "caption": "Four ticks later the boot comes round low and sets down flat, nothing sunk into the turf. Still wrong: GL frame, dark armour, no Forward+ light on the legs.",
   "verdict": "fail"
  }
 ]
