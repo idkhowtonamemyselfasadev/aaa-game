@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261101-1915-arrowpale.jpg",
-  "time": "2026-11-01T19:15:00Z",
-  "caption": "An archer's arrow standing in the hero's chest now reads as pale ash with grey-goose fletching instead of a dark hairline; GL compatibility frame, flat light, the field still lacks Wukong-grade density.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-1915-arrowsnap.jpg",
   "time": "2026-11-01T19:15:00Z",
   "caption": "The fletched half of a snapped arrow lies on the pressed grass and is visible at last (it used to sink below the terrain grid); GL frame, the half is small and the near grass clumps are flat-lit.",
@@ -891,6 +885,18 @@
   "file": "20261106-1638-stomp-front.jpg",
   "time": "2026-11-06T16:38:31Z",
   "caption": "The phase-2 knight holding its stomp's knee-up, hips now shifted over the standing boot (GL quick-look); still wrong: the front lens is backlit at 15:00 and the tall grass hides both boots, so the weight shift cannot be judged in this frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-1727-crownreel.jpg",
+  "time": "2026-11-06T17:27:03Z",
+  "caption": "The Ashen Knight buckled in the crown reel, glaive drooping into the turf, its boots now held where they stood (bot-proven); still backlit against the sun, so the legs read as a silhouette (GL frame).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-1727-reelup.jpg",
+  "time": "2026-11-06T17:27:03Z",
+  "caption": "The knight shaking off the crown reel and standing straight again after its settle steps; backlit silhouette, the ground under it is flat dark dirt (GL frame).",
   "verdict": "fail"
  }
 ]
