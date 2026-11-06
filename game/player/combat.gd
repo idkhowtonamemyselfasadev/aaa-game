@@ -182,6 +182,7 @@ var fist_gap: Array[float] = [0.0, 0.0]   # (bots) right, left: fist centre to t
 var fist_gain := 0.6           # of the measured gap taken out each tick (bots: env FIST_GAIN)
 const FIST_MAX := 0.15
 var _twist: SpineTwist
+var grip_roll: GripRoll
 var _blend := 0.0            # IK/twist influence, eased in on draw
 var _spun := 0.0
 var _trail: MeshInstance3D
@@ -221,6 +222,13 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 		_ik.set_end_bone_name(i, "mixamorig_%sHand" % side)
 		_ik.set_target_node(i, _ik.get_path_to(arms[i][1]))
 		_ik.set_pole_node(i, _ik.get_path_to(arms[i][2]))
+	# (11-06) the hands may only roll about the shaft (GripRoll); env HERO_FREEHANDS: the before
+	if OS.get_environment("HERO_FREEHANDS") == "":
+		grip_roll = GripRoll.new()
+		grip_roll.name = "GripRoll"
+		grip_roll.staff = staff
+		skel.add_child(grip_roll)
+		skel.move_child(grip_roll, _ik.get_index() + 1)
 	_set_influence(0.0)
 	# the modified pose only exists right after the modifiers ran; sample the grip there
 	_ik.modification_processed.connect(func(): last_grip_error = _measure_grip())
@@ -707,6 +715,11 @@ static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 	return Vector3(sin(y) * cos(p), sin(p), cos(y) * cos(p))
 
 func physics_step(delta: float) -> void:
+	if grip_roll != null:
+		var hr: HandRest = player.get("hand_rest")
+		var held := hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
+			and state in [READY, ATTACKING, CHARGING, PLUNGING]
+		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * 6.0)
 	_spin_applied = spin_delta
 	spin_delta = 0.0
 	if hitstop > 0.0:

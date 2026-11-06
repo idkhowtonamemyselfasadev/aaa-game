@@ -845,6 +845,7 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
 const HERO_FIST_SWING := 0.03    # m: MEAN through the light string (the worst tick is the clip's hand-roll pop, see PROGRESS Known bugs)
 const HERO_WRIST_MAX := 80.0     # deg: the hand's line off the forearm's
+const HERO_HAND_TURN := 50.0     # deg: a hand's turn in one tick through the string (GripRoll; was 178 with the clip's hands)
 
 func _staff_gap(c: StaffCombat, side: String) -> float:
 	var f := c.fist_center(side)
@@ -958,6 +959,8 @@ func _hands_test() -> void:
 			return _combat_done(false, "the light string did not run (%d blows)" % (c.swings - swing_n))
 		if wrist[0] > HERO_WRIST_MAX:
 			return _combat_done(false, "a wrist bends %.0f deg off the forearm in the string" % wrist[0])
+		if wrist[1] > HERO_HAND_TURN and OS.get_environment("HERO_FREEHANDS") == "":
+			return _combat_done(false, "a hand pops %.0f deg in one tick in the string (the grip may only roll about the shaft)" % wrist[1])
 	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f), fists on its axis (guard %.3f/%.3f, string mean %.3f)" % [
 		worst["Left"][1], worst["Right"][1], worst["Left"][2], worst["Right"][2], held[0], held[1], sgap[0], sgap[1], sgap[3]])
 
