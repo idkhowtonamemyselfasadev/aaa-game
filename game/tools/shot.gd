@@ -3003,11 +3003,12 @@ func _ready() -> void:
 		var fo: HollowSoldier = world.knight if "knight" in args else world.soldier
 		var side := "Left" if "flhand" in args else "Right"
 		var fsk: Skeleton3D = fo.skel
-		var hp := fsk.global_transform * fsk.get_bone_global_pose(fsk.find_bone("mixamorig_%sHandMiddle1" % side)).origin
+		await fsk.skeleton_updated      # (11-06 10:00) the posed fist, not the clip's hand before the arm IK
+		var hp := fo.fist_center(side)
 		var bz := fo.body.global_basis.z
 		var bx := fo.body.global_basis.x * (1.0 if side == "Left" else -1.0)
-		var d := 0.6 * fo.size_scale
-		cam.global_position = hp + bx * d + bz * d * 0.6 + Vector3.UP * d * 0.25
+		var d := (0.6 if "fnear" in args else 0.95) * fo.size_scale   # (11-06 10:00) back out of the tabard
+		cam.global_position = hp + bx * d + bz * d * 0.7 + Vector3.UP * d * 0.3
 		cam.look_at(hp)
 		print("SHOT foe %s hand at %s" % [side, hp])
 		for i in 3:

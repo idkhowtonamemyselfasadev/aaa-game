@@ -156,6 +156,14 @@ var stride_warp: StrideWarp
 ## twisting the chest, the knees giving; the shove walked off in backward steps.
 var crumple: Crumple
 var hand_rest: HandRest      # the fingers: a grip while the hands hold the weapon, open as it slips
+## (11-06) the fists round the haft: the arm IK lands the WRIST on the grip point, so the shaft ran
+## beside the closed fingers; each tick the posed fist's centre is measured against the shaft's
+## axis and the wrist target moved (Wield space) so the haft sits inside the curl
+var fist_fit_on := true          # (bots / archer) off: the wrist on the grip point (env FOE_WRISTGRIP)
+var _fist_off: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # right, left: Wield-space wrist shift
+var fist_gap: Array[float] = [0.0, 0.0]   # (bots) right, left: fist centre to the shaft axis, m per size, last fit
+const FIST_GAIN := 0.6           # of the measured gap taken out each tick
+const FIST_MAX := 0.22           # m (Wield space) the wrist may move off its grip point (the knight's needs ~0.16)
 var reel_on := true              # (bots) off: the old rigid lean of the whole model about the hips
 var _reel_dir := Vector3.ZERO    # world: the way the blow drove the body (flat, unit)
 var _reel_posed := false
@@ -402,7 +410,51 @@ func _setup_spear() -> void:
 		hand_rest.name = "HandRest"
 		hand_rest.hold = 1.0
 		skel.add_child(hand_rest)
+		if OS.get_environment("FOE_WRISTGRIP") == "":
+			skel.skeleton_updated.connect(_fit_fists)
 	_place(GUARD)
+
+## The closed fist's centre (world): the mean of the index, middle and ring joints and tips, the
+## hollow the haft runs through when the fingers wrap it.
+func fist_center(side: String) -> Vector3:
+	var sum := Vector3.ZERO
+	var n := 0
+	for f in ["Index", "Middle", "Ring"]:
+		var last := -1
+		for j in 3:
+			var b := skel.find_bone("mixamorig_%sHand%s%d" % [side, f, j + 1])
+			if b < 0:
+				break
+			sum += skel.get_bone_global_pose(b).origin
+			n += 1
+			last = b
+		if last >= 0:
+			var tb := skel.get_bone_global_pose(last)
+			sum += tb.origin + tb.basis.y.normalized() * 2.0
+			n += 1
+	return skel.global_transform * (sum / maxf(n, 1))
+
+## After the modifiers: each fist's centre to the shaft's axis, and the wrist target moved by a
+## share of that gap for the next tick (the IK keeps the hand's turn, so the gap closes in a
+## few ticks and follows the poses as the hand rolls round the shaft).
+func _fit_fists() -> void:
+	if spear == null or _wield == null or hand_rest == null:
+		return
+	var on := fist_fit_on and state != DEAD and _ik != null and _ik.influence > 0.5
+	var o := spear.global_position
+	var ax := spear.global_basis.y.normalized()
+	var inv := _wield.global_basis.inverse()
+	var s := maxf(size_scale, 0.01)
+	var sides := ["Right", "Left"]
+	for i in 2:
+		var f := fist_center(sides[i])
+		var p := o + ax * ax.dot(f - o)
+		fist_gap[i] = f.distance_to(p) / s
+		if on:
+			var off: Vector3 = _fist_off[i] - inv * (f - p) * FIST_GAIN
+			_fist_off[i] = off.limit_length(FIST_MAX)
+		else:
+			_fist_off[i] = _fist_off[i].lerp(Vector3.ZERO, 0.1)
 
 func _place(pose: Array) -> void:
 	var d := StaffCombat.dir_of(pose[0], pose[1])
@@ -419,8 +471,8 @@ func _place(pose: Array) -> void:
 		axis = d * 0.15
 	var d2 := axis.normalized()
 	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
-	_grip_r.position = hr
-	_grip_l.position = hl
+	_grip_r.position = hr + _fist_off[0]
+	_grip_l.position = hl + _fist_off[1]
 	if _twist != null:
 		_twist.twist = tw
 

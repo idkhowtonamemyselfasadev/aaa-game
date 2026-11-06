@@ -896,6 +896,8 @@ func _hands_test() -> void:
 ## The foes' hands (11-06): the soldier and the knight (at each size) hold the spear/glaive in both
 ## hands all fight; read on the final pose the fingers must be closed round the haft (no claw over
 ## it), standing and walking, and the arm IK must still put the hands on their grips.
+const FIST_GAP_MAX := 0.012    # m per size: the fist's centre to the shaft axis (the haft is ~0.018 m round; the wrist on the grip point gave 0.15)
+
 func _foe_hands_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
@@ -921,6 +923,7 @@ func _foe_hands_test() -> void:
 		var skel: Skeleton3D = e.skel
 		var r := {"Left": [9.0, 0.0, 9.0], "Right": [9.0, 0.0, 9.0]}   # min bend, max spread, min mean curl
 		var gerr := 0.0
+		var gap := [0.0, 0.0, 0.0, 0]     # worst right, worst left (m per size, last 100 ticks), sum, count
 		var hb := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
 		for i in 120:
 			# the second half walks: the clip swings the arms, the IK keeps the hands on the haft
@@ -938,9 +941,22 @@ func _foe_hands_test() -> void:
 			for j in 2:
 				var hand := skel.global_transform * skel.get_bone_global_pose(hb[j]).origin
 				gerr = maxf(gerr, hand.distance_to(([e._grip_r, e._grip_l][j] as Node3D).global_position) / sc)
+				# 11-06: the fist's hollow on the haft: its centre to the shaft's axis (the fit's
+				# first ticks after a size change excluded: it closes the gap over a few ticks)
+				var fc := e.fist_center(["Right", "Left"][j])
+				var o := e.spear.global_position
+				var ax := e.spear.global_basis.y.normalized()
+				var gp := fc.distance_to(o + ax * ax.dot(fc - o)) / sc
+				if OS.has_environment("FISTGAP_DBG") and j == 0:
+					print("    gap %d %.3f %.3f off %s" % [i, gp, e.fist_gap[1], str(e._fist_off)])
+				if i >= 20 and not (i >= 60 and i < 70):
+					gap[j] = maxf(gap[j], gp)
+					gap[2] += gp
+					gap[3] += 1
 		e.bot_move = Vector3.ZERO
-		var line := "%s x%.1f: L min %.2f spread %.2f curl %.2f | R min %.2f spread %.2f curl %.2f | grip %.3f m" % [
-			e.name, sc, r["Left"][0], r["Left"][1], r["Left"][2], r["Right"][0], r["Right"][1], r["Right"][2], gerr]
+		var line := "%s x%.1f: L min %.2f spread %.2f curl %.2f | R min %.2f spread %.2f curl %.2f | grip %.3f m | fist-shaft R %.3f L %.3f mean %.3f m" % [
+			e.name, sc, r["Left"][0], r["Left"][1], r["Left"][2], r["Right"][0], r["Right"][1], r["Right"][2], gerr,
+			gap[0], gap[1], gap[2] / maxf(gap[3], 1)]
 		print("   " + line)
 		lines.append(line)
 		for side in ["Left", "Right"]:
@@ -951,6 +967,8 @@ func _foe_hands_test() -> void:
 				fail = "%s x%.1f %s finger bent back like a claw (%.2f)" % [e.name, sc, side, w[0]]
 		if fail == "" and gerr > 0.05:
 			fail = "%s x%.1f hands off their grips (%.3f m)" % [e.name, sc, gerr]
+		if fail == "" and maxf(gap[0], gap[1]) > FIST_GAP_MAX and not OS.has_environment("FOE_WRISTGRIP"):
+			fail = "%s x%.1f the fist sits off the haft (centre %.3f m from the shaft axis)" % [e.name, sc, maxf(gap[0], gap[1])]
 	if OS.has_environment("FOE_CLAWHANDS"):
 		return _combat_done(true, "the before (clip fingers) measured")
 	if fail != "":
@@ -4782,8 +4800,12 @@ func _hewer_test() -> void:
 		return _combat_done(false, "the hewer should wait idle, clear of the other Hollows")
 	# the axe: knob just under the rear (right) hand's grip, the head out past both grips (the
 	# hands IK onto these grips; headless bone poses read pre-IK, so the grips are checked)
-	var rh := w._grip_r.global_position
-	var lh := w._grip_l.global_position
+	# (11-06 10:00) the fists, not the wrists: the wrist targets now sit off the helve so the
+	# closed fingers wrap it; read on the final pose
+	await w.skel.skeleton_updated
+	var rh := w.fist_center("Right")
+	var lh := w.fist_center("Left")
+	print("BOT hewer: fists to the shaft axis R %.3f L %.3f m, wrist shift %s" % [w.fist_gap[0], w.fist_gap[1], str(w._fist_off)])
 	var knob := w.axe.global_position
 	var head := w._head()
 	print("BOT hewer: knob %.2f m from the right hand, head %.2f m from the right hand, left hand %.2f m off the helve" % [knob.distance_to(rh), head.distance_to(rh), _seg_dist(lh, knob, head)])

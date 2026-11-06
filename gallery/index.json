@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261101-1414-bite.jpg",
-  "time": "2026-11-01T14:14:35Z",
-  "caption": "The Hollow Hewer bent ~40 deg over its buried axe after a dodged chop, arms down the helve into the turf (the punish window now reads); still GL, the bit itself is lost in the grass and dust and the hood reads as a smooth green sack.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-1510-bite.jpg",
-  "time": "2026-11-01T15:10:00Z",
-  "caption": "The Hollow Hewer bent over its buried axe with the grass laid flat round the bit and a low, short dust; its hood is now creased brown wool. Still GL, and the near grass plus the house shadow swallow the figure.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-1623-archer.jpg",
   "time": "2026-11-01T16:23:51Z",
   "caption": "The new Ashen Archer (left, red hood) at full draw, bow arm out at the hero; GL quick frame, the archer stands in the house's shadow so the bow and draw are hard to read, still needs a Forward+ look.",
@@ -660,12 +648,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261105-0804-toestep.jpg",
-  "time": "2026-11-05T08:04:16Z",
-  "caption": "Toe IK test: a boot stands on top of a 16 cm masonry block with nothing sunk into it; the lens is not side-on so the ball-on-edge read is unverified, and the GL quick-look lighting and test block are not shipping quality.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0710-knight-surge-burst.jpg",
   "time": "2026-11-05T07:10:00Z",
   "caption": "The Ashen Knight still on its knee as the surge bursts, glaive heaved skyward inside the ring of fire; backlit from the gate so the flung-back head is only a silhouette, GL frame.",
@@ -675,6 +657,12 @@
   "file": "20261105-0710-knight-surge-settle.jpg",
   "time": "2026-11-05T07:10:00Z",
   "caption": "The knight risen at its phase-2 size, glaive levelled back into guard with the fire still burning; the fallen stone in front reads blocky and the figure is backlit, GL frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261105-0804-toestep.jpg",
+  "time": "2026-11-05T08:04:16Z",
+  "caption": "Toe IK test: a boot stands on top of a 16 cm masonry block with nothing sunk into it; the lens is not side-on so the ball-on-edge read is unverified, and the GL quick-look lighting and test block are not shipping quality.",
   "verdict": "fail"
  },
  {
@@ -891,6 +879,12 @@
   "file": "20261106-0908-foehands.jpg",
   "time": "2026-11-06T09:08:00Z",
   "caption": "Hollow soldier's hands on the spear, before (left: clip fingers splayed open over the shaft, a claw on the lower hand) and after (right: both hands closed into fists round the haft); GL quick-look, the lens is too close and the gauntlets still read blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-1040-foefist.jpg",
+  "time": "2026-11-06T10:40:19Z",
+  "caption": "A Hollow soldier's right fist now closed round the spear haft (the wrist moved off the shaft so it runs through the fingers); GL quick-look, the hand sits in shadow and the lens still does not centre on it.",
   "verdict": "fail"
  }
 ]

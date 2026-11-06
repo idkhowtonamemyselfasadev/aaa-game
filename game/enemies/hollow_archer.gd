@@ -310,6 +310,7 @@ func _ready() -> void:
 	health = ARCHER_HP
 	poise_max = ARCHER_POISE
 	guard_pose = CARRY
+	fist_fit_on = false     # the bow hand holds the bow's grip, not the shaft rig's axis
 	engage_delay = 0.6
 	sweep_reach = STAVE_REACH
 	notice = 18.0
