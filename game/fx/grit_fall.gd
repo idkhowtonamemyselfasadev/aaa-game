@@ -5,6 +5,13 @@ extends Node3D
 ## after them that slows, spreads and drifts off as it nears the turf. Frees itself when done.
 ## `width` is roughly the stone's width; `drop` the height it falls (sets the dust's lifetime).
 
+static var _shader: Shader
+
+static func _dust_shader() -> Shader:
+	if _shader == null:
+		_shader = load("res://shaders/grit_dust.gdshader")
+	return _shader
+
 static func spawn(parent: Node, top: Vector3, width: float, drop: float) -> GritFall:
 	var fx := GritFall.new()
 	fx.name = "GritFall"
@@ -44,6 +51,10 @@ func _build(width: float, drop: float) -> void:
 	cm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	cm.billboard_keep_scale = true
 	cm.roughness = 1.0
+	# a chip that drops right past the lens would fill the frame as a dark blot: dither it out up close
+	cm.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+	cm.distance_fade_min_distance = 1.2
+	cm.distance_fade_max_distance = 3.0
 	cq.material = cm
 	crumbs.mesh = cq
 	crumbs.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -52,7 +63,7 @@ func _build(width: float, drop: float) -> void:
 	# dust curtain: soft puffs that fall, drag to a hang and spread out low
 	var dust := CPUParticles3D.new()
 	dust.name = "Dust"
-	dust.amount = 14
+	dust.amount = 12
 	dust.lifetime = fall_t * 1.6 + 1.2
 	dust.one_shot = true
 	dust.explosiveness = 0.3
@@ -75,25 +86,16 @@ func _build(width: float, drop: float) -> void:
 	var dg := Gradient.new()
 	var col := Color(0.58, 0.55, 0.50)
 	dg.set_color(0, Color(col.r, col.g, col.b, 0.0))
-	dg.add_point(0.12, Color(col.r, col.g, col.b, 0.32))
+	dg.add_point(0.12, Color(col.r, col.g, col.b, 0.2))   # a veil, not a wall: the puffs overlap
 	dg.set_color(1, Color(col.r, col.g, col.b, 0.0))
 	dust.color_ramp = dg
 	var dq := QuadMesh.new()
 	dq.size = Vector2(0.9, 0.9)
-	var dm := StandardMaterial3D.new()
-	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	dm.albedo_texture = ImpactFX._clump_tex(true)
-	dm.vertex_color_use_as_albedo = true
-	dm.vertex_color_is_srgb = true
-	dm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	dm.billboard_keep_scale = true
-	dm.roughness = 1.0
-	dm.metallic_specular = 0.0
-	dm.backlight_enabled = true
-	dm.backlight = Color(0.25, 0.23, 0.2)
-	dm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	dm.proximity_fade_enabled = true
-	dm.proximity_fade_distance = 0.3
+	# lit like real airborne dust (wrapped diffuse + a forward-scatter lobe), so a puff between the
+	# lens and the sun glows instead of drawing as a black blot; fades out near the lens
+	var dm := ShaderMaterial.new()
+	dm.shader = _dust_shader()
+	dm.set_shader_parameter("puff_tex", ImpactFX._clump_tex(true))
 	dq.material = dm
 	dust.mesh = dq
 	dust.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

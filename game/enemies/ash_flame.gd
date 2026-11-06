@@ -93,12 +93,21 @@ func _ready() -> void:
 	_smoke.initial_velocity_min = 0.8
 	_smoke.initial_velocity_max = 1.8
 	_smoke.gravity = Vector3(0.35, 0.7, 0)
+	# soot, not a hole in the frame: the old material took the ramp's near-black times an albedo
+	# of the same near-black (~0.005) and drew every puff as a black blot against the sky. Now a
+	# lit volume (grit_dust.gdshader: wrapped sun, a forward-scatter lobe so a backlit plume glows
+	# at its rim, warmed from below by the column's light) in charcoal greys that thin as it rises.
 	var gs := Gradient.new()
-	gs.set_color(0, Color(0.08, 0.06, 0.05, 0.0))
-	gs.set_color(1, Color(0.16, 0.15, 0.14, 0.0))
-	gs.add_point(0.15, Color(0.07, 0.06, 0.05, 0.8))
-	gs.add_point(0.6, Color(0.12, 0.11, 0.1, 0.45))
+	gs.set_color(0, Color(0.30, 0.26, 0.23, 0.0))
+	gs.set_color(1, Color(0.52, 0.50, 0.48, 0.0))
+	gs.add_point(0.15, Color(0.26, 0.23, 0.21, 0.6))
+	gs.add_point(0.6, Color(0.40, 0.38, 0.36, 0.3))
 	_smoke.color_ramp = gs
+	var sm := ShaderMaterial.new()
+	sm.shader = GritFall._dust_shader()
+	sm.set_shader_parameter("puff_tex", _soft_texture())
+	sm.set_shader_parameter("scatter_gain", 0.35)
+	(_smoke.mesh as QuadMesh).material = sm
 	# heat over the smoulder: a thin trickle of ember motes lifting off the fissures
 	_motes = _emitter(26, 1.3, Vector2(0.015, 0.035), Color(1.0, 0.55, 0.2), 4.0)
 	_motes.one_shot = false
