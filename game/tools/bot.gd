@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -208,6 +208,9 @@ func _ready() -> void:
 		return
 	if name == "heroturn":
 		_hero_turn_test()
+		return
+	if name == "hands":
+		_hands_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -788,6 +791,105 @@ func _turn_free_track(i: int, fh: float, at: Vector3) -> void:
 ## Hero turn lead: the head and chest swing toward where the hero is turning before the body
 ## comes round (on the spot while locked, and in a run turn), settle square after, and keep out
 ## of the pivot (which turns the head itself).
+## The hero's hands at rest (11-06): read on the final pose, each finger's bend at its three joints
+## (radians toward the palm; below 0 is bent back like a claw) and the spread between the index's
+## and the pinky's first bones. A relaxed hand curls a little, more toward the pinky, and the
+## fingers lie close together; the clip's own pose splays them stiff and hooked.
+func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
+	var g := func(n: String) -> Vector3:
+		return skel.get_bone_global_pose(skel.find_bone("mixamorig_%s%s" % [side, n])).origin
+	var h: Vector3 = g.call("Hand")
+	var dir: Vector3 = (g.call("HandMiddle1") - h).normalized()
+	var across: Vector3 = g.call("HandIndex1") - g.call("HandPinky1")
+	across = (across - dir * across.dot(dir)).normalized()
+	var palm := across.cross(dir) * (1.0 if side == "Right" else -1.0)
+	var out := {}
+	var mins := 9.0
+	var sum := 0.0
+	var cnt := 0
+	for f in ["Index", "Middle", "Ring", "Pinky"]:
+		# the rig has 2-3 bones a finger (the pinky 2); the tip end is 2 cm along the last bone
+		var pts: Array[Vector3] = [h]
+		var last := -1
+		for j in 3:
+			var bj := skel.find_bone("mixamorig_%sHand%s%d" % [side, f, j + 1])
+			if bj < 0:
+				break
+			pts.append(skel.get_bone_global_pose(bj).origin)
+			last = bj
+		pts.append(pts[pts.size() - 1] + skel.get_bone_global_pose(last).basis.y.normalized() * 2.0)
+		var bends: Array[float] = []
+		for j in pts.size() - 2:
+			var a: Vector3 = (pts[j + 1] - pts[j]).normalized()
+			var b: Vector3 = (pts[j + 2] - pts[j + 1]).normalized()
+			# signed bend about the finger's hinge: + folds toward the palm
+			var hinge := dir.cross(palm).normalized()
+			bends.append(a.signed_angle_to(b, hinge))
+		out[f] = bends
+		for v in bends:
+			mins = minf(mins, v)
+			sum += v
+			cnt += 1
+	var i1: Vector3 = (g.call("HandIndex2") - g.call("HandIndex1")).normalized()
+	var p1: Vector3 = (g.call("HandPinky2") - g.call("HandPinky1")).normalized()
+	out["spread"] = i1.angle_to(p1)
+	out["min"] = mins
+	out["mean"] = sum / maxf(cnt, 1)
+	var t1: Vector3 = g.call("HandThumb1")
+	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
+	return out
+
+func _hands_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(60)
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var worst := {"Left": [9.0, 0.0, 0.0, 9.0], "Right": [9.0, 0.0, 0.0, 9.0]}   # min bend, max spread, mean, min mean
+	for i in 60:
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		for side in ["Left", "Right"]:
+			var r := _hand_read(skel, side)
+			var w: Array = worst[side]
+			w[0] = minf(w[0], r["min"])
+			w[1] = maxf(w[1], r["spread"])
+			w[2] += float(r["mean"]) / 60.0
+			w[3] = minf(w[3], r["mean"])
+			if i == 0 or OS.has_environment("HANDS_DBG"):
+				print("   %s %s spread %.2f thumb %.2f" % [side, str(r).substr(0, 400), r["spread"], r["thumb_off"]])
+	print("   idle hands: L min bend %.2f spread %.2f mean %.2f | R min bend %.2f spread %.2f mean %.2f" % [
+		worst["Left"][0], worst["Left"][1], worst["Left"][2], worst["Right"][0], worst["Right"][1], worst["Right"][2]])
+	# the staff drawn: both hands close round the shaft
+	var c: StaffCombat = p.combat
+	c._begin_draw()
+	var held := [9.0, 9.0]
+	var gerr := 0.0
+	for i in 90:
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		if c.state == StaffCombat.READY and i > 60:
+			for k in 2:
+				held[k] = minf(held[k], float(_hand_read(skel, ["Left", "Right"][k])["mean"]))
+			gerr = maxf(gerr, c.grip_error())
+	print("   staff drawn: mean curl L %.2f R %.2f (min over ticks), grip error %.3f m, state %d" % [held[0], held[1], gerr, c.state])
+	if OS.has_environment("HERO_CLAWHANDS"):
+		return _combat_done(true, "the before (clip fingers) measured")
+	for side in ["Left", "Right"]:
+		var w: Array = worst[side]
+		if w[1] > 0.42:
+			return _combat_done(false, "%s fingers splayed at rest (index-pinky %.2f rad)" % [side, w[1]])
+		if w[0] < 0.1:
+			return _combat_done(false, "%s finger straight or bent back at rest (%.2f rad)" % [side, w[0]])
+		if w[2] < 0.3 or w[2] > 0.6:
+			return _combat_done(false, "%s fingers' rest curl %.2f rad off a relaxed hand (0.3-0.6)" % [side, w[2]])
+	if held[0] < 0.85 or held[1] < 0.85:
+		return _combat_done(false, "the hands do not close on the drawn staff (curl %.2f / %.2f)" % [held[0], held[1]])
+	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f)" % [
+		worst["Left"][1], worst["Right"][1], worst["Left"][2], worst["Right"][2], held[0], held[1]])
+
 func _hero_turn_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0

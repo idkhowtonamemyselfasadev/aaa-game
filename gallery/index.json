@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261101-0739-face8.jpg",
-  "time": "2026-11-01T07:39:27Z",
-  "caption": "Hero close-up after the face cloth was dropped under the nose: the hood now frames a face with a nose, cheekbones and eyes instead of a grey block, but the skin reads as a smooth orange mannequin and the cloth front is a flat dark panel.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-1141-hewer.jpg",
-  "time": "2026-11-01T11:41:56Z",
-  "caption": "The new Hollow Hewer (left) holds its felling axe overhead at the top of the chop with the glint on the bit; GL quick frame, the figure is backlit and dark and the axe head reads small.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-1217-hewer-bite.jpg",
-  "time": "2026-11-01T12:17:51Z",
-  "caption": "The hewer bent over its buried axe after the hero rolled clear (GL quick frame); the new turf burst reads as a flat over-bright smear on the ground and the camera framing is off.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-1312-hewerbite.jpg",
-  "time": "2026-11-01T13:12:10Z",
-  "caption": "GL frame looking down on the Hewer's missed chop: the turf burst is now a soft, shaded brown haze with dark soil crumbs instead of a pale glowing smear; the hewer still stands upright instead of bent over the buried bit, and the frame is GL, dark and shadowed.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-1414-bite.jpg",
   "time": "2026-11-01T14:14:35Z",
   "caption": "The Hollow Hewer bent ~40 deg over its buried axe after a dodged chop, arms down the helve into the turf (the punish window now reads); still GL, the bit itself is lost in the grass and dust and the hood reads as a smooth green sack.",
@@ -897,6 +873,18 @@
   "file": "20261106-0740-knightsettle.jpg",
   "time": "2026-11-06T07:40:35Z",
   "caption": "The knight (size 2.2) squared up after a turn on the spot, both boots settled under it in the idle stance (GL quick-look frame, not Forward+); the ring floor still reads as flat speckled dirt.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0829-handrest.jpg",
+  "time": "2026-11-06T08:29:43Z",
+  "caption": "The hero's right hand at rest, before (left) and after (right): fingers drawn together and curled in a relaxed cascade instead of the clip's stiff splay (GL quick-look, not Forward+); the glove's knuckle plates still read a little blocky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0829-staffgrip.jpg",
+  "time": "2026-11-06T08:29:43Z",
+  "caption": "Staff drawn, before (left) and after (right): the lower hand now closes into a fist round the shaft instead of splaying open over it (GL quick-look, low resolution).",
   "verdict": "fail"
  }
 ]

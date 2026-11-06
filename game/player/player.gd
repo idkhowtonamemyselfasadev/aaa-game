@@ -408,6 +408,10 @@ func _setup_crumple() -> void:
 	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
 	if skel == null:
 		return
+	if OS.get_environment("HERO_CLAWHANDS") == "":   # env HERO_CLAWHANDS: the before (the clip's own fingers)
+		hand_rest = HandRest.new()
+		hand_rest.name = "HandRest"
+		skel.add_child(hand_rest)              # before Crumple: its fists and holds go on top
 	crumple = Crumple.new()
 	crumple.name = "Crumple"
 	skel.add_child(crumple)                    # last modifier: runs after the arm IK
@@ -745,7 +749,22 @@ func _update_lock(delta: float) -> void:
 	_yaw = lerp_angle(_yaw, want_yaw, k)
 	_pitch = lerpf(_pitch, want_pitch, k)
 
+## The fingers' pose (HandRest): relaxed at rest, closed round the shaft as the staff is drawn, and
+## eased off whenever another pose owns the hands (climbing holds, the glider bar, a mantle, a fist).
+const HAND_RATE := 10.0           # 1/s
+var hand_rest: HandRest
+
+func _update_hand_rest(delta: float) -> void:
+	if hand_rest == null:
+		return
+	var owned := climbing or gliding or mantle_t >= 0.0 \
+		or (crumple != null and crumple.active and (crumple.plant > 0.01 or crumple.grip > 0.01))
+	var k := 1.0 - exp(-HAND_RATE * delta)
+	hand_rest.weight = lerpf(hand_rest.weight, 0.0 if owned else 1.0, k)
+	hand_rest.hold = lerpf(hand_rest.hold, combat._blend if combat != null else 0.0, k)
+
 func _physics_process(delta: float) -> void:
+	_update_hand_rest(delta)
 	if woke_t >= 0.0:
 		woke_t += delta
 		if woke_t > RESPAWN_FADE:

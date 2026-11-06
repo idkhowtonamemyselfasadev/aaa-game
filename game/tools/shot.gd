@@ -2997,7 +2997,20 @@ func _ready() -> void:
 		var to_lens := get_viewport().get_camera_3d().global_position - kb.global_position
 		print("SHOT kindle facing %s yaw %.2f (spot %.2f), lens dir %s, dot %.2f" % [kf, kb.rotation.y,
 			world.keeper._spots["kindle"][1], to_lens, Vector2(kf.x, kf.z).normalized().dot(Vector2(to_lens.x, to_lens.z).normalized())])
-	if spot == "face" and cam != null:
+	if (spot == "face" or spot == "hero") and cam != null and ("hand" in args or "lhand" in args):
+		# (11-06) the idle hand close up: from the hero's side, a little ahead and below the hip,
+		# so the fingers show against the leg (hand = the right one, lhand = the left)
+		var side := "Left" if "lhand" in args else "Right"
+		var hsk := player.model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var hp := hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_%sHandMiddle1" % side)).origin
+		var bz := player.body.global_basis.z
+		var bx := player.body.global_basis.x * (1.0 if side == "Left" else -1.0)
+		cam.global_position = hp + bx * 0.55 + bz * 0.35 + Vector3.UP * 0.05
+		cam.look_at(hp)
+		print("SHOT %s hand at %s" % [side, hp])
+		for i in 3:
+			await get_tree().process_frame
+	elif spot == "face" and cam != null:
 		# aim from where the face actually is after the warm-up: out along head bone -> eyes,
 		# 3/4 from the left, from a little below eye level (the idle head pitches down, so
 		# from eye height the hat brim hides the eyes)
