@@ -155,6 +155,7 @@ var stride_warp: StrideWarp
 ## hips thrown back off the blow, the chest caving round it, the head whipping, a side blow
 ## twisting the chest, the knees giving; the shove walked off in backward steps.
 var crumple: Crumple
+var hand_rest: HandRest      # the fingers: a grip while the hands hold the weapon, open as it slips
 var reel_on := true              # (bots) off: the old rigid lean of the whole model about the hips
 var _reel_dir := Vector3.ZERO    # world: the way the blow drove the body (flat, unit)
 var _reel_posed := false
@@ -394,6 +395,13 @@ func _setup_spear() -> void:
 	skel.move_child(crumple, _ik.get_index())
 	crumple.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
 	crumple.active = false
+	# (11-06) the fingers closed round the haft (the hero's HandRest: the clip leaves them splayed
+	# and hooked like claws over the shaft); the rig is the hero's, so the same bones and angles
+	if OS.get_environment("FOE_CLAWHANDS") == "":   # env FOE_CLAWHANDS: the before
+		hand_rest = HandRest.new()
+		hand_rest.name = "HandRest"
+		hand_rest.hold = 1.0
+		skel.add_child(hand_rest)
 	_place(GUARD)
 
 func _place(pose: Array) -> void:
@@ -500,6 +508,8 @@ func parried(dir: Vector3, hitstop: float) -> void:
 func _physics_process(delta: float) -> void:
 	if _player == null:
 		_player = get_parent().get_node_or_null("Player") as Player
+	if hand_rest != null and _ik != null:
+		hand_rest.hold = _ik.influence
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 5.0, 0.0)
 		_set_skin("hit_flash", _flash)

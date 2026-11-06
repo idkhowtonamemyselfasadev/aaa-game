@@ -2997,6 +2997,21 @@ func _ready() -> void:
 		var to_lens := get_viewport().get_camera_3d().global_position - kb.global_position
 		print("SHOT kindle facing %s yaw %.2f (spot %.2f), lens dir %s, dot %.2f" % [kf, kb.rotation.y,
 			world.keeper._spots["kindle"][1], to_lens, Vector2(kf.x, kf.z).normalized().dot(Vector2(to_lens.x, to_lens.z).normalized())])
+	if spot == "soldier" and cam != null and ("fhand" in args or "flhand" in args):
+		# (11-06) a foe's grip close up: the hand on the haft from its outer side, a little ahead
+		# (fhand = the right hand, flhand = the left; add `knight` for the knight)
+		var fo: HollowSoldier = world.knight if "knight" in args else world.soldier
+		var side := "Left" if "flhand" in args else "Right"
+		var fsk: Skeleton3D = fo.skel
+		var hp := fsk.global_transform * fsk.get_bone_global_pose(fsk.find_bone("mixamorig_%sHandMiddle1" % side)).origin
+		var bz := fo.body.global_basis.z
+		var bx := fo.body.global_basis.x * (1.0 if side == "Left" else -1.0)
+		var d := 0.6 * fo.size_scale
+		cam.global_position = hp + bx * d + bz * d * 0.6 + Vector3.UP * d * 0.25
+		cam.look_at(hp)
+		print("SHOT foe %s hand at %s" % [side, hp])
+		for i in 3:
+			await get_tree().process_frame
 	if (spot == "face" or spot == "hero") and cam != null and ("hand" in args or "lhand" in args):
 		# (11-06) the idle hand close up: from the hero's side, a little ahead and below the hip,
 		# so the fingers show against the leg (hand = the right one, lhand = the left)

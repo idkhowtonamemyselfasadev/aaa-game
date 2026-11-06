@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -211,6 +211,9 @@ func _ready() -> void:
 		return
 	if name == "hands":
 		_hands_test()
+		return
+	if name == "foehands":
+		_foe_hands_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -889,6 +892,70 @@ func _hands_test() -> void:
 		return _combat_done(false, "the hands do not close on the drawn staff (curl %.2f / %.2f)" % [held[0], held[1]])
 	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f)" % [
 		worst["Left"][1], worst["Right"][1], worst["Left"][2], worst["Right"][2], held[0], held[1]])
+
+## The foes' hands (11-06): the soldier and the knight (at each size) hold the spear/glaive in both
+## hands all fight; read on the final pose the fingers must be closed round the haft (no claw over
+## it), standing and walking, and the arm IK must still put the hands on their grips.
+func _foe_hands_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	await _ticks(20)
+	var cases := [[so, 1.0]]
+	for i in 3:
+		cases.append([k, float(AshenKnight.PHASES[i]["scale"])])
+	var lines := []
+	var fail := ""
+	for c in cases:
+		var e: HollowSoldier = c[0]
+		var sc: float = c[1]
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		e.set_size_scale(sc)
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		e.bot_face = Vector3.ZERO
+		await _ticks(60)
+		var skel: Skeleton3D = e.skel
+		var r := {"Left": [9.0, 0.0, 9.0], "Right": [9.0, 0.0, 9.0]}   # min bend, max spread, min mean curl
+		var gerr := 0.0
+		var hb := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
+		for i in 120:
+			# the second half walks: the clip swings the arms, the IK keeps the hands on the haft
+			e.bot_move = e.body.global_basis.z * (1.0 if i >= 60 else 0.0)
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			for side in ["Left", "Right"]:
+				var h := _hand_read(skel, side)
+				if OS.has_environment("FOEHANDS_DBG") and i % 30 == 0:
+					print("   %s %s %d %s" % [e.name, side, i, str(h).substr(0, 300)])
+				var w: Array = r[side]
+				w[0] = minf(w[0], h["min"])
+				w[1] = maxf(w[1], h["spread"])
+				w[2] = minf(w[2], h["mean"])
+			for j in 2:
+				var hand := skel.global_transform * skel.get_bone_global_pose(hb[j]).origin
+				gerr = maxf(gerr, hand.distance_to(([e._grip_r, e._grip_l][j] as Node3D).global_position) / sc)
+		e.bot_move = Vector3.ZERO
+		var line := "%s x%.1f: L min %.2f spread %.2f curl %.2f | R min %.2f spread %.2f curl %.2f | grip %.3f m" % [
+			e.name, sc, r["Left"][0], r["Left"][1], r["Left"][2], r["Right"][0], r["Right"][1], r["Right"][2], gerr]
+		print("   " + line)
+		lines.append(line)
+		for side in ["Left", "Right"]:
+			var w: Array = r[side]
+			if fail == "" and w[2] < 0.85:
+				fail = "%s x%.1f %s fingers not closed on the haft (curl %.2f)" % [e.name, sc, side, w[2]]
+			if fail == "" and w[0] < 0.1:
+				fail = "%s x%.1f %s finger bent back like a claw (%.2f)" % [e.name, sc, side, w[0]]
+		if fail == "" and gerr > 0.05:
+			fail = "%s x%.1f hands off their grips (%.3f m)" % [e.name, sc, gerr]
+	if OS.has_environment("FOE_CLAWHANDS"):
+		return _combat_done(true, "the before (clip fingers) measured")
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "foes' fingers closed on the haft at every size")
 
 func _hero_turn_test() -> void:
 	var p := _player
