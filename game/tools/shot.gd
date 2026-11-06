@@ -2660,7 +2660,8 @@ func _ready() -> void:
 			# bootlens: low and close on the sun side, framing the legs and boots (the turn step's arc)
 			var tl: Vector3 = -world.sun.global_transform.basis.z
 			var toward := Vector3(-tl.x, 0, -tl.z).normalized()
-			var bc := rr.centre + (toward * 0.8 + rf * 0.6).normalized() * 2.4 * sz
+			var sgn := 1.0 if toward.dot(rside) > 0.0 else -1.0
+			var bc := rr.centre + (rf + rside * 0.6 * sgn).normalized() * 2.2 * sz
 			bc.y = terrain.height_at(bc.x, bc.z) + 0.45 * sz
 			cam.global_position = bc
 			cam.look_at(rr.centre + Vector3.UP * 0.35 * sz)

@@ -54,7 +54,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   fall between two higher points of the free boot while the pivot holds; `FOETURN_DBG` prints the sequence): before
   0.009/0.019/0.018/0.015 per size, now 0.000/0.001/0.001/0.001; new gate <= 0.005 (0.03 with PIVOT_ARC_DIP). Also
   pass: `heroturn`, `pivot`, `stop`, `start`, `stride`, `foestride`, `knight`, `footik`, `foeflinch`, `soldier`, `stepup`.
-  New shot lens `ring X N 10.0 fixfps turn bootlens sz=S` (low, close, sun side, on the legs).
+  New shot lens `ring X N 10.0 fixfps turn bootlens sz=S` (low and close from the gate, on the sun's flank, on the
+  legs). GL frames 4/8/12 at size 2.2 looked at: 4 both boots set, 8 the trailing boot up off the turf heel and toe,
+  12 it comes round low and sets down; one step, nothing sunk. Still: GL lighting, the armour near-black in its own
+  shade, the lens crops above the belt. Gallery: 2 frames (fail).
 - (01:00 11-06) **TURN STEP ARC: THE FOES' FREE BOOT STEPS, NOT FLICKS (12 movement/boss bots PASS).**
   `StrideWarp._pivot_leg` now lifts the free (stepping) foot while the pivot holds: the clip's free ankle's world
   travel speed over the turf (smoothed, `STEP_SPEED_RATE` 20/s) x `STEP_LIFT_K` 0.03 s gives a clearance (cap
