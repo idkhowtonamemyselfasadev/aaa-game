@@ -55,6 +55,7 @@ var pivot_side := 0          # 0 the left foot, 1 the right foot
 var pivot_pin = null         # world ankle pin (Vector3) while pivoting, else null
 var pivot_ankle := Vector3.ZERO  # (bots) world pivot ankle as posed this tick
 var pivot_other := Vector3.ZERO  # (bots) world other ankle as posed this tick
+var pivot_settle := false    # (owner) the body has squared up: the turn step comes down now
 var pivot_sink := 0.0            # (bots) skeleton units the hips settled onto the pivot leg this tick
 const PIVOT_SINK_MAX := 8.0      # skeleton units (cm)
 var pivot_short := 0.0           # (bots) skeleton units the leg could not reach to the pin this tick
@@ -320,6 +321,25 @@ const STEP_EASE_V := 1.2         # ...plus this (skeleton units/s), so it does r
 static var PIVOT_ARC_TAP := OS.has_environment("PIVOT_ARC_TAP")
 var _arc_floor := 0.0            # the stance level when the pivot planted (skeleton space, the clip's)
 
+ ## The settle (11-06, 06:00): once the body has squared up, the step comes down at once instead
+## of hovering on with the clip's shuffle (the hero's boot held 2-3 cm up for ~0.8 s after the
+## turn, then sank). The clip's own lift no longer holds it, it eases down at STEP_SETTLE_K and
+## it stops travelling over the turf once down. PIVOT_HOVER: the before.
+static var PIVOT_HOVER := OS.has_environment("PIVOT_HOVER")
+const STEP_SETTLE_K := 11.0      # 1/s: share of the boot's height closed per second while settling
+const STEP_SETTLE_V := 2.0       # ...plus this (skeleton units/s)
+var _settle_t := 0.0             # s settling
+var _settle_at = null            # the free ankle's world point where the settle started
+const STEP_SETTLE_T := 0.28      # s: each settle step closes the stance over this
+const STEP_SETTLE_LIFT := 0.15   # a settle step clears the turf by this share of its reach...
+const STEP_SETTLE_LIFT_MAX := 6.0  # ...at most (skeleton units)
+const STEP_SETTLE_MIN := 3.0     # skeleton units: a foot nearer its stance spot than this does not step
+var settle_done := false         # (owner, bots) both settle steps are down: the pivot may let go
+var _settle_b0 = null            # the pivot's pin where its own settle step started (world)
+var stance_idle := false         # (owner) standing still and square: the clip's stance is sampled
+var _stance := [Vector3.ZERO, Vector3.ZERO]  # each ankle as the idle clip stands it (skeleton space)
+var _stance_ok := false
+var settle_reach := 0.0          # (bots) skeleton units the settle step carries the boot
 const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts as down under this
 const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
 static var PIVOT_DBG := OS.has_environment("PIVOT_DBG")
@@ -336,6 +356,8 @@ func pivot_want(want: float, standing: bool, delta: float) -> float:
 	if want > 0.0 or not standing or PIVOT_EARLY_LET_GO or PIVOT_NO_ARC or pivot < 0.999:
 		_aloft_held = 0.0
 		return want
+	if pivot_settle and not PIVOT_HOVER and _stance_ok and not settle_done and _settle_t < STEP_SETTLE_T * 2.0 + 0.4:
+		return 1.0                      # the settle steps are still closing the stance
 	if _arc_top > STEP_DOWN_H and _aloft_held < STEP_HOLD_MAX:
 		_aloft_held += delta
 		return 1.0
@@ -351,6 +373,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_arc_top = 0.0
 		_arc_peak = 0.0
 		_arc_falling = false
+		_settle_t = 0.0
+		_settle_at = null
+		_settle_b0 = null
+		settle_done = false
+		if stance_idle:
+			for i in 2:
+				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
+				if fb >= 0:
+					_stance[i] = skel.get_bone_global_pose(fb).origin
+			_stance_ok = true
 		return
 	var sides := ["Left", "Right"]
 	var ul := skel.find_bone("mixamorig_%sUpLeg" % sides[pivot_side])
@@ -369,6 +401,24 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
 		_arc_floor = lo
+	# the settle's second step (11-06): once the stepping boot is down in its stance spot, the
+	# pivot foot itself steps into its own, so the turn ends square in the idle stance and the
+	# release hands both feet to the clip where it stands them (they slid up to ~0.4 m before)
+	if pivot_settle and _stance_ok and not PIVOT_HOVER and _settle_t > STEP_SETTLE_T:
+		if _settle_b0 == null:
+			_settle_b0 = pivot_pin
+		var b0: Vector3 = inv * (_settle_b0 as Vector3)
+		var bg: Vector3 = _stance[pivot_side]
+		var bd: Vector3 = bg - b0
+		bd -= up * bd.dot(up)
+		var ub := clampf((_settle_t - STEP_SETTLE_T) / STEP_SETTLE_T, 0.0, 1.0)
+		if bd.length() < STEP_SETTLE_MIN:
+			ub = 1.0 if bd.length() < 1e-3 else ub
+		var eb := ub * ub * (3.0 - 2.0 * ub)
+		var lift_b := pow(sin(PI * ub), 2.0) * minf(bd.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
+		if ub >= 1.0:
+			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
 	var s := skel.get_bone_global_pose(ul).origin
 	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
@@ -447,10 +497,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# 6.6 -> 3.3 cm mid-step and rose to 4.1 again, the lift too small at their slow cadence)
 			_arc_peak = maxf(_arc_peak, _arc_speed)
 			var travelling := _arc_speed > STEP_HOLD_FRAC * _arc_peak
+			var settling := pivot_settle and not PIVOT_HOVER
+			if settling:
+				travelling = false
+				_arc_falling = true
 			# once the arc is coming down, the lift no longer pushes it back up (the knight's body
 			# swings round a second time and its travel speed rose again: a second hump); only the
 			# clip's own foot can
 			var cand := maxf(hgt - floor_h, 0.0) if _arc_falling else (top - floor_h)
+			if settling:
+				cand = 0.0                      # a new step of the shuffle clip does not lift it again
 			# the boot slows over its last ~1.5 cm and is set down, not tapped down at full rate (11-06:
 			# a straight 0.35 cm/size per tick ramp into the turf). PIVOT_ARC_TAP: the before
 			var fall_rate := STEP_SAG if travelling else STEP_FALL
@@ -462,6 +518,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				# pivot until the boot is down) stopped travelling at 1.4 units up and fell straight in at the
 				# full braked STEP_FALL, 0.5 cm a tick (11-06); now it settles over ~0.3 s
 				fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_EASE_K * delta)) + STEP_EASE_V * delta)
+			if settling:
+				fall = maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_SETTLE_K * delta)) + STEP_SETTLE_V * delta
 			var nt := maxf(cand, _arc_top - fall)
 			if travelling and not PIVOT_ARC_SAG:
 				# while the foot still travels round, the sag stops at the lift its speed wants (it
@@ -477,6 +535,35 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			top = floor_h + _arc_top
 		var raise := (top - hgt) * pivot
 		of_t += up * raise
+		if pivot_settle and not PIVOT_HOVER and not PIVOT_ARC_DIP:
+			# ...as one settle step that closes the stance: the boot travels from where the shuffle
+			# left it to where the idle stance stands it beside the planted foot, and stays there; the
+			# clip's shuffle would scuff it on over the turf, and the release slid it ~9 cm (11-06)
+			if _settle_at == null:
+				_settle_at = xf * of_t
+			_settle_t += delta
+			var from: Vector3 = inv * (_settle_at as Vector3)
+			var goal := from
+			if _stance_ok:
+				goal = _stance[1 - pivot_side]
+			var gd := goal - from
+			gd -= up * gd.dot(up)
+			settle_reach = gd.length()
+			if settle_reach < STEP_SETTLE_MIN:
+				settle_reach = 0.0
+			if PIVOT_DBG:
+				print("  settle t %.2f reach %.2f from %s goal %s pin %s stance %s %s" % [_settle_t, settle_reach, from, goal, inv * (pivot_pin as Vector3), _stance[0], _stance[1]])
+			var u := clampf(_settle_t / STEP_SETTLE_T, 0.0, 1.0)
+			var e := u * u * (3.0 - 2.0 * u)
+			var tgt := from + gd * e
+			var dh := tgt - of_t
+			of_t += (dh - up * dh.dot(up)) * pivot
+			# a step that has to travel clears the turf on the way
+			# (sin squared: it leaves and meets the turf at rest, no tap at the contact)
+			of_t += up * (pow(sin(PI * u), 2.0) * minf(settle_reach * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX) * pivot)
+		else:
+			_settle_t = 0.0
+			_settle_at = null
 		step_lift = _arc_lift * pivot
 	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip:
 		var oul := skel.find_bone("mixamorig_%sUpLeg" % sides[1 - pivot_side])

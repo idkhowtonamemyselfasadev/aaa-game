@@ -746,6 +746,45 @@ func _lean_test() -> void:
 		return _combat_done(false, "the feet keep shuffling once squared up (%.2f)" % p.turn_shuffle)
 	_combat_done(true, "the hero leans into starts, banks into turns, rocks back and settles on a stop, and steps round on the spot")
 
+var _tf_feet = null
+var _tf_rel_slide := 0.0
+var _tf_settled := false
+var _tf_stance_err := 0.0
+## (heroturn) both feet from the release on: how far they slide back to the clip once the pivot
+## lets go, and how far each stands from its idle stance spot when the settle is done
+func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
+	var now := []
+	for side in ["Left", "Right"]:
+		now.append(skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % side)).origin)
+	if sw.settle_done and not _tf_settled:
+		_tf_settled = true
+		for j in 2:
+			var d: Vector3 = skel.global_transform.basis * (skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][j])).origin - sw._stance[j])
+			_tf_stance_err = maxf(_tf_stance_err, Vector2(d.x, d.z).length())
+	if OS.has_environment("HEROTURN_DBG") and sw.pivot_settle:
+		print("   settle piv %.3f done %s L y %.4f R y %.4f" % [sw.pivot, sw.settle_done, (now[0] as Vector3).y, (now[1] as Vector3).y])
+	if _tf_feet != null and sw.pivot < 0.999 and (sw.pivot_settle or sw.pivot <= 0.0):
+		for j in 2:
+			var a: Vector3 = now[j]
+			var b: Vector3 = _tf_feet[j]
+			_tf_rel_slide += Vector2(a.x - b.x, a.z - b.z).length()
+	_tf_feet = now
+
+var _tf_last_up := -1
+var _tf_skate := 0.0
+var _tf_prev = null
+## (heroturn) the stepping boot's last tick off the turf and its scuff along the turf while down
+func _turn_free_track(i: int, fh: float, at: Vector3) -> void:
+	if fh > 0.003:
+		_tf_last_up = i
+		_tf_prev = null
+		return
+	if _tf_prev != null and OS.has_environment("HEROTURN_DBG"):
+		print("   down i %d reach %.2f scuff %.4f" % [i, _player.stride_warp.settle_reach, Vector2(at.x - (_tf_prev as Vector3).x, at.z - (_tf_prev as Vector3).z).length()])
+	if _tf_prev != null:
+		_tf_skate += Vector2(at.x - (_tf_prev as Vector3).x, at.z - (_tf_prev as Vector3).z).length()
+	_tf_prev = at
+
 ## Hero turn lead: the head and chest swing toward where the hero is turning before the body
 ## comes round (on the spot while locked, and in a run turn), settle square after, and keep out
 ## of the pivot (which turns the head itself).
@@ -792,11 +831,14 @@ func _hero_turn_test() -> void:
 				if sw.pivot < float(rel[0]) and float(rel[0]) >= 0.999 and float(rel[1]) < 0.0:
 					rel[1] = fh
 				rel[0] = sw.pivot
-				if sw.pivot > 0.5:
+				if sw.pivot > 0.5 and not sw.pivot_settle:
 					free_h.append(fh)
 					rel[2] = maxf(float(rel[2]), sw.step_lift)
-					if OS.has_environment("HEROTURN_DBG"):
-						print("   i %d free %d h %.4f pivot %.3f lift %.2f top %.2f falling %s speed %.1f peak %.1f off %.4f" % [i, fs, fh, sw.pivot, sw.step_lift, sw._arc_top, sw._arc_falling, sw._arc_speed, sw._arc_peak, float(sw.ground_off[fs])])
+				if sw.pivot > 0.5:
+					_turn_free_track(i, fh, sw.pivot_other)
+				_turn_feet_track(skel, sw)
+				if OS.has_environment("HEROTURN_DBG"):
+					print("   i %d free %d h %.4f pivot %.3f lift %.2f top %.2f falling %s speed %.1f peak %.1f off %.4f" % [i, fs, fh, sw.pivot, sw.step_lift, sw._arc_top, sw._arc_falling, sw._arc_speed, sw._arc_peak, float(sw.ground_off[fs])])
 			if sw.pivot_pin != null and sw.pivot > 0.95:
 				var pin: Vector3 = sw.pivot_pin
 				var dv := sw.pivot_ankle - pin
@@ -849,8 +891,11 @@ func _hero_turn_test() -> void:
 		if sw2.pivot < float(rel[0]) and float(rel[0]) >= 0.999 and float(rel[1]) < 0.0:
 			rel[1] = fh2
 		rel[0] = sw2.pivot
-		if sw2.pivot > 0.5:
+		if sw2.pivot > 0.5 and not sw2.pivot_settle:
 			free_h.append(fh2)
+		if sw2.pivot > 0.5:
+			_turn_free_track(60 + i, fh2, sw2.pivot_other)
+		_turn_feet_track(skel, sw2)
 	free_on[0] = false
 	var f_peak := 0.0
 	var f_up := 0
@@ -884,6 +929,8 @@ func _hero_turn_test() -> void:
 	var spot_orbit: float = p.pivot_orbit
 	var pin_after: bool = p.stride_warp.pivot_pin != null
 	p._set_lock(null)
+	print("BOT heroturn: settle done %s, the feet end %.3f m from the idle stance, and slide %.3f m as the pivot lets go" % [_tf_settled, _tf_stance_err, _tf_rel_slide])
+	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
@@ -928,6 +975,15 @@ func _hero_turn_test() -> void:
 		return _combat_done(false, "the pivot foot slides off its plant (%.3f m, y %.3f m)" % [spot_piv[0], spot_piv[1]])
 	if spot_piv[2] < 0.15:
 		return _combat_done(false, "the outside foot does not step round the pivot (%.2f m)" % spot_piv[2])
+	# 11-06 06:00: the turn ends in two settle steps that close the stance (PIVOT_HOVER = the before:
+	# the boot hovered ~0.7 s after square and both feet slid 0.55 m back to the clip on the release)
+	if not OS.has_environment("PIVOT_HOVER"):
+		if not _tf_settled:
+			return _combat_done(false, "the turn does not end in settle steps into the stance")
+		if _tf_rel_slide > 0.02:
+			return _combat_done(false, "the feet slide back to the clip as the pivot lets go (%.3f m)" % _tf_rel_slide)
+		if _tf_last_up - int(spot[3]) > 30:
+			return _combat_done(false, "the stepping boot hovers after the body has squared (%d ticks)" % (_tf_last_up - int(spot[3])))
 	if spot_orbit < 0.05:
 		return _combat_done(false, "the body does not come round over the planted foot (%.2f m)" % spot_orbit)
 	if pin_after:

@@ -886,5 +886,11 @@
   "time": "2026-11-06T05:11:48Z",
   "caption": "Same turn 0.6 s later, squared to the lens with the stepping boot easing down; still wrong: the end stance is left staggered with no settle step, dark GL turf and lens too high to read the soles.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261106-0641-turnsettle.jpg",
+  "time": "2026-11-06T06:41:37Z",
+  "caption": "The hero just after a turn on the spot, squared up with both feet stepped into the idle stance (GL frame); the boots are lost in shade under the tabard, the hands hang claw-like and the lighting is a flat GL fallback.",
+  "verdict": "fail"
  }
 ]

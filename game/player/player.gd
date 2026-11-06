@@ -1159,6 +1159,7 @@ var _lean_hv := Vector2.ZERO           # last tick's ground velocity
 var _lean_yaw := 0.0
 var _pose_dip := 0.0                   # what the jump/landing pose sank the model this tick
 var lean_peak := Vector2.ZERO          # (bots) most forward / most back pitch seen
+var _turn_sh := 0.0                    # the shuffle the turn rate wants this tick
 var turn_shuffle := 0.0                # 0..1 stepping on the spot while the body turns
 const TURN_STEP_RATE := 6.0            # rad/s: on the spot the body comes round only as fast as the feet step it
 const TURN_STILL := 0.6                # m/s: below this the hero is turning on the spot, not running a curve
@@ -1195,6 +1196,12 @@ func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
 	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
+	# squared up (the body no longer turning): the turn step comes down where it is
+	if stride_warp.pivot <= 0.0 or (standing and _turn_sh > 0.3):
+		stride_warp.pivot_settle = false
+	elif standing and _turn_sh <= 0.0:
+		stride_warp.pivot_settle = true
+	stride_warp.stance_idle = standing and turn_shuffle <= 0.0 and Vector2(velocity.x, velocity.z).length() < 0.05
 	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * (10.0 if want > stride_warp.pivot else 5.0))
 func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var hv := Vector2(velocity.x, velocity.z)
@@ -1227,6 +1234,7 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	# standing and turning: shuffle steps (read by _update_animation next tick)
 	var standing := is_on_floor() and hv.length() < 0.6 and not owned and not calm
 	var sh := clampf((absf(yaw_rate) - 1.2) / 3.0, 0.0, 1.0) if standing else 0.0
+	_turn_sh = sh
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 3.0))
 	_update_pivot_foot(delta, standing)
 	if owned:
