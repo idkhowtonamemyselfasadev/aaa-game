@@ -113,11 +113,21 @@ func _ready() -> void:
 	_sparks.spread = 22.0
 	_sparks.gravity = Vector3(0, -6.0, 0)
 	# dark, oily smoke boiling off the crown of the column a beat after the burst
-	_smoke = _emitter(36, 3.0, Vector2(1.2, 2.4), Color(0.07, 0.06, 0.055, 0.8), 0.0)
+	# many smaller puffs that swell as they rise and churn slowly (a few big ones read as one
+	# round soft blob over the column): the plume breaks up into lobes with a ragged crown
+	_smoke = _emitter(60, 3.0, Vector2(0.85, 1.7), Color(0.07, 0.06, 0.055, 0.8), 0.0)
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	_smoke.emission_sphere_radius = 0.45
+	_smoke.emission_sphere_radius = 0.7
+	var ss := Curve.new()
+	ss.max_value = 2.0
+	ss.add_point(Vector2(0.0, 0.55))
+	ss.add_point(Vector2(0.35, 1.0))
+	ss.add_point(Vector2(1.0, 1.7))
+	_smoke.scale_amount_curve = ss
+	_smoke.angular_velocity_min = -28.0
+	_smoke.angular_velocity_max = 28.0
 	_smoke.position.y = 2.2
-	_smoke.explosiveness = 0.3
+	_smoke.explosiveness = 0.5   # most of the plume out in the first ~1.5 s, while the fire still stands
 	_smoke.spread = 25.0
 	_smoke.initial_velocity_min = 0.8
 	_smoke.initial_velocity_max = 1.8
@@ -129,7 +139,7 @@ func _ready() -> void:
 	var gs := Gradient.new()
 	gs.set_color(0, Color(0.30, 0.26, 0.23, 0.0))
 	gs.set_color(1, Color(0.52, 0.50, 0.48, 0.0))
-	gs.add_point(0.12, Color(0.26, 0.23, 0.21, 0.72))
+	gs.add_point(0.12, Color(0.24, 0.21, 0.19, 0.8))
 	gs.add_point(0.6, Color(0.40, 0.38, 0.36, 0.42))
 	_smoke.color_ramp = gs
 	var sm := ShaderMaterial.new()

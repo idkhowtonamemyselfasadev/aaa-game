@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-0248-wisps.jpg",
-  "time": "2026-11-02T02:48:46Z",
-  "caption": "GL quick look at dusk: a Hollow Wisp at the peak of its flare (an ember-veined coal in a ring of charred shards) over the meadow past the hero; still wrong: it is small at 5 m, its two kin do not read at all, and this is GL light, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-0318-wisps-rain.jpg",
-  "time": "2026-11-02T03:18:38Z",
-  "caption": "A doused Hollow Wisp knot in a downpour on the meadow: wet turf, puddles and rain streaks read well, but the steam off the coals barely shows, the flaring heart is still a bright ball, the shards read as flat orange flakes and the hero is out of frame",
-  "verdict": "fail"
- },
- {
   "file": "20261102-0410-wisps-rain-close.jpg",
   "time": "2026-11-02T04:11:00Z",
   "caption": "A doused Hollow Wisp knot in the rain, framed over the hero's shoulder: blacker char shards and a pale steam plume off the flaring coal now read, with a kin wisp glowing past his shoulder; the wisps are still small at 4 m, the hero's back is a flat dark shape, and this is a GL frame, not Forward+.",
@@ -897,6 +885,18 @@
   "file": "20261106-2040-surge-smoke.jpg",
   "time": "2026-11-06T20:40:11Z",
   "caption": "0.6 s after the burst the columns lick down and charcoal smoke finally shows above them; one centre puff is still a round soft blob.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-2120-surge-size3-lens.jpg",
+  "time": "2026-11-06T21:20:00Z",
+  "caption": "The knight at size 3 in its second growth surge, seen from a lens now kept on the ring's open floor; the ring of fire reads well, but the smoke plume is too faint and the lens shows its back.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-2120-surge-smoke-wisps.jpg",
+  "time": "2026-11-06T21:20:00Z",
+  "caption": "Growth surge 0.9 s after the burst: the smoke over the columns no longer balls into one blob, but now only a few thin wisps show against the sky.",
   "verdict": "fail"
  }
 ]

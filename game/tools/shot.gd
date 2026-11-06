@@ -2697,8 +2697,35 @@ func _ready() -> void:
 		if "side" in args:
 			# from the knight's flank, low, looking up at its chest: the burst against the sky
 			var kp := rk.global_position
-			var sp := kp + rside * 9.0 * rk.size_scale / 2.2 + rf * 3.0
+			# keep the lens on the ring's open floor: the flank distance grows with the knight and
+			# at size ~3 (st=40) put it inside a standing stone, then beside a toppled slab lying
+			# inward from the rim. Clamp the distance inside the stone line, then swing the flank
+			# direction round the knight until the lens is clear of every stone and fallen slab.
+			var cen := Vector3(rr.centre.x, kp.y, rr.centre.z)
+			var max_r := StoneRing.RADIUS - 3.2
+			var dist := 9.0 * rk.size_scale / 2.2
+			var sp := kp
+			for yaw_off in [0.0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2]:
+				var dir: Vector3 = (rside * dist + rf * 3.0).rotated(Vector3.UP, yaw_off)
+				var cand := kp + dir
+				var cl := Vector2(cand.x - cen.x, cand.z - cen.z)
+				if cl.length() > max_r:
+					cand = kp + dir * maxf(0.3, (max_r - Vector2(kp.x - cen.x, kp.z - cen.z).length()) / dir.length())
+				var clear := true
+				for so in rr.stones:
+					# a stone's foot and the slab a toppled one lays inward (up to ~6.5 m)
+					var f2 := Vector2(so.x, so.z)
+					var inw := (Vector2(cen.x, cen.z) - f2).normalized()
+					var c2 := Vector2(cand.x, cand.z)
+					var tt := clampf((c2 - f2).dot(inw), 0.0, 6.5)
+					if (c2 - (f2 + inw * tt)).length() < 3.0:
+						clear = false
+						break
+				sp = cand
+				if clear:
+					break
 			sp.y = terrain.height_at(sp.x, sp.z) + 0.9
+			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
 			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
