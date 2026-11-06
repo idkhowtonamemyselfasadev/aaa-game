@@ -843,7 +843,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	return out
 
 const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
-const HERO_FIST_SWING := 0.03    # m: MEAN through the light string (the worst tick is the clip's hand-roll pop, see PROGRESS Known bugs)
+const HERO_FIST_SWING := 0.012   # m: MEAN through the light string (GripRoll's feed-forward; was 0.03 with the one-tick-late fit)
+const HERO_FIST_OFF_TICKS := 45  # hand-ticks of the string with a fist > 3 cm off the axis (feed held back to spare the wrist; was 78)
 const HERO_WRIST_MAX := 80.0     # deg: the hand's line off the forearm's
 const HERO_HAND_TURN := 50.0     # deg: a hand's turn in one tick through the string (GripRoll; was 178 with the clip's hands)
 
@@ -905,6 +906,7 @@ func _hands_test() -> void:
 	var fb := [skel.find_bone("mixamorig_RightForeArm"), skel.find_bone("mixamorig_LeftForeArm")]
 	var hbs := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
 	var swing_n := c.swings
+	var off_ticks := 0
 	for i in 130:
 		if i % 6 == 0 and i < 80:
 			c.light()
@@ -916,6 +918,8 @@ func _hands_test() -> void:
 			var fdir := (hp.origin - fp.origin).normalized()
 			wrist[0] = maxf(wrist[0], rad_to_deg(fdir.angle_to(hp.basis.y.normalized())))
 			var q := (skel.global_basis.orthonormalized() * hp.basis.orthonormalized()).get_rotation_quaternion()
+			if OS.has_environment("WRIST_DBG"):
+				print("    wrist %d %d bend %.0f turn %.0f hs %.3f u %.2f st %d" % [i, k, rad_to_deg(fdir.angle_to(hp.basis.y.normalized())), rad_to_deg(q.angle_to(last_q[k])), c.hitstop, c.t, c.state])
 			if i > 0 and c.hitstop <= 0.0:
 				wrist[1] = maxf(wrist[1], rad_to_deg(q.angle_to(last_q[k])))
 			last_q[k] = q
@@ -933,11 +937,13 @@ func _hands_test() -> void:
 				print("    swing %d %s %.3f u %.2f elbow %s hand %s handq %s" % [i, k, g, c.t, str(el), str(ha), str(hq)])
 			sgap[2] = maxf(sgap[2], g)
 			sgap[3] += g
+			if g > 0.03:
+				off_ticks += 1
 			sn += 1
 	sgap[3] /= maxf(sn, 1)
 	print("   fist to staff axis: guard R %.3f L %.3f m | light string (%d blows) worst %.3f mean %.3f | wrist shift %s, grip error %.3f" % [
 		sgap[0], sgap[1], c.swings - swing_n, sgap[2], sgap[3], str(c._fist_off), c.grip_error()])
-	print("   string: worst wrist bend %.0f deg, worst hand turn in one tick %.0f deg" % [wrist[0], wrist[1]])
+	print("   string: worst wrist bend %.0f deg, worst hand turn in one tick %.0f deg, hand-ticks with a fist > 3 cm off %d" % [wrist[0], wrist[1], off_ticks])
 	if OS.has_environment("HERO_CLAWHANDS"):
 		return _combat_done(true, "the before (clip fingers) measured")
 	for side in ["Left", "Right"]:
@@ -955,6 +961,8 @@ func _hands_test() -> void:
 			return _combat_done(false, "the shaft runs beside the fists at guard (%.3f / %.3f m off its axis)" % [sgap[0], sgap[1]])
 		if sgap[3] > HERO_FIST_SWING:
 			return _combat_done(false, "the fists ride off the shaft in the string (mean %.3f m off its axis)" % sgap[3])
+		if not OS.has_environment("HERO_GRIPLAG") and off_ticks > HERO_FIST_OFF_TICKS:
+			return _combat_done(false, "a fist rides > 3 cm off the shaft on %d hand-ticks of the string" % off_ticks)
 		if c.swings - swing_n < 3:
 			return _combat_done(false, "the light string did not run (%d blows)" % (c.swings - swing_n))
 		if wrist[0] > HERO_WRIST_MAX:

@@ -968,6 +968,11 @@ func _fit_fists() -> void:
 	var hr: HandRest = player.get("hand_rest")
 	var on := fist_fit_on and hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
 		and state in [READY, ATTACKING, CHARGING, PLUNGING]
+	# (11-06) GripRoll's feed-forward puts the fists on the axis the same tick (as far as the
+	# wrist allows); this one-tick-late fit then only fought it (it ran up to FIST_MAX while
+	# the feed pulled back), so it runs only without the feed (env HERO_GRIPLAG)
+	if grip_roll != null and grip_roll.feed_on:
+		on = false
 	var o := staff.global_position
 	var ax := staff.global_basis.y.normalized()
 	var inv := _wield.global_basis.inverse()
