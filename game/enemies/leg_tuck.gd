@@ -38,6 +38,15 @@ var model_up := Transform3D()  # the model's local transform with no lean or sin
 var floor_fn: Callable         # world ground height under a point (owner)
 var floor_of: Node3D           # the node whose origin is the floor the clip stands on (owner)
 var _held_h: Array = [null, null]   # [standing, lifted]: each boot's height over the turf, held while planted
+## LATCHED (with pin): the boots are held on the world spot they stood on at the first planted
+## tick, whatever the clip does under them meanwhile (a reel that catches the body mid-stride,
+## the walk easing out to the stance). They let go one after the other as pin runs out (the
+## standing boot over pin 1 -> 0.5, the other over 0.5 -> 0), each lifted in a little arc onto
+## the clip's spot: a settle step, never a skate.
+var latch := false
+var step_h := 0.12                   # skeleton-units arc height per skeleton-unit the step travels (capped)
+var _latched: Array = [null, null]
+var stepped := 0.0                   # (bots) the longest settle step this release, world m
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
@@ -46,20 +55,28 @@ func _process_modification_with_delta(_delta: float) -> void:
 	dropped = 0.0
 	if pin < 1e-4:
 		_held_h = [null, null]
+		_latched = [null, null]
 	if skel == null or (absf(hip) < 1e-4 and absf(knee) < 1e-4 and absf(lift_hip) < 1e-4 and absf(lift_knee) < 1e-4 \
 			and shift < 1e-4 and pin < 1e-4):
 		return
 	var axis_world := side.global_basis.x if side != null else Vector3.RIGHT
 	var axis_skel := (skel.global_basis.orthonormalized().inverse() * axis_world).normalized()
-	if shift >= 1e-4 or pin >= 1e-4:
-		_shift_weight(skel, axis_skel)
+	# the planted boots' spots come from the clip's pose before any bend (both legs' crouch
+	# bend only gives the knees their direction: the legs are re-solved onto the spots after it)
+	var feet := _plant_spots(skel) if (shift >= 1e-4 or pin >= 1e-4) else []
 	for i in LEGS.size():
 		var leg: Array = LEGS[i]
-		var lh := lift_hip if i == lift_leg else 0.0
-		var lk := lift_knee if i == lift_leg else 0.0
+		_bend(skel, leg[0], axis_skel, -hip)
+		_bend(skel, leg[1], axis_skel, knee)
+	if not feet.is_empty():
+		_shift_weight(skel, axis_skel, feet)
+	for i in LEGS.size():
+		if i != lift_leg:
+			continue
+		var leg: Array = LEGS[i]
 		# rotating "down" about +X by +a swings it toward -Z, so forward is -a
-		_bend(skel, leg[0], axis_skel, -(hip + lh))
-		_bend(skel, leg[1], axis_skel, knee + lk)
+		_bend(skel, leg[0], axis_skel, -lift_hip)
+		_bend(skel, leg[1], axis_skel, lift_knee)
 
 func _bend(skel: Skeleton3D, bone: String, axis_skel: Vector3, angle: float) -> void:
 	var b := skel.find_bone(bone)
@@ -72,7 +89,60 @@ func _bend(skel: Skeleton3D, bone: String, axis_skel: Vector3, angle: float) -> 
 
 ## The hips over the standing boot (see `shift`): slide + hike, spine rolled back, then both
 ## legs re-solved so the ankles (and the soles' orientation) stay exactly where they were.
-func _shift_weight(skel: Skeleton3D, axis_skel: Vector3) -> void:
+func _plant_spots(skel: Skeleton3D) -> Array:
+	var feet := []
+	var xf := skel.global_transform
+	var c := Transform3D()
+	if pin >= 1e-4:
+		var unlean := Transform3D()
+		if model != null and model.is_inside_tree():
+			var par := model.get_parent() as Node3D
+			var pg := par.global_transform if par != null else Transform3D()
+			unlean = (pg * model_up) * model.global_transform.affine_inverse()
+		c = xf.affine_inverse() * unlean * xf
+	var order: Array = [LEGS[1 - lift_leg], LEGS[lift_leg]]
+	for j in 2:
+		var ft := skel.find_bone(str(order[j][0]).replace("UpLeg", "Foot"))
+		if ft < 0:
+			return []
+		var cur := skel.get_bone_global_pose(ft)
+		if pin < 1e-4:
+			feet.append(cur)
+			continue
+		# the spot on the turf is held, at the upright clip's height over the ground under it
+		# (the owner keeps its ground IK out of it meanwhile, or the boot is lifted twice);
+		# the sole keeps the clip's turn
+		var w := xf * (c * cur.origin)
+		if floor_fn.is_valid() and floor_of != null:
+			# the boot's height over the turf only ever comes down while planted: a stomp
+			# begun mid-stride lets the stepping boot land, but the clip's own idle sway
+			# (~1 cm per size, upward) does not lift a standing boot off the turf
+			var h := w.y - floor_of.global_position.y
+			_held_h[j] = h if _held_h[j] == null else minf(float(_held_h[j]), h)
+			w.y = float(floor_fn.call(w)) + float(_held_h[j])
+		var pj := pin
+		if latch:
+			if _latched[j] == null:
+				_latched[j] = w
+			var clip_w := w
+			w = _latched[j]
+			# each boot lets go in its own half of the release, stepped (lifted) onto the clip's spot
+			pj = clampf((pin - 0.5) * 2.0, 0.0, 1.0) if j == 0 else clampf(pin * 2.0, 0.0, 1.0)
+			var run := Vector2(clip_w.x - w.x, clip_w.z - w.z).length()
+			var at := clip_w.lerp(w, pj)
+			if pj < 1.0:
+				stepped = maxf(stepped, run)
+				# skeleton units -> world: the arc scales with the body
+				at.y += minf(run * 0.5, step_h * xf.basis.get_scale().y) * sin(PI * (1.0 - pj))
+			feet.append(Transform3D(cur.basis, xf.affine_inverse() * at))
+			continue
+		feet.append(Transform3D(cur.basis, cur.origin.lerp(xf.affine_inverse() * w, pj)))
+	return feet
+
+## The hips over the standing boot (see `shift`): slide + hike, spine rolled back, then both
+## legs re-solved so the ankles (and the soles' orientation) go to `feet` ([standing, lifted],
+## skeleton space: the planted spots, or where the clip put them).
+func _shift_weight(skel: Skeleton3D, axis_skel: Vector3, feet: Array) -> void:
 	var hb := skel.find_bone("mixamorig_Hips")
 	var sp := skel.find_bone("mixamorig_Spine")
 	if hb < 0:
@@ -83,7 +153,6 @@ func _shift_weight(skel: Skeleton3D, axis_skel: Vector3) -> void:
 	var stand: Array = LEGS[1 - lift_leg]
 	var lifted: Array = LEGS[lift_leg]
 	var bones := []
-	var feet := []
 	for leg in [stand, lifted]:
 		var ul := skel.find_bone(leg[0])
 		var lg := skel.find_bone(leg[1])
@@ -91,30 +160,6 @@ func _shift_weight(skel: Skeleton3D, axis_skel: Vector3) -> void:
 		if ul < 0 or lg < 0 or ft < 0:
 			return
 		bones.append([ul, lg, ft])
-		feet.append(skel.get_bone_global_pose(ft))
-	# the planted boots: the clip's spot with the model's lean and sink taken back out
-	if pin >= 1e-4:
-		var xf := skel.global_transform
-		var unlean := Transform3D()
-		if model != null and model.is_inside_tree():
-			var par := model.get_parent() as Node3D
-			var pg := par.global_transform if par != null else Transform3D()
-			unlean = (pg * model_up) * model.global_transform.affine_inverse()
-		var c := xf.affine_inverse() * unlean * xf
-		for j in 2:
-			var cur: Transform3D = feet[j]
-			# the spot on the turf is held, at the upright clip's height over the ground under it
-			# (the owner keeps its ground IK out of it meanwhile, or the boot is lifted twice);
-			# the sole keeps the clip's turn
-			var w := xf * (c * cur.origin)
-			if floor_fn.is_valid() and floor_of != null:
-				# the boot's height over the turf only ever comes down while planted: a stomp
-				# begun mid-stride lets the stepping boot land, but the clip's own idle sway
-				# (~1 cm per size, upward) does not lift a standing boot off the turf
-				var h := w.y - floor_of.global_position.y
-				_held_h[j] = h if _held_h[j] == null else minf(float(_held_h[j]), h)
-				w.y = float(floor_fn.call(w)) + float(_held_h[j])
-			feet[j] = Transform3D(cur.basis, cur.origin.lerp(xf.affine_inverse() * w, pin))
 	var hips := skel.get_bone_global_pose(hb)
 	# sideways only (along the body's side axis): the gap from the hips to the standing ankle
 	var lat := axis_skel - up * axis_skel.dot(up)

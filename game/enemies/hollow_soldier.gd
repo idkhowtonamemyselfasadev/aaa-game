@@ -745,6 +745,8 @@ func _physics_process(delta: float) -> void:
 		var hs := Vector2(velocity.x, velocity.z).length() / size_scale
 		if state == STRIKE or state == STAGGER:
 			hs = minf(hs, 0.8)      # the lunge is a planted thrust, not a run
+		if _legs_still():
+			hs = 0.0                # carried with the legs set (a leap's flight): no run stride
 		# a big body's natural cadence is slower (pendulum legs: ~1/sqrt(size)), so below a full
 		# walk it keeps that cadence and shortens the stride instead of shuffling quick little steps
 		var goal := gait_blend(hs)
@@ -819,6 +821,10 @@ func _step_climb(delta: float) -> void:
 
 ## Another modifier stands the boots on the ground itself this tick (the knight's stomp):
 ## the ground IK stays out of it, or the two lift the boot twice.
+## The body is carried without the legs walking (a giant's leap): the locomotion clip stands.
+func _legs_still() -> bool:
+	return false
+
 func _feet_planted() -> bool:
 	return false
 

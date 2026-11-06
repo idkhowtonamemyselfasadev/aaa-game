@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -112,6 +112,9 @@ func _ready() -> void:
 		return
 	if name == "knightstomp":
 		_knightstomp_test()
+		return
+	if name == "knightplant":
+		_knightplant_test()
 		return
 	if name == "warden":
 		_warden_test()
@@ -4137,6 +4140,125 @@ func _knightstomp_test() -> void:
 	_combat_done(true, "the stomp tells, stamps, sends a wave you roll through, and burns the ground in phase 3")
 
 ## Right boot's height above the left (x), body-local; for the stomp's raised knee.
+## The giant's boots stay where they stand while a move leans or sinks the whole model from the
+## hips: the leap's crouch, the landing it recovers from, and the crown reel. Each boot's world
+## spot is read after every modifier; its slide across the turf from the first judged tick is
+## the measure (gate <= 0.02 x size; before the pin it was 0.1-0.2 x size).
+func _knightplant_test() -> void:
+	var p := _player
+	var k: AshenKnight = _world.knight
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	await _ticks(10)
+	var sk := k.skel
+	var bw := func(nm: String) -> Vector3:
+		return sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin
+	var worst := {}
+	var gate := 0.02
+	for tr in [["crouch", 2], ["land", 2], ["crown", 1], ["crown", 3], ["land", 3]]:
+		var kind: String = tr[0]
+		var ph: int = tr[1]
+		k._set_phase(ph)
+		k.set_size_scale(k.growth.scale_of(ph))
+		var ks := k.size_scale
+		k._home = k.global_position
+		k._leap_cool = 99.0
+		k._stomp_cool = 99.0
+		k._flame_t = -999.0
+		k.health = k.health_max
+		k.poise = 0.0
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		k.move_kind = HollowSoldier.THRUST_MOVE
+		p.health = Player.HEALTH_MAX
+		while p.is_down():
+			await get_tree().physics_frame
+		var dir := k.body.global_basis.z
+		dir.y = 0.0
+		dir = dir.normalized()
+		# the hero well out in front (the leap's landing spot), out of reach of the crown reel
+		p.global_position = k.global_position + dir * 8.0 * ks
+		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+		await _ticks(40)
+		var m := {"l0": null, "r0": null, "l": 0.0, "r": 0.0, "n": 0}
+		var judge := func() -> bool:
+			match kind:
+				"crouch":
+					return k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP
+				"land":
+					return k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.RECOVER
+				_:
+					return k.state == HollowSoldier.STAGGER and k._crown_reel
+		var grab := func() -> void:
+			var la: Vector3 = bw.call("LeftFoot")
+			var ra: Vector3 = bw.call("RightFoot")
+			# the touchdown: the boots' jump from the flight's last tick to the landing's first
+			if kind == "land" and k.move_kind == AshenKnight.LEAP_MOVE:
+				if k.state == HollowSoldier.STRIKE:
+					m["pl"] = la
+					m["pr"] = ra
+				elif k.state == HollowSoldier.RECOVER and m.has("pl") and not m.has("pop"):
+					# across the turf only: the drop onto it is the fall itself
+					var dl: Vector3 = la - (m["pl"] as Vector3)
+					var dr: Vector3 = ra - (m["pr"] as Vector3)
+					m["pop"] = maxf(Vector2(dl.x, dl.z).length(), Vector2(dr.x, dr.z).length())
+			if OS.get_environment("PLANT_DBG") != "" and kind == "land" and k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.STRIKE:
+				var gl: float = _world.terrain.height_at(la.x, la.z)
+				print("  air t %.2f body %s L %s (over turf %.2f) R %s pin %.2f lift %.2f" % [k.t, k.global_position, la, la.y - gl, ra, k.tuck.pin, k.leap_lift])
+			if not judge.call():
+				return
+			if m["l0"] == null:
+				m["l0"] = la
+				m["r0"] = ra
+			# the release (crown reel: two settle steps onto the stance) is judged on its own
+			if k.tuck.latch and k.tuck.pin < 0.999:
+				return
+			m["n"] += 1
+			m["l"] = maxf(m["l"], (la - (m["l0"] as Vector3)).length())
+			m["r"] = maxf(m["r"], (ra - (m["r0"] as Vector3)).length())
+			if OS.get_environment("PLANT_DBG") != "":
+				print("  %s st %d t %.2f body %s L %s %.3f R %.3f pin %.2f" % [kind, k.state, k.t, k.global_position, la, (la - (m["l0"] as Vector3)).length(), (ra - (m["r0"] as Vector3)).length(), k.tuck.pin])
+		k.tuck.stepped = 0.0
+		sk.skeleton_updated.connect(grab)
+		if kind == "crown":
+			k.crowned(k.global_position + Vector3.UP * 3.0 * ks)
+		else:
+			k._leap_cool = 0.0
+			k._from = k._pose
+			k.move_kind = AshenKnight.LEAP_MOVE
+			k._enter(HollowSoldier.WINDUP)
+		var waited := 0.0
+		var started := false
+		while waited < 10.0:
+			var on: bool = judge.call()
+			if on:
+				started = true
+			elif started:
+				break
+			await get_tree().physics_frame
+			waited += get_physics_process_delta_time()
+		sk.skeleton_updated.disconnect(grab)
+		var key := "%s%d" % [kind, ph]
+		worst[key] = maxf(m["l"], m["r"]) / ks
+		if kind == "crown":
+			print("BOT knightplant: crown reel let go in settle steps (longest %.3f m, lifted in an arc)" % k.tuck.stepped)
+		if m.has("pop"):
+			print("BOT knightplant: touchdown: boots jump %.3f m in the landing's first tick (x size %.4f)" % [m["pop"], float(m["pop"]) / ks])
+			worst["pop" + str(ph)] = float(m["pop"]) / ks
+		print("BOT knightplant: %s phase %d (x%.2f): left boot slid %.3f m, right %.3f m over %d ticks (worst x size %.4f)" % [kind, ph, ks, m["l"], m["r"], m["n"], worst[key]])
+		if m["n"] < 5:
+			return _combat_done(false, "the %s was never judged" % key)
+		k.move_kind = HollowSoldier.THRUST_MOVE
+		k.state = HollowSoldier.IDLE
+		await _ticks(30)
+	print("BOT knightplant: worst boot slide x size %s" % [worst])
+	if OS.get_environment("PLANT_NOGATE") == "":
+		for key in worst:
+			# the touchdown is one tick of the carry at bot speed (4x): judged a touch looser
+			if worst[key] > (0.03 if key.begins_with("pop") else gate):
+				return _combat_done(false, "the knight's boot skates in the %s (%.4f x size)" % [key, worst[key]])
+	_combat_done(true, "the giant's boots stay planted through the crouch, the landing and the crown reel")
+
 func _knight_feet(k: AshenKnight) -> Vector3:
 	var sk := k.skel
 	if sk == null:

@@ -244,7 +244,13 @@ func _lean(rad: float, sink: float) -> void:
 	super._lean(rad, sink)
 	if tuck != null:
 		tuck.model = model
-		tuck.model_up = Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.ZERO) * _model_rest
+		# in the leap's flight the upright model keeps its height off the turf (only the lean is undone)
+		tuck.model_up = Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.UP * _up_lift) * _model_rest
+
+var _up_lift := 0.0   # model-space height the leap's arc carries the model (LegTuck's upright reference)
+
+func _legs_still() -> bool:
+	return (move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) or (_crown_reel and state == STAGGER)
 
 func _feet_planted() -> bool:
 	return tuck != null and tuck.pin > 0.5
@@ -417,6 +423,11 @@ func _crown_tick(delta: float, snap := false) -> void:
 		head.roll = _head_roll
 	var sink := 0.21 * down + 0.05 * hit
 	_set_tuck(0.62 * down + 0.1 * hit, 1.22 * down + 0.2 * hit)
+	# the knees buckle over boots that stay where they stood (latched: a reel that caught it
+	# mid-stride holds that stride); as it shakes it off and straightens, a settle step each
+	_plant(1.0 - smoothstep(0.66, 0.96, u))
+	if tuck != null:
+		tuck.latch = true
 	_lean(0.27 * down + 0.06 * hit + 0.04 * sin(u * TAU * 1.5) * hold, sink)
 	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
 	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
@@ -482,6 +493,8 @@ func _physics_process(delta: float) -> void:
 	# free of them, held to the turf height, and take back its collision as it lands
 	var flying := move_kind == LEAP_MOVE and state == STRIKE and _surge < 0.0
 	collision_mask = 0 if flying else (1 | 2)
+	if not flying:
+		_up_lift = 0.0
 	super._physics_process(delta)
 	if flying and state == STRIKE:
 		global_position.y = _ground(global_position) + 0.05
@@ -490,7 +503,10 @@ func _physics_process(delta: float) -> void:
 		tuck.lift_hip = 0.0
 		tuck.lift_knee = 0.0
 		tuck.shift = 0.0
-		tuck.pin = 0.0
+		# the leap's crouch and landing and the crown reel plant the boots too (their own ticks set it)
+		if not ((move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) or (_crown_reel and state == STAGGER)) \
+				or _surge >= 0.0:
+			tuck.pin = 0.0
 	if not (move_kind in [LEAP_MOVE, STOMP_MOVE, INTRO_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
@@ -712,9 +728,12 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			lean = 0.26 * smoothstep(0.0, 0.7, u)
 			sink = 0.34 * smoothstep(0.0, 0.7, u)
 			_set_tuck(0.85 * smoothstep(0.0, 0.7, u), 1.6 * smoothstep(0.0, 0.7, u))
+			# the boots stay where they stand as it coils down and pitches forward over them
+			_plant(1.0)
 			ember = 1.0 + 4.0 * smoothstep(0.2, 0.9, u)
 			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
 			if u >= 1.0:
+				_plant(0.0)
 				_resolved = false
 				strikes += 1
 				leaps += 1
@@ -752,10 +771,16 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			# pitched into the leap, then over onto the blade
 			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u))
 			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u)   # model space (scaled)
+			# the legs reach down under the pitched body for the landing: the boots are planted
+			# over the last of the fall (the held height only comes down, so they track it to
+			# the turf) and touch down where they then stay through the recovery
+			_up_lift = leap_lift / size_scale
+			_plant(smoothstep(0.78, 0.95, u))
 			ember = 5.0 - 1.0 * u
 			_update_glint(smoothstep(0.35, 0.55, u) * (1.0 - smoothstep(0.75, 0.88, u)))
 			if u >= 1.0:
 				leap_lift = 0.0
+				_up_lift = 0.0
 				# the blade bites ahead of where the feet actually came down
 				leap_to = Vector3(global_position.x, leap_to.y, global_position.z)
 				if not _resolved:
@@ -771,8 +796,12 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			lean = 0.34 * (1.0 - f) - 0.08 * sin(PI * f)
 			sink = 0.24 * (1.0 - f)
 			_set_tuck(0.55 * (1.0 - f), 1.1 * (1.0 - f))
+			# the boots stay where they came down while it is bent over the blade; they let go to
+			# the clip once the lean and the crouch have nearly run out
+			_plant(1.0 - smoothstep(0.85, 1.0, u))
 			ember = 2.2 - 1.0 * u
 			if u >= 1.0:
+				_plant(0.0)
 				_set_tuck(0.0, 0.0)
 				_enter(STALK)
 	# the glaive's wield frame lives on the body, the model rides the sink: carry the grips
@@ -964,6 +993,7 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 		tuck.lift_knee = STOMP_KNEE * lift
 		tuck.shift = 0.0 if OS.get_environment("STOMP_NOSHIFT") != "" else shift
 		tuck.pin = 0.0 if OS.get_environment("STOMP_NOPIN") != "" else pin
+		tuck.latch = false
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
@@ -1008,6 +1038,16 @@ func _stomp_land() -> void:
 		get_parent().add_child(sc)
 		sc.global_position = at
 		last_hazard = sc
+
+## Plant both boots (LegTuck.pin) through a move that leans or sinks the model from the hips.
+## Env PLANT_NOPIN=1 = the before (bots compare).
+func _plant(w: float) -> void:
+	if tuck != null:
+		tuck.lift_hip = 0.0
+		tuck.lift_knee = 0.0
+		tuck.shift = 0.0
+		tuck.pin = 0.0 if OS.get_environment("PLANT_NOPIN") != "" else w
+		tuck.latch = false
 
 func _set_tuck(h: float, k: float) -> void:
 	if tuck != null:
