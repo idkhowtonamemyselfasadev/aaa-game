@@ -314,8 +314,30 @@ var _arc_peak := 0.0             # the step's peak travel speed
 var _arc_falling := false        # the arc has passed its top
 const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
 const STEP_EASE_MIN := 0.25      # ...down to this fraction of the rate, so it does get down
+const STEP_EASE_K := 6.5         # 1/s: the boot closes at most this share of its height per second (~10 % a tick at 60 Hz)...
+const STEP_EASE_V := 1.2         # ...plus this (skeleton units/s), so it does reach the turf
 static var PIVOT_ARC_TAP := OS.has_environment("PIVOT_ARC_TAP")
 var _arc_floor := 0.0            # the stance level when the pivot planted (skeleton space, the clip's)
+
+const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts as down under this
+const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
+static var PIVOT_DBG := OS.has_environment("PIVOT_DBG")
+static var PIVOT_EARLY_LET_GO := OS.has_environment("PIVOT_EARLY_LET_GO")
+var _aloft_held := 0.0
+
+## The pivot weight a turn on the spot wants next tick: a turn that has squared up (want 0) still
+## holds its pivot while the stepping boot is in the air, so the release does not hand a boot
+## that is still ~1 cm up back to the clip mid-step (11-06: the soldier let go at 1.2 cm). Only
+## while standing (a walk away lets go at once) and for at most STEP_HOLD_MAX.
+## PIVOT_EARLY_LET_GO: the before.
+func pivot_want(want: float, standing: bool, delta: float) -> float:
+	if want > 0.0 or not standing or PIVOT_EARLY_LET_GO or PIVOT_NO_ARC or pivot < 0.999:
+		_aloft_held = 0.0
+		return want
+	if _arc_top > STEP_DOWN_H and _aloft_held < STEP_HOLD_MAX:
+		_aloft_held += delta
+		return 1.0
+	return want
 
 func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	step_lift = 0.0
@@ -432,7 +454,15 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var fall_rate := STEP_SAG if travelling else STEP_FALL
 			if not PIVOT_ARC_TAP:
 				fall_rate *= clampf(sqrt(maxf(_arc_top, 0.0) / STEP_EASE_H), STEP_EASE_MIN, 1.0)
-			var nt := maxf(cand, _arc_top - fall_rate * delta)
+			var fall := fall_rate * delta
+			if not PIVOT_ARC_TAP and not PIVOT_EARLY_LET_GO:
+				# ...and never closes more than a share of what is left per tick: the soldier (now held on its
+				# pivot until the boot is down) stopped travelling at 1.4 units up and fell straight in at the
+				# full braked STEP_FALL, 0.5 cm a tick (11-06); now it settles over ~0.3 s
+				fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_EASE_K * delta)) + STEP_EASE_V * delta)
+			var nt := maxf(cand, _arc_top - fall)
+			if PIVOT_DBG:
+				print("  arc f%d top %.2f fall %.2f cand %.2f d %.4f trav %s" % [Engine.get_physics_frames(), _arc_top, fall, cand, delta, travelling])
 			if nt < _arc_top - 1e-4:
 				_arc_falling = true
 			_arc_top = nt

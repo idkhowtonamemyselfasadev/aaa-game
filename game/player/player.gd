@@ -1194,7 +1194,7 @@ const PIVOT_REACH := 0.11              # m: the most the body's middle orbits of
 func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
-	var want := 1.0 if standing and turn_shuffle > 0.05 else 0.0
+	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
 	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * (10.0 if want > stride_warp.pivot else 5.0))
 func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var hv := Vector2(velocity.x, velocity.z)

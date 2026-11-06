@@ -1435,6 +1435,8 @@ func _foe_turn_test() -> void:
 		var ts_peak := 0.0
 		var free_h: Array[float] = []          # the free (stepping) boot's height per tick, for the arc's dip
 		var free_l: Array[float] = []          # (FOETURN_DBG) StrideWarp's lift that tick
+		var rel_prev := 0.0                    # the pivot weight last tick
+		var rel_h := -1.0                      # the free boot's height (per size) the tick the pivot starts releasing
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -1451,10 +1453,14 @@ func _foe_turn_test() -> void:
 					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j]])
 				if h > 0.02:
 					up += 1
+				if post and j == 1 and e.stride_warp.pivot < rel_prev and rel_prev >= 0.999 and rel_h < 0.0:
+					rel_h = h                    # the free boot's height as the pivot starts to let go
+				if post and j == 1:
+					rel_prev = e.stride_warp.pivot
 				if post and j == 1 and e.stride_warp.pivot > 0.5:
 					free_h.append(h)
 					if OS.has_environment("FOETURN_DBG"):
-						free_l.append(e.stride_warp.step_lift / 100.0)
+						free_l.append((e.stride_warp._arc_top if OS.has_environment("FOETURN_ARC") else e.stride_warp.step_lift) / 100.0)
 			if up > 0:
 				lifted += 1
 			if up == 2:
@@ -1497,7 +1503,7 @@ func _foe_turn_test() -> void:
 		for m in range(1, free_h.size()):
 			if free_h[m - 1] < 0.01 and free_h[m - 1] > free_h[m]:
 				tap = maxf(tap, free_h[m - 1] - free_h[m])
-		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks, set-down %.4f per size per tick" % [dip, free_h.size(), tap])
+		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks, set-down %.4f per size per tick, %.4f per size up as the pivot lets go" % [dip, free_h.size(), tap, rel_h])
 		if OS.has_environment("FOETURN_DBG"):
 			print("   free boot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
 			print("   lift     : ", " ".join(free_l.map(func(x): return "%.1f" % (x * 100.0 / sc))))
@@ -1514,7 +1520,7 @@ func _foe_turn_test() -> void:
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
 		if o[1] < 0.5:
@@ -1535,6 +1541,10 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: the turn step's arc dips and rises again (%.3f per size)" % [o[0], o[17]])
 		# 11-06: the boot is set down, braking over its last cm: 0.0035 per size per tick into the turf before
 		# (a straight ramp, env PIVOT_ARC_TAP), 0.0018-0.0020 now
+		# 11-06: the soldier let its pivot go while the stepping boot was still 2.1 cm/size up (the release
+		# blend handed it back to the clip mid-air); held until the boot is down: 0.0006. PIVOT_EARLY_LET_GO: the before
+		if o[19] > (0.03 if OS.has_environment("PIVOT_EARLY_LET_GO") else 0.004):
+			return _combat_done(false, "size %.1f: the pivot lets go with the stepping boot still up (%.4f per size)" % [o[0], o[19]])
 		if o[18] > (0.005 if OS.has_environment("PIVOT_ARC_TAP") else 0.0026):
 			return _combat_done(false, "size %.1f: the turn step taps the boot down (%.4f per size per tick)" % [o[0], o[18]])
 		if o[5] < 0.97:

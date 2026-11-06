@@ -997,7 +997,7 @@ func _pivot_orbit(d: float) -> void:
 func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
-	var want := 1.0 if standing and turn_shuffle > 0.05 else 0.0
+	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
 	var rate := (10.0 if want > stride_warp.pivot else 5.0) * natural_cadence()
 	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * rate)
 
