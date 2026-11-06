@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-0500-wisps-fire.jpg",
-  "time": "2026-11-02T05:35:06Z",
-  "caption": "Night: the Hollow Wisp knot drawn in off the meadow, wheeling in the smoke over Hesper's fire while she dozes beside it (GL frame) -- the coals still read as big bright balls and the ivy is flat yellow; Hesper does not react to them yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-0555-wisps-fire-fp.jpg",
-  "time": "2026-11-02T05:54:44Z",
-  "caption": "Forward+ night frame of the wisp knot wheeling over Hesper's fire: the keep's firelit stone and the night sky read well, but the wisp hearts blow out to flat cream discs with no veins, the fire's smoke is a dark blob and Hesper is lit cold blue.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-0615-wisps-fire-fp2.jpg",
   "time": "2026-11-02T06:15:00Z",
   "caption": "Forward+ night: the three wisp hearts over Hesper's fire now show a cracked veined coal face instead of flat cream discs, but the crust plates still read pale grey, the fire smoke is a dark blob and Hesper is lit cold blue.",
@@ -897,6 +885,18 @@
   "file": "20261106-2225-surge-front.jpg",
   "time": "2026-11-06T22:25:10Z",
   "caption": "The Ashen Knight's growth surge now seen from its front (cracked glowing helm, red tabard, the village behind) with the ring of fire round it; the nearest flame columns blur across the lens and the smoke plume is still thin.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-2300-surge-smoke.jpg",
+  "time": "2026-11-06T23:00:00Z",
+  "caption": "Ashen Knight growth surge 2 s after the ring of fire: the column smoke now drifts as translucent grey plumes instead of black blots; still a little flat and brownish, and the lighting is dim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-2300-surge-fire.jpg",
+  "time": "2026-11-06T23:00:00Z",
+  "caption": "The ring of fire bursting round the kneeling Ashen Knight, HUD hidden and the lens clear of the columns; fire reads well, the helm's glowing cracks look like cartoon eyes.",
   "verdict": "fail"
  }
 ]

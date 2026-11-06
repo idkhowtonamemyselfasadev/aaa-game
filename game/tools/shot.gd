@@ -2749,6 +2749,13 @@ func _ready() -> void:
 						if (c2 - (f2 + inw * tt)).length() < 3.0:
 							clear = false
 							break
+					# and clear of the ring-of-fire columns: a column under 3 m from the lens blurs
+					# across the whole front of the frame
+					if clear:
+						for fl in rk.flames:
+							if is_instance_valid(fl) and Vector2(fl.global_position.x - cand.x, fl.global_position.z - cand.z).length() < 3.0:
+								clear = false
+								break
 					if not clear:
 						continue
 					sp = cand
@@ -2766,6 +2773,9 @@ func _ready() -> void:
 			cam.global_position = sp
 			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
+		# the boss bar covers the knight's boots in a low lens: a surge frame is a cinematic beat
+		if not "hud" in args:
+			(player.get_node("Hud") as CanvasLayer).visible = false
 		for a in args:
 			if a.begins_with("hide="):
 				for nm in a.substr(5).split(","):

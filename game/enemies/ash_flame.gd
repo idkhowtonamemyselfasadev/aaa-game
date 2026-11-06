@@ -25,6 +25,7 @@ var _fire: CPUParticles3D
 var _core: CPUParticles3D
 var _sparks: CPUParticles3D
 var _smoke: CPUParticles3D
+var _pall: CPUParticles3D
 var _light: OmniLight3D
 
 static var _soft: ImageTexture
@@ -121,10 +122,11 @@ func _ready() -> void:
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_smoke.emission_sphere_radius = 0.7
 	var ss := Curve.new()
-	ss.max_value = 2.0
+	ss.max_value = 2.6
 	ss.add_point(Vector2(0.0, 0.55))
-	ss.add_point(Vector2(0.35, 1.0))
-	ss.add_point(Vector2(1.0, 1.7))
+	ss.add_point(Vector2(0.35, 1.1))
+	# late puffs swell wide (1.7 -> 2.4) so the plume keeps body as it thins and greys
+	ss.add_point(Vector2(1.0, 2.4))
 	_smoke.scale_amount_curve = ss
 	_smoke.angular_velocity_min = -28.0
 	_smoke.angular_velocity_max = 28.0
@@ -141,11 +143,13 @@ func _ready() -> void:
 	var gs := Gradient.new()
 	# darker, denser base (0.18 charcoal at 0.9) so the plume has body against the sky; it still
 	# thins and greys as it rises, so the crown stays ragged rather than one solid blob
-	gs.set_color(0, Color(0.22, 0.19, 0.17, 0.0))
-	gs.set_color(1, Color(0.50, 0.48, 0.46, 0.0))
-	gs.add_point(0.1, Color(0.18, 0.16, 0.145, 0.9))
-	gs.add_point(0.4, Color(0.28, 0.26, 0.245, 0.7))
-	gs.add_point(0.75, Color(0.42, 0.40, 0.38, 0.38))
+	# a matured plume (60-frame shot, 23:00 11-06) at the old 0.18 / 0.9 drew as opaque black blots
+	# that hid the knight: mid greys at half alpha, so it reads as smoke the light gets into
+	gs.set_color(0, Color(0.45, 0.42, 0.39, 0.0))
+	gs.set_color(1, Color(0.66, 0.64, 0.62, 0.0))
+	gs.add_point(0.1, Color(0.40, 0.37, 0.34, 0.55))
+	gs.add_point(0.4, Color(0.50, 0.48, 0.46, 0.38))
+	gs.add_point(0.75, Color(0.60, 0.58, 0.56, 0.18))
 	_smoke.color_ramp = gs
 	var sm := ShaderMaterial.new()
 	sm.shader = GritFall._dust_shader()
@@ -153,6 +157,34 @@ func _ready() -> void:
 	sm.set_shader_parameter("puff_tex", ImpactFX._clump_tex(true))
 	sm.set_shader_parameter("scatter_gain", 0.35)
 	(_smoke.mesh as QuadMesh).material = sm
+	# the pall: a few big, slow, faint puffs that spread out above the plume and hang there, so
+	# over a ring of columns the smoke builds into one dark ceiling instead of thin separate wisps
+	_pall = _emitter(14, 5.5, Vector2(2.2, 3.4), Color(0.1, 0.09, 0.08, 0.5), 0.0)
+	_pall.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	_pall.emission_sphere_radius = 1.2
+	_pall.position.y = 3.6
+	_pall.explosiveness = 0.2
+	_pall.spread = 60.0
+	_pall.initial_velocity_min = 0.5
+	_pall.initial_velocity_max = 1.2
+	_pall.damping_min = 0.3
+	_pall.damping_max = 0.6
+	_pall.gravity = Vector3(0.3, 0.35, 0)
+	_pall.angular_velocity_min = -12.0
+	_pall.angular_velocity_max = 12.0
+	var ps := Curve.new()
+	ps.max_value = 2.0
+	ps.add_point(Vector2(0.0, 0.4))
+	ps.add_point(Vector2(0.4, 1.0))
+	ps.add_point(Vector2(1.0, 1.6))
+	_pall.scale_amount_curve = ps
+	var pg := Gradient.new()
+	pg.set_color(0, Color(0.48, 0.46, 0.44, 0.0))
+	pg.set_color(1, Color(0.66, 0.64, 0.62, 0.0))
+	pg.add_point(0.2, Color(0.50, 0.48, 0.46, 0.2))
+	pg.add_point(0.65, Color(0.58, 0.56, 0.54, 0.14))
+	_pall.color_ramp = pg
+	(_pall.mesh as QuadMesh).material = sm
 	# heat over the smoulder: a thin trickle of ember motes lifting off the fissures
 	_motes = _emitter(26, 1.3, Vector2(0.015, 0.035), Color(1.0, 0.55, 0.2), 4.0)
 	_motes.one_shot = false
@@ -221,13 +253,15 @@ func _process(delta: float) -> void:
 	var b := t - WARN
 	if b > 0.12 and not _smoke.emitting and b < 0.5:
 		_smoke.emitting = true
+	if b > 0.45 and not _pall.emitting and b < 0.9:
+		_pall.emitting = true
 	_light.light_energy = 3.5 * exp(-b * 3.0) + (1.2 * (1.0 - b / BURN) if b < BURN else 0.0)
 	# the fissures cool to dull red then black; the scorch itself lingers and fades last
 	_ring.emission_energy = 6.0 * exp(-b * 2.2)
 	_ring.modulate = Color(1, 1, 1, clampf((LIFE - b) / 1.2, 0.0, 1.0))
 	# the scorch is gone at LIFE, but the plume keeps rising: free only once the last puff
 	# (born up to half a lifetime after the smoke starts) has had its full life
-	if t > WARN + maxf(LIFE, 0.12 + _smoke.lifetime * (2.0 - _smoke.explosiveness)):
+	if t > WARN + maxf(LIFE, maxf(0.12 + _smoke.lifetime * (2.0 - _smoke.explosiveness), 0.45 + _pall.lifetime * (2.0 - _pall.explosiveness))):
 		queue_free()
 
 func _burst() -> void:

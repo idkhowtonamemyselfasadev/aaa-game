@@ -37,6 +37,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (23:00 11-06) **SURGE SMOKE PALL; LENS CLEAR OF THE FIRE COLUMNS; NO HUD IN SURGE FRAMES.** (a) `AshFlame`: late smoke
+  puffs swell to 2.4x (was 1.7x), and a second emitter `_pall` (14 big 2.2-3.4 m puffs, 5.5 s, alpha ~0.4, from 3.6 m up,
+  wide spread, starts 0.45 s after the burst) spreads over the plume so a ring of columns builds a dark ceiling; the node
+  frees after the pall's last puff. (b) `shot.gd` `ring surge side`: a lens spot under 3 m from any `rk.flames` column
+  counts as blocked. (c) `ring surge` hides the whole HUD (boss bar covered the boots) unless `hud` is in the args.
+  FOUND: in `ring surge` shots the flames only age through the warm-up frames (the st ticks run the knight's physics
+  only), so a 10-frame shot shows every column ~0.3 s after its burst, before any smoke has risen: the "thin plume" of
+  the last sessions was partly this. Judge smoke with 60 warm-up frames (`ring X 60 15.0 fixfps surge st=30 side`).
+  GL st=34/52 (10 frames): HUD gone, no column in the lens's face, columns read as fire; no plume yet (too young).
+  GL st=30 at 60 frames (the first frame ever of a MATURED plume): the dark ramp drew opaque black blots that hid the
+  knight. Smoke ramp lightened to mid greys at 0.55 -> 0.18 alpha, pall 0.2 -> 0.14: now translucent grey-brown plumes
+  over each column with the knight readable through them (gallery 20261106-2300-surge-smoke). Bots knight, kindler pass. Content hours unchanged (VFX + tool polish).
 - (22:00 11-06) **SURGE LENS ON THE KNIGHT'S FRONT; SMOKE PLUME WITH MORE BODY.** (a) `shot.gd` `ring surge side`: the
   facing is read from the knight's body AFTER the surge ticks, and the chest faces body -Z (the model sits rotated PI
   inside the body; the old frames, scored on +Z, all showed its back). The flank direction now swings the whole circle
@@ -8022,6 +8034,11 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (23:00 11-06) **SURGE PALL + LENS/HUD DONE.** NEXT: (a) the matured smoke (60-frame GL) is now readable but flat and
+   brownish: let the sun warm its top (scatter) and cool it to blue-grey higher up, then call the surge VFX done; (b) a Forward+ frame of the same
+   with nothing else running; (c) the helm's glowing crack pattern reads like two cartoon eyes in the surge close-up:
+   break it into irregular seams; (d) leave the surge VFX after (a)-(c) and move on to the next AAA-animation item (the
+   graded move list) or the next boss; the 22:00/19:00/18:00 items below. Audio after.
 0. (22:00 11-06) **SURGE LENS FRONT-SIDE + DENSER SMOKE DONE (GL).** NEXT: (a) the plume is still thin at st=34: try
    bigger late puffs (scale curve end 1.7 -> 2.4) or a second slow, wide, low-alpha emitter over the ring, then judge GL
    at st=34/52; (b) the nearest flame columns blur across the front lens: keep the lens >= 3 m from any column (flames
