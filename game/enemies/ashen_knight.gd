@@ -204,7 +204,13 @@ func _ready() -> void:
 		tuck = LegTuck.new()
 		tuck.name = "LegTuck"
 		tuck.side = body
+		tuck.floor_fn = _ground
+		tuck.floor_of = self
 		skel.add_child(tuck)
+		# right after the stride/ground IK: the stomp's weight shift moves the hips, and the
+		# arm IK after it keeps the fists on the glaive
+		if stride_warp != null and stride_warp.get_parent() == skel:
+			skel.move_child(tuck, stride_warp.get_index() + 1)
 		head = HeadBow.new()
 		head.name = "HeadBow"
 		head.side = body
@@ -231,6 +237,17 @@ func _dress() -> void:
 	growth.seam_fn = armour.seam_at
 	growth.seam_n = armour.seams.size()
 	_set_skin("heat", 0.0)
+
+## The lean and sink tilt the whole model from the hips; the leg tuck can put the boots back
+## where they stood upright (the stomp's planted boots).
+func _lean(rad: float, sink: float) -> void:
+	super._lean(rad, sink)
+	if tuck != null:
+		tuck.model = model
+		tuck.model_up = Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.ZERO) * _model_rest
+
+func _feet_planted() -> bool:
+	return tuck != null and tuck.pin > 0.5
 
 ## The hero woke at the rest point: the knight stands whole again, in its first form.
 func return_to_post() -> void:
@@ -472,6 +489,8 @@ func _physics_process(delta: float) -> void:
 	if tuck != null and not (move_kind == STOMP_MOVE and state in [WINDUP, STRIKE, RECOVER]):
 		tuck.lift_hip = 0.0
 		tuck.lift_knee = 0.0
+		tuck.shift = 0.0
+		tuck.pin = 0.0
 	if not (move_kind in [LEAP_MOVE, STOMP_MOVE, INTRO_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
@@ -887,6 +906,8 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 	var sink := 0.0
 	var ember := 1.0
 	var lift := 0.0
+	var shift := 0.0
+	var pin := 1.0
 	match state:
 		WINDUP:
 			var hold := STOMP_RAISE_T + STOMP_HOLD_T
@@ -894,7 +915,9 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 			if t < STOMP_RAISE_T:
 				_turn_to(to, delta, 4.0)
 			var u := smoothstep(0.0, STOMP_RAISE_T, t)
-			lift = u
+			# the weight goes over onto the standing boot first, the knee follows it up
+			shift = smoothstep(0.0, STOMP_RAISE_T * 0.6, t)
+			lift = smoothstep(STOMP_RAISE_T * 0.2, STOMP_RAISE_T, t)
 			# up a touch onto the standing leg and back over it, the glaive drawn in
 			lean = -0.12 * u
 			sink = -0.04 * u
@@ -911,6 +934,8 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 			var u := clampf(t / STOMP_T, 0.0, 1.0)
 			# driven down: accelerating, the body following it over and down
 			lift = 1.0 - u * u
+			# the weight rides over to the falling boot as it comes down (half of it by contact)
+			shift = 1.0 - 0.5 * u * u
 			lean = lerpf(-0.12, 0.16, u)
 			sink = lerpf(-0.04, 0.12, u * u)
 			ember = 4.0 + 2.0 * u
@@ -927,12 +952,18 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 			lean = 0.16 * (1.0 - f)
 			sink = 0.12 * (1.0 - f) + 0.03 * sin(PI * clampf(u / 0.3, 0.0, 1.0))
 			ember = 6.0 - 5.0 * f
+			# the rest of the weight settles back between the boots in the first third
+			shift = 0.5 * (1.0 - smoothstep(0.0, 0.35, u))
+			# the boots let go to the clip as the lean and sink run out
+			pin = 1.0 - smoothstep(0.7, 1.0, u)
 			if u >= 1.0:
 				_enter(STALK)
 	if tuck != null:
 		tuck.lift_leg = 1
 		tuck.lift_hip = STOMP_HIP * lift
 		tuck.lift_knee = STOMP_KNEE * lift
+		tuck.shift = 0.0 if OS.get_environment("STOMP_NOSHIFT") != "" else shift
+		tuck.pin = 0.0 if OS.get_environment("STOMP_NOPIN") != "" else pin
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]

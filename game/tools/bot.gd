@@ -3999,7 +3999,49 @@ func _knightstomp_test() -> void:
 		var s0 := k.stomps
 		var old_wave = k.last_wave              # the last trial's ring: not this stomp's
 		var seen := [Vector3.ZERO]
-		var grab := func() -> void: seen[0] = _knight_feet(k)
+		# the weight shift (read after every modifier): the standing (left) boot must not
+		# skate, the hips must go over it, the fists must stay on the glaive's grips
+		var wt := {"a0": null, "h0": null, "slip": 0.0, "over": 0.0, "g0": -1.0, "grip": 0.0, "hike": 0.0, "n": 0}
+		var grab := func() -> void:
+			seen[0] = _knight_feet(k)
+			if not (k.move_kind == AshenKnight.STOMP_MOVE and k.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]):
+				return
+			var sk := k.skel
+			var inv := k.body.global_basis.orthonormalized().inverse()
+			var bw := func(nm: String) -> Vector3:
+				return sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin
+			var la: Vector3 = bw.call("LeftFoot")
+			var hp: Vector3 = inv * (bw.call("Hips") - k.body.global_position)
+			var gg: float = (bw.call("RightHand") as Vector3).distance_to(k._grip_r.global_position) \
+					+ (bw.call("LeftHand") as Vector3).distance_to(k._grip_l.global_position)
+			var lu: Vector3 = bw.call("LeftUpLeg")
+			var ru: Vector3 = bw.call("RightUpLeg")
+			# a stomp begun mid-stride finishes that step first (the walk blends to the guard
+			# over ~0.2 s): the standing boot is judged from then on
+			if wt["h0"] == null:
+				wt["h0"] = hp
+				wt["g0"] = gg
+			var la_b0: Vector3 = inv * (la - k.body.global_position)
+			wt["over"] = maxf(wt["over"], (hp.x - (wt["h0"] as Vector3).x) * signf(la_b0.x - (wt["h0"] as Vector3).x))
+			if k.state == HollowSoldier.WINDUP and k.t < 0.2:
+				return
+			if wt["a0"] == null:
+				wt["a0"] = la
+			wt["n"] += 1
+			if OS.get_environment("STOMP_DBG") != "":
+				print("  st %d t %.2f ankle %s short %.2f shifted %.2f dropped %.2f" % [k.state, k.t, la, k.tuck.short, k.tuck.shifted, k.tuck.dropped])
+			wt["slip"] = maxf(wt["slip"], (la - (wt["a0"] as Vector3)).length())
+			var la_b: Vector3 = inv * (la - k.body.global_position)
+			var toward := signf(la_b.x - (wt["h0"] as Vector3).x)
+			wt["over"] = maxf(wt["over"], (hp.x - (wt["h0"] as Vector3).x) * toward)
+			wt["grip"] = maxf(wt["grip"], gg - float(wt["g0"]))
+			wt["hike"] = maxf(wt["hike"], ru.y - lu.y)
+			# the stamped boot, from the tick after contact: it stays on its spot through the recovery
+			var ra: Vector3 = bw.call("RightFoot")
+			if k.state == HollowSoldier.RECOVER:
+				if not wt.has("r0"):
+					wt["r0"] = ra
+				wt["rslip"] = maxf(wt.get("rslip", 0.0), (ra - (wt["r0"] as Vector3)).length())
 		k.skel.skeleton_updated.connect(grab)
 		var max_raise := 0.0
 		var rolled := false
@@ -4030,6 +4072,18 @@ func _knightstomp_test() -> void:
 		reach[ph] = maxf(reach.get(ph, 0.0), mr)
 		print("BOT knightstomp: phase %d %s at %.1f m -> %s (stomps %d, boot raised %.2f m over the standing foot, wave reach %.1f m, hero hp %.0f -> %.0f, knight state %d)" % [ph, kind, off, r, k.stomps - s0, max_raise, mr, hp0, p.health, k.state])
 		res["%s%d" % [kind, ph]] = r
+		print("BOT knightstomp: weight shift: hips over the standing boot %.3f m (x size %.3f), standing boot slip %.4f m, stamped boot slip after contact %.4f m, lifted hip hiked %.3f m over the other, fists off the grips %.4f m over the start (%d ticks)" % [wt["over"], wt["over"] / ks, wt["slip"], wt.get("rslip", -1.0), wt["hike"], wt["grip"], wt["n"]])
+		if OS.get_environment("STOMP_NOSHIFT") == "":
+			if wt["over"] < 0.04 * ks:
+				return _combat_done(false, "the stomp's hips do not go over the standing boot (%.3f m)" % wt["over"])
+			# (0.23 x size before the planted boots, 11-06 16:00; a stomp begun mid-stride still
+			# lets the walk's blend to the guard move the boot ~1.5 cm per size)
+			if wt["slip"] > 0.02 * ks:
+				return _combat_done(false, "the stomp's standing boot skates (%.3f m)" % wt["slip"])
+			if wt.get("rslip", 1.0) > 0.03 * ks:
+				return _combat_done(false, "the stomp's stamped boot skates after contact (%.3f m)" % wt.get("rslip", 1.0))
+			if wt["grip"] > 0.03 * ks:
+				return _combat_done(false, "the stomp's fists leave the glaive (%.3f m)" % wt["grip"])
 		if k.stomps - s0 != 1:
 			return _combat_done(false, "the knight did not stomp (%s)" % kind)
 		if max_raise < 0.35 * ks:

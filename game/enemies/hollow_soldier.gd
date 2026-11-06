@@ -817,12 +817,19 @@ func _step_climb(delta: float) -> void:
 		_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, size_scale)
 		body.position.y = _step_dip
 
+## Another modifier stands the boots on the ground itself this tick (the knight's stomp):
+## the ground IK stays out of it, or the two lift the boot twice.
+func _feet_planted() -> bool:
+	return false
+
 func _update_ground_feet(delta: float) -> void:
 	if stride_warp == null:
 		return
 	stride_warp.ground_scale = size_scale
 	var w := 1.0 if is_on_floor() and state != DEAD else 0.0
 	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
+	if _feet_planted():
+		stride_warp.ground_w = 0.0
 	# staggered: the stance boot is pinned where it struck (the hero's contact lock), so the
 	# shove's backward stagger steps plant instead of skating while the walk's cadence and the
 	# shove's pace disagree (the 4x backward walk lifted its stance foot before the shove slowed)

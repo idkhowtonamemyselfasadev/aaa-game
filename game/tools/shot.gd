@@ -1148,6 +1148,10 @@ func _ready() -> void:
 				# looking up a little, pulled back as it grows
 				var gs: float = world.knight.size_scale
 				SPOTS[spot] = [mid + side * (3.0 + 2.6 * gs) - line * (0.6 + 0.4 * gs) + Vector3.UP * 0.9, mid + Vector3.UP * (1.0 * gs)]
+				if "front" in args:
+					# (animation review) face-on to the giant from behind the hero and off to the
+					# lit side: the stomp's sideways weight shift and hip hike read across the frame
+					SPOTS[spot] = [pp - line * (1.5 + 1.2 * gs) + side * (0.8 * gs) + Vector3.UP * (0.6 * gs), fp + Vector3.UP * (0.75 * gs)]
 			if "lodged" in args:
 				# the arrow standing in the hero: close on the hero's flank, the archer beyond
 				SPOTS[spot] = [pp + side * 2.4 + line * 0.5 + Vector3.UP * 0.25, pp.lerp(fp, 0.18) + Vector3.UP * 1.05]
