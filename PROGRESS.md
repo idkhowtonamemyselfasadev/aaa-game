@@ -45,8 +45,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   the boot really stood last tick (after the ground IK) and the offset eases out at 14/s. Measured slide x size:
   intro 0.207 -> 0.000, surge2 0.223 -> 0.000, surge3 0.218 -> 0.000; the leap/crown/stomp trials unchanged. Also fixed
   a bot slip: the stomp test's per-phase size line. Bots: knightplant, knight, crown, knightleap, knightstomp,
-  foestride, foeturn, warden, combat pass; soldier fails on HEAD too (known flaky). Shots: 3 GL/lavapipe frames of the
-  surge from the side (backlit; the falling grit reads as black lens blobs, logged).
+  foestride, foeturn, warden, combat pass; soldier fails on HEAD too (known flaky). Shots: 1 lavapipe frame of the surge
+  kneel from the side, st=26 (backlit; the falling grit reads as black lens blobs, logged); st=10/52 were OOM-killed.
 - (17:00 11-06) **KNIGHT BOOTS PLANTED THROUGH THE LEAP CROUCH, THE LANDING AND THE CROWN REEL (new bot `knightplant`:
   each boot's world spot read after every modifier, gate <= 0.02 x size of slide, touchdown jump <= 0.03 x size; knightplant,
   knight, knightleap, knightstomp, crown, combat, soldier, hewer, foestride, foeturn, foehands, footik, foeflinch, hands PASS).**
@@ -7984,7 +7984,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    the right leg kneels on top. LegTuck hand-over carry (`_carry`, CARRY_RATE 14/s): the tick pin crosses 0.5 each
    planted spot starts where the boot really stood last tick and the offset eases out (env PLANT_NOCARRY=1 = before).
    Measured slide x size: intro 0.21 -> 0.000, surge 1->2 0.22 -> 0.000, surge 2->3 0.22 -> 0.000.
-   NEXT: (a) look at a frame SEQUENCE of the surge (shots `ring surge_stN side`, N 10/26/52 rendered this session,
+   NEXT: (a) look at a frame SEQUENCE of the surge (shots `ring surge_stN side`: only N=26 rendered this session, 10/52 OOM-killed;
    backlit: the boots are in silhouette, needs a front-lit lens) and of the intro's two hand-off settle steps;
    (b) the falling grit (BossGrowth grit_falls) renders as big soft BLACK blobs across the frame in the surge side
    shot: it reads as dirt on the lens, not grit: make the flakes small, lit and sharp (or keep them behind the knight);
