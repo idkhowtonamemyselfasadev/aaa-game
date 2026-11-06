@@ -289,6 +289,8 @@ func _bend(skel: Skeleton3D, b: int, axis_skel: Vector3, angle: float) -> void:
 	var local_axis := (pb.inverse() * axis_skel).normalized()
 	skel.set_bone_pose_rotation(b, Quaternion(local_axis, angle) * skel.get_bone_pose_rotation(b))
 
+static var PIVOT_FREE_SINKS := OS.has_environment("PIVOT_FREE_SINKS")
+
 func _pivot_leg(skel: Skeleton3D) -> void:
 	if pivot <= 0.0:
 		pivot_pin = null
@@ -317,6 +319,9 @@ func _pivot_leg(skel: Skeleton3D) -> void:
 	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(inv * (pivot_pin as Vector3), pivot)
 	var dd := tp - s
 	pivot_sink = 0.0
+	# the free foot as the clip steps it, before the hips settle: it keeps that place after
+	var of_clip := skel.get_bone_global_pose(of).origin
+	var of_keep := skel.get_bone_global_pose(of).basis
 	if dd.length() > reach_l:
 		var du := dd.dot(up)
 		var h := -du - sqrt(maxf(du * du - dd.length_squared() + reach_l * reach_l, 0.0))
@@ -351,6 +356,15 @@ func _pivot_leg(skel: Skeleton3D) -> void:
 	# the sole keeps the clip's angle: it spins on the ball with the body, it does not tip
 	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
 	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
+	# the hips settled onto the pivot leg carry the stepping leg down with them: without this
+	# its boot sank up to 7.5 cm into the turf through the step (11-06, bot `foeturn` on the
+	# final pose: off the turf 3 ticks of a turn, then under it). The free leg bends to keep its
+	# boot where the clip steps it. PIVOT_FREE_SINKS: the before
+	if pivot_sink > 0.0 and not PIVOT_FREE_SINKS:
+		var oul := skel.find_bone("mixamorig_%sUpLeg" % sides[1 - pivot_side])
+		var olg := skel.find_bone("mixamorig_%sLeg" % sides[1 - pivot_side])
+		if oul >= 0 and olg >= 0:
+			_leg_to(skel, oul, olg, of, of_clip, of_keep, fwd)
 	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
 	pivot_other = xf * skel.get_bone_global_pose(of).origin
 
