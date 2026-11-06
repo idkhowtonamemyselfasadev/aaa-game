@@ -1503,6 +1503,41 @@ func _foe_stride_test() -> void:
 ## Foe turn on the spot: a soldier and the knight at all three sizes, standing, turn 120 deg.
 ## The feet must step round (a foot clears the turf, at the body's own slow cadence for the
 ## giant), the body must not wander off its spot, and the stepping must settle once squared up.
+var _ff_prev = null
+var _ff_slide := 0.0
+var _ff_released := false
+var _ff_settled := false
+var _ff_was_full := false
+var _ff_rel_ticks := 0
+var _ff_idle := 0.0
+## (foeturn) both boots on the final pose from the moment the pivot starts to let go: how far they
+## slide over the turf back to the clip (per size), and whether the settle steps closed the stance
+func _foe_feet_track(skel: Skeleton3D, sw: StrideWarp, sc: float) -> void:
+	var now := []
+	for side in ["Left", "Right"]:
+		now.append(skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % side)).origin)
+	if sw.settle_done:
+		_ff_settled = true
+	if sw.pivot >= 0.999:
+		_ff_was_full = true
+	elif _ff_was_full:
+		_ff_released = true
+	if _ff_released:
+		_ff_rel_ticks += 1
+	# the release window (40 ticks from the pivot starting to let go); past it the idle clip's own
+	# sub-mm foot sway is counted apart (_ff_idle)
+	if _ff_released and _ff_prev != null and _ff_rel_ticks > 40:
+		for j in 2:
+			_ff_idle += Vector2((now[j] as Vector3).x - (_ff_prev[j] as Vector3).x, (now[j] as Vector3).z - (_ff_prev[j] as Vector3).z).length() / sc
+	if _ff_released and _ff_prev != null and _ff_rel_ticks <= 40:
+		for j in 2:
+			var a: Vector3 = now[j]
+			var b: Vector3 = _ff_prev[j]
+			_ff_slide += Vector2(a.x - b.x, a.z - b.z).length() / sc
+			if OS.has_environment("FOETURN_SLIDE") and Vector2(a.x - b.x, a.z - b.z).length() > 0.0005:
+				print("   slide foot %d %.4f pivot %.3f settle %s" % [j, Vector2(a.x - b.x, a.z - b.z).length() / sc, sw.pivot, sw.settle_done])
+	_ff_prev = now
+
 func _foe_turn_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
@@ -1559,6 +1594,13 @@ func _foe_turn_test() -> void:
 		var free_l: Array[float] = []          # (FOETURN_DBG) StrideWarp's lift that tick
 		var rel_prev := 0.0                    # the pivot weight last tick
 		var rel_h := -1.0                      # the free boot's height (per size) the tick the pivot starts releasing
+		_ff_prev = null
+		_ff_slide = 0.0
+		_ff_released = false
+		_ff_settled = false
+		_ff_was_full = false
+		_ff_rel_ticks = 0
+		_ff_idle = 0.0
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -1570,7 +1612,7 @@ func _foe_turn_test() -> void:
 			for j in 2:
 				var h: float = ((float(e.stride_warp.ground_sole[j]) if post else (skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y) - rest[j]) / sc
 				lift = maxf(lift, h)
-				if OS.has_environment("FOETURN_DBG") and sc < 1.5:
+				if OS.has_environment("FOETURN_DBG") and sc < float(OS.get_environment("FOETURN_DBG_SC") if OS.has_environment("FOETURN_DBG_SC") else "1.5"):
 					var hc: float = ((skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y - rest[j]) / sc
 					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j]])
 				if h > 0.02:
@@ -1587,6 +1629,8 @@ func _foe_turn_test() -> void:
 				lifted += 1
 			if up == 2:
 				both_up += 1
+			if post:
+				_foe_feet_track(skel, e.stride_warp, sc)
 			var sw: StrideWarp = e.stride_warp
 			if sw != null and sw.pivot_pin != null and sw.pivot > 0.97:
 				await skel.skeleton_updated
@@ -1633,7 +1677,12 @@ func _foe_turn_test() -> void:
 		var moved := e.global_position - start
 		var swung := Vector2(e.pivot_shift.x, e.pivot_shift.z).length()
 		var drift := Vector2(moved.x - e.pivot_shift.x, moved.z - e.pivot_shift.z).length()
-		await _ticks(100)
+		for i in 100:
+			await get_tree().physics_frame
+			if e.stride_warp != null:
+				await skel.skeleton_updated
+				_foe_feet_track(skel, e.stride_warp, sc)
+		print("BOT foeturn: settle done %s, the boots slide %.3f per size over the 40 ticks from the pivot's release (then the idle clip sways them %.3f over %d ticks)" % [_ff_settled, _ff_slide, _ff_idle, maxi(_ff_rel_ticks - 40, 0)])
 		var after := e.turn_shuffle
 		var blend_after: float = e._blend
 		var lead_after := absf(e.turn_lead)
@@ -1642,7 +1691,7 @@ func _foe_turn_test() -> void:
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
 		if o[1] < 0.5:
@@ -1669,6 +1718,13 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: the pivot lets go with the stepping boot still up (%.4f per size)" % [o[0], o[19]])
 		if o[18] > (0.005 if OS.has_environment("PIVOT_ARC_TAP") else 0.0026):
 			return _combat_done(false, "size %.1f: the turn step taps the boot down (%.4f per size per tick)" % [o[0], o[18]])
+		# 11-06 07:00: the turn ends in two settle steps into the idle stance, as the hero's does; before
+		# (env FOE_PIVOT_HOVER) the boots slid back over the turf to the idle stance on the release
+		if not OS.has_environment("FOE_PIVOT_HOVER") and not OS.has_environment("PIVOT_HOVER"):
+			if not o[20]:
+				return _combat_done(false, "size %.1f: the turn does not end in settle steps into the stance" % o[0])
+			if o[21] > 0.02:
+				return _combat_done(false, "size %.1f: the boots slide back to the clip as the pivot lets go (%.3f per size)" % [o[0], o[21]])
 		if o[5] < 0.97:
 			return _combat_done(false, "size %.1f: did not square up (%.2f)" % [o[0], o[5]])
 		if o[6] > 0.08 * o[0]:

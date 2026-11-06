@@ -143,6 +143,11 @@ var bot_face := Vector3.ZERO     # bots: IDLE turns on the spot toward this (wor
 var turn_shuffle := 0.0          # 0..1 stepping round on the spot while the body turns
 var shuffle_peak := 0.0          # bots: highest turn_shuffle since reset
 var _prev_yaw := 0.0
+var _turn_sh := 0.0                # the shuffle the turn rate wants this tick
+## 11-06: the turn ends in the hero's two settle steps (StrideWarp.pivot_settle) into the idle
+## stance. FOE_PIVOT_HOVER: the before (the turn ended in the shuffle clip's stance and both boots
+## slid back to the idle stance on the release)
+static var FOE_PIVOT_HOVER := OS.has_environment("FOE_PIVOT_HOVER")
 ## Pivot foot (the hero's StrideWarp, contact lock and stride warp off): in a turn on the spot
 ## the inside foot stays planted and the body swings round over it; the outside foot steps.
 var stride_warp: StrideWarp
@@ -787,6 +792,7 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 	# measured against the body's own cadence: the giant's slow turn is still a full step round
 	var sh := clampf((rate / natural_cadence() - TURN_FROM) / TURN_FULL, 0.0, 1.0) if standing else 0.0
 	# rises quick (the first step goes as the turn starts), settles over the last step
+	_turn_sh = sh
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 2.5))
 	shuffle_peak = maxf(shuffle_peak, turn_shuffle)
 	_update_pivot_foot(delta, standing)
@@ -998,6 +1004,12 @@ func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
 	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
+	# squared up (the body no longer turning): the turn step comes down and the feet close the stance
+	if FOE_PIVOT_HOVER or not standing or stride_warp.pivot <= 0.0 or _turn_sh > 0.3:
+		stride_warp.pivot_settle = false
+	elif standing and _turn_sh <= 0.0:
+		stride_warp.pivot_settle = true
+	stride_warp.stance_idle = standing and turn_shuffle <= 0.0 and Vector2(velocity.x, velocity.z).length() < 0.05 * size_scale
 	var rate := (10.0 if want > stride_warp.pivot else 5.0) * natural_cadence()
 	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * rate)
 

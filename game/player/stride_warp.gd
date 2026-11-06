@@ -330,8 +330,8 @@ const STEP_SETTLE_K := 11.0      # 1/s: share of the boot's height closed per se
 const STEP_SETTLE_V := 2.0       # ...plus this (skeleton units/s)
 var _settle_t := 0.0             # s settling
 var _settle_at = null            # the free ankle's world point where the settle started
-const STEP_SETTLE_T := 0.28      # s: each settle step closes the stance over this
-const STEP_SETTLE_LIFT := 0.15   # a settle step clears the turf by this share of its reach...
+const STEP_SETTLE_T := 0.32      # s: each settle step closes the stance over this (0.28 before 11-06 07:00)
+const STEP_SETTLE_LIFT := 0.10   # a settle step clears the turf by this share of its reach (0.15 before)...
 const STEP_SETTLE_LIFT_MAX := 6.0  # ...at most (skeleton units)
 const STEP_SETTLE_MIN := 3.0     # skeleton units: a foot nearer its stance spot than this does not step
 var settle_done := false         # (owner, bots) both settle steps are down: the pivot may let go
@@ -352,6 +352,24 @@ var _aloft_held := 0.0
 ## that is still ~1 cm up back to the clip mid-step (11-06: the soldier let go at 1.2 cm). Only
 ## while standing (a walk away lets go at once) and for at most STEP_HOLD_MAX.
 ## PIVOT_EARLY_LET_GO: the before.
+## A settle step's height over its time u (0..1), peak 1: it rises quick (sin squared to u 0.35) and
+## is set down slow, a cubic tail into the turf (11-06 07:00: the symmetric sin squared tapped the
+## soldier's boot down 0.33 cm a tick over its last cm; the hero's was never gated). SETTLE_SYMMETRIC: the before
+static var SETTLE_SYMMETRIC := OS.has_environment("SETTLE_SYMMETRIC")
+const SETTLE_PEAK_U := 0.35
+static var SETTLE_LIFT_ADD := OS.has_environment("SETTLE_LIFT_ADD")
+const STEP_SETTLE_EASE_K := 6.5  # 1/s at size 1: a settle step's last STEP_EASE_H closes this share per second, / sqrt(size): a giant sets its boot down slower (its ground feet add their own drop)
+static var SETTLE_DROP := OS.has_environment("SETTLE_DROP")
+static func settle_lift(u: float) -> float:
+	if SETTLE_SYMMETRIC:
+		return pow(sin(PI * u), 2.0)
+	if u <= 0.0 or u >= 1.0:
+		return 0.0
+	if u < SETTLE_PEAK_U:
+		return pow(sin(PI * 0.5 * u / SETTLE_PEAK_U), 2.0)
+	var v := (u - SETTLE_PEAK_U) / (1.0 - SETTLE_PEAK_U)
+	return pow(1.0 - v, 3.0) * (1.0 + 3.0 * v)
+
 func pivot_want(want: float, standing: bool, delta: float) -> float:
 	if want > 0.0 or not standing or PIVOT_EARLY_LET_GO or PIVOT_NO_ARC or pivot < 0.999:
 		_aloft_held = 0.0
@@ -415,7 +433,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if bd.length() < STEP_SETTLE_MIN:
 			ub = 1.0 if bd.length() < 1e-3 else ub
 		var eb := ub * ub * (3.0 - 2.0 * ub)
-		var lift_b := pow(sin(PI * ub), 2.0) * minf(bd.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
 		if ub >= 1.0:
 			settle_done = true
@@ -520,6 +538,14 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_EASE_K * delta)) + STEP_EASE_V * delta)
 			if settling:
 				fall = maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_SETTLE_K * delta)) + STEP_SETTLE_V * delta
+				# ...and over its last STEP_EASE_H it is set down at the eased rate, not dropped in
+				# (11-06 07:00: the soldier's boot fell 0.33 cm/size a tick over its last cm). SETTLE_DROP: the before
+				if _arc_top < STEP_EASE_H and not SETTLE_DROP:
+					# the closing speed held in world terms per body size (1.2 cm/s), not skeleton units: a
+					# knight's skeleton unit is ~4x the hero's per size and STEP_EASE_V dropped it in
+					var wpu := skel.global_basis.get_scale().x
+					var v := STEP_EASE_V * (0.01 * ground_scale / wpu if wpu > 1e-6 else 1.0)
+					fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_SETTLE_EASE_K / sqrt(maxf(ground_scale, 1.0)) * delta)) + minf(v, STEP_EASE_V) * delta)
 			var nt := maxf(cand, _arc_top - fall)
 			if travelling and not PIVOT_ARC_SAG:
 				# while the foot still travels round, the sag stops at the lift its speed wants (it
@@ -560,7 +586,13 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			of_t += (dh - up * dh.dot(up)) * pivot
 			# a step that has to travel clears the turf on the way
 			# (sin squared: it leaves and meets the turf at rest, no tap at the contact)
-			of_t += up * (pow(sin(PI * u), 2.0) * minf(settle_reach * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX) * pivot)
+			# ...only up to that clearance: a boot still coming down from the turn step's arc already
+			# clears it (11-06 07:00: added on top, the giant knight's boot rose 1.5 -> 2.0 cm/size again
+			# mid-descent, a second hump). SETTLE_LIFT_ADD: the before
+			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+			if not SETTLE_LIFT_ADD:
+				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
+			of_t += up * (clear * pivot)
 		else:
 			_settle_t = 0.0
 			_settle_at = null
