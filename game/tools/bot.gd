@@ -4155,11 +4155,12 @@ func _knightplant_test() -> void:
 		return sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin
 	var worst := {}
 	var gate := 0.02
-	for tr in [["crouch", 2], ["land", 2], ["crown", 1], ["crown", 3], ["land", 3]]:
+	for tr in [["crouch", 2], ["land", 2], ["crown", 1], ["crown", 3], ["land", 3], ["intro", 1], ["surge", 2], ["surge", 3]]:
 		var kind: String = tr[0]
 		var ph: int = tr[1]
-		k._set_phase(ph)
-		k.set_size_scale(k.growth.scale_of(ph))
+		# a surge is begun from the phase before it (it grows the body into `ph` as it goes)
+		k._set_phase(ph - 1 if kind == "surge" else ph)
+		k.set_size_scale(k.growth.scale_of(ph - 1 if kind == "surge" else ph))
 		var ks := k.size_scale
 		k._home = k.global_position
 		k._leap_cool = 99.0
@@ -4187,11 +4188,22 @@ func _knightplant_test() -> void:
 					return k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP
 				"land":
 					return k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.RECOVER
+				"intro":
+					return k.move_kind == AshenKnight.INTRO_MOVE and k.state == HollowSoldier.WINDUP
+				"surge":
+					return k._surge >= 0.0
 				_:
 					return k.state == HollowSoldier.STAGGER and k._crown_reel
 		var grab := func() -> void:
 			var la: Vector3 = bw.call("LeftFoot")
 			var ra: Vector3 = bw.call("RightFoot")
+			# the surge grows the body about its origin: the boots are judged in the body's frame,
+			# at the starting size (a boot carried outward by the growth is not a skate)
+			if kind == "surge":
+				la = k.global_position + (la - k.global_position) * (ks / k.size_scale)
+				ra = k.global_position + (ra - k.global_position) * (ks / k.size_scale)
+				# the right knee goes down to the turf on purpose: only the left boot stands
+				ra = Vector3.ZERO
 			# the touchdown: the boots' jump from the flight's last tick to the landing's first
 			if kind == "land" and k.move_kind == AshenKnight.LEAP_MOVE:
 				if k.state == HollowSoldier.STRIKE:
@@ -4207,21 +4219,42 @@ func _knightplant_test() -> void:
 				print("  air t %.2f body %s L %s (over turf %.2f) R %s pin %.2f lift %.2f" % [k.t, k.global_position, la, la.y - gl, ra, k.tuck.pin, k.leap_lift])
 			if not judge.call():
 				return
-			if m["l0"] == null:
+			# the worst one-tick jump of a boot while judged (the hand-over's pop shows here)
+			if m.has("pla"):
+				m["tick"] = maxf(float(m.get("tick", 0.0)), maxf((la - (m["pla"] as Vector3)).length(), (ra - (m["pra"] as Vector3)).length()))
+			m["pla"] = la
+			m["pra"] = ra
+			# the slide is judged from where the boots stand once the hand-over has eased out
+			var easing: bool = maxf((k.tuck._carry[0] as Vector3).length(), (k.tuck._carry[1] as Vector3).length()) > 0.002 * ks
+			if m["l0"] == null or easing:
 				m["l0"] = la
 				m["r0"] = ra
+			m["lastpin"] = k.tuck.pin
 			# the release (crown reel: two settle steps onto the stance) is judged on its own
 			if k.tuck.latch and k.tuck.pin < 0.999:
 				return
 			m["n"] += 1
-			m["l"] = maxf(m["l"], (la - (m["l0"] as Vector3)).length())
-			m["r"] = maxf(m["r"], (ra - (m["r0"] as Vector3)).length())
+			var dl: Vector3 = la - (m["l0"] as Vector3)
+			var dr: Vector3 = ra - (m["r0"] as Vector3)
+			if kind == "surge":
+				# the surge is judged across the turf; its recoil lets the clip set the standing
+				# boot down 1-2 cm per size (the held height only comes down), reported on its own
+				m["v"] = maxf(float(m.get("v", 0.0)), absf(dl.y))
+				dl.y = 0.0
+				dr.y = 0.0
+			m["l"] = maxf(m["l"], dl.length())
+			m["r"] = maxf(m["r"], dr.length())
 			if OS.get_environment("PLANT_DBG") != "":
 				print("  %s st %d t %.2f body %s L %s %.3f R %.3f pin %.2f" % [kind, k.state, k.t, k.global_position, la, (la - (m["l0"] as Vector3)).length(), (ra - (m["r0"] as Vector3)).length(), k.tuck.pin])
 		k.tuck.stepped = 0.0
 		sk.skeleton_updated.connect(grab)
 		if kind == "crown":
 			k.crowned(k.global_position + Vector3.UP * 3.0 * ks)
+		elif kind == "intro":
+			k.intro_seen = false
+			k._begin_intro()
+		elif kind == "surge":
+			k._begin_surge()
 		else:
 			k._leap_cool = 0.0
 			k._from = k._pose
@@ -4240,8 +4273,18 @@ func _knightplant_test() -> void:
 		sk.skeleton_updated.disconnect(grab)
 		var key := "%s%d" % [kind, ph]
 		worst[key] = maxf(m["l"], m["r"]) / ks
-		if kind == "crown":
-			print("BOT knightplant: crown reel let go in settle steps (longest %.3f m, lifted in an arc)" % k.tuck.stepped)
+		if m.has("v"):
+			print("BOT knightplant: surge phase %d: standing boot set down %.3f m (x size %.4f)" % [ph, float(m["v"]), float(m["v"]) / ks])
+			worst["down" + str(ph)] = float(m["v"]) / ks * 0.5   # gated at 2x the slide gate
+		print("BOT knightplant: %s phase %d: worst one-tick boot jump %.3f m (x size %.4f), hand-over carried %.3f m" % [kind, ph, float(m.get("tick", 0.0)), float(m.get("tick", 0.0)) / ks, k.tuck.carried])
+		k.tuck.carried = 0.0
+		if kind == "crown" or kind == "intro":
+			print("BOT knightplant: %s let go in settle steps (longest %.3f m, lifted in an arc)" % [kind, k.tuck.stepped])
+		if kind == "intro":
+			# the hand-off: the boots have stepped back onto the clip before the fight takes them
+			print("BOT knightplant: intro ends with the pin at %.3f" % float(m.get("lastpin", 1.0)))
+			if float(m.get("lastpin", 1.0)) > 0.05:
+				return _combat_done(false, "the intro drops its planted boots in one tick (pin %.2f)" % float(m["lastpin"]))
 		if m.has("pop"):
 			print("BOT knightplant: touchdown: boots jump %.3f m in the landing's first tick (x size %.4f)" % [m["pop"], float(m["pop"]) / ks])
 			worst["pop" + str(ph)] = float(m["pop"]) / ks
@@ -4257,7 +4300,7 @@ func _knightplant_test() -> void:
 			# the touchdown is one tick of the carry at bot speed (4x): judged a touch looser
 			if worst[key] > (0.03 if key.begins_with("pop") else gate):
 				return _combat_done(false, "the knight's boot skates in the %s (%.4f x size)" % [key, worst[key]])
-	_combat_done(true, "the giant's boots stay planted through the crouch, the landing and the crown reel")
+	_combat_done(true, "the giant's boots stay planted through the crouch, the landing, the crown reel, the reveal and the surge's kneel")
 
 func _knight_feet(k: AshenKnight) -> Vector3:
 	var sk := k.skel

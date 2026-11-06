@@ -46,13 +46,35 @@ var _held_h: Array = [null, null]   # [standing, lifted]: each boot's height ove
 var latch := false
 var step_h := 0.12                   # skeleton-units arc height per skeleton-unit the step travels (capped)
 var _latched: Array = [null, null]
+## (with latch) the latched spots ride the body's upright frame instead of the world: a body
+## that grows about its origin (the surge) carries its planted boots out with it
+var latch_body := false
 var stepped := 0.0                   # (bots) the longest settle step this release, world m
+## HAND-OVER: the tick the boots become planted (pin rises past 0.5, where the owner takes its
+## ground IK off them) each planted spot starts from where that boot really stood last tick (after
+## the ground IK's lift and toe clearance), and the difference eases out over ~0.2 s: no one-tick
+## drop or jump as the ground IK lets go. Env PLANT_NOCARRY=1 = the before (bots compare).
+const CARRY_RATE := 14.0             # 1/s the hand-over offset dies away
+var _final: Array = [null, null]     # LEGS order: each ankle's world spot after every modifier, last tick
+var _carry: Array = [Vector3.ZERO, Vector3.ZERO]   # LEGS order: world offset still being eased out
+var _was_planted := false
+var _dt := 0.0
+var carried := 0.0                   # (bots) the largest hand-over offset taken on, world m
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
 	shifted = 0.0
 	short = 0.0
 	dropped = 0.0
+	_dt = _delta
+	if skel != null and not skel.skeleton_updated.is_connected(_record_final):
+		skel.skeleton_updated.connect(_record_final)
+	var planted := pin > 0.5
+	if planted and not _was_planted and OS.get_environment("PLANT_NOCARRY") == "":
+		_take_carry = true
+	elif not planted:
+		_carry = [Vector3.ZERO, Vector3.ZERO]
+	_was_planted = planted
 	if pin < 1e-4:
 		_held_h = [null, null]
 		_latched = [null, null]
@@ -120,12 +142,18 @@ func _plant_spots(skel: Skeleton3D) -> Array:
 			var h := w.y - floor_of.global_position.y
 			_held_h[j] = h if _held_h[j] == null else minf(float(_held_h[j]), h)
 			w.y = float(floor_fn.call(w)) + float(_held_h[j])
+		var li: int = (1 - lift_leg) if j == 0 else lift_leg
+		var cw := _carry_for(li, w)
 		var pj := pin
 		if latch:
+			var up_xf := xf * c
 			if _latched[j] == null:
-				_latched[j] = w
+				# latched where the boot really stood (the hand-over offset taken in at once)
+				_latched[j] = up_xf.affine_inverse() * (w + cw) if latch_body else w + cw
+				_carry[li] = Vector3.ZERO
+			cw = Vector3.ZERO
 			var clip_w := w
-			w = _latched[j]
+			w = up_xf * (_latched[j] as Vector3) if latch_body else _latched[j]
 			# each boot lets go in its own half of the release, stepped (lifted) onto the clip's spot
 			pj = clampf((pin - 0.5) * 2.0, 0.0, 1.0) if j == 0 else clampf(pin * 2.0, 0.0, 1.0)
 			var run := Vector2(clip_w.x - w.x, clip_w.z - w.z).length()
@@ -134,9 +162,9 @@ func _plant_spots(skel: Skeleton3D) -> Array:
 				stepped = maxf(stepped, run)
 				# skeleton units -> world: the arc scales with the body
 				at.y += minf(run * 0.5, step_h * xf.basis.get_scale().y) * sin(PI * (1.0 - pj))
-			feet.append(Transform3D(cur.basis, xf.affine_inverse() * at))
+			feet.append(Transform3D(cur.basis, xf.affine_inverse() * (at + cw)))
 			continue
-		feet.append(Transform3D(cur.basis, cur.origin.lerp(xf.affine_inverse() * w, pj)))
+		feet.append(Transform3D(cur.basis, cur.origin.lerp(xf.affine_inverse() * (w + cw), pj)))
 	return feet
 
 ## The hips over the standing boot (see `shift`): slide + hike, spine rolled back, then both
@@ -233,3 +261,33 @@ func _leg_to(skel: Skeleton3D, ul: int, lg: int, ft: int, t: Vector3, keep: Basi
 	_swing(skel, lg, f - k, s + dn * dl - k)
 	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
 	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
+
+var _take_carry := false
+
+## The hand-over offset for leg `li` whose planted spot this tick is `w` (world): taken on the
+## first planted tick from where the boot really stood, then eased out.
+func _carry_for(li: int, w: Vector3) -> Vector3:
+	if _take_carry:
+		var c := Vector3.ZERO
+		if _final[li] != null:
+			c = (_final[li] as Vector3) - w
+			var sk := get_skeleton()
+			# a teleport or a respawn is not a hand-over
+			if sk != null and c.length() > 0.5 * sk.global_basis.get_scale().y:
+				c = Vector3.ZERO
+		_carry[li] = c
+		carried = maxf(carried, c.length())
+		if li == lift_leg:
+			_take_carry = false     # both legs taken (the standing one comes first)
+	var out: Vector3 = _carry[li]
+	_carry[li] = out * exp(-CARRY_RATE * _dt)
+	return out
+
+func _record_final() -> void:
+	var sk := get_skeleton()
+	if sk == null:
+		return
+	for i in LEGS.size():
+		var ft := sk.find_bone(str(LEGS[i][0]).replace("UpLeg", "Foot"))
+		if ft >= 0:
+			_final[i] = sk.global_transform * sk.get_bone_global_pose(ft).origin

@@ -504,8 +504,9 @@ func _physics_process(delta: float) -> void:
 		tuck.lift_knee = 0.0
 		tuck.shift = 0.0
 		# the leap's crouch and landing and the crown reel plant the boots too (their own ticks set it)
-		if not ((move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) or (_crown_reel and state == STAGGER)) \
-				or _surge >= 0.0:
+		# (the reveal and the surge plant them in theirs: the surge's tick runs after this one)
+		if not ((move_kind == LEAP_MOVE and state in [WINDUP, STRIKE, RECOVER]) or (_crown_reel and state == STAGGER) \
+				or (move_kind == INTRO_MOVE and state == WINDUP)) or _surge >= 0.0:
 			tuck.pin = 0.0
 	if not (move_kind in [LEAP_MOVE, STOMP_MOVE, INTRO_MOVE] and state in [WINDUP, STRIKE, RECOVER]) and _surge < 0.0:
 		_set_tuck(0.0, 0.0)
@@ -595,6 +596,14 @@ func _surge_body(delta: float) -> void:
 	# knee goes to the turf while the left shin stays upright over its planted foot
 	_set_tuck(1.0 * kneel, 1.55 * kneel)
 	if tuck != null:
+		# the left boot stays where it stood while the body folds, pitches and is flung back over
+		# it (the pin holds the upright clip's spot, so the growth carries it out with the body);
+		# the right leg is bent down onto its knee after the pin, so only the left boot stands
+		# latched where it really stood in the body's frame (so the growth carries it out), it
+		# lets go in a settle step as the weight settles at the end
+		_plant(1.0 - smoothstep(SURGE_T - 0.5, SURGE_T - 0.08, s))
+		tuck.latch = true
+		tuck.latch_body = true
 		tuck.lift_leg = 1
 		tuck.lift_hip = -0.8 * kneel
 		tuck.lift_knee = 0.3 * kneel
@@ -887,6 +896,14 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	var sink := 0.06 * dormant + 0.2 * gather + 0.07 * settle
 	_set_tuck(0.12 * dormant + 0.42 * gather + 0.14 * settle, 0.24 * dormant + 0.84 * gather + 0.28 * settle)
 	intro_gather_peak = maxf(intro_gather_peak, sink)
+	# both boots stay where they stand through the hunch, the gather's crouch and the heave back
+	# (the lean tips the model about its root and the knees bend: without the pin the boots
+	# swept ~0.2 m per size across the turf); a skip eases the crouch out over planted boots too.
+	# Latched: the slump from the stance it stood in and the squaring-up turn keep the boots on
+	# the spot; in the hand-off they let go in two settle steps onto the guard stance
+	_plant(1.0 - smoothstep(BossIntro.T - 0.55, BossIntro.T - 0.1, it))
+	if tuck != null:
+		tuck.latch = true
 	var ember := 0.35 + 0.9 * wake + 5.0 * up + 0.6 * sin(it * 23.0) * up
 	_update_glint(0.0)
 	if not has_meta("roared") and it >= r0 + 0.3:
@@ -994,6 +1011,7 @@ func _stomp_tick(delta: float, to: Vector3) -> Array:
 		tuck.shift = 0.0 if OS.get_environment("STOMP_NOSHIFT") != "" else shift
 		tuck.pin = 0.0 if OS.get_environment("STOMP_NOPIN") != "" else pin
 		tuck.latch = false
+		tuck.latch_body = false
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
@@ -1048,6 +1066,7 @@ func _plant(w: float) -> void:
 		tuck.shift = 0.0
 		tuck.pin = 0.0 if OS.get_environment("PLANT_NOPIN") != "" else w
 		tuck.latch = false
+		tuck.latch_body = false
 
 func _set_tuck(h: float, k: float) -> void:
 	if tuck != null:
