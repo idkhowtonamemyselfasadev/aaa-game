@@ -37,6 +37,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (22:00 11-06) **SURGE LENS ON THE KNIGHT'S FRONT; SMOKE PLUME WITH MORE BODY.** (a) `shot.gd` `ring surge side`: the
+  facing is read from the knight's body AFTER the surge ticks, and the chest faces body -Z (the model sits rotated PI
+  inside the body; the old frames, scored on +Z, all showed its back). The flank direction now swings the whole circle
+  (yaw 0 .. +-3.0) and the ray is cut where it leaves the inner circle (the old radial shrink put a ray across the centre
+  ~3.6 m from the knight); per direction the lens is pulled in to 80 %/65 % until clear; the clear spot most on the front
+  side wins. `StoneRing.lying` (parallel to `stones`) marks the fallen slabs, so only those count as 6.5 m-long obstacles
+  (standing stones ~1 m). st=34: lens 9.6 m out, front 0.99: helm cracks glowing, tabard lit, village behind. (b)
+  `AshFlame._smoke`: 72 puffs (was 60), 4.2 s life (was 3.0), darker denser ramp (0.18 grey at alpha 0.9, 0.28 at 0.7,
+  0.42 at 0.38); the flame node now frees only after its last puff has lived (it was freed at LIFE 3.6 s, cutting the
+  plume off). GL st=34: dark wisps now stand over every column, still thin (see Next). Bots knight, knightplant,
+  knightleap, knightstomp, crown, kindler pass. Forward+ not attempted. Content hours unchanged (tool + VFX polish).
 - (21:00 11-06) **SURGE LENS CLEAR OF THE STONES; SMOKE BROKEN UP; GL FALLBACK KEEPS FIXFPS.** (a) `shot.gd` `ring surge
   side`: the flank distance (9 m x size/2.2) is clamped inside RADIUS-3.2 and the flank direction swings round the knight
   (yaw offsets 0, +-0.3 .. +-1.2 rad) until the lens is >= 3 m from every stone foot and the slab a toppled stone lays
@@ -8011,6 +8022,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (22:00 11-06) **SURGE LENS FRONT-SIDE + DENSER SMOKE DONE (GL).** NEXT: (a) the plume is still thin at st=34: try
+   bigger late puffs (scale curve end 1.7 -> 2.4) or a second slow, wide, low-alpha emitter over the ring, then judge GL
+   at st=34/52; (b) the nearest flame columns blur across the front lens: keep the lens >= 3 m from any column (flames
+   are at `rk.flames`) or lift it; (c) a Forward+ frame of `ring surge st=16/34 side` with nothing else running; (d) the
+   boss health bar covers the knight's boots in low lenses (hide HUD in `ring surge` shots, or raise the lens);
+   (e) the 19:00/18:00 items below. BOSS/ANIMATION priority order unchanged; audio after.
 0. (21:00 11-06) **SURGE LENS CLAMP + SMOKE BREAK-UP DONE (GL frames).** NEXT: (a) the fire-column smoke is now too faint
    against the bright afternoon sky: give the plume more body without one blob (darker base grey ~0.18, or more puffs
    over the outer columns, or a longer lifetime so it builds above the ring); judge GL then Forward+; (b) a Forward+ frame

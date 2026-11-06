@@ -21,6 +21,7 @@ const SINK := 0.35           # metres each upright is set below the low side of 
 var centre := Vector3.ZERO
 var facing := Vector2(0, -1)    # xz direction from the centre out through the entrance
 var stones: Array[Vector3] = []     # world foot of each standing stone (bots)
+var lying: Array[bool] = []         # parallel to stones: true where it has fallen inward (a slab)
 var fallen := 0
 var burn_ring := Vector4.ZERO   # what the terrain shader was told (bots)
 var scorches := 0         # burnt-ground decals (bots)
@@ -105,6 +106,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 		# b = 0 (not a laid course), a = 1: long out in the weather -- dark crust, moss, lichen
 		_per[v].append([xf.translated(-global_position), Color(0.0, rng.randf(), 0.0, 1.0)])
 		stones.append(foot)
+		lying.append(kind == 1)
 	for v in VARIANTS:
 		_multimesh(meshes[v], _per[v], "Stones_%d" % v)
 	_scorch_ground(rng)

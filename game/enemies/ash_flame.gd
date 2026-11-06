@@ -115,7 +115,9 @@ func _ready() -> void:
 	# dark, oily smoke boiling off the crown of the column a beat after the burst
 	# many smaller puffs that swell as they rise and churn slowly (a few big ones read as one
 	# round soft blob over the column): the plume breaks up into lobes with a ragged crown
-	_smoke = _emitter(60, 3.0, Vector2(0.85, 1.7), Color(0.07, 0.06, 0.055, 0.8), 0.0)
+	# 4.2 s life (was 3.0): the plume builds into a standing column over the ring instead of
+	# thinning away to nothing against a bright afternoon sky
+	_smoke = _emitter(72, 4.2, Vector2(0.85, 1.7), Color(0.07, 0.06, 0.055, 0.8), 0.0)
 	_smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_smoke.emission_sphere_radius = 0.7
 	var ss := Curve.new()
@@ -137,10 +139,13 @@ func _ready() -> void:
 	# lit volume (grit_dust.gdshader: wrapped sun, a forward-scatter lobe so a backlit plume glows
 	# at its rim, warmed from below by the column's light) in charcoal greys that thin as it rises.
 	var gs := Gradient.new()
-	gs.set_color(0, Color(0.30, 0.26, 0.23, 0.0))
-	gs.set_color(1, Color(0.52, 0.50, 0.48, 0.0))
-	gs.add_point(0.12, Color(0.24, 0.21, 0.19, 0.8))
-	gs.add_point(0.6, Color(0.40, 0.38, 0.36, 0.42))
+	# darker, denser base (0.18 charcoal at 0.9) so the plume has body against the sky; it still
+	# thins and greys as it rises, so the crown stays ragged rather than one solid blob
+	gs.set_color(0, Color(0.22, 0.19, 0.17, 0.0))
+	gs.set_color(1, Color(0.50, 0.48, 0.46, 0.0))
+	gs.add_point(0.1, Color(0.18, 0.16, 0.145, 0.9))
+	gs.add_point(0.4, Color(0.28, 0.26, 0.245, 0.7))
+	gs.add_point(0.75, Color(0.42, 0.40, 0.38, 0.38))
 	_smoke.color_ramp = gs
 	var sm := ShaderMaterial.new()
 	sm.shader = GritFall._dust_shader()
@@ -220,7 +225,9 @@ func _process(delta: float) -> void:
 	# the fissures cool to dull red then black; the scorch itself lingers and fades last
 	_ring.emission_energy = 6.0 * exp(-b * 2.2)
 	_ring.modulate = Color(1, 1, 1, clampf((LIFE - b) / 1.2, 0.0, 1.0))
-	if t > WARN + LIFE:
+	# the scorch is gone at LIFE, but the plume keeps rising: free only once the last puff
+	# (born up to half a lifetime after the smoke starts) has had its full life
+	if t > WARN + maxf(LIFE, 0.12 + _smoke.lifetime * (2.0 - _smoke.explosiveness)):
 		queue_free()
 
 func _burst() -> void:

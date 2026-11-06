@@ -2705,25 +2705,62 @@ func _ready() -> void:
 			var max_r := StoneRing.RADIUS - 3.2
 			var dist := 9.0 * rk.size_scale / 2.2
 			var sp := kp
-			for yaw_off in [0.0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2]:
+			# among the clear spots take the one most on the knight's front side, so the lens sees
+			# the chest, not its back (21:00 11-06 item c). Read the facing from the body AFTER the
+			# surge ticks (face() above is turned during them). The model sits rotated PI inside the
+			# body, so the knight's chest faces body -Z (a lens on +Z rendered its back)
+			var kb := -rk.body.global_transform.basis.z
+			var kfwd := Vector3(kb.x, 0, kb.z).normalized()
+			print("SHOT ring surge knight front (%.2f, %.2f)" % [kfwd.x, kfwd.z])
+			var best_score := -INF
+			var best_sp := Vector3.INF
+			# the whole circle: the clear spots on the front side may lie far round from the flank
+			for yaw_off in [0.0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2, 1.5, -1.5, 1.8, -1.8, 2.1, -2.1, 2.4, -2.4, 2.7, -2.7, 3.0, -3.0]:
 				var dir: Vector3 = (rside * dist + rf * 3.0).rotated(Vector3.UP, yaw_off)
 				var cand := kp + dir
 				var cl := Vector2(cand.x - cen.x, cand.z - cen.z)
 				if cl.length() > max_r:
-					cand = kp + dir * maxf(0.3, (max_r - Vector2(kp.x - cen.x, kp.z - cen.z).length()) / dir.length())
-				var clear := true
-				for so in rr.stones:
-					# a stone's foot and the slab a toppled one lays inward (up to ~6.5 m)
-					var f2 := Vector2(so.x, so.z)
-					var inw := (Vector2(cen.x, cen.z) - f2).normalized()
-					var c2 := Vector2(cand.x, cand.z)
-					var tt := clampf((c2 - f2).dot(inw), 0.0, 6.5)
-					if (c2 - (f2 + inw * tt)).length() < 3.0:
-						clear = false
-						break
-				sp = cand
-				if clear:
+					# cut the ray where it leaves the circle (|k + d t - c| = max_r), not a radial
+					# shrink: a ray across the ring centre was shrunk to ~3 m from the knight
+					var k2 := Vector2(kp.x - cen.x, kp.z - cen.z)
+					var d2 := Vector2(dir.x, dir.z)
+					var qa := d2.dot(d2)
+					var qb := 2.0 * k2.dot(d2)
+					var qc := k2.dot(k2) - max_r * max_r
+					var disc := qb * qb - 4.0 * qa * qc
+					var tc := 0.3
+					if disc > 0.0:
+						tc = maxf(0.3, (-qb + sqrt(disc)) / (2.0 * qa))
+					cand = kp + dir * minf(tc, 1.0)
+				# the knight grows at the ring's centre, so a full-length ray ends at the rim among
+				# the stones: pull the lens in along the ray (to 80 %, 65 %) until it is clear
+				var far := cand
+				for pull in [1.0, 0.8, 0.65]:
+					cand = kp + (far - kp) * pull
+					var clear := true
+					for si in rr.stones.size():
+						# a stone's foot, and the slab a toppled one lays inward (up to ~6.5 m;
+						# standing stones and stumps only ~1 m deep)
+						var so: Vector3 = rr.stones[si]
+						var f2 := Vector2(so.x, so.z)
+						var inw := (Vector2(cen.x, cen.z) - f2).normalized()
+						var c2 := Vector2(cand.x, cand.z)
+						var tt := clampf((c2 - f2).dot(inw), 0.0, 6.5 if rr.lying[si] else 1.0)
+						if (c2 - (f2 + inw * tt)).length() < 3.0:
+							clear = false
+							break
+					if not clear:
+						continue
+					sp = cand
+					# front-ness first, small costs for swinging off the flank and for pulling in
+					var score: float = (cand - kp).normalized().dot(kfwd) - 0.05 * absf(yaw_off) - 0.3 * (1.0 - pull)
+					if score > best_score:
+						best_score = score
+						best_sp = cand
 					break
+			if best_sp != Vector3.INF:
+				sp = best_sp
+				print("SHOT ring surge lens front %.2f" % (sp - kp).normalized().dot(kfwd))
 			sp.y = terrain.height_at(sp.x, sp.z) + 0.9
 			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
