@@ -312,6 +312,9 @@ const STEP_HOLD_FRAC := 0.15     # the foot counts as travelling while its speed
 var _arc_top := 0.0              # the boot's height over the stance level the arc holds (skeleton units)
 var _arc_peak := 0.0             # the step's peak travel speed
 var _arc_falling := false        # the arc has passed its top
+const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
+const STEP_EASE_MIN := 0.25      # ...down to this fraction of the rate, so it does get down
+static var PIVOT_ARC_TAP := OS.has_environment("PIVOT_ARC_TAP")
 var _arc_floor := 0.0            # the stance level when the pivot planted (skeleton space, the clip's)
 
 func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
@@ -424,7 +427,12 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# swings round a second time and its travel speed rose again: a second hump); only the
 			# clip's own foot can
 			var cand := maxf(hgt - floor_h, 0.0) if _arc_falling else (top - floor_h)
-			var nt := maxf(cand, _arc_top - (STEP_SAG if travelling else STEP_FALL) * delta)
+			# the boot slows over its last ~1.5 cm and is set down, not tapped down at full rate (11-06:
+			# a straight 0.35 cm/size per tick ramp into the turf). PIVOT_ARC_TAP: the before
+			var fall_rate := STEP_SAG if travelling else STEP_FALL
+			if not PIVOT_ARC_TAP:
+				fall_rate *= clampf(sqrt(maxf(_arc_top, 0.0) / STEP_EASE_H), STEP_EASE_MIN, 1.0)
+			var nt := maxf(cand, _arc_top - fall_rate * delta)
 			if nt < _arc_top - 1e-4:
 				_arc_falling = true
 			_arc_top = nt

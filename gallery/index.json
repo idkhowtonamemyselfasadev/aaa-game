@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261101-0030-guard4.jpg",
-  "time": "2026-11-01T00:30:00Z",
-  "caption": "Hero in the new low guard: the staff now reads as a clear diagonal, tip down to knee height -- but the figure still looks squat and toy-like, the face is a blank grey cloth and the straw post crowds the right.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-0130-guard5.jpg",
-  "time": "2026-11-01T01:30:00Z",
-  "caption": "The hero's douli cut to a man's 0.58 m: he no longer reads as a toy under a parasol, but the hood and face cloth still read as a flat grey box round the head and the torso is bulky over hidden legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-0230-face.jpg",
-  "time": "2026-11-01T02:39:00Z",
-  "caption": "The hero's head after the jaw taper: hood and face cloth now narrow from the temples to the throat so it reads as a head with eyes, not a grey box; still wrong: the face cloth's dark tail hangs below the hood's pale ragged collar over the breastplate, and the skin reads doll-smooth.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-0300-face.jpg",
-  "time": "2026-11-01T04:02:00Z",
-  "caption": "The hero's face cloth now ends inside the hood's lower edge instead of hanging a dark tail onto the breastplate; still wrong: the armour reads dark and flat and the hood is a plain grey shell.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-0400-guard6.jpg",
   "time": "2026-11-01T04:40:00Z",
   "caption": "The hero in the low guard after the sash was cut to a hand's breadth (11 cm) and the face cloth tucked: the waist reads as a belt, not a girdle, but the hood still reads as a dark grey block from this angle, the figure is squat over hidden legs and the staff's bright red lacquer looks toy-like.",
@@ -897,6 +873,18 @@
   "file": "20261106-0230-turnstep-down.jpg",
   "time": "2026-11-06T02:30:00Z",
   "caption": "Four ticks later the boot comes round low and sets down flat, nothing sunk into the turf. Still wrong: GL frame, dark armour, no Forward+ light on the legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0328-turnset14.jpg",
+  "time": "2026-11-06T03:28:25Z",
+  "caption": "Knight at size 2.2 mid turn step from the gate, low: the trailing boot is up and swinging round; GL frame, armour near-black in its own shade, speckled ground is a GL artefact.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0328-turnset22.jpg",
+  "time": "2026-11-06T03:28:25Z",
+  "caption": "Same turn eight frames later: the boot is braking into the turf beside the planted one and sets down flat instead of tapping down; still GL lighting, lens crops above the belt.",
   "verdict": "fail"
  }
 ]
