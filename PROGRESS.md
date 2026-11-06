@@ -51,6 +51,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   skeleton_updated), so "per tick" gates there are per 1/30 s; env `PIVOT_DBG` prints the arc per modifier run,
   `FOETURN_ARC` with `FOETURN_DBG` prints `_arc_top` instead of the lift. Also pass: `heroturn`, `pivot`, `stop`,
   `start`, `stride`, `foestride`, `knight`, `footik`, `stepup`, `foeflinch`, `knightstomp`, `soldier`, `jump`.
+  Forward+ frame (`ring turnfp20 20 10.0 fixfps turn bootlens sz=2.2`, ~15 min) looked at: real Forward+ lighting this
+  time (red cloth and armour read, sunlit stones), boots planted mid-turn. Fails as a Wukong shot: the ring's floor is a
+  flat grey with cartoon black speckles (the worn-ground material needs a real PBR texture), and the lens crops the
+  knight at the shoulders. Gallery: 1 frame (fail).
 - (03:00 11-06) **TURN STEP SET DOWN, NOT TAPPED (foeturn + 11 movement/boss bots PASS; `soldier` flaky, see bugs).**
   The 02:00 arc came down as a straight ramp (STEP_SAG 9 / STEP_FALL 24 units/s) right into the turf: 0.35 cm/size per
   tick on the contact tick at every knight size. `StrideWarp._pivot_leg` now scales the arc top's fall rate by
@@ -7743,7 +7747,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    pin drags forward along the walk); (b) the hero's pivot free foot on the final pose (`heroturn` with the per-tick
    free-foot height, dip, set-down and release measures from `foeturn`; `pivot_want` already runs for the hero);
    (c) a shot spot for the soldier turning (`ring turn` only poses the knight) and a frame sequence of its set-down;
-   (d) `soldier` bot flaky (passed this session; failed ~1 in 2 at 03:00). BOSS/ANIMATION priority order from CLAUDE.md
+   (d) `soldier` bot flaky (passed this session; failed ~1 in 2 at 03:00); (e) the stone ring's worn floor reads as flat
+   grey with black speckles in Forward+ (gallery 0440): give it a real PBR ground material. BOSS/ANIMATION priority order from CLAUDE.md
    unchanged; audio leftovers after.
 0. (03:00 11-06) **TURN STEP SET-DOWN EASED.** NEXT: (a) the walk contact lock for foes (00:00 11-06 item b: why the pin
    drags forward along the walk); (b) the hero's pivot free foot on the final pose (`heroturn` with a per-tick free-foot
