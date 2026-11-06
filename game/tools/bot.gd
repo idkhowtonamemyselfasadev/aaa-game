@@ -1433,6 +1433,8 @@ func _foe_turn_test() -> void:
 		var lifted := 0
 		var both_up := 0
 		var ts_peak := 0.0
+		var free_h: Array[float] = []          # the free (stepping) boot's height per tick, for the arc's dip
+		var free_l: Array[float] = []          # (FOETURN_DBG) StrideWarp's lift that tick
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -1449,6 +1451,10 @@ func _foe_turn_test() -> void:
 					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j]])
 				if h > 0.02:
 					up += 1
+				if post and j == 1 and e.stride_warp.pivot > 0.5:
+					free_h.append(h)
+					if OS.has_environment("FOETURN_DBG"):
+						free_l.append(e.stride_warp.step_lift / 100.0)
 			if up > 0:
 				lifted += 1
 			if up == 2:
@@ -1475,6 +1481,20 @@ func _foe_turn_test() -> void:
 				head_lead = maxf(head_lead, angle_difference(head0, head_yaw.call()))
 			if e.turn_lead > 0.5 and body_at_lead == 0.0:
 				body_at_lead = f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)
+		# the arc's dip: the deepest fall between two higher points while the boot is off the turf
+		var dip := 0.0
+		for m in range(1, free_h.size() - 1):
+			var before_pk := 0.0
+			for q in m:
+				before_pk = maxf(before_pk, free_h[q])
+			var after_pk := 0.0
+			for q in range(m + 1, free_h.size()):
+				after_pk = maxf(after_pk, free_h[q])
+			dip = maxf(dip, minf(before_pk, after_pk) - free_h[m])
+		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks" % [dip, free_h.size()])
+		if OS.has_environment("FOETURN_DBG"):
+			print("   free boot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
+			print("   lift     : ", " ".join(free_l.map(func(x): return "%.1f" % (x * 100.0 / sc))))
 		var faced := e.body.global_basis.z.normalized().dot(e.bot_face.normalized())
 		var moved := e.global_position - start
 		var swung := Vector2(e.pivot_shift.x, e.pivot_shift.z).length()
@@ -1488,7 +1508,7 @@ func _foe_turn_test() -> void:
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
 		if o[1] < 0.5:
@@ -1503,6 +1523,10 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: no foot clears the turf in the turn (lift %.3f, %d ticks)" % [o[0], o[2], o[3]])
 		if o[4] > 2:
 			return _combat_done(false, "size %.1f: both feet off the turf in a step on the spot (%d ticks)" % [o[0], o[4]])
+		# 11-06: one arc, not two: the boot used to fall 2-4.6 cm mid-step and rise again (soldier 0.009,
+		# knight 0.015-0.019 per size); now <= 0.001. PIVOT_ARC_DIP: the before
+		if o[17] > (0.03 if OS.has_environment("PIVOT_ARC_DIP") else 0.005):
+			return _combat_done(false, "size %.1f: the turn step's arc dips and rises again (%.3f per size)" % [o[0], o[17]])
 		if o[5] < 0.97:
 			return _combat_done(false, "size %.1f: did not square up (%.2f)" % [o[0], o[5]])
 		if o[6] > 0.08 * o[0]:

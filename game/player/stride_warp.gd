@@ -301,10 +301,18 @@ const STEP_LIFT_MAX := 6.5       # skeleton units (cm): a turn step clears the t
 const STEP_RISE := 30.0          # 1/s: the lift eases up to its target this fast
 const STEP_FALL := 24.0          # skeleton units/s: the boot comes down at most this fast
 const STEP_SPEED_RATE := 20.0    # 1/s: the travel speed is smoothed (a one-tick jump is not a step)
+const STEP_SPEED_DECAY := 6.0    # 1/s: ...and let down this slowly
+static var PIVOT_ARC_DIP := OS.has_environment("PIVOT_ARC_DIP")
 var step_lift := 0.0             # (bots) skeleton units the free boot is lifted this tick
 var _arc_prev = null             # the free ankle's world position last tick (the clip's, before the arc)
 var _arc_speed := 0.0            # skeleton units/s, smoothed
 var _arc_lift := 0.0
+const STEP_SAG := 9.0            # skeleton units/s: the arc's top sags this fast while the foot travels
+const STEP_HOLD_FRAC := 0.15     # the foot counts as travelling while its speed is above this x the step's peak
+var _arc_top := 0.0              # the boot's height over the stance level the arc holds (skeleton units)
+var _arc_peak := 0.0             # the step's peak travel speed
+var _arc_falling := false        # the arc has passed its top
+var _arc_floor := 0.0            # the stance level when the pivot planted (skeleton space, the clip's)
 
 func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	step_lift = 0.0
@@ -313,6 +321,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_arc_prev = null
 		_arc_speed = 0.0
 		_arc_lift = 0.0
+		_arc_top = 0.0
+		_arc_peak = 0.0
+		_arc_falling = false
 		return
 	var sides := ["Left", "Right"]
 	var ul := skel.find_bone("mixamorig_%sUpLeg" % sides[pivot_side])
@@ -330,6 +341,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var f0 := skel.get_bone_global_pose(ft).origin
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
+		_arc_floor = lo
 	var keep := skel.get_bone_global_pose(ft).basis
 	var s := skel.get_bone_global_pose(ul).origin
 	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
@@ -385,16 +397,39 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if _arc_prev != null:
 			var dv: Vector3 = inv.basis * (wnow - (_arc_prev as Vector3))
 			var v := (dv - up * dv.dot(up)).length() / delta
-			_arc_speed = lerpf(_arc_speed, v, 1.0 - exp(-STEP_SPEED_RATE * delta))
+			# the speed rises fast but is let down slowly, so a lull mid-step (the clip's foot slows as
+			# the body catches up) does not set the boot down and lift it again (11-06: a 2-4 cm dip
+			# mid-arc). PIVOT_ARC_DIP: the before
+			var rate := STEP_SPEED_RATE if (v > _arc_speed or PIVOT_ARC_DIP) else STEP_SPEED_DECAY
+			_arc_speed = lerpf(_arc_speed, v, 1.0 - exp(-rate * delta))
 		_arc_prev = wnow
 		var want := minf(_arc_speed * STEP_LIFT_K, STEP_LIFT_MAX)
 		if want > _arc_lift:
 			_arc_lift = lerpf(_arc_lift, want, 1.0 - exp(-STEP_RISE * delta))
 		else:
 			_arc_lift = maxf(want, _arc_lift - STEP_FALL * delta)
-		var floor_h := (inv * (pivot_pin as Vector3)).dot(up)
+		# the stance level in the clip's space: _ground_feet adds each foot's own ground after this,
+		# so the pinned ankle's height (which carries the pivot foot's ground) would set the free boot
+		# into a rise in the turf (11-06: -4 cm at size 4.6). PIVOT_ARC_DIP: the before
+		var floor_h := (inv * (pivot_pin as Vector3)).dot(up) if PIVOT_ARC_DIP else _arc_floor
 		var hgt := of_t.dot(up)
-		var raise := (maxf(hgt, floor_h + _arc_lift) - hgt) * pivot
+		var top := maxf(hgt, floor_h + _arc_lift)
+		if not PIVOT_ARC_DIP:
+			# one arc: the boot's height over the stance level only sags slowly while the foot still
+			# travels round, and comes down at STEP_FALL once it has (11-06: the knights' clip foot fell
+			# 6.6 -> 3.3 cm mid-step and rose to 4.1 again, the lift too small at their slow cadence)
+			_arc_peak = maxf(_arc_peak, _arc_speed)
+			var travelling := _arc_speed > STEP_HOLD_FRAC * _arc_peak
+			# once the arc is coming down, the lift no longer pushes it back up (the knight's body
+			# swings round a second time and its travel speed rose again: a second hump); only the
+			# clip's own foot can
+			var cand := maxf(hgt - floor_h, 0.0) if _arc_falling else (top - floor_h)
+			var nt := maxf(cand, _arc_top - (STEP_SAG if travelling else STEP_FALL) * delta)
+			if nt < _arc_top - 1e-4:
+				_arc_falling = true
+			_arc_top = nt
+			top = floor_h + _arc_top
+		var raise := (top - hgt) * pivot
 		of_t += up * raise
 		step_lift = _arc_lift * pivot
 	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip:

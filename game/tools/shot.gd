@@ -2656,6 +2656,14 @@ func _ready() -> void:
 		sc.y = terrain.height_at(sc.x, sc.z) + 0.2 * sz
 		cam.global_position = sc
 		cam.look_at(rr.centre + Vector3.UP * 0.55 * sz)
+		if "bootlens" in args:
+			# bootlens: low and close on the sun side, framing the legs and boots (the turn step's arc)
+			var tl: Vector3 = -world.sun.global_transform.basis.z
+			var toward := Vector3(-tl.x, 0, -tl.z).normalized()
+			var bc := rr.centre + (toward * 0.8 + rf * 0.6).normalized() * 2.4 * sz
+			bc.y = terrain.height_at(bc.x, bc.z) + 0.45 * sz
+			cam.global_position = bc
+			cam.look_at(rr.centre + Vector3.UP * 0.35 * sz)
 		print("SHOT ring turn size %.2f" % sz)
 	if spot == "ring" and "surge" in args:
 		# ring surge [st=N]: the knight at its post growing into phase 2 (BossGrowth), N physics
