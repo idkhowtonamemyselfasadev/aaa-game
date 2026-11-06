@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261101-0400-guard6.jpg",
-  "time": "2026-11-01T04:40:00Z",
-  "caption": "The hero in the low guard after the sash was cut to a hand's breadth (11 cm) and the face cloth tucked: the waist reads as a belt, not a girdle, but the hood still reads as a dark grey block from this angle, the figure is squat over hidden legs and the staff's bright red lacquer looks toy-like.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-0548-staffox.jpg",
-  "time": "2026-11-01T05:48:47Z",
-  "caption": "Hero in the mid guard at 15:00: the staff is now a deep oxblood lacquer with worn wood showing near the grips instead of a toy-bright red; the hood still reads as a grey block and the figure is lost in tall grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261101-0640-guard7.jpg",
-  "time": "2026-11-01T06:40:00Z",
-  "caption": "Hero in the mid guard at 15:00 after the hood was warmed and creased down the cheeks: barely visible at this range -- the head still reads as a grey block because the face cloth covers the whole front, and the figure is lost in tall grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261101-0739-face8.jpg",
   "time": "2026-11-01T07:39:27Z",
   "caption": "Hero close-up after the face cloth was dropped under the nose: the hood now frames a face with a nose, cheekbones and eyes instead of a grey block, but the skin reads as a smooth orange mannequin and the cloth front is a flat dark panel.",
@@ -891,6 +873,18 @@
   "file": "20261106-0440-turnfp20.jpg",
   "time": "2026-11-06T04:40:00Z",
   "caption": "Forward+ frame of the Ashen Knight (size 2.2) turning on the spot, boots planted mid-step; still wrong: the ring floor is a flat grey with cartoon black speckles and the low lens crops the knight at the shoulders.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0511-heroturnstep.jpg",
+  "time": "2026-11-06T05:11:48Z",
+  "caption": "The hero turning on the spot toward the lens, head leading, the stepping boot carried in one 4 cm arc (bot-measured); still wrong: GL lighting, the feet are hidden under the tabard in shade, so the arc is not visible from this high lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0511-heroturnsettle.jpg",
+  "time": "2026-11-06T05:11:48Z",
+  "caption": "Same turn 0.6 s later, squared to the lens with the stepping boot easing down; still wrong: the end stance is left staggered with no settle step, dark GL turf and lens too high to read the soles.",
   "verdict": "fail"
  }
 ]

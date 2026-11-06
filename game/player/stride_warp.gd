@@ -307,6 +307,7 @@ var step_lift := 0.0             # (bots) skeleton units the free boot is lifted
 var _arc_prev = null             # the free ankle's world position last tick (the clip's, before the arc)
 var _arc_speed := 0.0            # skeleton units/s, smoothed
 var _arc_lift := 0.0
+const STEP_SAG_HELD := 0.3       # ...and at this share of it once it is down to the lift a travelling foot wants
 const STEP_SAG := 9.0            # skeleton units/s: the arc's top sags this fast while the foot travels
 const STEP_HOLD_FRAC := 0.15     # the foot counts as travelling while its speed is above this x the step's peak
 var _arc_top := 0.0              # the boot's height over the stance level the arc holds (skeleton units)
@@ -323,6 +324,7 @@ const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts a
 const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
 static var PIVOT_DBG := OS.has_environment("PIVOT_DBG")
 static var PIVOT_EARLY_LET_GO := OS.has_environment("PIVOT_EARLY_LET_GO")
+static var PIVOT_ARC_SAG := OS.has_environment("PIVOT_ARC_SAG")
 var _aloft_held := 0.0
 
 ## The pivot weight a turn on the spot wants next tick: a turn that has squared up (want 0) still
@@ -461,6 +463,12 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				# full braked STEP_FALL, 0.5 cm a tick (11-06); now it settles over ~0.3 s
 				fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_EASE_K * delta)) + STEP_EASE_V * delta)
 			var nt := maxf(cand, _arc_top - fall)
+			if travelling and not PIVOT_ARC_SAG:
+				# while the foot still travels round, the sag stops at the lift its speed wants (it
+				# holds, never rises): the hero's 180 deg turn sagged 4.0 -> 1.2 cm at a full stride
+				# and its clip's second step lifted it to 2.4 again, a double hop (11-06, `heroturn`);
+				# held there it hovered flat at 2.9 cm for 0.5 s, so it still eases down at STEP_SAG_HELD
+				nt = maxf(nt, minf(_arc_top - fall * STEP_SAG_HELD, _arc_lift))
 			if PIVOT_DBG:
 				print("  arc f%d top %.2f fall %.2f cand %.2f d %.4f trav %s" % [Engine.get_physics_frames(), _arc_top, fall, cand, delta, travelling])
 			if nt < _arc_top - 1e-4:

@@ -768,6 +768,12 @@ func _hero_turn_test() -> void:
 	var shuf := [0.0]
 	var piv := [0.0, 0.0, 0.0, -1, 0]   # pin drift xz, pin drift y, other foot travel, side, ticks planted
 	var piv_o0 := [Vector3.INF]
+	# 11-06: the free (stepping) foot read on the final pose like `foeturn`: per-tick height over its
+	# standing height while the pivot holds, and its height the tick the pivot starts to let go
+	var free_on := [false]
+	var free_h: Array[float] = []
+	var free_rest := [0.0, 0.0]
+	var rel := [0.0, -1.0, 0.0]          # pivot last tick, free height at the release, lift peak
 	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
 	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
 		var peak := 0.0
@@ -780,6 +786,17 @@ func _hero_turn_test() -> void:
 			await skel.skeleton_updated
 			shuf[0] = maxf(shuf[0], p.turn_shuffle)
 			var sw: StrideWarp = p.stride_warp
+			if free_on[0]:
+				var fs: int = 1 - sw.pivot_side
+				var fh: float = float(sw.ground_sole[fs]) - float(free_rest[fs])
+				if sw.pivot < float(rel[0]) and float(rel[0]) >= 0.999 and float(rel[1]) < 0.0:
+					rel[1] = fh
+				rel[0] = sw.pivot
+				if sw.pivot > 0.5:
+					free_h.append(fh)
+					rel[2] = maxf(float(rel[2]), sw.step_lift)
+					if OS.has_environment("HEROTURN_DBG"):
+						print("   i %d free %d h %.4f pivot %.3f lift %.2f top %.2f falling %s speed %.1f peak %.1f off %.4f" % [i, fs, fh, sw.pivot, sw.step_lift, sw._arc_top, sw._arc_falling, sw._arc_speed, sw._arc_peak, float(sw.ground_off[fs])])
 			if sw.pivot_pin != null and sw.pivot > 0.95:
 				var pin: Vector3 = sw.pivot_pin
 				var dv := sw.pivot_ankle - pin
@@ -819,8 +836,47 @@ func _hero_turn_test() -> void:
 	var post_yaw := func() -> float:
 		var d := post.global_position - p.global_position
 		return atan2(d.x, d.z)
+	await skel.skeleton_updated
+	for j in 2:
+		free_rest[j] = float(p.stride_warp.ground_sole[j])
+	free_on[0] = true
 	var spot: Array = await measure.call(post_yaw, 60, Vector2.ZERO)
-	await _ticks(40)
+	for i in 40:                          # the release may come after the measured turn: keep reading
+		await get_tree().physics_frame
+		await skel.skeleton_updated
+		var sw2: StrideWarp = p.stride_warp
+		var fh2: float = float(sw2.ground_sole[1 - sw2.pivot_side]) - float(free_rest[1 - sw2.pivot_side])
+		if sw2.pivot < float(rel[0]) and float(rel[0]) >= 0.999 and float(rel[1]) < 0.0:
+			rel[1] = fh2
+		rel[0] = sw2.pivot
+		if sw2.pivot > 0.5:
+			free_h.append(fh2)
+	free_on[0] = false
+	var f_peak := 0.0
+	var f_up := 0
+	for h in free_h:
+		f_peak = maxf(f_peak, h)
+		if h > 0.02:
+			f_up += 1
+	var f_dip := 0.0
+	for m in range(1, free_h.size() - 1):
+		var bp := 0.0
+		for q in m:
+			bp = maxf(bp, free_h[q])
+		var ap := 0.0
+		for q in range(m + 1, free_h.size()):
+			ap = maxf(ap, free_h[q])
+		f_dip = maxf(f_dip, minf(bp, ap) - free_h[m])
+	var f_tap := 0.0
+	var f_low := 0.0
+	for m in range(1, free_h.size()):
+		if free_h[m - 1] < 0.01 and free_h[m - 1] > free_h[m]:
+			f_tap = maxf(f_tap, free_h[m - 1] - free_h[m])
+	for h in free_h:
+		f_low = minf(f_low, h)
+	print("BOT heroturn: free foot peak %.3f m, %d ticks over 2 cm of %d pivot ticks, arc dip %.3f, set-down %.4f m/tick, lowest %.3f, %.4f up as the pivot lets go" % [f_peak, f_up, free_h.size(), f_dip, f_tap, f_low, float(rel[1])])
+	if OS.has_environment("HEROTURN_DBG"):
+		print("   free foot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
 	var spot_after := absf(p.turn_lead)
 	var spot_rate := p.turn_rate_peak
 	var spot_shuffle: float = shuf[0]
@@ -858,6 +914,16 @@ func _hero_turn_test() -> void:
 	# turning to the post: the turn's side decides the planted foot (yaw up = a left turn = the left foot)
 	if spot_piv[4] < 8:
 		return _combat_done(false, "no planted pivot foot through the turn on the spot (%d ticks)" % spot_piv[4])
+	# 11-06 the free foot on the final pose: before (env PIVOT_ARC_SAG) its arc sagged 4.0 -> 1.2 cm while
+	# it still travelled and the clip's second step lifted it to 2.4 again (dip 0.012); now one arc
+	if f_peak < 0.025 or f_peak > 0.11 or f_up < 12:
+		return _combat_done(false, "the turn step's free foot does not clear the turf in one step (peak %.3f m, %d ticks)" % [f_peak, f_up])
+	if f_dip > (0.03 if OS.has_environment("PIVOT_ARC_SAG") else 0.004):
+		return _combat_done(false, "the turn step's free foot sags and lifts again mid-step (dip %.3f m)" % f_dip)
+	if f_tap > 0.003 or f_low < -0.01:
+		return _combat_done(false, "the turn step's free foot taps down or sinks (%.4f m/tick, lowest %.3f)" % [f_tap, f_low])
+	if float(rel[1]) > 0.005:
+		return _combat_done(false, "the pivot lets go with the free foot still up (%.4f m)" % float(rel[1]))
 	if spot_piv[0] > 0.03 or spot_piv[1] > 0.03:
 		return _combat_done(false, "the pivot foot slides off its plant (%.3f m, y %.3f m)" % [spot_piv[0], spot_piv[1]])
 	if spot_piv[2] < 0.15:
