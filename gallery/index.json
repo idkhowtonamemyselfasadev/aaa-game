@@ -886,5 +886,17 @@
   "time": "2026-11-05T23:30:00Z",
   "caption": "The knight's gather before the roar: knees set, glaive drawn back low; GL fallback frame, flat lighting.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261106-0113-knight-turn-step.jpg",
+  "time": "2026-11-06T01:13:14Z",
+  "caption": "The Ashen Knight (first size) mid-turn on the spot, its trailing boot lifted in the new step arc instead of scraping; GL frame, the knight is backlit and its feet too small and dark to read the arc well.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261106-0113-knight-turn-squared.jpg",
+  "time": "2026-11-06T01:13:14Z",
+  "caption": "The knight squaring up to the gate at the end of its turn with the glaive carried across; GL compatibility lighting, flat dark armour and a bare dirt floor, not Wukong quality yet.",
+  "verdict": "fail"
  }
 ]

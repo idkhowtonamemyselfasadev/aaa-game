@@ -95,7 +95,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if absf(k - 1.0) >= 1e-3:
 		_warp_stride(skel)
 	_lock_feet(skel, _delta)
-	_pivot_leg(skel)
+	_pivot_leg(skel, _delta)
 	_ground_feet(skel, _delta)
 
 func _warp_stride(skel: Skeleton3D) -> void:
@@ -290,10 +290,29 @@ func _bend(skel: Skeleton3D, b: int, axis_skel: Vector3, angle: float) -> void:
 	skel.set_bone_pose_rotation(b, Quaternion(local_axis, angle) * skel.get_bone_pose_rotation(b))
 
 static var PIVOT_FREE_SINKS := OS.has_environment("PIVOT_FREE_SINKS")
+## The turn step's arc (11-06): the clip's free foot only flicks up ~4 cm for 3 ticks and then
+## drops ~4 cm under its standing height while it is still travelling round. While the pivot
+## holds, the free boot is lifted by how fast it travels over the turf (eased: it rises quickly,
+## comes down over ~0.15 s and sets down flat), and never goes below the stance level.
+## PIVOT_NO_ARC: the before.
+static var PIVOT_NO_ARC := OS.has_environment("PIVOT_NO_ARC")
+const STEP_LIFT_K := 0.030       # s: lift = the free foot's travel speed x this (skeleton units)
+const STEP_LIFT_MAX := 6.5       # skeleton units (cm): a turn step clears the turf by at most this
+const STEP_RISE := 30.0          # 1/s: the lift eases up to its target this fast
+const STEP_FALL := 24.0          # skeleton units/s: the boot comes down at most this fast
+const STEP_SPEED_RATE := 20.0    # 1/s: the travel speed is smoothed (a one-tick jump is not a step)
+var step_lift := 0.0             # (bots) skeleton units the free boot is lifted this tick
+var _arc_prev = null             # the free ankle's world position last tick (the clip's, before the arc)
+var _arc_speed := 0.0            # skeleton units/s, smoothed
+var _arc_lift := 0.0
 
-func _pivot_leg(skel: Skeleton3D) -> void:
+func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
+	step_lift = 0.0
 	if pivot <= 0.0:
 		pivot_pin = null
+		_arc_prev = null
+		_arc_speed = 0.0
+		_arc_lift = 0.0
 		return
 	var sides := ["Left", "Right"]
 	var ul := skel.find_bone("mixamorig_%sUpLeg" % sides[pivot_side])
@@ -360,11 +379,29 @@ func _pivot_leg(skel: Skeleton3D) -> void:
 	# its boot sank up to 7.5 cm into the turf through the step (11-06, bot `foeturn` on the
 	# final pose: off the turf 3 ticks of a turn, then under it). The free leg bends to keep its
 	# boot where the clip steps it. PIVOT_FREE_SINKS: the before
-	if pivot_sink > 0.0 and not PIVOT_FREE_SINKS:
+	var of_t := of_clip
+	if not PIVOT_NO_ARC and delta > 0.0:
+		var wnow := xf * of_clip
+		if _arc_prev != null:
+			var dv: Vector3 = inv.basis * (wnow - (_arc_prev as Vector3))
+			var v := (dv - up * dv.dot(up)).length() / delta
+			_arc_speed = lerpf(_arc_speed, v, 1.0 - exp(-STEP_SPEED_RATE * delta))
+		_arc_prev = wnow
+		var want := minf(_arc_speed * STEP_LIFT_K, STEP_LIFT_MAX)
+		if want > _arc_lift:
+			_arc_lift = lerpf(_arc_lift, want, 1.0 - exp(-STEP_RISE * delta))
+		else:
+			_arc_lift = maxf(want, _arc_lift - STEP_FALL * delta)
+		var floor_h := (inv * (pivot_pin as Vector3)).dot(up)
+		var hgt := of_t.dot(up)
+		var raise := (maxf(hgt, floor_h + _arc_lift) - hgt) * pivot
+		of_t += up * raise
+		step_lift = _arc_lift * pivot
+	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip:
 		var oul := skel.find_bone("mixamorig_%sUpLeg" % sides[1 - pivot_side])
 		var olg := skel.find_bone("mixamorig_%sLeg" % sides[1 - pivot_side])
 		if oul >= 0 and olg >= 0:
-			_leg_to(skel, oul, olg, of, of_clip, of_keep, fwd)
+			_leg_to(skel, oul, olg, of, of_t, of_keep, fwd)
 	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
 	pivot_other = xf * skel.get_bone_global_pose(of).origin
 

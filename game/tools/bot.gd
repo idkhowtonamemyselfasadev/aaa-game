@@ -1493,10 +1493,12 @@ func _foe_turn_test() -> void:
 	for o in out:
 		if o[1] < 0.5:
 			return _combat_done(false, "size %.1f: the feet do not step round in a turn (shuffle %.2f)" % [o[0], o[1]])
-		# 11-06: read on the final pose the pivot foot stays down, so only the free foot counts: the
-		# soldier's turn step is up (> 2 cm/size) just 3 ticks, the knight 6-11 (KNOWN BUG, a flick, not a
-		# step: give the free foot a step arc). The clip read (FOETURN_CLIP) counted both feet: >= 8 then
-		var min_up := 8 if OS.has_environment("FOETURN_CLIP") else (3 if o[0] < 1.5 else 6)
+		# 11-06: read on the final pose the pivot foot stays down, so only the free foot counts. Before the
+		# step arc (env PIVOT_NO_ARC) the soldier's turn step was up (> 2 cm/size) just 3 ticks, the knight
+		# 6-11 (a flick); with the arc 18 / 20-29. The clip read (FOETURN_CLIP) counted both feet: >= 8 then
+		var min_up := 3 if OS.has_environment("PIVOT_NO_ARC") else (8 if OS.has_environment("FOETURN_CLIP") else 12)
+		if o[2] > 0.11:
+			return _combat_done(false, "size %.1f: the turn step kicks the boot too high (%.3f per size)" % [o[0], o[2]])
 		if o[2] < 0.03 or o[3] < min_up:
 			return _combat_done(false, "size %.1f: no foot clears the turf in the turn (lift %.3f, %d ticks)" % [o[0], o[2], o[3]])
 		if o[4] > 2:
