@@ -3290,6 +3290,7 @@ func _knight_test() -> void:
 	var coil_hy := [-9.0]
 	var coil_hx := [-9.0]
 	var coil_butt := [-9.0]
+	var coil_glare := [0.0]
 	var grip_probe := func() -> void:
 		if k.intro == null or not is_instance_valid(k.intro):
 			return
@@ -3315,6 +3316,8 @@ func _knight_test() -> void:
 				coil_hx[0] = maxf(coil_hx[0], hp.x)
 			var bw: Vector3 = k.spear.to_global(-k.spear.tip_local())
 			coil_butt[0] = maxf(coil_butt[0], (bw.y - k.global_position.y) / k.size_scale)
+			# the helm on the hero while the chest twists away (04:00 11-07: it looked off to its right)
+			coil_glare[0] = maxf(coil_glare[0], absf(HeadGlare.yaw_to(k.skel, k.body, p.global_position + Vector3.UP * 1.5)))
 			if OS.get_environment("COILDBG") != "":
 				print("COIL t %.2f r %s l %s butt %.2f" % [k.intro.t, inv * (k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin), inv * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin), (bw.y - k.global_position.y) / k.size_scale])
 		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
@@ -3360,6 +3363,9 @@ func _knight_test() -> void:
 	print("BOT knight: coil: hands at most %.2f m up, %.2f toward its left (+x); butt %.2f m up (per size)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
 	if coil_hy[0] > 1.05 or coil_hx[0] > -0.08 or coil_butt[0] > 1.3:
 		return _combat_done(false, "the reveal's coil holds the hands high or across the body, not low at the right hip (y %.2f, x %.2f, butt %.2f)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
+	print("BOT knight: coil: helm at most %.1f deg off the hero" % rad_to_deg(coil_glare[0]))
+	if coil_glare[0] > deg_to_rad(20.0):
+		return _combat_done(false, "the reveal's coil turns the helm away from the hero with the twisted chest (%.1f deg off)" % rad_to_deg(coil_glare[0]))
 	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
 	if heave_fwd > 0.45 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])

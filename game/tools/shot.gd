@@ -2501,10 +2501,11 @@ func _ready() -> void:
 			kk._physics_process(dt)
 			player._physics_process(dt)
 			bi._frame(bi.t)
-		if "body" in args:
+		if "body" in args or "kface" in args or "kside" in args:
 			# intro body: a fixed front 3/4 lens on the whole giant (judge the beats, not the shot)
+			# (04:00 11-07: kface/kside did nothing without `body`, the reveal's own lens was shot)
 			var kf := player.global_position - kk.global_position
-			if "kface" in args:
+			if "kface" in args or "kside" in args:
 				# kface: the lens off the knight's own front (before it has turned onto the hero)
 				kf = kk.body.global_transform.basis.z
 			kf.y = 0.0

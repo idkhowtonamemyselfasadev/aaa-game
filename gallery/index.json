@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261102-1741-knight-leap-tuck.jpg",
-  "time": "2026-11-02T17:41:00Z",
-  "caption": "The Ashen Knight at the top of its ember leap, knees tucked under it and the glaive heaved over its helm with the blade laid back; still a GL-compat frame (dark sky, flat distant mountains), and the cape hangs stiff instead of streaming.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-1830-knight-leap-cloth.jpg",
   "time": "2026-11-02T18:30:00Z",
   "caption": "The Ashen Knight coming down out of its ember leap, knees tucked, the oxblood back tabard flared out behind on the air; still wrong: GL fallback sky and chalky mountains, the front panel barely reads, no scorch where the glaive will bite.",
@@ -891,6 +885,18 @@
   "file": "20261107-0310-knight-coil-heave.jpg",
   "time": "2026-11-07T03:10:00Z",
   "caption": "The heave out of the new coil (GL, it=3.1): the glaive rises diagonally round the knight's right side; lighting is still the flat GL path, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0422-knight-coil-glare.jpg",
+  "time": "2026-11-07T04:22:13Z",
+  "caption": "The Ashen Knight's reveal coil (GL frame): chest twisted round to its right, glaive trailing low, helm held on the hero; still lit flat in the stones' shadow and only a GL frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0422-knight-coil-profile.jpg",
+  "time": "2026-11-07T04:22:13Z",
+  "caption": "The coil in profile (the kside lens now works): crouched, glaive low behind the right hip; backlit to a silhouette, GL not Forward+.",
   "verdict": "fail"
  }
 ]

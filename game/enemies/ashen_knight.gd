@@ -166,6 +166,8 @@ const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already kno
 ## The crown reel's glaive: the hands lose it and it droops, blade into the turf, leaned on.
 const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
 var head: HeadBow                # bows the head onto the chest in the crown reel and the surge
+var glare: HeadGlare             # the neck turns the helm back onto the hero in the reveal's coil
+var intro_glare_err := 0.0       # bots: worst yaw (rad) left between the helm and the hero in the coil
 var _crown_reel := false
 
 ## The crown reel and the growth surge choreograph the whole body themselves: the plain hit
@@ -228,6 +230,11 @@ func _ready() -> void:
 		head.name = "HeadBow"
 		head.side = body
 		skel.add_child(head)
+		# after the bow: the helm stays on the hero while the chest twists away in the coil
+		glare = HeadGlare.new()
+		glare.name = "HeadGlare"
+		glare.side = body
+		skel.add_child(glare)
 	add_to_group("boss")
 	set_size_scale(growth.scale_of(1))
 
@@ -723,6 +730,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		rags.stream = 0.0
 		rags.flap = 0.0
 		rags.air_y = 0.0
+	if glare != null:
+		glare.weight = 0.0
 	if move_kind == INTRO_MOVE:
 		return _intro_tick(delta, to)
 	if move_kind == STOMP_MOVE:
@@ -879,6 +888,11 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	var coil := smoothstep(2.25, r0, it) * (1.0 - smoothstep(r0 + 0.25, r0 + 0.45, it))
 	if skip:
 		coil = 0.0
+	# (04:00 11-07) the chest's -65 deg coil twist carried the helm round to its right with it, so
+	# it looked away from the hero just as it gathered: the neck takes the twist back out
+	if glare != null and _player != null:
+		glare.weight = coil if OS.get_environment("KNIGHT_NOGLARE") == "" else 0.0   # env: the before
+		glare.target = _player.global_position + Vector3.UP * 1.5
 	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * coil)
 	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
 	_pose = _lerp_pose(rest, INTRO_ROAR, up)
