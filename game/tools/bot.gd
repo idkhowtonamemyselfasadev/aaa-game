@@ -845,6 +845,9 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const SWING_AHEAD_GATE := 0.15  # m: the free left wrist in the knock-down rise stays no further ahead of its hip socket than this
+const SWING_BACK_GATE := -0.45  # the upper arm hangs near plumb: not swung back past ~27 deg (nor forward past ~6)
+const SWING_UP_GATE := 0.10     # m: nor raised above it (kneeling, a hanging wrist sits ~0.05 over the socket)
 const FROG_GATE := 0.09         # m: the climbing stepping knee splays this much further out than the standing one
 const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
 const HERO_FIST_SWING := 0.004   # m: MEAN through the light string (bisected feed share + re-keyed recoveries 15:00 11-06: 0.001; was 0.007, 0.03 with the one-tick-late fit)
@@ -7617,12 +7620,13 @@ func _sweep_test() -> void:
 	var laid := {}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
 	var push := [0.0, 0.0, null, 0]         # pushing wrist: max height over the turf, max drift, first spot, samples
-	for pn in ["mixamorig_LeftHand", "mixamorig_LeftLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_RightLeg", "mixamorig_RightHand"]:
+	for pn in ["mixamorig_LeftHand", "mixamorig_LeftArm", "mixamorig_LeftForeArm", "mixamorig_LeftLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_RightLeg", "mixamorig_RightHand"]:
 		if not p.crumple.probe.has(pn):
 			p.crumple.probe.append(pn)
 	# the rise off one knee: left knee height, right ankle height, right foot ahead of the knee (min over
 	# the held kneel), then the lowest knee/ankle over the whole rise (nothing sinks into the turf)
 	var kneel := [9.0, -9.0, 9.0, 9.0, 0, -9.0]   # right ankle lo, left knee hi, foot ahead min, lowest, samples, right ankle hi
+	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7684,6 +7688,20 @@ func _sweep_test() -> void:
 			kh[1] = minf(kh[1], wr.y - kn.y)
 			kh[2] += 1
 			if OS.has_environment("KNEEL_DBG"): print("knee hand t %.3f d %.3f up %.3f" % [p.down_t, wr.distance_to(kn), wr.y - kn.y])
+		if p.down_t >= Player.KNOCK_SWING[1] and p.down_t <= Player.KNOCK_SWING[2] and p.crumple.probed.has("mixamorig_LeftHand"):
+			var lw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
+			var hj: Vector3 = p.crumple.hip_joint[0]
+			var f2 := p.body.global_basis.z
+			swing[0] = maxf(swing[0], (lw - hj).dot(Vector3(f2.x, 0, f2.z).normalized()))
+			swing[1] = maxf(swing[1], lw.y - hj.y)
+			swing[2] += 1
+			if p.crumple.probed.has("mixamorig_LeftForeArm"):
+				var ua: Vector3 = (sk.global_transform * (p.crumple.probed["mixamorig_LeftForeArm"] as Vector3) - sk.global_transform * (p.crumple.probed["mixamorig_LeftArm"] as Vector3)).normalized()
+				var uf := ua.dot(Vector3(f2.x, 0, f2.z).normalized())
+				swing[3] = minf(swing[3], uf)
+				swing[4] = maxf(swing[4], uf)
+				if OS.has_environment("KNEEL_DBG"): print("upper arm t %.3f fwd %.2f out %.2f down %.2f" % [p.down_t, ua.dot(Vector3(f2.x, 0, f2.z).normalized()), ua.dot(p.body.global_basis.x), -ua.y])
+			if OS.has_environment("KNEEL_DBG"): print("swing t %.3f ahead %.3f up %.3f" % [p.down_t, (lw - hj).dot(Vector3(f2.x, 0, f2.z).normalized()), lw.y - hj.y])
 		if passed_over == "" and p.down_t > 0.8:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
@@ -7716,6 +7734,9 @@ func _sweep_test() -> void:
 	print("BOT sweep: right palm on the front knee: wrist within %.3f m of the knee, at least %.3f m above it, %d samples" % [kh[0], kh[1], kh[2]])
 	if kh[2] < 2 or kh[0] > 0.16 or kh[1] < -0.02:
 		return _combat_done(false, "the hero's right hand does not brace on the front knee in the rise")
+	print("BOT sweep: free left arm in the rise: wrist at most %.3f m ahead of the left hip socket, at most %.3f m above it, upper arm forward component %.2f..%.2f, %d samples" % [swing[0], swing[1], swing[3], swing[4], swing[2]])
+	if swing[2] < 2 or swing[0] > SWING_AHEAD_GATE or swing[1] > SWING_UP_GATE or swing[3] < SWING_BACK_GATE or swing[4] > 0.10:
+		return _combat_done(false, "the hero's free left arm flings out in front of the chest in the rise instead of swinging back by the hip")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
 		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not

@@ -51,6 +51,8 @@ var knee_lr := Vector2.ZERO  # likewise on top of knee (a braced front leg, a fo
 var ankle_lr := Vector2.ZERO # likewise on top of ankle, after sole_flat (- toes up on a heel strike,
 							 # + toes down: a back heel lifted onto the ball of the foot)
 var arm_lr := Vector2.ZERO   # likewise on top of arm (a counter-swing)
+var elbow_lr := Vector2.ZERO # radians per forearm (left, right) on top of elbow
+var arm_aim_lr := Vector2.ZERO # per arm (left, right) added to arm_aim (one arm kept hanging while the other is posed)
 var ground := 0.0            # 0..1: after the leg bends, the hips are moved up or down so the lower
 							 # ankle sits at its rest height (a posed stance stays on the turf)
 var settle := 0              # after `ground`: 1 the left leg, 2 the right one is bent down at the knee
@@ -114,9 +116,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_bend(skel, "mixamorig_%sUpLeg" % side, x, -th - pelvis)
 		_bend(skel, "mixamorig_%sLeg" % side, x, kn)
 		_bend(skel, "mixamorig_%sFoot" % side, x, ankle + ankle_lr[li] - sole_flat * (kn - th))
-		if arm_aim > 0.0:
+		var aa := minf(arm_aim + arm_aim_lr[li], 1.0)
+		if aa > 0.0:
 			_hang(skel, "mixamorig_%sArm" % side, "mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side,
-				(-up + x * sg * 0.3).normalized(), arm_aim)
+				(-up + x * sg * 0.3).normalized(), aa)
 		var bh := back_hand if side == "Right" else 0.0
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
@@ -126,7 +129,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		if arm_sweep != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, up, arm_sweep)
 		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg + arm_lr[0 if side == "Left" else 1], -1.0, bh), toss_arm, ts))
-		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow, 1.7, bh), toss_elbow, ts))
+		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow + elbow_lr[0 if side == "Left" else 1], 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
 		if side == "Right" and flick > 0.0:

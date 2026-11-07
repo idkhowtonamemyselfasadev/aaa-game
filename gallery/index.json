@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-2134-knight-reveal-crane.jpg",
-  "time": "2026-11-03T21:34:14Z",
-  "caption": "Boss reveal, first shot: the lens low at the Ashen Knight's feet as it cranes up the giant; GL frame, no letterbox in this render, and the knight is a dark backlit silhouette.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-2134-knight-reveal-roar.jpg",
-  "time": "2026-11-03T21:34:14Z",
-  "caption": "Boss reveal, roar beat: letterboxed, the giant brandishes its glaive skyward with the ember blazing at its shoulders; still GL, backlit against the sun, and the arms do not rise high enough for a roar.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-2236-knight-stomp-tell.jpg",
   "time": "2026-11-03T22:36:00Z",
   "caption": "Phase-2 Ashen Knight with the right knee raised high for the stomp, the hero small in front; GL frame, the giant is backlit so the lifted leg reads only as a silhouette and the body leans back stiffly.",
@@ -885,6 +873,18 @@
   "file": "20261107-1928-kneebrace-grass.jpg",
   "time": "2026-11-07T19:28:20Z",
   "caption": "The kneeling rise in the meadow at 15:30: tall grass hides the braced hand and knees; the figure reads as kneeling but the frame is cluttered by foreground blades.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2030-armhang-cmp.jpg",
+  "time": "2026-11-07T20:30:00Z",
+  "caption": "Knock-down rise, grass hidden, 1.62/1.70/1.76: before (top) the free left hand claws out in front of the chest; after (bottom) it hangs by the hip as a counterweight. The hang still splays a little to the side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2030-armhang-170.jpg",
+  "time": "2026-11-07T20:30:00Z",
+  "caption": "Kneeling up at 1.70 in the GL fallback: right palm on the front knee, left arm hanging by the thigh; the GL frame lacks fog and GI so it is not a Wukong-grade image.",
   "verdict": "fail"
  }
 ]

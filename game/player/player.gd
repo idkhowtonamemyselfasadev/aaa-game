@@ -68,6 +68,9 @@ const KNOCK_ROLL := 0.30              # rad: the body rolls onto the hand's hip 
 const KNOCK_SIT := 0.40               # rad: less forward curl in the spine, the trunk leant back onto the arm
 const KNOCK_KNEEL := [1.34, 1.54, 1.64, 1.82]   # down_t: the kneel forms, held, eases out in the rise
 const KNOCK_KNEE_HAND := [1.44, 1.54, 1.70, 1.80]  # down_t: the right palm comes onto the front knee, braced, pushes, lets go
+const KNOCK_SWING := [1.40, 1.56, 1.72, 1.85]  # down_t: the free left arm swings back by the hip as a counterweight, held, eases out
+const KNOCK_SWING_ARM := 0.35          # rad (+ = forward, on top of the spine's forward curl): the upper arm hangs ~13 deg behind plumb
+const KNOCK_SWING_ELBOW := 0.20        # rad: its forearm, a soft bend, the hand relaxed
 const KNOCK_KNEE_HAND_AT := Vector3(0.0, 0.07, -0.04) # m from the knee joint: up (over the kneecap), forward (- = back up the thigh)
 const KNOCK_KNEEL_FRONT := 1.46       # down_t: the front (right) foot starts forward
 const KNOCK_KNEEL_HIP := Vector2(-0.87, 0.52)   # rad on top of hip (left back under the body, right forward)
@@ -2863,6 +2866,9 @@ func _down_tick(delta: float) -> void:
 			crumple.hip_lr = Vector2.ZERO
 			crumple.knee_lr = Vector2.ZERO
 			crumple.hand_knee = Vector3.ZERO
+			crumple.arm_lr = Vector2.ZERO
+			crumple.elbow_lr = Vector2.ZERO
+			crumple.arm_aim_lr = Vector2.ZERO
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		return
@@ -2992,6 +2998,16 @@ func _pose_knockdown(t: float) -> void:
 			kr = 0.0
 		crumple.hip_lr = Vector2(KNOCK_KNEEL_HIP.x * kl, KNOCK_KNEEL_HIP.y * kr)
 		crumple.knee_lr = Vector2(KNOCK_KNEEL_KNEE.x * kl, KNOCK_KNEEL_KNEE.y * kr)
+		# once the push hand has left the turf the free left arm does not fling out in front of
+		# the chest: it swings back and down by the hip, elbow soft, a counterweight to the
+		# trunk coming forward over the front foot
+		var sw: Array = KNOCK_SWING
+		var aw := smoothstep(sw[0], sw[1], t) * (1.0 - smoothstep(sw[2], sw[3], t))
+		if OS.has_environment("KNOCK_NOSWING"):
+			aw = 0.0
+		crumple.arm_aim_lr = Vector2((1.0 - crumple.arm_aim) * aw, 0.0)
+		crumple.arm_lr = Vector2((KNOCK_SWING_ARM - crumple.arm) * aw, 0.0)
+		crumple.elbow_lr = Vector2((KNOCK_SWING_ELBOW - crumple.elbow) * aw, 0.0)
 	# tip back about the heels (the body faces +Z in body space)
 	var heel := Vector3(0.0, 0.0, -0.12)
 	var tip := Transform3D(Basis(), heel) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(k[0])), Vector3.ZERO) * Transform3D(Basis(), -heel)
