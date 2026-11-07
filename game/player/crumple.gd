@@ -75,6 +75,8 @@ var hip_joint := [Vector3.ZERO, Vector3.ZERO]     # world hip joints as posed, b
 var foot_err := [0.0, 0.0]   # (bots) m from each ankle to its target after the reach
 var hip_shift := Vector3.ZERO # world m: the hips (and all above) moved this way before the limb reaches,
 							 # the spine bent back so the chest stays near centre (weight over a standing foot)
+var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
+							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
@@ -140,6 +142,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_bend(skel, "mixamorig_Head", up, head_turn)
 	if hip_shift != Vector3.ZERO:
 		_shift_hips(skel, up)
+	if hip_roll != 0.0:
+		_roll_hips(skel, fwd)
 	if ground > 0.0:
 		_ground(skel, up)
 		if settle > 0:
@@ -446,6 +450,18 @@ func _shift_hips(skel: Skeleton3D, up: Vector3) -> void:
 	_bend(skel, "mixamorig_Spine", k, m * 0.6)
 	_bend(skel, "mixamorig_Spine1", k, m * 0.6)
 	_bend(skel, "mixamorig_Spine2", k, m * 0.5)
+
+## Rolls the pelvis about the facing by hip_roll so the stepping side's hip hikes up, and rolls
+## the spine back the other way, mostly low down, so the chest and shoulders stay level over the
+## holds. The limb reaches run after this and keep hands and feet on their stones.
+func _roll_hips(skel: Skeleton3D, fwd: Vector3) -> void:
+	var a := hip_roll * ROLL_SIGN
+	_bend(skel, "mixamorig_Hips", fwd, a)
+	_bend(skel, "mixamorig_Spine", fwd, -a * 0.5)
+	_bend(skel, "mixamorig_Spine1", fwd, -a * 0.32)
+	_bend(skel, "mixamorig_Spine2", fwd, -a * 0.18)
+
+const ROLL_SIGN := 1.0
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 ## Turns a bone about the body's up so the line from its right child joint to its left one

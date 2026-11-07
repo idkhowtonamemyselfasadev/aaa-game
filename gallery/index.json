@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-1130-warden-pleats.jpg",
-  "time": "2026-11-03T11:30:00Z",
-  "caption": "Kindled warden up close: the tabard now hangs in real uneven pleats with a torn side edge and ragged hem; still GL-only, square spark sprites, and the shoulder mantle reads as a stiff box.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1207-warden-mantle.jpg",
-  "time": "2026-11-03T12:07:09Z",
-  "caption": "Kindled warden close-up: the shoulder mantle now drapes in uneven folds from the shoulders with a torn front edge and hand-cut hem instead of a stiff cone; still GL-only (square spark sprites) and the hood reads heavy.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-1309-warden-cowl.jpg",
   "time": "2026-11-03T13:09:44Z",
   "caption": "Kindled warden close-up: the Hollow cowl now has a thick rolled brim round the face, drape folds deepening to the shoulders and a torn edge; the crown is still a smooth dome and GL draws square sparks.",
@@ -897,6 +885,18 @@
   "file": "20261107-1414-climbsway-cmp.jpg",
   "time": "2026-11-07T14:14:59Z",
   "caption": "Same climb frame before (left, hips centred) and after (right, belt tipped, hips and robe out over the standing foot, shoulders level); weight shift reads but is subtle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1513-climb-hike.jpg",
+  "time": "2026-11-07T15:13:14Z",
+  "caption": "Hero on the keep's stones from behind with the right foot stepping up: the belt and robe tip up on the stepping hip while the chest stays level; GL frame, the figure is small and in the face's shadow, no Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1513-climb-hike-cmp.jpg",
+  "time": "2026-11-07T15:13:14Z",
+  "caption": "Before (level pelvis, left) and after (stepping hip hiked, right) close crop: belt tilt is visible but subtle; the hands, glide and deep-hold lean-in are still rough.",
   "verdict": "fail"
  }
 ]

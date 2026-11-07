@@ -87,7 +87,8 @@ const CLIMB_LUNGE_COST := 20.0
 const CLIMB_LUNGE := 0.38             # seconds of the heave up
 const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
-const CLIMB_SWAY := 0.09              # m: the hips sway out over the standing foot while the other one steps
+const CLIMB_HIKE := 0.24              # rad: the stepping foot's hip hikes up (pelvis roll) while it steps
+const CLIMB_SWAY := 0.10              # m: the hips sway out over the standing foot while the other one steps
 const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
 # Jump off a face: jump with the stick pulled away from the stones (down/back, or hard to a side)
@@ -140,6 +141,10 @@ var climb_ticks: Array[Vector3] = []   # (bots) per climb tick: (rate m/s, neck 
 var climb_sway: Array[Vector2] = []    # (bots) per climb tick: (standing foot: +1 right / -1 left / 0 both,
 									   # posed hip centre m to the body's right of the origin)
 var _no_sway := OS.has_environment("CLIMB_NOSWAY")   # (env) the old centred hips, for before/after
+var climb_roll: Array[Vector2] = []    # (bots) per climb tick: (standing foot as climb_sway, posed left hip
+									   # socket height minus the right one, m)
+var _no_hike := OS.has_environment("CLIMB_NOHIKE")   # (env) the level pelvis, for before/after
+var _hike := 0.0                       # rad pelvis roll, + = the left hip up, eased
 var _sway := 0.0                       # m to the body's right, eased
 var _climb_surge := 1.0                # eased speed factor of the climb's push-and-reach rhythm
 var _climb_even := OS.has_environment("CLIMB_EVEN")
@@ -2393,6 +2398,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		var rgt := -Vector3(n.x, 0.0, n.z).normalized().cross(Vector3.UP).normalized()
 		var hc: Vector3 = ((crumple.hip_joint[0] as Vector3) + (crumple.hip_joint[1] as Vector3)) * 0.5
 		climb_sway.append(Vector2(stand, (hc - global_position).dot(rgt)))
+		climb_roll.append(Vector2(stand, (crumple.hip_joint[0] as Vector3).y - (crumple.hip_joint[1] as Vector3).y))
 	if garb != null and gap < INF:
 		# the front panel swings out over the knees only as far as the stones let it
 		garb.wall_n = n
@@ -2434,6 +2440,8 @@ func _mantle_tick(delta: float) -> void:
 	if crumple != null:
 		_sway *= exp(-8.0 * delta)             # the hips come back under the body as it hauls over
 		crumple.hip_shift = crumple.hip_shift * exp(-8.0 * delta)
+		_hike *= exp(-8.0 * delta)
+		crumple.hip_roll = _hike
 	_hold_still_anim()
 	if u >= 1.0:
 		mantle_t = -1.0
@@ -2604,6 +2612,16 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 	_sway = lerpf(_sway, want, 1.0 - exp(-12.0 * delta))
 	var rgt := -Vector3(n.x, 0.0, n.z).normalized().cross(Vector3.UP).normalized()
 	crumple.hip_shift = rgt * _sway
+	# and the stepping side's hip hikes: the pelvis rolls up on the side of the foot that is
+	# lifting to its next hold, the trunk rolled back above it so the shoulders stay level
+	var roll := 0.0
+	for i in 2:
+		if _foot_t[i] < 1.0:
+			roll += (1.0 if i == 0 else -1.0) * CLIMB_HIKE * minf(1.5 * sin(PI * float(_foot_t[i])), 1.0)
+	if _no_hike:
+		roll = 0.0
+	_hike = lerpf(_hike, roll, 1.0 - exp(-12.0 * delta))
+	crumple.hip_roll = _hike
 
 ## The held idle is the staff guard: pelvis turned ~44 deg and chest ~18 deg off the facing.
 ## Hanging on the stones, hauling over a lip or swinging under the glider bar the body faces
@@ -2646,7 +2664,9 @@ func _clear_climb_pose() -> void:
 	crumple.neck = 0.0
 	crumple.head_turn = 0.0
 	crumple.hip_shift = Vector3.ZERO
+	crumple.hip_roll = 0.0
 	_sway = 0.0
+	_hike = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:

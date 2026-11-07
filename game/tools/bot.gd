@@ -11185,6 +11185,7 @@ func _climb_test() -> void:
 	p.climb_log = true
 	p.climb_ticks.clear()
 	p.climb_sway.clear()
+	p.climb_roll.clear()
 	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
@@ -11287,6 +11288,17 @@ func _climb_test() -> void:
 	var sw_l: float = sw_sum[-1.0] / maxf(sw_n[-1.0], 1)
 	var sw_b: float = sw_sum[0.0] / maxf(sw_n[0.0], 1)
 	print("BOT climb: hip sway: hip centre %.3f m right of the body on the right foot (%d), %.3f on the left (%d), %.3f on both (%d): shift %.3f m" % [sw_r, sw_n[1.0], sw_l, sw_n[-1.0], sw_b, sw_n[0.0], sw_r - sw_l])
+	# the stepping side's hip hikes: left hip above the right while the left foot steps (the right stands)
+	var rl_sum := {1.0: 0.0, -1.0: 0.0, 0.0: 0.0}
+	var rl_n := {1.0: 0, -1.0: 0, 0.0: 0}
+	for cr in p.climb_roll:
+		rl_sum[cr.x] += cr.y
+		rl_n[cr.x] += 1
+	var rl_r: float = rl_sum[1.0] / maxf(rl_n[1.0], 1)
+	var rl_l: float = rl_sum[-1.0] / maxf(rl_n[-1.0], 1)
+	print("BOT climb: hip hike: left hip %.3f m above the right while the left steps, %.3f while the right steps: hike %.3f m" % [rl_r, rl_l, rl_r - rl_l])
+	if p.climbs > 0 and not OS.has_environment("CLIMB_NOHIKE") and (rl_n[1.0] < 3 or rl_n[-1.0] < 3 or rl_r - rl_l < 0.03):
+		return _combat_done(false, "the pelvis stays level while a foot steps up instead of the stepping hip hiking")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_NOSWAY") and (sw_n[1.0] < 3 or sw_n[-1.0] < 3 or sw_r - sw_l < 0.05):
 		return _combat_done(false, "the hips hang centred instead of swaying out over the standing foot")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_EVEN") and rates.size() > 10 and (r90 - r10) / maxf(rmean, 1e-3) < 0.45:
