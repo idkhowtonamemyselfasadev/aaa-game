@@ -58,6 +58,14 @@ const FLINCH_DODGE_AT := 0.24         # a dodge may break the stagger this far i
 const FLINCH_LEAN := 17.0             # degrees the upper body rocks away from the blow
 const KNOCK_LAND := 0.42              # seconds into a knockdown when the back hits the ground
 const KNOCK_TIME := 1.85              # a heavy blow's knockdown: thrown, lying, back on the feet
+# the get-up pushes off the near (left) hand: it goes to the turf beside the hip as the body
+# begins to sit up, stays put while the trunk rises over it, and lets go as the squat takes the weight
+const KNOCK_HAND := [0.92, 1.04, 1.30, 1.44]   # down_t: reach starts, planted, lifts, gone
+const KNOCK_HAND_OUT := 0.26          # m out from the hip socket to the side
+const KNOCK_HAND_BACK := 0.25         # m behind it (the body faces +Z, thrown toward -Z)
+const KNOCK_LEAN := 0.32              # rad: the chest turns toward the pushing hand at full weight
+const KNOCK_ROLL := 0.30              # rad: the body rolls onto the hand's hip (about the ground line under it)
+const KNOCK_SIT := 0.40               # rad: less forward curl in the spine, the trunk leant back onto the arm
 const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
 const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
 
@@ -227,6 +235,7 @@ var armoured_hits := 0                # blows taken through the heavy's armour (
 var _flinch_dir := Vector3.ZERO       # world direction the blow shoves the hero
 var down_t := -1.0                    # seconds into a knockdown, -1 while on the feet
 var knockdowns := 0                   # heavy blows that threw the hero (bots read this)
+var _knock_hand := Vector3.INF        # world wrist target of the get-up's planted hand (fixed once set)
 var dead_t := -1.0                    # seconds since the killing blow, -1 while alive
 var deaths := 0
 var woke_t := -1.0                    # seconds since the last respawn (the black lifting)
@@ -2809,6 +2818,7 @@ func _knockdown(attacker: Node) -> void:
 	if crumple != null:
 		crumple.active = true
 	down_t = 0.0
+	_knock_hand = Vector3.INF
 	knockdowns += 1
 
 func _down_tick(delta: float) -> void:
@@ -2840,9 +2850,12 @@ func _down_tick(delta: float) -> void:
 		down_t = -1.0
 		model.transform = _model_rest
 		if crumple != null:
-			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn", "leg_aim", "square", "arm_aim"]:
+			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn", "leg_aim", "square", "arm_aim", "plant", "chest_twist"]:
 				crumple.set(k, 0.0)
+			crumple.plant_w = [1.0, 1.0]
+			crumple.hand_fingers = Vector3.ZERO
 			crumple.active = false
+		_knock_hand = Vector3.INF
 		return
 	if crumple != null:
 		# whatever stance the blow caught (a staggered guard, a stride), hang both legs even
@@ -2851,6 +2864,47 @@ func _down_tick(delta: float) -> void:
 		crumple.square = crumple.leg_aim
 		crumple.arm_aim = crumple.leg_aim
 	_pose_knockdown(down_t)
+	_knock_push_hand()
+
+## The get-up's push off the ground: the left hand reaches for the turf beside the hip and
+## holds there (a fixed world point) while the trunk sits up over it, the chest turned a little
+## toward it so the weight goes onto that arm; it lets go as the squat comes over the feet.
+func _knock_push_hand() -> void:
+	if crumple == null:
+		return
+	var h: Array = KNOCK_HAND
+	var w := smoothstep(h[0], h[1], down_t) * (1.0 - smoothstep(h[2], h[3], down_t))
+	if OS.has_environment("KNOCK_NOHAND"):
+		w = 0.0
+	if w <= 0.0:
+		crumple.plant = 0.0
+		crumple.chest_twist = 0.0
+		crumple.plant_w = [1.0, 1.0]
+		crumple.hand_fingers = Vector3.ZERO
+		if down_t > h[3] and _knock_hand != Vector3.INF:
+			_knock_hand = Vector3.INF
+			crumple.hand_curl = 0.4
+		return
+	var fwd := body.global_basis.z
+	fwd = Vector3(fwd.x, 0.0, fwd.z).normalized()
+	var out: Vector3 = crumple.hip_joint[0] - crumple.hip_joint[1]
+	out = (out - Vector3.UP * out.dot(Vector3.UP)).normalized()
+	if _knock_hand == Vector3.INF:
+		# where the left hip socket lies now, out to its side and a little behind, down on the turf
+		var at: Vector3 = crumple.hip_joint[0] + out * KNOCK_HAND_OUT - fwd * KNOCK_HAND_BACK
+		var hit := _ray(at + Vector3.UP * 1.0, at - Vector3.UP * 1.5)
+		var gy: float = (hit["position"] as Vector3).y if not hit.is_empty() else global_position.y
+		_knock_hand = Vector3(at.x, gy + 0.06, at.z)
+	crumple.plant = w
+	crumple.plant_w = [1.0, 0.0]
+	crumple.hand_target[0] = _knock_hand
+	crumple.hand_wall = Vector3.UP
+	crumple.hand_curl = 0.15
+	crumple.hand_fingers = (out - fwd * 0.6).normalized()
+	crumple.chest_twist = KNOCK_LEAN * w
+	crumple.spine -= KNOCK_SIT * w
+	# roll the top toward the left (+X in body space) about the body's forward line on the ground
+	model.transform = Transform3D(Basis(Vector3.BACK, -KNOCK_ROLL * w), Vector3.ZERO) * model.transform
 
 # t, then: pitch back (deg), hip, knee, spine, sink (m), arm, elbow -- the body thrown back
 # off its feet with the back arched and arms flung forward, landing on its back with the knees
@@ -2862,8 +2916,9 @@ const KNOCK_KEYS := [
 	[0.52, -79.0, 54.0, 116.0, 20.0, 0.13, 16.0, 30.0],
 	[0.62, -84.0, 55.0, 120.0, 18.0, 0.17, 8.0, 14.0],
 	[1.00, -83.0, 56.0, 120.0, 20.0, 0.17, 6.0, 12.0],
-	[1.30, -38.0, 88.0, 128.0, 48.0, 0.22, 48.0, 62.0],
-	[1.55, 0.0, 62.0, 120.0, 34.0, 0.44, 30.0, 40.0],
+	[1.28, -63.0, 76.0, 128.0, 34.0, 0.20, 30.0, 50.0],
+	[1.45, -28.0, 90.0, 130.0, 46.0, 0.24, 48.0, 62.0],
+	[1.60, 0.0, 62.0, 120.0, 34.0, 0.44, 30.0, 40.0],
 	[1.85, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 ]
 

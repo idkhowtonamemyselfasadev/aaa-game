@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-1543-harrier-coif-knot.jpg",
-  "time": "2026-11-03T15:43:57Z",
-  "caption": "The crouched harrier's hand-wound coif close up: uneven strip laps, a strip over the crown and a tie-off knot break the old smooth pot shape; still a GL frame, and the white ember-cracked armour and small head read busy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1614-harrier-ash-cracks.jpg",
-  "time": "2026-11-03T16:14:15Z",
-  "caption": "Harrier up close: the ash-stone skin is now dull grey with sooty blotches and broken, irregular dark seams instead of a chalk-white honeycomb; still GL only, and the chest glow is busy during the tell.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-1722-hollow-tell-chest.jpg",
   "time": "2026-11-03T17:22:13Z",
   "caption": "A Hollow Soldier mid wind-up: the chest tell is now dark ash with a few broken burning cracks and a soft underglow instead of a lit honeycomb; GL quick-look only, no Forward+ fog/bloom.",
@@ -897,6 +885,18 @@
   "file": "20261107-1613-climb-frog-cmp.jpg",
   "time": "2026-11-07T16:13:47Z",
   "caption": "Before (knee in line, left) and after (frog step, right) close crop: the right knee sits a few cm further out; subtle from this lens, needs a lit three-quarter view.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1735-getup-propped.jpg",
+  "time": "2026-11-07T17:35:44Z",
+  "caption": "Knock-down get-up 1.25 s in: the hero now rolls onto the near hip propped on a hand planted in the turf, knees drawn up, instead of a symmetric sit-up with hands floating; GL frame, lens high and grass hides the hand.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1735-getup-rise.jpg",
+  "time": "2026-11-07T17:35:44Z",
+  "caption": "Knock-down get-up 1.42 s in: the hand lets go as the hero comes over the feet into the squat; the rise is still one symmetric squat with no knee-down step.",
   "verdict": "fail"
  }
 ]

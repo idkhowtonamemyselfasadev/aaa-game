@@ -78,6 +78,9 @@ var hip_shift := Vector3.ZERO # world m: the hips (and all above) moved this way
 var knee_out := [0.0, 0.0]   # per leg (left, right): extra outward pull on the reaching knee's pole (a
 							 # climber's frog step: the stepping knee swings out to the side as the hip hikes)
 var knee_joint := [Vector3.ZERO, Vector3.ZERO]    # (bots) world knee joints after the foot reach
+var plant_w := [1.0, 1.0]    # per hand (left, right) on top of `plant`: one hand alone can reach (a push off the ground)
+var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point this way (flat on the ground)
+							 # instead of up the face
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -166,8 +169,11 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if plant > 0.0:
 		# last of all, after the spine has moved the shoulders: the hands go to their holds
 		for i in 2:
-			_reach(skel, sides[i], hand_target[i], plant)
-			_grip(skel, sides[i], hand_curl * plant)
+			var pw: float = plant * float(plant_w[i])
+			if pw <= 0.0:
+				continue
+			_reach(skel, sides[i], hand_target[i], pw)
+			_grip(skel, sides[i], hand_curl * pw)
 	for n in probe:
 		var pb := skel.find_bone(n)
 		if pb >= 0:
@@ -272,6 +278,8 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
 		return
 	# fingers up the face, tipped a little into it so they hook over the stone above
 	var want := (up - wall * up.dot(wall)).normalized() - wall * 0.25
+	if hand_fingers != Vector3.ZERO:
+		want = (inv.basis * hand_fingers).normalized()
 	_swing(skel, hd, skel.get_bone_global_pose(mid).origin - h, want)
 	var idx := skel.find_bone("mixamorig_%sHandIndex1" % side)
 	var pin := skel.find_bone("mixamorig_%sHandPinky1" % side)

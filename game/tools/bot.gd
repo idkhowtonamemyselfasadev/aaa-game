@@ -7616,6 +7616,9 @@ func _sweep_test() -> void:
 	var lay := {"LeftUpLeg": 9.0, "RightUpLeg": 9.0, "LeftFoot": 9.0, "RightFoot": 9.0, "LeftHand": 9.0, "RightHand": 9.0}
 	var laid := {}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
+	var push := [0.0, 0.0, null, 0]         # pushing wrist: max height over the turf, max drift, first spot, samples
+	if not p.crumple.probe.has("mixamorig_LeftHand"):
+		p.crumple.probe.append("mixamorig_LeftHand")
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
 		falls[1] = at.y - _world.terrain.height_at(at.x, at.z)
@@ -7645,6 +7648,14 @@ func _sweep_test() -> void:
 				if bi >= 0:
 					laid[k] = trm.herd_lay_at(sk.global_transform * sk.get_bone_global_pose(bi).origin)
 			print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
+		if p.down_t >= Player.KNOCK_HAND[1] and p.down_t <= Player.KNOCK_HAND[2] and p.crumple.probed.has("mixamorig_LeftHand"):
+			# the get-up's pushing hand, as posed: down on the turf and staying put while the body rises
+			var wp: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
+			push[0] = maxf(push[0], wp.y - _world.terrain.height_at(wp.x, wp.z))
+			if push[2] == null:
+				push[2] = wp
+			push[1] = maxf(push[1], (wp - (push[2] as Vector3)).length())
+			push[3] += 1
 		if passed_over == "" and p.down_t > 0.8:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
@@ -7668,6 +7679,9 @@ func _sweep_test() -> void:
 	print("BOT sweep: back hit the ground %d time(s), %.2f m over the sward, dust bursts %d" % [falls[0], falls[1], falls[2]])
 	if falls[0] != 1 or falls[2] < 1 or absf(falls[1]) > 0.5:
 		return _combat_done(false, "the hero's landing on their back raised no single thud and dust puff at the ground")
+	print("BOT sweep: get-up push hand: wrist up to %.3f m over the turf, drift %.3f m, %d samples" % [push[0], push[1], push[3]])
+	if push[3] < 3 or push[0] > 0.15 or push[1] > 0.08:
+		return _combat_done(false, "the hero's get-up does not push off a hand planted on the turf")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
 		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not
