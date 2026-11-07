@@ -83,7 +83,12 @@ const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
 ## both hands low at the right hip, the blade trailing behind the right boot, so the heave is an
 ## upward sweep round the right side instead of a lift from a raised crouch (01:00 11-07: the
 ## gather borrowed the leap's CROUCHED, which RAISED the glaive to 1.9 m before the heave)
-const INTRO_COIL := [-158.0, -24.0, Vector3(-0.3, 1.0, 0.22), -8.0, 0.1, 0.62]
+## (03:10 11-07) the hands sit along the shaft from the hold point, so a blade trailing low behind
+## put them up at the chest (y 1.10-1.34, butt 1.55 m by the face) once the shoulder reach clamp
+## bit. Re-solved offline against `_place`: the shaft near level pointing back-right (-150, -8),
+## the hold point back by the right hip, the chest twisted well round (-65) so the left hand
+## reaches; fists now ~0.95 m up on its right, butt ~1.0 m, grip gap 0.029 (bot `knight`)
+const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
 ## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
 ## the shaft comes down beside the helm instead of standing upright in front of the face
 const FOLLOW_RIGHT := 0.32

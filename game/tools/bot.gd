@@ -3287,6 +3287,9 @@ func _knight_test() -> void:
 	var grip := [0.0]          # worst hand-to-haft-hold distance in the heave/roar (m / size)
 	var neck := [99.0, -99.0]  # the neck's forward offset over the hips: least (roar), most (slump)
 	# read the bones once the modifiers (spine bend, arm IK) have run, not the clip's pose
+	var coil_hy := [-9.0]
+	var coil_hx := [-9.0]
+	var coil_butt := [-9.0]
 	var grip_probe := func() -> void:
 		if k.intro == null or not is_instance_valid(k.intro):
 			return
@@ -3300,6 +3303,20 @@ func _knight_test() -> void:
 			neck[1] = maxf(neck[1], off)
 		if rhb < 0 or lhb < 0:
 			return
+		# the coil's hands (body frame, unscaled, from the feet): low at the right hip, not at
+		# the chest (02:10 11-07: the reach clamp left them at y 1.16-1.34, the butt up by the face)
+		if k.intro.t > 2.89 and k.intro.t < 2.98:
+			var inv: Transform3D = k.body.global_transform.affine_inverse()
+			for hbi in [rhb, lhb]:
+				# the body node carries the size scale, so its frame is already unscaled
+				var hp: Vector3 = inv * (k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin)
+				hp.y = ((k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin).y - k.global_position.y) / k.size_scale
+				coil_hy[0] = maxf(coil_hy[0], hp.y)
+				coil_hx[0] = maxf(coil_hx[0], hp.x)
+			var bw: Vector3 = k.spear.to_global(-k.spear.tip_local())
+			coil_butt[0] = maxf(coil_butt[0], (bw.y - k.global_position.y) / k.size_scale)
+			if OS.get_environment("COILDBG") != "":
+				print("COIL t %.2f r %s l %s butt %.2f" % [k.intro.t, inv * (k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin), inv * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin), (bw.y - k.global_position.y) / k.size_scale])
 		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
 			return
 		var rw := k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin
@@ -3340,6 +3357,9 @@ func _knight_test() -> void:
 		it += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	k.skel.skeleton_updated.disconnect(grip_probe)
+	print("BOT knight: coil: hands at most %.2f m up, %.2f toward its left (+x); butt %.2f m up (per size)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
+	if coil_hy[0] > 1.05 or coil_hx[0] > -0.08 or coil_butt[0] > 1.3:
+		return _combat_done(false, "the reveal's coil holds the hands high or across the body, not low at the right hip (y %.2f, x %.2f, butt %.2f)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
 	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
 	if heave_fwd > 0.45 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
