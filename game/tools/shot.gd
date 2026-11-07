@@ -2522,6 +2522,15 @@ func _ready() -> void:
 				var kc := kk.global_position + Vector3.UP * 1.55 * kk.size_scale
 				bp = kc + (Vector3(bp.x, kc.y, bp.z) - kc) * 0.5
 				aim = kc
+			if "kfist" in args:
+				# kfist (11-07): a close lens on the raised left hand from the knight's front-left
+				# (judge the clenched fist: folded fingers, thumb across them)
+				# (the IK target: the skeleton's own pose is not re-solved until the frame draws)
+				var lh: Vector3 = kk._grip_l.global_position
+				print("SHOT kfist hand %s knight %s" % [lh, kk.global_position])
+				var kl := kk.body.global_basis.x.normalized() * (-1.0 if "flip" in args else 1.0)
+				bp = lh + (kf * 0.8 + kl * 0.45 + Vector3.DOWN * 0.15).normalized() * (0.4 if "near" in args else 0.75) * kk.size_scale
+				aim = lh + Vector3.UP * 0.06 * kk.size_scale
 			bi.cam.h_offset = 0.0
 			bi.cam.v_offset = 0.0
 			bi.cam.global_position = bp

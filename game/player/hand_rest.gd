@@ -10,6 +10,11 @@ extends SkeletonModifier3D
 var weight := 1.0            # 0..1: how much of this pose is on (eased by Player)
 var hold := 0.0              # 0..1: the relaxed curl closed toward a grip on the staff
 var fan_k := 1.0             # (bots) scale on the fan; 0 leaves the spread as the rest pose has it
+## 0..1 per side: the hand clenched into a closed fist with nothing in it (the knight's roar fist).
+## A grip on a haft leaves a hollow; this closes it: the fingers folded right in, the tips on the
+## palm, the thumb wrapped across the index and middle fingers' middle joints.
+var clench_l := 0.0
+var clench_r := 0.0
 
 # radians per finger joint, knuckle to tip: + folds toward the palm
 const RELAX := {
@@ -31,6 +36,16 @@ const THUMB_CURL := [0.0, 0.1, 0.1]
 const THUMB_HOLD_SWING := -1.1
 const THUMB_HOLD_CURL := [0.4, 0.5, 0.45]
 const FINGERS := ["Index", "Middle", "Ring", "Pinky"]
+# the clenched fist: knuckles at ~85 deg, middle joints folded right over, tips tucked onto the palm
+const FIST := {
+	"Index": [1.40, 1.55, 0.95],
+	"Middle": [1.50, 1.60, 0.95],
+	"Ring": [1.55, 1.60, 0.95],
+	"Pinky": [1.60, 1.95, 0.85],
+}
+const FIST_FAN := {"Index": 0.03, "Middle": 0.0, "Ring": -0.03, "Pinky": -0.07}
+const THUMB_FIST_SWING := 1.2     # the thumb's root rolled about the knuckle line, across the fingers
+const THUMB_FIST_CURL := [0.6, 0.6, 0.6]
 
 ## The closed fist's centre (world): the mean of the index, middle and ring joints and tips, the
 ## hollow a haft runs through when the fingers wrap it (hero and foes share the rig).
@@ -57,12 +72,13 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if skel == null or weight <= 0.001:
 		return
 	for side in ["Left", "Right"]:
-		_pose_hand(skel, side, weight, hold)
+		_pose_hand(skel, side, weight, hold, clench_l if side == "Left" else clench_r)
 
 func _y(skel: Skeleton3D, b: int) -> Vector3:
 	return skel.get_bone_global_pose(b).basis.y.normalized()
 
-func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
+func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) -> void:
+	c = clampf(c, 0.0, 1.0)
 	var pre := "mixamorig_%sHand" % side
 	var hb := skel.find_bone(pre)
 	var mid := skel.find_bone(pre + "Middle1")
@@ -92,7 +108,7 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
 			continue
 		var a := _y(skel, b)
 		var ang := atan2(a.dot(across), a.dot(dir))
-		_turn(skel, b, fan_axis, (float(FAN[f]) * fan_k - ang) * w)
+		_turn(skel, b, fan_axis, (lerpf(float(FAN[f]), float(FIST_FAN[f]), c) * fan_k - ang) * w)
 	# 3. the curl, joint by joint: each bone turned so its bend off the bone before is the target
 	for f in FINGERS:
 		var prev := dir
@@ -100,7 +116,7 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
 			var b := skel.find_bone("%s%s%d" % [pre, f, j + 1])
 			if b < 0:
 				break
-			var want := lerpf(float(RELAX[f][j]), float(HOLD[f][j]), h)
+			var want := lerpf(lerpf(float(RELAX[f][j]), float(HOLD[f][j]), h), float(FIST[f][j]), c)
 			# (11-06) both bones projected onto the hinge's plane first: the fan sets the first bone
 			# off the hand's length ACROSS the hinge, and a plain signed angle then took that 0.1 rad
 			# as fold with a sign from rounding noise (the knight's index flipped 0.2 rad tick to tick)
@@ -110,14 +126,19 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float) -> void:
 	# 4. the thumb: its root swung in toward the palm, the joints a little curled
 	var t1 := skel.find_bone(pre + "Thumb1")
 	if t1 >= 0:
-		_turn(skel, t1, across.cross(palm).normalized(), lerpf(THUMB_SWING, THUMB_HOLD_SWING, h) * w)
+		# (11-07) the fist's thumb: the grip's swing eased out and the root rolled about the knuckle
+		# line instead, down across the front of the folded index and middle (swept on the knight's
+		# roar fist: tip 1.23 -> 0.67 index-lengths from their middle joints; mirrored for the right)
+		_turn(skel, t1, across.cross(palm).normalized(), lerpf(THUMB_SWING, THUMB_HOLD_SWING, h) * w * (1.0 - c))
+		_turn(skel, t1, across * (1.0 if side == "Left" else -1.0), THUMB_FIST_SWING * c * w)
 		var t2 := skel.find_bone(pre + "Thumb2")
 		var tl := _y(skel, t1)
 		var th := tl.cross(palm).normalized()
 		for j in 3:
 			var b := skel.find_bone("%sThumb%d" % [pre, j + 1])
 			if b >= 0:
-				_turn(skel, b, th, lerpf(float(THUMB_CURL[j]), float(THUMB_HOLD_CURL[j]), h) * w)
+				_turn(skel, b, th, lerpf(lerpf(float(THUMB_CURL[j]), float(THUMB_HOLD_CURL[j]), h),
+					float(THUMB_FIST_CURL[j]), c) * w)
 		if t2 < 0:
 			return
 

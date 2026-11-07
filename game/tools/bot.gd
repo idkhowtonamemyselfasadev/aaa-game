@@ -3303,6 +3303,10 @@ func _knight_test() -> void:
 	var roar_headup := [9.0]
 	var roar_lside := [9.0]
 	var free_peak := [0.0]
+	# (11-07) the freed left hand in the roar: min mean finger curl, max index-pinky spread, the
+	# thumb tip's worst distance to the index's middle joint (per index-bone length: a fist's
+	# thumb lies across the folded index; an open hand's sticks out ~2-3 lengths away)
+	var roar_fist := [9.0, 0.0, 0.0, 9.0]
 	var grip_probe := func() -> void:
 		if k.intro == null or not is_instance_valid(k.intro):
 			return
@@ -3364,6 +3368,28 @@ func _knight_test() -> void:
 				roar_lfwd[0] = maxf(roar_lfwd[0], lf_b.z - hd_b.z)
 				roar_lside[0] = minf(roar_lside[0], lf_b.x - hd_b.x)
 				free_peak[0] = maxf(free_peak[0], k.free_l)
+				if k.free_l > 0.95:
+					var hr := _hand_read(k.skel, "Left")
+					roar_fist[0] = minf(roar_fist[0], hr["mean"])
+					roar_fist[1] = maxf(roar_fist[1], hr["spread"])
+					var tb := -1
+					for tj in [3, 2, 1]:
+						tb = k.skel.find_bone("mixamorig_LeftHandThumb%d" % tj)
+						if tb >= 0:
+							break
+					var i1 := k.skel.find_bone("mixamorig_LeftHandIndex1")
+					var i2 := k.skel.find_bone("mixamorig_LeftHandIndex2")
+					var tpose := k.skel.get_bone_global_pose(tb)
+					var tip: Vector3 = tpose.origin + tpose.basis.y.normalized() * 2.0
+					var p2 := k.skel.get_bone_global_pose(i2 if i2 >= 0 else i1).origin
+					var il: float = (p2 - k.skel.get_bone_global_pose(k.skel.find_bone("mixamorig_LeftHand")).origin).length() * 0.5
+					# the folded fingers' front: between the index's and middle's middle joints
+					var fm: Vector3 = (k.skel.get_bone_global_pose(i2).origin + k.skel.get_bone_global_pose(k.skel.find_bone("mixamorig_LeftHandMiddle2")).origin) * 0.5
+					var tipd := tip.distance_to(fm) / maxf(il, 0.001)
+					roar_fist[2] = maxf(roar_fist[2], tipd)
+					# the thumb's last bone across the fist toward the pinky side (1 = straight across)
+					var tov: Vector3 = (k.skel.get_bone_global_pose(k.skel.find_bone("mixamorig_LeftHandPinky1")).origin - k.skel.get_bone_global_pose(i1).origin).normalized()
+					roar_fist[3] = minf(roar_fist[3], tpose.basis.y.normalized().dot(tov))
 				if nb >= 0:
 					var nk_b: Vector3 = inv2 * (k.skel.global_transform * k.skel.get_bone_global_pose(nb).origin)
 					roar_headup[0] = minf(roar_headup[0], hd_b.y - nk_b.y)
@@ -3436,6 +3462,10 @@ func _knight_test() -> void:
 	print("BOT knight: roar profile: left hand off the haft %.2f, left fist at least %.2f m out to its left of the helm, at most %.2f m forward of it, head %.2f m over the neck" % [free_peak[0], roar_lside[0], roar_lfwd[0], roar_headup[0]])
 	if OS.get_environment("ROAR_NOFLING") == "" and (free_peak[0] < 0.95 or roar_lside[0] < 0.3):
 		return _combat_done(false, "the reveal's roar keeps the left fist over the helm (off the haft %.2f, out %.2f m)" % [free_peak[0], roar_lside[0]])
+	print("BOT knight: roar fist: left fingers curl at least %.2f rad, spread at most %.2f rad, thumb tip at most %.2f index-lengths off the index/middle middle joints, thumb across %.2f" % roar_fist)
+	if OS.get_environment("ROAR_NOFLING") == "" and OS.get_environment("ROAR_OPENFIST") == "" \
+			and (roar_fist[0] < 1.3 or roar_fist[1] > 0.28 or roar_fist[2] > 0.9):
+		return _combat_done(false, "the roar's raised left hand is not a closed fist (curl %.2f, spread %.2f, thumb %.2f, across %.2f)" % roar_fist)
 	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])
 	if roar_clear[0] < 0.22 or roar_lo[0] < 1.33:
 		return _combat_done(false, "the reveal's roar hugs the helm: a fist in front of the visor or down at the chest (clear %.2f, low %.2f)" % [roar_clear[0], roar_lo[0]])

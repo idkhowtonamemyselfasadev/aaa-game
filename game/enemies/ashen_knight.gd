@@ -1012,6 +1012,10 @@ func _place(pose: Array) -> void:
 	# the fist-on-haft fit chases a shaft the free hand is nowhere near: it starts clean on the regrip
 	if free_l > 0.02 and _fist_off.size() > 1:
 		_fist_off[1] = Vector3.ZERO
+	# (11-07) the freed left hand clenches into a real fist (the haft grip left a hollow in it, the
+	# fingers half open against the sky); it opens back to the grip before it closes on the haft
+	if hand_rest != null:
+		hand_rest.clench_l = 0.0 if OS.get_environment("ROAR_OPENFIST") != "" else smoothstep(0.25, 0.8, free_l)
 	super._place(pose)
 	if free_l <= 0.001 or spear == null or _grip_l == null:
 		return

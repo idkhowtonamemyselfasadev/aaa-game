@@ -886,5 +886,17 @@
   "time": "2026-11-07T09:30:00Z",
   "caption": "Close front lens on the roar: raised fist and glaive frame the knight's shoulders; the fingers look half open rather than clenched and the frame is GL, not Forward+.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261107-1024-roarfist-before-after.jpg",
+  "time": "2026-11-07T10:24:42Z",
+  "caption": "The Ashen Knight's raised roar hand, close (GL): before, a hooked half-open claw with a hole through it; now the fingers fold tight into the palm. Still wrong: the thumb points up along the index instead of wrapping across the fingers.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1024-roarfist-wide.jpg",
+  "time": "2026-11-07T10:24:42Z",
+  "caption": "The knight's left fist thrown up against the sky at the top of the reveal roar (GL, hour 8.5); reads as a fist at this distance, thumb still upright, armour hand texture plain.",
+  "verdict": "fail"
  }
 ]
