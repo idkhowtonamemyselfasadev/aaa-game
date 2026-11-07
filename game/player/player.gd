@@ -66,6 +66,10 @@ const KNOCK_HAND_BACK := 0.25         # m behind it (the body faces +Z, thrown t
 const KNOCK_LEAN := 0.32              # rad: the chest turns toward the pushing hand at full weight
 const KNOCK_ROLL := 0.30              # rad: the body rolls onto the hand's hip (about the ground line under it)
 const KNOCK_SIT := 0.40               # rad: less forward curl in the spine, the trunk leant back onto the arm
+const KNOCK_KNEEL := [1.34, 1.54, 1.64, 1.82]   # down_t: the kneel forms, held, eases out in the rise
+const KNOCK_KNEEL_FRONT := 1.46       # down_t: the front (right) foot starts forward
+const KNOCK_KNEEL_HIP := Vector2(-0.87, 0.52)   # rad on top of hip (left back under the body, right forward)
+const KNOCK_KNEEL_KNEE := Vector2(-0.44, -0.52) # rad on top of knee (left shin laid back, right shin plumb)
 const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
 const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
 
@@ -2854,6 +2858,8 @@ func _down_tick(delta: float) -> void:
 				crumple.set(k, 0.0)
 			crumple.plant_w = [1.0, 1.0]
 			crumple.hand_fingers = Vector3.ZERO
+			crumple.hip_lr = Vector2.ZERO
+			crumple.knee_lr = Vector2.ZERO
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		return
@@ -2945,6 +2951,19 @@ func _pose_knockdown(t: float) -> void:
 		crumple.arm = deg_to_rad(k[5])
 		crumple.elbow = deg_to_rad(k[6])
 		crumple.head_turn = deg_to_rad(25.0) * smoothstep(0.4, 0.6, t) * (1.0 - smoothstep(0.95, 1.2, t))
+		# the rise comes up off one knee, not a two-footed squat: the right foot is set flat
+		# ahead (thigh level, shin plumb) while the left knee goes down to the turf under the
+		# hip, then the front leg drives the body up and the back knee leaves the ground
+		# (the front foot swings forward only once the trunk has come up off its back, so it
+		# skims the turf instead of kicking up into the air)
+		var out_w := 1.0 - smoothstep(KNOCK_KNEEL[2], KNOCK_KNEEL[3], t)
+		var kl := smoothstep(KNOCK_KNEEL[0], KNOCK_KNEEL[1], t) * out_w
+		var kr := smoothstep(KNOCK_KNEEL_FRONT, KNOCK_KNEEL[1] + 0.04, t) * out_w
+		if OS.has_environment("KNOCK_SQUAT"):
+			kl = 0.0
+			kr = 0.0
+		crumple.hip_lr = Vector2(KNOCK_KNEEL_HIP.x * kl, KNOCK_KNEEL_HIP.y * kr)
+		crumple.knee_lr = Vector2(KNOCK_KNEEL_KNEE.x * kl, KNOCK_KNEEL_KNEE.y * kr)
 	# tip back about the heels (the body faces +Z in body space)
 	var heel := Vector3(0.0, 0.0, -0.12)
 	var tip := Transform3D(Basis(), heel) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(k[0])), Vector3.ZERO) * Transform3D(Basis(), -heel)

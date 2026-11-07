@@ -7617,8 +7617,12 @@ func _sweep_test() -> void:
 	var laid := {}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
 	var push := [0.0, 0.0, null, 0]         # pushing wrist: max height over the turf, max drift, first spot, samples
-	if not p.crumple.probe.has("mixamorig_LeftHand"):
-		p.crumple.probe.append("mixamorig_LeftHand")
+	for pn in ["mixamorig_LeftHand", "mixamorig_LeftLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_RightLeg"]:
+		if not p.crumple.probe.has(pn):
+			p.crumple.probe.append(pn)
+	# the rise off one knee: left knee height, right ankle height, right foot ahead of the knee (min over
+	# the held kneel), then the lowest knee/ankle over the whole rise (nothing sinks into the turf)
+	var kneel := [9.0, -9.0, 9.0, 9.0, 0, -9.0]   # right ankle lo, left knee hi, foot ahead min, lowest, samples, right ankle hi
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
 		falls[1] = at.y - _world.terrain.height_at(at.x, at.z)
@@ -7656,6 +7660,22 @@ func _sweep_test() -> void:
 				push[2] = wp
 			push[1] = maxf(push[1], (wp - (push[2] as Vector3)).length())
 			push[3] += 1
+		if p.down_t >= 1.30 and p.crumple.probed.has("mixamorig_LeftLeg"):
+			var gnd := func(n: String) -> float:
+				var bp: Vector3 = sk.global_transform * (p.crumple.probed[n] as Vector3)
+				return bp.y - _world.terrain.height_at(bp.x, bp.z)
+			var lk: float = gnd.call("mixamorig_LeftLeg")
+			var rf: float = gnd.call("mixamorig_RightFoot")
+			kneel[3] = minf(kneel[3], minf(minf(lk, rf), minf(gnd.call("mixamorig_LeftFoot"), gnd.call("mixamorig_RightLeg"))))
+			if OS.has_environment("KNEEL_DBG"): print("rise t %.3f knee %.3f rf %.3f" % [p.down_t, lk, rf])
+			if p.down_t >= Player.KNOCK_KNEEL[1] and p.down_t <= Player.KNOCK_KNEEL[2] + 0.02:
+				var fw := p.body.global_basis.z
+				var ahead: float = (sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3) - sk.global_transform * (p.crumple.probed["mixamorig_LeftLeg"] as Vector3)).dot(Vector3(fw.x, 0, fw.z).normalized())
+				kneel[1] = maxf(kneel[1], lk)
+				kneel[0] = minf(kneel[0], rf)
+				kneel[5] = maxf(kneel[5], rf)
+				kneel[2] = minf(kneel[2], ahead)
+				kneel[4] += 1
 		if passed_over == "" and p.down_t > 0.8:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
@@ -7682,6 +7702,9 @@ func _sweep_test() -> void:
 	print("BOT sweep: get-up push hand: wrist up to %.3f m over the turf, drift %.3f m, %d samples" % [push[0], push[1], push[3]])
 	if push[3] < 3 or push[0] > 0.15 or push[1] > 0.08:
 		return _combat_done(false, "the hero's get-up does not push off a hand planted on the turf")
+	print("BOT sweep: rise off one knee: left knee up to %.3f m over the turf, right ankle %.3f..%.3f m, right foot %.3f m ahead of the knee, %d samples; lowest knee/ankle in the rise %.3f m" % [kneel[1], kneel[0], kneel[5], kneel[2], kneel[4], kneel[3]])
+	if kneel[4] < 1 or kneel[1] > 0.14 or kneel[0] < -0.03 or kneel[5] > 0.16 or kneel[2] < 0.25 or kneel[3] < -0.06:
+		return _combat_done(false, "the hero's get-up does not come up off one knee with the other foot planted ahead")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
 		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not

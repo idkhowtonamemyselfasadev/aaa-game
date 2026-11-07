@@ -3384,6 +3384,10 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		# side-on and low, just over the grass tops, so the whole body reads lying on the sward
 		cam.global_position = mid + side * 2.6 + player.body.global_basis.z * 0.4 + Vector3.UP * 1.3
 		cam.look_at(mid - Vector3.UP * 0.55)
+		if "kfront" in args:
+			# low three-quarter from ahead on the left (the planted hand's and the kneeling knee's side)
+			cam.global_position = mid + side * 1.9 + player.body.global_basis.z * 1.7 + Vector3.UP * 0.25
+			cam.look_at(mid - Vector3.UP * 0.4)
 		print("SHOT knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero

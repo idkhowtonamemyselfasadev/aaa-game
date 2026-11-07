@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261103-1722-hollow-tell-chest.jpg",
-  "time": "2026-11-03T17:22:13Z",
-  "caption": "A Hollow Soldier mid wind-up: the chest tell is now dark ash with a few broken burning cracks and a soft underglow instead of a lit honeycomb; GL quick-look only, no Forward+ fog/bloom.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1840-harrier-coif-rear.jpg",
-  "time": "2026-11-03T18:40:00Z",
-  "caption": "Crouched harrier from behind (GL frame): helm lugs no longer poke through the coif and the neck is bound, but an orange-lit patch remains on the nape (likely the ember light, unculled in GL) and the knot does not read.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1950-harrier-nape-clean.jpg",
-  "time": "2026-11-03T19:50:00Z",
-  "caption": "Crouched harrier from behind mid wind-up (GL frame): the orange glow on the nape is gone (the chest band no longer follows the crouch onto the back), but a thin ember sliver still shows at the lower-back edge and the frame is GL, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1950-hollow-tell-front.jpg",
-  "time": "2026-11-03T19:50:00Z",
-  "caption": "Hollow spearman winding up, seen from the front (GL frame): the chest still smoulders through broken cracks during the tell after the facing fix; backlit and GL-only, so the burn has no bloom.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-2045-knight-size-p1.jpg",
   "time": "2026-11-03T20:45:00Z",
   "caption": "The Ashen Knight at its phase-1 size (~2.5x the hero) beside the hero, boss bar with phase notches (GL quick-look): the size reads but it is a GL frame, not at its stone ring, and the knight's ember skin is dark.",
@@ -897,6 +873,18 @@
   "file": "20261107-1735-getup-rise.jpg",
   "time": "2026-11-07T17:35:44Z",
   "caption": "Knock-down get-up 1.42 s in: the hand lets go as the hero comes over the feet into the squat; the rise is still one symmetric squat with no knee-down step.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1800-kneel-rise.jpg",
+  "time": "2026-11-07T18:00:00Z",
+  "caption": "Knock-down get-up: the hero now kneels on the left knee with the right foot planted ahead before rising, instead of a two-footed squat; the legs are still half hidden in the tall grass and the free right arm just hangs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1800-kneel-drive.jpg",
+  "time": "2026-11-07T18:00:00Z",
+  "caption": "Mid-rise from the kneel: the front leg drives the body up and the back knee leaves the turf; the reaching left arm and hanging right arm still need weight-bearing poses.",
   "verdict": "fail"
  }
 ]
