@@ -2516,10 +2516,16 @@ func _ready() -> void:
 				# kside: square off the knight's flank (judge the spine's hunch and arch in profile)
 				bp = kk.global_position + kf * 0.9 * kk.size_scale + ks * (-4.4 if "flip" in args else 4.4) * kk.size_scale
 			bp.y = terrain.height_at(bp.x, bp.z) + 0.75 * kk.size_scale
+			var aim := kk.global_position + Vector3.UP * 1.0 * kk.size_scale
+			if "kclose" in args:
+				# kclose (09:00 11-07): half the distance, aimed at the shoulders (judge the helm and arms)
+				var kc := kk.global_position + Vector3.UP * 1.55 * kk.size_scale
+				bp = kc + (Vector3(bp.x, kc.y, bp.z) - kc) * 0.5
+				aim = kc
 			bi.cam.h_offset = 0.0
 			bi.cam.v_offset = 0.0
 			bi.cam.global_position = bp
-			bi.cam.look_at(kk.global_position + Vector3.UP * 1.0 * kk.size_scale)
+			bi.cam.look_at(aim)
 			(bi.cam.attributes as CameraAttributesPractical).dof_blur_far_enabled = false
 		bi.cam.make_current()
 		cam = bi.cam

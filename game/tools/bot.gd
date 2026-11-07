@@ -3297,6 +3297,12 @@ func _knight_test() -> void:
 	var visor_shaft := [9.0, 0.0]   # the haft's nearest pass in front of the visor (m / size), at it
 	var roar_lo := [9.0]
 	var roar_hi := [-9.0]
+	# (09:00 11-07) the roar in profile: the left fist forward of the helm hid the flung-back head
+	# (kside frame): the fists' most-forward body-frame z past the head's, and the head's rise over the neck
+	var roar_lfwd := [-9.0]
+	var roar_headup := [9.0]
+	var roar_lside := [9.0]
+	var free_peak := [0.0]
 	var grip_probe := func() -> void:
 		if k.intro == null or not is_instance_valid(k.intro):
 			return
@@ -3351,11 +3357,24 @@ func _knight_test() -> void:
 				roar_clear[0] = minf(roar_clear[0], hw2.distance_to(hdw) / k.size_scale)
 				roar_lo[0] = minf(roar_lo[0], (hw2.y - k.global_position.y) / k.size_scale)
 				roar_hi[0] = maxf(roar_hi[0], (hw2.y - k.global_position.y) / k.size_scale)
+			if k.intro.t > 3.35 and k.intro.t < 3.65:
+				var inv2: Transform3D = k.body.global_transform.affine_inverse()
+				var hd_b: Vector3 = inv2 * (k.skel.global_transform * k.skel.get_bone_global_pose(headb).origin)
+				var lf_b: Vector3 = inv2 * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin)
+				roar_lfwd[0] = maxf(roar_lfwd[0], lf_b.z - hd_b.z)
+				roar_lside[0] = minf(roar_lside[0], lf_b.x - hd_b.x)
+				free_peak[0] = maxf(free_peak[0], k.free_l)
+				if nb >= 0:
+					var nk_b: Vector3 = inv2 * (k.skel.global_transform * k.skel.get_bone_global_pose(nb).origin)
+					roar_headup[0] = minf(roar_headup[0], hd_b.y - nk_b.y)
+				if OS.get_environment("ROARDBG") != "":
+					print("ROAR t %.2f head %s lfist %s" % [k.intro.t, hd_b, lf_b])
 		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
 			return
 		var rw := k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin
 		var lw := k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin
-		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position)) / k.size_scale
+		# the left hand lets go in the roar (09:00 11-07): only a hand meant to be on counts
+		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position) * (1.0 - k.free_l)) / k.size_scale
 		if OS.get_environment("GRIPDBG") != "":
 			print("GRIP t %.2f %.3f r %.3f l %.3f rw %s lw %s" % [k.intro.t, g, rw.distance_to(k._grip_r.global_position) / k.size_scale, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.body.global_transform.affine_inverse() * rw, k.body.global_transform.affine_inverse() * lw])
 		grip[0] = maxf(grip[0], g)
@@ -3414,6 +3433,9 @@ func _knight_test() -> void:
 	print("BOT knight: heave: the haft passes at least %.2f m (per size) from the front of the visor (at it %.2f)" % [visor_shaft[0], visor_shaft[1]])
 	if visor_shaft[0] < 0.25:
 		return _combat_done(false, "the reveal's heave carries the haft across the face (%.2f m off the visor at it %.2f)" % [visor_shaft[0], visor_shaft[1]])
+	print("BOT knight: roar profile: left hand off the haft %.2f, left fist at least %.2f m out to its left of the helm, at most %.2f m forward of it, head %.2f m over the neck" % [free_peak[0], roar_lside[0], roar_lfwd[0], roar_headup[0]])
+	if OS.get_environment("ROAR_NOFLING") == "" and (free_peak[0] < 0.95 or roar_lside[0] < 0.3):
+		return _combat_done(false, "the reveal's roar keeps the left fist over the helm (off the haft %.2f, out %.2f m)" % [free_peak[0], roar_lside[0]])
 	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])
 	if roar_clear[0] < 0.22 or roar_lo[0] < 1.33:
 		return _combat_done(false, "the reveal's roar hugs the helm: a fist in front of the visor or down at the chest (clear %.2f, low %.2f)" % [roar_clear[0], roar_lo[0]])

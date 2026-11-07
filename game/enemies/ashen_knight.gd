@@ -85,6 +85,15 @@ const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
 ## its right (~1.88), the right fist up to the right shoulder (~1.50), the glaive standing at its
 ## right side. The chest turns only a little further (-20): at -38 the reveal lens saw its back
 const INTRO_ROAR := [-10.0, 65.0, Vector3(-0.27, 2.12, 0.24), -20.0, 0.1, 0.66]
+## (09:00 11-07) at the top of the reveal's heave the left hand lets go of the haft and is flung
+## up and out to the knight's left, a clenched fist (body frame, unscaled, from the shoulder's
+## unit direction x reach): in profile the raised left arm sat in front of / over the flung-back
+## helm (kside frame at 08:30), so the roar read as a hunch with a fist up. The glaive stays
+## brandished skyward in the right hand alone, the shaft along the pose's own direction
+const ROAR_FLING_DIR := Vector3(0.4, 0.91, 0.1)
+const ROAR_FLING_REACH := 0.58
+## how far the head is flung back at the roar's peak (rad; was 0.62, hidden under the hood)
+const ROAR_HEAD_BACK := 0.85
 ## the reveal's gather (the coil before the heave): the glaive drawn down and back on its right,
 ## both hands low at the right hip, the blade trailing behind the right boot, so the heave is an
 ## upward sweep round the right side instead of a lift from a raised crouch (01:00 11-07: the
@@ -198,6 +207,9 @@ var _head_bow := 0.0
 var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
 var _heave_now := 0.0
+## 0..1: the left hand off the haft, flung out (the reveal's roar)
+var free_l := 0.0
+var _intro_it := 0.0
 var _intro_dorm := 1.0
 var _intro_arch := 0.0           # the reveal's spine bend at the joints (Crumple.spine: + hunched, - arched back)
 var _intro_arched := false
@@ -580,6 +592,7 @@ func _physics_process(delta: float) -> void:
 			_blast()
 		if _surge >= SURGE_T or state != STAGGER:
 			_surge = -1.0
+			free_l = 0.0
 			_set_skin("heat", (phase - 1) * 0.5)
 			if growth.growing():
 				growth.stop()
@@ -615,6 +628,11 @@ func _surge_body(delta: float) -> void:
 	var settle := smoothstep(1.75, SURGE_T - 0.05, s)
 	var kneel := coil * (1.0 - rise)
 	var roar := burst * (1.0 - settle)
+	# (09:00 11-07) the left hand lets go and is thrust up as it rises roaring, back on the haft
+	# before the settle brings the glaive down into guard (as in the reveal)
+	free_l = 0.0 if OS.get_environment("ROAR_NOFLING") != "" else \
+		smoothstep(SURGE_BLAST + 0.1, SURGE_BLAST + 0.35, s) * (1.0 - smoothstep(1.5, 1.78, s))
+	_intro_it = s
 	# the coil shudders harder toward the burst; the roar shakes through the arms and head
 	var shud := smoothstep(0.4, SURGE_BLAST, s) * (1.0 - burst)
 	var p1 := _lerp_pose(_from, SURGE_LEAN, smoothstep(0.1, 0.7, s))
@@ -894,6 +912,10 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		settle = 0.0
 	_heave_now = up
 	_intro_dorm = dormant
+	_intro_it = it
+	# the left hand lets go once the glaive is up, and is back on the haft before it comes down
+	free_l = 0.0 if skip or OS.get_environment("ROAR_NOFLING") != "" else \
+		smoothstep(r0 + 0.22, r0 + 0.45, it) * (1.0 - smoothstep(BossIntro.ROAR_END - 0.45, BossIntro.ROAR_END - 0.03, it))
 	intro_heave = maxf(intro_heave, up)
 	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
 	# and back in the gather, heaved to the sky, then down past the guard and back up into it
@@ -934,7 +956,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the
 	# gather, flung back in the roar with a shaking roll, comes down onto the hero first
 	var bow := 0.62 * dormant - 0.08 * sin(PI * clampf((it - 1.6) / 0.9, 0.0, 1.0)) + 0.16 * gather \
-		- 0.62 * roar + 0.14 * follow
+		- (0.62 if OS.get_environment("ROAR_NOFLING") != "" else ROAR_HEAD_BACK) * roar + 0.14 * follow
 	var roll := 0.07 * sin(it * 29.0) * roar + 0.05 * sin(it * 1.7) * dormant
 	if head != null:
 		# the head leads the body: a quicker follow in the roar than in the wake
@@ -983,6 +1005,34 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	if _wield != null:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
+
+## The glaive placed from its pose; with `free_l` the left hand lets go and is flung up and out
+## to the left (the glaive then rides the right hand alone, the shaft along the pose's direction)
+func _place(pose: Array) -> void:
+	# the fist-on-haft fit chases a shaft the free hand is nowhere near: it starts clean on the regrip
+	if free_l > 0.02 and _fist_off.size() > 1:
+		_fist_off[1] = Vector3.ZERO
+	super._place(pose)
+	if free_l <= 0.001 or spear == null or _grip_l == null:
+		return
+	var f := free_l * free_l * (3.0 - 2.0 * free_l)
+	var slide: float = pose[4] if pose.size() > 4 else 0.0
+	var d := StaffCombat.dir_of(pose[0], pose[1])
+	var d2 := spear.transform.basis.y.normalized().slerp(d, f).normalized()
+	var hr := _grip_r.position - _fist_off[0]
+	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
+	var tw := deg_to_rad(pose[3])
+	var sl := SHOULDER.rotated(Vector3.UP, tw)
+	# the arched chest carries the shoulder back with it; the arm is thrown up from there (the
+	# direction is not arched with it, or the fist ends level with the helm, lost behind the hood)
+	var b := Basis(Vector3.RIGHT, _intro_arch * ROAR_CARRY)
+	var fling := SPINE_BASE + b * (sl - SPINE_BASE) \
+		+ ROAR_FLING_DIR.normalized().rotated(Vector3.UP, tw) * ROAR_FLING_REACH
+	# the shaking roar runs through the free arm too
+	fling += Vector3(0.0, 0.025 * sin(_intro_it * 31.0), 0.0) * f
+	# the fist travels from the haft (on its right) over to its left: bowed up and back over the
+	# helm on the way, never across the front of the visor
+	_grip_l.position = _grip_l.position.lerp(fling, f) + Vector3(0.0, 0.12, -0.2) * sin(PI * f)
 
 ## Swing a glaive pose about the spine's base by `a` rad about the body's right (back = negative),
 ## as the arched chest carries the hands: both the hold point and the shaft's direction turn.

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261103-0315-kindler-thread.jpg",
-  "time": "2026-11-03T03:15:41Z",
-  "caption": "The Hollow Kindler mid-chant at 16:30 pouring a tight ember stream with a hot thread under it into the kindled Warden (GL frame): the stream finally reads as one ribbon across the meadow, but the thread looks laser-straight and both Hollows still stand in shade with their backs half to the lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0438-kindler-sag.jpg",
-  "time": "2026-11-03T04:38:14Z",
-  "caption": "The Hollow Kindler mid-chant at 17:00 (GL frame): the ember thread now hangs in a soft wavering arc instead of a laser line, but the motes still flew straight above it (fixed after the frame: they now fall along the same arc), the thread leaves its chest not the spear tip, and the Kindler still shows its back.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0450-kindler-spear.jpg",
-  "time": "2026-11-03T04:50:00Z",
-  "caption": "The Hollow Kindler mid-chant from its front quarter (GL frame, 17:00): the ember thread now leaves the point of the raised spear about 3 m up, but the motes arced high above the thread (a sign error in their launch, fixed and re-rendered in the next shot).",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0512-kindler-pour.jpg",
-  "time": "2026-11-03T05:12:00Z",
-  "caption": "After the fix: the motes now pour down the same hanging thread from the spear point to the kindled ally off-frame; still wrong: the Kindler stands backlit in shadow so its face does not read, the warden it kindles is out of shot, and the sky is blotchy.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-0620-kindler-sunside.jpg",
   "time": "2026-11-03T06:20:00Z",
   "caption": "The Kindler shot reframed from the sunlit side and backed off: the ember thread now pours from the raised spear point down to the warden, both readable in one frame; still wrong: at 16:00 a long cast shadow drowns the foreground and both Hollows into silhouette, and a lantern-post lamp hangs into the top-left corner.",
@@ -897,6 +873,18 @@
   "file": "20261107-0800-knight-roar-side-lit.jpg",
   "time": "2026-11-07T08:00:00Z",
   "caption": "Boss reveal roar in profile, lit (GL): fist raised and glaive skyward, but the flung-back head is hidden behind the raised arm and the hood, so it reads as a hunch, not a roar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0930-knight-roar-fist.jpg",
+  "time": "2026-11-07T09:30:00Z",
+  "caption": "Boss reveal roar (GL, hour 8.5): the left hand now lets go of the haft and is thrown up in a fist while the glaive stands skyward in the right; the flung-back helm still reads as a dark dome, the face never shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0930-knight-roar-close.jpg",
+  "time": "2026-11-07T09:30:00Z",
+  "caption": "Close front lens on the roar: raised fist and glaive frame the knight's shoulders; the fingers look half open rather than clenched and the frame is GL, not Forward+.",
   "verdict": "fail"
  }
 ]
