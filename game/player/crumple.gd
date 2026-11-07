@@ -28,6 +28,8 @@ var flick_across := 0.0      # radians: the flicked upper arm rolled about the b
 var probe := PackedStringArray() # (bots) bones whose skeleton-space origins are recorded after the bends
 var probed := {}             # (bots) bone name -> its skeleton-space origin as posed by this modifier
 var grip := 0.0              # 0..1: the right hand's fingers close into a fist (round a bail or a helve)
+var grip_l := 0.0            # 0..1: the left hand's fingers close (about 0.3 = a relaxed, hanging hand)
+var grip_fold_l := 0.0       # (bots) the same for the left hand when grip_l closes it
 var grip_fold := 0.0         # (bots) the closed hand as posed: the middle finger's first bone . the palm's normal
 var grip_thumb := 0.0        # (bots) the thumb's second bone . the palm's normal (folded over the fingers)
 var grip_gap := 0.0          # (bots) m from the thumb's last joint (its tip if rigged) to the index's middle joint
@@ -142,6 +144,12 @@ func _process_modification_with_delta(_delta: float) -> void:
 				_bend(skel, "mixamorig_RightArm", fwd, flick_across * flick)
 	if grip > 0.0:
 		_grip(skel, "Right", grip)
+	if grip_l > 0.0:
+		# the bot read-outs describe the right hand: keep them, report the left fold apart
+		var keep := [grip_fold, grip_thumb, grip_gap, grip_tip, grip_turn]
+		_grip(skel, "Left", grip_l)
+		grip_fold_l = grip_fold
+		grip_fold = keep[0]; grip_thumb = keep[1]; grip_gap = keep[2]; grip_tip = keep[3]; grip_turn = keep[4]
 	_bend(skel, "mixamorig_Spine", x, spine * 0.3)
 	_bend(skel, "mixamorig_Spine1", x, spine * 0.35)
 	_bend(skel, "mixamorig_Spine2", x, spine * 0.35)

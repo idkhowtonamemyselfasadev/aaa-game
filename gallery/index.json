@@ -886,5 +886,17 @@
   "time": "2026-11-07T20:30:00Z",
   "caption": "Kneeling up at 1.70 in the GL fallback: right palm on the front knee, left arm hanging by the thigh; the GL frame lacks fog and GI so it is not a Wukong-grade image.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261107-2100-knockrise-hand.jpg",
+  "time": "2026-11-07T21:00:00Z",
+  "caption": "Standing up after a knock-down: the free left hand now hangs as a loose half-curl instead of a splayed claw; GL fallback lighting is flat and the arm still swings up to the guard quickly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2100-knockkneel.jpg",
+  "time": "2026-11-07T21:00:00Z",
+  "caption": "Kneel in the knock-down rise: right palm on the front knee, left hand loose by the hip; GL compatibility render, no fog or GI, so not yet a Wukong frame.",
+  "verdict": "fail"
  }
 ]

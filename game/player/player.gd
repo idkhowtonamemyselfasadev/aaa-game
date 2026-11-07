@@ -71,6 +71,7 @@ const KNOCK_KNEE_HAND := [1.44, 1.54, 1.70, 1.80]  # down_t: the right palm come
 const KNOCK_SWING := [1.40, 1.56, 1.72, 1.85]  # down_t: the free left arm swings back by the hip as a counterweight, held, eases out
 const KNOCK_SWING_ARM := 0.35          # rad (+ = forward, on top of the spine's forward curl): the upper arm hangs ~13 deg behind plumb
 const KNOCK_SWING_ELBOW := 0.20        # rad: its forearm, a soft bend, the hand relaxed
+const KNOCK_RELAX := [1.36, 1.50, 1.80, 1.85, 0.32]  # down_t in, held, out, gone; left fingers close this much (a relaxed hand, not the clip's open claw)
 const KNOCK_KNEE_HAND_AT := Vector3(0.0, 0.07, -0.04) # m from the knee joint: up (over the kneecap), forward (- = back up the thigh)
 const KNOCK_KNEEL_FRONT := 1.46       # down_t: the front (right) foot starts forward
 const KNOCK_KNEEL_HIP := Vector2(-0.87, 0.52)   # rad on top of hip (left back under the body, right forward)
@@ -2869,6 +2870,7 @@ func _down_tick(delta: float) -> void:
 			crumple.arm_lr = Vector2.ZERO
 			crumple.elbow_lr = Vector2.ZERO
 			crumple.arm_aim_lr = Vector2.ZERO
+			crumple.grip_l = 0.0
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		return
@@ -3008,6 +3010,12 @@ func _pose_knockdown(t: float) -> void:
 		crumple.arm_aim_lr = Vector2((1.0 - crumple.arm_aim) * aw, 0.0)
 		crumple.arm_lr = Vector2((KNOCK_SWING_ARM - crumple.arm) * aw, 0.0)
 		crumple.elbow_lr = Vector2((KNOCK_SWING_ELBOW - crumple.elbow) * aw, 0.0)
+		# the free hand hangs loose: the fingers fall into a soft half-curl, the thumb in by
+		# the index, through the swing and the hand-off back to the guard
+		var rl: Array = KNOCK_RELAX
+		crumple.grip_l = rl[4] * smoothstep(rl[0], rl[1], t) * (1.0 - smoothstep(rl[2], rl[3], t))
+		if OS.has_environment("KNOCK_NORELAX"):
+			crumple.grip_l = 0.0001 if crumple.grip_l > 0.0 else 0.0  # (the before: measured, not curled)
 	# tip back about the heels (the body faces +Z in body space)
 	var heel := Vector3(0.0, 0.0, -0.12)
 	var tip := Transform3D(Basis(), heel) * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(k[0])), Vector3.ZERO) * Transform3D(Basis(), -heel)
