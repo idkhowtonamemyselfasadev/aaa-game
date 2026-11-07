@@ -3294,6 +3294,7 @@ func _knight_test() -> void:
 	var coil_glare := [0.0]
 	# the roar's hold (05:00 11-07): the fists clear of the helm and raised, not hugging the visor
 	var roar_clear := [9.0]
+	var visor_shaft := [9.0, 0.0]   # the haft's nearest pass in front of the visor (m / size), at it
 	var roar_lo := [9.0]
 	var roar_hi := [-9.0]
 	var grip_probe := func() -> void:
@@ -3325,6 +3326,20 @@ func _knight_test() -> void:
 			coil_glare[0] = maxf(coil_glare[0], absf(HeadGlare.yaw_to(k.skel, k.body, p.global_position + Vector3.UP * 1.5)))
 			if OS.get_environment("COILDBG") != "":
 				print("COIL t %.2f r %s l %s butt %.2f" % [k.intro.t, inv * (k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin), inv * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin), (bw.y - k.global_position.y) / k.size_scale])
+		if k.intro.t > 2.95 and k.intro.t < BossIntro.ROAR_END and headb >= 0:
+			# (08:00 11-07) the shaft passing across the face in the heave (lit kface frame it=3.13):
+			# the nearest the haft comes to a point just in front of the visor, per size
+			var kf2 := k.body.global_basis.z
+			kf2.y = 0.0
+			var vis := k.skel.global_transform * k.skel.get_bone_global_pose(headb).origin \
+				+ (Vector3.UP * 0.12 + kf2.normalized() * 0.2) * k.size_scale
+			var s_tip := k.spear.to_global(k.spear.tip_local())
+			var s_butt := k.spear.to_global(-k.spear.tip_local())
+			var s_pt := Geometry3D.get_closest_point_to_segment(vis, s_butt, s_tip)
+			var sc := s_pt.distance_to(vis) / k.size_scale
+			if sc < visor_shaft[0]:
+				visor_shaft[0] = sc
+				visor_shaft[1] = k.intro.t
 		if k.intro.t > 3.3 and k.intro.t < 3.7 and headb >= 0:
 			# a point just in front of the visor: a fist there hides the face and pins the arms in
 			var kf := k.body.global_basis.z
@@ -3396,6 +3411,9 @@ func _knight_test() -> void:
 		return _combat_done(false, "the reveal's heave swings the glaive's butt across to its left hip (%.2f)" % heave_butt)
 	if heave_fwd > 0.3 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
+	print("BOT knight: heave: the haft passes at least %.2f m (per size) from the front of the visor (at it %.2f)" % [visor_shaft[0], visor_shaft[1]])
+	if visor_shaft[0] < 0.25:
+		return _combat_done(false, "the reveal's heave carries the haft across the face (%.2f m off the visor at it %.2f)" % [visor_shaft[0], visor_shaft[1]])
 	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])
 	if roar_clear[0] < 0.22 or roar_lo[0] < 1.33:
 		return _combat_done(false, "the reveal's roar hugs the helm: a fist in front of the visor or down at the chest (clear %.2f, low %.2f)" % [roar_clear[0], roar_lo[0]])

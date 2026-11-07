@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261103-0008-harrier-coif.jpg",
-  "time": "2026-11-03T00:08:52Z",
-  "caption": "Hollow Harrier crouched with its coif now wound in spiral strips and a knotted tail at the nape; the even thin turns make the head read like a clay pot, and GL-compatibility lighting is flat (no Forward+ frame).",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0106-harrier-coif-uneven.jpg",
-  "time": "2026-11-03T01:06:21Z",
-  "caption": "GL frame from behind the Hollow Harrier's shoulder: the coif's turns now run wide and narrow with dark laps, but the head still reads as a smooth pot, the camera sits too high and close, and the loose end and nape tails are hidden behind the shoulder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0222-kindler-chant.jpg",
-  "time": "2026-11-03T02:22:08Z",
-  "caption": "The Hollow Kindler mid-chant at dusk, spear raised, pouring a thick ember stream into the white-hot shield Warden beside the hero (GL frame); the stream now reads, but both Hollows stand as dark backlit silhouettes and the motes look scattered rather than a flowing ribbon.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-0315-kindler-thread.jpg",
   "time": "2026-11-03T03:15:41Z",
   "caption": "The Hollow Kindler mid-chant at 16:30 pouring a tight ember stream with a hot thread under it into the kindled Warden (GL frame): the stream finally reads as one ribbon across the meadow, but the thread looks laser-straight and both Hollows still stand in shade with their backs half to the lens.",
@@ -897,6 +879,24 @@
   "file": "20261107-0715-knight-heave-rise.jpg",
   "time": "2026-11-07T07:15:00Z",
   "caption": "Reveal heave at it=3.20 (GL): the glaive rises beside the helm with both fists climbing the haft; the knight still reads as a dark silhouette against the sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0800-knight-coil-lit.jpg",
+  "time": "2026-11-07T08:00:00Z",
+  "caption": "Boss reveal coil, front-lit at 08:30 (GL frame): glaive drawn low at the right hip, helm on the hero; the giant reads well-lit for the first time, but the frame is GL (Forward+ OOM-killed) and the knight is small in the lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0800-knight-heave-lit.jpg",
+  "time": "2026-11-07T08:00:00Z",
+  "caption": "Boss reveal heave, front-lit (GL): the glaive stands upright on its right, but the shaft still crosses the right edge of the helm in this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0800-knight-roar-side-lit.jpg",
+  "time": "2026-11-07T08:00:00Z",
+  "caption": "Boss reveal roar in profile, lit (GL): fist raised and glaive skyward, but the flung-back head is hidden behind the raised arm and the hood, so it reads as a hunch, not a roar.",
   "verdict": "fail"
  }
 ]
