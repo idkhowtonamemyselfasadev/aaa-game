@@ -102,6 +102,12 @@ const FOLLOW_RIGHT := 0.32
 ## of hands out to the right), so the blade sweeps up beside the body, never across the chest
 const HEAVE_ROUND_YAW := 35.0
 const HEAVE_ROUND_OUT := 0.12
+## (07:00 11-07) the pitch leads the yaw in the heave: out of the coil the shaft came round to
+## point right near level (pitch ~20 at up 0.4), so the butt swung low across to the left hip.
+## Lifting the blade first stands the shaft up beside the right side before it swings round
+const HEAVE_LIFT := 50.0
+const HEAVE_FWD := 0.15
+const HEAVE_REACH_IN := 0.06
 ## how much of the reveal's spine arch the glaive pose is swung back with (about SPINE_BASE)
 const ROAR_CARRY := 0.9
 const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
@@ -913,6 +919,13 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		var bulge := sin(PI * clampf(up, 0.0, 1.0)) * smoothstep(0.2, 0.6, up)
 		_pose[0] = float(_pose[0]) - HEAVE_ROUND_YAW * bulge
 		_pose[2] = (_pose[2] as Vector3) + Vector3(-HEAVE_ROUND_OUT * bulge, 0.0, 0.0)
+		if OS.get_environment("HEAVE_NOLIFT") == "":   # env: the before
+			var lift := sin(PI * clampf(up, 0.0, 1.0))
+			_pose[1] = float(_pose[1]) + HEAVE_LIFT * lift
+			# the stood-up shaft put the butt (right) fist back behind the hip where the arm lagged
+			# off the haft (grip gap 0.106 at up ~0.4): the hold point comes forward while it stands
+			_pose[2] = (_pose[2] as Vector3) + Vector3(0.0, 0.0, HEAVE_FWD * lift)
+			_pose[5] = float(_pose[5]) - HEAVE_REACH_IN * lift
 	# the follow-through brings the glaive down on the right, beside the helm, not past the visor
 	var down_side := sin(PI * clampf((it - (BossIntro.ROAR_END - 0.3)) / (BossIntro.T - BossIntro.ROAR_END + 0.1), 0.0, 1.0))
 	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, -0.08 * down_side)

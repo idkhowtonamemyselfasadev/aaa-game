@@ -3342,11 +3342,12 @@ func _knight_test() -> void:
 		var lw := k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin
 		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position)) / k.size_scale
 		if OS.get_environment("GRIPDBG") != "":
-			print("GRIP t %.2f %.3f" % [k.intro.t, g])
+			print("GRIP t %.2f %.3f r %.3f l %.3f rw %s lw %s" % [k.intro.t, g, rw.distance_to(k._grip_r.global_position) / k.size_scale, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.body.global_transform.affine_inverse() * rw, k.body.global_transform.affine_inverse() * lw])
 		grip[0] = maxf(grip[0], g)
 	k.skel.skeleton_updated.connect(grip_probe)
 	var heave_fwd := -9.0
 	var heave_right := 9.0
+	var heave_butt := -9.0   # the butt's body-frame x (+x = its left), per size, during the heave
 	var it := 0.0
 	while k.intro_playing() and it < 8.0:
 		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
@@ -3368,6 +3369,14 @@ func _knight_test() -> void:
 			var ax := (k.body.global_basis.inverse() * k.spear.global_basis.y).normalized()
 			heave_fwd = maxf(heave_fwd, ax.z)
 			heave_right = minf(heave_right, ax.x)
+			# (07:00 11-07) the butt swung low across to the LEFT hip as the shaft came out of the
+			# coil pointing right near level: it must stay round the right side all the way up
+			var bl := k.body.global_transform.affine_inverse() * k.spear.to_global(-k.spear.tip_local())
+			# (the coil itself holds the butt forward-left of the belly, ~0.4 m: judge from mid-heave)
+			if k._heave_now > 0.3:
+				heave_butt = maxf(heave_butt, bl.x)   # body carries the size scale
+			if OS.get_environment("HEAVEDBG") != "":
+				print("HEAVE butt t %.2f %s" % [k.intro.t, bl])
 			if OS.get_environment("HEAVEDBG") != "":
 				print("HEAVE t %.2f up %.2f ax %s" % [k.intro.t, k._heave_now, ax])
 		if get_viewport().get_camera_3d() != hero_cam:
@@ -3382,7 +3391,9 @@ func _knight_test() -> void:
 	print("BOT knight: coil: helm at most %.1f deg off the hero" % rad_to_deg(coil_glare[0]))
 	if coil_glare[0] > deg_to_rad(20.0):
 		return _combat_done(false, "the reveal's coil turns the helm away from the hero with the twisted chest (%.1f deg off)" % rad_to_deg(coil_glare[0]))
-	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
+	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right; butt at most %.2f m toward its left from mid-heave" % [heave_fwd, heave_right, heave_butt])
+	if heave_butt > 0.2:
+		return _combat_done(false, "the reveal's heave swings the glaive's butt across to its left hip (%.2f)" % heave_butt)
 	if heave_fwd > 0.3 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
 	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])

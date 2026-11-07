@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-2220-harrier-crouch.jpg",
-  "time": "2026-11-02T22:20:00Z",
-  "caption": "The new Hollow Harrier crouched at the hero's back with the spear low and the glint at its point (GL frame): the crouch reads, but it is lost in shade and the practice post crowds the foreground; reframe from the lit side.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-2317-harrier-lean.jpg",
-  "time": "2026-11-02T23:17:55Z",
-  "caption": "The Hollow Harrier's new lean cut in its crouch: fitted hemp coif over the helm, bare narrow pale shoulders, short brown kilt, spear low with the glint at the point; the coif is still a smooth sack with no visible wrap turns or tails from this side, and this is a GL fallback frame, not Forward+.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-0008-harrier-coif.jpg",
   "time": "2026-11-03T00:08:52Z",
   "caption": "Hollow Harrier crouched with its coif now wound in spiral strips and a knotted tail at the nape; the even thin turns make the head read like a clay pot, and GL-compatibility lighting is flat (no Forward+ frame).",
@@ -897,6 +885,18 @@
   "file": "20261107-0610-ring-heave.jpg",
   "time": "2026-11-07T06:10:00Z",
   "caption": "Reveal heave mid-rise (GL): the glaive now sweeps up beside the knight's right shoulder instead of across its chest; the knight still stands in the stones' shadow and the GL frame lacks Forward+ fog/GI.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0715-knight-heave-upright.jpg",
+  "time": "2026-11-07T07:15:00Z",
+  "caption": "Reveal heave at it=3.13 (GL): the glaive now stands upright on the knight's right side instead of crossing its body with the butt at the left hip; the knight is still backlit in the stones' shadow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0715-knight-heave-rise.jpg",
+  "time": "2026-11-07T07:15:00Z",
+  "caption": "Reveal heave at it=3.20 (GL): the glaive rises beside the helm with both fists climbing the haft; the knight still reads as a dark silhouette against the sun.",
   "verdict": "fail"
  }
 ]
