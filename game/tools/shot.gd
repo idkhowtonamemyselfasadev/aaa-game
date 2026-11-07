@@ -2707,9 +2707,10 @@ func _ready() -> void:
 			var sp := kp
 			# among the clear spots take the one most on the knight's front side, so the lens sees
 			# the chest, not its back (21:00 11-06 item c). Read the facing from the body AFTER the
-			# surge ticks (face() above is turned during them). The model sits rotated PI inside the
-			# body, so the knight's chest faces body -Z (a lens on +Z rendered its back)
-			var kb := -rk.body.global_transform.basis.z
+			# surge ticks (face() above is turned during them). face() sets body.rotation.y =
+			# atan2(d.x, d.z), so the chest faces body +Z (00:45 11-07: -Z rendered the cape in
+			# every frame; 01:00 11-07 flipped back to +Z)
+			var kb := rk.body.global_transform.basis.z
 			var kfwd := Vector3(kb.x, 0, kb.z).normalized()
 			print("SHOT ring surge knight front (%.2f, %.2f)" % [kfwd.x, kfwd.z])
 			var best_score := -INF

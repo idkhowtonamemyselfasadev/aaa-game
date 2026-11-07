@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-0800-wisps-cower.jpg",
-  "time": "2026-11-02T10:10:00Z",
-  "caption": "Hesper backed against the keep wall from the Hollow Wisps, her right forearm now raised to her face (GL fallback frame; Vulkan failed): the lens sees her from behind, her hands are chalk white and the knot is out of frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-1150-sentinel-slam.jpg",
-  "time": "2026-11-02T11:50:00Z",
-  "caption": "The Stone Sentinel's glaive slam just landed (GL frame): blade bitten in the turf, the hero thrown by the shock; but the dust reads as sparse yellow blobs, the shock ring does not read as a ring, and the crack decal is invisible (decals need Forward+, and the tall grass hides the ground).",
-  "verdict": "fail"
- },
- {
   "file": "20261102-1250-sentinel-ring.jpg",
   "time": "2026-11-02T12:50:00Z",
   "caption": "Stone Sentinel's glaive bitten into the turf after the slam (GL frame): the sward now lies flat in a dark ring round the pit, but the new dust ring is lost in the tree shade (too dark, too thin) and the statue still reads chalk white.",
@@ -897,6 +885,18 @@
   "file": "20261107-0045-surge-size3.jpg",
   "time": "2026-11-07T00:45:00Z",
   "caption": "The grown knight in the stone ring at the end of a surge: cracked plate glows faintly at the helm and pauldrons, smoke drifts over the ring; still seen from its back and GL-only, not a Forward+ frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0200-intro-gather.jpg",
+  "time": "2026-11-07T02:00:00Z",
+  "caption": "The Ashen Knight's reveal at the gather beat (GL): it now coils the glaive low on its right side, knees set, before the heave, instead of lifting it into a raised crouch; the knight stands in shadow and it is not a Forward+ frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0200-intro-follow.jpg",
+  "time": "2026-11-07T02:00:00Z",
+  "caption": "The reveal's follow-through (GL): the glaive comes down beside the helm so the visor and its ember seams stay visible; the turf around the ring still reads flat and speckled.",
   "verdict": "fail"
  }
 ]

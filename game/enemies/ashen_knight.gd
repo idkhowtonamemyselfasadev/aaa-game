@@ -79,6 +79,14 @@ signal stomped(at: Vector3)
 ## body: standing, its point hovered ~0.15 m over the ground at the first size)
 const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
 const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
+## the reveal's gather (the coil before the heave): the glaive drawn down and back on its right,
+## both hands low at the right hip, the blade trailing behind the right boot, so the heave is an
+## upward sweep round the right side instead of a lift from a raised crouch (01:00 11-07: the
+## gather borrowed the leap's CROUCHED, which RAISED the glaive to 1.9 m before the heave)
+const INTRO_COIL := [-158.0, -24.0, Vector3(-0.3, 1.0, 0.22), -8.0, 0.1, 0.62]
+## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
+## the shaft comes down beside the helm instead of standing upright in front of the face
+const FOLLOW_RIGHT := 0.32
 ## how much of the reveal's spine arch the glaive pose is swung back with (about SPINE_BASE)
 const ROAR_CARRY := 0.9
 const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
@@ -860,8 +868,13 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
 	# and back in the gather, heaved to the sky, then down past the guard and back up into it
 	var base := _lerp_pose(_from, guard_pose, smoothstep(0.0, 0.4, it))
-	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), CROUCHED, 0.6 * gather + 0.35 * follow)
+	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * gather)
+	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
 	_pose = _lerp_pose(rest, INTRO_ROAR, up)
+	# the follow-through brings the glaive down on the right, beside the helm, not past the visor
+	var down_side := sin(PI * clampf((it - (BossIntro.ROAR_END - 0.3)) / (BossIntro.T - BossIntro.ROAR_END + 0.1), 0.0, 1.0))
+	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, -0.08 * down_side)
+	_pose[0] = float(_pose[0]) - 22.0 * down_side
 	_pose[1] += sin(it * 38.0) * 2.0 * roar + sin(it * 7.0) * 1.5 * dormant
 	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the
 	# gather, flung back in the roar with a shaking roll, comes down onto the hero first
