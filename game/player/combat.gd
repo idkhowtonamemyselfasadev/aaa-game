@@ -15,7 +15,7 @@ signal charge_tier(tier: int)
 signal slammed(at: Vector3, power: float)
 signal plunged(at: Vector3, power: float, radius: float)
 
-enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED, PLUNGING }
+enum { SHEATHED, DRAWING, READY, ATTACKING, SHEATHING, CHARGING, DROPPED, PLUNGING, HELD }
 
 const DRAW_TIME := 0.22
 const SHEATHE_AFTER := 5.0
@@ -168,6 +168,18 @@ var _recover_keys: Array = []  # the path picked by _begin_recover (keys [t] + p
 var _back_slot: Node3D
 var _back_xform: Transform3D
 var _wield: Node3D
+## (11-07) knocked down, the hero keeps the drawn staff in the right fist instead of leaving it
+## hanging in the air at guard height in Wield space. Each tick, after the modifiers (the posed
+## hand), the shaft is put through the fist: first as it was held, then laid flat on the turf as
+## the back hits the ground (`held_lay`), then its butt planted on the turf outside the front knee
+## to push up on (`held_plant`). The player drives both weights. Env KNOCK_FLOATSTAFF: the before.
+var hold_on := true
+var held_lay := 0.0
+var held_plant := 0.0
+var held_guard := 0.0
+var held_ground := 0.0       # world height of the turf under the hero (the player sets it)
+var _held_rel := Transform3D()
+var _held_rel_ok := false
 var _from_xform: Transform3D
 var _target_r: Node3D
 var _target_l: Node3D
@@ -198,6 +210,8 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 	_wield = Node3D.new()
 	_wield.name = "Wield"
 	player.body.add_child(_wield)
+	hold_on = OS.get_environment("KNOCK_FLOATSTAFF") == ""
+	skel.skeleton_updated.connect(_place_held)
 	_target_r = _marker("GripR")
 	_target_l = _marker("GripL")
 	var pole_r := _marker("PoleR")
@@ -456,6 +470,109 @@ func drop() -> void:
 	_drop_rest = Basis(Quaternion(Vector3.UP, flat.normalized()))
 	_drop_v = 0.0
 	state = DROPPED
+
+## Knocked down: the IK lets go of the arms (the knock-down pose owns them) but the right fist
+## keeps the staff, which now rides the posed right hand through the fall and the get-up.
+## Returns false (nothing to hold) when the staff is slung on the back.
+func hold() -> bool:
+	if not hold_on or staff.get_parent() == _back_slot or state == DROPPED:
+		return false
+	if state == HELD:
+		return true
+	_air_draw_t = -1.0
+	cancel_to_guard()
+	_heavy_queued = false
+	queued = false
+	hitstop = 0.0
+	_set_influence(0.0)
+	_twist.twist = 0.0
+	staff.reparent(player.get_parent(), true)
+	_held_rel_ok = false
+	held_lay = 0.0
+	held_plant = 0.0
+	held_guard = 0.0
+	state = HELD
+	return true
+
+func _hand_xform() -> Transform3D:
+	return skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightHand"))
+
+## The shaft through the posed right fist (see `hold`): the axis turns from the held one to the
+## laid one to the planted one, and the fist slides along it, so the shaft always runs through the
+## fist (blending the two placements' centres let it drift 0.17 m off the hand mid-turn).
+var _plant_sign := 0.0
+const PLANT_BACK := deg_to_rad(16.0)
+const PLANT_OUT := deg_to_rad(15.0)
+func _place_held() -> void:
+	if state != HELD:
+		return
+	var hand := _hand_xform()
+	if not _held_rel_ok:
+		_held_rel = hand.affine_inverse() * staff.global_transform
+		_held_rel_ok = true
+		_plant_sign = 0.0
+	var fist := fist_center("Right")           # the closed fist's centre (Crumple's grip has closed it)
+	var held := hand * _held_rel
+	var q := held.basis.get_rotation_quaternion()
+	var ax0 := held.basis.y.normalized()
+	var sl := (fist - held.origin).dot(ax0)    # where along the shaft the fist is (from the centre)
+	if held_lay > 0.0:
+		# flat on the turf, keeping its heading, the fist a third of the way along it
+		var ax := Vector3(ax0.x, 0.0, ax0.z)
+		ax = ax.normalized() if ax.length() > 0.1 else player.body.global_basis.z
+		q = q.slerp(Quaternion(ax0, ax) * q, held_lay)
+		sl = lerpf(sl, -Staff.LENGTH * 0.18, held_lay)
+	if held_plant > 0.0:
+		# planted: the shaft stands up through the fist on the front knee, tipped back and out so its
+		# top clears the head outside the right shoulder, and its butt meets the turf a little
+		# ahead of and inside the knee (a butt set out to the side tipped the top in through the hat)
+		var fw := player.body.global_basis.z
+		fw.y = 0.0
+		fw = fw.normalized()
+		var right := -player.body.global_basis.x
+		right.y = 0.0
+		right = right.normalized()
+		var up := (Vector3.UP - fw * tan(PLANT_BACK) + right * tan(PLANT_OUT)).normalized()
+		var butt := fist - up * maxf(fist.y - held_ground - 0.02, 0.05) / up.y
+		var cur := q * Vector3.UP
+		if _plant_sign == 0.0:
+			_plant_sign = 1.0 if cur.dot(up) >= 0.0 else -1.0   # latched: no flip end for end mid-turn
+		var ax2 := up * _plant_sign
+		q = q.slerp(Quaternion(cur, ax2) * q, held_plant)
+		sl = lerpf(sl, _plant_sign * (fist.distance_to(butt) - Staff.LENGTH * 0.5), held_plant)
+	if held_guard > 0.0:
+		# coming up: the shaft turns in the fist to the guard's line and slides to the guard grip,
+		# so the draw back into both hands that follows only has a few cm left to cover
+		var g := _wield.global_transform * _staff_xform(GUARD)
+		var gq := g.basis.get_rotation_quaternion()
+		var grip_r := _wield.global_transform * _target_r.position
+		q = q.slerp(gq, held_guard)
+		sl = lerpf(sl, (grip_r - g.origin).dot(g.basis.y.normalized()), held_guard)
+	var ax3 := q * Vector3.UP
+	staff.global_transform = Transform3D(Basis(q).scaled(held.basis.get_scale()), fist - ax3 * sl)
+
+func _axis_xform(ax: Vector3, centre: Vector3) -> Transform3D:
+	var ref := Vector3.UP if absf(ax.y) < 0.9 else Vector3.FORWARD
+	var x := ref.cross(ax).normalized()
+	return Transform3D(Basis(x, ax, x.cross(ax)), centre)
+
+## Blend two shaft placements: the axis turns, the centre slides (no flip if the axis reverses).
+func _xform_between(a: Transform3D, b: Transform3D, w: float) -> Transform3D:
+	var bb := b.basis
+	if a.basis.y.dot(bb.y) < 0.0:
+		bb = Basis(-bb.x, -bb.y, bb.z)
+	var q := a.basis.get_rotation_quaternion().slerp(bb.get_rotation_quaternion(), w)
+	return Transform3D(Basis(q), a.origin.lerp(b.origin, w))
+
+## Up again: the staff comes back from the right fist into both hands at guard, eased like a
+## draw from wherever the fist holds it.
+func unhold() -> void:
+	if state != HELD:
+		return
+	staff.reparent(_wield, true)
+	_from_xform = staff.transform
+	state = DRAWING
+	t = 0.0
 
 ## Back on the hero's back after a rest.
 func restore() -> void:
@@ -731,6 +848,9 @@ func physics_step(delta: float) -> void:
 	var pose: Array = GUARD
 	match state:
 		SHEATHED:
+			_age_trail(delta)
+			return
+		HELD:
 			_age_trail(delta)
 			return
 		DROPPED:

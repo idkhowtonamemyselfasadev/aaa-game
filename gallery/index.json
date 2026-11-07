@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-0117-jump-apex.jpg",
-  "time": "2026-11-04T01:17:39Z",
-  "caption": "The hero at the top of a held running jump over the meadow (GL frame): knees tucked, robe flared; the air pose is still a procedural squat with splayed hands, no mocap clip.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0117-jump-rise.jpg",
-  "time": "2026-11-04T01:17:39Z",
-  "caption": "Rising out of a running jump, 0.7 m up, legs gathering under the hips (GL frame); reads as a jump but stiff, the arms only swing forward.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0122-growth-seams.jpg",
   "time": "2026-11-04T01:22:56Z",
   "caption": "The Ashen Knight 0.6 s into its growth in the stone ring: embers spitting from the pauldron seams, dust kicked up round its feet (GL frame, backlit at 15:00; the grit falling off the stones barely reads and the knight is a silhouette).",
@@ -891,6 +879,18 @@
   "file": "20261107-2256-knockdown-situp-after.jpg",
   "time": "2026-11-07T22:56:42Z",
   "caption": "Knock-down sit-up AFTER: the soles stay planted on the turf with the shins down to them; still a front lens that foreshortens the legs, and the flung staff floats in the air at the left.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2337-knock-staff-rise.jpg",
+  "time": "2026-11-07T23:37:39Z",
+  "caption": "Knock-down rise (down_t 1.70): the hero keeps the staff in the right fist, its butt planted on the turf by the front knee, pushing up on it instead of the staff hanging in mid-air; GL frame, the lens still foreshortens the legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2337-knock-staff-regrip.jpg",
+  "time": "2026-11-07T23:37:39Z",
+  "caption": "Just after the get-up (1.95): the staff comes back up from the right fist to the guard beside the body; the left hand has not caught it yet in this mid-regrip frame (rough).",
   "verdict": "fail"
  }
 ]

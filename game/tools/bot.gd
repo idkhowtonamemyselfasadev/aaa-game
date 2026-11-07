@@ -845,6 +845,9 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist to the staff's shaft
+const REGRIP_GATE := 0.22      # m: either fist to the shaft as the staff comes back into both hands (before the guard turn: 0.29 m behind the hand)
+const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
 const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
 const SOLE_KNEEL_GATE := 0.22  # m: and on the way into the kneel
 const RELAX_FOLD_GATE := 0.40  # the free left hand in the knock-down rise: its middle finger folds into the palm at least this much (open claw before: 0.24, relaxed after: 0.60)
@@ -7588,6 +7591,9 @@ func _sweep_test() -> void:
 	var s: HollowSoldier = _world.soldier
 	var c: StaffCombat = p.combat
 	await _ticks(10)
+	# (11-07) the staff drawn, so the knock-down shows where it goes (it hung in mid-air before)
+	c._begin_draw()
+	await _ticks(12)
 	# 1) crowd it at 1.7 m: it picks the sweep by itself; stand still and take it
 	_soldier_at(s, 1.7, -1)
 	while s.state != HollowSoldier.WINDUP:
@@ -7632,6 +7638,7 @@ func _sweep_test() -> void:
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
+	var held := [0.0, 9.0, 0, 0]   # the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7657,11 +7664,13 @@ func _sweep_test() -> void:
 			print("BOT sweep: lying, over the sward: " + ", ".join(lay.keys().map(func(k): return "%s %.2f" % [k, lay[k]])))
 			# the grass under the body is pressed flat, hips to head, not standing through it
 			var trm: Trample = _world.trample
+			# (11-07) the spots are read now but judged after the get-up: the trail ages in _process,
+			# and with the staff drawn the frames run long enough that no frame has aged the fresh
+			# points yet at this tick (they are long-lived, so they still lie flat afterwards)
 			for k in ["Hips", "Spine2", "Head"]:
 				var bi := sk.find_bone("mixamorig_" + k)
 				if bi >= 0:
-					laid[k] = trm.herd_lay_at(sk.global_transform * sk.get_bone_global_pose(bi).origin)
-			print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
+					laid[k] = sk.global_transform * sk.get_bone_global_pose(bi).origin
 		if p.down_t >= Player.KNOCK_HAND[1] and p.down_t <= Player.KNOCK_HAND[2] and p.crumple.probed.has("mixamorig_LeftHand"):
 			# the get-up's pushing hand, as posed: down on the turf and staying put while the body rises
 			var wp: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
@@ -7699,6 +7708,22 @@ func _sweep_test() -> void:
 				kneel[5] = maxf(kneel[5], rf)
 				kneel[2] = minf(kneel[2], ahead)
 				kneel[4] += 1
+		if p.down_t > 0.05 and p.down_t < Player.KNOCK_UNHOLD - 0.02 and p.crumple.probed.has("mixamorig_RightHand"):
+			if c.state == StaffCombat.HELD:
+				var st := c.staff.global_transform
+				var e0: Vector3 = st * Vector3(0, -Staff.LENGTH * 0.5, 0)
+				var e1: Vector3 = st * Vector3(0, Staff.LENGTH * 0.5, 0)
+				var rw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightHand"] as Vector3)
+				var on := Geometry3D.get_closest_point_to_segment(rw, e0, e1)
+				held[0] = maxf(held[0], c.fist_gap[0])   # the closed fist's centre to the shaft
+				for e in [e0, e1]:
+					held[1] = minf(held[1], (e as Vector3).y - _world.terrain.height_at(e.x, e.z))
+				held[2] += 1
+				if OS.has_environment("KNEEL_DBG"): print("staff t %.3f wrist-axis %.3f ends %.2f %.2f" % [p.down_t, rw.distance_to(on), e0.y - _world.terrain.height_at(e0.x, e0.z), e1.y - _world.terrain.height_at(e1.x, e1.z)])
+			elif c.state != StaffCombat.SHEATHED:
+				held[3] += 1
+		if p.down_t >= Player.KNOCK_UNHOLD - 0.1 and OS.has_environment("KNEEL_DBG"):
+			print("unhold t %.3f state %d gap r %.3f l %.3f blend %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend])
 		if p.down_t >= Player.KNOCK_KNEE_HAND[1] and p.down_t <= Player.KNOCK_KNEE_HAND[2] and p.crumple.probed.has("mixamorig_RightHand"):
 			var wr: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightHand"] as Vector3)
 			var kn: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightLeg"] as Vector3)
@@ -7730,6 +7755,9 @@ func _sweep_test() -> void:
 		await get_tree().physics_frame
 	await _ticks(2)
 	var rest_ok := p.model.transform.is_equal_approx(p._model_rest)
+	for k in laid.keys():
+		laid[k] = _world.trample.herd_lay_at(laid[k])
+	print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
 	print("BOT sweep: knockdowns %d, max tip %.0f deg, head low %.2f m, blow while down -> %s, down %.2f s, back at rest %s" % [p.knockdowns, rad_to_deg(max_tip), min_head, passed_over, down_for, rest_ok])
 	if p.knockdowns != 1 or max_tip < deg_to_rad(70.0):
 		return _combat_done(false, "the sweep did not throw the hero down")
@@ -7765,6 +7793,15 @@ func _sweep_test() -> void:
 	print("BOT sweep: free left hand in the rise: least finger fold %.3f (%d samples)" % [relax[0], relax[1]])
 	if relax[1] < 2 or relax[0] < RELAX_FOLD_GATE:
 		return _combat_done(false, "the hero's free left hand hangs as a stiff open claw in the rise instead of a relaxed half-curl")
+	var regrip := 0.0   # the staff back into both hands after the get-up: the larger fist gap, max
+	for _i in 10:
+		regrip = maxf(regrip, maxf(c.fist_gap[0], c.fist_gap[1]))
+		if OS.has_environment("KNEEL_DBG"):
+			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend])
+		await get_tree().physics_frame
+	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
+	if regrip > REGRIP_GATE or held[2] < 10 or held[3] > 0 or held[0] > HELD_WRIST_GATE or held[1] < HELD_END_GATE or c.state != StaffCombat.READY:
+		return _combat_done(false, "the drawn staff does not stay in the knocked-down hero's right fist (or hangs in the air, or goes through the turf, or is not back at guard after)")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:
 		return _combat_done(false, "the hero did not get back up cleanly")
 	# 2) strafe during the wind-up: the thrust loses the hero, the sweep does not

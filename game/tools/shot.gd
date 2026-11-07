@@ -3378,6 +3378,10 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		player.receive_attack(foe, HollowSoldier.SWEEP_DAMAGE, true)
 		for i in int(at * 60.0):
 			player._physics_process(dt)
+			# (11-07) no frames run in this loop, so no skeleton_updated: place the staff held in the
+			# fist by hand each tick (from the unmodified pose), or the regrip draws it from the
+			# spot where the blow caught it
+			c._place_held()
 		var mid := player.model.global_transform * Vector3(0, 0.9, 0)
 		var cam := get_viewport().get_camera_3d()
 		var side := player.body.global_basis.x
@@ -3388,7 +3392,7 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			# low three-quarter from ahead on the left (the planted hand's and the kneeling knee's side)
 			cam.global_position = mid + side * 1.9 + player.body.global_basis.z * 1.7 + Vector3.UP * 0.25
 			cam.look_at(mid - Vector3.UP * 0.4)
-		print("SHOT knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
+		print("SHOT knocked down_t %.2f knockdowns %d staff state %d parent %s at %s fist %s" % [player.down_t, player.knockdowns, c.state, c.staff.get_parent().name, c.staff.global_position, c.fist_center("Right")])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero
 		c._start_charge()

@@ -2834,6 +2834,15 @@ func _knockdown(attacker: Node) -> void:
 	down_t = 0.0
 	_knock_hand = Vector3.INF
 	knockdowns += 1
+	_knock_held = combat != null and combat.hold()   # the right fist keeps a drawn staff
+
+## (11-07) a drawn staff stays in the right fist through the knock-down (it hung in the air at
+## guard height before) and is taken back into both hands as the arms come up to the guard.
+const KNOCK_UNHOLD := 1.83
+const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
+const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
+const KNOCK_STAFF_PLANT := [1.28, 1.52]  # its butt set on the turf by the front knee as the fist comes to it
+var _knock_held := false
 
 func _down_tick(delta: float) -> void:
 	down_t += delta
@@ -2847,6 +2856,19 @@ func _down_tick(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
+	if _knock_held and (down_t >= KNOCK_UNHOLD or down_t >= KNOCK_TIME):
+		_knock_held = false
+		if crumple != null:
+			crumple.grip = 0.0
+		if combat != null:
+			combat.unhold()
+	elif _knock_held and crumple != null:
+		crumple.grip = 1.0                     # a fist round the shaft
+		# laid flat in the grass as the back lands, then its butt planted on the turf to push up on
+		combat.held_lay = smoothstep(KNOCK_STAFF_LAY[0], KNOCK_STAFF_LAY[1], down_t)
+		combat.held_plant = smoothstep(KNOCK_STAFF_PLANT[0], KNOCK_STAFF_PLANT[1], down_t)
+		combat.held_ground = global_position.y
+		combat.held_guard = smoothstep(KNOCK_STAFF_GUARD[0], KNOCK_STAFF_GUARD[1], down_t)
 	if combat != null:
 		combat.physics_step(delta)
 	if down_t >= KNOCK_LAND and down_t - delta < KNOCK_LAND:
@@ -2875,6 +2897,7 @@ func _down_tick(delta: float) -> void:
 			crumple.elbow_lr = Vector2.ZERO
 			crumple.arm_aim_lr = Vector2.ZERO
 			crumple.grip_l = 0.0
+			crumple.grip = 0.0
 			crumple.foot_plant = 0.0
 			crumple.foot_w = [1.0, 1.0]
 			crumple.foot_pole = Vector3.ZERO
@@ -3239,6 +3262,7 @@ func _pose_death(t: float) -> void:
 func _respawn() -> void:
 	dead_t = -1.0
 	woke_t = 0.0
+	_knock_held = false
 	global_position = respawn_point
 	velocity = Vector3.ZERO
 	health = health_max
