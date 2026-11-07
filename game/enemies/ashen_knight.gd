@@ -868,7 +868,13 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
 	# and back in the gather, heaved to the sky, then down past the guard and back up into it
 	var base := _lerp_pose(_from, guard_pose, smoothstep(0.0, 0.4, it))
-	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * gather)
+	# the glaive holds the coil until the heave owns it (02:45 11-07: on `gather` it let go of the
+	# coil before `up` took over, so the rest pose sprang back to the guard mid-heave and the
+	# blade swung up through the front of the body instead of out and up round the right side)
+	var coil := smoothstep(2.25, r0, it) * (1.0 - smoothstep(r0 + 0.25, r0 + 0.45, it))
+	if skip:
+		coil = 0.0
+	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * coil)
 	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
 	_pose = _lerp_pose(rest, INTRO_ROAR, up)
 	# the follow-through brings the glaive down on the right, beside the helm, not past the visor

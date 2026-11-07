@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261102-1250-sentinel-ring.jpg",
-  "time": "2026-11-02T12:50:00Z",
-  "caption": "Stone Sentinel's glaive bitten into the turf after the slam (GL frame): the sward now lies flat in a dark ring round the pit, but the new dust ring is lost in the tree shade (too dark, too thin) and the statue still reads chalk white.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-1400-sentinel-plinth.jpg",
-  "time": "2026-11-02T14:00:00Z",
-  "caption": "The Stone Sentinel on its new carved two-step granite plinth: squared, tooled blocks, but the plinth sits in deep shade, the lens is behind the statue and GL renders the statue chalk white.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-1400-sentinel-plinth-far.jpg",
-  "time": "2026-11-02T14:00:00Z",
-  "caption": "From 12 m down the meadow the Sentinel now reads as a statue on a plinth, not a man in a field; the plinth is a dark lump in shade and the frame is the dim GL fallback.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-1400-sentinel-dust.jpg",
-  "time": "2026-11-02T15:06:00Z",
-  "caption": "The Stone Sentinel's slam at noon: the pale dust ring now reads clearly running out over the sward with the hero thrown down, but in full sun it is too white and glowy, a pale half-dome card sits at the pit and the statue is chalk white in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-1653-knight-leap.jpg",
   "time": "2026-11-02T16:53:00Z",
   "caption": "The Ashen Knight 1.7 m up in its new ember leap over the meadow (GL frame); it reads as floating: the legs hang straight with no tuck and the glaive is upright at its side instead of heaved overhead.",
@@ -897,6 +873,18 @@
   "file": "20261107-0200-intro-follow.jpg",
   "time": "2026-11-07T02:00:00Z",
   "caption": "The reveal's follow-through (GL): the glaive comes down beside the helm so the visor and its ember seams stay visible; the turf around the ring still reads flat and speckled.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0210-knight-heave-out-right.jpg",
+  "time": "2026-11-07T02:10:00Z",
+  "caption": "The Ashen Knight's reveal heave, front lens (GL): the glaive now swings out and up round its right side from the coil instead of through its chest; the knight still stands in the stones' shadow and the frame is GL, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0210-knight-heave-rise.jpg",
+  "time": "2026-11-07T02:10:00Z",
+  "caption": "A beat later the shaft rises diagonally to its right shoulder on the way to the skyward roar; the body still reads stiff at the hips and the lighting is flat GL.",
   "verdict": "fail"
  }
 ]

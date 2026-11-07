@@ -3309,6 +3309,8 @@ func _knight_test() -> void:
 			print("GRIP t %.2f %.3f" % [k.intro.t, g])
 		grip[0] = maxf(grip[0], g)
 	k.skel.skeleton_updated.connect(grip_probe)
+	var heave_fwd := -9.0
+	var heave_right := 9.0
 	var it := 0.0
 	while k.intro_playing() and it < 8.0:
 		p.bot_input = Vector2(0.0, -1.0)            # pushing forward does nothing while it plays
@@ -3324,12 +3326,23 @@ func _knight_test() -> void:
 			var gy := _ground_y_at(k, tip_w)
 			tip_lo = minf(tip_lo, tip_w.y - gy)
 			tip_hi = maxf(tip_hi, tip_w.y - gy)
+		# the heave's path: the shaft (spear +Y, toward the blade) in the knight's body frame
+		# (+Z chest, -X its right) while the glaive is between the coil and the roar
+		if k._heave_now > 0.15 and k._heave_now < 0.85 and k.intro.t < BossIntro.ROAR_END:
+			var ax := (k.body.global_basis.inverse() * k.spear.global_basis.y).normalized()
+			heave_fwd = maxf(heave_fwd, ax.z)
+			heave_right = minf(heave_right, ax.x)
+			if OS.get_environment("HEAVEDBG") != "":
+				print("HEAVE t %.2f up %.2f ax %s" % [k.intro.t, k._heave_now, ax])
 		if get_viewport().get_camera_3d() != hero_cam:
 			cam_other = true
 		await get_tree().physics_frame
 		it += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	k.skel.skeleton_updated.disconnect(grip_probe)
+	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
+	if heave_fwd > 0.45 or heave_right > -0.6:
+		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
 	var grip_gap: float = grip[0]
 	neck_back = neck[0]
 	neck_fore = neck[1]
