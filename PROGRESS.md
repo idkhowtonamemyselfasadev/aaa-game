@@ -8,6 +8,7 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (11:00 11-07) Setup, GL shots (`kfist` close-ups, ~3 min each, two at once fine) and headless bots all work; Forward+ not tried.
 - (10:30 11-07) Setup, GL shots and headless bots all work; Forward+ not tried. New lens `ring X 20 8.5 fixfps intro
   it=3.45 kface kfist [flip] [near]` frames the knight's raised left hand close (judge the fist).
 - (09:30 11-07) Setup, GL screenshots and headless bots all work; Forward+ not tried this session (OOM on the ring intro last time). Close crops: PIL is broken on this box, use `ffmpeg -vf crop=...` or ImageMagick `convert`.
@@ -8124,6 +8125,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (11:00 11-07) **THUMB WRAP TRIED, NOT SHIPPED (code reverted; `knight` PASS on every variant).** Measured the knight's
+   left fist in the hand's frame (index-bone lengths il=3.25 from the wrist: along / index-ward / palm-out, palm side
+   negative): Thumb1 (1.28 0.46 -0.60), Thumb2 (2.43 0.75 -0.74), Index1/2/3 (4.52 .88 -.13)/(5.01 .98 -1.0)/(4.52 1.06
+   -1.65), Middle2 (4.84 0 -0.92). The rig's thumb is 2 bones and Thumb2 carries BOTH phalanges as one stiff piece
+   from a knuckle half way down the palm, so no aim can fold it over the fingers' tops: a tip on the middle phalanges
+   (along ~5) points it straight up the hand. Tried (a) CCD of both bones onto the index/middle middle phalanges
+   (target 10 units from Thumb1, ~7 of reach: thumb stays upright, frame unchanged); (b) two aims in the hand's frame
+   (Thumb1 brings the knuckle to K, Thumb2 laid at T): K/T = (2.3,.55,-1.15)/(4.6,0,-2.0), (2.3,.55,-1.15)/(5.0,-.4,
+   -1.5), (2.3,.4,-1.3)/(4.2,-1.3,-1.7), (2.3,.45,-1.1)/(4.3,-1.6,-1.1), (2.3,.6,-1.2)/(4.4,2.2,-1.4): in the `kfist
+   flip near` lens EVERY one leaned the thumb out to screen-right, away from the fingers (even the +across one), and
+   in the non-flip lens it crossed out past the hand's silhouette. The old fixed roll (thumb upright, tight beside the
+   index) still looks tightest; kept. If anyone retries: render a frame with debug spheres at K, T and each bone origin
+   first to learn which screen direction each hand axis is, or weight-paint/split the thumb mesh. Otherwise LEAVE the
+   hands (seen only for ~1 s at 20+ m in play) and take the next rough move: hero climb/glide, foot IK on slopes,
+   knock-down. BOSS/ANIMATION order unchanged; audio after.
 0. (10:30 11-07) **ROAR FIST CLENCHED (bot-gated + GL close-ups).** `HandRest.clench_l/_r` (0..1): a closed fist with
    nothing in it (FIST curl table, tighter fan, thumb rolled about the knuckle line); the knight sets clench_l from
    free_l in `_place` (env ROAR_OPENFIST = the before). Bot `knight` measures the freed hand at the roar hold: curl
