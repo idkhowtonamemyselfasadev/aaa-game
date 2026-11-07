@@ -76,6 +76,10 @@ const KNOCK_KNEE_HAND_AT := Vector3(0.0, 0.07, -0.04) # m from the knee joint: u
 const KNOCK_KNEEL_FRONT := 1.46       # down_t: the front (right) foot starts forward
 const KNOCK_KNEEL_HIP := Vector2(-0.87, 0.52)   # rad on top of hip (left back under the body, right forward)
 const KNOCK_KNEEL_KNEE := Vector2(-0.44, -0.52) # rad on top of knee (left shin laid back, right shin plumb)
+const KNOCK_FEET := [1.00, 1.10]  # down_t: both soles come down onto the turf where they lie, planted
+const KNOCK_FEET_STEP := [[1.34, 1.50, 1.56], [1.38, 1.53, 1.58]]  # per leg: slide to the kneel's spot, there, let go
+const KNOCK_FEET_DRAG := [1.10, 1.34]  # down_t: the planted heels drag in toward the seat with the knees
+const KNOCK_FEET_ARC := 0.06       # m: the stepping foot skims this high over the turf on its way
 const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
 const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
 
@@ -2871,8 +2875,13 @@ func _down_tick(delta: float) -> void:
 			crumple.elbow_lr = Vector2.ZERO
 			crumple.arm_aim_lr = Vector2.ZERO
 			crumple.grip_l = 0.0
+			crumple.foot_plant = 0.0
+			crumple.foot_w = [1.0, 1.0]
+			crumple.foot_pole = Vector3.ZERO
+			crumple.foot_toes = Vector3.ZERO
 			crumple.active = false
 		_knock_hand = Vector3.INF
+		_knock_feet_at = [Vector3.INF, Vector3.INF]
 		return
 	if crumple != null:
 		# whatever stance the blow caught (a staggered guard, a stride), hang both legs even
@@ -2883,6 +2892,52 @@ func _down_tick(delta: float) -> void:
 	_pose_knockdown(down_t)
 	_knock_push_hand()
 	_knock_knee_hand()
+	_knock_feet()
+
+var _knock_feet_at := [Vector3.INF, Vector3.INF]
+
+## The sit-up keeps the soles on the turf: as the trunk comes up off its back and the knees
+## draw in, each foot stays where it lay (heels down, toes forward) instead of floating up with
+## the bent legs; then each slides to the spot its kneel role wants (the left back under the
+## hip, the right set ahead), skimming the grass, and is let go to the posed leg.
+func _knock_feet() -> void:
+	if crumple == null:
+		return
+	var w := smoothstep(KNOCK_FEET[0], KNOCK_FEET[1], down_t)
+	if OS.has_environment("KNOCK_NOFEET") or w <= 0.0 or down_t >= KNOCK_FEET_STEP[1][2]:
+		crumple.foot_plant = 0.0
+		crumple.foot_pole = Vector3.ZERO
+		crumple.foot_toes = Vector3.ZERO
+		return
+	var fwd := body.global_basis.z
+	fwd = Vector3(fwd.x, 0.0, fwd.z).normalized()
+	var ws := [1.0, 1.0]
+	for i in 2:
+		var fk: Vector3 = crumple.foot_fk[i]
+		var gy := _world_ground_y(fk)
+		if _knock_feet_at[i] == Vector3.INF:
+			# where the ankle lies now, kept just over the turf
+			_knock_feet_at[i] = Vector3(fk.x, gy + clampf(fk.y - gy, 0.03, 0.10), fk.z)
+		var st: Array = KNOCK_FEET_STEP[i]
+		var u := smoothstep(st[0], st[1], down_t)
+		# the heels drag in along the turf toward the seat as the knees draw up (the planted
+		# spot follows the bent legs' footprint, so the legs do not lie stretched out flat)
+		var drag := smoothstep(KNOCK_FEET_DRAG[0], KNOCK_FEET_DRAG[1], down_t)
+		var at0: Vector3 = _knock_feet_at[i]
+		var at := Vector3(lerpf(at0.x, fk.x, drag), at0.y, lerpf(at0.z, fk.z, drag))
+		var tgt := Vector3(lerpf(at.x, fk.x, u), 0.0, lerpf(at.z, fk.z, u))
+		var lift := lerpf(at.y - _world_ground_y(at), 0.08, u) + KNOCK_FEET_ARC * sin(PI * u)
+		tgt.y = minf(_world_ground_y(tgt) + lift, fk.y) if u > 0.0 else at.y
+		crumple.foot_target[i] = tgt
+		ws[i] = 1.0 - smoothstep(st[1], st[2], down_t)
+	crumple.foot_plant = w
+	crumple.foot_w = ws
+	crumple.foot_pole = (Vector3.UP * 0.7 + fwd * 0.7).normalized()
+	crumple.foot_toes = (fwd - Vector3.UP * 0.55).normalized()
+
+func _world_ground_y(at: Vector3) -> float:
+	var hit := _ray(at + Vector3.UP * 1.0, at - Vector3.UP * 1.5)
+	return (hit["position"] as Vector3).y if not hit.is_empty() else global_position.y
 
 ## The rise off one knee: the right palm comes down onto the front knee as the foot is set and
 ## stays braced on it (its target follows the knee as posed) while the front leg drives the body

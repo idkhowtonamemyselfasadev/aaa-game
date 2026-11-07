@@ -845,6 +845,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
+const SOLE_KNEEL_GATE := 0.22  # m: and on the way into the kneel
 const RELAX_FOLD_GATE := 0.40  # the free left hand in the knock-down rise: its middle finger folds into the palm at least this much (open claw before: 0.24, relaxed after: 0.60)
 const SWING_AHEAD_GATE := 0.15  # m: the free left wrist in the knock-down rise stays no further ahead of its hip socket than this
 const SWING_BACK_GATE := -0.45  # the upper arm hangs near plumb: not swung back past ~27 deg (nor forward past ~6)
@@ -7629,6 +7631,7 @@ func _sweep_test() -> void:
 	var kneel := [9.0, -9.0, 9.0, 9.0, 0, -9.0]   # right ankle lo, left knee hi, foot ahead min, lowest, samples, right ankle hi
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
+	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7667,6 +7670,19 @@ func _sweep_test() -> void:
 				push[2] = wp
 			push[1] = maxf(push[1], (wp - (push[2] as Vector3)).length())
 			push[3] += 1
+		if p.down_t >= 1.12 and p.down_t <= 1.54 and p.crumple.probed.has("mixamorig_LeftFoot"):
+			for fi in 2:
+				var fp: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_%sFoot" % ["Left", "Right"][fi]] as Vector3)
+				var fh: float = fp.y - _world.terrain.height_at(fp.x, fp.z)
+				soles[5] = maxf(soles[5], fh)
+				if p.down_t <= 1.34:
+					soles[0] = maxf(soles[0], fh)
+					if soles[3 + fi] == null:
+						soles[3 + fi] = fp
+					soles[1] = maxf(soles[1], Vector2(fp.x - (soles[3 + fi] as Vector3).x, fp.z - (soles[3 + fi] as Vector3).z).length())
+			if p.down_t <= 1.34:
+				soles[2] += 1
+			if OS.has_environment("KNEEL_DBG"): print("soles t %.3f" % p.down_t)
 		if p.down_t >= 1.30 and p.crumple.probed.has("mixamorig_LeftLeg"):
 			var gnd := func(n: String) -> float:
 				var bp: Vector3 = sk.global_transform * (p.crumple.probed[n] as Vector3)
@@ -7674,7 +7690,7 @@ func _sweep_test() -> void:
 			var lk: float = gnd.call("mixamorig_LeftLeg")
 			var rf: float = gnd.call("mixamorig_RightFoot")
 			kneel[3] = minf(kneel[3], minf(minf(lk, rf), minf(gnd.call("mixamorig_LeftFoot"), gnd.call("mixamorig_RightLeg"))))
-			if OS.has_environment("KNEEL_DBG"): print("rise t %.3f knee %.3f rf %.3f" % [p.down_t, lk, rf])
+			if OS.has_environment("KNEEL_DBG"): print("rise t %.3f knee %.3f rf %.3f lf %.3f" % [p.down_t, lk, rf, gnd.call("mixamorig_LeftFoot")])
 			if p.down_t >= Player.KNOCK_KNEEL[1] and p.down_t <= Player.KNOCK_KNEEL[2] + 0.02:
 				var fw := p.body.global_basis.z
 				var ahead: float = (sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3) - sk.global_transform * (p.crumple.probed["mixamorig_LeftLeg"] as Vector3)).dot(Vector3(fw.x, 0, fw.z).normalized())
@@ -7734,6 +7750,9 @@ func _sweep_test() -> void:
 	print("BOT sweep: get-up push hand: wrist up to %.3f m over the turf, drift %.3f m, %d samples" % [push[0], push[1], push[3]])
 	if push[3] < 3 or push[0] > 0.15 or push[1] > 0.08:
 		return _combat_done(false, "the hero's get-up does not push off a hand planted on the turf")
+	print("BOT sweep: sit-up soles: ankles up to %.3f m over the turf (to the kneel %.3f), drift %.3f m, %d samples" % [soles[0], soles[5], soles[1], soles[2]])
+	if soles[2] < 2 or soles[0] > SOLE_UP_GATE or soles[5] > SOLE_KNEEL_GATE or soles[1] > 0.45:
+		return _combat_done(false, "the hero's feet float up off the turf as the knees draw in for the get-up")
 	print("BOT sweep: rise off one knee: left knee up to %.3f m over the turf, right ankle %.3f..%.3f m, right foot %.3f m ahead of the knee, %d samples; lowest knee/ankle in the rise %.3f m" % [kneel[1], kneel[0], kneel[5], kneel[2], kneel[4], kneel[3]])
 	if kneel[4] < 1 or kneel[1] > 0.14 or kneel[0] < -0.03 or kneel[5] > 0.16 or kneel[2] < 0.25 or kneel[3] < -0.06:
 		return _combat_done(false, "the hero's get-up does not come up off one knee with the other foot planted ahead")

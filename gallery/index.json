@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261103-2236-knight-stomp-tell.jpg",
-  "time": "2026-11-03T22:36:00Z",
-  "caption": "Phase-2 Ashen Knight with the right knee raised high for the stomp, the hero small in front; GL frame, the giant is backlit so the lifted leg reads only as a silhouette and the body leans back stiffly.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-2236-knight-stomp-wave.jpg",
-  "time": "2026-11-03T22:36:00Z",
-  "caption": "Phase-3 stomp: a dust wall racing out over the meadow to the hero and the stamped ground burning under the giant; GL frame, the burning patch reads as a dark disc with a dome of flame, not yet a convincing ground fire.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-2322-ring-arena.jpg",
-  "time": "2026-11-03T23:22:24Z",
-  "caption": "The Ashen Knight's stone ring widened to ~32 m with 4-6 m uprights so the growing giant has room; GL fallback frame (Forward+ ran out of memory), the ash floor reads too dark and flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0117-jump-apex.jpg",
   "time": "2026-11-04T01:17:39Z",
   "caption": "The hero at the top of a held running jump over the meadow (GL frame): knees tucked, robe flared; the air pose is still a procedural squat with splayed hands, no mocap clip.",
@@ -897,6 +879,18 @@
   "file": "20261107-2100-knockkneel.jpg",
   "time": "2026-11-07T21:00:00Z",
   "caption": "Kneel in the knock-down rise: right palm on the front knee, left hand loose by the hip; GL compatibility render, no fog or GI, so not yet a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2256-knockdown-situp-before.jpg",
+  "time": "2026-11-07T22:56:42Z",
+  "caption": "Knock-down sit-up BEFORE (down_t 1.40, front lens): the knees are drawn up to the chest and both boots hang 0.3-0.4 m in the air by the seat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-2256-knockdown-situp-after.jpg",
+  "time": "2026-11-07T22:56:42Z",
+  "caption": "Knock-down sit-up AFTER: the soles stay planted on the turf with the shins down to them; still a front lens that foreshortens the legs, and the flung staff floats in the air at the left.",
   "verdict": "fail"
  }
 ]

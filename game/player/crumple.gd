@@ -87,6 +87,10 @@ var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point th
 							 # instead of up the face
 var hand_knee := Vector3.ZERO # world offset: when set, the RIGHT hand's target is the right knee as posed
 							 # plus this (a palm braced on the front knee to push the body up off it)
+var foot_w := [1.0, 1.0]     # per leg (left, right) on top of `foot_plant`: one foot alone can be planted
+var foot_pole := Vector3.ZERO # world: when set, the reaching knees bend toward this (not away from hand_wall)
+var foot_toes := Vector3.ZERO # world: when set, the planted foot's toes point this way (a sole flat on the turf)
+var foot_fk := [Vector3.ZERO, Vector3.ZERO]       # world ankle joints as posed, before the foot reach
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -176,9 +180,15 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var hb := skel.find_bone("mixamorig_%sUpLeg" % sides[i])
 		if hb >= 0:
 			hip_joint[i] = skel.global_transform * skel.get_bone_global_pose(hb).origin
+	for i in 2:
+		var fb := skel.find_bone("mixamorig_%sFoot" % sides[i])
+		if fb >= 0:
+			foot_fk[i] = skel.global_transform * skel.get_bone_global_pose(fb).origin
 	if foot_plant > 0.0:
 		for i in 2:
-			_reach_leg(skel, sides[i], foot_target[i], foot_plant)
+			var fw: float = foot_plant * float(foot_w[i])
+			if fw > 0.0:
+				_reach_leg(skel, sides[i], foot_target[i], fw)
 	if hand_knee != Vector3.ZERO:
 		var rk := skel.find_bone("mixamorig_RightLeg")
 		if rk >= 0:
@@ -338,6 +348,8 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	out = (out - up * out.dot(up) - wall * out.dot(wall)).normalized()
 	var li := 0 if side == "Left" else 1
 	var pole := -wall * 0.75 + out * (0.55 + float(knee_out[li])) + up * 0.15
+	if foot_pole != Vector3.ZERO:
+		pole = (inv.basis * foot_pole).normalized() + out * 0.15
 	pole = (pole - dn * pole.dot(dn)).normalized()
 	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
 	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
@@ -348,7 +360,14 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	f = skel.get_bone_global_pose(ft).origin
 	knee_joint[li] = skel.global_transform * skel.get_bone_global_pose(lg).origin
 	foot_err[0 if side == "Left" else 1] = f.distance_to(inv * target) * skel.global_basis.get_scale().x
-	if toe < 0 or w < 0.5:
+	if toe < 0:
+		return
+	if foot_toes != Vector3.ZERO:
+		# the sole set flat on the turf: the toes turned toward foot_toes by the plant's weight
+		var cur := skel.get_bone_global_pose(toe).origin - f
+		_swing(skel, ft, cur, cur.slerp((inv.basis * foot_toes).normalized() * cur.length(), clampf(w, 0.0, 1.0)))
+		return
+	if w < 0.5:
 		return
 	# toes into the face, tipped down onto the stone's edge
 	var want := (-wall * 0.85 - up * 0.5).normalized()
