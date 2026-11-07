@@ -2772,6 +2772,15 @@ func _ready() -> void:
 			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
 			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
+			if "helm" in args:
+				# helm close-up: from the chosen lens line, close in on the head (the ember seams)
+				# the sight slit seam rides the helm itself (the raw bone pose missed the grown mesh)
+				var slit: Array = rk.armour.seam_at(1)
+				var khead: Vector3 = slit[0]
+				cam.fov = 14.0
+				cam.global_position = sp + Vector3.UP * (khead.y - sp.y) * 0.5
+				cam.look_at(khead + Vector3.UP * 0.32 * rk.size_scale)   # the surge grows on through the warm-up frames
+				print("SHOT ring surge helm close-up at %s" % khead)
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
 		# the boss bar covers the knight's boots in a low lens: a surge frame is a cinematic beat
 		if not "hud" in args:

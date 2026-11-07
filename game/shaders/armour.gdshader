@@ -50,6 +50,24 @@ float fbm(vec3 p) {
 	return s;
 }
 
+// Distance to the nearest Voronoi cell border (F2 - F1 approximation, in cell units): thin
+// polygonal seams like plate that split along its grain, not round contour blobs.
+float vedge(vec3 p) {
+	vec3 i = floor(p);
+	vec3 f = fract(p);
+	float d1 = 8.0;
+	float d2 = 8.0;
+	for (int z = -1; z <= 1; z++)
+	for (int y = -1; y <= 1; y++)
+	for (int x = -1; x <= 1; x++) {
+		vec3 g = vec3(float(x), float(y), float(z));
+		vec3 o = vec3(hash(i + g), hash(i + g + 17.1), hash(i + g + 41.7));
+		float d = length(g + o - f);
+		if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+	}
+	return (d2 - d1) * 0.5;
+}
+
 void vertex() {
 	layer = COLOR.r;
 	edge = COLOR.g;
@@ -76,9 +94,23 @@ void fragment() {
 		metal = mix(0.85, 0.15, r);
 		bump = pits * 0.35 - dent * 0.6 + r * 0.25;
 		// hairline cracks in the blackened plate show the ember behind
-		float crack = 1.0 - smoothstep(0.0, 0.035, abs(fbm(opos * 6.0 + 11.0) - 0.5));
-		crack *= smoothstep(0.45, 0.6, vnoise(opos * 4.0));
-		glow = ember_col * crack * (0.15 + ember * 0.6) * (0.25 + heat) * 2.4;
+		// warped Voronoi seams (~10 cm cells, jagged), split into two widths: a few main seams and
+		// finer hair branches, broken into patches so no closed loop ever reads as a shape
+		vec3 cp = opos * 10.0 + (vec3(fbm(opos * 9.0 + 2.0), fbm(opos * 9.0 + 5.0), fbm(opos * 9.0 + 8.0)) - 0.5) * 1.6;
+		float de = vedge(cp);
+		float aa = fwidth(de) + 0.0015;
+		// seam width tapers along each crack (hairline to ~1.5 cm), a hot core inside a dim red halo
+		float taper = smoothstep(0.25, 0.85, vnoise(opos * 18.0 + 4.0));
+		float w = mix(0.002, 0.011, taper);
+		float main_c = 1.0 - smoothstep(w, w + aa, de);
+		float halo = (1.0 - smoothstep(w, w + 0.035, de)) * taper;
+		float hair = 1.0 - smoothstep(0.002, 0.002 + aa, vedge(cp * 2.3 + 7.0));
+		float patch_m = smoothstep(0.55, 0.72, vnoise(opos * 5.0 + 3.0));
+		float crack = max(main_c * patch_m, hair * 0.35 * smoothstep(0.68, 0.82, vnoise(opos * 9.0 + 9.0)));
+		crack *= 1.0 - wear * 0.8;   // worn-bright ridges are solid metal
+		halo *= patch_m * (1.0 - wear * 0.8);
+		float gain = (0.15 + ember * 0.6) * (0.25 + heat);
+		glow = (mix(ember_col, vec3(1.0, 0.62, 0.3), main_c * taper) * crack * 1.8 + ember_col * vec3(0.8, 0.5, 0.4) * halo * 0.35) * gain;
 		alb *= 1.0 - crack * 0.5;
 	} else if (layer < 0.75) {
 		float grain = fbm(opos * 120.0);

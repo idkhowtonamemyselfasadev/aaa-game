@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-0615-wisps-fire-fp2.jpg",
-  "time": "2026-11-02T06:15:00Z",
-  "caption": "Forward+ night: the three wisp hearts over Hesper's fire now show a cracked veined coal face instead of flat cream discs, but the crust plates still read pale grey, the fire smoke is a dark blob and Hesper is lit cold blue.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-0810-hesper-cower.jpg",
-  "time": "2026-11-02T08:10:00Z",
-  "caption": "Hesper backed against the keep's inner face with both hands up, warding off the Hollow Wisps wheeling over her fire (GL fallback): the fear reads, but the frame is very dark, her hands read pale as gloves, the right forearm never crosses her face and the knot itself is out of frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-0800-wisps-cower.jpg",
   "time": "2026-11-02T10:10:00Z",
   "caption": "Hesper backed against the keep wall from the Hollow Wisps, her right forearm now raised to her face (GL fallback frame; Vulkan failed): the lens sees her from behind, her hands are chalk white and the knot is out of frame.",
@@ -897,6 +885,18 @@
   "file": "20261106-2300-surge-fire.jpg",
   "time": "2026-11-06T23:00:00Z",
   "caption": "The ring of fire bursting round the kneeling Ashen Knight, HUD hidden and the lens clear of the columns; fire reads well, the helm's glowing cracks look like cartoon eyes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0045-helm-seams.jpg",
+  "time": "2026-11-07T00:45:00Z",
+  "caption": "Close on the Ashen Knight's helm and pauldrons mid-surge: the ember glow now runs in sparse, tapering, irregular seams instead of two eye-like blobs; frame is from behind (the lens front score is inverted) and fire reflections smear orange over the helm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0045-surge-size3.jpg",
+  "time": "2026-11-07T00:45:00Z",
+  "caption": "The grown knight in the stone ring at the end of a surge: cracked plate glows faintly at the helm and pauldrons, smoke drifts over the ring; still seen from its back and GL-only, not a Forward+ frame.",
   "verdict": "fail"
  }
 ]
