@@ -98,6 +98,10 @@ const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
 ## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
 ## the shaft comes down beside the helm instead of standing upright in front of the face
 const FOLLOW_RIGHT := 0.32
+## how far the heave's path bows out round the right side mid-rise (deg of shaft yaw, unscaled m
+## of hands out to the right), so the blade sweeps up beside the body, never across the chest
+const HEAVE_ROUND_YAW := 35.0
+const HEAVE_ROUND_OUT := 0.12
 ## how much of the reveal's spine arch the glaive pose is swung back with (about SPINE_BASE)
 const ROAR_CARRY := 0.9
 const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
@@ -902,6 +906,13 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * coil)
 	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
 	_pose = _lerp_pose(rest, INTRO_ROAR, up)
+	# (06:00 11-07) the straight lerp coil -> roar cut the late heave across the chest (shaft 0.39
+	# toward the front at up ~0.6): bow the path out round the right side while it rises, the
+	# shaft held further round (yaw) and the hands carried out to the right, gone again at the top
+	if it < BossIntro.ROAR_END and not skip:
+		var bulge := sin(PI * clampf(up, 0.0, 1.0)) * smoothstep(0.2, 0.6, up)
+		_pose[0] = float(_pose[0]) - HEAVE_ROUND_YAW * bulge
+		_pose[2] = (_pose[2] as Vector3) + Vector3(-HEAVE_ROUND_OUT * bulge, 0.0, 0.0)
 	# the follow-through brings the glaive down on the right, beside the helm, not past the visor
 	var down_side := sin(PI * clampf((it - (BossIntro.ROAR_END - 0.3)) / (BossIntro.T - BossIntro.ROAR_END + 0.1), 0.0, 1.0))
 	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, -0.08 * down_side)

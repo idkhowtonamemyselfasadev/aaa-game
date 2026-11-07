@@ -3383,7 +3383,7 @@ func _knight_test() -> void:
 	if coil_glare[0] > deg_to_rad(20.0):
 		return _combat_done(false, "the reveal's coil turns the helm away from the hero with the twisted chest (%.1f deg off)" % rad_to_deg(coil_glare[0]))
 	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
-	if heave_fwd > 0.45 or heave_right > -0.6:
+	if heave_fwd > 0.3 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
 	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])
 	if roar_clear[0] < 0.22 or roar_lo[0] < 1.33:
