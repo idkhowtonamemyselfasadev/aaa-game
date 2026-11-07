@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-1309-warden-cowl.jpg",
-  "time": "2026-11-03T13:09:44Z",
-  "caption": "Kindled warden close-up: the Hollow cowl now has a thick rolled brim round the face, drape folds deepening to the shoulders and a torn edge; the crown is still a smooth dome and GL draws square sparks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-1406-warden-crown.jpg",
-  "time": "2026-11-03T14:06:41Z",
-  "caption": "Kindled warden close-up: the cowl crown now gathers into a slumped peak pulled back over the skull with creases running down from it instead of a smooth dome; still a GL frame with square spark sprites.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-1543-harrier-coif-knot.jpg",
   "time": "2026-11-03T15:43:57Z",
   "caption": "The crouched harrier's hand-wound coif close up: uneven strip laps, a strip over the crown and a tie-off knot break the old smooth pot shape; still a GL frame, and the white ember-cracked armour and small head read busy.",
@@ -897,6 +885,18 @@
   "file": "20261107-1513-climb-hike-cmp.jpg",
   "time": "2026-11-07T15:13:14Z",
   "caption": "Before (level pelvis, left) and after (stepping hip hiked, right) close crop: belt tilt is visible but subtle; the hands, glide and deep-hold lean-in are still rough.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1613-climb-frog.jpg",
+  "time": "2026-11-07T16:13:47Z",
+  "caption": "Hero climbing the keep from behind mid-step with the new frog step: the stepping knee swings out past the robe panel; GL frame, the figure is small and in the face's shadow and the panel hides the thighs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1613-climb-frog-cmp.jpg",
+  "time": "2026-11-07T16:13:47Z",
+  "caption": "Before (knee in line, left) and after (frog step, right) close crop: the right knee sits a few cm further out; subtle from this lens, needs a lit three-quarter view.",
   "verdict": "fail"
  }
 ]

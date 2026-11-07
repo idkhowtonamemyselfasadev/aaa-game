@@ -88,6 +88,7 @@ const CLIMB_LUNGE := 0.38             # seconds of the heave up
 const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
 const CLIMB_HIKE := 0.24              # rad: the stepping foot's hip hikes up (pelvis roll) while it steps
+const CLIMB_FROG := 0.9               # pole weight: the stepping knee swings out to its side (frog step) while it steps
 const CLIMB_SWAY := 0.10              # m: the hips sway out over the standing foot while the other one steps
 const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
@@ -144,6 +145,10 @@ var _no_sway := OS.has_environment("CLIMB_NOSWAY")   # (env) the old centred hip
 var climb_roll: Array[Vector2] = []    # (bots) per climb tick: (standing foot as climb_sway, posed left hip
 									   # socket height minus the right one, m)
 var _no_hike := OS.has_environment("CLIMB_NOHIKE")   # (env) the level pelvis, for before/after
+var climb_knee: Array[Vector2] = []    # (bots) per climb tick: (standing foot as climb_sway, stepping knee's
+									   # outward splay from its hip socket minus the standing knee's, m)
+var _no_frog := OS.has_environment("CLIMB_NOFROG")   # (env) the knees kept in line, for before/after
+var _frog := [0.0, 0.0]                # eased knee_out per leg
 var _hike := 0.0                       # rad pelvis roll, + = the left hip up, eased
 var _sway := 0.0                       # m to the body's right, eased
 var _climb_surge := 1.0                # eased speed factor of the climb's push-and-reach rhythm
@@ -2399,6 +2404,13 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		var hc: Vector3 = ((crumple.hip_joint[0] as Vector3) + (crumple.hip_joint[1] as Vector3)) * 0.5
 		climb_sway.append(Vector2(stand, (hc - global_position).dot(rgt)))
 		climb_roll.append(Vector2(stand, (crumple.hip_joint[0] as Vector3).y - (crumple.hip_joint[1] as Vector3).y))
+		var spl_l := ((crumple.knee_joint[0] as Vector3) - (crumple.hip_joint[0] as Vector3)).dot(-rgt)
+		var spl_r := ((crumple.knee_joint[1] as Vector3) - (crumple.hip_joint[1] as Vector3)).dot(rgt)
+		var mid_step := false
+		for i in 2:
+			mid_step = mid_step or (_foot_t[i] > 0.25 and _foot_t[i] < 0.75)
+		if mid_step:
+			climb_knee.append(Vector2(stand, (spl_l - spl_r) * stand))
 	if garb != null and gap < INF:
 		# the front panel swings out over the knees only as far as the stones let it
 		garb.wall_n = n
@@ -2442,6 +2454,9 @@ func _mantle_tick(delta: float) -> void:
 		crumple.hip_shift = crumple.hip_shift * exp(-8.0 * delta)
 		_hike *= exp(-8.0 * delta)
 		crumple.hip_roll = _hike
+		for i in 2:
+			_frog[i] = float(_frog[i]) * exp(-8.0 * delta)
+		crumple.knee_out = [_frog[0], _frog[1]]
 	_hold_still_anim()
 	if u >= 1.0:
 		mantle_t = -1.0
@@ -2622,6 +2637,14 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 		roll = 0.0
 	_hike = lerpf(_hike, roll, 1.0 - exp(-12.0 * delta))
 	crumple.hip_roll = _hike
+	# with the hip hiked the stepping knee swings out to its own side (a frog step) instead of
+	# driving straight up into the stones, back in line as the foot lands
+	for i in 2:
+		var fw := 0.0
+		if _foot_t[i] < 1.0 and not _no_frog:
+			fw = CLIMB_FROG * minf(1.5 * sin(PI * float(_foot_t[i])), 1.0)
+		_frog[i] = lerpf(float(_frog[i]), fw, 1.0 - exp(-(12.0 if fw > float(_frog[i]) else 20.0) * delta))
+	crumple.knee_out = [_frog[0], _frog[1]]
 
 ## The held idle is the staff guard: pelvis turned ~44 deg and chest ~18 deg off the facing.
 ## Hanging on the stones, hauling over a lip or swinging under the glider bar the body faces
@@ -2665,6 +2688,8 @@ func _clear_climb_pose() -> void:
 	crumple.head_turn = 0.0
 	crumple.hip_shift = Vector3.ZERO
 	crumple.hip_roll = 0.0
+	crumple.knee_out = [0.0, 0.0]
+	_frog = [0.0, 0.0]
 	_sway = 0.0
 	_hike = 0.0
 	crumple.active = false

@@ -75,6 +75,9 @@ var hip_joint := [Vector3.ZERO, Vector3.ZERO]     # world hip joints as posed, b
 var foot_err := [0.0, 0.0]   # (bots) m from each ankle to its target after the reach
 var hip_shift := Vector3.ZERO # world m: the hips (and all above) moved this way before the limb reaches,
 							 # the spine bent back so the chest stays near centre (weight over a standing foot)
+var knee_out := [0.0, 0.0]   # per leg (left, right): extra outward pull on the reaching knee's pole (a
+							 # climber's frog step: the stepping knee swings out to the side as the hip hikes)
+var knee_joint := [Vector3.ZERO, Vector3.ZERO]    # (bots) world knee joints after the foot reach
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -308,7 +311,8 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	var dn := d.normalized()
 	var out := s - skel.get_bone_global_pose(hp).origin
 	out = (out - up * out.dot(up) - wall * out.dot(wall)).normalized()
-	var pole := -wall * 0.75 + out * 0.55 + up * 0.15
+	var li := 0 if side == "Left" else 1
+	var pole := -wall * 0.75 + out * (0.55 + float(knee_out[li])) + up * 0.15
 	pole = (pole - dn * pole.dot(dn)).normalized()
 	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
 	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
@@ -317,6 +321,7 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	f = skel.get_bone_global_pose(ft).origin
 	_swing(skel, lg, f - k, t - k)
 	f = skel.get_bone_global_pose(ft).origin
+	knee_joint[li] = skel.global_transform * skel.get_bone_global_pose(lg).origin
 	foot_err[0 if side == "Left" else 1] = f.distance_to(inv * target) * skel.global_basis.get_scale().x
 	if toe < 0 or w < 0.5:
 		return

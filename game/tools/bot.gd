@@ -845,6 +845,7 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const FROG_GATE := 0.09         # m: the climbing stepping knee splays this much further out than the standing one
 const HERO_FIST_GAP := 0.012     # m: a closed fist's centre to the staff's axis at guard
 const HERO_FIST_SWING := 0.004   # m: MEAN through the light string (bisected feed share + re-keyed recoveries 15:00 11-06: 0.001; was 0.007, 0.03 with the one-tick-late fit)
 const HERO_FIST_OFF_TICKS := 8   # hand-ticks of the string with a fist > 3 cm off the axis (15:00 11-06: 4; was 35, 78 before the feed)
@@ -11186,6 +11187,7 @@ func _climb_test() -> void:
 	p.climb_ticks.clear()
 	p.climb_sway.clear()
 	p.climb_roll.clear()
+	p.climb_knee.clear()
 	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
@@ -11297,6 +11299,17 @@ func _climb_test() -> void:
 	var rl_r: float = rl_sum[1.0] / maxf(rl_n[1.0], 1)
 	var rl_l: float = rl_sum[-1.0] / maxf(rl_n[-1.0], 1)
 	print("BOT climb: hip hike: left hip %.3f m above the right while the left steps, %.3f while the right steps: hike %.3f m" % [rl_r, rl_l, rl_r - rl_l])
+	var kn_sum := {1.0: 0.0, -1.0: 0.0}
+	var kn_n := {1.0: 0, -1.0: 0}
+	for ck in p.climb_knee:
+		if ck.x != 0.0:
+			kn_sum[ck.x] += ck.y
+			kn_n[ck.x] += 1
+	var kn_l: float = kn_sum[1.0] / maxf(kn_n[1.0], 1)
+	var kn_r: float = kn_sum[-1.0] / maxf(kn_n[-1.0], 1)
+	print("BOT climb: frog step: stepping knee splayed %.3f m further out than the standing one while the left steps (%d), %.3f while the right steps (%d)" % [kn_l, kn_n[1.0], kn_r, kn_n[-1.0]])
+	if p.climbs > 0 and not OS.has_environment("CLIMB_NOFROG") and (kn_n[1.0] < 3 or kn_n[-1.0] < 3 or minf(kn_l, kn_r) < FROG_GATE):
+		return _combat_done(false, "the stepping knee drives straight up into the stones instead of swinging out to its side")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_NOHIKE") and (rl_n[1.0] < 3 or rl_n[-1.0] < 3 or rl_r - rl_l < 0.03):
 		return _combat_done(false, "the pelvis stays level while a foot steps up instead of the stepping hip hiking")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_NOSWAY") and (sw_n[1.0] < 3 or sw_n[-1.0] < 3 or sw_r - sw_l < 0.05):
