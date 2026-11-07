@@ -87,6 +87,7 @@ const CLIMB_LUNGE_COST := 20.0
 const CLIMB_LUNGE := 0.38             # seconds of the heave up
 const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
+const CLIMB_SWAY := 0.09              # m: the hips sway out over the standing foot while the other one steps
 const CLIMB_REACH := 0.75             # how far ahead a jump finds a face to catch
 const CLIMB_STEEP := 0.5              # |normal.y| below this is a face, not a slope
 # Jump off a face: jump with the stick pulled away from the stones (down/back, or hard to a side)
@@ -136,6 +137,10 @@ var _hold_missed := false              # the last _find_hold found no stone (it 
 var _lip_felt := false                 # a reaching hand found the top of the face (see _find_hold)
 var climb_log := false                 # (bots) record every climb tick into climb_ticks
 var climb_ticks: Array[Vector3] = []   # (bots) per climb tick: (rate m/s, neck lift, head turn)
+var climb_sway: Array[Vector2] = []    # (bots) per climb tick: (standing foot: +1 right / -1 left / 0 both,
+									   # posed hip centre m to the body's right of the origin)
+var _no_sway := OS.has_environment("CLIMB_NOSWAY")   # (env) the old centred hips, for before/after
+var _sway := 0.0                       # m to the body's right, eased
 var _climb_surge := 1.0                # eased speed factor of the climb's push-and-reach rhythm
 var _climb_even := OS.has_environment("CLIMB_EVEN")
 var hand_moves := 0                   # times a hand let go of one hold for the next (bots read this)
@@ -2380,6 +2385,14 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	climb_rate = moved.length() / maxf(delta, 1e-4)
 	if climb_log and _climb_t > 0.4 and _lunge_t < 0.0 and crumple != null:
 		climb_ticks.append(Vector3(climb_rate, crumple.neck, crumple.head_turn))
+		var stand := 0.0
+		if _foot_t[0] < 1.0 and _foot_t[1] >= 1.0:
+			stand = 1.0
+		elif _foot_t[1] < 1.0 and _foot_t[0] >= 1.0:
+			stand = -1.0
+		var rgt := -Vector3(n.x, 0.0, n.z).normalized().cross(Vector3.UP).normalized()
+		var hc: Vector3 = ((crumple.hip_joint[0] as Vector3) + (crumple.hip_joint[1] as Vector3)) * 0.5
+		climb_sway.append(Vector2(stand, (hc - global_position).dot(rgt)))
 	if garb != null and gap < INF:
 		# the front panel swings out over the knees only as far as the stones let it
 		garb.wall_n = n
@@ -2418,6 +2431,9 @@ func _mantle_tick(delta: float) -> void:
 		crumple.spine = 0.45 * k
 		crumple.plant = (1.0 - smoothstep(0.25, 0.55, u)) if _mantle_hands else 0.0   # the hands press on the lip, then come away
 		crumple.foot_plant = (1.0 - smoothstep(0.1, 0.4, u)) if _mantle_hands else 0.0  # the feet push off their holds first
+	if crumple != null:
+		_sway *= exp(-8.0 * delta)             # the hips come back under the body as it hauls over
+		crumple.hip_shift = crumple.hip_shift * exp(-8.0 * delta)
 	_hold_still_anim()
 	if u >= 1.0:
 		mantle_t = -1.0
@@ -2577,6 +2593,17 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 		var at: Vector3 = (_foot_from[i] as Vector3).lerp(_foot[i], u) + n * 0.15 * sin(PI * u)
 		# the ankle sits a foot's length off the stone the toes stand on, a little above them
 		crumple.foot_target[i] = at + n * 0.12 + up_dir * 0.07
+	# weight over the standing foot: while one foot is off its hold the hips sway out over the
+	# other one (to the body's right for the right foot), back to the middle as it lands
+	var want := 0.0
+	for i in 2:
+		if _foot_t[i] < 1.0:
+			want += (-1.0 if i == 1 else 1.0) * CLIMB_SWAY * minf(1.6 * sin(PI * float(_foot_t[i])), 1.0)
+	if _no_sway:
+		want = 0.0
+	_sway = lerpf(_sway, want, 1.0 - exp(-12.0 * delta))
+	var rgt := -Vector3(n.x, 0.0, n.z).normalized().cross(Vector3.UP).normalized()
+	crumple.hip_shift = rgt * _sway
 
 ## The held idle is the staff guard: pelvis turned ~44 deg and chest ~18 deg off the facing.
 ## Hanging on the stones, hauling over a lip or swinging under the glider bar the body faces
@@ -2618,6 +2645,8 @@ func _clear_climb_pose() -> void:
 	crumple.square = 0.0
 	crumple.neck = 0.0
 	crumple.head_turn = 0.0
+	crumple.hip_shift = Vector3.ZERO
+	_sway = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:

@@ -73,6 +73,8 @@ var foot_plant := 0.0        # 0..1: both ankles reach for foot_target (toe hold
 var foot_target := [Vector3.ZERO, Vector3.ZERO]   # world ankle targets, left then right
 var hip_joint := [Vector3.ZERO, Vector3.ZERO]     # world hip joints as posed, before the reach
 var foot_err := [0.0, 0.0]   # (bots) m from each ankle to its target after the reach
+var hip_shift := Vector3.ZERO # world m: the hips (and all above) moved this way before the limb reaches,
+							 # the spine bent back so the chest stays near centre (weight over a standing foot)
 
 func _process_modification_with_delta(_delta: float) -> void:
 	var skel := get_skeleton()
@@ -136,6 +138,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_bend(skel, "mixamorig_Spine2", up, chest_twist * 0.4)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
+	if hip_shift != Vector3.ZERO:
+		_shift_hips(skel, up)
 	if ground > 0.0:
 		_ground(skel, up)
 		if settle > 0:
@@ -423,6 +427,25 @@ func _settle_leg(skel: Skeleton3D, side: String, up: Vector3) -> void:
 	_swing(skel, lg, f - k, t - k)
 	f = skel.get_bone_global_pose(ft).origin
 	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, toe_dir)
+
+## Moves the hips by hip_shift (world) and bends the spine back the other way, so the pelvis
+## sways out over a standing foot while the shoulders stay nearly over the holds (an S through
+## the trunk, like a climber's weight shift). The limb reaches run after this.
+func _shift_hips(skel: Skeleton3D, up: Vector3) -> void:
+	var hb := skel.find_bone("mixamorig_Hips")
+	if hb < 0 or skel.get_bone_parent(hb) >= 0:
+		return
+	var d := skel.global_transform.affine_inverse().basis * hip_shift
+	skel.set_bone_pose_position(hb, skel.get_bone_pose_position(hb) + d)
+	var m := hip_shift.length()
+	var k := d.normalized().cross(up)
+	if k.length() < 1e-4:
+		return
+	k = k.normalized()
+	# ~1.7 rad per metre of shift, spread up the spine: the top leans back toward the middle
+	_bend(skel, "mixamorig_Spine", k, m * 0.6)
+	_bend(skel, "mixamorig_Spine1", k, m * 0.6)
+	_bend(skel, "mixamorig_Spine2", k, m * 0.5)
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 ## Turns a bone about the body's up so the line from its right child joint to its left one

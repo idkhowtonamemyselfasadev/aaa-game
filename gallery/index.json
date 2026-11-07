@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261103-1025-warden-hemp.jpg",
-  "time": "2026-11-03T10:25:29Z",
-  "caption": "Kindled warden up close in the meadow: its hood, mantle and tabard now hang in irregular drape folds with visible slubbed hemp threads and soft darns instead of flat sacking; still wrong: the tabard and sash panels are flat-cut geometry with straight silhouettes, and GL draws square spark sprites.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-1130-warden-pleats.jpg",
   "time": "2026-11-03T11:30:00Z",
   "caption": "Kindled warden up close: the tabard now hangs in real uneven pleats with a torn side edge and ragged hem; still GL-only, square spark sprites, and the shoulder mantle reads as a stiff box.",
@@ -891,6 +885,18 @@
   "file": "20261107-1320-climb-rhythm.jpg",
   "time": "2026-11-07T13:20:08Z",
   "caption": "The hero mid-climb on the keep's outer face (GL, 15:30): arms reaching hand over hand, head tipped up the face; the body now surges between reaches, but the whole face still sits in the wall's own shadow so the figure reads as a dark silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1414-climbsway.jpg",
+  "time": "2026-11-07T14:14:59Z",
+  "caption": "The hero climbing the keep seen from behind, hips swung out over the standing foot; GL frame, the figure is still small and the wall face is flatly lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1414-climbsway-cmp.jpg",
+  "time": "2026-11-07T14:14:59Z",
+  "caption": "Same climb frame before (left, hips centred) and after (right, belt tipped, hips and robe out over the standing foot, shoulders level); weight shift reads but is subtle.",
   "verdict": "fail"
  }
 ]

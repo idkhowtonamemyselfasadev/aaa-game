@@ -11184,6 +11184,7 @@ func _climb_test() -> void:
 	var sq_n := 0
 	p.climb_log = true
 	p.climb_ticks.clear()
+	p.climb_sway.clear()
 	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
@@ -11275,6 +11276,19 @@ func _climb_test() -> void:
 	var r10: float = rates[int(rates.size() * 0.1)] if rates.size() > 0 else 0.0
 	var r90: float = rates[int(rates.size() * 0.9)] if rates.size() > 0 else 0.0
 	print("BOT climb: rhythm: rate p10 %.2f / mean %.2f / p90 %.2f m/s (spread %.2f of mean, %d samples); head lift %.2f..%.2f rad, turn %.2f..%.2f rad" % [r10, rmean, r90, (r90 - r10) / maxf(rmean, 1e-3), rates.size(), neck_span.x, neck_span.y, turn_span.x, turn_span.y])
+	# weight over the standing foot: the posed hip centre to the body's right while the right foot
+	# stands (the left one steps), to the left while the left one stands
+	var sw_sum := {1.0: 0.0, -1.0: 0.0, 0.0: 0.0}
+	var sw_n := {1.0: 0, -1.0: 0, 0.0: 0}
+	for cs in p.climb_sway:
+		sw_sum[cs.x] += cs.y
+		sw_n[cs.x] += 1
+	var sw_r: float = sw_sum[1.0] / maxf(sw_n[1.0], 1)
+	var sw_l: float = sw_sum[-1.0] / maxf(sw_n[-1.0], 1)
+	var sw_b: float = sw_sum[0.0] / maxf(sw_n[0.0], 1)
+	print("BOT climb: hip sway: hip centre %.3f m right of the body on the right foot (%d), %.3f on the left (%d), %.3f on both (%d): shift %.3f m" % [sw_r, sw_n[1.0], sw_l, sw_n[-1.0], sw_b, sw_n[0.0], sw_r - sw_l])
+	if p.climbs > 0 and not OS.has_environment("CLIMB_NOSWAY") and (sw_n[1.0] < 3 or sw_n[-1.0] < 3 or sw_r - sw_l < 0.05):
+		return _combat_done(false, "the hips hang centred instead of swaying out over the standing foot")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_EVEN") and rates.size() > 10 and (r90 - r10) / maxf(rmean, 1e-3) < 0.45:
 		return _combat_done(false, "the body glides up the face at an even rate instead of surging between reaches")
 	if p.climbs > 0 and rates.size() > 10 and rmean < Player.CLIMB_SPEED * 0.6:

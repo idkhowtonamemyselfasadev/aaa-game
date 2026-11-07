@@ -3184,6 +3184,11 @@ func _ready() -> void:
 			# chest against the face (square to the stones, or turned off them)
 			lens.global_position = hp + face_out * 2.0 + lft * 1.7 + Vector3.DOWN * 0.1
 			lens.look_at(hp - face_out * 0.1)
+		if "back" in args:
+			# straight out from the face behind the hero, a little below the hips: the trunk's
+			# side-to-side line (the hips swaying out over the standing foot) reads against the stones
+			lens.global_position = hp + face_out * 2.4 + Vector3.DOWN * 0.2
+			lens.look_at(hp + Vector3.UP * 0.1)
 		var hsk2 := player.find_child("Skeleton3D", true, false) as Skeleton3D
 		if hsk2 != null and hsk2.find_bone("mixamorig_Hips") >= 0:
 			var hz := (hsk2.global_basis * hsk2.get_bone_global_pose(hsk2.find_bone("mixamorig_Hips")).basis).z
