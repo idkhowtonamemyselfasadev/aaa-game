@@ -11135,6 +11135,13 @@ func _climb_test() -> void:
 		t += 0.1
 	var r0 := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
 	print("BOT climb: walked into the face, %.2f m from the keep's centre, climbing %s" % [r0, p.climbing])
+	var wsk := p.find_child("Skeleton3D", true, false) as Skeleton3D
+	var wbf := Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z).normalized()
+	for bn: Array in [["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg"], ["mixamorig_LeftArm", "mixamorig_RightArm"]]:
+		var wl := wsk.global_transform * wsk.get_bone_global_pose(wsk.find_bone(bn[0])).origin
+		var wr := wsk.global_transform * wsk.get_bone_global_pose(wsk.find_bone(bn[1])).origin
+		var wz := Vector3.UP.cross(wr - wl)
+		print("BOT climb: standing %s line fwd off the body's facing %.1f deg" % [bn[0], rad_to_deg(Vector3(wz.x, 0, wz.z).normalized().angle_to(wbf))])
 	if p.climbs > 0 or p.mantles > 0:
 		return _combat_done(false, "walking into a wall grabbed it")
 	if r0 > 5.6:
@@ -11166,11 +11173,30 @@ func _climb_test() -> void:
 	var drag_span := Vector2(INF, -INF)
 	var clear_min := INF
 	var swing_f_max := 0.0
+	var csk := p.find_child("Skeleton3D", true, false) as Skeleton3D
+	# anatomical forward: up x (right joint - left joint), the hip sockets for the pelvis, the shoulders for the chest
+	var sq_bones := {"hips": ["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg"], "chest": ["mixamorig_LeftArm", "mixamorig_RightArm"]}
+	var sq_max := {"hips": 0.0, "chest": 0.0}
+	var sq_sum := {"hips": 0.0, "chest": 0.0}
+	var sq_n := 0
+	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
 		await _ticks(3)
 		t += 0.05
 		top_y = maxf(top_y, p.global_position.y)
+		if p.climbing and p._climb_t > 0.4 and p._wk_coil < 0.0:
+			# square to the face: the hips' and chest's forward (bone +Z, flattened) against into-the-face
+			var into := -Vector3(p.climb_normal.x, 0, p.climb_normal.z).normalized()
+			sq_n += 1
+			for k: String in sq_bones:
+				# as Crumple posed them (outside the modifier the skeleton reads the clip's pose)
+				var jl := csk.global_transform * (p.crumple.probed.get(sq_bones[k][0], Vector3.ZERO) as Vector3)
+				var jr := csk.global_transform * (p.crumple.probed.get(sq_bones[k][1], Vector3.ZERO) as Vector3)
+				var bz := Vector3.UP.cross(jr - jl)
+				var a := rad_to_deg(Vector3(bz.x, 0, bz.z).normalized().angle_to(into))
+				sq_max[k] = maxf(sq_max[k], a)
+				sq_sum[k] += a
 		if p.climbing and p._lunge_t < 0.0:
 			rate_max = maxf(rate_max, p.climb_rate)
 		if p.climbing:
@@ -11213,6 +11239,10 @@ func _climb_test() -> void:
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])
 	print("BOT climb: feet stepped hold to hold %d times, ankle off its target at most %.3f m, toe holds off the stone at most %.3f m (%d planted samples)" % [p.foot_moves - fmoves0, ferr_max, foff_max, fplanted_n])
 	print("BOT climb: robe hems dragged %.3f..%.3f m to the side by the knees, front panel out %.2f rad at most, its hem %.3f m off the face at least" % [drag_span.x, drag_span.y, swing_f_max, clear_min])
+	p.crumple.probe = PackedStringArray()
+	print("BOT climb: square to the face: hips off %.1f deg mean / %.1f max, chest off %.1f mean / %.1f max (%d samples)" % [sq_sum["hips"] / maxf(sq_n, 1), sq_max["hips"], sq_sum["chest"] / maxf(sq_n, 1), sq_max["chest"], sq_n])
+	if p.climbs > 0 and not OS.has_environment("CLIMB_NOSQUARE") and (sq_n < 5 or sq_sum["hips"] / sq_n > 10.0 or sq_sum["chest"] / sq_n > 10.0):
+		return _combat_done(false, "the hips/chest hang turned off the face in the guard stance instead of square to the stones")
 	if p.climbs > 0 and drag_span.y - drag_span.x < 0.03:
 		return _combat_done(false, "the robe hangs dead still while the knees step up the face")
 	if p.climbs > 0 and clear_min < 0.02:

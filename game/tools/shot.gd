@@ -2045,6 +2045,8 @@ func _ready() -> void:
 		player.body.rotation.y = atan2(-rad.x, -rad.z)
 		player._start_climb(rad)
 		player.climbed = 0.6
+		if "up" in args:
+			player.bot_input = Vector2(0, -1)    # climb on up the face (frame sequences of the reach)
 		var hero := player.global_position + Vector3.UP * 1.1
 		var cp := hero + rad * 4.2 + tan * 2.4
 		cp.y = terrain.height_at(cp.x, cp.z) + 1.4
@@ -3177,6 +3179,11 @@ func _ready() -> void:
 		var hp := player.global_position + Vector3.UP * 1.3
 		lens.global_position = hp + face_out * 0.6 + lft * 2.6 + Vector3.UP * 1.5
 		lens.look_at(hp + Vector3.UP * 0.2 - face_out * 0.15)
+		if "sq" in args:
+			# level three-quarter from out and to the left at hip height: judge the hips and
+			# chest against the face (square to the stones, or turned off them)
+			lens.global_position = hp + face_out * 2.0 + lft * 1.7 + Vector3.DOWN * 0.1
+			lens.look_at(hp - face_out * 0.1)
 		var hsk2 := player.find_child("Skeleton3D", true, false) as Skeleton3D
 		if hsk2 != null and hsk2.find_bone("mixamorig_Hips") >= 0:
 			var hz := (hsk2.global_basis * hsk2.get_bone_global_pose(hsk2.find_bone("mixamorig_Hips")).basis).z

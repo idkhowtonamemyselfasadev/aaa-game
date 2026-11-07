@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-0700-kindler-daylight.jpg",
-  "time": "2026-11-03T07:00:00Z",
-  "caption": "Same Kindler shot at 14:30: both Hollows and the kindled warden stand in daylight with the ember thread pouring from the spear tip down to the warden along the rut road; still wrong: the Kindler's hood hides its face from this side-on lens, a lantern-post lamp hangs into the top-left, and the Hollows' cloth still reads coarse.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-0714-kindler-postclear.jpg",
-  "time": "2026-11-03T07:14:35Z",
-  "caption": "Hollow Kindler at 14:30 with the lantern post swung out of frame and its ember thread pouring from the spear tip; still wrong: it reads from behind with the hood hiding its face, the kindled warden is off the right edge, and a cottage shadow blacks out the bottom third.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-0810-kindler-sunfront.jpg",
   "time": "2026-11-03T08:10:20Z",
   "caption": "The Hollow Kindler now chants into the sun, front-lit, with its face under the hood and the ember stream pouring from its spear tip; but the hero fills the right third and the burning warden is off the right edge.",
@@ -897,6 +885,18 @@
   "file": "20261107-1127-knight-fist.jpg",
   "time": "2026-11-07T11:27:15Z",
   "caption": "Close-up of the knight's raised roar fist: the fingers fold tight, but the thumb still stands upright beside the index (5 aim-based fixes tried this session, none looked better).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1224-climb-guardturned.jpg",
+  "time": "2026-11-07T12:24:47Z",
+  "caption": "BEFORE (env CLIMB_NOSQUARE): climbing the keep with the staff guard's 44 deg pelvis turn still on, the back and robe panel angled off the stones; the wall's shadow hides most of the figure.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1224-climb-square.jpg",
+  "time": "2026-11-07T12:24:47Z",
+  "caption": "AFTER: hips and chest square to the stones, left hand reaching for the next hold, knee up, the back panel hanging straight down the wall; still dim in the wall's shadow, the climb moves at an even speed with no push/pull surge.",
   "verdict": "fail"
  }
 ]

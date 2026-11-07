@@ -77,6 +77,9 @@ const RESPAWN_FADE := 1.2             # seconds the black lifts over after wakin
 const CLIMB_SPEED := 1.35
 const CLIMB_COST := 9.0               # stamina per second while moving on the face
 const CLIMB_HOLD_COST := 1.5          # per second hanging still
+const SQUARE_IN := 7.0                 # /s: hips and chest turn square to the stones/bar (~0.15 s)
+const SQUARE_OUT := 3.5                # /s: back to the guard stance after (~0.3 s)
+var _no_square := OS.has_environment("CLIMB_NOSQUARE")
 const CLIMB_LUNGE_COST := 20.0
 const CLIMB_LUNGE := 0.38             # seconds of the heave up
 const CLIMB_LUNGE_SPEED := 4.2
@@ -809,6 +812,7 @@ func _physics_process(delta: float) -> void:
 		toggle_lock()
 	_update_lock(delta)
 	_regrab_t -= delta
+	_ease_square(delta)
 	if climbing or mantle_t >= 0.0:
 		cam_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
 		_climb_tick(delta, dir2, want_jump, want_dodge)
@@ -2037,6 +2041,7 @@ func _end_glide(clear_pose: bool) -> void:
 		crumple.hip = 0.0
 		crumple.spine = 0.0
 		crumple.stride = 0.0
+		crumple.square = 0.0
 		crumple.active = false
 
 # --- climbing ---
@@ -2501,6 +2506,23 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 		# the ankle sits a foot's length off the stone the toes stand on, a little above them
 		crumple.foot_target[i] = at + n * 0.12 + up_dir * 0.07
 
+## The held idle is the staff guard: pelvis turned ~44 deg and chest ~18 deg off the facing.
+## Hanging on the stones, hauling over a lip or swinging under the glider bar the body faces
+## square into what it holds, so Crumple turns the hips and chest back to the facing; caught
+## fast on the grab, let go slower as a kick-off or a landing hands back to the guard. (The
+## knock-down drives `square` itself.)
+func _ease_square(delta: float) -> void:
+	if crumple == null or down_t >= 0.0 or dead_t >= 0.0:
+		return
+	var want := 0.0
+	if mantle_t >= 0.0:
+		want = 1.0 - smoothstep(0.6, 1.0, mantle_t / MANTLE_TIME)   # back to the guard as the feet take the ledge
+	elif climbing or gliding:
+		want = 1.0
+	if _no_square:
+		want = 0.0                             # (env CLIMB_NOSQUARE=1: the guard-turned hang, for before/after)
+	crumple.square = move_toward(crumple.square, want, delta * (SQUARE_IN if want > crumple.square else SQUARE_OUT))
+
 func _hold_still_anim() -> void:
 	if anim_tree != null:
 		_blend = 0.0
@@ -2521,6 +2543,7 @@ func _clear_climb_pose() -> void:
 	crumple.spine = 0.0
 	crumple.plant = 0.0
 	crumple.foot_plant = 0.0
+	crumple.square = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:
