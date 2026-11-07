@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261102-1830-knight-leap-cloth.jpg",
-  "time": "2026-11-02T18:30:00Z",
-  "caption": "The Ashen Knight coming down out of its ember leap, knees tucked, the oxblood back tabard flared out behind on the air; still wrong: GL fallback sky and chalky mountains, the front panel barely reads, no scorch where the glaive will bite.",
-  "verdict": "fail"
- },
- {
-  "file": "20261102-1930-knight-scorch.jpg",
-  "time": "2026-11-02T19:30:00Z",
-  "caption": "The Ashen Knight's glaive bitten into the turf after its ember leap: the meadow grass blasted flat in a ring round the bite, ember glow and sparks lifting off it; still wrong: GL fallback frame, the black char barely shows through the laid grass (the stems should scorch too), and the practice post crowds the framing.",
-  "verdict": "fail"
- },
- {
   "file": "20261102-2044-knight-char.jpg",
   "time": "2026-11-02T20:44:34Z",
   "caption": "The Ashen Knight's leap scorch 8 s on (GL frame): the grass and soil inside the bite are now charred black in a ragged burnt star with sooted stubble; the practice post still crowds the foreground and the frame is not Forward+.",
@@ -897,6 +885,18 @@
   "file": "20261107-0422-knight-coil-profile.jpg",
   "time": "2026-11-07T04:22:13Z",
   "caption": "The coil in profile (the kside lens now works): crouched, glaive low behind the right hip; backlit to a silhouette, GL not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0525-knight-roar-reveal.jpg",
+  "time": "2026-11-07T05:25:46Z",
+  "caption": "The reveal lens at the roar: the glaive now stands upright beside the helm, blade to the sky, no fist across the visor; the fists are hidden behind the thrown-back helm from this lens, GL not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-0525-knight-roar-profile.jpg",
+  "time": "2026-11-07T05:25:46Z",
+  "caption": "The roar in profile: arm raised above the helm, glaive vertical on its right instead of both hands hugging the visor; backlit to a silhouette in the stones' shadow, GL only.",
   "verdict": "fail"
  }
 ]

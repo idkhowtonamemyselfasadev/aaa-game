@@ -78,7 +78,13 @@ signal stomped(at: Vector3)
 ## the right boot, both hands low on the haft, leaned on (SURGE_LEAN is set for a kneeling
 ## body: standing, its point hovered ~0.15 m over the ground at the first size)
 const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
-const INTRO_ROAR := [-35.0, 68.0, Vector3(-0.42, 1.85, 0.3), -14.0, 0.1, 0.66]
+## (05:00 11-07) was [-35, 68, (-0.42, 1.85, 0.3), -14]: the left fist sat right in front of the
+## visor (y 1.61, arm at full reach across the chest) and the right one at the chest (1.22), so
+## the roar read cramped, the hands hugging the helm. Re-solved offline against `_place` (both
+## hands unclamped, both fists >= 0.3 m off the helm): the left fist goes up above the helm on
+## its right (~1.88), the right fist up to the right shoulder (~1.50), the glaive standing at its
+## right side. The chest turns only a little further (-20): at -38 the reveal lens saw its back
+const INTRO_ROAR := [-10.0, 65.0, Vector3(-0.27, 2.12, 0.24), -20.0, 0.1, 0.66]
 ## the reveal's gather (the coil before the heave): the glaive drawn down and back on its right,
 ## both hands low at the right hip, the blade trailing behind the right boot, so the heave is an
 ## upward sweep round the right side instead of a lift from a raised crouch (01:00 11-07: the

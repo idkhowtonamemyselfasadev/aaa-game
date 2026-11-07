@@ -3284,6 +3284,7 @@ func _knight_test() -> void:
 	var hb := k.skel.find_bone("mixamorig_Hips")
 	var rhb := k.skel.find_bone("mixamorig_RightHand")
 	var lhb := k.skel.find_bone("mixamorig_LeftHand")
+	var headb := k.skel.find_bone("mixamorig_Head")
 	var grip := [0.0]          # worst hand-to-haft-hold distance in the heave/roar (m / size)
 	var neck := [99.0, -99.0]  # the neck's forward offset over the hips: least (roar), most (slump)
 	# read the bones once the modifiers (spine bend, arm IK) have run, not the clip's pose
@@ -3291,6 +3292,10 @@ func _knight_test() -> void:
 	var coil_hx := [-9.0]
 	var coil_butt := [-9.0]
 	var coil_glare := [0.0]
+	# the roar's hold (05:00 11-07): the fists clear of the helm and raised, not hugging the visor
+	var roar_clear := [9.0]
+	var roar_lo := [9.0]
+	var roar_hi := [-9.0]
 	var grip_probe := func() -> void:
 		if k.intro == null or not is_instance_valid(k.intro):
 			return
@@ -3320,6 +3325,17 @@ func _knight_test() -> void:
 			coil_glare[0] = maxf(coil_glare[0], absf(HeadGlare.yaw_to(k.skel, k.body, p.global_position + Vector3.UP * 1.5)))
 			if OS.get_environment("COILDBG") != "":
 				print("COIL t %.2f r %s l %s butt %.2f" % [k.intro.t, inv * (k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin), inv * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin), (bw.y - k.global_position.y) / k.size_scale])
+		if k.intro.t > 3.3 and k.intro.t < 3.7 and headb >= 0:
+			# a point just in front of the visor: a fist there hides the face and pins the arms in
+			var kf := k.body.global_basis.z
+			kf.y = 0.0
+			var hdw := k.skel.global_transform * k.skel.get_bone_global_pose(headb).origin \
+				+ (Vector3.UP * 0.12 + kf.normalized() * 0.2) * k.size_scale
+			for hbi in [rhb, lhb]:
+				var hw2 := k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin
+				roar_clear[0] = minf(roar_clear[0], hw2.distance_to(hdw) / k.size_scale)
+				roar_lo[0] = minf(roar_lo[0], (hw2.y - k.global_position.y) / k.size_scale)
+				roar_hi[0] = maxf(roar_hi[0], (hw2.y - k.global_position.y) / k.size_scale)
 		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
 			return
 		var rw := k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin
@@ -3369,6 +3385,9 @@ func _knight_test() -> void:
 	print("BOT knight: heave path: shaft at most %.2f toward the chest, out to %.2f on its right" % [heave_fwd, heave_right])
 	if heave_fwd > 0.45 or heave_right > -0.6:
 		return _combat_done(false, "the reveal's heave swings the glaive up through the front, not round its right (fwd %.2f, right %.2f)" % [heave_fwd, heave_right])
+	print("BOT knight: roar hold: fists at least %.2f m off the front of the visor, fists %.2f .. %.2f m up (per size)" % [roar_clear[0], roar_lo[0], roar_hi[0]])
+	if roar_clear[0] < 0.22 or roar_lo[0] < 1.33:
+		return _combat_done(false, "the reveal's roar hugs the helm: a fist in front of the visor or down at the chest (clear %.2f, low %.2f)" % [roar_clear[0], roar_lo[0]])
 	var grip_gap: float = grip[0]
 	neck_back = neck[0]
 	neck_fore = neck[1]
