@@ -75,6 +75,9 @@ const RESPAWN_FADE := 1.2             # seconds the black lifts over after wakin
 # top the hero hauls up over the lip onto the ledge. Out of stamina, the grip fails and they
 # fall. A jump at a waist-high ledge vaults straight up onto it.
 const CLIMB_SPEED := 1.35
+const CLIMB_LOOK_UP := Vector2(0.18, 0.22)   # neck lift on the face, + more while a hand reaches
+const CLIMB_LOOK_TURN := 0.32              # head turn toward the reaching hand (+ left)
+const CLIMB_SURGE := Vector2(1.4, 0.55)   # speed x while every limb holds / while one reaches (`_climb_rhythm`)
 const CLIMB_COST := 9.0               # stamina per second while moving on the face
 const CLIMB_HOLD_COST := 1.5          # per second hanging still
 const SQUARE_IN := 7.0                 # /s: hips and chest turn square to the stones/bar (~0.15 s)
@@ -99,6 +102,12 @@ const WALL_JUMP_TWIST := 0.32          # s of the turn from facing the stones to
 const WALL_KICK_COIL := 0.1            # s of the coil on the face before the push
 const WALL_KICK_PUSH := 0.11           # s the soles stay on the stones as the legs straighten
 const HAND_MOVE := 0.18               # seconds for a hand to reach to its next hold
+# where a reaching hand feels for a stone round its reach, nearest first (the wider ring when a
+# joint runs deep or a stone is set back further than the arm goes)
+const HOLD_FEEL: Array[Vector2] = [Vector2.ZERO, Vector2(0.0, -0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0),
+	Vector2(0.0, 0.08), Vector2(0.0, -0.16), Vector2(0.14, -0.04), Vector2(-0.14, -0.04), Vector2(0.12, -0.14),
+	Vector2(-0.12, -0.14), Vector2(0.0, -0.24), Vector2(0.2, -0.1), Vector2(-0.2, -0.1)]
+const HOLD_REACH := 0.62              # m from the shoulder: a stone further off (a proud block, the crown) is no hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
 const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
 const FOOT_STEP := 0.24               # a toe hold this far from where the foot wants to be is left
@@ -123,6 +132,12 @@ var mantle_t := -1.0                  # seconds into a haul-up, -1 when not mant
 var _mantle_from := Vector3.ZERO
 var _mantle_to := Vector3.ZERO
 var _lunge_t := -1.0
+var _hold_missed := false              # the last _find_hold found no stone (it gave the face's plane)
+var _lip_felt := false                 # a reaching hand found the top of the face (see _find_hold)
+var climb_log := false                 # (bots) record every climb tick into climb_ticks
+var climb_ticks: Array[Vector3] = []   # (bots) per climb tick: (rate m/s, neck lift, head turn)
+var _climb_surge := 1.0                # eased speed factor of the climb's push-and-reach rhythm
+var _climb_even := OS.has_environment("CLIMB_EVEN")
 var hand_moves := 0                   # times a hand let go of one hold for the next (bots read this)
 var _hold := [Vector3.ZERO, Vector3.ZERO]       # world holds under the left and right hand
 var _hold_from := [Vector3.ZERO, Vector3.ZERO]
@@ -2137,6 +2152,8 @@ func _start_climb(n: Vector3) -> void:
 	climb_normal = n
 	climbs += 1
 	_climb_t = 0.0
+	_climb_surge = 1.0
+	_lip_felt = false
 	_lunge_t = -1.0
 	velocity = Vector3.ZERO
 	for i in 2:
@@ -2170,6 +2187,9 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 	climbing = false
 	_lunge_t = -1.0
 	_regrab_t = 0.45
+	if crumple != null:
+		crumple.neck = 0.0                     # the climb's look up at the holds is over
+		crumple.head_turn = 0.0
 	stamina -= WALL_JUMP_COST
 	velocity = out + Vector3.UP * WALL_JUMP_UP
 	global_position += n * 0.1               # clear of the rough stones (a jutting lip would eat the rise)
@@ -2205,6 +2225,10 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 func _kick_coil(delta: float, n: Vector3, gap: float, right: Vector3) -> void:
 	_wk_coil += delta
 	var u := clampf(_wk_coil / WALL_KICK_COIL, 0.0, 1.0)
+	if crumple != null:
+		# the eyes come off the holds onto where the kick will fly
+		crumple.neck = lerpf(crumple.neck, 0.0, 1.0 - exp(-25.0 * delta))
+		crumple.head_turn = lerpf(crumple.head_turn, 0.0, 1.0 - exp(-25.0 * delta))
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	# drawn in to a hand's breadth off the stones and a little down onto the bent legs
 	var v := -n * clampf((gap - (CLIMB_GAP - 0.1)) * 10.0, -1.2, 1.2) - up_dir * 0.9 * (1.0 - u)
@@ -2307,11 +2331,12 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	if dir2.y < -0.2 or _lunge_t >= 0.0:
 		# climbing up and the face ends below the hands: reach over the lip and haul up
 		var head := _ray(global_position + Vector3.UP * 1.85, global_position + Vector3.UP * 1.85 - n * 1.1)
-		if head.is_empty():
+		if head.is_empty() or _lip_felt:
 			var lip: Variant = _ledge_top(n, 2.1)
 			if lip != null:
 				_start_mantle(lip, n)
 				return
+	_lip_felt = false
 	if want_dodge:
 		_let_go(2.2, 0.6)
 		return
@@ -2341,7 +2366,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		var m := Vector2(dir2.x, -dir2.y)
 		if m.length() > 1.0:
 			m = m.normalized()
-		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED
+		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED * _climb_rhythm(delta)
 		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
 	# keep the hands on the face: close or open the gap toward CLIMB_GAP
 	v += -n * clampf((gap - CLIMB_GAP) * 6.0, -0.8, 0.8)
@@ -2353,6 +2378,8 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	var moved := global_position - before
 	climbed += moved.length()
 	climb_rate = moved.length() / maxf(delta, 1e-4)
+	if climb_log and _climb_t > 0.4 and _lunge_t < 0.0 and crumple != null:
+		climb_ticks.append(Vector3(climb_rate, crumple.neck, crumple.head_turn))
 	if garb != null and gap < INF:
 		# the front panel swings out over the knees only as far as the stones let it
 		garb.wall_n = n
@@ -2396,6 +2423,23 @@ func _mantle_tick(delta: float) -> void:
 		mantle_t = -1.0
 		_clear_climb_pose()
 
+## A climb is not an even glide: the body surges up while all four limbs hold (a foot pushes,
+## the hands pull) and nearly stops while a hand or foot is off reaching for its next hold.
+## Returns the speed factor for this tick (about 1 on average over a cycle; env CLIMB_EVEN=1
+## gives the old even rate, for before/after).
+func _climb_rhythm(delta: float) -> float:
+	var reach := 0.0
+	for i in 2:
+		if _hold_t[i] < 1.0:
+			reach = maxf(reach, sin(PI * float(_hold_t[i])))
+		if _foot_t[i] < 1.0:
+			reach = maxf(reach, 0.8 * sin(PI * float(_foot_t[i])))
+	var want := lerpf(CLIMB_SURGE.x, CLIMB_SURGE.y, reach)
+	if _climb_even:
+		want = 1.0
+	_climb_surge = lerpf(_climb_surge, want, 1.0 - exp(-14.0 * delta))
+	return _climb_surge
+
 ## Arms up on the face, knees bent; the reach cycles hand over hand with the distance climbed.
 func _pose_climb() -> void:
 	_hold_still_anim()
@@ -2419,11 +2463,24 @@ func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 	var p := sh + Vector3.UP * (0.26 + lift) + right * (0.07 if i == 1 else -0.07) + ahead
 	# rough masonry: a stone end can stand proud of the face or a joint run deep into it, so
 	# feel a few spots round the reach and take the first one that is a face
-	for off: Vector2 in [Vector2.ZERO, Vector2(0.0, -0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0), Vector2(0.0, 0.08), Vector2(0.0, -0.16)]:
+	for off: Vector2 in HOLD_FEEL:
 		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
 		var hit := _ray(o, o - n * 1.8)
-		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25:
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
+				and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH:
 			return hit["position"]
+	_hold_missed = true
+	# nothing in reach: a stone set back deeper (the arm goes in after it), nearest first
+	var deep := Vector3.ZERO
+	for off: Vector2 in HOLD_FEEL:
+		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
+		var hit := _ray(o, o - n * 2.2)
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
+				and (deep == Vector3.ZERO or (hit["position"] as Vector3).distance_to(sh) < deep.distance_to(sh)):
+			deep = hit["position"]
+	if deep != Vector3.ZERO:
+		return deep
+	_lip_felt = true                           # nothing to hold up here: the face has ended, haul up
 	# no stone there (over the lip): hold the face's plane level with the hand
 	return p - n * (p - (global_position - n * CLIMB_GAP)).dot(n)
 
@@ -2447,8 +2504,12 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 		var sh: Vector3 = crumple.shoulder[i]
 		var out_of_reach: bool = sh != Vector3.ZERO and sh.distance_to(_hold[i]) > 0.46
 		if (far > HAND_STEP and _hold_t[other] >= 1.0) or out_of_reach:
+			_hold_missed = false
+			var next := _find_hold(i, 0.0, ahead)
+			if _hold_missed and not out_of_reach:
+				continue                       # no stone up there yet (a set-back course): keep this grip
 			_hold_from[i] = _hold[i]
-			_hold[i] = _find_hold(i, 0.0, ahead)
+			_hold[i] = next
 			_hold_t[i] = 0.0
 			hand_moves += 1
 	crumple.plant = minf(crumple.plant + delta * 6.0, 1.0)
@@ -2458,6 +2519,17 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 		var at: Vector3 = (_hold_from[i] as Vector3).lerp(_hold[i], u) + n * 0.12 * sin(PI * u)
 		# the wrist sits a hand's length below the fingers' grip and a palm off the stone
 		crumple.hand_target[i] = at + n * 0.04 - up_dir * 0.07
+	# the eyes go to the hold: the head tips back up the face and turns toward the hand that is
+	# reaching, settling back as it takes the stone
+	var look := 0.0
+	var lift := 0.0
+	for i in 2:
+		var r := sin(PI * float(_hold_t[i])) if _hold_t[i] < 1.0 else 0.0
+		lift = maxf(lift, r)
+		look += (CLIMB_LOOK_TURN if i == 0 else -CLIMB_LOOK_TURN) * r
+	var kl := 1.0 - exp(-10.0 * delta)
+	crumple.neck = lerpf(crumple.neck, CLIMB_LOOK_UP.x + CLIMB_LOOK_UP.y * lift, kl)
+	crumple.head_turn = lerpf(crumple.head_turn, look, kl)
 
 ## Where a foot wants to stand: on the face below its hip, found by a ray so the toes sit on
 ## a real stone. `lift` staggers the feet.
@@ -2544,6 +2616,8 @@ func _clear_climb_pose() -> void:
 	crumple.plant = 0.0
 	crumple.foot_plant = 0.0
 	crumple.square = 0.0
+	crumple.neck = 0.0
+	crumple.head_turn = 0.0
 	crumple.active = false
 
 func is_invulnerable() -> bool:

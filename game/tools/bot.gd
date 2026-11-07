@@ -11173,12 +11173,17 @@ func _climb_test() -> void:
 	var drag_span := Vector2(INF, -INF)
 	var clear_min := INF
 	var swing_f_max := 0.0
+	var rates: Array[float] = []
+	var neck_span := Vector2(INF, -INF)
+	var turn_span := Vector2(INF, -INF)
 	var csk := p.find_child("Skeleton3D", true, false) as Skeleton3D
 	# anatomical forward: up x (right joint - left joint), the hip sockets for the pelvis, the shoulders for the chest
 	var sq_bones := {"hips": ["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg"], "chest": ["mixamorig_LeftArm", "mixamorig_RightArm"]}
 	var sq_max := {"hips": 0.0, "chest": 0.0}
 	var sq_sum := {"hips": 0.0, "chest": 0.0}
 	var sq_n := 0
+	p.climb_log = true
+	p.climb_ticks.clear()
 	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
@@ -11212,13 +11217,29 @@ func _climb_test() -> void:
 						continue
 					planted_n += 1
 					err_max = maxf(err_max, p.crumple.hand_err[i])
+					if OS.has_environment("CLIMB_DBG"):
+						print("DBG t %.2f hand %d err %.3f hold_t %s foot_t %s rate %.2f surge %.2f sh-hold %.3f" % [t, i, p.crumple.hand_err[i], str(p._hold_t), str(p._foot_t), p.climb_rate, p._climb_surge, (p.crumple.shoulder[i] as Vector3).distance_to(p._hold[i])])
 					# the hold is on the stone: a ray along the face normal meets it there
 					var hp: Vector3 = p._hold[i]
 					var hn: Vector3 = p.climb_normal
 					var q := PhysicsRayQueryParameters3D.create(hp + hn * 0.3, hp - hn * 0.3)
 					q.exclude = [p.get_rid()]
 					var hh := p.get_world_3d().direct_space_state.intersect_ray(q)
-					off_max = maxf(off_max, 0.3 if hh.is_empty() else hp.distance_to(hh["position"]))
+					var hoff := 0.3 if hh.is_empty() else hp.distance_to(hh["position"])
+					if hoff > 0.01:
+						# fingers on a stone's top or end (rough masonry, a recess the face's normal
+						# does not see into): feel down, up and to either side for the surface
+						var hr := Vector3.UP.cross(hn).normalized()
+						for ax: Vector3 in [Vector3.UP, -Vector3.UP, hr, -hr]:
+							var qd := PhysicsRayQueryParameters3D.create(hp + ax * 0.3, hp - ax * 0.3)
+							qd.exclude = [p.get_rid()]
+							var hd := p.get_world_3d().direct_space_state.intersect_ray(qd)
+							if not hd.is_empty():
+								hoff = minf(hoff, hp.distance_to(hd["position"]))
+					hh = {"position": hp}
+					off_max = maxf(off_max, hoff)
+					if OS.has_environment("CLIMB_DBG"):
+						print("DBG hold %d off %.3f, %.2f m above the body, %.3f m into the face" % [i, hoff, hp.y - p.global_position.y, (p.global_position - hp).dot(hn)])
 			if p.crumple.foot_plant >= 0.99:
 				for i in 2:
 					if p._foot_t[i] < 1.0:
@@ -11241,6 +11262,25 @@ func _climb_test() -> void:
 	print("BOT climb: robe hems dragged %.3f..%.3f m to the side by the knees, front panel out %.2f rad at most, its hem %.3f m off the face at least" % [drag_span.x, drag_span.y, swing_f_max, clear_min])
 	p.crumple.probe = PackedStringArray()
 	print("BOT climb: square to the face: hips off %.1f deg mean / %.1f max, chest off %.1f mean / %.1f max (%d samples)" % [sq_sum["hips"] / maxf(sq_n, 1), sq_max["hips"], sq_sum["chest"] / maxf(sq_n, 1), sq_max["chest"], sq_n])
+	p.climb_log = false
+	for ct in p.climb_ticks:
+		rates.append(ct.x)
+		neck_span = Vector2(minf(neck_span.x, ct.y), maxf(neck_span.y, ct.y))
+		turn_span = Vector2(minf(turn_span.x, ct.z), maxf(turn_span.y, ct.z))
+	rates.sort()
+	var rmean := 0.0
+	for rv in rates:
+		rmean += rv
+	rmean /= maxf(rates.size(), 1)
+	var r10: float = rates[int(rates.size() * 0.1)] if rates.size() > 0 else 0.0
+	var r90: float = rates[int(rates.size() * 0.9)] if rates.size() > 0 else 0.0
+	print("BOT climb: rhythm: rate p10 %.2f / mean %.2f / p90 %.2f m/s (spread %.2f of mean, %d samples); head lift %.2f..%.2f rad, turn %.2f..%.2f rad" % [r10, rmean, r90, (r90 - r10) / maxf(rmean, 1e-3), rates.size(), neck_span.x, neck_span.y, turn_span.x, turn_span.y])
+	if p.climbs > 0 and not OS.has_environment("CLIMB_EVEN") and rates.size() > 10 and (r90 - r10) / maxf(rmean, 1e-3) < 0.45:
+		return _combat_done(false, "the body glides up the face at an even rate instead of surging between reaches")
+	if p.climbs > 0 and rates.size() > 10 and rmean < Player.CLIMB_SPEED * 0.6:
+		return _combat_done(false, "the push-and-reach rhythm made the climb crawl")
+	if p.climbs > 0 and not OS.has_environment("CLIMB_EVEN") and (neck_span.y < 0.25 or turn_span.y - turn_span.x < 0.3):
+		return _combat_done(false, "the head does not look up at the reaching hands")
 	if p.climbs > 0 and not OS.has_environment("CLIMB_NOSQUARE") and (sq_n < 5 or sq_sum["hips"] / sq_n > 10.0 or sq_sum["chest"] / sq_n > 10.0):
 		return _combat_done(false, "the hips/chest hang turned off the face in the guard stance instead of square to the stones")
 	if p.climbs > 0 and drag_span.y - drag_span.x < 0.03:
