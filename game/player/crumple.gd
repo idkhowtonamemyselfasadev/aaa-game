@@ -81,6 +81,8 @@ var knee_joint := [Vector3.ZERO, Vector3.ZERO]    # (bots) world knee joints aft
 var plant_w := [1.0, 1.0]    # per hand (left, right) on top of `plant`: one hand alone can reach (a push off the ground)
 var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point this way (flat on the ground)
 							 # instead of up the face
+var hand_knee := Vector3.ZERO # world offset: when set, the RIGHT hand's target is the right knee as posed
+							 # plus this (a palm braced on the front knee to push the body up off it)
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -166,6 +168,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if foot_plant > 0.0:
 		for i in 2:
 			_reach_leg(skel, sides[i], foot_target[i], foot_plant)
+	if hand_knee != Vector3.ZERO:
+		var rk := skel.find_bone("mixamorig_RightLeg")
+		if rk >= 0:
+			hand_target[1] = skel.global_transform * skel.get_bone_global_pose(rk).origin + hand_knee
 	if plant > 0.0:
 		# last of all, after the spine has moved the shoulders: the hands go to their holds
 		for i in 2:

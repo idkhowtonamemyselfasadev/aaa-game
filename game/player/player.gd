@@ -67,6 +67,8 @@ const KNOCK_LEAN := 0.32              # rad: the chest turns toward the pushing 
 const KNOCK_ROLL := 0.30              # rad: the body rolls onto the hand's hip (about the ground line under it)
 const KNOCK_SIT := 0.40               # rad: less forward curl in the spine, the trunk leant back onto the arm
 const KNOCK_KNEEL := [1.34, 1.54, 1.64, 1.82]   # down_t: the kneel forms, held, eases out in the rise
+const KNOCK_KNEE_HAND := [1.44, 1.54, 1.70, 1.80]  # down_t: the right palm comes onto the front knee, braced, pushes, lets go
+const KNOCK_KNEE_HAND_AT := Vector3(0.0, 0.07, -0.04) # m from the knee joint: up (over the kneecap), forward (- = back up the thigh)
 const KNOCK_KNEEL_FRONT := 1.46       # down_t: the front (right) foot starts forward
 const KNOCK_KNEEL_HIP := Vector2(-0.87, 0.52)   # rad on top of hip (left back under the body, right forward)
 const KNOCK_KNEEL_KNEE := Vector2(-0.44, -0.52) # rad on top of knee (left shin laid back, right shin plumb)
@@ -2860,6 +2862,7 @@ func _down_tick(delta: float) -> void:
 			crumple.hand_fingers = Vector3.ZERO
 			crumple.hip_lr = Vector2.ZERO
 			crumple.knee_lr = Vector2.ZERO
+			crumple.hand_knee = Vector3.ZERO
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		return
@@ -2871,6 +2874,31 @@ func _down_tick(delta: float) -> void:
 		crumple.arm_aim = crumple.leg_aim
 	_pose_knockdown(down_t)
 	_knock_push_hand()
+	_knock_knee_hand()
+
+## The rise off one knee: the right palm comes down onto the front knee as the foot is set and
+## stays braced on it (its target follows the knee as posed) while the front leg drives the body
+## up, so the arm helps push instead of hanging by the shin; it lets go as the body comes upright.
+func _knock_knee_hand() -> void:
+	if crumple == null:
+		return
+	var h: Array = KNOCK_KNEE_HAND
+	var w := smoothstep(h[0], h[1], down_t) * (1.0 - smoothstep(h[2], h[3], down_t))
+	if OS.has_environment("KNOCK_NOKNEEHAND") or OS.has_environment("KNOCK_SQUAT"):
+		w = 0.0
+	if w <= 0.0:
+		crumple.hand_knee = Vector3.ZERO
+		return
+	var fwd := body.global_basis.z
+	fwd = Vector3(fwd.x, 0.0, fwd.z).normalized()
+	var at: Vector3 = KNOCK_KNEE_HAND_AT
+	crumple.hand_knee = Vector3.UP * at.y + fwd * at.z
+	crumple.plant = w
+	crumple.plant_w = [0.0, 1.0]
+	crumple.hand_wall = Vector3.UP
+	crumple.hand_curl = 0.35
+	# fingers draped forward and down over the kneecap
+	crumple.hand_fingers = (fwd - Vector3.UP * 0.7).normalized()
 
 ## The get-up's push off the ground: the left hand reaches for the turf beside the hip and
 ## holds there (a fixed world point) while the trunk sits up over it, the chest turned a little

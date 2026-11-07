@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261103-2045-knight-size-p1.jpg",
-  "time": "2026-11-03T20:45:00Z",
-  "caption": "The Ashen Knight at its phase-1 size (~2.5x the hero) beside the hero, boss bar with phase notches (GL quick-look): the size reads but it is a GL frame, not at its stone ring, and the knight's ember skin is dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261103-2045-knight-size-p3.jpg",
-  "time": "2026-11-03T20:45:00Z",
-  "caption": "The Ashen Knight at its phase-3 size (~5.3x the hero) towering over the small hero (GL quick-look): the giant reads, but the camera is too close to compare sizes cleanly and there is no growth FX in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261103-2134-knight-reveal-crane.jpg",
   "time": "2026-11-03T21:34:14Z",
   "caption": "Boss reveal, first shot: the lens low at the Ashen Knight's feet as it cranes up the giant; GL frame, no letterbox in this render, and the knight is a dark backlit silhouette.",
@@ -885,6 +873,18 @@
   "file": "20261107-1800-kneel-drive.jpg",
   "time": "2026-11-07T18:00:00Z",
   "caption": "Mid-rise from the kneel: the front leg drives the body up and the back knee leaves the turf; the reaching left arm and hanging right arm still need weight-bearing poses.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1928-kneebrace-cmp.jpg",
+  "time": "2026-11-07T19:28:20Z",
+  "caption": "Knock-down rise, grass hidden: before (1.62, hand hanging by the shin) / after (1.62, right palm braced on the front knee) / after (1.74, pushing off the thigh); the left hand still claws out in front of the chest.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261107-1928-kneebrace-grass.jpg",
+  "time": "2026-11-07T19:28:20Z",
+  "caption": "The kneeling rise in the meadow at 15:30: tall grass hides the braced hand and knees; the figure reads as kneeling but the frame is cluttered by foreground blades.",
   "verdict": "fail"
  }
 ]
