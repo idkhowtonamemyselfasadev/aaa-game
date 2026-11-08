@@ -939,6 +939,8 @@ func _keepgap_test() -> void:
 					w[k] = maxf(w[k], c.fist_gap[k])
 			else:
 				wf = maxf(wf, g)
+			if OS.has_environment("KG_SH"):
+				print("   sh %s i %d R %s L %s ride %s yaw %.2f ctw %.2f gap R %.3f" % [sg[0], i, str(c.shoulder_body[0]), str(c.shoulder_body[1]), str(c.ride), c.chest_yaw, c.counter_twist, c.fist_gap[0]])
 			if OS.has_environment("KG_DBG"):
 				print("   kg %s i %d gap R %.3f L %.3f active %s keep %.2f spine %.2f pelvis %.2f twist %.2f jp %.2f err R %.3f feed %s" % [sg[0], i, c.fist_gap[0], c.fist_gap[1], str(p.crumple.active), p.crumple.keep_hands, p.crumple.spine, p.crumple.pelvis, p.crumple.chest_twist, p._jp, p.crumple.keep_err[1], str(c.grip_roll.last_feed)])
 		res[sg[0]] = w
@@ -954,7 +956,7 @@ func _keepgap_test() -> void:
 	p.bot_input = Vector2.ZERO
 	if p.pivots < 1:
 		return _combat_done(false, "no pivot fired with the staff drawn")
-	var free_gate := float(OS.get_environment("KG_FREE_GATE")) if OS.has_environment("KG_FREE_GATE") else 0.13
+	var free_gate := float(OS.get_environment("KG_FREE_GATE")) if OS.has_environment("KG_FREE_GATE") else 0.03
 	print("BOT keepgap: worst under the trunk bends %.3f m (%s), plain run (no bends, wrist cap) %.3f m (%s)" % [worst, worst_seg, free, free_seg])
 	if worst > gate:
 		return _combat_done(false, "a fist leaves the drawn staff under the trunk bends in %s (%.3f m > %.3f)" % [worst_seg, worst, gate])

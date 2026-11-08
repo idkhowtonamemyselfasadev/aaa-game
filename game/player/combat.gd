@@ -189,6 +189,21 @@ var _recover_keys: Array = []  # the path picked by _begin_recover (keys [t] + p
 var _back_slot: Node3D
 var _back_xform: Transform3D
 var _wield: Node3D
+var SQUARE_INBEND := OS.get_environment("SQUARE_BENDOFF") != "1"
+var GUARD_NORIDE := OS.get_environment("GUARD_NORIDE") == "1"
+var shoulder_body := [Vector3.ZERO, Vector3.ZERO]   # [R, L] shoulder joints, body space (read-out)
+var ride := Vector3.ZERO                            # the Wield frame's carry with the shoulders, m
+var SHOULDER_MID_REF := Vector3(0.02, 1.385, 0.014) # shoulder joints' midpoint standing at guard (measured)
+const YAW_REF := -0.30          # the shoulder line's heading standing at guard (measured), rad
+var chest_yaw := 0.0            # the clip's shoulder-line heading (read-out), rad
+var counter_twist := 0.0        # the yaw added to SpineTwist to hold the chest square to the staff
+var TWIST_GAIN := float(OS.get_environment("TWIST_GAIN")) if OS.has_environment("TWIST_GAIN") else 0.85
+const TWIST_MAX := 0.9
+var TWIST_RATE := float(OS.get_environment("TWIST_RATE")) if OS.has_environment("TWIST_RATE") else 4.0     # /s, the square weight eases in and out
+var CLAV_HOLD := float(OS.get_environment("CLAV_HOLD")) if OS.has_environment("CLAV_HOLD") else 0.0
+var RIDE_GAIN := float(OS.get_environment("RIDE_GAIN")) if OS.has_environment("RIDE_GAIN") else 1.0
+const RIDE_MAX := 0.30
+const RIDE_RATE := 10.0
 ## (11-07) knocked down, the hero keeps the drawn staff in the right fist instead of leaving it
 ## hanging in the air at guard height in Wield space. Each tick, after the modifiers (the posed
 ## hand), the shaft is put through the fist: first as it was held, then laid flat on the turf as
@@ -1313,6 +1328,7 @@ func physics_step(delta: float) -> void:
 	if is_air_attack() and t / float(_atk["dur"]) > 0.4:
 		want_dip = AIR_DIP                     # from above, the whole arc tips down onto the foe
 	dip = lerpf(dip, want_dip, 1.0 - exp(-12.0 * delta))
+	_ride_chest(delta)
 	staff.transform = _place_hands(pose)
 	if _air_draw_t >= 0.0:
 		_air_draw_t += delta
@@ -1433,6 +1449,42 @@ func _ground_slam() -> void:
 ## Puts both grips on the authored staff line, pulls each into its shoulder's reach (the
 ## shoulders turn with the spine twist), then lays the staff through the two grips.
 ## Returns the staff's body-space transform.
+## (16:30 11-08) The guard staff rides with the shoulders. GUARD is authored in body (Wield)
+## space against a standing hero; the run clip leans the trunk ~0.2 m forward and swings the
+## right shoulder onto the staff, so its right grip ended 4-10 cm from the shoulder joint (an
+## arm can't fold that tight; the fist slid 0.12 m off the shaft). While the staff is held at
+## guard (READY), the Wield frame is carried by the shoulders' offset from where they stand
+## at the guard (each shoulder measured from the last skeleton update, the nearer-to-staff
+## one weighted in), eased; in the attacks, charge and plunge it eases back to zero so their
+## authored arcs and hit sweeps are unchanged. `GUARD_NORIDE=1` = old.
+func _ride_chest(delta: float) -> void:
+	var want := Vector3.ZERO
+	if skel != null:
+		var inv := player.body.global_transform.affine_inverse() * skel.global_transform
+		for i in 2:
+			var b := skel.find_bone(["mixamorig_RightArm", "mixamorig_LeftArm"][i])
+			if b >= 0:
+				shoulder_body[i] = inv * skel.get_bone_global_pose(b).origin
+	var want_sq := 0.0
+	var cr = player.get("crumple")
+	if state == READY and not GUARD_NORIDE and skel != null:
+		if cr == null or not cr.active or SQUARE_INBEND:
+			want_sq = TWIST_GAIN
+		var mid: Vector3 = (shoulder_body[0] + shoulder_body[1]) * 0.5
+		var off: Vector3 = mid - SHOULDER_MID_REF
+		# forward/back and down only (never lift the guard above where it stands; sideways the
+		# shoulders swap each stride and the staff would wag)
+		want = Vector3(0.0, minf(off.y, 0.0), maxf(off.z, 0.0)) * RIDE_GAIN
+		want = want.limit_length(RIDE_MAX)
+	_twist.square = move_toward(_twist.square, want_sq, delta * TWIST_RATE)
+	_twist.clav_hold = _twist.square * CLAV_HOLD
+	_twist.square_ref = YAW_REF
+	_twist.square_max = TWIST_MAX
+	chest_yaw = _twist.last_yaw
+	counter_twist = _twist.last_counter
+	ride = ride.lerp(want, 1.0 - exp(-RIDE_RATE * delta))
+	_wield.position = ride
+
 func _place_hands(pose: Array) -> Transform3D:
 	var r := _solve(pose)
 	_target_r.position = r[1] + _fist_off[0]
