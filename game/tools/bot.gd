@@ -849,6 +849,8 @@ const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist t
 const REGRIP_GATE := 0.05      # m: either fist to the shaft as the staff comes back into both hands (0.29 before the guard turn, 0.167 before the 11-08 regrip)
 const REGRIP_L_EARLY_T := 1.78
 const REGRIP_L_EARLY_GATE := 0.05  # m: (11-08) the left fist already on the shaft by REGRIP_L_EARLY_T (before 0.160, after 0.016)
+const HEAD_TIP_GATE := 6.0    # deg: (03:00 11-08) the held staff's own path stays out of the face (before: 23.7 deg at 1.20..1.27)
+const HELD_SPIN_GATE := 60.0  # deg per 15 Hz tick: the held shaft never whips end for end
 const HAT_CLEAR_GATE := 0.02  # m: (11-08) the held shaft outside the hat's brim cylinder at the hat's height (before -0.285: through the crown at 1.33)
 const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
 const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
@@ -7656,6 +7658,8 @@ func _sweep_test() -> void:
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
+	var held_ax := Vector3.ZERO
+	var held_spin := 0.0   # deg: the largest turn of the held shaft's axis in one 15 Hz tick
 	var held := [0.0, 9.0, 0, 0, 9.0, 9.0, 9.0, -1.0]   # [6] least shaft margin outside the hat brim, [7] at down_t; [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
@@ -7735,6 +7739,11 @@ func _sweep_test() -> void:
 				var st := c.staff.global_transform
 				var e0: Vector3 = st * Vector3(0, -Staff.LENGTH * 0.5, 0)
 				var e1: Vector3 = st * Vector3(0, Staff.LENGTH * 0.5, 0)
+				# (03:00 11-08) the shaft never spins end for end between two ticks (it did at the guard turn)
+				var sax := st.basis.y.normalized()
+				if held_ax != Vector3.ZERO:
+					held_spin = maxf(held_spin, rad_to_deg(held_ax.angle_to(sax)))
+				held_ax = sax
 				var rw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightHand"] as Vector3)
 				var on := Geometry3D.get_closest_point_to_segment(rw, e0, e1)
 				held[0] = maxf(held[0], c.fist_gap[0])   # the closed fist's centre to the shaft
@@ -7847,6 +7856,11 @@ func _sweep_test() -> void:
 	print("BOT sweep: held shaft clear of the hat brim by %.3f m at its closest (t %.2f)" % [held[6], held[7]])
 	if held[6] < HAT_CLEAR_GATE:
 		return _combat_done(false, "the staff held through the knock-down passes through the hero's hat and head")
+	print("BOT sweep: the head-clearance had to tip the held shaft up to %.1f deg off its own path (gate %.0f; in the reach to the left hand %.1f deg); largest one-tick turn of the shaft %.0f deg (gate %.0f)" % [rad_to_deg(c.head_tip_max), HEAD_TIP_GATE, rad_to_deg(c.head_tip_reach), held_spin, HELD_SPIN_GATE])
+	if held_spin > HELD_SPIN_GATE:
+		return _combat_done(false, "the staff held through the knock-down spins end for end in the fist")
+	if rad_to_deg(c.head_tip_max) > HEAD_TIP_GATE:
+		return _combat_done(false, "the held staff's own path through the knock-down swings it into the hero's face (only the clearance keeps it out)")
 	if held[4] > REGRIP_L_GATE or held[5] > REGRIP_L_EARLY_GATE:
 		return _combat_done(false, "the hero's free left hand does not come to the shaft before the staff is taken back into both hands")
 	if regrip > REGRIP_GATE or held[2] < 10 or held[3] > 0 or held[0] > HELD_WRIST_GATE or held[1] < HELD_END_GATE or c.state != StaffCombat.READY:

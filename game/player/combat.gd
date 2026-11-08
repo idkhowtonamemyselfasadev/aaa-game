@@ -496,6 +496,13 @@ func hold() -> bool:
 	held_reach_l = 0.0
 	_held_shoulder_l = Vector3.ZERO
 	head_clear_min = 9.0
+	head_tip_max = 0.0
+	head_tip_reach = 0.0
+	# which end of the shaft rises: the end on the left hand's side of the guard grips (the reach to
+	# the left hand at the end of the rise stands that end up; latching the other one flipped the
+	# shaft end for end there). Read in the wield's own frame, independent of the body's fall.
+	var gy := _staff_xform(GUARD).basis.y.normalized()
+	_lay_top = 1.0 if (_target_l.position - _target_r.position).dot(gy) >= 0.0 else -1.0
 	state = HELD
 	return true
 
@@ -508,6 +515,10 @@ func _hand_xform() -> Transform3D:
 var _plant_sign := 0.0
 const PLANT_BACK := deg_to_rad(16.0)
 const PLANT_OUT := deg_to_rad(15.0)
+const LAY_GRIP := 0.36     # laid: the fist this far (x LENGTH) from the centre, near the butt (short end ~0.26 m over the thigh)
+const LAY_BACK := 0.7       # laid out to the right and back this much (tan): its rise to the plant stays clear of the head
+const LAY_END_H := 0.13     # m over the hero's feet: where the laid shaft's far end rests on the sward
+var _lay_top := 0.0
 func _place_held() -> void:
 	if state != HELD:
 		return
@@ -522,11 +533,32 @@ func _place_held() -> void:
 	var ax0 := held.basis.y.normalized()
 	var sl := (fist - held.origin).dot(ax0)    # where along the shaft the fist is (from the centre)
 	if held_lay > 0.0:
-		# flat on the turf, keeping its heading, the fist a third of the way along it
 		var ax := Vector3(ax0.x, 0.0, ax0.z)
 		ax = ax.normalized() if ax.length() > 0.1 else player.body.global_basis.z
+		var lay_sl := -Staff.LENGTH * 0.18
+		if not OS.has_environment("KNOCK_LAYHEAD"):
+			# (03:00 11-08) flat on the turf out to the right and back, the guard's top end long:
+			# laid on its old heading the long end could lie up by the head, and the turn to the
+			# plant then swung it up past the face. Laid this way the top rises to the plant in a
+			# plane out on the right side, ~0.8 m off the head, and stays the top through the guard
+			# turn (choosing the end by the old heading flipped the shaft end for end there).
+			var lfw := player.body.global_basis.z
+			lfw = Vector3(lfw.x, 0.0, lfw.z).normalized()
+			var lrt := -player.body.global_basis.x
+			lrt = Vector3(lrt.x, 0.0, lrt.z).normalized()
+			var out := (lrt - lfw * LAY_BACK).normalized()
+			if _lay_top == 0.0:
+				_lay_top = 1.0   # (hold() latches it while still upright; the wield tips with the body as it falls)
+			# the far end stays on the grass as the fist rises in the sit-up: the shaft trails down
+			# from the fist to the turf instead of being held out level in the air
+			var reach := Staff.LENGTH * (0.5 + LAY_GRIP)
+			var drop := clampf((fist.y - held_ground - LAY_END_H) / reach, -0.15, 0.7)
+			ax = (out * sqrt(1.0 - drop * drop) - Vector3.UP * drop) * _lay_top
+			lay_sl = -Staff.LENGTH * LAY_GRIP * _lay_top   # centre = fist - ax * sl = fist + out * LAY_GRIP L
 		q = q.slerp(Quaternion(ax0, ax) * q, held_lay)
-		sl = lerpf(sl, -Staff.LENGTH * 0.18, held_lay)
+		# the fist runs down toward the butt ahead of the turn, so the short end is already short
+		# while the axis still points up past the head mid-fall
+		sl = lerpf(sl, lay_sl, sqrt(held_lay) if not OS.has_environment("KNOCK_LAYHEAD") else held_lay)
 	if held_plant > 0.0:
 		# planted: the shaft stands up through the fist on the front knee, tipped back and out so its
 		# top clears the head outside the right shoulder, and its butt meets the turf a little
@@ -542,6 +574,9 @@ func _place_held() -> void:
 		var cur := q * Vector3.UP
 		if _plant_sign == 0.0:
 			_plant_sign = 1.0 if cur.dot(up) >= 0.0 else -1.0   # latched: no flip end for end mid-turn
+			if _lay_top != 0.0:
+				# (03:00 11-08) the end that lay out to the back-right (the guard's top) rises to the top
+				_plant_sign = _lay_top
 		var ax2 := up * _plant_sign
 		q = q.slerp(Quaternion(cur, ax2) * q, held_plant)
 		sl = lerpf(sl, _plant_sign * (fist.distance_to(butt) - Staff.LENGTH * 0.5), held_plant)
@@ -572,6 +607,13 @@ func _place_held() -> void:
 			q = q.slerp(Quaternion(cur3, want) * q, held_reach_l)
 	q = _clear_head(q, fist, sl)
 	var ax3 := q * Vector3.UP
+	if held_lay > 0.0 and absf(ax3.y) > 0.12 and not OS.has_environment("KNOCK_LAYHEAD"):
+		# (03:00 11-08) as the long end rises off the turf the short end pivots on the ground: the
+		# fist slides up the shaft rather than the butt digging into the turf
+		var lo_end := minf((fist - ax3 * sl + ax3 * Staff.LENGTH * 0.5).y, (fist - ax3 * sl - ax3 * Staff.LENGTH * 0.5).y)
+		var floor_y := held_ground - 0.02
+		if lo_end < floor_y:
+			sl -= (floor_y - lo_end) / ax3.y   # centre = fist - a * sl: raising it by d takes sl -= d / a.y
 	staff.global_transform = Transform3D(Basis(q).scaled(held.basis.get_scale()), fist - ax3 * sl)
 
 ## (11-08) The held shaft never runs through the hero's head and hat: the laid -> planted turn
@@ -584,6 +626,8 @@ const HEAD_CLEAR := 0.34    # m: shaft axis to the hat's centre (brim 0.29 + the
 var _hat_rel := Transform3D()
 var _hat_rel_ok := false
 var head_clear_min := 9.0    # (bots) least shaft-to-hat-centre distance after the clearance, this knock-down
+var head_tip_reach := 0.0    # (bots) the same during the tip toward the left hand
+var head_tip_max := 0.0      # (bots, 03:00 11-08) the largest tip `_clear_head` had to give (rad): the raw path into the face
 func hat_centre() -> Vector3:
 	var hat: MeshInstance3D = player.garb.hat if player.garb != null else null
 	if hat == null or hat.mesh == null:
@@ -630,6 +674,12 @@ func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
 		spin = player.body.global_basis.x.cross(hf)   # dead on the hat: tip it out to the right
 	spin = spin.normalized()
 	var fix := Quaternion(spin, want - now)
+	if held_reach_l > 0.0:
+		head_tip_reach = maxf(head_tip_reach, want - now)   # the reach to the left hand (11-08 item o), tracked apart
+	else:
+		head_tip_max = maxf(head_tip_max, want - now)
+	if OS.has_environment("TIP_DBG"):
+		print("TIP t %.3f tip %.1f deg along %.2f lay %.2f plant %.2f guard %.2f reach %.2f" % [player.down_t, rad_to_deg(want - now), along, held_lay, held_plant, held_guard, held_reach_l])
 	head_clear_min = minf(head_clear_min, HEAD_CLEAR)
 	return fix * q
 

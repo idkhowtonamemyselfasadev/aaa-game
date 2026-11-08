@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261104-0502-plunge-dust.jpg",
-  "time": "2026-11-04T05:02:26Z",
-  "caption": "The hero 0.3 s after a plunge from 4 m: a low dust ring bursts out round the deep crouch; GL frame, backlit in the cottage's shadow, and the crack star is hidden under the standing grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0552-ring-clear-sky.jpg",
-  "time": "2026-11-04T05:52:20Z",
-  "caption": "The Ashen Knight starting to grow from inside its stone ring, the sky above it now clear: the column of pale 'snow' specks was fog being added over the keep's additive thermal chaff. Still a GL frame; the knight's heave is only a knee pose.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0552-surge-side.jpg",
-  "time": "2026-11-04T05:52:20Z",
-  "caption": "New low flank view one second into the phase-2 growth: charred ash flakes drift up dark against the sky and the ring of fire stands round the knight. GL frame taken before the flame shader's fog fix; the flames still look like flat sprites.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0624-jump-push.jpg",
   "time": "2026-11-04T06:24:19Z",
   "caption": "Jump take-off, 1/60 s after the press (GL): the hero is drawn low with the soles still on the turf, pushing out of a crouch. The lens is from behind rather than the side, and the feet are too dark to check the toes.",
@@ -891,6 +873,18 @@
   "file": "20261108-0212-knock-side-rise.jpg",
   "time": "2026-11-08T02:12:18Z",
   "caption": "Side-on at 1.72 s: the staff stands on its butt beside the rising hero, clear of the hat brim; the get-up pose is still rough and backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0350-knock-staff-trails.jpg",
+  "time": "2026-11-08T03:26:25Z",
+  "caption": "Side-on at 1.27 s into a knock-down, sun-lit: sitting up, the hero keeps the staff's far end trailing on the grass instead of holding it up across the face; the grip's short butt still pokes up beside the chest and the get-up pose is still rough.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0350-knock-staff-on-grass.jpg",
+  "time": "2026-11-08T03:26:25Z",
+  "caption": "1.00 s: the staff lies on the grass out to the hero's back-right, still in the right fist; GL frame, flat ground texture, no Forward+ lighting.",
   "verdict": "fail"
  }
 ]
