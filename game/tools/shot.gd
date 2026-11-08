@@ -2496,19 +2496,6 @@ func _ready() -> void:
 			fcam.global_position = fc
 			fcam.look_at(back + Vector3.UP * 1.0)
 			print("SHOT frontlens cam %s hero %s side %s" % [fc, back, fside])
-		if "fistpx" in args:
-			# fistpx: where each closed fist and the staff's ends land on screen, and the fist gap,
-			# so a frame can be checked for a hand that only looks off the shaft
-			var fcm = player.get("combat")
-			var pcam2 := get_viewport().get_camera_3d()
-			if fcm != null and pcam2 != null:
-				for sd in ["Right", "Left"]:
-					print("SHOT fistpx %s %s" % [sd, pcam2.unproject_position(fcm.fist_center(sd))])
-				var st: Node3D = fcm.staff
-				if st != null:
-					for e in [-1.0, 1.0]:
-						print("SHOT fistpx staff end %s" % pcam2.unproject_position(st.global_position + st.global_basis.y.normalized() * e * 0.9))
-				print("SHOT fistpx gap R %.3f L %.3f" % [fcm.fist_gap[0], fcm.fist_gap[1]])
 		if "jlens" in args:
 			# jlens: a front 3/4 lens for air moves, on the sun side and ahead of the frozen hero
 			# along the run (+X), level with the chest, far enough back to fit the raised staff
@@ -2527,6 +2514,20 @@ func _ready() -> void:
 			jcam.global_position = jc
 			jcam.look_at(back + Vector3.UP * 0.95)
 			print("SHOT jlens cam %s hero %s side %s" % [jc, back, jside])
+		if "fistpx" in args:
+			# fistpx: where each closed fist and the staff's ends land on screen, and the fist gap,
+			# so a frame can be checked for a hand that only looks off the shaft; runs after every
+			# lens option and prints IMAGE pixels (unproject works in the 1920x1080 base viewport)
+			var fcm = player.get("combat")
+			var pcam2 := get_viewport().get_camera_3d()
+			if fcm != null and pcam2 != null:
+				for sd in ["Right", "Left"]:
+					print("SHOT fistpx %s %s" % [sd, _px(pcam2.unproject_position(fcm.fist_center(sd)))])
+				var st: Node3D = fcm.staff
+				if st != null:
+					for e in [-1.0, 1.0]:
+						print("SHOT fistpx staff end %s" % _px(pcam2.unproject_position(st.global_position + st.global_basis.y.normalized() * e * 0.9)))
+				print("SHOT fistpx gap R %.3f L %.3f" % [fcm.fist_gap[0], fcm.fist_gap[1]])
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])
@@ -3539,3 +3540,13 @@ func _print_facing(world: Node3D, player: Player) -> void:
 			var m: Node3D = f.get("model")
 			print("SHOT facing   model.z.cam %.2f model %s" % [Vector3(m.global_basis.z.x, 0, m.global_basis.z.z).normalized().dot(to_cam), m.transform.basis.get_euler()])
 		print("SHOT facing %s yaw %.2f body+Z.cam %.2f toe.cam %.2f lens %s (%s)" % [k, b.rotation.y, bz.normalized().dot(to_cam), toe_dot, c.global_position, c.get_path()])
+
+
+# a point from Camera3D.unproject_position (base viewport space, 1920x1080 under the
+# canvas_items stretch) in pixels of the saved image (the real window size)
+func _px(p: Vector2) -> Vector2:
+	var vis := get_viewport().get_visible_rect().size
+	var win := Vector2(get_window().size)
+	if vis.x <= 0.0 or vis.y <= 0.0:
+		return p
+	return Vector2(p.x * win.x / vis.x, p.y * win.y / vis.y)

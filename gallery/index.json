@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-2200-giantstride.jpg",
-  "time": "2026-11-04T22:00:00Z",
-  "caption": "The phase-3 Ashen Knight (4.6x) mid-stride at its full stalk with the new slow giant cadence and calibrated feet; GL frame, the lens sees it 3/4 from behind and nothing nearby sells its 8 m height.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-2200-giantpass.jpg",
-  "time": "2026-11-04T22:00:00Z",
-  "caption": "The giant's legs passing under it a third of a second later, the planted boot still on the burnt turf; GL only, facing in the shot does not follow its walk yet.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-2224-giant-turn-step.jpg",
   "time": "2026-11-04T22:24:56Z",
   "caption": "The phase-3 Ashen Knight (4.6x) turning on the spot: a boot comes off the turf as it steps round instead of spinning on still soles (GL frame; backlit, the armour reads dark).",
@@ -891,6 +879,18 @@
   "file": "20261108-1940-front-guard-run-dusk.jpg",
   "time": "2026-11-08T19:40:00Z",
   "caption": "Same run at 16:30 from ahead: the face under the hat now reads, but the hero runs in the cottage's shadow and the lit meadow is behind; the pose holds up, the light does not.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2100-jumpattack-swing.jpg",
+  "time": "2026-11-08T21:00:00Z",
+  "caption": "Jump attack at jt 0.38 (front 3/4 from the shadow side): staff swinging over and forward in both fists, hat and capelet read; the robe's straight red panels hide the tucked legs so the airborne body reads stiff, and the GL backlight leaves the hero a silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2100-jumpattack-fold.jpg",
+  "time": "2026-11-08T21:00:00Z",
+  "caption": "Jump attack fold at jt 0.48: body jackknifed over the blow, the staff driven down to the grass ahead, face under the hat reads; one robe panel sticks out as a flat, stiff red blade instead of trailing like cloth.",
   "verdict": "fail"
  }
 ]
