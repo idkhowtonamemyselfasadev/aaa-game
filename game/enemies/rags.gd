@@ -58,6 +58,23 @@ var peak_back := 0.0                     # widest back-panel swing in the air (r
 var wall_n := Vector3.ZERO
 var wall_p := Vector3.ZERO
 var lateral := 0.0                       # the knee drag (m, body +X = the wearer's left), for the bots
+## (11-08) In the air with the legs posed (a leap's tuck, the jump attack's fold) the front panel
+## lies along the higher thigh and folds down over its knee instead of standing out as a flat
+## board at the 0.7 rad cap, and the back panel swings back clear of the heels. `knee_fold`
+## turns it on (the hero); `tuck_lie` is how far it lies (0..1), `tuck_gap` the panel line's
+## worst clearance over the knee's top this tuck (m, < 0 = the knee through the cloth), and
+## `tuck_heel` the back hem's worst clearance behind the heels (m), for the bots.
+var knee_fold := false
+var tuck_lie := 0.0
+var tuck_gap := 9.0
+var tuck_heel := 9.0
+var tuck_lie_peak := 0.0
+var tuck_aim := 0.0
+var tuck_k := 0.0
+const TUCK_LIE0 := 0.62                  # thigh angle off the pelvis (rad) the panel starts to lie on it
+const TUCK_LIE1 := 0.95                  # ... and lies along it fully
+const TUCK_PAD := 0.075                  # m, the cloth over the thigh's top (thigh radius + wool)
+const TUCK_SWING_MAX := 1.75             # rad, the most the front panel lies out along a thigh
 ## Cut of the rags, set before build(): the harrier runs light in a fitted coif, no mantle,
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
@@ -560,6 +577,116 @@ func _hang_panels(fwd: float, bwd: float, k: float) -> void:
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold2", fold_front2)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
 
+var KNEEFOLD_OFF := OS.has_environment("KNEEFOLD_OFF")   # the old flat board in the tuck (before)
+
+## The pivot's rest frame (rotation 0): its down and forward axes, world.
+func _pivot_frame(pv: Node3D) -> Array:
+	var rot := pv.rotation.x
+	pv.rotation.x = 0.0
+	var down := -pv.global_basis.y.normalized()
+	var fz := pv.global_basis.z.normalized()
+	pv.rotation.x = rot
+	return [down, fz]
+
+## The free-hanging swing (as the plain path) plus the tuck: with the legs posed off the ground
+## the front panel lies along the higher thigh (over its top, `TUCK_PAD` up) and folds down at
+## the knee to hang plumb; the back panel swings back so its hem clears the heels.
+func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
+	var tf := minf(fwd * 1.1, 0.7)
+	var tb := minf(bwd * 1.1, 0.7)
+	# what the limbs push the cloth to at once (a thigh or a heel is a contact, not a spring:
+	# easing toward it, the fast fold drove the knee 11 cm through the panel)
+	var push_f := -INF
+	var push_b := -INF
+	var gap_at := []
+	var heels := []
+	var lie := 0.0
+	var ff := fold_front
+	var fd := ff.x if ff.x < 100.0 else 0.0
+	var fa := INF          # the plumb line's angle in the pivot's frame (INF: no knee fold)
+	var sy := _front.global_basis.y.length()
+	var fl: float = _front.get_meta("len", 1.0)
+	var up := _body.global_basis.y.normalized()
+	if posed_legs and wall_n == Vector3.ZERO and _legs.size() == 2:
+		var fr := _pivot_frame(_front)
+		var down: Vector3 = fr[0]
+		var fz: Vector3 = fr[1]
+		var o := _front.global_position
+		# the higher thigh (most forward off the pelvis, posed)
+		var th := -INF
+		var hp := Vector3.ZERO
+		var kp := Vector3.ZERO
+		for leg in _legs:
+			var h := _joint(leg[0])
+			var kn := _joint(leg[1])
+			var d := kn - h
+			var a := atan2(d.dot(fz), d.dot(down))
+			if a > th:
+				th = a
+				hp = h
+				kp = kn
+		lie = smoothstep(TUCK_LIE0, TUCK_LIE1, th)
+		if lie > 0.0:
+			# the knee's top: out from the joint along the thigh line's outward normal
+			var tn := (fz * cos(th) - down * sin(th)).normalized()
+			var top := kp + tn * TUCK_PAD
+			var r := top - o
+			var aim := minf(atan2(r.dot(fz), r.dot(down)), TUCK_SWING_MAX)
+			tuck_aim = aim
+			tf = lerpf(tf, maxf(tf, aim), lie)
+			push_f = lerpf(-0.5, aim, lie) if lie >= 0.5 else -INF
+			var kd := r.length() / sy
+			if kd < fl - 0.05:
+				fd = kd
+				# below the knee the cloth hangs plumb (the world's down in the pivot's frame)
+				var g := -up
+				var plumb := atan2(g.dot(fz), g.dot(down))
+				fa = plumb
+			if lie >= 0.9:
+				gap_at = [o, down, fz, kp, r]
+		# the back panel's hem behind the heels
+		var br := _pivot_frame(_back)
+		var bdown: Vector3 = br[0]
+		var bz: Vector3 = br[1]
+		var bo := _back.global_position
+		var bl: float = _back.get_meta("len", 1.0) * _back.global_basis.y.length()
+		for leg in _legs:
+			var heel := _joint(leg[2]) - bz * 0.06
+			var rh := heel - bo
+			if rh.length() < bl:
+				# back swing (+ = hem toward -fz) that puts the panel line 6 cm behind the heel
+				var ah := atan2(-rh.dot(bz), rh.dot(bdown)) + 0.06 / maxf(rh.length(), 0.2)
+				tb = maxf(tb, minf(ah, 1.2))
+				push_b = maxf(push_b, minf(ah, 1.2))
+				heels.append([rh.length(), ah - 0.06 / maxf(rh.length(), 0.2)])
+	tuck_k = k
+	tuck_lie = lerpf(tuck_lie, lie, k)
+	tuck_lie_peak = maxf(tuck_lie_peak, tuck_lie)
+	_swing_f = maxf(lerpf(_swing_f, tf, k), push_f)
+	_swing_b = maxf(lerpf(_swing_b, tb, k), push_b)
+	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
+	# behind the heels
+	if not gap_at.is_empty():
+		var pd: Vector3 = gap_at[1] * cos(_swing_f) + gap_at[2] * sin(_swing_f)
+		var pn: Vector3 = gap_at[2] * cos(_swing_f) - gap_at[1] * sin(_swing_f)
+		var rr: Vector3 = gap_at[4]
+		if rr.dot(pd) > 0.0 and rr.dot(pd) < fl * sy:
+			tuck_gap = minf(tuck_gap, _pn_gap(gap_at[0], pn, gap_at[3]))
+	for hl in heels:
+		tuck_heel = minf(tuck_heel, hl[0] * sin(_swing_b - hl[1]))
+	# below the knee the cloth hangs plumb: the fold takes back what the panel lies out past it
+	var fy := maxf(_swing_f - fa, 0.0) * lie if fa < INF else 0.0
+	if lie > 0.0 or fold_front.y > 0.002:
+		fold_front = Vector2(fd if fd > 0.0 else fl, lerpf(fold_front.y if fold_front.x < 100.0 else 0.0, fy, maxf(k, lie)))
+	else:
+		fold_front = Vector2(1000.0, 0.0)
+	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
+
+## The knee joint's distance out past the panel line (m, + = the cloth clear over the knee's top
+## by that much less TUCK_PAD; the measure the bots gate on).
+func _pn_gap(o: Vector3, pn: Vector3, kp: Vector3) -> float:
+	return (o - kp).dot(pn) - TUCK_PAD
+
 ## The most the front panel may swing out (rad) before its hem meets the face, kept 4 cm
 ## off it; `front_clear` is the hem's gap at the swing it returns.
 func _wall_swing() -> float:
@@ -675,6 +802,8 @@ func _physics_process(delta: float) -> void:
 	var k := minf(delta * 14.0, 1.0)
 	if hang > 0.0:
 		_hang_panels(fwd, bwd, k)
+	elif knee_fold and not KNEEFOLD_OFF:
+		_tuck_panels(fwd, bwd, k)
 	else:
 		_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), k)
 		_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)

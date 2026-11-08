@@ -2568,6 +2568,8 @@ func _jump_test() -> void:
 ## Jump attack + plunging attack on the practice post: a light at the top of a jump strikes
 ## down into it (once per jump), a heavy at the top of a jump drops the hero in a slam that
 ## strikes it, a plunge from 6 m hits harder and wider, and a 12 m plunge soaks half the fall.
+const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
+
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -2619,6 +2621,11 @@ func _airstrike_test() -> void:
 	var h0 := post.hits
 	await to_apex.call()
 	var y_press := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
+	p.garb.tuck_gap = 9.0
+	p.garb.tuck_heel = 9.0
+	p.garb.tuck_lie_peak = 0.0
+	var ja_swf := 0.0
+	var ja_fold_a := 0.0
 	p.bot_attack = true
 	await _ticks(2)
 	var started := c.is_air_attack()
@@ -2685,6 +2692,10 @@ func _airstrike_test() -> void:
 			if OS.has_environment("JA_DBG"): print("JA u %.2f hat %.3f cock %.1f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y)))])
 			ja_hat = minf(ja_hat, hm)
 			ja_neck = Vector2(minf(ja_neck.x, p.crumple.neck), maxf(ja_neck.y, p.crumple.neck))
+		ja_swf = maxf(ja_swf, p.garb._swing_f)
+		if p.garb.fold_front.x < 100.0:
+			ja_fold_a = maxf(ja_fold_a, p.garb.fold_front.y)
+		if OS.has_environment("JA_TRACE"): print("JR u %.2f swing_f %.2f swing_b %.2f fold %.2f@%.2f lie %.2f gap %.3f heel %.3f aim %.2f k %.3f ts %.2f" % [c.air_attack_u(), p.garb._swing_f, p.garb._swing_b, p.garb.fold_front.y, p.garb.fold_front.x, p.garb.tuck_lie, p.garb.tuck_gap, p.garb.tuck_heel, p.garb.tuck_aim, p.garb.tuck_k, Engine.time_scale])
 		if i == 12:
 			p.bot_attack = true                    # a second press in the same jump: no second air swing
 		if c.air_attacks > 1:
@@ -2694,6 +2705,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
+	print("BOT airstrike: jump attack robe -> front panel lie %.2f, swing %.2f rad, knee fold %.2f rad, cloth over the knee %.3f m (gate > -%.2f), back hem behind the heels %.3f m" % [p.garb.tuck_lie_peak, ja_swf, ja_fold_a, p.garb.tuck_gap, TUCK_GAP_GATE, p.garb.tuck_heel])
+	if not p.garb.KNEEFOLD_OFF and (p.garb.tuck_lie_peak < 0.8 or p.garb.tuck_gap < -TUCK_GAP_GATE or ja_fold_a < 0.3):
+		return _combat_done(false, "the robe's front panel stands off the tucked thighs as a flat board (no knee fold)")
 	print("BOT airstrike: jump attack fists -> worst gap to the shaft R %.3f L %.3f m (gate %.2f), ticks over 5 cm %d (gate %d)" % [ja_gap.x, ja_gap.y, JA_FIST_GATE, ja_loose, JA_LOOSE_GATE])
 	if not p.JUMPATK_LOOSEHANDS and not OS.has_environment("JUMPATK_HIGHKEY") and (maxf(ja_gap.x, ja_gap.y) > JA_FIST_GATE or ja_loose > JA_LOOSE_GATE):
 		return _combat_done(false, "the jump attack's arch and fold carry the fists off the staff")

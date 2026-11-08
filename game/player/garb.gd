@@ -122,6 +122,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# the long robe hangs clear of the hero's relaxed stance (idle front leg ~0.45 rad); only a
 	# real stride pushes it
 	swing_slack = 0.45
+	# in the air the front panel lies along a tucked thigh and folds at the knee
+	knee_fold = true
 	var head := _attach_sized(BONE_HEAD)
 	var chest := _attach_sized(BONE_CHEST)
 	var hips := _attach_sized(BONE_HIPS)
