@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261104-1752-start-load.jpg",
-  "time": "2026-11-04T17:52:00Z",
-  "caption": "Driving start at 0.10 s (GL): the hips load as the hero turns onto the line; still wrong: back-lit and from behind, the drive leg is hidden by the robe.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1818-pivot-drive.jpg",
-  "time": "2026-11-04T18:18:11Z",
-  "caption": "Run pivot at u 0.73 (GL): the hero comes out of the spin crouched over the planted leg, free knee driving through; legs sit in shade so the knee punch is hard to judge, GL not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1818-pivot-handoff.jpg",
-  "time": "2026-11-04T18:18:11Z",
-  "caption": "Run pivot hand-off (GL): body pitched into the new line, back leg pushing off as the run clip takes over in step; legs still dark on dark turf, needs a Forward+ side frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1929-runstride.jpg",
-  "time": "2026-11-04T19:29:29Z",
-  "caption": "The run with the lengthened stride (StrideWarp 1.25x): a long open stride with the planted foot held still on the turf; GL frame, the lens is still 3/4 from behind and the legs sit in shade.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-2100-stride.jpg",
   "time": "2026-11-04T21:00:00Z",
   "caption": "The hero mid-run with the struck foot pinned by the new contact lock: a long open stride, but the GL frame leaves the legs in shade and the camera is 3/4 behind.",
@@ -897,6 +873,18 @@
   "file": "20261108-1700-guardrun.jpg",
   "time": "2026-11-08T17:00:00Z",
   "caption": "Mid-run at guard: the staff held low and diagonal in both fists with the chest now square to it (the right fist no longer slides off); seen from behind, the dog overlaps the legs and the lens doesn't show the face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-1809-guardrun-profile.jpg",
+  "time": "2026-11-08T18:09:00Z",
+  "caption": "Guard run with the staff drawn, square side-on (new sidelens, dog hidden): forward lean, back knee high, staff carried low and forward in both fists; still a backlit silhouette in GL, no Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-1809-guardrun-sunside.jpg",
+  "time": "2026-11-08T18:09:00Z",
+  "caption": "Same stride from the sun side: the capelet and hood hide the chest and face, so the squared chest reads as a back view; legs and staff read, the dog crowds the legs.",
   "verdict": "fail"
  }
 ]

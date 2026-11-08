@@ -2464,6 +2464,24 @@ func _ready() -> void:
 			pcam.global_position = pc
 			pcam.look_at(aim)
 			print("SHOT pivotlens cam %s hero %s side %s" % [pc, back, pside])
+		if "nodog" in args:
+			# nodog: the companion dog trots at the hero's heel and covers the legs in run frames
+			var ndg = world.get("dog")
+			if ndg != null and is_instance_valid(ndg):
+				ndg.visible = false
+		if "sidelens" in args:
+			# sidelens: square side-on to the run line (+X) on the sun side, at hip height, so
+			# one stride of the guard run reads as a profile (chest pump, arms, legs; 11-08 n3)
+			var sl_light: Vector3 = -world.sun.global_transform.basis.z
+			var sside := Vector3(0, 0, 1) if -sl_light.z > 0.0 else Vector3(0, 0, -1)
+			if "flip" in args:
+				sside = -sside
+			var sc := back + sside * 3.4
+			sc.y = maxf(back.y + 1.0, terrain.height_at(sc.x, sc.z) + 0.9)
+			var scam := get_viewport().get_camera_3d()
+			scam.global_position = sc
+			scam.look_at(back + Vector3.UP * 0.95)
+			print("SHOT sidelens cam %s hero %s side %s" % [sc, back, sside])
 		if "jlens" in args:
 			# jlens: a front 3/4 lens for air moves, on the sun side and ahead of the frozen hero
 			# along the run (+X), level with the chest, far enough back to fit the raised staff
