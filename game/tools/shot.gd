@@ -2482,6 +2482,33 @@ func _ready() -> void:
 			scam.global_position = sc
 			scam.look_at(back + Vector3.UP * 0.95)
 			print("SHOT sidelens cam %s hero %s side %s" % [sc, back, sside])
+		if "frontlens" in args:
+			# frontlens: ahead of the run (+X), a little to the sun side, at chest height, so the
+			# chest, both fists on the staff and the face under the hat face the camera (11-08 n4;
+			# stoplens sits only 0.7 m ahead and reads as a rear 3/4 once the capelet hangs back)
+			var fl_light: Vector3 = -world.sun.global_transform.basis.z
+			var fside := Vector3(0, 0, 1) if -fl_light.z > 0.0 else Vector3(0, 0, -1)
+			if "flip" in args:
+				fside = -fside
+			var fc := back + Vector3(3.3, 0, 0) + fside * 1.5
+			fc.y = maxf(back.y + 1.35, terrain.height_at(fc.x, fc.z) + 0.6)
+			var fcam := get_viewport().get_camera_3d()
+			fcam.global_position = fc
+			fcam.look_at(back + Vector3.UP * 1.0)
+			print("SHOT frontlens cam %s hero %s side %s" % [fc, back, fside])
+		if "fistpx" in args:
+			# fistpx: where each closed fist and the staff's ends land on screen, and the fist gap,
+			# so a frame can be checked for a hand that only looks off the shaft
+			var fcm = player.get("combat")
+			var pcam2 := get_viewport().get_camera_3d()
+			if fcm != null and pcam2 != null:
+				for sd in ["Right", "Left"]:
+					print("SHOT fistpx %s %s" % [sd, pcam2.unproject_position(fcm.fist_center(sd))])
+				var st: Node3D = fcm.staff
+				if st != null:
+					for e in [-1.0, 1.0]:
+						print("SHOT fistpx staff end %s" % pcam2.unproject_position(st.global_position + st.global_basis.y.normalized() * e * 0.9))
+				print("SHOT fistpx gap R %.3f L %.3f" % [fcm.fist_gap[0], fcm.fist_gap[1]])
 		if "jlens" in args:
 			# jlens: a front 3/4 lens for air moves, on the sun side and ahead of the frozen hero
 			# along the run (+X), level with the chest, far enough back to fit the raised staff
