@@ -886,5 +886,17 @@
   "time": "2026-11-08T03:26:25Z",
   "caption": "1.00 s: the staff lies on the grass out to the hero's back-right, still in the right fist; GL frame, flat ground texture, no Forward+ lighting.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261108-0415-knockplant1.33.jpg",
+  "time": "2026-11-08T04:15:54Z",
+  "caption": "Knock-down get-up (GL): the staff now starts swinging up from the grass on the hero's right as they sit up, spread over 0.4 s instead of a two-tick whip; the body pose and the lit grass are still rough.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0415-knockplant1.47.jpg",
+  "time": "2026-11-08T04:15:54Z",
+  "caption": "Knock-down get-up (GL): the staff stands planted by the knee clear of the hat; the hero's crouch still reads stiff and the GL frame has no fog or GI.",
+  "verdict": "fail"
  }
 ]

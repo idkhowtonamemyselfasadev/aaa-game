@@ -2847,8 +2847,8 @@ const KNOCK_UNHOLD := 1.83
 const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
 const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
 const KNOCK_REGRIP := [1.67, 1.76]       # the free left hand comes off the hip and closes on the shaft before the draw
-const KNOCK_STAFF_PLANT := [1.28, 1.52]  # its butt set on the turf by the front knee as the fist comes to it
-const KNOCK_STAFF_REACH := [1.62, 1.74]  # (11-08) ...and tips toward the left arm's reach so the left fist lands on it early
+const KNOCK_STAFF_PLANT := [1.16, 1.56]  # its butt set on the turf by the front knee as the fist comes to it
+const KNOCK_STAFF_REACH := [1.54, 1.76]  # (11-08) ...and tips toward the left arm's reach so the left fist lands on it early
 var _knock_held := false
 
 func _down_tick(delta: float) -> void:

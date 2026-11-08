@@ -490,6 +490,8 @@ func hold() -> bool:
 	_twist.twist = 0.0
 	staff.reparent(player.get_parent(), true)
 	_held_rel_ok = false
+	_held_prev_ok = false
+	_held_dt = 0.0
 	held_lay = 0.0
 	held_plant = 0.0
 	held_guard = 0.0
@@ -519,6 +521,33 @@ const LAY_GRIP := 0.36     # laid: the fist this far (x LENGTH) from the centre,
 const LAY_BACK := 0.7       # laid out to the right and back this much (tan): its rise to the plant stays clear of the head
 const LAY_END_H := 0.13     # m over the hero's feet: where the laid shaft's far end rests on the sward
 var _lay_top := 0.0
+## (04:00 11-08) the shaft's axis never turns faster than this in the fist: the guard turn and the
+## reach to the left hand stacked into a ~90 deg whip over two 15 Hz ticks (~650 deg/s) as the hero
+## came up. Clamped about the fist, so the fist stays on the shaft; it trails its target by a few
+## degrees through the peak and catches up as the turn eases out.
+const HELD_MAX_RATE := deg_to_rad(400.0)
+var _held_prev := Quaternion.IDENTITY
+var _held_prev_ok := false
+var _held_dt := 0.0          # game time since the last placement (physics_step adds, _place_held spends)
+func _limit_held_turn(q: Quaternion) -> Quaternion:
+	if OS.has_environment("KNOCK_NORATE"):
+		return q
+	if not _held_prev_ok:
+		_held_prev = q
+		_held_prev_ok = true
+		_held_dt = 0.0
+		return q
+	var a0 := _held_prev * Vector3.UP
+	var a1 := q * Vector3.UP
+	var ang := a0.angle_to(a1)
+	var lim := HELD_MAX_RATE * _held_dt
+	_held_dt = 0.0
+	if ang > lim and ang > 1e-4:
+		# swing the target back toward last tick's axis (shortest arc), keeping its roll
+		q = Quaternion(a1, a0.slerp(a1, lim / ang).normalized()) * q
+	_held_prev = q
+	return q
+
 func _place_held() -> void:
 	if state != HELD:
 		return
@@ -605,7 +634,8 @@ func _place_held() -> void:
 			var cur3 := q * Vector3.UP
 			var want := d.normalized() * signf(span)
 			q = q.slerp(Quaternion(cur3, want) * q, held_reach_l)
-	q = _clear_head(q, fist, sl)
+	q = _clear_head(_limit_held_turn(_clear_head(q, fist, sl)), fist, sl)
+	_held_prev = q   # (the clearance wins over the rate limit: never through the hat)
 	var ax3 := q * Vector3.UP
 	if held_lay > 0.0 and absf(ax3.y) > 0.12 and not OS.has_environment("KNOCK_LAYHEAD"):
 		# (03:00 11-08) as the long end rises off the turf the short end pivots on the ground: the
@@ -999,6 +1029,8 @@ static func dir_of(yaw_deg: float, pitch_deg: float) -> Vector3:
 	return Vector3(sin(y) * cos(p), sin(p), cos(y) * cos(p))
 
 func physics_step(delta: float) -> void:
+	if state == HELD:
+		_held_dt += delta
 	if grip_roll != null:
 		var hr: HandRest = player.get("hand_rest")
 		var held := hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
