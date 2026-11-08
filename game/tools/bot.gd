@@ -907,12 +907,15 @@ func _keepgap_test() -> void:
 	var worst_seg := ""
 	var free := 0.0            # ticks without Crumple (plain run: GripRoll's wrist-bend cap)
 	var free_seg := ""
+	var feed_sum := 0.0        # GripRoll's wrist drag per tick (the IK target's miss), m
+	var feed_n := 0
 	for sg in segs:
 		var w := [0.0, 0.0]
 		var wf := 0.0
 		var n := 0
 		var nb := 0
 		var keep := 0.0
+		var feed := 0.0
 		for i in int(sg[1]):
 			p.bot_input = sg[2]
 			c.idle_t = 0.0                     # stay drawn (READY sheathes after SHEATHE_AFTER idle)
@@ -927,6 +930,7 @@ func _keepgap_test() -> void:
 			if c.state != StaffCombat.READY or c._blend < 0.9 or p.hand_rest.hold < 0.9:
 				continue
 			n += 1
+			feed += maxf(c.grip_roll.last_feed[0], c.grip_roll.last_feed[1])
 			var g := maxf(c.fist_gap[0], c.fist_gap[1])
 			if p.crumple.active:
 				nb += 1
@@ -938,7 +942,9 @@ func _keepgap_test() -> void:
 			if OS.has_environment("KG_DBG"):
 				print("   kg %s i %d gap R %.3f L %.3f active %s keep %.2f spine %.2f pelvis %.2f twist %.2f jp %.2f err R %.3f feed %s" % [sg[0], i, c.fist_gap[0], c.fist_gap[1], str(p.crumple.active), p.crumple.keep_hands, p.crumple.spine, p.crumple.pelvis, p.crumple.chest_twist, p._jp, p.crumple.keep_err[1], str(c.grip_roll.last_feed)])
 		res[sg[0]] = w
-		print("BOT keepgap %-8s ticks %3d (bent %3d) worst fist gap bent R %.3f L %.3f | unbent %.3f keep %.2f state %d" % [sg[0], n, nb, w[0], w[1], wf, keep, c.state])
+		feed_sum += feed
+		feed_n += n
+		print("BOT keepgap %-8s ticks %3d (bent %3d) worst fist gap bent R %.3f L %.3f | unbent %.3f keep %.2f state %d feed %.3f" % [sg[0], n, nb, w[0], w[1], wf, keep, c.state, feed / maxf(n, 1)])
 		if maxf(w[0], w[1]) > worst:
 			worst = maxf(w[0], w[1])
 			worst_seg = sg[0]
