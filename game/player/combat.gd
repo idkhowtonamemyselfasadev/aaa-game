@@ -95,7 +95,7 @@ const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0
 	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
 	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
-	[0.30, -10.0, 137.0, Vector3(-0.03, 2.10, 0.25), -14.0],          # cocked back behind the head with the arch (a drawn bow)
+	[0.30, -10.0, 140.0, Vector3(-0.06, 2.18, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT)
 	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
 	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
 # Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),
@@ -934,6 +934,15 @@ func _start_air() -> void:
 	player.note_air_attack()
 	_snatch_draw()
 	_atk = _air_old() if JUMPATK_NOCOCK else AIR_LIGHT
+	if player.JUMPATK_NOTILT and not JUMPATK_NOCOCK:
+		# (11-08 10:00) the 09:00 cock (26 deg back), drawn with the head upright
+		_atk = AIR_LIGHT.duplicate(true)
+		_atk["keys"][3] = [0.30, -10.0, 137.0, Vector3(-0.03, 2.10, 0.25), -14.0]
+	if OS.has_environment("JA_KEY"):
+		# tuning: JA_KEY="yaw,pitch,x,y,z" replaces the cocked key
+		var f := OS.get_environment("JA_KEY").split_floats(",")
+		_atk = AIR_LIGHT.duplicate(true)
+		_atk["keys"][3] = [0.30, f[0], f[1], Vector3(f[2], f[3], f[4]), -14.0]
 	_recover = 0.0
 	_power = AIR_POWER
 	_hit_this_swing.clear()

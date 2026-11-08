@@ -2295,7 +2295,7 @@ func _scree_test() -> void:
 		return _combat_done(false, "the wall face dropped the hero at once")
 	_combat_done(true, "a loose stone is refused, a wall face is caught")
 
-const JA_COCK_GATE := 25.0
+const JA_COCK_GATE := 36.0             # (11-08 10:00) 25 -> 36 with the head tipped clear (now ~40)
 const JA_HAT_GATE := 0.02
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
@@ -2583,7 +2583,7 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
-	if not c.JUMPATK_NOCOCK and (ja_cock < JA_COCK_GATE or ja_hat < JA_HAT_GATE):
+	if not c.JUMPATK_NOCOCK and (ja_cock < (25.0 if p.JUMPATK_NOTILT else JA_COCK_GATE) or ja_hat < JA_HAT_GATE):
 		return _combat_done(false, "the jump attack's staff is not drawn back behind the head at the arch, or the shaft cuts the hat")
 	if not p.JUMPATK_FLAT and (ja_arch < 0.8 or ja_fold < 0.8 or ja_lean_max - ja_lean_min < JA_LEAN_GATE or ja_grip > JA_GRIP_GATE):
 		return _combat_done(false, "the jump attack is swung with the arms alone (no arch and fold of the body) or the hands leave the staff")

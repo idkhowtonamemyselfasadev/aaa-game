@@ -1820,6 +1820,12 @@ const JA_ARCH_NECK := 0.0
 const JA_FOLD_NECK := -0.30
 var JUMPATK_NONECK := OS.get_environment("JUMPATK_NONECK") == "1"
 var _ja_neck := 0.0
+# (11-08 10:00) the head tips over (26 deg, away from the shaft's line) at the arch so the staff
+# can be drawn further back past the hat's brim (cock 26 -> 40 deg); JUMPATK_NOTILT=1 = upright
+# head and the 09:00 cock (before). JA_TILT overrides the angle for tuning.
+var JA_ARCH_TILT := float(OS.get_environment("JA_TILT")) if OS.has_environment("JA_TILT") else -0.45
+var JUMPATK_NOTILT := OS.get_environment("JUMPATK_NOTILT") == "1"
+var _ja_tilt := 0.0
 var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
 var ja_arch := 0.0                      # (bots) this tick's arch / fold weights
@@ -1858,6 +1864,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var flat := 0.0
 	var pel := 0.0
 	var nk := 0.0
+	var tl := 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -1949,6 +1956,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 				pel = JA_ARCH_PELVIS * arch + JA_FOLD_PELVIS * fold
 			if not JUMPATK_NONECK:
 				nk = JA_ARCH_NECK * arch + JA_FOLD_NECK * fold
+			if not JUMPATK_NOTILT:
+				tl = JA_ARCH_TILT * arch
 	crumple.active = true
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
@@ -1969,6 +1978,11 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		if nk == 0.0 and absf(_ja_neck) < 0.002:
 			_ja_neck = 0.0
 		crumple.neck = _ja_neck
+	if tl != 0.0 or _ja_tilt != 0.0:
+		_ja_tilt = lerpf(_ja_tilt, tl * _jp, k)
+		if tl == 0.0 and absf(_ja_tilt) < 0.002:
+			_ja_tilt = 0.0
+		crumple.head_tilt = _ja_tilt
 	if push:
 		# the push frames are drawn as posed, not eased in: the crouch only lasts a frame or two
 		crumple.hip = hip
@@ -1997,6 +2011,9 @@ func _clear_jump_pose() -> void:
 	if _ja_neck != 0.0 and crumple != null:
 		crumple.neck = 0.0
 	_ja_neck = 0.0
+	if _ja_tilt != 0.0 and crumple != null:
+		crumple.head_tilt = 0.0
+	_ja_tilt = 0.0
 	if crumple == null:
 		return
 	crumple.leg_aim = 0.0

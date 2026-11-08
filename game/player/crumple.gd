@@ -12,6 +12,7 @@ var arm := 0.0               # radians, positive swings the upper arms forward
 var elbow := 0.0             # radians, positive bends the forearms
 var neck := 0.0              # radians, positive lifts the head back (an old stoop looks up)
 var head_turn := 0.0         # radians about the neck, so the face does not plant in the dirt
+var head_tilt := 0.0         # radians about the body's forward at the head, + tips the crown toward body +X (60 % neck, 40 % head)
 var pelvis := 0.0            # radians, positive tips the pelvis (and all above it) forward
 							 # at the hip joints; the thighs are held where `hip` puts them
 var back_hand := 0.0         # 0..1: the right hand goes round to the small of the back
@@ -167,6 +168,9 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_bend(skel, "mixamorig_Spine2", up, chest_twist * 0.4)
 	_bend(skel, "mixamorig_Neck", x, -neck)
 	_bend(skel, "mixamorig_Head", up, head_turn)
+	if head_tilt != 0.0:
+		_bend(skel, "mixamorig_Head", fwd, -head_tilt * 0.4)
+		_bend(skel, "mixamorig_Neck", fwd, -head_tilt * 0.6)
 	if hip_shift != Vector3.ZERO:
 		_shift_hips(skel, up)
 	if hip_roll != 0.0:
