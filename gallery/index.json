@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-0624-jump-push.jpg",
-  "time": "2026-11-04T06:24:19Z",
-  "caption": "Jump take-off, 1/60 s after the press (GL): the hero is drawn low with the soles still on the turf, pushing out of a crouch. The lens is from behind rather than the side, and the feet are too dark to check the toes.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0624-jump-line.jpg",
-  "time": "2026-11-04T06:24:19Z",
-  "caption": "Jump 0.1 s in (GL): legs driven straight, an arm thrown up with the elbow bent, before the tuck. The pose reads, but it is a procedural layer over the clip with no mocap take-off, and the hero is backlit and small.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0756-wallkick-push.jpg",
   "time": "2026-11-04T07:56:13Z",
   "caption": "Kick off the keep face 0.1 s in (GL): hands flung up off the holds as the body starts to twist away. Still reads upright from this lens; no planted-sole kick, and the hero is small in frame.",
@@ -897,6 +885,18 @@
   "file": "20261108-0415-knockplant1.47.jpg",
   "time": "2026-11-08T04:15:54Z",
   "caption": "Knock-down get-up (GL): the staff stands planted by the knee clear of the hat; the hero's crouch still reads stiff and the GL frame has no fog or GI.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0514-knockdown-reach.jpg",
+  "time": "2026-11-08T05:14:55Z",
+  "caption": "Knock-down get-up at 1.73 s: the held staff now waits at the hat's brim and comes round it instead of jerking out past it; seen from behind, grass off, body pose still rough.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0514-knockdown-draw.jpg",
+  "time": "2026-11-08T05:14:55Z",
+  "caption": "Knock-down get-up at 1.90 s: the staff mid-way through the new eased half-second draw back to the guard, upright beside the body; lens behind the hero, grass off, ground texture still flat.",
   "verdict": "fail"
  }
 ]

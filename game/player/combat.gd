@@ -500,6 +500,7 @@ func hold() -> bool:
 	head_clear_min = 9.0
 	head_tip_max = 0.0
 	head_tip_reach = 0.0
+	held_hold_max = 0.0
 	# which end of the shaft rises: the end on the left hand's side of the guard grips (the reach to
 	# the left hand at the end of the rise stands that end up; latching the other one flipped the
 	# shaft end for end there). Read in the wield's own frame, independent of the body's fall.
@@ -529,18 +530,30 @@ const HELD_MAX_RATE := deg_to_rad(400.0)
 var _held_prev := Quaternion.IDENTITY
 var _held_prev_ok := false
 var _held_dt := 0.0          # game time since the last placement (physics_step adds, _place_held spends)
+var _held_base := Quaternion.IDENTITY   # the shaft at the end of the last tick (the limit's reference)
+var _held_base_dt := 0.0
 func _limit_held_turn(q: Quaternion) -> Quaternion:
 	if OS.has_environment("KNOCK_NORATE"):
 		return q
 	if not _held_prev_ok:
 		_held_prev = q
+		_held_base = q
+		_held_base_dt = 0.0
 		_held_prev_ok = true
 		_held_dt = 0.0
 		return q
-	var a0 := _held_prev * Vector3.UP
+	if _held_dt > 0.0 or OS.has_environment("KNOCK_TICKFREEZE"):
+		# a new tick: limit against where the shaft ended last tick. (05:00 11-08) A second placement
+		# in the same tick (Crumple's fist_l_fn, then skeleton_updated) limits against that same base
+		# with the same dt, not against the first placement with dt 0: frozen on the first pass's
+		# axis it ignored this pass's posed fist and head, and the hat clearance then had to tip
+		# it 13 deg in one go (the 34 deg tick at 1.73)
+		_held_base = _held_prev
+		_held_base_dt = _held_dt
+	var a0 := _held_base * Vector3.UP
 	var a1 := q * Vector3.UP
 	var ang := a0.angle_to(a1)
-	var lim := HELD_MAX_RATE * _held_dt
+	var lim := HELD_MAX_RATE * _held_base_dt
 	_held_dt = 0.0
 	if ang > lim and ang > 1e-4:
 		# swing the target back toward last tick's axis (shortest arc), keeping its roll
@@ -633,8 +646,17 @@ func _place_held() -> void:
 		if d.length() > 0.15 and absf(span) > 0.05:
 			var cur3 := q * Vector3.UP
 			var want := d.normalized() * signf(span)
-			q = q.slerp(Quaternion(cur3, want) * q, held_reach_l)
-	q = _clear_head(_limit_held_turn(_clear_head(q, fist, sl)), fist, sl)
+			var qt := Quaternion(cur3, want) * q
+			if not OS.has_environment("KNOCK_REACHRAW"):
+				# (05:00 11-08) the reach's own target is cleared round the hat before the turn, so the
+				# slerp runs toward a line already outside the brim and the late clearance no longer has
+				# to tip the shaft round the hat in one tick (a 14 deg tip -> a 34 deg tick at 1.73)
+				qt = _clear_head(qt, fist, sl, false)
+			q = q.slerp(qt, held_reach_l)
+	q = _limit_held_turn(_clear_head(q, fist, sl))
+	if not OS.has_environment("KNOCK_TIPPAST"):
+		q = _hold_clear(q, fist, sl)
+	q = _clear_head(q, fist, sl)
 	_held_prev = q   # (the clearance wins over the rate limit: never through the hat)
 	var ax3 := q * Vector3.UP
 	if held_lay > 0.0 and absf(ax3.y) > 0.12 and not OS.has_environment("KNOCK_LAYHEAD"):
@@ -657,6 +679,7 @@ var _hat_rel := Transform3D()
 var _hat_rel_ok := false
 var head_clear_min := 9.0    # (bots) least shaft-to-hat-centre distance after the clearance, this knock-down
 var head_tip_reach := 0.0    # (bots) the same during the tip toward the left hand
+var held_hold_max := 0.0     # (bots) the largest share of a tick's turn held back at the brim's edge
 var head_tip_max := 0.0      # (bots, 03:00 11-08) the largest tip `_clear_head` had to give (rad): the raw path into the face
 func hat_centre() -> Vector3:
 	var hat: MeshInstance3D = player.garb.hat if player.garb != null else null
@@ -675,7 +698,7 @@ func hat_centre() -> Vector3:
 		_hat_rel_ok = true
 	return skel.global_transform * skel.get_bone_global_pose(hb) * _hat_rel * hat.mesh.get_aabb().get_center()
 
-func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
+func _clear_head(q: Quaternion, fist: Vector3, sl: float, track := true) -> Quaternion:
 	if OS.has_environment("KNOCK_NOCLEAR"):
 		return q
 	var h := hat_centre()
@@ -688,7 +711,8 @@ func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
 	var ext := Staff.LENGTH * 0.5 - sl if along >= 0.0 else Staff.LENGTH * 0.5 + sl
 	var d := (hf - a * along).length()
 	if absf(along) > ext + HEAD_CLEAR:
-		head_clear_min = minf(head_clear_min, hf.length())
+		if track:
+			head_clear_min = minf(head_clear_min, hf.length())
 		return q
 	var r := hf.length()
 	if r <= HEAD_CLEAR + 0.01:
@@ -697,13 +721,16 @@ func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
 	var dir := a if along >= 0.0 else -a          # the half of the shaft that points toward the hat
 	var now := dir.angle_to(hf)
 	if now >= want:
-		head_clear_min = minf(head_clear_min, d)
+		if track:
+			head_clear_min = minf(head_clear_min, d)
 		return q
 	var spin := hf.cross(dir)
 	if spin.length() < 1e-4:
 		spin = player.body.global_basis.x.cross(hf)   # dead on the hat: tip it out to the right
 	spin = spin.normalized()
 	var fix := Quaternion(spin, want - now)
+	if not track:
+		return fix * q
 	if held_reach_l > 0.0:
 		head_tip_reach = maxf(head_tip_reach, want - now)   # the reach to the left hand (11-08 item o), tracked apart
 	else:
@@ -712,6 +739,33 @@ func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
 		print("TIP t %.3f tip %.1f deg along %.2f lay %.2f plant %.2f guard %.2f reach %.2f" % [player.down_t, rad_to_deg(want - now), along, held_lay, held_plant, held_guard, held_reach_l])
 	head_clear_min = minf(head_clear_min, HEAD_CLEAR)
 	return fix * q
+
+## (05:00 11-08) The rate-limited turn takes the shortest arc from last tick's shaft, and in the
+## reach to the left hand that arc ran through the hat: the clearance then tipped it ~13 deg out
+## on top of the full 400 deg/s step (a 34 deg tick at 1.73). Instead, go only as far along the
+## arc as stays clear of the hat (and within the rate): the shaft waits at the brim's edge for a
+## tick and comes round it, never swinging out past it in one jerk.
+func _tip_needed(q: Quaternion, fist: Vector3, sl: float) -> float:
+	return (q * Vector3.UP).angle_to(_clear_head(q, fist, sl, false) * Vector3.UP)
+
+func _hold_clear(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
+	if not _held_prev_ok or _held_base_dt <= 0.0:
+		return q
+	if _tip_needed(q, fist, sl) < deg_to_rad(0.5):
+		return q
+	if _tip_needed(_held_base, fist, sl) > deg_to_rad(0.5):
+		return q       # last tick's shaft is itself in the way now (the head moved): the clearance must win
+	var best := _held_base
+	var t := 0.0
+	for i in range(1, 21):
+		var u := float(i) / 20.0
+		var c := _held_base.slerp(q, u)
+		if _tip_needed(c, fist, sl) > deg_to_rad(0.5):
+			break
+		best = c
+		t = u
+	held_hold_max = maxf(held_hold_max, 1.0 - t)
+	return best
 
 func _axis_xform(ax: Vector3, centre: Vector3) -> Transform3D:
 	var ref := Vector3.UP if absf(ax.y) < 0.9 else Vector3.FORWARD
@@ -738,6 +792,7 @@ func held_grip_l() -> Vector3:
 ## the right fist as it now stands first, so the left fist's target is on this tick's shaft.
 var _unhold_draw := false
 const UNHOLD_ROLL_RATE := 20.0  # 1/s
+const UNHOLD_DRAW := 0.50    # s: the draw back to the guard after a knock-down (eased)
 const UNHOLD_TAKE := 0.06    # s: the arm IK takes the hands from the knock-down pose (already on the shaft)
 const REGRIP_REACH := 0.38   # m: shoulder to the fist's centre the arm can take without locking straight
 const REGRIP_AIM := 0.30     # m: the shaft is tipped through a spot this far from the left shoulder
@@ -1066,7 +1121,15 @@ func physics_step(delta: float) -> void:
 			t += delta
 			var f := clampf(t / DRAW_TIME, 0.0, 1.0)
 			var g := _place_hands(GUARD)
-			staff.transform = _from_xform.interpolate_with(g, f)
+			var fe := f
+			if _unhold_draw and not OS.has_environment("KNOCK_FASTDRAW"):
+				# (05:00 11-08) back from a knock-down the shaft may have ~100 deg to turn from the reach
+				# toward the left hand to the guard: drawn linearly in DRAW_TIME that was a constant
+				# 35 deg per 15 Hz tick, starting and stopping dead. Eased in and out over UNHOLD_DRAW
+				# (peak ~26 deg per tick) it carries on from the held turn and settles into the guard.
+				f = clampf(t / UNHOLD_DRAW, 0.0, 1.0)
+				fe = smoothstep(0.0, 1.0, f)
+			staff.transform = _from_xform.interpolate_with(g, fe)
 			if _unhold_draw:
 				# back from a knock-down: both fists are already on the shaft, so the grips ride the
 				# staff as it eases to the guard (aiming them at the guard's grips while the staff

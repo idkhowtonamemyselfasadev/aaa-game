@@ -851,6 +851,7 @@ const REGRIP_L_EARLY_T := 1.78
 const REGRIP_L_EARLY_GATE := 0.05  # m: (11-08) the left fist already on the shaft by REGRIP_L_EARLY_T (before 0.160, after 0.016)
 const HEAD_TIP_GATE := 6.0    # deg: (03:00 11-08) the held staff's own path stays out of the face (before: 23.7 deg at 1.20..1.27)
 const PLANT_SPIN_GATE := 30.0  # (04:00 11-08) deg per 15 Hz tick in the swing up to the planted staff
+const DRAW_SPIN_GATE := 30.0  # deg per 15 Hz tick: the eased draw back to the guard after a knock-down (05:00 11-08: 23)
 const HELD_SPIN_GATE := 40.0  # deg per 15 Hz tick: the held shaft never whips end for end
 const HAT_CLEAR_GATE := 0.02  # m: (11-08) the held shaft outside the hat's brim cylinder at the hat's height (before -0.285: through the crown at 1.33)
 const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
@@ -7661,6 +7662,8 @@ func _sweep_test() -> void:
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
 	var held_ax := Vector3.ZERO
 	var held_spin := 0.0   # deg: the largest turn of the held shaft's axis in one 15 Hz tick
+	var draw_spin := 0.0   # deg: the same over the first ticks of the draw back to the guard
+	var draw_ticks := 0
 	var plant_spin := 0.0  # (04:00 11-08) deg: ...of those, the largest in the swing up to the plant
 	var held := [0.0, 9.0, 0, 0, 9.0, 9.0, 9.0, -1.0]   # [6] least shaft margin outside the hat brim, [7] at down_t; [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
@@ -7732,6 +7735,15 @@ func _sweep_test() -> void:
 				kneel[5] = maxf(kneel[5], rf)
 				kneel[2] = minf(kneel[2], ahead)
 				kneel[4] += 1
+		if held_ax != Vector3.ZERO and c.state == StaffCombat.DRAWING and draw_ticks < 6:
+			# (05:00 11-08) the draw back to the guard after the knock-down takes the shaft on from
+			# where it was held: no catch-up whip when the held turn waited at the hat's brim
+			var dax := c.staff.global_transform.basis.y.normalized()
+			draw_spin = maxf(draw_spin, rad_to_deg(held_ax.angle_to(dax)))
+			if OS.get_environment("SPIN_DBG") != "":
+				print("SPIN draw %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
+			held_ax = dax
+			draw_ticks += 1
 		if p.down_t > 0.05 and p.down_t < Player.KNOCK_UNHOLD - 0.02 and p.crumple.probed.has("mixamorig_RightHand"):
 			if c.state == StaffCombat.HELD:
 				if p.down_t >= Player.KNOCK_REGRIP[1] - 0.02:
@@ -7811,7 +7823,16 @@ func _sweep_test() -> void:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
 		await get_tree().physics_frame
-	await _ticks(2)
+	for _i in 2:
+		if held_ax != Vector3.ZERO and c.state == StaffCombat.DRAWING:
+			# (05:00 11-08) the draw goes on past the end of the knock-down: keep sampling the shaft's turn
+			var dax := c.staff.global_transform.basis.y.normalized()
+			draw_spin = maxf(draw_spin, rad_to_deg(held_ax.angle_to(dax)))
+			if OS.get_environment("SPIN_DBG") != "":
+				print("SPIN draw+ %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
+			held_ax = dax
+			draw_ticks += 1
+		await get_tree().physics_frame
 	var rest_ok := p.model.transform.is_equal_approx(p._model_rest)
 	for k in laid.keys():
 		laid[k] = _world.trample.herd_lay_at(laid[k])
@@ -7853,10 +7874,21 @@ func _sweep_test() -> void:
 		return _combat_done(false, "the hero's free left hand hangs as a stiff open claw in the rise instead of a relaxed half-curl")
 	var regrip := 0.0   # the staff back into both hands after the get-up: the larger fist gap, max
 	for _i in 10:
+		if held_ax != Vector3.ZERO and c.state == StaffCombat.DRAWING:
+			# (05:00 11-08) the draw goes on past the end of the knock-down: keep sampling the shaft's turn
+			var dax := c.staff.global_transform.basis.y.normalized()
+			draw_spin = maxf(draw_spin, rad_to_deg(held_ax.angle_to(dax)))
+			if OS.get_environment("SPIN_DBG") != "":
+				print("SPIN draw+ %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
+			held_ax = dax
+			draw_ticks += 1
 		regrip = maxf(regrip, maxf(c.fist_gap[0], c.fist_gap[1]))
 		if OS.has_environment("KNEEL_DBG"):
 			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f hr w %.2f hold %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend, p.hand_rest.weight, p.hand_rest.hold])
 		await get_tree().physics_frame
+	print("BOT sweep: largest one-tick turn of the shaft in the draw back to the guard %.0f deg (gate %.0f), %d ticks" % [draw_spin, DRAW_SPIN_GATE, draw_ticks])
+	if draw_spin > DRAW_SPIN_GATE or draw_ticks < 4:
+		return _combat_done(false, "the staff whips round in the draw back to the guard after the knock-down")
 	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
 	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m (by t %.2f: %.3f m)" % [held[4], REGRIP_L_EARLY_T, held[5]])
 	print("BOT sweep: held shaft clear of the hat brim by %.3f m at its closest (t %.2f)" % [held[6], held[7]])
