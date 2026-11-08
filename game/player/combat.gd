@@ -499,6 +499,7 @@ func hold() -> bool:
 	_held_shoulder_l = Vector3.ZERO
 	head_clear_min = 9.0
 	head_tip_max = 0.0
+	draw_tip_max = 0.0
 	head_tip_reach = 0.0
 	held_hold_max = 0.0
 	# which end of the shaft rises: the end on the left hand's side of the guard grips (the reach to
@@ -653,11 +654,15 @@ func _place_held() -> void:
 				# to tip the shaft round the hat in one tick (a 14 deg tip -> a 34 deg tick at 1.73)
 				qt = _clear_head(qt, fist, sl, false)
 			q = q.slerp(qt, held_reach_l)
+	var _dbg_q := q
 	q = _limit_held_turn(_clear_head(q, fist, sl))
 	if not OS.has_environment("KNOCK_TIPPAST"):
 		q = _hold_clear(q, fist, sl)
 	q = _clear_head(q, fist, sl)
 	_held_prev = q   # (the clearance wins over the rate limit: never through the hat)
+	if OS.has_environment("SPIN_DBG") and held_guard > 0.0:
+		var gdb := (_wield.global_transform * _staff_xform(GUARD)).basis.y.normalized()
+		print("HG t %.3f guard %.2f reach %.2f want-vs-guard %.1f final-vs-guard %.1f" % [player.down_t, held_guard, held_reach_l, rad_to_deg((_dbg_q * Vector3.UP).angle_to(gdb)), rad_to_deg((q * Vector3.UP).angle_to(gdb))])
 	var ax3 := q * Vector3.UP
 	if held_lay > 0.0 and absf(ax3.y) > 0.12 and not OS.has_environment("KNOCK_LAYHEAD"):
 		# (03:00 11-08) as the long end rises off the turf the short end pivots on the ground: the
@@ -755,6 +760,21 @@ func _hold_clear(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
 		return q
 	if _tip_needed(_held_base, fist, sl) > deg_to_rad(0.5):
 		return q       # last tick's shaft is itself in the way now (the head moved): the clearance must win
+	if not OS.has_environment("KNOCK_HOLDWAIT"):
+		# (11-08) waiting at the brim never came round when the target lay on the hat's far side
+		# (the planted shaft -> the guard): the shaft stood still at the brim for the whole rise
+		# and the draw then had ~116 deg to cover, through the hat. Now each tick steps round
+		# the brim: the step is tipped clear of the hat, then held to the turn rate from last
+		# tick's shaft (the last clearance pass fixes the hair it may cut back in).
+		var cq := _clear_head(q, fist, sl, false)
+		var b0 := _held_base * Vector3.UP
+		var c1 := cq * Vector3.UP
+		var ang := b0.angle_to(c1)
+		var lim := HELD_MAX_RATE * _held_base_dt
+		if ang > lim and ang > 1e-4:
+			cq = Quaternion(c1, b0.slerp(c1, lim / ang).normalized()) * cq
+		held_hold_max = maxf(held_hold_max, (cq * Vector3.UP).angle_to(q * Vector3.UP))
+		return cq
 	var best := _held_base
 	var t := 0.0
 	for i in range(1, 21):
@@ -792,7 +812,7 @@ func held_grip_l() -> Vector3:
 ## the right fist as it now stands first, so the left fist's target is on this tick's shaft.
 var _unhold_draw := false
 const UNHOLD_ROLL_RATE := 20.0  # 1/s
-const UNHOLD_DRAW := 0.50    # s: the draw back to the guard after a knock-down (eased)
+const UNHOLD_DRAW := 0.36    # s: the draw back to the guard after a knock-down (eased)  (11-08: 0.50 -> 0.36 once the held shaft came round the hat)
 const UNHOLD_TAKE := 0.06    # s: the arm IK takes the hands from the knock-down pose (already on the shaft)
 const REGRIP_REACH := 0.38   # m: shoulder to the fist's centre the arm can take without locking straight
 const REGRIP_AIM := 0.30     # m: the shaft is tipped through a spot this far from the left shoulder
@@ -815,11 +835,35 @@ func held_grip_l_now(shoulder: Vector3) -> Vector3:
 	var sl := ax.dot(at - near)
 	return near + ax * clampf(sl, -half, half)
 
+## (11-08) The draw back to the guard after a knock-down eased the staff from the held line to
+## the guard on the shortest turn, and that turn swept the shaft 0.18 m through the hat (the
+## held shaft waits outside the brim; the guard lies on its far side). Tipped about the right
+## fist each tick by the least angle that clears the hat, the draw brings the shaft round the
+## brim instead. The fists ride the staff (the draw's grip shift), so they stay on it.
+var draw_tip_max := 0.0   # (bots) the largest tip the draw needed (rad)
+func _draw_clear_hat() -> void:
+	var gt := staff.global_transform
+	var ax := gt.basis.y.normalized()
+	var fist := fist_center("Right")
+	var pivot := gt.origin + ax * ax.dot(fist - gt.origin)
+	var sl := (pivot - gt.origin).dot(ax)
+	var q := gt.basis.get_rotation_quaternion()
+	var q2 := _clear_head(q, pivot, sl, false)
+	var tip := (q * Vector3.UP).angle_to(q2 * Vector3.UP)
+	if tip < 1e-4:
+		return
+	draw_tip_max = maxf(draw_tip_max, tip)
+	var ax2 := q2 * Vector3.UP
+	staff.global_transform = Transform3D(Basis(q2).scaled(gt.basis.get_scale()), pivot - ax2 * sl)
+
 ## Up again: the staff comes back from the right fist into both hands at guard, eased like a
 ## draw from wherever the fist holds it.
 func unhold() -> void:
 	if state != HELD:
 		return
+	if OS.has_environment("SPIN_DBG"):
+		var gw := _wield.global_transform * _staff_xform(GUARD)
+		print("UNHOLD axis vs guard %.1f deg (fist y over ground %.2f)" % [rad_to_deg(staff.global_basis.y.normalized().angle_to(gw.basis.y.normalized())), fist_center("Right").y - held_ground])
 	staff.reparent(_wield, true)
 	_from_xform = staff.transform
 	_unhold_draw = not OS.has_environment("KNOCK_NOREGRIP")
@@ -1130,6 +1174,8 @@ func physics_step(delta: float) -> void:
 				f = clampf(t / UNHOLD_DRAW, 0.0, 1.0)
 				fe = smoothstep(0.0, 1.0, f)
 			staff.transform = _from_xform.interpolate_with(g, fe)
+			if _unhold_draw and not OS.has_environment("KNOCK_DRAWRAW"):
+				_draw_clear_hat()
 			if _unhold_draw:
 				# back from a knock-down: both fists are already on the shaft, so the grips ride the
 				# staff as it eases to the guard (aiming them at the guard's grips while the staff

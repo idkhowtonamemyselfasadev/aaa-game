@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-0756-wallkick-push.jpg",
-  "time": "2026-11-04T07:56:13Z",
-  "caption": "Kick off the keep face 0.1 s in (GL): hands flung up off the holds as the body starts to twist away. Still reads upright from this lens; no planted-sole kick, and the hero is small in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0756-wallkick-flight.jpg",
-  "time": "2026-11-04T07:56:13Z",
-  "caption": "Kick off the keep face 0.25 s in (GL): twisted round to face the flight, knees gathering, staff on the back. The leap reads, but it is a procedural pose over the clip with no mocap.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0825-wallkick-scree.jpg",
   "time": "2026-11-04T08:25:00Z",
   "caption": "The hero 0.15 s into a kick off the keep's face above the scree heap (GL quick look); loose stones like these no longer give a false catch, but the kick still reads as an upright stand with raised arms, not legs driving off the stones.",
@@ -897,6 +885,18 @@
   "file": "20261108-0514-knockdown-draw.jpg",
   "time": "2026-11-08T05:14:55Z",
   "caption": "Knock-down get-up at 1.90 s: the staff mid-way through the new eased half-second draw back to the guard, upright beside the body; lens behind the hero, grass off, ground texture still flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0620-knockdown-round.jpg",
+  "time": "2026-11-08T06:20:00Z",
+  "caption": "Knock-down get-up at 1.73 s: the held staff now steps round the hat brim and lies diagonally behind the left shoulder, well clear of the hat (it used to wait at the brim and then sweep through it in the draw); body pose still rough, flat ground texture.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0620-knockdown-guard.jpg",
+  "time": "2026-11-08T06:20:00Z",
+  "caption": "Knock-down get-up at 1.80 s: the left fist is closed on the shaft by the hip and the staff runs low toward the guard instead of standing up through the hat; lens from behind, so the guard line is foreshortened.",
   "verdict": "fail"
  }
 ]

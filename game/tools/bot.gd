@@ -851,6 +851,7 @@ const REGRIP_L_EARLY_T := 1.78
 const REGRIP_L_EARLY_GATE := 0.05  # m: (11-08) the left fist already on the shaft by REGRIP_L_EARLY_T (before 0.160, after 0.016)
 const HEAD_TIP_GATE := 6.0    # deg: (03:00 11-08) the held staff's own path stays out of the face (before: 23.7 deg at 1.20..1.27)
 const PLANT_SPIN_GATE := 30.0  # (04:00 11-08) deg per 15 Hz tick in the swing up to the planted staff
+const DRAW_HAT_GATE := 0.02   # m: (11-08) the draw back to the guard after a knock-down stays outside the hat brim (before -0.178)
 const DRAW_SPIN_GATE := 30.0  # deg per 15 Hz tick: the eased draw back to the guard after a knock-down (05:00 11-08: 23)
 const HELD_SPIN_GATE := 40.0  # deg per 15 Hz tick: the held shaft never whips end for end
 const HAT_CLEAR_GATE := 0.02  # m: (11-08) the held shaft outside the hat's brim cylinder at the hat's height (before -0.285: through the crown at 1.33)
@@ -7608,6 +7609,29 @@ func _wait_strike_done(s: HollowSoldier, n: int) -> void:
 
 ## Sweep: chosen when the hero crowds in; it catches a hero who stands or strafes (where a
 ## strafe beats the thrust), and is beaten by a dodge on the glint or a parry.
+## (11-08) least radial margin of the staff segment e0..e1 outside the hero's hat brim (a cone from
+## the crown out to the brim), over shaft points at the hat's height; negative = through the hat.
+func _hat_margin(p: Player, e0: Vector3, e1: Vector3) -> float:
+	var best := 9.0
+	if p.garb == null or p.garb.hat == null or p.garb.hat.mesh == null:
+		return best
+	var hb: AABB = p.garb.hat.mesh.get_aabb()
+	var hinv: Transform3D = p.garb.hat.global_transform.affine_inverse()
+	var hc := hb.get_center()
+	var hr := maxf(hb.size.x, hb.size.z) * 0.5
+	for k in 41:
+		var hl: Vector3 = hinv * e0.lerp(e1, k / 40.0)
+		if hl.y >= hb.position.y - 0.03 and hl.y <= hb.end.y + 0.03:
+			var rmax := clampf((hb.end.y - hl.y) / HeroGarb.HAT_SLOPE, 0.0, hr) if hb.size.y < 0.25 else hr
+			var m := Vector2(hl.x - hc.x, hl.z - hc.z).length() - rmax
+			if OS.has_environment("HAT_DBG"): print("hat t %.3f k %d m %.3f local %s" % [p.down_t, k, m, hl])
+			best = minf(best, m)
+	return best
+
+func _staff_ends(c: StaffCombat) -> Array:
+	var st: Transform3D = c.staff.global_transform
+	return [st * Vector3(0, -Staff.LENGTH * 0.5, 0), st * Vector3(0, Staff.LENGTH * 0.5, 0)]
+
 func _sweep_test() -> void:
 	var p := _player
 	var s: HollowSoldier = _world.soldier
@@ -7663,6 +7687,7 @@ func _sweep_test() -> void:
 	var held_ax := Vector3.ZERO
 	var held_spin := 0.0   # deg: the largest turn of the held shaft's axis in one 15 Hz tick
 	var draw_spin := 0.0   # deg: the same over the first ticks of the draw back to the guard
+	var draw_hat := 9.0    # m: (11-08) the shaft's least margin outside the hat brim during that draw
 	var draw_ticks := 0
 	var plant_spin := 0.0  # (04:00 11-08) deg: ...of those, the largest in the swing up to the plant
 	var held := [0.0, 9.0, 0, 0, 9.0, 9.0, 9.0, -1.0]   # [6] least shaft margin outside the hat brim, [7] at down_t; [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
@@ -7743,6 +7768,8 @@ func _sweep_test() -> void:
 			if OS.get_environment("SPIN_DBG") != "":
 				print("SPIN draw %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
 			held_ax = dax
+			var de := _staff_ends(c)
+			draw_hat = minf(draw_hat, _hat_margin(p, de[0], de[1]))
 			draw_ticks += 1
 		if p.down_t > 0.05 and p.down_t < Player.KNOCK_UNHOLD - 0.02 and p.crumple.probed.has("mixamorig_RightHand"):
 			if c.state == StaffCombat.HELD:
@@ -7767,21 +7794,10 @@ func _sweep_test() -> void:
 				held[0] = maxf(held[0], c.fist_gap[0])   # the closed fist's centre to the shaft
 				# (11-08) the shaft clear of the hat: least radial margin outside the hat's brim
 				# cylinder over shaft points at the hat's height (negative = through the brim)
-				if p.garb != null and p.garb.hat != null and p.garb.hat.mesh != null:
-					var hb: AABB = p.garb.hat.mesh.get_aabb()
-					var hinv: Transform3D = p.garb.hat.global_transform.affine_inverse()
-					var hc := hb.get_center()
-					var hr := maxf(hb.size.x, hb.size.z) * 0.5
-					for k in 41:
-						var hl: Vector3 = hinv * e0.lerp(e1, k / 40.0)
-						if hl.y >= hb.position.y - 0.03 and hl.y <= hb.end.y + 0.03:
-							# a cone from the crown point out to the brim (HeroGarb.HAT_SLOPE fall per metre)
-							var rmax := clampf((hb.end.y - hl.y) / HeroGarb.HAT_SLOPE, 0.0, hr) if p.garb.hat.mesh.get_aabb().size.y < 0.25 else hr
-							var m := Vector2(hl.x - hc.x, hl.z - hc.z).length() - rmax
-							if OS.has_environment("HAT_DBG"): print("hat t %.3f k %d m %.3f local %s" % [p.down_t, k, m, hl])
-							if m < held[6]:
-								held[6] = m
-								held[7] = p.down_t
+				var hm := _hat_margin(p, e0, e1)
+				if hm < held[6]:
+					held[6] = hm
+					held[7] = p.down_t
 
 				for e in [e0, e1]:
 					held[1] = minf(held[1], (e as Vector3).y - _world.terrain.height_at(e.x, e.z))
@@ -7831,6 +7847,8 @@ func _sweep_test() -> void:
 			if OS.get_environment("SPIN_DBG") != "":
 				print("SPIN draw+ %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
 			held_ax = dax
+			var de := _staff_ends(c)
+			draw_hat = minf(draw_hat, _hat_margin(p, de[0], de[1]))
 			draw_ticks += 1
 		await get_tree().physics_frame
 	var rest_ok := p.model.transform.is_equal_approx(p._model_rest)
@@ -7881,14 +7899,18 @@ func _sweep_test() -> void:
 			if OS.get_environment("SPIN_DBG") != "":
 				print("SPIN draw+ %d %.1f deg" % [draw_ticks, rad_to_deg(held_ax.angle_to(dax))])
 			held_ax = dax
+			var de := _staff_ends(c)
+			draw_hat = minf(draw_hat, _hat_margin(p, de[0], de[1]))
 			draw_ticks += 1
 		regrip = maxf(regrip, maxf(c.fist_gap[0], c.fist_gap[1]))
 		if OS.has_environment("KNEEL_DBG"):
 			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f hr w %.2f hold %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend, p.hand_rest.weight, p.hand_rest.hold])
 		await get_tree().physics_frame
-	print("BOT sweep: largest one-tick turn of the shaft in the draw back to the guard %.0f deg (gate %.0f), %d ticks" % [draw_spin, DRAW_SPIN_GATE, draw_ticks])
+	print("BOT sweep: largest one-tick turn of the shaft in the draw back to the guard %.0f deg (gate %.0f), %d ticks; clear of the hat brim by %.3f m at its closest in the draw" % [draw_spin, DRAW_SPIN_GATE, draw_ticks, draw_hat])
 	if draw_spin > DRAW_SPIN_GATE or draw_ticks < 4:
 		return _combat_done(false, "the staff whips round in the draw back to the guard after the knock-down")
+	if draw_hat < DRAW_HAT_GATE:
+		return _combat_done(false, "the staff swept through the hero's hat in the draw back to the guard after a knock-down")
 	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
 	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m (by t %.2f: %.3f m)" % [held[4], REGRIP_L_EARLY_T, held[5]])
 	print("BOT sweep: held shaft clear of the hat brim by %.3f m at its closest (t %.2f)" % [held[6], held[7]])
