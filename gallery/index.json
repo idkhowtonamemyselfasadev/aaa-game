@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261104-1623-stop-brace.jpg",
-  "time": "2026-11-04T16:23:14Z",
-  "caption": "Planted stop at 0.17 s (GL): front leg thrown out and braced, back heel up on the ball of the foot, arms out for balance; still wrong: the lens sees the hero from behind in shade, so the heel strike cannot be judged.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-1623-stop-rollover.jpg",
   "time": "2026-11-04T16:23:14Z",
   "caption": "Planted stop at 0.27 s (GL): the weight rolls over the front foot and the back foot comes up; still wrong: back-lit, hero seen from behind, not a side-on profile yet.",
@@ -897,6 +891,12 @@
   "file": "20261108-1242-jumpsnatch.jpg",
   "time": "2026-11-08T12:42:36Z",
   "caption": "Jump attack mid-snatch, side-on: the staff swings off the back across the shoulders with the right fist already on it; backlit, the figure reads as a silhouette and the left hand is still rising from the hip.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-1420-jumpattack-arch.jpg",
+  "time": "2026-11-08T14:20:00Z",
+  "caption": "Jump attack at the top of the arch from a slung start: the staff is drawn ~39 deg back behind the hat with the right fist on the shaft; still backlit to a silhouette, and the cottage behind reads plain.",
   "verdict": "fail"
  }
 ]
