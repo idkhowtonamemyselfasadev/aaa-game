@@ -326,6 +326,13 @@ func elbow_bearing(i: int) -> Vector2:
 		m.set_shader_parameter("gore_fold_f2", fold_front2)
 		m.set_shader_parameter("gore_fold_b", fold_back)
 
+var _gore_len := 0.0
+## The gores' front ends roll round the same knee-fold arc as the front panel (Rags._set_fold_len).
+func _gore_fold_len(v: float) -> void:
+	_gore_len = v
+	for g in gores:
+		(g.material_override as ShaderMaterial).set_shader_parameter("gore_fold_len", v)
+
 ## A gore's hem point at `u` (0 front end .. 1 back end) in world space, walked through the
 ## same swing and folds as rag.gdshader's gore pass (no flutter): for the bots.
 func gore_hem(i: int, u: float) -> Vector3:
@@ -339,7 +346,9 @@ func gore_hem(i: int, u: float) -> Vector3:
 	var st := drop / 14.0
 	for j in 14:
 		var d := (j + 0.5) * st
-		var tf := _swing_f - fold_front.y * smoothstep(0.0, 0.07, d - fold_front.x) \
+		var ramp_f := clampf((d - fold_front.x) / maxf(_gore_len, 0.07), 0.0, 1.0) if _gore_len > 0.0 \
+				else smoothstep(0.0, 0.07, d - fold_front.x)
+		var tf := _swing_f - fold_front.y * ramp_f \
 				- fold_front2.y * smoothstep(0.0, 0.07, d - fold_front2.x)
 		var tb := -_swing_b - fold_back.y * smoothstep(0.0, 0.07, d - fold_back.x)
 		var t := tf * wf + tb * wb

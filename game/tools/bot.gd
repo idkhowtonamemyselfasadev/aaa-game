@@ -2568,6 +2568,7 @@ func _jump_test() -> void:
 ## Jump attack + plunging attack on the practice post: a light at the top of a jump strikes
 ## down into it (once per jump), a heavy at the top of a jump drops the hero in a slam that
 ## strikes it, a plunge from 6 m hits harder and wider, and a 12 m plunge soaks half the fall.
+const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
 func _airstrike_test() -> void:
@@ -2623,6 +2624,7 @@ func _airstrike_test() -> void:
 	var y_press := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
 	p.garb.tuck_gap = 9.0
 	p.garb.tuck_heel = 9.0
+	p.garb.tuck_shin = 9.0
 	p.garb.tuck_lie_peak = 0.0
 	var ja_swf := 0.0
 	var ja_fold_a := 0.0
@@ -2706,6 +2708,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
 	print("BOT airstrike: jump attack robe -> front panel lie %.2f, swing %.2f rad, knee fold %.2f rad, cloth over the knee %.3f m (gate > -%.2f), back hem behind the heels %.3f m" % [p.garb.tuck_lie_peak, ja_swf, ja_fold_a, p.garb.tuck_gap, TUCK_GAP_GATE, p.garb.tuck_heel])
+	print("BOT airstrike: knee fold rolls round a %.2f m arc, bent cloth's worst gap off the shin %.3f m (gate > %.2f)" % [p.garb.TUCK_ROUND if not OS.has_environment("KNEEROUND_OFF") else 0.0, p.garb.tuck_shin, TUCK_SHIN_GATE])
+	if not p.garb.KNEEFOLD_OFF and p.garb.tuck_shin < TUCK_SHIN_GATE:
+		return _combat_done(false, "the rolled knee fold drives the robe through the shin")
 	if not p.garb.KNEEFOLD_OFF and (p.garb.tuck_lie_peak < 0.8 or p.garb.tuck_gap < -TUCK_GAP_GATE or ja_fold_a < 0.3):
 		return _combat_done(false, "the robe's front panel stands off the tucked thighs as a flat board (no knee fold)")
 	print("BOT airstrike: jump attack fists -> worst gap to the shaft R %.3f L %.3f m (gate %.2f), ticks over 5 cm %d (gate %d)" % [ja_gap.x, ja_gap.y, JA_FIST_GATE, ja_loose, JA_LOOSE_GATE])

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261105-0014-hero-turn-54.jpg",
-  "time": "2026-11-05T00:14:02Z",
-  "caption": "Hero 0.04 s into a hard run turn: the hood and chest already swing onto the new line while the legs still stride across (turn lead); GL frame, hero in shade, turning away from the lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0014-hero-turn-60.jpg",
-  "time": "2026-11-05T00:14:02Z",
-  "caption": "The same turn 0.1 s in: the body has caught up with the head; GL, shaded and seen from behind, so the lead cannot be judged on the face.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0130-spot-turn-24.jpg",
-  "time": "2026-11-05T01:30:00Z",
-  "caption": "Standing turn stepped at 6 rad/s, 0.14 s in: the hero steps round 3/4 to the lens, one foot lifting; GL frame, hero in tree shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0130-spot-turn-36.jpg",
-  "time": "2026-11-05T01:30:00Z",
-  "caption": "0.26 s into the stepped turn: the hood and face are already in profile ahead of the shoulders (head lead reads); GL, shaded, and the turn goes away from the lens though the yaw says it should face it.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0221-spotturn-lead.jpg",
   "time": "2026-11-05T02:21:46Z",
   "caption": "Hero's standing turn toward the lens, mid-turn: the hooded head already looks at the camera while the torso is still side-on (GL frame); the hero stands in the cottage's shade and the idle staff arm juts out stiffly.",
@@ -897,6 +873,18 @@
   "file": "20261108-2200-kneefold-tuck.jpg",
   "time": "2026-11-08T22:21:00Z",
   "caption": "Jump attack at jt 0.48 with the knee fold: panel over the thigh, hem hanging plumb from the knee, legs read as tucked; figure small and backlit in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2320-kneeroll-before-after.jpg",
+  "time": "2026-11-08T23:20:00Z",
+  "caption": "Jump attack fold, hard crease (left) vs the new rolled knee fold (right): the robe panel now curves over the knee instead of turning a square corner. Still GL-only, rear 3/4 and backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2320-kneeroll-fold.jpg",
+  "time": "2026-11-08T23:21:00Z",
+  "caption": "Jump attack fold at jt 0.52 with the rolled knee fold; the figure is small and in shadow and the red panel still reads too saturated.",
   "verdict": "fail"
  }
 ]

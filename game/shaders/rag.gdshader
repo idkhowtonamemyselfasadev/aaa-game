@@ -43,8 +43,10 @@ uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, dam
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
+uniform float fold_len = 0.0;      // > 0: `fold` bends round a true arc this long (m, >= 0.07) instead of a 7 cm crease
 uniform float gore = 0.0;          // 1: this piece is a side gore
 uniform vec2 gore_fold_f = vec2(1000.0, 0.0);  // the front panel's folds, which the gore's front end follows
+uniform float gore_fold_len = 0.0;  // > 0: the front fold is an arc this long (see fold_len)
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
@@ -114,6 +116,30 @@ float pleat_phase(vec2 t) {
 	return t.x * pleats + 0.22 * sin(t.y * 2.3 + seed * 1.7) + 0.12 * sin(t.x * 7.0 + t.y * 1.1 + seed);
 }
 
+// A panel bent round a circular arc `len` long starting `f.x` below the seam, turning by `f.y`
+// over it: the cloth rolls over a knee the way wool does (no hard corner, no stretch), and
+// below the arc hangs straight on at the full angle. Must match Rags.fold_arc() (the bots).
+void fold_panel_arc(inout vec3 v, inout vec3 n, vec2 f, float len) {
+	float fd = -v.y - f.x;
+	if (fd <= 0.0 || abs(f.y) < 0.0005) {
+		return;
+	}
+	float t = min(fd, len);
+	float a = f.y * t / len;
+	float rr = len / f.y;
+	// centre line: arc then straight on
+	float y = -f.x - rr * sin(a);
+	float z = -rr * (1.0 - cos(a));
+	float rest = fd - t;
+	y -= rest * cos(a);
+	z -= rest * sin(a);
+	float cs = cos(a);
+	float sn = sin(a);
+	v.y = y - v.z * sn;
+	v.z = z + v.z * cs;
+	n.yz = vec2(n.y * cs - n.z * sn, n.y * sn + n.z * cs);
+}
+
 void fold_panel(inout vec3 v, inout vec3 n, vec2 f) {
 	float fd = -v.y - f.x;
 	if (fd > 0.0) {
@@ -161,7 +187,11 @@ void vertex() {
 	// about the panel's x axis, eased in over a few centimetres so the bend is soft; the far
 	// fold first, so the near one carries it round
 	fold_panel(VERTEX, NORMAL, fold2);
-	fold_panel(VERTEX, NORMAL, fold);
+	if (fold_len > 0.0) {
+		fold_panel_arc(VERTEX, NORMAL, fold, max(fold_len, 0.07));
+	} else {
+		fold_panel(VERTEX, NORMAL, fold);
+	}
 	// a cape on a stooped or leaning chest: rigid to the bone its back flared out behind like a
 	// stiff flap; below the shoulders let it fall along world down instead, each point by its
 	// drop from the pivot, then rest it on the torso (an ellipse) where that would sink it in
@@ -202,7 +232,9 @@ void vertex() {
 		float st = drop / 14.0;
 		for (int i = 0; i < 14; i++) {
 			float d = (float(i) + 0.5) * st;
-			float tf = gore_swing.x - gore_fold_f.y * smoothstep(0.0, 0.07, d - gore_fold_f.x)
+			float ramp_f = gore_fold_len > 0.0 ? clamp((d - gore_fold_f.x) / max(gore_fold_len, 0.07), 0.0, 1.0)
+					: smoothstep(0.0, 0.07, d - gore_fold_f.x);
+			float tf = gore_swing.x - gore_fold_f.y * ramp_f
 					- gore_fold_f2.y * smoothstep(0.0, 0.07, d - gore_fold_f2.x);
 			float tb = -gore_swing.y - gore_fold_b.y * smoothstep(0.0, 0.07, d - gore_fold_b.x);
 			float t = tf * wf + tb * wb;

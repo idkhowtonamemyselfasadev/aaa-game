@@ -71,6 +71,14 @@ var tuck_heel := 9.0
 var tuck_lie_peak := 0.0
 var tuck_aim := 0.0
 var tuck_k := 0.0
+## (11-08 g2) The knee fold rolls round an arc this long (m, local panel units) instead of a
+## 7 cm crease: eased toward TUCK_ROUND in the tuck and back to 0 (the old crease) once the
+## panels hang again. `tuck_shin` is the bent cloth's worst gap off the higher shin (m), for
+## the bots. `KNEEROUND_OFF=1` keeps the hard crease.
+const TUCK_ROUND := 0.15
+const KNEEROUND_OFF_ENV := "KNEEROUND_OFF"
+var fold_round := 0.0
+var tuck_shin := 9.0
 const TUCK_LIE0 := 0.62                  # thigh angle off the pelvis (rad) the panel starts to lie on it
 const TUCK_LIE1 := 0.95                  # ... and lies along it fully
 const TUCK_PAD := 0.075                  # m, the cloth over the thigh's top (thigh radius + wool)
@@ -573,6 +581,12 @@ func _hang_panels(fwd: float, bwd: float, k: float) -> void:
 	if bl * sy * c > h and h > 0.0:
 		fb = Vector2(h / c / sy, maxf(PI * 0.5 - bw - 0.05, 0.0) * hang)
 	fold_back = fold_back.lerp(fb, k)
+	if fold_round > 0.0:
+		# back from a tuck: the rolled knee fold eases back to the plain crease
+		fold_round = lerpf(fold_round, 0.0, k)
+		if fold_round <= 0.002:
+			fold_round = 0.0
+		_set_fold_len(fold_round)
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold2", fold_front2)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
@@ -599,6 +613,7 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	var push_f := -INF
 	var push_b := -INF
 	var gap_at := []
+	var shin_at := []
 	var heels := []
 	var lie := 0.0
 	var ff := fold_front
@@ -644,6 +659,9 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 				fa = plumb
 			if lie >= 0.9:
 				gap_at = [o, down, fz, kp, r]
+				for leg in _legs:
+					if _joint(leg[1]).is_equal_approx(kp):
+						shin_at = [o, down, fz, kp, _joint(leg[2])]
 		# the back panel's hem behind the heels
 		var br := _pivot_frame(_back)
 		var bdown: Vector3 = br[0]
@@ -680,7 +698,45 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 		fold_front = Vector2(fd if fd > 0.0 else fl, lerpf(fold_front.y if fold_front.x < 100.0 else 0.0, fy, maxf(k, lie)))
 	else:
 		fold_front = Vector2(1000.0, 0.0)
+	var round_to := 0.0 if OS.has_environment(KNEEROUND_OFF_ENV) else TUCK_ROUND
+	fold_round = lerpf(fold_round, round_to, maxf(k, lie))
+	if not shin_at.is_empty() and fold_front.x < 100.0 and fold_front.y > 0.3:
+		# the bent cloth's centre line against the higher shin (knee -> ankle)
+		var so: Vector3 = shin_at[0]
+		var sd: Vector3 = shin_at[1] * cos(_swing_f) + shin_at[2] * sin(_swing_f)
+		var sn: Vector3 = shin_at[2] * cos(_swing_f) - shin_at[1] * sin(_swing_f)
+		for i in 12:
+			var dl := fold_front.x + (fl - fold_front.x) * (i + 0.5) / 12.0
+			var q := fold_arc(dl, fold_front, fold_round)
+			var w := so + (sd * q.x + sn * q.y) * sy
+			var a0: Vector3 = shin_at[3]
+			var a1: Vector3 = shin_at[4]
+			var seg := a1 - a0
+			var u := clampf((w - a0).dot(seg) / maxf(seg.length_squared(), 1e-6), 0.0, 1.0)
+			tuck_shin = minf(tuck_shin, (w - (a0 + seg * u)).length())
+	_set_fold_len(fold_round)
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
+
+## The front panel's (and the gores' front ends') knee-fold arc length; 0 = the old crease.
+func _set_fold_len(v: float) -> void:
+	var fv := v if v > 0.002 else 0.0
+	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold_len", fv)
+	if has_method("_gore_fold_len"):
+		call("_gore_fold_len", fv)
+
+## Where a point `d` down a panel (local units, from the seam) sits once bent by fold `f`
+## round an arc `len` long: (down along the unbent panel, out along its normal). Matches
+## rag.gdshader fold_panel_arc().
+static func fold_arc(d: float, f: Vector2, len: float) -> Vector2:
+	var fd := d - f.x
+	if fd <= 0.0 or absf(f.y) < 0.0005:
+		return Vector2(d, 0.0)
+	len = maxf(len, 0.07)
+	var t := minf(fd, len)
+	var a := f.y * t / len
+	var rr := len / f.y
+	var rest := fd - t
+	return Vector2(f.x + rr * sin(a) + rest * cos(a), -rr * (1.0 - cos(a)) - rest * sin(a))
 
 ## The knee joint's distance out past the panel line (m, + = the cloth clear over the knee's top
 ## by that much less TUCK_PAD; the measure the bots gate on).
