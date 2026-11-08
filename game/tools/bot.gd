@@ -2665,6 +2665,14 @@ func _airstrike_test() -> void:
 			var cb := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Neck")).origin
 			var fw := p.body.global_basis.z
 			var lean := rad_to_deg(atan2((cb - hb).dot(fw), (cb - hb).dot(p.body.global_basis.y)))
+			if OS.has_environment("JA_TRACE"):
+				# (11-08 21:00) per tick: chest lean, where the face points (deg above the body's level), the posed legs
+				var hd := sk.global_transform.basis * sk.get_bone_global_pose(sk.find_bone("mixamorig_Head")).basis
+				var face := hd.z.normalized()
+				var fpitch := rad_to_deg(asin(clampf(face.dot(Vector3.UP), -1.0, 1.0)))
+				var lknee := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftLeg")).origin
+				var lfoot := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftFoot")).origin
+				print("JT u %.2f lean %+.1f face %+.1f spine %+.2f hip %.2f knee %.2f pel %+.2f neck %+.2f tilt %+.2f foot_back %+.2f foot_low %.2f arch %.2f fold %.2f" % [c.air_attack_u(), lean, fpitch, p.crumple.spine, p.crumple.hip, p.crumple.knee, p.crumple.pelvis, p.crumple.neck, p._ja_tilt, -(lfoot - hb).dot(fw), (hb - lfoot).dot(p.body.global_basis.y), p.ja_arch, p.ja_fold])
 			ja_lean_min = minf(ja_lean_min, lean)
 			ja_lean_max = maxf(ja_lean_max, lean)
 			var ends := _staff_ends(c)

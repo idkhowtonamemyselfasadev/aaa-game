@@ -1841,6 +1841,14 @@ var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0
 var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
+var JUMPATK_LATEFOLD := OS.get_environment("JUMPATK_LATEFOLD") == "1"
+static func _envf(n: String, d: float) -> float:
+	return float(OS.get_environment(n)) if OS.has_environment(n) else d
+var JA_ARCH_PEAK := _envf("JA_ARCH_PEAK", 0.28)
+var JA_ARCH_OFF0 := _envf("JA_ARCH_OFF0", 0.30)
+var JA_ARCH_OFF1 := _envf("JA_ARCH_OFF1", 0.40)
+var JA_FOLD_ON0 := _envf("JA_FOLD_ON0", 0.31)
+var JA_FOLD_ON1 := _envf("JA_FOLD_ON1", 0.50)
 var ja_arch := 0.0                      # (bots) this tick's arch / fold weights
 var ja_fold := 0.0
 var _tuck := 0.0
@@ -1952,8 +1960,16 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			# staff climbs overhead the back arches and the shins swing up behind (a drawn bow),
 			# then on the blow the body jackknifes, chest folding over the knees driven up to
 			# meet it, and opens back out to the tuck through the follow-through
+			# (11-08 21:00) the body leads the staff (hips -> chest -> arms -> staff): the arch lets go
+			# and the fold starts as the staff reaches its cock, so the chest is already coming over
+			# when the shaft passes vertical (frames: at u 0.46 the shaft was 60 deg up in front with
+			# the chest still 14 deg back and the face to the sky; the pose ease lags ~0.1 u).
+			# JUMPATK_LATEFOLD=1 = the old timing.
 			var arch := smoothstep(0.04, 0.32, au) * (1.0 - smoothstep(0.34, 0.46, au))
 			var fold := smoothstep(0.36, 0.56, au) * (1.0 - 0.6 * smoothstep(0.66, 1.0, au))
+			if not JUMPATK_LATEFOLD:
+				arch = smoothstep(0.04, JA_ARCH_PEAK, au) * (1.0 - smoothstep(JA_ARCH_OFF0, JA_ARCH_OFF1, au))
+				fold = smoothstep(JA_FOLD_ON0, JA_FOLD_ON1, au) * (1.0 - 0.6 * smoothstep(0.66, 1.0, au))
 			spine = lerpf(spine, JA_ARCH_SPINE, arch)
 			hip = lerpf(hip, JA_ARCH_HIP, arch)
 			knee = lerpf(knee, JA_ARCH_KNEE, arch)

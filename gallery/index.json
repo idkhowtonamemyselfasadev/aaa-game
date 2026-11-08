@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-2224-giant-turn-step.jpg",
-  "time": "2026-11-04T22:24:56Z",
-  "caption": "The phase-3 Ashen Knight (4.6x) turning on the spot: a boot comes off the turf as it steps round instead of spinning on still soles (GL frame; backlit, the armour reads dark).",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-2224-giant-turn-square.jpg",
-  "time": "2026-11-04T22:24:56Z",
-  "caption": "The giant squared up after the turn, feet set apart and planted (GL frame; still backlit and dark, no Forward+ lighting).",
-  "verdict": "fail"
- },
- {
   "file": "20261104-2320-knight-turn-lead.jpg",
   "time": "2026-11-04T23:20:00Z",
   "caption": "The Ashen Knight (2.2x) mid-turn on the spot, helm and chest swung ahead toward where it is turning (GL frame; backlit, the head lead is hard to read from this lens).",
@@ -891,6 +879,18 @@
   "file": "20261108-2100-jumpattack-fold.jpg",
   "time": "2026-11-08T21:00:00Z",
   "caption": "Jump attack fold at jt 0.48: body jackknifed over the blow, the staff driven down to the grass ahead, face under the hat reads; one robe panel sticks out as a flat, stiff red blade instead of trailing like cloth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2140-jumpattack-before.jpg",
+  "time": "2026-11-08T21:16:00Z",
+  "caption": "Jump attack at jt 0.38 BEFORE: the staff has already swung past vertical in front while the chest still leans 14 deg back and the face looks at the sky, so the body trails the blow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-2140-jumpattack-after.jpg",
+  "time": "2026-11-08T21:36:00Z",
+  "caption": "Same frame AFTER the body leads the staff: head and hat over the fists, face down on the target, chest coming forward; still GL-only and backlit at 11:00, legs hang under the hips at this tick.",
   "verdict": "fail"
  }
 ]
