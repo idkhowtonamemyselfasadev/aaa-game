@@ -100,8 +100,11 @@ var foot_fk := [Vector3.ZERO, Vector3.ZERO]       # world ankle joints as posed,
 ## pelvis/spine/neck bends: the trunk tips under arms that stay on a held staff (the jump
 ## attack's arch and fold carried both fists up to 0.38 m off the shaft without it).
 var keep_hands := 0.0
-const KEEP_CLAV_MAX := 0.45  # rad, most the collarbone reaches a held fist past the arm's length
+var KEEP_CLAV_MAX := float(OS.get_environment("CLAV_MAX")) if OS.has_environment("CLAV_MAX") else 0.45  # rad, most the collarbone reaches a held fist past the arm's length
 var KEEP_NOCLAV := OS.get_environment("JUMPATK_NOCLAV") == "1"
+const KEEP_CLAV_ITERS := 4
+var KEEP_CLAV_ONCE := OS.get_environment("JUMPATK_CLAVONCE") == "1"   # the 12:00 single step
+var keep_shrug := [0.0, 0.0]  # (bots) rad the collarbone reached each kept fist this tick
 var keep_err := [0.0, 0.0]   # (bots) m from each wrist to where the IK left it, after the keep
 var _kept := []              # skeleton-space [origin, basis] per hand (left, right), before the bends
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
@@ -397,20 +400,29 @@ func _keep_hands(skel: Skeleton3D) -> void:
 		# (11-08 12:00) out of the arm's reach (the arch carried the shoulder back from a fist
 		# cocked high over the hat): the collarbone lifts/reaches the shoulder toward it first,
 		# as a real shoulder girdle does, up to KEEP_CLAV_MAX (env JUMPATK_NOCLAV=1 = off)
-		var over := s.distance_to(t) - (a + b) * 0.995
+		# (11-08 13:00) iterated: one small-angle step (over / collarbone length) fell short
+		# whenever the shoulder could not swing straight at the wrist (the slung start's cocked
+		# tick kept the right wrist 0.043 m short); up to KEEP_CLAV_ITERS steps, the sum capped
 		var cl := skel.find_bone("mixamorig_%sShoulder" % sides[i])
-		if over > 0.0 and cl >= 0 and not KEEP_NOCLAV:
+		var shrug := 0.0
+		for it in (KEEP_CLAV_ITERS if not KEEP_CLAV_ONCE else 1):
+			var over := s.distance_to(t) - (a + b) * 0.995
+			if over <= 0.0 or cl < 0 or KEEP_NOCLAV or shrug >= KEEP_CLAV_MAX - 1e-4:
+				break
 			var c := skel.get_bone_global_pose(cl).origin
 			var arm := s - c
 			var to_t := t - c
 			var full := arm.angle_to(to_t)
-			var step := minf(full, minf(over / maxf(arm.length(), 1e-3), KEEP_CLAV_MAX))
-			if full > 1e-4:
-				var ax := arm.cross(to_t).normalized()
-				_swing(skel, cl, arm, arm.rotated(ax, step))
-				s = skel.get_bone_global_pose(ua).origin
-				e = skel.get_bone_global_pose(fa).origin
-				h = skel.get_bone_global_pose(hd).origin
+			var step := minf(full, minf(over / maxf(arm.length(), 1e-3), KEEP_CLAV_MAX - shrug))
+			if full <= 1e-4:
+				break
+			var ax := arm.cross(to_t).normalized()
+			_swing(skel, cl, arm, arm.rotated(ax, step))
+			shrug += step
+			s = skel.get_bone_global_pose(ua).origin
+			e = skel.get_bone_global_pose(fa).origin
+			h = skel.get_bone_global_pose(hd).origin
+		keep_shrug[i] = shrug
 		var d := t - s
 		var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.999)
 		var dn := d.normalized()

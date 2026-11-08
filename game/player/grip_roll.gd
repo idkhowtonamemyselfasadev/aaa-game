@@ -38,6 +38,9 @@ var last_roll := [0.0, 0.0]  # (bots) rad rolled about the shaft this tick, righ
 var feed_on := true
 var _fist_local := [null, null]   # per hand: fist centre - wrist, in the hand's frame (skeleton space)
 var last_feed := [0.0, 0.0]       # (bots) m the wrist was moved this tick, right / left
+const CLAV_MAX := 0.45            # rad, most the feed shrugs a collarbone toward an out-of-reach wrist
+var NO_SHRUG := OS.get_environment("GRIP_NOSHRUG") == "1"
+var last_shrug := 0.0             # (bots) rad the feed shrugged a collarbone this tick (largest)
 
 func _ready() -> void:
 	if OS.has_environment("ROLL_MAX"):
@@ -55,7 +58,7 @@ func _ready() -> void:
 			continue
 		# the line a haft runs through a closed fist: across the palm, pinky to index knuckle
 		var g := (skel.get_bone_rest(ib).origin - skel.get_bone_rest(pb).origin).normalized()
-		_sides.append({"arm": skel.find_bone("mixamorig_%sArm" % side), "side": side, "hand": hb, "fore": fb, "grip": g, "sign": 1.0, "hs": Basis(), "init": false, "tilt": Quaternion.IDENTITY})
+		_sides.append({"clav": skel.find_bone("mixamorig_%sShoulder" % side), "arm": skel.find_bone("mixamorig_%sArm" % side), "side": side, "hand": hb, "fore": fb, "grip": g, "sign": 1.0, "hs": Basis(), "init": false, "tilt": Quaternion.IDENTITY})
 
 	if OS.has_environment("HERO_GRIPLAG"):
 		feed_on = false
@@ -116,6 +119,23 @@ func _shift_wrist(skel: Skeleton3D, s: Dictionary, move: Vector3) -> void:
 	var l1 := A.distance_to(B)
 	var l2 := B.distance_to(C)
 	var T := C + move
+	# (13:00 11-08) past the arm's reach the collarbone lifts/reaches the shoulder toward the
+	# wrist first, as a real shoulder girdle does, up to CLAV_MAX (env GRIP_NOSHRUG=1 = off):
+	# the fist then meets a shaft cocked high behind the head instead of hanging off it
+	var over := A.distance_to(T) - (l1 + l2) * 0.995
+	var cl: int = s.get("clav", -1)
+	if over > 0.0 and cl >= 0 and not NO_SHRUG:
+		var c := skel.get_bone_global_pose(cl).origin
+		var arm := A - c
+		var to_t := T - c
+		var full := arm.angle_to(to_t)
+		var stp := minf(full, minf(over / maxf(arm.length(), 1e-3), CLAV_MAX))
+		if full > 1e-4:
+			_aim_bone(skel, cl, arm, arm.rotated(arm.cross(to_t).normalized(), stp))
+			A = skel.get_bone_global_pose(ab).origin
+			B = skel.get_bone_global_pose(fb).origin
+			C = skel.get_bone_global_pose(hb).origin
+			last_shrug = maxf(last_shrug, stp)
 	var at := T - A
 	var d := clampf(at.length(), absf(l1 - l2) + 1e-4, (l1 + l2) * 0.999)
 	if at.length() < 1e-6:
@@ -159,6 +179,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 				s.erase("tilt_on")
 				s["tilt"] = Quaternion.IDENTITY
 		return
+	last_shrug = 0.0
 	var sb := skel.global_basis.orthonormalized()
 	var S := (sb.inverse() * staff.global_basis.orthonormalized()).orthonormalized()
 	var a := S.y.normalized()
@@ -195,7 +216,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 			# the largest share of the shift (1, 2/3, 1/3) whose wrist stays within BEND_LIMIT;
 			# else none: the fist rides off the shaft that tick rather than a wrist bent back
 			var ab: int = s["arm"]
-			var keep := [skel.get_bone_pose_rotation(ab), skel.get_bone_pose_rotation(fb)]
+			var cb: int = s.get("clav", -1)
+			var keep := [skel.get_bone_pose_rotation(ab), skel.get_bone_pose_rotation(fb), skel.get_bone_pose_rotation(cb) if cb >= 0 else Quaternion.IDENTITY]
 			var inv := skel.global_transform.affine_inverse()
 			var o := inv * staff.global_position
 			var ax_s := (inv.basis * staff.global_basis.y).normalized()
@@ -217,6 +239,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 					print("  k %.2f bend %.0f" % [k, rad_to_deg(bend2)])
 				skel.set_bone_pose_rotation(ab, keep[0])
 				skel.set_bone_pose_rotation(fb, keep[1])
+				if cb >= 0:
+					skel.set_bone_pose_rotation(cb, keep[2])
 				if bend2 <= lim:
 					lo = k
 					lo_bend = bend2

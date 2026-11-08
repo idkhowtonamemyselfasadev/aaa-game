@@ -2567,7 +2567,7 @@ func _airstrike_test() -> void:
 				ja_gap = Vector2(maxf(ja_gap.x, c.fist_gap[0]), maxf(ja_gap.y, c.fist_gap[1]))
 				if maxf(c.fist_gap[0], c.fist_gap[1]) > 0.05:
 					ja_loose += 1
-			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f blend %.2f draw %.3f keep %.2f hold %.2f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error, c._blend, c._air_draw_t, p.crumple.keep_hands, p.hand_rest.hold])
+			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f blend %.2f draw %.3f keep %.2f hold %.2f shrug L %.2f R %.2f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error, c._blend, c._air_draw_t, p.crumple.keep_hands, p.hand_rest.hold, p.crumple.keep_shrug[0], p.crumple.keep_shrug[1]])
 			# the chest's lean off the body's up, forward + (hips -> top of the spine, posed)
 			var sk: Skeleton3D = c.skel
 			await sk.skeleton_updated
