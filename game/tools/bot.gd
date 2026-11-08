@@ -2301,7 +2301,7 @@ const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the f
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 ## (11-08) each fist's centre to the shaft's axis through the air attack (crumple.keep_hands: the
 ## arch and fold carried them up to 0.38 m off it; the 10:00 cocked key's hands were then out of reach)
-const JA_FIST_GATE := 0.06
+const JA_FIST_GATE := 0.04            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower
 const JA_LOOSE_GATE := 0
 func _jump_test() -> void:
 	var p := _player
@@ -2562,11 +2562,12 @@ func _airstrike_test() -> void:
 			ja_fold = maxf(ja_fold, p.ja_fold)
 			ja_grip = maxf(ja_grip, c.last_grip_error)
 			# (JA_SHEATHED: the snatch off the back is judged from the arch's peak, u 0.30, on)
-			if not OS.has_environment("JA_SHEATHED") or c.air_attack_u() >= 0.30:
+			# (11-08 12:00: from u 0.21, the fists now close with the snatch's last half; was 0.30 at 7 cm)
+			if not OS.has_environment("JA_SHEATHED") or c.air_attack_u() >= 0.205:
 				ja_gap = Vector2(maxf(ja_gap.x, c.fist_gap[0]), maxf(ja_gap.y, c.fist_gap[1]))
-				if maxf(c.fist_gap[0], c.fist_gap[1]) > (0.07 if OS.has_environment("JA_SHEATHED") else 0.05):
+				if maxf(c.fist_gap[0], c.fist_gap[1]) > 0.05:
 					ja_loose += 1
-			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error])
+			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f blend %.2f draw %.3f keep %.2f hold %.2f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error, c._blend, c._air_draw_t, p.crumple.keep_hands, p.hand_rest.hold])
 			# the chest's lean off the body's up, forward + (hips -> top of the spine, posed)
 			var sk: Skeleton3D = c.skel
 			await sk.skeleton_updated

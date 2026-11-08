@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261104-1530-pivot-plant.jpg",
-  "time": "2026-11-04T15:30:00Z",
-  "caption": "GL quick-look: the plant of the run pivot from behind, head and shoulders already turning toward the new line while the hips still face the old one; tall grass hides the skid foot, not Forward+.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-1623-stop-brace.jpg",
   "time": "2026-11-04T16:23:14Z",
   "caption": "Planted stop at 0.17 s (GL): front leg thrown out and braced, back heel up on the ball of the foot, arms out for balance; still wrong: the lens sees the hero from behind in shade, so the heel strike cannot be judged.",
@@ -897,6 +891,12 @@
   "file": "20261108-1215-jumpattack-before.jpg",
   "time": "2026-11-08T12:15:00Z",
   "caption": "Same moment before the fix: both open hands reach up beside the hat while the staff still lags across the back (slow 0.22 s air snatch plus trunk bends carrying the arms off).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-1242-jumpsnatch.jpg",
+  "time": "2026-11-08T12:42:36Z",
+  "caption": "Jump attack mid-snatch, side-on: the staff swings off the back across the shoulders with the right fist already on it; backlit, the figure reads as a silhouette and the left hand is still rising from the hip.",
   "verdict": "fail"
  }
 ]

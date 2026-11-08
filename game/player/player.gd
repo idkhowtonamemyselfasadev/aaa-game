@@ -818,6 +818,9 @@ func _update_hand_rest(delta: float) -> void:
 	var k := 1.0 - exp(-HAND_RATE * delta)
 	hand_rest.weight = lerpf(hand_rest.weight, 0.0 if owned else 1.0, k)
 	hand_rest.hold = lerpf(hand_rest.hold, combat._blend if combat != null else 0.0, k)
+	if combat != null and combat._air_draw_t >= 0.0 and combat.air_snatch_late():
+		# snatched off the back in the air: the fingers close with the staff's arrival
+		hand_rest.hold = maxf(hand_rest.hold, combat._blend)
 	if combat != null and combat._unhold_draw and (crumple == null or crumple.plant <= 0.01):
 		# up from a knock-down with the staff: the knock-down pose had both fists closed on the
 		# shaft, so the grip stays closed (easing it back in from open put the fists 0.1 m off it)

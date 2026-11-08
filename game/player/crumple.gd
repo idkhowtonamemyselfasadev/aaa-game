@@ -100,6 +100,8 @@ var foot_fk := [Vector3.ZERO, Vector3.ZERO]       # world ankle joints as posed,
 ## pelvis/spine/neck bends: the trunk tips under arms that stay on a held staff (the jump
 ## attack's arch and fold carried both fists up to 0.38 m off the shaft without it).
 var keep_hands := 0.0
+const KEEP_CLAV_MAX := 0.45  # rad, most the collarbone reaches a held fist past the arm's length
+var KEEP_NOCLAV := OS.get_environment("JUMPATK_NOCLAV") == "1"
 var keep_err := [0.0, 0.0]   # (bots) m from each wrist to where the IK left it, after the keep
 var _kept := []              # skeleton-space [origin, basis] per hand (left, right), before the bends
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
@@ -392,6 +394,23 @@ func _keep_hands(skel: Skeleton3D) -> void:
 		var t: Vector3 = h.lerp(_kept[i][0], keep_hands)
 		var a := s.distance_to(e)
 		var b := e.distance_to(h)
+		# (11-08 12:00) out of the arm's reach (the arch carried the shoulder back from a fist
+		# cocked high over the hat): the collarbone lifts/reaches the shoulder toward it first,
+		# as a real shoulder girdle does, up to KEEP_CLAV_MAX (env JUMPATK_NOCLAV=1 = off)
+		var over := s.distance_to(t) - (a + b) * 0.995
+		var cl := skel.find_bone("mixamorig_%sShoulder" % sides[i])
+		if over > 0.0 and cl >= 0 and not KEEP_NOCLAV:
+			var c := skel.get_bone_global_pose(cl).origin
+			var arm := s - c
+			var to_t := t - c
+			var full := arm.angle_to(to_t)
+			var step := minf(full, minf(over / maxf(arm.length(), 1e-3), KEEP_CLAV_MAX))
+			if full > 1e-4:
+				var ax := arm.cross(to_t).normalized()
+				_swing(skel, cl, arm, arm.rotated(ax, step))
+				s = skel.get_bone_global_pose(ua).origin
+				e = skel.get_bone_global_pose(fa).origin
+				h = skel.get_bone_global_pose(hd).origin
 		var d := t - s
 		var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.999)
 		var dn := d.normalized()

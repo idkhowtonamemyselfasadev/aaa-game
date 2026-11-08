@@ -95,7 +95,7 @@ const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0
 	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
 	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
-	[0.30, -12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT); (11-08 11:00) hands 6 cm lower: at 2.18 the left arm ran out of reach and its fist hung 0.13 m off the shaft
+	[0.30, -12.0, 142.0, Vector3(-0.05, 2.10, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT); (11-08 11:00) hands 6 cm lower: at 2.18 the left arm ran out of reach and its fist hung 0.13 m off the shaft; (11-08 12:00) (-0.05, 2.10): at (-0.07, 2.12) the right arm was out of reach for the key tick (fist 0.04-0.10 m off), cock 39.1 -> 36.8 deg
 	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
 	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
 # Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),
@@ -153,6 +153,14 @@ static func _air_old() -> Dictionary:
 const AIR_DRAW_TIME := 0.12
 const AIR_ROLL_RATE := 16.0
 var JUMPATK_SLOWSNATCH := OS.get_environment("JUMPATK_SLOWSNATCH") == "1"
+## (11-08 12:00) in the snatch's last half the grip roll's feed already takes the fists onto the
+## shaft (they rode 0.09-0.15 m off it for ~5 ticks after the snatch: the gate waited on the
+## fingers closing, eased at HAND_RATE, and on the full draw). JUMPATK_LATEFEED=1 = old gate.
+var JUMPATK_LATEFEED := OS.get_environment("JUMPATK_LATEFEED") == "1"
+
+## True while a snatch off the back is blended under an air move and has passed its half.
+func air_snatch_late() -> bool:
+	return not JUMPATK_LATEFEED and not JUMPATK_SLOWSNATCH and is_air_attack() and _blend > 0.5
 const AIR_DIP := 0.42          # the jump attack's strike tips down from the apex
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
@@ -1164,6 +1172,8 @@ func physics_step(delta: float) -> void:
 		var hr: HandRest = player.get("hand_rest")
 		var held := hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
 			and (state in [READY, ATTACKING, CHARGING, PLUNGING] or (state == DRAWING and _unhold_draw))
+		if not held and air_snatch_late() and hr != null and hr.weight > 0.5:
+			held = true                        # the fists close round the shaft as it arrives
 		# (11-08) back from a knock-down the fists are already round the shaft: the roll comes in
 		# quickly with the draw instead of easing in after it (the fists rode 0.1 m off for 3 ticks)
 		var rate := UNHOLD_ROLL_RATE if _unhold_draw else 6.0
