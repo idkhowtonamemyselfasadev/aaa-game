@@ -1966,6 +1966,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	crumple.active = true
 	# (11-08) with the staff in both hands the trunk's bends no longer carry the fists off it
 	crumple.keep_hands = _jp if armed and not JUMPATK_LOOSEHANDS else 0.0
+	# the kept fists aimed onto the shaft once the staff is in them (a snatch eases it in)
+	crumple.keep_staff = combat.staff if armed and combat != null else null
+	crumple.keep_shaft = clampf((combat._blend - 0.5) * 2.5, 0.0, 1.0) if armed and combat != null else 0.0
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
 	crumple.knee = lerpf(crumple.knee, knee * _jp, k)

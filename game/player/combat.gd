@@ -95,7 +95,7 @@ const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0
 	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
 	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
-	[0.30, -12.0, 142.0, Vector3(-0.05, 2.10, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT); (11-08 11:00) hands 6 cm lower: at 2.18 the left arm ran out of reach and its fist hung 0.13 m off the shaft; (11-08 12:00) (-0.05, 2.10): at (-0.07, 2.12) the right arm was out of reach for the key tick (fist 0.04-0.10 m off), cock 39.1 -> 36.8 deg
+	[0.30, -12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT); (11-08 11:00) hands 6 cm lower: at 2.18 the left arm ran out of reach and its fist hung 0.13 m off the shaft; (11-08 12:00) (-0.05, 2.10): at (-0.07, 2.12) the right arm was out of reach for the key tick (fist 0.04-0.10 m off), cock 39.1 -> 36.8 deg; (11-08 14:00) back to (-0.07, 2.12), cock 39.1: Crumple's keep now aims the fists onto the shaft (JUMPATK_NOSHAFT), so the out-of-reach tick no longer loses the right fist
 	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
 	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
 # Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),

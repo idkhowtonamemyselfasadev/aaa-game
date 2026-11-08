@@ -2295,13 +2295,13 @@ func _scree_test() -> void:
 		return _combat_done(false, "the wall face dropped the hero at once")
 	_combat_done(true, "a loose stone is refused, a wall face is caught")
 
-const JA_COCK_GATE := 36.0             # (11-08 10:00) 25 -> 36 with the head tipped clear (now ~40)
+const JA_COCK_GATE := 38.0             # (11-08 10:00) 25 -> 36 with the head tipped clear; (11-08 14:00) 36 -> 38 with the deep key back (39.1)
 const JA_HAT_GATE := 0.02
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 ## (11-08) each fist's centre to the shaft's axis through the air attack (crumple.keep_hands: the
 ## arch and fold carried them up to 0.38 m off it; the 10:00 cocked key's hands were then out of reach)
-const JA_FIST_GATE := 0.04            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower
+const JA_FIST_GATE := 0.02            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower; (11-08 14:00) 0.04 -> 0.02: the keep aims the fists onto the shaft
 const JA_LOOSE_GATE := 0
 func _jump_test() -> void:
 	var p := _player
@@ -2567,6 +2567,7 @@ func _airstrike_test() -> void:
 				ja_gap = Vector2(maxf(ja_gap.x, c.fist_gap[0]), maxf(ja_gap.y, c.fist_gap[1]))
 				if maxf(c.fist_gap[0], c.fist_gap[1]) > 0.05:
 					ja_loose += 1
+			if OS.has_environment("JA_DBG"): p.crumple.gap_staff = c.staff; print("JA gaps in crumple %s" % str(p.crumple.gap_trace))
 			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f blend %.2f draw %.3f keep %.2f hold %.2f shrug L %.2f R %.2f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error, c._blend, c._air_draw_t, p.crumple.keep_hands, p.hand_rest.hold, p.crumple.keep_shrug[0], p.crumple.keep_shrug[1]])
 			# the chest's lean off the body's up, forward + (hips -> top of the spine, posed)
 			var sk: Skeleton3D = c.skel

@@ -103,10 +103,15 @@ var keep_hands := 0.0
 var KEEP_CLAV_MAX := float(OS.get_environment("CLAV_MAX")) if OS.has_environment("CLAV_MAX") else 0.45  # rad, most the collarbone reaches a held fist past the arm's length
 var KEEP_NOCLAV := OS.get_environment("JUMPATK_NOCLAV") == "1"
 const KEEP_CLAV_ITERS := 4
+var KEEP_NOSHAFT := OS.get_environment("JUMPATK_NOSHAFT") == "1"
 var KEEP_CLAV_ONCE := OS.get_environment("JUMPATK_CLAVONCE") == "1"   # the 12:00 single step
 var keep_shrug := [0.0, 0.0]  # (bots) rad the collarbone reached each kept fist this tick
 var keep_err := [0.0, 0.0]   # (bots) m from each wrist to where the IK left it, after the keep
 var _kept := []              # skeleton-space [origin, basis] per hand (left, right), before the bends
+var keep_staff: Node3D = null  # the staff held in both fists: the kept wrists aimed so the fists sit on its axis
+var keep_shaft := 0.0        # weight of that aim (eases in as a snatched staff arrives in the hands)
+var gap_staff: Node3D = null # (bots, JA_DBG) the held staff: fist gaps measured inside the keep
+var gap_trace := []          # (bots) [before bends R, L, before keep R, L, after keep R, L] m
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -133,6 +138,20 @@ func _process_modification_with_delta(_delta: float) -> void:
 				break
 			var kp := skel.get_bone_global_pose(kb)
 			_kept.append([kp.origin, kp.basis.orthonormalized()])
+	# (11-08 14:00) the arm IK can leave a fist off the shaft on a tick its wrist target is out
+	# of the arm's reach (the slung start's deep-cocked tick: R 0.135 m before any bend); the
+	# keep then restored that fault faithfully. Aimed at the shaft instead (the hand's turn is
+	# kept, so moving the wrist moves the fist with it), the collarbone shrug lends the reach
+	# the IK lacked (env JUMPATK_NOSHAFT=1 = off)
+	if _kept.size() == 2 and keep_staff != null and keep_shaft > 0.0 and not KEEP_NOSHAFT:
+		var inv := skel.global_transform.affine_inverse()
+		var o := inv * keep_staff.global_position
+		var ax := (inv.basis * keep_staff.global_basis.y).normalized()
+		for i in 2:
+			var f := inv * HandRest.fist_center(skel, ["Left", "Right"][i])
+			_kept[i][0] += (o + ax * ax.dot(f - o) - f) * keep_shaft
+	if gap_staff != null:
+		gap_trace = _fist_gaps(skel)
 	if square > 0.0:
 		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
 		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
@@ -200,7 +219,11 @@ func _process_modification_with_delta(_delta: float) -> void:
 		if settle > 0:
 			_settle_leg(skel, "Left" if settle == 1 else "Right", up)
 	if _kept.size() == 2:
+		if gap_staff != null:
+			gap_trace.append_array(_fist_gaps(skel))
 		_keep_hands(skel)
+		if gap_staff != null:
+			gap_trace.append_array(_fist_gaps(skel))
 	var sides := ["Left", "Right"]
 	for i in 2:
 		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
@@ -379,6 +402,16 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float, orient :=
 	palm = palm - dir * palm.dot(dir)
 	if flat.length() > 1e-3 and palm.length() > 1e-3:
 		_swing(skel, hd, palm, flat)
+
+## (bots) each fist centre's distance to the held staff's axis, [right, left], m
+func _fist_gaps(skel: Skeleton3D) -> Array:
+	var o := gap_staff.global_position
+	var ax := gap_staff.global_basis.y.normalized()
+	var out := []
+	for side in ["Right", "Left"]:
+		var f := HandRest.fist_center(skel, side)
+		out.append(f.distance_to(o + ax * ax.dot(f - o)))
+	return out
 
 ## Each arm turned back so its wrist lands where the IK left it before the trunk bends (the
 ## elbow kept in the plane the bends carried it to, so it bows the way it did), then the hand
