@@ -2295,6 +2295,8 @@ func _scree_test() -> void:
 		return _combat_done(false, "the wall face dropped the hero at once")
 	_combat_done(true, "a loose stone is refused, a wall face is caught")
 
+const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
+const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 func _jump_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0                    # the 0.12 s windows need real-time ticks
@@ -2528,6 +2530,13 @@ func _airstrike_test() -> void:
 	var hit_air := false
 	var second := false
 	var tip_min := 99.0
+	var ja_arch := 0.0
+	var ja_fold := 0.0
+	var ja_grip := 0.0
+	var ja_lean_min := 99.0
+	var ja_lean_max := -99.0
+	var ja_spine_min := 99.0
+	var ja_spine_max := -99.0
 	for i in 90:
 		await get_tree().physics_frame
 		if c.hit_active:
@@ -2535,6 +2544,21 @@ func _airstrike_test() -> void:
 			tip_min = minf(tip_min, Vector2(tp.x - post.global_position.x, tp.z - post.global_position.z).length())
 		if post.hits > h0 and not p.is_on_floor():
 			hit_air = true
+		if c.is_air_attack():
+			ja_arch = maxf(ja_arch, p.ja_arch)
+			ja_fold = maxf(ja_fold, p.ja_fold)
+			ja_grip = maxf(ja_grip, c.last_grip_error)
+			# the chest's lean off the body's up, forward + (hips -> top of the spine, posed)
+			var sk: Skeleton3D = c.skel
+			await sk.skeleton_updated
+			ja_spine_min = minf(ja_spine_min, p.crumple.spine)
+			ja_spine_max = maxf(ja_spine_max, p.crumple.spine)
+			var hb := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Hips")).origin
+			var cb := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Neck")).origin
+			var fw := p.body.global_basis.z
+			var lean := rad_to_deg(atan2((cb - hb).dot(fw), (cb - hb).dot(p.body.global_basis.y)))
+			ja_lean_min = minf(ja_lean_min, lean)
+			ja_lean_max = maxf(ja_lean_max, lean)
 		if i == 12:
 			p.bot_attack = true                    # a second press in the same jump: no second air swing
 		if c.air_attacks > 1:
@@ -2542,6 +2566,9 @@ func _airstrike_test() -> void:
 		if p.is_on_floor() and not c.is_attacking():
 			break
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
+	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
+	if not p.JUMPATK_FLAT and (ja_arch < 0.8 or ja_fold < 0.8 or ja_lean_max - ja_lean_min < JA_LEAN_GATE or ja_grip > JA_GRIP_GATE):
+		return _combat_done(false, "the jump attack is swung with the arms alone (no arch and fold of the body) or the hands leave the staff")
 	if not started or post.hits <= h0:
 		return _combat_done(false, "a light at the top of a jump did not strike down into the post")
 	if second:

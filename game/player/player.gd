@@ -1802,8 +1802,20 @@ func _touch_down() -> void:
 ## ground as the fall gathers speed, then the knees give on touchdown, deeper after a real
 ## drop, with the chest folding over them and the arms swinging down for balance.
 var _jp := 0.0                          # 0..1 how much the jump pose owns the legs
+# the jump attack's whole-body arc (see `_jump_pose`); JUMPATK_FLAT = the old arms-only swing
+const JA_ARCH_SPINE := -0.40            # back arched as the staff climbs overhead
+const JA_ARCH_HIP := 0.12               # thighs swung back under the hips
+const JA_ARCH_KNEE := 1.55              # shins up behind
+const JA_FOLD_SPINE := 0.64             # chest folded down over the blow
+const JA_FOLD_HIP := 1.30               # knees driven up to meet the chest
+const JA_FOLD_KNEE := 1.50
+var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
+var ja_arch := 0.0                      # (bots) this tick's arch / fold weights
+var ja_fold := 0.0
 var _tuck := 0.0
 func _jump_pose(delta: float, busy: bool, armed := false) -> void:
+	ja_arch = 0.0
+	ja_fold = 0.0
 	if crumple == null or gliding or climbing or mantle_t >= 0.0 or dead_t >= 0.0 or down_t >= 0.0:
 		return
 	var air := _air_t >= 0.0 and (_jumped or _air_t > 0.15) and not busy
@@ -1900,6 +1912,25 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		arm = 0.0                              # the staff's IK owns the arms
 		elbow = 0.0
 		spine *= 0.5
+		var au: float = combat.air_attack_u() if combat != null else -1.0
+		if air and au >= 0.0 and not JUMPATK_FLAT:
+			# (11-08) the jump attack is thrown with the whole body, not the arms alone: as the
+			# staff climbs overhead the back arches and the shins swing up behind (a drawn bow),
+			# then on the blow the body jackknifes, chest folding over the knees driven up to
+			# meet it, and opens back out to the tuck through the follow-through
+			var arch := smoothstep(0.04, 0.32, au) * (1.0 - smoothstep(0.34, 0.46, au))
+			var fold := smoothstep(0.36, 0.56, au) * (1.0 - 0.6 * smoothstep(0.66, 1.0, au))
+			spine = lerpf(spine, JA_ARCH_SPINE, arch)
+			hip = lerpf(hip, JA_ARCH_HIP, arch)
+			knee = lerpf(knee, JA_ARCH_KNEE, arch)
+			ankle = lerpf(ankle, 0.55, arch)        # toes pointed behind
+			stride *= 1.0 - 0.6 * arch
+			spine = lerpf(spine, JA_FOLD_SPINE, fold)
+			hip = lerpf(hip, JA_FOLD_HIP, fold)
+			knee = lerpf(knee, JA_FOLD_KNEE, fold)
+			ankle = lerpf(ankle, 0.15, fold)
+			ja_arch = arch
+			ja_fold = fold
 	crumple.active = true
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)

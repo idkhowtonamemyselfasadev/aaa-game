@@ -296,6 +296,10 @@ func legs_free() -> bool:
 func is_air_attack() -> bool:
 	return state == ATTACKING and _atk.get("air", false)
 
+## 0..1 through the jump attack's clip (-1 when no jump attack is swinging).
+func air_attack_u() -> float:
+	return clampf(t / float(_atk["dur"]), 0.0, 1.0) if is_air_attack() else -1.0
+
 func current_attack() -> Dictionary:
 	return _atk
 
