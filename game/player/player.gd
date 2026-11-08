@@ -1814,6 +1814,12 @@ const JA_FOLD_KNEE := 1.50
 const JA_ARCH_PELVIS := -0.26
 const JA_FOLD_PELVIS := 0.14
 var JUMPATK_NOPELVIS := OS.get_environment("JUMPATK_NOPELVIS") == "1"
+# (11-08) the head: chin tucked through the arch so the eyes stay on the foe (the arched back
+# alone tipped the face to the sky), then dropped with the fold to follow the ferrule down
+const JA_ARCH_NECK := 0.0
+const JA_FOLD_NECK := -0.30
+var JUMPATK_NONECK := OS.get_environment("JUMPATK_NONECK") == "1"
+var _ja_neck := 0.0
 var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
 var ja_arch := 0.0                      # (bots) this tick's arch / fold weights
@@ -1851,6 +1857,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var ankle := 0.0
 	var flat := 0.0
 	var pel := 0.0
+	var nk := 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -1940,6 +1947,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			ja_fold = fold
 			if not JUMPATK_NOPELVIS:
 				pel = JA_ARCH_PELVIS * arch + JA_FOLD_PELVIS * fold
+			if not JUMPATK_NONECK:
+				nk = JA_ARCH_NECK * arch + JA_FOLD_NECK * fold
 	crumple.active = true
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
@@ -1955,6 +1964,11 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		if pel == 0.0 and absf(_ja_pelvis) < 0.002:
 			_ja_pelvis = 0.0
 		crumple.pelvis = _ja_pelvis
+	if nk != 0.0 or _ja_neck != 0.0:
+		_ja_neck = lerpf(_ja_neck, nk * _jp, k)
+		if nk == 0.0 and absf(_ja_neck) < 0.002:
+			_ja_neck = 0.0
+		crumple.neck = _ja_neck
 	if push:
 		# the push frames are drawn as posed, not eased in: the crouch only lasts a frame or two
 		crumple.hip = hip
@@ -1980,6 +1994,9 @@ func _clear_jump_pose() -> void:
 	_jp = 0.0
 	_tuck = 0.0
 	_ja_pelvis = 0.0
+	if _ja_neck != 0.0 and crumple != null:
+		crumple.neck = 0.0
+	_ja_neck = 0.0
 	if crumple == null:
 		return
 	crumple.leg_aim = 0.0

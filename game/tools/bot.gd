@@ -2295,6 +2295,8 @@ func _scree_test() -> void:
 		return _combat_done(false, "the wall face dropped the hero at once")
 	_combat_done(true, "a loose stone is refused, a wall face is caught")
 
+const JA_COCK_GATE := 25.0
+const JA_HAT_GATE := 0.02
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 func _jump_test() -> void:
@@ -2537,6 +2539,9 @@ func _airstrike_test() -> void:
 	var ja_lean_max := -99.0
 	var ja_spine_min := 99.0
 	var ja_spine_max := -99.0
+	var ja_cock := -99.0                       # deg the tip leans back past vertical (+ behind the head)
+	var ja_hat := 9.0                          # m, the shaft's closest pass to the hat
+	var ja_neck := Vector2(9.0, -9.0)
 	for i in 90:
 		await get_tree().physics_frame
 		if c.hit_active:
@@ -2559,6 +2564,16 @@ func _airstrike_test() -> void:
 			var lean := rad_to_deg(atan2((cb - hb).dot(fw), (cb - hb).dot(p.body.global_basis.y)))
 			ja_lean_min = minf(ja_lean_min, lean)
 			ja_lean_max = maxf(ja_lean_max, lean)
+			var ends := _staff_ends(c)
+			var tpp := c.tip_position()
+			var tip_e: Vector3 = ends[1] if ends[1].distance_to(tpp) < ends[0].distance_to(tpp) else ends[0]
+			var but_e: Vector3 = ends[0] if tip_e == ends[1] else ends[1]
+			var ax: Vector3 = (tip_e - but_e).normalized()
+			ja_cock = maxf(ja_cock, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))))
+			var hm := _hat_margin(p, ends[0], ends[1])
+			if OS.has_environment("JA_DBG"): print("JA u %.2f hat %.3f cock %.1f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y)))])
+			ja_hat = minf(ja_hat, hm)
+			ja_neck = Vector2(minf(ja_neck.x, p.crumple.neck), maxf(ja_neck.y, p.crumple.neck))
 		if i == 12:
 			p.bot_attack = true                    # a second press in the same jump: no second air swing
 		if c.air_attacks > 1:
@@ -2567,6 +2582,9 @@ func _airstrike_test() -> void:
 			break
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
+	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
+	if not c.JUMPATK_NOCOCK and (ja_cock < JA_COCK_GATE or ja_hat < JA_HAT_GATE):
+		return _combat_done(false, "the jump attack's staff is not drawn back behind the head at the arch, or the shaft cuts the hat")
 	if not p.JUMPATK_FLAT and (ja_arch < 0.8 or ja_fold < 0.8 or ja_lean_max - ja_lean_min < JA_LEAN_GATE or ja_grip > JA_GRIP_GATE):
 		return _combat_done(false, "the jump attack is swung with the arms alone (no arch and fold of the body) or the hands leave the staff")
 	if not started or post.hits <= h0:

@@ -95,7 +95,7 @@ const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0
 	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
 	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
-	[0.36, -20.0, 106.0, Vector3(0.15, 1.98, 0.09), -14.0],          # overhead, back arched
+	[0.30, -10.0, 137.0, Vector3(-0.03, 2.10, 0.25), -14.0],          # cocked back behind the head with the arch (a drawn bow)
 	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
 	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
 # Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),
@@ -140,6 +140,12 @@ var queued := false
 var hit_active := false
 var dip := 0.0                 # rad the swing plane tips forward-down onto a low foe (a hound)
 const LOW_DIP := 0.55          # full tip toward a low target in front
+## (11-08) JUMPATK_NOCOCK=1 = the old arc (the staff only upright beside the hat at the arch's peak)
+var JUMPATK_NOCOCK := OS.get_environment("JUMPATK_NOCOCK") == "1"
+static func _air_old() -> Dictionary:
+	var d: Dictionary = AIR_LIGHT.duplicate(true)
+	d["keys"][3] = [0.36, -20.0, 106.0, Vector3(0.15, 1.98, 0.09), -14.0]
+	return d
 const AIR_DIP := 0.42          # the jump attack's strike tips down from the apex
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
@@ -927,7 +933,7 @@ func _start_air() -> void:
 	player.stamina = maxf(player.stamina - AIR_COST, 0.0)
 	player.note_air_attack()
 	_snatch_draw()
-	_atk = AIR_LIGHT
+	_atk = _air_old() if JUMPATK_NOCOCK else AIR_LIGHT
 	_recover = 0.0
 	_power = AIR_POWER
 	_hit_this_swing.clear()
