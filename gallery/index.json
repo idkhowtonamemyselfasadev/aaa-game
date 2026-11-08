@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-1623-stop-rollover.jpg",
-  "time": "2026-11-04T16:23:14Z",
-  "caption": "Planted stop at 0.27 s (GL): the weight rolls over the front foot and the back foot comes up; still wrong: back-lit, hero seen from behind, not a side-on profile yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1752-start-drive.jpg",
-  "time": "2026-11-04T17:52:00Z",
-  "caption": "Driving start at 0.20 s (GL): the back leg drives off its toes, the right knee is thrown up and ahead, the opposite arm punches through, chest over the feet; still wrong: seen 3/4 from behind and in shade, so the toe contact and the face cannot be judged.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-1752-start-load.jpg",
   "time": "2026-11-04T17:52:00Z",
   "caption": "Driving start at 0.10 s (GL): the hips load as the hero turns onto the line; still wrong: back-lit and from behind, the drive leg is hidden by the robe.",
@@ -897,6 +885,12 @@
   "file": "20261108-1420-jumpattack-arch.jpg",
   "time": "2026-11-08T14:20:00Z",
   "caption": "Jump attack at the top of the arch from a slung start: the staff is drawn ~39 deg back behind the hat with the right fist on the shaft; still backlit to a silhouette, and the cottage behind reads plain.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-1500-guard-stop.jpg",
+  "time": "2026-11-08T15:00:00Z",
+  "caption": "Hero halting from a run with the staff drawn at guard: both fists stay on the shaft through the stop's hip and back bend (they used to ride 20 cm off); backlit, the figure is a silhouette and the foreground is black.",
   "verdict": "fail"
  }
 ]

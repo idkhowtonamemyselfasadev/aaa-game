@@ -2358,6 +2358,13 @@ func _ready() -> void:
 			if a.begins_with("land="):
 				land = float(a.substr(5))
 		var spr := "sprint" in args
+		if "guard" in args:
+			# guard: the staff drawn and held in both fists before the run (the start/stop/
+			# pivot/landing frames with the staff at guard; 11-08 keepgap)
+			player.combat._begin_draw()
+			for i in 60:
+				await get_tree().physics_frame
+			player.combat.idle_t = -1.0e6
 		var jstart := player.global_position
 		if "drop" in args:
 			player.global_position += Vector3.UP * 4.0

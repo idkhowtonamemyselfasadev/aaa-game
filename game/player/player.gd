@@ -828,6 +828,13 @@ func _update_hand_rest(delta: float) -> void:
 		hand_rest.hold = 1.0
 
 func _physics_process(delta: float) -> void:
+	if guard_keep > 0.0 and crumple != null:
+		# last tick's guard keep goes: _guard_keep sets it again this tick if it still applies
+		# (paths that return early, knock-down/climb/glide, must not keep it; the jump pose
+		# sets its own keep each tick before _guard_keep)
+		crumple.keep_hands = 0.0
+		crumple.keep_shaft = 0.0
+		guard_keep = 0.0
 	_update_hand_rest(delta)
 	if woke_t >= 0.0:
 		woke_t += delta
@@ -1182,6 +1189,7 @@ func _physics_process(delta: float) -> void:
 	_start_pose()
 	_flinch_layer()
 	_weight_lean(delta, dodging or reeling, attacking or charging or plunging or not is_on_floor())
+	_guard_keep()
 	_update_turn_lead(delta)
 	if combat != null:
 		combat.physics_step(delta)
@@ -2011,6 +2019,32 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	if not busy:
 		model.transform = Transform3D(Basis(), Vector3(0, -dip, 0)) * _model_rest
 		_pose_dip = dip
+
+## (11-08 15:00) the staff held at guard in both fists: the start, stop and pivot poses (and a
+## jump's take-off/landing dip) bend the pelvis and spine after the arm IK, and the arms rode
+## with the trunk: fists up to 0.48 m off the shaft through a start, 0.21 m through a stop
+## (bot `keepgap`). Crumple's keep holds each wrist where the IK put it, aimed onto the shaft,
+## whenever the staff is in the hands (env GUARD_LOOSEHANDS=1 = old).
+var GUARD_LOOSEHANDS := OS.get_environment("GUARD_LOOSEHANDS") == "1"
+var guard_keep := 0.0          # (bots) the weight set this tick
+
+func _guard_keep() -> void:
+	guard_keep = 0.0
+	if crumple == null or combat == null or GUARD_LOOSEHANDS:
+		return
+	# knocked down the left hand lets go to plant on the sward (its own reach); on a face or
+	# under the glider the hands are on the holds / the bar
+	if down_t >= 0.0 or climbing or gliding:
+		return
+	if combat.state != StaffCombat.READY or combat.staff == null or hand_rest == null:
+		return
+	var w := clampf((combat._blend - 0.5) * 2.5, 0.0, 1.0) * clampf(hand_rest.hold, 0.0, 1.0)
+	if w <= 0.0 or w < crumple.keep_hands:
+		return
+	guard_keep = w
+	crumple.keep_hands = w
+	crumple.keep_staff = combat.staff
+	crumple.keep_shaft = w
 
 func _clear_jump_pose() -> void:
 	if _jp > 0.0 and model != null:
@@ -2920,6 +2954,10 @@ func _flinch(attacker: Node) -> void:
 
 func _knockdown(attacker: Node) -> void:
 	_clear_flinch_layer()
+	if guard_keep > 0.0 and crumple != null:
+		crumple.keep_hands = 0.0               # the down ticks skip _guard_keep: let the hands go now
+		crumple.keep_shaft = 0.0
+		guard_keep = 0.0
 	_flinch(attacker)                      # breaks off glide/climb/swing/dodge, sets the shove
 	flinches -= 1
 	flinch_t = -1.0

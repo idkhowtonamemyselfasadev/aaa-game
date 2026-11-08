@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "keepgap"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -193,6 +193,9 @@ func _ready() -> void:
 		return
 	if name == "pivot":
 		_pivot_test()
+		return
+	if name == "keepgap":
+		_keepgap_test()
 		return
 	if name == "stop":
 		_stop_test()
@@ -876,6 +879,82 @@ func _staff_gap(c: StaffCombat, side: String) -> float:
 	var o := c.staff.global_position
 	var ax := c.staff.global_basis.y.normalized()
 	return f.distance_to(o + ax * ax.dot(f - o))
+
+## (11-08 15:00) the staff drawn at guard: each fist's centre to the shaft's axis (combat.fist_gap)
+## through the moves where Crumple bends the trunk under the held staff (start, stop, pivot,
+## a jump's take-off and landing dip). Gate KG_GATE m worst over the ticks the fingers are
+## closed (hand_rest.hold > 0.9) with the staff fully in hand (_blend > 0.9).
+func _keepgap_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var c: StaffCombat = p.combat
+	c._begin_draw()
+	await _ticks(90)
+	if c.state != StaffCombat.READY:
+		return _combat_done(false, "the staff is not drawn (%d)" % c.state)
+	var gate := float(OS.get_environment("KG_GATE")) if OS.has_environment("KG_GATE") else 0.02
+	var res := {}
+	var segs := [["guard", 40, Vector2.ZERO, false], ["start", 50, Vector2(0, -1), false],
+		["stop", 60, Vector2.ZERO, false], ["run", 60, Vector2(0, -1), false],
+		["pivot", 60, Vector2(0, 1), false], ["stop2", 60, Vector2.ZERO, false],
+		["jump", 90, Vector2.ZERO, true], ["runjump", 90, Vector2(0, -1), true],
+		["land", 60, Vector2.ZERO, false]]
+	var worst := 0.0           # ticks Crumple bends the trunk (start/stop/pivot/jump poses)
+	var worst_seg := ""
+	var free := 0.0            # ticks without Crumple (plain run: GripRoll's wrist-bend cap)
+	var free_seg := ""
+	for sg in segs:
+		var w := [0.0, 0.0]
+		var wf := 0.0
+		var n := 0
+		var nb := 0
+		var keep := 0.0
+		for i in int(sg[1]):
+			p.bot_input = sg[2]
+			c.idle_t = 0.0                     # stay drawn (READY sheathes after SHEATHE_AFTER idle)
+			if OS.has_environment("KG_DBG"):
+				p.crumple.gap_staff = c.staff
+			if sg[3] and i == 2:
+				p.bot_jump = true
+				p.bot_jump_hold = true
+			if sg[3] and i == 20:
+				p.bot_jump_hold = false
+			await get_tree().physics_frame
+			if c.state != StaffCombat.READY or c._blend < 0.9 or p.hand_rest.hold < 0.9:
+				continue
+			n += 1
+			var g := maxf(c.fist_gap[0], c.fist_gap[1])
+			if p.crumple.active:
+				nb += 1
+				keep = maxf(keep, p.crumple.keep_hands)
+				for k in 2:
+					w[k] = maxf(w[k], c.fist_gap[k])
+			else:
+				wf = maxf(wf, g)
+			if OS.has_environment("KG_DBG"):
+				print("   kg %s i %d gap R %.3f L %.3f active %s keep %.2f spine %.2f pelvis %.2f twist %.2f jp %.2f err R %.3f feed %s" % [sg[0], i, c.fist_gap[0], c.fist_gap[1], str(p.crumple.active), p.crumple.keep_hands, p.crumple.spine, p.crumple.pelvis, p.crumple.chest_twist, p._jp, p.crumple.keep_err[1], str(c.grip_roll.last_feed)])
+		res[sg[0]] = w
+		print("BOT keepgap %-8s ticks %3d (bent %3d) worst fist gap bent R %.3f L %.3f | unbent %.3f keep %.2f state %d" % [sg[0], n, nb, w[0], w[1], wf, keep, c.state])
+		if maxf(w[0], w[1]) > worst:
+			worst = maxf(w[0], w[1])
+			worst_seg = sg[0]
+		if wf > free:
+			free = wf
+			free_seg = sg[0]
+	p.bot_input = Vector2.ZERO
+	if p.pivots < 1:
+		return _combat_done(false, "no pivot fired with the staff drawn")
+	var free_gate := float(OS.get_environment("KG_FREE_GATE")) if OS.has_environment("KG_FREE_GATE") else 0.13
+	print("BOT keepgap: worst under the trunk bends %.3f m (%s), plain run (no bends, wrist cap) %.3f m (%s)" % [worst, worst_seg, free, free_seg])
+	if worst > gate:
+		return _combat_done(false, "a fist leaves the drawn staff under the trunk bends in %s (%.3f m > %.3f)" % [worst_seg, worst, gate])
+	if free > free_gate:
+		return _combat_done(false, "a fist leaves the drawn staff in the plain run in %s (%.3f m > %.3f)" % [free_seg, free, free_gate])
+	_combat_done(true, "fists on the drawn staff through start/stop/pivot/jump, worst %.3f m (%s)" % [worst, worst_seg])
 
 func _hands_test() -> void:
 	var p := _player
