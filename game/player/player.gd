@@ -818,6 +818,11 @@ func _update_hand_rest(delta: float) -> void:
 	var k := 1.0 - exp(-HAND_RATE * delta)
 	hand_rest.weight = lerpf(hand_rest.weight, 0.0 if owned else 1.0, k)
 	hand_rest.hold = lerpf(hand_rest.hold, combat._blend if combat != null else 0.0, k)
+	if combat != null and combat._unhold_draw and (crumple == null or crumple.plant <= 0.01):
+		# up from a knock-down with the staff: the knock-down pose had both fists closed on the
+		# shaft, so the grip stays closed (easing it back in from open put the fists 0.1 m off it)
+		hand_rest.weight = 1.0
+		hand_rest.hold = 1.0
 
 func _physics_process(delta: float) -> void:
 	_update_hand_rest(delta)
@@ -2841,6 +2846,7 @@ func _knockdown(attacker: Node) -> void:
 const KNOCK_UNHOLD := 1.83
 const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
 const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
+const KNOCK_REGRIP := [1.70, 1.81]       # the free left hand comes off the hip and closes on the shaft before the draw
 const KNOCK_STAFF_PLANT := [1.28, 1.52]  # its butt set on the turf by the front knee as the fist comes to it
 var _knock_held := false
 
@@ -2893,6 +2899,7 @@ func _down_tick(delta: float) -> void:
 			crumple.hip_lr = Vector2.ZERO
 			crumple.knee_lr = Vector2.ZERO
 			crumple.hand_knee = Vector3.ZERO
+			crumple.fist_l = Vector3.ZERO
 			crumple.arm_lr = Vector2.ZERO
 			crumple.elbow_lr = Vector2.ZERO
 			crumple.arm_aim_lr = Vector2.ZERO
@@ -2905,6 +2912,7 @@ func _down_tick(delta: float) -> void:
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		_knock_feet_at = [Vector3.INF, Vector3.INF]
+		_regripping = false
 		return
 	if crumple != null:
 		# whatever stance the blow caught (a staggered guard, a stride), hang both legs even
@@ -2915,7 +2923,34 @@ func _down_tick(delta: float) -> void:
 	_pose_knockdown(down_t)
 	_knock_push_hand()
 	_knock_knee_hand()
+	_knock_regrip()
 	_knock_feet()
+
+## The regrip: as the arms come up to the guard, the free left hand leaves the hip and closes on
+## the shaft at its guard grip while the right fist still holds the staff alone, so both hands
+## are already on it when the draw takes over (it used to swing in from 0.25-0.35 m away).
+var _regripping := false
+func _knock_regrip() -> void:
+	if crumple == null:
+		return
+	var w := 0.0
+	if _knock_held and combat != null and down_t < KNOCK_UNHOLD and not OS.has_environment("KNOCK_NOREGRIP"):
+		w = smoothstep(KNOCK_REGRIP[0], KNOCK_REGRIP[1], down_t)
+	if w <= 0.0:
+		if _regripping:
+			_regripping = false
+			crumple.fist_l = Vector3.ZERO
+			if crumple.hand_knee == Vector3.ZERO:
+				crumple.plant = 0.0
+			crumple.plant_w = [0.0, 1.0] if crumple.hand_knee != Vector3.ZERO else [1.0, 1.0]
+		return
+	_regripping = true
+	var wk := crumple.plant if crumple.hand_knee != Vector3.ZERO else 0.0
+	crumple.plant = 1.0
+	crumple.plant_w = [w, wk]
+	crumple.fist_l = combat.held_grip_l()
+	crumple.fist_l_fn = combat.held_grip_l_now
+	crumple.grip_l = maxf(crumple.grip_l, w)    # the fingers close round it as it arrives
 
 var _knock_feet_at := [Vector3.INF, Vector3.INF]
 

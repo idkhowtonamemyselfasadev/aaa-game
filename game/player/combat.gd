@@ -564,6 +564,37 @@ func _xform_between(a: Transform3D, b: Transform3D, w: float) -> Transform3D:
 	var q := a.basis.get_rotation_quaternion().slerp(bb.get_rotation_quaternion(), w)
 	return Transform3D(Basis(q), a.origin.lerp(b.origin, w))
 
+## (bots, Player) where the left fist closes on the shaft as the hero comes up: the guard's left
+## grip, slid along the staff as it is held now (the right fist still holds it alone).
+func held_grip_l() -> Vector3:
+	var g := _wield.global_transform * _staff_xform(GUARD)
+	var gl := _wield.global_transform * _target_l.position
+	var sl := (gl - g.origin).dot(g.basis.y.normalized())
+	return staff.global_position + staff.global_basis.y.normalized() * sl
+
+## The same from inside the pose (Crumple, after the right hand is posed): the staff is placed in
+## the right fist as it now stands first, so the left fist's target is on this tick's shaft.
+var _unhold_draw := false
+const UNHOLD_ROLL_RATE := 20.0  # 1/s
+const UNHOLD_TAKE := 0.06    # s: the arm IK takes the hands from the knock-down pose (already on the shaft)
+const REGRIP_REACH := 0.38   # m: shoulder to the fist's centre the arm can take without locking straight
+func held_grip_l_now(shoulder: Vector3) -> Vector3:
+	_place_held()
+	var at := held_grip_l()
+	if shoulder == Vector3.ZERO or not shoulder.is_finite():
+		return at
+	# out of the arm's reach (the staff not yet at its guard line): slide along the shaft toward
+	# the shoulder until it is within reach, so the hand closes on the shaft, not on the air beside it
+	var o := staff.global_position
+	var ax := staff.global_basis.y.normalized()
+	var near := o + ax * ax.dot(shoulder - o)
+	var d_near := shoulder.distance_to(near)
+	if shoulder.distance_to(at) <= REGRIP_REACH or d_near >= REGRIP_REACH:
+		return at if d_near < REGRIP_REACH else near
+	var half := sqrt(REGRIP_REACH * REGRIP_REACH - d_near * d_near)
+	var sl := ax.dot(at - near)
+	return near + ax * clampf(sl, -half, half)
+
 ## Up again: the staff comes back from the right fist into both hands at guard, eased like a
 ## draw from wherever the fist holds it.
 func unhold() -> void:
@@ -571,6 +602,7 @@ func unhold() -> void:
 		return
 	staff.reparent(_wield, true)
 	_from_xform = staff.transform
+	_unhold_draw = not OS.has_environment("KNOCK_NOREGRIP")
 	state = DRAWING
 	t = 0.0
 
@@ -835,8 +867,10 @@ func physics_step(delta: float) -> void:
 	if grip_roll != null:
 		var hr: HandRest = player.get("hand_rest")
 		var held := hr != null and hr.weight > 0.5 and hr.hold > 0.5 and _blend > 0.9 \
-			and state in [READY, ATTACKING, CHARGING, PLUNGING]
-		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * 6.0)
+			and (state in [READY, ATTACKING, CHARGING, PLUNGING] or (state == DRAWING and _unhold_draw))
+		# (11-08) back from a knock-down the fists are already round the shaft: the roll comes in
+		# quickly with the draw instead of easing in after it (the fists rode 0.1 m off for 3 ticks)
+		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * (UNHOLD_ROLL_RATE if _unhold_draw else 6.0))
 	_spin_applied = spin_delta
 	spin_delta = 0.0
 	if hitstop > 0.0:
@@ -864,9 +898,20 @@ func physics_step(delta: float) -> void:
 		DRAWING:
 			t += delta
 			var f := clampf(t / DRAW_TIME, 0.0, 1.0)
-			staff.transform = _from_xform.interpolate_with(_place_hands(GUARD), f)
-			_set_influence(f)
+			var g := _place_hands(GUARD)
+			staff.transform = _from_xform.interpolate_with(g, f)
+			if _unhold_draw:
+				# back from a knock-down: both fists are already on the shaft, so the grips ride the
+				# staff as it eases to the guard (aiming them at the guard's grips while the staff
+				# was still where the fist held it put both hands 0.15 m off it for a few ticks)
+				var shift := staff.transform * g.affine_inverse()
+				_target_r.position = shift * _target_r.position
+				_target_l.position = shift * _target_l.position
+				_set_influence(minf(t / UNHOLD_TAKE, 1.0))
+			else:
+				_set_influence(f)
 			if f >= 1.0:
+				_unhold_draw = false
 				state = READY
 				idle_t = 0.0
 				if _heavy_queued:

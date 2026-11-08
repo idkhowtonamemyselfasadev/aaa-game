@@ -846,7 +846,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	return out
 
 const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist to the staff's shaft
-const REGRIP_GATE := 0.22      # m: either fist to the shaft as the staff comes back into both hands (before the guard turn: 0.29 m behind the hand)
+const REGRIP_GATE := 0.05      # m: either fist to the shaft as the staff comes back into both hands (0.29 before the guard turn, 0.167 before the 11-08 regrip)
+const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
 const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
 const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
 const SOLE_KNEEL_GATE := 0.22  # m: and on the way into the kneel
@@ -3159,9 +3160,23 @@ func _soldier_test() -> void:
 	p.health = Player.HEALTH_MAX
 	var t := 0.0
 	var hp0 := s.health
+	var evades := 0
 	while not s.is_dead() and t < 40.0:
 		var to := s.global_position - p.global_position
 		var flat := Vector2(to.x, to.z)
+		# a player reads the glint: dodge out of a wind-up just before it lets go (back out of the
+		# sweep's arc, which tracks a strafe), then come in on the recovery
+		var wt := HollowSoldier.SWEEP_WINDUP_T if s.move_kind == HollowSoldier.SWEEP_MOVE else HollowSoldier.WINDUP_T
+		if s.state == HollowSoldier.WINDUP and s.t >= wt - 0.12 and not p.is_slowmo():
+			p.bot_input = -flat.normalized()
+			p.bot_dodge = true
+			evades += 1
+			await _ticks(1)
+			p.bot_input = Vector2.ZERO
+			while s.state == HollowSoldier.WINDUP:
+				await get_tree().physics_frame
+				t += get_physics_process_delta_time()
+			continue
 		if flat.length() > 2.0:
 			p.bot_input = flat.normalized()
 		else:
@@ -3174,7 +3189,7 @@ func _soldier_test() -> void:
 		await get_tree().physics_frame
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
-	print("BOT soldier: fight %.1f s, hits taken %d, staggers %d, health %.0f -> %.0f, dead %s, strikes %d (sweeps %d)" % [t, s.hits_taken, s.staggers, hp0, s.health, s.is_dead(), s.strikes, s.sweeps])
+	print("BOT soldier: fight %.1f s, hits taken %d, staggers %d, health %.0f -> %.0f, dead %s, strikes %d (sweeps %d), dodged out of %d wind-ups, knock-downs %d" % [t, s.hits_taken, s.staggers, hp0, s.health, s.is_dead(), s.strikes, s.sweeps, evades, p.knockdowns])
 	if not s.is_dead():
 		return _combat_done(false, "the hero could not kill the soldier")
 	if s.staggers < 1:
@@ -7638,7 +7653,7 @@ func _sweep_test() -> void:
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
-	var held := [0.0, 9.0, 0, 0]   # the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
+	var held := [0.0, 9.0, 0, 0, 9.0]   # the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7710,6 +7725,8 @@ func _sweep_test() -> void:
 				kneel[4] += 1
 		if p.down_t > 0.05 and p.down_t < Player.KNOCK_UNHOLD - 0.02 and p.crumple.probed.has("mixamorig_RightHand"):
 			if c.state == StaffCombat.HELD:
+				if p.down_t >= Player.KNOCK_REGRIP[1] - 0.02:
+					held[4] = c.fist_gap[1]   # the left fist closing on the shaft (last held tick wins)
 				var st := c.staff.global_transform
 				var e0: Vector3 = st * Vector3(0, -Staff.LENGTH * 0.5, 0)
 				var e1: Vector3 = st * Vector3(0, Staff.LENGTH * 0.5, 0)
@@ -7723,7 +7740,10 @@ func _sweep_test() -> void:
 			elif c.state != StaffCombat.SHEATHED:
 				held[3] += 1
 		if p.down_t >= Player.KNOCK_UNHOLD - 0.1 and OS.has_environment("KNEEL_DBG"):
-			print("unhold t %.3f state %d gap r %.3f l %.3f blend %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend])
+			var fl: Vector3 = p.crumple.fist_l
+			var so := c.staff.global_position
+			var sa := c.staff.global_basis.y.normalized()
+			print("unhold t %.3f state %d gap r %.3f l %.3f blend %.2f | wrist err %.3f, target to the shaft %.3f, along %.2f, fist to target %.3f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend, p.crumple.hand_err[0], (fl - so - sa * sa.dot(fl - so)).length() if fl != Vector3.ZERO else -1.0, sa.dot(fl - so), c.fist_center("Left").distance_to(fl) if fl != Vector3.ZERO else -1.0])
 		if p.down_t >= Player.KNOCK_KNEE_HAND[1] and p.down_t <= Player.KNOCK_KNEE_HAND[2] and p.crumple.probed.has("mixamorig_RightHand"):
 			var wr: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightHand"] as Vector3)
 			var kn: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightLeg"] as Vector3)
@@ -7797,9 +7817,12 @@ func _sweep_test() -> void:
 	for _i in 10:
 		regrip = maxf(regrip, maxf(c.fist_gap[0], c.fist_gap[1]))
 		if OS.has_environment("KNEEL_DBG"):
-			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend])
+			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f hr w %.2f hold %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend, p.hand_rest.weight, p.hand_rest.hold])
 		await get_tree().physics_frame
 	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
+	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m" % held[4])
+	if held[4] > REGRIP_L_GATE:
+		return _combat_done(false, "the hero's free left hand does not come to the shaft before the staff is taken back into both hands")
 	if regrip > REGRIP_GATE or held[2] < 10 or held[3] > 0 or held[0] > HELD_WRIST_GATE or held[1] < HELD_END_GATE or c.state != StaffCombat.READY:
 		return _combat_done(false, "the drawn staff does not stay in the knocked-down hero's right fist (or hangs in the air, or goes through the turf, or is not back at guard after)")
 	if not rest_ok or down_for < Player.KNOCK_TIME - 0.1:

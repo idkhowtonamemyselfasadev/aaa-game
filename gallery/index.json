@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261104-0122-growth-seams.jpg",
-  "time": "2026-11-04T01:22:56Z",
-  "caption": "The Ashen Knight 0.6 s into its growth in the stone ring: embers spitting from the pauldron seams, dust kicked up round its feet (GL frame, backlit at 15:00; the grit falling off the stones barely reads and the knight is a silhouette).",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0122-growth-ring.jpg",
-  "time": "2026-11-04T01:22:56Z",
-  "caption": "1.3 s into the growth: the ring of fire up round the swelling knight, small orange sparks off its armour, cracks glowing on the plate (GL frame; the surge's stone-chip burst still reads as pale snow over the helm).",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0244-jumpattack-overhead.jpg",
   "time": "2026-11-04T02:44:17Z",
   "caption": "The new jump attack at its top: the staff hauled straight overhead with the legs tucked, about to come down on the practice post (GL frame; procedural pose, no mocap clip, figure small in frame).",
@@ -891,6 +879,18 @@
   "file": "20261107-2337-knock-staff-regrip.jpg",
   "time": "2026-11-07T23:37:39Z",
   "caption": "Just after the get-up (1.95): the staff comes back up from the right fist to the guard beside the body; the left hand has not caught it yet in this mid-regrip frame (rough).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0023-knock-regrip-left.jpg",
+  "time": "2026-11-08T00:23:39Z",
+  "caption": "End of the knock-down rise (down_t 1.84): the free left hand has left the hip and closed on the staff's grip before the draw back to guard, instead of swinging in open from 0.25 m away; GL frame from behind, the guard line still reads low.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0023-knock-regrip-fist.jpg",
+  "time": "2026-11-08T00:23:39Z",
+  "caption": "Close crop of the same frame: the left fist closed round the wrapped grip; the hand is clean but the body is still the rough get-up pose.",
   "verdict": "fail"
  }
 ]

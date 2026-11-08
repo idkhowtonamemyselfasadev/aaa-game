@@ -87,6 +87,10 @@ var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point th
 							 # instead of up the face
 var hand_knee := Vector3.ZERO # world offset: when set, the RIGHT hand's target is the right knee as posed
 							 # plus this (a palm braced on the front knee to push the body up off it)
+var fist_l := Vector3.ZERO   # world: when set, the LEFT hand's reach puts the closed fist's centre here
+                             # (not the wrist) and keeps the hand's turn (a hand closing round a shaft)
+var fist_l_fn := Callable()  # when valid with fist_l set: called (after the right hand is posed) for fist_l
+                             # anew, so a target on a staff the right fist holds is not a tick behind
 var foot_w := [1.0, 1.0]     # per leg (left, right) on top of `foot_plant`: one foot alone can be planted
 var foot_pole := Vector3.ZERO # world: when set, the reaching knees bend toward this (not away from hand_wall)
 var foot_toes := Vector3.ZERO # world: when set, the planted foot's toes point this way (a sole flat on the turf)
@@ -195,9 +199,17 @@ func _process_modification_with_delta(_delta: float) -> void:
 			hand_target[1] = skel.global_transform * skel.get_bone_global_pose(rk).origin + hand_knee
 	if plant > 0.0:
 		# last of all, after the spine has moved the shoulders: the hands go to their holds
-		for i in 2:
+		for i in [1, 0]:
 			var pw: float = plant * float(plant_w[i])
 			if pw <= 0.0:
+				continue
+			if i == 0 and fist_l != Vector3.ZERO:
+				if fist_l_fn.is_valid():
+					fist_l = fist_l_fn.call(shoulder[0])
+				# two passes: the forearm's swing turns the hand, so re-measure the fist's offset
+				for _k in 2:
+					var off := skel.global_transform * _fist_local(skel, "Left") - skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftHand")).origin
+					_reach(skel, "Left", fist_l - off, pw, false)
 				continue
 			_reach(skel, sides[i], hand_target[i], pw)
 			_grip(skel, sides[i], hand_curl * pw)
@@ -269,7 +281,26 @@ func _grip(skel: Skeleton3D, side: String, g: float) -> void:
 ## Two-bone reach: the upper arm and forearm turn so the wrist lands on `target` (world), the
 ## elbow bowed out, down and off the face like a climber's; then the hand turns so the fingers
 ## point up the face and the palm lies on it. `w` blends from the posed wrist to the target.
-func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
+## The closed fist's centre in skeleton space (as HandRest.fist_center, unscaled).
+func _fist_local(skel: Skeleton3D, side: String) -> Vector3:
+	var sum := Vector3.ZERO
+	var n := 0
+	for f in ["Index", "Middle", "Ring"]:
+		var last := -1
+		for j in 3:
+			var b := skel.find_bone("mixamorig_%sHand%s%d" % [side, f, j + 1])
+			if b < 0:
+				break
+			sum += skel.get_bone_global_pose(b).origin
+			n += 1
+			last = b
+		if last >= 0:
+			var tb := skel.get_bone_global_pose(last)
+			sum += tb.origin + tb.basis.y.normalized() * 2.0
+			n += 1
+	return sum / maxf(n, 1)
+
+func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float, orient := true) -> void:
 	var ua := skel.find_bone("mixamorig_%sArm" % side)
 	var fa := skel.find_bone("mixamorig_%sForeArm" % side)
 	var hd := skel.find_bone("mixamorig_%sHand" % side)
@@ -288,6 +319,8 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
 	var t := h.lerp(inv * target, w)
 	var d := t - s
 	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	if not orient and OS.has_environment("KNEEL_DBG"):
+		print("regrip reach: d %.3f a %.3f b %.3f w %.2f" % [d.length(), a, b, w])
 	var dn := d.normalized()
 	var out := s - skel.get_bone_global_pose(ch).origin
 	out = (out - up * out.dot(up)).normalized()
@@ -301,7 +334,7 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float) -> void:
 	_swing(skel, fa, h - e, t - e)
 	h = skel.get_bone_global_pose(hd).origin
 	hand_err[0 if side == "Left" else 1] = h.distance_to(inv * target) * skel.global_basis.get_scale().x
-	if mid < 0 or w < 0.5:
+	if mid < 0 or w < 0.5 or not orient:
 		return
 	# fingers up the face, tipped a little into it so they hook over the stone above
 	var want := (up - wall * up.dot(wall)).normalized() - wall * 0.25
