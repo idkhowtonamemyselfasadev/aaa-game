@@ -849,6 +849,7 @@ const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist t
 const REGRIP_GATE := 0.05      # m: either fist to the shaft as the staff comes back into both hands (0.29 before the guard turn, 0.167 before the 11-08 regrip)
 const REGRIP_L_EARLY_T := 1.78
 const REGRIP_L_EARLY_GATE := 0.05  # m: (11-08) the left fist already on the shaft by REGRIP_L_EARLY_T (before 0.160, after 0.016)
+const HAT_CLEAR_GATE := 0.02  # m: (11-08) the held shaft outside the hat's brim cylinder at the hat's height (before -0.285: through the crown at 1.33)
 const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
 const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
 const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
@@ -7655,7 +7656,7 @@ func _sweep_test() -> void:
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
-	var held := [0.0, 9.0, 0, 0, 9.0, 9.0]   # [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
+	var held := [0.0, 9.0, 0, 0, 9.0, 9.0, 9.0, -1.0]   # [6] least shaft margin outside the hat brim, [7] at down_t; [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7737,6 +7738,24 @@ func _sweep_test() -> void:
 				var rw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightHand"] as Vector3)
 				var on := Geometry3D.get_closest_point_to_segment(rw, e0, e1)
 				held[0] = maxf(held[0], c.fist_gap[0])   # the closed fist's centre to the shaft
+				# (11-08) the shaft clear of the hat: least radial margin outside the hat's brim
+				# cylinder over shaft points at the hat's height (negative = through the brim)
+				if p.garb != null and p.garb.hat != null and p.garb.hat.mesh != null:
+					var hb: AABB = p.garb.hat.mesh.get_aabb()
+					var hinv: Transform3D = p.garb.hat.global_transform.affine_inverse()
+					var hc := hb.get_center()
+					var hr := maxf(hb.size.x, hb.size.z) * 0.5
+					for k in 41:
+						var hl: Vector3 = hinv * e0.lerp(e1, k / 40.0)
+						if hl.y >= hb.position.y - 0.03 and hl.y <= hb.end.y + 0.03:
+							# a cone from the crown point out to the brim (HeroGarb.HAT_SLOPE fall per metre)
+							var rmax := clampf((hb.end.y - hl.y) / HeroGarb.HAT_SLOPE, 0.0, hr) if p.garb.hat.mesh.get_aabb().size.y < 0.25 else hr
+							var m := Vector2(hl.x - hc.x, hl.z - hc.z).length() - rmax
+							if OS.has_environment("HAT_DBG"): print("hat t %.3f k %d m %.3f local %s" % [p.down_t, k, m, hl])
+							if m < held[6]:
+								held[6] = m
+								held[7] = p.down_t
+
 				for e in [e0, e1]:
 					held[1] = minf(held[1], (e as Vector3).y - _world.terrain.height_at(e.x, e.z))
 				held[2] += 1
@@ -7825,6 +7844,9 @@ func _sweep_test() -> void:
 		await get_tree().physics_frame
 	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
 	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m (by t %.2f: %.3f m)" % [held[4], REGRIP_L_EARLY_T, held[5]])
+	print("BOT sweep: held shaft clear of the hat brim by %.3f m at its closest (t %.2f)" % [held[6], held[7]])
+	if held[6] < HAT_CLEAR_GATE:
+		return _combat_done(false, "the staff held through the knock-down passes through the hero's hat and head")
 	if held[4] > REGRIP_L_GATE or held[5] > REGRIP_L_EARLY_GATE:
 		return _combat_done(false, "the hero's free left hand does not come to the shaft before the staff is taken back into both hands")
 	if regrip > REGRIP_GATE or held[2] < 10 or held[3] > 0 or held[0] > HELD_WRIST_GATE or held[1] < HELD_END_GATE or c.state != StaffCombat.READY:

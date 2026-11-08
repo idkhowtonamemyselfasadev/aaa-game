@@ -495,6 +495,7 @@ func hold() -> bool:
 	held_guard = 0.0
 	held_reach_l = 0.0
 	_held_shoulder_l = Vector3.ZERO
+	head_clear_min = 9.0
 	state = HELD
 	return true
 
@@ -569,8 +570,68 @@ func _place_held() -> void:
 			var cur3 := q * Vector3.UP
 			var want := d.normalized() * signf(span)
 			q = q.slerp(Quaternion(cur3, want) * q, held_reach_l)
+	q = _clear_head(q, fist, sl)
 	var ax3 := q * Vector3.UP
 	staff.global_transform = Transform3D(Basis(q).scaled(held.basis.get_scale()), fist - ax3 * sl)
+
+## (11-08) The held shaft never runs through the hero's head and hat: the laid -> planted turn
+## swung its top straight through the hat's crown (1.20..1.33 s into the knock-down) and the
+## reach toward the left arm put it 0.10 m into the brim (1.67..1.73). If the shaft line passes
+## within HEAD_CLEAR of the hat's centre on the part of the shaft past the fist, it is tipped
+## about the fist just far enough out to clear it. The hat's centre comes off this tick's posed
+## head bone (the hat's attachment can lag a tick inside the pose).
+const HEAD_CLEAR := 0.34    # m: shaft axis to the hat's centre (brim 0.29 + the shaft's radius + a hair)
+var _hat_rel := Transform3D()
+var _hat_rel_ok := false
+var head_clear_min := 9.0    # (bots) least shaft-to-hat-centre distance after the clearance, this knock-down
+func hat_centre() -> Vector3:
+	var hat: MeshInstance3D = player.garb.hat if player.garb != null else null
+	if hat == null or hat.mesh == null:
+		return Vector3.INF
+	var hb := skel.find_bone("mixamorig_Head")
+	if hb < 0:
+		return Vector3.INF
+	if not _hat_rel_ok:
+		var att: Node = hat.get_parent()
+		while att != null and not att is BoneAttachment3D:
+			att = att.get_parent()
+		if att == null:
+			return Vector3.INF
+		_hat_rel = (att as Node3D).global_transform.affine_inverse() * hat.global_transform
+		_hat_rel_ok = true
+	return skel.global_transform * skel.get_bone_global_pose(hb) * _hat_rel * hat.mesh.get_aabb().get_center()
+
+func _clear_head(q: Quaternion, fist: Vector3, sl: float) -> Quaternion:
+	if OS.has_environment("KNOCK_NOCLEAR"):
+		return q
+	var h := hat_centre()
+	if not h.is_finite():
+		return q
+	var a := q * Vector3.UP
+	var hf := h - fist
+	var along := hf.dot(a)
+	# only the stretch of shaft that is there: from the fist, (LENGTH/2 - sl) one way, (LENGTH/2 + sl) the other
+	var ext := Staff.LENGTH * 0.5 - sl if along >= 0.0 else Staff.LENGTH * 0.5 + sl
+	var d := (hf - a * along).length()
+	if absf(along) > ext + HEAD_CLEAR:
+		head_clear_min = minf(head_clear_min, hf.length())
+		return q
+	var r := hf.length()
+	if r <= HEAD_CLEAR + 0.01:
+		return q     # the fist itself at the hat: nothing a tip can fix
+	var want := asin(HEAD_CLEAR / r)            # the least angle between the shaft and the fist->hat line
+	var dir := a if along >= 0.0 else -a          # the half of the shaft that points toward the hat
+	var now := dir.angle_to(hf)
+	if now >= want:
+		head_clear_min = minf(head_clear_min, d)
+		return q
+	var spin := hf.cross(dir)
+	if spin.length() < 1e-4:
+		spin = player.body.global_basis.x.cross(hf)   # dead on the hat: tip it out to the right
+	spin = spin.normalized()
+	var fix := Quaternion(spin, want - now)
+	head_clear_min = minf(head_clear_min, HEAD_CLEAR)
+	return fix * q
 
 func _axis_xform(ax: Vector3, centre: Vector3) -> Transform3D:
 	var ref := Vector3.UP if absf(ax.y) < 0.9 else Vector3.FORWARD

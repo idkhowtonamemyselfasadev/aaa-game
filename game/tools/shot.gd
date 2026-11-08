@@ -3392,6 +3392,16 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			# low three-quarter from ahead on the left (the planted hand's and the kneeling knee's side)
 			cam.global_position = mid + side * 1.9 + player.body.global_basis.z * 1.7 + Vector3.UP * 0.25
 			cam.look_at(mid - Vector3.UP * 0.4)
+		if "kside" in args:
+			# (11-08) pure profile from the left (the planted hand's side), lens at knee height and
+			# far enough back that the standing figure fits: judge the rise and the regrip side-on.
+			# Framed off the knock-down's ground spot, not the moving model, so frames line up.
+			var kfoot := player.global_position
+			var kmid := Vector3(kfoot.x, kfoot.y + 0.75, kfoot.z)
+			var mside := player.model.global_basis.x
+			mside = Vector3(mside.x, 0, mside.z).normalized()
+			cam.global_position = kmid + mside * 2.9 + Vector3.UP * -0.2
+			cam.look_at(kmid)
 		print("SHOT knocked down_t %.2f knockdowns %d staff state %d parent %s at %s fist %s" % [player.down_t, player.knockdowns, c.state, c.staff.get_parent().name, c.staff.global_position, c.fist_center("Right")])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero

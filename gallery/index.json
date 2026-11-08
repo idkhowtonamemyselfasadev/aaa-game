@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261104-0244-jumpattack-overhead.jpg",
-  "time": "2026-11-04T02:44:17Z",
-  "caption": "The new jump attack at its top: the staff hauled straight overhead with the legs tucked, about to come down on the practice post (GL frame; procedural pose, no mocap clip, figure small in frame).",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0244-plunge-impact.jpg",
-  "time": "2026-11-04T02:44:17Z",
-  "caption": "The new plunging attack at impact: the ferrule driven into the turf beside the post, hands high on the shaft (GL frame; the body still reads fairly upright and the soil burst is not caught in this frozen frame).",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-0315-surge-ash.jpg",
-  "time": "2026-11-04T03:15:43Z",
-  "caption": "The Ashen Knight 1 s into its growth: the opening burst is now dark ash and a short ember spit instead of 15 m of pale chips; the ring of fire reads, but a thin pale speck column still rises behind the helm (not this burst) and it is a GL frame with a small figure.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-0502-plunge-dust.jpg",
   "time": "2026-11-04T05:02:26Z",
   "caption": "The hero 0.3 s after a plunge from 4 m: a low dust ring bursts out round the deep crouch; GL frame, backlit in the cottage's shadow, and the crack star is hidden under the standing grass.",
@@ -897,6 +879,18 @@
   "file": "20261108-0118-knockdown-regrip.jpg",
   "time": "2026-11-08T01:18:12Z",
   "caption": "Rising from a knock-down at 1.74 s: the left hand is already closed on the staff's wrapped grip as the shaft is held upright beside the body; the staff top still runs close to the hat brim and the lens sees mostly the back.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0212-knock-staff-clears-hat.jpg",
+  "time": "2026-11-08T02:12:18Z",
+  "caption": "Side-on at 1.33 s into a knock-down: the held staff now angles up in front of the face instead of swinging its top through the hat and head; the low backlit lens still leaves the body dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0212-knock-side-rise.jpg",
+  "time": "2026-11-08T02:12:18Z",
+  "caption": "Side-on at 1.72 s: the staff stands on its butt beside the rising hero, clear of the hat brim; the get-up pose is still rough and backlit.",
   "verdict": "fail"
  }
 ]
