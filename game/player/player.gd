@@ -1825,6 +1825,8 @@ var _ja_neck := 0.0
 # head and the 09:00 cock (before). JA_TILT overrides the angle for tuning.
 var JA_ARCH_TILT := float(OS.get_environment("JA_TILT")) if OS.has_environment("JA_TILT") else -0.45
 var JUMPATK_NOTILT := OS.get_environment("JUMPATK_NOTILT") == "1"
+## (11-08) env JUMPATK_LOOSEHANDS=1: the old wrists, carried off the staff by the arch and fold
+var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0
 var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
@@ -1959,6 +1961,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			if not JUMPATK_NOTILT:
 				tl = JA_ARCH_TILT * arch
 	crumple.active = true
+	# (11-08) with the staff in both hands the trunk's bends no longer carry the fists off it
+	crumple.keep_hands = _jp if armed and not JUMPATK_LOOSEHANDS else 0.0
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
 	crumple.knee = lerpf(crumple.knee, knee * _jp, k)
@@ -2008,6 +2012,8 @@ func _clear_jump_pose() -> void:
 	_jp = 0.0
 	_tuck = 0.0
 	_ja_pelvis = 0.0
+	if crumple != null:
+		crumple.keep_hands = 0.0
 	if _ja_neck != 0.0 and crumple != null:
 		crumple.neck = 0.0
 	_ja_neck = 0.0

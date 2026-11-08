@@ -96,6 +96,12 @@ var foot_w := [1.0, 1.0]     # per leg (left, right) on top of `foot_plant`: one
 var foot_pole := Vector3.ZERO # world: when set, the reaching knees bend toward this (not away from hand_wall)
 var foot_toes := Vector3.ZERO # world: when set, the planted foot's toes point this way (a sole flat on the turf)
 var foot_fk := [Vector3.ZERO, Vector3.ZERO]       # world ankle joints as posed, before the foot reach
+## 0..1: the wrists keep the place (and turn) the arm IK gave them through this modifier's
+## pelvis/spine/neck bends: the trunk tips under arms that stay on a held staff (the jump
+## attack's arch and fold carried both fists up to 0.38 m off the shaft without it).
+var keep_hands := 0.0
+var keep_err := [0.0, 0.0]   # (bots) m from each wrist to where the IK left it, after the keep
+var _kept := []              # skeleton-space [origin, basis] per hand (left, right), before the bends
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
@@ -113,6 +119,15 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if clf >= 0 and crf >= 0:
 		clip_ahead = (skel.get_bone_global_pose(crf).origin - skel.get_bone_global_pose(clf).origin).dot(fwd) \
 			* skel.global_basis.get_scale().x
+	_kept = []
+	if keep_hands > 0.0:
+		for side in ["Left", "Right"]:
+			var kb := skel.find_bone("mixamorig_%sHand" % side)
+			if kb < 0:
+				_kept = []
+				break
+			var kp := skel.get_bone_global_pose(kb)
+			_kept.append([kp.origin, kp.basis.orthonormalized()])
 	if square > 0.0:
 		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
 		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
@@ -179,6 +194,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_ground(skel, up)
 		if settle > 0:
 			_settle_leg(skel, "Left" if settle == 1 else "Right", up)
+	if _kept.size() == 2:
+		_keep_hands(skel)
 	var sides := ["Left", "Right"]
 	for i in 2:
 		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
@@ -357,6 +374,44 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float, orient :=
 	palm = palm - dir * palm.dot(dir)
 	if flat.length() > 1e-3 and palm.length() > 1e-3:
 		_swing(skel, hd, palm, flat)
+
+## Each arm turned back so its wrist lands where the IK left it before the trunk bends (the
+## elbow kept in the plane the bends carried it to, so it bows the way it did), then the hand
+## turned back to the IK's turn, so the fist closes on the same line of the shaft.
+func _keep_hands(skel: Skeleton3D) -> void:
+	var sides := ["Left", "Right"]
+	for i in 2:
+		var ua := skel.find_bone("mixamorig_%sArm" % sides[i])
+		var fa := skel.find_bone("mixamorig_%sForeArm" % sides[i])
+		var hd := skel.find_bone("mixamorig_%sHand" % sides[i])
+		if ua < 0 or fa < 0 or hd < 0:
+			continue
+		var s := skel.get_bone_global_pose(ua).origin
+		var e := skel.get_bone_global_pose(fa).origin
+		var h := skel.get_bone_global_pose(hd).origin
+		var t: Vector3 = h.lerp(_kept[i][0], keep_hands)
+		var a := s.distance_to(e)
+		var b := e.distance_to(h)
+		var d := t - s
+		var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.999)
+		var dn := d.normalized()
+		var pole := (e - s) - dn * (e - s).dot(dn)
+		if pole.length() < 1e-4:
+			pole = (h - s).cross(dn)
+		pole = pole.normalized()
+		var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+		var e_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+		_swing(skel, ua, e - s, e_new - s)
+		e = skel.get_bone_global_pose(fa).origin
+		h = skel.get_bone_global_pose(hd).origin
+		_swing(skel, fa, h - e, t - e)
+		# the hand back to its turn (eased by the weight): its local turn under the forearm as posed now
+		var pb := skel.get_bone_global_pose(fa).basis.orthonormalized()
+		var cur := skel.get_bone_global_pose(hd).basis.orthonormalized()
+		var want: Basis = cur.slerp(_kept[i][1], keep_hands)
+		var lr := Quaternion((pb.inverse() * want).orthonormalized())
+		skel.set_bone_pose_rotation(hd, lr)
+		keep_err[i] = skel.get_bone_global_pose(hd).origin.distance_to(_kept[i][0]) * skel.global_basis.get_scale().x
 
 ## Two-bone leg reach: the thigh and shin turn so the ankle lands on `target` (world), the
 ## knee bowed into the face and a little out like a climber's frog; then the foot turns so the

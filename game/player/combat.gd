@@ -95,7 +95,7 @@ const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0
 	[0.00, 60.0, -28.0, Vector3(0.12, 1.10, 0.30), -24.0, -0.03],
 	[0.10, 35.0, -7.0, Vector3(-0.06, 1.46, 0.41), -24.0, -0.03],    # chamber: up past the chest
 	[0.18, -5.0, 5.0, Vector3(0.10, 1.60, 0.60), -20.0, -0.03],      # tip swung round to the front, rising
-	[0.30, -10.0, 140.0, Vector3(-0.06, 2.18, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT)
+	[0.30, -12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0],          # cocked back behind the head with the arch (a drawn bow; the head tips clear, Player.JA_ARCH_TILT); (11-08 11:00) hands 6 cm lower: at 2.18 the left arm ran out of reach and its fist hung 0.13 m off the shaft
 	[0.58, -4.0, -28.0, Vector3(0.13, 1.28, 0.56), -21.0, -0.05],    # driven down (tipped by AIR_DIP)
 	[1.00, 9.0, -23.0, Vector3(0.27, 1.33, 0.52), -15.0, -0.06]]}
 # Plunging attack (heavy in the air): a short hang with the staff hauled overhead (the tell),
@@ -146,6 +146,13 @@ static func _air_old() -> Dictionary:
 	var d: Dictionary = AIR_LIGHT.duplicate(true)
 	d["keys"][3] = [0.36, -20.0, 106.0, Vector3(0.15, 1.98, 0.09), -14.0]
 	return d
+## (11-08 11:00) a staff snatched off the back by a jump attack is in both fists by the end of
+## the chamber (u 0.21), eased; at DRAW_TIME it was still 0.3-0.6 m from the fists at the
+## arch's peak, the arms posed round nothing beside a staff lagging on the back (env
+## JUMPATK_SLOWSNATCH=1 = the old 0.22 s linear snatch and slow grip roll)
+const AIR_DRAW_TIME := 0.12
+const AIR_ROLL_RATE := 16.0
+var JUMPATK_SLOWSNATCH := OS.get_environment("JUMPATK_SLOWSNATCH") == "1"
 const AIR_DIP := 0.42          # the jump attack's strike tips down from the apex
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
@@ -938,6 +945,10 @@ func _start_air() -> void:
 		# (11-08 10:00) the 09:00 cock (26 deg back), drawn with the head upright
 		_atk = AIR_LIGHT.duplicate(true)
 		_atk["keys"][3] = [0.30, -10.0, 137.0, Vector3(-0.03, 2.10, 0.25), -14.0]
+	if OS.has_environment("JUMPATK_HIGHKEY"):
+		# (11-08 10:00) the cocked key with the hands 6 cm higher (the left fist out of reach of the shaft)
+		_atk = AIR_LIGHT.duplicate(true)
+		_atk["keys"][3] = [0.30, -10.0, 140.0, Vector3(-0.06, 2.18, 0.17), -14.0]
 	if OS.has_environment("JA_KEY"):
 		# tuning: JA_KEY="yaw,pitch,x,y,z" replaces the cocked key
 		var f := OS.get_environment("JA_KEY").split_floats(",")
@@ -1155,7 +1166,10 @@ func physics_step(delta: float) -> void:
 			and (state in [READY, ATTACKING, CHARGING, PLUNGING] or (state == DRAWING and _unhold_draw))
 		# (11-08) back from a knock-down the fists are already round the shaft: the roll comes in
 		# quickly with the draw instead of easing in after it (the fists rode 0.1 m off for 3 ticks)
-		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * (UNHOLD_ROLL_RATE if _unhold_draw else 6.0))
+		var rate := UNHOLD_ROLL_RATE if _unhold_draw else 6.0
+		if held and is_air_attack() and not JUMPATK_SLOWSNATCH:
+			rate = AIR_ROLL_RATE               # snatched in the air: the fists close round it at once
+		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * rate)
 	_spin_applied = spin_delta
 	spin_delta = 0.0
 	if hitstop > 0.0:
@@ -1292,7 +1306,9 @@ func physics_step(delta: float) -> void:
 	staff.transform = _place_hands(pose)
 	if _air_draw_t >= 0.0:
 		_air_draw_t += delta
-		var f := clampf(_air_draw_t / DRAW_TIME, 0.0, 1.0)
+		var f := clampf(_air_draw_t / (DRAW_TIME if JUMPATK_SLOWSNATCH else AIR_DRAW_TIME), 0.0, 1.0)
+		if not JUMPATK_SLOWSNATCH:
+			f = smoothstep(0.0, 1.0, f)
 		staff.transform = _from_xform.interpolate_with(staff.transform, f)
 		_set_influence(f)
 		if f >= 1.0:

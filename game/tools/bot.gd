@@ -2299,6 +2299,10 @@ const JA_COCK_GATE := 36.0             # (11-08 10:00) 25 -> 36 with the head ti
 const JA_HAT_GATE := 0.02
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
+## (11-08) each fist's centre to the shaft's axis through the air attack (crumple.keep_hands: the
+## arch and fold carried them up to 0.38 m off it; the 10:00 cocked key's hands were then out of reach)
+const JA_FIST_GATE := 0.06
+const JA_LOOSE_GATE := 0
 func _jump_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0                    # the 0.12 s windows need real-time ticks
@@ -2516,12 +2520,14 @@ func _airstrike_test() -> void:
 				break
 		p.bot_jump_hold = false
 	# draw the staff first so the light goes straight into the air arc
+	# (env JA_SHEATHED=1: leave it slung, so the jump attack snatches it off the back in the air)
 	await place.call(1.9, 0.0)
-	p.bot_attack = true
-	await _ticks(2)
-	while c.is_attacking() or c.state == StaffCombat.DRAWING:
-		await get_tree().physics_frame
-	await place.call(1.9, 0.0)
+	if not OS.has_environment("JA_SHEATHED"):
+		p.bot_attack = true
+		await _ticks(2)
+		while c.is_attacking() or c.state == StaffCombat.DRAWING:
+			await get_tree().physics_frame
+		await place.call(1.9, 0.0)
 	# 1) jump attack
 	var h0 := post.hits
 	await to_apex.call()
@@ -2542,6 +2548,8 @@ func _airstrike_test() -> void:
 	var ja_cock := -99.0                       # deg the tip leans back past vertical (+ behind the head)
 	var ja_hat := 9.0                          # m, the shaft's closest pass to the hat
 	var ja_neck := Vector2(9.0, -9.0)
+	var ja_gap := Vector2.ZERO                 # m, worst fist-centre-to-shaft gap (right, left)
+	var ja_loose := 0                          # air-attack ticks with a fist over 0.05 m off the shaft
 	for i in 90:
 		await get_tree().physics_frame
 		if c.hit_active:
@@ -2553,6 +2561,12 @@ func _airstrike_test() -> void:
 			ja_arch = maxf(ja_arch, p.ja_arch)
 			ja_fold = maxf(ja_fold, p.ja_fold)
 			ja_grip = maxf(ja_grip, c.last_grip_error)
+			# (JA_SHEATHED: the snatch off the back is judged from the arch's peak, u 0.30, on)
+			if not OS.has_environment("JA_SHEATHED") or c.air_attack_u() >= 0.30:
+				ja_gap = Vector2(maxf(ja_gap.x, c.fist_gap[0]), maxf(ja_gap.y, c.fist_gap[1]))
+				if maxf(c.fist_gap[0], c.fist_gap[1]) > (0.07 if OS.has_environment("JA_SHEATHED") else 0.05):
+					ja_loose += 1
+			if OS.has_environment("JA_DBG"): print("JA u %.2f fist gap R %.3f L %.3f keep err L %.3f R %.3f feed %s roll %s grip %.3f" % [c.air_attack_u(), c.fist_gap[0], c.fist_gap[1], p.crumple.keep_err[0], p.crumple.keep_err[1], str(c.grip_roll.last_feed), str(c.grip_roll.last_roll), c.last_grip_error])
 			# the chest's lean off the body's up, forward + (hips -> top of the spine, posed)
 			var sk: Skeleton3D = c.skel
 			await sk.skeleton_updated
@@ -2583,6 +2597,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
+	print("BOT airstrike: jump attack fists -> worst gap to the shaft R %.3f L %.3f m (gate %.2f), ticks over 5 cm %d (gate %d)" % [ja_gap.x, ja_gap.y, JA_FIST_GATE, ja_loose, JA_LOOSE_GATE])
+	if not p.JUMPATK_LOOSEHANDS and not OS.has_environment("JUMPATK_HIGHKEY") and (maxf(ja_gap.x, ja_gap.y) > JA_FIST_GATE or ja_loose > JA_LOOSE_GATE):
+		return _combat_done(false, "the jump attack's arch and fold carry the fists off the staff")
 	if not c.JUMPATK_NOCOCK and (ja_cock < (25.0 if p.JUMPATK_NOTILT else JA_COCK_GATE) or ja_hat < JA_HAT_GATE):
 		return _combat_done(false, "the jump attack's staff is not drawn back behind the head at the arch, or the shaft cuts the hat")
 	if not p.JUMPATK_FLAT and (ja_arch < 0.8 or ja_fold < 0.8 or ja_lean_max - ja_lean_min < JA_LEAN_GATE or ja_grip > JA_GRIP_GATE):
