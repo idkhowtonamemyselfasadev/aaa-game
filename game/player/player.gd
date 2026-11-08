@@ -68,7 +68,7 @@ const KNOCK_ROLL := 0.30              # rad: the body rolls onto the hand's hip 
 const KNOCK_SIT := 0.40               # rad: less forward curl in the spine, the trunk leant back onto the arm
 const KNOCK_KNEEL := [1.34, 1.54, 1.64, 1.82]   # down_t: the kneel forms, held, eases out in the rise
 const KNOCK_KNEE_HAND := [1.44, 1.54, 1.70, 1.80]  # down_t: the right palm comes onto the front knee, braced, pushes, lets go
-const KNOCK_SWING := [1.40, 1.56, 1.72, 1.85]  # down_t: the free left arm swings back by the hip as a counterweight, held, eases out
+const KNOCK_SWING := [1.40, 1.56, 1.67, 1.82]  # down_t: the free left arm swings back by the hip as a counterweight, held, eases out
 const KNOCK_SWING_ARM := 0.35          # rad (+ = forward, on top of the spine's forward curl): the upper arm hangs ~13 deg behind plumb
 const KNOCK_SWING_ELBOW := 0.20        # rad: its forearm, a soft bend, the hand relaxed
 const KNOCK_RELAX := [1.36, 1.50, 1.80, 1.85, 0.32]  # down_t in, held, out, gone; left fingers close this much (a relaxed hand, not the clip's open claw)
@@ -2846,8 +2846,9 @@ func _knockdown(attacker: Node) -> void:
 const KNOCK_UNHOLD := 1.83
 const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
 const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
-const KNOCK_REGRIP := [1.70, 1.81]       # the free left hand comes off the hip and closes on the shaft before the draw
+const KNOCK_REGRIP := [1.67, 1.76]       # the free left hand comes off the hip and closes on the shaft before the draw
 const KNOCK_STAFF_PLANT := [1.28, 1.52]  # its butt set on the turf by the front knee as the fist comes to it
+const KNOCK_STAFF_REACH := [1.62, 1.74]  # (11-08) ...and tips toward the left arm's reach so the left fist lands on it early
 var _knock_held := false
 
 func _down_tick(delta: float) -> void:
@@ -2875,6 +2876,7 @@ func _down_tick(delta: float) -> void:
 		combat.held_plant = smoothstep(KNOCK_STAFF_PLANT[0], KNOCK_STAFF_PLANT[1], down_t)
 		combat.held_ground = global_position.y
 		combat.held_guard = smoothstep(KNOCK_STAFF_GUARD[0], KNOCK_STAFF_GUARD[1], down_t)
+		combat.held_reach_l = smoothstep(KNOCK_STAFF_REACH[0], KNOCK_STAFF_REACH[1], down_t)
 	if combat != null:
 		combat.physics_step(delta)
 	if down_t >= KNOCK_LAND and down_t - delta < KNOCK_LAND:

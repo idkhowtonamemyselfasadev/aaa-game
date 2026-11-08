@@ -847,6 +847,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 
 const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist to the staff's shaft
 const REGRIP_GATE := 0.05      # m: either fist to the shaft as the staff comes back into both hands (0.29 before the guard turn, 0.167 before the 11-08 regrip)
+const REGRIP_L_EARLY_T := 1.78
+const REGRIP_L_EARLY_GATE := 0.05  # m: (11-08) the left fist already on the shaft by REGRIP_L_EARLY_T (before 0.160, after 0.016)
 const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
 const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
 const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
@@ -7653,7 +7655,7 @@ func _sweep_test() -> void:
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
-	var held := [0.0, 9.0, 0, 0, 9.0]   # the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
+	var held := [0.0, 9.0, 0, 0, 9.0, 9.0]   # [5] left fist gap on the last held tick by REGRIP_L_EARLY_T; the staff in the right fist while down: max wrist-to-axis, lowest end over the turf, samples, ticks floating in Wield
 	var kh := [0.0, 9.0, 0]   # the right palm braced on the front knee: max wrist-to-knee, min wrist height over the knee, samples
 	p.fell.connect(func(at: Vector3) -> void:
 		falls[0] += 1
@@ -7727,6 +7729,8 @@ func _sweep_test() -> void:
 			if c.state == StaffCombat.HELD:
 				if p.down_t >= Player.KNOCK_REGRIP[1] - 0.02:
 					held[4] = c.fist_gap[1]   # the left fist closing on the shaft (last held tick wins)
+				if p.down_t <= REGRIP_L_EARLY_T:
+					held[5] = c.fist_gap[1]   # ...and already on it before the arms finish coming up
 				var st := c.staff.global_transform
 				var e0: Vector3 = st * Vector3(0, -Staff.LENGTH * 0.5, 0)
 				var e1: Vector3 = st * Vector3(0, Staff.LENGTH * 0.5, 0)
@@ -7820,8 +7824,8 @@ func _sweep_test() -> void:
 			print("after t %.3f state %d gap r %.3f l %.3f blend %.2f hr w %.2f hold %.2f" % [p.down_t, c.state, c.fist_gap[0], c.fist_gap[1], c._blend, p.hand_rest.weight, p.hand_rest.hold])
 		await get_tree().physics_frame
 	print("BOT sweep: staff while down: in the right fist %d samples (fist centre to the shaft up to %.3f m, lowest end %.3f m over the turf), %d samples left floating, after the get-up %s, fists to the shaft up to %.3f m on the regrip" % [held[2], held[0], held[1], held[3], ["sheathed", "drawing", "ready", "attacking", "sheathing", "charging", "dropped", "plunging", "held"][c.state], regrip])
-	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m" % held[4])
-	if held[4] > REGRIP_L_GATE:
+	print("BOT sweep: left fist to the shaft as it closes on it before the draw: %.3f m (by t %.2f: %.3f m)" % [held[4], REGRIP_L_EARLY_T, held[5]])
+	if held[4] > REGRIP_L_GATE or held[5] > REGRIP_L_EARLY_GATE:
 		return _combat_done(false, "the hero's free left hand does not come to the shaft before the staff is taken back into both hands")
 	if regrip > REGRIP_GATE or held[2] < 10 or held[3] > 0 or held[0] > HELD_WRIST_GATE or held[1] < HELD_END_GATE or c.state != StaffCombat.READY:
 		return _combat_done(false, "the drawn staff does not stay in the knocked-down hero's right fist (or hangs in the air, or goes through the turf, or is not back at guard after)")

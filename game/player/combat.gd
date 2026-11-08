@@ -177,6 +177,8 @@ var hold_on := true
 var held_lay := 0.0
 var held_plant := 0.0
 var held_guard := 0.0
+var held_reach_l := 0.0   # 0..1 (knock-down rise): the shaft tips in the right fist toward the left arm's reach
+var _held_shoulder_l := Vector3.ZERO
 var held_ground := 0.0       # world height of the turf under the hero (the player sets it)
 var _held_rel := Transform3D()
 var _held_rel_ok := false
@@ -491,6 +493,8 @@ func hold() -> bool:
 	held_lay = 0.0
 	held_plant = 0.0
 	held_guard = 0.0
+	held_reach_l = 0.0
+	_held_shoulder_l = Vector3.ZERO
 	state = HELD
 	return true
 
@@ -548,6 +552,23 @@ func _place_held() -> void:
 		var grip_r := _wield.global_transform * _target_r.position
 		q = q.slerp(gq, held_guard)
 		sl = lerpf(sl, (grip_r - g.origin).dot(g.basis.y.normalized()), held_guard)
+	if held_reach_l > 0.0 and _held_shoulder_l != Vector3.ZERO and not OS.has_environment("KNOCK_NOREACH"):
+		# (11-08) the right fist is still low by the knee as the arms come up, so the guard's line
+		# through it passed ~0.4 m off the left shoulder and the left hand could only close on the
+		# shaft at the very end: tip the shaft in the fist so it runs through a spot the left arm
+		# can take (the guard's left grip, drawn in to REGRIP_AIM of the shoulder)
+		var g2 := _wield.global_transform * _staff_xform(GUARD)
+		var gax := g2.basis.y.normalized()
+		var gl := _wield.global_transform * _target_l.position
+		var gr := _wield.global_transform * _target_r.position
+		var span := (gl - g2.origin).dot(gax) - (gr - g2.origin).dot(gax)   # right grip -> left grip along the axis
+		var to := gl - _held_shoulder_l
+		var aim := _held_shoulder_l + to.limit_length(REGRIP_AIM)
+		var d := aim - fist
+		if d.length() > 0.15 and absf(span) > 0.05:
+			var cur3 := q * Vector3.UP
+			var want := d.normalized() * signf(span)
+			q = q.slerp(Quaternion(cur3, want) * q, held_reach_l)
 	var ax3 := q * Vector3.UP
 	staff.global_transform = Transform3D(Basis(q).scaled(held.basis.get_scale()), fist - ax3 * sl)
 
@@ -578,7 +599,10 @@ var _unhold_draw := false
 const UNHOLD_ROLL_RATE := 20.0  # 1/s
 const UNHOLD_TAKE := 0.06    # s: the arm IK takes the hands from the knock-down pose (already on the shaft)
 const REGRIP_REACH := 0.38   # m: shoulder to the fist's centre the arm can take without locking straight
+const REGRIP_AIM := 0.30     # m: the shaft is tipped through a spot this far from the left shoulder
 func held_grip_l_now(shoulder: Vector3) -> Vector3:
+	if shoulder.is_finite():
+		_held_shoulder_l = shoulder
 	_place_held()
 	var at := held_grip_l()
 	if shoulder == Vector3.ZERO or not shoulder.is_finite():
