@@ -20,11 +20,12 @@ for spec in "$@"; do
   set -- $spec
   spot=$1; name=$2; frames=${3:-90}
   shift 2; [ $# -gt 0 ] && shift
-  out="../shots/$name.png"
+  out="../shots/$name.png"; rm -f "$out"
   # "fixfps" in the args: step the game 1/30 s per rendered frame (the software renderer
   # takes ~1 s per frame, which ages short-lived FX such as drips past their life in one frame)
   ff=""; case " $* " in *" fixfps "*) ff="--fixed-fps 30";; esac
-  run_shot $ff --rendering-driver vulkan res://tools/shot.tscn -- "$spot" "$out" "$frames" "$@" 2>&1 | grep -E "SHOT|GRASS|SCRIPT ERROR|ERROR" | grep -v "shader_rd\|XKB\|xkbcommon"
+  # SHOT_GL=1: skip the Vulkan try (on the cloud box lavapipe runs out of memory on this scene)
+  [ -z "$SHOT_GL" ] && run_shot $ff --rendering-driver vulkan res://tools/shot.tscn -- "$spot" "$out" "$frames" "$@" 2>&1 | grep -E "SHOT|GRASS|SCRIPT ERROR|ERROR" | grep -v "shader_rd\|XKB\|xkbcommon"
   if [ ! -s "$out" ]; then
     echo "vulkan failed for $name, retrying opengl3"
     run_shot $ff --rendering-driver opengl3 --rendering-method gl_compatibility res://tools/shot.tscn -- "$spot" "$out" "$frames" "$@" 2>&1 | grep -E "SHOT|GRASS|SCRIPT ERROR|ERROR"

@@ -2457,6 +2457,24 @@ func _ready() -> void:
 			pcam.global_position = pc
 			pcam.look_at(aim)
 			print("SHOT pivotlens cam %s hero %s side %s" % [pc, back, pside])
+		if "jlens" in args:
+			# jlens: a front 3/4 lens for air moves, on the sun side and ahead of the frozen hero
+			# along the run (+X), level with the chest, far enough back to fit the raised staff
+			var jl_light: Vector3 = -world.sun.global_transform.basis.z
+			var jside := Vector3(0, 0, 1) if -jl_light.z > 0.0 else Vector3(0, 0, -1)
+			if "flip" in args:
+				jside = -jside
+			# raised a little over the chest so the meadow grass does not hide the legs
+			var jfwd := 1.7
+			for a in args:
+				if a.begins_with("jfwd="):
+					jfwd = float(a.substr(5))
+			var jc := back + jside * 2.7 + Vector3(jfwd, 0.0, 0.0)
+			jc.y = maxf(back.y + 1.45, terrain.height_at(jc.x, jc.z) + 0.6)
+			var jcam := get_viewport().get_camera_3d()
+			jcam.global_position = jc
+			jcam.look_at(back + Vector3.UP * 0.95)
+			print("SHOT jlens cam %s hero %s side %s" % [jc, back, jside])
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])

@@ -1809,6 +1809,12 @@ const JA_ARCH_KNEE := 1.55              # shins up behind
 const JA_FOLD_SPINE := 0.64             # chest folded down over the blow
 const JA_FOLD_HIP := 1.30               # knees driven up to meet the chest
 const JA_FOLD_KNEE := 1.50
+# (11-08 08:00) the trunk tips back off the hips through the arch and forward into the fold
+# (crumple.pelvis: the thighs keep their pose, only the chest goes); JUMPATK_NOPELVIS=1 = off
+const JA_ARCH_PELVIS := -0.26
+const JA_FOLD_PELVIS := 0.14
+var JUMPATK_NOPELVIS := OS.get_environment("JUMPATK_NOPELVIS") == "1"
+var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
 var ja_arch := 0.0                      # (bots) this tick's arch / fold weights
 var ja_fold := 0.0
@@ -1844,6 +1850,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var dip := 0.0
 	var ankle := 0.0
 	var flat := 0.0
+	var pel := 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -1931,6 +1938,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			ankle = lerpf(ankle, 0.15, fold)
 			ja_arch = arch
 			ja_fold = fold
+			if not JUMPATK_NOPELVIS:
+				pel = JA_ARCH_PELVIS * arch + JA_FOLD_PELVIS * fold
 	crumple.active = true
 	crumple.leg_aim = _jp
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
@@ -1941,6 +1950,11 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	crumple.stride = lerpf(crumple.stride, stride * _jp, k)
 	crumple.ankle = lerpf(crumple.ankle, ankle * _jp, k)
 	crumple.sole_flat = lerpf(crumple.sole_flat, flat * _jp, k)
+	if pel != 0.0 or _ja_pelvis != 0.0:
+		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)
+		if pel == 0.0 and absf(_ja_pelvis) < 0.002:
+			_ja_pelvis = 0.0
+		crumple.pelvis = _ja_pelvis
 	if push:
 		# the push frames are drawn as posed, not eased in: the crouch only lasts a frame or two
 		crumple.hip = hip
@@ -1965,6 +1979,7 @@ func _clear_jump_pose() -> void:
 		model.transform = _model_rest          # the take-off/landing dip goes with the pose
 	_jp = 0.0
 	_tuck = 0.0
+	_ja_pelvis = 0.0
 	if crumple == null:
 		return
 	crumple.leg_aim = 0.0

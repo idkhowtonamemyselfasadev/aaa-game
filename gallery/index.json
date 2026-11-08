@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261104-0920-crown-helm.jpg",
-  "time": "2026-11-04T09:20:00Z",
-  "caption": "The hero dropped onto the Ashen Knight's helm in the stone ring (GL quick look, hand-stepped): the crown strike works in play and in the bot, but this frame catches the hero upright before the plunge, seen from behind the giant, not the flank; no dedicated reel pose yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1104-crown-reel-slump.jpg",
-  "time": "2026-11-04T11:04:29Z",
-  "caption": "GL quick-look: the crowned Ashen Knight 0.45 s into its reel, knees buckled, glaive drooped blade-first into the turf; still a backlit silhouette, the bowed head barely reads, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261104-1104-crown-reel-shakeoff.jpg",
-  "time": "2026-11-04T11:04:29Z",
-  "caption": "GL quick-look: the knight shaking the crown strike off at 1.05 s, head thrown back, ember cracks flaring; backlit, little surface detail, not Forward+.",
-  "verdict": "fail"
- },
- {
   "file": "20261104-1222-wallkick-coil.jpg",
   "time": "2026-11-04T12:22:05Z",
   "caption": "GL quick-look: the hero coiled on the keep's face a frame before the kick, knees drawn up under the chest and pressed to the stones; the lens is still 3/4 from behind and the robe hides the legs, not Forward+.",
@@ -897,6 +879,18 @@
   "file": "20261108-0750-jumpattack-arch.jpg",
   "time": "2026-11-08T07:50:00Z",
   "caption": "Jump attack 0.16 s into the swing: the shins swing up behind and the legs trail as the staff climbs overhead; the clear+close jump lens sees the hero from behind with the head cropped, so the back arch cannot be judged here.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0850-jumpattack-arch-front.jpg",
+  "time": "2026-11-08T08:50:00Z",
+  "caption": "Jump attack at the arch peak, first front 3/4 frame: the trunk tips back and a shin trails, but the staff stands upright beside the hat instead of cocked behind the head, and the figure is dark against the grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261108-0850-jumpattack-fold-front.jpg",
+  "time": "2026-11-08T08:50:00Z",
+  "caption": "Jump attack on the blow: face and hat read under the new air lens, staff struck down-forward, knees up; the fold is mild with the head still upright.",
   "verdict": "fail"
  }
 ]
