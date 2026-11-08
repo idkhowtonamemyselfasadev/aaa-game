@@ -8225,6 +8225,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    now 0.000 / 0.000 in both starts from u 0.21 (slung 0.019 at u 0.18). Gates tightened: JA_COCK_GATE 36 -> 38,
    JA_FIST_GATE 0.04 -> 0.02. Note `keep_err` now reads against the aimed target.
    Bots airstrike (both starts) jump combat heavy lockon dodge hands sweep flinch knight climb glide footik crown PASS.
+   GL frame `jump kl30 90 15.0 fixfps press=0.12 jt=0.30 clear jlens flip` (slung, top of the arch): staff cocked back
+   over the shoulder behind the hat, right fist on the shaft; backlit to a silhouette (gallery 20261108-1420).
    Grade (jump attack): rough+ -> good- (hands honest and on the shaft every tick, deeper draw; still needs a frame
    sequence check for weight/overshoot and the hands following the chest at the fold).
    NEXT for the jump attack: (e) frame sequence jt 0.22/0.26/0.34/0.38/0.48/0.52 with `jlens flip`, one render at a
@@ -8247,6 +8249,8 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    or the fist-gap read-out in StaffCombat (`_fit_fists`, read in _process) samples bones and staff from different ticks.
    No GL frames this session (the change is invisible at the shipped key: 0.002 -> 0.000 m; renders take ~30 min).
    Bots airstrike (both starts) jump combat heavy lockon dodge hands sweep flinch knight climb glide footik crown PASS.
+   GL frame `jump kl30 90 15.0 fixfps press=0.12 jt=0.30 clear jlens flip` (slung, top of the arch): staff cocked back
+   over the shoulder behind the hat, right fist on the shaft; backlit to a silhouette (gallery 20261108-1420).
    Grade (jump attack): rough+ (unchanged).
    NEXT for the jump attack: (m2) measure the fist gap inside Crumple right after `_keep_hands` (staff transform from
    `player.combat.staff`, fist from `HandRest.fist_center`) to split a read-out artefact from a real pose fault at u 0.30
