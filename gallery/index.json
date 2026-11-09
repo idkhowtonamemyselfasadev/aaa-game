@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261105-0221-spotturn-lead.jpg",
-  "time": "2026-11-05T02:21:46Z",
-  "caption": "Hero's standing turn toward the lens, mid-turn: the hooded head already looks at the camera while the torso is still side-on (GL frame); the hero stands in the cottage's shade and the idle staff arm juts out stiffly.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0221-ring-knight-facing.jpg",
   "time": "2026-11-05T02:21:46Z",
   "caption": "The phase-3 Ashen Knight after turning on the spot to face the gate lens: facing confirmed by bone check, but at noon from the gate it is backlit and reads as a dark silhouette (GL frame).",
@@ -891,6 +885,12 @@
   "file": "20261109-0000-jumpattack-recovered.jpg",
   "time": "2026-11-09T00:50:00Z",
   "caption": "0.74 s after the jump-attack press the hero is already back upright with the staff on the shoulder and the robe hanging; this frame missed the new falling-robe landing, which is bot-checked only so far (GL render, backlit, figure small).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0200-jumpattack-landing.jpg",
+  "time": "2026-11-09T01:45:00Z",
+  "caption": "The jump attack 0.10 s before touch-down: legs tucked, staff driven down; from this rear-3/4 lens only the back robe panel shows, so the new falling front panel still is not seen (GL render, backlit, red too flat).",
   "verdict": "fail"
  }
 ]

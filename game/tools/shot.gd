@@ -2397,6 +2397,12 @@ func _ready() -> void:
 			if a.begins_with("press="):
 				press_t = float(a.substr(6))
 		var pressed := -1
+		var left_floor := false
+		var td_t := -1.0
+		var td_after := -1.0
+		for a in args:
+			if a.begins_with("td="):
+				td_after = float(a.substr(3))
 		for i in 600:
 			if not "drop" in args:
 				# world-space: the camera rig follows the hero, so a fixed stick would curve the run
@@ -2432,6 +2438,17 @@ func _ready() -> void:
 				player.bot_heavy = false
 			await get_tree().physics_frame
 			t += 1.0 / 60.0
+			# touch-down: the first tick back on the floor after leaving it (td=<s> freezes
+			# that far after it: the landing drop of a jump attack, 11-09)
+			if not left_floor and not player.is_on_floor():
+				left_floor = true
+			elif left_floor and td_t < 0.0 and player.is_on_floor():
+				td_t = t
+				print("SHOT touchdown jt %.3f" % t)
+			if td_after >= 0.0:
+				if td_t >= 0.0 and t >= td_t + td_after:
+					break
+				continue
 			if land < 0.0 and t >= jump_t:
 				break
 			if land >= 0.0 and player.land_t >= land:

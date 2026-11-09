@@ -2698,7 +2698,7 @@ func _airstrike_test() -> void:
 		ja_swf = maxf(ja_swf, p.garb._swing_f)
 		if p.garb.fold_front.x < 100.0:
 			ja_fold_a = maxf(ja_fold_a, p.garb.fold_front.y)
-		if OS.has_environment("JA_TRACE"): print("JR u %.2f swing_f %.2f swing_b %.2f fold %.2f@%.2f lie %.2f gap %.3f heel %.3f aim %.2f k %.3f ts %.2f" % [c.air_attack_u(), p.garb._swing_f, p.garb._swing_b, p.garb.fold_front.y, p.garb.fold_front.x, p.garb.tuck_lie, p.garb.tuck_gap, p.garb.tuck_heel, p.garb.tuck_aim, p.garb.tuck_k, Engine.time_scale])
+		if OS.has_environment("JA_TRACE"): print("JR u %.2f swing_f %.2f swing_b %.2f fold %.2f@%.2f lie %.2f gap %.3f heel %.3f aim %.2f k %.3f ts %.2f floor %s y %.2f" % [c.air_attack_u(), p.garb._swing_f, p.garb._swing_b, p.garb.fold_front.y, p.garb.fold_front.x, p.garb.tuck_lie, p.garb.tuck_gap, p.garb.tuck_heel, p.garb.tuck_aim, p.garb.tuck_k, Engine.time_scale, p.is_on_floor(), p.global_position.y])
 		if i == 12:
 			p.bot_attack = true                    # a second press in the same jump: no second air swing
 		if c.air_attacks > 1:
