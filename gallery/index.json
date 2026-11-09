@@ -886,5 +886,11 @@
   "time": "2026-11-08T23:21:00Z",
   "caption": "Jump attack fold at jt 0.52 with the rolled knee fold; the figure is small and in shadow and the red panel still reads too saturated.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261109-0000-jumpattack-recovered.jpg",
+  "time": "2026-11-09T00:50:00Z",
+  "caption": "0.74 s after the jump-attack press the hero is already back upright with the staff on the shoulder and the robe hanging; this frame missed the new falling-robe landing, which is bot-checked only so far (GL render, backlit, figure small).",
+  "verdict": "fail"
  }
 ]

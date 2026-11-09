@@ -2568,6 +2568,7 @@ func _jump_test() -> void:
 ## Jump attack + plunging attack on the practice post: a light at the top of a jump strikes
 ## down into it (once per jump), a heavy at the top of a jump drops the hero in a slam that
 ## strikes it, a plunge from 6 m hits harder and wider, and a 12 m plunge soaks half the fall.
+const DROP_FIRST_GATE := 4.0
 const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
@@ -2709,6 +2710,10 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
 	print("BOT airstrike: jump attack robe -> front panel lie %.2f, swing %.2f rad, knee fold %.2f rad, cloth over the knee %.3f m (gate > -%.2f), back hem behind the heels %.3f m" % [p.garb.tuck_lie_peak, ja_swf, ja_fold_a, p.garb.tuck_gap, TUCK_GAP_GATE, p.garb.tuck_heel])
 	print("BOT airstrike: knee fold rolls round a %.2f m arc, bent cloth's worst gap off the shin %.3f m (gate > %.2f)" % [p.garb.TUCK_ROUND if not OS.has_environment("KNEEROUND_OFF") else 0.0, p.garb.tuck_shin, TUCK_SHIN_GATE])
+	# (11-09 00:00) the landing: the front panel falls off the dropping thigh like heavy cloth
+	print("BOT airstrike: robe drop at landing -> first-tick swing speed %.1f rad/s (gate < %.1f; the old ease ~10), fastest fall %.1f rad/s, past the hang %.2f rad, down in %.2f s" % [p.garb.drop_first_w, DROP_FIRST_GATE, p.garb.drop_peak_w, p.garb.drop_under, p.garb.drop_settle])
+	if not p.garb.DROP_OFF and not p.garb.KNEEFOLD_OFF and (p.garb.drop_first_w > DROP_FIRST_GATE or p.garb.drop_peak_w < 3.0 or p.garb.drop_settle < 0.15 or p.garb.drop_settle > 0.7):
+		return _combat_done(false, "the robe's front panel shuts like a lid at the landing instead of falling like cloth")
 	if not p.garb.KNEEFOLD_OFF and p.garb.tuck_shin < TUCK_SHIN_GATE:
 		return _combat_done(false, "the rolled knee fold drives the robe through the shin")
 	if not p.garb.KNEEFOLD_OFF and (p.garb.tuck_lie_peak < 0.8 or p.garb.tuck_gap < -TUCK_GAP_GATE or ja_fold_a < 0.3):

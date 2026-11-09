@@ -680,8 +680,8 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	tuck_k = k
 	tuck_lie = lerpf(tuck_lie, lie, k)
 	tuck_lie_peak = maxf(tuck_lie_peak, tuck_lie)
-	_swing_f = maxf(lerpf(_swing_f, tf, k), push_f)
-	_swing_b = maxf(lerpf(_swing_b, tb, k), push_b)
+	_swing_f = _drop_swing(0, _swing_f, tf, push_f, k, fl * sy)
+	_swing_b = _drop_swing(1, _swing_b, tb, push_b, k, _back.get_meta("len", 1.0) * _back.global_basis.y.length())
 	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
 	# behind the heels
 	if not gap_at.is_empty():
@@ -716,6 +716,67 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 			tuck_shin = minf(tuck_shin, (w - (a0 + seg * u)).length())
 	_set_fold_len(fold_round)
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
+
+## A panel left high (the thigh it lay on drops away at a landing) FALLS: a heavy wool board
+## hinged at the belt, under gravity with air drag, from rest, so it starts slow, speeds up,
+## swings a little past its hang and settles, instead of easing shut like a damped lid (the old
+## ease started at its fastest, 10 rad/s, the moment the thigh left it). A limb under it still
+## catches it at once (`push`). Small swings (walking) keep the plain ease.
+const DROP_START := 0.6       # rad above its rest a panel must be left to fall freely
+const DROP_ZETA := 0.35       # air drag on the wool (damping ratio)
+## cloth is no rigid board: the part below the knee hangs off the fold already and the rest
+## bends as it goes, so it falls like a board this fraction of the panel's length (~0.3 s down)
+const DROP_EFF := 0.42
+const DROP_UNDER := 0.15      # rad past its rest it may swing (the legs are behind it)
+var DROP_OFF := OS.has_environment("ROBEDROP_OFF")   # the old eased lid (before)
+var _dt := 1.0 / 60.0
+var _drop := [false, false]
+var _drop_w := [0.0, 0.0]     # rad/s, each panel's swing speed
+var _drop_t := [0.0, 0.0]     # s since the fall began
+var drop_peak_w := 0.0        # fastest fall seen (rad/s), for the bots
+var drop_under := 0.0         # deepest swing past the hang (rad), for the bots
+var drop_first_w := 9.0       # swing speed on the fall's first tick (rad/s), for the bots
+var drop_settle := 0.0        # s from release to within 0.1 rad of the hang, for the bots
+
+func _drop_swing(i: int, s: float, rest: float, push: float, k: float, length: float) -> float:
+	var eased := maxf(lerpf(s, rest, k), push)
+	if DROP_OFF:
+		return eased
+	if not _drop[i] and s - rest > DROP_START and push < s - 0.02:
+		_drop[i] = true
+		_drop_t[i] = 0.0
+		_drop_w[i] = minf(_drop_w[i], 0.0)
+	if not _drop[i]:
+		_drop_w[i] = (eased - s) / maxf(_dt, 1e-4)
+		return eased
+	# a physical pendulum the panel's length (uniform board: w^2 = 3g / 2L), in substeps
+	var w2 := 1.5 * 9.8 / maxf(length * DROP_EFF, 0.2)
+	var w := sqrt(w2)
+	var om: float = _drop_w[i]
+	var n := 4
+	var h := _dt / n
+	for j in n:
+		om += (-w2 * sin(s - rest) - 2.0 * DROP_ZETA * w * om) * h
+		s += om * h
+		if s < rest - DROP_UNDER:
+			s = rest - DROP_UNDER
+			om = absf(om) * 0.3   # it meets the legs behind it
+	if s < push:
+		s = push                  # a limb catches it
+		om = maxf(om, 0.0)
+	if i == 0:
+		if _drop_t[i] == 0.0:
+			drop_first_w = absf(om)
+		drop_peak_w = maxf(drop_peak_w, -om)
+		drop_under = maxf(drop_under, rest - s)
+		if drop_settle == 0.0 and s - rest < 0.1:
+			drop_settle = _drop_t[i] + _dt
+	_drop_t[i] += _dt
+	_drop_w[i] = om
+	# past the low point and on the way back up: the plain ease takes it home
+	if (s < rest and om >= 0.0) or (absf(s - rest) < 0.03 and absf(om) < 0.5) or _drop_t[i] > 1.5:
+		_drop[i] = false
+	return s
 
 ## The front panel's (and the gores' front ends') knee-fold arc length; 0 = the old crease.
 func _set_fold_len(v: float) -> void:
@@ -856,6 +917,7 @@ func _physics_process(delta: float) -> void:
 	bwd = maxf(bwd, stream * 0.42 + fall * 0.4)
 	fwd = maxf(fwd, fall * 0.5)
 	var k := minf(delta * 14.0, 1.0)
+	_dt = delta
 	if hang > 0.0:
 		_hang_panels(fwd, bwd, k)
 	elif knee_fold and not KNEEFOLD_OFF:
