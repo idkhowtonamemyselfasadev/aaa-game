@@ -2580,6 +2580,7 @@ const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
 const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the hat crown at the plunge hang (old -0.33)
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
+const PL_SNATCH_HAT_GATE := -0.04     # m: worst shaft-to-hat margin while the plunge snatches a slung staff (old -0.25)
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -2955,20 +2956,34 @@ func _airstrike_test() -> void:
 	var sl_seen := false
 	var sl_fist_hat := [-9.0]          # (11-09 09:00) higher fist minus the hat's crown at plunge_t ~0.08 (array: lambdas capture by value)
 	var sl_shaft_hat := [9.0]          # worst shaft-to-hat margin from the hang through the swing over (plunge_t 0.08..0.215)
+	var sl_prev_ax := [Vector3.ZERO]   # staff axis on the last tick (for the per-tick turn)
+	var sl_snatch_turn := [0.0]        # worst per-tick turn of the shaft from the snatch to the swing (plunge_t < 0.12), deg
+	var sl_snatch_hat := [9.0]         # (11-09 10:00) worst shaft-to-hat margin during the snatch off the back (plunge_t < 0.08)
 	var ph_rec := func() -> void:
 		if not c.is_plunging():
 			return
 		var ht := _hat_top(p)
 		var fr := c.fist_center("Right").y - ht
 		var fl := c.fist_center("Left").y - ht
+		var axn: Vector3 = c.staff.global_basis.y.normalized()
+		var turn := 0.0
+		if sl_prev_ax[0] != Vector3.ZERO:
+			turn = rad_to_deg(sl_prev_ax[0].angle_to(axn))
+			if c.plunge_t < 0.12:
+				sl_snatch_turn[0] = maxf(sl_snatch_turn[0], turn)
+		sl_prev_ax[0] = axn
 		if OS.get_environment("PL_TRACE") == "1":
 			var se := _staff_ends(c)
+			print("PT t %.3f turn %.1f deg" % [c.plunge_t, turn])
 			print("PH t %.3f fistR-hat %.3f fistL-hat %.3f | hat-root %.3f blend %.2f shaft-hat %.3f gap R %.3f L %.3f" % [c.plunge_t, fr, fl, ht - p.global_position.y, c._blend, _hat_margin(p, se[0], se[1]), c.fist_gap[0], c.fist_gap[1]])
 		if sl_fist_hat[0] < -8.0 and c.plunge_t >= 0.08:
 			sl_fist_hat[0] = maxf(fr, fl)
 		if c.plunge_t >= 0.08 and c.plunge_t <= 0.215:
 			var sh := _staff_ends(c)
 			sl_shaft_hat[0] = minf(sl_shaft_hat[0], _hat_margin(p, sh[0], sh[1]))
+		elif c.plunge_t < 0.08:
+			var ss := _staff_ends(c)
+			sl_snatch_hat[0] = minf(sl_snatch_hat[0], _hat_margin(p, ss[0], ss[1]))
 	c.skel.skeleton_updated.connect(ph_rec)
 	p.bot_heavy = true
 	for i in 160:
@@ -2993,6 +3008,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge hang -> higher fist %.3f m from the hat's crown (gate >= %.2f; the old chin-high hang -0.33), worst shaft-to-hat %.3f m from the hang through the swing over (gate >= %.2f; old -0.25)" % [sl_fist_hat[0], PL_HANG_FIST_GATE, sl_shaft_hat[0], PL_HANG_HAT_GATE])
 	if not c.PLUNGE_LOWHANG and (sl_fist_hat[0] < PL_HANG_FIST_GATE or sl_shaft_hat[0] < PL_HANG_HAT_GATE):
 		return _combat_done(false, "the plunge's hang is not overhead, or the staff cuts through the hat")
+	print("BOT airstrike: slung snatch -> worst shaft-to-hat %.3f m while the staff comes off the back (gate >= %.2f; old -0.25), worst shaft turn %.1f deg/tick to plunge 0.12 s" % [sl_snatch_hat[0], PL_SNATCH_HAT_GATE, sl_snatch_turn[0]])
+	if not c.PLUNGE_SNATCHRAW and sl_snatch_hat[0] < PL_SNATCH_HAT_GATE:
+		return _combat_done(false, "the slung staff passes through the hat as the plunge snatches it")
 	if c.plunges != 4:
 		return _combat_done(false, "the slung-staff plunge never landed")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")

@@ -180,6 +180,8 @@ var air_holds := 0             # jump attacks that held their struck pose into t
 ## at ~0.25 s, in the dive. PLUNGE_SLOWSNATCH=1 = old.
 const PLUNGE_DRAW_TIME := 0.075
 var PLUNGE_SLOWSNATCH := OS.get_environment("PLUNGE_SLOWSNATCH") == "1"
+## (11-09 10:00) PLUNGE_SNATCHRAW=1 = the snatch blended straight through the hat (before).
+var PLUNGE_SNATCHRAW := OS.get_environment("PLUNGE_SNATCHRAW") == "1"
 var _air_draw_dur := AIR_DRAW_TIME
 
 ## True while a move in the air snatches the staff: a jump attack, or a plunge (unless old).
@@ -1406,6 +1408,11 @@ func physics_step(delta: float) -> void:
 		if not JUMPATK_SLOWSNATCH:
 			f = smoothstep(0.0, 1.0, f)
 		staff.transform = _from_xform.interpolate_with(staff.transform, f)
+		if state == PLUNGING and f < 1.0 and not PLUNGE_SNATCHRAW:
+			# (11-09 10:00) the straight transform blend from the back slot to the overhead hang
+			# carried the shaft THROUGH the hat (0.25 m deep at plunge 0.05 s): tip it about the
+			# right fist so it passes beside the brim, as the knock-down redraw does
+			_draw_clear_hat()
 		_set_influence(f)
 		if f >= 1.0:
 			_air_draw_t = -1.0

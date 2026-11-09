@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-1040-stagger-3.jpg",
-  "time": "2026-11-05T10:40:00Z",
-  "caption": "0.05 s into a stagger from the Hollow soldier's thrust: the hero's chest caves round the blow and the head drops while the hips give back; the cloak hides most of the body line and this is a GL quick-look, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-1040-stagger-12.jpg",
-  "time": "2026-11-05T10:40:00Z",
-  "caption": "0.2 s into the stagger: the hero has stepped back about a metre on real backward steps (no skating) and is rebounding upright; the reaction is readable but modest at this distance.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-1230-soldier-reel-impact.jpg",
   "time": "2026-11-05T12:30:30Z",
   "caption": "A Hollow soldier 0.07 s after a blow from ahead: the chest caves round it, the head is thrown forward and the spear knocked up, reacting at the joints instead of tipping as one rigid piece; GL quick-look in cottage shade, no Forward+ frame yet.",
@@ -897,6 +885,18 @@
   "file": "20261109-0900-plunge-swing-clear.jpg",
   "time": "2026-11-09T09:00:00Z",
   "caption": "Plunge swing over the top: the staff is carried out in front of the brim, tip forward, as the dive starts (it used to sweep through the hat); the figure is small and in the cottage-side shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1000-plunge-snatch.jpg",
+  "time": "2026-11-09T10:40:00Z",
+  "caption": "Plunge pressed with the staff slung, 0.05 s in: the staff now swings out beside the straw hat as it comes off the back; still lit from behind by this lens, hands not yet on the shaft at this instant (GL renderer).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1000-snatch-before-after.jpg",
+  "time": "2026-11-09T10:40:00Z",
+  "caption": "Before (left) the snatched staff stood up through the hat brim; after (right) it passes beside it. The snatch path is still a little whippy.",
   "verdict": "fail"
  }
 ]
