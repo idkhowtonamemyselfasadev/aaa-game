@@ -30,6 +30,8 @@ var _dust: CPUParticles3D
 var _chips: CPUParticles3D
 var _puff: CPUParticles3D
 var _front_dust: CPUParticles3D  # laid along the shock front as it runs: the ring that reads
+var _clods: CPUParticles3D       # fist-sized turf clods thrown up and out (11-09 14:00)
+var _column: CPUParticles3D      # dark earth column shot straight up over the pit (11-09 14:00)
 var blasted := 0                 # grass points laid flat round the pit (bots)
 var exposure := 0.0              # 0 deep shade / night .. 1 open midday sun at the pit (bots)
 var glow := DUST_GLOW_E          # the dust's self-light after exposure (bots)
@@ -45,6 +47,14 @@ static var _soft: ImageTexture
 static var SOFT_OPEN := OS.get_environment("CRACK_SOFTOPEN") == "1"
 const OPEN_ALPHA := 0.6         # the dust's alpha on the very first frame (old 0.0)
 const OPEN_SCALE := 0.85        # its size on the first frame, of the scale curve's top end (old 0.45)
+
+## (11-09 14:00) the burst had no height and no texture: a flat, pale, even disc on the turf,
+## its 3.5 cm chips too small to read. Now a column of dark earth shoots up over the pit and
+## falls back as it thins, a dozen and a half fist-sized clods are thrown up and out on arcs,
+## and the dust opens dark wet-earth brown and pales as it hangs. CRACK_FLATBURST=1 = old.
+static var FLAT_BURST := OS.get_environment("CRACK_FLATBURST") == "1"
+const EARTH_OPEN := Color(0.34, 0.29, 0.23)    # the dust's colour on the contact frame (old pale 0.55)
+const CLOD_R := 0.075                          # m, a clod's radius at scale 1
 
 func _ready() -> void:
 	_decal = Decal.new()
@@ -63,7 +73,14 @@ func _ready() -> void:
 	add_child(_dust)
 	_front_dust = _make_front_dust()
 	add_child(_front_dust)
-	for p in [_chips, _puff, _dust, _front_dust]:
+	var all: Array = [_chips, _puff, _dust, _front_dust]
+	if not FLAT_BURST:
+		_clods = _make_clods()
+		add_child(_clods)
+		_column = _make_column()
+		add_child(_column)
+		all += [_clods, _column]
+	for p in all:
 		(p as CPUParticles3D).emitting = true
 	_blast_grass.call_deferred()   # the sentinel places us after add_child
 	_light_dust.call_deferred()
@@ -72,7 +89,9 @@ func _ready() -> void:
 func _light_dust() -> void:
 	exposure = _sun_exposure()
 	glow = lerpf(DUST_GLOW_E, DUST_GLOW_SUN, exposure)
-	for p in [_puff, _dust, _front_dust]:
+	for p in [_puff, _dust, _front_dust, _column]:
+		if p == null:
+			continue
 		var m := ((p as CPUParticles3D).mesh as QuadMesh).material as StandardMaterial3D
 		m.emission_energy_multiplier = glow
 
@@ -180,6 +199,124 @@ func _make_chips() -> CPUParticles3D:
 	q.material = m
 	p.mesh = q
 	return p
+
+## Fist-sized clods of turf and earth, lumpy (a displaced icosphere, not a ball), thrown up
+## out of the pit on steep arcs and out past the crouch; heavy, so they come down fast.
+func _make_clods() -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.name = "Clods"
+	p.one_shot = true
+	p.amount = int(18 * clampf(size_k, 0.85, 2.5))
+	p.lifetime = 1.4
+	p.explosiveness = 1.0
+	p.local_coords = false
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.3 * size_k
+	p.position = Vector3(0, 0.12, 0)
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 38.0
+	p.initial_velocity_min = 3.2
+	p.initial_velocity_max = 6.8
+	p.gravity = Vector3(0, -16.0, 0)
+	p.angle_min = 0.0
+	p.angle_max = 360.0
+	p.angular_velocity_min = -420.0
+	p.angular_velocity_max = 420.0
+	# a clod is a chunk of turf whatever the blow: only lean its size a little with the burst
+	var ck := lerpf(1.0, size_k, 0.4)
+	p.scale_amount_min = 0.65 * ck
+	p.scale_amount_max = 1.5 * ck
+	p.particle_flag_rotate_y = true
+	p.mesh = clod_mesh()
+	# a few still carry their green top, most are bare dark earth
+	var gi := Gradient.new()
+	gi.offsets = PackedFloat32Array([0.0, 0.7, 0.72, 1.0])
+	gi.colors = PackedColorArray([Color(0.26, 0.2, 0.15), Color(0.34, 0.27, 0.2), Color(0.3, 0.36, 0.17), Color(0.27, 0.33, 0.15)])
+	p.color_initial_ramp = gi
+	return p
+
+static var _clod_mesh: ArrayMesh
+## A lumpy clod: an icosphere pushed in and out by noise and squashed a little, dark earth,
+## rough, lit properly (vertex colour picks its tint per clod).
+static func clod_mesh() -> ArrayMesh:
+	if _clod_mesh != null:
+		return _clod_mesh
+	var noise := FastNoiseLite.new()
+	noise.seed = 77
+	noise.frequency = 1.8
+	var sph := SphereMesh.new()
+	sph.radius = CLOD_R
+	sph.height = CLOD_R * 1.5
+	sph.radial_segments = 9
+	sph.rings = 5
+	var arr := sph.get_mesh_arrays()
+	var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	for i in v.size():
+		var d := v[i].normalized()
+		var k := 1.0 + 0.38 * noise.get_noise_3dv(d * 2.0)
+		v[i] = v[i] * k
+	arr[Mesh.ARRAY_VERTEX] = v
+	arr[Mesh.ARRAY_NORMAL] = null
+	var st := SurfaceTool.new()
+	st.create_from_arrays(arr)
+	st.generate_normals()
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.albedo_color = Color(1, 1, 1)
+	m.roughness = 0.97
+	_clod_mesh = st.commit()
+	_clod_mesh.surface_set_material(0, m)
+	return _clod_mesh
+
+## A column of dark earth shot straight up over the pit: it rises 1.2-2 m in a narrow plume,
+## the air stops it, and it thins and pales as it hangs and spreads. Gives the burst height.
+func _make_column() -> CPUParticles3D:
+	var p := _dust_base(26, 1.6, 0.75 * clampf(size_k, 0.8, 2.0))
+	p.name = "Column"
+	p.explosiveness = 0.85
+	p.position = Vector3(0, 0.25, 0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.18 * size_k
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 9.0
+	var vk := lerpf(1.0, sqrt(size_k), 0.5)
+	p.initial_velocity_min = 3.5 * vk
+	p.initial_velocity_max = 5.0 * vk
+	p.damping_min = 7.0
+	p.damping_max = 8.5
+	p.gravity = Vector3(0, -1.2, 0)
+	p.scale_amount_min = 0.45
+	p.scale_amount_max = 1.0
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.015, 0.35, 1.0])
+	g.colors = PackedColorArray([Color(0.27, 0.23, 0.18, 0.85), Color(0.29, 0.25, 0.2, 0.85),
+		Color(0.45, 0.41, 0.36, 0.5), Color(0.6, 0.58, 0.55, 0.0)])
+	p.color_ramp = g
+	return p
+
+## Roughly how high the column's slowest and fastest cards stop over the turf (m): the rise of
+## a card fired at v and slowed by `damping` (linear, m/s^2) plus gravity. For the bots.
+func column_peak() -> Vector2:
+	if _column == null:
+		return Vector2.ZERO
+	var g := -_column.gravity.y
+	var lo := _column.initial_velocity_min
+	var hi := _column.initial_velocity_max
+	return Vector2(_column.position.y + lo * lo / (2.0 * (_column.damping_max + g)),
+		_column.position.y + hi * hi / (2.0 * (_column.damping_min + g)))
+
+## The smallest clod's radius (m) and how many are thrown. For the bots.
+func clod_read() -> Vector2:
+	if _clods == null:
+		return Vector2.ZERO
+	return Vector2(CLOD_R * _clods.scale_amount_min, _clods.amount)
+
+## How dark the dust opens (luminance of the ramp's first colour). For the bots.
+func open_luma() -> float:
+	if _puff == null:
+		return 1.0
+	var c := _puff.color_ramp.sample(0.0)
+	return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 
 ## A heavy grey-brown puff out of the pit itself.
 func _make_puff() -> CPUParticles3D:
@@ -321,6 +458,11 @@ func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	g.offsets = PackedFloat32Array([0.0, open, 0.45, 1.0])
 	g.colors = PackedColorArray([Color(0.55, 0.52, 0.48, a0), Color(0.58, 0.55, 0.51, 0.68),
 		Color(0.64, 0.62, 0.59, 0.42), Color(0.68, 0.67, 0.65, 0.0)])
+	if not FLAT_BURST:
+		# opens dark, wet-earth brown on the contact frame and pales as the cloud hangs and dries
+		g.offsets = PackedFloat32Array([0.0, open, 0.2, 0.5, 1.0])
+		g.colors = PackedColorArray([Color(EARTH_OPEN, a0), Color(EARTH_OPEN.lightened(0.05), 0.7),
+			Color(0.47, 0.43, 0.37, 0.6), Color(0.62, 0.6, 0.56, 0.4), Color(0.68, 0.67, 0.65, 0.0)])
 	p.color_ramp = g
 	var c := Curve.new()
 	if SOFT_OPEN:

@@ -2580,6 +2580,9 @@ const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
 const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the hat crown at the plunge hang (old -0.33)
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
+const PL_COLUMN_GATE := 1.2           # m the burst's earth column's fast cards rise over the turf (11-09 14:00; old none)
+const PL_CLOD_GATE := 0.04            # m the smallest thrown clod's radius (old chips 0.012)
+const PL_LUMA_GATE := 0.40            # the dust's opening luminance must be darker than this (old pale 0.52)
 const PL_OPEN_GATE := 0.10            # puff_read one tick after the blow (alpha x card area; 11-09 13:00, old slow open 0.006)
 const PL_HOLD_HAT_GATE := 0.0         # m: worst shaft-to-hat margin through the held hang (plunge_t 0.08..0.14; 11-09 12:00, old -0.024)
 const PL_SNATCH_TURN_GATE := 55.0     # deg/tick: worst shaft turn from the snatch to plunge 0.12 s (11-09 11:00; 10:00 tip-only 68.3)
@@ -2892,6 +2895,13 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge burst -> spawned on the touch-down tick %s, puff read one tick on %.3f (gate >= %.2f; old slow open 0.006), at 0.10 s %.3f" % [p.land_t <= 0.02, pc_open, PL_OPEN_GATE, pc.puff_read(0.1) if pc != null else 0.0])
 	if not GroundCrack.SOFT_OPEN and (pc_open < PL_OPEN_GATE or p.land_t > 0.02):
 		return _combat_done(false, "the plunge's dust burst does not open on the impact frame")
+	# (11-09 14:00) and it must have height and texture: an earth column, real clods, dark dust
+	var pk := pc.column_peak() if pc != null else Vector2.ZERO
+	var cl := pc.clod_read() if pc != null else Vector2.ZERO
+	var lu := pc.open_luma() if pc != null else 1.0
+	print("BOT airstrike: plunge burst shape -> earth column rises %.2f..%.2f m (gate >= %.1f), clods %d, smallest %.3f m (gate >= %.2f), dust opens luma %.2f (gate < %.2f)" % [pk.x, pk.y, PL_COLUMN_GATE, int(cl.y), cl.x, PL_CLOD_GATE, lu, PL_LUMA_GATE])
+	if not GroundCrack.FLAT_BURST and (pk.y < PL_COLUMN_GATE or cl.x < PL_CLOD_GATE or cl.y < 12 or lu >= PL_LUMA_GATE):
+		return _combat_done(false, "the plunge's burst is a flat pale disc: no earth column, no clods or pale dust")
 	await _ticks(3)
 	var pc_ok := pc != null and is_instance_valid(pc) and pc.harmless and pc.blasted >= 20 \
 		and absf(pc.ring_r - StaffCombat.plunge_radius(p.last_drop)) < 0.01 and pc.result != "hit"
