@@ -157,6 +157,13 @@ var JUMPATK_SLOWSNATCH := OS.get_environment("JUMPATK_SLOWSNATCH") == "1"
 ## shaft (they rode 0.09-0.15 m off it for ~5 ticks after the snatch: the gate waited on the
 ## fingers closing, eased at HAND_RATE, and on the full draw). JUMPATK_LATEFEED=1 = old gate.
 var JUMPATK_LATEFEED := OS.get_environment("JUMPATK_LATEFEED") == "1"
+## (11-09 04:00) a jump attack that has finished its blow before touch-down holds the struck pose
+## until the feet meet the turf (at most AIR_HOLD_MAX s; on a longer fall it lets go back to guard).
+## JUMPATK_NOAIRHOLD=1 = the old drop back to guard in the air.
+const AIR_HOLD_MAX := 0.45
+var JUMPATK_NOAIRHOLD := OS.get_environment("JUMPATK_NOAIRHOLD") == "1"
+var air_hold_t := 0.0          # s the current jump attack has held its struck pose in the air
+var air_holds := 0             # jump attacks that held their struck pose into the fall (bots)
 
 ## True while a snatch off the back is blended under an air move and has passed its half.
 func air_snatch_late() -> bool:
@@ -980,6 +987,7 @@ func _start_air() -> void:
 		_atk = AIR_LIGHT.duplicate(true)
 		_atk["keys"][3] = [0.30, f[0], f[1], Vector3(f[2], f[3], f[4]), -14.0]
 	_recover = 0.0
+	air_hold_t = 0.0
 	_power = AIR_POWER
 	_hit_this_swing.clear()
 	_prev_u = -1.0
@@ -1302,7 +1310,16 @@ func physics_step(delta: float) -> void:
 			if atk == HEAVY and not _slammed and u >= SLAM_AT:
 				_slammed = true
 				_ground_slam()
-			if u >= 1.0:
+			if u >= 1.0 and atk.get("air", false) and not JUMPATK_NOAIRHOLD and air_hold_t < AIR_HOLD_MAX \
+					and player._air_t >= 0.0 and not player.gliding and not player.climbing:
+				# (11-09 04:00) the blow is done but the feet are still off the turf: hold the struck
+				# pose (staff driven down, body folded) until touch-down, so the landing always comes
+				# down out of the strike and sinks through the knees (it used to drop back to guard
+				# in the air and land like a plain hop when pressed early in the jump)
+				t = dur
+				air_hold_t += delta
+				air_holds += 1 if air_hold_t <= delta + 0.0001 else 0
+			elif u >= 1.0:
 				if atk.get("air", false) and (queued or _heavy_queued) and player.strike_landing_hold():
 					pass   # (11-09) still sunk in the jump attack's landing: the next swing waits for the rise
 				elif _heavy_queued:
@@ -1489,8 +1506,14 @@ func _ride_chest(delta: float) -> void:
 	ride = ride.lerp(want, 1.0 - exp(-RIDE_RATE * delta))
 	# (11-09) down in a jump attack's landing the staff sinks with the body the same tick (it
 	# stayed at standing height and the arms could not reach it: grip error 0.09 m)
+	# (11-09 04:00) and keeps sinking with it once the strike has ended and the arms ease back to
+	# guard (READY / a swing pressed then): it used to pop back up by the whole dip (~0.3 m) in
+	# one tick the moment the attack ended mid-landing. JUMPATK_NOAIRHOLD=1 = the old.
 	strike_sink = 0.0
-	if state == ATTACKING and _atk.get("air", false) and player.strike_landing_hold():
+	var sink_on: bool = state == ATTACKING and _atk.get("air", false)
+	if not JUMPATK_NOAIRHOLD:
+		sink_on = state in [ATTACKING, READY, CHARGING]
+	if sink_on and player.strike_landing_hold():
 		strike_sink = player._pose_dip * STRIKE_SINK_SHARE
 	_wield.position = ride + Vector3(0.0, -strike_sink, 0.0)
 

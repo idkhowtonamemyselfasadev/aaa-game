@@ -2572,6 +2572,7 @@ const STRIKE_SINK_GATE := 0.18   # (11-09) m the hips sink at the deepest of a j
 const STRIKE_HOLD_GATE := 0.15   # m still sunk 0.08 s after touch-down (old: rising straight away)
 const STRIKE_UP_GATE := 0.30     # s before the hips are back within 3 cm of standing
 const STRIKE_KNEE_STEP := 0.12   # rad, the knee pose's largest change in one tick (no snap)
+const SINK_STEP_GATE := 0.04    # (11-09 04:00) m, the staff's landing sink may change at most this much per tick
 const DROP_FIRST_GATE := 4.0
 const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
@@ -2662,6 +2663,7 @@ func _airstrike_test() -> void:
 	var land_h: Array[float] = []
 	var land_knee: Array[float] = []
 	var land_strike := false
+	var land_sink: Array[float] = []
 	for i in 90:
 		await get_tree().physics_frame
 		if td_i < 0 and p.is_on_floor() and p.land_t >= 0.0:
@@ -2670,6 +2672,7 @@ func _airstrike_test() -> void:
 		if td_i >= 0:
 			land_h.append(hips_h.call())
 			land_knee.append(p.crumple.knee)
+			land_sink.append(c.strike_sink)
 			if OS.has_environment("JA_TRACE"): print("JLT land_t %.3f atk %s air %s u %.2f jp %.2f" % [p.land_t, c.is_attacking(), c.is_air_attack(), c.air_attack_u(), p._jp])
 		if c.hit_active:
 			var tp := c.tip_position()
@@ -2733,6 +2736,7 @@ func _airstrike_test() -> void:
 		await get_tree().physics_frame
 		land_h.append(hips_h.call())
 		land_knee.append(p.crumple.knee)
+		land_sink.append(c.strike_sink)
 	# sink below standing at touch-down, deepest, at +0.08 s; when back within 3 cm of standing
 	var ls := [0.0, 0.0, 0.0, 0.0]
 	var knee_jump := 0.0
@@ -2751,6 +2755,12 @@ func _airstrike_test() -> void:
 				break
 	if OS.has_environment("JA_TRACE"): print("JL stand %.3f hips %s knee %s" % [stand_h, str(land_h.map(func(v): return snappedf(v, 0.001))), str(land_knee.map(func(v): return snappedf(v, 0.01)))])
 	print("BOT airstrike: strike landing %s -> hips sink %.3f m at touch-down, %.3f deepest, %.3f at +0.08 s, back up in %.2f s (gates: deepest >= %.2f, +0.08 s >= %.2f, up >= %.2f s), worst knee step %.3f rad/tick (gate < %.2f)" % [land_strike, ls[0], ls[1], ls[2], ls[3], STRIKE_SINK_GATE, STRIKE_HOLD_GATE, STRIKE_UP_GATE, knee_jump, STRIKE_KNEE_STEP])
+	var sink_step := 0.0
+	for j in range(1, land_sink.size()):
+		sink_step = maxf(sink_step, absf(land_sink[j] - land_sink[j - 1]))
+	print("BOT airstrike: staff carried down with the landing -> worst per-tick jump %.3f m (gate < %.2f)" % [sink_step, SINK_STEP_GATE])
+	if not c.JUMPATK_NOAIRHOLD and not p.JUMPATK_QUICKLAND and sink_step > SINK_STEP_GATE:
+		return _combat_done(false, "the staff pops back up out of the jump attack's landing in one tick")
 	if not p.JUMPATK_QUICKLAND and (not land_strike or ls[1] < STRIKE_SINK_GATE or ls[2] < STRIKE_HOLD_GATE or ls[3] < STRIKE_UP_GATE or knee_jump > STRIKE_KNEE_STEP):
 		return _combat_done(false, "the jump attack lands by straightening up at once instead of sinking through the knees")
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
@@ -2777,6 +2787,53 @@ func _airstrike_test() -> void:
 		return _combat_done(false, "a light at the top of a jump did not strike down into the post")
 	if second:
 		return _combat_done(false, "a second jump attack was thrown in the same jump")
+	# 1b) (11-09 04:00) a jump attack pressed right off the take-off ends its blow before touch-down:
+	# it must hold the struck pose into the fall and still land through the knees
+	await place.call(4.5, 0.0)                 # clear of the post (its hit-stop would stretch the swing)
+	var holds0 := c.air_holds
+	p.bot_jump = true
+	p.bot_jump_hold = true                     # a full jump, the light pressed just off the take-off
+	for i in 30:
+		await get_tree().physics_frame
+		if not p.is_on_floor() and p.air_attack_ok():
+			break
+	p.bot_attack = true
+	await _ticks(2)
+	var early_started := c.is_air_attack()
+	var early_strike := false
+	var early_td := -1.0
+	var early_down := false
+	var early_h: Array[float] = []
+	var early_sink: Array[float] = []
+	for i in 150:
+		await get_tree().physics_frame
+		if i == 30:
+			p.bot_jump_hold = false
+		if i == 8:
+			p.global_position.y += 2.0             # as if the jump had left a 2 m ledge: a longer fall
+			p._air_top += 2.0
+		if OS.has_environment("JA_TRACE"): print("JE %d floor %s y %.2f vy %.2f u %.2f hold %.2f land_t %.2f strike %s state %d" % [i, p.is_on_floor(), p.global_position.y, p.velocity.y, c.air_attack_u(), c.air_hold_t, p.land_t, p._land_strike, c.state])
+		if not early_down and p.is_on_floor() and p.land_t >= 0.0:
+			early_down = true
+			early_td = p.land_t
+			early_strike = p._land_strike
+		if early_down:
+			early_h.append(hips_h.call())
+			early_sink.append(c.strike_sink)
+			if p.land_t < 0.0:
+				break
+	var early_deep := 0.0
+	var early_step := 0.0
+	if early_h.size() > 2:
+		var st: float = early_h.back()
+		for j in early_h.size():
+			early_deep = maxf(early_deep, st - early_h[j])
+			if j > 0:
+				early_step = maxf(early_step, absf(early_sink[j] - early_sink[j - 1]))
+	if OS.has_environment("JA_TRACE"): print("JE hips %s" % str(early_h.map(func(v): return snappedf(v, 0.001))))
+	print("BOT airstrike: early jump attack -> started %s, held the struck pose into the fall %s (first landing tick land_t %.3f), strike landing %s, hips sink %.3f m deepest (gate >= %.2f), staff jump %.3f m/tick" % [early_started, c.air_holds > holds0, early_td, early_strike, early_deep, STRIKE_SINK_GATE, early_step])
+	if not c.JUMPATK_NOAIRHOLD and not p.JUMPATK_QUICKLAND and (not early_started or c.air_holds <= holds0 or not early_strike or early_deep < STRIKE_SINK_GATE or early_step > SINK_STEP_GATE):
+		return _combat_done(false, "a jump attack pressed early drops back to guard in the air and lands like a plain hop")
 	# 2) jump + heavy: a low plunge
 	await place.call(1.6, 0.0)
 	h0 = post.hits

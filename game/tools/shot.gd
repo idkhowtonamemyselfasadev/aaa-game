@@ -2526,6 +2526,15 @@ func _ready() -> void:
 				if a.begins_with("jfwd="):
 					jfwd = float(a.substr(5))
 			var jc := back + jside * 2.7 + Vector3(jfwd, 0.0, 0.0)
+			if "jface" in args:
+				# (11-09 04:00) jface: in FRONT of the hero by its own facing (the run direction is
+				# not where the body faces at touch-down), 40 deg round to the sun side, 3.2 m out
+				var hf: Vector3 = player.body.global_basis.z
+				hf.y = 0.0
+				hf = hf.normalized()
+				var turn := 0.7 if hf.cross(Vector3.UP).dot(-jl_light) < 0.0 else -0.7
+				jc = back + hf.rotated(Vector3.UP, turn) * 3.2
+				print("SHOT jface facing %s" % hf)
 			jc.y = maxf(back.y + 1.45, terrain.height_at(jc.x, jc.z) + 0.6)
 			var jcam := get_viewport().get_camera_3d()
 			jcam.global_position = jc
