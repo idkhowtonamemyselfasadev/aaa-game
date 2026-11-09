@@ -8254,10 +8254,18 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    (gate >= 0.15; old ~0), back within 3 cm of standing in 0.52 s (gate >= 0.30), worst knee step 0.114 rad/tick
    (gate < 0.12); robe first tick 0.7 rad/s, fastest 5.5, down on the thigh in 0.25 s; grip error 0.000.
    Bots airstrike jump glide combat heavy dodge lockon soldier knight villager stride start stop pivot keepgap
-   hands climb PASS. Frames: see the next entry line (front lens sl04/sl16/sl32 + sl16old, rendering at commit).
-   Grade (jump attack): good- -> good (landing weight fixed; Forward+ frame and fold follow-through still to do).
-   NEXT: look at sl04/sl16/sl32 vs sl16old (front `jlens`, no flip): does the sink read, is the staff tip in the
-   turf, does the robe sit on the thigh; then (e2) fold follow-through; then the next move graded rough/good-.
+   hands climb PASS. Frames `jump sl04|sl16|sl32 90 11.0 fixfps press=0.12 jt=2 clear jlens td=0.04|0.16|0.32` +
+   sl16old (QUICKLAND), SHOT_GL: sl32 OOM-killed; sl16 and sl16old are IDENTICAL: the hero stands upright, staff on
+   the shoulder, seen from BEHIND (the no-flip jlens is behind the hero at touch-down). Cause: in that shot run
+   (press 0.12 s after take-off, touch-down jt 0.717) the jump attack is OVER before touch-down, so the strike
+   landing never fires (it needs the swing still going, as in the bot where it lands at u 0.62). So the new
+   landing is NOT YET SEEN in a frame.
+   Grade (jump attack): good- (unchanged until the new landing is seen in frames; bot data says the weight now arrives).
+   NEXT SESSION FIRST: (1) decide whether a jump attack that finished in the air should also land heavy (likely
+   yes when it finished < ~0.25 s before touch-down: widen `_land_strike` to "air attack ended recently"), and/or
+   render with a later press (press=0.30+) so the swing is still going at touch-down; (2) a lens that is truly in
+   FRONT at touch-down (print hero facing at td; jside from it, not from the sun), then frames td 0.04/0.16/0.32
+   new vs QUICKLAND: does the sink read, is the staff tip in the turf, does the robe sit on the thigh; then (e2) fold follow-through; then the next move graded rough/good-.
    BOSS/ANIMATION order unchanged; audio after.
 0. (02:00 11-09) **JUMP ATTACK LANDING: FRAMES AT TOUCH-DOWN (tooling + frames; no game change).** Item (g3) frames.
    shot.gd jump loop: `SHOT touchdown jt` (first floor tick after leaving it) and `td=<s>` (freeze s after it).

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261105-0221-ring-knight-facing.jpg",
-  "time": "2026-11-05T02:21:46Z",
-  "caption": "The phase-3 Ashen Knight after turning on the spot to face the gate lens: facing confirmed by bone check, but at noon from the gate it is backlit and reads as a dark silhouette (GL frame).",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0310-rollback.jpg",
   "time": "2026-11-05T03:10:00Z",
   "caption": "Hero from behind at rest: the furled glider is now a compact roll inside the hips instead of a bar jutting out at the elbows; the hero still stands in the cottage's shade and this is a GL frame, not Forward+.",
@@ -891,6 +885,12 @@
   "file": "20261109-0200-jumpattack-landing.jpg",
   "time": "2026-11-09T01:45:00Z",
   "caption": "The jump attack 0.10 s before touch-down: legs tucked, staff driven down; from this rear-3/4 lens only the back robe panel shows, so the new falling front panel still is not seen (GL render, backlit, red too flat).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0300-jumpattack-landed.jpg",
+  "time": "2026-11-09T03:00:00Z",
+  "caption": "The hero 0.16 s after a jump attack lands: already upright with the staff on the shoulder, seen from behind; the attack had ended in the air in this run, so the new knee-sinking strike landing does not show (GL render, rear lens).",
   "verdict": "fail"
  }
 ]
