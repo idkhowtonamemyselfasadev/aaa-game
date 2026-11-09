@@ -8266,10 +8266,13 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    Fix (game/player/combat.gd `plunge_fx_kind`): "turf" (dark soil clods, low shaded haze) on the meadow, "stone"
    only over DoorStones / RutStones / SentinelPlinth. `PLUNGE_STONEFX=1` = old. Bot (airstrike): kind turf on the
    meadow. Bots airstrike sentinel jump knightstomp crown combat heavy PASS.
-   Frame: `jump fx030 90 11.0 fixfps drop clear heavy press=0.1 land=0.30 jlens jface jdist=4.6 nodog` (SHOT_GL) rendering;
-   verdict below if it finished this session.
+   Frame: `jump fx030 90 11.0 fixfps drop clear heavy press=0.1 land=0.30 jlens jface jdist=4.6 nodog` (SHOT_GL, ~25 min).
+   Compared to ring030: the white hot spot at the ferrule is GONE, the dust bowl is an even grey-brown haze. Still wrong:
+   a dozen small whitish pebble dots scattered round the feet (GroundCrack `_make_chips` 0.3 grey spheres or the turf
+   chaff ramp, blown out by the noon sun: give them `_sun_tint` / darker albedo), the column is a faint plume behind
+   the hero. Gallery 20261109-2100-plunge-ferrule-turf-030 (fail).
    Grade (hero plunge): rough+.
-   NEXT: (1) judge fx030 against 20:00's ring030 (hot spot gone?); (2) hour 9.0 or 15.0 with the same lens for front
+   NEXT: (1) the whitish pebble dots: find chips vs turf chaff, darken under the sun; (2) hour 9.0 or 15.0 with the same lens for front
    light; (2b) column off the shoulder: COL_FRONT toward the lens side; (3) jump attack rise frames td 0.20/0.35.
    BOSS/ANIMATION order unchanged; audio after.
 0. (20:00 11-09) **HERO PLUNGE: THE DUST AT THE FEET HOLDS EARTH BROWN (game change + bot gate).** Item (1) of 19:00.
