@@ -15,6 +15,14 @@ var fan_k := 1.0             # (bots) scale on the fan; 0 leaves the spread as t
 ## palm, the thumb wrapped across the index and middle fingers' middle joints.
 var clench_l := 0.0
 var clench_r := 0.0
+## (11-09 23:00) 0..1: on a grip, the thumb's root swung so its tip comes round the haft onto the
+## folded index's middle joint (opposed, a power grip). The fixed swing + curl left the foes'
+## thumbs out beside the haft like a thumbs-up (tip 2.5-3.3 index-lengths off the index, 6-11 cm
+## off the shaft axis). Foes set 1; the hero's grip is tuned through Crumple and stays at 0.
+var thumb_aim := 0.0
+const THUMB_AIM_MAX := 1.2    # rad per step: no wild flip when the clip throws the hand about
+const THUMB_AIM_PALM := 0.35   # index-lengths: the aim point lifted off the middle joint, outside the fist
+var thumb_tip_gap := [0.0, 0.0]   # (bots) right, left: tip to the index's middle joint, index-lengths, last pose
 
 # radians per finger joint, knuckle to tip: + folds toward the palm
 const RELAX := {
@@ -141,6 +149,52 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) ->
 					float(THUMB_FIST_CURL[j]), c) * w)
 		if t2 < 0:
 			return
+		var ak := thumb_aim * h * (1.0 - c) * w
+		if ak > 0.001:
+			for it in 3:
+				_aim_thumb(skel, pre, t1, t2, palm, ak)
+		var ti := skel.find_bone(pre + "Index1")
+		var t2i := skel.find_bone(pre + "Index2")
+		if ti >= 0 and t2i >= 0:
+			var i2 := skel.get_bone_global_pose(t2i).origin
+			thumb_tip_gap[0 if side == "Right" else 1] = _thumb_tip(skel, pre, t1, t2).distance_to(i2) / maxf(skel.get_bone_global_pose(ti).origin.distance_to(i2), 1e-4)
+
+## The thumb's tip (skeleton space). The foes' left thumb is rigged with two bones (the second
+## carries both phalanges), the right with three plus an end.
+func _thumb_tip(skel: Skeleton3D, pre: String, t1: int, t2: int) -> Vector3:
+	var t3 := skel.find_bone(pre + "Thumb3")
+	var t4 := skel.find_bone(pre + "Thumb4")
+	if t4 >= 0:
+		return skel.get_bone_global_pose(t4).origin
+	if t3 >= 0:
+		var p3 := skel.get_bone_global_pose(t3).origin
+		return p3 + _y(skel, t3) * p3.distance_to(skel.get_bone_global_pose(t2).origin)
+	var p2 := skel.get_bone_global_pose(t2).origin
+	return p2 + _y(skel, t2) * p2.distance_to(skel.get_bone_global_pose(t1).origin) * 1.3
+
+## One step of the opposed thumb: the root (Thumb1) turned the shortest way so the tip heads for
+## the index's middle joint, lifted a little off it on the back of the folded finger.
+func _aim_thumb(skel: Skeleton3D, pre: String, t1: int, t2: int, palm: Vector3, k: float) -> void:
+	var i1 := skel.find_bone(pre + "Index1")
+	var i2 := skel.find_bone(pre + "Index2")
+	var m2 := skel.find_bone(pre + "Middle2")
+	if i1 < 0 or i2 < 0:
+		return
+	var p2 := skel.get_bone_global_pose(i2).origin
+	var il := p2.distance_to(skel.get_bone_global_pose(i1).origin)
+	var tgt := p2
+	if m2 >= 0:
+		tgt = p2.lerp(skel.get_bone_global_pose(m2).origin, 0.3)
+	tgt -= palm * il * THUMB_AIM_PALM
+	# the root takes the swing, the second bone half of what is left (a curl round the haft)
+	for pair in [[t1, 1.0], [t2, 0.5]]:
+		var root := skel.get_bone_global_pose(pair[0]).origin
+		var a := _thumb_tip(skel, pre, t1, t2) - root
+		var b := tgt - root
+		var ax := a.cross(b)
+		if ax.length() < 1e-6:
+			continue
+		_turn(skel, pair[0], ax.normalized(), minf(a.angle_to(b), THUMB_AIM_MAX) * k * float(pair[1]))
 
 func _on_plane(v: Vector3, n: Vector3) -> Vector3:
 	return v - n * v.dot(n)

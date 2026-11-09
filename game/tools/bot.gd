@@ -1087,7 +1087,36 @@ func _hands_test() -> void:
 ## The foes' hands (11-06): the soldier and the knight (at each size) hold the spear/glaive in both
 ## hands all fight; read on the final pose the fingers must be closed round the haft (no claw over
 ## it), standing and walking, and the arm IK must still put the hands on their grips.
+const THUMB_AXIS_MAX := 0.045   # m per size: the thumb tip to the haft's axis (was 0.06-0.11 out beside it)
+const THUMB_IDX_MAX_R := 1.0     # index-lengths: the 3-bone right thumb's tip on the folded index (was 3.3)
+const THUMB_IDX_MAX_L := 1.6     # the 2-bone left thumb reaches less far round (was 2.5)
 const FIST_GAP_MAX := 0.012    # m per size: the fist's centre to the shaft axis (the haft is ~0.018 m round; the wrist on the grip point gave 0.15)
+
+## (11-09 23:00) The thumb tip (world): the last thumb bone's head pushed on by one bone length.
+## Returns [tip to the shaft axis (m, world), tip to the index's middle joint (index-bone lengths)].
+func _thumb_read(skel: Skeleton3D, side: String, o: Vector3, ax: Vector3) -> Array:
+	var pre := "mixamorig_%sHand" % side
+	var t1 := skel.find_bone(pre + "Thumb1")
+	var t2 := skel.find_bone(pre + "Thumb2")
+	var t3 := skel.find_bone(pre + "Thumb3")
+	var t4 := skel.find_bone(pre + "Thumb4")
+	if t1 < 0 or t2 < 0:
+		return [0.0, 0.0]
+	var tip: Vector3
+	if t4 >= 0:
+		tip = skel.get_bone_global_pose(t4).origin
+	elif t3 >= 0:
+		var p3 := skel.get_bone_global_pose(t3).origin
+		tip = p3 + skel.get_bone_global_pose(t3).basis.y.normalized() * p3.distance_to(skel.get_bone_global_pose(t2).origin)
+	else:
+		# the foes' left thumb is rigged with 2 bones: the second carries both phalanges
+		var p2 := skel.get_bone_global_pose(t2)
+		tip = p2.origin + p2.basis.y.normalized() * p2.origin.distance_to(skel.get_bone_global_pose(t1).origin) * 1.3
+	var i1 := skel.get_bone_global_pose(skel.find_bone(pre + "Index1")).origin
+	var i2 := skel.get_bone_global_pose(skel.find_bone(pre + "Index2")).origin
+	var tw := skel.global_transform * tip
+	var d_axis := tw.distance_to(o + ax * ax.dot(tw - o))
+	return [d_axis, tip.distance_to(i2) / maxf(i1.distance_to(i2), 1e-4)]
 
 func _foe_hands_test() -> void:
 	Engine.time_scale = 1.0
@@ -1116,6 +1145,7 @@ func _foe_hands_test() -> void:
 		var gerr := 0.0
 		var gap := [0.0, 0.0, 0.0, 0]     # worst right, worst left (m per size, last 100 ticks), sum, count
 		var hb := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
+		var thumb := [0.0, 0.0, 0.0, 0.0]   # worst tip-to-axis R, L (m per size); worst tip-to-index R, L
 		for i in 120:
 			# the second half walks: the clip swings the arms, the IK keeps the hands on the haft
 			e.bot_move = e.body.global_basis.z * (1.0 if i >= 60 else 0.0)
@@ -1144,10 +1174,17 @@ func _foe_hands_test() -> void:
 					gap[j] = maxf(gap[j], gp)
 					gap[2] += gp
 					gap[3] += 1
+					# (11-09 23:00) the thumb round the haft: its tip's distance to the shaft
+					# axis (m per size) and to the index's middle joint (index-bone lengths)
+					var tr := _thumb_read(skel, ["Right", "Left"][j], o, ax)
+					thumb[j] = maxf(thumb[j], tr[0] / sc)
+					thumb[2 + j] = maxf(thumb[2 + j], tr[1])
+					if OS.has_environment("THUMB_DBG") and i % 20 == 0:
+						print("    thumb %s %d axis %.3f idx %.2f" % [["R", "L"][j], i, tr[0] / sc, tr[1]])
 		e.bot_move = Vector3.ZERO
-		var line := "%s x%.1f: L min %.2f spread %.2f curl %.2f | R min %.2f spread %.2f curl %.2f | grip %.3f m | fist-shaft R %.3f L %.3f mean %.3f m" % [
+		var line := "%s x%.1f: L min %.2f spread %.2f curl %.2f | R min %.2f spread %.2f curl %.2f | grip %.3f m | fist-shaft R %.3f L %.3f mean %.3f m | thumb tip-axis R %.3f L %.3f m, tip-index R %.2f L %.2f" % [
 			e.name, sc, r["Left"][0], r["Left"][1], r["Left"][2], r["Right"][0], r["Right"][1], r["Right"][2], gerr,
-			gap[0], gap[1], gap[2] / maxf(gap[3], 1)]
+			gap[0], gap[1], gap[2] / maxf(gap[3], 1), thumb[0], thumb[1], thumb[2], thumb[3]]
 		print("   " + line)
 		lines.append(line)
 		for side in ["Left", "Right"]:
@@ -1162,6 +1199,10 @@ func _foe_hands_test() -> void:
 				fail = "%s x%.1f %s fingers fan out of the fist (index-pinky %.2f rad)" % [e.name, sc, side, w[1]]
 		if fail == "" and gerr > 0.05:
 			fail = "%s x%.1f hands off their grips (%.3f m)" % [e.name, sc, gerr]
+		# 11-09 23:00: the thumb comes round the haft onto the folded index (it stuck out beside
+		# the haft: tip 2.5-3.3 index-lengths off the index's middle joint, 6-11 cm off the axis)
+		if fail == "" and not OS.has_environment("FOE_THUMBOUT") and (maxf(thumb[0], thumb[1]) > THUMB_AXIS_MAX or thumb[2] > THUMB_IDX_MAX_R or thumb[3] > THUMB_IDX_MAX_L):
+			fail = "%s x%.1f a thumb sticks out of the grip (tip-axis R %.3f L %.3f m, tip-index R %.2f L %.2f)" % [e.name, sc, thumb[0], thumb[1], thumb[2], thumb[3]]
 		if fail == "" and maxf(gap[0], gap[1]) > FIST_GAP_MAX and not OS.has_environment("FOE_WRISTGRIP"):
 			fail = "%s x%.1f the fist sits off the haft (centre %.3f m from the shaft axis)" % [e.name, sc, maxf(gap[0], gap[1])]
 	if OS.has_environment("FOE_CLAWHANDS"):

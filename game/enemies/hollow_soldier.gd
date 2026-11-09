@@ -409,6 +409,7 @@ func _setup_spear() -> void:
 		hand_rest = HandRest.new()
 		hand_rest.name = "HandRest"
 		hand_rest.hold = 1.0
+		hand_rest.thumb_aim = 0.0 if OS.has_environment("FOE_THUMBOUT") else 1.0
 		skel.add_child(hand_rest)
 		if OS.get_environment("FOE_WRISTGRIP") == "":
 			skel.skeleton_updated.connect(_fit_fists)
