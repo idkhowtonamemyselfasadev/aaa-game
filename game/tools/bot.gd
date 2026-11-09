@@ -2585,6 +2585,8 @@ const PL_CLOD_GATE := 0.04            # m the smallest thrown clod's radius (old
 const PL_COL_AHEAD_GATE := 0.35       # m the plunge's column must rise ahead of the hero (11-09 18:00; old 0, behind the crouch)
 const PL_LIT_GATE := 0.70             # the dust's opening luma x sun tint x sun strength (11-09 18:00; old 0.30 x 3 = 0.9, chalk in GL frames)
 const PL_COL_LUMA_GATE := 0.26       # column luma at 0.4 s after the blow (11-09 19:00; old 0.37, pale smoke in GL frames)
+const PL_RING_LUMA_GATE := 0.36      # ring dust luma at 0.3 s (11-09 20:00; old 0.43, pale glowing patch at the feet)
+const PL_RING_GLOW_GATE := 0.15      # ring dust self-glow (old up to 0.32 in shade)
 const PL_COL_ALPHA_GATE := 0.85      # column alpha at 0.4 s (old 0.60)
 const PL_LUMA_GATE := 0.40            # the dust's opening luminance must be darker than this (old pale 0.52)
 const PL_OPEN_GATE := 0.10            # puff_read one tick after the blow (alpha x card area; 11-09 13:00, old slow open 0.006)
@@ -2924,6 +2926,11 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge column at 0.4 s -> luma %.2f (gate <= %.2f; old 0.37), alpha %.2f (gate >= %.2f; old 0.60), glow %.3f" % [cr.x, PL_COL_LUMA_GATE, cr.y, PL_COL_ALPHA_GATE, ((pc._column.mesh as QuadMesh).material as StandardMaterial3D).emission_energy_multiplier if pc and pc._column else -1.0])
 	if not GroundCrack.PALE_COL and not GroundCrack.FLAT_BURST and (cr.x > PL_COL_LUMA_GATE or cr.y < PL_COL_ALPHA_GATE):
 		return _combat_done(false, "the plunge's earth column reads as pale thin smoke")
+	# (11-09 20:00) the dust at the feet holds earth brown and barely glows, not a pale patch
+	var rr := pc.ring_read(0.3) if pc != null else Vector2(1, 1)
+	print("BOT airstrike: plunge ring dust at 0.3 s -> luma %.2f (gate <= %.2f; old 0.43), glow %.3f (gate <= %.2f)" % [rr.x, PL_RING_LUMA_GATE, rr.y, PL_RING_GLOW_GATE])
+	if not GroundCrack.PALE_RING and not GroundCrack.FLAT_BURST and (rr.x > PL_RING_LUMA_GATE or rr.y > PL_RING_GLOW_GATE):
+		return _combat_done(false, "the plunge's dust ring at the feet reads as a pale glowing patch")
 	print("BOT airstrike: plunge marks -> crack %s, ring %.2f m, grass laid %d, size %.2f, deep crouch %s" % [pc != null, pc.ring_r if pc else 0.0, pc.blasted if pc else 0, pc.size_k if pc else 0.0, p._land_plunge])
 	if not pc_ok or not p._land_plunge:
 		return _combat_done(false, "the plunge left no crack star / dust ring, or it struck the hero")

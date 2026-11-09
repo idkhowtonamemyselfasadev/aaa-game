@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261105-2230-knight-slump-flank.jpg",
-  "time": "2026-11-05T22:30:00Z",
-  "caption": "The dormant knight from the flank, hunched through the spine over its planted glaive; back-lit, the body reads as a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-2330-knight-roar-deep-arch.jpg",
   "time": "2026-11-05T23:30:00Z",
   "caption": "The Ashen Knight's reveal roar with the deeper back arch: helm thrown back, glaive carried straight up in both hands; GL fallback frame (Vulkan OOM), no fog/GI, lens not truly on the flank.",
@@ -891,6 +885,12 @@
   "file": "20261109-1900-plunge-column-dark-030.jpg",
   "time": "2026-11-09T19:00:00Z",
   "caption": "Plunge impact 0.30 s: the earth column beside the hero is now a denser, darker brown plume rather than pale grey smoke; the dust ring round the feet still glows pale and the column still sits behind the staff, off the hero's shoulder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-2000-plunge-ring-earth-030.jpg",
+  "time": "2026-11-09T19:27:07Z",
+  "caption": "Hero plunge at land 0.30 s: the dust ring at the feet is now grey-brown earth instead of a white glowing disc; still a bright hot spot at the ferrule, the column sits behind the staff and the hero is backlit.",
   "verdict": "fail"
  }
 ]

@@ -74,6 +74,15 @@ static var PALE_COL := OS.get_environment("CRACK_PALECOL") == "1"
 const COL_DARK := Color(0.21, 0.175, 0.135)
 const COL_HOLD := 0.45
 const COL_GLOW_K := 0.35
+## (11-09 20:00) The dust at the hero's feet (puff, shock ring, front band) read as a pale
+## glowing patch right under the lens in the land 0.30 frame: its ramp paled to 0.47 by 20 %
+## of life and it kept the full self-glow. It now holds wet-earth brown to ~35 % of life
+## (0.5 s on the ring) before it dries pale, with under half the glow.
+## Only the hero's plunge (harmless): the Stone Sentinel's slam keeps the glow that lets its
+## ring read in the shade under the oaks. CRACK_PALERING=1 = old.
+static var PALE_RING := OS.get_environment("CRACK_PALERING") == "1"
+const RING_HOLD := 0.35
+const RING_GLOW_K := 0.45
 var sun_tint := 1.0              # the dust's albedo factor after the sun (bots)
 var sun_e := 0.0                 # the sun's strength x height the tint answered (bots)
 
@@ -115,7 +124,12 @@ func _light_dust() -> void:
 		if p == null:
 			continue
 		var m := ((p as CPUParticles3D).mesh as QuadMesh).material as StandardMaterial3D
-		m.emission_energy_multiplier = glow * (COL_GLOW_K if p == _column and not PALE_COL else 1.0)
+		var k := 1.0
+		if p == _column and not PALE_COL:
+			k = COL_GLOW_K
+		elif p != _column and harmless and not PALE_RING and not FLAT_BURST:
+			k = RING_GLOW_K
+		m.emission_energy_multiplier = glow * k
 		m.albedo_color = Color(sun_tint, sun_tint, sun_tint)
 
 ## How much darker the dust's albedo must be under the sun as it stands so it reads as earth,
@@ -342,6 +356,15 @@ func _make_column() -> CPUParticles3D:
 	p.color_ramp = g
 	return p
 
+## How dark the dust at the feet (the shock ring) is `age` s after the blow, and its self-glow:
+## Vector2(luma, emission energy). For the bots.
+func ring_read(age: float) -> Vector2:
+	if _dust == null:
+		return Vector2(1.0, 1.0)
+	var c := _dust.color_ramp.sample(clampf(age / _dust.lifetime, 0.0, 1.0))
+	var m := (_dust.mesh as QuadMesh).material as StandardMaterial3D
+	return Vector2(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, m.emission_energy_multiplier)
+
 ## How dark and solid the column is `age` s after the blow: Vector2(luma, alpha). For the bots.
 func column_read(age: float) -> Vector2:
 	if _column == null:
@@ -518,6 +541,11 @@ func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 		g.offsets = PackedFloat32Array([0.0, open, 0.2, 0.5, 1.0])
 		g.colors = PackedColorArray([Color(EARTH_OPEN, a0), Color(EARTH_OPEN.lightened(0.05), 0.7),
 			Color(0.47, 0.43, 0.37, 0.6), Color(0.62, 0.6, 0.56, 0.4), Color(0.68, 0.67, 0.65, 0.0)])
+		if harmless and not PALE_RING:
+			# (11-09 20:00, the hero's plunge; the Stone Sentinel's slam keeps its pale shade-reading dust) holds wet earth while the shock runs out, dries pale only as it hangs
+			g.offsets = PackedFloat32Array([0.0, open, RING_HOLD, 0.7, 1.0])
+			g.colors = PackedColorArray([Color(EARTH_OPEN, a0), Color(EARTH_OPEN.lightened(0.03), 0.72),
+				Color(0.37, 0.33, 0.27, 0.62), Color(0.54, 0.52, 0.48, 0.36), Color(0.64, 0.63, 0.6, 0.0)])
 	p.color_ramp = g
 	var c := Curve.new()
 	if SOFT_OPEN:
