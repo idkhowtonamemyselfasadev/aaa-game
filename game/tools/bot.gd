@@ -2582,6 +2582,8 @@ const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the 
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
 const PL_COLUMN_GATE := 1.2           # m the burst's earth column's fast cards rise over the turf (11-09 14:00; old none)
 const PL_CLOD_GATE := 0.04            # m the smallest thrown clod's radius (old chips 0.012)
+const PL_COL_AHEAD_GATE := 0.35       # m the plunge's column must rise ahead of the hero (11-09 18:00; old 0, behind the crouch)
+const PL_LIT_GATE := 0.70             # the dust's opening luma x sun tint x sun strength (11-09 18:00; old 0.30 x 3 = 0.9, chalk in GL frames)
 const PL_LUMA_GATE := 0.40            # the dust's opening luminance must be darker than this (old pale 0.52)
 const PL_OPEN_GATE := 0.10            # puff_read one tick after the blow (alpha x card area; 11-09 13:00, old slow open 0.006)
 const PL_HOLD_HAT_GATE := 0.0         # m: worst shaft-to-hat margin through the held hang (plunge_t 0.08..0.14; 11-09 12:00, old -0.024)
@@ -2908,6 +2910,13 @@ func _airstrike_test() -> void:
 	await _ticks(3)
 	var pc_ok := pc != null and is_instance_valid(pc) and pc.harmless and pc.blasted >= 20 \
 		and absf(pc.ring_r - StaffCombat.plunge_radius(p.last_drop)) < 0.01 and pc.result != "hit"
+	var col_ahead := pc.column_ahead(p.global_position, p.body.global_basis.z) if pc != null else -9.0
+	var lit := pc.lit_open() if pc != null else 9.0
+	print("BOT airstrike: plunge burst in light -> column %.2f m ahead of the hero (gate >= %.2f; old 0), sun %.2f, dust tint %.2f, lit opening %.2f (gate <= %.2f; old %.2f)" % [col_ahead, PL_COL_AHEAD_GATE, pc.sun_e if pc else 0.0, pc.sun_tint if pc else 0.0, lit, PL_LIT_GATE, pc.open_luma() * maxf(pc.sun_e, 1.0) if pc else 0.0])
+	if not GroundCrack.COL_BEHIND and not GroundCrack.FLAT_BURST and col_ahead < PL_COL_AHEAD_GATE:
+		return _combat_done(false, "the plunge's earth column rises behind the crouched hero")
+	if not GroundCrack.PALE_DUST and lit > PL_LIT_GATE:
+		return _combat_done(false, "the plunge's dust blows out to chalk under the sun")
 	print("BOT airstrike: plunge marks -> crack %s, ring %.2f m, grass laid %d, size %.2f, deep crouch %s" % [pc != null, pc.ring_r if pc else 0.0, pc.blasted if pc else 0, pc.size_k if pc else 0.0, p._land_plunge])
 	if not pc_ok or not p._land_plunge:
 		return _combat_done(false, "the plunge left no crack star / dust ring, or it struck the hero")

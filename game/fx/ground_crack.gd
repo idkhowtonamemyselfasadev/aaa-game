@@ -56,6 +56,19 @@ static var FLAT_BURST := OS.get_environment("CRACK_FLATBURST") == "1"
 const EARTH_OPEN := Color(0.34, 0.29, 0.23)    # the dust's colour on the contact frame (old pale 0.55)
 const CLOD_R := 0.075                          # m, a clod's radius at scale 1
 
+## (11-09 18:00) GL frames showed the burst as a near-white glowing disc and no column. Test
+## renders (CRACK_DBG, removed): switching the emission off changed nothing, the 0.34 brown
+## albedo simply blows out under the full midday sun (energy 3.0). The dust now darkens with the
+## sun's strength (`sun_tint`, x0.62 at noon, x1 at dusk/night). A red-painted column stood
+## low and BEHIND the crouched hero: the hero's own plunge now raises it where the ferrule went
+## in, 0.55 m in front of the hero (scaled), and fires it faster so it tops the hat by 0.15 s.
+## CRACK_PALEDUST=1 / CRACK_COLBEHIND=1 = old.
+static var PALE_DUST := OS.get_environment("CRACK_PALEDUST") == "1"
+static var COL_BEHIND := OS.get_environment("CRACK_COLBEHIND") == "1"
+const COL_FRONT := 0.55          # m ahead of the hero, at size_k 1 (where the ferrule strikes)
+var sun_tint := 1.0              # the dust's albedo factor after the sun (bots)
+var sun_e := 0.0                 # the sun's strength x height the tint answered (bots)
+
 func _ready() -> void:
 	_decal = Decal.new()
 	_decal.size = Vector3(3.6 * size_k, 1.4, 3.6 * size_k)
@@ -89,11 +102,24 @@ func _ready() -> void:
 func _light_dust() -> void:
 	exposure = _sun_exposure()
 	glow = lerpf(DUST_GLOW_E, DUST_GLOW_SUN, exposure)
+	sun_tint = 1.0 if PALE_DUST else _sun_tint()
 	for p in [_puff, _dust, _front_dust, _column]:
 		if p == null:
 			continue
 		var m := ((p as CPUParticles3D).mesh as QuadMesh).material as StandardMaterial3D
 		m.emission_energy_multiplier = glow
+		m.albedo_color = Color(sun_tint, sun_tint, sun_tint)
+
+## How much darker the dust's albedo must be under the sun as it stands so it reads as earth,
+## not chalk: 1.0 at dusk, at night and under a weak sun, down to ~0.62 at full midday sun.
+## The sun's raw strength, not the shade estimate: the cards face the lens and catch it anyway.
+func _sun_tint() -> float:
+	var sun := get_node_or_null("../Sun") as DirectionalLight3D
+	if sun == null or not sun.visible:
+		return 1.0
+	var e := sun.light_energy * smoothstep(0.0, 0.25, sun.global_basis.z.normalized().y)
+	sun_e = e
+	return clampf(1.3 / (0.6 + 0.5 * e), 0.55, 1.0)
 
 ## Lay the sward flat round the pit, the stems combed outward away from the blow, so the
 ## crack star is not hidden in standing grass and the ground shows where the shock went.
@@ -280,6 +306,10 @@ func _make_column() -> CPUParticles3D:
 	p.direction = Vector3(0, 1, 0)
 	p.spread = 9.0
 	var vk := lerpf(1.0, sqrt(size_k), 0.5)
+	if harmless and not COL_BEHIND:
+		# the hero's plunge: up where the ferrule went in, in front of the crouch, not behind it
+		p.position = Vector3(0, 0.25, COL_FRONT * clampf(size_k, 0.8, 1.1))
+		vk *= 1.25
 	p.initial_velocity_min = 3.5 * vk
 	p.initial_velocity_max = 5.0 * vk
 	p.damping_min = 7.0
@@ -474,6 +504,18 @@ func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	c.add_point(Vector2(1, 1.6))
 	p.scale_amount_curve = c
 	return p
+
+## How far ahead of `from` along `fwd` (flat) the column rises (m), for the bots.
+func column_ahead(from: Vector3, fwd: Vector3) -> float:
+	if _column == null:
+		return -9.0
+	var d := _column.global_position - from
+	var f := Vector3(fwd.x, 0, fwd.z).normalized()
+	return d.dot(f)
+
+## The dust's lit brightness on the contact frame: its opening luma x the sun tint x the sun.
+func lit_open() -> float:
+	return open_luma() * sun_tint * maxf(sun_e, 1.0)
 
 ## How much of the puff a lens sees `age` s after the blow: its ramp alpha x its card area
 ## (scale curve x card size, squared), for the bots' contact-frame gate.

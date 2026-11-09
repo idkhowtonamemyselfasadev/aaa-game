@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-2014-reveal-roar.jpg",
-  "time": "2026-11-05T20:14:05Z",
-  "caption": "The boss reveal's roar beat: glaive heaved up, chest and head thrown back (GL frame from its back flank; the face is hidden, needs a front-lit Forward+ frame).",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-2130-knight-dormant.jpg",
-  "time": "2026-11-05T21:30:00Z",
-  "caption": "The dormant boss leans on its glaive with the point now meeting the turf by its right boot (GL quick look, not Forward+); the bowed head does not read under the helm.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-2130-knight-roar.jpg",
   "time": "2026-11-05T21:30:00Z",
   "caption": "The roar beat from the knight front: the glaive is up but the head throw and chest-out barely read from straight on; needs a stronger back arch or a lower 3/4 lens.",
@@ -897,6 +885,18 @@
   "file": "20261109-1700-plunge-burst-front-030.jpg",
   "time": "2026-11-09T17:00:00Z",
   "caption": "Plunge impact 0.30 s: the dust ring spreads 3 m wide round the hero, still pale white instead of earth brown, still no column above the pit; hero lit from behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1800-plunge-burst-tint-015.jpg",
+  "time": "2026-11-09T18:00:00Z",
+  "caption": "Plunge impact 0.15 s, same front lens as 17:00, after the sun tint and front column: the ring no longer glows white and a grey plume starts up at the hero's side, but it is still pale grey smoke, not dark earth, and the hero is backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1800-plunge-burst-tint-030.jpg",
+  "time": "2026-11-09T18:00:00Z",
+  "caption": "Plunge impact 0.30 s: for the first time a column of dust rises beside the hero above the hat and the ring is soft grey-brown; the column is translucent pale grey instead of dark thrown earth and still sits half behind the staff.",
   "verdict": "fail"
  }
 ]
