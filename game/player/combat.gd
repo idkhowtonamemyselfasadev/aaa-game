@@ -105,7 +105,11 @@ const PLUNGE_HANG := 0.18     # s held at the top: staff up (0.08 s), held, then
 const PLUNGE_SPEED := 21.0    # m/s straight down after the hang
 const PLUNGE_COST := 18.0
 const PLUNGE_MIN := 0.7       # m of clear air below needed (lower: a plain heavy waits for the ground)
-const PLUNGE_HANG_KEY := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0]
+# (11-09 12:00) z 0.17 -> 0.22: the held hang stood the shaft 2.4 cm inside the hat brim at plunge
+# 0.083 s; 5 cm further back it clears the brim through the whole hold. PLUNGE_HANGFWD=1 = the old.
+const PLUNGE_HANG_KEY := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.22), -14.0]
+const PLUNGE_HANG_KEY_FWD := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0]
+var PLUNGE_HANGFWD := OS.get_environment("PLUNGE_HANGFWD") == "1"
 var PLUNGE_LOWHANG := OS.get_environment("PLUNGE_LOWHANG") == "1"
 var _pl_key_env: PackedFloat64Array = OS.get_environment("PL_KEY").split_floats(",") if OS.has_environment("PL_KEY") else PackedFloat64Array()
 const PLUNGE_MID_KEY := [0.0, 20.0, Vector3(-0.12, 1.65, 0.55), -25.0]   # tip forward, hands out in front of the brim
@@ -1120,6 +1124,8 @@ func _plunge_hang_key() -> Array:
 		return RAISED
 	if _pl_key_env.size() == 5:
 		return [_pl_key_env[0], _pl_key_env[1], Vector3(_pl_key_env[2], _pl_key_env[3], _pl_key_env[4]), PLUNGE_HANG_KEY[3]]
+	if PLUNGE_HANGFWD:
+		return PLUNGE_HANG_KEY_FWD
 	return PLUNGE_HANG_KEY
 
 var last_plunge_crack: GroundCrack   # the turf the last plunge split (bots read this)
