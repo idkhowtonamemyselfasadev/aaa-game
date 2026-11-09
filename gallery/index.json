@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261105-0310-turnfront.jpg",
-  "time": "2026-11-05T03:10:00Z",
-  "caption": "End of the stepped standing turn, face to the lens, arms relaxed and staff slung; flat GL lighting in shade, so it does not yet hold up as a Wukong frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0421-pivotstep.jpg",
-  "time": "2026-11-05T04:21:00Z",
-  "caption": "Mid stepped turn from above: the inside foot stays planted while the outside foot steps round and the body swings over it; GL frame in tree shade, so the light is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0421-pivotend.jpg",
-  "time": "2026-11-05T04:21:00Z",
-  "caption": "End of the pivot turn, square to the lens with the feet still staggered before the idle settles; flat GL shade lighting, not a Forward+ frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0514-knight-pivot.jpg",
-  "time": "2026-11-05T05:14:20Z",
-  "caption": "The Ashen Knight (phase-1 size) mid-turn on the spot, stepping round on a planted foot; GL frame, backlit at 15:00 so the knight is a silhouette and the plant can't be judged closely.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0620-slope-ik.jpg",
   "time": "2026-11-05T06:20:00Z",
   "caption": "The hero standing across a 23 deg hillside with the new foot IK: hips settled, both boots meet the turf at their own height; GL frame from the front along the contour, so the difference is subtle and the lighting is not Forward+.",
@@ -897,6 +873,18 @@
   "file": "20261109-0400-jumpatk-land20.jpg",
   "time": "2026-11-09T04:00:00Z",
   "caption": "0.20 s after the jump-attack landing: hips still low and rising, staff easing back to guard across the body; backlit, face hidden under the hat, GL only.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0419-jf06.jpg",
+  "time": "2026-11-09T04:19:05Z",
+  "caption": "Jump attack 0.06 s after touch-down: hips sunk, chest folded, hat bowed, staff tip driven at the turf in front; still wrong: the hero lands in the cottage's shadow with the sun behind, figure too dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0419-jf06old.jpg",
+  "time": "2026-11-09T04:19:05Z",
+  "caption": "Same moment with the old landing (no air hold) for comparison: the hero already stands nearly upright with the staff loose, no weight arrives.",
   "verdict": "fail"
  }
 ]

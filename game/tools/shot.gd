@@ -2532,9 +2532,15 @@ func _ready() -> void:
 				var hf: Vector3 = player.body.global_basis.z
 				hf.y = 0.0
 				hf = hf.normalized()
-				var turn := 0.7 if hf.cross(Vector3.UP).dot(-jl_light) < 0.0 else -0.7
+				# (11-09 05:00) the 04:00 sign test landed on the shadow side; now turn straight
+				# toward the sun's ground bearing, clamped to 70 deg off the facing so the chest
+				# still faces the lens
+				var sunh := -jl_light
+				sunh.y = 0.0
+				sunh = sunh.normalized()
+				var turn := clampf(hf.signed_angle_to(sunh, Vector3.UP), -1.22, 1.22)
 				jc = back + hf.rotated(Vector3.UP, turn) * 3.2
-				print("SHOT jface facing %s" % hf)
+				print("SHOT jface facing %s sun %s turn %.2f" % [hf, sunh, turn])
 			jc.y = maxf(back.y + 1.45, terrain.height_at(jc.x, jc.z) + 0.6)
 			var jcam := get_viewport().get_camera_3d()
 			jcam.global_position = jc
