@@ -2931,6 +2931,10 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge ring dust at 0.3 s -> luma %.2f (gate <= %.2f; old 0.43), glow %.3f (gate <= %.2f)" % [rr.x, PL_RING_LUMA_GATE, rr.y, PL_RING_GLOW_GATE])
 	if not GroundCrack.PALE_RING and not GroundCrack.FLAT_BURST and (rr.x > PL_RING_LUMA_GATE or rr.y > PL_RING_GLOW_GATE):
 		return _combat_done(false, "the plunge's dust ring at the feet reads as a pale glowing patch")
+	# (11-09 21:00) the burst at the ferrule on the meadow is dark soil, not pale stone grit (the white hot spot)
+	print("BOT airstrike: plunge burst at the ferrule -> kind %s (gate turf on the meadow; old stone)" % c.last_plunge_fx)
+	if not StaffCombat.PLUNGE_STONEFX and c.last_plunge_fx != "turf":
+		return _combat_done(false, "the plunge into the meadow throws pale stone grit at the ferrule")
 	print("BOT airstrike: plunge marks -> crack %s, ring %.2f m, grass laid %d, size %.2f, deep crouch %s" % [pc != null, pc.ring_r if pc else 0.0, pc.blasted if pc else 0, pc.size_k if pc else 0.0, p._land_plunge])
 	if not pc_ok or not p._land_plunge:
 		return _combat_done(false, "the plunge left no crack star / dust ring, or it struck the hero")

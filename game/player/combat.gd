@@ -1147,6 +1147,20 @@ func _plunge_hang_key() -> Array:
 	return PLUNGE_HANG_KEY
 
 var last_plunge_crack: GroundCrack   # the turf the last plunge split (bots read this)
+var last_plunge_fx := ""             # the ImpactFX kind the last plunge threw (bots read this)
+
+## The burst at the ferrule matches what it went into: grey stone chips and stone dust only on
+## the door stones, rut stones or the sentinel's plinth; on the meadow dark moist soil and a low
+## shaded haze. The pale "stone" grey (0.55) blew out to a white hot spot under the noon sun in
+## the front-lens frames of the plunge (11-09). PLUNGE_STONEFX=1 = old (always stone).
+static var PLUNGE_STONEFX := OS.get_environment("PLUNGE_STONEFX") == "1"
+func plunge_fx_kind(at: Vector3) -> String:
+	if PLUNGE_STONEFX:
+		return "stone"
+	if DoorStones.under(at.x, at.z, 0.05) or RutStones.under(at.x, at.z, 0.05) \
+			or SentinelPlinth.under(at.x, at.z, 0.05):
+		return "stone"
+	return "turf"
 
 ## Where the ferrule went in, the turf splits in a crack star sized to the burst, the sward is
 ## laid flat outward and a low ring of dust runs out to the burst's edge: the same marks the
@@ -1204,7 +1218,8 @@ func plunge_land(drop: float) -> void:
 	hitstop = HITSTOP * power * (1.0 if last_plunge_hits > 0 else 0.5)
 	if last_crown_frame == Engine.get_physics_frames():
 		hitstop *= 1.5
-	ImpactFX.spawn(player.get_parent(), front, Vector3.DOWN, "stone", 1.0 + 0.5 * power)
+	last_plunge_fx = plunge_fx_kind(front)
+	ImpactFX.spawn(player.get_parent(), front, Vector3.DOWN, last_plunge_fx, 1.0 + 0.5 * power)
 	_plunge_marks(at, radius)
 	player.add_shake(0.25 + 0.15 * power)
 	slammed.emit(front, 0.8 + 0.4 * power)
