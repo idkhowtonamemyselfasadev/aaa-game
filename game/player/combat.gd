@@ -204,6 +204,8 @@ var CLAV_HOLD := float(OS.get_environment("CLAV_HOLD")) if OS.has_environment("C
 var RIDE_GAIN := float(OS.get_environment("RIDE_GAIN")) if OS.has_environment("RIDE_GAIN") else 1.0
 const RIDE_MAX := 0.30
 const RIDE_RATE := 10.0
+var STRIKE_SINK_SHARE := float(OS.get_environment("STRIKE_SINK_SHARE")) if OS.has_environment("STRIKE_SINK_SHARE") else 1.0
+var strike_sink := 0.0          # m the staff is carried down with the strike landing this tick
 ## (11-07) knocked down, the hero keeps the drawn staff in the right fist instead of leaving it
 ## hanging in the air at guard height in Wield space. Each tick, after the modifiers (the posed
 ## hand), the shaft is put through the fist: first as it was held, then laid flat on the turf as
@@ -1301,7 +1303,9 @@ func physics_step(delta: float) -> void:
 				_slammed = true
 				_ground_slam()
 			if u >= 1.0:
-				if _heavy_queued:
+				if atk.get("air", false) and (queued or _heavy_queued) and player.strike_landing_hold():
+					pass   # (11-09) still sunk in the jump attack's landing: the next swing waits for the rise
+				elif _heavy_queued:
 					_start_charge(pose)
 				elif queued:
 					_start((step + 1) % STRING.size())
@@ -1483,7 +1487,12 @@ func _ride_chest(delta: float) -> void:
 	chest_yaw = _twist.last_yaw
 	counter_twist = _twist.last_counter
 	ride = ride.lerp(want, 1.0 - exp(-RIDE_RATE * delta))
-	_wield.position = ride
+	# (11-09) down in a jump attack's landing the staff sinks with the body the same tick (it
+	# stayed at standing height and the arms could not reach it: grip error 0.09 m)
+	strike_sink = 0.0
+	if state == ATTACKING and _atk.get("air", false) and player.strike_landing_hold():
+		strike_sink = player._pose_dip * STRIKE_SINK_SHARE
+	_wield.position = ride + Vector3(0.0, -strike_sink, 0.0)
 
 func _place_hands(pose: Array) -> Transform3D:
 	var r := _solve(pose)

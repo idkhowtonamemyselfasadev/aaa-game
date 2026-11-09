@@ -722,7 +722,7 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 ## swings a little past its hang and settles, instead of easing shut like a damped lid (the old
 ## ease started at its fastest, 10 rad/s, the moment the thigh left it). A limb under it still
 ## catches it at once (`push`). Small swings (walking) keep the plain ease.
-const DROP_START := 0.6       # rad above its rest a panel must be left to fall freely
+const DROP_START := 0.35      # rad above its rest a panel must be left to fall freely
 const DROP_ZETA := 0.35       # air drag on the wool (damping ratio)
 ## cloth is no rigid board: the part below the knee hangs off the fold already and the rest
 ## bends as it goes, so it falls like a board this fraction of the panel's length (~0.3 s down)
@@ -746,6 +746,11 @@ func _drop_swing(i: int, s: float, rest: float, push: float, k: float, length: f
 		_drop[i] = true
 		_drop_t[i] = 0.0
 		_drop_w[i] = minf(_drop_w[i], 0.0)
+		if i == 0:                # (bots) each fall is judged on its own
+			drop_first_w = 9.0
+			drop_peak_w = 0.0
+			drop_under = 0.0
+			drop_settle = 0.0
 	if not _drop[i]:
 		_drop_w[i] = (eased - s) / maxf(_dt, 1e-4)
 		return eased
@@ -755,12 +760,18 @@ func _drop_swing(i: int, s: float, rest: float, push: float, k: float, length: f
 	var om: float = _drop_w[i]
 	var n := 4
 	var h := _dt / n
+	# (11-09) gravity pulls the wool toward plumb, not toward the thigh it will come to lie on:
+	# with the thigh still under it (rest > 0, a landing that stays down in the knees) it is
+	# that thigh that stops it, with no swing past (the old pull toward `rest` let a panel left
+	# 0.5 rad over a lowering thigh drift down at the speed of a lid)
+	var hang := minf(rest, 0.0)
+	var low := rest - DROP_UNDER * (1.0 - clampf(rest / 0.3, 0.0, 1.0))
 	for j in n:
-		om += (-w2 * sin(s - rest) - 2.0 * DROP_ZETA * w * om) * h
+		om += (-w2 * sin(s - hang) - 2.0 * DROP_ZETA * w * om) * h
 		s += om * h
-		if s < rest - DROP_UNDER:
-			s = rest - DROP_UNDER
-			om = absf(om) * 0.3   # it meets the legs behind it
+		if s < low:
+			s = low
+			om = absf(om) * 0.3   # it meets the legs behind it (or the thigh under it)
 	if s < push:
 		s = push                  # a limb catches it
 		om = maxf(om, 0.0)
@@ -769,7 +780,7 @@ func _drop_swing(i: int, s: float, rest: float, push: float, k: float, length: f
 			drop_first_w = absf(om)
 		drop_peak_w = maxf(drop_peak_w, -om)
 		drop_under = maxf(drop_under, rest - s)
-		if drop_settle == 0.0 and s - rest < 0.1:
+		if drop_settle == 0.0 and (s - rest < 0.1 or s <= push + 0.001):   # down, or caught by a limb
 			drop_settle = _drop_t[i] + _dt
 	_drop_t[i] += _dt
 	_drop_w[i] = om

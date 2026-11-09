@@ -2568,6 +2568,10 @@ func _jump_test() -> void:
 ## Jump attack + plunging attack on the practice post: a light at the top of a jump strikes
 ## down into it (once per jump), a heavy at the top of a jump drops the hero in a slam that
 ## strikes it, a plunge from 6 m hits harder and wider, and a 12 m plunge soaks half the fall.
+const STRIKE_SINK_GATE := 0.18   # (11-09) m the hips sink at the deepest of a jump attack's landing
+const STRIKE_HOLD_GATE := 0.15   # m still sunk 0.08 s after touch-down (old: rising straight away)
+const STRIKE_UP_GATE := 0.30     # s before the hips are back within 3 cm of standing
+const STRIKE_KNEE_STEP := 0.12   # rad, the knee pose's largest change in one tick (no snap)
 const DROP_FIRST_GATE := 4.0
 const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
@@ -2620,6 +2624,13 @@ func _airstrike_test() -> void:
 			await get_tree().physics_frame
 		await place.call(1.9, 0.0)
 	# 1) jump attack
+	# (11-09) the strike landing: hips height over the turf per tick from the touch-down
+	var skl: Skeleton3D = c.skel
+	var hips_i := skl.find_bone("mixamorig_Hips")
+	var hips_h := func() -> float:
+		var hp := skl.global_transform * skl.get_bone_global_pose(hips_i).origin
+		return hp.y - terrain.height_at(hp.x, hp.z)
+	var stand_h: float = hips_h.call()
 	var h0 := post.hits
 	await to_apex.call()
 	var y_press := p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z)
@@ -2647,8 +2658,19 @@ func _airstrike_test() -> void:
 	var ja_neck := Vector2(9.0, -9.0)
 	var ja_gap := Vector2.ZERO                 # m, worst fist-centre-to-shaft gap (right, left)
 	var ja_loose := 0                          # air-attack ticks with a fist over 0.05 m off the shaft
+	var td_i := -1
+	var land_h: Array[float] = []
+	var land_knee: Array[float] = []
+	var land_strike := false
 	for i in 90:
 		await get_tree().physics_frame
+		if td_i < 0 and p.is_on_floor() and p.land_t >= 0.0:
+			td_i = i
+			land_strike = p._land_strike
+		if td_i >= 0:
+			land_h.append(hips_h.call())
+			land_knee.append(p.crumple.knee)
+			if OS.has_environment("JA_TRACE"): print("JLT land_t %.3f atk %s air %s u %.2f jp %.2f" % [p.land_t, c.is_attacking(), c.is_air_attack(), c.air_attack_u(), p._jp])
 		if c.hit_active:
 			var tp := c.tip_position()
 			tip_min = minf(tip_min, Vector2(tp.x - post.global_position.x, tp.z - post.global_position.z).length())
@@ -2705,6 +2727,32 @@ func _airstrike_test() -> void:
 			second = true
 		if p.is_on_floor() and not c.is_attacking():
 			break
+	for i in 60:
+		if p.land_t < 0.0 or td_i < 0:
+			break
+		await get_tree().physics_frame
+		land_h.append(hips_h.call())
+		land_knee.append(p.crumple.knee)
+	# sink below standing at touch-down, deepest, at +0.08 s; when back within 3 cm of standing
+	var ls := [0.0, 0.0, 0.0, 0.0]
+	var knee_jump := 0.0
+	if land_h.size() > 6:
+		stand_h = land_h.back()                # settled on the turf after it (the idle stands a little lower)
+		ls[0] = stand_h - land_h[0]
+		ls[2] = stand_h - land_h[mini(5, land_h.size() - 1)]
+		ls[3] = land_h.size() / 60.0
+		for j in land_h.size():
+			ls[1] = maxf(ls[1], stand_h - land_h[j])
+			if j > 0:
+				knee_jump = maxf(knee_jump, absf(land_knee[j] - land_knee[j - 1]))
+		for j in land_h.size():
+			if j > 6 and stand_h - land_h[j] < 0.03:
+				ls[3] = j / 60.0
+				break
+	if OS.has_environment("JA_TRACE"): print("JL stand %.3f hips %s knee %s" % [stand_h, str(land_h.map(func(v): return snappedf(v, 0.001))), str(land_knee.map(func(v): return snappedf(v, 0.01)))])
+	print("BOT airstrike: strike landing %s -> hips sink %.3f m at touch-down, %.3f deepest, %.3f at +0.08 s, back up in %.2f s (gates: deepest >= %.2f, +0.08 s >= %.2f, up >= %.2f s), worst knee step %.3f rad/tick (gate < %.2f)" % [land_strike, ls[0], ls[1], ls[2], ls[3], STRIKE_SINK_GATE, STRIKE_HOLD_GATE, STRIKE_UP_GATE, knee_jump, STRIKE_KNEE_STEP])
+	if not p.JUMPATK_QUICKLAND and (not land_strike or ls[1] < STRIKE_SINK_GATE or ls[2] < STRIKE_HOLD_GATE or ls[3] < STRIKE_UP_GATE or knee_jump > STRIKE_KNEE_STEP):
+		return _combat_done(false, "the jump attack lands by straightening up at once instead of sinking through the knees")
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])

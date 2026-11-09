@@ -27,6 +27,12 @@ const SPRINT_JUMP_BOOST := 1.6       # m/s added along the run when a sprint lea
 const LAND_SOFT := 0.2               # s of knee give on an ordinary landing
 const LAND_HARD := 0.45              # s crouched after a real drop (slowed, cannot jump)
 const HARD_DROP := 2.2               # m fallen that makes a landing hard
+# (11-09) a jump attack that comes down with the staff still swinging lands through the knees:
+# the tucked legs meet the turf, the hips sink on under the folded chest, hold, then rise out
+const LAND_STRIKE := 0.60             # s of the strike landing
+const LAND_STRIKE_DIP := 0.30         # m the hips sink at its deepest
+var STRIKE_SPINE := float(OS.get_environment("STRIKE_SPINE")) if OS.has_environment("STRIKE_SPINE") else 0.5
+var JUMPATK_QUICKLAND := OS.get_environment("JUMPATK_QUICKLAND") == "1"   # old: eased straight up
 const FALL_HURT := 7.0               # m fallen before the ground starts to hurt
 const FALL_LETHAL := 22.0            # m fallen that kills outright
 const TURN_SPEED := 12.0
@@ -273,6 +279,7 @@ var _jump_from_sprint := false
 var land_t := -1.0                      # s into a landing (-1 none)
 var _land_hard := false
 var _land_plunge := false             # the landing was a plunge: deepest crouch, chest over the knees
+var _land_strike := false             # the landing came down out of a jump attack (see LAND_STRIKE)
 var _land_dur := LAND_SOFT
 var jumps := 0                          # (bots) jumps taken
 ## A leap off a foe's back, waiting out the hit-stop: a crown strike vaults the hero off the
@@ -1793,6 +1800,9 @@ func _touch_down() -> void:
 	_land_hard = drop >= HARD_DROP or plunged   # a plunge always lands in the deep crouch
 	_land_plunge = plunged
 	_land_dur = LAND_HARD if _land_hard else LAND_SOFT
+	_land_strike = not plunged and not JUMPATK_QUICKLAND and combat != null and combat.is_air_attack()
+	if _land_strike:
+		_land_dur = maxf(_land_dur, LAND_STRIKE)
 	land_t = 0.0
 	if _land_hard:
 		hard_landings += 1
@@ -1807,6 +1817,12 @@ func _touch_down() -> void:
 		if health <= 0.0:
 			_clear_jump_pose()
 			_die(self)
+
+## (11-09) true while the body is still down in a jump attack's landing: a swing pressed in the
+## air waits for the rise instead of tearing the hero straight up out of the crouch
+## (the whole landing: cut short, the dip it holds popped the hips 10 cm up in one tick)
+func strike_landing_hold() -> bool:
+	return _land_strike and land_t >= 0.0
 
 ## The body in the air and on landing, laid over the clip by the crumple modifier: the legs
 ## gather up under the hips on the rise (the leading knee higher), hang and reach for the
@@ -1950,10 +1966,26 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		elbow = 0.5 * env
 		flat = 1.0                             # the soles stay flat on the turf as the knees give
 		_tuck = 0.0
+		if _land_strike:
+			# the legs come down already tucked (the hips ~0.2 m over level feet), so the sink
+			# starts deep, gives a little more as the weight arrives (u 0.2), holds while the
+			# staff is driven in, then the body rises out of it slowly, chest last
+			var se := lerpf(0.68, 1.0, smoothstep(0.0, 0.22, u)) * (1.0 - smoothstep(0.38, 1.0, u))
+			dip = LAND_STRIKE_DIP * se
+			a = acos(clampf(1.0 - dip / 0.9, -1.0, 1.0))
+			hip = a * 1.15
+			knee = a * 2.0
+			var ce := 1.0 - smoothstep(0.5, 1.0, u)   # the chest comes up after the hips
+			spine = STRIKE_SPINE * maxf(se, ce * 0.6)
+			pel = 0.10 * se
+			nk = JA_FOLD_NECK * 0.6 * maxf(se, ce * 0.6)
+			arm = 0.0
+			elbow = 0.0
 	if armed:
 		arm = 0.0                              # the staff's IK owns the arms
 		elbow = 0.0
-		spine *= 0.5
+		if not (landing and _land_strike):
+			spine *= 0.5
 		var au: float = combat.air_attack_u() if combat != null else -1.0
 		if air and au >= 0.0 and not JUMPATK_FLAT:
 			# (11-08) the jump attack is thrown with the whole body, not the arms alone: as the
