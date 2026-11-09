@@ -2580,6 +2580,7 @@ const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
 const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the hat crown at the plunge hang (old -0.33)
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
+const PL_SNATCH_TURN_GATE := 55.0     # deg/tick: worst shaft turn from the snatch to plunge 0.12 s (11-09 11:00; 10:00 tip-only 68.3)
 const PL_SNATCH_HAT_GATE := -0.04     # m: worst shaft-to-hat margin while the plunge snatches a slung staff (old -0.25)
 func _airstrike_test() -> void:
 	var p := _player
@@ -2985,6 +2986,7 @@ func _airstrike_test() -> void:
 			var ss := _staff_ends(c)
 			sl_snatch_hat[0] = minf(sl_snatch_hat[0], _hat_margin(p, ss[0], ss[1]))
 	c.skel.skeleton_updated.connect(ph_rec)
+	c.draw_tip_max = 0.0
 	p.bot_heavy = true
 	for i in 160:
 		await get_tree().physics_frame
@@ -3008,9 +3010,11 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge hang -> higher fist %.3f m from the hat's crown (gate >= %.2f; the old chin-high hang -0.33), worst shaft-to-hat %.3f m from the hang through the swing over (gate >= %.2f; old -0.25)" % [sl_fist_hat[0], PL_HANG_FIST_GATE, sl_shaft_hat[0], PL_HANG_HAT_GATE])
 	if not c.PLUNGE_LOWHANG and (sl_fist_hat[0] < PL_HANG_FIST_GATE or sl_shaft_hat[0] < PL_HANG_HAT_GATE):
 		return _combat_done(false, "the plunge's hang is not overhead, or the staff cuts through the hat")
-	print("BOT airstrike: slung snatch -> worst shaft-to-hat %.3f m while the staff comes off the back (gate >= %.2f; old -0.25), worst shaft turn %.1f deg/tick to plunge 0.12 s" % [sl_snatch_hat[0], PL_SNATCH_HAT_GATE, sl_snatch_turn[0]])
+	print("BOT airstrike: slung snatch -> worst shaft-to-hat %.3f m while the staff comes off the back (gate >= %.2f; old -0.25), worst shaft turn %.1f deg/tick to plunge 0.12 s (gate <= %.0f; 10:00 tip-only 68.3), largest hat tip %.1f deg" % [sl_snatch_hat[0], PL_SNATCH_HAT_GATE, sl_snatch_turn[0], PL_SNATCH_TURN_GATE, rad_to_deg(c.draw_tip_max)])
 	if not c.PLUNGE_SNATCHRAW and sl_snatch_hat[0] < PL_SNATCH_HAT_GATE:
 		return _combat_done(false, "the slung staff passes through the hat as the plunge snatches it")
+	if not c.PLUNGE_SNATCHRAW and not c.PLUNGE_SNATCHTIP and sl_snatch_turn[0] > PL_SNATCH_TURN_GATE:
+		return _combat_done(false, "the plunge's snatch off the back whips the staff round in one tick")
 	if c.plunges != 4:
 		return _combat_done(false, "the slung-staff plunge never landed")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")

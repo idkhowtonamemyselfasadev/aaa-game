@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261105-1230-soldier-reel-impact.jpg",
-  "time": "2026-11-05T12:30:30Z",
-  "caption": "A Hollow soldier 0.07 s after a blow from ahead: the chest caves round it, the head is thrown forward and the spear knocked up, reacting at the joints instead of tipping as one rigid piece; GL quick-look in cottage shade, no Forward+ frame yet.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-1230-soldier-reel-step.jpg",
   "time": "2026-11-05T12:30:30Z",
   "caption": "The same stagger at 0.15 s: the shove walked off in a real backward step into a wide stance while the spear comes back to guard; flat GL light, and the cloak hides the hip throw.",
@@ -897,6 +891,12 @@
   "file": "20261109-1000-snatch-before-after.jpg",
   "time": "2026-11-09T10:40:00Z",
   "caption": "Before (left) the snatched staff stood up through the hat brim; after (right) it passes beside it. The snatch path is still a little whippy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1019-plunge-snatch-bow.jpg",
+  "time": "2026-11-09T10:19:48Z",
+  "caption": "Plunge snatch at plunge 0.05 s: before (left) the shaft stood up beside the hat brim, after (right) it swings along behind the shoulders on a smooth arc. The hands are still reaching for it and this lens sees the hero from behind.",
   "verdict": "fail"
  }
 ]

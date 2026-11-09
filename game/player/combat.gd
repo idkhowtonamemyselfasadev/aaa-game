@@ -183,6 +183,14 @@ var PLUNGE_SLOWSNATCH := OS.get_environment("PLUNGE_SLOWSNATCH") == "1"
 ## (11-09 10:00) PLUNGE_SNATCHRAW=1 = the snatch blended straight through the hat (before).
 var PLUNGE_SNATCHRAW := OS.get_environment("PLUNGE_SNATCHRAW") == "1"
 var _air_draw_dur := AIR_DRAW_TIME
+## (11-09 11:00) the 10:00 fix tipped the shaft only once the straight blend reached the hat and
+## let go at f = 1, so the snatch whipped (68 deg in one tick). Now the whole snatch bows out
+## round the side of the head: the blended staff is turned about the right fist by
+## PL_BOW x sin(pi f) about the body's forward axis (zero at both ends, so no jump into or out
+## of it); the hat tip stays under it as a net. PLUNGE_SNATCHTIP=1 = the 10:00 tip-only snatch.
+var PLUNGE_SNATCHTIP := OS.get_environment("PLUNGE_SNATCHTIP") == "1"
+var PL_BOW_YAW := deg_to_rad(float(OS.get_environment("PL_BOW_YAW"))) if OS.has_environment("PL_BOW_YAW") else 0.0
+var PL_BOW := deg_to_rad(float(OS.get_environment("PL_BOW"))) if OS.has_environment("PL_BOW") else deg_to_rad(-50.0)
 
 ## True while a move in the air snatches the staff: a jump attack, or a plunge (unless old).
 func _air_snatching_move() -> bool:
@@ -928,6 +936,22 @@ func _draw_clear_hat() -> void:
 	var ax2 := q2 * Vector3.UP
 	staff.global_transform = Transform3D(Basis(q2).scaled(gt.basis.get_scale()), pivot - ax2 * sl)
 
+## (11-09 11:00) the plunge snatch's bow: turn the staff about the right fist by PL_BOW sin(pi f)
+## about the body's forward axis, so the path off the back swings out beside the head.
+func _snatch_bow(f: float) -> void:
+	var a := PL_BOW * sin(PI * f)
+	if absf(a) < 1e-4:
+		return
+	var gt := staff.global_transform
+	var ax := gt.basis.y.normalized()
+	var fist := fist_center("Right")
+	var pivot := gt.origin + ax * ax.dot(fist - gt.origin)
+	var fwd: Vector3 = player.body.global_basis.z.normalized()
+	if PL_BOW_YAW != 0.0:
+		fwd = fwd.rotated(Vector3.UP, PL_BOW_YAW)
+	var r := Basis(fwd, a)
+	staff.global_transform = Transform3D(r * gt.basis, pivot + r * (gt.origin - pivot))
+
 ## Up again: the staff comes back from the right fist into both hands at guard, eased like a
 ## draw from wherever the fist holds it.
 func unhold() -> void:
@@ -1412,6 +1436,8 @@ func physics_step(delta: float) -> void:
 			# (11-09 10:00) the straight transform blend from the back slot to the overhead hang
 			# carried the shaft THROUGH the hat (0.25 m deep at plunge 0.05 s): tip it about the
 			# right fist so it passes beside the brim, as the knock-down redraw does
+			if not PLUNGE_SNATCHTIP:
+				_snatch_bow(f)
 			_draw_clear_hat()
 		_set_influence(f)
 		if f >= 1.0:
