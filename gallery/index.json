@@ -886,5 +886,11 @@
   "time": "2026-11-09T14:19:33Z",
   "caption": "Same frame with the old late dip fade (PLUNGE_LATEDIP=1): the shaft stands bolt upright through the hat brim in front of the face, the fault fixed this session.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261109-1525-plunge-snatch-pre.jpg",
+  "time": "2026-11-09T15:25:59Z",
+  "caption": "Plunge pressed with the staff slung, one beat before the snatch: the frame froze too early to show the new first-tick hat clearance, and the lens still sees the hero from behind against a dusk sky.",
+  "verdict": "fail"
  }
 ]

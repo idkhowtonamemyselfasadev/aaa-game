@@ -198,6 +198,18 @@ var _air_draw_dur := AIR_DRAW_TIME
 ## PL_BOW x sin(pi f) about the body's forward axis (zero at both ends, so no jump into or out
 ## of it); the hat tip stays under it as a net. PLUNGE_SNATCHTIP=1 = the 10:00 tip-only snatch.
 var PLUNGE_SNATCHTIP := OS.get_environment("PLUNGE_SNATCHTIP") == "1"
+## (11-09 16:00) the snatch's hat clearance used the hat where LAST tick's pose left it; on the
+## plunge's first tick the dive folds the head 0.18 m forward and the shaft, cleared against the
+## old hat, stood 2 cm inside the brim of the new one. Once the skeleton is posed this tick the
+## clearance runs again against the hat where it now is. PLUNGE_PREPOSEHAT=1 = the old.
+var PLUNGE_PREPOSEHAT := OS.get_environment("PLUNGE_PREPOSEHAT") == "1"
+var snatch_posed_tip := 0.0   # (bots) the largest extra tip the posed re-clear gave (rad)
+func _snatch_clear_posed() -> void:
+	if PLUNGE_PREPOSEHAT or PLUNGE_SNATCHRAW or state != PLUNGING or _air_draw_t < 0.0 or staff == null:
+		return
+	var before := staff.global_basis.y.normalized()
+	_draw_clear_hat()
+	snatch_posed_tip = maxf(snatch_posed_tip, before.angle_to(staff.global_basis.y.normalized()))
 var PL_BOW_YAW := deg_to_rad(float(OS.get_environment("PL_BOW_YAW"))) if OS.has_environment("PL_BOW_YAW") else 0.0
 var PL_BOW := deg_to_rad(float(OS.get_environment("PL_BOW"))) if OS.has_environment("PL_BOW") else deg_to_rad(-50.0)
 
@@ -299,6 +311,7 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 	player.body.add_child(_wield)
 	hold_on = OS.get_environment("KNOCK_FLOATSTAFF") == ""
 	skel.skeleton_updated.connect(_place_held)
+	skel.skeleton_updated.connect(_snatch_clear_posed)
 	_target_r = _marker("GripR")
 	_target_l = _marker("GripL")
 	var pole_r := _marker("PoleR")

@@ -2589,6 +2589,7 @@ const PL_SNATCH_TURN_GATE := 55.0     # deg/tick: worst shaft turn from the snat
 const PL_SWING_HAT_GATE := 0.0        # m: worst shaft-to-hat margin through the swing down (plunge_t 0.14..0.215; 11-09 15:00, old late dip -0.023)
 const PL_SWING_TURN_GATE := 54.0      # deg/tick: worst shaft turn through the swing down (plunge_t 0.14..0.25; old late dip 57.1)
 const PL_SNATCH_HAT_GATE := -0.04     # m: worst shaft-to-hat margin while the plunge snatches a slung staff (old -0.25)
+const PL_SNATCH_POSED_GATE := 0.0     # m: the same with the clearance re-run on the posed hat (11-09 16:00; old pre-pose hat -0.021)
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -3016,6 +3017,7 @@ func _airstrike_test() -> void:
 			sl_snatch_hat[0] = minf(sl_snatch_hat[0], _hat_margin(p, ss[0], ss[1]))
 	c.skel.skeleton_updated.connect(ph_rec)
 	c.draw_tip_max = 0.0
+	c.snatch_posed_tip = 0.0
 	p.bot_heavy = true
 	for i in 160:
 		await get_tree().physics_frame
@@ -3048,6 +3050,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: slung snatch -> worst shaft-to-hat %.3f m while the staff comes off the back (gate >= %.2f; old -0.25), worst shaft turn %.1f deg/tick to plunge 0.12 s (gate <= %.0f; 10:00 tip-only 68.3), largest hat tip %.1f deg" % [sl_snatch_hat[0], PL_SNATCH_HAT_GATE, sl_snatch_turn[0], PL_SNATCH_TURN_GATE, rad_to_deg(c.draw_tip_max)])
 	if not c.PLUNGE_SNATCHRAW and sl_snatch_hat[0] < PL_SNATCH_HAT_GATE:
 		return _combat_done(false, "the slung staff passes through the hat as the plunge snatches it")
+	print("BOT airstrike: slung snatch on the posed hat -> worst shaft-to-hat %.3f m (gate >= %.2f; old pre-pose hat -0.021), posed re-clear tip %.1f deg" % [sl_snatch_hat[0], PL_SNATCH_POSED_GATE, rad_to_deg(c.snatch_posed_tip)])
+	if not c.PLUNGE_SNATCHRAW and not c.PLUNGE_PREPOSEHAT and not c.PLUNGE_SNATCHTIP and _pl_no_env() and sl_snatch_hat[0] < PL_SNATCH_POSED_GATE:
+		return _combat_done(false, "the plunge snatch clears the hat where last tick left it, not where it is")
 	if not c.PLUNGE_SNATCHRAW and not c.PLUNGE_SNATCHTIP and sl_snatch_turn[0] > PL_SNATCH_TURN_GATE:
 		return _combat_done(false, "the plunge's snatch off the back whips the staff round in one tick")
 	if c.plunges != 4:
