@@ -1873,6 +1873,13 @@ const PL_DIVE_KNEE := 1.55
 const PL_DIVE_PELVIS := 0.16
 const PL_DIVE_NECK := -0.32
 var PLUNGE_FLAT := OS.get_environment("PLUNGE_FLAT") == "1"
+# (11-09 07:00) a plunge started from a plain fall (off a ledge, no jump) had the jump pose easing
+# in from standing (_jp at 14/s, pose at k 18), so the 0.08 s coil was over before it showed
+# (knee 0.38 of 1.25): the hero read as standing with the staff raised. The plunge now takes the
+# legs at once and its coil is drawn fast. PLUNGE_SLOWCOIL=1 = old.
+var PLUNGE_SLOWCOIL := OS.get_environment("PLUNGE_SLOWCOIL") == "1"
+const PL_TAKE_RATE := 45.0              # /s: _jp to 1 in ~1.5 frames at 60 fps on a plunge
+const PL_COIL_K := 38.0                 # pose ease rate while coiling (the air pose's is 18)
 var pl_coil := 0.0                       # bots read these
 var pl_dive := 0.0
 var JUMPATK_LATEFOLD := OS.get_environment("JUMPATK_LATEFOLD") == "1"
@@ -1903,13 +1910,15 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var push := air and _jumped and _air_t < PUSH_CROUCH
 	if push:
 		_jp = 1.0                             # the take-off owns the legs from its first frame
-	_jp = move_toward(_jp, want, delta * (14.0 if want > _jp else 8.0))
+	var plunge_pt: float = combat.plunge_t if air and combat != null and combat.is_plunging() and not PLUNGE_FLAT and not PLUNGE_SLOWCOIL else -1.0
+	var up_rate := PL_TAKE_RATE if plunge_pt >= 0.0 else 14.0
+	_jp = move_toward(_jp, want, delta * (up_rate if want > _jp else 8.0))
 	_pose_dip = 0.0
 	if _jp <= 0.0:
 		if crumple.leg_aim > 0.0:
 			_clear_jump_pose()
 		return
-	var k := 1.0 - exp(-18.0 * delta)
+	var k := 1.0 - exp(-(PL_COIL_K if plunge_pt >= 0.0 and plunge_pt < 0.17 else 18.0) * delta)
 	var hip := 0.0
 	var knee := 0.0
 	var spine := 0.0

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-0620-slope-ik.jpg",
-  "time": "2026-11-05T06:20:00Z",
-  "caption": "The hero standing across a 23 deg hillside with the new foot IK: hips settled, both boots meet the turf at their own height; GL frame from the front along the contour, so the difference is subtle and the lighting is not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0620-slope-noik.jpg",
-  "time": "2026-11-05T06:20:00Z",
-  "caption": "The same spot without foot IK for comparison: the clip stands as on flat ground and the far boot hangs over the downhill side; GL frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0710-knight-surge-burst.jpg",
   "time": "2026-11-05T07:10:00Z",
   "caption": "The Ashen Knight still on its knee as the surge bursts, glaive heaved skyward inside the ring of fire; backlit from the gate so the flung-back head is only a silhouette, GL frame.",
@@ -897,6 +885,18 @@
   "file": "20261109-0600-plunge-dive-old.jpg",
   "time": "2026-11-09T05:30:00Z",
   "caption": "Same moment with the old plunge body for comparison: the hero falls bolt upright with the staff held in front of the face, reading as floating, not driving down.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0700-plunge-coil-profile.jpg",
+  "time": "2026-11-09T07:00:00Z",
+  "caption": "Plunge coil at the hang from a plain fall, in profile: new (left) knees drawn up and shins swung back, old (right) legs hanging straight; still wrong: from a slung start the staff is still on the back and the hands are empty at the belt, GL renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0700-plunge-dive-back.jpg",
+  "time": "2026-11-09T07:00:00Z",
+  "caption": "Plunge dive from behind: hat bowed, knees up, staff driven straight down along the body; reads as a committed drop, but the lens is behind and the light is GL only.",
   "verdict": "fail"
  }
 ]

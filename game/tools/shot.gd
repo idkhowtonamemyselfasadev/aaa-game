@@ -2493,6 +2493,15 @@ func _ready() -> void:
 			var sside := Vector3(0, 0, 1) if -sl_light.z > 0.0 else Vector3(0, 0, -1)
 			if "flip" in args:
 				sside = -sside
+			if "prof" in args:
+				# (11-09 07:00) prof: square to the hero's own facing (a drop has no +X run line),
+				# on the sun side, so an arch or fold of the back reads in profile
+				var pf: Vector3 = player.body.global_basis.x
+				pf.y = 0.0
+				pf = pf.normalized()
+				sside = pf if pf.dot(-sl_light) >= 0.0 else -pf
+				if "flip" in args:
+					sside = -sside
 			var sc := back + sside * 3.4
 			sc.y = maxf(back.y + 1.0, terrain.height_at(sc.x, sc.z) + 0.9)
 			var scam := get_viewport().get_camera_3d()

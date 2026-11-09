@@ -2895,12 +2895,34 @@ func _airstrike_test() -> void:
 	await place.call(1.4, 6.0)
 	h0 = post.hits
 	p.bot_heavy = true
-	await _ticks(2)
+	# (11-09 07:00) a plunge from a plain fall coils at the hang too (the jump pose used to ease in
+	# from standing and the coil was over before it showed)
+	var dc_knee := 0.0
+	var dc_arch := 0.0
+	var dc_jp := 0.0
+	var dc_seen := false
+	for i in 2:
+		await get_tree().physics_frame
+		if c.is_plunging() and c.plunge_t < 0.12:
+			dc_seen = true
+			dc_knee = maxf(dc_knee, p.crumple.knee)
+			dc_arch = minf(dc_arch, p.crumple.spine)
+			dc_jp = maxf(dc_jp, p._jp)
 	p.bot_heavy = false
 	for i in 200:
 		await get_tree().physics_frame
+		if c.is_plunging() and c.plunge_t < 0.12:
+			dc_seen = true
+			dc_knee = maxf(dc_knee, p.crumple.knee)
+			dc_arch = minf(dc_arch, p.crumple.spine)
+			dc_jp = maxf(dc_jp, p._jp)
+		if OS.get_environment("PL_TRACE") == "1" and c.is_plunging():
+			print("PD t %.3f jp %.2f coil %.2f dive %.2f spine %.3f hip %.3f knee %.3f" % [c.plunge_t, p._jp, p.pl_coil, p.pl_dive, p.crumple.spine, p.crumple.hip, p.crumple.knee])
 		if c.plunges > 1:
 			break
+	print("BOT airstrike: plunge from a fall -> coil seen %s, knee %.3f (gate >= 1.0), arch %.3f (gate <= -0.24), jump pose %.2f by plunge 0.12 s" % [dc_seen, dc_knee, dc_arch, dc_jp])
+	if not p.PLUNGE_FLAT and not p.PLUNGE_SLOWCOIL and (not dc_seen or dc_knee < 1.0 or dc_arch > -0.24):
+		return _combat_done(false, "a plunge from a plain fall shows no coil at the hang (the pose eases in from standing)")
 	print("BOT airstrike: 6 m plunge -> plunges %d, post hits %d -> %d, power %.2f (low %.2f), health %.0f" % [c.plunges, h0, post.hits, c.last_power, low_pow, p.health])
 	if c.plunges != 2 or post.hits <= h0 or c.last_power < low_pow + 0.8 or p.health < p.health_max:
 		return _combat_done(false, "a plunge from 6 m did not strike harder, or it hurt")
