@@ -8262,9 +8262,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    New `column_peak()`, `clod_read()`, `open_luma()`. Bot (airstrike, new gates PL_COLUMN_GATE 1.2 m, PL_CLOD_GATE
    0.04 m, PL_LUMA_GATE 0.40): column 0.78..1.52 m, 15 clods, smallest 0.042 m, opening luma 0.30 (old: none / 0.012 / 0.52).
    Bots airstrike sentinel knightstomp jump combat heavy glide crown dodge lockon knight hands keepgap PASS.
-   Frames (SHOT_GL): `jump cb05n|cb15n 90 16.5 fixfps drop clear heavy press=0.1 land=0.05|0.15 sidelens prof nodog` rendering at commit time; verdict in the next commit.
-   Grade (hero plunge): rough+ (burst has shape; not yet judged in frames).
-   NEXT: (1) a front-lit lens for drop shots (`prof` + `flip`, or a sun-side option) and re-render the impact;
+   Frames (SHOT_GL): `jump cb05n|cb15n 90 16.5 fixfps drop clear heavy press=0.1 land=0.05|0.15 sidelens prof nodog` 0.05: the dust opens dark earth-brown round the crouch (13:00 pale), still a low disc (column not up yet). 0.15: darker, a little taller, a few clods flying left, but the column sits behind the hero's back from this lens and the clods read as specks. Gallery 20261109-*-plunge-burst-005 / -015 (fail).
+   Grade (hero plunge): rough+ (burst darker with height on paper; column hidden by the hero from the prof lens).
+   NEXT: (1) a front-lit side lens for drop shots (`prof` + `flip`, or a sun-side option) so the column and clods
+   read beside the hero, re-render land 0.15/0.30; push the column slightly forward of the ferrule if still hidden;
    (2) the -0.023 m graze at plunge 0.200 (PLUNGE_DOWN / PL_DIP fade); (3) jump attack rise frames td 0.20/0.35 in
    front light. BOSS/ANIMATION order unchanged; audio after.
 0. (13:00 11-09) **HERO PLUNGE: THE DUST BURST OPENS ON THE CONTACT TICK (game change + bot gate).** Item (1) of 12:00.

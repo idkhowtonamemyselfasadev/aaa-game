@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-1415-reellock-u0.5.jpg",
-  "time": "2026-11-05T14:15:24Z",
-  "caption": "The same stumble at 0.25 s: legs stepped back under the body on bare turf, chest counter-twisted; needs a sunlit Forward+ frame and the soldier drifts to the frame edge.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-1530-latlock-u0.15.jpg",
-  "time": "2026-11-05T15:30:00Z",
-  "caption": "A Hollow soldier 0.15 s into a side-blow reel: chest twisted off the blow, boots stepping back wide with the stance boot now also held sideways; GL quick-look, flat light and the cottage shade still darken it.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-1530-latlock-u0.45.jpg",
   "time": "2026-11-05T15:30:00Z",
   "caption": "The same reel at 0.45 s: stepped 0.66 m off the line and turning back to the hero, spear dropping to guard, feet planted; still a GL frame, not a sunlit Forward+ one.",
@@ -897,6 +885,18 @@
   "file": "20261109-1236-plunge-contact-005.jpg",
   "time": "2026-11-09T12:36:02Z",
   "caption": "The plunge 0.05 s after contact: dust ring round the feet, ferrule driven into the turf; the cloud is low and uniform with no clods or height, still backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1341-plunge-burst-005.jpg",
+  "time": "2026-11-09T13:41:47Z",
+  "caption": "Plunge contact frame 0.05 s: the dust now opens dark earth-brown round the crouch, but it is still a low disc (column not risen yet) and the hero is backlit from behind 3/4.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1341-plunge-burst-015.jpg",
+  "time": "2026-11-09T13:41:47Z",
+  "caption": "Plunge 0.15 s: the burst is darker and a little taller with a few clods flying left, but the new earth column hides behind the hero's back from this lens and the clods read as specks.",
   "verdict": "fail"
  }
 ]
