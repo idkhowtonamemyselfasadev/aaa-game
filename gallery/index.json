@@ -886,5 +886,17 @@
   "time": "2026-11-09T04:19:05Z",
   "caption": "Same moment with the old landing (no air hold) for comparison: the hero already stands nearly upright with the staff loose, no weight arrives.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261109-0600-plunge-dive.jpg",
+  "time": "2026-11-09T05:30:00Z",
+  "caption": "Plunge dive (new): mid-drop the hero is jackknifed, knees drawn up under a chest folded over the ferrule, hat bowed after it; still wrong: the lens from above hides the face and the staff line, GL renderer, the coil at the hang is weak.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0600-plunge-dive-old.jpg",
+  "time": "2026-11-09T05:30:00Z",
+  "caption": "Same moment with the old plunge body for comparison: the hero falls bolt upright with the staff held in front of the face, reading as floating, not driving down.",
+  "verdict": "fail"
  }
 ]

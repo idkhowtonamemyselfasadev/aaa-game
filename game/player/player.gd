@@ -1857,6 +1857,24 @@ var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0
 var _ja_pelvis := 0.0
 var JUMPATK_FLAT := OS.get_environment("JUMPATK_FLAT") == "1"
+# (11-09) the plunge's own body (see `_jump_pose`): at the hang the hero coils, back bowed
+# under the raised staff with the shins swung up behind (the tell); as the staff comes down the
+# body jackknifes into a compact drop, knees drawn up under a chest folded over the ferrule,
+# head bowed after it, so the deep landing crouch is reached from a folded body, not a straight
+# fall. PLUNGE_FLAT=1 = the old plain falling pose (legs opened to reach, chest halved).
+const PL_COIL_SPINE := -0.34
+const PL_COIL_HIP := 0.20
+const PL_COIL_KNEE := 1.25
+const PL_COIL_PELVIS := -0.20
+const PL_COIL_NECK := -0.10            # chin down: eyes on the spot below, not the sky
+const PL_DIVE_SPINE := 0.56
+const PL_DIVE_HIP := 1.05
+const PL_DIVE_KNEE := 1.55
+const PL_DIVE_PELVIS := 0.16
+const PL_DIVE_NECK := -0.32
+var PLUNGE_FLAT := OS.get_environment("PLUNGE_FLAT") == "1"
+var pl_coil := 0.0                       # bots read these
+var pl_dive := 0.0
 var JUMPATK_LATEFOLD := OS.get_environment("JUMPATK_LATEFOLD") == "1"
 static func _envf(n: String, d: float) -> float:
 	return float(OS.get_environment(n)) if OS.has_environment(n) else d
@@ -1871,9 +1889,11 @@ var _tuck := 0.0
 func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	ja_arch = 0.0
 	ja_fold = 0.0
+	pl_coil = 0.0
+	pl_dive = 0.0
 	if crumple == null or gliding or climbing or mantle_t >= 0.0 or dead_t >= 0.0 or down_t >= 0.0:
 		return
-	var air := _air_t >= 0.0 and (_jumped or _air_t > 0.15) and not busy
+	var air := _air_t >= 0.0 and (_jumped or _air_t > 0.15 or (combat != null and combat.is_plunging() and not PLUNGE_FLAT)) and not busy
 	if land_t >= 0.0:
 		land_t += delta
 		if land_t >= _land_dur:
@@ -2019,6 +2039,26 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 				nk = JA_ARCH_NECK * arch + JA_FOLD_NECK * fold
 			if not JUMPATK_NOTILT:
 				tl = JA_ARCH_TILT * arch
+		var pt: float = combat.plunge_t if combat != null and combat.is_plunging() else -1.0
+		if air and pt >= 0.0 and not PLUNGE_FLAT:
+			# coiled at the hang as the staff goes up (0-0.08 s), let go as it starts down (0.11 s);
+			# the dive leads the staff by a beat (body first), then holds all the way down
+			var coil := smoothstep(0.0, 0.07, pt) * (1.0 - smoothstep(0.08, 0.15, pt))
+			var dive := smoothstep(0.08, 0.17, pt)
+			spine = lerpf(spine, PL_COIL_SPINE, coil)
+			hip = lerpf(hip, PL_COIL_HIP, coil)
+			knee = lerpf(knee, PL_COIL_KNEE, coil)
+			ankle = lerpf(ankle, 0.5, coil)           # toes pointed behind
+			stride *= 1.0 - coil
+			spine = lerpf(spine, PL_DIVE_SPINE, dive)
+			hip = lerpf(hip, PL_DIVE_HIP, dive)
+			knee = lerpf(knee, PL_DIVE_KNEE, dive)
+			ankle = lerpf(ankle, 0.1, dive)           # soles coming level for the ground
+			stride *= 1.0 - 0.7 * dive
+			pel = PL_COIL_PELVIS * coil + PL_DIVE_PELVIS * dive
+			nk = PL_COIL_NECK * coil + PL_DIVE_NECK * dive
+			pl_coil = coil
+			pl_dive = dive
 	crumple.active = true
 	# (11-08) with the staff in both hands the trunk's bends no longer carry the fists off it
 	crumple.keep_hands = _jp if armed and not JUMPATK_LOOSEHANDS else 0.0

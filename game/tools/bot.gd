@@ -2845,13 +2845,33 @@ func _airstrike_test() -> void:
 	var plunging := c.is_plunging()
 	var hang_y := p.global_position.y
 	var vmin := 0.0
+	# (11-09) the plunge's body: coiled at the hang, jackknifed into the dive before touch-down
+	var pl_arch := 0.0
+	var pl_fold := 0.0
+	var pl_hip := 0.0
+	var pl_knee := 0.0
+	var pl_step := 0.0
+	var pl_last := p.crumple.spine
+	var pl_land_spine := 0.0
 	for i in 120:
 		await get_tree().physics_frame
 		vmin = minf(vmin, p.velocity.y)
 		if c.plunge_t < StaffCombat.PLUNGE_HANG:
 			hang_y = minf(hang_y, p.global_position.y)
 		if c.plunges > 0:
+			pl_land_spine = p.crumple.spine
 			break
+		pl_arch = minf(pl_arch, p.crumple.spine)
+		pl_fold = maxf(pl_fold, p.crumple.spine)
+		pl_hip = maxf(pl_hip, p.crumple.hip)
+		pl_knee = maxf(pl_knee, p.crumple.knee)
+		pl_step = maxf(pl_step, absf(p.crumple.spine - pl_last))
+		pl_last = p.crumple.spine
+		if OS.get_environment("PL_TRACE") == "1":
+			print("PL t %.3f vy %.1f coil %.2f dive %.2f spine %.3f hip %.3f knee %.3f" % [c.plunge_t, p.velocity.y, p.pl_coil, p.pl_dive, p.crumple.spine, p.crumple.hip, p.crumple.knee])
+	print("BOT airstrike: plunge body -> arch %.3f, fold %.3f, hip %.3f, knee %.3f, worst spine step %.3f rad/tick, spine at touch-down %.3f" % [pl_arch, pl_fold, pl_hip, pl_knee, pl_step, pl_land_spine])
+	if not p.PLUNGE_FLAT and (pl_arch > -0.18 or pl_fold < 0.40 or pl_hip < 0.8 or pl_knee < 1.2 or pl_step > 0.20):
+		return _combat_done(false, "the plunge falls as a plain jump: no coil at the hang or no fold into the dive (or it snaps)")
 	var low_pow := c.last_power
 	print("BOT airstrike: jump plunge -> plunging %s, hang dropped %.2f m, fastest fall %.1f m/s, plunges %d, post hits %d -> %d, power %.2f" % [plunging, y0 - hang_y, vmin, c.plunges, h0, post.hits, low_pow])
 	if not plunging or c.plunges != 1 or post.hits <= h0:
