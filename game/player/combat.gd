@@ -165,9 +165,22 @@ var JUMPATK_NOAIRHOLD := OS.get_environment("JUMPATK_NOAIRHOLD") == "1"
 var air_hold_t := 0.0          # s the current jump attack has held its struck pose in the air
 var air_holds := 0             # jump attacks that held their struck pose into the fall (bots)
 
+## (11-09 08:00) a plunge pressed with the staff slung snatches it into both fists by the top of
+## the raise (plunge_t 0.08): it used to take the jump attack's 0.12 s snatch with the slow 6/s
+## grip roll and closed fingers only past _blend 0.9, so at the hang (plunge_t ~0.07) the staff
+## still lay on the back and the hands hung empty at the belt, and the fists only met the shaft
+## at ~0.25 s, in the dive. PLUNGE_SLOWSNATCH=1 = old.
+const PLUNGE_DRAW_TIME := 0.075
+var PLUNGE_SLOWSNATCH := OS.get_environment("PLUNGE_SLOWSNATCH") == "1"
+var _air_draw_dur := AIR_DRAW_TIME
+
+## True while a move in the air snatches the staff: a jump attack, or a plunge (unless old).
+func _air_snatching_move() -> bool:
+	return is_air_attack() or (state == PLUNGING and not PLUNGE_SLOWSNATCH)
+
 ## True while a snatch off the back is blended under an air move and has passed its half.
 func air_snatch_late() -> bool:
-	return not JUMPATK_LATEFEED and not JUMPATK_SLOWSNATCH and is_air_attack() and _blend > 0.5
+	return not JUMPATK_LATEFEED and not JUMPATK_SLOWSNATCH and _air_snatching_move() and _blend > 0.5
 const AIR_DIP := 0.42          # the jump attack's strike tips down from the apex
 var spin_delta := 0.0        # body yaw the current attack added this frame
 var _spin_applied := 0.0     # last frame's spin_delta, which the body turned by this frame
@@ -1010,6 +1023,8 @@ func _start_plunge() -> void:
 	player.stamina = maxf(player.stamina - PLUNGE_COST, 0.0)
 	if _snatch_draw():
 		_raise_from = GUARD
+		if not PLUNGE_SLOWSNATCH:
+			_air_draw_dur = PLUNGE_DRAW_TIME
 	elif state == CHARGING:
 		_raise_from = _charge_pose()
 	elif state == ATTACKING:
@@ -1041,6 +1056,7 @@ func _snatch_draw() -> bool:
 		staff.reparent(_wield, true)
 	_from_xform = staff.transform
 	_air_draw_t = 0.0
+	_air_draw_dur = AIR_DRAW_TIME
 	_set_influence(0.0)
 	return true
 
@@ -1202,7 +1218,7 @@ func physics_step(delta: float) -> void:
 		# (11-08) back from a knock-down the fists are already round the shaft: the roll comes in
 		# quickly with the draw instead of easing in after it (the fists rode 0.1 m off for 3 ticks)
 		var rate := UNHOLD_ROLL_RATE if _unhold_draw else 6.0
-		if held and is_air_attack() and not JUMPATK_SLOWSNATCH:
+		if held and _air_snatching_move() and not JUMPATK_SLOWSNATCH:
 			rate = AIR_ROLL_RATE               # snatched in the air: the fists close round it at once
 		grip_roll.weight = move_toward(grip_roll.weight, 1.0 if held else 0.0, delta * rate)
 	_spin_applied = spin_delta
@@ -1353,7 +1369,7 @@ func physics_step(delta: float) -> void:
 	staff.transform = _place_hands(pose)
 	if _air_draw_t >= 0.0:
 		_air_draw_t += delta
-		var f := clampf(_air_draw_t / (DRAW_TIME if JUMPATK_SLOWSNATCH else AIR_DRAW_TIME), 0.0, 1.0)
+		var f := clampf(_air_draw_t / (DRAW_TIME if JUMPATK_SLOWSNATCH else _air_draw_dur), 0.0, 1.0)
 		if not JUMPATK_SLOWSNATCH:
 			f = smoothstep(0.0, 1.0, f)
 		staff.transform = _from_xform.interpolate_with(staff.transform, f)

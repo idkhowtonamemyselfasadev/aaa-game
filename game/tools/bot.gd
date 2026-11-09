@@ -2577,6 +2577,7 @@ const DROP_FIRST_GATE := 4.0
 const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
+const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -2941,6 +2942,36 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: 12 m plunge (drop %.2f) -> lost %.0f of a plain fall's %.0f" % [p.last_drop, lost, full])
 	if c.plunges != 3 or lost <= 0.0 or absf(lost - full * 0.5) > 1.5:
 		return _combat_done(false, "a 12 m plunge did not soak half the fall damage")
+	# 5) (11-09 08:00) a plunge from a plain fall with the staff SLUNG: it is in both fists by the
+	# top of the raise (it used to lie on the back at the hang, the hands empty at the belt)
+	c.restore()
+	await place.call(1.4, 6.0)
+	p.stamina = p.stamina_max
+	var sl_blend_hang := -1.0          # staff blend into the hands at plunge_t ~0.075 (the hang)
+	var sl_gap10 := -1.0               # worst fist to shaft gap on the first tick at plunge_t >= 0.10
+	var sl_hold10 := -1.0              # finger hold then
+	var sl_seen := false
+	p.bot_heavy = true
+	for i in 160:
+		await get_tree().physics_frame
+		if i == 1:
+			p.bot_heavy = false
+		if c.is_plunging():
+			sl_seen = true
+			if OS.get_environment("PL_TRACE") == "1":
+				print("PS t %.3f blend %.2f hold %.2f roll %.2f gap R %.3f L %.3f" % [c.plunge_t, c._blend, p.hand_rest.hold, c.grip_roll.weight if c.grip_roll else -1.0, c.fist_gap[0], c.fist_gap[1]])
+			if sl_blend_hang < 0.0 and c.plunge_t >= 0.075:
+				sl_blend_hang = c._blend
+			if sl_gap10 < 0.0 and c.plunge_t >= 0.10:
+				sl_gap10 = maxf(c.fist_gap[0], c.fist_gap[1])
+				sl_hold10 = p.hand_rest.hold
+		if c.plunges > 3:
+			break
+	print("BOT airstrike: plunge with the staff slung -> seen %s, staff in the hands %.2f at the hang (gate >= 0.98), fists %.3f m off the shaft at plunge 0.10 s (gate <= %.2f), finger hold %.2f" % [sl_seen, sl_blend_hang, sl_gap10, PL_SNATCH_GATE, sl_hold10])
+	if not c.PLUNGE_SLOWSNATCH and (not sl_seen or sl_blend_hang < 0.98 or sl_gap10 < 0.0 or sl_gap10 > PL_SNATCH_GATE):
+		return _combat_done(false, "a plunge from a slung staff does not have it in both fists by the hang")
+	if c.plunges != 4:
+		return _combat_done(false, "the slung-staff plunge never landed")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")
 
 ## Foot IK on slopes: standing on a ~20 deg hillside each sole sits on ITS ground (the uphill

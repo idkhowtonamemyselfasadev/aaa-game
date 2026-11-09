@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-0710-knight-surge-burst.jpg",
-  "time": "2026-11-05T07:10:00Z",
-  "caption": "The Ashen Knight still on its knee as the surge bursts, glaive heaved skyward inside the ring of fire; backlit from the gate so the flung-back head is only a silhouette, GL frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-0710-knight-surge-settle.jpg",
-  "time": "2026-11-05T07:10:00Z",
-  "caption": "The knight risen at its phase-2 size, glaive levelled back into guard with the fire still burning; the fallen stone in front reads blocky and the figure is backlit, GL frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-0804-toestep.jpg",
   "time": "2026-11-05T08:04:16Z",
   "caption": "Toe IK test: a boot stands on top of a 16 cm masonry block with nothing sunk into it; the lens is not side-on so the ball-on-edge read is unverified, and the GL quick-look lighting and test block are not shipping quality.",
@@ -897,6 +885,18 @@
   "file": "20261109-0700-plunge-dive-back.jpg",
   "time": "2026-11-09T07:00:00Z",
   "caption": "Plunge dive from behind: hat bowed, knees up, staff driven straight down along the body; reads as a committed drop, but the lens is behind and the light is GL only.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0800-plunge-slung-hang.jpg",
+  "time": "2026-11-09T08:00:00Z",
+  "caption": "Plunge from a slung staff at the hang (plunge 0.08 s), profile: new (left) staff snatched into the fist and angled up behind the hat; old (right) staff still upright on the back, hands empty. Still wrong: the fists stay at the chest instead of going overhead, GL renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-0800-plunge-slung-hang-close.jpg",
+  "time": "2026-11-09T08:00:00Z",
+  "caption": "Close crop of the same frames: the new snatch has the staff in the fists by the hang; the raise still reads as a shouldered staff, not one lifted overhead.",
   "verdict": "fail"
  }
 ]
