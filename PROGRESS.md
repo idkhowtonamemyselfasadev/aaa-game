@@ -8260,7 +8260,12 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    worst shaft-to-hat from plunge 0.08 to 0.215 s -0.024 m (gate >= -0.04; old -0.25).
    Still wrong: during the slung snatch (plunge 0.05-0.067 s) the staff blends from the back THROUGH the hat (-0.25,
    -0.12; old the same): the transform interpolation from the back slot takes the straight path over the head.
-   Grade (hero plunge): rough+ (raise now reads overhead in numbers; frames below).
+   Frames (SHOT_GL, ~45 min for 2 alongside bots): `jump ph18n 90 16.5 fixfps drop clear heavy press=0.1 jt=0.18
+   sidelens prof nodog` (hang) and ph25n (jt 0.25, swing over): hang = fist up by the hat crown, staff cocked back over
+   the shoulder, clear of the brim (vs gallery 20261109-0800: fists at the chest, shaft through the brim); still reads
+   as shouldered more than lifted, and this lens caught the hero from BEHIND 3/4 (the prof lens follows the facing).
+   Swing = staff carried out in front of the brim at the chest, tip forward-up. Gallery 20261109-0900 x2 (fail).
+   Grade (hero plunge): rough+ (raise higher and clean of the hat; the overhead silhouette still weak).
    NEXT: (1) snatch path round the hat (interpolate via a point beside the head, or blend in body-space pose
    instead of the transform); (2) impact frame `land=0.05` from the prof lens; (3) jump attack rise frames td
    0.20/0.35 in front light. BOSS/ANIMATION order unchanged; audio after.
