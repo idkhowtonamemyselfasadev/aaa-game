@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261105-2014-reveal-dormant.jpg",
-  "time": "2026-11-05T20:14:05Z",
-  "caption": "The boss reveal's dormant beat: slumped over its planted glaive, head bowed (GL frame; Forward+ not checked, the blade tip hovers just above the turf).",
-  "verdict": "fail"
- },
- {
   "file": "20261105-2014-reveal-roar.jpg",
   "time": "2026-11-05T20:14:05Z",
   "caption": "The boss reveal's roar beat: glaive heaved up, chest and head thrown back (GL frame from its back flank; the face is hidden, needs a front-lit Forward+ frame).",
@@ -891,6 +885,18 @@
   "file": "20261109-1525-plunge-snatch-pre.jpg",
   "time": "2026-11-09T15:25:59Z",
   "caption": "Plunge pressed with the staff slung, one beat before the snatch: the frame froze too early to show the new first-tick hat clearance, and the lens still sees the hero from behind against a dusk sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1700-plunge-burst-front-015.jpg",
+  "time": "2026-11-09T17:00:00Z",
+  "caption": "Plunge impact 0.15 s after touch-down from a new front lens (jface jdist=4.6): the burst finally reads beside the hero, but it is a flat pale ring that looks lit from inside; no dark earth column or clods show, and the sun is still behind the scene.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1700-plunge-burst-front-030.jpg",
+  "time": "2026-11-09T17:00:00Z",
+  "caption": "Plunge impact 0.30 s: the dust ring spreads 3 m wide round the hero, still pale white instead of earth brown, still no column above the pit; hero lit from behind.",
   "verdict": "fail"
  }
 ]

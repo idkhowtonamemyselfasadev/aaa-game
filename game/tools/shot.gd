@@ -2548,7 +2548,12 @@ func _ready() -> void:
 				sunh.y = 0.0
 				sunh = sunh.normalized()
 				var turn := clampf(hf.signed_angle_to(sunh, Vector3.UP), -1.22, 1.22)
-				jc = back + hf.rotated(Vector3.UP, turn) * 3.2
+				# jdist=<m> (11-09 17:00): further out, so a plunge's earth column and clods fit beside the hero
+				var jdist := 3.2
+				for a in args:
+					if a.begins_with("jdist="):
+						jdist = float(a.substr(6))
+				jc = back + hf.rotated(Vector3.UP, turn) * jdist
 				print("SHOT jface facing %s sun %s turn %.2f" % [hf, sunh, turn])
 			jc.y = maxf(back.y + 1.45, terrain.height_at(jc.x, jc.z) + 0.6)
 			var jcam := get_viewport().get_camera_3d()
