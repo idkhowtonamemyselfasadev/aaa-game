@@ -105,6 +105,14 @@ const PLUNGE_HANG := 0.18     # s held at the top: staff up (0.08 s), held, then
 const PLUNGE_SPEED := 21.0    # m/s straight down after the hang
 const PLUNGE_COST := 18.0
 const PLUNGE_MIN := 0.7       # m of clear air below needed (lower: a plain heavy waits for the ground)
+const PLUNGE_HANG_KEY := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0]
+var PLUNGE_LOWHANG := OS.get_environment("PLUNGE_LOWHANG") == "1"
+var _pl_key_env: PackedFloat64Array = OS.get_environment("PL_KEY").split_floats(",") if OS.has_environment("PL_KEY") else PackedFloat64Array()
+const PLUNGE_MID_KEY := [0.0, 20.0, Vector3(-0.12, 1.65, 0.55), -25.0]   # tip forward, hands out in front of the brim
+const PLUNGE_MID_AT := 0.5
+var PL_DIP := float(OS.get_environment("PL_DIP")) if OS.has_environment("PL_DIP") else 0.8
+var PL_DIP_OUT := OS.get_environment("PL_DIP_OUT").split_floats(",") if OS.has_environment("PL_DIP_OUT") else PackedFloat64Array([0.17, 0.24])
+var _pl_mid_env: PackedFloat64Array = OS.get_environment("PL_MID").split_floats(",") if OS.has_environment("PL_MID") else PackedFloat64Array()
 const PLUNGE_DOWN := [10.0, -70.0, Vector3(-0.20, 1.20, 0.30), -55.0, -0.05]
 const PLUNGE_RISE := { "dur": 0.62, "hit": [2.0, 2.0], "lunge": 0.0, "spin": 0.0, "legs": true, "keys": [
 	[0.00, 10.0, -70.0, Vector3(-0.20, 1.20, 0.30), -55.0, -0.05],   # ferrule in the turf
@@ -1061,12 +1069,32 @@ func _snatch_draw() -> bool:
 	return true
 
 func _plunge_pose() -> Array:
+	var hang: Array = _plunge_hang_key()
 	var up := smoothstep(0.0, 0.08, plunge_t)
-	var pose := _pose_at([[0.0] + _raise_from, [1.0] + RAISED], up)
+	var pose := _pose_at([[0.0] + _raise_from, [1.0] + hang], up)
 	var down := smoothstep(0.11, 0.21, plunge_t)
 	if down > 0.0:
-		pose = _pose_at([[0.0] + RAISED, [1.0] + PLUNGE_DOWN], down)
+		if PLUNGE_LOWHANG:
+			pose = _pose_at([[0.0] + hang, [1.0] + PLUNGE_DOWN], down)
+		else:
+			# (11-09 09:00) over the top through a mid key out in front of the brim: straight from
+			# the hang to PLUNGE_DOWN the shaft swept through the hat (0.25 m deep)
+			var mid: Array = PLUNGE_MID_KEY
+			if _pl_mid_env.size() == 5:
+				mid = [_pl_mid_env[0], _pl_mid_env[1], Vector3(_pl_mid_env[2], _pl_mid_env[3], _pl_mid_env[4]), PLUNGE_MID_KEY[3]]
+			pose = _pose_at([[0.0] + hang, [PLUNGE_MID_AT] + mid, [1.0] + PLUNGE_DOWN], down)
 	return pose
+
+## The staff at the top of the plunge's hang. (11-09 09:00) it was the ground heavy's RAISED
+## (fists at the chin, 0.33-0.52 m under the hat's crown): from the side the hang read as a
+## shouldered staff. Now the arms go up over the hat, the shaft cocked back behind the head.
+## PLUNGE_LOWHANG=1 = the old; PL_KEY="yaw,pitch,x,y,z" for tuning.
+func _plunge_hang_key() -> Array:
+	if PLUNGE_LOWHANG:
+		return RAISED
+	if _pl_key_env.size() == 5:
+		return [_pl_key_env[0], _pl_key_env[1], Vector3(_pl_key_env[2], _pl_key_env[3], _pl_key_env[4]), PLUNGE_HANG_KEY[3]]
+	return PLUNGE_HANG_KEY
 
 var last_plunge_crack: GroundCrack   # the turf the last plunge split (bots read this)
 
@@ -1365,6 +1393,11 @@ func physics_step(delta: float) -> void:
 	if is_air_attack() and t / float(_atk["dur"]) > 0.4:
 		want_dip = AIR_DIP                     # from above, the whole arc tips down onto the foe
 	dip = lerpf(dip, want_dip, 1.0 - exp(-12.0 * delta))
+	if state == PLUNGING and not PLUNGE_LOWHANG:
+		# (11-09 09:00) the dive folds the chest and hat forward over the staff while it swings
+		# over the top; the swing tips forward with the fold (as the jump attack's arc does) so
+		# the shaft passes in front of the brim, and is back square by the drive (PLUNGE_DOWN)
+		dip = PL_DIP * float(player.get("pl_dive")) * (1.0 - smoothstep(PL_DIP_OUT[0], PL_DIP_OUT[1], plunge_t))
 	_ride_chest(delta)
 	staff.transform = _place_hands(pose)
 	if _air_draw_t >= 0.0:
