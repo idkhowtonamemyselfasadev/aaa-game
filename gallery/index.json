@@ -892,5 +892,11 @@
   "time": "2026-11-09T19:27:07Z",
   "caption": "Hero plunge at land 0.30 s: the dust ring at the feet is now grey-brown earth instead of a white glowing disc; still a bright hot spot at the ferrule, the column sits behind the staff and the hero is backlit.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261109-2100-plunge-ferrule-turf-030.jpg",
+  "time": "2026-11-09T21:00:00Z",
+  "caption": "Hero plunge 0.30 s after impact, front lens: the white hot spot at the staff's tip is gone and the dust bowl reads grey-brown; still wrong: small whitish pebble dots scattered round the feet and the earth column is a faint plume behind the hero.",
+  "verdict": "fail"
  }
 ]
