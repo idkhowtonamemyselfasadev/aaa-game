@@ -37,6 +37,15 @@ var glow := DUST_GLOW_E          # the dust's self-light after exposure (bots)
 static var _crack_tex: ImageTexture
 static var _soft: ImageTexture
 
+## (11-09 13:00) the burst opens ON the contact tick: the dust used to fade in from alpha 0 over
+## 6 % of its life (0.13 s for the puff) at under half size, low enough that the soft-particle
+## fade ate it, so the plunge's impact frame showed bare turf and the cloud came a beat late.
+## Now the puff and the ring dust open near full alpha at ~0.8 of their size and the puff is
+## thrown up off the turf fast, then held by the air. CRACK_SOFTOPEN=1 = the old slow open.
+static var SOFT_OPEN := OS.get_environment("CRACK_SOFTOPEN") == "1"
+const OPEN_ALPHA := 0.6         # the dust's alpha on the very first frame (old 0.0)
+const OPEN_SCALE := 0.85        # its size on the first frame, of the scale curve's top end (old 0.45)
+
 func _ready() -> void:
 	_decal = Decal.new()
 	_decal.size = Vector3(3.6 * size_k, 1.4, 3.6 * size_k)
@@ -185,6 +194,16 @@ func _make_puff() -> CPUParticles3D:
 	p.initial_velocity_max = 1.9
 	p.damping_min = 2.5
 	p.damping_max = 4.0
+	if not SOFT_OPEN:
+		# thrown up out of the pit hard, then the air holds it: it clears the soft-particle
+		# fade off the turf within a couple of frames instead of creeping up through it
+		p.explosiveness = 1.0
+		p.initial_velocity_min = 1.4
+		p.initial_velocity_max = 3.6
+		p.damping_min = 4.5
+		p.damping_max = 6.5
+		var m := (p.mesh as QuadMesh).material as StandardMaterial3D
+		m.proximity_fade_distance = 0.18
 	p.scale_amount_min = 0.5
 	p.scale_amount_max = 1.3
 	return p
@@ -297,15 +316,32 @@ func _dust_base(n: int, life: float, card := 0.6) -> CPUParticles3D:
 	p.mesh = q
 	var g := Gradient.new()
 	# grey-brown earth dust, paling and thinning as it hangs
-	g.offsets = PackedFloat32Array([0.0, 0.06, 0.45, 1.0])
-	g.colors = PackedColorArray([Color(0.55, 0.52, 0.48, 0.0), Color(0.58, 0.55, 0.51, 0.68),
+	var a0 := 0.0 if SOFT_OPEN else OPEN_ALPHA
+	var open := 0.06 if SOFT_OPEN else 0.015
+	g.offsets = PackedFloat32Array([0.0, open, 0.45, 1.0])
+	g.colors = PackedColorArray([Color(0.55, 0.52, 0.48, a0), Color(0.58, 0.55, 0.51, 0.68),
 		Color(0.64, 0.62, 0.59, 0.42), Color(0.68, 0.67, 0.65, 0.0)])
 	p.color_ramp = g
 	var c := Curve.new()
-	c.add_point(Vector2(0, 0.45))
+	if SOFT_OPEN:
+		c.add_point(Vector2(0, 0.45))
+	else:
+		# a quick bloom to near full size, then the slow spread as it hangs
+		c.add_point(Vector2(0, OPEN_SCALE))
+		c.add_point(Vector2(0.08, 1.05))
 	c.add_point(Vector2(1, 1.6))
 	p.scale_amount_curve = c
 	return p
+
+## How much of the puff a lens sees `age` s after the blow: its ramp alpha x its card area
+## (scale curve x card size, squared), for the bots' contact-frame gate.
+func puff_read(age: float) -> float:
+	if _puff == null:
+		return 0.0
+	var u := clampf(age / _puff.lifetime, 0.0, 1.0)
+	var a := _puff.color_ramp.sample(u).a
+	var k := _puff.scale_amount_curve.sample(u) * ((_puff.mesh as QuadMesh).size.x)
+	return a * k * k
 
 static func _soft_texture() -> ImageTexture:
 	if _soft != null:

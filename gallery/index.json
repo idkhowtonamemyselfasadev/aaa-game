@@ -886,5 +886,17 @@
   "time": "2026-11-09T11:19:16Z",
   "caption": "Plunge 0.15 s into the landing: dust ring bursts round the crouch, staff angled up past the hat; still lit from behind, the burst arrives a beat late.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261109-1236-plunge-contact-002.jpg",
+  "time": "2026-11-09T12:36:02Z",
+  "caption": "The plunge one frame after contact: the dust cloud is now up round the crouch on the impact frame itself (was bare turf); it still reads as a flat pale disc, not an upward burst, and the hero is backlit from behind.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1236-plunge-contact-005.jpg",
+  "time": "2026-11-09T12:36:02Z",
+  "caption": "The plunge 0.05 s after contact: dust ring round the feet, ferrule driven into the turf; the cloud is low and uniform with no clods or height, still backlit.",
+  "verdict": "fail"
  }
 ]
