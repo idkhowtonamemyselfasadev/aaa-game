@@ -1016,6 +1016,9 @@ func _place(pose: Array) -> void:
 	# fingers half open against the sky); it opens back to the grip before it closes on the haft
 	if hand_rest != null:
 		hand_rest.clench_l = 0.0 if OS.get_environment("ROAR_OPENFIST") != "" else smoothstep(0.25, 0.8, free_l)
+	# (11-10) the freed hand leaves the haft: GripRoll lets it go (it would roll it back round the shaft)
+	if grip_roll != null:
+		grip_roll.side_weight[1] = 1.0 - smoothstep(0.0, 0.15, free_l)
 	super._place(pose)
 	if free_l <= 0.001 or spear == null or _grip_l == null:
 		return
@@ -1023,8 +1026,12 @@ func _place(pose: Array) -> void:
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
 	var d := StaffCombat.dir_of(pose[0], pose[1])
 	var d2 := spear.transform.basis.y.normalized().slerp(d, f).normalized()
-	var hr := _grip_r.position - _fist_off[0]
+	var hr := _grip_r.position - fist_shift[0]
 	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
+	# (11-10) the fist fit's wrist shift lives in the spear's frame: turn it with the re-aimed glaive
+	if _roll_frame:
+		fist_shift[0] = spear.basis * _fist_off[0]
+		_grip_r.position = hr + fist_shift[0]
 	var tw := deg_to_rad(pose[3])
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	# the arched chest carries the shoulder back with it; the arm is thrown up from there (the
@@ -1037,6 +1044,12 @@ func _place(pose: Array) -> void:
 	# the fist travels from the haft (on its right) over to its left: bowed up and back over the
 	# helm on the way, never across the front of the visor
 	_grip_l.position = _grip_l.position.lerp(fling, f) + Vector3(0.0, 0.12, -0.2) * sin(PI * f)
+
+## (11-10) one-handed (the roar's freed left): GripRoll eases out, the old fit holds the right.
+## The reveal keeps the old fit throughout: switching mid-roar left the old fit overshooting
+## every tick (right fist 0.16-0.22 m per size off the haft); see PROGRESS.md Next.
+func _grip_roll_wanted() -> bool:
+	return free_l < 0.02 and not intro_playing()
 
 ## Swing a glaive pose about the spine's base by `a` rad about the body's right (back = negative),
 ## as the arched chest carries the hands: both the hold point and the shaft's direction turn.

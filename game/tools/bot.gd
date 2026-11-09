@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "keepgap"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -220,6 +220,9 @@ func _ready() -> void:
 		return
 	if name == "foehands":
 		_foe_hands_test()
+		return
+	if name == "foegrip":
+		_foe_grip_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -1161,7 +1164,14 @@ func _foe_hands_test() -> void:
 				w[2] = minf(w[2], h["mean"])
 			for j in 2:
 				var hand := skel.global_transform * skel.get_bone_global_pose(hb[j]).origin
-				gerr = maxf(gerr, hand.distance_to(([e._grip_r, e._grip_l][j] as Node3D).global_position) / sc)
+				var gpt := ([e._grip_r, e._grip_l][j] as Node3D).global_position
+				if e.grip_roll != null and e.grip_roll.weight > 0.5:
+					# (11-10) GripRoll moves the wrist so the FIST sits on the axis: the hand is
+					# where it should be when the wrist is at its grip point ALONG the haft
+					var ax0 := e.spear.global_basis.y.normalized()
+					gerr = maxf(gerr, absf(ax0.dot(hand - gpt)) / sc)
+				else:
+					gerr = maxf(gerr, hand.distance_to(gpt) / sc)
 				# 11-06: the fist's hollow on the haft: its centre to the shaft's axis (the fit's
 				# first ticks after a size change excluded: it closes the gap over a few ticks)
 				var fc := e.fist_center(["Right", "Left"][j])
@@ -1210,6 +1220,81 @@ func _foe_hands_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "foes' fingers closed on the haft at every size")
+
+## (11-10) The foes' fists stay on the haft through the attack: the soldier and the knight (each
+## size) run a thrust and a sweep, WINDUP -> STRIKE -> RECOVER, and each tick the fist's centre to
+## the shaft axis (m per size) and the wrist to its IK target are read per state.
+const GRIP_ATK_GAP_MAX := 0.05     # m per size, worst tick of an attack state (old fit: 0.089-0.095 on the thrust; now <= 0.032)
+const GRIP_ATK_MEAN_MAX := 0.004   # (old fit: 0.011-0.020 on the strikes; now <= 0.001)
+const GRIP_ATK_OFF_TICKS := 2      # hand-ticks > 3 cm off per state (GripRoll's roll cap / wrist-bend limit may cost a tick)
+func _foe_grip_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	await _ticks(20)
+	var cases := [[so, 1.0]]
+	for i in 3:
+		cases.append([k, float(AshenKnight.PHASES[i]["scale"])])
+	var fail := ""
+	var names := {HollowSoldier.WINDUP: "windup", HollowSoldier.STRIKE: "strike", HollowSoldier.RECOVER: "recover"}
+	for c in cases:
+		var e: HollowSoldier = c[0]
+		var sc: float = c[1]
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		e.set_size_scale(sc)
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.bot_move = Vector3.ZERO
+		e.bot_face = Vector3.ZERO
+		_player.global_position = e.global_position + e.body.global_basis.z * 6.0 * sc
+		for mk in [HollowSoldier.THRUST_MOVE, HollowSoldier.SWEEP_MOVE]:
+			e.state = HollowSoldier.IDLE
+			await _ticks(40)
+			e._from = e._pose
+			e.move_kind = mk
+			e._enter(HollowSoldier.WINDUP)
+			var acc := {}   # state -> [worst R, worst L, sum, n, worst wrist-target]
+			var skel: Skeleton3D = e.skel
+			var hb := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
+			for i in 400:
+				await get_tree().physics_frame
+				await skel.skeleton_updated
+				var st: int = e.state
+				if not names.has(st):
+					break
+				if not acc.has(st):
+					acc[st] = [0.0, 0.0, 0.0, 0, 0.0, 0]
+				var a: Array = acc[st]
+				var o := e.spear.global_position
+				var ax := e.spear.global_basis.y.normalized()
+				for j in 2:
+					var fc := e.fist_center(["Right", "Left"][j])
+					var gp := fc.distance_to(o + ax * ax.dot(fc - o)) / sc
+					a[j] = maxf(a[j], gp)
+					if gp > 0.03:
+						a[5] += 1
+					a[2] += gp
+					a[3] += 1
+					var hand := skel.global_transform * skel.get_bone_global_pose(hb[j]).origin
+					a[4] = maxf(a[4], hand.distance_to(([e._grip_r, e._grip_l][j] as Node3D).global_position) / sc)
+					if gp > 0.02 and OS.has_environment("FOEGRIP_PEAKS"):
+						print("    peak %s x%.1f %s %d %s %s gap %.3f off %.3f feed %.3f roll %.2f" % [e.name, sc, ["thrust", "sweep"][mk], i, names[st], ["R", "L"][j], gp, e._fist_off[j].length(), e.grip_roll.last_feed[j] / sc if e.grip_roll else 0.0, e.grip_roll.last_roll[j] if e.grip_roll else 0.0])
+					if OS.has_environment("FOEGRIP_DBG") and j == 0 and i % 4 == 0:
+						print("    %s %d %s gapR %.3f wrist-tgt %.3f off %s" % [e.name, i, names[st], gp, a[4], str(e._fist_off[0])])
+			for st in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
+				if not acc.has(st):
+					if fail == "":
+						fail = "%s x%.1f %s never reached %s" % [e.name, sc, ["thrust", "sweep"][mk], names[st]]
+					continue
+				var a: Array = acc[st]
+				var mean: float = a[2] / maxf(a[3], 1)
+				print("   %s x%.1f %s %s: fist-shaft R %.3f L %.3f mean %.3f m, %d hand-ticks > 3 cm | wrist-target %.3f m" % [e.name, sc, ["thrust", "sweep"][mk], names[st], a[0], a[1], mean, a[5], a[4]])
+				if fail == "" and not OS.has_environment("FOEGRIP_MEASURE") and (maxf(a[0], a[1]) > GRIP_ATK_GAP_MAX or mean > GRIP_ATK_MEAN_MAX or a[5] > GRIP_ATK_OFF_TICKS):
+					fail = "%s x%.1f %s %s: a fist rides off the haft (R %.3f L %.3f mean %.3f m, %d hand-ticks > 3 cm)" % [e.name, sc, ["thrust", "sweep"][mk], names[st], a[0], a[1], mean, a[5]]
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "foes' fists stay on the haft through the thrust and the sweep at every size")
 
 func _hero_turn_test() -> void:
 	var p := _player
@@ -3843,6 +3928,9 @@ func _knight_test() -> void:
 	var neck := [99.0, -99.0]  # the neck's forward offset over the hips: least (roar), most (slump)
 	# read the bones once the modifiers (spine bend, arm IK) have run, not the clip's pose
 	var coil_hy := [-9.0]
+	var coil_gap := [0.0]
+	var coil_fist := [false]
+	var grip_fist := [0.0]
 	var coil_hx := [-9.0]
 	var coil_butt := [-9.0]
 	var coil_glare := [0.0]
@@ -3880,10 +3968,17 @@ func _knight_test() -> void:
 			var inv: Transform3D = k.body.global_transform.affine_inverse()
 			for hbi in [rhb, lhb]:
 				# the body node carries the size scale, so its frame is already unscaled
-				var hp: Vector3 = inv * (k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin)
-				hp.y = ((k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin).y - k.global_position.y) / k.size_scale
+				# (11-10) the closed fist's centre, not the wrist bone: with GripRoll the wrist sits
+				# ~15 cm off the haft so the fist is ON it (wrists: old 0.96 / -0.11, now 1.02 / 0.00)
+				var hw: Vector3 = k.fist_center("Right" if hbi == rhb else "Left")
+				if OS.has_environment("COIL_WRIST") or not k._roll_frame:
+					hw = k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin
+				var hp: Vector3 = inv * hw
+				hp.y = (hw.y - k.global_position.y) / k.size_scale
 				coil_hy[0] = maxf(coil_hy[0], hp.y)
 				coil_hx[0] = maxf(coil_hx[0], hp.x)
+				coil_gap[0] = maxf(coil_gap[0], k.fist_gap[0 if hbi == rhb else 1])
+				coil_fist[0] = k._roll_frame
 			var bw: Vector3 = k.spear.to_global(-k.spear.tip_local())
 			coil_butt[0] = maxf(coil_butt[0], (bw.y - k.global_position.y) / k.size_scale)
 			# the helm on the hero while the chest twists away (04:00 11-07: it looked off to its right)
@@ -3955,8 +4050,13 @@ func _knight_test() -> void:
 		var lw := k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin
 		# the left hand lets go in the roar (09:00 11-07): only a hand meant to be on counts
 		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position) * (1.0 - k.free_l)) / k.size_scale
+		if k._roll_frame and not OS.has_environment("COIL_WRIST"):
+			# (11-10) with GripRoll the wrist leaves its grip point so the FIST sits on the haft:
+			# read the fist's centre to the shaft axis (per size) instead
+			g = maxf(k.fist_gap[0], k.fist_gap[1] * (1.0 - k.free_l))
+			grip_fist[0] = maxf(grip_fist[0], g)
 		if OS.get_environment("GRIPDBG") != "":
-			print("GRIP t %.2f %.3f r %.3f l %.3f rw %s lw %s" % [k.intro.t, g, rw.distance_to(k._grip_r.global_position) / k.size_scale, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.body.global_transform.affine_inverse() * rw, k.body.global_transform.affine_inverse() * lw])
+			print("GRIP t %.2f %.3f off %.3f err %.3f st %d ik %.2f w %.2f fist r %.3f l %.3f free %.2f sw %s feed %s r %.3f l %.3f rw %s lw %s" % [k.intro.t, g, k._fist_off[0].length(), k.grip_roll.last_err[0].length() / k.size_scale if k.grip_roll else 0.0, k.state, k._ik.influence, k.grip_roll.weight if k.grip_roll else 0.0, k.fist_gap[0], k.fist_gap[1], k.free_l, str(k.grip_roll.side_weight) if k.grip_roll else "", str(k.grip_roll.last_feed) if k.grip_roll else "", rw.distance_to(k._grip_r.global_position) / k.size_scale, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.body.global_transform.affine_inverse() * rw, k.body.global_transform.affine_inverse() * lw])
 		grip[0] = maxf(grip[0], g)
 	k.skel.skeleton_updated.connect(grip_probe)
 	var heave_fwd := -9.0
@@ -3999,8 +4099,10 @@ func _knight_test() -> void:
 		it += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	k.skel.skeleton_updated.disconnect(grip_probe)
-	print("BOT knight: coil: hands at most %.2f m up, %.2f toward its left (+x); butt %.2f m up (per size)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
-	if coil_hy[0] > 1.05 or coil_hx[0] > -0.08 or coil_butt[0] > 1.3:
+	print("BOT knight: coil: hands at most %.2f m up, %.2f toward its left (+x); butt %.2f m up (per size); fists %.3f m off the haft" % [coil_hy[0], coil_hx[0], coil_butt[0], coil_gap[0]])
+	# (11-10) x gate -0.08 -> -0.03: it was set on fists that rode off the haft (left 0.16 m to
+	# the right of it); on the haft the left fist sits at -0.06, still right of the belly
+	if coil_hy[0] > 1.05 or coil_hx[0] > (-0.08 if (OS.has_environment("COIL_WRIST") or not coil_fist[0]) else -0.03) or coil_butt[0] > 1.3:
 		return _combat_done(false, "the reveal's coil holds the hands high or across the body, not low at the right hip (y %.2f, x %.2f, butt %.2f)" % [coil_hy[0], coil_hx[0], coil_butt[0]])
 	print("BOT knight: coil: helm at most %.1f deg off the hero" % rad_to_deg(coil_glare[0]))
 	if coil_glare[0] > deg_to_rad(20.0):
@@ -4039,7 +4141,7 @@ func _knight_test() -> void:
 	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
 	print("BOT knight: reveal spine: hunched %.2f rad, arched back %.2f rad; neck over the hips %.2f .. %.2f m (per size)" % [k.intro_hunch_peak, k.intro_arch_peak, neck_back, neck_fore])
-	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar" % grip_gap)
+	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar (fists off the axis %.3f)" % [grip_gap, grip_fist[0]])
 	if grip_gap > 0.09:
 		return _combat_done(false, "the roar's arch pulls the hands off the glaive (%.3f m)" % grip_gap)
 	if k.intro_arch_peak > -0.45 or k.intro_hunch_peak < 0.1 or neck_fore - neck_back < 0.25 or neck_back > -0.12:
@@ -4710,6 +4812,10 @@ func _knightstomp_test() -> void:
 			var hp: Vector3 = inv * (bw.call("Hips") - k.body.global_position)
 			var gg: float = (bw.call("RightHand") as Vector3).distance_to(k._grip_r.global_position) \
 					+ (bw.call("LeftHand") as Vector3).distance_to(k._grip_l.global_position)
+			if k._roll_frame and not OS.has_environment("COIL_WRIST"):
+				# (11-10) GripRoll moves the wrist off its grip point so the fist sits on the haft:
+				# read both fists' centres to the shaft axis instead (world m)
+				gg = (k.fist_gap[0] + k.fist_gap[1]) * k.size_scale
 			var lu: Vector3 = bw.call("LeftUpLeg")
 			var ru: Vector3 = bw.call("RightUpLeg")
 			# a stomp begun mid-stride finishes that step first (the walk blends to the guard

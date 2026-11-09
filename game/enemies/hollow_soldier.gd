@@ -161,7 +161,11 @@ var hand_rest: HandRest      # the fingers: a grip while the hands hold the weap
 ## axis and the wrist target moved (Wield space) so the haft sits inside the curl
 var fist_fit_on := true          # (bots / archer) off: the wrist on the grip point (env FOE_WRISTGRIP)
 var _fist_off: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # right, left: Wield-space wrist shift
-var fist_gap: Array[float] = [0.0, 0.0]   # (bots) right, left: fist centre to the shaft axis, m per size, last fit
+var fist_gap: Array[float] = [0.0, 0.0]
+var _feed_gain := float(OS.get_environment("FOE_FEEDGAIN")) if OS.has_environment("FOE_FEEDGAIN") else 0.6
+var fist_shift: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # (11-10) the wrist shift _place applied (Wield space)
+var _roll_frame := false          # (11-10) _fist_off is in the spear's frame (GripRoll holding)
+var grip_roll: GripRoll           # (11-10) null with FOE_GRIPLAG or on the archer   # (bots) right, left: fist centre to the shaft axis, m per size, last fit
 const FIST_GAIN := 0.6           # of the measured gap taken out each tick
 const FIST_MAX := 0.22           # m (Wield space) the wrist may move off its grip point (the knight's needs ~0.16)
 var reel_on := true              # (bots) off: the old rigid lean of the whole model about the hips
@@ -411,6 +415,16 @@ func _setup_spear() -> void:
 		hand_rest.hold = 1.0
 		hand_rest.thumb_aim = 0.0 if OS.has_environment("FOE_THUMBOUT") else 1.0
 		skel.add_child(hand_rest)
+		# (11-10) the hero's GripRoll on the foes' hands: each hand held in the spear's frame and
+		# only rolled about the shaft, and the arm re-solved on the same tick so the closed fist
+		# sits on the haft (the late fit alone let a fist ride 9 cm off it on a thrust's first
+		# ticks, the hand turning with the clip's forearm); env FOE_GRIPLAG: the before
+		if not OS.has_environment("FOE_GRIPLAG") and fist_fit_on:
+			grip_roll = GripRoll.new()
+			grip_roll.name = "GripRoll"
+			grip_roll.staff = spear
+			skel.add_child(grip_roll)
+			skel.move_child(grip_roll, _ik.get_index() + 1)
 		if OS.get_environment("FOE_WRISTGRIP") == "":
 			skel.skeleton_updated.connect(_fit_fists)
 	_place(GUARD)
@@ -427,6 +441,14 @@ func _fit_fists() -> void:
 	if spear == null or _wield == null or hand_rest == null:
 		return
 	var on := fist_fit_on and state != DEAD and _ik != null and _ik.influence > 0.5
+	# (11-10) GripRoll's feed puts the fists on the axis the same tick. Fitting the gap left
+	# AFTER it would only fight it (the hero's rule), but with no fit the IK aims each wrist
+	# ~15 cm per size off the fist's line, and a tick where the feed's wrist-bend limit refuses
+	# the shift popped the fist that far off the haft. So the fit learns, slowly, from the gap
+	# the feed found BEFORE it moved the wrist, kept in the SPEAR's frame (GripRoll holds the
+	# hand in that frame, so the shift is near constant there); the feed trims the rest.
+	# (Tried: the same in the body frame at gain 0.3-0.6: it ran to FIST_MAX, the roll chattered.)
+	var feed := grip_roll != null and grip_roll.feed_on and _roll_frame
 	var o := spear.global_position
 	var ax := spear.global_basis.y.normalized()
 	var inv := _wield.global_basis.inverse()
@@ -436,7 +458,10 @@ func _fit_fists() -> void:
 		var f := fist_center(sides[i])
 		var p := o + ax * ax.dot(f - o)
 		fist_gap[i] = f.distance_to(p) / s
-		if on:
+		if on and feed:
+			var gap: Vector3 = grip_roll.last_err[i]
+			_fist_off[i] = (_fist_off[i] - spear.global_basis.inverse() * gap * _feed_gain).limit_length(FIST_MAX)
+		elif on:
 			var off: Vector3 = _fist_off[i] - inv * (f - p) * FIST_GAIN
 			_fist_off[i] = off.limit_length(FIST_MAX)
 		else:
@@ -457,8 +482,10 @@ func _place(pose: Array) -> void:
 		axis = d * 0.15
 	var d2 := axis.normalized()
 	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
-	_grip_r.position = hr + _fist_off[0]
-	_grip_l.position = hl + _fist_off[1]
+	var fb := spear.basis if _roll_frame else Basis.IDENTITY
+	fist_shift = [fb * _fist_off[0], fb * _fist_off[1]]
+	_grip_r.position = hr + fist_shift[0]
+	_grip_l.position = hl + fist_shift[1]
 	if _twist != null:
 		_twist.twist = tw
 
@@ -548,6 +575,16 @@ func _physics_process(delta: float) -> void:
 		_player = get_parent().get_node_or_null("Player") as Player
 	if hand_rest != null and _ik != null:
 		hand_rest.hold = _ik.influence
+	if grip_roll != null:
+		var want := _ik.influence if (fist_fit_on and state != DEAD and spear.get_parent() == _wield and _grip_roll_wanted()) else 0.0
+		grip_roll.weight = want if want >= grip_roll.weight else move_toward(grip_roll.weight, want, delta * 8.0)
+		# the wrist shift lives in the spear's frame while GripRoll holds the hands, in the body's
+		# without it: carried across on the switch so the wrist target does not jump
+		var on_now := grip_roll.weight > 0.5
+		if on_now != _roll_frame:
+			for i in 2:
+				_fist_off[i] = (spear.basis.inverse() * _fist_off[i]) if on_now else (spear.basis * _fist_off[i])
+			_roll_frame = on_now
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 5.0, 0.0)
 		_set_skin("hit_flash", _flash)
@@ -889,6 +926,11 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 	if t > engage_delay and _facing(to) > 0.85:
 		_begin_attack(dist)
 	return Vector3.ZERO
+
+## (11-10) Variants that take a hand off the haft (the knight's roar) return false while they do:
+## the late body-frame fit then holds the one hand that is left.
+func _grip_roll_wanted() -> bool:
+	return true
 
 func _begin_attack(dist: float) -> void:
 	windups += 1

@@ -11,6 +11,9 @@ extends SkeletonModifier3D
 
 var staff: Node3D            # the drawn staff (its basis.y is the shaft)
 var weight := 0.0            # 0..1, eased by StaffCombat (on only with the staff in both hands)
+## (11-10) per hand, right / left, times `weight` (the Ashen Knight's roar lets go with the left)
+var side_weight := [1.0, 1.0]
+var _w := 0.0                # this hand's weight while it is solved
 var roll_max := 0.6        # rad a tick the hand may roll about the shaft (~34 deg; bots: env ROLL_MAX)
 ## when the forearm runs nearly along the shaft no roll squares the hand to it: the fist then
 ## holds the shaft obliquely (a real grip does: the haft lies slanted across the palm), the hand
@@ -38,6 +41,9 @@ var last_roll := [0.0, 0.0]  # (bots) rad rolled about the shaft this tick, righ
 var feed_on := true
 var _fist_local := [null, null]   # per hand: fist centre - wrist, in the hand's frame (skeleton space)
 var last_feed := [0.0, 0.0]       # (bots) m the wrist was moved this tick, right / left
+## (11-10) the fist's gap to the shaft axis (world) before the feed moved the wrist this tick,
+## right / left (zero when the feed did not run); the foes' slow fit learns from it
+var last_err: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 const CLAV_MAX := 0.45            # rad, most the feed shrugs a collarbone toward an out-of-reach wrist
 var NO_SHRUG := OS.get_environment("GRIP_NOSHRUG") == "1"
 var last_shrug := 0.0             # (bots) rad the feed shrugged a collarbone this tick (largest)
@@ -102,7 +108,7 @@ func _solve_hand(skel: Skeleton3D, s: Dictionary, H0: Basis, H_ik: Basis, a: Vec
 	# eased in and out over a few ticks (kept in the staff's frame, so it rides the swing)
 	tq = tprev.slerp(tq, TILT_EASE) if s.has("tilt_on") else tq
 	var H := (Basis(tq) * Hr).orthonormalized()
-	var Hq := H_ik.get_rotation_quaternion().slerp(H.get_rotation_quaternion(), weight)
+	var Hq := H_ik.get_rotation_quaternion().slerp(H.get_rotation_quaternion(), _w)
 	return [Hq, tq, th, Basis(Hq).y.angle_to(f)]
 
 ## Moves the wrist (hand bone origin) by `move` (skeleton space): the upper arm and forearm are
@@ -187,6 +193,14 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var s = _sides[i]
 		if s == null:
 			continue
+		_w = weight * float(side_weight[i])
+		if _w <= 0.001:
+			s["init"] = false
+			s.erase("tilt_on")
+			s["tilt"] = Quaternion.IDENTITY
+			last_feed[i] = 0.0
+			last_err[i] = Vector3.ZERO
+			continue
 		var hb: int = s["hand"]
 		var fb: int = s["fore"]
 		var hg := skel.get_bone_global_pose(hb)
@@ -212,6 +226,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var tprev: Quaternion = S.get_rotation_quaternion() * (s["tilt"] as Quaternion) * S.get_rotation_quaternion().inverse()
 		var sol := _solve_hand(skel, s, H0, H_ik, a, tprev)
 		last_feed[i] = 0.0
+		last_err[i] = Vector3.ZERO
 		if feed_on and _fist_local[i] != null:
 			# the largest share of the shift (1, 2/3, 1/3) whose wrist stays within BEND_LIMIT;
 			# else none: the fist rides off the shaft that tick rather than a wrist bent back
@@ -224,6 +239,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 			var Hy := Basis(sol[0] as Quaternion).y
 			var P: Vector3 = skel.get_bone_global_pose(hb).origin + Basis(sol[0] as Quaternion) * (_fist_local[i] as Vector3)
 			var e := P - (o + ax_s * ax_s.dot(P - o))
+			last_err[i] = skel.global_transform.basis * e
 			# (15:00 11-06) the share is found by bisection (was the steps 1, 2/3, 1/3, none: a
 			# fist jumped 4.5 -> 9 cm off the shaft between ticks where the next step down failed)
 			var lim := maxf(bend_limit, float(sol[3]))
@@ -232,7 +248,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 			var lo_bend := float(sol[3])
 			var k := 1.0
 			for it in maxi(share_steps, 0) + 1:
-				_shift_wrist(skel, s, -e * weight * k)
+				_shift_wrist(skel, s, -e * _w * k)
 				var f2 := (skel.get_bone_global_pose(hb).origin - skel.get_bone_global_pose(fb).origin).normalized()
 				var bend2 := Hy.angle_to(f2)
 				if OS.has_environment("GRIP_DBG"):
@@ -250,9 +266,9 @@ func _process_modification_with_delta(_delta: float) -> void:
 					hi = k
 				k = (lo + hi) * 0.5
 			if lo > 0.0:
-				_shift_wrist(skel, s, -e * weight * lo)
+				_shift_wrist(skel, s, -e * _w * lo)
 				sol[3] = lo_bend
-				last_feed[i] = (skel.global_transform.basis * e).length() * weight * lo
+				last_feed[i] = (skel.global_transform.basis * e).length() * _w * lo
 		var Hq: Quaternion = sol[0]
 		var tq: Quaternion = sol[1]
 		var th: float = sol[2]

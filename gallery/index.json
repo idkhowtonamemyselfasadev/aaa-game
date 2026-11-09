@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261106-0230-turnstep-up.jpg",
-  "time": "2026-11-06T02:30:00Z",
-  "caption": "The Ashen Knight turning on the spot, seen low from the gate: its trailing boot is lifted clear of the turf mid-step in one arc. Still wrong: GL lighting, the armour reads near-black in its own shade and the lens crops the body.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0230-turnstep-down.jpg",
   "time": "2026-11-06T02:30:00Z",
   "caption": "Four ticks later the boot comes round low and sets down flat, nothing sunk into the turf. Still wrong: GL frame, dark armour, no Forward+ light on the legs.",
@@ -891,6 +885,12 @@
   "file": "20261109-2300-foe-thumb-wrap-after.jpg",
   "time": "2026-11-09T23:05:00Z",
   "caption": "After: the thumb curls round into the fist instead of sticking out; still wrong: in the wind-up the fist hovers ~10 cm above the spear shaft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0000-foe-fist-on-haft-windup.jpg",
+  "time": "2026-11-10T00:00:00Z",
+  "caption": "Hollow Soldier's right fist in the thrust wind-up now closes round the spear haft (it sat ~10 cm above it last session); still backlit and dark, and the gloved fingers read chunky.",
   "verdict": "fail"
  }
 ]
