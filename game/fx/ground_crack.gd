@@ -83,6 +83,13 @@ const COL_GLOW_K := 0.35
 static var PALE_RING := OS.get_environment("CRACK_PALERING") == "1"
 const RING_HOLD := 0.35
 const RING_GLOW_K := 0.45
+## (11-09 22:00) A dozen whitish pebble dots round the hero's feet in the plunge frames: the
+## chips were smooth grey (0.3) low-poly balls with the full specular and none of the dust's sun
+## tint, so the midday sun lit each into a white bead; the clods had no tint either. Chips are
+## now small lumpy crumbs of dark earth (the clod mesh at ~half size), near-matte, and chips and
+## clods both darken with the sun like the dust. CRACK_PALECHIPS=1 = old.
+static var PALE_CHIPS := OS.get_environment("CRACK_PALECHIPS") == "1"
+const CHIP_EARTH := Color(0.2, 0.16, 0.12)
 var sun_tint := 1.0              # the dust's albedo factor after the sun (bots)
 var sun_e := 0.0                 # the sun's strength x height the tint answered (bots)
 
@@ -131,6 +138,17 @@ func _light_dust() -> void:
 			k = RING_GLOW_K
 		m.emission_energy_multiplier = glow * k
 		m.albedo_color = Color(sun_tint, sun_tint, sun_tint)
+	if not PALE_CHIPS:
+		var c := CHIP_EARTH * sun_tint
+		c.a = 1.0
+		_chips.color = c
+		if _clods != null and _clods.color_initial_ramp != null:
+			var g := _clods.color_initial_ramp.duplicate() as Gradient
+			for i in g.get_point_count():
+				var gc := g.get_color(i) * sun_tint
+				gc.a = 1.0
+				g.set_color(i, gc)
+			_clods.color_initial_ramp = g
 
 ## How much darker the dust's albedo must be under the sun as it stands so it reads as earth,
 ## not chalk: 1.0 at dusk, at night and under a weak sun, down to ~0.62 at full midday sun.
@@ -236,6 +254,16 @@ func _make_chips() -> CPUParticles3D:
 	p.angular_velocity_max = 540.0
 	p.scale_amount_min = 0.35
 	p.scale_amount_max = 1.5
+	if not PALE_CHIPS:
+		# crumbs of the clod mesh at ~0.45 of its size (0.035 m like the old balls), tinted
+		# per instance through the particle colour (set again under the sun in _light_dust)
+		p.scale_amount_min = 0.35 * 0.45
+		p.scale_amount_max = 1.5 * 0.45
+		p.angle_max = 360.0
+		p.particle_flag_rotate_y = true
+		p.mesh = clod_mesh()
+		p.color = CHIP_EARTH
+		return p
 	var q := SphereMesh.new()
 	q.radius = 0.035
 	q.height = 0.05
@@ -312,6 +340,7 @@ static func clod_mesh() -> ArrayMesh:
 	m.vertex_color_use_as_albedo = true
 	m.albedo_color = Color(1, 1, 1)
 	m.roughness = 0.97
+	m.metallic_specular = 0.15   # wet earth, not a glazed pebble: no white sun glint
 	_clod_mesh = st.commit()
 	_clod_mesh.surface_set_material(0, m)
 	return _clod_mesh
@@ -382,6 +411,20 @@ func column_peak() -> Vector2:
 	var hi := _column.initial_velocity_max
 	return Vector2(_column.position.y + lo * lo / (2.0 * (_column.damping_max + g)),
 		_column.position.y + hi * hi / (2.0 * (_column.damping_min + g)))
+
+## The chips' albedo luminance after the sun, and their mesh's specular. For the bots.
+func chip_read() -> Vector2:
+	if _chips == null:
+		return Vector2(1, 1)
+	var c := _chips.color
+	var spec := 0.5
+	if _chips.mesh is SphereMesh:
+		var m := (_chips.mesh as SphereMesh).material as StandardMaterial3D
+		c = c * m.albedo_color
+		spec = m.metallic_specular
+	else:
+		spec = (_chips.mesh.surface_get_material(0) as StandardMaterial3D).metallic_specular
+	return Vector2(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, spec)
 
 ## The smallest clod's radius (m) and how many are thrown. For the bots.
 func clod_read() -> Vector2:

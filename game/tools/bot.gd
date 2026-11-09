@@ -2584,6 +2584,8 @@ const PL_COLUMN_GATE := 1.2           # m the burst's earth column's fast cards 
 const PL_CLOD_GATE := 0.04            # m the smallest thrown clod's radius (old chips 0.012)
 const PL_COL_AHEAD_GATE := 0.35       # m the plunge's column must rise ahead of the hero (11-09 18:00; old 0, behind the crouch)
 const PL_LIT_GATE := 0.70             # the dust's opening luma x sun tint x sun strength (11-09 18:00; old 0.30 x 3 = 0.9, chalk in GL frames)
+const PL_CHIP_LUMA_GATE := 0.18      # chip albedo luma after the sun (11-09 22:00; old 0.27 grey balls, white beads in GL frames)
+const PL_CHIP_SPEC_GATE := 0.2       # chip specular (old 0.5 default: a white sun glint on each)
 const PL_COL_LUMA_GATE := 0.26       # column luma at 0.4 s after the blow (11-09 19:00; old 0.37, pale smoke in GL frames)
 const PL_RING_LUMA_GATE := 0.36      # ring dust luma at 0.3 s (11-09 20:00; old 0.43, pale glowing patch at the feet)
 const PL_RING_GLOW_GATE := 0.15      # ring dust self-glow (old up to 0.32 in shade)
@@ -2935,6 +2937,11 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: plunge burst at the ferrule -> kind %s (gate turf on the meadow; old stone)" % c.last_plunge_fx)
 	if not StaffCombat.PLUNGE_STONEFX and c.last_plunge_fx != "turf":
 		return _combat_done(false, "the plunge into the meadow throws pale stone grit at the ferrule")
+	# (11-09 22:00) the chips are dark matte earth crumbs, not grey glazed beads that the sun whitens
+	var ch := pc.chip_read() if pc != null else Vector2(1, 1)
+	print("BOT airstrike: plunge chips -> luma %.3f (gate <= %.2f; old 0.27), specular %.2f (gate <= %.2f; old 0.50), mesh %s" % [ch.x, PL_CHIP_LUMA_GATE, ch.y, PL_CHIP_SPEC_GATE, pc._chips.mesh.get_class() if pc else "-"])
+	if not GroundCrack.PALE_CHIPS and (ch.x > PL_CHIP_LUMA_GATE or ch.y > PL_CHIP_SPEC_GATE):
+		return _combat_done(false, "the plunge's chips are pale glazed beads that the sun turns white")
 	print("BOT airstrike: plunge marks -> crack %s, ring %.2f m, grass laid %d, size %.2f, deep crouch %s" % [pc != null, pc.ring_r if pc else 0.0, pc.blasted if pc else 0, pc.size_k if pc else 0.0, p._land_plunge])
 	if not pc_ok or not p._land_plunge:
 		return _combat_done(false, "the plunge left no crack star / dust ring, or it struck the hero")

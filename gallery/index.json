@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261105-2330-knight-gather.jpg",
-  "time": "2026-11-05T23:30:00Z",
-  "caption": "The knight's gather before the roar: knees set, glaive drawn back low; GL fallback frame, flat lighting.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0113-knight-turn-step.jpg",
   "time": "2026-11-06T01:13:14Z",
   "caption": "The Ashen Knight (first size) mid-turn on the spot, its trailing boot lifted in the new step arc instead of scraping; GL frame, the knight is backlit and its feet too small and dark to read the arc well.",
@@ -897,6 +891,12 @@
   "file": "20261109-2100-plunge-ferrule-turf-030.jpg",
   "time": "2026-11-09T21:00:00Z",
   "caption": "Hero plunge 0.30 s after impact, front lens: the white hot spot at the staff's tip is gone and the dust bowl reads grey-brown; still wrong: small whitish pebble dots scattered round the feet and the earth column is a faint plume behind the hero.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-2200-plunge-chips-earth-030.jpg",
+  "time": "2026-11-09T22:00:00Z",
+  "caption": "Hero plunge 0.30 s after impact at 11:00: the whitish pebble beads round the feet are gone, the chips now read as dark earth crumbs; the dust bowl is still a pale grey haze and the earth column barely shows behind the staff.",
   "verdict": "fail"
  }
 ]
