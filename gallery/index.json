@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261105-2130-knight-roar.jpg",
-  "time": "2026-11-05T21:30:00Z",
-  "caption": "The roar beat from the knight front: the glaive is up but the head throw and chest-out barely read from straight on; needs a stronger back arch or a lower 3/4 lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261105-2230-knight-roar-arch.jpg",
-  "time": "2026-11-05T22:30:00Z",
-  "caption": "The knight's roar from its sunlit flank: helm and shoulders arched back behind planted hips, glaive raised; GL fallback frame (no fog/GI), the glaive is still forward of vertical.",
-  "verdict": "fail"
- },
- {
   "file": "20261105-2230-knight-slump-flank.jpg",
   "time": "2026-11-05T22:30:00Z",
   "caption": "The dormant knight from the flank, hunched through the spine over its planted glaive; back-lit, the body reads as a dark silhouette.",
@@ -897,6 +885,12 @@
   "file": "20261109-1800-plunge-burst-tint-030.jpg",
   "time": "2026-11-09T18:00:00Z",
   "caption": "Plunge impact 0.30 s: for the first time a column of dust rises beside the hero above the hat and the ring is soft grey-brown; the column is translucent pale grey instead of dark thrown earth and still sits half behind the staff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261109-1900-plunge-column-dark-030.jpg",
+  "time": "2026-11-09T19:00:00Z",
+  "caption": "Plunge impact 0.30 s: the earth column beside the hero is now a denser, darker brown plume rather than pale grey smoke; the dust ring round the feet still glows pale and the column still sits behind the staff, off the hero's shoulder.",
   "verdict": "fail"
  }
 ]

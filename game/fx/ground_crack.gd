@@ -66,6 +66,14 @@ const CLOD_R := 0.075                          # m, a clod's radius at scale 1
 static var PALE_DUST := OS.get_environment("CRACK_PALEDUST") == "1"
 static var COL_BEHIND := OS.get_environment("CRACK_COLBEHIND") == "1"
 const COL_FRONT := 0.55          # m ahead of the hero, at size_k 1 (where the ferrule strikes)
+## (11-09 19:00) GL frames showed the column as translucent pale-grey smoke (its ramp paled to
+## 0.45 by 35 % of life and dropped to alpha 0.5). Now it holds dark earth, alpha ~0.9, to 45 %
+## of life with fewer, larger cards, and self-lights at a third of the dust glow.
+## CRACK_PALECOL=1 = old.
+static var PALE_COL := OS.get_environment("CRACK_PALECOL") == "1"
+const COL_DARK := Color(0.21, 0.175, 0.135)
+const COL_HOLD := 0.45
+const COL_GLOW_K := 0.35
 var sun_tint := 1.0              # the dust's albedo factor after the sun (bots)
 var sun_e := 0.0                 # the sun's strength x height the tint answered (bots)
 
@@ -107,7 +115,7 @@ func _light_dust() -> void:
 		if p == null:
 			continue
 		var m := ((p as CPUParticles3D).mesh as QuadMesh).material as StandardMaterial3D
-		m.emission_energy_multiplier = glow
+		m.emission_energy_multiplier = glow * (COL_GLOW_K if p == _column and not PALE_COL else 1.0)
 		m.albedo_color = Color(sun_tint, sun_tint, sun_tint)
 
 ## How much darker the dust's albedo must be under the sun as it stands so it reads as earth,
@@ -321,8 +329,25 @@ func _make_column() -> CPUParticles3D:
 	g.offsets = PackedFloat32Array([0.0, 0.015, 0.35, 1.0])
 	g.colors = PackedColorArray([Color(0.27, 0.23, 0.18, 0.85), Color(0.29, 0.25, 0.2, 0.85),
 		Color(0.45, 0.41, 0.36, 0.5), Color(0.6, 0.58, 0.55, 0.0)])
+	if not PALE_COL:
+		# (11-09 19:00) thrown earth, not smoke: the column holds dark and near-opaque while it
+		# rises and stalls (to ~45 % of life, 0.7 s), then pales and thins as it falls apart
+		g.offsets = PackedFloat32Array([0.0, 0.015, COL_HOLD, 0.72, 1.0])
+		g.colors = PackedColorArray([Color(COL_DARK, 0.93), Color(COL_DARK.lightened(0.03), 0.92),
+			Color(COL_DARK.lightened(0.12), 0.85), Color(0.46, 0.43, 0.38, 0.38),
+			Color(0.6, 0.58, 0.55, 0.0)])
+		p.amount = 22
+		p.scale_amount_min = 0.6
+		p.scale_amount_max = 1.15
 	p.color_ramp = g
 	return p
+
+## How dark and solid the column is `age` s after the blow: Vector2(luma, alpha). For the bots.
+func column_read(age: float) -> Vector2:
+	if _column == null:
+		return Vector2(1.0, 0.0)
+	var c := _column.color_ramp.sample(clampf(age / _column.lifetime, 0.0, 1.0))
+	return Vector2(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, c.a)
 
 ## Roughly how high the column's slowest and fastest cards stop over the turf (m): the rise of
 ## a card fired at v and slowed by `damping` (linear, m/s^2) plus gravity. For the bots.
