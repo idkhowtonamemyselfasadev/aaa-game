@@ -115,7 +115,12 @@ var _pl_key_env: PackedFloat64Array = OS.get_environment("PL_KEY").split_floats(
 const PLUNGE_MID_KEY := [0.0, 20.0, Vector3(-0.12, 1.65, 0.55), -25.0]   # tip forward, hands out in front of the brim
 const PLUNGE_MID_AT := 0.5
 var PL_DIP := float(OS.get_environment("PL_DIP")) if OS.has_environment("PL_DIP") else 0.8
-var PL_DIP_OUT := OS.get_environment("PL_DIP_OUT").split_floats(",") if OS.has_environment("PL_DIP_OUT") else PackedFloat64Array([0.17, 0.24])
+# (11-09 15:00) the dip fades 0.14 -> 0.20 s (was 0.17 -> 0.24): straightening the arc while the
+# head was already folded into the dive stood the shaft 2.3 cm inside the hat at plunge 0.200 s;
+# fading it out as the swing passes the mid key keeps every swing tick >= +0.03 m off the hat and
+# the swing's worst turn drops 57.1 -> 50.3 deg/tick. PLUNGE_LATEDIP=1 = the old window.
+var PLUNGE_LATEDIP := OS.get_environment("PLUNGE_LATEDIP") == "1"
+var PL_DIP_OUT := OS.get_environment("PL_DIP_OUT").split_floats(",") if OS.has_environment("PL_DIP_OUT") else (PackedFloat64Array([0.17, 0.24]) if OS.get_environment("PLUNGE_LATEDIP") == "1" else PackedFloat64Array([0.14, 0.20]))
 var _pl_mid_env: PackedFloat64Array = OS.get_environment("PL_MID").split_floats(",") if OS.has_environment("PL_MID") else PackedFloat64Array()
 const PLUNGE_DOWN := [10.0, -70.0, Vector3(-0.20, 1.20, 0.30), -55.0, -0.05]
 const PLUNGE_RISE := { "dur": 0.62, "hit": [2.0, 2.0], "lunge": 0.0, "spin": 0.0, "legs": true, "keys": [

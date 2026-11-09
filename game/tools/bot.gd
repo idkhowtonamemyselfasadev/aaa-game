@@ -2586,6 +2586,8 @@ const PL_LUMA_GATE := 0.40            # the dust's opening luminance must be dar
 const PL_OPEN_GATE := 0.10            # puff_read one tick after the blow (alpha x card area; 11-09 13:00, old slow open 0.006)
 const PL_HOLD_HAT_GATE := 0.0         # m: worst shaft-to-hat margin through the held hang (plunge_t 0.08..0.14; 11-09 12:00, old -0.024)
 const PL_SNATCH_TURN_GATE := 55.0     # deg/tick: worst shaft turn from the snatch to plunge 0.12 s (11-09 11:00; 10:00 tip-only 68.3)
+const PL_SWING_HAT_GATE := 0.0        # m: worst shaft-to-hat margin through the swing down (plunge_t 0.14..0.215; 11-09 15:00, old late dip -0.023)
+const PL_SWING_TURN_GATE := 54.0      # deg/tick: worst shaft turn through the swing down (plunge_t 0.14..0.25; old late dip 57.1)
 const PL_SNATCH_HAT_GATE := -0.04     # m: worst shaft-to-hat margin while the plunge snatches a slung staff (old -0.25)
 func _airstrike_test() -> void:
 	var p := _player
@@ -2978,6 +2980,8 @@ func _airstrike_test() -> void:
 	var sl_prev_ax := [Vector3.ZERO]   # staff axis on the last tick (for the per-tick turn)
 	var sl_snatch_turn := [0.0]        # worst per-tick turn of the shaft from the snatch to the swing (plunge_t < 0.12), deg
 	var sl_hold_hat := [9.0]           # (11-09 12:00) worst shaft-to-hat margin through the held hang (plunge_t 0.08..0.14)
+	var sl_swing_hat := [9.0]          # (11-09 15:00) worst shaft-to-hat margin through the swing down (plunge_t 0.14..0.215)
+	var sl_swing_turn := [0.0]         # (11-09 15:00) worst per-tick shaft turn through the swing down (plunge_t 0.14..0.25), deg
 	var sl_snatch_hat := [9.0]         # (11-09 10:00) worst shaft-to-hat margin during the snatch off the back (plunge_t < 0.08)
 	var ph_rec := func() -> void:
 		if not c.is_plunging():
@@ -2991,6 +2995,8 @@ func _airstrike_test() -> void:
 			turn = rad_to_deg(sl_prev_ax[0].angle_to(axn))
 			if c.plunge_t < 0.12:
 				sl_snatch_turn[0] = maxf(sl_snatch_turn[0], turn)
+			elif c.plunge_t >= 0.14 and c.plunge_t <= 0.25:
+				sl_swing_turn[0] = maxf(sl_swing_turn[0], turn)
 		sl_prev_ax[0] = axn
 		if OS.get_environment("PL_TRACE") == "1":
 			var se := _staff_ends(c)
@@ -3003,6 +3009,8 @@ func _airstrike_test() -> void:
 			sl_shaft_hat[0] = minf(sl_shaft_hat[0], _hat_margin(p, sh[0], sh[1]))
 			if c.plunge_t <= 0.14:
 				sl_hold_hat[0] = minf(sl_hold_hat[0], _hat_margin(p, sh[0], sh[1]))
+			else:
+				sl_swing_hat[0] = minf(sl_swing_hat[0], _hat_margin(p, sh[0], sh[1]))
 		elif c.plunge_t < 0.08:
 			var ss := _staff_ends(c)
 			sl_snatch_hat[0] = minf(sl_snatch_hat[0], _hat_margin(p, ss[0], ss[1]))
@@ -3034,6 +3042,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: held hang -> worst shaft-to-hat %.3f m while the staff is held overhead (gate >= %.2f; old forward key -0.024)" % [sl_hold_hat[0], PL_HOLD_HAT_GATE])
 	if not c.PLUNGE_LOWHANG and not c.PLUNGE_HANGFWD and _pl_no_env() and sl_hold_hat[0] < PL_HOLD_HAT_GATE:
 		return _combat_done(false, "the plunge's held hang stands the shaft inside the hat brim")
+	print("BOT airstrike: swing down -> worst shaft-to-hat %.3f m (gate >= %.2f; old late dip -0.023), worst shaft turn %.1f deg/tick (gate <= %.0f; old late dip 57.1)" % [sl_swing_hat[0], PL_SWING_HAT_GATE, sl_swing_turn[0], PL_SWING_TURN_GATE])
+	if not c.PLUNGE_LOWHANG and not c.PLUNGE_LATEDIP and _pl_no_env() and (sl_swing_hat[0] < PL_SWING_HAT_GATE or sl_swing_turn[0] > PL_SWING_TURN_GATE):
+		return _combat_done(false, "the plunge's swing down cuts the shaft through the hat, or whips")
 	print("BOT airstrike: slung snatch -> worst shaft-to-hat %.3f m while the staff comes off the back (gate >= %.2f; old -0.25), worst shaft turn %.1f deg/tick to plunge 0.12 s (gate <= %.0f; 10:00 tip-only 68.3), largest hat tip %.1f deg" % [sl_snatch_hat[0], PL_SNATCH_HAT_GATE, sl_snatch_turn[0], PL_SNATCH_TURN_GATE, rad_to_deg(c.draw_tip_max)])
 	if not c.PLUNGE_SNATCHRAW and sl_snatch_hat[0] < PL_SNATCH_HAT_GATE:
 		return _combat_done(false, "the slung staff passes through the hat as the plunge snatches it")
