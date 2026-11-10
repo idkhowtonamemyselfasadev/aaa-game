@@ -120,7 +120,14 @@ const ROAR_HEAD_BACK := 0.85
 const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
 ## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
 ## the shaft comes down beside the helm instead of standing upright in front of the face
-const FOLLOW_RIGHT := 0.32
+## (11:00 11-10) was 0.32: carried that far right the left grip ran 0.07-0.15 m past its reach as
+## the glaive came down, so the two-hand axis drifted up to 19 deg off the pose and the shaft
+## stalled for a tick (5.7 -> 3.5 -> 5.9 deg/tick) at the roar's end. Solved offline against
+## `_place` and tried in the bot (0.10/0, 0.18/0.05, 0.25/0.10): 0.25 right plus 0.10 more reach
+## keeps the haft furthest off the visor (0.36 m) and the fists closest (0.020); the shaft now
+## speeds up every tick from the top of the roar into the swing. Env FOLLOW_WIDE: the before.
+const FOLLOW_RIGHT := 0.25
+const FOLLOW_REACH := 0.10
 ## (09:00 11-10) the follow-through carries the hold point forward (was 0.08 back): drawn back, the
 ## right fist came down ~0.2 m from its shoulder (the arm folded shut), the IK flipped the hand as the
 ## glaive swept past and the fist popped 0.24 m per size off the haft for a tick (bot knight:
@@ -1067,7 +1074,17 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# the follow-through brings the glaive down on the right, beside the helm, not past the visor
 	var down_side := sin(PI * clampf((it - (BossIntro.ROAR_END - 0.3)) / (BossIntro.T - BossIntro.ROAR_END + 0.1), 0.0, 1.0))
 	var ffwd := -0.08 if OS.has_environment("FOLLOW_BACK") else FOLLOW_FWD   # env: the before
-	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, ffwd * down_side)
+	var fright := FOLLOW_RIGHT
+	var freach := FOLLOW_REACH
+	if OS.has_environment("FOLLOW_WIDE"):   # env: the before (left grip past its reach, the glaive stalled)
+		fright = 0.32
+		freach = 0.0
+	if OS.has_environment("FOLLOW_TRY"):    # env: "right,reach" tuning
+		var ft := OS.get_environment("FOLLOW_TRY").split_floats(",")
+		fright = ft[0]
+		freach = ft[1]
+	_pose[2] = (_pose[2] as Vector3) + Vector3(-fright * down_side, 0.0, ffwd * down_side)
+	_pose[5] = float(_pose[5]) + freach * down_side
 	_pose[0] = float(_pose[0]) - 22.0 * down_side
 	_pose[1] += sin(it * 38.0) * 2.0 * roar + sin(it * 7.0) * 1.5 * dormant
 	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the

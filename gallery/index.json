@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261106-1727-crownreel.jpg",
-  "time": "2026-11-06T17:27:03Z",
-  "caption": "The Ashen Knight buckled in the crown reel, glaive drooping into the turf, its boots now held where they stood (bot-proven); still backlit against the sun, so the legs read as a silhouette (GL frame).",
-  "verdict": "fail"
- },
- {
   "file": "20261106-1727-reelup.jpg",
   "time": "2026-11-06T17:27:03Z",
   "caption": "The knight shaking off the crown reel and standing straight again after its settle steps; backlit silhouette, the ground under it is flat dark dirt (GL frame).",
@@ -891,6 +885,18 @@
   "file": "20261110-1000-reveal-roar-end.jpg",
   "time": "2026-11-10T10:00:00Z",
   "caption": "The Ashen Knight a tick after its reveal roar ends, glaive held upright with both fists on the haft; the 10-degree jump of the glaive here is gone (motion only, the frame looks the same). Still wrong: seen from behind, armour dark and flat, the shaft thin.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1100-reveal-glaive-hang.jpg",
+  "time": "2026-11-10T11:15:00Z",
+  "caption": "The Ashen Knight at the end of its reveal roar: the glaive now hangs upright out at its right with both gauntlets on the haft before speeding into the downswing (no more stall); the armour still reads dark and flat and the ground is speckled.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1100-reveal-glaive-hang-before.jpg",
+  "time": "2026-11-10T11:15:00Z",
+  "caption": "Before: the same tick with the old follow-through, the left grip past its reach so the haft slants across the body and the swing stalls for a tick.",
   "verdict": "fail"
  }
 ]
