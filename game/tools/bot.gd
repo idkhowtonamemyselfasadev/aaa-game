@@ -1315,11 +1315,11 @@ func _foe_grip_test() -> void:
 ## left only while it holds (free_l <= 0.02), per beat: kneel / burst+roar / settle.
 const SURGE_GRIP_MAX := 0.03     # m per size, worst tick of the kneel / settle / after (07:00 11-10: <= 0.005; old switch: settle L 0.108-0.110)
 const SURGE_GRIP_MEAN_MAX := 0.01
-# the roar: the heave from the planted point-down lean to the glaive skyward turns the shaft
-# ~180 deg against the right forearm in ~3 ticks, more than a rigid grip can follow (NEXT: re-author
-# the heave). Gated at today's level so it cannot get worse (old switch: 0.300-0.312, mean 0.045).
-const SURGE_ROAR_MAX := 0.16
-const SURGE_ROAR_MEAN_MAX := 0.03
+# the roar: (08:00 11-10) with the surge's own roar pose (SURGE_ROAR: the right arm held out, not
+# folded shut at the shoulder) the fists read <= 0.001; the old INTRO_ROAR heave 0.144-0.149 (mean
+# 0.025; env SURGE_OLDROAR), the old switch 0.300-0.312
+const SURGE_ROAR_MAX := 0.03
+const SURGE_ROAR_MEAN_MAX := 0.01
 func _surge_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var p := _player

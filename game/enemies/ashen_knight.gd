@@ -85,6 +85,13 @@ const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
 ## its right (~1.88), the right fist up to the right shoulder (~1.50), the glaive standing at its
 ## right side. The chest turns only a little further (-20): at -38 the reveal lens saw its back
 const INTRO_ROAR := [-10.0, 65.0, Vector3(-0.27, 2.12, 0.24), -20.0, 0.1, 0.66]
+## (08:00 11-10) the surge's roar: INTRO_ROAR puts the right fist ~0.1 m from its shoulder (the arm
+## folded shut), so the forearm GripRoll squares the hand to has no clear line and the one-handed
+## brandish rolled the fist off the haft (bot surgegrip: 0.14 m per size). Here the fist is held out
+## 0.37 m forward-right of the shoulder at chest height with the forearm square to a near-upright
+## glaive (found offline: fist-shoulder line . shaft ~0.01, left fist within reach until it lets
+## go). Env SURGE_OLDROAR: the before.
+const SURGE_ROAR := [-20.0, 75.0, Vector3(-0.25, 2.05, 0.4), -20.0, 0.1, 0.66]
 ## (09:00 11-07) at the top of the reveal's heave the left hand lets go of the haft and is flung
 ## up and out to the knight's left, a clenched fist (body frame, unscaled, from the shoulder's
 ## unit direction x reach): in profile the raised left arm sat in front of / over the flung-back
@@ -724,7 +731,8 @@ func _surge_body(delta: float) -> void:
 	# the coil shudders harder toward the burst; the roar shakes through the arms and head
 	var shud := smoothstep(0.4, SURGE_BLAST, s) * (1.0 - burst)
 	var p1 := _lerp_pose(_from, SURGE_LEAN, smoothstep(0.1, 0.7, s))
-	var p2 := _lerp_pose(p1, INTRO_ROAR, burst)
+	var roar_pose: Array = INTRO_ROAR if OS.get_environment("SURGE_OLDROAR") != "" else SURGE_ROAR
+	var p2 := _lerp_pose(p1, roar_pose, burst)
 	_pose = _lerp_pose(p2, guard_pose, settle)
 	_pose[1] += sin(s * 38.0) * 2.0 * roar + sin(s * 53.0) * 1.2 * shud
 	_place(_pose)

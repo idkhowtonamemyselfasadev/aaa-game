@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261106-0908-foehands.jpg",
-  "time": "2026-11-06T09:08:00Z",
-  "caption": "Hollow soldier's hands on the spear, before (left: clip fingers splayed open over the shaft, a claw on the lower hand) and after (right: both hands closed into fists round the haft); GL quick-look, the lens is too close and the gauntlets still read blocky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-1040-foefist.jpg",
-  "time": "2026-11-06T10:40:19Z",
-  "caption": "A Hollow soldier's right fist now closed round the spear haft (the wrist moved off the shaft so it runs through the fingers); GL quick-look, the hand sits in shadow and the lens still does not centre on it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-1120-knight-fist.jpg",
-  "time": "2026-11-06T11:18:11Z",
-  "caption": "GL quick-look of the Ashen Knight's left fist on the glaive through the new own-lens close-up: the framing now holds, but the lens sits behind the knight and the fist is a dark shape in shadow at the right of the frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-1530-swing1-mid.jpg",
-  "time": "2026-11-06T15:30:00Z",
-  "caption": "GL frame of light-string blow 2 frozen mid-swing (the swing shot spot works again): the staff sweeps level at shoulder height, but the fixed lens loses the hero's hands as the body spins away and GL lighting is flat",
-  "verdict": "fail"
- },
- {
   "file": "20261106-1530-swing1-wind.jpg",
   "time": "2026-11-06T15:30:00Z",
   "caption": "GL frame of blow 2's wind-up, staff carried back over the right shoulder; the hands are too small and dark to judge the grip: needs a close lens that follows the spin and a Forward+ render",
@@ -897,6 +873,18 @@
   "file": "20261110-0700-surge-roar-before.jpg",
   "time": "2026-11-10T07:40:00Z",
   "caption": "The same surge frame with the old grip switch (SURGE_ROLLOFF=1) for comparison: at this lens the fist change is not visible, and the same floating knight and backlit silhouette make it a fail.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0800-surge-roar-held-out.jpg",
+  "time": "2026-11-10T08:30:00Z",
+  "caption": "The Ashen Knight's growth-surge roar with its new pose: the glaive stands tall in front of it, the right fist held out on the haft at chest height (fist-haft gap 0.000 m per size, was 0.144); the ring of fire hides most of the body and the light is flat, so not yet a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0800-surge-roar-before.jpg",
+  "time": "2026-11-10T08:30:00Z",
+  "caption": "The same surge frame with the old roar pose (SURGE_OLDROAR=1): the right fist jammed up against the shoulder, the arm folded shut, which is what rolled the fist off the haft.",
   "verdict": "fail"
  }
 ]
