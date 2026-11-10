@@ -8275,7 +8275,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 ## Next (milestone 1 — vertical slice, in order)
 0. (01:00 11-10, parallel session B) **KNIGHT REVEAL GRIP: A SECOND, DROPPED FIX + FRAMES OF THE MERGED FistAim FIX.**
    This session worked the same item as the FistAim session above and lost the push race; its game change was NOT
-   merged (it turned GripRoll ON through the reveal, which would switch FistAim off). Kept on a local branch only.
+   merged (it turned GripRoll ON through the reveal, which would switch FistAim off). Not kept in git; the recipe below is enough to redo it.
    Findings worth keeping for the roar's one-handed grip: with GripRoll on in the roar the right hand chattered
    (GRIP_DBG: hand turned 120-160 deg from the forearm line about the shaft, roll cap +-0.6 rad flipping sign every tick,
    wrist bend 80-118 deg, feed refused, fist 6-18 cm off): hand roll and wrist fit chase each other one-handed. NOT the
