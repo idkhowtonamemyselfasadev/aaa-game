@@ -8,6 +8,10 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (01:00 11-10, session B) Setup first try (import ~4 min), headless bots and GL shots work; Forward+ not tried; asset
+  sites not rechecked. A GL shot alongside a bot run got processes OOM-killed and made `knight` fail late ("phase 3
+  never set the ground alight"); alone it passes. Check `git fetch` for a parallel session's push on the same item
+  BEFORE starting the work, not only at push time.
 - (00:00 11-10) Setup first try, headless bots and GL shots work (shot alongside bots is slow: 2 bots took ~15 min);
   Forward+ not tried; asset sites not rechecked. `FOE_GRIPLAG=1` = the foes' old late fist fit (no GripRoll);
   `FOE_FEEDGAIN=<k>` tunes the spear-frame fit (default 0.5); `FOEGRIP_PEAKS=1 foegrip` prints every tick a fist is
@@ -8269,6 +8273,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (01:00 11-10, parallel session B) **KNIGHT REVEAL GRIP: A SECOND, DROPPED FIX + FRAMES OF THE MERGED FistAim FIX.**
+   This session worked the same item as the FistAim session above and lost the push race; its game change was NOT
+   merged (it turned GripRoll ON through the reveal, which would switch FistAim off). Kept on a local branch only.
+   Findings worth keeping for the roar's one-handed grip: with GripRoll on in the roar the right hand chattered
+   (GRIP_DBG: hand turned 120-160 deg from the forearm line about the shaft, roll cap +-0.6 rad flipping sign every tick,
+   wrist bend 80-118 deg, feed refused, fist 6-18 cm off): hand roll and wrist fit chase each other one-handed. NOT the
+   cause / no effect: the right elbow pole (3 positions), pitching the glaive back 30/55 deg or yawing it out 40 deg, a
+   roll keeping its direction past the cap, a twist-free (parallel-transported) hold frame in GripRoll (the shortest-arc
+   spear basis is not what twists the hand), decaying the learned wrist shift. What worked there: ease the right hand's
+   GripRoll out ~0.2 s BEFORE the left lets go (dropping it on free_l snapped the hand, glaive jumped 0.2 m per size),
+   then slide the glaive (translation only) onto the clip's closed right fist, hold point 0.08 m out to its right to
+   keep the haft >= 0.25 m off the visor (fist exactly on the axis, slide <= 0.2 m per size; fist jerk 0.586 vs old
+   0.638 m per size a tick). If FistAim's roar ever shows the fist off the haft in frames, that is the fallback.
+   Also measured: the heave whips the blade tip ~1.6 m per size a tick (jerk) at it 3.13-3.27 with either fit: a
+   candidate for easing the heave's yaw/lift curves.
+   Frames of the merged FistAim build (GL, hour 8.5): `ring X 20 8.5 fixfps intro body kclose it=3.5`: the right fist is
+   hidden behind the cape from this lens (cannot judge; gallery 20261110-0130-knight-roar-fistaim, fail);
+   `... kclose it=2.93` (coil): kclose aims at the shoulders and the coil's low hands are cut off the bottom of the frame.
+   NEXT for FistAim's NEXT (1): frame the coil with `body` WITHOUT `kclose` (or `kside`), and the roar through `kface`
+   or `kside flip`, hour 15-16 front-lit. Knight bot on the merged build here: PASS (coil fists 0.019, roar 0.055/0.036).
 0. (01:00 11-10) **ASHEN KNIGHT REVEAL: THE FISTS ON THE GLAIVE (game change + bot gate).** NEXT (1) of 00:00 GripRoll.
    Fix (game/enemies/fist_aim.gd new, hollow_soldier.gd `_setup_fist_aim` / `_aim_fists`, ashen_knight.gd
    `_fist_aim_weight`): after HandRest, FistAim reads each posed fist's gap off the shaft axis and sets a per-side second
