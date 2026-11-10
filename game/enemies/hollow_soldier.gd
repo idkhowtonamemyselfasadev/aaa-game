@@ -650,7 +650,9 @@ static func sweep_pose(a: float) -> Array:
 	return [a, -4.0, c, a * 0.3, SWEEP_SLIDE, SWEEP_ARM]
 
 ## Lean the whole model from the hips (back = negative), pivoting so the feet stay put.
+var lean_last := 0.0   # (bots) the hip lean set last tick
 func _lean(rad: float, sink: float) -> void:
+	lean_last = rad
 	var hip := Vector3(0, 0.95, 0)
 	var tr := Transform3D(Basis(Vector3.RIGHT, rad), Vector3.ZERO)
 	tr = Transform3D(Basis(), hip) * tr * Transform3D(Basis(), -hip)

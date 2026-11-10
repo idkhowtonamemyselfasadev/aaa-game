@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(19:00 11-10: THE HOLLOW HEWER NO LONGER FOLDS ITS ARMS SHUT AS IT HEAVES THE AXE OVERHEAD: a new bot `foefold` runs every foe attack live and measures each arm's shoulder-to-wrist and each fist to the haft. The hewer's raise held the rear fist under its chin (0.23 m from the shoulder) and the straight lerp out of the guard dragged the front grip up the chest past its shoulder: bone shoulder-wrist 0.083 m (right) / 0.060 m (left), the arms crushed flat. Re-solved offline: the raise now swings the axe up in an arc out in front (a single-eased quadratic blend through RAISE_ARC, no mid-way stop) to a new cocked pose, fists in front of the face and the helve 60 deg up and back over the head: 0.269 / 0.255 m, fists on the helve 0.000 m. Found, not fixed yet: the warden's bash leaves its right fist 0.143 m off the haft, and the harrier's dart recovery folds its right arm to 0.111 m.)
 (18:00 11-10: THE HOLLOW SOLDIER'S THRUST NOW DRIVES ITS SPEAR ALONG THE THRUST'S LINE: the live thrust's front grip was asked 0.53 m past its reach, so at full stretch the real spear pointed up and across the chest, 102 deg off the line of the blow. The re-solved pose (THRUST_SOLVED, found at 14:00) is now live: its one-tick fist slip was the lunge itself. The strike leans the body from the hips (-0.13 -> +0.16 rad) but the spear lives in the unleaned Wield space, so the shoulders swung over the rear fist, the right arm folded to 0.12 m shoulder-to-wrist, the elbow flipped across the shaft and the fist left the haft 0.12 m. The thrust's grips and the shoulders its reach is measured from now turn about the hips with the lean (the shaft's direction kept), and the lean no longer pops 0.13 rad forward on the first strike tick (it blends on from the wind-up's lean back). Bot `foereach`: soldier THRUST pose 0.0 deg off; live thrust fists 0.000 m, shaft at full stretch 3.7 deg off the line, rear arm never under 0.205 m; THRUST_UNLEANED=1 fails it (0.122 m, arm 0.069 m). The Ashen Knight's thrust uses the same pose at every size: `foegrip` 0.000 m.)
 (17:00 11-10: THE STAFF NO LONGER SLIPS HALF A TURN ROUND IN THE HERO'S FISTS ON EACH LIGHT BLOW: the staff's placed basis was the shortest turn from UP onto the shaft, so as the shaft swung near straight down its grain and cloth wrap spun ~180 deg about the shaft and back while GripRoll counter-rolled the hands to keep them still. Now the staff rolls WITH the right fist: each tick GripRoll turns the staff about its own shaft by the right hand's roll (accumulated `twist`, added by StaffCombat `_solve`) and takes the same turn back out of both hands' staff-frame bases, so the hands move exactly as before in the world (every hand number identical) and the wrap stays put in the fist. Bot `hands`: right fist slip on the staff 22.17 -> 0.00 rad over the string, staff turn about its shaft 15.87 -> 10.59 rad (what is left is the fist's own roll); new gates HERO_FIST_SLIP_MAX 0.5 / HERO_STAFF_SPIN_SUM 12; env STAFF_SPINRAW=1 = old, fails them.)
 (16:00 11-10: NO VISIBLE CHANGE: THE HERO'S HANDS DO NOT RING ON THE STAFF LIKE THE FOES' DID, AND THE BOT NOW PROVES IT. A new roll-chatter line in `hands` measures each hand's net roll on the shaft through the light string (GripRoll's roll plus the staff's own spin): 2 slow reversals, no tick-to-tick ringing (the foes rang 37-56); gated at 3. It also found the staff spinning ~180 deg about its own shaft and back on each blow (0.63 rad a tick worst: the shortest-arc-from-UP basis in `_solve` as the shaft swings near straight down), with GripRoll's hands counter-rolling it at their 0.6 cap. Holding the staff's twist steady (5 caps tried) made the hands chase it instead (hand pop 43 -> 50-58 deg a tick, more reversals), so it was reverted; the fix is to roll the staff WITH the fists (Next).)
@@ -18,6 +19,7 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (19:00 11-10) Setup first try (import ~6 min), 5 bot sets in parallel; asset sites not rechecked (no downloads).
 - (18:00 11-10) Setup first try (import ~8 min), 5 bot sets in parallel fine (29 routes, ~12 min); GL shots run alone
   after the bots. Asset sites not rechecked (no downloads).
 - (17:00 11-10) Setup first try (import ~6 min), 4 bot sets in parallel fine (20 routes, ~35 min). A GL shot
@@ -8303,6 +8305,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (19:00 11-10) **HEWER'S RAISE RE-SOLVED, NO ARM FOLD — DONE (game change + new bot `foefold`).**
+   NEXT (1) of 18:00. New bot `foefold` (`_attack_probe`): each foe attack run live wind-up -> recovery with the other
+   foes disabled; per arm the min bone shoulder-wrist (mixamorig_*Arm -> *Hand, m/size, with the state/time it hits),
+   each fist to the haft axis (m/size), the hip lean's range (new `lean_last` on HollowSoldier). Gates FOEFOLD_MIN
+   0.18, FOEFOLD_FIST_MAX 0.05. Readings: soldier thrust 0.209/0.206, sweep 0.194/0.194, knight x2.2 thrust
+   0.281/0.284, sweep 0.257/0.217 (all fists <= 0.005): fine, the sweeps' small lean (-0.06..0.10) needs no lean carry.
+   HEWER CHOP was 0.083 (R, chop start at RAISED) / 0.060 (L, mid-raise): RAISED put the rear grip 0.23 m from its
+   shoulder under the chin; the guard->RAISED lerp swept the front grip to 0.22 m. Offline (python replica of `_place`
+   + `_lerp_pose`, /tmp scripts, not kept): RAISED_NEW [-8, 120, (-0.02, 2.08, 0.08), 0, 0, 0.56] (grip min 0.34 m
+   over raise and chop, axis 0 deg) and the raise through RAISE_ARC [4, 60, (0, 1.8, 0.65), 4, 0, 0.56] via
+   `_arc_pose` (quadratic blend, eased once; grips >= 0.46 m, axis <= 0.2 deg). Bone readings 0.269 / 0.255.
+   Bone wrist sits ~0.15-0.2 m nearer the shoulder than the grip point: aim grips >= 0.40 m offline to clear 0.18.
+   Env RAISE_OLD=1 = old RAISED + straight lerp (foefold FAILS: 0.083 / 0.060). Bot `hewer` PASS unchanged.
+   Bots PASS (24): foefold foereach foegrip hewer soldier sweep warden harrier archer knight foehands keepgap foeflinch
+   foeturn foeguard surgegrip crown lockon combat heavy dodge hands kindler sentinel.
+   Shots (GL, alone after the bots): `soldier hew_r15/r30/r55 20 15.0 hewer u=0.15/0.3/0.55`: the axe swings up in front
+   (chest -> upright before the face -> cocked back over the head); far and backlit. Gallery 20261110-1900-hewer-raise-r30
+   / -r55 (fail: silhouette, wide lens). No new third-party files.
+   NEXT: (1) the warden's BASH: right fist 0.143 m/size off the haft somewhere in the bash (find the tick: is it
+   the BASH_DRIVE/BASH_COIL grips past reach, cf. 18:00's (3) 19 / 7 deg); then gate it (`gated` false in
+   `_foe_fold_test`); (2) the harrier's dart recovery: right arm 0.111 m at R t=0.13 (DART_REC lerp; it leans 0.32):
+   re-solve / lean-carry like the thrust, then gate it; (3) a GL frame sequence of the new hewer raise (u=0.15/0.3/0.5
+   of the wind-up) was rendered (see Shots below) but the lens is wide and backlit: a close side-lit sequence is still owed; (4) 18:00's (2): knight's surge/
+   stomp/leap fold (not in `foefold` yet: they run their own ticks), the hero's net-roll on heavy/plunge.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (18:00 11-10) **SOLDIER THRUST RE-SOLVED AND LIVE — DONE (game change + new `foereach` gates).**
    NEXT (1) of 17:00. FOUND (env THR_DBG, removed): THRUST_SOLVED's strike-tick flip was not GripRoll's: the real right
    shoulder-to-wrist distance fell 0.43 -> 0.12 m in 5 strike ticks. The strike's `_lean` (0 -> 0.16, and a pop from the

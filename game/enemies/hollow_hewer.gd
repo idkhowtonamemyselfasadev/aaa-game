@@ -41,7 +41,29 @@ const AXE_GRIP := HAND_R - 0.08  # the knob 8 cm below the rear hand, on the spe
 ## the fists moved 3 cm, both grips inside reach, axis 0 deg off the pose. VGUARD_OLD=1 env: before.
 const HEW_GUARD := [12.5, 25.5, Vector3(0.087, 1.384, 0.575), 4.0, 0.0, 0.48]
 const HEW_GUARD_OLD := [10.0, 22.0, Vector3(0.06, 1.32, 0.62), 4.0, 0.0, 0.48]
-const RAISED := [-4.0, 104.0, Vector3(-0.02, 2.24, -0.12), -12.0, 0.0, 0.52]
+## (11-10 19:00) re-solved offline (replica of `_place` along the smoothstepped lerps): the old
+## raise held the rear fist under the chin, 0.23 m from its shoulder, and the lerp out of the guard
+## swung the front grip through 0.22 m: both arms folded shut (bone shoulder-wrist 0.06-0.08 m, bot
+## `foefold`). Now the fists ride out in front of the face (rear at chin height 0.42 m ahead, front
+## above the brow) and the helve is cocked 60 deg up and back over the head, the bit behind it:
+## every grip >= 0.34 m from its shoulder through the raise and the chop, axis 0 deg off.
+## Env RAISE_OLD=1: before.
+const RAISED_NEW := [-8.0, 120.0, Vector3(-0.02, 2.08, 0.08), 0.0, 0.0, 0.56]
+const RAISED_OLD := [-4.0, 104.0, Vector3(-0.02, 2.24, -0.12), -12.0, 0.0, 0.52]
+static var RAISED: Array = RAISED_OLD if OS.get_environment("RAISE_OLD") == "1" else RAISED_NEW
+## The raise swings the axe up in an arc out in front (a quadratic blend through RAISE_ARC, eased
+## once, so it never stops mid-way): lerped straight from the guard the front grip dragged up the
+## chest past its shoulder (grip 0.35 m, bone wrist 0.15 m). Through the arc every grip stays
+## >= 0.46 m from its shoulder, axis <= 0.2 deg off.
+const RAISE_ARC := [4.0, 60.0, Vector3(0.0, 1.8, 0.65), 4.0, 0.0, 0.56]
+static var RAISE_OLD := OS.get_environment("RAISE_OLD") == "1"
+static func _lin_pose(a: Array, b: Array, f: float) -> Array:
+	return [lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), (a[2] as Vector3).lerp(b[2], f), lerpf(a[3], b[3], f),
+		lerpf(a[4] if a.size() > 4 else 0.0, b[4] if b.size() > 4 else 0.0, f),
+		lerpf(a[5] if a.size() > 5 else ARM_REACH, b[5] if b.size() > 5 else ARM_REACH, f)]
+static func _arc_pose(a: Array, m: Array, b: Array, r: float) -> Array:
+	var f := r * r * (3.0 - 2.0 * r)
+	return _lin_pose(_lin_pose(a, m, f), _lin_pose(m, b, f), f)
 # CHOPPED and BITE are authored in the LEANED frame (the hewer's wield leans with its body,
 # see _lean): solved offline so both hands stay inside arm reach and the bit edge lands on the
 # turf ~0.85 m ahead with the helve ~42 deg below level (old CHOPPED clamped both hands and
@@ -165,7 +187,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_turn_to(to, delta, 5.0 * (1.0 - g))
 			var held := RAISED.duplicate()
 			held[1] = RAISED[1] + sin(t * 41.0) * 1.2 * smoothstep(0.8, 1.0, r)
-			_pose = _lerp_pose(_from, held, r)
+			_pose = _lerp_pose(_from, held, r) if RAISE_OLD else _arc_pose(_from, RAISE_ARC, held, r)
 			lean = -0.12 * smoothstep(0.0, 1.0, r)
 			sink = 0.04 * r
 			ember = 1.0 + 1.2 * r + 2.2 * g

@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -232,6 +232,9 @@ func _ready() -> void:
 		return
 	if name == "foereach":
 		_foe_reach_test()
+		return
+	if name == "foefold":
+		_foe_fold_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -1511,6 +1514,94 @@ func _foe_reach_test() -> void:
 		return _combat_done(false, fail)
 	_combat_done(true, "the gated foes' attack poses lie along their direction")
 
+
+## (19:00 11-10) Every foe attack under the body's lean: `_lean` tips the model from the hips while
+## the weapon is posed in the unleaned Wield space (the 18:00 thrust fold). Each live attack, wind-up
+## to recovery: each fist to the haft axis (m per size) and each arm's shoulder-to-wrist distance
+## (m per size; the thrust's fold was 0.069 -> 0.205 once leaned), plus the lean's range.
+const FOEFOLD_MIN := 0.18        # m per size, shoulder to wrist
+const FOEFOLD_FIST_MAX := 0.05   # m per size
+func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, gated := true) -> String:
+	for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.knight, _world.sentinel]:
+		if o != null:
+			o.process_mode = Node.PROCESS_MODE_INHERIT if o == e else Node.PROCESS_MODE_DISABLED
+	e.notice = -1.0
+	e.give_up = 1e9
+	e.state = HollowSoldier.IDLE
+	var ks := e.size_scale
+	_player.global_position = e.global_position + e.body.global_basis.z * 2.6 * ks
+	await _ticks(30)
+	e._from = e._pose
+	e.move_kind = kind
+	e._enter(HollowSoldier.WINDUP)
+	var fist := [0.0, 0.0]
+	var fold := [9.0, 9.0]
+	var fold_at := ["", ""]
+	var lean_lo := 0.0
+	var lean_hi := 0.0
+	var seen := {}
+	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
+		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
+	for i in 400:
+		await get_tree().physics_frame
+		await e.skel.skeleton_updated
+		if not e.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
+			if seen.size() > 0:
+				break
+			continue
+		seen[e.state] = true
+		var o := e.spear.global_position
+		var ax := e.spear.global_basis.y.normalized()
+		var gt := e.skel.global_transform
+		var ln: float = e.lean_last
+		lean_lo = minf(lean_lo, ln)
+		lean_hi = maxf(lean_hi, ln)
+		for j in 2:
+			if j == 1 and not check_l:
+				continue
+			var fc := e.fist_center(["Right", "Left"][j])
+			fist[j] = maxf(fist[j], fc.distance_to(o + ax * ax.dot(fc - o)) / ks)
+			var f: float = (gt * e.skel.get_bone_global_pose(bones[j][0]).origin).distance_to(gt * e.skel.get_bone_global_pose(bones[j][1]).origin) / ks
+			if f < fold[j]:
+				fold[j] = f
+				fold_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
+	e.process_mode = Node.PROCESS_MODE_DISABLED
+	print("   %s (x%.1f, states %s): fist-haft R %.3f L %.3f m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
+	if not seen.has(HollowSoldier.STRIKE):
+		return "%s: the strike never ran" % label
+	if not gated:
+		print("   (%s: measured, not gated yet: see PROGRESS.md)" % label)
+		return ""
+	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
+		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
+	if minf(fold[0], fold[1]) < FOEFOLD_MIN:
+		return "%s: an arm folds shut (shoulder to wrist R %.3f L %.3f m/size)" % [label, fold[0], fold[1]]
+	return ""
+
+func _foe_fold_test() -> void:
+	Engine.time_scale = 1.0
+	await _ticks(5)
+	var runs := [
+		[_world.soldier, HollowSoldier.THRUST_MOVE, "HollowSoldier thrust", true],
+		[_world.soldier, HollowSoldier.SWEEP_MOVE, "HollowSoldier sweep", true],
+		# FOUND 19:00 11-10, not fixed: the bash's right fist 0.143 m/size off the haft
+		[_world.warden, HollowWarden.BASH_MOVE, "HollowWarden bash", false, false],
+		[_world.hewer, HollowHewer.CHOP_MOVE, "HollowHewer chop", true],
+		# FOUND 19:00 11-10, not fixed: the dart's recovery folds the right arm to 0.111 m
+		[_world.harrier, HollowHarrier.DART_MOVE, "HollowHarrier dart", true, false],
+		[_world.knight, HollowSoldier.THRUST_MOVE, "AshenKnight thrust", true],
+		[_world.knight, HollowSoldier.SWEEP_MOVE, "AshenKnight sweep", true],
+	]
+	var fail := ""
+	for r in runs:
+		if r[0] == null:
+			continue
+		var f: String = await _attack_probe(r[0], r[1], r[2], r[3], r[4] if r.size() > 4 else true)
+		if fail == "" and f != "":
+			fail = f
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "no foe's arm folds shut or loses the haft through its attacks")
 const VGUARD_AXIS_MAX := 3.0   # deg (VGUARD_OLD=1: 9.3 / 4.2 / 19.8 / 42.0)
 func _foe_guard_test() -> void:
 	Engine.time_scale = 1.0

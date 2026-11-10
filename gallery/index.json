@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261106-2300-surge-smoke.jpg",
-  "time": "2026-11-06T23:00:00Z",
-  "caption": "Ashen Knight growth surge 2 s after the ring of fire: the column smoke now drifts as translucent grey plumes instead of black blots; still a little flat and brownish, and the lighting is dim.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-2300-surge-fire.jpg",
-  "time": "2026-11-06T23:00:00Z",
-  "caption": "The ring of fire bursting round the kneeling Ashen Knight, HUD hidden and the lens clear of the columns; fire reads well, the helm's glowing cracks look like cartoon eyes.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0045-helm-seams.jpg",
   "time": "2026-11-07T00:45:00Z",
   "caption": "Close on the Ashen Knight's helm and pauldrons mid-surge: the ember glow now runs in sparse, tapering, irregular seams instead of two eye-like blobs; frame is from behind (the lens front score is inverted) and fire reflections smear orange over the helm.",
@@ -897,6 +885,18 @@
   "file": "20261110-1800-soldier-thrust-before.jpg",
   "time": "2026-11-10T18:30:00Z",
   "caption": "Before: the same thrust frame with the old pose, the front grip past its reach so the spear stood straight up, 102 deg off the line of the blow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1900-hewer-raise-r30.jpg",
+  "time": "2026-11-10T19:21:00Z",
+  "caption": "Hollow Hewer mid-raise: the axe now swings up in an arc out in front of the body instead of dragging up the chest; still backlit and far, the grips can't be judged at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1900-hewer-raise-r55.jpg",
+  "time": "2026-11-10T19:25:00Z",
+  "caption": "Hollow Hewer at the top of its raise: fists before the face, the axe cocked back over the head (arms no longer folded shut); the hewer is a dark silhouette, the lens too wide.",
   "verdict": "fail"
  }
 ]
