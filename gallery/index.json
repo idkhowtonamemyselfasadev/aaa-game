@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261106-0230-turnstep-down.jpg",
-  "time": "2026-11-06T02:30:00Z",
-  "caption": "Four ticks later the boot comes round low and sets down flat, nothing sunk into the turf. Still wrong: GL frame, dark armour, no Forward+ light on the legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-0328-turnset14.jpg",
-  "time": "2026-11-06T03:28:25Z",
-  "caption": "Knight at size 2.2 mid turn step from the gate, low: the trailing boot is up and swinging round; GL frame, armour near-black in its own shade, speckled ground is a GL artefact.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-0328-turnset22.jpg",
-  "time": "2026-11-06T03:28:25Z",
-  "caption": "Same turn eight frames later: the boot is braking into the turf beside the planted one and sets down flat instead of tapping down; still GL lighting, lens crops above the belt.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-0440-turnfp20.jpg",
-  "time": "2026-11-06T04:40:00Z",
-  "caption": "Forward+ frame of the Ashen Knight (size 2.2) turning on the spot, boots planted mid-step; still wrong: the ring floor is a flat grey with cartoon black speckles and the low lens crops the knight at the shoulders.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0511-heroturnstep.jpg",
   "time": "2026-11-06T05:11:48Z",
   "caption": "The hero turning on the spot toward the lens, head leading, the stepping boot carried in one 4 cm arc (bot-measured); still wrong: GL lighting, the feet are hidden under the tabard in shade, so the arc is not visible from this high lens.",
@@ -756,6 +732,12 @@
   "verdict": "fail"
  },
  {
+  "file": "20261109-1019-plunge-snatch-bow.jpg",
+  "time": "2026-11-09T10:19:48Z",
+  "caption": "Plunge snatch at plunge 0.05 s: before (left) the shaft stood up beside the hat brim, after (right) it swings along behind the shoulders on a smooth arc. The hands are still reaching for it and this lens sees the hero from behind.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261109-1000-plunge-snatch.jpg",
   "time": "2026-11-09T10:40:00Z",
   "caption": "Plunge pressed with the staff slung, 0.05 s in: the staff now swings out beside the straw hat as it comes off the back; still lit from behind by this lens, hands not yet on the shaft at this instant (GL renderer).",
@@ -765,12 +747,6 @@
   "file": "20261109-1000-snatch-before-after.jpg",
   "time": "2026-11-09T10:40:00Z",
   "caption": "Before (left) the snatched staff stood up through the hat brim; after (right) it passes beside it. The snatch path is still a little whippy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1019-plunge-snatch-bow.jpg",
-  "time": "2026-11-09T10:19:48Z",
-  "caption": "Plunge snatch at plunge 0.05 s: before (left) the shaft stood up beside the hat brim, after (right) it swings along behind the shoulders on a smooth arc. The hands are still reaching for it and this lens sees the hero from behind.",
   "verdict": "fail"
  },
  {
@@ -897,6 +873,18 @@
   "file": "20261110-0130-knight-roar-fistaim.jpg",
   "time": "2026-11-10T01:55:00Z",
   "caption": "The Ashen Knight's reveal roar on the merged FistAim grip (GL, hour 8.5, from behind): the left fist flung up reads, but the right fist on the glaive is hidden behind the cape from this lens, so the grip is not yet judged; backlit, dark armour.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0200-knight-grip-frontlit.jpg",
+  "time": "2026-11-10T02:30:00Z",
+  "caption": "The Ashen Knight with its glaive in the late sun beside the cottage: the fists sit on the haft (bot 0.000 m), but the hand lens frames it wide and the gloved right fist is lost in shadow under the pauldron.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0200-knight-reveal-coil.jpg",
+  "time": "2026-11-10T02:30:00Z",
+  "caption": "The reveal's kneeling coil from the intro lens: a good ring of standing stones and god-lit meadow, but the lens sits behind the knight so the hands on the glaive (now held 1.9 cm off the haft) never show, and the figure is a dark silhouette.",
   "verdict": "fail"
  }
 ]

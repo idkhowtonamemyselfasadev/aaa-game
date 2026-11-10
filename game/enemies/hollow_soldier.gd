@@ -431,6 +431,11 @@ func _setup_spear() -> void:
 			grip_roll = GripRoll.new()
 			grip_roll.name = "GripRoll"
 			grip_roll.staff = spear
+			# (02:00 11-10) the foes' wrists may bend 80 deg for the feed (the hero's 75): at 75 the
+			# knight's left fist rode 3.2 cm off the glaive for a tick of the sweep (its feed was cut
+			# to 2/3); at 80 no hand-tick passes 2 cm (bot foegrip). env FOE_BEND75: the before
+			if not OS.has_environment("BEND_LIMIT") and not OS.has_environment("FOE_BEND75"):
+				grip_roll.bend_limit = deg_to_rad(80.0)
 			skel.add_child(grip_roll)
 			skel.move_child(grip_roll, _ik.get_index() + 1)
 		if OS.get_environment("FOE_WRISTGRIP") == "":

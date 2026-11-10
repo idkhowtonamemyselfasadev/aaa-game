@@ -1233,9 +1233,9 @@ func _foe_hands_test() -> void:
 ## (11-10) The foes' fists stay on the haft through the attack: the soldier and the knight (each
 ## size) run a thrust and a sweep, WINDUP -> STRIKE -> RECOVER, and each tick the fist's centre to
 ## the shaft axis (m per size) and the wrist to its IK target are read per state.
-const GRIP_ATK_GAP_MAX := 0.05     # m per size, worst tick of an attack state (old fit: 0.089-0.095 on the thrust; now <= 0.032)
+const GRIP_ATK_GAP_MAX := 0.02     # m per size, worst tick of an attack state (old fit: 0.089-0.095 on the thrust; 00:00 11-10 <= 0.032; 02:00 foe bend 80: <= 0.006)
 const GRIP_ATK_MEAN_MAX := 0.004   # (old fit: 0.011-0.020 on the strikes; now <= 0.001)
-const GRIP_ATK_OFF_TICKS := 2      # hand-ticks > 3 cm off per state (GripRoll's roll cap / wrist-bend limit may cost a tick)
+const GRIP_ATK_OFF_TICKS := 0      # hand-ticks > 3 cm off per state (02:00 11-10: none since the foes' 80 deg wrist bend; was 1 at 75)
 func _foe_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
