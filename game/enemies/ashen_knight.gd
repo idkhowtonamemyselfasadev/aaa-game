@@ -126,6 +126,8 @@ const FOLLOW_RIGHT := 0.32
 ## glaive swept past and the fist popped 0.24 m per size off the haft for a tick (bot knight:
 ## follow-through 0.132 -> 0.019 right, haft still 0.33 m off the visor). Env FOLLOW_BACK: the before.
 const FOLLOW_FWD := 0.15
+## (11-10) the heave's round-the-side terms are gone this long before ROAR_END
+const HEAVE_FADE := 0.15
 ## how far the heave's path bows out round the right side mid-rise (deg of shaft yaw, unscaled m
 ## of hands out to the right), so the blade sweeps up beside the body, never across the chest
 const HEAVE_ROUND_YAW := 35.0
@@ -1045,12 +1047,18 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# (06:00 11-07) the straight lerp coil -> roar cut the late heave across the chest (shaft 0.39
 	# toward the front at up ~0.6): bow the path out round the right side while it rises, the
 	# shaft held further round (yaw) and the hands carried out to the right, gone again at the top
-	if it < BossIntro.ROAR_END and not skip:
-		var bulge := sin(PI * clampf(up, 0.0, 1.0)) * smoothstep(0.2, 0.6, up)
+	# (10:00 11-10) the round-the-side terms belong to the rise: they faded back in as `up` began to
+	# fall and were then cut at ROAR_END, a ~9 deg one-tick jump of the shaft; they now fade out
+	# before the glaive starts down (HEAVE_CUT=1 = the old hard cut)
+	var rise_w := 1.0 - smoothstep(BossIntro.ROAR_END - HEAVE_FADE - 0.2, BossIntro.ROAR_END - HEAVE_FADE, it)
+	if OS.has_environment("HEAVE_CUT"):   # env: the before
+		rise_w = 1.0 if it < BossIntro.ROAR_END else 0.0
+	if rise_w > 0.0 and not skip:
+		var bulge := sin(PI * clampf(up, 0.0, 1.0)) * smoothstep(0.2, 0.6, up) * rise_w
 		_pose[0] = float(_pose[0]) - HEAVE_ROUND_YAW * bulge
 		_pose[2] = (_pose[2] as Vector3) + Vector3(-HEAVE_ROUND_OUT * bulge, 0.0, 0.0)
 		if OS.get_environment("HEAVE_NOLIFT") == "":   # env: the before
-			var lift := sin(PI * clampf(up, 0.0, 1.0))
+			var lift := sin(PI * clampf(up, 0.0, 1.0)) * rise_w
 			_pose[1] = float(_pose[1]) + HEAVE_LIFT * lift
 			# the stood-up shaft put the butt (right) fist back behind the hip where the arm lagged
 			# off the haft (grip gap 0.106 at up ~0.4): the hold point comes forward while it stands

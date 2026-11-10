@@ -886,5 +886,11 @@
   "time": "2026-11-10T09:20:00Z",
   "caption": "Before: the right arm jammed against the shoulder and the shaft sliding past the fist as the glaive comes down.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261110-1000-reveal-roar-end.jpg",
+  "time": "2026-11-10T10:00:00Z",
+  "caption": "The Ashen Knight a tick after its reveal roar ends, glaive held upright with both fists on the haft; the 10-degree jump of the glaive here is gone (motion only, the frame looks the same). Still wrong: seen from behind, armour dark and flat, the shaft thin.",
+  "verdict": "fail"
  }
 ]

@@ -1124,7 +1124,8 @@ func _thumb_read(skel: Skeleton3D, side: String, o: Vector3, ax: Vector3) -> Arr
 	var d_axis := tw.distance_to(o + ax * ax.dot(tw - o))
 	return [d_axis, tip.distance_to(i2) / maxf(i1.distance_to(i2), 1e-4)]
 
-const REVEAL_FOLLOW_MAX := 0.07  # m per size: fists off the haft as the reveal's glaive comes down (11-10 09:00; was 0.132)
+const REVEAL_TURN_MAX := 7.5  # deg per tick: the shaft across ROAR_END +-0.16 s (11-10 10:00; was 9.9, now 5.9)
+const REVEAL_FOLLOW_MAX := 0.05  # m per size: fists off the haft as the reveal's glaive comes down (11-10 09:00 was 0.132; 10:00 0.043)
 const REVEAL_FIST_MAX := 0.05   # m per size: the knight's fists off the glaive's axis through the reveal (11-10)
 
 ## (11-10 01:00) the knight's hands read as fists (centre on the haft) rather than wrists: GripRoll
@@ -4042,6 +4043,8 @@ func _knight_test() -> void:
 	var grip_fist := [0.0]
 	var follow_visor := [9.0, 0.0]  # the haft's nearest pass to the visor in the follow-through
 	var follow_fist := [0.0, 0.0]   # worst fist off the haft in the follow-through, at it
+	var shaft_prev := Vector3.ZERO   # (10:00 11-10) the shaft in the body frame last tick
+	var shaft_turn := [0.0, 0.0]    # worst one-tick turn of the shaft across ROAR_END, at it
 	var coil_hx := [-9.0]
 	var coil_butt := [-9.0]
 	var coil_glare := [0.0]
@@ -4225,6 +4228,20 @@ func _knight_test() -> void:
 				print("HEAVE butt t %.2f %s" % [k.intro.t, bl])
 			if OS.get_environment("HEAVEDBG") != "":
 				print("HEAVE t %.2f up %.2f ax %s" % [k.intro.t, k._heave_now, ax])
+		# (10:00 11-10) the glaive's path from the top of the roar into the guard: the heave's
+		# round-the-side terms were cut at ROAR_END, a ~9 deg one-tick jump of the shaft
+		if k.intro.t > BossIntro.ROAR_END - 0.5 and k.intro.t < BossIntro.T:
+			var sx := (k.body.global_basis.inverse() * k.spear.global_basis.y).normalized()
+			if shaft_prev != Vector3.ZERO:
+				var tdeg := rad_to_deg(shaft_prev.angle_to(sx))
+				# gated across the hand-off from the roar into the downswing (the swing itself
+				# turns ~12 deg a tick by design)
+				if absf(k.intro.t - BossIntro.ROAR_END) <= 0.16 and tdeg > shaft_turn[0]:
+					shaft_turn[0] = tdeg
+					shaft_turn[1] = k.intro.t
+				if OS.has_environment("SHAFTTURN_DBG"):
+					print("STURN t %.3f %.2f deg" % [k.intro.t, tdeg])
+			shaft_prev = sx
 		if get_viewport().get_camera_3d() != hero_cam:
 			cam_other = true
 		await get_tree().physics_frame
@@ -4275,6 +4292,9 @@ func _knight_test() -> void:
 	print("BOT knight: reveal spine: hunched %.2f rad, arched back %.2f rad; neck over the hips %.2f .. %.2f m (per size)" % [k.intro_hunch_peak, k.intro_arch_peak, neck_back, neck_fore])
 	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar (fists off the axis %.3f)" % [grip_gap, grip_fist[0]])
 	print("BOT knight: reveal follow-through: fists off the haft at most %.3f m (per size) at it %.2f; haft at least %.2f m off the visor (at it %.2f)" % [follow_fist[0], follow_fist[1], follow_visor[0], follow_visor[1]])
+	print("BOT knight: reveal glaive path: shaft turns at most %.1f deg in a tick across the roar's end into the downswing (at it %.2f)" % [shaft_turn[0], shaft_turn[1]])
+	if shaft_turn[0] > REVEAL_TURN_MAX:
+		return _combat_done(false, "the reveal's glaive jumps %.1f deg in one tick as it comes down from the roar (at it %.2f)" % [shaft_turn[0], shaft_turn[1]])
 	if k._aim_ik[0] != null and (follow_fist[0] > REVEAL_FOLLOW_MAX or follow_visor[0] < 0.25):
 		return _combat_done(false, "the reveal's follow-through pops a fist off the glaive or swings it across the visor (%.3f m, visor %.2f m)" % [follow_fist[0], follow_visor[0]])
 	if grip_gap > 0.09:
