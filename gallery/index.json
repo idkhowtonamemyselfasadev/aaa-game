@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261106-0829-staffgrip.jpg",
-  "time": "2026-11-06T08:29:43Z",
-  "caption": "Staff drawn, before (left) and after (right): the lower hand now closes into a fist round the shaft instead of splaying open over it (GL quick-look, low resolution).",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0908-foehands.jpg",
   "time": "2026-11-06T09:08:00Z",
   "caption": "Hollow soldier's hands on the spear, before (left: clip fingers splayed open over the shaft, a claw on the lower hand) and after (right: both hands closed into fists round the haft); GL quick-look, the lens is too close and the gauntlets still read blocky.",
@@ -891,6 +885,18 @@
   "file": "20261110-0600-knight-rise-grip.jpg",
   "time": "2026-11-10T06:25:00Z",
   "caption": "The knight lifting the glaive out of the daze (u 0.68): the right fist stays on the haft through the rise (worst 0.030 m per size, was 0.096); the low backlit lens still hides the hands' detail.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0700-surge-roar-grip.jpg",
+  "time": "2026-11-10T07:40:00Z",
+  "caption": "The Ashen Knight heaving its glaive skyward as it grows in the surge (low flank lens, GL): the right fist now holds the haft through the roar (worst 0.144 m per size, was 0.31) and the left closes back on it cleanly; the frame shows the knight hanging above the turf and the glaive lost against the sky, a lens/harness problem to fix next.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0700-surge-roar-before.jpg",
+  "time": "2026-11-10T07:40:00Z",
+  "caption": "The same surge frame with the old grip switch (SURGE_ROLLOFF=1) for comparison: at this lens the fist change is not visible, and the same floating knight and backlit silhouette make it a fail.",
   "verdict": "fail"
  }
 ]

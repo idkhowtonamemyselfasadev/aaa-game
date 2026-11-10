@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -223,6 +223,9 @@ func _ready() -> void:
 		return
 	if name == "foegrip":
 		_foe_grip_test()
+		return
+	if name == "surgegrip":
+		_surge_grip_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -1304,6 +1307,102 @@ func _foe_grip_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "foes' fists stay on the haft through the thrust and the sweep at every size")
+
+## (11-10 07:00) The knight's fists stay on the glaive through each surge (phase change): the
+## knight leans from the hips (kneel 0.36 forward, roar 0.24 back) while the glaive is posed in the
+## unleaned Wield space, the mismatch that threw the crown reel's right fist 0.28 m per size off.
+## Each tick (read inside the modifier pass) the fist's centre to the haft axis, m per size; the
+## left only while it holds (free_l <= 0.02), per beat: kneel / burst+roar / settle.
+const SURGE_GRIP_MAX := 0.03     # m per size, worst tick of the kneel / settle / after (07:00 11-10: <= 0.005; old switch: settle L 0.108-0.110)
+const SURGE_GRIP_MEAN_MAX := 0.01
+# the roar: the heave from the planted point-down lean to the glaive skyward turns the shaft
+# ~180 deg against the right forearm in ~3 ticks, more than a rigid grip can follow (NEXT: re-author
+# the heave). Gated at today's level so it cannot get worse (old switch: 0.300-0.312, mean 0.045).
+const SURGE_ROAR_MAX := 0.16
+const SURGE_ROAR_MEAN_MAX := 0.03
+func _surge_grip_test() -> void:
+	Engine.time_scale = 1.0
+	var p := _player
+	var k: AshenKnight = _world.knight
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	await _ticks(10)
+	var fail := ""
+	for ph in [2, 3]:
+		k._set_phase(ph - 1)
+		k.set_size_scale(k.growth.scale_of(ph - 1))
+		var ks := k.size_scale
+		k._home = k.global_position
+		k._leap_cool = 99.0
+		k._stomp_cool = 99.0
+		k._flame_t = -999.0
+		k.health = k.health_max
+		k.poise = 0.0
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		k.move_kind = HollowSoldier.THRUST_MOVE
+		var dir := k.body.global_basis.z
+		dir.y = 0.0
+		p.global_position = k.global_position + dir.normalized() * 8.0 * ks
+		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+		await _ticks(40)
+		var beats := ["kneel", "roar", "settle", "after"]
+		var acc := {}   # beat -> [worst R, worst L, sum, n, s of worst]
+		for b in beats:
+			acc[b] = [0.0, 0.0, 0.0, 0, 0.0]
+		k._begin_surge()
+		var started := false
+		var after := 0
+		var boot_hi := 0.0
+		for i in 600:
+			await get_tree().physics_frame
+			await k.skel.skeleton_updated
+			if k._surge < 0.0:
+				if not started:
+					continue
+				# GripRoll takes the hands back once the surge is over: 20 more ticks
+				after += 1
+				if after > 20:
+					break
+			started = true
+			var s: float = k._surge if after == 0 else AshenKnight.SURGE_T + after * get_physics_process_delta_time()
+			var b: String = "after" if after > 0 else ("kneel" if s < AshenKnight.SURGE_BLAST else ("roar" if s < 1.75 else "settle"))
+			var a: Array = acc[b]
+			var gr: float = k.fist_gap[0]
+			var gl: float = k.fist_gap[1] if k.free_l <= 0.02 else 0.0
+			if gr > a[0] or gl > a[1]:
+				if maxf(gr, gl) > maxf(a[0], a[1]):
+					a[4] = s
+			a[0] = maxf(a[0], gr)
+			a[1] = maxf(a[1], gl)
+			a[2] += maxf(gr, gl)
+			a[3] += 1
+			# (07:00) the lower boot over the turf beneath it (a frame from the `ring surge side` lens
+			# showed the knight hanging in the air)
+			var lo := INF
+			for bn in ["mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+				var fw: Vector3 = k.skel.global_transform * k.skel.get_bone_global_pose(k.skel.find_bone(bn)).origin
+				lo = minf(lo, fw.y - _world.terrain.height_at(fw.x, fw.z))
+			boot_hi = maxf(boot_hi, lo / k.size_scale)
+			if OS.has_environment("SURGEGRIP_DBG"):
+				print("    SG boot %.3f body y-terrain %.3f" % [lo, k.global_position.y - _world.terrain.height_at(k.global_position.x, k.global_position.z)])
+				print("    SG ph %d s %.3f gapR %.3f gapL %.3f free_l %.2f size %.2f gr %.2f feed %.3f roll %.2f err %.3f shrug %.2f off %.3f aim %.2f" % [ph, s, k.fist_gap[0], k.fist_gap[1], k.free_l, k.size_scale, k.grip_roll.weight, k.grip_roll.last_feed[0] / k.size_scale, k.grip_roll.last_roll[0], k.grip_roll.last_err[0].length() / k.size_scale, k.grip_roll.last_shrug, (k._fist_off[0] as Vector3).length(), (k._aim_ik[0] as TwoBoneIK3D).influence])
+		if not started:
+			return _combat_done(false, "the surge into phase %d never began" % ph)
+		for b in beats:
+			var a: Array = acc[b]
+			var mean: float = a[2] / maxf(a[3], 1)
+			print("BOT surgegrip: phase %d %s (%d ticks): fist-haft R %.3f L %.3f worst at s %.2f, mean %.3f m per size" % [ph, b, a[3], a[0], a[1], a[4], mean])
+			var gmax := SURGE_ROAR_MAX if b == "roar" else SURGE_GRIP_MAX
+			var gmean := SURGE_ROAR_MEAN_MAX if b == "roar" else SURGE_GRIP_MEAN_MAX
+			if fail == "" and not OS.has_environment("SURGEGRIP_MEASURE") and (maxf(a[0], a[1]) > gmax or mean > gmean):
+				fail = "surge into phase %d, %s: a fist rides off the glaive (R %.3f L %.3f mean %.3f)" % [ph, b, a[0], a[1], mean]
+		print("BOT surgegrip: phase %d size now %.2f (from %.2f); lower boot at most %.3f m per size over the turf" % [ph, k.size_scale, ks, boot_hi])
+		if fail == "" and boot_hi > 0.2:
+			fail = "the knight left the turf in the surge into phase %d (lower boot %.2f m per size up)" % [ph, boot_hi]
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "the knight's fists stay on the glaive through both surges")
 
 func _hero_turn_test() -> void:
 	var p := _player

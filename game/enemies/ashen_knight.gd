@@ -1180,7 +1180,13 @@ func _palm_gap(helm: Vector3) -> float:
 ## (11-10) one-handed (the roar's freed left): GripRoll eases out, the old fit holds the right.
 ## The reveal keeps the old fit throughout: switching mid-roar left the old fit overshooting
 ## every tick (right fist 0.16-0.22 m per size off the haft); see PROGRESS.md Next.
+## (11-10 07:00) The surge keeps GripRoll through its roar (it lets the freed left go on its own,
+## side_weight): the switch to the old fit as the left let go threw the right fist 0.31 m per size
+## off the glaive for a tick and 0.12-0.29 for ten more, and the left came back onto the haft
+## 0.11 off as GripRoll took over again in the settle (bot surgegrip; env SURGE_ROLLOFF: before).
 func _grip_roll_wanted() -> bool:
+	if _surge >= 0.0 and OS.get_environment("SURGE_ROLLOFF") == "":
+		return true
 	return free_l < 0.02 and not intro_playing()
 
 ## Swing a glaive pose about the spine's base by `a` rad about the body's right (back = negative),
