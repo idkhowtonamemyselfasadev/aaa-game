@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(18:00 11-10: THE HOLLOW SOLDIER'S THRUST NOW DRIVES ITS SPEAR ALONG THE THRUST'S LINE: the live thrust's front grip was asked 0.53 m past its reach, so at full stretch the real spear pointed up and across the chest, 102 deg off the line of the blow. The re-solved pose (THRUST_SOLVED, found at 14:00) is now live: its one-tick fist slip was the lunge itself. The strike leans the body from the hips (-0.13 -> +0.16 rad) but the spear lives in the unleaned Wield space, so the shoulders swung over the rear fist, the right arm folded to 0.12 m shoulder-to-wrist, the elbow flipped across the shaft and the fist left the haft 0.12 m. The thrust's grips and the shoulders its reach is measured from now turn about the hips with the lean (the shaft's direction kept), and the lean no longer pops 0.13 rad forward on the first strike tick (it blends on from the wind-up's lean back). Bot `foereach`: soldier THRUST pose 0.0 deg off; live thrust fists 0.000 m, shaft at full stretch 3.7 deg off the line, rear arm never under 0.205 m; THRUST_UNLEANED=1 fails it (0.122 m, arm 0.069 m). The Ashen Knight's thrust uses the same pose at every size: `foegrip` 0.000 m.)
 (17:00 11-10: THE STAFF NO LONGER SLIPS HALF A TURN ROUND IN THE HERO'S FISTS ON EACH LIGHT BLOW: the staff's placed basis was the shortest turn from UP onto the shaft, so as the shaft swung near straight down its grain and cloth wrap spun ~180 deg about the shaft and back while GripRoll counter-rolled the hands to keep them still. Now the staff rolls WITH the right fist: each tick GripRoll turns the staff about its own shaft by the right hand's roll (accumulated `twist`, added by StaffCombat `_solve`) and takes the same turn back out of both hands' staff-frame bases, so the hands move exactly as before in the world (every hand number identical) and the wrap stays put in the fist. Bot `hands`: right fist slip on the staff 22.17 -> 0.00 rad over the string, staff turn about its shaft 15.87 -> 10.59 rad (what is left is the fist's own roll); new gates HERO_FIST_SLIP_MAX 0.5 / HERO_STAFF_SPIN_SUM 12; env STAFF_SPINRAW=1 = old, fails them.)
 (16:00 11-10: NO VISIBLE CHANGE: THE HERO'S HANDS DO NOT RING ON THE STAFF LIKE THE FOES' DID, AND THE BOT NOW PROVES IT. A new roll-chatter line in `hands` measures each hand's net roll on the shaft through the light string (GripRoll's roll plus the staff's own spin): 2 slow reversals, no tick-to-tick ringing (the foes rang 37-56); gated at 3. It also found the staff spinning ~180 deg about its own shaft and back on each blow (0.63 rad a tick worst: the shortest-arc-from-UP basis in `_solve` as the shaft swings near straight down), with GripRoll's hands counter-rolling it at their 0.6 cap. Holding the staff's twist steady (5 caps tried) made the hands chase it instead (hand pop 43 -> 50-58 deg a tick, more reversals), so it was reverted; the fix is to roll the staff WITH the fists (Next).)
 (15:00 11-10: THE FOES' HANDS NO LONGER FLAP ON THE HAFT: GripRoll took the whole wanted roll about the shaft every tick, but rolling the hand swings the fist about the wrist, the feed moves the wrist to keep the fist on the haft and that swings the forearm round the shaft the other way, so the next tick's wanted roll overshot: on the soldier's and the knight's SWEEP the hands rang +-0.6 rad (34 deg) a tick for up to 40 ticks (37-56 reversals per swing, 42-65 rad of reversing roll; the fists stayed on the haft, so no bot saw it). The foes now take a quarter of the wanted roll a tick and fade it out where the forearm runs along the shaft (its side flips there): 0-1 reversals per swing, wrists bend less (left max 77 -> 55 deg, right 71 -> 68). New bot gate `foegrip` roll chatter (<= 3 reversals, <= 2 rad); FOE_ROLLRING=1 = old, fails it.)
@@ -17,6 +18,8 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (18:00 11-10) Setup first try (import ~8 min), 5 bot sets in parallel fine (29 routes, ~12 min); GL shots run alone
+  after the bots. Asset sites not rechecked (no downloads).
 - (17:00 11-10) Setup first try (import ~6 min), 4 bot sets in parallel fine (20 routes, ~35 min). A GL shot
   (SHOT_GL=1, `swing1 ... u=0.3`) started alongside the bots was still rendering after 33 min at 130 % CPU and was
   killed: no shots or gallery this session (the change is the staff's roll about its own shaft; the hands' world
@@ -8300,6 +8303,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (18:00 11-10) **SOLDIER THRUST RE-SOLVED AND LIVE — DONE (game change + new `foereach` gates).**
+   NEXT (1) of 17:00. FOUND (env THR_DBG, removed): THRUST_SOLVED's strike-tick flip was not GripRoll's: the real right
+   shoulder-to-wrist distance fell 0.43 -> 0.12 m in 5 strike ticks. The strike's `_lean` (0 -> 0.16, and a pop from the
+   wind-up's -0.13 to 0 on the first strike tick) tips the model about the hips while `_place` works in the unleaned
+   Wield space, so the shoulders swung ~0.15 m forward over the rear fist; the folded arm's elbow flipped across the shaft
+   (forearm 9 -> 64 deg off the shaft on the far side in one tick, GripRoll raw -2.87, bend 112, feed refused).
+   FIX (hollow_soldier.gd): `_place_lean` (set from `lean - lean_kick` for THRUST_MOVE in WINDUP/STRIKE/RECOVER, 0 else):
+   `_place` turns c and both SHOULDER points about the hip (0, 0.95, 0) by it, shaft direction kept. First try leaned only
+   c: the clamp from the unleaned shoulders bent the shaft 10.8 deg at full stretch; leaning the shoulders too: 3.7.
+   STRIKE lean = lerp(WINDUP_LEAN -0.13, 0.16, smoothstep(0, 0.4, u)). THRUST_SOLVED is the live `thrust_pose`.
+   Envs: THRUST_OLD=1 (old pose), THRUST_UNLEANED=1 (grips unleaned), THRUST_LEAN_POP=1 (the lean pop).
+   Bot `foereach`: THRUST added to the placed-pose set (0.0 deg); new live-thrust block: fist-shaft R/L 0.000 m (gate
+   0.05), shaft in the 2nd half of the strike 3.7 deg off dir_of(thrust) (gate FOEREACH_THRUST_LINE_MAX 6), rear arm
+   shoulder-wrist min 0.205 m (gate FOEREACH_FOLD_MIN 0.18). THRUST_UNLEANED=1 -> FAIL (0.122 m, fold 0.069). `foegrip`:
+   soldier + knight x2.2/3.2/4.6 thrust strike 0.000 m, 0 reversals.
+   Bots PASS (29): foegrip foereach soldier sweep knight warden hewer harrier archer kindler foehands keepgap foeflinch
+   foeturn foeguard surgegrip crown lockon combat heavy dodge knightplant knightstomp knightleap airstrike hands
+   foestride sentinel hounds.
+   Shots (GL, alone after the bots): `soldier th_new 20 10.0 strike u=0.6` and th_old (THRUST_OLD=1 THRUST_UNLEANED=1
+   THRUST_LEAN_POP=1): old spear stands straight up at full stretch, new drives level into the hero. Gallery
+   20261110-1800-soldier-thrust / -before (fail: side-on lens, bodies overlap, the foe's hands hidden). No new third-party files.
+   NEXT: (1) the rest of the foes' attacks under `_lean` (sweep, the knight's surge/stomp/leap, the warden's bash, the
+   hewer's chop): measure shoulder-to-wrist fold and the shaft line in each, carry their grips leaned the same way where
+   it folds; (2) 17:00's (2)/(3): the hero's net-roll metric on the heavy and the plunge; the staff-with-fist roll for the
+   foes' spear/glaive; (3) the warden's BASH_DRIVE 19 / BASH_COIL 7 deg. BOSS/ANIMATION order unchanged; audio after.
 0. (17:00 11-10) **STAFF ROLLS WITH THE RIGHT FIST — DONE (game change + new `hands` gates).**
    NEXT (1) of 16:00. grip_roll.gd `_roll_staff_with_fist` (hero only: `roll_staff`, set in combat.gd setup): after both
    hands solve, staff.transform.basis *= Basis(UP, right roll * weight), hs and tilt of both hands re-expressed by

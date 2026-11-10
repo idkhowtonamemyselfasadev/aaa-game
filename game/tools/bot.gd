@@ -1406,11 +1406,13 @@ func _foe_grip_test() -> void:
 ## Still open (see PROGRESS Next): the warden's BASH_COIL 7 / BASH_DRIVE 19 deg off.
 const FOEREACH_AXIS_MAX := 12.0   # deg
 const FOEREACH_FIST_MAX := 0.05   # m, worst fist centre off the haft through the harrier's dart
+const FOEREACH_THRUST_LINE_MAX := 6.0   # deg, the live thrust's shaft at full stretch (clamp from unleaned shoulders: 10.8)
+const FOEREACH_FOLD_MIN := 0.18   # m, the soldier's rear arm shoulder-to-wrist through its thrust (unleaned: 0.11)
 func _foe_reach_test() -> void:
 	Engine.time_scale = 1.0
 	await _ticks(5)
 	var sets := [
-		[_world.soldier, {"DRAWN": HollowSoldier.DRAWN}],
+		[_world.soldier, {"DRAWN": HollowSoldier.DRAWN, "THRUST": _world.soldier.thrust_pose}],
 		[_world.harrier, {"CROUCHED": HollowHarrier.CROUCHED, "DARTED": _world.harrier.dart_pose, "DART_REC": _world.harrier.dart_rec_pose}],
 	]
 	var fail := ""
@@ -1456,11 +1458,55 @@ func _foe_reach_test() -> void:
 	if fail == "" and (not seen.has(HollowSoldier.STRIKE) or maxf(worst[0], worst[1]) > FOEREACH_FIST_MAX):
 		fail = "HollowHarrier dart: a fist rides off the haft (R %.3f L %.3f m; strike seen %s)" % [worst[0], worst[1], seen.has(HollowSoldier.STRIKE)]
 	h.process_mode = Node.PROCESS_MODE_DISABLED
-	# not gated yet (see HollowSoldier.THRUST_SOLVED): the live thrust and the solved one
-	for k in ["THRUST", "THRUST_SOLVED"]:
-		var pose: Array = HollowSoldier.THRUST if k == "THRUST" else HollowSoldier.THRUST_SOLVED
-		_world.soldier._place(pose)
-		print("   (open) HollowSoldier %s: shaft %.1f deg off the pose's direction" % [k, rad_to_deg(_world.soldier.spear.transform.basis.y.normalized().angle_to(StaffCombat.dir_of(pose[0], pose[1])))])
+	# (18:00 11-10) the soldier's live thrust (wind-up -> lunge -> recovery), the grips leaned with
+	# the body: fists on the haft, the real shaft along the pose's line at full stretch (the leaned
+	# grips must not run into the reach clamp), and the rear arm never folded shut (was 0.12 m
+	# shoulder-to-wrist when the lunge's lean swung the shoulder over the rear fist)
+	var so: HollowSoldier = _world.soldier
+	so.process_mode = Node.PROCESS_MODE_INHERIT
+	so.notice = -1.0
+	so.give_up = 1e9
+	_player.global_position = so.global_position + so.body.global_basis.z * 3.0
+	await _ticks(20)
+	so._from = so._pose
+	so.move_kind = HollowSoldier.THRUST_MOVE
+	so._enter(HollowSoldier.WINDUP)
+	var sw := [0.0, 0.0]
+	var s_over := 0
+	var fold := 9.0
+	var line_off := 0.0
+	var s_seen := {}
+	var td := StaffCombat.dir_of(so.thrust_pose[0], so.thrust_pose[1])
+	var rsh := so.skel.find_bone("mixamorig_RightArm")
+	var rhb := so.skel.find_bone("mixamorig_RightHand")
+	for i in 300:
+		await get_tree().physics_frame
+		await so.skel.skeleton_updated
+		if not so.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
+			if s_seen.size() > 0:
+				break
+			continue
+		s_seen[so.state] = true
+		var o := so.spear.global_position
+		var ax := so.spear.global_basis.y.normalized()
+		for j in 2:
+			var fc := so.fist_center(["Right", "Left"][j])
+			var gp := fc.distance_to(o + ax * ax.dot(fc - o))
+			sw[j] = maxf(sw[j], gp)
+			if gp > 0.03:
+				s_over += 1
+		var gt := so.skel.global_transform
+		fold = minf(fold, (gt * so.skel.get_bone_global_pose(rsh).origin).distance_to(gt * so.skel.get_bone_global_pose(rhb).origin))
+		if so.state == HollowSoldier.STRIKE and so.t > HollowSoldier.STRIKE_T * 0.5:
+			line_off = maxf(line_off, rad_to_deg(so.spear.transform.basis.y.normalized().angle_to(td)))
+	so.process_mode = Node.PROCESS_MODE_DISABLED
+	print("   HollowSoldier thrust (states %s): fist-shaft R %.3f L %.3f m, %d hand-ticks > 3 cm | shaft at full stretch %.1f deg off the pose | rear arm shoulder-wrist min %.3f m" % [str(s_seen.keys()), sw[0], sw[1], s_over, line_off, fold])
+	if fail == "" and (not s_seen.has(HollowSoldier.STRIKE) or maxf(sw[0], sw[1]) > FOEREACH_FIST_MAX):
+		fail = "HollowSoldier thrust: a fist rides off the haft (R %.3f L %.3f m; strike seen %s)" % [sw[0], sw[1], s_seen.has(HollowSoldier.STRIKE)]
+	if fail == "" and line_off > FOEREACH_THRUST_LINE_MAX:
+		fail = "HollowSoldier thrust: the shaft at full stretch lies %.1f deg off the thrust's line" % line_off
+	if fail == "" and fold < FOEREACH_FOLD_MIN:
+		fail = "HollowSoldier thrust: the rear arm folds shut (shoulder to wrist %.3f m)" % fold
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "the gated foes' attack poses lie along their direction")

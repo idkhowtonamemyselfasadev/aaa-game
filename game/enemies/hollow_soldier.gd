@@ -64,20 +64,23 @@ const GUARD_OLD := [16.0, 4.0, Vector3(0.10, 1.12, 0.80), 6.0]
 const SWEEP_HOME := 16.0
 const SWEEP_FROM_BLEND := 2.0   # 1 / the share of the sweep wind-up spent turning out of the guard
 const DRAWN := [6.0, 9.0, Vector3(-0.05, 1.24, 0.30), -32.0]
-## (11-10 14:00) THRUST (still the live pose): the front (left) grip wants 0.98 m from its shoulder
+## (11-10 14:00) THRUST (the old pose; env THRUST_OLD=1): the front (left) grip wants 0.98 m from its shoulder
 ## (reach 0.45), the clamp pulls it 0.53 m in and the real shaft at full extension points up and
 ## across the chest, 102 deg off the line of the thrust (bot `foereach`). THRUST_SOLVED (python
 ## replica of `_place`): arms out to 0.58, rear fist at the right hip 0.3 m from its shoulder, the
 ## shaft angled 18 deg across a bladed chest so the blade drives in on the centre line, both grips
-## inside reach, axis 0 deg off. NOT LIVE YET: GripRoll's right wrist needs a ~166 deg roll on one
-## strike tick (the forearm comes round the other side of the shaft), caps at 0.6 and the fist
-## leaves the haft 0.115 m (bot `foegrip`). Env THRUST_NEW=1: the solved pose; THRUST_TRY=a,b,x,y,z,tw,sl,r.
+## inside reach, axis 0 deg off. LIVE since 18:00 11-10: its one-tick fist slip (the rear forearm
+## swinging round the far side of the shaft, a ~166 deg roll wanted) was the lunge's lean folding the
+## arm shut, now carried by `_lean_grips`. THRUST_TRY=a,b,x,y,z,tw,sl,r tries a pose.
 const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
 const THRUST_SOLVED := [18.0, 1.0, Vector3(0.02, 1.22, 0.82), -20.0, -0.1, 0.58]
 var thrust_pose: Array = _try_thrust()
+const WINDUP_LEAN := -0.13
+var THRUST_UNLEANED := OS.get_environment("THRUST_UNLEANED") == "1"
+var THRUST_LEAN_POP := OS.get_environment("THRUST_LEAN_POP") == "1"
 static func _try_thrust() -> Array:
 	if not OS.has_environment("THRUST_TRY"):
-		return THRUST_SOLVED if OS.has_environment("THRUST_NEW") else THRUST
+		return THRUST if OS.get_environment("THRUST_OLD") == "1" else THRUST_SOLVED
 	var v := OS.get_environment("THRUST_TRY").split_floats(",")
 	return [v[0], v[1], Vector3(v[2], v[3], v[4]), v[5], v[6], v[7]]
 
@@ -596,6 +599,12 @@ func _place(pose: Array) -> void:
 	var tw := deg_to_rad(pose[3])
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
+	if absf(_place_lean) > 0.0005:
+		var hip := Vector3(0, 0.95, 0)
+		var lb := Basis(Vector3.RIGHT, _place_lean)
+		c = hip + lb * (c - hip)
+		sl = hip + lb * (sl - hip)
+		sr = hip + lb * (sr - hip)
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
 	var reach: float = pose[5] if pose.size() > 5 else ARM_REACH
 	var hr := sr + (c + d * (HAND_R + slide) - sr).limit_length(reach)
@@ -611,6 +620,17 @@ func _place(pose: Array) -> void:
 	_grip_l.position = hl + fist_shift[1]
 	if _twist != null:
 		_twist.twist = tw
+
+## (18:00 11-10) the thrust's grips ride the body's lean. `_lean` tips the model from the hips but
+## the spear lives in the Wield's unleaned space: in the lunge (lean -0.13 -> +0.16) the shoulders
+## swung ~0.15 m forward over the rear fist, the right arm folded to 0.12 m shoulder-to-wrist, the
+## elbow flipped across the shaft and the fist left the haft (THRUST_SOLVED, bot `foegrip`). The
+## grip positions and the shoulders the reach is measured from are now turned about the hips with
+## the lean (`_place_lean`; the shaft's direction kept, so the blade still drives level).
+## Env THRUST_UNLEANED=1: the before.
+var _place_lean := 0.0
+func _thrust_leaned() -> bool:
+	return move_kind == THRUST_MOVE and state in [WINDUP, STRIKE, RECOVER] and not THRUST_UNLEANED
 
 static func _lerp_pose(a: Array, b: Array, f: float) -> Array:
 	f = f * f * (3.0 - 2.0 * f)
@@ -818,7 +838,7 @@ func _physics_process(delta: float) -> void:
 			var u := clampf(t / WINDUP_T, 0.0, 1.0)
 			_turn_to(to, delta, 3.0 * (1.0 - u))   # tracks early, commits late
 			_pose = _lerp_pose(guard_pose, DRAWN, minf(u * 1.6, 1.0))
-			lean = -0.13 * smoothstep(0.0, 0.6, u)
+			lean = WINDUP_LEAN * smoothstep(0.0, 0.6, u)
 			sink = 0.07 * smoothstep(0.0, 0.6, u)
 			ember = 1.0 + 3.2 * smoothstep(0.15, 0.85, u)
 			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
@@ -832,7 +852,9 @@ func _physics_process(delta: float) -> void:
 			var u := clampf(t / STRIKE_T, 0.0, 1.0)
 			_update_glint(0.0)
 			_pose = _lerp_pose(DRAWN, thrust_pose, minf(u * 2.2, 1.0))
-			lean = 0.16 * smoothstep(0.0, 0.4, u)
+			# (18:00 11-10) from the wind-up's lean back into the lunge (was 0 -> 0.16: the whole
+			# body popped 0.13 rad forward on the first strike tick)
+			lean = 0.16 * smoothstep(0.0, 0.4, u) if THRUST_LEAN_POP else lerpf(WINDUP_LEAN, 0.16, smoothstep(0.0, 0.4, u))
 			sink = 0.09
 			ember = 4.2 - 1.5 * u
 			# speed falls off linearly; integrates to LUNGE over the thrust
@@ -875,7 +897,9 @@ func _physics_process(delta: float) -> void:
 	_reel_layer()
 	if state == STAGGER and bot_move == Vector3.ZERO:
 		move = _reel_steer(move) if reel_pivot_on else move      # this tick's leg yaw: a tick late, the shove ran 15 deg off the stepping legs
+	_place_lean = lean - lean_kick if _thrust_leaned() else 0.0
 	_place(_pose)
+	_place_lean = 0.0
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
 	lean_kick = move_toward(lean_kick, 0.0, delta * 1.2)

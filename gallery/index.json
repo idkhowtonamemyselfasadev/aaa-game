@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261106-2120-surge-smoke-wisps.jpg",
-  "time": "2026-11-06T21:20:00Z",
-  "caption": "Growth surge 0.9 s after the burst: the smoke over the columns no longer balls into one blob, but now only a few thin wisps show against the sky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-2225-surge-front.jpg",
-  "time": "2026-11-06T22:25:10Z",
-  "caption": "The Ashen Knight's growth surge now seen from its front (cracked glowing helm, red tabard, the village behind) with the ring of fire round it; the nearest flame columns blur across the lens and the smoke plume is still thin.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-2300-surge-smoke.jpg",
   "time": "2026-11-06T23:00:00Z",
   "caption": "Ashen Knight growth surge 2 s after the ring of fire: the column smoke now drifts as translucent grey plumes instead of black blots; still a little flat and brownish, and the lighting is dim.",
@@ -897,6 +885,18 @@
   "file": "20261110-1500-soldier-sweep.jpg",
   "time": "2026-11-10T15:15:00Z",
   "caption": "The Hollow Soldier mid-sweep with its hands no longer flapping on the spear tick to tick (a frozen frame can't show the fix, the bot measures it); the hero's back hides the foe's hands and the grass reads oversaturated.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1800-soldier-thrust.jpg",
+  "time": "2026-11-10T18:30:00Z",
+  "caption": "The Hollow soldier's thrust at full stretch now drives the spear level along the blow's line into the hero; still wrong: the two bodies overlap from this side-on lens and the foe's hands are hidden.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1800-soldier-thrust-before.jpg",
+  "time": "2026-11-10T18:30:00Z",
+  "caption": "Before: the same thrust frame with the old pose, the front grip past its reach so the spear stood straight up, 102 deg off the line of the blow.",
   "verdict": "fail"
  }
 ]
