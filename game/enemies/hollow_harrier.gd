@@ -36,7 +36,12 @@ const HOP := 2.0                 # m the hop carries it
 
 # spear poses in body space: [yaw°, pitch°, centre, twist°, slide, reach]
 # carried low and short in the run, gripped near the middle like a reiver's lance
-const LOW_GUARD := [8.0, -6.0, Vector3(0.10, 1.02, 0.58), 4.0, 0.18, 0.5]
+## (11-10 13:00) re-solved offline (replica of `_place`): the old pose asked a grip past its reach, so
+## the clamp bent the shaft 19.8 deg off the pose's direction and every lerp into or out of the guard
+## bent through the clamp. New: the shaft on the line the old guard visibly held (<= 0.3 deg),
+## the fists moved 7-8 cm, both grips inside reach, axis 0 deg off the pose. VGUARD_OLD=1 env: before.
+const LOW_GUARD := [17.0, 12.0, Vector3(0.189, 1.247, 0.49), 4.0, 0.18, 0.5]
+const LOW_GUARD_OLD := [8.0, -6.0, Vector3(0.10, 1.02, 0.58), 4.0, 0.18, 0.5]
 # the crouch: point low and forward at the hero's middle, butt tucked back past the hip
 const CROUCHED := [2.0, 6.0, Vector3(-0.02, 1.08, 0.22), -26.0, 0.1, 0.5]
 const DARTED := [0.0, 2.0, Vector3(0.0, 1.14, 1.18), 18.0, 0.1, 0.6]
@@ -63,7 +68,7 @@ func _ready() -> void:
 	health_max = HARRIER_HP
 	health = HARRIER_HP
 	poise_max = HARRIER_POISE
-	guard_pose = LOW_GUARD
+	guard_pose = LOW_GUARD_OLD if OS.has_environment("VGUARD_OLD") else LOW_GUARD
 	engage_delay = 0.0
 	notice = 13.0
 	super._ready()

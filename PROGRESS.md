@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(13:00 11-10: EVERY HOLLOW VARIANT NOW HOLDS ITS GUARD WHERE IT IS DEFINED: the warden's ward, the hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its reach, so the clamp bent the real shaft 9.3 / 4.2 / 19.8 / 42.0 deg off the pose's direction and every lerp into or out of the guard bent through the clamp. Re-solved offline (python replica of `_place`, reproduces the engine to 0.1 deg): the shaft on the line each old guard visibly held (<= 0.3 deg), fists moved 3-8 cm, every grip inside reach, 0.0 deg off in-engine. New bot `foeguard`.)
 (12:00 11-10: THE HOLLOW SOLDIERS AND THE ASHEN KNIGHT NOW HOLD THEIR GUARD WHERE IT IS DEFINED: the shared GUARD pose asked the left grip for 0.69 m from its shoulder (reach 0.45), so the reach clamp pulled it in and the shaft really lay 34.8 deg off the pose's direction; every lerp into or out of the guard (sweep, thrust recovery, the knight's surge settle, crown rise, stomp recovery) bent through that clamp on the way. GUARD re-solved offline: the same right fist, the shaft where the old guard visibly held it (3 deg off), axis 0.0 deg off at every size. The soldier's sweep now turns out of the guard over half its wind-up (was a quarter), the knight's reveal keeps its tuned path and eases onto the new guard in the settle. New bot gate `foegrip` guard line.)
 (11:00 11-10: THE ASHEN KNIGHT'S GLAIVE NO LONGER STALLS AS IT COMES DOWN FROM THE REVEAL'S ROAR: the follow-through carried the hold point so far right that the left fist ran 0.07-0.15 m past its reach, so the two-hand axis drifted up to 19 deg off the pose and the shaft slowed for a tick (5.7 -> 3.5 -> 5.9 deg/tick). Now FOLLOW_RIGHT 0.32 -> 0.25 plus 0.10 reach: the glaive hangs at the top, then speeds up every tick into the downswing; fists 0.043 -> 0.020 m per size, haft 0.33 -> 0.36 m off the visor. New bot gate on the ramp.)
 (10:00 11-10: THE ASHEN KNIGHT'S GLAIVE NO LONGER JERKS AS ITS REVEAL ROAR ENDS: the heave's round-the-side terms (bulge/lift) faded back in as the glaive began to fall and were then cut at ROAR_END, a 9.9 deg one-tick jump of the shaft; they now fade out before the glaive starts down (HEAVE_FADE). Across the roar's end the shaft now turns at most 5.9 deg a tick, and the left fist closes back on the haft cleaner (0.056 -> 0.043 m per size). New bot gate on the turn.)
@@ -12,6 +13,9 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (13:00 11-10) Setup first try (import ~6 min, log stops at "importing"; .tools/status says SHOTS_OK when done), 4 bots
+  in parallel fine, GL shots ~10 min for a pair. Asset sites: polyhaven 200, ambientcg 200, freesound 403. `VGUARD_OLD=1`
+  = the variants' old guards (warden/hewer/harrier/archer); bot `foeguard` measures them.
 - (09:00 11-10) Setup first try (import ~10 min, silent), headless bots (3 in parallel) and GL shots (SHOT_GL=1, 3 at
   once ~4 min) work; Forward+ not tried; asset sites not rechecked. `FOLLOW_BACK=1` = the reveal's old drawn-back follow-through.
 - (03:00 11-10) Setup first try (import ~6 min), headless bots and GL shots (SHOT_GL=1, 4 at once ~12 min) work;
@@ -8286,6 +8290,30 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (13:00 11-10) **HOLLOW VARIANTS' GUARDS RE-SOLVED: SHAFT ON ITS POSE — FIXED (game change + new bot `foeguard`).**
+   NEXT (2) of 12:00. FOUND (scratch python replica of HollowSoldier._place, the same maths; it reproduces GUARD_OLD's
+   34.8 deg and, in-engine, every variant's number exactly): WARD (warden) left grip wanted 0.52 m (reach 0.45) -> 9.3 deg
+   off; HEW_GUARD (hewer) 0.51 vs 0.48 -> 4.2; LOW_GUARD (harrier) 0.66 vs 0.50 -> 19.8; CARRY (archer) RIGHT grip 0.84 vs
+   0.50 -> 42.0. FIX: a grid search per pose (direction within 15 deg of the old VISIBLE shaft, the anchor fist free to
+   move <= 8 cm, both grips >= 1 cm inside reach, cost = angle + 40 deg/m of fist move; anchor = right fist, the archer's
+   = the left bow hand): WARD [26.5, 15, (0.212, 1.333, 0.548), 10] (vis 0.2 deg, fists 3 cm); HEW_GUARD [12.5, 25.5,
+   (0.087, 1.384, 0.575), 4, 0, 0.48] (0.1, 3 cm); LOW_GUARD [17, 12, (0.189, 1.247, 0.49), 4, 0.18, 0.5] (0.3, 7-8 cm);
+   CARRY [44, 22.5, (0.303, 1.3, 0.458), 6, 0, 0.5] (0.2, bow hand 6 cm). The old poses kept as *_OLD (env VGUARD_OLD=1).
+   The visible guard barely changes (same shaft line); what changes is that every lerp out of / into the guard (attacks,
+   recoveries, staggers) now starts from where the shaft really is instead of bending through the reach clamp.
+   New bot `foeguard` (in tools/bots.sh): each foe alone, IDLE, 20 ticks at rest, shaft vs dir_of(guard_pose), gate
+   VGUARD_AXIS_MAX 3: new 0.0 all five; VGUARD_OLD=1 0.0 / 9.3 / 4.2 / 19.8 / 42.0 FAIL.
+   Bots PASS: foeguard warden hewer harrier archer foehands kindler keepgap foeflinch foeturn.
+   Shots (GL; Vulkan fails under lavapipe as before): `soldier hg_{new,old} 20 10.0 guard harrier` (VGUARD_OLD=1 for old):
+   the harrier at rest, same visible line, a touch steeper, both fists on the haft. The archer pair was cut for time.
+   Gallery 20261110-1300-harrier-guard / -before (fail: foe far and dark, hands unreadable at that distance).
+   Environment: cloud-setup ~6 min (import), bots ~3-4 min (4 in parallel fine). Asset sites: polyhaven 200,
+   ambientcg 200, freesound 403. No new third-party files.
+   NEXT: (1) GripRoll's roll cap flip (12:00 NEXT (1)): the left wrist's roll should pick the near branch instead of
+   capping, then SWEEP_FROM_BLEND back to taste; (2) the variants' attack poses (BASH_DRIVE, the hewer's chop/raise, the
+   harrier's dart, the archer's stave swing) through the same replica: any grip past reach mid-attack; (3) 11:00's
+   (1)/(2): the left regrip's finger shape in a lit close-up; a fire-free front-lit lens on the surge roar.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (12:00 11-10) **FOE GUARD RE-SOLVED: SHAFT ON ITS POSE, NOT 35 DEG OFF — FIXED (game change + new bot gate).**
    NEXT (3) of 11:00. FOUND (scratch python replica of HollowSoldier._place): GUARD [16, 4, (0.10, 1.12, 0.80), 6] put the
    left grip 0.69 m from its shoulder (ARM_REACH 0.45): clamped 0.24 m in, the real shaft (hl-hr) lay at yaw 40.7 /

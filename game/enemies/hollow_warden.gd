@@ -43,7 +43,12 @@ const BASH_DAMAGE := 8.0
 const BASH_COIL := [55.0, 14.0, Vector3(-0.12, 1.30, 0.22), -38.0]
 const BASH_DRIVE := [8.0, 4.0, Vector3(0.24, 1.26, 0.78), 34.0]
 # the warden's guard: spear drawn in and up, the left forearm (and the targe) across the chest
-const WARD := [20.0, 8.0, Vector3(0.14, 1.22, 0.62), 10.0]
+## (11-10 13:00) re-solved offline (replica of `_place`): the old pose asked a grip past its reach, so
+## the clamp bent the shaft 9.3 deg off the pose's direction and every lerp into or out of the guard
+## bent through the clamp. New: the shaft on the line the old guard visibly held (<= 0.3 deg),
+## the fists moved 3 cm, both grips inside reach, axis 0 deg off the pose. VGUARD_OLD=1 env: before.
+const WARD := [26.5, 15.0, Vector3(0.212, 1.333, 0.548), 10.0]
+const WARD_OLD := [20.0, 8.0, Vector3(0.14, 1.22, 0.62), 10.0]
 
 ## a blow turned on the targe (foley: a wooden thunk with iron in it)
 signal shield_blocked(point: Vector3)
@@ -70,7 +75,7 @@ func _ready() -> void:
 	health_max = WARDEN_HP
 	health = WARDEN_HP
 	poise_max = WARDEN_POISE
-	guard_pose = WARD
+	guard_pose = WARD_OLD if OS.has_environment("VGUARD_OLD") else WARD
 	engage_delay = WARD_HOLD
 	super._ready()
 	name = "HollowWarden"

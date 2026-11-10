@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -226,6 +226,9 @@ func _ready() -> void:
 		return
 	if name == "surgegrip":
 		_surge_grip_test()
+		return
+	if name == "foeguard":
+		_foe_guard_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -1326,6 +1329,40 @@ func _foe_grip_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "foes' fists stay on the haft through the thrust and the sweep at every size")
+
+## (11-10 13:00) Every variant's rest guard lies where its pose says: the warden's ward, the
+## hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its
+## reach (the clamp bent the shaft 9 / 4 / 20 / 42 deg off the pose's direction, offline replica),
+## so every lerp into or out of the guard bent through the clamp. At rest, IDLE, hero far off.
+const VGUARD_AXIS_MAX := 3.0   # deg (VGUARD_OLD=1: 9.3 / 4.2 / 19.8 / 42.0)
+func _foe_guard_test() -> void:
+	Engine.time_scale = 1.0
+	var foes := [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer]
+	var fail := ""
+	for e in foes:
+		if e == null:
+			fail = "a variant is missing from the world"
+			continue
+		for o in foes:
+			if o != null:
+				o.process_mode = Node.PROCESS_MODE_INHERIT if o == e else Node.PROCESS_MODE_DISABLED
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e._pose = e.guard_pose
+		e._from = e.guard_pose
+		await _ticks(30)
+		var gd := StaffCombat.dir_of(e.guard_pose[0], e.guard_pose[1])
+		var off := 0.0
+		for i in 20:
+			await get_tree().physics_frame
+			off = maxf(off, rad_to_deg(e.spear.transform.basis.y.normalized().angle_to(gd)))
+		print("   %s guard: shaft %.1f deg off the guard pose's direction" % [e.name, off])
+		if fail == "" and off > VGUARD_AXIS_MAX:
+			fail = "%s guard: the shaft lies %.1f deg off its pose (a grip past its reach)" % [e.name, off]
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "every foe's guard lies along its pose")
 
 ## (11-10 07:00) The knight's fists stay on the glaive through each surge (phase change): the
 ## knight leans from the hips (kneel 0.36 forward, roar 0.24 back) while the glaive is posed in the

@@ -35,7 +35,12 @@ const HEW_SWEEP_REACH := 1.9   # the axe's flat cut reaches ~0.7 m less than the
 const AXE_GRIP := HAND_R - 0.08  # the knob 8 cm below the rear hand, on the spear's axis
 
 # axe poses in body space: [yaw°, pitch°, haft centre, twist°, slide, reach]
-const HEW_GUARD := [10.0, 22.0, Vector3(0.06, 1.32, 0.62), 4.0, 0.0, 0.48]
+## (11-10 13:00) re-solved offline (replica of `_place`): the old pose asked a grip past its reach, so
+## the clamp bent the shaft 4.2 deg off the pose's direction and every lerp into or out of the guard
+## bent through the clamp. New: the shaft on the line the old guard visibly held (<= 0.3 deg),
+## the fists moved 3 cm, both grips inside reach, axis 0 deg off the pose. VGUARD_OLD=1 env: before.
+const HEW_GUARD := [12.5, 25.5, Vector3(0.087, 1.384, 0.575), 4.0, 0.0, 0.48]
+const HEW_GUARD_OLD := [10.0, 22.0, Vector3(0.06, 1.32, 0.62), 4.0, 0.0, 0.48]
 const RAISED := [-4.0, 104.0, Vector3(-0.02, 2.24, -0.12), -12.0, 0.0, 0.52]
 # CHOPPED and BITE are authored in the LEANED frame (the hewer's wield leans with its body,
 # see _lean): solved offline so both hands stay inside arm reach and the bit edge lands on the
@@ -73,7 +78,7 @@ func _ready() -> void:
 	health_max = HEWER_HP
 	health = HEWER_HP
 	poise_max = HEWER_POISE
-	guard_pose = HEW_GUARD
+	guard_pose = HEW_GUARD_OLD if OS.has_environment("VGUARD_OLD") else HEW_GUARD
 	engage_delay = 0.35
 	sweep_reach = HEW_SWEEP_REACH
 	super._ready()

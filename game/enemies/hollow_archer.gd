@@ -71,7 +71,12 @@ const COVER_GO_T := 3.5           # s it may take to reach cover before it gives
 const ANCHOR := Vector3(0.05, 1.58, 0.06)  # the drawing hand's anchor under the jaw (body space)
 
 # shaft-rig poses for the carry (bow held across the body, upper limb up and forward)
-const CARRY := [24.0, 62.0, Vector3(0.12, 1.36, 0.42), 6.0, 0.0, 0.5]
+## (11-10 13:00) re-solved offline (replica of `_place`): the old pose asked a grip past its reach, so
+## the clamp bent the shaft 42 deg off the pose's direction and every lerp into or out of the guard
+## bent through the clamp. New: the shaft on the line the old guard visibly held (<= 0.3 deg),
+## the bow hand moved 6 cm, both grips inside reach, axis 0 deg off the pose. VGUARD_OLD=1 env: before.
+const CARRY := [44.0, 22.5, Vector3(0.303, 1.3, 0.458), 6.0, 0.0, 0.5]
+const CARRY_OLD := [24.0, 62.0, Vector3(0.12, 1.36, 0.42), 6.0, 0.0, 0.5]
 
 ## the bow comes up and the arrow is nocked (foley: a creak of the stave, a rustle)
 signal drew(point: Vector3)
@@ -309,7 +314,7 @@ func _ready() -> void:
 	health_max = ARCHER_HP
 	health = ARCHER_HP
 	poise_max = ARCHER_POISE
-	guard_pose = CARRY
+	guard_pose = CARRY_OLD if OS.has_environment("VGUARD_OLD") else CARRY
 	fist_fit_on = false     # the bow hand holds the bow's grip, not the shaft rig's axis
 	engage_delay = 0.6
 	sweep_reach = STAVE_REACH

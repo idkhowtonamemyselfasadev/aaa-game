@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261106-1833-surgekneel.jpg",
-  "time": "2026-11-06T18:33:13Z",
-  "caption": "The knight down on its right knee in the growth surge, left boot now held where it stood (bot-proven); backlit silhouette, and the falling grit draws as big black lens blobs (GL frame).",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-1942-surge-ringfire.jpg",
-  "time": "2026-11-06T19:42:07Z",
-  "caption": "The Ashen Knight's growth surge with its ring of fire: the soot off the flame columns is now lit grey smoke, no longer big black blots across the sky (GL frame); still wrong: the columns read as thin pale orange streaks with no hot core, and the shot is backlit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-2040-surge-firejets.jpg",
-  "time": "2026-11-06T20:40:11Z",
-  "caption": "The knight's growth-surge ring of fire 0.25 s after the burst: each column now has a white-hot core with orange licks instead of pale streaks (GL frame; Forward+ ran out of memory this session).",
-  "verdict": "pass"
- },
- {
-  "file": "20261106-2040-surge-smoke.jpg",
-  "time": "2026-11-06T20:40:11Z",
-  "caption": "0.6 s after the burst the columns lick down and charcoal smoke finally shows above them; one centre puff is still a round soft blob.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-2120-surge-size3-lens.jpg",
   "time": "2026-11-06T21:20:00Z",
   "caption": "The knight at size 3 in its second growth surge, seen from a lens now kept on the ring's open floor; the ring of fire reads well, but the smoke plume is too faint and the lens shows its back.",
@@ -897,6 +873,18 @@
   "file": "20261110-1236-soldier-guard.jpg",
   "time": "2026-11-10T12:36:57Z",
   "caption": "The Hollow Soldier at rest in its re-solved guard (left; GL renderer): the spear now lies where its pose says, the frame matches the old look; still flat GL light, a small, backlit figure, not a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1300-harrier-guard.jpg",
+  "time": "2026-11-10T13:09:29Z",
+  "caption": "The Harrier (right) at rest in its re-solved low guard: the spear on the line it visibly held, both fists inside reach so every move out of the guard starts clean; still too far and dark to read the hands, grass flat-lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1300-harrier-guard-before.jpg",
+  "time": "2026-11-10T13:09:29Z",
+  "caption": "Before: the same frame with the old low guard (the pose asked a grip past its reach, the real shaft 20 deg off its pose); near-identical at rest, the difference shows in the moves out of it.",
   "verdict": "fail"
  }
 ]
