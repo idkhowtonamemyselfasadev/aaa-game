@@ -128,6 +128,8 @@ const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
 ## speeds up every tick from the top of the roar into the swing. Env FOLLOW_WIDE: the before.
 const FOLLOW_RIGHT := 0.25
 const FOLLOW_REACH := 0.10
+## (11-10 12:00) from this intro time the reveal eases off the old guard onto the re-solved one
+const REVEAL_GUARD_FROM := 4.35
 ## (09:00 11-10) the follow-through carries the hold point forward (was 0.08 back): drawn back, the
 ## right fist came down ~0.2 m from its shoulder (the arm folded shut), the IK flipped the hand as the
 ## glaive swept past and the fist popped 0.24 m per size off the haft for a tick (bot knight:
@@ -1036,7 +1038,14 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	intro_heave = maxf(intro_heave, up)
 	# the glaive: planted point-down and leaned on (the surge's lean) while dormant, drawn low
 	# and back in the gather, heaved to the sky, then down past the guard and back up into it
-	var base := _lerp_pose(_from, guard_pose, smoothstep(0.0, 0.4, it))
+	# (11-10 12:00) the reveal's beats were tuned against the old guard pose (the left grip past its
+	# reach, see HollowSoldier.GUARD): it keeps that one as its rest until the downswing is past and
+	# eases onto the re-solved guard in the settle (offline: the shaft moves <= 3 deg, the left fist
+	# slides 0.09 m up the haft). REVEAL_NEWGUARD=1 env: the new guard throughout (fails the coil gate).
+	var rg: Array = guard_pose
+	if guard_pose == HollowSoldier.GUARD and not OS.has_environment("REVEAL_NEWGUARD"):
+		rg = _lerp_pose(HollowSoldier.GUARD_OLD, guard_pose, smoothstep(REVEAL_GUARD_FROM, BossIntro.T, it))
+	var base := _lerp_pose(_from, rg, smoothstep(0.0, 0.4, it))
 	# the glaive holds the coil until the heave owns it (02:45 11-07: on `gather` it let go of the
 	# coil before `up` took over, so the rest pose sprang back to the guard mid-heave and the
 	# blade swung up through the front of the body instead of out and up round the right side)

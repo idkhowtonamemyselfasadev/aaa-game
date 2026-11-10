@@ -1051,6 +1051,9 @@ func _ready() -> void:
 			foe_state = HollowSoldier.DEAD
 		elif "recover" in args:
 			foe_state = HollowSoldier.RECOVER
+		elif "guard" in args:
+			# guard: at rest in its guard pose (asleep: it never wakes), 40 ticks in
+			foe_state = HollowSoldier.IDLE
 		if "snapped" in args and not "lodged" in args:
 			args.append("lodged")
 		if "flinch" in args or "fallen" in args or "knocked" in args or "lodged" in args:
@@ -3000,6 +3003,10 @@ func _ready() -> void:
 			foe.take_hit(foe.global_position + Vector3.UP, bd, 1.0, 0.0)
 		elif foe_state == HollowSoldier.DEAD:
 			foe.take_hit(foe.global_position + Vector3.UP, Vector3(1, 0, 0), 20.0, 0.0)
+		elif foe_state == HollowSoldier.IDLE:
+			foe.notice = -1.0
+			foe._enter(HollowSoldier.IDLE)
+			dur[HollowSoldier.IDLE] = 40.0 * dt / maxf(foe_u, 0.01)
 		else:
 			foe.windups += 1
 			foe._enter(HollowSoldier.WINDUP)

@@ -1246,6 +1246,7 @@ func _foe_hands_test() -> void:
 const GRIP_ATK_GAP_MAX := 0.02     # m per size, worst tick of an attack state (old fit: 0.089-0.095 on the thrust; 00:00 11-10 <= 0.032; 02:00 foe bend 80: <= 0.006)
 const GRIP_ATK_MEAN_MAX := 0.004   # (old fit: 0.011-0.020 on the strikes; now <= 0.001)
 const GRIP_ATK_OFF_TICKS := 0      # hand-ticks > 3 cm off per state (02:00 11-10: none since the foes' 80 deg wrist bend; was 1 at 75)
+const GUARD_AXIS_MAX := 3.0   # deg (11-10 12:00: old GUARD 34.8)
 func _foe_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
@@ -1269,7 +1270,18 @@ func _foe_grip_test() -> void:
 		_player.global_position = e.global_position + e.body.global_basis.z * 6.0 * sc
 		for mk in [HollowSoldier.THRUST_MOVE, HollowSoldier.SWEEP_MOVE]:
 			e.state = HollowSoldier.IDLE
-			await _ticks(40)
+			await _ticks(30)
+			# (11-10 12:00) at rest in guard the shaft lies along the guard pose's own direction (the
+			# old GUARD had the left grip 0.24 m past its reach: 35 deg off)
+			var gd := StaffCombat.dir_of(e.guard_pose[0], e.guard_pose[1])
+			var g_off := 0.0
+			for gi in 10:
+				await get_tree().physics_frame
+				g_off = maxf(g_off, rad_to_deg(e.spear.transform.basis.y.normalized().angle_to(gd)))
+			if mk == HollowSoldier.THRUST_MOVE:
+				print("   %s x%.1f guard: shaft %.1f deg off the guard pose's direction" % [e.name, sc, g_off])
+				if fail == "" and g_off > GUARD_AXIS_MAX:
+					fail = "%s x%.1f guard: the shaft lies %.1f deg off its pose (a grip past its reach)" % [e.name, sc, g_off]
 			e._from = e._pose
 			e.move_kind = mk
 			e._enter(HollowSoldier.WINDUP)

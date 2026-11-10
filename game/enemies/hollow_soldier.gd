@@ -52,7 +52,17 @@ const SHOULDER := Vector3(0.21, 1.48, -0.06)
 const ARM_REACH := 0.45
 
 # spear poses in body space (+Z forward, +X the soldier's left): [yaw°, pitch°, centre, twist°]
-const GUARD := [16.0, 4.0, Vector3(0.10, 1.12, 0.80), 6.0]
+## (11-10 12:00) was [16, 4, (0.10, 1.12, 0.80), 6]: the left grip wanted 0.69 m from its shoulder
+## (reach 0.45), so the reach clamp pulled it 0.24 m in and the shaft really lay 35 deg off the
+## pose's direction (yaw 41, pitch 30 from the right fist) and every lerp into the guard bent
+## through the clamp on its way. Re-solved offline (scratch python replica of `_place`): the same
+## right fist, the shaft where the old guard visibly held it (3 deg off), both grips inside their
+## reach, axis 0 deg off the pose. GUARD_OLD=1 env: the before.
+const GUARD := [43.2, 32.8, Vector3(0.334, 1.488, 0.53), 6.0]
+const GUARD_OLD := [16.0, 4.0, Vector3(0.10, 1.12, 0.80), 6.0]
+## the sweep's blade bearing at the guard (the old guard's yaw: the cut's arc and timing unchanged)
+const SWEEP_HOME := 16.0
+const SWEEP_FROM_BLEND := 2.0   # 1 / the share of the sweep wind-up spent turning out of the guard
 const DRAWN := [6.0, 9.0, Vector3(-0.05, 1.24, 0.30), -32.0]
 const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
 
@@ -196,6 +206,8 @@ var _col: CollisionShape3D
 var _ember_range := 2.6
 
 func _ready() -> void:
+	if OS.has_environment("GUARD_OLD") and guard_pose == GUARD:
+		guard_pose = GUARD_OLD
 	add_to_group("hittable")
 	add_to_group("enemy")
 	collision_layer = 4
@@ -273,7 +285,7 @@ func return_to_post() -> void:
 	velocity = Vector3.ZERO
 	health = health_max
 	poise = 0.0
-	_pose = GUARD
+	_pose = guard_pose
 	_update_glint(0.0)
 	_enter(IDLE)
 
@@ -442,7 +454,7 @@ func _setup_spear() -> void:
 			skel.skeleton_updated.connect(_fit_fists)
 			if fist_fit_on and not OS.has_environment("FOE_NOAIM"):
 				_setup_fist_aim(pole_r, pole_l)
-	_place(GUARD)
+	_place(guard_pose)
 
 ## (11-10 01:00) the second arm pass for when GripRoll is NOT holding (the knight's reveal and
 ## roar): FistAim (after HandRest) sets the targets, one TwoBoneIK3D per side so each can fade on
@@ -735,8 +747,12 @@ func _physics_process(delta: float) -> void:
 			# the coiled sweep keeps tracking almost to the release: it is built to catch a strafe
 			_turn_to(to, delta, 6.0 * (1.0 - u * u * u))
 			# swing round low to the right, chest turned away, then a held, trembling coil
-			var a := lerpf(GUARD[0], SWEEP_FROM, smoothstep(0.0, 0.62, u)) + sin(t * 47.0) * 1.5 * smoothstep(0.6, 0.9, u)
-			_pose = _lerp_pose(_from, sweep_pose(a), minf(u * 4.0, 1.0))
+			var a := lerpf(SWEEP_HOME, SWEEP_FROM, smoothstep(0.0, 0.62, u)) + sin(t * 47.0) * 1.5 * smoothstep(0.6, 0.9, u)
+			# (11-10 12:00) the turn out of the (re-solved, high) guard into the low coil takes half the
+			# wind-up (was a quarter: from the real guard the left wrist's GripRoll roll hit its cap for
+			# a tick, fist 0.06 m off; 2.5-3.0 do too, see PROGRESS.md). Env SWEEP_FROMK: tuning.
+			var fk := float(OS.get_environment("SWEEP_FROMK")) if OS.has_environment("SWEEP_FROMK") else SWEEP_FROM_BLEND
+			_pose = _lerp_pose(_from, sweep_pose(a), minf(u * fk, 1.0))
 			lean = -0.06 * smoothstep(0.0, 0.6, u)
 			sink = 0.14 * smoothstep(0.0, 0.6, u)
 			ember = 1.0 + 3.2 * smoothstep(0.15, 0.85, u)
@@ -768,7 +784,7 @@ func _physics_process(delta: float) -> void:
 		RECOVER when move_kind == SWEEP_MOVE:
 			var u := clampf(t / SWEEP_RECOVER_T, 0.0, 1.0)
 			var f := smoothstep(0.35, 1.0, u)
-			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, GUARD[0], f)), guard_pose, f)
+			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, SWEEP_HOME, f)), guard_pose, f)
 			lean = 0.1 * (1.0 - smoothstep(0.2, 0.9, u))
 			sink = 0.14 * (1.0 - u)
 			ember = 1.4 - 0.4 * u

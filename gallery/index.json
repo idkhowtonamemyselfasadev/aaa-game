@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261106-1727-reelup.jpg",
-  "time": "2026-11-06T17:27:03Z",
-  "caption": "The knight shaking off the crown reel and standing straight again after its settle steps; backlit silhouette, the ground under it is flat dark dirt (GL frame).",
-  "verdict": "fail"
- },
- {
   "file": "20261106-1833-surgekneel.jpg",
   "time": "2026-11-06T18:33:13Z",
   "caption": "The knight down on its right knee in the growth surge, left boot now held where it stood (bot-proven); backlit silhouette, and the falling grit draws as big black lens blobs (GL frame).",
@@ -897,6 +891,12 @@
   "file": "20261110-1100-reveal-glaive-hang-before.jpg",
   "time": "2026-11-10T11:15:00Z",
   "caption": "Before: the same tick with the old follow-through, the left grip past its reach so the haft slants across the body and the swing stalls for a tick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1236-soldier-guard.jpg",
+  "time": "2026-11-10T12:36:57Z",
+  "caption": "The Hollow Soldier at rest in its re-solved guard (left; GL renderer): the spear now lies where its pose says, the frame matches the old look; still flat GL light, a small, backlit figure, not a Wukong frame.",
   "verdict": "fail"
  }
 ]
