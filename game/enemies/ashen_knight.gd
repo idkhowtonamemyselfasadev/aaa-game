@@ -1006,6 +1006,10 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		_wield.position.y = -sink
 	return [Vector3.ZERO, lean, sink, ember]
 
+## (11-10 01:00) the freed left hand is nowhere near the haft: the same-tick fist pass lets it go.
+func _fist_aim_weight(side: int) -> float:
+	return 1.0 - smoothstep(0.0, 0.15, free_l) if side == 1 else 1.0
+
 ## The glaive placed from its pose; with `free_l` the left hand lets go and is flung up and out
 ## to the left (the glaive then rides the right hand alone, the shaft along the pose's direction)
 func _place(pose: Array) -> void:

@@ -167,6 +167,14 @@ var fist_shift: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # (11-10) the wr
 var _roll_frame := false          # (11-10) _fist_off is in the spear's frame (GripRoll holding)
 var grip_roll: GripRoll           # (11-10) null with FOE_GRIPLAG or on the archer   # (bots) right, left: fist centre to the shaft axis, m per size, last fit
 const FIST_GAIN := 0.6           # of the measured gap taken out each tick
+var _aim: FistAim
+var _aim_tgt := [null, null]
+var _aim_ik := [null, null]
+var _aim_bone := [-1, -1]
+var _aim_gap: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]   # world: the fist's gap off the axis before the second pass
+var _aim_gap_ok := [false, false]
+const FIST_AIM_K := 0.6          # of the gap the second pass moves the wrist (the IK turns the hand as the wrist moves: the fist moves ~1.4x; 1.0 rings)
+const FIST_AIM_FIT_GAIN := 0.45
 const FIST_MAX := 0.22           # m (Wield space) the wrist may move off its grip point (the knight's needs ~0.16)
 var reel_on := true              # (bots) off: the old rigid lean of the whole model about the hips
 var _reel_dir := Vector3.ZERO    # world: the way the blow drove the body (flat, unit)
@@ -427,7 +435,69 @@ func _setup_spear() -> void:
 			skel.move_child(grip_roll, _ik.get_index() + 1)
 		if OS.get_environment("FOE_WRISTGRIP") == "":
 			skel.skeleton_updated.connect(_fit_fists)
+			if fist_fit_on and not OS.has_environment("FOE_NOAIM"):
+				_setup_fist_aim(pole_r, pole_l)
 	_place(GUARD)
+
+## (11-10 01:00) the second arm pass for when GripRoll is NOT holding (the knight's reveal and
+## roar): FistAim (after HandRest) sets the targets, one TwoBoneIK3D per side so each can fade on
+## its own (the knight's freed left hand). With GripRoll on it stands aside (weight 0).
+func _setup_fist_aim(pole_r: Node3D, pole_l: Node3D) -> void:
+	_aim = FistAim.new()
+	_aim.name = "FistAim"
+	_aim.foe = self
+	skel.add_child(_aim)
+	var poles := [pole_r, pole_l]
+	var sides := ["Right", "Left"]
+	for i in 2:
+		var tgt := Node3D.new()
+		tgt.name = "FistAimTarget%s" % sides[i]
+		tgt.top_level = true
+		_wield.add_child(tgt)
+		_aim_tgt[i] = tgt
+		var ik := TwoBoneIK3D.new()
+		ik.name = "FistAimIK%s" % sides[i]
+		skel.add_child(ik)
+		ik.setting_count = 1
+		ik.set_root_bone_name(0, "mixamorig_%sArm" % sides[i])
+		ik.set_middle_bone_name(0, "mixamorig_%sForeArm" % sides[i])
+		ik.set_end_bone_name(0, "mixamorig_%sHand" % sides[i])
+		ik.set_target_node(0, ik.get_path_to(tgt))
+		ik.set_pole_node(0, ik.get_path_to(poles[i]))
+		ik.influence = 0.0
+		ik.active = false
+		_aim_ik[i] = ik
+		_aim_bone[i] = skel.find_bone("mixamorig_%sHand" % sides[i])
+
+## Variants: 0..1 how much the same-tick fit may pull this side's fist onto the haft (0 while
+## the hand is off it).
+func _fist_aim_weight(_side: int) -> float:
+	return 1.0
+
+## FistAim's step, mid-update: the posed fist's gap across the haft's axis (world), handed to
+## the cross-tick fit, and the second-pass wrist target moved by minus that gap.
+func _aim_fists() -> void:
+	if spear == null or _aim_ik[0] == null:
+		return
+	var on := fist_fit_on and state != DEAD and _ik != null and _ik.influence > 0.5
+	var o := spear.global_position
+	var ax := spear.global_basis.y.normalized()
+	var s := maxf(size_scale, 0.01)
+	var sides := ["Right", "Left"]
+	for i in 2:
+		var ik: TwoBoneIK3D = _aim_ik[i]
+		var f := fist_center(sides[i])
+		var gap := f - (o + ax * ax.dot(f - o))
+		_aim_gap[i] = gap
+		# only where GripRoll is not wanted (it holds the hands in every attack; the knight opts out
+		# through its reveal and roar): the two fighting over a wrist broke foegrip and the stomp
+		var gr_off := grip_roll == null or not _grip_roll_wanted()
+		var w := (_fist_aim_weight(i) * (1.0 - smoothstep(0.12, 0.25, gap.length() / s))) if (on and gr_off) else 0.0
+		var wr := skel.global_transform * skel.get_bone_global_pose(_aim_bone[i]).origin
+		(_aim_tgt[i] as Node3D).global_position = wr - gap * FIST_AIM_K
+		ik.influence = w * _ik.influence
+		ik.active = ik.influence > 0.001   # an idle pass off entirely (at influence 0 it still re-solved the arm)
+		_aim_gap_ok[i] = ik.influence > 0.01
 
 ## The closed fist's centre (world): the mean of the index, middle and ring joints and tips, the
 ## hollow the haft runs through when the fingers wrap it.
@@ -458,11 +528,23 @@ func _fit_fists() -> void:
 		var f := fist_center(sides[i])
 		var p := o + ax * ax.dot(f - o)
 		fist_gap[i] = f.distance_to(p) / s
-		if on and feed:
+		var aim_ok: bool = _aim_gap_ok[i]
+		_aim_gap_ok[i] = false
+		if on and not feed and _aim_ik[0] != null and (grip_roll == null or not _grip_roll_wanted()) and _fist_aim_weight(i) < 0.99:
+			# (11-10 01:00) a hand the variant has let go of (the knight's roar fling): no fit
+			# chasing a haft it is nowhere near (it pinned the wrist ~0.2 m off its fling target)
+			_fist_off[i] = Vector3.ZERO
+		elif on and feed:
 			var gap: Vector3 = grip_roll.last_err[i]
 			_fist_off[i] = (_fist_off[i] - spear.global_basis.inverse() * gap * _feed_gain).limit_length(FIST_MAX)
 		elif on:
-			var off: Vector3 = _fist_off[i] - inv * (f - p) * FIST_GAIN
+			var g := FIST_GAIN
+			if aim_ok:
+				# the second pass already put the fist on the axis: learn from the gap it saw,
+				# at a lower gain (0.6 on top of the pass rang at the knight x4.6 sweep end)
+				p = f - _aim_gap[i]
+				g = FIST_AIM_FIT_GAIN
+			var off: Vector3 = _fist_off[i] - inv * (f - p) * g
 			_fist_off[i] = off.limit_length(FIST_MAX)
 		else:
 			_fist_off[i] = _fist_off[i].lerp(Vector3.ZERO, 0.1)

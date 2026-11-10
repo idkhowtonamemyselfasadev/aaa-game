@@ -1121,6 +1121,15 @@ func _thumb_read(skel: Skeleton3D, side: String, o: Vector3, ax: Vector3) -> Arr
 	var d_axis := tw.distance_to(o + ax * ax.dot(tw - o))
 	return [d_axis, tip.distance_to(i2) / maxf(i1.distance_to(i2), 1e-4)]
 
+const REVEAL_FIST_MAX := 0.05   # m per size: the knight's fists off the glaive's axis through the reveal (11-10)
+
+## (11-10 01:00) the knight's hands read as fists (centre on the haft) rather than wrists: GripRoll
+## holds them, or the same-tick FistAim pass is pulling them onto the haft
+func _knight_fist_mode(k: HollowSoldier) -> bool:
+	if k._roll_frame:
+		return true
+	return k._aim_ik[0] != null and (k._aim_ik[0] as TwoBoneIK3D).influence > 0.5
+
 func _foe_hands_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
@@ -3971,14 +3980,14 @@ func _knight_test() -> void:
 				# (11-10) the closed fist's centre, not the wrist bone: with GripRoll the wrist sits
 				# ~15 cm off the haft so the fist is ON it (wrists: old 0.96 / -0.11, now 1.02 / 0.00)
 				var hw: Vector3 = k.fist_center("Right" if hbi == rhb else "Left")
-				if OS.has_environment("COIL_WRIST") or not k._roll_frame:
+				if OS.has_environment("COIL_WRIST") or not _knight_fist_mode(k):
 					hw = k.skel.global_transform * k.skel.get_bone_global_pose(hbi).origin
 				var hp: Vector3 = inv * hw
 				hp.y = (hw.y - k.global_position.y) / k.size_scale
 				coil_hy[0] = maxf(coil_hy[0], hp.y)
 				coil_hx[0] = maxf(coil_hx[0], hp.x)
 				coil_gap[0] = maxf(coil_gap[0], k.fist_gap[0 if hbi == rhb else 1])
-				coil_fist[0] = k._roll_frame
+				coil_fist[0] = _knight_fist_mode(k)
 			var bw: Vector3 = k.spear.to_global(-k.spear.tip_local())
 			coil_butt[0] = maxf(coil_butt[0], (bw.y - k.global_position.y) / k.size_scale)
 			# the helm on the hero while the chest twists away (04:00 11-07: it looked off to its right)
@@ -4050,11 +4059,18 @@ func _knight_test() -> void:
 		var lw := k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin
 		# the left hand lets go in the roar (09:00 11-07): only a hand meant to be on counts
 		var g := maxf(rw.distance_to(k._grip_r.global_position), lw.distance_to(k._grip_l.global_position) * (1.0 - k.free_l)) / k.size_scale
-		if k._roll_frame and not OS.has_environment("COIL_WRIST"):
+		if _knight_fist_mode(k) and not OS.has_environment("COIL_WRIST"):
 			# (11-10) with GripRoll the wrist leaves its grip point so the FIST sits on the haft:
 			# read the fist's centre to the shaft axis (per size) instead
 			g = maxf(k.fist_gap[0], k.fist_gap[1] * (1.0 - k.free_l))
-			grip_fist[0] = maxf(grip_fist[0], g)
+			if k.free_l > 0.02 and not k._roll_frame:
+				# (11-10 01:00) the left hand flung off the glaive: read it against its fling
+				# target (the wrist on its grip node), the right fist on the haft
+				# (weighted by 1 - free_l like the wrist gate before it: a hand fully let go is not "off")
+				g = maxf(k.fist_gap[0], minf(k.fist_gap[1], lw.distance_to(k._grip_l.global_position) / k.size_scale) * (1.0 - k.free_l))
+			grip_fist[0] = maxf(grip_fist[0], maxf(k.fist_gap[0], k.fist_gap[1] if k.free_l <= 0.02 else 0.0))   # the fists on the haft (not the flung hand)
+		if OS.has_environment("REVEALFIST_DBG"):
+			print("RF t %.2f g %.3f lw %.3f gap R %.3f L %.3f free %.2f aim %.2f/%.2f roll %s off %s" % [k.intro.t, g, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.fist_gap[0], k.fist_gap[1], k.free_l, (k._aim_ik[0] as TwoBoneIK3D).influence, (k._aim_ik[1] as TwoBoneIK3D).influence, k._roll_frame, str(k._fist_off)])
 		if OS.get_environment("GRIPDBG") != "":
 			print("GRIP t %.2f %.3f off %.3f err %.3f st %d ik %.2f w %.2f fist r %.3f l %.3f free %.2f sw %s feed %s r %.3f l %.3f rw %s lw %s" % [k.intro.t, g, k._fist_off[0].length(), k.grip_roll.last_err[0].length() / k.size_scale if k.grip_roll else 0.0, k.state, k._ik.influence, k.grip_roll.weight if k.grip_roll else 0.0, k.fist_gap[0], k.fist_gap[1], k.free_l, str(k.grip_roll.side_weight) if k.grip_roll else "", str(k.grip_roll.last_feed) if k.grip_roll else "", rw.distance_to(k._grip_r.global_position) / k.size_scale, lw.distance_to(k._grip_l.global_position) / k.size_scale, k.body.global_transform.affine_inverse() * rw, k.body.global_transform.affine_inverse() * lw])
 		grip[0] = maxf(grip[0], g)
@@ -4144,6 +4160,9 @@ func _knight_test() -> void:
 	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar (fists off the axis %.3f)" % [grip_gap, grip_fist[0]])
 	if grip_gap > 0.09:
 		return _combat_done(false, "the roar's arch pulls the hands off the glaive (%.3f m)" % grip_gap)
+	# (11-10 01:00) the reveal's fists on the glaive (the same-tick FistAim pass; old fit 0.089 in the coil)
+	if k._aim_ik[0] != null and (coil_gap[0] > REVEAL_FIST_MAX or grip_fist[0] > REVEAL_FIST_MAX):
+		return _combat_done(false, "the reveal's fists ride off the glaive (coil %.3f, heave/roar %.3f m per size)" % [coil_gap[0], grip_fist[0]])
 	if k.intro_arch_peak > -0.45 or k.intro_hunch_peak < 0.1 or neck_fore - neck_back < 0.25 or neck_back > -0.12:
 		return _combat_done(false, "the reveal's roar does not arch the back (spine %.2f, neck swing %.2f m)" % [k.intro_arch_peak, neck_fore - neck_back])
 	if drift > 0.35 or k.health != hp_i or k.intro_heave < 0.9 or not k.has_meta("roared"):
