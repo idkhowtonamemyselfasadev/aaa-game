@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(17:00 11-10: THE STAFF NO LONGER SLIPS HALF A TURN ROUND IN THE HERO'S FISTS ON EACH LIGHT BLOW: the staff's placed basis was the shortest turn from UP onto the shaft, so as the shaft swung near straight down its grain and cloth wrap spun ~180 deg about the shaft and back while GripRoll counter-rolled the hands to keep them still. Now the staff rolls WITH the right fist: each tick GripRoll turns the staff about its own shaft by the right hand's roll (accumulated `twist`, added by StaffCombat `_solve`) and takes the same turn back out of both hands' staff-frame bases, so the hands move exactly as before in the world (every hand number identical) and the wrap stays put in the fist. Bot `hands`: right fist slip on the staff 22.17 -> 0.00 rad over the string, staff turn about its shaft 15.87 -> 10.59 rad (what is left is the fist's own roll); new gates HERO_FIST_SLIP_MAX 0.5 / HERO_STAFF_SPIN_SUM 12; env STAFF_SPINRAW=1 = old, fails them.)
 (16:00 11-10: NO VISIBLE CHANGE: THE HERO'S HANDS DO NOT RING ON THE STAFF LIKE THE FOES' DID, AND THE BOT NOW PROVES IT. A new roll-chatter line in `hands` measures each hand's net roll on the shaft through the light string (GripRoll's roll plus the staff's own spin): 2 slow reversals, no tick-to-tick ringing (the foes rang 37-56); gated at 3. It also found the staff spinning ~180 deg about its own shaft and back on each blow (0.63 rad a tick worst: the shortest-arc-from-UP basis in `_solve` as the shaft swings near straight down), with GripRoll's hands counter-rolling it at their 0.6 cap. Holding the staff's twist steady (5 caps tried) made the hands chase it instead (hand pop 43 -> 50-58 deg a tick, more reversals), so it was reverted; the fix is to roll the staff WITH the fists (Next).)
 (15:00 11-10: THE FOES' HANDS NO LONGER FLAP ON THE HAFT: GripRoll took the whole wanted roll about the shaft every tick, but rolling the hand swings the fist about the wrist, the feed moves the wrist to keep the fist on the haft and that swings the forearm round the shaft the other way, so the next tick's wanted roll overshot: on the soldier's and the knight's SWEEP the hands rang +-0.6 rad (34 deg) a tick for up to 40 ticks (37-56 reversals per swing, 42-65 rad of reversing roll; the fists stayed on the haft, so no bot saw it). The foes now take a quarter of the wanted roll a tick and fade it out where the forearm runs along the shaft (its side flips there): 0-1 reversals per swing, wrists bend less (left max 77 -> 55 deg, right 71 -> 68). New bot gate `foegrip` roll chatter (<= 3 reversals, <= 2 rad); FOE_ROLLRING=1 = old, fails it.)
 (14:00 11-10: THE HARRIER'S DART NOW DRIVES ITS SPEAR ALONG THE DART: at full stretch the old DARTED pose asked the front grip 0.51 m past its reach, so the clamp stood the spear straight up, 96 deg off the dart's line (the overrun pose 48 deg off). Re-solved offline (python replica of `_place`): rear fist at the right hip, the shaft angled 12 / 20 deg across the body, both grips inside reach, 0.0 deg off in-engine, fists on the haft every tick of the live dart. New bot `foereach`. FOUND, NOT FIXED: the soldier's THRUST is 102 deg off the same way; a solved pose exists (THRUST_SOLVED, env THRUST_NEW=1) but GripRoll's right wrist flips branch on one strike tick (needs a ~166 deg roll, caps at 0.6, fist 0.115 m off the haft), so it is not live yet.)
@@ -16,6 +17,10 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (17:00 11-10) Setup first try (import ~6 min), 4 bot sets in parallel fine (20 routes, ~35 min). A GL shot
+  (SHOT_GL=1, `swing1 ... u=0.3`) started alongside the bots was still rendering after 33 min at 130 % CPU and was
+  killed: no shots or gallery this session (the change is the staff's roll about its own shaft; the hands' world
+  motion is proven identical by `hands`). Next session: run shots ALONE, after the bots. Asset sites not rechecked.
 - (16:00 11-10) Setup first try (import ~8 min), headless bots (3 in parallel) work; no GL shots this session (no
   visible change); asset sites not rechecked (no downloads). `TWIST_RELAX` / `STAFF_TWISTRAW` were the reverted experiment's envs (gone).
 - (13:00 11-10) Setup first try (import ~6 min, log stops at "importing"; .tools/status says SHOTS_OK when done), 4 bots
@@ -8295,6 +8300,17 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (17:00 11-10) **STAFF ROLLS WITH THE RIGHT FIST — DONE (game change + new `hands` gates).**
+   NEXT (1) of 16:00. grip_roll.gd `_roll_staff_with_fist` (hero only: `roll_staff`, set in combat.gd setup): after both
+   hands solve, staff.transform.basis *= Basis(UP, right roll * weight), hs and tilt of both hands re-expressed by
+   R_y(-roll), `twist` += roll (wrapped), eased home at 3 rad/s when the grip weight is 0; combat.gd `_solve` multiplies
+   its basis by Basis(UP, twist) so every hand-placed staff transform carries it. Skipped on a hand's first tick
+   (uncapped roll). Bot `hands`: net roll = last_roll - last_staff_roll + spin (unchanged: 2 reversals), right-fist
+   slip 0.00 rad (old 22.17), staff turn total 10.59 (old 15.87). Foes untouched (roll_staff false).
+   NEXT: (1) 15:00's (1) the soldier thrust's singular crossing / THRUST_SOLVED; (2) the net-roll metric on the heavy
+   and the plunge (and check the twist through the heavy, plunge, air snatch and knock-down redraw in frame shots);
+   (3) the same staff-with-fist roll for the foes' spear/glaive (their shafts are placed the same way). BOSS/ANIMATION
+   order unchanged; audio after.
 0. (16:00 11-10) **HERO'S GRIP ROLL CHECKED: NO RING (bot gate only; game unchanged).**
    NEXT (2) of 15:00. Bot `hands` new line `string roll chatter (hand's net roll on the shaft): N reversals, X rad |
    staff spin about its shaft worst S rad a tick` (net roll = GripRoll last_roll + the staff's spin about its own

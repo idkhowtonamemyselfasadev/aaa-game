@@ -55,6 +55,19 @@ var last_feed := [0.0, 0.0]       # (bots) m the wrist was moved this tick, righ
 ## (11-10) the fist's gap to the shaft axis (world) before the feed moved the wrist this tick,
 ## right / left (zero when the feed did not run); the foes' slow fit learns from it
 var last_err: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+## (17:00 11-10) the staff rolls WITH the right fist (hero only; StaffCombat sets it): the staff's
+## placed basis is the shortest turn from UP onto the shaft, so as the shaft swings near straight
+## down in a light blow its twist spun ~180 deg about the shaft and back while the hands, held in
+## the staff's frame, were counter-rolled by up to roll_max a tick to stay put: the grain and the
+## cloth wrap slipped half a turn through the fists. Now the right hand's roll each tick is also
+## turned onto the staff about its own shaft (accumulated in `twist`, which StaffCombat adds when
+## it places the staff), and taken back out of both hands' staff-frame bases, so the hands move
+## exactly as before in the world and the staff turns only as the right fist does; the left
+## hand's roll is then its slip relative to the right. Env STAFF_SPINRAW=1: the before.
+var roll_staff := false
+var twist := 0.0                  # rad, the staff's accumulated roll about its shaft
+var last_staff_roll := 0.0        # (bots) rad the staff was rolled with the right fist this tick
+const TWIST_HOME := 3.0           # rad/s the twist eases home with the staff out of both hands
 const CLAV_MAX := 0.45            # rad, most the feed shrugs a collarbone toward an out-of-reach wrist
 var NO_SHRUG := OS.get_environment("GRIP_NOSHRUG") == "1"
 var last_shrug := 0.0             # (bots) rad the feed shrugged a collarbone this tick (largest)
@@ -194,11 +207,13 @@ func _aim_bone(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	var ng := (R * g.orthonormalized()).orthonormalized()
 	skel.set_bone_pose_rotation(b, (pb.orthonormalized().inverse() * ng).get_rotation_quaternion())
 
-func _process_modification_with_delta(_delta: float) -> void:
+func _process_modification_with_delta(delta: float) -> void:
 	var skel := get_skeleton()
 	if skel == null or staff == null or not is_instance_valid(staff):
 		return
+	last_staff_roll = 0.0
 	if weight <= 0.001:
+		twist = move_toward(twist, 0.0, delta * TWIST_HOME)
 		for s in _sides:
 			if s != null:
 				s["init"] = false
@@ -228,6 +243,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var H_ik := hg.basis.orthonormalized()
 		var g: Vector3 = s["grip"]
 		var H0: Basis
+		s["was_init"] = s["init"]
 		if not s["init"]:
 			s["sign"] = 1.0 if (H_ik * g).dot(a) >= 0.0 else -1.0
 			H0 = H_ik
@@ -313,3 +329,28 @@ func _process_modification_with_delta(_delta: float) -> void:
 			skel.set_bone_pose_rotation(fb, Quaternion(fl, ft) * skel.get_bone_pose_rotation(fb))
 		var Fn := skel.get_bone_global_pose(fb).basis.orthonormalized()
 		skel.set_bone_pose_rotation(hb, (Fn.inverse() * Basis(Hq)).get_rotation_quaternion())
+	_roll_staff_with_fist()
+
+## (17:00 11-10) turns the staff about its own shaft by the right hand's (weighted) roll this tick
+## and re-expresses both hands' stored staff-frame turns (and tilts) in the rolled staff, so the
+## hands' world turn is unchanged. Not on the hand's first tick (its roll there is uncapped).
+func _roll_staff_with_fist() -> void:
+	if not roll_staff or OS.get_environment("STAFF_SPINRAW") == "1" or _sides.is_empty() or _sides[0] == null:
+		return
+	var r = _sides[0]
+	if not r.get("was_init", false) or not r["init"]:
+		return
+	var tr := float(last_roll[0]) * weight * float(side_weight[0])
+	if absf(tr) < 1e-7:
+		return
+	var t := staff.transform
+	staff.transform = Transform3D(t.basis * Basis(Vector3.UP, tr), t.origin)
+	var qb := Basis(Vector3.UP, -tr)
+	var qq := Quaternion(Vector3.UP, -tr)
+	for s in _sides:
+		if s == null or not s["init"]:
+			continue
+		s["hs"] = (qb * (s["hs"] as Basis)).orthonormalized()
+		s["tilt"] = qq * (s["tilt"] as Quaternion) * qq.inverse()
+	twist = wrapf(twist + tr, -PI, PI)
+	last_staff_roll = tr

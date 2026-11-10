@@ -341,6 +341,7 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 		grip_roll = GripRoll.new()
 		grip_roll.name = "GripRoll"
 		grip_roll.staff = staff
+		grip_roll.roll_staff = true   # (17:00 11-10) the staff turns with the right fist
 		skel.add_child(grip_roll)
 		skel.move_child(grip_roll, _ik.get_index() + 1)
 	_set_influence(0.0)
@@ -1702,6 +1703,8 @@ func _solve(pose: Array) -> Array:
 		axis = d * 0.12
 	var d2 := axis.normalized()
 	var b := Basis(Quaternion(Vector3.UP, d2)) if d2.y > -0.99 else Basis(Vector3.RIGHT, PI)
+	if grip_roll != null and grip_roll.twist != 0.0:
+		b = b * Basis(Vector3.UP, grip_roll.twist)   # (17:00 11-10) rolled with the right fist
 	return [Transform3D(b, hr - d2 * (HAND_R + slide)), hr, hl]
 
 ## Starts the ease from `_from_pose` back down to GUARD. A straight blend from a pose with the
