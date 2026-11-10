@@ -1253,6 +1253,8 @@ const GRIP_ATK_GAP_MAX := 0.02     # m per size, worst tick of an attack state (
 const GRIP_ATK_MEAN_MAX := 0.004   # (old fit: 0.011-0.020 on the strikes; now <= 0.001)
 const GRIP_ATK_OFF_TICKS := 0      # hand-ticks > 3 cm off per state (02:00 11-10: none since the foes' 80 deg wrist bend; was 1 at 75)
 const GUARD_AXIS_MAX := 3.0   # deg (11-10 12:00: old GUARD 34.8)
+const ROLL_FLIPS_MAX := 3      # per foe, size and attack
+const ROLL_REV_MAX := 2.0      # rad
 func _foe_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var k: AshenKnight = _world.knight
@@ -1292,6 +1294,11 @@ func _foe_grip_test() -> void:
 			e.move_kind = mk
 			e._enter(HollowSoldier.WINDUP)
 			var acc := {}   # state -> [worst R, worst L, sum, n, worst wrist-target]
+			# (15:00 11-10) roll chatter: ticks where a hand's roll about the haft reverses (both
+			# rolls > 0.1 rad) and the summed swing of those reversals
+			var prev_roll := [0.0, 0.0]
+			var flips := 0
+			var rev := 0.0
 			var skel: Skeleton3D = e.skel
 			var hb := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
 			for i in 400:
@@ -1306,6 +1313,13 @@ func _foe_grip_test() -> void:
 				var o := e.spear.global_position
 				var ax := e.spear.global_basis.y.normalized()
 				for j in 2:
+					if e.grip_roll != null and e.grip_roll.weight > 0.5:
+						var r: float = e.grip_roll.last_roll[j]
+						if r * prev_roll[j] < 0.0:
+							rev += absf(r - prev_roll[j])
+							if absf(r) > 0.1 and absf(prev_roll[j]) > 0.1:
+								flips += 1
+						prev_roll[j] = r
 					var fc := e.fist_center(["Right", "Left"][j])
 					var gp := fc.distance_to(o + ax * ax.dot(fc - o)) / sc
 					a[j] = maxf(a[j], gp)
@@ -1319,6 +1333,9 @@ func _foe_grip_test() -> void:
 						print("    peak %s x%.1f %s %d %s %s gap %.3f off %.3f feed %.3f roll %.2f" % [e.name, sc, ["thrust", "sweep"][mk], i, names[st], ["R", "L"][j], gp, e._fist_off[j].length(), e.grip_roll.last_feed[j] / sc if e.grip_roll else 0.0, e.grip_roll.last_roll[j] if e.grip_roll else 0.0])
 					if OS.has_environment("FOEGRIP_DBG") and j == 0 and i % 4 == 0:
 						print("    %s %d %s gapR %.3f wrist-tgt %.3f off %s" % [e.name, i, names[st], gp, a[4], str(e._fist_off[0])])
+			print("   %s x%.1f %s roll chatter: %d reversals > 0.1 rad, %.2f rad reversing swing" % [e.name, sc, ["thrust", "sweep"][mk], flips, rev])
+			if fail == "" and not OS.has_environment("FOEGRIP_MEASURE") and (flips > ROLL_FLIPS_MAX or rev > ROLL_REV_MAX):
+				fail = "%s x%.1f %s: the hands' roll on the haft chatters (%d reversals, %.2f rad)" % [e.name, sc, ["thrust", "sweep"][mk], flips, rev]
 			for st in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
 				if not acc.has(st):
 					if fail == "":

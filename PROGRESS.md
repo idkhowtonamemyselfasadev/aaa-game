@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(15:00 11-10: THE FOES' HANDS NO LONGER FLAP ON THE HAFT: GripRoll took the whole wanted roll about the shaft every tick, but rolling the hand swings the fist about the wrist, the feed moves the wrist to keep the fist on the haft and that swings the forearm round the shaft the other way, so the next tick's wanted roll overshot: on the soldier's and the knight's SWEEP the hands rang +-0.6 rad (34 deg) a tick for up to 40 ticks (37-56 reversals per swing, 42-65 rad of reversing roll; the fists stayed on the haft, so no bot saw it). The foes now take a quarter of the wanted roll a tick and fade it out where the forearm runs along the shaft (its side flips there): 0-1 reversals per swing, wrists bend less (left max 77 -> 55 deg, right 71 -> 68). New bot gate `foegrip` roll chatter (<= 3 reversals, <= 2 rad); FOE_ROLLRING=1 = old, fails it.)
 (14:00 11-10: THE HARRIER'S DART NOW DRIVES ITS SPEAR ALONG THE DART: at full stretch the old DARTED pose asked the front grip 0.51 m past its reach, so the clamp stood the spear straight up, 96 deg off the dart's line (the overrun pose 48 deg off). Re-solved offline (python replica of `_place`): rear fist at the right hip, the shaft angled 12 / 20 deg across the body, both grips inside reach, 0.0 deg off in-engine, fists on the haft every tick of the live dart. New bot `foereach`. FOUND, NOT FIXED: the soldier's THRUST is 102 deg off the same way; a solved pose exists (THRUST_SOLVED, env THRUST_NEW=1) but GripRoll's right wrist flips branch on one strike tick (needs a ~166 deg roll, caps at 0.6, fist 0.115 m off the haft), so it is not live yet.)
 (13:00 11-10: EVERY HOLLOW VARIANT NOW HOLDS ITS GUARD WHERE IT IS DEFINED: the warden's ward, the hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its reach, so the clamp bent the real shaft 9.3 / 4.2 / 19.8 / 42.0 deg off the pose's direction and every lerp into or out of the guard bent through the clamp. Re-solved offline (python replica of `_place`, reproduces the engine to 0.1 deg): the shaft on the line each old guard visibly held (<= 0.3 deg), fists moved 3-8 cm, every grip inside reach, 0.0 deg off in-engine. New bot `foeguard`.)
 (12:00 11-10: THE HOLLOW SOLDIERS AND THE ASHEN KNIGHT NOW HOLD THEIR GUARD WHERE IT IS DEFINED: the shared GUARD pose asked the left grip for 0.69 m from its shoulder (reach 0.45), so the reach clamp pulled it in and the shaft really lay 34.8 deg off the pose's direction; every lerp into or out of the guard (sweep, thrust recovery, the knight's surge settle, crown rise, stomp recovery) bent through that clamp on the way. GUARD re-solved offline: the same right fist, the shaft where the old guard visibly held it (3 deg off), axis 0.0 deg off at every size. The soldier's sweep now turns out of the guard over half its wind-up (was a quarter), the knight's reveal keeps its tuned path and eases onto the new guard in the settle. New bot gate `foegrip` guard line.)
@@ -8291,6 +8292,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (15:00 11-10) **FOES' WRIST ROLL CHATTER — FIXED (game change + new bot gate in `foegrip`).**
+   Started on NEXT (1) of 14:00 (GripRoll branch flip for THRUST_SOLVED). GRIP_DBG with raw roll + fp (forearm's
+   component across the shaft) showed two things: (a) the 14:00 strike-tick flip is a singular crossing: the tick
+   before, fp 0.17 (forearm along the shaft), the next the forearm is 65 deg off on the far side, raw roll -2.87;
+   (b) much worse and LIVE: after it, and through every sweep of the soldier and knight at every size, the roll
+   alternated +0.6/-0.6 (the cap) EVERY tick for up to 40 ticks (raw +1.6/-0.8): a feedback loop (roll -> fist
+   swings about the wrist -> feed moves the wrist -> forearm swings round the shaft the other way -> overshoot,
+   loop gain ~2-4). The fists stayed on the haft so fist-gap gates never saw it; the hand flapped 34 deg a tick.
+   FIX (grip_roll.gd, foes only via hollow_soldier.gd): roll_gain 0.25 (share of the wanted roll per tick, still
+   capped at roll_max) and fp_fade (roll faded out by smoothstep(0.15, 0.45, fp)). Hero unchanged (gain 1, no fade;
+   env ROLL_GAIN / ROLL_FPFADE=1 try them on everything). Tried 0.2/0.25/0.3/0.4 with fade, 0.3-0.5 without: without
+   the fade 0.4 still rang 0.3 rad a tick for 15 ticks; 0.25+fade is clean and keeps tracking. Env FOE_ROLLRING=1 = old.
+   Bot `foegrip` new line per foe/size/attack `roll chatter: N reversals > 0.1 rad, X rad reversing swing`, gates
+   ROLL_FLIPS_MAX 3 / ROLL_REV_MAX 2.0: new thrust 0 / 0.04-0.17, sweep 0-1 / 0.20-1.09 PASS; FOE_ROLLRING=1 sweep
+   37-56 / 42-65 FAIL. Wrist bend over the run: left max 77 -> 55 deg (ticks > 60: 23 -> 0), right 71 -> 68 (12 -> 7).
+   THRUST_SOLVED still NOT live: its strike crossing tick (b) still leaves the right fist 0.12 m off for 1 tick.
+   Bots PASS: foegrip foereach soldier sweep knight surgegrip crown knightplant warden hewer harrier foehands keepgap
+   foeflinch foeturn foeguard archer kindler lockon combat heavy dodge.
+   Shots (GL): `soldier rc_new 20 10.0 sweep strike u=0.5` (a frozen frame cannot show tick chatter; the before
+   shot rendered blank when run in parallel). Gallery 20261110-1500-soldier-sweep (fail: hero's back hides the
+   foe's hands, grass oversaturated). Environment: cloud-setup ~8 min; asset sites not rechecked (no downloads).
+   No new third-party files.
+   NEXT: (1) the thrust's singular crossing: on the tick the forearm passes the shaft line, hold the hand by the
+   tilt (oblique grip) and re-seat the roll from the far side over several ticks (or keep the rear forearm off the
+   shaft line in THRUST_SOLVED's strike), then make THRUST_SOLVED live and gate it in `foereach`; (2) check the
+   HERO's GripRoll for the same ring (add the chatter metric to `keepgap`/`combat`; try ROLL_GAIN on the hero);
+   (3) 14:00's (2)/(3): warden BASH_DRIVE/BASH_COIL; a front three-quarter shot spot for foe hands.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (14:00 11-10) **HARRIER DART RE-SOLVED; SOLDIER THRUST FOUND 102 DEG OFF (game change + new bot `foereach`).**
    NEXT (2) of 13:00 (variants' attack poses through the replica). FOUND (python replica of HollowSoldier._place,
    confirmed in-engine by the new bot): soldier THRUST left grip wanted 0.98 m (reach 0.45) -> the real shaft at full

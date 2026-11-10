@@ -463,6 +463,15 @@ func _setup_spear() -> void:
 			# to 2/3); at 80 no hand-tick passes 2 cm (bot foegrip). env FOE_BEND75: the before
 			if not OS.has_environment("BEND_LIMIT") and not OS.has_environment("FOE_BEND75"):
 				grip_roll.bend_limit = deg_to_rad(80.0)
+			# (15:00 11-10) the roll damped (a quarter of the wanted roll a tick, faded out with the
+			# forearm along the haft): taken whole it rang +-0.6 rad a tick through the feed for up
+			# to 40 ticks, the hand flapping on the haft (bot foegrip `roll chatter`). Env
+			# FOE_ROLLRING=1: the before.
+			if not OS.has_environment("FOE_ROLLRING"):
+				if not OS.has_environment("ROLL_GAIN"):
+					grip_roll.roll_gain = 0.25
+				if not OS.has_environment("ROLL_FPFADE"):
+					grip_roll.fp_fade = true
 			skel.add_child(grip_roll)
 			skel.move_child(grip_roll, _ik.get_index() + 1)
 		if OS.get_environment("FOE_WRISTGRIP") == "":

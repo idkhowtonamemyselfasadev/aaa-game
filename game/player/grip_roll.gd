@@ -15,6 +15,17 @@ var weight := 0.0            # 0..1, eased by StaffCombat (on only with the staf
 var side_weight := [1.0, 1.0]
 var _w := 0.0                # this hand's weight while it is solved
 var roll_max := 0.6        # rad a tick the hand may roll about the shaft (~34 deg; bots: env ROLL_MAX)
+## (15:00 11-10) share of the wanted roll taken per tick (1 = all, up to roll_max). Rolling the
+## hand swings the fist about the wrist, the feed then moves the wrist to keep the fist on the
+## shaft, and that swings the forearm round the shaft the other way: the next tick's wanted roll
+## overshoots. On the foes this loop rang at +-0.6 rad a tick for up to 40 ticks (the fist kept
+## on the haft, the hand flapping 34 deg each way). Taking a share damps it (bots: env ROLL_GAIN).
+var roll_gain := 1.0
+## near a forearm running along the shaft its line across the shaft is noise (it flips side as
+## the forearm passes the shaft): the roll is faded out below FP_FULL (sin of their angle)
+var fp_fade := false
+const FP_ZERO := 0.15
+const FP_FULL := 0.45
 ## when the forearm runs nearly along the shaft no roll squares the hand to it: the fist then
 ## holds the shaft obliquely (a real grip does: the haft lies slanted across the palm), the hand
 ## turned toward the forearm's line by up to TILT_MAX once the bend passes BEND_OK
@@ -51,6 +62,10 @@ var last_shrug := 0.0             # (bots) rad the feed shrugged a collarbone th
 func _ready() -> void:
 	if OS.has_environment("ROLL_MAX"):
 		roll_max = float(OS.get_environment("ROLL_MAX"))
+	if OS.has_environment("ROLL_GAIN"):
+		roll_gain = float(OS.get_environment("ROLL_GAIN"))
+	if OS.has_environment("ROLL_FPFADE"):
+		fp_fade = OS.get_environment("ROLL_FPFADE") == "1"
 	var skel := get_skeleton()
 	if skel == null:
 		return
@@ -97,8 +112,13 @@ func _solve_hand(skel: Skeleton3D, s: Dictionary, H0: Basis, H_ik: Basis, a: Vec
 	var th := 0.0
 	if yp.length() > 1e-4 and fp.length() > 1e-4:
 		th = yp.normalized().signed_angle_to(fp.normalized(), a)
+		s["dbg_raw"] = th
+		s["dbg_fp"] = fp.length()
 		if s["init"]:
-			th = clampf(th, -roll_max, roll_max)
+			var g := roll_gain
+			if fp_fade:
+				g *= smoothstep(FP_ZERO, FP_FULL, fp.length())
+			th = clampf(th * g, -roll_max, roll_max)
 	var Hr := (Basis(a, th) * H0).orthonormalized()
 	var bend := Hr.y.angle_to(f)
 	var tq := Quaternion.IDENTITY
@@ -273,7 +293,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var tq: Quaternion = sol[1]
 		var th: float = sol[2]
 		if OS.has_environment("GRIP_DBG"):
-			print("GRIP %d roll %.2f bend %.0f feed %.3f w %.2f" % [i, th, rad_to_deg(sol[3]), last_feed[i], weight])
+			print("GRIP %d roll %.2f raw %.2f fp %.3f bend %.0f feed %.3f w %.2f" % [i, th, float(s.get("dbg_raw", 0.0)), float(s.get("dbg_fp", 0.0)), rad_to_deg(sol[3]), last_feed[i], weight])
 		s["tilt"] = S.get_rotation_quaternion().inverse() * tq * S.get_rotation_quaternion()
 		s["tilt_on"] = true
 		last_roll[i] = th
