@@ -8269,6 +8269,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (00:30 11-10, parallel session) **FOE HANDS: A SECOND, DROPPED FIX FOR THE SAME ITEM + THE `fhand` SHOT SETTLE.**
+   This session worked the same 23:00 item at the same time as the GripRoll session above and lost the race; its
+   game change was NOT merged (two grip systems stacked would fight). Kept: shot.gd `fhand`/`flhand` now re-runs
+   the frozen foe's `_place` for 24 ticks before the frame (the frozen foe never re-placed its grips, so the cross-tick
+   `_fist_off` never reached a held frame; FOE_GRIPLAG-era frames showed the fist ~11 cm off the haft for that reason,
+   `SHOT fist gaps R 0.109` with the fit frozen, 0.000 settled); `nosettle` = old. It prints `SHOT fist gaps`.
+   Not yet re-rendered on the GripRoll code (should be harmless: `_place` only re-sets grips from the current pose).
+   For NEXT (1) above (the knight's reveal, one-handed roar), what worked in the dropped branch: a same-tick SECOND
+   TwoBoneIK3D pass per side, placed after HandRest, whose target is wrist - K x (posed fist's gap off the axis),
+   K 0.6 (swept 0.5-1.6: the arm IK turns the hand as the wrist moves, so the fist moves ~1.4x the wrist; K 1 rings),
+   cross-tick fit gain 0.45 on the PRE-pass gap; a per-side weight (knight: 1 - smoothstep(0, 0.15, free_l) on the
+   left) let the freed roar hand go with no overshoot. Worst attack gap 0.026 m per size; in the reveal it moved the
+   coil wrists ~5 cm to put the fists on the haft (coil wrist x -0.11 -> -0.06), and the knight bot's roar grip probe
+   passed once measured against the IK goal. A per-side second pass may be the simplest way to hold the right fist in
+   the roar while GripRoll is off.
+   Environment (00:30): setup first try (import ~20 min); headless bots and GL shots (2 in sequence ~25 min) work;
+   Forward+ not tried; asset sites not rechecked. A new class_name file needs `godot --headless --path game --import`
+   before a bot run, or the bot hangs silently. Under load (2 GL shots + bots) foeflinch/foestride/foeturn failed here
+   on both old and new fit; the GripRoll session saw them PASS: likely load-sensitive, rerun alone before believing.
 0. (00:00 11-10) **FOE HANDS: THE FISTS STAY ON THE HAFT THROUGH THE ATTACKS (game change + new bot `foegrip`).**
    Item (1) of 23:00 (the wind-up grip). New bot `foegrip`: soldier x1 and knight x2.2/3.2/4.6 each run a thrust and a
    sweep (WINDUP -> STRIKE -> RECOVER); per state and tick the fist centre to the shaft axis (m per size).

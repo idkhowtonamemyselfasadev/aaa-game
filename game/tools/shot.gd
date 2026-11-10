@@ -3230,6 +3230,13 @@ func _ready() -> void:
 		var side := "Left" if "flhand" in args else "Right"
 		var fsk: Skeleton3D = fo.skel
 		await fsk.skeleton_updated      # (11-06 10:00) the posed fist, not the clip's hand before the arm IK
+		# (11-10) the frozen foe never re-placed its grips, so the cross-tick fist fit never reached
+		# the frame (the 23:00 wind-up fist ~10 cm off the haft); settle it as a live tick would
+		if not "nosettle" in args:
+			for i in 24:
+				fo._place(fo._pose)
+				await fsk.skeleton_updated
+		print("SHOT fist gaps R %.3f L %.3f" % [fo.fist_gap[0], fo.fist_gap[1]])
 		var hp := fo.fist_center(side)
 		var bz := fo.body.global_basis.z
 		var bx := fo.body.global_basis.x * (1.0 if side == "Left" else -1.0)
