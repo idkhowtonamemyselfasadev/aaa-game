@@ -1579,6 +1579,11 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				fist[j] = fg
 				fist_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 			var f: float = (gt * e.skel.get_bone_global_pose(bones[j][0]).origin).distance_to(gt * e.skel.get_bone_global_pose(bones[j][1]).origin) / ks
+			if OS.has_environment("FOEFOLD_TICKS_L") and j == 1:
+				var shl: Vector3 = gt * e.skel.get_bone_global_pose(bones[1][0]).origin
+				var shr: Vector3 = gt * e.skel.get_bone_global_pose(bones[0][0]).origin
+				var wi: Transform3D = e._wield.global_transform.affine_inverse()
+				print("      tick st=%d t=%.3f L sh-wrist %.3f sh-grip %.3f gap %.3f | wield-local shL %s shR %s gripL %s" % [e.state, e.t, f, shl.distance_to(e._grip_l.global_position) / ks, fg, str(wi * shl), str(wi * shr), str(e._grip_l.position)])
 			if f < fold[j]:
 				fold[j] = f
 				fold_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
@@ -1608,11 +1613,26 @@ func _foe_fold_test() -> void:
 		[_world.harrier, HollowHarrier.DART_MOVE, "HollowHarrier dart", true],
 		[_world.knight, HollowSoldier.THRUST_MOVE, "AshenKnight thrust", true],
 		[_world.knight, HollowSoldier.SWEEP_MOVE, "AshenKnight sweep", true],
+		# (23:00 11-10) first measured: the archer's shot, the kindler's kindle, the knight's
+		# phase-2 stomp and leap (at the phase-2 size)
+		[_world.archer, HollowArcher.SHOT_MOVE, "HollowArcher shot", true, false],
+		[_world.knight, AshenKnight.STOMP_MOVE, "AshenKnight stomp", true, false],
+		# (23:00 11-10) the leap's heave + slam re-solved as arcs: the right arm crushed to 0.042
+		# m/size in flight, the fist through the helm (LEAPFOLD_OLD=1)
+		[_world.knight, AshenKnight.LEAP_MOVE, "AshenKnight leap", true],
 	]
 	var fail := ""
 	for r in runs:
 		if r[0] == null:
 			continue
+		if r[1] in [AshenKnight.STOMP_MOVE, AshenKnight.LEAP_MOVE] and r[0] == _world.knight:
+			var k: AshenKnight = r[0]
+			k.intro_seen = true
+			k._set_phase(1)
+			k.set_size_scale(k.growth.scale_of(1))
+			k._flame_t = -999.0
+			k._leap_cool = 0.0 if r[1] == AshenKnight.LEAP_MOVE else 99.0
+			k._stomp_cool = 99.0
 		var f: String = await _attack_probe(r[0], r[1], r[2], r[3], r[4] if r.size() > 4 else true)
 		if fail == "" and f != "":
 			fail = f

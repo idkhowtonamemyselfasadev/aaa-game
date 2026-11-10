@@ -65,7 +65,20 @@ const LEAP_BITE := 1.75          # m ahead of its feet where the blade comes dow
 # glaive poses borrowed from the Stone Sentinel's slam (same glaive, same build of body)
 const CROUCHED := [-14.0, 62.0, Vector3(0.05, 1.9, -0.1), -10.0, 0.1, 0.62]
 ## leap heave: both hands up over the helm, the blade laid back behind the head
-const LEAP_HEAVE := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+const LEAP_HEAVE_OLD := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
+## (23:00 11-10) the leap's heave re-solved offline (python replica of `_place`): the old heave asked
+## the left grip 0.74 m from its shoulder (reach 0.66, the shaft 9 deg off the pose), and the
+## straight lerps up from CROUCHED and down to SLAMMED dragged the right fist through the helm
+## (3-6 cm from the head) with the arm crushed shut (bone shoulder-wrist 0.042 m/size in flight,
+## bot `foefold`). Now the glaive is heaved up in an arc out to the right and in front of the
+## helm (LEAP_UP_ARC) to a heave both hands reach (the same shaft line), and brought down in an
+## arc out in front (LEAP_DOWN_ARC): offline every grip >= 0.34 m from its shoulder, both fists
+## >= 0.23 m clear of the helm. Env LEAPFOLD_OLD=1: the before.
+const LEAP_HEAVE_NEW := [-6.0, 148.0, Vector3(0.049, 2.283, -0.362), 7.9, -0.094, 0.66]
+const LEAP_UP_ARC := [9.9, 86.7, Vector3(0.235, 2.286, 0.05), -12.8, -0.012, 0.64]
+const LEAP_DOWN_ARC := [-19.1, 119.4, Vector3(0.095, 2.388, 0.992), -7.4, -0.131, 0.65]
+static var LEAPFOLD_OLD := OS.get_environment("LEAPFOLD_OLD") == "1"
+static var LEAP_HEAVE: Array = LEAP_HEAVE_OLD if LEAPFOLD_OLD else LEAP_HEAVE_NEW
 ## the surge's coil: the glaive planted point-down beside the right knee, both hands on the
 ## shaft, leaned on (a shorter crown-reel slump, the blade into the turf)
 const SURGE_LEAN := [20.0, -58.0, Vector3(0.12, 1.02, 0.46), 10.0, 0.1, 0.62]
@@ -945,9 +958,11 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				rags.air_y = LEAP_H * size_scale * PI * cos(PI * u) * tempo / LEAP_T if u < 1.0 else 0.0   # world m/s (rags divides by the body scale)
 			# up with the glaive heaved overhead, then down blade first
 			if u < 0.6:
-				_pose = _lerp_pose(_from, LEAP_HEAVE, clampf(u / LEAP_HEAVED_U, 0.0, 1.0))
+				var r := clampf(u / LEAP_HEAVED_U, 0.0, 1.0)
+				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP_ARC, LEAP_HEAVE, r)
 			else:
-				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, smoothstep(0.0, 1.0, (u - 0.6) / 0.4))
+				var r := smoothstep(0.0, 1.0, (u - 0.6) / 0.4)
+				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN_ARC, StoneSentinel.SLAMMED, r)
 			# knees drive up off the crouch, tucked through the top, legs reach down to land
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)

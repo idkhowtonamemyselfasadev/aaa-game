@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261107-0210-knight-heave-rise.jpg",
-  "time": "2026-11-07T02:10:00Z",
-  "caption": "A beat later the shaft rises diagonally to its right shoulder on the way to the skyward roar; the body still reads stiff at the hips and the lighting is flat GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0310-knight-coil-hip.jpg",
   "time": "2026-11-07T03:10:00Z",
   "caption": "The Ashen Knight's reveal coil (GL frame, it=2.95): chest twisted to its right, a fist low at the right hip and the glaive trailing low behind, so the heave is an upward sweep; still a GL frame, and the head turns away with the chest instead of staying on the hero.",
@@ -897,6 +891,12 @@
   "file": "20261110-2200-harrier-crouch.jpg",
   "time": "2026-11-10T22:18:26Z",
   "caption": "The harrier's crouch at the hero's back with the re-solved spear pose (shaft now on its pose, no clamp bend into the dart); the harrier is still backlit and dark, the arms cannot be read at this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-2300-knight-leap-takeoff.jpg",
+  "time": "2026-11-10T23:30:00Z",
+  "caption": "The Ashen Knight at the leap's take-off (the shot harness stops at the strike's first tick, so the re-solved heave is not in frame); fog and bloom wash the knight out to a white silhouette.",
   "verdict": "fail"
  }
 ]

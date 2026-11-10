@@ -57,13 +57,6 @@ static var RAISED: Array = RAISED_OLD if OS.get_environment("RAISE_OLD") == "1" 
 ## >= 0.46 m from its shoulder, axis <= 0.2 deg off.
 const RAISE_ARC := [4.0, 60.0, Vector3(0.0, 1.8, 0.65), 4.0, 0.0, 0.56]
 static var RAISE_OLD := OS.get_environment("RAISE_OLD") == "1"
-static func _lin_pose(a: Array, b: Array, f: float) -> Array:
-	return [lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), (a[2] as Vector3).lerp(b[2], f), lerpf(a[3], b[3], f),
-		lerpf(a[4] if a.size() > 4 else 0.0, b[4] if b.size() > 4 else 0.0, f),
-		lerpf(a[5] if a.size() > 5 else ARM_REACH, b[5] if b.size() > 5 else ARM_REACH, f)]
-static func _arc_pose(a: Array, m: Array, b: Array, r: float) -> Array:
-	var f := r * r * (3.0 - 2.0 * r)
-	return _lin_pose(_lin_pose(a, m, f), _lin_pose(m, b, f), f)
 # CHOPPED and BITE are authored in the LEANED frame (the hewer's wield leans with its body,
 # see _lean): solved offline so both hands stay inside arm reach and the bit edge lands on the
 # turf ~0.85 m ahead with the helve ~42 deg below level (old CHOPPED clamped both hands and

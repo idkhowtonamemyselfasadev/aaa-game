@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(23:00 11-10: THE ASHEN KNIGHT NO LONGER CRUSHES ITS RIGHT ARM AND DRAGS ITS FIST THROUGH ITS OWN HELM AS IT HEAVES THE GLAIVE IN THE EMBER LEAP: `foefold` now runs the knight's phase-2 leap and stomp, the archer's shot (measured). The leap's straight lerp up from CROUCHED put the right fist 3-6 cm from the head with the arm folded to 0.037-0.042 m/size shoulder-to-wrist (on a 2.2x giant), and the old heave asked the left grip 0.74 m at reach 0.66 (shaft 9 deg off). Re-solved offline: a new heave both hands reach on the same shaft line, an arc up out to the right in front of the helm (LEAP_UP_ARC) and an arc down out in front (LEAP_DOWN_ARC). In-engine: right arm min 0.251, left 0.227 (was 0.169 in the slam), fists 0.000 m; the leap is now gated in `foefold`; LEAPFOLD_OLD=1 fails it.)
 (22:00 11-10: THE HARRIER'S CROUCH NOW HOLDS ITS SPEAR WHERE IT IS DEFINED: CROUCHED asked the right grip 0.576 m from its shoulder (reach 0.5), so the clamp bent the shaft 9.2 deg off the pose and the lerps in from the guard and out into the dart bent through the clamp. Re-solved offline (python replica of `_place`): the shaft on the line the old crouch visibly held (yaw 4.6, pitch -2.8), right fist moved 3.7 cm, both grips 0.46 m from the shoulders; 0.0 deg off in-engine, and 0.0 deg through both lerps (guard->crouch, crouch->dart) offline. Bot `foereach` now holds every re-solved pose (CROUCHED, DARTED, DART_REC, THRUST, BASH_COIL, BASH_DRIVE) to 2 deg; CROUCH_OLD=1 fails it at 9.2.)
 (21:00 11-10: THE HARRIER'S RIGHT ARM NO LONGER FOLDS SHUT THROUGH ITS DART AND OVERRUN: the 14:00 dart poses kept both grips inside reach but put the rear (right) grip only 0.32 / 0.24 m from its shoulder (offline), so the arm crushed to 0.111 m shoulder-to-wrist in the overrun, the elbow plane flipped mid-dart (pole normal +0.75 -> -0.55 in two ticks) and the fist slid 0.019 m off the haft. Re-solved DARTED / DART_REC offline (shaft within 2-4 deg of the old line, front fist within a few cm, the rear fist drawn back to the hip 0.40-0.41 m from the shoulder): bone shoulder-wrist 0.293 m, fists 0.000 m, the elbow keeps its side the whole dart. The dart is now gated in `foefold`; DARTFOLD_OLD=1 fails it.)
 (20:00 11-10: THE SHIELD WARDEN'S RIGHT FIST NO LONGER LEAVES THE SPEAR AS IT COILS AND SHOVES ITS TARGE: bot `foefold` caught the fist 0.143 m off the haft. Two causes: the old coil and drive asked the grips up to 0.72 m from the shoulders (reach 0.45), so the clamp bent the shaft 7 / 19 deg and crushed the drive's fists 0.26 m together; and as the coil hauled the fist back, the shoulder-to-wrist line ran within 7-17 deg of the right elbow's pole, so the elbow swung the forearm half round the shaft (GripRoll wanted 130-170 deg, the wrist feed refused). Re-solved coil and drive (every grip inside reach, the shaft on its pose 0.0-0.2 deg), the bash's grips ride the hip lean like the thrust's, the shove's lean no longer pops on the first tick, and through the bash the right elbow's pole eases out, up and back (a drawn-back shoving arm, elbow high): fist 0.000 m every tick. The bash is now gated in `foefold`; BASH_OLD=1 fails it.)
@@ -22,6 +23,10 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (23:00 11-10) Setup first try (import ~8 min; numpy via `python3 -m pip`, PIL broken -> gallery JPEG via ffmpeg).
+  Bots headless fine; GL shots (SHOT_GL=1, 3 at once, ~4 min) after the bots. Asset sites not rechecked (no
+  downloads). New: `FOEFOLD_TICKS_L=1 foefold` prints the left arm per tick plus both REAL shoulders and the left
+  grip in Wield-local space (use these, not SHOULDER, in offline replicas). LEAPFOLD_OLD=1 = the old leap heave/slam.
 - (20:00 11-10) Setup first try (import ~6 min), 3 bot sets in parallel fine; GL shots (SHOT_GL=1, 3 at once) after
   the bots. Asset sites not rechecked (no downloads). New: `FOEFOLD_TICKS=1 foefold` prints the right fist's gap, the
   elbow pole's angle to the shoulder-grip line and the shoulder-grip distance per tick; shot args `warden bash`
@@ -213,6 +218,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (23:00 11-10) **KNIGHT'S LEAP HEAVE + SLAM AS ARCS: RIGHT ARM 0.037 -> 0.251, FIST NO LONGER THROUGH THE HELM (bot `foefold` gates the leap).** Details in Next 0.
 - (22:00 11-10) **HARRIER CROUCH RE-SOLVED: SHAFT 9.2 -> 0.0 DEG OFF ITS POSE (bot `foereach` gate 2 deg on re-solved poses).** Details in Next 0.
 - (10:00 11-08) **JUMP ATTACK: HEAD TIPS CLEAR, STAFF DRAWN BACK 40 DEG (bot `airstrike` gate raised; GL frames).**
   Details in Next 0.
@@ -8313,6 +8319,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (23:00 11-10) **KNIGHT'S LEAP HEAVE + SLAM RE-SOLVED AS ARCS, NO ARM FOLD — DONE (game change + `foefold` gate).**
+   NEXT (2) of 22:00 (the knight's surge/stomp/leap fold). `foefold` runs added: archer SHOT (measured, not gated:
+   R fist 0.531 / L 0.353 m off the "haft" -- the archer's spear slot is the bow, the draw hand leaves it by design;
+   the L reading needs a bow-aware probe), knight STOMP (x2.2, phase 2: R 0.322 / L 0.275, fists 0.000; measured, not
+   gated), knight LEAP (x2.2: R 0.042 at S t=0.13, L 0.177 at S t=0.50 -> FAIL). The kindler's KINDLE cannot be
+   probed by `_attack_probe` (it went straight to RECOVER: "the strike never ran"), dropped from the list (owed).
+   Offline (python replica of `_place`, /tmp, not kept): the straight lerp CROUCHED -> LEAP_HEAVE ran the right fist
+   through the helm (min 0.057 m from a head point) with the arm want 0.18; LEAP_HEAVE asked L 0.737 at reach 0.66.
+   LEAP_HEAVE_NEW [-6, 148, (0.049, 2.283, -0.362), 7.9, -0.094, 0.66] (same shaft line, R 0.561 L 0.604, 0 deg),
+   LEAP_UP_ARC [9.9, 86.7, (0.235, 2.286, 0.05), -12.8, -0.012, 0.64] (fists >= 0.34 from the shoulders, >= 0.23
+   from the head). The down arc: the replica's shoulders are wrong for the knight -- REAL shoulders in Wield-local
+   (printed by the new env FOEFOLD_TICKS_L=1) sit at y ~1.59 (const SHOULDER says 1.48), lean forward with the hip
+   lean (z 0.13 -> 0.26), and the chest's yaw runs ~18 deg LEFT-shoulder-forward minus tw (opposite to
+   `SHOULDER.rotated(UP, tw)` in `_place`). With measured shoulders: LEAP_DOWN_ARC [-19.1, 119.4, (0.095, 2.388,
+   0.992), -7.4, -0.131, 0.65]. `_arc_pose`/`_lin_pose` moved from HollowHewer to HollowSoldier (shared).
+   In-engine `foefold`: leap R 0.251 (S t=0.13) L 0.227 (W t=0.32), fists 0.000 -> gated. LEAPFOLD_OLD=1: R 0.037.
+   Bots PASS (14): foefold knightleap knight knightplant knightstomp foegrip foereach surgegrip crown lockon hewer
+   foeguard foehands combat.
+   Shots (GL): `soldier kleap_u20/u45 40 16.5 fixfps knight leap u=0.2/0.45` (+ LEAPFOLD_OLD=1): USELESS -- every
+   frame reports `SHOT knight leap state 3 t 0.02` (the leap loop in shot.gd breaks on the strike's first tick for
+   any u, so all three show the take-off) and the knight is a fog/bloom-washed white silhouette at the default lens.
+   The new heave has NOT been looked at. Gallery 20261110-2300-knight-leap-takeoff (fail). No new third-party files.
+   NEXT: (1) fix the shot.gd leap capture (why it breaks at t 0.02; probably `foe_u` or the strike's t reset) and
+   look at a leap frame sequence u=0.1/0.2/0.35/0.7/0.85 side-on, exposure fixed, to grade the new arcs by eye;
+   (2) correct the shoulder model in `_place` for the knight (y 1.59, chest yaw sign) -- every knight pose's reach
+   clamp is measured from the wrong shoulders; (3) a bow-aware archer probe, a kindler probe; (4) 22:00's leftovers:
+   the `dart` lens + crouch->dart->overrun frames, the 55 deg warden coil, a close hewer raise sequence, the hero's
+   net-roll on heavy/plunge. BOSS/ANIMATION order unchanged; audio after.
 0. (22:00 11-10) **HARRIER'S CROUCH RE-SOLVED, SHAFT ON ITS POSE — DONE (game change + tighter `foereach` gate).**
    NEXT (2) of 21:00. Offline replica (python, kept out of the repo): old CROUCHED [2, 6, (-0.02, 1.08, 0.22), -26,
    0.1, 0.5] wanted R 0.576 / L 0.498 (reach 0.5), clamped shaft yaw 4.6 pitch -2.8 (9.2 deg off). Searched yaw/pitch

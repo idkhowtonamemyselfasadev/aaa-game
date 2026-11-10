@@ -632,6 +632,16 @@ var _place_lean := 0.0
 func _thrust_leaned() -> bool:
 	return move_kind == THRUST_MOVE and state in [WINDUP, STRIKE, RECOVER] and not THRUST_UNLEANED
 
+## (11-10) a pose eased once along a quadratic arc through `m` (the hewer's raise, the knight's
+## leap heave and slam): a straight lerp between far-apart poses drags a grip through the body.
+static func _lin_pose(a: Array, b: Array, f: float) -> Array:
+	return [lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), (a[2] as Vector3).lerp(b[2], f), lerpf(a[3], b[3], f),
+		lerpf(a[4] if a.size() > 4 else 0.0, b[4] if b.size() > 4 else 0.0, f),
+		lerpf(a[5] if a.size() > 5 else ARM_REACH, b[5] if b.size() > 5 else ARM_REACH, f)]
+static func _arc_pose(a: Array, m: Array, b: Array, r: float) -> Array:
+	var f := r * r * (3.0 - 2.0 * r)
+	return _lin_pose(_lin_pose(a, m, f), _lin_pose(m, b, f), f)
+
 static func _lerp_pose(a: Array, b: Array, f: float) -> Array:
 	f = f * f * (3.0 - 2.0 * f)
 	var sa: float = a[4] if a.size() > 4 else 0.0
