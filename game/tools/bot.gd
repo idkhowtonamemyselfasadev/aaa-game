@@ -1599,8 +1599,8 @@ func _foe_fold_test() -> void:
 		# (20:00 11-10) the bash re-solved: right fist was 0.143 m/size off the haft (BASH_OLD=1)
 		[_world.warden, HollowWarden.BASH_MOVE, "HollowWarden bash", true],
 		[_world.hewer, HollowHewer.CHOP_MOVE, "HollowHewer chop", true],
-		# FOUND 19:00 11-10, not fixed: the dart's recovery folds the right arm to 0.111 m
-		[_world.harrier, HollowHarrier.DART_MOVE, "HollowHarrier dart", true, false],
+		# (21:00 11-10) dart + overrun re-solved: the right arm folded to 0.111 m (DARTFOLD_OLD=1)
+		[_world.harrier, HollowHarrier.DART_MOVE, "HollowHarrier dart", true],
 		[_world.knight, HollowSoldier.THRUST_MOVE, "AshenKnight thrust", true],
 		[_world.knight, HollowSoldier.SWEEP_MOVE, "AshenKnight sweep", true],
 	]

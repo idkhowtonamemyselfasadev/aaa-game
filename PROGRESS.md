@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(21:00 11-10: THE HARRIER'S RIGHT ARM NO LONGER FOLDS SHUT THROUGH ITS DART AND OVERRUN: the 14:00 dart poses kept both grips inside reach but put the rear (right) grip only 0.32 / 0.24 m from its shoulder (offline), so the arm crushed to 0.111 m shoulder-to-wrist in the overrun, the elbow plane flipped mid-dart (pole normal +0.75 -> -0.55 in two ticks) and the fist slid 0.019 m off the haft. Re-solved DARTED / DART_REC offline (shaft within 2-4 deg of the old line, front fist within a few cm, the rear fist drawn back to the hip 0.40-0.41 m from the shoulder): bone shoulder-wrist 0.293 m, fists 0.000 m, the elbow keeps its side the whole dart. The dart is now gated in `foefold`; DARTFOLD_OLD=1 fails it.)
 (20:00 11-10: THE SHIELD WARDEN'S RIGHT FIST NO LONGER LEAVES THE SPEAR AS IT COILS AND SHOVES ITS TARGE: bot `foefold` caught the fist 0.143 m off the haft. Two causes: the old coil and drive asked the grips up to 0.72 m from the shoulders (reach 0.45), so the clamp bent the shaft 7 / 19 deg and crushed the drive's fists 0.26 m together; and as the coil hauled the fist back, the shoulder-to-wrist line ran within 7-17 deg of the right elbow's pole, so the elbow swung the forearm half round the shaft (GripRoll wanted 130-170 deg, the wrist feed refused). Re-solved coil and drive (every grip inside reach, the shaft on its pose 0.0-0.2 deg), the bash's grips ride the hip lean like the thrust's, the shove's lean no longer pops on the first tick, and through the bash the right elbow's pole eases out, up and back (a drawn-back shoving arm, elbow high): fist 0.000 m every tick. The bash is now gated in `foefold`; BASH_OLD=1 fails it.)
 (19:00 11-10: THE HOLLOW HEWER NO LONGER FOLDS ITS ARMS SHUT AS IT HEAVES THE AXE OVERHEAD: a new bot `foefold` runs every foe attack live and measures each arm's shoulder-to-wrist and each fist to the haft. The hewer's raise held the rear fist under its chin (0.23 m from the shoulder) and the straight lerp out of the guard dragged the front grip up the chest past its shoulder: bone shoulder-wrist 0.083 m (right) / 0.060 m (left), the arms crushed flat. Re-solved offline: the raise now swings the axe up in an arc out in front (a single-eased quadratic blend through RAISE_ARC, no mid-way stop) to a new cocked pose, fists in front of the face and the helve 60 deg up and back over the head: 0.269 / 0.255 m, fists on the helve 0.000 m. Found, not fixed yet: the warden's bash leaves its right fist 0.143 m off the haft, and the harrier's dart recovery folds its right arm to 0.111 m.)
 (18:00 11-10: THE HOLLOW SOLDIER'S THRUST NOW DRIVES ITS SPEAR ALONG THE THRUST'S LINE: the live thrust's front grip was asked 0.53 m past its reach, so at full stretch the real spear pointed up and across the chest, 102 deg off the line of the blow. The re-solved pose (THRUST_SOLVED, found at 14:00) is now live: its one-tick fist slip was the lunge itself. The strike leans the body from the hips (-0.13 -> +0.16 rad) but the spear lives in the unleaned Wield space, so the shoulders swung over the rear fist, the right arm folded to 0.12 m shoulder-to-wrist, the elbow flipped across the shaft and the fist left the haft 0.12 m. The thrust's grips and the shoulders its reach is measured from now turn about the hips with the lean (the shaft's direction kept), and the lean no longer pops 0.13 rad forward on the first strike tick (it blends on from the wind-up's lean back). Bot `foereach`: soldier THRUST pose 0.0 deg off; live thrust fists 0.000 m, shaft at full stretch 3.7 deg off the line, rear arm never under 0.205 m; THRUST_UNLEANED=1 fails it (0.122 m, arm 0.069 m). The Ashen Knight's thrust uses the same pose at every size: `foegrip` 0.000 m.)
@@ -8310,6 +8311,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (21:00 11-10) **HARRIER'S DART + OVERRUN RE-SOLVED, NO ARM FOLD — DONE (game change + `foefold` gate).**
+   NEXT (1) of 20:00. FOUND (FOEFOLD_TICKS): in-engine shoulder-to-grip fell 0.42 -> 0.20 through the strike and to
+   0.11 in the overrun; the pole normal's y flipped +0.75 -> -0.55 at strike t=0.12-0.13 (elbow swapped sides). Offline
+   (python replica of `_place`, /tmp, not kept): DARTED wanted R 0.315 / DART_REC R 0.236 from the shoulder. Search
+   (yaw/pitch +-16, slide, centre +-0.12 around the old front grip) for R want 0.40-0.45 and L <= reach-0.03:
+   DARTED_V2 [12, 4, (0, 1.138, 0.749), -10, -0.15, 0.6] (R 0.412, L 0.568), DART_REC_V2 [20, -10, (0.142, 0.965,
+   0.525), -10, 0, 0.58] (R 0.400, L 0.538), axis 0 deg. In-engine: R shoulder-wrist 0.293 (was 0.111), fist-haft
+   0.000 (was 0.019), pole normal stays +0.31..+0.75 (no flip; the pole angle dips to 14 deg late in the strike).
+   Env DARTFOLD_OLD=1 = 14:00 poses (foefold FAILS 0.111). Also seen offline: CROUCHED asks the right grip 0.576 m at
+   reach 0.5 (shaft 9.2 deg off the pose): re-solve next.
+   Bots PASS (10): foefold harrier foereach foeguard foegrip foehands keepgap foeflinch foeturn foestride.
+   Shots (GL): `soldier dart_rec 20 15.0 harrier close recover u=0.25` / `strike u=0.8` (+ DARTFOLD_OLD=1 dart_rec_old):
+   the `close` lens is placed for the crouch, so the dart carries the harrier to the right edge, overlapping the hero:
+   the bent-over overrun reads, the arm cannot be graded. A dart lens (side-on, ahead of the dart's end) is owed.
+   No new third-party files.
+   NEXT: (1) a `dart` lens in shot.gd (side-on to the dart's line at its end point, chest high) and a frame sequence
+   of crouch -> dart -> overrun; (2) re-solve CROUCHED (R grip past reach, 9.2 deg) and check the crouch's fold;
+   (3) 20:00's (2)/(3): the 55 deg warden coil, a close side-lit hewer raise sequence, the knight's surge/stomp/leap
+   fold, the hero's net-roll on heavy/plunge. BOSS/ANIMATION order unchanged; audio after.
 0. (20:00 11-10) **WARDEN'S BASH: FIST ON THE HAFT, NO ELBOW SWING — DONE (game change + `foefold` gate).**
    NEXT (1) of 19:00. FOUND (FOEFOLD_TICKS + GRIP_DBG): two faults. (a) BASH_COIL [55,14,(-0.12,1.30,0.22),-38] asked
    the grips 0.715 / 0.668 m from the shoulders, BASH_DRIVE's left 0.642 (reach 0.45): shaft 7.1 / 19.1 deg off,

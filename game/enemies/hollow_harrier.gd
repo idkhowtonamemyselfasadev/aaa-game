@@ -52,8 +52,16 @@ const DARTED := [12.0, 2.0, Vector3(-0.04, 1.2, 0.83), -10.0, -0.15, 0.6]
 const DART_REC := [20.0, -14.0, Vector3(0.02, 1.06, 0.64), -10.0, 0.0, 0.58]   # bent over the spear, overrunning
 const DARTED_OLD := [0.0, 2.0, Vector3(0.0, 1.14, 1.18), 18.0, 0.1, 0.6]
 const DART_REC_OLD := [6.0, -14.0, Vector3(0.05, 0.98, 0.9), 10.0, 0.1, 0.55]
-var dart_pose: Array = DARTED_OLD if OS.has_environment("REACH_OLD") else DARTED
-var dart_rec_pose: Array = DART_REC_OLD if OS.has_environment("REACH_OLD") else DART_REC
+## (11-10 21:00) the 14:00 dart poses kept both grips inside reach but put the rear (right) grip
+## only 0.32 / 0.24 m from its shoulder, so through the dart and the overrun the right arm folded
+## shut (bone shoulder-to-wrist 0.111 m, bot `foefold`). Re-solved offline: the shaft within a few
+## degrees of the old line, the front fist within a few cm, the rear fist drawn back to the hip
+## 0.40-0.45 m from the shoulder. DARTFOLD_OLD=1 env: the 14:00 poses.
+const DARTED_V2 := [12.0, 4.0, Vector3(0.0, 1.138, 0.749), -10.0, -0.15, 0.6]
+const DART_REC_V2 := [20.0, -10.0, Vector3(0.142, 0.965, 0.525), -10.0, 0.0, 0.58]
+const DARTFOLD_OLD_ENV := "DARTFOLD_OLD"
+var dart_pose: Array = DARTED_OLD if OS.has_environment("REACH_OLD") else (DARTED if OS.has_environment(DARTFOLD_OLD_ENV) else DARTED_V2)
+var dart_rec_pose: Array = DART_REC_OLD if OS.has_environment("REACH_OLD") else (DART_REC if OS.has_environment(DARTFOLD_OLD_ENV) else DART_REC_V2)
 const CROUCH_SINK := 0.3
 const CROUCH_LEAN := 0.32        # rad forward over the knees
 
