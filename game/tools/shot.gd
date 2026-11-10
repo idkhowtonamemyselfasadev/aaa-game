@@ -2762,6 +2762,12 @@ func _ready() -> void:
 			ep = kp + (kl * 2.3 + ef * 2.4) * ek.size_scale / 2.2
 			ep.y = terrain.height_at(ep.x, ep.z) + 1.15 * ek.size_scale
 			look = kp + Vector3.UP * 1.42 * ek.size_scale + kl * 0.12 * ek.size_scale
+			if "cwide" in args:
+				# (11-10 05:00) the plain `chest` lens sat so close the bowed helm and pauldron hid the
+				# gauntlet: twice as far out and lower, the hand reads against the sky on the helm's side
+				ep = kp + (kl * 4.5 + ef * 4.8) * ek.size_scale / 2.2
+				ep.y = terrain.height_at(ep.x, ep.z) + 0.9 * ek.size_scale
+				look = kp + Vector3.UP * 1.3 * ek.size_scale + kl * 0.15 * ek.size_scale
 		cam.global_position = ep
 		cam.look_at(look)
 		print("SHOT reel rt %.2f size %.2f state %d bow %.2f roll %.2f" % [rt, ek.size_scale, ek.state, ek.head.bow, ek.head.roll])

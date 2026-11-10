@@ -4739,6 +4739,9 @@ func _crown_test() -> void:
 			var r_gap := 0.0          # right fist off the glaive's axis while the left is on the helm
 			var l_end := 0.0          # left fist off the axis once it is back on the haft (u > 0.75)
 			var regrip := 0.0         # worst fist off the axis from the regrip through the rise (u 0.4-0.85)
+			var regrip_u := 0.0       # (11-10 05:00) where in the reel that worst tick was
+			var rise_mean := 0.0      # mean right fist off the axis through the rise (u 0.62-0.85)
+			var rise_n := 0
 			for i in 120:
 				if k.state != HollowSoldier.STAGGER:
 					break
@@ -4754,7 +4757,12 @@ func _crown_test() -> void:
 					if ru > 0.75:
 						l_end = maxf(l_end, gaps[1])
 					if ru > 0.4 and ru < 0.85 and k.clutch < 0.5:
+						if gaps[0] > regrip:
+							regrip_u = ru
 						regrip = maxf(regrip, gaps[0])
+						if ru > 0.62:
+							rise_mean += gaps[0]
+							rise_n += 1
 				if i == 20:
 					# a follow-up blow in the punish window lands without cutting the reel short
 					t_hit = k.t
@@ -4774,6 +4782,7 @@ func _crown_test() -> void:
 			print("BOT crown:   clutch: peak %.2f, palm to the helm's temple %.3f m per size, right fist off the axis one-handed %.3f, left fist back on the haft %.3f, right fist through the regrip and rise %.3f (old reel 0.12), free_l now %.2f" % [k.clutch_peak, k.clutch_gap, r_gap, l_end, regrip, k.free_l])
 			if OS.get_environment("CROWN_NOCLUTCH") == "" and (k.clutch_peak < 0.95 or k.clutch_gap > CLUTCH_GAP_MAX or r_gap > CLUTCH_FIST_MAX or l_end > CLUTCH_FIST_MAX or regrip > CLUTCH_REGRIP_MAX or k.free_l > 0.0):
 				return _combat_done(false, "the crown reel's left hand does not go to the helm and back onto the haft")
+			print("BOT crown:   rise: right fist worst %.3f at u %.2f, mean %.3f m per size over u 0.62-0.85" % [regrip, regrip_u, rise_mean / maxf(rise_n, 1)])
 			# (11-10 04:00) the hand lands a touch past the temple and settles back onto it
 			print("BOT crown:   landing: flight peak %.3f (overshoot), settled palm to the temple %.3f m per size" % [k.clutch_flight_peak, k.clutch_settled_gap])
 			if OS.get_environment("CROWN_NOCLUTCH") == "" and OS.get_environment("CLUTCH_LINEAR") == "" \

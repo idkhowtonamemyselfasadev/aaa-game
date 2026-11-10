@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261106-0641-turnsettle.jpg",
-  "time": "2026-11-06T06:41:37Z",
-  "caption": "The hero just after a turn on the spot, squared up with both feet stepped into the idle stance (GL frame); the boots are lost in shade under the tabard, the hands hang claw-like and the lighting is a flat GL fallback.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0740-knightsettle.jpg",
   "time": "2026-11-06T07:40:35Z",
   "caption": "The knight (size 2.2) squared up after a turn on the spot, both boots settled under it in the idle stance (GL quick-look frame, not Forward+); the ring floor still reads as flat speckled dirt.",
@@ -891,6 +885,12 @@
   "file": "20261110-0400-knight-clutch-landing.jpg",
   "time": "2026-11-10T04:15:00Z",
   "caption": "Ashen Knight crown reel at the clutch's landing overshoot (u 0.24), new chest-height lens on its left: too close, the bowed helm and pauldron hide the gauntlet entirely, so the eased landing cannot be judged from here.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0500-knight-reel-wide-right.jpg",
+  "time": "2026-11-10T05:00:00Z",
+  "caption": "The Ashen Knight kneeling dazed in the crown reel from a new wide chest-height lens: the whole body reads in the ring, but the lens is on its right side so the hand clutching the helm is hidden behind it.",
   "verdict": "fail"
  }
 ]
