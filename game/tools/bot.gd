@@ -1406,7 +1406,7 @@ func _foe_grip_test() -> void:
 ## pose is placed directly (HollowSoldier._place) and the real shaft (fist to fist) compared with
 ## the pose's direction. A grip asked past its reach is clamped in and bends the shaft (offline
 ## replica found the soldier's THRUST 102 deg off, the harrier's DARTED 96; REACH_OLD=1: the before).
-## Still open (see PROGRESS Next): the warden's BASH_COIL 7 / BASH_DRIVE 19 deg off.
+## (11-10 20:00) the warden's BASH_COIL / BASH_DRIVE re-solved (were 7 / 19 deg off; BASH_OLD=1).
 const FOEREACH_AXIS_MAX := 12.0   # deg
 const FOEREACH_FIST_MAX := 0.05   # m, worst fist centre off the haft through the harrier's dart
 const FOEREACH_THRUST_LINE_MAX := 6.0   # deg, the live thrust's shaft at full stretch (clamp from unleaned shoulders: 10.8)
@@ -1417,6 +1417,7 @@ func _foe_reach_test() -> void:
 	var sets := [
 		[_world.soldier, {"DRAWN": HollowSoldier.DRAWN, "THRUST": _world.soldier.thrust_pose}],
 		[_world.harrier, {"CROUCHED": HollowHarrier.CROUCHED, "DARTED": _world.harrier.dart_pose, "DART_REC": _world.harrier.dart_rec_pose}],
+		[_world.warden, {"BASH_COIL": _world.warden.BASH_COIL, "BASH_DRIVE": _world.warden.BASH_DRIVE}],
 	]
 	var fail := ""
 	for st in sets:
@@ -1535,6 +1536,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	e.move_kind = kind
 	e._enter(HollowSoldier.WINDUP)
 	var fist := [0.0, 0.0]
+	var fist_at := ["", ""]
 	var fold := [9.0, 9.0]
 	var fold_at := ["", ""]
 	var lean_lo := 0.0
@@ -1560,13 +1562,23 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 			if j == 1 and not check_l:
 				continue
 			var fc := e.fist_center(["Right", "Left"][j])
-			fist[j] = maxf(fist[j], fc.distance_to(o + ax * ax.dot(fc - o)) / ks)
+			var fg: float = fc.distance_to(o + ax * ax.dot(fc - o)) / ks
+			if OS.has_environment("FOEFOLD_TICKS") and j == 0:
+				var pn: Node3D = e._ik.get_node(e._ik.get_pole_node(0))
+				var sh: Vector3 = gt * e.skel.get_bone_global_pose(bones[0][0]).origin
+				var A: Vector3 = e._grip_r.global_position - sh
+				var P: Vector3 = pn.global_position - sh
+				var nb: Vector3 = e.body.global_basis.inverse() * A.cross(P)
+				print("      tick st=%d t=%.3f R gap %.3f grip-target %.3f pole %.0f deg n.y %+.2f sh-grip %.3f" % [e.state, e.t, fg, fc.distance_to(e._grip_r.global_position) / ks, rad_to_deg(A.angle_to(P)), nb.normalized().y, A.length()])
+			if fg > fist[j]:
+				fist[j] = fg
+				fist_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 			var f: float = (gt * e.skel.get_bone_global_pose(bones[j][0]).origin).distance_to(gt * e.skel.get_bone_global_pose(bones[j][1]).origin) / ks
 			if f < fold[j]:
 				fold[j] = f
 				fold_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 	e.process_mode = Node.PROCESS_MODE_DISABLED
-	print("   %s (x%.1f, states %s): fist-haft R %.3f L %.3f m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
+	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
 		return "%s: the strike never ran" % label
 	if not gated:
@@ -1584,8 +1596,8 @@ func _foe_fold_test() -> void:
 	var runs := [
 		[_world.soldier, HollowSoldier.THRUST_MOVE, "HollowSoldier thrust", true],
 		[_world.soldier, HollowSoldier.SWEEP_MOVE, "HollowSoldier sweep", true],
-		# FOUND 19:00 11-10, not fixed: the bash's right fist 0.143 m/size off the haft
-		[_world.warden, HollowWarden.BASH_MOVE, "HollowWarden bash", false, false],
+		# (20:00 11-10) the bash re-solved: right fist was 0.143 m/size off the haft (BASH_OLD=1)
+		[_world.warden, HollowWarden.BASH_MOVE, "HollowWarden bash", true],
 		[_world.hewer, HollowHewer.CHOP_MOVE, "HollowHewer chop", true],
 		# FOUND 19:00 11-10, not fixed: the dart's recovery folds the right arm to 0.111 m
 		[_world.harrier, HollowHarrier.DART_MOVE, "HollowHarrier dart", true, false],

@@ -40,8 +40,23 @@ const BASH_LUNGE := 0.75         # metres the shove carries the body
 const BASH_DAMAGE := 8.0
 # the bash: spear hauled back and up on the right, chest turned away so the targe coils
 # behind the left shoulder; then the chest whips round and the forearm (the board) drives out
-const BASH_COIL := [55.0, 14.0, Vector3(-0.12, 1.30, 0.22), -38.0]
-const BASH_DRIVE := [8.0, 4.0, Vector3(0.24, 1.26, 0.78), 34.0]
+## (11-10 20:00) re-solved offline (replica of `_place` with the hip lean): the old coil asked the
+## grips 0.72 / 0.67 m from the shoulders (reach 0.45) and the drive's left 0.64, so the clamp bent
+## the shaft 7 / 19 deg off the pose, crushed the drive's fists 0.26 m together on a 0.42 m grip and
+## threw the right fist 0.143 m off the haft (bot `foefold`). New: the arms reach 0.55 (a shove,
+## near straight, like the sweep's 0.6), every grip inside it through the coil, drive and recovery
+## (0.35-0.53 m), the drive's centre 14 cm nearer the chest; the coil (reach 0.45, its grips
+## <= 0.45 m) hauls the centre 0.3 m back and the chest 48 deg away with the shaft held at the
+## guard's line (a 55 deg shaft put the right fist on the elbow pole's line: see `_bash_pole`).
+## Env BASH_OLD=1: the before.
+const BASH_COIL_OLD := [55.0, 14.0, Vector3(-0.12, 1.30, 0.22), -38.0]
+const BASH_DRIVE_OLD := [8.0, 4.0, Vector3(0.24, 1.26, 0.78), 34.0]
+const BASH_COIL_NEW := [25.0, 14.0, Vector3(-0.04, 1.38, 0.26), -38.0, 0.0, 0.45]
+const BASH_DRIVE_NEW := [8.0, 4.0, Vector3(0.20, 1.32, 0.64), 34.0, 0.0, 0.55]
+const BASH_COIL_LEAN := -0.08
+var BASH_OLD := OS.get_environment("BASH_OLD") == "1"
+var BASH_COIL: Array = BASH_COIL_OLD if BASH_OLD else BASH_COIL_NEW
+var BASH_DRIVE: Array = BASH_DRIVE_OLD if BASH_OLD else BASH_DRIVE_NEW
 # the warden's guard: spear drawn in and up, the left forearm (and the targe) across the chest
 ## (11-10 13:00) re-solved offline (replica of `_place`): the old pose asked a grip past its reach, so
 ## the clamp bent the shaft 9.3 deg off the pose's direction and every lerp into or out of the guard
@@ -130,7 +145,39 @@ func _physics_process(delta: float) -> void:
 		_targe_flash = maxf(_targe_flash - delta * 4.0, 0.0)
 		targe.set_param("hit_flash", _targe_flash)
 	_watch_crowding(delta)
+	_bash_pole(delta)
 	super._physics_process(delta)
+
+## (11-10 20:00) the bash's right elbow points out to the side. The soldier's right-arm pole sits
+## low and behind; as the coil hauls the fist back the shoulder-to-wrist line ran within 7-17 deg
+## of it, the elbow plane was ill-defined and swung the forearm half round the shaft (GripRoll
+## wanted 130-170 deg, the fist left the haft 0.12-0.14 m; bot `foefold`). Through the bash the
+## pole eases out to the right, up and back (a drawn-back shoving arm, elbow high and out; tried
+## (-1.2, 0.9, -0.1): 0.032 m, (-1.0, 0.4, 0.2): 0.135 m; this one 0.000).
+## Env BASH_OLD=1: the before.
+const BASH_POLE_R := Vector3(-1.2, 1.3, -0.3)
+var _pole_r: Node3D
+var _pole_r_rest := Vector3.ZERO
+var _pole_w := 0.0
+func _bash_pole(delta: float) -> void:
+	if _pole_r == null:
+		if _ik == null or BASH_OLD:
+			return
+		_pole_r = _ik.get_node_or_null(_ik.get_pole_node(0)) as Node3D
+		if _pole_r == null:
+			return
+		_pole_r_rest = _pole_r.position
+	var want := 0.0
+	if move_kind == BASH_MOVE:
+		match state:
+			WINDUP:
+				want = smoothstep(0.0, 0.35, t / BASH_WINDUP_T)
+			STRIKE:
+				want = 1.0
+			RECOVER:
+				want = 1.0 - smoothstep(0.2, 0.9, t / BASH_RECOVER_T)
+	_pole_w = move_toward(_pole_w, want, delta * 5.0)
+	_pole_r.position = _pole_r_rest.lerp(BASH_POLE_R, _pole_w)
 
 ## A hero standing inside the ward, in front, gets the board: count how long they have crowded
 ## it and start the bash once that passes BASH_CROWD.
@@ -164,7 +211,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			var u := clampf(t / BASH_WINDUP_T, 0.0, 1.0)
 			_turn_to(to, delta, 6.0 * (1.0 - u * u))     # squares up to the hero, then commits
 			_pose = _lerp_pose(_from, BASH_COIL, minf(u * 1.8, 1.0))
-			lean = -0.08 * smoothstep(0.0, 0.7, u)
+			lean = BASH_COIL_LEAN * smoothstep(0.0, 0.7, u)
 			sink = 0.1 * smoothstep(0.0, 0.7, u)
 			ember = 1.0 + 2.6 * smoothstep(0.2, 0.9, u)
 			# a hero in reach late in the coil is "caught": a dodge from there earns the dodge
@@ -180,7 +227,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		STRIKE:
 			var u := clampf(t / BASH_T, 0.0, 1.0)
 			_pose = _lerp_pose(BASH_COIL, BASH_DRIVE, minf(u * 2.4, 1.0))
-			lean = 0.2 * smoothstep(0.0, 0.4, u)
+			# the shove's lean blends on from the coil's lean back (it popped 0.08 rad on the first tick)
+			lean = 0.2 * smoothstep(0.0, 0.4, u) if BASH_OLD else lerpf(BASH_COIL_LEAN, 0.2, smoothstep(0.0, 0.4, u))
 			sink = 0.1
 			ember = 3.6 - 1.2 * u
 			# the shove carries the body on, but it stops short of walking through the hero
@@ -200,6 +248,13 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			if u >= 1.0:
 				_enter(STALK)
 	return [move, lean, sink, ember]
+
+## (11-10 20:00) the bash's grips ride the hip lean like the thrust's (the shove leans 0.2 forward,
+## the shoulders swung over the fists the spear was placed for in the unleaned Wield space).
+func _thrust_leaned() -> bool:
+	if move_kind == BASH_MOVE:
+		return state in [WINDUP, STRIKE, RECOVER] and not BASH_OLD
+	return super()
 
 func _bash_in_reach() -> bool:
 	if _player == null:

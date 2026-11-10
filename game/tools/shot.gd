@@ -1161,6 +1161,10 @@ func _ready() -> void:
 			if "knoll" in args:
 				# low behind the hero's shoulder, looking up the rise at the archer on its post
 				SPOTS[spot] = [pp - line * 2.0 + side * 3.4 + Vector3.UP * 0.9, pp.lerp(fp, 0.7) + Vector3.UP * 1.1]
+			if "warden" in args and "bash" in args:
+				# (animation review) the warden's bash close from its lit front quarter, chest high:
+				# the coiled right arm (elbow out) and the shove read against the sky
+				SPOTS[spot] = [fp + side * 2.6 - line * 1.3 + Vector3.UP * 0.35, fp - line * 0.3 + Vector3.UP * 1.2]
 			if "harrier" in args and "close" in args:
 				# the harrier's crouch at the hero's back: close on its lit flank, front three-quarter,
 				# low, so the coif, the bare shoulders and the low spear read against the hero
@@ -2990,6 +2994,12 @@ func _ready() -> void:
 			dur[HollowSoldier.WINDUP] = HollowHarrier.TELL_T
 			dur[HollowSoldier.STRIKE] = HollowHarrier.DART_T
 			dur[HollowSoldier.RECOVER] = HollowHarrier.OVERRUN_T
+		if foe is HollowWarden and "bash" in args:
+			# warden: the targe bash (coil, shove, recovery)
+			foe.move_kind = HollowWarden.BASH_MOVE
+			dur[HollowSoldier.WINDUP] = HollowWarden.BASH_WINDUP_T
+			dur[HollowSoldier.STRIKE] = HollowWarden.BASH_T
+			dur[HollowSoldier.RECOVER] = HollowWarden.BASH_RECOVER_T
 		if foe_state == HollowSoldier.STAGGER:
 			# blowfront: driven straight back from the hero; blowside: from its right; reelold: the
 			# old rigid lean instead of the joint reaction (for a before/after)

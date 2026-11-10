@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(20:00 11-10: THE SHIELD WARDEN'S RIGHT FIST NO LONGER LEAVES THE SPEAR AS IT COILS AND SHOVES ITS TARGE: bot `foefold` caught the fist 0.143 m off the haft. Two causes: the old coil and drive asked the grips up to 0.72 m from the shoulders (reach 0.45), so the clamp bent the shaft 7 / 19 deg and crushed the drive's fists 0.26 m together; and as the coil hauled the fist back, the shoulder-to-wrist line ran within 7-17 deg of the right elbow's pole, so the elbow swung the forearm half round the shaft (GripRoll wanted 130-170 deg, the wrist feed refused). Re-solved coil and drive (every grip inside reach, the shaft on its pose 0.0-0.2 deg), the bash's grips ride the hip lean like the thrust's, the shove's lean no longer pops on the first tick, and through the bash the right elbow's pole eases out, up and back (a drawn-back shoving arm, elbow high): fist 0.000 m every tick. The bash is now gated in `foefold`; BASH_OLD=1 fails it.)
 (19:00 11-10: THE HOLLOW HEWER NO LONGER FOLDS ITS ARMS SHUT AS IT HEAVES THE AXE OVERHEAD: a new bot `foefold` runs every foe attack live and measures each arm's shoulder-to-wrist and each fist to the haft. The hewer's raise held the rear fist under its chin (0.23 m from the shoulder) and the straight lerp out of the guard dragged the front grip up the chest past its shoulder: bone shoulder-wrist 0.083 m (right) / 0.060 m (left), the arms crushed flat. Re-solved offline: the raise now swings the axe up in an arc out in front (a single-eased quadratic blend through RAISE_ARC, no mid-way stop) to a new cocked pose, fists in front of the face and the helve 60 deg up and back over the head: 0.269 / 0.255 m, fists on the helve 0.000 m. Found, not fixed yet: the warden's bash leaves its right fist 0.143 m off the haft, and the harrier's dart recovery folds its right arm to 0.111 m.)
 (18:00 11-10: THE HOLLOW SOLDIER'S THRUST NOW DRIVES ITS SPEAR ALONG THE THRUST'S LINE: the live thrust's front grip was asked 0.53 m past its reach, so at full stretch the real spear pointed up and across the chest, 102 deg off the line of the blow. The re-solved pose (THRUST_SOLVED, found at 14:00) is now live: its one-tick fist slip was the lunge itself. The strike leans the body from the hips (-0.13 -> +0.16 rad) but the spear lives in the unleaned Wield space, so the shoulders swung over the rear fist, the right arm folded to 0.12 m shoulder-to-wrist, the elbow flipped across the shaft and the fist left the haft 0.12 m. The thrust's grips and the shoulders its reach is measured from now turn about the hips with the lean (the shaft's direction kept), and the lean no longer pops 0.13 rad forward on the first strike tick (it blends on from the wind-up's lean back). Bot `foereach`: soldier THRUST pose 0.0 deg off; live thrust fists 0.000 m, shaft at full stretch 3.7 deg off the line, rear arm never under 0.205 m; THRUST_UNLEANED=1 fails it (0.122 m, arm 0.069 m). The Ashen Knight's thrust uses the same pose at every size: `foegrip` 0.000 m.)
 (17:00 11-10: THE STAFF NO LONGER SLIPS HALF A TURN ROUND IN THE HERO'S FISTS ON EACH LIGHT BLOW: the staff's placed basis was the shortest turn from UP onto the shaft, so as the shaft swung near straight down its grain and cloth wrap spun ~180 deg about the shaft and back while GripRoll counter-rolled the hands to keep them still. Now the staff rolls WITH the right fist: each tick GripRoll turns the staff about its own shaft by the right hand's roll (accumulated `twist`, added by StaffCombat `_solve`) and takes the same turn back out of both hands' staff-frame bases, so the hands move exactly as before in the world (every hand number identical) and the wrap stays put in the fist. Bot `hands`: right fist slip on the staff 22.17 -> 0.00 rad over the string, staff turn about its shaft 15.87 -> 10.59 rad (what is left is the fist's own roll); new gates HERO_FIST_SLIP_MAX 0.5 / HERO_STAFF_SPIN_SUM 12; env STAFF_SPINRAW=1 = old, fails them.)
@@ -19,6 +20,10 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (20:00 11-10) Setup first try (import ~6 min), 3 bot sets in parallel fine; GL shots (SHOT_GL=1, 3 at once) after
+  the bots. Asset sites not rechecked (no downloads). New: `FOEFOLD_TICKS=1 foefold` prints the right fist's gap, the
+  elbow pole's angle to the shoulder-grip line and the shoulder-grip distance per tick; shot args `warden bash`
+  (+ `strike`/`recover`, u=) frame the warden's bash close from its lit front quarter. BASH_OLD=1 = the old bash.
 - (19:00 11-10) Setup first try (import ~6 min), 5 bot sets in parallel; asset sites not rechecked (no downloads).
 - (18:00 11-10) Setup first try (import ~8 min), 5 bot sets in parallel fine (29 routes, ~12 min); GL shots run alone
   after the bots. Asset sites not rechecked (no downloads).
@@ -8305,6 +8310,34 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (20:00 11-10) **WARDEN'S BASH: FIST ON THE HAFT, NO ELBOW SWING — DONE (game change + `foefold` gate).**
+   NEXT (1) of 19:00. FOUND (FOEFOLD_TICKS + GRIP_DBG): two faults. (a) BASH_COIL [55,14,(-0.12,1.30,0.22),-38] asked
+   the grips 0.715 / 0.668 m from the shoulders, BASH_DRIVE's left 0.642 (reach 0.45): shaft 7.1 / 19.1 deg off,
+   the drive's clamped fists 0.263 m apart. (b) the right fist's gap (0.06-0.14 m from W t=0.15 to S t=0.05) was
+   GripRoll's raw roll jumping -0.16 -> -2.30 rad in one tick (bend 90-105, feed refused): in-engine the shoulder-to-
+   grip line ran 7-17 deg from the right pole (Wield (-0.8, 0.6, -0.4)), the elbow plane ill-defined.
+   Offline replica (python, /tmp, not kept; it is ~5 deg / ~0.05-0.1 m off the engine's real shoulder, so check
+   in-engine): the in-engine shoulder-grip distance must stay <= ~0.42 (at 0.46-0.49 the fist dropped off), so
+   the offline solve aims <= 0.45 at reach 0.45. FIX (hollow_warden.gd): BASH_COIL_NEW [25, 14, (-0.04, 1.38,
+   0.26), -38, 0, 0.45] (shaft on the guard's line, centre 0.3 m back, chest 48 deg away), BASH_DRIVE_NEW [8, 4,
+   (0.20, 1.32, 0.64), 34, 0, 0.55]; `_thrust_leaned` override: the bash's grips ride the lean; STRIKE lean =
+   lerp(BASH_COIL_LEAN -0.08, 0.2, ...) (was a 0.08 pop); `_bash_pole`: pole_r eases to BASH_POLE_R (-1.2, 1.3,
+   -0.3) through the bash (want: W smoothstep(0, 0.35, u), S 1, R 1 - smoothstep(0.2, 0.9, u), 5/s). Tried poles
+   (-1.2, 0.9, -0.1) 0.032 m, (-1.0, 0.4, 0.2) 0.135 m. Coil blended toward the guard (k 0.5 / 0.65 / 0.8 without
+   the pole): 0.055 / 0.073 / 0.092, so the pole was the fix, not the reach.
+   Bot `foefold`: warden bash now gated, fist-haft R 0.000 L 0.000, shoulder-wrist R 0.273 L 0.217; BASH_OLD=1:
+   FAIL 0.143. `foereach`: BASH_COIL 0.2 / BASH_DRIVE 0.0 deg (added to the placed-pose set).
+   Bots PASS (9): foefold foereach foegrip warden foehands foeguard keepgap foeflinch foeturn.
+   Shots (GL, alone after the bots): `soldier bash_coil 20 15.0 warden bash u=0.95` (+ BASH_OLD=1 bash_coil_old):
+   new coil lifts the spear up and across from the hauled-back right fist, elbow out; the old one laid it flat across
+   the chest. Both backlit, hood and arms dark. `... bash strike u=0.7` lost the warden off the frame's right edge
+   (the lunge carries it 0.75 m toward the hero): the drive frame needs a wider lens. Gallery 20261110-2000-warden-
+   bash-coil / -before (fail: silhouette). No new third-party files.
+   NEXT: (1) the harrier's dart recovery: right arm 0.111 m at R t=0.13 (DART_REC lerp; it leans 0.32): re-solve /
+   lean-carry like the thrust (check the elbow pole angle with FOEFOLD_TICKS first: the bash showed the pole, not the
+   reach, was the cause), then gate it; (2) a 55 deg coil (more haul across the back) with the new pole, if the
+   in-engine shoulder-grip stays <= 0.42; (3) 19:00's (3)/(4): a close side-lit hewer raise sequence; the knight's
+   surge/stomp/leap fold; the hero's net-roll on heavy/plunge. BOSS/ANIMATION order unchanged; audio after.
 0. (19:00 11-10) **HEWER'S RAISE RE-SOLVED, NO ARM FOLD — DONE (game change + new bot `foefold`).**
    NEXT (1) of 18:00. New bot `foefold` (`_attack_probe`): each foe attack run live wind-up -> recovery with the other
    foes disabled; per arm the min bone shoulder-wrist (mixamorig_*Arm -> *Hand, m/size, with the state/time it hits),
