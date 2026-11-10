@@ -1124,6 +1124,7 @@ func _thumb_read(skel: Skeleton3D, side: String, o: Vector3, ax: Vector3) -> Arr
 	var d_axis := tw.distance_to(o + ax * ax.dot(tw - o))
 	return [d_axis, tip.distance_to(i2) / maxf(i1.distance_to(i2), 1e-4)]
 
+const REVEAL_FOLLOW_MAX := 0.07  # m per size: fists off the haft as the reveal's glaive comes down (11-10 09:00; was 0.132)
 const REVEAL_FIST_MAX := 0.05   # m per size: the knight's fists off the glaive's axis through the reveal (11-10)
 
 ## (11-10 01:00) the knight's hands read as fists (centre on the haft) rather than wrists: GripRoll
@@ -4039,6 +4040,8 @@ func _knight_test() -> void:
 	var coil_gap := [0.0]
 	var coil_fist := [false]
 	var grip_fist := [0.0]
+	var follow_visor := [9.0, 0.0]  # the haft's nearest pass to the visor in the follow-through
+	var follow_fist := [0.0, 0.0]   # worst fist off the haft in the follow-through, at it
 	var coil_hx := [-9.0]
 	var coil_butt := [-9.0]
 	var coil_glare := [0.0]
@@ -4093,7 +4096,7 @@ func _knight_test() -> void:
 			coil_glare[0] = maxf(coil_glare[0], absf(HeadGlare.yaw_to(k.skel, k.body, p.global_position + Vector3.UP * 1.5)))
 			if OS.get_environment("COILDBG") != "":
 				print("COIL t %.2f r %s l %s butt %.2f" % [k.intro.t, inv * (k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin), inv * (k.skel.global_transform * k.skel.get_bone_global_pose(lhb).origin), (bw.y - k.global_position.y) / k.size_scale])
-		if k.intro.t > 2.95 and k.intro.t < BossIntro.ROAR_END and headb >= 0:
+		if k.intro.t > 2.95 and k.intro.t < BossIntro.T and headb >= 0:
 			# (08:00 11-07) the shaft passing across the face in the heave (lit kface frame it=3.13):
 			# the nearest the haft comes to a point just in front of the visor, per size
 			var kf2 := k.body.global_basis.z
@@ -4104,7 +4107,12 @@ func _knight_test() -> void:
 			var s_butt := k.spear.to_global(-k.spear.tip_local())
 			var s_pt := Geometry3D.get_closest_point_to_segment(vis, s_butt, s_tip)
 			var sc := s_pt.distance_to(vis) / k.size_scale
-			if sc < visor_shaft[0]:
+			if k.intro.t >= BossIntro.ROAR_END:
+				# (09:00 11-10) the follow-through brings the glaive down beside the helm, not across it
+				if sc < follow_visor[0]:
+					follow_visor[0] = sc
+					follow_visor[1] = k.intro.t
+			elif sc < visor_shaft[0]:
 				visor_shaft[0] = sc
 				visor_shaft[1] = k.intro.t
 		if k.intro.t > 3.3 and k.intro.t < 3.7 and headb >= 0:
@@ -4152,6 +4160,15 @@ func _knight_test() -> void:
 					roar_headup[0] = minf(roar_headup[0], hd_b.y - nk_b.y)
 				if OS.get_environment("ROARDBG") != "":
 					print("ROAR t %.2f head %s lfist %s" % [k.intro.t, hd_b, lf_b])
+		# (09:00 11-10) the follow-through: the left hand back on the haft and the glaive brought
+		# down past the guard was never measured (the gate stopped at ROAR_END)
+		if k.intro.t >= BossIntro.ROAR_END and k.intro.t < BossIntro.T and _knight_fist_mode(k):
+			var fg := maxf(k.fist_gap[0], k.fist_gap[1] * (1.0 - k.free_l))
+			if fg > follow_fist[0]:
+				follow_fist[0] = fg
+				follow_fist[1] = k.intro.t
+			if OS.has_environment("REVEALFIST_DBG"):
+				print("RFF t %.2f gap R %.3f L %.3f free %.2f aim %.2f/%.2f roll %s" % [k.intro.t, k.fist_gap[0], k.fist_gap[1], k.free_l, (k._aim_ik[0] as TwoBoneIK3D).influence, (k._aim_ik[1] as TwoBoneIK3D).influence, k._roll_frame])
 		if k.intro.t <= BossIntro.CRANE_T or k.intro.t >= BossIntro.ROAR_END:
 			return
 		var rw := k.skel.global_transform * k.skel.get_bone_global_pose(rhb).origin
@@ -4257,6 +4274,9 @@ func _knight_test() -> void:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
 	print("BOT knight: reveal spine: hunched %.2f rad, arched back %.2f rad; neck over the hips %.2f .. %.2f m (per size)" % [k.intro_hunch_peak, k.intro_arch_peak, neck_back, neck_fore])
 	print("BOT knight: reveal grip: hands off the haft holds at most %.3f m (per size) through the heave and roar (fists off the axis %.3f)" % [grip_gap, grip_fist[0]])
+	print("BOT knight: reveal follow-through: fists off the haft at most %.3f m (per size) at it %.2f; haft at least %.2f m off the visor (at it %.2f)" % [follow_fist[0], follow_fist[1], follow_visor[0], follow_visor[1]])
+	if k._aim_ik[0] != null and (follow_fist[0] > REVEAL_FOLLOW_MAX or follow_visor[0] < 0.25):
+		return _combat_done(false, "the reveal's follow-through pops a fist off the glaive or swings it across the visor (%.3f m, visor %.2f m)" % [follow_fist[0], follow_visor[0]])
 	if grip_gap > 0.09:
 		return _combat_done(false, "the roar's arch pulls the hands off the glaive (%.3f m)" % grip_gap)
 	# (11-10 01:00) the reveal's fists on the glaive (the same-tick FistAim pass; old fit 0.089 in the coil)

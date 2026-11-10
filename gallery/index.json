@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261106-1530-swing1-wind.jpg",
-  "time": "2026-11-06T15:30:00Z",
-  "caption": "GL frame of blow 2's wind-up, staff carried back over the right shoulder; the hands are too small and dark to judge the grip: needs a close lens that follows the spin and a Forward+ render",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-1638-stomp-front.jpg",
-  "time": "2026-11-06T16:38:31Z",
-  "caption": "The phase-2 knight holding its stomp's knee-up, hips now shifted over the standing boot (GL quick-look); still wrong: the front lens is backlit at 15:00 and the tall grass hides both boots, so the weight shift cannot be judged in this frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-1727-crownreel.jpg",
   "time": "2026-11-06T17:27:03Z",
   "caption": "The Ashen Knight buckled in the crown reel, glaive drooping into the turf, its boots now held where they stood (bot-proven); still backlit against the sun, so the legs read as a silhouette (GL frame).",
@@ -885,6 +873,18 @@
   "file": "20261110-0800-surge-roar-before.jpg",
   "time": "2026-11-10T08:30:00Z",
   "caption": "The same surge frame with the old roar pose (SURGE_OLDROAR=1): the right fist jammed up against the shoulder, the arm folded shut, which is what rolled the fist off the haft.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0900-reveal-follow-grip.jpg",
+  "time": "2026-11-10T09:20:00Z",
+  "caption": "The Ashen Knight's reveal follow-through: the glaive now comes down held out in front of the chest with both fists on the haft; the armour still reads dark and flat at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0900-reveal-follow-before.jpg",
+  "time": "2026-11-10T09:20:00Z",
+  "caption": "Before: the right arm jammed against the shoulder and the shaft sliding past the fist as the glaive comes down.",
   "verdict": "fail"
  }
 ]

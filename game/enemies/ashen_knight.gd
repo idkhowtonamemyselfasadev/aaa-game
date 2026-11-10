@@ -92,6 +92,13 @@ const INTRO_ROAR := [-10.0, 65.0, Vector3(-0.27, 2.12, 0.24), -20.0, 0.1, 0.66]
 ## glaive (found offline: fist-shoulder line . shaft ~0.01, left fist within reach until it lets
 ## go). Env SURGE_OLDROAR: the before.
 const SURGE_ROAR := [-20.0, 75.0, Vector3(-0.25, 2.05, 0.4), -20.0, 0.1, 0.66]
+## env INTRO_ROAR_TRY="yaw,pitch,x,y,z,chest" replaces the reveal's roar pose (tuning loops)
+func _intro_roar_pose() -> Array:
+	var e := OS.get_environment("INTRO_ROAR_TRY")
+	if e == "":
+		return INTRO_ROAR
+	var v := e.split_floats(",")
+	return [v[0], v[1], Vector3(v[2], v[3], v[4]), v[5], INTRO_ROAR[4], INTRO_ROAR[5]]
 ## (09:00 11-07) at the top of the reveal's heave the left hand lets go of the haft and is flung
 ## up and out to the knight's left, a clenched fist (body frame, unscaled, from the shoulder's
 ## unit direction x reach): in profile the raised left arm sat in front of / over the flung-back
@@ -114,6 +121,11 @@ const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
 ## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
 ## the shaft comes down beside the helm instead of standing upright in front of the face
 const FOLLOW_RIGHT := 0.32
+## (09:00 11-10) the follow-through carries the hold point forward (was 0.08 back): drawn back, the
+## right fist came down ~0.2 m from its shoulder (the arm folded shut), the IK flipped the hand as the
+## glaive swept past and the fist popped 0.24 m per size off the haft for a tick (bot knight:
+## follow-through 0.132 -> 0.019 right, haft still 0.33 m off the visor). Env FOLLOW_BACK: the before.
+const FOLLOW_FWD := 0.15
 ## how far the heave's path bows out round the right side mid-rise (deg of shaft yaw, unscaled m
 ## of hands out to the right), so the blade sweeps up beside the body, never across the chest
 const HEAVE_ROUND_YAW := 35.0
@@ -1029,7 +1041,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		glare.target = _player.global_position + Vector3.UP * 1.5
 	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * coil)
 	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
-	_pose = _lerp_pose(rest, INTRO_ROAR, up)
+	_pose = _lerp_pose(rest, _intro_roar_pose(), up)
 	# (06:00 11-07) the straight lerp coil -> roar cut the late heave across the chest (shaft 0.39
 	# toward the front at up ~0.6): bow the path out round the right side while it rises, the
 	# shaft held further round (yaw) and the hands carried out to the right, gone again at the top
@@ -1046,7 +1058,8 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 			_pose[5] = float(_pose[5]) - HEAVE_REACH_IN * lift
 	# the follow-through brings the glaive down on the right, beside the helm, not past the visor
 	var down_side := sin(PI * clampf((it - (BossIntro.ROAR_END - 0.3)) / (BossIntro.T - BossIntro.ROAR_END + 0.1), 0.0, 1.0))
-	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, -0.08 * down_side)
+	var ffwd := -0.08 if OS.has_environment("FOLLOW_BACK") else FOLLOW_FWD   # env: the before
+	_pose[2] = (_pose[2] as Vector3) + Vector3(-FOLLOW_RIGHT * down_side, 0.0, ffwd * down_side)
 	_pose[0] = float(_pose[0]) - 22.0 * down_side
 	_pose[1] += sin(it * 38.0) * 2.0 * roar + sin(it * 7.0) * 1.5 * dormant
 	# head: bowed asleep, lifts onto the hero (a slight overshoot back as it locks on), dips in the
@@ -1076,6 +1089,8 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# be left reaching for a haft the arched shoulders have pulled away from); asleep and in the
 	# gather it stays where it is, the point in the turf / drawn low
 	_pose = _arch_pose(_pose, _intro_arch * ROAR_CARRY * up)
+	if OS.has_environment("INTRO_DBG") and it > 3.8:
+		print("KI t %.3f up %.2f ds %.2f fol %.2f arch %.3f pose %s gap %s" % [it, up, down_side, follow, _intro_arch, str(_pose), str(fist_gap)])
 	intro_arch_peak = minf(intro_arch_peak, _intro_arch)
 	intro_hunch_peak = maxf(intro_hunch_peak, _intro_arch)
 	# legs: knees soft asleep, deep in the gather, straight in the heave, a settle dip after
