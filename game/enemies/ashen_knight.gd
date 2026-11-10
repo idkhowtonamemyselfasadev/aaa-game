@@ -212,6 +212,14 @@ var clutch_gap := 9.0            # bots: closest the left palm came to the helm'
 ## later regrip, 0.54-0.7, overlapped the rise and threw the right fist 0.3 m per size off the haft)
 const CLUTCH_REL := [0.46, 0.62]
 const CLUTCH_AT := Vector3(0.15, 0.06, 0.07)  # body space, unscaled: off the head bone, the helm's left temple
+## (11-10 04:00) the hand's flight to the helm: it reaches quickly and lands a touch past the temple
+## (along its path, up the side of the helm), then settles back onto it on a damped spring
+var clutch_flight := 0.0         # 0..~1.07: how far along the haft-to-helm path the hand is
+var clutch_flight_peak := 0.0    # bots: highest flight of the last reel (the overshoot)
+var clutch_settled_gap := 0.0    # bots: worst palm to temple point once it has settled (u 0.32-0.44)
+const CLUTCH_OVER := 0.2         # amplitude of the landing overshoot (fraction of the path)
+const CLUTCH_HEAD_KICK := 0.07   # rad: the head knocked away from the landing hand
+const CLUTCH_LAND := [0.2, 0.31] # u window of the landing and settle
 var _head_bow := 0.0
 var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
@@ -449,6 +457,8 @@ func crowned(_point: Vector3) -> void:
 	crown_lift_back = 0.0
 	clutch_peak = 0.0
 	clutch_gap = 9.0
+	clutch_flight_peak = 0.0
+	clutch_settled_gap = 0.0
 	# start a beat in, already knocked down: the hit-stop freezes the head on the chest
 	t = CROWN_IMPACT_U * CROWN_STAGGER
 	_crown_tick(0.0, true)
@@ -469,6 +479,11 @@ func _crown_tick(delta: float, snap := false) -> void:
 	var bow := 0.78 * down + 0.22 * hit - 0.24 * back
 	var roll := 0.2 * sin((u - CROWN_IMPACT_U) * TAU * 1.5) * hold * smoothstep(0.1, 0.22, u) \
 		+ 0.13 * sin(u * TAU * 7.5) * shake
+	# (11-10 04:00) the gauntlet landing on the helm's left side knocks the head a little to its
+	# right (+roll drops it toward the body's +X, the hand's side), then it settles back
+	var land := _clutch_spring(u)
+	if OS.get_environment("CROWN_NOCLUTCH") == "" and OS.get_environment("CLUTCH_LINEAR") == "":
+		roll -= CLUTCH_HEAD_KICK * land
 	if snap:
 		_head_bow = bow
 		_head_roll = roll
@@ -494,6 +509,13 @@ func _crown_tick(delta: float, snap := false) -> void:
 		smoothstep(0.1, 0.26, u) * (1.0 - smoothstep(CLUTCH_REL[0], CLUTCH_REL[1], u))
 	free_l = clutch
 	clutch_peak = maxf(clutch_peak, clutch)
+	clutch_flight = clutch
+	if OS.get_environment("CLUTCH_LINEAR") == "" and u < 0.4 and clutch > 0.0:
+		# reach: the hand is off the haft as GripRoll lets it go (the slow smoothstep start) and
+		# decelerates into the helm; the landing overshoots and settles (a damped spring)
+		var reach := smoothstep(0.1, 0.23, u)
+		clutch_flight = reach + CLUTCH_OVER * land
+	clutch_flight_peak = maxf(clutch_flight_peak, clutch_flight)
 	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
 	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
 		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
@@ -504,6 +526,12 @@ func _crown_tick(delta: float, snap := false) -> void:
 	crown_bow_peak = maxf(crown_bow_peak, _head_bow)
 	crown_sink_peak = maxf(crown_sink_peak, sink)
 	crown_lift_back = minf(crown_lift_back, _head_bow)
+
+## the landing's damped spring over CLUTCH_LAND: up to ~0.6 a beat after contact, a small dip
+## back under, 0 by the end of the window
+func _clutch_spring(u: float) -> float:
+	var s := clampf((u - CLUTCH_LAND[0]) / (CLUTCH_LAND[1] - CLUTCH_LAND[0]), 0.0, 1.0)
+	return exp(-3.5 * s) * sin(PI * 1.6 * s) * (1.0 - smoothstep(0.75, 1.0, s))
 
 func _hero_in_front() -> bool:
 	if _player == null:
@@ -1063,10 +1091,17 @@ func _place(pose: Array) -> void:
 	if _crown_reel:
 		var helm := _helm_point()
 		if helm != Vector3.INF:
-			# out round the pauldron and up the side of the helm, never across the visor
-			_grip_l.position = _grip_l.position.lerp(helm, f) + Vector3(0.14, 0.04, 0.06) * sin(PI * f)
+			# out round the pauldron and up the side of the helm, never across the visor; on the way
+			# in the eased flight (overshoot + settle), on the way back the release's smoothstep
+			var g := clutch_flight if clutch_flight != clutch else f
+			_grip_l.position = _grip_l.position.lerp(helm, g) + Vector3(0.14, 0.04, 0.06) * sin(PI * clampf(g, 0.0, 1.0))
+			if OS.has_environment("CLUTCH_FLY_DBG"):
+				print("FLY u %.3f g %.3f target %s palm-helm %.3f" % [t / CROWN_STAGGER, g, str(_grip_l.position), _palm_gap(helm)])
 			if f > 0.95:
 				clutch_gap = minf(clutch_gap, _palm_gap(helm))
+				var u := t / CROWN_STAGGER
+				if u > 0.32 and u < 0.44:
+					clutch_settled_gap = maxf(clutch_settled_gap, _palm_gap(helm))
 			return
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	# the arched chest carries the shoulder back with it; the arm is thrown up from there (the

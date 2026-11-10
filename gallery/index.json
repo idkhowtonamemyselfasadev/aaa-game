@@ -886,5 +886,11 @@
   "time": "2026-11-10T03:45:00Z",
   "caption": "The same crown-reel frame with the old pose (CROWN_NOCLUTCH=1): both fists stay down on the haft, so the stunned knight reads as a hunch; kept for comparison with the clutch frame.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261110-0400-knight-clutch-landing.jpg",
+  "time": "2026-11-10T04:15:00Z",
+  "caption": "Ashen Knight crown reel at the clutch's landing overshoot (u 0.24), new chest-height lens on its left: too close, the bowed helm and pauldron hide the gauntlet entirely, so the eased landing cannot be judged from here.",
+  "verdict": "fail"
  }
 ]

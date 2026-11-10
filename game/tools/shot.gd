@@ -2752,8 +2752,18 @@ func _ready() -> void:
 			# (11-10) closer, from the front quarter, to read the hands and helm
 			ep = kp + eside * side_k * 2.2 * ek.size_scale / 2.2 + ef * 3.6 * ek.size_scale / 2.2
 		ep.y = terrain.height_at(ep.x, ep.z) + 1.0
+		var look := kp + Vector3.UP * 1.25 * ek.size_scale
+		if "chest" in args:
+			# (11-10 04:00) the helm clutch: from the knight's left front quarter at its chest
+			# height, looking at the bowed helm and the gauntlet on its left temple
+			var kl := ek.body.global_basis.x
+			kl.y = 0.0
+			kl = kl.normalized() * (-1.0 if "flip" in args else 1.0)
+			ep = kp + (kl * 2.3 + ef * 2.4) * ek.size_scale / 2.2
+			ep.y = terrain.height_at(ep.x, ep.z) + 1.15 * ek.size_scale
+			look = kp + Vector3.UP * 1.42 * ek.size_scale + kl * 0.12 * ek.size_scale
 		cam.global_position = ep
-		cam.look_at(kp + Vector3.UP * 1.25 * ek.size_scale)
+		cam.look_at(look)
 		print("SHOT reel rt %.2f size %.2f state %d bow %.2f roll %.2f" % [rt, ek.size_scale, ek.state, ek.head.bow, ek.head.roll])
 		print("SHOT reel cam %s cur %s knight %s fwd %s hero %s" % [cam.global_position, get_viewport().get_camera_3d().global_position, kp, ek.body.global_basis.z, player.global_position])
 	if spot == "ring" and "stride" in args:

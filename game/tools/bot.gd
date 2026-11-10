@@ -4747,7 +4747,7 @@ func _crown_test() -> void:
 					# hands back the clip's unmodified pose)
 					var gaps: Array = k.fist_gap
 					if OS.has_environment("CLUTCH_DBG"):
-						print("    u %.2f clutch %.2f gap R %.3f L %.3f fist_gap %s size %.2f" % [k.t / AshenKnight.CROWN_STAGGER, k.clutch, gaps[0], gaps[1], str(k.fist_gap), k.size_scale])
+						print("    u %.2f clutch %.2f flight %.3f palm-helm %.3f gap R %.3f L %.3f size %.2f" % [k.t / AshenKnight.CROWN_STAGGER, k.clutch, k.clutch_flight, k._palm_gap(k._helm_point()), gaps[0], gaps[1], k.size_scale])
 					if k.clutch > 0.5:
 						r_gap = maxf(r_gap, gaps[0])
 					var ru: float = k.t / AshenKnight.CROWN_STAGGER
@@ -4774,6 +4774,11 @@ func _crown_test() -> void:
 			print("BOT crown:   clutch: peak %.2f, palm to the helm's temple %.3f m per size, right fist off the axis one-handed %.3f, left fist back on the haft %.3f, right fist through the regrip and rise %.3f (old reel 0.12), free_l now %.2f" % [k.clutch_peak, k.clutch_gap, r_gap, l_end, regrip, k.free_l])
 			if OS.get_environment("CROWN_NOCLUTCH") == "" and (k.clutch_peak < 0.95 or k.clutch_gap > CLUTCH_GAP_MAX or r_gap > CLUTCH_FIST_MAX or l_end > CLUTCH_FIST_MAX or regrip > CLUTCH_REGRIP_MAX or k.free_l > 0.0):
 				return _combat_done(false, "the crown reel's left hand does not go to the helm and back onto the haft")
+			# (11-10 04:00) the hand lands a touch past the temple and settles back onto it
+			print("BOT crown:   landing: flight peak %.3f (overshoot), settled palm to the temple %.3f m per size" % [k.clutch_flight_peak, k.clutch_settled_gap])
+			if OS.get_environment("CROWN_NOCLUTCH") == "" and OS.get_environment("CLUTCH_LINEAR") == "" \
+					and (k.clutch_flight_peak < 1.03 or k.clutch_flight_peak > 1.12 or k.clutch_settled_gap > CLUTCH_GAP_MAX):
+				return _combat_done(false, "the crown reel's hand does not land past the helm's temple and settle onto it")
 		if kind == "beside" and (c.crown_strikes != c0 or c.plunges != pl0 + 1 or hp0 - k.health <= 0.0):
 			return _combat_done(false, "a plunge beside the knight did not land as a plain plunge")
 		if kind == "drop" and (p.foe_slides <= s0 or c.crown_strikes != c0):
