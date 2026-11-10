@@ -43,7 +43,14 @@ const HOP := 2.0                 # m the hop carries it
 const LOW_GUARD := [17.0, 12.0, Vector3(0.189, 1.247, 0.49), 4.0, 0.18, 0.5]
 const LOW_GUARD_OLD := [8.0, -6.0, Vector3(0.10, 1.02, 0.58), 4.0, 0.18, 0.5]
 # the crouch: point low and forward at the hero's middle, butt tucked back past the hip
-const CROUCHED := [2.0, 6.0, Vector3(-0.02, 1.08, 0.22), -26.0, 0.1, 0.5]
+## (11-10 22:00) re-solved offline (replica of `_place`): the old crouch asked the right grip 0.576 m
+## from its shoulder (reach 0.5), so the clamp bent the shaft 9.2 deg off the pose and the lerps in
+## from the guard and out into the dart bent through the clamp. New: the shaft on the line the old
+## crouch visibly held (yaw 4.6, pitch -2.8), right fist 3.7 cm, both grips 0.46 m (inside reach,
+## far enough out that the arms do not fold). CROUCH_OLD=1 env: the before.
+const CROUCHED_OLD := [2.0, 6.0, Vector3(-0.02, 1.08, 0.22), -26.0, 0.1, 0.5]
+const CROUCHED_V2 := [4.6, -2.8, Vector3(-0.008, 1.07, 0.28), -26.0, 0.1, 0.5]
+static var CROUCHED: Array = CROUCHED_OLD if OS.has_environment("CROUCH_OLD") else CROUCHED_V2
 ## (11-10 14:00) the old dart asked the front grip 0.51 m past its reach (shaft 96 deg off the
 ## dart's line at full stretch) and the overrun 0.33 (48 deg off). Re-solved offline like the
 ## soldier's THRUST: rear fist at the right hip, the shaft angled 12 / 20 deg across the body,

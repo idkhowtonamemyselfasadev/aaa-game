@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(22:00 11-10: THE HARRIER'S CROUCH NOW HOLDS ITS SPEAR WHERE IT IS DEFINED: CROUCHED asked the right grip 0.576 m from its shoulder (reach 0.5), so the clamp bent the shaft 9.2 deg off the pose and the lerps in from the guard and out into the dart bent through the clamp. Re-solved offline (python replica of `_place`): the shaft on the line the old crouch visibly held (yaw 4.6, pitch -2.8), right fist moved 3.7 cm, both grips 0.46 m from the shoulders; 0.0 deg off in-engine, and 0.0 deg through both lerps (guard->crouch, crouch->dart) offline. Bot `foereach` now holds every re-solved pose (CROUCHED, DARTED, DART_REC, THRUST, BASH_COIL, BASH_DRIVE) to 2 deg; CROUCH_OLD=1 fails it at 9.2.)
 (21:00 11-10: THE HARRIER'S RIGHT ARM NO LONGER FOLDS SHUT THROUGH ITS DART AND OVERRUN: the 14:00 dart poses kept both grips inside reach but put the rear (right) grip only 0.32 / 0.24 m from its shoulder (offline), so the arm crushed to 0.111 m shoulder-to-wrist in the overrun, the elbow plane flipped mid-dart (pole normal +0.75 -> -0.55 in two ticks) and the fist slid 0.019 m off the haft. Re-solved DARTED / DART_REC offline (shaft within 2-4 deg of the old line, front fist within a few cm, the rear fist drawn back to the hip 0.40-0.41 m from the shoulder): bone shoulder-wrist 0.293 m, fists 0.000 m, the elbow keeps its side the whole dart. The dart is now gated in `foefold`; DARTFOLD_OLD=1 fails it.)
 (20:00 11-10: THE SHIELD WARDEN'S RIGHT FIST NO LONGER LEAVES THE SPEAR AS IT COILS AND SHOVES ITS TARGE: bot `foefold` caught the fist 0.143 m off the haft. Two causes: the old coil and drive asked the grips up to 0.72 m from the shoulders (reach 0.45), so the clamp bent the shaft 7 / 19 deg and crushed the drive's fists 0.26 m together; and as the coil hauled the fist back, the shoulder-to-wrist line ran within 7-17 deg of the right elbow's pole, so the elbow swung the forearm half round the shaft (GripRoll wanted 130-170 deg, the wrist feed refused). Re-solved coil and drive (every grip inside reach, the shaft on its pose 0.0-0.2 deg), the bash's grips ride the hip lean like the thrust's, the shove's lean no longer pops on the first tick, and through the bash the right elbow's pole eases out, up and back (a drawn-back shoving arm, elbow high): fist 0.000 m every tick. The bash is now gated in `foefold`; BASH_OLD=1 fails it.)
 (19:00 11-10: THE HOLLOW HEWER NO LONGER FOLDS ITS ARMS SHUT AS IT HEAVES THE AXE OVERHEAD: a new bot `foefold` runs every foe attack live and measures each arm's shoulder-to-wrist and each fist to the haft. The hewer's raise held the rear fist under its chin (0.23 m from the shoulder) and the straight lerp out of the guard dragged the front grip up the chest past its shoulder: bone shoulder-wrist 0.083 m (right) / 0.060 m (left), the arms crushed flat. Re-solved offline: the raise now swings the axe up in an arc out in front (a single-eased quadratic blend through RAISE_ARC, no mid-way stop) to a new cocked pose, fists in front of the face and the helve 60 deg up and back over the head: 0.269 / 0.255 m, fists on the helve 0.000 m. Found, not fixed yet: the warden's bash leaves its right fist 0.143 m off the haft, and the harrier's dart recovery folds its right arm to 0.111 m.)
@@ -212,6 +213,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (22:00 11-10) **HARRIER CROUCH RE-SOLVED: SHAFT 9.2 -> 0.0 DEG OFF ITS POSE (bot `foereach` gate 2 deg on re-solved poses).** Details in Next 0.
 - (10:00 11-08) **JUMP ATTACK: HEAD TIPS CLEAR, STAFF DRAWN BACK 40 DEG (bot `airstrike` gate raised; GL frames).**
   Details in Next 0.
 - (06:00 11-08) **KNOCK-DOWN: STAFF ROUND THE HAT, DRAW CLEAR OF IT (bot `sweep` gate DRAW_HAT_GATE; GL frames).** The
@@ -8311,6 +8313,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (22:00 11-10) **HARRIER'S CROUCH RE-SOLVED, SHAFT ON ITS POSE — DONE (game change + tighter `foereach` gate).**
+   NEXT (2) of 21:00. Offline replica (python, kept out of the repo): old CROUCHED [2, 6, (-0.02, 1.08, 0.22), -26,
+   0.1, 0.5] wanted R 0.576 / L 0.498 (reach 0.5), clamped shaft yaw 4.6 pitch -2.8 (9.2 deg off). Searched yaw/pitch
+   +-8 around the visible line, front grip +-6 cm around the old clamped grip, twist/slide: CROUCHED_V2 [4.6, -2.8,
+   (-0.008, 1.07, 0.28), -26, 0.1, 0.5] (R 0.463, L 0.466, right fist 3.7 cm from where it sat). Lerps LOW_GUARD->crouch
+   and crouch->DARTED_V2: worst 9.2 -> 0.0 deg, min wanted R 0.41-0.43 (no fold). In-engine `foereach` 0.0 deg.
+   `CROUCHED` is now a static var (CROUCH_OLD=1 env: the before). New `foereach` gate FOEREACH_SOLVED_MAX 2 deg on
+   the re-solved poses (the *_OLD envs fail it by design).
+   Bots PASS (10): foereach foefold harrier foeguard foegrip foehands keepgap foeflinch foeturn foestride.
+   Shots (GL): `soldier crouch_new 20 15.0 harrier close u=0.9` (+ CROUCH_OLD=1 crouch_old). No new third-party files.
+   NEXT: (1) the `dart` lens in shot.gd + a crouch -> dart -> overrun frame sequence (21:00 (1), still owed);
+   (2) 20:00's (2)/(3): the 55 deg warden coil, a close side-lit hewer raise sequence, the knight's surge/stomp/leap
+   fold, the hero's net-roll on heavy/plunge. BOSS/ANIMATION order unchanged; audio after.
 0. (21:00 11-10) **HARRIER'S DART + OVERRUN RE-SOLVED, NO ARM FOLD — DONE (game change + `foefold` gate).**
    NEXT (1) of 20:00. FOUND (FOEFOLD_TICKS): in-engine shoulder-to-grip fell 0.42 -> 0.20 through the strike and to
    0.11 in the overrun; the pole normal's y flipped +0.75 -> -0.55 at strike t=0.12-0.13 (elbow swapped sides). Offline

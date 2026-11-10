@@ -1409,6 +1409,10 @@ func _foe_grip_test() -> void:
 ## (11-10 20:00) the warden's BASH_COIL / BASH_DRIVE re-solved (were 7 / 19 deg off; BASH_OLD=1).
 const FOEREACH_AXIS_MAX := 12.0   # deg
 const FOEREACH_FIST_MAX := 0.05   # m, worst fist centre off the haft through the harrier's dart
+## (11-10 22:00) the harrier's CROUCHED re-solved (was 9.2 deg off; CROUCH_OLD=1): re-solved poses
+## are held to a tight gate so a later edit cannot drift one back into the clamp unnoticed.
+const FOEREACH_SOLVED_MAX := 2.0  # deg
+const FOEREACH_SOLVED := ["CROUCHED", "DARTED", "DART_REC", "THRUST", "BASH_COIL", "BASH_DRIVE"]
 const FOEREACH_THRUST_LINE_MAX := 6.0   # deg, the live thrust's shaft at full stretch (clamp from unleaned shoulders: 10.8)
 const FOEREACH_FOLD_MIN := 0.18   # m, the soldier's rear arm shoulder-to-wrist through its thrust (unleaned: 0.11)
 func _foe_reach_test() -> void:
@@ -1430,7 +1434,8 @@ func _foe_reach_test() -> void:
 			e._place(pose)
 			var off := rad_to_deg(e.spear.transform.basis.y.normalized().angle_to(StaffCombat.dir_of(pose[0], pose[1])))
 			print("   %s %s: shaft %.1f deg off the pose's direction" % [e.name, k, off])
-			if fail == "" and off > FOEREACH_AXIS_MAX:
+			var cap := FOEREACH_SOLVED_MAX if k in FOEREACH_SOLVED and not OS.has_environment("REACH_OLD") else FOEREACH_AXIS_MAX
+			if fail == "" and off > cap:
 				fail = "%s %s: the shaft lies %.1f deg off its pose (a grip past its reach)" % [e.name, k, off]
 	# the harrier's live dart (crouch -> dart -> overrun): its fists on the haft every tick
 	var h: HollowSoldier = _world.harrier
