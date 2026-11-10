@@ -64,7 +64,22 @@ const GUARD_OLD := [16.0, 4.0, Vector3(0.10, 1.12, 0.80), 6.0]
 const SWEEP_HOME := 16.0
 const SWEEP_FROM_BLEND := 2.0   # 1 / the share of the sweep wind-up spent turning out of the guard
 const DRAWN := [6.0, 9.0, Vector3(-0.05, 1.24, 0.30), -32.0]
+## (11-10 14:00) THRUST (still the live pose): the front (left) grip wants 0.98 m from its shoulder
+## (reach 0.45), the clamp pulls it 0.53 m in and the real shaft at full extension points up and
+## across the chest, 102 deg off the line of the thrust (bot `foereach`). THRUST_SOLVED (python
+## replica of `_place`): arms out to 0.58, rear fist at the right hip 0.3 m from its shoulder, the
+## shaft angled 18 deg across a bladed chest so the blade drives in on the centre line, both grips
+## inside reach, axis 0 deg off. NOT LIVE YET: GripRoll's right wrist needs a ~166 deg roll on one
+## strike tick (the forearm comes round the other side of the shaft), caps at 0.6 and the fist
+## leaves the haft 0.115 m (bot `foegrip`). Env THRUST_NEW=1: the solved pose; THRUST_TRY=a,b,x,y,z,tw,sl,r.
 const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
+const THRUST_SOLVED := [18.0, 1.0, Vector3(0.02, 1.22, 0.82), -20.0, -0.1, 0.58]
+var thrust_pose: Array = _try_thrust()
+static func _try_thrust() -> Array:
+	if not OS.has_environment("THRUST_TRY"):
+		return THRUST_SOLVED if OS.has_environment("THRUST_NEW") else THRUST
+	var v := OS.get_environment("THRUST_TRY").split_floats(",")
+	return [v[0], v[1], Vector3(v[2], v[3], v[4]), v[5], v[6], v[7]]
 
 signal struck(result: String)
 signal died
@@ -807,7 +822,7 @@ func _physics_process(delta: float) -> void:
 		STRIKE:
 			var u := clampf(t / STRIKE_T, 0.0, 1.0)
 			_update_glint(0.0)
-			_pose = _lerp_pose(DRAWN, THRUST, minf(u * 2.2, 1.0))
+			_pose = _lerp_pose(DRAWN, thrust_pose, minf(u * 2.2, 1.0))
 			lean = 0.16 * smoothstep(0.0, 0.4, u)
 			sink = 0.09
 			ember = 4.2 - 1.5 * u
@@ -821,7 +836,7 @@ func _physics_process(delta: float) -> void:
 				_enter(RECOVER)
 		RECOVER:
 			var u := clampf(t / RECOVER_T, 0.0, 1.0)
-			_pose = _lerp_pose(THRUST, guard_pose, smoothstep(0.35, 1.0, u))
+			_pose = _lerp_pose(thrust_pose, guard_pose, smoothstep(0.35, 1.0, u))
 			lean = 0.16 * (1.0 - smoothstep(0.2, 0.9, u))
 			sink = 0.09 * (1.0 - u)
 			ember = 1.4 - 0.4 * u

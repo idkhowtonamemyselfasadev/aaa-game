@@ -886,5 +886,17 @@
   "time": "2026-11-10T13:09:29Z",
   "caption": "Before: the same frame with the old low guard (the pose asked a grip past its reach, the real shaft 20 deg off its pose); near-identical at rest, the difference shows in the moves out of it.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261110-1400-harrier-dart.jpg",
+  "time": "2026-11-10T14:00:00Z",
+  "caption": "The harrier at full stretch of its dart: the spear now drives forward and low past the hero's waist along the dart's line (bot foereach 0.0 deg); still shot from behind the hero, so the foe is half hidden.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-1400-harrier-dart-before.jpg",
+  "time": "2026-11-10T14:00:01Z",
+  "caption": "Before: the same frame with the old dart pose, the front grip clamped 0.5 m short so the spear stood straight up, 96 deg off the line it was meant to drive along.",
+  "verdict": "fail"
  }
 ]

@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(14:00 11-10: THE HARRIER'S DART NOW DRIVES ITS SPEAR ALONG THE DART: at full stretch the old DARTED pose asked the front grip 0.51 m past its reach, so the clamp stood the spear straight up, 96 deg off the dart's line (the overrun pose 48 deg off). Re-solved offline (python replica of `_place`): rear fist at the right hip, the shaft angled 12 / 20 deg across the body, both grips inside reach, 0.0 deg off in-engine, fists on the haft every tick of the live dart. New bot `foereach`. FOUND, NOT FIXED: the soldier's THRUST is 102 deg off the same way; a solved pose exists (THRUST_SOLVED, env THRUST_NEW=1) but GripRoll's right wrist flips branch on one strike tick (needs a ~166 deg roll, caps at 0.6, fist 0.115 m off the haft), so it is not live yet.)
 (13:00 11-10: EVERY HOLLOW VARIANT NOW HOLDS ITS GUARD WHERE IT IS DEFINED: the warden's ward, the hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its reach, so the clamp bent the real shaft 9.3 / 4.2 / 19.8 / 42.0 deg off the pose's direction and every lerp into or out of the guard bent through the clamp. Re-solved offline (python replica of `_place`, reproduces the engine to 0.1 deg): the shaft on the line each old guard visibly held (<= 0.3 deg), fists moved 3-8 cm, every grip inside reach, 0.0 deg off in-engine. New bot `foeguard`.)
 (12:00 11-10: THE HOLLOW SOLDIERS AND THE ASHEN KNIGHT NOW HOLD THEIR GUARD WHERE IT IS DEFINED: the shared GUARD pose asked the left grip for 0.69 m from its shoulder (reach 0.45), so the reach clamp pulled it in and the shaft really lay 34.8 deg off the pose's direction; every lerp into or out of the guard (sweep, thrust recovery, the knight's surge settle, crown rise, stomp recovery) bent through that clamp on the way. GUARD re-solved offline: the same right fist, the shaft where the old guard visibly held it (3 deg off), axis 0.0 deg off at every size. The soldier's sweep now turns out of the guard over half its wind-up (was a quarter), the knight's reveal keeps its tuned path and eases onto the new guard in the settle. New bot gate `foegrip` guard line.)
 (11:00 11-10: THE ASHEN KNIGHT'S GLAIVE NO LONGER STALLS AS IT COMES DOWN FROM THE REVEAL'S ROAR: the follow-through carried the hold point so far right that the left fist ran 0.07-0.15 m past its reach, so the two-hand axis drifted up to 19 deg off the pose and the shaft slowed for a tick (5.7 -> 3.5 -> 5.9 deg/tick). Now FOLLOW_RIGHT 0.32 -> 0.25 plus 0.10 reach: the glaive hangs at the top, then speeds up every tick into the downswing; fists 0.043 -> 0.020 m per size, haft 0.33 -> 0.36 m off the visor. New bot gate on the ramp.)
@@ -8290,6 +8291,32 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (14:00 11-10) **HARRIER DART RE-SOLVED; SOLDIER THRUST FOUND 102 DEG OFF (game change + new bot `foereach`).**
+   NEXT (2) of 13:00 (variants' attack poses through the replica). FOUND (python replica of HollowSoldier._place,
+   confirmed in-engine by the new bot): soldier THRUST left grip wanted 0.98 m (reach 0.45) -> the real shaft at full
+   extension 102.0 deg off the thrust's line (pointing up/left across the chest); harrier DARTED 95.7 deg off (spear
+   straight up at full stretch, plainly visible in the before shot), DART_REC (overrun, was an inline literal) 48.5;
+   warden BASH_COIL 7.1 / BASH_DRIVE 19.1; harrier CROUCHED 9.2; soldier DRAWN 2.2; hewer RAISED/CHOPPED/BITE <= 6.8.
+   FIX (hollow_harrier.gd): DARTED [12, 2, (-0.04, 1.2, 0.83), -10, -0.15, 0.6], DART_REC [20, -14, (0.02, 1.06, 0.64),
+   -10, 0, 0.58] (grid search: both grips >= 1 cm inside reach and >= 0.30 m from their shoulder, fists outside a torso
+   ellipse and not behind z -0.02, max tip forward). Old poses kept: env REACH_OLD=1.
+   SOLDIER THRUST NOT LIVE: THRUST_SOLVED [18, 1, (0.02, 1.22, 0.82), -20, -0.1, 0.58] is 0.0 deg off, but `foegrip`
+   fails it: on strike tick 49 GripRoll's right wrist wants th -2.90 rad (forearm comes round the far side of the
+   shaft), the 0.6 cap holds it and the fist leaves the haft 0.115 m (1 tick). 8 candidate poses tried (env
+   THRUST_TRY=yaw,pitch,x,y,z,twist,slide,reach), all flip at the same tick (0.106-0.152 m). The live THRUST stays the old one.
+   New bot `foereach` (tools/bots.sh): each pose placed directly, shaft vs dir_of(pose), gate 12 deg (soldier DRAWN,
+   harrier CROUCHED/DARTED/DART_REC), plus the harrier's live dart (windup/strike/recover) fist-to-haft <= 0.05 m (0.000);
+   prints the soldier THRUST / THRUST_SOLVED as "(open)". REACH_OLD=1 -> FAIL 95.7.
+   Bots PASS: foereach foegrip soldier harrier heavy lockon dodge combat foehands foeguard knight keepgap foeflinch
+   foeturn surgegrip airstrike crown.
+   Shots (GL): `soldier hd_{new,old} 20 10.0 strike u=0.9 harrier` (REACH_OLD=1 for old). Gallery
+   20261110-1400-harrier-dart / -before (fail: shot from behind the hero, the foe half hidden).
+   Environment: cloud-setup ~6 min, asset sites unchanged (not rechecked: no downloads this session). No new third-party files.
+   NEXT: (1) GripRoll branch flip: when |th| > pi/2 the forearm has come round the far side of the shaft; pick the
+   near branch / let the IK elbow pole keep the forearm on its side, then make THRUST_SOLVED live (THRUST_NEW=1 must
+   pass `foegrip`) and gate the soldier THRUST in `foereach`; (2) the warden's BASH_DRIVE 19 deg / BASH_COIL 7 through
+   the same solver (and its fists in a live bash); (3) a front three-quarter shot spot for the harrier's dart.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (13:00 11-10) **HOLLOW VARIANTS' GUARDS RE-SOLVED: SHAFT ON ITS POSE — FIXED (game change + new bot `foeguard`).**
    NEXT (2) of 12:00. FOUND (scratch python replica of HollowSoldier._place, the same maths; it reproduces GUARD_OLD's
    34.8 deg and, in-engine, every variant's number exactly): WARD (warden) left grip wanted 0.52 m (reach 0.45) -> 9.3 deg

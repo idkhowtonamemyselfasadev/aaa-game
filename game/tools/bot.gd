@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -229,6 +229,9 @@ func _ready() -> void:
 		return
 	if name == "foeguard":
 		_foe_guard_test()
+		return
+	if name == "foereach":
+		_foe_reach_test()
 		return
 	if name == "footik":
 		_foot_ik_test()
@@ -1334,6 +1337,72 @@ func _foe_grip_test() -> void:
 ## hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its
 ## reach (the clamp bent the shaft 9 / 4 / 20 / 42 deg off the pose's direction, offline replica),
 ## so every lerp into or out of the guard bent through the clamp. At rest, IDLE, hero far off.
+## (11-10 14:00) Every key attack pose of the soldier and its variants lies along its pose: each
+## pose is placed directly (HollowSoldier._place) and the real shaft (fist to fist) compared with
+## the pose's direction. A grip asked past its reach is clamped in and bends the shaft (offline
+## replica found the soldier's THRUST 102 deg off, the harrier's DARTED 96; REACH_OLD=1: the before).
+## Still open (see PROGRESS Next): the warden's BASH_COIL 7 / BASH_DRIVE 19 deg off.
+const FOEREACH_AXIS_MAX := 12.0   # deg
+const FOEREACH_FIST_MAX := 0.05   # m, worst fist centre off the haft through the harrier's dart
+func _foe_reach_test() -> void:
+	Engine.time_scale = 1.0
+	await _ticks(5)
+	var sets := [
+		[_world.soldier, {"DRAWN": HollowSoldier.DRAWN}],
+		[_world.harrier, {"CROUCHED": HollowHarrier.CROUCHED, "DARTED": _world.harrier.dart_pose, "DART_REC": _world.harrier.dart_rec_pose}],
+	]
+	var fail := ""
+	for st in sets:
+		var e: HollowSoldier = st[0]
+		for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler]:
+			if o != null:
+				o.process_mode = Node.PROCESS_MODE_DISABLED
+		for k in st[1]:
+			var pose: Array = st[1][k]
+			e._place(pose)
+			var off := rad_to_deg(e.spear.transform.basis.y.normalized().angle_to(StaffCombat.dir_of(pose[0], pose[1])))
+			print("   %s %s: shaft %.1f deg off the pose's direction" % [e.name, k, off])
+			if fail == "" and off > FOEREACH_AXIS_MAX:
+				fail = "%s %s: the shaft lies %.1f deg off its pose (a grip past its reach)" % [e.name, k, off]
+	# the harrier's live dart (crouch -> dart -> overrun): its fists on the haft every tick
+	var h: HollowSoldier = _world.harrier
+	h.process_mode = Node.PROCESS_MODE_INHERIT
+	_player.global_position = h.global_position + h.body.global_basis.z * 3.0
+	await _ticks(5)
+	h._from = h._pose
+	h._enter(HollowSoldier.WINDUP)
+	var worst := [0.0, 0.0]
+	var over := 0
+	var seen := {}
+	for i in 240:
+		await get_tree().physics_frame
+		await h.skel.skeleton_updated
+		if not h.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
+			if seen.size() > 0:
+				break
+			continue
+		seen[h.state] = true
+		var o := h.spear.global_position
+		var ax := h.spear.global_basis.y.normalized()
+		for j in 2:
+			var fc := h.fist_center(["Right", "Left"][j])
+			var gp := fc.distance_to(o + ax * ax.dot(fc - o))
+			worst[j] = maxf(worst[j], gp)
+			if gp > 0.03:
+				over += 1
+	print("   HollowHarrier dart (states %s): fist-shaft R %.3f L %.3f m, %d hand-ticks > 3 cm" % [str(seen.keys()), worst[0], worst[1], over])
+	if fail == "" and (not seen.has(HollowSoldier.STRIKE) or maxf(worst[0], worst[1]) > FOEREACH_FIST_MAX):
+		fail = "HollowHarrier dart: a fist rides off the haft (R %.3f L %.3f m; strike seen %s)" % [worst[0], worst[1], seen.has(HollowSoldier.STRIKE)]
+	h.process_mode = Node.PROCESS_MODE_DISABLED
+	# not gated yet (see HollowSoldier.THRUST_SOLVED): the live thrust and the solved one
+	for k in ["THRUST", "THRUST_SOLVED"]:
+		var pose: Array = HollowSoldier.THRUST if k == "THRUST" else HollowSoldier.THRUST_SOLVED
+		_world.soldier._place(pose)
+		print("   (open) HollowSoldier %s: shaft %.1f deg off the pose's direction" % [k, rad_to_deg(_world.soldier.spear.transform.basis.y.normalized().angle_to(StaffCombat.dir_of(pose[0], pose[1])))])
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "the gated foes' attack poses lie along their direction")
+
 const VGUARD_AXIS_MAX := 3.0   # deg (VGUARD_OLD=1: 9.3 / 4.2 / 19.8 / 42.0)
 func _foe_guard_test() -> void:
 	Engine.time_scale = 1.0

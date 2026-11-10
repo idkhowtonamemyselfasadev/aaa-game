@@ -44,7 +44,16 @@ const LOW_GUARD := [17.0, 12.0, Vector3(0.189, 1.247, 0.49), 4.0, 0.18, 0.5]
 const LOW_GUARD_OLD := [8.0, -6.0, Vector3(0.10, 1.02, 0.58), 4.0, 0.18, 0.5]
 # the crouch: point low and forward at the hero's middle, butt tucked back past the hip
 const CROUCHED := [2.0, 6.0, Vector3(-0.02, 1.08, 0.22), -26.0, 0.1, 0.5]
-const DARTED := [0.0, 2.0, Vector3(0.0, 1.14, 1.18), 18.0, 0.1, 0.6]
+## (11-10 14:00) the old dart asked the front grip 0.51 m past its reach (shaft 96 deg off the
+## dart's line at full stretch) and the overrun 0.33 (48 deg off). Re-solved offline like the
+## soldier's THRUST: rear fist at the right hip, the shaft angled 12 / 20 deg across the body,
+## both grips inside reach. REACH_OLD=1 env: the before.
+const DARTED := [12.0, 2.0, Vector3(-0.04, 1.2, 0.83), -10.0, -0.15, 0.6]
+const DART_REC := [20.0, -14.0, Vector3(0.02, 1.06, 0.64), -10.0, 0.0, 0.58]   # bent over the spear, overrunning
+const DARTED_OLD := [0.0, 2.0, Vector3(0.0, 1.14, 1.18), 18.0, 0.1, 0.6]
+const DART_REC_OLD := [6.0, -14.0, Vector3(0.05, 0.98, 0.9), 10.0, 0.1, 0.55]
+var dart_pose: Array = DARTED_OLD if OS.has_environment("REACH_OLD") else DARTED
+var dart_rec_pose: Array = DART_REC_OLD if OS.has_environment("REACH_OLD") else DART_REC
 const CROUCH_SINK := 0.3
 const CROUCH_LEAN := 0.32        # rad forward over the knees
 
@@ -184,7 +193,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 		STRIKE:
 			var u := clampf(t / DART_T, 0.0, 1.0)
 			_update_glint(0.0)
-			_pose = _lerp_pose(CROUCHED, DARTED, minf(u * 1.8, 1.0))
+			_pose = _lerp_pose(CROUCHED, dart_pose, minf(u * 1.8, 1.0))
 			# fast off the mark, easing into the drive: integrates to _dart_len over the dart
 			var move := body.global_basis.z * (_dart_len / DART_T) * 1.5 * (1.0 - u * u)
 			if not _resolved and u >= DART_AT:
@@ -198,7 +207,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			if t < OVERRUN_T:
 				# carried on past the hero, bent over the spear, scrabbling to stop
 				var k := t / OVERRUN_T
-				_pose = _lerp_pose(DARTED, [6.0, -14.0, Vector3(0.05, 0.98, 0.9), 10.0, 0.1, 0.55], minf(k * 3.0, 1.0))
+				_pose = _lerp_pose(dart_pose, dart_rec_pose, minf(k * 3.0, 1.0))
 				var drift := body.global_basis.z * 1.6 * (1.0 - k) * (1.0 - k)
 				return [drift, 0.26 + 0.04 * sin(t * 19.0), 0.16 * (1.0 - k), 1.6]
 			var u := clampf((t - OVERRUN_T) / HOP_T, 0.0, 1.0)
