@@ -4654,8 +4654,8 @@ func _knightleap_test() -> void:
 ## A plunge from above onto the Ashen Knight's helm is a crown strike at every size: it hits
 ## harder than a plunge beside it, the giant reels, and the hero vaults off to the turf.
 ## A plain drop onto its head (no plunge) puts the hero off it too.
-const CLUTCH_GAP_MAX := 0.08    # m per size: the crown reel's left wrist on the helm's temple point (11-10)
-const CLUTCH_REGRIP_MAX := 0.11  # m per size: the right fist as the left comes back and the glaive rises (old reel 0.12)
+const CLUTCH_GAP_MAX := 0.02    # m per size: the crown reel's left wrist on the helm's temple point (11-10; 0.044 before the bow moved ahead of the arm IK at 06:00, now 0.001-0.003)
+const CLUTCH_REGRIP_MAX := 0.05  # m per size: the right fist as the left comes back and the glaive rises (0.096 before the 11-10 06:00 lean-carried glaive, now 0.03)
 const CLUTCH_FIST_MAX := 0.06   # m per size: the fists on the glaive one-handed and after the regrip (11-10)
 func _crown_test() -> void:
 	var p := _player

@@ -15,6 +15,7 @@ var side: Node3D             # node whose +X is the bow axis and +Z is forward (
 ## after the arm IK and the bow: outside the modifier pass the skeleton hands back the clip's pose)
 var head_world := Vector3.INF
 var hand_l_world := Vector3.INF
+var record_hand := true      # false: the owner reads the hand itself after the arm IK
 var _hb := -2
 var _lh := -2
 
@@ -51,5 +52,5 @@ func _record(skel: Skeleton3D) -> void:
 		_lh = skel.find_bone("mixamorig_LeftHand")
 	if _hb >= 0:
 		head_world = skel.global_transform * skel.get_bone_global_pose(_hb).origin
-	if _lh >= 0:
+	if _lh >= 0 and record_hand:
 		hand_l_world = skel.global_transform * skel.get_bone_global_pose(_lh).origin

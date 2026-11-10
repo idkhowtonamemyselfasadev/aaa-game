@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261106-0740-knightsettle.jpg",
-  "time": "2026-11-06T07:40:35Z",
-  "caption": "The knight (size 2.2) squared up after a turn on the spot, both boots settled under it in the idle stance (GL quick-look frame, not Forward+); the ring floor still reads as flat speckled dirt.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-0829-handrest.jpg",
-  "time": "2026-11-06T08:29:43Z",
-  "caption": "The hero's right hand at rest, before (left) and after (right): fingers drawn together and curled in a relaxed cascade instead of the clip's stiff splay (GL quick-look, not Forward+); the glove's knuckle plates still read a little blocky.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0829-staffgrip.jpg",
   "time": "2026-11-06T08:29:43Z",
   "caption": "Staff drawn, before (left) and after (right): the lower hand now closes into a fist round the shaft instead of splaying open over it (GL quick-look, low resolution).",
@@ -891,6 +879,18 @@
   "file": "20261110-0500-knight-reel-wide-right.jpg",
   "time": "2026-11-10T05:00:00Z",
   "caption": "The Ashen Knight kneeling dazed in the crown reel from a new wide chest-height lens: the whole body reads in the ring, but the lens is on its right side so the hand clutching the helm is hidden behind it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0600-knight-clutch-on-helm.jpg",
+  "time": "2026-11-10T06:25:00Z",
+  "caption": "The Ashen Knight in the crown daze, low lens from its front left: the gauntlet now sits up on the helm (the bow runs before the arm IK, palm 0.001 m per size off the temple, was 0.044); still backlit to a silhouette so the hand only reads as a shape.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0600-knight-rise-grip.jpg",
+  "time": "2026-11-10T06:25:00Z",
+  "caption": "The knight lifting the glaive out of the daze (u 0.68): the right fist stays on the haft through the rise (worst 0.030 m per size, was 0.096); the low backlit lens still hides the hands' detail.",
   "verdict": "fail"
  }
 ]

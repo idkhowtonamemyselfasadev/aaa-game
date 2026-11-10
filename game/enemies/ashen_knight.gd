@@ -275,6 +275,14 @@ func _ready() -> void:
 		head.name = "HeadBow"
 		head.side = body
 		skel.add_child(head)
+		# (11-10 06:00) the bow bends Spine2, the shoulders' parent: after the arm IK it carried the
+		# fists off the glaive (3.5 cm per size through the crown daze, a 0.35 runaway as the head
+		# lifted in the rise, which neither the same-tick pass nor the fit could see). Before the
+		# arm IK the arms are solved from the bowed chest. env HEADBOW_LATE: the before
+		if OS.get_environment("HEADBOW_LATE") == "" and _ik != null and _ik.get_parent() == skel:
+			skel.move_child(head, _ik.get_index())
+			head.record_hand = false
+			skel.skeleton_updated.connect(_record_left_hand)
 		# after the bow: the helm stays on the hero while the chest twists away in the coil
 		glare = HeadGlare.new()
 		glare.name = "HeadGlare"
@@ -502,7 +510,7 @@ func _crown_tick(delta: float, snap := false) -> void:
 	_plant(1.0 - smoothstep(0.66, 0.96, u))
 	if tuck != null:
 		tuck.latch = true
-	_lean(0.27 * down + 0.06 * hit + 0.04 * sin(u * TAU * 1.5) * hold, sink)
+	_lean(_crown_lean(u), sink)
 	# (11-10) the left hand goes to the helm a beat after the blow (the head is already down), holds
 	# it through the daze, and leaves it as the shake starts, back on the haft before the glaive rises
 	clutch = 0.0 if OS.get_environment("CROWN_NOCLUTCH") != "" else \
@@ -519,13 +527,45 @@ func _crown_tick(delta: float, snap := false) -> void:
 	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
 	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
 		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
+	if u >= 0.5 and OS.get_environment("CROWN_FIXEDGLAIVE") == "":
+		# (11-10 06:00) the model leans from the hips but the glaive lives in the Wield's (unleaned)
+		# space: as the knight straightened, the shoulders swept past the slumped grip and the right
+		# arm folded through a singular pose (the fist thrown 0.28 m per size off the haft at u 0.67).
+		# From the daze on the glaive is carried in the leaned frame: the slump as it stood at the
+		# daze's lean, the guard upright, so both ends are unchanged and the arms keep their shape.
+		var lean_now := _crown_lean(u)
+		var l0 := _crown_lean(0.5)
+		gp = _lean_pose(_lerp_pose(_lean_pose(CROWN_SLUMP, -l0), guard_pose, smoothstep(0.58, 0.96, u)), lean_now)
 	_place(gp)
+	if OS.has_environment("CROWN_DBG"):
+		var sp := spear.global_position if spear != null else Vector3.ZERO
+		print("CRD u %.3f free_l %.3f gapR %.3f gapL %.3f offR %.3f offL %.3f aimR %.2f aimL %.2f gr %.2f spear %s" % [u, free_l, fist_gap[0], fist_gap[1], (_fist_off[0] as Vector3).length(), (_fist_off[1] as Vector3).length(), _aim_ik[0].influence if _aim_ik[0] else -1.0, _aim_ik[1].influence if _aim_ik[1] else -1.0, grip_roll.weight if grip_roll else -1.0, str(sp / size_scale)])
 	var e := 0.55 + 0.25 * sin(u * 60.0) * hold if u < 0.55 else lerpf(0.6, 1.8, smoothstep(0.55, 0.8, u)) - 0.6 * smoothstep(0.85, 1.0, u)
 	_set_skin("ember", e)
 	_ember_light.light_energy = 0.3 * e
 	crown_bow_peak = maxf(crown_bow_peak, _head_bow)
 	crown_sink_peak = maxf(crown_sink_peak, sink)
 	crown_lift_back = minf(crown_lift_back, _head_bow)
+
+## the crown reel's lean from the hips (rad, forward +) at reel time u
+func _crown_lean(u: float) -> float:
+	var down := smoothstep(0.0, CROWN_IMPACT_U, u) * (1.0 - smoothstep(0.52, 0.92, u))
+	var hold := smoothstep(0.0, CROWN_IMPACT_U, u) * (1.0 - smoothstep(0.42, 0.62, u))
+	var hit := 1.0 - smoothstep(CROWN_IMPACT_U, 0.24, u)
+	return 0.27 * down + 0.06 * hit + 0.04 * sin(u * TAU * 1.5) * hold
+
+## A glaive pose leaned with the model by `a` rad (forward +) about the hips (`_lean`'s pivot)
+func _lean_pose(pose: Array, a: float) -> Array:
+	if absf(a) < 0.0005:
+		return pose
+	var hip := Vector3(0, 0.95, 0)
+	var b := Basis(Vector3.RIGHT.rotated(Vector3.UP, _reel_yaw), a)
+	var d := b * StaffCombat.dir_of(pose[0], pose[1])
+	var out := pose.duplicate()
+	out[2] = hip + b * ((pose[2] as Vector3) - hip)
+	out[0] = rad_to_deg(atan2(d.x, d.z))
+	out[1] = rad_to_deg(asin(clampf(d.y, -1.0, 1.0)))
+	return out
 
 ## the landing's damped spring over CLUTCH_LAND: up to ~0.6 a beat after contact, a small dip
 ## back under, 0 by the end of the window
@@ -1121,6 +1161,15 @@ func _helm_point() -> Vector3:
 	if head == null or _wield == null or head.head_world == Vector3.INF:
 		return Vector3.INF
 	return _wield.to_local(head.head_world) + CLUTCH_AT
+
+## (11-10 06:00) HeadBow now runs before the arm IK: the left hand as finally posed is read here
+## (skeleton_updated runs inside the pass, after every modifier)
+func _record_left_hand() -> void:
+	if head == null:
+		return
+	var b := skel.find_bone("mixamorig_LeftHand")
+	if b >= 0:
+		head.hand_l_world = skel.global_transform * skel.get_bone_global_pose(b).origin
 
 ## (bots) the left wrist's distance from the helm point, in the Wield's space (m per size)
 func _palm_gap(helm: Vector3) -> float:
