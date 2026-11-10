@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.5
+(16:00 11-10: NO VISIBLE CHANGE: THE HERO'S HANDS DO NOT RING ON THE STAFF LIKE THE FOES' DID, AND THE BOT NOW PROVES IT. A new roll-chatter line in `hands` measures each hand's net roll on the shaft through the light string (GripRoll's roll plus the staff's own spin): 2 slow reversals, no tick-to-tick ringing (the foes rang 37-56); gated at 3. It also found the staff spinning ~180 deg about its own shaft and back on each blow (0.63 rad a tick worst: the shortest-arc-from-UP basis in `_solve` as the shaft swings near straight down), with GripRoll's hands counter-rolling it at their 0.6 cap. Holding the staff's twist steady (5 caps tried) made the hands chase it instead (hand pop 43 -> 50-58 deg a tick, more reversals), so it was reverted; the fix is to roll the staff WITH the fists (Next).)
 (15:00 11-10: THE FOES' HANDS NO LONGER FLAP ON THE HAFT: GripRoll took the whole wanted roll about the shaft every tick, but rolling the hand swings the fist about the wrist, the feed moves the wrist to keep the fist on the haft and that swings the forearm round the shaft the other way, so the next tick's wanted roll overshot: on the soldier's and the knight's SWEEP the hands rang +-0.6 rad (34 deg) a tick for up to 40 ticks (37-56 reversals per swing, 42-65 rad of reversing roll; the fists stayed on the haft, so no bot saw it). The foes now take a quarter of the wanted roll a tick and fade it out where the forearm runs along the shaft (its side flips there): 0-1 reversals per swing, wrists bend less (left max 77 -> 55 deg, right 71 -> 68). New bot gate `foegrip` roll chatter (<= 3 reversals, <= 2 rad); FOE_ROLLRING=1 = old, fails it.)
 (14:00 11-10: THE HARRIER'S DART NOW DRIVES ITS SPEAR ALONG THE DART: at full stretch the old DARTED pose asked the front grip 0.51 m past its reach, so the clamp stood the spear straight up, 96 deg off the dart's line (the overrun pose 48 deg off). Re-solved offline (python replica of `_place`): rear fist at the right hip, the shaft angled 12 / 20 deg across the body, both grips inside reach, 0.0 deg off in-engine, fists on the haft every tick of the live dart. New bot `foereach`. FOUND, NOT FIXED: the soldier's THRUST is 102 deg off the same way; a solved pose exists (THRUST_SOLVED, env THRUST_NEW=1) but GripRoll's right wrist flips branch on one strike tick (needs a ~166 deg roll, caps at 0.6, fist 0.115 m off the haft), so it is not live yet.)
 (13:00 11-10: EVERY HOLLOW VARIANT NOW HOLDS ITS GUARD WHERE IT IS DEFINED: the warden's ward, the hewer's axe guard, the harrier's low guard and the archer's bow carry each asked a grip past its reach, so the clamp bent the real shaft 9.3 / 4.2 / 19.8 / 42.0 deg off the pose's direction and every lerp into or out of the guard bent through the clamp. Re-solved offline (python replica of `_place`, reproduces the engine to 0.1 deg): the shaft on the line each old guard visibly held (<= 0.3 deg), fists moved 3-8 cm, every grip inside reach, 0.0 deg off in-engine. New bot `foeguard`.)
@@ -15,6 +16,8 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (16:00 11-10) Setup first try (import ~8 min), headless bots (3 in parallel) work; no GL shots this session (no
+  visible change); asset sites not rechecked (no downloads). `TWIST_RELAX` / `STAFF_TWISTRAW` were the reverted experiment's envs (gone).
 - (13:00 11-10) Setup first try (import ~6 min, log stops at "importing"; .tools/status says SHOTS_OK when done), 4 bots
   in parallel fine, GL shots ~10 min for a pair. Asset sites: polyhaven 200, ambientcg 200, freesound 403. `VGUARD_OLD=1`
   = the variants' old guards (warden/hewer/harrier/archer); bot `foeguard` measures them.
@@ -8292,6 +8295,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (16:00 11-10) **HERO'S GRIP ROLL CHECKED: NO RING (bot gate only; game unchanged).**
+   NEXT (2) of 15:00. Bot `hands` new line `string roll chatter (hand's net roll on the shaft): N reversals, X rad |
+   staff spin about its shaft worst S rad a tick` (net roll = GripRoll last_roll + the staff's spin about its own
+   axis in skeleton space, hit-stop ticks skipped; ROLL_DBG=1 prints grip/spin/net per tick). Now 2 reversals,
+   5.95 rad (slow sign changes of small values), spin worst 0.63; gate HERO_ROLL_FLIPS_MAX 3.
+   FOUND: the staff's basis is `Basis(Quaternion(UP, axis))` (combat.gd `_solve`), so as the shaft swings near
+   straight down in a light blow its twist spins ~3 rad over 8 ticks and back; the hands stay steady in the world
+   only because GripRoll counter-rolls at its 0.6 cap (dragged ~0.03 rad on the 0.63 tick). The grain and cloth
+   wrap visibly slip half a turn in the fists. TRIED (reverted): carry last tick's staff basis onto the new shaft
+   and relax toward the placed twist at TWIST_RELAX 0.05/0.15/0.25/0.35 rad a tick: the staff stops spinning but the
+   hands then chase it (worst one-tick hand turn 43 -> 50/58/50/45 deg, reversals 3-6), ROLL_GAIN 0.35-0.5 with the
+   fade did not cure it. The old twist happens to sit near what the fists need.
+   NEXT: (1) roll the staff WITH the fists: after GripRoll solves, turn the staff about its shaft by the right
+   hand's roll and take the same turn out of both hands' stored staff-frame bases (hs) so they are not carried
+   twice; the left hand's difference stays as GripRoll's roll; gate staff-vs-fist slip in `hands`; (2) 15:00's
+   (1) the soldier thrust's singular crossing / THRUST_SOLVED; (3) the net-roll metric on the heavy and the plunge.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (15:00 11-10) **FOES' WRIST ROLL CHATTER — FIXED (game change + new bot gate in `foegrip`).**
    Started on NEXT (1) of 14:00 (GripRoll branch flip for THRUST_SOLVED). GRIP_DBG with raw roll + fp (forearm's
    component across the shaft) showed two things: (a) the 14:00 strike-tick flip is a singular crossing: the tick

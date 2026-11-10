@@ -884,6 +884,7 @@ const HERO_FIST_SWING := 0.004   # m: MEAN through the light string (bisected fe
 const HERO_FIST_OFF_TICKS := 8   # hand-ticks of the string with a fist > 3 cm off the axis (15:00 11-06: 4; was 35, 78 before the feed)
 const HERO_FIST_WORST := 0.06    # m: the string's worst tick (15:00 11-06: 0.050; was 0.094)
 const HERO_WRIST_MAX := 80.0     # deg: the hand's line off the forearm's
+const HERO_ROLL_FLIPS_MAX := 3   # (16:00 11-10) reversals of a hand's net roll on the shaft > 0.1 rad both ways (foes rang 37-56)
 const HERO_HAND_TURN := 50.0     # deg: a hand's turn in one tick through the string (GripRoll; was 178 with the clip's hands)
 
 func _staff_gap(c: StaffCombat, side: String) -> float:
@@ -1029,11 +1030,37 @@ func _hands_test() -> void:
 	var hbs := [skel.find_bone("mixamorig_RightHand"), skel.find_bone("mixamorig_LeftHand")]
 	var swing_n := c.swings
 	var off_ticks := 0
+	# (16:00 11-10) roll chatter, as `foegrip` measures the foes: ticks where a hand's roll about
+	# the shaft reverses with both rolls > 0.1 rad, and the summed swing of all reversals
+	var prev_roll := [0.0, 0.0]
+	var r_flips := 0
+	var r_rev := 0.0
+	var prev_sb = null
+	var spin_max := 0.0
 	for i in 130:
 		if i % 6 == 0 and i < 80:
 			c.light()
 		await get_tree().physics_frame
 		await skel.skeleton_updated
+		# the staff's spin about its own shaft since last tick (skeleton space)
+		var sbn := (skel.global_basis.orthonormalized().inverse() * c.staff.global_basis.orthonormalized()).orthonormalized()
+		var spin := 0.0
+		if prev_sb != null:
+			var rel: Quaternion = (sbn * (prev_sb as Basis).inverse()).get_rotation_quaternion()
+			spin = wrapf(2.0 * atan2(Vector3(rel.x, rel.y, rel.z).dot(sbn.y.normalized()), rel.w), -PI, PI)
+		prev_sb = sbn
+		if c.grip_roll != null and c.grip_roll.weight > 0.5 and c.hitstop <= 0.0:
+			spin_max = maxf(spin_max, absf(spin))
+			for k in 2:
+				# the hand's own roll about the shaft this tick: GripRoll's roll on top of the staff's spin
+				var r: float = c.grip_roll.last_roll[k] + spin
+				if r * prev_roll[k] < 0.0:
+					r_rev += absf(r - prev_roll[k])
+					if absf(r) > 0.1 and absf(prev_roll[k]) > 0.1:
+						r_flips += 1
+				if OS.has_environment("ROLL_DBG"):
+					print("    roll %d %s grip %.3f spin %.3f net %.3f u %.2f" % [i, ["R", "L"][k], c.grip_roll.last_roll[k], spin, r, c.t])
+				prev_roll[k] = r
 		for k in 2:
 			var fp := skel.get_bone_global_pose(fb[k])
 			var hp := skel.get_bone_global_pose(hbs[k])
@@ -1066,6 +1093,7 @@ func _hands_test() -> void:
 	print("   fist to staff axis: guard R %.3f L %.3f m | light string (%d blows) worst %.3f mean %.3f | wrist shift %s, grip error %.3f" % [
 		sgap[0], sgap[1], c.swings - swing_n, sgap[2], sgap[3], str(c._fist_off), c.grip_error()])
 	print("   string: worst wrist bend %.0f deg, worst hand turn in one tick %.0f deg, hand-ticks with a fist > 3 cm off %d" % [wrist[0], wrist[1], off_ticks])
+	print("   string roll chatter (hand's net roll on the shaft): %d reversals > 0.1 rad, %.2f rad reversing swing | staff spin about its shaft worst %.2f rad a tick" % [r_flips, r_rev, spin_max])
 	if OS.has_environment("HERO_CLAWHANDS"):
 		return _combat_done(true, "the before (clip fingers) measured")
 	for side in ["Left", "Right"]:
@@ -1091,6 +1119,8 @@ func _hands_test() -> void:
 			return _combat_done(false, "the light string did not run (%d blows)" % (c.swings - swing_n))
 		if wrist[0] > HERO_WRIST_MAX:
 			return _combat_done(false, "a wrist bends %.0f deg off the forearm in the string" % wrist[0])
+		if r_flips > HERO_ROLL_FLIPS_MAX and OS.get_environment("HERO_FREEHANDS") == "":
+			return _combat_done(false, "a hand's roll on the shaft chatters in the string (%d reversals)" % r_flips)
 		if wrist[1] > HERO_HAND_TURN and OS.get_environment("HERO_FREEHANDS") == "":
 			return _combat_done(false, "a hand pops %.0f deg in one tick in the string (the grip may only roll about the shaft)" % wrist[1])
 	_combat_done(true, "relaxed hands at rest (spread %.2f/%.2f, curl %.2f/%.2f), closed on the staff (%.2f/%.2f), fists on its axis (guard %.3f/%.3f, string mean %.3f)" % [
