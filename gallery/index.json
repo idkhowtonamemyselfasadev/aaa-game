@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261106-0511-heroturnstep.jpg",
-  "time": "2026-11-06T05:11:48Z",
-  "caption": "The hero turning on the spot toward the lens, head leading, the stepping boot carried in one 4 cm arc (bot-measured); still wrong: GL lighting, the feet are hidden under the tabard in shade, so the arc is not visible from this high lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261106-0511-heroturnsettle.jpg",
-  "time": "2026-11-06T05:11:48Z",
-  "caption": "Same turn 0.6 s later, squared to the lens with the stepping boot easing down; still wrong: the end stance is left staggered with no settle step, dark GL turf and lens too high to read the soles.",
-  "verdict": "fail"
- },
- {
   "file": "20261106-0641-turnsettle.jpg",
   "time": "2026-11-06T06:41:37Z",
   "caption": "The hero just after a turn on the spot, squared up with both feet stepped into the idle stance (GL frame); the boots are lost in shade under the tabard, the hands hang claw-like and the lighting is a flat GL fallback.",
@@ -885,6 +873,18 @@
   "file": "20261110-0200-knight-reveal-coil.jpg",
   "time": "2026-11-10T02:30:00Z",
   "caption": "The reveal's kneeling coil from the intro lens: a good ring of standing stones and god-lit meadow, but the lens sits behind the knight so the hands on the glaive (now held 1.9 cm off the haft) never show, and the figure is a dark silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0300-knight-crown-clutch.jpg",
+  "time": "2026-11-10T03:45:00Z",
+  "caption": "The Ashen Knight's crown reel 0.42 s in: head bowed, the left hand let go of the glaive and cups the left side of the helm (wrist 4 cm per size off the temple, bot-gated); from this low front-left lens the gauntlet is half hidden behind the red hood and the glaive tilts one-handed, so the clutch reads only weakly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261110-0300-knight-crown-before.jpg",
+  "time": "2026-11-10T03:45:00Z",
+  "caption": "The same crown-reel frame with the old pose (CROWN_NOCLUTCH=1): both fists stay down on the haft, so the stunned knight reads as a hunch; kept for comparison with the clutch frame.",
   "verdict": "fail"
  }
 ]

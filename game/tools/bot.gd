@@ -4654,6 +4654,9 @@ func _knightleap_test() -> void:
 ## A plunge from above onto the Ashen Knight's helm is a crown strike at every size: it hits
 ## harder than a plunge beside it, the giant reels, and the hero vaults off to the turf.
 ## A plain drop onto its head (no plunge) puts the hero off it too.
+const CLUTCH_GAP_MAX := 0.08    # m per size: the crown reel's left wrist on the helm's temple point (11-10)
+const CLUTCH_REGRIP_MAX := 0.11  # m per size: the right fist as the left comes back and the glaive rises (old reel 0.12)
+const CLUTCH_FIST_MAX := 0.06   # m per size: the fists on the glaive one-handed and after the regrip (11-10)
 func _crown_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -4733,9 +4736,25 @@ func _crown_test() -> void:
 			var kept0 := k.crown_hits_kept
 			var t_hit := -1.0
 			var t_after := -1.0
+			var r_gap := 0.0          # right fist off the glaive's axis while the left is on the helm
+			var l_end := 0.0          # left fist off the axis once it is back on the haft (u > 0.75)
+			var regrip := 0.0         # worst fist off the axis from the regrip through the rise (u 0.4-0.85)
 			for i in 120:
 				if k.state != HollowSoldier.STAGGER:
 					break
+				if k.skel != null and k.spear != null:
+					# the game's own read, taken inside the modifier pass (outside it the skeleton
+					# hands back the clip's unmodified pose)
+					var gaps: Array = k.fist_gap
+					if OS.has_environment("CLUTCH_DBG"):
+						print("    u %.2f clutch %.2f gap R %.3f L %.3f fist_gap %s size %.2f" % [k.t / AshenKnight.CROWN_STAGGER, k.clutch, gaps[0], gaps[1], str(k.fist_gap), k.size_scale])
+					if k.clutch > 0.5:
+						r_gap = maxf(r_gap, gaps[0])
+					var ru: float = k.t / AshenKnight.CROWN_STAGGER
+					if ru > 0.75:
+						l_end = maxf(l_end, gaps[1])
+					if ru > 0.4 and ru < 0.85 and k.clutch < 0.5:
+						regrip = maxf(regrip, gaps[0])
 				if i == 20:
 					# a follow-up blow in the punish window lands without cutting the reel short
 					t_hit = k.t
@@ -4751,6 +4770,10 @@ func _crown_test() -> void:
 				return _combat_done(false, "the crown reel did not bow the head, buckle the knees and shake it off")
 			if k.state == HollowSoldier.STAGGER:
 				return _combat_done(false, "the crown reel never ended")
+			# (11-10 03:00) the left hand cups the helm through the daze and is back on the haft for the guard
+			print("BOT crown:   clutch: peak %.2f, palm to the helm's temple %.3f m per size, right fist off the axis one-handed %.3f, left fist back on the haft %.3f, right fist through the regrip and rise %.3f (old reel 0.12), free_l now %.2f" % [k.clutch_peak, k.clutch_gap, r_gap, l_end, regrip, k.free_l])
+			if OS.get_environment("CROWN_NOCLUTCH") == "" and (k.clutch_peak < 0.95 or k.clutch_gap > CLUTCH_GAP_MAX or r_gap > CLUTCH_FIST_MAX or l_end > CLUTCH_FIST_MAX or regrip > CLUTCH_REGRIP_MAX or k.free_l > 0.0):
+				return _combat_done(false, "the crown reel's left hand does not go to the helm and back onto the haft")
 		if kind == "beside" and (c.crown_strikes != c0 or c.plunges != pl0 + 1 or hp0 - k.health <= 0.0):
 			return _combat_done(false, "a plunge beside the knight did not land as a plain plunge")
 		if kind == "drop" and (p.foe_slides <= s0 or c.crown_strikes != c0):

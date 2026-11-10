@@ -2736,6 +2736,10 @@ func _ready() -> void:
 		var edt := 1.0 / 60.0
 		for i in int(round((rt - AshenKnight.CROWN_IMPACT_U * AshenKnight.CROWN_STAGGER) / edt)):
 			ek._physics_process(edt)
+		# (11-10) held in a hit-stop that never ends: the reel ticks on at its frozen u, so poses that
+		# read the skeleton as last posed (the helm clutch) settle on the rendered frames
+		ek._freeze = 1e6
+		ek.set_physics_process(true)
 		var kp := ek.global_position
 		# frame off the body's own facing (the ring's facing is not where its chest points)
 		ef = ek.body.global_basis.z
@@ -2744,6 +2748,9 @@ func _ready() -> void:
 		eside = ef.cross(Vector3.UP)
 		var side_k := -1.0 if "flip" in args else 1.0
 		var ep := kp + eside * side_k * (2.6 if "front" in args else 6.0) * ek.size_scale / 2.2 + ef * (7.0 if "front" in args else 2.0) * ek.size_scale / 2.2
+		if "near" in args:
+			# (11-10) closer, from the front quarter, to read the hands and helm
+			ep = kp + eside * side_k * 2.2 * ek.size_scale / 2.2 + ef * 3.6 * ek.size_scale / 2.2
 		ep.y = terrain.height_at(ep.x, ep.z) + 1.0
 		cam.global_position = ep
 		cam.look_at(kp + Vector3.UP * 1.25 * ek.size_scale)

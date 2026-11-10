@@ -203,6 +203,15 @@ var crown_bow_peak := 0.0        # bots: deepest head bow of the last crown reel
 var crown_sink_peak := 0.0       # bots: deepest buckle of the knees in it
 var crown_lift_back := 0.0       # bots: how far the head was thrown back as it shook the blow off
 var crown_hits_kept := 0         # bots: blows landed in the reel that did not cut it short
+## (11-10 03:00) the crown reel's left hand: lets go of the haft and cups the left side of the
+## helm through the daze, back on the haft before the glaive comes up to guard
+var clutch := 0.0                # 0..1: the left hand off the haft and on the helm
+var clutch_peak := 0.0           # bots: highest clutch of the last reel
+var clutch_gap := 9.0            # bots: closest the left palm came to the helm's side point (m per size)
+## u window the hand leaves the helm in: back on the haft before the glaive starts up at 0.58 (a
+## later regrip, 0.54-0.7, overlapped the rise and threw the right fist 0.3 m per size off the haft)
+const CLUTCH_REL := [0.46, 0.62]
+const CLUTCH_AT := Vector3(0.15, 0.06, 0.07)  # body space, unscaled: off the head bone, the helm's left temple
 var _head_bow := 0.0
 var _head_roll := 0.0
 var intro_heave := 0.0           # bots: how far the roar beat raised the glaive (0..1)
@@ -438,6 +447,8 @@ func crowned(_point: Vector3) -> void:
 	crown_bow_peak = 0.0
 	crown_sink_peak = 0.0
 	crown_lift_back = 0.0
+	clutch_peak = 0.0
+	clutch_gap = 9.0
 	# start a beat in, already knocked down: the hit-stop freezes the head on the chest
 	t = CROWN_IMPACT_U * CROWN_STAGGER
 	_crown_tick(0.0, true)
@@ -477,6 +488,12 @@ func _crown_tick(delta: float, snap := false) -> void:
 	if tuck != null:
 		tuck.latch = true
 	_lean(0.27 * down + 0.06 * hit + 0.04 * sin(u * TAU * 1.5) * hold, sink)
+	# (11-10) the left hand goes to the helm a beat after the blow (the head is already down), holds
+	# it through the daze, and leaves it as the shake starts, back on the haft before the glaive rises
+	clutch = 0.0 if OS.get_environment("CROWN_NOCLUTCH") != "" else \
+		smoothstep(0.1, 0.26, u) * (1.0 - smoothstep(CLUTCH_REL[0], CLUTCH_REL[1], u))
+	free_l = clutch
+	clutch_peak = maxf(clutch_peak, clutch)
 	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
 	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
 		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
@@ -565,6 +582,9 @@ func _physics_process(delta: float) -> void:
 		_pose_arch(_intro_arch)
 	if _crown_reel and (state != STAGGER or _surge >= 0.0):
 		_crown_reel = false
+		if _surge < 0.0:
+			clutch = 0.0
+			free_l = 0.0
 	if _crown_reel and state != DEAD:
 		_crown_tick(0.0 if _freeze > 0.0 else delta)
 	elif head != null and _surge < 0.0 and not (move_kind == INTRO_MOVE and state == WINDUP):
@@ -1020,6 +1040,9 @@ func _place(pose: Array) -> void:
 	# fingers half open against the sky); it opens back to the grip before it closes on the haft
 	if hand_rest != null:
 		hand_rest.clench_l = 0.0 if OS.get_environment("ROAR_OPENFIST") != "" else smoothstep(0.25, 0.8, free_l)
+		# the hand on the helm stays cupped (the grip's curl), not a fist
+		if _crown_reel:
+			hand_rest.clench_l = 0.0
 	# (11-10) the freed hand leaves the haft: GripRoll lets it go (it would roll it back round the shaft)
 	if grip_roll != null:
 		grip_roll.side_weight[1] = 1.0 - smoothstep(0.0, 0.15, free_l)
@@ -1037,6 +1060,14 @@ func _place(pose: Array) -> void:
 		fist_shift[0] = spear.basis * _fist_off[0]
 		_grip_r.position = hr + fist_shift[0]
 	var tw := deg_to_rad(pose[3])
+	if _crown_reel:
+		var helm := _helm_point()
+		if helm != Vector3.INF:
+			# out round the pauldron and up the side of the helm, never across the visor
+			_grip_l.position = _grip_l.position.lerp(helm, f) + Vector3(0.14, 0.04, 0.06) * sin(PI * f)
+			if f > 0.95:
+				clutch_gap = minf(clutch_gap, _palm_gap(helm))
+			return
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	# the arched chest carries the shoulder back with it; the arm is thrown up from there (the
 	# direction is not arched with it, or the fist ends level with the helm, lost behind the hood)
@@ -1048,6 +1079,19 @@ func _place(pose: Array) -> void:
 	# the fist travels from the haft (on its right) over to its left: bowed up and back over the
 	# helm on the way, never across the front of the visor
 	_grip_l.position = _grip_l.position.lerp(fling, f) + Vector3(0.0, 0.12, -0.2) * sin(PI * f)
+
+## (11-10 03:00) the helm's left temple in the Wield's space (body space, unscaled), off the head
+## bone as last posed (bowed and rolled by HeadBow), INF without a skeleton
+func _helm_point() -> Vector3:
+	if head == null or _wield == null or head.head_world == Vector3.INF:
+		return Vector3.INF
+	return _wield.to_local(head.head_world) + CLUTCH_AT
+
+## (bots) the left wrist's distance from the helm point, in the Wield's space (m per size)
+func _palm_gap(helm: Vector3) -> float:
+	if head == null or head.hand_l_world == Vector3.INF:
+		return 9.0
+	return _wield.to_local(head.hand_l_world).distance_to(helm)
 
 ## (11-10) one-handed (the roar's freed left): GripRoll eases out, the old fit holds the right.
 ## The reveal keeps the old fit throughout: switching mid-roar left the old fit overshooting
