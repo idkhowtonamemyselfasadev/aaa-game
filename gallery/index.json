@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261107-0310-knight-coil-hip.jpg",
-  "time": "2026-11-07T03:10:00Z",
-  "caption": "The Ashen Knight's reveal coil (GL frame, it=2.95): chest twisted to its right, a fist low at the right hip and the glaive trailing low behind, so the heave is an upward sweep; still a GL frame, and the head turns away with the chest instead of staying on the hero.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0310-knight-coil-heave.jpg",
-  "time": "2026-11-07T03:10:00Z",
-  "caption": "The heave out of the new coil (GL, it=3.1): the glaive rises diagonally round the knight's right side; lighting is still the flat GL path, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0422-knight-coil-glare.jpg",
-  "time": "2026-11-07T04:22:13Z",
-  "caption": "The Ashen Knight's reveal coil (GL frame): chest twisted round to its right, glaive trailing low, helm held on the hero; still lit flat in the stones' shadow and only a GL frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0422-knight-coil-profile.jpg",
-  "time": "2026-11-07T04:22:13Z",
-  "caption": "The coil in profile (the kside lens now works): crouched, glaive low behind the right hip; backlit to a silhouette, GL not Forward+.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0525-knight-roar-reveal.jpg",
   "time": "2026-11-07T05:25:46Z",
   "caption": "The reveal lens at the roar: the glaive now stands upright beside the helm, blade to the sky, no fist across the visor; the fists are hidden behind the thrown-back helm from this lens, GL not Forward+.",
@@ -897,6 +873,24 @@
   "file": "20261110-2300-knight-leap-takeoff.jpg",
   "time": "2026-11-10T23:30:00Z",
   "caption": "The Ashen Knight at the leap's take-off (the shot harness stops at the strike's first tick, so the re-solved heave is not in frame); fog and bloom wash the knight out to a white silhouette.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0050-knight-leap-heave.jpg",
+  "time": "2026-11-11T00:50:00Z",
+  "caption": "The Ashen Knight at the top of its ember leap, legs tucked and the glaive heaved over its right shoulder (re-solved arc, now seen in a real frame sequence); lit and readable, but the shot harness leaves it at phase-1 size during a phase-2 move and the lens sits a little behind its shoulder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0050-knight-leap-downswing.jpg",
+  "time": "2026-11-11T00:50:00Z",
+  "caption": "The knight falling onto the hero with the glaive swung out level in front and the legs reaching down for the landing; the down arc reads, the giant still looks too small next to the hero for a phase-2 leap.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0050-knight-leap-bite.jpg",
+  "time": "2026-11-11T00:50:00Z",
+  "caption": "The blade biting the turf in front of the hero as the knight lands; a coherent end to the arc, armour materials and the grass still short of a Wukong frame.",
   "verdict": "fail"
  }
 ]

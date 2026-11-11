@@ -1080,7 +1080,12 @@ func _ready() -> void:
 		if "knoll" in args:
 			fp = world.archer._home
 		if "knight" in args and "leap" in args:
-			fp = pp + Vector3(-7.6, 0, 1.2)      # the ember leap springs from out of glaive reach
+			# the ember leap springs from out of glaive reach: its window (LEAP_MIN..LEAP_MAX) scales
+			# with the knight's size, so stand it off in the middle of the window at that size
+			# (a flat 7.7 m sat inside LEAP_MIN at x2.2: the brain thrust instead and every leap shot
+			# froze the thrust)
+			var lk: float = (world.knight as AshenKnight).size_scale
+			fp = pp + Vector3(-1.0, 0, 0.16).normalized() * (0.5 * (AshenKnight.LEAP_MIN + AshenKnight.LEAP_MAX) * lk)
 		# g1 / g2 / g3: the knight at its phase-1/2/3 size (BossGrowth), standing off from the hero
 		var giant := 0
 		for gi in [1, 2, 3]:
@@ -3107,11 +3112,14 @@ func _ready() -> void:
 			kl._set_phase(2)
 			kl._leap_cool = 0.0
 			kl._player = player
+			kl.force_move = AshenKnight.LEAP_MOVE
 			kl.state = HollowSoldier.STALK
 			kl.t = 1.0
 			kl.set_physics_process(true)
 			for i in 400:
 				kl._physics_process(dt)
+				if OS.get_environment("LEAPDBG") == "1":
+					print("LEAPDBG i %d mk %d st %d t %.3f" % [i, kl.move_kind, kl.state, kl.t])
 				if "scorched" in args:
 					# on through the landing: bent over the bitten glaive, the burn fresh
 					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.RECOVER and kl.t >= foe_u * AshenKnight.LEAP_RECOVER_T:
@@ -3136,7 +3144,22 @@ func _ready() -> void:
 					for i in 80:
 						kl.last_scorch._process(0.1)
 				print("SHOT knight scorch at %s heat %.2f, camera %s" % [bt, kl.last_scorch.heat, cp])
-			print("SHOT knight leap state %d t %.2f lift %.2f" % [kl.state, kl.t, kl.leap_lift])
+			elif cam != null and not "keeplens" in args:
+				# side-on to the leap from the lit side, back far enough (with the knight's size)
+				# to hold the giant and the heaved glaive whole, aimed at the body where it hangs
+				var kc := kl.global_position + Vector3.UP * (kl.leap_lift + 1.3 * kl.size_scale)
+				var kd2 := Vector3(kl.leap_to.x - kl.leap_from.x, 0, kl.leap_to.z - kl.leap_from.z).normalized()
+				var sd2 := kd2.cross(Vector3.UP)
+				var sl2: Vector3 = -world.sun.global_transform.basis.z
+				if sd2.dot(Vector3(-sl2.x, 0, -sl2.z)) < 0.0:
+					sd2 = -sd2
+				if "flip" in args:
+					sd2 = -sd2
+				var cp2 := kc + sd2 * (3.3 * kl.size_scale) - kd2 * (0.5 * kl.size_scale)
+				cp2.y = maxf(terrain.height_at(cp2.x, cp2.z) + 1.6, kc.y - 0.8 * kl.size_scale)
+				cam.global_position = cp2
+				cam.look_at(kc)
+			print("SHOT knight leap state %d t %.2f lift %.2f u %.2f" % [kl.state, kl.t, kl.leap_lift, kl.t / AshenKnight.LEAP_T])
 		if "knight" in args and ("surge" in args or "p3" in args):
 			# surge: the knight down on its knee as the ring of fire bursts (phase 2 -> 3);
 			# p3: phase 3, the ground under the hero erupting. Fire is held back so it bursts
