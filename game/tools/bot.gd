@@ -1684,6 +1684,9 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	# tick, still the crouch's pose, whose re-solve is next in PROGRESS.md)
 	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.LEAPHELM_OLD and float(helm_by.get("high", -9.0)) > FOEFOLD_HELM_GRAZE:
 		return "%s: the heaved glaive runs %.3f m/size through the helm" % [label, helm_by["high"]]
+	# (14:00 11-11) and its crouch's wind-up (W) draws the glaive past the helm too (CROUCH_OLD: 0.113)
+	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.CROUCH_OLD and float(helm_by.get("W", -9.0)) > FOEFOLD_HELM_GRAZE:
+		return "%s: the crouching glaive runs %.3f m/size through the helm" % [label, helm_by["W"]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:

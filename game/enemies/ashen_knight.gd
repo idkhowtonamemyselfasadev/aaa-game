@@ -96,6 +96,17 @@ static var LEAPFOLD_OLD := OS.get_environment("LEAPFOLD_OLD") == "1"
 static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else (LEAP_HEAVE_NEW if LEAPHELM_OLD else LEAP_HEAVE_LEFT))
 static var LEAP_UP: Array = _env_pose("LEAP_UP_TRY", LEAP_UP_ARC)
 static var LEAP_DOWN: Array = _env_pose("LEAP_DOWN_TRY", LEAP_DOWN_ARC)
+## (14:00 11-11) the knight's own leap crouch. CROUCHED (borrowed from the sentinel) held the
+## glaive up over the crown (1.9 m, hold just behind the helm's axis), so the guard -> crouch
+## wind-up drew the haft 0.11 m/size through the great helm (bot `foefold` W). Searched against
+## the bot's helm read-out (30 random + 3 hill-climbs of 6 x 19 s runs): the knight now coils by
+## raising the glaive near-upright out in FRONT of the helm (hold 0.74 ahead), blade high, both
+## fists on the haft, the left elbow bent (shoulder-wrist 0.25 m/size, gate 0.18), the chest
+## turned a little to its right; from there the heave goes up the left side. Wind-up clear of
+## the helm by 0.058 m/size, the take-off ticks by 0.008. env CROUCH_OLD=1: the before.
+const KNIGHT_CROUCH_FRONT := [25.7, 80.8, Vector3(0.035, 2.012, 0.737), -8.0, 0.002, 0.604]
+static var CROUCH_OLD := OS.get_environment("CROUCH_OLD") == "1"
+static var LEAP_CROUCH: Array = _env_pose("CROUCH_TRY", CROUCHED if CROUCH_OLD else KNIGHT_CROUCH_FRONT)
 ## env <name>="yaw,pitch,x,y,z,chest,slide,reach" replaces a pose (tuning loops); else `base`
 static func _env_pose(name: String, base: Array) -> Array:
 	var e := OS.get_environment(name)
@@ -1001,7 +1012,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				var lk := _reach_k()
 				var reach := clampf(off.length() - LEAP_BITE * lk, 0.5, (LEAP_MAX - LEAP_BITE) * lk)
 				leap_to = global_position + off.normalized() * reach if off.length() > 1e-3 else global_position
-			_pose = _lerp_pose(_from, CROUCHED, smoothstep(0.0, 0.7, u))
+			_pose = _lerp_pose(_from, LEAP_CROUCH, smoothstep(0.0, 0.7, u))
 			_pose[1] += sin(t * 44.0) * 1.0 * smoothstep(0.6, 0.9, u)
 			lean = 0.26 * smoothstep(0.0, 0.7, u)
 			sink = 0.34 * smoothstep(0.0, 0.7, u)

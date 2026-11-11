@@ -3173,9 +3173,33 @@ func _ready() -> void:
 					# (`landed`: the same side-on lens as the flight, u= of the recovery)
 					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.RECOVER and kl.t >= foe_u * AshenKnight.LEAP_RECOVER_T:
 						break
+				elif "crouch" in args:
+					# (14:00 11-11) crouch: u= of the crouch (the wind-up tell)
+					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.WINDUP and kl.t >= foe_u * AshenKnight.LEAP_CROUCH_T:
+						break
 				elif kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:
 					break
 			kl.set_physics_process(false)
+			if "crouch" in args and cam != null:
+				# front quarter off the posed chest (kchest's lens), on the sun's side, 3.0 x size out
+				var lsk: Skeleton3D = kl.skel
+				var lgt: Transform3D = lsk.global_transform * lsk.get_bone_global_pose(lsk.find_bone("mixamorig_Spine2"))
+				var lbf: Vector3 = kl.body.global_basis.z.normalized()
+				var lfw: Vector3 = lgt.basis.z
+				if lfw.dot(lbf) < 0.0:
+					lfw = -lfw
+				lfw.y = 0.0
+				lfw = lfw.normalized()
+				var lrt := Vector3.UP.cross(lfw).normalized()
+				var lsun: Vector3 = world.sun.global_basis.z
+				lsun.y = 0.0
+				var lsd := 1.0 if (lfw + lrt * 0.55).dot(lsun) > (lfw - lrt * 0.55).dot(lsun) else -1.0
+				if "flip" in args:
+					lsd = -lsd
+				var lc: Vector3 = lgt.origin + Vector3.UP * 0.35 * kl.size_scale
+				cam.global_position = lc + (lfw + lrt * lsd * 0.55).normalized() * 3.0 * kl.size_scale + Vector3.UP * 0.2 * kl.size_scale
+				cam.look_at(lc)
+				print("SHOT knight crouch u=%.2f lens %s side %s" % [foe_u, cam.global_position, "left" if lsd > 0.0 else "right"])
 			if "scorched" in args and kl.last_scorch != null:
 				# low on the burn from the lit side, the knight stooped over it beyond
 				var bt := kl.last_scorch.global_position
@@ -3193,7 +3217,7 @@ func _ready() -> void:
 					for i in 80:
 						kl.last_scorch._process(0.1)
 				print("SHOT knight scorch at %s heat %.2f, camera %s" % [bt, kl.last_scorch.heat, cp])
-			elif cam != null and not "keeplens" in args:
+			elif cam != null and not "keeplens" in args and not "crouch" in args:
 				# side-on to the leap from the lit side, back far enough (with the knight's size)
 				# to hold the giant and the heaved glaive whole, aimed at the body where it hangs
 				var kc := kl.global_position + Vector3.UP * (kl.leap_lift + 1.3 * kl.size_scale)
