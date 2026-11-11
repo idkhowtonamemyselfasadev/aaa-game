@@ -107,6 +107,18 @@ static var LEAP_DOWN: Array = _env_pose("LEAP_DOWN_TRY", LEAP_DOWN_ARC)
 const KNIGHT_CROUCH_FRONT := [25.7, 80.8, Vector3(0.035, 2.012, 0.737), -8.0, 0.002, 0.604]
 static var CROUCH_OLD := OS.get_environment("CROUCH_OLD") == "1"
 static var LEAP_CROUCH: Array = _env_pose("CROUCH_TRY", CROUCHED if CROUCH_OLD else KNIGHT_CROUCH_FRONT)
+## (15:00 11-11) the knight's own landed pose over the bitten glaive. SLAMMED (borrowed from the
+## sentinel) bows the chest over a glaive whose haft runs up under the great helm's flared rim, so
+## the landing and the crouch over the bite ran the haft 0.08 m/size into the helm (bot `foefold`
+## S / R). Searched against the bot (hill-climb over 3 parallel `foefold` runs, scoring the helm,
+## the blade's bite on the turf, fists on the haft and arm bend): the knight now lands with the
+## glaive held a little to its left (hold x +0.135), lower and nearer (y 0.90, z 0.85), the chest
+## turned to its right (-13) and a shorter reach (0.52), so the haft runs out past the bowed helm's
+## rim instead of up under it: landing clear by 0.008 m/size, the crouch over the bite by 0.159,
+## the blade still bitten into the turf (low end -0.035..0.131 m/size), left elbow bent (0.88).
+const KNIGHT_SLAMMED := [-7.95, -28.14, Vector3(0.135, 0.898, 0.848), -13.14, 0.082, 0.518]
+static var SLAM_OLD := OS.get_environment("SLAM_OLD") == "1"
+static var LEAP_SLAM: Array = _env_pose("SLAM_TRY", StoneSentinel.SLAMMED if SLAM_OLD else KNIGHT_SLAMMED)
 ## env <name>="yaw,pitch,x,y,z,chest,slide,reach" replaces a pose (tuning loops); else `base`
 static func _env_pose(name: String, base: Array) -> Array:
 	var e := OS.get_environment(name)
@@ -1054,7 +1066,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP, LEAP_HEAVE, r)
 			else:
 				var r := smoothstep(0.0, 1.0, (u - 0.6) / 0.4)
-				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN, StoneSentinel.SLAMMED, r)
+				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN, LEAP_SLAM, r)
 			# knees drive up off the crouch, tucked through the top, legs reach down to land
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)
@@ -1096,7 +1108,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			var u := clampf(t / LEAP_RECOVER_T, 0.0, 1.0)
 			# bent over the bitten glaive, then wrenches it free
 			var f := smoothstep(0.55, 1.0, u)
-			_pose = _lerp_pose(StoneSentinel.SLAMMED, guard_pose, f)
+			_pose = _lerp_pose(StoneSentinel.SLAMMED if LEAPFOLD_OLD else LEAP_SLAM, guard_pose, f)
 			lean = 0.34 * (1.0 - f) - 0.08 * sin(PI * f)
 			sink = 0.24 * (1.0 - f)
 			_set_tuck(0.55 * (1.0 - f), 1.1 * (1.0 - f))

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261107-1735-getup-rise.jpg",
-  "time": "2026-11-07T17:35:44Z",
-  "caption": "Knock-down get-up 1.42 s in: the hand lets go as the hero comes over the feet into the squat; the rise is still one symmetric squat with no knee-down step.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1800-kneel-rise.jpg",
   "time": "2026-11-07T18:00:00Z",
   "caption": "Knock-down get-up: the hero now kneels on the left knee with the right foot planted ahead before rising, instead of a two-footed squat; the legs are still half hidden in the tall grass and the free right arm just hangs.",
@@ -891,6 +885,12 @@
   "file": "20261111-1500-knight-crouch.jpg",
   "time": "2026-11-11T14:34:42Z",
   "caption": "The Ashen Knight's leap crouch now raises its glaive near-upright in front of the helm, both fists on the haft and clear of the helm; the helm still reads as a dark dome with no face from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1515-knight-landing.jpg",
+  "time": "2026-11-11T15:15:00Z",
+  "caption": "The Ashen Knight lands its ember leap bowed over the bitten glaive, the haft now running out past its helm into the turf instead of up under the rim; the helm still reads as a dark dome and the sky is too dark for the hour.",
   "verdict": "fail"
  }
 ]

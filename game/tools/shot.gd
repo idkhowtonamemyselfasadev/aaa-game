@@ -3168,7 +3168,7 @@ func _ready() -> void:
 				kl._physics_process(dt)
 				if OS.get_environment("LEAPDBG") == "1":
 					print("LEAPDBG i %d mk %d st %d t %.3f" % [i, kl.move_kind, kl.state, kl.t])
-				if "scorched" in args or "landed" in args:
+				if "scorched" in args or "landed" in args or "landfront" in args:
 					# on through the landing: bent over the bitten glaive, the burn fresh
 					# (`landed`: the same side-on lens as the flight, u= of the recovery)
 					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.RECOVER and kl.t >= foe_u * AshenKnight.LEAP_RECOVER_T:
@@ -3180,7 +3180,8 @@ func _ready() -> void:
 				elif kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:
 					break
 			kl.set_physics_process(false)
-			if "crouch" in args and cam != null:
+			# (15:00 11-11) `landfront`: the landing (u= of the recovery) through the same front lens
+			if ("crouch" in args or "landfront" in args) and cam != null:
 				# front quarter off the posed chest (kchest's lens), on the sun's side, 3.0 x size out
 				var lsk: Skeleton3D = kl.skel
 				var lgt: Transform3D = lsk.global_transform * lsk.get_bone_global_pose(lsk.find_bone("mixamorig_Spine2"))
@@ -3217,7 +3218,7 @@ func _ready() -> void:
 					for i in 80:
 						kl.last_scorch._process(0.1)
 				print("SHOT knight scorch at %s heat %.2f, camera %s" % [bt, kl.last_scorch.heat, cp])
-			elif cam != null and not "keeplens" in args and not "crouch" in args:
+			elif cam != null and not "keeplens" in args and not "crouch" in args and not "landfront" in args:
 				# side-on to the leap from the lit side, back far enough (with the knight's size)
 				# to hold the giant and the heaved glaive whole, aimed at the body where it hangs
 				var kc := kl.global_position + Vector3.UP * (kl.leap_lift + 1.3 * kl.size_scale)
