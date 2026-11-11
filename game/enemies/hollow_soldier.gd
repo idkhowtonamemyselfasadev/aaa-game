@@ -607,6 +607,33 @@ const REACH_SLIDE_MAX := 0.45
 func _reach_slide_on() -> bool:
 	return false
 
+## (11-11 20:00) the reach clamp eases in over its last SOFTCLAMP_K metres for the plain soldiers'
+## sweep. The front (left) grip runs up to 0.16 m past the sweep's reach through the first two thirds of
+## the cut; the hard clamp bent the shaft up to 11 deg (leading the blade) and, as the bend unwound
+## between bearing +47 and +65, it stopped dead the tick the grip came back inside reach: the blade's
+## turn went 6.7 -> 6.6 -> 7.1 -> 6.2 deg/tick, a hitch in the follow-through. A soft clamp (same reach,
+## C1 at the knee) lets the bend fade out. The slide (`_reach_slide_on`) was tried first: it straightens
+## the shaft but pulls the blade 0.16 m in, folds the right arm (0.14 m shoulder-to-wrist, bot foefold)
+## and moves the blade's arrival out of the parry window. Env SOFTCLAMP_OLD=1: the hard clamp.
+const SOFTCLAMP_K := 0.08
+static var SOFTCLAMP_OLD := OS.get_environment("SOFTCLAMP_OLD") == "1"
+func _soft_clamp_k() -> float:
+	# (foes that slide their grips inside reach, the knight, never reach the clamp's knee: left hard)
+	if SOFTCLAMP_OLD or _reach_slide_on() or move_kind != SWEEP_MOVE or not state in [WINDUP, STRIKE, RECOVER]:
+		return 0.0
+	return float(OS.get_environment("SOFTCLAMP_K")) if OS.has_environment("SOFTCLAMP_K") else SOFTCLAMP_K
+
+## w limited to `reach`; with k > 0 the length eases toward reach over its last k metres instead of
+## stopping at it (exponential knee, continuous slope)
+static func _clamp_reach(w: Vector3, reach: float, k: float) -> Vector3:
+	var n := w.length()
+	if k <= 0.0:
+		return w.limit_length(reach)
+	var knee := reach - k
+	if n <= knee or n < 1e-6:
+		return w
+	return w * ((knee + k * (1.0 - exp(-(n - knee) / k))) / n)
+
 func _shoulders(tw: float) -> Array:
 	return [SHOULDER.rotated(Vector3.UP, tw), Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw), false]
 
@@ -646,8 +673,9 @@ func _place(pose: Array) -> void:
 	var wr := c + d * (HAND_R + slide) - sr
 	var wl := c + d * (HAND_L + slide) - sl
 	clamp_over = [maxf(wr.length() - reach, 0.0), maxf(wl.length() - reach, 0.0)]
-	var hr := sr + wr.limit_length(reach)
-	var hl := sl + wl.limit_length(reach)
+	var sk := _soft_clamp_k()
+	var hr := sr + _clamp_reach(wr, reach, sk)
+	var hl := sl + _clamp_reach(wl, reach, sk)
 	var axis := hl - hr
 	if axis.length() < 0.15:
 		axis = d * 0.15

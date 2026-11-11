@@ -1,32 +1,8 @@
 [
  {
-  "file": "20261107-2100-knockrise-hand.jpg",
-  "time": "2026-11-07T21:00:00Z",
-  "caption": "Standing up after a knock-down: the free left hand now hangs as a loose half-curl instead of a splayed claw; GL fallback lighting is flat and the arm still swings up to the guard quickly.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-2256-knockdown-situp-before.jpg",
-  "time": "2026-11-07T22:56:42Z",
-  "caption": "Knock-down sit-up BEFORE (down_t 1.40, front lens): the knees are drawn up to the chest and both boots hang 0.3-0.4 m in the air by the seat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-2256-knockdown-situp-after.jpg",
-  "time": "2026-11-07T22:56:42Z",
-  "caption": "Knock-down sit-up AFTER: the soles stay planted on the turf with the shins down to them; still a front lens that foreshortens the legs, and the flung staff floats in the air at the left.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-2337-knock-staff-rise.jpg",
   "time": "2026-11-07T23:37:39Z",
   "caption": "Knock-down rise (down_t 1.70): the hero keeps the staff in the right fist, its butt planted on the turf by the front knee, pushing up on it instead of the staff hanging in mid-air; GL frame, the lens still foreshortens the legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-2337-knock-staff-regrip.jpg",
-  "time": "2026-11-07T23:37:39Z",
-  "caption": "Just after the get-up (1.95): the staff comes back up from the right fist to the guard beside the body; the left hand has not caught it yet in this mid-regrip frame (rough).",
   "verdict": "fail"
  },
  {
@@ -897,6 +873,18 @@
   "file": "20261111-1946-sweep-cut.jpg",
   "time": "2026-11-11T19:46:32Z",
   "caption": "The sweep's glaive whipping low across the knight's front at peak speed past the hero; the motion reads, the framing and dark backlit armour do not hold up as a Wukong shot yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2033-soldier-sweep-front.jpg",
+  "time": "2026-11-11T20:33:47Z",
+  "caption": "A Hollow Soldier's sweep at bearing +48 deg seen past the hero's straw cape: the cut now runs out without the follow-through hitch, but the figures are small in a wide sunlit field and the lens is too far to read the swing.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2033-soldier-sweep-back.jpg",
+  "time": "2026-11-11T20:33:47Z",
+  "caption": "Same sweep at +62 deg from behind the soldier: hat, cloak and red tabard read well in warm light, but a straw sheaf blocks the hero and the spear is a thin line against the grass.",
   "verdict": "fail"
  }
 ]

@@ -9275,6 +9275,7 @@ func _staff_ends(c: StaffCombat) -> Array:
 	var st: Transform3D = c.staff.global_transform
 	return [st * Vector3(0, -Staff.LENGTH * 0.5, 0), st * Vector3(0, Staff.LENGTH * 0.5, 0)]
 
+const SWEEP_CUT_REBOUND := 0.2
 const SWEEP_CUT_FIRST := 0.45   # (11-11 19:00) no tick-to-tick speed-up in the cut above this share of its peak
 
 func _sweep_test() -> void:
@@ -9307,7 +9308,7 @@ func _sweep_test() -> void:
 		if s.state == HollowSoldier.STRIKE:
 			lo = minf(lo, b)
 			hi = maxf(hi, b)
-			cut.append([clampf(s.t / HollowSoldier.SWEEP_T, 0.0, 1.0), absf(b - bprev)])
+			cut.append([clampf(s.t / HollowSoldier.SWEEP_T, 0.0, 1.0), absf(b - bprev), s._pose[0], b, s.axis_off, s.clamp_over[0], s.clamp_over[1]])
 		elif s.state == HollowSoldier.WINDUP:
 			coil_last = absf(b - bprev)
 		bprev = b
@@ -9329,9 +9330,21 @@ func _sweep_test() -> void:
 		if cut_front_u < 0.0 and acc >= 0.0:
 			cut_front_u = e[0]
 	print("BOT sweep: cut profile %d ticks, coil's last tick %.1f deg, largest one-tick speed-up %.1f deg (%.0f%% of peak), peak %.1f deg/tick at u %.2f, front crossed at u %.2f (%.3f s)" % [cut.size(), coil_last, cut_first, 100.0 * cut_first / maxf(cut_peak, 1e-3), cut_peak, cut_peak_u, cut_front_u, cut_front_u * HollowSoldier.SWEEP_T])
+	# (11-11 20:00) past the peak the blade only slows: a rise there is a hitch (the hard reach clamp's
+	# bend stopping dead in the follow-through gave +0.54 deg/tick at u 0.69)
+	var cut_rebound := 0.0
+	var past_peak := false
+	for i in range(1, cut.size()):
+		if cut[i - 1][0] >= cut_peak_u:
+			past_peak = true
+		if past_peak:
+			cut_rebound = maxf(cut_rebound, cut[i][1] - cut[i - 1][1])
+	print("BOT sweep: follow-through: largest rise in speed after the peak %.2f deg/tick (gate %.2f)" % [cut_rebound, SWEEP_CUT_REBOUND])
 	if OS.get_environment("CUT_TRACE") == "1":
 		for e in cut:
-			print("CUT u %.3f %.2f" % [e[0], e[1]])
+			print("CUT u %.3f %.2f  a %.1f bearing %.1f  axis_off %.1f clamp R %.3f L %.3f" % [e[0], e[1], e[2], e[3], e[4], e[5], e[6]])
+	if OS.get_environment("SOFTCLAMP_OLD") != "1" and OS.get_environment("SWEEPCUT_OLD") != "1" and cut_rebound > SWEEP_CUT_REBOUND:
+		return _combat_done(false, "the sweep's blade speeds up again in its follow-through (%.2f deg/tick)" % cut_rebound)
 	if OS.get_environment("SWEEPCUT_OLD") != "1" and cut_first > SWEEP_CUT_FIRST * cut_peak:
 		return _combat_done(false, "the sweep's cut snaps to full speed off the held coil in one tick")
 	print("BOT sweep: stood -> %s, health %.0f -> %.0f, blade arc %.0f..%.0f deg, max ember %.1f" % [s.last_result, h0, p.health, lo, hi, s.max_ember])

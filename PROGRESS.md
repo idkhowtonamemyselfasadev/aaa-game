@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.8
+(20:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP NOW RUNS OUT SMOOTHLY INSTEAD OF HITCHING IN ITS FOLLOW-THROUGH: a per-tick trace with the commanded angle, shaft bend and clamp excess (bot `sweep`, CUT_TRACE=1) showed the front (left) grip 0.03-0.16 m past the sweep's reach for the first two thirds of the cut, so the hard reach clamp bent the shaft up to 11 deg ahead of the pose, and the tick the grip came back inside reach (bearing ~+65) the bend stopped dead: blade 6.7 -> 6.6 -> 7.1 -> 6.2 deg/tick. The clamp now eases in over its last 0.08 m (C1 knee) for the plain soldiers' sweep: after the peak the blade only slows (largest rise 0.54 -> 0.00 deg/tick), front crossed at the same 0.133 s, dodge and parry unchanged. SOFTCLAMP_OLD=1 is the before. GL sequences old/new looked at.)
 (19:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP, AND THE ASHEN KNIGHT'S, NOW LEAVES ITS HELD COIL ACCELERATING INSTEAD OF POPPING TO FULL SPEED IN ONE TICK: the first frame SEQUENCE of the knight's sweep (leapseq mode now takes `sweep`) showed the glaive going from the trembling coil at W.97 to already down across the front by S.15, and a new real-time per-tick trace in bot `sweep` found the blade turning 1.0 deg on the last coil tick and 16.7 deg on the next (88% of its peak in one tick: the cut curve 1-(1-u)^2 starts at full speed). Now the speed ramps up linearly over the first 14% of the cut (~3 ticks) to the same peak and eases out as before: largest one-tick speed-up 15.7 -> 6.8 deg (35% of peak), peak at u 0.23 (was 0.14), blade crosses the front 0.016 s later (0.117 -> 0.133 s); dodge on the glint and parry still beat it. SWEEPCUT_OLD=1 is the before. GL sequences old/new looked at.)
 (18:00 11-11: THE ASHEN KNIGHT'S SWEEP NO LONGER COILS ITS GLAIVE THROUGH ITS OWN HELM: in the coil the haft's butt ran forward-left across the throat, 0.17 m/size through the great helm's chin skirt for the whole held coil and the cut's first ticks. Found by a search straight against bot `foefold` (16 s a run, 4 in parallel, 24 tries): the chest now twists further into the coil (0.4 of the blade's bearing, was 0.3) and the hold sits 0.15 m lower, 6 cm left, 4 cm back, so the haft runs under the chin across the upper chest. W 0.173 -> -0.125, S 0.165 -> -0.162 m/size; arms/fists unchanged. New gate; SWEEPHELM_OLD=1 is the before. GL frames old/new looked at: the change is small at this distance, the haft now meets the right fist below the helm instead of entering its lower edge.)
 (17:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP NOW BRINGS ITS GLAIVE DOWN AS ONE READABLE, ACCELERATING SLAM INSTEAD OF A JUMP CUT: the down-swing was a double smoothstep over the last 40% of the airtime after a dead hold, so the blade went from heaved to the turf in ~0.12 s (10-90% of the turn) and then EASED OUT, arriving at the ground while the giant still hung ~1.8 m in the air (old GL sequence). Now the glaive hangs heaved over the top of the arc, starts to come over just past the apex and gathers speed all the way down (ease-in x^2.4), fastest at the bite, with the body arched back over the top and whipping over with it. Bot: 10-90% of the turn over 0.200 s (was 0.117), last tick 100% of peak speed (was 1%). Same path through the poses, so every helm/arm gate holds. New gate in `knightleap`; DOWNSWING_OLD=1 is the before and fails it.)
@@ -40,6 +41,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (20:00 11-11) Setup needed a second run (the first was killed with its shell; run it in the foreground or as a tracked background job); import ~10 min; GL shots via opengl3 (SHOT_GL=1); headless bots fine. Asset sites not rechecked (no downloads).
 - (19:00 11-11) Setup first try (import ~15 min); GL shots via opengl3 (SHOT_GL=1 still prints "vulkan failed"; an 8-frame sequence ~10 min, two in parallel fine); headless bots fine. Asset sites not rechecked (no downloads this session).
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
@@ -8365,6 +8367,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (20:00 11-11) **SOLDIER SWEEP FOLLOW-THROUGH HITCH — DONE (game change, gated).** NEXT (1) of 19:00.
+   Cause (CUT_TRACE now also prints a = commanded bearing, measured bearing, axis_off, clamp_over R/L): the base
+   soldier's sweep pose (reach SWEEP_ARM 0.6, model shoulders, no slide) puts the left grip up to 0.158 m past reach
+   from the coil to bearing ~+60; the hard clamp (`limit_length`) bends the shaft up to 11.4 deg, leading the blade,
+   and the bend's unwind stopped dead the tick the excess hit 0 (axis_off 4.5 -> 1.8 -> 0.0): +0.54 deg/tick at u 0.69.
+   Fix: `hollow_soldier.gd` `_clamp_reach(w, reach, k)`: exponential knee over the last SOFTCLAMP_K 0.08 m, used by
+   `_place` when `_soft_clamp_k()` > 0 = sweep move in WINDUP/STRIKE/RECOVER and the foe does not reach-slide (the
+   knight keeps its hard clamp + slide; with the soft clamp it failed foefold's 2.7 deg bend gate). env SOFTCLAMP_OLD=1
+   = the before, SOFTCLAMP_K tuning. Tried first: turning the reach slide on for the soldier's sweep: straight shaft
+   but the blade pulled 0.16 m in, the right arm folded to 0.14 m/size (foefold FAIL) and the blade arrived later
+   (front 0.133 -> 0.150 s) so the bot's heavy-raise no longer parried: rejected. New gate in bot `sweep`:
+   SWEEP_CUT_REBOUND 0.2 deg/tick (largest speed rise after the peak; old 0.54 fails, new 0.00). Ramp-in speed-up 36%
+   of peak (gate 45%). Bots PASS: sweep foefold foegrip foehands soldier combat hewer archer sentinel knight
+   knightleap knightguard lockon. GL sequence `soldier ssw_new 40 16.5 fixfps sweep leapseq sunlit u=0.02
+   seqt=S0.45,S0.55,S0.62,S0.68,S0.74,S0.8` (+ ssw_old with SOFTCLAMP_OLD=1) looked at as contact sheets: identical at this distance (a ~5 deg timing fix); the cut reads crossing to the soldier's left. `shot.gd` leapseq now also takes the plain soldier ("sweep" without "knight"), and `rev` flips the front lens (the soldier's chest axis reads backwards: without it the lens lands behind the soldier). From the front at far 3 the soldier is small in a wide field: a closer side lens is still needed (NEXT 1).
+   Grade: soldier sweep good (cut curve + follow-through now smooth; the bend leading the blade by ~11 deg mid-cut is
+   still there, reads as the shaft flexing, not judged at this distance).
+   NOTE: bot `sweep`'s hero get-up check failed once this session on the first run with the old code (alone, not
+   under load): flaky, seen 19:00 too. Watch it; if it recurs, look at the rise-off-one-knee sampling (1 sample).
+   NEXT: (1) side-lens / fixed-camera leapseq (17:00 NEXT 1) — knight heave lay-back + the sweep from the side;
+   (2) leap hang cock-back; (3) thrust/stomp helm gates; (4) the flaky get-up sample. BOSS/ANIMATION order unchanged; audio after.
 0. (19:00 11-11) **SWEEP CUT ACCELERATES OFF THE COIL — DONE (game change, gated).** NEXT (1) of 18:00.
    `hollow_soldier.gd` STRIKE (sweep): `sweep_cut_f(u)` = u^2/R for u < R (SWEEP_CUT_RAMP 0.14), then
    1 - (1-u)^2/(1-R): same peak speed (2x mean), linear ramp in, ease-out follow-through. env SWEEPCUT_OLD=1 = the
