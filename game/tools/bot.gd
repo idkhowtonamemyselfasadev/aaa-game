@@ -1614,6 +1614,8 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				var wi: Transform3D = e._wield.global_transform.affine_inverse()
 				print("      tick st=%d t=%.3f L sh-wrist %.3f sh-grip %.3f gap %.3f | wield-local shL %s shR %s gripL %s" % [e.state, e.t, f, shl.distance_to(e._grip_l.global_position) / ks, fg, str(wi * shl), str(wi * shr), str(e._grip_l.position)])
 			var ch: float = straight_len[j]
+			if OS.has_environment("FOEFOLD_STRAIGHT") and ch > 0.0:
+				print("      tick st=%d t=%.3f %s straight %.3f fist-haft %.3f" % [e.state, e.t, "RL"[j], f * ks / ch, fg])
 			if ch > 0.0 and f * ks / ch > straight[j]:
 				straight[j] = f * ks / ch
 				straight_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
@@ -1631,7 +1633,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	# (11-11 08:00) the knight's poses are solved against its real shoulders: the clamp may not bend the glaive
 	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and axis_hi > FOEFOLD_KNIGHT_AXIS_MAX:
 		return "%s: the reach clamp bends the glaive %.1f deg off its pose (%s)" % [label, axis_hi, axis_at]
-	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and kind == AshenKnight.LEAP_MOVE \
+	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and kind in [AshenKnight.LEAP_MOVE, HollowSoldier.SWEEP_MOVE] \
 			and maxf(straight[0], straight[1]) > FOEFOLD_KNIGHT_STRAIGHT_MAX:
 		return "%s: an arm locks straight (R %.3f %s, L %.3f %s of the chain)" % [label, straight[0], straight_at[0], straight[1], straight_at[1]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
@@ -1664,6 +1666,8 @@ func _foe_fold_test() -> void:
 	var fail := ""
 	for r in runs:
 		if r[0] == null:
+			continue
+		if OS.has_environment("FOEFOLD_ONLY") and not OS.get_environment("FOEFOLD_ONLY") in r[2]:
 			continue
 		if r[1] in [AshenKnight.STOMP_MOVE, AshenKnight.LEAP_MOVE] and r[0] == _world.knight:
 			var k: AshenKnight = r[0]

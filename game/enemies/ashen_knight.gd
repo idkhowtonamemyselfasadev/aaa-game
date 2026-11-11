@@ -1380,6 +1380,32 @@ static var ARMBEND_REACH := float(OS.get_environment("ARMBEND_REACH")) if OS.has
 static var ARMBEND_SWEEP := float(OS.get_environment("ARMBEND_SWEEP")) if OS.has_environment("ARMBEND_SWEEP") else 0.0
 const KNIGHT_ARM_BEND_CROUCH := 0.58
 static var ARMBEND_CROUCH := float(OS.get_environment("ARMBEND_CROUCH")) if OS.has_environment("ARMBEND_CROUCH") else KNIGHT_ARM_BEND_CROUCH
+## (11-11 10:00) The knight's own sweep, re-solved against its real shoulders: the shared pose's
+## reach (SWEEP_ARM 0.6) let the reach slide park the left grip 0.55 m from the left shoulder through
+## the whole coil and the first tenth of the cut, on an arm of 0.547 (straightness 0.98-0.99, locked
+## like a rod across the chest). The reach is now KNIGHT_SWEEP_REACH 0.46 while the blade is on the
+## knight's right (bearing < -20 deg), eased back to 0.6 by +40 deg, so the slide draws both grips in
+## along the glaive's own line and the left elbow keeps a bend: L 0.991 -> 0.923, hand roll chatter
+## unchanged (no reversals). 0.50 leaves the cut's first ticks locked (the shoulders unwind faster
+## than the one-tick-old reading) and flips the left hand off the haft (0.075 m); 0.44 crushes the
+## right arm toward FOEFOLD_MIN (0.184). env KSWEEP_OLD=1: the
+## shared HollowSoldier.sweep_pose; env KSWEEP_TRY="twistk,cap,dx,dy,dz,w0,w1" for tuning (offset in
+## Wield space, weighted in over blade bearings w0..w1 degrees).
+const KNIGHT_SWEEP_REACH := 0.46
+static var KSWEEP_OLD := OS.has_environment("KSWEEP_OLD")
+static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array([0.3, KNIGHT_SWEEP_REACH, 0.0, 0.0, 0.0, -20.0, 40.0])
+func _sweep_pose(a: float) -> Array:
+	var p := HollowSoldier.sweep_pose(a)
+	if KSWEEP_OLD or not _reach_slide_on():
+		return p
+	var k := KSWEEP_P
+	p[3] = a * k[0]
+	var w := 1.0 - smoothstep(k[5], k[6], a) if k[5] < k[6] else 1.0
+	p[2] = (p[2] as Vector3) + Vector3(k[2], k[3], k[4]) * w
+	if k[1] > 0.0:
+		p[5] = lerpf(p[5], minf(p[5], k[1]), w)
+	return p
+
 func _arm_bent(pose: Array) -> Array:
 	if ARMBEND_OLD or not _reach_slide_on() or pose.size() < 6:
 		return pose

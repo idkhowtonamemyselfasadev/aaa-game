@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-1224-climb-square.jpg",
-  "time": "2026-11-07T12:24:47Z",
-  "caption": "AFTER: hips and chest square to the stones, left hand reaching for the next hold, knee up, the back panel hanging straight down the wall; still dim in the wall's shadow, the climb moves at an even speed with no push/pull surge.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1320-climb-rhythm.jpg",
-  "time": "2026-11-07T13:20:08Z",
-  "caption": "The hero mid-climb on the keep's outer face (GL, 15:30): arms reaching hand over hand, head tipped up the face; the body now surges between reaches, but the whole face still sits in the wall's own shadow so the figure reads as a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1414-climbsway.jpg",
   "time": "2026-11-07T14:14:59Z",
   "caption": "The hero climbing the keep seen from behind, hips swung out over the standing foot; GL frame, the figure is still small and the wall face is flatly lit.",
@@ -891,6 +879,18 @@
   "file": "20261111-0930-knight-leap-landing.jpg",
   "time": "2026-11-11T09:30:00Z",
   "caption": "The Ashen Knight crouched over its bitten glaive after the ember leap: both fists now drawn in to the chest with the elbows bent (before, the left arm locked straight along the haft); still backlit and dark against the sun, the knight reads small at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1000-knight-sweep-coil.jpg",
+  "time": "2026-11-11T10:00:00Z",
+  "caption": "The Ashen Knight coiled for its sweep with the left elbow now bent: the glaive rides high out past the right pauldron; seen from behind, so the arms themselves are hidden.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1000-knight-sweep-cut.jpg",
+  "time": "2026-11-11T10:00:00Z",
+  "caption": "The first tick of the knight's sweep cut, the glaive swinging out level over the hero; the lens is too close for the 2.2x giant and crops the helm.",
   "verdict": "fail"
  }
 ]

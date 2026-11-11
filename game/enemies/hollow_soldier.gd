@@ -703,6 +703,10 @@ static func sweep_pose(a: float) -> Array:
 	var c := mid - d * ((HAND_R + HAND_L) * 0.5 + SWEEP_SLIDE)
 	return [a, -4.0, c, a * 0.3, SWEEP_SLIDE, SWEEP_ARM]
 
+## (11-11) the sweep pose this foe actually swings (the knight re-solves it against its real shoulders)
+func _sweep_pose(a: float) -> Array:
+	return sweep_pose(a)
+
 ## Lean the whole model from the hips (back = negative), pivoting so the feet stay put.
 var lean_last := 0.0   # (bots) the hip lean set last tick
 func _lean(rad: float, sink: float) -> void:
@@ -852,7 +856,7 @@ func _physics_process(delta: float) -> void:
 			# wind-up (was a quarter: from the real guard the left wrist's GripRoll roll hit its cap for
 			# a tick, fist 0.06 m off; 2.5-3.0 do too, see PROGRESS.md). Env SWEEP_FROMK: tuning.
 			var fk := float(OS.get_environment("SWEEP_FROMK")) if OS.has_environment("SWEEP_FROMK") else SWEEP_FROM_BLEND
-			_pose = _lerp_pose(_from, sweep_pose(a), minf(u * fk, 1.0))
+			_pose = _lerp_pose(_from, _sweep_pose(a), minf(u * fk, 1.0))
 			lean = -0.06 * smoothstep(0.0, 0.6, u)
 			sink = 0.14 * smoothstep(0.0, 0.6, u)
 			ember = 1.0 + 3.2 * smoothstep(0.15, 0.85, u)
@@ -868,7 +872,7 @@ func _physics_process(delta: float) -> void:
 			var u := clampf(t / SWEEP_T, 0.0, 1.0)
 			_update_glint(0.0)
 			var a := lerpf(SWEEP_FROM, SWEEP_TO, 1.0 - (1.0 - u) * (1.0 - u))
-			_pose = sweep_pose(a)
+			_pose = _sweep_pose(a)
 			lean = 0.1 * smoothstep(0.0, 0.5, u)
 			sink = 0.14
 			ember = 4.2 - 1.5 * u
@@ -884,7 +888,7 @@ func _physics_process(delta: float) -> void:
 		RECOVER when move_kind == SWEEP_MOVE:
 			var u := clampf(t / SWEEP_RECOVER_T, 0.0, 1.0)
 			var f := smoothstep(0.35, 1.0, u)
-			_pose = _lerp_pose(sweep_pose(lerpf(SWEEP_TO, SWEEP_HOME, f)), guard_pose, f)
+			_pose = _lerp_pose(_sweep_pose(lerpf(SWEEP_TO, SWEEP_HOME, f)), guard_pose, f)
 			lean = 0.1 * (1.0 - smoothstep(0.2, 0.9, u))
 			sink = 0.14 * (1.0 - u)
 			ember = 1.4 - 0.4 * u

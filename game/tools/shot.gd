@@ -1157,6 +1157,11 @@ func _ready() -> void:
 				# to hold the whole arc and the hero under it
 				# (closer and a little low, looking up into the tuck and the heaved glaive)
 				SPOTS[spot] = [mid + side * 4.6 - line * 0.4 + Vector3.UP * 0.05, mid + Vector3.UP * 1.6]
+			if "knight" in args and "sweep" in args and "kbody" in args:
+				# (11-11) kbody: the whole knight from its front quarter on the hero's side, chest
+				# high, pulled back with its size (judge the sweep's arms: the coil and the cut)
+				var ws: float = world.knight.size_scale
+				SPOTS[spot] = [fp + line * ((2.0 if "kopp" in args else -2.0) * ws) + side * ((-1.4 if "flip" in args else 1.4) * ws) + Vector3.UP * (0.75 * ws), fp + Vector3.UP * (1.05 * ws)]
 			if giant > 0:
 				# the giant whole, the hero small at its feet: wide from the lit side, low,
 				# looking up a little, pulled back as it grows
