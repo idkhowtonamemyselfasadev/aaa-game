@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-0715-knight-heave-upright.jpg",
-  "time": "2026-11-07T07:15:00Z",
-  "caption": "Reveal heave at it=3.13 (GL): the glaive now stands upright on the knight's right side instead of crossing its body with the butt at the left hip; the knight is still backlit in the stones' shadow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0800-knight-coil-lit.jpg",
-  "time": "2026-11-07T08:00:00Z",
-  "caption": "Boss reveal coil, front-lit at 08:30 (GL frame): glaive drawn low at the right hip, helm on the hero; the giant reads well-lit for the first time, but the frame is GL (Forward+ OOM-killed) and the knight is small in the lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0800-knight-heave-lit.jpg",
   "time": "2026-11-07T08:00:00Z",
   "caption": "Boss reveal heave, front-lit (GL): the glaive stands upright on its right, but the shaft still crosses the right edge of the helm in this lens.",
@@ -897,6 +885,18 @@
   "file": "20261111-0230-knight-leap-land-r40.jpg",
   "time": "2026-11-11T02:30:00Z",
   "caption": "The knight holding its crouch over the bitten blade before wrenching it free, boots planted. Still wrong: no dust kicked off the knees and grass not flattened round the boots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0339-knight-leap-kick.jpg",
+  "time": "2026-11-11T03:39:00Z",
+  "caption": "Front-quarter lens on the Ashen Knight at the bottom of its ember-leap landing: knees given, chest over the bitten glaive, a pale ring of dust rolling off the right boot. Still wrong: the ember-ring flame stands right in front of the boot and hides half the kick, and the GL fallback renders the armour flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0339-knight-leap-give.jpg",
+  "time": "2026-11-11T03:39:00Z",
+  "caption": "The same front-quarter lens a beat earlier: the giant bottoming out over its blade, the hero a third of its height at left. Still wrong: tall grass hides the boots and the clods read as tiny specks at this scale.",
   "verdict": "fail"
  }
 ]

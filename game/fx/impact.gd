@@ -40,6 +40,10 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		# thrown down) and a thin, shaded haze of fine soil that hugs the ground
 		chaff_col = Color(0.20, 0.15, 0.10)
 		dust_col = Color(0.33, 0.29, 0.23, 0.30)
+	elif kind == "stamp":
+		# (11-11) a giant's boot driven into the meadow: dry soil and torn stems, a broad ring
+		chaff_col = Color(0.42, 0.38, 0.24)
+		dust_col = Color(0.66, 0.61, 0.52, 0.6)   # dry, pale: reads against sunlit sward
 	if kind == "ash":
 		# a boss bursting its armour: charred flakes and a dark breath of ash round the body
 		chaff_col = Color(0.11, 0.09, 0.08)
@@ -64,6 +68,14 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		chaff.initial_velocity_max = 3.0 * power
 		chaff.scale_amount_min = 0.7
 		chaff.scale_amount_max = 1.8
+	if kind == "stamp":
+		chaff.amount = int(14 * power)
+		chaff.direction = (dir + Vector3.UP * 0.8).normalized()
+		chaff.spread = 50.0
+		chaff.initial_velocity_min = 1.0 * power
+		chaff.initial_velocity_max = 2.6 * power
+		chaff.scale_amount_min = 0.8
+		chaff.scale_amount_max = 2.0
 	if kind == "dirt":
 		chaff.amount = int(18 * power)
 		chaff.direction = Vector3.UP
@@ -156,6 +168,21 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 		dust.flatness = 0.75
 		dust.initial_velocity_max = 2.2 * power
 		dust.emission_sphere_radius = 0.35
+	elif kind == "stamp":
+		# a ring of dust rolled out flat along the turf from under the boot, big with the giant,
+		# slow to settle (the weight of the thing that landed)
+		dust.amount = int(10 * power) + 8
+		dust.lifetime = 1.8
+		dust.explosiveness = 0.95
+		dust.direction = Vector3.UP
+		dust.spread = 90.0
+		dust.flatness = 0.85
+		dust.initial_velocity_min = 0.8 * power
+		dust.initial_velocity_max = 3.6 * power
+		dust.damping_min = 1.4
+		dust.damping_max = 2.4
+		dust.gravity = Vector3(0, 0.05, 0)
+		dust.emission_sphere_radius = 0.4 * power
 	elif kind == "pierce":
 		# a small, quick grey breath at the wound, never a bright puff
 		dust.amount = 3
@@ -197,7 +224,7 @@ func _build(dir: Vector3, kind: String, power: float) -> void:
 	dg.add_point(0.15, dust_col)
 	dust.color_ramp = dg
 	var dq := QuadMesh.new()
-	dq.size = Vector2(0.65, 0.65) * power if kind == "ash" else (Vector2(0.45, 0.45) if kind == "turf" else (Vector2(0.25, 0.25) if kind == "pierce" else Vector2(0.7, 0.7)))
+	dq.size = Vector2(0.65, 0.65) * power if kind == "ash" else (Vector2(0.45, 0.45) if kind == "turf" else (Vector2(0.25, 0.25) if kind == "pierce" else (Vector2(0.75, 0.75) * power if kind == "stamp" else Vector2(0.7, 0.7))))
 	var dm := StandardMaterial3D.new()
 	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	dm.albedo_texture = _soft_tex()

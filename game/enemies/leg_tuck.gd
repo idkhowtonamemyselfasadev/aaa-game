@@ -283,6 +283,10 @@ func _carry_for(li: int, w: Vector3) -> Vector3:
 	_carry[li] = out * exp(-CARRY_RATE * _dt)
 	return out
 
+## Each ankle's world spot after every modifier last tick (LEGS order), or null before the first.
+func ankle(i: int) -> Variant:
+	return _final[i]
+
 func _record_final() -> void:
 	var sk := get_skeleton()
 	if sk == null:

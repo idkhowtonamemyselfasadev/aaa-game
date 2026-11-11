@@ -3155,6 +3155,8 @@ func _ready() -> void:
 				# side-on to the leap from the lit side, back far enough (with the knight's size)
 				# to hold the giant and the heaved glaive whole, aimed at the body where it hangs
 				var kc := kl.global_position + Vector3.UP * (kl.leap_lift + 1.3 * kl.size_scale)
+				if "fq" in args and "landed" in args:
+					kc = kl.global_position + Vector3.UP * (0.75 * kl.size_scale)   # down on the bent knees and boots
 				var kd2 := Vector3(kl.leap_to.x - kl.leap_from.x, 0, kl.leap_to.z - kl.leap_from.z).normalized()
 				var sd2 := kd2.cross(Vector3.UP)
 				var sl2: Vector3 = -world.sun.global_transform.basis.z
@@ -3169,11 +3171,20 @@ func _ready() -> void:
 				var cp2 := Vector3.ZERO
 				var picked := false
 				for side in [sd2, -sd2]:
-					for far in [3.3, 2.6, 2.0, 1.5]:
+					for far in ([2.2, 1.8, 1.5] if "fq" in args else [3.3, 2.6, 2.0, 1.5]):
 						var cand: Vector3 = kc + side * (far * kl.size_scale) - kd2 * (0.5 * kl.size_scale)
-						cand.y = maxf(terrain.height_at(cand.x, cand.z) + 1.6, kc.y - 0.8 * kl.size_scale)
+						if "fq" in args:
+							# (11-11) front quarter: ahead of the landing and out to the side, so the
+							# pitch over the blade and the knees' give read, not foreshortened
+							cand = kc + ((side as Vector3) * 0.75 + kd2 * 0.66).normalized() * (far * kl.size_scale)
+							cand.y = terrain.height_at(cand.x, cand.z) + 1.25 * kl.size_scale   # over the tall grass, down onto the boots
+						else:
+							cand.y = maxf(terrain.height_at(cand.x, cand.z) + 1.6, kc.y - 0.8 * kl.size_scale)
 						var clear := true
-						for aim in [kc, kc + Vector3.UP * 1.2 * kl.size_scale, kc - Vector3.UP * 0.9 * kl.size_scale]:
+						var aims := [kc, kc + Vector3.UP * 1.2 * kl.size_scale, kc - Vector3.UP * 0.9 * kl.size_scale]
+						if "fq" in args:
+							aims = [kc, kc + Vector3.UP * 1.0 * kl.size_scale, kc - Vector3.UP * 0.4 * kl.size_scale]
+						for aim in aims:
 							var q := PhysicsRayQueryParameters3D.create(cand, aim)
 							q.exclude = [kl.get_rid()] if kl is CollisionObject3D else []
 							var hit := space.intersect_ray(q)
@@ -3193,7 +3204,7 @@ func _ready() -> void:
 					print("SHOT knight leap lens: no clear line, lit side")
 				cam.global_position = cp2
 				cam.look_at(kc)
-			print("SHOT knight leap state %d t %.2f lift %.2f u %.2f" % [kl.state, kl.t, kl.leap_lift, kl.t / AshenKnight.LEAP_T])
+			print("SHOT knight leap state %d t %.2f lift %.2f u %.2f kicks %d at %s ankle %s" % [kl.state, kl.t, kl.leap_lift, kl.t / AshenKnight.LEAP_T, kl.boot_kicks, kl.boot_kick_at, kl.tuck.ankle(0) if kl.tuck else null])
 		if "knight" in args and ("surge" in args or "p3" in args):
 			# surge: the knight down on its knee as the ring of fire bursts (phase 2 -> 3);
 			# p3: phase 3, the ground under the hero erupting. Fire is held back so it bursts
@@ -3311,6 +3322,14 @@ func _ready() -> void:
 		if player.has_meta("shot_walk"):
 			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * 0.5
 		await get_tree().process_frame
+	if "fq" in args:
+		var nimp := 0
+		for ch in world.knight.get_parent().get_children():
+			if ch is ImpactFX:
+				nimp += 1
+				var du := ch.get_node_or_null("Dust") as CPUParticles3D
+				print("SHOT impact at %s dust emitting %s amount %d" % [ch.global_position, du.emitting if du else false, du.amount if du else 0])
+		print("SHOT impacts alive %d" % nimp)
 	if player.has_meta("shot_walk"):
 		print("SHOT stepdown root %.3f body off %.3f floor %s set down %d" % [player.global_position.y, player.body.position.y, player.is_on_floor(), StepUp.steps_down])
 	if spot == "hearth" and "kindle" in args:

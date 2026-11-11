@@ -1,6 +1,7 @@
 # Progress
 
-Content hours playable: 15.6
+Content hours playable: 15.7
+(03:40 11-11: THE ASHEN KNIGHT'S LEAP LANDING NOW KICKS DUST OFF ITS BOOTS: at the bottom of the knees' give (recover u 0.09) each boot throws a low spray of dark turf clods and a broad pale ring of dust that rolls out over the grass tops (new ImpactFX kind `stamp`, sized with the giant), the grass is pressed flat under and outside each boot, and the hero's camera takes a small extra shake. The leap shot has a front-quarter lens (`fq`) so the pitch over the blade reads. Bot `knightleap` gates 2 kicks per landing on the turf with the grass laid; LEAPKICK_OFF=1 is the before.)
 (02:30 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH WEIGHT: the knees give as the boots touch, it bottoms out a beat after the blade bites (hips 73% -> 57% of standing height over the planted boots, chest pitched 0.34 -> 0.54 rad over the glaive), comes back up a little and holds a crouch over the bitten blade, then wrenches it free. The extra pitch is carried by the grips about the hips, so the arms keep their shape (foefold PASS), and the give is spent before the boots release to the clip, so they do not skate (knightplant unchanged at 0.0177 x size). New gate in `knightleap`; LEAPLAND_OLD=1 fails it. Frames u=0.95 / recover 0.05, 0.08, 0.40, 0.75 looked at.)
 (01:30 11-11: THE ASHEN KNIGHT'S EMBER LEAP IS NOW SHOT AT ITS REAL PHASE-2 SIZE: the leap shot grows the knight to its phase-2 scale (3.2, leap window 16-35 m) before standing it off, and the side-on lens now tests three rays (body, helm, legs) for a clear line, trying the lit side then the shade side at 3.3/2.6/2.0/1.5 x size, so a cottage roof no longer fills the frame. Frames u=0.15/0.45/0.70/0.87/0.97 looked at: tuck with the glaive upright at take-off, heave over the right shoulder, level out in front, blade in the turf by the hero, who is now plainly a third of the giant's height. The arc reads at full size; the landing's torso stays upright (see Next). Shot harness only, no game change; bots knightleap foefold knight PASS.)
 (00:50 11-11: THE ASHEN KNIGHT'S EMBER LEAP CAN NOW BE WATCHED FRAME BY FRAME, AND THE RE-SOLVED HEAVE AND SLAM WERE LOOKED AT: the shot harness's `knight leap` never leapt -- it stood the knight a flat 7.7 m off, inside the leap window at its size (LEAP_MIN 5 m x size 2.2 = 11 m), so the brain thrust instead and every leap frame was the thrust's strike (the 'state 3 t 0.02' of last night). The shot now stands the knight in the middle of the window at its size, pins the leap (force_move) and re-aims the lens side-on on the airborne knight from the lit side, scaled to its size. Frames u=0.15/0.35/0.55/0.7/0.85/0.95: the glaive goes up past the helm, is held heaved over the right shoulder through the tucked hang, swings out level in front on the way down and bites the turf before the hero as the legs reach for the ground; no arm folds, no fist through the helm. Grade stays good: the knight is shot at its phase-1 size during a phase-2 move, and the lens sits a little behind its shoulder.)
@@ -8330,6 +8331,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (03:40 11-11) **LEAP LANDING KICKS DUST + PRESSES GRASS, FRONT-QUARTER LENS — DONE (game change + `knightleap` gate).**
+   NEXT (1) of 02:30. `ashen_knight.gd` `_boot_kick()` fires once per leap at RECOVER u >= KICK_U 0.09 (the give's
+   bottom): per boot ImpactFX "turf" (0.9 x k, clods) at the turf + new "stamp" (1.4 x k; k = size / phase-1 size) 0.45
+   m up so the dust rolls over the grass tops, two Trample herd points per boot (under it and 0.35 x size outward),
+   hero shake +0.12. Boot spots: new `LegTuck.ankle(i)` (last posed ankle); a stale one (> 1 x size from the root, as in
+   the shot harness, which steps physics many times in one frame so skeleton_updated never fires) falls back to
+   +-0.16 model m either side under the hips. `impact.gd` "stamp": pale dry dust (0.66, 0.61, 0.52, 0.6), quads 0.75 x
+   power, flat ring (flatness 0.85), 1.8 s life. Bot `knightleap` prints/gates `boot kicks 2 ... grass laid 1.00`.
+   shot.gd: `fq` (front quarter, 2.2/1.8/1.5 x size, 1.25 x size up; with `landed` aimed at 0.75 x size) -- NOTE the
+   older `front` arg collides with the giant SPOTS block, hence `fq`; an `fq` capture prints every live ImpactFX.
+   Harness lesson: FX spawned while stepping only age by the rendered frames, so match frames to the dust's age
+   (`soldier kkick_r30 9 10.0 fixfps knight leap landed fq u=0.30` = kick aged 0.3 s, pose at its real 0.31 s).
+   Bots PASS: knightleap knight knightplant foefold. Gallery 20261111-0339-knight-leap-kick/-give (fail).
+   Grade: knight leap landing good (unchanged; the kick is VFX, not the pose).
+   NEXT: (1) the ember-ring flame (`_resolve_leap`, 5 flames at 1.5 x reach round the BITE) lands right in front of the
+   boot in the fq lens and hides the kick; consider offsetting the ring's phase so no flame sits on the knight's own
+   boots, and pressing the grass inside the boots' stance (herd points age in from 0, so check a later frame); (2)
+   02:30's (2): the knight's shoulder model in `_place` (y 1.59, chest yaw sign); (3) bow-aware archer probe, kindler
+   probe; (4) 22:00's leftovers. BOSS/ANIMATION order unchanged; audio after.
 0. (02:30 11-11) **THE LEAP'S LANDING TAKES THE WEIGHT — DONE (game change + `knightleap` landing gate).**
    NEXT (1) of 01:30. `ashen_knight.gd`: LAND_LEAN 0.2 rad / LAND_SINK 0.14 model m on top of the old landing curve,
    driven by a give `g`: 0 -> 0.35 over airtime u 0.86-1.0 (`_land_give_strike`), on into the recovery 0.35 -> 1.0 by

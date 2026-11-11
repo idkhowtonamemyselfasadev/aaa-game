@@ -176,6 +176,13 @@ const LAND_SINK := 0.14           # model m of extra drop at the bottom of the g
 const LAND_TOUCH_U := 0.86        # airtime fraction from which the knees start to give
 const LAND_HOLD := 0.55           # share of the give held while bent over the bitten glaive
 static var LEAPLAND_OLD := OS.get_environment("LEAPLAND_OLD") == "1"
+## (11-11) the bottom of the give drives the boots into the sward: a low kick of soil and torn turf
+## thrown out round each boot (scaled with the giant), and the grass pressed flat where it stands.
+## Env LEAPKICK_OFF=1: the before.
+const KICK_U := 0.09              # recovery fraction: the bottom of the give
+var boot_kicks := 0               # (bots) boot kicks thrown, all leaps
+var boot_kick_at: Array = []      # (bots) where the last landing's kicks were thrown (world)
+var _kicked := false
 const TUCK_KNEE := 1.75           # rad the shins fold back
 ## STOMP (phases 2 and 3, its answer to a hero crowding its shins): the weight goes onto the
 ## left leg, the right knee comes up high to the chest and hangs there shuddering (the tell),
@@ -1047,6 +1054,11 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_land_lean = LAND_LEAN * g
 			land_give = g
 			land_give_peak = maxf(land_give_peak, g)
+			if u < KICK_U * 0.5:
+				_kicked = false
+			if not _kicked and u >= KICK_U and not LEAPLAND_OLD:
+				_kicked = true
+				_boot_kick()
 			# the boots stay where they came down while it is bent over the blade; they let go to
 			# the clip once the lean and the crouch have nearly run out
 			_plant(1.0 - smoothstep(0.85, 1.0, u))
@@ -1469,6 +1481,39 @@ func _set_tuck(h: float, k: float) -> void:
 	if tuck != null:
 		tuck.hip = h
 		tuck.knee = k
+
+## The landing's weight bottoms out in the boots: soil and torn turf kicked out low round each one
+## (away from the body, along the turf), and the stems pressed flat under and round them.
+func _boot_kick() -> void:
+	if OS.get_environment("LEAPKICK_OFF") == "1" or tuck == null:
+		return
+	boot_kick_at = []
+	var tr := get_parent().get_node_or_null("Trample")
+	var k := size_scale / growth.scale_of(1)
+	for i in 2:
+		var a: Variant = tuck.ankle(i)
+		var p := global_position + body.global_basis * Vector3(0.16 * (1.0 if i == 0 else -1.0), 0.0, 0.0)
+		# the ankles as last posed; a stale spot (no skeleton update since it moved) falls back
+		# to under the hips, a boot's width to each side
+		if a != null and Vector2((a as Vector3).x - global_position.x, (a as Vector3).z - global_position.z).length() < 1.0 * size_scale:
+			p = a as Vector3
+		var ground := Vector3(p.x, global_position.y, p.z)
+		var out := ground - global_position
+		out.y = 0.0
+		out = out.normalized() if out.length() > 1e-3 else -body.global_transform.basis.z
+		# thrown out low along the turf, a little forward with the lunge
+		var dir := (out + Vector3.UP * 0.15).normalized()
+		ImpactFX.spawn(get_parent(), ground + Vector3.UP * 0.05, dir, "turf", 0.9 * k)
+		# the dust rolls out over the grass tops, not inside the sward
+		ImpactFX.spawn(get_parent(), ground + Vector3.UP * 0.45, dir, "stamp", 1.4 * k)
+		boot_kick_at.append(ground)
+		boot_kicks += 1
+		if tr != null and tr.has_method("add_herd_point"):
+			var d2 := Vector2(out.x, out.z)
+			tr.add_herd_point(Vector2(ground.x, ground.z), d2, 1.0, 0.0, 0.2, 0.0)
+			tr.add_herd_point(Vector2(ground.x, ground.z) + d2 * 0.35 * size_scale, d2, 1.0, 0.0, 0.2, 0.0)
+	if _player != null:
+		_player.add_shake(0.12 + 0.03 * size_scale)
 
 ## The hero stands in the blade's line ahead of the landing, or inside LEAP_R of the bite.
 func _in_leap_reach() -> bool:

@@ -5077,6 +5077,20 @@ func _knightleap_test() -> void:
 			if land_min > stand_legs.x * LEAP_LAND_SQUAT or lean_max < LEAP_LAND_LEAN:
 				k.skel.skeleton_updated.disconnect(grab)
 				return _combat_done(false, "the leap lands stiff: hips %.2f of standing, lean %.2f" % [land_min / maxf(stand_legs.x, 1e-3), lean_max])
+			# (11-11) the bottom of the give kicks soil and turf out round both boots and lays the grass there
+			var kicks: Array = k.boot_kick_at
+			var trp := _world.get_node_or_null("Trample")
+			var lay := 1.0
+			var kdy := 0.0
+			for kp in kicks:
+				var kv := kp as Vector3
+				kdy = maxf(kdy, absf(kv.y - _world.terrain.height_at(kv.x, kv.z)))
+				if trp != null:
+					lay = minf(lay, trp.herd_lay_at(kv, 0.6))
+			print("BOT knightleap: landing (%s) boot kicks %d (total %d), %.2f m off the turf, grass laid %.2f" % [kind, kicks.size(), k.boot_kicks, kdy, lay])
+			if OS.get_environment("LEAPKICK_OFF") != "1" and (kicks.size() != 2 or kdy > 0.35 * ks or lay < 0.3):
+				k.skel.skeleton_updated.disconnect(grab)
+				return _combat_done(false, "the landing throws no dust off the boots / leaves the grass standing")
 		k.skel.skeleton_updated.disconnect(grab)
 		var r: String = k.leap_results[-1] if k.leap_results.size() > 0 else "none"
 		var land_err := Vector2(k.leap_bite().x - hero_at.x, k.leap_bite().z - hero_at.z).length()
