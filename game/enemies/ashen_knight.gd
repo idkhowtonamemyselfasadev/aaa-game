@@ -1269,7 +1269,7 @@ func _place(pose: Array) -> void:
 	# (11-10) the freed hand leaves the haft: GripRoll lets it go (it would roll it back round the shaft)
 	if grip_roll != null:
 		grip_roll.side_weight[1] = 1.0 - smoothstep(0.0, 0.15, free_l)
-	super._place(pose)
+	super._place(_arm_bent(pose))
 	if KPLACE_DBG and intro_playing():
 		print("KPLACE t %.3f up %.3f pose %s shR %s shL %s over %.3f %.3f off %.1f slid %s" % [_intro_it, _heave_now, str(pose), str(_sh_real[1]), str(_sh_real[0]), clamp_over[0], clamp_over[1], axis_off, str(slid)])
 	if free_l <= 0.001 or spear == null or _grip_l == null:
@@ -1360,6 +1360,43 @@ func _record_shoulders() -> void:
 static var REACH_SLIDE_OFF := OS.has_environment("REACH_SLIDE_OFF")
 func _reach_slide_on() -> bool:
 	return SHOULDER_MODEL_REAL and not REACH_SLIDE_OFF and _sh_real[0] != Vector3.INF
+
+## (11-11 09:00) the ember leap (and the sweep) kept the soldiers' / sentinel's reach (0.60-0.66),
+## so with the real shoulders the reach slide held the grips 0.58-0.64 m out and the arm chain
+## (0.547, the grip ~0.05 past the wrist) locked straight: sweep L 0.991 (S t=0.08), leap L 0.996
+## (bot `foefold`). In the leap's flight and landing the knight's reach is capped at KNIGHT_ARM_BEND, so the slide
+## draws both grips in along the pose's line and the elbows keep a bend; the glaive keeps its
+## direction. The leap's crouch is capped softer (0.58): it draws the grips in already, and at
+## 0.52-0.56 the slide shoved them onto the left shoulder (arm folded to 0.139-0.171 m/size).
+## Result: leap R 0.958 -> 0.901, L 0.996 -> 0.922. NOT the sweep (live: L 0.991): capped at
+## 0.52 its left arm bends (0.958) but the forearm then passes along the haft and GripRoll flips
+## the hand round it twice (0.6 rad a tick, `foegrip` 2.19 rad); 0.54: 0.961 / 0.74 rad reversing
+## roll (old 0.08); 0.55+: the arm locks again (0.974+). The sweep needs sweep_pose re-solved
+## against the real shoulders instead (PROGRESS.md Next). env ARMBEND_SWEEP=x opts the sweep in.
+## env ARMBEND_OLD=1: the before; env ARMBEND_REACH / ARMBEND_CROUCH=x: tuning.
+const KNIGHT_ARM_BEND := 0.52
+static var ARMBEND_OLD := OS.has_environment("ARMBEND_OLD")
+static var ARMBEND_REACH := float(OS.get_environment("ARMBEND_REACH")) if OS.has_environment("ARMBEND_REACH") else KNIGHT_ARM_BEND
+static var ARMBEND_SWEEP := float(OS.get_environment("ARMBEND_SWEEP")) if OS.has_environment("ARMBEND_SWEEP") else 0.0
+const KNIGHT_ARM_BEND_CROUCH := 0.58
+static var ARMBEND_CROUCH := float(OS.get_environment("ARMBEND_CROUCH")) if OS.has_environment("ARMBEND_CROUCH") else KNIGHT_ARM_BEND_CROUCH
+func _arm_bent(pose: Array) -> Array:
+	if ARMBEND_OLD or not _reach_slide_on() or pose.size() < 6:
+		return pose
+	var cap := ARMBEND_REACH
+	if move_kind == LEAP_MOVE and state == WINDUP:
+		# the crouch draws the grips in already: capped as hard as the rest it folds the left arm
+		# shut (0.139 m/size, the slide shoves both grips onto the left shoulder)
+		cap = ARMBEND_CROUCH
+	elif move_kind == SWEEP_MOVE and state in [WINDUP, STRIKE, RECOVER] and ARMBEND_SWEEP > 0.0:
+		cap = ARMBEND_SWEEP
+	elif not (move_kind == LEAP_MOVE and state in [STRIKE, RECOVER]):
+		return pose
+	if pose[5] <= cap:
+		return pose
+	var p := pose.duplicate()
+	p[5] = cap
+	return p
 
 func _shoulders(tw: float) -> Array:
 	if not SHOULDER_MODEL_REAL or _sh_real[0] == Vector3.INF:

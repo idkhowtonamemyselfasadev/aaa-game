@@ -1366,6 +1366,8 @@ func _foe_grip_test() -> void:
 				for j in 2:
 					if e.grip_roll != null and e.grip_roll.weight > 0.5:
 						var r: float = e.grip_roll.last_roll[j]
+						if OS.has_environment("FOEGRIP_ROLLDBG") and absf(r) > 0.05:
+							print("    roll %s x%.1f %s %s t=%.3f %s %.3f" % [e.name, sc, ["thrust", "sweep"][mk], names[st], e.t, ["R", "L"][j], r])
 						if r * prev_roll[j] < 0.0:
 							rev += absf(r - prev_roll[j])
 							if absf(r) > 0.1 and absf(prev_roll[j]) > 0.1:
@@ -1531,6 +1533,9 @@ func _foe_reach_test() -> void:
 const FOEFOLD_MIN := 0.18        # m per size, shoulder to wrist
 const FOEFOLD_FIST_MAX := 0.05   # m per size
 const FOEFOLD_KNIGHT_AXIS_MAX := 2.0  # deg, knight only, real shoulder model
+## (11-11 09:00) the knight's leap no longer locks an arm straight (R 0.958 / L 0.996 of the chain,
+## now 0.901 / 0.922). ARMBEND_OLD=1 fails it. The sweep (L 0.991) is not gated yet: see PROGRESS.md.
+const FOEFOLD_KNIGHT_STRAIGHT_MAX := 0.95
 func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, gated := true) -> String:
 	for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.knight, _world.sentinel]:
 		if o != null:
@@ -1626,6 +1631,9 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	# (11-11 08:00) the knight's poses are solved against its real shoulders: the clamp may not bend the glaive
 	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and axis_hi > FOEFOLD_KNIGHT_AXIS_MAX:
 		return "%s: the reach clamp bends the glaive %.1f deg off its pose (%s)" % [label, axis_hi, axis_at]
+	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and kind == AshenKnight.LEAP_MOVE \
+			and maxf(straight[0], straight[1]) > FOEFOLD_KNIGHT_STRAIGHT_MAX:
+		return "%s: an arm locks straight (R %.3f %s, L %.3f %s of the chain)" % [label, straight[0], straight_at[0], straight[1], straight_at[1]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:

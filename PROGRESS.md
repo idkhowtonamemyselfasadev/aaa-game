@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(09:00 11-11: THE ASHEN KNIGHT NO LONGER LOCKS ITS ARMS STRAIGHT THROUGH THE EMBER LEAP: in the flight, the landing and the crouch over the bitten glaive the arms were held at 0.96-0.996 of their full length (the sentinel's slam pose asks 0.65 m of reach, the knight's real arm is 0.547 plus the fist), so the left arm stood out like a rod along the haft. The knight's reach in the leap is now capped (0.52 in the air and the landing, 0.58 in the crouch, where a harder cap folds the left arm shut), so the reach slide draws both fists in along the glaive's line: right arm 0.958 -> 0.901, left 0.996 -> 0.922, glaive 0.0 deg off its pose, fists on the haft. GL frame of the landing (recover u=0.65) looked at with and without: fists now in at the chest, elbows bent. New `foefold` gate (knight leap straightest <= 0.95; ARMBEND_OLD=1 fails it at 0.996). The SWEEP is not fixed: the same cap trades its locked left arm for a hand that flips round the haft (see Next).)
 (08:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GLAIVE FROM ITS REAL SHOULDERS IN EVERY MOVE: the real-shoulder model and the reach slide are live. In the reveal the coil now holds the glaive level at the hip with the left fist visibly on the haft (it trailed on the turf with that fist off it), and the heave draws it up diagonally over the right shoulder in both fists; the clamp bends the glaive 0.0 deg off its pose in the thrust, sweep, stomp and leap (the leap's slam was bent 8.2 deg). GL frames it=2.8/3.0/3.13 front and 3.0 side looked at with and without. New `foefold` gate: knight axis_off <= 2 deg (REACH_SLIDE_OFF=1 fails it at 8.2). env SHOULDER_MODEL_OLD=1 = the before.)
 (07:00 11-11: NO VISIBLE CHANGE YET: THE ASHEN KNIGHT CAN NOW HOLD EVERY GLAIVE LINE AGAINST ITS REAL SHOULDERS, OPT-IN. Measured from the arm bones, the knight's right shoulder sits 0.14 m higher than the old model, so in the reveal's coil and early heave the right grip was asked 0.12-0.39 m past reach and the clamp bent the glaive 50-61 deg off its line, swinging the butt to the left hip. New reach slide in `_place`: both grips slide together along the pose's own line back inside reach (cap 0.45 m) before the clamp may bend anything. With SHOULDER_MODEL_REAL=1 and a coil hold 6 cm further right, every knight bot passes (butt 0.07, gate 0.2), and foefold shows the shaft 0.0 deg off its pose in the thrust, sweep, stomp and leap (live model: 3.7 / 10.9 / 0 / 16.8). Not live: the slide lifts the heave's hands up to 0.37 m and nobody has looked at it yet.)
 (06:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GUARD INSIDE THE REACH OF ITS OWN SHOULDERS: the guard it shared with the hollow soldiers put its right grip 0.52-0.54 m from its real right shoulder (reach 0.45), so measured from the real shoulders the clamp bent the glaive 11.7 deg off the guard. The knight now has its own guard (KNIGHT_GUARD): the same shaft line moved 4.7 cm toward the right shoulder, reach 0.58, so the right elbow keeps a bend (arm straightness 0.735 -> 0.650) and the clamp bends nothing under either shoulder model. With the real shoulders the knight's thrust bend drops 3.7 -> 0.0 deg, sweep 10.9 -> 1.1, leap 16.8 -> 8.2, stomp 0. The real-shoulder model is still not live: it swings the reveal heave's butt to the left hip (bot `knight`, 0.29 > gate). New bot `knightguard`; KGUARD_OLD=1 is the before.)
@@ -32,6 +33,7 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (09:00 11-11) Setup first try (import ~8 min), headless bots and GL shots (SHOT_GL=1, 2 at once ~6 min) work; Forward+ not tried; asset sites not rechecked. Note: do not export GODOT=.tools/godot (bots.sh/shots.sh cd into game/; leave GODOT unset).
 - (08:00 11-11) Setup first try (import ~8 min, background). GL shots (SHOT_GL=1, 4 at once ~4 min) and headless bots
   (4 sets at once) fine. Asset sites not rechecked (no new files). `SHOULDER_MODEL_REAL` is gone as an opt-in: the real
   model is default, env SHOULDER_MODEL_OLD=1 = the old SHOULDER model.
@@ -8347,6 +8349,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:00 11-11) **KNIGHT LEAP ARMS KEEP A BEND — DONE (game change + `foefold` gate).**
+   NEXT (1) of 08:00, leap part. `ashen_knight.gd` `_arm_bent(pose)` (called from `_place`): with the real shoulders
+   and the slide on, LEAP_MOVE STRIKE/RECOVER poses get reach min(pose, KNIGHT_ARM_BEND 0.52), the leap's WINDUP
+   (crouch) min(pose, KNIGHT_ARM_BEND_CROUCH 0.58). Crouch caps 0.52/0.54/0.56 fold the left arm to 0.139/0.154/0.171
+   m/size (FOEFOLD_MIN 0.18) at W t=0.30: the slide shoves both grips onto the left shoulder. foefold leap: R 0.958
+   -> 0.901 (W t=0.35), L 0.996 -> 0.922 (R t=0.98), axis_off 0.0, fists 0.000, fold min L 0.185. `bot.gd`:
+   FOEFOLD_KNIGHT_STRAIGHT_MAX 0.95 on the knight's leap only; `foegrip` env FOEGRIP_ROLLDBG=1 prints every hand roll
+   > 0.05 rad a tick. env ARMBEND_OLD=1 = before; ARMBEND_REACH / ARMBEND_CROUCH / ARMBEND_SWEEP = tuning.
+   SWEEP TRIED, NOT LIVE (left arm still 0.991 at S t=0.08): capping its reach bends the arm but the left forearm then
+   passes along the haft and GripRoll flips the hand: cap 0.52 -> L 0.958 but 2 hand flips of 0.6 rad/tick (windup
+   t 0.42-0.45, strike t 0.05-0.07), `foegrip` reversing roll 2.19 rad (fails 2.0; old 0.08); 0.53 1.62 rad; 0.54 L
+   0.961 / 0.74 rad no flips; 0.55 L 0.974; 0.56 L 0.982. One-tick shoulder prediction made it worse (0.986): at S
+   t=0.05 the wrist sits further from the shoulder than the grip (0.524 vs 0.513), i.e. the hand bends back.
+   Bots PASS: foefold foegrip knightleap knightplant knightguard knightstomp surgegrip crown soldier foeguard foereach
+   combat knight (4 of 6 runs; see Known bugs). Grades: knight leap good (arms now bent; landing still backlit).
+   NEXT: (1) re-solve `sweep_pose` for the knight against its real shoulders (its own sweep pose function, python
+   replica of `_place` with the measured shoulders): the left grip held ~0.48 from the left shoulder AND the forearm
+   kept off the haft's line through the whole arc (check GripRoll's wanted roll per tick, FOEGRIP_ROLLDBG), then gate
+   the sweep straightest <= 0.95 and keep `foegrip` chatter <= old; (2) coil pitch (08:00 NEXT (2)); (3) grass inside
+   the boots' stance; (4) bow-aware archer probe, kindler probe. BOSS/ANIMATION order unchanged; audio after.
 0. (08:00 11-11) **KNIGHT'S REAL SHOULDERS LIVE — DONE (game change + `foefold` gate).**
    NEXT (1)+(2) of 07:00. GL frames `ring X 20 10.0 fixfps intro kface it=2.8/3.0/3.13` and `intro kside it=3.0`, real
    model vs SHOULDER_MODEL_REAL unset, looked at: 2.8 coil level at the hip, left fist on the haft (old: blade on the
@@ -13454,6 +13476,7 @@ blaze, grit off the stones, recorded roar; 07:10 11-05: choreographed in beats: 
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (09:00 11-11) Bot `knight` is flaky: 2 of 6 runs failed 'phase 3 never set the ground alight'. In the failing run the hero died in phase 3, the fight reset to phase 1, and the hero then fell through the world (y -37569 by t 150 s) instead of respawning on the turf. Most likely not this session's change: the leap never fires in that sim (leaps 0 in every run) and the change only touches the leap; ARMBEND_OLD=1 passed all 3 runs, so this is not proven. Look at the respawn path after a death in the knight's arena.
 - (12:00 11-10) Foe sweep wind-up: the left wrist's GripRoll roll can hit its 0.6 rad/tick cap for one tick (fist 0.06 m
   off the haft) depending on how fast the pose leaves the guard; passes at the shipped SWEEP_FROM_BLEND 2.0 but fails at 2.5-4.0. See Next 12:00 (1).
 - (00:00 11-10) The Ashen Knight's reveal (heave/coil) holds both fists ~9 cm per size off the glaive (old late fit;
