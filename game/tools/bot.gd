@@ -9275,6 +9275,8 @@ func _staff_ends(c: StaffCombat) -> Array:
 	var st: Transform3D = c.staff.global_transform
 	return [st * Vector3(0, -Staff.LENGTH * 0.5, 0), st * Vector3(0, Staff.LENGTH * 0.5, 0)]
 
+const SWEEP_CUT_FIRST := 0.45   # (11-11 19:00) no tick-to-tick speed-up in the cut above this share of its peak
+
 func _sweep_test() -> void:
 	var p := _player
 	var s: HollowSoldier = _world.soldier
@@ -9294,12 +9296,44 @@ func _sweep_test() -> void:
 	var n := s.strikes
 	var lo := 9.0
 	var hi := -9.0
+	# (19:00 11-11) the cut's speed profile at real-time ticks: [u, deg this tick]; the coil's last held tick
+	var ts0 := Engine.time_scale
+	Engine.time_scale = 1.0
+	var cut: Array = []
+	var bprev := s._blade_bearing()
+	var coil_last := 0.0
 	while s.strikes == n or s.state == HollowSoldier.STRIKE:
+		var b := s._blade_bearing()
 		if s.state == HollowSoldier.STRIKE:
-			var b := s._blade_bearing()
 			lo = minf(lo, b)
 			hi = maxf(hi, b)
+			cut.append([clampf(s.t / HollowSoldier.SWEEP_T, 0.0, 1.0), absf(b - bprev)])
+		elif s.state == HollowSoldier.WINDUP:
+			coil_last = absf(b - bprev)
+		bprev = b
 		await get_tree().physics_frame
+	Engine.time_scale = ts0
+	var cut_peak := 0.0
+	var cut_peak_u := 0.0
+	for e in cut:
+		if e[1] > cut_peak:
+			cut_peak = e[1]
+			cut_peak_u = e[0]
+	var cut_first := 0.0   # the largest rise of the turn from one tick to the next (a pop if near the peak)
+	for i in range(1, cut.size()):
+		cut_first = maxf(cut_first, cut[i][1] - cut[i - 1][1])
+	var cut_front_u := -1.0   # u where the blade crosses the soldier's front (bearing 0)
+	var acc := HollowSoldier.SWEEP_FROM
+	for e in cut:
+		acc += e[1]
+		if cut_front_u < 0.0 and acc >= 0.0:
+			cut_front_u = e[0]
+	print("BOT sweep: cut profile %d ticks, coil's last tick %.1f deg, largest one-tick speed-up %.1f deg (%.0f%% of peak), peak %.1f deg/tick at u %.2f, front crossed at u %.2f (%.3f s)" % [cut.size(), coil_last, cut_first, 100.0 * cut_first / maxf(cut_peak, 1e-3), cut_peak, cut_peak_u, cut_front_u, cut_front_u * HollowSoldier.SWEEP_T])
+	if OS.get_environment("CUT_TRACE") == "1":
+		for e in cut:
+			print("CUT u %.3f %.2f" % [e[0], e[1]])
+	if OS.get_environment("SWEEPCUT_OLD") != "1" and cut_first > SWEEP_CUT_FIRST * cut_peak:
+		return _combat_done(false, "the sweep's cut snaps to full speed off the held coil in one tick")
 	print("BOT sweep: stood -> %s, health %.0f -> %.0f, blade arc %.0f..%.0f deg, max ember %.1f" % [s.last_result, h0, p.health, lo, hi, s.max_ember])
 	if s.last_result != "hit" or h0 - p.health < HollowSoldier.SWEEP_DAMAGE - 0.5:
 		return _combat_done(false, "standing hero was not cut by the sweep")

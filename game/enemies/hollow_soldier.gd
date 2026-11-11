@@ -871,7 +871,7 @@ func _physics_process(delta: float) -> void:
 		STRIKE when move_kind == SWEEP_MOVE:
 			var u := clampf(t / SWEEP_T, 0.0, 1.0)
 			_update_glint(0.0)
-			var a := lerpf(SWEEP_FROM, SWEEP_TO, 1.0 - (1.0 - u) * (1.0 - u))
+			var a := lerpf(SWEEP_FROM, SWEEP_TO, sweep_cut_f(u))
 			_pose = _sweep_pose(a)
 			lean = 0.1 * smoothstep(0.0, 0.5, u)
 			sink = 0.14
@@ -1347,6 +1347,20 @@ func _hero_local() -> Vector3:
 	return body.global_transform.affine_inverse() * _player.global_position
 
 ## Bearing (degrees, + = soldier's left) of the blade, from the spear as actually placed.
+# (11-11 19:00) the cut's path over its u: the blade leaves the held coil accelerating over the first
+# SWEEP_CUT_RAMP of the cut (linear speed ramp), reaches the same peak speed as before (2x the mean) and
+# eases out into the follow-through. The old curve (1 - (1-u)^2, env SWEEPCUT_OLD=1) started at full speed:
+# 1 -> 16.7 deg in one tick off the trembling coil, a visible pop.
+const SWEEP_CUT_RAMP := 0.14
+static var SWEEPCUT_OLD := OS.get_environment("SWEEPCUT_OLD") == "1"
+
+static func sweep_cut_f(u: float) -> float:
+	if SWEEPCUT_OLD:
+		return 1.0 - (1.0 - u) * (1.0 - u)
+	if u < SWEEP_CUT_RAMP:
+		return u * u / SWEEP_CUT_RAMP
+	return 1.0 - (1.0 - u) * (1.0 - u) / (1.0 - SWEEP_CUT_RAMP)
+
 func _blade_bearing() -> float:
 	var tip := body.global_transform.affine_inverse() * spear.to_global(spear.tip_local())
 	return rad_to_deg(atan2(tip.x, tip.z))

@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261107-2100-knockkneel.jpg",
-  "time": "2026-11-07T21:00:00Z",
-  "caption": "Kneel in the knock-down rise: right palm on the front knee, left hand loose by the hip; GL compatibility render, no fog or GI, so not yet a Wukong frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-2256-knockdown-situp-before.jpg",
   "time": "2026-11-07T22:56:42Z",
   "caption": "Knock-down sit-up BEFORE (down_t 1.40, front lens): the knees are drawn up to the chest and both boots hang 0.3-0.4 m in the air by the seat.",
@@ -891,6 +885,18 @@
   "file": "20261111-1812-knight-sweep-before-after.jpg",
   "time": "2026-11-11T18:12:18Z",
   "caption": "Before (left) the coiled haft ran into the helm's lower edge; after (right) it runs lower under the chin to the right fist with the chest turned further into the coil. A small change at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1946-sweep-release.jpg",
+  "time": "2026-11-11T19:46:32Z",
+  "caption": "The Ashen Knight's sweep two ticks off the held coil: the glaive now accelerates out of the coil instead of popping to full speed; the knight is still small and backlit from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1946-sweep-cut.jpg",
+  "time": "2026-11-11T19:46:32Z",
+  "caption": "The sweep's glaive whipping low across the knight's front at peak speed past the hero; the motion reads, the framing and dark backlit armour do not hold up as a Wukong shot yet.",
   "verdict": "fail"
  }
 ]

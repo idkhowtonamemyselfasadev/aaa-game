@@ -3600,12 +3600,17 @@ func _ready() -> void:
 					var stl := {"W": HollowSoldier.WINDUP, "S": HollowSoldier.STRIKE, "R": HollowSoldier.RECOVER}
 					targets.append([stl[it.substr(0, 1)], float(it.substr(1))])
 		var durs := {HollowSoldier.WINDUP: AshenKnight.LEAP_CROUCH_T, HollowSoldier.STRIKE: AshenKnight.LEAP_T, HollowSoldier.RECOVER: AshenKnight.LEAP_RECOVER_T}
+		# (19:00 11-11) "sweep" in the args: the same sequence through the sweep (coil -> cut -> follow-through)
+		var seq_move := AshenKnight.LEAP_MOVE
+		if "sweep" in args:
+			seq_move = HollowSoldier.SWEEP_MOVE
+			durs = {HollowSoldier.WINDUP: HollowSoldier.SWEEP_WINDUP_T, HollowSoldier.STRIKE: HollowSoldier.SWEEP_T, HollowSoldier.RECOVER: HollowSoldier.SWEEP_RECOVER_T}
 		var order := [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]
 		var n := 0
 		for tg in targets:
 			var guard := 0
 			while guard < 600:
-				var si := order.find(sk.state) if sk.move_kind == AshenKnight.LEAP_MOVE else -1
+				var si := order.find(sk.state) if sk.move_kind == seq_move else -1
 				var ti := order.find(tg[0])
 				if si > ti or (si == ti and sk.t >= tg[1] * durs[tg[0]]):
 					break
@@ -3617,7 +3622,7 @@ func _ready() -> void:
 			var simg := get_viewport().get_texture().get_image()
 			var sabs := ProjectSettings.globalize_path("res://").path_join(out.get_basename() + "_%02d.png" % n)
 			simg.save_png(sabs)
-			print("SHOT leapseq %02d state %d t %.3f lift %.2f -> %s" % [n, sk.state, sk.t, sk.leap_lift, sabs])
+			print("SHOT leapseq %02d state %d t %.3f lift %.2f blade %.1f -> %s" % [n, sk.state, sk.t, sk.leap_lift, sk._blade_bearing(), sabs])
 			n += 1
 	_print_facing(world, player)
 	var img := get_viewport().get_texture().get_image()
