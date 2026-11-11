@@ -886,5 +886,17 @@
   "time": "2026-11-11T20:33:47Z",
   "caption": "Same sweep at +62 deg from behind the soldier: hat, cloak and red tabard read well in warm light, but a straw sheaf blocks the hero and the spear is a thin line against the grass.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261111-2129-knightleap-side-top.jpg",
+  "time": "2026-11-11T21:29:00Z",
+  "caption": "The Ashen Knight at the top of its ember leap seen square from the side: the glaive lies back ~40 deg over the shoulder with both fists overhead and knees tucked; backlit from this side and a GL frame, not Forward+.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2129-knightleap-side-seq.jpg",
+  "time": "2026-11-11T21:29:00Z",
+  "caption": "The whole ember leap from a fixed side lens (crouch, rise over the cottage, hang, down-swing, bite): the arc height and lay-back now read; the crouch is hidden behind the cottage and the knight is backlit.",
+  "verdict": "fail"
  }
 ]

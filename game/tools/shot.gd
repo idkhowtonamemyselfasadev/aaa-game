@@ -3617,7 +3617,10 @@ func _ready() -> void:
 					break
 				sk._physics_process(sdt)
 				guard += 1
-			_knight_front_lens(sk, cam, world, args)
+			if "side" in args:
+				_knight_side_lens(sk, cam, world, args, n == 0)
+			else:
+				_knight_front_lens(sk, cam, world, args)
 			for i in 4:
 				await get_tree().process_frame
 			var simg := get_viewport().get_texture().get_image()
@@ -3791,6 +3794,55 @@ func _knight_front_lens(kl: HollowSoldier, cam: Camera3D, world: Node3D, args: P
 	cam.global_position = lc + (lfw + lrt * lsd * 0.55).normalized() * far * kl.size_scale + Vector3.UP * 0.2 * kl.size_scale
 	cam.look_at(lc)
 	return lsd
+
+
+# (21:00 11-11) leapseq "side": a FIXED lens square to the foe's travel (set on the first frame,
+# never re-aimed), so the height of the leap's arc and the heave's lay-back over the shoulder
+# read against the ground. Centre = halfway along the leap (leap_to when known), on the sun's
+# side unless "flip"; "far=<x size>" sets the distance (default 5.5), "lift=<x size>" the eye height.
+var _side_lens_c := Vector3.ZERO
+func _knight_side_lens(kl: HollowSoldier, cam: Camera3D, world: Node3D, args: PackedStringArray, first: bool) -> void:
+	if not first:
+		cam.look_at(_side_lens_c)
+		return
+	var fw: Vector3 = kl.body.global_basis.z
+	fw.y = 0.0
+	fw = fw.normalized()
+	var rt := Vector3.UP.cross(fw).normalized()
+	var lsun: Vector3 = world.sun.global_basis.z
+	lsun.y = 0.0
+	var sd := 1.0 if rt.dot(lsun) > 0.0 else -1.0
+	if "flip" in args:
+		sd = -sd
+	var far := 5.5
+	var lift := 1.1
+	for a in args:
+		if a.begins_with("far="):
+			far = float(a.substr(4))
+		elif a.begins_with("lift="):
+			lift = float(a.substr(5))
+	var s := kl.size_scale
+	var mid: Vector3 = kl.global_position
+	if kl is AshenKnight and "sweep" not in args:
+		var lt: Vector3 = (kl as AshenKnight).leap_to
+		if lt.distance_to(kl.global_position) > 0.3:
+			mid = (kl.global_position + lt) * 0.5
+	_side_lens_c = mid + Vector3.UP * 1.25 * s
+	# a wall/roof between the lens and the foe (the first try sat behind a cottage): take the
+	# other side if that one is clear, unless "flip" forced the side
+	if "flip" not in args:
+		var ss := cam.get_world_3d().direct_space_state
+		var blocked := func(sgn: float) -> bool:
+			var q := PhysicsRayQueryParameters3D.create(mid + rt * sgn * far * s + Vector3.UP * lift * s, _side_lens_c)
+			q.exclude = [kl.get_rid()]
+			var hit := ss.intersect_ray(q)
+			return not hit.is_empty() and (hit.position as Vector3).distance_to(_side_lens_c) > 1.2 * s
+		if blocked.call(sd) and not blocked.call(-sd):
+			sd = -sd
+			print("SHOT side lens: sun side blocked, taking the shade side")
+	cam.global_position = mid + rt * sd * far * s + Vector3.UP * lift * s
+	cam.look_at(_side_lens_c)
+	print("SHOT side lens at %s looking %s (sun side %d, size %.2f)" % [cam.global_position, _side_lens_c, int(sd), s])
 
 
 func _print_facing(world: Node3D, player: Player) -> void:

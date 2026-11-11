@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.8
+(21:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP JUDGED SIDE-ON FOR THE FIRST TIME, AND A FLAKY BOT GATE FIXED: new fixed side lens for the frame-sequence tool (`shot.gd` leapseq + `side`, set once square to the leap, swaps to the clear side if a wall is in the way). The 8-frame side sequence shows the arc rising well over a cottage, the glaive laid back ~40 deg over the shoulder through the hang (the front lens had made it look upright), forward at S.7 and biting as the boots land. Bot `sweep`'s get-up 'off one knee' check passed or failed with the 15 Hz sample phase (knee 0.134 vs 0.14 gate at the ease-out, 0.130 / foot ahead 0.249 vs 0.25 while still sinking); it now reads only the settled hold 1.57..1.64 s (nearest sample to 1.605 if none). No game code changed.)
 (20:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP NOW RUNS OUT SMOOTHLY INSTEAD OF HITCHING IN ITS FOLLOW-THROUGH: a per-tick trace with the commanded angle, shaft bend and clamp excess (bot `sweep`, CUT_TRACE=1) showed the front (left) grip 0.03-0.16 m past the sweep's reach for the first two thirds of the cut, so the hard reach clamp bent the shaft up to 11 deg ahead of the pose, and the tick the grip came back inside reach (bearing ~+65) the bend stopped dead: blade 6.7 -> 6.6 -> 7.1 -> 6.2 deg/tick. The clamp now eases in over its last 0.08 m (C1 knee) for the plain soldiers' sweep: after the peak the blade only slows (largest rise 0.54 -> 0.00 deg/tick), front crossed at the same 0.133 s, dodge and parry unchanged. SOFTCLAMP_OLD=1 is the before. GL sequences old/new looked at.)
 (19:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP, AND THE ASHEN KNIGHT'S, NOW LEAVES ITS HELD COIL ACCELERATING INSTEAD OF POPPING TO FULL SPEED IN ONE TICK: the first frame SEQUENCE of the knight's sweep (leapseq mode now takes `sweep`) showed the glaive going from the trembling coil at W.97 to already down across the front by S.15, and a new real-time per-tick trace in bot `sweep` found the blade turning 1.0 deg on the last coil tick and 16.7 deg on the next (88% of its peak in one tick: the cut curve 1-(1-u)^2 starts at full speed). Now the speed ramps up linearly over the first 14% of the cut (~3 ticks) to the same peak and eases out as before: largest one-tick speed-up 15.7 -> 6.8 deg (35% of peak), peak at u 0.23 (was 0.14), blade crosses the front 0.016 s later (0.117 -> 0.133 s); dodge on the glint and parry still beat it. SWEEPCUT_OLD=1 is the before. GL sequences old/new looked at.)
 (18:00 11-11: THE ASHEN KNIGHT'S SWEEP NO LONGER COILS ITS GLAIVE THROUGH ITS OWN HELM: in the coil the haft's butt ran forward-left across the throat, 0.17 m/size through the great helm's chin skirt for the whole held coil and the cut's first ticks. Found by a search straight against bot `foefold` (16 s a run, 4 in parallel, 24 tries): the chest now twists further into the coil (0.4 of the blade's bearing, was 0.3) and the hold sits 0.15 m lower, 6 cm left, 4 cm back, so the haft runs under the chin across the upper chest. W 0.173 -> -0.125, S 0.165 -> -0.162 m/size; arms/fists unchanged. New gate; SWEEPHELM_OLD=1 is the before. GL frames old/new looked at: the change is small at this distance, the haft now meets the right fist below the helm instead of entering its lower edge.)
@@ -8367,6 +8368,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (21:00 11-11) **SIDE-LENS LEAP SEQUENCE + FLAKY KNEEL GATE — DONE (tools only, no game change).** NEXT (1) and (4) of 20:00.
+   `shot.gd` `_knight_side_lens`: leapseq with `side` sets a FIXED camera once (first frame) square to the foe's
+   facing, centred halfway to `leap_to` (the foe itself for `sweep`), far=5.5 x size, lift=1.1 x size, on the sun
+   side unless `flip`; if a ray to the centre hits something >1.2 x size short of it, it takes the other side
+   (first try sat behind a cottage). Shot used: `soldier kls2 40 16.5 fixfps knight leap crouch leapseq side sunlit
+   u=0.02 seqt=W0.5,W0.97,S0.15,S0.35,S0.5,S0.7,S0.88,S0.99` (~10 min GL). WHAT IT SHOWED: arc clearly above a
+   cottage roof (lift 5.4 m at S.5); glaive laid back ~40 deg past vertical over the shoulder at S.35-S.5 with both
+   fists overhead and knees tucked (the heave DOES read; the front lens hid it); forward to near upright at S.7,
+   down at S.88, bite at S.99 as the boots land. Weak: the crouch frames are behind the cottage from this side, and
+   the shade side is backlit at 16:30 (try another hour or `flip` with the knight moved).
+   `bot.gd` sweep: the kneel samples (15 Hz probe) in 1.54..1.66 are kept with their down_t, and the gate reads only
+   the settled hold 1.57..1.64 (or the sample nearest 1.605). Seen under load: samples at the knee still sinking
+   (0.130 m, foot ahead 0.249 < 0.25 gate) -> FAIL; alone: 1.583 + 1.650 (ease-out, 0.134). Now reads 1.583 only
+   (knee 0.097, foot ahead 0.326). env KNEELWIN_OLD=1 = the old window. 3 parallel runs + 1 alone PASS.
+   Bots PASS: sweep knightleap soldier.
+   Grade: knight leap good (unchanged; lay-back now confirmed side-on).
+   NEXT: (1) leap hang cock-back: lay the glaive a further ~25-30 deg back at the hang (blade behind the back),
+   solved against helm/pauldron with `foefold`, judged with the side lens (place the camera where the crouch is not
+   hidden: `flip` or another hour); (2) the sweep from the side lens (`knight sweep leapseq side`); (3) thrust/stomp
+   helm gates. BOSS/ANIMATION order unchanged; audio after.
 0. (20:00 11-11) **SOLDIER SWEEP FOLLOW-THROUGH HITCH — DONE (game change, gated).** NEXT (1) of 19:00.
    Cause (CUT_TRACE now also prints a = commanded bearing, measured bearing, axis_off, clamp_over R/L): the base
    soldier's sweep pose (reach SWEEP_ARM 0.6, model shoulders, no slide) puts the left grip up to 0.158 m past reach

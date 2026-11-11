@@ -9371,6 +9371,7 @@ func _sweep_test() -> void:
 	# the rise off one knee: left knee height, right ankle height, right foot ahead of the knee (min over
 	# the held kneel), then the lowest knee/ankle over the whole rise (nothing sinks into the turf)
 	var kneel := [9.0, -9.0, 9.0, 9.0, 0, -9.0]   # right ankle lo, left knee hi, foot ahead min, lowest, samples, right ankle hi
+	var kneel_s := []   # (21:00 11-11) [down_t, left knee, right ankle, foot ahead] per sample in the kneel window
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
 	var soles := [-9.0, 0.0, 0, null, null, -9.0]   # the sit-up's planted feet: max ankle height over the turf (1.12..1.34), max drift, samples, first spots, max height up to the kneel (..1.54)
@@ -9442,14 +9443,16 @@ func _sweep_test() -> void:
 			var rf: float = gnd.call("mixamorig_RightFoot")
 			kneel[3] = minf(kneel[3], minf(minf(lk, rf), minf(gnd.call("mixamorig_LeftFoot"), gnd.call("mixamorig_RightLeg"))))
 			if OS.has_environment("KNEEL_DBG"): print("rise t %.3f knee %.3f rf %.3f lf %.3f" % [p.down_t, lk, rf, gnd.call("mixamorig_LeftFoot")])
+			# (21:00 11-11) the HELD kneel only: the probe updates at ~15 Hz, and the old window 1.54..1.66
+			# took whichever 1-2 samples fell in it, including the knee still dropping at 1.54 (0.13 m) or
+			# the ease-out at 1.65, so the gates (knee 0.14, foot ahead 0.25) passed or failed with the
+			# sample phase, i.e. with machine load. Now every sample in 1.54..1.66 is kept and the gate
+			# reads those in the settled hold 1.57..1.64, or the one nearest 1.605 if none fell there.
+			# env KNEELWIN_OLD=1 = the old window.
 			if p.down_t >= Player.KNOCK_KNEEL[1] and p.down_t <= Player.KNOCK_KNEEL[2] + 0.02:
 				var fw := p.body.global_basis.z
 				var ahead: float = (sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3) - sk.global_transform * (p.crumple.probed["mixamorig_LeftLeg"] as Vector3)).dot(Vector3(fw.x, 0, fw.z).normalized())
-				kneel[1] = maxf(kneel[1], lk)
-				kneel[0] = minf(kneel[0], rf)
-				kneel[5] = maxf(kneel[5], rf)
-				kneel[2] = minf(kneel[2], ahead)
-				kneel[4] += 1
+				kneel_s.append([p.down_t, lk, rf, ahead])
 		if held_ax != Vector3.ZERO and c.state == StaffCombat.DRAWING and draw_ticks < 6:
 			# (05:00 11-08) the draw back to the guard after the knock-down takes the shaft on from
 			# where it was held: no catch-up whip when the held turn waited at the hat's brim
@@ -9568,6 +9571,24 @@ func _sweep_test() -> void:
 	print("BOT sweep: sit-up soles: ankles up to %.3f m over the turf (to the kneel %.3f), drift %.3f m, %d samples" % [soles[0], soles[5], soles[1], soles[2]])
 	if soles[2] < 2 or soles[0] > SOLE_UP_GATE or soles[5] > SOLE_KNEEL_GATE or soles[1] > 0.45:
 		return _combat_done(false, "the hero's feet float up off the turf as the knees draw in for the get-up")
+	var kmid := (Player.KNOCK_KNEEL[1] + Player.KNOCK_KNEEL[2]) * 0.5 + 0.015
+	var kpick := []
+	for ks in kneel_s:
+		if OS.has_environment("KNEELWIN_OLD") or (ks[0] >= Player.KNOCK_KNEEL[1] + 0.03 and ks[0] <= Player.KNOCK_KNEEL[2]):
+			kpick.append(ks)
+	if kpick.is_empty() and not kneel_s.is_empty():
+		var best: Array = kneel_s[0]
+		for ks in kneel_s:
+			if absf(ks[0] - kmid) < absf(best[0] - kmid):
+				best = ks
+		kpick.append(best)
+	for ks in kpick:
+		kneel[1] = maxf(kneel[1], ks[1])
+		kneel[0] = minf(kneel[0], ks[2])
+		kneel[5] = maxf(kneel[5], ks[2])
+		kneel[2] = minf(kneel[2], ks[3])
+		kneel[4] += 1
+	print("BOT sweep: kneel samples (down_t) %s, read %s" % [kneel_s.map(func(k): return snappedf(k[0], 0.001)), kpick.map(func(k): return snappedf(k[0], 0.001))])
 	print("BOT sweep: rise off one knee: left knee up to %.3f m over the turf, right ankle %.3f..%.3f m, right foot %.3f m ahead of the knee, %d samples; lowest knee/ankle in the rise %.3f m" % [kneel[1], kneel[0], kneel[5], kneel[2], kneel[4], kneel[3]])
 	if kneel[4] < 1 or kneel[1] > 0.14 or kneel[0] < -0.03 or kneel[5] > 0.16 or kneel[2] < 0.25 or kneel[3] < -0.06:
 		return _combat_done(false, "the hero's get-up does not come up off one knee with the other foot planted ahead")
