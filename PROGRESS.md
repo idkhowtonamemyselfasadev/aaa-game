@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(16:00 11-11: THE ASHEN KNIGHT NO LONGER SNAPS UP OFF ITS CROUCH WHEN IT SPRINGS INTO THE EMBER LEAP: the first frame SEQUENCE of the whole leap (new shot mode `leapseq`, 12 frames in one render) showed the crouch reaching full depth at 70% and then freezing, and the bot found the take-off throwing the crouch's whole sink back in one tick (hips +0.39 m/size past the arc, ~1.3 m at phase-2 size, pitch popping 0.14 rad, boots let go at once). The coil now keeps loading to the spring (deeper sink/knees/pitch from u 0.55), and the push-off spends the sink and pitch over the first 15% of the flight with the boots held on the turf until the legs drive straight: worst tick 0.098 m/size past the arc, pitch 0.045 rad. New gate in `knightleap` (measured at 1x time scale through the take-off; TAKEOFF_OLD=1 is the before and fails).)
 (15:10 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH THE GLAIVE CLEAR OF ITS OWN HELM: the landed pose was borrowed from the stone sentinel and bowed the helm over a haft that ran up under its flared rim (0.084 m/size deep as it touched down, 0.016 while crouched over the bite). The knight now has its own landed pose, found by a hill-climb straight against the bot: glaive a little to its left, lower and nearer, chest turned to its right, so the haft runs out past the rim. Landing clear by 0.008 m/size, crouch over the bite by 0.159, blade still bitten into the turf, left elbow bent. New gate on landing + bite.)
 (14:50 11-11: THE ASHEN KNIGHT'S LEAP CROUCH NO LONGER DRAWS ITS GLAIVE THROUGH ITS OWN HELM: the crouch was borrowed from the stone sentinel and held the glaive up over the crown, so the wind-up from the guard ran the haft 0.11 m/size through the great helm. The knight now has its own crouch, found by searching against the bot's helm read-out: it raises the glaive almost upright out in front of the helm, blade high, both fists on the haft, left elbow bent, then heaves up the left side. Wind-up clear by 0.058 m/size, take-off clear by 0.008; new gate on the wind-up. GL frame of the crouch from its front looked at.)(13:40 11-11: THE ASHEN KNIGHT'S EMBER LEAP NO LONGER RUNS ITS GLAIVE THROUGH ITS OWN HELM WHILE HEAVED: the heave laid the glaive straight back over the head, but the great helm stands 0.4 m above the shoulders and the arms reach 0.52, so the reach slide pulled the whole line down into the crown (0.17 m/size deep for the whole hang). Solved offline against the helm's and both pauldrons' real meshes (new bot dump `HELM_DUMP`): the knight now heaves the glaive over its LEFT shoulder, laid back 45 deg, blade higher than before, the haft in the gap between helm and pauldron (clear by 0.056 m/size), and swings it down out in front-left (the old down-swing crossed the crown, +0.08). New gate: heaved high <= 0.01 m/size (old 0.173 fails). Still through: the crouch's wind-up (0.113) and the landing under the helm's flared rim (0.08).)(12:34 11-11: NO GAME CHANGE: THE ASHEN KNIGHT'S GLAIVE IS NOW MEASURED AGAINST ITS REAL HELM, AND IT RUNS THROUGH IT IN TWO MOVES. A sun-side lens (`kchest sunlit`, hour 16.5) finally lights the sweep coil from the front, and it shows the haft vanishing into the helm's lower edge. New bot read-out tests every point of the haft against the great helm's own mesh rings: the EMBER LEAP's held heave sinks the haft 0.16-0.18 m/size into the helm's crown for the whole hang (strike t 0.18-0.48; the GL frame u=0.29 shows it entering the top of the helm), and the SWEEP's coil runs it 0.17 m/size through the helm's chin skirt (W t 0.43-0.95). The thrust (-0.15) and stomp (-0.06) are clear. Measured, not gated yet; the heave/coil re-solve is next.)
 (11:44 11-11: NO GAME CHANGE: THE ASHEN KNIGHT'S SWEEP IS NOW SEEN FROM ITS OWN FRONT, AND THE RAISED GLAIVE CLEARS THE HELM. A new shot lens `kchest` re-aims off the knight's posed chest after the move is stepped. Projected bones prove it frames the front-right quarter (right shoulder nearer and screen-left); the 10:00 note that every lens showed the knight's back was wrong. In the coil (u=0.5/0.9) the glaive rides at shoulder height cocked back past the right side, clear of the helm, with no visible pass through the right pauldron; the cut (u=0.1/0.3) brings it down diagonally in both fists. The frames are backlit, so the arms still read as a dark silhouette.)
@@ -36,6 +37,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
 - (14:50 11-11) Setup first try (import ~25 min this time). GL shots (SHOT_GL=1) work: 2 run one after the other in shots.sh took ~12 min; headless bots fine. Forward+ not tried; asset sites not rechecked (no new files). PIL is broken on this box (`_imaging` missing): make gallery JPEGs with ImageMagick `convert x.png -resize 1280x720! -quality 80 y.jpg`.
 - (12:34 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). `kchest sunlit` picks the front quarter on the sun's side; at hours 9/12/15 the knight's front faces away from the sun, use hour 16.5 (17.5 renders a black sky in GL compat).
@@ -8357,6 +8359,29 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (16:00 11-11) **KNIGHT LEAP AS A FRAME SEQUENCE; TAKE-OFF SNAP FIXED — DONE (game change, gated).** NEXT (1) of 15:10.
+   `shot.gd` new `leapseq` (with `knight leap crouch u=<start>`): steps the leap on and saves <out>_NN.png per frame
+   through the crouch's front lens re-aimed off the posed chest (`_knight_front_lens`, now shared with crouch/landfront;
+   `far=<x size>` widens it); default 12 frames W.1/.4/.7/.97 S.2/.45/.7/.95 R.05/.15/.4/.8, or `seqt=W0.8,S0.05,R0.1`.
+   One run of 12 frames ~12 min GL. Contact sheet: `montage shots/lseq_*.png -tile 4x3 -geometry 640x360+2+2 x.png`
+   (python PIL is broken on the box; ImageMagick works). WHAT THE SEQUENCE SHOWED: crouch frames u .4/.7/.97 near
+   identical (coil done at 0.7, then a frozen 0.24 s hold); glaive upright overhead through the flight u .2-.7 (the
+   heave over the left shoulder reads as upright from the front), down-swing in the last ~0.15 s, blade in the turf
+   by the hero at landing, flame ring round the bite, glaive wrenched up by R .8. FIX: `ashen_knight.gd` coil loads on
+   from u 0.55 to COIL_SINK_END 0.38 / COIL_LEAN_END 0.30 / COIL_HIP_END 0.93 / COIL_KNEE_END 1.75 (was frozen at
+   0.34/0.26/0.85/1.6); the STRIKE carries sink + pitch over TAKEOFF_U 0.15 (`po`), pins the boots over 0.09 and starts
+   the tuck from the coil's end values. env TAKEOFF_OLD=1 = the before. `bot.gd` knightleap prints `take-off`:
+   hips' per-tick rise past the arc, pitch change, boots under the turf; gates LEAP_TAKEOFF_JUMP 0.2 m/size,
+   LEAP_TAKEOFF_LEAN 0.08 rad (old 0.389 / 0.140, new 0.098 / 0.045); TO_TRACE=1 prints per tick. NOTE: bots run at
+   Engine.time_scale 4 (15 Hz effective ticks): the knightleap loop now drops to 1x through the crouch and take-off.
+   Bots PASS: knightleap foefold knight knightplant knightstomp knightguard crown combat soldier. Grade: knight leap
+   good (take-off no longer snaps; crouch now builds). GL `tko` frames W.6/.8/.99 S.03-.2 at far=3.6 looked at: one
+   continuous rise, pitch easing off the crouch; the legs are hidden behind a cottage roof from this lens.
+   NEXT: (1) the flight's down-swing is ~0.15 s for a 2.5 m glaive on a 3x giant: look at S .6-.97 at fine steps
+   (`seqt=S0.6,S0.68,S0.76,S0.84,S0.9,S0.95`) and give it a beat of anticipation at the top (hang) so it reads;
+   (2) the heave over the LEFT shoulder reads as plain upright from the front lens: try a side lens sequence;
+   (3) a FIXED-camera mode for leapseq (the tracking lens hides the arc's height); (4) sweep coil (+0.166 through the
+   chin skirt) with the bot-driven search; (5) thrust/stomp helm gates. BOSS/ANIMATION order unchanged; audio after.
 0. (15:10 11-11) **KNIGHT'S OWN LANDED POSE, CLEAR OF THE HELM — DONE (game change, gated).** NEXT (1) of 14:50.
    `ashen_knight.gd` KNIGHT_SLAMMED [-7.95, -28.14, (0.135, 0.898, 0.848), -13.14, 0.082, 0.518] replaces the shared
    StoneSentinel.SLAMMED as the leap's down-swing end and the recovery's start (`LEAP_SLAM`). env SLAM_OLD=1 = the

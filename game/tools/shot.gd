@@ -3182,24 +3182,7 @@ func _ready() -> void:
 			kl.set_physics_process(false)
 			# (15:00 11-11) `landfront`: the landing (u= of the recovery) through the same front lens
 			if ("crouch" in args or "landfront" in args) and cam != null:
-				# front quarter off the posed chest (kchest's lens), on the sun's side, 3.0 x size out
-				var lsk: Skeleton3D = kl.skel
-				var lgt: Transform3D = lsk.global_transform * lsk.get_bone_global_pose(lsk.find_bone("mixamorig_Spine2"))
-				var lbf: Vector3 = kl.body.global_basis.z.normalized()
-				var lfw: Vector3 = lgt.basis.z
-				if lfw.dot(lbf) < 0.0:
-					lfw = -lfw
-				lfw.y = 0.0
-				lfw = lfw.normalized()
-				var lrt := Vector3.UP.cross(lfw).normalized()
-				var lsun: Vector3 = world.sun.global_basis.z
-				lsun.y = 0.0
-				var lsd := 1.0 if (lfw + lrt * 0.55).dot(lsun) > (lfw - lrt * 0.55).dot(lsun) else -1.0
-				if "flip" in args:
-					lsd = -lsd
-				var lc: Vector3 = lgt.origin + Vector3.UP * 0.35 * kl.size_scale
-				cam.global_position = lc + (lfw + lrt * lsd * 0.55).normalized() * 3.0 * kl.size_scale + Vector3.UP * 0.2 * kl.size_scale
-				cam.look_at(lc)
+				var lsd := _knight_front_lens(kl, cam, world, args)
 				print("SHOT knight crouch u=%.2f lens %s side %s" % [foe_u, cam.global_position, "left" if lsd > 0.0 else "right"])
 			if "scorched" in args and kl.last_scorch != null:
 				# low on the burn from the lit side, the knight stooped over it beyond
@@ -3601,6 +3584,41 @@ func _ready() -> void:
 				var ah := ch as HollowArrow
 				print("SHOT capture hero %s screen %s, lens fov %.0f size %s, cams %s" % [player.global_position, fcam.unproject_position(player.global_position + Vector3.UP), fcam.fov, get_viewport().get_visible_rect().size, fcam.get_path()])
 				print("SHOT capture lens %s: arrow %s %.1f m, screen %s%s, frozen %s" % [fcam.global_position, ah.global_position, ah.global_position.distance_to(fcam.global_position), fcam.unproject_position(ah.global_position), " (behind)" if fcam.is_position_behind(ah.global_position) else "", ah.frozen])
+	if spot == "soldier" and "knight" in args and "leapseq" in args and cam != null:
+		# (16:00 11-11) leapseq: the whole ember leap as a frame SEQUENCE through the crouch's
+		# front lens (re-aimed off the posed chest each frame), saved as <out>_NN.png
+		var sk: AshenKnight = world.knight
+		var sdt := 1.0 / 60.0
+		var targets := [[HollowSoldier.WINDUP, 0.1], [HollowSoldier.WINDUP, 0.4], [HollowSoldier.WINDUP, 0.7], [HollowSoldier.WINDUP, 0.97],
+			[HollowSoldier.STRIKE, 0.2], [HollowSoldier.STRIKE, 0.45], [HollowSoldier.STRIKE, 0.7], [HollowSoldier.STRIKE, 0.95],
+			[HollowSoldier.RECOVER, 0.05], [HollowSoldier.RECOVER, 0.15], [HollowSoldier.RECOVER, 0.4], [HollowSoldier.RECOVER, 0.8]]
+		# seqt=W0.85,S0.05,R0.1: pick the frames (state letter + u)
+		for a in args:
+			if a.begins_with("seqt="):
+				targets = []
+				for it in a.substr(5).split(","):
+					var stl := {"W": HollowSoldier.WINDUP, "S": HollowSoldier.STRIKE, "R": HollowSoldier.RECOVER}
+					targets.append([stl[it.substr(0, 1)], float(it.substr(1))])
+		var durs := {HollowSoldier.WINDUP: AshenKnight.LEAP_CROUCH_T, HollowSoldier.STRIKE: AshenKnight.LEAP_T, HollowSoldier.RECOVER: AshenKnight.LEAP_RECOVER_T}
+		var order := [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]
+		var n := 0
+		for tg in targets:
+			var guard := 0
+			while guard < 600:
+				var si := order.find(sk.state) if sk.move_kind == AshenKnight.LEAP_MOVE else -1
+				var ti := order.find(tg[0])
+				if si > ti or (si == ti and sk.t >= tg[1] * durs[tg[0]]):
+					break
+				sk._physics_process(sdt)
+				guard += 1
+			_knight_front_lens(sk, cam, world, args)
+			for i in 4:
+				await get_tree().process_frame
+			var simg := get_viewport().get_texture().get_image()
+			var sabs := ProjectSettings.globalize_path("res://").path_join(out.get_basename() + "_%02d.png" % n)
+			simg.save_png(sabs)
+			print("SHOT leapseq %02d state %d t %.3f lift %.2f -> %s" % [n, sk.state, sk.t, sk.leap_lift, sabs])
+			n += 1
 	_print_facing(world, player)
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)
@@ -3741,6 +3759,32 @@ func _stick_for(player: Player, dir: Vector3) -> Vector2:
 
 ## Facing check at capture: which way each figure's body and feet point vs the lens that
 ## renders the frame (+1 = faces the camera, -1 = its back to it, 0 = side-on).
+func _knight_front_lens(kl: AshenKnight, cam: Camera3D, world: Node3D, args: PackedStringArray) -> float:
+	# front quarter off the posed chest (kchest's lens), on the sun's side, 3.0 x size out
+	var lsk: Skeleton3D = kl.skel
+	var lgt: Transform3D = lsk.global_transform * lsk.get_bone_global_pose(lsk.find_bone("mixamorig_Spine2"))
+	var lbf: Vector3 = kl.body.global_basis.z.normalized()
+	var lfw: Vector3 = lgt.basis.z
+	if lfw.dot(lbf) < 0.0:
+		lfw = -lfw
+	lfw.y = 0.0
+	lfw = lfw.normalized()
+	var lrt := Vector3.UP.cross(lfw).normalized()
+	var lsun: Vector3 = world.sun.global_basis.z
+	lsun.y = 0.0
+	var lsd := 1.0 if (lfw + lrt * 0.55).dot(lsun) > (lfw - lrt * 0.55).dot(lsun) else -1.0
+	if "flip" in args:
+		lsd = -lsd
+	var far := 3.0
+	for a in args:
+		if a.begins_with("far="):
+			far = float(a.substr(4))
+	var lc: Vector3 = lgt.origin + Vector3.UP * 0.35 * kl.size_scale
+	cam.global_position = lc + (lfw + lrt * lsd * 0.55).normalized() * far * kl.size_scale + Vector3.UP * 0.2 * kl.size_scale
+	cam.look_at(lc)
+	return lsd
+
+
 func _print_facing(world: Node3D, player: Player) -> void:
 	var c := get_viewport().get_camera_3d()
 	if c == null:

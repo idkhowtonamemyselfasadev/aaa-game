@@ -5279,6 +5279,8 @@ func _knight_test() -> void:
 ## hero stood (standing there: thrown down; it lands near the hero, not on top); a roll as it
 ## lands passes through; a parry-window heavy cannot turn it; and the landing leaves it open.
 const LEAP_LAND_SQUAT := 0.66   # (11-11) hips over the boots at the landing's bottom, share of standing (old landing 0.73, new 0.54)
+const LEAP_TAKEOFF_JUMP := 0.2  # (11-11 16:00) m/size a tick the hips may rise past the arc at take-off
+const LEAP_TAKEOFF_LEAN := 0.08  # rad a tick the pitch may change across take-off
 const LEAP_LAND_LEAN := 0.45    # rad: the body pitched over the bitten blade at the bottom (old 0.34)
 func _knightleap_test() -> void:
 	var p := _player
@@ -5336,8 +5338,10 @@ func _knightleap_test() -> void:
 		var rolled := false
 		var parry_up := false
 		# bone poses carry the modifiers (tuck, arm IK) only inside skeleton_updated
-		var seen := [Vector3.ZERO]
-		var grab := func() -> void: seen[0] = _knight_legs(k)
+		var seen := [Vector3.ZERO, Vector3.ZERO]
+		var grab := func() -> void:
+			seen[0] = _knight_legs(k)
+			seen[1] = _knight_hips_world(k)
 		k.skel.skeleton_updated.connect(grab)
 		await _ticks(2)
 		var stand_legs: Vector3 = seen[0]
@@ -5346,7 +5350,33 @@ func _knightleap_test() -> void:
 		k.rags.peak_back = 0.0
 		var peak_fall := 0.0
 		var peak_stream := 0.0
+		# (16:00 11-11) take-off: the hips rise with the arc and the legs' push, never a jump of
+		# the crouch's whole sink in one tick; the boots stay on the turf until the legs straighten
+		var to_prev := Vector3.INF
+		var ts_run := Engine.time_scale
+		var to_lift_prev := 0.0
+		var to_jump := 0.0
+		var to_lean_prev := 99.0
+		var to_lean_jump := 0.0
+		var to_sunk := 0.0
 		while k.leaps_landed() == n0 and waited < 6.0:
+			var in_to := k.move_kind == AshenKnight.LEAP_MOVE and ((k.state == HollowSoldier.WINDUP and k.t > 0.8 * AshenKnight.LEAP_CROUCH_T) \
+					or (k.state == HollowSoldier.STRIKE and k.t < 0.3 * AshenKnight.LEAP_T))
+			# real-time ticks through the take-off (the bots' x4 time scale samples it at 15 Hz)
+			Engine.time_scale = 1.0 if (in_to or (k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP)) else ts_run
+			if in_to:
+				var hw: Vector3 = seen[1]
+				if to_prev != Vector3.INF:
+					# the hips' rise this tick beyond the arc's own rise
+					to_jump = maxf(to_jump, absf((hw.x - to_prev.x) - (k.leap_lift - to_lift_prev)))
+				if to_lean_prev < 90.0:
+					to_lean_jump = maxf(to_lean_jump, absf(k.lean_last - to_lean_prev))
+				to_sunk = maxf(to_sunk, -hw.y)
+				if OS.get_environment("TO_TRACE") == "1":
+					print("TO st %d t %.3f lift %.3f hips %.3f low %.3f lean %.3f" % [k.state, k.t, k.leap_lift, hw.x, hw.y, k.lean_last])
+				to_prev = hw
+				to_lift_prev = k.leap_lift
+				to_lean_prev = k.lean_last
 			peak_fall = maxf(peak_fall, k.rags.fall)
 			peak_stream = maxf(peak_stream, k.rags.stream)
 			if k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP:
@@ -5369,6 +5399,11 @@ func _knightleap_test() -> void:
 			await get_tree().physics_frame
 			waited += get_physics_process_delta_time()
 		p.bot_input = Vector2.ZERO
+		Engine.time_scale = ts_run
+		print("BOT knightleap: take-off (%s) hips jump %.3f m/size a tick past the arc, lean jump %.3f rad, boots %.3f m/size under the turf" % [kind, to_jump / ks, to_lean_jump, to_sunk / ks])
+		if OS.get_environment("TAKEOFF_OLD") != "1" and (to_jump > LEAP_TAKEOFF_JUMP * ks or to_lean_jump > LEAP_TAKEOFF_LEAN or to_sunk > 0.05 * ks):
+			k.skel.skeleton_updated.disconnect(grab)
+			return _combat_done(false, "the leap's take-off snaps the body up: hips %.3f m/size in a tick, lean %.3f rad" % [to_jump / ks, to_lean_jump])
 		# (11-11) the landing takes the weight: through the first third of the recovery the hips come
 		# down over the planted boots (knees give) well below the standing height, and the body is
 		# pitched over the blade. Not on the stand trial (its scorch checks run on the next ticks).
@@ -6031,6 +6066,20 @@ func _knight_feet(k: AshenKnight) -> Vector3:
 	var l: Vector3 = at.call("LeftFoot")
 	var r: Vector3 = at.call("RightFoot")
 	return Vector3(r.y - l.y, r.z - l.z, 0.0)
+
+## (16:00 11-11) the knight's hips' world height (x) and the lower boot's depth under the turf (y, < 0 = sunk)
+func _knight_hips_world(k: AshenKnight) -> Vector3:
+	var sk := k.skel
+	if sk == null:
+		return Vector3.ZERO
+	var at := func(nm: String) -> Vector3:
+		return sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin
+	var hips: Vector3 = at.call("Hips")
+	var low := 99.0
+	for nm in ["LeftFoot", "RightFoot"]:
+		var f: Vector3 = at.call(nm)
+		low = minf(low, f.y - _world.terrain.height_at(f.x, f.z))
+	return Vector3(hips.y, low, 0.0)
 
 func _knight_legs(k: AshenKnight) -> Vector3:
 	var sk := k.skel

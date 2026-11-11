@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-1800-kneel-rise.jpg",
-  "time": "2026-11-07T18:00:00Z",
-  "caption": "Knock-down get-up: the hero now kneels on the left knee with the right foot planted ahead before rising, instead of a two-footed squat; the legs are still half hidden in the tall grass and the free right arm just hangs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1800-kneel-drive.jpg",
-  "time": "2026-11-07T18:00:00Z",
-  "caption": "Mid-rise from the kneel: the front leg drives the body up and the back knee leaves the turf; the reaching left arm and hanging right arm still need weight-bearing poses.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1928-kneebrace-cmp.jpg",
   "time": "2026-11-07T19:28:20Z",
   "caption": "Knock-down rise, grass hidden: before (1.62, hand hanging by the shin) / after (1.62, right palm braced on the front knee) / after (1.74, pushing off the thigh); the left hand still claws out in front of the chest.",
@@ -891,6 +879,18 @@
   "file": "20261111-1515-knight-landing.jpg",
   "time": "2026-11-11T15:15:00Z",
   "caption": "The Ashen Knight lands its ember leap bowed over the bitten glaive, the haft now running out past its helm into the turf instead of up under the rim; the helm still reads as a dark dome and the sky is too dark for the hour.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1639-knight-leap-land.jpg",
+  "time": "2026-11-11T16:39:15Z",
+  "caption": "Frame 9 of the first 12-frame sequence of the Ashen Knight's ember leap: glaive bitten into the turf by the hero, ember ring flaring; the knight is still small in frame and its helm reads faceless.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1639-knight-takeoff.jpg",
+  "time": "2026-11-11T16:39:15Z",
+  "caption": "The knight's push-off now rises smoothly out of the deeper crouch instead of snapping up 1.3 m in one tick; the cottage roof hides the legs from this lens.",
   "verdict": "fail"
  }
 ]

@@ -224,6 +224,15 @@ const HEAVE_REACH_IN := 0.06
 ## how much of the reveal's spine arch the glaive pose is swung back with (about SPINE_BASE)
 const ROAR_CARRY := 0.9
 const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
+## (16:00 11-11) the coil's end (it keeps loading from u 0.55 to the spring) and the push-off:
+## the sink, pitch and planted boots are spent over the first TAKEOFF_U of the flight.
+## env TAKEOFF_OLD=1: the before (frozen coil, the sink and pitch let go in one tick)
+static var TAKEOFF_OLD := OS.get_environment("TAKEOFF_OLD") == "1"
+const COIL_SINK_END := 0.38
+const COIL_LEAN_END := 0.30
+const COIL_HIP_END := 0.93
+const COIL_KNEE_END := 1.75
+const TAKEOFF_U := 0.15
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
 ## (11-11) THE LEAP'S LANDING TAKES THE WEIGHT: the old touch-down came in with straight legs and the
@@ -1026,15 +1035,19 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				leap_to = global_position + off.normalized() * reach if off.length() > 1e-3 else global_position
 			_pose = _lerp_pose(_from, LEAP_CROUCH, smoothstep(0.0, 0.7, u))
 			_pose[1] += sin(t * 44.0) * 1.0 * smoothstep(0.6, 0.9, u)
-			lean = 0.26 * smoothstep(0.0, 0.7, u)
-			sink = 0.34 * smoothstep(0.0, 0.7, u)
-			_set_tuck(0.85 * smoothstep(0.0, 0.7, u), 1.6 * smoothstep(0.0, 0.7, u))
+			var cs := smoothstep(0.0, 0.7, u)
+			# (16:00 11-11) the coil keeps loading to the spring (it froze at u 0.7 before)
+			var ld := 0.0 if TAKEOFF_OLD else smoothstep(0.55, 1.0, u)
+			lean = 0.26 * cs + (COIL_LEAN_END - 0.26) * ld
+			sink = 0.34 * cs + (COIL_SINK_END - 0.34) * ld
+			_set_tuck(0.85 * cs + (COIL_HIP_END - 0.85) * ld, 1.6 * cs + (COIL_KNEE_END - 1.6) * ld)
 			# the boots stay where they stand as it coils down and pitches forward over them
 			_plant(1.0)
 			ember = 1.0 + 4.0 * smoothstep(0.2, 0.9, u)
 			_update_glint(smoothstep(0.55, 0.8, u) * (1.0 - smoothstep(0.92, 1.0, u)))
 			if u >= 1.0:
-				_plant(0.0)
+				if TAKEOFF_OLD:
+					_plant(0.0)
 				_resolved = false
 				strikes += 1
 				leaps += 1
@@ -1071,8 +1084,8 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)
 			var g := 0.0 if LEAPLAND_OLD else _land_give_strike(u)
-			var th := lerpf(0.85 * c, TUCK_HIP, k)
-			var tk := lerpf(1.6 * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u)
+			var th := lerpf(COIL_HIP_END * c, TUCK_HIP, k)
+			var tk := lerpf(COIL_KNEE_END * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u)
 			if not LEAPLAND_OLD:
 				# the knee hint runs on into the recovery's crouch (0.55, 1.1) as the legs take the weight
 				var w := smoothstep(LAND_TOUCH_U, 1.0, u)
@@ -1082,6 +1095,12 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			# pitched into the leap, then over onto the blade
 			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u)) + LAND_LEAN * g
 			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u) + LAND_SINK * g   # model space (scaled)
+			# (16:00 11-11) the push-off: the crouch's sink and pitch are carried into the flight and
+			# spent as the legs drive straight, the boots held on the turf until they leave it
+			# (the whole sink came back in one tick, ~1.3 m at phase-2 size, and the pitch 0.14 rad)
+			var po := 0.0 if TAKEOFF_OLD else 1.0 - smoothstep(0.0, TAKEOFF_U, u)
+			sink += COIL_SINK_END * po
+			lean = lerpf(lean, COIL_LEAN_END, po)
 			_land_lean = LAND_LEAN * g
 			land_give = g
 			if u < 0.5:
@@ -1091,7 +1110,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			# over the last of the fall (the held height only comes down, so they track it to
 			# the turf) and touch down where they then stay through the recovery
 			_up_lift = leap_lift / size_scale
-			_plant(smoothstep(0.78, 0.95, u))
+			_plant(maxf(smoothstep(0.78, 0.95, u), 0.0 if TAKEOFF_OLD else 1.0 - smoothstep(0.0, TAKEOFF_U * 0.6, u)))
 			ember = 5.0 - 1.0 * u
 			_update_glint(smoothstep(0.35, 0.55, u) * (1.0 - smoothstep(0.75, 0.88, u)))
 			if u >= 1.0:
