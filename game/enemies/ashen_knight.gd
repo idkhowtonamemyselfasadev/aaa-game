@@ -90,11 +90,26 @@ const LEAP_DOWN_ARC_OLD := [-19.1, 119.4, Vector3(0.095, 2.388, 0.992), -7.4, -0
 ## +0.08). env LEAPHELM_OLD=1: the before (LEAP_HEAVE_NEW + LEAP_DOWN_ARC_OLD).
 const LEAP_HEAVE_LEFT := [-17.6, 134.6, Vector3(0.389, 2.356, -0.313), -8.1, -0.094, 0.66]
 const LEAP_DOWN_LEFT := [-46.3, 62.5, Vector3(0.131, 2.735, 1.007), -3.9, 0.120, 0.65]
+## (22:00 11-11) the hang laid further back and the swing up and down kept off the left pauldron.
+## A new bot read-out (`foefold`: both pauldrons as spheres round the shoulder joints) found the
+## haft's butt passing almost through the left shoulder on the way up (0.19 m/size deep, u ~0.2)
+## and on the way down (0.19, u ~0.85), which the helm-only gates never saw; and from the side lens
+## the hang laid the glaive back only 45 deg past upright. Hill-climbed against the bot (36 rounds
+## x 3 parallel runs, scoring helm, pauldrons, lay-back, arm bend, fists): the heave is held 0.13 m
+## further out over the left shoulder and laid back 61 deg (the blade well behind the back), the
+## chest turned less across, the up-arc held higher and further out in front, the down-arc further
+## round to the left and steeper. Pauldron up 0.192 -> 0.093, down 0.193 -> 0.089 (the rest is the
+## butt passing close in front of the pauldron's rim, see PROGRESS.md), helm unchanged 0.006,
+## arms/fists unchanged. env LAYBACK_OLD=1: the before.
+const LEAP_HEAVE_BACK := [-10.203, 151.227, Vector3(0.516, 2.356, -0.267), -8.1, -0.094, 0.66]
+const LEAP_UP_CLEAR := [6.298, 89.819, Vector3(0.231, 2.319, 0.112), 2.457, -0.012, 0.64]
+const LEAP_DOWN_CLEAR := [-49.608, 74.756, Vector3(0.104, 2.542, 1.058), -2.395, 0.120, 0.65]
+static var LAYBACK_OLD := OS.get_environment("LAYBACK_OLD") == "1"
 static var LEAPHELM_OLD := OS.get_environment("LEAPHELM_OLD") == "1"
-static var LEAP_DOWN_ARC: Array = LEAP_DOWN_ARC_OLD if LEAPHELM_OLD else LEAP_DOWN_LEFT
+static var LEAP_DOWN_ARC: Array = LEAP_DOWN_ARC_OLD if LEAPHELM_OLD else (LEAP_DOWN_LEFT if LAYBACK_OLD else LEAP_DOWN_CLEAR)
 static var LEAPFOLD_OLD := OS.get_environment("LEAPFOLD_OLD") == "1"
-static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else (LEAP_HEAVE_NEW if LEAPHELM_OLD else LEAP_HEAVE_LEFT))
-static var LEAP_UP: Array = _env_pose("LEAP_UP_TRY", LEAP_UP_ARC)
+static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else (LEAP_HEAVE_NEW if LEAPHELM_OLD else (LEAP_HEAVE_LEFT if LAYBACK_OLD else LEAP_HEAVE_BACK)))
+static var LEAP_UP: Array = _env_pose("LEAP_UP_TRY", LEAP_UP_ARC if (LAYBACK_OLD or LEAPHELM_OLD or LEAPFOLD_OLD) else LEAP_UP_CLEAR)
 static var LEAP_DOWN: Array = _env_pose("LEAP_DOWN_TRY", LEAP_DOWN_ARC)
 ## (14:00 11-11) the knight's own leap crouch. CROUCHED (borrowed from the sentinel) held the
 ## glaive up over the crown (1.9 m, hold just behind the helm's axis), so the guard -> crouch

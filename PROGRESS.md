@@ -1,6 +1,7 @@
 # Progress
 
-Content hours playable: 15.8
+Content hours playable: 15.9
+(22:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP NOW HEAVES ITS GLAIVE WELL BACK BEHIND ITS SHOULDERS AT THE TOP OF THE ARC, AND THE HAFT NO LONGER SWINGS THROUGH ITS LEFT SHOULDER: a new bot read-out (`foefold`: both pauldrons as spheres round the shoulder joints, split by airtime up/hang/down, plus the hang's lay-back angle) found the haft's butt passing almost through the left shoulder on the swing up (0.192 m/size) and down (0.193), unseen by the helm-only gates. Hill-climbed against the bot (36 rounds x 3 parallel runs): hang laid back 44 -> ~60 deg past upright, pauldron up 0.093, down 0.089, helm/arms/fists unchanged. New gates; LAYBACK_OLD=1 is the before. GL side sequence old/new looked at.)
 (21:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP JUDGED SIDE-ON FOR THE FIRST TIME, AND A FLAKY BOT GATE FIXED: new fixed side lens for the frame-sequence tool (`shot.gd` leapseq + `side`, set once square to the leap, swaps to the clear side if a wall is in the way). The 8-frame side sequence shows the arc rising well over a cottage, the glaive laid back ~40 deg over the shoulder through the hang (the front lens had made it look upright), forward at S.7 and biting as the boots land. Bot `sweep`'s get-up 'off one knee' check passed or failed with the 15 Hz sample phase (knee 0.134 vs 0.14 gate at the ease-out, 0.130 / foot ahead 0.249 vs 0.25 while still sinking); it now reads only the settled hold 1.57..1.64 s (nearest sample to 1.605 if none). No game code changed.)
 (20:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP NOW RUNS OUT SMOOTHLY INSTEAD OF HITCHING IN ITS FOLLOW-THROUGH: a per-tick trace with the commanded angle, shaft bend and clamp excess (bot `sweep`, CUT_TRACE=1) showed the front (left) grip 0.03-0.16 m past the sweep's reach for the first two thirds of the cut, so the hard reach clamp bent the shaft up to 11 deg ahead of the pose, and the tick the grip came back inside reach (bearing ~+65) the bend stopped dead: blade 6.7 -> 6.6 -> 7.1 -> 6.2 deg/tick. The clamp now eases in over its last 0.08 m (C1 knee) for the plain soldiers' sweep: after the peak the blade only slows (largest rise 0.54 -> 0.00 deg/tick), front crossed at the same 0.133 s, dodge and parry unchanged. SOFTCLAMP_OLD=1 is the before. GL sequences old/new looked at.)
 (19:00 11-11: EVERY HOLLOW SOLDIER'S SWEEP, AND THE ASHEN KNIGHT'S, NOW LEAVES ITS HELD COIL ACCELERATING INSTEAD OF POPPING TO FULL SPEED IN ONE TICK: the first frame SEQUENCE of the knight's sweep (leapseq mode now takes `sweep`) showed the glaive going from the trembling coil at W.97 to already down across the front by S.15, and a new real-time per-tick trace in bot `sweep` found the blade turning 1.0 deg on the last coil tick and 16.7 deg on the next (88% of its peak in one tick: the cut curve 1-(1-u)^2 starts at full speed). Now the speed ramps up linearly over the first 14% of the cut (~3 ticks) to the same peak and eases out as before: largest one-tick speed-up 15.7 -> 6.8 deg (35% of peak), peak at u 0.23 (was 0.14), blade crosses the front 0.016 s later (0.117 -> 0.133 s); dodge on the glint and parry still beat it. SWEEPCUT_OLD=1 is the before. GL sequences old/new looked at.)
@@ -41,6 +42,8 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 (a few minutes of real combat); one short quest (Bread for the Keep), no shrines yet. Game scope is
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
+
+- (22:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 (SHOT_GL=1, 5-frame side leapseq ~12 min, ran alongside 3 bots fine); headless bots fine. Asset sites not rechecked (no downloads).
 
 - (20:00 11-11) Setup needed a second run (the first was killed with its shell; run it in the foreground or as a tracked background job); import ~10 min; GL shots via opengl3 (SHOT_GL=1); headless bots fine. Asset sites not rechecked (no downloads).
 - (19:00 11-11) Setup first try (import ~15 min); GL shots via opengl3 (SHOT_GL=1 still prints "vulkan failed"; an 8-frame sequence ~10 min, two in parallel fine); headless bots fine. Asset sites not rechecked (no downloads this session).
@@ -8368,6 +8371,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (22:00 11-11) **LEAP HANG LAID BACK + SWING OFF THE LEFT PAULDRON — DONE (game change, gated).** NEXT (1) of 21:00.
+   `bot.gd` foefold: `_pauldron_spheres` (KnightArmour._pauldron centre = upper-arm rest + (sx*0.025,-0.01,-0.01) in the
+   pauldron mesh's space, radius PAULDRON_R 0.184 x mesh scale) -> per tick while heaved high (STRIKE, pose pitch > 45)
+   the haft capsule's depth into each sphere, split by airtime u = t/LEAP_T (up < LEAP_HEAVED_U, hang < DOWN_U0, down),
+   and the hang lay-back = atan2(-blade.fwd, blade.up) max. env PAULDRON_TICKS=1 prints per tick. The sphere is
+   conservative (it includes the joint and the gap next to the helm), so the hang's 0.017 was a graze; the swing's
+   0.19 was the butt through the shoulder joint, visible in the old S0.16 frame.
+   `ashen_knight.gd`: LEAP_HEAVE_BACK / LEAP_UP_CLEAR / LEAP_DOWN_CLEAR (env LAYBACK_OLD=1 = LEAP_HEAVE_LEFT/LEAP_UP_ARC/
+   LEAP_DOWN_LEFT). Search: scratch climb.py over LEAP_UP_TRY/LEAP_HEAVE_TRY/LEAP_DOWN_TRY (score: helm high + W, pauldron
+   up/down/hang over 0.02, lay-back short of 72, arm straightness, fold, fists, bend, bite), 36 rounds x 3 parallel
+   single-foe runs (~20 s each). Lay-back reads 61.1 in a FOEFOLD_ONLY run and 58.8 in the full run (sample phase).
+   Result: up 0.192 -> 0.093, down 0.193 -> 0.089, hang 0.017 -> -0.042, lay-back 43-45 -> 59-61, helm 0.006 unchanged,
+   fists 0.000, fold L 0.249. Pitch alone (145-165 with the old hold) drove the haft's butt into the helm (0.013-0.092):
+   the hold had to move out over the left shoulder (+0.13 m) with the chest turned less across.
+   New gates: FOEFOLD_LAYBACK_MIN 55 deg, FOEFOLD_PAULDRON_SWING 0.12, hang pauldron <= FOEFOLD_HELM_GRAZE (skipped with
+   LAYBACK_OLD or LEAP_HEAVE_TRY). Bots PASS: foefold knightleap knight foegrip foehands lockon.
+   GL `soldier pl_new 40 16.5 fixfps knight leap crouch leapseq side sunlit u=0.02 seqt=S0.16,S0.24,S0.35,S0.8,S0.88`
+   (+ pl_old, rendered before the change) as a cropped contact sheet: S0.35 now lays the
+   glaive near-horizontal behind the helm (old: ~45 deg up); S0.16/S0.24 look the same at this distance. S0.8/S0.88:
+   the knight has left the crop (crop the full frames next time). Still backlit from this side at 16:30.
+   Grade: knight leap good (hang now reads as a real heave).
+   NEXT: (1) the last ~0.09 m/size of the swing past the left pauldron (butt passing close in front of the rim at u
+   ~0.2 and ~0.85; try the up-arc's chest twist + a second up-arc key, or a shorter grip slide); (2) the sweep from
+   the side lens (`knight sweep leapseq side`); (3) thrust/stomp helm + pauldron gates (the pauldron read-out only
+   runs for the leap's heaved-high ticks now; extend it to every move). BOSS/ANIMATION order unchanged; audio after.
 0. (21:00 11-11) **SIDE-LENS LEAP SEQUENCE + FLAKY KNEEL GATE — DONE (tools only, no game change).** NEXT (1) and (4) of 20:00.
    `shot.gd` `_knight_side_lens`: leapseq with `side` sets a FIXED camera once (first frame) square to the foe's
    facing, centred halfway to `leap_to` (the foe itself for `sweep`), far=5.5 x size, lift=1.1 x size, on the sun

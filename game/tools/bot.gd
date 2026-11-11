@@ -1584,6 +1584,12 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	var helm_by := {}   # (13:00 11-11) the deepest per state: W windup, S strike, R recover
 	var bite := [9.0, -9.0, 0.0]   # (15:00 11-11) blade tip over the turf in the first half of R: min, max, ahead (m/size)
 	var hring := _helm_rings(e)
+	# (22:00 11-11) both pauldrons as spheres (KnightArmour._pauldron: centre just off the upper arm's
+	# rest, lowest lame radius 0.184): how deep the haft runs into them while heaved high, m/size
+	var pring := _pauldron_spheres(e)
+	var paul_hi := [-9.0, -9.0]
+	var hang_back := -99.0
+	var paul_ph := {}   # "up"/"hang"/"down" -> worst of both pauldrons (knight's leap: airtime phases)
 	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
 		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
 	for i in 400:
@@ -1631,6 +1637,22 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				# heave, hang and the top of the slam's swing
 				if e.state == HollowSoldier.STRIKE and float(e._pose[1]) > 45.0:
 					helm_by["high"] = maxf(float(helm_by.get("high", -9.0)), pen)
+					var bdir: Vector3 = (hs_tip - hs_butt).normalized()
+					var kfw: Vector3 = -e.global_basis.z.normalized()
+					hang_back = maxf(hang_back, rad_to_deg(atan2(-bdir.dot(kfw), bdir.y)))
+					for pj in pring.size():
+						var pm: MeshInstance3D = pring[pj][0]
+						var pc: Vector3 = pm.global_transform * (pring[pj][1] as Vector3)
+						var pr: float = PAULDRON_R * pm.global_basis.get_scale().x
+						var pq: Vector3 = Geometry3D.get_closest_point_to_segment(pc, hs_butt, hs_tip)
+						var pp: float = (pr + HELM_HAFT_R * e.size_scale - pq.distance_to(pc)) / ks
+						paul_hi[pj] = maxf(float(paul_hi[pj]), pp)
+						var pu: float = e.t / AshenKnight.LEAP_T
+						var ph: String = "up" if pu < AshenKnight.LEAP_HEAVED_U else ("hang" if pu < AshenKnight.DOWN_U0 else "down")
+						paul_ph[ph] = maxf(float(paul_ph.get(ph, -9.0)), pp)
+						if OS.has_environment("PAULDRON_TICKS"):
+							var kb := e.global_basis
+							print("      tick t=%.3f %s pauldron %.3f at haft %.2f (centre in foe space %s, haft pt %s)" % [e.t, "LR"[pj], pp, (pq - hs_butt).length() / hs_butt.distance_to(hs_tip), str(kb.inverse() * (pc - e.global_position) / ks), str(kb.inverse() * (pq - e.global_position) / ks)])
 				if pen > float(helm_in[0]):
 					helm_in[0] = pen
 					helm_in[1] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
@@ -1676,6 +1698,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if hring.size() > 0:
 		print("   %s bite: low end over the turf %.3f..%.3f m/size, %.2f m/size ahead (R, first 0.6 s)" % [label, bite[0], bite[1], bite[2]])
 		print("   %s haft sunk into the helm at most %.3f m/size (%s) (<= 0 = clear) | W %.3f S %.3f R %.3f | heaved high %.3f" % [label, helm_in[0], helm_in[1], helm_by.get("W", -9.0), helm_by.get("S", -9.0), helm_by.get("R", -9.0), helm_by.get("high", -9.0)])
+		print("   %s heaved high: haft into the pauldrons L %.3f R %.3f m/size (<= 0 = clear) | hang lay-back %.1f deg past upright | up %.3f hang %.3f down %.3f" % [label, paul_hi[0], paul_hi[1], hang_back, paul_ph.get("up", -9.0), paul_ph.get("hang", -9.0), paul_ph.get("down", -9.0)])
 	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
 		return "%s: the strike never ran" % label
@@ -1693,6 +1716,15 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	# tick, still the crouch's pose, whose re-solve is next in PROGRESS.md)
 	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.LEAPHELM_OLD and float(helm_by.get("high", -9.0)) > FOEFOLD_HELM_GRAZE:
 		return "%s: the heaved glaive runs %.3f m/size through the helm" % [label, helm_by["high"]]
+	# (22:00 11-11) the heave lays the glaive well back (side lens) and the swing up and down keeps the
+	# butt off the left pauldron (LAYBACK_OLD: lay-back 44.6, up 0.192, down 0.193)
+	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.LAYBACK_OLD and not OS.has_environment("LEAP_HEAVE_TRY"):
+		if hang_back < FOEFOLD_LAYBACK_MIN:
+			return "%s: the heave lays the glaive back only %.1f deg past upright" % [label, hang_back]
+		if maxf(float(paul_ph.get("up", -9.0)), float(paul_ph.get("down", -9.0))) > FOEFOLD_PAULDRON_SWING:
+			return "%s: the swing runs the haft %.3f m/size into a pauldron" % [label, maxf(float(paul_ph.get("up", -9.0)), float(paul_ph.get("down", -9.0)))]
+		if float(paul_ph.get("hang", -9.0)) > FOEFOLD_HELM_GRAZE:
+			return "%s: the hang runs the haft %.3f m/size into a pauldron" % [label, paul_ph["hang"]]
 	# (14:00 11-11) and its crouch's wind-up (W) draws the glaive past the helm too (CROUCH_OLD: 0.113)
 	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.CROUCH_OLD and float(helm_by.get("W", -9.0)) > FOEFOLD_HELM_GRAZE:
 		return "%s: the crouching glaive runs %.3f m/size through the helm" % [label, helm_by["W"]]
@@ -1754,10 +1786,29 @@ func _helm_dump(e: HollowSoldier, hr: Array) -> void:
 	f.close()
 
 const FOEFOLD_HELM_GRAZE := 0.01   # m/size
+const FOEFOLD_LAYBACK_MIN := 55.0  # deg past upright at the knight's leap hang
+const FOEFOLD_PAULDRON_SWING := 0.12  # m/size (sphere model, conservative) on the leap's swing up/down
 const FOEFOLD_BITE_MAX := 0.06     # m/size: the blade's low end over the turf early in the leap's recovery
 const HELM_HAFT_R := 0.019      # the glaive's shaft radius (m at size 1, HollowSpear._profile)
 ## (12:00 11-11) the knight's helm (KnightArmour, hung on the Head bone) as rings of its mesh
 ## grouped by height, in the helm's own space: [helm MeshInstance3D, {y_key: [Vector2 x/z]}, centre]
+const PAULDRON_R := 0.184
+## [[mesh instance, sphere centre in its space], ...] for the knight's Left then Right pauldron
+func _pauldron_spheres(e: HollowSoldier) -> Array:
+	var out := []
+	if not e is AshenKnight or (e as AshenKnight).armour == null:
+		return out
+	for side in ["Left", "Right"]:
+		var att := e.skel.get_node_or_null("Armour%sShoulder" % side)
+		var bi := e.skel.find_bone("mixamorig_%sArm" % side)
+		if att == null or bi < 0:
+			continue
+		var mi: MeshInstance3D = att.find_children("*", "MeshInstance3D", true, false)[0]
+		var arm: Vector3 = (e.body.global_transform.affine_inverse() * e.skel.global_transform * e.skel.get_bone_global_rest(bi)).origin
+		var sx := 1.0 if side == "Left" else -1.0
+		out.append([mi, arm + Vector3(sx * 0.025, -0.01, -0.01)])
+	return out
+
 func _helm_rings(e: HollowSoldier) -> Array:
 	if not e is AshenKnight:
 		return []

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-2337-knock-staff-rise.jpg",
-  "time": "2026-11-07T23:37:39Z",
-  "caption": "Knock-down rise (down_t 1.70): the hero keeps the staff in the right fist, its butt planted on the turf by the front knee, pushing up on it instead of the staff hanging in mid-air; GL frame, the lens still foreshortens the legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0023-knock-regrip-left.jpg",
-  "time": "2026-11-08T00:23:39Z",
-  "caption": "End of the knock-down rise (down_t 1.84): the free left hand has left the hip and closed on the staff's grip before the draw back to guard, instead of swinging in open from 0.25 m away; GL frame from behind, the guard line still reads low.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0023-knock-regrip-fist.jpg",
   "time": "2026-11-08T00:23:39Z",
   "caption": "Close crop of the same frame: the left fist closed round the wrapped grip; the hand is clean but the body is still the rough get-up pose.",
@@ -897,6 +885,18 @@
   "file": "20261111-2129-knightleap-side-seq.jpg",
   "time": "2026-11-11T21:29:00Z",
   "caption": "The whole ember leap from a fixed side lens (crouch, rise over the cottage, hang, down-swing, bite): the arc height and lay-back now read; the crouch is hidden behind the cottage and the knight is backlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2229-leap-layback.jpg",
+  "time": "2026-11-11T22:29:51Z",
+  "caption": "The boss at the top of its ember leap with the glaive now laid ~60 deg back behind its shoulders; still backlit and small in frame from this side lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2229-leap-layback-cmp.jpg",
+  "time": "2026-11-11T22:29:51Z",
+  "caption": "Before (top) / after (bottom) of the leap's heave and hang: the hang lays the glaive much further back and the butt no longer swings through the left shoulder as deep; the landing frames leave the crop.",
   "verdict": "fail"
  }
 ]
