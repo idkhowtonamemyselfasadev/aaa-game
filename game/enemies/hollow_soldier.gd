@@ -600,6 +600,13 @@ var axis_off := 0.0
 ## The shoulders the reach clamp measures from, in the Wield's space: [left, right, leaned]. The
 ## default is the hero's body model turned with the chest (`leaned` false: `_place` tips them with
 ## the grips). A variant may return the skeleton's real shoulders (already leaned: true).
+## (11-11) reach slide (variants opt in): the shift `_place` gave the hold point this tick (read-out)
+var slid := Vector3.ZERO
+const REACH_SLIDE_MARGIN := 0.02
+const REACH_SLIDE_MAX := 0.45
+func _reach_slide_on() -> bool:
+	return false
+
 func _shoulders(tw: float) -> Array:
 	return [SHOULDER.rotated(Vector3.UP, tw), Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw), false]
 
@@ -619,6 +626,23 @@ func _place(pose: Array) -> void:
 			sr = hip + lb * (sr - hip)
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
 	var reach: float = pose[5] if pose.size() > 5 else ARM_REACH
+	slid = Vector3.ZERO
+	if _reach_slide_on():
+		# (11-11) slide both grips together along the pose's own line back inside reach of the
+		# shoulders before the clamp has to bend the shaft: the body brings its hands to where
+		# its arms can hold the glaive, the glaive keeps the pose's direction
+		var room := reach - REACH_SLIDE_MARGIN
+		for _i in 24:
+			var g := Vector3.ZERO
+			for pr in [[c + slid + d * (HAND_R + slide), sr], [c + slid + d * (HAND_L + slide), sl]]:
+				var w: Vector3 = pr[0] - pr[1]
+				var n := w.length()
+				if n > room:
+					g -= (n - room) * w / n
+			if g.length() < 0.0005:
+				break
+			slid = (slid + g * 0.5).limit_length(REACH_SLIDE_MAX)
+		c += slid
 	var wr := c + d * (HAND_R + slide) - sr
 	var wl := c + d * (HAND_L + slide) - sl
 	clamp_over = [maxf(wr.length() - reach, 0.0), maxf(wl.length() - reach, 0.0)]

@@ -131,6 +131,20 @@ const ROAR_HEAD_BACK := 0.85
 ## the hold point back by the right hip, the chest twisted well round (-65) so the left hand
 ## reaches; fists now ~0.95 m up on its right, butt ~1.0 m, grip gap 0.029 (bot `knight`)
 const INTRO_COIL := [-150.0, -8.0, Vector3(-0.5, 0.97, -0.25), -65.0, 0.1, 0.64]
+const INTRO_COIL_REAL := [-150.0, -8.0, Vector3(-0.56, 0.97, -0.25), -65.0, 0.1, 0.64]
+## env INTRO_COIL_TRY="yaw,pitch,x,y,z,chest" replaces the reveal's coil pose (tuning loops)
+static func _intro_coil_pose() -> Array:
+	var e := OS.get_environment("INTRO_COIL_TRY")
+	if e == "":
+		return INTRO_COIL_REAL if SHOULDER_MODEL_REAL else INTRO_COIL
+	var v := e.split_floats(",")
+	return [v[0], v[1], Vector3(v[2], v[3], v[4]), v[5], INTRO_COIL[4], INTRO_COIL[5]]
+## (11-11) the coil against the REAL shoulders (with the reach slide): measured from the arm bones
+## the right shoulder sits 0.14 m higher than the old model (1.61-1.63 in the twist), so the hands
+## at the right hip were asked 0.12-0.39 m past reach through the coil and the early heave and the
+## clamp bent the glaive 50-61 deg off its line, swinging the butt to the left hip (0.29). With the
+## slide the grips rise ~0.13-0.37 along the line instead, which drew the coil's left fist to the
+## belly (x -0.01); the hold point 0.06 m further right keeps it at the right hip (-0.04)
 ## how far right (body -X, unscaled m) the hands carry the glaive down the follow-through, so
 ## the shaft comes down beside the helm instead of standing upright in front of the face
 ## (11:00 11-10) was 0.32: carried that far right the left grip ran 0.07-0.15 m past its reach as
@@ -1141,7 +1155,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	if glare != null and _player != null:
 		glare.weight = coil if OS.get_environment("KNIGHT_NOGLARE") == "" else 0.0   # env: the before
 		glare.target = _player.global_position + Vector3.UP * 1.5
-	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), INTRO_COIL, 0.85 * coil)
+	var rest := _lerp_pose(_lerp_pose(base, INTRO_REST, dormant), _intro_coil_pose(), 0.85 * coil)
 	rest = _lerp_pose(rest, CROUCHED, 0.35 * follow)
 	_pose = _lerp_pose(rest, _intro_roar_pose(), up)
 	# (06:00 11-07) the straight lerp coil -> roar cut the late heave across the chest (shaft 0.39
@@ -1256,6 +1270,8 @@ func _place(pose: Array) -> void:
 	if grip_roll != null:
 		grip_roll.side_weight[1] = 1.0 - smoothstep(0.0, 0.15, free_l)
 	super._place(pose)
+	if KPLACE_DBG and intro_playing():
+		print("KPLACE t %.3f up %.3f pose %s shR %s shL %s over %.3f %.3f off %.1f slid %s" % [_intro_it, _heave_now, str(pose), str(_sh_real[1]), str(_sh_real[0]), clamp_over[0], clamp_over[1], axis_off, str(slid)])
 	if free_l <= 0.001 or spear == null or _grip_l == null:
 		return
 	var f := free_l * free_l * (3.0 - 2.0 * free_l)
@@ -1322,6 +1338,7 @@ func _helm_point() -> Vector3:
 ## the chain is 0.547 and the grip sits ~0.05 past the wrist). env KGUARD_OLD=1: the shared guard.
 const KNIGHT_GUARD := [43.2, 32.8, Vector3(0.326, 1.534, 0.522), 6.0, 0.0, 0.58]
 static var SHOULDER_MODEL_REAL := OS.get_environment("SHOULDER_MODEL_REAL") != ""
+static var KPLACE_DBG := OS.has_environment("KPLACE_DBG")   # env: per-tick reveal pose + clamp (tuning)
 var _sh_real := [Vector3.INF, Vector3.INF]
 var _sh_bones := [-1, -1]
 func _record_shoulders() -> void:
@@ -1335,6 +1352,12 @@ func _record_shoulders() -> void:
 	var wi := _wield.global_transform.affine_inverse()
 	for i in 2:
 		_sh_real[i] = wi * (gt * skel.get_bone_global_pose(_sh_bones[i]).origin)
+
+## (11-11) with the real shoulders the knight slides its grips back inside reach along the pose's
+## line instead of letting the clamp bend the glaive (env REACH_SLIDE_OFF=1: the clamp alone)
+static var REACH_SLIDE_OFF := OS.has_environment("REACH_SLIDE_OFF")
+func _reach_slide_on() -> bool:
+	return SHOULDER_MODEL_REAL and not REACH_SLIDE_OFF and _sh_real[0] != Vector3.INF
 
 func _shoulders(tw: float) -> Array:
 	if not SHOULDER_MODEL_REAL or _sh_real[0] == Vector3.INF:

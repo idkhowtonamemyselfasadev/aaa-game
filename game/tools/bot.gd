@@ -4695,6 +4695,7 @@ func _knight_test() -> void:
 				print("HEAVE butt t %.2f %s" % [k.intro.t, bl])
 			if OS.get_environment("HEAVEDBG") != "":
 				print("HEAVE t %.2f up %.2f ax %s" % [k.intro.t, k._heave_now, ax])
+				print("HPOSE t %.3f pose %s shR %s shL %s over %s off %.1f" % [k.intro.t, str(k._pose), str(k._sh_real[1]), str(k._sh_real[0]), str(k.clamp_over), k.axis_off])
 		# (10:00 11-10) the glaive's path from the top of the roar into the guard: the heave's
 		# round-the-side terms were cut at ROAR_END, a ~9 deg one-tick jump of the shaft
 		if k.intro.t > BossIntro.ROAR_END - 0.5 and k.intro.t < BossIntro.T:
