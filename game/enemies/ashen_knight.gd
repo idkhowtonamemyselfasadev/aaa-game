@@ -319,6 +319,8 @@ func _ready() -> void:
 	name = "AshenKnight"
 	model.scale = Vector3(1.14, 1.16, 1.16)
 	_model_rest = model.transform
+	if not OS.has_environment("KGUARD_OLD"):
+		guard_pose = KNIGHT_GUARD
 	# iron-dark ash, a hotter ember
 	_set_skin("ash_dark", Color(0.06, 0.055, 0.052))
 	_set_skin("ash_light", Color(0.30, 0.28, 0.26))
@@ -1125,7 +1127,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 	# eases onto the re-solved guard in the settle (offline: the shaft moves <= 3 deg, the left fist
 	# slides 0.09 m up the haft). REVEAL_NEWGUARD=1 env: the new guard throughout (fails the coil gate).
 	var rg: Array = guard_pose
-	if guard_pose == HollowSoldier.GUARD and not OS.has_environment("REVEAL_NEWGUARD"):
+	if (guard_pose == HollowSoldier.GUARD or guard_pose == KNIGHT_GUARD) and not OS.has_environment("REVEAL_NEWGUARD"):
 		rg = _lerp_pose(HollowSoldier.GUARD_OLD, guard_pose, smoothstep(REVEAL_GUARD_FROM, BossIntro.T, it))
 	var base := _lerp_pose(_from, rg, smoothstep(0.0, 0.4, it))
 	# the glaive holds the coil until the heave owns it (02:45 11-07: on `gather` it let go of the
@@ -1312,6 +1314,13 @@ func _helm_point() -> Vector3:
 ## shoulders the clamp bites where it never did (thrust 11.6, stomp 13.7, sweep 10.1 deg off the
 ## pose) and the leap's arms still lock straight (0.98-0.996 of the chain). The poses must be
 ## re-solved against these shoulders first (PROGRESS.md Next). env SHOULDER_MODEL_REAL=1 opts in.
+## (11-11 06:00) the knight's own guard, re-solved against its REAL shoulders (bot `knightguard`,
+## mean over the idle's sway R (-0.205, 1.578, -0.033), L (0.248, 1.583, 0.062) in the Wield's
+## space): the shared GUARD put the right grip 0.52-0.54 m from it (reach 0.45), so the clamp bent
+## the glaive 11.7 deg off the pose. The same shaft line (yaw 43.2, pitch 32.8) moved 0.047 m toward
+## the right shoulder (right grip 0.48, left 0.37 m) with a reach of 0.58 (the elbows keep a bend:
+## the chain is 0.547 and the grip sits ~0.05 past the wrist). env KGUARD_OLD=1: the shared guard.
+const KNIGHT_GUARD := [43.2, 32.8, Vector3(0.326, 1.534, 0.522), 6.0, 0.0, 0.58]
 static var SHOULDER_MODEL_REAL := OS.get_environment("SHOULDER_MODEL_REAL") != ""
 var _sh_real := [Vector3.INF, Vector3.INF]
 var _sh_bones := [-1, -1]

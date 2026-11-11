@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(06:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GUARD INSIDE THE REACH OF ITS OWN SHOULDERS: the guard it shared with the hollow soldiers put its right grip 0.52-0.54 m from its real right shoulder (reach 0.45), so measured from the real shoulders the clamp bent the glaive 11.7 deg off the guard. The knight now has its own guard (KNIGHT_GUARD): the same shaft line moved 4.7 cm toward the right shoulder, reach 0.58, so the right elbow keeps a bend (arm straightness 0.735 -> 0.650) and the clamp bends nothing under either shoulder model. With the real shoulders the knight's thrust bend drops 3.7 -> 0.0 deg, sweep 10.9 -> 1.1, leap 16.8 -> 8.2, stomp 0. The real-shoulder model is still not live: it swings the reveal heave's butt to the left hip (bot `knight`, 0.29 > gate). New bot `knightguard`; KGUARD_OLD=1 is the before.)
 (05:00 11-11: NO VISIBLE CHANGE: THE KNIGHT'S REAL SHOULDERS ARE NOW MEASURED, AND THEY SHOW THE KNIGHT'S POSES NEED RE-SOLVING, NOT JUST A NEW SHOULDER MODEL. `_place` now asks a virtual `_shoulders(tw)`; the knight can read its arm-IK shoulders back off the posed skeleton every tick (env SHOULDER_MODEL_REAL=1, not live). Bot `foefold` now prints, per attack, how far a grip is asked past its reach, how far the clamp bends the shaft, and how straight each arm is pulled (shoulder-wrist over upper+fore arm). Live (old model): the knight's leap locks the right arm straight (0.995) and its slam bends the shaft 16.8 deg at S t=0.48; the sweep locks the left arm (0.96). With the real shoulders the clamp bites where it never did (thrust 11.6, stomp 13.7, sweep 10.1 deg) and the leap still locks (0.98/0.996), so switching alone is worse; the poses must be re-solved against the real shoulders with reach ~0.58 so the elbows keep a bend. No screenshots this session (no visual change).)
 (04:40 11-11: THE ASHEN KNIGHT NO LONGER LANDS ITS EMBER LEAP INSIDE ITS OWN FIRE: the ring of five flames that flares round the bite was phased +0.3 rad off the knight's heading, which stood one flame 1.2 m from a boot (flame radius 2.05 at phase 2), so the giant came down in its own fire and the flame hid the boots' dust kick. The ring is now phased so the gap between two flames faces back at the knight: nearest flame 2.57 m from a boot, the fire sprays out ahead and to the sides of the bite. Bot knightleap gates it (ring >= 1.2 x flame radius from the boots; RING_OLD=1 fails at 1.21 m).)
 (03:40 11-11: THE ASHEN KNIGHT'S LEAP LANDING NOW KICKS DUST OFF ITS BOOTS: at the bottom of the knees' give (recover u 0.09) each boot throws a low spray of dark turf clods and a broad pale ring of dust that rolls out over the grass tops (new ImpactFX kind `stamp`, sized with the giant), the grass is pressed flat under and outside each boot, and the hero's camera takes a small extra shake. The leap shot has a front-quarter lens (`fq`) so the pitch over the blade reads. Bot `knightleap` gates 2 kicks per landing on the turf with the grass laid; LEAPKICK_OFF=1 is the before.)
@@ -29,6 +30,9 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (06:00 11-11) Setup first try (background, import done). Bots headless fine (12 routes ~serial); GL shots (SHOT_GL=1,
+  2 at once). Asset sites not rechecked (no downloads, no new files). No numpy on this box: offline solves in plain
+  python3. New bot `knightguard`; env KGUARD_OLD=1 = the knight on the shared guard.
 - (04:40 11-11) Setup first try (background run, import completed: SHOTS_OK). Bots headless fine; GL shots
   (SHOT_GL=1, 3 at once; vulkan fails, opengl3 retry). Asset sites not rechecked (no downloads, no new files).
 - (02:30 11-11) Setup first try, but the setup's import was cut off when its parent shell exited: run
@@ -8335,6 +8339,26 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (06:00 11-11) **KNIGHT GUARD RE-SOLVED AGAINST ITS REAL SHOULDERS — DONE (game change + new bot `knightguard`).**
+   NEXT (1) of 05:00, guard part. `ashen_knight.gd`: `KNIGHT_GUARD = [43.2, 32.8, (0.326, 1.534, 0.522), 6, 0, 0.58]`
+   set as `guard_pose` in `_ready` (env KGUARD_OLD=1 = the shared HollowSoldier.GUARD); the reveal's GUARD_OLD ->
+   guard blend now also runs for KNIGHT_GUARD. Real shoulders at the guard (Wield space, idle sway) R (-0.205, 1.568..
+   1.588, -0.033), L (0.244..0.253, 1.575..1.592, 0.062); identical at x2.2/3.2/4.6. New grips from them R 0.47-0.49,
+   L 0.36-0.37. Bot `knightguard` (in tools/bots.sh) hooks `_record_shoulders` itself, so it measures the real
+   shoulders whatever model is live; gates clamp bend vs real <= 2 deg and arm straightest <= 0.95 at all three
+   phases: new 0.0 deg / R 0.650, old 11.7 deg / R 0.735 (fails). `foefold` with SHOULDER_MODEL_REAL=1 + new guard:
+   knight thrust 0.0 deg, sweep 1.1 (L arm 0.991 locked, S t=0.08), stomp 0.0, leap 8.2 (S t=0.48, arms 0.990 /
+   0.996); old model live: unchanged except stomp arms 0.766 -> 0.681. With SHOULDER_MODEL_REAL=1 every knight bot
+   passes EXCEPT `knight`: "the reveal's heave swings the glaive's butt across to its left hip (0.29)" (gate; old
+   model 0.16) -- this also fails with KGUARD_OLD=1, so it is the reveal's coil/heave poses, not the guard.
+   Bots PASS (live): knightguard foefold foeguard foereach foegrip surgegrip knight knightleap knightstomp
+   knightplant crown soldier. Shots `soldier kguard_new|kguard_old 20 15.0 fixfps knight g1 front`.
+   NEXT: (1) re-solve the reveal's INTRO_COIL / heave against the real shoulders until `knight` passes with
+   SHOULDER_MODEL_REAL=1 (butt <= gate, coil and visor gates kept); (2) the sweep's left arm (0.991 at S t=0.08) and
+   the leap's heave/slam (8.2 deg, arms locked) re-solved against the real shoulders with reach ~0.58; (3) then make
+   SHOULDER_MODEL_REAL default on and gate the knight's `axis_off` <= 2 deg and straightest <= 0.95 in `foefold`;
+   (4) 04:40's (1): grass inside the boots' stance; (5) bow-aware archer probe, kindler probe. BOSS/ANIMATION order
+   unchanged; audio after.
 0. (05:00 11-11) **KNIGHT'S REAL SHOULDERS MEASURED — DONE (read-outs only; not live, no visible change).**
    NEXT (2) of 04:40. `hollow_soldier.gd`: `_place` takes its shoulders from virtual `_shoulders(tw)` -> [l, r,
    leaned] (default = SHOULDER turned by tw, tipped with `_place_lean`); new read-outs `clamp_over` [R, L] (m past

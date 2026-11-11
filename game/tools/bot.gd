@@ -39,7 +39,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -229,6 +229,9 @@ func _ready() -> void:
 		return
 	if name == "foeguard":
 		_foe_guard_test()
+		return
+	if name == "knightguard":
+		_knight_guard_test()
 		return
 	if name == "foereach":
 		_foe_reach_test()
@@ -1664,6 +1667,84 @@ func _foe_fold_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "no foe's arm folds shut or loses the haft through its attacks")
+## (11-11 06:00) The knight's guard measured from its REAL shoulders (the arm-IK shoulders read
+## back off the posed skeleton, `AshenKnight._record_shoulders`), whatever shoulder model `_place`
+## uses: each grip's distance from its real shoulder (m, Wield space = body space unscaled), how
+## far past the guard's reach that is, the shaft bend the clamp gives against the real shoulders,
+## and how straight each arm is pulled (shoulder-wrist over upper + fore arm, 1 = locked).
+const KGUARD_AXIS_MAX := 2.0      # deg the clamp may bend the guard against the real shoulders
+const KGUARD_STRAIGHT_MAX := 0.95 # of the arm chain
+func _knight_guard_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.sentinel]:
+		if o != null:
+			o.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	k.notice = -1.0
+	k.give_up = 1e9
+	if not k.skel.skeleton_updated.is_connected(k._record_shoulders):
+		k.skel.skeleton_updated.connect(k._record_shoulders)
+	var fail := ""
+	for ph in [1, 2, 3]:
+		k._set_phase(ph)
+		k.set_size_scale(k.growth.scale_of(ph))
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		k._pose = k.guard_pose
+		k._from = k.guard_pose
+		_player.global_position = k.global_position + k.body.global_basis.z * 9.0 * k.size_scale
+		await _ticks(30)
+		var g: Array = k.guard_pose
+		var d := StaffCombat.dir_of(g[0], g[1])
+		var slide: float = g[4] if g.size() > 4 else 0.0
+		var reach: float = g[5] if g.size() > 5 else HollowSoldier.ARM_REACH
+		var chain := [0.0, 0.0]
+		var bs := [["Right"], ["Left"]]
+		for j in 2:
+			var sd: String = ["Right", "Left"][j]
+			bs[j] = [k.skel.find_bone("mixamorig_%sArm" % sd), k.skel.find_bone("mixamorig_%sForeArm" % sd), k.skel.find_bone("mixamorig_%sHand" % sd)]
+		var dist := [[9.0, 0.0], [9.0, 0.0]]
+		var bend := 0.0
+		var straight := [0.0, 0.0]
+		var sh_lo := [Vector3.INF, Vector3.INF]
+		var sh_hi := [-Vector3.INF, -Vector3.INF]
+		for i in 90:
+			await get_tree().physics_frame
+			await k.skel.skeleton_updated
+			var sr: Vector3 = k._sh_real[1]
+			var sl: Vector3 = k._sh_real[0]
+			if sr == Vector3.INF:
+				continue
+			var c: Vector3 = g[2]
+			var wr: Vector3 = c + d * (HollowSoldier.HAND_R + slide) - sr
+			var wl: Vector3 = c + d * (HollowSoldier.HAND_L + slide) - sl
+			for j in 2:
+				var w: Vector3 = [wr, wl][j]
+				dist[j] = [minf(dist[j][0], w.length()), maxf(dist[j][1], w.length())]
+				var s: Vector3 = [sr, sl][j]
+				sh_lo[j] = Vector3(minf(sh_lo[j].x, s.x), minf(sh_lo[j].y, s.y), minf(sh_lo[j].z, s.z))
+				sh_hi[j] = Vector3(maxf(sh_hi[j].x, s.x), maxf(sh_hi[j].y, s.y), maxf(sh_hi[j].z, s.z))
+			var hr: Vector3 = sr + wr.limit_length(reach)
+			var hl: Vector3 = sl + wl.limit_length(reach)
+			bend = maxf(bend, rad_to_deg(d.angle_to((hl - hr).normalized())))
+			var gt := k.skel.global_transform
+			for j in 2:
+				var a: Vector3 = gt * k.skel.get_bone_global_pose(bs[j][0]).origin
+				var f: Vector3 = gt * k.skel.get_bone_global_pose(bs[j][1]).origin
+				var h: Vector3 = gt * k.skel.get_bone_global_pose(bs[j][2]).origin
+				var ch := a.distance_to(f) + f.distance_to(h)
+				if ch > 0.0:
+					straight[j] = maxf(straight[j], a.distance_to(h) / ch)
+		print("   AshenKnight guard phase %d (x%.1f, reach %.2f, live model %s): real shoulders R %s..%s L %s..%s" % [ph, k.size_scale, reach, "real" if AshenKnight.SHOULDER_MODEL_REAL else "old", str(sh_lo[0]), str(sh_hi[0]), str(sh_lo[1]), str(sh_hi[1])])
+		print("   AshenKnight guard phase %d: grip from real shoulder R %.3f..%.3f L %.3f..%.3f m | clamp bend vs real %.1f deg | live axis_off %.1f | arm straightest R %.3f L %.3f" % [ph, dist[0][0], dist[0][1], dist[1][0], dist[1][1], bend, k.axis_off, straight[0], straight[1]])
+		if fail == "" and bend > KGUARD_AXIS_MAX:
+			fail = "phase %d: against its real shoulders the guard's clamp bends the glaive %.1f deg" % [ph, bend]
+		if fail == "" and maxf(straight[0], straight[1]) > KGUARD_STRAIGHT_MAX:
+			fail = "phase %d: an arm is pulled straight at the guard (R %.3f L %.3f)" % [ph, straight[0], straight[1]]
+	if fail != "":
+		return _combat_done(false, "AshenKnight guard: " + fail)
+	_combat_done(true, "the knight's guard lies inside the reach of its real shoulders at every size")
 const VGUARD_AXIS_MAX := 3.0   # deg (VGUARD_OLD=1: 9.3 / 4.2 / 19.8 / 42.0)
 func _foe_guard_test() -> void:
 	Engine.time_scale = 1.0

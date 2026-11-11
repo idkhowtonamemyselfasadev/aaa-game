@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-0930-knight-roar-close.jpg",
-  "time": "2026-11-07T09:30:00Z",
-  "caption": "Close front lens on the roar: raised fist and glaive frame the knight's shoulders; the fingers look half open rather than clenched and the frame is GL, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1024-roarfist-before-after.jpg",
-  "time": "2026-11-07T10:24:42Z",
-  "caption": "The Ashen Knight's raised roar hand, close (GL): before, a hooked half-open claw with a hole through it; now the fingers fold tight into the palm. Still wrong: the thumb points up along the index instead of wrapping across the fingers.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1024-roarfist-wide.jpg",
   "time": "2026-11-07T10:24:42Z",
   "caption": "The knight's left fist thrown up against the sky at the top of the reveal roar (GL, hour 8.5); reads as a fist at this distance, thumb still upright, armour hand texture plain.",
@@ -891,6 +879,18 @@
   "file": "20261111-0440-knight-leap-ring-before.jpg",
   "time": "2026-11-11T04:40:00Z",
   "caption": "Before: the old ring phase stood a flame right on the knight's own boot, hiding the landing's dust kick.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0600-knight-guard.jpg",
+  "time": "2026-11-11T06:00:00Z",
+  "caption": "The Ashen Knight (phase-1 size) at its re-solved guard behind the hero; the glaive line reads, but the knight is a backlit dark silhouette and the shot is software-rendered (no GI/volumetrics).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0600-knight-guard-pair.jpg",
+  "time": "2026-11-11T06:00:00Z",
+  "caption": "Before (left, shared guard) / after (right, guard re-solved against the knight's real shoulders): the glaive sits ~10 cm higher and closer at this size, the right elbow keeps a bend; a barely visible change, mainly a correctness fix.",
   "verdict": "fail"
  }
 ]
