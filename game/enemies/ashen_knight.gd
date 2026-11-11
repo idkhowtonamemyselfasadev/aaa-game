@@ -233,6 +233,21 @@ const COIL_LEAN_END := 0.30
 const COIL_HIP_END := 0.93
 const COIL_KNEE_END := 1.75
 const TAKEOFF_U := 0.15
+## (11-11 17:00) the leap's down-swing. It was a double smoothstep over u 0.6-1 (~0.12 s of
+## visible motion that then EASED OUT into the bite, after a dead hold from u 0.35): the slam read
+## as a jump cut. Now the glaive hangs heaved over the top of the arc, starts to come over just
+## past the apex (DOWN_U0) and gathers speed all the way down, fastest as it bites (f = x^DOWN_POW),
+## the body arched back over the top and whipping over with it. The path through the poses is the
+## same as before (helm clearance unchanged), only its timing. env DOWNSWING_OLD=1: the before.
+static var DOWNSWING_OLD := OS.get_environment("DOWNSWING_OLD") == "1"
+const DOWN_U0 := 0.5
+const DOWN_POW := 2.4
+const DOWN_ARCH := 0.07
+static func downswing_f(u: float) -> float:
+	return pow(clampf((u - DOWN_U0) / (1.0 - DOWN_U0), 0.0, 1.0), DOWN_POW)
+## the Bezier through three poses with no easing of its own (f is already shaped)
+static func _arc_pose_raw(a: Array, m: Array, b: Array, f: float) -> Array:
+	return _lin_pose(_lin_pose(a, m, f), _lin_pose(m, b, f), f)
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
 ## (11-11) THE LEAP'S LANDING TAKES THE WEIGHT: the old touch-down came in with straight legs and the
@@ -1074,12 +1089,14 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				rags.flap = rags.stream * (0.6 + 0.4 * rags.fall)
 				rags.air_y = LEAP_H * size_scale * PI * cos(PI * u) * tempo / LEAP_T if u < 1.0 else 0.0   # world m/s (rags divides by the body scale)
 			# up with the glaive heaved overhead, then down blade first
-			if u < 0.6:
+			if u < (0.6 if (DOWNSWING_OLD or LEAPFOLD_OLD) else DOWN_U0):
 				var r := clampf(u / LEAP_HEAVED_U, 0.0, 1.0)
 				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP, LEAP_HEAVE, r)
-			else:
+			elif DOWNSWING_OLD or LEAPFOLD_OLD:
 				var r := smoothstep(0.0, 1.0, (u - 0.6) / 0.4)
 				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN, LEAP_SLAM, r)
+			else:
+				_pose = _arc_pose_raw(LEAP_HEAVE, LEAP_DOWN, LEAP_SLAM, downswing_f(u))
 			# knees drive up off the crouch, tucked through the top, legs reach down to land
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)
@@ -1094,6 +1111,9 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			_set_tuck(th, tk)
 			# pitched into the leap, then over onto the blade
 			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u)) + LAND_LEAN * g
+			if not DOWNSWING_OLD:
+				# (11-11) arched back over the top of the arc, the body then whips over with the blade
+				lean = lerpf(0.12, 0.34, downswing_f(u)) - DOWN_ARCH * sin(PI * clampf((u - 0.25) / 0.45, 0.0, 1.0)) + LAND_LEAN * g
 			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u) + LAND_SINK * g   # model space (scaled)
 			# (16:00 11-11) the push-off: the crouch's sink and pitch are carried into the flight and
 			# spent as the legs drive straight, the boots held on the turf until they leave it

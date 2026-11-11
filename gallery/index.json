@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-1928-kneebrace-cmp.jpg",
-  "time": "2026-11-07T19:28:20Z",
-  "caption": "Knock-down rise, grass hidden: before (1.62, hand hanging by the shin) / after (1.62, right palm braced on the front knee) / after (1.74, pushing off the thigh); the left hand still claws out in front of the chest.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1928-kneebrace-grass.jpg",
-  "time": "2026-11-07T19:28:20Z",
-  "caption": "The kneeling rise in the meadow at 15:30: tall grass hides the braced hand and knees; the figure reads as kneeling but the frame is cluttered by foreground blades.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-2030-armhang-cmp.jpg",
   "time": "2026-11-07T20:30:00Z",
   "caption": "Knock-down rise, grass hidden, 1.62/1.70/1.76: before (top) the free left hand claws out in front of the chest; after (bottom) it hangs by the hip as a counterweight. The hang still splays a little to the side.",
@@ -891,6 +879,18 @@
   "file": "20261111-1639-knight-takeoff.jpg",
   "time": "2026-11-11T16:39:15Z",
   "caption": "The knight's push-off now rises smoothly out of the deeper crouch instead of snapping up 1.3 m in one tick; the cottage roof hides the legs from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1731-leap-downswing-compare.jpg",
+  "time": "2026-11-11T17:31:32Z",
+  "caption": "Ashen Knight ember leap down-swing, top row old timing (blade already in the turf while the giant still hangs ~2 m up), bottom row new (blade still high, level near the ground, bites as the boots land); still backlit from this lens, the helm reads as a dark dome.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1731-leap-downswing.jpg",
+  "time": "2026-11-11T17:31:32Z",
+  "caption": "The knight's glaive whipping level over the hero a beat before the bite; motion reads, but the knight is a dark silhouette against the sun and the grass/cottage are still prototype-grade beside it.",
   "verdict": "fail"
  }
 ]

@@ -5280,6 +5280,8 @@ func _knight_test() -> void:
 ## lands passes through; a parry-window heavy cannot turn it; and the landing leaves it open.
 const LEAP_LAND_SQUAT := 0.66   # (11-11) hips over the boots at the landing's bottom, share of standing (old landing 0.73, new 0.54)
 const LEAP_TAKEOFF_JUMP := 0.2  # (11-11 16:00) m/size a tick the hips may rise past the arc at take-off
+const LEAP_DS_LAST := 0.8   # (11-11 17:00) the down-swing's last tick turns at least this share of its fastest
+const LEAP_DS_READ := 0.15  # real s the glaive takes from 10% to 90% of its down-swing
 const LEAP_TAKEOFF_LEAN := 0.08  # rad a tick the pitch may change across take-off
 const LEAP_LAND_LEAN := 0.45    # rad: the body pitched over the bitten blade at the bottom (old 0.34)
 func _knightleap_test() -> void:
@@ -5359,11 +5361,20 @@ func _knightleap_test() -> void:
 		var to_lean_prev := 99.0
 		var to_lean_jump := 0.0
 		var to_sunk := 0.0
+		# (11-11 17:00) the down-swing: the glaive's turn per tick from the top of the arc to the bite
+		var ds: Array = []         # [u, deg this tick]
+		var ds_prev := Vector3.ZERO
 		while k.leaps_landed() == n0 and waited < 6.0:
 			var in_to := k.move_kind == AshenKnight.LEAP_MOVE and ((k.state == HollowSoldier.WINDUP and k.t > 0.8 * AshenKnight.LEAP_CROUCH_T) \
 					or (k.state == HollowSoldier.STRIKE and k.t < 0.3 * AshenKnight.LEAP_T))
-			# real-time ticks through the take-off (the bots' x4 time scale samples it at 15 Hz)
-			Engine.time_scale = 1.0 if (in_to or (k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP)) else ts_run
+			var in_ds := k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.STRIKE and k.t > 0.3 * AshenKnight.LEAP_T
+			# real-time ticks through the take-off and the down-swing (the bots' x4 time scale samples them at 15 Hz)
+			Engine.time_scale = 1.0 if (in_to or in_ds or (k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.WINDUP)) else ts_run
+			if in_ds:
+				var sd := StaffCombat.dir_of(k._pose[0], k._pose[1])
+				if ds_prev != Vector3.ZERO:
+					ds.append([clampf(k.t / AshenKnight.LEAP_T, 0.0, 1.0), rad_to_deg(ds_prev.angle_to(sd))])
+				ds_prev = sd
 			if in_to:
 				var hw: Vector3 = seen[1]
 				if to_prev != Vector3.INF:
@@ -5400,6 +5411,30 @@ func _knightleap_test() -> void:
 			waited += get_physics_process_delta_time()
 		p.bot_input = Vector2.ZERO
 		Engine.time_scale = ts_run
+		# the swing must not ease out into the bite, and must take long enough to read
+		var ds_tot := 0.0
+		var ds_peak := 0.0
+		for e in ds:
+			ds_tot += e[1]
+			ds_peak = maxf(ds_peak, e[1])
+		var ds_acc := 0.0
+		var u10 := -1.0
+		var u90 := -1.0
+		for e in ds:
+			ds_acc += e[1]
+			if u10 < 0.0 and ds_acc >= 0.1 * ds_tot:
+				u10 = e[0]
+			if u90 < 0.0 and ds_acc >= 0.9 * ds_tot:
+				u90 = e[0]
+		var ds_last: float = ds[ds.size() - 1][1] if ds.size() > 0 else 0.0
+		var ds_read := (u90 - u10) * AshenKnight.LEAP_T / k.tempo
+		print("BOT knightleap: down-swing (%s) %.0f deg in %d ticks, 10-90%% over u %.2f-%.2f (%.3f s), peak %.1f deg/tick, last tick %.1f (%.0f%% of peak)" % [kind, ds_tot, ds.size(), u10, u90, ds_read, ds_peak, ds_last, 100.0 * ds_last / maxf(ds_peak, 1e-3)])
+		if OS.get_environment("DS_TRACE") == "1":
+			for e in ds:
+				print("DS u %.3f %.2f" % [e[0], e[1]])
+		if OS.get_environment("DOWNSWING_OLD") != "1" and (ds_last < LEAP_DS_LAST * ds_peak or ds_read < LEAP_DS_READ):
+			k.skel.skeleton_updated.disconnect(grab)
+			return _combat_done(false, "the leap's down-swing eases out into the bite or is over too fast to read: last tick %.0f%% of peak, 10-90%% in %.3f s" % [100.0 * ds_last / maxf(ds_peak, 1e-3), ds_read])
 		print("BOT knightleap: take-off (%s) hips jump %.3f m/size a tick past the arc, lean jump %.3f rad, boots %.3f m/size under the turf" % [kind, to_jump / ks, to_lean_jump, to_sunk / ks])
 		if OS.get_environment("TAKEOFF_OLD") != "1" and (to_jump > LEAP_TAKEOFF_JUMP * ks or to_lean_jump > LEAP_TAKEOFF_LEAN or to_sunk > 0.05 * ks):
 			k.skel.skeleton_updated.disconnect(grab)
