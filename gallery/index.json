@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261107-1024-roarfist-wide.jpg",
-  "time": "2026-11-07T10:24:42Z",
-  "caption": "The knight's left fist thrown up against the sky at the top of the reveal roar (GL, hour 8.5); reads as a fist at this distance, thumb still upright, armour hand texture plain.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1127-knight-fist.jpg",
-  "time": "2026-11-07T11:27:15Z",
-  "caption": "Close-up of the knight's raised roar fist: the fingers fold tight, but the thumb still stands upright beside the index (5 aim-based fixes tried this session, none looked better).",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1224-climb-guardturned.jpg",
-  "time": "2026-11-07T12:24:47Z",
-  "caption": "BEFORE (env CLIMB_NOSQUARE): climbing the keep with the staff guard's 44 deg pelvis turn still on, the back and robe panel angled off the stones; the wall's shadow hides most of the figure.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1224-climb-square.jpg",
   "time": "2026-11-07T12:24:47Z",
   "caption": "AFTER: hips and chest square to the stones, left hand reaching for the next hold, knee up, the back panel hanging straight down the wall; still dim in the wall's shadow, the climb moves at an even speed with no push/pull surge.",
@@ -891,6 +873,18 @@
   "file": "20261111-0600-knight-guard-pair.jpg",
   "time": "2026-11-11T06:00:00Z",
   "caption": "Before (left, shared guard) / after (right, guard re-solved against the knight's real shoulders): the glaive sits ~10 cm higher and closer at this size, the right elbow keeps a bend; a barely visible change, mainly a correctness fix.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0830-knight-heave-side.jpg",
+  "time": "2026-11-11T08:30:00Z",
+  "caption": "The Ashen Knight's reveal heave, now posed from its real shoulders: both fists on the glaive, drawn up diagonally over the right shoulder; the knight still reads dark against the sun and the shadowed turf is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0830-knight-coil-front.jpg",
+  "time": "2026-11-11T08:30:00Z",
+  "caption": "Reveal coil from the front: the glaive held level at the hip with the left fist now visibly on the haft (before it trailed on the turf with that fist off it); the coil reads a little less low than before.",
   "verdict": "fail"
  }
 ]

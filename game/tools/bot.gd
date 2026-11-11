@@ -1530,6 +1530,7 @@ func _foe_reach_test() -> void:
 ## (m per size; the thrust's fold was 0.069 -> 0.205 once leaned), plus the lean's range.
 const FOEFOLD_MIN := 0.18        # m per size, shoulder to wrist
 const FOEFOLD_FIST_MAX := 0.05   # m per size
+const FOEFOLD_KNIGHT_AXIS_MAX := 2.0  # deg, knight only, real shoulder model
 func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, gated := true) -> String:
 	for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.knight, _world.sentinel]:
 		if o != null:
@@ -1622,6 +1623,9 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if not gated:
 		print("   (%s: measured, not gated yet: see PROGRESS.md)" % label)
 		return ""
+	# (11-11 08:00) the knight's poses are solved against its real shoulders: the clamp may not bend the glaive
+	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and axis_hi > FOEFOLD_KNIGHT_AXIS_MAX:
+		return "%s: the reach clamp bends the glaive %.1f deg off its pose (%s)" % [label, axis_hi, axis_at]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:

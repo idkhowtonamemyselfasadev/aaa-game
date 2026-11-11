@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(08:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GLAIVE FROM ITS REAL SHOULDERS IN EVERY MOVE: the real-shoulder model and the reach slide are live. In the reveal the coil now holds the glaive level at the hip with the left fist visibly on the haft (it trailed on the turf with that fist off it), and the heave draws it up diagonally over the right shoulder in both fists; the clamp bends the glaive 0.0 deg off its pose in the thrust, sweep, stomp and leap (the leap's slam was bent 8.2 deg). GL frames it=2.8/3.0/3.13 front and 3.0 side looked at with and without. New `foefold` gate: knight axis_off <= 2 deg (REACH_SLIDE_OFF=1 fails it at 8.2). env SHOULDER_MODEL_OLD=1 = the before.)
 (07:00 11-11: NO VISIBLE CHANGE YET: THE ASHEN KNIGHT CAN NOW HOLD EVERY GLAIVE LINE AGAINST ITS REAL SHOULDERS, OPT-IN. Measured from the arm bones, the knight's right shoulder sits 0.14 m higher than the old model, so in the reveal's coil and early heave the right grip was asked 0.12-0.39 m past reach and the clamp bent the glaive 50-61 deg off its line, swinging the butt to the left hip. New reach slide in `_place`: both grips slide together along the pose's own line back inside reach (cap 0.45 m) before the clamp may bend anything. With SHOULDER_MODEL_REAL=1 and a coil hold 6 cm further right, every knight bot passes (butt 0.07, gate 0.2), and foefold shows the shaft 0.0 deg off its pose in the thrust, sweep, stomp and leap (live model: 3.7 / 10.9 / 0 / 16.8). Not live: the slide lifts the heave's hands up to 0.37 m and nobody has looked at it yet.)
 (06:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GUARD INSIDE THE REACH OF ITS OWN SHOULDERS: the guard it shared with the hollow soldiers put its right grip 0.52-0.54 m from its real right shoulder (reach 0.45), so measured from the real shoulders the clamp bent the glaive 11.7 deg off the guard. The knight now has its own guard (KNIGHT_GUARD): the same shaft line moved 4.7 cm toward the right shoulder, reach 0.58, so the right elbow keeps a bend (arm straightness 0.735 -> 0.650) and the clamp bends nothing under either shoulder model. With the real shoulders the knight's thrust bend drops 3.7 -> 0.0 deg, sweep 10.9 -> 1.1, leap 16.8 -> 8.2, stomp 0. The real-shoulder model is still not live: it swings the reveal heave's butt to the left hip (bot `knight`, 0.29 > gate). New bot `knightguard`; KGUARD_OLD=1 is the before.)
 (05:00 11-11: NO VISIBLE CHANGE: THE KNIGHT'S REAL SHOULDERS ARE NOW MEASURED, AND THEY SHOW THE KNIGHT'S POSES NEED RE-SOLVING, NOT JUST A NEW SHOULDER MODEL. `_place` now asks a virtual `_shoulders(tw)`; the knight can read its arm-IK shoulders back off the posed skeleton every tick (env SHOULDER_MODEL_REAL=1, not live). Bot `foefold` now prints, per attack, how far a grip is asked past its reach, how far the clamp bends the shaft, and how straight each arm is pulled (shoulder-wrist over upper+fore arm). Live (old model): the knight's leap locks the right arm straight (0.995) and its slam bends the shaft 16.8 deg at S t=0.48; the sweep locks the left arm (0.96). With the real shoulders the clamp bites where it never did (thrust 11.6, stomp 13.7, sweep 10.1 deg) and the leap still locks (0.98/0.996), so switching alone is worse; the poses must be re-solved against the real shoulders with reach ~0.58 so the elbows keep a bend. No screenshots this session (no visual change).)
@@ -31,6 +32,9 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (08:00 11-11) Setup first try (import ~8 min, background). GL shots (SHOT_GL=1, 4 at once ~4 min) and headless bots
+  (4 sets at once) fine. Asset sites not rechecked (no new files). `SHOULDER_MODEL_REAL` is gone as an opt-in: the real
+  model is default, env SHOULDER_MODEL_OLD=1 = the old SHOULDER model.
 - (07:00 11-11) Setup first try (import ~12 min in the background). Bots headless fine (4 at once). No GL shots this
   session (no live visual change). Asset sites not rechecked (no new files).
 - (06:00 11-11) Setup first try (background, import done). Bots headless fine (12 routes ~serial); GL shots (SHOT_GL=1,
@@ -8343,6 +8347,21 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (08:00 11-11) **KNIGHT'S REAL SHOULDERS LIVE — DONE (game change + `foefold` gate).**
+   NEXT (1)+(2) of 07:00. GL frames `ring X 20 10.0 fixfps intro kface it=2.8/3.0/3.13` and `intro kside it=3.0`, real
+   model vs SHOULDER_MODEL_REAL unset, looked at: 2.8 coil level at the hip, left fist on the haft (old: blade on the
+   turf, left fist hidden/off); 3.0 front: glaive diagonal, blade up past the right shoulder, butt low at the left hip,
+   both fists on it (old: level through the waist); 3.0 side: a clean heave over the right shoulder (old: one hand, the
+   shaft stopping at the body); 3.13 near identical (upright beside the helm). No fist through helm/pauldron.
+   `ashen_knight.gd`: SHOULDER_MODEL_REAL = env SHOULDER_MODEL_OLD unset. `bot.gd` `_attack_probe`: knight fails if
+   the clamp's axis_off > FOEFOLD_KNIGHT_AXIS_MAX 2 deg (live real model); REACH_SLIDE_OFF=1 fails at leap 8.2 deg
+   (S t=0.48). Bots PASS: knight foefold knightguard knightleap knightstomp knightplant surgegrip crown foegrip
+   soldier foeguard foereach combat. Grades: knight reveal coil/heave good (unchanged), knight leap good.
+   NEXT: (1) the sweep's left arm (0.991 at S t=0.08) and the leap's left arm (0.996) lock straight: re-solve those
+   poses against the real shoulders so the elbows keep a bend, then gate straightest <= 0.95 for the knight in
+   `foefold`; (2) the coil reads a little less low than the old one (blade at waist, not trailing): try lowering the
+   coil's blade end (pitch) with the hold point kept, `knight` coil gates; (3) 04:40's (1): grass inside the boots'
+   stance; (4) bow-aware archer probe, kindler probe. BOSS/ANIMATION order unchanged; audio after.
 0. (07:00 11-11) **REACH SLIDE + REVEAL COIL AGAINST THE REAL SHOULDERS — DONE (opt-in, SHOULDER_MODEL_REAL=1).**
    NEXT (1) of 06:00. `hollow_soldier.gd` `_place`: when a variant's `_reach_slide_on()` is true, the hold point is
    slid (24 projection steps, capped REACH_SLIDE_MAX 0.45, margin 0.02) so both grips sit inside reach of the

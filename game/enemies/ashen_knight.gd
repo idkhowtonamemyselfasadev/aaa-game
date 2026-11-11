@@ -1337,7 +1337,9 @@ func _helm_point() -> Vector3:
 ## the right shoulder (right grip 0.48, left 0.37 m) with a reach of 0.58 (the elbows keep a bend:
 ## the chain is 0.547 and the grip sits ~0.05 past the wrist). env KGUARD_OLD=1: the shared guard.
 const KNIGHT_GUARD := [43.2, 32.8, Vector3(0.326, 1.534, 0.522), 6.0, 0.0, 0.58]
-static var SHOULDER_MODEL_REAL := OS.get_environment("SHOULDER_MODEL_REAL") != ""
+## (11-11 08:00) LIVE: GL frames of the reveal coil/heave looked at with and without (both fists
+## on the haft, no fist through the helm); env SHOULDER_MODEL_OLD=1 = the old SHOULDER model
+static var SHOULDER_MODEL_REAL := OS.get_environment("SHOULDER_MODEL_OLD") == ""
 static var KPLACE_DBG := OS.has_environment("KPLACE_DBG")   # env: per-tick reveal pose + clamp (tuning)
 var _sh_real := [Vector3.INF, Vector3.INF]
 var _sh_bones := [-1, -1]
