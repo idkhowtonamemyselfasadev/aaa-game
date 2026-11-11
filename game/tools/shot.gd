@@ -1084,7 +1084,13 @@ func _ready() -> void:
 			# with the knight's size, so stand it off in the middle of the window at that size
 			# (a flat 7.7 m sat inside LEAP_MIN at x2.2: the brain thrust instead and every leap shot
 			# froze the thrust)
-			var lk: float = (world.knight as AshenKnight).size_scale
+			# the leap is a phase-2 move: grow the knight to its phase-2 size first, or the shot
+			# shows a phase-1-sized knight leaping (`p1size` keeps the old small one)
+			var lkn: AshenKnight = world.knight
+			if not "p1size" in args:
+				lkn._set_phase(2)
+				lkn.set_size_scale(lkn.growth.scale_of(2))
+			var lk: float = lkn.size_scale
 			fp = pp + Vector3(-1.0, 0, 0.16).normalized() * (0.5 * (AshenKnight.LEAP_MIN + AshenKnight.LEAP_MAX) * lk)
 		# g1 / g2 / g3: the knight at its phase-1/2/3 size (BossGrowth), standing off from the hero
 		var giant := 0
@@ -3155,8 +3161,35 @@ func _ready() -> void:
 					sd2 = -sd2
 				if "flip" in args:
 					sd2 = -sd2
-				var cp2 := kc + sd2 * (3.3 * kl.size_scale) - kd2 * (0.5 * kl.size_scale)
-				cp2.y = maxf(terrain.height_at(cp2.x, cp2.z) + 1.6, kc.y - 0.8 * kl.size_scale)
+				# the leap lands in among the cottages at phase-2 size (window 16-35 m): try the lit
+				# side, then the other, nearer and nearer, and take the first lens with a clear line
+				# to the knight (a roof filled the frame at u=0.15)
+				var space := kl.get_world_3d().direct_space_state
+				var cp2 := Vector3.ZERO
+				var picked := false
+				for side in [sd2, -sd2]:
+					for far in [3.3, 2.6, 2.0, 1.5]:
+						var cand: Vector3 = kc + side * (far * kl.size_scale) - kd2 * (0.5 * kl.size_scale)
+						cand.y = maxf(terrain.height_at(cand.x, cand.z) + 1.6, kc.y - 0.8 * kl.size_scale)
+						var clear := true
+						for aim in [kc, kc + Vector3.UP * 1.2 * kl.size_scale, kc - Vector3.UP * 0.9 * kl.size_scale]:
+							var q := PhysicsRayQueryParameters3D.create(cand, aim)
+							q.exclude = [kl.get_rid()] if kl is CollisionObject3D else []
+							var hit := space.intersect_ray(q)
+							if not hit.is_empty() and not (hit.collider is Node and (kl.is_ancestor_of(hit.collider) or hit.collider == kl)):
+								clear = false
+								break
+						if clear:
+							cp2 = cand
+							picked = true
+							print("SHOT knight leap lens side %s far %.1f clear" % ["lit" if side == sd2 else "shade", far])
+							break
+					if picked:
+						break
+				if not picked:
+					cp2 = kc + sd2 * (3.3 * kl.size_scale) - kd2 * (0.5 * kl.size_scale)
+					cp2.y = maxf(terrain.height_at(cp2.x, cp2.z) + 1.6, kc.y - 0.8 * kl.size_scale)
+					print("SHOT knight leap lens: no clear line, lit side")
 				cam.global_position = cp2
 				cam.look_at(kc)
 			print("SHOT knight leap state %d t %.2f lift %.2f u %.2f" % [kl.state, kl.t, kl.leap_lift, kl.t / AshenKnight.LEAP_T])

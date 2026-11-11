@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-0525-knight-roar-reveal.jpg",
-  "time": "2026-11-07T05:25:46Z",
-  "caption": "The reveal lens at the roar: the glaive now stands upright beside the helm, blade to the sky, no fist across the visor; the fists are hidden behind the thrown-back helm from this lens, GL not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0525-knight-roar-profile.jpg",
-  "time": "2026-11-07T05:25:46Z",
-  "caption": "The roar in profile: arm raised above the helm, glaive vertical on its right instead of both hands hugging the visor; backlit to a silhouette in the stones' shadow, GL only.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0610-ring-heave.jpg",
   "time": "2026-11-07T06:10:00Z",
   "caption": "Reveal heave mid-rise (GL): the glaive now sweeps up beside the knight's right shoulder instead of across its chest; the knight still stands in the stones' shadow and the GL frame lacks Forward+ fog/GI.",
@@ -891,6 +879,24 @@
   "file": "20261111-0050-knight-leap-bite.jpg",
   "time": "2026-11-11T00:50:00Z",
   "caption": "The blade biting the turf in front of the hero as the knight lands; a coherent end to the arc, armour materials and the grass still short of a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0130-knight-leap-p2-heave.jpg",
+  "time": "2026-11-11T01:30:00Z",
+  "caption": "The phase-2-sized knight (x3.2) in mid-leap above the village, glaive heaved over its right shoulder with both fists on the haft; the arc reads, armour and cloth still read flat and dark for a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0130-knight-leap-p2-downswing.jpg",
+  "time": "2026-11-11T01:30:00Z",
+  "caption": "The giant falling at the small hero (bottom left) with the glaive swung out level; the size gap finally reads as a boss leap, but the body is stiff and the lighting flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0130-knight-leap-p2-bite.jpg",
+  "time": "2026-11-11T01:30:00Z",
+  "caption": "The blade biting the turf beside the hero as the giant lands; the torso stays upright instead of bending into the slam, so the impact lacks weight.",
   "verdict": "fail"
  }
 ]
