@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(12:34 11-11: NO GAME CHANGE: THE ASHEN KNIGHT'S GLAIVE IS NOW MEASURED AGAINST ITS REAL HELM, AND IT RUNS THROUGH IT IN TWO MOVES. A sun-side lens (`kchest sunlit`, hour 16.5) finally lights the sweep coil from the front, and it shows the haft vanishing into the helm's lower edge. New bot read-out tests every point of the haft against the great helm's own mesh rings: the EMBER LEAP's held heave sinks the haft 0.16-0.18 m/size into the helm's crown for the whole hang (strike t 0.18-0.48; the GL frame u=0.29 shows it entering the top of the helm), and the SWEEP's coil runs it 0.17 m/size through the helm's chin skirt (W t 0.43-0.95). The thrust (-0.15) and stomp (-0.06) are clear. Measured, not gated yet; the heave/coil re-solve is next.)
 (11:44 11-11: NO GAME CHANGE: THE ASHEN KNIGHT'S SWEEP IS NOW SEEN FROM ITS OWN FRONT, AND THE RAISED GLAIVE CLEARS THE HELM. A new shot lens `kchest` re-aims off the knight's posed chest after the move is stepped. Projected bones prove it frames the front-right quarter (right shoulder nearer and screen-left); the 10:00 note that every lens showed the knight's back was wrong. In the coil (u=0.5/0.9) the glaive rides at shoulder height cocked back past the right side, clear of the helm, with no visible pass through the right pauldron; the cut (u=0.1/0.3) brings it down diagonally in both fists. The frames are backlit, so the arms still read as a dark silhouette.)
 (10:00 11-11: THE ASHEN KNIGHT'S LEFT ARM NO LONGER LOCKS STRAIGHT ACROSS ITS CHEST THROUGH THE SWEEP'S COIL: the shared sweep pose let the reach slide park the left fist 0.55 m from the left shoulder (arm 0.547) for the whole coil and the cut's first tenth, so the arm stood like a rod (0.98-0.99 of its length). The knight now swings its own sweep: reach 0.46 while the blade is on its right, eased back to 0.6 across the cut, so both fists draw in along the glaive's line and the left elbow keeps a bend (L 0.991 -> 0.923); the coiled glaive now rides higher at the right shoulder. New `foefold` gate on the knight's sweep (straightest <= 0.95); KSWEEP_OLD=1 fails it. Hand roll chatter unchanged, fists 0.000 off the haft.)
 (09:00 11-11: THE ASHEN KNIGHT NO LONGER LOCKS ITS ARMS STRAIGHT THROUGH THE EMBER LEAP: in the flight, the landing and the crouch over the bitten glaive the arms were held at 0.96-0.996 of their full length (the sentinel's slam pose asks 0.65 m of reach, the knight's real arm is 0.547 plus the fist), so the left arm stood out like a rod along the haft. The knight's reach in the leap is now capped (0.52 in the air and the landing, 0.58 in the crouch, where a harder cap folds the left arm shut), so the reach slide draws both fists in along the glaive's line: right arm 0.958 -> 0.901, left 0.996 -> 0.922, glaive 0.0 deg off its pose, fists on the haft. GL frame of the landing (recover u=0.65) looked at with and without: fists now in at the chest, elbows bent. New `foefold` gate (knight leap straightest <= 0.95; ARMBEND_OLD=1 fails it at 0.996). The SWEEP is not fixed: the same cap trades its locked left arm for a hand that flips round the haft (see Next).)
@@ -35,6 +36,7 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (12:34 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). `kchest sunlit` picks the front quarter on the sun's side; at hours 9/12/15 the knight's front faces away from the sun, use hour 16.5 (17.5 renders a black sky in GL compat).
 - (11:44 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). Running shot.tscn with --headless hangs: use shots.sh. Note `mkdir shots` before redirecting logs into it on a fresh box.
 - (09:00 11-11) Setup first try (import ~8 min), headless bots and GL shots (SHOT_GL=1, 2 at once ~6 min) work; Forward+ not tried; asset sites not rechecked. Note: do not export GODOT=.tools/godot (bots.sh/shots.sh cd into game/; leave GODOT unset).
 - (08:00 11-11) Setup first try (import ~8 min, background). GL shots (SHOT_GL=1, 4 at once ~4 min) and headless bots
@@ -8353,6 +8355,37 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (12:34 11-11) **HAFT-THROUGH-HELM MEASURED — DONE (bot read-out + lit lens; no game change). FIX NEXT.**
+   NEXT (1) of 11:44. `shot.gd` `kchest sunlit`: of the two front quarters, the lens on the sun's side; prints
+   `lens sun dot`. Hour 16.5 lights the knight's front (sun dot +0.27); 9/12/15 are backlit. NOTE the `kchest bone`
+   screen prints are read before the skeleton's IK update (stale hands); trust the frame, not those hand prints.
+   Lit coil u=0.9 (shots/ksl_n16.5): helm, gorget, right pauldron and right gauntlet read; the shaft runs from the
+   right fist at the right pauldron in under the helm's lower edge and the left arm is hidden behind the torso.
+   `bot.gd` `_attack_probe` now prints, per probe, `haft-helm nearest` (haft to the neck->crown core, m/size) and,
+   for the knight, `haft sunk into the helm at most X m/size` (> 0 = through): `_helm_rings` reads the KnightArmour
+   helm mesh (node ArmourHead) as rings by height in helm space, `_haft_in_helm` takes 81 haft points into helm space
+   (skel.global * Head pose * off * mi) and compares each with the nearest ring's support toward it plus the shaft
+   radius HELM_HAFT_R 0.019 x size. Env FOEFOLD_HELM=1 per tick, HELM_WHERE=1 where (ring 0 crown..1 rim, bearing 0 =
+   face). The helm is a TALL great helm: helm space y 1.617..2.127 with the Head bone at 1.82 (crown 0.31 above it,
+   0.55 above the shoulders, so no bent-arm pose can lift the haft over it). Results: knight thrust -0.154, stomp
+   -0.060 (clear); SWEEP +0.166 (coil W t 0.43-0.95, ring 0.93 bearing 17 deg = through the chin skirt at the throat);
+   LEAP +0.176 (S t 0.18-0.48 the whole held heave, ring 0.22 near the crown, 3 cm off the axis; landing ~+0.01).
+   GL frames `knight leap u=0.22/0.29/0.36` (16.5) looked at: the haft enters the top of the helm. Measured with the
+   LEAP_HEAVE_NEW numbers in body space the LEFT grip sits at (0.01, 2.04, 0.02), i.e. inside the crown itself.
+   Env hooks (ashen_knight.gd `_env_pose`): LEAP_HEAVE_TRY / LEAP_UP_TRY="yaw,pitch,x,y,z,chest[,slide,reach]".
+   TRIED (not live, all still ~0.165 deep, every other gate fine): "-26,143.1,0.223,2.088,-0.102,7.9,0,0.52",
+   "-26,143.1,0.223,2.088,-0.05,...", "-30,135,0.24,2.12,-0.10,...". My hand-solved line was meant to pass beside the
+   helm on its left (+x) with R grip (-0.05,1.62,0.46), L (0.10,1.87,0.16); it did not move the penetration, so the
+   Wield space the pose lives in is NOT the helm space I assumed (check the knight's Wield transform/flip, and that
+   the reach slide is not dragging the hold back along the line). Bots PASS: foefold knightguard knightleap soldier
+   knight combat. Grades: knight leap good -> rough (glaive through the helm); knight sweep good- -> rough (through
+   the chin skirt).
+   NEXT: (1) print the grips and 5 haft points in HELM space per tick (HELM_WHERE) for the leap hold, find the real
+   mapping Wield->helm space, then re-solve LEAP_HEAVE (and LEAP_UP_ARC's late half) so the line passes beside or
+   behind the helm with the fists >= 0.05 off its surface, gate `haft sunk` <= 0 for the knight's leap; (2) same for
+   the sweep coil (the knight's `_sweep_pose` override: lower the coil line under/out from the chin), gate it;
+   (3) then gate thrust/stomp at <= 0 too; (4) coil pitch, grass in the boots' stance, archer/kindler probes.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (11:44 11-11) **KNIGHT SWEEP SEEN FROM ITS OWN FRONT — DONE (shot tooling + frames looked at; no game change).**
    NEXT (1) of 10:00. `shot.gd` `soldier ... knight sweep kchest [near] [flip] [strike] u=`: after the hand-stepped
    move, the lens is re-placed off the Spine2 bone's posed forward (sign matched to body +Z), a quarter to the
@@ -13521,6 +13554,8 @@ blaze, grit off the stones, recorded roar; 07:10 11-05: choreographed in beats: 
 11. Every step: shots + bots, then update this file.
 
 ## Known bugs
+- (12:34 11-11) The Ashen Knight's glaive passes through its own great helm: through the crown for the whole held
+  heave of the ember leap, and through the chin skirt in the sweep's coil (bot `foefold` `haft sunk into the helm`).
 - (09:00 11-11) Bot `knight` is flaky: 2 of 6 runs failed 'phase 3 never set the ground alight'. In the failing run the hero died in phase 3, the fight reset to phase 1, and the hero then fell through the world (y -37569 by t 150 s) instead of respawning on the turf. Most likely not this session's change: the leap never fires in that sim (leaps 0 in every run) and the change only touches the leap; ARMBEND_OLD=1 passed all 3 runs, so this is not proven. Look at the respawn path after a death in the knight's arena.
 - (12:00 11-10) Foe sweep wind-up: the left wrist's GripRoll roll can hit its 0.6 rad/tick cap for one tick (fist 0.06 m
   off the haft) depending on how fast the pose leaves the guard; passes at the shipped SWEEP_FROM_BLEND 2.0 but fails at 2.5-4.0. See Next 12:00 (1).

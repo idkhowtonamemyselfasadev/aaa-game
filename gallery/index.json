@@ -1,32 +1,8 @@
 [
  {
-  "file": "20261107-1414-climbsway.jpg",
-  "time": "2026-11-07T14:14:59Z",
-  "caption": "The hero climbing the keep seen from behind, hips swung out over the standing foot; GL frame, the figure is still small and the wall face is flatly lit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1513-climb-hike.jpg",
-  "time": "2026-11-07T15:13:14Z",
-  "caption": "Hero on the keep's stones from behind with the right foot stepping up: the belt and robe tip up on the stepping hip while the chest stays level; GL frame, the figure is small and in the face's shadow, no Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1513-climb-hike-cmp.jpg",
-  "time": "2026-11-07T15:13:14Z",
-  "caption": "Before (level pelvis, left) and after (stepping hip hiked, right) close crop: belt tilt is visible but subtle; the hands, glide and deep-hold lean-in are still rough.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1613-climb-frog.jpg",
   "time": "2026-11-07T16:13:47Z",
   "caption": "Hero climbing the keep from behind mid-step with the new frog step: the stepping knee swings out past the robe panel; GL frame, the figure is small and in the face's shadow and the panel hides the thighs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-1613-climb-frog-cmp.jpg",
-  "time": "2026-11-07T16:13:47Z",
-  "caption": "Before (knee in line, left) and after (frog step, right) close crop: the right knee sits a few cm further out; subtle from this lens, needs a lit three-quarter view.",
   "verdict": "fail"
  },
  {
@@ -897,6 +873,18 @@
   "file": "20261111-1144-knight-sweep-cut-front.jpg",
   "time": "2026-11-11T11:44:00Z",
   "caption": "The start of the knight's sweep cut from its front quarter: the glaive comes down diagonally across the body in both fists; still backlit and the giant reads dark against the meadow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1234-knight-sweep-coil-lit.jpg",
+  "time": "2026-11-11T12:34:44Z",
+  "caption": "The Ashen Knight's sweep coil finally lit from its front (16:30 sun): helm, gorget and right pauldron read; but the glaive runs in behind the right pauldron and through the lower skirt of the helm at the throat (measured 0.17 m/size deep), and the left arm is hidden.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1234-knight-leap-heave-helm.jpg",
+  "time": "2026-11-11T12:34:44Z",
+  "caption": "The ember leap's heave in mid-air: the glaive's haft passes straight through the crown of the knight's great helm (measured 0.16-0.18 m/size deep through the whole held heave); needs a new heave line beside the helm.",
   "verdict": "fail"
  }
 ]

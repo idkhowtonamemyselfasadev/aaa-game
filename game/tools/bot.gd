@@ -1572,6 +1572,16 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				+ (gs * e.skel.get_bone_global_pose(bf).origin).distance_to(gs * e.skel.get_bone_global_pose(bh).origin)
 	var axis_hi := 0.0
 	var axis_at := ""
+	# (12:00 11-11) the haft's nearest pass to the head bone (the helm's core), per size: a lit
+	# front frame of the knight's sweep coil showed the shaft running in behind the helm at the
+	# neck, so the clearance is measured instead of guessed from a silhouette
+	var head_b := e.skel.find_bone("mixamorig_Head")
+	var neck_b := e.skel.find_bone("mixamorig_Neck")
+	var helm := [9.0, ""]
+	# (12:00 11-11) the haft against the knight's real helm mesh: the deepest any point of the
+	# haft (radius HELM_HAFT_R) sinks inside the helm's cross-section rings, m/size (> 0 = through)
+	var helm_in := [-9.0, ""]
+	var hring := _helm_rings(e)
 	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
 		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
 	for i in 400:
@@ -1589,6 +1599,27 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 		var o := e.spear.global_position
 		var ax := e.spear.global_basis.y.normalized()
 		var gt := e.skel.global_transform
+		if head_b >= 0 and neck_b >= 0:
+			var hs_tip: Vector3 = e.spear.to_global(e.spear.tip_local())
+			var hs_butt: Vector3 = e.spear.to_global(-e.spear.tip_local())
+			var hd: Vector3 = gt * e.skel.get_bone_global_pose(head_b).origin
+			var nk: Vector3 = gt * e.skel.get_bone_global_pose(neck_b).origin
+			# nearest approach between the haft and the neck-to-crown core (head bone + 0.1 m up)
+			var crown: Vector3 = hd + (hd - nk).normalized() * 0.1 * ks
+			var cp: PackedVector3Array = Geometry3D.get_closest_points_between_segments(hs_butt, hs_tip, nk, crown)
+			var hc: float = cp[0].distance_to(cp[1]) / ks
+			if OS.has_environment("FOEFOLD_HELM"):
+				print("      tick st=%d t=%.3f haft-helm %.3f" % [e.state, e.t, hc])
+			if hring.size() > 0:
+				var pen := _haft_in_helm(e, hring, hs_butt, hs_tip) / ks
+				if OS.has_environment("FOEFOLD_HELM"):
+					print("      tick st=%d t=%.3f haft-in-helm %.3f" % [e.state, e.t, pen])
+				if pen > float(helm_in[0]):
+					helm_in[0] = pen
+					helm_in[1] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
+			if hc < float(helm[0]):
+				helm[0] = hc
+				helm[1] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 		var ln: float = e.lean_last
 		lean_lo = minf(lean_lo, ln)
 		lean_hi = maxf(lean_hi, ln)
@@ -1624,6 +1655,9 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				fold_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 	e.process_mode = Node.PROCESS_MODE_DISABLED
 	print("   %s reach clamp: worst grip asked %.3f past reach, shaft bent %.1f deg off the pose (%s) | arm straightest R %.3f (%s) L %.3f (%s)" % [label, clamp_hi, axis_hi, axis_at, straight[0], straight_at[0], straight[1], straight_at[1]])
+	print("   %s haft-helm nearest %.3f m/size (%s)" % [label, helm[0], helm[1]])
+	if hring.size() > 0:
+		print("   %s haft sunk into the helm at most %.3f m/size (%s) (<= 0 = clear)" % [label, helm_in[0], helm_in[1]])
 	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
 		return "%s: the strike never ran" % label
@@ -1641,6 +1675,84 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:
 		return "%s: an arm folds shut (shoulder to wrist R %.3f L %.3f m/size)" % [label, fold[0], fold[1]]
 	return ""
+
+const HELM_HAFT_R := 0.019      # the glaive's shaft radius (m at size 1, HollowSpear._profile)
+## (12:00 11-11) the knight's helm (KnightArmour, hung on the Head bone) as rings of its mesh
+## grouped by height, in the helm's own space: [helm MeshInstance3D, {y_key: [Vector2 x/z]}, centre]
+func _helm_rings(e: HollowSoldier) -> Array:
+	if not e is AshenKnight:
+		return []
+	var k: AshenKnight = e
+	if k.armour == null:
+		return []
+	var att := k.skel.get_node_or_null("ArmourHead")
+	if att == null:
+		return []
+	var mi: MeshInstance3D = att.find_children("*", "MeshInstance3D", true, false)[0]
+	var verts: PackedVector3Array = mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var rings := {}
+	var cx := 0.0
+	var cz := 0.0
+	for v in verts:
+		var key := int(round(v.y * 400.0))
+		if not rings.has(key):
+			rings[key] = []
+		(rings[key] as Array).append(Vector2(v.x, v.z))
+		cx += v.x
+		cz += v.z
+	var keys := rings.keys()
+	keys.sort()
+	return [mi, rings, Vector2(cx, cz) / float(verts.size()), keys]
+
+## How deep the haft (a capsule butt..tip) sinks into the helm, m (world): > 0 = through it.
+## Each of 80 points along the haft is taken into the helm's space; inside a ring's height span,
+## the ring's extent toward the point (its support along that direction) against the point's
+## distance from the centre, plus the shaft radius.
+func _haft_in_helm(e: HollowSoldier, hr: Array, a: Vector3, b: Vector3) -> float:
+	var mi: MeshInstance3D = hr[0]
+	var rings: Dictionary = hr[1]
+	var c: Vector2 = hr[2]
+	var keys: Array = hr[3]
+	var att: Node3D = mi.get_parent().get_parent()
+	var hb := e.skel.find_bone("mixamorig_Head")
+	var mw: Transform3D = e.skel.global_transform * e.skel.get_bone_global_pose(hb) * (mi.get_parent() as Node3D).transform * mi.transform
+	var inv := mw.affine_inverse()
+	var sc: float = mw.basis.get_scale().x
+	var rr := HELM_HAFT_R * e.size_scale / maxf(sc, 1e-4)
+	var lo: float = float(keys[0]) / 400.0
+	var hi: float = float(keys[keys.size() - 1]) / 400.0
+	var worst := -9.0
+	if OS.has_environment("HELM_WHERE"):
+		var hq: Vector3 = inv * (e.skel.global_transform * e.skel.get_bone_global_pose(hb).origin)
+		var hn: Vector3 = inv * (e.skel.global_transform * e.skel.get_bone_global_pose(e.skel.find_bone("mixamorig_Neck")).origin)
+		var hm: Vector3 = inv * mi.global_position
+		print("        helm-space head %s neck %s mi %s centre %s y %.3f..%.3f sc %.3f" % [hq, hn, hm, c, lo, hi, sc])
+	for i in 81:
+		var q: Vector3 = inv * a.lerp(b, i / 80.0)
+		if q.y < lo - rr or q.y > hi + rr:
+			continue
+		var d2 := Vector2(q.x, q.z) - c
+		var dist := d2.length()
+		var dir := d2 / dist if dist > 1e-5 else Vector2(1, 0)
+		# the ring nearest in height (the rings are ~1/21 of the helm's height apart)
+		var best_k = keys[0]
+		for kk in keys:
+			if absf(float(kk) / 400.0 - clampf(q.y, lo, hi)) < absf(float(best_k) / 400.0 - clampf(q.y, lo, hi)):
+				best_k = kk
+		var sup := 0.0
+		for pt in rings[best_k]:
+			sup = maxf(sup, ((pt as Vector2) - c).dot(dir))
+		var pen := sup + rr - dist
+		# above the crown / below the rim: only the shaft's radius can still touch
+		var dy := maxf(lo - q.y, q.y - hi)
+		if dy > 0.0:
+			pen = minf(pen, rr - dy)
+		if pen * sc > worst:
+			worst = pen * sc
+			if OS.has_environment("HELM_WHERE"):
+				# where on the helm: 0 = crown .. 1 = rim, and the bearing round it (0 = the face)
+				print("        helm pt i %d ring %.2f bearing %.0f deg dist %.3f sup %.3f" % [i, (hi - clampf(q.y, lo, hi)) / maxf(hi - lo, 1e-4), rad_to_deg(atan2(dir.x, dir.y)), dist * sc, sup * sc])
+	return worst
 
 func _foe_fold_test() -> void:
 	Engine.time_scale = 1.0

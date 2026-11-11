@@ -3088,6 +3088,16 @@ func _ready() -> void:
 			var crt := Vector3.UP.cross(cfw).normalized()   # +X of a +Z-forward body = its left
 			var kws: float = foe.size_scale
 			var csd := 1.0 if "flip" in args else -1.0
+			var ksun: Vector3 = world.sun.global_basis.z
+			ksun.y = 0.0
+			ksun = ksun.normalized()
+			if "sunlit" in args:
+				# (12:00 11-11) sunlit: of the two front quarters, the one whose lens sits on the
+				# sun's side, so the chest, arms and glaive are lit rather than a silhouette
+				var qa := (cfw * 1.0 + crt * 0.55).normalized()
+				var qb := (cfw * 1.0 - crt * 0.55).normalized()
+				csd = 1.0 if qa.dot(ksun) > qb.dot(ksun) else -1.0
+			print("SHOT kchest lens sun dot %.2f (front sun dot %.2f, side %s)" % [(cfw * 1.0 + crt * csd * 0.55).normalized().dot(ksun), cfw.dot(ksun), "left" if csd > 0.0 else "right"])
 			var cdist := 2.3 if "near" in args else 3.2
 			cam.global_position = cgt.origin + (cfw * 1.0 + crt * csd * 0.55).normalized() * cdist * kws + Vector3.UP * 0.35 * kws
 			cam.look_at(cgt.origin + Vector3.UP * 0.12 * kws)

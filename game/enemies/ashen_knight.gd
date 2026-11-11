@@ -78,7 +78,15 @@ const LEAP_HEAVE_NEW := [-6.0, 148.0, Vector3(0.049, 2.283, -0.362), 7.9, -0.094
 const LEAP_UP_ARC := [9.9, 86.7, Vector3(0.235, 2.286, 0.05), -12.8, -0.012, 0.64]
 const LEAP_DOWN_ARC := [-19.1, 119.4, Vector3(0.095, 2.388, 0.992), -7.4, -0.131, 0.65]
 static var LEAPFOLD_OLD := OS.get_environment("LEAPFOLD_OLD") == "1"
-static var LEAP_HEAVE: Array = LEAP_HEAVE_OLD if LEAPFOLD_OLD else LEAP_HEAVE_NEW
+static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else LEAP_HEAVE_NEW)
+static var LEAP_UP: Array = _env_pose("LEAP_UP_TRY", LEAP_UP_ARC)
+## env <name>="yaw,pitch,x,y,z,chest,slide,reach" replaces a pose (tuning loops); else `base`
+static func _env_pose(name: String, base: Array) -> Array:
+	var e := OS.get_environment(name)
+	if e == "":
+		return base
+	var f := e.split_floats(",")
+	return [f[0], f[1], Vector3(f[2], f[3], f[4]), f[5], f[6] if f.size() > 6 else base[4], f[7] if f.size() > 7 else base[5]]
 ## the surge's coil: the glaive planted point-down beside the right knee, both hands on the
 ## shaft, leaned on (a shorter crown-reel slump, the blade into the turf)
 const SURGE_LEAN := [20.0, -58.0, Vector3(0.12, 1.02, 0.46), 10.0, 0.1, 0.62]
@@ -1016,7 +1024,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			# up with the glaive heaved overhead, then down blade first
 			if u < 0.6:
 				var r := clampf(u / LEAP_HEAVED_U, 0.0, 1.0)
-				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP_ARC, LEAP_HEAVE, r)
+				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP, LEAP_HEAVE, r)
 			else:
 				var r := smoothstep(0.0, 1.0, (u - 0.6) / 0.4)
 				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN_ARC, StoneSentinel.SLAMMED, r)
