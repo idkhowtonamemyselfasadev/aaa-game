@@ -76,10 +76,26 @@ const LEAP_HEAVE_OLD := [-6.0, 148.0, Vector3(0.0, 2.3, -0.4), -6.0, 0.1, 0.66]
 ## >= 0.23 m clear of the helm. Env LEAPFOLD_OLD=1: the before.
 const LEAP_HEAVE_NEW := [-6.0, 148.0, Vector3(0.049, 2.283, -0.362), 7.9, -0.094, 0.66]
 const LEAP_UP_ARC := [9.9, 86.7, Vector3(0.235, 2.286, 0.05), -12.8, -0.012, 0.64]
-const LEAP_DOWN_ARC := [-19.1, 119.4, Vector3(0.095, 2.388, 0.992), -7.4, -0.131, 0.65]
+const LEAP_DOWN_ARC_OLD := [-19.1, 119.4, Vector3(0.095, 2.388, 0.992), -7.4, -0.131, 0.65]
+## (13:00 11-11) the heave re-solved against the knight's REAL great helm. LEAP_HEAVE_NEW laid the
+## glaive back straight over the head, but the helm is tall (crown 2.00 in the Wield's space, the
+## shoulders 1.59, the arms 0.52 of reach): the reach slide pulled the whole line down into it and
+## the haft sank 0.17 m/size into the crown for the whole hang (bot `foefold` `haft sunk`). Solved
+## offline against the helm and both pauldrons' meshes and the real shoulders as dumped by the bot
+## (env HELM_DUMP): the glaive is heaved up over the LEFT shoulder instead, laid back 45 deg, blade
+## high behind the left pauldron (tip ~0.3 m higher than before), passing in the gap between the
+## helm and the left pauldron; the chest turns a little the other way (-8.1) so the right hand comes
+## across. The hang now clears the helm by 0.056 m/size. The slam's mid-arc follows it out in front
+## and to the knight's left (the old one swung the haft across the helm's crown on the way down,
+## +0.08). env LEAPHELM_OLD=1: the before (LEAP_HEAVE_NEW + LEAP_DOWN_ARC_OLD).
+const LEAP_HEAVE_LEFT := [-17.6, 134.6, Vector3(0.389, 2.356, -0.313), -8.1, -0.094, 0.66]
+const LEAP_DOWN_LEFT := [-46.3, 62.5, Vector3(0.131, 2.735, 1.007), -3.9, 0.120, 0.65]
+static var LEAPHELM_OLD := OS.get_environment("LEAPHELM_OLD") == "1"
+static var LEAP_DOWN_ARC: Array = LEAP_DOWN_ARC_OLD if LEAPHELM_OLD else LEAP_DOWN_LEFT
 static var LEAPFOLD_OLD := OS.get_environment("LEAPFOLD_OLD") == "1"
-static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else LEAP_HEAVE_NEW)
+static var LEAP_HEAVE: Array = _env_pose("LEAP_HEAVE_TRY", LEAP_HEAVE_OLD if LEAPFOLD_OLD else (LEAP_HEAVE_NEW if LEAPHELM_OLD else LEAP_HEAVE_LEFT))
 static var LEAP_UP: Array = _env_pose("LEAP_UP_TRY", LEAP_UP_ARC)
+static var LEAP_DOWN: Array = _env_pose("LEAP_DOWN_TRY", LEAP_DOWN_ARC)
 ## env <name>="yaw,pitch,x,y,z,chest,slide,reach" replaces a pose (tuning loops); else `base`
 static func _env_pose(name: String, base: Array) -> Array:
 	var e := OS.get_environment(name)
@@ -1027,7 +1043,7 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 				_pose = _lerp_pose(_from, LEAP_HEAVE, r) if LEAPFOLD_OLD else _arc_pose(_from, LEAP_UP, LEAP_HEAVE, r)
 			else:
 				var r := smoothstep(0.0, 1.0, (u - 0.6) / 0.4)
-				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN_ARC, StoneSentinel.SLAMMED, r)
+				_pose = _lerp_pose(LEAP_HEAVE, StoneSentinel.SLAMMED, r) if LEAPFOLD_OLD else _arc_pose(LEAP_HEAVE, LEAP_DOWN, StoneSentinel.SLAMMED, r)
 			# knees drive up off the crouch, tucked through the top, legs reach down to land
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)

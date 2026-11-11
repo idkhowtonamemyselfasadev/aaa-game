@@ -1581,6 +1581,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	# (12:00 11-11) the haft against the knight's real helm mesh: the deepest any point of the
 	# haft (radius HELM_HAFT_R) sinks inside the helm's cross-section rings, m/size (> 0 = through)
 	var helm_in := [-9.0, ""]
+	var helm_by := {}   # (13:00 11-11) the deepest per state: W windup, S strike, R recover
 	var hring := _helm_rings(e)
 	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
 		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
@@ -1610,10 +1611,18 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 			var hc: float = cp[0].distance_to(cp[1]) / ks
 			if OS.has_environment("FOEFOLD_HELM"):
 				print("      tick st=%d t=%.3f haft-helm %.3f" % [e.state, e.t, hc])
+			if hring.size() > 0 and OS.has_environment("HELM_DUMP"):
+				_helm_dump(e, hring)
 			if hring.size() > 0:
 				var pen := _haft_in_helm(e, hring, hs_butt, hs_tip) / ks
 				if OS.has_environment("FOEFOLD_HELM"):
 					print("      tick st=%d t=%.3f haft-in-helm %.3f" % [e.state, e.t, pen])
+				var stk: String = ["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?"
+				helm_by[stk] = maxf(float(helm_by.get(stk, -9.0)), pen)
+				# (13:00 11-11) the glaive heaved high (pose pitch > 45 deg) in the strike: the leap's
+				# heave, hang and the top of the slam's swing
+				if e.state == HollowSoldier.STRIKE and float(e._pose[1]) > 45.0:
+					helm_by["high"] = maxf(float(helm_by.get("high", -9.0)), pen)
 				if pen > float(helm_in[0]):
 					helm_in[0] = pen
 					helm_in[1] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
@@ -1657,7 +1666,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	print("   %s reach clamp: worst grip asked %.3f past reach, shaft bent %.1f deg off the pose (%s) | arm straightest R %.3f (%s) L %.3f (%s)" % [label, clamp_hi, axis_hi, axis_at, straight[0], straight_at[0], straight[1], straight_at[1]])
 	print("   %s haft-helm nearest %.3f m/size (%s)" % [label, helm[0], helm[1]])
 	if hring.size() > 0:
-		print("   %s haft sunk into the helm at most %.3f m/size (%s) (<= 0 = clear)" % [label, helm_in[0], helm_in[1]])
+		print("   %s haft sunk into the helm at most %.3f m/size (%s) (<= 0 = clear) | W %.3f S %.3f R %.3f | heaved high %.3f" % [label, helm_in[0], helm_in[1], helm_by.get("W", -9.0), helm_by.get("S", -9.0), helm_by.get("R", -9.0), helm_by.get("high", -9.0)])
 	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
 		return "%s: the strike never ran" % label
@@ -1670,12 +1679,57 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if e is AshenKnight and AshenKnight.SHOULDER_MODEL_REAL and kind in [AshenKnight.LEAP_MOVE, HollowSoldier.SWEEP_MOVE] \
 			and maxf(straight[0], straight[1]) > FOEFOLD_KNIGHT_STRAIGHT_MAX:
 		return "%s: an arm locks straight (R %.3f %s, L %.3f %s of the chain)" % [label, straight[0], straight_at[0], straight[1], straight_at[1]]
+	# (13:00 11-11) the knight's leap heaves the glaive past its great helm, never through it
+	# (tolerance: half the shaft's radius, for a 7 mm graze under the helm's back rim on the take-off
+	# tick, still the crouch's pose, whose re-solve is next in PROGRESS.md)
+	if e is AshenKnight and kind == AshenKnight.LEAP_MOVE and not AshenKnight.LEAPHELM_OLD and float(helm_by.get("high", -9.0)) > FOEFOLD_HELM_GRAZE:
+		return "%s: the heaved glaive runs %.3f m/size through the helm" % [label, helm_by["high"]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:
 		return "%s: an arm folds shut (shoulder to wrist R %.3f L %.3f m/size)" % [label, fold[0], fold[1]]
 	return ""
 
+## (13:00 11-11) offline solving: the helm's mesh rings, the real shoulders, both grips and the haft's
+## ends written in the Wield's space (the space the glaive poses live in) to the json file HELM_DUMP
+func _helm_dump(e: HollowSoldier, hr: Array) -> void:
+	var mi: MeshInstance3D = hr[0]
+	var hb := e.skel.find_bone("mixamorig_Head")
+	var mw: Transform3D = e.skel.global_transform * e.skel.get_bone_global_pose(hb) * (mi.get_parent() as Node3D).transform * mi.transform
+	var wi: Transform3D = e._wield.global_transform.affine_inverse()
+	var m := wi * mw
+	var verts: PackedVector3Array = mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var vs := []
+	for i in range(0, verts.size(), 3):
+		var q: Vector3 = m * verts[i]
+		vs.append([q.x, q.y, q.z])
+	var v3 := func(q: Vector3) -> Array: return [q.x, q.y, q.z]
+	var k: AshenKnight = e
+	var parts := {}
+	for pn in ["ArmourRightShoulder", "ArmourLeftShoulder"]:
+		var at: BoneAttachment3D = e.skel.get_node_or_null(pn)
+		if at == null:
+			continue
+		var pm: MeshInstance3D = at.find_children("*", "MeshInstance3D", true, false)[0]
+		var pw: Transform3D = wi * e.skel.global_transform * e.skel.get_bone_global_pose(e.skel.find_bone(at.bone_name)) * (pm.get_parent() as Node3D).transform * pm.transform
+		var pv: PackedVector3Array = pm.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		var pl := []
+		for i in range(0, pv.size(), 3):
+			var q: Vector3 = pw * pv[i]
+			pl.append([q.x, q.y, q.z])
+		parts[pn] = pl
+	var out := {"t": e.t, "state": e.state, "verts": vs, "parts": parts, "shL": v3.call(k._sh_real[0]), "shR": v3.call(k._sh_real[1]),
+		"gripR": v3.call(e._grip_r.position), "gripL": v3.call(e._grip_l.position),
+		"tip": v3.call(wi * e.spear.to_global(e.spear.tip_local())), "butt": v3.call(wi * e.spear.to_global(-e.spear.tip_local())),
+		"pose": [e._pose[0], e._pose[1], v3.call(e._pose[2]), e._pose[3], e._pose[4] if e._pose.size() > 4 else 0.0, e._pose[5] if e._pose.size() > 5 else 0.0], "slid": v3.call(e.slid), "wscale": e._wield.global_transform.basis.get_scale().x, "size": e.size_scale}
+	# one json line per tick (the file is started fresh by the caller)
+	var path := OS.get_environment("HELM_DUMP")
+	var f := FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+	f.seek_end()
+	f.store_line(JSON.stringify(out))
+	f.close()
+
+const FOEFOLD_HELM_GRAZE := 0.01   # m/size
 const HELM_HAFT_R := 0.019      # the glaive's shaft radius (m at size 1, HollowSpear._profile)
 ## (12:00 11-11) the knight's helm (KnightArmour, hung on the Head bone) as rings of its mesh
 ## grouped by height, in the helm's own space: [helm MeshInstance3D, {y_key: [Vector2 x/z]}, centre]
