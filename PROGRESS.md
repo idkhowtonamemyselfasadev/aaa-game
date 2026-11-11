@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(11:44 11-11: NO GAME CHANGE: THE ASHEN KNIGHT'S SWEEP IS NOW SEEN FROM ITS OWN FRONT, AND THE RAISED GLAIVE CLEARS THE HELM. A new shot lens `kchest` re-aims off the knight's posed chest after the move is stepped. Projected bones prove it frames the front-right quarter (right shoulder nearer and screen-left); the 10:00 note that every lens showed the knight's back was wrong. In the coil (u=0.5/0.9) the glaive rides at shoulder height cocked back past the right side, clear of the helm, with no visible pass through the right pauldron; the cut (u=0.1/0.3) brings it down diagonally in both fists. The frames are backlit, so the arms still read as a dark silhouette.)
 (10:00 11-11: THE ASHEN KNIGHT'S LEFT ARM NO LONGER LOCKS STRAIGHT ACROSS ITS CHEST THROUGH THE SWEEP'S COIL: the shared sweep pose let the reach slide park the left fist 0.55 m from the left shoulder (arm 0.547) for the whole coil and the cut's first tenth, so the arm stood like a rod (0.98-0.99 of its length). The knight now swings its own sweep: reach 0.46 while the blade is on its right, eased back to 0.6 across the cut, so both fists draw in along the glaive's line and the left elbow keeps a bend (L 0.991 -> 0.923); the coiled glaive now rides higher at the right shoulder. New `foefold` gate on the knight's sweep (straightest <= 0.95); KSWEEP_OLD=1 fails it. Hand roll chatter unchanged, fists 0.000 off the haft.)
 (09:00 11-11: THE ASHEN KNIGHT NO LONGER LOCKS ITS ARMS STRAIGHT THROUGH THE EMBER LEAP: in the flight, the landing and the crouch over the bitten glaive the arms were held at 0.96-0.996 of their full length (the sentinel's slam pose asks 0.65 m of reach, the knight's real arm is 0.547 plus the fist), so the left arm stood out like a rod along the haft. The knight's reach in the leap is now capped (0.52 in the air and the landing, 0.58 in the crouch, where a harder cap folds the left arm shut), so the reach slide draws both fists in along the glaive's line: right arm 0.958 -> 0.901, left 0.996 -> 0.922, glaive 0.0 deg off its pose, fists on the haft. GL frame of the landing (recover u=0.65) looked at with and without: fists now in at the chest, elbows bent. New `foefold` gate (knight leap straightest <= 0.95; ARMBEND_OLD=1 fails it at 0.996). The SWEEP is not fixed: the same cap trades its locked left arm for a hand that flips round the haft (see Next).)
 (08:00 11-11: THE ASHEN KNIGHT NOW HOLDS ITS GLAIVE FROM ITS REAL SHOULDERS IN EVERY MOVE: the real-shoulder model and the reach slide are live. In the reveal the coil now holds the glaive level at the hip with the left fist visibly on the haft (it trailed on the turf with that fist off it), and the heave draws it up diagonally over the right shoulder in both fists; the clamp bends the glaive 0.0 deg off its pose in the thrust, sweep, stomp and leap (the leap's slam was bent 8.2 deg). GL frames it=2.8/3.0/3.13 front and 3.0 side looked at with and without. New `foefold` gate: knight axis_off <= 2 deg (REACH_SLIDE_OFF=1 fails it at 8.2). env SHOULDER_MODEL_OLD=1 = the before.)
@@ -34,6 +35,7 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (11:44 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). Running shot.tscn with --headless hangs: use shots.sh. Note `mkdir shots` before redirecting logs into it on a fresh box.
 - (09:00 11-11) Setup first try (import ~8 min), headless bots and GL shots (SHOT_GL=1, 2 at once ~6 min) work; Forward+ not tried; asset sites not rechecked. Note: do not export GODOT=.tools/godot (bots.sh/shots.sh cd into game/; leave GODOT unset).
 - (08:00 11-11) Setup first try (import ~8 min, background). GL shots (SHOT_GL=1, 4 at once ~4 min) and headless bots
   (4 sets at once) fine. Asset sites not rechecked (no new files). `SHOULDER_MODEL_REAL` is gone as an opt-in: the real
@@ -8351,6 +8353,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (11:44 11-11) **KNIGHT SWEEP SEEN FROM ITS OWN FRONT — DONE (shot tooling + frames looked at; no game change).**
+   NEXT (1) of 10:00. `shot.gd` `soldier ... knight sweep kchest [near] [flip] [strike] u=`: after the hand-stepped
+   move, the lens is re-placed off the Spine2 bone's posed forward (sign matched to body +Z), a quarter to the
+   knight's right (`flip` = its left), 3.2 x size away (`near` 2.3), 0.35 x size above the chest. It prints each
+   arm/hand/head bone's screen position and depth (the viewport is 1920x1080, the PNG is scaled to 1280x720, so
+   divide by 1.5). Measured at coil u=0.9: right shoulder depth 4.83 screen-left, left shoulder 5.34 screen-right =
+   FRONT-right quarter. Body +Z is the knight's front here (-Z framed its back with the hero beyond). The Spine2 turn
+   off the body is only -19/-20 deg through the coil and cut start, so the 10:00 belief that the coil turns the chest
+   away from the hero was wrong: the earlier lenses were just from behind the hero line or far off. Looked at:
+   coil u=0.5/0.9 (3.2 and 2.3 x size, both quarters), cut u=0.1/0.3. Verdict: shaft at shoulder height, clear of
+   the helm, no visible pass through the right pauldron; the cut reads as a diagonal two-hand draw-down. The sun is
+   behind the knight from its front, so the armour is a dark silhouette and the elbows cannot be judged by eye.
+   Bots PASS: foefold knight soldier. Grades: knight sweep good- (unchanged; clipping cleared by eye).
+   NEXT: (1) a lit lens on the sweep: put `kchest` on the sun side (pick the quarter whose lens faces away from the
+   sun) or shoot at hour 9/17 so the low sun lights the front, then judge the elbows' bend in the coil; (2) coil
+   pitch (08:00 NEXT (2)); (3) grass inside the boots' stance; (4) bow-aware archer probe, kindler probe.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (10:00 11-11) **KNIGHT SWEEP ARMS KEEP A BEND — DONE (game change + `foefold` gate).**
    NEXT (1) of 09:00. `hollow_soldier.gd`: new virtual `_sweep_pose(a)` (the sweep's WINDUP/STRIKE/RECOVER call it;
    default = static `sweep_pose`). `ashen_knight.gd` overrides it: reach KNIGHT_SWEEP_REACH 0.46 weighted in by

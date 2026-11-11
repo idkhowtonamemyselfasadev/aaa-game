@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261107-1414-climbsway-cmp.jpg",
-  "time": "2026-11-07T14:14:59Z",
-  "caption": "Same climb frame before (left, hips centred) and after (right, belt tipped, hips and robe out over the standing foot, shoulders level); weight shift reads but is subtle.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-1513-climb-hike.jpg",
   "time": "2026-11-07T15:13:14Z",
   "caption": "Hero on the keep's stones from behind with the right foot stepping up: the belt and robe tip up on the stepping hip while the chest stays level; GL frame, the figure is small and in the face's shadow, no Forward+.",
@@ -891,6 +885,18 @@
   "file": "20261111-1000-knight-sweep-cut.jpg",
   "time": "2026-11-11T10:00:00Z",
   "caption": "The first tick of the knight's sweep cut, the glaive swinging out level over the hero; the lens is too close for the 2.2x giant and crops the helm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1144-knight-sweep-coil-front.jpg",
+  "time": "2026-11-11T11:44:00Z",
+  "caption": "The Ashen Knight coiled for its sweep, seen at last from its own front-right quarter (new kchest lens): the raised glaive passes clear of the helm at shoulder height, but the backlit armour hides the arms.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1144-knight-sweep-cut-front.jpg",
+  "time": "2026-11-11T11:44:00Z",
+  "caption": "The start of the knight's sweep cut from its front quarter: the glaive comes down diagonally across the body in both fists; still backlit and the giant reads dark against the meadow.",
   "verdict": "fail"
  }
 ]

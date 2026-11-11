@@ -3069,6 +3069,33 @@ func _ready() -> void:
 			cam.global_position = chead + coff.normalized() * 1.05 + Vector3.UP * 0.1
 			cam.look_at(chead + Vector3.UP * 0.06)
 			print("SHOT coif re-aimed on the head at %s" % chead)
+		if "knight" in args and "kchest" in args and cam != null:
+			# (11-11) kchest: re-aim off the knight's OWN posed chest after the hand-stepped move
+			# (the sweep's coil turns the chest away from the hero line, so every hero-line lens
+			# framed its back). Lens in front of the Spine2 bone's forward, a quarter off to the
+			# knight's right (the coiled glaive side; `flip` = its left), a little above the chest.
+			var ksk: Skeleton3D = foe.skel
+			var cbi := ksk.find_bone("mixamorig_Spine2")
+			var cgt: Transform3D = ksk.global_transform * ksk.get_bone_global_pose(cbi)
+			# (checked on frames: body +Z puts the hero in the foreground and the glaive on the
+			# knight's right, i.e. the front; -Z framed its back with the hero beyond it)
+			var bfwd: Vector3 = foe.body.global_basis.z.normalized()
+			var cfw: Vector3 = cgt.basis.z
+			if cfw.dot(bfwd) < 0.0:
+				cfw = -cfw
+			cfw.y = 0.0
+			cfw = cfw.normalized()
+			var crt := Vector3.UP.cross(cfw).normalized()   # +X of a +Z-forward body = its left
+			var kws: float = foe.size_scale
+			var csd := 1.0 if "flip" in args else -1.0
+			var cdist := 2.3 if "near" in args else 3.2
+			cam.global_position = cgt.origin + (cfw * 1.0 + crt * csd * 0.55).normalized() * cdist * kws + Vector3.UP * 0.35 * kws
+			cam.look_at(cgt.origin + Vector3.UP * 0.12 * kws)
+			for kbn in ["mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_Head", "mixamorig_LeftHand", "mixamorig_RightHand"]:
+				var kbw: Vector3 = ksk.global_transform * ksk.get_bone_global_pose(ksk.find_bone(kbn)).origin
+				print("SHOT kchest bone %s screen %s depth %.2f" % [kbn, cam.unproject_position(kbw), cam.global_position.distance_to(kbw)])
+			print("SHOT kchest hero screen %s depth %.2f" % [cam.unproject_position(player.global_position + Vector3.UP), cam.global_position.distance_to(player.global_position)])
+			print("SHOT kchest chest %s fwd %s body fwd %s turn %.0f deg" % [cgt.origin, cfw, bfwd, rad_to_deg(Vector3(bfwd.x, 0, bfwd.z).normalized().signed_angle_to(cfw, Vector3.UP))])
 		if "kindler" in args:
 			# kindler: the warden already burning white-hot, the Kindler at u= of a fresh chant
 			# into it (spear raised, ember stream flowing); particles run on through the warm-up
