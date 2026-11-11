@@ -4969,6 +4969,8 @@ func _knight_test() -> void:
 ## leapt at; in phase 2 the knight crouches, springs and comes down blade first where the
 ## hero stood (standing there: thrown down; it lands near the hero, not on top); a roll as it
 ## lands passes through; a parry-window heavy cannot turn it; and the landing leaves it open.
+const LEAP_LAND_SQUAT := 0.66   # (11-11) hips over the boots at the landing's bottom, share of standing (old landing 0.73, new 0.54)
+const LEAP_LAND_LEAN := 0.45    # rad: the body pitched over the bitten blade at the bottom (old 0.34)
 func _knightleap_test() -> void:
 	var p := _player
 	var k: AshenKnight = _world.knight
@@ -5058,6 +5060,23 @@ func _knightleap_test() -> void:
 			await get_tree().physics_frame
 			waited += get_physics_process_delta_time()
 		p.bot_input = Vector2.ZERO
+		# (11-11) the landing takes the weight: through the first third of the recovery the hips come
+		# down over the planted boots (knees give) well below the standing height, and the body is
+		# pitched over the blade. Not on the stand trial (its scorch checks run on the next ticks).
+		if kind != "stand":
+			var land_min := 99.0
+			var lean_max := 0.0
+			var w2 := 0.0
+			while k.move_kind == AshenKnight.LEAP_MOVE and k.state == HollowSoldier.RECOVER \
+					and k.t < 0.35 * AshenKnight.LEAP_RECOVER_T and w2 < 1.5:
+				await get_tree().physics_frame
+				w2 += get_physics_process_delta_time()
+				land_min = minf(land_min, (seen[0] as Vector3).x)
+				lean_max = maxf(lean_max, k.lean_last)
+			print("BOT knightleap: landing (%s) hips %.2f m over the boots at the bottom (standing %.2f, %.0f%%), lean %.2f rad, give peak %.2f" % [kind, land_min, stand_legs.x, 100.0 * land_min / maxf(stand_legs.x, 1e-3), lean_max, k.land_give_peak])
+			if land_min > stand_legs.x * LEAP_LAND_SQUAT or lean_max < LEAP_LAND_LEAN:
+				k.skel.skeleton_updated.disconnect(grab)
+				return _combat_done(false, "the leap lands stiff: hips %.2f of standing, lean %.2f" % [land_min / maxf(stand_legs.x, 1e-3), lean_max])
 		k.skel.skeleton_updated.disconnect(grab)
 		var r: String = k.leap_results[-1] if k.leap_results.size() > 0 else "none"
 		var land_err := Vector2(k.leap_bite().x - hero_at.x, k.leap_bite().z - hero_at.z).length()

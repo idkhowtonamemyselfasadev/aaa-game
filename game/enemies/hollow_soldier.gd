@@ -629,6 +629,10 @@ func _place(pose: Array) -> void:
 ## the lean (`_place_lean`; the shaft's direction kept, so the blade still drives level).
 ## Env THRUST_UNLEANED=1: the before.
 var _place_lean := 0.0
+## the share of this tick's model lean the grips are carried by (variants add their own moves)
+func _grip_lean(lean: float) -> float:
+	return lean - lean_kick if _thrust_leaned() else 0.0
+
 func _thrust_leaned() -> bool:
 	return move_kind == THRUST_MOVE and state in [WINDUP, STRIKE, RECOVER] and not THRUST_UNLEANED
 
@@ -909,7 +913,7 @@ func _physics_process(delta: float) -> void:
 	_reel_layer()
 	if state == STAGGER and bot_move == Vector3.ZERO:
 		move = _reel_steer(move) if reel_pivot_on else move      # this tick's leg yaw: a tick late, the shove ran 15 deg off the stepping legs
-	_place_lean = lean - lean_kick if _thrust_leaned() else 0.0
+	_place_lean = _grip_lean(lean)
 	_place(_pose)
 	_place_lean = 0.0
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:

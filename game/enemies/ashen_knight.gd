@@ -165,6 +165,17 @@ const ROAR_CARRY := 0.9
 const SPINE_BASE := Vector3(0.0, 1.02, 0.0)   # body space, unscaled: where the arch bends from
 const LEAP_HEAVED_U := 0.35       # fraction of the airtime by which the glaive is fully overhead
 const TUCK_HIP := 1.15            # rad the thighs come up at the top of the leap
+## (11-11) THE LEAP'S LANDING TAKES THE WEIGHT: the old touch-down came in with straight legs and the
+## torso at the flight's lean, so the blade bit with no give. Now the knees give and the body
+## pitches over the blade as the boots touch (the end of the airtime), bottoms out a beat into the
+## recovery (a damped give, not a hold) and settles to a held crouch over the bitten glaive; the
+## grips ride the extra pitch about the hips (`_grip_lean`), so the arms keep their shape. The
+## knee hint carries on from the flight into the recovery with no jump. Env LEAPLAND_OLD=1: the before.
+const LAND_LEAN := 0.2            # rad of extra pitch from the hips at the bottom of the give
+const LAND_SINK := 0.14           # model m of extra drop at the bottom of the give
+const LAND_TOUCH_U := 0.86        # airtime fraction from which the knees start to give
+const LAND_HOLD := 0.55           # share of the give held while bent over the bitten glaive
+static var LEAPLAND_OLD := OS.get_environment("LEAPLAND_OLD") == "1"
 const TUCK_KNEE := 1.75           # rad the shins fold back
 ## STOMP (phases 2 and 3, its answer to a hero crowding its shins): the weight goes onto the
 ## left leg, the right knee comes up high to the chest and hangs there shuddering (the tell),
@@ -219,6 +230,9 @@ var leap_lift := 0.0             # current height of the arc (hurt capsule and m
 var _leap_cool := 0.0
 var last_scorch: Scorch          # the burn the last leap left in the turf (bots)
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
+var land_give := 0.0             # (bots) the landing's give this tick, 0..1
+var land_give_peak := 0.0        # (bots) the deepest give of the last leap
+var _land_lean := 0.0            # this tick's extra landing pitch (the grips ride it)
 var _terrain_ref: Terrain
 var growth := BossGrowth.new(PHASES)
 ## INTRO (BossIntro): the first time the hero walks in it does not just start: the camera cranes
@@ -874,6 +888,23 @@ func _choose(dist: float) -> int:
 		return STOMP_MOVE
 	return super._choose(dist)
 
+## the landing's give over the last of the airtime: the boots touch and the knees start to go
+static func _land_give_strike(u: float) -> float:
+	return 0.35 * smoothstep(LAND_TOUCH_U, 1.0, u)
+
+## ... and on into the recovery: it bottoms out a beat after the bite, comes back up a little
+## and holds the crouch over the glaive (the recovery's wrench eases it out with the rest)
+static func _land_give_recover(u: float) -> float:
+	if u < 0.09:
+		return lerpf(0.35, 1.0, sin(0.5 * PI * u / 0.09))
+	return lerpf(1.0, LAND_HOLD, smoothstep(0.09, 0.32, u))
+
+## the leap's landing pitch rides the grips (the rest of the leap's lean was tuned unleaned)
+func _grip_lean(lean: float) -> float:
+	if move_kind == LEAP_MOVE and state in [STRIKE, RECOVER] and not LEAPLAND_OLD:
+		return _land_lean
+	return super._grip_lean(lean)
+
 func leaps_landed() -> int:
 	return leap_results.size()
 
@@ -966,10 +997,23 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			# knees drive up off the crouch, tucked through the top, legs reach down to land
 			var k := smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.72, 0.97, u))
 			var c := 1.0 - smoothstep(0.0, 0.18, u)
-			_set_tuck(lerpf(0.85 * c, TUCK_HIP, k), lerpf(1.6 * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u))
+			var g := 0.0 if LEAPLAND_OLD else _land_give_strike(u)
+			var th := lerpf(0.85 * c, TUCK_HIP, k)
+			var tk := lerpf(1.6 * c, TUCK_KNEE, k) + 0.5 * smoothstep(0.9, 1.0, u)
+			if not LEAPLAND_OLD:
+				# the knee hint runs on into the recovery's crouch (0.55, 1.1) as the legs take the weight
+				var w := smoothstep(LAND_TOUCH_U, 1.0, u)
+				th = lerpf(th, 0.55, w)
+				tk = lerpf(tk, 1.1, w)
+			_set_tuck(th, tk)
 			# pitched into the leap, then over onto the blade
-			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u))
-			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u)   # model space (scaled)
+			lean = lerpf(0.12, 0.34, smoothstep(0.55, 1.0, u)) + LAND_LEAN * g
+			sink = -leap_lift / size_scale + 0.22 * smoothstep(0.85, 1.0, u) + LAND_SINK * g   # model space (scaled)
+			_land_lean = LAND_LEAN * g
+			land_give = g
+			if u < 0.5:
+				land_give_peak = 0.0
+			land_give_peak = maxf(land_give_peak, g)
 			# the legs reach down under the pitched body for the landing: the boots are planted
 			# over the last of the fall (the held height only comes down, so they track it to
 			# the turf) and touch down where they then stay through the recovery
@@ -995,6 +1039,14 @@ func _special_tick(delta: float, to: Vector3, dist: float) -> Array:
 			lean = 0.34 * (1.0 - f) - 0.08 * sin(PI * f)
 			sink = 0.24 * (1.0 - f)
 			_set_tuck(0.55 * (1.0 - f), 1.1 * (1.0 - f))
+			# the give is spent before the boots let go to the clip (pin 1 -> 0 over u 0.85-1): a
+			# pitch or drop still on at the release swings the boots across the turf as they go
+			var g := 0.0 if LEAPLAND_OLD else _land_give_recover(u) * (1.0 - smoothstep(0.5, 0.82, u))
+			lean += LAND_LEAN * g
+			sink += LAND_SINK * g
+			_land_lean = LAND_LEAN * g
+			land_give = g
+			land_give_peak = maxf(land_give_peak, g)
 			# the boots stay where they came down while it is bent over the blade; they let go to
 			# the clip once the lean and the crouch have nearly run out
 			_plant(1.0 - smoothstep(0.85, 1.0, u))

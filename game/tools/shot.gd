@@ -3126,8 +3126,9 @@ func _ready() -> void:
 				kl._physics_process(dt)
 				if OS.get_environment("LEAPDBG") == "1":
 					print("LEAPDBG i %d mk %d st %d t %.3f" % [i, kl.move_kind, kl.state, kl.t])
-				if "scorched" in args:
+				if "scorched" in args or "landed" in args:
 					# on through the landing: bent over the bitten glaive, the burn fresh
+					# (`landed`: the same side-on lens as the flight, u= of the recovery)
 					if kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.RECOVER and kl.t >= foe_u * AshenKnight.LEAP_RECOVER_T:
 						break
 				elif kl.move_kind == AshenKnight.LEAP_MOVE and kl.state == HollowSoldier.STRIKE and kl.t >= foe_u * AshenKnight.LEAP_T:

@@ -1,6 +1,7 @@
 # Progress
 
-Content hours playable: 15.5
+Content hours playable: 15.6
+(02:30 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH WEIGHT: the knees give as the boots touch, it bottoms out a beat after the blade bites (hips 73% -> 57% of standing height over the planted boots, chest pitched 0.34 -> 0.54 rad over the glaive), comes back up a little and holds a crouch over the bitten blade, then wrenches it free. The extra pitch is carried by the grips about the hips, so the arms keep their shape (foefold PASS), and the give is spent before the boots release to the clip, so they do not skate (knightplant unchanged at 0.0177 x size). New gate in `knightleap`; LEAPLAND_OLD=1 fails it. Frames u=0.95 / recover 0.05, 0.08, 0.40, 0.75 looked at.)
 (01:30 11-11: THE ASHEN KNIGHT'S EMBER LEAP IS NOW SHOT AT ITS REAL PHASE-2 SIZE: the leap shot grows the knight to its phase-2 scale (3.2, leap window 16-35 m) before standing it off, and the side-on lens now tests three rays (body, helm, legs) for a clear line, trying the lit side then the shade side at 3.3/2.6/2.0/1.5 x size, so a cottage roof no longer fills the frame. Frames u=0.15/0.45/0.70/0.87/0.97 looked at: tuck with the glaive upright at take-off, heave over the right shoulder, level out in front, blade in the turf by the hero, who is now plainly a third of the giant's height. The arc reads at full size; the landing's torso stays upright (see Next). Shot harness only, no game change; bots knightleap foefold knight PASS.)
 (00:50 11-11: THE ASHEN KNIGHT'S EMBER LEAP CAN NOW BE WATCHED FRAME BY FRAME, AND THE RE-SOLVED HEAVE AND SLAM WERE LOOKED AT: the shot harness's `knight leap` never leapt -- it stood the knight a flat 7.7 m off, inside the leap window at its size (LEAP_MIN 5 m x size 2.2 = 11 m), so the brain thrust instead and every leap frame was the thrust's strike (the 'state 3 t 0.02' of last night). The shot now stands the knight in the middle of the window at its size, pins the leap (force_move) and re-aims the lens side-on on the airborne knight from the lit side, scaled to its size. Frames u=0.15/0.35/0.55/0.7/0.85/0.95: the glaive goes up past the helm, is held heaved over the right shoulder through the tucked hang, swings out level in front on the way down and bites the turf before the hero as the legs reach for the ground; no arm folds, no fist through the helm. Grade stays good: the knight is shot at its phase-1 size during a phase-2 move, and the lens sits a little behind its shoulder.)
 (23:00 11-10: THE ASHEN KNIGHT NO LONGER CRUSHES ITS RIGHT ARM AND DRAGS ITS FIST THROUGH ITS OWN HELM AS IT HEAVES THE GLAIVE IN THE EMBER LEAP: `foefold` now runs the knight's phase-2 leap and stomp, the archer's shot (measured). The leap's straight lerp up from CROUCHED put the right fist 3-6 cm from the head with the arm folded to 0.037-0.042 m/size shoulder-to-wrist (on a 2.2x giant), and the old heave asked the left grip 0.74 m at reach 0.66 (shaft 9 deg off). Re-solved offline: a new heave both hands reach on the same shaft line, an arc up out to the right in front of the helm (LEAP_UP_ARC) and an arc down out in front (LEAP_DOWN_ARC). In-engine: right arm min 0.251, left 0.227 (was 0.169 in the slam), fists 0.000 m; the leap is now gated in `foefold`; LEAPFOLD_OLD=1 fails it.)
@@ -25,6 +26,10 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (02:30 11-11) Setup first try, but the setup's import was cut off when its parent shell exited: run
+  `tools/cloud-setup.sh` in the foreground (or re-run `.tools/godot --headless --path game --import`, ~2 min after a
+  partial import). Bots headless fine; GL shots (SHOT_GL=1, 3 at once, ~12 min). Asset sites not rechecked. New shot
+  arg `landed` on `knight leap`: steps on into the RECOVER to u= of LEAP_RECOVER_T with the flight's side-on lens.
 - (00:50 11-11) Setup first try (import ~10 min). PIL broken -> gallery JPEG via ImageMagick `convert`. Bots headless
   fine; GL shots (SHOT_GL=1, 3 at once, ~10 min). polyhaven/ambientcg/freesound reachable (200). `LEAPDBG=1` on a
   `knight leap` shot prints the knight's move/state/t per stepped tick.
@@ -223,6 +228,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (02:30 11-11) **KNIGHT'S LEAP LANDING TAKES THE WEIGHT: KNEE GIVE + PITCH OVER THE BLADE (bot `knightleap` landing gate).** Details in Next 0.
 - (23:00 11-10) **KNIGHT'S LEAP HEAVE + SLAM AS ARCS: RIGHT ARM 0.037 -> 0.251, FIST NO LONGER THROUGH THE HELM (bot `foefold` gates the leap).** Details in Next 0.
 - (22:00 11-10) **HARRIER CROUCH RE-SOLVED: SHAFT 9.2 -> 0.0 DEG OFF ITS POSE (bot `foereach` gate 2 deg on re-solved poses).** Details in Next 0.
 - (10:00 11-08) **JUMP ATTACK: HEAD TIPS CLEAR, STAFF DRAWN BACK 40 DEG (bot `airstrike` gate raised; GL frames).**
@@ -8324,6 +8330,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (02:30 11-11) **THE LEAP'S LANDING TAKES THE WEIGHT — DONE (game change + `knightleap` landing gate).**
+   NEXT (1) of 01:30. `ashen_knight.gd`: LAND_LEAN 0.2 rad / LAND_SINK 0.14 model m on top of the old landing curve,
+   driven by a give `g`: 0 -> 0.35 over airtime u 0.86-1.0 (`_land_give_strike`), on into the recovery 0.35 -> 1.0 by
+   u 0.09 (sine ease, the bottom), back to LAND_HOLD 0.55 by u 0.32, faded out over u 0.5-0.82 (before the boots'
+   pin lets go at 0.85: a give still on at the release skated the boots, land3 0.0177 -> 0.0233 x size, now 0.0177).
+   The knee hint (tuck hip/knee) now blends from the flight's to the recovery's crouch (0.55, 1.1) over u 0.86-1.0
+   (it jumped on the first recover tick). The grips ride ONLY the extra pitch: new virtual `_grip_lean(lean)` in
+   HollowSoldier (default = the thrust's lean carry), the knight returns `_land_lean` in the leap's STRIKE/RECOVER.
+   Bot `knightleap` (roll + parry trials) measures hips-over-boots and lean through the first 35% of the recovery:
+   57-58% of standing, 0.54 rad (gates 0.66 / 0.45); LEAPLAND_OLD=1 = 73%, 0.34, fails. Bots PASS: knightleap
+   knightplant foefold knight knightstomp surgegrip crown soldier foereach. Frames (`knight leap landed u=`)
+   looked at: s0.95 knees bent and chest over the blade, r0.05/0.08 deep give with embers, r0.40 held crouch,
+   r0.75 glaive wrenched up level, boots planted. Grade: knight leap landing rough -> good. Gallery
+   20261111-0230-knight-leap-land-* (fail: lens, renderer).
+   NEXT: (1) a front-quarter lens for the landing (the side lens sits behind the shoulder and foreshortens the
+   pitch) and a dust/turf kick off the boots and knees at the bottom of the give, grass pressed round the boots;
+   (2) 01:30's (2): the knight's shoulder model in `_place` (y 1.59, chest yaw sign); (3) bow-aware archer probe,
+   kindler probe; (4) 22:00's leftovers. BOSS/ANIMATION order unchanged; audio after.
 0. (01:30 11-11) **LEAP SHOT AT PHASE-2 SIZE + CLEAR-LINE LENS — DONE (shot.gd only, no game change).**
    NEXT (1) of 00:50. The `knight leap` fp block now calls `_set_phase(2)` + `set_size_scale(growth.scale_of(2))`
    before the stand-off (`p1size` keeps the old x2.2 knight). The leap lens raycasts body/helm/legs from each

@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261107-0610-ring-heave.jpg",
-  "time": "2026-11-07T06:10:00Z",
-  "caption": "Reveal heave mid-rise (GL): the glaive now sweeps up beside the knight's right shoulder instead of across its chest; the knight still stands in the stones' shadow and the GL frame lacks Forward+ fog/GI.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0715-knight-heave-upright.jpg",
   "time": "2026-11-07T07:15:00Z",
   "caption": "Reveal heave at it=3.13 (GL): the glaive now stands upright on the knight's right side instead of crossing its body with the butt at the left hip; the knight is still backlit in the stones' shadow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0715-knight-heave-rise.jpg",
-  "time": "2026-11-07T07:15:00Z",
-  "caption": "Reveal heave at it=3.20 (GL): the glaive rises beside the helm with both fists climbing the haft; the knight still reads as a dark silhouette against the sun.",
   "verdict": "fail"
  },
  {
@@ -897,6 +885,18 @@
   "file": "20261111-0130-knight-leap-p2-bite.jpg",
   "time": "2026-11-11T01:30:00Z",
   "caption": "The blade biting the turf beside the hero as the giant lands; the torso stays upright instead of bending into the slam, so the impact lacks weight.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0230-knight-leap-land-r08.jpg",
+  "time": "2026-11-11T02:30:00Z",
+  "caption": "The Ashen Knight a beat after the ember leap's bite: knees given deep, chest pitched over the glaive in the turf (was stiff and upright). Still wrong: rear three-quarter lens foreshortens the pitch; armour reads flat in the GL fallback renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0230-knight-leap-land-r40.jpg",
+  "time": "2026-11-11T02:30:00Z",
+  "caption": "The knight holding its crouch over the bitten blade before wrenching it free, boots planted. Still wrong: no dust kicked off the knees and grass not flattened round the boots.",
   "verdict": "fail"
  }
 ]
