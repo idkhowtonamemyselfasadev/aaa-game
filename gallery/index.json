@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-0023-knock-regrip-fist.jpg",
-  "time": "2026-11-08T00:23:39Z",
-  "caption": "Close crop of the same frame: the left fist closed round the wrapped grip; the hand is clean but the body is still the rough get-up pose.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0118-knockdown-regrip.jpg",
-  "time": "2026-11-08T01:18:12Z",
-  "caption": "Rising from a knock-down at 1.74 s: the left hand is already closed on the staff's wrapped grip as the shaft is held upright beside the body; the staff top still runs close to the hat brim and the lens sees mostly the back.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0212-knock-staff-clears-hat.jpg",
   "time": "2026-11-08T02:12:18Z",
   "caption": "Side-on at 1.33 s into a knock-down: the held staff now angles up in front of the face instead of swinging its top through the hat and head; the low backlit lens still leaves the body dark.",
@@ -897,6 +885,18 @@
   "file": "20261111-2229-leap-layback-cmp.jpg",
   "time": "2026-11-11T22:29:51Z",
   "caption": "Before (top) / after (bottom) of the leap's heave and hang: the hang lays the glaive much further back and the butt no longer swings through the left shoulder as deep; the landing frames leave the crop.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2326-sweep-coil.jpg",
+  "time": "2026-11-11T23:26:07Z",
+  "caption": "The boss holding its sweep's coil, glaive cocked back at its right shoulder; the haft's butt now passes behind the left pauldron instead of into it, but the knight is backlit and the change is barely readable at this distance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-2326-sweep-coil-cmp.jpg",
+  "time": "2026-11-11T23:26:07Z",
+  "caption": "Before (left) / after (right) crop of the sweep coil: the hold sits a little lower and further back; a closer side lens is still needed to show the pauldron clearance.",
   "verdict": "fail"
  }
 ]

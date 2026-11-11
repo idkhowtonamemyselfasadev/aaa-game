@@ -1504,7 +1504,17 @@ static var KSWEEP_OLD := OS.has_environment("KSWEEP_OLD")
 static var SWEEPHELM_OLD := OS.has_environment("SWEEPHELM_OLD")
 const KSWEEP_CLEAR := [0.4, KNIGHT_SWEEP_REACH, 0.06, -0.15, -0.04, -20.0, 40.0]
 const KSWEEP_THROAT := [0.3, KNIGHT_SWEEP_REACH, 0.0, 0.0, 0.0, -20.0, 40.0]
-static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array(KSWEEP_THROAT if SWEEPHELM_OLD else KSWEEP_CLEAR)
+## (11-11 23:00) and off its own left pauldron: the coil above ran the glaive's butt 0.067 m/size into
+## the left pauldron (bot `foefold`'s every-tick pauldron read-out, sphere model) for the whole held
+## coil (W t 0.43-0.93) and the cut's first ticks. ~50 runs against `foefold` + `foegrip`: the chest
+## twists a little further into the coil (0.4 -> 0.44 of the bearing) and the hold sits 0.11 m further
+## left and 0.13 m further back, so the butt passes behind the left shoulder's rim: WL 0.067 -> -0.009,
+## SL 0.063 -> -0.015, WR -0.030 m/size, helm W -0.125 -> -0.196, arms within 0.03. Twisting to 0.5
+## instead made the hands' roll chatter at x3.2/x4.6 (foegrip); a hold further left (+0.2) brings the
+## right pauldron in. env SWEEPPAUL_OLD=1: the before (KSWEEP_CLEAR).
+static var SWEEPPAUL_OLD := OS.has_environment("SWEEPPAUL_OLD")
+const KSWEEP_SHOULDER := [0.44, KNIGHT_SWEEP_REACH, 0.17, -0.15, -0.17, -20.0, 40.0]
+static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array(KSWEEP_THROAT if SWEEPHELM_OLD else (KSWEEP_CLEAR if SWEEPPAUL_OLD else KSWEEP_SHOULDER))
 func _sweep_pose(a: float) -> Array:
 	var p := HollowSoldier.sweep_pose(a)
 	if KSWEEP_OLD or not _reach_slide_on():

@@ -1590,6 +1590,7 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	var paul_hi := [-9.0, -9.0]
 	var hang_back := -99.0
 	var paul_ph := {}   # "up"/"hang"/"down" -> worst of both pauldrons (knight's leap: airtime phases)
+	var paul_by := {}   # (23:00 11-11) "WL".."RR" -> [depth m/size, t, haft fraction from butt], every tick
 	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
 		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
 	for i in 400:
@@ -1633,6 +1634,18 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 					print("      tick st=%d t=%.3f haft-in-helm %.3f" % [e.state, e.t, pen])
 				var stk: String = ["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?"
 				helm_by[stk] = maxf(float(helm_by.get(stk, -9.0)), pen)
+				# (23:00 11-11) the pauldrons on every tick of every knight move, per state
+				for pj2 in pring.size():
+					var pm2: MeshInstance3D = pring[pj2][0]
+					var pc2: Vector3 = pm2.global_transform * (pring[pj2][1] as Vector3)
+					var pr2: float = PAULDRON_R * pm2.global_basis.get_scale().x
+					var pq2: Vector3 = Geometry3D.get_closest_point_to_segment(pc2, hs_butt, hs_tip)
+					var pp2: float = (pr2 + HELM_HAFT_R * e.size_scale - pq2.distance_to(pc2)) / ks
+					var pk: String = stk + "LR"[pj2]
+					if pp2 > float(paul_by.get(pk, [-9.0, 0.0])[0]):
+						paul_by[pk] = [pp2, e.t, (pq2 - hs_butt).length() / hs_butt.distance_to(hs_tip)]
+					if OS.has_environment("PAULDRON_ALL_TICKS"):
+						print("      tick st=%s t=%.3f %s pauldron %.3f at haft %.2f" % [stk, e.t, "LR"[pj2], pp2, (pq2 - hs_butt).length() / hs_butt.distance_to(hs_tip)])
 				# (13:00 11-11) the glaive heaved high (pose pitch > 45 deg) in the strike: the leap's
 				# heave, hang and the top of the slam's swing
 				if e.state == HollowSoldier.STRIKE and float(e._pose[1]) > 45.0:
@@ -1698,6 +1711,11 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if hring.size() > 0:
 		print("   %s bite: low end over the turf %.3f..%.3f m/size, %.2f m/size ahead (R, first 0.6 s)" % [label, bite[0], bite[1], bite[2]])
 		print("   %s haft sunk into the helm at most %.3f m/size (%s) (<= 0 = clear) | W %.3f S %.3f R %.3f | heaved high %.3f" % [label, helm_in[0], helm_in[1], helm_by.get("W", -9.0), helm_by.get("S", -9.0), helm_by.get("R", -9.0), helm_by.get("high", -9.0)])
+		var pls := ""
+		for pk in ["WL", "WR", "SL", "SR", "RL", "RR"]:
+			if paul_by.has(pk):
+				pls += " %s %.3f (t=%.2f at %.2f)" % [pk, paul_by[pk][0], paul_by[pk][1], paul_by[pk][2]]
+		print("   %s pauldrons every tick (state+side, depth m/size, <= 0 clear):%s" % [label, pls])
 		print("   %s heaved high: haft into the pauldrons L %.3f R %.3f m/size (<= 0 = clear) | hang lay-back %.1f deg past upright | up %.3f hang %.3f down %.3f" % [label, paul_hi[0], paul_hi[1], hang_back, paul_ph.get("up", -9.0), paul_ph.get("hang", -9.0), paul_ph.get("down", -9.0)])
 	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
@@ -1740,6 +1758,17 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	if e is AshenKnight and kind == HollowSoldier.SWEEP_MOVE and not AshenKnight.SWEEPHELM_OLD and not AshenKnight.KSWEEP_OLD \
 			and not OS.has_environment("KSWEEP_TRY") and maxf(float(helm_by.get("W", -9.0)), float(helm_by.get("S", -9.0))) > FOEFOLD_HELM_GRAZE:
 		return "%s: the coiled glaive runs %.3f / %.3f m/size through the helm" % [label, helm_by["W"], helm_by["S"]]
+	# (23:00 11-11) every knight move keeps the haft off both pauldrons on every tick (the leap's
+	# strike has its own swing gate above). SWEEPPAUL_OLD: the sweep coil's WL 0.067, SL 0.063.
+	if e is AshenKnight and pring.size() > 0 and not OS.has_environment("KSWEEP_TRY") \
+			and not (kind == HollowSoldier.SWEEP_MOVE and (AshenKnight.SWEEPPAUL_OLD or AshenKnight.SWEEPHELM_OLD or AshenKnight.KSWEEP_OLD)) \
+			and not (kind == AshenKnight.LEAP_MOVE and (AshenKnight.LAYBACK_OLD or OS.has_environment("LEAP_HEAVE_TRY"))):
+		for pk in paul_by:
+			if kind == AshenKnight.LEAP_MOVE and String(pk).begins_with("S"):
+				continue
+			# held wind-ups to a graze; fast passes in the strike/recovery to the leap swing's tolerance
+			if float(paul_by[pk][0]) > (FOEFOLD_HELM_GRAZE if String(pk).begins_with("W") else FOEFOLD_PAULDRON_SWING):
+				return "%s: the haft runs %.3f m/size into a pauldron (%s, t=%.2f)" % [label, paul_by[pk][0], pk, paul_by[pk][1]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:
