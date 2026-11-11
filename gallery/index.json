@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261107-2030-armhang-cmp.jpg",
-  "time": "2026-11-07T20:30:00Z",
-  "caption": "Knock-down rise, grass hidden, 1.62/1.70/1.76: before (top) the free left hand claws out in front of the chest; after (bottom) it hangs by the hip as a counterweight. The hang still splays a little to the side.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-2030-armhang-170.jpg",
-  "time": "2026-11-07T20:30:00Z",
-  "caption": "Kneeling up at 1.70 in the GL fallback: right palm on the front knee, left arm hanging by the thigh; the GL frame lacks fog and GI so it is not a Wukong-grade image.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-2100-knockrise-hand.jpg",
   "time": "2026-11-07T21:00:00Z",
   "caption": "Standing up after a knock-down: the free left hand now hangs as a loose half-curl instead of a splayed claw; GL fallback lighting is flat and the arm still swings up to the guard quickly.",
@@ -891,6 +879,18 @@
   "file": "20261111-1731-leap-downswing.jpg",
   "time": "2026-11-11T17:31:32Z",
   "caption": "The knight's glaive whipping level over the hero a beat before the bite; motion reads, but the knight is a dark silhouette against the sun and the grass/cottage are still prototype-grade beside it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1812-knight-sweep-coil.jpg",
+  "time": "2026-11-11T18:12:18Z",
+  "caption": "The Ashen Knight coils its sweep with the glaive now passing under its helm's chin skirt (bot: clear by 0.125 m/size, was 0.17 through); the knight is still dim and backlit, and the helm reads as a dark dome.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1812-knight-sweep-before-after.jpg",
+  "time": "2026-11-11T18:12:18Z",
+  "caption": "Before (left) the coiled haft ran into the helm's lower edge; after (right) it runs lower under the chin to the right fist with the chest turned further into the coil. A small change at this distance.",
   "verdict": "fail"
  }
 ]

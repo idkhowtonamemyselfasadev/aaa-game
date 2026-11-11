@@ -1703,6 +1703,11 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 			return "%s: the landed glaive runs %.3f / %.3f m/size through the helm" % [label, helm_by["S"], helm_by["R"]]
 		if bite[0] > FOEFOLD_BITE_MAX:
 			return "%s: the blade never bites the turf on landing (low end %.3f m/size up)" % [label, bite[0]]
+	# (18:00 11-11) the knight's sweep coils its glaive under its helm's chin skirt, never through it
+	# (SWEEPHELM_OLD: W 0.173, S 0.165)
+	if e is AshenKnight and kind == HollowSoldier.SWEEP_MOVE and not AshenKnight.SWEEPHELM_OLD and not AshenKnight.KSWEEP_OLD \
+			and not OS.has_environment("KSWEEP_TRY") and maxf(float(helm_by.get("W", -9.0)), float(helm_by.get("S", -9.0))) > FOEFOLD_HELM_GRAZE:
+		return "%s: the coiled glaive runs %.3f / %.3f m/size through the helm" % [label, helm_by["W"], helm_by["S"]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:

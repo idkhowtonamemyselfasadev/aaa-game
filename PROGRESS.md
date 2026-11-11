@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.8
+(18:00 11-11: THE ASHEN KNIGHT'S SWEEP NO LONGER COILS ITS GLAIVE THROUGH ITS OWN HELM: in the coil the haft's butt ran forward-left across the throat, 0.17 m/size through the great helm's chin skirt for the whole held coil and the cut's first ticks. Found by a search straight against bot `foefold` (16 s a run, 4 in parallel, 24 tries): the chest now twists further into the coil (0.4 of the blade's bearing, was 0.3) and the hold sits 0.15 m lower, 6 cm left, 4 cm back, so the haft runs under the chin across the upper chest. W 0.173 -> -0.125, S 0.165 -> -0.162 m/size; arms/fists unchanged. New gate; SWEEPHELM_OLD=1 is the before. GL frames old/new looked at: the change is small at this distance, the haft now meets the right fist below the helm instead of entering its lower edge.)
 (17:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP NOW BRINGS ITS GLAIVE DOWN AS ONE READABLE, ACCELERATING SLAM INSTEAD OF A JUMP CUT: the down-swing was a double smoothstep over the last 40% of the airtime after a dead hold, so the blade went from heaved to the turf in ~0.12 s (10-90% of the turn) and then EASED OUT, arriving at the ground while the giant still hung ~1.8 m in the air (old GL sequence). Now the glaive hangs heaved over the top of the arc, starts to come over just past the apex and gathers speed all the way down (ease-in x^2.4), fastest at the bite, with the body arched back over the top and whipping over with it. Bot: 10-90% of the turn over 0.200 s (was 0.117), last tick 100% of peak speed (was 1%). Same path through the poses, so every helm/arm gate holds. New gate in `knightleap`; DOWNSWING_OLD=1 is the before and fails it.)
 (16:00 11-11: THE ASHEN KNIGHT NO LONGER SNAPS UP OFF ITS CROUCH WHEN IT SPRINGS INTO THE EMBER LEAP: the first frame SEQUENCE of the whole leap (new shot mode `leapseq`, 12 frames in one render) showed the crouch reaching full depth at 70% and then freezing, and the bot found the take-off throwing the crouch's whole sink back in one tick (hips +0.39 m/size past the arc, ~1.3 m at phase-2 size, pitch popping 0.14 rad, boots let go at once). The coil now keeps loading to the spring (deeper sink/knees/pitch from u 0.55), and the push-off spends the sink and pitch over the first 15% of the flight with the boots held on the turf until the legs drive straight: worst tick 0.098 m/size past the arc, pitch 0.045 rad. New gate in `knightleap` (measured at 1x time scale through the take-off; TAKEOFF_OLD=1 is the before and fails).)
 (15:10 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH THE GLAIVE CLEAR OF ITS OWN HELM: the landed pose was borrowed from the stone sentinel and bowed the helm over a haft that ran up under its flared rim (0.084 m/size deep as it touched down, 0.016 while crouched over the bite). The knight now has its own landed pose, found by a hill-climb straight against the bot: glaive a little to its left, lower and nearer, chest turned to its right, so the haft runs out past the rim. Landing clear by 0.008 m/size, crouch over the bite by 0.159, blade still bitten into the turf, left elbow bent. New gate on landing + bite.)
@@ -41,6 +42,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
+- (18:00 11-11) Setup first try (import ~8 min). Headless bots fine (4 sets at once, ~8 min); GL shots (SHOT_GL=1, 2 at once ~6 min) after the bots. Asset sites not rechecked (no new files). Use ImageMagick for crops/sheets (PIL broken).
 - (14:50 11-11) Setup first try (import ~25 min this time). GL shots (SHOT_GL=1) work: 2 run one after the other in shots.sh took ~12 min; headless bots fine. Forward+ not tried; asset sites not rechecked (no new files). PIL is broken on this box (`_imaging` missing): make gallery JPEGs with ImageMagick `convert x.png -resize 1280x720! -quality 80 y.jpg`.
 - (12:34 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). `kchest sunlit` picks the front quarter on the sun's side; at hours 9/12/15 the knight's front faces away from the sun, use hour 16.5 (17.5 renders a black sky in GL compat).
 - (11:44 11-11) Setup first try (import ~8 min). GL shots (SHOT_GL=1, 3 at once ~8 min) and headless bots work; Forward+ not tried; asset sites not rechecked (no new files). Running shot.tscn with --headless hangs: use shots.sh. Note `mkdir shots` before redirecting logs into it on a fresh box.
@@ -8361,6 +8363,23 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (18:00 11-11) **KNIGHT SWEEP COIL CLEARS THE HELM — DONE (game change, gated).** NEXT (3) of 17:00.
+   `ashen_knight.gd` KSWEEP_CLEAR [twistk 0.4, cap 0.46, dx 0.06, dy -0.15, dz -0.04, w0 -20, w1 40] replaces the
+   10:00 KSWEEP_P default (now KSWEEP_THROAT, env SWEEPHELM_OLD=1). Search: scratch `run1.sh "<KSWEEP_TRY>"` prints
+   W/S/R helm, arm straightness, fist-haft, fold, clamp bend for one `FOEFOLD_ONLY="AshenKnight sweep" foefold` run.
+   FINDINGS: dy alone is non-monotonic (-0.1 worse 0.190, -0.2 0.018, -0.3 0.010: the coil hold at W t 0.47-0.93
+   grazes ~0.01 under the skirt whatever the drop); the extra chest twist is what takes it clear (0.36 -> W 0.004,
+   0.4 + dx +0.06 + dz -0.04 -> -0.197 at dy -0.22, -0.125 at dy -0.15, -0.016 at dy -0.10). dz +0.15 or dx -0.06
+   make it worse. Picked dy -0.15 (closest to the old shoulder-height coil with a safe margin). `bot.gd` foefold
+   gates knight sweep max(W,S) <= FOEFOLD_HELM_GRAZE (skipped under SWEEPHELM_OLD/KSWEEP_OLD/KSWEEP_TRY). Result:
+   W 0.173 -> -0.125, S 0.165 -> -0.162, straightest R 0.842 -> 0.835 L 0.923 -> 0.928, fold min R 0.195 -> 0.250.
+   Bots PASS: foefold knight sweep soldier combat knightguard foegrip foehands crown surgegrip lockon. GL
+   `soldier ksw_new 40 16.5 fixfps knight sweep kchest sunlit u=0.9` (and ksw_old) looked at + 2x crop side by side:
+   the haft enters the helm's lower edge in the old, passes under the chin to the right fist in the new; small at
+   this distance. Grade: knight sweep rough -> good- (rough since 12:34 for the helm clip; helm now clear; the cut itself not re-watched as a sequence).
+   NEXT: (1) a `leapseq`-style frame SEQUENCE for the sweep (coil -> cut -> follow-through) to judge the motion;
+   (2) side-lens / fixed-camera leapseq (17:00 NEXT 1); (3) leap hang cock-back; (4) thrust/stomp helm gates (both
+   measured clear: thrust -0.15, stomp -0.06). BOSS/ANIMATION order unchanged; audio after.
 0. (17:00 11-11) **KNIGHT LEAP DOWN-SWING RETIMED: HANG, THEN ACCELERATE INTO THE BITE — DONE (game change, gated).** NEXT (1) of 16:00.
    `ashen_knight.gd` STRIKE: the heave holds to DOWN_U0 0.5 (apex), then `_arc_pose_raw(LEAP_HEAVE, LEAP_DOWN, LEAP_SLAM,
    downswing_f(u))` with downswing_f = ((u-0.5)/0.5)^DOWN_POW 2.4 (no smoothstep of its own: the old path was smoothstep

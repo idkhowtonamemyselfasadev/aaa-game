@@ -1479,7 +1479,17 @@ static var ARMBEND_CROUCH := float(OS.get_environment("ARMBEND_CROUCH")) if OS.h
 ## Wield space, weighted in over blade bearings w0..w1 degrees).
 const KNIGHT_SWEEP_REACH := 0.46
 static var KSWEEP_OLD := OS.has_environment("KSWEEP_OLD")
-static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array([0.3, KNIGHT_SWEEP_REACH, 0.0, 0.0, 0.0, -20.0, 40.0])
+## (11-11 18:00) and its coil cleared of its own great helm: the coil held the glaive cocked back at
+## the right shoulder with the haft's butt running forward-left across the throat, 0.17 m/size through
+## the helm's chin skirt for the whole held coil (W t 0.43-0.93) and the cut's first ticks. Found by a
+## search against bot `foefold` (scratch, ~16 s a run): the chest twists further into the coil (0.3 ->
+## 0.4 of the blade's bearing, -46 deg at the coil) and the hold drops 0.15 m, 0.06 m to the left and
+## 0.04 m back, so the haft runs under the chin skirt across the upper chest: W 0.173 -> -0.125, S 0.165
+## -> -0.162 m/size, every arm/fist read-out unchanged within 0.02. env SWEEPHELM_OLD=1: the before.
+static var SWEEPHELM_OLD := OS.has_environment("SWEEPHELM_OLD")
+const KSWEEP_CLEAR := [0.4, KNIGHT_SWEEP_REACH, 0.06, -0.15, -0.04, -20.0, 40.0]
+const KSWEEP_THROAT := [0.3, KNIGHT_SWEEP_REACH, 0.0, 0.0, 0.0, -20.0, 40.0]
+static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array(KSWEEP_THROAT if SWEEPHELM_OLD else KSWEEP_CLEAR)
 func _sweep_pose(a: float) -> Array:
 	var p := HollowSoldier.sweep_pose(a)
 	if KSWEEP_OLD or not _reach_slide_on():
