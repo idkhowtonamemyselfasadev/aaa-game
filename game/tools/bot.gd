@@ -1547,6 +1547,22 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 	var lean_lo := 0.0
 	var lean_hi := 0.0
 	var seen := {}
+	var clamp_hi := 0.0
+	# (05:00 11-11) how straight each arm is pulled: shoulder-to-wrist over upper + fore arm (1 = locked)
+	var straight := [0.0, 0.0]
+	var straight_at := ["", ""]
+	var straight_len := [0.0, 0.0]
+	for j in 2:
+		var sd: String = ["Right", "Left"][j]
+		var ba := e.skel.find_bone("mixamorig_%sArm" % sd)
+		var bf := e.skel.find_bone("mixamorig_%sForeArm" % sd)
+		var bh := e.skel.find_bone("mixamorig_%sHand" % sd)
+		if ba >= 0 and bf >= 0 and bh >= 0:
+			var gs := e.skel.global_transform
+			straight_len[j] = (gs * e.skel.get_bone_global_pose(ba).origin).distance_to(gs * e.skel.get_bone_global_pose(bf).origin) \
+				+ (gs * e.skel.get_bone_global_pose(bf).origin).distance_to(gs * e.skel.get_bone_global_pose(bh).origin)
+	var axis_hi := 0.0
+	var axis_at := ""
 	var bones := [[e.skel.find_bone("mixamorig_RightArm"), e.skel.find_bone("mixamorig_RightHand")],
 		[e.skel.find_bone("mixamorig_LeftArm"), e.skel.find_bone("mixamorig_LeftHand")]]
 	for i in 400:
@@ -1557,6 +1573,10 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				break
 			continue
 		seen[e.state] = true
+		clamp_hi = maxf(clamp_hi, maxf(e.clamp_over[0], e.clamp_over[1]))
+		if e.axis_off > axis_hi:
+			axis_hi = e.axis_off
+			axis_at = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 		var o := e.spear.global_position
 		var ax := e.spear.global_basis.y.normalized()
 		var gt := e.skel.global_transform
@@ -1584,10 +1604,15 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 				var shr: Vector3 = gt * e.skel.get_bone_global_pose(bones[0][0]).origin
 				var wi: Transform3D = e._wield.global_transform.affine_inverse()
 				print("      tick st=%d t=%.3f L sh-wrist %.3f sh-grip %.3f gap %.3f | wield-local shL %s shR %s gripL %s" % [e.state, e.t, f, shl.distance_to(e._grip_l.global_position) / ks, fg, str(wi * shl), str(wi * shr), str(e._grip_l.position)])
+			var ch: float = straight_len[j]
+			if ch > 0.0 and f * ks / ch > straight[j]:
+				straight[j] = f * ks / ch
+				straight_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 			if f < fold[j]:
 				fold[j] = f
 				fold_at[j] = "%s t=%.2f" % [["W", "W", "W", "S", "R"][e.state] if e.state < 5 else "?", e.t]
 	e.process_mode = Node.PROCESS_MODE_DISABLED
+	print("   %s reach clamp: worst grip asked %.3f past reach, shaft bent %.1f deg off the pose (%s) | arm straightest R %.3f (%s) L %.3f (%s)" % [label, clamp_hi, axis_hi, axis_at, straight[0], straight_at[0], straight[1], straight_at[1]])
 	print("   %s (x%.1f, states %s): fist-haft R %.3f (%s) L %.3f (%s) m/size | shoulder-wrist min R %.3f (%s) L %.3f (%s) m/size | body pitch %.2f..%.2f" % [label, ks, str(seen.keys()), fist[0], fist_at[0], fist[1], fist_at[1], fold[0], fold_at[0], fold[1], fold_at[1], lean_lo, lean_hi])
 	if not seen.has(HollowSoldier.STRIKE):
 		return "%s: the strike never ran" % label

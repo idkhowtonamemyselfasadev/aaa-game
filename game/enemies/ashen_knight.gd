@@ -348,6 +348,8 @@ func _ready() -> void:
 			skel.move_child(head, _ik.get_index())
 			head.record_hand = false
 			skel.skeleton_updated.connect(_record_left_hand)
+		if skel != null and SHOULDER_MODEL_REAL:
+			skel.skeleton_updated.connect(_record_shoulders)
 		# after the bow: the helm stays on the hero while the chest twists away in the coil
 		glare = HeadGlare.new()
 		glare.name = "HeadGlare"
@@ -1298,6 +1300,37 @@ func _helm_point() -> Vector3:
 	if head == null or _wield == null or head.head_world == Vector3.INF:
 		return Vector3.INF
 	return _wield.to_local(head.head_world) + CLUTCH_AT
+
+## (05:00 11-11) the knight's reach clamp measures from its REAL shoulders. The shared body
+## model (SHOULDER (+-0.21, 1.48, -0.06) turned by the chest twist, tipped with the lean) is the
+## hero's: the knight's shoulder joints sit ~0.1 higher (y 1.50-1.61 in the Wield's space), move
+## with the clip, the hip lean and the head bow, and its chest's yaw runs the other way to `tw`
+## (bot `foefold`, env FOEFOLD_TICKS_L). Every knight pose's clamp was measured from points up to
+## ~0.2 m off. The arm-IK shoulders as last posed (skeleton_updated, after every modifier; one
+## tick behind, which the clip's slow sway does not feel) are read back here into the Wield's
+## space. NOT LIVE YET: the knight's poses were solved against the old model, so with the real
+## shoulders the clamp bites where it never did (thrust 11.6, stomp 13.7, sweep 10.1 deg off the
+## pose) and the leap's arms still lock straight (0.98-0.996 of the chain). The poses must be
+## re-solved against these shoulders first (PROGRESS.md Next). env SHOULDER_MODEL_REAL=1 opts in.
+static var SHOULDER_MODEL_REAL := OS.get_environment("SHOULDER_MODEL_REAL") != ""
+var _sh_real := [Vector3.INF, Vector3.INF]
+var _sh_bones := [-1, -1]
+func _record_shoulders() -> void:
+	if _wield == null or not is_instance_valid(_wield):
+		return
+	if _sh_bones[0] < 0:
+		_sh_bones = [skel.find_bone("mixamorig_LeftArm"), skel.find_bone("mixamorig_RightArm")]
+		if _sh_bones[0] < 0 or _sh_bones[1] < 0:
+			return
+	var gt := skel.global_transform
+	var wi := _wield.global_transform.affine_inverse()
+	for i in 2:
+		_sh_real[i] = wi * (gt * skel.get_bone_global_pose(_sh_bones[i]).origin)
+
+func _shoulders(tw: float) -> Array:
+	if not SHOULDER_MODEL_REAL or _sh_real[0] == Vector3.INF:
+		return super._shoulders(tw)
+	return [_sh_real[0], _sh_real[1], true]
 
 ## (11-10 06:00) HeadBow now runs before the arm IK: the left hand as finally posed is read here
 ## (skeleton_updated runs inside the pass, after every modifier)

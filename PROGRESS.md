@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(05:00 11-11: NO VISIBLE CHANGE: THE KNIGHT'S REAL SHOULDERS ARE NOW MEASURED, AND THEY SHOW THE KNIGHT'S POSES NEED RE-SOLVING, NOT JUST A NEW SHOULDER MODEL. `_place` now asks a virtual `_shoulders(tw)`; the knight can read its arm-IK shoulders back off the posed skeleton every tick (env SHOULDER_MODEL_REAL=1, not live). Bot `foefold` now prints, per attack, how far a grip is asked past its reach, how far the clamp bends the shaft, and how straight each arm is pulled (shoulder-wrist over upper+fore arm). Live (old model): the knight's leap locks the right arm straight (0.995) and its slam bends the shaft 16.8 deg at S t=0.48; the sweep locks the left arm (0.96). With the real shoulders the clamp bites where it never did (thrust 11.6, stomp 13.7, sweep 10.1 deg) and the leap still locks (0.98/0.996), so switching alone is worse; the poses must be re-solved against the real shoulders with reach ~0.58 so the elbows keep a bend. No screenshots this session (no visual change).)
 (04:40 11-11: THE ASHEN KNIGHT NO LONGER LANDS ITS EMBER LEAP INSIDE ITS OWN FIRE: the ring of five flames that flares round the bite was phased +0.3 rad off the knight's heading, which stood one flame 1.2 m from a boot (flame radius 2.05 at phase 2), so the giant came down in its own fire and the flame hid the boots' dust kick. The ring is now phased so the gap between two flames faces back at the knight: nearest flame 2.57 m from a boot, the fire sprays out ahead and to the sides of the bite. Bot knightleap gates it (ring >= 1.2 x flame radius from the boots; RING_OLD=1 fails at 1.21 m).)
 (03:40 11-11: THE ASHEN KNIGHT'S LEAP LANDING NOW KICKS DUST OFF ITS BOOTS: at the bottom of the knees' give (recover u 0.09) each boot throws a low spray of dark turf clods and a broad pale ring of dust that rolls out over the grass tops (new ImpactFX kind `stamp`, sized with the giant), the grass is pressed flat under and outside each boot, and the hero's camera takes a small extra shake. The leap shot has a front-quarter lens (`fq`) so the pitch over the blade reads. Bot `knightleap` gates 2 kicks per landing on the turf with the grass laid; LEAPKICK_OFF=1 is the before.)
 (02:30 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH WEIGHT: the knees give as the boots touch, it bottoms out a beat after the blade bites (hips 73% -> 57% of standing height over the planted boots, chest pitched 0.34 -> 0.54 rad over the glaive), comes back up a little and holds a crouch over the bitten blade, then wrenches it free. The extra pitch is carried by the grips about the hips, so the arms keep their shape (foefold PASS), and the give is spent before the boots release to the clip, so they do not skate (knightplant unchanged at 0.0177 x size). New gate in `knightleap`; LEAPLAND_OLD=1 fails it. Frames u=0.95 / recover 0.05, 0.08, 0.40, 0.75 looked at.)
@@ -8334,6 +8335,25 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (05:00 11-11) **KNIGHT'S REAL SHOULDERS MEASURED — DONE (read-outs only; not live, no visible change).**
+   NEXT (2) of 04:40. `hollow_soldier.gd`: `_place` takes its shoulders from virtual `_shoulders(tw)` -> [l, r,
+   leaned] (default = SHOULDER turned by tw, tipped with `_place_lean`); new read-outs `clamp_over` [R, L] (m past
+   reach) and `axis_off` (deg the clamp bent the shaft). `ashen_knight.gd`: `_record_shoulders` (skeleton_updated)
+   stores LeftArm/RightArm in the Wield's space, `_shoulders` returns them when env SHOULDER_MODEL_REAL=1. Arm chain
+   (Wield units): upper 0.27 + fore 0.28 = 0.547; grip sits ~0.05 past the wrist, so a grip > ~0.60 from the real
+   shoulder locks the elbow. Bot `foefold` prints `reach clamp: worst grip asked .. past reach, shaft bent .. deg
+   (..) | arm straightest R .. L ..` (1 = locked) for every foe. Live numbers (old model): knight leap R 0.995 (W
+   t=0.33), slam clamp 0.217 past / 16.8 deg (S t=0.48); knight sweep L 0.962, clamp 10.9 deg (S t=0.12, same as
+   the soldier); hewer chop 6.5 deg, arms 0.93-0.95; archer 0.988 both (bow draw, by design?). Real model: knight
+   thrust 11.6 deg (R t=0.93), sweep 10.1 (W t=0.03, the guard!), stomp 13.7 (R t=0.75), leap 14.7 (W t=0.03),
+   arms leap 0.98/0.996. Bots PASS: foefold knight knightleap knightstomp knightplant foereach foegrip foeguard
+   surgegrip crown soldier.
+   NEXT: (1) re-solve the knight's poses against the REAL shoulders (python replica of `_place` with the measured
+   per-tick shoulders from FOEFOLD_TICKS_L, reach ~0.58 so the elbows keep a bend, shaft lines kept): GUARD first
+   (W t=0.03 of every move), then the leap's heave/slam arcs (arm locked + 16.8 deg), the sweep (left arm locked),
+   thrust recovery, stomp recovery; then go live (SHOULDER_MODEL_REAL default on) and gate `axis_off` <= 2 deg and
+   arm straightest <= 0.95 for the knight in `foefold`; (2) grass inside the boots' stance (04:40's (1)); (3)
+   bow-aware archer probe, kindler probe; (4) 22:00's leftovers. BOSS/ANIMATION order unchanged; audio after.
 0. (04:40 11-11) **EMBER RING NO LONGER ON THE KNIGHT'S OWN BOOTS — DONE (game change + `knightleap` gate).**
    NEXT (1a) of 03:40. `ashen_knight.gd` `_resolve_leap`: flame angles = heading + PI + TAU*(i+0.5)/5 (gap centred
    behind the bite, i.e. on the knight), new `last_ring` (bots). `RING_OLD=1` = the old +0.3 phase. Bot `knightleap`

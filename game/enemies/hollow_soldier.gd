@@ -593,26 +593,42 @@ func _fit_fists() -> void:
 		else:
 			_fist_off[i] = _fist_off[i].lerp(Vector3.ZERO, 0.1)
 
+## (05:00 11-11) read-outs of the last `_place` (bots): how far past its reach each grip was
+## asked (m, R/L) and how far the clamp then bent the shaft off the pose's direction (deg)
+var clamp_over := [0.0, 0.0]
+var axis_off := 0.0
+## The shoulders the reach clamp measures from, in the Wield's space: [left, right, leaned]. The
+## default is the hero's body model turned with the chest (`leaned` false: `_place` tips them with
+## the grips). A variant may return the skeleton's real shoulders (already leaned: true).
+func _shoulders(tw: float) -> Array:
+	return [SHOULDER.rotated(Vector3.UP, tw), Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw), false]
+
 func _place(pose: Array) -> void:
 	var d := StaffCombat.dir_of(pose[0], pose[1])
 	var c: Vector3 = pose[2]
 	var tw := deg_to_rad(pose[3])
-	var sl := SHOULDER.rotated(Vector3.UP, tw)
-	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
+	var sh: Array = _shoulders(tw)
+	var sl: Vector3 = sh[0]
+	var sr: Vector3 = sh[1]
 	if absf(_place_lean) > 0.0005:
 		var hip := Vector3(0, 0.95, 0)
 		var lb := Basis(Vector3.RIGHT, _place_lean)
 		c = hip + lb * (c - hip)
-		sl = hip + lb * (sl - hip)
-		sr = hip + lb * (sr - hip)
+		if not sh[2]:
+			sl = hip + lb * (sl - hip)
+			sr = hip + lb * (sr - hip)
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
 	var reach: float = pose[5] if pose.size() > 5 else ARM_REACH
-	var hr := sr + (c + d * (HAND_R + slide) - sr).limit_length(reach)
-	var hl := sl + (c + d * (HAND_L + slide) - sl).limit_length(reach)
+	var wr := c + d * (HAND_R + slide) - sr
+	var wl := c + d * (HAND_L + slide) - sl
+	clamp_over = [maxf(wr.length() - reach, 0.0), maxf(wl.length() - reach, 0.0)]
+	var hr := sr + wr.limit_length(reach)
+	var hl := sl + wl.limit_length(reach)
 	var axis := hl - hr
 	if axis.length() < 0.15:
 		axis = d * 0.15
 	var d2 := axis.normalized()
+	axis_off = rad_to_deg(d.angle_to(d2))
 	spear.transform = Transform3D(Basis(Quaternion(Vector3.UP, d2)), hr - d2 * (HAND_R + slide))
 	var fb := spear.basis if _roll_frame else Basis.IDENTITY
 	fist_shift = [fb * _fist_off[0], fb * _fist_off[1]]
