@@ -5092,6 +5092,20 @@ func _knightleap_test() -> void:
 				k.skel.skeleton_updated.disconnect(grab)
 				return _combat_done(false, "the landing throws no dust off the boots / leaves the grass standing")
 		k.skel.skeleton_updated.disconnect(grab)
+		# (11-11) the ember ring flares round the bite, never on the knight's own boots
+		var ring_clear := 999.0
+		var ring_r := 0.0
+		for f in k.last_ring:
+			if not is_instance_valid(f):
+				continue
+			var fl := f as AshFlame
+			ring_r = fl.radius
+			for kp in k.boot_kick_at:
+				var kv := kp as Vector3
+				ring_clear = minf(ring_clear, Vector2(fl.global_position.x - kv.x, fl.global_position.z - kv.z).length())
+		print("BOT knightleap: ember ring %d flames, nearest %.2f m from a boot (flame radius %.2f)" % [k.last_ring.size(), ring_clear, ring_r])
+		if k.last_ring.size() == 5 and k.boot_kick_at.size() > 0 and ring_clear < ring_r * 1.2:
+			return _combat_done(false, "the leap's ember ring flares up on the knight's own boots")
 		var r: String = k.leap_results[-1] if k.leap_results.size() > 0 else "none"
 		var land_err := Vector2(k.leap_bite().x - hero_at.x, k.leap_bite().z - hero_at.z).length()
 		var feet_gap := Vector2(k.global_position.x - hero_at.x, k.global_position.z - hero_at.z).length()

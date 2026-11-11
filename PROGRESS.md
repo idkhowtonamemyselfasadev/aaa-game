@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.7
+(04:40 11-11: THE ASHEN KNIGHT NO LONGER LANDS ITS EMBER LEAP INSIDE ITS OWN FIRE: the ring of five flames that flares round the bite was phased +0.3 rad off the knight's heading, which stood one flame 1.2 m from a boot (flame radius 2.05 at phase 2), so the giant came down in its own fire and the flame hid the boots' dust kick. The ring is now phased so the gap between two flames faces back at the knight: nearest flame 2.57 m from a boot, the fire sprays out ahead and to the sides of the bite. Bot knightleap gates it (ring >= 1.2 x flame radius from the boots; RING_OLD=1 fails at 1.21 m).)
 (03:40 11-11: THE ASHEN KNIGHT'S LEAP LANDING NOW KICKS DUST OFF ITS BOOTS: at the bottom of the knees' give (recover u 0.09) each boot throws a low spray of dark turf clods and a broad pale ring of dust that rolls out over the grass tops (new ImpactFX kind `stamp`, sized with the giant), the grass is pressed flat under and outside each boot, and the hero's camera takes a small extra shake. The leap shot has a front-quarter lens (`fq`) so the pitch over the blade reads. Bot `knightleap` gates 2 kicks per landing on the turf with the grass laid; LEAPKICK_OFF=1 is the before.)
 (02:30 11-11: THE ASHEN KNIGHT NOW LANDS ITS EMBER LEAP WITH WEIGHT: the knees give as the boots touch, it bottoms out a beat after the blade bites (hips 73% -> 57% of standing height over the planted boots, chest pitched 0.34 -> 0.54 rad over the glaive), comes back up a little and holds a crouch over the bitten blade, then wrenches it free. The extra pitch is carried by the grips about the hips, so the arms keep their shape (foefold PASS), and the give is spent before the boots release to the clip, so they do not skate (knightplant unchanged at 0.0177 x size). New gate in `knightleap`; LEAPLAND_OLD=1 fails it. Frames u=0.95 / recover 0.05, 0.08, 0.40, 0.75 looked at.)
 (01:30 11-11: THE ASHEN KNIGHT'S EMBER LEAP IS NOW SHOT AT ITS REAL PHASE-2 SIZE: the leap shot grows the knight to its phase-2 scale (3.2, leap window 16-35 m) before standing it off, and the side-on lens now tests three rays (body, helm, legs) for a clear line, trying the lit side then the shade side at 3.3/2.6/2.0/1.5 x size, so a cottage roof no longer fills the frame. Frames u=0.15/0.45/0.70/0.87/0.97 looked at: tuck with the glaive upright at take-off, heave over the right shoulder, level out in front, blade in the turf by the hero, who is now plainly a third of the giant's height. The arc reads at full size; the landing's torso stays upright (see Next). Shot harness only, no game change; bots knightleap foefold knight PASS.)
@@ -27,6 +28,8 @@ now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
 ## Environment / renderer (cloud box)
+- (04:40 11-11) Setup first try (background run, import completed: SHOTS_OK). Bots headless fine; GL shots
+  (SHOT_GL=1, 3 at once; vulkan fails, opengl3 retry). Asset sites not rechecked (no downloads, no new files).
 - (02:30 11-11) Setup first try, but the setup's import was cut off when its parent shell exited: run
   `tools/cloud-setup.sh` in the foreground (or re-run `.tools/godot --headless --path game --import`, ~2 min after a
   partial import). Bots headless fine; GL shots (SHOT_GL=1, 3 at once, ~12 min). Asset sites not rechecked. New shot
@@ -8331,6 +8334,16 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (04:40 11-11) **EMBER RING NO LONGER ON THE KNIGHT'S OWN BOOTS — DONE (game change + `knightleap` gate).**
+   NEXT (1a) of 03:40. `ashen_knight.gd` `_resolve_leap`: flame angles = heading + PI + TAU*(i+0.5)/5 (gap centred
+   behind the bite, i.e. on the knight), new `last_ring` (bots). `RING_OLD=1` = the old +0.3 phase. Bot `knightleap`
+   prints `ember ring 5 flames, nearest N m from a boot (flame radius R)` and fails below 1.2 x R: new 2.57/2.05,
+   old 1.21. (The geometry is size-invariant: bite 1.75 x size ahead, ring 1.5 x size, flame radius ~sqrt size.)
+   Bots PASS: knightleap knight knightplant. Shots `knight leap landed fq u=0.30/0.60` (RING_OLD=1 for before).
+   Grade: knight leap landing good (unchanged; VFX placement).
+   NEXT: (1) grass pressed inside the boots' stance (herd points age in from 0: check a later frame); (2) the knight's
+   shoulder model in `_place` (y 1.59, chest yaw sign); (3) bow-aware archer probe, kindler probe; (4) 22:00's
+   leftovers. BOSS/ANIMATION order unchanged; audio after.
 0. (03:40 11-11) **LEAP LANDING KICKS DUST + PRESSES GRASS, FRONT-QUARTER LENS — DONE (game change + `knightleap` gate).**
    NEXT (1) of 02:30. `ashen_knight.gd` `_boot_kick()` fires once per leap at RECOVER u >= KICK_U 0.09 (the give's
    bottom): per boot ImpactFX "turf" (0.9 x k, clods) at the turf + new "stamp" (1.4 x k; k = size / phase-1 size) 0.45

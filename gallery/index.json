@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261107-0800-knight-heave-lit.jpg",
-  "time": "2026-11-07T08:00:00Z",
-  "caption": "Boss reveal heave, front-lit (GL): the glaive stands upright on its right, but the shaft still crosses the right edge of the helm in this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0800-knight-roar-side-lit.jpg",
-  "time": "2026-11-07T08:00:00Z",
-  "caption": "Boss reveal roar in profile, lit (GL): fist raised and glaive skyward, but the flung-back head is hidden behind the raised arm and the hood, so it reads as a hunch, not a roar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261107-0930-knight-roar-fist.jpg",
-  "time": "2026-11-07T09:30:00Z",
-  "caption": "Boss reveal roar (GL, hour 8.5): the left hand now lets go of the haft and is thrown up in a fist while the glaive stands skyward in the right; the flung-back helm still reads as a dark dome, the face never shows.",
-  "verdict": "fail"
- },
- {
   "file": "20261107-0930-knight-roar-close.jpg",
   "time": "2026-11-07T09:30:00Z",
   "caption": "Close front lens on the roar: raised fist and glaive frame the knight's shoulders; the fingers look half open rather than clenched and the frame is GL, not Forward+.",
@@ -897,6 +879,18 @@
   "file": "20261111-0339-knight-leap-give.jpg",
   "time": "2026-11-11T03:39:00Z",
   "caption": "The same front-quarter lens a beat earlier: the giant bottoming out over its blade, the hero a third of its height at left. Still wrong: tall grass hides the boots and the clods read as tiny specks at this scale.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0440-knight-leap-ring.jpg",
+  "time": "2026-11-11T04:40:00Z",
+  "caption": "Ashen Knight's leap landing at phase-2 size: the ember ring now flares to the sides and ahead of the bite, the boot and its dust kick read clear; the front flame still crosses the front-quarter lens and the GL renderer is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0440-knight-leap-ring-before.jpg",
+  "time": "2026-11-11T04:40:00Z",
+  "caption": "Before: the old ring phase stood a flame right on the knight's own boot, hiding the landing's dust kick.",
   "verdict": "fail"
  }
 ]

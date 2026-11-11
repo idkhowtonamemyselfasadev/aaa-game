@@ -236,6 +236,7 @@ var leap_to := Vector3.ZERO      # where its feet land (the bite is LEAP_BITE be
 var leap_lift := 0.0             # current height of the arc (hurt capsule and model ride it)
 var _leap_cool := 0.0
 var last_scorch: Scorch          # the burn the last leap left in the turf (bots)
+var last_ring: Array = []        # (bots) the ember ring the last leap's bite flared up
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var land_give := 0.0             # (bots) the landing's give this tick, 0..1
 var land_give_peak := 0.0        # (bots) the deepest give of the last leap
@@ -1543,10 +1544,18 @@ func _resolve_leap() -> void:
 	sc.global_position = b
 	last_scorch = sc
 	# the ember shakes loose as the blade bites: a ring of fire flares up round the impact
+	# (11-11) the ring is phased so the gap between two flames faces back at the knight: the old
+	# phase (+0.3 rad) stood one flame ~1 m off its own boots (inside the flame's radius), so the
+	# giant landed in its own fire and the flame hid the boots' dust kick
+	last_ring = []
+	var back := body.rotation.y + PI
+	if OS.get_environment("RING_OLD") == "1":
+		back = body.rotation.y + 0.3 - TAU * 0.5 / 5.0
 	for i in 5:
-		var a := TAU * i / 5.0 + body.rotation.y + 0.3
+		var a := back + TAU * (i + 0.5) / 5.0
 		var f := _flame_at(b + Vector3(sin(a), 0, cos(a)) * 1.5 * _reach_k(), false)
 		f.t = AshFlame.WARN - 0.02
+		last_ring.append(f)
 	last_result = r
 	leap_results.append(r)
 	leap_landed.emit(b, r)
