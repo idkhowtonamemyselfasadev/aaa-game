@@ -74,6 +74,8 @@ const DRAWN := [6.0, 9.0, Vector3(-0.05, 1.24, 0.30), -32.0]
 ## arm shut, now carried by `_lean_grips`. THRUST_TRY=a,b,x,y,z,tw,sl,r tries a pose.
 const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
 const THRUST_SOLVED := [18.0, 1.0, Vector3(0.02, 1.22, 0.82), -20.0, -0.1, 0.58]
+const FOE_PIVOT_SINK := 14.0     # skeleton cm the hips may settle onto a ball-pivot leg (hero 8)
+const FOE_BALL_HEEL_MAX := 24.0  # deg a foe's heel may rise onto the ball to keep it on its spot
 var thrust_pose: Array = _try_thrust()
 const WINDUP_LEAN := -0.13
 var THRUST_UNLEANED := OS.get_environment("THRUST_UNLEANED") == "1"
@@ -389,6 +391,17 @@ func _setup_animation() -> void:
 		skel.move_child(stride_warp, 0)        # first modifier: on the clip's own legs
 		stride_warp.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
 		stride_warp.ground_body = self
+		# (11-12 02:00) the turn on the spot spins on the ball with the heel up, like the hero's; the
+		# foes' clips rise onto the stepping leg, so the hips may sink deeper and the heel rise higher
+		# to keep the ball on its spot. FOEBALL_OLD: the before (ankle pin, 8 cm sink)
+		stride_warp.ball_pivot = not OS.has_environment("FOEBALL_OLD")
+		if stride_warp.ball_pivot:
+			stride_warp.pivot_sink_max = FOE_PIVOT_SINK
+			stride_warp.ball_heel_max_deg = FOE_BALL_HEEL_MAX
+		if OS.has_environment("FOE_SINK"):
+			stride_warp.pivot_sink_max = float(OS.get_environment("FOE_SINK"))
+		if OS.has_environment("FOE_HEEL"):
+			stride_warp.ball_heel_max_deg = float(OS.get_environment("FOE_HEEL"))
 		# modifiers once per physics tick on the AnimationTree's physics pose (the hero's 17:30
 		# switch): on idle frames they ran 0 or 2 times a tick, so the contact lock was flaky
 		if OS.get_environment("FOE_IDLEMOD") == "":

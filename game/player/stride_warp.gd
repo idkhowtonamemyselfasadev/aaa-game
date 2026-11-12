@@ -58,6 +58,7 @@ var pivot_other := Vector3.ZERO  # (bots) world other ankle as posed this tick
 var pivot_settle := false    # (owner) the body has squared up: the turn step comes down now
 var pivot_sink := 0.0            # (bots) skeleton units the hips settled onto the pivot leg this tick
 const PIVOT_SINK_MAX := 8.0      # skeleton units (cm)
+var pivot_sink_max := PIVOT_SINK_MAX  # (11-12 02:00) per owner: the foes may sink further
 var pivot_short := 0.0           # (bots) skeleton units the leg could not reach to the pin this tick
 ## (11-12) Ball pivot: a turn on the spot spins the planted foot on its BALL with the heel lifted,
 ## not on the ankle (which swept the toes ~0.2 m round over the turf through a 160 deg turn). The
@@ -68,8 +69,12 @@ static var BALLPIVOT_OLD := OS.has_environment("BALLPIVOT_OLD")
 const BALL_HEEL_DEG := 13.0      # deg the heel comes up off the turf at full spin
 const BALL_HEEL_RISE := 9.0      # 1/s the heel comes up
 const BALL_HEEL_FALL := 7.0      # 1/s it settles back down once square
-var ball_pivot := false          # set by the owner: the hero (foes: pending, their legs run out of reach)
+var ball_pivot := false          # set by the owner: the hero (foes too since 11-12 02:00, deeper sink + reach rise)
 var _ball_pin = null             # world ball of the pivot foot while spinning on it
+static var FOEBALL_NO_REACH := OS.has_environment("FOEBALL_NO_REACH")
+var ball_heel_max_deg := 30.0  # a leg short of the ball's ankle spot rises this far onto the ball at most
+const BALL_REACH_K := 0.985      # the ankle target is kept inside this share of the leg's full length
+var heel_reach_deg := 0.0        # (bots) the heel angle this tick after the reach rise
 var _heel_w := 0.0               # 0..1 heel lift weight
 var pivot_ball := Vector3.ZERO   # (bots) world ball of the pivot foot as posed this tick
 var pivot_ball_pin := Vector3.ZERO  # (bots) where that ball was planted (or rebased)
@@ -463,6 +468,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var pin_l: Vector3 = inv * (pivot_pin as Vector3)
 	var heel_q := Basis()
 	pivot_heel_up = 0.0
+	heel_reach_deg = 0.0
 	var tb := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
 	if tb >= 0 and ball_pivot and not BALLPIVOT_OLD:
 		var toe_off: Vector3 = skel.get_bone_global_pose(tb).origin - skel.get_bone_global_pose(ft).origin
@@ -476,12 +482,39 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var ball_l := pin_l + toe_off
 		pivot_ball_pin = xf * ball_l
 		var flat := toe_off - up * toe_off.dot(up)
-		if _heel_w > 1e-4 and flat.length() > 1e-4:
+		if (_heel_w > 1e-4 or not FOEBALL_NO_REACH) and flat.length() > 1e-4:
 			var lat := up.cross(flat).normalized()
 			var ang := deg_to_rad(BALL_HEEL_DEG) * (_heel_w * _heel_w * (3.0 - 2.0 * _heel_w))
 			var v := pin_l - ball_l
-			if v.rotated(lat, ang).dot(up) < v.dot(up):
+			if v.rotated(lat, deg_to_rad(BALL_HEEL_DEG)).dot(up) < v.dot(up):
 				ang = -ang
+				lat = -lat                # rotate the other way round: the heel always goes up
+				ang = -ang
+			# (11-12 02:00) a leg that cannot reach the ankle where the ball puts it (the foes: the
+			# hips already sink the full PIVOT_SINK_MAX) rises further onto the ball, up to
+			# BALL_HEEL_MAX_DEG, instead of dragging the planted ball off its spot. FOEBALL_NO_REACH: the before
+			if not FOEBALL_NO_REACH:
+				var hip := skel.get_bone_global_pose(ul).origin - up * pivot_sink_max
+				var kn := skel.get_bone_global_pose(lg).origin
+				var reach_m := (hip.distance_to(kn) + kn.distance_to(skel.get_bone_global_pose(ft).origin)) * BALL_REACH_K
+				var sgn := signf(ang)
+				var amax := deg_to_rad(ball_heel_max_deg) * sgn
+				if (ball_l + v.rotated(lat, ang) - hip).length() > reach_m:
+					var lo_a := ang
+					var hi_a := amax
+					if (ball_l + v.rotated(lat, hi_a) - hip).length() > reach_m:
+						lo_a = hi_a
+					else:
+						for _it in 10:
+							var mid := (lo_a + hi_a) * 0.5
+							if (ball_l + v.rotated(lat, mid) - hip).length() > reach_m:
+								lo_a = mid
+							else:
+								hi_a = mid
+						lo_a = hi_a
+					# the extra rise comes in with the pivot weight, so the plant itself does not pop
+					ang = lerpf(ang, lo_a, clampf(pivot, 0.0, 1.0))
+				heel_reach_deg = absf(rad_to_deg(ang))
 			var v2 := v.rotated(lat, ang)
 			pivot_heel_up = (xf.basis * (up * (v2.dot(up) - v.dot(up)))).length()
 			pin_l = ball_l + v2
@@ -499,7 +532,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	if dd.length() > reach_l:
 		var du := dd.dot(up)
 		var h := -du - sqrt(maxf(du * du - dd.length_squared() + reach_l * reach_l, 0.0))
-		h = clampf(h, 0.0, PIVOT_SINK_MAX)
+		h = clampf(h, 0.0, pivot_sink_max)
 		var hips := skel.find_bone("mixamorig_Hips")
 		if hips >= 0 and h > 0.0:
 			var hp := skel.get_bone_parent(hips)

@@ -3000,10 +3000,14 @@ func _foe_turn_test() -> void:
 			var up := 0
 			for j in 2:
 				var h: float = ((float(e.stride_warp.ground_sole[j]) if post else (skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y) - rest[j]) / sc
+				# (11-12 02:00) a foot spinning on its ball stands on the ball: its heel lift is not a step
+				# so it is read on the ball's height over where the ball was planted, not on the ankle
+				if post and e.stride_warp.ball_pivot and not StrideWarp.BALLPIVOT_OLD and j == e.stride_warp.pivot_side and e.stride_warp.pivot > 0.0 and e.stride_warp._ball_pin != null:
+					h = (e.stride_warp.pivot_ball.y - e.stride_warp.pivot_ball_pin.y) / sc
 				lift = maxf(lift, h)
 				if OS.has_environment("FOETURN_DBG") and sc < float(OS.get_environment("FOETURN_DBG_SC") if OS.has_environment("FOETURN_DBG_SC") else "1.5"):
 					var hc: float = ((skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y - rest[j]) / sc
-					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j]])
+					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f heelup %.3f ballY %.3f pinY %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j], e.stride_warp.pivot_heel_up, e.stride_warp.pivot_ball.y - e.global_position.y, e.stride_warp.pivot_ball_pin.y - e.global_position.y])
 				if h > 0.02:
 					up += 1
 				if post and j == 1 and e.stride_warp.pivot < rel_prev and rel_prev >= 0.999 and rel_h < 0.0:
@@ -3029,6 +3033,8 @@ func _foe_turn_test() -> void:
 				if sw.ball_pivot and not StrideWarp.BALLPIVOT_OLD:
 					dv = sw.pivot_ball - sw.pivot_ball_pin
 				_heel_peak = maxf(_heel_peak, sw.pivot_heel_up / sc)
+				if OS.has_environment("FOEBALL_DBG"):
+					print("   ball sc %.1f dv %.3f %.3f %.3f short %.2f sink %.1f heel %.1f deg piv %.2f settle %s" % [sc, dv.x / sc, dv.y / sc, dv.z / sc, sw.pivot_short, sw.pivot_sink, sw.heel_reach_deg, sw.pivot, sw.pivot_settle])
 				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length() / sc)
 				piv[1] = maxf(piv[1], absf(dv.y) / sc)
 				if piv_o0 == Vector3.INF:
@@ -3137,7 +3143,10 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: no pivot foot planted in the turn (%d ticks)" % [o[0], pv[4]])
 		if pv[3] != 0:
 			return _combat_done(false, "size %.1f: a left turn planted the right foot" % o[0])
-		if pv[0] > 0.03 or pv[1] > 0.03:
+		# 11-12 02:00: the foes spin on the ball too, read on the ball: 0.000 at every size (it slid
+		# 0.025-0.031 per size off its spot in the settle before the reach rise and the deeper sink)
+		var pv_cap := 0.01 if (k.stride_warp.ball_pivot and not StrideWarp.BALLPIVOT_OLD and not StrideWarp.FOEBALL_NO_REACH) else 0.03
+		if pv[0] > pv_cap or pv[1] > pv_cap:
 			return _combat_done(false, "size %.1f: the pivot foot slides %.3f per size (y %.3f)" % [o[0], pv[0], pv[1]])
 		if pv[2] < 0.08:
 			return _combat_done(false, "size %.1f: the outside foot does not step round (%.2f per size)" % [o[0], pv[2]])

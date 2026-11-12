@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261108-0415-knockplant1.47.jpg",
-  "time": "2026-11-08T04:15:54Z",
-  "caption": "Knock-down get-up (GL): the staff stands planted by the knee clear of the hat; the hero's crouch still reads stiff and the GL frame has no fog or GI.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0514-knockdown-reach.jpg",
-  "time": "2026-11-08T05:14:55Z",
-  "caption": "Knock-down get-up at 1.73 s: the held staff now waits at the hat's brim and comes round it instead of jerking out past it; seen from behind, grass off, body pose still rough.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0514-knockdown-draw.jpg",
-  "time": "2026-11-08T05:14:55Z",
-  "caption": "Knock-down get-up at 1.90 s: the staff mid-way through the new eased half-second draw back to the guard, upright beside the body; lens behind the hero, grass off, ground texture still flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0620-knockdown-round.jpg",
   "time": "2026-11-08T06:20:00Z",
   "caption": "Knock-down get-up at 1.73 s: the held staff now steps round the hat brim and lies diagonally behind the left shoulder, well clear of the hat (it used to wait at the brim and then sweep through it in the draw); body pose still rough, flat ground texture.",
@@ -891,6 +873,18 @@
   "file": "20261112-0127-turnfeet.jpg",
   "time": "2026-11-12T01:27:43Z",
   "caption": "First low lens on the boots through a 160 deg turn on the spot (0.40-1.60 s): step arc and closed end stance read, but it is dark and unlit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0223-knight-ballturn.jpg",
+  "time": "2026-11-12T02:23:57Z",
+  "caption": "The Ashen Knight (phase-1 size) mid turn on the spot at 09:00, low boot lens: the planted boot now stands on its ball with the heel up instead of spinning flat; the lens still crops the body and the boots read small.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0223-knight-ankleturn-before.jpg",
+  "time": "2026-11-12T02:23:57Z",
+  "caption": "Same tick before the change (FOEBALL_OLD=1): the planted boot lies flat and pivots on its ankle; for comparison only.",
   "verdict": "fail"
  }
 ]

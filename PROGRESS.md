@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(02:00 11-12: THE SOLDIER AND THE ASHEN KNIGHT NOW TURN ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL UP, LIKE THE HERO: before, the foes kept the ankle pin and the ball tried last night slid 0.025-0.031 m/size off its spot. The slide was in the settle, not the spin: once squared up the heel came down and the leg could not reach the turf (short 3.5 cm). `StrideWarp` now rises further onto the ball when the leg is short (bisection on the heel angle, up to `ball_heel_max_deg`, also through the settle), and the foes may sink 14 cm (hero 8). Bot `foeturn`: ball drift 0.000 at x1/2.2/3.2/4.6 (gate tightened 0.03 -> 0.01), heel 0.064-0.067/size, both-feet-off read on the ball 0-2 ticks. Frames at 09:00 (bootlens) new vs old: the planted boot stands on its ball, heel up. FOEBALL_OLD=1 is the before.)
 (01:00 11-12: THE HERO NOW TURNS ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL LIFTED: the pivot foot was pinned at the ankle, so through a 160 deg standing turn its toes swept round over the turf. New ball pivot in `StrideWarp._pivot_leg`: the ball (ToeBase) is pinned where it stood, the ankle orbits it as the sole turns with the body, the heel rises up to 13 deg (3.9 cm) while the body turns and settles back 16 ticks after squaring, before the settle steps. Bot `heroturn`: ball drift 0.000 m, heel 0.039 m, end stance 0.000 m off idle. First lit frames of the feet through a turn (new `anklelens`). Hero only for now; BALLPIVOT_OLD=1 is the before.)
 (00:00 11-12: THE ASHEN KNIGHT'S SWEEP FOLLOW-THROUGH NO LONGER SWINGS ITS GLAIVE'S BUTT CAP THROUGH ITS OWN RIGHT PAULDRON: run out to the left (bearing ~95) the shared pose held the glaive right of the chest, so the butt cap swept 0.038-0.040 m/size into the right pauldron at the cut's end and the recovery's start (bot `foefold`, full run). New KSWEEP_FOLLOW: the hold drifts 0.15 m left and 0.15 m forward over bearings 40..95. ~12 runs: SR 0.038 -> -0.023, RR 0.040 -> -0.086, helm R -0.137 -> -0.077 (clear), left arm 0.900 -> 0.905, fists/roll unchanged at every size. New gate on SR/RR; SWEEPFOLLOW_OLD=1 is the before.)
 (23:00 11-11: THE ASHEN KNIGHT'S SWEEP COIL NO LONGER RUNS ITS GLAIVE'S BUTT INTO ITS OWN LEFT SHOULDER ARMOUR: the bot's pauldron read-out now runs on every tick of every knight move (was: only the leap's heaved-high ticks). Thrust, stomp and the leap's wind-up/recovery read clear; the sweep's held coil sat 0.067 m/size inside the left pauldron for its whole 0.5 s hold. ~50 runs against `foefold` + `foegrip`: chest twist 0.4 -> 0.44 of the bearing, hold 0.11 m further left and 0.13 m further back: WL 0.067 -> -0.009, SL -0.015, helm clearance improved, arms within 0.03, hand roll steady at every size. New gate on every knight move's pauldrons; SWEEPPAUL_OLD=1 is the before. GL old/new looked at.)
@@ -46,6 +47,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (02:00 11-12) Setup first try (import ~5 min); GL shots via opengl3 (SHOT_GL=1; a ring bootlens frame ~1.5 min, 4 in parallel fine); headless bots fine. Asset sites not rechecked (no downloads). `ring turn bootlens` at hour 9.0 is front-lit (15:00 is backlit).
 - (22:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 (SHOT_GL=1, 5-frame side leapseq ~12 min, ran alongside 3 bots fine); headless bots fine. Asset sites not rechecked (no downloads).
 
 - (20:00 11-11) Setup needed a second run (the first was killed with its shell; run it in the foreground or as a tracked background job); import ~10 min; GL shots via opengl3 (SHOT_GL=1); headless bots fine. Asset sites not rechecked (no downloads).
@@ -8376,6 +8378,31 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (02:00 11-12) **FOE BALL PIVOT ON THE SPOT — DONE (game change, gated).** NEXT (1) of 01:00.
+   FOEBALL_DBG=1 (bot foeturn, per pivot tick: ball dv, pivot_short, sink, heel deg, settle) showed the ball held
+   0.000 through the spin; it slid in the SETTLE (pivot_settle true, `_ball_pin` dropped, heel easing down): the ankle
+   came back down to the turf and the leg was 1.3-3.8 cm short with the hips already at the 8 cm cap.
+   `stride_warp.gd`: reach rise -- after the base heel lift, if the ankle (ball + clip toe offset rotated) is beyond
+   BALL_REACH_K 0.985 x the leg from the hip lowered by `pivot_sink_max`, bisect the heel angle up to
+   `ball_heel_max_deg` (blended in with `pivot`); runs through the settle too (block entered with heel_w 0); the
+   heel direction sign is now taken from a nominal angle so it works at heel_w 0. New per-instance `pivot_sink_max`
+   (default PIVOT_SINK_MAX 8) and `ball_heel_max_deg` (30). `heel_reach_deg` exposed. FOEBALL_NO_REACH=1 = no rise.
+   `hollow_soldier.gd`: `ball_pivot` on for every foe (FOEBALL_OLD=1 = ankle pin), FOE_PIVOT_SINK 14, FOE_BALL_HEEL_MAX 24.
+   Search (sink/heel): 8/30 still slides 0.025-0.030 (30 deg is not enough alone); 12/24 0.000-0.006; 14/24 and 16/20
+   0.000 (sink used 12.5-13.5 cm). Chose 14/24.
+   `bot.gd` foeturn: the pivot foot under the ball pivot is read on its BALL height over the planted ball (the ankle
+   rises with the clip's own foot pitch at the step, 8 cm, which counted as "both feet off" 7-17 ticks); pin drift gate
+   0.01 with the ball pivot (0.03 before).
+   Readings: drift 0.000 all sizes, heel 0.067/0.067/0.066/0.064 per size, both-off 2/1/0/0, slide 0.007-0.010.
+   Hero unchanged (heroturn heel 0.039, ball 0.000).
+   Bots PASS: heroturn foeturn pivot stop start lean stride footik stepup jump combat knight soldier foestride sentinel
+   knightleap knightstomp foefold foegrip knightguard foeflinch foehands lockon foeguard keepgap foereach.
+   Frames `ring kh_new 16 9.0 fixfps turn sz=2.2 bootlens` (+ kh_old with FOEBALL_OLD=1, kh_new12 at 12): the near boot
+   stands toe-down on its ball with the heel up in the new one, flat in the old. Gallery: 2 (fail; lens crops the body).
+   Grade: foe turn-in-place good- -> good.
+   NEXT: (1) a sunlit anklelens turn sequence for the HERO (try hour 9.0, the ring's bootlens reads there); (2) a
+   ring turn frame sequence at size 4.6 to see the 13 cm hip sink at the giant size (is the dip visible / ugly?);
+   (3) the knight sweep side lens (00:00 NEXT 1). BOSS/ANIMATION order unchanged; audio after.
 0. (01:00 11-12) **HERO BALL PIVOT ON THE SPOT — DONE (game change, gated).** NEXT (3) of 00:00 (the next hero move graded rough: turn-in-place).
    Frames first: `shot.gd` new `anklelens` (with stoplens: 2.4 m off on the sun side, lens 0.45 m over the turf, aimed
    at 0.3 m) so the boots read under the tabard hem for the first time. Sequence `jump tk_<t> 20 11.0 fixfps nojump fromrest
