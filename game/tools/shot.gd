@@ -2549,6 +2549,14 @@ func _ready() -> void:
 			var scam := get_viewport().get_camera_3d()
 			scam.global_position = sc
 			scam.look_at(back + Vector3.UP * 0.95)
+			if "bodytight" in args:
+				# (11-12 08:00) bodytight: zoomed onto the whole body (fov 42, aimed at the hips'
+				# height a touch above) so knee bend and hip height read in a turn on the spot;
+				# the plain 3.4 m lens leaves the hero ~300 px tall with the knees under the robe
+				scam.fov = 42.0
+				sc.y = maxf(back.y + 0.75, terrain.height_at(sc.x, sc.z) + 0.7)
+				scam.global_position = sc
+				scam.look_at(back + Vector3.UP * 0.9)
 			print("SHOT sidelens cam %s hero %s side %s" % [sc, back, sside])
 		if "frontlens" in args:
 			# frontlens: ahead of the run (+X), a little to the sun side, at chest height, so the

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261108-1027-ja30tf.jpg",
-  "time": "2026-11-08T10:27:15Z",
-  "caption": "Jump attack at the arch's peak, side lens: the head now tips over and the staff is drawn back ~40 deg past vertical behind the hat (was 26); still wrong: the left hand reads open beside the brim and the figure is backlit and dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1027-ja30t.jpg",
-  "time": "2026-11-08T10:27:15Z",
-  "caption": "Same instant from the rear 3/4 lens: the tilted hat shows, but from behind the deeper draw still reads as an upright staff; the move needs a side-on gameplay camera to sell the bow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1215-jumpattack-fists.jpg",
-  "time": "2026-11-08T12:15:00Z",
-  "caption": "Jump attack at the arch's peak, staff snatched off the back: both fists now closed on the shaft over the hat; still seen from behind, so the drawn-back cock reads as a staff held across rather than a loaded bow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1215-jumpattack-before.jpg",
-  "time": "2026-11-08T12:15:00Z",
-  "caption": "Same moment before the fix: both open hands reach up beside the hat while the staff still lags across the back (slow 0.22 s air snatch plus trunk bends carrying the arms off).",
-  "verdict": "fail"
- },
- {
   "file": "20261108-1242-jumpsnatch.jpg",
   "time": "2026-11-08T12:42:36Z",
   "caption": "Jump attack mid-snatch, side-on: the staff swings off the back across the shoulders with the right fist already on it; backlit, the figure reads as a silhouette and the left hand is still rising from the hip.",
@@ -897,6 +873,18 @@
   "file": "20261112-0730-turn-old-new.jpg",
   "time": "2026-11-12T07:30:00Z",
   "caption": "Before (left) vs after (right) at jt 0.55: the robe hem sits slightly higher as the body rises on the pivot ball; the difference is small from this low lens, a side-on full-body lens is still owed.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0900-turn-side-040.jpg",
+  "time": "2026-11-12T09:00:00Z",
+  "caption": "Turn on the spot at jt 0.40 from the new full-body side lens (sidelens prof bodytight): the step back and the ball pivot read, the hips stay up; the hero's front is in its own shade and the shin wraps read as bulky tubes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0900-turn-side-055.jpg",
+  "time": "2026-11-12T09:00:00Z",
+  "caption": "Turn on the spot at jt 0.55, side-on full body: with the hips hold the whole figure stands a few px taller than the old build (hat brim higher); the knees are still hidden under robe and tabard and the GL ground reads flat.",
   "verdict": "fail"
  }
 ]
