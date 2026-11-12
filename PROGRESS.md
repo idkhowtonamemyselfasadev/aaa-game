@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(14:00 11-12: THE HERO'S FEET NO LONGER SCISSOR IN A TURN ON THE SPOT TO THE LEFT: measured first (bot `heroturn` new HEROTURN_FLIP turns the other way, HEROTURN_SEP prints the ankles' spread across the body per tick): turning right the feet stayed >= 7 cm apart, turning LEFT the stepping right ankle crossed 32 cm over the planted left one, because the guard stands the left foot forward and the body spun about its own middle, swinging that fore-aft offset across. `player.gd` `_step_capped`: where the turn would carry the planted ball inside PIVOT_KEEP 7 cm of the body's middle line, the body steps round it (up to 5 cm a tick); `stride_warp.gd`: the stepping ankle's target is held at least half the idle stance width out on its own side of the planted ankle (caught the settle step, which still crossed 2 cm). PIVOT_CROSS_OLD=1 = before. Turning left now: min ankle spread 0.070 m (was -0.318), stepping knee fold 18 deg past the guard (was 31). Frames xs_old / xs_new (facesun 9:00 jt 0.55) looked at. New bot gate: ankles across the body >= 0.4 x rest. Grade turn-in-place: good (feet fixed; left-turn knee fold still deep).)
 (13:00 11-12: THE HERO'S TURN ON THE SPOT JUDGED FRONT-LIT: `shot.gd` spotturn `facesun` ends the turn facing the sun; at 9:00 the face and cape read lit; found the feet crossing into a scissor stance mid-turn (next fix). Content hours unchanged (tool + judgement).)
 (12:00 11-12: A SUN-SIDE LENS FOR JUDGING THE HERO'S TURN ON THE SPOT: `shot.gd` sidelens gets `sunside` (swing the profile lens toward the hero's front by sunswing=<deg>, default 35, so it is a front 3/4 on the sun's flank; prints the sun's angle off the lens and off the hero's facing). A first try that swung toward the sun's azimuth gave a rear 3/4 whenever the sun stood behind the hero (9:00 and 12:00 at the `jump` spot). Frames looked at: sun_old (plain prof bodytight 9:00, front in self-shade), sf09 (sunside 9:00: face, fists, staff and the stepping legs read; front still half shaded, sun 77 deg off the lens), sun15_* (15:00: hero in the cottage's shadow, useless), sun12/sf12 (12:00: the hero walks away with the staff slung instead of turning: spot setup differs at that hour). Bots PASS: walk heroturn jump combat footik. Gallery: 2 (fail). Grade turn-in-place: good- (unchanged).)
 (11:15 11-12: THE HERO'S BOOT TOES ARE SCUFFED MATTE LEATHER, NOT GLOSSY PINK LACQUER: inside the boot mask (v_boot) the base mesh's lacquered plates (toe cap, vamp) kept the armour's satin roughness 0.46 and red lacquer, so in the ankle lens the toes caught the sky as a glossy pinkish-white highlight. New hero.gdshader uniform `boot_scuff` (player.gd sets 1 on the hero; BOOTGLOSS_OLD=1 = before): plates inside the boot mask are pulled half way to the straps' hide x(0.3..0.42), darkened up to 18 % along a fine rub grain, roughness 0.66-0.86. Frames bt_old / bt_new2 (ankle lens jt 0.40) looked at: the toes now read as worn brown boots; bt_side (bodytight side) looked at, boots lost in the grass there. Bots PASS: walk heroturn jump combat villager knight footik stepup hands climb glide neighbour pedlar (pedlar failed once while a GL shot ran in parallel, passed twice alone).)
@@ -58,6 +59,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (14:00 11-12) Setup first try (import ~5 min, background); GL shots via opengl3 (SHOT_GL=1, 2 in parallel ~5 min, alongside bots fine); headless bots fine. Asset sites not rechecked (no downloads). `HEROTURN_FLIP=1` turns the heroturn bot left; `HEROTURN_SEP=1` prints the feet spread per tick.
 - (12:00 11-12) Setup first try (import a few min); GL shots via opengl3 (SHOT_GL=1, 2 in parallel ~4 min); headless bots fine. Asset sites not rechecked (no downloads).
 - (05:00 11-12) Setup first try (import ~12 min, run as a background job); GL shots via opengl3 (SHOT_GL=1, 4 at once ~10 min); headless bots fine. Asset sites not rechecked (no downloads).
 - (02:00 11-12) Setup first try (import ~5 min); GL shots via opengl3 (SHOT_GL=1; a ring bootlens frame ~1.5 min, 4 in parallel fine); headless bots fine. Asset sites not rechecked (no downloads). `ring turn bootlens` at hour 9.0 is front-lit (15:00 is backlit).
@@ -8398,6 +8400,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (14:00 11-12) **NO SCISSOR FEET IN A TURN ON THE SPOT — DONE (game change, gated).** NEXT (1) of 13:00.
+   Measured: `HEROTURN_FLIP=1 HEROTURN_SEP=1` bot heroturn (turn left; the default bot turns right). Turning left
+   the stepping right ankle crossed 0.318 m over the planted left (guard = left foot forward; the body spun about its
+   middle so the pin's fore-aft offset swung across). Fix: `player.gd` `_step_capped` pushes the body round the
+   planted ball when it would come within PIVOT_KEEP 0.07 m of the middle line (only while turning, not in the
+   settle); `stride_warp.gd` clamps the stepping ankle's target to >= PIVOT_CROSS_MIN 0.5 stance widths out from the
+   planted ankle (hero only, `uncross` flag: on the foes it made the size-2.2 knight's settle tap its boot down,
+   bot foeturn FAIL; foes unchanged). PIVOT_CROSS_OLD=1 = before. Left turn: spread min 0.070 m
+   (rest 0.140), right turn unchanged (0.072). Bot gate added (spread >= 0.4 x rest). Frames xs_old/xs_new/xs_n45/xs_n65
+   (`jump ... spotturn facesun turnat=0.3 sidelens prof bodytight sunside jt=...`, 9:00) looked at.
+   Verdict (sequence 0.45/0.55/0.65): feet apart, the stepping leg passes close behind, no crossing; still the knees
+   nearly touch mid-pass and the body tilts hard to the side. Gallery: 2 (fail).
+   Bots PASS: heroturn walk jump combat foeturn knight footik stepup pivot. Grade turn-in-place: good.
+   NEXT: (1) the LEFT turn's stepping knee folds 18 deg past the guard (right turn 6): its arc lift is 6.5 cm vs
+   3.9 (the boot travels faster in world as the body steps round); make `heroturn` run both directions once it
+   passes; also the knees nearly touching as the step passes, and whether the foes need the uncross clamp (knight
+   settle tap); (2) why at 12:00 the `jump ... spotturn` setup leaves the hero walking off with the staff slung; (3)
+   heel-side lens; (4) knight sweep side lens; (5) laid lane's uniform band. BOSS/ANIMATION order unchanged; audio after.
 0. (13:00 11-12) **FRONT-LIT TURN ON THE SPOT — DONE (tool + judgement).** NEXT (1) of 12:00.
    `shot.gd` spotturn `facesun`: the turn ends with the hero's face (body +Z) toward the sun's azimuth (prints the
    yaw once). Command: `SHOT_GL=1 tools/shots.sh "jump fs_90 20 9.0 fixfps nojump fromrest clear nograss nodog spotturn

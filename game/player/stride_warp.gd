@@ -362,6 +362,10 @@ var _arc_floor := 0.0            # the stance level when the pivot planted (skel
 ## turn, then sank). The clip's own lift no longer holds it, it eases down at STEP_SETTLE_K and
 ## it stops travelling over the turf once down. PIVOT_HOVER: the before.
 static var PIVOT_HOVER := OS.has_environment("PIVOT_HOVER")
+static var PIVOT_CROSS_OLD := OS.has_environment("PIVOT_CROSS_OLD")
+const PIVOT_CROSS_MIN := 0.5     # share of the idle stance width the stepping ankle keeps out from the planted one
+var uncross_peak := 0.0          # (bots) most the stepping boot was held out, in stance widths
+var uncross := false             # set by the owner: the hero (the foes tap their boot down with it, bot foeturn size 2.2)
 const STEP_SETTLE_K := 11.0      # 1/s: share of the boot's height closed per second while settling
 const STEP_SETTLE_V := 2.0       # ...plus this (skeleton units/s)
 var _settle_t := 0.0             # s settling
@@ -733,6 +737,19 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			_settle_t = 0.0
 			_settle_at = null
 		step_lift = _arc_lift * pivot
+	# (11-12 14:00) the stepping boot never crosses the planted one's line: a turn toward the
+	# forward foot's side (the hero's left) carried it 2-32 cm across into a scissor stance mid-turn
+	# and through the settle (bot `heroturn` HEROTURN_FLIP). Its target is held at least half the
+	# idle stance's width out on its own side of the planted ankle. PIVOT_CROSS_OLD: the before
+	if uncross and _stance_ok and not PIVOT_CROSS_OLD:
+		var lx := 1.0 if (_stance[0] as Vector3).x > (_stance[1] as Vector3).x else -1.0   # +x toward the left foot
+		var sg := lx * (1.0 if pivot_side == 0 else -1.0)            # the planted foot's side
+		var w := absf((_stance[0] as Vector3).x - (_stance[1] as Vector3).x)
+		var pa := skel.get_bone_global_pose(ft).origin
+		var short := (of_t.x - (pa.x - sg * w * PIVOT_CROSS_MIN)) * sg
+		if short > 0.0:
+			of_t.x -= sg * short
+			uncross_peak = maxf(uncross_peak, short / maxf(w, 1e-4))
 	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip or pivot_hips_raise > 0.0:
 		var oul := skel.find_bone("mixamorig_%sUpLeg" % sides[1 - pivot_side])
 		var olg := skel.find_bone("mixamorig_%sLeg" % sides[1 - pivot_side])

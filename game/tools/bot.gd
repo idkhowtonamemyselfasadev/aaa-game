@@ -816,7 +816,28 @@ func _hips_over_ankle(skel: Skeleton3D) -> float:
 	var lo := minf((g * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin).y, (g * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin).y)
 	return h.y - lo
 
+## (heroturn 11-12 14:00) the feet's sideways spread across the body (left ankle minus right
+## ankle along the body's left, m; the same for the balls of the feet): at rest it is the stance
+## width; below ~0 the stepping foot has crossed the support foot's line (a scissor stance)
+var _tf_sep_rest := [NAN, NAN]
+var _tf_sep_min := [9.0, 9.0]
+func _foot_sep(skel: Skeleton3D) -> Array:
+	var g := skel.global_transform
+	var lft := _player.body.global_basis.x
+	lft = Vector3(lft.x, 0.0, lft.z).normalized()
+	var out := []
+	for b in ["Foot", "ToeBase"]:
+		var l := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Left%s" % b)).origin
+		var r := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Right%s" % b)).origin
+		out.append((l - r).dot(lft))
+	return out
 func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
+	if sw.pivot > 0.05:
+		var sp := _foot_sep(skel)
+		for j in 2:
+			_tf_sep_min[j] = minf(_tf_sep_min[j], float(sp[j]))
+		if OS.has_environment("HEROTURN_SEP"):
+			print("   sep ankle %.3f ball %.3f pivot %.2f side %d settle %s" % [sp[0], sp[1], sw.pivot, sw.pivot_side, sw.pivot_settle])
 	if sw.pivot > 0.5:
 		var fs: String = ["Left", "Right"][1 - sw.pivot_side]
 		var ps: String = ["Left", "Right"][sw.pivot_side]
@@ -2300,7 +2321,7 @@ func _hero_turn_test() -> void:
 	if post == null:
 		return _combat_done(false, "no practice post to lock onto")
 	var to := post.global_position - p.global_position
-	p.body.rotation.y = atan2(to.x, to.z) + PI - 0.3    # facing away, so the turn has a side
+	p.body.rotation.y = atan2(to.x, to.z) + PI + (0.3 if OS.has_environment("HEROTURN_FLIP") else -0.3)    # facing away, so the turn has a side (HEROTURN_FLIP: the other way)
 	await _ticks(20)
 	p.lead_peak = 0.0
 	p.turn_rate_peak = 0.0
@@ -2313,6 +2334,7 @@ func _hero_turn_test() -> void:
 		free_rest[j] = float(p.stride_warp.ground_sole[j])
 	_tf_knee_rest = maxf(_leg_read(skel, "Left"), _leg_read(skel, "Right"))
 	_tf_hips_rest = _hips_over_ankle(skel)
+	_tf_sep_rest = _foot_sep(skel)
 	free_on[0] = true
 	var spot: Array = await measure.call(post_yaw, 60, Vector2.ZERO)
 	for i in 40:                          # the release may come after the measured turn: keep reading
@@ -2363,6 +2385,10 @@ func _hero_turn_test() -> void:
 	p._set_lock(null)
 	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d), hips sink up to %.1f cm" % [_heel_peak, _heel_down_tick, spot[3], _hero_sink_peak])
 	print("BOT heroturn: knees: at rest %.1f deg, through the turn stepping leg up to %.1f, pivot leg up to %.1f; hips over the lower ankle %.3f m at rest, %.3f..%.3f through the turn" % [_tf_knee_rest, _tf_knee_peak[0], _tf_knee_peak[1], _tf_hips_rest, _tf_hips_low, _tf_hips_high])
+	print("BOT heroturn: feet spread across the body at rest ankle %.3f ball %.3f m, through the turn down to ankle %.3f ball %.3f m (below 0: crossed)" % [_tf_sep_rest[0], _tf_sep_rest[1], _tf_sep_min[0], _tf_sep_min[1]])
+	# (11-12 14:00) no scissor stance: the stepping ankle stays out on its own side of the planted one
+	if not StrideWarp.PIVOT_CROSS_OLD and _tf_sep_min[0] < 0.4 * float(_tf_sep_rest[0]):
+		return _combat_done(false, "the feet cross into a scissor stance in a turn on the spot (ankles %.3f m apart across the body, %.3f at rest)" % [_tf_sep_min[0], _tf_sep_rest[0]])
 	# (11-12 07:00) the hips rise with the ball pivot's heel: the stepping knee no longer folds 13 deg
 	# past the guard's (HIPSHOLD_OLD: 43.2 -> 55.9), and the body does not bob up off the guard
 	if not StrideWarp.HIPSHOLD_OLD and _tf_knee_peak[0] - _tf_knee_rest > 9.0:

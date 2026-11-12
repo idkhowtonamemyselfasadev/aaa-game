@@ -509,6 +509,7 @@ func _setup_crumple() -> void:
 	stride_warp.frame = crumple.frame
 	stride_warp.ground_body = self
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
+	stride_warp.uncross = true             # (11-12 14:00) the stepping boot never crosses the planted one
 	# (11-12 05:00) the hero's heel comes up further onto the ball (HERO_HEEL tunes, HEROHEEL_OLD = 13)
 	if not OS.has_environment("HEROHEEL_OLD"):
 		stride_warp.ball_heel_deg = HERO_BALL_HEEL_DEG
@@ -1312,7 +1313,27 @@ func _step_capped(want: float, delta: float) -> float:
 			if orbit.length() > 1e-5 and orbit.length() < 0.2:
 				move_and_collide(orbit)
 				pivot_orbit += orbit.length()
+			# (11-12 14:00) ...and the planted foot never ends up across the body's line: the guard
+			# stands the left foot forward, so a turn left swung that fore-aft offset 32 cm over to
+			# the right while the stepping right foot kept its clip place (a scissor stance, bot
+			# `heroturn` HEROTURN_FLIP). Where the turn would carry the planted ball inside
+			# PIVOT_KEEP of the middle line, the body steps round it instead. PIVOT_CROSS_OLD: before
+			if not PIVOT_CROSS_OLD and absf(d) > 1e-4 and not stride_warp.pivot_settle:
+				var anchor: Vector3 = stride_warp._ball_pin if stride_warp._ball_pin != null else stride_warp.pivot_pin
+				var side2 := body.global_basis.x.rotated(Vector3.UP, d)
+				side2 = Vector3(side2.x, 0.0, side2.z).normalized()
+				var lat := (anchor - global_position).dot(side2)
+				var sgn := 1.0 if stride_warp.pivot_side == 0 else -1.0   # the left foot stands on +x (the body's left)
+				var short := PIVOT_KEEP - lat * sgn
+				if short > 0.0:
+					var push := side2 * (-sgn * minf(short, 0.05) * stride_warp.pivot)
+					move_and_collide(push)
+					pivot_orbit += push.length()
+					pivot_uncross += push.length()
 	return body.rotation.y + d
+const PIVOT_KEEP := 0.07               # m: the planted ball stays at least this far on its own side
+static var PIVOT_CROSS_OLD := OS.has_environment("PIVOT_CROSS_OLD")
+var pivot_uncross := 0.0               # (bots) m the body stepped round so the planted foot does not cross
 var pivot_orbit := 0.0                 # (bots) m the body has swung round planted feet
 const PIVOT_REACH := 0.11              # m: the most the body's middle orbits off the pivot foot
 ## The planted pivot foot of a turn on the spot: in while the feet step round, out once square.

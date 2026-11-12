@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-2100-jumpattack-swing.jpg",
-  "time": "2026-11-08T21:00:00Z",
-  "caption": "Jump attack at jt 0.38 (front 3/4 from the shadow side): staff swinging over and forward in both fists, hat and capelet read; the robe's straight red panels hide the tucked legs so the airborne body reads stiff, and the GL backlight leaves the hero a silhouette.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-2140-jumpattack-before.jpg",
-  "time": "2026-11-08T21:16:00Z",
-  "caption": "Jump attack at jt 0.38 BEFORE: the staff has already swung past vertical in front while the chest still leans 14 deg back and the face looks at the sky, so the body trails the blow.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-2140-jumpattack-after.jpg",
   "time": "2026-11-08T21:36:00Z",
   "caption": "Same frame AFTER the body leads the staff: head and hat over the fists, face down on the target, chest coming forward; still GL-only and backlit at 11:00, legs hang under the hips at this tick.",
@@ -885,6 +873,18 @@
   "file": "20261112-1304-turn-frontlit.jpg",
   "time": "2026-11-12T13:04:00Z",
   "caption": "Hero's turn on the spot at 9:00, mid-turn, judged front-lit for the first time (new facesun option): face and cape lit, both fists on the staff. Still wrong: the feet cross into a scissor stance, the face reads as a flat pale mask.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1413-turnseq.jpg",
+  "time": "2026-11-12T14:13:16Z",
+  "caption": "Hero's left turn on the spot at 0.45/0.55/0.65 s: the feet stay apart and the stepping leg passes behind, no scissor; still the knees nearly touch mid-step and the body tilts hard sideways.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1413-turnfix.jpg",
+  "time": "2026-11-12T14:13:16Z",
+  "caption": "Same instant before (left, feet crossed into a scissor stance) and after the fix (right, stepping foot held on its own side).",
   "verdict": "fail"
  }
 ]
