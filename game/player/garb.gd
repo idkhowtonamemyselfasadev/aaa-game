@@ -78,6 +78,11 @@ var wrap_calm := 0.0
 var shin_slim := 1.0
 const HERO_FOOT_WRAP_END := 0.5
 var slimmed := 0   # base-body verts the shin bindings pulled in, for the bots
+## The hero: mark the boots (COLOR.b 0) so hero.gdshader's boot_leather turns their iron
+## fittings into strap leather; the owner sets the shader uniform (BOOTS_OLD=1: before).
+var boot_leather := false
+var booted := 0   # base-body verts marked as boot, for the bots
+var ankle_slimmed := 0   # foot-skinned greave-lip verts pulled in above the ankle (ANKLESLIM_OLD=1: none)
 ## a darned kirtle, not a Hollow's rags: no moth holes or burnt edges in the panels and gores
 ## (their cut-outs showed the legs as pale grey patches ringed in soot)
 var mended := false
@@ -261,6 +266,10 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		tint = _calm(palette.get("wraps", SHIN_LINEN))
 		if shin_slim < 1.0:
 			slimmed += _slim_leg("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, shin_slim)
+			# the greave's foot-skinned lip above the ankle, which peeked out grey between the
+			# binding's end and the boot
+			if OS.get_environment("ANKLESLIM_OLD") == "":
+				ankle_slimmed += _slim_ankle("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, shin_slim)
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.06, 0.93, 0.01, 8.0)
 		# the hero's tight puttee stops at the instep: run to the ball of the foot it stood round
 		# the boot as a wide cuff, a baggy hem over the slimmer shin (ankle lens, 13:00 11-12)
@@ -279,6 +288,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# patches between the gores
 		tint = palette.get("thighs", _calm(palette.get("wraps", HEMP)))
 		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.97, 0.012, 9.0)
+	if boot_leather:
+		booted = _mark_boots()
 	if basket:
 		_basket()
 	if mended:
@@ -1355,3 +1366,57 @@ func _sash_tail(u: float, v: float, side: float, ln: float, w: float) -> Array:
 	var p := _knot_centre() + Vector3.DOWN * 0.02 + down + across + off + wave
 	var cav := lerpf(0.7, 1.0, 1.0 - absf(u - 0.5) * 1.2) * lerpf(0.75, 1.0, smoothstep(0.0, 0.15, v))
 	return [p, cav]
+
+
+## Marks the base body's boot verts: COLOR.b = 1 - (weight on the shins, feet and toes), smoothed, the
+## other channels kept (COLOR.g is the villagers' finger mask). Returns verts marked.
+func _mark_boots() -> int:
+	var marked := 0
+	for mi in _body.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.skin == null or not (m.mesh is ArrayMesh):
+			continue
+		var feet := {}
+		for j in m.skin.get_bind_count():
+			var bb := m.skin.get_bind_bone(j)
+			if bb < 0:
+				bb = _skel.find_bone(m.skin.get_bind_name(j))
+			var n := _skel.get_bone_name(bb) if bb >= 0 else ""
+			# the shins too: under the binding, where the greave's grey peeked out above it
+			if n.ends_with("Foot") or n.contains("Toe") or (n.ends_with("Leg") and not n.ends_with("UpLeg")):
+				feet[j] = true
+		if feet.is_empty():
+			continue
+		var src := m.mesh as ArrayMesh
+		var dst := ArrayMesh.new()
+		dst.blend_shape_mode = src.blend_shape_mode
+		for bsi in src.get_blend_shape_count():
+			dst.add_blend_shape(src.get_blend_shape_name(bsi))
+		for s in src.get_surface_count():
+			var arr := src.surface_get_arrays(s)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			var wts: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+			var col: PackedColorArray = arr[Mesh.ARRAY_COLOR] if arr[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+			if col.size() != verts.size():
+				col.resize(verts.size())
+				col.fill(Color(1, 1, 1, 1))
+			if not verts.is_empty() and not bones.is_empty():
+				var per := bones.size() / verts.size()
+				for v in verts.size():
+					var w := 0.0
+					for j in per:
+						if feet.has(bones[v * per + j]):
+							w += wts[v * per + j]
+					var b := smoothstep(0.3, 0.7, w)
+					if b > 0.0:
+						marked += 1
+					col[v].b = 1.0 - b
+			arr[Mesh.ARRAY_COLOR] = col
+			dst.add_surface_from_arrays(src.surface_get_primitive_type(s), arr,
+					src.surface_get_blend_shape_arrays(s), {},
+					src.surface_get_format(s) & _KEEP_FLAGS)
+			dst.surface_set_material(s, src.surface_get_material(s))
+			dst.surface_set_name(s, src.surface_get_name(s))
+		m.mesh = dst
+	return marked

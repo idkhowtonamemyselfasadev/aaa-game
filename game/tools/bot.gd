@@ -470,6 +470,15 @@ func _finish(ok: bool, why: String) -> void:
 			why = "hero garb missing, hat off the head or robe panels not swinging"
 		# the shin bindings are wound tight: the base body's shins pulled in under them
 		print("BOT garb: shin bindings pulled %d base-body verts in (slim %.2f)" % [garb.slimmed, garb.shin_slim])
+		print("BOT garb: ankle greave lip pulled %d verts in" % garb.ankle_slimmed)
+		print("BOT garb: %d boot verts marked for strap leather" % garb.booted)
+		if ok and _route.size() > 0 and garb.boot_leather and garb.booted < 100:
+			ok = false
+			why = "the hero's boots were not marked for strap leather"
+		if ok and _route.size() > 0 and garb.shin_slim < 1.0 and OS.get_environment("ANKLESLIM_OLD") == "" \
+				and garb.ankle_slimmed < 10:
+			ok = false
+			why = "the greave's lip above the ankle was not pulled in"
 		if ok and _route.size() > 0 and garb.shin_slim < 1.0 and garb.slimmed < 100:
 			ok = false
 			why = "hero shin bindings did not pull the base body's shins in"

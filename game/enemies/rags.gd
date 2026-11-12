@@ -258,10 +258,44 @@ const _KEEP_FLAGS := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS \
 		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM2_SHIFT) \
 		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM3_SHIFT)
 func _slim_leg(bone: String, tip: String, k: float) -> int:
-	var bi := _skel.find_bone(bone)
-	var a := _rest_in_body(bi).origin
+	var a := _rest_in_body(_skel.find_bone(bone)).origin
 	var axis := _rest_in_body(_skel.find_bone(tip)).origin - a
 	var d := axis.normalized()
+	return _reshape(bone, func(pb: Vector3, w: float) -> Vector3:
+		var p := pb - a
+		var along := p.dot(d)
+		var t := along / axis.length()
+		var band := smoothstep(0.0, 0.22, t) * (1.0 - smoothstep(1.0, 1.12, t))
+		var f := lerpf(1.0, k, band * smoothstep(0.0, 0.6, w))
+		if f >= 0.999:
+			return pb
+		return a + d * along + (p - d * along) * f)
+
+## The ankle's share of the slim: the base body's greave ends in a lip skinned to the foot that
+## stood 8-10 cm in front of the ankle 0-4 cm above the joint, where the slimmed shin is 5-6 cm,
+## so a grey plate rim peeked out between the shin binding's end and the boot (ankle lens, 09:15
+## 11-12). Every vert carried by `foot` above the ankle joint is pulled toward the shin's axis
+## (run on below the ankle) horizontally by `k`, faded in over 1..3.5 cm above the joint and by
+## its foot weight, so the instep and the sole keep their shape. Returns verts moved.
+func _slim_ankle(leg: String, foot: String, k: float) -> int:
+	var knee := _rest_in_body(_skel.find_bone(leg)).origin
+	var ank := _rest_in_body(_skel.find_bone(foot)).origin
+	var d := (ank - knee).normalized()
+	return _reshape(foot, func(pb: Vector3, w: float) -> Vector3:
+		var h := pb.y - ank.y
+		var f := lerpf(1.0, k, smoothstep(0.01, 0.035, h) * smoothstep(0.2, 0.6, w))
+		if f >= 0.999:
+			return pb
+		# the point on the shin axis at this height
+		var c := ank + d * ((pb.y - ank.y) / d.y)
+		var q := pb - c
+		q.y = 0.0
+		return pb - q * (1.0 - f))
+
+## Moves the base body's verts carried by `bone`: `fn(body_pos, weight) -> body_pos` per vert with
+## any weight on that bone. Each mesh gets its own copy (custom-format + 8-weight flags kept).
+func _reshape(bone: String, fn: Callable) -> int:
+	var bi := _skel.find_bone(bone)
 	var moved := 0
 	for mi in _body.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
@@ -298,15 +332,11 @@ func _slim_leg(bone: String, tip: String, k: float) -> int:
 							w += wts[v * per + j]
 					if w <= 0.0:
 						continue
-					var p := to_body * verts[v] - a
-					var along := p.dot(d)
-					var t := along / axis.length()
-					var band := smoothstep(0.0, 0.22, t) * (1.0 - smoothstep(1.0, 1.12, t))
-					var f := lerpf(1.0, k, band * smoothstep(0.0, 0.6, w))
-					if f >= 0.999:
+					var pb := to_body * verts[v]
+					var nb: Vector3 = fn.call(pb, w)
+					if nb.is_equal_approx(pb):
 						continue
-					var q := p - d * along
-					verts[v] = from_body * (a + d * along + q * f)
+					verts[v] = from_body * nb
 					hit += 1
 				arr[Mesh.ARRAY_VERTEX] = verts
 			dst.add_surface_from_arrays(src.surface_get_primitive_type(s), arr,

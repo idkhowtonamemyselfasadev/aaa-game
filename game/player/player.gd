@@ -397,8 +397,17 @@ func _dress() -> void:
 	# the shin bindings wound tight over the old greaves (SHINSLIM_OLD=1: the bulky tube before)
 	garb.shin_slim = 1.0 if OS.get_environment("SHINSLIM_OLD") != "" \
 			else float(OS.get_environment("SHIN_SLIM")) if OS.get_environment("SHIN_SLIM") != "" else HERO_SHIN_SLIM
+	# the boots' iron fittings as strap leather, not a grey greave at the ankle (BOOTS_OLD=1: before)
+	garb.boot_leather = OS.get_environment("BOOTS_OLD") == ""
 	add_child(garb)
 	garb.build(skel, body)
+	if garb.boot_leather:
+		for mi in model.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			for s in m.get_surface_override_material_count():
+				var sm := m.get_surface_override_material(s) as ShaderMaterial
+				if sm != null and sm.shader == preload("res://shaders/hero.gdshader"):
+					sm.set_shader_parameter("boot_leather", 1.0)
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.

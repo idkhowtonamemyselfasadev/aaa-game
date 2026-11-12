@@ -44,6 +44,11 @@ uniform float iron_inset = 0.0;
 uniform float bare_hands = 0.0;
 uniform vec3 hand_skin : source_color = vec3(0.30, 0.225, 0.19);
 varying float v_finger;
+// 1 = the boots' iron fittings (heel counter, ankle straps) become worn dark leather; the
+// garb marks the boots' verts with COLOR.b 0 (HeroGarb._mark_boots): the fittings caught the
+// sky as a pale grey greave between the shin binding and the boot (ankle lens, 11-12)
+uniform float boot_leather = 0.0;
+varying float v_boot;
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -75,6 +80,7 @@ float tan_of(vec3 c) {
 // smooth piece and its edge tapers into the undersuit instead of tearing at the seam
 void vertex() {
 	v_finger = bare_hands * (1.0 - COLOR.g);
+	v_boot = boot_leather * (1.0 - COLOR.b);
 	if (cloth_body > 0.0 && plate_inset + iron_inset > 0.0) {
 		float tan_v = 0.0;
 		float iron_v = 0.0;
@@ -197,6 +203,15 @@ void fragment() {
 		o = mix(o, fc, visor);
 		r_o = mix(r_o, 0.95, visor);
 		metal *= 1.0 - visor;
+		// the boots: iron fittings become strap leather a shade darker than the plates' hide
+		// (the heel counter and ankle plates are a pale neutral grey in the texture, not the
+		// blue-grey fittings: any unsaturated texel off the plates and stripes counts)
+		float grey_m = (1.0 - smoothstep(0.02, 0.06, max(src.r, max(src.g, src.b)) - min(src.r, min(src.g, src.b))))
+				* smoothstep(0.02, 0.06, lum) * (1.0 - region) * (1.0 - red_m);
+		float boot = v_boot * max(iron_m, grey_m);
+		o = mix(o, hide * (0.34 + 0.2 * mott), boot);
+		r_o = mix(r_o, 0.7 + 0.1 * mott, boot);
+		metal *= 1.0 - boot;
 		alb = mix(src, o, restyle);
 		rough = mix(roughness, r_o, restyle);
 	}

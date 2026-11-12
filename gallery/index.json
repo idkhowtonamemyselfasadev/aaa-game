@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261108-1420-jumpattack-arch.jpg",
-  "time": "2026-11-08T14:20:00Z",
-  "caption": "Jump attack at the top of the arch from a slung start: the staff is drawn ~39 deg back behind the hat with the right fist on the shaft; still backlit to a silhouette, and the cottage behind reads plain.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-1500-guard-stop.jpg",
   "time": "2026-11-08T15:00:00Z",
   "caption": "Hero halting from a run with the staff drawn at guard: both fists stay on the shaft through the stop's hip and back bend (they used to ride 20 cm off); backlit, the figure is a silhouette and the foreground is black.",
@@ -891,6 +885,18 @@
   "file": "20261112-0916-shin-side.jpg",
   "time": "2026-11-12T09:16:08Z",
   "caption": "Full-body side view mid-turn with the slimmer shin bindings; the legs no longer read as a bulky tube, but the hero's front sits in self-shade from this side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1022-ankle-boots.jpg",
+  "time": "2026-11-12T10:22:46Z",
+  "caption": "Ankle lens in a turn on the spot: the boots' grey heel counter and ankle straps are now worn strap leather, no grey plate between binding and boot; specular glints on the boot toe and the ground texture still look synthetic.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1022-turn-side.jpg",
+  "time": "2026-11-12T10:22:46Z",
+  "caption": "Full-body side view mid-turn: the feet now read as dark leather boots; the hero still lacks Wukong-grade detail (flat hat, thin capelet, stiff robe panel) and the ground is a flat ochre plane.",
   "verdict": "fail"
  }
 ]
