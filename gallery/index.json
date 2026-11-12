@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-0850-jumpattack-arch-front.jpg",
-  "time": "2026-11-08T08:50:00Z",
-  "caption": "Jump attack at the arch peak, first front 3/4 frame: the trunk tips back and a shin trails, but the staff stands upright beside the hat instead of cocked behind the head, and the figure is dark against the grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0850-jumpattack-fold-front.jpg",
-  "time": "2026-11-08T08:50:00Z",
-  "caption": "Jump attack on the blow: face and hat read under the new air lens, staff struck down-forward, knees up; the fold is mild with the head still upright.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0929-ja30c.jpg",
   "time": "2026-11-08T09:29:33Z",
   "caption": "Jump attack at the arch's peak with the staff now cocked 26 deg behind the head, clear of the hat; from this rear-left lens it still reads near-upright, not a drawn bow.",
@@ -897,6 +885,18 @@
   "file": "20261112-0540-heroturn-ankle.jpg",
   "time": "2026-11-12T05:40:25Z",
   "caption": "The hero's boots mid turn on the spot, heel now rising 5.5 cm onto the ball; the tabard hem hides the heel and the radial trample decal looks stamped.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0616-turnturf.jpg",
+  "time": "2026-11-12T06:16:05Z",
+  "caption": "Hero's boots in a turn on the spot: the stamped radial starburst of combed straw under the feet is gone; the tabard hem still hides the pivot heel and the turf reads flat at this range.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0616-trail.jpg",
+  "time": "2026-11-12T06:16:05Z",
+  "caption": "A trodden lane through the meadow: the matted sward now combs in a wandering swirl instead of ruled lines; the laid lane is still too smooth and uniform in colour.",
   "verdict": "fail"
  }
 ]

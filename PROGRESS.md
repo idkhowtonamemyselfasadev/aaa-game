@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(06:00 11-12: THE STAMPED STARBURST UNDER THE HERO'S BOOTS IS GONE: the ground's matted-straw layer used the plants' full leg-parting ring (1.1 m, combed radially outward from the hero's origin), so wherever the hero stood the turf showed a pale radial starburst. New `trample_lay_k` in trample.gdshaderinc (ring in/out + strength; `trample_lay` = the old full ring for grass/flowers/ferns); terrain.gdshader uses a small weak patch (0.1-0.42 m, x0.55), rotates the comb direction by ground noise (+/-0.9 rad) and thins the matting edge in tufts. A walked trail still reads as a laid lane, now swirled instead of ruled. Frames tr_old/tr_new (nograss) and tr_oldg/tr_newg (grass) at the ankle lens, tc_new/tw_new on the seeded trail, all looked at. Bots trample heroturn jump walk sward PASS.)
 (05:00 11-12: THE HERO NOW RISES HIGHER ONTO THE BALL OF THE PLANTED FOOT IN A TURN ON THE SPOT: the heel came up 13 deg (3.9 cm); a real 160 deg pivot rises ~5-7 cm. New per-instance `ball_heel_deg` in StrideWarp, hero 19 deg (HERO_BALL_HEEL_DEG in player.gd): heel 0.039 -> 0.055 m, ball drift 0.000, settle/stance/slide unchanged; 22 deg gave 0.062 (over the 0.06 cap). heroturn gate tightened to >= 0.045 m and now prints the hip sink (0.0 cm in the spin: the 8 cm sink blamed for the hem at 04:00 is NOT the pivot's). Foes unchanged (13 + reach rise). Ankletight frames old/new at jt 0.55/0.70 look almost identical: the tabard and hem cover the heel at this lens. HEROHEEL_OLD=1 is the before; HERO_HEEL=<deg> tunes.)
 (04:00 11-12: THE HERO'S BOOTS ARE SEEN LIT THROUGH A TURN ON THE SPOT FOR THE FIRST TIME: the frame tool's low ankle lens picked its side by +/-Z only and was backlit at every tried hour (9.0, 15.0, 16.5; flip too). New `ankletight` lens option (shot.gd): on the true sun bearing swung 30 deg, 0.6 m up, fov 22, aimed at the soles. Sequence jt 0.40/0.55/0.70 at 9.0 looked at: the planted boot stays on its spot on the turf; the baggy trouser hem hangs over the stepping boot almost to the turf at 0.40 and hides the heel; the 13 deg heel lift is too subtle to read by eye. Tool change only, no game code.)
 (03:00 11-12: THE FOES NO LONGER SLAP THE HEEL FLAT AND DROP THEIR HIPS AS THEY SQUARE UP FROM A TURN ON THE SPOT: per-tick read-out (FOEBALL_DBG) of the giant's turn showed the hips falling 5 cm in ONE tick at the settle (13.5 cm peak) and then popping 8 cm back up in ~4 ticks as the pivot foot stepped off (35 cm world at size 4.6). Cause: the reach rise took its direction from `signf(ang)`, which is 0 once the heel weight eases to 0, so the heel snapped 24 -> 0 deg. Fixed (sign is always +, lat carries the side), plus the hips now rise back at most 30 skeleton cm/s. Bot foeturn: worst hip change between reads 4.9-7.0 -> 1.9-2.4 cm (new gate 3.0), peak sink 12.5-13.5 -> 8.8-10.6 cm, ball drift 0.000, lift unchanged. FOEHEEL_SNAP_OLD=1 is the before.)
@@ -59,6 +60,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
+- (06:00 11-12) Setup: godot + xvfb fine but the setup's import was cut off (background subshell); re-ran `--import` as a tracked background job (fast). GL shots (SHOT_GL=1, 2 at once ~5 min); headless bots fine. Asset sites not rechecked (no downloads). Shader edits are not compiled by headless bots: check GL shot logs for SHADER ERROR.
 - (03:00 11-12) Setup first try (import in the setup run). Headless bots fine (4 sets at once); GL shots (SHOT_GL=1, 4 at once ~8 min). One of 3 parallel GL frames rendered blown-out white (gt_14, old code, mid-turn): a GL glitch, re-render if it recurs. Asset sites not rechecked (no new files).
 - (00:00 11-12) Setup first try (import finished in the setup run). Headless bots fine (3-4 at once); GL shots (SHOT_GL=1) fine, a 12-frame side leapseq ~25 min alongside bots. Forward+ not tried. Asset sites: polyhaven 200, ambientcg 200, freesound 403 (no new files).
 - (23:00 11-11) Setup first try. Headless bots fine (4 single-route runs at once for searches, ~20 s each); GL shots (SHOT_GL=1) fine. Asset sites not rechecked (no new files). Gallery JPEGs via ImageMagick.
@@ -8383,6 +8385,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (06:00 11-12) **RADIAL TRAMPLE STARBURST SOFTENED — DONE (game change, visual).** NEXT (1) of 05:00.
+   Cause: terrain.gdshader's trodden-lane layer called `trample_lay(wpos, 0.85)`, whose live "legs part the plants" ring
+   (full inside 0.2 m, none past 1.1 m, direction = radial from the hero's origin) is right for blades but drew straw
+   combed radially on the ground. `trample.gdshaderinc`: `trample_lay_k(root, reach, body_in, body_out, body_k)`;
+   `trample_lay` wraps it with the old values (grass, flowers, leaves unchanged). Terrain: `trample_lay_k(wpos, 0.85,
+   0.1, 0.42, 0.55)`, comb dir rotated by two-octave vnoise (~+/-0.9 rad), `laid` edge thinned by a 7/m noise.
+   Frames `jump tr_{old,new}[g] 20 9.0 fixfps nojump fromrest clear [nograss] stoplens anklelens ankletight spotturn
+   turnat=0.3 jt=0.55`: starburst gone with and without grass; `trample tc_new/tw_new 20 10.0 close [nograss]`: the
+   seeded trail still reads as a laid lane, swirled. Bots PASS: trample heroturn jump walk sward. Gallery: 2 (fail).
+   NEXT: (1) the stepping leg's deep knee under the hem at jt 0.40 (05:00 NEXT 2); (2) a heel-side lens (behind the
+   pivot foot, low) to see the ball pivot; (3) the knight sweep side lens (00:00 NEXT 1); (4) the laid lane is a
+   uniform smooth band of one colour: break it with bare scuffed soil patches and bruised dark-green stems. BOSS/ANIMATION
+   order unchanged; audio after.
 0. (05:00 11-12) **HERO HEEL HIGHER ON THE BALL IN A TURN ON THE SPOT — DONE (game change, gated).** NEXT (2) of 04:00.
    `stride_warp.gd`: `ball_heel_deg` var (default BALL_HEEL_DEG 13) replaces the const in the heel lift; `player.gd`
    sets HERO_BALL_HEEL_DEG 19 (env HEROHEEL_OLD=1 = 13, HERO_HEEL=<deg> overrides). Bot heroturn: heel 13 -> 0.039,

@@ -54,7 +54,11 @@ vec3 herd_lay(vec3 root, float reach, inout vec2 lay) {
 	return vec3(0.0, 0.0, amt);
 }
 
-vec3 trample_lay(vec3 root, float reach) {
+// `body_in`/`body_out`: the ring the legs part round the hero (full inside body_in, none past
+// body_out); `body_k` scales it. The plants use the full ring (trample_lay); the matted ground
+// layer (terrain.gdshader) only a small, weak one: a standing hero does not comb the sward
+// flat a metre all round, so a full ring read as a stamped starburst under the boots.
+vec3 trample_lay_k(vec3 root, float reach, float body_in, float body_out, float body_k) {
 	vec2 hlay = vec2(0.0);
 	float hamt = herd_lay(root, reach, hlay).z;
 	if (trample_body.w < 0.5) {
@@ -71,7 +75,7 @@ vec3 trample_lay(vec3 root, float reach) {
 	// the legs part the plants round the hero (only when the feet are near the ground)
 	float dl = sqrt(d2);
 	float near = (1.0 - smoothstep(0.5, 1.6, abs(root.y - trample_body.y))) * grounded;
-	float live = (1.0 - smoothstep(0.2, reach + 0.25, dl)) * near;
+	float live = (1.0 - smoothstep(body_in, body_out, dl)) * near * body_k;
 	vec2 lay = (dl > 1e-3 ? dh / dl : vec2(1.0, 0.0)) * live + hlay;
 	float amt = max(live, hamt);
 	for (int i = 0; i < TRAMPLE_N; i++) {
@@ -100,6 +104,10 @@ vec3 trample_lay(vec3 root, float reach) {
 	float ll = length(lay);
 	vec2 ldir = ll > 1e-3 ? lay / ll : vec2(0.0);
 	return vec3(ldir, clamp(amt, 0.0, 1.0));
+}
+
+vec3 trample_lay(vec3 root, float reach) {
+	return trample_lay_k(root, reach, 0.2, reach + 0.25, 1.0);
 }
 
 // World-space offset that tips the point `rel` (relative to the root) over by angle

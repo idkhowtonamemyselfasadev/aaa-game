@@ -469,8 +469,15 @@ void fragment() {
 	// straw and bruised green blades all combed one way, so the lane reads lighter)
 	float laid = 0.0;
 	if (fp < 0.05) {
-		vec3 tl = trample_lay(wpos, 0.85);
+		// trail points full, but only a small weak patch right under the boots (not the plants'
+		// metre-wide parting ring, which combed a radial starburst into the turf); the comb
+		// direction wanders with the ground so even a trail patch is not ruled straight
+		vec3 tl = trample_lay_k(wpos, 0.85, 0.1, 0.42, 0.55);
+		float tw = (vnoise(wpos * 1.9 + 17.0) - 0.5) * 1.3 + (vnoise(wpos * 5.3 + 3.0) - 0.5) * 0.5;
+		tl.xy = vec2(tl.x * cos(tw) - tl.y * sin(tw), tl.x * sin(tw) + tl.y * cos(tw));
 		laid = tl.z * (1.0 - rockw) * (1.0 - smoothstep(0.025, 0.05, fp));
+		// ragged edge: the matting thins out in tufts, not along a clean circle
+		laid *= smoothstep(0.15, 0.55, laid + (vnoise(wpos * 7.0 + 29.0) - 0.5) * 0.5);
 		if (laid > 0.001) {
 			vec3 lb = blades(xz, 9.0, tl.xy, 2.7, 0.5, fp);
 			vec3 lb2 = blades(xz, 13.0, tl.xy, 7.1, 0.7, fp);
