@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261109-0600-plunge-dive.jpg",
-  "time": "2026-11-09T05:30:00Z",
-  "caption": "Plunge dive (new): mid-drop the hero is jackknifed, knees drawn up under a chest folded over the ferrule, hat bowed after it; still wrong: the lens from above hides the face and the staff line, GL renderer, the coil at the hang is weak.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0600-plunge-dive-old.jpg",
   "time": "2026-11-09T05:30:00Z",
   "caption": "Same moment with the old plunge body for comparison: the hero falls bolt upright with the staff held in front of the face, reading as floating, not driving down.",
@@ -891,6 +885,12 @@
   "file": "20261112-2219-stairdown.jpg",
   "time": "2026-11-12T22:19:08Z",
   "caption": "The hero walking off a low masonry course, lead boot reaching heel-first for the turf: the step reads, but the light is flat, the course is a plain box and the robe hides the knees.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-2315-stairwalk.jpg",
+  "time": "2026-11-12T23:15:00Z",
+  "caption": "Hero walking up the test stair side-on at the step-up tick: the hips now keep the walk's pace instead of lurching 12 cm onto the tread; still plain box steps, a dark flat foreground and the hat and robe hiding the knees.",
   "verdict": "fail"
  }
 ]

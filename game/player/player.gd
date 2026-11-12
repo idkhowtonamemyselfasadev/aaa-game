@@ -1241,16 +1241,38 @@ var steps_up := 0
 var step_rise := 0.0           # bots: the last step's rise
 var _step_dip := 0.0           # visible body/camera off the root (m: < 0 below after a step up, > 0 held above after a step down)
 var _cam_base_y := NAN
+## (11-12 23:00) StepUp.try carries the root onto the tread up to its 0.14 m probe in one tick (a
+## walk covers ~0.018 m a tick), so the hips lurched forward 12 cm and dragged the planted boot
+## with them. The visible body (and the camera) is held back by that carry and lets it go as the
+## root lags on the tread behind the step, so the hips keep the walk's pace. STEPCARRY_OLD=1 = before.
+var _step_carry := Vector3.ZERO      # visible body off the root, across the ground (m, world axes)
+var _carry_p1 := Vector3.ZERO        # root after this tick's step-up, before the slide
+var _carry_sp := 0.0                 # horizontal speed before the slide
+var _cam_base_xz := Vector2(NAN, NAN)
+static var _carry_old := OS.has_environment("STEPCARRY_OLD")
+var carry_max := 0.0                 # bots: the largest hold-back so far (m)
 
 func _step_climb(delta: float) -> void:
 	if is_nan(_cam_base_y):
 		_cam_base_y = cam_pivot.position.y
+	if is_nan(_cam_base_xz.x):
+		_cam_base_xz = Vector2(cam_pivot.position.x, cam_pivot.position.z)
 	var lift := 0.0
+	var p0 := global_position
 	if not climbing and not gliding:
 		lift = StepUp.try(self, delta, STEP_H)
+	_carry_p1 = global_position
+	_carry_sp = Vector2(velocity.x, velocity.z).length()
 	if lift > 0.0:
 		steps_up += 1
 		step_rise = lift
+		if not _carry_old:
+			var c := global_position - p0
+			c.y = 0.0
+			_step_carry -= c
+			carry_max = maxf(carry_max, _step_carry.length())
+	if climbing or gliding:
+		_step_carry = Vector3.ZERO
 	_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, 1.0)
 	body.position.y = _step_dip
 	if stride_warp != null:
@@ -1261,6 +1283,7 @@ func _step_climb(delta: float) -> void:
 ## raise the root: a grounded root that rose more in one tick than the slope under it would
 ## lift it is let down by the excess, which then eases out (StepUp.ease_dip).
 func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
+	_ease_carry(delta)
 	if not floor_pre or velocity.y > 0.5 or climbing or gliding:
 		return
 	var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
@@ -1272,6 +1295,23 @@ func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
 		if stride_warp != null:
 			stride_warp.floor_dip = _step_dip
 		cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
+
+## The hold-back goes as the root falls behind the pace it was asked for (the capsule riding the
+## tread's edge just after the lift), and at least at a quarter of the pace (so it never lingers).
+func _ease_carry(delta: float) -> void:
+	if _step_carry != Vector3.ZERO:
+		var moved := global_position - _carry_p1
+		moved.y = 0.0
+		var nominal := _carry_sp * delta
+		var lag := maxf(nominal - moved.length(), 0.0)
+		var go := maxf(lag, maxf(0.25 * nominal, 0.15 * delta))
+		var m := _step_carry.length()
+		_step_carry = Vector3.ZERO if m <= go else _step_carry * ((m - go) / m)
+	body.position.x = _step_carry.x
+	body.position.z = _step_carry.z
+	if not is_nan(_cam_base_xz.x):
+		cam_pivot.position.x = _cam_base_xz.x + _step_carry.x * 0.8
+		cam_pivot.position.z = _cam_base_xz.y + _step_carry.z * 0.8
 
 # --- locomotion weight: the body leans into what the feet are doing ---
 ## Pivoting at the soles, the whole figure tips forward into a start (the push of the first

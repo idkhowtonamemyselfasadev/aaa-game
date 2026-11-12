@@ -4458,6 +4458,9 @@ func _step_up_test() -> void:
 	last_vis = p.body.global_position.y
 	var wstart := p.global_position
 	var wblend := 0.0
+	var hips_b := sk.find_bone("mixamorig_Hips")
+	var last_hipf := NAN
+	var whz := 0.0
 	var walk_in := float(OS.get_environment("STEPWALK_IN")) if OS.get_environment("STEPWALK_IN") != "" else 0.25
 	for i in 600:
 		if (p.global_position - start).dot(fwd) > 1.2 + TREAD * 3 + 0.7:
@@ -4490,19 +4493,28 @@ func _step_up_test() -> void:
 				print("STEPWALK i %d foot %d lift %.3f fold %.1f shin_back %.1f ankle_ahead %.3f ankle_y %.3f hips_y %.3f root %.3f body %.3f blend %.2f" % [i, f, p.stride_warp.swing_lift[f], fold, shin_ang, (ap - hp).dot(fwd), ap.y, hp.y, p.global_position.y, p.body.position.y, p._blend])
 		if dug:
 			wdig_ticks += 1
+		# (11-12 23:00) the hips' advance in one tick: a walk covers ~0.018 m; the step-up's carry
+		# threw the root (and the hips with it) 0.14 m onto the tread in one tick (STEPCARRY_OLD=1)
+		var hipf: float = ((sk.global_transform * sk.get_bone_global_pose(hips_b).origin) - start).dot(fwd)
+		if not is_nan(last_hipf):
+			whz = maxf(whz, hipf - last_hipf)
+		last_hipf = hipf
 		var v: float = p.body.global_position.y
 		wjump = maxf(wjump, absf(v - last_vis))
 		last_vis = v
 	p.bot_input = Vector2.ZERO
 	await _ticks(20)
 	var wclimb := p.global_position.y - wy0
-	print("BOT stepup: walked up it at a WALK (input %.2f, blend %.2f): climbed %.3f m in %d steps, knees folded L %.1f R %.1f deg at most, a shin up to %.1f deg back from hanging, toes into the risers %.3f m (%d ticks over 1 cm), largest visible rise in one tick %.3f m" % [walk_in, wblend, wclimb, p.steps_up - wsteps0, wfold[0], wfold[1], wshin, wdig, wdig_ticks, wjump])
+	print("BOT stepup: walked up it at a WALK (input %.2f, blend %.2f): climbed %.3f m in %d steps, knees folded L %.1f R %.1f deg at most, a shin up to %.1f deg back from hanging, toes into the risers %.3f m (%d ticks over 1 cm), largest visible rise in one tick %.3f m, hips advanced at most %.3f m in one tick (held back %.3f m at a step)" % [walk_in, wblend, wclimb, p.steps_up - wsteps0, wfold[0], wfold[1], wshin, wdig, wdig_ticks, wjump, whz, p.carry_max])
 	if wclimb < RISE * 3 - 0.05:
 		return _combat_done(false, "the hero did not walk up the stair at a walk (climbed %.2f m)" % wclimb)
 	# (11-12 21:00) at a walk the planted boot sank 0.124 m into its tread on the tick the root stepped
 	# up (the foot IK measured from the root, not the visibly let-down body: STEPFLOOR_OLD=1)
-	if wdig > 0.05 or wdig_ticks > 2:
+	# (11-12 23:00) with the carry held back the planted toes press 0.013 m (was 0.037) for 3 ticks
+	if wdig > 0.03 or (wdig_ticks > 2 and wdig > 0.015):
 		return _combat_done(false, "walking up, a boot runs %.3f m into the stair (%d ticks)" % [wdig, wdig_ticks])
+	if whz > 0.04:
+		return _combat_done(false, "walking up, the hips lurch %.3f m forward in one tick as the hero steps up (walk ~0.018)" % whz)
 	# (11-12 22:00) and down again at a WALK: the jog's descent (input 0.6) has a flight phase, so its
 	# both-boots-off read-out hides a boot hanging over a lower tread. Per foot: how far the sole stands
 	# off the ground under it; the lower of the two is the stance boot and should be on its tread
