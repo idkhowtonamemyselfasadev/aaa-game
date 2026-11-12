@@ -20,6 +20,7 @@ const ROUTES := {
 	"heavy": [],
 }
 
+var _turn_left := false        # (heroturnl, 11-12 15:00) the turn on the spot goes to the left
 var _hero_sink_peak := 0.0  # (heroturn, 11-12 05:00) deepest hip sink onto the pivot leg, skeleton cm
 var _heel_peak := 0.0      # (heroturn/foeturn) highest heel lift of the ball pivot
 var _heel_down_tick := -1
@@ -42,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -215,7 +216,8 @@ func _ready() -> void:
 	if name == "foeturn":
 		_foe_turn_test()
 		return
-	if name == "heroturn":
+	if name == "heroturn" or name == "heroturnl":
+		_turn_left = name == "heroturnl" or OS.has_environment("HEROTURN_FLIP")
 		_hero_turn_test()
 		return
 	if name == "hands":
@@ -800,6 +802,7 @@ var _tf_stance_err := 0.0
 ## (heroturn) both feet from the release on: how far they slide back to the clip once the pivot
 ## lets go, and how far each stands from its idle stance spot when the settle is done
 var _tf_knee_peak := [0.0, 0.0]   # (heroturn 11-12 07:00) deepest knee bend, stepping / pivot leg, deg
+var _tf_knee_rest_lr := [0.0, 0.0]  # (11-12 15:00) each leg's guard knee at rest, left / right
 var _tf_knee_rest := 0.0          # knee bend standing at rest before the turn, deg
 var _tf_hips_low := 9.0           # lowest hips height over the lower ankle through the turn, m
 var _tf_hips_rest := 0.0
@@ -849,7 +852,7 @@ func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
 		_tf_hips_low = minf(_tf_hips_low, hh)
 		_tf_hips_high = maxf(_tf_hips_high, hh)
 		if OS.has_environment("HEROTURN_KNEE"):
-			print("   knee step %.1f pivot %.1f hips %.3f lift %.3f pivot %.2f settle %s raise %.2f guard %.2f drop %.3f" % [kf, kp, hh, sw.step_lift, sw.pivot, sw.pivot_settle, sw.pivot_hips_raise, sw._hips_guard, sw.ground_drop])
+			print("   knee step %.1f pivot %.1f hips %.3f lift %.3f pivot %.2f settle %s raise %.2f dip %.2f drop %.3f body_y %.3f skel_y %.3f hipsW %.3f pa %.3f fa %.3f" % [kf, kp, hh, sw.step_lift, sw.pivot, sw.pivot_settle, sw.pivot_hips_raise, sw.pivot_hips_short, sw.ground_drop, _player.global_position.y, skel.global_position.y, (skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips")).origin).y, (skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % ps)).origin).y, (skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % fs)).origin).y])
 	var now := []
 	for side in ["Left", "Right"]:
 		now.append(skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % side)).origin)
@@ -2321,7 +2324,7 @@ func _hero_turn_test() -> void:
 	if post == null:
 		return _combat_done(false, "no practice post to lock onto")
 	var to := post.global_position - p.global_position
-	p.body.rotation.y = atan2(to.x, to.z) + PI + (0.3 if OS.has_environment("HEROTURN_FLIP") else -0.3)    # facing away, so the turn has a side (HEROTURN_FLIP: the other way)
+	p.body.rotation.y = atan2(to.x, to.z) + PI + (0.3 if _turn_left else -0.3)    # facing away, so the turn has a side (route heroturnl / HEROTURN_FLIP: the other way, toward the forward guard foot)
 	await _ticks(20)
 	p.lead_peak = 0.0
 	p.turn_rate_peak = 0.0
@@ -2333,6 +2336,7 @@ func _hero_turn_test() -> void:
 	for j in 2:
 		free_rest[j] = float(p.stride_warp.ground_sole[j])
 	_tf_knee_rest = maxf(_leg_read(skel, "Left"), _leg_read(skel, "Right"))
+	_tf_knee_rest_lr = [_leg_read(skel, "Left"), _leg_read(skel, "Right")]
 	_tf_hips_rest = _hips_over_ankle(skel)
 	_tf_sep_rest = _foot_sep(skel)
 	free_on[0] = true
@@ -2386,6 +2390,12 @@ func _hero_turn_test() -> void:
 	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d), hips sink up to %.1f cm" % [_heel_peak, _heel_down_tick, spot[3], _hero_sink_peak])
 	print("BOT heroturn: knees: at rest %.1f deg, through the turn stepping leg up to %.1f, pivot leg up to %.1f; hips over the lower ankle %.3f m at rest, %.3f..%.3f through the turn" % [_tf_knee_rest, _tf_knee_peak[0], _tf_knee_peak[1], _tf_hips_rest, _tf_hips_low, _tf_hips_high])
 	print("BOT heroturn: feet spread across the body at rest ankle %.3f ball %.3f m, through the turn down to ankle %.3f ball %.3f m (below 0: crossed)" % [_tf_sep_rest[0], _tf_sep_rest[1], _tf_sep_min[0], _tf_sep_min[1]])
+	var step_rest: float = _tf_knee_rest_lr[1 - int(spot_piv[3])]
+	print("BOT heroturn: turning %s, the stepping %s knee folds %.1f deg past its own guard bend (%.1f), %.1f past the deeper guard knee" % ["left" if _turn_left else "right", "right" if spot_piv[3] == 0 else "left", _tf_knee_peak[0] - step_rest, step_rest, _tf_knee_peak[0] - _tf_knee_rest])
+	# (11-12 15:00) the left turn's stepping (rear guard) knee folded 20 deg past its own guard bend: the
+	# boot hit the 6.5 cm lift cap and the hips sank 2.4 cm under the guard height over the pin
+	if not StrideWarp.HIPSPIN_OLD and not OS.has_environment("STEPLIFT_OLD") and _tf_knee_peak[0] - step_rest > 16.0:
+		return _combat_done(false, "the stepping knee folds %.1f deg past its own guard bend in a turn on the spot" % (_tf_knee_peak[0] - step_rest))
 	# (11-12 14:00) no scissor stance: the stepping ankle stays out on its own side of the planted one
 	if not StrideWarp.PIVOT_CROSS_OLD and _tf_sep_min[0] < 0.4 * float(_tf_sep_rest[0]):
 		return _combat_done(false, "the feet cross into a scissor stance in a turn on the spot (ankles %.3f m apart across the body, %.3f at rest)" % [_tf_sep_min[0], _tf_sep_rest[0]])

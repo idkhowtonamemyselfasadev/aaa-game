@@ -886,5 +886,11 @@
   "time": "2026-11-12T14:13:16Z",
   "caption": "Same instant before (left, feet crossed into a scissor stance) and after the fix (right, stepping foot held on its own side).",
   "verdict": "fail"
+ },
+ {
+  "file": "20261112-1515-leftturn.jpg",
+  "time": "2026-11-12T15:15:53Z",
+  "caption": "The hero mid-turn to the left on the ball of the foot, now standing a little taller with the stepping boot lifted 4 cm instead of 6.5; the knees still read knock-kneed and the face is a flat pale mask.",
+  "verdict": "fail"
  }
 ]

@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(15:00 11-12: THE HERO'S TURN ON THE SPOT TO THE LEFT NO LONGER FOLDS THE STEPPING KNEE DEEP: measured (bot `heroturn` HEROTURN_KNEE per tick, now with world heights): turning left the stepping boot hit the 6.5 cm lift cap (the body stepping round the planted ball carries it faster over the turf) and late in the spin the hips sank 2.4 cm under the guard height over the planted foot, so the rear guard knee folded 20 deg past its own guard bend (right turn: 3.9 cm, 4.5 deg). `stride_warp.gd`: per-instance `step_lift_max` (hero HERO_STEP_LIFT_MAX 4.0 cm, foes keep 6.5; STEPLIFT_OLD=1 / STEP_LIFT=<cm>) and the hips hold now measures from the pin: the hips stand at least at their height over the pin when it planted, plus the heel share (HIPSPIN_OLD=1 = before). Left turn: stepping knee 14.7 deg past its own guard (was 20.1), 6.6 past the deeper guard knee (was 18.1, gate 9 now passes); right turn unchanged (4.5). New bot route `heroturnl` (in bots.sh) runs the turn to the left; both report the own-leg fold, new gate <= 16. Frames lt_old/lt_new (facesun bodytight sunside jt 0.6, 9:00) looked at: the figure stands a few px taller, otherwise nearly identical (knees under the robe). Bots PASS: heroturn heroturnl walk jump combat foeturn knight (alone; failed its music cue once with 12 bots in parallel) footik stepup pivot stop start hands climb glide villager. Gallery: 1 (fail). Grade turn-in-place: good.)
 (14:00 11-12: THE HERO'S FEET NO LONGER SCISSOR IN A TURN ON THE SPOT TO THE LEFT: measured first (bot `heroturn` new HEROTURN_FLIP turns the other way, HEROTURN_SEP prints the ankles' spread across the body per tick): turning right the feet stayed >= 7 cm apart, turning LEFT the stepping right ankle crossed 32 cm over the planted left one, because the guard stands the left foot forward and the body spun about its own middle, swinging that fore-aft offset across. `player.gd` `_step_capped`: where the turn would carry the planted ball inside PIVOT_KEEP 7 cm of the body's middle line, the body steps round it (up to 5 cm a tick); `stride_warp.gd`: the stepping ankle's target is held at least half the idle stance width out on its own side of the planted ankle (caught the settle step, which still crossed 2 cm). PIVOT_CROSS_OLD=1 = before. Turning left now: min ankle spread 0.070 m (was -0.318), stepping knee fold 18 deg past the guard (was 31). Frames xs_old / xs_new (facesun 9:00 jt 0.55) looked at. New bot gate: ankles across the body >= 0.4 x rest. Grade turn-in-place: good (feet fixed; left-turn knee fold still deep).)
 (13:00 11-12: THE HERO'S TURN ON THE SPOT JUDGED FRONT-LIT: `shot.gd` spotturn `facesun` ends the turn facing the sun; at 9:00 the face and cape read lit; found the feet crossing into a scissor stance mid-turn (next fix). Content hours unchanged (tool + judgement).)
 (12:00 11-12: A SUN-SIDE LENS FOR JUDGING THE HERO'S TURN ON THE SPOT: `shot.gd` sidelens gets `sunside` (swing the profile lens toward the hero's front by sunswing=<deg>, default 35, so it is a front 3/4 on the sun's flank; prints the sun's angle off the lens and off the hero's facing). A first try that swung toward the sun's azimuth gave a rear 3/4 whenever the sun stood behind the hero (9:00 and 12:00 at the `jump` spot). Frames looked at: sun_old (plain prof bodytight 9:00, front in self-shade), sf09 (sunside 9:00: face, fists, staff and the stepping legs read; front still half shaded, sun 77 deg off the lens), sun15_* (15:00: hero in the cottage's shadow, useless), sun12/sf12 (12:00: the hero walks away with the staff slung instead of turning: spot setup differs at that hour). Bots PASS: walk heroturn jump combat footik. Gallery: 2 (fail). Grade turn-in-place: good- (unchanged).)
@@ -59,6 +60,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (15:00 11-12) Setup first try (import a few min, background); GL shots via opengl3 (SHOT_GL=1, 2 in parallel ~15 min while 4 bots ran); 12 headless bots in parallel fine except knight's music-cue check (passes alone). Asset sites not rechecked (no downloads). Route `heroturnl` = the left turn; `STEPLIFT_OLD=1` / `HIPSPIN_OLD=1` = before this session.
 - (14:00 11-12) Setup first try (import ~5 min, background); GL shots via opengl3 (SHOT_GL=1, 2 in parallel ~5 min, alongside bots fine); headless bots fine. Asset sites not rechecked (no downloads). `HEROTURN_FLIP=1` turns the heroturn bot left; `HEROTURN_SEP=1` prints the feet spread per tick.
 - (12:00 11-12) Setup first try (import a few min); GL shots via opengl3 (SHOT_GL=1, 2 in parallel ~4 min); headless bots fine. Asset sites not rechecked (no downloads).
 - (05:00 11-12) Setup first try (import ~12 min, run as a background job); GL shots via opengl3 (SHOT_GL=1, 4 at once ~10 min); headless bots fine. Asset sites not rechecked (no downloads).
@@ -8400,6 +8402,24 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (15:00 11-12) **LEFT TURN'S STEPPING KNEE NO LONGER FOLDS DEEP — DONE (game change, gated).** NEXT (1) of 14:00.
+   Measured with HEROTURN_KNEE (prints now include body/skeleton/hips/ankle world heights and the hips' shortfall under
+   the pin height). Two causes: (a) the stepping boot's lift is its travel speed x 0.03, capped 6.5; in the left turn
+   `_step_capped` swings the body round the planted ball so the boot travels faster in world and hit the cap (right
+   turn peaks at 3.9 naturally); (b) late in the spin the hips sank 2.4 cm relative to the planted foot (body steps
+   round and uphill, walk-cycle dip), while the hips hold only added back 0.6 x heel rise. Fix: `step_lift_max` per
+   instance (hero 4.0); `pivot_hips_short` = hips-over-pin at plant minus now (skeleton units, not in the settle) is
+   added to the raise (cap 6). A first try giving back the clip's hips dip under the guard (skeleton space) did
+   nothing (clip dip only 0.5 cm): the sink is relative to the pin, not in the clip.
+   Numbers: left stepping knee 61.0 -> 55.6 (own guard 40.9, deeper guard 49.0), hips over lower ankle min 0.786 ->
+   0.818; right 47.6 (own guard 43.2). New route `heroturnl`; gate own-leg fold <= 16 (left is 14.7: the rear guard
+   leg is straighter and has to fold to step under the body; a real swing knee reaches ~60 deg).
+   Frames lt_old/lt_new looked at: a few px taller, otherwise the same; knees hidden by robe/tabard.
+   NEXT: (1) the knees nearly touching as the left step passes and the knock-kneed read in the frame (measure knee
+   separation across the body per tick like `_foot_sep`; push the stepping knee's pole outward); (2) whether the foes
+   need the uncross clamp (knight settle tap); (3) why at 12:00 the `jump ... spotturn` setup leaves the hero walking
+   off with the staff slung; (4) heel-side lens; (5) knight sweep side lens; (6) laid lane's uniform band.
+   BOSS/ANIMATION order unchanged; audio after.
 0. (14:00 11-12) **NO SCISSOR FEET IN A TURN ON THE SPOT — DONE (game change, gated).** NEXT (1) of 13:00.
    Measured: `HEROTURN_FLIP=1 HEROTURN_SEP=1` bot heroturn (turn left; the default bot turns right). Turning left
    the stepping right ankle crossed 0.318 m over the planted left (guard = left foot forward; the body spun about its

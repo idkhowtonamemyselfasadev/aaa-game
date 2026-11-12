@@ -76,6 +76,9 @@ var ball_heel_deg := BALL_HEEL_DEG
 ## (43 -> 62 deg) and the stepping knee (43 -> 56 deg): a squat under the hem, not a pivot up on the ball
 var pivot_hips_hold := 0.0
 var pivot_hips_raise := 0.0      # (bots) skeleton units the hips were given back this tick
+static var HIPSPIN_OLD := OS.has_environment("HIPSPIN_OLD")
+var _hips_over_pin0 := -1e9      # the hips' height over the pin when it was planted (skeleton units)
+var pivot_hips_short := 0.0      # (bots) skeleton units the hips stood under that this tick
 var _hips_guard := -1.0          # the guard's hips height (skeleton units, along up), sampled at rest
 var _heel_up_prev := 0.0         # last tick's pivot_heel_up (world m)
 const BALL_HEEL_RISE := 9.0      # 1/s the heel comes up
@@ -335,6 +338,11 @@ static var PIVOT_FREE_SINKS := OS.has_environment("PIVOT_FREE_SINKS")
 static var PIVOT_NO_ARC := OS.has_environment("PIVOT_NO_ARC")
 const STEP_LIFT_K := 0.030       # s: lift = the free foot's travel speed x this (skeleton units)
 const STEP_LIFT_MAX := 6.5       # skeleton units (cm): a turn step clears the turf by at most this
+## (11-12 15:00) per instance: the hero's turn step to the LEFT (toward the forward guard foot) hit
+## the 6.5 cap, as the body stepping round the planted ball carries the boot faster over the turf,
+## and the stepping knee folded 18 deg past the guard (right turn: 3.9 cm, 6 deg). A pivot step
+## clears the turf ~3-5 cm. The foes keep 6.5 (their slow cadence needs it). STEPLIFT_OLD (player.gd)
+var step_lift_max := STEP_LIFT_MAX
 const STEP_RISE := 30.0          # 1/s: the lift eases up to its target this fast
 const STEP_FALL := 24.0          # skeleton units/s: the boot comes down at most this fast
 const STEP_SPEED_RATE := 20.0    # 1/s: the travel speed is smoothed (a one-tick jump is not a step)
@@ -438,6 +446,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		settle_done = false
 		pivot_hips_raise = 0.0
 		_heel_up_prev = 0.0
+		_hips_over_pin0 = -1e9
+		pivot_hips_short = 0.0
 		if stance_idle:
 			for i in 2:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
@@ -501,6 +511,18 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if hbr >= 0:
 			# last tick's ankle rise on the ball (world m -> skeleton units): the body goes up with it
 			var r := minf(_heel_up_prev * (inv.basis * Vector3.UP).length() * pivot_hips_hold, PIVOT_HIPS_RAISE_MAX)
+			# (11-12 15:00) ...and measured from the planted foot, not the clip: in a turn to the LEFT the
+			# body steps round the planted ball (and up the slope) and the shuffle's walk cycle dips, so
+			# the hips sank 2.4 cm under the guard height over the pin late in the spin and the stepping
+			# knee folded 20 deg past its guard (bot `heroturn` HEROTURN_FLIP). The hips now stand at least
+			# at the guard height over the pin plus the share of the heel rise. HIPSPIN_OLD: the before
+			var hh := skel.get_bone_global_pose(hbr).origin.dot(up)
+			var ph := (inv * (pivot_pin as Vector3)).dot(up)
+			if _hips_over_pin0 < -1e8:
+				_hips_over_pin0 = hh - ph
+			if not HIPSPIN_OLD and not pivot_settle:
+				pivot_hips_short = maxf(_hips_over_pin0 - (hh - ph), 0.0)
+				r = minf(maxf(r, pivot_hips_short + r), PIVOT_HIPS_RAISE_MAX)
 			if r > 0.0:
 				var hpr := skel.get_bone_parent(hbr)
 				var pbr := skel.get_bone_global_pose(hpr).basis if hpr >= 0 else Basis()
@@ -638,7 +660,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var rate := STEP_SPEED_RATE if (v > _arc_speed or PIVOT_ARC_DIP) else STEP_SPEED_DECAY
 			_arc_speed = lerpf(_arc_speed, v, 1.0 - exp(-rate * delta))
 		_arc_prev = wnow
-		var want := minf(_arc_speed * STEP_LIFT_K, STEP_LIFT_MAX)
+		var want := minf(_arc_speed * STEP_LIFT_K, step_lift_max)
 		if want > _arc_lift:
 			_arc_lift = lerpf(_arc_lift, want, 1.0 - exp(-STEP_RISE * delta))
 		else:
