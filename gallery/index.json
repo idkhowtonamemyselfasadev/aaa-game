@@ -886,5 +886,17 @@
   "time": "2026-11-12T02:23:57Z",
   "caption": "Same tick before the change (FOEBALL_OLD=1): the planted boot lies flat and pivots on its ankle; for comparison only.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261112-0315-giantturn-settle.jpg",
+  "time": "2026-11-12T03:15:46Z",
+  "caption": "The phase-3 Ashen Knight (size 4.6) squaring up after a turn on the spot: the heel now stays on the ball and the hips ease up instead of slapping flat and popping; the pop was 1-4 ticks so this still frame looks the same as before; the knight reads small from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0315-giantturn-spin.jpg",
+  "time": "2026-11-12T03:15:46Z",
+  "caption": "The giant knight mid-turn on the ball of its planted foot, glaive raised; feet planted, but the low lens and grass in the foreground crowd the frame.",
+  "verdict": "fail"
  }
 ]

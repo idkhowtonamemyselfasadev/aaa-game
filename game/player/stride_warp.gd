@@ -72,6 +72,9 @@ const BALL_HEEL_FALL := 7.0      # 1/s it settles back down once square
 var ball_pivot := false          # set by the owner: the hero (foes too since 11-12 02:00, deeper sink + reach rise)
 var _ball_pin = null             # world ball of the pivot foot while spinning on it
 static var FOEBALL_NO_REACH := OS.has_environment("FOEBALL_NO_REACH")
+static var FOEHEEL_SNAP_OLD := OS.has_environment("FOEHEEL_SNAP_OLD")
+const PIVOT_SINK_RELAX := 30.0   # skeleton cm/s the hips may rise back out of a pivot sink
+var _sink_prev := 0.0
 var ball_heel_max_deg := 30.0  # a leg short of the ball's ankle spot rises this far onto the ball at most
 const BALL_REACH_K := 0.985      # the ankle target is kept inside this share of the leg's full length
 var heel_reach_deg := 0.0        # (bots) the heel angle this tick after the reach rise
@@ -405,6 +408,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	step_lift = 0.0
 	if pivot <= 0.0:
 		pivot_pin = null
+		_sink_prev = 0.0
 		_arc_prev = null
 		_arc_speed = 0.0
 		_arc_lift = 0.0
@@ -497,7 +501,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				var hip := skel.get_bone_global_pose(ul).origin - up * pivot_sink_max
 				var kn := skel.get_bone_global_pose(lg).origin
 				var reach_m := (hip.distance_to(kn) + kn.distance_to(skel.get_bone_global_pose(ft).origin)) * BALL_REACH_K
-				var sgn := signf(ang)
+				# (11-12 03:00) ang is never negative here (lat carries the side), so the rise always
+				# goes up; signf(ang) was 0 once the heel weight eased to 0 in the settle, collapsing
+				# the range: the heel slapped flat in one tick and the hips dropped ~5 cm with it.
+				# FOEHEEL_SNAP_OLD: the before
+				var sgn := signf(ang) if FOEHEEL_SNAP_OLD else 1.0
 				var amax := deg_to_rad(ball_heel_max_deg) * sgn
 				if (ball_l + v.rotated(lat, ang) - hip).length() > reach_m:
 					var lo_a := ang
@@ -529,12 +537,20 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	# the free foot as the clip steps it, before the hips settle: it keeps that place after
 	var of_clip := skel.get_bone_global_pose(of).origin
 	var of_keep := skel.get_bone_global_pose(of).basis
+	var h := 0.0
 	if dd.length() > reach_l:
 		var du := dd.dot(up)
-		var h := -du - sqrt(maxf(du * du - dd.length_squared() + reach_l * reach_l, 0.0))
+		h = -du - sqrt(maxf(du * du - dd.length_squared() + reach_l * reach_l, 0.0))
 		h = clampf(h, 0.0, pivot_sink_max)
+	# (11-12 03:00) the hips come back up at most PIVOT_SINK_RELAX cm/s: when the pivot foot steps
+	# off in the settle its leg no longer needs the sink and the hips popped up 8 cm in ~4 ticks
+	# (35 cm at the giant size). A deeper sink than needed only bends the knee more. FOEHEEL_SNAP_OLD: the before
+	if not FOEHEEL_SNAP_OLD:
+		h = clampf(maxf(h, _sink_prev - PIVOT_SINK_RELAX * delta), 0.0, pivot_sink_max)
+	_sink_prev = h
+	if h > 0.0:
 		var hips := skel.find_bone("mixamorig_Hips")
-		if hips >= 0 and h > 0.0:
+		if hips >= 0:
 			var hp := skel.get_bone_parent(hips)
 			var pbh := skel.get_bone_global_pose(hp).basis if hp >= 0 else Basis()
 			skel.set_bone_pose_position(hips, skel.get_bone_pose_position(hips) - pbh.inverse() * (up * h))

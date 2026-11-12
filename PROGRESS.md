@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(03:00 11-12: THE FOES NO LONGER SLAP THE HEEL FLAT AND DROP THEIR HIPS AS THEY SQUARE UP FROM A TURN ON THE SPOT: per-tick read-out (FOEBALL_DBG) of the giant's turn showed the hips falling 5 cm in ONE tick at the settle (13.5 cm peak) and then popping 8 cm back up in ~4 ticks as the pivot foot stepped off (35 cm world at size 4.6). Cause: the reach rise took its direction from `signf(ang)`, which is 0 once the heel weight eases to 0, so the heel snapped 24 -> 0 deg. Fixed (sign is always +, lat carries the side), plus the hips now rise back at most 30 skeleton cm/s. Bot foeturn: worst hip change between reads 4.9-7.0 -> 1.9-2.4 cm (new gate 3.0), peak sink 12.5-13.5 -> 8.8-10.6 cm, ball drift 0.000, lift unchanged. FOEHEEL_SNAP_OLD=1 is the before.)
 (02:00 11-12: THE SOLDIER AND THE ASHEN KNIGHT NOW TURN ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL UP, LIKE THE HERO: before, the foes kept the ankle pin and the ball tried last night slid 0.025-0.031 m/size off its spot. The slide was in the settle, not the spin: once squared up the heel came down and the leg could not reach the turf (short 3.5 cm). `StrideWarp` now rises further onto the ball when the leg is short (bisection on the heel angle, up to `ball_heel_max_deg`, also through the settle), and the foes may sink 14 cm (hero 8). Bot `foeturn`: ball drift 0.000 at x1/2.2/3.2/4.6 (gate tightened 0.03 -> 0.01), heel 0.064-0.067/size, both-feet-off read on the ball 0-2 ticks. Frames at 09:00 (bootlens) new vs old: the planted boot stands on its ball, heel up. FOEBALL_OLD=1 is the before.)
 (01:00 11-12: THE HERO NOW TURNS ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL LIFTED: the pivot foot was pinned at the ankle, so through a 160 deg standing turn its toes swept round over the turf. New ball pivot in `StrideWarp._pivot_leg`: the ball (ToeBase) is pinned where it stood, the ankle orbits it as the sole turns with the body, the heel rises up to 13 deg (3.9 cm) while the body turns and settles back 16 ticks after squaring, before the settle steps. Bot `heroturn`: ball drift 0.000 m, heel 0.039 m, end stance 0.000 m off idle. First lit frames of the feet through a turn (new `anklelens`). Hero only for now; BALLPIVOT_OLD=1 is the before.)
 (00:00 11-12: THE ASHEN KNIGHT'S SWEEP FOLLOW-THROUGH NO LONGER SWINGS ITS GLAIVE'S BUTT CAP THROUGH ITS OWN RIGHT PAULDRON: run out to the left (bearing ~95) the shared pose held the glaive right of the chest, so the butt cap swept 0.038-0.040 m/size into the right pauldron at the cut's end and the recovery's start (bot `foefold`, full run). New KSWEEP_FOLLOW: the hold drifts 0.15 m left and 0.15 m forward over bearings 40..95. ~12 runs: SR 0.038 -> -0.023, RR 0.040 -> -0.086, helm R -0.137 -> -0.077 (clear), left arm 0.900 -> 0.905, fists/roll unchanged at every size. New gate on SR/RR; SWEEPFOLLOW_OLD=1 is the before.)
@@ -55,6 +56,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
+- (03:00 11-12) Setup first try (import in the setup run). Headless bots fine (4 sets at once); GL shots (SHOT_GL=1, 4 at once ~8 min). One of 3 parallel GL frames rendered blown-out white (gt_14, old code, mid-turn): a GL glitch, re-render if it recurs. Asset sites not rechecked (no new files).
 - (00:00 11-12) Setup first try (import finished in the setup run). Headless bots fine (3-4 at once); GL shots (SHOT_GL=1) fine, a 12-frame side leapseq ~25 min alongside bots. Forward+ not tried. Asset sites: polyhaven 200, ambientcg 200, freesound 403 (no new files).
 - (23:00 11-11) Setup first try. Headless bots fine (4 single-route runs at once for searches, ~20 s each); GL shots (SHOT_GL=1) fine. Asset sites not rechecked (no new files). Gallery JPEGs via ImageMagick.
 - (18:00 11-11) Setup first try (import ~8 min). Headless bots fine (4 sets at once, ~8 min); GL shots (SHOT_GL=1, 2 at once ~6 min) after the bots. Asset sites not rechecked (no new files). Use ImageMagick for crops/sheets (PIL broken).
@@ -8378,6 +8380,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (03:00 11-12) **FOE TURN SETTLE: NO HEEL SLAP, NO HIP POP — DONE (game change, gated).** NEXT (2) of 02:00 (the giant's hip sink).
+   Before rendering, FOEBALL_DBG per-read sink/heel at size 4.6: the sink climbed to ~9 cm in the spin (fine, eased), then
+   in the settle the heel went 24 -> 0 deg and the sink 8.5 -> 13.5 cm in one read, then 12.9 -> 10.2 -> 3.2 -> 0 as the
+   pivot foot stepped off. Same at every size (4.9-7.0 cm between reads).
+   `stride_warp.gd`: (a) the reach rise's `sgn := signf(ang)` -> 1.0 (ang is always >= 0 there, `lat` is flipped for the
+   side); at heel weight 0 the range collapsed to 0 so the heel slapped flat. Now the heel stays on the ball through the
+   settle until the settle step lifts the foot. (b) `PIVOT_SINK_RELAX` 30 skeleton cm/s: the hip sink may rise back no faster
+   (`_sink_prev`, reset when the pivot ends); more sink than needed only bends the knee. Shared with the hero (heroturn
+   unchanged: heel 0.039, down by tick 39). Env FOEHEEL_SNAP_OLD=1 = both off.
+   `bot.gd` foeturn: the pivot foot's heel lift is subtracted from its height after the ball pin is released too (the
+   raised heel in the settle read as a 0.126/size "kick"); new read-out `hips sink step at most` + gate <= 3.0 cm.
+   Readings: sink step 2.4/2.4/1.9/1.9 cm (x1/2.2/3.2/4.6), peak 9.0/10.1/8.8/10.6 cm, lift 0.070/0.087/0.106/0.099, drift 0.
+   Bots PASS: foeturn heroturn pivot stop start lean stride footik stepup jump combat knight soldier foestride sentinel
+   knightleap knightstomp foefold foegrip knightguard foeflinch foehands lockon foeguard keepgap foereach.
+   Frames `ring gt_8/14/20 N 9.0 fixfps turn sz=4.6` (spin, old code) and `gs_old/new_34/40` (settle, FOEHEEL_SNAP_OLD vs new),
+   looked at as sheets: the giant's spin reads (planted, glaive up); old/new settle frames are identical to the eye, as
+   expected for a 1-4 tick pop; this lens (3 + 2.2 x size off) keeps the giant small. gt_14 rendered blown-out white (GL).
+   Gallery: 2 (fail). Grade: foe turn-in-place good (a pop removed; frames still do not prove it).
+   NEXT: (1) a turn sequence at 60 fps-equivalent frames around the settle (fixfps steps 2 ticks a frame; render
+   consecutive frames 30-40) to judge the heel coming down by eye, closer lens at size 4.6; (2) the hero sunlit anklelens
+   turn (02:00 NEXT 1); (3) the knight sweep side lens (00:00 NEXT 1). BOSS/ANIMATION order unchanged; audio after.
 0. (02:00 11-12) **FOE BALL PIVOT ON THE SPOT — DONE (game change, gated).** NEXT (1) of 01:00.
    FOEBALL_DBG=1 (bot foeturn, per pivot tick: ball dv, pivot_short, sink, heel deg, settle) showed the ball held
    0.000 through the spin; it slid in the SETTLE (pivot_settle true, `_ball_pin` dropped, heel easing down): the ankle

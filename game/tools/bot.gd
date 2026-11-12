@@ -2962,7 +2962,7 @@ func _foe_turn_test() -> void:
 		var piv := [0.0, 0.0, 0.0, -1, 0]   # pin drift xz, pin drift y, other foot travel, side, ticks planted
 		_heel_peak = 0.0
 		var piv_o0 := Vector3.INF
-		var piv_sink := [0.0]
+		var piv_sink := [0.0, -1.0, 0.0]   # peak cm, last read, biggest change between reads (11-12 03:00)
 		e.bot_face = f0.rotated(Vector3.UP, deg_to_rad(120.0))
 		e.shuffle_peak = 0.0
 		e.lead_peak = 0.0
@@ -3004,6 +3004,10 @@ func _foe_turn_test() -> void:
 				# so it is read on the ball's height over where the ball was planted, not on the ankle
 				if post and e.stride_warp.ball_pivot and not StrideWarp.BALLPIVOT_OLD and j == e.stride_warp.pivot_side and e.stride_warp.pivot > 0.0 and e.stride_warp._ball_pin != null:
 					h = (e.stride_warp.pivot_ball.y - e.stride_warp.pivot_ball_pin.y) / sc
+				# (11-12 03:00) after squaring up the heel now stays raised on the ball until the settle
+				# step (it slapped flat in one tick before): that heel is not a step either
+				elif post and e.stride_warp.ball_pivot and not StrideWarp.BALLPIVOT_OLD and not StrideWarp.FOEHEEL_SNAP_OLD and j == e.stride_warp.pivot_side and e.stride_warp.pivot > 0.0:
+					h -= e.stride_warp.pivot_heel_up / sc
 				lift = maxf(lift, h)
 				if OS.has_environment("FOETURN_DBG") and sc < float(OS.get_environment("FOETURN_DBG_SC") if OS.has_environment("FOETURN_DBG_SC") else "1.5"):
 					var hc: float = ((skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y - rest[j]) / sc
@@ -3043,6 +3047,9 @@ func _foe_turn_test() -> void:
 				piv[2] = maxf(piv[2], Vector2(sw.pivot_other.x - piv_o0.x, sw.pivot_other.z - piv_o0.z).length() / sc)
 				piv[4] += 1
 				piv_sink[0] = maxf(piv_sink[0], sw.pivot_sink)
+				if piv_sink[1] >= 0.0:
+					piv_sink[2] = maxf(piv_sink[2], absf(sw.pivot_sink - piv_sink[1]))
+				piv_sink[1] = sw.pivot_sink
 			if e.turn_shuffle > 0.3:
 				ts_peak = maxf(ts_peak, e.anim_tree.get("parameters/speed/scale"))
 			if e.turn_lead > lead_signed:
@@ -3090,6 +3097,11 @@ func _foe_turn_test() -> void:
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
 		print("BOT foeturn: ball pivot heel up to %.3f per size" % _heel_peak)
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
+		print("BOT foeturn: hips sink step at most %.1f cm between reads" % piv_sink[2])
+		# (11-12 03:00) the heel slapped flat on squaring up and the hips dropped 5 cm, then popped
+		# 8 cm back up as the pivot foot stepped off (4.9-7.0 cm between reads); now <= 2.4
+		if piv_sink[2] > 3.0 and not StrideWarp.FOEHEEL_SNAP_OLD and not StrideWarp.BALLPIVOT_OLD:
+			return _combat_done(false, "size %.1f: the hips pop %.1f cm in one read through the turn" % [sc, piv_sink[2]])
 		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for o in out:
