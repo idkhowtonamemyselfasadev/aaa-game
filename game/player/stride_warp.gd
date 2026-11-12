@@ -77,6 +77,13 @@ var ball_heel_deg := BALL_HEEL_DEG
 var pivot_hips_hold := 0.0
 var pivot_hips_raise := 0.0      # (bots) skeleton units the hips were given back this tick
 static var HIPSPIN_OLD := OS.has_environment("HIPSPIN_OLD")
+static var HIPSOVER_OLD := OS.has_environment("HIPSOVER_OLD")
+var hips_over_pin := false       # (11-12 16:00) set by the owner (the hero): the pelvis slides over the planted ankle
+const PIVOT_OVER_KEEP := 0.0     # stance widths the planted ankle is kept out past the hips' middle
+const PIVOT_OVER_MAX := 0.5      # stance widths: the most the pelvis slides toward the planted foot
+const PIVOT_OVER_RATE := 3.0     # stance widths per second the slide moves at
+var _hips_over := 0.0            # skeleton units the pelvis is slid toward the planted foot now
+var pivot_hips_over := 0.0       # (bots) the same, this tick
 var _hips_over_pin0 := -1e9      # the hips' height over the pin when it was planted (skeleton units)
 var pivot_hips_short := 0.0      # (bots) skeleton units the hips stood under that this tick
 var _hips_guard := -1.0          # the guard's hips height (skeleton units, along up), sampled at rest
@@ -445,6 +452,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_settle_b0 = null
 		settle_done = false
 		pivot_hips_raise = 0.0
+		_hips_over = 0.0
+		pivot_hips_over = 0.0
 		_heel_up_prev = 0.0
 		_hips_over_pin0 = -1e9
 		pivot_hips_short = 0.0
@@ -528,6 +537,32 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				var pbr := skel.get_bone_global_pose(hpr).basis if hpr >= 0 else Basis()
 				skel.set_bone_pose_position(hbr, skel.get_bone_pose_position(hbr) + pbr.inverse() * (up * r))
 				pivot_hips_raise = r
+	# (11-12 16:00) the weight goes over the planted foot: the guard stands the left foot 0.4 m
+	# forward, so a turn to the LEFT swings that planted ankle 6-11 cm across the body's middle line
+	# (rest: 8 cm out on its own side) for the whole spin and settle (bot `heroturnl` HEROTURN_SEP lat
+	# read-out); the left leg slanted in under the hips and the hips hung ~10 cm to the left of both
+	# feet. Pushing the body round the pin only skated it sideways (the ball is already across at the
+	# plant). Instead the pelvis slides over toward the planted ankle, up to PIVOT_OVER_MAX stance
+	# widths, so the planted leg stands near plumb under its hip. HIPSOVER_OLD: the before
+	pivot_hips_over = 0.0
+	if hips_over_pin and _stance_ok and not HIPSOVER_OLD:
+		var hbo := skel.find_bone("mixamorig_Hips")
+		if hbo >= 0:
+			var lxo := 1.0 if (_stance[0] as Vector3).x > (_stance[1] as Vector3).x else -1.0
+			var sgo := lxo * (1.0 if pivot_side == 0 else -1.0)       # +1: the planted foot's side is +x
+			var wo := absf((_stance[0] as Vector3).x - (_stance[1] as Vector3).x)
+			var cross := -((inv * (pivot_pin as Vector3)).x - skel.get_bone_global_pose(hbo).origin.x) * sgo
+			var want_o := clampf(cross + PIVOT_OVER_KEEP * wo, 0.0, PIVOT_OVER_MAX * wo) * clampf(pivot, 0.0, 1.0)
+			_hips_over = move_toward(_hips_over, want_o, PIVOT_OVER_RATE * wo * delta)
+			if _hips_over > 0.0:
+				var hpo := skel.get_bone_parent(hbo)
+				var pbo := skel.get_bone_global_pose(hpo).basis if hpo >= 0 else Basis()
+				skel.set_bone_pose_position(hbo, skel.get_bone_pose_position(hbo) + pbo.inverse() * Vector3(-sgo * _hips_over, 0.0, 0.0))
+				pivot_hips_over = _hips_over
+				# ...and the stepping boot goes out with it, so that leg keeps the clip's bend (slid alone,
+				# the pelvis came 7 cm nearer the stepping foot and its knee folded 2 deg past the gate)
+				if not pivot_settle:
+					of_clip0 += Vector3(-sgo * _hips_over, 0.0, 0.0)
 	# ball pivot (11-12): the ankle target orbits the planted ball as the sole turns with the body,
 	# and the heel lift rotates foot and ankle up about the ball
 	var pin_l: Vector3 = inv * (pivot_pin as Vector3)

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261108-2140-jumpattack-after.jpg",
-  "time": "2026-11-08T21:36:00Z",
-  "caption": "Same frame AFTER the body leads the staff: head and hat over the fists, face down on the target, chest coming forward; still GL-only and backlit at 11:00, legs hang under the hips at this tick.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-2200-kneefold-before-after.jpg",
   "time": "2026-11-08T22:20:00Z",
   "caption": "Jump attack fold, before (left) and after (right): the robe's front panel used to hang as a flat red board hiding the tucked legs; it now lies along the thigh and folds down at the knee so the tucked boot shows. Still GL-only, rear 3/4, crease at the knee reads a little sharp.",
@@ -891,6 +885,12 @@
   "file": "20261112-1515-leftturn.jpg",
   "time": "2026-11-12T15:15:53Z",
   "caption": "The hero mid-turn to the left on the ball of the foot, now standing a little taller with the stepping boot lifted 4 cm instead of 6.5; the knees still read knock-kneed and the face is a flat pale mask.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1651-leftturn.jpg",
+  "time": "2026-11-12T16:51:49Z",
+  "caption": "Hero mid-way through a turn on the spot to the left, weight now slid over the planted foot; the legs still read crossed from this lens and the face is a flat flesh-coloured plane.",
   "verdict": "fail"
  }
 ]

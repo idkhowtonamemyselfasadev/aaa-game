@@ -511,6 +511,7 @@ func _setup_crumple() -> void:
 	stride_warp.ground_body = self
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
 	stride_warp.uncross = true             # (11-12 14:00) the stepping boot never crosses the planted one
+	stride_warp.hips_over_pin = true       # (11-12 16:00) the pelvis slides over the planted ankle
 	# (11-12 05:00) the hero's heel comes up further onto the ball (HERO_HEEL tunes, HEROHEEL_OLD = 13)
 	if not OS.has_environment("HEROHEEL_OLD"):
 		stride_warp.ball_heel_deg = HERO_BALL_HEEL_DEG

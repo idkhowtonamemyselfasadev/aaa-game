@@ -822,14 +822,15 @@ func _hips_over_ankle(skel: Skeleton3D) -> float:
 ## (heroturn 11-12 14:00) the feet's sideways spread across the body (left ankle minus right
 ## ankle along the body's left, m; the same for the balls of the feet): at rest it is the stance
 ## width; below ~0 the stepping foot has crossed the support foot's line (a scissor stance)
-var _tf_sep_rest := [NAN, NAN]
-var _tf_sep_min := [9.0, 9.0]
+var _tf_sep_rest := [NAN, NAN, NAN]
+var _tf_sep_min := [9.0, 9.0, 9.0]
+var _tf_pin_cross := 9.0
 func _foot_sep(skel: Skeleton3D) -> Array:
 	var g := skel.global_transform
 	var lft := _player.body.global_basis.x
 	lft = Vector3(lft.x, 0.0, lft.z).normalized()
 	var out := []
-	for b in ["Foot", "ToeBase"]:
+	for b in ["Foot", "ToeBase", "Leg"]:   # (11-12 16:00) [2] = the knees
 		var l := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Left%s" % b)).origin
 		var r := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Right%s" % b)).origin
 		out.append((l - r).dot(lft))
@@ -837,11 +838,27 @@ func _foot_sep(skel: Skeleton3D) -> Array:
 func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
 	if sw.pivot > 0.05:
 		var sp := _foot_sep(skel)
-		for j in 2:
+		for j in 3:
 			_tf_sep_min[j] = minf(_tf_sep_min[j], float(sp[j]))
 		if OS.has_environment("HEROTURN_SEP"):
-			print("   sep ankle %.3f ball %.3f pivot %.2f side %d settle %s" % [sp[0], sp[1], sw.pivot, sw.pivot_side, sw.pivot_settle])
+			print("   sep ankle %.3f ball %.3f knee %.3f pivot %.2f side %d settle %s" % [sp[0], sp[1], sp[2], sw.pivot, sw.pivot_side, sw.pivot_settle])
+			var g := skel.global_transform
+			var lft := _player.body.global_basis.x
+			lft = Vector3(lft.x, 0.0, lft.z).normalized()
+			var hc := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips")).origin
+			var o := []
+			for sd in ["Left", "Right"]:
+				for b in ["UpLeg", "Leg", "Foot"]:
+					o.append(((g * skel.get_bone_global_pose(skel.find_bone("mixamorig_%s%s" % [sd, b])).origin) - hc).dot(lft))
+			print("     lat L hip %.3f knee %.3f ankle %.3f | R hip %.3f knee %.3f ankle %.3f" % o)
 	if sw.pivot > 0.5:
+		# (11-12 16:00) the planted ankle's place across the body from the pelvis' middle, on its own
+		# side (+): at rest ~0.08 m; below 0 it has crossed under the body
+		var gx := skel.global_transform
+		var lf := _player.body.global_basis.x
+		lf = Vector3(lf.x, 0.0, lf.z).normalized()
+		var pc := ((gx * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][sw.pivot_side])).origin) - gx * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips")).origin).dot(lf)
+		_tf_pin_cross = minf(_tf_pin_cross, pc * (1.0 if sw.pivot_side == 0 else -1.0))
 		var fs: String = ["Left", "Right"][1 - sw.pivot_side]
 		var ps: String = ["Left", "Right"][sw.pivot_side]
 		var kf := _leg_read(skel, fs)
@@ -2390,6 +2407,11 @@ func _hero_turn_test() -> void:
 	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d), hips sink up to %.1f cm" % [_heel_peak, _heel_down_tick, spot[3], _hero_sink_peak])
 	print("BOT heroturn: knees: at rest %.1f deg, through the turn stepping leg up to %.1f, pivot leg up to %.1f; hips over the lower ankle %.3f m at rest, %.3f..%.3f through the turn" % [_tf_knee_rest, _tf_knee_peak[0], _tf_knee_peak[1], _tf_hips_rest, _tf_hips_low, _tf_hips_high])
 	print("BOT heroturn: feet spread across the body at rest ankle %.3f ball %.3f m, through the turn down to ankle %.3f ball %.3f m (below 0: crossed)" % [_tf_sep_rest[0], _tf_sep_rest[1], _tf_sep_min[0], _tf_sep_min[1]])
+	print("BOT heroturn: knees spread across the body at rest %.3f m, through the turn down to %.3f m" % [_tf_sep_rest[2], _tf_sep_min[2]])
+	print("BOT heroturn: the planted ankle stands at least %.3f m out on its own side of the pelvis' middle (below 0: under the far hip)" % _tf_pin_cross)
+	# (11-12 16:00) turning left the planted ankle crossed 0.11 m under the body (the hips hung off both feet)
+	if not StrideWarp.HIPSOVER_OLD and _tf_pin_cross < -0.07:
+		return _combat_done(false, "the planted ankle crosses %.3f m under the body in a turn on the spot" % -_tf_pin_cross)
 	var step_rest: float = _tf_knee_rest_lr[1 - int(spot_piv[3])]
 	print("BOT heroturn: turning %s, the stepping %s knee folds %.1f deg past its own guard bend (%.1f), %.1f past the deeper guard knee" % ["left" if _turn_left else "right", "right" if spot_piv[3] == 0 else "left", _tf_knee_peak[0] - step_rest, step_rest, _tf_knee_peak[0] - _tf_knee_rest])
 	# (11-12 15:00) the left turn's stepping (rear guard) knee folded 20 deg past its own guard bend: the
