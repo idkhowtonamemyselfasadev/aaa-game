@@ -2441,6 +2441,12 @@ func _ready() -> void:
 					if "flip" in args:
 						lz = -lz
 					var lens_yaw := atan2(0.7, 3.0 * lz)
+					if "facesun" in args:
+						# (11-12 13:00) facesun: the turn ends with the face (body +Z) toward the
+						# sun's azimuth, so `sidelens prof sunside` judges it front-lit
+						lens_yaw = atan2(-sl.x, -sl.z)
+						if t == 0.0:
+							print("SHOT facesun turn ends at yaw %.1f deg" % rad_to_deg(lens_yaw))
 					player.bot_input = Vector2.ZERO
 					if t == 0.0:
 						player.body.rotation.y = lens_yaw - deg_to_rad(160.0)

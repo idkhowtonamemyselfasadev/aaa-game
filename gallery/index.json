@@ -1,26 +1,8 @@
 [
  {
-  "file": "20261108-1940-front-guard-run.jpg",
-  "time": "2026-11-08T19:40:00Z",
-  "caption": "Guard run with the staff drawn, seen from ahead (new frontlens, dog hidden): chest square, staff carried diagonally across the body with both fists together on its upper third, hat and masked face toward the camera; backlit at 10:00 so the front is in shade, GL renderer.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1940-front-guard-run-dusk.jpg",
-  "time": "2026-11-08T19:40:00Z",
-  "caption": "Same run at 16:30 from ahead: the face under the hat now reads, but the hero runs in the cottage's shadow and the lit meadow is behind; the pose holds up, the light does not.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-2100-jumpattack-swing.jpg",
   "time": "2026-11-08T21:00:00Z",
   "caption": "Jump attack at jt 0.38 (front 3/4 from the shadow side): staff swinging over and forward in both fists, hat and capelet read; the robe's straight red panels hide the tucked legs so the airborne body reads stiff, and the GL backlight leaves the hero a silhouette.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-2100-jumpattack-fold.jpg",
-  "time": "2026-11-08T21:00:00Z",
-  "caption": "Jump attack fold at jt 0.48: body jackknifed over the blow, the staff driven down to the grass ahead, face under the hat reads; one robe panel sticks out as a flat, stiff red blade instead of trailing like cloth.",
   "verdict": "fail"
  },
  {
@@ -897,6 +879,12 @@
   "file": "20261112-1209-profile-turn.jpg",
   "time": "2026-11-12T12:09:50Z",
   "caption": "Same moment through the old square profile lens for comparison: the hero's front is in self-shade and the legs hide behind the tabard.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1304-turn-frontlit.jpg",
+  "time": "2026-11-12T13:04:00Z",
+  "caption": "Hero's turn on the spot at 9:00, mid-turn, judged front-lit for the first time (new facesun option): face and cape lit, both fists on the staff. Still wrong: the feet cross into a scissor stance, the face reads as a flat pale mask.",
   "verdict": "fail"
  }
 ]

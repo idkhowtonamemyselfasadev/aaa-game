@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(13:00 11-12: THE HERO'S TURN ON THE SPOT JUDGED FRONT-LIT: `shot.gd` spotturn `facesun` ends the turn facing the sun; at 9:00 the face and cape read lit; found the feet crossing into a scissor stance mid-turn (next fix). Content hours unchanged (tool + judgement).)
 (12:00 11-12: A SUN-SIDE LENS FOR JUDGING THE HERO'S TURN ON THE SPOT: `shot.gd` sidelens gets `sunside` (swing the profile lens toward the hero's front by sunswing=<deg>, default 35, so it is a front 3/4 on the sun's flank; prints the sun's angle off the lens and off the hero's facing). A first try that swung toward the sun's azimuth gave a rear 3/4 whenever the sun stood behind the hero (9:00 and 12:00 at the `jump` spot). Frames looked at: sun_old (plain prof bodytight 9:00, front in self-shade), sf09 (sunside 9:00: face, fists, staff and the stepping legs read; front still half shaded, sun 77 deg off the lens), sun15_* (15:00: hero in the cottage's shadow, useless), sun12/sf12 (12:00: the hero walks away with the staff slung instead of turning: spot setup differs at that hour). Bots PASS: walk heroturn jump combat footik. Gallery: 2 (fail). Grade turn-in-place: good- (unchanged).)
 (11:15 11-12: THE HERO'S BOOT TOES ARE SCUFFED MATTE LEATHER, NOT GLOSSY PINK LACQUER: inside the boot mask (v_boot) the base mesh's lacquered plates (toe cap, vamp) kept the armour's satin roughness 0.46 and red lacquer, so in the ankle lens the toes caught the sky as a glossy pinkish-white highlight. New hero.gdshader uniform `boot_scuff` (player.gd sets 1 on the hero; BOOTGLOSS_OLD=1 = before): plates inside the boot mask are pulled half way to the straps' hide x(0.3..0.42), darkened up to 18 % along a fine rub grain, roughness 0.66-0.86. Frames bt_old / bt_new2 (ankle lens jt 0.40) looked at: the toes now read as worn brown boots; bt_side (bodytight side) looked at, boots lost in the grass there. Bots PASS: walk heroturn jump combat villager knight footik stepup hands climb glide neighbour pedlar (pedlar failed once while a GL shot ran in parallel, passed twice alone).)
 (10:00 11-12: THE HERO'S BOOTS ARE STRAP LEATHER, NO GREY PLATE AT THE ANKLE: the grey between the shin binding and the boot was the base mesh's pale neutral-grey heel counter and ankle plates (not the blue-grey 'iron' mask and not the greave lip). `HeroGarb._mark_boots` writes COLOR.b = 1 - (shin/foot/toe skin weight) into the hero's base mesh; hero.gdshader `boot_leather` turns iron AND unsaturated grey texels inside that mask into strap leather (hide x0.34-0.54, rough 0.7-0.8, no metal). Also new `HollowRags._slim_ankle`: the greave's foot-skinned lip 1-3.5 cm above the ankle is pulled toward the shin axis by the shin slim (forward reach 0.081 -> 0.058 m; no visible change at this lens). `_slim_leg` now runs on a shared `_reshape(bone, fn)` (same 909 verts). BOOTS_OLD=1 / ANKLESLIM_OLD=1 = before. New probe `game/tools/ankle_probe.gd`. Bots PASS: walk (gates: >= 10 ankle verts, now 206; >= 100 boot verts, now 601) heroturn jump footik stepup villager combat hands knight climb glide pedlar neighbour.)
@@ -8397,6 +8398,20 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (13:00 11-12) **FRONT-LIT TURN ON THE SPOT — DONE (tool + judgement).** NEXT (1) of 12:00.
+   `shot.gd` spotturn `facesun`: the turn ends with the hero's face (body +Z) toward the sun's azimuth (prints the
+   yaw once). Command: `SHOT_GL=1 tools/shots.sh "jump fs_90 20 9.0 fixfps nojump fromrest clear nograss nodog spotturn
+   facesun turnat=0.3 sidelens prof bodytight sunside jt=0.55"` (also 12.0). Frames looked at: fs_90 (9:00, ends at yaw
+   -135): face, cape, sash and both fists on the staff now sun-lit, lens 19 deg off the sun; fs_120 (12:00): same pose
+   in tree/cloud shade, reads dark. Verdict: at jt 0.55 the feet are CROSSED into a scissor stance (left boot stacked
+   over the right): a real 160-deg turn opens the stepping foot out, it does not cross it in front. The face is still
+   a flat pale mask with a dark bar under the hood. Grade turn-in-place: good- (motion unchanged; scissor feet found).
+   Bots PASS: heroturn jump walk combat knight. Gallery: 1 (fail). Screenshots: GL (opengl3/llvmpipe) under xvfb, Vulkan
+   fails; ~25 min for 2 shots in parallel. Asset sites not rechecked.
+   NEXT: (1) the scissor feet mid-turn: measure foot positions per tick in heroturn (gate: the stepping foot's lateral
+   offset must not cross the support foot's line) and open the step; (2) why at 12:00 the `jump ... spotturn` setup
+   leaves the hero walking off with the staff slung; (3) heel-side lens; (4) knight sweep side lens; (5) laid lane's
+   uniform band. BOSS/ANIMATION order unchanged; audio after.
 0. (12:00 11-12) **SUN-SIDE BODYTIGHT LENS — DONE (tool + judgement).** NEXT (1) of 11:15.
    `shot.gd` sidelens `sunside` [`sunswing=<deg>`]: after prof picks the sun flank, the lens swings toward the hero's
    facing (body.basis.z) by up to 35 deg. Command: `SHOT_GL=1 tools/shots.sh "jump sf09 20 9.0 fixfps nojump fromrest
