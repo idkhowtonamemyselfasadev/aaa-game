@@ -71,12 +71,21 @@ const BALL_HEEL_DEG := 13.0      # deg the heel comes up off the turf at full sp
 ## ~5-7 cm on the ball; 13 deg was 3.9 cm and did not read under the trouser hem). The foes keep 13
 ## and add their reach rise on top. HEROHEEL_OLD (in player.gd): the hero's before
 var ball_heel_deg := BALL_HEEL_DEG
+## (11-12 07:00) how much of the ball pivot's ankle rise the hips rise with (0 = none, the foes):
+## with the hips held at the guard height the 5.5 cm heel rise only folded the pivot knee
+## (43 -> 62 deg) and the stepping knee (43 -> 56 deg): a squat under the hem, not a pivot up on the ball
+var pivot_hips_hold := 0.0
+var pivot_hips_raise := 0.0      # (bots) skeleton units the hips were given back this tick
+var _hips_guard := -1.0          # the guard's hips height (skeleton units, along up), sampled at rest
+var _heel_up_prev := 0.0         # last tick's pivot_heel_up (world m)
 const BALL_HEEL_RISE := 9.0      # 1/s the heel comes up
 const BALL_HEEL_FALL := 7.0      # 1/s it settles back down once square
 var ball_pivot := false          # set by the owner: the hero (foes too since 11-12 02:00, deeper sink + reach rise)
 var _ball_pin = null             # world ball of the pivot foot while spinning on it
 static var FOEBALL_NO_REACH := OS.has_environment("FOEBALL_NO_REACH")
 static var FOEHEEL_SNAP_OLD := OS.has_environment("FOEHEEL_SNAP_OLD")
+const PIVOT_HIPS_RAISE_MAX := 6.0   # skeleton cm: the most the hips are given back in a turn on the spot
+static var HIPSHOLD_OLD := OS.has_environment("HIPSHOLD_OLD")   # the clip's dip kept (before 11-12 07:00)
 const PIVOT_SINK_RELAX := 30.0   # skeleton cm/s the hips may rise back out of a pivot sink
 var _sink_prev := 0.0
 var ball_heel_max_deg := 30.0  # a leg short of the ball's ankle spot rises this far onto the ball at most
@@ -423,12 +432,18 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_settle_at = null
 		_settle_b0 = null
 		settle_done = false
+		pivot_hips_raise = 0.0
+		_heel_up_prev = 0.0
 		if stance_idle:
 			for i in 2:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
 				if fb >= 0:
 					_stance[i] = skel.get_bone_global_pose(fb).origin
 			_stance_ok = true
+			var hb0 := skel.find_bone("mixamorig_Hips")
+			if hb0 >= 0:
+				var up0 := (frame.inverse() * Vector3.UP).normalized()
+				_hips_guard = skel.get_bone_global_pose(hb0).origin.dot(up0)
 		return
 	var sides := ["Left", "Right"]
 	var ul := skel.find_bone("mixamorig_%sUpLeg" % sides[pivot_side])
@@ -471,6 +486,22 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if ub >= 1.0:
 			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
+	# (11-12 07:00) the free foot as the clip steps it, read before the hips are given back, so the
+	# step keeps its place and lift; then the hips go back up toward the guard height (both legs
+	# are IK'd below: the pivot leg onto its pin, the free leg onto this clip place)
+	var of_clip0 := skel.get_bone_global_pose(of).origin
+	var of_keep0 := skel.get_bone_global_pose(of).basis
+	pivot_hips_raise = 0.0
+	if pivot_hips_hold > 0.0 and not HIPSHOLD_OLD:
+		var hbr := skel.find_bone("mixamorig_Hips")
+		if hbr >= 0:
+			# last tick's ankle rise on the ball (world m -> skeleton units): the body goes up with it
+			var r := minf(_heel_up_prev * (inv.basis * Vector3.UP).length() * pivot_hips_hold, PIVOT_HIPS_RAISE_MAX)
+			if r > 0.0:
+				var hpr := skel.get_bone_parent(hbr)
+				var pbr := skel.get_bone_global_pose(hpr).basis if hpr >= 0 else Basis()
+				skel.set_bone_pose_position(hbr, skel.get_bone_pose_position(hbr) + pbr.inverse() * (up * r))
+				pivot_hips_raise = r
 	# ball pivot (11-12): the ankle target orbits the planted ball as the sole turns with the body,
 	# and the heel lift rotates foot and ankle up about the ball
 	var pin_l: Vector3 = inv * (pivot_pin as Vector3)
@@ -531,6 +562,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			pivot_heel_up = (xf.basis * (up * (v2.dot(up) - v.dot(up)))).length()
 			pin_l = ball_l + v2
 			heel_q = Basis(lat, ang)
+	_heel_up_prev = pivot_heel_up
 	var s := skel.get_bone_global_pose(ul).origin
 	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
 	# settle onto the pivot leg instead, by just what it needs to reach (capped, a few cm)
@@ -539,8 +571,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var dd := tp - s
 	pivot_sink = 0.0
 	# the free foot as the clip steps it, before the hips settle: it keeps that place after
-	var of_clip := skel.get_bone_global_pose(of).origin
-	var of_keep := skel.get_bone_global_pose(of).basis
+	var of_clip := of_clip0
+	var of_keep := of_keep0
 	var h := 0.0
 	if dd.length() > reach_l:
 		var du := dd.dot(up)
@@ -701,7 +733,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			_settle_t = 0.0
 			_settle_at = null
 		step_lift = _arc_lift * pivot
-	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip:
+	if (pivot_sink > 0.0 and not PIVOT_FREE_SINKS) or of_t != of_clip or pivot_hips_raise > 0.0:
 		var oul := skel.find_bone("mixamorig_%sUpLeg" % sides[1 - pivot_side])
 		var olg := skel.find_bone("mixamorig_%sLeg" % sides[1 - pivot_side])
 		if oul >= 0 and olg >= 0:

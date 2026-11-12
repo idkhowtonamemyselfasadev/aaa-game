@@ -6,6 +6,7 @@ extends CharacterBody3D
 const WALK_SPEED := 4.2
 const RUN_SPEED := 6.5
 const CHARGE_SPEED := 1.1       # shuffle while the heavy is raised
+const HERO_HIPS_HOLD := 0.6       # (11-12 07:00) share of the ball pivot's ankle rise the hips rise with in a turn on the spot
 const HERO_BALL_HEEL_DEG := 19.0  # (11-12 05:00) deg the hero's heel rises onto the ball in a turn on the spot
 const SPRINT_SPEED := 9.0
 const ACCEL := 14.0
@@ -496,6 +497,8 @@ func _setup_crumple() -> void:
 	# (11-12 05:00) the hero's heel comes up further onto the ball (HERO_HEEL tunes, HEROHEEL_OLD = 13)
 	if not OS.has_environment("HEROHEEL_OLD"):
 		stride_warp.ball_heel_deg = HERO_BALL_HEEL_DEG
+	# (11-12 07:00) the turn on the spot keeps the guard's hip height (HIPS_HOLD tunes 0..1)
+	stride_warp.pivot_hips_hold = float(OS.get_environment("HIPS_HOLD")) if OS.get_environment("HIPS_HOLD") != "" else HERO_HIPS_HOLD
 	if OS.get_environment("HERO_HEEL") != "":
 		stride_warp.ball_heel_deg = float(OS.get_environment("HERO_HEEL"))
 	var knee := skel.find_bone("mixamorig_LeftLeg")

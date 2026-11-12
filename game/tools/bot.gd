@@ -785,7 +785,36 @@ var _tf_settled := false
 var _tf_stance_err := 0.0
 ## (heroturn) both feet from the release on: how far they slide back to the clip once the pivot
 ## lets go, and how far each stands from its idle stance spot when the settle is done
+var _tf_knee_peak := [0.0, 0.0]   # (heroturn 11-12 07:00) deepest knee bend, stepping / pivot leg, deg
+var _tf_knee_rest := 0.0          # knee bend standing at rest before the turn, deg
+var _tf_hips_low := 9.0           # lowest hips height over the lower ankle through the turn, m
+var _tf_hips_rest := 0.0
+var _tf_hips_high := 0.0          # highest hips height over the lower ankle through the turn, m
+## knee flexion (deg, 0 = straight) of one leg and the hips' height over the lower ankle, final pose
+func _leg_read(skel: Skeleton3D, side: String) -> float:
+	var u := skel.get_bone_global_pose(skel.find_bone("mixamorig_%sUpLeg" % side)).origin
+	var k := skel.get_bone_global_pose(skel.find_bone("mixamorig_%sLeg" % side)).origin
+	var f := skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % side)).origin
+	return rad_to_deg((k - u).angle_to(f - k))
+func _hips_over_ankle(skel: Skeleton3D) -> float:
+	var g := skel.global_transform
+	var h := g * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips")).origin
+	var lo := minf((g * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin).y, (g * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin).y)
+	return h.y - lo
+
 func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
+	if sw.pivot > 0.5:
+		var fs: String = ["Left", "Right"][1 - sw.pivot_side]
+		var ps: String = ["Left", "Right"][sw.pivot_side]
+		var kf := _leg_read(skel, fs)
+		var kp := _leg_read(skel, ps)
+		_tf_knee_peak[0] = maxf(_tf_knee_peak[0], kf)
+		_tf_knee_peak[1] = maxf(_tf_knee_peak[1], kp)
+		var hh := _hips_over_ankle(skel)
+		_tf_hips_low = minf(_tf_hips_low, hh)
+		_tf_hips_high = maxf(_tf_hips_high, hh)
+		if OS.has_environment("HEROTURN_KNEE"):
+			print("   knee step %.1f pivot %.1f hips %.3f lift %.3f pivot %.2f settle %s raise %.2f guard %.2f drop %.3f" % [kf, kp, hh, sw.step_lift, sw.pivot, sw.pivot_settle, sw.pivot_hips_raise, sw._hips_guard, sw.ground_drop])
 	var now := []
 	for side in ["Left", "Right"]:
 		now.append(skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_%sFoot" % side)).origin)
@@ -2268,6 +2297,8 @@ func _hero_turn_test() -> void:
 	await skel.skeleton_updated
 	for j in 2:
 		free_rest[j] = float(p.stride_warp.ground_sole[j])
+	_tf_knee_rest = maxf(_leg_read(skel, "Left"), _leg_read(skel, "Right"))
+	_tf_hips_rest = _hips_over_ankle(skel)
 	free_on[0] = true
 	var spot: Array = await measure.call(post_yaw, 60, Vector2.ZERO)
 	for i in 40:                          # the release may come after the measured turn: keep reading
@@ -2317,6 +2348,13 @@ func _hero_turn_test() -> void:
 	var pin_after: bool = p.stride_warp.pivot_pin != null
 	p._set_lock(null)
 	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d), hips sink up to %.1f cm" % [_heel_peak, _heel_down_tick, spot[3], _hero_sink_peak])
+	print("BOT heroturn: knees: at rest %.1f deg, through the turn stepping leg up to %.1f, pivot leg up to %.1f; hips over the lower ankle %.3f m at rest, %.3f..%.3f through the turn" % [_tf_knee_rest, _tf_knee_peak[0], _tf_knee_peak[1], _tf_hips_rest, _tf_hips_low, _tf_hips_high])
+	# (11-12 07:00) the hips rise with the ball pivot's heel: the stepping knee no longer folds 13 deg
+	# past the guard's (HIPSHOLD_OLD: 43.2 -> 55.9), and the body does not bob up off the guard
+	if not StrideWarp.HIPSHOLD_OLD and _tf_knee_peak[0] - _tf_knee_rest > 9.0:
+		return _combat_done(false, "the stepping knee folds %.1f deg past the guard's in a turn on the spot" % (_tf_knee_peak[0] - _tf_knee_rest))
+	if _tf_hips_high - _tf_hips_rest > 0.04:
+		return _combat_done(false, "the hips bob %.3f m up off the guard in a turn on the spot" % (_tf_hips_high - _tf_hips_rest))
 	print("BOT heroturn: settle done %s, the feet end %.3f m from the idle stance, and slide %.3f m as the pivot lets go" % [_tf_settled, _tf_stance_err, _tf_rel_slide])
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
