@@ -103,12 +103,18 @@ static func step_down(cb: CharacterBody3D, y_pre: float, delta: float, max_h: fl
 		var hit := cb.get_world_3d().direct_space_state.intersect_ray(q)
 		var wall_y := cos(cb.floor_max_angle)
 		if hit.is_empty() or (hit.normal as Vector3).y < wall_y:
+			if OS.has_environment("STEPDOWN_DEBUG"):
+				print("STEPDOWN_DEBUG no ground: fell %.3f hit %s" % [fell, str(hit.get("position", "none"))])
 			return 0.0                  # nothing within a step below (a ledge: let it fall), or a steep face
 		# down onto it, sliding the round bottom off the tread edge it hangs on
 		var xf := cb.global_transform
 		var motion := Vector3.DOWN * (o.y - (hit.position as Vector3).y + 0.02)
 		var landed := false
-		for k in 4:
+		# (11-12 22:00) at a walk the round bottom is still rolling off the edge it hangs on: 4 slides
+		# left it ~4 mm short of the tread (no floor contact, so it fell 4 ticks and both boots hung
+		# off their treads). More slides, then a short probe straight down onto the tread
+		var tries := 4 if OS.has_environment("STEPDOWN_OLD") else int(OS.get_environment("STEPDOWN_TRIES")) if OS.has_environment("STEPDOWN_TRIES") else 8
+		for k in tries:
 			var col := KinematicCollision3D.new()
 			if not cb.test_move(xf, motion, col, 0.001):
 				xf.origin += motion
@@ -120,8 +126,19 @@ static func step_down(cb: CharacterBody3D, y_pre: float, delta: float, max_h: fl
 			motion = col.get_remainder().slide(col.get_normal())
 			if motion.length() < 0.002:
 				break
+		if not landed and not OS.has_environment("STEPDOWN_OLD") and not OS.has_environment("STEPDOWN_NOPROBE"):
+			var col2 := KinematicCollision3D.new()
+			# only walking OFF an edge (the slide carried it the way it walks): a walker climbing onto a
+			# course and hanging on its lip slides back against its own heading and is not pulled down
+			var slid := Vector2(xf.origin.x - o.x, xf.origin.z - o.z)
+			var heading := Vector2(cb.velocity.x, cb.velocity.z)
+			if slid.dot(heading) > 0.0 and cb.test_move(xf, Vector3.DOWN * 0.03 * size, col2, 0.001) and col2.get_normal().y >= wall_y:
+				xf.origin += col2.get_travel()
+				landed = true
 		var hz := Vector2(xf.origin.x - o.x, xf.origin.z - o.z).length()
 		if not landed or hz > 0.2 * size:
+			if OS.has_environment("STEPDOWN_DEBUG"):
+				print("STEPDOWN_DEBUG no settle: landed %s hz %.3f fell %.3f o %s xf %s" % [landed, hz, fell, str(o), str(xf.origin)])
 			return 0.0                  # it would not settle on the tread: leave it to the fall
 		cb.global_position = xf.origin
 		cb.velocity.y = 0.0

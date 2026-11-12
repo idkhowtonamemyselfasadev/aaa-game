@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-0419-jf06.jpg",
-  "time": "2026-11-09T04:19:05Z",
-  "caption": "Jump attack 0.06 s after touch-down: hips sunk, chest folded, hat bowed, staff tip driven at the turf in front; still wrong: the hero lands in the cottage's shadow with the sun behind, figure too dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0419-jf06old.jpg",
-  "time": "2026-11-09T04:19:05Z",
-  "caption": "Same moment with the old landing (no air hold) for comparison: the hero already stands nearly upright with the staff loose, no weight arrives.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0600-plunge-dive.jpg",
   "time": "2026-11-09T05:30:00Z",
   "caption": "Plunge dive (new): mid-drop the hero is jackknifed, knees drawn up under a chest folded over the ferrule, hat bowed after it; still wrong: the lens from above hides the face and the staff line, GL renderer, the coil at the hang is weak.",
@@ -897,6 +885,12 @@
   "file": "20261112-2125-stairwalk.jpg",
   "time": "2026-11-12T21:25:26Z",
   "caption": "The hero steps up at a walk, near boot on the tread top; the stair is untextured-looking masonry boxes and the lens loses him by the top.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-2219-stairdown.jpg",
+  "time": "2026-11-12T22:19:08Z",
+  "caption": "The hero walking off a low masonry course, lead boot reaching heel-first for the turf: the step reads, but the light is flat, the course is a plain box and the robe hides the knees.",
   "verdict": "fail"
  }
 ]
