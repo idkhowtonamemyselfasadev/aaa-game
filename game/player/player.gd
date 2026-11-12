@@ -491,6 +491,7 @@ func _setup_crumple() -> void:
 	skel.move_child(stride_warp, 0)            # first modifier: it lengthens the clip's own stride
 	stride_warp.frame = crumple.frame
 	stride_warp.ground_body = self
+	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
 	var knee := skel.find_bone("mixamorig_LeftLeg")
 	if knee >= 0:
 		var kp := skel.global_transform * skel.get_bone_global_rest(knee).origin

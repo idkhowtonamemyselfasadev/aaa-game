@@ -2500,6 +2500,12 @@ func _ready() -> void:
 				pc = back + (pc - back).normalized() * 2.3
 				pc.y = terrain.height_at(pc.x, pc.z) + 2.3
 				aim = back + Vector3.UP * 0.45
+			if "anklelens" in args:
+				# (11-12) anklelens: low at shin height, 2.4 m off on the sun side, looking level at
+				# the boots, so a stepping foot reads under the tabard hem instead of in its shade
+				pc = back + Vector3(pc.x - back.x, 0.0, pc.z - back.z).normalized() * 2.4
+				pc.y = terrain.height_at(pc.x, pc.z) + 0.45
+				aim = back + Vector3.UP * 0.3
 			var pcam := get_viewport().get_camera_3d()
 			pcam.global_position = pc
 			pcam.look_at(aim)

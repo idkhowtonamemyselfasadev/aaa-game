@@ -20,6 +20,8 @@ const ROUTES := {
 	"heavy": [],
 }
 
+var _heel_peak := 0.0      # (heroturn/foeturn) highest heel lift of the ball pivot
+var _heel_down_tick := -1
 var _world: Node3D
 var _player: Player
 var _route: Array = []
@@ -2219,6 +2221,12 @@ func _hero_turn_test() -> void:
 			if sw.pivot_pin != null and sw.pivot > 0.95:
 				var pin: Vector3 = sw.pivot_pin
 				var dv := sw.pivot_ankle - pin
+				if sw.ball_pivot and not StrideWarp.BALLPIVOT_OLD:
+					# (11-12) ball pivot: the ball stays planted, the ankle orbits it and rises with the heel
+					dv = sw.pivot_ball - sw.pivot_ball_pin
+				_heel_peak = maxf(_heel_peak, sw.pivot_heel_up)
+				if sw.pivot_settle and sw.pivot_heel_up < 0.003 and _heel_down_tick < 0:
+					_heel_down_tick = i
 				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length())
 				piv[1] = maxf(piv[1], absf(dv.y))
 				if piv_o0[0] == Vector3.INF:
@@ -2306,6 +2314,7 @@ func _hero_turn_test() -> void:
 	var spot_orbit: float = p.pivot_orbit
 	var pin_after: bool = p.stride_warp.pivot_pin != null
 	p._set_lock(null)
+	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d)" % [_heel_peak, _heel_down_tick, spot[3]])
 	print("BOT heroturn: settle done %s, the feet end %.3f m from the idle stance, and slide %.3f m as the pivot lets go" % [_tf_settled, _tf_stance_err, _tf_rel_slide])
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
@@ -2350,6 +2359,8 @@ func _hero_turn_test() -> void:
 		return _combat_done(false, "the pivot lets go with the free foot still up (%.4f m)" % float(rel[1]))
 	if spot_piv[0] > 0.03 or spot_piv[1] > 0.03:
 		return _combat_done(false, "the pivot foot slides off its plant (%.3f m, y %.3f m)" % [spot_piv[0], spot_piv[1]])
+	if not StrideWarp.BALLPIVOT_OLD and (_heel_peak < 0.012 or _heel_peak > 0.06):
+		return _combat_done(false, "the pivot heel does not come up onto the ball in the spin (%.3f m)" % _heel_peak)
 	if spot_piv[2] < 0.15:
 		return _combat_done(false, "the outside foot does not step round the pivot (%.2f m)" % spot_piv[2])
 	# 11-06 06:00: the turn ends in two settle steps that close the stance (PIVOT_HOVER = the before:
@@ -2949,6 +2960,7 @@ func _foe_turn_test() -> void:
 		e.pivot_shift = Vector3.ZERO
 		var f0 := e.body.global_basis.z
 		var piv := [0.0, 0.0, 0.0, -1, 0]   # pin drift xz, pin drift y, other foot travel, side, ticks planted
+		_heel_peak = 0.0
 		var piv_o0 := Vector3.INF
 		var piv_sink := [0.0]
 		e.bot_face = f0.rotated(Vector3.UP, deg_to_rad(120.0))
@@ -3014,6 +3026,9 @@ func _foe_turn_test() -> void:
 				if sw.pivot_pin == null or sw.pivot < 0.97:
 					continue                     # the release blend: the foot is let go back to the clip
 				var dv: Vector3 = sw.pivot_ankle - sw.pivot_pin
+				if sw.ball_pivot and not StrideWarp.BALLPIVOT_OLD:
+					dv = sw.pivot_ball - sw.pivot_ball_pin
+				_heel_peak = maxf(_heel_peak, sw.pivot_heel_up / sc)
 				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length() / sc)
 				piv[1] = maxf(piv[1], absf(dv.y) / sc)
 				if piv_o0 == Vector3.INF:
@@ -3067,6 +3082,7 @@ func _foe_turn_test() -> void:
 		e.bot_face = Vector3.ZERO
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
+		print("BOT foeturn: ball pivot heel up to %.3f per size" % _heel_peak)
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
 		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])

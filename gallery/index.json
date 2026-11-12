@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261108-0350-knock-staff-trails.jpg",
-  "time": "2026-11-08T03:26:25Z",
-  "caption": "Side-on at 1.27 s into a knock-down, sun-lit: sitting up, the hero keeps the staff's far end trailing on the grass instead of holding it up across the face; the grip's short butt still pokes up beside the chest and the get-up pose is still rough.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0350-knock-staff-on-grass.jpg",
-  "time": "2026-11-08T03:26:25Z",
-  "caption": "1.00 s: the staff lies on the grass out to the hero's back-right, still in the right fist; GL frame, flat ground texture, no Forward+ lighting.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0415-knockplant1.33.jpg",
-  "time": "2026-11-08T04:15:54Z",
-  "caption": "Knock-down get-up (GL): the staff now starts swinging up from the grass on the hero's right as they sit up, spread over 0.4 s instead of a two-tick whip; the body pose and the lit grass are still rough.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0415-knockplant1.47.jpg",
   "time": "2026-11-08T04:15:54Z",
   "caption": "Knock-down get-up (GL): the staff stands planted by the knee clear of the hat; the hero's crouch still reads stiff and the GL frame has no fog or GI.",
@@ -897,6 +879,18 @@
   "file": "20261112-0031-sweep-follow-cmp.jpg",
   "time": "2026-11-12T00:31:00Z",
   "caption": "Sweep follow-through, before (top) / after (bottom): the hold now runs out further left and forward; this lens lands behind the knight, so the right-pauldron clearance is proven by the bot, not by these frames.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0127-ballpivot.jpg",
+  "time": "2026-11-12T01:27:43Z",
+  "caption": "Hero's feet mid standing turn, old ankle pivot (left) vs new ball pivot with heel lifted (middle, right); the change is subtle and the hero stands in the barn's shade, so a sunlit sequence is still needed.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0127-turnfeet.jpg",
+  "time": "2026-11-12T01:27:43Z",
+  "caption": "First low lens on the boots through a 160 deg turn on the spot (0.40-1.60 s): step arc and closed end stance read, but it is dark and unlit.",
   "verdict": "fail"
  }
 ]

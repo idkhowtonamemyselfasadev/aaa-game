@@ -59,6 +59,21 @@ var pivot_settle := false    # (owner) the body has squared up: the turn step co
 var pivot_sink := 0.0            # (bots) skeleton units the hips settled onto the pivot leg this tick
 const PIVOT_SINK_MAX := 8.0      # skeleton units (cm)
 var pivot_short := 0.0           # (bots) skeleton units the leg could not reach to the pin this tick
+## (11-12) Ball pivot: a turn on the spot spins the planted foot on its BALL with the heel lifted,
+## not on the ankle (which swept the toes ~0.2 m round over the turf through a 160 deg turn). The
+## ball is pinned where it stood, the ankle orbits it as the sole turns with the body, and the
+## heel rises up to BALL_HEEL_DEG while the body turns; on squaring up the pin is rebased to where
+## the ankle then stands and the heel eases down before the settle steps. BALLPIVOT_OLD: the before
+static var BALLPIVOT_OLD := OS.has_environment("BALLPIVOT_OLD")
+const BALL_HEEL_DEG := 13.0      # deg the heel comes up off the turf at full spin
+const BALL_HEEL_RISE := 9.0      # 1/s the heel comes up
+const BALL_HEEL_FALL := 7.0      # 1/s it settles back down once square
+var ball_pivot := false          # set by the owner: the hero (foes: pending, their legs run out of reach)
+var _ball_pin = null             # world ball of the pivot foot while spinning on it
+var _heel_w := 0.0               # 0..1 heel lift weight
+var pivot_ball := Vector3.ZERO   # (bots) world ball of the pivot foot as posed this tick
+var pivot_ball_pin := Vector3.ZERO  # (bots) where that ball was planted (or rebased)
+var pivot_heel_up := 0.0         # (bots) world m the heel lift raised the ankle this tick
 ## Ground feet (foot IK on slopes, steps, stones): the clip is authored on flat ground at the
 ## body's floor level. Each tick a ray finds the real ground under each ankle; the hips settle
 ## by what the lower foot needs to reach its ground, each leg is bent (two-bone IK, knee in the
@@ -419,6 +434,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
 		_arc_floor = lo
+		var tb0 := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
+		_ball_pin = null
+		_heel_w = 0.0
+		if tb0 >= 0 and ball_pivot and not BALLPIVOT_OLD:
+			_ball_pin = pivot_pin + xf.basis * (skel.get_bone_global_pose(tb0).origin - f0)
 	# the settle's second step (11-06): once the stepping boot is down in its stance spot, the
 	# pivot foot itself steps into its own, so the turn ends square in the idle stance and the
 	# release hands both feet to the clip where it stands them (they slid up to ~0.4 m before)
@@ -438,11 +458,39 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if ub >= 1.0:
 			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
+	# ball pivot (11-12): the ankle target orbits the planted ball as the sole turns with the body,
+	# and the heel lift rotates foot and ankle up about the ball
+	var pin_l: Vector3 = inv * (pivot_pin as Vector3)
+	var heel_q := Basis()
+	pivot_heel_up = 0.0
+	var tb := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
+	if tb >= 0 and ball_pivot and not BALLPIVOT_OLD:
+		var toe_off: Vector3 = skel.get_bone_global_pose(tb).origin - skel.get_bone_global_pose(ft).origin
+		if pivot_settle and _ball_pin != null:
+			_ball_pin = null              # squared up: the ankle stays where the ball pivot left it
+		if _ball_pin != null:
+			pin_l = inv * (_ball_pin as Vector3) - toe_off
+			pivot_pin = xf * pin_l
+		var hw_want := 0.0 if pivot_settle else pivot
+		_heel_w = move_toward(_heel_w, hw_want, delta * (BALL_HEEL_RISE if hw_want > _heel_w else BALL_HEEL_FALL))
+		var ball_l := pin_l + toe_off
+		pivot_ball_pin = xf * ball_l
+		var flat := toe_off - up * toe_off.dot(up)
+		if _heel_w > 1e-4 and flat.length() > 1e-4:
+			var lat := up.cross(flat).normalized()
+			var ang := deg_to_rad(BALL_HEEL_DEG) * (_heel_w * _heel_w * (3.0 - 2.0 * _heel_w))
+			var v := pin_l - ball_l
+			if v.rotated(lat, ang).dot(up) < v.dot(up):
+				ang = -ang
+			var v2 := v.rotated(lat, ang)
+			pivot_heel_up = (xf.basis * (up * (v2.dot(up) - v.dot(up)))).length()
+			pin_l = ball_l + v2
+			heel_q = Basis(lat, ang)
 	var s := skel.get_bone_global_pose(ul).origin
 	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
 	# settle onto the pivot leg instead, by just what it needs to reach (capped, a few cm)
 	var reach_l := (s.distance_to(skel.get_bone_global_pose(lg).origin) + skel.get_bone_global_pose(lg).origin.distance_to(skel.get_bone_global_pose(ft).origin)) * 0.99
-	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(inv * (pivot_pin as Vector3), pivot)
+	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(pin_l, pivot)
 	var dd := tp - s
 	pivot_sink = 0.0
 	# the free foot as the clip steps it, before the hips settle: it keeps that place after
@@ -463,7 +511,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var f := skel.get_bone_global_pose(ft).origin
 	var a := s.distance_to(k)
 	var b := k.distance_to(f)
-	var t := f.lerp(inv * (pivot_pin as Vector3), pivot)
+	var t := f.lerp(pin_l, pivot)
 	var d := t - s
 	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
 	pivot_short = d.length() - dl
@@ -481,7 +529,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	_swing(skel, lg, f - k, t - k)
 	# the sole keeps the clip's angle: it spins on the ball with the body, it does not tip
 	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
-	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
+	skel.set_bone_pose_rotation(ft, (pb.inverse() * (heel_q * keep.orthonormalized())).get_rotation_quaternion())
+	var tbp := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
+	if tbp >= 0:
+		pivot_ball = xf * skel.get_bone_global_pose(tbp).origin
 	# the hips settled onto the pivot leg carry the stepping leg down with them: without this
 	# its boot sank up to 7.5 cm into the turf through the step (11-06, bot `foeturn` on the
 	# final pose: off the turf 3 ticks of a turn, then under it). The free leg bends to keep its
