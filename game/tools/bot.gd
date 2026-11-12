@@ -20,6 +20,7 @@ const ROUTES := {
 	"heavy": [],
 }
 
+var _hero_sink_peak := 0.0  # (heroturn, 11-12 05:00) deepest hip sink onto the pivot leg, skeleton cm
 var _heel_peak := 0.0      # (heroturn/foeturn) highest heel lift of the ball pivot
 var _heel_down_tick := -1
 var _world: Node3D
@@ -2225,6 +2226,7 @@ func _hero_turn_test() -> void:
 					# (11-12) ball pivot: the ball stays planted, the ankle orbits it and rises with the heel
 					dv = sw.pivot_ball - sw.pivot_ball_pin
 				_heel_peak = maxf(_heel_peak, sw.pivot_heel_up)
+				_hero_sink_peak = maxf(_hero_sink_peak, sw.pivot_sink)
 				if sw.pivot_settle and sw.pivot_heel_up < 0.003 and _heel_down_tick < 0:
 					_heel_down_tick = i
 				piv[0] = maxf(piv[0], Vector2(dv.x, dv.z).length())
@@ -2314,7 +2316,7 @@ func _hero_turn_test() -> void:
 	var spot_orbit: float = p.pivot_orbit
 	var pin_after: bool = p.stride_warp.pivot_pin != null
 	p._set_lock(null)
-	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d)" % [_heel_peak, _heel_down_tick, spot[3]])
+	print("BOT heroturn: ball pivot: heel up to %.3f m off the turf while the body turns, down by tick %d (square at %d), hips sink up to %.1f cm" % [_heel_peak, _heel_down_tick, spot[3], _hero_sink_peak])
 	print("BOT heroturn: settle done %s, the feet end %.3f m from the idle stance, and slide %.3f m as the pivot lets go" % [_tf_settled, _tf_stance_err, _tf_rel_slide])
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
@@ -2359,7 +2361,9 @@ func _hero_turn_test() -> void:
 		return _combat_done(false, "the pivot lets go with the free foot still up (%.4f m)" % float(rel[1]))
 	if spot_piv[0] > 0.03 or spot_piv[1] > 0.03:
 		return _combat_done(false, "the pivot foot slides off its plant (%.3f m, y %.3f m)" % [spot_piv[0], spot_piv[1]])
-	if not StrideWarp.BALLPIVOT_OLD and (_heel_peak < 0.012 or _heel_peak > 0.06):
+	# (11-12 05:00) the hero rises 19 deg onto the ball (~5.5 cm, a real pivot's 5-7): at least 4.5 cm now
+	var heel_lo := 0.012 if (OS.has_environment("HEROHEEL_OLD") or OS.get_environment("HERO_HEEL") != "") else 0.045
+	if not StrideWarp.BALLPIVOT_OLD and (_heel_peak < heel_lo or _heel_peak > 0.06):
 		return _combat_done(false, "the pivot heel does not come up onto the ball in the spin (%.3f m)" % _heel_peak)
 	if spot_piv[2] < 0.15:
 		return _combat_done(false, "the outside foot does not step round the pivot (%.2f m)" % spot_piv[2])

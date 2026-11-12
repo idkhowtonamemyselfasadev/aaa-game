@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(05:00 11-12: THE HERO NOW RISES HIGHER ONTO THE BALL OF THE PLANTED FOOT IN A TURN ON THE SPOT: the heel came up 13 deg (3.9 cm); a real 160 deg pivot rises ~5-7 cm. New per-instance `ball_heel_deg` in StrideWarp, hero 19 deg (HERO_BALL_HEEL_DEG in player.gd): heel 0.039 -> 0.055 m, ball drift 0.000, settle/stance/slide unchanged; 22 deg gave 0.062 (over the 0.06 cap). heroturn gate tightened to >= 0.045 m and now prints the hip sink (0.0 cm in the spin: the 8 cm sink blamed for the hem at 04:00 is NOT the pivot's). Foes unchanged (13 + reach rise). Ankletight frames old/new at jt 0.55/0.70 look almost identical: the tabard and hem cover the heel at this lens. HEROHEEL_OLD=1 is the before; HERO_HEEL=<deg> tunes.)
 (04:00 11-12: THE HERO'S BOOTS ARE SEEN LIT THROUGH A TURN ON THE SPOT FOR THE FIRST TIME: the frame tool's low ankle lens picked its side by +/-Z only and was backlit at every tried hour (9.0, 15.0, 16.5; flip too). New `ankletight` lens option (shot.gd): on the true sun bearing swung 30 deg, 0.6 m up, fov 22, aimed at the soles. Sequence jt 0.40/0.55/0.70 at 9.0 looked at: the planted boot stays on its spot on the turf; the baggy trouser hem hangs over the stepping boot almost to the turf at 0.40 and hides the heel; the 13 deg heel lift is too subtle to read by eye. Tool change only, no game code.)
 (03:00 11-12: THE FOES NO LONGER SLAP THE HEEL FLAT AND DROP THEIR HIPS AS THEY SQUARE UP FROM A TURN ON THE SPOT: per-tick read-out (FOEBALL_DBG) of the giant's turn showed the hips falling 5 cm in ONE tick at the settle (13.5 cm peak) and then popping 8 cm back up in ~4 ticks as the pivot foot stepped off (35 cm world at size 4.6). Cause: the reach rise took its direction from `signf(ang)`, which is 0 once the heel weight eases to 0, so the heel snapped 24 -> 0 deg. Fixed (sign is always +, lat carries the side), plus the hips now rise back at most 30 skeleton cm/s. Bot foeturn: worst hip change between reads 4.9-7.0 -> 1.9-2.4 cm (new gate 3.0), peak sink 12.5-13.5 -> 8.8-10.6 cm, ball drift 0.000, lift unchanged. FOEHEEL_SNAP_OLD=1 is the before.)
 (02:00 11-12: THE SOLDIER AND THE ASHEN KNIGHT NOW TURN ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL UP, LIKE THE HERO: before, the foes kept the ankle pin and the ball tried last night slid 0.025-0.031 m/size off its spot. The slide was in the settle, not the spin: once squared up the heel came down and the leg could not reach the turf (short 3.5 cm). `StrideWarp` now rises further onto the ball when the leg is short (bisection on the heel angle, up to `ball_heel_max_deg`, also through the settle), and the foes may sink 14 cm (hero 8). Bot `foeturn`: ball drift 0.000 at x1/2.2/3.2/4.6 (gate tightened 0.03 -> 0.01), heel 0.064-0.067/size, both-feet-off read on the ball 0-2 ticks. Frames at 09:00 (bootlens) new vs old: the planted boot stands on its ball, heel up. FOEBALL_OLD=1 is the before.)
@@ -49,6 +50,7 @@ who can draw the staff, land a four-hit string and a chargeable heavy smash on a
 now ~30 h per the owner's direction in CLAUDE.md.)
 Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DESIGN.md written.
 
+- (05:00 11-12) Setup first try (import ~12 min, run as a background job); GL shots via opengl3 (SHOT_GL=1, 4 at once ~10 min); headless bots fine. Asset sites not rechecked (no downloads).
 - (02:00 11-12) Setup first try (import ~5 min); GL shots via opengl3 (SHOT_GL=1; a ring bootlens frame ~1.5 min, 4 in parallel fine); headless bots fine. Asset sites not rechecked (no downloads). `ring turn bootlens` at hour 9.0 is front-lit (15:00 is backlit).
 - (22:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 (SHOT_GL=1, 5-frame side leapseq ~12 min, ran alongside 3 bots fine); headless bots fine. Asset sites not rechecked (no downloads).
 
@@ -8381,6 +8383,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (05:00 11-12) **HERO HEEL HIGHER ON THE BALL IN A TURN ON THE SPOT — DONE (game change, gated).** NEXT (2) of 04:00.
+   `stride_warp.gd`: `ball_heel_deg` var (default BALL_HEEL_DEG 13) replaces the const in the heel lift; `player.gd`
+   sets HERO_BALL_HEEL_DEG 19 (env HEROHEEL_OLD=1 = 13, HERO_HEEL=<deg> overrides). Bot heroturn: heel 13 -> 0.039,
+   19 -> 0.055, 22 -> 0.062 m (fails the 0.06 cap); new gate heel >= 0.045 (0.012 under HEROHEEL_OLD/HERO_HEEL); new
+   read-out "hips sink up to" = 0.0 cm through the spin, so the deep knee under the hem at jt 0.40 comes from the clip
+   itself, not the pivot sink.
+   Frames `jump h{o,n}_{55,70} 20 9.0 fixfps nojump fromrest clear nograss stoplens anklelens ankletight spotturn
+   turnat=0.3 jt=0.55/0.70` (GL, 4 at once ~10 min) looked at full and cropped: old vs new nearly identical; the
+   tabard's ragged hem and the trouser cuff sit over the heel, so the higher heel does not read by eye from this lens.
+   The radial trample decal under the feet dominates every frame.
+   Bots PASS: heroturn foeturn pivot stop start jump footik lean stride stepup combat. Gallery: 1 (fail). Grade unchanged (good-).
+   NEXT: (1) soften the radial trample decal (game/world/trample.gd / ground shader; it reads as a stamped starburst
+   with `nograss`, check with grass too); (2) the stepping leg's deep knee under the hem at jt 0.40 (clip-driven: check
+   the spot-turn clip's hip height, consider a small hip lift or a hem skin-weight fix); (3) a heel-side lens (behind
+   the pivot foot, low) to actually see the ball pivot; (4) the knight sweep side lens (00:00 NEXT 1). BOSS/ANIMATION
+   order unchanged; audio after.
 0. (04:00 11-12) **SUNLIT ANKLE LENS FOR THE TURN ON THE SPOT — DONE (tool only).** NEXT (2) of 03:00 (02:00 NEXT 1).
    Probes `jump probe_<h> 20 <h> fixfps nojump fromrest clear nograss stoplens anklelens spotturn turnat=0.3 jt=0.70`
    at 9.0/15.0/16.5: 15.0 and 16.5 silhouette the hero (black boots), 9.0 has sun but the boots stand in the body's own

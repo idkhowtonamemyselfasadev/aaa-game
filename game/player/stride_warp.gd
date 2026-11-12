@@ -67,6 +67,10 @@ var pivot_short := 0.0           # (bots) skeleton units the leg could not reach
 ## the ankle then stands and the heel eases down before the settle steps. BALLPIVOT_OLD: the before
 static var BALLPIVOT_OLD := OS.has_environment("BALLPIVOT_OLD")
 const BALL_HEEL_DEG := 13.0      # deg the heel comes up off the turf at full spin
+## (11-12 05:00) per-instance base heel rise: the hero rises further (a real 160 deg pivot comes up
+## ~5-7 cm on the ball; 13 deg was 3.9 cm and did not read under the trouser hem). The foes keep 13
+## and add their reach rise on top. HEROHEEL_OLD (in player.gd): the hero's before
+var ball_heel_deg := BALL_HEEL_DEG
 const BALL_HEEL_RISE := 9.0      # 1/s the heel comes up
 const BALL_HEEL_FALL := 7.0      # 1/s it settles back down once square
 var ball_pivot := false          # set by the owner: the hero (foes too since 11-12 02:00, deeper sink + reach rise)
@@ -488,9 +492,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var flat := toe_off - up * toe_off.dot(up)
 		if (_heel_w > 1e-4 or not FOEBALL_NO_REACH) and flat.length() > 1e-4:
 			var lat := up.cross(flat).normalized()
-			var ang := deg_to_rad(BALL_HEEL_DEG) * (_heel_w * _heel_w * (3.0 - 2.0 * _heel_w))
+			var ang := deg_to_rad(ball_heel_deg) * (_heel_w * _heel_w * (3.0 - 2.0 * _heel_w))
 			var v := pin_l - ball_l
-			if v.rotated(lat, deg_to_rad(BALL_HEEL_DEG)).dot(up) < v.dot(up):
+			if v.rotated(lat, deg_to_rad(ball_heel_deg)).dot(up) < v.dot(up):
 				ang = -ang
 				lat = -lat                # rotate the other way round: the heel always goes up
 				ang = -ang

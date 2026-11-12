@@ -6,6 +6,7 @@ extends CharacterBody3D
 const WALK_SPEED := 4.2
 const RUN_SPEED := 6.5
 const CHARGE_SPEED := 1.1       # shuffle while the heavy is raised
+const HERO_BALL_HEEL_DEG := 19.0  # (11-12 05:00) deg the hero's heel rises onto the ball in a turn on the spot
 const SPRINT_SPEED := 9.0
 const ACCEL := 14.0
 const JUMP_VEL := 7.5
@@ -492,6 +493,11 @@ func _setup_crumple() -> void:
 	stride_warp.frame = crumple.frame
 	stride_warp.ground_body = self
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
+	# (11-12 05:00) the hero's heel comes up further onto the ball (HERO_HEEL tunes, HEROHEEL_OLD = 13)
+	if not OS.has_environment("HEROHEEL_OLD"):
+		stride_warp.ball_heel_deg = HERO_BALL_HEEL_DEG
+	if OS.get_environment("HERO_HEEL") != "":
+		stride_warp.ball_heel_deg = float(OS.get_environment("HERO_HEEL"))
 	var knee := skel.find_bone("mixamorig_LeftLeg")
 	if knee >= 0:
 		var kp := skel.global_transform * skel.get_bone_global_rest(knee).origin
