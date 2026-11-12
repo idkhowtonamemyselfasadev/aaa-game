@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261108-0620-knockdown-round.jpg",
-  "time": "2026-11-08T06:20:00Z",
-  "caption": "Knock-down get-up at 1.73 s: the held staff now steps round the hat brim and lies diagonally behind the left shoulder, well clear of the hat (it used to wait at the brim and then sweep through it in the draw); body pose still rough, flat ground texture.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0620-knockdown-guard.jpg",
-  "time": "2026-11-08T06:20:00Z",
-  "caption": "Knock-down get-up at 1.80 s: the left fist is closed on the shaft by the hip and the staff runs low toward the guard instead of standing up through the hat; lens from behind, so the guard line is foreshortened.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0750-jumpattack-arch.jpg",
-  "time": "2026-11-08T07:50:00Z",
-  "caption": "Jump attack 0.16 s into the swing: the shins swing up behind and the legs trail as the staff climbs overhead; the clear+close jump lens sees the hero from behind with the head cropped, so the back arch cannot be judged here.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0850-jumpattack-arch-front.jpg",
   "time": "2026-11-08T08:50:00Z",
   "caption": "Jump attack at the arch peak, first front 3/4 frame: the trunk tips back and a shin trails, but the staff stands upright beside the hat instead of cocked behind the head, and the figure is dark against the grass.",
@@ -897,6 +879,18 @@
   "file": "20261112-0315-giantturn-spin.jpg",
   "time": "2026-11-12T03:15:46Z",
   "caption": "The giant knight mid-turn on the ball of its planted foot, glaive raised; feet planted, but the low lens and grass in the foreground crowd the frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0400-ankletight-0.40.jpg",
+  "time": "2026-11-12T04:00:00Z",
+  "caption": "New sun-bearing ankle lens on the hero's turn on the spot (0.1 s in): boots lit and readable for the first time; the baggy trouser hem hangs over the stepping boot almost to the turf and hides the heel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0400-ankletight-0.55.jpg",
+  "time": "2026-11-12T04:00:00Z",
+  "caption": "Same turn 0.25 s in: the planted boot sits on its ball under the tabard; heel lift is too subtle to read at 13 deg and the radial trample decal around the feet looks stamped.",
   "verdict": "fail"
  }
 ]

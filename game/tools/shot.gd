@@ -2507,6 +2507,19 @@ func _ready() -> void:
 				pc.y = terrain.height_at(pc.x, pc.z) + 0.45
 				aim = back + Vector3.UP * 0.3
 			var pcam := get_viewport().get_camera_3d()
+			if "ankletight" in args:
+				# (11-12 04:00) ankletight: anklelens zoomed onto the boots (fov 22, a touch higher,
+				# aimed at the soles) so the planted ball, the heel lift and the stepping foot fill the frame
+				# on the true sun bearing (the +/-Z pick above is backlit at a low morning sun),
+				# swung 30 deg off it so the boots model instead of reading flat; "flip" swings the other way
+				var sflat := Vector3(-plight.x, 0.0, -plight.z)
+				if sflat.length() < 1e-3:
+					sflat = Vector3(0, 0, 1)
+				sflat = sflat.normalized().rotated(Vector3.UP, deg_to_rad(-30.0 if "flip" in args else 30.0))
+				pc = back + sflat * 2.4
+				pc.y = terrain.height_at(pc.x, pc.z) + 0.6
+				aim = back + Vector3.UP * 0.12
+				pcam.fov = 22.0
 			pcam.global_position = pc
 			pcam.look_at(aim)
 			print("SHOT pivotlens cam %s hero %s side %s" % [pc, back, pside])

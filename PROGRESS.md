@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(04:00 11-12: THE HERO'S BOOTS ARE SEEN LIT THROUGH A TURN ON THE SPOT FOR THE FIRST TIME: the frame tool's low ankle lens picked its side by +/-Z only and was backlit at every tried hour (9.0, 15.0, 16.5; flip too). New `ankletight` lens option (shot.gd): on the true sun bearing swung 30 deg, 0.6 m up, fov 22, aimed at the soles. Sequence jt 0.40/0.55/0.70 at 9.0 looked at: the planted boot stays on its spot on the turf; the baggy trouser hem hangs over the stepping boot almost to the turf at 0.40 and hides the heel; the 13 deg heel lift is too subtle to read by eye. Tool change only, no game code.)
 (03:00 11-12: THE FOES NO LONGER SLAP THE HEEL FLAT AND DROP THEIR HIPS AS THEY SQUARE UP FROM A TURN ON THE SPOT: per-tick read-out (FOEBALL_DBG) of the giant's turn showed the hips falling 5 cm in ONE tick at the settle (13.5 cm peak) and then popping 8 cm back up in ~4 ticks as the pivot foot stepped off (35 cm world at size 4.6). Cause: the reach rise took its direction from `signf(ang)`, which is 0 once the heel weight eases to 0, so the heel snapped 24 -> 0 deg. Fixed (sign is always +, lat carries the side), plus the hips now rise back at most 30 skeleton cm/s. Bot foeturn: worst hip change between reads 4.9-7.0 -> 1.9-2.4 cm (new gate 3.0), peak sink 12.5-13.5 -> 8.8-10.6 cm, ball drift 0.000, lift unchanged. FOEHEEL_SNAP_OLD=1 is the before.)
 (02:00 11-12: THE SOLDIER AND THE ASHEN KNIGHT NOW TURN ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL UP, LIKE THE HERO: before, the foes kept the ankle pin and the ball tried last night slid 0.025-0.031 m/size off its spot. The slide was in the settle, not the spin: once squared up the heel came down and the leg could not reach the turf (short 3.5 cm). `StrideWarp` now rises further onto the ball when the leg is short (bisection on the heel angle, up to `ball_heel_max_deg`, also through the settle), and the foes may sink 14 cm (hero 8). Bot `foeturn`: ball drift 0.000 at x1/2.2/3.2/4.6 (gate tightened 0.03 -> 0.01), heel 0.064-0.067/size, both-feet-off read on the ball 0-2 ticks. Frames at 09:00 (bootlens) new vs old: the planted boot stands on its ball, heel up. FOEBALL_OLD=1 is the before.)
 (01:00 11-12: THE HERO NOW TURNS ON THE SPOT ON THE BALL OF THE PLANTED FOOT WITH THE HEEL LIFTED: the pivot foot was pinned at the ankle, so through a 160 deg standing turn its toes swept round over the turf. New ball pivot in `StrideWarp._pivot_leg`: the ball (ToeBase) is pinned where it stood, the ankle orbits it as the sole turns with the body, the heel rises up to 13 deg (3.9 cm) while the body turns and settles back 16 ticks after squaring, before the settle steps. Bot `heroturn`: ball drift 0.000 m, heel 0.039 m, end stance 0.000 m off idle. First lit frames of the feet through a turn (new `anklelens`). Hero only for now; BALLPIVOT_OLD=1 is the before.)
@@ -8380,6 +8381,22 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (04:00 11-12) **SUNLIT ANKLE LENS FOR THE TURN ON THE SPOT — DONE (tool only).** NEXT (2) of 03:00 (02:00 NEXT 1).
+   Probes `jump probe_<h> 20 <h> fixfps nojump fromrest clear nograss stoplens anklelens spotturn turnat=0.3 jt=0.70`
+   at 9.0/15.0/16.5: 15.0 and 16.5 silhouette the hero (black boots), 9.0 has sun but the boots stand in the body's own
+   shadow; `flip` is worse (shadow falls toward the lens). Cause: stoplens picks the "sun side" from the sun's Z only.
+   `shot.gd` new `ankletight` (with anklelens): lens on the sun's real horizontal bearing rotated 30 deg (flip = -30),
+   2.4 m off, 0.6 m up, aim 0.12 m, fov 22. Frames `jump at_<t> 20 9.0 fixfps nojump fromrest clear nograss stoplens
+   anklelens ankletight spotturn turnat=0.3 jt=0.40/0.55/0.70` looked at (sheet + full res): boots lit and filling the
+   frame. Seen: (a) at 0.40 the baggy trouser hem of the stepping leg drapes over the boot's front almost to the turf
+   (deep knee + 8 cm hip sink; looks like the cloth swallows the instep); (b) the planted boot holds its spot; its 13 deg
+   (3.9 cm) heel lift does not read by eye under the hem; (c) the radial trample decal round the feet looks stamped.
+   Bots heroturn foeturn PASS (no game code changed; foe heel 0.065-0.067/size, drift 0.000). Gallery: 2 (fail). Grade unchanged (good-).
+   NEXT: (1) the trouser hem over the stepping boot at 0.40: check the hip sink/knee there (bot heroturn read-out) and
+   whether the hem's skin weights pull to the shin bone; lift/tighten the hem or shorten the sink; (2) try BALL_HEEL_DEG
+   18-22 for the hero (a real 160 deg pivot rises ~5-7 cm on the ball) and judge it with this lens, gate in heroturn;
+   (3) soften the radial trample decal; (4) the knight sweep side lens (00:00 NEXT 1). BOSS/ANIMATION order unchanged;
+   audio after.
 0. (03:00 11-12) **FOE TURN SETTLE: NO HEEL SLAP, NO HIP POP — DONE (game change, gated).** NEXT (2) of 02:00 (the giant's hip sink).
    Before rendering, FOEBALL_DBG per-read sink/heel at size 4.6: the sink climbed to ~9 cm in the spin (fine, eased), then
    in the settle the heel went 24 -> 0 deg and the sink 8.5 -> 13.5 cm in one read, then 12.9 -> 10.2 -> 3.2 -> 0 as the
