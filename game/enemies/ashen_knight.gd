@@ -1515,6 +1515,15 @@ const KSWEEP_THROAT := [0.3, KNIGHT_SWEEP_REACH, 0.0, 0.0, 0.0, -20.0, 40.0]
 static var SWEEPPAUL_OLD := OS.has_environment("SWEEPPAUL_OLD")
 const KSWEEP_SHOULDER := [0.44, KNIGHT_SWEEP_REACH, 0.17, -0.15, -0.17, -20.0, 40.0]
 static var KSWEEP_P: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_TRY") else PackedFloat64Array(KSWEEP_THROAT if SWEEPHELM_OLD else (KSWEEP_CLEAR if SWEEPPAUL_OLD else KSWEEP_SHOULDER))
+## (11-12 00:00) and its follow-through off its own RIGHT pauldron: run out to the left (bearing ~95),
+## the shared pose holds the glaive right of the chest, so its butt cap swept 0.04 m/size into the
+## right pauldron at the end of the cut and the start of the recovery (bot `foefold`: SR 0.038, RR
+## 0.040 at haft 0.00). The hold now drifts left and forward as the cut runs out (offset in Wield
+## space, weighted in over bearings a0..a1 degrees). env SWEEPFOLLOW_OLD=1: the before; env
+## KSWEEP_FOLLOW_TRY="dx,dy,dz,a0,a1" for tuning.
+static var SWEEPFOLLOW_OLD := OS.has_environment("SWEEPFOLLOW_OLD")
+const KSWEEP_FOLLOW := [0.15, 0.0, 0.15, 40.0, 95.0]
+static var KSWEEP_F: PackedFloat64Array = PackedFloat64Array(Array(OS.get_environment("KSWEEP_FOLLOW_TRY").split(",")).map(func(x): return float(x))) if OS.has_environment("KSWEEP_FOLLOW_TRY") else PackedFloat64Array(KSWEEP_FOLLOW)
 func _sweep_pose(a: float) -> Array:
 	var p := HollowSoldier.sweep_pose(a)
 	if KSWEEP_OLD or not _reach_slide_on():
@@ -1523,6 +1532,9 @@ func _sweep_pose(a: float) -> Array:
 	p[3] = a * k[0]
 	var w := 1.0 - smoothstep(k[5], k[6], a) if k[5] < k[6] else 1.0
 	p[2] = (p[2] as Vector3) + Vector3(k[2], k[3], k[4]) * w
+	if not SWEEPFOLLOW_OLD:
+		var f := KSWEEP_F
+		p[2] = (p[2] as Vector3) + Vector3(f[0], f[1], f[2]) * smoothstep(f[3], f[4], a)
 	if k[1] > 0.0:
 		p[5] = lerpf(p[5], minf(p[5], k[1]), w)
 	return p

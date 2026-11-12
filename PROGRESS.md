@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 15.9
+(00:00 11-12: THE ASHEN KNIGHT'S SWEEP FOLLOW-THROUGH NO LONGER SWINGS ITS GLAIVE'S BUTT CAP THROUGH ITS OWN RIGHT PAULDRON: run out to the left (bearing ~95) the shared pose held the glaive right of the chest, so the butt cap swept 0.038-0.040 m/size into the right pauldron at the cut's end and the recovery's start (bot `foefold`, full run). New KSWEEP_FOLLOW: the hold drifts 0.15 m left and 0.15 m forward over bearings 40..95. ~12 runs: SR 0.038 -> -0.023, RR 0.040 -> -0.086, helm R -0.137 -> -0.077 (clear), left arm 0.900 -> 0.905, fists/roll unchanged at every size. New gate on SR/RR; SWEEPFOLLOW_OLD=1 is the before.)
 (23:00 11-11: THE ASHEN KNIGHT'S SWEEP COIL NO LONGER RUNS ITS GLAIVE'S BUTT INTO ITS OWN LEFT SHOULDER ARMOUR: the bot's pauldron read-out now runs on every tick of every knight move (was: only the leap's heaved-high ticks). Thrust, stomp and the leap's wind-up/recovery read clear; the sweep's held coil sat 0.067 m/size inside the left pauldron for its whole 0.5 s hold. ~50 runs against `foefold` + `foegrip`: chest twist 0.4 -> 0.44 of the bearing, hold 0.11 m further left and 0.13 m further back: WL 0.067 -> -0.009, SL -0.015, helm clearance improved, arms within 0.03, hand roll steady at every size. New gate on every knight move's pauldrons; SWEEPPAUL_OLD=1 is the before. GL old/new looked at.)
 (22:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP NOW HEAVES ITS GLAIVE WELL BACK BEHIND ITS SHOULDERS AT THE TOP OF THE ARC, AND THE HAFT NO LONGER SWINGS THROUGH ITS LEFT SHOULDER: a new bot read-out (`foefold`: both pauldrons as spheres round the shoulder joints, split by airtime up/hang/down, plus the hang's lay-back angle) found the haft's butt passing almost through the left shoulder on the swing up (0.192 m/size) and down (0.193), unseen by the helm-only gates. Hill-climbed against the bot (36 rounds x 3 parallel runs): hang laid back 44 -> ~60 deg past upright, pauldron up 0.093, down 0.089, helm/arms/fists unchanged. New gates; LAYBACK_OLD=1 is the before. GL side sequence old/new looked at.)
 (21:00 11-11: THE ASHEN KNIGHT'S EMBER LEAP JUDGED SIDE-ON FOR THE FIRST TIME, AND A FLAKY BOT GATE FIXED: new fixed side lens for the frame-sequence tool (`shot.gd` leapseq + `side`, set once square to the leap, swaps to the clear side if a wall is in the way). The 8-frame side sequence shows the arc rising well over a cottage, the glaive laid back ~40 deg over the shoulder through the hang (the front lens had made it look upright), forward at S.7 and biting as the boots land. Bot `sweep`'s get-up 'off one knee' check passed or failed with the 15 Hz sample phase (knee 0.134 vs 0.14 gate at the ease-out, 0.130 / foot ahead 0.249 vs 0.25 while still sinking); it now reads only the settled hold 1.57..1.64 s (nearest sample to 1.605 if none). No game code changed.)
@@ -51,6 +52,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
+- (00:00 11-12) Setup first try (import finished in the setup run). Headless bots fine (3-4 at once); GL shots (SHOT_GL=1) fine, a 12-frame side leapseq ~25 min alongside bots. Forward+ not tried. Asset sites: polyhaven 200, ambientcg 200, freesound 403 (no new files).
 - (23:00 11-11) Setup first try. Headless bots fine (4 single-route runs at once for searches, ~20 s each); GL shots (SHOT_GL=1) fine. Asset sites not rechecked (no new files). Gallery JPEGs via ImageMagick.
 - (18:00 11-11) Setup first try (import ~8 min). Headless bots fine (4 sets at once, ~8 min); GL shots (SHOT_GL=1, 2 at once ~6 min) after the bots. Asset sites not rechecked (no new files). Use ImageMagick for crops/sheets (PIL broken).
 - (14:50 11-11) Setup first try (import ~25 min this time). GL shots (SHOT_GL=1) work: 2 run one after the other in shots.sh took ~12 min; headless bots fine. Forward+ not tried; asset sites not rechecked (no new files). PIL is broken on this box (`_imaging` missing): make gallery JPEGs with ImageMagick `convert x.png -resize 1280x720! -quality 80 y.jpg`.
@@ -8373,6 +8375,27 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (00:00 11-12) **KNIGHT SWEEP FOLLOW-THROUGH OFF THE RIGHT PAULDRON — DONE (game change, gated).** NEXT (2) of 23:00.
+   `ashen_knight.gd` `_sweep_pose`: KSWEEP_FOLLOW [dx 0.15, dy 0, dz 0.15, a0 40, a1 95] added to the hold (Wield space)
+   weighted by smoothstep(a0, a1, bearing), on top of KSWEEP_SHOULDER (which fades out over -20..40). env
+   SWEEPFOLLOW_OLD=1 = before; KSWEEP_FOLLOW_TRY="dx,dy,dz,a0,a1" tunes. Search (full foefold runs, ~45 s, 4 at once;
+   NOTE the isolated FOEFOLD_ONLY run reads SR/RR ~0.00 for the OLD pose, the full run 0.038/0.040: sample phase,
+   so judge pauldron grazes in full runs): a0 20 also clears it but the left arm reaches more (0.935); dz 0.05-0.1
+   leaves RR -0.04; 0.15/0.15/40 best. Result: SR 0.038 -> -0.023, RR 0.040 -> -0.086, helm R -0.137 -> -0.077,
+   L straightest 0.900 -> 0.905, foegrip sweep chatter/fists/wrist identical at x2.2/3.2/4.6.
+   `bot.gd` foefold: knight sweep SR/RR <= FOEFOLD_HELM_GRAZE (skipped with SWEEPFOLLOW_OLD/KSWEEP_OLD/_TRY envs).
+   Bots PASS: foefold foegrip knight sweep soldier knightguard foehands lockon knightleap knightstomp.
+   GL side-lens sequence `soldier swside 40 16.5 fixfps knight sweep leapseq side sunlit` (rendered on the OLD pose,
+   it started before the change): 12 frames looked at as a sheet. The coil reads (glaive level, blade cocked back
+   past the right side), but the lens is only square at frame 0: once the knight turns to the hero the strike and
+   follow-through are seen from behind and the glaive hides behind the body (frames 06-10). Frames 00-02 are the
+   same tick (the shot starts at W t 0.667, past the W0.1/0.4 targets). Follow-through old/new through the front
+   lens (`ft_old`/`ft_new seqt=S0.7,S0.95,R0.05,R0.2`, 4 frames each): this lens also lands behind the knight here;
+   the new hold runs a little further out to the left; the pauldron itself is hidden, so the fix is bot-proven only.
+   Gallery: 2 (fail). Grade: knight sweep good (one more clip removed).
+   NEXT: (1) a side lens that re-squares to the knight's chest EACH frame (or from its left/front, the hero's side)
+   so the cut and follow-through are seen, then the sequence on the new pose; (2) the leap's last ~0.09 m/size past the left pauldron (22:00
+   NEXT 1); (3) then the next hero move graded rough (turn-in-place) per the move list. BOSS/ANIMATION order unchanged; audio after.
 0. (23:00 11-11) **KNIGHT PAULDRONS READ ON EVERY MOVE; SWEEP COIL OFF THE LEFT PAULDRON — DONE (game change, gated).** NEXT (3) of 22:00.
    `bot.gd` `_attack_probe`: `paul_by` = deepest haft-into-pauldron (sphere model, same as the 22:00 leap read-out) per
    state W/S/R x side L/R on EVERY tick, with t and the haft fraction from the butt; printed as `pauldrons every tick`.

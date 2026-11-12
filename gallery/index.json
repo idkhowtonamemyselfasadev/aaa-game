@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-0212-knock-staff-clears-hat.jpg",
-  "time": "2026-11-08T02:12:18Z",
-  "caption": "Side-on at 1.33 s into a knock-down: the held staff now angles up in front of the face instead of swinging its top through the hat and head; the low backlit lens still leaves the body dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-0212-knock-side-rise.jpg",
-  "time": "2026-11-08T02:12:18Z",
-  "caption": "Side-on at 1.72 s: the staff stands on its butt beside the rising hero, clear of the hat brim; the get-up pose is still rough and backlit.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-0350-knock-staff-trails.jpg",
   "time": "2026-11-08T03:26:25Z",
   "caption": "Side-on at 1.27 s into a knock-down, sun-lit: sitting up, the hero keeps the staff's far end trailing on the grass instead of holding it up across the face; the grip's short butt still pokes up beside the chest and the get-up pose is still rough.",
@@ -897,6 +885,18 @@
   "file": "20261111-2326-sweep-coil-cmp.jpg",
   "time": "2026-11-11T23:26:07Z",
   "caption": "Before (left) / after (right) crop of the sweep coil: the hold sits a little lower and further back; a closer side lens is still needed to show the pauldron clearance.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0031-sweep-side-coil.jpg",
+  "time": "2026-11-12T00:31:00Z",
+  "caption": "The Ashen Knight's held sweep coil through the new side lens: glaive cocked level behind its right side over the meadow; the lens drifts off square once it turns to the hero, and the far field still looks flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0031-sweep-follow-cmp.jpg",
+  "time": "2026-11-12T00:31:00Z",
+  "caption": "Sweep follow-through, before (top) / after (bottom): the hold now runs out further left and forward; this lens lands behind the knight, so the right-pauldron clearance is proven by the bot, not by these frames.",
   "verdict": "fail"
  }
 ]

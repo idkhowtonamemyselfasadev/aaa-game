@@ -1769,6 +1769,13 @@ func _attack_probe(e: HollowSoldier, kind: int, label: String, check_l := true, 
 			# held wind-ups to a graze; fast passes in the strike/recovery to the leap swing's tolerance
 			if float(paul_by[pk][0]) > (FOEFOLD_HELM_GRAZE if String(pk).begins_with("W") else FOEFOLD_PAULDRON_SWING):
 				return "%s: the haft runs %.3f m/size into a pauldron (%s, t=%.2f)" % [label, paul_by[pk][0], pk, paul_by[pk][1]]
+	# (00:00 11-12) the knight's sweep follow-through keeps the butt cap off the right pauldron
+	# (SWEEPFOLLOW_OLD: SR 0.038, RR 0.040 in the full run; varies with the sample phase)
+	if e is AshenKnight and kind == HollowSoldier.SWEEP_MOVE and not AshenKnight.SWEEPFOLLOW_OLD and not AshenKnight.KSWEEP_OLD \
+			and not OS.has_environment("KSWEEP_TRY") and not OS.has_environment("KSWEEP_FOLLOW_TRY"):
+		for pk in ["SR", "RR"]:
+			if paul_by.has(pk) and float(paul_by[pk][0]) > FOEFOLD_HELM_GRAZE:
+				return "%s: the follow-through runs the butt %.3f m/size into the right pauldron (%s, t=%.2f)" % [label, paul_by[pk][0], pk, paul_by[pk][1]]
 	if maxf(fist[0], fist[1]) > FOEFOLD_FIST_MAX:
 		return "%s: a fist rides off the haft (R %.3f L %.3f m/size)" % [label, fist[0], fist[1]]
 	if minf(fold[0], fold[1]) < FOEFOLD_MIN:
