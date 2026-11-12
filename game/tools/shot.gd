@@ -815,7 +815,42 @@ func _ready() -> void:
 			blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy + 0.06, pp.z) + f * (0.06 + 0.4))
 			player.add_collision_exception_with(blk)
 			eye = pp + sd * 1.6 + f * 0.25 + Vector3.UP * 0.3
-		if "stepdown" in args:
+		if "stairup" in args:
+			# (11-12 18:00) swing clearance: the `stepup` bot's stair (three 0.2 m masonry courses,
+			# 0.45 m treads) set 1.0 m ahead of the hero on the flat turf (`step`), who walks up it;
+			# seen side-on at knee height so the swinging boot's lift over each riser reads
+			var f := along
+			var sd := f.cross(Vector3.UP)
+			var gy := terrain.height_at(pp.x, pp.z)
+			for c in 3:
+				var blk := StaticBody3D.new()
+				var cs := CollisionShape3D.new()
+				var bx := BoxShape3D.new()
+				var near := 1.0 + 0.45 * c
+				var far := 1.0 + 0.45 * 3 + 1.5
+				bx.size = Vector3(1.6, 0.2 * (c + 1) + 0.3, far - near)
+				cs.shape = bx
+				blk.add_child(cs)
+				var mi := MeshInstance3D.new()
+				var bm := BoxMesh.new()
+				bm.size = bx.size
+				mi.mesh = bm
+				var rn := world.get_node_or_null("Ruins")
+				if rn != null and rn.get("material") != null:
+					mi.material_override = rn.material
+				blk.add_child(mi)
+				world.add_child(blk)
+				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.3 + bx.size.y * 0.5, pp.z) + f * ((near + far) * 0.5))
+			player.use_bot_input = true
+			player.set_meta("shot_walk", f)
+			player.set_meta("shot_stair", true)
+			var lx := 1.3
+			for a in args:
+				if a.begins_with("lx="):
+					lx = float(a.substr(3))
+			eye = pp + f * lx + sd * 2.6 + Vector3.UP * 0.55
+			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.45]
+		elif "stepdown" in args:
 			# step-down: the hero walks along the turf off the end of a 0.3 m masonry course (two
 			# courses of 0.15 m, so it steps down twice), seen side-on at hip height
 			var f := along
@@ -3424,6 +3459,9 @@ func _ready() -> void:
 		if player.has_meta("shot_walk"):
 			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * 0.5
 		await get_tree().process_frame
+		if player.has_meta("shot_stair") and player.stride_warp != null:
+			var sw: StrideWarp = player.stride_warp
+			print("SHOT stair f %d root %.3f swing lift L %.3f R %.3f rise ahead L %.3f R %.3f" % [i, player.global_position.y, sw.swing_lift[0], sw.swing_lift[1], sw.swing_ahead_rise[0], sw.swing_ahead_rise[1]])
 	if "fq" in args:
 		var nimp := 0
 		for ch in world.knight.get_parent().get_children():

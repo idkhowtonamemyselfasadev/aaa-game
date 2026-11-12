@@ -509,6 +509,7 @@ func _setup_crumple() -> void:
 	skel.move_child(stride_warp, 0)            # first modifier: it lengthens the clip's own stride
 	stride_warp.frame = crumple.frame
 	stride_warp.ground_body = self
+	stride_warp.swing_clear = not OS.has_environment("STEPCLEAR_OLD")   # (11-12 18:00) boots lift over a riser ahead
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
 	stride_warp.uncross = true             # (11-12 14:00) the stepping boot never crosses the planted one
 	stride_warp.hips_over_pin = true       # (11-12 16:00) the pelvis slides over the planted ankle

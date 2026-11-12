@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261108-2320-kneeroll-before-after.jpg",
-  "time": "2026-11-08T23:20:00Z",
-  "caption": "Jump attack fold, hard crease (left) vs the new rolled knee fold (right): the robe panel now curves over the knee instead of turning a square corner. Still GL-only, rear 3/4 and backlit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-2320-kneeroll-fold.jpg",
-  "time": "2026-11-08T23:21:00Z",
-  "caption": "Jump attack fold at jt 0.52 with the rolled knee fold; the figure is small and in shadow and the red panel still reads too saturated.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0000-jumpattack-recovered.jpg",
-  "time": "2026-11-09T00:50:00Z",
-  "caption": "0.74 s after the jump-attack press the hero is already back upright with the staff on the shoulder and the robe hanging; this frame missed the new falling-robe landing, which is bot-checked only so far (GL render, backlit, figure small).",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0200-jumpattack-landing.jpg",
   "time": "2026-11-09T01:45:00Z",
   "caption": "The jump attack 0.10 s before touch-down: legs tucked, staff driven down; from this rear-3/4 lens only the back robe panel shows, so the new falling front panel still is not seen (GL render, backlit, red too flat).",
@@ -885,6 +867,24 @@
   "file": "20261112-1718-turngather.jpg",
   "time": "2026-11-12T17:18:46Z",
   "caption": "Turn on the spot to the left, 0.1 s in: the forward guard boot now draws in toward the body before the hero pivots on it; the knees still hide under the robe and the light is flat ochre, not Wukong-grade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1843-stair-swing.jpg",
+  "time": "2026-11-12T18:43:24Z",
+  "caption": "Walking up a 3 x 0.2 m stair: the swinging boot now lifts with the knee raised over the riser instead of running into it; lens is low and side-on, test stair is plain boxes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1843-stair-old.jpg",
+  "time": "2026-11-12T18:43:24Z",
+  "caption": "Same frame before the change (STEPCLEAR_OLD): both legs nearly straight, the lead boot driven into the riser face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1843-stair-trail.jpg",
+  "time": "2026-11-12T18:43:24Z",
+  "caption": "Three ticks later: the trailing boot is lifted while still behind the hips, so the shin folds up flat behind the body; next fix.",
   "verdict": "fail"
  }
 ]

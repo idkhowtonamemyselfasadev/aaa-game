@@ -4288,11 +4288,56 @@ func _step_up_test() -> void:
 	var dip_max := 0.0
 	var last_vis: float = p.body.global_position.y
 	var start := p.global_position
+	# (11-12 18:00) the swinging boot must clear each riser: the ball and toe tip of each foot are
+	# read against the ground under them (a point inside a riser reads the tread above it). Base:
+	# how high each point stands over the flat when that foot is planted (the bone sits in the boot)
+	var sk := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var tbs := [sk.find_bone("mixamorig_LeftToeBase"), sk.find_bone("mixamorig_RightToeBase")]
+	var fts := [sk.find_bone("mixamorig_LeftFoot"), sk.find_bone("mixamorig_RightFoot")]
+	var toe_pts := func() -> Array:
+		var out := []
+		for f in 2:
+			var a: Vector3 = sk.global_transform * sk.get_bone_global_pose(fts[f]).origin
+			var b: Vector3 = sk.global_transform * sk.get_bone_global_pose(tbs[f]).origin
+			var reach := Vector3(b.x - a.x, 0.0, b.z - a.z)
+			out.append([b, b + reach * StrideWarp.TOE_TIP])
+		return out
+	var under := func(pt: Vector3) -> float:
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pt + Vector3.UP * 0.6, pt + Vector3.DOWN * 0.6, 1, [p.get_rid()]))
+		return hit.position.y if not hit.is_empty() else -INF
+	await sk.skeleton_updated
+	var base_toe := [INF, INF]
+	for f in 2:
+		for pt in (toe_pts.call()[f] as Array):
+			base_toe[f] = minf(base_toe[f], (pt as Vector3).y - float(under.call(pt)))
+	var dig_max := 0.0               # deepest any toe point went into the stair (m, under its planted height)
+	var dig_ticks := 0
+	var lift_sw := 0.0               # most a swinging boot was raised for a riser ahead (StrideWarp)
 	for i in 300:
 		if (p.global_position - start).dot(fwd) > 1.2 + TREAD * 3 + 0.7:
 			break                      # on the top tread
 		p.bot_input = Vector2(fwd.x, fwd.z) * 0.6
 		await get_tree().physics_frame
+		await sk.skeleton_updated
+		var pts: Array = toe_pts.call()
+		var dug := false
+		for f in 2:
+			for pt in (pts[f] as Array):
+				var gyv: float = under.call(pt)
+				var dig: float = gyv - ((pt as Vector3).y - float(base_toe[f]))
+				# only a point over a tread higher than the hero's own floor can be in a riser
+				if gyv > p.global_position.y + 0.1:
+					if dig > 0.01:
+						dug = true
+						if OS.get_environment("STEP_DEBUG") != "":
+							print("STEPDIG foot %d dig %.3f lift %.3f ramp %.2f rise %.3f toe_lift %.3f" % [f, dig, p.stride_warp.swing_lift[f], p.stride_warp.swing_ramp[f], p.stride_warp.swing_ahead_rise[f], p.stride_warp.toe_lift[f]])
+					dig_max = maxf(dig_max, dig)
+		if dug:
+			dig_ticks += 1
+			if OS.get_environment("STEP_DEBUG") != "":
+				print("STEPDIG i %d root %.3f dig %.3f" % [i, p.global_position.y, dig_max])
+		if p.stride_warp != null:
+			lift_sw = maxf(lift_sw, maxf(float(p.stride_warp.swing_lift[0]), float(p.stride_warp.swing_lift[1])))
 		var v: float = p.body.global_position.y
 		if OS.get_environment("STEP_DEBUG") != "" and absf(v - last_vis) > 0.02:
 			print("STEPDBG i %d root %.3f body %.3f vis %.3f dv %.3f floor %s steps %d" % [i, p.global_position.y, p.body.position.y, v, v - last_vis, p.is_on_floor(), p.steps_up])
@@ -4304,10 +4349,15 @@ func _step_up_test() -> void:
 	var climbed := p.global_position.y - y0
 	var steps: int = p.steps_up - steps0
 	print("BOT stepup: walked up a 3 x %.2f m stair: climbed %.3f m in %d steps (last rise %.3f), visible body dipped %.3f m at most, largest visible rise in one tick %.3f m" % [RISE, climbed, steps, p.step_rise, -dip_max, vis_jump])
+	print("BOT stepup: toes into the risers: deepest %.3f m, %d ticks over 1 cm; swing boot raised for a riser ahead up to %.3f m" % [dig_max, dig_ticks, lift_sw])
 	if climbed < RISE * 3 - 0.05 or steps < 3:
 		return _combat_done(false, "the hero did not walk up the stair (climbed %.2f m, %d steps)" % [climbed, steps])
 	if vis_jump > 0.06:
 		return _combat_done(false, "the step pops the visible body %.3f m in one tick" % vis_jump)
+	# (the bot steps physics at 15 ticks/s: the toe crosses the edge in one ~0.15 m tick, so one
+	# tick of a few cm is the ease of the tread's ground, not a toe driven into the riser's face)
+	if (dig_max > 0.05 or dig_ticks > 1) and OS.get_environment("STEPCLEAR_OLD") == "":
+		return _combat_done(false, "the swinging boot's toes run %.3f m into a riser" % dig_max)
 	if dip_max > -0.05:
 		return _combat_done(false, "the step lift is not eased (body dip %.3f)" % dip_max)
 	# and back down: off each tread edge the hero is set down on the lower tread (never airborne,

@@ -139,6 +139,7 @@ var _ground_t := -1.0
 var _drop := 0.0               # world m, the hips' settle, eased
 var _ground_pf := -1
 var toe_lift := [0.0, 0.0]        # (bots) world m each foot was lifted so its toes clear a rising edge
+var swing_lift := [0.0, 0.0]      # (bots) world m each swinging foot was raised for a riser ahead
 const TOE_TIP := 0.55            # the toe tip ray sits this far past the ball (x the ankle-to-ball reach)
 const TOE_TOL := 0.006           # m (x scale): a rise smaller than this under the toes is the slope's own curve
 var _gxz := [Vector3.ZERO, Vector3.ZERO]   # each ankle's world x/z last tick (the slope's own rise under a moving foot)
@@ -885,6 +886,104 @@ func _leg_to(skel: Skeleton3D, ul: int, lg: int, ft: int, t: Vector3, keep: Basi
 	var pb := skel.get_bone_global_pose(lg).basis.orthonormalized()
 	skel.set_bone_pose_rotation(ft, (pb.inverse() * keep.orthonormalized()).get_rotation_quaternion())
 
+## (11-12 18:00) Swing clearance: a swinging boot looks ahead along its own travel; where the
+## ground there rises over the slope its ankle stands on (a stair riser, a kerb, a stone) by more
+## than SWING_STEP_MIN, the boot is raised so its ball and toes pass SWING_CLEAR over that edge
+## (the knee comes up through the two-bone IK) instead of running into the riser's face until
+## the toe rays find the tread above. The lift fades as the boot slows to its strike.
+## STEPCLEAR_OLD: the before.
+var swing_clear := false         # (owner) on for the hero (Player); the foes not yet
+const SWING_STEP_MIN := 0.04     # m (x scale): a smaller rise ahead is the slope's own (no lift)
+const SWING_CLEAR := 0.05        # m (x scale) the ball's sole passes over the edge
+const SWING_AHEAD_T := 0.2       # s of the boot's own travel looked ahead
+const SWING_AHEAD_MAX := 0.4     # m (x scale)
+const SWING_SPEED_MIN := 0.5     # m/s (x scale): slower, the boot is planted or settling
+const SWING_SPEED_FULL := 1.2    # m/s (x scale): a full swing
+const SWING_UP_RATE := 35.0      # 1/s the lift comes in (a riser is met within ~3 ticks)
+const SWING_DOWN_RATE := 18.0    # 1/s it goes once the edge is passed
+const SWING_UNDER_CLEAR := 0.01 # m (x scale) over the ground right under the toes while swinging
+const SWING_SAMPLES := 7         # rays along the look-ahead
+const SWING_RAMP_NEAR := 0.08    # m (x scale): the toe this near the edge gets the full clearance
+static var SWING_DBG := OS.has_environment("SWING_DBG")
+static var SWING_RAMP_OLD := OS.has_environment("SWINGRAMP_OLD")
+var swing_ramp := [0.0, 0.0]     # (bots) 0..1 how much of the clearance the edge's distance allows
+var _was_swing := [false, false]
+var _ball_rest := [INF, INF]     # world m the ball bone stands over its ground when planted
+var swing_ahead_rise := [0.0, 0.0]   # (bots) world m the ground ahead rose over the slope
+
+func _swing_clear(i: int, tbi: int, skel: Skeleton3D, xf: Transform3D, space: PhysicsDirectSpaceState3D, excl: Array[RID], a: Vector3, mv: Vector3, gy: float, n: Vector3, floor_y: float, sc: float, lim: float, dt: float) -> void:
+	var ball: Vector3 = xf * skel.get_bone_global_pose(tbi).origin
+	# the ball's height over its own ground as the IK will pose it (the hips drop and the foot's
+	# lift by the drop cancel): planted, this is the bone's height in the boot
+	var over := ball.y + float(ground_off[i]) - gy
+	var speed := mv.length() / dt
+	var sw := clampf((speed - SWING_SPEED_MIN * sc) / ((SWING_SPEED_FULL - SWING_SPEED_MIN) * sc), 0.0, 1.0)
+	# measured while planted only (the swing's eased ground lags); each new plant starts afresh,
+	# so a landing or a teleport's settle cannot leave a wrong height behind
+	if sw <= 0.0:
+		_ball_rest[i] = over if _was_swing[i] or _ball_rest[i] == INF else minf(float(_ball_rest[i]), over)
+	elif _ball_rest[i] == INF:
+		_ball_rest[i] = over
+	_was_swing[i] = sw > 0.0
+	var target := 0.0
+	var floor_need := 0.0           # a hard floor (not eased): the sole over the ground under the toes
+	swing_ahead_rise[i] = 0.0
+	if sw > 0.0 and mv.length() > 1e-5 and mv.length() < 0.5 * sc:
+		var dir := mv.normalized()
+		var reach := Vector3(ball.x - a.x, 0.0, ball.z - a.z)
+		var tip := ball + reach * TOE_TIP
+		var ahead := dir * minf(speed * SWING_AHEAD_T, SWING_AHEAD_MAX * sc)
+		var hy := -INF
+		var rise := 0.0
+		var d_edge := -1.0              # how far ahead of the toe tip the rise begins (m)
+		for k in SWING_SAMPLES:
+			var pt: Vector3 = tip + ahead * (float(k) / float(SWING_SAMPLES - 1))
+			var th := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(pt.x, floor_y + lim + 0.3 * sc, pt.z), Vector3(pt.x, floor_y - lim - 0.3 * sc, pt.z), 1, excl))
+			if th.is_empty() or (th.normal as Vector3).y < 0.5:
+				continue
+			var dxz := Vector3(pt.x - a.x, 0.0, pt.z - a.z)
+			var plane_y := gy - (n.x * dxz.x + n.z * dxz.z) / maxf(n.y, 0.5)
+			var ty := (th.position as Vector3).y
+			if ty - gy > lim:
+				continue                        # a wall top, not a step
+			rise = maxf(rise, ty - plane_y)
+			hy = maxf(hy, ty)
+			if d_edge < 0.0 and ty - plane_y > SWING_STEP_MIN * sc:
+				d_edge = ahead.length() * float(k) / float(SWING_SAMPLES - 1)
+		swing_ahead_rise[i] = rise
+		var sole := ball.y + float(ground_off[i]) - float(_ball_rest[i])
+		# and never below the ground right under the ball and toe tip as it crosses the edge (the
+		# look-ahead no longer sees a rise there, and the tread's own ground eases in)
+		# (only where that ground stands over the eased ground's slope plane: on a hillside the toes
+		# are naturally higher than the ankle)
+		var under := -INF
+		var over_plane := 0.0
+		var g_eased := floor_y + float(ground_off[i])
+		for pt in [ball, tip]:
+			var uh := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(pt.x, floor_y + lim + 0.3 * sc, pt.z), Vector3(pt.x, floor_y - lim - 0.3 * sc, pt.z), 1, excl))
+			if not uh.is_empty() and (uh.normal as Vector3).y >= 0.5 and (uh.position as Vector3).y - gy <= lim:
+				var dxz := Vector3(pt.x - a.x, 0.0, pt.z - a.z)
+				var py := g_eased - (n.x * dxz.x + n.z * dxz.z) / maxf(n.y, 0.5)
+				over_plane = maxf(over_plane, (uh.position as Vector3).y - py)
+				under = maxf(under, (uh.position as Vector3).y)
+		if under > -INF and over_plane > SWING_STEP_MIN * sc * 0.5:
+			floor_need = clampf(under + SWING_UNDER_CLEAR * sc - sole, 0.0, over_plane + SWING_UNDER_CLEAR * sc) * sw
+		if rise > SWING_STEP_MIN * sc:
+			# the boot climbs toward the edge along its path, full clearance as the toe reaches
+			# it: lifted at once (still behind the hips at toe-off) the shin kicked up flat behind
+			# (the edge is met one tick of travel early; the path rises as an arc, sqrt)
+			var near := SWING_RAMP_NEAR * sc + speed * dt
+			var span := maxf(ahead.length() - near, 0.05 * sc)
+			var ramp := 1.0 if SWING_RAMP_OLD else sqrt(clampf(1.0 - (d_edge - near) / span, 0.0, 1.0))
+			swing_ramp[i] = ramp
+			# never more than the edge stands over the boot's own (eased) ground, plus the clearance
+			var cap := maxf(0.0, hy - (floor_y + float(ground_off[i]))) + SWING_CLEAR * sc
+			target = maxf(target, clampf(hy + SWING_CLEAR * sc - sole, 0.0, cap) * sw * ramp)
+	if SWING_DBG:
+		print("SWINGDBG %d sw %.2f speed %.2f ball %.3f over %.3f rest %.3f gy %.3f off %.3f floor %.3f target %.3f need %.3f lift %.3f" % [i, sw, speed, ball.y, over, _ball_rest[i], gy, ground_off[i], floor_y, target, floor_need, swing_lift[i]])
+	var rate := SWING_UP_RATE if target > float(swing_lift[i]) else SWING_DOWN_RATE
+	swing_lift[i] = maxf(lerpf(float(swing_lift[i]), target, 1.0 - exp(-rate * dt)), floor_need)
+
 func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	ground_drop = 0.0
 	if ground_body == null or not ground_body.is_inside_tree():
@@ -970,6 +1069,10 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		_gy[i] = gy if absf(jump - slope_rise) <= GROUND_SNAP * sc and dt > 0.0 and dt < 1.0 else lerpf(float(_gy[i]), gy, r)
 		ground_off[i] = clampf(float(_gy[i]) - floor_y, -lim, lim)
 		ground_n[i] = (ground_n[i] as Vector3).lerp(n, r).normalized()
+		if swing_clear and tb[i] >= 0 and dt > 0.0 and dt < 1.0:
+			_swing_clear(i, tb[i], skel, xf, space, excl, a, mv, gy, n, floor_y, sc, lim, dt)
+		elif not swing_clear or dt >= 1.0:
+			swing_lift[i] = 0.0
 	ground_anim = anim_h.duplicate()
 	var w := clampf(ground_w, 0.0, 1.0)
 	if w <= 0.0:
@@ -991,7 +1094,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	ground_drop = drop
 	for i in 2:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
-		var lift := float(ground_off[i]) * w + drop
+		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
 		var keep := skel.get_bone_global_pose(ft[i]).basis
 		# a planted sole lies on the slope; a foot swinging high keeps the clip's angle
 		var plant := clampf(1.0 - (float(anim_h[i]) / sc - 0.12) / 0.14, 0.0, 1.0) * w
