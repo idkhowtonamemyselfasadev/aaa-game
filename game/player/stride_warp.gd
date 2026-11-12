@@ -893,6 +893,13 @@ func _leg_to(skel: Skeleton3D, ul: int, lg: int, ft: int, t: Vector3, keep: Basi
 ## the toe rays find the tread above. The lift fades as the boot slows to its strike.
 ## STEPCLEAR_OLD: the before.
 var swing_clear := false         # (owner) on for the hero (Player); the foes not yet
+static var HIPS_TRAIL_OLD := OS.has_environment("HIPSTRAIL_OLD")
+const HIPS_TRAIL_BEHIND := 0.15  # m (x scale) behind the hips: a lifting boot there is trailing
+const HIPS_TRAIL_STEP0 := 0.06  # m (x scale) under the lead foot's slope: below, a tread down
+const HIPS_TRAIL_STEP1 := 0.06  # m (x scale) more: a full step
+const HIPS_TRAIL_H0 := 0.12      # m (x scale) ankle over its own ground: still planted
+const HIPS_TRAIL_H1 := 0.08      # m (x scale) more: fully off it
+var trail_w := [0.0, 0.0]        # (bots) how far a trailing boot's lower ground is let go
 const SWING_STEP_MIN := 0.04     # m (x scale): a smaller rise ahead is the slope's own (no lift)
 const SWING_CLEAR := 0.05        # m (x scale) the ball's sole passes over the edge
 const SWING_AHEAD_T := 0.2       # s of the boot's own travel looked ahead
@@ -1083,7 +1090,33 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	var up_s: Vector3 = inv.basis * Vector3.UP                # 1 world m up, in skeleton units
 	var fwd := (frame.inverse() * Vector3.BACK).normalized()
 	# the hips settle by what the lower ground needs (the clip's floor is the body's origin)
-	var want := maxf(0.0, -minf(float(ground_off[0]), float(ground_off[1]))) * w
+	# (11-12 19:00) a trailing boot that has left its lower ground (lifting behind the hips on a
+	# stair) no longer holds the hips down to it: they rise over the lead foot as it pushes off,
+	# else the lead knee squats and the trailing shin folds up flat behind (HIPSTRAIL_OLD)
+	var eff := [float(ground_off[0]), float(ground_off[1])]
+	trail_w = [0.0, 0.0]
+	var hb := skel.find_bone("mixamorig_Hips")
+	if not HIPS_TRAIL_OLD and hb >= 0:
+		var hw: Vector3 = xf * skel.get_bone_global_pose(hb).origin
+		var fw := xf.basis * fwd
+		fw = Vector3(fw.x, 0.0, fw.z).normalized()
+		for i in 2:
+			var o := 1 - i
+			if float(ground_off[i]) >= float(ground_off[o]):
+				continue
+			var aw: Vector3 = xf * skel.get_bone_global_pose(ft[i]).origin
+			# only a step down from the lead foot's own slope (a tread), never a hillside
+			var ao: Vector3 = xf * skel.get_bone_global_pose(ft[o]).origin
+			var no: Vector3 = ground_n[o]
+			var plane_y := float(_gy[o]) - (no.x * (aw.x - ao.x) + no.z * (aw.z - ao.z)) / maxf(no.y, 0.5)
+			var step := clampf((plane_y - float(_gy[i]) - HIPS_TRAIL_STEP0 * sc) / (HIPS_TRAIL_STEP1 * sc), 0.0, 1.0)
+			if step <= 0.0:
+				continue
+			var behind := clampf(-(aw - hw).dot(fw) / (HIPS_TRAIL_BEHIND * sc), 0.0, 1.0)
+			var up := clampf((float(anim_h[i]) - HIPS_TRAIL_H0 * sc) / (HIPS_TRAIL_H1 * sc), 0.0, 1.0)
+			trail_w[i] = behind * up * step
+			eff[i] = lerpf(float(ground_off[i]), float(ground_off[o]), trail_w[i])
+	var want := maxf(0.0, -minf(eff[0], eff[1])) * w
 	_drop = lerpf(_drop, want, 1.0 - exp(-GROUND_HIPS_RATE * dt)) if want < _drop else want   # down at once, up eased
 	var drop := _drop
 	var hips := skel.find_bone("mixamorig_Hips")

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-0200-jumpattack-landing.jpg",
-  "time": "2026-11-09T01:45:00Z",
-  "caption": "The jump attack 0.10 s before touch-down: legs tucked, staff driven down; from this rear-3/4 lens only the back robe panel shows, so the new falling front panel still is not seen (GL render, backlit, red too flat).",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0300-jumpattack-landed.jpg",
-  "time": "2026-11-09T03:00:00Z",
-  "caption": "The hero 0.16 s after a jump attack lands: already upright with the staff on the shoulder, seen from behind; the attack had ended in the air in this run, so the new knee-sinking strike landing does not show (GL render, rear lens).",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0400-jumpatk-land06.jpg",
   "time": "2026-11-09T04:00:00Z",
   "caption": "Jump attack struck early now holds into the fall and lands through the knees: hero folded over the staff, tip driven into the turf, 0.06 s after touch-down; lens on the shadow side, figure dark, GL renderer.",
@@ -885,6 +873,18 @@
   "file": "20261112-1843-stair-trail.jpg",
   "time": "2026-11-12T18:43:24Z",
   "caption": "Three ticks later: the trailing boot is lifted while still behind the hips, so the shin folds up flat behind the body; next fix.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1900-stair-hips.jpg",
+  "time": "2026-11-12T19:00:00Z",
+  "caption": "Hero climbing the test stair: the hips now rise over the lead foot on the first tread instead of squatting; still seen from behind with hat and robe hiding the knees, and the steps are plain test boxes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1900-stair-before-after.jpg",
+  "time": "2026-11-12T19:00:00Z",
+  "caption": "Same stair frame before (left: crouched to the trailing tread) and after (right: standing taller over the lead foot); the lens is still poor for judging the knees.",
   "verdict": "fail"
  }
 ]

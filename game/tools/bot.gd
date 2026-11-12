@@ -4313,6 +4313,13 @@ func _step_up_test() -> void:
 	var dig_max := 0.0               # deepest any toe point went into the stair (m, under its planted height)
 	var dig_ticks := 0
 	var lift_sw := 0.0               # most a swinging boot was raised for a riser ahead (StrideWarp)
+	# (11-12 19:00) the knee of a boot lifted for a riser: how deep it folds (0 = straight leg) and
+	# how flat the shin lies (its angle up from straight down, measured backwards: 90 = the shin
+	# kicked up horizontal behind the knee)
+	var uls := [sk.find_bone("mixamorig_LeftUpLeg"), sk.find_bone("mixamorig_RightUpLeg")]
+	var lgs := [sk.find_bone("mixamorig_LeftLeg"), sk.find_bone("mixamorig_RightLeg")]
+	var fold_max := 0.0
+	var shin_back_max := 0.0
 	for i in 300:
 		if (p.global_position - start).dot(fwd) > 1.2 + TREAD * 3 + 0.7:
 			break                      # on the top tread
@@ -4338,6 +4345,19 @@ func _step_up_test() -> void:
 				print("STEPDIG i %d root %.3f dig %.3f" % [i, p.global_position.y, dig_max])
 		if p.stride_warp != null:
 			lift_sw = maxf(lift_sw, maxf(float(p.stride_warp.swing_lift[0]), float(p.stride_warp.swing_lift[1])))
+			for f in 2:
+				if true:
+					var hp: Vector3 = sk.global_transform * sk.get_bone_global_pose(uls[f]).origin
+					var kp: Vector3 = sk.global_transform * sk.get_bone_global_pose(lgs[f]).origin
+					var ap: Vector3 = sk.global_transform * sk.get_bone_global_pose(fts[f]).origin
+					var fold := rad_to_deg((kp - hp).angle_to(ap - kp))
+					var shin := ap - kp
+					var back := -shin.dot(fwd)            # + = the ankle behind the knee
+					var shin_ang := rad_to_deg(atan2(back, -shin.y))
+					fold_max = maxf(fold_max, fold)
+					shin_back_max = maxf(shin_back_max, shin_ang)
+					if OS.get_environment("STEP_DEBUG") != "":
+						print("STEPKNEE i %d foot %d lift %.3f fold %.1f shin_back %.1f ankle_ahead_of_hips %.3f off %.3f anim %.3f trail %.2f drop %.3f ankle_y %.3f hips_y %.3f" % [i, f, p.stride_warp.swing_lift[f], fold, shin_ang, (ap - hp).dot(fwd), p.stride_warp.ground_off[f], p.stride_warp.ground_anim[f], p.stride_warp.trail_w[f], p.stride_warp.ground_drop, ap.y, hp.y] + " root %.3f body %.3f" % [p.global_position.y, p.body.position.y] + " floor %s air %.2f land %.2f jp %.2f blend %.2f" % [p.is_on_floor(), p._air_t, p.land_t, p._jp, p._blend])
 		var v: float = p.body.global_position.y
 		if OS.get_environment("STEP_DEBUG") != "" and absf(v - last_vis) > 0.02:
 			print("STEPDBG i %d root %.3f body %.3f vis %.3f dv %.3f floor %s steps %d" % [i, p.global_position.y, p.body.position.y, v, v - last_vis, p.is_on_floor(), p.steps_up])
@@ -4349,7 +4369,7 @@ func _step_up_test() -> void:
 	var climbed := p.global_position.y - y0
 	var steps: int = p.steps_up - steps0
 	print("BOT stepup: walked up a 3 x %.2f m stair: climbed %.3f m in %d steps (last rise %.3f), visible body dipped %.3f m at most, largest visible rise in one tick %.3f m" % [RISE, climbed, steps, p.step_rise, -dip_max, vis_jump])
-	print("BOT stepup: toes into the risers: deepest %.3f m, %d ticks over 1 cm; swing boot raised for a riser ahead up to %.3f m" % [dig_max, dig_ticks, lift_sw])
+	print("BOT stepup: toes into the risers: deepest %.3f m, %d ticks over 1 cm; swing boot raised for a riser ahead up to %.3f m; knees folded %.1f deg at most (the run's own heel kick), a shin up to %.1f deg back from hanging" % [dig_max, dig_ticks, lift_sw, fold_max, shin_back_max])
 	if climbed < RISE * 3 - 0.05 or steps < 3:
 		return _combat_done(false, "the hero did not walk up the stair (climbed %.2f m, %d steps)" % [climbed, steps])
 	if vis_jump > 0.06:
@@ -4358,6 +4378,10 @@ func _step_up_test() -> void:
 	# tick of a few cm is the ease of the tread's ground, not a toe driven into the riser's face)
 	if (dig_max > 0.05 or dig_ticks > 1) and OS.get_environment("STEPCLEAR_OLD") == "":
 		return _combat_done(false, "the swinging boot's toes run %.3f m into a riser" % dig_max)
+	# (11-12 19:00) a trailing boot lifting off its lower tread no longer holds the hips down: the
+	# shins stay under 120 deg back from hanging (130 before: the hips sank over the low foot)
+	if shin_back_max > 120.0 and OS.get_environment("HIPSTRAIL_OLD") == "":
+		return _combat_done(false, "a shin folds %.1f deg back from hanging on the stair" % shin_back_max)
 	if dip_max > -0.05:
 		return _combat_done(false, "the step lift is not eased (body dip %.3f)" % dip_max)
 	# and back down: off each tread edge the hero is set down on the lower tread (never airborne,
