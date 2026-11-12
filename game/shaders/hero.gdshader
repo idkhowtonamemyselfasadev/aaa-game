@@ -48,6 +48,9 @@ varying float v_finger;
 // garb marks the boots' verts with COLOR.b 0 (HeroGarb._mark_boots): the fittings caught the
 // sky as a pale grey greave between the shin binding and the boot (ankle lens, 11-12)
 uniform float boot_leather = 0.0;
+// 1 = the boots' lacquered toe caps and vamp plates are scuffed to worn oiled leather: at the
+// plates' satin 0.46 the toes caught the sky as a glossy white highlight (ankle lens, 11-12)
+uniform float boot_scuff = 0.0;
 varying float v_boot;
 
 float h_hash(vec2 p) {
@@ -212,6 +215,14 @@ void fragment() {
 		o = mix(o, hide * (0.34 + 0.2 * mott), boot);
 		r_o = mix(r_o, 0.7 + 0.1 * mott, boot);
 		metal *= 1.0 - boot;
+		// the boots' lacquered plates (toe cap, vamp): scuffed matte along a worn grain, a touch
+		// darker where the lacquer is rubbed through to hide
+		float scuff = v_boot * boot_scuff * region;
+		// (pulled half way to the straps' hide: matte, the plates' red lacquer read pink)
+		float rub = smoothstep(0.35, 0.75, h_noise(UV * vec2(240.0, 640.0)));
+		vec3 lea = mix(o * 0.8, hide * (0.3 + 0.12 * mott), 0.55) * (1.0 - 0.18 * rub);
+		o = mix(o, lea, scuff);
+		r_o = mix(r_o, 0.66 + 0.12 * mott + 0.08 * rub, scuff);
 		alb = mix(src, o, restyle);
 		rough = mix(roughness, r_o, restyle);
 	}

@@ -408,6 +408,8 @@ func _dress() -> void:
 				var sm := m.get_surface_override_material(s) as ShaderMaterial
 				if sm != null and sm.shader == preload("res://shaders/hero.gdshader"):
 					sm.set_shader_parameter("boot_leather", 1.0)
+					# scuffed matte toe caps, not glossy lacquer (BOOTGLOSS_OLD=1: before)
+					sm.set_shader_parameter("boot_scuff", 0.0 if OS.get_environment("BOOTGLOSS_OLD") != "" else 1.0)
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.

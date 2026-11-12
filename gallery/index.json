@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-1500-guard-stop.jpg",
-  "time": "2026-11-08T15:00:00Z",
-  "caption": "Hero halting from a run with the staff drawn at guard: both fists stay on the shaft through the stop's hip and back bend (they used to ride 20 cm off); backlit, the figure is a silhouette and the foreground is black.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1700-guardrun.jpg",
-  "time": "2026-11-08T17:00:00Z",
-  "caption": "Mid-run at guard: the staff held low and diagonal in both fists with the chest now square to it (the right fist no longer slides off); seen from behind, the dog overlaps the legs and the lens doesn't show the face.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-1809-guardrun-profile.jpg",
   "time": "2026-11-08T18:09:00Z",
   "caption": "Guard run with the staff drawn, square side-on (new sidelens, dog hidden): forward lean, back knee high, staff carried low and forward in both fists; still a backlit silhouette in GL, no Forward+.",
@@ -897,6 +885,18 @@
   "file": "20261112-1022-turn-side.jpg",
   "time": "2026-11-12T10:22:46Z",
   "caption": "Full-body side view mid-turn: the feet now read as dark leather boots; the hero still lacks Wukong-grade detail (flat hat, thin capelet, stiff robe panel) and the ground is a flat ochre plane.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1115-boots-scuffed.jpg",
+  "time": "2026-11-12T11:15:00Z",
+  "caption": "Ankle lens through a turn on the spot: the boots' toe caps are now scuffed matte brown leather instead of glossy pink lacquer; the trouser hem is still baggy and the ground texture reads flat in the GL fallback renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1115-hero-side.jpg",
+  "time": "2026-11-12T11:15:00Z",
+  "caption": "The hero side-on in the meadow by the cottage at 09:00; the boots are lost in the grass at this distance, and the figure and lighting still read as a GL-compatibility render, not Wukong.",
   "verdict": "fail"
  }
 ]

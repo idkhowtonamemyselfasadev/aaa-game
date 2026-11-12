@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(11:15 11-12: THE HERO'S BOOT TOES ARE SCUFFED MATTE LEATHER, NOT GLOSSY PINK LACQUER: inside the boot mask (v_boot) the base mesh's lacquered plates (toe cap, vamp) kept the armour's satin roughness 0.46 and red lacquer, so in the ankle lens the toes caught the sky as a glossy pinkish-white highlight. New hero.gdshader uniform `boot_scuff` (player.gd sets 1 on the hero; BOOTGLOSS_OLD=1 = before): plates inside the boot mask are pulled half way to the straps' hide x(0.3..0.42), darkened up to 18 % along a fine rub grain, roughness 0.66-0.86. Frames bt_old / bt_new2 (ankle lens jt 0.40) looked at: the toes now read as worn brown boots; bt_side (bodytight side) looked at, boots lost in the grass there. Bots PASS: walk heroturn jump combat villager knight footik stepup hands climb glide neighbour pedlar (pedlar failed once while a GL shot ran in parallel, passed twice alone).)
 (10:00 11-12: THE HERO'S BOOTS ARE STRAP LEATHER, NO GREY PLATE AT THE ANKLE: the grey between the shin binding and the boot was the base mesh's pale neutral-grey heel counter and ankle plates (not the blue-grey 'iron' mask and not the greave lip). `HeroGarb._mark_boots` writes COLOR.b = 1 - (shin/foot/toe skin weight) into the hero's base mesh; hero.gdshader `boot_leather` turns iron AND unsaturated grey texels inside that mask into strap leather (hide x0.34-0.54, rough 0.7-0.8, no metal). Also new `HollowRags._slim_ankle`: the greave's foot-skinned lip 1-3.5 cm above the ankle is pulled toward the shin axis by the shin slim (forward reach 0.081 -> 0.058 m; no visible change at this lens). `_slim_leg` now runs on a shared `_reshape(bone, fn)` (same 909 verts). BOOTS_OLD=1 / ANKLESLIM_OLD=1 = before. New probe `game/tools/ankle_probe.gd`. Bots PASS: walk (gates: >= 10 ankle verts, now 206; >= 100 boot verts, now 601) heroturn jump footik stepup villager combat hands knight climb glide pedlar neighbour.)
 (09:15 11-12: THE HERO'S SHINS ARE BOUND TIGHT AND THE BOOTS SHOW: new `HollowRags._slim_leg` pulls the base body's skinned shin verts toward the bone axis (k 0.7, faded in below the knee and by shin skin weight) before the shin binding is fitted, so the binding wraps a slimmer leg (mid-calf depth 22 -> 15 cm, width 23 -> 16 cm, WRAP_DBG=1 prints the fitted radii); the hero's foot puttee now ends at the instep (t 0.5) instead of standing round the boot as a wide baggy cuff. Frames old/new looked at side-on (jt 0.55) and in the ankle lens (jt 0.40): legs no longer a bulky tube, leather boots visible. SHINSLIM_OLD=1 = before, SHIN_SLIM=<k> tunes. Bots PASS: walk (new gate: >= 100 verts slimmed, now 909) heroturn jump footik stepup combat hands villager knight climb glide pedlar neighbour.)
 (09:00 11-12: A FULL-BODY SIDE LENS FOR THE TURN ON THE SPOT, AND THE HIPS-HOLD RISE JUDGED IN IT: frame-tool modifier `bodytight` for `sidelens` (fov 42, lens at hips height, aimed at 0.9 m) so the whole hero fills the frame side-on; with `prof` it squares to the hero's own facing. Frames tb40/tb55 (new) and tbo55 (HIPSHOLD_OLD) looked at: at jt 0.55 the whole figure stands a few px taller with the hips hold (hat brim and capelet higher), no dip, the step back at 0.40 reads; the knees stay under the robe and tabard, so knee bend is still judged by the bot numbers. No game change. Bots PASS: heroturn pivot jump stop. Screenshots: Vulkan/lavapipe OOMs this box, SHOT_GL=1 (opengl3) used; python3 PIL is broken here, gallery JPEGs made with ffmpeg.)
@@ -64,6 +65,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - (17:00 11-11) Setup first try (import ~10 min); GL shots via opengl3 fallback (8-frame leapseq ~10 min); headless bots fine.
 - (16:00 11-11) Setup first try (import ~10 min); GL shots work (vulkan fails, opengl3 fallback; a 12-frame `leapseq` ~12 min); headless bots fine. Asset sites: polyhaven 200, ambientcg 200, freesound 403. python3 PIL is broken (no _imaging): use ImageMagick `montage`/`convert` for sheets and the gallery JPEGs.
 ## Environment / renderer (cloud box)
+- (11:15 11-12) Setup first try (import in setup, SHOTS_OK); GL shots ~5 min; running 2 GL shots at once gave one blown-out white frame (re-render alone); a bot run beside a GL shot can flake (pedlar). Asset sites not rechecked (no new files).
 - (10:00 11-12) Setup first try (import in the setup run, SHOTS_OK). GL shots (SHOT_GL=1, ~5 min each, 2 at once fine); headless bots fine. Asset sites not rechecked (no new files). Debug trick: paint a mask green in hero.gdshader (`ALBEDO = mix(ALBEDO, vec3(0,1,0), step(0.5, v_boot))`) to see what a vertex mask covers.
 - (07:00 11-12) Setup: godot + xvfb fine, the setup's import was cut off again (background); re-ran `--import` in the foreground (~3 min). GL shots (SHOT_GL=1, 2 at once ~6 min); headless bots fine. Asset sites not rechecked (no new files).
 - (06:00 11-12) Setup: godot + xvfb fine but the setup's import was cut off (background subshell); re-ran `--import` as a tracked background job (fast). GL shots (SHOT_GL=1, 2 at once ~5 min); headless bots fine. Asset sites not rechecked (no downloads). Shader edits are not compiled by headless bots: check GL shot logs for SHADER ERROR.
@@ -287,6 +289,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (11:15 11-12) **HERO'S BOOT TOES SCUFFED MATTE LEATHER (hero.gdshader `boot_scuff`).** Details in Next 0.
 - (09:15 11-12) **HERO'S SHIN BINDINGS WOUND TIGHT, BOOTS SHOW UNDER THEM (bot `walk` gate on slimmed verts).** Details in Next 0.
 - (10:00 11-11) **KNIGHT SWEEP RE-SOLVED: LEFT ARM 0.991 -> 0.923, BOT-GATED (`foefold` sweep straightest <= 0.95).** Details in Next 0.
 - (07:00 11-11) **REACH SLIDE: THE KNIGHT KEEPS EVERY GLAIVE LINE AGAINST ITS REAL SHOULDERS (opt-in; all knight bots PASS with it).** Details in Next 0.
@@ -8392,6 +8395,19 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (11:15 11-12) **BOOT-TOE GLOSS SCUFFED TO MATTE LEATHER — DONE (look change).** NEXT (5) of 10:00.
+   `hero.gdshader`: uniform `boot_scuff`; `scuff = v_boot * boot_scuff * region` (the lacquered plates inside the boot
+   mask); albedo -> mix(o*0.8, hide*(0.3+0.12*mott), 0.55) * (1 - 0.18*rub) with rub a fine (240x640 UV) grain;
+   roughness -> 0.66 + 0.12*mott + 0.08*rub. `player.gd` sets it with boot_leather (BOOTGLOSS_OLD=1 = before). A first
+   try at rub*0.5 toward hide*0.3 at 90x260 left pale pink-grey blotches on the vamp: finer grain + darker blend fixed it.
+   Frames `jump bt_{old,new2} 20 9.0 fixfps nojump fromrest clear nograss stoplens anklelens ankletight spotturn
+   turnat=0.3 jt=0.40` and `jump bt_side 20 9.0 fixfps nojump fromrest clear stoplens spotturn turnat=0.3 sidelens prof
+   bodytight jt=0.55` looked at. Still wrong: the trouser hem bunching over the boot is baggy; boots hidden in grass at
+   body lens. Bots PASS: walk heroturn jump combat villager knight footik stepup hands climb glide neighbour pedlar.
+   Gallery: 2 (fail). Grade turn-in-place: good- (motion unchanged).
+   NEXT: (1) `bodytight` on the sun side (09:00 NEXT 2); (2) heel-side lens; (3) knight sweep side lens; (4) laid
+   lane's uniform band; (5) the small pale spot at the near heel's back and the beige patch above the near binding's
+   top (10:00 still-wrong). BOSS/ANIMATION order unchanged; audio after.
 0. (10:00 11-12) **BOOTS AS STRAP LEATHER; NO GREY GREAVE AT THE ANKLE — DONE (game change, gated).** NEXT (1) of 09:15.
    Measured first (`game/tools/ankle_probe.gd`: base-mesh verts round the left ankle by height, dominant bone, reach):
    foot-skinned verts 0-4 cm above the ankle reached 8-10 cm forward of the shin axis (slimmed shin 5-6 cm). New
