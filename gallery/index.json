@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-2200-kneefold-before-after.jpg",
-  "time": "2026-11-08T22:20:00Z",
-  "caption": "Jump attack fold, before (left) and after (right): the robe's front panel used to hang as a flat red board hiding the tucked legs; it now lies along the thigh and folds down at the knee so the tucked boot shows. Still GL-only, rear 3/4, crease at the knee reads a little sharp.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-2200-kneefold-tuck.jpg",
-  "time": "2026-11-08T22:21:00Z",
-  "caption": "Jump attack at jt 0.48 with the knee fold: panel over the thigh, hem hanging plumb from the knee, legs read as tucked; figure small and backlit in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-2320-kneeroll-before-after.jpg",
   "time": "2026-11-08T23:20:00Z",
   "caption": "Jump attack fold, hard crease (left) vs the new rolled knee fold (right): the robe panel now curves over the knee instead of turning a square corner. Still GL-only, rear 3/4 and backlit.",
@@ -891,6 +879,12 @@
   "file": "20261112-1651-leftturn.jpg",
   "time": "2026-11-12T16:51:49Z",
   "caption": "Hero mid-way through a turn on the spot to the left, weight now slid over the planted foot; the legs still read crossed from this lens and the face is a flat flesh-coloured plane.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1718-turngather.jpg",
+  "time": "2026-11-12T17:18:46Z",
+  "caption": "Turn on the spot to the left, 0.1 s in: the forward guard boot now draws in toward the body before the hero pivots on it; the knees still hide under the robe and the light is flat ochre, not Wukong-grade.",
   "verdict": "fail"
  }
 ]

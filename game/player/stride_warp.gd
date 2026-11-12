@@ -84,7 +84,20 @@ const PIVOT_OVER_MAX := 0.5      # stance widths: the most the pelvis slides tow
 const PIVOT_OVER_RATE := 3.0     # stance widths per second the slide moves at
 var _hips_over := 0.0            # skeleton units the pelvis is slid toward the planted foot now
 var pivot_hips_over := 0.0       # (bots) the same, this tick
-var _hips_over_pin0 := -1e9      # the hips' height over the pin when it was planted (skeleton units)
+var _hips_over_pin0 := -1e9
+## (11-12 17:00) gather: in a turn on the spot the guard's forward foot (0.4 m ahead of the hips)
+## swung round faster than the pelvis could slide over it, so the planted ankle still crossed 5 cm
+## under the body mid-spin (bot `heroturnl`). A real turn first draws the forward foot in toward the
+## body line in a short lifted step, then pivots on it. The pin is planted PIVOT_GATHER_K of the
+## fore-aft offset nearer the hips and the foot steps there over PIVOT_GATHER_T (hero only, with
+## hips_over_pin). GATHER_OLD: the before; PIVOT_GATHER=<k> tunes.
+static var GATHER_OLD := OS.has_environment("GATHER_OLD")
+static var PIVOT_GATHER_K := float(OS.get_environment("PIVOT_GATHER")) if OS.has_environment("PIVOT_GATHER") else 0.35
+const PIVOT_GATHER_T := 0.16     # s: the gather step's length
+const PIVOT_GATHER_MIN := 0.5    # stance widths: a foot nearer the body line than this fore-aft does not gather
+var _gather_off := Vector3.ZERO  # skeleton units: from the gathered pin back to where the foot stood
+var _gather_t := 0.0
+var pivot_gather := 0.0          # (bots) skeleton units the pivot foot gathered in at the plant      # the hips' height over the pin when it was planted (skeleton units)
 var pivot_hips_short := 0.0      # (bots) skeleton units the hips stood under that this tick
 var _hips_guard := -1.0          # the guard's hips height (skeleton units, along up), sampled at rest
 var _heel_up_prev := 0.0         # last tick's pivot_heel_up (world m)
@@ -457,6 +470,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_heel_up_prev = 0.0
 		_hips_over_pin0 = -1e9
 		pivot_hips_short = 0.0
+		_gather_off = Vector3.ZERO
+		_gather_t = 0.0
 		if stance_idle:
 			for i in 2:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
@@ -490,6 +505,21 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_heel_w = 0.0
 		if tb0 >= 0 and ball_pivot and not BALLPIVOT_OLD:
 			_ball_pin = pivot_pin + xf.basis * (skel.get_bone_global_pose(tb0).origin - f0)
+		pivot_gather = 0.0
+		var hbg := skel.find_bone("mixamorig_Hips")
+		if hips_over_pin and _stance_ok and not GATHER_OLD and PIVOT_GATHER_K > 0.0 and hbg >= 0:
+			var wg := absf((_stance[0] as Vector3).x - (_stance[1] as Vector3).x)
+			var fa := (f0 - skel.get_bone_global_pose(hbg).origin).dot(fwd)
+			# only the forward foot gathers: the rear foot pivoting (a turn toward the rear guard foot)
+			# already stands near the body line, and drawing it in skated the stepping boot (0.02 -> 0.07 m)
+			if fa > PIVOT_GATHER_MIN * wg:
+				var gl := -fwd * fa * PIVOT_GATHER_K
+				_gather_off = -gl
+				_gather_t = 0.0
+				pivot_gather = gl.length()
+				pivot_pin = (pivot_pin as Vector3) + xf.basis * gl
+				if _ball_pin != null:
+					_ball_pin = (_ball_pin as Vector3) + xf.basis * gl
 	# the settle's second step (11-06): once the stepping boot is down in its stance spot, the
 	# pivot foot itself steps into its own, so the turn ends square in the idle stance and the
 	# release hands both feet to the clip where it stands them (they slid up to ~0.4 m before)
@@ -565,7 +595,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					of_clip0 += Vector3(-sgo * _hips_over, 0.0, 0.0)
 	# ball pivot (11-12): the ankle target orbits the planted ball as the sole turns with the body,
 	# and the heel lift rotates foot and ankle up about the ball
-	var pin_l: Vector3 = inv * (pivot_pin as Vector3)
+	# the gather step: the foot travels from where it stood to the gathered pin, lifted off the turf
+	var gather_now := Vector3.ZERO
+	if _gather_off.length_squared() > 0.0 and not pivot_settle:
+		_gather_t += delta
+		var ug := clampf(_gather_t / PIVOT_GATHER_T, 0.0, 1.0)
+		var eg := ug * ug * (3.0 - 2.0 * ug)
+		gather_now = _gather_off * (1.0 - eg) + up * settle_lift(ug) * minf(_gather_off.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+		if ug >= 1.0:
+			_gather_off = Vector3.ZERO
+	var pin_l: Vector3 = inv * (pivot_pin as Vector3) + gather_now
 	var heel_q := Basis()
 	pivot_heel_up = 0.0
 	heel_reach_deg = 0.0
@@ -577,6 +616,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if _ball_pin != null:
 			pin_l = inv * (_ball_pin as Vector3) - toe_off
 			pivot_pin = xf * pin_l
+			pin_l += gather_now
 		var hw_want := 0.0 if pivot_settle else pivot
 		_heel_w = move_toward(_heel_w, hw_want, delta * (BALL_HEEL_RISE if hw_want > _heel_w else BALL_HEEL_FALL))
 		var ball_l := pin_l + toe_off
