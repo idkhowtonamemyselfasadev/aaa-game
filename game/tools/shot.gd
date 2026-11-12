@@ -2544,6 +2544,25 @@ func _ready() -> void:
 				sside = pf if pf.dot(-sl_light) >= 0.0 else -pf
 				if "flip" in args:
 					sside = -sside
+			if "sunside" in args:
+				# (11-12 12:00) sunside: a square profile sees the flank the sun only grazes, and
+				# the front in self-shade (bodytight 09:00). Swing the lens from the profile toward
+				# the hero's FRONT by sunswing=<deg> (35) so it is a front 3/4 on the sun's flank
+				# (swinging toward the sun itself gave a rear 3/4 whenever the sun stood behind
+				# the hero). Pick an hour with the sun ahead of the hero for a lit front: the
+				# print gives the sun's angle off the lens (under ~90 = the visible side is lit).
+				var sw := deg_to_rad(35.0)
+				for a in args:
+					if str(a).begins_with("sunswing="):
+						sw = deg_to_rad(float(str(a).substr(9)))
+				var hf: Vector3 = player.body.global_basis.z
+				hf.y = 0.0
+				if hf.length() > 0.01:
+					hf = hf.normalized()
+					var ang := sside.signed_angle_to(hf, Vector3.UP)
+					sside = sside.rotated(Vector3.UP, clampf(ang, -sw, sw)).normalized()
+				var sun_h := Vector3(-sl_light.x, 0.0, -sl_light.z).normalized()
+				print("SHOT sunside lens off the sun's azimuth by %.1f deg, off the hero's facing by %.1f deg" % [rad_to_deg(sun_h.angle_to(sside)), rad_to_deg(hf.angle_to(sside))])
 			var sc := back + sside * 3.4
 			sc.y = maxf(back.y + 1.0, terrain.height_at(sc.x, sc.z) + 0.9)
 			var scam := get_viewport().get_camera_3d()

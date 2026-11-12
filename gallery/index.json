@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261108-1809-guardrun-profile.jpg",
-  "time": "2026-11-08T18:09:00Z",
-  "caption": "Guard run with the staff drawn, square side-on (new sidelens, dog hidden): forward lean, back knee high, staff carried low and forward in both fists; still a backlit silhouette in GL, no Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261108-1809-guardrun-sunside.jpg",
-  "time": "2026-11-08T18:09:00Z",
-  "caption": "Same stride from the sun side: the capelet and hood hide the chest and face, so the squared chest reads as a back view; legs and staff read, the dog crowds the legs.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-1940-front-guard-run.jpg",
   "time": "2026-11-08T19:40:00Z",
   "caption": "Guard run with the staff drawn, seen from ahead (new frontlens, dog hidden): chest square, staff carried diagonally across the body with both fists together on its upper third, hat and masked face toward the camera; backlit at 10:00 so the front is in shade, GL renderer.",
@@ -897,6 +885,18 @@
   "file": "20261112-1115-hero-side.jpg",
   "time": "2026-11-12T11:15:00Z",
   "caption": "The hero side-on in the meadow by the cottage at 09:00; the boots are lost in the grass at this distance, and the figure and lighting still read as a GL-compatibility render, not Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1209-sunside-turn.jpg",
+  "time": "2026-11-12T12:09:50Z",
+  "caption": "New sunside lens: the hero's turn on the spot as a front 3/4 on the sun's flank at 09:00; feet, staff and face read, but the front still sits half in shade (the sun is behind him here) and the face is a flat pink mask.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1209-profile-turn.jpg",
+  "time": "2026-11-12T12:09:50Z",
+  "caption": "Same moment through the old square profile lens for comparison: the hero's front is in self-shade and the legs hide behind the tabard.",
   "verdict": "fail"
  }
 ]
