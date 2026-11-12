@@ -4393,6 +4393,7 @@ func _step_up_test() -> void:
 	var hold_max := 0.0
 	vis_jump = 0.0
 	last_vis = p.body.global_position.y
+	var dfloat_max := 0.0              # both boots off their ground at once while on the floor (m)
 	var holds := 0                     # each step down: the hips held up and let down once
 	var held := false
 	for i in 400:
@@ -4400,6 +4401,19 @@ func _step_up_test() -> void:
 			break                      # back on the flat below the stair
 		p.bot_input = Vector2(-fwd.x, -fwd.z) * 0.6
 		await get_tree().physics_frame
+		await sk.skeleton_updated
+		# (11-12 21:00) the lower boot stands on its ground: neither boot hangs over the treads
+		var dpts: Array = toe_pts.call()
+		var lowest := INF
+		for f in 2:
+			var cl := INF
+			for pt in (dpts[f] as Array):
+				cl = minf(cl, (pt as Vector3).y - float(base_toe[f]) - float(under.call(pt)))
+			lowest = minf(lowest, cl)
+		if p.is_on_floor():
+			dfloat_max = maxf(dfloat_max, lowest)
+			if OS.get_environment("STEP_DEBUG") != "":
+				print("STEPDFLOAT i %d float %.3f body %.3f root %.3f" % [i, lowest, p.body.position.y, p.global_position.y])
 		var v: float = p.body.global_position.y
 		if OS.get_environment("STEP_DEBUG") != "" and absf(v - last_vis) > 0.01:
 			print("STEPDBG down i %d root %.3f body %.3f vis %.3f dv %.3f floor %s down %d" % [i, p.global_position.y, p.body.position.y, v, v - last_vis, p.is_on_floor(), StepUp.steps_down])
@@ -4416,6 +4430,7 @@ func _step_up_test() -> void:
 	var descended := top_y - p.global_position.y
 	var downs: int = holds
 	print("BOT stepup: walked down it: descended %.3f m in %d eased steps (%d set down off an edge, last slid %.3f m), %d ticks off the floor, %d landings, hips held %.3f m above the root at most, largest visible drop in one tick %.3f m, body offset now %.3f" % [descended, downs, StepUp.steps_down - down0, StepUp.last_down_hz, air_ticks, p.landings - land0, hold_max, vis_jump, p.body.position.y])
+	print("BOT stepup: walking down, both boots stood off their ground by up to %.3f m at once" % dfloat_max)
 	if descended < RISE * 3 - 0.06 or StepUp.steps_down - down0 < 1:
 		return _combat_done(false, "the hero did not step down the stair (descended %.2f m, %d set down)" % [descended, StepUp.steps_down - down0])
 	if air_ticks > 2 or p.landings != land0:
@@ -4424,6 +4439,66 @@ func _step_up_test() -> void:
 		return _combat_done(false, "the step down drops the visible body %.3f m in one tick" % vis_jump)
 	if hold_max < 0.05 or absf(p.body.position.y) > 0.005:
 		return _combat_done(false, "the step down is not eased (hold %.3f, left at %.3f)" % [hold_max, p.body.position.y])
+	# (11-12 21:00) and up again at a WALK (the climb above runs: input 0.6 is the jog blend). A walk's
+	# swing knee folds ~60-80 deg; the run's heel kick (~145) is the clip's own and hides a stair fault
+	p.velocity = Vector3.ZERO
+	await _ticks(20)
+	var wy0 := p.global_position.y
+	var wsteps0: int = p.steps_up
+	var wfold := [0.0, 0.0]
+	var wshin := 0.0
+	var wdig := 0.0
+	var wdig_ticks := 0
+	var wjump := 0.0
+	var wtoe_scuff := 0.0                # the swing boot's toe nearest a riser's top edge while lifted
+	last_vis = p.body.global_position.y
+	var wstart := p.global_position
+	var wblend := 0.0
+	var walk_in := float(OS.get_environment("STEPWALK_IN")) if OS.get_environment("STEPWALK_IN") != "" else 0.25
+	for i in 600:
+		if (p.global_position - start).dot(fwd) > 1.2 + TREAD * 3 + 0.7:
+			break
+		p.bot_input = Vector2(fwd.x, fwd.z) * walk_in
+		await get_tree().physics_frame
+		await sk.skeleton_updated
+		wblend = maxf(wblend, p._blend)
+		var pts: Array = toe_pts.call()
+		var dug := false
+		for f in 2:
+			for pt in (pts[f] as Array):
+				var gyv: float = under.call(pt)
+				if gyv > p.global_position.y + 0.1:
+					var dig: float = gyv - ((pt as Vector3).y - float(base_toe[f]))
+					if dig > 0.01:
+						dug = true
+						if OS.get_environment("STEP_DEBUG") != "":
+							print("STEPWDIG i %d foot %d dig %.3f fdip %.3f bodyy %.3f off %.3f drop %.3f anim %.3f sole %.3f lift %.3f ramp %.2f rise %.3f toe_lift %.3f pt_y %.3f tread %.3f root %.3f ahead %.3f" % [i, f, dig, p.stride_warp.floor_dip, p.body.position.y, p.stride_warp.ground_off[f], p.stride_warp.ground_drop, p.stride_warp.ground_anim[f], p.stride_warp.ground_sole[f], p.stride_warp.swing_lift[f], p.stride_warp.swing_ramp[f], p.stride_warp.swing_ahead_rise[f], p.stride_warp.toe_lift[f], (pt as Vector3).y, gyv, p.global_position.y, ((pt as Vector3) - p.global_position).dot(fwd)])
+					wdig = maxf(wdig, dig)
+			var hp: Vector3 = sk.global_transform * sk.get_bone_global_pose(uls[f]).origin
+			var kp: Vector3 = sk.global_transform * sk.get_bone_global_pose(lgs[f]).origin
+			var ap: Vector3 = sk.global_transform * sk.get_bone_global_pose(fts[f]).origin
+			var fold := rad_to_deg((kp - hp).angle_to(ap - kp))
+			var shin := ap - kp
+			var shin_ang := rad_to_deg(atan2(-shin.dot(fwd), -shin.y))
+			wfold[f] = maxf(wfold[f], fold)
+			wshin = maxf(wshin, shin_ang)
+			if OS.get_environment("STEP_DEBUG") != "":
+				print("STEPWALK i %d foot %d lift %.3f fold %.1f shin_back %.1f ankle_ahead %.3f ankle_y %.3f hips_y %.3f root %.3f body %.3f blend %.2f" % [i, f, p.stride_warp.swing_lift[f], fold, shin_ang, (ap - hp).dot(fwd), ap.y, hp.y, p.global_position.y, p.body.position.y, p._blend])
+		if dug:
+			wdig_ticks += 1
+		var v: float = p.body.global_position.y
+		wjump = maxf(wjump, absf(v - last_vis))
+		last_vis = v
+	p.bot_input = Vector2.ZERO
+	await _ticks(20)
+	var wclimb := p.global_position.y - wy0
+	print("BOT stepup: walked up it at a WALK (input %.2f, blend %.2f): climbed %.3f m in %d steps, knees folded L %.1f R %.1f deg at most, a shin up to %.1f deg back from hanging, toes into the risers %.3f m (%d ticks over 1 cm), largest visible rise in one tick %.3f m" % [walk_in, wblend, wclimb, p.steps_up - wsteps0, wfold[0], wfold[1], wshin, wdig, wdig_ticks, wjump])
+	if wclimb < RISE * 3 - 0.05:
+		return _combat_done(false, "the hero did not walk up the stair at a walk (climbed %.2f m)" % wclimb)
+	# (11-12 21:00) at a walk the planted boot sank 0.124 m into its tread on the tick the root stepped
+	# up (the foot IK measured from the root, not the visibly let-down body: STEPFLOOR_OLD=1)
+	if wdig > 0.05 or wdig_ticks > 2:
+		return _combat_done(false, "walking up, a boot runs %.3f m into the stair (%d ticks)" % [wdig, wdig_ticks])
 	for b in built:
 		b.queue_free()
 	built.clear()

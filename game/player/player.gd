@@ -1253,6 +1253,8 @@ func _step_climb(delta: float) -> void:
 		step_rise = lift
 	_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, 1.0)
 	body.position.y = _step_dip
+	if stride_warp != null:
+		stride_warp.floor_dip = _step_dip
 	cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
 
 ## The lift and the slide's own ride over a lip's corner (the capsule's round bottom) both
@@ -1267,6 +1269,8 @@ func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
 	if excess != 0.0:
 		_step_dip = clampf(_step_dip - excess, -STEP_H - 0.05, STEP_H + 0.05)
 		body.position.y = _step_dip
+		if stride_warp != null:
+			stride_warp.floor_dip = _step_dip
 		cam_pivot.position.y = _cam_base_y + _step_dip * 0.8
 
 # --- locomotion weight: the body leans into what the feet are doing ---

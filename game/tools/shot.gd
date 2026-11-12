@@ -3455,13 +3455,17 @@ func _ready() -> void:
 		var gf: GrassField = world.get_node("Grass")
 		gf.fill_around(get_viewport().get_camera_3d().global_position)
 		print("SHOT grass: sward %d chunks %d clumps" % [gf.sward_chunks(), gf.sward_clumps()])
+	var walk_in := 0.5
+	for a in args:
+		if a.begins_with("walkin="):
+			walk_in = float(a.substr(7))       # (11-12 21:00) 0.25 = a walk up the stair
 	for i in frames:
 		if player.has_meta("shot_walk"):
-			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * 0.5
+			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * walk_in
 		await get_tree().process_frame
 		if player.has_meta("shot_stair") and player.stride_warp != null:
 			var sw: StrideWarp = player.stride_warp
-			print("SHOT stair f %d root %.3f swing lift L %.3f R %.3f rise ahead L %.3f R %.3f" % [i, player.global_position.y, sw.swing_lift[0], sw.swing_lift[1], sw.swing_ahead_rise[0], sw.swing_ahead_rise[1]])
+			print("SHOT stair f %d root %.3f dip %.3f swing lift L %.3f R %.3f rise ahead L %.3f R %.3f sole L %.3f R %.3f" % [i, player.global_position.y, player.body.position.y, sw.swing_lift[0], sw.swing_lift[1], sw.swing_ahead_rise[0], sw.swing_ahead_rise[1], sw.ground_sole[0], sw.ground_sole[1]])
 	if "fq" in args:
 		var nimp := 0
 		for ch in world.knight.get_parent().get_children():

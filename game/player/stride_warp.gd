@@ -124,6 +124,7 @@ var pivot_heel_up := 0.0         # (bots) world m the heel lift raised the ankle
 ## clip's plane) to put its foot on its own ground, and a planted sole is tilted onto the slope.
 var ground_w := 0.0              # 0..1 weight (owner: grounded and on its feet)
 var ground_body: Node3D = null   # the owner: its origin is the floor the clip stands on; excluded from rays
+var floor_dip := 0.0             # world m the owner's visible body sits off its root (a step's eased dip)
 var ground_scale := 1.0          # the owner's body size (a growing boss): limits and snaps scale with it
 var ground_off := [0.0, 0.0]     # world m each foot's ground sits above (+) or below the floor, eased
 var ground_n := [Vector3.UP, Vector3.UP]   # each foot's ground normal, eased
@@ -998,7 +999,10 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	var xf := skel.global_transform
 	var inv := xf.affine_inverse()
 	var sc: float = ground_scale
-	var floor_y: float = ground_body.global_position.y
+	# (11-12 21:00) the clip's floor is the VISIBLE body's: after a step up the body is let down
+	# below the root and eased up (player._step_dip), and a planted boot measured from the root
+	# sank into its tread by the whole dip for a tick (12 cm at a walk). STEPFLOOR_OLD=1 = before
+	var floor_y: float = ground_body.global_position.y + _floor_dip_now()
 	var sides := ["Left", "Right"]
 	var ul := [0, 0]
 	var lg := [0, 0]
@@ -1143,3 +1147,12 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		_leg_to(skel, ul[i], lg[i], ft[i], t, keep, fwd)
 	for i in 2:
 		ground_sole[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y - floor_y - float(ground_off[i])
+
+
+static var _floor_mode := OS.get_environment("STEPFLOOR")
+func _floor_dip_now() -> float:
+	if OS.get_environment("STEPFLOOR_OLD") != "" or _floor_mode == "off":
+		return 0.0
+	if _floor_mode == "up":
+		return minf(floor_dip, 0.0)
+	return floor_dip

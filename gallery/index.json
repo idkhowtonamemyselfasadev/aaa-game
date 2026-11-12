@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-0400-jumpatk-land06.jpg",
-  "time": "2026-11-09T04:00:00Z",
-  "caption": "Jump attack struck early now holds into the fall and lands through the knees: hero folded over the staff, tip driven into the turf, 0.06 s after touch-down; lens on the shadow side, figure dark, GL renderer.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0400-jumpatk-land20.jpg",
-  "time": "2026-11-09T04:00:00Z",
-  "caption": "0.20 s after the jump-attack landing: hips still low and rising, staff easing back to guard across the body; backlit, face hidden under the hat, GL only.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0419-jf06.jpg",
   "time": "2026-11-09T04:19:05Z",
   "caption": "Jump attack 0.06 s after touch-down: hips sunk, chest folded, hat bowed, staff tip driven at the turf in front; still wrong: the hero lands in the cottage's shadow with the sun behind, figure too dark.",
@@ -897,6 +885,18 @@
   "file": "20261112-2020-turn-gather.jpg",
   "time": "2026-11-12T20:20:00Z",
   "caption": "Mid-turn on the spot at 9:00 with the full gather step: feet under the body and the hero no longer drifts off; the pose still reads stiff and knock-kneed, flat light on the legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-2125-stairwalk-pair.jpg",
+  "time": "2026-11-12T21:25:26Z",
+  "caption": "Walking up the stair, second step: before (left) the lead boot sank into the tread as the body stepped up, now (right) it stands on it; still plain box steps and a low fixed lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-2125-stairwalk.jpg",
+  "time": "2026-11-12T21:25:26Z",
+  "caption": "The hero steps up at a walk, near boot on the tread top; the stair is untextured-looking masonry boxes and the lens loses him by the top.",
   "verdict": "fail"
  }
 ]
