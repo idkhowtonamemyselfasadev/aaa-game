@@ -886,5 +886,17 @@
   "time": "2026-11-12T19:00:00Z",
   "caption": "Same stair frame before (left: crouched to the trailing tread) and after (right: standing taller over the lead foot); the lens is still poor for judging the knees.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261112-2020-turn-gather-cmp.jpg",
+  "time": "2026-11-12T20:20:00Z",
+  "caption": "Left turn on the spot, before/after at 0.40 s and 0.55 s (old, new, old, new): the forward foot is now drawn in under the hips before the spin, so the hero stays upright instead of leaning hard over a far-off pivot; knees still close and hidden by the robe.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-2020-turn-gather.jpg",
+  "time": "2026-11-12T20:20:00Z",
+  "caption": "Mid-turn on the spot at 9:00 with the full gather step: feet under the body and the hero no longer drifts off; the pose still reads stiff and knock-kneed, flat light on the legs.",
+  "verdict": "fail"
  }
 ]

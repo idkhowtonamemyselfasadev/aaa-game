@@ -785,7 +785,7 @@ func _lean_test() -> void:
 	var facing := p.body.global_basis.z.dot(Vector3(to.x, 0, to.z).normalized())
 	await _ticks(60)
 	p._set_lock(null)
-	print("BOT lean: turn on the spot shuffle %.2f, stride blend %.2f, moved %.2f m, facing %.2f, after %.2f" % [shuffle, blend, moved, facing, p.turn_shuffle])
+	print("BOT lean: turn on the spot shuffle %.2f, stride blend %.2f, moved %.2f m, facing %.2f, after %.2f (orbit %.2f m, of it uncross %.2f m)" % [shuffle, blend, moved, facing, p.turn_shuffle, p.pivot_orbit, p.pivot_uncross])
 	if shuffle < 0.5 or blend < 0.3:
 		return _combat_done(false, "turning on the spot does not step the feet round (shuffle %.2f blend %.2f)" % [shuffle, blend])
 	if moved > 0.26:

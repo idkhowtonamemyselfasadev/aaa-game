@@ -1336,7 +1336,7 @@ func _step_capped(want: float, delta: float) -> float:
 					pivot_orbit += push.length()
 					pivot_uncross += push.length()
 	return body.rotation.y + d
-const PIVOT_KEEP := 0.07               # m: the planted ball stays at least this far on its own side
+static var PIVOT_KEEP := float(OS.get_environment("PIVOT_KEEP")) if OS.has_environment("PIVOT_KEEP") else 0.03   # (11-12 20:00, was 0.07) m: the planted ball stays at least this far on its own side
 static var PIVOT_CROSS_OLD := OS.has_environment("PIVOT_CROSS_OLD")
 var pivot_uncross := 0.0               # (bots) m the body stepped round so the planted foot does not cross
 var pivot_orbit := 0.0                 # (bots) m the body has swung round planted feet
