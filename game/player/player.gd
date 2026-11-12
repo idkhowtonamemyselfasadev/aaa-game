@@ -386,6 +386,7 @@ func _skin() -> void:
 
 ## Travelling garb over the old armour: hood + straw hat, mantle, robe panels, sash, bindings.
 var garb: HeroGarb
+const HERO_SHIN_SLIM := 0.7
 
 func _dress() -> void:
 	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -393,6 +394,9 @@ func _dress() -> void:
 		return
 	garb = HeroGarb.new()
 	garb.name = "Garb"
+	# the shin bindings wound tight over the old greaves (SHINSLIM_OLD=1: the bulky tube before)
+	garb.shin_slim = 1.0 if OS.get_environment("SHINSLIM_OLD") != "" \
+			else float(OS.get_environment("SHIN_SLIM")) if OS.get_environment("SHIN_SLIM") != "" else HERO_SHIN_SLIM
 	add_child(garb)
 	garb.build(skel, body)
 

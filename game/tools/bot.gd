@@ -468,6 +468,11 @@ func _finish(ok: bool, why: String) -> void:
 				or hat_box.size.x < 0.55 or hat_box.end.y < head.y + 0.1):
 			ok = false
 			why = "hero garb missing, hat off the head or robe panels not swinging"
+		# the shin bindings are wound tight: the base body's shins pulled in under them
+		print("BOT garb: shin bindings pulled %d base-body verts in (slim %.2f)" % [garb.slimmed, garb.shin_slim])
+		if ok and _route.size() > 0 and garb.shin_slim < 1.0 and garb.slimmed < 100:
+			ok = false
+			why = "hero shin bindings did not pull the base body's shins in"
 		# the face cloth hangs in front of the face, below the hat brim
 		var veil := garb.veil.global_transform * garb.veil.get_aabb()
 		var fwd := _player.body.global_transform.basis.z

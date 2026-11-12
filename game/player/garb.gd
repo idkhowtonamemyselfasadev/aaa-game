@@ -73,6 +73,11 @@ var skin_col := Color(0.33, 0.27, 0.24)
 var fill_gain := 1.0
 ## 0..1: how far the wraps' dark/light tones draw together (villagers: calm, even wool bands)
 var wrap_calm := 0.0
+## How tight the shin bindings pull the base body's shin in (1 = untouched; see _slim_leg).
+## Set by the owner before build(): the hero 0.7, villagers keep their legs.
+var shin_slim := 1.0
+const HERO_FOOT_WRAP_END := 0.5
+var slimmed := 0   # base-body verts the shin bindings pulled in, for the bots
 ## a darned kirtle, not a Hollow's rags: no moth holes or burnt edges in the panels and gores
 ## (their cut-outs showed the legs as pale grey patches ringed in soot)
 var mended := false
@@ -254,8 +259,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	_knotted_sash(hips)
 	for side in ["Left", "Right"]:
 		tint = _calm(palette.get("wraps", SHIN_LINEN))
+		if shin_slim < 1.0:
+			slimmed += _slim_leg("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, shin_slim)
 		_wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, 0.06, 0.93, 0.01, 8.0)
-		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
+		# the hero's tight puttee stops at the instep: run to the ball of the foot it stood round
+		# the boot as a wide cuff, a baggy hem over the slimmer shin (ankle lens, 13:00 11-12)
+		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0,
+				0.92 if shin_slim >= 1.0 else HERO_FOOT_WRAP_END, 0.008, 4.0)
 		# villagers' forearms in their sleeve wool and a mitt over the hand: in the pale shin-wrap
 		# grey the forearm wraps and the base body's gloves read as grey plate gauntlets
 		tint = palette.get("sleeves", _calm(palette.get("wraps", ARM_LINEN)))

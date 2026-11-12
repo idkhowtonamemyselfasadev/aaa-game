@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261108-1242-jumpsnatch.jpg",
-  "time": "2026-11-08T12:42:36Z",
-  "caption": "Jump attack mid-snatch, side-on: the staff swings off the back across the shoulders with the right fist already on it; backlit, the figure reads as a silhouette and the left hand is still rising from the hip.",
-  "verdict": "fail"
- },
- {
   "file": "20261108-1420-jumpattack-arch.jpg",
   "time": "2026-11-08T14:20:00Z",
   "caption": "Jump attack at the top of the arch from a slung start: the staff is drawn ~39 deg back behind the hat with the right fist on the shaft; still backlit to a silhouette, and the cottage behind reads plain.",
@@ -885,6 +879,18 @@
   "file": "20261112-0900-turn-side-055.jpg",
   "time": "2026-11-12T09:00:00Z",
   "caption": "Turn on the spot at jt 0.55, side-on full body: with the hips hold the whole figure stands a few px taller than the old build (hat brim higher); the knees are still hidden under robe and tabard and the GL ground reads flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0916-shin-ankle.jpg",
+  "time": "2026-11-12T09:16:08Z",
+  "caption": "Hero's boots in a turn on the spot: the shins are now bound tight and the puttee stops at the instep so the leather boots show; still a grey greave plate peeks at the ankle and the back ankle band shows a hollow rim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0916-shin-side.jpg",
+  "time": "2026-11-12T09:16:08Z",
+  "caption": "Full-body side view mid-turn with the slimmer shin bindings; the legs no longer read as a bulky tube, but the hero's front sits in self-shade from this side.",
   "verdict": "fail"
  }
 ]

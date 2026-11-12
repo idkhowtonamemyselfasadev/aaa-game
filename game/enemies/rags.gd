@@ -246,6 +246,79 @@ static func pleat_count(mseed: float) -> float:
 static func pleat_phase(u: float, v: float, n: float, mseed: float) -> float:
 	return u * n + 0.22 * sin(v * 2.3 + mseed * 1.7) + 0.12 * sin(u * 7.0 + v * 1.1 + mseed)
 
+## Binds the base body's shins in tight: every skinned vertex carried by `bone` (the shin) between
+## t 0..1.1 of bone -> `tip` is pulled toward the bone axis by `k` (1 = untouched), faded in below
+## the knee and by its skin weight on the shin, so the knee and the foot keep their shape. Run it
+## before `_wrap()`, which then fits a slimmer binding over the slimmer leg (a real puttee is
+## wound tight and gathers the trouser in; fitted over the old greave and baggy trouser hem the
+## hero's read as a 22 cm-deep tube side-on). Each mesh gets its own copy; returns verts moved.
+const _KEEP_FLAGS := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS \
+		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT) \
+		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT) \
+		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM2_SHIFT) \
+		| (Mesh.ARRAY_FORMAT_CUSTOM_MASK << Mesh.ARRAY_FORMAT_CUSTOM3_SHIFT)
+func _slim_leg(bone: String, tip: String, k: float) -> int:
+	var bi := _skel.find_bone(bone)
+	var a := _rest_in_body(bi).origin
+	var axis := _rest_in_body(_skel.find_bone(tip)).origin - a
+	var d := axis.normalized()
+	var moved := 0
+	for mi in _body.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.skin == null or not (m.mesh is ArrayMesh):
+			continue
+		var bind := -1
+		for j in m.skin.get_bind_count():
+			var bb := m.skin.get_bind_bone(j)
+			if bb < 0:
+				bb = _skel.find_bone(m.skin.get_bind_name(j))
+			if bb == bi:
+				bind = j
+		if bind < 0:
+			continue
+		var to_body := _rest_in_body(bi) * m.skin.get_bind_pose(bind)
+		var from_body := to_body.affine_inverse()
+		var src := m.mesh as ArrayMesh
+		var dst := ArrayMesh.new()
+		dst.blend_shape_mode = src.blend_shape_mode
+		for bsi in src.get_blend_shape_count():
+			dst.add_blend_shape(src.get_blend_shape_name(bsi))
+		var hit := 0
+		for s in src.get_surface_count():
+			var arr := src.surface_get_arrays(s)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			var wts: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+			if not verts.is_empty() and not bones.is_empty():
+				var per := bones.size() / verts.size()
+				for v in verts.size():
+					var w := 0.0
+					for j in per:
+						if bones[v * per + j] == bind:
+							w += wts[v * per + j]
+					if w <= 0.0:
+						continue
+					var p := to_body * verts[v] - a
+					var along := p.dot(d)
+					var t := along / axis.length()
+					var band := smoothstep(0.0, 0.22, t) * (1.0 - smoothstep(1.0, 1.12, t))
+					var f := lerpf(1.0, k, band * smoothstep(0.0, 0.6, w))
+					if f >= 0.999:
+						continue
+					var q := p - d * along
+					verts[v] = from_body * (a + d * along + q * f)
+					hit += 1
+				arr[Mesh.ARRAY_VERTEX] = verts
+			dst.add_surface_from_arrays(src.surface_get_primitive_type(s), arr,
+					src.surface_get_blend_shape_arrays(s), {},
+					src.surface_get_format(s) & _KEEP_FLAGS)
+			dst.surface_set_material(s, src.surface_get_material(s))
+			dst.surface_set_name(s, src.surface_get_name(s))
+		if hit > 0:
+			m.mesh = dst
+			moved += hit
+	return moved
+
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its
 ## radius fitted per height and angle to the skinned armour underneath so nothing pokes through.
 func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float) -> void:
@@ -313,6 +386,14 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 					m = maxf(m, rad[clampi(ih + o, 0, NH - 1) * NA + ia] * 0.94)
 				out[ih * NA + ia] = maxf(m, floor_r)
 		rad = out
+	if OS.get_environment("WRAP_DBG") != "" and bone.contains("Leg") and not bone.contains("Up"):
+		var line := "WRAP %s len %.3f floor %.3f |" % [bone, axis.length(), floor_r]
+		for ih in NH:
+			var f := rad[ih * NA]          # front (body forward)
+			var bk := rad[ih * NA + NA / 2]  # back (calf)
+			var sd := rad[ih * NA + NA / 4]
+			line += " %.2f:%.3f/%.3f/%.3f" % [lerpf(t0, t1, (ih + 0.5) / NH), f, sd, bk]
+		print(line)
 	var mesh := _grid(func(u: float, v: float) -> Vector3:
 		var ang := u * TAU
 		var fa := u * NA - 0.5

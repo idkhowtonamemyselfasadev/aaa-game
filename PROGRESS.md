@@ -1,6 +1,7 @@
 # Progress
 
 Content hours playable: 16.0
+(09:15 11-12: THE HERO'S SHINS ARE BOUND TIGHT AND THE BOOTS SHOW: new `HollowRags._slim_leg` pulls the base body's skinned shin verts toward the bone axis (k 0.7, faded in below the knee and by shin skin weight) before the shin binding is fitted, so the binding wraps a slimmer leg (mid-calf depth 22 -> 15 cm, width 23 -> 16 cm, WRAP_DBG=1 prints the fitted radii); the hero's foot puttee now ends at the instep (t 0.5) instead of standing round the boot as a wide baggy cuff. Frames old/new looked at side-on (jt 0.55) and in the ankle lens (jt 0.40): legs no longer a bulky tube, leather boots visible. SHINSLIM_OLD=1 = before, SHIN_SLIM=<k> tunes. Bots PASS: walk (new gate: >= 100 verts slimmed, now 909) heroturn jump footik stepup combat hands villager knight climb glide pedlar neighbour.)
 (09:00 11-12: A FULL-BODY SIDE LENS FOR THE TURN ON THE SPOT, AND THE HIPS-HOLD RISE JUDGED IN IT: frame-tool modifier `bodytight` for `sidelens` (fov 42, lens at hips height, aimed at 0.9 m) so the whole hero fills the frame side-on; with `prof` it squares to the hero's own facing. Frames tb40/tb55 (new) and tbo55 (HIPSHOLD_OLD) looked at: at jt 0.55 the whole figure stands a few px taller with the hips hold (hat brim and capelet higher), no dip, the step back at 0.40 reads; the knees stay under the robe and tabard, so knee bend is still judged by the bot numbers. No game change. Bots PASS: heroturn pivot jump stop. Screenshots: Vulkan/lavapipe OOMs this box, SHOT_GL=1 (opengl3) used; python3 PIL is broken here, gallery JPEGs made with ffmpeg.)
 (07:00 11-12: THE HERO NOW RISES UP ONTO THE BALL OF THE FOOT IN A TURN ON THE SPOT INSTEAD OF SQUATTING INTO IT: a new knee read-out (bot heroturn) showed the hips never dipped; the knees folded because the 5.5 cm heel rise lifted the pivot ankle under hips held at guard height (stepping knee 43 -> 56 deg, pivot 43 -> 62 deg). `StrideWarp.pivot_hips_hold` (hero 0.6): the hips rise with last tick's ankle rise on the ball (cap 6 skeleton cm), the free leg is IK'd to its clip place read before the raise so the step keeps its lift. Stepping knee peak 55.9 -> 49.4 deg, pivot knee in the spin 61.6 -> 55.5, hips rise at most 2.6 cm, smooth, back down with the heel. New heroturn gates: stepping knee <= guard + 9 deg (HIPS_HOLD=0 FAILS at +12.8), hips bob <= 4 cm. Frames at jt 0.40/0.55 from the ankle lens: the change barely reads there (robe hem a touch higher); a full-body side lens is owed. Bots PASS: heroturn foeturn pivot stop start jump footik stepup.)
 (06:00 11-12: THE STAMPED STARBURST UNDER THE HERO'S BOOTS IS GONE: the ground's matted-straw layer used the plants' full leg-parting ring (1.1 m, combed radially outward from the hero's origin), so wherever the hero stood the turf showed a pale radial starburst. New `trample_lay_k` in trample.gdshaderinc (ring in/out + strength; `trample_lay` = the old full ring for grass/flowers/ferns); terrain.gdshader uses a small weak patch (0.1-0.42 m, x0.55), rotates the comb direction by ground noise (+/-0.9 rad) and thins the matting edge in tufts. A walked trail still reads as a laid lane, now swirled instead of ruled. Frames tr_old/tr_new (nograss) and tr_oldg/tr_newg (grass) at the ankle lens, tc_new/tw_new on the seeded trail, all looked at. Bots trample heroturn jump walk sward PASS.)
@@ -284,6 +285,7 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
   matches the tool's own shell command line and kills it (exit 144).
 
 ## Done
+- (09:15 11-12) **HERO'S SHIN BINDINGS WOUND TIGHT, BOOTS SHOW UNDER THEM (bot `walk` gate on slimmed verts).** Details in Next 0.
 - (10:00 11-11) **KNIGHT SWEEP RE-SOLVED: LEFT ARM 0.991 -> 0.923, BOT-GATED (`foefold` sweep straightest <= 0.95).** Details in Next 0.
 - (07:00 11-11) **REACH SLIDE: THE KNIGHT KEEPS EVERY GLAIVE LINE AGAINST ITS REAL SHOULDERS (opt-in; all knight bots PASS with it).** Details in Next 0.
 - (02:30 11-11) **KNIGHT'S LEAP LANDING TAKES THE WEIGHT: KNEE GIVE + PITCH OVER THE BLADE (bot `knightleap` landing gate).** Details in Next 0.
@@ -8388,6 +8390,28 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
 - `rocks` 12h: oak hills over a meadow, shade readable; rocks tiny, ground bare. Fail.
 
 ## Next (milestone 1 — vertical slice, in order)
+0. (09:15 11-12) **SHIN BINDINGS WOUND TIGHT OVER A SLIMMER LEG; FOOT PUTTEE ENDS AT THE INSTEP — DONE (game change, gated).** NEXT (1) of 09:00.
+   Measured first (`WRAP_DBG=1` prints the shin binding's fitted radius per height, front/side/back): over the old
+   greave and baggy trouser the hero's binding stood 0.070/0.115/0.147 m off the shin bone at mid-calf (22 cm deep,
+   23 cm wide: twice a real calf). `rags.gd` `_slim_leg(bone, tip, k)`: every skinned vert carried by the shin bone,
+   t 0..1.12 of knee -> ankle, is pulled toward the bone axis by k, faded in over t 0..0.22 below the knee, out over
+   1.0..1.12 and by its shin skin weight (smoothstep 0..0.6) so knee and foot keep their shape; each mesh gets its own
+   copy (custom-format + 8-weight flags kept). Runs before `_wrap()`, which then fits the slimmer leg: mid-calf now
+   0.049/0.081/0.103 (15 x 16 cm). `garb.gd` `shin_slim` (1 = villagers untouched), `slimmed` count; `player.gd`
+   HERO_SHIN_SLIM 0.7 (SHINSLIM_OLD=1 = before, SHIN_SLIM=<k> tunes). With the slimmer shin the foot puttee (run to the
+   ball of the foot) stood round the boot as a wide cuff that read as a baggy trouser hem: the hero's now ends at
+   HERO_FOOT_WRAP_END 0.5 (the instep). Frames `jump {old55,new55} ... sidelens prof bodytight jt=0.55` and
+   `jump {ank40o,ank40b} 20 9.0 fixfps nojump fromrest clear nograss stoplens anklelens ankletight spotturn turnat=0.3
+   jt=0.40` looked at: the shins taper to the ankle, the leather boots with their toe caps now show, no base mesh pokes
+   through the binding. Still wrong: a grey greave plate peeks out at the near ankle between binding and boot; the
+   back foot's ankle band shows its hollow open rim from above. Bot walk: new gate slimmed >= 100 (909). Bots PASS:
+   walk heroturn jump footik stepup combat hands villager knight climb glide pedlar neighbour. Gallery: 2 (fail).
+   Grade turn-in-place: good- (look of the legs better; motion unchanged).
+   NEXT: (1) the grey greave plate at the ankle (find which surface: its verts are likely Foot-weighted, so restyle
+   it in the garb's armour pass or pull it in with a foot-bone slim limited to the ankle above the sole) and close the
+   ankle band's open rim (cap the band's top edge inward, or start the foot puttee inside the shin binding's end);
+   (2) `bodytight` on the sun side (09:00 NEXT 2); (3) heel-side lens; (4) knight sweep side lens; (5) laid lane's
+   uniform band. BOSS/ANIMATION order unchanged; audio after.
 0. (09:00 11-12) **FULL-BODY SIDE LENS FOR THE TURN ON THE SPOT — DONE (tool + judgement).** NEXT (1) of 07:00.
    `shot.gd` sidelens: `bodytight` (fov 42, cam y = hero + 0.75 m, aim + 0.9 m). Command:
    `SHOT_GL=1 tools/shots.sh "jump tb55 20 9.0 fixfps nojump fromrest clear nograss nodog spotturn turnat=0.3 sidelens prof
