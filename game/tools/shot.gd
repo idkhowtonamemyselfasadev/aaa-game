@@ -777,7 +777,9 @@ func _ready() -> void:
 		# (args: noik = the clip's flat stance, for comparison; side = from downhill)
 		var sp := Vector3(34.0, 0, -81.0)
 		for a in args:
-			if a.begins_with("at="):
+			if a == "at=knight" and world.knight != null:
+				sp = world.knight.global_position + Vector3(0.0, 0.0, 8.0)   # (11-13 06:00) the boss's open meadow
+			elif a.begins_with("at="):
 				var xz := a.substr(3).split(",")
 				sp = Vector3(float(xz[0]), 0, float(xz[1]))
 		if "step" in args and not Array(args).any(func(a): return String(a).begins_with("at=")):
