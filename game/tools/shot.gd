@@ -850,6 +850,22 @@ func _ready() -> void:
 					lx = float(a.substr(3))
 			eye = pp + f * lx + sd * 2.6 + Vector3.UP * 0.55
 			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.45]
+			if "foestair" in args:
+				# (11-13 00:00) the Hollow soldier walks up the stair at a stalk instead of the hero
+				# (stepped aside behind the lens' far side); the lens pulls back for its full height
+				var fo: HollowSoldier = world.soldier
+				fo.global_position = pp + Vector3.UP * 0.05
+				fo.velocity = Vector3.ZERO
+				fo.notice = -1.0
+				fo.give_up = 1e9
+				fo.state = HollowSoldier.IDLE
+				fo.body.rotation.y = atan2(f.x, f.z)
+				fo.set_meta("shot_walk", f * HollowSoldier.STALK_SPEED * 0.6)
+				player.remove_meta("shot_walk")
+				player.remove_meta("shot_stair")
+				player.global_position = pp - sd * 3.0 - f * 2.0 + Vector3.UP * 0.3
+				eye = pp + f * lx + sd * 3.4 + Vector3.UP * 0.9
+				SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75]
 		elif "stepdown" in args:
 			# step-down: the hero walks along the turf off the end of a 0.3 m masonry course (two
 			# courses of 0.15 m, so it steps down twice), seen side-on at hip height
@@ -3460,6 +3476,10 @@ func _ready() -> void:
 		if a.begins_with("walkin="):
 			walk_in = float(a.substr(7))       # (11-12 21:00) 0.25 = a walk up the stair
 	for i in frames:
+		if world.soldier != null and world.soldier.has_meta("shot_walk"):
+			world.soldier.bot_move = world.soldier.get_meta("shot_walk")
+			if i % 6 == 0:
+				print("SHOT foestair f %d root %.3f body off %.3f %.3f %.3f steps %d" % [i, world.soldier.global_position.y, world.soldier.body.position.x, world.soldier.body.position.y, world.soldier.body.position.z, world.soldier.steps_up])
 		if player.has_meta("shot_walk"):
 			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * walk_in
 		await get_tree().process_frame

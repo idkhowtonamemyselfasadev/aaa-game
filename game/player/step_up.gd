@@ -10,11 +10,13 @@ class_name StepUp
 const PROBE := 0.14          # look this far ahead at least (a slow walk still finds the riser)
 const CLEAR := 0.012         # a hair over the tread so the slide does not catch its edge
 const MIN_RISE := 0.03       # below this the capsule handles it alone
+const LIP_REACH := 0.1       # a rounded lip under the probe: look this much further for the tread
+static var _lip_old := OS.has_environment("STEPLIP_OLD")
 
 ## Returns the rise climbed this tick (0 when no step was taken).
 static var why := ""   # debug: why the last try did not step
 
-static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true) -> float:
+static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true, lip_retry := false) -> float:
 	if not cb.is_on_floor() or max_h <= MIN_RISE:
 		why = "r1"
 		return 0.0
@@ -43,17 +45,27 @@ static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true) 
 		why = "r6"
 		return 0.0
 	var up := xf.translated(Vector3.UP * max_h)
-	if cb.test_move(up, ahead, null, 0.001):
-		why = "r7"
-		return 0.0                     # taller than a step
-	var fwd := up.translated(ahead)
+	# (11-13 00:00) a probe that comes down on a worn, rounded lip (the Sentinel's capstone) reads it
+	# as a steep face; once more a little further in, onto the tread behind it (STEPLIP_OLD=1 = no retry).
+	# Opt-in (the foes): on the hero's square stair the retry fired and stacked the carry 0.5 m deep
 	var down := KinematicCollision3D.new()
-	if not cb.test_move(fwd, Vector3.DOWN * (max_h + 0.05), down, 0.001):
-		why = "r8"
-		return 0.0                     # nothing to stand on behind the lip
-	if down.get_normal().y < wall_y:
-		why = "r9"
-		return 0.0                     # the far side is a steep face, not a tread
+	var tries := 2 if lip_retry and not _lip_old else 1
+	for k in tries:
+		if k == 1:
+			ahead += dir * LIP_REACH
+		if cb.test_move(up, ahead, null, 0.001):
+			why = "r7"
+			return 0.0                     # taller than a step
+		var fwd := up.translated(ahead)
+		down = KinematicCollision3D.new()
+		if not cb.test_move(fwd, Vector3.DOWN * (max_h + 0.05), down, 0.001):
+			why = "r8"
+			return 0.0                     # nothing to stand on behind the lip
+		if down.get_normal().y >= wall_y:
+			break
+		if k == tries - 1:
+			why = "r9"
+			return 0.0                     # the far side is a steep face, not a tread
 	var rise := max_h - absf(down.get_travel().y)
 	if rise < MIN_RISE or rise > max_h:
 		why = "r10"

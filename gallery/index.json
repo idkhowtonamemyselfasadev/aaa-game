@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261109-0600-plunge-dive-old.jpg",
-  "time": "2026-11-09T05:30:00Z",
-  "caption": "Same moment with the old plunge body for comparison: the hero falls bolt upright with the staff held in front of the face, reading as floating, not driving down.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0700-plunge-coil-profile.jpg",
   "time": "2026-11-09T07:00:00Z",
   "caption": "Plunge coil at the hang from a plain fall, in profile: new (left) knees drawn up and shins swung back, old (right) legs hanging straight; still wrong: from a slung start the staff is still on the back and the hands are empty at the belt, GL renderer.",
@@ -891,6 +885,18 @@
   "file": "20261112-2315-stairwalk.jpg",
   "time": "2026-11-12T23:15:00Z",
   "caption": "Hero walking up the test stair side-on at the step-up tick: the hips now keep the walk's pace instead of lurching 12 cm onto the tread; still plain box steps, a dark flat foreground and the hat and robe hiding the knees.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0039-foestair.jpg",
+  "time": "2026-11-13T00:39:59Z",
+  "caption": "A Hollow soldier now walks up a three-tread stone stair at a stalk, mid-climb on the second tread; still wrong: the test stair is a plain box course, and the soldier is backlit and dark against the low sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0039-foestair-before.jpg",
+  "time": "2026-11-13T00:39:59Z",
+  "caption": "Before the fix (same moment): the soldier is stuck against the first riser, lifting and falling back every tick; foes could never climb a stair at a stalk.",
   "verdict": "fail"
  }
 ]

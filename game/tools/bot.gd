@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -249,6 +249,9 @@ func _ready() -> void:
 		return
 	if name == "stepup":
 		_step_up_test()
+		return
+	if name == "foestep":
+		_foe_step_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -4248,6 +4251,99 @@ func _airstrike_test() -> void:
 ## Step-up: a three-tread stair (0.2 m risers) set in front of the hero on the flat is walked
 ## up course by course, the visible body easing through each lift (no pop); a 0.6 m wall is
 ## not stepped; the real plinths' risers (shrine lid, Sentinel post) are all steps.
+## (11-13 00:00) Foes up a stair: the soldier and the knight (phase-1 size) walk up a 3-tread stair
+## (0.2 m x size risers) at a stalk. Per tick: the hips bone's advance across the ground (a lurch
+## onto the tread shows as a jump over the walk's pace), the root's advance (a capsule stuck on the
+## tread's edge shows as a stall), the climb and the steps taken.
+func _foe_step_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	await _ticks(20)
+	var res := []
+	for e: HollowSoldier in [so, k]:
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		var sc: float = 1.0 if e == so else float(AshenKnight.PHASES[0]["scale"])
+		e.set_size_scale(sc)
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		await _ticks(60)
+		var space := e.get_world_3d().direct_space_state
+		var floor_y: float = e.global_position.y
+		var fh := space.intersect_ray(PhysicsRayQueryParameters3D.create(e.global_position + Vector3.UP, e.global_position + Vector3.DOWN * 3.0, 1, [e.get_rid()]))
+		if not fh.is_empty():
+			floor_y = fh.position.y
+		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+		var side := fwd.cross(Vector3.UP)
+		var rise := 0.2 * sc
+		var tread := 0.45 * sc
+		var built := []
+		for i in 3:
+			var h := rise * (i + 1)
+			var near := 1.0 * sc + tread * i
+			var far := 1.0 * sc + tread * 3 + 2.0 * sc
+			var sb := StaticBody3D.new()
+			var cs := CollisionShape3D.new()
+			var bx := BoxShape3D.new()
+			bx.size = Vector3(2.4 * sc, h + 0.4, far - near)
+			cs.shape = bx
+			sb.add_child(cs)
+			_world.add_child(sb)
+			sb.global_transform = Transform3D(Basis(side, Vector3.UP, fwd), e.global_position + fwd * ((near + far) * 0.5) + Vector3.UP * (floor_y - e.global_position.y + h * 0.5 - 0.2))
+			built.append(sb)
+		await _ticks(5)
+		var skel: Skeleton3D = e.skel
+		var hb := skel.find_bone("mixamorig_Hips")
+		var hips_w := func() -> Vector3:
+			return skel.global_transform * skel.get_bone_global_pose(hb).origin
+		var spd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
+		var y0 := e.global_position.y
+		var st0: int = e.steps_up
+		e.carry_max = 0.0
+		var start := e.global_position
+		await skel.skeleton_updated
+		var ph: Vector3 = hips_w.call()
+		var pr := e.global_position
+		var hmax := 0.0
+		var stall := 0
+		var dbg := OS.has_environment("FOESTEP_DEBUG")
+		for i in 400:
+			if (e.global_position - start).dot(fwd) > 1.0 * sc + tread * 3 + 0.8 * sc:
+				break
+			e.bot_move = fwd * spd
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			var h: Vector3 = hips_w.call()
+			var dh := (h - ph).dot(fwd)
+			var dr := (e.global_position - pr).dot(fwd)
+			var along := (e.global_position - start).dot(fwd)
+			if i > 20 and along > 0.6 * sc and along < 1.0 * sc + tread * 3:
+				hmax = maxf(hmax, dh)
+				if dr < 0.3 * spd / 60.0:
+					stall += 1
+			if dbg:
+				print("FOESTEP i %d along %.3f root dy %.3f dr %.4f hips dh %.4f body x %.3f z %.3f steps %d" % [i, along, e.global_position.y - y0, dr, dh, e.body.position.x, e.body.position.z, e.steps_up - st0])
+			ph = h
+			pr = e.global_position
+		e.bot_move = Vector3.ZERO
+		var climbed := e.global_position.y - y0
+		var pace := spd / 60.0
+		print("BOT foestep: %s size %.1f at %.2f m/s (pace %.4f m/tick): climbed %.3f m in %d steps, hips advanced at most %.4f m in one tick (%.1fx pace), root stalled %d ticks, held back up to %.3f m" % ["knight" if e == k else "soldier", sc, spd, pace, climbed, e.steps_up - st0, hmax, hmax / pace, stall, e.carry_max])
+		res.append([e == k, sc, climbed, rise, hmax, pace, stall])
+		for b in built:
+			b.queue_free()
+		await _ticks(10)
+	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
+	for r in res:
+		if r[2] < r[3] * 3 - 0.06:
+			return _combat_done(false, "a foe did not walk up the stair (climbed %.2f m; FOECARRY_OLD never did)" % r[2])
+		if r[4] > 1.6 * r[5]:
+			return _combat_done(false, "a foe's hips lurch %.4f m forward in one tick onto a tread (pace %.4f)" % [r[4], r[5]])
+	_combat_done(true, "the foes walk up a stair at a stalk, hips at the stalk's pace")
+
 func _step_up_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
@@ -6844,6 +6940,8 @@ func _sentinel_test() -> void:
 		await get_tree().physics_frame
 		tt += get_physics_process_delta_time()
 		_sentinel_low = minf(_sentinel_low, w.global_position.y)
+		if OS.has_environment("SENT_DEBUG") and Engine.get_physics_frames() % 10 == 0:
+			print("SENTDBG t %.2f d %.3f y %.3f st %d steps %d carry %s vel %s floor %s" % [tt, Vector2(w.global_position.x - home.x, w.global_position.z - home.z).length(), w.global_position.y, w.state, w.steps_up, w._step_carry, w.velocity, w.is_on_floor()], " why ", StepUp.why, " sc ", w.size_scale)
 	spd = w.anim_tree.get("parameters/speed/scale")
 	print("BOT sentinel: hero 30 m off -> still again after %.1f s, %.2f m from its post, facing off %.2f rad, health %.0f/%.0f, anim speed %.2f, petrifies %d" % [tt, (w.global_position - home).length(), absf(angle_difference(w.body.rotation.y, w._home_yaw)), w.health, w.health_max, spd, w.petrifies])
 	if not w.dormant or w.health < w.health_max or w.petrifies != 1 or spd != 0.0 or Vector2(w.global_position.x - home.x, w.global_position.z - home.z).length() > 0.12:

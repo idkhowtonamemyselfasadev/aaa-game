@@ -1023,6 +1023,7 @@ func _physics_process(delta: float) -> void:
 	var floor_pre := is_on_floor()
 	_step_climb(delta)
 	move_and_slide()
+	_ease_carry(delta)
 	if floor_pre and velocity.y < 0.5 and state != DEAD:
 		var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, size_scale)
 		excess -= StepUp.step_down(self, y_pre, delta, STEP_H * size_scale, size_scale)
@@ -1100,14 +1101,51 @@ func _update_turn_lead(delta: float) -> void:
 const STEP_H := 0.38
 var steps_up := 0
 var _step_dip := 0.0
+## (11-13 00:00) The foes stepped up without the carry onto the tread, so a stalk's slide left the
+## round bottom on the riser's edge and it settled back off it every tick: a soldier or the knight
+## walking slower than the probe never climbed a stair at all (bot `foestep`: 370 lifts, 0 m up).
+## Now carried like the hero, and the visible body is held back by the carry and let go as the root
+## lags its pace (`_ease_carry`), so the hips keep the stalk's pace. FOECARRY_OLD=1 = before.
+var _step_carry := Vector3.ZERO      # visible body off the root, across the ground (m, world axes)
+var _carry_p1 := Vector3.ZERO
+var _carry_sp := 0.0
+static var _foe_carry_old := OS.has_environment("FOECARRY_OLD")
+static var _foe_nohold := OS.has_environment("FOECARRY_NOHOLD")   # bots: carried, not held back
+var carry_max := 0.0                 # bots: the largest hold-back so far (m)
 
 func _step_climb(delta: float) -> void:
-	var lift := StepUp.try(self, delta, STEP_H * size_scale, false) if state != DEAD else 0.0
+	var p0 := global_position
+	var lift := StepUp.try(self, delta, STEP_H * size_scale, not _foe_carry_old, true) if state != DEAD else 0.0
+	_carry_p1 = global_position
+	_carry_sp = Vector2(velocity.x, velocity.z).length()
 	if lift > 0.0:
 		steps_up += 1
+		if not _foe_carry_old:
+			var c := global_position - p0
+			c.y = 0.0
+			_step_carry -= c
+			carry_max = maxf(carry_max, _step_carry.length())
 	if _step_dip != 0.0 or lift > 0.0:
 		_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, size_scale)
 		body.position.y = _step_dip
+
+## The hold-back goes as the root falls behind the pace it was asked for, and at least at a quarter
+## of the pace (never lingers); dead or staggered off its feet it goes at once.
+func _ease_carry(delta: float) -> void:
+	if _step_carry == Vector3.ZERO:
+		return
+	if state == DEAD or _foe_nohold:
+		_step_carry = Vector3.ZERO
+	else:
+		var moved := global_position - _carry_p1
+		moved.y = 0.0
+		var nominal := _carry_sp * delta
+		var lag := maxf(nominal - moved.length(), 0.0)
+		var go := maxf(lag, maxf(0.25 * nominal, 0.15 * sqrt(size_scale) * delta))
+		var m := _step_carry.length()
+		_step_carry = Vector3.ZERO if m <= go else _step_carry * ((m - go) / m)
+	body.position.x = _step_carry.x
+	body.position.z = _step_carry.z
 
 ## Another modifier stands the boots on the ground itself this tick (the knight's stomp):
 ## the ground IK stays out of it, or the two lift the boot twice.
