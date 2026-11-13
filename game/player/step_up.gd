@@ -12,11 +12,12 @@ const CLEAR := 0.012         # a hair over the tread so the slide does not catch
 const MIN_RISE := 0.03       # below this the capsule handles it alone
 const LIP_REACH := 0.1       # a rounded lip under the probe: look this much further for the tread
 static var _lip_old := OS.has_environment("STEPLIP_OLD")
+static var _lip_giant_old := OS.has_environment("STEPLIP_GIANT_OLD")
 
 ## Returns the rise climbed this tick (0 when no step was taken).
 static var why := ""   # debug: why the last try did not step
 
-static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true, lip_retry := false) -> float:
+static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true, lip_retry := false, size := 1.0) -> float:
 	if not cb.is_on_floor() or max_h <= MIN_RISE:
 		why = "r1"
 		return 0.0
@@ -49,9 +50,13 @@ static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true, 
 	# as a steep face; once more a little further in, onto the tread behind it (STEPLIP_OLD=1 = no retry).
 	# Opt-in (the foes): on the hero's square stair the retry fired and stacked the carry 0.5 m deep
 	var down := KinematicCollision3D.new()
-	var tries := 2 if lip_retry and not _lip_old else 1
+	# (11-13 05:00) a giant's round bottom (the knight at 4.6x) still lands on the tread's corner one
+	# retry in (it never climbed a 0.92 m riser: 335 'r9'): look further in, LIP_REACH at a time, up
+	# to as many times as the body is sized, so the shortest reach that finds the tread is the one
+	# taken (a body of size <= 2 keeps its one retry). STEPLIP_GIANT_OLD=1 = one retry at any size
+	var tries := (1 + maxi(1, int(ceil(size - 1.0))) if not _lip_giant_old else 2) if lip_retry and not _lip_old else 1
 	for k in tries:
-		if k == 1:
+		if k >= 1:
 			ahead += dir * LIP_REACH
 		if cb.test_move(up, ahead, null, 0.001):
 			why = "r7"

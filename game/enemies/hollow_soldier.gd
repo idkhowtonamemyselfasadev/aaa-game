@@ -1128,6 +1128,7 @@ var _step_carry := Vector3.ZERO      # visible body off the root, across the gro
 var _carry_p1 := Vector3.ZERO
 var _carry_sp := 0.0
 static var _foe_carry_old := OS.has_environment("FOECARRY_OLD")
+static var _stepwhy := OS.has_environment("STEPWHY")   # debug: print why a moving foe did not step
 static var _foe_nohold := OS.has_environment("FOECARRY_NOHOLD")   # bots: carried, not held back
 var carry_max := 0.0                 # bots: the largest hold-back so far (m)
 var down_carry_max := 0.0            # bots: the largest slide off a tread edge held back (m)
@@ -1143,7 +1144,9 @@ func _floor_dip_to_feet() -> void:
 
 func _step_climb(delta: float) -> void:
 	var p0 := global_position
-	var lift := StepUp.try(self, delta, STEP_H * size_scale, not _foe_carry_old, true) if state != DEAD else 0.0
+	var lift := StepUp.try(self, delta, STEP_H * size_scale, not _foe_carry_old, true, size_scale) if state != DEAD else 0.0
+	if _stepwhy and lift <= 0.0 and Vector2(velocity.x, velocity.z).length() > 0.1:
+		print("STEPWHY %s %s y %.3f" % [name, StepUp.why, global_position.y])
 	_carry_p1 = global_position
 	_carry_sp = Vector2(velocity.x, velocity.z).length()
 	if lift > 0.0:

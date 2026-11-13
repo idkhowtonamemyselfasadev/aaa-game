@@ -815,6 +815,53 @@ func _ready() -> void:
 			blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy + 0.06, pp.z) + f * (0.06 + 0.4))
 			player.add_collision_exception_with(blk)
 			eye = pp + sd * 1.6 + f * 0.25 + Vector3.UP * 0.3
+		if "knightstair" in args:
+			# (11-13 05:00) the Ashen Knight at a phase's size (ks=<size>, default the last, 4.6)
+			# walks UP the `foestep` bot's stair scaled to it (three 0.2 m x size courses, 0.45 m x
+			# size treads) at 0.6 of its stalk; the lens well back, 3/4 front, at its knee height
+			var ks := float(AshenKnight.PHASES[AshenKnight.PHASES.size() - 1]["scale"])
+			for a in args:
+				if a.begins_with("ks="):
+					ks = float(a.substr(3))
+			var f := along
+			var sd := f.cross(Vector3.UP)
+			var gy := terrain.height_at(pp.x, pp.z)
+			for c in 3:
+				var blk := StaticBody3D.new()
+				var cs := CollisionShape3D.new()
+				var bx := BoxShape3D.new()
+				var near := (1.0 + 0.45 * c) * ks
+				var far := (1.0 + 0.45 * 3 + 2.0) * ks
+				bx.size = Vector3(2.4 * ks, 0.2 * ks * (c + 1) + 0.4, far - near)
+				cs.shape = bx
+				blk.add_child(cs)
+				var mi := MeshInstance3D.new()
+				var bm := BoxMesh.new()
+				bm.size = bx.size
+				mi.mesh = bm
+				var rn := world.get_node_or_null("Ruins")
+				if rn != null and rn.get("material") != null:
+					mi.material_override = rn.material
+				blk.add_child(mi)
+				world.add_child(blk)
+				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.4 + bx.size.y * 0.5, pp.z) + f * ((near + far) * 0.5))
+			var kn: AshenKnight = world.knight
+			kn.intro_enabled = false
+			kn.set_size_scale(ks)
+			kn.global_position = Vector3(pp.x, gy + 0.1, pp.z)
+			kn.velocity = Vector3.ZERO
+			kn.notice = -1.0
+			kn.give_up = 1e9
+			kn.state = HollowSoldier.IDLE
+			kn.body.rotation.y = atan2(f.x, f.z)
+			kn.set_meta("shot_walk", f * HollowSoldier.STALK_SPEED * sqrt(ks) * 0.6)
+			player.global_position = pp - sd * 4.0 * ks - f * 2.0 + Vector3.UP * 0.8
+			var lx := 1.6 * ks
+			for a in args:
+				if a.begins_with("lx="):
+					lx = float(a.substr(3)) * ks
+			eye = pp + f * (lx + 2.6 * ks) + sd * 2.6 * ks + Vector3.UP * 0.55 * ks
+			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75 * ks]
 		if "stairup" in args:
 			# (11-12 18:00) swing clearance: the `stepup` bot's stair (three 0.2 m masonry courses,
 			# 0.45 m treads) set 1.0 m ahead of the hero on the flat turf (`step`), who walks up it;
@@ -3529,6 +3576,10 @@ func _ready() -> void:
 			world.soldier.bot_move = world.soldier.get_meta("shot_walk")
 			if i % 6 == 0:
 				print("SHOT foestair f %d root %.3f body off %.3f %.3f %.3f steps %d" % [i, world.soldier.global_position.y, world.soldier.body.position.x, world.soldier.body.position.y, world.soldier.body.position.z, world.soldier.steps_up])
+		if world.knight != null and world.knight.has_meta("shot_walk"):
+			world.knight.bot_move = world.knight.get_meta("shot_walk")
+			if i % 6 == 0:
+				print("SHOT knightstair f %d root %.3f steps %d" % [i, world.knight.global_position.y, world.knight.steps_up])
 		if player.has_meta("shot_walk"):
 			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * walk_in
 		await get_tree().process_frame

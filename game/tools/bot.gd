@@ -4261,10 +4261,19 @@ func _foe_step_test() -> void:
 	var so: HollowSoldier = _world.soldier
 	await _ticks(20)
 	var res := []
-	for e: HollowSoldier in [so, k]:
+	# (11-13 05:00) the knight at each phase's size (2.2 / 3.2 / 4.6), the stair scaled with it
+	var runs := [[so, 1.0]]
+	for ph in AshenKnight.PHASES.size():
+		runs.append([k, float(AshenKnight.PHASES[ph]["scale"])])
+	if OS.has_environment("FOESTEP_PH1"):
+		runs.resize(2)
+	if OS.has_environment("FOESTEP_SIZE"):      # bots: only the run at this size
+		runs = runs.filter(func(rn: Array) -> bool: return absf(float(rn[1]) - float(OS.get_environment("FOESTEP_SIZE"))) < 0.05)
+	for run in runs:
+		var e: HollowSoldier = run[0]
 		for other in [k, so]:
 			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
-		var sc: float = 1.0 if e == so else float(AshenKnight.PHASES[0]["scale"])
+		var sc: float = run[1]
 		e.set_size_scale(sc)
 		e.notice = -1.0
 		e.give_up = 1e9
@@ -4344,11 +4353,22 @@ func _foe_step_test() -> void:
 		e.bot_move = Vector3.ZERO
 		await _ticks(40)
 		await skel.skeleton_updated
+		# (11-13 05:00) per BONE: the ankle bone stands ~0.3 x size over its sole, the ball ~0; one
+		# base per foot (the min of both) read a boot standing heel-on-tread with its ball over the
+		# edge as hanging by the ankle's own height (the knight's '0.35 m' was mostly that).
+		# FOEBASE_OLD=1 = the old one-base-per-foot read
 		var base_f := [INF, INF]
+		var base_b := {}
 		for f in 2:
 			for bn in [tbs[f], fts[f]]:
 				var pt: Vector3 = skel.global_transform * skel.get_bone_global_pose(bn).origin
-				base_f[f] = minf(base_f[f], pt.y - float(under.call(pt)))
+				var hb0: float = pt.y - float(under.call(pt))
+				base_b[bn] = hb0
+				base_f[f] = minf(base_f[f], hb0)
+		if OS.has_environment("FOEBASE_OLD"):
+			for f in 2:
+				for bn in [tbs[f], fts[f]]:
+					base_b[bn] = base_f[f]
 		var down0: int = StepUp.steps_down
 		var top_y := e.global_position.y
 		var air := 0
@@ -4374,26 +4394,32 @@ func _foe_step_test() -> void:
 			lv = v
 			if e.is_on_floor():
 				var lowest := INF
+				var per := [0.0, 0.0]
 				for f in 2:
 					var cl := INF
 					for bn in [tbs[f], fts[f]]:
 						var pt: Vector3 = skel.global_transform * skel.get_bone_global_pose(bn).origin
-						cl = minf(cl, pt.y - float(base_f[f]) - float(under.call(pt)))
+						cl = minf(cl, pt.y - float(base_b[bn]) - float(under.call(pt)))
+					per[f] = cl
+					if ddbg and e == k:
+						var pa: Vector3 = skel.global_transform * skel.get_bone_global_pose(fts[f]).origin
+						var pt2: Vector3 = skel.global_transform * skel.get_bone_global_pose(tbs[f]).origin
+						print("FOEFOOT %d ankle along %.3f h %.3f  toe along %.3f h %.3f base %.3f" % [f, (pa - start).dot(fwd), pa.y - float(under.call(pa)), (pt2 - start).dot(fwd), pt2.y - float(under.call(pt2)), base_f[f]])
 					lowest = minf(lowest, cl)
 				dfloat = maxf(dfloat, lowest)
 				if ddbg:
-					print("FOEDOWN i %d along %.3f root y %.3f body %.3f lowest boot %.3f carry %.3f facing %.2f gw %.2f off %.3f %.3f" % [i, along2, e.global_position.y - y0, e.body.position.y, lowest, e._step_carry.length(), e.body.global_basis.z.dot(fwd), e.stride_warp.ground_w, e.stride_warp.ground_off[0], e.stride_warp.ground_off[1]])
+					print("FOEDOWN i %d along %.3f root y %.3f body %.3f boots %.3f %.3f lowest boot %.3f carry %.3f facing %.2f gw %.2f off %.3f %.3f" % [i, along2, e.global_position.y - y0, e.body.position.y, per[0], per[1], lowest, e._step_carry.length(), e.body.global_basis.z.dot(fwd), e.stride_warp.ground_w, e.stride_warp.ground_off[0], e.stride_warp.ground_off[1]])
 		e.bot_move = Vector3.ZERO
 		var descended := top_y - e.global_position.y
 		var nd: int = StepUp.steps_down - down0
-		print("BOT foestep: %s walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m" % ["knight" if e == k else "soldier", descended, nd, air, dvis, dfloat, e.down_carry_max])
+		print("BOT foestep: %s x%.1f walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m" % ["knight" if e == k else "soldier", sc, descended, nd, air, dvis, dfloat, e.down_carry_max])
 		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat])
 		for b in built:
 			b.queue_free()
 		await _ticks(10)
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	for r in res:
-		if r[2] < r[3] * 3 - 0.06:
+		if r[2] < r[3] * 3 - 0.06 - (0.04 * r[1] if r[1] > 1.0 else 0.0):
 			return _combat_done(false, "a foe did not walk up the stair (climbed %.2f m; FOECARRY_OLD never did)" % r[2])
 		if r[4] > 1.6 * r[5]:
 			return _combat_done(false, "a foe's hips lurch %.4f m forward in one tick onto a tread (pace %.4f)" % [r[4], r[5]])
@@ -4403,7 +4429,10 @@ func _foe_step_test() -> void:
 			return _combat_done(false, "a foe's body trails its capsule %.3f m up the stair (carry not paid back)" % r[7])
 		# (11-13 04:00) down: a step down onto every tread, never off the floor (STEPDOWN_ROUNDS=1: the
 		# knight fell the whole stair, 1 step, 11 ticks airborne), no visible pop
-		if r[8] < r[3] * 3 - 0.06 or r[9] < 3:
+		# (11-13 05:00) the knight at 3.2x/4.6x too; a giant's round bottom may roll one tread's corner
+		# by itself with no step taken (no fall, no pop: the gates below), and each size starts on
+		# its own patch of uneven turf, so the height check allows 4 cm a size for the ground
+		if r[8] < r[3] * 3 - 0.06 - (0.04 * r[1] if r[1] > 1.0 else 0.0) or r[9] < (2 if r[1] > 3.0 else 3):
 			return _combat_done(false, "a foe did not walk down the stair (%.2f m, %d steps down)" % [r[8], r[9]])
 		if r[10] > 0 and not OS.has_environment("STEPDOWN_ROUNDS"):
 			return _combat_done(false, "a foe falls off the treads walking down (%d ticks off the floor)" % r[10])
@@ -4414,9 +4443,11 @@ func _foe_step_test() -> void:
 		# full rise below while its root rolls over the corner (0.35 m = 0.16 x size: see PROGRESS)
 		if not r[0] and r[12] > 0.03 and not OS.has_environment("FOEFLOORDIP_OLD"):
 			return _combat_done(false, "the soldier's boots hang %.3f m off the treads walking down" % r[12])
-		if r[0] and r[12] > 0.2 * r[1]:
-			return _combat_done(false, "the knight's boots hang %.3f m off the treads walking down" % r[12])
-	_combat_done(true, "the foes walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads")
+		# (11-13 05:00) read per bone (FOEBASE_OLD: 0.352 m at x2.2, all of it the ankle bone's own
+		# height over a heel standing on the tread with the ball over the edge): on the treads
+		if r[0] and r[12] > 0.025 * r[1] and not OS.has_environment("FOEBASE_OLD"):
+			return _combat_done(false, "the knight (x%.1f)'s boots hang %.3f m off the treads walking down" % [r[1], r[12]])
+	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads")
 
 func _step_up_test() -> void:
 	var p := _player
