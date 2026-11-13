@@ -854,8 +854,16 @@ func _ready() -> void:
 				blk.add_child(mi)
 				world.add_child(blk)
 				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.4 + bx.size.y * 0.5, pp.z) + f * ((near + far) * 0.5))
-			var kn: AshenKnight = world.knight
-			kn.intro_enabled = false
+			# (11-13 20:00) foe=soldier: the Hollow Soldier (size 1) instead of the knight; windup=thrust|sweep
+			# with stopat=<frame>: at the cut the foe opens that wind-up as STALK does at its engage range
+			var kn: HollowSoldier = world.knight
+			if "foe=soldier" in args:
+				kn = world.soldier
+				ks = 1.0
+				world.knight.process_mode = Node.PROCESS_MODE_DISABLED
+				world.knight.visible = false
+			else:
+				world.knight.intro_enabled = false
 			kn.set_size_scale(ks)
 			kn.global_position = Vector3(pp.x, gy + 0.1, pp.z)
 			kn.velocity = Vector3.ZERO
@@ -863,7 +871,8 @@ func _ready() -> void:
 			kn.give_up = 1e9
 			kn.state = HollowSoldier.IDLE
 			kn.body.rotation.y = atan2(f.x, f.z)
-			kn.set_meta("shot_walk", f * HollowSoldier.STALK_SPEED * sqrt(ks) * 0.6)
+			kn.set_meta("shot_kwalk", f * HollowSoldier.STALK_SPEED * sqrt(ks) * 0.6)
+			kn.set_meta("shot_kfwd", f)
 			player.global_position = pp - sd * 4.0 * ks - f * 2.0 + Vector3.UP * 0.8
 			var lx := 1.6 * ks
 			for a in args:
@@ -3595,18 +3604,32 @@ func _ready() -> void:
 			world.soldier.bot_move = world.soldier.get_meta("shot_walk")
 			if i % 6 == 0:
 				print("SHOT foestair f %d root %.3f body off %.3f %.3f %.3f steps %d" % [i, world.soldier.global_position.y, world.soldier.body.position.x, world.soldier.body.position.y, world.soldier.body.position.z, world.soldier.steps_up])
-		if world.knight != null and world.knight.has_meta("shot_walk") and i >= stop_at:
-			# (11-13 10:00) stopat=<frame>: the walk is cut here and the knight stays where it stops
+		var kw: HollowSoldier = null
+		for fo in [world.knight, world.soldier]:
+			if fo != null and fo.has_meta("shot_kwalk"):
+				kw = fo
+		if kw != null and i >= stop_at:
+			# (11-13 10:00) stopat=<frame>: the walk is cut here and the foe stays where it stops
 			if i == stop_at:
-				world.knight._home = world.knight.global_position
-				print("SHOT knight stops at frame %d" % i)
-			world.knight.bot_move = Vector3.ZERO
-			if i % 2 == 0 and world.knight.stride_warp != null:
-				print("SHOT knightstop f %d pivot %.2f settle_t %.2f" % [i, world.knight.stride_warp.pivot, world.knight.stride_warp._settle_t])
-		elif world.knight != null and world.knight.has_meta("shot_walk"):
-			world.knight.bot_move = world.knight.get_meta("shot_walk")
+				kw._home = kw.global_position
+				print("SHOT knight stops at frame %d at %s facing %s walk %s" % [i, kw.global_position, kw.body.global_basis.z, kw.get_meta("shot_kfwd")])
+				for a in args:
+					if a.begins_with("windup="):
+						# the hero far ahead on the line of the walk, so the wind-up faces it and does not turn
+						var kf: Vector3 = kw.get_meta("shot_kfwd")
+						player.global_position = kw.global_position + kf * 30.0 * kw.size_scale + Vector3.UP * 0.5
+						kw.move_kind = HollowSoldier.SWEEP_MOVE if a == "windup=sweep" else HollowSoldier.THRUST_MOVE
+						kw._from = kw._pose
+						kw.windups += 1
+						kw._enter(HollowSoldier.WINDUP)
+						print("SHOT windup %s opened at frame %d" % [a.substr(7), i])
+			kw.bot_move = Vector3.ZERO
+			if i % 2 == 0 and kw.stride_warp != null:
+				print("SHOT knightstop f %d state %d pivot %.2f settle_t %.2f facing %s hero %s" % [i, kw.state, kw.stride_warp.pivot, kw.stride_warp._settle_t, kw.body.global_basis.z, player.global_position])
+		elif kw != null:
+			kw.bot_move = kw.get_meta("shot_kwalk")
 			if i % 6 == 0:
-				print("SHOT knightstair f %d root %.3f steps %d" % [i, world.knight.global_position.y, world.knight.steps_up])
+				print("SHOT knightstair f %d root %.3f steps %d" % [i, kw.global_position.y, kw.steps_up])
 		if player.has_meta("shot_walk"):
 			player.bot_input = _stick_for(player, player.get_meta("shot_walk")) * walk_in
 		await get_tree().process_frame

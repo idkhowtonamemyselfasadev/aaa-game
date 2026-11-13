@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261109-1119-plunge-impact-015.jpg",
-  "time": "2026-11-09T11:19:16Z",
-  "caption": "Plunge 0.15 s into the landing: dust ring bursts round the crouch, staff angled up past the hat; still lit from behind, the burst arrives a beat late.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1236-plunge-contact-002.jpg",
-  "time": "2026-11-09T12:36:02Z",
-  "caption": "The plunge one frame after contact: the dust cloud is now up round the crouch on the impact frame itself (was bare turf); it still reads as a flat pale disc, not an upward burst, and the hero is backlit from behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1236-plunge-contact-005.jpg",
-  "time": "2026-11-09T12:36:02Z",
-  "caption": "The plunge 0.05 s after contact: dust ring round the feet, ferrule driven into the turf; the cloud is low and uniform with no clods or height, still backlit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1341-plunge-burst-005.jpg",
-  "time": "2026-11-09T13:41:47Z",
-  "caption": "Plunge contact frame 0.05 s: the dust now opens dark earth-brown round the crouch, but it is still a low disc (column not risen yet) and the hero is backlit from behind 3/4.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1341-plunge-burst-015.jpg",
   "time": "2026-11-09T13:41:47Z",
   "caption": "Plunge 0.15 s: the burst is darker and a little taller with a few clods flying left, but the new earth column hides behind the hero's back from this lens and the clods read as specks.",
@@ -897,6 +873,18 @@
   "file": "20261113-1700-knight-stop.jpg",
   "time": "2026-11-13T17:26:00Z",
   "caption": "The Ashen Knight at its phase-1 size stepping into its guard after a stop, lit from the sun side at 10:00; the meadow grass still hides its boots, so the settle-step fix only shows in the bot numbers, and the armour reads dark against the bright field.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2000-soldier-windup-front.jpg",
+  "time": "2026-11-13T20:40:00Z",
+  "caption": "A Hollow Soldier that walked in opens its thrust wind-up in the meadow grass (backlit, hour 10): drawn pose and lit chest embers read, but the foe is nearly a silhouette and the foreground blades are too broad.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2000-soldier-walkin-seq.jpg",
+  "time": "2026-11-13T20:40:00Z",
+  "caption": "Frames 50/58/62/72: the soldier walks, stops and draws its thrust; the boots take one settle step then hold still, but the hood crown reads as a stiff cylinder and the ground under the hidden grass is a flat straw texture.",
   "verdict": "fail"
  }
 ]
