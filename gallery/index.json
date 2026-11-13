@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-0700-plunge-coil-profile.jpg",
-  "time": "2026-11-09T07:00:00Z",
-  "caption": "Plunge coil at the hang from a plain fall, in profile: new (left) knees drawn up and shins swung back, old (right) legs hanging straight; still wrong: from a slung start the staff is still on the back and the hands are empty at the belt, GL renderer.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0700-plunge-dive-back.jpg",
-  "time": "2026-11-09T07:00:00Z",
-  "caption": "Plunge dive from behind: hat bowed, knees up, staff driven straight down along the body; reads as a committed drop, but the lens is behind and the light is GL only.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0800-plunge-slung-hang.jpg",
   "time": "2026-11-09T08:00:00Z",
   "caption": "Plunge from a slung staff at the hang (plunge 0.08 s), profile: new (left) staff snatched into the fist and angled up behind the hat; old (right) staff still upright on the back, hands empty. Still wrong: the fists stay at the chest instead of going overhead, GL renderer.",
@@ -897,6 +885,18 @@
   "file": "20261113-0039-foestair-before.jpg",
   "time": "2026-11-13T00:39:59Z",
   "caption": "Before the fix (same moment): the soldier is stuck against the first riser, lifting and falling back every tick; foes could never climb a stair at a stalk.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0121-stairdown-close.jpg",
+  "time": "2026-11-13T01:21:24Z",
+  "caption": "The hero walking down the 3-tread test stair, rear boot on the upper tread and the lead boot set on the next; the lens crops the hat and the stair is a plain test block on flat turf.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0121-stairdown-wide.jpg",
+  "time": "2026-11-13T01:21:24Z",
+  "caption": "Wider 3/4 front view of the same descent at the step-down tick: both boots stand on their treads, but the figure is small, the light flat, and the stair a bare test block.",
   "verdict": "fail"
  }
 ]

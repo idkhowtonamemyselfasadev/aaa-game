@@ -1251,6 +1251,8 @@ var _carry_sp := 0.0                 # horizontal speed before the slide
 var _cam_base_xz := Vector2(NAN, NAN)
 static var _carry_old := OS.has_environment("STEPCARRY_OLD")
 var carry_max := 0.0                 # bots: the largest hold-back so far (m)
+static var _down_carry_old := OS.has_environment("STEPDOWNCARRY_OLD")
+var down_carry_max := 0.0            # bots: the largest slide off a tread edge held back (m)
 
 func _step_climb(delta: float) -> void:
 	if is_nan(_cam_base_y):
@@ -1288,7 +1290,22 @@ func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
 		return
 	var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, 1.0)
 	# off a tread edge or a kerb: set down on the lower tread (no fall), the hips held and let down
+	var pd0 := global_position
 	excess -= StepUp.step_down(self, y_pre, delta, STEP_H, 1.0) if not _jumped else 0.0
+	# (11-13) the step down slides the round bottom off the tread edge: at a walk ~3 cm past the
+	# pace in one tick, which dragged the planted boot over the edge (both boots hung off their
+	# treads 4 cm). The visible body is held back by that slide, as for a step up. STEPDOWNCARRY_OLD=1
+	if not _carry_old and not _down_carry_old:
+		var cd := global_position - pd0
+		cd.y = 0.0
+		if cd.length() > 0.001:
+			_step_carry -= cd
+			down_carry_max = maxf(down_carry_max, cd.length())
+			body.position.x = _step_carry.x
+			body.position.z = _step_carry.z
+			if not is_nan(_cam_base_xz.x):
+				cam_pivot.position.x = _cam_base_xz.x + _step_carry.x * 0.8
+				cam_pivot.position.z = _cam_base_xz.y + _step_carry.z * 0.8
 	if excess != 0.0:
 		_step_dip = clampf(_step_dip - excess, -STEP_H - 0.05, STEP_H + 0.05)
 		body.position.y = _step_dip

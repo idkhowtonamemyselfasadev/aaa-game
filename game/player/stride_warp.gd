@@ -1129,6 +1129,8 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		var pbh := skel.get_bone_global_pose(hp).basis if hp >= 0 else Basis()
 		skel.set_bone_pose_position(hips, skel.get_bone_pose_position(hips) - pbh.inverse() * (up_s * drop))
 	ground_drop = drop
+	if _gdbg:
+		print("GROUNDDBG floor %.3f gy %.3f %.3f off %.3f %.3f eff %.3f %.3f anim %.3f %.3f toe %.3f %.3f drop %.3f want %.3f" % [floor_y, _gy[0], _gy[1], ground_off[0], ground_off[1], eff[0], eff[1], anim_h[0], anim_h[1], toe_lift[0], toe_lift[1], drop, want])
 	for i in 2:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
@@ -1149,6 +1151,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		ground_sole[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y - floor_y - float(ground_off[i])
 
 
+static var _gdbg := OS.has_environment("GROUNDDBG")
 static var _floor_mode := OS.get_environment("STEPFLOOR")
 func _floor_dip_now() -> float:
 	if OS.get_environment("STEPFLOOR_OLD") != "" or _floor_mode == "off":

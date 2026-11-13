@@ -4675,7 +4675,11 @@ func _step_up_test() -> void:
 		return _combat_done(false, "the hero did not walk down the stair at a walk (descended %.2f m)" % wdesc)
 	if wdair > 2 or p.landings != wdland0:
 		return _combat_done(false, "walking down, the hero falls off each tread (%d ticks airborne)" % wdair)
-	if wdfloat > 0.06 or wdfloat_ticks > 3:
+	# (11-13) the step down's slide off the tread edge (~3 cm past the pace in one tick) dragged the
+	# planted boot over the edge: 0.040 m, 2 ticks over 3 cm. The visible body is held back by it now
+	# (STEPDOWNCARRY_OLD=1 = before): 0.028 m, 0 ticks
+	print("BOT stepup: walking down, the slide off a tread edge held back up to %.3f m" % p.down_carry_max)
+	if wdfloat > 0.035 or wdfloat_ticks > 1:
 		return _combat_done(false, "walking down, the lower boot hangs %.3f m off its tread (%d ticks)" % [wdfloat, wdfloat_ticks])
 	for b in built:
 		b.queue_free()

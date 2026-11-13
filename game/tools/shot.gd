@@ -866,6 +866,41 @@ func _ready() -> void:
 				player.global_position = pp - sd * 3.0 - f * 2.0 + Vector3.UP * 0.3
 				eye = pp + f * lx + sd * 3.4 + Vector3.UP * 0.9
 				SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75]
+		elif "stairdown" in args:
+			# (11-13) the `stepup` bot's stair (three 0.2 m courses, 0.45 m treads) with the hero
+			# standing on its top, 0.5 m short of the first edge, walking DOWN it at `walkin`; the
+			# lens 3/4 front and a little high so both boots on the treads read
+			var f := along
+			var sd := f.cross(Vector3.UP)
+			var gy := terrain.height_at(pp.x, pp.z)
+			for c in 3:
+				var blk := StaticBody3D.new()
+				var cs := CollisionShape3D.new()
+				var bx := BoxShape3D.new()
+				var ends := 0.5 + 0.45 * c
+				bx.size = Vector3(1.6, 0.2 * (3 - c) + 0.3, ends + 2.0)
+				cs.shape = bx
+				blk.add_child(cs)
+				var mi := MeshInstance3D.new()
+				var bm := BoxMesh.new()
+				bm.size = bx.size
+				mi.mesh = bm
+				var rn := world.get_node_or_null("Ruins")
+				if rn != null and rn.get("material") != null:
+					mi.material_override = rn.material
+				blk.add_child(mi)
+				world.add_child(blk)
+				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.3 + bx.size.y * 0.5, pp.z) + f * ((ends - 2.0) * 0.5))
+			player.global_position = Vector3(pp.x, gy + 0.62, pp.z)
+			player.use_bot_input = true
+			player.set_meta("shot_walk", f)
+			player.set_meta("shot_stair", true)
+			var lx := 1.0
+			for a in args:
+				if a.begins_with("lx="):
+					lx = float(a.substr(3))
+			eye = pp + f * (lx + 3.4) + sd * 2.4 + Vector3.UP * 1.25
+			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75]
 		elif "stepdown" in args:
 			# step-down: the hero walks along the turf off the end of a 0.3 m masonry course (two
 			# courses of 0.15 m, so it steps down twice), seen side-on at hip height
