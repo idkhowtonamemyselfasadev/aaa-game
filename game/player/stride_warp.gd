@@ -129,6 +129,15 @@ var ground_scale := 1.0          # the owner's body size (a growing boss): limit
 var ground_off := [0.0, 0.0]     # world m each foot's ground sits above (+) or below the floor, eased
 var ground_n := [Vector3.UP, Vector3.UP]   # each foot's ground normal, eased
 var ground_drop := 0.0           # (bots) world m the hips settled for the lower foot this tick
+# (11-13 06:00) the ball (ToeBase) bone never dips under the ground beneath it: the foes' walk
+# clip, retargeted onto the knight, pitched the left boot so far at toe-off that the ball sank
+# ~0.06 m per size into the stone (0.28 m at the phase-3 size) and dragged through it into the
+# swing. -INF = off (the hero; its swing clearance does this job); else the ball bone's lowest
+# height over its ground in m per size (it sits inside the boot's sole). TOEFLOOR_OLD=1 = off
+var toe_floor := -INF
+var toe_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ball out of the ground
+static var TOE_FLOOR_OLD := OS.has_environment("TOEFLOOR_OLD")
+var _ball_gy := [-INF, -INF]
 var ground_anim := [0.0, 0.0]    # (bots) world m each ankle sat over the floor in the clip this tick
 var ground_sole := [0.0, 0.0]    # (bots) world m each ankle sits over the ground under it after the IK
 const GROUND_MAX := 0.42         # m (x the owner's scale): a bigger step is not a slope, leave it
@@ -1047,6 +1056,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		# foot is lifted onto it so the toes never dip into it: the ball takes the weight on the
 		# step, the heel hangs over the lower ground, as a foot does on a stair edge.
 		toe_lift[i] = 0.0
+		_ball_gy[i] = -INF
 		if tb[i] >= 0:
 			var ball: Vector3 = xf * skel.get_bone_global_pose(tb[i]).origin
 			var reach := Vector3(ball.x - a.x, 0.0, ball.z - a.z)
@@ -1058,6 +1068,8 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 				var tn := th.normal as Vector3
 				if tn.y < 0.5:
 					continue                    # the riser's face: the tread's own ray decides
+				if tp == ball:
+					_ball_gy[i] = (th.position as Vector3).y
 				# where the ankle's slope would put the ground under this toe point
 				var dxz := Vector3(tp.x - a.x, 0.0, tp.z - a.z)
 				var plane_y := gy - (n.x * dxz.x + n.z * dxz.z) / maxf(n.y, 0.5)
@@ -1134,6 +1146,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	for i in 2:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
+		toe_floor_lift[i] = 0.0
 		var keep := skel.get_bone_global_pose(ft[i]).basis
 		# a planted sole lies on the slope; a foot swinging high keeps the clip's angle
 		var plant := clampf(1.0 - (float(anim_h[i]) / sc - 0.12) / 0.14, 0.0, 1.0) * w
@@ -1143,6 +1156,18 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 			var ax_w := Vector3.UP.cross(n).normalized()
 			var ax_s := (inv.basis * ax_w).normalized()
 			keep = Basis(ax_s, minf(tilt, GROUND_TILT_MAX) * plant) * keep
+		if toe_floor > -INF and not TOE_FLOOR_OLD and tb[i] >= 0 and float(_ball_gy[i]) > -INF:
+			# the ball where the IK will put it: carried up by the lift with the foot, turned with
+			# the sole onto the slope about the ankle (the hips' drop is in the pose already)
+			var aw: Vector3 = xf * skel.get_bone_global_pose(ft[i]).origin
+			var bw: Vector3 = xf * skel.get_bone_global_pose(tb[i]).origin
+			var rel := bw - aw
+			if plant > 0.0 and tilt > 1e-3:
+				rel = Basis(Vector3.UP.cross(n).normalized(), minf(tilt, GROUND_TILT_MAX) * plant) * rel
+			var need := float(_ball_gy[i]) + toe_floor * sc - (aw.y + lift + rel.y)
+			if need > 0.0:
+				toe_floor_lift[i] = minf(need, lim) * w
+				lift += toe_floor_lift[i]
 		if absf(lift) < 1e-4 and plant <= 0.0:
 			continue
 		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift

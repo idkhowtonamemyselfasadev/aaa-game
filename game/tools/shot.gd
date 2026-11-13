@@ -782,6 +782,12 @@ func _ready() -> void:
 				sp = Vector3(float(xz[0]), 0, float(xz[1]))
 		if "step" in args and not Array(args).any(func(a): return String(a).begins_with("at=")):
 			sp = player.global_position + Vector3(3.0, 0, -6.0)    # the footik bot's flat turf
+		# (11-13 06:00) kat=<dx>,<dz>: from the Ashen Knight's own post down the meadow (open
+		# ground far from the cottages; at x4.6 the `knightstair` stair is ~20 m deep)
+		for a in args:
+			if a.begins_with("kat="):
+				var kxz := a.substr(4).split(",")
+				sp = world.knight.global_position + Vector3(float(kxz[0]), 0, float(kxz[1]))
 		var n: Vector3 = terrain.normal_at(sp.x, sp.z, 0.6)
 		var dn := Vector3(n.x, 0, n.z).normalized()
 		var along := dn.cross(Vector3.UP)
@@ -861,6 +867,12 @@ func _ready() -> void:
 				if a.begins_with("lx="):
 					lx = float(a.substr(3)) * ks
 			eye = pp + f * (lx + 2.6 * ks) + sd * 2.6 * ks + Vector3.UP * 0.55 * ks
+			# (11-13 06:00) knee height over the ground under the LENS (on a rise the lens sat in the grass);
+			# ksd=-1 puts the lens on the stair's other side (the sun's side)
+			for a in args:
+				if a.begins_with("ksd="):
+					eye = pp + f * (lx + 2.6 * ks) + sd * 2.6 * ks * float(a.substr(4)) + Vector3.UP * 0.55 * ks
+			eye.y = maxf(eye.y, terrain.height_at(eye.x, eye.z) + 0.55 * ks)
 			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75 * ks]
 		if "stairup" in args:
 			# (11-12 18:00) swing clearance: the `stepup` bot's stair (three 0.2 m masonry courses,

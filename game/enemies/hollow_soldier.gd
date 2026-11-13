@@ -74,6 +74,8 @@ const DRAWN := [6.0, 9.0, Vector3(-0.05, 1.24, 0.30), -32.0]
 ## arm shut, now carried by `_lean_grips`. THRUST_TRY=a,b,x,y,z,tw,sl,r tries a pose.
 const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
 const THRUST_SOLVED := [18.0, 1.0, Vector3(0.02, 1.22, 0.82), -20.0, -0.1, 0.58]
+const FOE_TOE_FLOOR := -0.002   # m per size: the ball bone's lowest height over the ground (a flat planted boot stands its ball at ~-0.001: at 0 the floor lifted planted boots a few mm and they skated, `foestride`)
+static var _toe_floor: float = float(OS.get_environment("FOE_TOEFLOOR")) if OS.has_environment("FOE_TOEFLOOR") else FOE_TOE_FLOOR
 const FOE_PIVOT_SINK := 14.0     # skeleton cm the hips may settle onto a ball-pivot leg (hero 8)
 const FOE_BALL_HEEL_MAX := 24.0  # deg a foe's heel may rise onto the ball to keep it on its spot
 var thrust_pose: Array = _try_thrust()
@@ -395,6 +397,9 @@ func _setup_animation() -> void:
 		# foes' clips rise onto the stepping leg, so the hips may sink deeper and the heel rise higher
 		# to keep the ball on its spot. FOEBALL_OLD: the before (ankle pin, 8 cm sink)
 		stride_warp.ball_pivot = not OS.has_environment("FOEBALL_OLD")
+		# (11-13 06:00) the ball of each boot stays on the ground at toe-off (the knight's left
+		# ball sank 0.06 m per size into it): see StrideWarp.toe_floor
+		stride_warp.toe_floor = _toe_floor
 		if stride_warp.ball_pivot:
 			stride_warp.pivot_sink_max = FOE_PIVOT_SINK
 			stride_warp.ball_heel_max_deg = FOE_BALL_HEEL_MAX
@@ -1218,6 +1223,9 @@ func _update_ground_feet(delta: float) -> void:
 	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
 	if _feet_planted():
 		stride_warp.ground_w = 0.0
+	# (11-13 06:00) the toe floor is for the walk's toe-off; a stagger's step-off and stance pin
+	# own the boots (with it on, the right-case stance boot skated 0.025 m one tick, `foeflinch`)
+	stride_warp.toe_floor = -INF if state == STAGGER else _toe_floor
 	# staggered: the stance boot is pinned where it struck (the hero's contact lock), so the
 	# shove's backward stagger steps plant instead of skating while the walk's cadence and the
 	# shove's pace disagree (the 4x backward walk lifted its stance foot before the shove slowed)

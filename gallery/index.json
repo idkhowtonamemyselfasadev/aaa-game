@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261109-1000-plunge-snatch.jpg",
-  "time": "2026-11-09T10:40:00Z",
-  "caption": "Plunge pressed with the staff slung, 0.05 s in: the staff now swings out beside the straw hat as it comes off the back; still lit from behind by this lens, hands not yet on the shaft at this instant (GL renderer).",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1000-snatch-before-after.jpg",
   "time": "2026-11-09T10:40:00Z",
   "caption": "Before (left) the snatched staff stood up through the hat brim; after (right) it passes beside it. The snatch path is still a little whippy.",
@@ -885,6 +879,12 @@
   "file": "20261113-0400-foe-stair-off.jpg",
   "time": "2026-11-13T04:00:00Z",
   "caption": "The same soldier stepping off the last tread onto the turf without a pop; the GL fallback lighting is flat and the scene is a test set, not a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0601-knight-stair-x46.jpg",
+  "time": "2026-11-13T06:01:26Z",
+  "caption": "The Ashen Knight at its phase-3 size (4.6x) on the test stair on open meadow: lens too low and backlit, its head cropped out, the stair a plain dark box with no masonry.",
   "verdict": "fail"
  }
 ]

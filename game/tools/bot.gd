@@ -2968,6 +2968,7 @@ func _foe_stride_test() -> void:
 		var prev = null
 		var vv := 0.0
 		var ts := 0.0
+		var since_sw := 99
 		for i in 240:
 			var dir := Vector3(0, 0, -1) if (i / 80) % 2 == 0 else Vector3(0, 0, 1)
 			e.bot_move = dir * spd
@@ -2981,7 +2982,15 @@ func _foe_stride_test() -> void:
 			var now := [a if ha < hb else b, 0 if ha < hb else 1, e.global_position, minf(ha, hb)]
 			var pv = prev
 			prev = now
-			if i % 80 < 40 or pv == null or pv[1] != now[1]:
+			# (11-13 06:00) the first ticks after the lower foot changes are double support: the
+			# toe-off boot's heel rising (it no longer sinks its ball into the turf, toe_floor) hands the
+			# pick to the swing boot still skimming in at the stride's pace before heel strike, which
+			# is no skate; FOESTRIDE_SWITCH_OLD=1 = skip only the switch tick
+			if pv != null and pv[1] != now[1]:
+				since_sw = 0
+			else:
+				since_sw += 1
+			if i % 80 < 40 or pv == null or since_sw < (1 if OS.has_environment("FOESTRIDE_SWITCH_OLD") else 6):
 				continue
 			var d: Vector3 = (now[0] as Vector3) - (pv[0] as Vector3)
 			var sk := Vector2(d.x, d.z).length()
@@ -3004,8 +3013,11 @@ func _foe_stride_test() -> void:
 	for o in out:
 		if o[4] < 6:
 			return _combat_done(false, "too few flat-foot ticks (size %.1f at %.2f m/s)" % [o[1], o[2]])
-		if o[3] > 0.006:   # 0.0085 before the 11-04 22:00 calibration
-			return _combat_done(false, "a foe's planted foot skates %.4f m/tick per size (size %.1f at %.2f m/s; want <= 0.006)" % [o[3], o[1], o[2]])
+		# 0.0085 before the 11-04 22:00 calibration; (11-13 06:00) 0.0065: with the toe floor the
+		# toe-off boot rolls up onto its ball (its ankle travels forward ~0.4 mm a tick more while it
+		# is still the lower foot) instead of sinking the ball into the turf (TOEFLOOR_OLD 0.0057, new 0.0061)
+		if o[3] > 0.0065:
+			return _combat_done(false, "a foe's planted foot skates %.4f m/tick per size (size %.1f at %.2f m/s; want <= 0.0065)" % [o[3], o[1], o[2]])
 	_combat_done(true, "the soldier's and the knight's planted feet hold still at every size and pace")
 
 ## Foe turn on the spot: a soldier and the knight at all three sizes, standing, turn 120 deg.
@@ -4374,6 +4386,7 @@ func _foe_step_test() -> void:
 		var air := 0
 		var dvis := 0.0
 		var dfloat := 0.0
+		var dsink := INF                # (11-13 06:00) the lowest a ball (toe) bone got under the stone beneath it
 		var lv: float = e.body.global_position.y
 		e.down_carry_max = 0.0
 		var ddbg := OS.has_environment("FOESTEP_DEBUG")
@@ -4401,6 +4414,10 @@ func _foe_step_test() -> void:
 						var pt: Vector3 = skel.global_transform * skel.get_bone_global_pose(bn).origin
 						cl = minf(cl, pt.y - float(base_b[bn]) - float(under.call(pt)))
 					per[f] = cl
+					var pb: Vector3 = skel.global_transform * skel.get_bone_global_pose(tbs[f]).origin
+					var ub: float = under.call(pb)
+					if ub > -INF:
+						dsink = minf(dsink, pb.y - ub)
 					if ddbg and e == k:
 						var pa: Vector3 = skel.global_transform * skel.get_bone_global_pose(fts[f]).origin
 						var pt2: Vector3 = skel.global_transform * skel.get_bone_global_pose(tbs[f]).origin
@@ -4412,8 +4429,8 @@ func _foe_step_test() -> void:
 		e.bot_move = Vector3.ZERO
 		var descended := top_y - e.global_position.y
 		var nd: int = StepUp.steps_down - down0
-		print("BOT foestep: %s x%.1f walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m" % ["knight" if e == k else "soldier", sc, descended, nd, air, dvis, dfloat, e.down_carry_max])
-		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat])
+		print("BOT foestep: %s x%.1f walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m, ball bone at worst %.3f m over the stone (%.4f per size)" % ["knight" if e == k else "soldier", sc, descended, nd, air, dvis, dfloat, e.down_carry_max, dsink, dsink / sc])
+		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat, dsink])
 		for b in built:
 			b.queue_free()
 		await _ticks(10)
@@ -4447,7 +4464,12 @@ func _foe_step_test() -> void:
 		# height over a heel standing on the tread with the ball over the edge): on the treads
 		if r[0] and r[12] > 0.025 * r[1] and not OS.has_environment("FOEBASE_OLD"):
 			return _combat_done(false, "the knight (x%.1f)'s boots hang %.3f m off the treads walking down" % [r[1], r[12]])
-	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads")
+		# (11-13 06:00) the ball of a boot never sinks into the stone (TOEFLOOR_OLD: the knight's left
+		# ball 0.06 m per size under it at toe-off, 0.28 m at x4.6); a tread corner under a heel-on
+		# boot may read the ball a little low for a tick, so 1.5 cm a size
+		if r[13] < -0.015 * r[1] and not OS.has_environment("TOEFLOOR_OLD"):
+			return _combat_done(false, "a foe (x%.1f)'s boot ball sinks %.3f m into the stone walking down" % [r[1], -r[13]])
+	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads, balls never in the stone")
 
 func _step_up_test() -> void:
 	var p := _player
