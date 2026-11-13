@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-1341-plunge-burst-015.jpg",
-  "time": "2026-11-09T13:41:47Z",
-  "caption": "Plunge 0.15 s: the burst is darker and a little taller with a few clods flying left, but the new earth column hides behind the hero's back from this lens and the clods read as specks.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1419-plunge-swing-new.jpg",
-  "time": "2026-11-09T14:19:33Z",
-  "caption": "Plunge swing down at 0.20 s with the new dip fade: the shaft slants forward clear of the straw hat, ferrule heading for the turf; still backlit, hero small in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1419-plunge-swing-old.jpg",
   "time": "2026-11-09T14:19:33Z",
   "caption": "Same frame with the old late dip fade (PLUNGE_LATEDIP=1): the shaft stands bolt upright through the hat brim in front of the face, the fault fixed this session.",
@@ -885,6 +873,18 @@
   "file": "20261113-2000-soldier-walkin-seq.jpg",
   "time": "2026-11-13T20:40:00Z",
   "caption": "Frames 50/58/62/72: the soldier walks, stops and draws its thrust; the boots take one settle step then hold still, but the hood crown reads as a stiff cylinder and the ground under the hidden grass is a flat straw texture.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2100-soldier-hood-front-above.jpg",
+  "time": "2026-11-13T21:55:00Z",
+  "caption": "The Hollow Soldier's hood from the fight camera's height after the reshape: a round crown on the skull, folds no longer meeting in a star at the tip; the cloth still looks too clean and smooth for ash-stiff hemp.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2100-soldier-hood-back.jpg",
+  "time": "2026-11-13T21:55:00Z",
+  "caption": "The hood from behind and above: a rounded crown widening steadily to the shoulders (it was a flat-lidded pail); still a too-regular bell over a mantle that reads as a pleated skirt shelf.",
   "verdict": "fail"
  }
 ]

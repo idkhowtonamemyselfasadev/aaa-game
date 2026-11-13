@@ -37,6 +37,7 @@ uniform float felt = 0.0;          // > 0: pressed felt (a hat): matte, no fibre
 uniform float fuzz_ratio = 0.39;    // wool fuzz grain length across / along the hang (1 = no streaks)
 uniform float hemp = 0.0;          // > 0: coarse open-weave hemp sacking: slubbed threads, drape folds, darns, fray
 uniform float pleats = 0.0;        // > 0: a tabard panel with this many pleats baked into its mesh (rags.gd pleat_phase)
+uniform float crown_fade = 0.0;    // > 0 (a cowl): the hemp fold shading fades out above this UV.y, so the folds do not meet in a star at the crown
 uniform float side_tear = 0.0;     // > 0: the panel's side edges are torn too (bites deepening toward the hem)
 uniform float wool = 0.0;          // > 0: heavy fulled wool: fibre fuzz, pilling, soft creases, sheen
 uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, damp hem, rubbed edge, mud flecks
@@ -347,6 +348,7 @@ void fragment() {
 	if (hm > 0.0) {
 		float hang = clamp(UV.y, 0.0, 1.0);
 		float depth = mix(0.35, 1.0, smoothstep(0.0, 0.7, hang));
+		depth *= crown_fade > 0.0 ? smoothstep(0.0, crown_fade, hang) : 1.0;
 		float nf = 4.0 + 1.5 * hash(vec2(seed, 7.0));
 		float ph = uv.x * nf + (fbm(vec2(uv.x * 2.0, uv.y * 0.6) + seed) - 0.5) * 2.4;
 		// a pleated panel: the shading follows the folds baked into the mesh (the geometry

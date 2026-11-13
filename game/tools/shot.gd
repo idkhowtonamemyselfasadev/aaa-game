@@ -2302,6 +2302,18 @@ func _ready() -> void:
 			look = hhead + Vector3.UP * 0.06
 			pos = hhead + hoff.normalized() * 1.05 + Vector3.UP * 0.1
 			print("SHOT coif head at %.2f m over the turf" % (hhead.y - terrain.height_at(hhead.x, hhead.z)))
+		if spot == "soldierface" and "crown" in args:
+			# (11-13 21:00) crown: the soldier's hood from above and in front, off its Head bone
+			# (the fight camera looks down on the cowl's crown and shoulders all fight);
+			# `crownback` swings round behind the shoulder
+			var csk: Skeleton3D = world.soldier.model.find_children("*", "Skeleton3D", true, false)[0]
+			var chead: Vector3 = csk.global_transform * csk.get_bone_global_pose(csk.find_bone("mixamorig_Head")).origin
+			var cb: Basis = world.soldier.global_transform.basis
+			var cfwd := Vector3(cb.z.x, 0, cb.z.z).normalized()
+			var cleft := Vector3(cb.x.x, 0, cb.x.z).normalized()
+			var coff := (cfwd * 0.8 + cleft * 0.6) if not "crownback" in args else (-cfwd * 0.8 + cleft * 0.6)
+			look = chead + Vector3.UP * 0.02
+			pos = chead + coff.normalized() * 1.25 + Vector3.UP * 0.95
 		if spot == "soldier" and "bite" in args:
 			# look down at the buried bit and its turf burst, the hewer's arms above
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.75    # (2.7 looked straight down on the bent back; 1.75 profiles the stoop over the helve)

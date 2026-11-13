@@ -114,6 +114,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		var hm := hp.material_override as ShaderMaterial
 		hm.set_shader_parameter("pleats", h_n)
 		hm.set_shader_parameter("side_tear", 0.035)
+		hm.set_shader_parameter("crown_fade", 0.32)
 		head.add_child(hp)
 	else:
 		# a fitted hemp coif bound round the old helm, the visor left bare, two knotted
@@ -464,8 +465,15 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 		var cut := 1.0 - 0.035 * (0.5 + 0.5 * sin(a * 2.7 + mseed)) \
 				- 0.02 * (0.5 + 0.5 * sin(a * 9.0 + mseed * 1.9))
 		var vv := v * lerpf(1.0, cut, smoothstep(0.5, 1.0, v))
-		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(vv / 0.34, 1.0), 2.0), 0.0, 1.0))
-		var r := dome * (1.0 + 0.45 * smoothstep(0.7, 1.0, vv))
+		# (11-13 21:00) not a bucket: from above and behind the old profile (a shallow dome, full
+		# width straight down to a shelf at vv 0.7, then a 45 % skirt) read as a straight-sided
+		# pail with a flat lid. Now a round dome as tall as it is wide sits snug on the skull, and
+		# from there the cloth widens steadily all the way to the shoulders, a bell, not a pail
+		var dome := sqrt(clampf(1.0 - pow(1.0 - minf(vv / 0.42, 1.0), 2.0), 0.0, 1.0))
+		var bk := maxf(-cos(a), 0.0)
+		var r := dome * (0.86 + 0.59 * pow(smoothstep(0.22, 1.0, vv), 1.3))
+		# the back's slack: below the occiput the hood sags out a little under its own weight
+		r += 0.05 * bk * bk * exp(-pow((vv - 0.62) / 0.14, 2.0))
 		r *= 1.0 + 0.03 * sin(a * 7.0) * vv
 		if n > 0.0:
 			# drape folds, each its own depth, biased outward so no valley sinks onto the head
@@ -483,7 +491,12 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 		# skull, the tip drooping behind, with a couple of creases running down from it
 		var pk := 1.0 - smoothstep(0.0, 0.34, vv)
 		var back := maxf(-cos(a), 0.0)
-		r *= 1.0 + 0.22 * pk * pk * back * smoothstep(0.02, 0.1, vv)
+		# (11-13 21:00: 0.22 left a flat ledge on top seen from behind; a softer droop)
+		r *= 1.0 + 0.08 * pk * pk * back * smoothstep(0.02, 0.1, vv)
+		# a centre seam runs over the crown down the back: two panels sewn edge to edge stand a
+		# little proud along it, breaking the dome's smooth top
+		var sda := wrapf(a - PI, -PI, PI)
+		r += 0.075 * exp(-sda * sda / 0.006) * (1.0 - smoothstep(0.35, 0.75, vv)) * smoothstep(0.0, 0.05, vv)
 		var crease := 0.0
 		for c in [[PI - 0.85 + 0.2 * sin(mseed), 1.0], [PI + 0.7 + 0.15 * cos(mseed * 1.7), 0.8],
 				[0.9 * PI + 0.3 * sin(mseed * 2.3), 0.6]]:
@@ -491,12 +504,15 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 			# a sharp ridge with a shallow hollow beside it, strongest just below the peak
 			crease += float(c[1]) * (exp(-da * da / 0.012) - 0.45 * exp(-pow(da - 0.16, 2.0) / 0.02))
 		r += 0.05 * crease * smoothstep(0.04, 0.14, vv) * (1.0 - smoothstep(0.32, 0.55, vv))
-		var cz := -0.045 - 0.06 * pow(1.0 - vv, 3.0) - 0.075 * pk * pk
+		var cz := -0.045 - 0.06 * pow(1.0 - vv, 3.0) - 0.045 * pk * pk
 		# the brim sags forward over the brow where the cloth has nothing under it
 		var brow := (1.0 - smoothstep(0.0, 0.18, minf(u, 1.0 - u))) * smoothstep(0.05, 0.2, vv) \
 				* (1.0 - smoothstep(0.3, 0.55, vv))
-		var y := 2.09 - vv * 0.43 - 0.012 * brow - 0.025 * pk * pk * pk + 0.012 * pk * (1.0 - pk) * 4.0 * (1.0 - back)
-		return Vector3(sin(a) * 0.168 * r, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
+		# (11-13 21:00) the crown sits 4 cm lower, on the skull instead of a peak above it
+		var y := 2.09 - vv * 0.43 - 0.04 * (1.0 - smoothstep(0.0, 0.45, vv)) - 0.012 * brow - 0.025 * pk * pk * pk + 0.012 * pk * (1.0 - pk) * 4.0 * (1.0 - back)
+		# slumped a little to the wearer's right at the top, as worn cloth settles
+		var slump := -0.012 * (1.0 - smoothstep(0.0, 0.5, vv))
+		return Vector3(sin(a) * 0.168 * r + slump, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
 
 ## How many drape folds hang across the cowl (9..12), from its material seed.
 static func hood_folds(mseed: float) -> float:
