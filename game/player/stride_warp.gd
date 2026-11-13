@@ -138,6 +138,15 @@ var toe_floor := -INF
 var toe_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ball out of the ground
 static var TOE_FLOOR_OLD := OS.has_environment("TOEFLOOR_OLD")
 var _ball_gy := [-INF, -INF]
+# (11-13 07:00) the ankle (Foot) bone never stands lower over the ground under it than it does in
+# the idle: the foes' walk clip carries each planted boot ~0.02 m per size lower against the root
+# than their idle, so at every stalk the soles stood 1.5-5 cm (soldier) into flat turf, heel and
+# ball alike (a CPU-skinned sole probe, bot `foestep` FOESOLE=1), 0.11 m at the knight's x4.6.
+# -INF = off (the hero); else m per size. ANKLEFLOOR_OLD=1 = off
+var ankle_floor := -INF
+var ankle_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ankle at the idle's height
+static var ANKLE_FLOOR_OLD := OS.has_environment("ANKLEFLOOR_OLD")
+var _ank_gy := [-INF, -INF]
 var ground_anim := [0.0, 0.0]    # (bots) world m each ankle sat over the floor in the clip this tick
 var ground_sole := [0.0, 0.0]    # (bots) world m each ankle sits over the ground under it after the IK
 const GROUND_MAX := 0.42         # m (x the owner's scale): a bigger step is not a slope, leave it
@@ -1057,6 +1066,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		# step, the heel hangs over the lower ground, as a foot does on a stair edge.
 		toe_lift[i] = 0.0
 		_ball_gy[i] = -INF
+		_ank_gy[i] = gy if not hit.is_empty() else -INF
 		if tb[i] >= 0:
 			var ball: Vector3 = xf * skel.get_bone_global_pose(tb[i]).origin
 			var reach := Vector3(ball.x - a.x, 0.0, ball.z - a.z)
@@ -1147,6 +1157,13 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
 		toe_floor_lift[i] = 0.0
+		ankle_floor_lift[i] = 0.0
+		if ankle_floor > -INF and not ANKLE_FLOOR_OLD and float(_ank_gy[i]) > -INF:
+			var aw0: Vector3 = xf * skel.get_bone_global_pose(ft[i]).origin
+			var need0 := float(_ank_gy[i]) + ankle_floor * sc - (aw0.y + lift)
+			if need0 > 0.0:
+				ankle_floor_lift[i] = minf(need0, lim) * w
+				lift += ankle_floor_lift[i]
 		var keep := skel.get_bone_global_pose(ft[i]).basis
 		# a planted sole lies on the slope; a foot swinging high keeps the clip's angle
 		var plant := clampf(1.0 - (float(anim_h[i]) / sc - 0.12) / 0.14, 0.0, 1.0) * w

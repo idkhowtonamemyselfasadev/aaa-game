@@ -4298,6 +4298,70 @@ func _foe_step_test() -> void:
 		if not fh.is_empty():
 			floor_y = fh.position.y
 		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+		# (11-13 07:00) each boot bone's height over the turf in a true idle on the flat, before the
+		# stair is built: the old base was read after the climb, with the giant stopped mid-stride
+		# on the top tread (its left boot 3.5 m behind, toe pitched up 0.21 m at x4.6), so a planted
+		# left ball read 0.22 m 'in the stone' all the way down. FOEBASE_TOP=1 = that old read
+		var idle_b := {}
+		await e.skel.skeleton_updated
+		var sole_dbg := OS.has_environment("FOESOLE")
+		if sole_dbg:
+			var lw0: Array = _boot_soles(e, e.skel)
+			print("FOESOLE idle verts %d soles over turf %.4f %.4f (floor %.3f)" % [(_sole_cache[e] as Array).size(), lw0[0] - floor_y, lw0[1] - floor_y, floor_y])
+		for bname in ["mixamorig_LeftToeBase", "mixamorig_LeftFoot", "mixamorig_RightToeBase", "mixamorig_RightFoot"]:
+			var bi: int = e.skel.find_bone(bname)
+			var bp: Vector3 = e.skel.global_transform * e.skel.get_bone_global_pose(bi).origin
+			var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6 * sc, bp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+			if not bh.is_empty():
+				idle_b[bi] = bp.y - (bh.position as Vector3).y
+		# the same read on the FLAT at the same stalk: the walk clip's own stance against the idle
+		var flat_low := INF
+		var flat_hi := -INF
+		var flat_under := 0
+		var flat_n := 0
+		if idle_b.size() == 4:
+			var fspd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
+			for fi in 150:
+				e.bot_move = fwd * fspd
+				await get_tree().physics_frame
+				await e.skel.skeleton_updated
+				if fi < 40 or not e.is_on_floor():
+					continue
+				if sole_dbg:
+					var lw1: Array = _boot_soles(e, e.skel)
+					var gl := []
+					for f3 in 2:
+						var fb: int = e.skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][f3])
+						var fp: Vector3 = e.skel.global_transform * e.skel.get_bone_global_pose(fb).origin
+						var fr := space.intersect_ray(PhysicsRayQueryParameters3D.create(fp + Vector3.UP * 0.6 * sc, fp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+						gl.append(float(lw1[f3]) - ((fr.position as Vector3).y if not fr.is_empty() else floor_y))
+					print("FOESOLE %d %.4f %.4f" % [fi, gl[0], gl[1]])
+				var lw := INF
+				for f2 in 2:
+					var cl2 := INF
+					for bi in idle_b:
+						if (e.skel.get_bone_name(bi).begins_with("mixamorig_Left")) != (f2 == 0):
+							continue
+						var bp2: Vector3 = e.skel.global_transform * e.skel.get_bone_global_pose(bi).origin
+						var bh2 := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp2 + Vector3.UP * 0.6 * sc, bp2 + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+						if not bh2.is_empty():
+							cl2 = minf(cl2, bp2.y - (bh2.position as Vector3).y - float(idle_b[bi]))
+							if OS.has_environment("FOESTEP_DEBUG"):
+								print("FOEFLAT %d %s %.3f" % [fi, e.skel.get_bone_name(bi).trim_prefix("mixamorig_"), bp2.y - (bh2.position as Vector3).y - float(idle_b[bi])])
+					lw = minf(lw, cl2)
+					flat_low = minf(flat_low, cl2)
+					if cl2 < -0.01 * sc:
+						flat_under += 1
+				flat_hi = maxf(flat_hi, lw)
+				flat_n += 1
+			e.bot_move = Vector3.ZERO
+			await _ticks(60)
+			floor_y = e.global_position.y
+			fh = space.intersect_ray(PhysicsRayQueryParameters3D.create(e.global_position + Vector3.UP, e.global_position + Vector3.DOWN * 3.0, 1, [e.get_rid()]))
+			if not fh.is_empty():
+				floor_y = fh.position.y
+			fwd = Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+			print("BOT foestep: %s x%.1f on the flat at the stalk: a boot bone at worst %.3f m under its idle height (%.4f per size), %d boot-ticks over 1 cm/size under of %d, both boots off up to %.3f m" % [e.name, sc, flat_low, flat_low / sc, flat_under, flat_n * 2, flat_hi])
 		var side := fwd.cross(Vector3.UP)
 		var rise := 0.2 * sc
 		var tread := 0.45 * sc
@@ -4377,16 +4441,24 @@ func _foe_step_test() -> void:
 				var hb0: float = pt.y - float(under.call(pt))
 				base_b[bn] = hb0
 				base_f[f] = minf(base_f[f], hb0)
+				if OS.has_environment("FOESTEP_DEBUG"):
+					print("FOEBASE foot %d bone %s h %.3f along %.3f" % [f, skel.get_bone_name(bn), hb0, (pt - start).dot(fwd)])
 		if OS.has_environment("FOEBASE_OLD"):
 			for f in 2:
 				for bn in [tbs[f], fts[f]]:
 					base_b[bn] = base_f[f]
+		elif not OS.has_environment("FOEBASE_TOP") and idle_b.size() == 4:
+			for bn in idle_b:
+				base_b[bn] = idle_b[bn]
+		if OS.has_environment("FOESTEP_DEBUG"):
+			print("FOEBASE idle ", idle_b, " used ", base_b)
 		var down0: int = StepUp.steps_down
 		var top_y := e.global_position.y
 		var air := 0
 		var dvis := 0.0
 		var dfloat := 0.0
 		var dsink := INF                # (11-13 06:00) the lowest a ball (toe) bone got under the stone beneath it
+		var dlow := INF                 # (11-13 07:00) the lowest any boot bone got under its idle height
 		var lv: float = e.body.global_position.y
 		e.down_carry_max = 0.0
 		var ddbg := OS.has_environment("FOESTEP_DEBUG")
@@ -4424,13 +4496,14 @@ func _foe_step_test() -> void:
 						print("FOEFOOT %d ankle along %.3f h %.3f  toe along %.3f h %.3f base %.3f" % [f, (pa - start).dot(fwd), pa.y - float(under.call(pa)), (pt2 - start).dot(fwd), pt2.y - float(under.call(pt2)), base_f[f]])
 					lowest = minf(lowest, cl)
 				dfloat = maxf(dfloat, lowest)
+				dlow = minf(dlow, lowest)
 				if ddbg:
 					print("FOEDOWN i %d along %.3f root y %.3f body %.3f boots %.3f %.3f lowest boot %.3f carry %.3f facing %.2f gw %.2f off %.3f %.3f" % [i, along2, e.global_position.y - y0, e.body.position.y, per[0], per[1], lowest, e._step_carry.length(), e.body.global_basis.z.dot(fwd), e.stride_warp.ground_w, e.stride_warp.ground_off[0], e.stride_warp.ground_off[1]])
 		e.bot_move = Vector3.ZERO
 		var descended := top_y - e.global_position.y
 		var nd: int = StepUp.steps_down - down0
-		print("BOT foestep: %s x%.1f walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m, ball bone at worst %.3f m over the stone (%.4f per size)" % ["knight" if e == k else "soldier", sc, descended, nd, air, dvis, dfloat, e.down_carry_max, dsink, dsink / sc])
-		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat, dsink])
+		print("BOT foestep: %s x%.1f walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m, ball bone at worst %.3f m over the stone (%.4f per size), a boot bone at worst %.3f m under its idle height (%.4f per size)" % ["knight" if e == k else "soldier", sc, descended, nd, air, dvis, dfloat, e.down_carry_max, dsink, dsink / sc, dlow, dlow / sc])
+		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat, dsink, dlow, flat_low, flat_under])
 		for b in built:
 			b.queue_free()
 		await _ticks(10)
@@ -4469,7 +4542,15 @@ func _foe_step_test() -> void:
 		# boot may read the ball a little low for a tick, so 1.5 cm a size
 		if r[13] < -0.015 * r[1] and not OS.has_environment("TOEFLOOR_OLD"):
 			return _combat_done(false, "a foe (x%.1f)'s boot ball sinks %.3f m into the stone walking down" % [r[1], -r[13]])
-	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads, balls never in the stone")
+		# (11-13 07:00) the boots stand at their idle height, not in the turf/stone: each boot bone
+		# against its own idle height (ANKLEFLOOR_OLD + TOEFLOOR_06: 2.8-3.0 cm per size under on
+		# the flat for ~43% of boot-ticks, 3.9 cm per size on the stair); 1.5 cm/size flat, 2 on a stair
+		if not OS.has_environment("FOEBASE_TOP") and not OS.has_environment("ANKLEFLOOR_OLD"):
+			if r[15] < -0.015 * r[1]:
+				return _combat_done(false, "a foe (x%.1f)'s boots sink %.3f m under their idle height walking on the flat" % [r[1], -r[15]])
+			if r[14] < -0.02 * r[1]:
+				return _combat_done(false, "a foe (x%.1f)'s boots sink %.3f m under their idle height walking down the stair" % [r[1], -r[14]])
+	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads at their idle height, balls never in the stone")
 
 func _step_up_test() -> void:
 	var p := _player
@@ -15893,3 +15974,64 @@ func _ground_y_at(from: Node3D, at: Vector3) -> float:
 
 func _pl_no_env() -> bool:
 	return not OS.has_environment("PL_KEY")
+
+
+# (11-13 07:00) the lowest SKINNED vertex of each boot (verts whose heaviest bone is that side's Foot or
+# ToeBase), CPU-skinned from the current pose: world heights [left, right]. `prep` caches the verts.
+var _sole_cache := {}
+func _boot_soles(e: Node, skel: Skeleton3D) -> Array:
+	if not _sole_cache.has(e):
+		var lst := []
+		for mi in e.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			if m.skin == null or not (m.mesh is ArrayMesh) or not m.is_visible_in_tree():
+				continue
+			var skin := m.skin
+			var bb := PackedInt32Array()
+			for i in skin.get_bind_count():
+				var b := skin.get_bind_bone(i)
+				if b < 0:
+					b = skel.find_bone(skin.get_bind_name(i))
+				bb.append(b)
+			var am := m.mesh as ArrayMesh
+			for si in am.get_surface_count():
+				var arr := am.surface_get_arrays(si)
+				var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+				var bs = arr[Mesh.ARRAY_BONES]
+				var ws = arr[Mesh.ARRAY_WEIGHTS]
+				if bs == null or ws == null or bs.size() == 0:
+					continue
+				var per: int = bs.size() / vs.size()
+				for vi in vs.size():
+					var best := -1
+					var bw := 0.0
+					for k in per:
+						if ws[vi * per + k] > bw:
+							bw = ws[vi * per + k]
+							best = bs[vi * per + k]
+					if best < 0 or best >= bb.size() or bb[best] < 0:
+						continue
+					var nm := skel.get_bone_name(bb[best])
+					var side := 0 if nm.begins_with("mixamorig_Left") else 1
+					if not (nm.ends_with("Foot") or nm.ends_with("ToeBase") or nm.ends_with("Toe_End")):
+						continue
+					var ids := []
+					var wts := []
+					for k in per:
+						if ws[vi * per + k] > 0.0:
+							ids.append(bs[vi * per + k])
+							wts.append(ws[vi * per + k])
+					lst.append([side, vs[vi], ids, wts, skin, bb])
+		_sole_cache[e] = lst
+	var low := [INF, INF]
+	var gx := skel.global_transform
+	for it in _sole_cache[e]:
+		var acc := Vector3.ZERO
+		var skin: Skin = it[4]
+		var bb: PackedInt32Array = it[5]
+		for k in (it[2] as Array).size():
+			var bi: int = it[2][k]
+			acc += float(it[3][k]) * ((skel.get_bone_global_pose(bb[bi]) * skin.get_bind_pose(bi)) * (it[1] as Vector3))
+		var wp: Vector3 = gx * acc
+		low[it[0]] = minf(low[it[0]], wp.y)
+	return low

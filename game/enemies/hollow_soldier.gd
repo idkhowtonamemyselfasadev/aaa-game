@@ -76,6 +76,25 @@ const THRUST := [2.0, 1.0, Vector3(0.02, 1.20, 1.15), 22.0]
 const THRUST_SOLVED := [18.0, 1.0, Vector3(0.02, 1.22, 0.82), -20.0, -0.1, 0.58]
 const FOE_TOE_FLOOR := -0.002   # m per size: the ball bone's lowest height over the ground (a flat planted boot stands its ball at ~-0.001: at 0 the floor lifted planted boots a few mm and they skated, `foestride`)
 static var _toe_floor: float = float(OS.get_environment("FOE_TOEFLOOR")) if OS.has_environment("FOE_TOEFLOOR") else FOE_TOE_FLOOR
+# (11-13 07:00) the ankle bone's lowest height over its ground, m per size: the idle stands it at
+# 0.143 (soldier) / 0.154 (knight) with the soles on the turf; the walk clip carried planted boots
+# ~0.02/size lower (soles into the turf). A few mm under the idle so a flat planted boot is not
+# lifted off its lock. See StrideWarp.ankle_floor. FOE_ANKLEFLOOR=<m/size> tries a value
+# Only the foes whose idle ankle was measured (bot `foestep` FOEBASE idle); the others stay off.
+const FOE_ANKLE_FLOOR := {"hollow_soldier.gd": 0.139, "ashen_knight.gd": 0.150}
+# (11-13 07:00) and the ball: the idle stands it at 0.0165 (soldier) / 0.0193 (knight) m per size,
+# so the 06:00 floor (-0.002) still let a planted ball sit ~2 cm/size under the idle. Measured
+# foes only (others keep FOE_TOE_FLOOR); `foestride` slips unchanged within 1 mm/tick
+const FOE_TOE_FLOOR_MEASURED := 0.012
+func _toe_floor_h() -> float:
+	if OS.has_environment("FOE_TOEFLOOR") or OS.has_environment("TOEFLOOR_06"):
+		return _toe_floor
+	return FOE_TOE_FLOOR_MEASURED if FOE_ANKLE_FLOOR.has((get_script() as Script).resource_path.get_file()) else _toe_floor
+func _ankle_floor_h() -> float:
+	var fl: float = FOE_ANKLE_FLOOR.get((get_script() as Script).resource_path.get_file(), -INF)
+	if fl > -INF and OS.has_environment("FOE_ANKLEFLOOR"):
+		fl = float(OS.get_environment("FOE_ANKLEFLOOR"))
+	return fl
 const FOE_PIVOT_SINK := 14.0     # skeleton cm the hips may settle onto a ball-pivot leg (hero 8)
 const FOE_BALL_HEEL_MAX := 24.0  # deg a foe's heel may rise onto the ball to keep it on its spot
 var thrust_pose: Array = _try_thrust()
@@ -399,7 +418,8 @@ func _setup_animation() -> void:
 		stride_warp.ball_pivot = not OS.has_environment("FOEBALL_OLD")
 		# (11-13 06:00) the ball of each boot stays on the ground at toe-off (the knight's left
 		# ball sank 0.06 m per size into it): see StrideWarp.toe_floor
-		stride_warp.toe_floor = _toe_floor
+		stride_warp.toe_floor = _toe_floor_h()
+		stride_warp.ankle_floor = _ankle_floor_h()
 		if stride_warp.ball_pivot:
 			stride_warp.pivot_sink_max = FOE_PIVOT_SINK
 			stride_warp.ball_heel_max_deg = FOE_BALL_HEEL_MAX
@@ -1225,7 +1245,8 @@ func _update_ground_feet(delta: float) -> void:
 		stride_warp.ground_w = 0.0
 	# (11-13 06:00) the toe floor is for the walk's toe-off; a stagger's step-off and stance pin
 	# own the boots (with it on, the right-case stance boot skated 0.025 m one tick, `foeflinch`)
-	stride_warp.toe_floor = -INF if state == STAGGER else _toe_floor
+	stride_warp.toe_floor = -INF if state == STAGGER else _toe_floor_h()
+	stride_warp.ankle_floor = -INF if state == STAGGER else _ankle_floor_h()
 	# staggered: the stance boot is pinned where it struck (the hero's contact lock), so the
 	# shove's backward stagger steps plant instead of skating while the walk's cadence and the
 	# shove's pace disagree (the 4x backward walk lifted its stance foot before the shove slowed)
