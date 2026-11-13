@@ -8,6 +8,12 @@ const RUN_SPEED := 6.5
 const CHARGE_SPEED := 1.1       # shuffle while the heavy is raised
 const HERO_STEP_LIFT_MAX := 4.0   # (11-12 15:00) cm the hero's turn step clears the turf by at most (STEPLIFT_OLD = 6.5, STEP_LIFT tunes)
 const HERO_HIPS_HOLD := 0.6       # (11-12 07:00) share of the ball pivot's ankle rise the hips rise with in a turn on the spot
+# (11-13 09:00) the hero's boots never stand lower than the idle stands them on the flat (bot
+# `heroflat`: idle ankle bone 0.1324 m, ball 0.0142 m over a slab; the walk/jog/sprint clips planted
+# each boot 3.8 / 4.7 / 5.7 cm under that, soles into the ground). A few mm under the idle so a flat
+# planted boot is not lifted off its lock. HEROFLOOR_OLD=1 = off (the before). See StrideWarp.ankle_floor
+const HERO_ANKLE_FLOOR := 0.128
+const HERO_TOE_FLOOR := 0.010
 const HERO_BALL_HEEL_DEG := 19.0  # (11-12 05:00) deg the hero's heel rises onto the ball in a turn on the spot
 const SPRINT_SPEED := 9.0
 const ACCEL := 14.0
@@ -513,6 +519,9 @@ func _setup_crumple() -> void:
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
 	stride_warp.uncross = true             # (11-12 14:00) the stepping boot never crosses the planted one
 	stride_warp.hips_over_pin = true       # (11-12 16:00) the pelvis slides over the planted ankle
+	if not OS.has_environment("HEROFLOOR_OLD"):
+		_ankle_floor = float(OS.get_environment("HERO_ANKLEFLOOR")) if OS.get_environment("HERO_ANKLEFLOOR") != "" else HERO_ANKLE_FLOOR
+		_toe_floor = float(OS.get_environment("HERO_TOEFLOOR")) if OS.get_environment("HERO_TOEFLOOR") != "" else HERO_TOE_FLOOR
 	# (11-12 05:00) the hero's heel comes up further onto the ball (HERO_HEEL tunes, HEROHEEL_OLD = 13)
 	if not OS.has_environment("HEROHEEL_OLD"):
 		stride_warp.ball_heel_deg = HERO_BALL_HEEL_DEG
@@ -584,6 +593,8 @@ func _update_warp(delta: float, on: bool) -> void:
 ## Foot IK on uneven ground (StrideWarp ground feet): on while the hero stands or strides on
 ## the floor; off in the air, on a wall, under the wing, and under posed legs (Crumple).
 var foot_ground_on := true              # (bots) the ground feet may be switched off
+var _ankle_floor := -INF                # HERO_ANKLE_FLOOR unless HEROFLOOR_OLD
+var _toe_floor := -INF
 
 func _update_ground_feet(delta: float) -> void:
 	if stride_warp == null:
@@ -592,6 +603,11 @@ func _update_ground_feet(delta: float) -> void:
 	if crumple != null and crumple.active:
 		w *= 1.0 - clampf(crumple.leg_aim, 0.0, 1.0)
 	stride_warp.ground_w = move_toward(stride_warp.ground_w, w, delta * (8.0 if w > stride_warp.ground_w else 12.0))
+	# (11-13 09:00) the floors are for the gaits' plants: a knockdown's kneel lays the back boot on
+	# its instep (with the ankle floor on, the get-up's front foot no longer planted ahead, `sweep`),
+	# and the turn on the spot's step owns its boot (the toe floor lifted it, knee +5 deg, `heroturn`)
+	stride_warp.ankle_floor = _ankle_floor if down_t < 0.0 else -INF
+	stride_warp.toe_floor = _toe_floor if down_t < 0.0 and stride_warp.pivot <= 0.0 and turn_shuffle <= 0.0 else -INF
 
 func _update_animation(delta: float) -> void:
 	if anim_tree == null:

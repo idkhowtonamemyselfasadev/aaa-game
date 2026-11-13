@@ -886,5 +886,11 @@
   "time": "2026-11-13T07:32:00Z",
   "caption": "The Ashen Knight at its phase-1 size walking onto the test stair after the boot-height fix; backlit silhouette and the stair top hides its boots, so the fix (boots no longer 2-11 cm into the turf) cannot be judged here, and the stair is still a plain dark slab.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261113-0918-herorun.jpg",
+  "time": "2026-11-13T09:18:27Z",
+  "caption": "The hero jogging across the meadow after the ankle/ball floor fix (boots no longer planted 4-6 cm into the ground, measured by bot heroflat); backlit and the tall grass hides the boots, so the frame cannot show the fix itself.",
+  "verdict": "fail"
  }
 ]

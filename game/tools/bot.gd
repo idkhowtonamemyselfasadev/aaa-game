@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -255,6 +255,9 @@ func _ready() -> void:
 		return
 	if name == "foeflat":
 		_foe_flat_test()
+		return
+	if name == "heroflat":
+		_hero_flat_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -4567,10 +4570,11 @@ func _foe_step_test() -> void:
 ## turf under a boot is uneven by a few cm a size (`foestep` x3.2 read -0.080 m 'under the idle' on
 ## one patch, -0.028 on another), so the read measured the turf, not the clip. Its top sits just
 ## over the highest turf along the walk; the foe is set on it. Returns the slab (free it after).
-func _flat_slab(e: HollowSoldier, fwd: Vector3, sc: float) -> StaticBody3D:
+func _flat_slab(e: CharacterBody3D, fwd: Vector3, sc: float, length := -1.0) -> StaticBody3D:
 	var space := e.get_world_3d().direct_space_state
 	var side := fwd.cross(Vector3.UP)
-	var length := 2.0 * sc + 8.0 * sqrt(sc)
+	if length <= 0.0:
+		length = 2.0 * sc + 8.0 * sqrt(sc)
 	var top := -INF
 	for i in int(length / 0.4) + 1:
 		for lane in [-1.0, 0.0, 1.0]:
@@ -4680,6 +4684,110 @@ func _foe_flat_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "every foe type walks on the flat with its boots at its own idle height, not in the turf")
+
+## (11-13 09:00) The hero's boots against its own idle on a flat slab (the `foeflat` read): each boot
+## bone's height over the slab in a true idle, then the lowest any bone goes under that while it
+## walks, jogs and sprints straight down the slab (the lower foot per bone, ticks on the floor only).
+func _hero_flat_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(60)
+	var fwd := Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z).normalized()
+	var space := p.get_world_3d().direct_space_state
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var gaits := [["walk", 0.5, false], ["jog", 1.0, false], ["sprint", 1.0, true]]
+	var names := ["mixamorig_LeftToeBase", "mixamorig_LeftFoot", "mixamorig_RightToeBase", "mixamorig_RightFoot"]
+	var cur_slab := [null]
+	# only the slab counts: a bone over anything else (a stone, the turf past its edge) reads INF
+	var over := func(bi: int) -> float:
+		var bp: Vector3 = skel.global_transform * skel.get_bone_global_pose(bi).origin
+		var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6, bp + Vector3.DOWN * 0.6, 1, [p.get_rid()]))
+		if bh.is_empty() or bh.collider != cur_slab[0]:
+			return INF
+		return bp.y - (bh.position as Vector3).y
+	var fail := ""
+	var start := p.global_position
+	for g in gaits:
+		p.global_position = start
+		p.velocity = Vector3.ZERO
+		p.bot_input = Vector2.ZERO
+		p.bot_sprint = false
+		await _ticks(20)
+		# the slab runs the way the input walks the hero (camera-relative): walk a moment to see
+		for i in 30:
+			p.bot_input = Vector2(0, -1) * float(g[1])
+			await get_tree().physics_frame
+		var hv := Vector3(p.velocity.x, 0, p.velocity.z)
+		if hv.length() > 0.3:
+			fwd = hv.normalized()
+		p.bot_input = Vector2.ZERO
+		p.global_position = start
+		p.velocity = Vector3.ZERO
+		await _ticks(30)
+		var sb_len := 30.0
+		var slab: StaticBody3D = _flat_slab(p, fwd, 1.0, sb_len)
+		cur_slab[0] = slab
+		await _ticks(90)
+		await skel.skeleton_updated
+		var raw := []
+		for bn in names:
+			raw.append(float(over.call(skel.find_bone(bn))))
+		if INF in raw:
+			fail = "no slab under a boot"
+			slab.queue_free()
+			break
+		var ball: float = minf(raw[0], raw[2])
+		var ankle: float = minf(raw[1], raw[3])
+		var idle_b := {skel.find_bone(names[0]): ball, skel.find_bone(names[2]): ball, skel.find_bone(names[1]): ankle, skel.find_bone(names[3]): ankle}
+		var low := [INF, INF]   # ankle, ball
+		var under := 0
+		var n := 0
+		var t0 := p.global_position
+		for fi in 150:
+			var to := p.global_position - t0
+			var d := Vector3(fwd.x, 0, fwd.z)
+			p.bot_input = Vector2(0, -1) * float(g[1])
+			p.bot_sprint = g[2]
+			p.stamina = p.stamina_max
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			if fi < 40 or not p.is_on_floor() or to.dot(d) > sb_len - 4.0:
+				continue
+			for f in 2:
+				var cl := INF
+				for bi in idle_b:
+					if skel.get_bone_name(bi).begins_with("mixamorig_Left") != (f == 0):
+						continue
+					var ov: float = over.call(bi)
+					if ov == INF:
+						continue
+					var dv: float = ov - float(idle_b[bi])
+					if OS.has_environment("HEROFLAT_DEBUG") and dv < -0.01:
+						print("   %s t%d %s under %.3f side %.2f along %.2f" % [g[0], fi, skel.get_bone_name(bi), dv, to.dot(fwd.cross(Vector3.UP)), to.dot(d)])
+					cl = minf(cl, dv)
+					var k := 0 if skel.get_bone_name(bi).ends_with("Foot") else 1
+					low[k] = minf(low[k], dv)
+				if cl == INF:
+					continue
+				if cl < -0.01:
+					under += 1
+				n += 1
+		p.bot_input = Vector2.ZERO
+		p.bot_sprint = false
+		var worst: float = minf(low[0], low[1])
+		print("BOT heroflat: %s idle ankle %.4f ball %.4f m (raw L %.3f/%.3f R %.3f/%.3f); worst under idle: ankle %.4f ball %.4f m, %d of %d boot-ticks over 1 cm under" % [g[0], ankle, ball, raw[1], raw[0], raw[3], raw[2], low[0], low[1], under, n])
+		if n < 40:
+			fail = "%s: only %d boot-ticks on the floor" % [g[0], n]
+		elif fail == "" and worst < -0.015 and not OS.has_environment("HEROFLAT_NOGATE"):
+			fail = "the hero's boots sink %.3f m under their idle height at a %s on the flat" % [-worst, g[0]]
+		slab.queue_free()
+		await _ticks(5)
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "the hero walks, jogs and sprints on the flat with its boots at its idle height, not in the ground")
 
 func _step_up_test() -> void:
 	var p := _player
@@ -5206,7 +5314,8 @@ func _foot_ik_test() -> void:
 				ticks += 1
 				for f in 2:
 					if sw.ground_w > 0.99 and sw.ground_anim[f] < ankle + 0.04:   # the foot on (or at) the turf
-						var e := absf(float(sole_true.call(f)) - sw.ground_anim[f])
+						# (11-13 09:00) the ankle/toe floors lift a boot the clip set in the turf on purpose
+						var e := absf(float(sole_true.call(f)) - (sw.ground_anim[f] + float(sw.ankle_floor_lift[f]) + float(sw.toe_floor_lift[f])))
 						if e > worst and OS.get_environment("FOOTIK_DEBUG") != "":
 							print("dbg i%d f%d anim %.3f true %.3f off %.3f/%.3f" % [i, f, sw.ground_anim[f], sole_true.call(f), sw.ground_off[0], sw.ground_off[1]])
 						worst = maxf(worst, e)
