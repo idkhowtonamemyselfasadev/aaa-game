@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261109-1119-plunge-impact-005.jpg",
-  "time": "2026-11-09T11:19:16Z",
-  "caption": "Plunge 0.05 s into the landing: hunched over the staff driven into the turf; no dust yet on the impact tick, hero backlit and seen from behind 3/4.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1119-plunge-impact-015.jpg",
   "time": "2026-11-09T11:19:16Z",
   "caption": "Plunge 0.15 s into the landing: dust ring bursts round the crouch, staff angled up past the hat; still lit from behind, the burst arrives a beat late.",
@@ -897,6 +891,12 @@
   "file": "20261113-1010-kstop.jpg",
   "time": "2026-11-13T12:10:00Z",
   "caption": "The Ashen Knight (x2.2) a tenth of a second into a stop from a walk, now stepping its boots into the guard stance instead of skating them (bot foestop: 0.24-0.80 -> 0.01 m/size); the lens is poor: a tree trunk fills the left, the knight is backlit and its boots sit in shadow, so the steps themselves are not visible.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-1700-knight-stop.jpg",
+  "time": "2026-11-13T17:26:00Z",
+  "caption": "The Ashen Knight at its phase-1 size stepping into its guard after a stop, lit from the sun side at 10:00; the meadow grass still hides its boots, so the settle-step fix only shows in the bot numbers, and the armour reads dark against the bright field.",
   "verdict": "fail"
  }
 ]

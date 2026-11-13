@@ -4832,7 +4832,9 @@ func _foe_stop_test(attack := false) -> void:
 			tsj = maxf(tsj, absf(st[4] - st[3]))
 		print("BOT " + tag + ": %s x%.2f (settle steps %d): after the %s, planted boots skate at worst %.4f m/size summed, %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d" % [e.name, sc, e.stop_settles, "wind-up" if attack else "stop", tot, wst, tsj, stl])
 		if fail == "" and not OS.has_environment("FOESTOP_NOGATE"):
-			if attack and (tot > 0.10 or wst > 0.025 or e.stop_settles < 3):
+			# (11-13 17:00) tightened from 0.10 / 0.025 once the settle goal held in the world and the
+			# step cleared the turf from the idle ankle level (SETTLEPIN_OLD SETTLEFLOOR_OLD: 0.078 / 0.021)
+			if attack and (tot > 0.05 or wst > 0.012 or e.stop_settles < 3):
 				# a wind-up from a walk: its arms, lean and sink move the body over the settle steps (the
 				# steady walk slips ~0.16 m/size over the same 44 ticks; before the fix 0.32-0.51, worst 0.04-0.08)
 				fail = "%s x%.1f: a planted boot skates %.3f m/size (worst tick %.3f) after a wind-up from a walk" % [e.name, sc, tot, wst]

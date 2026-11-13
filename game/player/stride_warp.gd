@@ -468,6 +468,17 @@ const STOP_TRAVEL_END := 0.75
 var settle_time_k := 1.0          # x the settle steps' time (a stop: the body's own step time, sqrt(size))
 const STOP_PICK_LEVEL := 1.5     # skeleton units (cm): ankles this level count as double support
 var STOP_PICK_OLD := OS.has_environment("STOPPICK_OLD")
+## (11-13 17:00) a stop's settle step, once its boot has travelled, holds its goal in the WORLD: the
+## goal is the idle stance spot in skeleton space, so a wind-up's lean and the sweep's chest turn
+## moved it under a boot already set down (the soldier's sweep from a walk: the landing boot slid
+## ~2 cm a tick for 4 ticks, bot `foewindup` cut 83). Stop settles only (a turn's body still turns
+## round its steps). SETTLEPIN_OLD: the before
+var settle_pin_world := false
+static var SETTLE_DBG := OS.has_environment("SETTLE_DBG")
+static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
+static var SETTLE_PIN_OLD := OS.has_environment("SETTLEPIN_OLD")
+var _settle_goal_w = null          # the first settle step's goal, world, once travelled
+var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, world, once travelled
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	if not _stance_ok or pivot > 0.0 or skel == null:
 		return false
@@ -493,10 +504,16 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	settle_lift_k = STOP_LIFT_K
 	settle_travel_end = STOP_TRAVEL_END
 	settle_time_k = maxf(time_k, 1.0)
+	settle_pin_world = not SETTLE_PIN_OLD
+	_settle_goal_w = null
+	_settle_bgoal_w = null
 	return true
 
 ## A stop's settle handed over (walking again, or a turn begins): back to a turn's own step settings.
 func end_stop_settle() -> void:
+	settle_pin_world = false
+	_settle_goal_w = null
+	_settle_bgoal_w = null
 	settle_lift_k = 1.0
 	settle_travel_end = 1.0
 	settle_time_k = 1.0
@@ -527,6 +544,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_settle_at = null
 		_settle_b0 = null
 		settle_done = false
+		settle_pin_world = false
+		_settle_goal_w = null
+		_settle_bgoal_w = null
 		settle_lift_k = 1.0
 		settle_travel_end = 1.0
 		settle_time_k = 1.0
@@ -594,6 +614,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			_settle_b0 = pivot_pin
 		var b0: Vector3 = inv * (_settle_b0 as Vector3)
 		var bg: Vector3 = _stance[pivot_side]
+		if _settle_bgoal_w != null:
+			bg = inv * (_settle_bgoal_w as Vector3)
 		var bd: Vector3 = bg - b0
 		bd -= up * bd.dot(up)
 		var ub := clampf((_settle_t - STEP_SETTLE_T) / STEP_SETTLE_T, 0.0, 1.0)
@@ -603,6 +625,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var eb := ubt * ubt * (3.0 - 2.0 * ubt)
 		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
+		if settle_pin_world and ubt >= 1.0 and _settle_bgoal_w == null:
+			_settle_bgoal_w = xf * (b0 + bd)
 		if ub >= 1.0:
 			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
@@ -876,6 +900,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var goal := from
 			if _stance_ok:
 				goal = _stance[1 - pivot_side]
+			if _settle_goal_w != null:
+				goal = inv * (_settle_goal_w as Vector3)
 			var gd := goal - from
 			gd -= up * gd.dot(up)
 			settle_reach = gd.length()
@@ -887,6 +913,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var ut := clampf(u / settle_travel_end, 0.0, 1.0)
 			var e := ut * ut * (3.0 - 2.0 * ut)
 			var tgt := from + gd * e
+			if settle_pin_world and ut >= 1.0 and _settle_goal_w == null:
+				_settle_goal_w = xf * (from + gd)
 			var dh := tgt - of_t
 			of_t += (dh - up * dh.dot(up)) * pivot
 			# a step that has to travel clears the turf on the way
@@ -895,8 +923,17 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# clears it (11-06 07:00: added on top, the giant knight's boot rose 1.5 -> 2.0 cm/size again
 			# mid-descent, a second hump). SETTLE_LIFT_ADD: the before
 			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
-			if not SETTLE_LIFT_ADD:
+			if settle_lift_k != 1.0 and _stance_ok and not SETTLE_FLOOR_OLD:
+				# (11-13 17:00) a stop's step clears the turf from the IDLE ankle level: the walk clip
+				# carries its lower ankle ~3 cm/size under it (the ankle floor lifts the planted boot back
+				# up in the world), so measured from the clip's floor the stepping boot met the turf while
+				# it still travelled and slid 2 cm a tick (the soldier's sweep from a walk, `foewindup`)
+				var fc := maxf(floor_h, minf((_stance[0] as Vector3).dot(up), (_stance[1] as Vector3).dot(up)))
+				clear = maxf(fc + clear - of_t.dot(up), 0.0)
+			elif not SETTLE_LIFT_ADD:
 				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
+			if SETTLE_DBG:
+				print("  sdbg f%d u %.2f ut %.2f reach %.1f h %.2f clear %.2f floor %.2f" % [Engine.get_physics_frames(), u, ut, settle_reach, of_t.dot(up) - floor_h, clear, floor_h])
 			of_t += up * (clear * pivot)
 		else:
 			_settle_t = 0.0
