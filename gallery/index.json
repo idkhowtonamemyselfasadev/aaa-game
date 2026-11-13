@@ -6,12 +6,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261109-0800-plunge-slung-hang-close.jpg",
-  "time": "2026-11-09T08:00:00Z",
-  "caption": "Close crop of the same frames: the new snatch has the staff in the fists by the hang; the raise still reads as a shouldered staff, not one lifted overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-0900-plunge-hang-overhead.jpg",
   "time": "2026-11-09T09:00:00Z",
   "caption": "Plunge hang: the fist is now up by the hat crown with the staff cocked back clear of the brim (before: fists at the chest, shaft through the hat); it still reads as shouldered rather than lifted high, and the lens sees the hero from behind.",
@@ -897,6 +891,12 @@
   "file": "20261113-0121-stairdown-wide.jpg",
   "time": "2026-11-13T01:21:24Z",
   "caption": "Wider 3/4 front view of the same descent at the step-down tick: both boots stand on their treads, but the figure is small, the light flat, and the stair a bare test block.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0207-foestair.jpg",
+  "time": "2026-11-13T02:07:51Z",
+  "caption": "A Hollow soldier walking up the 3-tread test stair, both boots on the stone, its body no longer trailing its collision capsule by half a metre; still a bare test block and flat afternoon light, not a real place.",
   "verdict": "fail"
  }
 ]

@@ -1022,7 +1022,11 @@ func _physics_process(delta: float) -> void:
 	var y_pre := global_position.y
 	var floor_pre := is_on_floor()
 	_step_climb(delta)
+	var pay := _carry_payback(delta)
 	move_and_slide()
+	if pay < 1.0:
+		velocity.x /= pay
+		velocity.z /= pay
 	_ease_carry(delta)
 	if floor_pre and velocity.y < 0.5 and state != DEAD:
 		var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, size_scale)
@@ -1128,6 +1132,29 @@ func _step_climb(delta: float) -> void:
 	if _step_dip != 0.0 or lift > 0.0:
 		_step_dip = StepUp.ease_dip(_step_dip, Vector2(velocity.x, velocity.z).length(), delta, size_scale)
 		body.position.y = _step_dip
+
+## (11-13 03:00) The carry onto a tread is ground the root covers for free (0.22 m a step for a
+## soldier on a 0.45 m tread: up a stair it went ~2x its stalk), so the hold-back the body owed it
+## piled up step on step (0.46 m behind the capsule on the test stair). Once the root stands
+## square on the tread it pays the carry back: it slides at half pace until the hold-back is gone,
+## and the body, let go by the root's lag, keeps walking at its own pace. FOEPAYBACK_OLD=1 = before.
+## Returns the factor the horizontal velocity was scaled by (restored after the slide).
+const PAYBACK := 0.5
+static var _foe_payback_old := OS.has_environment("FOEPAYBACK_OLD")
+
+func _carry_payback(delta: float) -> float:
+	if _foe_payback_old or _step_carry == Vector3.ZERO or state == DEAD or not is_on_floor():
+		return 1.0
+	if get_floor_normal().y < 0.95:
+		return 1.0                       # still riding the tread's edge: keep the full slide
+	var sp := Vector2(velocity.x, velocity.z).length()
+	if sp < 0.05:
+		return 1.0
+	var owed := _step_carry.length()
+	var f := 1.0 - minf(owed / (sp * delta), PAYBACK)
+	velocity.x *= f
+	velocity.z *= f
+	return f
 
 ## The hold-back goes as the root falls behind the pace it was asked for, and at least at a quarter
 ## of the pace (never lingers); dead or staggered off its feet it goes at once.

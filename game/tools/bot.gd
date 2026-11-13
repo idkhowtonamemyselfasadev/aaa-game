@@ -4332,7 +4332,7 @@ func _foe_step_test() -> void:
 		var climbed := e.global_position.y - y0
 		var pace := spd / 60.0
 		print("BOT foestep: %s size %.1f at %.2f m/s (pace %.4f m/tick): climbed %.3f m in %d steps, hips advanced at most %.4f m in one tick (%.1fx pace), root stalled %d ticks, held back up to %.3f m" % ["knight" if e == k else "soldier", sc, spd, pace, climbed, e.steps_up - st0, hmax, hmax / pace, stall, e.carry_max])
-		res.append([e == k, sc, climbed, rise, hmax, pace, stall])
+		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max])
 		for b in built:
 			b.queue_free()
 		await _ticks(10)
@@ -4342,6 +4342,10 @@ func _foe_step_test() -> void:
 			return _combat_done(false, "a foe did not walk up the stair (climbed %.2f m; FOECARRY_OLD never did)" % r[2])
 		if r[4] > 1.6 * r[5]:
 			return _combat_done(false, "a foe's hips lurch %.4f m forward in one tick onto a tread (pace %.4f)" % [r[4], r[5]])
+		# (11-13 03:00) one step's carry at most: the hold-back must not pile up tread on tread
+		# (FOEPAYBACK_OLD: 0.458 m behind the capsule for the soldier)
+		if r[7] > 0.3 * r[1]:
+			return _combat_done(false, "a foe's body trails its capsule %.3f m up the stair (carry not paid back)" % r[7])
 	_combat_done(true, "the foes walk up a stair at a stalk, hips at the stalk's pace")
 
 func _step_up_test() -> void:

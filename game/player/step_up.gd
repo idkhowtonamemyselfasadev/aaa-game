@@ -61,6 +61,8 @@ static func try(cb: CharacterBody3D, delta: float, max_h: float, carry := true, 
 		if not cb.test_move(fwd, Vector3.DOWN * (max_h + 0.05), down, 0.001):
 			why = "r8"
 			return 0.0                     # nothing to stand on behind the lip
+		if OS.has_environment("STEPLIP_DEBUG"):
+			print("STEPLIP_DEBUG %s k %d hit y %.3f (top %.3f) n.y %.3f contact y %.3f" % [cb.name, k, down.get_position().y - xf.origin.y, max_h - absf(down.get_travel().y), down.get_normal().y, col.get_position().y - xf.origin.y])
 		if down.get_normal().y >= wall_y:
 			break
 		if k == tries - 1:
