@@ -86,6 +86,14 @@ const TUCK_SWING_MAX := 1.75             # rad, the most the front panel lies ou
 ## Cut of the rags, set before build(): the harrier runs light in a fitted coif, no mantle,
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
+## (11-13 22:00) the cowl's side profile: how far (m) the front of the dome rolls down over the
+## brow, and how much (of r) the back of the crown rounds in; HOODSIDE_OLD=1 = both 0 (before)
+static var HOOD_BROW_ROLL := 0.0 if OS.get_environment("HOODSIDE_OLD") == "1" else float(OS.get_environment("HOOD_ROLL") if OS.get_environment("HOOD_ROLL") != "" else "0.05")
+static var HOOD_BACK_ROUND := 0.0 if OS.get_environment("HOODSIDE_OLD") == "1" else float(OS.get_environment("HOOD_BACKR") if OS.get_environment("HOOD_BACKR") != "" else "0.12")
+## (11-13 22:00) the cowl's hemp: 0..1 how far its folds break into sharp ridges, and the depth
+## (of r) of its few deep irregular folds; HOODFOLD_OLD=1 = both 0 (before)
+static var HOOD_STIFF := 0.0 if OS.get_environment("HOODFOLD_OLD") == "1" else 0.5
+static var HOOD_DEEP := 0.0 if OS.get_environment("HOODFOLD_OLD") == "1" else float(OS.get_environment("HOOD_DEEP") if OS.get_environment("HOOD_DEEP") != "" else "0.15")
 const COIF_TURNS := 5.0                  # turns of strip wound round the harrier's coif
 const COIF_KNOT := 0.05                  # how proud the tie-off knot stands off the coif (m)
 const COIF_KNOT_V := 0.3                 # its height on the coif (0 crown .. 1 throat)
@@ -483,7 +491,26 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 			var amp := lerpf(0.003, 0.085, smoothstep(0.15, 0.95, vv)) * swell
 			# pressed flat where the cowl lies on the back of the neck
 			amp *= 1.0 - 0.45 * smoothstep(0.2, 0.9, vv) * pow(maxf(-cos(a), 0.0), 2.0)
+			# (11-13 22:00) ash-stiff hemp does not ripple like silk: the folds break into sharp
+			# ridges between rounder hollows, and three or four deep irregular folds (a crush
+			# where the hood lay on the shoulder, a fold kinked by the mantle collar) break the
+			# bell's even run of pleats at uneven places round it
+			if HOOD_STIFF > 0.0:
+				var sharp := 2.0 * (1.0 - absf(sin(ph * PI))) - 1.0
+				fh = lerpf(fh, 1.3 * sharp, HOOD_STIFF)
 			r += amp * (0.5 * fh + 0.55)
+			if HOOD_STIFF > 0.0:
+				var deep := 0.0
+				for k in 4:
+					var fk := float(k)
+					var ca := 1.1 + fk * 1.33 + 0.5 * sin(mseed * (2.1 + fk) + fk * 4.7)
+					var cw := 0.07 + 0.04 * (0.5 + 0.5 * sin(mseed * 3.3 + fk * 2.9))
+					var cd := 0.6 + 0.4 * sin(mseed * 1.3 + fk * 5.1)
+					# the fold leans as it falls, as cloth draped off a round shoulder does
+					var dk: float = wrapf(a - ca - (0.18 + 0.1 * fk) * (vv - 0.5), -PI, PI)
+					# a stiff ridge thrown out, a deep hollow tucked under it on one side
+					deep += cd * (exp(-dk * dk / (cw * cw)) - 0.8 * exp(-pow(dk + 1.4 * cw, 2.0) / (0.6 * cw * cw)))
+				r += HOOD_DEEP * deep * smoothstep(0.22, 0.8, vv) * (1.0 - 0.6 * pow(maxf(-cos(a), 0.0), 3.0))
 			# the brim: a rolled lip of doubled cloth round the face opening
 			var lip := 1.0 - smoothstep(0.0, 0.07, minf(u, 1.0 - u))
 			r += 0.06 * lip * dome
@@ -510,6 +537,16 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 				* (1.0 - smoothstep(0.3, 0.55, vv))
 		# (11-13 21:00) the crown sits 4 cm lower, on the skull instead of a peak above it
 		var y := 2.09 - vv * 0.43 - 0.04 * (1.0 - smoothstep(0.0, 0.45, vv)) - 0.012 * brow - 0.025 * pk * pk * pk + 0.012 * pk * (1.0 - pk) * 4.0 * (1.0 - back)
+		# (11-13 22:00) a head's curve side-on, not a sloped lid: the old profile ran nearly level
+		# from the crown back to a hard corner over the brow and dropped straight down the face
+		# panel. Now the front of the dome rolls down over the brow (the brim hangs over the
+		# forehead with nothing holding it up) and the back of the crown rounds off into the drape
+		var fr := pow(maxf(cos(a), 0.0), 1.5)
+		var roll := smoothstep(0.0, 0.22, vv) * (1.0 - smoothstep(0.3, 0.62, vv))
+		y -= HOOD_BROW_ROLL * fr * roll
+		var occ := smoothstep(0.0, 0.08, vv) * (1.0 - smoothstep(0.18, 0.5, vv))
+		r *= 1.0 - HOOD_BACK_ROUND * back * back * occ
+		y -= 0.03 * back * back * occ
 		# slumped a little to the wearer's right at the top, as worn cloth settles
 		var slump := -0.012 * (1.0 - smoothstep(0.0, 0.5, vv))
 		return Vector3(sin(a) * 0.168 * r + slump, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
