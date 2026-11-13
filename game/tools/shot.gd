@@ -901,6 +901,20 @@ func _ready() -> void:
 					lx = float(a.substr(3))
 			eye = pp + f * (lx + 3.4) + sd * 2.4 + Vector3.UP * 1.25
 			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75]
+			if "foedown" in args:
+				# (11-13 04:00) the Hollow soldier walks DOWN the stair at a stalk instead of the hero
+				# (the hero stepped aside behind the lens' far side)
+				var fo: HollowSoldier = world.soldier
+				fo.global_position = Vector3(pp.x, gy + 0.62, pp.z)
+				fo.velocity = Vector3.ZERO
+				fo.notice = -1.0
+				fo.give_up = 1e9
+				fo.state = HollowSoldier.IDLE
+				fo.body.rotation.y = atan2(f.x, f.z)
+				fo.set_meta("shot_walk", f * HollowSoldier.STALK_SPEED * 0.6)
+				player.remove_meta("shot_walk")
+				player.remove_meta("shot_stair")
+				player.global_position = pp - sd * 3.0 - f * 2.0 + Vector3.UP * 0.8
 		elif "stepdown" in args:
 			# step-down: the hero walks along the turf off the end of a 0.3 m masonry course (two
 			# courses of 0.15 m, so it steps down twice), seen side-on at hip height

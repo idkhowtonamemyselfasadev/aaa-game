@@ -128,18 +128,32 @@ static func step_down(cb: CharacterBody3D, y_pre: float, delta: float, max_h: fl
 		# left it ~4 mm short of the tread (no floor contact, so it fell 4 ticks and both boots hung
 		# off their treads). More slides, then a short probe straight down onto the tread
 		var tries := 4 if OS.has_environment("STEPDOWN_OLD") else int(OS.get_environment("STEPDOWN_TRIES")) if OS.has_environment("STEPDOWN_TRIES") else 8
-		for k in tries:
-			var col := KinematicCollision3D.new()
-			if not cb.test_move(xf, motion, col, 0.001):
-				xf.origin += motion
-				break
-			xf.origin += col.get_travel()
-			if col.get_normal().y >= wall_y:
-				landed = true
-				break
-			motion = col.get_remainder().slide(col.get_normal())
-			if motion.length() < 0.002:
-				break
+		# (11-13 04:00) a big body (the knight, 2.2x) hangs its round bottom on the tread's corner for
+		# longer than one round of slides can roll it off: the slides drained against the steep
+		# contact ~10 cm over the tread and it fell the whole stair. Up to 3 rounds, each starting
+		# again straight down at the gap still left. STEPDOWN_ROUNDS=1 = before
+		var rounds := 1 if OS.has_environment("STEPDOWN_OLD") else int(OS.get_environment("STEPDOWN_ROUNDS")) if OS.has_environment("STEPDOWN_ROUNDS") else 3
+		var floor_hit_y: float = (hit.position as Vector3).y
+		for r in rounds:
+			if r > 0:
+				var gap := xf.origin.y - floor_hit_y + 0.02
+				if landed or gap < 0.004:
+					break
+				motion = Vector3.DOWN * gap
+			for k in tries:
+				var col := KinematicCollision3D.new()
+				if not cb.test_move(xf, motion, col, 0.001):
+					xf.origin += motion
+					break
+				xf.origin += col.get_travel()
+				if OS.has_environment("STEPDOWN_DEBUG"):
+					print("STEPDOWN_DEBUG round %d slide %d travel %s normal %s remainder %.3f" % [r, k, str(col.get_travel()), str(col.get_normal()), col.get_remainder().length()])
+				if col.get_normal().y >= wall_y:
+					landed = true
+					break
+				motion = col.get_remainder().slide(col.get_normal())
+				if motion.length() < 0.002:
+					break
 		if not landed and not OS.has_environment("STEPDOWN_OLD") and not OS.has_environment("STEPDOWN_NOPROBE"):
 			var col2 := KinematicCollision3D.new()
 			# only walking OFF an edge (the slide carried it the way it walks): a walker climbing onto a

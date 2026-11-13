@@ -1030,10 +1030,24 @@ func _physics_process(delta: float) -> void:
 	_ease_carry(delta)
 	if floor_pre and velocity.y < 0.5 and state != DEAD:
 		var excess := StepUp.lip_excess(self, global_position.y - y_pre, delta, size_scale)
+		var pd0 := global_position
 		excess -= StepUp.step_down(self, y_pre, delta, STEP_H * size_scale, size_scale)
+		# (11-13 04:00) the step down slides the round bottom off the tread edge (a few cm past the
+		# pace in one tick): the visible body is held back by that slide, as the hero's is, so the
+		# planted boot is not dragged over the edge. FOEDOWNCARRY_OLD=1 = before
+		if not _foe_carry_old and not _foe_down_carry_old and not _foe_nohold:
+			var cd := global_position - pd0
+			cd.y = 0.0
+			if cd.length() > 0.001:
+				_step_carry -= cd
+				_carry_p1 = global_position
+				down_carry_max = maxf(down_carry_max, cd.length())
+				body.position.x = _step_carry.x
+				body.position.z = _step_carry.z
 		if excess != 0.0:
 			_step_dip = clampf(_step_dip - excess, -(STEP_H + 0.05) * size_scale, (STEP_H + 0.05) * size_scale)
 			body.position.y = _step_dip
+	_floor_dip_to_feet()
 	_update_ground_feet(delta)
 	if anim_tree:
 		# a bigger body covers more ground per stride: the clips play at the scaled speed
@@ -1116,6 +1130,16 @@ var _carry_sp := 0.0
 static var _foe_carry_old := OS.has_environment("FOECARRY_OLD")
 static var _foe_nohold := OS.has_environment("FOECARRY_NOHOLD")   # bots: carried, not held back
 var carry_max := 0.0                 # bots: the largest hold-back so far (m)
+var down_carry_max := 0.0            # bots: the largest slide off a tread edge held back (m)
+static var _foe_down_carry_old := OS.has_environment("FOEDOWNCARRY_OLD")
+## (11-13 04:00) The ground IK stands the boots on the VISIBLE body's floor, as the hero's does:
+## held up over a step down (or let down after a step up) the foe's boots were measured from the
+## root and hung 13 cm off the tread (or sank into it). FOEFLOORDIP_OLD=1 = before
+static var _foe_floor_dip_old := OS.has_environment("FOEFLOORDIP_OLD")
+
+func _floor_dip_to_feet() -> void:
+	if stride_warp != null and not _foe_floor_dip_old:
+		stride_warp.floor_dip = _step_dip
 
 func _step_climb(delta: float) -> void:
 	var p0 := global_position

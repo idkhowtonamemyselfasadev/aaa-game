@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261109-0800-plunge-slung-hang.jpg",
-  "time": "2026-11-09T08:00:00Z",
-  "caption": "Plunge from a slung staff at the hang (plunge 0.08 s), profile: new (left) staff snatched into the fist and angled up behind the hat; old (right) staff still upright on the back, hands empty. Still wrong: the fists stay at the chest instead of going overhead, GL renderer.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0900-plunge-hang-overhead.jpg",
-  "time": "2026-11-09T09:00:00Z",
-  "caption": "Plunge hang: the fist is now up by the hat crown with the staff cocked back clear of the brim (before: fists at the chest, shaft through the hat); it still reads as shouldered rather than lifted high, and the lens sees the hero from behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-0900-plunge-swing-clear.jpg",
-  "time": "2026-11-09T09:00:00Z",
-  "caption": "Plunge swing over the top: the staff is carried out in front of the brim, tip forward, as the dive starts (it used to sweep through the hat); the figure is small and in the cottage-side shade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1019-plunge-snatch-bow.jpg",
-  "time": "2026-11-09T10:19:48Z",
-  "caption": "Plunge snatch at plunge 0.05 s: before (left) the shaft stood up beside the hat brim, after (right) it swings along behind the shoulders on a smooth arc. The hands are still reaching for it and this lens sees the hero from behind.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1000-plunge-snatch.jpg",
   "time": "2026-11-09T10:40:00Z",
   "caption": "Plunge pressed with the staff slung, 0.05 s in: the staff now swings out beside the straw hat as it comes off the back; still lit from behind by this lens, hands not yet on the shaft at this instant (GL renderer).",
@@ -897,6 +873,18 @@
   "file": "20261113-0207-foestair.jpg",
   "time": "2026-11-13T02:07:51Z",
   "caption": "A Hollow soldier walking up the 3-tread test stair, both boots on the stone, its body no longer trailing its collision capsule by half a metre; still a bare test block and flat afternoon light, not a real place.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0400-foe-stair-down.jpg",
+  "time": "2026-11-13T04:00:00Z",
+  "caption": "A Hollow soldier walking down the test stair at a stalk, one boot on each tread now that the foot IK uses the eased step dip; still a plain box stair on an empty meadow under flat GL light, and the hero stands visible behind it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0400-foe-stair-off.jpg",
+  "time": "2026-11-13T04:00:00Z",
+  "caption": "The same soldier stepping off the last tread onto the turf without a pop; the GL fallback lighting is flat and the scene is a test set, not a Wukong frame.",
   "verdict": "fail"
  }
 ]

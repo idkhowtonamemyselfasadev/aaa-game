@@ -4332,7 +4332,62 @@ func _foe_step_test() -> void:
 		var climbed := e.global_position.y - y0
 		var pace := spd / 60.0
 		print("BOT foestep: %s size %.1f at %.2f m/s (pace %.4f m/tick): climbed %.3f m in %d steps, hips advanced at most %.4f m in one tick (%.1fx pace), root stalled %d ticks, held back up to %.3f m" % ["knight" if e == k else "soldier", sc, spd, pace, climbed, e.steps_up - st0, hmax, hmax / pace, stall, e.carry_max])
-		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max])
+		# (11-13 04:00) and back down: off each tread edge the foe is set down on the lower tread (no
+		# fall), the visible body never pops, and the step down's slide off the edge is held back
+		# like the hero's so the planted boot is not dragged over the edge
+		var tbs := [skel.find_bone("mixamorig_LeftToeBase"), skel.find_bone("mixamorig_RightToeBase")]
+		var fts := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+		var under := func(pt: Vector3) -> float:
+			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pt + Vector3.UP * 0.6 * sc, pt + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+			return hit.position.y if not hit.is_empty() else -INF
+		# the boots' own height over the tread when planted (bones sit inside the boot): stand still
+		e.bot_move = Vector3.ZERO
+		await _ticks(40)
+		await skel.skeleton_updated
+		var base_f := [INF, INF]
+		for f in 2:
+			for bn in [tbs[f], fts[f]]:
+				var pt: Vector3 = skel.global_transform * skel.get_bone_global_pose(bn).origin
+				base_f[f] = minf(base_f[f], pt.y - float(under.call(pt)))
+		var down0: int = StepUp.steps_down
+		var top_y := e.global_position.y
+		var air := 0
+		var dvis := 0.0
+		var dfloat := 0.0
+		var lv: float = e.body.global_position.y
+		e.down_carry_max = 0.0
+		var ddbg := OS.has_environment("FOESTEP_DEBUG")
+		for i in 500:
+			if (e.global_position - start).dot(fwd) < 0.3 * sc:
+				break
+			e.bot_move = -fwd * spd
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			var along2 := (e.global_position - start).dot(fwd)
+			if along2 > 1.0 * sc + tread * 3:
+				lv = e.body.global_position.y
+				continue                    # still turning round on the top tread
+			if not e.is_on_floor():
+				air += 1
+			var v: float = e.body.global_position.y
+			dvis = maxf(dvis, absf(v - lv))
+			lv = v
+			if e.is_on_floor():
+				var lowest := INF
+				for f in 2:
+					var cl := INF
+					for bn in [tbs[f], fts[f]]:
+						var pt: Vector3 = skel.global_transform * skel.get_bone_global_pose(bn).origin
+						cl = minf(cl, pt.y - float(base_f[f]) - float(under.call(pt)))
+					lowest = minf(lowest, cl)
+				dfloat = maxf(dfloat, lowest)
+				if ddbg:
+					print("FOEDOWN i %d along %.3f root y %.3f body %.3f lowest boot %.3f carry %.3f facing %.2f gw %.2f off %.3f %.3f" % [i, along2, e.global_position.y - y0, e.body.position.y, lowest, e._step_carry.length(), e.body.global_basis.z.dot(fwd), e.stride_warp.ground_w, e.stride_warp.ground_off[0], e.stride_warp.ground_off[1]])
+		e.bot_move = Vector3.ZERO
+		var descended := top_y - e.global_position.y
+		var nd: int = StepUp.steps_down - down0
+		print("BOT foestep: %s walked down: descended %.3f m in %d steps down, %d ticks off the floor, visible body moved at most %.3f m in a tick, both boots off their ground up to %.3f m, slide off an edge held back up to %.3f m" % ["knight" if e == k else "soldier", descended, nd, air, dvis, dfloat, e.down_carry_max])
+		res.append([e == k, sc, climbed, rise, hmax, pace, stall, e.carry_max, descended, nd, air, dvis, dfloat])
 		for b in built:
 			b.queue_free()
 		await _ticks(10)
@@ -4346,7 +4401,22 @@ func _foe_step_test() -> void:
 		# (FOEPAYBACK_OLD: 0.458 m behind the capsule for the soldier)
 		if r[7] > 0.3 * r[1]:
 			return _combat_done(false, "a foe's body trails its capsule %.3f m up the stair (carry not paid back)" % r[7])
-	_combat_done(true, "the foes walk up a stair at a stalk, hips at the stalk's pace")
+		# (11-13 04:00) down: a step down onto every tread, never off the floor (STEPDOWN_ROUNDS=1: the
+		# knight fell the whole stair, 1 step, 11 ticks airborne), no visible pop
+		if r[8] < r[3] * 3 - 0.06 or r[9] < 3:
+			return _combat_done(false, "a foe did not walk down the stair (%.2f m, %d steps down)" % [r[8], r[9]])
+		if r[10] > 0 and not OS.has_environment("STEPDOWN_ROUNDS"):
+			return _combat_done(false, "a foe falls off the treads walking down (%d ticks off the floor)" % r[10])
+		if r[11] > 0.03 * r[1] + 0.02:
+			return _combat_done(false, "a foe's visible body pops %.3f m in one tick walking down" % r[11])
+		# the soldier's boots stand on the treads (FOEFLOORDIP_OLD: 0.128 m, both hanging over the
+		# tread while the body was held up); the knight's stance boot still can't reach a tread a
+		# full rise below while its root rolls over the corner (0.35 m = 0.16 x size: see PROGRESS)
+		if not r[0] and r[12] > 0.03 and not OS.has_environment("FOEFLOORDIP_OLD"):
+			return _combat_done(false, "the soldier's boots hang %.3f m off the treads walking down" % r[12])
+		if r[0] and r[12] > 0.2 * r[1]:
+			return _combat_done(false, "the knight's boots hang %.3f m off the treads walking down" % r[12])
+	_combat_done(true, "the foes walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads")
 
 func _step_up_test() -> void:
 	var p := _player
