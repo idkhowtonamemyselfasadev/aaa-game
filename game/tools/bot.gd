@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestart", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -264,6 +264,9 @@ func _ready() -> void:
 		return
 	if name == "foestart":
 		_foe_start_test()
+		return
+	if name == "foewindup":
+		_foe_stop_test(true)
 		return
 	if name == "scree":
 		_scree_test()
@@ -4703,8 +4706,13 @@ func _foe_flat_test() -> void:
 ## idle height) both ticks is planted, and its horizontal travel per tick is a skate; the read is
 ## the summed skate per size, the worst tick, the clip rate on the stop tick vs the walk's, and how
 ## long until the legs are still (the blend under 0.02 of the walk).
-func _foe_stop_test() -> void:
+## (11-13 16:00) `foewindup` (attack = true): the same walk, but at the cut the foe opens its wind-up
+## (thrust at cuts 70/96, sweep at 83) as STALK does on reaching its engage range; the read covers
+## the first WINDUP_N ticks (inside the shorter wind-up, before the lunge moves the body).
+func _foe_stop_test(attack := false) -> void:
 	Engine.time_scale = 1.0
+	var tag := "foewindup" if attack else "foestop"
+	const WINDUP_N := 44
 	var k: AshenKnight = _world.knight
 	var so: HollowSoldier = _world.soldier
 	var spot: Vector3 = so.global_position
@@ -4774,15 +4782,25 @@ func _foe_stop_test() -> void:
 			var blend0: float = e._blend
 			e._home = e.global_position        # stays where it stopped (IDLE walks home past 0.6 m)
 			e.bot_move = Vector3.ZERO
+			if attack:
+				# the hero far ahead on the line of the walk: the wind-up faces it and does not turn
+				_world.player.global_position = e.global_position + fwd * 30.0 * sc + Vector3.UP * 0.5
+				e.move_kind = HollowSoldier.SWEEP_MOVE if cut == 83 else HollowSoldier.THRUST_MOVE
+				e._from = e._pose
+				e.windups += 1
+				e._enter(HollowSoldier.WINDUP)
 			var prev := [null, null]
 			var skate := 0.0
 			var worst := 0.0
 			var swing := 0.0
 			var still_at := -1
 			var stop_ts := -1.0
-			for fi in 90:
+			for fi in (WINDUP_N if attack else 90):
 				await get_tree().physics_frame
 				await skel.skeleton_updated
+				if attack and e.state != HollowSoldier.WINDUP:
+					fail = "%s x%.1f: the wind-up ended after %d ticks" % [e.name, sc, fi]
+					break
 				if fi == 2:
 					stop_ts = float(e.anim_tree.get("parameters/speed/scale"))
 				var st = stance.call()
@@ -4812,13 +4830,19 @@ func _foe_stop_test() -> void:
 			wst = maxf(wst, st[1])
 			stl = maxi(stl, st[5] if st[5] >= 0 else 999)
 			tsj = maxf(tsj, absf(st[4] - st[3]))
-		print("BOT foestop: %s x%.2f (settle steps %d): after the stop, planted boots skate at worst %.4f m/size summed, %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d" % [e.name, sc, e.stop_settles, tot, wst, tsj, stl])
+		print("BOT " + tag + ": %s x%.2f (settle steps %d): after the %s, planted boots skate at worst %.4f m/size summed, %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d" % [e.name, sc, e.stop_settles, "wind-up" if attack else "stop", tot, wst, tsj, stl])
 		if fail == "" and not OS.has_environment("FOESTOP_NOGATE"):
-			if tot > 0.045:
-				fail = "%s x%.1f: a planted boot skates %.3f m/size after a stop" % [e.name, sc, tot]
-			elif stl > 75 or e.stop_settles < 3:
+			if attack and (tot > 0.10 or wst > 0.025 or e.stop_settles < 3):
+				# a wind-up from a walk: its arms, lean and sink move the body over the settle steps (the
+				# steady walk slips ~0.16 m/size over the same 44 ticks; before the fix 0.32-0.51, worst 0.04-0.08)
+				fail = "%s x%.1f: a planted boot skates %.3f m/size (worst tick %.3f) after a wind-up from a walk" % [e.name, sc, tot, wst]
+			elif not attack and tot > 0.045:
+				fail = "%s x%.1f: a planted boot skates %.3f m/size after a %s" % [e.name, sc, tot, "wind-up from a walk" if attack else "stop"]
+			elif not attack and (stl > 75 or e.stop_settles < 3):
 				fail = "%s x%.1f: the legs are not still %d ticks after a stop" % [e.name, sc, stl]
 		e.bot_move = Vector3.ZERO
+		if attack:
+			e._enter(HollowSoldier.IDLE)
 		slab.queue_free()
 		e.global_position = spot + Vector3(0, 0.3 * sc, 0)
 		await _ticks(10)
@@ -4826,7 +4850,7 @@ func _foe_stop_test() -> void:
 		o.process_mode = Node.PROCESS_MODE_INHERIT
 	if fail != "":
 		return _combat_done(false, fail)
-	_combat_done(true, "a walking foe that stops sets its boots down where they are instead of skating them")
+	_combat_done(true, "a walking foe that winds up sets its boots into the guard instead of skating them" if attack else "a walking foe that stops sets its boots down where they are instead of skating them")
 
 ## (11-13 15:00) A foe that STARTS walking from its guard stance (left boot ~0.6 m/size ahead): does
 ## the idle -> walk blend drag the weight-bearing boot over the ground into the stride, the way the

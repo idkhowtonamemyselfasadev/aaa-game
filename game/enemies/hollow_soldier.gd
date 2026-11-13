@@ -101,6 +101,9 @@ var _was_walking := false        # last tick's pace was a walk (the stop's settl
 var stop_settles := 0            # (bots) stops that stepped into the stance
 const STOP_FROM := 0.25          # m/s per size: a pace this fast counts as walking
 var _foe_start_old := OS.has_environment("FOESTART_OLD")
+var _foe_windup_old := OS.has_environment("FOEWINDUP_OLD")
+var windup_hold := 0.0              # 1 while a wind-up's settle steps hold its sink back (eases off after)
+const WINDUP_HOLD_RATE := 5.0       # /s the held sink drops in once the feet are set (x 1/sqrt(size))
 var start_t := float(OS.get_environment("FOESTART_T")) if OS.has_environment("FOESTART_T") else START_T
 ## The walk clip's phase that stands like the guard stance: the left boot flat ~25 cm (skeleton)
 ## ahead, the right ~34 cm behind just lifting off (guard: +29 / -29). A start seeks it.
@@ -1065,7 +1068,13 @@ func _physics_process(delta: float) -> void:
 	if state == STRIKE and move_kind == SWEEP_MOVE and not _resolved:
 		_sweep_contact()
 	lean_kick = move_toward(lean_kick, 0.0, delta * 1.2)
-	_lean(lean - lean_kick, sink)
+	# (11-13 16:00) a sweep wound up mid-stride sets its feet first (the stop's settle steps, carried
+	# into it): its deep sink (0.14) waits for them and then drops in (the thrust's 0.07 is left: held,
+	# its late drop-in skated more than it saved). Sunk at once, the body lowered the
+	# stepping boot onto the turf before its travel was done and it slid 2-4 cm a tick (bot `foewindup`)
+	var hold_w := 1.0 if not _foe_windup_old and state == WINDUP and move_kind == SWEEP_MOVE and stride_warp != null and stride_warp.settle_lift_k != 1.0 else 0.0
+	windup_hold = hold_w if hold_w > windup_hold else move_toward(windup_hold, hold_w, delta * WINDUP_HOLD_RATE / sqrt(maxf(size_scale, 1.0)))
+	_lean(lean - lean_kick, sink * (1.0 - windup_hold))
 	max_ember = maxf(max_ember, ember)
 	ember *= 1.0 + 0.9 * _kindle_glow
 	_set_skin("ember", ember)
@@ -1314,6 +1323,11 @@ func _legs_still() -> bool:
 func _stop_steps_ok() -> bool:
 	return true
 
+## The wind-up of a base move (thrust, sweep) leaves the legs to the locomotion: a stop's settle
+## steps may start in it and run on through it (variants' own moves own their footwork)
+func _windup_steps_ok() -> bool:
+	return state == WINDUP and move_kind <= SWEEP_MOVE
+
 func _feet_planted() -> bool:
 	return false
 
@@ -1348,8 +1362,13 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 	# to its stance spot, then the pinned one steps to its own (the turn's settle steps, StrideWarp)
 	# Started on the move it wants (a stall on a stair tread is not a stop); walking again or turning
 	# mid-stop hands the boots back (quickly) or to the turn's own settle
+	# (11-13 16:00) STALK opens its wind-up the tick it reaches its range, mid-stride: the thrust's
+	# and the sweep's wind-ups keep the legs out of it (arms, lean and a little sink), so the same
+	# settle steps run into them (before: the walk -> idle blend skated the boots 0.32-0.51 m/size
+	# into the guard on every approach that ended in an attack, bot `foewindup`; FOEWINDUP_OLD=1)
+	var stop_standing := standing or (not _foe_windup_old and _windup_steps_ok() and hs * size_scale < TURN_STILL and is_on_floor())
 	if not _foe_stop_old and stride_warp != null and stride_warp.ball_pivot:
-		if _was_walking and standing and _move_zero and turn_shuffle <= 0.05 and stride_warp.pivot <= 0.0 and _stop_steps_ok():
+		if _was_walking and stop_standing and _move_zero and turn_shuffle <= 0.05 and stride_warp.pivot <= 0.0 and _stop_steps_ok():
 			if stride_warp.begin_stop_settle(skel, 1.0 / natural_cadence()):
 				stop_settles += 1
 		if stride_warp.settle_lift_k != 1.0:
@@ -1363,9 +1382,9 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 		if stride_warp.settle_lift_k != 1.0 and stale:
 			stride_warp.end_stop_settle()
 			stride_warp.pivot = 0.0
-		elif stride_warp.settle_lift_k != 1.0 and (not _move_zero or not standing or _turn_sh > 0.05 or not _stop_steps_ok()):
+		elif stride_warp.settle_lift_k != 1.0 and (not _move_zero or not stop_standing or _turn_sh > 0.05 or not _stop_steps_ok()):
 			stride_warp.end_stop_settle()
-			stride_warp.pivot = 0.0 if not _move_zero or not standing else stride_warp.pivot
+			stride_warp.pivot = 0.0 if not _move_zero or not stop_standing else stride_warp.pivot
 		_was_walking = hs > STOP_FROM and is_on_floor() and state in [IDLE, STALK]
 	# measured against the body's own cadence: the giant's slow turn is still a full step round
 	var sh := clampf((rate / natural_cadence() - TURN_FROM) / TURN_FULL, 0.0, 1.0) if standing else 0.0
@@ -1373,7 +1392,8 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 	_turn_sh = sh
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 2.5))
 	shuffle_peak = maxf(shuffle_peak, turn_shuffle)
-	_update_pivot_foot(delta, standing)
+	# a stop's settle steps carried into a wind-up are driven as standing (the pivot's settle needs it)
+	_update_pivot_foot(delta, standing or (stride_warp != null and stride_warp.settle_lift_k != 1.0 and stop_standing))
 
 ## Blend position for a ground speed (per unit size): the walk point held up to WALK_TOP, then
 ## a short band to the run point, so a quick stalk is never an unsynced walk/run mix.
