@@ -94,6 +94,12 @@ static var HOOD_BACK_ROUND := 0.0 if OS.get_environment("HOODSIDE_OLD") == "1" e
 ## (of r) of its few deep irregular folds; HOODFOLD_OLD=1 = both 0 (before)
 static var HOOD_STIFF := 0.0 if OS.get_environment("HOODFOLD_OLD") == "1" else 0.5
 static var HOOD_DEEP := 0.0 if OS.get_environment("HOODFOLD_OLD") == "1" else float(OS.get_environment("HOOD_DEEP") if OS.get_environment("HOOD_DEEP") != "" else "0.15")
+## (11-13 23:00) the side panel read flat and evenly lit: the fold hollows are now darkened by a
+## baked cavity term (COLOR.r -> rag.gdshader fold_ao) and two or three stiff horizontal creases
+## sag across each side, where a hood pushed back off the head has crumpled. HOODAO_OLD=1 = before.
+static var HOOD_AO := 0.0 if OS.get_environment("HOODAO_OLD") == "1" else float(OS.get_environment("HOOD_AO") if OS.get_environment("HOOD_AO") != "" else "0.9")
+static var HOOD_CAV := float(OS.get_environment("HOOD_CAV") if OS.get_environment("HOOD_CAV") != "" else "0.003")
+static var HOOD_CREASE := 0.0 if OS.get_environment("HOODAO_OLD") == "1" else float(OS.get_environment("HOOD_CREASE") if OS.get_environment("HOOD_CREASE") != "" else "0.05")
 const COIF_TURNS := 5.0                  # turns of strip wound round the harrier's coif
 const COIF_KNOT := 0.05                  # how proud the tie-off knot stands off the coif (m)
 const COIF_KNOT_V := 0.3                 # its height on the coif (0 crown .. 1 throat)
@@ -123,6 +129,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		hm.set_shader_parameter("pleats", h_n)
 		hm.set_shader_parameter("side_tear", 0.035)
 		hm.set_shader_parameter("crown_fade", 0.32)
+		hm.set_shader_parameter("fold_ao", HOOD_AO)
 		head.add_child(hp)
 	else:
 		# a fitted hemp coif bound round the old helm, the visor left bare, two knotted
@@ -511,6 +518,23 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 					# a stiff ridge thrown out, a deep hollow tucked under it on one side
 					deep += cd * (exp(-dk * dk / (cw * cw)) - 0.8 * exp(-pow(dk + 1.4 * cw, 2.0) / (0.6 * cw * cw)))
 				r += HOOD_DEEP * deep * smoothstep(0.22, 0.8, vv) * (1.0 - 0.6 * pow(maxf(-cos(a), 0.0), 3.0))
+			if HOOD_CREASE > 0.0:
+				# stiff horizontal creases sagging across the sides: each a sharp ridge with the
+				# hollow under it, bowing down toward the middle of the side, fading to the front
+				# (the brim) and the back (pressed on the neck); seeded per hood
+				var side := pow(absf(sin(a)), 2.0)
+				var hc := 0.0
+				for k in 3:
+					var fk := float(k)
+					var sgn := signf(sin(a))
+					var c0 := 0.42 + 0.13 * fk + 0.03 * sin(mseed * (1.7 + fk) + sgn * 2.1)
+					# the crease sags in the middle of the side and wanders round it
+					var cv := c0 + 0.035 * absf(sin(a)) + 0.012 * sin(a * 5.0 + mseed + fk * 2.3)
+					var dv := vv - cv
+					var cwid := 0.018 + 0.006 * fk
+					var ck := (0.8 - 0.2 * fk) * (0.7 + 0.3 * sin(mseed * 2.9 + fk * 3.1 + sgn))
+					hc += ck * (exp(-dv * dv / (cwid * cwid)) - 0.9 * exp(-pow(dv - 1.6 * cwid, 2.0) / (0.8 * cwid * cwid)))
+				r += HOOD_CREASE * hc * side
 			# the brim: a rolled lip of doubled cloth round the face opening
 			var lip := 1.0 - smoothstep(0.0, 0.07, minf(u, 1.0 - u))
 			r += 0.06 * lip * dome
@@ -549,7 +573,8 @@ func _cowl(mseed: float, n: float) -> ArrayMesh:
 		y -= 0.03 * back * back * occ
 		# slumped a little to the wearer's right at the top, as worn cloth settles
 		var slump := -0.012 * (1.0 - smoothstep(0.0, 0.5, vv))
-		return Vector3(sin(a) * 0.168 * r + slump, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28)
+		return Vector3(sin(a) * 0.168 * r + slump, y, cz + cos(a) * 0.192 * r + 0.01 * brow), 64, 28,
+			HOOD_CAV if HOOD_AO > 0.0 else 0.0, Vector3(0.0, 1.85, -0.045))
 
 ## How many drape folds hang across the cowl (9..12), from its material seed.
 static func hood_folds(mseed: float) -> float:
@@ -1021,15 +1046,28 @@ func _joint(bone: int) -> Vector3:
 	return att.global_position
 
 ## A cloth sheet from f(u, v) -> point, u across (nu cells), v from the seam to the hem.
-func _grid(f: Callable, nu: int, nv: int) -> ArrayMesh:
+## With `cavity` > 0 it also bakes a fold cavity term into COLOR.r (1 open, 0 deep in a
+## hollow): how far each vertex sits inside its neighbours along the outward normal (one and
+## two cells away, so both the sharp crease and the broad hollow under a fold read), scaled so
+## a hollow `cavity` metres deep is fully dark. rag.gdshader shades it through `fold_ao`.
+func _grid(f: Callable, nu: int, nv: int, cavity: float = 0.0, centre: Vector3 = Vector3.ZERO) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var pts := PackedVector3Array()
+	for j in nv + 1:
+		for i in nu + 1:
+			pts.append(f.call(float(i) / nu, float(j) / nv))
+	var cav := PackedFloat32Array()
+	if cavity > 0.0:
+		cav = _cavity(pts, nu, nv, cavity, centre)
 	for j in nv + 1:
 		for i in nu + 1:
 			var u := float(i) / nu
 			var v := float(j) / nv
 			st.set_uv(Vector2(u, v))
-			st.add_vertex(f.call(u, v))
+			if cavity > 0.0:
+				st.set_color(Color(cav[j * (nu + 1) + i], 0.0, 0.0, 1.0))
+			st.add_vertex(pts[j * (nu + 1) + i])
 	for j in nv:
 		for i in nu:
 			var a := j * (nu + 1) + i
@@ -1041,6 +1079,38 @@ func _grid(f: Callable, nu: int, nv: int) -> ArrayMesh:
 	st.generate_normals()
 	st.generate_tangents()
 	return st.commit()
+
+static func _cavity(pts: PackedVector3Array, nu: int, nv: int, depth: float, centre: Vector3) -> PackedFloat32Array:
+	var w := nu + 1
+	var out := PackedFloat32Array()
+	out.resize(pts.size())
+	for j in nv + 1:
+		for i in nu + 1:
+			var p := pts[j * w + i]
+			var tu := pts[j * w + mini(i + 1, nu)] - pts[j * w + maxi(i - 1, 0)]
+			var tv := pts[mini(j + 1, nv) * w + i] - pts[maxi(j - 1, 0) * w + i]
+			var n := tu.cross(tv)
+			if n.length_squared() < 1e-12:
+				n = p - centre
+			n = n.normalized()
+			if n.dot(p - centre) < 0.0:
+				n = -n
+			var ins := 0.0
+			for s in [1, 2]:
+				var acc := Vector3.ZERO
+				var cnt := 0
+				for o in [Vector2i(s, 0), Vector2i(-s, 0), Vector2i(0, s), Vector2i(0, -s)]:
+					var ii: int = i + o.x
+					var jj: int = j + o.y
+					if ii < 0 or ii > nu or jj < 0 or jj > nv:
+						continue
+					acc += pts[jj * w + ii]
+					cnt += 1
+				if cnt > 0:
+					# > 0: the neighbours stand out past this vertex, it sits in a hollow
+					ins += (acc / cnt - p).dot(n) * (0.35 if s == 1 else 0.65)
+			out[j * w + i] = 1.0 - smoothstep(0.0, depth, ins)
+	return out
 
 func set_param(param: String, v: Variant) -> void:
 	for m in mats:

@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261109-1419-plunge-swing-old.jpg",
-  "time": "2026-11-09T14:19:33Z",
-  "caption": "Same frame with the old late dip fade (PLUNGE_LATEDIP=1): the shaft stands bolt upright through the hat brim in front of the face, the fault fixed this session.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1525-plunge-snatch-pre.jpg",
-  "time": "2026-11-09T15:25:59Z",
-  "caption": "Plunge pressed with the staff slung, one beat before the snatch: the frame froze too early to show the new first-tick hat clearance, and the lens still sees the hero from behind against a dusk sky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1700-plunge-burst-front-015.jpg",
-  "time": "2026-11-09T17:00:00Z",
-  "caption": "Plunge impact 0.15 s after touch-down from a new front lens (jface jdist=4.6): the burst finally reads beside the hero, but it is a flat pale ring that looks lit from inside; no dark earth column or clods show, and the sun is still behind the scene.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1700-plunge-burst-front-030.jpg",
   "time": "2026-11-09T17:00:00Z",
   "caption": "Plunge impact 0.30 s: the dust ring spreads 3 m wide round the hero, still pale white instead of earth brown, still no column above the pit; hero lit from behind.",
@@ -897,6 +879,18 @@
   "file": "20261113-2200-soldier-hood-back.jpg",
   "time": "2026-11-13T22:35:00Z",
   "caption": "The hood from behind and above: a rounded crown falling in sharper-ridged hemp folds; the mantle under it still reads as a pleated skirt shelf.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2300-soldier-hood-side.jpg",
+  "time": "2026-11-13T23:20:00Z",
+  "caption": "Hollow Soldier from the fight camera: the hood's side now shows darkened fold hollows and sagging stiff creases instead of one flat-lit panel; the hemp still reads a bit pale and clean, and the meadow trees are blotchy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2300-hood-ao-compare.jpg",
+  "time": "2026-11-13T23:20:00Z",
+  "caption": "Hood side close-up, before (left) and after (right): baked fold cavity shading plus horizontal crumple creases give the cloth form; the weave is still a uniform stripe pattern.",
   "verdict": "fail"
  }
 ]
