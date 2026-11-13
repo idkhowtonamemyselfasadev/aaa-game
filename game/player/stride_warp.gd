@@ -464,7 +464,7 @@ static func settle_lift(u: float) -> float:
 var settle_lift_k := 1.0          # x the settle steps' clearance (a turn's steps 1; a stop's longer steps STOP_LIFT_K)
 var STOP_LIFT_K := float(OS.get_environment("STOP_LIFT_K")) if OS.has_environment("STOP_LIFT_K") else 2.5
 var settle_travel_end := 1.0      # share of a settle step by which the boot has travelled (then it is only set down)
-const STOP_TRAVEL_END := 0.75
+var STOP_TRAVEL_END := float(OS.get_environment("STOP_TRAVEL_END")) if OS.has_environment("STOP_TRAVEL_END") else 0.75
 var settle_time_k := 1.0          # x the settle steps' time (a stop: the body's own step time, sqrt(size))
 const STOP_PICK_LEVEL := 1.5     # skeleton units (cm): ankles this level count as double support
 var STOP_PICK_OLD := OS.has_environment("STOPPICK_OLD")
@@ -477,6 +477,14 @@ var settle_pin_world := false
 static var SETTLE_DBG := OS.has_environment("SETTLE_DBG")
 static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
 static var SETTLE_PIN_OLD := OS.has_environment("SETTLEPIN_OLD")
+## (11-13 18:00 EXPERIMENTS, opt-in, NOT on: each measured worse or mixed on `foewindup`, see PROGRESS.md)
+## SETTLEPIN_PEAK=1: pin the goal in the world from the step's peak (soldier 0.023 -> 0.033 summed);
+## SETTLE_FLOORW=1: hold the step's idle ankle level in the world (the wind-up's sink no longer eats the
+## clearance, but the stepping boot then never hands the weight over: 0.075); STOP_TRAVEL_END=<u> tunes
+## when a stop step has travelled (0.6: mixed). SETTLE_DBG also prints posdbg (world pin/boot/goals per tick).
+static var SETTLE_PIN_PEAK := OS.has_environment("SETTLEPIN_PEAK")
+static var SETTLE_FLOORW := OS.has_environment("SETTLE_FLOORW")
+var _settle_fc_w = null            # (SETTLE_FLOORW) a stop step's idle ankle level, world, from its first tick
 var _settle_goal_w = null          # the first settle step's goal, world, once travelled
 var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, world, once travelled
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
@@ -625,7 +633,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var eb := ubt * ubt * (3.0 - 2.0 * ubt)
 		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
-		if settle_pin_world and ubt >= 1.0 and _settle_bgoal_w == null:
+		if settle_pin_world and _settle_bgoal_w == null and (ubt >= 1.0 or (ub >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 			_settle_bgoal_w = xf * (b0 + bd)
 		if ub >= 1.0:
 			settle_done = true
@@ -913,7 +921,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var ut := clampf(u / settle_travel_end, 0.0, 1.0)
 			var e := ut * ut * (3.0 - 2.0 * ut)
 			var tgt := from + gd * e
-			if settle_pin_world and ut >= 1.0 and _settle_goal_w == null:
+			if settle_pin_world and _settle_goal_w == null and (ut >= 1.0 or (u >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 				_settle_goal_w = xf * (from + gd)
 			var dh := tgt - of_t
 			of_t += (dh - up * dh.dot(up)) * pivot
@@ -929,6 +937,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				# up in the world), so measured from the clip's floor the stepping boot met the turf while
 				# it still travelled and slid 2 cm a tick (the soldier's sweep from a walk, `foewindup`)
 				var fc := maxf(floor_h, minf((_stance[0] as Vector3).dot(up), (_stance[1] as Vector3).dot(up)))
+				if SETTLE_FLOORW:
+					if _settle_fc_w == null:
+						_settle_fc_w = xf * (from - up * from.dot(up) + up * fc)
+					fc = (inv * (_settle_fc_w as Vector3)).dot(up)
 				clear = maxf(fc + clear - of_t.dot(up), 0.0)
 			elif not SETTLE_LIFT_ADD:
 				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
@@ -938,6 +950,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		else:
 			_settle_t = 0.0
 			_settle_at = null
+			_settle_fc_w = null
 		step_lift = _arc_lift * pivot
 	# (11-12 14:00) the stepping boot never crosses the planted one's line: a turn toward the
 	# forward foot's side (the hero's left) carried it 2-32 cm across into a scissor stance mid-turn
@@ -959,6 +972,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			_leg_to(skel, oul, olg, of, of_t, of_keep, fwd)
 	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
 	pivot_other = xf * skel.get_bone_global_pose(of).origin
+	if SETTLE_DBG and pivot_settle:
+		print("  posdbg f%d t %.3f pin %s other %s goalw %s bgoalw %s" % [Engine.get_physics_frames(), _settle_t, pivot_ankle, pivot_other, _settle_goal_w, _settle_bgoal_w])
 
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	var ax := from.cross(to)
