@@ -820,6 +820,12 @@ func _lean(rad: float, sink: float) -> void:
 	var tr := Transform3D(Basis(Vector3.RIGHT, rad), Vector3.ZERO)
 	tr = Transform3D(Basis(), hip) * tr * Transform3D(Basis(), -hip)
 	model.transform = Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.ZERO) * Transform3D(Basis(), Vector3(0, -sink, 0)) * tr * _model_rest
+	# (11-13 19:00) the stop's settle steps aim their boots in the body as it stands UNLEANED and
+	# unsunk: this tilt and sink move the whole skeleton, so its stance spots and idle ankle level
+	# slid back and down through the world under a wind-up (see StrideWarp.settle_ref_delta)
+	if stride_warp != null:
+		var pg := (model.get_parent() as Node3D).global_transform
+		stride_warp.settle_ref_delta = pg * (Transform3D(Basis(Vector3.UP, _reel_yaw), Vector3.ZERO) * _model_rest) * model.transform.affine_inverse() * pg.affine_inverse()
 
 # --- hittable contract ---
 
@@ -1606,6 +1612,7 @@ func _pivot_orbit(d: float) -> void:
 func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
+	stride_warp.settle_hold = state == WINDUP
 	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
 	# squared up (the body no longer turning): the turn step comes down and the feet close the stance
 	if FOE_PIVOT_HOVER or not standing or stride_warp.pivot <= 0.0 or _turn_sh > 0.3:

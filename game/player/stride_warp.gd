@@ -474,6 +474,18 @@ var STOP_PICK_OLD := OS.has_environment("STOPPICK_OLD")
 ## ~2 cm a tick for 4 ticks, bot `foewindup` cut 83). Stop settles only (a turn's body still turns
 ## round its steps). SETTLEPIN_OLD: the before
 var settle_pin_world := false
+## (11-13 19:00) world-space delta from the skeleton as posed to the skeleton as the body stands
+## unleaned and unsunk (set by the foe each tick from its model lean). A stop's settle steps aim at
+## the idle stance and clear the turf from the idle ankle level through it, so a wind-up's lean and
+## sink no longer drag the goals back and down under a boot already set down. SETTLEREF_OLD=1: off
+var settle_ref_delta := Transform3D()
+static var SETTLE_B_LIFT_FIRST := float(OS.get_environment("SETTLE_BLIFT")) if OS.has_environment("SETTLE_BLIFT") else 0.15
+var settle_hold := false           # (set by the foe) the body is in a wind-up: a stop's settle holds its boots
+static var SETTLE_REF_OLD := OS.has_environment("SETTLEREF_OLD")
+func _settle_ref(xf: Transform3D) -> Transform3D:
+	if SETTLE_REF_OLD or settle_lift_k == 1.0:
+		return xf
+	return settle_ref_delta * xf
 static var SETTLE_DBG := OS.has_environment("SETTLE_DBG")
 static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
 static var SETTLE_PIN_OLD := OS.has_environment("SETTLEPIN_OLD")
@@ -532,6 +544,10 @@ func pivot_want(want: float, standing: bool, delta: float) -> float:
 		return want
 	if pivot_settle and not PIVOT_HOVER and _stance_ok and not settle_done and _settle_t < STEP_SETTLE_T * 2.0 + 0.4:
 		return 1.0                      # the settle steps are still closing the stance
+	# (11-13 19:00) a stop settled under a wind-up keeps both boots where it set them until the
+	# wind-up ends: let go mid-lean, the clip's leaned legs dragged them ~1 cm a tick (`foewindup`)
+	if settle_hold and pivot_settle and settle_lift_k != 1.0 and not SETTLE_REF_OLD:
+		return 1.0
 	if _arc_top > STEP_DOWN_H and _aloft_held < STEP_HOLD_MAX:
 		_aloft_held += delta
 		return 1.0
@@ -621,7 +637,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if _settle_b0 == null:
 			_settle_b0 = pivot_pin
 		var b0: Vector3 = inv * (_settle_b0 as Vector3)
-		var bg: Vector3 = _stance[pivot_side]
+		var bg: Vector3 = inv * (_settle_ref(xf) * (_stance[pivot_side] as Vector3))
 		if _settle_bgoal_w != null:
 			bg = inv * (_settle_bgoal_w as Vector3)
 		var bd: Vector3 = bg - b0
@@ -630,6 +646,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if bd.length() < STEP_SETTLE_MIN:
 			ub = 1.0 if bd.length() < 1e-3 else ub
 		var ubt := clampf(ub / settle_travel_end, 0.0, 1.0)
+		if settle_lift_k != 1.0 and not SETTLE_REF_OLD:
+			# (11-13 19:00) a stop's pivot boot lifts before it travels: aimed at the unleaned stance
+			# under a sweep's coil it steps ~0.3 m/size and slid 0.3-2 cm a tick before it cleared the turf
+			ubt = clampf((ub - SETTLE_B_LIFT_FIRST) / maxf(settle_travel_end - SETTLE_B_LIFT_FIRST, 0.05), 0.0, 1.0)
 		var eb := ubt * ubt * (3.0 - 2.0 * ubt)
 		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
@@ -907,7 +927,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var from: Vector3 = inv * (_settle_at as Vector3)
 			var goal := from
 			if _stance_ok:
-				goal = _stance[1 - pivot_side]
+				goal = inv * (_settle_ref(xf) * (_stance[1 - pivot_side] as Vector3))
 			if _settle_goal_w != null:
 				goal = inv * (_settle_goal_w as Vector3)
 			var gd := goal - from
@@ -938,10 +958,27 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				# it still travelled and slid 2 cm a tick (the soldier's sweep from a walk, `foewindup`)
 				var fc := maxf(floor_h, minf((_stance[0] as Vector3).dot(up), (_stance[1] as Vector3).dot(up)))
 				if SETTLE_FLOORW:
+					# (11-13 19:00) held in the WORLD and measured along world up: the wind-up's lean
+					# tilts the skeleton, so its `up` is no longer the world's, and a world level read
+					# along it climbed ~1.5 cm a tick (the stepping boot rose to 33 cm and never landed)
 					if _settle_fc_w == null:
 						_settle_fc_w = xf * (from - up * from.dot(up) + up * fc)
-					fc = (inv * (_settle_fc_w as Vector3)).dot(up)
-				clear = maxf(fc + clear - of_t.dot(up), 0.0)
+					var clear_w := (xf.basis * (up * clear)).length()
+					var dyw := maxf((_settle_fc_w as Vector3).y + clear_w - (xf * of_t).y, 0.0)
+					of_t += inv.basis * (Vector3.UP * dyw * pivot)
+					clear = 0.0
+				elif not SETTLE_REF_OLD and not OS.has_environment("SETTLEREF_NOCLEAR"):
+					# ...measured in the world along world up from the idle ankle level of the
+					# unleaned body (or the clip's floor under the boot, if higher)
+					var refx := _settle_ref(xf)
+					var fcw := minf((refx * (_stance[0] as Vector3)).y, (refx * (_stance[1] as Vector3)).y)
+					fcw = maxf(fcw, (xf * (of_t - up * of_t.dot(up) + up * floor_h)).y)
+					var clear_w2 := (xf.basis * (up * clear)).length()
+					var dyw2 := maxf(fcw + clear_w2 - (xf * of_t).y, 0.0)
+					of_t += inv.basis * (Vector3.UP * dyw2 * pivot)
+					clear = 0.0
+				else:
+					clear = maxf(fc + clear - of_t.dot(up), 0.0)
 			elif not SETTLE_LIFT_ADD:
 				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
 			if SETTLE_DBG:
@@ -973,7 +1010,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
 	pivot_other = xf * skel.get_bone_global_pose(of).origin
 	if SETTLE_DBG and pivot_settle:
-		print("  posdbg f%d t %.3f pin %s other %s goalw %s bgoalw %s" % [Engine.get_physics_frames(), _settle_t, pivot_ankle, pivot_other, _settle_goal_w, _settle_bgoal_w])
+		print("  posdbg f%d t %.3f ankle %s pinw %s miss %.4f pv %.2f sink %.3f/%.3f other %s goalw %s bgoalw %s" % [Engine.get_physics_frames(), _settle_t, pivot_ankle, pivot_pin, pivot_ankle.distance_to(pivot_pin as Vector3), pivot, pivot_sink, pivot_sink_max, pivot_other, _settle_goal_w, _settle_bgoal_w])
 
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:
 	var ax := from.cross(to)
