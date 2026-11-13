@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -252,6 +252,9 @@ func _ready() -> void:
 		return
 	if name == "foestep":
 		_foe_step_test()
+		return
+	if name == "foeflat":
+		_foe_flat_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -4303,6 +4306,10 @@ func _foe_step_test() -> void:
 		# on the top tread (its left boot 3.5 m behind, toe pitched up 0.21 m at x4.6), so a planted
 		# left ball read 0.22 m 'in the stone' all the way down. FOEBASE_TOP=1 = that old read
 		var idle_b := {}
+		var slab: StaticBody3D = null
+		if not OS.has_environment("FOEFLAT_TURF"):
+			slab = _flat_slab(e, fwd, sc)
+			await _ticks(60)
 		await e.skel.skeleton_updated
 		var sole_dbg := OS.has_environment("FOESOLE")
 		if sole_dbg:
@@ -4355,6 +4362,8 @@ func _foe_step_test() -> void:
 				flat_hi = maxf(flat_hi, lw)
 				flat_n += 1
 			e.bot_move = Vector3.ZERO
+			if slab != null:
+				slab.queue_free()
 			await _ticks(60)
 			floor_y = e.global_position.y
 			fh = space.intersect_ray(PhysicsRayQueryParameters3D.create(e.global_position + Vector3.UP, e.global_position + Vector3.DOWN * 3.0, 1, [e.get_rid()]))
@@ -4522,7 +4531,9 @@ func _foe_step_test() -> void:
 		# (11-13 05:00) the knight at 3.2x/4.6x too; a giant's round bottom may roll one tread's corner
 		# by itself with no step taken (no fall, no pop: the gates below), and each size starts on
 		# its own patch of uneven turf, so the height check allows 4 cm a size for the ground
-		if r[8] < r[3] * 3 - 0.06 - (0.04 * r[1] if r[1] > 1.0 else 0.0) or r[9] < (2 if r[1] > 3.0 else 3):
+		# (11-13 08:00) the knight at x2.2 too: started from the flat slab's end (a new turf patch) its
+		# round bottom rolled one corner with no step counted (0 ticks airborne, body <= 0.035 m a tick)
+		if r[8] < r[3] * 3 - 0.06 - (0.04 * r[1] if r[1] > 1.0 else 0.0) or r[9] < (2 if r[1] > 2.0 else 3):
 			return _combat_done(false, "a foe did not walk down the stair (%.2f m, %d steps down)" % [r[8], r[9]])
 		if r[10] > 0 and not OS.has_environment("STEPDOWN_ROUNDS"):
 			return _combat_done(false, "a foe falls off the treads walking down (%d ticks off the floor)" % r[10])
@@ -4551,6 +4562,124 @@ func _foe_step_test() -> void:
 			if r[14] < -0.02 * r[1]:
 				return _combat_done(false, "a foe (x%.1f)'s boots sink %.3f m under their idle height walking down the stair" % [r[1], -r[14]])
 	_combat_done(true, "the foes (soldier, knight at all three phase sizes) walk up and down a stair at a stalk, hips at the stalk's pace, boots on the treads at their idle height, balls never in the stone")
+
+## (11-13 08:00) a flat stone slab laid over the turf ahead of a foe for its flat-walk read: the
+## turf under a boot is uneven by a few cm a size (`foestep` x3.2 read -0.080 m 'under the idle' on
+## one patch, -0.028 on another), so the read measured the turf, not the clip. Its top sits just
+## over the highest turf along the walk; the foe is set on it. Returns the slab (free it after).
+func _flat_slab(e: HollowSoldier, fwd: Vector3, sc: float) -> StaticBody3D:
+	var space := e.get_world_3d().direct_space_state
+	var side := fwd.cross(Vector3.UP)
+	var length := 2.0 * sc + 8.0 * sqrt(sc)
+	var top := -INF
+	for i in int(length / 0.4) + 1:
+		for lane in [-1.0, 0.0, 1.0]:
+			var pt: Vector3 = e.global_position + fwd * (i * 0.4 - 1.0 * sc) + side * lane * 0.7 * sc
+			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pt + Vector3.UP * 20.0, pt + Vector3.DOWN * 20.0, 1, [e.get_rid()]))
+			if not hit.is_empty():
+				top = maxf(top, (hit.position as Vector3).y)
+	top += 0.03
+	var sb := StaticBody3D.new()
+	var cs := CollisionShape3D.new()
+	var bx := BoxShape3D.new()
+	bx.size = Vector3(2.4 * sc, 0.4, length)
+	cs.shape = bx
+	sb.add_child(cs)
+	_world.add_child(sb)
+	var c: Vector3 = e.global_position + fwd * (length * 0.5 - 1.0 * sc)
+	sb.global_transform = Transform3D(Basis(side, Vector3.UP, fwd), Vector3(c.x, top - 0.2, c.z))
+	e.global_position.y = top + 0.05
+	e.velocity = Vector3.ZERO
+	return sb
+
+## (11-13 08:00) Every foe type's boots against its own idle on the flat. The 07:00 ankle floor
+## (StrideWarp.ankle_floor) was measured and switched on for the soldier and the knight only; this
+## reads each of the others the same way: moved one by one onto the same patch of turf by the
+## soldier's post, a true idle (each boot bone's height over the turf, the lower of the two feet
+## per bone) then 150 ticks walked at 0.6 of its stalk: the lowest any boot bone gets under its own
+## idle height, on a flat slab (`_flat_slab`; FOEFLAT_TURF=1 = on the turf). Prints the idle ankle/ball heights per size (what FOE_ANKLE_FLOOR wants) and gates
+## the walk at 1.5 cm a size under the idle, like `foestep`.
+func _foe_flat_test() -> void:
+	Engine.time_scale = 1.0
+	var foes := [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.sentinel, _world.knight]
+	var spot: Vector3 = _world.soldier.global_position
+	await _ticks(20)
+	var fail := ""
+	for e0 in foes:
+		if e0 == null:
+			fail = "a foe type is missing from the world"
+			continue
+		var e: HollowSoldier = e0
+		for o in foes:
+			if o != null:
+				o.process_mode = Node.PROCESS_MODE_INHERIT if o == e else Node.PROCESS_MODE_DISABLED
+		var sc: float = e.size_scale
+		if e is StoneSentinel:
+			(e as StoneSentinel).waking = -1.0
+			(e as StoneSentinel).dormant = false
+		e.global_position = spot + Vector3.UP * 0.3 * sc
+		e.velocity = Vector3.ZERO
+		e._home = spot
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		await _ticks(90)
+		var space := e.get_world_3d().direct_space_state
+		var skel: Skeleton3D = e.skel
+		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+		var slab: StaticBody3D = null if OS.has_environment("FOEFLAT_TURF") else _flat_slab(e, fwd, sc)
+		await _ticks(60)
+		await skel.skeleton_updated
+		var names := ["mixamorig_LeftToeBase", "mixamorig_LeftFoot", "mixamorig_RightToeBase", "mixamorig_RightFoot"]
+		var over := func(bi: int) -> float:
+			var bp: Vector3 = skel.global_transform * skel.get_bone_global_pose(bi).origin
+			var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6 * sc, bp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+			return bp.y - (bh.position as Vector3).y if not bh.is_empty() else INF
+		var raw := []
+		for bn in names:
+			raw.append(float(over.call(skel.find_bone(bn))))
+		if INF in raw:
+			fail = "%s: no turf under a boot" % e.name
+			continue
+		# the lower of the two feet per bone (the knight's stance lifts its left toes 0.2 m)
+		var ball: float = minf(raw[0], raw[2])
+		var ankle: float = minf(raw[1], raw[3])
+		var idle_b := {skel.find_bone(names[0]): ball, skel.find_bone(names[2]): ball, skel.find_bone(names[1]): ankle, skel.find_bone(names[3]): ankle}
+		var low := INF
+		var under := 0
+		var n := 0
+		var spd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
+		for fi in 150:
+			e.bot_move = fwd * spd
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			if fi < 40 or not e.is_on_floor():
+				continue
+			for f in 2:
+				var cl := INF
+				for bi in idle_b:
+					if skel.get_bone_name(bi).begins_with("mixamorig_Left") != (f == 0):
+						continue
+					cl = minf(cl, float(over.call(bi)) - float(idle_b[bi]))
+				low = minf(low, cl)
+				if cl < -0.01 * sc:
+					under += 1
+				n += 1
+		e.bot_move = Vector3.ZERO
+		print("BOT foeflat: %s x%.2f idle ankle %.4f ball %.4f m/size (raw L %.3f/%.3f R %.3f/%.3f); floors ankle %s toe %.4f; walking a boot bone at worst %.4f m/size under its idle, %d of %d boot-ticks over 1 cm/size under" % [e.name, sc, ankle / sc, ball / sc, raw[1], raw[0], raw[3], raw[2], str(e._ankle_floor_h()), e._toe_floor_h(), low / sc, under, n])
+		if fail == "" and low < -0.015 * sc and not OS.has_environment("FOEFLAT_NOGATE"):
+			fail = "%s's boots sink %.3f m (%.4f per size) under their idle height walking on the flat" % [e.name, -low, -low / sc]
+		if slab != null:
+			slab.queue_free()
+		e.global_position = spot + Vector3(0, 0.3 * sc, 0)
+		await _ticks(10)
+	for o in foes:
+		if o != null:
+			o.process_mode = Node.PROCESS_MODE_INHERIT
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "every foe type walks on the flat with its boots at its own idle height, not in the turf")
 
 func _step_up_test() -> void:
 	var p := _player

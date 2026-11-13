@@ -80,8 +80,13 @@ static var _toe_floor: float = float(OS.get_environment("FOE_TOEFLOOR")) if OS.h
 # 0.143 (soldier) / 0.154 (knight) with the soles on the turf; the walk clip carried planted boots
 # ~0.02/size lower (soles into the turf). A few mm under the idle so a flat planted boot is not
 # lifted off its lock. See StrideWarp.ankle_floor. FOE_ANKLEFLOOR=<m/size> tries a value
-# Only the foes whose idle ankle was measured (bot `foestep` FOEBASE idle); the others stay off.
-const FOE_ANKLE_FLOOR := {"hollow_soldier.gd": 0.139, "ashen_knight.gd": 0.150}
+# Only the foes whose idle ankle was measured (bot `foestep` FOEBASE idle, `foeflat`); the others stay off.
+# (11-13 08:00) every other type measured too (bot `foeflat`): the Hollow variants share the
+# soldier's body and idle (ankle 0.1429/size) and sank the same 2.8 cm/size walking; the Sentinel's
+# idle stands its ankle at 0.1509/size and sank 1.7 cm/size
+const FOE_ANKLE_FLOOR := {"hollow_soldier.gd": 0.139, "ashen_knight.gd": 0.150,
+	"hollow_warden.gd": 0.139, "hollow_hewer.gd": 0.139, "hollow_harrier.gd": 0.139,
+	"hollow_archer.gd": 0.139, "hollow_kindler.gd": 0.139, "stone_sentinel.gd": 0.147}
 # (11-13 07:00) and the ball: the idle stands it at 0.0165 (soldier) / 0.0193 (knight) m per size,
 # so the 06:00 floor (-0.002) still let a planted ball sit ~2 cm/size under the idle. Measured
 # foes only (others keep FOE_TOE_FLOOR); `foestride` slips unchanged within 1 mm/tick
