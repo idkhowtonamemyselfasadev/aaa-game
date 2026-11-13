@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -258,6 +258,9 @@ func _ready() -> void:
 		return
 	if name == "heroflat":
 		_hero_flat_test()
+		return
+	if name == "foestop":
+		_foe_stop_test()
 		return
 	if name == "scree":
 		_scree_test()
@@ -4314,6 +4317,12 @@ func _foe_step_test() -> void:
 			slab = _flat_slab(e, fwd, sc)
 			await _ticks(60)
 		await e.skel.skeleton_updated
+		# (11-13 10:00) a true idle: a stop's settle steps (the walk home after the move) done first
+		for wi in 300:
+			if e.stride_warp == null or e.stride_warp.pivot <= 0.0:
+				break
+			await get_tree().physics_frame
+		await e.skel.skeleton_updated
 		var sole_dbg := OS.has_environment("FOESOLE")
 		if sole_dbg:
 			var lw0: Array = _boot_soles(e, e.skel)
@@ -4684,6 +4693,137 @@ func _foe_flat_test() -> void:
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "every foe type walks on the flat with its boots at its own idle height, not in the turf")
+
+## (11-13 10:00) A walking foe that stops: its boots settle instead of skating. Each foe (the soldier
+## and the knight at every phase size) walks down a flat slab at its stalk pace, then its move is
+## cut to zero mid-stride. For 90 ticks after: every boot on the slab (ankle within 3 cm/size of its
+## idle height) both ticks is planted, and its horizontal travel per tick is a skate; the read is
+## the summed skate per size, the worst tick, the clip rate on the stop tick vs the walk's, and how
+## long until the legs are still (the blend under 0.02 of the walk).
+func _foe_stop_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	var spot: Vector3 = so.global_position
+	await _ticks(20)
+	var runs := [[so, 1.0]]
+	for ph in AshenKnight.PHASES.size():
+		runs.append([k, float(AshenKnight.PHASES[ph]["scale"])])
+	var fail := ""
+	for run in runs:
+		var e: HollowSoldier = run[0]
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		var sc: float = run[1]
+		e.set_size_scale(sc)
+		e.global_position = spot + Vector3.UP * 0.3 * sc
+		e.velocity = Vector3.ZERO
+		e._home = spot
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		await _ticks(60)
+		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+		var slab := _flat_slab(e, fwd, sc, 3.0 * sc + 14.0 * sqrt(sc))
+		await _ticks(60)
+		var skel: Skeleton3D = e.skel
+		var space := e.get_world_3d().direct_space_state
+		await skel.skeleton_updated
+		var bones := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+		var wpos := func(bi: int) -> Vector3:
+			return skel.global_transform * skel.get_bone_global_pose(bi).origin
+		var over := func(bp: Vector3) -> float:
+			var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6 * sc, bp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
+			return bp.y - (bh.position as Vector3).y if not bh.is_empty() else INF
+		var idle := minf(over.call(wpos.call(bones[0])), over.call(wpos.call(bones[1])))
+		# the weight-bearing boot: the lower ankle, if it is on the slab (within 3 cm/size of idle)
+		var stance := func():
+			var a0: Vector3 = wpos.call(bones[0])
+			var a1: Vector3 = wpos.call(bones[1])
+			var h0: float = over.call(a0)
+			var h1: float = over.call(a1)
+			var f := 0 if h0 <= h1 else 1
+			if minf(h0, h1) - idle > 0.03 * sc:
+				return null
+			return [a0 if f == 0 else a1, f]
+		var spd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
+		var stops := []
+		# three stops at different points of the stride
+		for cut in [70, 83, 96]:
+			e.global_position = slab.global_position + Vector3.UP * 0.3 - fwd * (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5 + fwd * 1.2 * sc
+			e.velocity = Vector3.ZERO
+			e.bot_move = Vector3.ZERO
+			await _ticks(60)
+			var walk_ts := 0.0
+			var wprev := [null, null]
+			var wskate := 0.0
+			for fi in cut:
+				e.bot_move = fwd * spd
+				await get_tree().physics_frame
+				walk_ts = float(e.anim_tree.get("parameters/speed/scale"))
+				if fi >= cut - 30:
+					await skel.skeleton_updated
+					var st = stance.call()
+					if st != null and wprev[0] != null and wprev[0][1] == st[1]:
+						wskate += Vector2(st[0].x - wprev[0][0].x, st[0].z - wprev[0][0].z).length()
+					wprev[0] = st
+			var blend0: float = e._blend
+			e._home = e.global_position        # stays where it stopped (IDLE walks home past 0.6 m)
+			e.bot_move = Vector3.ZERO
+			var prev := [null, null]
+			var skate := 0.0
+			var worst := 0.0
+			var swing := 0.0
+			var still_at := -1
+			var stop_ts := -1.0
+			for fi in 90:
+				await get_tree().physics_frame
+				await skel.skeleton_updated
+				if fi == 2:
+					stop_ts = float(e.anim_tree.get("parameters/speed/scale"))
+				var st = stance.call()
+				if OS.has_environment("FOESTOP_TICKS") and st != null and cut == 70:
+					var d0 := Vector2(st[0].x - prev[0][0].x, st[0].z - prev[0][0].z).length() if prev[0] != null else 0.0
+					var a0: Vector3 = wpos.call(bones[0])
+					var a1: Vector3 = wpos.call(bones[1])
+					print("     t%d foot %d travel %.4f along %+.3f  hL %.3f hR %.3f  v %.2f blend %.2f ts %.2f lock %.2f" % [fi, st[1], d0 / sc, (a0 - a1).dot(fwd) / sc, (float(over.call(a0)) - idle) / sc, (float(over.call(a1)) - idle) / sc, Vector2(e.velocity.x, e.velocity.z).length(), e._blend, float(e.anim_tree.get("parameters/speed/scale")), e.stride_warp.lock])
+				if st != null and prev[0] != null and prev[0][1] == st[1]:
+					var d := Vector2(st[0].x - prev[0][0].x, st[0].z - prev[0][0].z).length()
+					skate += d
+					worst = maxf(worst, d)
+				elif st != null and prev[0] != null:
+					swing += 1.0          # hand-overs of the weight from boot to boot
+				prev[0] = st
+				if still_at < 0 and e._blend < 0.02 * Player.ANIM_WALK_SPEED:
+					still_at = fi
+			stops.append([skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0])
+			if OS.has_environment("FOESTOP_DEBUG"):
+				print("   cut %d: (steady walk: %.4f m/size per 30 ticks) skate %.4f worst %.4f weight hand-overs %d, ts walk %.2f stop %.2f, still at tick %d (blend %.2f)" % [cut, wskate / sc, skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0])
+		var tot := 0.0
+		var wst := 0.0
+		var stl := 0
+		var tsj := 0.0
+		for st in stops:
+			tot = maxf(tot, st[0])
+			wst = maxf(wst, st[1])
+			stl = maxi(stl, st[5] if st[5] >= 0 else 999)
+			tsj = maxf(tsj, absf(st[4] - st[3]))
+		print("BOT foestop: %s x%.2f (settle steps %d): after the stop, planted boots skate at worst %.4f m/size summed, %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d" % [e.name, sc, e.stop_settles, tot, wst, tsj, stl])
+		if fail == "" and not OS.has_environment("FOESTOP_NOGATE"):
+			if tot > 0.045:
+				fail = "%s x%.1f: a planted boot skates %.3f m/size after a stop" % [e.name, sc, tot]
+			elif stl > 75 or e.stop_settles < 3:
+				fail = "%s x%.1f: the legs are not still %d ticks after a stop" % [e.name, sc, stl]
+		e.bot_move = Vector3.ZERO
+		slab.queue_free()
+		e.global_position = spot + Vector3(0, 0.3 * sc, 0)
+		await _ticks(10)
+	for o in [k, so]:
+		o.process_mode = Node.PROCESS_MODE_INHERIT
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "a walking foe that stops sets its boots down where they are instead of skating them")
 
 ## (11-13 09:00) The hero's boots against its own idle on a flat slab (the `foeflat` read): each boot
 ## bone's height over the slab in a true idle, then the lowest any bone goes under that while it

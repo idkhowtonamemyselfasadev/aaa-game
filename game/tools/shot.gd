@@ -834,7 +834,8 @@ func _ready() -> void:
 			var f := along
 			var sd := f.cross(Vector3.UP)
 			var gy := terrain.height_at(pp.x, pp.z)
-			for c in 3:
+			# (11-13 10:00) nostair: the same walk on the open turf (with stopat=<frame>: the stop's steps)
+			for c in (0 if "nostair" in args else 3):
 				var blk := StaticBody3D.new()
 				var cs := CollisionShape3D.new()
 				var bx := BoxShape3D.new()
@@ -3585,12 +3586,24 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("walkin="):
 			walk_in = float(a.substr(7))       # (11-12 21:00) 0.25 = a walk up the stair
+	var stop_at := 1 << 30
+	for a in args:
+		if a.begins_with("stopat="):
+			stop_at = int(a.substr(7))
 	for i in frames:
 		if world.soldier != null and world.soldier.has_meta("shot_walk"):
 			world.soldier.bot_move = world.soldier.get_meta("shot_walk")
 			if i % 6 == 0:
 				print("SHOT foestair f %d root %.3f body off %.3f %.3f %.3f steps %d" % [i, world.soldier.global_position.y, world.soldier.body.position.x, world.soldier.body.position.y, world.soldier.body.position.z, world.soldier.steps_up])
-		if world.knight != null and world.knight.has_meta("shot_walk"):
+		if world.knight != null and world.knight.has_meta("shot_walk") and i >= stop_at:
+			# (11-13 10:00) stopat=<frame>: the walk is cut here and the knight stays where it stops
+			if i == stop_at:
+				world.knight._home = world.knight.global_position
+				print("SHOT knight stops at frame %d" % i)
+			world.knight.bot_move = Vector3.ZERO
+			if i % 2 == 0 and world.knight.stride_warp != null:
+				print("SHOT knightstop f %d pivot %.2f settle_t %.2f" % [i, world.knight.stride_warp.pivot, world.knight.stride_warp._settle_t])
+		elif world.knight != null and world.knight.has_meta("shot_walk"):
 			world.knight.bot_move = world.knight.get_meta("shot_walk")
 			if i % 6 == 0:
 				print("SHOT knightstair f %d root %.3f steps %d" % [i, world.knight.global_position.y, world.knight.steps_up])

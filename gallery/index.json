@@ -892,5 +892,11 @@
   "time": "2026-11-13T09:18:27Z",
   "caption": "The hero jogging across the meadow after the ankle/ball floor fix (boots no longer planted 4-6 cm into the ground, measured by bot heroflat); backlit and the tall grass hides the boots, so the frame cannot show the fix itself.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261113-1010-kstop.jpg",
+  "time": "2026-11-13T12:10:00Z",
+  "caption": "The Ashen Knight (x2.2) a tenth of a second into a stop from a walk, now stepping its boots into the guard stance instead of skating them (bot foestop: 0.24-0.80 -> 0.01 m/size); the lens is poor: a tree trunk fills the left, the knight is backlit and its boots sit in shadow, so the steps themselves are not visible.",
+  "verdict": "fail"
  }
 ]

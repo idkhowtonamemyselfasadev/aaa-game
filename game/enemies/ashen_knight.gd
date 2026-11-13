@@ -497,6 +497,9 @@ func _legs_still() -> bool:
 func _feet_planted() -> bool:
 	return tuck != null and tuck.pin > 0.5
 
+func _stop_steps_ok() -> bool:
+	return not intro_playing() and not _feet_planted() and not _legs_still()
+
 ## The hero woke at the rest point: the knight stands whole again, in its first form.
 func return_to_post() -> void:
 	super.return_to_post()

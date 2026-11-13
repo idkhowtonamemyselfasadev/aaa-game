@@ -91,6 +91,17 @@ const FOE_ANKLE_FLOOR := {"hollow_soldier.gd": 0.139, "ashen_knight.gd": 0.150,
 # so the 06:00 floor (-0.002) still let a planted ball sit ~2 cm/size under the idle. Measured
 # foes only (others keep FOE_TOE_FLOOR); `foestride` slips unchanged within 1 mm/tick
 const FOE_TOE_FLOOR_MEASURED := 0.012
+## (11-13 10:00) Stop brake: see the velocity step in _physics_process. FOESTOP_OLD=1 = the dead stop
+## (and the clip snapping to 1x cadence at a standstill: the giant's legs sped up 2x as it stopped).
+var _foe_stop_old := OS.has_environment("FOESTOP_OLD")
+var _foe_stop_brake := OS.has_environment("FOESTOP_BRAKE")
+var _stop_t := 0.0               # s the stop's settle steps have run
+var _move_zero := false          # this tick's wanted move is nothing (a stop, not a stall)
+var _was_walking := false        # last tick's pace was a walk (the stop's settle steps start when it ends)
+var stop_settles := 0            # (bots) stops that stepped into the stance
+const STOP_FROM := 0.25          # m/s per size: a pace this fast counts as walking
+const STOP_T := 0.35             # s from a full stalk to a stand (any size: pace and cadence both go with sqrt(size))
+
 func _toe_floor_h() -> float:
 	if OS.has_environment("FOE_TOEFLOOR") or OS.has_environment("TOEFLOOR_06"):
 		return _toe_floor
@@ -1043,6 +1054,16 @@ func _physics_process(delta: float) -> void:
 	_set_skin("chest_unpose", _chest_unpose())
 	_set_skin("chest_fwd", _chest_fwd)
 	_ember_light.light_energy = 0.3 * ember
+	var mv_h := Vector3(move.x, 0.0, move.z)
+	_move_zero = mv_h.length() < 0.01
+	var cur_h := Vector3(velocity.x, 0.0, velocity.z)
+	if not _foe_stop_old and _foe_stop_brake and bot_move == Vector3.ZERO and state in [IDLE, STALK] and is_on_floor() and mv_h.length() < cur_h.length() - 0.01:
+		# (11-13 10:00) a walk does not stop dead: the body brakes over ~STOP_T (x its own cadence),
+		# so the clip's stride shrinks with the pace and the planted boot is not skated by the
+		# walk -> idle blend at a standstill (0.24-0.80 m/size before, bot `foestop`)
+		mv_h = cur_h.move_toward(mv_h, STALK_SPEED / STOP_T * delta)
+		move.x = mv_h.x
+		move.z = mv_h.z
 	velocity.x = move.x
 	velocity.z = move.z
 	if is_on_floor():
@@ -1099,7 +1120,7 @@ func _physics_process(delta: float) -> void:
 		anim_tree.set("parameters/move/blend_position", _blend)
 		# cadence from the stride the clip mix covers (the hero's calibration, bot `foestride`):
 		# the old hs / 1.9 (clamped 0.7-1.4) let the planted foot ride forward up to 4 m/s on the giant
-		var ts := clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else 1.0
+		var ts := clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else (natural_cadence() if stride_warp != null and stride_warp.settle_lift_k != 1.0 else 1.0)
 		if turn_shuffle > 0.02 and hs * size_scale < TURN_STILL:
 			ts = lerpf(ts, TURN_STEP_CADENCE * natural_cadence(), minf(turn_shuffle * 3.0, 1.0))
 		if _reel_posed:
@@ -1237,6 +1258,10 @@ func _ease_carry(delta: float) -> void:
 func _legs_still() -> bool:
 	return false
 
+## A stop from a walk may step into the guard stance (no scripted move owns the legs)
+func _stop_steps_ok() -> bool:
+	return true
+
 func _feet_planted() -> bool:
 	return false
 
@@ -1265,6 +1290,31 @@ func _update_turn_shuffle(delta: float, hs: float) -> void:
 	var rate := absf(angle_difference(_prev_yaw, yaw)) / maxf(delta, 1e-4)
 	_prev_yaw = yaw
 	var standing := hs * size_scale < TURN_STILL and is_on_floor() and state in [IDLE, STALK]
+	# (11-13 10:00) a walk that stops: the guard stance stands the left boot 0.6 m/size ahead, so
+	# the walk -> idle blend dragged both boots ~0.4 m/size over the turf into it (bot `foestop`).
+	# Now the stop steps into it: the weight-bearing boot is pinned where it stands, the other steps
+	# to its stance spot, then the pinned one steps to its own (the turn's settle steps, StrideWarp)
+	# Started on the move it wants (a stall on a stair tread is not a stop); walking again or turning
+	# mid-stop hands the boots back (quickly) or to the turn's own settle
+	if not _foe_stop_old and stride_warp != null and stride_warp.ball_pivot:
+		if _was_walking and standing and _move_zero and turn_shuffle <= 0.05 and stride_warp.pivot <= 0.0 and _stop_steps_ok():
+			if stride_warp.begin_stop_settle(skel, 1.0 / natural_cadence()):
+				stop_settles += 1
+		if stride_warp.settle_lift_k != 1.0:
+			_stop_t += delta
+		else:
+			_stop_t = 0.0
+		# a stop that outlives its two steps, or whose pin is far off the body (moved, a teleport), lets go
+		var stale := _stop_t > (StrideWarp.STEP_SETTLE_T * 2.0 + 0.8) * stride_warp.settle_time_k
+		if stride_warp.pivot_pin != null and Vector2((stride_warp.pivot_pin as Vector3).x - global_position.x, (stride_warp.pivot_pin as Vector3).z - global_position.z).length() > 1.2 * size_scale:
+			stale = true
+		if stride_warp.settle_lift_k != 1.0 and stale:
+			stride_warp.end_stop_settle()
+			stride_warp.pivot = 0.0
+		elif stride_warp.settle_lift_k != 1.0 and (not _move_zero or not standing or _turn_sh > 0.05 or not _stop_steps_ok()):
+			stride_warp.end_stop_settle()
+			stride_warp.pivot = 0.0 if not _move_zero or not standing else stride_warp.pivot
+		_was_walking = hs > STOP_FROM and is_on_floor() and state in [IDLE, STALK]
 	# measured against the body's own cadence: the giant's slow turn is still a full step round
 	var sh := clampf((rate / natural_cadence() - TURN_FROM) / TURN_FULL, 0.0, 1.0) if standing else 0.0
 	# rises quick (the first step goes as the turn starts), settles over the last step

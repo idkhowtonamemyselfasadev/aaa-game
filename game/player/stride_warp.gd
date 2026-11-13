@@ -458,6 +458,37 @@ static func settle_lift(u: float) -> float:
 	var v := (u - SETTLE_PEAK_U) / (1.0 - SETTLE_PEAK_U)
 	return pow(1.0 - v, 3.0) * (1.0 + 3.0 * v)
 
+## (11-13 10:00) A walk that stops: plant the weight-bearing (lower) boot where it stands and start
+## the settle steps at once (no turn first): the other boot steps to its idle stance spot, then the
+## planted one to its own. Needs the idle stance read (_stance_ok); false if it cannot start.
+var settle_lift_k := 1.0          # x the settle steps' clearance (a turn's steps 1; a stop's longer steps STOP_LIFT_K)
+var STOP_LIFT_K := float(OS.get_environment("STOP_LIFT_K")) if OS.has_environment("STOP_LIFT_K") else 2.5
+var settle_travel_end := 1.0      # share of a settle step by which the boot has travelled (then it is only set down)
+const STOP_TRAVEL_END := 0.75
+var settle_time_k := 1.0          # x the settle steps' time (a stop: the body's own step time, sqrt(size))
+func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
+	if not _stance_ok or pivot > 0.0 or skel == null:
+		return false
+	var up := (frame.inverse() * Vector3.UP).normalized()
+	var lf := skel.find_bone("mixamorig_LeftFoot")
+	var rf := skel.find_bone("mixamorig_RightFoot")
+	if lf < 0 or rf < 0:
+		return false
+	pivot_side = 0 if skel.get_bone_global_pose(lf).origin.dot(up) <= skel.get_bone_global_pose(rf).origin.dot(up) else 1
+	pivot_pin = null
+	pivot = 1.0
+	pivot_settle = true
+	settle_lift_k = STOP_LIFT_K
+	settle_travel_end = STOP_TRAVEL_END
+	settle_time_k = maxf(time_k, 1.0)
+	return true
+
+## A stop's settle handed over (walking again, or a turn begins): back to a turn's own step settings.
+func end_stop_settle() -> void:
+	settle_lift_k = 1.0
+	settle_travel_end = 1.0
+	settle_time_k = 1.0
+
 func pivot_want(want: float, standing: bool, delta: float) -> float:
 	if want > 0.0 or not standing or PIVOT_EARLY_LET_GO or PIVOT_NO_ARC or pivot < 0.999:
 		_aloft_held = 0.0
@@ -484,6 +515,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_settle_at = null
 		_settle_b0 = null
 		settle_done = false
+		settle_lift_k = 1.0
+		settle_travel_end = 1.0
+		settle_time_k = 1.0
 		pivot_hips_raise = 0.0
 		_hips_over = 0.0
 		pivot_hips_over = 0.0
@@ -553,8 +587,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var ub := clampf((_settle_t - STEP_SETTLE_T) / STEP_SETTLE_T, 0.0, 1.0)
 		if bd.length() < STEP_SETTLE_MIN:
 			ub = 1.0 if bd.length() < 1e-3 else ub
-		var eb := ub * ub * (3.0 - 2.0 * ub)
-		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+		var ubt := clampf(ub / settle_travel_end, 0.0, 1.0)
+		var eb := ubt * ubt * (3.0 - 2.0 * ubt)
+		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
 		if ub >= 1.0:
 			settle_done = true
@@ -824,7 +859,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# clip's shuffle would scuff it on over the turf, and the release slid it ~9 cm (11-06)
 			if _settle_at == null:
 				_settle_at = xf * of_t
-			_settle_t += delta
+			_settle_t += delta / settle_time_k
 			var from: Vector3 = inv * (_settle_at as Vector3)
 			var goal := from
 			if _stance_ok:
@@ -837,7 +872,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			if PIVOT_DBG:
 				print("  settle t %.2f reach %.2f from %s goal %s pin %s stance %s %s" % [_settle_t, settle_reach, from, goal, inv * (pivot_pin as Vector3), _stance[0], _stance[1]])
 			var u := clampf(_settle_t / STEP_SETTLE_T, 0.0, 1.0)
-			var e := u * u * (3.0 - 2.0 * u)
+			var ut := clampf(u / settle_travel_end, 0.0, 1.0)
+			var e := ut * ut * (3.0 - 2.0 * ut)
 			var tgt := from + gd * e
 			var dh := tgt - of_t
 			of_t += (dh - up * dh.dot(up)) * pivot
@@ -846,7 +882,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# ...only up to that clearance: a boot still coming down from the turn step's arc already
 			# clears it (11-06 07:00: added on top, the giant knight's boot rose 1.5 -> 2.0 cm/size again
 			# mid-descent, a second hump). SETTLE_LIFT_ADD: the before
-			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
+			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 			if not SETTLE_LIFT_ADD:
 				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
 			of_t += up * (clear * pivot)
