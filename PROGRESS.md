@@ -8433,8 +8433,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    offset changes, drop 1.08 vs want 0.97): ease the drop back up with the size, or cap it at `want` while a foot is
    planted, and gate sinking (`foestep` reads only hanging); (2) the 4.6x walk down's 0.099 m hover in some runs
    (the stance boot heel-lifting while the other is planted with toes past the edge? read FOEFOOT); (3) the smarter
-   step-up carry (03:00 11-13 item 1); (4) look at the `knightstair` frames (render is slow under software GL:
-   ~105 frames take 10+ min); (5) the hero items from 01:00 11-13. BOSS/ANIMATION order unchanged; audio after.
+   step-up carry (03:00 11-13 item 1); (4) the first `knightstair` frame (05:00, "slope ks46a 105 9.0 step knightstair fixfps", ~13 min
+   under xvfb software GL) is useless: at 4.6x the scaled stair and the lens land inside the cottage beside the
+   `step` turf, only walls and a window in frame, no knight. Give it an open patch (`at=x,z` far from buildings)
+   and look at it; no gallery entry this session because of that; (5) the hero items from 01:00 11-13. BOSS/ANIMATION order unchanged; audio after.
 0. (04:00 11-13) **FOES WALK DOWN A STAIR: BOOTS ON THE TREADS, KNIGHT NO LONGER FALLS — DONE (game change, gated).**
    See the top line. NEXT: (1) the knight's stance boot hangs up to 0.35 m (0.16 x size) over a tread a full rise
    below while its root still rolls over the corner (0.6 of a tread): let the hips drop toward a planted boot the
