@@ -466,6 +466,8 @@ var STOP_LIFT_K := float(OS.get_environment("STOP_LIFT_K")) if OS.has_environmen
 var settle_travel_end := 1.0      # share of a settle step by which the boot has travelled (then it is only set down)
 const STOP_TRAVEL_END := 0.75
 var settle_time_k := 1.0          # x the settle steps' time (a stop: the body's own step time, sqrt(size))
+const STOP_PICK_LEVEL := 1.5     # skeleton units (cm): ankles this level count as double support
+var STOP_PICK_OLD := OS.has_environment("STOPPICK_OLD")
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	if not _stance_ok or pivot > 0.0 or skel == null:
 		return false
@@ -474,7 +476,17 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	var rf := skel.find_bone("mixamorig_RightFoot")
 	if lf < 0 or rf < 0:
 		return false
-	pivot_side = 0 if skel.get_bone_global_pose(lf).origin.dot(up) <= skel.get_bone_global_pose(rf).origin.dot(up) else 1
+	var hl := skel.get_bone_global_pose(lf).origin.dot(up)
+	var hr := skel.get_bone_global_pose(rf).origin.dot(up)
+	pivot_side = 0 if hl <= hr else 1
+	var fw := (frame.inverse() * Vector3.BACK).normalized()
+	if absf(hl - hr) < STOP_PICK_LEVEL and not STOP_PICK_OLD:
+		# (11-13 15:00) both ankles level: a heel strike's double support. The front boot is taking the
+		# weight, the back one pushing off: pinning the back one (the lower by a hair) made the front
+		# boot skate ~5 cm before it stepped (bot `foestop` at a stop on the strike tick)
+		pivot_side = 0 if skel.get_bone_global_pose(lf).origin.dot(fw) >= skel.get_bone_global_pose(rf).origin.dot(fw) else 1
+	if OS.has_environment("STOPPICK_DEBUG"):
+		print("  stop pick: hL %.2f hR %.2f  zL %.2f zR %.2f -> %d" % [hl, hr, skel.get_bone_global_pose(lf).origin.dot(fw), skel.get_bone_global_pose(rf).origin.dot(fw), pivot_side])
 	pivot_pin = null
 	pivot = 1.0
 	pivot_settle = true

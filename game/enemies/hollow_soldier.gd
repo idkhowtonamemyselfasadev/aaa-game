@@ -100,6 +100,16 @@ var _move_zero := false          # this tick's wanted move is nothing (a stop, n
 var _was_walking := false        # last tick's pace was a walk (the stop's settle steps start when it ends)
 var stop_settles := 0            # (bots) stops that stepped into the stance
 const STOP_FROM := 0.25          # m/s per size: a pace this fast counts as walking
+var _foe_start_old := OS.has_environment("FOESTART_OLD")
+var start_t := float(OS.get_environment("FOESTART_T")) if OS.has_environment("FOESTART_T") else START_T
+## The walk clip's phase that stands like the guard stance: the left boot flat ~25 cm (skeleton)
+## ahead, the right ~34 cm behind just lifting off (guard: +29 / -29). A start seeks it.
+const WALK_START_AT := 0.36
+const START_BLEND_RATE := 20.0   # 1/s: the idle -> walk blend on a start (8 otherwise)
+var start_win := 0.0             # s left in a start's window (seeked walk, wanted-pace blend)
+var walk_starts := 0             # (bots)
+var _want_hs := 0.0              # this tick's wanted pace (m/s per size) before the start ramp
+const START_T := 0.45            # s from a stand to a full stalk (pace x sqrt(size), as the cadence)
 const STOP_T := 0.35             # s from a full stalk to a stand (any size: pace and cadence both go with sqrt(size))
 
 func _toe_floor_h() -> float:
@@ -409,6 +419,16 @@ func _setup_animation() -> void:
 	for pt in [["Idle", 0.0], ["Walk", Player.ANIM_WALK_SPEED], ["Run", Player.ANIM_RUN_SPEED]]:
 		var clip := AnimationNodeAnimation.new()
 		clip.animation = pt[0]
+		if pt[0] == "Walk":
+			# (11-13 15:00) the walk can be seeked on its own (a start from the guard stance picks
+			# up the stride at the phase that stands like the guard: WALK_START_AT)
+			var wt := AnimationNodeBlendTree.new()
+			wt.add_node("clip", clip, Vector2(0, 0))
+			wt.add_node("seek", AnimationNodeTimeSeek.new(), Vector2(200, 0))
+			wt.connect_node("seek", 0, "clip")
+			wt.connect_node("output", 0, "seek")
+			space.add_blend_point(wt, pt[1])
+			continue
 		space.add_blend_point(clip, pt[1])
 	var root := AnimationNodeBlendTree.new()
 	root.add_node("move", space, Vector2(0, 0))
@@ -1064,6 +1084,15 @@ func _physics_process(delta: float) -> void:
 		mv_h = cur_h.move_toward(mv_h, STALK_SPEED / STOP_T * delta)
 		move.x = mv_h.x
 		move.z = mv_h.z
+	_want_hs = mv_h.length() / size_scale
+	if not _foe_start_old and state in [IDLE, STALK] and is_on_floor() and mv_h.length() > cur_h.length() + 0.01:
+		# (11-13 15:00) a walk does not start at full pace: the body gathers speed over ~START_T, so
+		# the clip's stride grows with the pace and the guard stance's planted boots are not skated
+		# back under a body already at a full stalk (bot `foestart`; FOESTART_OLD=1 = before)
+		var sp := minf(mv_h.length(), cur_h.length() + STALK_SPEED * sqrt(size_scale) / start_t * delta)
+		mv_h = mv_h.normalized() * sp
+		move.x = mv_h.x
+		move.z = mv_h.z
 	velocity.x = move.x
 	velocity.z = move.z
 	if is_on_floor():
@@ -1116,11 +1145,34 @@ func _physics_process(delta: float) -> void:
 		# instead of the whole figure spinning on two still, sliding soles
 		_update_turn_shuffle(delta, hs)
 		goal = maxf(goal, turn_shuffle * Player.ANIM_WALK_SPEED * TURN_STEP_REACH)
-		_blend = lerpf(_blend, goal, 1.0 - exp(-(14.0 if turn_shuffle > 0.05 else 8.0) * delta))
+		# (11-13 15:00) a start from the guard stance: the walk picks up at the phase that stands like
+		# the guard (left boot planted ahead, right lifting behind) and the blend goes straight to the
+		# stride of the pace it wants, so the first step lifts its boot clear and the planted one rolls
+		# back at the body's own (ramping) pace. Before: the blend crept up from the idle with the
+		# body at full pace: the planted boot skated ~14 cm and the first step scuffed along the turf
+		var rate := 14.0 if turn_shuffle > 0.05 else 8.0
+		if not _foe_start_old:
+			var can := state in [IDLE, STALK] and is_on_floor() and not _legs_still() and turn_shuffle <= 0.02 \
+					and (stride_warp == null or stride_warp.settle_lift_k == 1.0)
+			if start_win <= 0.0 and can and _blend < 0.05 * Player.ANIM_WALK_SPEED and hs > 0.01 and _want_hs > STOP_FROM:
+				start_win = start_t * 1.6
+				walk_starts += 1
+				anim_tree.set("parameters/move/1/seek/seek_request", WALK_START_AT)
+			if start_win > 0.0:
+				start_win -= delta
+				if not can or _want_hs < 0.01 or hs >= _want_hs * 0.97:
+					start_win = 0.0
+			if start_win > 0.0:
+				var wg := gait_blend(_want_hs)
+				if wg < Player.ANIM_WALK_SPEED:
+					wg = minf(_want_hs / (Player.WALK_STRIDE_SPEED * STRIDE_BUILD * natural_cadence()), 1.0) * Player.ANIM_WALK_SPEED
+				goal = maxf(goal, wg)
+				rate = START_BLEND_RATE
+		_blend = lerpf(_blend, goal, 1.0 - exp(-rate * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
 		# cadence from the stride the clip mix covers (the hero's calibration, bot `foestride`):
 		# the old hs / 1.9 (clamped 0.7-1.4) let the planted foot ride forward up to 4 m/s on the giant
-		var ts := clampf(hs / clip_stride_speed(), 0.3, 1.8) * bot_cadence_k if hs > 0.05 else (natural_cadence() if stride_warp != null and stride_warp.settle_lift_k != 1.0 else 1.0)
+		var ts := clampf(hs / clip_stride_speed(), 0.05 if start_win > 0.0 else 0.3, 1.8) * bot_cadence_k if hs > (0.002 if start_win > 0.0 else 0.05) else (natural_cadence() if stride_warp != null and stride_warp.settle_lift_k != 1.0 else 1.0)
 		if turn_shuffle > 0.02 and hs * size_scale < TURN_STILL:
 			ts = lerpf(ts, TURN_STEP_CADENCE * natural_cadence(), minf(turn_shuffle * 3.0, 1.0))
 		if _reel_posed:
