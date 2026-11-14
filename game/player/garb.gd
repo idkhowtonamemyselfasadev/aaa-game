@@ -213,6 +213,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# out behind like a stiff flap
 	mm.set_shader_parameter("plumb", 1.0)
 	# CAPE_OLDLIFT=1: before 11-14 16:00, the cape side stood out level over an overhead arm
+	mm.set_shader_parameter("drape_ramp", drape_ramp())
 	mm.set_shader_parameter("drape_over", 0.0 if OS.get_environment("CAPE_OLDLIFT") != "" else 1.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
@@ -380,6 +381,14 @@ func mantle_sway() -> Vector3:
 ## A mantle vertex (mesh space, with its UV) walked through rag.gdshader's plumb hang and
 ## both lift_over_arm passes (no flutter or sway): where the cloth really sits, for the bots.
 func cape_vertex(v: Vector3, uv: Vector2) -> Vector3:
+	var p := cape_plumb(v)
+	var ca := lerpf(0.42, TAU - 0.42, uv.x)
+	for i in 2:
+		p = _lift_vertex(p, i, ca)
+	return p + mantle_sway() * uv.y * uv.y
+
+## A mantle vertex through rag.gdshader's plumb hang only (before the arms lift it).
+func cape_plumb(v: Vector3) -> Vector3:
 	var mm := _cape.material_override as ShaderMaterial
 	var ht0 = mm.get_shader_parameter("hang_top")
 	var hb0 = mm.get_shader_parameter("hang_body")
@@ -394,10 +403,7 @@ func cape_vertex(v: Vector3, uv: Vector2) -> Vector3:
 	if e < 1.0 and q0.length() >= 1.0 and e > 0.001:
 		p.x /= e
 		p.z = hb.z + (p.z - hb.z) / e
-	var ca := lerpf(0.42, TAU - 0.42, uv.x)
-	for i in 2:
-		p = _lift_vertex(p, i, ca)
-	return p + mantle_sway() * uv.y * uv.y
+	return p
 
 func _lift_vertex(v: Vector3, i: int, a: float) -> Vector3:
 	var e := elbow_in_cape[i]
@@ -423,10 +429,16 @@ func _lift_vertex(v: Vector3, i: int, a: float) -> Vector3:
 		return out
 	var d2 := smoothstep(0.85, 1.45, d0) * (d + 0.25 * wa)
 	if d2 > 0.0:
-		var w2 := smoothstep(0.10, 0.17, s)
-		var h := c + _rot(dir * 0.10, k, d)
+		var r := drape_ramp()
+		var w2 := smoothstep(r.x, r.y, s)
+		var h := c + _rot(dir * r.x, k, d)
 		out = h + _rot(out - h, k, -d2 * w2)
 	return out
+
+## Where along a lifted line the mantle's fall-back off a raised arm starts and is complete
+## (rag.gdshader's drape_ramp). CAPE_OLDRAMP=1 = before 11-14 18:00 (a 7 cm bend 10 cm out).
+static func drape_ramp() -> Vector2:
+	return Vector2(0.10, 0.17) if OS.get_environment("CAPE_OLDRAMP") != "" else Vector2(0.05, 0.28)
 
 ## Rodrigues, as the shader writes it: p * cos + (k x p) * sin + k (k.p)(1 - cos).
 static func _rot(p: Vector3, k: Vector3, ang: float) -> Vector3:

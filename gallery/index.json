@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261110-1400-harrier-dart.jpg",
-  "time": "2026-11-10T14:00:00Z",
-  "caption": "The harrier at full stretch of its dart: the spear now drives forward and low past the hero's waist along the dart's line (bot foereach 0.0 deg); still shot from behind the hero, so the foe is half hidden.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-1500-soldier-sweep.jpg",
   "time": "2026-11-10T15:15:00Z",
   "caption": "The Hollow Soldier mid-sweep with its hands no longer flapping on the spear tick to tick (a frozen frame can't show the fix, the bot measures it); the hero's back hides the foe's hands and the grass reads oversaturated.",
@@ -891,6 +885,18 @@
   "file": "20261114-1700-glide-mantle-front.jpg",
   "time": "2026-11-14T17:00:00Z",
   "caption": "Front 3/4 under the glider after the fix: mantle sits on the shoulders, legs hang loose; still wrong: the figure is dark in self-shade and the face is lost under the hat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1800-glide-back.jpg",
+  "time": "2026-11-14T18:00:00Z",
+  "caption": "Gliding from behind: the mantle now rolls round both shoulder caps over the raised arms instead of standing up in a pointed ear; a pointed hem corner still sticks out past the right side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1800-glide-mantle-before-after.jpg",
+  "time": "2026-11-14T18:00:00Z",
+  "caption": "Mantle over the glider arms, before (left) and after (right) the longer drape bend: shoulder tops rounder, the right-side hem tongue is still there (next task).",
   "verdict": "fail"
  }
 ]

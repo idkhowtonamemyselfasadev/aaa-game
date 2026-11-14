@@ -976,6 +976,7 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const CAPE_KINK := 60.0         # deg: under the glider the sharpest bend between two segments along any mantle line (11-14 18:00: 93 -> ~40)
 const CAPE_HEM_TILT := 1.0      # rad: under the glider the mantle hem's angle off plumb from its collar point (rest ~0.5)
 const CAPE_HEM_MIN := 0.0       # m: under the glider no mantle hem point may ride up above this far below the collar
 const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist to the staff's shaft
@@ -9901,6 +9902,33 @@ func _glide_test() -> void:
 		var ui := roundi(uvs[vi].x * 84.0)
 		if ui % 6 == 0:
 			table += " %.0f:%.2f" % [rad_to_deg(ang), hd]
+	# (11-14 18:00) the sharpest bend along any line of the mantle: the fall-back off a raised
+	# arm bent the cloth over 7 cm, standing its collar edge up as a pointed ear with a hard
+	# corner over each shoulder in the back view
+	var grid := {}
+	for vi in verts.size():
+		grid[Vector2i(roundi(uvs[vi].x * 84.0), roundi(uvs[vi].y * 18.0))] = p.garb.cape_vertex(verts[vi], uvs[vi])
+	var kink := 0.0
+	var kink_at := Vector2i.ZERO
+	for i in 85:
+		for j in range(1, 18):
+			var a1: Vector3 = grid[Vector2i(i, j)] - grid[Vector2i(i, j - 1)]
+			var a2: Vector3 = grid[Vector2i(i, j + 1)] - grid[Vector2i(i, j)]
+			var kk := rad_to_deg(a1.angle_to(a2))
+			if kk > kink:
+				kink = kk
+				kink_at = Vector2i(i, j)
+	print("BOT glide: mantle's sharpest bend along a line %.0f deg (bearing %.0f, %d/18 down)" % [kink, rad_to_deg(lerpf(0.42, TAU - 0.42, kink_at.x / 84.0)), kink_at.y])
+	if OS.get_environment("CAPE_OLDRAMP") == "" and kink > CAPE_KINK:
+		return _combat_done(false, "the mantle stands up in a pointed ear over a raised arm")
+	if OS.get_environment("CAPE_DUMP") != "":
+		var rows := []
+		for vi in verts.size():
+			var pl: Vector3 = p.garb.cape_plumb(verts[vi])
+			rows.append([uvs[vi].x, uvs[vi].y, pl.x, pl.y, pl.z])
+		var fd := FileAccess.open(OS.get_environment("CAPE_DUMP"), FileAccess.WRITE)
+		fd.store_string(JSON.stringify({"verts": rows, "elbows": [[p.garb.elbow_in_cape[0].x, p.garb.elbow_in_cape[0].y, p.garb.elbow_in_cape[0].z], [p.garb.elbow_in_cape[1].x, p.garb.elbow_in_cape[1].y, p.garb.elbow_in_cape[1].z]], "sway": [p.garb.mantle_sway().x, p.garb.mantle_sway().y, p.garb.mantle_sway().z]}))
+		fd.close()
 	for i in 2:
 		print("BOT glide: elbow %d bearing %.0f deg, %.2f rad off plumb" % [i, rad_to_deg(p.garb.elbow_bearing(i).x), p.garb.elbow_bearing(i).y])
 	print("BOT glide: mantle hem drop below the collar by bearing (deg:m):%s" % table)

@@ -51,6 +51,7 @@ uniform float gore_fold_len = 0.0;  // > 0: the front fold is an arc this long (
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
+uniform vec2 drape_ramp = vec2(0.05, 0.28);  // (11-14 18:00) where along a lifted line the fall-back starts / is complete (m); was 0.10/0.17, a sharp corner
 uniform float drape_over = 1.0;  // (11-14 16:00) past the shoulder the lifted cloth falls back off an overhead arm (0 = the old rigid wing)
 uniform vec4 arm_l = vec4(0.0);     // the mantle: an elbow (mesh space, w 1 = in use) the cape lifts over
 uniform vec4 arm_r = vec4(0.0);
@@ -190,8 +191,11 @@ void lift_over_arm(inout vec3 v, inout vec3 n, vec4 e, float a) {
 	// Must match HeroGarb.cape_drape().
 	float d2 = smoothstep(0.85, 1.45, d0) * (d + 0.25 * wa) * drape_over;   // by the elbow's own height, so the lines either side fall too
 	if (d2 > 0.0) {
-		float w2 = smoothstep(0.10, 0.17, s);
-		vec3 hl = dir * 0.10;
+		// (11-14 18:00) bent over a long run from close to the collar, so the cloth rolls round
+		// the shoulder cap: a 7 cm bend 10 cm out stood the collar's edge up as a pointed ear
+		// over each raised arm with a hard corner where the rest fell away
+		float w2 = smoothstep(drape_ramp.x, drape_ramp.y, s);
+		vec3 hl = dir * drape_ramp.x;
 		vec3 h = c + hl * cs + cross(k, hl) * sn + k * dot(k, hl) * (1.0 - cs);
 		float a2 = -d2 * w2;
 		float c2 = cos(a2);
