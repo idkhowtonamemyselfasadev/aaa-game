@@ -512,6 +512,10 @@ var _shown_prev := [null, null]    # each ankle where it was shown last tick, wo
 var stop_pin_shown := false        # (11-14, set by the hero) a stop's pin comes from last tick's shown boot
 var _stop_pin_lock := false        # (11-14) the next pivot pin is taken from the contact lock's pin
 static var STOPPIN_LOCK_OLD := OS.has_environment("STOPPIN_LOCK_OLD")
+static var STOPGATHER_OLD := OS.has_environment("STOPGATHER_OLD")
+static var STOPPICK_SHOWN_OLD := OS.has_environment("STOPPICK_SHOWN_OLD")
+static var STOPPIN_FLOOR_OLD := OS.has_environment("STOPPIN_FLOOR_OLD")
+var _idle_ank_h := 0.0             # (11-14) world m: the idle ankle over the turf (hero)
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	if not _stance_ok or pivot > 0.0 or skel == null:
 		return false
@@ -522,6 +526,18 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 		return false
 	var hl := skel.get_bone_global_pose(lf).origin.dot(up)
 	var hr := skel.get_bone_global_pose(rf).origin.dot(up)
+	if stop_pin_shown and not STOPPICK_SHOWN_OLD and _shown_prev[0] != null and _shown_prev[1] != null:
+		# (11-14 01:00) the hero picks from the boots as SHOWN last tick (after the foot IK): the clip
+		# had both ankles level mid-stride, so the front boot was pinned though it showed 4.6-6 cm up
+		# and the back one was landing; the pin hung in the air and the back boot's step dragged
+		# 0.14 m along the turf (bot `herostop` walk+ 59). STOPPICK_SHOWN_OLD: before
+		# heights in the WORLD over each boot's own ground: the skeleton's up is tipped by the stop's
+		# backward lean, which read boots 0.85 m apart ~6 cm off level
+		var sc0 := maxf(skel.global_transform.basis.get_scale().y, 1e-4)
+		var g0: float = float(_ank_gy[0]) if float(_ank_gy[0]) > -1e9 else minf((_shown_prev[0] as Vector3).y, (_shown_prev[1] as Vector3).y)
+		var g1: float = float(_ank_gy[1]) if float(_ank_gy[1]) > -1e9 else minf((_shown_prev[0] as Vector3).y, (_shown_prev[1] as Vector3).y)
+		hl = ((_shown_prev[0] as Vector3).y - g0) / sc0
+		hr = ((_shown_prev[1] as Vector3).y - g1) / sc0
 	pivot_side = 0 if hl <= hr else 1
 	var fw := (frame.inverse() * Vector3.BACK).normalized()
 	if absf(hl - hr) < STOP_PICK_LEVEL and not STOP_PICK_OLD:
@@ -602,6 +618,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				if fb >= 0:
 					_stance[i] = skel.get_bone_global_pose(fb).origin
 			_stance_ok = true
+			# (11-14 01:00) the idle ankle's height over the turf, world (a stop's pin is set at it)
+			if stop_pin_shown and _shown_prev[0] != null and _shown_prev[1] != null and float(_ank_gy[0]) > -1e9 and float(_ank_gy[1]) > -1e9:
+				_idle_ank_h = minf((_shown_prev[0] as Vector3).y - float(_ank_gy[0]), (_shown_prev[1] as Vector3).y - float(_ank_gy[1]))
 			var hb0 := skel.find_bone("mixamorig_Hips")
 			if hb0 >= 0:
 				var up0 := (frame.inverse() * Vector3.UP).normalized()
@@ -621,6 +640,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	if pivot_pin == null:
 		# plant it where it stands, at the stance level (the lower ankle), not mid-lift
 		var f0 := skel.get_bone_global_pose(ft).origin
+		var fp := f0                    # the posed ankle: the ball's offset is taken from it
 		if _stop_pin_lock and stop_pin_shown and not STOPPIN_LOCK_OLD and _shown_prev[pivot_side] != null:
 			# (11-14 00:00) a stop: plant it where the boot was SHOWN last tick, not where this tick's
 			# pose has it: the contact lock lets go as the body slows under 0.5 m/s, and its first
@@ -630,16 +650,30 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			f0 = lp - up * (lp.dot(up) - f0.dot(up))
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
+		var stop_pin := _stop_pin_lock
+		if stop_pin and stop_pin_shown and not STOPPIN_FLOOR_OLD and _idle_ank_h > 0.0 and float(_ank_gy[pivot_side]) > -1e9:
+			# (11-14 01:00) the hero's stop pin stands at the idle ankle height over the turf: the lower of
+			# the two clip ankles along the skeleton's up (tipped by the stop's lean) put a long stride's
+			# back boot 4.4 cm under the turf, out of the leg's reach; the boot drifted with the clip and its
+			# own settle step then slid along the ground (bot `herostop` walk+ 59). STOPPIN_FLOOR_OLD: before
+			var pw: Vector3 = pivot_pin
+			pivot_pin = Vector3(pw.x, float(_ank_gy[pivot_side]) + _idle_ank_h, pw.z)
+			f0 = inv * (pivot_pin as Vector3)
+			lo = f0.dot(up)
 		_stop_pin_lock = false
 		_arc_floor = lo
 		var tb0 := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
 		_ball_pin = null
 		_heel_w = 0.0
 		if tb0 >= 0 and ball_pivot and not BALLPIVOT_OLD:
-			_ball_pin = pivot_pin + xf.basis * (skel.get_bone_global_pose(tb0).origin - f0)
+			_ball_pin = pivot_pin + xf.basis * (skel.get_bone_global_pose(tb0).origin - (fp if not STOPPIN_FLOOR_OLD else f0))
 		pivot_gather = 0.0
 		var hbg := skel.find_bone("mixamorig_Hips")
-		if hips_over_pin and _stance_ok and not GATHER_OLD and PIVOT_GATHER_K > 0.0 and hbg >= 0:
+		# (11-14 01:00) a stop's pinned boot is not gathered: the gather's eased step is skipped while
+		# settling (pivot_settle), so it SNAPPED the front boot 22 cm back toward the hips in one tick
+		# (bot `herostop` walk cut 50); the stop's own settle steps close the stance. STOPGATHER_OLD: before
+		if hips_over_pin and _stance_ok and not GATHER_OLD and PIVOT_GATHER_K > 0.0 and hbg >= 0 \
+				and not (stop_pin and not STOPGATHER_OLD):
 			var wg := absf((_stance[0] as Vector3).x - (_stance[1] as Vector3).x)
 			var fa := (f0 - skel.get_bone_global_pose(hbg).origin).dot(fwd)
 			# only the forward foot gathers: the rear foot pivoting (a turn toward the rear guard foot)

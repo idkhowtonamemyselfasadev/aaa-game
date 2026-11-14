@@ -5134,8 +5134,8 @@ func _hero_stop_test() -> void:
 	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of 9" % [worst_sum, worst_tick, worst_still, worst_pop, settles])
 	slab.queue_free()
 	p.global_position = start
-	# gated only with the new walk stop on (WALKSTOP_NEW=1; off by default until its last pop is fixed)
-	if OS.has_environment("WALKSTOP_NEW") and not OS.has_environment("HEROSTOP_NOGATE"):
+	# gated with the new walk stop on (the default since 11-14 01:00; WALKSTOP_OLD=1 reads the before ungated)
+	if not OS.has_environment("WALKSTOP_OLD") and not OS.has_environment("HEROSTOP_NOGATE"):
 		if worst_sum > 0.12 or worst_tick > 0.025:
 			fail = "the hero's planted boot skates %.3f m (worst tick %.3f) after a walk stop" % [worst_sum, worst_tick]
 		elif worst_pop > 0.08:
@@ -5144,7 +5144,7 @@ func _hero_stop_test() -> void:
 			fail = "the hero's legs are not still %d ticks after a walk stop" % worst_still
 	if fail != "":
 		return _combat_done(false, fail)
-	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if OS.has_environment("WALKSTOP_NEW") else "walk-stop skate read (new walk stop off by default; WALKSTOP_NEW=1 gates it)")
+	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if not OS.has_environment("WALKSTOP_OLD") else "walk-stop skate read (WALKSTOP_OLD: the before, ungated)")
 
 func _hero_flat_test() -> void:
 	var p := _player

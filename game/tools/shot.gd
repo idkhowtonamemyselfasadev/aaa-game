@@ -2572,11 +2572,16 @@ func _ready() -> void:
 				await get_tree().physics_frame
 			player.combat.idle_t = -1.0e6
 		var jstart := player.global_position
+		# (11-14) stick=<k>: the stick pushed only this far (0.5 = the hero's walk, for walk-stop frames)
+		var stick_k := 1.0
+		for a in args:
+			if a.begins_with("stick="):
+				stick_k = float(a.substr(6))
 		if "drop" in args:
 			player.global_position += Vector3.UP * 4.0
 		elif not "fromrest" in args:
 			for i in 60:
-				player.bot_input = _stick_for(player, Vector3(1, 0, 0))
+				player.bot_input = _stick_for(player, Vector3(1, 0, 0)) * stick_k
 				player.bot_sprint = spr
 				await get_tree().physics_frame
 		# pivotat=<t>: the stick thrown back to world -X at a run (the plant-and-spin pivot)
@@ -2612,7 +2617,7 @@ func _ready() -> void:
 		for i in 600:
 			if not "drop" in args:
 				# world-space: the camera rig follows the hero, so a fixed stick would curve the run
-				player.bot_input = _stick_for(player, Vector3(1, 0, 0))
+				player.bot_input = _stick_for(player, Vector3(1, 0, 0)) * stick_k
 				if turn_at >= 0.0 and t >= turn_at:
 					player.bot_input = _stick_for(player, Vector3(0, 0, 1))
 				if "spotturn" in args:

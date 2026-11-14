@@ -1428,15 +1428,17 @@ const PIVOT_REACH := 0.11              # m: the most the body's middle orbits of
 ## foes' (11-13 10:00): the weight-bearing boot is pinned where it stands, the other steps to its idle
 ## spot, then the pinned one to its own (StrideWarp's stop settle). Pushing the stick again, turning or
 ## any owned move hands the boots back at once. WALKSTOP_OLD=1: the before.
-## NOT ON BY DEFAULT YET (11-14 00:00): one sequential `herostop` cut (walk, cut 50) still jumps a planted
-## boot 22 cm in one tick, and a long stride is left to the old blend. WALKSTOP_NEW=1 turns it on.
-static var WALKSTOP_OLD := not OS.has_environment("WALKSTOP_NEW")
+## ON BY DEFAULT since 11-14 01:00: the 22 cm one-tick pop was the turn's gather snapping the stop's pinned
+## boot toward the hips, and the long-stride case was the pin set under the turf (both fixed in StrideWarp).
+static var WALKSTOP_OLD := OS.has_environment("WALKSTOP_OLD")
 const WALKSTOP_FROM := 0.25            # m/s: last tick's pace this fast counts as walking
 var walk_stop_settles := 0             # (bots)
+static var WALKSTOP_SINK := float(OS.get_environment("WALKSTOP_SINK")) if OS.has_environment("WALKSTOP_SINK") else 8.0
 ## the feet further apart than this (m, as shown last tick) are a long stride: pinning the front boot
 ## out of the idling leg's reach pulled it 35 cm back over the turf in one tick (`herostop` walk+ 41),
-## so a stop from that stride keeps the plain blend (TODO: sink the hips and step the back foot up)
-const WALKSTOP_SPREAD := 0.6
+## so a stop from that stride kept the plain blend. (11-14 01:00) that pull was the gather snap and the pin under
+## the turf, both fixed: no limit now (INF); WALKSTOP_SPREAD=0.6 gives the 00:00 gate back
+static var WALKSTOP_SPREAD := float(OS.get_environment("WALKSTOP_SPREAD")) if OS.has_environment("WALKSTOP_SPREAD") else INF
 func _walk_stop_spread() -> float:
 	var a = stride_warp._shown_prev[0]
 	var b = stride_warp._shown_prev[1]
@@ -1458,6 +1460,10 @@ func _walk_stop_settle(delta: float, standing: bool, hs: float, busy: bool) -> v
 			walk_stop_settles += 1
 			in_stop = true
 	_walkstop_t = _walkstop_t + delta if in_stop else 0.0
+	# (11-14 01:00) a stop from a long stride: the hips may sink further onto the planted leg so a front
+	# boot pinned 0.4 m ahead stays in its reach (it hung 5.6 cm in the air at the 8 cm cap while the back
+	# boot's step dragged 0.14 m along the turf, `herostop` walk+ 59). WALKSTOP_SINK tunes
+	stride_warp.pivot_sink_max = WALKSTOP_SINK if in_stop else StrideWarp.PIVOT_SINK_MAX
 	if in_stop:
 		var stale := _walkstop_t > StrideWarp.STEP_SETTLE_T * 2.0 + 0.8
 		if stride_warp.pivot_pin != null and Vector2((stride_warp.pivot_pin as Vector3).x - global_position.x, (stride_warp.pivot_pin as Vector3).z - global_position.z).length() > 1.2:

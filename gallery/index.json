@@ -892,5 +892,11 @@
   "time": "2026-11-13T23:20:00Z",
   "caption": "Hood side close-up, before (left) and after (right): baked fold cavity shading plus horizontal crumple creases give the cloth form; the weave is still a uniform stripe pattern.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261114-0129-walk-stop.jpg",
+  "time": "2026-11-14T01:29:15Z",
+  "caption": "The hero 0.5 s after letting go at a walk: both boots set flat on the turf in the idle stance (the new walk stop, now on by default); backlit at midday beside the cottage, the legs read dark and the lens is behind the hero.",
+  "verdict": "fail"
  }
 ]
