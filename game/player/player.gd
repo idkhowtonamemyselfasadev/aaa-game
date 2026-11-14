@@ -518,6 +518,9 @@ func _setup_crumple() -> void:
 	stride_warp.swing_clear = not OS.has_environment("STEPCLEAR_OLD")   # (11-12 18:00) boots lift over a riser ahead
 	stride_warp.ball_pivot = true          # (11-12) the turn on the spot spins on the ball, heel up
 	stride_warp.uncross = true             # (11-12 14:00) the stepping boot never crosses the planted one
+	stride_warp.dbg_me = true
+	stride_warp.stop_pin_shown = true
+	stride_warp.stop_lift_min = float(OS.get_environment("HERO_STOP_LIFT_MIN")) if OS.has_environment("HERO_STOP_LIFT_MIN") else 4.0   # (11-14) walk stop
 	stride_warp.hips_over_pin = true       # (11-12 16:00) the pelvis slides over the planted ankle
 	if not OS.has_environment("HEROFLOOR_OLD"):
 		_ankle_floor = float(OS.get_environment("HERO_ANKLEFLOOR")) if OS.get_environment("HERO_ANKLEFLOOR") != "" else HERO_ANKLE_FLOOR
@@ -1041,6 +1044,7 @@ func _physics_process(delta: float) -> void:
 		sprinting = false
 	_pivot_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	_stop_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
+	_wish_zero = wish.length() < 0.05
 	_start_step(delta, wish, attacking or charging or plunging or dodging or reeling or landing)
 	var target := wish * speed
 	var accel := ACCEL
@@ -1418,6 +1422,52 @@ static var PIVOT_CROSS_OLD := OS.has_environment("PIVOT_CROSS_OLD")
 var pivot_uncross := 0.0               # (bots) m the body stepped round so the planted foot does not cross
 var pivot_orbit := 0.0                 # (bots) m the body has swung round planted feet
 const PIVOT_REACH := 0.11              # m: the most the body's middle orbits off the pivot foot
+## (11-14 00:00) Letting go of the stick at a WALK (under the planted stop's 4.6 m/s): the body
+## stops in ~3 ticks but the walk -> idle blend dragged both boots over the turf into the idle stance
+## (bot `herostop`: up to 0.29 m summed, 4.5 cm in one tick). Now the stop steps into it like the
+## foes' (11-13 10:00): the weight-bearing boot is pinned where it stands, the other steps to its idle
+## spot, then the pinned one to its own (StrideWarp's stop settle). Pushing the stick again, turning or
+## any owned move hands the boots back at once. WALKSTOP_OLD=1: the before.
+## NOT ON BY DEFAULT YET (11-14 00:00): one sequential `herostop` cut (walk, cut 50) still jumps a planted
+## boot 22 cm in one tick, and a long stride is left to the old blend. WALKSTOP_NEW=1 turns it on.
+static var WALKSTOP_OLD := not OS.has_environment("WALKSTOP_NEW")
+const WALKSTOP_FROM := 0.25            # m/s: last tick's pace this fast counts as walking
+var walk_stop_settles := 0             # (bots)
+## the feet further apart than this (m, as shown last tick) are a long stride: pinning the front boot
+## out of the idling leg's reach pulled it 35 cm back over the turf in one tick (`herostop` walk+ 41),
+## so a stop from that stride keeps the plain blend (TODO: sink the hips and step the back foot up)
+const WALKSTOP_SPREAD := 0.6
+func _walk_stop_spread() -> float:
+	var a = stride_warp._shown_prev[0]
+	var b = stride_warp._shown_prev[1]
+	if a == null or b == null:
+		return INF
+	return Vector2((a as Vector3).x - (b as Vector3).x, (a as Vector3).z - (b as Vector3).z).length()
+var _wish_zero := true
+var _walked := false
+var _walkstop_t := 0.0
+func _walk_stop_settle(delta: float, standing: bool, hs: float, busy: bool) -> void:
+	if WALKSTOP_OLD or stride_warp == null or crumple == null:
+		return
+	var skel := crumple.get_skeleton()
+	var in_stop := stride_warp.settle_lift_k != 1.0
+	if not in_stop and _walked and standing and _wish_zero and not busy and turn_shuffle <= 0.05 \
+			and stride_warp.pivot <= 0.0 and stop_t < 0.0 and pivot_t < 0.0 and start_t < 0.0 and skel != null \
+			and _walk_stop_spread() < WALKSTOP_SPREAD:
+		if stride_warp.begin_stop_settle(skel):
+			walk_stop_settles += 1
+			in_stop = true
+	_walkstop_t = _walkstop_t + delta if in_stop else 0.0
+	if in_stop:
+		var stale := _walkstop_t > StrideWarp.STEP_SETTLE_T * 2.0 + 0.8
+		if stride_warp.pivot_pin != null and Vector2((stride_warp.pivot_pin as Vector3).x - global_position.x, (stride_warp.pivot_pin as Vector3).z - global_position.z).length() > 1.2:
+			stale = true
+		if stale or not _wish_zero or not standing or busy or _turn_sh > 0.05:
+			stride_warp.end_stop_settle()
+			if stale or not _wish_zero or not standing or busy:
+				stride_warp.pivot = 0.0
+	_walked = hs > WALKSTOP_FROM and is_on_floor() and not busy and stop_t < 0.0
+
 ## The planted pivot foot of a turn on the spot: in while the feet step round, out once square.
 func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
@@ -1463,6 +1513,7 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var sh := clampf((absf(yaw_rate) - 1.2) / 3.0, 0.0, 1.0) if standing else 0.0
 	_turn_sh = sh
 	turn_shuffle = move_toward(turn_shuffle, sh, delta * (8.0 if sh > turn_shuffle else 3.0))
+	_walk_stop_settle(delta, standing, hv.length(), owned or calm)
 	_update_pivot_foot(delta, standing)
 	if owned:
 		return                                 # the dodge / flinch pose writes the model itself

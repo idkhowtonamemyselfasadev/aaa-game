@@ -177,6 +177,9 @@ func _process_modification_with_delta(_delta: float) -> void:
 	_lock_feet(skel, _delta)
 	_pivot_leg(skel, _delta)
 	_ground_feet(skel, _delta)
+	for i in 2:
+		var fbi := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
+		_shown_prev[i] = skel.global_transform * skel.get_bone_global_pose(fbi).origin if fbi >= 0 else null
 
 func _warp_stride(skel: Skeleton3D) -> void:
 	var to_skel := frame.inverse()
@@ -487,6 +490,8 @@ func _settle_ref(xf: Transform3D) -> Transform3D:
 		return xf
 	return settle_ref_delta * xf
 static var SETTLE_DBG := OS.has_environment("SETTLE_DBG")
+static var SETTLE_DBG_HERO := OS.has_environment("SETTLE_DBG_HERO")   # (11-14) SETTLE_DBG prints the hero only
+var dbg_me := false                # (set by the hero)
 static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
 static var SETTLE_PIN_OLD := OS.has_environment("SETTLEPIN_OLD")
 ## (11-13 18:00 EXPERIMENTS, opt-in, NOT on: each measured worse or mixed on `foewindup`, see PROGRESS.md)
@@ -499,6 +504,14 @@ static var SETTLE_FLOORW := OS.has_environment("SETTLE_FLOORW")
 var _settle_fc_w = null            # (SETTLE_FLOORW) a stop step's idle ankle level, world, from its first tick
 var _settle_goal_w = null          # the first settle step's goal, world, once travelled
 var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, world, once travelled
+## (11-14) a stop's settle step clears the turf by at least this (skeleton units) however short it is:
+## the hero's short first step after a quick walk (8 cm) rose 2 cm, under the walk clip's own dip, and
+## its boot slid 7 cm along the turf (bot `herostop` walk+ cuts). 0 = off (the foes)
+var stop_lift_min := 0.0
+var _shown_prev := [null, null]    # each ankle where it was shown last tick, world (after every correction)
+var stop_pin_shown := false        # (11-14, set by the hero) a stop's pin comes from last tick's shown boot
+var _stop_pin_lock := false        # (11-14) the next pivot pin is taken from the contact lock's pin
+static var STOPPIN_LOCK_OLD := OS.has_environment("STOPPIN_LOCK_OLD")
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	if not _stance_ok or pivot > 0.0 or skel == null:
 		return false
@@ -527,6 +540,7 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	settle_pin_world = not SETTLE_PIN_OLD
 	_settle_goal_w = null
 	_settle_bgoal_w = null
+	_stop_pin_lock = true
 	return true
 
 ## A stop's settle handed over (walking again, or a turn begins): back to a turn's own step settings.
@@ -607,8 +621,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	if pivot_pin == null:
 		# plant it where it stands, at the stance level (the lower ankle), not mid-lift
 		var f0 := skel.get_bone_global_pose(ft).origin
+		if _stop_pin_lock and stop_pin_shown and not STOPPIN_LOCK_OLD and _shown_prev[pivot_side] != null:
+			# (11-14 00:00) a stop: plant it where the boot was SHOWN last tick, not where this tick's
+			# pose has it: the contact lock lets go as the body slows under 0.5 m/s, and its first
+			# tick of letting go already moved the boot ~5 cm back toward the idling clip (the hero's
+			# walk stop, bot `herostop`). STOPPIN_LOCK_OLD: before
+			var lp: Vector3 = inv * (_shown_prev[pivot_side] as Vector3)
+			f0 = lp - up * (lp.dot(up) - f0.dot(up))
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
+		_stop_pin_lock = false
 		_arc_floor = lo
 		var tb0 := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
 		_ball_pin = null
@@ -652,6 +674,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			ubt = clampf((ub - SETTLE_B_LIFT_FIRST) / maxf(settle_travel_end - SETTLE_B_LIFT_FIRST, 0.05), 0.0, 1.0)
 		var eb := ubt * ubt * (3.0 - 2.0 * ubt)
 		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
+		if settle_lift_k != 1.0 and bd.length() >= STEP_SETTLE_MIN:
+			lift_b = maxf(lift_b, settle_lift(ub) * stop_lift_min)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
 		if settle_pin_world and _settle_bgoal_w == null and (ubt >= 1.0 or (ub >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 			_settle_bgoal_w = xf * (b0 + bd)
@@ -951,6 +975,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# clears it (11-06 07:00: added on top, the giant knight's boot rose 1.5 -> 2.0 cm/size again
 			# mid-descent, a second hump). SETTLE_LIFT_ADD: the before
 			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
+			if settle_lift_k != 1.0 and settle_reach > 0.0:
+				clear = maxf(clear, settle_lift(u) * stop_lift_min)
 			if settle_lift_k != 1.0 and _stance_ok and not SETTLE_FLOOR_OLD:
 				# (11-13 17:00) a stop's step clears the turf from the IDLE ankle level: the walk clip
 				# carries its lower ankle ~3 cm/size under it (the ankle floor lifts the planted boot back
@@ -981,7 +1007,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					clear = maxf(fc + clear - of_t.dot(up), 0.0)
 			elif not SETTLE_LIFT_ADD:
 				clear = maxf(clear - maxf(of_t.dot(up) - floor_h, 0.0), 0.0)
-			if SETTLE_DBG:
+			if SETTLE_DBG and (dbg_me or not SETTLE_DBG_HERO):
 				print("  sdbg f%d u %.2f ut %.2f reach %.1f h %.2f clear %.2f floor %.2f" % [Engine.get_physics_frames(), u, ut, settle_reach, of_t.dot(up) - floor_h, clear, floor_h])
 			of_t += up * (clear * pivot)
 		else:
@@ -1009,7 +1035,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			_leg_to(skel, oul, olg, of, of_t, of_keep, fwd)
 	pivot_ankle = xf * skel.get_bone_global_pose(ft).origin
 	pivot_other = xf * skel.get_bone_global_pose(of).origin
-	if SETTLE_DBG and pivot_settle:
+	if SETTLE_DBG and pivot_settle and (dbg_me or not SETTLE_DBG_HERO):
 		print("  posdbg f%d t %.3f ankle %s pinw %s miss %.4f pv %.2f sink %.3f/%.3f other %s goalw %s bgoalw %s" % [Engine.get_physics_frames(), _settle_t, pivot_ankle, pivot_pin, pivot_ankle.distance_to(pivot_pin as Vector3), pivot, pivot_sink, pivot_sink_max, pivot_other, _settle_goal_w, _settle_bgoal_w])
 
 func _swing(skel: Skeleton3D, b: int, from: Vector3, to: Vector3) -> void:

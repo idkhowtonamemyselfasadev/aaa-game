@@ -43,7 +43,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -264,6 +264,9 @@ func _ready() -> void:
 		return
 	if name == "foestart":
 		_foe_start_test()
+		return
+	if name == "herostop":
+		_hero_stop_test()
 		return
 	if name == "foewindup":
 		_foe_stop_test(true)
@@ -5009,6 +5012,140 @@ func _foe_start_test() -> void:
 ## (11-13 09:00) The hero's boots against its own idle on a flat slab (the `foeflat` read): each boot
 ## bone's height over the slab in a true idle, then the lowest any bone goes under that while it
 ## walks, jogs and sprints straight down the slab (the lower foot per bone, ticks on the floor only).
+## (11-14 00:00) The hero letting go of the stick at a WALK or a slow jog (under the planted stop's
+## 4.6 m/s): do the boots skate into the idle stance? `foestop` for the hero: a flat slab along the
+## walk, the move cut at three points of the stride per gait, then for 90 ticks the weight-bearing
+## (lower) boot on the slab (within 3 cm of its idle height, same boot both ticks) counts its travel
+## over the slab as skate; also how long until the legs are still. HEROSTOP_DEBUG=1 prints per cut.
+func _hero_stop_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	p.global_position += Vector3(3.0, 0, -6.0)
+	p.velocity = Vector3.ZERO
+	await _ticks(60)
+	var space := p.get_world_3d().direct_space_state
+	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var bones := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+	var balls := [skel.find_bone("mixamorig_LeftToeBase"), skel.find_bone("mixamorig_RightToeBase")]
+	var cur_slab := [null]
+	var wpos := func(bi: int) -> Vector3:
+		return skel.global_transform * skel.get_bone_global_pose(bi).origin
+	var over := func(bp: Vector3) -> float:
+		var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6, bp + Vector3.DOWN * 0.6, 1, [p.get_rid()]))
+		if bh.is_empty() or bh.collider != cur_slab[0]:
+			return INF
+		return bp.y - (bh.position as Vector3).y
+	var start := p.global_position
+	var fail := ""
+	var gaits := [["walk", 0.25], ["walk+", 0.5], ["jog", 0.7]]
+	var fwd := Vector3.ZERO
+	for i in 30:
+		p.bot_input = Vector2(0, -1) * 0.5
+		await get_tree().physics_frame
+	fwd = Vector3(p.velocity.x, 0, p.velocity.z).normalized()
+	p.bot_input = Vector2.ZERO
+	p.global_position = start
+	p.velocity = Vector3.ZERO
+	await _ticks(30)
+	var slab: StaticBody3D = _flat_slab(p, fwd, 1.0, 30.0)
+	cur_slab[0] = slab
+	var base := p.global_position
+	await _ticks(90)
+	await skel.skeleton_updated
+	var idle := minf(over.call(wpos.call(bones[0])), over.call(wpos.call(bones[1])))
+	if idle == INF:
+		slab.queue_free()
+		return _combat_done(false, "no slab under the hero's boots")
+	var stance := func():
+		var a0: Vector3 = wpos.call(bones[0])
+		var a1: Vector3 = wpos.call(bones[1])
+		var h0: float = over.call(a0)
+		var h1: float = over.call(a1)
+		var f := 0 if h0 <= h1 else 1
+		if minf(h0, h1) - idle > 0.03:
+			return null
+		return [a0 if f == 0 else a1, f, wpos.call(balls[f])]
+	var worst_sum := 0.0
+	var worst_tick := 0.0
+	var worst_still := 0
+	var worst_pop := 0.0
+	var settles0: int = p.walk_stop_settles if "walk_stop_settles" in p else 0
+	for g in gaits:
+		for cut in [41, 50, 59]:
+			if OS.has_environment("HEROSTOP_CUT") and "%s%d" % [g[0], cut] != OS.get_environment("HEROSTOP_CUT"):
+				continue
+			p.global_position = base - fwd * 0.4
+			p.velocity = Vector3.ZERO
+			p.bot_input = Vector2.ZERO
+			await _ticks(50)
+			var v_cut := 0.0
+			for fi in cut:
+				p.bot_input = Vector2(0, -1) * float(g[1])
+				await get_tree().physics_frame
+				v_cut = Vector2(p.velocity.x, p.velocity.z).length()
+			p.bot_input = Vector2.ZERO
+			var prev = null
+			var skate := 0.0
+			var worst := 0.0
+			var hand := 0
+			var still_at := -1
+			var lastpos := p.global_position
+			var lastank := [wpos.call(bones[0]), wpos.call(bones[1])]
+			var pop := 0.0
+			for fi in 90:
+				await get_tree().physics_frame
+				await skel.skeleton_updated
+				var st = stance.call()
+				for f in 2:
+					var an: Vector3 = wpos.call(bones[f])
+					if Vector2(p.velocity.x, p.velocity.z).length() < 0.3:
+						pop = maxf(pop, (an - (lastank[f] as Vector3)).length() - (p.global_position - lastpos).length())
+					lastank[f] = an
+				if OS.has_environment("HEROSTOP_PIN") and (fi < 8 or (fi >= 15 and fi < 28)):
+					var swd: StrideWarp = p.stride_warp
+					print("     pin t%d L %s R %s pin %s posed %s groundoff %s gw %.2f blend %.2f" % [fi, wpos.call(bones[0]), wpos.call(bones[1]), swd.pivot_pin, swd.pivot_ankle, swd.ground_off, swd.ground_w, p._blend])
+				if st != null and prev != null and prev[1] == st[1]:
+					# a boot rolling up onto its ball (heel lifting, the ball held) or back down is not
+					# a skate: only the whole boot moving counts (the lesser of ankle and ball travel)
+					var d := minf(Vector2(st[0].x - prev[0].x, st[0].z - prev[0].z).length(), Vector2(st[2].x - prev[2].x, st[2].z - prev[2].z).length())
+					skate += d
+					worst = maxf(worst, d)
+					if OS.has_environment("HEROSTOP_TICKS") and d > 0.002 and (not OS.has_environment("HEROSTOP_CUT") or "%s%d" % [g[0], cut] == OS.get_environment("HEROSTOP_CUT")):
+						var a0: Vector3 = wpos.call(bones[0])
+						var a1: Vector3 = wpos.call(bones[1])
+						print("     %s%d t%d foot %d travel %.4f v %.2f pivot %.2f side %d settle_t %.2f hL %.3f hR %.3f along %+.3f" % [g[0], cut, fi, st[1], d, Vector2(p.velocity.x, p.velocity.z).length(), p.stride_warp.pivot, p.stride_warp.pivot_side, p.stride_warp._settle_t, float(over.call(a0)) - idle, float(over.call(a1)) - idle, (a0 - a1).dot(fwd)])
+				elif st != null and prev != null:
+					hand += 1
+				prev = st
+				var moved := (p.global_position - lastpos).length()
+				lastpos = p.global_position
+				if still_at < 0 and moved < 0.0005 and p.stride_warp.pivot <= 0.0 and p.stop_t < 0.0:
+					still_at = fi
+			if OS.has_environment("HEROSTOP_DEBUG"):
+				print("   %s cut %d (v %.2f, planted stop %s): skate %.4f worst %.4f hand-overs %d still at %d pop %.3f" % [g[0], cut, v_cut, "yes" if p.stops > 0 and p.stop_t >= 0.0 else "no", skate, worst, hand, still_at, pop])
+			worst_pop = maxf(worst_pop, pop)
+			if g[0] != "jog":
+				# the jog band (4.2-4.6 m/s, just under the planted stop) is read, not gated yet
+				worst_sum = maxf(worst_sum, skate)
+				worst_tick = maxf(worst_tick, worst)
+			worst_still = maxi(worst_still, still_at if still_at >= 0 else 999)
+	var settles: int = (p.walk_stop_settles if "walk_stop_settles" in p else 0) - settles0
+	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of 9" % [worst_sum, worst_tick, worst_still, worst_pop, settles])
+	slab.queue_free()
+	p.global_position = start
+	# gated only with the new walk stop on (WALKSTOP_NEW=1; off by default until its last pop is fixed)
+	if OS.has_environment("WALKSTOP_NEW") and not OS.has_environment("HEROSTOP_NOGATE"):
+		if worst_sum > 0.12 or worst_tick > 0.025:
+			fail = "the hero's planted boot skates %.3f m (worst tick %.3f) after a walk stop" % [worst_sum, worst_tick]
+		elif worst_pop > 0.08:
+			fail = "a boot jumps %.3f m in one tick after a walk stop" % worst_pop
+		elif worst_still > 75:
+			fail = "the hero's legs are not still %d ticks after a walk stop" % worst_still
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if OS.has_environment("WALKSTOP_NEW") else "walk-stop skate read (new walk stop off by default; WALKSTOP_NEW=1 gates it)")
+
 func _hero_flat_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
