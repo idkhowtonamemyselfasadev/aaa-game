@@ -109,6 +109,7 @@ var _elbows: Array[BoneAttachment3D] = []
 ## The angle off plumb (rad) of the mantle's lines from the collar ring down to the hem at the
 ## sides; an elbow raised past it lifts the cloth (rag.gdshader's lift_over_arm, 0.5 there).
 const CAPE_LINE := 0.5
+const MANTLE_GLIDE_SWAY := 0.09   # m: the mantle hem's trail at full airflow (the robe's is 0.3)
 const EYE_X := 0.031
 const EYE_Y := 1.968
 const EYE_R := 0.0125
@@ -223,6 +224,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mantle.transform = Transform3D(Basis.from_scale(Vector3(1.16, 1.0, 1.12)), Vector3(0, 0.03, -0.005))
 	chest.add_child(mantle)
 	_cape = mantle
+	if OS.get_environment("CAPE_HIDE") != "":
+		mantle.visible = false                 # (debug) to tell the mantle from the pieces under it
 	# bone attachments, not the skeleton's poses: those are restored after the pose modifiers
 	# run, so they would never show an arm the crumple raised
 	for side in ["Left", "Right"]:
@@ -320,11 +323,29 @@ func _physics_process(delta: float) -> void:
 	super(delta)
 	if _cape != null and _elbows.size() == 2:
 		var mm := _cape.material_override as ShaderMaterial
+		# (11-14 17:00) the shoulder mantle takes less of the hems' trail in the airflow: the
+		# robe's full 0.3 m pushed its short (0.45 m) hem straight back under the glider, so
+		# from behind the back of it stood out as a level shelf ending in a beak past the right
+		# shoulder. Heavy wool lying on the back, sheltered by the wing, only lifts a little.
+		mm.set_shader_parameter("sway", mantle_sway())
 		var inv := _cape.global_transform.affine_inverse()
 		for i in 2:
 			var e := inv * _elbows[i].global_position
 			elbow_in_cape[i] = e
 			mm.set_shader_parameter("arm_l" if i == 0 else "arm_r", Vector4(e.x, e.y, e.z, 1.0))
+		if OS.get_environment("CAPE_DEBUG") != "" and Engine.get_physics_frames() % 15 == 0:
+			_cape_debug()
+
+func _cape_debug() -> void:
+	var arr := _cape.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+	var t := ""
+	for vi in verts.size():
+		if uvs[vi].y > 0.999 and roundi(uvs[vi].x * 84.0) % 12 == 0:
+			var cv := cape_vertex(verts[vi], uvs[vi])
+			t += " %.0f:%.2f,%.2f,%.2f" % [rad_to_deg(lerpf(0.42, TAU - 0.42, uvs[vi].x)), cv.x, cv.y, cv.z]
+	print("SHOT cape f%d elbows %s %s hem%s" % [Engine.get_physics_frames(), elbow_in_cape[0], elbow_in_cape[1], t])
 
 ## How far (rad) the mantle's radial line at bearing `a` (mesh space, 0 = straight ahead) turns
 ## up over elbow `i` (0 left, 1 right): rag.gdshader's lift_over_arm, for the bots.
@@ -348,6 +369,69 @@ func cape_drape(i: int, a: float) -> float:
 	var d0 := cape_lift(i, eb.x)               # the lift right over the elbow sets how far all of it falls
 	var d := cape_lift(i, a)
 	return smoothstep(0.85, 1.45, d0) * (d + 0.25 * d / maxf(d0, 0.001))
+
+## The trail (mesh space) the mantle's hem takes: the robe's own on the ground, held to
+## MANTLE_GLIDE_SWAY in full airflow. CAPE_SWAYOLD=1 = before 11-14 17:00 (the robe's 0.3 m).
+func mantle_sway() -> Vector3:
+	if OS.get_environment("CAPE_SWAYOLD") != "":
+		return _trail
+	return _trail.limit_length(lerpf(0.3, MANTLE_GLIDE_SWAY, stream))
+
+## A mantle vertex (mesh space, with its UV) walked through rag.gdshader's plumb hang and
+## both lift_over_arm passes (no flutter or sway): where the cloth really sits, for the bots.
+func cape_vertex(v: Vector3, uv: Vector2) -> Vector3:
+	var mm := _cape.material_override as ShaderMaterial
+	var ht0 = mm.get_shader_parameter("hang_top")
+	var hb0 = mm.get_shader_parameter("hang_body")
+	var hang_top: float = 1.62 if ht0 == null else ht0          # the shader's defaults
+	var hb: Vector3 = Vector3(0.245, 0.22, -0.015) if hb0 == null else hb0
+	var drop := maxf(hang_top - v.y, 0.0)
+	var dn := (_cape.global_transform.basis.inverse() * Vector3.DOWN).normalized()
+	var p := v + (dn - Vector3.DOWN) * drop
+	var q := Vector2(p.x / hb.x, (p.z - hb.z) / hb.y)
+	var e := q.length()
+	var q0 := Vector2(v.x / hb.x, (v.z - hb.z) / hb.y)
+	if e < 1.0 and q0.length() >= 1.0 and e > 0.001:
+		p.x /= e
+		p.z = hb.z + (p.z - hb.z) / e
+	var ca := lerpf(0.42, TAU - 0.42, uv.x)
+	for i in 2:
+		p = _lift_vertex(p, i, ca)
+	return p + mantle_sway() * uv.y * uv.y
+
+func _lift_vertex(v: Vector3, i: int, a: float) -> Vector3:
+	var e := elbow_in_cape[i]
+	var eo := Vector2(e.x, e.z + 0.045)
+	var ae := atan2(eo.x, eo.y)
+	var da := fposmod(a - ae + PI, TAU) - PI
+	var wa := exp(-pow(da / 0.55, 2.0))
+	var re := eo.length()
+	var dv := Vector2(re - 0.1485, 1.72 - e.y)
+	var th := atan2(dv.x, dv.y) + atan2(0.07, maxf(dv.length(), 0.1))
+	var d0 := clampf(th - CAPE_LINE, 0.0, 1.6)
+	var d := d0 * wa
+	if d <= 0.0:
+		return v
+	var rn := Vector3(sin(a), 0.0, cos(a))
+	var c := Vector3(0.0, 1.72, -0.045) + rn * 0.1485
+	var k := Vector3(-rn.z, 0.0, rn.x)
+	var pp := v - c
+	var s := pp.length()
+	var dir := pp / maxf(s, 0.0001)
+	var out := c + _rot(pp, k, d)
+	if OS.get_environment("CAPE_OLDLIFT") != "":
+		return out
+	var d2 := smoothstep(0.85, 1.45, d0) * (d + 0.25 * wa)
+	if d2 > 0.0:
+		var w2 := smoothstep(0.10, 0.17, s)
+		var h := c + _rot(dir * 0.10, k, d)
+		out = h + _rot(out - h, k, -d2 * w2)
+	return out
+
+## Rodrigues, as the shader writes it: p * cos + (k x p) * sin + k (k.p)(1 - cos).
+static func _rot(p: Vector3, k: Vector3, ang: float) -> Vector3:
+	var cs := cos(ang)
+	return p * cs + k.cross(p) * sin(ang) + k * k.dot(p) * (1.0 - cs)
 
 ## The elbow's bearing round the collar (mesh space, as cape_lift takes it) and the angle off
 ## plumb (rad) of the line from the collar ring to it.

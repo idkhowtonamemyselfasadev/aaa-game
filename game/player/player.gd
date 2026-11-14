@@ -2596,6 +2596,8 @@ func _glide_pose(delta: float) -> void:
 		garb.posed_legs = true                 # the robe panels follow the trailing legs
 		garb.stream = lerpf(garb.stream, air, k)
 		garb.flap = garb.stream * (0.7 + 0.6 * glider.gust)
+		if OS.get_environment("CAPE_FLAP0") != "":
+			garb.flap = 0.0                    # (debug) no airflow waves on the cloth
 
 func _end_glide(clear_pose: bool) -> void:
 	gliding = false

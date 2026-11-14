@@ -1,20 +1,8 @@
 [
  {
-  "file": "20261110-1300-harrier-guard-before.jpg",
-  "time": "2026-11-10T13:09:29Z",
-  "caption": "Before: the same frame with the old low guard (the pose asked a grip past its reach, the real shaft 20 deg off its pose); near-identical at rest, the difference shows in the moves out of it.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-1400-harrier-dart.jpg",
   "time": "2026-11-10T14:00:00Z",
   "caption": "The harrier at full stretch of its dart: the spear now drives forward and low past the hero's waist along the dart's line (bot foereach 0.0 deg); still shot from behind the hero, so the foe is half hidden.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1400-harrier-dart-before.jpg",
-  "time": "2026-11-10T14:00:01Z",
-  "caption": "Before: the same frame with the old dart pose, the front grip clamped 0.5 m short so the spear stood straight up, 96 deg off the line it was meant to drive along.",
   "verdict": "fail"
  },
  {
@@ -885,6 +873,24 @@
   "file": "20261114-1616-glide-mantle-front.jpg",
   "time": "2026-11-14T16:16:23Z",
   "caption": "Glide from the front 3/4: the black wing beside the right shoulder is gone and the mantle hangs from the shoulder caps; a small dark tongue remains at the right side and the feet are cropped.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1700-glide-mantle-back-before.jpg",
+  "time": "2026-11-14T17:00:00Z",
+  "caption": "Before: under the glider the shoulder mantle's hem was pushed 0.3 m straight back by the airflow trail, so from behind it stood out as a level shelf ending in a beak past the right shoulder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1700-glide-mantle-back.jpg",
+  "time": "2026-11-14T17:00:00Z",
+  "caption": "After: the mantle takes only 0.09 m of the trail in full airflow and hangs over the back in folds; still wrong: a pointed fold of cloth hangs off the raised right upper arm, and the figure reads dark against the light.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1700-glide-mantle-front.jpg",
+  "time": "2026-11-14T17:00:00Z",
+  "caption": "Front 3/4 under the glider after the fix: mantle sits on the shoulders, legs hang loose; still wrong: the figure is dark in self-shade and the face is lost under the hat.",
   "verdict": "fail"
  }
 ]

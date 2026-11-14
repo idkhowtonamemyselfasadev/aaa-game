@@ -976,6 +976,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const CAPE_HEM_TILT := 1.0      # rad: under the glider the mantle hem's angle off plumb from its collar point (rest ~0.5)
+const CAPE_HEM_MIN := 0.0       # m: under the glider no mantle hem point may ride up above this far below the collar
 const HELD_WRIST_GATE := 0.04   # m: the knocked-down hero's closed right fist to the staff's shaft
 const REGRIP_GATE := 0.05      # m: either fist to the shaft as the staff comes back into both hands (0.29 before the guard turn, 0.167 before the 11-08 regrip)
 const REGRIP_L_EARLY_T := 1.78
@@ -9861,6 +9863,57 @@ func _glide_test() -> void:
 			return _combat_done(false, "the raised elbow pokes out through the mantle")
 		if OS.get_environment("CAPE_OLDLIFT") == "" and outer > 0.6:
 			return _combat_done(false, "the mantle stands out level like a wing over the raised arm")
+	# (11-14 17:00) every hem point of the mantle walked through the shader: no line may ride
+	# up level with the collar (the back of it stood out as a level band ending in a point
+	# past the right shoulder in the back view)
+	var cmesh: ArrayMesh = p.garb._cape.mesh
+	var arr := cmesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+	var hem_lo := 9.0
+	var hem_lo_a := 0.0
+	var hem_tilt := 0.0
+	var hem_tilt_a := 0.0
+	var table := ""
+	var far := {}
+	for vi in verts.size():
+		var ui0 := roundi(uvs[vi].x * 84.0)
+		if ui0 % 6 == 0:
+			var cw: Vector3 = p.garb.cape_vertex(verts[vi], uvs[vi])
+			var rr := Vector2(cw.x, cw.z + 0.045).length()
+			if not far.has(ui0) or rr > far[ui0].x:
+				far[ui0] = Vector3(rr, uvs[vi].y, cw.y)
+		if uvs[vi].y < 0.999:
+			continue
+		var cv: Vector3 = p.garb.cape_vertex(verts[vi], uvs[vi])
+		var hd := 1.72 - cv.y
+		var ang := lerpf(0.42, TAU - 0.42, uvs[vi].x)
+		# how far the hem stands off plumb from its line's collar point (rest ~0.5 rad)
+		var cc := Vector3(sin(ang) * 0.1485, 1.72, -0.045 + cos(ang) * 0.1485)
+		var off := Vector2(cv.x - cc.x, cv.z - cc.z).length()
+		var tilt := atan2(off, maxf(cc.y - cv.y, 0.001))
+		if tilt > hem_tilt:
+			hem_tilt = tilt
+			hem_tilt_a = ang
+		if hd < hem_lo:
+			hem_lo = hd
+			hem_lo_a = ang
+		var ui := roundi(uvs[vi].x * 84.0)
+		if ui % 6 == 0:
+			table += " %.0f:%.2f" % [rad_to_deg(ang), hd]
+	for i in 2:
+		print("BOT glide: elbow %d bearing %.0f deg, %.2f rad off plumb" % [i, rad_to_deg(p.garb.elbow_bearing(i).x), p.garb.elbow_bearing(i).y])
+	print("BOT glide: mantle hem drop below the collar by bearing (deg:m):%s" % table)
+	var ft := ""
+	for ui0 in far:
+		ft += " %.0f:r%.2f@v%.2f,y%.2f" % [rad_to_deg(lerpf(0.42, TAU - 0.42, ui0 / 84.0)), far[ui0].x, far[ui0].y, far[ui0].z]
+	print("BOT glide: mantle farthest out by bearing:%s" % ft)
+	print("BOT glide: mantle hem highest at bearing %.0f deg, %.2f m below the collar" % [rad_to_deg(hem_lo_a), hem_lo])
+	print("BOT glide: mantle hem trail %s m, hem stands off plumb up to %.2f rad at bearing %.0f deg" % [p.garb.mantle_sway(), hem_tilt, rad_to_deg(hem_tilt_a)])
+	if OS.get_environment("CAPE_SWAYOLD") == "" and hem_tilt > CAPE_HEM_TILT:
+		return _combat_done(false, "the mantle's hem streams out level behind the shoulders")
+	if OS.get_environment("CAPE_OLDLIFT") == "" and hem_lo < CAPE_HEM_MIN:
+		return _combat_done(false, "a line of the mantle rides up level with the collar over the raised arms")
 	if thigh_mean > -0.12:
 		return _combat_done(false, "the legs do not trail back in flight")
 	if thigh_hi - thigh_lo < 0.08:
