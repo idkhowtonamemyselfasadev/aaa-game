@@ -15513,7 +15513,7 @@ func _facelight_test() -> void:
 		_world.time_of_day = h
 		await _ticks(10)
 		var c := fill.light_color
-		got[h] = [fill.light_energy, c]
+		got[h] = [fill.light_energy, c, _world.rim_light, _world.rim_dir]
 		var s: Color = _world.face_shade
 		print("BOT facelight %.1f h: shade lum %.3f, fill %.3f colour (%.2f %.2f %.2f)" % [h,
 				s.r * 0.3 + s.g * 0.59 + s.b * 0.11, fill.light_energy, c.r, c.g, c.b])
@@ -15528,7 +15528,16 @@ func _facelight_test() -> void:
 		return _combat_done(false, "face fill does not dim from noon through dusk into night")
 	if nc.b <= nc.r:
 		return _combat_done(false, "the night face fill is still warm")
-	_combat_done(true, "the face fill follows the shade light from noon to night")
+	# the figures' rim light (figure_fill.gdshaderinc) keys off the sun by day, the moon by night
+	var rn: Vector3 = got[13.0][2]
+	var rnight: Vector3 = got[23.0][2]
+	print("BOT facelight rim: noon %.2f (%.2f %.2f %.2f) toward y %.2f, night %.2f (%.2f %.2f %.2f)" % [rn.length(),
+			rn.x, rn.y, rn.z, (got[13.0][3] as Vector3).y, rnight.length(), rnight.x, rnight.y, rnight.z])
+	if rn.length() < 1.5 or (got[13.0][3] as Vector3).y < 0.3:
+		return _combat_done(false, "no noon rim light from the sun")
+	if rnight.length() < 0.2 or rnight.length() > rn.length() * 0.6:
+		return _combat_done(false, "the night rim light is not the dimmer moon")
+	_combat_done(true, "the face fill follows the shade light from noon to night, the figures' rim light keys off sun then moon")
 
 ## Edda keeps her day: out of the door at dawn, stooping at the butt and the woodpile, sat on
 ## the bench at noon, out to the lantern at dusk to light it with her taper (and it stays dark

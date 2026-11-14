@@ -247,7 +247,7 @@ void fragment() {
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth * mix(1.0, cloth_normal, cloth_body * restyle);
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light
-	EMISSION = figure_fill(alb, wet_n, wet_p);
+	EMISSION = figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
 	RIM = 0.15;
 	RIM_TINT = 0.55;
 }

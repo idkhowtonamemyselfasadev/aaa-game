@@ -152,7 +152,7 @@ void fragment() {
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, vnoise(opos * 9.0)), 1.0 - metal);
 	ALBEDO = alb;
-	EMISSION += figure_fill(alb, wet_n, wet_p) + glow;
+	EMISSION += figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD) + glow;
 	ROUGHNESS = clamp(rough, 0.05, 1.0);
 	METALLIC = metal;
 	vec3 dpdx = dFdx(VERTEX);

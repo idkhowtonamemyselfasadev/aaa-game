@@ -548,7 +548,7 @@ void fragment() {
 	// a tightly plaited straw hat is opaque: no light through its underside
 	BACKLIGHT = vec3(0.12, 0.10, 0.08) * (1.0 - 0.9 * rigid);
 	// the meadow's warm bounce turned a near-black felt hat orange-brown: felt takes a greyer fill
-	vec3 fill = figure_fill(alb, wet_n, wet_p);
+	vec3 fill = figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
 	fill = mix(fill, vec3(dot(fill, vec3(0.3, 0.55, 0.15))), 0.7 * felt);
 	EMISSION = ember_col * glow * 3.0 + fill * fold_occ;
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles

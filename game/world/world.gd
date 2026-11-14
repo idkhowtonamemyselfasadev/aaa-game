@@ -840,6 +840,10 @@ var sky_floor := Vector3.ZERO   # last value written to the sky_floor global
 var bounce_light := Vector3.ZERO   # last value written to the bounce_light global
 var ground_fill := Vector3.ZERO   # last value written to the ground_fill global
 var ground_fill_far := 1.0   # share of it the ground keeps past ~120 m (ground_fill_far global)
+## the figures' rim key as last set (colour x energy, direction toward it); read by the facelight bot
+var rim_light := Vector3.ZERO
+var rim_dir := Vector3.UP
+
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
 	var sun_h := maxf(sun.global_transform.basis.z.y, 0.0)
@@ -883,6 +887,23 @@ func _apply_bounce(e: Environment) -> void:
 	sf = sf.lerp(SKY_FLOOR_WARM * (sl / maxf(SKY_FLOOR_WARM.get_luminance(), 0.001)), 0.25)
 	sky_floor = Vector3(sf.r, sf.g, sf.b)
 	RenderingServer.global_shader_parameter_set("sky_floor", sky_floor)
+	# the figures' rim light (figure_fill.gdshaderinc): the key that is up (sun, else moon) and
+	# the sky dome; kept with SDFGI (GI does not put a grazing sheen on dark cloth either)
+	var rl := Color(0, 0, 0)
+	var rd := Vector3.UP
+	if sun.visible and sun.light_energy > 0.01:
+		rl = sun.light_color * sun.light_energy
+		rd = sun.global_transform.basis.z
+	elif moon and moon.visible:
+		rl = moon.light_color * moon.light_energy
+		rd = moon.global_transform.basis.z
+	var rs := e.ambient_light_color * e.ambient_light_energy
+	rim_light = Vector3(rl.r, rl.g, rl.b)
+	rim_dir = rd
+	RenderingServer.global_shader_parameter_set("rim_light", rim_light)
+	RenderingServer.global_shader_parameter_set("rim_sky", Vector3(rs.r, rs.g, rs.b))
+	RenderingServer.global_shader_parameter_set("rim_dir", rd)
+	RenderingServer.global_shader_parameter_set("figure_rim_off", OS.get_environment("RIM_OLD") == "1")
 	if e.sdfgi_enabled:
 		b = Color(0, 0, 0)
 		ground_fill = Vector3.ZERO

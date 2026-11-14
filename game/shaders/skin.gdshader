@@ -228,7 +228,7 @@ void fragment() {
 	// the meadow's bounce up under the hat brim and into the hood opening, as the garb gets
 	// it: without it the face band, shaded by the brim, read darker than the body round it
 	// and was lost in the hood. The sockets and tucked edges keep most of their shade.
-	EMISSION = figure_fill(alb, wn, wp) * face_fill * mix(0.25, 1.0, tuck)
+	EMISSION = figure_fill(alb, wn, wp, CAMERA_POSITION_WORLD) * face_fill * mix(0.25, 1.0, tuck)
 			* mix(0.5, 1.0, smoothstep(0.0, 0.009, de));
 	SSS_STRENGTH = 0.35;
 	SSS_TRANSMITTANCE_COLOR = vec4(0.9, 0.3, 0.2, 1.0);

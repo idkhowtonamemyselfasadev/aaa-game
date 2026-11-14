@@ -226,5 +226,5 @@ void fragment() {
 	vec3 grad = sign(det) * (bx * r1 + by * r2);
 	NORMAL = normalize(abs(det) * NORMAL - grad * 0.004);
 	// meadow bounce into the shaded side, like the fighters (no black post in back light)
-	EMISSION = figure_fill(alb, mat3(INV_VIEW_MATRIX) * NORMAL, (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz) * ao;
+	EMISSION = figure_fill(alb, mat3(INV_VIEW_MATRIX) * NORMAL, (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz, CAMERA_POSITION_WORLD) * ao;
 }

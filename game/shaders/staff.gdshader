@@ -111,7 +111,7 @@ void fragment() {
 	float porous = layer > 0.75 ? 1.0 : (layer < 0.25 ? 0.6 : 0.0);
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, vnoise(vec2(around * 9.0, along * 5.0))), porous);
 	ALBEDO = alb;
-	EMISSION += figure_fill(alb, wet_n, wet_p);
+	EMISSION += figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
 	ROUGHNESS = clamp(rough, 0.05, 1.0);
 	METALLIC = metal;
 	SPECULAR = 0.5;

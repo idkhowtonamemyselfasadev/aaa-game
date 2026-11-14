@@ -255,6 +255,22 @@ sky_floor={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+rim_light={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+rim_sky={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+rim_dir={
+"type": "vec3",
+"value": Vector3(0, 1, 0)
+}
+figure_rim_off={
+"type": "bool",
+"value": false
+}
 ground_fill_far={
 "type": "float",
 "value": 1.0

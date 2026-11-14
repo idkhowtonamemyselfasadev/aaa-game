@@ -6,7 +6,7 @@ func _init():
 	var mi := MeshInstance3D.new()
 	mi.mesh = BoxMesh.new()
 	var m := ShaderMaterial.new()
-	m.shader = load("res://shaders/rag.gdshader")
+	m.shader = load(OS.get_environment("SHADER") if OS.get_environment("SHADER") != "" else "res://shaders/rag.gdshader")
 	mi.material_override = m
 	var cam := Camera3D.new()
 	cam.position = Vector3(0, 0, 3)

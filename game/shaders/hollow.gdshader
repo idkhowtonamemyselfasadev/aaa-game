@@ -174,7 +174,7 @@ void fragment() {
 	AO = 1.0 - fis * 0.5;
 	AO_LIGHT_AFFECT = 0.4;
 	EMISSION = ember_col * glow * 3.2 + vec3(1.0, 0.75, 0.45) * pow(clamp(glow, 0.0, 4.0), 3.0) * 0.08
-			+ figure_fill(ALBEDO, wet_n, wet_p) * AO;
+			+ figure_fill(ALBEDO, wet_n, wet_p, CAMERA_POSITION_WORLD) * AO;
 	// ash dust on the skin catches the sun round the silhouette
 	RIM = 0.15;
 	RIM_TINT = 0.5;
