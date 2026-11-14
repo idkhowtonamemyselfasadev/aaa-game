@@ -5081,6 +5081,7 @@ func _hero_stop_test() -> void:
 	var worst_tick := 0.0
 	var worst_still := 0
 	var worst_pop := 0.0
+	var rel_hump := 0.0      # (11-14 06:00) worst boot height off its idle while the stop's pivot lets go
 	var settles0: int = p.walk_stop_settles if "walk_stop_settles" in p else 0
 	var run_sum := 0.0
 	var run_pop := 0.0
@@ -5114,6 +5115,8 @@ func _hero_stop_test() -> void:
 					var an: Vector3 = wpos.call(bones[f])
 					if Vector2(p.velocity.x, p.velocity.z).length() < 0.3:
 						pop = maxf(pop, (an - (lastank[f] as Vector3)).length() - (p.global_position - lastpos).length())
+					if p.stride_warp.pivot > 0.0 and p.stride_warp.pivot < 1.0 and p.stride_warp.settle_done:
+						rel_hump = maxf(rel_hump, absf(float(over.call(an)) - idle))
 					if OS.has_environment("HEROSTOP_REL") and (OS.get_environment("HEROSTOP_REL") == "all" or "%s%d" % [g[0], cut] == OS.get_environment("HEROSTOP_REL")):
 						print("     rel %s%d t%d f%d travel %.4f h %+.3f pivot %.2f side %d done %s settle_t %.2f stop_t %.2f wt %.2f body %s" % [g[0], cut, fi, f, (an - (lastank[f] as Vector3)).length(), float(over.call(an)) - idle, p.stride_warp.pivot, p.stride_warp.pivot_side, p.stride_warp.settle_done, p.stride_warp._settle_t, p.stop_t, p._walkstop_t, p.global_position])
 					lastank[f] = an
@@ -5158,7 +5161,7 @@ func _hero_stop_test() -> void:
 	var settles: int = (p.walk_stop_settles if "walk_stop_settles" in p else 0) - settles0
 	if run_sum > 0.0 or run_pop > 0.0:
 		print("   run stop: skate at worst %.4f m summed, worst pop %.3f m, %d handed to the settle" % [run_sum, run_pop, p.run_stop_settles if "run_stop_settles" in p else 0])
-	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3])
+	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d; boots off the turf %.3f m as the pivot lets go" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3, rel_hump])
 	slab.queue_free()
 	p.global_position = start
 	# gated with the new walk stop on (the default since 11-14 01:00; WALKSTOP_OLD=1 reads the before ungated)
@@ -5169,6 +5172,9 @@ func _hero_stop_test() -> void:
 			fail = "a boot jumps %.3f m in one tick after a walk stop" % worst_pop
 		elif worst_still > 75:
 			fail = "the hero's legs are not still %d ticks after a walk stop" % worst_still
+		# (11-14 06:00) the release lifted walk+ 59's stepped boot 2.1 cm (a (1-p)p hump); after: 2 mm
+		elif rel_hump > 0.008 and not OS.has_environment("RELEASE_HUMP_OLD"):
+			fail = "a boot rises %.3f m off the turf as the stop's pivot lets go" % rel_hump
 		# (11-14 03:00) before the opening fix the run stop skated 0.40-0.48 m summed (up to 18 cm in a
 		# tick); after 0.007-0.024 m. Its worst pop (0.070, the settle's release) shares the walk gate
 		elif not RUNSTOP_OPEN_OLD_ENV and (run_sum > 0.08 or run_pop > 0.08):
