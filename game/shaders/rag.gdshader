@@ -51,6 +51,7 @@ uniform float gore_fold_len = 0.0;  // > 0: the front fold is an arc this long (
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
+uniform float side_settle = 0.85;      // (11-14 19:00) how far the side lines next to a raised arm settle in onto the torso
 uniform vec2 drape_ramp = vec2(0.05, 0.28);  // (11-14 18:00) where along a lifted line the fall-back starts / is complete (m); was 0.10/0.17, a sharp corner
 uniform float drape_over = 1.0;  // (11-14 16:00) past the shoulder the lifted cloth falls back off an overhead arm (0 = the old rigid wing)
 uniform vec4 arm_l = vec4(0.0);     // the mantle: an elbow (mesh space, w 1 = in use) the cape lifts over
@@ -206,6 +207,32 @@ void lift_over_arm(inout vec3 v, inout vec3 n, vec4 e, float a) {
 	}
 }
 
+// (11-14 19:00) the side of the mantle next to a raised arm: at rest those lines hang out over
+// the deltoid; with the arm overhead nothing holds them out there, and their hem points stood
+// off the body in the back view as a pointed tongue each side (1.5 x the torso radius). Settle
+// them in toward the torso (never inside 1.08 x it), more the further down the line, over a
+// wider bearing bell than the lift so the back panel between stays as it was.
+// Must match HeroGarb._settle_side().
+void settle_side(inout vec3 v, vec4 e, float a) {
+	if (e.w <= 0.0 || side_settle <= 0.0) {
+		return;
+	}
+	vec2 eo = vec2(e.x, e.z + 0.045);
+	float da = mod(a - atan(eo.x, eo.y) + PI, TAU) - PI;
+	float re = length(eo);
+	float th = atan(re - 0.1485, 1.72 - e.y) + atan(0.07, max(length(vec2(re - 0.1485, 1.72 - e.y)), 0.1));
+	float d0 = clamp(th - 0.5, 0.0, 1.6);
+	float k = side_settle * e.w * smoothstep(0.85, 1.45, d0) * exp(-pow(da / 0.9, 2.0))
+			* smoothstep(0.05, 0.25, 1.72 - v.y);
+	vec2 q = vec2(v.x / hang_body.x, (v.z - hang_body.z) / hang_body.y);
+	float el = length(q);
+	if (k > 0.0 && el > 1.08) {
+		float f = (el - k * (el - 1.08)) / el;
+		v.x *= f;
+		v.z = hang_body.z + (v.z - hang_body.z) * f;
+	}
+}
+
 void vertex() {
 	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
@@ -238,6 +265,8 @@ void vertex() {
 	float ca = mix(0.42, TAU - 0.42, UV.x);
 	lift_over_arm(VERTEX, NORMAL, arm_l, ca);
 	lift_over_arm(VERTEX, NORMAL, arm_r, ca);
+	settle_side(VERTEX, arm_l, ca);
+	settle_side(VERTEX, arm_r, ca);
 	// a slow breathing flutter plus the fed swing; the hem lags the seam
 	float tt = TIME + time_offset;
 	float flutter = sin(tt * 1.7 + UV.x * 9.0 + seed) * 0.012 + sin(tt * 3.1 + UV.x * 17.0) * 0.005;

@@ -976,6 +976,7 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const CAPE_SIDE_X := 0.30       # m: under the glider the lower mantle's widest reach out to the side (11-14 19:00: 0.32 -> ~0.28)
 const CAPE_KINK := 60.0         # deg: under the glider the sharpest bend between two segments along any mantle line (11-14 18:00: 93 -> ~40)
 const CAPE_HEM_TILT := 1.0      # rad: under the glider the mantle hem's angle off plumb from its collar point (rest ~0.5)
 const CAPE_HEM_MIN := 0.0       # m: under the glider no mantle hem point may ride up above this far below the collar
@@ -9921,6 +9922,17 @@ func _glide_test() -> void:
 	print("BOT glide: mantle's sharpest bend along a line %.0f deg (bearing %.0f, %d/18 down)" % [kink, rad_to_deg(lerpf(0.42, TAU - 0.42, kink_at.x / 84.0)), kink_at.y])
 	if OS.get_environment("CAPE_OLDRAMP") == "" and kink > CAPE_KINK:
 		return _combat_done(false, "the mantle stands up in a pointed ear over a raised arm")
+	# (11-14 19:00) the side lines beside the raised arms hung out where the deltoid held them
+	# at rest: a pointed hem tongue stood off each side of the body in the back view
+	var side_x := 0.0
+	var side_at := Vector2i.ZERO
+	for key in grid:
+		if key.y >= 10 and absf(grid[key].x) > side_x:
+			side_x = absf(grid[key].x)
+			side_at = key
+	print("BOT glide: lower mantle reaches %.3f m out to the side (bearing %.0f, %d/18 down)" % [side_x, rad_to_deg(lerpf(0.42, TAU - 0.42, side_at.x / 84.0)), side_at.y])
+	if OS.get_environment("CAPE_OLDSIDE") == "" and side_x > CAPE_SIDE_X:
+		return _combat_done(false, "the mantle's side hangs out off the body in a pointed tongue under the raised arms")
 	if OS.get_environment("CAPE_DUMP") != "":
 		var rows := []
 		for vi in verts.size():

@@ -214,6 +214,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	mm.set_shader_parameter("plumb", 1.0)
 	# CAPE_OLDLIFT=1: before 11-14 16:00, the cape side stood out level over an overhead arm
 	mm.set_shader_parameter("drape_ramp", drape_ramp())
+	mm.set_shader_parameter("side_settle", side_settle())
 	mm.set_shader_parameter("drape_over", 0.0 if OS.get_environment("CAPE_OLDLIFT") != "" else 1.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
@@ -385,6 +386,8 @@ func cape_vertex(v: Vector3, uv: Vector2) -> Vector3:
 	var ca := lerpf(0.42, TAU - 0.42, uv.x)
 	for i in 2:
 		p = _lift_vertex(p, i, ca)
+	for i in 2:
+		p = _settle_side(p, i, ca)
 	return p + mantle_sway() * uv.y * uv.y
 
 ## A mantle vertex through rag.gdshader's plumb hang only (before the arms lift it).
@@ -439,6 +442,35 @@ func _lift_vertex(v: Vector3, i: int, a: float) -> Vector3:
 ## (rag.gdshader's drape_ramp). CAPE_OLDRAMP=1 = before 11-14 18:00 (a 7 cm bend 10 cm out).
 static func drape_ramp() -> Vector2:
 	return Vector2(0.10, 0.17) if OS.get_environment("CAPE_OLDRAMP") != "" else Vector2(0.05, 0.28)
+
+## How far the mantle's side lines next to a raised arm settle in onto the torso (rag.gdshader's
+## side_settle). CAPE_OLDSIDE=1 = before 11-14 19:00 (they stood out as a pointed tongue each side).
+static func side_settle() -> float:
+	return 0.0 if OS.get_environment("CAPE_OLDSIDE") != "" else 0.85
+
+## rag.gdshader's settle_side: the side lines beside raised elbow `i` drawn in toward the torso.
+func _settle_side(v: Vector3, i: int, a: float) -> Vector3:
+	var ss := side_settle()
+	if ss <= 0.0:
+		return v
+	var e := elbow_in_cape[i]
+	var eo := Vector2(e.x, e.z + 0.045)
+	var da := fposmod(a - atan2(eo.x, eo.y) + PI, TAU) - PI
+	var re := eo.length()
+	var dv := Vector2(re - 0.1485, 1.72 - e.y)
+	var th := atan2(dv.x, dv.y) + atan2(0.07, maxf(dv.length(), 0.1))
+	var d0 := clampf(th - CAPE_LINE, 0.0, 1.6)
+	var k := ss * smoothstep(0.85, 1.45, d0) * exp(-pow(da / 0.9, 2.0)) * smoothstep(0.05, 0.25, 1.72 - v.y)
+	var hb := _hang_body()
+	var el := Vector2(v.x / hb.x, (v.z - hb.z) / hb.y).length()
+	if k <= 0.0 or el <= 1.08:
+		return v
+	var f := (el - k * (el - 1.08)) / el
+	return Vector3(v.x * f, v.y, hb.z + (v.z - hb.z) * f)
+
+func _hang_body() -> Vector3:
+	var hb0 = (_cape.material_override as ShaderMaterial).get_shader_parameter("hang_body")
+	return Vector3(0.245, 0.22, -0.015) if hb0 == null else hb0
 
 ## Rodrigues, as the shader writes it: p * cos + (k x p) * sin + k (k.p)(1 - cos).
 static func _rot(p: Vector3, k: Vector3, ang: float) -> Vector3:
