@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-1900-plunge-column-dark-030.jpg",
-  "time": "2026-11-09T19:00:00Z",
-  "caption": "Plunge impact 0.30 s: the earth column beside the hero is now a denser, darker brown plume rather than pale grey smoke; the dust ring round the feet still glows pale and the column still sits behind the staff, off the hero's shoulder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-2000-plunge-ring-earth-030.jpg",
-  "time": "2026-11-09T19:27:07Z",
-  "caption": "Hero plunge at land 0.30 s: the dust ring at the feet is now grey-brown earth instead of a white glowing disc; still a bright hot spot at the ferrule, the column sits behind the staff and the hero is backlit.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-2100-plunge-ferrule-turf-030.jpg",
   "time": "2026-11-09T21:00:00Z",
   "caption": "Hero plunge 0.30 s after impact, front lens: the white hot spot at the staff's tip is gone and the dust bowl reads grey-brown; still wrong: small whitish pebble dots scattered round the feet and the earth column is a faint plume behind the hero.",
@@ -891,6 +879,18 @@
   "file": "20261114-0200-runstop-settled.jpg",
   "time": "2026-11-14T02:41:00Z",
   "caption": "0.65 s after letting go of a run: the settle has stepped both boots flat into the idle stance with no skate, but the frame is backlit, the legs are dark and the head is cut off by the lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0300-runstop-brake.jpg",
+  "time": "2026-11-14T03:00:00Z",
+  "caption": "The hero braking from a run, sunlit side-on: front boot struck and pinned on the turf, back boot on its ball, the balance hand forward at chest height; the hand still reads a little high and the legs dark under the tabard.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0300-runstop-settled.jpg",
+  "time": "2026-11-14T03:00:00Z",
+  "caption": "The same run stop settled 0.4 s later, boots together in the idle stance on a sunlit yard; pose reads, but the dark legs and the flat cottage behind keep it below a Wukong frame.",
   "verdict": "fail"
  }
 ]

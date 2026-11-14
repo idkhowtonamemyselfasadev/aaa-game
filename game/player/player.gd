@@ -1744,6 +1744,16 @@ var _stop_w := 1.0                     # eases to 0 when the stick comes back mi
 var _stop_cancel := false
 var _stop_posed := false
 var _stop_env := 0.0                   # how much of the lean is taken at the hips, not the soles
+## (11-14 03:00) the stop's opening: until the heel strike (u STOP_STRIKE_U) both boots are off the turf
+## (the run's last flight: the front one thrown, the back one just pushed off), then the struck front boot
+## is pinned in the world while the body brakes over it. Before, the thrown boot slid 16-18 cm at turf
+## height in a tick and the back boot was dragged 15 cm (`herostop` HEROSTOP_RUN). RUNSTOP_OPEN_OLD=1: before
+static var RUNSTOP_OPEN_OLD := OS.has_environment("RUNSTOP_OPEN_OLD")
+static var STOP_STRIKE_U := float(OS.get_environment("STOP_STRIKE_U")) if OS.has_environment("STOP_STRIKE_U") else 0.14
+static var STOP_LIFT_F := float(OS.get_environment("STOP_LIFT_F")) if OS.has_environment("STOP_LIFT_F") else 0.07   # m, the thrown boot's arc
+static var STOP_LIFT_B := float(OS.get_environment("STOP_LIFT_B")) if OS.has_environment("STOP_LIFT_B") else 0.06   # m, the back boot off its push
+var _stop_pin_set := false
+static var STOPARM_OLD := OS.has_environment("STOPARM_OLD")
 
 func _stop_step(delta: float, wish: Vector3, busy: bool) -> void:
 	if stop_t >= 0.0:
@@ -1802,6 +1812,9 @@ func _stop_pose() -> void:
 			crumple.pelvis = 0.0
 			crumple.ground = 0.0
 			crumple.settle = 0
+			crumple.leg_lift = Vector2.ZERO
+			crumple.leg_pin_w = Vector2.ZERO
+			crumple.elbow_lr = Vector2.ZERO
 			_stop_env = 0.0
 			_stop_posed = false
 			if pivot_t < 0.0 and _jp <= 0.0:
@@ -1833,7 +1846,14 @@ func _stop_pose() -> void:
 	crumple.knee_lr = (Vector2(kn_b, kn_f) if r else Vector2(kn_f, kn_b)) * env
 	crumple.ankle_lr = (Vector2(an_b, an_f) if r else Vector2(an_f, an_b)) * env
 	# the arm opposite the front leg swings forward, the other back; both lift a touch for balance
-	crumple.arm_lr = (Vector2(0.45, -0.25) if r else Vector2(-0.25, 0.45)) * reach * env
+	# (11-14 03:00) the forward arm reaches out and DOWN for balance, the elbow opened: swung 0.45 rad on
+	# the run clip's bent elbow it threw the hand up by the face like a wave (lit frames rsm_0.47).
+	# STOPARM_OLD=1: before
+	if STOPARM_OLD:
+		crumple.arm_lr = (Vector2(0.45, -0.25) if r else Vector2(-0.25, 0.45)) * reach * env
+	else:
+		crumple.arm_lr = (Vector2(0.28, -0.22) if r else Vector2(-0.22, 0.28)) * reach * env
+		crumple.elbow_lr = (Vector2(-0.55, -0.15) if r else Vector2(-0.15, -0.55)) * reach * env
 	crumple.arm = 0.2 * absorb * env
 	crumple.elbow = 0.45 * env
 	# chest held up against the brake, then rolling forward over the front foot, then still
@@ -1848,6 +1868,26 @@ func _stop_pose() -> void:
 	_pose_dip = 0.0
 	_stop_env = env
 	stop_dip_peak = maxf(stop_dip_peak, crumple.ground_drop)
+	if RUNSTOP_OPEN_OLD:
+		return
+	var fi := 1 if r else 0
+	var su := STOP_STRIKE_U
+	# the thrown boot rises and comes down onto its heel at the strike; the back one leaves its push and
+	# comes down onto its ball (the settle's reach) as the front heel strikes
+	var lf := STOP_LIFT_F * sin(PI * clampf(u / su, 0.0, 1.0)) * _stop_w
+	# (down onto its ball by the strike: the two boots meet the turf together, the toes touching)
+	var lb := STOP_LIFT_B * smoothstep(0.0, su * 0.4, u) * (1.0 - smoothstep(su * 0.6, su, u)) * _stop_w
+	crumple.leg_lift = Vector2(lb, lf) if r else Vector2(lf, lb)
+	if u < su:
+		_stop_pin_set = false
+		crumple.leg_pin_w = Vector2.ZERO
+	else:
+		if not _stop_pin_set and stride_warp != null and stride_warp._shown_prev[fi] != null:
+			crumple.leg_pin[fi] = stride_warp._shown_prev[fi]
+			_stop_pin_set = true
+		if _stop_pin_set:
+			var w := _stop_w * (1.0 - smoothstep(0.62, 1.0, u))
+			crumple.leg_pin_w = Vector2(0.0, w) if r else Vector2(w, 0.0)
 
 # --- the driving start: off one leg into the first stride ---
 ## Pushing the stick hard from a standstill no longer slides the hero up to speed on the run

@@ -115,6 +115,15 @@ var gap_trace := []          # (bots) [before bends R, L, before keep R, L, afte
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
+## (11-14 03:00) per leg (left, right), after `ground`/`settle`: the ankle raised this far (m, world up)
+## along its own knee plane (the run stop's last flight before the strike: both boots off the turf) ...
+var leg_lift := Vector2.ZERO
+## ... then pulled toward leg_pin (world ankle targets) by leg_pin_w: the struck front boot held where it
+## landed while the body brakes over it (it skated with the body before, 16 cm in a tick)
+var leg_pin_w := Vector2.ZERO
+var leg_pin := [Vector3.ZERO, Vector3.ZERO]
+var leg_pin_err := Vector2.ZERO  # (bots) m from each pinned ankle to its target after the reach
+
 ## (11-14 02:00) StrideWarp runs FIRST and records where each boot was shown (`_shown_prev`) at its
 ## end: while this pose owns the legs (the planted run stop) that record missed it, so a settle handed
 ## the boots from the run stop pinned a boot 31 cm from where it stood. Set by the hero: the record is
@@ -234,6 +243,23 @@ func _crumple_mod(_delta: float) -> void:
 		_ground(skel, up)
 		if settle > 0:
 			_settle_leg(skel, "Left" if settle == 1 else "Right", up)
+	if leg_lift != Vector2.ZERO or leg_pin_w != Vector2.ZERO:
+		var sc := maxf(skel.global_basis.get_scale().x, 1e-6)
+		var winv := skel.global_transform.affine_inverse()
+		for i in 2:
+			var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
+			if fb < 0:
+				continue
+			var f := skel.get_bone_global_pose(fb).origin
+			var t := f + up * (leg_lift[i] / sc)
+			if leg_pin_w[i] > 0.0:
+				# held across the ground only: the height stays the pose's (the lower ankle is on the turf)
+				var pt := winv * (leg_pin[i] as Vector3)
+				pt += up * (t - pt).dot(up)
+				t = t.lerp(pt, clampf(leg_pin_w[i], 0.0, 1.0))
+			if t.distance_squared_to(f) > 1e-10:
+				_leg_to(skel, ["Left", "Right"][i], t)
+			leg_pin_err[i] = skel.get_bone_global_pose(fb).origin.distance_to(t) * sc
 	if _kept.size() == 2:
 		if gap_staff != null:
 			gap_trace.append_array(_fist_gaps(skel))
@@ -650,6 +676,37 @@ func _settle_leg(skel: Skeleton3D, side: String, up: Vector3) -> void:
 	k = skel.get_bone_global_pose(lg).origin
 	f = skel.get_bone_global_pose(ft).origin
 	_swing(skel, lg, f - k, t - k)
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, toe_dir)
+
+## Two-bone: the thigh and shin turn in the knee's own bend plane so the ankle reaches t (skeleton
+## space, clamped to the leg's reach); the foot keeps its posed angle.
+func _leg_to(skel: Skeleton3D, side: String, t: Vector3) -> void:
+	var ul := skel.find_bone("mixamorig_%sUpLeg" % side)
+	var lg := skel.find_bone("mixamorig_%sLeg" % side)
+	var ft := skel.find_bone("mixamorig_%sFoot" % side)
+	var toe := skel.find_bone("mixamorig_%sToeBase" % side)
+	if ul < 0 or lg < 0 or ft < 0 or toe < 0:
+		return
+	var s := skel.get_bone_global_pose(ul).origin
+	var k := skel.get_bone_global_pose(lg).origin
+	var f := skel.get_bone_global_pose(ft).origin
+	var toe_dir := skel.get_bone_global_pose(toe).origin - f
+	var a := s.distance_to(k)
+	var b := k.distance_to(f)
+	var d := t - s
+	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
+	var dn := d.normalized()
+	var pole := (k - s) - dn * (k - s).dot(dn)
+	if pole.length() < 1e-5:
+		return
+	pole = pole.normalized()
+	var d1 := (a * a - b * b + dl * dl) / (2.0 * dl)
+	var k_new := s + dn * d1 + pole * sqrt(maxf(a * a - d1 * d1, 0.0))
+	_swing(skel, ul, k - s, k_new - s)
+	k = skel.get_bone_global_pose(lg).origin
+	f = skel.get_bone_global_pose(ft).origin
+	_swing(skel, lg, f - k, s + dn * dl - k)
 	f = skel.get_bone_global_pose(ft).origin
 	_swing(skel, ft, skel.get_bone_global_pose(toe).origin - f, toe_dir)
 

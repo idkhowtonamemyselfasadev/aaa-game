@@ -5021,6 +5021,7 @@ func _foe_start_test() -> void:
 ## walk, the move cut at three points of the stride per gait, then for 90 ticks the weight-bearing
 ## (lower) boot on the slab (within 3 cm of its idle height, same boot both ticks) counts its travel
 ## over the slab as skate; also how long until the legs are still. HEROSTOP_DEBUG=1 prints per cut.
+var RUNSTOP_OPEN_OLD_ENV := OS.has_environment("RUNSTOP_OPEN_OLD") or OS.has_environment("RUNSTOP_SETTLE_OLD")
 func _hero_stop_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
@@ -5043,9 +5044,12 @@ func _hero_stop_test() -> void:
 	var start := p.global_position
 	var fail := ""
 	var gaits := [["walk", 0.25], ["walk+", 0.5], ["jog", 0.7]]
-	if OS.has_environment("HEROSTOP_RUN"):
-		# (11-14 02:00) read the planted run stop's boots too (not gated)
-		gaits = [["run", 1.0]] if OS.get_environment("HEROSTOP_RUN") == "only" else gaits + [["run", 1.0]]
+	# (11-14 02:00) read the planted run stop's boots too; (11-14 03:00) in the default run and gated
+	# (HEROSTOP_RUN=only runs it alone, HEROSTOP_NORUN=1 leaves it out)
+	if OS.get_environment("HEROSTOP_RUN") == "only":
+		gaits = [["run", 1.0]]
+	elif not OS.has_environment("HEROSTOP_NORUN"):
+		gaits = gaits + [["run", 1.0]]
 	var fwd := Vector3.ZERO
 	for i in 30:
 		p.bot_input = Vector2(0, -1) * 0.5
@@ -5114,6 +5118,11 @@ func _hero_stop_test() -> void:
 				if OS.has_environment("HEROSTOP_PIN") and (fi < 8 or (fi >= 15 and fi < 28)):
 					var swd: StrideWarp = p.stride_warp
 					print("     pin t%d L %s R %s pin %s posed %s groundoff %s gw %.2f blend %.2f" % [fi, wpos.call(bones[0]), wpos.call(bones[1]), swd.pivot_pin, swd.pivot_ankle, swd.ground_off, swd.ground_w, p._blend])
+				if OS.has_environment("HEROSTOP_H") and fi < 24:
+					# (11-14 03:00) both boots' height over their idle and world travel per tick (is a boot floating?)
+					var h0: Vector3 = wpos.call(bones[0])
+					var h1: Vector3 = wpos.call(bones[1])
+					print("     %s%d h t%d hL %+.3f hR %+.3f v %.2f stop_u %.2f pinerr %s" % [g[0], cut, fi, float(over.call(h0)) - idle, float(over.call(h1)) - idle, Vector2(p.velocity.x, p.velocity.z).length(), p.stop_t / p.STOP_TIME if p.stop_t >= 0.0 else -1.0, p.crumple.leg_pin_err])
 				if st != null and prev != null and prev[1] == st[1]:
 					# a boot rolling up onto its ball (heel lifting, the ball held) or back down is not
 					# a skate: only the whole boot moving counts (the lesser of ankle and ball travel)
@@ -5136,7 +5145,7 @@ func _hero_stop_test() -> void:
 			if g[0] == "run":
 				run_sum = maxf(run_sum, skate)
 				run_pop = maxf(run_pop, pop)
-				continue                       # the run stop is read, not gated (yet)
+				continue                       # gated on its own below
 			worst_pop = maxf(worst_pop, pop)
 			if g[0] != "jog":
 				# the jog band (4.2-4.6 m/s, just under the planted stop) is read, not gated yet
@@ -5144,8 +5153,8 @@ func _hero_stop_test() -> void:
 				worst_tick = maxf(worst_tick, worst)
 			worst_still = maxi(worst_still, still_at if still_at >= 0 else 999)
 	var settles: int = (p.walk_stop_settles if "walk_stop_settles" in p else 0) - settles0
-	if OS.has_environment("HEROSTOP_RUN"):
-		print("   run stop (read): skate at worst %.4f m summed, worst pop %.3f m, %d handed to the settle" % [run_sum, run_pop, p.run_stop_settles if "run_stop_settles" in p else 0])
+	if run_sum > 0.0 or run_pop > 0.0:
+		print("   run stop: skate at worst %.4f m summed, worst pop %.3f m, %d handed to the settle" % [run_sum, run_pop, p.run_stop_settles if "run_stop_settles" in p else 0])
 	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3])
 	slab.queue_free()
 	p.global_position = start
@@ -5157,6 +5166,10 @@ func _hero_stop_test() -> void:
 			fail = "a boot jumps %.3f m in one tick after a walk stop" % worst_pop
 		elif worst_still > 75:
 			fail = "the hero's legs are not still %d ticks after a walk stop" % worst_still
+		# (11-14 03:00) before the opening fix the run stop skated 0.40-0.48 m summed (up to 18 cm in a
+		# tick); after 0.007-0.024 m. Its worst pop (0.070, the settle's release) shares the walk gate
+		elif not RUNSTOP_OPEN_OLD_ENV and (run_sum > 0.08 or run_pop > 0.08):
+			fail = "the hero's run stop skates %.3f m summed (pop %.3f m)" % [run_sum, run_pop]
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if not OS.has_environment("WALKSTOP_OLD") else "walk-stop skate read (WALKSTOP_OLD: the before, ungated)")
