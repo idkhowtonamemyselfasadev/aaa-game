@@ -843,6 +843,11 @@ var ground_fill_far := 1.0   # share of it the ground keeps past ~120 m (ground_
 ## the figures' rim key as last set (colour x energy, direction toward it); read by the facelight bot
 var rim_light := Vector3.ZERO
 var rim_dir := Vector3.UP
+# the figures' sky shade (figure_fill.gdshaderinc figure_sky_shade): share of the sky dome's
+# colour x energy their sun-turned-away faces take by day (backlit glide: 0.45 and 2 moved
+# the near-black mantle 1 -> 1.5 / 6 of 255, the grade's toe crushes it; 8 washed the figure flat)
+const FIGURE_SHADE := 4.0
+var figure_shade := 0.0
 
 func _apply_bounce(e: Environment) -> void:
 	var b := Color(0, 0, 0)
@@ -904,6 +909,14 @@ func _apply_bounce(e: Environment) -> void:
 	RenderingServer.global_shader_parameter_set("rim_sky", Vector3(rs.r, rs.g, rs.b))
 	RenderingServer.global_shader_parameter_set("rim_dir", rd)
 	RenderingServer.global_shader_parameter_set("figure_rim_off", OS.get_environment("RIM_OLD") == "1")
+	# the sky's fill on the figures' sun-turned-away side, by day (low-sun ground_fill and the
+	# moonlit fill already cover dusk and night, so it fades with the sun's height under 10 deg)
+	var shade_k := 0.0
+	if sun.visible and OS.get_environment("SHADE_OLD") != "1":
+		var kk := float(OS.get_environment("SHADE_K")) if OS.get_environment("SHADE_K") != "" else FIGURE_SHADE
+		shade_k = kk * clampf(sun_h / sin(deg_to_rad(10.0)), 0.0, 1.0)
+	figure_shade = shade_k
+	RenderingServer.global_shader_parameter_set("figure_shade", shade_k)
 	if e.sdfgi_enabled:
 		b = Color(0, 0, 0)
 		ground_fill = Vector3.ZERO

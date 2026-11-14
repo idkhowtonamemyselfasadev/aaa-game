@@ -19,6 +19,30 @@ global uniform vec3 rim_light;   // sun (or moon) colour x energy
 global uniform vec3 rim_sky;     // sky dome colour x energy
 global uniform vec3 rim_dir;     // direction toward the sun (or moon)
 global uniform bool figure_rim_off;  // RIM_OLD=1: the figures before the rim light
+// Sky shade (World._apply_bounce sets it; SHADE_OLD=1 = 0): the open sky dome lighting the
+// faces of a figure turned AWAY from the sun. ground_fill only lives at a low sun, so at
+// mid-day a figure seen against the light (every glide or walk toward the sun) had only the
+// SSAO-crushed flat ambient on its dark wool and the trousers and the mantle's body read as
+// one black cut-out. Real dark cloth in the open keeps its folds in the sky's light: this
+// fills the sun-turned-away side only (sunlit faces get nothing, so the key side keeps its
+// contrast), most on faces open to the sky, less on those turned down to the ground.
+global uniform float figure_shade;
+
+vec3 figure_sky_shade(vec3 alb, vec3 wn) {
+	vec3 l = normalize(rim_dir + vec3(0.0, 1e-4, 0.0));
+	float away = smoothstep(0.15, -0.35, dot(wn, l));
+	float open = clamp(0.6 + 0.4 * wn.y, 0.25, 1.0);
+	// dark wool's matte fibres keep a floor of their own (as in the rim's sheen); paler cloth,
+	// skin and the hood already read in the flat ambient and take half (at the full share the
+	// pale hood went sky-white against the light)
+	float lum = dot(alb, vec3(0.3, 0.59, 0.11));
+	vec3 a = max(alb, vec3(0.03)) * mix(1.0, 0.5, smoothstep(0.04, 0.2, lum));
+	// mostly neutral: half the shade light is the sunlit meadow's bounce, not the blue dome
+	// (the pure sky tint turned the hood and the wraps blue-grey)
+	float sl = dot(rim_sky, vec3(0.3, 0.59, 0.11));
+	vec3 tint = mix(rim_sky, vec3(sl) * vec3(1.06, 1.0, 0.9), 0.6);
+	return a * tint * figure_shade * away * open;
+}
 
 vec3 figure_rim(vec3 alb, vec3 wn, vec3 wp, vec3 cam) {
 	vec3 v = normalize(cam - wp);
@@ -44,5 +68,6 @@ vec3 figure_fill(vec3 alb, vec3 wn, vec3 wp, vec3 cam) {
 	// 0.7; at 0.5 a standing figure, nearly all sides, stayed a stop under the meadow at 16:30)
 	float sky = clamp(0.75 + 0.2 * up, 0.25, 0.95);
 	return alb * (bounce_light * 0.55 * lobe * bounce_gain(wp) + ground_fill * sky)
-			+ (figure_rim_off ? vec3(0.0) : figure_rim(alb, wn, wp, cam));
+			+ (figure_rim_off ? vec3(0.0) : figure_rim(alb, wn, wp, cam))
+			+ figure_sky_shade(alb, wn);
 }

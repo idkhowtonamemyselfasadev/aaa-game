@@ -15513,7 +15513,7 @@ func _facelight_test() -> void:
 		_world.time_of_day = h
 		await _ticks(10)
 		var c := fill.light_color
-		got[h] = [fill.light_energy, c, _world.rim_light, _world.rim_dir]
+		got[h] = [fill.light_energy, c, _world.rim_light, _world.rim_dir, _world.figure_shade]
 		var s: Color = _world.face_shade
 		print("BOT facelight %.1f h: shade lum %.3f, fill %.3f colour (%.2f %.2f %.2f)" % [h,
 				s.r * 0.3 + s.g * 0.59 + s.b * 0.11, fill.light_energy, c.r, c.g, c.b])
@@ -15537,7 +15537,11 @@ func _facelight_test() -> void:
 		return _combat_done(false, "no noon rim light from the sun")
 	if rnight.length() < 0.2 or rnight.length() > rn.length() * 0.6:
 		return _combat_done(false, "the night rim light is not the dimmer moon")
-	_combat_done(true, "the face fill follows the shade light from noon to night, the figures' rim light keys off sun then moon")
+	# the figures' sky shade on their sun-turned-away side: full by day, gone at night
+	print("BOT facelight sky shade: noon %.2f, 17.5 h %.2f, night %.2f" % [got[13.0][4], got[17.5][4], got[23.0][4]])
+	if OS.get_environment("SHADE_OLD") != "1" and (got[13.0][4] < 3.9 or got[23.0][4] > 0.0):
+		return _combat_done(false, "the figures' sky shade is not on by day and off at night")
+	_combat_done(true, "the face fill follows the shade light from noon to night, the figures' rim light keys off sun then moon, the sky shade by day")
 
 ## Edda keeps her day: out of the door at dawn, stooping at the butt and the woodpile, sat on
 ## the bench at noon, out to the lantern at dusk to light it with her taper (and it stays dark

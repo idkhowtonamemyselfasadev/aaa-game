@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261110-2100-harrier-overrun.jpg",
-  "time": "2026-11-10T21:00:00Z",
-  "caption": "The harrier's overrun after its dart with the re-solved pose: the rear fist drawn back to the hip instead of crushed up under the armpit; the lens is placed for the crouch, so the harrier sits on the frame's edge overlapping the hero and the arm cannot be graded.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-2200-harrier-crouch.jpg",
   "time": "2026-11-10T22:18:26Z",
   "caption": "The harrier's crouch at the hero's back with the re-solved spear pose (shaft now on its pose, no clamp bend into the dart); the harrier is still backlit and dark, the arms cannot be read at this lens.",
@@ -885,6 +879,24 @@
   "file": "20261114-2100-glide-rim-before-after.jpg",
   "time": "2026-11-14T21:00:00Z",
   "caption": "Backlit glide, before (left) and after (right) the rim light: the silhouette edges now catch the sun and sky (mantle 15 -> 22 of 255); the legs still read as a black cut-out.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2200-glide-back-skyshade.jpg",
+  "time": "2026-11-14T22:00:00Z",
+  "caption": "Gliding into the light from behind: the new sky shade lets the hero's leg bindings and the mantle's folds read instead of a black cut-out; still a dark figure, the glider's own shadow flattens the shoulders.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2200-skyshade-before-after.jpg",
+  "time": "2026-11-14T22:00:00Z",
+  "caption": "Backlit glide crop, before (left) and after (right) the figures' sky shade: mantle 1 -> 14 of 255, legs 24 -> 31, form kept, hood no longer sky-blue.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2200-glide-front-skyshade.jpg",
+  "time": "2026-11-14T22:00:00Z",
+  "caption": "Front 3/4 glide against the light: face, wraps, mantle and robe now read where it was a silhouette; the forearm wraps look greenish and the figure a little flat.",
   "verdict": "fail"
  }
 ]
