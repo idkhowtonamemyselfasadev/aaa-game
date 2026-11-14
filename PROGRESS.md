@@ -8472,6 +8472,10 @@ Current milestone: 1 (vertical slice, Harrowmere Vale). Milestone 0 is done: DES
    release only once they match; (3) then gate `herostop` HEROSTOP_RUN (target <= 0.15 m summed) and add it to the
    default read; (4) lit side-on frames of the run stop (rs_45/62/95 this session, see verdicts) and the walk stop;
    (5) the jog band 4.2-4.6 m/s (still 0.14-0.31 m) once the run stop's opening is clean, retry STOP_MIN_SPEED=4.0.
+   FRAMES (honest): `jump rs_<t> 20 12.0 fixfps nojump clear nograss stoplens anklelens stopat=0.3 jt=0.45/0.62/0.95`
+   (stick 1.0, a run stop): at 0.45 the stagger reads (front boot struck, back boot behind), at 0.95 both boots flat
+   in the idle stance; but the lens is low, backlit, the head cropped, and the left hand thrown up at 0.45 reads as a
+   wave: the stop pose's arm_lr swing wants a lower, forward balance arm. Gallery 20261114-0200-runstop-* (fail).
    BOSS/ANIMATION order unchanged; audio after.
 0. (01:00 11-14) **HERO WALK STOP — ON BY DEFAULT (game change, gated).** See the top line.
    NEXT (animation, priority 2): (1) a front-lit side-on frame sequence of the walk stop: the jump spot's walk stop

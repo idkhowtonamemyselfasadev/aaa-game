@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261109-1700-plunge-burst-front-030.jpg",
-  "time": "2026-11-09T17:00:00Z",
-  "caption": "Plunge impact 0.30 s: the dust ring spreads 3 m wide round the hero, still pale white instead of earth brown, still no column above the pit; hero lit from behind.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1800-plunge-burst-tint-015.jpg",
-  "time": "2026-11-09T18:00:00Z",
-  "caption": "Plunge impact 0.15 s, same front lens as 17:00, after the sun tint and front column: the ring no longer glows white and a grey plume starts up at the hero's side, but it is still pale grey smoke, not dark earth, and the hero is backlit.",
-  "verdict": "fail"
- },
- {
-  "file": "20261109-1800-plunge-burst-tint-030.jpg",
-  "time": "2026-11-09T18:00:00Z",
-  "caption": "Plunge impact 0.30 s: for the first time a column of dust rises beside the hero above the hat and the ring is soft grey-brown; the column is translucent pale grey instead of dark thrown earth and still sits half behind the staff.",
-  "verdict": "fail"
- },
- {
   "file": "20261109-1900-plunge-column-dark-030.jpg",
   "time": "2026-11-09T19:00:00Z",
   "caption": "Plunge impact 0.30 s: the earth column beside the hero is now a denser, darker brown plume rather than pale grey smoke; the dust ring round the feet still glows pale and the column still sits behind the staff, off the hero's shoulder.",
@@ -897,6 +879,18 @@
   "file": "20261114-0129-walk-stop.jpg",
   "time": "2026-11-14T01:29:15Z",
   "caption": "The hero 0.5 s after letting go at a walk: both boots set flat on the turf in the idle stance (the new walk stop, now on by default); backlit at midday beside the cottage, the legs read dark and the lens is behind the hero.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0200-runstop-brake.jpg",
+  "time": "2026-11-14T02:40:00Z",
+  "caption": "The hero 0.15 s into a run stop: front boot struck, back boot behind on the turf; the lens is low and backlit, the head is cropped and the raised left hand reads as a wave, not a balance swing.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0200-runstop-settled.jpg",
+  "time": "2026-11-14T02:41:00Z",
+  "caption": "0.65 s after letting go of a run: the settle has stepped both boots flat into the idle stance with no skate, but the frame is backlit, the legs are dark and the head is cut off by the lens.",
   "verdict": "fail"
  }
 ]
