@@ -1570,6 +1570,14 @@ func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	# the driving start pushes straight off the toes: the bank comes in after the first stride
 	var tip := Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, lean.y * (1.0 - _start_env) * (1.0 - _stop_env))
 	model.transform = Transform3D(Basis(), Vector3(0, -_pose_dip, 0)) * Transform3D(tip, Vector3.ZERO) * _model_rest
+	# (11-14 05:00) a stop's settle steps aim their boots at the idle stance of the body as it will
+	# stand UNTIPPED (the foes' settle_ref_delta): the stop's lean back tipped the whole skeleton, so the
+	# stepped boot was set down short of where the clip stands it and the release then carried it
+	# ~4 cm over the turf with a 2 cm hump (bot `herostop` walk+ 59). HERO_SETTLEREF_OLD=1: before
+	if stride_warp != null and not HERO_SETTLEREF_OLD:
+		var pg := (model.get_parent() as Node3D).global_transform
+		stride_warp.settle_ref_delta = pg * _model_rest * model.transform.affine_inverse() * pg.affine_inverse()
+static var HERO_SETTLEREF_OLD := OS.has_environment("HERO_SETTLEREF_OLD")
 
 # --- the run pivot: plant, spin, drive ---
 ## Reversing the stick at a run no longer swings the hero round a wide lerped arc. The foot on

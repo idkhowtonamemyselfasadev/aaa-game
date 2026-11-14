@@ -494,6 +494,7 @@ static var SETTLE_DBG_HERO := OS.has_environment("SETTLE_DBG_HERO")   # (11-14) 
 var dbg_me := false                # (set by the hero)
 static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
 static var SETTLE_PIN_OLD := OS.has_environment("SETTLEPIN_OLD")
+static var SETTLE_WORLDY_OLD := OS.has_environment("SETTLE_WORLDY_OLD")
 ## (11-13 18:00 EXPERIMENTS, opt-in, NOT on: each measured worse or mixed on `foewindup`, see PROGRESS.md)
 ## SETTLEPIN_PEAK=1: pin the goal in the world from the step's peak (soldier 0.023 -> 0.033 summed);
 ## SETTLE_FLOORW=1: hold the step's idle ankle level in the world (the wind-up's sink no longer eats the
@@ -1052,6 +1053,19 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					var clear_w2 := (xf.basis * (up * clear)).length()
 					var dyw2 := maxf(fcw + clear_w2 - (xf * of_t).y, 0.0)
 					of_t += inv.basis * (Vector3.UP * dyw2 * pivot)
+					# (11-14 05:00) the hero's stop step is SET DOWN at the idle ankle height over the
+					# turf in the world: the stop's backward lean tips the skeleton, so a boot set down
+					# at the skeleton's floor 0.4-0.5 m ahead of the pinned one stood 2.5-6 cm over the
+					# turf for the whole second step and the release then dropped it (bot `herostop`
+					# walk+ 50/59). Only lowered, eased in over the step's fall. SETTLE_WORLDY_OLD: before
+					var oside := 1 - pivot_side
+					if stop_pin_shown and not SETTLE_WORLDY_OLD and _idle_ank_h > 0.0 and float(_ank_gy[oside]) > -1e9:
+						var lvl := float(_ank_gy[oside]) + _idle_ank_h + clear_w2
+						var over_w := (xf * of_t).y - lvl
+						var kd := clampf((u - SETTLE_PEAK_U) / (1.0 - SETTLE_PEAK_U), 0.0, 1.0)
+						kd = kd * kd * (3.0 - 2.0 * kd)
+						if over_w > 0.0 and kd > 0.0:
+							of_t -= inv.basis * (Vector3.UP * over_w * kd * pivot)
 					clear = 0.0
 				else:
 					clear = maxf(fc + clear - of_t.dot(up), 0.0)

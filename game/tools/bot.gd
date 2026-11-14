@@ -5114,6 +5114,8 @@ func _hero_stop_test() -> void:
 					var an: Vector3 = wpos.call(bones[f])
 					if Vector2(p.velocity.x, p.velocity.z).length() < 0.3:
 						pop = maxf(pop, (an - (lastank[f] as Vector3)).length() - (p.global_position - lastpos).length())
+					if OS.has_environment("HEROSTOP_REL") and (OS.get_environment("HEROSTOP_REL") == "all" or "%s%d" % [g[0], cut] == OS.get_environment("HEROSTOP_REL")):
+						print("     rel %s%d t%d f%d travel %.4f h %+.3f pivot %.2f side %d done %s settle_t %.2f stop_t %.2f wt %.2f body %s" % [g[0], cut, fi, f, (an - (lastank[f] as Vector3)).length(), float(over.call(an)) - idle, p.stride_warp.pivot, p.stride_warp.pivot_side, p.stride_warp.settle_done, p.stride_warp._settle_t, p.stop_t, p._walkstop_t, p.global_position])
 					lastank[f] = an
 				if OS.has_environment("HEROSTOP_PIN") and (fi < 8 or (fi >= 15 and fi < 28)):
 					var swd: StrideWarp = p.stride_warp

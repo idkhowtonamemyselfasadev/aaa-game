@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261109-2300-foe-thumb-wrap-after.jpg",
-  "time": "2026-11-09T23:05:00Z",
-  "caption": "After: the thumb curls round into the fist instead of sticking out; still wrong: in the wind-up the fist hovers ~10 cm above the spear shaft.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0000-foe-fist-on-haft-windup.jpg",
-  "time": "2026-11-10T00:00:00Z",
-  "caption": "Hollow Soldier's right fist in the thrust wind-up now closes round the spear haft (it sat ~10 cm above it last session); still backlit and dark, and the gloved fingers read chunky.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0130-knight-roar-fistaim.jpg",
   "time": "2026-11-10T01:55:00Z",
   "caption": "The Ashen Knight's reveal roar on the merged FistAim grip (GL, hour 8.5, from behind): the left fist flung up reads, but the right fist on the glaive is hidden behind the cape from this lens, so the grip is not yet judged; backlit, dark armour.",
@@ -885,6 +873,18 @@
   "file": "20261114-0400-jogstop-planted.jpg",
   "time": "2026-11-14T04:00:00Z",
   "caption": "The same jog stop 0.2 s later, both boots flat and the body rising over them with no skate; lighting on the figure is still murky for a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0530-walkstop-step.jpg",
+  "time": "2026-11-14T05:30:00Z",
+  "caption": "The hero stepping out of a fast-walk stop, seen three-quarter from behind; the stepped boot now lands on the turf, but the legs read as a dark mass under the tabard.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0530-walkstop-settled.jpg",
+  "time": "2026-11-14T05:30:00Z",
+  "caption": "Settled after the walk stop: both boots flat on the turf in the idle stance (no hover); trousers and greaves still too dark even in sun.",
   "verdict": "fail"
  }
 ]
