@@ -211,6 +211,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# below the shoulders the cape falls plumb, so a stoop or a lean no longer cocks its back
 	# out behind like a stiff flap
 	mm.set_shader_parameter("plumb", 1.0)
+	# CAPE_OLDLIFT=1: before 11-14 16:00, the cape side stood out level over an overhead arm
+	mm.set_shader_parameter("drape_over", 0.0 if OS.get_environment("CAPE_OLDLIFT") != "" else 1.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
 		# fulled wool has no grain down the hang: near-round fuzz, not wood-grain streaks
@@ -336,6 +338,16 @@ func cape_lift(i: int, a: float) -> float:
 	var dv := Vector2(re - 0.1485, 1.72 - e.y)
 	var th := atan2(dv.x, dv.y) + atan2(0.07, maxf(dv.length(), 0.1))
 	return clampf(th - CAPE_LINE, 0.0, 1.6) * wa
+
+## How far (rad) the mantle falls back down past the shoulder cap off an elbow raised above it
+## (rag.gdshader's second hinge in lift_over_arm); 0 for an elbow at or below the shoulder.
+func cape_drape(i: int, a: float) -> float:
+	if OS.get_environment("CAPE_OLDLIFT") != "":
+		return 0.0
+	var eb := elbow_bearing(i)
+	var d0 := cape_lift(i, eb.x)               # the lift right over the elbow sets how far all of it falls
+	var d := cape_lift(i, a)
+	return smoothstep(0.85, 1.45, d0) * (d + 0.25 * d / maxf(d0, 0.001))
 
 ## The elbow's bearing round the collar (mesh space, as cape_lift takes it) and the angle off
 ## plumb (rad) of the line from the collar ring to it.

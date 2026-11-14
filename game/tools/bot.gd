@@ -9849,6 +9849,18 @@ func _glide_test() -> void:
 			return _combat_done(false, "the two legs hang mirrored")
 		if minf(tl, tr) < 1.4:
 			return _combat_done(false, "the hanging feet do not point their toes")
+	# (11-14 16:00) the mantle over the two overhead arms: it rides up over the shoulder caps
+	# but past them falls back down; rigid to the collar it stood out level like two black wings
+	for i in 2:
+		var eb: Vector2 = p.garb.elbow_bearing(i)
+		var up: float = p.garb.cape_lift(i, eb.x)
+		var dr: float = p.garb.cape_drape(i, eb.x)
+		var outer := HeroGarb.CAPE_LINE + up - dr
+		print("BOT glide: mantle over the %s elbow (%.2f rad off plumb): lifted %.2f at the collar, falls back %.2f past the shoulder, outer cloth %.2f rad off plumb" % [["left", "right"][i], eb.y, up, dr, outer])
+		if HeroGarb.CAPE_LINE + up < minf(eb.y, 1.2):
+			return _combat_done(false, "the raised elbow pokes out through the mantle")
+		if OS.get_environment("CAPE_OLDLIFT") == "" and outer > 0.6:
+			return _combat_done(false, "the mantle stands out level like a wing over the raised arm")
 	if thigh_mean > -0.12:
 		return _combat_done(false, "the legs do not trail back in flight")
 	if thigh_hi - thigh_lo < 0.08:

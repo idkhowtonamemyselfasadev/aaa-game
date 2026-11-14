@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261110-1100-reveal-glaive-hang-before.jpg",
-  "time": "2026-11-10T11:15:00Z",
-  "caption": "Before: the same tick with the old follow-through, the left grip past its reach so the haft slants across the body and the swing stalls for a tick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1236-soldier-guard.jpg",
-  "time": "2026-11-10T12:36:57Z",
-  "caption": "The Hollow Soldier at rest in its re-solved guard (left; GL renderer): the spear now lies where its pose says, the frame matches the old look; still flat GL light, a small, backlit figure, not a Wukong frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1300-harrier-guard.jpg",
-  "time": "2026-11-10T13:09:29Z",
-  "caption": "The Harrier (right) at rest in its re-solved low guard: the spear on the line it visibly held, both fists inside reach so every move out of the guard starts clean; still too far and dark to read the hands, grass flat-lit.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-1300-harrier-guard-before.jpg",
   "time": "2026-11-10T13:09:29Z",
   "caption": "Before: the same frame with the old low guard (the pose asked a grip past its reach, the real shaft 20 deg off its pose); near-identical at rest, the difference shows in the moves out of it.",
@@ -891,6 +873,18 @@
   "file": "20261114-1500-glide-front.jpg",
   "time": "2026-11-14T15:00:00Z",
   "caption": "Glide from the front three-quarter: face, fists on the bar and the patterned wing read; the legs hang one ahead of the other, but a black cloth mass juts out beside the right shoulder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1616-glide-mantle-back.jpg",
+  "time": "2026-11-14T16:16:23Z",
+  "caption": "Hero gliding seen from behind: the shoulder mantle now falls back down off the overhead arms instead of standing out level like a plate; one thin hem tongue still pokes out at the right shoulder and the legs read dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1616-glide-mantle-front.jpg",
+  "time": "2026-11-14T16:16:23Z",
+  "caption": "Glide from the front 3/4: the black wing beside the right shoulder is gone and the mantle hangs from the shoulder caps; a small dark tongue remains at the right side and the feet are cropped.",
   "verdict": "fail"
  }
 ]

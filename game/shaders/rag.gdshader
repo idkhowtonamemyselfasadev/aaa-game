@@ -51,6 +51,7 @@ uniform float gore_fold_len = 0.0;  // > 0: the front fold is an arc this long (
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
+uniform float drape_over = 1.0;  // (11-14 16:00) past the shoulder the lifted cloth falls back off an overhead arm (0 = the old rigid wing)
 uniform vec4 arm_l = vec4(0.0);     // the mantle: an elbow (mesh space, w 1 = in use) the cape lifts over
 uniform vec4 arm_r = vec4(0.0);
 uniform float hem_band = 0.0;      // > 0: a turned and stitched hem instead of a raw edge     // > 0: a bandage tube (UV.x around): spiral strips, rides rigid
@@ -167,7 +168,8 @@ void lift_over_arm(inout vec3 v, inout vec3 n, vec4 e, float a) {
 	float wa = exp(-pow(da / 0.55, 2.0)) * e.w;
 	float re = length(eo);
 	float th = atan(re - 0.1485, 1.72 - e.y) + atan(0.07, max(length(vec2(re - 0.1485, 1.72 - e.y)), 0.1));
-	float d = clamp(th - 0.5, 0.0, 1.6) * wa;
+	float d0 = clamp(th - 0.5, 0.0, 1.6);
+	float d = d0 * wa;
 	if (d <= 0.0) {
 		return;
 	}
@@ -177,8 +179,27 @@ void lift_over_arm(inout vec3 v, inout vec3 n, vec4 e, float a) {
 	float cs = cos(d);
 	float sn = sin(d);
 	vec3 p = v - c;
+	float s = length(p);
+	vec3 dir = p / max(s, 0.0001);
 	v = c + p * cs + cross(k, p) * sn + k * dot(k, p) * (1.0 - cs);
 	n = n * cs + cross(k, n) * sn + k * dot(k, n) * (1.0 - cs);
+	// (11-14 16:00) an elbow lifted above the shoulder (the glider bar, a reach overhead): rigid
+	// to the collar the whole side of the cape stood out level like a wing. Heavy wool only
+	// rides up as far as the shoulder cap; past it (DRAPE_LC along the line) it falls back down
+	// off the raised arm, so the hem rises and folds hang from the shoulder instead.
+	// Must match HeroGarb.cape_drape().
+	float d2 = smoothstep(0.85, 1.45, d0) * (d + 0.25 * wa) * drape_over;   // by the elbow's own height, so the lines either side fall too
+	if (d2 > 0.0) {
+		float w2 = smoothstep(0.10, 0.17, s);
+		vec3 hl = dir * 0.10;
+		vec3 h = c + hl * cs + cross(k, hl) * sn + k * dot(k, hl) * (1.0 - cs);
+		float a2 = -d2 * w2;
+		float c2 = cos(a2);
+		float s2 = sin(a2);
+		vec3 q = v - h;
+		v = h + q * c2 + cross(k, q) * s2 + k * dot(k, q) * (1.0 - c2);
+		n = n * c2 + cross(k, n) * s2 + k * dot(k, n) * (1.0 - c2);
+	}
 }
 
 void vertex() {
