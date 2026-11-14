@@ -11081,8 +11081,22 @@ func _sweep_test() -> void:
 		for ch in p.get_parent().get_children():
 			if ch is ImpactFX:
 				falls[2] += 1)
+	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if sk != null and p.down_t > 0.05 and p.down_t < 0.62 and p.crumple.probed.has("mixamorig_LeftFoot"):
+			fall[3] += 1
+			for pn in ["mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_LeftLeg", "mixamorig_RightLeg"]:
+				if not p.crumple.probed.has(pn):
+					continue
+				var fw: Vector3 = sk.global_transform * (p.crumple.probed[pn] as Vector3)
+				var fh: float = fw.y - _world.terrain.height_at(fw.x, fw.z)
+				fall[2] = minf(fall[2], fh)
+				if pn.ends_with("Foot"):
+					if p.down_t < Player.KNOCK_LAND:
+						fall[0] = maxf(fall[0], fh)
+					else:
+						fall[1] = maxf(fall[1], fh)
 		if head >= 0:
 			var hp := sk.global_transform * sk.get_bone_global_pose(head).origin
 			min_head = minf(min_head, hp.y - _world.terrain.height_at(hp.x, hp.z))
@@ -11240,6 +11254,7 @@ func _sweep_test() -> void:
 	for k in laid.keys():
 		laid[k] = _world.trample.herd_lay_at(laid[k])
 	print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
+	print("BOT sweep: swept fall: feet up to %.2f m over the turf before the slam, %.2f m after it, lowest foot/knee %.2f m, %d samples" % [fall[0], fall[1], fall[2], fall[3]])
 	print("BOT sweep: knockdowns %d, max tip %.0f deg, head low %.2f m, blow while down -> %s, down %.2f s, back at rest %s" % [p.knockdowns, rad_to_deg(max_tip), min_head, passed_over, down_for, rest_ok])
 	if p.knockdowns != 1 or max_tip < deg_to_rad(70.0):
 		return _combat_done(false, "the sweep did not throw the hero down")

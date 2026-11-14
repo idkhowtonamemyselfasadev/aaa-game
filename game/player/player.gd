@@ -3623,8 +3623,31 @@ func _knock_pose(t: float) -> Array:
 			return out
 	return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
+## (11-14) The sweep takes the legs out from under the hero instead of the body toppling about
+## the heels like a plank with the knees bent (frames at 0.15/0.30 s read as a stagger, then a
+## sit on thin air): the legs are kicked out forward and up, nearly straight, while the trunk
+## falls back faster and the hips drop, so the back slams down with the legs still in the air
+## and they flop down onto the turf after it (gone by 0.62 s; the lying pose is unchanged).
+## `KNOCK_OLDFALL=1` = before.
+const KNOCK_SWEEP_LEG := [0.03, 0.22, 0.32, 0.62]   # down_t: legs kicked out, held, flop down
+const KNOCK_SWEEP_FALL := [0.04, 0.24, 0.30, 0.42]  # down_t: trunk thrown back early, gone at the slam
+const KNOCK_SWEEP := [45.0, -55.0, -18.0, 0.15]     # hip deg, knee deg, pitch deg, sink m at full weight
+
+func _knock_sweep(k: Array, t: float) -> Array:
+	if OS.has_environment("KNOCK_OLDFALL"):
+		return k
+	var l: Array = KNOCK_SWEEP_LEG
+	var f: Array = KNOCK_SWEEP_FALL
+	var s := smoothstep(l[0], l[1], t) * (1.0 - smoothstep(l[2], l[3], t))
+	var p := smoothstep(f[0], f[1], t) * (1.0 - smoothstep(f[2], f[3], t))
+	k[0] += KNOCK_SWEEP[2] * p
+	k[1] += KNOCK_SWEEP[0] * s
+	k[2] = maxf(k[2] + KNOCK_SWEEP[1] * s, 4.0)
+	k[4] += KNOCK_SWEEP[3] * p
+	return k
+
 func _pose_knockdown(t: float) -> void:
-	var k := _knock_pose(t)
+	var k := _knock_sweep(_knock_pose(t), t)
 	if crumple != null:
 		crumple.hip = deg_to_rad(k[1])
 		crumple.knee = deg_to_rad(k[2])
