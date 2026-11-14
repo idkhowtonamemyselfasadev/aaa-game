@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261110-0130-knight-roar-fistaim.jpg",
-  "time": "2026-11-10T01:55:00Z",
-  "caption": "The Ashen Knight's reveal roar on the merged FistAim grip (GL, hour 8.5, from behind): the left fist flung up reads, but the right fist on the glaive is hidden behind the cape from this lens, so the grip is not yet judged; backlit, dark armour.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0200-knight-grip-frontlit.jpg",
-  "time": "2026-11-10T02:30:00Z",
-  "caption": "The Ashen Knight with its glaive in the late sun beside the cottage: the fists sit on the haft (bot 0.000 m), but the hand lens frames it wide and the gloved right fist is lost in shadow under the pauldron.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0200-knight-reveal-coil.jpg",
   "time": "2026-11-10T02:30:00Z",
   "caption": "The reveal's kneeling coil from the intro lens: a good ring of standing stones and god-lit meadow, but the lens sits behind the knight so the hands on the glaive (now held 1.9 cm off the haft) never show, and the figure is a dark silhouette.",
@@ -891,6 +879,18 @@
   "file": "20261114-0600-walkstop-release.jpg",
   "time": "2026-11-14T06:30:00Z",
   "caption": "The hero just after letting go at a fast walk: both boots set flat on the turf as the stop's pivot lets go (the 1-2 cm bob is gone); the legs still read dark under the tabard and the yard ground is flat and plain.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0700-walkstop-step.jpg",
+  "time": "2026-11-14T07:30:00Z",
+  "caption": "The hero closing a fast-walk stop, seen three-quarter from behind: the stride gathers in with the back boot pinned and no longer turning under it; the legs still read dark under the tabard and the lens hides the back heel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0700-walkstop-settled.jpg",
+  "time": "2026-11-14T07:30:00Z",
+  "caption": "The same stop settled into the idle stance with both boots on the turf; lighting is the GL fallback (no SDFGI/volumetrics) and trousers and greaves are still too dark in sun.",
   "verdict": "fail"
  }
 ]

@@ -521,6 +521,14 @@ static var STOPGATHER_OLD := OS.has_environment("STOPGATHER_OLD")
 static var STOPPICK_SHOWN_OLD := OS.has_environment("STOPPICK_SHOWN_OLD")
 static var STOPPIN_FLOOR_OLD := OS.has_environment("STOPPIN_FLOOR_OLD")
 var _idle_ank_h := 0.0             # (11-14) world m: the idle ankle over the turf (hero)
+## (11-14 07:00) a stop's pinned boot holds its WORLD orientation while it is planted: only the ankle
+## was pinned and the boot kept turning with the clip, so its ball crept 0.5-1 cm a tick and the
+## reach-rise then lifted the heel round that moving ball (the ankle slid 1-4 cm a tick; bot
+## `herostop` walk+ 59, the worst cut). Eased back to the clip's angle over the boot's own step.
+## STOPKEEP_OLD=1: the before
+static var STOPKEEP_OLD := OS.has_environment("STOPKEEP_OLD")
+var _stop_keep_on := false
+var _stop_keep_w = null            # the pinned boot's world basis (orthonormal) from its first pinned tick
 var _stop_from_shown := false
 static var STOPFROM_SHOWN_OLD := OS.has_environment("STOPFROM_SHOWN_OLD")
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
@@ -566,10 +574,14 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	_settle_bgoal_w = null
 	_stop_pin_lock = true
 	_stop_from_shown = stop_pin_shown
+	_stop_keep_on = stop_pin_shown and not STOPKEEP_OLD
+	_stop_keep_w = null
 	return true
 
 ## A stop's settle handed over (walking again, or a turn begins): back to a turn's own step settings.
 func end_stop_settle() -> void:
+	_stop_keep_on = false
+	_stop_keep_w = null
 	settle_pin_world = false
 	_settle_goal_w = null
 	_settle_bgoal_w = null
@@ -608,6 +620,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_settle_b0 = null
 		settle_done = false
 		settle_pin_world = false
+		_stop_keep_on = false
+		_stop_keep_w = null
 		_settle_goal_w = null
 		_settle_bgoal_w = null
 		settle_lift_k = 1.0
@@ -725,6 +739,17 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if ub >= 1.0:
 			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
+	var keep_clip := keep.orthonormalized()
+	if _stop_keep_on and pivot_settle:
+		var xr := xf.basis.orthonormalized()
+		if _stop_keep_w == null:
+			_stop_keep_w = xr * keep_clip
+		var wh := 1.0
+		if _settle_t > STEP_SETTLE_T:
+			var uk := clampf((_settle_t - STEP_SETTLE_T) / STEP_SETTLE_T, 0.0, 1.0)
+			wh = 1.0 - uk * uk * (3.0 - 2.0 * uk)
+		var held := xr.inverse() * (_stop_keep_w as Basis)
+		keep = Basis(keep_clip.get_rotation_quaternion().slerp(held.get_rotation_quaternion(), clampf(wh * pivot, 0.0, 1.0)))
 	# (11-12 07:00) the free foot as the clip steps it, read before the hips are given back, so the
 	# step keeps its place and lift; then the hips go back up toward the guard height (both legs
 	# are IK'd below: the pivot leg onto its pin, the free leg onto this clip place)
@@ -797,6 +822,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var tb := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
 	if tb >= 0 and ball_pivot and not BALLPIVOT_OLD:
 		var toe_off: Vector3 = skel.get_bone_global_pose(tb).origin - skel.get_bone_global_pose(ft).origin
+		if _stop_keep_on and pivot_settle:
+			toe_off = keep.orthonormalized() * (keep_clip.inverse() * toe_off)
 		if pivot_settle and _ball_pin != null:
 			_ball_pin = null              # squared up: the ankle stays where the ball pivot left it
 		if _ball_pin != null:
