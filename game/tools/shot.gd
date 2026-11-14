@@ -844,16 +844,23 @@ func _ready() -> void:
 				bx.size = Vector3(2.4 * ks, 0.2 * ks * (c + 1) + 0.4, far - near)
 				cs.shape = bx
 				blk.add_child(cs)
-				var mi := MeshInstance3D.new()
-				var bm := BoxMesh.new()
-				bm.size = bx.size
-				mi.mesh = bm
 				var rn := world.get_node_or_null("Ruins")
-				if rn != null and rn.get("material") != null:
-					mi.material_override = rn.material
-				blk.add_child(mi)
+				# (11-14 11:00) `kdress`: each course laid in the ruins' own cut stones (running bond, open
+				# joints). OPT-IN, NOT GOOD YET: renders as black crooked slabs with stones hanging out under
+				# course 0 (custom data / non-uniform bevel scale); the plain box stays the default
+				var kdress: bool = "kdress" in args and rn != null and not rn.block_meshes.is_empty()
+				if not kdress:
+					var mi := MeshInstance3D.new()
+					var bm := BoxMesh.new()
+					bm.size = bx.size
+					mi.mesh = bm
+					if rn != null and rn.get("material") != null:
+						mi.material_override = rn.material
+					blk.add_child(mi)
 				world.add_child(blk)
 				blk.global_transform = Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy - 0.4 + bx.size.y * 0.5, pp.z) + f * ((near + far) * 0.5))
+				if kdress:
+					_stair_course(world, rn, Transform3D(Basis(sd, Vector3.UP, f), Vector3(pp.x, gy, pp.z)), c, near, far, ks)
 			# (11-13 20:00) foe=soldier: the Hollow Soldier (size 1) instead of the knight; windup=thrust|sweep
 			# with stopat=<frame>: at the cut the foe opens that wind-up as STALK does at its engage range
 			var kn: HollowSoldier = world.knight
@@ -3655,6 +3662,10 @@ func _ready() -> void:
 	for a in args:
 		if a.begins_with("stopat="):
 			stop_at = int(a.substr(7))
+	var kdown := -1
+	for a in args:
+		if a.begins_with("kdown="):
+			kdown = int(a.substr(6))
 	for i in frames:
 		if world.soldier != null and world.soldier.has_meta("shot_walk"):
 			world.soldier.bot_move = world.soldier.get_meta("shot_walk")
@@ -3682,6 +3693,12 @@ func _ready() -> void:
 			kw.bot_move = Vector3.ZERO
 			if i % 2 == 0 and kw.stride_warp != null:
 				print("SHOT knightstop f %d state %d pivot %.2f settle_t %.2f facing %s hero %s" % [i, kw.state, kw.stride_warp.pivot, kw.stride_warp._settle_t, kw.body.global_basis.z, player.global_position])
+		elif kw != null and kdown >= 0 and i >= kdown:
+			# (11-14 11:00) kdown=<frame>: stand on the top 40 frames (like the foestep bot), then walk back DOWN
+			var kwd: Vector3 = kw.get_meta("shot_kwalk")
+			kw.bot_move = Vector3.ZERO if i < kdown + 40 else -kwd
+			if i % 6 == 0:
+				print("SHOT knightdown f %d root %.3f steps down %d" % [i, kw.global_position.y, StepUp.steps_down])
 		elif kw != null:
 			kw.bot_move = kw.get_meta("shot_kwalk")
 			if i % 6 == 0:
@@ -4069,6 +4086,57 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			if c.is_attacking() and c.t / float(StaffCombat.HEAVY["dur"]) >= 0.43:
 				break
 		print("SHOT smash tier %d u %.2f" % [c.tier, c.t / float(StaffCombat.HEAVY["dur"])])
+
+## (11-14 11:00) one course of the knightstair test stair laid in the ruins' dressed stones: the layer
+## from 0.2 x size x c to 0.2 x size x (c + 1) over the ground (course 0 sunk 0.4 m), from `near`
+## to `far` along the climb, 2.4 x size wide; rows one tread deep, stones ~0.8 x size long in a
+## running bond, set 1 % of a size apart so the joints read. xf: the stair frame (x across, z up the climb).
+func _stair_course(world: Node3D, rn: Node, xf: Transform3D, c: int, near: float, far: float, ks: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4400 + c
+	var y0 := 0.2 * ks * c - (0.4 if c == 0 else 0.0)
+	var y1 := 0.2 * ks * (c + 1)
+	var gap := 0.012 * ks
+	var rows := maxi(1, int(round((far - near) / (0.45 * ks))))
+	var rd := (far - near) / rows
+	var w := 2.4 * ks
+	var per := {}
+	for r in rows:
+		var x := -w * 0.5
+		var first := true
+		while x < w * 0.5 - 0.05 * ks:
+			var ln := ks * rng.randf_range(0.6, 1.0) * (0.5 if first and (r + c) % 2 == 1 else 1.0)
+			first = false
+			ln = minf(ln, w * 0.5 - x)
+			if w * 0.5 - x - ln < 0.3 * ks:
+				ln = w * 0.5 - x
+			var size := Vector3(ln - gap, y1 - y0 - gap * 0.5, rd - gap)
+			var v: int = rng.randi() % rn.block_meshes.size()
+			var d: Vector3 = rn.block_dims[v]
+			var sc := Vector3(size.x / d.x, size.y / d.y, size.z / d.z)
+			if rng.randf() < 0.5:
+				sc.x = -sc.x
+				sc.z = -sc.z
+			# tops flush with the tread (the collision box), the joint taken off the bottom
+			var ctr := Vector3(x + ln * 0.5, y1 - size.y * 0.5, near + rd * (r + 0.5))
+			var bxf := xf * Transform3D(Basis.from_scale(sc), ctr)
+			if not per.has(v):
+				per[v] = []
+			per[v].append([bxf, Color(clampf((y1 + 1.0) / 8.0, 0.0, 1.0), rng.randf(), 0.0, 0.0)])
+			x += ln
+	for v in per:
+		var items: Array = per[v]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_custom_data = true
+		mm.mesh = rn.block_meshes[v]
+		mm.instance_count = items.size()
+		for i in items.size():
+			mm.set_instance_transform(i, items[i][0])
+			mm.set_instance_custom_data(i, items[i][1])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		world.add_child(mmi)
 
 func _rr(a: float, b: float) -> float:
 	return randf_range(a, b)

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261110-0600-knight-clutch-on-helm.jpg",
-  "time": "2026-11-10T06:25:00Z",
-  "caption": "The Ashen Knight in the crown daze, low lens from its front left: the gauntlet now sits up on the helm (the bow runs before the arm IK, palm 0.001 m per size off the temple, was 0.044); still backlit to a silhouette so the hand only reads as a shape.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0600-knight-rise-grip.jpg",
-  "time": "2026-11-10T06:25:00Z",
-  "caption": "The knight lifting the glaive out of the daze (u 0.68): the right fist stays on the haft through the rise (worst 0.030 m per size, was 0.096); the low backlit lens still hides the hands' detail.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0700-surge-roar-grip.jpg",
-  "time": "2026-11-10T07:40:00Z",
-  "caption": "The Ashen Knight heaving its glaive skyward as it grows in the surge (low flank lens, GL): the right fist now holds the haft through the roar (worst 0.144 m per size, was 0.31) and the left closes back on it cleanly; the frame shows the knight hanging above the turf and the glaive lost against the sky, a lens/harness problem to fix next.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0700-surge-roar-before.jpg",
-  "time": "2026-11-10T07:40:00Z",
-  "caption": "The same surge frame with the old grip switch (SURGE_ROLLOFF=1) for comparison: at this lens the fist change is not visible, and the same floating knight and backlit silhouette make it a fail.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0800-surge-roar-held-out.jpg",
   "time": "2026-11-10T08:30:00Z",
   "caption": "The Ashen Knight's growth-surge roar with its new pose: the glaive stands tall in front of it, the right fist held out on the haft at chest height (fist-haft gap 0.000 m per size, was 0.144); the ring of fire hides most of the body and the light is flat, so not yet a Wukong frame.",
@@ -897,6 +873,18 @@
   "file": "20261114-1000-knightstair-top.jpg",
   "time": "2026-11-14T10:50:00Z",
   "caption": "The knight standing square on the top platform, both boots flat at the edge; lens too low (below the treads) so the stair reads as one block, and the bladed guard turns the torso away.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1100-knightstair-down.jpg",
+  "time": "2026-11-14T11:00:00Z",
+  "caption": "The Ashen Knight (x2.2) walking DOWN the test stair side-on: rear boot holds the upper tread while the front boot reaches down toe-first; still reads rear 3/4 (bladed guard), lens low, stair a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1100-knightstair-dressed.jpg",
+  "time": "2026-11-14T11:00:00Z",
+  "caption": "Knight stepping off the stair onto the turf, front boot planted; the trial masonry dressing (kdress) renders as black crooked slabs with stones hanging under it, so it stays opt-in.",
   "verdict": "fail"
  }
 ]
