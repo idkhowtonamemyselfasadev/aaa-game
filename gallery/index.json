@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261110-0300-knight-crown-clutch.jpg",
-  "time": "2026-11-10T03:45:00Z",
-  "caption": "The Ashen Knight's crown reel 0.42 s in: head bowed, the left hand let go of the glaive and cups the left side of the helm (wrist 4 cm per size off the temple, bot-gated); from this low front-left lens the gauntlet is half hidden behind the red hood and the glaive tilts one-handed, so the clutch reads only weakly.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0300-knight-crown-before.jpg",
-  "time": "2026-11-10T03:45:00Z",
-  "caption": "The same crown-reel frame with the old pose (CROWN_NOCLUTCH=1): both fists stay down on the haft, so the stunned knight reads as a hunch; kept for comparison with the clutch frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0400-knight-clutch-landing.jpg",
   "time": "2026-11-10T04:15:00Z",
   "caption": "Ashen Knight crown reel at the clutch's landing overshoot (u 0.24), new chest-height lens on its left: too close, the bowed helm and pauldron hide the gauntlet entirely, so the eased landing cannot be judged from here.",
@@ -897,6 +885,18 @@
   "file": "20261114-0800-walkstop-backheel.jpg",
   "time": "2026-11-14T08:00:00Z",
   "caption": "Walk stop's settle step at 1.15 s: the stepping boot lifts with the heel up on its ball, the planted one flat and still; the lens still sits rear 3/4 and the boots read as rounded clogs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0900-knightstair-tread2.jpg",
+  "time": "2026-11-14T09:00:00Z",
+  "caption": "The Ashen Knight (phase-1 size) stepping up onto the second tread of a masonry stair from the new kside lens; reads as a climb, but the lens sits 14 m out and the tall grass hides its boots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0900-knightstair-seq.jpg",
+  "time": "2026-11-14T09:00:00Z",
+  "caption": "Frames 45/70/95 of the boss walking up the stair: knee lifted onto each tread, then standing square on the top; still too far and too rear-on to judge sole contact, and the stair is a plain box.",
   "verdict": "fail"
  }
 ]

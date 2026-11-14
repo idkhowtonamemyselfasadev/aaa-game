@@ -885,7 +885,19 @@ func _ready() -> void:
 				if a.begins_with("ksd="):
 					eye = pp + f * (lx + 2.6 * ks) + sd * 2.6 * ks * float(a.substr(4)) + Vector3.UP * 0.55 * ks
 			eye.y = maxf(eye.y, terrain.height_at(eye.x, eye.z) + 0.55 * ks)
-			SPOTS[spot] = [eye, pp + f * lx + Vector3.UP * 0.75 * ks]
+			var ktgt := pp + f * lx + Vector3.UP * 0.75 * ks
+			# (11-14 09:00) kside: square side-on from well out past the stair's flank (ksd sign picks
+			# the side), lifted over the top tread so the boots on every tread read; kup=<x size> height
+			if "kside" in args:
+				var ksg := -1.0 if "ksd=-1" in args else 1.0
+				var kup := 1.0
+				for a in args:
+					if a.begins_with("kup="):
+						kup = float(a.substr(4))
+				eye = pp + f * lx + sd * ksg * 6.5 * ks + Vector3.UP * kup * ks
+				eye.y = maxf(eye.y, terrain.height_at(eye.x, eye.z) + 0.5 * ks)
+				ktgt = pp + f * lx + Vector3.UP * 0.9 * ks
+			SPOTS[spot] = [eye, ktgt]
 		if "stairup" in args:
 			# (11-12 18:00) swing clearance: the `stepup` bot's stair (three 0.2 m masonry courses,
 			# 0.45 m treads) set 1.0 m ahead of the hero on the flat turf (`step`), who walks up it;
