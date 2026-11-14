@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261110-0200-knight-reveal-coil.jpg",
-  "time": "2026-11-10T02:30:00Z",
-  "caption": "The reveal's kneeling coil from the intro lens: a good ring of standing stones and god-lit meadow, but the lens sits behind the knight so the hands on the glaive (now held 1.9 cm off the haft) never show, and the figure is a dark silhouette.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0300-knight-crown-clutch.jpg",
   "time": "2026-11-10T03:45:00Z",
   "caption": "The Ashen Knight's crown reel 0.42 s in: head bowed, the left hand let go of the glaive and cups the left side of the helm (wrist 4 cm per size off the temple, bot-gated); from this low front-left lens the gauntlet is half hidden behind the red hood and the glaive tilts one-handed, so the clutch reads only weakly.",
@@ -891,6 +885,18 @@
   "file": "20261114-0700-walkstop-settled.jpg",
   "time": "2026-11-14T07:30:00Z",
   "caption": "The same stop settled into the idle stance with both boots on the turf; lighting is the GL fallback (no SDFGI/volumetrics) and trousers and greaves are still too dark in sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0800-thighs-sunlit.jpg",
+  "time": "2026-11-14T08:00:00Z",
+  "caption": "Hero at rest after a walk stop, front 3/4 in morning sun: the thigh wraps now read as faded brown hemp bands instead of black stumps; the upper thighs and hips are still in deep self-shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0800-walkstop-backheel.jpg",
+  "time": "2026-11-14T08:00:00Z",
+  "caption": "Walk stop's settle step at 1.15 s: the stepping boot lifts with the heel up on its ball, the planted one flat and still; the lens still sits rear 3/4 and the boots read as rounded clogs.",
   "verdict": "fail"
  }
 ]

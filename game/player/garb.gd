@@ -28,6 +28,10 @@ const SHIN_LINEN := [Color(0.10, 0.088, 0.07), Color(0.42, 0.37, 0.29), 0.45]
 ## sleeves rub them). Clean LINEN (light 0.60) read as two pale bright cuffs on the torso at noon.
 const ARM_LINEN := [Color(0.11, 0.096, 0.077), Color(0.44, 0.39, 0.31), 0.4]
 const HEMP := [Color(0.05, 0.045, 0.04), Color(0.26, 0.23, 0.19), 0.4]
+## (11-14 08:00) the hero's thigh wraps: a sun-faded, road-dusted hemp. In HEMP (dark 0.05, light 0.26)
+## the thighs read as two black stumps under the tabard even in full sun (walk stop frames 11-14).
+## THIGH_OLD=1: HEMP as before
+const THIGH_HEMP := [Color(0.10, 0.088, 0.07), Color(0.40, 0.35, 0.27), 0.35]
 # an old, weathered douli: the fresh-straw 0.66/0.53/0.31 read as a bright yellow cone at noon
 const STRAW := [Color(0.15, 0.12, 0.072), Color(0.52, 0.43, 0.28), 0.15]
 
@@ -286,7 +290,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			_wrap("mixamorig_%sHand" % side, "mixamorig_%sHandMiddle1" % side, 0.0, 0.85, 0.014, 3.0)
 		# under a long kirtle the thigh wraps take its wool: pale grey ones showed as plate
 		# patches between the gores
-		tint = palette.get("thighs", _calm(palette.get("wraps", HEMP)))
+		tint = palette.get("thighs", _calm(palette.get("wraps", HEMP if OS.get_environment("THIGH_OLD") != "" else THIGH_HEMP)))
 		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.97, 0.012, 9.0)
 	if boot_leather:
 		booted = _mark_boots()
