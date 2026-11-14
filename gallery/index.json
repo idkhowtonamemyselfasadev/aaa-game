@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261110-0900-reveal-follow-grip.jpg",
-  "time": "2026-11-10T09:20:00Z",
-  "caption": "The Ashen Knight's reveal follow-through: the glaive now comes down held out in front of the chest with both fists on the haft; the armour still reads dark and flat at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0900-reveal-follow-before.jpg",
-  "time": "2026-11-10T09:20:00Z",
-  "caption": "Before: the right arm jammed against the shoulder and the shaft sliding past the fist as the glaive comes down.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1000-reveal-roar-end.jpg",
-  "time": "2026-11-10T10:00:00Z",
-  "caption": "The Ashen Knight a tick after its reveal roar ends, glaive held upright with both fists on the haft; the 10-degree jump of the glaive here is gone (motion only, the frame looks the same). Still wrong: seen from behind, armour dark and flat, the shaft thin.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-1100-reveal-glaive-hang.jpg",
   "time": "2026-11-10T11:15:00Z",
   "caption": "The Ashen Knight at the end of its reveal roar: the glaive now hangs upright out at its right with both gauntlets on the haft before speeding into the downswing (no more stall); the armour still reads dark and flat and the ground is speckled.",
@@ -885,6 +867,24 @@
   "file": "20261114-1200-knightstair-pelvis-down.jpg",
   "time": "2026-11-14T12:00:00Z",
   "caption": "Knight stepping off the stair's foot on the way down, same pelvis-squared lens: front boot plants on the turf, rear boot still on the tread; figure small, stair a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1300-knightstair-zoom-up.jpg",
+  "time": "2026-11-14T13:00:00Z",
+  "caption": "Ashen Knight (x2.2) climbing, zoomed pelvis-squared lens: rear boot flat on the tread at the nosing, front boot lifting over the riser; clean contact, but the boots read as rounded clogs and the stair is a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1300-knightstair-zoom-down.jpg",
+  "time": "2026-11-14T13:00:00Z",
+  "caption": "Knight walking down, same zoom: rear boot rolling onto its ball at the tread edge, front boot touching the turf at the foot; motion reads, boots and stair still look unfinished.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1300-knightstair-zoom-down-high.jpg",
+  "time": "2026-11-14T13:00:00Z",
+  "caption": "Walk-down from a higher lens (kpup 1.8): rear boot planted on the top tread, front boot reaching past the nosing heel-up; tread edges read, the box stair and clog boots do not hold up.",
   "verdict": "fail"
  }
 ]

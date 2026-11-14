@@ -3748,6 +3748,17 @@ func _ready() -> void:
 			print("SHOT kpelvis hips side %s vs walk side %s (%.1f deg off) dist %.1f" % [pside, pfwd.cross(Vector3.UP), rad_to_deg(acos(clampf(absf(pside.dot(pfwd.cross(Vector3.UP).normalized())), -1.0, 1.0))), pdist])
 			pcam.global_position = Vector3(ph.x, pgy + pup * pks, ph.z) + pside * pdist
 			pcam.look_at(Vector3(ph.x, pgy + 0.35 * pks, ph.z))
+			# (11-14 13:00) kfov=<deg>: zoom the pelvis lens (same spot) so the boots on the treads
+			# fill the frame; aimed lower, between the soles (kaim=<x size> over the hips' ground, 0.18)
+			for a in args:
+				if a.begins_with("kfov="):
+					pcam.fov = float(a.substr(5))
+					var paim := 0.18
+					for b in args:
+						if b.begins_with("kaim="):
+							paim = float(b.substr(5))
+					pcam.look_at(Vector3(ph.x, pgy + paim * pks, ph.z))
+					print("SHOT kpelvis fov %.1f aim %.2f x size" % [pcam.fov, paim])
 			# render the re-aimed lens (two ticks, the foe frozen in place so the frame is the cut's)
 			pkw.bot_move = Vector3.ZERO
 			pkw.process_mode = Node.PROCESS_MODE_DISABLED
