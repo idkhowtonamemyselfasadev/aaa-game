@@ -2767,9 +2767,13 @@ func _stop_test() -> void:
 			sprev = snow
 		p.bot_input = Vector2.ZERO
 		var n0 := p.stops
+		var rs0: int = p.run_stop_settles if "run_stop_settles" in p else 0
 		for i in cut:
 			await get_tree().physics_frame
 		var was := p.stop_t
+		# (11-14 02:00) once the body has halted the stop hands its legs to the walk stop's settle
+		# (~0.25 s): a later cut takes the legs back from the settle, not the pose
+		var handed: bool = ("run_stop_settles" in p) and p.run_stop_settles > rs0
 		var lead := p.stop_lead
 		var gone := -1.0
 		var hand_jump := 0.0
@@ -2803,8 +2807,8 @@ func _stop_test() -> void:
 			fprev = fnow
 		var v_after := Vector3(p.velocity.x, 0, p.velocity.z).length()
 		print("BOT run: planted foot slips %.4f m/tick over %d flat ticks at %.1f m/s (stride warp %.2f)" % [_mean(flat_skate), flat_skate[1], v_after, p.stride_warp.k])
-		print("BOT stop: cut short at %.2f s (stops %d, lead %+.0f): legs back in %.2f s, clip lead foot ahead %+.3f m as it takes over, foot jump %.3f m/tick (steady run %.3f), stance foot slip %.3f m/tick (steady run %.3f), running at %.1f m/s after" % [was, p.stops - n0, lead, gone, handoff, hand_jump, run_step, _mean(hand_skate), _mean(run_skate), v_after])
-		cuts.append([was, gone, v_after, hand_jump, run_step, p.stops - n0, _mean(hand_skate), _mean(run_skate), _mean(flat_skate), flat_skate[1], handoff])
+		print("BOT stop: cut short at %.2f s%s (stops %d, lead %+.0f): legs back in %.2f s, clip lead foot ahead %+.3f m as it takes over, foot jump %.3f m/tick (steady run %.3f), stance foot slip %.3f m/tick (steady run %.3f), running at %.1f m/s after" % [was, " (handed to the settle)" if handed else "", p.stops - n0, lead, gone, handoff, hand_jump, run_step, _mean(hand_skate), _mean(run_skate), v_after])
+		cuts.append([was, gone, v_after, hand_jump, run_step, p.stops - n0, _mean(hand_skate), _mean(run_skate), _mean(flat_skate), flat_skate[1], handoff, handed])
 		p.bot_input = Vector2.ZERO
 		p.crumple.active = false
 		await _ticks(60)
@@ -2835,7 +2839,7 @@ func _stop_test() -> void:
 	if (results[1] as Array)[0] != 0:
 		return _combat_done(false, "a walk plants a run stop")
 	for c in cuts:
-		if c[5] != 1 or c[0] < 0.0:
+		if c[5] != 1 or (c[0] < 0.0 and not c[11]):
 			return _combat_done(false, "no stop to cut short")
 		if c[1] < 0.0 or c[1] > 0.25:
 			return _combat_done(false, "the legs do not let go when the stick comes back (%.2f s)" % c[1])
@@ -5039,6 +5043,9 @@ func _hero_stop_test() -> void:
 	var start := p.global_position
 	var fail := ""
 	var gaits := [["walk", 0.25], ["walk+", 0.5], ["jog", 0.7]]
+	if OS.has_environment("HEROSTOP_RUN"):
+		# (11-14 02:00) read the planted run stop's boots too (not gated)
+		gaits = [["run", 1.0]] if OS.get_environment("HEROSTOP_RUN") == "only" else gaits + [["run", 1.0]]
 	var fwd := Vector3.ZERO
 	for i in 30:
 		p.bot_input = Vector2(0, -1) * 0.5
@@ -5071,6 +5078,8 @@ func _hero_stop_test() -> void:
 	var worst_still := 0
 	var worst_pop := 0.0
 	var settles0: int = p.walk_stop_settles if "walk_stop_settles" in p else 0
+	var run_sum := 0.0
+	var run_pop := 0.0
 	for g in gaits:
 		for cut in [41, 50, 59]:
 			if OS.has_environment("HEROSTOP_CUT") and "%s%d" % [g[0], cut] != OS.get_environment("HEROSTOP_CUT"):
@@ -5124,6 +5133,10 @@ func _hero_stop_test() -> void:
 					still_at = fi
 			if OS.has_environment("HEROSTOP_DEBUG"):
 				print("   %s cut %d (v %.2f, planted stop %s): skate %.4f worst %.4f hand-overs %d still at %d pop %.3f" % [g[0], cut, v_cut, "yes" if p.stops > 0 and p.stop_t >= 0.0 else "no", skate, worst, hand, still_at, pop])
+			if g[0] == "run":
+				run_sum = maxf(run_sum, skate)
+				run_pop = maxf(run_pop, pop)
+				continue                       # the run stop is read, not gated (yet)
 			worst_pop = maxf(worst_pop, pop)
 			if g[0] != "jog":
 				# the jog band (4.2-4.6 m/s, just under the planted stop) is read, not gated yet
@@ -5131,7 +5144,9 @@ func _hero_stop_test() -> void:
 				worst_tick = maxf(worst_tick, worst)
 			worst_still = maxi(worst_still, still_at if still_at >= 0 else 999)
 	var settles: int = (p.walk_stop_settles if "walk_stop_settles" in p else 0) - settles0
-	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of 9" % [worst_sum, worst_tick, worst_still, worst_pop, settles])
+	if OS.has_environment("HEROSTOP_RUN"):
+		print("   run stop (read): skate at worst %.4f m summed, worst pop %.3f m, %d handed to the settle" % [run_sum, run_pop, p.run_stop_settles if "run_stop_settles" in p else 0])
+	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3])
 	slab.queue_free()
 	p.global_position = start
 	# gated with the new walk stop on (the default since 11-14 01:00; WALKSTOP_OLD=1 reads the before ungated)

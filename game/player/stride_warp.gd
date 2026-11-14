@@ -516,6 +516,8 @@ static var STOPGATHER_OLD := OS.has_environment("STOPGATHER_OLD")
 static var STOPPICK_SHOWN_OLD := OS.has_environment("STOPPICK_SHOWN_OLD")
 static var STOPPIN_FLOOR_OLD := OS.has_environment("STOPPIN_FLOOR_OLD")
 var _idle_ank_h := 0.0             # (11-14) world m: the idle ankle over the turf (hero)
+var _stop_from_shown := false
+static var STOPFROM_SHOWN_OLD := OS.has_environment("STOPFROM_SHOWN_OLD")
 func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	if not _stance_ok or pivot > 0.0 or skel == null:
 		return false
@@ -547,6 +549,7 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 		pivot_side = 0 if skel.get_bone_global_pose(lf).origin.dot(fw) >= skel.get_bone_global_pose(rf).origin.dot(fw) else 1
 	if OS.has_environment("STOPPICK_DEBUG"):
 		print("  stop pick: hL %.2f hR %.2f  zL %.2f zR %.2f -> %d" % [hl, hr, skel.get_bone_global_pose(lf).origin.dot(fw), skel.get_bone_global_pose(rf).origin.dot(fw), pivot_side])
+		print("  stop pick f%d: stance fwd L %.1f R %.1f ok %s" % [Engine.get_physics_frames(), (_stance[0] as Vector3).dot(fw), (_stance[1] as Vector3).dot(fw), _stance_ok])
 	pivot_pin = null
 	pivot = 1.0
 	pivot_settle = true
@@ -557,6 +560,7 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 	_settle_goal_w = null
 	_settle_bgoal_w = null
 	_stop_pin_lock = true
+	_stop_from_shown = stop_pin_shown
 	return true
 
 ## A stop's settle handed over (walking again, or a turn begins): back to a turn's own step settings.
@@ -901,6 +905,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	# final pose: off the turf 3 ticks of a turn, then under it). The free leg bends to keep its
 	# boot where the clip steps it. PIVOT_FREE_SINKS: the before
 	var of_t := of_clip
+	if pivot_settle and _settle_at == null and _stop_from_shown and not STOPFROM_SHOWN_OLD and _shown_prev[1 - pivot_side] != null:
+		# (11-14 02:00) ...and its arc starts at the height it was shown at (the run stop's back boot up on
+		# its ball, 8 cm): pressed onto the floor at once it dropped 8 cm in one tick
+		_arc_top = maxf(_arc_top, (inv * (_shown_prev[1 - pivot_side] as Vector3)).dot(up) - _arc_floor)
+		_arc_falling = true
 	if not PIVOT_NO_ARC and delta > 0.0:
 		var wnow := xf * of_clip
 		if _arc_prev != null:
@@ -981,6 +990,13 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# clip's shuffle would scuff it on over the turf, and the release slid it ~9 cm (11-06)
 			if _settle_at == null:
 				_settle_at = xf * of_t
+				# (11-14 02:00) a stop's step leaves from where the boot was SHOWN, not from the clip's
+				# idle: handed over from the planted run stop's pose the free boot snapped 0.73 m in one
+				# tick to the clip's spot (bot `herostop` HEROSTOP_RUN). STOPFROM_SHOWN_OLD: before
+				if _stop_from_shown and not STOPFROM_SHOWN_OLD and _shown_prev[1 - pivot_side] != null:
+					var sh: Vector3 = _shown_prev[1 - pivot_side]
+					_settle_at = Vector3(sh.x, (_settle_at as Vector3).y, sh.z)
+				_stop_from_shown = false
 			_settle_t += delta / settle_time_k
 			var from: Vector3 = inv * (_settle_at as Vector3)
 			var goal := from

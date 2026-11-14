@@ -115,7 +115,23 @@ var gap_trace := []          # (bots) [before bends R, L, before keep R, L, afte
 var hip_roll := 0.0          # rad: the pelvis rolls about the facing so one hip hikes (+ = the left hip up,
 							 # a climber's stepping side), the spine rolled back so the shoulders stay level
 
+## (11-14 02:00) StrideWarp runs FIRST and records where each boot was shown (`_shown_prev`) at its
+## end: while this pose owns the legs (the planted run stop) that record missed it, so a settle handed
+## the boots from the run stop pinned a boot 31 cm from where it stood. Set by the hero: the record is
+## taken again here, after this pose. SHOWNREC_OLD=1: before
+var warp: Object = null
+static var SHOWNREC_OLD := OS.has_environment("SHOWNREC_OLD")
 func _process_modification_with_delta(_delta: float) -> void:
+	_crumple_mod(_delta)
+	if warp != null and active and not SHOWNREC_OLD:
+		var skel := get_skeleton()
+		if skel != null:
+			for i in 2:
+				var fbi := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
+				if fbi >= 0:
+					warp._shown_prev[i] = skel.global_transform * skel.get_bone_global_pose(fbi).origin
+
+func _crumple_mod(_delta: float) -> void:
 	var skel := get_skeleton()
 	if skel == null:
 		return

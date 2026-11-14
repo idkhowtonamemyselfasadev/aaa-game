@@ -507,6 +507,7 @@ func _setup_crumple() -> void:
 	stride_warp = StrideWarp.new()
 	stride_warp.name = "StrideWarp"
 	skel.add_child(stride_warp)
+	crumple.warp = stride_warp
 	# the modifiers run once per physics tick, right on the AnimationTree's pose (which is
 	# advanced on physics too): on idle frames they ran 0 or 2 times a tick, so the contact
 	# lock saw a foot that had not moved ("not falling") or missed the strike tick altogether
@@ -1431,6 +1432,17 @@ const PIVOT_REACH := 0.11              # m: the most the body's middle orbits of
 ## ON BY DEFAULT since 11-14 01:00: the 22 cm one-tick pop was the turn's gather snapping the stop's pinned
 ## boot toward the hips, and the long-stride case was the pin set under the turf (both fixed in StrideWarp).
 static var WALKSTOP_OLD := OS.has_environment("WALKSTOP_OLD")
+static var RUNSTOP_SETTLE_OLD := OS.has_environment("RUNSTOP_SETTLE_OLD")
+static var STANCE_STOP_OLD := OS.has_environment("STANCE_STOP_OLD")
+static var SETTLE_SNAP_OLD := OS.has_environment("SETTLE_SNAP_OLD")
+static var STARTSETTLE_OLD := OS.has_environment("STARTSETTLE_OLD")
+var _settle_cut := false
+var _run_settle := false               # the settle running was handed over from the planted run stop
+## u of the planted stop (stop_t / STOP_TIME) from which it may hand over, and the pace under which
+static var RUNSTOP_HANDOFF_U := float(OS.get_environment("RUNSTOP_HANDOFF_U")) if OS.has_environment("RUNSTOP_HANDOFF_U") else 0.45
+static var RUNSTOP_HANDOFF_V := float(OS.get_environment("RUNSTOP_HANDOFF_V")) if OS.has_environment("RUNSTOP_HANDOFF_V") else 0.1
+var run_stop_settles := 0              # (bots)
+static var RUNSTOP_KEEP := OS.has_environment("RUNSTOP_KEEP")   # (experiment) keep the stop pose running under the settle
 const WALKSTOP_FROM := 0.25            # m/s: last tick's pace this fast counts as walking
 var walk_stop_settles := 0             # (bots)
 static var WALKSTOP_SINK := float(OS.get_environment("WALKSTOP_SINK")) if OS.has_environment("WALKSTOP_SINK") else 8.0
@@ -1453,12 +1465,27 @@ func _walk_stop_settle(delta: float, standing: bool, hs: float, busy: bool) -> v
 		return
 	var skel := crumple.get_skeleton()
 	var in_stop := stride_warp.settle_lift_k != 1.0
-	if not in_stop and _walked and standing and _wish_zero and not busy and turn_shuffle <= 0.05 \
-			and stride_warp.pivot <= 0.0 and stop_t < 0.0 and pivot_t < 0.0 and start_t < 0.0 and skel != null \
+	# (11-14 02:00) the planted RUN stop hands its legs to the same settle once the body has stopped:
+	# its own pose blended the boots back into the idle stance over the turf (0.65-0.86 m skated,
+	# up to 16 cm in a tick, bot `herostop` with HEROSTOP_RUN). RUNSTOP_SETTLE_OLD=1: before
+	var run_hand := false
+	if not RUNSTOP_SETTLE_OLD and not in_stop and stop_t >= 0.0 and not _stop_cancel and _stop_w >= 1.0 \
+			and stop_t / STOP_TIME >= RUNSTOP_HANDOFF_U and hs < RUNSTOP_HANDOFF_V:
+		run_hand = true
+	if not in_stop and (_walked or run_hand) and standing and _wish_zero and not busy and turn_shuffle <= 0.05 \
+			and stride_warp.pivot <= 0.0 and (stop_t < 0.0 or run_hand) and pivot_t < 0.0 and start_t < 0.0 and skel != null \
 			and _walk_stop_spread() < WALKSTOP_SPREAD:
 		if stride_warp.begin_stop_settle(skel):
 			walk_stop_settles += 1
 			in_stop = true
+			_run_settle = run_hand
+			if run_hand:
+				run_stop_settles += 1
+				if not RUNSTOP_KEEP:
+					# the stop's pose lets go on this same tick: Crumple runs after StrideWarp and its pose
+					# overrides the settle's pinned leg (the pin slid 31 cm with the pose blending out)
+					stop_t = -1.0
+					_stop_pose()
 	_walkstop_t = _walkstop_t + delta if in_stop else 0.0
 	# (11-14 01:00) a stop from a long stride: the hips may sink further onto the planted leg so a front
 	# boot pinned 0.4 m ahead stays in its reach (it hung 5.6 cm in the air at the 8 cm cap while the back
@@ -1470,7 +1497,13 @@ func _walk_stop_settle(delta: float, standing: bool, hs: float, busy: bool) -> v
 			stale = true
 		if stale or not _wish_zero or not standing or busy or _turn_sh > 0.05:
 			stride_warp.end_stop_settle()
-			if stale or not _wish_zero or not standing or busy:
+			# (11-14 02:00) the stick back on lets the settle's pin ease off (pivot fades at 5/s in
+			# _update_pivot_foot) instead of snapping both boots onto the clip: a run stop cut short
+			# after its hand-over jumped a boot 0.23 m in one tick (bot `stop`). SETTLE_SNAP_OLD: before
+			_settle_cut = not _wish_zero
+			# only a settle handed from the run stop eases: a walk stop's snapped as before (eased, a boot
+			# pinned on a stair tread hung 7.7 cm off the next one walking down, bot `stepup`)
+			if stale or (not _wish_zero and (SETTLE_SNAP_OLD or not _run_settle)) or not standing or busy:
 				stride_warp.pivot = 0.0
 	_walked = hs > WALKSTOP_FROM and is_on_floor() and not busy and stop_t < 0.0
 
@@ -1484,7 +1517,11 @@ func _update_pivot_foot(delta: float, standing: bool) -> void:
 		stride_warp.pivot_settle = false
 	elif standing and _turn_sh <= 0.0:
 		stride_warp.pivot_settle = true
-	stride_warp.stance_idle = standing and turn_shuffle <= 0.0 and Vector2(velocity.x, velocity.z).length() < 0.05
+	# (11-14 02:00) not while the run stop's pose has the legs: the body is already still there and the
+	# clip under it is still mid-stride, so the idle stance was re-read as that stride (the run stop's
+	# settle stepped the boots 0.6 m into the mirror of the guard, then slid them back). STANCE_STOP_OLD
+	stride_warp.stance_idle = standing and turn_shuffle <= 0.0 and Vector2(velocity.x, velocity.z).length() < 0.05 \
+		and (STANCE_STOP_OLD or (stop_t < 0.0 and start_t < 0.0 and _walkstop_t <= 0.0))
 	stride_warp.pivot = move_toward(stride_warp.pivot, want, delta * (10.0 if want > stride_warp.pivot else 5.0))
 func _weight_lean(delta: float, owned: bool, calm: bool) -> void:
 	var hv := Vector2(velocity.x, velocity.z)
@@ -1694,7 +1731,7 @@ func _pivot_pose() -> void:
 ## Then the weight rolls over the front foot, the back foot steps up beside it and the body
 ## rises and settles. Pushing the stick again lets go at once: the legs ease back in ~0.15 s.
 const STOP_TIME := 0.55                # s from the release to standing square
-const STOP_MIN_SPEED := 4.6            # m/s along the facing: a jog or faster
+static var STOP_MIN_SPEED := float(OS.get_environment("STOP_MIN_SPEED")) if OS.has_environment("STOP_MIN_SPEED") else 4.6   # m/s along the facing: a jog or faster
 const STOP_BRAKE := 0.45               # u at which the skid has bled off the run
 var stop_t := -1.0                     # s into a planted stop (-1 none)
 var stops := 0                         # (bots)
@@ -1851,6 +1888,12 @@ func _start_step(delta: float, wish: Vector3, busy: bool) -> void:
 				start_handoff = crumple.clip_ahead * start_swing
 			start_t = -1.0
 			_start_cool = 0.6
+		return
+	# (11-14 02:00) not while a stop's settle still holds a boot (STARTSETTLE_OLD: before): the start's pose
+	# overrode the easing pin and a boot jumped ~0.2 m in a tick (bot `stop`, a run stop cut short after its hand-over)
+	if stride_warp != null and stride_warp.pivot <= 0.0:
+		_settle_cut = false
+	if not STARTSETTLE_OLD and stride_warp != null and stride_warp.pivot > 0.0 and (_walkstop_t > 0.0 or _settle_cut):
 		return
 	if not starts_enabled or busy or climbing or gliding or pivot_t >= 0.0 or stop_t >= 0.0 or lock_target != null \
 			or not is_on_floor() or _jp > 0.05 or wish.length() < START_STICK:
