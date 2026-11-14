@@ -5147,8 +5147,9 @@ func _hero_stop_test() -> void:
 				run_pop = maxf(run_pop, pop)
 				continue                       # gated on its own below
 			worst_pop = maxf(worst_pop, pop)
-			if g[0] != "jog":
-				# the jog band (4.2-4.6 m/s, just under the planted stop) is read, not gated yet
+			# (11-14 04:00) the jog band (4.2-4.6 m/s) plants now (STOP_MIN_SPEED 4.0) and is gated with the
+			# walk: 0.14-0.31 m summed before, 0.013-0.016 after
+			if g[0] != "jog" or OS.get_environment("STOP_MIN_SPEED") == "4.6":
 				worst_sum = maxf(worst_sum, skate)
 				worst_tick = maxf(worst_tick, worst)
 			worst_still = maxi(worst_still, still_at if still_at >= 0 else 999)

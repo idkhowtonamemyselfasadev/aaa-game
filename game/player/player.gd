@@ -1731,7 +1731,10 @@ func _pivot_pose() -> void:
 ## Then the weight rolls over the front foot, the back foot steps up beside it and the body
 ## rises and settles. Pushing the stick again lets go at once: the legs ease back in ~0.15 s.
 const STOP_TIME := 0.55                # s from the release to standing square
-static var STOP_MIN_SPEED := float(OS.get_environment("STOP_MIN_SPEED")) if OS.has_environment("STOP_MIN_SPEED") else 4.6   # m/s along the facing: a jog or faster
+## (11-14 04:00) 4.6 -> 4.0: a jog (4.2-4.6 m/s) let go of now plants too. Under 4.6 the walk stop's
+## settle handled it and the boots skated 0.14-0.31 m summed (`herostop` jog cuts); planted 0.013-0.016 m.
+## STOP_MIN_SPEED=4.6: before
+static var STOP_MIN_SPEED := float(OS.get_environment("STOP_MIN_SPEED")) if OS.has_environment("STOP_MIN_SPEED") else 4.0   # m/s along the facing: a jog or faster
 const STOP_BRAKE := 0.45               # u at which the skid has bled off the run
 var stop_t := -1.0                     # s into a planted stop (-1 none)
 var stops := 0                         # (bots)
