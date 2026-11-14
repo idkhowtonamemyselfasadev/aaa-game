@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261110-1100-reveal-glaive-hang.jpg",
-  "time": "2026-11-10T11:15:00Z",
-  "caption": "The Ashen Knight at the end of its reveal roar: the glaive now hangs upright out at its right with both gauntlets on the haft before speeding into the downswing (no more stall); the armour still reads dark and flat and the ground is speckled.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-1100-reveal-glaive-hang-before.jpg",
   "time": "2026-11-10T11:15:00Z",
   "caption": "Before: the same tick with the old follow-through, the left grip past its reach so the haft slants across the body and the swing stalls for a tick.",
@@ -885,6 +879,18 @@
   "file": "20261114-1300-knightstair-zoom-down-high.jpg",
   "time": "2026-11-14T13:00:00Z",
   "caption": "Walk-down from a higher lens (kpup 1.8): rear boot planted on the top tread, front boot reaching past the nosing heel-up; tread edges read, the box stair and clog boots do not hold up.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1500-glide-side.jpg",
+  "time": "2026-11-14T15:00:00Z",
+  "caption": "Hero under the open glider seen side-on from a new riding lens: the legs now hang loose and apart with pointed toes instead of a mirrored kneel; backlit, the legs read dark and the feet are cut by the frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1500-glide-front.jpg",
+  "time": "2026-11-14T15:00:00Z",
+  "caption": "Glide from the front three-quarter: face, fists on the bar and the patterned wing read; the legs hang one ahead of the other, but a black cloth mass juts out beside the right shoulder.",
   "verdict": "fail"
  }
 ]

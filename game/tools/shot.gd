@@ -2231,6 +2231,7 @@ func _ready() -> void:
 		var galt := 16.0
 		var gpitch := -0.22
 		var gyaw := 0.55                       # lens bearing off dead astern (rad); ~1.4 for side-on
+		var gsp := 4.6                         # `gsp=<m>`: spring length (a close-up of the pose at ~2.4)
 		for a in args:
 			if a.begins_with("at="):
 				var xz := a.substr(3).split(",")
@@ -2244,6 +2245,8 @@ func _ready() -> void:
 				gpitch = float(a.substr(6))
 			elif a.begins_with("yaw="):
 				gyaw = float(a.substr(4))
+			elif a.begins_with("gsp="):
+				gsp = float(a.substr(4))
 		var gdir := (gto - gfrom).normalized()
 		player.use_bot_input = true
 		player.global_position = gfrom + Vector3.UP * (terrain.height_at(gfrom.x, gfrom.z) + galt)
@@ -2257,7 +2260,42 @@ func _ready() -> void:
 		var cf := Vector3(-sin(yc), 0, -cos(yc))
 		var cr := Vector3(cos(yc), 0, -sin(yc))
 		player.bot_input = Vector2(gdir.dot(cr), -gdir.dot(cf))
-		player.spring.spring_length = 4.6
+		player.spring.spring_length = gsp
+		# `glens=<deg>`: a lens of its own that rides along beside the flier every frame, at that bearing
+		# off the hero's facing (0 = dead ahead, 90 = its left side, 180 = astern), `gd=<m>` out and
+		# `gup=<m>` up from the hips, aimed at the hips: the follow camera only ever sees the back
+		var glens := ""
+		var gd := 3.2
+		var gup := 0.3
+		for a in args:
+			if a.begins_with("glens="):
+				glens = a.substr(6)
+			elif a.begins_with("gd="):
+				gd = float(a.substr(3))
+			elif a.begins_with("gup="):
+				gup = float(a.substr(4))
+		if glens != "":
+			var gcam := Camera3D.new()
+			gcam.fov = 40.0
+			gcam.near = 0.05
+			var pcam := get_viewport().get_camera_3d()
+			if pcam != null and pcam.attributes != null:
+				gcam.attributes = pcam.attributes
+			world.add_child(gcam)
+			var gb := deg_to_rad(float(glens))
+			var ride := func() -> void:
+				if not is_instance_valid(gcam) or not is_instance_valid(player):
+					return
+				var sk: Skeleton3D = player.body.find_children("*", "Skeleton3D", true, false)[0]
+				var hips: Vector3 = sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Hips")).origin
+				var f: Vector3 = player.body.global_basis.z
+				f.y = 0.0
+				f = f.normalized().rotated(Vector3.UP, gb)
+				gcam.global_position = hips + f * gd + Vector3.UP * gup
+				gcam.look_at(hips + Vector3.UP * 0.35)
+				gcam.make_current()
+			ride.call()
+			get_tree().process_frame.connect(ride)
 		print("SHOT glide from %s heading %s" % [player.global_position, gdir])
 	if spot == "climb":
 		# the hero halfway up the keep's outer face, hands up on the stones, from below and

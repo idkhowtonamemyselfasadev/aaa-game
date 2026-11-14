@@ -214,6 +214,9 @@ const GLIDE_MIN_STAMINA := 6.0
 const GLIDE_WIND_DIR := Vector3(0.8, 0.0, 0.6)   # the meadow wind (weather.gd slants the rain along it)
 const GLIDE_DRIFT := Vector2(0.5, 3.7)           # m/s the wind carries the wing: still air .. storm
 var gliding := false
+const GLIDE_KNEE := 0.22              # rad the knees soften under the wing (+0.25 at full airspeed)
+const GLIDE_POINT := 0.5              # rad the hanging feet point their toes
+var GLIDE_OLDLEGS := OS.get_environment("GLIDE_OLDLEGS") == "1"   # the kneeling hang before 11-14
 var glides := 0                       # times the glider was opened (bots read this)
 var glided := 0.0                     # metres flown under it (bots read this)
 var glide_landings := 0               # touchdowns under the open wing (bots read this)
@@ -2569,10 +2572,24 @@ func _glide_pose(delta: float) -> void:
 	var k := 1.0 - exp(-3.0 * delta)
 	glider.fill = lerpf(glider.fill, clampf(air * 1.4 - 0.2, 0.0, 1.0), k)
 	crumple.leg_aim = minf(crumple.leg_aim + delta * 3.0, 1.0)
-	crumple.knee = lerpf(crumple.knee, 0.45 + 0.3 * air, k)
+	var gt := _glide_t + float(glides) * 2.9
+	if GLIDE_OLDLEGS:
+		crumple.knee = lerpf(crumple.knee, 0.45 + 0.3 * air, k)
+	else:
+		# (15:00 11-14) hanging, not kneeling: the knees only soften (the shins had folded back
+		# 0.75 rad, a kneel in the air from the side), the feet hang relaxed with the toes pointed
+		# (they kept the jump's flat soles, which read as clogs), and the two legs are never
+		# mirrored: the left a touch ahead and straighter, the right trailing and more bent,
+		# drifting slowly so the pair is loose
+		crumple.knee = lerpf(crumple.knee, GLIDE_KNEE + 0.25 * air, k)
+		crumple.ankle = lerpf(crumple.ankle, GLIDE_POINT, k)
+		crumple.sole_flat = lerpf(crumple.sole_flat, 0.0, k)
+		var drift := 0.6 + 0.4 * sin(gt * 0.41)
+		crumple.hip_lr = crumple.hip_lr.lerp(Vector2(0.10, -0.08) * drift, k)
+		crumple.knee_lr = crumple.knee_lr.lerp(Vector2(-0.10, 0.16) * drift, k)
+		crumple.ankle_lr = crumple.ankle_lr.lerp(Vector2(0.10, -0.06) * drift, k)
 	crumple.hip = lerpf(crumple.hip, 0.12 - 0.44 * air, k)
 	crumple.spine = lerpf(crumple.spine, -0.08 - 0.08 * air, k)
-	var gt := _glide_t + float(glides) * 2.9
 	crumple.stride = 0.07 * sin(gt * 2.1) + 0.03 * sin(gt * 3.7 + 1.1) \
 		+ glider.gust * 0.11 * sin(gt * 6.3)
 	if garb != null:
@@ -2594,6 +2611,11 @@ func _end_glide(clear_pose: bool) -> void:
 			garb.posed_legs = false            # (onto a face the climb keeps them posed)
 	if crumple != null:
 		crumple.leg_aim = 0.0
+		crumple.ankle = 0.0
+		crumple.sole_flat = 0.0
+		crumple.hip_lr = Vector2.ZERO
+		crumple.knee_lr = Vector2.ZERO
+		crumple.ankle_lr = Vector2.ZERO
 	if clear_pose and crumple != null:
 		crumple.plant = 0.0
 		crumple.hand_curl = 0.4

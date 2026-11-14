@@ -9737,6 +9737,15 @@ func _glide_test() -> void:
 	var panel_back := 0.0
 	var flap := 0.0
 	var ground_trail := -p.garb._trail.z
+	var gl_knee := [0.0, 0.0]
+	var gl_toe := [0.0, 0.0]
+	var gl_n := 0.0
+	var gl_bones := []
+	for sd in ["Left", "Right"]:
+		for b in ["UpLeg", "Leg", "Foot", "ToeBase"]:
+			gl_bones.append("mixamorig_%s%s" % [sd, b])
+	p.crumple.probe = PackedStringArray(gl_bones)
+	p.crumple.probed = {}
 	for k in hz * 4:
 		p.bot_input = Vector2(0, -1)
 		await _ticks(1)
@@ -9757,6 +9766,25 @@ func _glide_test() -> void:
 				thigh_hi = maxf(thigh_hi, ang)
 				thigh_sum += ang
 				thigh_n += 1
+			# (11-14) the legs as posed on the skeleton: knee bend (rad between thigh and shin),
+			# toe drop (how far the foot's toe line points below the body's forward, rad)
+			# (read from Crumple's probe: get_bone_global_pose here is the clip's pose, before the bends)
+			var gsk: Skeleton3D = p.crumple.get_skeleton()
+			var pr: Dictionary = p.crumple.probed
+			for i in 2:
+				var sd: String = ["Left", "Right"][i]
+				if not pr.has("mixamorig_%sToeBase" % sd):
+					continue
+				var hj: Vector3 = gsk.global_transform * (pr["mixamorig_%sUpLeg" % sd] as Vector3)
+				var kj: Vector3 = gsk.global_transform * (pr["mixamorig_%sLeg" % sd] as Vector3)
+				var aj: Vector3 = gsk.global_transform * (pr["mixamorig_%sFoot" % sd] as Vector3)
+				var tj: Vector3 = gsk.global_transform * (pr["mixamorig_%sToeBase" % sd] as Vector3)
+				var kb := (kj - hj).angle_to(aj - kj)
+				var tv := tj - aj
+				var drop := atan2(-tv.dot(up), tv.dot(ahead))
+				gl_knee[i] += kb
+				gl_toe[i] += drop
+			gl_n += 1.0
 			trail_back = maxf(trail_back, -p.garb._trail.z)
 			panel_back = maxf(panel_back, p.garb._swing_b)
 			flap = maxf(flap, p.garb.flap)
@@ -9809,6 +9837,18 @@ func _glide_test() -> void:
 		return _combat_done(false, "gliding costs no stamina")
 	var thigh_mean := thigh_sum / maxf(thigh_n, 1.0)
 	print("BOT glide: thighs %.2f rad off plumb on average (%.2f..%.2f, - is behind), robe hem trailing %.2f m back (%.2f before the jump), back panel out %.2f rad, cloth flap %.2f" % [thigh_mean, thigh_lo, thigh_hi, trail_back, ground_trail, panel_back, flap])
+	var kl: float = gl_knee[0] / maxf(gl_n, 1.0)
+	var kr: float = gl_knee[1] / maxf(gl_n, 1.0)
+	var tl: float = gl_toe[0] / maxf(gl_n, 1.0)
+	var tr: float = gl_toe[1] / maxf(gl_n, 1.0)
+	print("BOT glide: knees bent L %.2f R %.2f rad (mean), toes pointing L %.2f R %.2f rad below the body's forward" % [kl, kr, tl, tr])
+	if OS.get_environment("GLIDE_OLDLEGS") != "1":
+		if maxf(kl, kr) > 0.65:
+			return _combat_done(false, "the legs kneel in the air instead of hanging")
+		if absf(kl - kr) < 0.1:
+			return _combat_done(false, "the two legs hang mirrored")
+		if minf(tl, tr) < 1.4:
+			return _combat_done(false, "the hanging feet do not point their toes")
 	if thigh_mean > -0.12:
 		return _combat_done(false, "the legs do not trail back in flight")
 	if thigh_hi - thigh_lo < 0.08:
