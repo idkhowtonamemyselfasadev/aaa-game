@@ -3709,6 +3709,50 @@ func _ready() -> void:
 		if player.has_meta("shot_stair") and player.stride_warp != null:
 			var sw: StrideWarp = player.stride_warp
 			print("SHOT stair f %d root %.3f dip %.3f swing lift L %.3f R %.3f rise ahead L %.3f R %.3f sole L %.3f R %.3f" % [i, player.global_position.y, player.body.position.y, sw.swing_lift[0], sw.swing_lift[1], sw.swing_ahead_rise[0], sw.swing_ahead_rise[1], sw.ground_sole[0], sw.ground_sole[1]])
+	if "kpelvis" in args and get_viewport().get_camera_3d() != null:
+		# (11-14 12:00) kpelvis: after the walk, swing the lens round the foe square to its PELVIS
+		# line (the hips bone's side axis), not the walk line: the bladed guard turns the torso, so a
+		# lens square to the walk read the figure rear 3/4. Same distance; height kup=<x size> over
+		# the hips' ground (kpup=<x size>, default 1.0), aimed at knee height.
+		var pkw: HollowSoldier = null
+		for fo in [world.knight, world.soldier]:
+			if fo != null and fo.has_meta("shot_kwalk"):
+				pkw = fo
+		if pkw != null and pkw.skel != null and pkw.skel.find_bone("mixamorig_Hips") >= 0:
+			var pcam := get_viewport().get_camera_3d()
+			var psk := pkw.skel
+			var phb := psk.find_bone("mixamorig_Hips")
+			var ph: Vector3 = psk.global_transform * psk.get_bone_global_pose(phb).origin
+			# the pelvis line from hip joint to hip joint (the Hips bone's own axes are not the body's:
+			# its x put the lens straight behind the figure)
+			var pl: Vector3 = psk.global_transform * psk.get_bone_global_pose(psk.find_bone("mixamorig_LeftUpLeg")).origin
+			var pr: Vector3 = psk.global_transform * psk.get_bone_global_pose(psk.find_bone("mixamorig_RightUpLeg")).origin
+			var pbx := pr - pl
+			var pside := Vector3(pbx.x, 0.0, pbx.z).normalized()
+			var psl: Vector3 = psk.global_transform * psk.get_bone_global_pose(psk.find_bone("mixamorig_LeftArm")).origin
+			var psr: Vector3 = psk.global_transform * psk.get_bone_global_pose(psk.find_bone("mixamorig_RightArm")).origin
+			var pfac := pkw.body.global_basis.z
+			print("SHOT kpelvis hip line %s shoulder line %s body +Z %s" % [pside, Vector3(psr.x - psl.x, 0, psr.z - psl.z).normalized(), Vector3(pfac.x, 0, pfac.z).normalized()])
+			var pto := pcam.global_position - ph
+			pto.y = 0.0
+			if pside.dot(pto) < 0.0:
+				pside = -pside
+			var pup := 1.0
+			for a in args:
+				if a.begins_with("kpup="):
+					pup = float(a.substr(5))
+			var pks := pkw.size_scale
+			var pgy := pkw.global_position.y
+			var pdist := pto.length()
+			var pfwd := pkw.get_meta("shot_kfwd") as Vector3
+			print("SHOT kpelvis hips side %s vs walk side %s (%.1f deg off) dist %.1f" % [pside, pfwd.cross(Vector3.UP), rad_to_deg(acos(clampf(absf(pside.dot(pfwd.cross(Vector3.UP).normalized())), -1.0, 1.0))), pdist])
+			pcam.global_position = Vector3(ph.x, pgy + pup * pks, ph.z) + pside * pdist
+			pcam.look_at(Vector3(ph.x, pgy + 0.35 * pks, ph.z))
+			# render the re-aimed lens (two ticks, the foe frozen in place so the frame is the cut's)
+			pkw.bot_move = Vector3.ZERO
+			pkw.process_mode = Node.PROCESS_MODE_DISABLED
+			for i in 2:
+				await get_tree().process_frame
 	if "fq" in args:
 		var nimp := 0
 		for ch in world.knight.get_parent().get_children():

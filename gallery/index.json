@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261110-0800-surge-roar-held-out.jpg",
-  "time": "2026-11-10T08:30:00Z",
-  "caption": "The Ashen Knight's growth-surge roar with its new pose: the glaive stands tall in front of it, the right fist held out on the haft at chest height (fist-haft gap 0.000 m per size, was 0.144); the ring of fire hides most of the body and the light is flat, so not yet a Wukong frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0800-surge-roar-before.jpg",
-  "time": "2026-11-10T08:30:00Z",
-  "caption": "The same surge frame with the old roar pose (SURGE_OLDROAR=1): the right fist jammed up against the shoulder, the arm folded shut, which is what rolled the fist off the haft.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0900-reveal-follow-grip.jpg",
   "time": "2026-11-10T09:20:00Z",
   "caption": "The Ashen Knight's reveal follow-through: the glaive now comes down held out in front of the chest with both fists on the haft; the armour still reads dark and flat at this distance.",
@@ -885,6 +873,18 @@
   "file": "20261114-1100-knightstair-dressed.jpg",
   "time": "2026-11-14T11:00:00Z",
   "caption": "Knight stepping off the stair onto the turf, front boot planted; the trial masonry dressing (kdress) renders as black crooked slabs with stones hanging under it, so it stays opt-in.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1200-knightstair-pelvis-up.jpg",
+  "time": "2026-11-14T12:00:00Z",
+  "caption": "Ashen Knight (x2.2) climbing the test stair, lens squared to its measured hip line (kpelvis): mid-stride on the treads, but at ~10 m the soles are tiny and the cape/pauldron mass still reads as a rear view; stair is a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1200-knightstair-pelvis-down.jpg",
+  "time": "2026-11-14T12:00:00Z",
+  "caption": "Knight stepping off the stair's foot on the way down, same pelvis-squared lens: front boot plants on the turf, rear boot still on the tread; figure small, stair a plain box.",
   "verdict": "fail"
  }
 ]
