@@ -51,6 +51,7 @@ uniform float gore_fold_len = 0.0;  // > 0: the front fold is an arc this long (
 uniform vec2 gore_fold_f2 = vec2(1000.0, 0.0);
 uniform vec2 gore_fold_b = vec2(1000.0, 0.0);   // the back panel's fold
 uniform float gore_top = 1.21;     // the gore's seam height (model space)
+uniform float side_gather = 0.6;      // (11-14 20:00) beside a raised arm the drop below 25 cm is gathered up by this x the settle
 uniform float side_settle = 0.85;      // (11-14 19:00) how far the side lines next to a raised arm settle in onto the torso
 uniform vec2 drape_ramp = vec2(0.05, 0.28);  // (11-14 18:00) where along a lifted line the fall-back starts / is complete (m); was 0.10/0.17, a sharp corner
 uniform float drape_over = 1.0;  // (11-14 16:00) past the shoulder the lifted cloth falls back off an overhead arm (0 = the old rigid wing)
@@ -230,6 +231,13 @@ void settle_side(inout vec3 v, vec4 e, float a) {
 		float f = (el - k * (el - 1.08)) / el;
 		v.x *= f;
 		v.z = hang_body.z + (v.z - hang_body.z) * f;
+	}
+	// (11-14 20:00) the mantle's scalloped hem hangs lowest (0.44 m) right at each side: with the
+	// arm overhead the lines in front of it ride up, and that scallop hung below them as a spike
+	// in the back view. Lifting the side gathers the cloth: the drop past 25 cm shortens.
+	float dr = 1.72 - v.y;
+	if (k > 0.0 && dr > 0.25) {
+		v.y = 1.72 - (0.25 + (dr - 0.25) * (1.0 - side_gather * k));
 	}
 }
 

@@ -1,44 +1,20 @@
 [
  {
-  "file": "20261110-1800-soldier-thrust-before.jpg",
-  "time": "2026-11-10T18:30:00Z",
-  "caption": "Before: the same thrust frame with the old pose, the front grip past its reach so the spear stood straight up, 102 deg off the line of the blow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1900-hewer-raise-r30.jpg",
-  "time": "2026-11-10T19:21:00Z",
-  "caption": "Hollow Hewer mid-raise: the axe now swings up in an arc out in front of the body instead of dragging up the chest; still backlit and far, the grips can't be judged at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-1900-hewer-raise-r55.jpg",
-  "time": "2026-11-10T19:25:00Z",
-  "caption": "Hollow Hewer at the top of its raise: fists before the face, the axe cocked back over the head (arms no longer folded shut); the hewer is a dark silhouette, the lens too wide.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-2000-warden-bash-coil.jpg",
   "time": "2026-11-10T20:30:00Z",
   "caption": "The shield warden's re-solved bash coil: spear angled up from the hauled-back right fist, elbow out, fist on the haft. Still wrong: backlit against the sun, the hood and arms read as a dark silhouette at this distance.",
   "verdict": "fail"
  },
  {
-  "file": "20261110-2000-warden-bash-coil-before.jpg",
-  "time": "2026-11-10T20:30:00Z",
-  "caption": "Before (BASH_OLD=1): the old coil laid the spear flat across the chest, bent 7 deg through the reach clamp; same dark backlit framing.",
+  "file": "20261110-2100-harrier-overrun-before.jpg",
+  "time": "2026-11-10T21:00:00Z",
+  "caption": "Before: the same overrun frame with the old pose, the spear tucked up under the right arm (shoulder-to-wrist 0.111 m); same poor framing.",
   "verdict": "fail"
  },
  {
   "file": "20261110-2100-harrier-overrun.jpg",
   "time": "2026-11-10T21:00:00Z",
   "caption": "The harrier's overrun after its dart with the re-solved pose: the rear fist drawn back to the hip instead of crushed up under the armpit; the lens is placed for the crouch, so the harrier sits on the frame's edge overlapping the hero and the arm cannot be graded.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-2100-harrier-overrun-before.jpg",
-  "time": "2026-11-10T21:00:00Z",
-  "caption": "Before: the same overrun frame with the old pose, the spear tucked up under the right arm (shoulder-to-wrist 0.111 m); same poor framing.",
   "verdict": "fail"
  },
  {
@@ -54,9 +30,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0050-knight-leap-heave.jpg",
+  "file": "20261111-0050-knight-leap-bite.jpg",
   "time": "2026-11-11T00:50:00Z",
-  "caption": "The Ashen Knight at the top of its ember leap, legs tucked and the glaive heaved over its right shoulder (re-solved arc, now seen in a real frame sequence); lit and readable, but the shot harness leaves it at phase-1 size during a phase-2 move and the lens sits a little behind its shoulder.",
+  "caption": "The blade biting the turf in front of the hero as the knight lands; a coherent end to the arc, armour materials and the grass still short of a Wukong frame.",
   "verdict": "fail"
  },
  {
@@ -66,15 +42,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0050-knight-leap-bite.jpg",
+  "file": "20261111-0050-knight-leap-heave.jpg",
   "time": "2026-11-11T00:50:00Z",
-  "caption": "The blade biting the turf in front of the hero as the knight lands; a coherent end to the arc, armour materials and the grass still short of a Wukong frame.",
+  "caption": "The Ashen Knight at the top of its ember leap, legs tucked and the glaive heaved over its right shoulder (re-solved arc, now seen in a real frame sequence); lit and readable, but the shot harness leaves it at phase-1 size during a phase-2 move and the lens sits a little behind its shoulder.",
   "verdict": "fail"
  },
  {
-  "file": "20261111-0130-knight-leap-p2-heave.jpg",
+  "file": "20261111-0130-knight-leap-p2-bite.jpg",
   "time": "2026-11-11T01:30:00Z",
-  "caption": "The phase-2-sized knight (x3.2) in mid-leap above the village, glaive heaved over its right shoulder with both fists on the haft; the arc reads, armour and cloth still read flat and dark for a Wukong frame.",
+  "caption": "The blade biting the turf beside the hero as the giant lands; the torso stays upright instead of bending into the slam, so the impact lacks weight.",
   "verdict": "fail"
  },
  {
@@ -84,9 +60,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0130-knight-leap-p2-bite.jpg",
+  "file": "20261111-0130-knight-leap-p2-heave.jpg",
   "time": "2026-11-11T01:30:00Z",
-  "caption": "The blade biting the turf beside the hero as the giant lands; the torso stays upright instead of bending into the slam, so the impact lacks weight.",
+  "caption": "The phase-2-sized knight (x3.2) in mid-leap above the village, glaive heaved over its right shoulder with both fists on the haft; the arc reads, armour and cloth still read flat and dark for a Wukong frame.",
   "verdict": "fail"
  },
  {
@@ -102,21 +78,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0339-knight-leap-kick.jpg",
-  "time": "2026-11-11T03:39:00Z",
-  "caption": "Front-quarter lens on the Ashen Knight at the bottom of its ember-leap landing: knees given, chest over the bitten glaive, a pale ring of dust rolling off the right boot. Still wrong: the ember-ring flame stands right in front of the boot and hides half the kick, and the GL fallback renders the armour flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0339-knight-leap-give.jpg",
   "time": "2026-11-11T03:39:00Z",
   "caption": "The same front-quarter lens a beat earlier: the giant bottoming out over its blade, the hero a third of its height at left. Still wrong: tall grass hides the boots and the clods read as tiny specks at this scale.",
   "verdict": "fail"
  },
  {
-  "file": "20261111-0440-knight-leap-ring.jpg",
-  "time": "2026-11-11T04:40:00Z",
-  "caption": "Ashen Knight's leap landing at phase-2 size: the ember ring now flares to the sides and ahead of the bite, the boot and its dust kick read clear; the front flame still crosses the front-quarter lens and the GL renderer is flat.",
+  "file": "20261111-0339-knight-leap-kick.jpg",
+  "time": "2026-11-11T03:39:00Z",
+  "caption": "Front-quarter lens on the Ashen Knight at the bottom of its ember-leap landing: knees given, chest over the bitten glaive, a pale ring of dust rolling off the right boot. Still wrong: the ember-ring flame stands right in front of the boot and hides half the kick, and the GL fallback renders the armour flat.",
   "verdict": "fail"
  },
  {
@@ -126,9 +96,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0600-knight-guard.jpg",
-  "time": "2026-11-11T06:00:00Z",
-  "caption": "The Ashen Knight (phase-1 size) at its re-solved guard behind the hero; the glaive line reads, but the knight is a backlit dark silhouette and the shot is software-rendered (no GI/volumetrics).",
+  "file": "20261111-0440-knight-leap-ring.jpg",
+  "time": "2026-11-11T04:40:00Z",
+  "caption": "Ashen Knight's leap landing at phase-2 size: the ember ring now flares to the sides and ahead of the bite, the boot and its dust kick read clear; the front flame still crosses the front-quarter lens and the GL renderer is flat.",
   "verdict": "fail"
  },
  {
@@ -138,15 +108,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-0830-knight-heave-side.jpg",
-  "time": "2026-11-11T08:30:00Z",
-  "caption": "The Ashen Knight's reveal heave, now posed from its real shoulders: both fists on the glaive, drawn up diagonally over the right shoulder; the knight still reads dark against the sun and the shadowed turf is flat.",
+  "file": "20261111-0600-knight-guard.jpg",
+  "time": "2026-11-11T06:00:00Z",
+  "caption": "The Ashen Knight (phase-1 size) at its re-solved guard behind the hero; the glaive line reads, but the knight is a backlit dark silhouette and the shot is software-rendered (no GI/volumetrics).",
   "verdict": "fail"
  },
  {
   "file": "20261111-0830-knight-coil-front.jpg",
   "time": "2026-11-11T08:30:00Z",
   "caption": "Reveal coil from the front: the glaive held level at the hip with the left fist now visibly on the haft (before it trailed on the turf with that fist off it); the coil reads a little less low than before.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-0830-knight-heave-side.jpg",
+  "time": "2026-11-11T08:30:00Z",
+  "caption": "The Ashen Knight's reveal heave, now posed from its real shoulders: both fists on the glaive, drawn up diagonally over the right shoulder; the knight still reads dark against the sun and the shadowed turf is flat.",
   "verdict": "fail"
  },
  {
@@ -180,15 +156,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-1234-knight-sweep-coil-lit.jpg",
-  "time": "2026-11-11T12:34:44Z",
-  "caption": "The Ashen Knight's sweep coil finally lit from its front (16:30 sun): helm, gorget and right pauldron read; but the glaive runs in behind the right pauldron and through the lower skirt of the helm at the throat (measured 0.17 m/size deep), and the left arm is hidden.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1234-knight-leap-heave-helm.jpg",
   "time": "2026-11-11T12:34:44Z",
   "caption": "The ember leap's heave in mid-air: the glaive's haft passes straight through the crown of the knight's great helm (measured 0.16-0.18 m/size deep through the whole held heave); needs a new heave line beside the helm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261111-1234-knight-sweep-coil-lit.jpg",
+  "time": "2026-11-11T12:34:44Z",
+  "caption": "The Ashen Knight's sweep coil finally lit from its front (16:30 sun): helm, gorget and right pauldron read; but the glaive runs in behind the right pauldron and through the lower skirt of the helm at the throat (measured 0.17 m/size deep), and the left arm is hidden.",
   "verdict": "fail"
  },
  {
@@ -240,21 +216,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-1812-knight-sweep-coil.jpg",
-  "time": "2026-11-11T18:12:18Z",
-  "caption": "The Ashen Knight coils its sweep with the glaive now passing under its helm's chin skirt (bot: clear by 0.125 m/size, was 0.17 through); the knight is still dim and backlit, and the helm reads as a dark dome.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1812-knight-sweep-before-after.jpg",
   "time": "2026-11-11T18:12:18Z",
   "caption": "Before (left) the coiled haft ran into the helm's lower edge; after (right) it runs lower under the chin to the right fist with the chest turned further into the coil. A small change at this distance.",
   "verdict": "fail"
  },
  {
-  "file": "20261111-1946-sweep-release.jpg",
-  "time": "2026-11-11T19:46:32Z",
-  "caption": "The Ashen Knight's sweep two ticks off the held coil: the glaive now accelerates out of the coil instead of popping to full speed; the knight is still small and backlit from this lens.",
+  "file": "20261111-1812-knight-sweep-coil.jpg",
+  "time": "2026-11-11T18:12:18Z",
+  "caption": "The Ashen Knight coils its sweep with the glaive now passing under its helm's chin skirt (bot: clear by 0.125 m/size, was 0.17 through); the knight is still dim and backlit, and the helm reads as a dark dome.",
   "verdict": "fail"
  },
  {
@@ -264,9 +234,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-2033-soldier-sweep-front.jpg",
-  "time": "2026-11-11T20:33:47Z",
-  "caption": "A Hollow Soldier's sweep at bearing +48 deg seen past the hero's straw cape: the cut now runs out without the follow-through hitch, but the figures are small in a wide sunlit field and the lens is too far to read the swing.",
+  "file": "20261111-1946-sweep-release.jpg",
+  "time": "2026-11-11T19:46:32Z",
+  "caption": "The Ashen Knight's sweep two ticks off the held coil: the glaive now accelerates out of the coil instead of popping to full speed; the knight is still small and backlit from this lens.",
   "verdict": "fail"
  },
  {
@@ -276,9 +246,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-2129-knightleap-side-top.jpg",
-  "time": "2026-11-11T21:29:00Z",
-  "caption": "The Ashen Knight at the top of its ember leap seen square from the side: the glaive lies back ~40 deg over the shoulder with both fists overhead and knees tucked; backlit from this side and a GL frame, not Forward+.",
+  "file": "20261111-2033-soldier-sweep-front.jpg",
+  "time": "2026-11-11T20:33:47Z",
+  "caption": "A Hollow Soldier's sweep at bearing +48 deg seen past the hero's straw cape: the cut now runs out without the follow-through hitch, but the figures are small in a wide sunlit field and the lens is too far to read the swing.",
   "verdict": "fail"
  },
  {
@@ -288,9 +258,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-2229-leap-layback.jpg",
-  "time": "2026-11-11T22:29:51Z",
-  "caption": "The boss at the top of its ember leap with the glaive now laid ~60 deg back behind its shoulders; still backlit and small in frame from this side lens.",
+  "file": "20261111-2129-knightleap-side-top.jpg",
+  "time": "2026-11-11T21:29:00Z",
+  "caption": "The Ashen Knight at the top of its ember leap seen square from the side: the glaive lies back ~40 deg over the shoulder with both fists overhead and knees tucked; backlit from this side and a GL frame, not Forward+.",
   "verdict": "fail"
  },
  {
@@ -300,9 +270,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261111-2326-sweep-coil.jpg",
-  "time": "2026-11-11T23:26:07Z",
-  "caption": "The boss holding its sweep's coil, glaive cocked back at its right shoulder; the haft's butt now passes behind the left pauldron instead of into it, but the knight is backlit and the change is barely readable at this distance.",
+  "file": "20261111-2229-leap-layback.jpg",
+  "time": "2026-11-11T22:29:51Z",
+  "caption": "The boss at the top of its ember leap with the glaive now laid ~60 deg back behind its shoulders; still backlit and small in frame from this side lens.",
   "verdict": "fail"
  },
  {
@@ -312,15 +282,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-0031-sweep-side-coil.jpg",
-  "time": "2026-11-12T00:31:00Z",
-  "caption": "The Ashen Knight's held sweep coil through the new side lens: glaive cocked level behind its right side over the meadow; the lens drifts off square once it turns to the hero, and the far field still looks flat.",
+  "file": "20261111-2326-sweep-coil.jpg",
+  "time": "2026-11-11T23:26:07Z",
+  "caption": "The boss holding its sweep's coil, glaive cocked back at its right shoulder; the haft's butt now passes behind the left pauldron instead of into it, but the knight is backlit and the change is barely readable at this distance.",
   "verdict": "fail"
  },
  {
   "file": "20261112-0031-sweep-follow-cmp.jpg",
   "time": "2026-11-12T00:31:00Z",
   "caption": "Sweep follow-through, before (top) / after (bottom): the hold now runs out further left and forward; this lens lands behind the knight, so the right-pauldron clearance is proven by the bot, not by these frames.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0031-sweep-side-coil.jpg",
+  "time": "2026-11-12T00:31:00Z",
+  "caption": "The Ashen Knight's held sweep coil through the new side lens: glaive cocked level behind its right side over the meadow; the lens drifts off square once it turns to the hero, and the far field still looks flat.",
   "verdict": "fail"
  },
  {
@@ -336,15 +312,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-0223-knight-ballturn.jpg",
-  "time": "2026-11-12T02:23:57Z",
-  "caption": "The Ashen Knight (phase-1 size) mid turn on the spot at 09:00, low boot lens: the planted boot now stands on its ball with the heel up instead of spinning flat; the lens still crops the body and the boots read small.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0223-knight-ankleturn-before.jpg",
   "time": "2026-11-12T02:23:57Z",
   "caption": "Same tick before the change (FOEBALL_OLD=1): the planted boot lies flat and pivots on its ankle; for comparison only.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0223-knight-ballturn.jpg",
+  "time": "2026-11-12T02:23:57Z",
+  "caption": "The Ashen Knight (phase-1 size) mid turn on the spot at 09:00, low boot lens: the planted boot now stands on its ball with the heel up instead of spinning flat; the lens still crops the body and the boots read small.",
   "verdict": "fail"
  },
  {
@@ -378,15 +354,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-0616-turnturf.jpg",
-  "time": "2026-11-12T06:16:05Z",
-  "caption": "Hero's boots in a turn on the spot: the stamped radial starburst of combed straw under the feet is gone; the tabard hem still hides the pivot heel and the turf reads flat at this range.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0616-trail.jpg",
   "time": "2026-11-12T06:16:05Z",
   "caption": "A trodden lane through the meadow: the matted sward now combs in a wandering swirl instead of ruled lines; the laid lane is still too smooth and uniform in colour.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-0616-turnturf.jpg",
+  "time": "2026-11-12T06:16:05Z",
+  "caption": "Hero's boots in a turn on the spot: the stamped radial starburst of combed straw under the feet is gone; the tabard hem still hides the pivot heel and the turf reads flat at this range.",
   "verdict": "fail"
  },
  {
@@ -450,15 +426,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-1209-sunside-turn.jpg",
-  "time": "2026-11-12T12:09:50Z",
-  "caption": "New sunside lens: the hero's turn on the spot as a front 3/4 on the sun's flank at 09:00; feet, staff and face read, but the front still sits half in shade (the sun is behind him here) and the face is a flat pink mask.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1209-profile-turn.jpg",
   "time": "2026-11-12T12:09:50Z",
   "caption": "Same moment through the old square profile lens for comparison: the hero's front is in self-shade and the legs hide behind the tabard.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1209-sunside-turn.jpg",
+  "time": "2026-11-12T12:09:50Z",
+  "caption": "New sunside lens: the hero's turn on the spot as a front 3/4 on the sun's flank at 09:00; feet, staff and face read, but the front still sits half in shade (the sun is behind him here) and the face is a flat pink mask.",
   "verdict": "fail"
  },
  {
@@ -468,15 +444,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-1413-turnseq.jpg",
-  "time": "2026-11-12T14:13:16Z",
-  "caption": "Hero's left turn on the spot at 0.45/0.55/0.65 s: the feet stay apart and the stepping leg passes behind, no scissor; still the knees nearly touch mid-step and the body tilts hard sideways.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1413-turnfix.jpg",
   "time": "2026-11-12T14:13:16Z",
   "caption": "Same instant before (left, feet crossed into a scissor stance) and after the fix (right, stepping foot held on its own side).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1413-turnseq.jpg",
+  "time": "2026-11-12T14:13:16Z",
+  "caption": "Hero's left turn on the spot at 0.45/0.55/0.65 s: the feet stay apart and the stepping leg passes behind, no scissor; still the knees nearly touch mid-step and the body tilts hard sideways.",
   "verdict": "fail"
  },
  {
@@ -498,15 +474,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-1843-stair-swing.jpg",
-  "time": "2026-11-12T18:43:24Z",
-  "caption": "Walking up a 3 x 0.2 m stair: the swinging boot now lifts with the knee raised over the riser instead of running into it; lens is low and side-on, test stair is plain boxes.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1843-stair-old.jpg",
   "time": "2026-11-12T18:43:24Z",
   "caption": "Same frame before the change (STEPCLEAR_OLD): both legs nearly straight, the lead boot driven into the riser face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1843-stair-swing.jpg",
+  "time": "2026-11-12T18:43:24Z",
+  "caption": "Walking up a 3 x 0.2 m stair: the swinging boot now lifts with the knee raised over the riser instead of running into it; lens is low and side-on, test stair is plain boxes.",
   "verdict": "fail"
  },
  {
@@ -516,15 +492,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261112-1900-stair-hips.jpg",
-  "time": "2026-11-12T19:00:00Z",
-  "caption": "Hero climbing the test stair: the hips now rise over the lead foot on the first tread instead of squatting; still seen from behind with hat and robe hiding the knees, and the steps are plain test boxes.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1900-stair-before-after.jpg",
   "time": "2026-11-12T19:00:00Z",
   "caption": "Same stair frame before (left: crouched to the trailing tread) and after (right: standing taller over the lead foot); the lens is still poor for judging the knees.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261112-1900-stair-hips.jpg",
+  "time": "2026-11-12T19:00:00Z",
+  "caption": "Hero climbing the test stair: the hips now rise over the lead foot on the first tread instead of squatting; still seen from behind with hat and robe hiding the knees, and the steps are plain test boxes.",
   "verdict": "fail"
  },
  {
@@ -564,15 +540,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261113-0039-foestair.jpg",
-  "time": "2026-11-13T00:39:59Z",
-  "caption": "A Hollow soldier now walks up a three-tread stone stair at a stalk, mid-climb on the second tread; still wrong: the test stair is a plain box course, and the soldier is backlit and dark against the low sun.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-0039-foestair-before.jpg",
   "time": "2026-11-13T00:39:59Z",
   "caption": "Before the fix (same moment): the soldier is stuck against the first riser, lifting and falling back every tick; foes could never climb a stair at a stalk.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-0039-foestair.jpg",
+  "time": "2026-11-13T00:39:59Z",
+  "caption": "A Hollow soldier now walks up a three-tread stone stair at a stalk, mid-climb on the second tread; still wrong: the test stair is a plain box course, and the soldier is backlit and dark against the low sun.",
   "verdict": "fail"
  },
  {
@@ -636,21 +612,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261113-2000-soldier-windup-front.jpg",
-  "time": "2026-11-13T20:40:00Z",
-  "caption": "A Hollow Soldier that walked in opens its thrust wind-up in the meadow grass (backlit, hour 10): drawn pose and lit chest embers read, but the foe is nearly a silhouette and the foreground blades are too broad.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-2000-soldier-walkin-seq.jpg",
   "time": "2026-11-13T20:40:00Z",
   "caption": "Frames 50/58/62/72: the soldier walks, stops and draws its thrust; the boots take one settle step then hold still, but the hood crown reads as a stiff cylinder and the ground under the hidden grass is a flat straw texture.",
   "verdict": "fail"
  },
  {
-  "file": "20261113-2100-soldier-hood-front-above.jpg",
-  "time": "2026-11-13T21:55:00Z",
-  "caption": "The Hollow Soldier's hood from the fight camera's height after the reshape: a round crown on the skull, folds no longer meeting in a star at the tip; the cloth still looks too clean and smooth for ash-stiff hemp.",
+  "file": "20261113-2000-soldier-windup-front.jpg",
+  "time": "2026-11-13T20:40:00Z",
+  "caption": "A Hollow Soldier that walked in opens its thrust wind-up in the meadow grass (backlit, hour 10): drawn pose and lit chest embers read, but the foe is nearly a silhouette and the foreground blades are too broad.",
   "verdict": "fail"
  },
  {
@@ -660,9 +630,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261113-2200-soldier-hood-side.jpg",
-  "time": "2026-11-13T22:35:00Z",
-  "caption": "The Hollow Soldier's hood from the low fight-side view: the crown now rolls down over the brow like a head's curve and the lower hood breaks into a few irregular stiff folds; the side still reads as one broad flat-lit panel and the armour is a dull grey.",
+  "file": "20261113-2100-soldier-hood-front-above.jpg",
+  "time": "2026-11-13T21:55:00Z",
+  "caption": "The Hollow Soldier's hood from the fight camera's height after the reshape: a round crown on the skull, folds no longer meeting in a star at the tip; the cloth still looks too clean and smooth for ash-stiff hemp.",
   "verdict": "fail"
  },
  {
@@ -672,15 +642,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261113-2300-soldier-hood-side.jpg",
-  "time": "2026-11-13T23:20:00Z",
-  "caption": "Hollow Soldier from the fight camera: the hood's side now shows darkened fold hollows and sagging stiff creases instead of one flat-lit panel; the hemp still reads a bit pale and clean, and the meadow trees are blotchy.",
+  "file": "20261113-2200-soldier-hood-side.jpg",
+  "time": "2026-11-13T22:35:00Z",
+  "caption": "The Hollow Soldier's hood from the low fight-side view: the crown now rolls down over the brow like a head's curve and the lower hood breaks into a few irregular stiff folds; the side still reads as one broad flat-lit panel and the armour is a dull grey.",
   "verdict": "fail"
  },
  {
   "file": "20261113-2300-hood-ao-compare.jpg",
   "time": "2026-11-13T23:20:00Z",
   "caption": "Hood side close-up, before (left) and after (right): baked fold cavity shading plus horizontal crumple creases give the cloth form; the weave is still a uniform stripe pattern.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261113-2300-soldier-hood-side.jpg",
+  "time": "2026-11-13T23:20:00Z",
+  "caption": "Hollow Soldier from the fight camera: the hood's side now shows darkened fold hollows and sagging stiff creases instead of one flat-lit panel; the hemp still reads a bit pale and clean, and the meadow trees are blotchy.",
   "verdict": "fail"
  },
  {
@@ -714,21 +690,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261114-0400-jogstop-strike.jpg",
-  "time": "2026-11-14T04:00:00Z",
-  "caption": "The hero letting go at a jog now plants: front heel struck, back boot on its ball, balance hand forward; the stop reads, but the legs are dark under the tabard and the yard is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0400-jogstop-planted.jpg",
   "time": "2026-11-14T04:00:00Z",
   "caption": "The same jog stop 0.2 s later, both boots flat and the body rising over them with no skate; lighting on the figure is still murky for a Wukong frame.",
   "verdict": "fail"
  },
  {
-  "file": "20261114-0530-walkstop-step.jpg",
-  "time": "2026-11-14T05:30:00Z",
-  "caption": "The hero stepping out of a fast-walk stop, seen three-quarter from behind; the stepped boot now lands on the turf, but the legs read as a dark mass under the tabard.",
+  "file": "20261114-0400-jogstop-strike.jpg",
+  "time": "2026-11-14T04:00:00Z",
+  "caption": "The hero letting go at a jog now plants: front heel struck, back boot on its ball, balance hand forward; the stop reads, but the legs are dark under the tabard and the yard is flat.",
   "verdict": "fail"
  },
  {
@@ -738,21 +708,27 @@
   "verdict": "fail"
  },
  {
+  "file": "20261114-0530-walkstop-step.jpg",
+  "time": "2026-11-14T05:30:00Z",
+  "caption": "The hero stepping out of a fast-walk stop, seen three-quarter from behind; the stepped boot now lands on the turf, but the legs read as a dark mass under the tabard.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261114-0600-walkstop-release.jpg",
   "time": "2026-11-14T06:30:00Z",
   "caption": "The hero just after letting go at a fast walk: both boots set flat on the turf as the stop's pivot lets go (the 1-2 cm bob is gone); the legs still read dark under the tabard and the yard ground is flat and plain.",
   "verdict": "fail"
  },
  {
-  "file": "20261114-0700-walkstop-step.jpg",
-  "time": "2026-11-14T07:30:00Z",
-  "caption": "The hero closing a fast-walk stop, seen three-quarter from behind: the stride gathers in with the back boot pinned and no longer turning under it; the legs still read dark under the tabard and the lens hides the back heel.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0700-walkstop-settled.jpg",
   "time": "2026-11-14T07:30:00Z",
   "caption": "The same stop settled into the idle stance with both boots on the turf; lighting is the GL fallback (no SDFGI/volumetrics) and trousers and greaves are still too dark in sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0700-walkstop-step.jpg",
+  "time": "2026-11-14T07:30:00Z",
+  "caption": "The hero closing a fast-walk stop, seen three-quarter from behind: the stride gathers in with the back boot pinned and no longer turning under it; the legs still read dark under the tabard and the lens hides the back heel.",
   "verdict": "fail"
  },
  {
@@ -768,15 +744,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261114-0900-knightstair-tread2.jpg",
-  "time": "2026-11-14T09:00:00Z",
-  "caption": "The Ashen Knight (phase-1 size) stepping up onto the second tread of a masonry stair from the new kside lens; reads as a climb, but the lens sits 14 m out and the tall grass hides its boots.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0900-knightstair-seq.jpg",
   "time": "2026-11-14T09:00:00Z",
   "caption": "Frames 45/70/95 of the boss walking up the stair: knee lifted onto each tread, then standing square on the top; still too far and too rear-on to judge sole contact, and the stair is a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-0900-knightstair-tread2.jpg",
+  "time": "2026-11-14T09:00:00Z",
+  "caption": "The Ashen Knight (phase-1 size) stepping up onto the second tread of a masonry stair from the new kside lens; reads as a climb, but the lens sits 14 m out and the tall grass hides its boots.",
   "verdict": "fail"
  },
  {
@@ -804,27 +780,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261114-1200-knightstair-pelvis-up.jpg",
-  "time": "2026-11-14T12:00:00Z",
-  "caption": "Ashen Knight (x2.2) climbing the test stair, lens squared to its measured hip line (kpelvis): mid-stride on the treads, but at ~10 m the soles are tiny and the cape/pauldron mass still reads as a rear view; stair is a plain box.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1200-knightstair-pelvis-down.jpg",
   "time": "2026-11-14T12:00:00Z",
   "caption": "Knight stepping off the stair's foot on the way down, same pelvis-squared lens: front boot plants on the turf, rear boot still on the tread; figure small, stair a plain box.",
   "verdict": "fail"
  },
  {
-  "file": "20261114-1300-knightstair-zoom-up.jpg",
-  "time": "2026-11-14T13:00:00Z",
-  "caption": "Ashen Knight (x2.2) climbing, zoomed pelvis-squared lens: rear boot flat on the tread at the nosing, front boot lifting over the riser; clean contact, but the boots read as rounded clogs and the stair is a plain box.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1300-knightstair-zoom-down.jpg",
-  "time": "2026-11-14T13:00:00Z",
-  "caption": "Knight walking down, same zoom: rear boot rolling onto its ball at the tread edge, front boot touching the turf at the foot; motion reads, boots and stair still look unfinished.",
+  "file": "20261114-1200-knightstair-pelvis-up.jpg",
+  "time": "2026-11-14T12:00:00Z",
+  "caption": "Ashen Knight (x2.2) climbing the test stair, lens squared to its measured hip line (kpelvis): mid-stride on the treads, but at ~10 m the soles are tiny and the cape/pauldron mass still reads as a rear view; stair is a plain box.",
   "verdict": "fail"
  },
  {
@@ -834,15 +798,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261114-1500-glide-side.jpg",
-  "time": "2026-11-14T15:00:00Z",
-  "caption": "Hero under the open glider seen side-on from a new riding lens: the legs now hang loose and apart with pointed toes instead of a mirrored kneel; backlit, the legs read dark and the feet are cut by the frame.",
+  "file": "20261114-1300-knightstair-zoom-down.jpg",
+  "time": "2026-11-14T13:00:00Z",
+  "caption": "Knight walking down, same zoom: rear boot rolling onto its ball at the tread edge, front boot touching the turf at the foot; motion reads, boots and stair still look unfinished.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1300-knightstair-zoom-up.jpg",
+  "time": "2026-11-14T13:00:00Z",
+  "caption": "Ashen Knight (x2.2) climbing, zoomed pelvis-squared lens: rear boot flat on the tread at the nosing, front boot lifting over the riser; clean contact, but the boots read as rounded clogs and the stair is a plain box.",
   "verdict": "fail"
  },
  {
   "file": "20261114-1500-glide-front.jpg",
   "time": "2026-11-14T15:00:00Z",
   "caption": "Glide from the front three-quarter: face, fists on the bar and the patterned wing read; the legs hang one ahead of the other, but a black cloth mass juts out beside the right shoulder.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1500-glide-side.jpg",
+  "time": "2026-11-14T15:00:00Z",
+  "caption": "Hero under the open glider seen side-on from a new riding lens: the legs now hang loose and apart with pointed toes instead of a mirrored kneel; backlit, the legs read dark and the feet are cut by the frame.",
   "verdict": "fail"
  },
  {
@@ -897,6 +873,18 @@
   "file": "20261114-1900-glide-front.jpg",
   "time": "2026-11-14T19:00:00Z",
   "caption": "Front 3/4 glide: mantle tucks under the raised arms with no clipping; the hero is backlit almost black and the face is unreadable.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2000-glide-back.jpg",
+  "time": "2026-11-14T20:20:00Z",
+  "caption": "Gliding over the vale from behind: the mantle's sides now gather up under the raised arms; the hero still reads almost black against the light.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2000-glide-hem-before-after.jpg",
+  "time": "2026-11-14T20:20:00Z",
+  "caption": "Glide, back view crop, before/after: the mantle's side scallop no longer hangs below the lifted cloth as a long dark spike; a short curl at the hem corner and the near-black backlit figure are still wrong.",
   "verdict": "fail"
  }
 ]

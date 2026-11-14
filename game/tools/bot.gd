@@ -976,6 +976,7 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const CAPE_SPIKE := 0.050      # m: (11-14 20:00) how far any mantle hem point hangs below the mean of its neighbours 4 lines either side
 const CAPE_SIDE_X := 0.30       # m: under the glider the lower mantle's widest reach out to the side (11-14 19:00: 0.32 -> ~0.28)
 const CAPE_KINK := 60.0         # deg: under the glider the sharpest bend between two segments along any mantle line (11-14 18:00: 93 -> ~40)
 const CAPE_HEM_TILT := 1.0      # rad: under the glider the mantle hem's angle off plumb from its collar point (rest ~0.5)
@@ -9931,13 +9932,30 @@ func _glide_test() -> void:
 			side_x = absf(grid[key].x)
 			side_at = key
 	print("BOT glide: lower mantle reaches %.3f m out to the side (bearing %.0f, %d/18 down)" % [side_x, rad_to_deg(lerpf(0.42, TAU - 0.42, side_at.x / 84.0)), side_at.y])
+	# (11-14 20:00) the scalloped hem's lowest point at each side hung below the lifted lines in
+	# front of it: a spike off each side in the back view
+	var spike := 0.0
+	var spike_at := 0
+	for i in range(4, 81):
+		var brg := rad_to_deg(lerpf(0.42, TAU - 0.42, i / 84.0))
+		if absf(brg - 90.0) > 45.0 and absf(brg - 270.0) > 45.0:
+			continue                # the back's and the chest's own scallops (as at rest), not beside the arms
+		var mn: float = (grid[Vector2i(i - 4, 18)].y + grid[Vector2i(i + 4, 18)].y) * 0.5
+		var dd: float = mn - grid[Vector2i(i, 18)].y
+		if dd > spike:
+			spike = dd
+			spike_at = i
+	print("BOT glide: mantle hem spike %.3f m below its neighbours (bearing %.0f)" % [spike, rad_to_deg(lerpf(0.42, TAU - 0.42, spike_at / 84.0))])
+	if OS.get_environment("CAPE_OLDGATHER") == "" and spike > CAPE_SPIKE:
+		return _combat_done(false, "the mantle's side scallop hangs below the lifted lines in a spike")
 	if OS.get_environment("CAPE_OLDSIDE") == "" and side_x > CAPE_SIDE_X:
 		return _combat_done(false, "the mantle's side hangs out off the body in a pointed tongue under the raised arms")
 	if OS.get_environment("CAPE_DUMP") != "":
 		var rows := []
 		for vi in verts.size():
 			var pl: Vector3 = p.garb.cape_plumb(verts[vi])
-			rows.append([uvs[vi].x, uvs[vi].y, pl.x, pl.y, pl.z])
+			var fv: Vector3 = p.garb.cape_vertex(verts[vi], uvs[vi])
+			rows.append([uvs[vi].x, uvs[vi].y, pl.x, pl.y, pl.z, fv.x, fv.y, fv.z])
 		var fd := FileAccess.open(OS.get_environment("CAPE_DUMP"), FileAccess.WRITE)
 		fd.store_string(JSON.stringify({"verts": rows, "elbows": [[p.garb.elbow_in_cape[0].x, p.garb.elbow_in_cape[0].y, p.garb.elbow_in_cape[0].z], [p.garb.elbow_in_cape[1].x, p.garb.elbow_in_cape[1].y, p.garb.elbow_in_cape[1].z]], "sway": [p.garb.mantle_sway().x, p.garb.mantle_sway().y, p.garb.mantle_sway().z]}))
 		fd.close()

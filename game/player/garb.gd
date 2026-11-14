@@ -215,6 +215,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 	# CAPE_OLDLIFT=1: before 11-14 16:00, the cape side stood out level over an overhead arm
 	mm.set_shader_parameter("drape_ramp", drape_ramp())
 	mm.set_shader_parameter("side_settle", side_settle())
+	mm.set_shader_parameter("side_gather", side_gather())
 	mm.set_shader_parameter("drape_over", 0.0 if OS.get_environment("CAPE_OLDLIFT") != "" else 1.0)
 	if mantle_wool:
 		mm.set_shader_parameter("wool", 1.0)
@@ -448,6 +449,14 @@ static func drape_ramp() -> Vector2:
 static func side_settle() -> float:
 	return 0.0 if OS.get_environment("CAPE_OLDSIDE") != "" else 0.85
 
+## How far the drop past 25 cm gathers up beside a raised arm (rag.gdshader's side_gather).
+## CAPE_OLDGATHER=1 = before 11-14 20:00 (the side scallop hung below the lifted lines as a spike).
+static func side_gather() -> float:
+	if OS.get_environment("CAPE_OLDGATHER") != "":
+		return 0.0
+	var e := OS.get_environment("CAPE_GATHER")
+	return float(e) if e != "" else 0.6
+
 ## rag.gdshader's settle_side: the side lines beside raised elbow `i` drawn in toward the torso.
 func _settle_side(v: Vector3, i: int, a: float) -> Vector3:
 	var ss := side_settle()
@@ -463,10 +472,16 @@ func _settle_side(v: Vector3, i: int, a: float) -> Vector3:
 	var k := ss * smoothstep(0.85, 1.45, d0) * exp(-pow(da / 0.9, 2.0)) * smoothstep(0.05, 0.25, 1.72 - v.y)
 	var hb := _hang_body()
 	var el := Vector2(v.x / hb.x, (v.z - hb.z) / hb.y).length()
-	if k <= 0.0 or el <= 1.08:
+	if k <= 0.0:
 		return v
-	var f := (el - k * (el - 1.08)) / el
-	return Vector3(v.x * f, v.y, hb.z + (v.z - hb.z) * f)
+	var out := v
+	if el > 1.08:
+		var f := (el - k * (el - 1.08)) / el
+		out = Vector3(v.x * f, v.y, hb.z + (v.z - hb.z) * f)
+	var dr := 1.72 - out.y
+	if dr > 0.25:
+		out.y = 1.72 - (0.25 + (dr - 0.25) * (1.0 - side_gather() * k))
+	return out
 
 func _hang_body() -> Vector3:
 	var hb0 = (_cape.material_override as ShaderMaterial).get_shader_parameter("hang_body")
