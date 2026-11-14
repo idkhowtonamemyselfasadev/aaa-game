@@ -894,9 +894,36 @@ func _ready() -> void:
 				for a in args:
 					if a.begins_with("kup="):
 						kup = float(a.substr(4))
-				eye = pp + f * lx + sd * ksg * 6.5 * ks + Vector3.UP * kup * ks
-				eye.y = maxf(eye.y, terrain.height_at(eye.x, eye.z) + 0.5 * ks)
-				ktgt = pp + f * lx + Vector3.UP * 0.9 * ks
+				# (11-14 10:00) kclose: in to 3.5 x size and down to 0.6 x size (the soles on the treads)
+				var kout := 4.2 if "kclose" in args else 6.5
+				# kclose frames the middle of the climb (the knight walks out of a lens aimed at the first tread)
+				var kmid_m := lx + (1.0 * ks if "kclose" in args else 0.0)
+				if "kclose" in args and not Array(args).any(func(a): return String(a).begins_with("kup=")):
+					kup = 0.6
+				eye = pp + f * kmid_m + sd * ksg * kout * ks + Vector3.UP * kup * ks
+				eye.y = maxf(eye.y, terrain.height_at(eye.x, eye.z) + (0.35 if "kclose" in args else 0.5) * ks)
+				ktgt = pp + f * kmid_m + Vector3.UP * (0.75 if "kclose" in args else 0.9) * ks
+			# (11-14 10:00) kmow: crop the meadow short along the stair and between it and the lens
+			# (Grass.cropped_spots, the grazers' turf) so the tall grass stops hiding the boots
+			if "kmow" in args and world.has_node("Grass"):
+				var gfm: GrassField = world.get_node("Grass")
+				var kmg := -1.0 if "ksd=-1" in args else 1.0
+				var far_m := (1.0 + 0.45 * 3 + 2.0) * ks
+				var ns := int(ceil(far_m / 4.0)) + 2
+				for i in ns:
+					var along_m := -2.0 + far_m * float(i) / float(ns - 1)
+					for j in 3:
+						var cp := pp + f * along_m + sd * kmg * (float(j) * 3.0 * ks)
+						gfm.cropped_spots.append(Vector3(cp.x, 0.0, cp.z))
+				for k in gfm._chunks.keys():
+					if is_instance_valid(gfm._chunks[k]):
+						gfm._chunks[k].queue_free()
+				gfm._chunks.clear()
+				for k in gfm._sward.keys():
+					if gfm._sward[k] is Node and is_instance_valid(gfm._sward[k]):
+						gfm._sward[k].queue_free()
+				gfm._sward.clear()
+				print("SHOT kmow %d cropped spots" % gfm.cropped_spots.size())
 			SPOTS[spot] = [eye, ktgt]
 		if "stairup" in args:
 			# (11-12 18:00) swing clearance: the `stepup` bot's stair (three 0.2 m masonry courses,

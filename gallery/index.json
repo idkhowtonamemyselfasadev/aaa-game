@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261110-0400-knight-clutch-landing.jpg",
-  "time": "2026-11-10T04:15:00Z",
-  "caption": "Ashen Knight crown reel at the clutch's landing overshoot (u 0.24), new chest-height lens on its left: too close, the bowed helm and pauldron hide the gauntlet entirely, so the eased landing cannot be judged from here.",
-  "verdict": "fail"
- },
- {
-  "file": "20261110-0500-knight-reel-wide-right.jpg",
-  "time": "2026-11-10T05:00:00Z",
-  "caption": "The Ashen Knight kneeling dazed in the crown reel from a new wide chest-height lens: the whole body reads in the ring, but the lens is on its right side so the hand clutching the helm is hidden behind it.",
-  "verdict": "fail"
- },
- {
   "file": "20261110-0600-knight-clutch-on-helm.jpg",
   "time": "2026-11-10T06:25:00Z",
   "caption": "The Ashen Knight in the crown daze, low lens from its front left: the gauntlet now sits up on the helm (the bow runs before the arm IK, palm 0.001 m per size off the temple, was 0.044); still backlit to a silhouette so the hand only reads as a shape.",
@@ -897,6 +885,18 @@
   "file": "20261114-0900-knightstair-seq.jpg",
   "time": "2026-11-14T09:00:00Z",
   "caption": "Frames 45/70/95 of the boss walking up the stair: knee lifted onto each tread, then standing square on the top; still too far and too rear-on to judge sole contact, and the stair is a plain box.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1000-knightstair-close.jpg",
+  "time": "2026-11-14T10:50:00Z",
+  "caption": "Ashen Knight (x2.2) climbing the test stair from a new close side lens on a mown strip: rear boot planted on the tread, front knee lifted onto the next; the stair is still a plain box and the figure reads rear 3/4.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-1000-knightstair-top.jpg",
+  "time": "2026-11-14T10:50:00Z",
+  "caption": "The knight standing square on the top platform, both boots flat at the edge; lens too low (below the treads) so the stair reads as one block, and the bladed guard turns the torso away.",
   "verdict": "fail"
  }
 ]
