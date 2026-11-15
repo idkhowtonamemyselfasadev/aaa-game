@@ -1404,6 +1404,7 @@ var _spot_turn_frame := -10
 var _spot_want_rate := 0.0            # (11-15) the yaw rate the turn on the spot asks for (uncapped), last driven tick
 const PLANT_EARLY_RATE := 1.2          # rad/s: a turn asking this fast (the shuffle's own start) plants its pivot foot at once
 static var HEROTURN_OLDPLANT := OS.has_environment("HEROTURN_OLDPLANT")   # pivot waits for the shuffle (before)
+static var HEROTURN_FULL_OLD := OS.has_environment("HEROTURN_FULL_OLD")   # (11-15 14:00) turn pin eased in with `pivot` (before)
 const TURN_STILL := 0.6                # m/s: below this the hero is turning on the spot, not running a curve
 var bot_square_yaw := NAN             # (shots) square up to this yaw standing, as if locked
 var turn_rate_peak := 0.0              # (bots) fastest on-the-spot turn seen, rad/s
@@ -1558,6 +1559,11 @@ func _update_pivot_foot(delta: float, standing: bool) -> void:
 	# slide). HEROTURN_OLDPLANT: before
 	var starting := standing and not HEROTURN_OLDPLANT and not HEROTURN_OLDSTART \
 		and Engine.get_physics_frames() - _spot_turn_frame <= 1 and _spot_want_rate > PLANT_EARLY_RATE
+	# (11-15 14:00) as the foes' (12:00): a turn on the spot's pin holds the pivot leg at full weight from
+	# the tick it plants (StrideWarp.turn_plant_full), instead of easing in with `pivot` over 4-7 ticks
+	# while the clip's first turn step dragged the ball over the turf (bot `heroturn` pre-pivot carry).
+	# HEROTURN_FULL_OLD: before
+	stride_warp.turn_plant_full = standing and not HEROTURN_FULL_OLD and (starting or turn_shuffle > 0.05)
 	var want := stride_warp.pivot_want(1.0 if standing and (turn_shuffle > 0.05 or starting) else 0.0, standing, delta)
 	# squared up (the body no longer turning): the turn step comes down where it is
 	if stride_warp.pivot <= 0.0 or (standing and _turn_sh > 0.3):

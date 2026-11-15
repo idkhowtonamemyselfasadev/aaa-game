@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-1515-knight-landing.jpg",
-  "time": "2026-11-11T15:15:00Z",
-  "caption": "The Ashen Knight lands its ember leap bowed over the bitten glaive, the haft now running out past its helm into the turf instead of up under the rim; the helm still reads as a dark dome and the sky is too dark for the hour.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1639-knight-leap-land.jpg",
-  "time": "2026-11-11T16:39:15Z",
-  "caption": "Frame 9 of the first 12-frame sequence of the Ashen Knight's ember leap: glaive bitten into the turf by the hero, ember ring flaring; the knight is still small in frame and its helm reads faceless.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1639-knight-takeoff.jpg",
   "time": "2026-11-11T16:39:15Z",
   "caption": "The knight's push-off now rises smoothly out of the deeper crouch instead of snapping up 1.3 m in one tick; the cottage roof hides the legs from this lens.",
@@ -885,6 +873,18 @@
   "file": "20261115-1300-hewer-raise.jpg",
   "time": "2026-11-15T13:30:00Z",
   "caption": "The axe hewer raising its chop at the hero beside the practice post (the hewer fight is bot-beatable again); the hewer's body still reads as a dark lump and the hero's hood face is grey.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1400-spinl-gather.jpg",
+  "time": "2026-11-15T14:45:00Z",
+  "caption": "Turning left on the spot: the forward boot, heel up, steps in toward the body line before the hero pivots on it (it now lifts and sets down instead of dragging its toe); GL fallback turf still shows a tiled diamond pattern.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1400-spinl-planted.jpg",
+  "time": "2026-11-15T14:45:00Z",
+  "caption": "The same turn a moment later, the gathered boot planted and the body coming round over it; from this low lens the two boots line up and read as one, and the GL turf is flat and patterned.",
   "verdict": "fail"
  }
 ]

@@ -4071,6 +4071,58 @@ func _ready() -> void:
 			simg.save_png(sabs)
 			print("SHOT leapseq %02d state %d t %.3f lift %.2f blade %.1f -> %s" % [n, sk.state, sk.t, (sk as AshenKnight).leap_lift if sk is AshenKnight else 0.0, sk._blade_bearing(), sabs])
 			n += 1
+	if spot == "spin" or spot == "spinl":
+		# (11-15 14:00) spin[l] [ticks=a,b,..] [lens=feet|wide]: the bot `heroturn[l]` turn on the spot
+		# (locked onto the practice post behind the hero), frames at the listed physics ticks into the
+		# turn -> <out>_NN.png; a low 3/4 lens on the boots from the side the turn swings toward
+		Engine.max_physics_steps_per_frame = 1
+		Engine.time_scale = 1.0
+		player.use_bot_input = true
+		player.bot_input = Vector2.ZERO
+		for i in 30:
+			await get_tree().physics_frame
+		player.global_position += Vector3(3.0, 0, -6.0)
+		player.velocity = Vector3.ZERO
+		for i in 40:
+			await get_tree().physics_frame
+		var tpost: Node3D = world.training_post
+		var to_post := tpost.global_position - player.global_position
+		var left := spot == "spinl"
+		player.body.rotation.y = atan2(to_post.x, to_post.z) + PI + (0.3 if left else -0.3)
+		for i in 20:
+			await get_tree().physics_frame
+		var ticks := [0, 2, 4, 6, 8, 10, 14, 20, 30, 45]
+		for a in args:
+			if a.begins_with("ticks="):
+				ticks = []
+				for it in a.substr(6).split(","):
+					ticks.append(int(it))
+		var c0 := player.global_position
+		var yaw0 := player.body.rotation.y
+		var wide := "wide" in args
+		player._set_lock(tpost)
+		var tick := 0
+		var nseq := 0
+		for tg in ticks:
+			get_tree().paused = false
+			while tick < int(tg):
+				await get_tree().physics_frame
+				tick += 1
+			get_tree().paused = true
+			# fixed in the world across the sequence, so the boots' travel over the turf reads
+			var side := Vector3(sin(yaw0 + (0.9 if left else -0.9)), 0, cos(yaw0 + (0.9 if left else -0.9)))
+			var cpos := c0 + side * (3.2 if wide else 1.7) + Vector3.UP * (1.3 if wide else 0.45)
+			cpos.y = maxf(cpos.y, terrain.height_at(cpos.x, cpos.z) + 0.25)
+			cam.global_position = cpos
+			cam.look_at(c0 + Vector3.UP * (0.8 if wide else 0.15))
+			cam.make_current()
+			for i in 4:
+				await get_tree().process_frame
+			var simg2 := get_viewport().get_texture().get_image()
+			var sabs2 := ProjectSettings.globalize_path("res://").path_join(out.get_basename() + "_%02d.png" % nseq)
+			simg2.save_png(sabs2)
+			print("SHOT spin %02d tick %d yaw %.3f pivot %.2f gather %.3f -> %s" % [nseq, tick, angle_difference(yaw0, player.body.rotation.y), player.stride_warp.pivot, player.stride_warp._gather_t, sabs2])
+			nseq += 1
 	_print_facing(world, player)
 	var img := get_viewport().get_texture().get_image()
 	var abs := ProjectSettings.globalize_path("res://") .path_join(out)

@@ -94,6 +94,8 @@ var _hips_over_pin0 := -1e9
 static var GATHER_OLD := OS.has_environment("GATHER_OLD")
 static var PIVOT_GATHER_K := float(OS.get_environment("PIVOT_GATHER")) if OS.has_environment("PIVOT_GATHER") else 1.0   # (11-12 20:00) was 0.35: full gather keeps a 180 on the spot (bot `lean` 0.49 -> 0.16 m)
 const PIVOT_GATHER_T := 0.16     # s: the gather step's length
+const GATHER_TRAVEL_END := 0.7   # (11-15 14:00) share of the gather step by which the boot has travelled
+static var GATHER_LAND_OLD := OS.has_environment("GATHER_LAND_OLD")
 const PIVOT_GATHER_MIN := 0.5    # stance widths: a foot nearer the body line than this fore-aft does not gather
 var _gather_off := Vector3.ZERO  # skeleton units: from the gathered pin back to where the foot stood
 var _gather_t := 0.0
@@ -835,7 +837,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	if _gather_off.length_squared() > 0.0 and not pivot_settle:
 		_gather_t += delta
 		var ug := clampf(_gather_t / PIVOT_GATHER_T, 0.0, 1.0)
-		var eg := ug * ug * (3.0 - 2.0 * ug)
+		# (11-15 14:00) the boot has travelled by GATHER_TRAVEL_END of the step and is then only set down:
+		# travel and lift ended together, and the lift's fast fall left the last ~5 cm of the step dragged
+		# within 3 mm of the turf (bot `heroturnl` pivot-ball drag). GATHER_LAND_OLD: before
+		var ugt := ug if GATHER_LAND_OLD else clampf(ug / GATHER_TRAVEL_END, 0.0, 1.0)
+		var eg := ugt * ugt * (3.0 - 2.0 * ugt)
 		gather_now = _gather_off * (1.0 - eg) + up * settle_lift(ug) * minf(_gather_off.length() * STEP_SETTLE_LIFT, STEP_SETTLE_LIFT_MAX)
 		if ug >= 1.0:
 			_gather_off = Vector3.ZERO

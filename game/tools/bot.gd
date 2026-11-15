@@ -2284,6 +2284,9 @@ func _surge_grip_test() -> void:
 		return _combat_done(false, fail)
 	_combat_done(true, "the knight's fists stay on the glaive through both surges")
 
+const PRE_CARRY_MAX_HERO := 0.003  # (11-15 14:00) m a ball may slide before the pivot is in (was 0.0107 eased in; 0.0005 full)
+const PIVOT_DRAG_MAX_HERO := 0.012 # (11-15 14:00) m the pivot ball may travel within 1 cm of the turf (gather landing 0.053 -> 0.004)
+var _hturn_drag: Array = []
 func _hero_turn_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0
@@ -2309,6 +2312,13 @@ func _hero_turn_test() -> void:
 	var free_h: Array[float] = []
 	var free_rest := [0.0, 0.0]
 	var rel := [0.0, -1.0, 0.0]          # pivot last tick, free height at the release, lift peak
+	# (11-15 14:00) the turn's first ticks, as `foeturn`: each ball's travel over the turf while the body
+	# turns before the pivot is fully in (both before it plants, then the pivot ball through its ramp-in)
+	var ti := [skel.find_bone("mixamorig_LeftToeBase"), skel.find_bone("mixamorig_RightToeBase")]
+	var pre := [Vector3.INF, Vector3.INF, 0.0, 0.0, 0, false]   # prev L, prev R, carry L, carry R, ticks, done
+	# ...and the pivot ball over the whole spin until the settle: travel over the turf on ticks it is
+	# within 1 cm of its standing height (a lifted gather step is fine, a dragged toe is not)
+	var scuff := [Vector3.INF, 0.0, 0.0, 0.0]   # prev, scuffed travel, total travel, rest y
 	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
 	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
 		var peak := 0.0
@@ -2323,6 +2333,37 @@ func _hero_turn_test() -> void:
 			await skel.skeleton_updated
 			shuf[0] = maxf(shuf[0], p.turn_shuffle)
 			var sw: StrideWarp = p.stride_warp
+			if free_on[0] and sw.pivot > 0.0 and not sw.pivot_settle:
+				var bp := skel.global_transform * skel.get_bone_global_pose(ti[sw.pivot_side]).origin
+				var rq := PhysicsRayQueryParameters3D.create(bp + Vector3.UP, bp + Vector3.DOWN * 2.0)
+				rq.exclude = [p.get_rid()]
+				var hit := p.get_world_3d().direct_space_state.intersect_ray(rq)
+				var gy: float = (hit["position"] as Vector3).y if not hit.is_empty() else bp.y
+				if scuff[0] != Vector3.INF:
+					var dxz := Vector2(bp.x - scuff[0].x, bp.z - scuff[0].z).length()
+					scuff[2] += dxz
+					_hturn_drag.append([bp.y - gy, dxz])
+					if OS.has_environment("HEROTURN_PRE"):
+						print("   ball i %d up %.4f overturf %.4f step %.4f gather %.3f" % [i, bp.y - float(scuff[3]), bp.y - gy, dxz, sw._gather_t])
+				else:
+					scuff[3] = bp.y
+					scuff.append(bp.y - gy)
+				scuff[0] = bp
+				if sw.pivot >= 0.97:
+					pre[5] = true
+				else:
+					var turning := absf(angle_difference(yaw0, p.body.rotation.y)) > 1e-4
+					if turning:
+						pre[4] += 1
+					for j in 2:
+						var fp := skel.global_transform * skel.get_bone_global_pose(ti[j]).origin
+						# (the forward boot's gather step is a lifted step toward the body line: read by the drag gate below)
+						if pre[j] != Vector3.INF and turning and (sw.pivot <= 0.0 or j == sw.pivot_side) \
+								and not (j == sw.pivot_side and sw.pivot_gather > 0.0 and sw._gather_off.length_squared() > 0.0):
+							pre[2 + j] += Vector2(fp.x - pre[j].x, fp.z - pre[j].z).length()
+						pre[j] = fp
+						if OS.has_environment("HEROTURN_PRE"):
+							print("   pre i %d foot %d pivot %.2f side %d fp %s ballpiv %s ball %s ballpin %s ankle %s pin %s full %s" % [i, j, sw.pivot, sw.pivot_side, fp, sw.ball_pivot, sw.pivot_ball, sw.pivot_ball_pin, sw.pivot_ankle, sw.pivot_pin, sw._pin_full])
 			if OS.has_environment("HEROTURN_REL") and (i < 8 or (i > 50 and i < 70)):
 				var fl := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin
 				var fr := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin
@@ -2444,6 +2485,20 @@ func _hero_turn_test() -> void:
 			f_tap = maxf(f_tap, free_h[m - 1] - free_h[m])
 	for h in free_h:
 		f_low = minf(f_low, h)
+	print("BOT heroturn: before the pivot is in: %d turning ticks, balls carried %.4f / %.4f m" % [pre[4], pre[2], pre[3]])
+	var stand_h := INF
+	for d in _hturn_drag:
+		stand_h = minf(stand_h, float(d[0]))
+	for d in _hturn_drag:
+		if float(d[0]) - stand_h < 0.01:
+			scuff[1] += float(d[1])
+	print("BOT heroturn: the pivot ball travels %.4f m through the spin, %.4f m of it dragged along the turf (within 1 cm of its standing height)" % [scuff[2], scuff[1]])
+	# (11-15 14:00) the gather step travelled its last ~5 cm with the boot already down (GATHER_LAND_OLD = before)
+	if not StrideWarp.GATHER_LAND_OLD and not Player.HEROTURN_FULL_OLD and float(scuff[1]) > PIVOT_DRAG_MAX_HERO:
+		return _combat_done(false, "the pivot ball drags %.4f m along the turf in a turn on the spot" % float(scuff[1]))
+	# (11-15 14:00) the pin holds the pivot leg at full weight from its first tick (HEROTURN_FULL_OLD = before)
+	if not Player.HEROTURN_FULL_OLD and not Player.HEROTURN_OLDPLANT and not Player.HEROTURN_OLDSTART and maxf(float(pre[2]), float(pre[3])) > PRE_CARRY_MAX_HERO:
+		return _combat_done(false, "a ball slides %.4f m over the turf before the pivot is in, in a turn on the spot" % maxf(float(pre[2]), float(pre[3])))
 	print("BOT heroturn: free foot peak %.3f m, %d ticks over 2 cm of %d pivot ticks, arc dip %.3f, set-down %.4f m/tick, lowest %.3f, %.4f up as the pivot lets go" % [f_peak, f_up, free_h.size(), f_dip, f_tap, f_low, float(rel[1])])
 	if OS.has_environment("HEROTURN_DBG"):
 		print("   free foot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
