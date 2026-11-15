@@ -10975,6 +10975,45 @@ const SWEEP_CUT_FIRST := 0.45   # (11-11 19:00) no tick-to-tick speed-up in the 
 ## strike loop): max left wrist over its shoulder (m; the trunk tips back, so a hanging arm is below
 ## it), max fling weight, samples
 var _fling := [-9.0, 0.0, 0]
+## (11-15 05:00) The back robe panel's centre line as the shader bends it (swing + fold), sampled
+## down its length: how far its lowest point sits over the turf (never under it) and how much
+## of it lies along the turf once the body is down (the lying cloth, not a board off the seat).
+const BACK_TURF_GATE := 0.02   # m the back panel may dip under the sampled turf (grass covers it)
+const BACK_FLIP_GATE := 9.0    # m.rad/s the folded stretch (angle x length past the fold) may swing (a flip of the lying hem in one 60 Hz tick: ~40)
+func _back_sample(p: Player, bkp: Array) -> void:
+	var g: HollowRags = p.garb
+	var pv: Node3D = g._back
+	var ln: float = pv.get_meta("len", 1.0)
+	var lo := 9.0
+	var lying := 0.0
+	var seat := pv.global_position
+	var hem := Vector3.ZERO
+	var n := 16
+	for i in n + 1:
+		var d := ln * i / float(n)
+		var q := HollowRags.fold_arc(d, g.fold_back, 0.0) if g.fold_back.x < 100.0 else Vector2(d, 0.0)
+		var w := pv.global_transform * Vector3(0.0, -q.x, q.y)
+		var h: float = w.y - _world.terrain.height_at(w.x, w.z)
+		lo = minf(lo, h)
+		if h < 0.06 and i > 0:
+			lying += ln * pv.global_basis.y.length() / n
+		hem = w
+	if seat.y - _world.terrain.height_at(seat.x, seat.z) > 0.06:   # (with the seat itself pressed into the sward the panel lies under the grass)
+		bkp[0] = minf(bkp[0], lo)
+		# the folded-over stretch's swing (fold angle x the length past the fold): a real flip of the lying cloth moves it a lot, the last 2 cm unfolding as the hem lifts does not
+		var sw: float = g.fold_back.y * maxf(ln - g.fold_back.x, 0.0) if g.fold_back.x < 100.0 else 0.0
+		var dt: float = p.down_t - bkp[6]
+		bkp[4] = maxf(bkp[4], absf(sw - bkp[5]) / dt if bkp[5] < 9.0 and dt > 0.001 else 0.0)
+		bkp[5] = sw
+		bkp[6] = p.down_t
+	if p.down_t > 0.6 and p.down_t < 1.4:
+		bkp[1] = maxf(bkp[1], lying)
+	if p.down_t > 0.08 and p.down_t < 0.30:
+		bkp[3] = maxf(bkp[3], hem.y - seat.y)
+	bkp[2] += 1
+	if OS.has_environment("BACK_DBG"):
+		print("back t %.3f body %.3f swing %.2f fold (%.2f, %.2f) seat %.3f hem %.3f lo %.3f lying %.2f" % [p.down_t, p.body.global_position.y - _world.terrain.height_at(p.body.global_position.x, p.body.global_position.z), g._swing_b, g.fold_back.x, g.fold_back.y, seat.y - _world.terrain.height_at(seat.x, seat.z), hem.y - _world.terrain.height_at(hem.x, hem.z), lo, lying])
+
 func _fling_sample(p: Player) -> void:
 	if p.crumple == null:
 		return
@@ -11115,6 +11154,7 @@ func _sweep_test() -> void:
 	var fling: Array = _fling
 	if p.garb != null:
 		p.garb.tuck_lie_peak = 0.0   # (11-15 04:00) the front robe panel lying on the swept-up thighs
+	var bkp := [9.0, 0.0, 0, -9.0, 0.0, 9.0, 0.0]   # [4] fastest swing of the folded stretch (fold angle x length past it, per s), [5] last one, [6] its down_t; (11-15 05:00) the back robe panel through the knock-down: lowest panel point over the turf (m, - = under it), widest stretch of it lying along the turf (m), samples, highest hem in the air 0.08..0.30 over the seat (m)
 	var tuck := [9.0, 0.0, 0]   # (11-15) the chin tuck through the slam (0.38..0.52): lowest head bone over the turf, max neck flexion (deg, head up vs chest up, chin toward chest), samples
 	# (11-15 05:00) the back robe panel: lowest hem over the turf in the air (0.14..0.32), hem height over the turf lying (0.55..1.20) max / min, samples air / lying
 	var brobe := [9.0, -9.0, 9.0, 0, 0, 9.0, 0]   # ..., lowest hem in the kneel (1.30..1.70), samples
@@ -11151,6 +11191,8 @@ func _sweep_test() -> void:
 				tuck[1] = maxf(tuck[1], rad_to_deg(atan2(-hu.dot(cf), hu.dot(cu))) * -1.0)
 				tuck[2] += 1
 		_fling_sample(p)
+		if p.garb != null:
+			_back_sample(p, bkp)
 		if OS.has_environment("AXIS_DBG") and sk != null and p.crumple.probed.has("mixamorig_Head") and p.crumple.probed.has("mixamorig_LeftFoot"):
 			# (11-15) the lying body's line (feet midpoint -> head, flat) vs the body's forward
 			var hd: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_Head"] as Vector3)
@@ -11385,6 +11427,8 @@ func _sweep_test() -> void:
 				return _combat_done(false, "the back robe panel does not lie on the turf while the hero is down (hem %.2f..%.2f m)" % [brobe[2], brobe[1]])
 			if brobe[6] > 0 and brobe[5] < -0.09:
 				return _combat_done(false, "the back robe panel runs into the turf in the kneel (hem %.2f m)" % brobe[5])
+	print("BOT sweep: robe probe: back panel line lowest point %.3f m over the turf (seat clear of the sward), lies along the turf %.2f m at most while down, hem %.2f m over the seat in the air, fastest swing of the folded stretch %.1f m.rad/s, %d samples" % [bkp[0], bkp[1], bkp[3], bkp[4], bkp[2]])
+	# (info only for now: the kneel dips 2-7 cm under; gate it at -BACK_TURF_GATE / BACK_FLIP_GATE once fixed)
 	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
 	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
 		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])
