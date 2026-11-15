@@ -4105,9 +4105,24 @@ func _ready() -> void:
 		var nseq := 0
 		for tg in ticks:
 			get_tree().paused = false
+			# (11-15 22:00) the capture pause lets physics frames pass, and the on-the-spot yaw rate
+			# restarts from rest whenever a tick goes by undriven (player._step_capped): carry the chain
+			# over the pause, or every frame of a sequence eases in again (the 21:00 '4x slower' turn).
+			# SPIN_PAUSE_OLD=1 = before
+			if not OS.has_environment("SPIN_PAUSE_OLD") and tick > 0:
+				player._spot_turn_frame = Engine.get_physics_frames()
+			# (11-15 22:00) the physics_frame signal comes before the nodes' _physics_process, and the
+			# frame the capture pauses on never runs it: the first signal after an unpause only starts
+			# the next step, so count a tick once its step has run (else every pause drops a tick)
+			var fresh := nseq > 0 and not OS.has_environment("SPIN_PAUSE_OLD")   # only after a capture pause
 			while tick < int(tg):
 				await get_tree().physics_frame
+				if fresh:
+					fresh = false
+					continue
 				tick += 1
+				if OS.has_environment("SPIN_DBG"):
+					print("SHOT spindbg tick %d yaw %.4f turned %.4f lock %s sq %s gap %.3f pivot %.2f pos %s" % [tick, player.body.rotation.y, angle_difference(yaw0, player.body.rotation.y), player.lock_target, player.bot_square_yaw, player._turn_gap, player.stride_warp.pivot, player.global_position])
 			get_tree().paused = true
 			# fixed in the world across the sequence, so the boots' travel over the turf reads
 			# (11-15 21:00) "side": square to the hero's starting flank (the boots read apart across the body)

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-2129-knightleap-side-top.jpg",
-  "time": "2026-11-11T21:29:00Z",
-  "caption": "The Ashen Knight at the top of its ember leap seen square from the side: the glaive lies back ~40 deg over the shoulder with both fists overhead and knees tucked; backlit from this side and a GL frame, not Forward+.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-2229-leap-layback-cmp.jpg",
-  "time": "2026-11-11T22:29:51Z",
-  "caption": "Before (top) / after (bottom) of the leap's heave and hang: the hang lays the glaive much further back and the butt no longer swings through the left shoulder as deep; the landing frames leave the crop.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-2229-leap-layback.jpg",
   "time": "2026-11-11T22:29:51Z",
   "caption": "The boss at the top of its ember leap with the glaive now laid ~60 deg back behind its shoulders; still backlit and small in frame from this side lens.",
@@ -897,6 +885,18 @@
   "file": "20261115-2100-gather-sheet.jpg",
   "time": "2026-11-15T21:00:00Z",
   "caption": "Gather step over ticks 0-20 (3-tick spacing): the boot now arrives at ticks 12-15 instead of snapping in by tick 9; rear lens, boots partly hidden by the robe.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2200-turn-side-sheet.jpg",
+  "time": "2026-11-15T22:00:00Z",
+  "caption": "Turn on the spot side-on at ticks 0,4,8,12,16,20,30 with the harness fixed: the head reaches the lens first, the body follows, the gather boot sets down with no pop; the meadow is flat and dark at this scale and the robe hides the boots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2200-turn-side-tick8.jpg",
+  "time": "2026-11-15T22:00:00Z",
+  "caption": "Tick 8 of the turn: the head already turned to the lens while the chest is still side-on; the staff, hat and capelet read, but the lighting is flat and the scene empty, not a Wukong frame yet.",
   "verdict": "fail"
  }
 ]
