@@ -3446,7 +3446,7 @@ func _down_tick(delta: float) -> void:
 		down_t = -1.0
 		model.transform = _model_rest
 		if crumple != null:
-			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn", "leg_aim", "square", "arm_aim", "plant", "chest_twist"]:
+			for k in ["knee", "hip", "spine", "arm", "elbow", "head_turn", "neck", "leg_aim", "square", "arm_aim", "plant", "chest_twist"]:
 				crumple.set(k, 0.0)
 			crumple.plant_w = [1.0, 1.0]
 			crumple.hand_fingers = Vector3.ZERO
@@ -3630,6 +3630,14 @@ const KNOCK_BREAK_FEET := 0.28     # m from the shoulder toward the feet (the bo
 const KNOCK_BREAK_UP := 0.05       # m: the wrist over the turf with the palm flat
 var breakfall_w := 0.0             # (bots) this tick's weight
 var _break_at := []                # world palms once they hit the turf: pinned there through the bounce
+const KNOCK_SLAP_FX := 0.3         # ImpactFX power of the puff under each slapping palm
+var breakfall_puffs := 0           # (bots) palm puffs spawned so far
+## (11-15) Chin tuck: as the legs go the chin drops to the chest and stays there through the
+## slam (the head is protected, the back of the skull never meets the turf), then lets go and
+## the head lolls to the side in the winded beat. `KNOCK_NOTUCK=1` = before.
+const KNOCK_TUCK := [0.08, 0.30, 0.46, 0.66]   # down_t: tuck in, held tucked, let go
+const KNOCK_TUCK_NECK := -0.42                  # rad on Crumple.neck (negative drops the chin)
+var tuck_w := 0.0                                # (bots) this tick's weight
 
 func _knock_breakfall() -> void:
 	breakfall_w = 0.0
@@ -3669,6 +3677,14 @@ func _knock_breakfall() -> void:
 	if _break_at.size() != 2 and down_t >= b[1]:
 		# the palms are on the turf: they stay where they slapped while the back bounces
 		_break_at = [crumple.hand_target[0], crumple.hand_target[1]]
+		if not OS.has_environment("KNOCK_NOSLAPFX"):
+			# (11-15) each slapping palm kicks up a small puff of dust and chaff off the sward
+			for i in 2:
+				if i == 1 and _knock_held:
+					continue          # the right fist keeps the staff: only the left slaps
+				var side_i := left if i == 0 else -left
+				ImpactFX.spawn(get_parent(), _break_at[i] + Vector3.UP * 0.03, side_i, "dirt", KNOCK_SLAP_FX)
+				breakfall_puffs += 1
 	crumple.plant = w
 	crumple.plant_w = [1.0, 0.0 if _knock_held else 1.0]
 	crumple.hand_wall = Vector3.UP
@@ -3786,6 +3802,9 @@ func _pose_knockdown(t: float) -> void:
 		crumple.arm = deg_to_rad(k[5])
 		crumple.elbow = deg_to_rad(k[6])
 		crumple.head_turn = deg_to_rad(25.0) * smoothstep(0.4, 0.6, t) * (1.0 - smoothstep(0.95, 1.2, t))
+		var tk: Array = KNOCK_TUCK
+		tuck_w = 0.0 if OS.has_environment("KNOCK_NOTUCK") else smoothstep(tk[0], tk[1], t) * (1.0 - smoothstep(tk[2], tk[3], t))
+		crumple.neck = KNOCK_TUCK_NECK * tuck_w
 		# the rise comes up off one knee, not a two-footed squat: the right foot is set flat
 		# ahead (thigh level, shin plumb) while the left knee goes down to the turf under the
 		# hip, then the front leg drives the body up and the back knee leaves the ground

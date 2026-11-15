@@ -27,6 +27,7 @@ var flick_out := 0.0         # radians: the flicked arm swung out to the right a
 var flick_across := 0.0      # radians: the flicked upper arm rolled about the body's forward axis, so a
 							 # forearm folded up before the face is laid across it (a shielding arm)
 var probe := PackedStringArray() # (bots) bones whose skeleton-space origins are recorded after the bends
+var probed_basis := {}       # (bots) bone name -> its skeleton-space basis as posed by this modifier
 var probed := {}             # (bots) bone name -> its skeleton-space origin as posed by this modifier
 var grip := 0.0              # 0..1: the right hand's fingers close into a fist (round a bail or a helve)
 var grip_l := 0.0            # 0..1: the left hand's fingers close (about 0.3 = a relaxed, hanging hand)
@@ -309,6 +310,7 @@ func _crumple_mod(_delta: float) -> void:
 		var pb := skel.find_bone(n)
 		if pb >= 0:
 			probed[n] = skel.get_bone_global_pose(pb).origin
+			probed_basis[n] = skel.get_bone_global_pose(pb).basis
 
 const GRIP_CURL := [1.25, 1.2, 0.8]   # radians per finger joint, knuckle to tip, at a full fist
 const THUMB_CURL := [0.55, 0.6, 0.5]

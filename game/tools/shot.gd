@@ -4167,7 +4167,8 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 				var krm: Array = Player.KNOCK_RISE_MOVE
 				kfoot -= Vector3(kbz.x, 0, kbz.z).normalized() * Player.KNOCK_RISE_SHIFT * smoothstep(krm[0], krm[1], player.down_t)
 			var kmid := Vector3(kfoot.x, kfoot.y + 0.75, kfoot.z)
-			var mside := player.model.global_basis.x
+			# (11-15) off the BODY's left (body +X): the model's x pointed the lens from behind-left
+			var mside := player.model.global_basis.x if OS.has_environment("KSIDE_OLD") else player.body.global_basis.x
 			mside = Vector3(mside.x, 0, mside.z).normalized()
 			cam.global_position = kmid + mside * 2.9 + Vector3.UP * -0.2
 			cam.look_at(kmid)

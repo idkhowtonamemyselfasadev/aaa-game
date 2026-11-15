@@ -11058,7 +11058,7 @@ func _sweep_test() -> void:
 	var laid := {}
 	var falls := [0, 9.0, 0]                 # thuds, landing spot's height over the ground, dust bursts
 	var push := [0.0, 0.0, null, 0]         # pushing wrist: max height over the turf, max drift, first spot, samples
-	for pn in ["mixamorig_LeftHand", "mixamorig_LeftArm", "mixamorig_LeftForeArm", "mixamorig_LeftLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_RightLeg", "mixamorig_RightHand"]:
+	for pn in ["mixamorig_LeftHand", "mixamorig_LeftArm", "mixamorig_LeftForeArm", "mixamorig_LeftLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_RightLeg", "mixamorig_RightHand", "mixamorig_Head", "mixamorig_Spine2"]:
 		if not p.crumple.probe.has(pn):
 			p.crumple.probe.append(pn)
 	# the rise off one knee: left knee height, right ankle height, right foot ahead of the knee (min over
@@ -11090,8 +11090,22 @@ func _sweep_test() -> void:
 		Engine.time_scale = 1.0   # (debug) the knock-down at the game's real 60 Hz step
 	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
 	var brk := [-9.0, 9.0, 0, 9.0]   # (11-15) the break-fall slap (0.44..0.68): max left wrist height over the turf, min out from the body's line, samples, wrist height just before the slap (0.30..0.40, min)
+	var tuck := [9.0, 0.0, 0]   # (11-15) the chin tuck through the slam (0.38..0.52): lowest head bone over the turf, max neck flexion (deg, head up vs chest up, chin toward chest), samples
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if sk != null and p.down_t > 0.38 and p.down_t < 0.52 and p.crumple.probed_basis.has("mixamorig_Head") and p.crumple.probed_basis.has("mixamorig_Spine2"):
+			if true:
+				var hp := sk.global_transform * Transform3D(p.crumple.probed_basis["mixamorig_Head"], p.crumple.probed["mixamorig_Head"])
+				var cp := sk.global_transform * Transform3D(p.crumple.probed_basis["mixamorig_Spine2"], p.crumple.probed["mixamorig_Spine2"])
+				if OS.has_environment("TUCK_DBG"):
+					print("tuck t %.3f w %.2f head %.3f" % [p.down_t, p.tuck_w, hp.origin.y - _world.terrain.height_at(hp.origin.x, hp.origin.z)])
+				tuck[0] = minf(tuck[0], hp.origin.y - _world.terrain.height_at(hp.origin.x, hp.origin.z))
+				# flexion: the head's up tipped toward the chest's forward (+ = chin down)
+				var hu := hp.basis.y.normalized()
+				var cu := cp.basis.y.normalized()
+				var cf := cp.basis.z.normalized()
+				tuck[1] = maxf(tuck[1], rad_to_deg(atan2(-hu.dot(cf), hu.dot(cu))) * -1.0)
+				tuck[2] += 1
 		if sk != null and p.down_t > 0.30 and p.down_t < 0.68 and p.crumple.probed.has("mixamorig_LeftHand"):
 			var lw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
 			var lh: float = lw.y - _world.terrain.height_at(lw.x, lw.z)
@@ -11302,6 +11316,11 @@ func _sweep_test() -> void:
 	print("BOT sweep: break-fall: left wrist %.2f m over the turf at most in the slap (0.44..0.68), %.2f m out from the body's line at least, %d samples; %.2f m before it" % [brk[0], brk[1], brk[2], brk[3]])
 	if not OS.has_environment("KNOCK_NOBREAK") and brk[2] > 0 and (brk[0] > 0.12 or brk[1] < 0.30):
 		return _combat_done(false, "the left hand does not slap the turf out to the side as the back lands (%.2f m up, %.2f m out)" % [brk[0], brk[1]])
+	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
+	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
+		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])
+	if not OS.has_environment("KNOCK_NOSLAPFX") and not OS.has_environment("KNOCK_NOBREAK") and p.breakfall_puffs < 1:
+		return _combat_done(false, "the break-fall slap raised no dust under the palm")
 	print("BOT sweep: swept fall: feet up to %.2f m over the turf before the slam, %.2f m after it, lowest foot/knee %.2f m, %d samples" % [fall[0], fall[1], fall[2], fall[3]])
 	print("BOT sweep: knockdowns %d, max tip %.0f deg, head low %.2f m, blow while down -> %s, down %.2f s, back at rest %s" % [p.knockdowns, rad_to_deg(max_tip), min_head, passed_over, down_for, rest_ok])
 	if p.knockdowns != 1 or max_tip < deg_to_rad(70.0):

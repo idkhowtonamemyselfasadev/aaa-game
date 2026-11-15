@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261111-0230-knight-leap-land-r08.jpg",
-  "time": "2026-11-11T02:30:00Z",
-  "caption": "The Ashen Knight a beat after the ember leap's bite: knees given deep, chest pitched over the glaive in the turf (was stiff and upright). Still wrong: rear three-quarter lens foreshortens the pitch; armour reads flat in the GL fallback renderer.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0230-knight-leap-land-r40.jpg",
   "time": "2026-11-11T02:30:00Z",
   "caption": "The knight holding its crouch over the bitten blade before wrenching it free, boots planted. Still wrong: no dust kicked off the knees and grass not flattened round the boots.",
@@ -885,6 +879,18 @@
   "file": "20261115-0100-breakfall-46.jpg",
   "time": "2026-11-15T01:00:00Z",
   "caption": "The instant after the slam: legs still up, the left hand already down on the turf beside the hat; the sweep's lens hides the arm's angle and the meadow is too dark to read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0200-chintuck.jpg",
+  "time": "2026-11-15T02:00:00Z",
+  "caption": "The slam at 0.42 s: the hero's chin is tucked to the chest so the hat and head stay off the turf as the back lands; the lens is a feet-side three-quarter rather than a true profile and the meadow reads dim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0200-palmpuff.jpg",
+  "time": "2026-11-15T02:00:00Z",
+  "caption": "Just after the break-fall slap: a small puff of dust and chaff kicks up off the sward round the hips and palm; the figure is still small and the light flat.",
   "verdict": "fail"
  }
 ]
