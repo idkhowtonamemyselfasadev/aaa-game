@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261111-1812-knight-sweep-coil.jpg",
-  "time": "2026-11-11T18:12:18Z",
-  "caption": "The Ashen Knight coils its sweep with the glaive now passing under its helm's chin skirt (bot: clear by 0.125 m/size, was 0.17 through); the knight is still dim and backlit, and the helm reads as a dark dome.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1946-sweep-cut.jpg",
   "time": "2026-11-11T19:46:32Z",
   "caption": "The sweep's glaive whipping low across the knight's front at peak speed past the hero; the motion reads, the framing and dark backlit armour do not hold up as a Wukong shot yet.",
@@ -891,6 +885,18 @@
   "file": "20261115-1704-soldier-guard.jpg",
   "time": "2026-11-15T17:04:34Z",
   "caption": "The same soldier side-on before the turn: the long spear guard stagger that read as a wide boot end-on; ground speckle and flat GL lighting still fall short of Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1846-pushoff.jpg",
+  "time": "2026-11-15T18:46:00Z",
+  "caption": "The hero's first push-off from standing, side-on: the rear boot now keeps its ball on the turf and lifts its heel instead of flicking its toes up; GL fallback lighting and ground speckle still fall short of Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1846-pushoff-cmp.jpg",
+  "time": "2026-11-15T18:46:00Z",
+  "caption": "Rear boot at the push-off, 3x crop, before (toes tipped up 0.35 rad, heel pressed down) and after (heel up, ball on the turf).",
   "verdict": "fail"
  }
 ]

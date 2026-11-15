@@ -2925,7 +2925,7 @@ func _ready() -> void:
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])
 		print("SHOT stop t %.3f stops %d lead %+.0f hip_lr %s knee_lr %s dip %.3f" % [player.stop_t, player.stops, player.stop_lead, player.crumple.hip_lr, player.crumple.knee_lr, player._pose_dip])
-		print("SHOT jump t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
+		print("SHOT jump (physics frame %d) t %.3f air %.3f land %.3f knee %.2f hip %.2f y %.2f" % [Engine.get_physics_frames(), t, player._air_t, player.land_t, player.crumple.knee, player.crumple.hip, player.global_position.y])
 	if dodge_u >= 0.0:
 		Engine.max_physics_steps_per_frame = 1
 		player.use_bot_input = true

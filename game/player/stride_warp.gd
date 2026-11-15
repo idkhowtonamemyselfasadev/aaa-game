@@ -140,6 +140,11 @@ var toe_floor := -INF
 var toe_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ball out of the ground
 static var TOE_FLOOR_OLD := OS.has_environment("TOEFLOOR_OLD")
 static var TOE_PITCH_OLD := OS.has_environment("TOEPITCH_OLD")
+static var TOE_PITCH_RISE_OLD := OS.has_environment("TOEPITCH_RISE_OLD")
+static var TOE_PITCH_DBG := OS.has_environment("TOEPITCH_DBG")   # print every tipped boot (frame, climb speed, ground step)
+const TOE_PITCH_RISE_V := 0.24    # (11-15 18:00) m/s per size of ankle climb at which a boot no longer tips its toes up (push-off)
+const TOE_PITCH_STEP := 0.03     # m per size the ball's ground may stand over the ankle's before the tip fades out (gone at 2x)
+var _tp_vy := [0.0, 0.0]          # (bots) each boot's ankle vertical speed when last tested for the toe tip
 const TOE_PITCH_AIR := 0.01       # (11-15 16:00) world m per size of ankle height over idle at which a landing boot fully tips its toes up
 const TOE_PITCH_MAX := 0.35       # rad: the most a landing boot tips its toes up to clear the turf
 var toe_pitch := [0.0, 0.0]       # (bots) rad each foot was tipped toes-up to keep its ball out of the ground
@@ -153,6 +158,7 @@ var ankle_floor := -INF
 var ankle_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ankle at the idle's height
 static var ANKLE_FLOOR_OLD := OS.has_environment("ANKLEFLOOR_OLD")
 var _ank_gy := [-INF, -INF]
+var _tp_prev_ay := [0.0, 0.0]     # (11-15 18:00) each boot's ankle world height last call (descending test for the toe tip)
 var ground_anim := [0.0, 0.0]    # (bots) world m each ankle sat over the floor in the clip this tick
 var ground_sole := [0.0, 0.0]    # (bots) world m each ankle sits over the ground under it after the IK
 const GROUND_MAX := 0.42         # m (x the owner's scale): a bigger step is not a slope, leave it
@@ -1513,6 +1519,18 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 				# the tip is shared out by how high the ankle still is over its idle height (fully tipped from
 				# TOE_PITCH_AIR up), so a boot standing on a stair edge is still lifted onto it. TOEPITCH_OLD: before
 				var air := clampf((aw.y + lift - float(_ank_gy[i]) - ankle_floor * sc) / (TOE_PITCH_AIR * sc), 0.0, 1.0)
+				# (11-15 18:00) only a boot that is not climbing: on the hero the tip also caught the push-off (ankle rising
+				# 2-3 cm a tick, ball still on the turf) and flicked the toes up 0.25-0.35 rad for 2-7 ticks at every walk/stop
+				# (bot `toepitch` read). A rising boot keeps the old lift: its ball pushes off the turf, toes down.
+				# TOEPITCH_RISE_OLD: before
+				var vy := (aw.y + lift - float(_tp_prev_ay[i])) / maxf(delta, 1e-4)
+				_tp_vy[i] = vy
+				if not TOE_PITCH_RISE_OLD:
+					air *= clampf(1.0 - vy / (TOE_PITCH_RISE_V * sc), 0.0, 1.0)
+					# nor a ball over a higher surface (a tread edge, the top of a wall walked into: the `stepup` wall
+					# held the tip at its cap 77 ticks): that boot is lifted onto it, as the 16:00 note meant
+					var step := (float(_ball_gy[i]) - float(_ank_gy[i])) / sc
+					air *= clampf(1.0 - (step - TOE_PITCH_STEP) / TOE_PITCH_STEP, 0.0, 1.0)
 				var rh := Vector3(rel.x, 0.0, rel.z)
 				if air > 0.0 and rh.length() > 1e-4:
 					# toes up by the angle that raises the ball by `need` exactly (rel points down to the ball)
@@ -1523,9 +1541,12 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 					need -= rel2.y - rel.y
 					keep = Basis((inv.basis * ax_w).normalized(), ang * w) * keep
 					toe_pitch[i] = ang * w
+					if TOE_PITCH_DBG and ang * w > 0.1:
+						print("TPDBG f%d i %d vy %+.3f ang %.3f air %.2f ank_y %.4f prev %.4f dy %+.4f ballgy-ankgy %+.4f need %.4f" % [Engine.get_physics_frames(), i, vy, ang * w, air, aw.y + lift, float(_tp_prev_ay[i]), aw.y + lift - float(_tp_prev_ay[i]), float(_ball_gy[i]) - float(_ank_gy[i]), need])
 			if need > 0.0:
 				toe_floor_lift[i] = minf(need, lim) * w
 				lift += toe_floor_lift[i]
+		_tp_prev_ay[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y + lift
 		if absf(lift) < 1e-4 and plant <= 0.0 and float(toe_pitch[i]) == 0.0:
 			continue
 		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift

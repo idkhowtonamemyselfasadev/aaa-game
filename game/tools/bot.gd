@@ -36,11 +36,16 @@ var _last_pos := Vector3.ZERO
 var _min_y := INF
 var _max_y := -INF
 var _max_blend := 0.0
+var _bot_name := ""
+# (11-15 18:00) the hero's landing-boot toe tip (stride_warp.toe_pitch, added 16:00 for the soldier):
+# peak rad, ticks a boot was tipped over 0.1 rad, longest such run, read every physics tick
+var _tp := {"peak": 0.0, "over": 0, "run": 0, "best_run": 0, "air_peak": 0.0, "ticks": 0, "rise_peak": 0.0}
 
 func _ready() -> void:
 	Engine.time_scale = 4.0   # headless: simulate faster, same fixed physics delta
 	var args := OS.get_cmdline_user_args()
 	var name := args[0] if args.size() > 0 else "walk"
+	_bot_name = name
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
@@ -405,6 +410,23 @@ func _ready() -> void:
 	print("BOT route=%s waypoints=%d start=%s" % [name, _route.size(), _player.global_position])
 
 func _physics_process(delta: float) -> void:
+	if _player != null and _player.stride_warp != null:
+		var tp := maxf(float(_player.stride_warp.toe_pitch[0]), float(_player.stride_warp.toe_pitch[1]))
+		_tp.ticks += 1
+		for f in 2:
+			# a boot climbing (push-off) must keep its toes down: tip on a boot rising over 0.3 m/s
+			if float(_player.stride_warp._tp_vy[f]) > 0.3:
+				_tp.rise_peak = maxf(_tp.rise_peak, float(_player.stride_warp.toe_pitch[f]))
+		if _player.is_on_floor():
+			_tp.peak = maxf(_tp.peak, tp)
+		else:
+			_tp.air_peak = maxf(_tp.air_peak, tp)
+		if tp > 0.1:
+			_tp.over += 1
+			_tp.run += 1
+			_tp.best_run = maxi(_tp.best_run, _tp.run)
+		else:
+			_tp.run = 0
 	if _player == null or _i >= _route.size():
 		return
 	_t += delta
@@ -3677,6 +3699,13 @@ func _start_test() -> void:
 	_combat_done(true, "a hard push from rest drives off one leg, toes on the turf and heel up, the other knee thrown ahead; the run clip takes over in step; a walk eases off")
 
 func _combat_done(ok: bool, why: String) -> void:
+	if _bot_name in ["heroflat", "herostop", "stop", "jump", "start", "heroturn", "heroturnl", "stepup"]:
+		# a hero boot tipped toes-up more than ~11 deg, or for over a quarter second, reads as a toe-up landing
+		print("BOT toepitch: %s hero boot toe tip on the floor peak %.3f rad (in the air %.3f), on a climbing boot %.3f rad, %d of %d ticks over 0.1 rad, longest run %d" % [_bot_name, _tp.peak, _tp.air_peak, _tp.rise_peak, _tp.over, _tp.ticks, _tp.best_run])
+		# the landing tip (heel strike, toes up to 0.35 rad) is fine for a few ticks; on a push-off it flicks the toes
+		if ok and (_tp.rise_peak > 0.05 or _tp.best_run > 15) and not OS.has_environment("TOEPITCH_NOGATE"):
+			ok = false
+			why = "the hero tips a boot's toes up %.3f rad as it pushes off, or holds a tip %d ticks" % [_tp.rise_peak, _tp.best_run]
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])
 	get_tree().quit(0 if ok else 1)
 
