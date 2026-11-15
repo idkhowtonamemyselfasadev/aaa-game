@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-2229-leap-layback.jpg",
-  "time": "2026-11-11T22:29:51Z",
-  "caption": "The boss at the top of its ember leap with the glaive now laid ~60 deg back behind its shoulders; still backlit and small in frame from this side lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-2326-sweep-coil-cmp.jpg",
-  "time": "2026-11-11T23:26:07Z",
-  "caption": "Before (left) / after (right) crop of the sweep coil: the hold sits a little lower and further back; a closer side lens is still needed to show the pauldron clearance.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-2326-sweep-coil.jpg",
   "time": "2026-11-11T23:26:07Z",
   "caption": "The boss holding its sweep's coil, glaive cocked back at its right shoulder; the haft's butt now passes behind the left pauldron instead of into it, but the knight is backlit and the change is barely readable at this distance.",
@@ -897,6 +885,18 @@
   "file": "20261115-2200-turn-side-tick8.jpg",
   "time": "2026-11-15T22:00:00Z",
   "caption": "Tick 8 of the turn: the head already turned to the lens while the chest is still side-on; the staff, hat and capelet read, but the lighting is flat and the scene empty, not a Wukong frame yet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2307-turngather-t9.jpg",
+  "time": "2026-11-15T23:07:18Z",
+  "caption": "Low side lens on the hero's left turn on the spot at tick 9: the forward boot is lifted mid-gather while the pivot boot stays planted; the bare turf (grass off for the lens) shows a harsh repeating dash texture.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2307-turngather-boots.jpg",
+  "time": "2026-11-15T23:07:18Z",
+  "caption": "Boot crops at ticks 6, 9, 12, 15, 18 of the turn: the gather boot lifts, travels in and sets down beside the pivot boot with no pop or slide; the boots sit in shadow, too dark to judge sole contact by eye.",
   "verdict": "fail"
  }
 ]
