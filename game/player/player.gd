@@ -473,6 +473,12 @@ const LEAD_K := 0.75             # lead per radian still to turn
 const LEAD_MAX := 0.8            # rad (~44 deg at the head, ~13 deg at the chest)
 const LEAD_RATE := 20.0          # 1/s: the eyes go first, quicker than the body's TURN_SPEED
 const LEAD_SETTLE := 7.0         # 1/s back to square once the body has caught up
+## (11-15) on the spot the body now eases into its turn, so a fixed LEAD_MAX left the head only
+## 0.8 rad ahead while the body was still slow and it reached the goal late (tick 22 of a 180).
+## While the body's yaw rate is still building, the eyes and neck may reach further ahead; the
+## extra recedes as the body speeds up into the turn, so the head leads, then the body catches it.
+const LEAD_SPOT_EXTRA := 0.4     # rad of extra reach at a standing start (head ~66 deg off the chest line)
+static var HEROTURN_OLDLEAD := OS.has_environment("HEROTURN_OLDLEAD")   # fixed LEAD_MAX on the spot (before)
 var turn_lead := 0.0             # radians, positive toward the hero's left (SpineTwist sign)
 var lead_peak := 0.0             # (bots) largest |turn_lead| since reset
 var _turn_gap := 0.0             # yaw still to turn this tick (set by the facing code)
@@ -496,7 +502,10 @@ func _setup_turn_lead() -> void:
 ## catches up. Off (eases to 0) whenever another pose owns the spine.
 func _update_turn_lead(delta: float) -> void:
 	var free := dead_t < 0.0 and down_t < 0.0 and not climbing and not gliding and pivot_t < 0.0
-	var goal := clampf(_turn_gap * LEAD_K, -LEAD_MAX, LEAD_MAX) if free else 0.0
+	var reach := LEAD_MAX
+	if not HEROTURN_OLDLEAD and not HEROTURN_OLDSTART and Engine.get_physics_frames() - _spot_turn_frame <= 1:
+		reach += LEAD_SPOT_EXTRA * (1.0 - clampf(_spot_turn_rate / TURN_STEP_RATE, 0.0, 1.0))
+	var goal := clampf(_turn_gap * LEAD_K, -reach, reach) if free else 0.0
 	var rate := LEAD_RATE if absf(goal) > absf(turn_lead) else LEAD_SETTLE
 	turn_lead = lerpf(turn_lead, goal, 1.0 - exp(-rate * delta))
 	if absf(turn_lead) < 1e-4:

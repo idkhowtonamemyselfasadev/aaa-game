@@ -886,5 +886,17 @@
   "time": "2026-11-15T09:30:00Z",
   "caption": "Same moment before the change: shoulders and staff already swung ~35 deg in one piece with the head; GL render.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261115-1011-heroturn-010.jpg",
+  "time": "2026-11-15T10:11:35Z",
+  "caption": "Hero 0.1 s into a turn on the spot: the hood and hat brim start round while back, mantle and staff stay square; the face under the hood still reads grey and the meadow is a GL-compatibility render.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1011-heroturn-020.jpg",
+  "time": "2026-11-15T10:11:35Z",
+  "caption": "0.2 s in: the head is now ~1 rad ahead and the face shows in profile while the shoulders have only started round (the eyes clearly lead); still a GL fallback render without Forward+ lighting.",
+  "verdict": "fail"
  }
 ]

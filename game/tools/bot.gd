@@ -22,7 +22,7 @@ const ROUTES := {
 
 var _turn_left := false        # (heroturnl, 11-12 15:00) the turn on the spot goes to the left
 var _hero_sink_peak := 0.0  # (heroturn, 11-12 05:00) deepest hip sink onto the pivot leg, skeleton cm
-var _ease_read := [-1.0, 0.0]   # (heroturn 11-15) body yaw turned when the head lead passes 0.5 / after 3 ticks
+var _ease_read := [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0]   # [4..5] head / body yaw turned at tick 6 / 12; (heroturn 11-15) body yaw turned when the head lead passes 0.5 / after 3 ticks
 var _heel_peak := 0.0      # (heroturn/foeturn) highest heel lift of the ball pivot
 var _heel_down_tick := -1
 var _world: Node3D
@@ -2314,7 +2314,7 @@ func _hero_turn_test() -> void:
 		var head_in := -1
 		var body_in := -1
 		var yaw0 := p.body.rotation.y
-		_ease_read = [-1.0, 0.0]
+		_ease_read = [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 		for i in ticks:
 			p.bot_input = stick
 			await get_tree().physics_frame
@@ -2361,6 +2361,10 @@ func _hero_turn_test() -> void:
 				_ease_read[0] = absf(angle_difference(yaw0, by))
 			if i < 3:
 				_ease_read[1] = absf(angle_difference(yaw0, by))
+			if i == 5 or i == 11:   # (11-15 10:00) 0.1 s / 0.2 s in: head and body turned so far
+				var k := 2 if i == 5 else 4
+				_ease_read[k] = absf(angle_difference(yaw0, hy))
+				_ease_read[k + 1] = absf(angle_difference(yaw0, by))
 			var gap_b := absf(angle_difference(by, g))
 			var gap_h := absf(angle_difference(hy, g))
 			ahead = maxf(ahead, gap_b - gap_h)
@@ -2470,6 +2474,10 @@ func _hero_turn_test() -> void:
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])
 	print("BOT heroturn: ease-in: the body has turned %.3f rad when the head lead passes 0.5, %.3f rad after 3 ticks" % [_ease_spot[0], _ease_spot[1]])
+	print("BOT heroturn: head / body turned at 0.1 s %.2f / %.2f rad, at 0.2 s %.2f / %.2f rad" % [_ease_spot[2], _ease_spot[3], _ease_spot[4], _ease_spot[5]])
+	# (11-15 10:00) the eyes go first: 0.2 s into a turn from rest the head is well round while the body has barely started
+	if not Player.HEROTURN_OLDSTART and not Player.HEROTURN_OLDLEAD and float(_ease_spot[4]) - float(_ease_spot[5]) < 0.85:
+		return _combat_done(false, "the head is only %.2f rad ahead of the body 0.2 s into a turn on the spot" % (float(_ease_spot[4]) - float(_ease_spot[5])))
 	if not Player.HEROTURN_OLDSTART and _ease_spot[0] > 0.2:
 		return _combat_done(false, "the body comes round with the head in a turn on the spot (%.3f rad turned when the lead passes 0.5)" % _ease_spot[0])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
