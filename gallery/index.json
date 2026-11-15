@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-1639-knight-takeoff.jpg",
-  "time": "2026-11-11T16:39:15Z",
-  "caption": "The knight's push-off now rises smoothly out of the deeper crouch instead of snapping up 1.3 m in one tick; the cottage roof hides the legs from this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1731-leap-downswing-compare.jpg",
-  "time": "2026-11-11T17:31:32Z",
-  "caption": "Ashen Knight ember leap down-swing, top row old timing (blade already in the turf while the giant still hangs ~2 m up), bottom row new (blade still high, level near the ground, bites as the boots land); still backlit from this lens, the helm reads as a dark dome.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1731-leap-downswing.jpg",
   "time": "2026-11-11T17:31:32Z",
   "caption": "The knight's glaive whipping level over the hero a beat before the bite; motion reads, but the knight is a dark silhouette against the sun and the grass/cottage are still prototype-grade beside it.",
@@ -885,6 +873,18 @@
   "file": "20261115-1400-spinl-planted.jpg",
   "time": "2026-11-15T14:45:00Z",
   "caption": "The same turn a moment later, the gathered boot planted and the body coming round over it; from this low lens the two boots line up and read as one, and the GL turf is flat and patterned.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1500-foeturn-lead.jpg",
+  "time": "2026-11-15T15:00:00Z",
+  "caption": "Hollow Soldier 0.1 s into a turn on the spot: the hood already looks round while torso and spear stay side-on; the figure still reads dark and flat against the bright meadow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1500-foeturn-compare.jpg",
+  "time": "2026-11-15T15:00:00Z",
+  "caption": "Soldier turn frames: before (left) and after (middle) at the same tick, the head now leads further; right, the body has caught up 0.2 s in. The change is subtle at this lens.",
   "verdict": "fail"
  }
 ]

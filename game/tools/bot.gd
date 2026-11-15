@@ -3187,6 +3187,7 @@ func _foe_turn_test() -> void:
 		cases.append([k, float(AshenKnight.PHASES[i]["scale"])])
 	var out := []
 	var pre_out := []
+	var ease_out := []                 # (11-15 15:00) head ahead of the body 0.2 s (natural) into the turn, per case
 	for c in cases:
 		var e: HollowSoldier = c[0]
 		var sc: float = c[1]
@@ -3248,6 +3249,8 @@ func _foe_turn_test() -> void:
 		var pre_carry := [0.0, 0.0]                   # each boot's travel over the turf before the pivot plants (per size)
 		var pre_ticks := 0
 		var pre_done := false
+		var ease_hb := [0.0, 0.0, 0.0, 0.0]          # (11-15 15:00) head / body turned at 0.1 s and 0.2 s (natural time, / cadence)
+		var tick_hz := float(Engine.physics_ticks_per_second)
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -3255,6 +3258,14 @@ func _foe_turn_test() -> void:
 			var post := not OS.has_environment("FOETURN_CLIP") and e.stride_warp != null
 			if post:
 				await skel.skeleton_updated
+			if OS.has_environment("FOELEAD_DBG") and post and i < 30:
+				var bt0 := f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)
+				print("FOELEAD i %d hz %.0f body %.3f head %.3f lead %.3f gap %.3f w %.2f" % [i, tick_hz, bt0, bt0 + angle_difference(head0, head_yaw.call()), e.turn_lead, e._turn_gap, e._spot_turn_w])
+			for qe in 2:
+				if post and i == int(round((0.1 + 0.1 * qe) / e.natural_cadence() * tick_hz)) - 1:
+					var bt := f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)
+					ease_hb[qe * 2] = bt + angle_difference(head0, head_yaw.call())
+					ease_hb[qe * 2 + 1] = bt
 			var up := 0
 			for j in 2:
 				var h: float = ((float(e.stride_warp.ground_sole[j]) if post else (skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y) - rest[j]) / sc
@@ -3366,6 +3377,8 @@ func _foe_turn_test() -> void:
 		var blend_after: float = e._blend
 		var lead_after := absf(e.turn_lead)
 		print("BOT foeturn: lead peak %.2f rad (head turned %.2f rad ahead of the body, body %.2f rad round when it passed 0.5), after %.3f" % [lead_signed, head_lead, body_at_lead, lead_after])
+		print("BOT foeturn: head / body turned at 0.1 s %.2f / %.2f rad, at 0.2 s %.2f / %.2f rad (natural time)" % ease_hb)
+		ease_out.append(ease_hb[2] - ease_hb[3])
 		e.bot_face = Vector3.ZERO
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
@@ -3385,6 +3398,10 @@ func _foe_turn_test() -> void:
 	for q in pre_out.size():
 		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > 0.005:
 			return _combat_done(false, "case %d: the pivot ball slides %.4f per size as the turn starts" % [q, float(pre_out[q])])
+	# (11-15 15:00) the soldier's eyes go first: its lead may reach further while the body is still easing
+	# into the turn (FOETURN_OLDLEAD=1 = before): head up to 0.68 -> 0.81 rad ahead of the body
+	if not HollowSoldier._foe_lead_old and not HollowSoldier._turn_oldstart and float(out[0][11]) < 0.76:
+		return _combat_done(false, "the soldier's head is only %.2f rad ahead of its body in a turn on the spot" % float(out[0][11]))
 	for o in out:
 		if o[1] < 0.5:
 			return _combat_done(false, "size %.1f: the feet do not step round in a turn (shuffle %.2f)" % [o[0], o[1]])
@@ -6207,7 +6224,7 @@ func _soldier_test() -> void:
 		# sweep's arc, which tracks a strafe), then come in on the recovery
 		var wt := HollowSoldier.SWEEP_WINDUP_T if s.move_kind == HollowSoldier.SWEEP_MOVE else HollowSoldier.WINDUP_T
 		if s.state == HollowSoldier.WINDUP and s.t >= wt - 0.12 and not p.is_slowmo():
-			p.bot_input = -flat.normalized()
+			p.bot_input = _input_dir(-Vector3(flat.x, 0.0, flat.y))
 			p.bot_dodge = true
 			evades += 1
 			await _ticks(1)
@@ -6217,7 +6234,7 @@ func _soldier_test() -> void:
 				t += get_physics_process_delta_time()
 			continue
 		if flat.length() > 2.0:
-			p.bot_input = flat.normalized()
+			p.bot_input = _input_dir(Vector3(flat.x, 0.0, flat.y))
 		else:
 			p.bot_input = Vector2.ZERO
 			if not p.combat.is_attacking():
@@ -6795,14 +6812,14 @@ func _knight_test() -> void:
 			p.bot_attack = false
 			p.bot_heavy = false
 			var side := Vector3(to.z, 0, -to.x).normalized()
-			p.bot_input = Vector2(side.x, side.z)
+			p.bot_input = _input_dir(side)
 			p.bot_dodge = true
 		elif k.state == HollowSoldier.WINDUP or k.state == HollowSoldier.STRIKE:
 			p.bot_attack = false
 			p.bot_heavy = false
 			p.bot_input = Vector2.ZERO
 		elif flat.length() > 1.1 + float(k.hurt_capsule()[2]):
-			p.bot_input = flat.normalized()
+			p.bot_input = _input_dir(Vector3(flat.x, 0.0, flat.y))
 			p.bot_heavy = false
 		else:
 			p.bot_input = Vector2.ZERO
@@ -7871,7 +7888,7 @@ func _warden_test() -> void:
 		var flat := Vector2(to.x, to.z)
 		p.stamina = Player.STAMINA_MAX
 		if flat.length() > 2.2:
-			p.bot_input = flat.normalized()
+			p.bot_input = _input_dir(Vector3(flat.x, 0.0, flat.y))
 			p.bot_attack = false
 		else:
 			p.bot_input = Vector2.ZERO

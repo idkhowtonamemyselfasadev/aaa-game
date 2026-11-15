@@ -1211,6 +1211,7 @@ const TURN_FULL := 2.5           # rad/s more for full steps
 const TURN_STEP_RATE := 4.0      # rad/s cap of a turn on the spot at 1x cadence
 const TURN_ACCEL := 14.0         # rad/s^2 at 1x cadence: a turn on the spot builds up (~0.3 s to full rate)
 var _spot_turn_tick := -10
+var _spot_lead_tick := -10       # last tick the body turned ON THE SPOT (the lead's early extra reach)
 var _spot_turn_w := 0.0          # rad/s: yaw rate of the body last tick (ease-in of a turn on the spot)
 static var _turn_oldstart := OS.has_environment("FOETURN_OLDSTART")   # = before 11-15 07:00
 static var _foe_turn_oldplant := OS.has_environment("FOETURN_OLDPLANT")   # = before 11-15 12:00
@@ -1222,12 +1223,23 @@ const LEAD_K := 0.7              # lead per radian still to turn
 const LEAD_MAX := 0.85           # rad (~49 deg at the head, ~15 deg at the chest)
 const LEAD_RATE := 12.0          # 1/s at 1x cadence: the eyes go first, quicker than the feet
 const LEAD_SETTLE := 6.0         # 1/s back to square once the body has caught up
+## (11-15 15:00) as the hero's (player.gd LEAD_SPOT_EXTRA): on the spot the body eases into its turn
+## (TURN_ACCEL), so the fixed LEAD_MAX left the head only ~0.85 rad ahead while the body was still slow.
+## While the body's yaw rate is still building the eyes may reach further; the extra recedes as it speeds up.
+const LEAD_SPOT_EXTRA := 0.4     # rad of extra reach at a standing start
+static var _foe_lead_old := OS.has_environment("FOETURN_OLDLEAD")   # fixed LEAD_MAX on the spot (before)
 
 ## The head and chest lead a turn: they swing toward where the body is turning before the
 ## feet have stepped it round, then settle back square as the body catches up. A big body
 ## looks round slower (its own cadence), never snapping its head.
 func _update_turn_lead(delta: float) -> void:
-	var goal := clampf(_turn_gap * LEAD_K, -LEAD_MAX, LEAD_MAX) if state in [IDLE, STALK] else 0.0
+	var reach := LEAD_MAX
+	if not _foe_lead_old and not _turn_oldstart and Engine.get_physics_frames() - _spot_lead_tick <= 1:
+		# squared: a foe reaches its full step rate in ~7 ticks, so a straight fall-off took the extra
+		# away before the head could use it (lead peak 0.85 -> 0.93 only); this keeps it through the ramp
+		var wr := clampf(absf(_spot_turn_w) / (TURN_STEP_RATE * natural_cadence()), 0.0, 1.0)
+		reach += LEAD_SPOT_EXTRA * (1.0 - wr * wr)
+	var goal := clampf(_turn_gap * LEAD_K, -reach, reach) if state in [IDLE, STALK] else 0.0
 	var rate := (LEAD_RATE if absf(goal) > absf(turn_lead) else LEAD_SETTLE) * natural_cadence()
 	turn_lead = lerpf(turn_lead, goal, 1.0 - exp(-rate * delta))
 	lead_peak = maxf(lead_peak, absf(turn_lead))
@@ -1604,6 +1616,7 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 			w = clampf(w, -lim, lim)
 			d = w * delta
 			_spot_turn_w = w
+			_spot_lead_tick = _spot_turn_tick
 		_pivot_orbit(d)
 		want = body.rotation.y + d
 	elif delta > 0.0:
