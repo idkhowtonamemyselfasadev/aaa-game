@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261111-0930-knight-leap-landing.jpg",
-  "time": "2026-11-11T09:30:00Z",
-  "caption": "The Ashen Knight crouched over its bitten glaive after the ember leap: both fists now drawn in to the chest with the elbows bent (before, the left arm locked straight along the haft); still backlit and dark against the sun, the knight reads small at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1000-knight-sweep-coil.jpg",
-  "time": "2026-11-11T10:00:00Z",
-  "caption": "The Ashen Knight coiled for its sweep with the left elbow now bent: the glaive rides high out past the right pauldron; seen from behind, so the arms themselves are hidden.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1000-knight-sweep-cut.jpg",
-  "time": "2026-11-11T10:00:00Z",
-  "caption": "The first tick of the knight's sweep cut, the glaive swinging out level over the hero; the lens is too close for the 2.2x giant and crops the helm.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1144-knight-sweep-coil-front.jpg",
-  "time": "2026-11-11T11:44:00Z",
-  "caption": "The Ashen Knight coiled for its sweep, seen at last from its own front-right quarter (new kchest lens): the raised glaive passes clear of the helm at shoulder height, but the backlit armour hides the arms.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1144-knight-sweep-cut-front.jpg",
   "time": "2026-11-11T11:44:00Z",
   "caption": "The start of the knight's sweep cut from its front quarter: the glaive comes down diagonally across the body in both fists; still backlit and the giant reads dark against the meadow.",
@@ -897,6 +873,18 @@
   "file": "20261115-0821-soldier-turn-square.jpg",
   "time": "2026-11-15T08:21:58Z",
   "caption": "Same turn 13 frames in: hips and spear guard have followed the head round; the far boot still reaches wide, GL render, speckled floor.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0930-heroturn-headfirst.jpg",
+  "time": "2026-11-15T09:30:00Z",
+  "caption": "Hero 0.1 s into a turn on the spot (new ease-in): the back is still square to the lens and only the hat brim has begun to turn; GL render, harsh flat light on the yard.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0930-heroturn-before.jpg",
+  "time": "2026-11-15T09:30:00Z",
+  "caption": "Same moment before the change: shoulders and staff already swung ~35 deg in one piece with the head; GL render.",
   "verdict": "fail"
  }
 ]

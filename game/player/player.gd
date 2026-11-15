@@ -1388,6 +1388,10 @@ var lean_peak := Vector2.ZERO          # (bots) most forward / most back pitch s
 var _turn_sh := 0.0                    # the shuffle the turn rate wants this tick
 var turn_shuffle := 0.0                # 0..1 stepping on the spot while the body turns
 const TURN_STEP_RATE := 6.0            # rad/s: on the spot the body comes round only as fast as the feet step it
+const TURN_ACCEL := 22.0               # rad/s^2: (11-15) on the spot the yaw rate builds up over ~0.27 s
+static var HEROTURN_OLDSTART := OS.has_environment("HEROTURN_OLDSTART")   # full turn rate from the first tick (before)
+var _spot_turn_rate := 0.0
+var _spot_turn_frame := -10
 const TURN_STILL := 0.6                # m/s: below this the hero is turning on the spot, not running a curve
 var bot_square_yaw := NAN             # (shots) square up to this yaw standing, as if locked
 var turn_rate_peak := 0.0              # (bots) fastest on-the-spot turn seen, rad/s
@@ -1397,6 +1401,16 @@ func _step_capped(want: float, delta: float) -> float:
 	if Vector2(velocity.x, velocity.z).length() >= TURN_STILL or not is_on_floor():
 		return want
 	var cap := TURN_STEP_RATE * delta
+	if not HEROTURN_OLDSTART:
+		# (11-15) the yaw rate eases in from rest like the foes' (`foeturn`): the head lead gets
+		# ahead first and the body speeds up into the turn after it; slowing is never held back,
+		# and a turn not driven last tick starts again from rest
+		if Engine.get_physics_frames() != _spot_turn_frame + 1:
+			_spot_turn_rate = 0.0
+		_spot_turn_frame = Engine.get_physics_frames()
+		var want_rate := absf(angle_difference(body.rotation.y, want)) / maxf(delta, 1e-4)
+		_spot_turn_rate = minf(minf(_spot_turn_rate + TURN_ACCEL * delta, TURN_STEP_RATE), want_rate)
+		cap = _spot_turn_rate * delta
 	var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
 	turn_rate_peak = maxf(turn_rate_peak, absf(d) / maxf(delta, 1e-4))
 	if stride_warp != null:

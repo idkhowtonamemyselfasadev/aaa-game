@@ -22,6 +22,7 @@ const ROUTES := {
 
 var _turn_left := false        # (heroturnl, 11-12 15:00) the turn on the spot goes to the left
 var _hero_sink_peak := 0.0  # (heroturn, 11-12 05:00) deepest hip sink onto the pivot leg, skeleton cm
+var _ease_read := [-1.0, 0.0]   # (heroturn 11-15) body yaw turned when the head lead passes 0.5 / after 3 ticks
 var _heel_peak := 0.0      # (heroturn/foeturn) highest heel lift of the ball pivot
 var _heel_down_tick := -1
 var _world: Node3D
@@ -2312,6 +2313,8 @@ func _hero_turn_test() -> void:
 		var ahead := 0.0
 		var head_in := -1
 		var body_in := -1
+		var yaw0 := p.body.rotation.y
+		_ease_read = [-1.0, 0.0]
 		for i in ticks:
 			p.bot_input = stick
 			await get_tree().physics_frame
@@ -2354,6 +2357,10 @@ func _hero_turn_test() -> void:
 			var hy: float = by + angle_difference(head0, head_local.call())
 			if absf(p.turn_lead) > absf(peak):
 				peak = p.turn_lead
+			if _ease_read[0] < 0.0 and absf(p.turn_lead) > 0.5:
+				_ease_read[0] = absf(angle_difference(yaw0, by))
+			if i < 3:
+				_ease_read[1] = absf(angle_difference(yaw0, by))
 			var gap_b := absf(angle_difference(by, g))
 			var gap_h := absf(angle_difference(hy, g))
 			ahead = maxf(ahead, gap_b - gap_h)
@@ -2427,6 +2434,7 @@ func _hero_turn_test() -> void:
 	if OS.has_environment("HEROTURN_DBG"):
 		print("   free foot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
 	var spot_after := absf(p.turn_lead)
+	var _ease_spot: Array = _ease_read.duplicate()
 	var spot_rate := p.turn_rate_peak
 	var spot_shuffle: float = shuf[0]
 	var spot_piv := piv.duplicate()
@@ -2461,6 +2469,9 @@ func _hero_turn_test() -> void:
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])
+	print("BOT heroturn: ease-in: the body has turned %.3f rad when the head lead passes 0.5, %.3f rad after 3 ticks" % [_ease_spot[0], _ease_spot[1]])
+	if not Player.HEROTURN_OLDSTART and _ease_spot[0] > 0.2:
+		return _combat_done(false, "the body comes round with the head in a turn on the spot (%.3f rad turned when the lead passes 0.5)" % _ease_spot[0])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
 	# 2) a hard right turn at a run
 	for i in 70:
