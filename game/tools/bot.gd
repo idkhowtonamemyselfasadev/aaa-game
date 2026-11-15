@@ -3280,6 +3280,9 @@ func _foe_turn_test() -> void:
 				lift = maxf(lift, h)
 				if OS.has_environment("FOETURN_DBG") and sc < float(OS.get_environment("FOETURN_DBG_SC") if OS.has_environment("FOETURN_DBG_SC") else "1.5"):
 					var hc: float = ((skel.global_transform * skel.get_bone_global_pose(fi[j]).origin).y - e.global_position.y - rest[j]) / sc
+					if j == 1 and OS.has_environment("FOETURN_SOLE"):
+						var sw0: StrideWarp = e.stride_warp
+						print("   sole i %d h %.4f anim %.4f off %.4f drop %.4f arc %.3f sink %.3f swing %.4f toe %.4f pitch %.3f ank %.4f" % [i, sw0.ground_sole[1], sw0.ground_anim[1], sw0.ground_off[1], sw0.ground_drop, sw0._arc_top, sw0.pivot_sink, sw0.swing_lift[1], sw0.toe_floor_lift[1], sw0.toe_pitch[1], sw0.ankle_floor_lift[1]])
 					print("   i %d foot %d h %.3f (pose y over origin %.3f) pivot %.2f side %d off %.3f heelup %.3f ballY %.3f pinY %.3f" % [i, j, h, hc, e.stride_warp.pivot, e.stride_warp.pivot_side, e.stride_warp.ground_off[j], e.stride_warp.pivot_heel_up, e.stride_warp.pivot_ball.y - e.global_position.y, e.stride_warp.pivot_ball_pin.y - e.global_position.y])
 				if h > 0.02:
 					up += 1
@@ -3359,7 +3362,14 @@ func _foe_turn_test() -> void:
 		for m in range(1, free_h.size()):
 			if free_h[m - 1] < 0.01 and free_h[m - 1] > free_h[m]:
 				tap = maxf(tap, free_h[m - 1] - free_h[m])
-		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks, set-down %.4f per size per tick, %.4f per size up as the pivot lets go" % [dip, free_h.size(), tap, rel_h])
+		# (11-15 16:00) the set-down's jerk: over the boot's last 3 cm, how much faster it falls in one read than
+		# in the read before (the toe guard lifted the soldier's boot for 3 ticks, 0.2 -> 0.5 cm a read; the
+		# 2.2x knight's travel ended 0.0 -> 0.3 cm a read)
+		var jerk := 0.0
+		for m in range(2, free_h.size()):
+			if free_h[m - 1] < 0.03 and free_h[m - 1] > 0.0005:
+				jerk = maxf(jerk, (free_h[m - 1] - free_h[m]) - maxf(free_h[m - 2] - free_h[m - 1], 0.0))
+		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks, set-down %.4f per size per tick, %.4f per size up as the pivot lets go, set-down jerk %.4f per size" % [dip, free_h.size(), tap, rel_h, jerk])
 		if OS.has_environment("FOETURN_DBG"):
 			print("   free boot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
 			print("   lift     : ", " ".join(free_l.map(func(x): return "%.1f" % (x * 100.0 / sc))))
@@ -3391,7 +3401,7 @@ func _foe_turn_test() -> void:
 		# 8 cm back up as the pivot foot stepped off (4.9-7.0 cm between reads); now <= 2.4
 		if piv_sink[2] > 3.0 and not StrideWarp.FOEHEEL_SNAP_OLD and not StrideWarp.BALLPIVOT_OLD:
 			return _combat_done(false, "size %.1f: the hips pop %.1f cm in one read through the turn" % [sc, piv_sink[2]])
-		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide])
+		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide, jerk])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	# (11-15 12:00) the turn's first ticks: the pivot ball slid 0.036-0.056 per size while the pivot
 	# eased in (FOETURN_OLDPLANT=1 = before); planted at once from where the boot was shown: <= 0.002
@@ -3427,6 +3437,8 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: the pivot lets go with the stepping boot still up (%.4f per size)" % [o[0], o[19]])
 		if o[18] > (0.005 if OS.has_environment("PIVOT_ARC_TAP") else 0.0026):
 			return _combat_done(false, "size %.1f: the turn step taps the boot down (%.4f per size per tick)" % [o[0], o[18]])
+		if o[22] > 0.002:
+			return _combat_done(false, "size %.1f: the turn step's set-down speeds up in a jerk (%.4f per size)" % [o[0], o[22]])
 		# 11-06 07:00: the turn ends in two settle steps into the idle stance, as the hero's does; before
 		# (env FOE_PIVOT_HOVER) the boots slid back over the turf to the idle stance on the release
 		if not OS.has_environment("FOE_PIVOT_HOVER") and not OS.has_environment("PIVOT_HOVER"):

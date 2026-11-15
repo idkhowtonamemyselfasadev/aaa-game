@@ -139,6 +139,10 @@ var ground_drop := 0.0           # (bots) world m the hips settled for the lower
 var toe_floor := -INF
 var toe_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep its ball out of the ground
 static var TOE_FLOOR_OLD := OS.has_environment("TOEFLOOR_OLD")
+static var TOE_PITCH_OLD := OS.has_environment("TOEPITCH_OLD")
+const TOE_PITCH_AIR := 0.01       # (11-15 16:00) world m per size of ankle height over idle at which a landing boot fully tips its toes up
+const TOE_PITCH_MAX := 0.35       # rad: the most a landing boot tips its toes up to clear the turf
+var toe_pitch := [0.0, 0.0]       # (bots) rad each foot was tipped toes-up to keep its ball out of the ground
 var _ball_gy := [-INF, -INF]
 # (11-13 07:00) the ankle (Foot) bone never stands lower over the ground under it than it does in
 # the idle: the foes' walk clip carries each planted boot ~0.02 m per size lower against the root
@@ -404,6 +408,7 @@ var _arc_top := 0.0              # the boot's height over the stance level the a
 var _arc_peak := 0.0             # the step's peak travel speed
 var _arc_falling := false        # the arc has passed its top
 var _arc_v := -1.0               # (11-15) units/s the arc top fell last tick (0: rising or held, a fresh fall is not capped)
+static var ARC_ACC_SIZE_OLD := OS.has_environment("ARC_ACC_SIZE_OLD")
 const ARC_DROP_ACC := 180.0      # units/s^2: the descent gains at most 3 units/s a tick at 60 Hz
 static var ARC_JERK_OLD := OS.has_environment("ARC_JERK_OLD")
 const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
@@ -1039,7 +1044,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				# (11-15 12:00) the descent speeds up smoothly: as the boot stopped travelling and the settle took
 				# it, its drop jumped 0.15 -> 0.48 units in one tick (a visible kink at ~2.8 cm, bot `foeturn`).
 				# ARC_JERK_OLD: before
-				nt = maxf(nt, _arc_top - (_arc_v + ARC_DROP_ACC * delta) * delta)
+				# (11-15 16:00) ...and a bigger body's boot gathers its fall more slowly (/ sqrt(size), as its settle ease):
+				# the 2.2x knight's descent still tripled in one read (0.07 -> 0.21 units) as its travel ended. ARC_ACC_SIZE_OLD: before
+				var acc := ARC_DROP_ACC if ARC_ACC_SIZE_OLD else ARC_DROP_ACC / sqrt(maxf(ground_scale, 1.0))
+				nt = maxf(nt, _arc_top - (_arc_v + acc * delta) * delta)
 			if travelling and not PIVOT_ARC_SAG:
 				# while the foot still travels round, the sag stops at the lift its speed wants (it
 				# holds, never rises): the hero's 180 deg turn sagged 4.0 -> 1.2 cm at a full stride
@@ -1471,6 +1479,7 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
 		toe_floor_lift[i] = 0.0
+		toe_pitch[i] = 0.0
 		ankle_floor_lift[i] = 0.0
 		if ankle_floor > -INF and not ANKLE_FLOOR_OLD and float(_ank_gy[i]) > -INF:
 			var aw0: Vector3 = xf * skel.get_bone_global_pose(ft[i]).origin
@@ -1496,10 +1505,28 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 			if plant > 0.0 and tilt > 1e-3:
 				rel = Basis(Vector3.UP.cross(n).normalized(), minf(tilt, GROUND_TILT_MAX) * plant) * rel
 			var need := float(_ball_gy[i]) + toe_floor * sc - (aw.y + lift + rel.y)
+			toe_pitch[i] = 0.0
+			if need > 0.0 and not TOE_PITCH_OLD and float(_ank_gy[i]) > -INF and ankle_floor > -INF:
+				# (11-15 16:00) a boot still coming down tips its toes up rather than rising: the guard lifted the
+				# whole soldier boot 1.5-3 mm for three ticks of its set-down (bot `foeturn` FOETURN_SOLE), so it
+				# stalled and then dropped 5 mm in one tick. A landing foot meets the turf heel first, toes raised;
+				# the tip is shared out by how high the ankle still is over its idle height (fully tipped from
+				# TOE_PITCH_AIR up), so a boot standing on a stair edge is still lifted onto it. TOEPITCH_OLD: before
+				var air := clampf((aw.y + lift - float(_ank_gy[i]) - ankle_floor * sc) / (TOE_PITCH_AIR * sc), 0.0, 1.0)
+				var rh := Vector3(rel.x, 0.0, rel.z)
+				if air > 0.0 and rh.length() > 1e-4:
+					# toes up by the angle that raises the ball by `need` exactly (rel points down to the ball)
+					var phi := atan2(rel.y, rh.length())
+					var ang := minf(maxf(asin(clampf((rel.y + need) / rel.length(), -1.0, 1.0)) - phi, 0.0), TOE_PITCH_MAX) * air
+					var ax_w := rh.normalized().cross(Vector3.UP).normalized()
+					var rel2 := Basis(ax_w, ang) * rel
+					need -= rel2.y - rel.y
+					keep = Basis((inv.basis * ax_w).normalized(), ang * w) * keep
+					toe_pitch[i] = ang * w
 			if need > 0.0:
 				toe_floor_lift[i] = minf(need, lim) * w
 				lift += toe_floor_lift[i]
-		if absf(lift) < 1e-4 and plant <= 0.0:
+		if absf(lift) < 1e-4 and plant <= 0.0 and float(toe_pitch[i]) == 0.0:
 			continue
 		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift
 		_leg_to(skel, ul[i], lg[i], ft[i], t, keep, fwd)
