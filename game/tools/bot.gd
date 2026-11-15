@@ -2322,6 +2322,7 @@ func _surge_grip_test() -> void:
 	_combat_done(true, "the knight's fists stay on the glaive through both surges")
 
 const PRE_CARRY_MAX_HERO := 0.003  # (11-15 14:00) m a ball may slide before the pivot is in (was 0.0107 eased in; 0.0005 full)
+const GATHER_PEAK_MAX := 2.8      # (11-15 21:00) m/s the gather step's boot may reach (0.16 s step: 3.71)
 const PIVOT_DRAG_MAX_HERO := 0.012 # (11-15 14:00) m the pivot ball may travel within 1 cm of the turf (gather landing 0.053 -> 0.004)
 var _hturn_drag: Array = []
 func _hero_turn_test() -> void:
@@ -2356,6 +2357,8 @@ func _hero_turn_test() -> void:
 	# ...and the pivot ball over the whole spin until the settle: travel over the turf on ticks it is
 	# within 1 cm of its standing height (a lifted gather step is fine, a dragged toe is not)
 	var scuff := [Vector3.INF, 0.0, 0.0, 0.0]   # prev, scuffed travel, total travel, rest y
+	# (11-15 21:00) the gather step itself: its peak boot speed and the biggest tick-to-tick change in it
+	var gath := [0.0, 0, 0.0, -1.0]   # peak m/tick, ticks, biggest step change m/tick, prev step
 	# one turn: returns [lead peak signed, head max ahead of body, head arrival tick, body arrival tick, lead after]
 	var measure := func(goal_yaw: Callable, ticks: int, stick: Vector2) -> Array:
 		var peak := 0.0
@@ -2380,6 +2383,12 @@ func _hero_turn_test() -> void:
 					var dxz := Vector2(bp.x - scuff[0].x, bp.z - scuff[0].z).length()
 					scuff[2] += dxz
 					_hturn_drag.append([bp.y - gy, dxz])
+					if sw._gather_t > 0.0 and (sw._gather_off.length_squared() > 0.0 or float(gath[3]) >= 0.0):
+						gath[0] = maxf(float(gath[0]), dxz)
+						if float(gath[3]) >= 0.0:
+							gath[2] = maxf(float(gath[2]), absf(dxz - float(gath[3])))
+						gath[1] = int(gath[1]) + 1
+						gath[3] = dxz if sw._gather_off.length_squared() > 0.0 else -1.0
 					if OS.has_environment("HEROTURN_PRE"):
 						print("   ball i %d up %.4f overturf %.4f step %.4f gather %.3f" % [i, bp.y - float(scuff[3]), bp.y - gy, dxz, sw._gather_t])
 				else:
@@ -2530,6 +2539,10 @@ func _hero_turn_test() -> void:
 		if float(d[0]) - stand_h < 0.01:
 			scuff[1] += float(d[1])
 	print("BOT heroturn: the pivot ball travels %.4f m through the spin, %.4f m of it dragged along the turf (within 1 cm of its standing height)" % [scuff[2], scuff[1]])
+	print("BOT heroturn: gather step %d ticks (%.2f s), boot peak %.2f m/s, biggest tick-to-tick speed change %.2f m/s" % [int(gath[1]), StrideWarp.PIVOT_GATHER_T, float(gath[0]) * 60.0, float(gath[2]) * 60.0])
+	# (11-15 21:00) a 22 cm gather step over 0.16 s whipped the boot at 3.7 m/s (GATHER_T=0.16 = before)
+	if int(gath[1]) > 0 and not OS.has_environment("GATHER_T") and float(gath[0]) * 60.0 > GATHER_PEAK_MAX:
+		return _combat_done(false, "the gather step whips the boot at %.2f m/s" % (float(gath[0]) * 60.0))
 	# (11-15 14:00) the gather step travelled its last ~5 cm with the boot already down (GATHER_LAND_OLD = before)
 	if not StrideWarp.GATHER_LAND_OLD and not Player.HEROTURN_FULL_OLD and float(scuff[1]) > PIVOT_DRAG_MAX_HERO:
 		return _combat_done(false, "the pivot ball drags %.4f m along the turf in a turn on the spot" % float(scuff[1]))

@@ -93,7 +93,7 @@ var _hips_over_pin0 := -1e9
 ## hips_over_pin). GATHER_OLD: the before; PIVOT_GATHER=<k> tunes.
 static var GATHER_OLD := OS.has_environment("GATHER_OLD")
 static var PIVOT_GATHER_K := float(OS.get_environment("PIVOT_GATHER")) if OS.has_environment("PIVOT_GATHER") else 1.0   # (11-12 20:00) was 0.35: full gather keeps a 180 on the spot (bot `lean` 0.49 -> 0.16 m)
-const PIVOT_GATHER_T := 0.16     # s: the gather step's length
+static var PIVOT_GATHER_T := float(OS.get_environment("GATHER_T")) if OS.has_environment("GATHER_T") else 0.26     # s: the gather step's length (GATHER_T=<s> tunes; 11-15 21:00 was 0.16: boot peak 3.7 -> 2.3 m/s, tick-to-tick change 1.66 -> 0.69 m/s)
 const GATHER_TRAVEL_END := 0.7   # (11-15 14:00) share of the gather step by which the boot has travelled
 static var GATHER_LAND_OLD := OS.has_environment("GATHER_LAND_OLD")
 const PIVOT_GATHER_MIN := 0.5    # stance widths: a foot nearer the body line than this fore-aft does not gather

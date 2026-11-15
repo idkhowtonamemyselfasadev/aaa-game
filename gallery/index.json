@@ -886,5 +886,17 @@
   "time": "2026-11-15T20:05:00Z",
   "caption": "Hero mid-run stride on open turf by the cottage, rear 3/4 at 09:00; hat, capelet and staff read, but the boots are too small in frame to judge the heel-strike toe tip and the backlit robe is dark.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261115-2100-heroturn-gather.jpg",
+  "time": "2026-11-15T21:00:00Z",
+  "caption": "Hero turning on the spot, the forward boot mid-way through its longer 0.26 s gather step; lens still reads from behind, not side-on, and the hero looks small against dark grass.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2100-gather-sheet.jpg",
+  "time": "2026-11-15T21:00:00Z",
+  "caption": "Gather step over ticks 0-20 (3-tick spacing): the boot now arrives at ticks 12-15 instead of snapping in by tick 9; rear lens, boots partly hidden by the robe.",
+  "verdict": "fail"
  }
 ]

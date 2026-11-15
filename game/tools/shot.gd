@@ -4110,7 +4110,9 @@ func _ready() -> void:
 				tick += 1
 			get_tree().paused = true
 			# fixed in the world across the sequence, so the boots' travel over the turf reads
-			var side := Vector3(sin(yaw0 + (0.9 if left else -0.9)), 0, cos(yaw0 + (0.9 if left else -0.9)))
+			# (11-15 21:00) "side": square to the hero's starting flank (the boots read apart across the body)
+			var sa := (PI * 0.5 if "side" in args else 0.9) * (1.0 if left else -1.0)
+			var side := Vector3(sin(yaw0 + sa), 0, cos(yaw0 + sa))
 			var cpos := c0 + side * (3.2 if wide else 1.7) + Vector3.UP * (1.3 if wide else 0.45)
 			cpos.y = maxf(cpos.y, terrain.height_at(cpos.x, cpos.z) + 0.25)
 			cam.global_position = cpos
