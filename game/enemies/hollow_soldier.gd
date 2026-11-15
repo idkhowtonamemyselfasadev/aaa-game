@@ -1209,6 +1209,10 @@ const TURN_STILL := 0.3          # m/s (any size): below this a turn is on the s
 const TURN_FROM := 0.8           # rad/s of yaw where the stepping starts
 const TURN_FULL := 2.5           # rad/s more for full steps
 const TURN_STEP_RATE := 4.0      # rad/s cap of a turn on the spot at 1x cadence
+const TURN_ACCEL := 14.0         # rad/s^2 at 1x cadence: a turn on the spot builds up (~0.3 s to full rate)
+var _spot_turn_tick := -10
+var _spot_turn_w := 0.0          # rad/s: yaw rate of the body last tick (ease-in of a turn on the spot)
+static var _turn_oldstart := OS.has_environment("FOETURN_OLDSTART")   # = before 11-15 07:00
 
 const LEAD_BONES := ["mixamorig_Spine1", "mixamorig_Spine2", "mixamorig_Neck", "mixamorig_Head"]
 const LEAD_SHARE := [0.12, 0.18, 0.30, 0.40]   # the head turns furthest, the chest a little
@@ -1584,8 +1588,25 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 		# ~230 deg/s, the phase-3 giant under half that (heavy, but it still keeps a circling hero)
 		var cap := TURN_STEP_RATE * natural_cadence() * delta
 		var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
+		if not _turn_oldstart:
+			# (11-15 07:00) ease in: the body speeds up into the turn at TURN_ACCEL (its cadence),
+			# so the head swings round first and the hips follow (the exp chase above turned the
+			# body at full rate on the first tick, with the head). Slowing down is never held back.
+			var w := d / delta
+			if Engine.get_physics_frames() - _spot_turn_tick > 1:
+				_spot_turn_w = 0.0      # not turned last tick: a new turn starts from rest
+			_spot_turn_tick = Engine.get_physics_frames()
+			var lim := absf(_spot_turn_w) + TURN_ACCEL * natural_cadence() * delta
+			if signf(w) != signf(_spot_turn_w):
+				lim = TURN_ACCEL * natural_cadence() * delta
+			w = clampf(w, -lim, lim)
+			d = w * delta
+			_spot_turn_w = w
 		_pivot_orbit(d)
 		want = body.rotation.y + d
+	elif delta > 0.0:
+		_spot_turn_w = angle_difference(body.rotation.y, want) / delta
+		_spot_turn_tick = Engine.get_physics_frames()
 	body.rotation.y = want
 
 ## Swings the body round the planted pivot foot by the yaw step d (the hero's Player._step_capped):

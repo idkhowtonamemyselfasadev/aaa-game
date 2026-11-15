@@ -3148,7 +3148,7 @@ func _ready() -> void:
 	if spot == "ring" and "turn" in args:
 		# ring turn [sz=4.6]: the knight at size sz standing side-on in the ring, turning on the spot
 		# to face the gate (bot_face, 90 deg); the frame count sets how far into the turn it is
-		var rk: AshenKnight = world.knight
+		var rk: HollowSoldier = world.knight
 		var rr: StoneRing = world.stone_ring
 		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
 		var rside := rf.cross(Vector3.UP)
@@ -3156,6 +3156,13 @@ func _ready() -> void:
 		for a in args:
 			if a.begins_with("sz="):
 				sz = float(a.substr(3))
+		# (11-15 07:00) foe=soldier: the Hollow Soldier (size 1) turns on the spot in the ring instead
+		if "foe=soldier" in args:
+			world.knight.process_mode = Node.PROCESS_MODE_DISABLED
+			world.knight.visible = false
+			rk = world.soldier
+			rk.give_up = 1e9
+			sz = 1.0
 		rk.set_size_scale(sz)
 		rk.notice = -1.0
 		rk.state = HollowSoldier.IDLE
@@ -3168,6 +3175,12 @@ func _ready() -> void:
 		sc.y = terrain.height_at(sc.x, sc.z) + 0.2 * sz
 		cam.global_position = sc
 		cam.look_at(rr.centre + Vector3.UP * 0.55 * sz)
+		if "foe=soldier" in args and not "bootlens" in args:
+			# a man-sized foe: in to 3.4 m at chest height so the whole body fills the frame
+			var sl := rr.centre + rf * 3.2 + rside * 1.1
+			sl.y = terrain.height_at(sl.x, sl.z) + 1.0
+			cam.global_position = sl
+			cam.look_at(rr.centre + Vector3.UP * 0.9)
 		if "bootlens" in args:
 			# bootlens: low and close on the sun side, framing the legs and boots (the turn step's arc)
 			var tl: Vector3 = -world.sun.global_transform.basis.z
