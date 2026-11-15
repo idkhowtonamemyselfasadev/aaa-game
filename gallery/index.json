@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261111-1812-knight-sweep-before-after.jpg",
-  "time": "2026-11-11T18:12:18Z",
-  "caption": "Before (left) the coiled haft ran into the helm's lower edge; after (right) it runs lower under the chin to the right fist with the chest turned further into the coil. A small change at this distance.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1812-knight-sweep-coil.jpg",
   "time": "2026-11-11T18:12:18Z",
   "caption": "The Ashen Knight coils its sweep with the glaive now passing under its helm's chin skirt (bot: clear by 0.125 m/size, was 0.17 through); the knight is still dim and backlit, and the helm reads as a dark dome.",
@@ -885,6 +879,18 @@
   "file": "20261115-1622-soldierturn.jpg",
   "time": "2026-11-15T16:22:52Z",
   "caption": "Hollow Soldier mid turn-on-the-spot, stepping boot setting down (now heel-first with toes tipped up instead of being lifted, so it no longer stalls and drops); still wrong: the soldier reads dark against the turf and the dirt floor is speckled black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1704-soldier-turned.jpg",
+  "time": "2026-11-15T17:04:34Z",
+  "caption": "Hollow Soldier squared up after a turn on the spot, boots back on its guard stance (no wide boot); the ring's dirt still shows black speckle under the GL fallback renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1704-soldier-guard.jpg",
+  "time": "2026-11-15T17:04:34Z",
+  "caption": "The same soldier side-on before the turn: the long spear guard stagger that read as a wide boot end-on; ground speckle and flat GL lighting still fall short of Wukong.",
   "verdict": "fail"
  }
 ]
