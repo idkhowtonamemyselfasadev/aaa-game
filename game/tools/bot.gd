@@ -11428,7 +11428,12 @@ func _sweep_test() -> void:
 			if brobe[6] > 0 and brobe[5] < -0.09:
 				return _combat_done(false, "the back robe panel runs into the turf in the kneel (hem %.2f m)" % brobe[5])
 	print("BOT sweep: robe probe: back panel line lowest point %.3f m over the turf (seat clear of the sward), lies along the turf %.2f m at most while down, hem %.2f m over the seat in the air, fastest swing of the folded stretch %.1f m.rad/s, %d samples" % [bkp[0], bkp[1], bkp[3], bkp[4], bkp[2]])
-	# (info only for now: the kneel dips 2-7 cm under; gate it at -BACK_TURF_GATE / BACK_FLIP_GATE once fixed)
+	# (11-15 06:00: gated now the floor fold is a contact taken from the swing the panel has)
+	if not OS.has_environment("KNOCK_NOBACKROBE") and not OS.has_environment("KNOCK_OLDFLOOR") and bkp[2] > 0:
+		if bkp[0] < -BACK_TURF_GATE:
+			return _combat_done(false, "the back robe panel runs %.3f m under the turf (gate %.2f)" % [-bkp[0], BACK_TURF_GATE])
+		if bkp[4] > BACK_FLIP_GATE:
+			return _combat_done(false, "the lying back robe panel flips over (%.1f m.rad/s, gate %.1f)" % [bkp[4], BACK_FLIP_GATE])
 	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
 	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
 		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])

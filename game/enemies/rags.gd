@@ -940,34 +940,63 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 			# in the fall the cloth is near weightless and the air drags the part past the knee
 			# back up: it turns only part way to plumb
 			bfold.y *= BACK_AIR_FOLD
-		push_b = -INF if wb > 0.5 else push_b
+		if OS.has_environment(FLOOR_OLD_ENV):
+			push_b = -INF if wb > 0.5 else push_b
+		elif push_b > -INF:
+			# (11-15 06:00) the heels' push comes back as the pose lets go, not in one tick: a hard
+			# switch at half weight popped the panel 0.2 rad up in a tick as the kneel rose
+			push_b = -INF if wb > 0.999 else push_b - BACK_PUSH_EASE * wb
 		back_thigh_gap = minf(back_thigh_gap, gap) if back_air > 0.9 else back_thigh_gap
+	tuck_k = k
+	tuck_lie = lerpf(tuck_lie, lie, k)
+	tuck_lie_peak = maxf(tuck_lie_peak, tuck_lie)
+	_swing_f = _drop_swing(0, _swing_f, tf, push_f, k, fl * sy)
+	_swing_b = _drop_swing(1, _swing_b, tb, push_b, k, _back.get_meta("len", 1.0) * _back.global_basis.y.length())
+	var floor_hit := false
 	if posed_legs and back_floor and bfold.x >= 100.0:
 		# where the panel line meets the turf it folds and the rest lies on the ground behind
+		# (11-15 06:00: from the swing the panel HAS, not the one it aims at, and set at once: a
+		# contact with the turf does not lag the seat rising in the kneel)
 		var br := _pivot_frame(_back)
 		var bo := _back.global_position
 		var bsy := _back.global_basis.y.length()
 		var bl: float = _back.get_meta("len", 1.0)
-		var dir: Vector3 = br[0] * cos(tb) - br[1] * sin(tb)
+		var sw := tb if OS.has_environment(FLOOR_OLD_ENV) else _swing_b
+		var dir: Vector3 = br[0] * cos(sw) - br[1] * sin(sw)
 		var c := -dir.dot(up)
-		var h := maxf(bo.dot(up) - _ground_at(bo, up) - 0.02, 0.01)
+		var h := maxf(bo.dot(up) - _ground_at(bo, up) - BACK_FLOOR_PAD, 0.01)
 		if c > 0.05 and bl * bsy * c > h:
 			# the turn that levels the rest (d cos f - n sin f flat), toward whichever face of the
 			# panel looks up: a panel leaning back lies on behind, one leaning forward (the seat
 			# down, the legs out in front) runs on along the turf toward the feet
-			var nrm: Vector3 = br[1] * cos(tb) + br[0] * sin(tb)
+			var nrm: Vector3 = br[1] * cos(sw) + br[0] * sin(sw)
 			var nup := nrm.dot(up)
 			# (the side, once the cloth is down on it, holds: as the panel swings through plumb
 			# the pooled rest does not flip over from in front to behind)
 			if _floor_side == 0.0:
 				_floor_side = 1.0 if nup <= 0.0 else -1.0
 			var f := atan2(c, -nup) - 0.05 if _floor_side > 0.0 else -(atan2(c, nup) - 0.05)
-			bfold = Vector2(h / c / bsy, clampf(f, -2.4, 2.4))
-	tuck_k = k
-	tuck_lie = lerpf(tuck_lie, lie, k)
-	tuck_lie_peak = maxf(tuck_lie_peak, tuck_lie)
-	_swing_f = _drop_swing(0, _swing_f, tf, push_f, k, fl * sy)
-	_swing_b = _drop_swing(1, _swing_b, tb, push_b, k, _back.get_meta("len", 1.0) * _back.global_basis.y.length())
+			f = clampf(f, -2.4, 2.4)
+			var fx := h / c / bsy
+			if not OS.has_environment(FLOOR_OLD_ENV):
+				# the bend's own round and the rest's last tilt carry the cloth a little lower than
+				# the fold's start: start the fold that much higher up the line
+				# (and as the seat lifts the last of the lying cloth off the turf it peels: the fold
+				# opens over the last BACK_PEEL m of lying cloth, the hem's tip the last to leave, so
+				# the tail does not flick up in a tick)
+				var f0 := f
+				var a := 0.02
+				var b := bl
+				for _it in 12:
+					fx = (a + b) * 0.5
+					if _floor_low(fx, f0, bl, bsy, dir, nrm, up) + h - c * fx * bsy > 0.0:
+						a = fx
+					else:
+						b = fx
+				fx = a
+				f = f0 * smoothstep(0.0, BACK_PEEL, maxf(bl - fx, 0.0) * bsy)
+				floor_hit = true
+			bfold = Vector2(fx, f)
 	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
 	# behind the heels
 	if not gap_at.is_empty():
@@ -1006,7 +1035,7 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	if bfold.x < 100.0 or _back_folded:
 		if bfold.x < 100.0:
 			# (a fold against the turf is a contact: it follows quickly)
-			fold_back = Vector2(bfold.x, lerpf(fold_back.y if fold_back.x < 100.0 else 0.0, bfold.y, maxf(k, 0.85)))
+			fold_back = bfold if floor_hit else Vector2(bfold.x, lerpf(fold_back.y if fold_back.x < 100.0 else 0.0, bfold.y, maxf(k, 0.85)))
 			_back_folded = true
 		else:
 			fold_back = Vector2(fold_back.x, lerpf(fold_back.y, 0.0, k))
@@ -1021,6 +1050,21 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	var bnl: Vector3 = bpf[1] * cos(bsw) + bpf[0] * sin(bsw)
 	var bq := fold_arc(_back.get_meta("len", 1.0), fold_back, 0.07)
 	back_hem = _back.global_position + (bdl * bq.x + bnl * bq.y) * _back.global_basis.y.length()
+
+const BACK_FLOOR_PAD := 0.02   # m the back panel's lying rest is held over the turf (under the grass tops)
+const BACK_PUSH_EASE := 3.0   # rad the heels' push floor is held down by at full pose weight
+const BACK_PEEL := 0.20   # m of lying back panel over which the floor fold opens as it lifts off
+const FLOOR_OLD_ENV := "KNOCK_OLDFLOOR"   # (A/B: the 05:00 floor fold, from the aimed swing and eased)
+## How far the back panel's folded rest (fold at `fx` down the panel, opening as it peels off)
+## dips below the fold's start (m, <= 0).
+func _floor_low(fx: float, f0: float, bl: float, bsy: float, dir: Vector3, nrm: Vector3, up: Vector3) -> float:
+	var rest := maxf(bl - fx, 0.0)
+	var f := f0 * smoothstep(0.0, BACK_PEEL, rest * bsy)
+	var lo := 0.0
+	for j in 5:
+		var q := fold_arc(rest * (j + 1) / 5.0, Vector2(0.0, f), 0.07)
+		lo = minf(lo, (dir * q.x + nrm * q.y).dot(up) * bsy)
+	return lo
 
 const BACK_AIR_FOLD := 0.55   # of the turn to plumb the back panel makes past the knee in a fall
 
