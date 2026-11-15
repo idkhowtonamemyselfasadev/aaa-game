@@ -401,6 +401,9 @@ const STEP_HOLD_FRAC := 0.15     # the foot counts as travelling while its speed
 var _arc_top := 0.0              # the boot's height over the stance level the arc holds (skeleton units)
 var _arc_peak := 0.0             # the step's peak travel speed
 var _arc_falling := false        # the arc has passed its top
+var _arc_v := -1.0               # (11-15) units/s the arc top fell last tick (0: rising or held, a fresh fall is not capped)
+const ARC_DROP_ACC := 180.0      # units/s^2: the descent gains at most 3 units/s a tick at 60 Hz
+static var ARC_JERK_OLD := OS.has_environment("ARC_JERK_OLD")
 const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
 const STEP_EASE_MIN := 0.25      # ...down to this fraction of the rate, so it does get down
 const STEP_EASE_K := 6.5         # 1/s: the boot closes at most this share of its height per second (~10 % a tick at 60 Hz)...
@@ -514,6 +517,10 @@ var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, worl
 ## its boot slid 7 cm along the turf (bot `herostop` walk+ cuts). 0 = off (the foes)
 var stop_lift_min := 0.0
 static var UNCROSS_CHASE_OLD := OS.has_environment("UNCROSS_CHASE_OLD")
+static var TURNPIN_SHOWN_OLD := OS.has_environment("TURNPIN_SHOWN_OLD")   # (11-15 12:00) a turn pin from this tick's pose (before)
+static var TURNPIN_FULL_OLD := OS.has_environment("TURNPIN_FULL_OLD")     # (11-15 12:00) a turn pin eased in with the pivot weight (before)
+var turn_plant_full := false       # (11-15, set by the owner) a pin planted now is a turn on the spot's: full weight at once
+var _pin_full := false             # this pin holds the pivot leg at full weight while `pivot` still ramps in
 var _shown_prev := [null, null]    # each ankle where it was shown last tick, world (after every correction)
 var stop_pin_shown := false        # (11-14, set by the hero) a stop's pin comes from last tick's shown boot
 var _stop_pin_lock := false        # (11-14) the next pivot pin is taken from the contact lock's pin
@@ -609,6 +616,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	step_lift = 0.0
 	if pivot <= 0.0:
 		pivot_pin = null
+		_pin_full = false
 		_sink_prev = 0.0
 		_arc_prev = null
 		_arc_speed = 0.0
@@ -616,6 +624,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_arc_top = 0.0
 		_arc_peak = 0.0
 		_arc_falling = false
+		_arc_v = -1.0
 		_settle_t = 0.0
 		_settle_at = null
 		_settle_b0 = null
@@ -662,6 +671,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var up := (frame.inverse() * Vector3.UP).normalized()
 	var fwd := (frame.inverse() * Vector3.BACK).normalized()
 	if pivot_pin == null:
+		# (11-15 12:00) a turn on the spot's pin is planted where the boot was shown (below), so it can hold
+		# the leg at full weight at once: eased in with `pivot` (4-7 ticks) the clip's first turn step slid
+		# the pivot ball 3.7 cm per unit size over the turf (17 cm on the phase-3 giant, bot `foeturn`)
+		_pin_full = turn_plant_full and not _stop_pin_lock and not TURNPIN_FULL_OLD
 		# plant it where it stands, at the stance level (the lower ankle), not mid-lift
 		var f0 := skel.get_bone_global_pose(ft).origin
 		var fp := f0                    # the posed ankle: the ball's offset is taken from it
@@ -672,6 +685,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# walk stop, bot `herostop`). STOPPIN_LOCK_OLD: before
 			var lp: Vector3 = inv * (_shown_prev[pivot_side] as Vector3)
 			f0 = lp - up * (lp.dot(up) - f0.dot(up))
+		elif not _stop_pin_lock and not TURNPIN_SHOWN_OLD and _shown_prev[pivot_side] != null:
+			# (11-15 12:00) a turn's pin: planted where the boot was SHOWN last tick, across the turf. The
+			# body yaw of the turn's first tick is already in this tick's pose, so the pin taken from it
+			# carried both boots round with the body for that tick, ~1.5 mm per unit size (7 mm on the
+			# phase-3 giant, bot `foeturn` pre-pivot carry). Not across a teleport. TURNPIN_SHOWN_OLD: before
+			var lp: Vector3 = inv * (_shown_prev[pivot_side] as Vector3)
+			var leg := skel.get_bone_global_pose(ul).origin.distance_to(f0)
+			var gap := (lp - f0) - up * (lp - f0).dot(up)
+			if gap.length() < 0.1 * leg:
+				f0 += gap
 		var lo := minf(f0.dot(up), skel.get_bone_global_pose(of).origin.dot(up))
 		pivot_pin = xf * (f0 - up * (f0.dot(up) - lo))
 		var stop_pin := _stop_pin_lock
@@ -882,7 +905,10 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	# a clip that rises onto the stepping leg would pull the planted foot off its pin: the hips
 	# settle onto the pivot leg instead, by just what it needs to reach (capped, a few cm)
 	var reach_l := (s.distance_to(skel.get_bone_global_pose(lg).origin) + skel.get_bone_global_pose(lg).origin.distance_to(skel.get_bone_global_pose(ft).origin)) * 0.99
-	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(pin_l, pivot)
+	if pivot >= 0.999:
+		_pin_full = false
+	var pin_w := 1.0 if _pin_full else pivot
+	var tp: Vector3 = skel.get_bone_global_pose(ft).origin.lerp(pin_l, pin_w)
 	var dd := tp - s
 	pivot_sink = 0.0
 	# the free foot as the clip steps it, before the hips settle: it keeps that place after
@@ -911,7 +937,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var f := skel.get_bone_global_pose(ft).origin
 	var a := s.distance_to(k)
 	var b := k.distance_to(f)
-	var t := f.lerp(pin_l, pivot)
+	var t := f.lerp(pin_l, pin_w)
 	var d := t - s
 	var dl := clampf(d.length(), absf(a - b) + 1e-3, (a + b) * 0.995)
 	pivot_short = d.length() - dl
@@ -1003,6 +1029,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					var v := STEP_EASE_V * (0.01 * ground_scale / wpu if wpu > 1e-6 else 1.0)
 					fall = minf(fall, maxf(_arc_top, 0.0) * (1.0 - exp(-STEP_SETTLE_EASE_K / sqrt(maxf(ground_scale, 1.0)) * delta)) + minf(v, STEP_EASE_V) * delta)
 			var nt := maxf(cand, _arc_top - fall)
+			if not ARC_JERK_OLD and _arc_v > 0.0 and nt < _arc_top:
+				# (11-15 12:00) the descent speeds up smoothly: as the boot stopped travelling and the settle took
+				# it, its drop jumped 0.15 -> 0.48 units in one tick (a visible kink at ~2.8 cm, bot `foeturn`).
+				# ARC_JERK_OLD: before
+				nt = maxf(nt, _arc_top - (_arc_v + ARC_DROP_ACC * delta) * delta)
 			if travelling and not PIVOT_ARC_SAG:
 				# while the foot still travels round, the sag stops at the lift its speed wants (it
 				# holds, never rises): the hero's 180 deg turn sagged 4.0 -> 1.2 cm at a full stride
@@ -1013,6 +1044,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				print("  arc f%d top %.2f fall %.2f cand %.2f d %.4f trav %s" % [Engine.get_physics_frames(), _arc_top, fall, cand, delta, travelling])
 			if nt < _arc_top - 1e-4:
 				_arc_falling = true
+			_arc_v = maxf(_arc_top - nt, 0.0) / maxf(delta, 1e-4) if nt < _arc_top else 0.0
 			_arc_top = nt
 			top = floor_h + _arc_top
 		var raise := (top - hgt) * pivot

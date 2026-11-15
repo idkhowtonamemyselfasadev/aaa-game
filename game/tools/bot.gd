@@ -3131,6 +3131,7 @@ func _foe_turn_test() -> void:
 	for i in 3:
 		cases.append([k, float(AshenKnight.PHASES[i]["scale"])])
 	var out := []
+	var pre_out := []
 	for c in cases:
 		var e: HollowSoldier = c[0]
 		var sc: float = c[1]
@@ -3168,6 +3169,8 @@ func _foe_turn_test() -> void:
 			return atan2(hz.x, hz.z)
 		await skel.skeleton_updated
 		var head0: float = head_yaw.call()
+		var ti := [skel.find_bone("mixamorig_LeftToeBase"), skel.find_bone("mixamorig_RightToeBase")]   # the ball: a ball pivot's contact
+		var pre_seed := [skel.global_transform * skel.get_bone_global_pose(ti[0]).origin, skel.global_transform * skel.get_bone_global_pose(ti[1]).origin]
 		var lead_signed := 0.0
 		var head_lead := 0.0
 		var body_at_lead := 0.0
@@ -3186,6 +3189,10 @@ func _foe_turn_test() -> void:
 		_ff_was_full = false
 		_ff_rel_ticks = 0
 		_ff_idle = 0.0
+		var pre_prev := pre_seed                      # (11-15 12:00) boot xz before the pivot plants
+		var pre_carry := [0.0, 0.0]                   # each boot's travel over the turf before the pivot plants (per size)
+		var pre_ticks := 0
+		var pre_done := false
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -3222,6 +3229,22 @@ func _foe_turn_test() -> void:
 				lifted += 1
 			if up == 2:
 				both_up += 1
+			if post and not pre_done:
+				# (11-15 12:00) the turn's first eased ticks: both boots on the final pose until the pivot plants
+				# (until the pivot is fully in: both boots before it plants, then the pivot boot through its ramp-in)
+				if e.stride_warp.pivot >= 0.97:
+					pre_done = true
+				else:
+					var turning := absf(f0.signed_angle_to(e.body.global_basis.z, Vector3.UP)) > 1e-4
+					if turning:
+						pre_ticks += 1
+					for j in 2:
+						var fp := skel.global_transform * skel.get_bone_global_pose(ti[j]).origin
+						if pre_prev[j] != Vector3.INF and turning and (e.stride_warp.pivot <= 0.0 or j == e.stride_warp.pivot_side):
+							pre_carry[j] += Vector2(fp.x - pre_prev[j].x, fp.z - pre_prev[j].z).length() / sc
+						pre_prev[j] = fp
+					if OS.has_environment("FOETURN_PRE"):
+						print("   pre i %d yaw %.4f pivot %.2f shuffle %.3f" % [i, f0.signed_angle_to(e.body.global_basis.z, Vector3.UP), e.stride_warp.pivot, e.turn_shuffle])
 			if post:
 				_foe_feet_track(skel, e.stride_warp, sc)
 			var sw: StrideWarp = e.stride_warp
@@ -3292,6 +3315,8 @@ func _foe_turn_test() -> void:
 		print("BOT foeturn: %s size %.1f: shuffle peak %.2f at cadence %.2f, foot lift %.3f per size, %d ticks a foot up (%d both), faced %.2f, drift %.3f m, after %.2f (blend %.2f)" % ["knight" if e == k else "soldier", sc, e.shuffle_peak, ts_peak, lift, lifted, both_up, faced, drift, after, blend_after])
 		var pin_after: bool = e.stride_warp != null and e.stride_warp.pivot_pin != null
 		print("BOT foeturn: ball pivot heel up to %.3f per size" % _heel_peak)
+		print("BOT foeturn: before the pivot is in: %d turning ticks, balls carried %.4f / %.4f per size" % [pre_ticks, pre_carry[0], pre_carry[1]])
+		pre_out.append(maxf(pre_carry[0], pre_carry[1]))
 		print("BOT foeturn: pivot foot %s planted %d ticks, pin drift %.3f per size (y %.3f), the other foot travels %.2f per size, the body swings %.2f m round it, hips settle up to %.1f cm, pin after %s" % ["left" if piv[3] == 0 else "right", piv[4], piv[0], piv[1], piv[2], swung, piv_sink[0], pin_after])
 		print("BOT foeturn: hips sink step at most %.1f cm between reads" % piv_sink[2])
 		# (11-12 03:00) the heel slapped flat on squaring up and the hips dropped 5 cm, then popped
@@ -3300,6 +3325,11 @@ func _foe_turn_test() -> void:
 			return _combat_done(false, "size %.1f: the hips pop %.1f cm in one read through the turn" % [sc, piv_sink[2]])
 		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide])
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
+	# (11-15 12:00) the turn's first ticks: the pivot ball slid 0.036-0.056 per size while the pivot
+	# eased in (FOETURN_OLDPLANT=1 = before); planted at once from where the boot was shown: <= 0.002
+	for q in pre_out.size():
+		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > 0.005:
+			return _combat_done(false, "case %d: the pivot ball slides %.4f per size as the turn starts" % [q, float(pre_out[q])])
 	for o in out:
 		if o[1] < 0.5:
 			return _combat_done(false, "size %.1f: the feet do not step round in a turn (shuffle %.2f)" % [o[0], o[1]])

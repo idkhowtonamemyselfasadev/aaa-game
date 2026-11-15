@@ -1213,6 +1213,8 @@ const TURN_ACCEL := 14.0         # rad/s^2 at 1x cadence: a turn on the spot bui
 var _spot_turn_tick := -10
 var _spot_turn_w := 0.0          # rad/s: yaw rate of the body last tick (ease-in of a turn on the spot)
 static var _turn_oldstart := OS.has_environment("FOETURN_OLDSTART")   # = before 11-15 07:00
+static var _foe_turn_oldplant := OS.has_environment("FOETURN_OLDPLANT")   # = before 11-15 12:00
+const FOE_PLANT_GAP := 0.15      # rad still to turn: a smaller correction is a sway, not a turn (no pivot)
 
 const LEAD_BONES := ["mixamorig_Spine1", "mixamorig_Spine2", "mixamorig_Neck", "mixamorig_Head"]
 const LEAD_SHARE := [0.12, 0.18, 0.30, 0.40]   # the head turns furthest, the chest a little
@@ -1634,11 +1636,19 @@ func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
 	stride_warp.settle_hold = state == WINDUP
-	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
+	# (11-15 12:00) a turn on the spot driven this tick with a real gap left plants its pivot at once
+	# (as the hero's, 11:00), at full weight on the pivot leg (StrideWarp.turn_plant_full): the body
+	# yaw of the turn's first tick had both boots carried round with it, then the pivot's 4-7 tick
+	# ease-in let the clip's first turn step slide the pivot ball 3.7 cm per unit size (bot `foeturn`).
+	# FOETURN_OLDPLANT: before
+	var starting := standing and not _foe_turn_oldplant and not _turn_oldstart and stride_warp.settle_lift_k == 1.0 \
+		and Engine.get_physics_frames() - _spot_turn_tick <= 1 and absf(_turn_gap) > FOE_PLANT_GAP
+	stride_warp.turn_plant_full = standing and not _foe_turn_oldplant and (starting or turn_shuffle > 0.05)
+	var want := stride_warp.pivot_want(1.0 if standing and (turn_shuffle > 0.05 or starting) else 0.0, standing, delta)
 	# squared up (the body no longer turning): the turn step comes down and the feet close the stance
 	if FOE_PIVOT_HOVER or not standing or stride_warp.pivot <= 0.0 or _turn_sh > 0.3:
 		stride_warp.pivot_settle = false
-	elif standing and _turn_sh <= 0.0:
+	elif standing and _turn_sh <= 0.0 and not starting:
 		stride_warp.pivot_settle = true
 	stride_warp.stance_idle = standing and turn_shuffle <= 0.0 and Vector2(velocity.x, velocity.z).length() < 0.05 * size_scale
 	var rate := (10.0 if want > stride_warp.pivot else 5.0) * natural_cadence()
