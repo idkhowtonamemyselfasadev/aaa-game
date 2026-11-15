@@ -909,6 +909,8 @@ func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
 			var a: Vector3 = now[j]
 			var b: Vector3 = _tf_feet[j]
 			_tf_rel_slide += Vector2(a.x - b.x, a.z - b.z).length()
+			if OS.has_environment("HEROTURN_REL"):
+				print("   rel f%d foot %d slide %.4f pivot %.3f settle %s done %s" % [Engine.get_physics_frames(), j, Vector2(a.x - b.x, a.z - b.z).length(), sw.pivot, sw.pivot_settle, sw.settle_done])
 	_tf_feet = now
 
 var _tf_last_up := -1
@@ -2321,6 +2323,10 @@ func _hero_turn_test() -> void:
 			await skel.skeleton_updated
 			shuf[0] = maxf(shuf[0], p.turn_shuffle)
 			var sw: StrideWarp = p.stride_warp
+			if OS.has_environment("HEROTURN_REL") and (i < 8 or (i > 50 and i < 70)):
+				var fl := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin
+				var fr := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin
+				print("   start i %d f%d yaw %.4f shuffle %.3f pivot %.3f settle %s st %.3f L %s R %s pos %s pin %s" % [i, Engine.get_physics_frames(), p.body.rotation.y, p.turn_shuffle, sw.pivot, sw.pivot_settle, sw._settle_t, fl, fr, p.global_position, sw.pivot_pin])
 			if free_on[0]:
 				var fs: int = 1 - sw.pivot_side
 				var fh: float = float(sw.ground_sole[fs]) - float(free_rest[fs])
@@ -2402,6 +2408,10 @@ func _hero_turn_test() -> void:
 		await get_tree().physics_frame
 		await skel.skeleton_updated
 		var sw2: StrideWarp = p.stride_warp
+		if OS.has_environment("HEROTURN_REL") and i < 12:
+			var fl2 := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin
+			var fr2 := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin
+			print("   late i %d yaw %.4f pivot %.3f settle %s st %.3f done %s L %s R %s pos %s pin %s" % [60 + i, p.body.rotation.y, sw2.pivot, sw2.pivot_settle, sw2._settle_t, sw2.settle_done, fl2, fr2, p.global_position, sw2.pivot_pin])
 		var fh2: float = float(sw2.ground_sole[1 - sw2.pivot_side]) - float(free_rest[1 - sw2.pivot_side])
 		if sw2.pivot < float(rel[0]) and float(rel[0]) >= 0.999 and float(rel[1]) < 0.0:
 			rel[1] = fh2
@@ -2461,7 +2471,10 @@ func _hero_turn_test() -> void:
 	if not StrideWarp.HIPSPIN_OLD and not OS.has_environment("STEPLIFT_OLD") and _tf_knee_peak[0] - step_rest > 16.0:
 		return _combat_done(false, "the stepping knee folds %.1f deg past its own guard bend in a turn on the spot" % (_tf_knee_peak[0] - step_rest))
 	# (11-12 14:00) no scissor stance: the stepping ankle stays out on its own side of the planted one
-	if not StrideWarp.PIVOT_CROSS_OLD and _tf_sep_min[0] < 0.4 * float(_tf_sep_rest[0]):
+	# (11-15 11:00) 0.4 -> 0.35 of rest: with the pivot foot planted from the turn's first tick the stepping
+	# boot lands on its own idle stance spot 0.056 m out on its side of the still-planted ankle (0.40 of
+	# rest), staggered, not crossed; the guard's line is now the pivot boot's settle goal (see stride_warp)
+	if not StrideWarp.PIVOT_CROSS_OLD and _tf_sep_min[0] < (0.4 if Player.HEROTURN_OLDPLANT else 0.35) * float(_tf_sep_rest[0]):
 		return _combat_done(false, "the feet cross into a scissor stance in a turn on the spot (ankles %.3f m apart across the body, %.3f at rest)" % [_tf_sep_min[0], _tf_sep_rest[0]])
 	# (11-12 07:00) the hips rise with the ball pivot's heel: the stepping knee no longer folds 13 deg
 	# past the guard's (HIPSHOLD_OLD: 43.2 -> 55.9), and the body does not bob up off the guard
@@ -2470,6 +2483,10 @@ func _hero_turn_test() -> void:
 	if _tf_hips_high - _tf_hips_rest > 0.04:
 		return _combat_done(false, "the hips bob %.3f m up off the guard in a turn on the spot" % (_tf_hips_high - _tf_hips_rest))
 	print("BOT heroturn: settle done %s, the feet end %.3f m from the idle stance, and slide %.3f m as the pivot lets go" % [_tf_settled, _tf_stance_err, _tf_rel_slide])
+	# (11-15 11:00) the pivot foot is planted from the turn's first tick: the eased-in body no longer carries
+	# both boots round over the turf before the shuffle starts (0.011 m in the first tick; 0.012 -> 0.001 summed)
+	if not Player.HEROTURN_OLDPLANT and not Player.HEROTURN_OLDSTART and _tf_rel_slide > 0.005:
+		return _combat_done(false, "the feet slide %.3f m on the turf off the pivot (start / release) in a turn on the spot" % _tf_rel_slide)
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])

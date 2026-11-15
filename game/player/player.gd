@@ -1401,6 +1401,9 @@ const TURN_ACCEL := 22.0               # rad/s^2: (11-15) on the spot the yaw ra
 static var HEROTURN_OLDSTART := OS.has_environment("HEROTURN_OLDSTART")   # full turn rate from the first tick (before)
 var _spot_turn_rate := 0.0
 var _spot_turn_frame := -10
+var _spot_want_rate := 0.0            # (11-15) the yaw rate the turn on the spot asks for (uncapped), last driven tick
+const PLANT_EARLY_RATE := 1.2          # rad/s: a turn asking this fast (the shuffle's own start) plants its pivot foot at once
+static var HEROTURN_OLDPLANT := OS.has_environment("HEROTURN_OLDPLANT")   # pivot waits for the shuffle (before)
 const TURN_STILL := 0.6                # m/s: below this the hero is turning on the spot, not running a curve
 var bot_square_yaw := NAN             # (shots) square up to this yaw standing, as if locked
 var turn_rate_peak := 0.0              # (bots) fastest on-the-spot turn seen, rad/s
@@ -1418,6 +1421,7 @@ func _step_capped(want: float, delta: float) -> float:
 			_spot_turn_rate = 0.0
 		_spot_turn_frame = Engine.get_physics_frames()
 		var want_rate := absf(angle_difference(body.rotation.y, want)) / maxf(delta, 1e-4)
+		_spot_want_rate = want_rate
 		_spot_turn_rate = minf(minf(_spot_turn_rate + TURN_ACCEL * delta, TURN_STEP_RATE), want_rate)
 		cap = _spot_turn_rate * delta
 	var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
@@ -1548,11 +1552,17 @@ func _walk_stop_settle(delta: float, standing: bool, hs: float, busy: bool) -> v
 func _update_pivot_foot(delta: float, standing: bool) -> void:
 	if stride_warp == null:
 		return
-	var want := stride_warp.pivot_want(1.0 if standing and turn_shuffle > 0.05 else 0.0, standing, delta)
+	# (11-15 11:00) a turn on the spot driven this tick with a real gap left plants its pivot foot at
+	# once: the eased-in body yaw stays under the shuffle's 1.2 rad/s for ~3 ticks, and until then
+	# both boots were carried round with the body, ~5 mm a tick over the turf (bot `heroturn` release
+	# slide). HEROTURN_OLDPLANT: before
+	var starting := standing and not HEROTURN_OLDPLANT and not HEROTURN_OLDSTART \
+		and Engine.get_physics_frames() - _spot_turn_frame <= 1 and _spot_want_rate > PLANT_EARLY_RATE
+	var want := stride_warp.pivot_want(1.0 if standing and (turn_shuffle > 0.05 or starting) else 0.0, standing, delta)
 	# squared up (the body no longer turning): the turn step comes down where it is
 	if stride_warp.pivot <= 0.0 or (standing and _turn_sh > 0.3):
 		stride_warp.pivot_settle = false
-	elif standing and _turn_sh <= 0.0:
+	elif standing and _turn_sh <= 0.0 and not starting:
 		stride_warp.pivot_settle = true
 	# (11-14 02:00) not while the run stop's pose has the legs: the body is already still there and the
 	# clip under it is still mid-stride, so the idle stance was re-read as that stride (the run stop's

@@ -513,6 +513,7 @@ var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, worl
 ## the hero's short first step after a quick walk (8 cm) rose 2 cm, under the walk clip's own dip, and
 ## its boot slid 7 cm along the turf (bot `herostop` walk+ cuts). 0 = off (the foes)
 var stop_lift_min := 0.0
+static var UNCROSS_CHASE_OLD := OS.has_environment("UNCROSS_CHASE_OLD")
 var _shown_prev := [null, null]    # each ankle where it was shown last tick, world (after every correction)
 var stop_pin_shown := false        # (11-14, set by the hero) a stop's pin comes from last tick's shown boot
 var _stop_pin_lock := false        # (11-14) the next pivot pin is taken from the contact lock's pin
@@ -1126,6 +1127,16 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var sg := lx * (1.0 if pivot_side == 0 else -1.0)            # the planted foot's side
 		var w := absf((_stance[0] as Vector3).x - (_stance[1] as Vector3).x)
 		var pa := skel.get_bone_global_pose(ft).origin
+		# (11-15 11:00) through the settle the line is the planted boot's settle GOAL (its idle stance
+		# spot), not where it stands: both boots are stepping into the idle stance, which never crosses,
+		# and measured against the pivot boot about to step away the guard set the stepping boot down
+		# 1.45 cm out and then pushed it back over the turf as the pivot boot stepped (bot `heroturn`
+		# scuff 0.018 m, once the pivot foot was planted from the turn's first tick). UNCROSS_CHASE_OLD: before
+		# The line moves over the first settle step while that boot is in the air, so it lands once.
+		if pivot_settle and not PIVOT_HOVER and not UNCROSS_CHASE_OLD:
+			var pg: Vector3 = inv * (_settle_bgoal_w as Vector3) if _settle_bgoal_w != null else inv * (_settle_ref(xf) * (_stance[pivot_side] as Vector3))
+			var ug := clampf(_settle_t / STEP_SETTLE_T, 0.0, 1.0)
+			pa = pa.lerp(pg, ug * ug * (3.0 - 2.0 * ug))
 		var short := (of_t.x - (pa.x - sg * w * PIVOT_CROSS_MIN)) * sg
 		if short > 0.0:
 			of_t.x -= sg * short
