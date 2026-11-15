@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261111-0050-knight-leap-bite.jpg",
-  "time": "2026-11-11T00:50:00Z",
-  "caption": "The blade biting the turf in front of the hero as the knight lands; a coherent end to the arc, armour materials and the grass still short of a Wukong frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0050-knight-leap-downswing.jpg",
-  "time": "2026-11-11T00:50:00Z",
-  "caption": "The knight falling onto the hero with the glaive swung out level in front and the legs reaching down for the landing; the down arc reads, the giant still looks too small next to the hero for a phase-2 leap.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0050-knight-leap-heave.jpg",
-  "time": "2026-11-11T00:50:00Z",
-  "caption": "The Ashen Knight at the top of its ember leap, legs tucked and the glaive heaved over its right shoulder (re-solved arc, now seen in a real frame sequence); lit and readable, but the shot harness leaves it at phase-1 size during a phase-2 move and the lens sits a little behind its shoulder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0130-knight-leap-p2-bite.jpg",
-  "time": "2026-11-11T01:30:00Z",
-  "caption": "The blade biting the turf beside the hero as the giant lands; the torso stays upright instead of bending into the slam, so the impact lacks weight.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0130-knight-leap-p2-downswing.jpg",
   "time": "2026-11-11T01:30:00Z",
   "caption": "The giant falling at the small hero (bottom left) with the glaive swung out level; the size gap finally reads as a boss leap, but the body is stiff and the lighting flat.",
@@ -897,6 +873,18 @@
   "file": "20261114-2300-sweepfall-front.jpg",
   "time": "2026-11-14T23:00:00Z",
   "caption": "Front 3/4 of the swept fall at 0.22 s: boots kicked up, trunk thrown back, staff still in the fist; reads as a real sweep, but the face is lit flat and the hand pose is stiff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0026-riseplant-1.62.jpg",
+  "time": "2026-11-15T00:26:00Z",
+  "caption": "Knock-down get-up at 1.62 s: right foot planted ahead on the turf, left knee down, the body starting forward over the foot; the lens is behind-left, not profile, and the figure still reads dark against the sun.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0026-riseplant-1.78.jpg",
+  "time": "2026-11-15T00:26:00Z",
+  "caption": "Same rise at 1.78 s: the body carried up and forward over the planted foot before it steps back into guard; reads as a lunge from this rear lens, back-leg swing-through still to be judged side-on.",
   "verdict": "fail"
  }
 ]

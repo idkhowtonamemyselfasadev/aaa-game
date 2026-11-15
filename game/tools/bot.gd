@@ -994,6 +994,7 @@ const HAT_CLEAR_GATE := 0.02  # m: (11-08) the held shaft outside the hat's brim
 const REGRIP_L_GATE := 0.12    # m: the left fist to the shaft on the last held tick, as it closes on it before the draw (0.255 before)
 const HELD_END_GATE := -0.05    # m: neither staff end deeper than this under the turf while down
 const SOLE_UP_GATE := 0.15     # m: the sit-up's ankles over the turf while planted (before: 0.39)
+const RISE_DRIFT_GATE := 0.03  # m: (11-15) the planted front foot's drift from the kneel's plant to the step back
 const SOLE_KNEEL_GATE := 0.22  # m: and on the way into the kneel
 const RELAX_FOLD_GATE := 0.40  # the free left hand in the knock-down rise: its middle finger folds into the palm at least this much (open claw before: 0.24, relaxed after: 0.60)
 const SWING_AHEAD_GATE := 0.15  # m: the free left wrist in the knock-down rise stays no further ahead of its hip socket than this
@@ -11063,6 +11064,10 @@ func _sweep_test() -> void:
 	# the rise off one knee: left knee height, right ankle height, right foot ahead of the knee (min over
 	# the held kneel), then the lowest knee/ankle over the whole rise (nothing sinks into the turf)
 	var kneel := [9.0, -9.0, 9.0, 9.0, 0, -9.0]   # right ankle lo, left knee hi, foot ahead min, lowest, samples, right ankle hi
+	var rise_at := Vector3.INF   # (11-15) the planted front foot in the rise: first spot, root then, max drift, samples
+	var rise_root := Vector3.INF
+	var rise_drift := 0.0
+	var rise_n := 0
 	var kneel_s := []   # (21:00 11-11) [down_t, left knee, right ankle, foot ahead] per sample in the kneel window
 	var relax := [9.0, 0]   # the free left hand in the rise: least finger fold (middle finger's first bone . palm normal), samples
 	var swing := [-9.0, -9.0, 0, 9.0, -9.0]   # the free left arm in the rise: max wrist ahead of the left hip socket, max wrist height over it, samples, upper arm forward component min/max
@@ -11081,6 +11086,8 @@ func _sweep_test() -> void:
 		for ch in p.get_parent().get_children():
 			if ch is ImpactFX:
 				falls[2] += 1)
+	if OS.has_environment("SWEEP_RT"):
+		Engine.time_scale = 1.0   # (debug) the knock-down at the game's real 60 Hz step
 	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
@@ -11148,13 +11155,28 @@ func _sweep_test() -> void:
 			var lk: float = gnd.call("mixamorig_LeftLeg")
 			var rf: float = gnd.call("mixamorig_RightFoot")
 			kneel[3] = minf(kneel[3], minf(minf(lk, rf), minf(gnd.call("mixamorig_LeftFoot"), gnd.call("mixamorig_RightLeg"))))
-			if OS.has_environment("KNEEL_DBG"): print("rise t %.3f knee %.3f rf %.3f lf %.3f" % [p.down_t, lk, rf, gnd.call("mixamorig_LeftFoot")])
+			if OS.has_environment("KNEEL_DBG"):
+				var fwd_d := p.body.global_basis.z
+				fwd_d = Vector3(fwd_d.x, 0, fwd_d.z).normalized()
+				var rfw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3)
+				var lkw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftLeg"] as Vector3)
+				print("rise t %.3f knee %.3f rf %.3f lf %.3f | rfoot fwd %.3f side %.3f lknee fwd %.3f hips fwd %.3f" % [p.down_t, lk, rf, gnd.call("mixamorig_LeftFoot"), rfw.dot(fwd_d), rfw.dot(fwd_d.cross(Vector3.UP)), lkw.dot(fwd_d), p.global_position.dot(fwd_d)])
 			# (21:00 11-11) the HELD kneel only: the probe updates at ~15 Hz, and the old window 1.54..1.66
 			# took whichever 1-2 samples fell in it, including the knee still dropping at 1.54 (0.13 m) or
 			# the ease-out at 1.65, so the gates (knee 0.14, foot ahead 0.25) passed or failed with the
 			# sample phase, i.e. with machine load. Now every sample in 1.54..1.66 is kept and the gate
 			# reads those in the settled hold 1.57..1.64, or the one nearest 1.605 if none fell there.
 			# env KNEELWIN_OLD=1 = the old window.
+			# (11-15) the rise over the planted front foot: from the plant to the step back the right
+			# ankle stays put on the turf while the body comes forward over it
+			if rise_root == Vector3.INF and p.down_t >= 1.5:
+				rise_root = p.global_position   # where the body knelt, before the rise carries it
+			if p._knock_rise_set and p.down_t > p._knock_rise_t + 0.01 and p.down_t <= Player.KNOCK_RISE_STEP[0] + 0.01:
+				var pf: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3)
+				if rise_at == Vector3.INF:
+					rise_at = p._knock_rise_at   # measured from the plant itself (at 15 Hz one sample may fall in)
+				rise_drift = maxf(rise_drift, Vector2(pf.x - rise_at.x, pf.z - rise_at.z).length())
+				rise_n += 1
 			if p.down_t >= Player.KNOCK_KNEEL[1] and p.down_t <= Player.KNOCK_KNEEL[2] + 0.02:
 				var fw := p.body.global_basis.z
 				var ahead: float = (sk.global_transform * (p.crumple.probed["mixamorig_RightFoot"] as Vector3) - sk.global_transform * (p.crumple.probed["mixamorig_LeftLeg"] as Vector3)).dot(Vector3(fw.x, 0, fw.z).normalized())
@@ -11238,7 +11260,7 @@ func _sweep_test() -> void:
 			passed_over = p.receive_attack(s, 5.0)
 		down_for = p.down_t
 		await get_tree().physics_frame
-	for _i in 2:
+	for _i in (24 if OS.has_environment("SWEEP_RT") else 2):
 		if held_ax != Vector3.ZERO and c.state == StaffCombat.DRAWING:
 			# (05:00 11-08) the draw goes on past the end of the knock-down: keep sampling the shaft's turn
 			var dax := c.staff.global_transform.basis.y.normalized()
@@ -11250,6 +11272,15 @@ func _sweep_test() -> void:
 			draw_hat = minf(draw_hat, _hat_margin(p, de[0], de[1]))
 			draw_ticks += 1
 		await get_tree().physics_frame
+	if OS.has_environment("SWEEP_RT"):
+		Engine.time_scale = 4.0   # back to the bots' usual step for the rest of the test
+	if OS.has_environment("KNEEL_DBG") and sk != null:
+		await sk.skeleton_updated
+		var fwd_e := p.body.global_basis.z
+		fwd_e = Vector3(fwd_e.x, 0, fwd_e.z).normalized()
+		for bn in ["mixamorig_RightFoot", "mixamorig_LeftFoot", "mixamorig_Hips"]:
+			var bw := sk.global_transform * sk.get_bone_global_pose(sk.find_bone(bn)).origin
+			print("stood %s fwd %.3f side %.3f (root %.3f)" % [bn, bw.dot(fwd_e), bw.dot(fwd_e.cross(Vector3.UP)), p.global_position.dot(fwd_e)])
 	var rest_ok := p.model.transform.is_equal_approx(p._model_rest)
 	for k in laid.keys():
 		laid[k] = _world.trample.herd_lay_at(laid[k])
@@ -11299,6 +11330,11 @@ func _sweep_test() -> void:
 	print("BOT sweep: rise off one knee: left knee up to %.3f m over the turf, right ankle %.3f..%.3f m, right foot %.3f m ahead of the knee, %d samples; lowest knee/ankle in the rise %.3f m" % [kneel[1], kneel[0], kneel[5], kneel[2], kneel[4], kneel[3]])
 	if kneel[4] < 1 or kneel[1] > 0.14 or kneel[0] < -0.03 or kneel[5] > 0.16 or kneel[2] < 0.25 or kneel[3] < -0.06:
 		return _combat_done(false, "the hero's get-up does not come up off one knee with the other foot planted ahead")
+	var rise_fw := p.body.global_basis.z
+	var rise_moved := (p.global_position - rise_root).dot(Vector3(rise_fw.x, 0, rise_fw.z).normalized()) if rise_root != Vector3.INF else 0.0
+	print("BOT sweep: rise over the planted front foot: ankle drift %.3f m over %d samples, body carried %.2f m forward" % [rise_drift, rise_n, rise_moved])
+	if rise_n < 1 or rise_drift > RISE_DRIFT_GATE or rise_moved < 0.3:
+		return _combat_done(false, "the hero's front foot slides along the turf in the get-up instead of staying planted while the body rises over it")
 	print("BOT sweep: right palm on the front knee: wrist within %.3f m of the knee, at least %.3f m above it, %d samples" % [kh[0], kh[1], kh[2]])
 	if kh[2] < 2 or kh[0] > 0.16 or kh[1] < -0.02:
 		return _combat_done(false, "the hero's right hand does not brace on the front knee in the rise")

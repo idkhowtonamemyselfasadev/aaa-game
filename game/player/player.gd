@@ -95,6 +95,17 @@ const KNOCK_FEET := [1.00, 1.10]  # down_t: both soles come down onto the turf w
 const KNOCK_FEET_STEP := [[1.34, 1.50, 1.56], [1.38, 1.53, 1.58]]  # per leg: slide to the kneel's spot, there, let go
 const KNOCK_FEET_DRAG := [1.10, 1.34]  # down_t: the planted heels drag in toward the seat with the knees
 const KNOCK_FEET_ARC := 0.06       # m: the stepping foot skims this high over the turf on its way
+## (11-15) The rise over the planted front foot: the right foot was set ahead of the hips for the
+## kneel (0.42 m) but the standing guard has it 0.28 m BEHIND them, so as the kneel eased out the
+## sole slid 0.64 m back along the turf while the body rose on the spot. Now the foot stays planted
+## where the kneel set it, the body is carried forward over it (root motion, KNOCK_RISE_SHIFT), the
+## back leg swings through under the hips, and once up the right foot takes a short lifted step back
+## into the guard. `KNOCK_OLDRISE=1` = before.
+const KNOCK_RISE_PLANT := 1.58             # down_t: the front foot is set (the kneel's front leg complete)
+const KNOCK_RISE_MOVE := [1.63, 1.85]      # down_t: the body comes forward over the planted foot
+const KNOCK_RISE_SHIFT := 0.38             # m the body travels forward in the rise
+const KNOCK_RISE_STEP := [1.74, 1.83]      # down_t: the right foot lifts and steps back into the guard
+const KNOCK_RISE_ARC := 0.07               # m: how high that step lifts the sole
 const KNOCK_PUSH := 1.3               # metres the heavy blow throws the hero
 const KNOCK_GUARD := Vector2(0.3, 1.6) # down_t window in which further blows pass over the body
 
@@ -3368,6 +3379,8 @@ func _knockdown(attacker: Node) -> void:
 		crumple.active = true
 	down_t = 0.0
 	_knock_hand = Vector3.INF
+	_knock_rise_at = Vector3.INF
+	_knock_rise_set = false
 	knockdowns += 1
 	_knock_held = combat != null and combat.hold()   # the right fist keeps a drawn staff
 
@@ -3376,7 +3389,7 @@ func _knockdown(attacker: Node) -> void:
 const KNOCK_UNHOLD := 1.83
 const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
 const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
-const KNOCK_REGRIP := [1.67, 1.76]       # the free left hand comes off the hip and closes on the shaft before the draw
+const KNOCK_REGRIP := [1.66, 1.75]       # the free left hand comes off the hip and closes on the shaft before the draw
 const KNOCK_STAFF_PLANT := [1.16, 1.56]  # its butt set on the turf by the front knee as the fist comes to it
 const KNOCK_STAFF_REACH := [1.54, 1.76]  # (11-08) ...and tips toward the left arm's reach so the left fist lands on it early
 var _knock_held := false
@@ -3390,6 +3403,14 @@ func _down_tick(delta: float) -> void:
 	var shove := _flinch_dir * (KNOCK_PUSH * 3.0 / 0.5) * maxf(1.0 - down_t / 0.5, 0.0) ** 2
 	velocity.x = shove.x
 	velocity.z = shove.z
+	if not OS.has_environment("KNOCK_OLDRISE") and delta > 0.0:
+		# root motion of the rise: the body comes forward over the planted front foot
+		var rm: Array = KNOCK_RISE_MOVE
+		var ds := KNOCK_RISE_SHIFT * (smoothstep(rm[0], rm[1], down_t) - smoothstep(rm[0], rm[1], down_t - delta))
+		var fz := body.global_basis.z
+		fz = Vector3(fz.x, 0.0, fz.z).normalized()
+		velocity.x += fz.x * ds / delta
+		velocity.z += fz.z * ds / delta
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
@@ -3444,12 +3465,17 @@ func _down_tick(delta: float) -> void:
 			crumple.active = false
 		_knock_hand = Vector3.INF
 		_knock_feet_at = [Vector3.INF, Vector3.INF]
+		_knock_rise_at = Vector3.INF
+		_knock_rise_set = false
 		_regripping = false
 		return
 	if crumple != null:
 		# whatever stance the blow caught (a staggered guard, a stride), hang both legs even
 		# first, so the feet land side by side on the sward instead of one heel in the ground
-		crumple.leg_aim = minf(down_t / 0.12, 1.0) * (1.0 - smoothstep(1.55, KNOCK_TIME, down_t))
+		# (11-15) let go of it only once the held kneel ends (from 1.55 it turned the kneeling leg
+		# so the knee slid ~10 cm forward along the turf before the rise)
+		var aim_out := 1.55 if OS.has_environment("KNOCK_OLDRISE") else KNOCK_KNEEL[2]
+		crumple.leg_aim = minf(down_t / 0.12, 1.0) * (1.0 - smoothstep(aim_out, KNOCK_TIME, down_t))
 		crumple.square = crumple.leg_aim
 		crumple.arm_aim = crumple.leg_aim
 	_pose_knockdown(down_t)
@@ -3485,6 +3511,10 @@ func _knock_regrip() -> void:
 	crumple.grip_l = maxf(crumple.grip_l, w)    # the fingers close round it as it arrives
 
 var _knock_feet_at := [Vector3.INF, Vector3.INF]
+var _knock_rise_at := Vector3.INF   # the planted front foot's spot in the rise (INF = not set yet)
+var _knock_rise_rel := 0.0          # ...its distance ahead of the root when taken
+var _knock_rise_set := false        # ...and frozen (the foot stopped coming forward)
+var _knock_rise_t := 0.0            # ...at this down_t
 
 ## The sit-up keeps the soles on the turf: as the trunk comes up off its back and the knees
 ## draw in, each foot stays where it lay (heels down, toes forward) instead of floating up with
@@ -3494,7 +3524,9 @@ func _knock_feet() -> void:
 	if crumple == null:
 		return
 	var w := smoothstep(KNOCK_FEET[0], KNOCK_FEET[1], down_t)
-	if OS.has_environment("KNOCK_NOFEET") or w <= 0.0 or down_t >= KNOCK_FEET_STEP[1][2]:
+	var rise := not OS.has_environment("KNOCK_OLDRISE")
+	var end_t: float = KNOCK_RISE_STEP[1] + 0.02 if rise else KNOCK_FEET_STEP[1][2]
+	if OS.has_environment("KNOCK_NOFEET") or w <= 0.0 or down_t >= end_t:
 		crumple.foot_plant = 0.0
 		crumple.foot_pole = Vector3.ZERO
 		crumple.foot_toes = Vector3.ZERO
@@ -3509,6 +3541,8 @@ func _knock_feet() -> void:
 			# where the ankle lies now, kept just over the turf
 			_knock_feet_at[i] = Vector3(fk.x, gy + clampf(fk.y - gy, 0.03, 0.10), fk.z)
 		var st: Array = KNOCK_FEET_STEP[i]
+		if i == 1 and OS.has_environment("RISE_DBG"):
+			print("RISE t %.3f fk fwd %.3f y %.3f w %.2f" % [down_t, fk.dot(fwd), fk.y - gy, crumple.foot_plant * float(crumple.foot_w[1])])
 		var u := smoothstep(st[0], st[1], down_t)
 		# the heels drag in along the turf toward the seat as the knees draw up (the planted
 		# spot follows the bent legs' footprint, so the legs do not lie stretched out flat)
@@ -3518,8 +3552,36 @@ func _knock_feet() -> void:
 		var tgt := Vector3(lerpf(at.x, fk.x, u), 0.0, lerpf(at.z, fk.z, u))
 		var lift := lerpf(at.y - _world_ground_y(at), 0.08, u) + KNOCK_FEET_ARC * sin(PI * u)
 		tgt.y = minf(_world_ground_y(tgt) + lift, fk.y) if u > 0.0 else at.y
-		crumple.foot_target[i] = tgt
 		ws[i] = 1.0 - smoothstep(st[1], st[2], down_t)
+		if rise and i == 1 and down_t >= st[1]:
+			# the front foot stays where the kneel set it while the body comes forward over it,
+			# then steps back (lifted, not dragged) to where the guard stance wants it. The spot
+			# is the furthest forward the posed foot gets (it follows the swing forward, then holds
+			# as the pose starts to draw it back), so it does not hang on one stale skeleton sample.
+			# (measured relative to the hips, which come forward too once the rise moves; the
+			# skeleton's pose lags a tick, ~0.07 s at the bots' 15 Hz)
+			var fgy := _world_ground_y(fk)
+			var fp := Vector3(fk.x, fgy + clampf(fk.y - fgy, 0.05, 0.10), fk.z)
+			var rel := (fk - global_position).dot(fwd)
+			if not _knock_rise_set:
+				# set once it has (nearly) stopped coming forward, or as the body starts to move
+				if _knock_rise_at != Vector3.INF and down_t >= KNOCK_RISE_PLANT \
+						and (rel - _knock_rise_rel < 0.02 or down_t >= KNOCK_RISE_MOVE[0]):
+					_knock_rise_set = true
+					_knock_rise_t = down_t
+					if rel > _knock_rise_rel:
+						_knock_rise_at = fp
+				else:
+					_knock_rise_at = fp
+					_knock_rise_rel = rel
+			var v := smoothstep(KNOCK_RISE_STEP[0], KNOCK_RISE_STEP[1], down_t)
+			tgt = _knock_rise_at.lerp(fk, v)
+			tgt.y = minf(_world_ground_y(tgt) + 0.08 + KNOCK_RISE_ARC * sin(PI * v), maxf(fk.y, _world_ground_y(tgt) + 0.08)) if v > 0.0 else _knock_rise_at.y
+			# until it is set the posed foot leads (the reach would trail the skeleton's last pose)
+			if _knock_rise_set:
+				# eased in over a few frames (the posed ankle may sit a few cm lower than the plant)
+				ws[i] = smoothstep(_knock_rise_t, _knock_rise_t + 0.06, down_t) * (1.0 - smoothstep(KNOCK_RISE_STEP[1] - 0.01, end_t, down_t))
+		crumple.foot_target[i] = tgt
 	crumple.foot_plant = w
 	crumple.foot_w = ws
 	crumple.foot_pole = (Vector3.UP * 0.7 + fwd * 0.7).normalized()
@@ -3608,12 +3670,19 @@ const KNOCK_KEYS := [
 	[1.60, 0.0, 62.0, 120.0, 34.0, 0.44, 30.0, 40.0],
 	[1.85, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 ]
+## (11-15) the kneel is HELD to KNOCK_KNEEL[2] before the stand begins (the last span used to start
+## straightening at 1.60, so the back knee slid ~8 cm forward along the turf in the "held" kneel)
+const KNOCK_KEYS_HOLD := [1.64, 0.0, 60.0, 119.0, 33.0, 0.43, 29.0, 38.0]
 
 func _knock_pose(t: float) -> Array:
-	for i in range(1, KNOCK_KEYS.size()):
-		var b: Array = KNOCK_KEYS[i]
-		if t <= b[0] or i == KNOCK_KEYS.size() - 1:
-			var a: Array = KNOCK_KEYS[i - 1]
+	var keys: Array = KNOCK_KEYS
+	if not OS.has_environment("KNOCK_OLDRISE"):
+		keys = KNOCK_KEYS.duplicate()
+		keys.insert(keys.size() - 1, KNOCK_KEYS_HOLD)
+	for i in range(1, keys.size()):
+		var b: Array = keys[i]
+		if t <= b[0] or i == keys.size() - 1:
+			var a: Array = keys[i - 1]
 			var u := clampf((t - a[0]) / (b[0] - a[0]), 0.0, 1.0)
 			# the fall accelerates like a dropped weight; every other span eases in and out
 			u = u * u if i == 2 else u * u * (3.0 - 2.0 * u)
@@ -3804,6 +3873,14 @@ func _dead_tick(delta: float) -> void:
 	var shove := _flinch_dir * (FLINCH_PUSH * 3.0 / FLINCH_TIME) * maxf(1.0 - dead_t / FLINCH_TIME, 0.0) ** 2
 	velocity.x = shove.x
 	velocity.z = shove.z
+	if not OS.has_environment("KNOCK_OLDRISE") and delta > 0.0:
+		# root motion of the rise: the body comes forward over the planted front foot
+		var rm: Array = KNOCK_RISE_MOVE
+		var ds := KNOCK_RISE_SHIFT * (smoothstep(rm[0], rm[1], down_t) - smoothstep(rm[0], rm[1], down_t - delta))
+		var fz := body.global_basis.z
+		fz = Vector3(fz.x, 0.0, fz.z).normalized()
+		velocity.x += fz.x * ds / delta
+		velocity.z += fz.z * ds / delta
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	move_and_slide()

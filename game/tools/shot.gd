@@ -4161,6 +4161,11 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			# far enough back that the standing figure fits: judge the rise and the regrip side-on.
 			# Framed off the knock-down's ground spot, not the moving model, so frames line up.
 			var kfoot := player.global_position
+			if not OS.has_environment("KNOCK_OLDRISE"):
+				# (11-15) the rise now carries the body forward over the planted foot: take that back out
+				var kbz := player.body.global_basis.z
+				var krm: Array = Player.KNOCK_RISE_MOVE
+				kfoot -= Vector3(kbz.x, 0, kbz.z).normalized() * Player.KNOCK_RISE_SHIFT * smoothstep(krm[0], krm[1], player.down_t)
 			var kmid := Vector3(kfoot.x, kfoot.y + 0.75, kfoot.z)
 			var mside := player.model.global_basis.x
 			mside = Vector3(mside.x, 0, mside.z).normalized()
