@@ -39,7 +39,7 @@ var _max_blend := 0.0
 var _bot_name := ""
 # (11-15 18:00) the hero's landing-boot toe tip (stride_warp.toe_pitch, added 16:00 for the soldier):
 # peak rad, ticks a boot was tipped over 0.1 rad, longest such run, read every physics tick
-var _tp := {"peak": 0.0, "over": 0, "run": 0, "best_run": 0, "air_peak": 0.0, "ticks": 0, "rise_peak": 0.0, "grow": 0.0, "fall": 0.0, "prev": [0.0, 0.0]}
+var _tp := {"peak": 0.0, "over": 0, "run": 0, "best_run": 0, "air_peak": 0.0, "ticks": 0, "rise_peak": 0.0, "grow": 0.0, "fall": 0.0, "prev": [0.0, 0.0], "edge_peak": 0.0, "edge_ticks": 0, "peak_step": 0.0}
 
 func _ready() -> void:
 	Engine.time_scale = 4.0   # headless: simulate faster, same fixed physics delta
@@ -424,6 +424,14 @@ func _physics_process(delta: float) -> void:
 			_tp.grow = maxf(_tp.grow, tpf - float(_tp.prev[f]))
 			_tp.fall = maxf(_tp.fall, float(_tp.prev[f]) - tpf)
 			_tp.prev[f] = tpf
+			# (11-15 20:00) a tip on a tread edge: the ball's ground standing over the ankle's by more than 6 cm
+			# (stride_warp TOE_PITCH_STEP x2, where the tip is meant to be gone: that boot is lifted onto the edge)
+			var gstep := float(_player.stride_warp._ball_gy[f]) - float(_player.stride_warp._ank_gy[f])
+			if is_finite(gstep) and gstep > 0.06 and tpf > 0.02:
+				_tp.edge_peak = maxf(_tp.edge_peak, tpf)
+				_tp.edge_ticks += 1
+			if _player.is_on_floor() and tpf > _tp.peak and is_finite(gstep):
+				_tp.peak_step = gstep
 		if _player.is_on_floor():
 			_tp.peak = maxf(_tp.peak, tp)
 		else:
@@ -3708,7 +3716,7 @@ func _start_test() -> void:
 func _combat_done(ok: bool, why: String) -> void:
 	if _bot_name in ["heroflat", "herostop", "stop", "jump", "start", "heroturn", "heroturnl", "stepup"]:
 		# a hero boot tipped toes-up more than ~11 deg, or for over a quarter second, reads as a toe-up landing
-		print("BOT toepitch: %s hero boot toe tip on the floor peak %.3f rad (in the air %.3f), on a climbing boot %.3f rad, %d of %d ticks over 0.1 rad, longest run %d, fastest growth %.3f / fall %.3f rad a tick" % [_bot_name, _tp.peak, _tp.air_peak, _tp.rise_peak, _tp.over, _tp.ticks, _tp.best_run, _tp.grow, _tp.fall])
+		print("BOT toepitch: %s hero boot toe tip on the floor peak %.3f rad (in the air %.3f), on a climbing boot %.3f rad, %d of %d ticks over 0.1 rad, longest run %d, fastest growth %.3f / fall %.3f rad a tick; ball ground over the ankle's at the peak %+.3f m; tip on a tread edge (> 6 cm) %.3f rad, %d ticks" % [_bot_name, _tp.peak, _tp.air_peak, _tp.rise_peak, _tp.over, _tp.ticks, _tp.best_run, _tp.grow, _tp.fall, _tp.peak_step, _tp.edge_peak, _tp.edge_ticks])
 		# the landing tip (heel strike, toes up to 0.35 rad) is fine for a few ticks; on a push-off it flicks the toes
 		if ok and (_tp.rise_peak > 0.05 or _tp.best_run > 15) and not OS.has_environment("TOEPITCH_NOGATE"):
 			ok = false
@@ -3717,6 +3725,10 @@ func _combat_done(ok: bool, why: String) -> void:
 		elif ok and (_tp.grow > 0.12 or _tp.fall > 0.12) and not OS.has_environment("TOEPITCH_NOGATE"):
 			ok = false
 			why = "a hero boot's toe tip snaps %.3f rad up / %.3f rad down in one tick" % [_tp.grow, _tp.fall]
+		# (11-15 20:00) a boot whose ball stands on a higher tread is lifted onto it, never tipped toes-up against it
+		elif ok and _tp.edge_ticks > 0 and not OS.has_environment("TOEPITCH_NOGATE"):
+			ok = false
+			why = "a hero boot tips its toes up %.3f rad against a tread edge (%d ticks)" % [_tp.edge_peak, _tp.edge_ticks]
 	print("BOT %s: %s" % ["PASS" if ok else "FAIL", why])
 	get_tree().quit(0 if ok else 1)
 

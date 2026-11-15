@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261111-2033-soldier-sweep-back.jpg",
-  "time": "2026-11-11T20:33:47Z",
-  "caption": "Same sweep at +62 deg from behind the soldier: hat, cloak and red tabard read well in warm light, but a straw sheaf blocks the hero and the spear is a thin line against the grass.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-2033-soldier-sweep-front.jpg",
-  "time": "2026-11-11T20:33:47Z",
-  "caption": "A Hollow Soldier's sweep at bearing +48 deg seen past the hero's straw cape: the cut now runs out without the follow-through hitch, but the figures are small in a wide sunlit field and the lens is too far to read the swing.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-2129-knightleap-side-seq.jpg",
-  "time": "2026-11-11T21:29:00Z",
-  "caption": "The whole ember leap from a fixed side lens (crouch, rise over the cottage, hang, down-swing, bite): the arc height and lay-back now read; the crouch is hidden behind the cottage and the knight is backlit.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-2129-knightleap-side-top.jpg",
   "time": "2026-11-11T21:29:00Z",
   "caption": "The Ashen Knight at the top of its ember leap seen square from the side: the glaive lies back ~40 deg over the shoulder with both fists overhead and knees tucked; backlit from this side and a GL frame, not Forward+.",
@@ -897,6 +879,12 @@
   "file": "20261115-1900-walkstop.jpg",
   "time": "2026-11-15T19:30:00Z",
   "caption": "Hero settling after a walk stop: both boots flat and grounded; the face is still lost grey under the hood and the scene lacks Wukong-grade grading.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2000-runstride.jpg",
+  "time": "2026-11-15T20:05:00Z",
+  "caption": "Hero mid-run stride on open turf by the cottage, rear 3/4 at 09:00; hat, capelet and staff read, but the boots are too small in frame to judge the heel-strike toe tip and the backlit robe is dark.",
   "verdict": "fail"
  }
 ]
