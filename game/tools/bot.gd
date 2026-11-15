@@ -11089,8 +11089,22 @@ func _sweep_test() -> void:
 	if OS.has_environment("SWEEP_RT"):
 		Engine.time_scale = 1.0   # (debug) the knock-down at the game's real 60 Hz step
 	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
+	var brk := [-9.0, 9.0, 0, 9.0]   # (11-15) the break-fall slap (0.44..0.68): max left wrist height over the turf, min out from the body's line, samples, wrist height just before the slap (0.30..0.40, min)
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if sk != null and p.down_t > 0.30 and p.down_t < 0.68 and p.crumple.probed.has("mixamorig_LeftHand"):
+			var lw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
+			var lh: float = lw.y - _world.terrain.height_at(lw.x, lw.z)
+			if OS.has_environment("BREAK_DBG"):
+				print("brk t %.3f wrist %.3f err %.3f w %.2f out %.3f" % [p.down_t, lh, p.crumple.hand_err[0], p.breakfall_w, (lw - p.global_position).dot(Vector3(p.body.global_basis.x.x, 0, p.body.global_basis.x.z).normalized())])
+			if p.down_t < 0.40:
+				brk[3] = minf(brk[3], lh)
+			elif p.down_t > 0.44:
+				var lft := p.body.global_basis.x
+				lft = Vector3(lft.x, 0.0, lft.z).normalized()
+				brk[0] = maxf(brk[0], lh)
+				brk[1] = minf(brk[1], (lw - p.global_position).dot(lft))
+				brk[2] += 1
 		if sk != null and p.down_t > 0.05 and p.down_t < 0.62 and p.crumple.probed.has("mixamorig_LeftFoot"):
 			fall[3] += 1
 			for pn in ["mixamorig_LeftFoot", "mixamorig_RightFoot", "mixamorig_LeftLeg", "mixamorig_RightLeg"]:
@@ -11285,6 +11299,9 @@ func _sweep_test() -> void:
 	for k in laid.keys():
 		laid[k] = _world.trample.herd_lay_at(laid[k])
 	print("BOT sweep: grass laid under the body: " + ", ".join(laid.keys().map(func(k): return "%s %.2f" % [k, laid[k]])))
+	print("BOT sweep: break-fall: left wrist %.2f m over the turf at most in the slap (0.44..0.68), %.2f m out from the body's line at least, %d samples; %.2f m before it" % [brk[0], brk[1], brk[2], brk[3]])
+	if not OS.has_environment("KNOCK_NOBREAK") and brk[2] > 0 and (brk[0] > 0.12 or brk[1] < 0.30):
+		return _combat_done(false, "the left hand does not slap the turf out to the side as the back lands (%.2f m up, %.2f m out)" % [brk[0], brk[1]])
 	print("BOT sweep: swept fall: feet up to %.2f m over the turf before the slam, %.2f m after it, lowest foot/knee %.2f m, %d samples" % [fall[0], fall[1], fall[2], fall[3]])
 	print("BOT sweep: knockdowns %d, max tip %.0f deg, head low %.2f m, blow while down -> %s, down %.2f s, back at rest %s" % [p.knockdowns, rad_to_deg(max_tip), min_head, passed_over, down_for, rest_ok])
 	if p.knockdowns != 1 or max_tip < deg_to_rad(70.0):

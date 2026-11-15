@@ -85,6 +85,7 @@ var knee_out := [0.0, 0.0]   # per leg (left, right): extra outward pull on the 
 var knee_joint := [Vector3.ZERO, Vector3.ZERO]    # (bots) world knee joints after the foot reach
 var plant_w := [1.0, 1.0]    # per hand (left, right) on top of `plant`: one hand alone can reach (a push off the ground)
 var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point this way (flat on the ground)
+var hand_fingers_r := Vector3.ZERO # world: when set, the RIGHT hand's planted fingers point this way instead
 							 # instead of up the face
 var hand_knee := Vector3.ZERO # world offset: when set, the RIGHT hand's target is the right knee as posed
 							 # plus this (a palm braced on the front knee to push the body up off it)
@@ -429,7 +430,9 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float, orient :=
 		return
 	# fingers up the face, tipped a little into it so they hook over the stone above
 	var want := (up - wall * up.dot(wall)).normalized() - wall * 0.25
-	if hand_fingers != Vector3.ZERO:
+	if side == "Right" and hand_fingers_r != Vector3.ZERO:
+		want = (inv.basis * hand_fingers_r).normalized()
+	elif hand_fingers != Vector3.ZERO:
 		want = (inv.basis * hand_fingers).normalized()
 	_swing(skel, hd, skel.get_bone_global_pose(mid).origin - h, want)
 	var idx := skel.find_bone("mixamorig_%sHandIndex1" % side)

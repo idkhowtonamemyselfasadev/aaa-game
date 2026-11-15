@@ -3379,6 +3379,7 @@ func _knockdown(attacker: Node) -> void:
 		crumple.active = true
 	down_t = 0.0
 	_knock_hand = Vector3.INF
+	_break_at = []
 	_knock_rise_at = Vector3.INF
 	_knock_rise_set = false
 	knockdowns += 1
@@ -3480,6 +3481,7 @@ func _down_tick(delta: float) -> void:
 		crumple.arm_aim = crumple.leg_aim
 	_pose_knockdown(down_t)
 	_knock_push_hand()
+	_knock_breakfall()
 	_knock_knee_hand()
 	_knock_regrip()
 	_knock_feet()
@@ -3614,6 +3616,66 @@ func _knock_knee_hand() -> void:
 	crumple.hand_curl = 0.35
 	# fingers draped forward and down over the kneecap
 	crumple.hand_fingers = (fwd - Vector3.UP * 0.7).normalized()
+
+## (11-15) The break-fall: as the legs go out from under the hero the arms do not ride the fall
+## stiffly forward; they whip down and out and slap the turf palms-down at ~40 deg from the trunk
+## the instant the back lands (a backward ukemi), and stay flat in the grass through the winded
+## beat before the push hand takes over. The target follows where each shoulder is going: out to
+## its side and toward the feet, on the ground, so in the air the arm reaches down for the turf.
+## A held staff keeps the right fist (it is laid flat out to the right by Combat); only the left
+## slaps then. `KNOCK_NOBREAK=1` = before.
+const KNOCK_BREAK := [0.26, 0.41, 0.70, 0.92]   # down_t: the reach starts, palms on the turf, held, gone
+const KNOCK_BREAK_OUT := 0.33      # m out from the shoulder to its side
+const KNOCK_BREAK_FEET := 0.28     # m from the shoulder toward the feet (the body faces +Z)
+const KNOCK_BREAK_UP := 0.05       # m: the wrist over the turf with the palm flat
+var breakfall_w := 0.0             # (bots) this tick's weight
+var _break_at := []                # world palms once they hit the turf: pinned there through the bounce
+
+func _knock_breakfall() -> void:
+	breakfall_w = 0.0
+	if crumple != null:
+		crumple.hand_fingers_r = Vector3.ZERO
+	if crumple == null or OS.has_environment("KNOCK_NOBREAK"):
+		return
+	var b: Array = KNOCK_BREAK
+	if down_t <= b[0] or down_t >= b[3] or down_t >= KNOCK_HAND[0]:
+		_break_at = []
+		return
+	# the slap whips in (accelerates onto the turf), the let-go eases
+	var u := clampf((down_t - b[0]) / (b[1] - b[0]), 0.0, 1.0)
+	var w := u * u * (1.0 - smoothstep(b[2], b[3], down_t))
+	if w <= 0.0:
+		return
+	breakfall_w = w
+	var fwd := body.global_basis.z
+	fwd = Vector3(fwd.x, 0.0, fwd.z).normalized()
+	var left := body.global_basis.x
+	left = Vector3(left.x, 0.0, left.z).normalized()
+	for i in 2:
+		if _break_at.size() == 2:
+			crumple.hand_target[i] = _break_at[i]
+			continue
+		var sh: Vector3 = crumple.shoulder[i]
+		if sh == Vector3.ZERO:
+			# (no modifier pass yet, e.g. physics stepped without frames) the shoulder off the skeleton
+			var sk := crumple.get_skeleton()
+			var sb := sk.find_bone("mixamorig_%sArm" % ["Left", "Right"][i]) if sk != null else -1
+			if sb < 0:
+				return
+			sh = sk.global_transform * sk.get_bone_global_pose(sb).origin
+		var side := left if i == 0 else -left
+		var at := sh + side * KNOCK_BREAK_OUT + fwd * KNOCK_BREAK_FEET
+		crumple.hand_target[i] = Vector3(at.x, _world_ground_y(at) + KNOCK_BREAK_UP, at.z)
+	if _break_at.size() != 2 and down_t >= b[1]:
+		# the palms are on the turf: they stay where they slapped while the back bounces
+		_break_at = [crumple.hand_target[0], crumple.hand_target[1]]
+	crumple.plant = w
+	crumple.plant_w = [1.0, 0.0 if _knock_held else 1.0]
+	crumple.hand_wall = Vector3.UP
+	crumple.hand_curl = 0.12
+	# fingers out away from the body and a little toward the feet: the palm flat on the turf
+	crumple.hand_fingers = (left + fwd * 0.5).normalized()
+	crumple.hand_fingers_r = (-left + fwd * 0.5).normalized()
 
 ## The get-up's push off the ground: the left hand reaches for the turf beside the hip and
 ## holds there (a fixed world point) while the trunk sits up over it, the chest turned a little

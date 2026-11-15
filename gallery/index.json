@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-0130-knight-leap-p2-downswing.jpg",
-  "time": "2026-11-11T01:30:00Z",
-  "caption": "The giant falling at the small hero (bottom left) with the glaive swung out level; the size gap finally reads as a boss leap, but the body is stiff and the lighting flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0130-knight-leap-p2-heave.jpg",
-  "time": "2026-11-11T01:30:00Z",
-  "caption": "The phase-2-sized knight (x3.2) in mid-leap above the village, glaive heaved over its right shoulder with both fists on the haft; the arc reads, armour and cloth still read flat and dark for a Wukong frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0230-knight-leap-land-r08.jpg",
   "time": "2026-11-11T02:30:00Z",
   "caption": "The Ashen Knight a beat after the ember leap's bite: knees given deep, chest pitched over the glaive in the turf (was stiff and upright). Still wrong: rear three-quarter lens foreshortens the pitch; armour reads flat in the GL fallback renderer.",
@@ -885,6 +873,18 @@
   "file": "20261115-0026-riseplant-1.78.jpg",
   "time": "2026-11-15T00:26:00Z",
   "caption": "Same rise at 1.78 s: the body carried up and forward over the planted foot before it steps back into guard; reads as a lunge from this rear lens, back-leg swing-through still to be judged side-on.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0100-breakfall-60.jpg",
+  "time": "2026-11-15T01:00:00Z",
+  "caption": "Winded after the sweep: the left arm lies out ~40 deg from the trunk, palm flat on the turf where it slapped as the back landed (it used to stay raised by the face); the scene is still dim and the figure small in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0100-breakfall-46.jpg",
+  "time": "2026-11-15T01:00:00Z",
+  "caption": "The instant after the slam: legs still up, the left hand already down on the turf beside the hat; the sweep's lens hides the arm's angle and the meadow is too dark to read.",
   "verdict": "fail"
  }
 ]
