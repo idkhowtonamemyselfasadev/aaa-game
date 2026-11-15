@@ -148,6 +148,16 @@ var _tp_vy := [0.0, 0.0]          # (bots) each boot's ankle vertical speed when
 const TOE_PITCH_AIR := 0.01       # (11-15 16:00) world m per size of ankle height over idle at which a landing boot fully tips its toes up
 const TOE_PITCH_MAX := 0.35       # rad: the most a landing boot tips its toes up to clear the turf
 var toe_pitch := [0.0, 0.0]       # (bots) rad each foot was tipped toes-up to keep its ball out of the ground
+static var TOE_PITCH_GROW_OLD := OS.has_environment("TOEPITCH_GROW_OLD")
+const TOE_PITCH_GROW := 0.11      # (11-15 19:00) rad a physics tick the landing tip may grow (it snapped 0 -> 0.35 in one tick)
+static var TOE_PITCH_VY_OLD := OS.has_environment("TOEPITCH_VY_OLD")
+static var _TPTRACE := int(OS.get_environment("TPTRACE")) if OS.has_environment("TPTRACE") else -1   # per-tick trace of one boot's lifts around this physics frame
+static var _TPTRACE_FOOT := int(OS.get_environment("TPTRACE_FOOT"))
+static var TOE_PITCH_FALL_OLD := OS.has_environment("TOEPITCH_FALL_OLD")
+const TOE_PITCH_FALL_RISE := 0.115  # rad a tick on a boot already rising again
+const TOE_PITCH_FALL := 0.08      # (11-15 19:00) rad a physics tick the forefoot lowers after the heel strike (it dropped flat in one tick)
+var _tp_base := [0.0, 0.0]        # each boot's tip at the end of the last physics tick (the growth cap's base)
+var _tp_pf := -1                  # physics frame _tp_base was taken on
 var _ball_gy := [-INF, -INF]
 # (11-13 07:00) the ankle (Foot) bone never stands lower over the ground under it than it does in
 # the idle: the foes' walk clip carries each planted boot ~0.02 m per size lower against the root
@@ -1481,6 +1491,10 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	ground_drop = drop
 	if _gdbg:
 		print("GROUNDDBG floor %.3f gy %.3f %.3f off %.3f %.3f eff %.3f %.3f anim %.3f %.3f toe %.3f %.3f drop %.3f want %.3f" % [floor_y, _gy[0], _gy[1], ground_off[0], ground_off[1], eff[0], eff[1], anim_h[0], anim_h[1], toe_lift[0], toe_lift[1], drop, want])
+	if pf != _tp_pf:
+		# the modifier may run several times a physics tick: the growth cap is per tick, from last tick's tip
+		_tp_pf = pf
+		_tp_base = toe_pitch.duplicate()
 	for i in 2:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
@@ -1512,7 +1526,8 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 				rel = Basis(Vector3.UP.cross(n).normalized(), minf(tilt, GROUND_TILT_MAX) * plant) * rel
 			var need := float(_ball_gy[i]) + toe_floor * sc - (aw.y + lift + rel.y)
 			toe_pitch[i] = 0.0
-			if need > 0.0 and not TOE_PITCH_OLD and float(_ank_gy[i]) > -INF and ankle_floor > -INF:
+			var hold0 := 0.0 if TOE_PITCH_FALL_OLD or TOE_PITCH_OLD else maxf(float(_tp_base[i]) - TOE_PITCH_FALL, 0.0)
+			if (need > 0.0 or hold0 > 0.0) and not TOE_PITCH_OLD and float(_ank_gy[i]) > -INF and ankle_floor > -INF:
 				# (11-15 16:00) a boot still coming down tips its toes up rather than rising: the guard lifted the
 				# whole soldier boot 1.5-3 mm for three ticks of its set-down (bot `foeturn` FOETURN_SOLE), so it
 				# stalled and then dropped 5 mm in one tick. A landing foot meets the turf heel first, toes raised;
@@ -1525,17 +1540,36 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 				# TOEPITCH_RISE_OLD: before
 				var vy := (aw.y + lift - float(_tp_prev_ay[i])) / maxf(delta, 1e-4)
 				_tp_vy[i] = vy
+				# (11-15 19:00) after the heel strike the forefoot comes down over a few ticks (TOE_PITCH_FALL a tick)
+				# instead of slapping flat in one (the tip went 0.22-0.35 -> 0 in a tick, bot `toepitch` fastest fall);
+				# not on a boot pushing off (its toes must not stay up) nor over a step. TOEPITCH_FALL_OLD: before
+				# A boot that rises again straight after (a stop's scuff, a stair foot lifting on) lowers its toes faster,
+				# TOE_PITCH_FALL_RISE a tick, but still over ticks: a tip is never GROWN on a rising boot (the `air` test below)
+				var hold := 0.0
+				if hold0 > 0.0:
+					var rise := clampf(vy / (TOE_PITCH_RISE_V * sc), 0.0, 1.0)
+					hold = maxf(float(_tp_base[i]) - lerpf(TOE_PITCH_FALL, TOE_PITCH_FALL_RISE, rise), 0.0)
 				if not TOE_PITCH_RISE_OLD:
 					air *= clampf(1.0 - vy / (TOE_PITCH_RISE_V * sc), 0.0, 1.0)
 					# nor a ball over a higher surface (a tread edge, the top of a wall walked into: the `stepup` wall
 					# held the tip at its cap 77 ticks): that boot is lifted onto it, as the 16:00 note meant
 					var step := (float(_ball_gy[i]) - float(_ank_gy[i])) / sc
-					air *= clampf(1.0 - (step - TOE_PITCH_STEP) / TOE_PITCH_STEP, 0.0, 1.0)
+					var on_step := clampf(1.0 - (step - TOE_PITCH_STEP) / TOE_PITCH_STEP, 0.0, 1.0)
+					air *= on_step
+					hold *= on_step
 				var rh := Vector3(rel.x, 0.0, rel.z)
-				if air > 0.0 and rh.length() > 1e-4:
+				if (air > 0.0 or hold > 0.0) and rh.length() > 1e-4:
 					# toes up by the angle that raises the ball by `need` exactly (rel points down to the ball)
 					var phi := atan2(rel.y, rh.length())
 					var ang := minf(maxf(asin(clampf((rel.y + need) / rel.length(), -1.0, 1.0)) - phi, 0.0), TOE_PITCH_MAX) * air
+					# (11-15 19:00) a fast set-down (sprint, stair, the stop's heel plant: boot falling 3-5 cm a tick)
+					# asked the full 0.35 rad cap in ONE tick (bot `toepitch` fastest growth 0.35), a visible snap of the
+					# toes; the tip now grows at most TOE_PITCH_GROW a tick and the rest of the clearance is the old lift.
+					# TOEPITCH_GROW_OLD: before
+					if not TOE_PITCH_GROW_OLD and w > 1e-4:
+						ang = minf(ang, (float(_tp_base[i]) + TOE_PITCH_GROW) / w)
+					if hold > 0.0 and w > 1e-4:
+						ang = maxf(ang, minf(hold, TOE_PITCH_MAX) / w)
 					var ax_w := rh.normalized().cross(Vector3.UP).normalized()
 					var rel2 := Basis(ax_w, ang) * rel
 					need -= rel2.y - rel.y
@@ -1546,7 +1580,15 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 			if need > 0.0:
 				toe_floor_lift[i] = minf(need, lim) * w
 				lift += toe_floor_lift[i]
-		_tp_prev_ay[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y + lift
+		# (11-15 19:00) the climb speed compares like with like: this tick's ankle is read BEFORE the toe-floor
+		# lift, so last tick's must be too. With the lift in, a boot lifting off at a run stop (clip ankle +4-5 cm
+		# a tick) read as FALLING 2.7 m/s (last tick's 5.5 cm toe lift vanished into the clip's own rise) and got
+		# its toes flicked up 0.35 rad for 1-2 ticks at toe-off. TOEPITCH_VY_OLD: before
+		_tp_prev_ay[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y + lift - (float(toe_floor_lift[i]) if not TOE_PITCH_VY_OLD else 0.0)
+		if _TPTRACE >= 0 and i == _TPTRACE_FOOT and absi(pf - _TPTRACE) <= 6:
+			print("TPTRACE f%d clip_ank %.4f off %.4f drop %.4f swing %.4f afl %.4f tfl %.4f tip %.3f anim_h %.4f ankgy %.4f ballgy %.4f" % [pf, (xf * skel.get_bone_global_pose(ft[i]).origin).y, float(ground_off[i]) * w, drop, float(swing_lift[i]) * w, float(ankle_floor_lift[i]), float(toe_floor_lift[i]), float(toe_pitch[i]), float(anim_h[i]), float(_ank_gy[i]), float(_ball_gy[i])])
+		if TOE_PITCH_DBG and float(_tp_base[i]) - float(toe_pitch[i]) > 0.09:
+			print("TPFALL f%d i %d base %.3f now %.3f w %.2f vy %+.3f step %+.4f tb %d ballgy %s" % [pf, i, float(_tp_base[i]), float(toe_pitch[i]), w, float(_tp_vy[i]), (float(_ball_gy[i]) - float(_ank_gy[i])) / sc, tb[i], str(_ball_gy[i])])
 		if absf(lift) < 1e-4 and plant <= 0.0 and float(toe_pitch[i]) == 0.0:
 			continue
 		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift

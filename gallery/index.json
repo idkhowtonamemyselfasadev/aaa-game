@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-1946-sweep-cut.jpg",
-  "time": "2026-11-11T19:46:32Z",
-  "caption": "The sweep's glaive whipping low across the knight's front at peak speed past the hero; the motion reads, the framing and dark backlit armour do not hold up as a Wukong shot yet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1946-sweep-release.jpg",
-  "time": "2026-11-11T19:46:32Z",
-  "caption": "The Ashen Knight's sweep two ticks off the held coil: the glaive now accelerates out of the coil instead of popping to full speed; the knight is still small and backlit from this lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-2033-soldier-sweep-back.jpg",
   "time": "2026-11-11T20:33:47Z",
   "caption": "Same sweep at +62 deg from behind the soldier: hat, cloak and red tabard read well in warm light, but a straw sheaf blocks the hero and the spear is a thin line against the grass.",
@@ -897,6 +885,18 @@
   "file": "20261115-1846-pushoff-cmp.jpg",
   "time": "2026-11-15T18:46:00Z",
   "caption": "Rear boot at the push-off, 3x crop, before (toes tipped up 0.35 rad, heel pressed down) and after (heel up, ball on the turf).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1900-pushoff.jpg",
+  "time": "2026-11-15T19:30:00Z",
+  "caption": "Hero's first step from rest, side-on: the rear boot lifts its heel with the ball on the turf, no toe flick; boots still read as chunky clogs and the figure is flat-lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1900-walkstop.jpg",
+  "time": "2026-11-15T19:30:00Z",
+  "caption": "Hero settling after a walk stop: both boots flat and grounded; the face is still lost grey under the hood and the scene lacks Wukong-grade grading.",
   "verdict": "fail"
  }
 ]
