@@ -4043,14 +4043,6 @@ func _dead_tick(delta: float) -> void:
 	var shove := _flinch_dir * (FLINCH_PUSH * 3.0 / FLINCH_TIME) * maxf(1.0 - dead_t / FLINCH_TIME, 0.0) ** 2
 	velocity.x = shove.x
 	velocity.z = shove.z
-	if not OS.has_environment("KNOCK_OLDRISE") and delta > 0.0:
-		# root motion of the rise: the body comes forward over the planted front foot
-		var rm: Array = KNOCK_RISE_MOVE
-		var ds := KNOCK_RISE_SHIFT * (smoothstep(rm[0], rm[1], down_t) - smoothstep(rm[0], rm[1], down_t - delta))
-		var fz := body.global_basis.z
-		fz = Vector3(fz.x, 0.0, fz.z).normalized()
-		velocity.x += fz.x * ds / delta
-		velocity.z += fz.z * ds / delta
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	move_and_slide()

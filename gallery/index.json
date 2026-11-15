@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261111-1340-knight-leap-heave-left.jpg",
-  "time": "2026-11-11T13:40:00Z",
-  "caption": "The ember leap's hang, re-solved: the glaive is heaved over the knight's left shoulder, blade high behind, and the haft now clears the great helm by 0.056 m/size for the whole hang; still seen only from behind, so the hands and elbows cannot be judged.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1340-knight-leap-rise-left.jpg",
-  "time": "2026-11-11T13:40:00Z",
-  "caption": "The ember leap's rise: the glaive comes up beside the helm into the sky instead of through its crown; the shared crouch still grazes the helm's back rim on take-off and the landing passes under its flared rim.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-1500-knight-crouch.jpg",
-  "time": "2026-11-11T14:34:42Z",
-  "caption": "The Ashen Knight's leap crouch now raises its glaive near-upright in front of the helm, both fists on the haft and clear of the helm; the helm still reads as a dark dome with no face from this lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-1515-knight-landing.jpg",
   "time": "2026-11-11T15:15:00Z",
   "caption": "The Ashen Knight lands its ember leap bowed over the bitten glaive, the haft now running out past its helm into the turf instead of up under the rim; the helm still reads as a dark dome and the sky is too dark for the hour.",
@@ -897,6 +879,12 @@
   "file": "20261115-1228-soldier-turn-strip.jpg",
   "time": "2026-11-15T12:28:35Z",
   "caption": "Soldier turn frames (old f6, new f4/6/9/13): boots hold their spots as the turn starts, the step reads; the armour still reads dark and flat in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1300-hewer-raise.jpg",
+  "time": "2026-11-15T13:30:00Z",
+  "caption": "The axe hewer raising its chop at the hero beside the practice post (the hewer fight is bot-beatable again); the hewer's body still reads as a dark lump and the hero's hood face is grey.",
   "verdict": "fail"
  }
 ]

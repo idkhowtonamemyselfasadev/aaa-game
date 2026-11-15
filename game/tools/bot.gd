@@ -8703,13 +8703,15 @@ func _hewer_test() -> void:
 		if w.state == HollowSoldier.WINDUP and w.t > wl - 0.08 and p.dodge_t < 0.0:
 			p.bot_attack = false
 			side = Vector3(to.z, 0, -to.x).normalized()
-			p.bot_input = Vector2(side.x, side.z) if w.move_kind == HollowHewer.CHOP_MOVE else -flat.normalized()
+			# (11-15) stick input is camera-relative: the rise after a knock-down can leave the
+			# camera turned round (yaw pi), and world-space input then walked the hero AWAY
+			p.bot_input = _input_dir(side if w.move_kind == HollowHewer.CHOP_MOVE else -to)
 			p.bot_dodge = true
 		elif w.state == HollowSoldier.WINDUP or w.state == HollowSoldier.STRIKE:
 			p.bot_attack = false
 			p.bot_input = Vector2.ZERO
 		elif flat.length() > 2.0:
-			p.bot_input = flat.normalized()
+			p.bot_input = _input_dir(to)
 			p.bot_attack = false
 		else:
 			p.bot_input = Vector2.ZERO
@@ -10536,6 +10538,10 @@ func _input_toward(at: Vector3) -> Vector2:
 	r.y = 0.0
 	return Vector2(to.dot(r.normalized()), -to.dot(f.normalized())).normalized()
 
+## Camera-relative stick input for a world-space direction.
+func _input_dir(dir: Vector3) -> Vector2:
+	return _input_toward(_player.global_position + dir)
+
 ## Angle between the camera's flat view direction and the flat line from it to the lock point.
 func _cam_error(t: Node3D) -> float:
 	var cam := _player.camera
@@ -10907,6 +10913,11 @@ func _death_test() -> void:
 	if s.last_result != "hit" or not p.is_dead() or p.deaths != 1:
 		return _combat_done(false, "the killing blow did not kill")
 	s._home = post                               # its real post, ~20 m off: it walks back
+	# (11-15) killed as if mid-rise from a knock-down: the rise's root motion must not carry the
+	# body on while dead (it was pasted into _dead_tick reading the frozen down_t: ~1.7 m/s drift)
+	p.down_t = 1.70
+	var drift_from := Vector3.INF
+	var drift_to := Vector3.INF
 	# input is dead: attacks, dodges and the stick do nothing; further blows miss
 	var sw := p.combat.swings
 	var d0 := p.dodges
@@ -10930,6 +10941,10 @@ func _death_test() -> void:
 		p.bot_dodge = true
 		p.bot_input = Vector2(0, -1)
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if p.dead_t > Player.FLINCH_TIME + 0.05:   # the blow's last shove has run out
+			if drift_from == Vector3.INF:
+				drift_from = p.global_position
+			drift_to = p.global_position
 		if p.dead_t > 1.3:
 			var head := p.model.global_transform * Vector3(0, 1.6, 0)
 			min_y = minf(min_y, head.y - _world.terrain.height_at(head.x, head.z))
@@ -10946,6 +10961,10 @@ func _death_test() -> void:
 	p.bot_input = Vector2.ZERO
 	var r := "n/a"
 	print("BOT death: swings %d, dodges %d, max tip %.0f deg, head %.2f m above ground once down, soldier strikes while down %d, state %d, black %.2f" % [p.combat.swings - sw, p.dodges - d0, rad_to_deg(max_tip), min_y, s.strikes - strikes_dead, s.state, black])
+	var drift := Vector2(drift_to.x - drift_from.x, drift_to.z - drift_from.z).length() if drift_from != Vector3.INF else 0.0
+	print("BOT death: body drift while dead (after the shove, killed mid-rise) %.3f m" % drift)
+	if drift > 0.05:
+		return _combat_done(false, "the body slides along the turf while dead")
 	if p.combat.swings != sw or p.dodges != d0:
 		return _combat_done(false, "the dead hero acted")
 	if max_tip < deg_to_rad(70.0) or min_y > 0.7:
