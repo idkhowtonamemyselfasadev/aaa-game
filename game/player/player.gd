@@ -3793,6 +3793,35 @@ func _knock_sweep(k: Array, t: float) -> Array:
 	k[4] += KNOCK_SWEEP[3] * p
 	return k
 
+## (11-15 03:00) The startle fling: when the legs are swept the arms do not hang at one angle
+## through the airborne beat (frames 0.15..0.30 read as a mannequin tipped over); they are thrown
+## up and forward by reflex the instant balance goes (fast in, peak ~0.15 s), elbows flexing,
+## the left a touch higher than the right, then they snap back down through the trunk's line
+## into the break-fall slap at 0.41 (the slap IK takes them from 0.26).
+## `KNOCK_NOFLING=1` = before.
+const KNOCK_FLING := [0.02, 0.13, 0.19, 0.31]   # down_t: thrown up, peak, held, gone (into the slap)
+const KNOCK_FLING_ARM := 0.60                   # rad added to the arm's forward raise at the peak
+const KNOCK_FLING_ELBOW := 0.45                 # rad more elbow flex at the peak
+const KNOCK_FLING_LR := Vector2(0.14, -0.06)    # rad more (left) / less (right) on top: not mirrored
+var fling_w := 0.0                              # (bots) this tick's weight
+
+func _knock_fling(t: float) -> void:
+	fling_w = 0.0
+	if OS.has_environment("KNOCK_NOFLING") or OS.has_environment("KNOCK_OLDFALL"):
+		return
+	var f: Array = KNOCK_FLING
+	# a reflex: whips in (ease-out), then the snap down accelerates (ease-in)
+	var a := clampf((t - f[0]) / (f[1] - f[0]), 0.0, 1.0)
+	var up := 1.0 - (1.0 - a) * (1.0 - a)
+	var d := clampf((t - f[2]) / (f[3] - f[2]), 0.0, 1.0)
+	var w := up * (1.0 - d * d)
+	if w <= 0.0:
+		return
+	fling_w = w
+	crumple.arm += KNOCK_FLING_ARM * w
+	crumple.elbow += KNOCK_FLING_ELBOW * w
+	crumple.arm_lr += KNOCK_FLING_LR * w
+
 func _pose_knockdown(t: float) -> void:
 	var k := _knock_sweep(_knock_pose(t), t)
 	if crumple != null:
@@ -3828,6 +3857,7 @@ func _pose_knockdown(t: float) -> void:
 		crumple.arm_aim_lr = Vector2((1.0 - crumple.arm_aim) * aw, 0.0)
 		crumple.arm_lr = Vector2((KNOCK_SWING_ARM - crumple.arm) * aw, 0.0)
 		crumple.elbow_lr = Vector2((KNOCK_SWING_ELBOW - crumple.elbow) * aw, 0.0)
+		_knock_fling(t)
 		# the free hand hangs loose: the fingers fall into a soft half-curl, the thumb in by
 		# the index, through the swing and the hand-off back to the guard
 		var rl: Array = KNOCK_RELAX

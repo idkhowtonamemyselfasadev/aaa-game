@@ -4167,11 +4167,24 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 				var krm: Array = Player.KNOCK_RISE_MOVE
 				kfoot -= Vector3(kbz.x, 0, kbz.z).normalized() * Player.KNOCK_RISE_SHIFT * smoothstep(krm[0], krm[1], player.down_t)
 			var kmid := Vector3(kfoot.x, kfoot.y + 0.75, kfoot.z)
+			var kback := 0.0
+			if not OS.has_environment("KSIDE_OLD"):
+				# (11-15 03:00) the lying body runs from the root (feet) ~1.5 m back along -body Z (sweep bot
+				# AXIS_DBG: head 1.52 m, feet -0.06 m, yaw 0 deg): aim at its middle while down, not at the feet,
+				# or perspective turns the profile into a feet-end three-quarter. Constant through the fall so
+				# frames line up, eased out as the sit-up gathers the body back over the feet.
+				var kbz2 := player.body.global_basis.z
+				kbz2 = Vector3(kbz2.x, 0, kbz2.z).normalized()
+				kback = 0.72 * (1.0 - smoothstep(1.28, 1.52, player.down_t))
+				kmid -= kbz2 * kback
+				kmid.y -= 0.35 * (1.0 - smoothstep(1.28, 1.52, player.down_t))
 			# (11-15) off the BODY's left (body +X): the model's x pointed the lens from behind-left
 			var mside := player.model.global_basis.x if OS.has_environment("KSIDE_OLD") else player.body.global_basis.x
 			mside = Vector3(mside.x, 0, mside.z).normalized()
-			cam.global_position = kmid + mside * 2.9 + Vector3.UP * -0.2
+			cam.global_position = kmid + mside * (2.9 + 0.5 * kback / 0.72)
+			cam.global_position.y = kfoot.y + 0.55   # (the old lens height, over the grass tops)
 			cam.look_at(kmid)
+			print("SHOT kside back %.2f m" % kback)
 		print("SHOT knocked down_t %.2f knockdowns %d staff state %d parent %s at %s fist %s" % [player.down_t, player.knockdowns, c.state, c.staff.get_parent().name, c.staff.global_position, c.fist_center("Right")])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261111-0230-knight-leap-land-r40.jpg",
-  "time": "2026-11-11T02:30:00Z",
-  "caption": "The knight holding its crouch over the bitten blade before wrenching it free, boots planted. Still wrong: no dust kicked off the knees and grass not flattened round the boots.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0339-knight-leap-give.jpg",
-  "time": "2026-11-11T03:39:00Z",
-  "caption": "The same front-quarter lens a beat earlier: the giant bottoming out over its blade, the hero a third of its height at left. Still wrong: tall grass hides the boots and the clods read as tiny specks at this scale.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0339-knight-leap-kick.jpg",
   "time": "2026-11-11T03:39:00Z",
   "caption": "Front-quarter lens on the Ashen Knight at the bottom of its ember-leap landing: knees given, chest over the bitten glaive, a pale ring of dust rolling off the right boot. Still wrong: the ember-ring flame stands right in front of the boot and hides half the kick, and the GL fallback renders the armour flat.",
@@ -891,6 +879,18 @@
   "file": "20261115-0200-palmpuff.jpg",
   "time": "2026-11-15T02:00:00Z",
   "caption": "Just after the break-fall slap: a small puff of dust and chaff kicks up off the sward round the hips and palm; the figure is still small and the light flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0300-fling.jpg",
+  "time": "2026-11-15T03:00:00Z",
+  "caption": "Swept off their feet, the hero now throws the arms up by reflex in mid-air (0.15 s), framed by the corrected side-on lens; dim meadow, flat ground light and a small figure still hold it back.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0300-slap.jpg",
+  "time": "2026-11-15T03:00:00Z",
+  "caption": "0.41 s: the flung arms have whipped down and the left palm meets the turf as the back lands; the lighting is still too dark and flat for a Wukong frame.",
   "verdict": "fail"
  }
 ]

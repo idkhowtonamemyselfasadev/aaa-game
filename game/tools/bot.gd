@@ -10971,6 +10971,27 @@ func _staff_ends(c: StaffCombat) -> Array:
 const SWEEP_CUT_REBOUND := 0.2
 const SWEEP_CUT_FIRST := 0.45   # (11-11 19:00) no tick-to-tick speed-up in the cut above this share of its peak
 
+## (11-15 03:00) the startle fling (0.08..0.24 s into the knock-down, mostly still inside the sweep's
+## strike loop): max left wrist over its shoulder (m; the trunk tips back, so a hanging arm is below
+## it), max fling weight, samples
+var _fling := [-9.0, 0.0, 0]
+func _fling_sample(p: Player) -> void:
+	if p.crumple == null:
+		return
+	for pn in ["mixamorig_LeftHand", "mixamorig_LeftArm"]:
+		if not p.crumple.probe.has(pn):
+			p.crumple.probe.append(pn)
+	if p.down_t <= 0.08 or p.down_t >= 0.24 or not p.crumple.probed.has("mixamorig_LeftHand") or not p.crumple.probed.has("mixamorig_LeftArm"):
+		return
+	var sk := p.crumple.get_skeleton()
+	var fw2: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
+	var fs2: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftArm"] as Vector3)
+	if OS.has_environment("FLING_DBG"):
+		print("fling t %.3f w %.2f wrist-over-shoulder %.3f" % [p.down_t, p.fling_w, fw2.y - fs2.y])
+	_fling[0] = maxf(_fling[0], fw2.y - fs2.y)
+	_fling[1] = maxf(_fling[1], p.fling_w)
+	_fling[2] += 1
+
 func _sweep_test() -> void:
 	var p := _player
 	var s: HollowSoldier = _world.soldier
@@ -11005,6 +11026,7 @@ func _sweep_test() -> void:
 		elif s.state == HollowSoldier.WINDUP:
 			coil_last = absf(b - bprev)
 		bprev = b
+		_fling_sample(p)
 		await get_tree().physics_frame
 	Engine.time_scale = ts0
 	var cut_peak := 0.0
@@ -11090,6 +11112,7 @@ func _sweep_test() -> void:
 		Engine.time_scale = 1.0   # (debug) the knock-down at the game's real 60 Hz step
 	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
 	var brk := [-9.0, 9.0, 0, 9.0]   # (11-15) the break-fall slap (0.44..0.68): max left wrist height over the turf, min out from the body's line, samples, wrist height just before the slap (0.30..0.40, min)
+	var fling: Array = _fling
 	var tuck := [9.0, 0.0, 0]   # (11-15) the chin tuck through the slam (0.38..0.52): lowest head bone over the turf, max neck flexion (deg, head up vs chest up, chin toward chest), samples
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
@@ -11106,6 +11129,16 @@ func _sweep_test() -> void:
 				var cf := cp.basis.z.normalized()
 				tuck[1] = maxf(tuck[1], rad_to_deg(atan2(-hu.dot(cf), hu.dot(cu))) * -1.0)
 				tuck[2] += 1
+		_fling_sample(p)
+		if OS.has_environment("AXIS_DBG") and sk != null and p.crumple.probed.has("mixamorig_Head") and p.crumple.probed.has("mixamorig_LeftFoot"):
+			# (11-15) the lying body's line (feet midpoint -> head, flat) vs the body's forward
+			var hd: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_Head"] as Vector3)
+			var ft: Vector3 = sk.global_transform * ((p.crumple.probed["mixamorig_LeftFoot"] as Vector3) + (p.crumple.probed["mixamorig_RightFoot"] as Vector3)) * 0.5
+			var ax := Vector3(hd.x - ft.x, 0, hd.z - ft.z)
+			var bz := p.body.global_basis.z
+			bz = Vector3(bz.x, 0, bz.z).normalized()
+			var lw2: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
+			print("axis t %.3f head %.2f feet %.2f along -bz from root | len %.2f yaw-from-(-bodyZ) %.1f deg | lwrist h %.2f" % [p.down_t, (hd - p.global_position).dot(-bz), (ft - p.global_position).dot(-bz), ax.length(), rad_to_deg((-bz).signed_angle_to(ax.normalized(), Vector3.UP)) if ax.length() > 0.05 else 0.0, lw2.y - _world.terrain.height_at(lw2.x, lw2.z)])
 		if sk != null and p.down_t > 0.30 and p.down_t < 0.68 and p.crumple.probed.has("mixamorig_LeftHand"):
 			var lw: Vector3 = sk.global_transform * (p.crumple.probed["mixamorig_LeftHand"] as Vector3)
 			var lh: float = lw.y - _world.terrain.height_at(lw.x, lw.z)
@@ -11316,6 +11349,9 @@ func _sweep_test() -> void:
 	print("BOT sweep: break-fall: left wrist %.2f m over the turf at most in the slap (0.44..0.68), %.2f m out from the body's line at least, %d samples; %.2f m before it" % [brk[0], brk[1], brk[2], brk[3]])
 	if not OS.has_environment("KNOCK_NOBREAK") and brk[2] > 0 and (brk[0] > 0.12 or brk[1] < 0.30):
 		return _combat_done(false, "the left hand does not slap the turf out to the side as the back lands (%.2f m up, %.2f m out)" % [brk[0], brk[1]])
+	print("BOT sweep: startle fling: left wrist up to %.2f m over its shoulder in the air (0.08..0.24), weight %.2f, %d samples" % [fling[0], fling[1], fling[2]])
+	if fling[2] > 0 and not OS.has_environment("KNOCK_NOFLING") and (fling[1] < 0.9 or fling[0] < 0.25):
+		return _combat_done(false, "the arms are not flung up as the legs go (left wrist %.2f m over the shoulder, weight %.2f)" % [fling[0], fling[1]])
 	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
 	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
 		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])
