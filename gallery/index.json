@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261111-0339-knight-leap-kick.jpg",
-  "time": "2026-11-11T03:39:00Z",
-  "caption": "Front-quarter lens on the Ashen Knight at the bottom of its ember-leap landing: knees given, chest over the bitten glaive, a pale ring of dust rolling off the right boot. Still wrong: the ember-ring flame stands right in front of the boot and hides half the kick, and the GL fallback renders the armour flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0440-knight-leap-ring-before.jpg",
   "time": "2026-11-11T04:40:00Z",
   "caption": "Before: the old ring phase stood a flame right on the knight's own boot, hiding the landing's dust kick.",
@@ -891,6 +885,18 @@
   "file": "20261115-0300-slap.jpg",
   "time": "2026-11-15T03:00:00Z",
   "caption": "0.41 s: the flung arms have whipped down and the left palm meets the turf as the back lands; the lighting is still too dark and flat for a Wukong frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0400-robe-kfront.jpg",
+  "time": "2026-11-15T04:00:00Z",
+  "caption": "Swept off their feet at 0.22 s, low front lens, before (left) vs after: the madder front robe panel now lies over the raised thighs instead of hanging below them like a board; the back panel still hangs from the seat as a stiff flat sheet, dark meadow light.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0400-robe-kside.jpg",
+  "time": "2026-11-15T04:00:00Z",
+  "caption": "Same fall in profile at 0.18 s: the shorter rod (front panel) is gone, the long red rod left is the back panel seen edge-on; small figure, flat light.",
   "verdict": "fail"
  }
 ]

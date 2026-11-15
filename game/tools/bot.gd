@@ -11113,6 +11113,8 @@ func _sweep_test() -> void:
 	var fall := [-9.0, -9.0, 9.0, 0]   # (11-14) the swept fall (down_t < 0.62): max foot height over the turf before the slam (<0.42), max after it, lowest foot/knee, samples
 	var brk := [-9.0, 9.0, 0, 9.0]   # (11-15) the break-fall slap (0.44..0.68): max left wrist height over the turf, min out from the body's line, samples, wrist height just before the slap (0.30..0.40, min)
 	var fling: Array = _fling
+	if p.garb != null:
+		p.garb.tuck_lie_peak = 0.0   # (11-15 04:00) the front robe panel lying on the swept-up thighs
 	var tuck := [9.0, 0.0, 0]   # (11-15) the chin tuck through the slam (0.38..0.52): lowest head bone over the turf, max neck flexion (deg, head up vs chest up, chin toward chest), samples
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
@@ -11352,6 +11354,10 @@ func _sweep_test() -> void:
 	print("BOT sweep: startle fling: left wrist up to %.2f m over its shoulder in the air (0.08..0.24), weight %.2f, %d samples" % [fling[0], fling[1], fling[2]])
 	if fling[2] > 0 and not OS.has_environment("KNOCK_NOFLING") and (fling[1] < 0.9 or fling[0] < 0.25):
 		return _combat_done(false, "the arms are not flung up as the legs go (left wrist %.2f m over the shoulder, weight %.2f)" % [fling[0], fling[1]])
+	if p.garb != null:
+		print("BOT sweep: robe: front panel lies on the thighs up to %.2f through the knock-down (0 = sticks out of the seat)" % p.garb.tuck_lie_peak)
+		if not OS.has_environment("KNOCK_NOROBE") and p.garb.tuck_lie_peak < 0.5:
+			return _combat_done(false, "the front robe panel does not lie on the swept-up thighs (%.2f)" % p.garb.tuck_lie_peak)
 	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
 	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
 		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])

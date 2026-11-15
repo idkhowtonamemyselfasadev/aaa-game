@@ -4185,6 +4185,21 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 			cam.global_position.y = kfoot.y + 0.55   # (the old lens height, over the grass tops)
 			cam.look_at(kmid)
 			print("SHOT kside back %.2f m" % kback)
+		# (11-15 04:00) SHOT_LIST=1: every mesh on the hero with its global AABB (find a stray piece);
+		# SHOT_HIDE=a,b: hide hero meshes whose name contains any of these
+		if OS.has_environment("SHOT_LIST") or OS.has_environment("SHOT_HIDE"):
+			var hide: PackedStringArray = OS.get_environment("SHOT_HIDE").split(",", false)
+			var near_root: Node = player if OS.get_environment("SHOT_LIST") == "1" else get_tree().root
+			for n in near_root.find_children("*", "GeometryInstance3D", true, false):
+				var gi := n as GeometryInstance3D
+				if OS.has_environment("SHOT_LIST") and gi.is_visible_in_tree():
+					var bb := gi.global_transform * gi.get_aabb()
+					if near_root != player and (bb.size.length() > 4.0 or bb.grow(0.5).intersects(AABB(player.global_position - Vector3(1.5, 0.2, 1.5), Vector3(3, 2.5, 3))) == false):
+						continue
+					print("SHOT mesh %s (%s) pos %s size %s" % [gi.get_path(), gi.get_class(), bb.position, bb.size])
+				for h in hide:
+					if h in String(gi.name):
+						gi.visible = false
 		print("SHOT knocked down_t %.2f knockdowns %d staff state %d parent %s at %s fist %s" % [player.down_t, player.knockdowns, c.state, c.staff.get_parent().name, c.staff.global_position, c.fist_center("Right")])
 	elif "smash" in args:
 		# a full-charge heavy meeting the ground in front of the hero

@@ -3464,6 +3464,8 @@ func _down_tick(delta: float) -> void:
 			crumple.foot_pole = Vector3.ZERO
 			crumple.foot_toes = Vector3.ZERO
 			crumple.active = false
+		if garb != null and not OS.has_environment("KNOCK_NOROBE"):
+			garb.posed_legs = false
 		_knock_hand = Vector3.INF
 		_knock_feet_at = [Vector3.INF, Vector3.INF]
 		_knock_rise_at = Vector3.INF
@@ -3479,6 +3481,13 @@ func _down_tick(delta: float) -> void:
 		crumple.leg_aim = minf(down_t / 0.12, 1.0) * (1.0 - smoothstep(aim_out, KNOCK_TIME, down_t))
 		crumple.square = crumple.leg_aim
 		crumple.arm_aim = crumple.leg_aim
+	# (11-15 04:00) the robe panels follow the legs as the knock-down poses them: before, they read
+	# the clip's standing legs and stayed in the pelvis's frame, so with the legs swept up both
+	# panels stuck out of the seat as two stiff red boards (edge-on in profile: two rods by the
+	# hips). Posed, the front panel lies over the raised thighs and the back one swings clear of
+	# the heels. `KNOCK_NOROBE=1` = before.
+	if garb != null and not OS.has_environment("KNOCK_NOROBE"):
+		garb.posed_legs = true
 	_pose_knockdown(down_t)
 	_knock_push_hand()
 	_knock_breakfall()
