@@ -4064,6 +4064,10 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(abs.get_base_dir())
 	var err := img.save_png(abs)
 	print("SHOT %s -> %s (%s) err=%d" % [spot, abs, img.get_size(), err])
+	if OS.has_environment("SHOT_ROBE") and is_instance_valid(player) and player.garb != null:
+		# (11-15 05:00) the robe panels' state at the capture
+		var g: HollowRags = player.garb
+		print("SHOT robe posed %s air %.2f ground %.2f swing f %.2f b %.2f fold_back %s hem %s" % [g.posed_legs, g.back_air, g.back_ground, g._swing_f, g._swing_b, g.fold_back, g.back_hem])
 	var we: Weather = world.weather
 	print("SHOT wade splashes %d" % we.wade_splashes)
 	if "dripdbg" in args:
@@ -4142,6 +4146,10 @@ func _heavy_action(player: Player, foe: HollowSoldier, args: PackedStringArray) 
 		player.receive_attack(foe, HollowSoldier.SWEEP_DAMAGE, true)
 		for i in int(at * 60.0):
 			player._physics_process(dt)
+			# (11-15 05:00) the robe too, as the game ticks it (it only ran in the few capture frames,
+			# so a panel that swings over ~0.2 s, the back one pressed onto the thighs, never got there)
+			if player.garb != null and not OS.has_environment("SHOT_OLDROBE"):
+				player.garb._physics_process(dt)
 			# (11-07) no frames run in this loop, so no skeleton_updated: place the staff held in the
 			# fist by hand each tick (from the unmodified pose), or the regrip draws it from the
 			# spot where the blow caught it

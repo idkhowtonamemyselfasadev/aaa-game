@@ -83,6 +83,20 @@ const TUCK_LIE0 := 0.62                  # thigh angle off the pelvis (rad) the 
 const TUCK_LIE1 := 0.95                  # ... and lies along it fully
 const TUCK_PAD := 0.075                  # m, the cloth over the thigh's top (thigh radius + wool)
 const TUCK_SWING_MAX := 1.75             # rad, the most the front panel lies out along a thigh
+## (11-15 05:00) The back panel through a fall onto the back (set by the wearer, 0..1): with
+## `back_air` the air of the fall presses it up onto the back of the lower thigh (hanging plumb
+## from the seat it read edge-on as a stiff red rod), folding to hang plumb past the knee; with
+## `back_ground` it lies along the turf from the seat toward the feet. `back_hem` is the hem's
+## world point and `back_thigh_gap` the panel line's distance off the thigh's underside (m),
+## for the bots.
+var back_air := 0.0
+var back_ground := 0.0
+var back_floor := false   # the whole fall: where the back panel meets the turf it folds and lies on it
+var back_hem := Vector3.ZERO
+var back_thigh_gap := 9.0
+var _back_folded := false
+var _BROBE_DBG := OS.has_environment("BROBE_DBG")
+var _floor_side := 0.0    # which way the back panel's rest lies on the turf (+ behind, - toward the feet)
 ## Cut of the rags, set before build(): the harrier runs light in a fitted coif, no mantle,
 ## and a short kilt-length tabard; everyone else wears the deep cowl and long panels.
 var cowl := true
@@ -866,6 +880,89 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 				tb = maxf(tb, minf(ah, 1.2))
 				push_b = maxf(push_b, minf(ah, 1.2))
 				heels.append([rh.length(), ah - 0.06 / maxf(rh.length(), 0.2)])
+	var bfold := Vector2(1000.0, 0.0)
+	if posed_legs and (back_air > 0.0 or back_ground > 0.0) and _legs.size() == 2:
+		var br := _pivot_frame(_back)
+		var bdown: Vector3 = br[0]
+		var bz: Vector3 = br[1]
+		var bo := _back.global_position
+		var bsy := _back.global_basis.y.length()
+		var bl: float = _back.get_meta("len", 1.0)
+		var tw := tb
+		var gap := 9.0
+		if back_air > 0.0:
+			# the lower thigh (least forward off the pelvis): the cloth lies along its underside
+			var th := INF
+			var kp := Vector3.ZERO
+			var hp := Vector3.ZERO
+			for leg in _legs:
+				var h := _joint(leg[0])
+				var kn := _joint(leg[1])
+				var d := kn - h
+				var a := atan2(d.dot(bz), d.dot(bdown))
+				if a < th:
+					th = a
+					kp = kn
+					hp = h
+			var tn := (bz * cos(th) - bdown * sin(th)).normalized()
+			var under := kp - tn * TUCK_PAD
+			var r := under - bo
+			var aim := atan2(-r.dot(bz), r.dot(bdown))
+			tw = lerpf(tw, aim, back_air)
+			var kd := r.length() / bsy
+			if kd < bl - 0.05:
+				# past the knee the cloth hangs plumb
+				var g := -up
+				var plumb := atan2(-g.dot(bz), g.dot(bdown))
+				bfold = Vector2(kd, maxf(plumb - tw, 0.0) * back_air)
+			var pd := bdown * cos(tw) - bz * sin(tw)
+			var seg := kp - hp
+			var u := clampf((bo + pd * minf(kd, bl) * bsy * 0.6 - hp).dot(seg) / maxf(seg.length_squared(), 1e-6), 0.0, 1.0)
+			gap = (bo + pd * minf(kd, bl) * bsy * 0.6 - (hp + seg * u)).length()
+		if back_ground > 0.0:
+			# along the turf toward the feet: the panel line from the seam down to a point on the
+			# ground most of its length out (where the seam is on the turf, flat along it)
+			var fh := bdown - up * bdown.dot(up)
+			if fh.length() > 0.3:
+				fh = fh.normalized()
+				var grd := _ground_at(bo, up)
+				var gh := bo.dot(up) - grd - 0.03
+				var run := sqrt(maxf(pow(bl * bsy * 0.9, 2.0) - gh * gh, 0.01))
+				var r := fh * run - up * gh
+				var aim_g := atan2(-r.dot(bz), r.dot(bdown))
+				tw = lerpf(tw, aim_g, back_ground)
+				bfold = Vector2(bfold.x, bfold.y * (1.0 - back_ground))
+		var wb := maxf(back_air, back_ground)
+		if _BROBE_DBG:
+			print("BROBE tw %.2f tb %.2f swing_b %.2f drop %s w %.2f" % [tw, tb, _swing_b, _drop[1], _drop_w[1]])
+		tb = lerpf(tb, tw, wb)
+		if back_air > 0.0 and bfold.x < 100.0:
+			# in the fall the cloth is near weightless and the air drags the part past the knee
+			# back up: it turns only part way to plumb
+			bfold.y *= BACK_AIR_FOLD
+		push_b = -INF if wb > 0.5 else push_b
+		back_thigh_gap = minf(back_thigh_gap, gap) if back_air > 0.9 else back_thigh_gap
+	if posed_legs and back_floor and bfold.x >= 100.0:
+		# where the panel line meets the turf it folds and the rest lies on the ground behind
+		var br := _pivot_frame(_back)
+		var bo := _back.global_position
+		var bsy := _back.global_basis.y.length()
+		var bl: float = _back.get_meta("len", 1.0)
+		var dir: Vector3 = br[0] * cos(tb) - br[1] * sin(tb)
+		var c := -dir.dot(up)
+		var h := maxf(bo.dot(up) - _ground_at(bo, up) - 0.02, 0.01)
+		if c > 0.05 and bl * bsy * c > h:
+			# the turn that levels the rest (d cos f - n sin f flat), toward whichever face of the
+			# panel looks up: a panel leaning back lies on behind, one leaning forward (the seat
+			# down, the legs out in front) runs on along the turf toward the feet
+			var nrm: Vector3 = br[1] * cos(tb) + br[0] * sin(tb)
+			var nup := nrm.dot(up)
+			# (the side, once the cloth is down on it, holds: as the panel swings through plumb
+			# the pooled rest does not flip over from in front to behind)
+			if _floor_side == 0.0:
+				_floor_side = 1.0 if nup <= 0.0 else -1.0
+			var f := atan2(c, -nup) - 0.05 if _floor_side > 0.0 else -(atan2(c, nup) - 0.05)
+			bfold = Vector2(h / c / bsy, clampf(f, -2.4, 2.4))
 	tuck_k = k
 	tuck_lie = lerpf(tuck_lie, lie, k)
 	tuck_lie_peak = maxf(tuck_lie_peak, tuck_lie)
@@ -905,6 +1002,41 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 			tuck_shin = minf(tuck_shin, (w - (a0 + seg * u)).length())
 	_set_fold_len(fold_round)
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_front)
+	# the back panel's knee fold (only while the fall poses it; the plain tuck leaves it flat)
+	if bfold.x < 100.0 or _back_folded:
+		if bfold.x < 100.0:
+			# (a fold against the turf is a contact: it follows quickly)
+			fold_back = Vector2(bfold.x, lerpf(fold_back.y if fold_back.x < 100.0 else 0.0, bfold.y, maxf(k, 0.85)))
+			_back_folded = true
+		else:
+			fold_back = Vector2(fold_back.x, lerpf(fold_back.y, 0.0, k))
+			if absf(fold_back.y) < 0.002:
+				fold_back = Vector2(1000.0, 0.0)
+				_back_folded = false
+				_floor_side = 0.0
+		(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
+	var bpf := _pivot_frame(_back)
+	var bsw := _swing_b
+	var bdl: Vector3 = bpf[0] * cos(bsw) - bpf[1] * sin(bsw)
+	var bnl: Vector3 = bpf[1] * cos(bsw) + bpf[0] * sin(bsw)
+	var bq := fold_arc(_back.get_meta("len", 1.0), fold_back, 0.07)
+	back_hem = _back.global_position + (bdl * bq.x + bnl * bq.y) * _back.global_basis.y.length()
+
+const BACK_AIR_FOLD := 0.55   # of the turn to plumb the back panel makes past the knee in a fall
+
+## The ground's height (along `up`) under a point: a ray down past the wearer's own body.
+func _ground_at(p: Vector3, up: Vector3) -> float:
+	var ss := _body.get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(p + up * 0.8, p - up * 2.5)
+	var n: Node = _body
+	while n != null and not (n is CollisionObject3D):
+		n = n.get_parent()
+	if n != null:
+		q.exclude = [(n as CollisionObject3D).get_rid()]
+	var hit := ss.intersect_ray(q)
+	if hit.is_empty():
+		return _body.global_position.dot(up)
+	return (hit["position"] as Vector3).dot(up)
 
 ## A panel left high (the thigh it lay on drops away at a landing) FALLS: a heavy wool board
 ## hinged at the belt, under gravity with air drag, from rest, so it starts slow, speeds up,

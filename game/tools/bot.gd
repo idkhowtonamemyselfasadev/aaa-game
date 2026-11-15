@@ -11116,8 +11116,27 @@ func _sweep_test() -> void:
 	if p.garb != null:
 		p.garb.tuck_lie_peak = 0.0   # (11-15 04:00) the front robe panel lying on the swept-up thighs
 	var tuck := [9.0, 0.0, 0]   # (11-15) the chin tuck through the slam (0.38..0.52): lowest head bone over the turf, max neck flexion (deg, head up vs chest up, chin toward chest), samples
+	# (11-15 05:00) the back robe panel: lowest hem over the turf in the air (0.14..0.32), hem height over the turf lying (0.55..1.20) max / min, samples air / lying
+	var brobe := [9.0, -9.0, 9.0, 0, 0, 9.0, 0]   # ..., lowest hem in the kneel (1.30..1.70), samples
+	if p.garb != null:
+		p.garb.back_thigh_gap = 9.0
 	while p.down_t >= 0.0:
 		max_tip = maxf(max_tip, p.model.transform.basis.y.angle_to(p._model_rest.basis.y))
+		if p.garb != null and p.garb.back_hem != Vector3.ZERO:
+			var bh: Vector3 = p.garb.back_hem
+			var over: float = bh.y - _world.terrain.height_at(bh.x, bh.z)
+			if OS.has_environment("BROBE_DBG"):
+				print("brobe t %.3f air %.2f grd %.2f hem %.3f swing %.2f fold %.2f/%.2f" % [p.down_t, p.garb.back_air, p.garb.back_ground, over, p.garb._swing_b, p.garb.fold_back.x, p.garb.fold_back.y])
+			if p.down_t > 0.14 and p.down_t < 0.32:
+				brobe[0] = minf(brobe[0], over)
+				brobe[3] += 1
+			elif p.down_t > 0.55 and p.down_t < 1.20:
+				brobe[1] = maxf(brobe[1], over)
+				brobe[2] = minf(brobe[2], over)
+				brobe[4] += 1
+			elif p.down_t > 1.30 and p.down_t < 1.70:
+				brobe[5] = minf(brobe[5], over)
+				brobe[6] += 1
 		if sk != null and p.down_t > 0.38 and p.down_t < 0.52 and p.crumple.probed_basis.has("mixamorig_Head") and p.crumple.probed_basis.has("mixamorig_Spine2"):
 			if true:
 				var hp := sk.global_transform * Transform3D(p.crumple.probed_basis["mixamorig_Head"], p.crumple.probed["mixamorig_Head"])
@@ -11358,6 +11377,14 @@ func _sweep_test() -> void:
 		print("BOT sweep: robe: front panel lies on the thighs up to %.2f through the knock-down (0 = sticks out of the seat)" % p.garb.tuck_lie_peak)
 		if not OS.has_environment("KNOCK_NOROBE") and p.garb.tuck_lie_peak < 0.5:
 			return _combat_done(false, "the front robe panel does not lie on the swept-up thighs (%.2f)" % p.garb.tuck_lie_peak)
+		print("BOT sweep: robe: back hem %.2f m over the turf at least in the air (0.14..0.32, %d samples), panel line %.3f m off the lower thigh's underside; lying (0.55..1.20, %d samples) hem %.2f..%.2f m over the turf; kneel (1.30..1.70, %d samples) hem %.2f m over the turf at least" % [brobe[0], brobe[3], p.garb.back_thigh_gap, brobe[4], brobe[2], brobe[1], brobe[6], brobe[5]])
+		if not OS.has_environment("KNOCK_NOBACKROBE") and not OS.has_environment("KNOCK_NOROBE"):
+			if brobe[3] > 0 and brobe[0] < 0.15:
+				return _combat_done(false, "the back robe panel hangs plumb from the seat down toward the turf in the swept fall (hem %.2f m up)" % brobe[0])
+			if brobe[4] > 0 and (brobe[1] > 0.12 or brobe[2] < -0.05):
+				return _combat_done(false, "the back robe panel does not lie on the turf while the hero is down (hem %.2f..%.2f m)" % [brobe[2], brobe[1]])
+			if brobe[6] > 0 and brobe[5] < -0.09:
+				return _combat_done(false, "the back robe panel runs into the turf in the kneel (hem %.2f m)" % brobe[5])
 	print("BOT sweep: chin tuck: head bone %.2f m over the turf at least through the slam (0.38..0.52), neck flexion up to %.0f deg, %d samples; palm puffs %d" % [tuck[0], tuck[1], tuck[2], p.breakfall_puffs])
 	if not OS.has_environment("KNOCK_NOTUCK") and tuck[2] > 0 and tuck[1] < 8.0:
 		return _combat_done(false, "the thrown hero does not tuck the chin through the slam (%.0f deg)" % tuck[1])

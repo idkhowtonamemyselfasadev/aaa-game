@@ -3388,6 +3388,12 @@ func _knockdown(attacker: Node) -> void:
 ## (11-07) a drawn staff stays in the right fist through the knock-down (it hung in the air at
 ## guard height before) and is taken back into both hands as the arms come up to the guard.
 const KNOCK_UNHOLD := 1.83
+const KNOCK_ROBE_AIR := [0.02, 0.10, 0.34, 0.46]     # down_t: the back panel pressed onto the thighs: in, held, out, gone
+const KNOCK_ROBE_GROUND := [0.34, 0.46, 1.28, 1.46]  # down_t: ...then lying along the turf toward the feet
+
+## A smooth in-held-out window over down_t (0..1).
+static func _knock_env(w: Array, t: float) -> float:
+	return smoothstep(w[0], w[1], t) * (1.0 - smoothstep(w[2], w[3], t))
 const KNOCK_STAFF_GUARD := [1.62, 1.83]  # the shaft turns in the fist to the guard's line as the arms come up
 const KNOCK_STAFF_LAY := [0.12, 0.42]    # the shaft tips flat onto the turf as the back lands
 const KNOCK_REGRIP := [1.66, 1.75]       # the free left hand comes off the hip and closes on the shaft before the draw
@@ -3466,6 +3472,10 @@ func _down_tick(delta: float) -> void:
 			crumple.active = false
 		if garb != null and not OS.has_environment("KNOCK_NOROBE"):
 			garb.posed_legs = false
+		if garb != null:
+			garb.back_air = 0.0
+			garb.back_ground = 0.0
+			garb.back_floor = false
 		_knock_hand = Vector3.INF
 		_knock_feet_at = [Vector3.INF, Vector3.INF]
 		_knock_rise_at = Vector3.INF
@@ -3488,6 +3498,13 @@ func _down_tick(delta: float) -> void:
 	# the heels. `KNOCK_NOROBE=1` = before.
 	if garb != null and not OS.has_environment("KNOCK_NOROBE"):
 		garb.posed_legs = true
+		# (11-15 05:00) the back panel: pressed up onto the backs of the swept thighs by the air
+		# of the fall (it hung plumb from the seat, edge-on a stiff red rod), then laid along the
+		# turf toward the feet once the back is down. `KNOCK_NOBACKROBE=1` = before.
+		if not OS.has_environment("KNOCK_NOBACKROBE"):
+			garb.back_air = _knock_env(KNOCK_ROBE_AIR, down_t)
+			garb.back_ground = _knock_env(KNOCK_ROBE_GROUND, down_t)
+			garb.back_floor = true
 	_pose_knockdown(down_t)
 	_knock_push_hand()
 	_knock_breakfall()

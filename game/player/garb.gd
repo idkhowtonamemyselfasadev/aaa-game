@@ -250,6 +250,8 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		chest.add_child(sk)
 	_front = _panel(hips, Vector3(0, 1.20, 0.215), 0.30 * robe_wide, lerpf(0.44, 0.52, robe_len - 1.0) * robe_wide, 0.90 * robe_len, 0.9, 1.0)
 	_back = _panel(hips, Vector3(0, 1.21, -0.205), 0.34 * robe_wide, lerpf(0.48, 0.56, robe_len - 1.0) * robe_wide, 0.96 * robe_len, -0.9, 2.0)
+	_front.get_child(0).name = "RobeFront"   # (names for shot.gd SHOT_HIDE / SHOT_LIST)
+	_back.get_child(0).name = "RobeBack"
 	if skirt:
 		for sx in [-1.0, 1.0]:
 			var g := _piece(_gore(sx), 0.06, 0.14, 40.0 + sx, GORE_LEN * robe_len / 0.42)

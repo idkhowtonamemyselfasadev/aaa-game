@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261111-0440-knight-leap-ring-before.jpg",
-  "time": "2026-11-11T04:40:00Z",
-  "caption": "Before: the old ring phase stood a flame right on the knight's own boot, hiding the landing's dust kick.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0440-knight-leap-ring.jpg",
-  "time": "2026-11-11T04:40:00Z",
-  "caption": "Ashen Knight's leap landing at phase-2 size: the ember ring now flares to the sides and ahead of the bite, the boot and its dust kick read clear; the front flame still crosses the front-quarter lens and the GL renderer is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0600-knight-guard-pair.jpg",
-  "time": "2026-11-11T06:00:00Z",
-  "caption": "Before (left, shared guard) / after (right, guard re-solved against the knight's real shoulders): the glaive sits ~10 cm higher and closer at this size, the right elbow keeps a bend; a barely visible change, mainly a correctness fix.",
-  "verdict": "fail"
- },
- {
-  "file": "20261111-0600-knight-guard.jpg",
-  "time": "2026-11-11T06:00:00Z",
-  "caption": "The Ashen Knight (phase-1 size) at its re-solved guard behind the hero; the glaive line reads, but the knight is a backlit dark silhouette and the shot is software-rendered (no GI/volumetrics).",
-  "verdict": "fail"
- },
- {
   "file": "20261111-0830-knight-coil-front.jpg",
   "time": "2026-11-11T08:30:00Z",
   "caption": "Reveal coil from the front: the glaive held level at the hip with the left fist now visibly on the haft (before it trailed on the turf with that fist off it); the coil reads a little less low than before.",
@@ -897,6 +873,18 @@
   "file": "20261115-0400-robe-kside.jpg",
   "time": "2026-11-15T04:00:00Z",
   "caption": "Same fall in profile at 0.18 s: the shorter rod (front panel) is gone, the long red rod left is the back panel seen edge-on; small figure, flat light.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0500-backrobe-air.jpg",
+  "time": "2026-11-15T05:00:00Z",
+  "caption": "Swept fall 0.30 s, side-on: the back robe panel now lies along the backs of the thighs and bends down at the knee instead of hanging from the seat as a red rod; still a thin edge-on sheet, dim flat light, small figure.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0500-backrobe-kneel.jpg",
+  "time": "2026-11-15T05:00:00Z",
+  "caption": "Getting up from the knock-down (1.45 s): the long back panel now folds where it meets the turf instead of running 25 cm into the ground; edge-on it still reads as a thin red strip.",
   "verdict": "fail"
  }
 ]
