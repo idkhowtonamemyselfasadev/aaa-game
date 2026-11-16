@@ -2989,6 +2989,28 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		if absf(m.x) > 0.05 and not OS.has_environment("CLIMB_EDGE_OLD") and not _side_has_stone(n, right * signf(m.x), gap):
 			m.x = 0.0                              # the course ends beside the leading hand: no hanging out past it
 			edge_stops += 1
+			_edge_ease = 0.0
+		elif absf(m.x) > 0.05 and not OS.has_environment("CLIMB_EDGE_OLD") and not OS.has_environment("CLIMB_EASE_OLD"):
+			# ease the sideways speed down as the end of the course comes near, so the body
+			# slows over the last stones and settles instead of halting dead in one tick
+			var sd := signf(m.x)
+			var room := CLIMB_EDGE_REACH + CLIMB_EASE_ZONE
+			for k in 3:
+				var r := CLIMB_EDGE_REACH + CLIMB_EASE_ZONE * float(3 - k) / 3.0
+				if _side_has_stone(n, right * sd, gap, r):
+					room = r
+					break
+				room = CLIMB_EDGE_REACH + CLIMB_EASE_ZONE * float(2 - k) / 3.0
+			var want := smoothstep(0.0, 1.0, (room - CLIMB_EDGE_REACH) / CLIMB_EASE_ZONE)
+			want = maxf(want, CLIMB_EASE_FLOOR)
+			if sd != _edge_side:
+				_edge_ease = 1.0                   # leaving the edge (or a fresh run) starts at full pace
+			_edge_side = sd
+			# slow down eased, speed back up at the same pace
+			_edge_ease = move_toward(_edge_ease, want, delta / CLIMB_EASE_T)
+			m.x *= _edge_ease
+		else:
+			_edge_ease = 1.0 if absf(m.x) <= 0.05 else _edge_ease
 		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED * _climb_rhythm(delta)
 		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
 	# keep the hands on the face: close or open the gap toward CLIMB_GAP
@@ -3040,13 +3062,20 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 ## carried on until the body's own centre line ran off the course, the outer hand and shoulder
 ## hanging in the air past a broken wall end.
 const CLIMB_EDGE_REACH := 0.4
-func _side_has_stone(n: Vector3, side: Vector3, gap: float) -> bool:
+## The last CLIMB_EASE_ZONE m before that point the sideways speed eases down (to
+## CLIMB_EASE_FLOOR of full pace), changing by at most 1 per CLIMB_EASE_T s.
+const CLIMB_EASE_ZONE := 0.3
+const CLIMB_EASE_FLOOR := 0.12
+const CLIMB_EASE_T := 0.2
+var _edge_ease := 1.0                       # sideways pace factor near the end of a course
+var _edge_side := 0.0                       # which way the last eased sideways move went
+func _side_has_stone(n: Vector3, side: Vector3, gap: float, reach := CLIMB_EDGE_REACH) -> bool:
 	# the band the hands hold in (the feet find footing lower down on whatever the hands are
 	# over); it only needs one stone: a single face stone fallen out of the course is not an edge
 	for band: Array in [[1.3, 1.5, 1.7, 1.9]]:
 		var found := false
 		for h: float in band:
-			var o := global_position + Vector3.UP * h + side * CLIMB_EDGE_REACH
+			var o := global_position + Vector3.UP * h + side * reach
 			var hit := _ray(o, o - n * 1.1)
 			if hit.is_empty() or absf((hit["normal"] as Vector3).y) >= CLIMB_STEEP + 0.15:
 				continue

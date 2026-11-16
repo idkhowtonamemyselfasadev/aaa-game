@@ -15237,6 +15237,7 @@ func _ruin_test() -> void:
 ## Sideways along the keep's outer face toward the breach, where the courses step down and end:
 ## the hero must stop with stone still under both hands and shoulders, not hang out past the end.
 ## CLIMB_EDGE_OLD=1 shows the old run-off.
+const CLIMB_STOP_DROP_MAX := 7.0   # m/s2: hardest braking allowed as a sideways climb stops at an edge (the old dead halt: 12.7)
 func _climb_edge_test() -> void:
 	var p := _player
 	var ruins: Ruins = _world.get_node("Ruins")
@@ -15246,6 +15247,7 @@ func _climb_edge_test() -> void:
 	var worst := 0.0
 	var stops := 0
 	var runs := 0
+	var worst_drop := 0.0
 	for side: float in [1.0, -1.0]:
 		# start where the face stands at least 3 m over the turf, as near the breach as that is
 		var a := INF
@@ -15292,8 +15294,40 @@ func _climb_edge_test() -> void:
 		var a_start := atan2(p.global_position.z - rs.z, p.global_position.x - rs.x)
 		var bare := 0.0
 		var t := 0.0
+		# per-tick sideways speed: the hardest one-tick braking once the run is past its
+		# first few ticks (the climb's own surge is eased), and how long the last slow-down took
+		var lat_prev := INF
+		var lat_peak := 0.0
+		var lat_drop := 0.0
+		var free_drop := 0.0
+		var slow_ticks := 0
+		var tick_n := 0
+		var stopped_at := -1
 		while t < 6.0 and p.climbing and p.mantle_t < 0.0:
-			await _ticks(3)
+			for _k in 3:
+				var q0 := p.global_position
+				await _ticks(1)
+				tick_n += 1
+				var lat := absf((p.global_position - q0).dot(right)) / maxf(get_physics_process_delta_time(), 1e-4)
+				if tick_n > 4 and lat_prev < INF:
+					var d := (lat_prev - lat) / maxf(get_physics_process_delta_time(), 1e-4)   # m/s2
+					if p.edge_stops == e0 and lat_peak > 0.0 and lat < lat_peak * 0.7:
+						lat_drop = maxf(lat_drop, d)   # slowing toward the edge
+					elif p.edge_stops == e0:
+						free_drop = maxf(free_drop, d)
+					else:
+						lat_drop = maxf(lat_drop, d)   # the stop itself
+				if p.edge_stops == e0:
+					lat_peak = maxf(lat_peak, lat if tick_n > 4 else 0.0)
+					if lat_peak > 0.0 and lat < lat_peak * 0.7:
+						slow_ticks += 1
+					else:
+						slow_ticks = 0
+				elif stopped_at < 0:
+					stopped_at = tick_n
+				if OS.has_environment("EDGE_LAT") and tick_n < 80:
+					print("EDGE lat tick %d %.3f m/s stops %d ease %.2f" % [tick_n, lat, p.edge_stops - e0, p._edge_ease])
+				lat_prev = lat
 			t += 0.05
 			if not p.climbing or p.mantle_t >= 0.0:
 				break
@@ -15325,6 +15359,9 @@ func _climb_edge_test() -> void:
 		var a_end := atan2(p.global_position.z - rs.z, p.global_position.x - rs.x)
 		var moved := absf(wrapf(a_end - a_start, -PI, PI)) * 5.0
 		print("BOT climbedge: side %+.0f from %.2f rad: moved %.2f m along the face in %.2f s, edge stops %d, climbing %s, mantling %s, %.2f s with a hand or shoulder off the stone, crown %.2f m above the hero" % [side, a, moved, t, p.edge_stops - e0, p.climbing, p.mantle_t >= 0.0, bare, ruins.wall_top(a_end, 4.3) - p.global_position.y])
+		print("BOT climbedge: side %+.0f sideways speed peak %.2f m/s, hardest one-tick braking running %.1f / into the stop %.1f m/s2, slowed over %d ticks before the stop (tick %d)" % [side, lat_peak, free_drop, lat_drop, slow_ticks, stopped_at])
+		if p.edge_stops > e0:
+			worst_drop = maxf(worst_drop, lat_drop)
 		worst = maxf(worst, bare)
 		if p.edge_stops > e0:
 			stops += 1
@@ -15339,6 +15376,8 @@ func _climb_edge_test() -> void:
 		return _combat_done(false, "a hand or shoulder hung off the end of the stones for %.2f s" % worst)
 	if stops < 1:
 		return _combat_done(false, "no sideways climb ever reached the end of a course")
+	if worst_drop > CLIMB_STOP_DROP_MAX and not OS.has_environment("CLIMB_EASE_OLD") and not OS.has_environment("CLIMB_EDGE_OLD"):
+		return _combat_done(false, "the sideways climb halted dead at the edge: braking %.1f m/s2 in one tick" % worst_drop)
 	_combat_done(true, "climbed sideways toward the breach and stopped with stone under both hands and shoulders")
 
 

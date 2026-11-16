@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261112-0223-knight-ankleturn-before.jpg",
-  "time": "2026-11-12T02:23:57Z",
-  "caption": "Same tick before the change (FOEBALL_OLD=1): the planted boot lies flat and pivots on its ankle; for comparison only.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0223-knight-ballturn.jpg",
   "time": "2026-11-12T02:23:57Z",
   "caption": "The Ashen Knight (phase-1 size) mid turn on the spot at 09:00, low boot lens: the planted boot now stands on its ball with the heel up instead of spinning flat; the lens still crops the body and the boots read small.",
@@ -891,6 +885,18 @@
   "file": "20261116-0116-climb-sq.jpg",
   "time": "2026-11-16T01:16:32Z",
   "caption": "Three-quarter of the same climb: knee up on a course, hands reaching, valley beyond; framing now judges the move, but the stone texture is noisy and the shadow side of the face goes near-black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0215-climbback-f22.jpg",
+  "time": "2026-11-16T02:15:00Z",
+  "caption": "Hero climbing the keep's outer face from behind (frame 22, sideways stops at a course end now ease in over ~1 s): stone and lighting read well, but both arms are hidden under the capelet instead of reaching up onto the stones.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0215-climbback-f28.jpg",
+  "time": "2026-11-16T02:15:00Z",
+  "caption": "Same climb 6 frames later, a course higher: the knees step up, but from behind the hands still never show above the shoulders, so the reach reads weak; the face's shadow side is near-black.",
   "verdict": "fail"
  }
 ]
