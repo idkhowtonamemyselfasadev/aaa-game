@@ -21,6 +21,7 @@ static var _mat: ShaderMaterial
 static var _drift := FastNoiseLite.new()
 static var _kind := FastNoiseLite.new()
 static var _noise_ready := false
+static var _ringflowers_old := OS.get_environment("SWARDSINGE_OLD") == "1"
 
 static func mesh(sp: int) -> ArrayMesh:
 	if _meshes.is_empty():
@@ -69,6 +70,9 @@ static func build_chunk(k: Vector2i, chunk_m: float, terrain: Terrain, far: floa
 		# no meadow flowers on the watchtower keep floor or through its walls, few in deep
 		# oak shade, none through the moss cushions (same masks as the grass)
 		if ruin != Vector3.INF and Vector2(x - ruin.x, z - ruin.z).length() < 4.8:
+			continue
+		# none on the knight's burnt ring floor or its singed lip (22:00 11-16; SWARDSINGE_OLD=1 = before)
+		if StoneRing.singed(x, z) > 0.2 and not _ringflowers_old:
 			continue
 		if Cottage.inside(x, z, -0.2) or StoneCottage.inside(x, z, -0.2) or WhiteCottage.covers(x, z, -0.2) or LanternPost.near(x, z, 0.15) or DryWall.near(x, z, 0.0) or FellBell.on_fold(x, z, 0.0) or YardWall.near(x, z, 0.0) or Hens.scratched(x, z) > 0.25 or YardGround.worn(x, z) > 0.1 or RutStones.under(x, z, 0.05):
 			continue
@@ -138,7 +142,7 @@ static func _verges(k: Vector2i, chunk_m: float, terrain: Terrain, far: float, r
 				continue
 			if absf(x) > half or absf(z) > half or rng.randf() > smoothstep(0.05, 0.5, wear):
 				continue
-			if YardGround.worn(x, z) > 0.1 or LanternPost.near(x, z, 0.15) or terrain.pond_at(x, z) > 0.2 or RutStones.under(x, z, 0.05):
+			if YardGround.worn(x, z) > 0.1 or LanternPost.near(x, z, 0.15) or terrain.pond_at(x, z) > 0.2 or RutStones.under(x, z, 0.05) or (StoneRing.singed(x, z) > 0.2 and not _ringflowers_old):
 				continue
 			var sp: int
 			var s: float

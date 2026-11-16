@@ -21,6 +21,7 @@ var _terrain: Terrain
 var cropped_spots: Array[Vector3] = []
 const CROP_R := 6.5
 var _ringsinge_old := OS.get_environment("RINGSINGE_OLD") == "1"   # before 17:00 11-16: tall clumps at the ring lip unsinged
+var _swardsinge_old := OS.get_environment("SWARDSINGE_OLD") == "1"   # before 22:00 11-16: spring-green stubble on the ring's ash
 var _meshes: Array[ArrayMesh] = []   # tall clump shapes: 0 upright, 1 tussock, 2 seeding
 var _sward_mesh: ArrayMesh
 var _chunks := {}            # Vector2i -> MultiMeshInstance3D
@@ -179,7 +180,7 @@ func _start_sward(k: Vector2i) -> Node3D:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(k) ^ 0x5a17
 	_job = {"k": k, "holder": holder, "rng": rng, "i": 0, "flora": _find_ruin(),
-		"xf": [] as Array[Transform3D], "var": PackedFloat32Array()}
+		"xf": [] as Array[Transform3D], "var": PackedFloat32Array(), "singe": PackedFloat32Array()}
 	return holder
 
 func _step_sward() -> void:
@@ -193,6 +194,7 @@ func _step_sward() -> void:
 	var flora: Node = _job.flora
 	var xf: Array[Transform3D] = _job.xf
 	var var_: PackedFloat32Array = _job["var"]
+	var singe_: PackedFloat32Array = _job["singe"]
 	var half := _terrain.size_m * 0.5 - 2.0
 	var end := mini(_job.i + SWARD_SLICE, sward_per_chunk)
 	# jittered grid, one mat per cell: pure random scatter at this density left a quarter of
@@ -218,6 +220,11 @@ func _step_sward() -> void:
 			continue
 		if DoorStones.under(x, z, 0.26) or (DoorStones.under(x, z, 0.42) and rng.randf() < 0.65):
 			continue
+		# the knight's ring: the few stubble mats left on the ash are thinned again and singed
+		# (char-black at the root, dead straw at the tip: Grass shader INSTANCE_CUSTOM.w)
+		var ring_singe := 0.0 if _swardsinge_old else StoneRing.singed(x, z)
+		if ring_singe > 0.0 and rng.randf() < StoneRing.burnt(x, z) * 0.55:
+			continue
 		var y := _terrain.height_at(x, z)
 		var nrm := _terrain.normal_at(x, z)
 		var s := lerpf(0.7, 1.25, rng.randf()) * (0.6 if site.z < 3.1 else 1.0) * lerpf(1.0, 0.7, site.y) * lerpf(1.0, 0.55, hen)
@@ -233,8 +240,10 @@ func _step_sward() -> void:
 		xf.append(Transform3D(basis, Vector3(x, y - 0.02, z)))
 		# greener than the tall grass on average (live leaf under the seed heads)
 		var_.append(clampf(site.x * 0.5 + rng.randf() * 0.45 - 0.1, 0.0, 1.0) * lerpf(1.0, 0.4, vg))
+		singe_.append(ring_singe)
 	_job.i = end
 	_job["var"] = var_   # packed arrays are values: write back
+	_job["singe"] = singe_
 	if end < sward_per_chunk:
 		sward_build_ms = maxf(sward_build_ms, (Time.get_ticks_usec() - t0) / 1000.0)
 		return
@@ -245,7 +254,7 @@ func _step_sward() -> void:
 	mm.instance_count = xf.size()
 	for n in xf.size():
 		mm.set_instance_transform(n, xf[n])
-		mm.set_instance_custom_data(n, Color(var_[n], 1.0, 0, 0))
+		mm.set_instance_custom_data(n, Color(var_[n], 1.0, 0, singe_[n]))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -256,6 +265,8 @@ func _step_sward() -> void:
 	if record_sward != null:
 		for n in xf.size():
 			record_sward.append(xf[n])
+	if record_sward_singe != null:
+		record_sward_singe.append_array(singe_)
 	_sward[k] = mmi
 	_job = {}
 	sward_build_ms = maxf(sward_build_ms, (Time.get_ticks_usec() - t0) / 1000.0)
@@ -265,6 +276,8 @@ func _step_sward() -> void:
 var record_clumps = null
 ## The same for the short sward: every finished sward chunk's blade-mat transforms.
 var record_sward = null
+## ...and each one's ring singe (custom data .w), in the same order.
+var record_sward_singe = null
 
 func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 	var flora := _find_ruin()
@@ -340,7 +353,9 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var wide := rng.randf_range(0.75, 1.3)
 		basis = basis.scaled(Vector3(s * wide, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s / wide))
 		(xfs[kind] as Array[Transform3D]).append(Transform3D(basis, Vector3(x, y - 0.03, z)))
-		(vars[kind] as Array).append(Vector2(dry * lerpf(1.0, 0.5, vg), singe * 0.7))
+		# the odd tall clump left standing on the ash itself: char-rooted dead straw like the sward
+		var ash := 0.0 if _swardsinge_old else smoothstep(0.3, 0.8, StoneRing.burnt(x, z))
+		(vars[kind] as Array).append(Vector3(dry * lerpf(1.0, 0.5, vg), singe * 0.7, ash))
 		if record_clumps != null:
 			record_clumps.append([kind, xfs[kind].back()])
 	var root: MultiMeshInstance3D = null
@@ -354,8 +369,8 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		mm.instance_count = xf.size()
 		for n in xf.size():
 			mm.set_instance_transform(n, xf[n])
-			var cv: Vector2 = var_[n]
-			mm.set_instance_custom_data(n, Color(cv.x, 0, cv.y, 0))
+			var cv: Vector3 = var_[n]
+			mm.set_instance_custom_data(n, Color(cv.x, 0, cv.y, cv.z))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

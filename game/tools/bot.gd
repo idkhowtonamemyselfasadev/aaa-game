@@ -14859,7 +14859,57 @@ func _ringlip_test() -> void:
 		return _combat_done(false, "%d seeding stems stand full height on the ring lip" % band[0][2])
 	if band[0][0] > 0 and hl > hm * 0.8:
 		return _combat_done(false, "the ring lip's clumps are not singed shorter than the meadow")
-	_combat_done(true, "the ring lip is singed short, no seed heads stand on the ash")
+	# the short sward: the few stubble mats on the ash are singed (custom .w), none spring green,
+	# and they stand far thinner than the sward on the meadow past the ring
+	var tr: Terrain = _world.get_node("Terrain")
+	for k: Vector2i in grass._sward:   # rebuild the ring's sward with the records on
+		grass._sward[k].queue_free()
+	grass._sward.clear()
+	grass._job = {}
+	grass.record_sward = []
+	grass.record_sward_singe = []
+	grass.fill_around(Vector3(c.x, tr.height_at(c.x, c.z), c.z))
+	var sxf: Array = grass.record_sward
+	var sw: Array = grass.record_sward_singe
+	grass.record_sward = null
+	grass.record_sward_singe = null
+	var ash := [0, 0, 0.0]   # mats on the ash, of them unsinged (w < 0.5), summed w
+	var out_n := 0
+	for n in sxf.size():
+		var o: Vector3 = (sxf[n] as Transform3D).origin
+		var r := Vector2(o.x - c.x, o.z - c.z).length()
+		if StoneRing.burnt(o.x, o.z) > 0.6:
+			var w: float = sw[n]
+			ash[0] += 1
+			ash[2] += w
+			if w < 0.5:
+				ash[1] += 1
+		elif r > StoneRing.RADIUS + 3.0 and r < StoneRing.RADIUS + 9.0:
+			out_n += 1
+	# areas: burnt > 0.6 is about r < RADIUS - 3.4; the outer band is RADIUS+3 .. RADIUS+9
+	var a_in := PI * pow(StoneRing.RADIUS - 3.4, 2.0)
+	var a_out := PI * (pow(StoneRing.RADIUS + 9.0, 2.0) - pow(StoneRing.RADIUS + 3.0, 2.0))
+	var dens_in: float = ash[0] / a_in
+	var dens_out: float = out_n / a_out
+	print("BOT ringlip: sward on the ash %d mats (%.2f/m2, %d unsinged, mean singe %.2f), meadow past it %.2f/m2" % [ash[0], dens_in, ash[1], ash[2] / maxf(ash[0], 1.0), dens_out])
+	# wildflowers: none on the burnt floor or the singed lip
+	var fl_in := 0
+	var fl_all := 0
+	for k in grass._heads:
+		for hp: Vector3 in (grass._heads[k][0] as PackedVector3Array):
+			fl_all += 1
+			if StoneRing.singed(hp.x, hp.z) > 0.2:
+				fl_in += 1
+	print("BOT ringlip: wildflower heads %d loaded, %d on the burnt ring" % [fl_all, fl_in])
+	if fl_in > 0:
+		return _combat_done(false, "%d wildflowers bloom on the knight's burnt ring" % fl_in)
+	if out_n < 200:
+		return _combat_done(false, "no sward measured past the ring")
+	if ash[1] > 0:
+		return _combat_done(false, "%d green stubble mats stand on the ring's ash (unsinged)" % ash[1])
+	if dens_in > dens_out * 0.08:   # (before 22:00 11-16: 0.12 of the meadow)
+		return _combat_done(false, "the ash stubble is not thinned (%.2f/m2 vs %.2f/m2 outside)" % [dens_in, dens_out])
+	_combat_done(true, "the ring lip is singed short, no seed heads stand on the ash, the ash stubble is singed and sparse")
 
 func _rutstones_test() -> void:
 	var terrain: Terrain = _world.get_node("Terrain")

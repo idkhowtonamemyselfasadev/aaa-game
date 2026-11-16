@@ -59,6 +59,7 @@ varying float v_cloud;   // cloud shadow on this vertex (1 = full sun)
 varying float v_scorch;  // singed by the hearth (static wall tufts, INSTANCE_CUSTOM.z)
 varying vec3 v_field;   // field kind under this clump (field_patch.gdshaderinc)
 varying float v_burnt;   // burnt down by the Ashen Knight's glaive (burn.gdshaderinc)
+varying float v_ringsinge;   // sward stubble singed on the knight's ring (INSTANCE_CUSTOM.w)
 varying float v_laid;    // 0 standing .. 1 laid flat by the hero (trample.gdshaderinc)
 
 void vertex() {
@@ -70,6 +71,7 @@ void vertex() {
 	v_var = INSTANCE_CUSTOM.x;
 	v_sward = INSTANCE_CUSTOM.y;
 	v_scorch = INSTANCE_CUSTOM.z;
+	v_ringsinge = INSTANCE_CUSTOM.w;
 	// burnt down where the Ashen Knight's glaive bit (burn.gdshaderinc): stubble a third
 	// the height, charred black (the singe tint below)
 	float burnt = burn_at(origin.xz);
@@ -189,6 +191,12 @@ void fragment() {
 	col = mix(col, col * vec3(1.22, 1.2, 0.98) + vec3(0.03, 0.03, 0.005), v_laid * 0.8);
 	// singed by the fire: brittle dark brown, tips sooted, little light through them
 	col = mix(col, vec3(0.07, 0.05, 0.03) * (0.7 + 0.6 * v_var) * mix(1.0, 0.55, v_h), v_scorch * 0.85);
+	// the knight's ring stubble: charred black-brown at the root, dead straw toward the tip,
+	// a few tips burnt off grey (no live green left on the ash)
+	vec3 stub = mix(vec3(0.025, 0.018, 0.012), vec3(0.30, 0.24, 0.15) * (0.75 + 0.4 * fract(v_var * 7.1)), smoothstep(0.3, 0.95, v_h));
+	stub = mix(stub, vec3(0.11, 0.105, 0.1), smoothstep(0.85, 1.0, v_h) * step(0.6, fract(v_var * 13.7)));
+	col = mix(col, stub, v_ringsinge * 0.95);
+	rough = mix(rough, 0.9, v_ringsinge);
 	// burnt stubble: sooted near-black all the way up, a little grey ash on the tips, dull
 	col = mix(col, mix(vec3(0.018, 0.015, 0.013), vec3(0.09, 0.085, 0.08), smoothstep(0.6, 1.0, v_h) * fract(v_var * 17.3)), v_burnt * 0.97);
 	rough = mix(rough, 0.95, v_burnt);
@@ -197,7 +205,7 @@ void fragment() {
 	ROUGHNESS = rough;
 	SPECULAR = mix(0.35, 0.1, v_burnt);
 	// thin edges let more sun through than the ribbed middle
-	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * v_scorch) * (0.85 + 0.3 * smoothstep(0.4, 1.0, abs(v_across)));   // transmission tint (foliage_light)
+	BACKLIGHT = vec3(0.85, 0.95, 0.5) * v_h * (1.0 - 0.8 * max(v_scorch, v_ringsinge)) * (0.85 + 0.3 * smoothstep(0.4, 1.0, abs(v_across)));   // transmission tint (foliage_light)
 	AO = v_ao;
 	AO_LIGHT_AFFECT = 0.4;
 	// a passing cloud takes the sun off the land

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261113-0121-stairdown-wide.jpg",
-  "time": "2026-11-13T01:21:24Z",
-  "caption": "Wider 3/4 front view of the same descent at the step-down tick: both boots stand on their treads, but the figure is small, the light flat, and the stair a bare test block.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0207-foestair.jpg",
-  "time": "2026-11-13T02:07:51Z",
-  "caption": "A Hollow soldier walking up the 3-tread test stair, both boots on the stone, its body no longer trailing its collision capsule by half a metre; still a bare test block and flat afternoon light, not a real place.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0400-foe-stair-down.jpg",
-  "time": "2026-11-13T04:00:00Z",
-  "caption": "A Hollow soldier walking down the test stair at a stalk, one boot on each tread now that the foot IK uses the eased step dip; still a plain box stair on an empty meadow under flat GL light, and the hero stands visible behind it.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0400-foe-stair-off.jpg",
-  "time": "2026-11-13T04:00:00Z",
-  "caption": "The same soldier stepping off the last tread onto the turf without a pop; the GL fallback lighting is flat and the scene is a test set, not a Wukong frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-0601-knight-stair-x46.jpg",
   "time": "2026-11-13T06:01:26Z",
   "caption": "The Ashen Knight at its phase-3 size (4.6x) on the test stair on open meadow: lens too low and backlit, its head cropped out, the stair a plain dark box with no masonry.",
@@ -897,6 +873,18 @@
   "file": "20261116-2100-ash-before-after.jpg",
   "time": "2026-11-16T21:00:00Z",
   "caption": "Ash floor foreground before (top: even dash speckle everywhere) and after (bottom: clean ash, cinders heaped in hollows and tussocks); the green stubble blades should be singed.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2200-ring-singed-stubble.jpg",
+  "time": "2026-11-16T22:00:00Z",
+  "caption": "Boss ring at the phase-2 settle: the ash floor now carries only sparse char-black stubble with dead straw tips and no wildflowers; the trees still read soft and the knight faces away from the lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2200-stubble-before-after.jpg",
+  "time": "2026-11-16T22:00:00Z",
+  "caption": "Foreground strip before (top: spring-green tufts and flower stems on the ash) and after (bottom: thinned, singed stubble only).",
   "verdict": "fail"
  }
 ]
