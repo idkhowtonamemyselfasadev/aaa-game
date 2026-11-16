@@ -880,6 +880,36 @@ void fragment() {
 			burn_col = mix(burn_col, vec3(0.45, 0.42, 0.38), flake * 0.6);
 			// coarse relief: clods and cinder lumps so the low sun picks out the surface
 			float bh = (vnoise(wpos * 4.5) - 0.5) * 0.02 + (n3 - 0.5) * 0.01 + cind * 0.004 - charw * 0.004;
+			if (burn_ring.w > 1.5) {
+				// (14:00 11-16) the first ash read as dark wet mud with black holes in GL shots:
+				// real burnt turf is pale grey wood-ash in drifts over black char, with the stubble
+				// of burnt grass standing in it. Paler, cooler ash; char only in small patches
+				// that fade out through grey ash (no hard black holes); charred stubble streaks.
+				// ASHFLOOR_OLD=1 (burn_ring.w 1) keeps the look above.
+				float drift = smoothstep(0.3, 0.8, n2 * 0.6 + lobes * 0.55);
+				vec3 ash2 = mix(vec3(0.13, 0.12, 0.108), vec3(0.33, 0.315, 0.29), drift);
+				ash2 = mix(ash2, vec3(0.42, 0.405, 0.38), smoothstep(0.7, 0.9, n3) * drift * 0.6);   // white ash where it lies thick
+				ash2 = mix(ash2, earth * 0.6, smoothstep(0.55, 0.85, n3) * (1.0 - drift) * 0.55);
+				ash2 *= 0.85 + 0.3 * micro;   // broad tonal variation   // soil through thin ash
+				float n4 = fbm(wpos * 1.6 + vec3(3.0, 0.0, 29.0));
+				float charw2 = smoothstep(0.54, 0.68, n4 + (n2 - 0.5) * 0.25) * (1.0 - drift * 0.5);
+				// the char's edge breaks into grey: a soft ash collar round every black patch
+				vec3 charc = mix(vec3(0.035, 0.03, 0.027), vec3(0.11, 0.1, 0.092), smoothstep(0.68, 0.54, n4 + (n2 - 0.5) * 0.25));
+				vec3 b2 = mix(ash2, charc, charw2 * 0.9);
+				// burnt stubble: short black stalk stumps and their streaks, too fine for geometry
+				vec2 sg = xz * 9.0 + vec2(vnoise(wpos * 1.3) * 3.0, 0.0);
+				vec2 cell = floor(sg);
+				vec2 fr = fract(sg) - 0.5;
+				float rnd = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.55);
+				vec2 off = vec2(fract(rnd * 7.13), fract(rnd * 3.71)) - 0.5;
+				float stub = (1.0 - smoothstep(0.03, 0.08, length(fr - off * 0.6))) * step(0.7, rnd) * (1.0 - charw2 * 0.5);
+				b2 = mix(b2, vec3(0.03, 0.026, 0.022), stub * 0.7);
+				b2 = mix(b2, vec3(0.02, 0.018, 0.016), cind * 0.6);
+				b2 = mix(b2, vec3(0.5, 0.47, 0.42), flake * 0.5);
+				burn_col = b2;
+				charw = charw2;
+				bh += stub * 0.006 + drift * 0.004 - charw2 * 0.003;
+			}
 			// rust-brown where the turf only scorched
 			vec3 scorched = mix(col * vec3(0.55, 0.42, 0.30), vec3(0.13, 0.085, 0.05), 0.45);
 			col = mix(col, scorched, clamp(singe * 0.9 + burnt * 0.3, 0.0, 1.0));

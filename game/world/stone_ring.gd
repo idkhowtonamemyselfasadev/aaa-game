@@ -42,7 +42,7 @@ func build(c: Vector2, toward: Vector2) -> void:
 	burn_centre = centre
 	crowns.clear()
 	# the terrain shader draws the ash, char and singed rim (terrain.gdshader burn_ring)
-	burn_ring = Vector4(centre.x, centre.z, RADIUS - 3.5, 1.0)
+	burn_ring = Vector4(centre.x, centre.z, RADIUS - 3.5, 1.0 if OS.get_environment("ASHFLOOR_OLD") == "1" else 2.0)
 	RenderingServer.global_shader_parameter_set("burn_ring", burn_ring)
 	var meshes: Array[ArrayMesh] = []
 	for v in VARIANTS:

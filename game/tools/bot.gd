@@ -6447,6 +6447,9 @@ func _knight_test() -> void:
 	print("BOT knight: terrain burn_ring %s" % br)
 	if br.w < 0.5 or Vector2(br.x - ring.centre.x, br.y - ring.centre.z).length() > 0.5 or br.z < 6.0:
 		return _combat_done(false, "the terrain shader is not told where the burnt ring is (%s)" % br)
+	# 14:00 11-16: w 2 = the pale-ash + charred-stubble floor (w 1 read as dark mud; ASHFLOOR_OLD=1)
+	if br.w < 1.5:
+		return _combat_done(false, "the burnt ring floor is the old dark-mud look (burn_ring.w %.1f)" % br.w)
 	# the burnt turf: the meadow mask keeps only a thin stubble inside the ring
 	var gf: GrassField = _world.get_node("Grass")
 	var flora := gf._find_ruin()
