@@ -173,6 +173,19 @@ const HOLD_FEEL: Array[Vector2] = [Vector2.ZERO, Vector2(0.0, -0.08), Vector2(0.
 	Vector2(-0.12, -0.14), Vector2(0.0, -0.24), Vector2(0.2, -0.1), Vector2(-0.2, -0.1)]
 const HOLD_REACH := 0.62              # m from the shoulder: a stone further off (a proud block, the crown) is no hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
+# (11-16 05:00) the overhead reach: with the shoulders now 0.21 m off the stones (was 0.37) a 0.47 m arm
+# can lift the wrist ~0.4 m over its shoulder, so a hand reaches for a hold HOLD_UP over the shoulder
+# (was 0.26: the wrists never rose above the shoulders and hid under the hat from behind), picked
+# where the shoulder will be when the hand gets there (the body's travel over the reach), and never
+# further than the arm goes from there. CLIMB_REACH_OLD=1 = before.
+static var _reach_old := OS.has_environment("CLIMB_REACH_OLD")
+static var HOLD_UP := 0.26 if _reach_old else float(OS.get_environment("CLIMB_HOLD_UP")) if OS.has_environment("CLIMB_HOLD_UP") else 0.48
+static var HAND_LETGO := HAND_STEP if _reach_old else float(OS.get_environment("CLIMB_HAND_STEP")) if OS.has_environment("CLIMB_HAND_STEP") else 0.45
+static var SURGE := Vector2(float(OS.get_environment("CLIMB_SURGE_HI")) if OS.has_environment("CLIMB_SURGE_HI") else 1.6,
+	float(OS.get_environment("CLIMB_SURGE_LO")) if OS.has_environment("CLIMB_SURGE_LO") else 0.2)
+static var SURGE_EASE := float(OS.get_environment("CLIMB_SURGE_EASE")) if OS.has_environment("CLIMB_SURGE_EASE") else 30.0
+static var _reach_dbg := OS.has_environment("CLIMB_REACH_DBG")
+static var HOLD_LEAD := float(OS.get_environment("CLIMB_HOLD_LEAD")) if OS.has_environment("CLIMB_HOLD_LEAD") else 2.0
 const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
 const FOOT_STEP := 0.24               # a toe hold this far from where the foot wants to be is left
 const MANTLE_TIME := 0.6
@@ -217,6 +230,7 @@ var _frog := [0.0, 0.0]                # eased knee_out per leg
 var _hike := 0.0                       # rad pelvis roll, + = the left hip up, eased
 var _sway := 0.0                       # m to the body's right, eased
 var _climb_surge := 1.0                # eased speed factor of the climb's push-and-reach rhythm
+var _climb_surge_v := 1.0              # the same for travel up/down the face (harder pulse, SURGE)
 var _climb_even := OS.has_environment("CLIMB_EVEN")
 var hand_moves := 0                   # times a hand let go of one hold for the next (bots read this)
 var _hold := [Vector3.ZERO, Vector3.ZERO]       # world holds under the left and right hand
@@ -2791,6 +2805,7 @@ func _start_climb(n: Vector3) -> void:
 	climbs += 1
 	_climb_t = 0.0
 	_climb_surge = 1.0
+	_climb_surge_v = 1.0
 	_lip_felt = false
 	_lunge_t = -1.0
 	velocity = Vector3.ZERO
@@ -3038,7 +3053,11 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		# travel: hung in close the climb surges harder, and a surge peak landing on the ease's
 		# steepest tick braked 8.8 m/s2 (gate 7)
 		var rx := rh if _inset_old or _edge_ease >= 1.0 else minf(rh, 1.0)
-		v = (right * m.x * rx + up_dir * m.y * rh) * CLIMB_SPEED
+		# (11-16 05:00) up and down the face the body surges harder and nearly stops while a hand
+		# reaches (SURGE), so the reaching hand gets above the head before the body rises to it;
+		# across the face the old gentle rhythm stays (the hard pulse braked 14 m/s2 sideways)
+		var ry := rh if _reach_old else _climb_surge_v
+		v = (right * m.x * rx + up_dir * m.y * ry) * CLIMB_SPEED
 		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
 	# keep the hands on the face: close or open the gap toward CLIMB_GAP
 	v += -n * clampf((gap - CLIMB_GAP) * 6.0, -0.8, 0.8)
@@ -3078,6 +3097,8 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 			climb_reach.append(Vector3((crumple.hand_target[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y,
 					(crumple.hand_target[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y,
 					0.5 * (((crumple.shoulder[0] as Vector3) - (_hold[0] as Vector3)).dot(n) + ((crumple.shoulder[1] as Vector3) - (_hold[1] as Vector3)).dot(n))))
+			if _reach_dbg:
+				print("REACH tick t %.3f rate %.2f surge %.2f hold_t %.2f %.2f wrist/sh %.3f %.3f hold/sh %.3f %.3f sh.y %.3f" % [_climb_t, climb_rate, _climb_surge, _hold_t[0], _hold_t[1], climb_reach[-1].x, climb_reach[-1].y, (_hold[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y, (_hold[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y, (crumple.shoulder[0] as Vector3).y])
 		var stand := 0.0
 		if _foot_t[0] < 1.0 and _foot_t[1] >= 1.0:
 			stand = 1.0
@@ -3191,9 +3212,12 @@ func _climb_rhythm(delta: float) -> float:
 		if _foot_t[i] < 1.0:
 			reach = maxf(reach, 0.8 * sin(PI * float(_foot_t[i])))
 	var want := lerpf(CLIMB_SURGE.x, CLIMB_SURGE.y, reach)
+	var want_v := lerpf(SURGE.x, SURGE.y, reach)
 	if _climb_even:
 		want = 1.0
+		want_v = 1.0
 	_climb_surge = lerpf(_climb_surge, want, 1.0 - exp(-14.0 * delta))
+	_climb_surge_v = lerpf(_climb_surge_v, want_v, 1.0 - exp(-SURGE_EASE * delta))
 	return _climb_surge
 
 ## Arms up on the face, knees bent; the reach cycles hand over hand with the distance climbed.
@@ -3222,14 +3246,22 @@ func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 	var face := -Vector3(n.x, 0.0, n.z).normalized()
 	var right := face.cross(Vector3.UP).normalized()
 	var sh: Vector3 = crumple.shoulder[i] if crumple != null and crumple.shoulder[i] != Vector3.ZERO else global_position + Vector3.UP * 1.42
-	var p := sh + Vector3.UP * (0.26 + lift) + right * (0.07 if i == 1 else -0.07) + ahead
+	var p := sh + Vector3.UP * (HOLD_UP + lift) + right * (0.07 if i == 1 else -0.07) + ahead
+	# the shoulder where it will be once the hand gets there: the wrist (a hand's length under the
+	# grip, a palm off the stone) must be within the arm's length of it
+	var sh_then := sh + (Vector3.ZERO if _reach_old else ahead)
+	var arm: float = crumple.arm_len if crumple != null and crumple.arm_len > 0.0 else 0.47
+	var up_dir := (Vector3.UP - n * n.y).normalized()
 	# rough masonry: a stone end can stand proud of the face or a joint run deep into it, so
 	# feel a few spots round the reach and take the first one that is a face
 	for off: Vector2 in HOLD_FEEL:
 		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
 		var hit := _ray(o, o - n * 1.8)
 		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
-				and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH:
+				and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH \
+				and (_reach_old or ((hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07).distance_to(sh_then) < arm - 0.01):
+			if _reach_dbg:
+				print("REACH pick hand %d off %s hold over sh %.3f over sh_then %.3f ahead %.3f depth %.3f" % [i, off, (hit["position"] as Vector3).y - sh.y, (hit["position"] as Vector3).y - sh_then.y, ahead.length(), (sh - (hit["position"] as Vector3)).dot(n)])
 			return hit["position"]
 	_hold_missed = true
 	# nothing in reach: a stone set back deeper (the arm goes in after it), nearest first
@@ -3256,6 +3288,10 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	var go := moved - n * moved.dot(n)
 	var ahead := go.normalized() * 0.1 if go.length() > 1e-4 else Vector3.ZERO
+	if not _reach_old and go.length() > 1e-4 and delta > 0.0:
+		# lead the reach by the body's travel over it (at the reaching surge), at least the old 0.1 m
+		var travel := go.length() / delta * HAND_MOVE * SURGE.y / maxf(_climb_surge_v, 0.2) * HOLD_LEAD
+		ahead = go.normalized() * clampf(travel, 0.1, 0.4)
 	for i in 2:
 		var other := 1 - i
 		if _hold_t[i] < 1.0:
@@ -3265,7 +3301,11 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 		var far: float = (_hold[i] as Vector3).distance_to(want)
 		var sh: Vector3 = crumple.shoulder[i]
 		var out_of_reach: bool = sh != Vector3.ZERO and sh.distance_to(_hold[i]) > 0.46
-		if (far > HAND_STEP and _hold_t[other] >= 1.0) or out_of_reach:
+		if not _reach_old and sh != Vector3.ZERO:
+			# a high hold sits ~0.45 m off the shoulder yet the wrist is well within the arm: judge by the wrist
+			var wr: Vector3 = (_hold[i] as Vector3) + n * 0.04 - up_dir * 0.07
+			out_of_reach = sh.distance_to(wr) > (crumple.arm_len if crumple.arm_len > 0.0 else 0.47) - 0.005
+		if (far > HAND_LETGO and _hold_t[other] >= 1.0) or out_of_reach:
 			_hold_missed = false
 			var next := _find_hold(i, 0.0, ahead)
 			if _hold_missed and not out_of_reach:
