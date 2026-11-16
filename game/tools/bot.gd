@@ -2248,6 +2248,8 @@ const SURGE_GRIP_MEAN_MAX := 0.01
 # 0.025; env SURGE_OLDROAR), the old switch 0.300-0.312
 const SURGE_ROAR_MAX := 0.03
 const SURGE_ROAR_MEAN_MAX := 0.01
+# (08:00 11-16) the regrip after the roar lands under the chin, not round the visor (set from the read)
+const SURGE_REGRIP_DROP_MIN := 0.15   # m per size (new 0.342-0.348; SURGE_REGRIP_OLD=1 -0.089 / -0.108, above it)
 func _surge_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var p := _player
@@ -2282,6 +2284,9 @@ func _surge_grip_test() -> void:
 		var started := false
 		var after := 0
 		var boot_hi := 0.0
+		var prev_free := 0.0
+		var regrip_drop := -INF
+		var regrip_s := -1.0
 		for i in 600:
 			await get_tree().physics_frame
 			await k.skel.skeleton_updated
@@ -2298,6 +2303,12 @@ func _surge_grip_test() -> void:
 			var a: Array = acc[b]
 			var gr: float = k.fist_gap[0]
 			var gl: float = k.fist_gap[1] if k.free_l <= 0.02 else 0.0
+			# (08:00 11-16) where the freed left fist closes back on the haft: the tick free_l falls
+			# to the grip, the fist's height under the helm (m per size) and how far the settle is
+			if k.free_l <= 0.02 and prev_free > 0.02 and k.head != null and k.head.head_world != Vector3.INF:
+				regrip_drop = (k.head.head_world.y - k._grip_l.global_position.y) / k.size_scale
+				regrip_s = s
+			prev_free = k.free_l
 			if gr > a[0] or gl > a[1]:
 				if maxf(gr, gl) > maxf(a[0], a[1]):
 					a[4] = s
@@ -2325,6 +2336,9 @@ func _surge_grip_test() -> void:
 			var gmean := SURGE_ROAR_MEAN_MAX if b == "roar" else SURGE_GRIP_MEAN_MAX
 			if fail == "" and not OS.has_environment("SURGEGRIP_MEASURE") and (maxf(a[0], a[1]) > gmax or mean > gmean):
 				fail = "surge into phase %d, %s: a fist rides off the glaive (R %.3f L %.3f mean %.3f)" % [ph, b, a[0], a[1], mean]
+		print("BOT surgegrip: phase %d the left fist regrips at s %.2f, %.3f m per size under the helm" % [ph, regrip_s, regrip_drop])
+		if fail == "" and regrip_drop < SURGE_REGRIP_DROP_MIN and not OS.has_environment("SURGEGRIP_MEASURE"):
+			fail = "surge into phase %d: the left fist closes on the haft only %.3f m per size under the helm (round the visor)" % [ph, regrip_drop]
 		print("BOT surgegrip: phase %d size now %.2f (from %.2f); lower boot at most %.3f m per size over the turf" % [ph, k.size_scale, ks, boot_hi])
 		if fail == "" and boot_hi > 0.2:
 			fail = "the knight left the turf in the surge into phase %d (lower boot %.2f m per size up)" % [ph, boot_hi]

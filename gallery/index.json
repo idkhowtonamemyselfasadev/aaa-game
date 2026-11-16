@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261112-0900-turn-side-055.jpg",
-  "time": "2026-11-12T09:00:00Z",
-  "caption": "Turn on the spot at jt 0.55, side-on full body: with the hips hold the whole figure stands a few px taller than the old build (hat brim higher); the knees are still hidden under robe and tabard and the GL ground reads flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0916-shin-ankle.jpg",
-  "time": "2026-11-12T09:16:08Z",
-  "caption": "Hero's boots in a turn on the spot: the shins are now bound tight and the puttee stops at the instep so the leather boots show; still a grey greave plate peeks at the ankle and the back ankle band shows a hollow rim.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0916-shin-side.jpg",
-  "time": "2026-11-12T09:16:08Z",
-  "caption": "Full-body side view mid-turn with the slimmer shin bindings; the legs no longer read as a bulky tube, but the hero's front sits in self-shade from this side.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1022-ankle-boots.jpg",
   "time": "2026-11-12T10:22:46Z",
   "caption": "Ankle lens in a turn on the spot: the boots' grey heel counter and ankle straps are now worn strap leather, no grey plate between binding and boot; specular glints on the boot toe and the ground texture still look synthetic.",
@@ -897,6 +879,18 @@
   "file": "20261116-0800-climbwait-zoom.jpg",
   "time": "2026-11-16T08:00:00Z",
   "caption": "2x crop of the same frame: fist and forearm up at head height on the left; the right arm hidden by the capelet, stone shows GL-fallback speckle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0800-surge-roar.jpg",
+  "time": "2026-11-16T08:00:00Z",
+  "caption": "Boss growth surge, front-lit at s~1.9: the knight now still roars with the left fist up where the old regrip had both fists closed round the visor (a hunch); face still hidden behind the helm slit, scale unreadable without the hero in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0800-surge-regrip-seq.jpg",
+  "time": "2026-11-16T08:00:00Z",
+  "caption": "Surge frames st=46/52/56: roar, fist still raised as the settle starts, then both hands meet the haft at the chest as the glaive tips into guard; no hunched frame left, but fire columns still crowd the foreground.",
   "verdict": "fail"
  }
 ]

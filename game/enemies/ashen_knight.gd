@@ -889,9 +889,14 @@ func _surge_body(delta: float) -> void:
 	var kneel := coil * (1.0 - rise)
 	var roar := burst * (1.0 - settle)
 	# (09:00 11-07) the left hand lets go and is thrust up as it rises roaring, back on the haft
-	# before the settle brings the glaive down into guard (as in the reveal)
+	# as the settle brings the glaive down into guard (as in the reveal, but later: see below)
+	# (08:00 11-16) the fist stays up through the roar and comes back onto the haft only as the settle
+	# lowers the glaive (1.95-2.25 s, settle ~0.35 -> 0.85): the old 1.5-1.78 regrip closed the left hand
+	# on the still-upright glaive right in front of the helm, both fists round the visor, so the frame
+	# after the roar read as a hunch (front-on `ring surge side st=46`). SURGE_REGRIP_OLD=1: the before.
+	var rg := Vector2(1.5, 1.78) if OS.get_environment("SURGE_REGRIP_OLD") == "1" else Vector2(1.95, 2.25)
 	free_l = 0.0 if OS.get_environment("ROAR_NOFLING") != "" else \
-		smoothstep(SURGE_BLAST + 0.1, SURGE_BLAST + 0.35, s) * (1.0 - smoothstep(1.5, 1.78, s))
+		smoothstep(SURGE_BLAST + 0.1, SURGE_BLAST + 0.35, s) * (1.0 - smoothstep(rg.x, rg.y, s))
 	_intro_it = s
 	# the coil shudders harder toward the burst; the roar shakes through the arms and head
 	var shud := smoothstep(0.4, SURGE_BLAST, s) * (1.0 - burst)
