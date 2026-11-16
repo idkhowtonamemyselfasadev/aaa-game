@@ -19,7 +19,11 @@ var _wind_dir := Vector2(0.8, 0.6)
 func _ready() -> void:
 	var m := SphereMesh.new()
 	m.radius = radius
-	m.height = radius * 2.0
+	# a hemisphere SphereMesh spans y 0..height, so height = radius*2 made a dome 2x too tall:
+	# its crown (6800 m) lay past the far plane the dome is fitted inside and was clipped,
+	# leaving a hard-edged cloudless polygon overhead in any steep upward lens (the boss's
+	# phase-3 shot, 12:00 11-16). height = radius: a true hemisphere. CLOUDDOME_OLD=1: before.
+	m.height = radius * (2.0 if OS.get_environment("CLOUDDOME_OLD") == "1" else 1.0)
 	m.is_hemisphere = true
 	m.radial_segments = 48
 	m.rings = 16

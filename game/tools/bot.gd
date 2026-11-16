@@ -13640,6 +13640,12 @@ func _weather_test() -> void:
 	print("BOT weather dome: radius %.0f m drawn, camera far %.0f m" % [cl.drawn_radius(), cam.far])
 	if cl.drawn_radius() > cam.far * 0.85:
 		return _combat_done(false, "cloud dome reaches past the camera's far plane (clouds clipped dead ahead)")
+	# and overhead: the dome's crown (mesh top x scale) must sit inside the far plane too, or the
+	# zenith is clipped into a hard cloudless polygon (12:00 11-16: the dome was 2x too tall)
+	var crown := cl.get_aabb().end.y * cl.scale.y
+	print("BOT weather dome crown %.0f m up" % crown)
+	if crown > cam.far * 0.85:
+		return _combat_done(false, "cloud dome's crown reaches past the camera's far plane (cloudless hole overhead)")
 	if cl.shadow_strength > 0.05:
 		return _combat_done(false, "cloud shadows still cast under the full rain deck (%.2f)" % cl.shadow_strength)
 	if t < 40.0:

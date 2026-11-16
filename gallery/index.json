@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261112-1209-profile-turn.jpg",
-  "time": "2026-11-12T12:09:50Z",
-  "caption": "Same moment through the old square profile lens for comparison: the hero's front is in self-shade and the legs hide behind the tabard.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1209-sunside-turn.jpg",
-  "time": "2026-11-12T12:09:50Z",
-  "caption": "New sunside lens: the hero's turn on the spot as a front 3/4 on the sun's flank at 09:00; feet, staff and face read, but the front still sits half in shade (the sun is behind him here) and the face is a flat pink mask.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1304-turn-frontlit.jpg",
   "time": "2026-11-12T13:04:00Z",
   "caption": "Hero's turn on the spot at 9:00, mid-turn, judged front-lit for the first time (new facesun option): face and cape lit, both fists on the staff. Still wrong: the feet cross into a scissor stance, the face reads as a flat pale mask.",
@@ -891,6 +879,24 @@
   "file": "20261116-1100-surge-roar-hero.jpg",
   "time": "2026-11-16T11:00:00Z",
   "caption": "The growth roar (size 3.2) from the front with the hero in frame; the ring-of-fire columns now age correctly in the shot and are fading red tongues by the roar instead of full-height columns filling a third of the frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1200-boss-p1-hero.jpg",
+  "time": "2026-11-16T12:00:00Z",
+  "caption": "The boss at its phase-1 size (2.2) on its post with the hero 2.5 m in front for scale; it reads about twice the hero, but the turf is bare dark mud and the knight's face is in shadow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1200-boss-p3-hero-sky.jpg",
+  "time": "2026-11-16T12:00:00Z",
+  "caption": "Phase-3 final size (4.6) beside the hero after the second growth surge, the cloudless polygon overhead now fixed; the hero is lost in dust at its boot and a flat pale low-poly sprig fills the foreground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1200-ringfire-before-after.jpg",
+  "time": "2026-11-16T12:00:00Z",
+  "caption": "Ring of fire during the roar, before (left) and after (right): the ring's tongues now fade out early and shrink instead of standing as thin red streaks; smoke still reads muddy.",
   "verdict": "fail"
  }
 ]

@@ -3221,7 +3221,20 @@ func _ready() -> void:
 		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
 		var rside := rf.cross(Vector3.UP)
 		rk.face(rk.global_position + rf * 5.0 + rside * 2.0)
-		rk._begin_surge()
+		# from=2: start from phase 2 at its full size, so the surge is the second one (phase
+		# 2 -> 3, 3.2 -> 4.6) and st=90 shows the final size; rest: no surge at all, the knight
+		# at its phase-1 size (2.2) on its post, so all three sizes can be judged beside the hero
+		var from_ph := 1
+		for a in args:
+			if a.begins_with("from="):
+				from_ph = clampi(int(a.substr(5)), 1, 2)
+		if from_ph == 2:
+			rk._set_phase(2)
+			rk.set_size_scale(rk.growth.scale_of(2))
+		if not "rest" in args:
+			rk._begin_surge()
+		else:
+			st = 0
 		var sdt := 1.0 / 30.0
 		# the ring of fire's flames (AshFlame) run on _process and their particles on the render
 		# loop, so the hand-stepped surge ticks left them frozen at the burst: every surge shot

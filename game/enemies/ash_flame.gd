@@ -208,6 +208,23 @@ func _ready() -> void:
 	if ring and OS.get_environment("RINGSMOKE_OLD") != "1":
 		_smoke.amount = 24
 		_pall.amount = 7
+	# a ring column's tongues die clean: the shared ramp's long dull-red tail (alpha 0.45 at 0.65
+	# of life) left thin red streaks standing round the knight through the roar (st=56, 11:00
+	# 11-16). Ring tongues fade out by 0.8 of life and shrink as they go, so the roar sees embers
+	# and smoke, not streaks. RINGFIRE_OLD=1: the before. Hazard eruptions keep the long tail.
+	if ring and OS.get_environment("RINGFIRE_OLD") != "1":
+		var rg := Gradient.new()
+		rg.set_color(0, Color(1.0, 0.82, 0.45, 1.0))
+		rg.set_color(1, Color(0.4, 0.12, 0.0, 0.0))
+		rg.add_point(0.3, Color(1.0, 0.5, 0.08, 0.85))
+		rg.add_point(0.55, Color(0.85, 0.3, 0.03, 0.3))
+		rg.add_point(0.8, Color(0.5, 0.15, 0.0, 0.0))
+		_fire.color_ramp = rg
+		var rc := Curve.new()
+		rc.add_point(Vector2(0.0, 0.55))
+		rc.add_point(Vector2(0.25, 1.0))
+		rc.add_point(Vector2(1.0, 0.12))
+		_fire.scale_amount_curve = rc
 
 func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float, tongue := false) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
