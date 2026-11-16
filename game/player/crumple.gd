@@ -74,6 +74,7 @@ var hand_target := [Vector3.ZERO, Vector3.ZERO]   # world wrist targets, left th
 var hand_wall := Vector3.FORWARD # world: the face's outward normal; the palms turn to it
 var hand_curl := 0.4         # the fingers half close over the stone they hold
 var shoulder := [Vector3.ZERO, Vector3.ZERO]      # world shoulder joints as posed, before the reach
+var arm_len := 0.0           # m: shoulder joint to wrist with the arm straight (read once from the skeleton)
 var hand_err := [0.0, 0.0]   # (bots) m from each wrist to its target after the reach
 var foot_plant := 0.0        # 0..1: both ankles reach for foot_target (toe holds on the face)
 var foot_target := [Vector3.ZERO, Vector3.ZERO]   # world ankle targets, left then right
@@ -273,6 +274,12 @@ func _crumple_mod(_delta: float) -> void:
 		var sb := skel.find_bone("mixamorig_%sArm" % sides[i])
 		if sb >= 0:
 			shoulder[i] = skel.global_transform * skel.get_bone_global_pose(sb).origin
+			var fb := skel.find_bone("mixamorig_%sForeArm" % sides[i])
+			var hb2 := skel.find_bone("mixamorig_%sHand" % sides[i])
+			if fb >= 0 and hb2 >= 0 and arm_len <= 0.0:
+				var sc := skel.global_basis.get_scale().x
+				arm_len = (skel.get_bone_global_pose(sb).origin.distance_to(skel.get_bone_global_pose(fb).origin) \
+						+ skel.get_bone_global_pose(fb).origin.distance_to(skel.get_bone_global_pose(hb2).origin)) * sc
 	for i in 2:
 		var hb := skel.find_bone("mixamorig_%sUpLeg" % sides[i])
 		if hb >= 0:

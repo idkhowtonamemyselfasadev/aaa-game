@@ -188,6 +188,7 @@ var _hold_missed := false              # the last _find_hold found no stone (it 
 var _lip_felt := false                 # a reaching hand found the top of the face (see _find_hold)
 var climb_log := false                 # (bots) record every climb tick into climb_ticks
 var climb_ticks: Array[Vector3] = []   # (bots) per climb tick: (rate m/s, neck lift, head turn)
+var climb_reach: Array[Vector3] = []   # (bots) per climb tick: each wrist target's height over its shoulder (left, right), shoulders' mean depth off their holds
 var climb_sway: Array[Vector2] = []    # (bots) per climb tick: (standing foot: +1 right / -1 left / 0 both,
 									   # posed hip centre m to the body's right of the origin)
 var _no_sway := OS.has_environment("CLIMB_NOSWAY")   # (env) the old centred hips, for before/after
@@ -3025,6 +3026,10 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	climb_rate = moved.length() / maxf(delta, 1e-4)
 	if climb_log and _climb_t > 0.4 and _lunge_t < 0.0 and crumple != null:
 		climb_ticks.append(Vector3(climb_rate, crumple.neck, crumple.head_turn))
+		if crumple.plant >= 0.99 and crumple.shoulder[0] != Vector3.ZERO and crumple.shoulder[1] != Vector3.ZERO:
+			climb_reach.append(Vector3((crumple.hand_target[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y,
+					(crumple.hand_target[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y,
+					0.5 * (((crumple.shoulder[0] as Vector3) - (_hold[0] as Vector3)).dot(n) + ((crumple.shoulder[1] as Vector3) - (_hold[1] as Vector3)).dot(n))))
 		var stand := 0.0
 		if _foot_t[0] < 1.0 and _foot_t[1] >= 1.0:
 			stand = 1.0

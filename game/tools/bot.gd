@@ -1019,6 +1019,9 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	out["thumb_off"] = skel.get_bone_global_pose(skel.find_bone("mixamorig_%sHandThumb2" % side)).basis.y.normalized().dot(palm)
 	return out
 
+const CLIMB_HEAD_OVER_SH := 0.25  # m: (11-16 03:00) a wrist this far over its shoulder joint shows above the hat brim from behind
+const CLIMB_REACH_HI_MIN := 0.30  # m: the highest wrist over its shoulder while climbing must reach at least this (arm overhead)
+const CLIMB_OVER_FRAC_MIN := 0.40 # share of climbing samples with at least one wrist over the head
 const CAPE_SPIKE := 0.050      # m: (11-14 20:00) how far any mantle hem point hangs below the mean of its neighbours 4 lines either side
 const CAPE_SIDE_X := 0.30       # m: under the glider the lower mantle's widest reach out to the side (11-14 19:00: 0.32 -> ~0.28)
 const CAPE_KINK := 60.0         # deg: under the glider the sharpest bend between two segments along any mantle line (11-14 18:00: 93 -> ~40)
@@ -15456,6 +15459,13 @@ func _climb_test() -> void:
 	var arm_max := 0.0
 	var stride_span := Vector2(INF, -INF)
 	var rate_max := 0.0
+	var reach_lo := 9.0
+	var reach_hi := -9.0
+	var reach_sum := 0.0
+	var reach_n := 0
+	var reach_top_sum := 0.0
+	var reach_top_n := 0
+	var reach_over_head := 0
 	var err_max := 0.0
 	var off_max := 0.0
 	var planted_n := 0
@@ -15478,6 +15488,7 @@ func _climb_test() -> void:
 	var sq_n := 0
 	p.climb_log = true
 	p.climb_ticks.clear()
+	p.climb_reach.clear()
 	p.climb_sway.clear()
 	p.climb_roll.clear()
 	p.climb_knee.clear()
@@ -15554,6 +15565,32 @@ func _climb_test() -> void:
 	var rr := Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length()
 	print("BOT climb: %.1f s on the face, climbed %.2f m, mantles %d, now %.2f m above the turf at r %.2f, on floor %s, stamina %.0f -> %.0f" % [t, p.climbed, p.mantles, p.global_position.y - ground, rr, p.is_on_floor(), st0, p.stamina])
 	print("BOT climb: arms up %.2f rad, reach cycle %.2f..%.2f, crumple off after %s, fastest %.2f m/s on the face" % [arm_max, stride_span.x, stride_span.y, not p.crumple.active, rate_max])
+	var hsk: Skeleton3D = p.crumple.get_skeleton() if p.crumple.get_skeleton() != null else null
+	if hsk != null and hsk.find_bone("mixamorig_Head") >= 0:
+		var hb := hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_Head")).origin
+		var sl := hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone("mixamorig_LeftArm")).origin
+		print("BOT climb: standing: head joint %.3f m over the shoulder joint" % [hb.y - sl.y])
+	# overhead reach, every physics tick on the face (p.climb_reach, logged with climb_ticks)
+	var shoff_sum := 0.0
+	for cr: Vector3 in p.climb_reach:
+		shoff_sum += cr.z
+		for wy: float in [cr.x, cr.y]:
+			reach_lo = minf(reach_lo, wy)
+			reach_hi = maxf(reach_hi, wy)
+			reach_sum += wy
+			reach_n += 1
+		var hi := maxf(cr.x, cr.y)
+		reach_top_sum += hi
+		reach_top_n += 1
+		if hi > CLIMB_HEAD_OVER_SH:
+			reach_over_head += 1
+	var reach_mean := reach_sum / maxf(reach_n, 1)
+	var top_mean := reach_top_sum / maxf(reach_top_n, 1)
+	var over_frac := float(reach_over_head) / maxf(reach_top_n, 1)
+	print("BOT climb: overhead reach: wrist over its shoulder %.3f..%.3f m (mean %.3f), higher hand mean %.3f m, a wrist over the head (> %.2f m) %.0f%% of the time (%d samples), arm %.3f m, shoulders %.3f m off their holds (mean)" % [reach_lo, reach_hi, reach_mean, top_mean, CLIMB_HEAD_OVER_SH, over_frac * 100.0, reach_top_n, p.crumple.arm_len, shoff_sum / maxf(p.climb_reach.size(), 1)])
+	if OS.has_environment("CLIMB_REACH_GATE") and reach_top_n > 8 and (reach_hi < CLIMB_REACH_HI_MIN or over_frac < CLIMB_OVER_FRAC_MIN):
+		return _combat_done(false, "climb: the hands never reach overhead (highest wrist %.3f m over the shoulder, over the head %.0f%% of the time)" % [reach_hi, over_frac * 100.0])
+		return
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])
 	print("BOT climb: feet stepped hold to hold %d times, ankle off its target at most %.3f m, toe holds off the stone at most %.3f m (%d planted samples)" % [p.foot_moves - fmoves0, ferr_max, foff_max, fplanted_n])
 	print("BOT climb: robe hems dragged %.3f..%.3f m to the side by the knees, front panel out %.2f rad at most, its hem %.3f m off the face at least" % [drag_span.x, drag_span.y, swing_f_max, clear_min])
