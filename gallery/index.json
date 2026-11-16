@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261112-0127-turnfeet.jpg",
-  "time": "2026-11-12T01:27:43Z",
-  "caption": "First low lens on the boots through a 160 deg turn on the spot (0.40-1.60 s): step arc and closed end stance read, but it is dark and unlit.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0223-knight-ankleturn-before.jpg",
   "time": "2026-11-12T02:23:57Z",
   "caption": "Same tick before the change (FOEBALL_OLD=1): the planted boot lies flat and pivots on its ankle; for comparison only.",
@@ -885,6 +879,18 @@
   "file": "20261116-0050-climb-corner.jpg",
   "time": "2026-11-16T00:50:00Z",
   "caption": "Close crop of the climb at frame 16 (old spot): the hero sits in a ruined corner, one hand low near the hip instead of up on a hold.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0116-climb-back.jpg",
+  "time": "2026-11-16T01:16:32Z",
+  "caption": "Hero climbing the keep's outer face from behind on the new raycast-picked spot (intact 7.6 m stretch, both hands on stone); the stone shows speckle noise under the GL fallback and the hero's head reads large.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0116-climb-sq.jpg",
+  "time": "2026-11-16T01:16:32Z",
+  "caption": "Three-quarter of the same climb: knee up on a course, hands reaching, valley beyond; framing now judges the move, but the stone texture is noisy and the shadow side of the face goes near-black.",
   "verdict": "fail"
  }
 ]

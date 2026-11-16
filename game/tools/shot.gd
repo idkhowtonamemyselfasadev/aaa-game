@@ -2312,6 +2312,23 @@ func _ready() -> void:
 			var g := terrain.height_at(rs.x + cos(a) * 5.2, rs.z + sin(a) * 5.2)
 			var h := ruins.wall_top(a, 4.3) - g
 			if h > 4.0 and absf(h - 5.0) < pick:
+				# and real stones there: wall_top does not know where the masonry stops, so cast a
+				# grid of rays (hands' band and below, 0.6 m either side) at the face the hero will
+				# hang on; every one must meet stone within 0.7 m (00:00 11-16 the spot hung the hero
+				# off a broken course end)
+				var ra := Vector3(cos(a), 0, sin(a))
+				var ta := Vector3(-ra.z, 0, ra.x)
+				var g5 := terrain.height_at(rs.x + ra.x * 5.0, rs.z + ra.z * 5.0)
+				var solid := true
+				for hy: float in [1.0, 1.6, 2.2, 2.8, 3.4]:
+					for lat: float in [-0.6, -0.3, 0.0, 0.3, 0.6]:
+						var o := rs + ra * 5.0 + ta * lat
+						o.y = g5 + hy
+						var hit := player._ray(o, o - ra * 1.1)
+						if hit.is_empty() or (o - (hit["position"] as Vector3)).dot(ra) > 0.7:
+							solid = false
+				if not solid and not OS.has_environment("CLIMB_SPOT_OLD"):
+					continue
 				pick = absf(h - 5.0)
 				best = a
 		var rad := Vector3(cos(best), 0, sin(best))

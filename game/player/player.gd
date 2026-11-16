@@ -174,6 +174,7 @@ var _wk_dir := Vector2.ZERO           # the stick the kick was asked with
 var kick_coils := 0                   # coils on the face before a kick (bots read this)
 var kick_sole_err := 0.0              # (bots) worst m from an ankle to its stone through the coil + push
 var false_drops := 0                  # catches that let go at once, the face gone under the hands (bots read this)
+var edge_stops := 0                   # ticks a sideways climb was held at the end of the stones (bots read this)
 var refused_grabs := 0                # catches refused: a loose stone, not a face, met the reach (bots read this)
 var _climb_t := 0.0                   # s on the current face
 var _wj_yaw := Vector2.ZERO           # (from, to) body yaw of the twist off the face
@@ -2985,6 +2986,9 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		var m := Vector2(dir2.x, -dir2.y)
 		if m.length() > 1.0:
 			m = m.normalized()
+		if absf(m.x) > 0.05 and not OS.has_environment("CLIMB_EDGE_OLD") and not _side_has_stone(n, right * signf(m.x), gap):
+			m.x = 0.0                              # the course ends beside the leading hand: no hanging out past it
+			edge_stops += 1
 		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED * _climb_rhythm(delta)
 		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
 	# keep the hands on the face: close or open the gap toward CLIMB_GAP
@@ -3029,6 +3033,29 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 		return
 	if is_on_floor() and dir2.y > 0.3:
 		_let_go(0.0, 0.3)                      # climbed back down to the ground
+
+## True when there is stone for the leading hand to move onto: rays up the hand's reach,
+## CLIMB_EDGE_REACH out to that side, must meet a face (not a slope)
+## no deeper than the core behind a fallen-out face stone. Without it a sideways climb
+## carried on until the body's own centre line ran off the course, the outer hand and shoulder
+## hanging in the air past a broken wall end.
+const CLIMB_EDGE_REACH := 0.4
+func _side_has_stone(n: Vector3, side: Vector3, gap: float) -> bool:
+	# the band the hands hold in (the feet find footing lower down on whatever the hands are
+	# over); it only needs one stone: a single face stone fallen out of the course is not an edge
+	for band: Array in [[1.3, 1.5, 1.7, 1.9]]:
+		var found := false
+		for h: float in band:
+			var o := global_position + Vector3.UP * h + side * CLIMB_EDGE_REACH
+			var hit := _ray(o, o - n * 1.1)
+			if hit.is_empty() or absf((hit["normal"] as Vector3).y) >= CLIMB_STEEP + 0.15:
+				continue
+			if (o - (hit["position"] as Vector3)).dot(n) <= (gap if gap < INF else CLIMB_GAP) + 0.7:
+				found = true
+				break
+		if not found:
+			return false
+	return true
 
 ## Haul up over the lip: the body rises against the face first, then rolls forward onto the
 ## ledge, knees coming up under it.

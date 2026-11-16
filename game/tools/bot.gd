@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -194,6 +194,9 @@ func _ready() -> void:
 		return
 	if name == "climb":
 		_climb_test()
+		return
+	if name == "climbedge":
+		_climb_edge_test()
 		return
 	if name == "jump":
 		_jump_test()
@@ -15231,6 +15234,124 @@ func _ruin_test() -> void:
 ## stick climbs the stones and the hero hauls up over the crown to stand on the wall top.
 ## On a second try the grip gives out when stamina runs dry and the hero drops to the turf,
 ## and a dodge lets go of the face.
+## Sideways along the keep's outer face toward the breach, where the courses step down and end:
+## the hero must stop with stone still under both hands and shoulders, not hang out past the end.
+## CLIMB_EDGE_OLD=1 shows the old run-off.
+func _climb_edge_test() -> void:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var rs := ruins.site
+	var breach := atan2(-rs.z, -rs.x)
+	var worst := 0.0
+	var stops := 0
+	var runs := 0
+	for side: float in [1.0, -1.0]:
+		# start where the face stands at least 3 m over the turf, as near the breach as that is
+		var a := INF
+		for k in 40:
+			var c := breach + side * (0.8 + 0.05 * k)
+			var gc := terrain.height_at(rs.x + cos(c) * 5.0, rs.z + sin(c) * 5.0)
+			if ruins.wall_top(c, 4.3) - gc <= 3.0:
+				continue
+			# and with stone in the hands' band right there (not a robbed-out low stretch)
+			var cr := Vector3(cos(c), 0, sin(c))
+			var held := 0
+			for h: float in [2.3, 2.5, 2.7]:
+				var o := rs + cr * 5.0 + Vector3.UP * (gc + h - rs.y)
+				o.y = gc + h
+				if not p._ray(o, o - cr * 1.1).is_empty():
+					held += 1
+			if OS.has_environment("EDGE_DBG"):
+				print("EDGE start cand %.2f held %d" % [c, held])
+			if held >= 2:
+				a = c
+				break
+		if a == INF:
+			return _combat_done(false, "no tall stretch of the outer face on side %+.0f of the breach" % side)
+		var rad := Vector3(cos(a), 0, sin(a))
+		var foot := rs + rad * 5.0
+		var g0 := terrain.height_at(foot.x, foot.z)
+		p.use_bot_input = true
+		p.velocity = Vector3.ZERO
+		p.global_position = Vector3(foot.x, g0 + 1.0, foot.z)
+		p.body.rotation.y = atan2(-rad.x, -rad.z)
+		p._start_climb(rad)
+		p.bot_input = Vector2.ZERO
+		await _ticks(20)
+		if not p.climbing:
+			return _combat_done(false, "no hold on the face at %.2f rad" % a)
+		# stick toward the breach: the tangent that lowers |a - breach|
+		var tb := Vector3(-rad.z, 0, rad.x) * -side
+		var face := -Vector3(p.climb_normal.x, 0, p.climb_normal.z).normalized()
+		var right := face.cross(Vector3.UP).normalized()
+		p.bot_input = Vector2(signf(tb.dot(right)), 0.0)
+		var e0 := p.edge_stops
+		if OS.has_environment("EDGE_GRID"):
+			_edge_grid(p, right)
+		var a_start := atan2(p.global_position.z - rs.z, p.global_position.x - rs.x)
+		var bare := 0.0
+		var t := 0.0
+		while t < 6.0 and p.climbing and p.mantle_t < 0.0:
+			await _ticks(3)
+			t += 0.05
+			if not p.climbing or p.mantle_t >= 0.0:
+				break
+			var n := p.climb_normal
+			var rgt := -Vector3(n.x, 0, n.z).normalized().cross(Vector3.UP).normalized()
+			# each shoulder (0.25 m either side) needs a stone in its hand band within 0.9 m
+			var miss := 0
+			for off: float in [-0.25, 0.25]:
+				var any := false
+				for h: float in [1.3, 1.5, 1.7, 1.9]:
+					var o := p.global_position + Vector3.UP * h + rgt * off
+					var hit := p._ray(o, o - n * 1.1)
+					if not hit.is_empty() and (o - (hit["position"] as Vector3)).dot(n) < 0.9:
+						any = true
+						break
+				if not any:
+					miss += 1
+			if miss > 0:
+				bare += 0.05
+			if OS.has_environment("EDGE_DBG") and int(t * 20.0) % 5 == 0:
+				var tags := ""
+				for h: float in [0.15, 0.25, 0.35, 0.45, 0.55, 0.7, 0.9]:
+					var o := p.global_position + Vector3.UP * 1.6 + rgt * h * signf(p.bot_input.x)
+					var hit := p._ray(o, o - n * 1.1)
+					tags += " %.1f:%s" % [h, "miss" if hit.is_empty() else "%.2f/%.2f" % [(o - (hit["position"] as Vector3)).dot(n), (hit["normal"] as Vector3).y]]
+				print("EDGE t %.2f r %.2f y+%.2f stops %d miss %d lead%s" % [t, Vector2(p.global_position.x - rs.x, p.global_position.z - rs.z).length(), p.global_position.y - terrain.height_at(p.global_position.x, p.global_position.z), p.edge_stops - e0, miss, tags])
+		if OS.has_environment("EDGE_GRID"):
+			_edge_grid(p, right)
+		var a_end := atan2(p.global_position.z - rs.z, p.global_position.x - rs.x)
+		var moved := absf(wrapf(a_end - a_start, -PI, PI)) * 5.0
+		print("BOT climbedge: side %+.0f from %.2f rad: moved %.2f m along the face in %.2f s, edge stops %d, climbing %s, mantling %s, %.2f s with a hand or shoulder off the stone, crown %.2f m above the hero" % [side, a, moved, t, p.edge_stops - e0, p.climbing, p.mantle_t >= 0.0, bare, ruins.wall_top(a_end, 4.3) - p.global_position.y])
+		worst = maxf(worst, bare)
+		if p.edge_stops > e0:
+			stops += 1
+		if moved > 0.5:
+			runs += 1
+		p.bot_input = Vector2.ZERO
+		p._let_go(0.0, 0.3)
+		await _ticks(40)
+	if runs < 1:
+		return _combat_done(false, "the hero did not climb sideways along the face in either run")
+	if worst > 0.15:
+		return _combat_done(false, "a hand or shoulder hung off the end of the stones for %.2f s" % worst)
+	if stops < 1:
+		return _combat_done(false, "no sideways climb ever reached the end of a course")
+	_combat_done(true, "climbed sideways toward the breach and stopped with stone under both hands and shoulders")
+
+
+func _edge_grid(p: Player, right: Vector3) -> void:
+	for hi in range(10, 0, -1):
+		var row := ""
+		for li in 21:
+			var o := p.global_position + Vector3.UP * (hi * 0.22) + right * (-1.0 + li * 0.1)
+			var hit := p._ray(o, o - p.climb_normal * 1.1)
+			row += "." if hit.is_empty() else str(clampi(int((o - (hit["position"] as Vector3)).dot(p.climb_normal) * 10.0), 0, 9))
+		print("EDGE grid %.2f %s" % [hi * 0.22, row])
+	print("EDGE stick x %+.0f (grid runs left -> right, digits = depth in dm)" % p.bot_input.x)
+
 func _climb_test() -> void:
 	var p := _player
 	var ruins: Ruins = _world.get_node("Ruins")
