@@ -22,6 +22,10 @@ uniform float stone = 0.0;
 // smouldering at rest and blazing with `ember` (the growth roar drives ember to ~7). 0 = the old helm.
 uniform float slit_on = 1.0;      // 1 = carved granite (the Stone Sentinel's helm, pauldrons, glaive)
 
+// (11-16 19:00) 1 = the slit is a thin dark-red cut that pinches shut at the keel, and the ember shows as two
+// round white-hot eye points in it (the old bar burned evenly and clipped into one white stroke). 0 = before.
+uniform float slit_eyes = 1.0;
+
 varying float layer;
 varying float edge;
 varying float helm;
@@ -129,11 +133,30 @@ void fragment() {
 			// two hot points where the eyes sit, either side of the keel
 			float eyes = exp(-pow((abs(sin(a)) - 0.30) / 0.10, 2.0));
 			float burn = (0.35 + 0.55 * ember) * slit_on;
+			if (slit_eyes > 0.5) {
+				float s = abs(sin(a));
+				// the cut narrows toward the keel: 0.4 of its width at the keel break, full width past the eyes
+				float wv = 0.0075 * mix(0.45, 1.0, smoothstep(0.12, 0.30, s));
+				cut = (1.0 - smoothstep(wv, wv + aav, dv)) * fr * smoothstep(0.10, 0.17, s);
+				bleed = (1.0 - smoothstep(wv, 0.04, dv)) * fr * off_keel;
+				// round hot points (in arc and in height), with a dark gap between them and the keel
+				float eye_r = pow((s - 0.30) / 0.05, 2.0) + pow(dv / 0.009, 2.0);
+				float eye2 = exp(-eye_r * 1.6);
+				// the bar itself stays a deep, low ember so it never clips: only the eyes burn white
+				float bar = cut * (0.18 + 0.3 * smoothstep(0.6, 0.0, abs(s - 0.30) / 0.3)) * min(burn, 1.2);
+				alb = mix(alb, vec3(0.01), cut);
+				rough = mix(rough, 1.0, cut);
+				metal = mix(metal, 0.0, cut);
+				glow += ember_col * vec3(0.9, 0.45, 0.35) * bar
+						+ mix(ember_col, vec3(1.0, 0.82, 0.55), eye2) * eye2 * fr * (0.8 + 0.9 * burn) * 1.6
+						+ ember_col * bleed * 0.12 * min(burn, 1.5);
+			} else {
 			alb = mix(alb, vec3(0.01), cut);
 			rough = mix(rough, 1.0, cut);
 			metal = mix(metal, 0.0, cut);
 			glow += (mix(ember_col, vec3(1.0, 0.7, 0.35), eyes * 0.7) * cut * (0.6 + 1.4 * eyes) * 2.0
 					+ ember_col * bleed * 0.25) * burn;
+			}
 		}
 	} else if (layer < 0.75) {
 		float grain = fbm(opos * 120.0);
