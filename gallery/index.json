@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261111-2326-sweep-coil.jpg",
-  "time": "2026-11-11T23:26:07Z",
-  "caption": "The boss holding its sweep's coil, glaive cocked back at its right shoulder; the haft's butt now passes behind the left pauldron instead of into it, but the knight is backlit and the change is barely readable at this distance.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0031-sweep-follow-cmp.jpg",
-  "time": "2026-11-12T00:31:00Z",
-  "caption": "Sweep follow-through, before (top) / after (bottom): the hold now runs out further left and forward; this lens lands behind the knight, so the right-pauldron clearance is proven by the bot, not by these frames.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0031-sweep-side-coil.jpg",
-  "time": "2026-11-12T00:31:00Z",
-  "caption": "The Ashen Knight's held sweep coil through the new side lens: glaive cocked level behind its right side over the meadow; the lens drifts off square once it turns to the hero, and the far field still looks flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0127-ballpivot.jpg",
-  "time": "2026-11-12T01:27:43Z",
-  "caption": "Hero's feet mid standing turn, old ankle pivot (left) vs new ball pivot with heel lifted (middle, right); the change is subtle and the hero stands in the barn's shade, so a sunlit sequence is still needed.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0127-turnfeet.jpg",
   "time": "2026-11-12T01:27:43Z",
   "caption": "First low lens on the boots through a 160 deg turn on the spot (0.40-1.60 s): step arc and closed end stance read, but it is dark and unlit.",
@@ -897,6 +873,18 @@
   "file": "20261115-2307-turngather-boots.jpg",
   "time": "2026-11-15T23:07:18Z",
   "caption": "Boot crops at ticks 6, 9, 12, 15, 18 of the turn: the gather boot lifts, travels in and sets down beside the pivot boot with no pop or slide; the boots sit in shadow, too dark to judge sole contact by eye.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0050-climb-edge.jpg",
+  "time": "2026-11-16T00:50:00Z",
+  "caption": "Hero climbing the keep from behind at frame 18: the shot spot sits at a broken wall end, so the body hangs half past the face's edge with the left side in the air; the climb pose cannot be judged here.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0050-climb-corner.jpg",
+  "time": "2026-11-16T00:50:00Z",
+  "caption": "Close crop of the climb at frame 16 (old spot): the hero sits in a ruined corner, one hand low near the hip instead of up on a hold.",
   "verdict": "fail"
  }
 ]
