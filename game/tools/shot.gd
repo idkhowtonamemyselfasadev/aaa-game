@@ -3270,6 +3270,15 @@ func _ready() -> void:
 		# though in play they stand 0.55 s and are smoke by the roar. Step them with the knight.
 		# SURGE_FREEZE_OLD=1: the before.
 		var step_fx := OS.get_environment("SURGE_FREEZE_OLD") != "1"
+		# (16:00 11-16) every request lands in this one render frame, and a one-shot emitter asked
+		# for more than ~its lifetime in one frame re-emits (Godot 4.7 CPUParticles3D: 10/20/30
+		# ticks of a 0.6 s one-shot finish, 49 ticks leave it emitting again; measured in a bare
+		# project). So the phase-3 surge shot (st=90, ring burst at tick ~40) showed the ring's
+		# tongues re-born mid-flight round the lens, read as 'fire tongues floating in the sky'.
+		# Now a one-shot emitter stops being stepped once all its particles must be dead
+		# (lifetime x (2 - explosiveness) after it started) and is hidden. SURGE_REEMIT_OLD=1: before.
+		var fx_age := {}
+		var reemit_old := OS.get_environment("SURGE_REEMIT_OLD") == "1"
 		for i in st:
 			rk._physics_process(sdt)
 			if step_fx:
@@ -3278,7 +3287,15 @@ func _ready() -> void:
 						(ch as AshFlame)._process(sdt)
 						for pc in ch.get_children():
 							if pc is CPUParticles3D:
-								(pc as CPUParticles3D).request_particles_process(sdt)
+								var cp := pc as CPUParticles3D
+								if not reemit_old and cp.one_shot:
+									if cp.emitting or fx_age.has(cp):
+										fx_age[cp] = float(fx_age.get(cp, 0.0)) + sdt
+									if float(fx_age.get(cp, 0.0)) > cp.lifetime * (2.0 - cp.explosiveness):
+										cp.emitting = false
+										cp.visible = false
+										continue
+								cp.request_particles_process(sdt)
 		var sc := rr.centre + rf * 11.0 + rside * 3.0
 		sc.y = terrain.height_at(sc.x, sc.z) + 1.2
 		cam.global_position = sc
