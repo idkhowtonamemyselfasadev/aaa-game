@@ -76,6 +76,10 @@ var hand_curl := 0.4         # the fingers half close over the stone they hold
 var shoulder := [Vector3.ZERO, Vector3.ZERO]      # world shoulder joints as posed, before the reach
 var arm_len := 0.0           # m: shoulder joint to wrist with the arm straight (read once from the skeleton)
 var hand_err := [0.0, 0.0]   # (bots) m from each wrist to its target after the reach
+var shrug := 0.0             # m: (11-16 06:00) climbing: the collarbone lifts the shoulder joint up to this far
+							 # as a wrist target rises over it (scapular elevation: an arm overhead shrugs
+							 # the shoulder up toward the ear, so the hand clears the hat brim)
+var shrug_rise := [0.0, 0.0] # (bots) m each shoulder joint was lifted by the shrug this frame
 var foot_plant := 0.0        # 0..1: both ankles reach for foot_target (toe holds on the face)
 var foot_target := [Vector3.ZERO, Vector3.ZERO]   # world ankle targets, left then right
 var hip_joint := [Vector3.ZERO, Vector3.ZERO]     # world hip joints as posed, before the reach
@@ -416,6 +420,25 @@ func _reach(skel: Skeleton3D, side: String, target: Vector3, w: float, orient :=
 	var up := (inv.basis * Vector3.UP).normalized()
 	var wall := (inv.basis * hand_wall).normalized()
 	var s := skel.get_bone_global_pose(ua).origin
+	var si := 0 if side == "Left" else 1
+	shrug_rise[si] = 0.0
+	var cl := skel.find_bone("mixamorig_%sShoulder" % side)
+	if shrug > 0.0 and cl >= 0 and orient:
+		# the higher the wrist target over the shoulder (0 at shoulder height, full at an arm's
+		# length straight up), the more the collarbone swings up about its root
+		var sc := skel.global_basis.get_scale().x
+		var lift := (inv * target - s).dot(up) * sc
+		var reach_len := maxf(arm_len, 0.3)
+		var k := smoothstep(0.0, 1.0, clampf(lift / reach_len, 0.0, 1.0)) * w
+		if k > 0.0:
+			var c := skel.get_bone_global_pose(cl).origin
+			var cs := s - c
+			var want_s := cs + up * (shrug / sc) * k
+			want_s = want_s.normalized() * cs.length()
+			_swing(skel, cl, cs, want_s)
+			var s2 := skel.get_bone_global_pose(ua).origin
+			shrug_rise[si] = (s2 - s).dot(up) * sc
+			s = s2
 	var e := skel.get_bone_global_pose(fa).origin
 	var h := skel.get_bone_global_pose(hd).origin
 	var a := s.distance_to(e)

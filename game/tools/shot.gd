@@ -3946,6 +3946,40 @@ func _ready() -> void:
 		print("SHOT climb re-aim fwd %s lens %s" % [fwd, lens.global_position])
 		for i in 3:
 			await get_tree().process_frame
+		# (11-16 06:00) seq=a,b,..: more frames of the same run, each a+3 rendered frames after the
+		# first capture point, the lens kept on the hero at the same offset -> <out>_NN.png (one
+		# warm-up for a whole frame sequence of the reach, instead of one run per frame)
+		var seqf: Array = []
+		for a in args:
+			if a.begins_with("seq="):
+				for it in a.substr(4).split(","):
+					seqf.append(int(it))
+		if not seqf.is_empty():
+			var loff := lens.global_position - player.global_position
+			var laim := (hp + Vector3.UP * 0.1) - player.global_position
+			var fdone := 0
+			var nq := 0
+			var hsq := player.find_child("Skeleton3D", true, false) as Skeleton3D
+			for fq in seqf:
+				while fdone < int(fq):
+					await get_tree().process_frame
+					fdone += 1
+				lens.global_position = player.global_position + loff
+				lens.look_at(player.global_position + laim)
+				await get_tree().process_frame
+				fdone += 1
+				var qimg := get_viewport().get_texture().get_image()
+				var qabs := ProjectSettings.globalize_path("res://").path_join(out.get_basename() + "_%02d.png" % nq)
+				qimg.save_png(qabs)
+				var wl := Vector3.ZERO
+				var wr := Vector3.ZERO
+				var sh := Vector3.ZERO
+				if hsq != null and hsq.find_bone("mixamorig_LeftHand") >= 0:
+					wl = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_LeftHand")).origin
+					wr = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_RightHand")).origin
+					sh = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_Neck")).origin
+				print("SHOT climbseq %02d f+%d y %.3f vy %.2f surge %.2f wristL %+.2f wristR %+.2f (over neck) -> %s" % [nq, fdone, player.global_position.y, player.velocity.y, player._climb_surge_v, wl.y - sh.y, wr.y - sh.y, qabs])
+				nq += 1
 	if spot == "osric" and "face" in args and cam != null:
 		# the portrait aimed after the warm-up, from where his face is in the pose he holds
 		# (leaning, the head drops forward over the cope): 3/4 from the front, just under eye level

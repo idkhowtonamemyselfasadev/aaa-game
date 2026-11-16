@@ -185,6 +185,9 @@ static var SURGE := Vector2(float(OS.get_environment("CLIMB_SURGE_HI")) if OS.ha
 	float(OS.get_environment("CLIMB_SURGE_LO")) if OS.has_environment("CLIMB_SURGE_LO") else 0.2)
 static var SURGE_EASE := float(OS.get_environment("CLIMB_SURGE_EASE")) if OS.has_environment("CLIMB_SURGE_EASE") else 30.0
 static var _reach_dbg := OS.has_environment("CLIMB_REACH_DBG")
+## (11-16 06:00) m the collarbone may lift a climbing shoulder as its hand reaches overhead
+## (`Crumple.shrug`); CLIMB_SHRUG=<m> to tune, CLIMB_SHRUG_OLD=1 = none (before)
+static var SHRUG := 0.0 if OS.has_environment("CLIMB_SHRUG_OLD") else (float(OS.get_environment("CLIMB_SHRUG")) if OS.has_environment("CLIMB_SHRUG") else 0.05)
 static var HOLD_LEAD := float(OS.get_environment("CLIMB_HOLD_LEAD")) if OS.has_environment("CLIMB_HOLD_LEAD") else 2.0
 const FOOT_MOVE := 0.2                # seconds for a foot to step to its next hold
 const FOOT_STEP := 0.24               # a toe hold this far from where the foot wants to be is left
@@ -3098,7 +3101,7 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 					(crumple.hand_target[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y,
 					0.5 * (((crumple.shoulder[0] as Vector3) - (_hold[0] as Vector3)).dot(n) + ((crumple.shoulder[1] as Vector3) - (_hold[1] as Vector3)).dot(n))))
 			if _reach_dbg:
-				print("REACH tick t %.3f rate %.2f surge %.2f hold_t %.2f %.2f wrist/sh %.3f %.3f hold/sh %.3f %.3f sh.y %.3f" % [_climb_t, climb_rate, _climb_surge, _hold_t[0], _hold_t[1], climb_reach[-1].x, climb_reach[-1].y, (_hold[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y, (_hold[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y, (crumple.shoulder[0] as Vector3).y])
+				print("REACH tick t %.3f rate %.2f surge %.2f hold_t %.2f %.2f wrist/sh %.3f %.3f hold/sh %.3f %.3f sh.y %.3f err %.3f %.3f" % [_climb_t, climb_rate, _climb_surge, _hold_t[0], _hold_t[1], climb_reach[-1].x, climb_reach[-1].y, (_hold[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y, (_hold[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y, (crumple.shoulder[0] as Vector3).y, float(crumple.hand_err[0]), float(crumple.hand_err[1])])
 		var stand := 0.0
 		if _foot_t[0] < 1.0 and _foot_t[1] >= 1.0:
 			stand = 1.0
@@ -3239,6 +3242,12 @@ func _stone_clear(j: Vector3, n: Vector3) -> float:
 	var hit := _ray(j + n * 0.6, j - n * 0.6)
 	return 0.6 if hit.is_empty() else (j - (hit["position"] as Vector3)).dot(n)
 
+## (11-16 06:00) the shoulder joint as Crumple's shrug will lift it for a wrist at `wr`
+## (the same smoothstep of the wrist's height over the shoulder per arm length, times SHRUG)
+func _shrugged(sh: Vector3, wr: Vector3, arm: float) -> Vector3:
+	var k := smoothstep(0.0, 1.0, clampf((wr.y - sh.y) / maxf(arm, 0.3), 0.0, 1.0))
+	return sh + Vector3.UP * SHRUG * k
+
 ## Where a hand wants to hold: a reach above its shoulder, ahead along the way the body is
 ## going, found on the face by a ray so it sits on a real stone. `lift` staggers the hands.
 func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
@@ -3259,7 +3268,7 @@ func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 		var hit := _ray(o, o - n * 1.8)
 		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
 				and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH \
-				and (_reach_old or ((hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07).distance_to(sh_then) < arm - 0.01):
+				and (_reach_old or ((hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07).distance_to(_shrugged(sh_then, (hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07, arm)) < arm - 0.01):
 			if _reach_dbg:
 				print("REACH pick hand %d off %s hold over sh %.3f over sh_then %.3f ahead %.3f depth %.3f" % [i, off, (hit["position"] as Vector3).y - sh.y, (hit["position"] as Vector3).y - sh_then.y, ahead.length(), (sh - (hit["position"] as Vector3)).dot(n)])
 			return hit["position"]
@@ -3304,7 +3313,8 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 		if not _reach_old and sh != Vector3.ZERO:
 			# a high hold sits ~0.45 m off the shoulder yet the wrist is well within the arm: judge by the wrist
 			var wr: Vector3 = (_hold[i] as Vector3) + n * 0.04 - up_dir * 0.07
-			out_of_reach = sh.distance_to(wr) > (crumple.arm_len if crumple.arm_len > 0.0 else 0.47) - 0.005
+			var arm_l: float = crumple.arm_len if crumple.arm_len > 0.0 else 0.47
+			out_of_reach = _shrugged(sh, wr, arm_l).distance_to(wr) > arm_l - 0.005
 		if (far > HAND_LETGO and _hold_t[other] >= 1.0) or out_of_reach:
 			_hold_missed = false
 			var next := _find_hold(i, 0.0, ahead)
@@ -3316,6 +3326,7 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 			hand_moves += 1
 	crumple.plant = minf(crumple.plant + delta * 6.0, 1.0)
 	crumple.hand_wall = n
+	crumple.shrug = SHRUG
 	for i in 2:
 		var u := smoothstep(0.0, 1.0, _hold_t[i])
 		var at: Vector3 = (_hold_from[i] as Vector3).lerp(_hold[i], u) + n * 0.12 * sin(PI * u)
@@ -3451,6 +3462,7 @@ func _clear_climb_pose() -> void:
 		garb.wall_n = Vector3.ZERO
 	if crumple == null:
 		return
+	crumple.shrug = 0.0
 	crumple.stride = 0.0
 	crumple.arm = 0.0
 	crumple.elbow = 0.0

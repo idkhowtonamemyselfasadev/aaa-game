@@ -886,5 +886,17 @@
   "time": "2026-11-16T05:30:00Z",
   "caption": "Climb frames f24/f27/f30 cropped: the right upper arm lifts toward the hat by f30 (before: hidden under the capelet), but from behind the reach still does not read as overhead.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261116-0620-climbsq.jpg",
+  "time": "2026-11-16T06:20:40Z",
+  "caption": "Climbing the keep from a rear three-quarter: hero hangs close to the stones with a knee turned out, but the hands only reach the hat brim, never fully overhead.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0620-climbshrug.jpg",
+  "time": "2026-11-16T06:20:40Z",
+  "caption": "Climb with the new shoulder shrug: the left forearm now shows over the capelet beside the hat, but the reach still stops at head height and the figure is small in frame.",
+  "verdict": "fail"
  }
 ]
