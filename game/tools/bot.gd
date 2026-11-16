@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -333,6 +333,9 @@ func _ready() -> void:
 		return
 	if name == "rutstones":
 		_rutstones_test()
+		return
+	if name == "ringlip":
+		_ringlip_test()
 		return
 	if name == "verge":
 		_verge_test()
@@ -14813,6 +14816,47 @@ func _verge_test() -> void:
 	if tall[1][0] < 50 or tall[0][0] > tall[1][0] * 0.6 or hv > hm * 0.75 or tall[0][2] > 0:
 		return _combat_done(false, "the verge sward is not cropped shorter than the meadow")
 	_combat_done(true, "the cart track runs between flowered verges")
+
+## The knight's ring lip: the tall clumps in the singed band round the ash stand short and
+## sooted, and no seeding stem stands full height there (a cream sprig filled the phase-3 lens).
+func _ringlip_test() -> void:
+	var grass: GrassField = _world.get_node("Grass")
+	await _ticks(10)
+	var c := StoneRing.burn_centre
+	if c == Vector3.INF:
+		return _combat_done(false, "no stone ring burn centre")
+	var ks := {}
+	var reach := StoneRing.RADIUS + 4.0
+	for ix in range(floori((c.x - reach) / grass.chunk_m), floori((c.x + reach) / grass.chunk_m) + 1):
+		for iz in range(floori((c.z - reach) / grass.chunk_m), floori((c.z + reach) / grass.chunk_m) + 1):
+			ks[Vector2i(ix, iz)] = true
+	grass.record_clumps = []
+	for k: Vector2i in ks:
+		grass._build_chunk(k).free()
+	# [clumps, summed height, seeding] in the singed lip (singed > 0.15, not burnt bare) / the meadow past it
+	var band := [[0, 0.0, 0], [0, 0.0, 0]]
+	for rc: Array in grass.record_clumps:
+		var xf: Transform3D = rc[1]
+		var sg := StoneRing.singed(xf.origin.x, xf.origin.z)
+		var r := Vector2(xf.origin.x - c.x, xf.origin.z - c.z).length()
+		var b := 0 if sg > 0.15 else 1 if r > StoneRing.RADIUS + 3.0 and r < reach else -1
+		if b < 0:
+			continue
+		band[b][0] += 1
+		band[b][1] += xf.basis.y.length()
+		if rc[0] == 2:
+			band[b][2] += 1
+	grass.record_clumps = null
+	var hl: float = band[0][1] / maxf(band[0][0], 1.0)
+	var hm: float = band[1][1] / maxf(band[1][0], 1.0)
+	print("BOT ringlip: %d chunks, lip %d tall clumps (mean height x%.2f, seeding %d), meadow past it %d (x%.2f, seeding %d)" % [ks.size(), band[0][0], hl, band[0][2], band[1][0], hm, band[1][2]])
+	if band[1][0] < 50 or band[1][2] == 0:
+		return _combat_done(false, "no meadow measured past the ring")
+	if band[0][2] > 0:
+		return _combat_done(false, "%d seeding stems stand full height on the ring lip" % band[0][2])
+	if band[0][0] > 0 and hl > hm * 0.8:
+		return _combat_done(false, "the ring lip's clumps are not singed shorter than the meadow")
+	_combat_done(true, "the ring lip is singed short, no seed heads stand on the ash")
 
 func _rutstones_test() -> void:
 	var terrain: Terrain = _world.get_node("Terrain")

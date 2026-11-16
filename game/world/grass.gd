@@ -20,6 +20,7 @@ var _terrain: Terrain
 ## animals are visible. Set by Birds before the first chunks stream in.
 var cropped_spots: Array[Vector3] = []
 const CROP_R := 6.5
+var _ringsinge_old := OS.get_environment("RINGSINGE_OLD") == "1"   # before 17:00 11-16: tall clumps at the ring lip unsinged
 var _meshes: Array[ArrayMesh] = []   # tall clump shapes: 0 upright, 1 tussock, 2 seeding
 var _sward_mesh: ArrayMesh
 var _chunks := {}            # Vector2i -> MultiMeshInstance3D
@@ -315,13 +316,17 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var nrm := _terrain.normal_at(x, z)
 		var y := _terrain.height_at(x, z)
 		var crop := _crop_at(x, z)
+		# the knight's ring edge: the tall clumps there were singed short too (no seeding stems
+		# standing full height on the ash at the ring's lip) and their leaves sooted
+		var singe := 0.0 if _ringsinge_old else StoneRing.singed(x, z)
+		crop *= lerpf(1.0, 0.35, singe)
 		var dry := clampf(patch * 0.7 + rng.randf() * 0.4, 0.0, 1.0)
 		# which clump: seeding stems on the drier, open turf; low tussocks in the lush and
 		# shaded ground; upright leafy clumps elsewhere. Grazed turf and the keep floor only
 		# keep the leafy kinds.
 		var kind := 0
 		var roll := rng.randf()
-		if crop > 0.9 and keep > 3.1 and vg < 0.04 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
+		if crop > 0.9 and singe < 0.08 and keep > 3.1 and vg < 0.04 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
 			kind = 2
 		elif roll > 0.74 - 0.2 * shade - 0.12 * (1.0 - patch):
 			kind = 1
@@ -335,7 +340,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		var wide := rng.randf_range(0.75, 1.3)
 		basis = basis.scaled(Vector3(s * wide, s * lerpf(0.8, 1.3, rng.randf()) * lerpf(0.22, 1.0, crop), s / wide))
 		(xfs[kind] as Array[Transform3D]).append(Transform3D(basis, Vector3(x, y - 0.03, z)))
-		(vars[kind] as Array).append(dry * lerpf(1.0, 0.5, vg))
+		(vars[kind] as Array).append(Vector2(dry * lerpf(1.0, 0.5, vg), singe * 0.7))
 		if record_clumps != null:
 			record_clumps.append([kind, xfs[kind].back()])
 	var root: MultiMeshInstance3D = null
@@ -349,7 +354,8 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		mm.instance_count = xf.size()
 		for n in xf.size():
 			mm.set_instance_transform(n, xf[n])
-			mm.set_instance_custom_data(n, Color(var_[n], 0, 0, 0))
+			var cv: Vector2 = var_[n]
+			mm.set_instance_custom_data(n, Color(cv.x, 0, cv.y, 0))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

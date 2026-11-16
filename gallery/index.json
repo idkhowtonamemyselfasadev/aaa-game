@@ -886,5 +886,17 @@
   "time": "2026-11-16T16:00:00Z",
   "caption": "Before/after: the 'fire tongues floating in the sky' were the shot harness re-emitting one-shot ring flames (left), not the game; fixed (right).",
   "verdict": "fail"
+ },
+ {
+  "file": "20261116-1700-p3-ringlip-clear.jpg",
+  "time": "2026-11-16T17:00:00Z",
+  "caption": "Phase-3 boss settle (4.6x) beside the hero: the cream seeding sprig no longer stands on the ring's ash lip, the edge clumps are singed short; still wrong: the ash floor speckle is even and the boss's face slit is small at this range.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1700-ringlip-before-after.jpg",
+  "time": "2026-11-16T17:00:00Z",
+  "caption": "Ring lip close-up, after (top) vs before (bottom): full-height cream seed heads on the burnt edge are gone, the singed band is shorter and browner.",
+  "verdict": "fail"
  }
 ]
