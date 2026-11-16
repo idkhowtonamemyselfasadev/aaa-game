@@ -25,6 +25,10 @@ uniform float slit_on = 1.0;      // 1 = carved granite (the Stone Sentinel's he
 // (11-16 19:00) 1 = the slit is a thin dark-red cut that pinches shut at the keel, and the ember shows as two
 // round white-hot eye points in it (the old bar burned evenly and clipped into one white stroke). 0 = before.
 uniform float slit_eyes = 1.0;
+// (11-16 20:00) 1 = the helm's keel is a crisp narrow line of rubbed-bright steel down the face (worn
+// from the UV, no pit jitter) with soot charring its flanks; the old wear came from COLOR.g on a
+// 40-column helm (the keel spans ~3 verts) plus pit noise and read as a soft grey smoke streak. 0 = before.
+uniform float keel_crisp = 1.0;
 
 varying float layer;
 varying float edge;
@@ -93,6 +97,30 @@ void fragment() {
 		float pits = fbm(opos * 70.0);
 		float scale = fbm(opos * 9.0 + 3.1);
 		float wear = smoothstep(0.35, 0.95, edge + (pits - 0.5) * 0.6);
+		float keel_soot = 0.0;
+		if (helm > 0.5 && keel_crisp > 0.5 && stone < 0.5) {
+			// rebuild the helm's edge factor from its UV (knight_armour.gd _helm) without the keel's
+			// vertex-smeared share: the brim and the slit's upper lip keep the old jittered wear
+			float ka = UV.x * 6.2831853;
+			float kv = UV.y;
+			float kfront = max(cos(ka), 0.0);
+			float ks = abs(sin(ka));
+			float brim = smoothstep(0.93, 1.0, kv);
+			// the slit's upper lip: the vertex factor only grazed it (22 rows, the lip is under one), so a
+			// per-fragment lip at full strength burned a white bar over the slit; keep it a faint rub
+			float lip = smoothstep(0.03, 0.012, abs(kv - 0.43)) * smoothstep(0.35, 0.7, cos(ka)) * 0.35;
+			float rest = smoothstep(0.35, 0.95, max(brim, lip) + (pits - 0.5) * 0.6);
+			// the keel: a hard line ~1.5 cm wide, its width anti-aliased in screen space
+			float kaa = fwidth(ks) + 0.002;
+			float ridge = (1.0 - smoothstep(0.018, 0.018 + kaa, ks)) * kfront * smoothstep(0.12, 0.32, kv)
+					* (1.0 - smoothstep(0.92, 0.97, kv));
+			// rubbed brightest on the brow and chin where a gauntlet would wipe it, a touch duller between
+			ridge *= 0.8 + 0.2 * (smoothstep(0.30, 0.20, kv) + smoothstep(0.6, 0.85, kv));
+			wear = max(rest, ridge * 0.92);
+			// the forge-black flanks either side of the ridge: soot gathers in the fold
+			keel_soot = (1.0 - smoothstep(0.03, 0.14, ks)) * (1.0 - ridge) * kfront * smoothstep(0.1, 0.3, kv)
+					* (1.0 - smoothstep(0.88, 0.95, kv));
+		}
 		float r = smoothstep(0.55, 0.8, fbm(opos * 14.0 + 7.7) + pits * 0.25) * (1.0 - wear);
 		float dent = smoothstep(0.7, 0.9, vnoise(opos * 22.0));
 		// heat scale: blue-black to a bruised brown where the fire bit hardest
@@ -102,6 +130,8 @@ void fragment() {
 		rough = mix(mix(0.62, 0.32, wear), 0.92, r);
 		metal = mix(0.85, 0.15, r);
 		bump = pits * 0.35 - dent * 0.6 + r * 0.25;
+		alb *= 1.0 - keel_soot * 0.55;
+		rough = mix(rough, 0.85, keel_soot * 0.7);
 		// hairline cracks in the blackened plate show the ember behind
 		// warped Voronoi seams (~10 cm cells, jagged), split into two widths: a few main seams and
 		// finer hair branches, broken into patches so no closed loop ever reads as a shape

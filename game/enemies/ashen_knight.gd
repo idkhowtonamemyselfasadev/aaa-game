@@ -478,6 +478,7 @@ func _dress() -> void:
 	_mats.append_array(armour.mats)
 	_set_skin("slit_on", 0.0 if OS.get_environment("SLIT_OLD") == "1" else 1.0)   # 11-16 09:00: the before
 	_set_skin("slit_eyes", 0.0 if OS.get_environment("SLITEYE_OLD") == "1" else 1.0)   # 11-16 19:00: the before
+	_set_skin("keel_crisp", 0.0 if OS.get_environment("KEELCRISP_OLD") == "1" else 1.0)   # 11-16 20:00: the before
 	growth.seam_fn = armour.seam_at
 	growth.seam_n = armour.seams.size()
 	_set_skin("heat", 0.0)

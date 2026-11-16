@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261113-0039-foestair.jpg",
-  "time": "2026-11-13T00:39:59Z",
-  "caption": "A Hollow soldier now walks up a three-tread stone stair at a stalk, mid-climb on the second tread; still wrong: the test stair is a plain box course, and the soldier is backlit and dark against the low sun.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0121-stairdown-close.jpg",
-  "time": "2026-11-13T01:21:24Z",
-  "caption": "The hero walking down the 3-tread test stair, rear boot on the upper tread and the lead boot set on the next; the lens crops the hat and the stair is a plain test block on flat turf.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-0121-stairdown-wide.jpg",
   "time": "2026-11-13T01:21:24Z",
   "caption": "Wider 3/4 front view of the same descent at the step-down tick: both boots stand on their treads, but the figure is small, the light flat, and the stair a bare test block.",
@@ -885,6 +873,18 @@
   "file": "20261116-1900-slit-before-after.jpg",
   "time": "2026-11-16T19:00:00Z",
   "caption": "Before (left): the slit burned as one white-clipped bar; after (right): a thin cut pinched at the keel with two round hot eyes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2000-helm-keel.jpg",
+  "time": "2026-11-16T20:00:00Z",
+  "caption": "Boss growth roar, helm lens: the keel is now a crisp narrow rubbed-steel ridge with sooted flanks between the two ember eyes; the mountain backdrop is still a flat procedural cone and the ember spits are dotty.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2000-keel-before-after.jpg",
+  "time": "2026-11-16T20:00:00Z",
+  "caption": "Helm close-up before (left: the keel smeared into a fuzzy grey smoke streak) and after (right: a hard forged line); the plate still reads a little plasticky in GL.",
   "verdict": "fail"
  }
 ]
