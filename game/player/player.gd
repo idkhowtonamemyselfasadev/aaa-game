@@ -183,6 +183,10 @@ static var HOLD_UP := 0.26 if _reach_old else float(OS.get_environment("CLIMB_HO
 static var HAND_LETGO := HAND_STEP if _reach_old else float(OS.get_environment("CLIMB_HAND_STEP")) if OS.has_environment("CLIMB_HAND_STEP") else 0.45
 static var SURGE := Vector2(float(OS.get_environment("CLIMB_SURGE_HI")) if OS.has_environment("CLIMB_SURGE_HI") else 1.6,
 	float(OS.get_environment("CLIMB_SURGE_LO")) if OS.has_environment("CLIMB_SURGE_LO") else 0.2)
+static var CLIMB_LATEHOLD_OLD := OS.has_environment("CLIMB_LATEHOLD_OLD")   # before 08:00 11-16: the body sped up again through the second half of each reach
+static var STRETCH_WAIT := Vector2(float(OS.get_environment("CLIMB_STRETCH_LO")) if OS.has_environment("CLIMB_STRETCH_LO") else 0.38,
+	float(OS.get_environment("CLIMB_STRETCH_HI")) if OS.has_environment("CLIMB_STRETCH_HI") else 0.45)   # shoulder-to-hold span (m) over which the body slows to wait for a low planted hand
+static var CLIMB_HOLE_OLD := OS.has_environment("CLIMB_HOLE_OLD")   # before 08:00 11-16: a hole in the face at chest height dropped the climber
 static var SURGE_EASE := float(OS.get_environment("CLIMB_SURGE_EASE")) if OS.has_environment("CLIMB_SURGE_EASE") else 30.0
 static var _reach_dbg := OS.has_environment("CLIMB_REACH_DBG")
 ## (11-16 06:00) m the collarbone may lift a climbing shoulder as its hand reaches overhead
@@ -208,6 +212,7 @@ var refused_grabs := 0                # catches refused: a loose stone, not a fa
 var _climb_t := 0.0                   # s on the current face
 var _wj_yaw := Vector2.ZERO           # (from, to) body yaw of the twist off the face
 var climbed := 0.0                    # metres moved on faces (bots read this; drives the reach cycle)
+var face_holes := 0                   # (bots/shots) climb ticks held through a hole in the face by the course above or below
 var climb_rate := 0.0                 # m/s moved on the face last tick (bots read this)
 var mantle_t := -1.0                  # seconds into a haul-up, -1 when not mantling
 var _mantle_from := Vector3.ZERO
@@ -2823,6 +2828,7 @@ func _start_climb(n: Vector3) -> void:
 		garb.posed_legs = true                 # the robe follows the climb pose's legs
 
 func _let_go(push: float, regrab: float) -> void:
+	if OS.has_environment("LETGO_DBG"): print("SHOT LETGO push %.2f regrab %.2f stamina %.1f floor %s t %.2f" % [push, regrab, stamina, is_on_floor(), _climb_t])
 	climbing = false
 	_wk_coil = -1.0
 	_regrab_t = regrab
@@ -2836,6 +2842,7 @@ func _let_go(push: float, regrab: float) -> void:
 ## attack and the plunge work from it, a release of the button cuts it short, and the hands
 ## cannot catch the same face for a moment.
 func _wall_jump(dir2: Vector2, right: Vector3) -> void:
+	if OS.has_environment("LETGO_DBG"): print("SHOT LETGO walljump ", dir2)
 	var n := Vector3(climb_normal.x, 0.0, climb_normal.z).normalized()
 	var away := clampf(dir2.y, 0.0, 1.0)
 	var side := clampf(dir2.x, -1.0, 1.0)
@@ -2934,6 +2941,7 @@ func _note_sole_err() -> void:
 		kick_sole_err = maxf(kick_sole_err, crumple.foot_err[i])
 
 func _start_mantle(top: Vector3, n: Vector3) -> void:
+	if OS.has_environment("LETGO_DBG"): print("SHOT LETGO mantle top ", top, " from ", global_position)
 	_jumped = false
 	if combat != null and combat.is_drawn():
 		combat.restore()
@@ -2976,6 +2984,18 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 			continue
 		sum += hit["normal"]
 		gap = minf(gap, (o - (hit["position"] as Vector3)).dot(n))
+	if sum == Vector3.ZERO and not CLIMB_HOLE_OLD:
+		# a hole in the face (a robbed-out band of stones at chest height) is not the face's end:
+		# feel for the course above the hands and the one at the knees, and hang on those
+		for h: float in [1.9, 0.35]:
+			var o := global_position + Vector3.UP * h
+			var hit := _ray(o, o - n * 1.1)
+			if hit.is_empty() or absf((hit["normal"] as Vector3).y) >= CLIMB_STEEP + 0.15:
+				continue
+			sum += hit["normal"]
+			gap = minf(gap, (o - (hit["position"] as Vector3)).dot(n))
+		if sum != Vector3.ZERO:
+			face_holes += 1
 	if sum == Vector3.ZERO:
 		# the face runs out under the hands: haul up if there is a ledge, else drop
 		var top: Variant = _ledge_top(n, 2.1)
@@ -3209,13 +3229,22 @@ func _mantle_tick(delta: float) -> void:
 ## gives the old even rate, for before/after).
 func _climb_rhythm(delta: float) -> float:
 	var reach := 0.0
+	var reach_v := 0.0
 	for i in 2:
 		if _hold_t[i] < 1.0:
 			reach = maxf(reach, sin(PI * float(_hold_t[i])))
+			# up/down the face the body stays near-still until the hand lands, so a high hold is still high when it is grabbed
+			reach_v = maxf(reach_v, sin(PI * (float(_hold_t[i]) if CLIMB_LATEHOLD_OLD else minf(float(_hold_t[i]), 0.5))))
+		elif not CLIMB_LATEHOLD_OLD and crumple != null and crumple.shoulder[i] != Vector3.ZERO:
+			# a planted arm near full stretch below the shoulder: the body cannot haul past it, it waits for that hand
+			var sh: Vector3 = crumple.shoulder[i]
+			if (_hold[i] as Vector3).y < sh.y:
+				reach_v = maxf(reach_v, smoothstep(STRETCH_WAIT.x, STRETCH_WAIT.y, sh.distance_to(_hold[i])))
 		if _foot_t[i] < 1.0:
 			reach = maxf(reach, 0.8 * sin(PI * float(_foot_t[i])))
+			reach_v = maxf(reach_v, 0.8 * sin(PI * float(_foot_t[i])))
 	var want := lerpf(CLIMB_SURGE.x, CLIMB_SURGE.y, reach)
-	var want_v := lerpf(SURGE.x, SURGE.y, reach)
+	var want_v := lerpf(SURGE.x, SURGE.y, reach_v)
 	if _climb_even:
 		want = 1.0
 		want_v = 1.0
@@ -3571,6 +3600,7 @@ func _flinch(attacker: Node) -> void:
 	if gliding:
 		_end_glide(true)                       # struck out of the air: the wing folds
 	if climbing or mantle_t >= 0.0:
+		if OS.has_environment("LETGO_DBG"): print("SHOT LETGO knocked off by ", attacker)
 		climbing = false                       # knocked off the face
 		mantle_t = -1.0
 		_clear_climb_pose()

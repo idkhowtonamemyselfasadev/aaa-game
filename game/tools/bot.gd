@@ -1025,6 +1025,8 @@ const CLIMB_KNEE_DEPTH_MIN := 0.04  # m: no knee joint closer than this to the h
 const CLIMB_REACH_HI_MIN := 0.30  # m: the highest wrist over its shoulder while climbing must reach at least this (arm overhead)
 const CLIMB_OVER_FRAC_MIN := 0.12 # share of climbing samples with at least one wrist over the head (11-16 05:00: 0.40 is out of reach at
                                   # ~1.1 m/s with a 0.18 s reach: the hands cycle back to back; 0.18-0.20 measured, gate below the noise)
+const CLIMB_REACH_HI_MIN_LATE := 0.42   # (11-16 08:00) with the body waiting through the whole reach: 0.481 m measured (was 0.371)
+const CLIMB_OVER_FRAC_MIN_LATE := 0.26  # (11-16 08:00) 33% measured (was 18%); deterministic run to run
 const CAPE_SPIKE := 0.050      # m: (11-14 20:00) how far any mantle hem point hangs below the mean of its neighbours 4 lines either side
 const CAPE_SIDE_X := 0.30       # m: under the glider the lower mantle's widest reach out to the side (11-14 19:00: 0.32 -> ~0.28)
 const CAPE_KINK := 60.0         # deg: under the glider the sharpest bend between two segments along any mantle line (11-14 18:00: 93 -> ~40)
@@ -15623,7 +15625,10 @@ func _climb_test() -> void:
 	print("BOT climb: depth off the hands' face plane (mean / least): capsule origin %.3f / %.3f, shoulders %.3f / %.3f, hip joints %.3f / %.3f, knee out of the stone behind it %.3f / %.3f m (%d samples)" % [dm.x, dmin.x, dm.y, dmin.y, dm.z, dmin.z, dm.w, dmin.w, p.climb_depth.size()])
 	if not OS.has_environment("CLIMB_INSET_OLD") and p.climb_depth.size() > 8 and (dm.y > CLIMB_SH_DEPTH_MAX or dmin.w < CLIMB_KNEE_DEPTH_MIN):
 		return _combat_done(false, "climb: the shoulders hang %.3f m off the stones (want <= %.2f) or a knee goes %.3f m into them" % [dm.y, CLIMB_SH_DEPTH_MAX, dmin.w])
-	if not OS.has_environment("CLIMB_REACH_OLD") and reach_top_n > 8 and (reach_hi < CLIMB_REACH_HI_MIN or over_frac < CLIMB_OVER_FRAC_MIN):
+	var late_new := not OS.has_environment("CLIMB_LATEHOLD_OLD")
+	var hi_min := CLIMB_REACH_HI_MIN_LATE if late_new else CLIMB_REACH_HI_MIN
+	var frac_min := CLIMB_OVER_FRAC_MIN_LATE if late_new else CLIMB_OVER_FRAC_MIN
+	if not OS.has_environment("CLIMB_REACH_OLD") and reach_top_n > 8 and (reach_hi < hi_min or over_frac < frac_min):
 		return _combat_done(false, "climb: the hands never reach overhead (highest wrist %.3f m over the shoulder, over the head %.0f%% of the time)" % [reach_hi, over_frac * 100.0])
 		return
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])

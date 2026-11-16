@@ -3974,11 +3974,21 @@ func _ready() -> void:
 				var wl := Vector3.ZERO
 				var wr := Vector3.ZERO
 				var sh := Vector3.ZERO
-				if hsq != null and hsq.find_bone("mixamorig_LeftHand") >= 0:
+				var cq = player.crumple
+				if cq != null:
+					for bn in ["mixamorig_LeftHand", "mixamorig_RightHand", "mixamorig_Neck"]:
+						if not (bn in cq.probe):
+							cq.probe.append(bn)   # recorded after the IK bends from the next pose on
+				if hsq != null and cq != null and cq.probed.has("mixamorig_Neck"):
+					# the POSED wrists (after the arm IK); get_bone_global_pose outside the modifier is the un-bent pose
+					wl = hsq.global_transform * (cq.probed["mixamorig_LeftHand"] as Vector3)
+					wr = hsq.global_transform * (cq.probed["mixamorig_RightHand"] as Vector3)
+					sh = hsq.global_transform * (cq.probed["mixamorig_Neck"] as Vector3)
+				elif hsq != null and hsq.find_bone("mixamorig_LeftHand") >= 0:
 					wl = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_LeftHand")).origin
 					wr = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_RightHand")).origin
 					sh = hsq.global_transform * hsq.get_bone_global_pose(hsq.find_bone("mixamorig_Neck")).origin
-				print("SHOT climbseq %02d f+%d y %.3f vy %.2f surge %.2f wristL %+.2f wristR %+.2f (over neck) -> %s" % [nq, fdone, player.global_position.y, player.velocity.y, player._climb_surge_v, wl.y - sh.y, wr.y - sh.y, qabs])
+				print("SHOT climbseq %02d f+%d climbing %s mantle %.2f y %.3f vy %.2f surge %.2f wristL %+.2f wristR %+.2f (over neck) -> %s" % [nq, fdone, player.climbing, player.mantle_t, player.global_position.y, player.velocity.y, player._climb_surge_v, wl.y - sh.y, wr.y - sh.y, qabs])
 				nq += 1
 	if spot == "osric" and "face" in args and cam != null:
 		# the portrait aimed after the warm-up, from where his face is in the pose he holds
