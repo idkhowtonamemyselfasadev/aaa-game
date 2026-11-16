@@ -18,6 +18,7 @@ extends RefCounted
 
 const GROW_T := 2.0      # real seconds the body takes to reach its new size
 const DUST_EVERY := 0.16 # s between dust bursts thrown up round its feet
+const DUST_GAP := 1.15   # rad each side of the line to the hero kept clear of growth dust
 const EMBER_EVERY := 0.09   # s between seams splitting open (EmberBurst), busiest mid-growth
 const GRIT_EVERY := 0.22    # s between stones shedding grit from their crowns (GritFall)
 const GRIT_REACH := 34.0    # m: stones farther from the boss than this stay still
@@ -27,6 +28,7 @@ var from_scale := 1.0
 var to_scale := 1.0
 var t := -1.0            # s into the growth, -1 when not growing
 var dust_puffs := 0      # bots: bursts spawned during growths
+var dust_gap_min := PI   # bots: smallest angle (rad) of a dust burst off the line to the hero
 var samples: Array[float] = []   # bots: the size at each tick of the last growth
 var ember_bursts := 0   # bots: seams that spat fire during growths
 var grit_falls := 0     # bots: stones that shed grit during growths
@@ -87,6 +89,19 @@ func tick(delta: float, boss: Node3D, player: Player, foot_r: float) -> float:
 		_dust_t = DUST_EVERY
 		dust_puffs += 1
 		var a := randf() * TAU
+		# (15:00 11-16) the puffs keep a clear wedge toward the hero: thrown all round the feet,
+		# the ones on the hero's side rolled over the hero and the boss's front, and the
+		# player's camera (behind the hero) saw the growth through a wall of dust with the hero
+		# lost in it (phase-2 settle, `surge side hero hd=2.5 st=90`). They now fall on the
+		# boss's flanks and behind it, never within DUST_GAP of the line to the hero.
+		# GROWDUST_OLD=1: the before.
+		if player != null and OS.get_environment("GROWDUST_OLD") != "1":
+			var to := player.global_position - boss.global_position
+			var h := atan2(to.z, to.x)
+			a = h + randf_range(DUST_GAP, TAU - DUST_GAP)
+		if player != null:
+			var to2 := player.global_position - boss.global_position
+			dust_gap_min = minf(dust_gap_min, absf(wrapf(a - atan2(to2.z, to2.x), -PI, PI)))
 		var r := foot_r * randf_range(0.9, 2.2)
 		var at := boss.global_position + Vector3(cos(a), 0.05, sin(a)) * r
 		ImpactFX.spawn(boss.get_parent(), at, Vector3.UP, "dirt", 1.4 + s * 0.2)

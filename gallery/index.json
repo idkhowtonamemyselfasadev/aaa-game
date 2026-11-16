@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261112-1651-leftturn.jpg",
-  "time": "2026-11-12T16:51:49Z",
-  "caption": "Hero mid-way through a turn on the spot to the left, weight now slid over the planted foot; the legs still read crossed from this lens and the face is a flat flesh-coloured plane.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1718-turngather.jpg",
-  "time": "2026-11-12T17:18:46Z",
-  "caption": "Turn on the spot to the left, 0.1 s in: the forward guard boot now draws in toward the body before the hero pivots on it; the knees still hide under the robe and the light is flat ochre, not Wukong-grade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1843-stair-old.jpg",
-  "time": "2026-11-12T18:43:24Z",
-  "caption": "Same frame before the change (STEPCLEAR_OLD): both legs nearly straight, the lead boot driven into the riser face.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1843-stair-swing.jpg",
-  "time": "2026-11-12T18:43:24Z",
-  "caption": "Walking up a 3 x 0.2 m stair: the swinging boot now lifts with the knee raised over the riser instead of running into it; lens is low and side-on, test stair is plain boxes.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1843-stair-trail.jpg",
   "time": "2026-11-12T18:43:24Z",
   "caption": "Three ticks later: the trailing boot is lifted while still behind the hips, so the shin folds up flat behind the body; next fix.",
@@ -897,6 +873,24 @@
   "file": "20261116-1400-ashfloor-before-after.jpg",
   "time": "2026-11-16T14:00:00Z",
   "caption": "Ring floor crop, before (top: dark brown mud with pale flakes) and after (bottom: cool grey ash drifts with char patches and stubble).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1500-p2settle-clear.jpg",
+  "time": "2026-11-16T15:00:00Z",
+  "caption": "Phase-2 settle beside the hero: the noon sky is clear of the white spark 'stars' and the growth dust falls on the knight's flanks, not over the hero; still: the knight is seen from behind-quarter and its dust still rolls past its right boot.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1500-sparks-before-after.jpg",
+  "time": "2026-11-16T15:00:00Z",
+  "caption": "Same frame before (left: ~500 white ring-fire sparks hanging 8 m up like daytime stars, dust over the hero) and after (right: sparks cool and die low, sky clean).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1500-p3-final.jpg",
+  "time": "2026-11-16T15:00:00Z",
+  "caption": "Phase-3 final size after the second surge, no spark field; still wrong: loose orange fire tongues float high in the sky and a pale seeding-grass sprig fills the left foreground.",
   "verdict": "fail"
  }
 ]

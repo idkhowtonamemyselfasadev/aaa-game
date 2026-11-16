@@ -7047,6 +7047,23 @@ func _knight_test() -> void:
 	print("BOT knight: final size %.2fx the start (%.1fx the hero), shake peak %.2f, dust bursts %d, hurt radius %.2f m" % [endk, AshenKnight.PHASES[2]["scale"] * 1.16, grow_shake, k.growth.dust_puffs, float(k.hurt_capsule()[2])])
 	if endk < 1.9 or endk > 2.6 or grow_shake < 0.3 or k.growth.dust_puffs < 10:
 		return _combat_done(false, "the knight did not grow ~2x with the arena shaking")
+	# (15:00 11-16) ring-column sparks cool, fade and stay low (SPARKS_OLD=1 FAILS)
+	var probe := AshFlame.new()
+	probe.ring = true
+	k.get_parent().add_child(probe)
+	var rsp: Variant = probe._sparks
+	if rsp != null:
+		var sp := rsp as CPUParticles3D
+		var apex := sp.initial_velocity_max * sp.initial_velocity_max / (2.0 * absf(sp.gravity.y))
+		var fade := sp.color_ramp.sample(0.8).a if sp.color_ramp != null else 1.0
+		print("BOT knight: ring sparks: %d, apex %.1f m (gate <= 3), alpha at 0.8 life %.2f (gate <= 0.05)" % [sp.amount, apex, fade])
+		probe.queue_free()
+		if apex > 3.0 or fade > 0.05:
+			return _combat_done(false, "ring-column sparks fly too high or never go out (a star field over the knight)")
+	# (15:00 11-16) the growth dust keeps a clear wedge toward the hero (GROWDUST_OLD=1 FAILS)
+	print("BOT knight: growth dust nearest the line to the hero %.0f deg (gate >= 55)" % rad_to_deg(k.growth.dust_gap_min))
+	if rad_to_deg(k.growth.dust_gap_min) < 55.0:
+		return _combat_done(false, "growth dust was thrown up on the hero's side (%.0f deg off the line)" % rad_to_deg(k.growth.dust_gap_min))
 	print("BOT knight: growth fx: %d seam ember bursts (%d seams), %d stones shed grit (%d crowns)" % [k.growth.ember_bursts, k.growth.seam_n, k.growth.grit_falls, StoneRing.crowns.size()])
 	if k.growth.seam_n < 6 or k.growth.ember_bursts < 20 or k.growth.grit_falls < 8:
 		return _combat_done(false, "the growth did not split the armour seams or shake grit off the stones")

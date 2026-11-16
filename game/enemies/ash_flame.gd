@@ -118,6 +118,31 @@ func _ready() -> void:
 	_sparks.initial_velocity_max = 10.0
 	_sparks.spread = 22.0
 	_sparks.gravity = Vector3(0, -6.0, 0)
+	# (15:00 11-16) sparks cool and go out as they fly: with no ramp each one stayed a full-bright
+	# point (glow 4 clips to white) for its whole 1.3 s, and a ring of 10-12 columns threw ~500
+	# of them 8 m up, so every surge settle frame showed a field of white 'stars' over the
+	# knight in a noon sky. Now they cool white-gold -> orange -> dull red and fade out by 0.75
+	# of life, shrinking; a ring column (the blast's own ring, not a hazard eruption) throws a
+	# short low spit (16 sparks, ~2.5 m) under its tongues. SPARKS_OLD=1: the before.
+	if OS.get_environment("SPARKS_OLD") != "1":
+		var kg := Gradient.new()
+		kg.set_color(0, Color(1.0, 0.85, 0.55, 1.0))
+		kg.set_color(1, Color(0.35, 0.06, 0.0, 0.0))
+		kg.add_point(0.25, Color(1.0, 0.5, 0.12, 0.9))
+		kg.add_point(0.55, Color(0.8, 0.2, 0.03, 0.45))
+		kg.add_point(0.75, Color(0.5, 0.1, 0.0, 0.0))
+		_sparks.color_ramp = kg
+		var kc := Curve.new()
+		kc.add_point(Vector2(0.0, 1.0))
+		kc.add_point(Vector2(1.0, 0.3))
+		_sparks.scale_amount_curve = kc
+		if ring:
+			_sparks.amount = 16
+			_sparks.lifetime = 0.9
+			_sparks.initial_velocity_min = 2.5
+			_sparks.initial_velocity_max = 5.5
+			_sparks.spread = 30.0
+			_sparks.gravity = Vector3(0, -8.0, 0)
 	# dark, oily smoke boiling off the crown of the column a beat after the burst
 	# many smaller puffs that swell as they rise and churn slowly (a few big ones read as one
 	# round soft blob over the column): the plume breaks up into lobes with a ragged crown
