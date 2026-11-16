@@ -3279,10 +3279,38 @@ func _ready() -> void:
 		# (lifetime x (2 - explosiveness) after it started) and is hidden. SURGE_REEMIT_OLD=1: before.
 		var fx_age := {}
 		var reemit_old := OS.get_environment("SURGE_REEMIT_OLD") == "1"
+		# (18:00 11-16) the growth's other one-shot FX (EmberBurst seam spits, GritFall dust from
+		# the stones, ImpactFX boot dust) were not stepped at all: they sat at their spawn frame in
+		# every st= shot (a seam jet frozen as a white star 3 s after it burst). Step them the same
+		# way, fade their flash lights by age (their tweens run on the render clock) and hide the
+		# whole node once every emitter is dead. FXSTEP_OLD=1: before.
+		var fxstep_old := OS.get_environment("FXSTEP_OLD") == "1"
+		var node_age := {}
 		for i in st:
 			rk._physics_process(sdt)
 			if step_fx:
 				for ch in rk.get_parent().get_children():
+					if not fxstep_old and (ch is EmberBurst or ch is GritFall or ch is ImpactFX) and (ch as Node3D).visible:
+						var na := float(node_age.get(ch, 0.0)) + sdt
+						node_age[ch] = na
+						var alive := false
+						for pc in ch.get_children():
+							if pc is OmniLight3D:
+								var fl := pc as OmniLight3D
+								if not fl.has_meta("e0"):
+									fl.set_meta("e0", fl.light_energy)
+								var fdur := 0.35 if ch is EmberBurst else 0.12
+								fl.light_energy = float(fl.get_meta("e0")) * maxf(0.0, 1.0 - na / fdur)
+							elif pc is CPUParticles3D:
+								var cq := pc as CPUParticles3D
+								if na > cq.lifetime * (2.0 - cq.explosiveness):
+									cq.emitting = false
+									cq.visible = false
+									continue
+								alive = true
+								cq.request_particles_process(sdt)
+						if not alive:
+							(ch as Node3D).visible = false
 					if ch is AshFlame:
 						(ch as AshFlame)._process(sdt)
 						for pc in ch.get_children():

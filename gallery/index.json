@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261112-2020-turn-gather-cmp.jpg",
-  "time": "2026-11-12T20:20:00Z",
-  "caption": "Left turn on the spot, before/after at 0.40 s and 0.55 s (old, new, old, new): the forward foot is now drawn in under the hips before the spin, so the hero stays upright instead of leaning hard over a far-off pivot; knees still close and hidden by the robe.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-2020-turn-gather.jpg",
-  "time": "2026-11-12T20:20:00Z",
-  "caption": "Mid-turn on the spot at 9:00 with the full gather step: feet under the body and the hero no longer drifts off; the pose still reads stiff and knock-kneed, flat light on the legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-2125-stairwalk-pair.jpg",
-  "time": "2026-11-12T21:25:26Z",
-  "caption": "Walking up the stair, second step: before (left) the lead boot sank into the tread as the body stepped up, now (right) it stands on it; still plain box steps and a low fixed lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-2125-stairwalk.jpg",
-  "time": "2026-11-12T21:25:26Z",
-  "caption": "The hero steps up at a walk, near boot on the tread top; the stair is untextured-looking masonry boxes and the lens loses him by the top.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-2219-stairdown.jpg",
   "time": "2026-11-12T22:19:08Z",
   "caption": "The hero walking off a low masonry course, lead boot reaching heel-first for the turf: the step reads, but the light is flat, the course is a plain box and the robe hides the knees.",
@@ -897,6 +873,24 @@
   "file": "20261116-1700-ringlip-before-after.jpg",
   "time": "2026-11-16T17:00:00Z",
   "caption": "Ring lip close-up, after (top) vs before (bottom): full-height cream seed heads on the burnt edge are gone, the singed band is shorter and browner.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1800-surge-fx-aged.jpg",
+  "time": "2026-11-16T18:00:00Z",
+  "caption": "Phase-2 growth roar (st=56) with the seam embers now aged in the shot: cinders drift up round the helm instead of a frozen spit; the knight still shows its back to this lens and the ring floor speckle is too even.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1800-fx-before-after.jpg",
+  "time": "2026-11-16T18:00:00Z",
+  "caption": "Before (left, FX frozen at spawn) vs after (right, ember/grit/impact FX stepped with the boss): the boot dust has rolled on and embers have risen; the frozen version misrepresented the game.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1800-helm-slit-close.jpg",
+  "time": "2026-11-16T18:00:00Z",
+  "caption": "Helm close lens mid-roar: the burning sight slit reads as one bar, the two eye hot points do not separate, and a grey streak runs down the helm; background mountain texture is stripy.",
   "verdict": "fail"
  }
 ]
