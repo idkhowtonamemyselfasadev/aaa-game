@@ -84,6 +84,9 @@ var hip_shift := Vector3.ZERO # world m: the hips (and all above) moved this way
 							 # the spine bent back so the chest stays near centre (weight over a standing foot)
 var knee_out := [0.0, 0.0]   # per leg (left, right): extra outward pull on the reaching knee's pole (a
 							 # climber's frog step: the stepping knee swings out to the side as the hip hikes)
+var knee_into := 0.75         # leg reach pole: how far the knees bow into the face ...
+var knee_frog_in := 0.0       # how much the frog step's knee_out takes off knee_into
+var knee_side := 0.55         # ... and out to the sides (a hang drawn in close turns them out, a frog)
 var knee_joint := [Vector3.ZERO, Vector3.ZERO]    # (bots) world knee joints after the foot reach
 var plant_w := [1.0, 1.0]    # per hand (left, right) on top of `plant`: one hand alone can reach (a push off the ground)
 var hand_fingers := Vector3.ZERO # world: when set, the planted fingers point this way (flat on the ground)
@@ -557,7 +560,10 @@ func _reach_leg(skel: Skeleton3D, side: String, target: Vector3, w: float) -> vo
 	var out := s - skel.get_bone_global_pose(hp).origin
 	out = (out - up * out.dot(up) - wall * out.dot(wall)).normalized()
 	var li := 0 if side == "Left" else 1
-	var pole := -wall * 0.75 + out * (0.55 + float(knee_out[li])) + up * 0.15
+	var ko := float(knee_out[li])
+	# (the frog step's knee lets go of the bow into the face as it swings out: drawn in close
+	# the standing knee keeps only a little of it, and a pure-sideways pole could not splay further)
+	var pole := -wall * (knee_into / (1.0 + knee_frog_in * ko)) + out * (knee_side + ko) + up * 0.15
 	if foot_pole != Vector3.ZERO:
 		pole = (inv.basis * foot_pole).normalized() + out * 0.15
 	pole = (pole - dn * pole.dot(dn)).normalized()

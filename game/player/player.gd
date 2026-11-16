@@ -135,6 +135,19 @@ const CLIMB_LUNGE_COST := 20.0
 const CLIMB_LUNGE := 0.38             # seconds of the heave up
 const CLIMB_LUNGE_SPEED := 4.2
 const CLIMB_GAP := 0.38               # body origin off the face while climbing
+# (11-16) the capsule (r 0.35) holds the origin 0.38 m off the stones, and the posed shoulders hang
+# at about that depth, 0.37 m off the holds: a climber's shoulders hang ~0.2 m off the stone, the
+# arms bent and the chest in. The VISIBLE body is drawn in toward the face (body.position) by the
+# gap past CLIMB_SH_GAP, at most CLIMB_INSET_MAX, eased in on the grab and back out off the face;
+# the capsule stays where it is. CLIMB_INSET_OLD=1 = before.
+const CLIMB_SH_GAP := 0.21
+const CLIMB_INSET_MAX := 0.17
+const FOOT_DEEP := 0.15
+const CLIMB_KNEE_INTO := -0.8
+const CLIMB_KNEE_SIDE := 0.15
+const CLIMB_KNEE_FROG_IN := 4.0
+static var _inset_old := OS.has_environment("CLIMB_INSET_OLD")
+var _climb_in := Vector3.ZERO
 const CLIMB_HIKE := 0.24              # rad: the stepping foot's hip hikes up (pelvis roll) while it steps
 const CLIMB_FROG := 0.9               # pole weight: the stepping knee swings out to its side (frog step) while it steps
 const CLIMB_SWAY := 0.10              # m: the hips sway out over the standing foot while the other one steps
@@ -188,6 +201,8 @@ var _hold_missed := false              # the last _find_hold found no stone (it 
 var _lip_felt := false                 # a reaching hand found the top of the face (see _find_hold)
 var climb_log := false                 # (bots) record every climb tick into climb_ticks
 var climb_ticks: Array[Vector3] = []   # (bots) per climb tick: (rate m/s, neck lift, head turn)
+var climb_depth: Array[Vector4] = []   # (bots) per climb tick: origin, shoulders (mean), hip joints (mean), nearest knee off the hands' face plane
+var climb_inset := 0.0               # (bots) the visible body's current inset toward the face (m)
 var climb_reach: Array[Vector3] = []   # (bots) per climb tick: each wrist target's height over its shoulder (left, right), shoulders' mean depth off their holds
 var climb_sway: Array[Vector2] = []    # (bots) per climb tick: (standing foot: +1 right / -1 left / 0 both,
 									   # posed hip centre m to the body's right of the origin)
@@ -1347,8 +1362,8 @@ func _step_settle(y_pre: float, floor_pre: bool, delta: float) -> void:
 		if cd.length() > 0.001:
 			_step_carry -= cd
 			down_carry_max = maxf(down_carry_max, cd.length())
-			body.position.x = _step_carry.x
-			body.position.z = _step_carry.z
+			body.position.x = _step_carry.x + _climb_in.x
+			body.position.z = _step_carry.z + _climb_in.z
 			if not is_nan(_cam_base_xz.x):
 				cam_pivot.position.x = _cam_base_xz.x + _step_carry.x * 0.8
 				cam_pivot.position.z = _cam_base_xz.y + _step_carry.z * 0.8
@@ -1370,8 +1385,10 @@ func _ease_carry(delta: float) -> void:
 		var go := maxf(lag, maxf(0.25 * nominal, 0.15 * delta))
 		var m := _step_carry.length()
 		_step_carry = Vector3.ZERO if m <= go else _step_carry * ((m - go) / m)
-	body.position.x = _step_carry.x
-	body.position.z = _step_carry.z
+	if not climbing and _climb_in != Vector3.ZERO:
+		_climb_in = _climb_in.move_toward(Vector3.ZERO, 1.2 * get_physics_process_delta_time())
+	body.position.x = _step_carry.x + _climb_in.x
+	body.position.z = _step_carry.z + _climb_in.z
 	if not is_nan(_cam_base_xz.x):
 		cam_pivot.position.x = _cam_base_xz.x + _step_carry.x * 0.8
 		cam_pivot.position.z = _cam_base_xz.y + _step_carry.z * 0.8
@@ -2921,6 +2938,10 @@ func _start_mantle(top: Vector3, n: Vector3) -> void:
 
 func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool) -> void:
 	if mantle_t >= 0.0:
+		# hauling over the lip the body comes back out to where the capsule stands
+		_climb_in = _climb_in.move_toward(Vector3.ZERO, 0.8 * delta)
+		body.position.x = _climb_in.x
+		body.position.z = _climb_in.z
 		_mantle_tick(delta)
 		return
 	# feel the face with three rays at hip, chest and shoulder along the facing; rough
@@ -3003,19 +3024,38 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 					break
 				room = CLIMB_EDGE_REACH + CLIMB_EASE_ZONE * float(2 - k) / 3.0
 			var want := smoothstep(0.0, 1.0, (room - CLIMB_EDGE_REACH) / CLIMB_EASE_ZONE)
-			want = maxf(want, CLIMB_EASE_FLOOR)
+			want = maxf(want, CLIMB_EASE_FLOOR if _inset_old else CLIMB_EASE_FLOOR_IN)
 			if sd != _edge_side:
 				_edge_ease = 1.0                   # leaving the edge (or a fresh run) starts at full pace
 			_edge_side = sd
 			# slow down eased, speed back up at the same pace
-			_edge_ease = move_toward(_edge_ease, want, delta / CLIMB_EASE_T)
+			_edge_ease = move_toward(_edge_ease, want, delta / (CLIMB_EASE_T if _inset_old else CLIMB_EASE_T_IN))
 			m.x *= _edge_ease
 		else:
 			_edge_ease = 1.0 if absf(m.x) <= 0.05 else _edge_ease
-		v = (right * m.x + up_dir * m.y) * CLIMB_SPEED * _climb_rhythm(delta)
+		var rh := _climb_rhythm(delta)
+		# (11-16) easing toward the end of a course the limbs' surge no longer speeds the sideways
+		# travel: hung in close the climb surges harder, and a surge peak landing on the ease's
+		# steepest tick braked 8.8 m/s2 (gate 7)
+		var rx := rh if _inset_old or _edge_ease >= 1.0 else minf(rh, 1.0)
+		v = (right * m.x * rx + up_dir * m.y * rh) * CLIMB_SPEED
 		stamina -= (CLIMB_COST if m.length() > 0.2 else CLIMB_HOLD_COST) * delta
 	# keep the hands on the face: close or open the gap toward CLIMB_GAP
 	v += -n * clampf((gap - CLIMB_GAP) * 6.0, -0.8, 0.8)
+	# the visible body hangs in close to the stones (the capsule cannot): eased in over ~0.2 s,
+	# never closer than the nearest stone the three rays feel allows
+	var inset := 0.0 if _inset_old or gap == INF else clampf(gap - CLIMB_SH_GAP, 0.0, CLIMB_INSET_MAX)
+	var nf := Vector3(n.x, 0.0, n.z).normalized()
+	_climb_in = _climb_in.lerp(-nf * inset, 1.0 - exp(-12.0 * delta))
+	climb_inset = _climb_in.length()
+	if crumple != null:
+		# drawn in close, the knees cannot bow into the stones: they turn out to the sides
+		var k := climb_inset / CLIMB_INSET_MAX
+		crumple.knee_into = lerpf(0.75, CLIMB_KNEE_INTO, k)
+		crumple.knee_side = lerpf(0.55, CLIMB_KNEE_SIDE, k)
+		crumple.knee_frog_in = CLIMB_KNEE_FROG_IN * k
+	body.position.x = _climb_in.x
+	body.position.z = _climb_in.z
 	velocity = v
 	var before := global_position
 	motion_mode = MOTION_MODE_FLOATING         # no floor snap or slope slide on the stones
@@ -3026,6 +3066,14 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 	climb_rate = moved.length() / maxf(delta, 1e-4)
 	if climb_log and _climb_t > 0.4 and _lunge_t < 0.0 and crumple != null:
 		climb_ticks.append(Vector3(climb_rate, crumple.neck, crumple.head_turn))
+		if crumple.plant >= 0.99 and crumple.shoulder[0] != Vector3.ZERO and crumple.knee_joint[0] != Vector3.ZERO:
+			var fp := 0.5 * ((_hold[0] as Vector3) + (_hold[1] as Vector3)).dot(n)
+			climb_depth.append(Vector4(global_position.dot(n) - fp,
+					0.5 * ((crumple.shoulder[0] as Vector3) + (crumple.shoulder[1] as Vector3)).dot(n) - fp,
+					0.5 * ((crumple.hip_joint[0] as Vector3) + (crumple.hip_joint[1] as Vector3)).dot(n) - fp,
+					minf(_stone_clear(crumple.knee_joint[0], n), _stone_clear(crumple.knee_joint[1], n))))
+			if OS.has_environment("CLIMB_DEPTH_DBG"):
+				print("DEPTH t %.2f inset %.3f knees %.3f %.3f clear %.3f %.3f feet %.3f %.3f foot_t %s hips-foot y %.2f %.2f" % [_climb_t, climb_inset, (crumple.knee_joint[0] as Vector3).dot(n) - fp, (crumple.knee_joint[1] as Vector3).dot(n) - fp, _stone_clear(crumple.knee_joint[0], n), _stone_clear(crumple.knee_joint[1], n), (crumple.foot_target[0] as Vector3).dot(n) - fp, (crumple.foot_target[1] as Vector3).dot(n) - fp, str(_foot_t), (crumple.hip_joint[0] as Vector3).y - (crumple.foot_target[0] as Vector3).y, (crumple.hip_joint[1] as Vector3).y - (crumple.foot_target[1] as Vector3).y])
 		if crumple.plant >= 0.99 and crumple.shoulder[0] != Vector3.ZERO and crumple.shoulder[1] != Vector3.ZERO:
 			climb_reach.append(Vector3((crumple.hand_target[0] as Vector3).y - (crumple.shoulder[0] as Vector3).y,
 					(crumple.hand_target[1] as Vector3).y - (crumple.shoulder[1] as Vector3).y,
@@ -3046,6 +3094,8 @@ func _climb_tick(delta: float, dir2: Vector2, want_jump: bool, want_dodge: bool)
 			mid_step = mid_step or (_foot_t[i] > 0.25 and _foot_t[i] < 0.75)
 		if mid_step:
 			climb_knee.append(Vector2(stand, (spl_l - spl_r) * stand))
+			if OS.has_environment("CLIMB_DEPTH_DBG"):
+				print("FROG t %.2f stand %d spl %.3f %.3f foot_t %.2f %.2f frog %.2f %.2f ankle-hip %.2f %.2f" % [_climb_t, stand, spl_l, spl_r, _foot_t[0], _foot_t[1], _frog[0], _frog[1], (crumple.hip_joint[0] as Vector3).distance_to(crumple.foot_target[0]), (crumple.hip_joint[1] as Vector3).distance_to(crumple.foot_target[1])])
 	if garb != null and gap < INF:
 		# the front panel swings out over the knees only as far as the stones let it
 		garb.wall_n = n
@@ -3071,7 +3121,9 @@ const CLIMB_EDGE_REACH := 0.4
 ## CLIMB_EASE_FLOOR of full pace), changing by at most 1 per CLIMB_EASE_T s.
 const CLIMB_EASE_ZONE := 0.3
 const CLIMB_EASE_FLOOR := 0.12
+const CLIMB_EASE_FLOOR_IN := 0.07     # (11-16) hung in close the limbs surge harder: a slower creep into the stop (8.8 -> under 5 m/s2)
 const CLIMB_EASE_T := 0.2
+const CLIMB_EASE_T_IN := 0.3          # (11-16) and a slower ease
 var _edge_ease := 1.0                       # sideways pace factor near the end of a course
 var _edge_side := 0.0                       # which way the last eased sideways move went
 func _side_has_stone(n: Vector3, side: Vector3, gap: float, reach := CLIMB_EDGE_REACH) -> bool:
@@ -3156,6 +3208,12 @@ func _pose_climb() -> void:
 	crumple.knee = 0.85
 	crumple.spine = 0.08
 	crumple.stride = 0.42 * sin(ph)
+
+## (bots) how far a joint stands out of the stone right behind it along the face normal (a ray in
+## from 0.6 m out; negative = inside a stone); 0.6 if no stone is there within 1.2 m.
+func _stone_clear(j: Vector3, n: Vector3) -> float:
+	var hit := _ray(j + n * 0.6, j - n * 0.6)
+	return 0.6 if hit.is_empty() else (j - (hit["position"] as Vector3)).dot(n)
 
 ## Where a hand wants to hold: a reach above its shoulder, ahead along the way the body is
 ## going, found on the face by a ray so it sits on a real stone. `lift` staggers the hands.
@@ -3243,11 +3301,17 @@ func _find_foot_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 	var right := face.cross(Vector3.UP).normalized()
 	var hp: Vector3 = crumple.hip_joint[i] if crumple != null and crumple.hip_joint[i] != Vector3.ZERO else global_position + Vector3.UP * 0.95
 	var p := hp + Vector3.UP * (-0.55 + lift) + right * (0.06 if i == 1 else -0.06) + ahead
-	for off: Vector2 in [Vector2.ZERO, Vector2(0.0, 0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0), Vector2(0.0, -0.08), Vector2(0.0, 0.16)]:
-		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
-		var hit := _ray(o, o - n * 1.8)
-		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25:
-			return hit["position"]
+	# (11-16) a toe hold no deeper than FOOT_DEEP behind the face the body hangs on: a boot pushed
+	# 0.4 m back into a recess under a course put the knee into the stone over it (shown once the
+	# body hung in close). Only if no spot round the step is that shallow, the first face found.
+	var face_d := (global_position - n * CLIMB_GAP).dot(n)
+	for pass_i in (1 if _inset_old else 2):
+		for off: Vector2 in [Vector2.ZERO, Vector2(0.0, 0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0), Vector2(0.0, -0.08), Vector2(0.0, 0.16)]:
+			var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
+			var hit := _ray(o, o - n * 1.8)
+			if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
+					and (pass_i == 1 or _inset_old or (hit["position"] as Vector3).dot(n) - face_d > -FOOT_DEEP):
+				return hit["position"]
 	return p - n * (p - (global_position - n * CLIMB_GAP)).dot(n)
 
 ## Foot over foot, like the hands: each foot stands on its toe hold while the body moves and
@@ -3270,6 +3334,11 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 		var far: float = (_foot[i] as Vector3).distance_to(want)
 		var hp: Vector3 = crumple.hip_joint[i]
 		var out_of_reach: bool = hp != Vector3.ZERO and hp.distance_to(_foot[i]) > 0.86
+		# (11-16) one foot at a time: a foot that falls out of reach while the other is still in the
+		# first half of its step waits for it (the leg straightens a moment) instead of both feet
+		# leaving their holds together, which they did through ~half of a fast climb
+		if out_of_reach and not _inset_old and _foot_t[other] < 0.5 and hp.distance_to(_foot[i]) < 0.98:
+			continue
 		if (far > FOOT_STEP and _foot_t[other] >= 1.0) or out_of_reach:
 			_foot_from[i] = _foot[i]
 			_foot[i] = _find_foot_hold(i, 0.0, ahead)
@@ -3289,7 +3358,7 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 			want += (-1.0 if i == 1 else 1.0) * CLIMB_SWAY * minf(1.6 * sin(PI * float(_foot_t[i])), 1.0)
 	if _no_sway:
 		want = 0.0
-	_sway = lerpf(_sway, want, 1.0 - exp(-12.0 * delta))
+	_sway = lerpf(_sway, want, 1.0 - exp(-(12.0 if _inset_old else 18.0) * delta))   # (11-16) faster, as the hike
 	var rgt := -Vector3(n.x, 0.0, n.z).normalized().cross(Vector3.UP).normalized()
 	crumple.hip_shift = rgt * _sway
 	# and the stepping side's hip hikes: the pelvis rolls up on the side of the foot that is
@@ -3300,7 +3369,9 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 			roll += (1.0 if i == 0 else -1.0) * CLIMB_HIKE * minf(1.5 * sin(PI * float(_foot_t[i])), 1.0)
 	if _no_hike:
 		roll = 0.0
-	_hike = lerpf(_hike, roll, 1.0 - exp(-12.0 * delta))
+	# (11-16) eased in faster (12 -> 18 /s): hung in close the climb runs up to 1.75 m/s and a step is
+	# over before a 12 /s ease got the hip half way up
+	_hike = lerpf(_hike, roll, 1.0 - exp(-(12.0 if _inset_old else 18.0) * delta))
 	crumple.hip_roll = _hike
 	# with the hip hiked the stepping knee swings out to its own side (a frog step) instead of
 	# driving straight up into the stones, back in line as the foot lands
@@ -3345,6 +3416,9 @@ func _clear_climb_pose() -> void:
 	crumple.elbow = 0.0
 	crumple.hip = 0.0
 	crumple.knee = 0.0
+	crumple.knee_into = 0.75
+	crumple.knee_side = 0.55
+	crumple.knee_frog_in = 0.0
 	crumple.spine = 0.0
 	crumple.plant = 0.0
 	crumple.foot_plant = 0.0

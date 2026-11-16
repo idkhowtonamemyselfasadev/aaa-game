@@ -1020,6 +1020,8 @@ func _hand_read(skel: Skeleton3D, side: String) -> Dictionary:
 	return out
 
 const CLIMB_HEAD_OVER_SH := 0.25  # m: (11-16 03:00) a wrist this far over its shoulder joint shows above the hat brim from behind
+const CLIMB_SH_DEPTH_MAX := 0.26  # m: (11-16 04:00) the shoulders hang no further than this off the stones on average (was 0.367)
+const CLIMB_KNEE_DEPTH_MIN := 0.04  # m: no knee joint closer than this to the hands' face plane (a knee in the stones)
 const CLIMB_REACH_HI_MIN := 0.30  # m: the highest wrist over its shoulder while climbing must reach at least this (arm overhead)
 const CLIMB_OVER_FRAC_MIN := 0.40 # share of climbing samples with at least one wrist over the head
 const CAPE_SPIKE := 0.050      # m: (11-14 20:00) how far any mantle hem point hangs below the mean of its neighbours 4 lines either side
@@ -15314,7 +15316,11 @@ func _climb_edge_test() -> void:
 				var lat := absf((p.global_position - q0).dot(right)) / maxf(get_physics_process_delta_time(), 1e-4)
 				if tick_n > 4 and lat_prev < INF:
 					var d := (lat_prev - lat) / maxf(get_physics_process_delta_time(), 1e-4)   # m/s2
-					if p.edge_stops == e0 and lat_peak > 0.0 and lat < lat_peak * 0.7:
+					if OS.has_environment("EDGE_LAT") and d > 5.0:
+						print("EDGE drop tick %d %.1f m/s2 (%.3f -> %.3f) stops %d ease %.2f" % [tick_n, d, lat_prev, lat, p.edge_stops - e0, p._edge_ease])
+					# (11-16) slowing toward the edge only once the edge ease has begun: a dip in the
+					# climb's own limb surge early in the run (ease still 1) is running, not the stop
+					if p.edge_stops == e0 and lat_peak > 0.0 and lat < lat_peak * 0.7 and p._edge_ease < 1.0:
 						lat_drop = maxf(lat_drop, d)   # slowing toward the edge
 					elif p.edge_stops == e0:
 						free_drop = maxf(free_drop, d)
@@ -15489,6 +15495,7 @@ func _climb_test() -> void:
 	p.climb_log = true
 	p.climb_ticks.clear()
 	p.climb_reach.clear()
+	p.climb_depth.clear()
 	p.climb_sway.clear()
 	p.climb_roll.clear()
 	p.climb_knee.clear()
@@ -15588,6 +15595,15 @@ func _climb_test() -> void:
 	var top_mean := reach_top_sum / maxf(reach_top_n, 1)
 	var over_frac := float(reach_over_head) / maxf(reach_top_n, 1)
 	print("BOT climb: overhead reach: wrist over its shoulder %.3f..%.3f m (mean %.3f), higher hand mean %.3f m, a wrist over the head (> %.2f m) %.0f%% of the time (%d samples), arm %.3f m, shoulders %.3f m off their holds (mean)" % [reach_lo, reach_hi, reach_mean, top_mean, CLIMB_HEAD_OVER_SH, over_frac * 100.0, reach_top_n, p.crumple.arm_len, shoff_sum / maxf(p.climb_reach.size(), 1)])
+	var dmin := Vector4(INF, INF, INF, INF)
+	var dsum := Vector4.ZERO
+	for cd: Vector4 in p.climb_depth:
+		dsum += cd
+		dmin = Vector4(minf(dmin.x, cd.x), minf(dmin.y, cd.y), minf(dmin.z, cd.z), minf(dmin.w, cd.w))
+	var dm := dsum / maxf(p.climb_depth.size(), 1)
+	print("BOT climb: depth off the hands' face plane (mean / least): capsule origin %.3f / %.3f, shoulders %.3f / %.3f, hip joints %.3f / %.3f, knee out of the stone behind it %.3f / %.3f m (%d samples)" % [dm.x, dmin.x, dm.y, dmin.y, dm.z, dmin.z, dm.w, dmin.w, p.climb_depth.size()])
+	if not OS.has_environment("CLIMB_INSET_OLD") and p.climb_depth.size() > 8 and (dm.y > CLIMB_SH_DEPTH_MAX or dmin.w < CLIMB_KNEE_DEPTH_MIN):
+		return _combat_done(false, "climb: the shoulders hang %.3f m off the stones (want <= %.2f) or a knee goes %.3f m into them" % [dm.y, CLIMB_SH_DEPTH_MAX, dmin.w])
 	if OS.has_environment("CLIMB_REACH_GATE") and reach_top_n > 8 and (reach_hi < CLIMB_REACH_HI_MIN or over_frac < CLIMB_OVER_FRAC_MIN):
 		return _combat_done(false, "climb: the hands never reach overhead (highest wrist %.3f m over the shoulder, over the head %.0f%% of the time)" % [reach_hi, over_frac * 100.0])
 		return

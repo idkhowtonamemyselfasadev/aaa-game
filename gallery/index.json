@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261112-0223-knight-ballturn.jpg",
-  "time": "2026-11-12T02:23:57Z",
-  "caption": "The Ashen Knight (phase-1 size) mid turn on the spot at 09:00, low boot lens: the planted boot now stands on its ball with the heel up instead of spinning flat; the lens still crops the body and the boots read small.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0315-giantturn-settle.jpg",
-  "time": "2026-11-12T03:15:46Z",
-  "caption": "The phase-3 Ashen Knight (size 4.6) squaring up after a turn on the spot: the heel now stays on the ball and the hips ease up instead of slapping flat and popping; the pop was 1-4 ticks so this still frame looks the same as before; the knight reads small from this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0315-giantturn-spin.jpg",
-  "time": "2026-11-12T03:15:46Z",
-  "caption": "The giant knight mid-turn on the ball of its planted foot, glaive raised; feet planted, but the low lens and grass in the foreground crowd the frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0400-ankletight-0.40.jpg",
   "time": "2026-11-12T04:00:00Z",
   "caption": "New sun-bearing ankle lens on the hero's turn on the spot (0.1 s in): boots lit and readable for the first time; the baggy trouser hem hangs over the stepping boot almost to the turf and hides the heel.",
@@ -897,6 +879,18 @@
   "file": "20261116-0215-climbback-f28.jpg",
   "time": "2026-11-16T02:15:00Z",
   "caption": "Same climb 6 frames later, a course higher: the knees step up, but from behind the hands still never show above the shoulders, so the reach reads weak; the face's shadow side is near-black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0447-climb-close-seq.jpg",
+  "time": "2026-11-16T04:47:22Z",
+  "caption": "Climbing frames f22/28/34: the body now hangs in close to the stones (shoulders 0.21 m off, was 0.37) with the stepping knee frogged out to the side; the hands still never rise above the shoulders.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0447-climb-before-after.jpg",
+  "time": "2026-11-16T04:47:22Z",
+  "caption": "Same climb frame before (left, hanging 0.37 m off the wall, knee jutting) and after (right, hugging the wall); the GL renderer is flat-lit and the arms are hidden under the capelet.",
   "verdict": "fail"
  }
 ]
