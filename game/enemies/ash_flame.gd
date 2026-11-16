@@ -17,6 +17,11 @@ const LIFE := 3.6
 var source: Node              # the knight (receive_attack's attacker)
 var player: Player
 var radius := RADIUS         # m: set before add_child (the knight scales it with its size)
+## set before add_child: one of the surge blast's ring of 7-10 columns. Ten full plumes (72 smoke +
+## 14 pall puffs each) built a wall of smoke round the knight 2 s after the burst that hid its helm
+## and chest through the roar's settle (`ring surge side hero st=90`, 10:00 11-16), so a ring column
+## puts out a third of the smoke and half the pall. RINGSMOKE_OLD=1: the before.
+var ring := false
 var t := 0.0
 var result := ""              # "" until the burst resolves, then hit / perfect / dodged / miss
 var _ring: Decal
@@ -200,6 +205,9 @@ func _ready() -> void:
 	_motes.gravity = Vector3(0.15, 0.5, 0.0)
 	_motes.position.y = 0.05
 	_motes.emitting = true
+	if ring and OS.get_environment("RINGSMOKE_OLD") != "1":
+		_smoke.amount = 24
+		_pall.amount = 7
 
 func _emitter(n: int, life: float, size: Vector2, col: Color, glow: float, tongue := false) -> CPUParticles3D:
 	var p := CPUParticles3D.new()

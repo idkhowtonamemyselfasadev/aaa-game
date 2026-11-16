@@ -3223,8 +3223,21 @@ func _ready() -> void:
 		rk.face(rk.global_position + rf * 5.0 + rside * 2.0)
 		rk._begin_surge()
 		var sdt := 1.0 / 30.0
+		# the ring of fire's flames (AshFlame) run on _process and their particles on the render
+		# loop, so the hand-stepped surge ticks left them frozen at the burst: every surge shot
+		# (st=40, 56, 90) showed the ring's columns at full height a few frames after they burst,
+		# though in play they stand 0.55 s and are smoke by the roar. Step them with the knight.
+		# SURGE_FREEZE_OLD=1: the before.
+		var step_fx := OS.get_environment("SURGE_FREEZE_OLD") != "1"
 		for i in st:
 			rk._physics_process(sdt)
+			if step_fx:
+				for ch in rk.get_parent().get_children():
+					if ch is AshFlame:
+						(ch as AshFlame)._process(sdt)
+						for pc in ch.get_children():
+							if pc is CPUParticles3D:
+								(pc as CPUParticles3D).request_particles_process(sdt)
 		var sc := rr.centre + rf * 11.0 + rside * 3.0
 		sc.y = terrain.height_at(sc.x, sc.z) + 1.2
 		cam.global_position = sc
@@ -3308,6 +3321,25 @@ func _ready() -> void:
 			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
 			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
+			if "hero" in args:
+				# hero in frame for scale: the hero stands on the lens line between lens and knight,
+				# a step off it so the knight's chest stays clear, facing the knight (hd=M: metres
+				# from the knight, default 30 % of the way to the lens: near the knight's own depth,
+				# so the two read at true scale; at 55 % the hero stood 7 m nearer and looked as big)
+				var to_lens := Vector3(sp.x - kp.x, 0, sp.z - kp.z)
+				var hd := to_lens.length() * 0.3
+				for a in args:
+					if a.begins_with("hd="):
+						hd = float(a.substr(3))
+				var ld := to_lens.normalized()
+				var hp := kp + ld * hd + ld.cross(Vector3.UP) * 1.4
+				hp.y = terrain.height_at(hp.x, hp.z) + 0.05
+				player.global_position = hp
+				var hf := kp - hp
+				player.body.rotation.y = atan2(hf.x, hf.z)
+				# frame both: aim between the knight's chest and the hero so the hero's boots show
+				cam.look_at(kp.lerp(hp, 0.25) + Vector3.UP * 1.45 * rk.size_scale)
+				print("SHOT ring surge hero %.2f m from knight, knight size %.2f (hero 1.8 m)" % [hd, rk.size_scale])
 			if "helm" in args:
 				# helm close-up: from the chosen lens line, close in on the head (the ember seams)
 				# the sight slit seam rides the helm itself (the raw bone pose missed the grown mesh)

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261112-1115-hero-side.jpg",
-  "time": "2026-11-12T11:15:00Z",
-  "caption": "The hero side-on in the meadow by the cottage at 09:00; the boots are lost in the grass at this distance, and the figure and lighting still read as a GL-compatibility render, not Wukong.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1209-profile-turn.jpg",
   "time": "2026-11-12T12:09:50Z",
   "caption": "Same moment through the old square profile lens for comparison: the hero's front is in self-shade and the legs hide behind the tabard.",
@@ -885,6 +879,18 @@
   "file": "20261116-0900-slit-before-after.jpg",
   "time": "2026-11-16T09:00:00Z",
   "caption": "Helm crops during the surge: before (blank helm, mid-roar), after mid-roar (slit blazing across the eyes) and after at the settle; the slit reads as one bar, the two eye hot points barely separate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1100-surge-hero-scale.jpg",
+  "time": "2026-11-16T11:00:00Z",
+  "caption": "The boss settling after its growth roar (size 3.2) with the hero standing beside it for scale (about 3x the hero); the ring of fire has burned down to embers and its thinned smoke no longer hides the helm. Still: the ember tongues read as thin streaks and the hero is small at this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1100-surge-roar-hero.jpg",
+  "time": "2026-11-16T11:00:00Z",
+  "caption": "The growth roar (size 3.2) from the front with the hero in frame; the ring-of-fire columns now age correctly in the shot and are fading red tongues by the roar instead of full-height columns filling a third of the frame.",
   "verdict": "fail"
  }
 ]

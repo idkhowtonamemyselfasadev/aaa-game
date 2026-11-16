@@ -966,7 +966,7 @@ func _blast() -> void:
 	last_blast_ring = []
 	for i in ring_n:
 		var a := TAU * (i + half) / ring_n + atan2(fwd.x, fwd.z)
-		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6 * k, false)
+		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6 * k, false, true)
 		f.t = AshFlame.WARN - 0.02   # bursts at once: the ring itself is the blast's fire
 		last_blast_ring.append(f)
 	if _player == null or _player.is_dead():
@@ -980,8 +980,9 @@ func spawn_flame(at: Vector3) -> AshFlame:
 	flames_spawned += 1
 	return _flame_at(at, true)
 
-func _flame_at(at: Vector3, harms: bool) -> AshFlame:
+func _flame_at(at: Vector3, harms: bool, ring := false) -> AshFlame:
 	var f := AshFlame.new()
+	f.ring = ring
 	f.radius = AshFlame.RADIUS * sqrt(size_scale / growth.scale_of(1))
 	f.source = self
 	f.player = _player if harms else null
