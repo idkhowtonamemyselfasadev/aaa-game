@@ -6453,6 +6453,9 @@ func _knight_test() -> void:
 	# 14:00 11-16: w 2 = the pale-ash + charred-stubble floor (w 1 read as dark mud; ASHFLOOR_OLD=1)
 	if br.w < 1.5:
 		return _combat_done(false, "the burnt ring floor is the old dark-mud look (burn_ring.w %.1f)" % br.w)
+	# 21:00 11-16: w 3 = cinders/stumps clumped in heaps and tussocks, not an even pepper (CINDERCLUS_OLD=1)
+	if br.w < 2.5 and OS.get_environment("CINDERCLUS_OLD") != "1":
+		return _combat_done(false, "the burnt ring floor still has the even cinder speckle (burn_ring.w %.1f)" % br.w)
 	# the burnt turf: the meadow mask keeps only a thin stubble inside the ring
 	var gf: GrassField = _world.get_node("Grass")
 	var flora := gf._find_ruin()

@@ -902,7 +902,23 @@ void fragment() {
 				vec2 fr = fract(sg) - 0.5;
 				float rnd = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.55);
 				vec2 off = vec2(fract(rnd * 7.13), fract(rnd * 3.71)) - 0.5;
-				float stub = (1.0 - smoothstep(0.03, 0.08, length(fr - off * 0.6))) * step(0.7, rnd) * (1.0 - charw2 * 0.5);
+				float stub_thr = 0.7;
+				if (burn_ring.w > 2.5) {
+					// (21:00 11-16) the cinders, flakes and stumps were an even pepper over the whole
+					// floor. Real burnt turf is clumped: stumps where the tussocks stood, cinders
+					// heaped in the hollows and round the char, bare smooth ash between.
+					// CINDERCLUS_OLD=1 (burn_ring.w 2) keeps the even speckle.
+					float tuft = smoothstep(0.42, 0.72, vnoise(wpos * 0.85 + vec3(13.0, 0.0, 71.0)) * 0.75 + n3 * 0.25);
+					float heap = smoothstep(0.45, 0.8, vnoise(wpos * 1.25 + vec3(57.0, 0.0, 3.0)) * 0.7 + charw2 * 0.45);
+					float cn = vnoise(wpos * 31.0);
+					cind = step(mix(0.97, 0.66, heap), cn);
+					// a lump has a grey collar of crushed cinder, not a hard black dot
+					float cgrit = smoothstep(mix(0.93, 0.58, heap), mix(0.97, 0.66, heap), cn) * (1.0 - cind);
+					b2 = mix(b2, b2 * 0.55, cgrit * 0.6);
+					flake = step(mix(0.97, 0.82, drift * (1.0 - heap)), vnoise(wpos * 23.0 + 5.0)) * (1.0 - charw2);
+					stub_thr = mix(0.985, 0.45, tuft);
+				}
+				float stub = (1.0 - smoothstep(0.03, 0.08, length(fr - off * 0.6))) * step(stub_thr, rnd) * (1.0 - charw2 * 0.5);
 				b2 = mix(b2, vec3(0.03, 0.026, 0.022), stub * 0.7);
 				b2 = mix(b2, vec3(0.02, 0.018, 0.016), cind * 0.6);
 				b2 = mix(b2, vec3(0.5, 0.47, 0.42), flake * 0.5);
