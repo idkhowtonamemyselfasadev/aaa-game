@@ -165,7 +165,7 @@ func _helm(head: Vector3, top: Vector3) -> ArrayMesh:
 		var p := Vector3(c.x + sin(a) * rx * r, y, c.z + front * rz * r - 0.02 * (1.0 - front) * v)
 		var e := maxf(keel * 1.2, smoothstep(0.93, 1.0, v))
 		e = maxf(e, smoothstep(0.03, 0.012, absf(v - slit_v - 0.03)) * smoothstep(0.35, 0.7, front))
-		return [p, STEEL, e], 40, 22)
+		return [p, STEEL, e, 1.0], 40, 22)
 
 ## A gorget: a two-lame steel collar round the neck base.
 func _gorget(neck: Vector3) -> ArrayMesh:
@@ -250,14 +250,16 @@ func _tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, e: float, layer :
 		st.set_color(Color(layer, e, 0))
 		st.add_vertex(p)
 
-## Grid mesh from f(u, v) -> [position, layer, edge].
+## Grid mesh from f(u, v) -> [position, layer, edge(, helm flag)].
 func _grid(f: Callable, nu: int, nv: int) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for j in nv + 1:
 		for i in nu + 1:
 			var r: Array = f.call(float(i) / nu, float(j) / nv)
-			st.set_color(Color(r[1], r[2], 0))
+			# COLOR.b = 1 on the helm: the shader cuts the sight slit from its UV (the 22-row grid is too
+			# coarse to carry a 1.5 cm groove in its vertices, so the slit never showed: 11-16 09:00)
+			st.set_color(Color(r[1], r[2], r[3] if r.size() > 3 else 0.0))
 			st.set_uv(Vector2(float(i) / nu, float(j) / nv))
 			st.add_vertex(r[0])
 	for j in nv:

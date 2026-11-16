@@ -117,6 +117,7 @@ func _dress() -> void:
 	armour.fit_glaive(spear, HollowSpear.LENGTH * 0.5 - HollowSpear.BLADE)
 	_mats.append_array(armour.mats)
 	_set_skin("stone", 1.0)
+	_set_skin("slit_on", 0.0)   # a carved granite helm: no ember behind its slit
 	_set_skin("heat", 0.0)
 	spear.material_override = armour.mats[0]
 

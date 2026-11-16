@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261112-1022-ankle-boots.jpg",
-  "time": "2026-11-12T10:22:46Z",
-  "caption": "Ankle lens in a turn on the spot: the boots' grey heel counter and ankle straps are now worn strap leather, no grey plate between binding and boot; specular glints on the boot toe and the ground texture still look synthetic.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1022-turn-side.jpg",
-  "time": "2026-11-12T10:22:46Z",
-  "caption": "Full-body side view mid-turn: the feet now read as dark leather boots; the hero still lacks Wukong-grade detail (flat hat, thin capelet, stiff robe panel) and the ground is a flat ochre plane.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1115-boots-scuffed.jpg",
-  "time": "2026-11-12T11:15:00Z",
-  "caption": "Ankle lens through a turn on the spot: the boots' toe caps are now scuffed matte brown leather instead of glossy pink lacquer; the trouser hem is still baggy and the ground texture reads flat in the GL fallback renderer.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1115-hero-side.jpg",
   "time": "2026-11-12T11:15:00Z",
   "caption": "The hero side-on in the meadow by the cottage at 09:00; the boots are lost in the grass at this distance, and the figure and lighting still read as a GL-compatibility render, not Wukong.",
@@ -891,6 +873,18 @@
   "file": "20261116-0800-surge-regrip-seq.jpg",
   "time": "2026-11-16T08:00:00Z",
   "caption": "Surge frames st=46/52/56: roar, fist still raised as the settle starts, then both hands meet the haft at the chest as the glaive tips into guard; no hunched frame left, but fire columns still crowd the foreground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0900-surge-slit.jpg",
+  "time": "2026-11-16T09:00:00Z",
+  "caption": "The boss settling after its growth roar (size 3.2): the helm's sight slit now burns with the ember instead of reading as a blank face; the ring-of-fire columns still fill a third of the frame and the hero is not in shot for scale.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0900-slit-before-after.jpg",
+  "time": "2026-11-16T09:00:00Z",
+  "caption": "Helm crops during the surge: before (blank helm, mid-roar), after mid-roar (slit blazing across the eyes) and after at the settle; the slit reads as one bar, the two eye hot points barely separate.",
   "verdict": "fail"
  }
 ]

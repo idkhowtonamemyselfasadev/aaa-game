@@ -17,10 +17,14 @@ uniform float ember = 0.0;      // the body's ember (HollowSoldier, pulses with 
 uniform float heat = 0.0;       // the knight's phase: 0, 0.5, 1
 uniform float dissolve = 0.0;   // crumbles with the body on death
 uniform float hit_flash = 0.0;
-uniform float stone = 0.0;      // 1 = carved granite (the Stone Sentinel's helm, pauldrons, glaive)
+uniform float stone = 0.0;
+// (11-16 09:00) the helm's sight slit: a black cut across the eyes with the ember burning behind it,
+// smouldering at rest and blazing with `ember` (the growth roar drives ember to ~7). 0 = the old helm.
+uniform float slit_on = 1.0;      // 1 = carved granite (the Stone Sentinel's helm, pauldrons, glaive)
 
 varying float layer;
 varying float edge;
+varying float helm;
 varying vec3 opos;
 
 float hash(vec3 p) {
@@ -71,6 +75,7 @@ float vedge(vec3 p) {
 void vertex() {
 	layer = COLOR.r;
 	edge = COLOR.g;
+	helm = COLOR.b;
 	opos = VERTEX;
 }
 
@@ -112,6 +117,24 @@ void fragment() {
 		float gain = (0.15 + ember * 0.6) * (0.25 + heat);
 		glow = (mix(ember_col, vec3(1.0, 0.62, 0.3), main_c * taper) * crack * 1.8 + ember_col * vec3(0.8, 0.5, 0.4) * halo * 0.35) * gain;
 		alb *= 1.0 - crack * 0.5;
+		if (helm > 0.5 && slit_on > 0.0) {
+			// UV.x 0 = straight ahead round the helm, UV.y 0.40 = eye height (knight_armour.gd _helm)
+			float a = UV.x * 6.2831853;
+			float fr = smoothstep(0.35, 0.7, cos(a));
+			float off_keel = smoothstep(0.08, 0.2, abs(sin(a)));
+			float dv = abs(UV.y - 0.405);
+			float aav = fwidth(UV.y) + 0.001;
+			float cut = (1.0 - smoothstep(0.011, 0.011 + aav, dv)) * fr * off_keel;
+			float bleed = (1.0 - smoothstep(0.011, 0.05, dv)) * fr * off_keel;
+			// two hot points where the eyes sit, either side of the keel
+			float eyes = exp(-pow((abs(sin(a)) - 0.30) / 0.10, 2.0));
+			float burn = (0.35 + 0.55 * ember) * slit_on;
+			alb = mix(alb, vec3(0.01), cut);
+			rough = mix(rough, 1.0, cut);
+			metal = mix(metal, 0.0, cut);
+			glow += (mix(ember_col, vec3(1.0, 0.7, 0.35), eyes * 0.7) * cut * (0.6 + 1.4 * eyes) * 2.0
+					+ ember_col * bleed * 0.25) * burn;
+		}
 	} else if (layer < 0.75) {
 		float grain = fbm(opos * 120.0);
 		float scuff = smoothstep(0.6, 0.85, fbm(opos * 18.0));
