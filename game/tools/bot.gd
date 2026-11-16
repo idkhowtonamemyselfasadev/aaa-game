@@ -6828,6 +6828,8 @@ func _knight_test() -> void:
 	p.health = Player.HEALTH_MAX
 	var t := 0.0
 	var phase_hp := {}
+	var ring_seen := 0
+	var ring_front: Array = []
 	var surged_hits := 0
 	var p2_hits := 0
 	var p2_strikes0 := -1
@@ -6958,6 +6960,19 @@ func _knight_test() -> void:
 			grow_shake = maxf(grow_shake, p._trauma)
 		if not k.surging() and grow_seen.has(k.phase) and not grow_done.has(k.phase):
 			grow_done[k.phase] = k.size_scale
+		if k.blasts > ring_seen:
+			# (07:00 11-16) the blast's ring of fire must leave a gap on the knight's front: the line
+			# it squares up to the hero on (and the hero's camera on its chest) passes between flames
+			ring_seen = k.blasts
+			var kf := k.body.global_basis.z
+			var kfa := atan2(kf.x, kf.z)
+			var off_min := INF
+			for fl in k.last_blast_ring:
+				var dv: Vector3 = (fl as Node3D).global_position - k.global_position
+				off_min = minf(off_min, absf(wrapf(atan2(dv.x, dv.z) - kfa, -PI, PI)))
+			var step := TAU / maxf(k.last_blast_ring.size(), 1)
+			ring_front.append(off_min / step)
+			print("BOT knight: blast %d ring %d flames, nearest %.1f deg off the knight's front (step %.1f deg, %.2f steps)" % [k.blasts, k.last_blast_ring.size(), rad_to_deg(off_min), rad_to_deg(step), off_min / step])
 		if k.surging() and not phase_hp.has(k.phase):
 			phase_hp[k.phase] = k.health
 			var hh := k.health
@@ -6991,6 +7006,9 @@ func _knight_test() -> void:
 	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s, stomps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results), k.stomps, str(k.stomp_results)])
 	if k.surges < 2 or k.blasts < 2:
 		return _combat_done(false, "knight did not surge into both later phases")
+	for rf in ring_front:
+		if rf < 0.4:
+			return _combat_done(false, "a blast ring stood a flame on the knight's front line (%.2f steps off, gate >= 0.4)" % rf)
 	# every surge was a growth moment: smooth, never a pop, ending at the phase's size
 	for ph in [2, 3]:
 		var sm: Array = grow_seen.get(ph, [])

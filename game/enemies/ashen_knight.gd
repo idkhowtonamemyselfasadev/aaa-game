@@ -940,6 +940,9 @@ func _surge_body(delta: float) -> void:
 
 ## The ember bursts: a ring of fire round the kneeling knight, hurling down whoever stands in
 ## it (unblockable; a dodge passes through). The second surge leaves the ground smouldering.
+## the surge blast's ring of fire, as last spawned (bots read where its flames stand)
+var last_blast_ring: Array = []
+
 func _blast() -> void:
 	blasts += 1
 	blast_result = "miss"
@@ -948,10 +951,18 @@ func _blast() -> void:
 	ImpactFX.spawn(get_parent(), c + Vector3.UP * 1.1 * k, body.global_basis.z.normalized(), "stone", 2.4 + k * 0.4)
 	blasted.emit(c)
 	var ring_n := 7 + int(round((k - 1.0) * 3.0))
+	# (07:00 11-16) the ring is phased half a step so the gap between two flames faces the way the
+	# knight faces: the old phase stood flame 0 dead ahead on the line to the hero it squares up
+	# to, so from the hero's camera a fire column covered the chest and the roar (front-on surge
+	# frames st=40/66). BLASTRING_OLD=1: the before.
+	var fwd := body.global_basis.z
+	var half := 0.0 if OS.get_environment("BLASTRING_OLD") == "1" else 0.5
+	last_blast_ring = []
 	for i in ring_n:
-		var a := TAU * i / ring_n + body.rotation.y
+		var a := TAU * (i + half) / ring_n + atan2(fwd.x, fwd.z)
 		var f := _flame_at(c + Vector3(sin(a), 0, cos(a)) * 2.6 * k, false)
 		f.t = AshFlame.WARN - 0.02   # bursts at once: the ring itself is the blast's fire
+		last_blast_ring.append(f)
 	if _player == null or _player.is_dead():
 		return
 	var d := _player.global_position - c

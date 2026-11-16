@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261112-0616-trail.jpg",
-  "time": "2026-11-12T06:16:05Z",
-  "caption": "A trodden lane through the meadow: the matted sward now combs in a wandering swirl instead of ruled lines; the laid lane is still too smooth and uniform in colour.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0616-turnturf.jpg",
-  "time": "2026-11-12T06:16:05Z",
-  "caption": "Hero's boots in a turn on the spot: the stamped radial starburst of combed straw under the feet is gone; the tabard hem still hides the pivot heel and the turf reads flat at this range.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-0730-turn-ball-hips.jpg",
-  "time": "2026-11-12T07:30:00Z",
-  "caption": "Turn on the spot at jt 0.55, sunlit ankle lens: the hips now rise with the heel on the ball, so the boots sit under a less folded knee; the baggy trouser hem still swallows the boot and the GL ground reads flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-0730-turn-old-new.jpg",
   "time": "2026-11-12T07:30:00Z",
   "caption": "Before (left) vs after (right) at jt 0.55: the robe hem sits slightly higher as the body rises on the pivot ball; the difference is small from this low lens, a side-on full-body lens is still owed.",
@@ -897,6 +879,24 @@
   "file": "20261116-0620-climbshrug.jpg",
   "time": "2026-11-16T06:20:40Z",
   "caption": "Climb with the new shoulder shrug: the left forearm now shows over the capelet beside the hat, but the reach still stops at head height and the figure is small in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0700-surge-before.jpg",
+  "time": "2026-11-16T07:00:00Z",
+  "caption": "Boss growth surge roar at size 3.0, front lens, BEFORE: a column of its own ring of fire stands dead ahead and hides the chest and roar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0700-surge-gap.jpg",
+  "time": "2026-11-16T07:00:00Z",
+  "caption": "Boss growth surge roar at size 2.8 AFTER: the ring of fire leaves a gap on its front so the roar with the left fist flung up reads; still no face, and its size does not read without the hero in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0700-surge-settle.jpg",
+  "time": "2026-11-16T07:00:00Z",
+  "caption": "Boss settling to guard at size 3.2 at the end of the surge, framed between two flames; clear silhouette, but the giant's scale and face still fall short of Wukong.",
   "verdict": "fail"
  }
 ]
