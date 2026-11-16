@@ -321,7 +321,7 @@ func _build_chunk(k: Vector2i) -> MultiMeshInstance3D:
 		# keep the leafy kinds.
 		var kind := 0
 		var roll := rng.randf()
-		if crop > 0.9 and keep > 3.1 and vg < 0.2 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
+		if crop > 0.9 and keep > 3.1 and vg < 0.04 and roll < 0.08 + 0.22 * smoothstep(0.35, 0.8, dry) * (1.0 - shade):
 			kind = 2
 		elif roll > 0.74 - 0.2 * shade - 0.12 * (1.0 - patch):
 			kind = 1
@@ -511,22 +511,67 @@ func _build_seeding_mesh() -> ArrayMesh:
 			var out := (side * cos(ang) + dir * sin(ang)).normalized()
 			var ln := rng.randf_range(0.05, 0.09) * (1.15 - 0.6 * float(i) / head_n)
 			_spikelet(st, at, out, ln, t)
+	if OS.get_environment("SPIKELET_OLD") != "1":
+		st.index()   # the husks' keel and edge vertices are shared between their facets
 	return st.commit()
 
 ## One spikelet: a narrow lanceolate quad pair (crossed so it reads from any side) from
 ## `at` along `out`, angled up and drooping, UV.x = 1 and UV.y = `v` (its height on the stem).
+## Each side is a folded husk, not a flat diamond: a raised keel down the middle with the two
+## halves falling away from it, widest a third of the way up and rounding into a fine point,
+## so a panicle close to the lens shades like real glumes (a flat 4-vertex diamond read as a
+## pale low-poly leaf filling the boss shot's foreground, 12:00 11-16). UV2.x = -1..1 across,
+## UV2.y = 0.02..1 along (> 0 marks a spikelet for grass.gdshader's glume veins).
+## env SPIKELET_OLD=1: the flat diamond.
 func _spikelet(st: SurfaceTool, at: Vector3, out: Vector3, ln: float, v: float) -> void:
 	var tip := at + (out * 0.75 + Vector3.UP * 0.55).normalized() * ln - Vector3.UP * ln * 0.25
-	var mid := at.lerp(tip, 0.45)
 	var axis := (tip - at).normalized()
-	for side in [out.cross(Vector3.UP).normalized(), axis.cross(out.cross(Vector3.UP)).normalized()]:
-		var w: Vector3 = side * ln * 0.13
-		var n := (Vector3.UP + out * 0.3).normalized()
-		for p in [at, mid - w, mid + w, mid - w, tip, mid + w]:
-			st.set_normal(n)
-			st.set_uv(Vector2(1.0, v))
-			st.set_uv2(Vector2(0.0 if p == at or p == tip else (-1.0 if p == mid - w else 1.0), 0.0))
-			st.add_vertex(p)
+	var sides := [out.cross(Vector3.UP).normalized(), axis.cross(out.cross(Vector3.UP)).normalized()]
+	if OS.get_environment("SPIKELET_OLD") == "1":
+		var mid := at.lerp(tip, 0.45)
+		for side in sides:
+			var w: Vector3 = side * ln * 0.13
+			var n := (Vector3.UP + out * 0.3).normalized()
+			for p in [at, mid - w, mid + w, mid - w, tip, mid + w]:
+				st.set_normal(n)
+				st.set_uv(Vector2(1.0, v))
+				st.set_uv2(Vector2(0.0 if p == at or p == tip else (-1.0 if p == mid - w else 1.0), 0.0))
+				st.add_vertex(p)
+		return
+	# stations along the husk: (fraction of length, half-width as a share of ln)
+	var prof := [[0.0, 0.035], [0.3, 0.12], [0.62, 0.105], [0.86, 0.055], [1.0, 0.0]]
+	var base_n := (Vector3.UP + out * 0.3).normalized()
+	for side_v in sides:
+		var side: Vector3 = side_v
+		var fn := axis.cross(side).normalized()
+		if fn.dot(base_n) < 0.0:
+			fn = -fn
+		var keel := ln * 0.055
+		# per station: left edge, keel, right edge [pos, normal, across]
+		var rows := []
+		for pr in prof:
+			var f: float = pr[0]
+			var hw: float = pr[1] * ln
+			var c := at.lerp(tip, f)
+			var k := keel * sin(PI * minf(f * 1.25, 1.0))   # the fold flattens into the point
+			var nl := (base_n + fn * 0.6 - side * 0.8).normalized()
+			var nr := (base_n + fn * 0.6 + side * 0.8).normalized()
+			var nk := (base_n + fn * 0.8).normalized()
+			rows.append([[c - side * hw, nl, -1.0], [c + fn * k, nk, 0.0], [c + side * hw, nr, 1.0]])
+		for i in prof.size() - 1:
+			var a: Array = rows[i]
+			var b: Array = rows[i + 1]
+			var fa: float = prof[i][0]
+			var fb: float = prof[i + 1][0]
+			for q in [[a[0], fa, b[0], fb, b[1], fb], [a[0], fa, b[1], fb, a[1], fa],
+					[a[1], fa, b[1], fb, b[2], fb], [a[1], fa, b[2], fb, a[2], fa]]:
+				for j in 3:
+					var vv: Array = q[j * 2]
+					var p: Vector3 = vv[0]   # the last station's three points all sit on the tip
+					st.set_normal(vv[1])
+					st.set_uv(Vector2(1.0, v))
+					st.set_uv2(Vector2(vv[2], 0.02 + 0.98 * float(q[j * 2 + 1])))
+					st.add_vertex(p)
 
 ## A tapered blade from `root` heading `dir`: rises `height`, leans `lean` out (quadratic)
 ## and droops `droop` at the tip (cubic), `width` half-width at the root. UV.x = `seed`.

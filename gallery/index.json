@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261112-1304-turn-frontlit.jpg",
-  "time": "2026-11-12T13:04:00Z",
-  "caption": "Hero's turn on the spot at 9:00, mid-turn, judged front-lit for the first time (new facesun option): face and cape lit, both fists on the staff. Still wrong: the feet cross into a scissor stance, the face reads as a flat pale mask.",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1413-turnfix.jpg",
-  "time": "2026-11-12T14:13:16Z",
-  "caption": "Same instant before (left, feet crossed into a scissor stance) and after the fix (right, stepping foot held on its own side).",
-  "verdict": "fail"
- },
- {
-  "file": "20261112-1413-turnseq.jpg",
-  "time": "2026-11-12T14:13:16Z",
-  "caption": "Hero's left turn on the spot at 0.45/0.55/0.65 s: the feet stay apart and the stepping leg passes behind, no scissor; still the knees nearly touch mid-step and the body tilts hard sideways.",
-  "verdict": "fail"
- },
- {
   "file": "20261112-1515-leftturn.jpg",
   "time": "2026-11-12T15:15:53Z",
   "caption": "The hero mid-turn to the left on the ball of the foot, now standing a little taller with the stepping boot lifted 4 cm instead of 6.5; the knees still read knock-kneed and the face is a flat pale mask.",
@@ -897,6 +879,18 @@
   "file": "20261116-1200-ringfire-before-after.jpg",
   "time": "2026-11-16T12:00:00Z",
   "caption": "Ring of fire during the roar, before (left) and after (right): the ring's tongues now fade out early and shrink instead of standing as thin red streaks; smoke still reads muddy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1300-seedhead-before-after.jpg",
+  "time": "2026-11-16T13:00:00Z",
+  "caption": "Seeding grass panicle close to the lens, before (left: flat pale 4-vertex diamonds) and after (right: folded husks with a keel, veins, pale margins and a dark base); the flowering stems are still wide flat ribbons up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1300-seedhead-meadow.jpg",
+  "time": "2026-11-16T13:00:00Z",
+  "caption": "Knee-height lens in the dry meadow with the new spikelet husks in the foreground; the grass reads as real seeding grass, but the near blades are still over-saturated straw-yellow.",
   "verdict": "fail"
  }
 ]

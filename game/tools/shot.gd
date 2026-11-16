@@ -146,6 +146,34 @@ func _ready() -> void:
 		var back2 := Vector3(sd2.x, 0, sd2.z).normalized().rotated(Vector3.UP, 1.2)
 		SPOTS[spot] = [fh + back2 * 0.9 + Vector3.UP * 0.12, fh - back2 * 3.0 - Vector3.UP * 0.2]
 		print("SHOT flower at %s" % fh)
+	if spot == "seedhead":
+		# seedhead [near=0.45]: a seeding grass clump's panicle close to the lens (the spikelet
+		# husks that filled the boss shot's foreground), side-lit, the meadow behind it
+		var nr := 0.45
+		for a in args:
+			if a.begins_with("near="):
+				nr = float(a.substr(5))
+		for i in 20:
+			await get_tree().process_frame
+		var gf: GrassField = world.get_node("Grass")
+		var pp := player.global_position
+		var best := Transform3D()
+		var bd := INF
+		for mmi in gf.find_children("*", "MultiMeshInstance3D", true, false):
+			var mm: MultiMesh = (mmi as MultiMeshInstance3D).multimesh
+			if mm == null or mm.mesh != gf._meshes[2]:
+				continue
+			for i in mm.instance_count:
+				var xf: Transform3D = (mmi as MultiMeshInstance3D).global_transform * mm.get_instance_transform(i)
+				var dd := Vector2(xf.origin.x - pp.x, xf.origin.z - pp.z).length()
+				if dd > 4.0 and abs(dd - 7.0) < bd:
+					bd = abs(dd - 7.0)
+					best = xf
+		var hd := best.origin + best.basis.y * 0.88
+		var sd3: Vector3 = world.sun.global_transform.basis.z
+		var sdir := Vector3(sd3.x, 0, sd3.z).normalized().rotated(Vector3.UP, 1.4)
+		SPOTS[spot] = [hd + sdir * nr + Vector3.UP * 0.05, hd - sdir * 2.0 - Vector3.UP * 0.1]
+		print("SHOT seedhead clump at %s head %s (scale %.2f)" % [best.origin, hd, best.basis.y.length()])
 	if spot == "turf":
 		# looking down at the meadow floor between the clumps a few metres from the hero:
 		# the ground layer (turf, clover, moss, litter) close up. turf [dx] [dz] moves it.
@@ -2378,7 +2406,7 @@ func _ready() -> void:
 		var look: Vector3 = s[1]
 		pos.y = look.y - 0.35 if spot == "midges" else (s[0] as Vector3).y if spot in ["butterflies", "flowers"] else terrain.height_at(pos.x, pos.z) + (1.2 if spot == "fireflies" else 1.5 if spot in ["hero", "heroback", "staff", "wade"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 or foe_u >= 0.0 else 2.5)
 		look.y = (s[1] as Vector3).y if spot in ["midges", "butterflies", "flowers"] else terrain.height_at(look.x, look.z) + (0.6 if spot == "fireflies" else 1.3 if spot == "staff" else 1.1 if spot in ["hero", "heroback"] or swing_step >= 0 or impact_step >= 0 or dodge_u >= 0.0 or jump_t >= 0.0 else 1.35 if foe_u >= 0.0 else 1.5)
-		if spot == "slope":
+		if spot == "slope" or spot == "seedhead":
 			pos = s[0]                           # the lens as framed (shin height), not 2.5 m up
 			look = s[1]
 		if spot == "soldier" and "knight" in args and "p3" in args:

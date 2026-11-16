@@ -46,6 +46,7 @@ varying float v_ao;
 varying float v_sward;    // 1 = short sward blade
 varying float v_seed;     // 1 = seed stem / spikelet
 varying float v_across;   // -1 .. 1 across the blade (UV2.x)
+varying float v_spk;      // > 0 on a spikelet husk: 0.02 base .. 1 point (UV2.y, grass.gd _spikelet)
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n2(vec2 p) {
@@ -131,6 +132,7 @@ void vertex() {
 	// blade's sideways axis is recoverable; tip the edge normals out along it so the light
 	// rolls across a keeled leaf instead of a flat ribbon (spikelets keep theirs)
 	v_across = UV2.x;
+	v_spk = UV2.y;
 	vec3 side = vec3(NORMAL.z, 0.0, -NORMAL.x);
 	float sl = length(side);
 	if (sl > 0.01) {
@@ -140,7 +142,8 @@ void vertex() {
 	v_ao = mix(mix(0.35, 0.75, v_sward), 1.0, smoothstep(0.0, 0.6, v_h));
 	v_ao = mix(v_ao, 1.0, v_seed * 0.5);   // thin stems stand clear of the clump's shade
 	// lean normals up so clumps light like a canopy, not like flat cards
-	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55));
+	// (a spikelet husk keeps most of its folded facets' normals, so its keel catches the light)
+	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0) * mat3(MODEL_MATRIX), 0.55 * (1.0 - 0.65 * step(0.01, v_spk))));
 	v_cloud = cloud_shade_at((MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz);
 }
 
@@ -164,6 +167,21 @@ void fragment() {
 	float edge = smoothstep(0.78, 1.0, ac);
 	col *= 1.0 + near_d * (0.22 * rib - 0.07 * vein + 0.12 * edge) * (1.0 - v_seed);
 	rough = mix(rough, 0.68, near_d * rib * 0.5);
+	// a spikelet husk close up: a green-brown keel down its lower half, fine parallel glume
+	// veins, thin papery margins that go pale, a darker base where it joins the branch and a
+	// bleached point (instead of one flat straw colour over the whole husk)
+	if (v_spk > 0.01) {
+		float sk = 1.0 - smoothstep(0.0, 0.22, ac);
+		float gv = 0.5 + 0.5 * cos(ac * 22.0);
+		float marg = smoothstep(0.62, 0.95, ac);
+		vec3 keel_c = mix(col * vec3(0.62, 0.7, 0.45), col * 0.75, smoothstep(0.2, 0.8, v_spk));
+		col = mix(col, keel_c, sk * (1.0 - 0.6 * smoothstep(0.5, 1.0, v_spk)));
+		col *= 1.0 - near_d * 0.12 * gv;
+		col = mix(col, col * 1.25 + vec3(0.04, 0.035, 0.02), marg * 0.7);
+		col *= mix(0.62, 1.0, smoothstep(0.0, 0.3, v_spk));
+		col = mix(col, col * 1.12 + vec3(0.03), smoothstep(0.8, 1.0, v_spk) * 0.6);
+		rough = mix(rough, 0.6, sk * 0.5);
+	}
 	// stronger toward the far clumps so they meet the ground's distance-raised tint
 	col *= field_tint_k(v_field, 1.0 + 0.9 * smoothstep(20.0, 64.0, length(VERTEX)));
 	col *= mix(v_ao, 1.0, v_laid * 0.5);
