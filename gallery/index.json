@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261113-0601-knight-stair-x46.jpg",
-  "time": "2026-11-13T06:01:26Z",
-  "caption": "The Ashen Knight at its phase-3 size (4.6x) on the test stair on open meadow: lens too low and backlit, its head cropped out, the stair a plain dark box with no masonry.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0700-knightfeet.jpg",
-  "time": "2026-11-13T07:32:00Z",
-  "caption": "The Ashen Knight at its phase-1 size walking onto the test stair after the boot-height fix; backlit silhouette and the stair top hides its boots, so the fix (boots no longer 2-11 cm into the turf) cannot be judged here, and the stair is still a plain dark slab.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-0918-herorun.jpg",
-  "time": "2026-11-13T09:18:27Z",
-  "caption": "The hero jogging across the meadow after the ankle/ball floor fix (boots no longer planted 4-6 cm into the ground, measured by bot heroflat); backlit and the tall grass hides the boots, so the frame cannot show the fix itself.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-1010-kstop.jpg",
   "time": "2026-11-13T12:10:00Z",
   "caption": "The Ashen Knight (x2.2) a tenth of a second into a stop from a walk, now stepping its boots into the guard stance instead of skating them (bot foestop: 0.24-0.80 -> 0.01 m/size); the lens is poor: a tree trunk fills the left, the knight is backlit and its boots sit in shadow, so the steps themselves are not visible.",
@@ -885,6 +867,18 @@
   "file": "20261116-2200-stubble-before-after.jpg",
   "time": "2026-11-16T22:00:00Z",
   "caption": "Foreground strip before (top: spring-green tufts and flower stems on the ash) and after (bottom: thinned, singed stubble only).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2300-surge-settle-front.jpg",
+  "time": "2026-11-16T23:00:00Z",
+  "caption": "The boss settling out of its phase-3 growth, chest and glaive squared to the hero's side of the ring; still wrong: flat GL light, soft blotchy trees behind, hero lost behind its legs.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2300-surge-pivot-onto-hero.jpg",
+  "time": "2026-11-16T23:00:00Z",
+  "caption": "The boss after pivoting about 80 deg on its planted boot during the growth roar, so it ends facing a hero who broke it from the flank; still wrong: the sun blows out the sky, the knight reads small at this lens.",
   "verdict": "fail"
  }
 ]

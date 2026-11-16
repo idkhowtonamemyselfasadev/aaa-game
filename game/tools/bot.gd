@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -240,6 +240,9 @@ func _ready() -> void:
 		return
 	if name == "surgegrip":
 		_surge_grip_test()
+		return
+	if name == "surgeturn":
+		_surge_turn_test()
 		return
 	if name == "foeguard":
 		_foe_guard_test()
@@ -2253,6 +2256,72 @@ const SURGE_ROAR_MAX := 0.03
 const SURGE_ROAR_MEAN_MAX := 0.01
 # (08:00 11-16) the regrip after the roar lands under the chin, not round the visor (set from the read)
 const SURGE_REGRIP_DROP_MIN := 0.15   # m per size (new 0.342-0.348; SURGE_REGRIP_OLD=1 -0.089 / -0.108, above it)
+## (23:00 11-16) the blow that breaks the knight mostly lands from its flank (phase 1 turns blows
+## in front): the surge's rise must pivot it round onto the hero on its planted left boot, the
+## boot staying on its spot (no skate) while the body turns.
+func _surge_turn_test() -> void:
+	Engine.time_scale = 1.0
+	var p := _player
+	var k: AshenKnight = _world.knight
+	_world.soldier.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	await _ticks(10)
+	var fail := ""
+	var fb := k.skel.find_bone("mixamorig_LeftFoot")
+	for ph in [2, 3]:
+		k._set_phase(ph - 1)
+		k.set_size_scale(k.growth.scale_of(ph - 1))
+		var ks := k.size_scale
+		k._home = k.global_position
+		k._leap_cool = 99.0
+		k._stomp_cool = 99.0
+		k._flame_t = -999.0
+		k.health = k.health_max
+		k.poise = 0.0
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		k.move_kind = HollowSoldier.THRUST_MOVE
+		var dir := k.body.global_basis.z
+		dir.y = 0.0
+		# the hero 115 deg round to the knight's right, at 4 m per size (in the ring)
+		var hd := dir.normalized().rotated(Vector3.UP, -2.0)
+		p.global_position = k.global_position + hd * 4.0 * ks
+		p.global_position.y = _world.terrain.height_at(p.global_position.x, p.global_position.z) + 0.1
+		p.set_physics_process(false)
+		k._begin_surge()
+		var err0 := INF
+		var boot0 := Vector3.INF
+		var drift := 0.0
+		var err1 := 0.0
+		for i in 400:
+			await get_tree().physics_frame
+			await k.skel.skeleton_updated
+			if k._surge < 0.0:
+				break
+			var to := p.global_position - k.global_position
+			var err := absf(angle_difference(k.body.rotation.y, atan2(to.x, to.z)))
+			if err0 == INF:
+				err0 = err
+			err1 = err
+			var s: float = k._surge
+			if s > AshenKnight.SURGE_BLAST + 0.05 and s < AshenKnight.SURGE_T - 0.5:
+				var fw: Vector3 = k.skel.global_transform * k.skel.get_bone_global_pose(fb).origin
+				if boot0 == Vector3.INF:
+					boot0 = fw
+				drift = maxf(drift, Vector2(fw.x - boot0.x, fw.z - boot0.z).length())
+				if OS.has_environment("SURGETURN_DBG"):
+					print("  SB s %.2f boot (%.3f, %.3f) yaw %.3f size %.2f short %.3f" % [s, fw.x, fw.z, k.body.rotation.y, k.size_scale, k.tuck.short])
+		p.set_physics_process(true)
+		print("BOT surgeturn: phase %d (size %.2f) facing error %.0f deg at the blow -> %.0f deg at the settle, turned %.0f deg; left boot drift over the turn %.3f m per size" % [ph, ks, rad_to_deg(err0), rad_to_deg(err1), rad_to_deg(k.surge_turned), drift / ks])
+		if fail == "" and OS.get_environment("SURGETURN_OLD") != "1":
+			if err0 - err1 < deg_to_rad(50.0):
+				fail = "surge into phase %d: the rise turned the knight only %.0f deg onto the hero" % [ph, rad_to_deg(err0 - err1)]
+			elif drift / ks > 0.075:   # the growth alone carries it ~0.06-0.07 per size out (SURGETURN_OLD: 0.069 / 0.060)
+				fail = "surge into phase %d: the planted boot skated %.3f m per size in the turn" % [ph, drift / ks]
+	if fail != "":
+		return _combat_done(false, fail)
+	_combat_done(true, "the surge's rise pivots the knight onto a hero at its flank on a planted boot")
+
 func _surge_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var p := _player

@@ -3259,6 +3259,18 @@ func _ready() -> void:
 		if from_ph == 2:
 			rk._set_phase(2)
 			rk.set_size_scale(rk.growth.scale_of(2))
+		# (23:00 11-16) the surge's rise now pivots the knight onto the hero (AshenKnight._surge_turn),
+		# and the hero was only put in frame after the ticks: the knight turned to wherever the hero
+		# spawned and the st=90 frame caught it side-on. Stand the hero on the knight's front first
+		# (the lens below prefers the front, so the hero ends up near there anyway); `turn`: put the
+		# hero on the knight's right flank instead, to see the pivot.
+		if "hero" in args:
+			var kf0 := Vector3(rk.body.global_basis.z.x, 0, rk.body.global_basis.z.z).normalized()
+			if "turn" in args:
+				kf0 = kf0.rotated(Vector3.UP, -2.0)
+			var hp0 := rk.global_position + kf0 * 4.0 * rk.size_scale
+			hp0.y = terrain.height_at(hp0.x, hp0.z) + 0.05
+			player.global_position = hp0
 		if not "rest" in args:
 			rk._begin_surge()
 		else:

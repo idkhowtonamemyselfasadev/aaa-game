@@ -405,6 +405,17 @@ var surge_kneel_peak := 0.0      # bots: deepest kneel of the surges (0..1)
 var surge_heave_peak := 0.0      # bots: how far the burst heaved the glaive up (0..1)
 var surge_bow_peak := 0.0        # bots: head bowed into the coil (rad)
 var surge_lift_back := 0.0       # bots: head flung back in the roar (rad, negative)
+var surge_turned := 0.0          # bots: yaw the surge's rise turned the body onto the hero (rad, signed)
+## (23:00 11-16) the surge's rise pivots the giant round onto the hero on its planted left boot.
+## Phase 1 turns blows that land in front, so the blow that breaks it mostly comes from the
+## flank or behind: it knelt, roared and settled facing the empty turf, the hero saw its cape
+## through the whole growth and the first thing it did after was a step-turn. Over the rise
+## (SURGE_BLAST+0.05 .. the boot's release) it now heaves round on the ball of that boot (the
+## body is swung about the boot's spot, so nothing skates), up to SURGE_TURN_MAX; STALK's own
+## step-turn finishes the rest. SURGETURN_OLD=1: the before.
+const SURGE_TURN_RATE := 2.2     # rad/s at the middle of the rise (eased in and out)
+const SURGE_TURN_MAX := 1.4      # rad the rise may turn in all
+var _surge_turn_on := OS.get_environment("SURGETURN_OLD") != "1"
 var stomps := 0                  # bots
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
@@ -771,6 +782,7 @@ func _begin_surge() -> void:
 	_set_phase(phase + 1)
 	surges += 1
 	_surge = 0.0
+	surge_turned = 0.0
 	_blasted = false
 	_flame_t = 0.0
 	poise = 0.0
@@ -930,6 +942,7 @@ func _surge_body(delta: float) -> void:
 		tuck.lift_leg = 1
 		tuck.lift_hip = -0.8 * kneel
 		tuck.lift_knee = 0.3 * kneel
+	_surge_turn(delta, s)
 	surge_kneel_peak = maxf(surge_kneel_peak, kneel)
 	surge_heave_peak = maxf(surge_heave_peak, burst * (1.0 - settle))
 	if head != null:
@@ -945,6 +958,46 @@ func _surge_body(delta: float) -> void:
 	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
 		set_meta("surge_roar_%d" % surges, true)
 		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
+
+## The rise's pivot onto the hero (see SURGE_TURN_RATE): the body yaws about the latched left
+## boot's spot (the latch rides the body's frame, so the knight's origin is swung round it).
+func _surge_turn(delta: float, s: float) -> void:
+	if not _surge_turn_on or _player == null or _player.is_dead() or skel == null:
+		return
+	var a0 := SURGE_BLAST + 0.05
+	var a1 := SURGE_T - 0.5          # the left boot's release starts here (see _plant above)
+	if s <= a0 or s >= a1:
+		return
+	var to := _player.global_position - global_position
+	to.y = 0.0
+	if to.length() < 0.5:
+		return
+	var w := sin(PI * (s - a0) / (a1 - a0))
+	var d := angle_difference(body.rotation.y, atan2(to.x, to.z))
+	var room := SURGE_TURN_MAX - absf(surge_turned)
+	var step := clampf(d, -1.0, 1.0) * SURGE_TURN_RATE * w * delta
+	step = clampf(step, -absf(d), absf(d))
+	step = clampf(step, -room, room)
+	if absf(step) < 1e-5:
+		return
+	# the boot as the tuck last placed it (the skeleton's pose read here is the clip's, before the
+	# modifiers: pivoting on it swung the latched boot ~0.1 m per size round the turn)
+	var pivot := global_position
+	if tuck != null and tuck._final[0] != null:
+		pivot = tuck._final[0]
+	else:
+		var fb := skel.find_bone("mixamorig_LeftFoot")
+		if fb >= 0:
+			pivot = skel.global_transform * skel.get_bone_global_pose(fb).origin
+	# body turns about its own origin (it can sit off the knight's by a step carry)
+	var bo := body.global_position
+	var r := Vector3(bo.x - pivot.x, 0, bo.z - pivot.z)
+	body.rotation.y += step
+	var r2 := r.rotated(Vector3.UP, step)
+	global_position += r2 - r
+	surge_turned += step
+	if OS.has_environment("SURGETURN_DBG"):
+		print("  ST s %.2f step %.4f pivot (%.3f, %.3f) pos (%.3f, %.3f) body (%.3f, %.3f)" % [s, step, pivot.x, pivot.z, global_position.x, global_position.z, body.global_position.x, body.global_position.z])
 
 ## The ember bursts: a ring of fire round the kneeling knight, hurling down whoever stands in
 ## it (unblockable; a dodge passes through). The second surge leaves the ground smouldering.
