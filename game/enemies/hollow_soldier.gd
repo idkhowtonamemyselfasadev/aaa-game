@@ -1195,6 +1195,14 @@ func _physics_process(delta: float) -> void:
 				rate = START_BLEND_RATE
 		_blend = lerpf(_blend, goal, 1.0 - exp(-rate * delta))
 		anim_tree.set("parameters/move/blend_position", _blend)
+		# (11-17 20:00) not on a walk's first tick: `stance_idle` was set earlier this tick (in
+		# _update_turn_shuffle) while the body still stood, but the start above already seeks the walk
+		# and jumps the blend to ~0.4, so StrideWarp re-read the idle stance off that first stride pose
+		# (~2 cm per size off the idle clip's feet). The next stop's settle steps aimed at it and the
+		# pivot's release then slid both boots the gap back onto the clip (knight x3.2 stop creep, bot
+		# `foestop`). STANCESNAP_OLD=1: before
+		if stride_warp != null and not _stance_snap_old and (start_win > 0.0 or _blend >= 0.01 * Player.ANIM_WALK_SPEED):
+			stride_warp.stance_idle = false
 		# cadence from the stride the clip mix covers (the hero's calibration, bot `foestride`):
 		# the old hs / 1.9 (clamped 0.7-1.4) let the planted foot ride forward up to 4 m/s on the giant
 		var ts := clampf(hs / clip_stride_speed(), 0.05 if start_win > 0.0 else 0.3, 1.8) * bot_cadence_k if hs > (0.002 if start_win > 0.0 else 0.05) else (natural_cadence() if stride_warp != null and stride_warp.settle_lift_k != 1.0 else 1.0)
@@ -1224,6 +1232,7 @@ var _spot_turn_tick := -10
 var _spot_lead_tick := -10       # last tick the body turned ON THE SPOT (the lead's early extra reach)
 var _spot_turn_w := 0.0          # rad/s: yaw rate of the body last tick (ease-in of a turn on the spot)
 static var _turn_oldstart := OS.has_environment("FOETURN_OLDSTART")   # = before 11-15 07:00
+static var _stance_snap_old := OS.has_environment("STANCESNAP_OLD")   # = before 11-17 20:00
 ## (11-17 17:00) a turn on the spot finishes: its last few degrees close at least this fast (rad/s at 1x
 ## cadence) instead of the exp chase's tail, which still turned the body ~1 deg over 25 ticks after the
 ## settle step was down and carried the boot over the turf with it (bot `foeturn` scuff ~0.01 per size).

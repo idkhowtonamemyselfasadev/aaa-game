@@ -3185,6 +3185,14 @@ func _ready() -> void:
 		var kst := rr.centre - rside * 4.0
 		rk.global_position = Vector3(kst.x, terrain.height_at(kst.x, kst.z) + 0.05, kst.z)
 		rk.bot_move = rside * sv
+		# (11-17 20:00) stop=<s>: the walk is cut after s seconds of game time (use fixfps) and the knight
+		# stays where it stopped, so a frame sequence covers the stop's settle steps and the release
+		for a in args:
+			if a.begins_with("stop="):
+				get_tree().create_timer(float(a.substr(5)), true, true).timeout.connect(func():
+					rk.bot_move = Vector3.ZERO
+					rk._home = rk.global_position
+					print("SHOT ring stride stopped at %s" % rk.global_position))
 		var sc := rr.centre + rf * (4.0 + 2.6 * sz)
 		sc.y = terrain.height_at(sc.x, sc.z) + 0.25 * sz
 		cam.global_position = sc

@@ -886,5 +886,17 @@
   "time": "2026-11-17T18:23:56Z",
   "caption": "Same turn after the settle step: both boots planted on the turf where the squared body wants them, no slide; framing and the dark shadow blob in the foreground still need work.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261117-2045-kstop45.jpg",
+  "time": "2026-11-17T20:45:00Z",
+  "caption": "Ashen knight at x3.2 half a second after stopping a walk: both boots planted wide on the turf; the lens sits behind its flank, the foreground is a dark shadow blob and the trees read blotchy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-2046-kstop100.jpg",
+  "time": "2026-11-17T20:46:00Z",
+  "caption": "Same stop 1.8 s later, after the settle steps and the release: the boots have not moved (the creep is gone); framing and lighting still not Wukong-grade.",
+  "verdict": "fail"
  }
 ]
