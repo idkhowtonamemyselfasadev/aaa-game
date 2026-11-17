@@ -495,6 +495,8 @@ static var SETTLE_SYMMETRIC := OS.has_environment("SETTLE_SYMMETRIC")
 static var SHORTSETTLE_OLD := OS.has_environment("SHORTSETTLE_OLD")
 var SETTLE_SHORT_LIFT := float(OS.get_environment("SETTLE_SHORT_LIFT")) if OS.has_environment("SETTLE_SHORT_LIFT") else 1.0  # skeleton units
 const SETTLE_PEAK_U := 0.35
+static var STOPSHORT_B_OLD := OS.has_environment("STOPSHORT_B_OLD")
+var STOP_SHORT_LIFT_B := float(OS.get_environment("STOP_SHORT_LIFT_B")) if OS.has_environment("STOP_SHORT_LIFT_B") else 2.0  # skeleton units
 ## (11-17 18:00) a foe's turn settle step aims at the squared body's idle spot (set by the foe each tick it turns
 ## on the spot; unset for the hero). TURNGOAL_OLD: before
 static var TURNGOAL_OLD := OS.has_environment("TURNGOAL_OLD")
@@ -872,6 +874,12 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		var lift_b := settle_lift(ub) * minf(bd.length() * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 		if settle_lift_k != 1.0 and bd.length() >= STEP_SETTLE_MIN:
 			lift_b = maxf(lift_b, settle_lift(ub) * stop_lift_min)
+		if settle_lift_k != 1.0 and not STOPSHORT_B_OLD and bd.length() > 1e-3:
+			# (11-17 22:00) a stop's pivot boot whose own step is short (under STEP_SETTLE_MIN) still travels its
+			# way, so it clears the turf too, as a turn's short step does (16:00): with ~0.3 cm/size of lift the
+			# knight x2.2's left boot shuffled 0.03 m/size along the turf for 14 ticks (bot `foestop` cut 96).
+			# STOPSHORT_B_OLD: before
+			lift_b = maxf(lift_b, settle_lift(ub) * STOP_SHORT_LIFT_B * minf(bd.length() / STEP_SETTLE_MIN, 1.0))
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
 		if _pin_abs and _pin_gy > -INF:
 			# the absolute pin steps over the turf: up or down by the ground's rise to its stance spot

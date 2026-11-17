@@ -5528,7 +5528,8 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 				# step has travelled by 0.65 of its time): worst tick soldier 0.022 -> 0.0024, knight x3.2
 				# downhill 0.0136 -> 0.0024 m/size (FOETRAVEL_OLD fails this)
 				fail = "%s x%.1f: a planted boot slides %.4f m/size in one tick after a stop" % [e.name, sc, wst]
-			elif not attack and sc > 3.0 and allsum > float(OS.get_environment("FOESTOP_GIANT_MAX") if OS.has_environment("FOESTOP_GIANT_MAX") else "0.012"):
+			elif not attack and sc > 2.0 and allsum > float(OS.get_environment("FOESTOP_GIANT_MAX") if OS.has_environment("FOESTOP_GIANT_MAX") else "0.012"):
+				# (11-17 22:00) x2.2 too: its short pivot step is lifted (STOPSHORT_B_OLD 0.035 fails)
 				# (11-17 20:00) the idle stance is no longer re-read off a walk's first stride tick: knight
 				# summed over the three cuts x3.2 0.064 -> 0.005, x4.6 0.012 -> 0.0005 m/size (STANCESNAP_OLD fails)
 				fail = "%s x%.1f: planted boots skate %.4f m/size summed over the three stops" % [e.name, sc, allsum]
