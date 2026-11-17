@@ -934,7 +934,9 @@ func _turn_feet_track(skel: Skeleton3D, sw: StrideWarp) -> void:
 		for j in 3:
 			_tf_sep_min[j] = minf(_tf_sep_min[j], float(sp[j]))
 		if OS.has_environment("HEROTURN_SEP"):
-			print("   sep ankle %.3f ball %.3f knee %.3f pivot %.2f side %d settle %s" % [sp[0], sp[1], sp[2], sw.pivot, sw.pivot_side, sw.pivot_settle])
+			var la := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin
+			var ra := skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin
+			print("   sep ankle %.3f ball %.3f knee %.3f pivot %.2f side %d settle %s yaw %.4f Lw %.3f,%.3f,%.3f Rw %.3f,%.3f,%.3f" % [sp[0], sp[1], sp[2], sw.pivot, sw.pivot_side, sw.pivot_settle, _player.body.rotation.y, la.x, la.y, la.z, ra.x, ra.y, ra.z])
 			var g := skel.global_transform
 			var lft := _player.body.global_basis.x
 			lft = Vector3(lft.x, 0.0, lft.z).normalized()
@@ -2951,7 +2953,9 @@ func _hero_turn_test(slope_preset := "") -> void:
 			return _combat_done(false, "the turn does not end in settle steps into the stance")
 		if _tf_rel_slide > 0.02:
 			return _combat_done(false, "the feet slide back to the clip as the pivot lets go (%.3f m)" % _tf_rel_slide)
-		if _tf_last_up - int(spot[3]) > 30:
+		# (11-17 12:00) the hero's settle now steps the pivot boot first, then the free boot (StrideWarp
+		# SETTLE_SWAP_OLD: before): the free boot's own step comes one settle step (0.32 s) later
+		if _tf_last_up - int(spot[3]) > (30 if StrideWarp.SETTLE_SWAP_OLD else 50):
 			return _combat_done(false, "the stepping boot hovers after the body has squared (%d ticks)" % (_tf_last_up - int(spot[3])))
 	if spot_orbit < 0.05:
 		return _combat_done(false, "the body does not come round over the planted foot (%.2f m)" % spot_orbit)

@@ -444,6 +444,14 @@ var _arc_floor := 0.0            # the stance level when the pivot planted (skel
 ## it stops travelling over the turf once down. PIVOT_HOVER: the before.
 static var PIVOT_HOVER := OS.has_environment("PIVOT_HOVER")
 static var PIVOT_CROSS_OLD := OS.has_environment("PIVOT_CROSS_OLD")
+## (11-17 12:00) the hero's turn settle steps the pivot boot into its stance spot FIRST, then the free
+## boot: stepped free-boot-first, the free boot's stance spot (the guard's 0.4 m stagger) sat right beside
+## the still-planted pivot boot, 10 cm ahead and 4.5 cm across on a 7 deg uphill turn (boots overlapping;
+## bot `heroturnup`; 0.054 m on the flat). SETTLE_SWAP_OLD: before
+static var SETTLE_SWAP_OLD := OS.has_environment("SETTLE_SWAP_OLD")
+var _settle_swap := false
+const SWAP_TRAVEL_FROM := 0.2    # share of the swapped free step's time at each end spent lifting / setting down in place
+const SWAP_LIFT_MIN := 2.5       # skeleton units: the swapped free step clears the turf by at least this
 const PIVOT_CROSS_MIN := 0.5     # share of the idle stance width the stepping ankle keeps out from the planted one
 var uncross_peak := 0.0          # (bots) most the stepping boot was held out, in stance widths
 var uncross := false             # set by the owner: the hero (the foes tap their boot down with it, bot foeturn size 2.2)
@@ -686,6 +694,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_arc_v = -1.0
 		_settle_t = 0.0
 		_settle_at = null
+		_settle_swap = false
 		_settle_b0 = null
 		settle_done = false
 		settle_pin_world = false
@@ -813,7 +822,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	# the settle's second step (11-06): once the stepping boot is down in its stance spot, the
 	# pivot foot itself steps into its own, so the turn ends square in the idle stance and the
 	# release hands both feet to the clip where it stands them (they slid up to ~0.4 m before)
-	if pivot_settle and _stance_ok and not PIVOT_HOVER and _settle_t > STEP_SETTLE_T:
+	var b_t0 := 0.0 if _settle_swap else STEP_SETTLE_T
+	if pivot_settle and _stance_ok and not PIVOT_HOVER and _settle_t > b_t0:
 		if _settle_b0 == null:
 			_settle_b0 = pivot_pin
 		var b0: Vector3 = inv * (_settle_b0 as Vector3)
@@ -822,7 +832,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			bg = inv * (_settle_bgoal_w as Vector3)
 		var bd: Vector3 = bg - b0
 		bd -= up * bd.dot(up)
-		var ub := clampf((_settle_t - STEP_SETTLE_T) / STEP_SETTLE_T, 0.0, 1.0)
+		var ub := clampf((_settle_t - b_t0) / STEP_SETTLE_T, 0.0, 1.0)
 		if bd.length() < STEP_SETTLE_MIN:
 			ub = 1.0 if bd.length() < 1e-3 else ub
 		var ubt := clampf(ub / settle_travel_end, 0.0, 1.0)
@@ -842,7 +852,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				pivot_pin = (pivot_pin as Vector3) + Vector3.UP * (tg - _pin_gy) * eb
 		if settle_pin_world and _settle_bgoal_w == null and (ubt >= 1.0 or (ub >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 			_settle_bgoal_w = xf * (b0 + bd)
-		if ub >= 1.0:
+		if ub >= 1.0 and (not _settle_swap or _settle_t >= STEP_SETTLE_T * 2.0):
 			settle_done = true
 	var keep := skel.get_bone_global_pose(ft).basis
 	var keep_clip := keep.orthonormalized()
@@ -1151,6 +1161,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					var sh: Vector3 = _shown_prev[1 - pivot_side]
 					_settle_at = Vector3(sh.x, (_settle_at as Vector3).y, sh.z)
 				_stop_from_shown = false
+				# (the hero's turns only: `uncross`; a stop keeps its own order)
+				_settle_swap = not SETTLE_SWAP_OLD and settle_lift_k == 1.0 and _stance_ok and uncross
 			_settle_t += delta / settle_time_k
 			var from: Vector3 = inv * (_settle_at as Vector3)
 			var goal := from
@@ -1165,8 +1177,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				settle_reach = 0.0
 			if PIVOT_DBG:
 				print("  settle t %.2f reach %.2f from %s goal %s pin %s stance %s %s" % [_settle_t, settle_reach, from, goal, inv * (pivot_pin as Vector3), _stance[0], _stance[1]])
-			var u := clampf(_settle_t / STEP_SETTLE_T, 0.0, 1.0)
+			var u := clampf((_settle_t - (STEP_SETTLE_T if _settle_swap else 0.0)) / STEP_SETTLE_T, 0.0, 1.0)
 			var ut := clampf(u / settle_travel_end, 0.0, 1.0)
+			if _settle_swap:
+				# stepped from the turf (not out of the turn's arc), it travels only while clear of it
+				ut = clampf((u - SWAP_TRAVEL_FROM) / (1.0 - 2.0 * SWAP_TRAVEL_FROM), 0.0, 1.0)
 			var e := ut * ut * (3.0 - 2.0 * ut)
 			var tgt := from + gd * e
 			if settle_pin_world and _settle_goal_w == null and (ut >= 1.0 or (u >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
@@ -1181,6 +1196,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
 			if settle_lift_k != 1.0 and settle_reach > 0.0:
 				clear = maxf(clear, settle_lift(u) * stop_lift_min)
+			if _settle_swap and gd.length() > 0.5:
+				clear = maxf(clear, settle_lift(u) * SWAP_LIFT_MIN)
 			if settle_lift_k != 1.0 and _stance_ok and not SETTLE_FLOOR_OLD:
 				# (11-13 17:00) a stop's step clears the turf from the IDLE ankle level: the walk clip
 				# carries its lower ankle ~3 cm/size under it (the ankle floor lifts the planted boot back
@@ -1261,7 +1278,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		# 1.45 cm out and then pushed it back over the turf as the pivot boot stepped (bot `heroturn`
 		# scuff 0.018 m, once the pivot foot was planted from the turn's first tick). UNCROSS_CHASE_OLD: before
 		# The line moves over the first settle step while that boot is in the air, so it lands once.
-		if pivot_settle and not PIVOT_HOVER and not UNCROSS_CHASE_OLD:
+		if pivot_settle and not PIVOT_HOVER and not UNCROSS_CHASE_OLD and not _settle_swap:
 			var pg: Vector3 = inv * (_settle_bgoal_w as Vector3) if _settle_bgoal_w != null else inv * (_settle_ref(xf) * (_stance[pivot_side] as Vector3))
 			var ug := clampf(_settle_t / STEP_SETTLE_T, 0.0, 1.0)
 			pa = pa.lerp(pg, ug * ug * (3.0 - 2.0 * ug))
