@@ -3465,6 +3465,10 @@ func _ready() -> void:
 				if "lensfix" in args:
 					lsz = rk.growth.scale_of(from_ph + 1)
 				var ldir := Vector3(sp.x - kp.x, 0, sp.z - kp.z).normalized()
+				if "legback" in args:
+					# (02:00 11-17) the same line through the knight to its other side: the rear
+					# lens, for the back panel and the trailing calf
+					ldir = -ldir
 				var lp := kp + ldir * 1.5 * lsz
 				lp.y = terrain.height_at(lp.x, lp.z) + 0.3 * lsz
 				cam.global_position = lp

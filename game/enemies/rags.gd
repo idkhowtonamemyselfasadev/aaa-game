@@ -821,7 +821,10 @@ func _drape_panels(bwd: float, k: float) -> void:
 	# coming down from a leap the air under it still flares it out
 	target = maxf(target, fall * 0.55)
 	_swing_f = lerpf(_swing_f, clampf(target, 0.0, 0.9), k)
-	_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)
+	if BACKDRAPE_OLD:
+		_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)
+	else:
+		_drape_back(bwd, k)
 	var ff := Vector2(1000.0, 0.0)
 	if kd < fl - 0.02 and _swing_f > 0.03:
 		ff = Vector2(kd, _swing_f - fall * 0.5)
@@ -832,6 +835,71 @@ func _drape_panels(bwd: float, k: float) -> void:
 	var mat := (_front.get_child(0) as MeshInstance3D).material_override
 	mat.set_shader_parameter("fold", fold_front)
 	mat.set_shader_parameter("fold2", Vector2(1000.0, 0.0))
+
+## (02:00 11-17) The back panel over the rear leg: in the growth kneel the kneeling leg's shin
+## lies back along the turf and its heel stood up to 0.45 m per size behind the plumb-hanging
+## panel (the thigh points forward, so the thigh-angle swing stayed 0): the calf and heel went
+## straight through the cloth (so the bot first read it; the heel is out past the panel's edge,
+## 0.37 per size off its centre line, so it passes beside it). Now the panel lies back over the
+## furthest-back part of either shin that is within its reach AND behind it (+ BACKDRAPE_PAD of
+## calf), then falls plumb from it, or lies back along the
+## turf when what is left is longer than the heel is high. BACKDRAPE_OLD=1: before.
+const BACKDRAPE_PAD := 0.12
+const BACKDRAPE_LEG_R := 0.08   # the shin's half-thickness past the panel's edge (rest units)
+var BACKDRAPE_OLD := OS.get_environment("BACKDRAPE_OLD") == "1"
+func _drape_back(bwd: float, k: float) -> void:
+	var fr := _pivot_frame(_back)
+	var down: Vector3 = fr[0]
+	var bz: Vector3 = -fr[1]
+	var up := -down
+	var sy := _back.global_basis.y.length()
+	var bl: float = _back.get_meta("len", 1.0)
+	var o := _back.global_position
+	var target := minf(bwd * 1.1, 0.7)
+	var kd := 1000.0
+	var ground := INF
+	var side := down.cross(-bz).normalized()
+	var half_w: float = float(_back.get_meta("w1", 0.4)) * 0.5 + BACKDRAPE_LEG_R
+	for leg in _legs:
+		ground = minf(ground, _joint(leg[2]).dot(up) - 0.07 * sy)
+		# along the shin, knee to heel: the cloth clears every part of it within its reach
+		var kn := _joint(leg[1])
+		var an := _joint(leg[2])
+		for j in 6:
+			var d := kn.lerp(an, j / 5.0) + bz * BACKDRAPE_PAD * sy - o
+			if d.dot(down) <= 0.0 or d.length() / sy > bl + BACKDRAPE_PAD:
+				continue   # above the seam or past the hem: the cloth does not reach it
+			if absf(d.dot(side)) / sy > half_w:
+				continue   # out beside the panel's edge (the kneeling heel: 0.37 per size out)
+			var a := atan2(d.dot(bz), d.dot(down))
+			if a > target:
+				target = a
+				kd = d.length() / sy
+	target = minf(target, 1.3)
+	_swing_b = lerpf(_swing_b, target, k)
+	var fb := Vector2(1000.0, 0.0)
+	if kd < bl - 0.02 and _swing_b > 0.05:
+		# the rest falls plumb from the heel (a back fold is negative toward plumb), unless it is
+		# longer than the heel is high: then it lies back along the turf from the crease
+		var pt := o + (down * cos(_swing_b) + bz * sin(_swing_b)) * kd * sy
+		var hf := pt.dot(up) - ground
+		if (bl - kd) * sy > hf:
+			fb = Vector2(kd, PI * 0.5 - _swing_b - 0.08)
+		else:
+			fb = Vector2(kd, -_swing_b)
+	if fold_back.x > 100.0 or fb.x > 100.0:
+		fold_back = fb
+	else:
+		fold_back = fold_back.lerp(fb, k)
+	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
+
+## The back panel's crease point (world; the hem when it has none), for the bots.
+func back_crease_pt() -> Vector3:
+	var fr := _pivot_frame(_back)
+	var sy := _back.global_basis.y.length()
+	var bl: float = _back.get_meta("len", 1.0)
+	var d1: Vector3 = fr[0] * cos(_swing_b) - fr[1] * sin(_swing_b)
+	return _back.global_position + d1 * minf(fold_back.x, bl) * sy
 
 ## The front panel's hem point (world), with its knee fold, for the bots.
 func front_hem() -> Vector3:
@@ -846,6 +914,20 @@ func front_hem() -> Vector3:
 	var a2 := _swing_f - fold_front.y
 	var d2 := down * cos(a2) + fz * sin(a2)
 	return _front.global_position + d1 * fold_front.x * sy + d2 * (fl - fold_front.x) * sy
+
+## The back panel's hem point (world), with its fold, for the bots.
+func back_hem_pt() -> Vector3:
+	var fr := _pivot_frame(_back)
+	var down: Vector3 = fr[0]
+	var bz: Vector3 = -fr[1]
+	var sy := _back.global_basis.y.length()
+	var bl: float = _back.get_meta("len", 1.0)
+	var d1 := down * cos(_swing_b) + bz * sin(_swing_b)
+	if fold_back.x >= bl:
+		return _back.global_position + d1 * bl * sy
+	var a2 := _swing_b + fold_back.y   # a back fold is + further back, - toward plumb
+	var d2 := down * cos(a2) + bz * sin(a2)
+	return _back.global_position + d1 * fold_back.x * sy + d2 * (bl - fold_back.x) * sy
 
 var KNEEFOLD_OFF := OS.has_environment("KNEEFOLD_OFF")   # the old flat board in the tuck (before)
 

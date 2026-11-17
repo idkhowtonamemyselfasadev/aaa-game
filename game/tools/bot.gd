@@ -2300,6 +2300,9 @@ func _surge_turn_test() -> void:
 		var kh0 := 0.0
 		var hem_jut := -INF
 		var hem_in := INF
+		var back_jut := -INF
+		var back_in := INF
+		var back_poke := -INF
 		for i in 400:
 			await get_tree().physics_frame
 			await k.skel.skeleton_updated
@@ -2321,8 +2324,39 @@ func _surge_turn_test() -> void:
 			var jut := ((hem - k.global_position).dot(bz) - kfront) / k.size_scale
 			hem_jut = maxf(hem_jut, jut)
 			hem_in = minf(hem_in, jut)
+			# the back panel's hem against the rearmost calf's back (behind = +): out past it = a board
+			var bhem: Vector3 = k.rags.back_hem_pt()
+			var kback := -INF
+			for lb in ["mixamorig_LeftLeg", "mixamorig_RightLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+				kback = maxf(kback, -(k.rags._joint(k.skel.find_bone(lb)) - k.global_position).dot(bz))
+			var bjut := (-(bhem - k.global_position).dot(bz) - kback) / k.size_scale
+			back_jut = maxf(back_jut, bjut)
+			# a leg through the back panel: a knee/ankle behind the seam-to-hem line at its height
+			var bseam: Vector3 = k.rags._back.global_position
+			var bcr: Vector3 = k.rags.back_crease_pt()
+			for lb in ["mixamorig_LeftLeg", "mixamorig_RightLeg", "mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+				var jp: Vector3 = k.rags._joint(k.skel.find_bone(lb))
+				# the cloth's line: seam -> crease -> hem; the segment spanning the joint's height
+				var seg := [bseam, bcr] if jp.y >= bcr.y else [bcr, bhem]
+				var a0: Vector3 = seg[0]
+				var a1: Vector3 = seg[1]
+				var t := (a0.y - jp.y) / (a0.y - a1.y) if absf(a0.y - a1.y) > 0.01 else -1.0
+				var pfr: Array = k.rags._pivot_frame(k.rags._back)
+				var lat := absf((jp - bseam).dot((pfr[0] as Vector3).cross(pfr[1]).normalized())) / k.rags._back.global_basis.y.length()
+				var half_w: float = float(k.rags._back.get_meta("w1", 0.4)) * 0.5 + 0.08
+				if t > 0.0 and t < 1.0 and lat < half_w:
+					var poke := (-(jp - a0.lerp(a1, t)).dot(bz)) / k.size_scale
+					back_poke = maxf(back_poke, poke)
+					if OS.has_environment("SURGEPANEL_DBG") and poke > 0.0 and lb.ends_with("Foot"):
+						var bl: float = k.rags._back.get_meta("len", 1.0)
+						var pf: Array = k.rags._pivot_frame(k.rags._back)
+						var dd: Vector3 = jp - bseam
+						print("  BR reach %.3f / len %.3f angle %.2f swing %.2f fold %.2f@%.2f crease y %.2f foot y %.2f hem y %.2f side %.2f" % [dd.length() / k.rags._back.global_basis.y.length(), bl, atan2(dd.dot(-pf[1]), dd.dot(pf[0])), k.rags._swing_b, k.rags.fold_back.y, k.rags.fold_back.x, bcr.y, jp.y, bhem.y, dd.dot((pf[0] as Vector3).cross(pf[1]).normalized()) / k.size_scale])
+					if OS.has_environment("SURGEPANEL_DBG") and poke > 0.0:
+						print("  BP s %.2f %s poke %.3f t %.2f swing_b %.2f" % [s, lb, poke, t, k.rags._swing_b])
+			back_in = minf(back_in, bjut)
 			if OS.has_environment("SURGEPANEL_DBG"):
-				print("  SH s %.2f hem jut %.3f" % [s, jut])
+				print("  SH s %.2f hem jut %.3f back jut %.3f" % [s, jut, bjut])
 			if OS.has_environment("SURGEPANEL_DBG"):
 				print("  SP s %.2f swing_f %.2f swing_b %.2f hang %.2f knee_fold %s fold %.2f@%.2f" % [s, k.rags._swing_f, k.rags._swing_b, k.rags.hang, k.rags.knee_fold, k.rags.fold_front.y, k.rags.fold_front.x])
 			if s > AshenKnight.SURGE_BLAST + 0.05 and s < AshenKnight.SURGE_T - 0.5:
@@ -2349,12 +2383,17 @@ func _surge_turn_test() -> void:
 					print("  SB s %.2f boot (%.3f, %.3f) yaw %.3f size %.2f short %.3f" % [s, fw.x, fw.z, k.body.rotation.y, k.size_scale, k.tuck.short])
 		p.set_physics_process(true)
 		print("BOT surgeturn: phase %d front panel hem vs the forward knee's front: out up to %.3f, in down to %.3f m per size" % [ph, hem_jut, hem_in])
+		print("BOT surgeturn: phase %d back panel hem vs the rear calf/heel's back: out up to %.3f, in down to %.3f m per size; a leg joint behind the cloth line up to %.3f m per size" % [ph, back_jut, back_in, back_poke])
 		if fail == "" and OS.get_environment("PANELDRAPE_OLD") != "1":
 			# board pitched to the thigh (PANELDRAPE_OLD): 0.281 / 0.278; draped: 0.081 / 0.082.
 			# (`in` is not gated: in the kneel the knee is past the panel's reach and it lies along
 			# the thigh short of it, -0.30 in both builds)
 			if hem_jut > 0.15:
 				fail = "surge into phase %d: the surcoat's front panel jutted %.3f m per size out past the knee" % [ph, hem_jut]
+			# a shin through the back panel (BACKDRAPE_OLD: the right knee 0.022 / 0.030 behind the
+			# cloth line; draped over it: -0.059 / -0.018)
+			elif back_poke > 0.0 and OS.get_environment("BACKDRAPE_OLD") != "1":
+				fail = "surge into phase %d: the rear shin stood %.3f m per size through the surcoat's back panel" % [ph, back_poke]
 		print("BOT surgeturn: phase %d (size %.2f) facing error %.0f deg at the blow -> %.0f deg at the settle, turned %.0f deg; left boot drift over the turn %.3f m per size; right knee skid on the turf %.3f m per size (knee up to %.2f per size)" % [ph, ks, rad_to_deg(err0), rad_to_deg(err1), rad_to_deg(k.surge_turned), drift / ks, kskid, kmaxh])
 		if fail == "" and OS.get_environment("SURGETURN_OLD") != "1":
 			if err0 - err1 < deg_to_rad(50.0):

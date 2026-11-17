@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261113-2000-soldier-walkin-seq.jpg",
-  "time": "2026-11-13T20:40:00Z",
-  "caption": "Frames 50/58/62/72: the soldier walks, stops and draws its thrust; the boots take one settle step then hold still, but the hood crown reads as a stiff cylinder and the ground under the hidden grass is a flat straw texture.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-2000-soldier-windup-front.jpg",
-  "time": "2026-11-13T20:40:00Z",
-  "caption": "A Hollow Soldier that walked in opens its thrust wind-up in the meadow grass (backlit, hour 10): drawn pose and lit chest embers read, but the foe is nearly a silhouette and the foreground blades are too broad.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-2100-soldier-hood-back.jpg",
   "time": "2026-11-13T21:55:00Z",
   "caption": "The hood from behind and above: a rounded crown widening steadily to the shoulders (it was a flat-lidded pail); still a too-regular bell over a mantle that reads as a pleated skirt shelf.",
@@ -885,6 +873,18 @@
   "file": "20261117-0100-panel-draped.jpg",
   "time": "2026-11-17T01:00:00Z",
   "caption": "Phase-2 boss after the growth beside the hero, surcoat panel now draped over the knee instead of a diagonal strip; the hero reads small and crouched at the left, trees soft in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-0200-backpanel-before-after.jpg",
+  "time": "2026-11-17T02:00:00Z",
+  "caption": "The boss in its growth kneel from behind, before (left) vs after (right): the back surcoat panel hangs between the legs and the kneeling boot passes beside it; the bot-measured knee poke through the cloth (~0.2 s) is gone, but the frames look alike and the low lens crops the panel.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-0200-backpanel-kneel-rear.jpg",
+  "time": "2026-11-17T02:00:00Z",
+  "caption": "Rear leg lens a little later in the rise (st=56): heavy boots on the ash, the panel above frame; dust puffs read flat and the stones are soft in GL.",
   "verdict": "fail"
  }
 ]
