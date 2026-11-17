@@ -3216,6 +3216,12 @@ func _ready() -> void:
 		rk.face(rk.global_position + rside * 5.0)
 		rk._prev_yaw = rk.body.rotation.y
 		rk.bot_face = rf
+		for a in args:
+			if a.begins_with("hold="):
+				# (11-17 11:00) hold=N: stand still N rendered frames (auto exposure settles, ~40) and only
+				# then start the turn, so frame N + k shows the turn k frames in, correctly exposed
+				rk.bot_face = Vector3.ZERO
+				get_tree().create_timer(float(a.substr(5)) / 30.0, true, true).timeout.connect(func(): rk.bot_face = rf)
 		var sc := rr.centre + rf * (3.0 + 2.2 * sz) + rside * 1.2 * sz
 		sc.y = terrain.height_at(sc.x, sc.z) + 0.2 * sz
 		cam.global_position = sc

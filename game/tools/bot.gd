@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -232,6 +232,11 @@ func _ready() -> void:
 	if name == "heroturn" or name == "heroturnl":
 		_turn_left = name == "heroturnl" or OS.has_environment("HEROTURN_FLIP")
 		_hero_turn_test()
+		return
+	# (11-17 11:00) the hero's turn on the spot on a 7 deg hillside slab: facing up, down and across
+	if name in HEROTURN_SLOPES:
+		_turn_left = OS.has_environment("HEROTURN_FLIP")
+		_hero_turn_test(HEROTURN_SLOPES[name])
 		return
 	if name == "hands":
 		_hands_test()
@@ -2585,13 +2590,37 @@ const PRE_CARRY_MAX_HERO := 0.003  # (11-15 14:00) m a ball may slide before the
 const GATHER_PEAK_MAX := 2.8      # (11-15 21:00) m/s the gather step's boot may reach (0.16 s step: 3.71)
 const PIVOT_DRAG_MAX_HERO := 0.012 # (11-15 14:00) m the pivot ball may travel within 1 cm of the turf (gather landing 0.053 -> 0.004)
 var _hturn_drag: Array = []
-func _hero_turn_test() -> void:
+const HEROTURN_SLOPES := {"heroturnup": "7", "heroturndown": "-7", "heroturncross": "0,7"}
+func _hero_turn_test(slope_preset := "") -> void:
 	var p := _player
 	Engine.time_scale = 1.0
 	await _ticks(30)
 	p.global_position += Vector3(3.0, 0, -6.0)    # clear of the practice post
 	p.velocity = Vector3.ZERO
 	await _ticks(40)
+	# (11-17 11:00) HEROTURN_SLOPE=<deg along>[,<deg across>] (or a heroturnup/down/cross route): the turn on
+	# the spot on a sloped slab laid under the hero along the way it first faces (as `foeturn`); the run
+	# turn after it is not read (the route ends once the on-the-spot gates pass)
+	var slope := (slope_preset if slope_preset != "" else OS.get_environment("HEROTURN_SLOPE")).split(",")
+	var s_t := float(slope[0]) if slope[0] != "" else 0.0
+	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
+	var slab: StaticBody3D = null
+	if s_t != 0.0 or s_r != 0.0:
+		var post0: Node3D = null
+		for t in get_tree().get_nodes_in_group("hittable"):
+			if not t.is_in_group("enemy") and p._lockable(t) and (post0 == null or t.global_position.distance_to(p.global_position) < post0.global_position.distance_to(p.global_position)):
+				post0 = t
+		var sfwd := Vector3(0, 0, 1)
+		if post0 != null:
+			var to0 := post0.global_position - p.global_position
+			var yaw0 := atan2(to0.x, to0.z) + PI + (0.3 if _turn_left else -0.3)
+			sfwd = Vector3(sin(yaw0), 0, cos(yaw0))
+		p.global_position -= sfwd * 3.0
+		slab = _flat_slab(p, sfwd, 1.0, 6.0, s_t, s_r)
+		p.global_position += sfwd * 3.0
+		p.global_position.y += sin(deg_to_rad(s_t)) * 3.0 + 0.05
+		await _ticks(60)
+		print("BOT heroturn slope %s: hero at y %.2f, on floor %s" % [",".join(slope), p.global_position.y, p.is_on_floor()])
 	var skel := p.model.find_child("Skeleton3D", true, false) as Skeleton3D
 	var hb := skel.find_bone("mixamorig_Head")
 	var head_local := func() -> float:
@@ -2830,6 +2859,10 @@ func _hero_turn_test() -> void:
 	if not StrideWarp.HIPSOVER_OLD and _tf_pin_cross < (-0.07 if StrideWarp.GATHER_OLD else -0.02):
 		return _combat_done(false, "the planted ankle crosses %.3f m under the body in a turn on the spot" % -_tf_pin_cross)
 	var step_rest: float = _tf_knee_rest_lr[1 - int(spot_piv[3])]
+	if slab != null:
+		# (11-17 11:00) on a hillside the two guard knees rest at different bends by the slope alone (facing
+		# downhill the stepping leg rests at 40 deg, the other at 60): the step may fold to the deeper one
+		step_rest = maxf(step_rest, _tf_knee_rest)
 	print("BOT heroturn: turning %s, the stepping %s knee folds %.1f deg past its own guard bend (%.1f), %.1f past the deeper guard knee" % ["left" if _turn_left else "right", "right" if spot_piv[3] == 0 else "left", _tf_knee_peak[0] - step_rest, step_rest, _tf_knee_peak[0] - _tf_knee_rest])
 	# (11-12 15:00) the left turn's stepping (rear guard) knee folded 20 deg past its own guard bend: the
 	# boot hit the 6.5 cm lift cap and the hips sank 2.4 cm under the guard height over the pin
@@ -2864,6 +2897,9 @@ func _hero_turn_test() -> void:
 		return _combat_done(false, "the body comes round with the head in a turn on the spot (%.3f rad turned when the lead passes 0.5)" % _ease_spot[0])
 	print("BOT heroturn: on the spot lead %.2f rad, head up to %.2f rad nearer the post than the body, head in at tick %d, body at %d, after %.4f" % [spot[0], spot[1], spot[2], spot[3], spot_after])
 	# 2) a hard right turn at a run
+	if slab != null:
+		slab.queue_free()
+		return _combat_done(true, "the hero's turn on the spot holds on a %s deg hillside" % ",".join(slope))
 	for i in 70:
 		p.bot_input = Vector2(0, -1)
 		await get_tree().physics_frame
@@ -4017,7 +4053,7 @@ func _start_test() -> void:
 	_combat_done(true, "a hard push from rest drives off one leg, toes on the turf and heel up, the other knee thrown ahead; the run clip takes over in step; a walk eases off")
 
 func _combat_done(ok: bool, why: String) -> void:
-	if _bot_name in ["heroflat", "herostop", "herostopup", "herostopdown", "herostopcross", "stop", "jump", "start", "heroturn", "heroturnl", "stepup"]:
+	if _bot_name in ["heroflat", "herostop", "herostopup", "herostopdown", "herostopcross", "stop", "jump", "start", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "stepup"]:
 		# a hero boot tipped toes-up more than ~11 deg, or for over a quarter second, reads as a toe-up landing
 		print("BOT toepitch: %s hero boot toe tip on the floor peak %.3f rad (in the air %.3f), on a climbing boot %.3f rad, %d of %d ticks over 0.1 rad, longest run %d, fastest growth %.3f / fall %.3f rad a tick; ball ground over the ankle's at the peak %+.3f m; tip on a tread edge (> 6 cm) %.3f rad, %d ticks" % [_bot_name, _tp.peak, _tp.air_peak, _tp.rise_peak, _tp.over, _tp.ticks, _tp.best_run, _tp.grow, _tp.fall, _tp.peak_step, _tp.edge_peak, _tp.edge_ticks])
 		# the landing tip (heel strike, toes up to 0.35 rad) is fine for a few ticks; on a push-off it flicks the toes
