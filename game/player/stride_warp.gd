@@ -486,6 +486,8 @@ var _aloft_held := 0.0
 ## is set down slow, a cubic tail into the turf (11-06 07:00: the symmetric sin squared tapped the
 ## soldier's boot down 0.33 cm a tick over its last cm; the hero's was never gated). SETTLE_SYMMETRIC: the before
 static var SETTLE_SYMMETRIC := OS.has_environment("SETTLE_SYMMETRIC")
+static var SHORTSETTLE_OLD := OS.has_environment("SHORTSETTLE_OLD")
+var SETTLE_SHORT_LIFT := float(OS.get_environment("SETTLE_SHORT_LIFT")) if OS.has_environment("SETTLE_SHORT_LIFT") else 1.0  # skeleton units
 const SETTLE_PEAK_U := 0.35
 static var SETTLE_LIFT_ADD := OS.has_environment("SETTLE_LIFT_ADD")
 const STEP_SETTLE_EASE_K := 6.5  # 1/s at size 1: a settle step's last STEP_EASE_H closes this share per second, / sqrt(size): a giant sets its boot down slower (its ground feet add their own drop)
@@ -1179,6 +1181,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var gd := goal - from
 			gd -= up * gd.dot(up)
 			settle_reach = gd.length()
+			var gd_len := settle_reach
 			if settle_reach < STEP_SETTLE_MIN:
 				settle_reach = 0.0
 			if PIVOT_DBG:
@@ -1200,6 +1203,12 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# clears it (11-06 07:00: added on top, the giant knight's boot rose 1.5 -> 2.0 cm/size again
 			# mid-descent, a second hump). SETTLE_LIFT_ADD: the before
 			var clear := settle_lift(u) * minf(settle_reach * STEP_SETTLE_LIFT * settle_lift_k, STEP_SETTLE_LIFT_MAX * settle_lift_k)
+			if not SHORTSETTLE_OLD:
+				# (11-17 16:00) a short step (under STEP_SETTLE_MIN, so its reach read 0) still travels its way,
+				# so it is lifted too, and every step clears at least SETTLE_SHORT_LIFT once it travels that far:
+				# with no lift the boot was carried ~1.4 cm a tick along the turf at the final-size boss and crept
+				# on for 20 ticks (bot `foeturn` x4.6 scuff 0.019 per size). SHORTSETTLE_OLD: before
+				clear = maxf(clear, settle_lift(u) * SETTLE_SHORT_LIFT * minf(gd_len / STEP_SETTLE_MIN, 1.0) * settle_lift_k)
 			if settle_lift_k != 1.0 and settle_reach > 0.0:
 				clear = maxf(clear, settle_lift(u) * stop_lift_min)
 			if _settle_swap and gd.length() > 0.5:

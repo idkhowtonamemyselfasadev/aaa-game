@@ -3531,6 +3531,7 @@ func _foe_feet_track(skel: Skeleton3D, sw: StrideWarp, sc: float) -> void:
 				print("   slide foot %d %.4f pivot %.3f settle %s" % [j, Vector2(a.x - b.x, a.z - b.z).length() / sc, sw.pivot, sw.settle_done])
 	_ff_prev = now
 
+const FOETURN_SCUFF_MAX := 0.015  # (11-17 16:00) per size: the stepping boot's travel over the turf while down
 const FOETURN_SLOPES := {"foeturnup": "7", "foeturndown": "-7", "foeturncross": "0,7"}
 func _foe_turn_test(slope_preset := "") -> void:
 	Engine.time_scale = 1.0
@@ -3633,6 +3634,7 @@ func _foe_turn_test(slope_preset := "") -> void:
 		var pre_done := false
 		var ease_hb := [0.0, 0.0, 0.0, 0.0]          # (11-15 15:00) head / body turned at 0.1 s and 0.2 s (natural time, / cadence)
 		var tick_hz := float(Engine.physics_ticks_per_second)
+		var fscuff := [null, 0.0]              # (11-17 16:00) prev free-ankle spot while down, scuffed travel per size
 		for i in 75:
 			await get_tree().physics_frame
 			# the lift is read on the final pose (after StrideWarp's pivot pin and ground feet), each foot
@@ -3680,6 +3682,20 @@ func _foe_turn_test(slope_preset := "") -> void:
 				lifted += 1
 			if up == 2:
 				both_up += 1
+			# (11-17 16:00) the stepping boot's travel over the turf while it is down (the hero's uphill turn
+			# dragged it 0.377 m before 15:00's arc fix; the same arc code steps the foes)
+			if post and e.stride_warp.pivot > 0.5:
+				var fsd: int = 1 - e.stride_warp.pivot_side
+				var fhd: float = (float(e.stride_warp.ground_sole[fsd]) - rest[fsd]) / sc
+				var fpd := skel.global_transform * skel.get_bone_global_pose(fi[fsd]).origin
+				if fhd > 0.003:
+					fscuff[0] = null
+				else:
+					if fscuff[0] != null:
+						fscuff[1] = float(fscuff[1]) + Vector2(fpd.x - (fscuff[0] as Vector3).x, fpd.z - (fscuff[0] as Vector3).z).length() / sc
+						if OS.has_environment("FOETURN_SCUFF_DBG"):
+							print("   scuff i %d h %.4f +%.4f piv %.2f settle %s arc %.3f reach %.2f st %.3f other %s ank %s" % [i, fhd, Vector2(fpd.x - (fscuff[0] as Vector3).x, fpd.z - (fscuff[0] as Vector3).z).length() / sc, e.stride_warp.pivot, e.stride_warp.pivot_settle, e.stride_warp._arc_top, e.stride_warp.settle_reach, e.stride_warp._settle_t, e.stride_warp.pivot_other / sc, fpd / sc])
+					fscuff[0] = fpd
 			if post and not pre_done:
 				# (11-15 12:00) the turn's first eased ticks: both boots on the final pose until the pivot plants
 				# (until the pivot is fully in: both boots before it plants, then the pivot boot through its ramp-in)
@@ -3754,6 +3770,9 @@ func _foe_turn_test(slope_preset := "") -> void:
 			if free_h[m - 1] < 0.03 and free_h[m - 1] > 0.0005:
 				jerk = maxf(jerk, (free_h[m - 1] - free_h[m]) - maxf(free_h[m - 2] - free_h[m - 1], 0.0))
 		print("BOT foeturn: free boot arc dip %.3f per size over %d pivot ticks, set-down %.4f per size per tick, %.4f per size up as the pivot lets go, set-down jerk %.4f per size" % [dip, free_h.size(), tap, rel_h, jerk])
+		print("BOT foeturn: the stepping boot scuffs %.4f per size over the turf while down on the pivot" % float(fscuff[1]))
+		if float(fscuff[1]) > FOETURN_SCUFF_MAX:
+			return _combat_done(false, "size %.1f: the stepping boot drags %.3f per size along the turf in a turn on the spot" % [sc, float(fscuff[1])])
 		if OS.has_environment("FOETURN_DBG"):
 			print("   free boot: ", " ".join(free_h.map(func(x): return "%.1f" % (x * 100.0))))
 			print("   lift     : ", " ".join(free_l.map(func(x): return "%.1f" % (x * 100.0 / sc))))
