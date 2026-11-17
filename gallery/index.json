@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-0200-runstop-brake.jpg",
-  "time": "2026-11-14T02:40:00Z",
-  "caption": "The hero 0.15 s into a run stop: front boot struck, back boot behind on the turf; the lens is low and backlit, the head is cropped and the raised left hand reads as a wave, not a balance swing.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0200-runstop-settled.jpg",
-  "time": "2026-11-14T02:41:00Z",
-  "caption": "0.65 s after letting go of a run: the settle has stepped both boots flat into the idle stance with no skate, but the frame is backlit, the legs are dark and the head is cut off by the lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0300-runstop-brake.jpg",
   "time": "2026-11-14T03:00:00Z",
   "caption": "The hero braking from a run, sunlit side-on: front boot struck and pinned on the turf, back boot on its ball, the balance hand forward at chest height; the hand still reads a little high and the legs dark under the tabard.",
@@ -897,6 +885,18 @@
   "file": "20261117-1300-turnsettle-left.jpg",
   "time": "2026-11-17T13:00:00Z",
   "caption": "Left turn settle ticks 30-72 with the new order: the right boot steps wide over ticks 42-54 then holds, no slide; boot-scale lens only, dark turf.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-1400-turn-lit-left.jpg",
+  "time": "2026-11-17T14:00:00Z",
+  "caption": "Hero's left turn on the spot, ticks 0-72 every 8, front-lit at 11:00: head leads at tick 8, chest by 16, square by 32, boots planted apart and still from 56 on; the hero stands on a dark trampled patch so sole contact reads only from the lit boot tops.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261117-1400-turn-lit-right.jpg",
+  "time": "2026-11-17T14:00:00Z",
+  "caption": "Right turn on the spot at tick 40, sun-side wide lens: the settle steps wide and holds; grass and the hero are lit but the turf under the boots is dark and the trees read soft in GL.",
   "verdict": "fail"
  }
 ]

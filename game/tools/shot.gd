@@ -4363,6 +4363,13 @@ func _ready() -> void:
 			# (11-15 21:00) "side": square to the hero's starting flank (the boots read apart across the body)
 			var sa := (PI * 0.5 if "side" in args else 0.9) * (1.0 if left else -1.0)
 			var side := Vector3(sin(yaw0 + sa), 0, cos(yaw0 + sa))
+			if "sunside" in args:
+				# (11-17 14:00) the lens on whichever flank faces the sun, so the boots stand lit
+				var to_sun: Vector3 = world.sun.global_basis.z
+				if Vector2(side.x, side.z).dot(Vector2(to_sun.x, to_sun.z)) < 0.0:
+					side = -side
+				if nseq == 0:
+					print("SHOT spin sunside side %s to_sun %s" % [side, to_sun])
 			var cpos := c0 + side * (3.2 if wide else 1.7) + Vector3.UP * (1.3 if wide else 0.45)
 			cpos.y = maxf(cpos.y, terrain.height_at(cpos.x, cpos.z) + 0.25)
 			cam.global_position = cpos
