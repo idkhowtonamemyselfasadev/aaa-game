@@ -555,6 +555,25 @@ static var STOPGATHER_OLD := OS.has_environment("STOPGATHER_OLD")
 static var STOPPICK_SHOWN_OLD := OS.has_environment("STOPPICK_SHOWN_OLD")
 static var STOPPIN_FLOOR_OLD := OS.has_environment("STOPPIN_FLOOR_OLD")
 static var STOPPIN_GROUND_OLD := OS.has_environment("STOPPIN_GROUND_OLD")   # (11-17 05:00) a stop pin's height counted the ground IK's lift twice on slopes (before)
+## (11-17 06:00) a stop's pin stands ABSOLUTE in the world: its turf is read straight under the pin (not
+## under the clip's ankle, which a jog/run stop's posed legs hold up to 0.4 m away: on a 7 deg hillside
+## that put the pin 5 cm over the turf), the ground IK's lift is kept off the pinned share of the boot
+## (it ramps in late after a run stop, which raised the pin by it), and the boot's own settle step
+## follows the turf to its stance spot. STOPPIN_ABS_OLD=1: before (bot `herostop` HEROSTOP_SLOPE=7)
+static var STOPPIN_ABS_OLD := OS.has_environment("STOPPIN_ABS_OLD")
+var _pin_abs := false
+var _pin_gy := -INF
+func _turf_y(p: Vector3, sc: float) -> float:
+	if ground_body == null or not ground_body.is_inside_tree():
+		return -INF
+	var excl: Array[RID] = []
+	if ground_body is CollisionObject3D:
+		excl.append((ground_body as CollisionObject3D).get_rid())
+	var q := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.8 * sc, p - Vector3.UP * 1.2 * sc, 1, excl)
+	var hit := ground_body.get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty() or (hit.normal as Vector3).y < 0.5:
+		return -INF
+	return (hit.position as Vector3).y
 var _idle_ank_h := 0.0             # (11-14) world m: the idle ankle over the turf (hero)
 ## (11-14 07:00) a stop's pinned boot holds its WORLD orientation while it is planted: only the ankle
 ## was pinned and the boot kept turning with the clip, so its ball crept 0.5-1 cm a tick and the
@@ -586,6 +605,15 @@ func begin_stop_settle(skel: Skeleton3D, time_k := 1.0) -> bool:
 		var sc0 := maxf(skel.global_transform.basis.get_scale().y, 1e-4)
 		var g0: float = float(_ank_gy[0]) if float(_ank_gy[0]) > -1e9 else minf((_shown_prev[0] as Vector3).y, (_shown_prev[1] as Vector3).y)
 		var g1: float = float(_ank_gy[1]) if float(_ank_gy[1]) > -1e9 else minf((_shown_prev[0] as Vector3).y, (_shown_prev[1] as Vector3).y)
+		if not STOPPIN_ABS_OLD:
+			# (11-17 06:00) the turf under each SHOWN boot, not under the clip's ankle: after a run stop on a
+			# 7 deg hillside the posed legs stand the clip ankles far off the shown boots and the boot held
+			# 12.6 cm up read as the lower one; it was pinned and dropped onto the turf in a tick (12.5 cm)
+			var t0 := _turf_y(_shown_prev[0] as Vector3, ground_scale)
+			var t1 := _turf_y(_shown_prev[1] as Vector3, ground_scale)
+			if t0 > -INF and t1 > -INF:
+				g0 = t0
+				g1 = t1
 		hl = ((_shown_prev[0] as Vector3).y - g0) / sc0
 		hr = ((_shown_prev[1] as Vector3).y - g1) / sc0
 	pivot_side = 0 if hl <= hr else 1
@@ -672,6 +700,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		pivot_hips_short = 0.0
 		_gather_off = Vector3.ZERO
 		_gather_t = 0.0
+		_pin_abs = false
 		if stance_idle:
 			for i in 2:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
@@ -698,6 +727,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var up := (frame.inverse() * Vector3.UP).normalized()
 	var fwd := (frame.inverse() * Vector3.BACK).normalized()
 	if pivot_pin == null:
+		_pin_abs = false
 		# (11-15 12:00) a turn on the spot's pin is planted where the boot was shown (below), so it can hold
 		# the leg at full weight at once: eased in with `pivot` (4-7 ticks) the clip's first turn step slid
 		# the pivot ball 3.7 cm per unit size over the turf (17 cm on the phase-3 giant, bot `foeturn`)
@@ -738,7 +768,15 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# (Not yet at a jog/run stop: it plants while the posed run-stop legs hold the ground IK at weight 0,
 			# which ramps back to 1 over ~8 ticks after, so its pin still rises by the lift; see PROGRESS.md.)
 			var gofs := 0.0 if STOPPIN_GROUND_OLD else float(ground_off[pivot_side]) * clampf(ground_w, 0.0, 1.0)
-			pivot_pin = Vector3(pw.x, float(_ank_gy[pivot_side]) + _idle_ank_h - gofs, pw.z)
+			var gyp := float(_ank_gy[pivot_side])
+			if not STOPPIN_ABS_OLD:
+				var tg := _turf_y(pw, ground_scale)
+				if tg > -INF:
+					gyp = tg
+					gofs = 0.0
+					_pin_abs = true
+					_pin_gy = tg
+			pivot_pin = Vector3(pw.x, gyp + _idle_ank_h - gofs, pw.z)
 			f0 = inv * (pivot_pin as Vector3)
 			lo = f0.dot(up)
 		_stop_pin_lock = false
@@ -793,6 +831,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		if settle_lift_k != 1.0 and bd.length() >= STEP_SETTLE_MIN:
 			lift_b = maxf(lift_b, settle_lift(ub) * stop_lift_min)
 		pivot_pin = xf * (b0 + bd * eb + up * lift_b)
+		if _pin_abs and _pin_gy > -INF:
+			# the absolute pin steps over the turf: up or down by the ground's rise to its stance spot
+			var tg := _turf_y(xf * (b0 + bd), ground_scale)
+			if tg > -INF:
+				pivot_pin = (pivot_pin as Vector3) + Vector3.UP * (tg - _pin_gy) * eb
 		if settle_pin_world and _settle_bgoal_w == null and (ubt >= 1.0 or (ub >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 			_settle_bgoal_w = xf * (b0 + bd)
 		if ub >= 1.0:
@@ -1172,6 +1215,13 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 					var oside := 1 - pivot_side
 					if stop_pin_shown and not SETTLE_WORLDY_OLD and _idle_ank_h > 0.0 and float(_ank_gy[oside]) > -1e9:
 						var lvl := float(_ank_gy[oside]) + _idle_ank_h + clear_w2
+						if not STOPPIN_ABS_OLD:
+							# (11-17 06:00) the turf under the step's own target, less the ground IK's lift that
+							# goes on after (it was read under the clip's ankle and the lift counted twice: the
+							# boot set down 1.7 cm over a 7 deg hillside after a run stop)
+							var tgo := _turf_y(xf * of_t, ground_scale)
+							if tgo > -INF:
+								lvl = tgo + _idle_ank_h + clear_w2 - float(ground_off[oside]) * clampf(ground_w, 0.0, 1.0)
 						var over_w := (xf * of_t).y - lvl
 						if not RELEASE_HUMP_OLD and pivot > 1e-3 and pivot < 1.0:
 							over_w = yfull + dyw2 - lvl
@@ -1510,6 +1560,8 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 	for i in 2:
 		# each foot keeps its height over ITS ground: up by its offset plus what the hips gave
 		var lift := float(ground_off[i]) * w + drop + float(swing_lift[i]) * w
+		if _pin_abs and i == pivot_side and pivot > 0.0:
+			lift -= float(ground_off[i]) * w * clampf(pivot, 0.0, 1.0)     # the pinned share stands on its own turf
 		toe_floor_lift[i] = 0.0
 		toe_pitch[i] = 0.0
 		ankle_floor_lift[i] = 0.0
