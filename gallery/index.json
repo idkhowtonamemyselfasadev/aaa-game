@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261113-1010-kstop.jpg",
-  "time": "2026-11-13T12:10:00Z",
-  "caption": "The Ashen Knight (x2.2) a tenth of a second into a stop from a walk, now stepping its boots into the guard stance instead of skating them (bot foestop: 0.24-0.80 -> 0.01 m/size); the lens is poor: a tree trunk fills the left, the knight is backlit and its boots sit in shadow, so the steps themselves are not visible.",
-  "verdict": "fail"
- },
- {
-  "file": "20261113-1700-knight-stop.jpg",
-  "time": "2026-11-13T17:26:00Z",
-  "caption": "The Ashen Knight at its phase-1 size stepping into its guard after a stop, lit from the sun side at 10:00; the meadow grass still hides its boots, so the settle-step fix only shows in the bot numbers, and the armour reads dark against the bright field.",
-  "verdict": "fail"
- },
- {
   "file": "20261113-2000-soldier-walkin-seq.jpg",
   "time": "2026-11-13T20:40:00Z",
   "caption": "Frames 50/58/62/72: the soldier walks, stops and draws its thrust; the boots take one settle step then hold still, but the hood crown reads as a stiff cylinder and the ground under the hidden grass is a flat straw texture.",
@@ -885,6 +873,18 @@
   "file": "20261117-0000-surge-knee-first.jpg",
   "time": "2026-11-17T00:00:00Z",
   "caption": "The boss mid-rise from its growth kneel, its right knee now off the ash before the hips heave round onto the hero (fixed-lens pivot sequence); still wrong: the lens sits too far to judge the boot twist, a ring flame blurs into the top-right corner, the sky is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-0100-panel-before-after.jpg",
+  "time": "2026-11-17T01:00:00Z",
+  "caption": "Boss growth rise, leg lens: before (left) the surcoat's front panel jutted off the hip as a stiff red slat pitched to the thigh; after (right) it lies over the knee and falls plumb. Still GL-only lighting, legs dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-0100-panel-draped.jpg",
+  "time": "2026-11-17T01:00:00Z",
+  "caption": "Phase-2 boss after the growth beside the hero, surcoat panel now draped over the knee instead of a diagonal strip; the hero reads small and crouched at the left, trees soft in GL.",
   "verdict": "fail"
  }
 ]

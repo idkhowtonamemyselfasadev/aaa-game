@@ -65,6 +65,14 @@ var lateral := 0.0                       # the knee drag (m, body +X = the weare
 ## worst clearance over the knee's top this tuck (m, < 0 = the knee through the cloth), and
 ## `tuck_heel` the back hem's worst clearance behind the heels (m), for the bots.
 var knee_fold := false
+## (01:00 11-17) Standing on the ground (the boss): the front panel lies on the front of the
+## forward knee (over `DRAPE_PAD` of knee plate) and falls plumb from it, instead of standing out
+## past the knee as a flat board pitched to the thigh's angle (the knight's guard stance held it
+## 0.48 rad out through idle and the whole growth surge: from the side a stiff red slat jutting
+## off the hip). Legs as posed after the modifiers. PANELDRAPE_OLD=1: the board (before).
+var knee_drape := false
+const DRAPE_PAD := 0.11
+var DRAPE_OLD := OS.get_environment("PANELDRAPE_OLD") == "1"
 var tuck_lie := 0.0
 var tuck_gap := 9.0
 var tuck_heel := 9.0
@@ -794,6 +802,51 @@ func _hang_panels(fwd: float, bwd: float, k: float) -> void:
 	(_front.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold2", fold_front2)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold", fold_back)
 
+## The front panel from its seam to the front of the forward knee, then plumb (`knee_drape`).
+func _drape_panels(bwd: float, k: float) -> void:
+	var fr := _pivot_frame(_front)
+	var down: Vector3 = fr[0]
+	var fz: Vector3 = fr[1]
+	var sy := _front.global_basis.y.length()
+	var fl: float = _front.get_meta("len", 1.0)
+	var o := _front.global_position
+	var target := 0.0
+	var kd := 1000.0
+	for leg in _legs:
+		var d := _joint(leg[1]) + fz * DRAPE_PAD * sy - o
+		var a := atan2(d.dot(fz), d.dot(down))
+		if a > target:
+			target = a
+			kd = d.length() / sy
+	# coming down from a leap the air under it still flares it out
+	target = maxf(target, fall * 0.55)
+	_swing_f = lerpf(_swing_f, clampf(target, 0.0, 0.9), k)
+	_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)
+	var ff := Vector2(1000.0, 0.0)
+	if kd < fl - 0.02 and _swing_f > 0.03:
+		ff = Vector2(kd, _swing_f - fall * 0.5)
+	if fold_front.x > 100.0 or ff.x > 100.0:
+		fold_front = Vector2(ff.x, lerpf(0.0 if fold_front.x > 100.0 else fold_front.y, ff.y, k)) if ff.x < 100.0 else ff
+	else:
+		fold_front = fold_front.lerp(ff, k)
+	var mat := (_front.get_child(0) as MeshInstance3D).material_override
+	mat.set_shader_parameter("fold", fold_front)
+	mat.set_shader_parameter("fold2", Vector2(1000.0, 0.0))
+
+## The front panel's hem point (world), with its knee fold, for the bots.
+func front_hem() -> Vector3:
+	var fr := _pivot_frame(_front)
+	var down: Vector3 = fr[0]
+	var fz: Vector3 = fr[1]
+	var sy := _front.global_basis.y.length()
+	var fl: float = _front.get_meta("len", 1.0)
+	var d1 := down * cos(_swing_f) + fz * sin(_swing_f)
+	if fold_front.x >= fl:
+		return _front.global_position + d1 * fl * sy
+	var a2 := _swing_f - fold_front.y
+	var d2 := down * cos(a2) + fz * sin(a2)
+	return _front.global_position + d1 * fold_front.x * sy + d2 * (fl - fold_front.x) * sy
+
 var KNEEFOLD_OFF := OS.has_environment("KNEEFOLD_OFF")   # the old flat board in the tuck (before)
 
 ## The pivot's rest frame (rotation 0): its down and forward axes, world.
@@ -1343,6 +1396,8 @@ func _physics_process(delta: float) -> void:
 		_hang_panels(fwd, bwd, k)
 	elif knee_fold and not KNEEFOLD_OFF:
 		_tuck_panels(fwd, bwd, k)
+	elif knee_drape and not DRAPE_OLD:
+		_drape_panels(bwd, k)
 	else:
 		_swing_f = lerpf(_swing_f, minf(fwd * 1.1, 0.7), k)
 		_swing_b = lerpf(_swing_b, minf(bwd * 1.1, 0.7), k)

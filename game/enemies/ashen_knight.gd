@@ -489,6 +489,8 @@ func _dress() -> void:
 	rags.set_param("cloth_dark", Color(0.10, 0.025, 0.02))
 	rags.set_param("cloth_light", Color(0.27, 0.07, 0.045))
 	rags.set_param("soot_amt", 0.55)
+	# (01:00 11-17) the surcoat's front panel lies on the forward knee and falls plumb from it
+	rags.knee_drape = true
 	armour = KnightArmour.new()
 	armour.name = "Armour"
 	add_child(armour)

@@ -3457,6 +3457,21 @@ func _ready() -> void:
 				cam.global_position = sp + Vector3.UP * (khead.y - sp.y) * 0.5
 				cam.look_at(khead + Vector3.UP * 0.32 * rk.size_scale)   # the surge grows on through the warm-up frames
 				print("SHOT ring surge helm close-up at %s" % khead)
+			if "legs" in args:
+				# (01:00 11-17) legs close-up for the rise's pivot: in along the chosen lens line to
+				# ~1.5 x the size, at knee height, framing hips to boots. With lensfix the size is the
+				# final one, so every st= frame of a sequence shares this one lens.
+				var lsz: float = rk.size_scale
+				if "lensfix" in args:
+					lsz = rk.growth.scale_of(from_ph + 1)
+				var ldir := Vector3(sp.x - kp.x, 0, sp.z - kp.z).normalized()
+				var lp := kp + ldir * 1.5 * lsz
+				lp.y = terrain.height_at(lp.x, lp.z) + 0.3 * lsz
+				cam.global_position = lp
+				cam.look_at(kp + Vector3.UP * 0.3 * lsz)
+				# the hero (on the flank for `turn`) stood in this close lens's left third: hide it
+				player.visible = false
+				print("SHOT ring surge legs lens %.2f m out, size %.2f" % [1.5 * lsz, lsz])
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
 		# the boss bar covers the knight's boots in a low lens: a surge frame is a cinematic beat
 		if not "hud" in args:
