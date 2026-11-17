@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -225,6 +225,10 @@ func _ready() -> void:
 	if name == "foeturn":
 		_foe_turn_test()
 		return
+	# (11-17 09:00) the foes' turn on the spot on a 7 deg hillside slab: facing up, down and across
+	if name in FOETURN_SLOPES:
+		_foe_turn_test(FOETURN_SLOPES[name])
+		return
 	if name == "heroturn" or name == "heroturnl":
 		_turn_left = name == "heroturnl" or OS.has_environment("HEROTURN_FLIP")
 		_hero_turn_test()
@@ -276,6 +280,10 @@ func _ready() -> void:
 		return
 	if name == "foestop":
 		_foe_stop_test()
+		return
+	# (11-17 09:00) the foes' walk start on the same 7 deg hillside slabs: up, down and across
+	if name in FOESTART_SLOPES:
+		_foe_start_test(FOESTART_SLOPES[name])
 		return
 	if name == "foestart":
 		_foe_start_test()
@@ -3479,8 +3487,16 @@ func _foe_feet_track(skel: Skeleton3D, sw: StrideWarp, sc: float) -> void:
 				print("   slide foot %d %.4f pivot %.3f settle %s" % [j, Vector2(a.x - b.x, a.z - b.z).length() / sc, sw.pivot, sw.settle_done])
 	_ff_prev = now
 
-func _foe_turn_test() -> void:
+const FOETURN_SLOPES := {"foeturnup": "7", "foeturndown": "-7", "foeturncross": "0,7"}
+func _foe_turn_test(slope_preset := "") -> void:
 	Engine.time_scale = 1.0
+	# (11-17 09:00) FOETURN_SLOPE=<deg along>[,<deg across>] (or a foeturnup/down/cross route): the
+	# turn on a sloped slab laid under the foe (`_flat_slab` tilt/roll, along the way it faces first)
+	var slope := (slope_preset if slope_preset != "" else OS.get_environment("FOETURN_SLOPE")).split(",")
+	var s_t := float(slope[0]) if slope[0] != "" else 0.0
+	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
+	var sloped := s_t != 0.0 or s_r != 0.0
+	var slab: StaticBody3D = null
 	var k: AshenKnight = _world.knight
 	var so: HollowSoldier = _world.soldier
 	await _ticks(20)
@@ -3502,6 +3518,17 @@ func _foe_turn_test() -> void:
 		e.bot_move = Vector3.ZERO
 		e.bot_face = Vector3.ZERO
 		await _ticks(90)
+		if sloped:
+			if slab != null:
+				slab.queue_free()
+			var sfwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
+			# centred under the foe (it turns on the spot): starts 2 sizes behind it, 4 sizes long
+			e.global_position -= sfwd * 1.0 * sc
+			slab = _flat_slab(e, sfwd, sc, 4.0 * sc + 2.0, s_t, s_r)
+			e.global_position += sfwd * 1.0 * sc
+			e.global_position.y += sin(deg_to_rad(s_t)) * 1.0 * sc + 0.05
+			await _ticks(90)
+			print("BOT foeturn slope %s: %s size %.1f stands on the slab: %s" % [",".join(slope), e.name, sc, str(e.is_on_floor())])
 		e._home = e.global_position
 		var skel: Skeleton3D = e.skel
 		var fi := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
@@ -3733,6 +3760,8 @@ func _foe_turn_test() -> void:
 		if piv_sink[2] > 3.0 and not StrideWarp.FOEHEEL_SNAP_OLD and not StrideWarp.BALLPIVOT_OLD:
 			return _combat_done(false, "size %.1f: the hips pop %.1f cm in one read through the turn" % [sc, piv_sink[2]])
 		out.append([sc, e.shuffle_peak, lift, lifted, both_up, faced, drift, after, ts_peak, e.natural_cadence(), lead_signed, head_lead, body_at_lead, lead_after, piv, swung, pin_after, dip, tap, rel_h, _ff_settled, _ff_slide, jerk, st_off])
+	if slab != null:
+		slab.queue_free()
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	# (11-15 12:00) the turn's first ticks: the pivot ball slid 0.036-0.056 per size while the pivot
 	# eased in (FOETURN_OLDPLANT=1 = before); planted at once from where the boot was shown: <= 0.002
@@ -5428,8 +5457,16 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 ## stop dragged both boots into the guard (`foestop`)? Stands each foe in a true idle on a flat slab,
 ## then walks it straight ahead; reads the lower (weight-bearing) boot's travel over the slab per tick
 ## for the first START_N ticks, against the same read over 40 ticks of its steady walk.
-func _foe_start_test() -> void:
+const FOESTART_SLOPES := {"foestartup": "7", "foestartdown": "-7", "foestartcross": "0,7"}
+func _foe_start_test(slope_preset := "") -> void:
 	Engine.time_scale = 1.0
+	# (11-17 09:00) FOESTART_SLOPE=<deg along>[,<deg across>] (or a foestartup/down/cross route): the
+	# start on a sloped slab (`_flat_slab` tilt/roll), as `foestop` / `herostop` do
+	var slope := (slope_preset if slope_preset != "" else OS.get_environment("FOESTART_SLOPE")).split(",")
+	var s_t := float(slope[0]) if slope[0] != "" else 0.0
+	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
+	var sloped := s_t != 0.0 or s_r != 0.0
+	var tag := ("foestart slope %s" % ",".join(slope)) if sloped else "foestart"
 	var k: AshenKnight = _world.knight
 	var so: HollowSoldier = _world.soldier
 	var spot: Vector3 = so.global_position
@@ -5457,7 +5494,7 @@ func _foe_start_test() -> void:
 		e.bot_move = Vector3.ZERO
 		await _ticks(60)
 		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
-		var slab := _flat_slab(e, fwd, sc, 3.0 * sc + 14.0 * sqrt(sc))
+		var slab := _flat_slab(e, fwd, sc, 3.0 * sc + 14.0 * sqrt(sc), s_t, s_r)
 		await _ticks(60)
 		var skel: Skeleton3D = e.skel
 		var space := e.get_world_3d().direct_space_state
@@ -5467,7 +5504,9 @@ func _foe_start_test() -> void:
 			return skel.global_transform * skel.get_bone_global_pose(bi).origin
 		var over := func(bp: Vector3) -> float:
 			var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6 * sc, bp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
-			return bp.y - (bh.position as Vector3).y if not bh.is_empty() else INF
+			if bh.is_empty() or (sloped and bh.collider != slab):
+				return INF
+			return bp.y - (bh.position as Vector3).y
 		var idle := minf(over.call(wpos.call(bones[0])), over.call(wpos.call(bones[1])))
 		var stance := func():
 			var a0: Vector3 = wpos.call(bones[0])
@@ -5475,18 +5514,20 @@ func _foe_start_test() -> void:
 			var h0: float = over.call(a0)
 			var h1: float = over.call(a1)
 			var f := 0 if h0 <= h1 else 1
-			if minf(h0, h1) - idle > 0.03 * sc:
+			if minf(h0, h1) - idle > (0.02 if sloped else 0.03) * sc:
 				return null
 			return [a0 if f == 0 else a1, f, minf(h0, h1) - idle]
 		var spd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
 		var starts := []
 		for rep in 2:
-			e.global_position = slab.global_position + Vector3.UP * 0.3 - fwd * (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5 + fwd * 1.2 * sc
+			# along the slab's own axes (the same spot as before on a flat slab)
+			e.global_position = slab.global_transform * Vector3(0, 0.3, 1.2 * sc - (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5)
 			e.velocity = Vector3.ZERO
 			e.bot_move = Vector3.ZERO
 			e._home = e.global_position
 			await _ticks(90 + rep * 17)      # a true idle (the second start from another idle phase)
 			await skel.skeleton_updated
+			var y_start := e.global_position
 			var a0i: Vector3 = wpos.call(bones[0])
 			var a1i: Vector3 = wpos.call(bones[1])
 			var gap0 := (a0i - a1i).dot(fwd) / sc
@@ -5535,6 +5576,8 @@ func _foe_start_test() -> void:
 					swaps += 1
 				prev = st
 			starts.append([skate / sc, worst / sc, worst_t, steady / sc, swaps, gap0, ts_max, lift / sc])
+			if OS.has_environment("FOESTART_DEBUG") and sloped:
+				print("   on the slab: rose %+.3f m over the start (%.0f deg along the walk), slab under the boots: %s" % [e.global_position.y - y_start.y, rad_to_deg(atan2(e.global_position.y - y_start.y, Vector2(e.global_position.x - y_start.x, e.global_position.z - y_start.z).length())), str(minf(over.call(wpos.call(bones[0])), over.call(wpos.call(bones[1]))) < 0.5 * sc)])
 			if OS.has_environment("FOESTART_DEBUG"):
 				print("   start %d: stance gap %+.3f m/size; first %d ticks skate %.4f worst %.4f (t%d), hand-overs %d, clip rate max %.2f; steady 40 ticks %.4f m/size; first step lifts %.3f m/size" % [rep, gap0, START_N, skate / sc, worst / sc, worst_t, swaps, ts_max, steady / sc, lift / sc])
 			e.bot_move = Vector3.ZERO
@@ -5548,7 +5591,7 @@ func _foe_start_test() -> void:
 			tot = maxf(tot, st[0])
 			wst = maxf(wst, st[1])
 			sty = maxf(sty, st[3])
-		print("BOT foestart: %s x%.2f: first %d ticks of a start the planted boot skates at worst %.4f m/size summed, %.4f m/size in one tick (steady walk %.4f m/size per 40 ticks); the first step lifts its boot %.3f m/size" % [e.name, sc, START_N, tot, wst, sty, lo_lift])
+		print("BOT %s: %s x%.2f: first %d ticks of a start the planted boot skates at worst %.4f m/size summed, %.4f m/size in one tick (steady walk %.4f m/size per 40 ticks); the first step lifts its boot %.3f m/size" % [tag, e.name, sc, START_N, tot, wst, sty, lo_lift])
 		if fail == "" and not OS.has_environment("FOESTART_NOGATE"):
 			# (measured 11-13 15:00) before: soldier 0.41 summed / 0.031 worst / 0.047 lift, knight x3.2
 			# worst 0.041; after: <= 0.27 / 0.013 / >= 0.08 (the steady walk itself slips ~0.0037 a tick)
