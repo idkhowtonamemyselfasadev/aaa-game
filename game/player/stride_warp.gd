@@ -470,6 +470,11 @@ var _settle_b0 = null            # the pivot's pin where its own settle step sta
 var stance_idle := false         # (owner) standing still and square: the clip's stance is sampled
 var _stance := [Vector3.ZERO, Vector3.ZERO]  # each ankle as the idle clip stands it (skeleton space)
 var _stance_ok := false
+# (11-17 21:00, bots) how far (skeleton units) any idle stance snapshot has strayed from the first one
+# taken: the idle clip reads ~0.16-0.35 (its loop and the spawn settle), so ~0.5+ means a snapshot was read off a
+# moving pose (the foe's walk-first-tick bug read ~2). Bots gate it for the hero (heroturn, herostop)
+var stance_spread := 0.0
+var _stance_ref = null
 var settle_reach := 0.0          # (bots) skeleton units the settle step carries the boot
 const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts as down under this
 const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
@@ -732,6 +737,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
 				if fb >= 0:
 					_stance[i] = skel.get_bone_global_pose(fb).origin
+			if _stance_ref == null:
+				_stance_ref = [_stance[0], _stance[1]]
+			else:
+				stance_spread = maxf(stance_spread, maxf(((_stance[0] as Vector3) - (_stance_ref[0] as Vector3)).length(),
+					((_stance[1] as Vector3) - (_stance_ref[1] as Vector3)).length()))
 			_stance_ok = true
 			if STANCE_DBG and ground_scale > 3.0:
 				print("  stancesnap f%d L %s R %s" % [Engine.get_physics_frames(), str(_stance[0]), str(_stance[1])])

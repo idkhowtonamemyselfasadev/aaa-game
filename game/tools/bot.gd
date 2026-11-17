@@ -508,6 +508,20 @@ func _physics_process(delta: float) -> void:
 	elif _t > _max:
 		_finish(false, "timeout at waypoint %d, pos %s" % [_i, p])
 
+## (11-17 21:00) the hero's idle stance snapshot (StrideWarp._stance, the spot every stop's and turn's
+## settle steps aim at) must stay on the idle clip's feet: re-read off a moving pose (as the foes' was on a
+## walk's first tick, ~2 units) the next settle aims off it and the release slides the boots back
+const STANCE_SPREAD_MAX := 0.5             # the hero reads 0.163 (idle loop), the foe bug read 2.6
+func _stance_spread_ok(p) -> bool:
+	if p.stride_warp == null:
+		return true
+	var sp: float = p.stride_warp.stance_spread
+	print("BOT stance: idle stance snapshots stray %.3f skeleton units at most from the first (gate %.2f)" % [sp, STANCE_SPREAD_MAX])
+	if sp > STANCE_SPREAD_MAX:
+		_combat_done(false, "the hero's idle stance was re-read off a moving pose (%.3f units off the first)" % sp)
+		return false
+	return true
+
 func _finish(ok: bool, why: String) -> void:
 	_i = _route.size() + 1
 	# grass must have streamed in around wherever the bot ended up
@@ -2987,6 +3001,8 @@ func _hero_turn_test(slope_preset := "") -> void:
 		return _combat_done(false, "no pivot on the reversed stick")
 	if pivot_lead > 0.12:
 		return _combat_done(false, "the turn lead fights the pivot's own head turn (%.3f)" % pivot_lead)
+	if not _stance_spread_ok(p):
+		return
 	_combat_done(true, "the hero's head and chest lead a turn on the spot and at a run, settle square, and keep out of the pivot")
 
 ## Pivot: reversing the stick at a run plants a foot, skids, spins 180 deg over it while low and
@@ -5528,6 +5544,11 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 		await _ticks(10)
 	for o in [k, so]:
 		o.process_mode = Node.PROCESS_MODE_INHERIT
+	# (11-17 21:00) read-out, not gated: how far each foe's idle stance snapshots strayed (STANCESNAP_OLD
+	# shows the walk-first-tick re-read the 20:00 fix removed)
+	for o in [k, so]:
+		if o.stride_warp != null:
+			print("BOT foestop stance: %s idle stance snapshots stray %.3f skeleton units at most" % [o.name, o.stride_warp.stance_spread])
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "a walking foe that winds up sets its boots into the guard instead of skating them" if attack else "a walking foe that stops sets its boots down where they are instead of skating them")
@@ -5888,6 +5909,8 @@ func _hero_stop_test(slope_preset := "") -> void:
 			fail = "the hero's jog stop on a %s deg slope skates %.3f m summed (%.3f m in a tick)" % [slope_preset, jog_sum, jog_tick]
 	if fail != "":
 		return _combat_done(false, fail)
+	if not _stance_spread_ok(p):
+		return
 	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if not OS.has_environment("WALKSTOP_OLD") else "walk-stop skate read (WALKSTOP_OLD: the before, ungated)")
 
 func _hero_flat_test() -> void:
