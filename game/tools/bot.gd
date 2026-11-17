@@ -3614,6 +3614,8 @@ func _foe_turn_test() -> void:
 						var fp := skel.global_transform * skel.get_bone_global_pose(ti[j]).origin
 						if pre_prev[j] != Vector3.INF and turning and (e.stride_warp.pivot <= 0.0 or j == e.stride_warp.pivot_side):
 							pre_carry[j] += Vector2(fp.x - pre_prev[j].x, fp.z - pre_prev[j].z).length() / sc
+							if OS.has_environment("FOETURN_PRE"):
+								print("   pre carry j %d +%.4f full %s short %.4f sink %.4f heel %.1f hup %.4f ballw %s fp %s" % [j, Vector2(fp.x - pre_prev[j].x, fp.z - pre_prev[j].z).length() / sc, e.stride_warp._pin_full, e.stride_warp.pivot_short, e.stride_warp.pivot_sink, e.stride_warp.heel_reach_deg, e.stride_warp.pivot_heel_up, e.stride_warp.pivot_ball / sc, fp / sc])
 						pre_prev[j] = fp
 					if OS.has_environment("FOETURN_PRE"):
 						print("   pre i %d yaw %.4f pivot %.2f shuffle %.3f" % [i, f0.signed_angle_to(e.body.global_basis.z, Vector3.UP), e.stride_warp.pivot, e.turn_shuffle])
@@ -3729,8 +3731,12 @@ func _foe_turn_test() -> void:
 	# (03:00 11-17) gate 0.005 -> 0.0065: the knight's wider base (StanceWiden) stands the pivot ball
 	# ~2.5x farther off the body's middle, so the yaw before the pivot is fully in carries it 0.0056 per
 	# size at size 3.2 (STANCEWIDE_OLD=1: 0.0032); planting at full weight on tick 0 is the real fix
+	# (04:00 11-17) gate 0.0065 -> 0.001: it was not the plant (pinned at full weight from tick 0) but the
+	# ground IK turning the sole onto the 7 deg slope about the ankle as the heel rose; it now turns it
+	# about the ball, the plant tick's offset held in the world (BALLGROUND_OLD=1: before, 0.0056): 0.0000 at every size
+	var pre_gate := 0.0065 if StrideWarp.BALLGROUND_OLD else 0.001
 	for q in pre_out.size():
-		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > 0.0065:
+		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > pre_gate:
 			return _combat_done(false, "case %d: the pivot ball slides %.4f per size as the turn starts" % [q, float(pre_out[q])])
 	# (11-15 15:00) the soldier's eyes go first: its lead may reach further while the body is still easing
 	# into the turn (FOETURN_OLDLEAD=1 = before): head up to 0.68 -> 0.81 rad ahead of the body

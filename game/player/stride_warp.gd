@@ -541,6 +541,9 @@ var _settle_bgoal_w = null         # the second (pivot boot's) step's goal, worl
 var stop_lift_min := 0.0
 static var UNCROSS_CHASE_OLD := OS.has_environment("UNCROSS_CHASE_OLD")
 static var TURNPIN_SHOWN_OLD := OS.has_environment("TURNPIN_SHOWN_OLD")   # (11-15 12:00) a turn pin from this tick's pose (before)
+static var BALLGROUND_OLD := OS.has_environment("BALLGROUND_OLD")     # (11-17 04:00) the ground IK turned the pivot sole about the ankle, swinging the ball (before)
+var _ball_gcorr := Vector3.ZERO     # world: the ground IK's ball carry undone this tick
+var _ball_gdv0: Variant = null     # the ground IK's carry of the pivot ball at its plant tick (world)
 static var TURNPIN_FULL_OLD := OS.has_environment("TURNPIN_FULL_OLD")     # (11-15 12:00) a turn pin eased in with the pivot weight (before)
 var turn_plant_full := false       # (11-15, set by the owner) a pin planted now is a turn on the spot's: full weight at once
 var _pin_full := false             # this pin holds the pivot leg at full weight while `pivot` still ramps in
@@ -734,6 +737,7 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_arc_floor = lo
 		var tb0 := skel.find_bone("mixamorig_%sToeBase" % sides[pivot_side])
 		_ball_pin = null
+		_ball_gdv0 = null
 		_heel_w = 0.0
 		if tb0 >= 0 and ball_pivot and not BALLPIVOT_OLD:
 			_ball_pin = pivot_pin + xf.basis * (skel.get_bone_global_pose(tb0).origin - (fp if not STOPPIN_FLOOR_OLD else f0))
@@ -1592,6 +1596,34 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 		if absf(lift) < 1e-4 and plant <= 0.0 and float(toe_pitch[i]) == 0.0:
 			continue
 		var t := skel.get_bone_global_pose(ft[i]).origin + up_s * lift
+		if i == pivot_side and pivot > 0.0 and pivot_pin != null and _ball_pin != null and ball_pivot and tb[i] >= 0 and not BALLGROUND_OLD:
+			# (11-17 04:00) the planted ball pivot keeps its ball still across the turf under the ground IK:
+			# on a slope the sole's tilt share (`plant`, which falls as the heel rises) and the toe tip turn
+			# the sole about the ANKLE, so the rising heel swung the ball 2 mm per size a tick (7 mm on the
+			# phase-2 giant on a 7 deg slope, bot `foeturn` pre-pivot carry 0.0056). The ankle target is moved
+			# across the turf by how much that turn's carry of the ball has changed since the plant tick (the
+			# plant tick's own offset is where the ball was shown, so nothing jumps). BALLGROUND_OLD: before
+			var keep0 := skel.get_bone_global_pose(ft[i]).basis.orthonormalized()
+			var rel0 := skel.get_bone_global_pose(tb[i]).origin - skel.get_bone_global_pose(ft[i]).origin
+			var dv := rel0 - keep.orthonormalized() * (keep0.inverse() * rel0)
+			var un := up_s.normalized()
+			dv -= un * dv.dot(un)
+			# held in the WORLD: the skeleton's frame spins with the body through the turn
+			var dv_w := xf.basis * dv
+			if _ball_gdv0 == null:
+				_ball_gdv0 = dv_w
+			_ball_gcorr = dv_w - (_ball_gdv0 as Vector3)
+			t += inv.basis * _ball_gcorr
+		elif i == pivot_side and pivot > 0.0 and pivot_pin != null and _ball_gdv0 != null:
+			# squared up (the ball pin let go): the last correction is baked into the ankle pin, so the
+			# boot stays where the ball pivot left it instead of sliding back as the pivot weight lets go
+			t += inv.basis * _ball_gcorr
+			pivot_pin = (pivot_pin as Vector3) + _ball_gcorr
+			_ball_gdv0 = null
+			_ball_gcorr = Vector3.ZERO
+		elif i == pivot_side and pivot <= 0.0:
+			_ball_gdv0 = null
+			_ball_gcorr = Vector3.ZERO
 		_leg_to(skel, ul[i], lg[i], ft[i], t, keep, fwd)
 	for i in 2:
 		ground_sole[i] = (xf * skel.get_bone_global_pose(ft[i]).origin).y - floor_y - float(ground_off[i])
