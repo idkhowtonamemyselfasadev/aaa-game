@@ -3531,7 +3531,7 @@ func _foe_feet_track(skel: Skeleton3D, sw: StrideWarp, sc: float) -> void:
 				print("   slide foot %d %.4f pivot %.3f settle %s" % [j, Vector2(a.x - b.x, a.z - b.z).length() / sc, sw.pivot, sw.settle_done])
 	_ff_prev = now
 
-const FOETURN_SCUFF_MAX := 0.015  # (11-17 16:00) per size: the stepping boot's travel over the turf while down
+const FOETURN_SCUFF_MAX := 0.012  # (11-17 16:00) per size: the stepping boot's travel over the turf while down
 const FOETURN_SLOPES := {"foeturnup": "7", "foeturndown": "-7", "foeturncross": "0,7"}
 func _foe_turn_test(slope_preset := "") -> void:
 	Engine.time_scale = 1.0
@@ -3695,6 +3695,7 @@ func _foe_turn_test(slope_preset := "") -> void:
 						fscuff[1] = float(fscuff[1]) + Vector2(fpd.x - (fscuff[0] as Vector3).x, fpd.z - (fscuff[0] as Vector3).z).length() / sc
 						if OS.has_environment("FOETURN_SCUFF_DBG"):
 							print("   scuff i %d h %.4f +%.4f piv %.2f settle %s arc %.3f reach %.2f st %.3f other %s ank %s" % [i, fhd, Vector2(fpd.x - (fscuff[0] as Vector3).x, fpd.z - (fscuff[0] as Vector3).z).length() / sc, e.stride_warp.pivot, e.stride_warp.pivot_settle, e.stride_warp._arc_top, e.stride_warp.settle_reach, e.stride_warp._settle_t, e.stride_warp.pivot_other / sc, fpd / sc])
+							print("     body yaw %.5f pos %s hips %s" % [f0.signed_angle_to(e.body.global_basis.z, Vector3.UP), e.global_position / sc, (skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips")).origin) / sc])
 					fscuff[0] = fpd
 			if post and not pre_done:
 				# (11-15 12:00) the turn's first eased ticks: both boots on the final pose until the pivot plants

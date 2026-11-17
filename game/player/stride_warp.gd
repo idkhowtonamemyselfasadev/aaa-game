@@ -432,6 +432,7 @@ static var ARC_ACC_SIZE_OLD := OS.has_environment("ARC_ACC_SIZE_OLD")
 const ARC_DROP_ACC := 180.0      # units/s^2: the descent gains at most 3 units/s a tick at 60 Hz
 static var ARC_JERK_OLD := OS.has_environment("ARC_JERK_OLD")
 static var TURNARC_FALL_OLD := OS.has_environment("TURNARC_FALL_OLD")
+static var TURNSETTLE_PIN_OLD := OS.has_environment("TURNSETTLE_PIN_OLD")
 const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
 const STEP_EASE_MIN := 0.25      # ...down to this fraction of the rate, so it does get down
 const STEP_EASE_K := 6.5         # 1/s: the boot closes at most this share of its height per second (~10 % a tick at 60 Hz)...
@@ -1193,7 +1194,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				ut = clampf((u - SWAP_TRAVEL_FROM) / (1.0 - 2.0 * SWAP_TRAVEL_FROM), 0.0, 1.0)
 			var e := ut * ut * (3.0 - 2.0 * ut)
 			var tgt := from + gd * e
-			if settle_pin_world and _settle_goal_w == null and (ut >= 1.0 or (u >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
+			# (11-17 17:00) a turn's settle step is pinned in the world once it has travelled too: its goal followed the
+			# idle stance of a body still easing square, so the final-size boss's boot crept on ~0.01 per size over the
+			# turf for 20 ticks after its short step was down (bot `foeturn` scuff). TURNSETTLE_PIN_OLD: before
+			var pin_turn := not TURNSETTLE_PIN_OLD and settle_lift_k == 1.0 and not _settle_swap
+			if (settle_pin_world or pin_turn) and _settle_goal_w == null and (ut >= 1.0 or (u >= SETTLE_PEAK_U and SETTLE_PIN_PEAK)):
 				_settle_goal_w = xf * (from + gd)
 			var dh := tgt - of_t
 			of_t += (dh - up * dh.dot(up)) * pivot

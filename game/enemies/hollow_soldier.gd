@@ -1224,6 +1224,12 @@ var _spot_turn_tick := -10
 var _spot_lead_tick := -10       # last tick the body turned ON THE SPOT (the lead's early extra reach)
 var _spot_turn_w := 0.0          # rad/s: yaw rate of the body last tick (ease-in of a turn on the spot)
 static var _turn_oldstart := OS.has_environment("FOETURN_OLDSTART")   # = before 11-15 07:00
+## (11-17 17:00) a turn on the spot finishes: its last few degrees close at least this fast (rad/s at 1x
+## cadence) instead of the exp chase's tail, which still turned the body ~1 deg over 25 ticks after the
+## settle step was down and carried the boot over the turf with it (bot `foeturn` scuff ~0.01 per size).
+## TURNFINISH_OLD: before
+const TURN_FINISH_W := 0.35
+static var _turn_finish_old := OS.has_environment("TURNFINISH_OLD")
 static var _foe_turn_oldplant := OS.has_environment("FOETURN_OLDPLANT")   # = before 11-15 12:00
 const FOE_PLANT_GAP := 0.15      # rad still to turn: a smaller correction is a sway, not a turn (no pivot)
 
@@ -1612,6 +1618,11 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 		# ~230 deg/s, the phase-3 giant under half that (heavy, but it still keeps a circling hero)
 		var cap := TURN_STEP_RATE * natural_cadence() * delta
 		var d := clampf(angle_difference(body.rotation.y, want), -cap, cap)
+		if not _turn_finish_old:
+			var gap := angle_difference(body.rotation.y, atan2(dir.x, dir.z))
+			var fin := TURN_FINISH_W * natural_cadence() * delta
+			if absf(d) < fin:
+				d = signf(gap) * minf(absf(gap), fin)
 		if not _turn_oldstart:
 			# (11-15 07:00) ease in: the body speeds up into the turn at TURN_ACCEL (its cadence),
 			# so the head swings round first and the hips follow (the exp chase above turned the
