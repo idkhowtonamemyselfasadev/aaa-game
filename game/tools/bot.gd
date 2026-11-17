@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -289,6 +289,10 @@ func _ready() -> void:
 		return
 	if name == "foewindup":
 		_foe_stop_test(true)
+		return
+	# (11-17 08:00) the foes' stop on the same 7 deg hillside slabs: up, down and across
+	if name in FOESTOP_SLOPES:
+		_foe_stop_test(false, FOESTOP_SLOPES[name])
 		return
 	if name == "scree":
 		_scree_test()
@@ -5237,9 +5241,18 @@ func _foe_flat_test() -> void:
 ## (11-13 16:00) `foewindup` (attack = true): the same walk, but at the cut the foe opens its wind-up
 ## (thrust at cuts 70/96, sweep at 83) as STALK does on reaching its engage range; the read covers
 ## the first WINDUP_N ticks (inside the shorter wind-up, before the lunge moves the body).
-func _foe_stop_test(attack := false) -> void:
+const FOESTOP_SLOPES := {"foestopup": "7", "foestopdown": "-7", "foestopcross": "0,7"}
+func _foe_stop_test(attack := false, slope_preset := "") -> void:
 	Engine.time_scale = 1.0
 	var tag := "foewindup" if attack else "foestop"
+	# (11-17 08:00) FOESTOP_SLOPE=<deg along>[,<deg across>] (or a foestopup/down/cross route): the
+	# stops on a sloped slab (`_flat_slab` tilt/roll), as `herostop` does for the hero
+	var slope := (slope_preset if slope_preset != "" else OS.get_environment("FOESTOP_SLOPE")).split(",")
+	var s_t := float(slope[0]) if slope[0] != "" else 0.0
+	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
+	var sloped := s_t != 0.0 or s_r != 0.0
+	if sloped:
+		tag += " slope %s" % ",".join(slope)
 	const WINDUP_N := 44
 	var k: AshenKnight = _world.knight
 	var so: HollowSoldier = _world.soldier
@@ -5264,7 +5277,7 @@ func _foe_stop_test(attack := false) -> void:
 		e.bot_move = Vector3.ZERO
 		await _ticks(60)
 		var fwd := Vector3(e.body.global_basis.z.x, 0, e.body.global_basis.z.z).normalized()
-		var slab := _flat_slab(e, fwd, sc, 3.0 * sc + 14.0 * sqrt(sc))
+		var slab := _flat_slab(e, fwd, sc, 3.0 * sc + 14.0 * sqrt(sc), s_t, s_r)
 		await _ticks(60)
 		var skel: Skeleton3D = e.skel
 		var space := e.get_world_3d().direct_space_state
@@ -5274,26 +5287,31 @@ func _foe_stop_test(attack := false) -> void:
 			return skel.global_transform * skel.get_bone_global_pose(bi).origin
 		var over := func(bp: Vector3) -> float:
 			var bh := space.intersect_ray(PhysicsRayQueryParameters3D.create(bp + Vector3.UP * 0.6 * sc, bp + Vector3.DOWN * 0.6 * sc, 1, [e.get_rid()]))
-			return bp.y - (bh.position as Vector3).y if not bh.is_empty() else INF
+			if bh.is_empty() or (sloped and bh.collider != slab):
+				return INF
+			return bp.y - (bh.position as Vector3).y
 		var idle := minf(over.call(wpos.call(bones[0])), over.call(wpos.call(bones[1])))
-		# the weight-bearing boot: the lower ankle, if it is on the slab (within 3 cm/size of idle)
+		# the weight-bearing boot: the lower ankle, if it is on the slab (within 3 cm/size of idle;
+		# 2 cm/size on a slope, as `herostop`'s hillside routes)
 		var stance := func():
 			var a0: Vector3 = wpos.call(bones[0])
 			var a1: Vector3 = wpos.call(bones[1])
 			var h0: float = over.call(a0)
 			var h1: float = over.call(a1)
 			var f := 0 if h0 <= h1 else 1
-			if minf(h0, h1) - idle > 0.03 * sc:
+			if minf(h0, h1) - idle > (0.02 if sloped else 0.03) * sc:
 				return null
 			return [a0 if f == 0 else a1, f]
 		var spd := HollowSoldier.STALK_SPEED * sqrt(sc) * 0.6
 		var stops := []
 		# three stops at different points of the stride
 		for cut in [70, 83, 96]:
-			e.global_position = slab.global_position + Vector3.UP * 0.3 - fwd * (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5 + fwd * 1.2 * sc
+			# (11-17 08:00) along the slab's own axes (the same spot as before on a flat slab)
+			e.global_position = slab.global_transform * Vector3(0, 0.3, 1.2 * sc - (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5)
 			e.velocity = Vector3.ZERO
 			e.bot_move = Vector3.ZERO
 			await _ticks(60)
+			var y_start := e.global_position
 			var walk_ts := 0.0
 			var wprev := [null, null]
 			var wskate := 0.0
@@ -5308,6 +5326,9 @@ func _foe_stop_test(attack := false) -> void:
 						wskate += Vector2(st[0].x - wprev[0][0].x, st[0].z - wprev[0][0].z).length()
 					wprev[0] = st
 			var blend0: float = e._blend
+			if OS.has_environment("FOESTOP_DEBUG") and sloped:
+				var dxz := Vector2(e.global_position.x - y_start.x, e.global_position.z - y_start.z).length()
+				print("   cut %d: walked %.2f m, rose %+.2f m (%.1f deg), on floor %s" % [cut, dxz, e.global_position.y - y_start.y, rad_to_deg(atan2(e.global_position.y - y_start.y, maxf(dxz, 0.001))), str(e.is_on_floor())])
 			e._home = e.global_position        # stays where it stopped (IDLE walks home past 0.6 m)
 			e.bot_move = Vector3.ZERO
 			if attack:
@@ -5346,21 +5367,29 @@ func _foe_stop_test(attack := false) -> void:
 				prev[0] = st
 				if still_at < 0 and e._blend < 0.02 * Player.ANIM_WALK_SPEED:
 					still_at = fi
-			stops.append([skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0])
+			# (11-17 08:00) where the boots come to rest: each ankle's height off its idle on the last tick
+			# (on a slope a boot left hovering, or pressed into the slab, reads here)
+			var rest_off := 0.0
+			for bi in bones:
+				var ro: float = float(over.call(wpos.call(bi))) - idle
+				rest_off = ro if absf(ro) > absf(rest_off) else rest_off
+			stops.append([skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0, rest_off / sc])
 			if OS.has_environment("FOESTOP_DEBUG"):
-				print("   cut %d: (steady walk: %.4f m/size per 30 ticks) skate %.4f worst %.4f weight hand-overs %d, ts walk %.2f stop %.2f, still at tick %d (blend %.2f)" % [cut, wskate / sc, skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0])
+				print("   cut %d: (steady walk: %.4f m/size per 30 ticks) skate %.4f worst %.4f weight hand-overs %d, ts walk %.2f stop %.2f, still at tick %d (blend %.2f), boots at rest %+.4f m/size off idle" % [cut, wskate / sc, skate / sc, worst / sc, int(swing), walk_ts, stop_ts, still_at, blend0, rest_off / sc])
 		var tot := 0.0
 		var wst := 0.0
 		var stl := 0
 		var tsj := 0.0
 		var allsum := 0.0
+		var rest := 0.0
 		for st in stops:
+			rest = st[7] if absf(st[7]) > absf(rest) else rest
 			allsum += st[0]
 			tot = maxf(tot, st[0])
 			wst = maxf(wst, st[1])
 			stl = maxi(stl, st[5] if st[5] >= 0 else 999)
 			tsj = maxf(tsj, absf(st[4] - st[3]))
-		print("BOT " + tag + ": %s x%.2f (settle steps %d): after the %s, planted boots skate at worst %.4f m/size summed (%.4f over all cuts), %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d" % [e.name, sc, e.stop_settles, "wind-up" if attack else "stop", tot, allsum, wst, tsj, stl])
+		print("BOT " + tag + ": %s x%.2f (settle steps %d): after the %s, planted boots skate at worst %.4f m/size summed (%.4f over all cuts), %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d; boots at rest %+.4f m/size off idle" % [e.name, sc, e.stop_settles, "wind-up" if attack else "stop", tot, allsum, wst, tsj, stl, rest])
 		if fail == "" and not OS.has_environment("FOESTOP_NOGATE"):
 			# (11-13 17:00) tightened from 0.10 / 0.025 once the settle goal held in the world and the
 			# step cleared the turf from the idle ankle level (SETTLEPIN_OLD SETTLEFLOOR_OLD: 0.078 / 0.021)
@@ -5373,6 +5402,11 @@ func _foe_stop_test(attack := false) -> void:
 				# through the wind-up, pivot boot lifting before it travels (SETTLEREF_OLD: soldier 0.042,
 				# knight x2.2 0.037; after: 0.028 / 0.002)
 				fail = "%s x%.1f: planted boots skate %.3f m/size summed over the three wind-ups from a walk" % [e.name, sc, allsum]
+			elif not attack and wst > 0.008:
+				# (11-17 08:00) the stop step's boot no longer meets the turf while it still travels (a foe's
+				# step has travelled by 0.65 of its time): worst tick soldier 0.022 -> 0.0024, knight x3.2
+				# downhill 0.0136 -> 0.0024 m/size (FOETRAVEL_OLD fails this)
+				fail = "%s x%.1f: a planted boot slides %.4f m/size in one tick after a stop" % [e.name, sc, wst]
 			elif not attack and tot > 0.045:
 				fail = "%s x%.1f: a planted boot skates %.3f m/size after a %s" % [e.name, sc, tot, "wind-up from a walk" if attack else "stop"]
 			elif not attack and (stl > 75 or e.stop_settles < 3):

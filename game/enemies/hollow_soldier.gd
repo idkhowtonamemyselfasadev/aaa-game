@@ -451,6 +451,11 @@ func _setup_animation() -> void:
 		skel.move_child(stride_warp, 0)        # first modifier: on the clip's own legs
 		stride_warp.frame = (body.global_basis.inverse() * skel.global_basis).orthonormalized()
 		stride_warp.ground_body = self
+		# (11-17 08:00) a foe's stop step has travelled by 0.65 of its time (the hero's 0.75): at 0.75 the
+		# boot met the turf while it still moved and slid on it for 3-4 ticks, worst on a hillside (bot
+		# `foestopdown`, knight x3.2: 4 cm a tick; the soldier 2.2 cm/size a tick on the flat). FOETRAVEL_OLD: before
+		if not OS.has_environment("STOP_TRAVEL_END") and not OS.has_environment("FOETRAVEL_OLD"):
+			stride_warp.STOP_TRAVEL_END = 0.65
 		# (11-12 02:00) the turn on the spot spins on the ball with the heel up, like the hero's; the
 		# foes' clips rise onto the stepping leg, so the hips may sink deeper and the heel rise higher
 		# to keep the ball on its spot. FOEBALL_OLD: the before (ankle pin, 8 cm sink)
