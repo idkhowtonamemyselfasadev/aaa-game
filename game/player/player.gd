@@ -1859,6 +1859,9 @@ static var STOP_LIFT_F := float(OS.get_environment("STOP_LIFT_F")) if OS.has_env
 static var STOP_LIFT_B := float(OS.get_environment("STOP_LIFT_B")) if OS.has_environment("STOP_LIFT_B") else 0.06   # m, the back boot off its push
 var _stop_pin_set := false
 static var STOPARM_OLD := OS.has_environment("STOPARM_OLD")
+static var STOPSLOPE_OLD := OS.has_environment("STOPSLOPE_OLD")
+const STOP_SLOPE_LIFT_MAX := 0.15        # m: the most a stop raises a boot onto higher turf
+var _stop_slope_lift := Vector2.ZERO
 
 func _stop_step(delta: float, wish: Vector3, busy: bool) -> void:
 	if stop_t >= 0.0:
@@ -1918,6 +1921,7 @@ func _stop_pose() -> void:
 			crumple.ground = 0.0
 			crumple.settle = 0
 			crumple.leg_lift = Vector2.ZERO
+			_stop_slope_lift = Vector2.ZERO
 			crumple.leg_pin_w = Vector2.ZERO
 			crumple.elbow_lr = Vector2.ZERO
 			_stop_env = 0.0
@@ -1983,6 +1987,21 @@ func _stop_pose() -> void:
 	# (down onto its ball by the strike: the two boots meet the turf together, the toes touching)
 	var lb := STOP_LIFT_B * smoothstep(0.0, su * 0.4, u) * (1.0 - smoothstep(su * 0.6, su, u)) * _stop_w
 	crumple.leg_lift = Vector2(lb, lf) if r else Vector2(lf, lb)
+	# (11-17 07:00) the stop's legs are posed for flat ground (each ankle set against the body's own floor):
+	# stopping DOWNHILL the back boot reached down to the body's floor, under the higher turf behind, and
+	# dragged through it at the body's speed for the first ticks (bot `herostop` HEROSTOP_SLOPE=-7: run50
+	# 0.34 m summed, 16 cm in a tick; jog50 14 cm); uphill the same for the front boot. Each boot is raised
+	# by how far the turf under it stands over the body's floor (never lowered), with the pose's envelope.
+	# STOPSLOPE_OLD=1: before
+	if not STOPSLOPE_OLD and stride_warp != null:
+		for i in 2:
+			var want := 0.0
+			if stride_warp._shown_prev[i] != null:
+				var ty: float = stride_warp._turf_y(stride_warp._shown_prev[i], model.scale.x if model != null else 1.0)
+				if ty > -1e9:
+					want = clampf(ty - global_position.y, 0.0, STOP_SLOPE_LIFT_MAX) * env
+			_stop_slope_lift[i] = want if want > _stop_slope_lift[i] else lerpf(_stop_slope_lift[i], want, 0.35)
+		crumple.leg_lift += _stop_slope_lift
 	if u < su:
 		_stop_pin_set = false
 		crumple.leg_pin_w = Vector2.ZERO

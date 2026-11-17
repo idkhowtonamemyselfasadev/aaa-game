@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -282,6 +282,10 @@ func _ready() -> void:
 		return
 	if name == "herostop":
 		_hero_stop_test()
+		return
+	# (11-17 07:00) the same stops gated on a 7 deg hillside: up, down and across the slope
+	if name in HEROSTOP_SLOPES:
+		_hero_stop_test(HEROSTOP_SLOPES[name])
 		return
 	if name == "foewindup":
 		_foe_stop_test(true)
@@ -3980,7 +3984,7 @@ func _start_test() -> void:
 	_combat_done(true, "a hard push from rest drives off one leg, toes on the turf and heel up, the other knee thrown ahead; the run clip takes over in step; a walk eases off")
 
 func _combat_done(ok: bool, why: String) -> void:
-	if _bot_name in ["heroflat", "herostop", "stop", "jump", "start", "heroturn", "heroturnl", "stepup"]:
+	if _bot_name in ["heroflat", "herostop", "herostopup", "herostopdown", "herostopcross", "stop", "jump", "start", "heroturn", "heroturnl", "stepup"]:
 		# a hero boot tipped toes-up more than ~11 deg, or for over a quarter second, reads as a toe-up landing
 		print("BOT toepitch: %s hero boot toe tip on the floor peak %.3f rad (in the air %.3f), on a climbing boot %.3f rad, %d of %d ticks over 0.1 rad, longest run %d, fastest growth %.3f / fall %.3f rad a tick; ball ground over the ankle's at the peak %+.3f m; tip on a tread edge (> 6 cm) %.3f rad, %d ticks" % [_bot_name, _tp.peak, _tp.air_peak, _tp.rise_peak, _tp.over, _tp.ticks, _tp.best_run, _tp.grow, _tp.fall, _tp.peak_step, _tp.edge_peak, _tp.edge_ticks])
 		# the landing tip (heel strike, toes up to 0.35 rad) is fine for a few ticks; on a push-off it flicks the toes
@@ -5108,7 +5112,10 @@ func _flat_slab(e: CharacterBody3D, fwd: Vector3, sc: float, length := -1.0, til
 			var pt: Vector3 = e.global_position + fwd * (i * 0.4 - 1.0 * sc) + side * lane * 0.7 * sc
 			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pt + Vector3.UP * 20.0, pt + Vector3.DOWN * 20.0, 1, [e.get_rid()]))
 			if not hit.is_empty():
-				top = maxf(top, (hit.position as Vector3).y)
+				# (11-17 07:00) a sloped slab must clear the turf along its whole length, not only where it
+				# starts: a downhill slab ran under the hillside a few metres on, the hero walked on the turf
+				# and `herostop`'s boot ray hit the turf (HEROSTOP_SLOPE=-7 read `boots off the turf inf`)
+				top = maxf(top, (hit.position as Vector3).y - (i * 0.4 - 1.0 * sc) * sin(deg_to_rad(tilt_deg)))
 	top += 0.03
 	var sb := StaticBody3D.new()
 	var cs := CollisionShape3D.new()
@@ -5536,7 +5543,8 @@ func _foe_start_test() -> void:
 ## (lower) boot on the slab (within 3 cm of its idle height, same boot both ticks) counts its travel
 ## over the slab as skate; also how long until the legs are still. HEROSTOP_DEBUG=1 prints per cut.
 var RUNSTOP_OPEN_OLD_ENV := OS.has_environment("RUNSTOP_OPEN_OLD") or OS.has_environment("RUNSTOP_SETTLE_OLD")
-func _hero_stop_test() -> void:
+const HEROSTOP_SLOPES := {"herostopup": "7", "herostopdown": "-7", "herostopcross": "0,7"}
+func _hero_stop_test(slope_preset := "") -> void:
 	var p := _player
 	Engine.time_scale = 1.0
 	await _ticks(30)
@@ -5574,7 +5582,7 @@ func _hero_stop_test() -> void:
 	p.velocity = Vector3.ZERO
 	await _ticks(30)
 	# (11-17 05:00) HEROSTOP_SLOPE=<deg along>[,<deg across>]: the same stops on a sloped slab
-	var slope := OS.get_environment("HEROSTOP_SLOPE").split(",")
+	var slope := (slope_preset if slope_preset != "" else OS.get_environment("HEROSTOP_SLOPE")).split(",")
 	var s_t := float(slope[0]) if slope[0] != "" else 0.0
 	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
 	var slab: StaticBody3D = _flat_slab(p, fwd, 1.0, 30.0, s_t, s_r)
@@ -5592,7 +5600,10 @@ func _hero_stop_test() -> void:
 		var h0: float = over.call(a0)
 		var h1: float = over.call(a1)
 		var f := 0 if h0 <= h1 else 1
-		if minf(h0, h1) - idle > 0.03:
+		# (11-17 07:00) the hillside routes read a boot as bearing weight under 2 cm, not 3: across the slope
+		# the jog's last swing boot, still coming down at the body's speed, dips to 2.7 cm on the uphill side
+		# (3.0 on the flat) and read as a 12 cm skate; the downhill drag it is there to catch ran at 0.3 cm
+		if minf(h0, h1) - idle > (0.02 if slope_preset != "" else 0.03):
 			return null
 		return [a0 if f == 0 else a1, f, wpos.call(balls[f])]
 	var worst_sum := 0.0
@@ -5604,6 +5615,8 @@ func _hero_stop_test() -> void:
 	var settles0: int = p.walk_stop_settles if "walk_stop_settles" in p else 0
 	var run_sum := 0.0
 	var run_pop := 0.0
+	var jog_sum := 0.0
+	var jog_tick := 0.0
 	for g in gaits:
 		for cut in [41, 50, 59]:
 			if OS.has_environment("HEROSTOP_CUT") and "%s%d" % [g[0], cut] != OS.get_environment("HEROSTOP_CUT"):
@@ -5682,6 +5695,9 @@ func _hero_stop_test() -> void:
 				run_pop = maxf(run_pop, pop)
 				continue                       # gated on its own below
 			worst_pop = maxf(worst_pop, pop)
+			if g[0] == "jog":
+				jog_sum = maxf(jog_sum, skate)
+				jog_tick = maxf(jog_tick, worst)
 			# (11-14 04:00) the jog band (4.2-4.6 m/s) plants now (STOP_MIN_SPEED 4.0) and is gated with the
 			# walk: 0.14-0.31 m summed before, 0.013-0.016 after
 			if g[0] != "jog" or OS.get_environment("STOP_MIN_SPEED") == "4.6":
@@ -5709,6 +5725,10 @@ func _hero_stop_test() -> void:
 		# tick); after 0.007-0.024 m. Its worst pop (0.070, the settle's release) shares the walk gate
 		elif not RUNSTOP_OPEN_OLD_ENV and (run_sum > 0.08 or run_pop > 0.08):
 			fail = "the hero's run stop skates %.3f m summed (pop %.3f m)" % [run_sum, run_pop]
+		# (11-17 07:00) on a hillside the jog stop is gated too: downhill its back boot dragged through the
+		# higher turf behind (jog50 0.178 m summed, 14 cm in a tick), uphill jog41 7.7 cm in a tick
+		elif slope_preset != "" and (jog_sum > 0.05 or jog_tick > 0.02):
+			fail = "the hero's jog stop on a %s deg slope skates %.3f m summed (%.3f m in a tick)" % [slope_preset, jog_sum, jog_tick]
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "the hero letting go at a walk steps into its idle stance instead of skating its boots" if not OS.has_environment("WALKSTOP_OLD") else "walk-stop skate read (WALKSTOP_OLD: the before, ungated)")

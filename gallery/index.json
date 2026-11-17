@@ -886,5 +886,17 @@
   "time": "2026-11-17T04:30:00Z",
   "caption": "The phase-2 giant turning on the spot on the ring's slope, boots planted on the ash (its pivot ball no longer creeps); low lens crops the body and the armour reads very dark in GL.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261117-0700-runstop-brake.jpg",
+  "time": "2026-11-17T07:00:00Z",
+  "caption": "Run stop mid-brake (frame 1.60 s): front boot planted heel-first, back boot coming down onto its ball, both on the turf; the lens is behind on near-flat ground and the GL fallback leaves the turf flat and over-saturated, so it doesn't show the downhill fix and would not pass as Wukong.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-0700-runstop-settle.jpg",
+  "time": "2026-11-17T07:00:00Z",
+  "caption": "Run stop settling (frame 1.72 s): the hero squares up over planted boots with no skid; still a GL render from behind, flat ochre ground with sparse leaf decals.",
+  "verdict": "fail"
  }
 ]
