@@ -3238,6 +3238,11 @@ func _ready() -> void:
 			var toward := Vector3(-tl.x, 0, -tl.z).normalized()
 			var sgn := 1.0 if toward.dot(rside) > 0.0 else -1.0
 			var bc := rr.centre + (rf + rside * 0.6 * sgn).normalized() * 2.2 * sz
+			if "sunside" in args:
+				# (11-17 15:00) sunside: the lens straight down the sun's azimuth (sun behind the lens),
+				# so the boots facing it are lit instead of standing in the body's own shadow
+				bc = rr.centre + toward * 2.2 * sz
+				print("SHOT ring bootlens sunside, off the gate by %.1f deg" % rad_to_deg(toward.angle_to(rf)))
 			bc.y = terrain.height_at(bc.x, bc.z) + 0.45 * sz
 			cam.global_position = bc
 			cam.look_at(rr.centre + Vector3.UP * 0.35 * sz)

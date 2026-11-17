@@ -2888,6 +2888,10 @@ func _hero_turn_test(slope_preset := "") -> void:
 	if not Player.HEROTURN_OLDPLANT and not Player.HEROTURN_OLDSTART and _tf_rel_slide > 0.005:
 		return _combat_done(false, "the feet slide %.3f m on the turf off the pivot (start / release) in a turn on the spot" % _tf_rel_slide)
 	print("BOT heroturn: the stepping boot last off the turf (> 3 mm) at tick %d, %d ticks after the body squared (tick %d); it scuffs %.3f m over the turf while down" % [_tf_last_up, _tf_last_up - int(spot[3]), spot[3], _tf_skate])
+	# (11-17 15:00) the stepping boot is lifted off the turf, not dragged round (uphill it scuffed 0.377 m
+	# before its arc was let rise on the first ticks; flat / down / across 0.001)
+	if not StrideWarp.TURNARC_FALL_OLD and _tf_skate > 0.02:
+		return _combat_done(false, "the stepping boot drags %.3f m along the turf in a turn on the spot" % _tf_skate)
 	print("BOT heroturn: on the spot the body turns at most %.2f rad/s (cap %.1f), shuffle up to %.2f, square at tick %d" % [spot_rate, p.TURN_STEP_RATE, spot_shuffle, spot[3]])
 	print("BOT heroturn: pivot foot %s planted %d ticks, pin drift %.3f m (y %.3f), the other foot travels %.2f m, the body swings %.2f m round it, pin after %s" % ["left" if spot_piv[3] == 0 else "right", spot_piv[4], spot_piv[0], spot_piv[1], spot_piv[2], spot_orbit, pin_after])
 	print("BOT heroturn: ease-in: the body has turned %.3f rad when the head lead passes 0.5, %.3f rad after 3 ticks" % [_ease_spot[0], _ease_spot[1]])

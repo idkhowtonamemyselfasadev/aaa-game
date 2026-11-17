@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261114-0300-runstop-brake.jpg",
-  "time": "2026-11-14T03:00:00Z",
-  "caption": "The hero braking from a run, sunlit side-on: front boot struck and pinned on the turf, back boot on its ball, the balance hand forward at chest height; the hand still reads a little high and the legs dark under the tabard.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0300-runstop-settled.jpg",
-  "time": "2026-11-14T03:00:00Z",
-  "caption": "The same run stop settled 0.4 s later, boots together in the idle stance on a sunlit yard; pose reads, but the dark legs and the flat cottage behind keep it below a Wukong frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0400-jogstop-planted.jpg",
-  "time": "2026-11-14T04:00:00Z",
-  "caption": "The same jog stop 0.2 s later, both boots flat and the body rising over them with no skate; lighting on the figure is still murky for a Wukong frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0400-jogstop-strike.jpg",
   "time": "2026-11-14T04:00:00Z",
   "caption": "The hero letting go at a jog now plants: front heel struck, back boot on its ball, balance hand forward; the stop reads, but the legs are dark under the tabard and the yard is flat.",
@@ -897,6 +879,12 @@
   "file": "20261117-1400-turn-lit-right.jpg",
   "time": "2026-11-17T14:00:00Z",
   "caption": "Right turn on the spot at tick 40, sun-side wide lens: the settle steps wide and holds; grass and the hero are lit but the turf under the boots is dark and the trees read soft in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-1500-bossturn-sunside.jpg",
+  "time": "2026-11-17T15:00:00Z",
+  "caption": "The final-size boss turning on the spot, new sun-side boot lens at 11:30 (frames 56 and 68): the outside boot lifts heel-up then sets beside the planted one, sabatons now lit; the trampled ring turf under them is still dark and the boots stack from this side.",
   "verdict": "fail"
  }
 ]

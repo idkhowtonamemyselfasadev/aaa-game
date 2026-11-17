@@ -431,6 +431,7 @@ var _arc_v := -1.0               # (11-15) units/s the arc top fell last tick (0
 static var ARC_ACC_SIZE_OLD := OS.has_environment("ARC_ACC_SIZE_OLD")
 const ARC_DROP_ACC := 180.0      # units/s^2: the descent gains at most 3 units/s a tick at 60 Hz
 static var ARC_JERK_OLD := OS.has_environment("ARC_JERK_OLD")
+static var TURNARC_FALL_OLD := OS.has_environment("TURNARC_FALL_OLD")
 const STEP_EASE_H := 2.5         # skeleton units: the boot's descent slows over this last bit (as sqrt: an even braking)
 const STEP_EASE_MIN := 0.25      # ...down to this fraction of the rate, so it does get down
 const STEP_EASE_K := 6.5         # 1/s: the boot closes at most this share of its height per second (~10 % a tick at 60 Hz)...
@@ -1141,7 +1142,12 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				nt = maxf(nt, minf(_arc_top - fall * STEP_SAG_HELD, _arc_lift))
 			if PIVOT_DBG:
 				print("  arc f%d top %.2f fall %.2f cand %.2f d %.4f trav %s" % [Engine.get_physics_frames(), _arc_top, fall, cand, delta, travelling])
-			if nt < _arc_top - 1e-4:
+			# (11-17 15:00) ...but not while the step is still rising on its first half: on an uphill turn the
+			# free boot starts over the stance level by the slope (top 0.07) and that baseline shrinks as it
+			# swings round, which read as the arc coming down on the first ticks, so the lift was never added
+			# and the boot dragged 0.38 m along the turf for 27 ticks (bot `heroturnup` scuff). TURNARC_FALL_OLD: before
+			var rising := not TURNARC_FALL_OLD and not settling and travelling and want > _arc_lift + 1e-4 and _arc_lift < 0.5 * step_lift_max
+			if nt < _arc_top - 1e-4 and not rising:
 				_arc_falling = true
 			_arc_v = maxf(_arc_top - nt, 0.0) / maxf(delta, 1e-4) if nt < _arc_top else 0.0
 			_arc_top = nt
