@@ -5455,6 +5455,13 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 					var d0 := Vector2(st[0].x - prev[0][0].x, st[0].z - prev[0][0].z).length() if prev[0] != null else 0.0
 					var a0: Vector3 = wpos.call(bones[0])
 					var a1: Vector3 = wpos.call(bones[1])
+					if OS.has_environment("FOESTOP_BOTH"):
+						var b0: Vector3 = wpos.call(bones[0])
+						var b1: Vector3 = wpos.call(bones[1])
+						var hp: Vector3 = skel.global_transform * skel.get_bone_global_pose(skel.find_bone("mixamorig_Hips") if skel.find_bone("mixamorig_Hips") >= 0 else 0).origin
+						if prev[1] != null:
+							print("     both srd %s rot %.4f  t%d piv %.3f done %s stopk %.2f b0 %.4f b1 %.4f root %.4f hips %.4f" % [str(e.stride_warp.settle_ref_delta.origin / sc), e.stride_warp.settle_ref_delta.basis.get_euler().length(), fi, e.stride_warp.pivot, str(e.stride_warp.settle_done), e.stride_warp.settle_lift_k, Vector2(b0.x - prev[1][0].x, b0.z - prev[1][0].z).length() / sc, Vector2(b1.x - prev[1][1].x, b1.z - prev[1][1].z).length() / sc, Vector2(e.global_position.x - prev[1][2].x, e.global_position.z - prev[1][2].z).length() / sc, Vector2(hp.x - prev[1][3].x, hp.z - prev[1][3].z).length() / sc])
+						prev[1] = [b0, b1, e.global_position, hp]
 					print("     t%d foot %d travel %.4f along %+.3f  hL %.3f hR %.3f  v %.2f blend %.2f ts %.2f lock %.2f" % [fi, st[1], d0 / sc, (a0 - a1).dot(fwd) / sc, (float(over.call(a0)) - idle) / sc, (float(over.call(a1)) - idle) / sc, Vector2(e.velocity.x, e.velocity.z).length(), e._blend, float(e.anim_tree.get("parameters/speed/scale")), e.stride_warp.lock])
 				if st != null and prev[0] != null and prev[0][1] == st[1]:
 					var d := Vector2(st[0].x - prev[0][0].x, st[0].z - prev[0][0].z).length()

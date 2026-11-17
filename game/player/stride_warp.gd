@@ -540,6 +540,7 @@ func _settle_ref(xf: Transform3D) -> Transform3D:
 		return xf
 	return settle_ref_delta * xf
 static var SETTLE_DBG := OS.has_environment("SETTLE_DBG")
+static var STANCE_DBG := OS.has_environment("STANCE_DBG")   # (11-17 19:00) a stop: the clip foot vs the idle stance snapshot, per tick
 static var SETTLE_DBG_HERO := OS.has_environment("SETTLE_DBG_HERO")   # (11-14) SETTLE_DBG prints the hero only
 var dbg_me := false                # (set by the hero)
 static var SETTLE_FLOOR_OLD := OS.has_environment("SETTLEFLOOR_OLD")
@@ -732,6 +733,8 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				if fb >= 0:
 					_stance[i] = skel.get_bone_global_pose(fb).origin
 			_stance_ok = true
+			if STANCE_DBG and ground_scale > 3.0:
+				print("  stancesnap f%d L %s R %s" % [Engine.get_physics_frames(), str(_stance[0]), str(_stance[1])])
 			# (11-14 01:00) the idle ankle's height over the turf, world (a stop's pin is set at it)
 			if stop_pin_shown and _shown_prev[0] != null and _shown_prev[1] != null and float(_ank_gy[0]) > -1e9 and float(_ank_gy[1]) > -1e9:
 				_idle_ank_h = minf((_shown_prev[0] as Vector3).y - float(_ank_gy[0]), (_shown_prev[1] as Vector3).y - float(_ank_gy[1]))
@@ -751,6 +754,9 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 	var inv := xf.affine_inverse()
 	var up := (frame.inverse() * Vector3.UP).normalized()
 	var fwd := (frame.inverse() * Vector3.BACK).normalized()
+	if STANCE_DBG and _stance_ok and settle_lift_k != 1.0:
+		var wsc := xf.basis.get_scale().x
+		print("  stancedbg f%d k %.3f clipL-stL %s clipR-stR %s" % [Engine.get_physics_frames(), k, str((xf.basis * (skel.get_bone_global_pose(skel.find_bone("mixamorig_LeftFoot")).origin - (_stance[0] as Vector3))) / ground_scale), str((xf.basis * (skel.get_bone_global_pose(skel.find_bone("mixamorig_RightFoot")).origin - (_stance[1] as Vector3))) / ground_scale)])
 	if pivot_pin == null:
 		_pin_abs = false
 		# (11-15 12:00) a turn on the spot's pin is planted where the boot was shown (below), so it can hold
