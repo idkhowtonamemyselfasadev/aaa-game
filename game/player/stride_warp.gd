@@ -554,6 +554,7 @@ static var STOPPIN_LOCK_OLD := OS.has_environment("STOPPIN_LOCK_OLD")
 static var STOPGATHER_OLD := OS.has_environment("STOPGATHER_OLD")
 static var STOPPICK_SHOWN_OLD := OS.has_environment("STOPPICK_SHOWN_OLD")
 static var STOPPIN_FLOOR_OLD := OS.has_environment("STOPPIN_FLOOR_OLD")
+static var STOPPIN_GROUND_OLD := OS.has_environment("STOPPIN_GROUND_OLD")   # (11-17 05:00) a stop pin's height counted the ground IK's lift twice on slopes (before)
 var _idle_ank_h := 0.0             # (11-14) world m: the idle ankle over the turf (hero)
 ## (11-14 07:00) a stop's pinned boot holds its WORLD orientation while it is planted: only the ankle
 ## was pinned and the boot kept turning with the clip, so its ball crept 0.5-1 cm a tick and the
@@ -730,7 +731,14 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			# back boot 4.4 cm under the turf, out of the leg's reach; the boot drifted with the clip and its
 			# own settle step then slid along the ground (bot `herostop` walk+ 59). STOPPIN_FLOOR_OLD: before
 			var pw: Vector3 = pivot_pin
-			pivot_pin = Vector3(pw.x, float(_ank_gy[pivot_side]) + _idle_ank_h, pw.z)
+			# (11-17 05:00) less the ground IK's own lift of this foot (its ground under the floor, eased),
+			# which _ground_feet adds on top of every pin: on a 7 deg hillside the uphill boot's pin stood
+			# 2.8 cm over the turf (counted twice), its settle step kept that height and the release then
+			# let it drop 2.6 cm over 11 ticks (bot `herostop` HEROSTOP_SLOPE=7). STOPPIN_GROUND_OLD: before
+			# (Not yet at a jog/run stop: it plants while the posed run-stop legs hold the ground IK at weight 0,
+			# which ramps back to 1 over ~8 ticks after, so its pin still rises by the lift; see PROGRESS.md.)
+			var gofs := 0.0 if STOPPIN_GROUND_OLD else float(ground_off[pivot_side]) * clampf(ground_w, 0.0, 1.0)
+			pivot_pin = Vector3(pw.x, float(_ank_gy[pivot_side]) + _idle_ank_h - gofs, pw.z)
 			f0 = inv * (pivot_pin as Vector3)
 			lo = f0.dot(up)
 		_stop_pin_lock = false

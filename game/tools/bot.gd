@@ -5097,7 +5097,7 @@ func _foe_step_test() -> void:
 ## turf under a boot is uneven by a few cm a size (`foestep` x3.2 read -0.080 m 'under the idle' on
 ## one patch, -0.028 on another), so the read measured the turf, not the clip. Its top sits just
 ## over the highest turf along the walk; the foe is set on it. Returns the slab (free it after).
-func _flat_slab(e: CharacterBody3D, fwd: Vector3, sc: float, length := -1.0) -> StaticBody3D:
+func _flat_slab(e: CharacterBody3D, fwd: Vector3, sc: float, length := -1.0, tilt_deg := 0.0, roll_deg := 0.0) -> StaticBody3D:
 	var space := e.get_world_3d().direct_space_state
 	var side := fwd.cross(Vector3.UP)
 	if length <= 0.0:
@@ -5118,7 +5118,16 @@ func _flat_slab(e: CharacterBody3D, fwd: Vector3, sc: float, length := -1.0) -> 
 	sb.add_child(cs)
 	_world.add_child(sb)
 	var c: Vector3 = e.global_position + fwd * (length * 0.5 - 1.0 * sc)
-	sb.global_transform = Transform3D(Basis(side, Vector3.UP, fwd), Vector3(c.x, top - 0.2, c.z))
+	if tilt_deg == 0.0 and roll_deg == 0.0:
+		sb.global_transform = Transform3D(Basis(side, Vector3.UP, fwd), Vector3(c.x, top - 0.2, c.z))
+	else:
+		# (11-17 05:00) a sloped slab: rising `tilt_deg` along fwd and `roll_deg` across (about fwd), turned
+		# about the spot under the foe so its surface there is still `top` (raised by the roll's half-width drop)
+		top += absf(sin(deg_to_rad(roll_deg))) * 1.2 * sc
+		var b := Basis(side, Vector3.UP, fwd)
+		b = Basis(side, deg_to_rad(tilt_deg)) * Basis(fwd, deg_to_rad(roll_deg)) * b
+		var here := Vector3(e.global_position.x, top, e.global_position.z)
+		sb.global_transform = Transform3D(b, here + b * Vector3(0, -0.2, length * 0.5 - 1.0 * sc))
 	e.global_position.y = top + 0.05
 	e.velocity = Vector3.ZERO
 	return sb
@@ -5564,7 +5573,11 @@ func _hero_stop_test() -> void:
 	p.global_position = start
 	p.velocity = Vector3.ZERO
 	await _ticks(30)
-	var slab: StaticBody3D = _flat_slab(p, fwd, 1.0, 30.0)
+	# (11-17 05:00) HEROSTOP_SLOPE=<deg along>[,<deg across>]: the same stops on a sloped slab
+	var slope := OS.get_environment("HEROSTOP_SLOPE").split(",")
+	var s_t := float(slope[0]) if slope[0] != "" else 0.0
+	var s_r := float(slope[1]) if slope.size() > 1 else 0.0
+	var slab: StaticBody3D = _flat_slab(p, fwd, 1.0, 30.0, s_t, s_r)
 	cur_slab[0] = slab
 	var base := p.global_position
 	await _ticks(90)
@@ -5586,6 +5599,7 @@ func _hero_stop_test() -> void:
 	var worst_tick := 0.0
 	var worst_still := 0
 	var worst_pop := 0.0
+	var worst_ball := 0.0
 	var rel_hump := 0.0      # (11-14 06:00) worst boot height off its idle while the stop's pivot lets go
 	var settles0: int = p.walk_stop_settles if "walk_stop_settles" in p else 0
 	var run_sum := 0.0
@@ -5603,9 +5617,13 @@ func _hero_stop_test() -> void:
 				p.bot_input = Vector2(0, -1) * float(g[1])
 				await get_tree().physics_frame
 				v_cut = Vector2(p.velocity.x, p.velocity.z).length()
+				if OS.has_environment("HEROSTOP_WALKH") and fi >= cut - 30:
+					await skel.skeleton_updated
+					print("     walkh %s%d t%d hL %+.3f hR %+.3f" % [g[0], cut, fi, float(over.call(wpos.call(bones[0]))) - idle, float(over.call(wpos.call(bones[1]))) - idle])
 			p.bot_input = Vector2.ZERO
 			var prev = null
 			var skate := 0.0
+			var bskate := 0.0
 			var worst := 0.0
 			var hand := 0
 			var still_at := -1
@@ -5635,10 +5653,14 @@ func _hero_stop_test() -> void:
 					var h0: Vector3 = wpos.call(bones[0])
 					var h1: Vector3 = wpos.call(bones[1])
 					print("     %s%d h t%d hL %+.3f hR %+.3f v %.2f stop_u %.2f pinerr %s" % [g[0], cut, fi, float(over.call(h0)) - idle, float(over.call(h1)) - idle, Vector2(p.velocity.x, p.velocity.z).length(), p.stop_t / p.STOP_TIME if p.stop_t >= 0.0 else -1.0, p.crumple.leg_pin_err])
+					print("       body_y %.4f model_y %.4f drop %.4f off %s gw %.2f floordip %.4f" % [p.global_position.y, p.model.global_position.y, p.stride_warp.ground_drop, p.stride_warp.ground_off, p.stride_warp.ground_w, p.stride_warp.floor_dip])
 				if st != null and prev != null and prev[1] == st[1]:
 					# a boot rolling up onto its ball (heel lifting, the ball held) or back down is not
 					# a skate: only the whole boot moving counts (the lesser of ankle and ball travel)
 					var d := minf(Vector2(st[0].x - prev[0].x, st[0].z - prev[0].z).length(), Vector2(st[2].x - prev[2].x, st[2].z - prev[2].z).length())
+					# (11-17 05:00) the ball alone across the turf while the boot bears weight (a sole turned about
+					# its pinned ankle swings it; the lesser-of read above hides that)
+					bskate += Vector2(st[2].x - prev[2].x, st[2].z - prev[2].z).length()
 					skate += d
 					worst = maxf(worst, d)
 					if OS.has_environment("HEROSTOP_TICKS") and d > 0.002 and (not OS.has_environment("HEROSTOP_CUT") or "%s%d" % [g[0], cut] == OS.get_environment("HEROSTOP_CUT")):
@@ -5653,7 +5675,8 @@ func _hero_stop_test() -> void:
 				if still_at < 0 and moved < 0.0005 and p.stride_warp.pivot <= 0.0 and p.stop_t < 0.0:
 					still_at = fi
 			if OS.has_environment("HEROSTOP_DEBUG"):
-				print("   %s cut %d (v %.2f, planted stop %s): skate %.4f worst %.4f hand-overs %d still at %d pop %.3f" % [g[0], cut, v_cut, "yes" if p.stops > 0 and p.stop_t >= 0.0 else "no", skate, worst, hand, still_at, pop])
+				print("   %s cut %d (v %.2f, planted stop %s): skate %.4f worst %.4f ball %.4f hand-overs %d still at %d pop %.3f" % [g[0], cut, v_cut, "yes" if p.stops > 0 and p.stop_t >= 0.0 else "no", skate, worst, bskate, hand, still_at, pop])
+			worst_ball = maxf(worst_ball, bskate)
 			if g[0] == "run":
 				run_sum = maxf(run_sum, skate)
 				run_pop = maxf(run_pop, pop)
@@ -5668,7 +5691,7 @@ func _hero_stop_test() -> void:
 	var settles: int = (p.walk_stop_settles if "walk_stop_settles" in p else 0) - settles0
 	if run_sum > 0.0 or run_pop > 0.0:
 		print("   run stop: skate at worst %.4f m summed, worst pop %.3f m, %d handed to the settle" % [run_sum, run_pop, p.run_stop_settles if "run_stop_settles" in p else 0])
-	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d; boots off the turf %.3f m as the pivot lets go" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3, rel_hump])
+	print("BOT herostop: after letting go at a walk/slow jog, planted boots skate at worst %.4f m summed, %.4f m in one tick; still by tick %d; worst boot pop %.3f m in a tick; stop settles %d of %d; boots off the turf %.3f m as the pivot lets go; ball travel %.4f m" % [worst_sum, worst_tick, worst_still, worst_pop, settles, gaits.size() * 3, rel_hump, worst_ball])
 	slab.queue_free()
 	p.global_position = start
 	# gated with the new walk stop on (the default since 11-14 01:00; WALKSTOP_OLD=1 reads the before ungated)
