@@ -416,6 +416,14 @@ var surge_turned := 0.0          # bots: yaw the surge's rise turned the body on
 const SURGE_TURN_RATE := 2.2     # rad/s at the middle of the rise (eased in and out)
 const SURGE_TURN_MAX := 1.4      # rad the rise may turn in all
 var _surge_turn_on := OS.get_environment("SURGETURN_OLD") != "1"
+## (00:00 11-17) the heave waits for the right knee: the turn began 0.05 s after the blast, while
+## the knee still knelt on the turf (it leaves it ~0.25 s after the blast as the rise straightens
+## the legs), so the kneeling knee was dragged round on the ash (0.08-0.11 m per size of scrub in
+## contact, 0.06 with no turn). Now the knee lifts first and the hips swing after it, a little
+## quicker so the rise still turns ~65 deg. SURGEKNEE_OLD=1: the before.
+const SURGE_TURN_FROM := 0.32    # s after the blast the pivot may start (the knee is off the turf)
+const SURGE_TURN_RATE_LATE := 2.9
+var _surge_knee_first := OS.get_environment("SURGEKNEE_OLD") != "1"
 var stomps := 0                  # bots
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
@@ -964,7 +972,8 @@ func _surge_body(delta: float) -> void:
 func _surge_turn(delta: float, s: float) -> void:
 	if not _surge_turn_on or _player == null or _player.is_dead() or skel == null:
 		return
-	var a0 := SURGE_BLAST + 0.05
+	var a0 := SURGE_BLAST + (SURGE_TURN_FROM if _surge_knee_first else 0.05)
+	var rate := SURGE_TURN_RATE_LATE if _surge_knee_first else SURGE_TURN_RATE
 	var a1 := SURGE_T - 0.5          # the left boot's release starts here (see _plant above)
 	if s <= a0 or s >= a1:
 		return
@@ -975,7 +984,7 @@ func _surge_turn(delta: float, s: float) -> void:
 	var w := sin(PI * (s - a0) / (a1 - a0))
 	var d := angle_difference(body.rotation.y, atan2(to.x, to.z))
 	var room := SURGE_TURN_MAX - absf(surge_turned)
-	var step := clampf(d, -1.0, 1.0) * SURGE_TURN_RATE * w * delta
+	var step := clampf(d, -1.0, 1.0) * rate * w * delta
 	step = clampf(step, -absf(d), absf(d))
 	step = clampf(step, -room, room)
 	if absf(step) < 1e-5:

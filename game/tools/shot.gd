@@ -3264,8 +3264,13 @@ func _ready() -> void:
 		# spawned and the st=90 frame caught it side-on. Stand the hero on the knight's front first
 		# (the lens below prefers the front, so the hero ends up near there anyway); `turn`: put the
 		# hero on the knight's right flank instead, to see the pivot.
+		# (00:00 11-17) lensfix: every st= frame of a sequence picks its lens from the knight's facing
+		# BEFORE the surge (turned 1 rad toward the `turn` hero) at its final size, so a frame
+		# sequence of the rise's pivot is shot from one fixed spot instead of chasing the front
+		var kf_start := Vector3(rk.body.global_basis.z.x, 0, rk.body.global_basis.z.z).normalized()
+		var kp_start := rk.global_position
 		if "hero" in args:
-			var kf0 := Vector3(rk.body.global_basis.z.x, 0, rk.body.global_basis.z.z).normalized()
+			var kf0 := kf_start
 			if "turn" in args:
 				kf0 = kf0.rotated(Vector3.UP, -2.0)
 			var hp0 := rk.global_position + kf0 * 4.0 * rk.size_scale
@@ -3350,6 +3355,8 @@ func _ready() -> void:
 			var cen := Vector3(rr.centre.x, kp.y, rr.centre.z)
 			var max_r := StoneRing.RADIUS - 3.2
 			var dist := 9.0 * rk.size_scale / 2.2
+			if "lensfix" in args:
+				dist = 9.0 * rk.growth.scale_of(from_ph + 1) / 2.2
 			var sp := kp
 			# among the clear spots take the one most on the knight's front side, so the lens sees
 			# the chest, not its back (21:00 11-06 item c). Read the facing from the body AFTER the
@@ -3358,6 +3365,9 @@ func _ready() -> void:
 			# every frame; 01:00 11-07 flipped back to +Z)
 			var kb := rk.body.global_transform.basis.z
 			var kfwd := Vector3(kb.x, 0, kb.z).normalized()
+			if "lensfix" in args:
+				kfwd = kf_start.rotated(Vector3.UP, -1.0 if "turn" in args else 0.0)
+				kp = kp_start
 			print("SHOT ring surge knight front (%.2f, %.2f)" % [kfwd.x, kfwd.z])
 			var best_score := -INF
 			var best_sp := Vector3.INF

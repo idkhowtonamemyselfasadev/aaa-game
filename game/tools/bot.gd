@@ -2293,6 +2293,11 @@ func _surge_turn_test() -> void:
 		var boot0 := Vector3.INF
 		var drift := 0.0
 		var err1 := 0.0
+		var kb := k.skel.find_bone("mixamorig_RightLeg")
+		var krel0 := Vector3.INF
+		var kskid := 0.0
+		var kmaxh := -INF
+		var kh0 := 0.0
 		for i in 400:
 			await get_tree().physics_frame
 			await k.skel.skeleton_updated
@@ -2309,13 +2314,30 @@ func _surge_turn_test() -> void:
 				if boot0 == Vector3.INF:
 					boot0 = fw
 				drift = maxf(drift, Vector2(fw.x - boot0.x, fw.z - boot0.z).length())
+				# the right knee on the turf: its spot relative to the boot, per size (the growth
+				# scales it out, a turn swings it round = a skid along the turf)
+				var kw: Vector3 = k.skel.global_transform * k.skel.get_bone_global_pose(kb).origin
+				var krel := (kw - fw) / k.size_scale
+				krel.y = 0.0
+				var kh: float = (kw.y - _world.terrain.height_at(kw.x, kw.z)) / k.size_scale
+				if krel0 == Vector3.INF:
+					krel0 = krel
+					kh0 = kh
+				# in contact: within 3 cm per size of its kneeling height (above that it is lifting)
+				if kh < kh0 + 0.03:
+					kskid = maxf(kskid, (krel - krel0).length())
+				kmaxh = maxf(kmaxh, kh)
+				if OS.has_environment("SURGETURN_DBG"):
+					print("  SK s %.2f knee h %.3f rel (%.3f, %.3f) skid %.3f" % [s, kh, krel.x, krel.z, (krel - krel0).length()])
 				if OS.has_environment("SURGETURN_DBG"):
 					print("  SB s %.2f boot (%.3f, %.3f) yaw %.3f size %.2f short %.3f" % [s, fw.x, fw.z, k.body.rotation.y, k.size_scale, k.tuck.short])
 		p.set_physics_process(true)
-		print("BOT surgeturn: phase %d (size %.2f) facing error %.0f deg at the blow -> %.0f deg at the settle, turned %.0f deg; left boot drift over the turn %.3f m per size" % [ph, ks, rad_to_deg(err0), rad_to_deg(err1), rad_to_deg(k.surge_turned), drift / ks])
+		print("BOT surgeturn: phase %d (size %.2f) facing error %.0f deg at the blow -> %.0f deg at the settle, turned %.0f deg; left boot drift over the turn %.3f m per size; right knee skid on the turf %.3f m per size (knee up to %.2f per size)" % [ph, ks, rad_to_deg(err0), rad_to_deg(err1), rad_to_deg(k.surge_turned), drift / ks, kskid, kmaxh])
 		if fail == "" and OS.get_environment("SURGETURN_OLD") != "1":
 			if err0 - err1 < deg_to_rad(50.0):
 				fail = "surge into phase %d: the rise turned the knight only %.0f deg onto the hero" % [ph, rad_to_deg(err0 - err1)]
+			elif kskid > 0.05 and OS.get_environment("SURGEKNEE_OLD") != "1":   # no turn: 0.043 / 0.044; turn on the knee (SURGEKNEE_OLD): 0.056 / 0.063; knee first: 0.043 / 0.045
+				fail = "surge into phase %d: the kneeling right knee scrubbed %.3f m per size round on the turf in the turn" % [ph, kskid]
 			elif drift / ks > 0.075:   # the growth alone carries it ~0.06-0.07 per size out (SURGETURN_OLD: 0.069 / 0.060)
 				fail = "surge into phase %d: the planted boot skated %.3f m per size in the turn" % [ph, drift / ks]
 	if fail != "":
