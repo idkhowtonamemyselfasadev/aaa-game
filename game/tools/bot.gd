@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "heroturn", "heroturnl", "footik", "stepup", "foestep", "foeflat", "foestop", "herostop", "foestart", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -249,6 +249,9 @@ func _ready() -> void:
 		return
 	if name == "knightguard":
 		_knight_guard_test()
+		return
+	if name == "knightbase":
+		_knight_base_test()
 		return
 	if name == "foereach":
 		_foe_reach_test()
@@ -2212,6 +2215,66 @@ func _knight_guard_test() -> void:
 	if fail != "":
 		return _combat_done(false, "AshenKnight guard: " + fail)
 	_combat_done(true, "the knight's guard lies inside the reach of its real shoulders at every size")
+## (03:00 11-17) The knight's guard stance base: the boots' sideways gap (along the body's side
+## axis, ankle to ankle) against its shoulder-joint width, at every size, standing in IDLE.
+## A heavy giant stands wider than its shoulders; the Idle clip stood it ~heels together.
+const KBASE_MIN := 0.8          # ankle gap / shoulder width below this fails (STANCEWIDE_OLD=1: 0.35)
+func _knight_base_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	for o in [_world.soldier, _world.warden, _world.hewer, _world.harrier, _world.archer, _world.kindler, _world.sentinel]:
+		if o != null:
+			o.process_mode = Node.PROCESS_MODE_DISABLED
+	k.intro_seen = true
+	k.notice = -1.0
+	k.give_up = 1e9
+	var fail := ""
+	var bl := k.skel.find_bone("mixamorig_LeftFoot")
+	var br := k.skel.find_bone("mixamorig_RightFoot")
+	var sl := k.skel.find_bone("mixamorig_LeftArm")
+	var sr := k.skel.find_bone("mixamorig_RightArm")
+	var tl := k.skel.find_bone("mixamorig_LeftToeBase")
+	var tr := k.skel.find_bone("mixamorig_RightToeBase")
+	for ph in [1, 2, 3]:
+		k._set_phase(ph)
+		k.set_size_scale(k.growth.scale_of(ph))
+		k.state = HollowSoldier.IDLE
+		k.t = 0.0
+		k._pose = k.guard_pose
+		k._from = k.guard_pose
+		_player.global_position = k.global_position + k.body.global_basis.z * 9.0 * k.size_scale
+		await _ticks(40)
+		var gap := [9.0, 0.0]
+		var fwd := 0.0
+		var shw := 0.0
+		var lift := 0.0
+		var splay := 0.0
+		for i in 60:
+			await get_tree().physics_frame
+			await k.skel.skeleton_updated
+			var gt := k.skel.global_transform
+			var bx := k.body.global_basis.x.normalized()
+			var bz := k.body.global_basis.z.normalized()
+			var fl: Vector3 = gt * k.skel.get_bone_global_pose(bl).origin
+			var fr: Vector3 = gt * k.skel.get_bone_global_pose(br).origin
+			var g := absf((fl - fr).dot(bx)) / k.size_scale
+			gap = [minf(gap[0], g), maxf(gap[1], g)]
+			fwd = (fl - fr).dot(bz) / k.size_scale
+			shw = absf(((gt * k.skel.get_bone_global_pose(sl).origin) - (gt * k.skel.get_bone_global_pose(sr).origin)).dot(bx)) / k.size_scale
+			lift = maxf(lift, maxf(fl.y, fr.y) - k.global_position.y)
+			if tl >= 0 and tr >= 0:
+				var al: Vector3 = (gt * k.skel.get_bone_global_pose(tl).origin) - fl
+				var ar: Vector3 = (gt * k.skel.get_bone_global_pose(tr).origin) - fr
+				al.y = 0.0
+				ar.y = 0.0
+				splay = rad_to_deg(al.angle_to(ar))
+		var ratio: float = gap[0] / maxf(shw, 1e-3)
+		print("   AshenKnight base phase %d (x%.1f): ankle gap %.3f..%.3f m/size, left boot ahead %.3f, shoulders %.3f -> gap/shoulders %.2f | toes splay %.0f deg | ankle top %.3f m" % [ph, k.size_scale, gap[0], gap[1], fwd, shw, ratio, splay, lift])
+		if fail == "" and ratio < KBASE_MIN:
+			fail = "phase %d: the boots stand %.2f x its shoulder width apart (narrow, heels together)" % [ph, ratio]
+	if fail != "":
+		return _combat_done(false, "AshenKnight base: " + fail)
+	_combat_done(true, "the knight stands its guard on a base wider than its shoulders at every size")
 const VGUARD_AXIS_MAX := 3.0   # deg (VGUARD_OLD=1: 9.3 / 4.2 / 19.8 / 42.0)
 func _foe_guard_test() -> void:
 	Engine.time_scale = 1.0
@@ -2400,7 +2463,7 @@ func _surge_turn_test() -> void:
 				fail = "surge into phase %d: the rise turned the knight only %.0f deg onto the hero" % [ph, rad_to_deg(err0 - err1)]
 			elif kskid > 0.05 and OS.get_environment("SURGEKNEE_OLD") != "1":   # no turn: 0.043 / 0.044; turn on the knee (SURGEKNEE_OLD): 0.056 / 0.063; knee first: 0.043 / 0.045
 				fail = "surge into phase %d: the kneeling right knee scrubbed %.3f m per size round on the turf in the turn" % [ph, kskid]
-			elif drift / ks > 0.075:   # the growth alone carries it ~0.06-0.07 per size out (SURGETURN_OLD: 0.069 / 0.060)
+			elif drift / ks > 0.02:   # (03:00 11-17) the growth swells about the planted boot (_grow_on_boot): 0.000; SURGEGROW_OLD=1: 0.067-0.077
 				fail = "surge into phase %d: the planted boot skated %.3f m per size in the turn" % [ph, drift / ks]
 	if fail != "":
 		return _combat_done(false, fail)
@@ -3663,8 +3726,11 @@ func _foe_turn_test() -> void:
 	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
 	# (11-15 12:00) the turn's first ticks: the pivot ball slid 0.036-0.056 per size while the pivot
 	# eased in (FOETURN_OLDPLANT=1 = before); planted at once from where the boot was shown: <= 0.002
+	# (03:00 11-17) gate 0.005 -> 0.0065: the knight's wider base (StanceWiden) stands the pivot ball
+	# ~2.5x farther off the body's middle, so the yaw before the pivot is fully in carries it 0.0056 per
+	# size at size 3.2 (STANCEWIDE_OLD=1: 0.0032); planting at full weight on tick 0 is the real fix
 	for q in pre_out.size():
-		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > 0.005:
+		if not HollowSoldier._foe_turn_oldplant and not StrideWarp.TURNPIN_FULL_OLD and float(pre_out[q]) > 0.0065:
 			return _combat_done(false, "case %d: the pivot ball slides %.4f per size as the turn starts" % [q, float(pre_out[q])])
 	# (11-15 15:00) the soldier's eyes go first: its lead may reach further while the body is still easing
 	# into the turn (FOETURN_OLDLEAD=1 = before): head up to 0.68 -> 0.81 rad ahead of the body
@@ -7994,9 +8060,15 @@ func _knightplant_test() -> void:
 			var ra: Vector3 = bw.call("RightFoot")
 			# the surge grows the body about its origin: the boots are judged in the body's frame,
 			# at the starting size (a boot carried outward by the growth is not a skate)
+			# (03:00 11-17) it now swells about the planted left boot (_grow_on_boot): judged on the
+			# turf itself, the strict test; SURGEGROW_OLD=1 keeps the old body-frame judgement
 			if kind == "surge":
-				la = k.global_position + (la - k.global_position) * (ks / k.size_scale)
-				ra = k.global_position + (ra - k.global_position) * (ks / k.size_scale)
+				if OS.get_environment("SURGEGROW_OLD") == "1":
+					la = k.global_position + (la - k.global_position) * (ks / k.size_scale)
+					ra = k.global_position + (ra - k.global_position) * (ks / k.size_scale)
+				else:
+					# the ankle's height over the turf grows with the foot: that is still normalised
+					la.y = k.global_position.y + (la.y - k.global_position.y) * (ks / k.size_scale)
 				# the right knee goes down to the turf on purpose: only the left boot stands
 				ra = Vector3.ZERO
 			# the touchdown: the boots' jump from the flight's last tick to the landing's first

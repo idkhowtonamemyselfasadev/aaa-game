@@ -337,6 +337,7 @@ var leap_lift := 0.0             # current height of the arc (hurt capsule and m
 var _leap_cool := 0.0
 var last_scorch: Scorch          # the burn the last leap left in the turf (bots)
 var last_ring: Array = []        # (bots) the ember ring the last leap's bite flared up
+var widen: StanceWiden          # the guard stance's wider base (first modifier)
 var tuck: LegTuck                # bends the knees in the crouch and tucks them up in the air
 var land_give := 0.0             # (bots) the landing's give this tick, 0..1
 var land_give_peak := 0.0        # (bots) the deepest give of the last leap
@@ -457,6 +458,15 @@ func _ready() -> void:
 		# arm IK after it keeps the fists on the glaive
 		if stride_warp != null and stride_warp.get_parent() == skel:
 			skel.move_child(tuck, stride_warp.get_index() + 1)
+		# (03:00 11-17) a wider, heavier base: first of all, on the clip's own legs (bot `knightbase`;
+		# env STANCEWIDE_OLD=1: the before, boots 0.35 x the shoulder width apart)
+		if OS.get_environment("STANCEWIDE_OLD") != "1":
+			widen = StanceWiden.new()
+			widen.name = "StanceWiden"
+			widen.side = body
+			widen.foe = self
+			skel.add_child(widen)
+			skel.move_child(widen, 0)
 		head = HeadBow.new()
 		head.name = "HeadBow"
 		head.side = body
@@ -864,7 +874,9 @@ func _physics_process(delta: float) -> void:
 	if _surge >= 0.0:
 		_surge += delta * tempo
 		if growth.growing():
+			var s0 := size_scale
 			set_size_scale(growth.tick(delta, self, _player, 0.6 * size_scale))
+			_grow_on_boot(s0)
 		var u := clampf(_surge / SURGE_T, 0.0, 1.0)
 		var e := 2.0 + 5.0 * smoothstep(0.0, SURGE_BLAST / SURGE_T, u) * (1.0 - smoothstep(0.6, 1.0, u))
 		_set_skin("ember", e + 0.4 * sin(_surge * 40.0))
@@ -968,6 +980,20 @@ func _surge_body(delta: float) -> void:
 	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
 		set_meta("surge_roar_%d" % surges, true)
 		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
+
+## (03:00 11-17) The body swells about its planted left boot, not about its origin: the latch
+## rides the body's frame, so the growth carried the boot out over the turf with it (0.06-0.07 m
+## per size over the surge; 0.077 with the wider StanceWiden base, bot `surgeturn`). While the
+## boot is latched the knight is slid back by what the growth would carry it, so it stays put.
+## Env SURGEGROW_OLD=1: the before.
+func _grow_on_boot(s0: float) -> void:
+	if OS.get_environment("SURGEGROW_OLD") == "1" or tuck == null or tuck._final[0] == null:
+		return
+	if _surge >= SURGE_T - 0.5 or s0 <= 0.0 or absf(size_scale - s0) < 1e-6:
+		return
+	var v: Vector3 = (tuck._final[0] as Vector3) - global_position
+	v.y = 0.0
+	global_position -= v * (size_scale / s0 - 1.0)
 
 ## The rise's pivot onto the hero (see SURGE_TURN_RATE): the body yaws about the latched left
 ## boot's spot (the latch rides the body's frame, so the knight's origin is swung round it).
@@ -1901,8 +1927,27 @@ func _resolve_leap() -> void:
 	var back := body.rotation.y + PI
 	if OS.get_environment("RING_OLD") == "1":
 		back = body.rotation.y + 0.3 - TAU * 0.5 / 5.0
+	# (03:00 11-17) the wider guard base (StanceWiden) stands each boot ~0.24 m per size farther
+	# out, so the two flames flanking the gap could land on a boot (2.19 m off, radius 2.05): a
+	# flame that would is turned on round the bite, away from the gap, until it clears both boots
+	var fr := AshFlame.RADIUS * sqrt(size_scale / growth.scale_of(1)) * 1.25
+	var boots := []
+	if tuck != null and OS.get_environment("RINGCLEAR_OLD") != "1":
+		for j in 2:
+			if tuck._final[j] != null:
+				boots.append(tuck._final[j])
 	for i in 5:
 		var a := back + TAU * (i + 0.5) / 5.0
+		var away := 1.0 if i < 2 else -1.0     # flames 0, 1 sit after the gap, 3, 4 before it
+		for n in 8:
+			var at := b + Vector3(sin(a), 0, cos(a)) * 1.5 * _reach_k()
+			var ok := true
+			for bp in boots:
+				if Vector2(at.x - (bp as Vector3).x, at.z - (bp as Vector3).z).length() < fr:
+					ok = false
+			if ok or i == 2:
+				break
+			a += away * 0.08
 		var f := _flame_at(b + Vector3(sin(a), 0, cos(a)) * 1.5 * _reach_k(), false)
 		f.t = AshFlame.WARN - 0.02
 		last_ring.append(f)

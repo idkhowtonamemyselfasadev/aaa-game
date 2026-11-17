@@ -3469,10 +3469,19 @@ func _ready() -> void:
 					# (02:00 11-17) the same line through the knight to its other side: the rear
 					# lens, for the back panel and the trailing calf
 					ldir = -ldir
-				var lp := kp + ldir * 1.5 * lsz
-				lp.y = terrain.height_at(lp.x, lp.z) + 0.3 * lsz
+				var lout := 1.5
+				var lh := 0.3
+				if "legfront" in args:
+					# (03:00 11-17) square on the knight's front, hips to boots, ~3 x size out: the
+					# guard base's width (StanceWiden) reads only from the front
+					var bz: Vector3 = rk.body.global_basis.z
+					ldir = Vector3(bz.x, 0, bz.z).normalized()
+					lout = 3.0
+					lh = 0.55
+				var lp := kp + ldir * lout * lsz
+				lp.y = terrain.height_at(lp.x, lp.z) + lh * lsz
 				cam.global_position = lp
-				cam.look_at(kp + Vector3.UP * 0.3 * lsz)
+				cam.look_at(kp + Vector3.UP * lh * lsz)
 				# the hero (on the flank for `turn`) stood in this close lens's left third: hide it
 				player.visible = false
 				print("SHOT ring surge legs lens %.2f m out, size %.2f" % [1.5 * lsz, lsz])
