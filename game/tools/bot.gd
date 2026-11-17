@@ -5339,6 +5339,11 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 			e.global_position = slab.global_transform * Vector3(0, 0.3, 1.2 * sc - (slab.shape_owner_get_shape(0, 0) as BoxShape3D).size.z * 0.5)
 			e.velocity = Vector3.ZERO
 			e.bot_move = Vector3.ZERO
+			# (11-17 10:00) its post moves with it: the last cut's stop spot was left as home, so IDLE walked it
+			# back up the slab through these 60 'standing' ticks and each cut started from that walk (how far
+			# it got depended on the home slack). FOESTOP_OLDHOME=1: before
+			if not OS.has_environment("FOESTOP_OLDHOME"):
+				e._home = e.global_position
 			await _ticks(60)
 			var y_start := e.global_position
 			var walk_ts := 0.0

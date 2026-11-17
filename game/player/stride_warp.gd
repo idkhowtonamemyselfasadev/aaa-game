@@ -141,6 +141,10 @@ var toe_floor_lift := [0.0, 0.0]  # (bots) world m each foot was raised to keep 
 static var TOE_FLOOR_OLD := OS.has_environment("TOEFLOOR_OLD")
 static var TOE_PITCH_OLD := OS.has_environment("TOEPITCH_OLD")
 static var TOE_PITCH_RISE_OLD := OS.has_environment("TOEPITCH_RISE_OLD")
+static var PLANT_LEVEL_OLD := OS.has_environment("PLANT_LEVEL_OLD")   # (11-17 10:00) sole-on-slope ramp from 0.12 per size
+const PLANT_H_TOL := 0.012       # per size over the lowest (flat-footed) ankle the sole still lies fully on the slope
+var _plant_hmin := INF            # per size: the lowest clip ankle over the floor seen (the flat-footed stance)
+static var TOE_STEP_LEVEL_OLD := OS.has_environment("TOESTEP_LEVEL_OLD")   # (11-17 10:00) the tip's tread test against the level
 static var TOE_PITCH_DBG := OS.has_environment("TOEPITCH_DBG")   # print every tipped boot (frame, climb speed, ground step)
 const TOE_PITCH_RISE_V := 0.24    # (11-15 18:00) m/s per size of ankle climb at which a boot no longer tips its toes up (push-off)
 const TOE_PITCH_STEP := 0.03     # m per size the ball's ground may stand over the ankle's before the tip fades out (gone at 2x)
@@ -1573,7 +1577,20 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 				lift += ankle_floor_lift[i]
 		var keep := skel.get_bone_global_pose(ft[i]).basis
 		# a planted sole lies on the slope; a foot swinging high keeps the clip's angle
-		var plant := clampf(1.0 - (float(anim_h[i]) / sc - 0.12) / 0.14, 0.0, 1.0) * w
+		# (11-17 10:00) the ramp starts over the rig's OWN standing ankle height: it started at 0.12 per size, under
+		# every rig's flat-footed ankle (soldier 0.133, knight 0.154), so a standing boot only took 91 % / 76 % of
+		# the slope's tilt and its toes dug into an uphill slope; the toe guard then lifted the whole boot (the
+		# final-size knight's turn step rose 7-10 cm again just before it set down on the uphill slab, bot
+		# `foeturnup` arc dip 0.038). The lowest ankle the clips have shown is the flat-footed one. PLANT_LEVEL_OLD: before
+		var p_h0 := 0.12
+		if not PLANT_LEVEL_OLD:
+			if w > 0.5:
+				_plant_hmin = minf(_plant_hmin, float(anim_h[i]) / sc)
+			if _plant_hmin < 1.0:
+				p_h0 = maxf(p_h0, _plant_hmin + PLANT_H_TOL)
+		var plant := clampf(1.0 - (float(anim_h[i]) / sc - p_h0) / 0.14, 0.0, 1.0) * w
+		if OS.has_environment("PLANT_DBG") and Engine.get_physics_frames() % 40 == 0:
+			print("PLANT sc %.2f i %d anim_h/sc %.4f plant %.2f h0 %.4f" % [sc, i, float(anim_h[i]) / sc, plant, p_h0])
 		var n: Vector3 = ground_n[i]
 		var tilt := Vector3.UP.angle_to(n)
 		if plant > 0.0 and tilt > 1e-3:
@@ -1618,6 +1635,15 @@ func _ground_feet(skel: Skeleton3D, delta: float) -> void:
 					# nor a ball over a higher surface (a tread edge, the top of a wall walked into: the `stepup` wall
 					# held the tip at its cap 77 ticks): that boot is lifted onto it, as the 16:00 note meant
 					var step := (float(_ball_gy[i]) - float(_ank_gy[i])) / sc
+					# (11-17 10:00) measured against the slope the ankle stands on, not the level: on a 7 deg rise a
+					# boot turned uphill has its ball's turf ~3 cm per size over its ankle's, read as a tread edge, so
+					# the tip faded out and the whole boot was lifted instead (the final-size knight's turn step on
+					# the uphill slab rose 7-10 cm again just before it set down: bot `foeturnup` arc dip 0.038).
+					# A smooth slope is not a step. TOESTEP_LEVEL_OLD: before
+					if not TOE_STEP_LEVEL_OLD:
+						var gn: Vector3 = ground_n[i]
+						var bxz := Vector3(bw.x - aw.x, 0.0, bw.z - aw.z)
+						step -= -(gn.x * bxz.x + gn.z * bxz.z) / maxf(gn.y, 0.5) / sc
 					var on_step := clampf(1.0 - (step - TOE_PITCH_STEP) / TOE_PITCH_STEP, 0.0, 1.0)
 					air *= on_step
 					hold *= on_step

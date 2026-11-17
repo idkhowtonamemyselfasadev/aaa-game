@@ -216,6 +216,7 @@ var rags: HollowRags
 ## glaive, collision capsule, hurt capsule, reach, stride and ember light all scale with it.
 ## Reach checks are made in the body's own (scaled) frame, so they grow on their own.
 var size_scale := 1.0
+static var HOMETOL_OLD := OS.has_environment("HOMETOL_OLD")   # (11-17 10:00) a flat 0.6 m home slack at every size
 ## Bots: a world velocity that overrides the brain's footwork (the gait is measured with it).
 var bot_move := Vector3.ZERO
 var bot_cadence_k := 1.0
@@ -938,7 +939,11 @@ func _physics_process(delta: float) -> void:
 			ember = 0.8 + 0.2 * sin(t * 1.7)
 			var back := _home - global_position
 			back.y = 0.0
-			if back.length() > 0.6:
+			# (11-17 10:00) the slack scales with the body: a giant's on-the-spot turn swings its body round
+			# the planted boot by up to 0.15 of its size (0.67 m at the knight's final x4.6 on a 7 deg rise), so a
+			# flat 0.6 m sent it walking back to its post mid-turn (bot `foeturnup`: the turn target flipped,
+			# the stepping boot was lifted a second time). HOMETOL_OLD: before
+			if back.length() > (0.6 if HOMETOL_OLD else 0.6 * maxf(size_scale, 1.0)):
 				move = back.normalized() * STALK_SPEED * 0.7
 				_turn_to(back, delta, 4.0)
 			elif bot_face != Vector3.ZERO:
