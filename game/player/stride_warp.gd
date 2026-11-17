@@ -490,6 +490,14 @@ static var SETTLE_SYMMETRIC := OS.has_environment("SETTLE_SYMMETRIC")
 static var SHORTSETTLE_OLD := OS.has_environment("SHORTSETTLE_OLD")
 var SETTLE_SHORT_LIFT := float(OS.get_environment("SETTLE_SHORT_LIFT")) if OS.has_environment("SETTLE_SHORT_LIFT") else 1.0  # skeleton units
 const SETTLE_PEAK_U := 0.35
+## (11-17 18:00) a foe's turn settle step aims at the squared body's idle spot (set by the foe each tick it turns
+## on the spot; unset for the hero). TURNGOAL_OLD: before
+static var TURNGOAL_OLD := OS.has_environment("TURNGOAL_OLD")
+var turn_left_xf := Transform3D()
+var turn_left_tick := -100
+static var TURNTRAVEL_OLD := OS.has_environment("TURNTRAVEL_OLD")
+var TURN_TRAVEL_END := float(OS.get_environment("TURN_TRAVEL_END")) if OS.has_environment("TURN_TRAVEL_END") else 0.7
+var TURN_TRAVEL_SHORT_K := float(OS.get_environment("TURN_TRAVEL_SHORT_K")) if OS.has_environment("TURN_TRAVEL_SHORT_K") else 1.0  # x STEP_SETTLE_MIN: steps shorter than this
 static var SETTLE_LIFT_ADD := OS.has_environment("SETTLE_LIFT_ADD")
 const STEP_SETTLE_EASE_K := 6.5  # 1/s at size 1: a settle step's last STEP_EASE_H closes this share per second, / sqrt(size): a giant sets its boot down slower (its ground feet add their own drop)
 static var SETTLE_DROP := OS.has_environment("SETTLE_DROP")
@@ -1176,7 +1184,11 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			var from: Vector3 = inv * (_settle_at as Vector3)
 			var goal := from
 			if _stance_ok:
-				goal = inv * (_settle_ref(xf) * (_stance[1 - pivot_side] as Vector3))
+				var rx := _settle_ref(xf)
+				if not TURNGOAL_OLD and settle_lift_k == 1.0 and not _settle_swap and Engine.get_physics_frames() - turn_left_tick <= 1:
+					# (11-17 18:00) a foe's turn: the idle spot of the body once square (the yaw it has left)
+					rx = turn_left_xf * rx
+				goal = inv * (rx * (_stance[1 - pivot_side] as Vector3))
 			if _settle_goal_w != null:
 				goal = inv * (_settle_goal_w as Vector3)
 			var gd := goal - from
@@ -1188,7 +1200,13 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 			if PIVOT_DBG:
 				print("  settle t %.2f reach %.2f from %s goal %s pin %s stance %s %s" % [_settle_t, settle_reach, from, goal, inv * (pivot_pin as Vector3), _stance[0], _stance[1]])
 			var u := clampf((_settle_t - (STEP_SETTLE_T if _settle_swap else 0.0)) / STEP_SETTLE_T, 0.0, 1.0)
-			var ut := clampf(u / settle_travel_end, 0.0, 1.0)
+			var te := settle_travel_end
+			if not TURNTRAVEL_OLD and settle_lift_k == 1.0 and not _settle_swap and gd_len < STEP_SETTLE_MIN * TURN_TRAVEL_SHORT_K:
+				# (11-17 18:00) a turn's short settle step has travelled by u TURN_TRAVEL_END and is only set down
+				# after: travelling to u 1 the boot was carried its last ~0.007 per size along the turf while it was
+				# already within 3 mm/size of it (bot `foeturn` x3.2/x4.6, ticks 44-47). TURNTRAVEL_OLD: before
+				te = minf(te, TURN_TRAVEL_END)
+			var ut := clampf(u / te, 0.0, 1.0)
 			if _settle_swap:
 				# stepped from the turf (not out of the turn's arc), it travels only while clear of it
 				ut = clampf((u - SWAP_TRAVEL_FROM) / (1.0 - 2.0 * SWAP_TRAVEL_FROM), 0.0, 1.0)

@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261114-0400-jogstop-strike.jpg",
-  "time": "2026-11-14T04:00:00Z",
-  "caption": "The hero letting go at a jog now plants: front heel struck, back boot on its ball, balance hand forward; the stop reads, but the legs are dark under the tabard and the yard is flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0530-walkstop-settled.jpg",
-  "time": "2026-11-14T05:30:00Z",
-  "caption": "Settled after the walk stop: both boots flat on the turf in the idle stance (no hover); trousers and greaves still too dark even in sun.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0530-walkstop-step.jpg",
-  "time": "2026-11-14T05:30:00Z",
-  "caption": "The hero stepping out of a fast-walk stop, seen three-quarter from behind; the stepped boot now lands on the turf, but the legs read as a dark mass under the tabard.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0600-walkstop-release.jpg",
   "time": "2026-11-14T06:30:00Z",
   "caption": "The hero just after letting go at a fast walk: both boots set flat on the turf as the stop's pivot lets go (the 1-2 cm bob is gone); the legs still read dark under the tabard and the yard ground is flat and plain.",
@@ -891,6 +873,18 @@
   "file": "20261117-1600-bossturn-settle.jpg",
   "time": "2026-11-17T16:00:00Z",
   "caption": "Final-size boss's turn settle, frames 52 / 62: outer boot set flat, then the short settle step now lifted instead of shuffled; ring turf still dark and flat in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-1823-bossturn32.jpg",
+  "time": "2026-11-17T18:23:56Z",
+  "caption": "Final-size boss mid-turn on the spot from the low sun-side boot lens: the stepping boot comes round lifted; the lens still crops the body at the hips and stacks the boots.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-1823-bossturn48.jpg",
+  "time": "2026-11-17T18:23:56Z",
+  "caption": "Same turn after the settle step: both boots planted on the turf where the squared body wants them, no slide; framing and the dark shadow blob in the foreground still need work.",
   "verdict": "fail"
  }
 ]

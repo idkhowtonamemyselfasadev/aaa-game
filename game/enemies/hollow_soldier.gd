@@ -1639,6 +1639,19 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 			_spot_turn_w = w
 			_spot_lead_tick = _spot_turn_tick
 		_pivot_orbit(d)
+		if not StrideWarp.TURNGOAL_OLD and stride_warp != null:
+			# (11-17 18:00) the yaw still left after this tick, about the point the body orbits: the turn's
+			# settle step aims at the idle spot of the SQUARED body, not of the body still coming round
+			var gl := angle_difference(body.rotation.y + d, atan2(dir.x, dir.z))
+			var c := global_position
+			if stride_warp.pivot_pin != null and stride_warp.pivot > 0.0:
+				var sd := body.global_basis.x
+				sd = Vector3(sd.x, 0.0, sd.z).normalized()
+				var rch := PIVOT_REACH * size_scale
+				c += sd * clampf((stride_warp.pivot_pin - global_position).dot(sd), -rch, rch)
+			var rot := Transform3D(Basis(Vector3.UP, gl * (stride_warp.pivot if stride_warp.pivot > 0.0 else 1.0)), Vector3.ZERO)
+			stride_warp.turn_left_xf = Transform3D(Basis(), c) * rot * Transform3D(Basis(), -c)
+			stride_warp.turn_left_tick = Engine.get_physics_frames()
 		want = body.rotation.y + d
 	elif delta > 0.0:
 		_spot_turn_w = angle_difference(body.rotation.y, want) / delta

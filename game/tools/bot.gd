@@ -3531,7 +3531,7 @@ func _foe_feet_track(skel: Skeleton3D, sw: StrideWarp, sc: float) -> void:
 				print("   slide foot %d %.4f pivot %.3f settle %s" % [j, Vector2(a.x - b.x, a.z - b.z).length() / sc, sw.pivot, sw.settle_done])
 	_ff_prev = now
 
-const FOETURN_SCUFF_MAX := 0.012  # (11-17 16:00) per size: the stepping boot's travel over the turf while down
+const FOETURN_SCUFF_MAX := 0.004  # (11-17 16:00) per size: the stepping boot's travel over the turf while down
 const FOETURN_SLOPES := {"foeturnup": "7", "foeturndown": "-7", "foeturncross": "0,7"}
 func _foe_turn_test(slope_preset := "") -> void:
 	Engine.time_scale = 1.0
