@@ -886,5 +886,17 @@
   "time": "2026-11-17T11:00:00Z",
   "caption": "Same turn 22 frames in: the outside boot lifts on its ball and swings round with no pop; turf reads as flat mottled dirt at this lens.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261117-1300-turnsettle-cmp.jpg",
+  "time": "2026-11-17T13:00:00Z",
+  "caption": "Hero's right turn on the spot, settle ticks 48-66: top the old order (boots stacked together until tick 66), bottom the new order (far boot stepped out by tick 54, open stance held); boots still in shadow, lens crops the body.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261117-1300-turnsettle-left.jpg",
+  "time": "2026-11-17T13:00:00Z",
+  "caption": "Left turn settle ticks 30-72 with the new order: the right boot steps wide over ticks 42-54 then holds, no slide; boot-scale lens only, dark turf.",
+  "verdict": "fail"
  }
 ]
