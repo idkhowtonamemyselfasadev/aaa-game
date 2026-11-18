@@ -488,6 +488,9 @@ const SURGE_TURN_FROM := 0.32    # s after the blast the pivot may start (the kn
 const SURGE_TURN_RATE_LATE := 2.9
 var _surge_knee_first := OS.get_environment("SURGEKNEE_OLD") != "1"
 var stomps := 0                  # bots
+var wraps_dark := 0              # bots: limb bindings recoloured to blackened leather
+const KWRAP_DARK := Color(0.030, 0.024, 0.020)
+const KWRAP_LIGHT := Color(0.13, 0.095, 0.07)
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
 var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
@@ -551,6 +554,36 @@ func _ready() -> void:
 	add_to_group("boss")
 	set_size_scale(growth.scale_of(1))
 
+## (12:00 11-18) The soldier's hemp bindings on the knight's limbs took the surcoat's oxblood, so the
+## whole giant read as one flat dark-red figure (red legs, red forearms under the plate). The knight's
+## bindings are blackened, oiled leather straps instead: near-black, a little sheen, rubbed brown at the
+## turns, so the red stays on the surcoat alone and the legs read dark like the plate.
+## env KWRAPS=old: the before (oxblood bindings); KWRAPS=hide: no bindings (the Vanguard legs bare).
+func _dress_wraps() -> void:
+	var mode := OS.get_environment("KWRAPS")
+	if mode == "old":
+		return
+	for m in rags.mats:
+		var turns: Variant = m.get_shader_parameter("wrap_turns")
+		if turns == null or float(turns) <= 0.0:
+			continue
+		if mode == "hide":
+			for n in _wrap_nodes(m):
+				n.visible = false
+			continue
+		m.set_shader_parameter("cloth_dark", KWRAP_DARK)
+		m.set_shader_parameter("cloth_light", KWRAP_LIGHT)
+		m.set_shader_parameter("soot_amt", 0.8)
+		m.set_shader_parameter("stain_amt", 0.3)
+		wraps_dark += 1
+
+func _wrap_nodes(m: Material) -> Array:
+	var out := []
+	for n in skel.find_children("*", "MeshInstance3D", true, false):
+		if (n as MeshInstance3D).material_override == m:
+			out.append(n)
+	return out
+
 ## Armour over the ash body: the soldier's hood comes off for a closed helm, pauldrons and a
 ## gorget go on, the grey rags turn to a burnt oxblood surcoat and the leaf blade becomes a
 ## broad glaive head.
@@ -561,6 +594,7 @@ func _dress() -> void:
 	rags.set_param("cloth_dark", Color(0.10, 0.025, 0.02))
 	rags.set_param("cloth_light", Color(0.27, 0.07, 0.045))
 	rags.set_param("soot_amt", 0.55)
+	_dress_wraps()
 	# (01:00 11-17) the surcoat's front panel lies on the forward knee and falls plumb from it
 	rags.knee_drape = true
 	armour = KnightArmour.new()
@@ -572,6 +606,7 @@ func _dress() -> void:
 	_set_skin("slit_on", 0.0 if OS.get_environment("SLIT_OLD") == "1" else 1.0)   # 11-16 09:00: the before
 	_set_skin("slit_eyes", 0.0 if OS.get_environment("SLITEYE_OLD") == "1" else 1.0)   # 11-16 19:00: the before
 	_set_skin("keel_crisp", 0.0 if OS.get_environment("KEELCRISP_OLD") == "1" else 1.0)   # 11-16 20:00: the before
+	_set_skin("rust_sparse", 0.0 if OS.get_environment("KWRAPS") == "old" else 1.0)   # 11-18 12:00: the before (with the oxblood bindings)
 	growth.seam_fn = armour.seam_at
 	growth.seam_n = armour.seams.size()
 	_set_skin("heat", 0.0)

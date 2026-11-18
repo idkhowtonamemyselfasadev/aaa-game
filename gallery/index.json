@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261114-1700-glide-mantle-back-before.jpg",
-  "time": "2026-11-14T17:00:00Z",
-  "caption": "Before: under the glider the shoulder mantle's hem was pushed 0.3 m straight back by the airflow trail, so from behind it stood out as a level shelf ending in a beak past the right shoulder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1700-glide-mantle-back.jpg",
-  "time": "2026-11-14T17:00:00Z",
-  "caption": "After: the mantle takes only 0.09 m of the trail in full airflow and hangs over the back in folds; still wrong: a pointed fold of cloth hangs off the raised right upper arm, and the figure reads dark against the light.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1700-glide-mantle-front.jpg",
-  "time": "2026-11-14T17:00:00Z",
-  "caption": "Front 3/4 under the glider after the fix: mantle sits on the shoulders, legs hang loose; still wrong: the figure is dark in self-shade and the face is lost under the hat.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1800-glide-back.jpg",
   "time": "2026-11-14T18:00:00Z",
   "caption": "Gliding from behind: the mantle now rolls round both shoulder caps over the raised arms instead of standing up in a pointed ear; a pointed hem corner still sticks out past the right side.",
@@ -897,6 +879,24 @@
   "file": "20261118-1105-surge-close-rise.jpg",
   "time": "2026-11-18T11:05:59Z",
   "caption": "Close lens early in the growth surge (embers bursting from the helm seams, hero facing it); scale reads, but the knight's plate lacks metal sheen and the frame is GL-only.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1200-knight-dark-steel.jpg",
+  "time": "2026-11-18T12:40:00Z",
+  "caption": "The Ashen Knight now reads as fire-blackened steel with leather-bound legs and the oxblood surcoat as its only red (it was one flat dark-red figure); the legs are still near-black blobs with little detail.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1200-knight-helm-before-after.jpg",
+  "time": "2026-11-18T12:40:00Z",
+  "caption": "Helm before (rust over half the plate), sparse rust only, and final: sparse rust plus a real steel reflectance, so the sun slides over the helm and pauldrons; the plate looks a touch too clean.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1200-knight-p3-steel.jpg",
+  "time": "2026-11-18T12:40:00Z",
+  "caption": "The phase-3 giant beside the hero with the new dark steel and leather; the plate now separates from the surcoat, but the GL fallback still lacks SDFGI/SSR and the boots are flat.",
   "verdict": "fail"
  }
 ]

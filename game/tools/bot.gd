@@ -6919,6 +6919,12 @@ func _knight_test() -> void:
 		return _combat_done(false, "the knight is missing its armour or still wears the soldier's hood")
 	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:
 		return _combat_done(false, "knight should wait idle at full health in phase 1")
+	# (12:00 11-18) the limb bindings are blackened leather, not the surcoat's oxblood, and the plate
+	# shader runs with sparse rust and a steel reflectance (the knight read as one flat dark-red figure)
+	var krust: Variant = k.armour.mats[0].get_shader_parameter("rust_sparse")
+	print("BOT knight: bindings recoloured %d of %d, rust_sparse %s" % [k.wraps_dark, k.rags.wraps, krust])
+	if OS.get_environment("KWRAPS") == "" and (k.wraps_dark < k.rags.wraps or k.wraps_dark < 8 or float(krust) < 0.5):
+		return _combat_done(false, "the knight's limb bindings are still oxblood or its plate still rust-red")
 	# (09:00 11-18) the haft against the real helm mesh through the WHOLE fight (reveal, leaps,
 	# stomps, staggers, surges): bucket -> [deepest m/size, ticks seen, ticks > 0]. KNIGHT_HELM_SWEEP=1 prints it.
 	var hsw_ring := _helm_rings(k)

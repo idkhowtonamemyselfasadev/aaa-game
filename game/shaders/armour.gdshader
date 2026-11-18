@@ -29,6 +29,10 @@ uniform float slit_eyes = 1.0;
 // from the UV, no pit jitter) with soot charring its flanks; the old wear came from COLOR.g on a
 // 40-column helm (the keel spans ~3 verts) plus pit noise and read as a soft grey smoke streak. 0 = before.
 uniform float keel_crisp = 1.0;
+// (11-18 12:00) rust only in the deep pits and seams: at 0 the rust mask (smoothstep 0.55..0.8 over a
+// noise averaging ~0.6) covered over half the plate in a warm brown and the whole knight read dark red
+// with no steel left. 1 = sparse, darker rust, so the fire-blackened steel and its bright rubbed edges show.
+uniform float rust_sparse = 1.0;
 
 varying float layer;
 varying float edge;
@@ -121,13 +125,19 @@ void fragment() {
 			keel_soot = (1.0 - smoothstep(0.03, 0.14, ks)) * (1.0 - ridge) * kfront * smoothstep(0.1, 0.3, kv)
 					* (1.0 - smoothstep(0.88, 0.95, kv));
 		}
-		float r = smoothstep(0.55, 0.8, fbm(opos * 14.0 + 7.7) + pits * 0.25) * (1.0 - wear);
+		float r = smoothstep(mix(0.55, 0.70, rust_sparse), mix(0.8, 0.9, rust_sparse), fbm(opos * 14.0 + 7.7) + pits * 0.25) * (1.0 - wear);
 		float dent = smoothstep(0.7, 0.9, vnoise(opos * 22.0));
 		// heat scale: blue-black to a bruised brown where the fire bit hardest
 		vec3 scaled = mix(steel_dark, vec3(0.075, 0.058, 0.05), scale);
 		alb = mix(scaled * (0.8 + 0.4 * pits), steel_bare * (0.75 + 0.35 * pits), wear);
-		alb = mix(alb, rust * (0.7 + 0.6 * pits), r);
-		rough = mix(mix(0.62, 0.32, wear), 0.92, r);
+		alb = mix(alb, rust * (0.7 + 0.6 * pits) * mix(1.0, 0.6, rust_sparse), r);
+		// (11-18 12:00) a metal's albedo is its reflectance: at 0.045 the plate reflected ~4 % (less than
+		// paint) and read as matte black cloth. Blackened steel still reflects ~15-20 %: brighter F0 for the
+		// metal, a touch smoother, so the sky and sun slide over the plate; soot and rust stay dull.
+		if (rust_sparse > 0.5 && stone < 0.5) {
+			alb = mix(alb, alb * 2.6 + vec3(0.05, 0.048, 0.046), (1.0 - r) * (1.0 - wear) * 0.9);
+		}
+		rough = mix(mix(mix(0.62, 0.46, rust_sparse), 0.32, wear), 0.92, r);
 		metal = mix(0.85, 0.15, r);
 		bump = pits * 0.35 - dent * 0.6 + r * 0.25;
 		alb *= 1.0 - keel_soot * 0.55;
