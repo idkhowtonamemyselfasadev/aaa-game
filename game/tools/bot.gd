@@ -7640,6 +7640,10 @@ func _knight_test() -> void:
 	# front view the roaring knight had no head (`ring surge side hero close st=50`). SURGE_LIFT_OLD=1 FAILS: -0.070
 	if k.surge_lift_on and k.surge_visor_fwd < 0.03:
 		return _combat_done(false, "the roar swung the helm back behind the chest (visor %.3f m/size ahead of it, gate >= 0.03): no head from the front" % k.surge_visor_fwd)
+	print("BOT knight: surge visor glow peak %.2f (KVISOR_OLD %s)" % [k.visor_glow_peak, k.KVISOR_OLD])
+	# (17:00 11-18) the slit's fire lights the visor in the roar, so the helm reads as a face from the low front view
+	if not k.KVISOR_OLD and k.visor_glow_peak < 1.5:
+		return _combat_done(false, "the roar's visor glow never lit (peak %.2f, gate >= 1.5)" % k.visor_glow_peak)
 	print("BOT knight: surge spine: coil hunch %.2f rad, roar arch %.2f rad" % [k.surge_hunch_peak, k.surge_arch_back])
 	# (05:00 11-18) the coil must curl the back over the glaive, not just tip a straight trunk (SURGE_HUNCH_OLD=1 FAILS: 0)
 	if k.surge_hunch_peak < 0.3:

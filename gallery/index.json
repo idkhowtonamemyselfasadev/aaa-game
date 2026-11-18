@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261114-2200-glide-front-skyshade.jpg",
-  "time": "2026-11-14T22:00:00Z",
-  "caption": "Front 3/4 glide against the light: face, wraps, mantle and robe now read where it was a silhouette; the forearm wraps look greenish and the figure a little flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-2200-skyshade-before-after.jpg",
-  "time": "2026-11-14T22:00:00Z",
-  "caption": "Backlit glide crop, before (left) and after (right) the figures' sky shade: mantle 1 -> 14 of 255, legs 24 -> 31, form kept, hood no longer sky-blue.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-2300-sweepfall-before-after.jpg",
-  "time": "2026-11-14T23:00:00Z",
-  "caption": "Knock-down at 0.3 s, before (left: toppling stiffly about the heels, sitting on thin air) and after (right: legs swept out and up, body thrown back airborne); the figure is still small and backlit at this lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2300-sweepfall-front.jpg",
   "time": "2026-11-14T23:00:00Z",
   "caption": "Front 3/4 of the swept fall at 0.22 s: boots kicked up, trunk thrown back, staff still in the fist; reads as a real sweep, but the face is lit flat and the hand pose is stiff.",
@@ -891,6 +873,18 @@
   "file": "20261118-1639-surge-roar-before.jpg",
   "time": "2026-11-18T16:39:33Z",
   "caption": "Before this session: the same roar frame, where the head was flung back behind the gorget, so the giant seemed to have no head from the front.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1702-roar-visor-glow.jpg",
+  "time": "2026-11-18T17:02:21Z",
+  "caption": "The Ashen Knight's growth roar from the knocked-down hero's view: the slit's fire now lights the tipped-up visor warm, so the helm reads as a face instead of a black crown; still wrong: GL renderer, the visor detail is soft at this range and the legs are very dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1702-roar-visor-before.jpg",
+  "time": "2026-11-18T17:02:21Z",
+  "caption": "Before this session: the same roar frame, the helm a dark crown with only sparks at its rim.",
   "verdict": "fail"
  }
 ]

@@ -1046,6 +1046,7 @@ func _physics_process(delta: float) -> void:
 		if _surge >= SURGE_T or state != STAGGER:
 			_surge = -1.0
 			free_l = 0.0
+			_visor_glow(0.0)
 			_set_skin("heat", (phase - 1) * 0.5)
 			if growth.growing():
 				growth.stop()
@@ -1168,9 +1169,48 @@ func _surge_body(delta: float) -> void:
 					surge_visor_fwd = minf(surge_visor_fwd, vfw)
 			if kneel > 0.8 and burst < 0.05:
 				surge_face_coil = minf(surge_face_coil, fp)
+	_visor_glow(roar)
 	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
 		set_meta("surge_roar_%d" % surges, true)
 		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
+
+## (17:00 11-18) The roar's visor glow: with the face tipped up, the hero's low front view saw the helm as a
+## dark crown with only an ember rim (`ring surge side hero close st=50`): the body's ember light skips the
+## knight's own skin (layer 2), so nothing lit the visor. The fire behind the sight slit now throws a warm
+## light back over the visor, keel and cheeks during the roar: a small light just ahead of and below the slit
+## that lights ONLY the knight's own meshes (layer 2), so the ground and the hero are untouched.
+## Env KVISOR_OLD=1: the before; KVISOR_E=<energy> overrides (tuning).
+const VISOR_GLOW_E := 2.6
+const VISOR_GLOW_RANGE := 0.75        # m per size
+static var KVISOR_OLD := OS.get_environment("KVISOR_OLD") == "1"
+var _visor_light: OmniLight3D
+var visor_glow_peak := 0.0       # bots: highest visor-light energy in a roar
+
+func _visor_glow(roar: float) -> void:
+	if KVISOR_OLD or armour == null:
+		return
+	if _visor_light == null:
+		_visor_light = OmniLight3D.new()
+		_visor_light.name = "VisorGlow"
+		_visor_light.light_color = Color(1.0, 0.42, 0.12)
+		_visor_light.light_cull_mask = 2
+		_visor_light.shadow_enabled = false
+		_visor_light.omni_attenuation = 1.6
+		add_child(_visor_light)
+	var e := VISOR_GLOW_E
+	if OS.has_environment("KVISOR_E"):
+		e = OS.get_environment("KVISOR_E").to_float()
+	var en := e * clampf(roar, 0.0, 1.0) * (1.0 + 0.12 * sin(_surge * 37.0))
+	_visor_light.light_energy = en
+	_visor_light.visible = en > 0.01
+	_visor_light.omni_range = VISOR_GLOW_RANGE * size_scale
+	var sl: Array = armour.seam_at(1)
+	var p: Vector3 = sl[0]
+	var n: Vector3 = sl[1]
+	# a hand's breadth out from the slit along its facing and a little below it, so the light rakes up
+	# over the visor's lower plates and the keel rather than flattening the crown
+	_visor_light.global_position = p + n * 0.16 * size_scale + Vector3.DOWN * 0.05 * size_scale
+	visor_glow_peak = maxf(visor_glow_peak, en)
 
 ## (16:00 11-18) The surge roar's head throw-back, per bone (Spine2, Neck, Head). HeadBow's default
 ## shares (0.2, 0.45, 0.35) put most of the 0.95 rad at the neck and chest, which swung the skull back
