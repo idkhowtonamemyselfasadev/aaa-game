@@ -3199,7 +3199,23 @@ func _ready() -> void:
 				get_tree().create_timer(float(a.substr(5)), true, true).timeout.connect(func():
 					rk.bot_move = Vector3.ZERO
 					rk._home = rk.global_position
-					print("SHOT ring stride stopped at %s" % rk.global_position))
+					print("SHOT ring stride stopped at %s" % rk.global_position)
+					if "sidelens" in args:
+						# (11-18 22:00) sidelens: at the stop, square the lens off the foe's flank (along the
+						# normal of its facing, on the sun side) at chest height, so the stop's chest sway
+						# reads in profile instead of front-on
+						var bf: Vector3 = rk.body.global_basis.z
+						bf = Vector3(bf.x, 0, bf.z).normalized()
+						var bn := bf.cross(Vector3.UP)
+						var sl: Vector3 = -world.sun.global_transform.basis.z
+						if bn.dot(Vector3(-sl.x, 0, -sl.z)) < 0.0:
+							bn = -bn
+						var sd := 3.0 * maxf(rk.size_scale, 1.0)
+						var sp: Vector3 = rk.global_position + bn * sd
+						sp.y = terrain.height_at(sp.x, sp.z) + 1.1 * rk.size_scale
+						cam.global_position = sp
+						cam.look_at(rk.global_position + Vector3.UP * 0.9 * rk.size_scale)
+						print("SHOT ring stride sidelens fwd %s cam %s" % [bf, sp]))
 			if a.begins_with("turnat="):
 				# (11-18 18:00) turnat=<s>: after s seconds the walk swings 90 deg toward the lens (a turn at
 				# speed: the foe's body has to carry the pace round a corner)
