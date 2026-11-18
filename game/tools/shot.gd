@@ -3167,7 +3167,7 @@ func _ready() -> void:
 	if spot == "ring" and "stride" in args:
 		# ring stride [sz=4.6] [v=4.5]: the knight at size sz walking across the ring at v m/s
 		# (bot_move), seen side-on from the gate; the frame count sets the stride phase
-		var rk: AshenKnight = world.knight
+		var rk: HollowSoldier = world.knight
 		var rr: StoneRing = world.stone_ring
 		var rf := Vector3(rr.facing.x, 0, rr.facing.y)
 		var rside := rf.cross(Vector3.UP)
@@ -3178,6 +3178,13 @@ func _ready() -> void:
 				sz = float(a.substr(3))
 			if a.begins_with("v="):
 				sv = float(a.substr(2))
+		# (11-18 18:00) foe=soldier: the Hollow Soldier (size 1) walks the line instead of the knight
+		if "foe=soldier" in args:
+			world.knight.process_mode = Node.PROCESS_MODE_DISABLED
+			world.knight.visible = false
+			rk = world.soldier
+			rk.give_up = 1e9
+			sz = 1.0
 		if sv < 0.0:
 			sv = HollowSoldier.STALK_SPEED * sqrt(sz)
 		rk.set_size_scale(sz)
@@ -3193,11 +3200,25 @@ func _ready() -> void:
 					rk.bot_move = Vector3.ZERO
 					rk._home = rk.global_position
 					print("SHOT ring stride stopped at %s" % rk.global_position))
+			if a.begins_with("turnat="):
+				# (11-18 18:00) turnat=<s>: after s seconds the walk swings 90 deg toward the lens (a turn at
+				# speed: the foe's body has to carry the pace round a corner)
+				get_tree().create_timer(float(a.substr(7)), true, true).timeout.connect(func():
+					rk.bot_move = rf * sv
+					print("SHOT ring stride turned at %s" % rk.global_position))
 		var sc := rr.centre + rf * (4.0 + 2.6 * sz)
-		sc.y = terrain.height_at(sc.x, sc.z) + 0.25 * sz
-		cam.global_position = sc
-		cam.look_at(rr.centre + Vector3.UP * 0.9 * sz)
-		print("SHOT ring stride size %.2f at %.2f m/s" % [sz, sv])
+		if "foe=soldier" in args:
+			# a man-sized foe: a lens 5.5 m off the line at hip height, the whole walk in frame
+			sc = rr.centre + rf * 5.5
+			sc.y = terrain.height_at(sc.x, sc.z) + 1.0
+			cam.global_position = sc
+			cam.look_at(rr.centre + Vector3.UP * 0.8)
+			print("SHOT ring stride soldier at %.2f m/s" % sv)
+		else:
+			sc.y = terrain.height_at(sc.x, sc.z) + 0.25 * sz
+			cam.global_position = sc
+			cam.look_at(rr.centre + Vector3.UP * 0.9 * sz)
+			print("SHOT ring stride size %.2f at %.2f m/s" % [sz, sv])
 	if spot == "ring" and "turn" in args:
 		# ring turn [sz=4.6]: the knight at size sz standing side-on in the ring, turning on the spot
 		# to face the gate (bot_face, 90 deg); the frame count sets how far into the turn it is

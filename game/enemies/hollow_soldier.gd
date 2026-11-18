@@ -958,7 +958,7 @@ func _physics_process(delta: float) -> void:
 			if dist > give_up or (global_position - _home).length() > give_up:
 				_enter(IDLE)
 			else:
-				move = _stalk(to, dist)
+				move = _corner(_stalk(to, dist), delta)
 
 		WINDUP, STRIKE, RECOVER when move_kind > SWEEP_MOVE:
 			# a variant's own move (the warden's shield bash): it poses itself and hands back
@@ -1073,8 +1073,12 @@ func _physics_process(delta: float) -> void:
 			_die_tick(delta)
 			return
 	if bot_move != Vector3.ZERO:
-		move = bot_move
-		body.rotation.y = atan2(bot_move.x, bot_move.z)
+		if bot_steer:
+			_turn_to(bot_move, delta, 5.0)       # as STALK
+			move = _corner(bot_move, delta)
+		else:
+			move = bot_move
+			body.rotation.y = atan2(bot_move.x, bot_move.z)
 	_update_turn_lead(delta)
 	_reel_layer()
 	if state == STAGGER and bot_move == Vector3.ZERO:
@@ -1240,6 +1244,22 @@ static var _stance_snap_old := OS.has_environment("STANCESNAP_OLD")   # = before
 ## TURNFINISH_OLD: before
 const TURN_FINISH_W := 0.35
 static var _turn_finish_old := OS.has_environment("TURNFINISH_OLD")
+## (11-18 18:00) a walking foe carries its pace round a corner: the walk's heading swings toward the
+## new direction at CORNER_RATE (x its cadence: the giant sweeps wider) and the pace eases off by up
+## to CORNER_SLOW through a sharp swing, instead of the velocity snapping onto the new line at once
+## while the body was still turning (a sideways skid on every sidestep). CORNER_OLD=1 = before
+static var _corner_old := OS.has_environment("CORNER_OLD")
+# (tuned on bot `foecorner`: 4.5/4.5, 4.5/2.5, 2.5/4.5, 4/4 all skated more; the walk's heading and the
+# body's swing must turn together or the planted boot is dragged sideways)
+const CORNER_RATE := 3.0          # rad/s at 1x cadence (a soldier rounds 90 deg in ~0.5 s)
+const CORNER_YAW := 3.0           # rad/s at 1x cadence: the walking body's own swing toward its new line
+static var _corner_rate := float(OS.get_environment("CORNER_RATE")) if OS.has_environment("CORNER_RATE") else CORNER_RATE
+static var _corner_slow := float(OS.get_environment("CORNER_SLOW")) if OS.has_environment("CORNER_SLOW") else CORNER_SLOW
+static var _corner_yaw := float(OS.get_environment("CORNER_YAW")) if OS.has_environment("CORNER_YAW") else CORNER_YAW
+const CORNER_SLOW := 1.0          # pace kept at a 90 deg swing (0.7 / 0.8 tried: easing the pace off skated the planted boot more)
+const CORNER_REVERSE := 2.4       # rad: a swing wider than this is a reversal (stop and turn), not a corner
+## (bots) steer the walk like STALK does instead of setting the body's heading outright
+var bot_steer := false
 static var _foe_turn_oldplant := OS.has_environment("FOETURN_OLDPLANT")   # = before 11-15 12:00
 const FOE_PLANT_GAP := 0.15      # rad still to turn: a smaller correction is a sway, not a turn (no pivot)
 
@@ -1620,6 +1640,25 @@ func _facing(to: Vector3) -> float:
 		return 1.0
 	return body.global_basis.z.normalized().dot(to.normalized())
 
+func _corner(want: Vector3, delta: float) -> Vector3:
+	if _corner_old:
+		return want
+	var cur := Vector2(velocity.x, velocity.z)
+	var w2 := Vector2(want.x, want.z)
+	if cur.length() < TURN_STILL or w2.length() < 0.01:
+		return want
+	var a_cur := atan2(cur.x, cur.y)
+	var gap := angle_difference(a_cur, atan2(w2.x, w2.y))
+	if absf(gap) > CORNER_REVERSE:
+		return want
+	var cap := _corner_rate * natural_cadence() * delta
+	var a := a_cur + clampf(gap, -cap, cap)
+	var spd := w2.length() * lerpf(1.0, _corner_slow, clampf(absf(gap) / (PI * 0.5), 0.0, 1.0))
+	# the pace eases off (and back) at the stop's brake rate: dropped at once, the stride clip slowed
+	# under a planted boot and dragged it ~3 cm on the corner's first tick
+	spd = move_toward(cur.length(), spd, STALK_SPEED * sqrt(size_scale) / STOP_T * delta)
+	return Vector3(sin(a) * spd, want.y, cos(a) * spd)
+
 func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 	if dir.length() < 1e-3 or rate <= 0.0:
 		return
@@ -1668,6 +1707,10 @@ func _turn_to(dir: Vector3, delta: float, rate: float) -> void:
 			stride_warp.turn_left_tick = Engine.get_physics_frames()
 		want = body.rotation.y + d
 	elif delta > 0.0:
+		if not _corner_old and state in [IDLE, STALK]:
+			# (11-18 18:00) walking, the body swings onto its new line no faster than the stride carries it
+			var ycap := _corner_yaw * natural_cadence() * delta
+			want = body.rotation.y + clampf(angle_difference(body.rotation.y, want), -ycap, ycap)
 		_spot_turn_w = angle_difference(body.rotation.y, want) / delta
 		_spot_turn_tick = Engine.get_physics_frames()
 	body.rotation.y = want

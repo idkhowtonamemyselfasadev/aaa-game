@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -221,6 +221,9 @@ func _ready() -> void:
 		return
 	if name == "foestride":
 		_foe_stride_test()
+		return
+	if name == "foecorner":
+		_foe_corner_test()
 		return
 	if name == "foeturn":
 		_foe_turn_test()
@@ -3537,6 +3540,102 @@ func _foe_stride_test() -> void:
 		if o[3] > 0.0065:
 			return _combat_done(false, "a foe's planted foot skates %.4f m/tick per size (size %.1f at %.2f m/s; want <= 0.0065)" % [o[3], o[1], o[2]])
 	_combat_done(true, "the soldier's and the knight's planted feet hold still at every size and pace")
+
+## (11-18 18:00) Foe turn AT SPEED: a soldier and the knight at all three sizes walk at their stalk
+## pace, then the walk swings 90 deg (a corner, as when it chases a hero who sidesteps). Through the
+## 60 ticks after the swing the planted boot must not skate over the turf while the body carries
+## its pace round, and the body must actually come round to the new heading.
+func _foe_corner_test() -> void:
+	Engine.time_scale = 1.0
+	var k: AshenKnight = _world.knight
+	var so: HollowSoldier = _world.soldier
+	await _ticks(20)
+	var cases := [[so, 1.0]]
+	for i in 3:
+		cases.append([k, float(AshenKnight.PHASES[i]["scale"])])
+	var out := []
+	for c in cases:
+		var e: HollowSoldier = c[0]
+		var sc: float = c[1]
+		var spd := HollowSoldier.STALK_SPEED * sqrt(sc)
+		for other in [k, so]:
+			other.process_mode = Node.PROCESS_MODE_INHERIT if other == e else Node.PROCESS_MODE_DISABLED
+		e.set_size_scale(sc)
+		e.notice = -1.0
+		e.give_up = 1e9
+		e.state = HollowSoldier.IDLE
+		e.bot_move = Vector3.ZERO
+		e.bot_steer = not OS.has_environment("FOECORNER_SNAP")    # the real STALK steering
+		await _ticks(90)
+		var skel: Skeleton3D = e.skel
+		var sw: StrideWarp = e.stride_warp
+		var fi := [skel.find_bone("mixamorig_LeftFoot"), skel.find_bone("mixamorig_RightFoot")]
+		var prev = null
+		var slips := []
+		var worst := 0.0
+		var worst_t := -1
+		var dir0 := Vector3(0, 0, -1)
+		var dir1 := Vector3(1, 0, 0) if not OS.has_environment("FOECORNER_LEFT") else Vector3(-1, 0, 0)
+		var since_sw := 99
+		var heading_ok := 0.0
+		var rest_h := 0.0
+		for j in 2:
+			rest_h += (float(sw.ground_sole[j]) if sw != null else 0.0) * 0.5
+		for i in 160:
+			e.bot_move = (dir0 if i < 90 else dir1) * spd
+			e._home = e.global_position        # IDLE's walk home must not pull the steered heading
+			await get_tree().physics_frame
+			await skel.skeleton_updated
+			var hs := []
+			var ps := []
+			for j in 2:
+				var at: Vector3 = skel.global_transform * skel.get_bone_global_pose(fi[j]).origin
+				ps.append(at)
+				hs.append(float(sw.ground_sole[j]) if sw != null else at.y - e.global_position.y)
+			var lo := 0 if hs[0] < hs[1] else 1
+			var now := [ps[lo], lo, hs[lo]]
+			var pv = prev
+			prev = now
+			if pv != null and pv[1] != now[1]:
+				since_sw = 0
+			else:
+				since_sw += 1
+			if i < 90 or i >= 150 or pv == null or since_sw < 6:
+				continue
+			if (float(now[2]) - rest_h) / sc > 0.006:
+				continue
+			var d: Vector3 = (now[0] as Vector3) - (pv[0] as Vector3)
+			var sk := Vector2(d.x, d.z).length() / sc
+			slips.append(sk)
+			if OS.has_environment("FOECORNER_DBG"):
+				print("   t %d foot %d slip %.4f /size  h %.4f  yaw %.3f v %s" % [i - 90, lo, sk, (float(now[2]) - rest_h) / sc, e.body.rotation.y, e.velocity])
+			if sk > worst:
+				worst = sk
+				worst_t = i - 90
+		var fwd := e.body.global_basis.z
+		heading_ok = Vector2(fwd.x, fwd.z).normalized().dot(Vector2(dir1.x, dir1.z))
+		e.bot_move = Vector3.ZERO
+		e.bot_steer = false
+		var m := 0.0
+		for v in slips:
+			m += v
+		m /= maxf(slips.size(), 1.0)
+		print("BOT foecorner: %s size %.1f at %.2f m/s: through the 90 deg swing the planted boot slips mean %.4f / worst %.4f m/tick per size (worst at t %d), over %d ticks; heading after 70 ticks %.2f" % ["knight" if e == k else "soldier", sc, spd, m, worst, worst_t, slips.size(), heading_ok])
+		out.append([e == k, sc, m, worst, slips.size(), heading_ok])
+	k.set_size_scale(AshenKnight.PHASES[0]["scale"])
+	for o in out:
+		if o[4] < 6:
+			return _combat_done(false, "too few planted ticks through the corner (size %.1f)" % o[1])
+		if o[5] < 0.9:
+			return _combat_done(false, "the foe has not come round to its new heading (size %.1f, dot %.2f)" % [o[1], o[5]])
+		if o[2] > FOECORNER_MEAN or o[3] > FOECORNER_WORST:
+			return _combat_done(false, "a foe's planted boot skates round the corner (size %.1f: mean %.4f / worst %.4f per size; want <= %.4f / %.4f)" % [o[1], o[2], o[3], FOECORNER_MEAN, FOECORNER_WORST])
+	_combat_done(true, "the soldier and the knight at every size carry their pace round a 90 deg corner on planted boots")
+# (11-18 18:00) CORNER_OLD=1 (the velocity snapped onto the new line): mean 0.0165 / 0.0117 / 0.0085 /
+# 0.0089, worst 0.084 / 0.062 / 0.037 / 0.042 per size (soldier, x2.2, x3.2, x4.6); now 0.0058 / 0.0074 /
+# 0.0064 / 0.0078, worst 0.017 / 0.015 / 0.012 / 0.015 (a straight walk reads ~0.004-0.006)
+const FOECORNER_MEAN := 0.009
+const FOECORNER_WORST := 0.025
 
 ## Foe turn on the spot: a soldier and the knight at all three sizes, standing, turn 120 deg.
 ## The feet must step round (a foot clears the turf, at the body's own slow cadence for the
