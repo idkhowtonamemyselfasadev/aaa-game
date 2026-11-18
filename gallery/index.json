@@ -892,5 +892,11 @@
   "time": "2026-11-18T20:10:00Z",
   "caption": "Knight legs 2x crop, before (left) vs after (right): the shaded thigh straps go from a black blob to brown leather turns with dark creases; the shaded greaves are still black.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261118-2100-soldier-stop-sway.jpg",
+  "time": "2026-11-18T21:40:00Z",
+  "caption": "Hollow Soldier 10 frames after a walk stops, before (left) vs with the new chest sway (right): boots set clean in both; from this near-front lens the forward pitch barely reads, a side lens is still needed to judge it.",
+  "verdict": "fail"
  }
 ]
