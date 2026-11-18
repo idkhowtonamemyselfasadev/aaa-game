@@ -12,6 +12,10 @@ extends Node
 const STEEL := 0.0
 const LEATHER := 0.5
 const RIVET := 1.0
+## COLOR.b on the pauldron lames (the helm is 1): armour.gdshader gathers soot under each lame's overlap
+const LAME_FLAG := 0.25
+## pauldron lame bands built with the overlap tag (the knight bot gates it)
+var lames_tagged := 0
 
 var mats: Array[ShaderMaterial] = []
 var pieces := 0          # meshes hung (bots)
@@ -189,7 +193,9 @@ func _pauldron(arm: Vector3, sx: float) -> ArrayMesh:
 	var out := Vector3(sx * 1.0, -0.55, 0.0).normalized()
 	var fwd := Vector3(0, 0, 1)
 	var bands := [[0.0, 0.78, 0.165], [0.66, 1.08, 0.174], [0.98, 1.38, 0.184]]
-	for b in bands:
+	for bi in bands.size():
+		var b: Array = bands[bi]
+		lames_tagged += 1
 		var t0: float = b[0]
 		var t1: float = b[1]
 		var rad: float = b[2]
@@ -207,12 +213,19 @@ func _pauldron(arm: Vector3, sx: float) -> ArrayMesh:
 				var flute := 1.0 + 0.025 * sin(p_ang * 5.0) * v
 				var pos := c + dir * rad * lip * flute
 				var e := maxf(smoothstep(0.8, 1.0, v), smoothstep(1.7, 1.95, absf(p_ang)))
-				verts.append([pos, e])
+				verts.append([pos, e, v])
 		for j in nv:
 			for i in nu:
 				var a := j * (nu + 1) + i
 				var q := [verts[a], verts[a + 1], verts[a + nu + 2], verts[a + nu + 1]]
-				_quad(st, q[0][0], q[1][0], q[2][0], q[3][0], (q[0][1] + q[2][1]) * 0.5)
+				# (11-18 15:00) COLOR.b 0.25 + UV (band index, v down the band) so the shader can gather
+				# soot in the strip each lower lame hides under the rim above it
+				var ef: float = (q[0][1] + q[2][1]) * 0.5
+				for tri in [[q[0], q[1], q[2]], [q[0], q[2], q[3]]]:
+					for vx in tri:
+						st.set_color(Color(STEEL, ef, LAME_FLAG))
+						st.set_uv(Vector2(float(bi), vx[2]))
+						st.add_vertex(vx[0])
 		# rivets along the lip
 		for k in 7:
 			var p_ang := lerpf(-1.5, 1.5, (k + 0.5) / 7.0)

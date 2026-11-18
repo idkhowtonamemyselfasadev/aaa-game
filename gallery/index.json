@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-2000-glide-hem-before-after.jpg",
-  "time": "2026-11-14T20:20:00Z",
-  "caption": "Glide, back view crop, before/after: the mantle's side scallop no longer hangs below the lifted cloth as a long dark spike; a short curl at the hem corner and the near-black backlit figure are still wrong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-2100-glide-back-rim.jpg",
-  "time": "2026-11-14T21:00:00Z",
-  "caption": "Gliding into the light from behind: the new figure rim light picks out the mantle's shoulders, hat brim and edges against the vale; the trousers and mantle body are still very dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2100-glide-rim-before-after.jpg",
   "time": "2026-11-14T21:00:00Z",
   "caption": "Backlit glide, before (left) and after (right) the rim light: the silhouette edges now catch the sun and sky (mantle 15 -> 22 of 255); the legs still read as a black cut-out.",
@@ -891,6 +879,18 @@
   "file": "20261118-1405-knight-soot.jpg",
   "time": "2026-11-18T14:05:41Z",
   "caption": "Close reveal frame of the Ashen Knight with streaked plate; the surcoat still reads flat and the GL fallback renderer lacks GI.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1500-knight-pauldron-soot.jpg",
+  "time": "2026-11-18T15:10:00Z",
+  "caption": "Ashen Knight pauldrons before (top) and after (bottom): soot now packs the strip under each lame's rim so the worn-bright rims separate; still subtle, the GL fallback renderer lacks GI.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1500-knight-ring.jpg",
+  "time": "2026-11-18T15:10:00Z",
+  "caption": "The Ashen Knight in the ring at hour 9 with sooted plate and pauldrons; legs in shade still read very dark and the scene lacks GI under the GL fallback.",
   "verdict": "fail"
  }
 ]

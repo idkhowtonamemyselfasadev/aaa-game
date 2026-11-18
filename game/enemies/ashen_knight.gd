@@ -617,6 +617,7 @@ func _dress() -> void:
 	_set_skin("keel_crisp", 0.0 if OS.get_environment("KEELCRISP_OLD") == "1" else 1.0)   # 11-16 20:00: the before
 	_set_skin("rust_sparse", 0.0 if OS.get_environment("KWRAPS") == "old" else 1.0)   # 11-18 12:00: the before (with the oxblood bindings)
 	_set_skin("soot_streaks", 0.0 if OS.get_environment("KSOOT_OLD") == "1" else 1.0)   # 11-18 14:00: the before (clean plate)
+	_set_skin("lame_soot", 0.0 if OS.get_environment("KLAME_OLD") == "1" else 1.0)   # 11-18 15:00: the before (clean pauldron overlaps)
 	growth.seam_fn = armour.seam_at
 	growth.seam_n = armour.seams.size()
 	_set_skin("heat", 0.0)

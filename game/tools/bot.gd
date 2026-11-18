@@ -6934,6 +6934,11 @@ func _knight_test() -> void:
 	print("BOT knight: soot_streaks %s" % [ksoot])
 	if OS.get_environment("KSOOT_OLD") != "1" and float(ksoot if ksoot != null else 0.0) < 0.5:
 		return _combat_done(false, "the knight's plate has no soot run-off (it reads too clean)")
+	# (15:00 11-18) soot packed under each pauldron lame's overlap (the pauldrons read clean)
+	var klame: Variant = k.armour.mats[0].get_shader_parameter("lame_soot")
+	print("BOT knight: lame_soot %s, lames tagged %d" % [klame, k.armour.lames_tagged])
+	if OS.get_environment("KLAME_OLD") != "1" and (float(klame if klame != null else 0.0) < 0.5 or k.armour.lames_tagged < 6):
+		return _combat_done(false, "the knight's pauldron overlaps carry no soot (they read too clean)")
 	# (09:00 11-18) the haft against the real helm mesh through the WHOLE fight (reveal, leaps,
 	# stomps, staggers, surges): bucket -> [deepest m/size, ticks seen, ticks > 0]. KNIGHT_HELM_SWEEP=1 prints it.
 	var hsw_ring := _helm_rings(k)

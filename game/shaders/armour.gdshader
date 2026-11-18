@@ -38,6 +38,11 @@ uniform float rust_sparse = 1.0;
 // the rims (rest-pose +Y is up: knight_armour.gd bakes each piece in the body's rest space), matte and
 // darker, with a few pale ash rivulets between them. 0 = before.
 uniform float soot_streaks = 0.0;
+// (11-18 15:00) soot packed into the pauldrons' overlaps: each lower lame (COLOR.b 0.25, UV.x the band
+// index, UV.y 0 at its top edge -> 1 at its rolled lip; knight_armour.gd _pauldron) is charred matte in
+// the strip just below the rim of the lame above, where rain never washes it, with short drips below.
+// The pauldrons had read as clean worn-bright rims. 0 = before.
+uniform float lame_soot = 0.0;
 
 varying float layer;
 varying float edge;
@@ -166,6 +171,20 @@ void fragment() {
 			alb = mix(alb, vec3(0.22, 0.21, 0.20), ash * 0.7);
 			rough = mix(rough, 0.95, ash * 0.7);
 			metal = mix(metal, 0.1, ash * 0.6);
+		}
+		if (lame_soot > 0.0 && stone < 0.5 && abs(helm - 0.25) < 0.1 && UV.x > 0.5) {
+			// the upper lame covers v < ~0.27 of this one (cap over lame 1: 0.29, lame 1 over lame 2: 0.25)
+			float v = UV.y;
+			float ragged = (fbm(opos * 40.0 + 5.0) - 0.5) * 0.16;
+			float pack = 1.0 - smoothstep(0.30, 0.46, v + ragged);
+			// short drips running down from the packed band, ~1-2 cm wide
+			float drip = smoothstep(0.55, 0.75, vnoise(vec3(opos.x * 70.0, v * 1.6, opos.z * 70.0)))
+					* (1.0 - smoothstep(0.42, 0.72, v + ragged));
+			float ls = max(pack, drip * 0.8) * (1.0 - wear * 0.9) * lame_soot;
+			alb = mix(alb, alb * 0.3 + vec3(0.006), ls * 0.92);
+			rough = mix(rough, 0.9, ls);
+			metal = mix(metal, 0.3, ls * 0.7);
+			bump -= ls * 0.15;
 		}
 		// hairline cracks in the blackened plate show the ember behind
 		// warped Voronoi seams (~10 cm cells, jagged), split into two widths: a few main seams and
