@@ -7886,7 +7886,8 @@ func _knightleap_test() -> void:
 ## A plain drop onto its head (no plunge) puts the hero off it too.
 const CLUTCH_GAP_MAX := 0.02    # m per size: the crown reel's left wrist on the helm's temple point (11-10; 0.044 before the bow moved ahead of the arm IK at 06:00, now 0.001-0.003)
 const CLUTCH_REGRIP_MAX := 0.05  # m per size: the right fist as the left comes back and the glaive rises (0.096 before the 11-10 06:00 lean-carried glaive, now 0.03)
-const CLUTCH_FIST_MAX := 0.06   # m per size: the fists on the glaive one-handed and after the regrip (11-10)
+const CROWN_DROP_GATE := 0.5    # (11-18) share of the glaive's droop already in the crown reel's hit-stop frame
+const CLUTCH_FIST_MAX := 0.06  # m per size: the fists on the glaive one-handed and after the regrip (11-10)
 func _crown_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -8008,6 +8009,10 @@ func _crown_test() -> void:
 				return _combat_done(false, "the crown reel did not bow the head, buckle the knees and shake it off")
 			if k.state == HollowSoldier.STAGGER:
 				return _combat_done(false, "the crown reel never ended")
+			# (11-18) the glaive is knocked down with the head, not left at guard height through the hit-stop
+			print("BOT crown:   glaive droop shown in the hit-stop %.2f (gate >= %.2f; old linear 0.27)" % [k.crown_drop_at_impact, CROWN_DROP_GATE])
+			if OS.get_environment("CROWN_DROP_OLD") == "" and k.crown_drop_at_impact < CROWN_DROP_GATE:
+				return _combat_done(false, "the crown reel's glaive stays up at guard height through the hit-stop")
 			# (11-10 03:00) the left hand cups the helm through the daze and is back on the haft for the guard
 			print("BOT crown:   clutch: peak %.2f, palm to the helm's temple %.3f m per size, right fist off the axis one-handed %.3f, left fist back on the haft %.3f, right fist through the regrip and rise %.3f (old reel 0.12), free_l now %.2f" % [k.clutch_peak, k.clutch_gap, r_gap, l_end, regrip, k.free_l])
 			if OS.get_environment("CROWN_NOCLUTCH") == "" and (k.clutch_peak < 0.95 or k.clutch_gap > CLUTCH_GAP_MAX or r_gap > CLUTCH_FIST_MAX or l_end > CLUTCH_FIST_MAX or regrip > CLUTCH_REGRIP_MAX or k.free_l > 0.0):

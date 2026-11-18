@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-0600-walkstop-release.jpg",
-  "time": "2026-11-14T06:30:00Z",
-  "caption": "The hero just after letting go at a fast walk: both boots set flat on the turf as the stop's pivot lets go (the 1-2 cm bob is gone); the legs still read dark under the tabard and the yard ground is flat and plain.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0700-walkstop-settled.jpg",
-  "time": "2026-11-14T07:30:00Z",
-  "caption": "The same stop settled into the idle stance with both boots on the turf; lighting is the GL fallback (no SDFGI/volumetrics) and trousers and greaves are still too dark in sun.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-0700-walkstop-step.jpg",
   "time": "2026-11-14T07:30:00Z",
   "caption": "The hero closing a fast-walk stop, seen three-quarter from behind: the stride gathers in with the back boot pinned and no longer turning under it; the legs still read dark under the tabard and the lens hides the back heel.",
@@ -897,6 +885,18 @@
   "file": "20261117-2046-kstop100.jpg",
   "time": "2026-11-17T20:46:00Z",
   "caption": "Same stop 1.8 s later, after the settle steps and the release: the boots have not moved (the creep is gone); framing and lighting still not Wukong-grade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0221-knight-crown-impact.jpg",
+  "time": "2026-11-18T02:21:26Z",
+  "caption": "Crown reel impact frame, front-lit for the first time: the glaive is now knocked down across the body with the bowed head instead of standing at guard height; the giant's scale still does not read without the hero in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0221-knight-crown-daze.jpg",
+  "time": "2026-11-18T02:21:26Z",
+  "caption": "Crown reel daze, front-lit: left gauntlet cupping the bowed helm, glaive drooped blade-first to the turf, knees buckled; armour reads dark and flat in the GL fallback renderer.",
   "verdict": "fail"
  }
 ]

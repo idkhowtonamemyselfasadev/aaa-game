@@ -356,6 +356,9 @@ const CROWN_STAGGER := 1.3       # s the giant reels after a plunge through its 
 const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already knocked down in the hit-stop
 ## The crown reel's glaive: the hands lose it and it droops, blade into the turf, leaned on.
 const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
+const CROWN_DROP_JOLT := 0.6     # (11-18) share of the glaive's droop already in the impact frame
+const CROWN_DROP_END := 0.26     # u the glaive has finished drooping (blade at the turf)
+var crown_drop_at_impact := 0.0  # bots: the droop share shown through the hit-stop
 var head: HeadBow                # bows the head onto the chest in the crown reel and the surge
 var glare: HeadGlare             # the neck turns the helm back onto the hero in the reveal's coil
 var intro_glare_err := 0.0       # bots: worst yaw (rad) left between the helm and the hero in the coil
@@ -731,7 +734,15 @@ func _crown_tick(delta: float, snap := false) -> void:
 		clutch_flight = reach + CLUTCH_OVER * land
 	clutch_flight_peak = maxf(clutch_flight_peak, clutch_flight)
 	# the glaive: falls a little behind the head (the hands give way), comes up with the knees
-	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, minf(u / 0.26, 1.0)) if u < 0.5 \
+	# (11-18) the blow jolts the hands down with the head (front-lit frames: through the hit-stop the
+	# head lay on the chest while the glaive still stood at guard height, read as a raised weapon),
+	# then the glaive falls the rest of the way and decelerates into the slump (was linear u / 0.26)
+	var drop := minf(u / 0.26, 1.0)
+	if OS.get_environment("CROWN_DROP_OLD") == "":
+		var ds := clampf((u - CROWN_IMPACT_U) / (CROWN_DROP_END - CROWN_IMPACT_U), 0.0, 1.0)
+		drop = CROWN_DROP_JOLT + (1.0 - CROWN_DROP_JOLT) * (1.0 - (1.0 - ds) * (1.0 - ds))
+	crown_drop_at_impact = drop if u <= CROWN_IMPACT_U + 0.001 else crown_drop_at_impact
+	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, drop) if u < 0.5 \
 		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
 	if u >= 0.5 and OS.get_environment("CROWN_FIXEDGLAIVE") == "":
 		# (11-10 06:00) the model leans from the hips but the glaive lives in the Wield's (unleaned)
@@ -1697,6 +1708,13 @@ func _palm_gap(helm: Vector3) -> float:
 ## side_weight): the switch to the old fit as the left let go threw the right fist 0.31 m per size
 ## off the glaive for a tick and 0.12-0.29 for ten more, and the left came back onto the haft
 ## 0.11 off as GripRoll took over again in the settle (bot surgegrip; env SURGE_ROLLOFF: before).
+## (11-18) the crown reel's regrip: GripRoll took both hands back in one tick as the left landed on
+## the haft (aim IK 1 -> 0, GripRoll 0 -> 1) and threw the right fist 0.04-0.10 m per size off it for
+## a tick, by how the fit had drifted through the daze; eased in over ~0.1 s there instead
+func _grip_roll_rise() -> float:
+	return GRIP_RISE_CROWN if _crown_reel and OS.get_environment("CROWN_RISE_OLD") == "" else 0.0
+const GRIP_RISE_CROWN := 10.0
+
 func _grip_roll_wanted() -> bool:
 	if _surge >= 0.0 and OS.get_environment("SURGE_ROLLOFF") == "":
 		return true

@@ -897,7 +897,8 @@ func _physics_process(delta: float) -> void:
 		hand_rest.hold = _ik.influence
 	if grip_roll != null:
 		var want := _ik.influence if (fist_fit_on and state != DEAD and spear.get_parent() == _wield and _grip_roll_wanted()) else 0.0
-		grip_roll.weight = want if want >= grip_roll.weight else move_toward(grip_roll.weight, want, delta * 8.0)
+		var rise := _grip_roll_rise()
+		grip_roll.weight = (want if rise <= 0.0 else move_toward(grip_roll.weight, want, delta * rise)) if want >= grip_roll.weight else move_toward(grip_roll.weight, want, delta * 8.0)
 		# the wrist shift lives in the spear's frame while GripRoll holds the hands, in the body's
 		# without it: carried across on the switch so the wrist target does not jump
 		var on_now := grip_roll.weight > 0.5
@@ -1480,6 +1481,10 @@ func _stalk(to: Vector3, dist: float) -> Vector3:
 ## the late body-frame fit then holds the one hand that is left.
 func _grip_roll_wanted() -> bool:
 	return true
+
+## (11-18) GripRoll's weight per second as it takes the hands back (0: at once, the default)
+func _grip_roll_rise() -> float:
+	return 0.0
 
 func _begin_attack(dist: float) -> void:
 	windups += 1
