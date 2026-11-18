@@ -33,6 +33,11 @@ uniform float keel_crisp = 1.0;
 // noise averaging ~0.6) covered over half the plate in a warm brown and the whole knight read dark red
 // with no steel left. 1 = sparse, darker rust, so the fire-blackened steel and its bright rubbed edges show.
 uniform float rust_sparse = 1.0;
+// (11-18 14:00) soot run-off: with sparse rust the blackened plate read too clean, one even sheen.
+// Rain and heat have washed soot down the plate in thin vertical runs that start under the crown and
+// the rims (rest-pose +Y is up: knight_armour.gd bakes each piece in the body's rest space), matte and
+// darker, with a few pale ash rivulets between them. 0 = before.
+uniform float soot_streaks = 0.0;
 
 varying float layer;
 varying float edge;
@@ -142,6 +147,26 @@ void fragment() {
 		bump = pits * 0.35 - dent * 0.6 + r * 0.25;
 		alb *= 1.0 - keel_soot * 0.55;
 		rough = mix(rough, 0.85, keel_soot * 0.7);
+		if (soot_streaks > 0.0 && stone < 0.5) {
+			// thin runs: noise squeezed across (1.5-2.5 cm wide) and stretched down (~40 cm), each run
+			// fading in and out along its length by a second, longer noise so no stripe spans a whole piece
+			vec3 sp = vec3(opos.x * 60.0, opos.y * 3.0, opos.z * 60.0);
+			float run = smoothstep(0.50, 0.70, vnoise(sp + vec3(0.0, fbm(opos * 6.0) * 1.5, 0.0)));
+			float len = smoothstep(0.25, 0.55, vnoise(vec3(opos.x * 9.0, opos.y * 1.1 + 3.0, opos.z * 9.0)));
+			float streak = run * len * (1.0 - wear * 0.85) * (1.0 - r * 0.5);
+			// a few pale ash rivulets in other cells: grey, dry, catch light in shade
+			float ash = smoothstep(0.64, 0.82, vnoise(sp * vec3(1.3, 0.8, 1.3) + 21.0))
+					* smoothstep(0.45, 0.7, vnoise(vec3(opos.x * 7.0, opos.y * 0.9 + 9.0, opos.z * 7.0)))
+					* (1.0 - wear) * (1.0 - streak);
+			streak *= soot_streaks;
+			ash *= soot_streaks;
+			alb = mix(alb, alb * 0.3, streak * 0.9);
+			rough = mix(rough, 0.9, streak * 0.9);
+			metal = mix(metal, 0.35, streak * 0.6);
+			alb = mix(alb, vec3(0.22, 0.21, 0.20), ash * 0.7);
+			rough = mix(rough, 0.95, ash * 0.7);
+			metal = mix(metal, 0.1, ash * 0.6);
+		}
 		// hairline cracks in the blackened plate show the ember behind
 		// warped Voronoi seams (~10 cm cells, jagged), split into two widths: a few main seams and
 		// finer hair branches, broken into patches so no closed loop ever reads as a shape

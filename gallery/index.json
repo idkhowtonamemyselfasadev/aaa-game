@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261114-2000-glide-back.jpg",
-  "time": "2026-11-14T20:20:00Z",
-  "caption": "Gliding over the vale from behind: the mantle's sides now gather up under the raised arms; the hero still reads almost black against the light.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2000-glide-hem-before-after.jpg",
   "time": "2026-11-14T20:20:00Z",
   "caption": "Glide, back view crop, before/after: the mantle's side scallop no longer hangs below the lifted cloth as a long dark spike; a short curl at the hem corner and the near-black backlit figure are still wrong.",
@@ -885,6 +879,18 @@
   "file": "20261118-1302-knight-body.jpg",
   "time": "2026-11-18T13:02:28Z",
   "caption": "Ashen Knight full body in the reveal at 9:00: dark steel plate, red surcoat, strapped legs now show some banding; GL fallback lighting is still flat and the plate a touch clean.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1405-knight-soot-crop.jpg",
+  "time": "2026-11-18T14:05:41Z",
+  "caption": "Ashen Knight helm before (top) and after (bottom): soot now runs down the blackened plate in vertical streaks with a few pale ash rivulets, breaking up the clean crown sheen; pauldrons still read clean.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1405-knight-soot.jpg",
+  "time": "2026-11-18T14:05:41Z",
+  "caption": "Close reveal frame of the Ashen Knight with streaked plate; the surcoat still reads flat and the GL fallback renderer lacks GI.",
   "verdict": "fail"
  }
 ]

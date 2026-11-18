@@ -6929,6 +6929,11 @@ func _knight_test() -> void:
 	print("BOT knight: bindings rubbed %d of %d" % [k.wraps_rubbed, k.wraps_dark])
 	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KWRUB_OLD") != "1" and k.wraps_rubbed < k.wraps_dark:
 		return _combat_done(false, "the knight's bindings have no rubbed leather lip (they read as black blobs)")
+	# (14:00 11-18) soot washed down the plate in vertical runs (the plate read too clean)
+	var ksoot: Variant = k.armour.mats[0].get_shader_parameter("soot_streaks")
+	print("BOT knight: soot_streaks %s" % [ksoot])
+	if OS.get_environment("KSOOT_OLD") != "1" and float(ksoot if ksoot != null else 0.0) < 0.5:
+		return _combat_done(false, "the knight's plate has no soot run-off (it reads too clean)")
 	# (09:00 11-18) the haft against the real helm mesh through the WHOLE fight (reveal, leaps,
 	# stomps, staggers, surges): bucket -> [deepest m/size, ticks seen, ticks > 0]. KNIGHT_HELM_SWEEP=1 prints it.
 	var hsw_ring := _helm_rings(k)
