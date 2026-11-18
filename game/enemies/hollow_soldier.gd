@@ -1095,6 +1095,7 @@ func _physics_process(delta: float) -> void:
 	# stepping boot onto the turf before its travel was done and it slid 2-4 cm a tick (bot `foewindup`)
 	var hold_w := 1.0 if not _foe_windup_old and state == WINDUP and move_kind == SWEEP_MOVE and stride_warp != null and stride_warp.settle_lift_k != 1.0 else 0.0
 	windup_hold = hold_w if hold_w > windup_hold else move_toward(windup_hold, hold_w, delta * WINDUP_HOLD_RATE / sqrt(maxf(size_scale, 1.0)))
+	_apply_stop_sway(_stop_sway(delta))
 	_lean(lean - lean_kick, sink * (1.0 - windup_hold))
 	max_ember = maxf(max_ember, ember)
 	ember *= 1.0 + 0.9 * _kindle_glow
@@ -1475,6 +1476,72 @@ static func gait_blend(v: float) -> float:
 	return lerpf(Player.ANIM_WALK_SPEED, Player.ANIM_RUN_SPEED, smoothstep(Player.WALK_TOP, Player.JOG_FROM, v))
 
 ## The clip rate a body of this size walks at: a soldier 1x, the phase-3 giant ~0.47x.
+## (11-18 21:00) a walk that stops carries the body on: the legs brake, the chest pitches on over the
+## front boot (momentum) and rocks back past upright before it settles, instead of the torso
+## freezing the tick the pace ends. Hip lean only (the same pivot as the wind-ups'), scaled by the
+## pace it stopped from, slowed with the body's own cadence (a giant's sway is slower). It bends
+## the spine on the reel layer (before the foot IK), not the whole model about the hips: tipping
+## the model swung the planted boots with it (bot `foestop`: knight x2.2 0.006 -> 0.015 m/size).
+## The neck takes back 60 % so the gaze stays on the hero.
+## FOESWAY_OLD=1: before. FOESWAY_FWD / FOESWAY_BACK / FOESWAY_T tune.
+var _sway_old := OS.has_environment("FOESWAY_OLD")
+var SWAY_FWD := float(OS.get_environment("FOESWAY_FWD")) if OS.has_environment("FOESWAY_FWD") else 0.10
+var SWAY_BACK := float(OS.get_environment("FOESWAY_BACK")) if OS.has_environment("FOESWAY_BACK") else 0.04
+var SWAY_T := float(OS.get_environment("FOESWAY_T")) if OS.has_environment("FOESWAY_T") else 0.8
+var _sway_t := -1.0
+var _sway_amp := 0.0
+var _sway_armed := false
+var stop_sways := 0          # (bots) stops that swayed
+var sway_peak := 0.0         # (bots) the most forward sway so far
+var sway_dip := 0.0          # (bots) the most backward sway so far
+func _stop_sway(delta: float) -> float:
+	if _sway_old or not (state in [IDLE, STALK]):
+		_sway_t = -1.0
+		_sway_armed = false
+		return 0.0
+	var pace := Vector2(velocity.x, velocity.z).length() / (STALK_SPEED * sqrt(maxf(size_scale, 1.0)))
+	# `_move_zero` still holds last tick's wanted move here
+	if not _move_zero and pace > 0.5 and is_on_floor():
+		_sway_armed = true
+		_sway_t = -1.0
+		_sway_amp = clampf(pace, 0.0, 1.0)     # the pace it stops from (the brake may already have it at 0)
+	elif _move_zero and _sway_armed:
+		_sway_armed = false
+		_sway_t = 0.0
+		stop_sways += 1
+	if _sway_t < 0.0:
+		return 0.0
+	_sway_t += delta * natural_cadence()
+	var u := _sway_t / SWAY_T
+	if u >= 1.0:
+		_sway_t = -1.0
+		return 0.0
+	var w := 0.0
+	if u < 0.4:
+		w = SWAY_FWD * sin(PI * u / 0.4)
+	else:
+		w = -SWAY_BACK * sin(PI * (u - 0.4) / 0.6)
+	w *= _sway_amp
+	sway_peak = maxf(sway_peak, w)
+	sway_dip = minf(sway_dip, w)
+	return w
+
+var _sway_posed := false
+func _apply_stop_sway(w: float) -> void:
+	if crumple == null or _reel_posed or not (state in [IDLE, STALK]):
+		_sway_posed = false
+		return
+	if absf(w) > 1e-5:
+		crumple.active = true
+		crumple.spine = w
+		crumple.neck = 0.6 * w
+		_sway_posed = true
+	elif _sway_posed:
+		crumple.spine = 0.0
+		crumple.neck = 0.0
+		crumple.active = false
+		_sway_posed = false
+
 func natural_cadence() -> float:
 	return 1.0 / sqrt(maxf(size_scale, 1.0))
 

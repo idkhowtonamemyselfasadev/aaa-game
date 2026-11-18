@@ -5639,6 +5639,8 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 			stl = maxi(stl, st[5] if st[5] >= 0 else 999)
 			tsj = maxf(tsj, absf(st[4] - st[3]))
 		print("BOT " + tag + ": %s x%.2f (settle steps %d): after the %s, planted boots skate at worst %.4f m/size summed (%.4f over all cuts), %.4f m/size in one tick; clip rate jumps %.2f on the stop; legs still by tick %d; boots at rest %+.4f m/size off idle" % [e.name, sc, e.stop_settles, "wind-up" if attack else "stop", tot, allsum, wst, tsj, stl, rest])
+		if not attack:
+			print("BOT foestop sway: %s x%.2f %d sways, hip lean peak %+.3f dip %+.3f rad" % [e.name, sc, e.stop_sways, e.sway_peak, e.sway_dip])
 		if fail == "" and not OS.has_environment("FOESTOP_NOGATE"):
 			# (11-13 17:00) tightened from 0.10 / 0.025 once the settle goal held in the world and the
 			# step cleared the turf from the idle ankle level (SETTLEPIN_OLD SETTLEFLOOR_OLD: 0.078 / 0.021)
@@ -5665,6 +5667,9 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 				fail = "%s x%.1f: a planted boot skates %.3f m/size after a %s" % [e.name, sc, tot, "wind-up from a walk" if attack else "stop"]
 			elif not attack and (stl > 75 or e.stop_settles < 3):
 				fail = "%s x%.1f: the legs are not still %d ticks after a stop" % [e.name, sc, stl]
+			elif not attack and not OS.has_environment("FOESWAY_OLD") and (e.stop_sways < 3 or e.sway_peak < 0.03 or e.sway_dip > -0.01):
+				# (11-18 21:00) the chest carries on over the front boot and rocks back as the walk stops
+				fail = "%s x%.1f: the body does not sway on a stop (%d sways, peak %+.3f, dip %+.3f rad)" % [e.name, sc, e.stop_sways, e.sway_peak, e.sway_dip]
 		e.bot_move = Vector3.ZERO
 		if attack:
 			e._enter(HollowSoldier.IDLE)
