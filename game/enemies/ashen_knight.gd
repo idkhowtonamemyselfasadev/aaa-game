@@ -409,6 +409,8 @@ var surge_kneel_peak := 0.0      # bots: deepest kneel of the surges (0..1)
 var surge_heave_peak := 0.0      # bots: how far the burst heaved the glaive up (0..1)
 var surge_bow_peak := 0.0        # bots: head bowed into the coil (rad)
 var surge_lift_back := 0.0       # bots: head flung back in the roar (rad, negative)
+var surge_face_up := -1.0        # bots: highest the helm's rendered face pointed in a surge's roar (rad above level)
+var surge_face_coil := 1.0       # bots: lowest it pointed in the coil (rad, negative = down)
 var surge_turned := 0.0          # bots: yaw the surge's rise turned the body onto the hero (rad, signed)
 ## (23:00 11-16) the surge's rise pivots the giant round onto the hero on its planted left boot.
 ## Phase 1 turns blows that land in front, so the blow that breaks it mostly comes from the
@@ -417,6 +419,7 @@ var surge_turned := 0.0          # bots: yaw the surge's rise turned the body on
 ## (SURGE_BLAST+0.05 .. the boot's release) it now heaves round on the ball of that boot (the
 ## body is swung about the boot's spot, so nothing skates), up to SURGE_TURN_MAX; STALK's own
 ## step-turn finishes the rest. SURGETURN_OLD=1: the before.
+const SURGE_ROAR_BACK := 0.95    # rad the roar flings the head back (HeadBow; the clip's carriage eats ~0.4)
 const SURGE_TURN_RATE := 2.2     # rad/s at the middle of the rise (eased in and out)
 const SURGE_TURN_MAX := 1.4      # rad the rise may turn in all
 var _surge_turn_on := OS.get_environment("SURGETURN_OLD") != "1"
@@ -979,7 +982,12 @@ func _surge_body(delta: float) -> void:
 	surge_kneel_peak = maxf(surge_kneel_peak, kneel)
 	surge_heave_peak = maxf(surge_heave_peak, burst * (1.0 - settle))
 	if head != null:
-		var goal := 0.55 * coil * (1.0 - burst) - 0.55 * roar
+		# (04:00 11-18) the roar's throw-back asked for -0.55 rad but the clip carries the head pitched
+		# down, so the rendered helm only rose 18 deg above level (bot `knight`: surge face): front-lit
+		# frames (`ring surge side lensfix helm st=40`, hour 9) read a level visor over a raised glaive,
+		# a salute, not a roar. Flung back further so the face points ~40 deg up. SURGE_ROARHEAD_OLD=1: before.
+		var back := 0.55 if OS.get_environment("SURGE_ROARHEAD_OLD") == "1" else SURGE_ROAR_BACK
+		var goal := 0.55 * coil * (1.0 - burst) - back * roar
 		var rl := 0.06 * sin(s * 31.0) * roar
 		var k := 1.0 - exp(-14.0 * delta)
 		_head_bow = lerpf(_head_bow, goal, k)
@@ -988,6 +996,12 @@ func _surge_body(delta: float) -> void:
 		head.roll = _head_roll
 		surge_bow_peak = maxf(surge_bow_peak, _head_bow)
 		surge_lift_back = minf(surge_lift_back, _head_bow)
+		if head.head_fwd_world != Vector3.ZERO:
+			var fp := asin(clampf(head.head_fwd_world.normalized().y, -1.0, 1.0))
+			if roar > 0.8:
+				surge_face_up = maxf(surge_face_up, fp)
+			if kneel > 0.8 and burst < 0.05:
+				surge_face_coil = minf(surge_face_coil, fp)
 	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
 		set_meta("surge_roar_%d" % surges, true)
 		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)

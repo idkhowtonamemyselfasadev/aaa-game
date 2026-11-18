@@ -7534,6 +7534,10 @@ func _knight_test() -> void:
 	print("BOT knight: surge body: kneel peak %.2f, head bowed %.2f rad, flung back %.2f rad, glaive heave %.2f" % [k.surge_kneel_peak, k.surge_bow_peak, k.surge_lift_back, k.surge_heave_peak])
 	if k.surge_kneel_peak < 0.85 or k.surge_bow_peak < 0.4 or k.surge_lift_back > -0.4 or k.surge_heave_peak < 0.9:
 		return _combat_done(false, "the surge did not coil onto the knee and burst up roaring")
+	print("BOT knight: surge face (rendered helm): coil down to %.0f deg, roar up to %.0f deg" % [rad_to_deg(k.surge_face_coil), rad_to_deg(k.surge_face_up)])
+	# (04:00 11-18) the roar must throw the rendered helm well back, not just lift the bow (SURGE_ROARHEAD_OLD=1 FAILS: 18 deg)
+	if rad_to_deg(k.surge_face_up) < 32.0:
+		return _combat_done(false, "the surge's roar left the helm near level (%.0f deg up, gate >= 32): a salute, not a roar" % rad_to_deg(k.surge_face_up))
 	var p2: float = phase_hp.get(2, 0.0) / k.health_max
 	var p3: float = phase_hp.get(3, 0.0) / k.health_max
 	if p2 > AshenKnight.PHASE_AT[0] + 0.01 or p2 < AshenKnight.PHASE_AT[1] or p3 > AshenKnight.PHASE_AT[1] + 0.01:

@@ -3444,6 +3444,10 @@ func _ready() -> void:
 			if best_sp != Vector3.INF:
 				sp = best_sp
 				print("SHOT ring surge lens front %.2f" % (sp - kp).normalized().dot(kfwd))
+			if "flank" in args:
+				# (04:00 11-18) the chosen front lens swung 90 deg round the knight (left flank; with
+				# `flip` the right): the kneel's depth and the glaive's lean read only side-on
+				sp = kp + (sp - kp).rotated(Vector3.UP, (-0.5 if "flip" in args else 0.5) * PI)
 			sp.y = terrain.height_at(sp.x, sp.z) + 0.9
 			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
