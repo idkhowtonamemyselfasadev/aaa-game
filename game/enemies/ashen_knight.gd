@@ -143,7 +143,28 @@ static func _env_pose(name: String, base: Array) -> Array:
 	return [f[0], f[1], Vector3(f[2], f[3], f[4]), f[5], f[6] if f.size() > 6 else base[4], f[7] if f.size() > 7 else base[5]]
 ## the surge's coil: the glaive planted point-down beside the right knee, both hands on the
 ## shaft, leaned on (a shorter crown-reel slump, the blade into the turf)
-const SURGE_LEAN := [20.0, -58.0, Vector3(0.12, 1.02, 0.46), 10.0, 0.1, 0.62]
+const SURGE_LEAN_OLD := [20.0, -58.0, Vector3(0.12, 1.02, 0.46), 10.0, 0.1, 0.62]
+## (11-18) measured against the helm mesh (bot `surgegrip`): the old hold (pitch -58, hands at y 1.02)
+## ran the haft's upper end 0.19-0.26 m/size up through the bowed helm all through the kneel; a
+## shallower lean (pitch -45) from lower hands (y 0.94) clears it (-0.05) and still bites the turf
+const SURGE_LEAN_NEW := [20.0, -45.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
+var SURGE_LEAN: Array = _surge_lean()
+## (11-18) the heave's detour, [yaw deg, hold x, hold z] at the heave's middle (sin(PI * burst));
+## env SURGE_HEAVE_TRY="yaw,x,z"; SURGE_LEAN_OLD=1 = none
+var SURGE_HEAVE_DETOUR: Vector3 = _surge_heave()
+static func _surge_heave() -> Vector3:
+	var e := OS.get_environment("SURGE_HEAVE_TRY")
+	if e != "":
+		var f := e.split_floats(",")
+		return Vector3(f[0], f[1], f[2])
+	return Vector3.ZERO if OS.get_environment("SURGE_LEAN_OLD") == "1" else Vector3(-30.0, -0.3, 0.0)
+## env SURGE_LEAN_TRY="yaw,pitch,x,y,z,tw" replaces the coil's glaive hold (tuning loops); SURGE_LEAN_OLD=1 = before
+static func _surge_lean() -> Array:
+	var e := OS.get_environment("SURGE_LEAN_TRY")
+	if e != "":
+		var f := e.split_floats(",")
+		return [f[0], f[1], Vector3(f[2], f[3], f[4]), f[5], 0.1, 0.62]
+	return SURGE_LEAN_OLD if OS.get_environment("SURGE_LEAN_OLD") == "1" else SURGE_LEAN_NEW
 ## the surge burst: the knight flung up off its knee roaring (foley: the recorded giant roar)
 signal surge_roared(at: Vector3)
 ## the stomp's boot hit the ground (foley: a ground slam with the boom under it)
@@ -997,6 +1018,13 @@ func _surge_body(delta: float) -> void:
 	var p1 := _lerp_pose(_from, SURGE_LEAN, smoothstep(0.1, 0.7, s))
 	var roar_pose: Array = INTRO_ROAR if OS.get_environment("SURGE_OLDROAR") != "" else SURGE_ROAR
 	var p2 := _lerp_pose(p1, roar_pose, burst)
+	# (11-18) the heave's detour: a straight blend swung the haft up through the bowed helm
+	# (s 1.0-1.12, 0.10 m/size inside it, bot `surgegrip`); it now swings out wide past the helm
+	var hv: Vector3 = SURGE_HEAVE_DETOUR * sin(PI * burst)
+	if hv != Vector3.ZERO:
+		p2 = p2.duplicate()
+		p2[0] = float(p2[0]) + hv.x
+		p2[2] = (p2[2] as Vector3) + Vector3(hv.y, 0.0, hv.z)
 	_pose = _lerp_pose(p2, guard_pose, settle)
 	_pose[1] += sin(s * 38.0) * 2.0 * roar + sin(s * 53.0) * 1.2 * shud
 	_place(_pose)

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-1100-knightstair-dressed.jpg",
-  "time": "2026-11-14T11:00:00Z",
-  "caption": "Knight stepping off the stair onto the turf, front boot planted; the trial masonry dressing (kdress) renders as black crooked slabs with stones hanging under it, so it stays opt-in.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1200-knightstair-pelvis-down.jpg",
-  "time": "2026-11-14T12:00:00Z",
-  "caption": "Knight stepping off the stair's foot on the way down, same pelvis-squared lens: front boot plants on the turf, rear boot still on the tread; figure small, stair a plain box.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1200-knightstair-pelvis-up.jpg",
   "time": "2026-11-14T12:00:00Z",
   "caption": "Ashen Knight (x2.2) climbing the test stair, lens squared to its measured hip line (kpelvis): mid-stride on the treads, but at ~10 m the soles are tiny and the cape/pauldron mass still reads as a rear view; stair is a plain box.",
@@ -897,6 +885,18 @@
   "file": "20261118-0613-knight-crown-slump-before.jpg",
   "time": "2026-11-18T06:13:23Z",
   "caption": "Before: the slumped haft ran straight up the chest into the bowed helm's chin skirt (0.15 m/size through it) and the blade hung over the turf.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0811-surge-heave-before-after.jpg",
+  "time": "2026-11-18T08:11:15Z",
+  "caption": "Growth-surge heave, helm close-up, before (left) vs after (right): the glaive now rises beside the cracked helm instead of up through it; the GL fallback renderer still flattens the lighting.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0811-surge-kneel-before-after.jpg",
+  "time": "2026-11-18T08:11:15Z",
+  "caption": "Surge kneel from the flank, 2x crop, before (left) vs after (right): the haft's butt no longer rises through the bowed helm and the blade stays in the ash; the boss is still small in this lens.",
   "verdict": "fail"
  }
 ]

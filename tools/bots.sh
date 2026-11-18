@@ -5,7 +5,7 @@ GODOT=${GODOT:-$(command -v godot || echo ../.tools/godot)}
 [ $# -eq 0 ] && set -- walk ridge combat dodge soldier lockon heavy sweep insects butterflies flinch death weather roost ruin understory trample herd bed moss shrine facelight sound foley mix gfx keeper talk hearth fox cottage stonehouse whitehouse leanto waterbutt drywall yardwall hens yardpath lantern villager chop feed eddatalk bat doorstones dog neighbour greet kite pedlar verge rutstones henfox climb climbedge scree jump glide thermal dust hare sward boulder deercross roadmeet hildnods breadquest flockbell wheatear music credits knight warden hounds hewer archer wisps sentinel knightleap knightstomp knightplant kindler harrier airstrike crown lean pivot stop start stride foestride foeturn heroturn heroturnl footik stepup foeflinch hands foehands foegrip keepgap surgegrip foeguard foereach foefold knightguard foestep foeflat foestop foestart foewindup heroflat herostop herostopup herostopdown herostopcross foestopup foestopdown foestopcross foestartup foestartdown foestartcross foeturnup foeturndown foeturncross heroturnup heroturndown heroturncross ringlip surgeturn knightbase
 rc=0
 for r in "$@"; do
-  out=$(timeout 300 "$GODOT" --headless --audio-driver Dummy res://tools/bot.tscn -- "$r" 2>&1)
+  out=$(timeout ${BOT_TIMEOUT:-300} "$GODOT" --headless --audio-driver Dummy res://tools/bot.tscn -- "$r" 2>&1)
   echo "$out" | grep -E "^BOT|SCRIPT ERROR|Parse Error|ERROR" | grep -v "shader_rd"
   echo "$out" | grep -q "^BOT PASS" || rc=1
   echo "$out" | grep -q "SCRIPT ERROR" && { echo "BOT FAIL: script errors"; rc=1; }

@@ -2507,6 +2507,7 @@ func _surge_turn_test() -> void:
 		return _combat_done(false, fail)
 	_combat_done(true, "the surge's rise pivots the knight onto a hero at its flank on a planted boot")
 
+const SURGE_HELM_MAX := 0.0   # (11-18) m/size the haft may sink into the helm in the surge (old 0.26)
 func _surge_grip_test() -> void:
 	Engine.time_scale = 1.0
 	var p := _player
@@ -2544,6 +2545,13 @@ func _surge_grip_test() -> void:
 		var prev_free := 0.0
 		var regrip_drop := -INF
 		var regrip_s := -1.0
+		# (11-18) the haft against the real helm mesh through the coil / roar / settle (as `crown`):
+		# beat -> [deepest haft into the helm m/size, its s]
+		var hring := _helm_rings(k)
+		var hpen := {}
+		var htip_lo := [9.0, -9.0]
+		for b in beats:
+			hpen[b] = [-9.0, 0.0]
 		for i in 600:
 			await get_tree().physics_frame
 			await k.skel.skeleton_updated
@@ -2566,6 +2574,18 @@ func _surge_grip_test() -> void:
 				regrip_drop = (k.head.head_world.y - k._grip_l.global_position.y) / k.size_scale
 				regrip_s = s
 			prev_free = k.free_l
+			if hring.size() > 0 and k.spear != null:
+				var htip: Vector3 = k.spear.to_global(k.spear.tip_local())
+				var hbutt: Vector3 = k.spear.to_global(-k.spear.tip_local())
+				var hp: float = _haft_in_helm(k, hring, hbutt, htip) / k.size_scale
+				if hp > float(hpen[b][0]):
+					hpen[b] = [hp, s]
+				# the planted blade's tip over the turf while knelt on it (s 0.6 .. the burst)
+				if b == "kneel" and s > 0.6:
+					htip_lo[0] = minf(htip_lo[0], (htip.y - _world.terrain.height_at(htip.x, htip.z)) / k.size_scale)
+					htip_lo[1] = maxf(htip_lo[1], (htip.y - _world.terrain.height_at(htip.x, htip.z)) / k.size_scale)
+				if OS.has_environment("SURGE_HELM_DBG"):
+					print("    SHG ph %d %s s %.3f haft-in-helm %.3f" % [ph, b, s, hp])
 			if gr > a[0] or gl > a[1]:
 				if maxf(gr, gl) > maxf(a[0], a[1]):
 					a[4] = s
@@ -2593,6 +2613,14 @@ func _surge_grip_test() -> void:
 			var gmean := SURGE_ROAR_MEAN_MAX if b == "roar" else SURGE_GRIP_MEAN_MAX
 			if fail == "" and not OS.has_environment("SURGEGRIP_MEASURE") and (maxf(a[0], a[1]) > gmax or mean > gmean):
 				fail = "surge into phase %d, %s: a fist rides off the glaive (R %.3f L %.3f mean %.3f)" % [ph, b, a[0], a[1], mean]
+		print("BOT surgegrip: phase %d haft into the helm (m per size, > 0 = through it): %s" % [ph, ", ".join(beats.map(func(bb): return "%s %.3f at s %.2f" % [bb, hpen[bb][0], hpen[bb][1]]))])
+		print("BOT surgegrip: phase %d planted blade tip %.3f .. %.3f m per size over the turf in the kneel" % [ph, htip_lo[0], htip_lo[1]])
+		# (11-18) old hold: kneel 0.19-0.26, heave 0.10-0.13 m/size inside the helm; new -0.05 / -0.02
+		if fail == "" and not OS.has_environment("SURGEGRIP_MEASURE"):
+			if float(hpen["kneel"][0]) > SURGE_HELM_MAX or float(hpen["roar"][0]) > SURGE_HELM_MAX:
+				fail = "surge into phase %d: the glaive's haft runs through the bowed helm (kneel %.3f, roar %.3f m per size, gate %.2f)" % [ph, hpen["kneel"][0], hpen["roar"][0], SURGE_HELM_MAX]
+			elif htip_lo[1] > 0.1 or htip_lo[0] < -0.35:
+				fail = "surge into phase %d: the leaned-on blade is not in the turf (tip %.3f .. %.3f m per size)" % [ph, htip_lo[0], htip_lo[1]]
 		print("BOT surgegrip: phase %d the left fist regrips at s %.2f, %.3f m per size under the helm" % [ph, regrip_s, regrip_drop])
 		if fail == "" and regrip_drop < SURGE_REGRIP_DROP_MIN and not OS.has_environment("SURGEGRIP_MEASURE"):
 			fail = "surge into phase %d: the left fist closes on the haft only %.3f m per size under the helm (round the visor)" % [ph, regrip_drop]
