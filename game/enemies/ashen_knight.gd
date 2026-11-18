@@ -491,6 +491,9 @@ var stomps := 0                  # bots
 var wraps_dark := 0              # bots: limb bindings recoloured to blackened leather
 const KWRAP_DARK := Color(0.030, 0.024, 0.020)
 const KWRAP_LIGHT := Color(0.13, 0.095, 0.07)
+const KWRAP_RUB := 0.85
+const KWRAP_RUB_COL := Color(0.30, 0.19, 0.12)
+var wraps_rubbed := 0            # bots: bindings with the rubbed leather lip
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
 var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
@@ -575,6 +578,12 @@ func _dress_wraps() -> void:
 		m.set_shader_parameter("cloth_light", KWRAP_LIGHT)
 		m.set_shader_parameter("soot_amt", 0.8)
 		m.set_shader_parameter("stain_amt", 0.3)
+		# (13:00 11-18) the straps read as near-black blobs in shade: each turn's proud lip is
+		# rubbed through to worn brown leather with a dull oiled sheen. env KWRUB_OLD=1: the before
+		if OS.get_environment("KWRUB_OLD") != "1":
+			m.set_shader_parameter("wrap_rub", KWRAP_RUB)
+			m.set_shader_parameter("wrap_rub_col", KWRAP_RUB_COL)
+			wraps_rubbed += 1
 		wraps_dark += 1
 
 func _wrap_nodes(m: Material) -> Array:

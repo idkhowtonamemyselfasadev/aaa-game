@@ -6925,6 +6925,10 @@ func _knight_test() -> void:
 	print("BOT knight: bindings recoloured %d of %d, rust_sparse %s" % [k.wraps_dark, k.rags.wraps, krust])
 	if OS.get_environment("KWRAPS") == "" and (k.wraps_dark < k.rags.wraps or k.wraps_dark < 8 or float(krust) < 0.5):
 		return _combat_done(false, "the knight's limb bindings are still oxblood or its plate still rust-red")
+	# (13:00 11-18) the bindings' turns read in shade: each strap's lip is rubbed brown leather
+	print("BOT knight: bindings rubbed %d of %d" % [k.wraps_rubbed, k.wraps_dark])
+	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KWRUB_OLD") != "1" and k.wraps_rubbed < k.wraps_dark:
+		return _combat_done(false, "the knight's bindings have no rubbed leather lip (they read as black blobs)")
 	# (09:00 11-18) the haft against the real helm mesh through the WHOLE fight (reveal, leaps,
 	# stomps, staggers, surges): bucket -> [deepest m/size, ticks seen, ticks > 0]. KNIGHT_HELM_SWEEP=1 prints it.
 	var hsw_ring := _helm_rings(k)

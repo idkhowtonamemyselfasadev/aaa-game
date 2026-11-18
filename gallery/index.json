@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261114-1800-glide-back.jpg",
-  "time": "2026-11-14T18:00:00Z",
-  "caption": "Gliding from behind: the mantle now rolls round both shoulder caps over the raised arms instead of standing up in a pointed ear; a pointed hem corner still sticks out past the right side.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1800-glide-mantle-before-after.jpg",
-  "time": "2026-11-14T18:00:00Z",
-  "caption": "Mantle over the glider arms, before (left) and after (right) the longer drape bend: shoulder tops rounder, the right-side hem tongue is still there (next task).",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1900-glide-back.jpg",
-  "time": "2026-11-14T19:00:00Z",
-  "caption": "Back view under the glider: the mantle's sides next to the raised arms now fall in onto the torso (4 cm narrower) instead of flaring out; the torn hem still ends in a thin spike at each side and the hero reads very dark against the sky.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1900-glide-front.jpg",
-  "time": "2026-11-14T19:00:00Z",
-  "caption": "Front 3/4 glide: mantle tucks under the raised arms with no clipping; the hero is backlit almost black and the face is unreadable.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2000-glide-back.jpg",
   "time": "2026-11-14T20:20:00Z",
   "caption": "Gliding over the vale from behind: the mantle's sides now gather up under the raised arms; the hero still reads almost black against the light.",
@@ -897,6 +873,18 @@
   "file": "20261118-1200-knight-p3-steel.jpg",
   "time": "2026-11-18T12:40:00Z",
   "caption": "The phase-3 giant beside the hero with the new dark steel and leather; the plate now separates from the surcoat, but the GL fallback still lacks SDFGI/SSR and the boots are flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1302-knight-straps.jpg",
+  "time": "2026-11-18T13:02:28Z",
+  "caption": "Ashen Knight legs, before (left) vs now (right): the blackened leather straps' turns now read through rubbed brown lips with a dull sheen; the shaded leg is still very dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1302-knight-body.jpg",
+  "time": "2026-11-18T13:02:28Z",
+  "caption": "Ashen Knight full body in the reveal at 9:00: dark steel plate, red surcoat, strapped legs now show some banding; GL fallback lighting is still flat and the plate a touch clean.",
   "verdict": "fail"
  }
 ]

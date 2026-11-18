@@ -30,6 +30,8 @@ uniform float stain_amt = 1.0;     // rust stains and grime streaks (a kept kirt
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float wrap_jitter = 0.0;   // > 0: the turns wound unevenly (wide and narrow strips), matching rags.gd _wrap_s()
+uniform float wrap_rub = 0.0;      // > 0 (leather straps): each turn's proud lip is rubbed through to a worn brown and takes a leather sheen
+uniform vec3 wrap_rub_col : source_color = vec3(0.30, 0.20, 0.13);
 uniform float edge_wear = 0.0;     // > 0: COLOR.g is a rubbed, sun-faded edge (the face cloth's outer turn)
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
@@ -346,6 +348,7 @@ void fragment() {
 	}
 	// bandage: each turn's edge laps over the last, with a shadowed crease under the lap
 	float band = 1.0;
+	float wrap_lip = 0.0;
 	if (wrap_turns > 0.0) {
 		float s0 = UV.y * wrap_turns + UV.x;
 		// uneven winding: a monotone warp of the turn coordinate (same as rags.gd _wrap_s), so
@@ -363,6 +366,10 @@ void fragment() {
 			band = smoothstep(0.0, 0.08, b) * (0.85 + 0.15 * smoothstep(0.98, 0.9, b));
 			ty += (smoothstep(0.92, 1.0, b) - smoothstep(0.0, 0.06, b)) * 0.6;
 		}
+		// (11-18 13:00) the strap's proud lip (the band just before the next turn laps over it)
+		// and a thinner rub at the strap's own top edge, broken up along the turn
+		wrap_lip = (smoothstep(0.62, 0.9, b) * (1.0 - smoothstep(0.93, 0.985, b)) + 0.45 * smoothstep(0.06, 0.1, b) * (1.0 - smoothstep(0.1, 0.2, b)))
+				* smoothstep(0.25, 0.65, vnoise(vec2(UV.x * 18.0, floor(sw) * 3.1 + seed)));
 	}
 	// turned hem: a doubled band above the edge, a shadow line where the fold-over is sewn
 	// and a soft rounded lip at the very edge
@@ -520,6 +527,8 @@ void fragment() {
 	alb = mix(alb, alb * 1.55 + vec3(0.025, 0.022, 0.018), clamp(COLOR.g * edge_wear, 0.0, 1.0)
 			* (0.65 + 0.35 * vnoise(vec2(UV.x * 60.0, UV.y * 9.0))));
 	alb = mix(alb, vec3(0.035, 0.03, 0.027), clamp(soot, 0.0, 0.9));
+	// rubbed leather: after the soot (the rub is the polished-through edge the soot never holds)
+	alb = mix(alb, wrap_rub_col * (0.8 + 0.4 * vnoise(vec2(UV.x * 50.0, UV.y * 30.0) + seed)), clamp(wrap_lip * wrap_rub, 0.0, 1.0));
 	// singed edges glow faintly where the ember's heat reaches the tear
 	float singe = (1.0 - smoothstep(0.0, 0.012, to_hem)) * step(0.5, fbm(vec2(UV.x * 23.0, seed)));
 	float glow = singe * 0.25 * ember + hit_flash * 0.15 * smoothstep(0.1, 0.0, to_hem);
@@ -530,12 +539,14 @@ void fragment() {
 	}
 	if (!FRONT_FACING) alb *= 0.55;
 	float rough = mix(mix(0.93 - 0.06 * thread, 0.99, felt), 0.72 - 0.1 * thread, straw);
+	// oiled leather: a dull sheen on the strap, a little brighter on the rubbed lip
+	rough = mix(rough, 0.62 - 0.14 * wrap_lip, clamp(wrap_rub, 0.0, 1.0));
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
-	SPECULAR = mix(0.3, 0.12, felt);
+	SPECULAR = mix(mix(0.3, 0.12, felt), 0.45, clamp(wrap_rub, 0.0, 1.0));
 	METALLIC = 0.0;
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
