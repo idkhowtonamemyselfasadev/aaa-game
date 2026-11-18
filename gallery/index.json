@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261115-0026-riseplant-1.62.jpg",
-  "time": "2026-11-15T00:26:00Z",
-  "caption": "Knock-down get-up at 1.62 s: right foot planted ahead on the turf, left knee down, the body starting forward over the foot; the lens is behind-left, not profile, and the figure still reads dark against the sun.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0026-riseplant-1.78.jpg",
-  "time": "2026-11-15T00:26:00Z",
-  "caption": "Same rise at 1.78 s: the body carried up and forward over the planted foot before it steps back into guard; reads as a lunge from this rear lens, back-leg swing-through still to be judged side-on.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0100-breakfall-46.jpg",
-  "time": "2026-11-15T01:00:00Z",
-  "caption": "The instant after the slam: legs still up, the left hand already down on the turf beside the hat; the sweep's lens hides the arm's angle and the meadow is too dark to read.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0100-breakfall-60.jpg",
   "time": "2026-11-15T01:00:00Z",
   "caption": "Winded after the sweep: the left arm lies out ~40 deg from the trunk, palm flat on the turf where it slapped as the back landed (it used to stay raised by the face); the scene is still dim and the figure small in frame.",
@@ -897,6 +879,18 @@
   "file": "20261118-1915-kcorner.jpg",
   "time": "2026-11-18T19:15:00Z",
   "caption": "The x3.2 Ashen Knight mid-stride just after a 90 deg corner, on a planted boot with no skid; legs very dark in shade, GL renderer softness.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-2010-knight-fill.jpg",
+  "time": "2026-11-18T20:10:00Z",
+  "caption": "Ashen Knight intro at 9:00: the shaded leather leg bindings now keep a brown fill so their turns read; still wrong: the plate legs in shade stay near-black and the GL fallback renderer softens everything.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-2010-knight-legs-before-after.jpg",
+  "time": "2026-11-18T20:10:00Z",
+  "caption": "Knight legs 2x crop, before (left) vs after (right): the shaded thigh straps go from a black blob to brown leather turns with dark creases; the shaded greaves are still black.",
   "verdict": "fail"
  }
 ]

@@ -509,8 +509,10 @@ const KWRAP_RUB := 0.85
 const KWRAP_RUB_COL := Color(0.30, 0.19, 0.12)
 const KWRAP_SPEC := 0.30
 const KWRAP_WARM := 0.25
+const KWRAP_FILL := 0.6
 var wraps_rubbed := 0            # bots: bindings with the rubbed leather lip
 var wraps_warm := 0              # bots: bindings with the warmed leather sheen (19:00 11-18)
+var wraps_filled := 0            # bots: bindings whose shade fill sees the leather brown (20:00 11-18)
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
 var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
@@ -610,6 +612,12 @@ func _dress_wraps() -> void:
 				m.set_shader_parameter("wrap_spec", float(ks) if ks != "" else KWRAP_SPEC)
 				m.set_shader_parameter("wrap_warm", float(kw) if kw != "" else KWRAP_WARM)
 				wraps_warm += 1
+			# (20:00 11-18) the shaded legs read near-black: the fill sees the leather's brown body.
+			# env KFILL_OLD=1: the before; KFILL=<share> tunes
+			if OS.get_environment("KFILL_OLD") != "1":
+				var kf := OS.get_environment("KFILL")
+				m.set_shader_parameter("wrap_fill", float(kf) if kf != "" else KWRAP_FILL)
+				wraps_filled += 1
 		wraps_dark += 1
 
 func _wrap_nodes(m: Material) -> Array:
