@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-1616-glide-mantle-back.jpg",
-  "time": "2026-11-14T16:16:23Z",
-  "caption": "Hero gliding seen from behind: the shoulder mantle now falls back down off the overhead arms instead of standing out level like a plate; one thin hem tongue still pokes out at the right shoulder and the legs read dark.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1616-glide-mantle-front.jpg",
-  "time": "2026-11-14T16:16:23Z",
-  "caption": "Glide from the front 3/4: the black wing beside the right shoulder is gone and the mantle hangs from the shoulder caps; a small dark tongue remains at the right side and the feet are cropped.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1700-glide-mantle-back-before.jpg",
   "time": "2026-11-14T17:00:00Z",
   "caption": "Before: under the glider the shoulder mantle's hem was pushed 0.3 m straight back by the airflow trail, so from behind it stood out as a level shelf ending in a beak past the right shoulder.",
@@ -897,6 +885,18 @@
   "file": "20261118-1010-surge-hero-down-wide.jpg",
   "time": "2026-11-18T10:10:00Z",
   "caption": "Phase-2 surge wide: burning ring, knight heaving the glaive with the hero down in front; boss still only ~35% of frame height and backlit armour reads flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1105-surge-close-p3.jpg",
+  "time": "2026-11-18T11:05:59Z",
+  "caption": "New close surge lens: the Ashen Knight at its final phase-3 size fills the frame beside the 1.8 m hero; armour still reads flat dark red in the GL fallback renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1105-surge-close-rise.jpg",
+  "time": "2026-11-18T11:05:59Z",
+  "caption": "Close lens early in the growth surge (embers bursting from the helm seams, hero facing it); scale reads, but the knight's plate lacks metal sheen and the frame is GL-only.",
   "verdict": "fail"
  }
 ]

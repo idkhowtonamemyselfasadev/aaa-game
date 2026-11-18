@@ -7665,6 +7665,7 @@ const LEAP_DS_LAST := 0.8   # (11-11 17:00) the down-swing's last tick turns at 
 const LEAP_DS_READ := 0.15  # real s the glaive takes from 10% to 90% of its down-swing
 const LEAP_TAKEOFF_LEAN := 0.08  # rad a tick the pitch may change across take-off
 const LEAP_LAND_LEAN := 0.45    # rad: the body pitched over the bitten blade at the bottom (old 0.34)
+const LEAP_HELM_MAX := 0.02    # (11-18) m/size the haft may graze the helm in any leap beat (marginal contact, not a visible clip)
 func _knightleap_test() -> void:
 	var p := _player
 	var k: AshenKnight = _world.knight
@@ -7672,6 +7673,31 @@ func _knightleap_test() -> void:
 	var fol: Foley = _world.foley
 	var played0: Dictionary = fol.played.duplicate()
 	await _ticks(10)
+	# (11:00 11-18) the haft against the real helm mesh through every leap (the `knight` fight
+	# rarely leaps, so its fight-wide sweep never saw these beats): beat -> [deepest m/size, ticks,
+	# ticks > 0, size]. LEAP_HELM_DBG=1 prints every leap tick within 0.05 of the helm.
+	var lh_ring := _helm_rings(k)
+	var lh := {}
+	var lh_fn := func() -> void:
+		if lh_ring.size() == 0 or k.spear == null or k.move_kind != AshenKnight.LEAP_MOVE:
+			return
+		if not k.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER]:
+			return
+		var key: String = ["", "", "windup", "strike", "recover"][k.state]
+		var tip: Vector3 = k.spear.to_global(k.spear.tip_local())
+		var butt: Vector3 = k.spear.to_global(-k.spear.tip_local())
+		var hp: float = _haft_in_helm(k, lh_ring, butt, tip) / k.size_scale
+		var r: Array = lh.get(key, [-9.0, 0, 0, 0.0])
+		if hp > float(r[0]):
+			r[0] = hp
+			r[3] = k.size_scale
+		r[1] += 1
+		if hp > 0.0:
+			r[2] += 1
+		lh[key] = r
+		if OS.has_environment("LEAP_HELM_DBG") and hp > -0.05:
+			print("BOT   LHD %s t %.3f size %.2f haft-in-helm %.3f" % [key, k.t, k.size_scale, hp])
+	k.skel.skeleton_updated.connect(lh_fn)
 	var away := (p.global_position - k.global_position)
 	away.y = 0.0
 	away = away.normalized()
@@ -7955,6 +7981,18 @@ func _knightleap_test() -> void:
 	for nm in ["whoom", "slam", "boom"]:
 		dp[nm] = int(fol.played.get(nm, 0)) - int(played0.get(nm, 0))
 	print("BOT knightleap: foley %s" % str(dp))
+	if k.skel.skeleton_updated.is_connected(lh_fn):
+		k.skel.skeleton_updated.disconnect(lh_fn)
+	var lh_worst := -9.0
+	for lk in ["windup", "strike", "recover"]:
+		if lh.has(lk):
+			var r: Array = lh[lk]
+			lh_worst = maxf(lh_worst, float(r[0]))
+			print("BOT knightleap: haft-in-helm leap/%-8s worst %.3f m/size (size %.2f), %d of %d ticks through" % [lk, r[0], r[3], r[2], r[1]])
+	if lh.size() == 0:
+		return _combat_done(false, "the leap haft-in-helm sweep saw no leap ticks")
+	if lh_worst > LEAP_HELM_MAX:
+		return _combat_done(false, "the glaive's haft runs %.3f m/size into the helm during a leap (gate %.2f)" % [lh_worst, LEAP_HELM_MAX])
 	if dp.whoom < 3 or dp.slam < 3:
 		return _combat_done(false, "the leap's take-off and landing sounds did not play")
 	_combat_done(true, "no leap in phase 1, crouch + arc + landing by the hero in phase 2, standing hit, roll passed, parry refused")

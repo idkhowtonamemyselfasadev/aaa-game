@@ -3386,6 +3386,11 @@ func _ready() -> void:
 			var dist := 9.0 * rk.size_scale / 2.2
 			if "lensfix" in args:
 				dist = 9.0 * rk.growth.scale_of(from_ph + 1) / 2.2
+			# (11:00 11-18) close: half the distance, lower and wider, so the knight fills most of
+			# the frame height with the hero beside it (the plain lens put the knight at ~35 %)
+			var close_k := "close" in args
+			if close_k:
+				dist *= 0.5
 			var sp := kp
 			# among the clear spots take the one most on the knight's front side, so the lens sees
 			# the chest, not its back (21:00 11-06 item c). Read the facing from the body AFTER the
@@ -3458,7 +3463,11 @@ func _ready() -> void:
 				# (04:00 11-18) the chosen front lens swung 90 deg round the knight (left flank; with
 				# `flip` the right): the kneel's depth and the glaive's lean read only side-on
 				sp = kp + (sp - kp).rotated(Vector3.UP, (-0.5 if "flip" in args else 0.5) * PI)
-			sp.y = terrain.height_at(sp.x, sp.z) + 0.9
+			sp.y = terrain.height_at(sp.x, sp.z) + (0.55 if close_k else 0.9)
+			if close_k:
+				# wider than the play lens (65): at 65 the knocked-down hero fell off the bottom edge
+				# and the raised glaive off the top at the phase-3 size
+				cam.fov = 76.0
 			print("SHOT ring surge lens %.2f m from centre, %.2f m from knight" % [Vector2(sp.x - cen.x, sp.z - cen.z).length(), Vector2(sp.x - kp.x, sp.z - kp.z).length()])
 			cam.global_position = sp
 			cam.look_at(kp + Vector3.UP * 1.9 * rk.size_scale)
@@ -3493,7 +3502,7 @@ func _ready() -> void:
 							player._knock_feet_at[fi] = hdx * (player._knock_feet_at[fi] as Vector3)
 					print("SHOT ring surge hero knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
 				# frame both: aim between the knight's chest and the hero so the hero's boots show
-				cam.look_at(kp.lerp(hp, 0.25) + Vector3.UP * 1.45 * rk.size_scale)
+				cam.look_at(kp.lerp(hp, 0.25) + Vector3.UP * (1.25 if close_k else 1.45) * rk.size_scale)
 				print("SHOT ring surge hero %.2f m from knight, knight size %.2f (hero 1.8 m)" % [hd, rk.size_scale])
 			if "helm" in args:
 				# helm close-up: from the chosen lens line, close in on the head (the ember seams)
