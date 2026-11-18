@@ -7894,6 +7894,7 @@ func _knightleap_test() -> void:
 ## A plain drop onto its head (no plunge) puts the hero off it too.
 const CLUTCH_GAP_MAX := 0.02    # m per size: the crown reel's left wrist on the helm's temple point (11-10; 0.044 before the bow moved ahead of the arm IK at 06:00, now 0.001-0.003)
 const CLUTCH_REGRIP_MAX := 0.05  # m per size: the right fist as the left comes back and the glaive rises (0.096 before the 11-10 06:00 lean-carried glaive, now 0.03)
+const CROWN_FACE_GATE := 12.0   # (11-18) deg the helm's face must point up in the crown shake-off
 const CROWN_DROP_GATE := 0.5    # (11-18) share of the glaive's droop already in the crown reel's hit-stop frame
 const CLUTCH_FIST_MAX := 0.06  # m per size: the fists on the glaive one-handed and after the regrip (11-10)
 func _crown_test() -> void:
@@ -8017,6 +8018,10 @@ func _crown_test() -> void:
 				return _combat_done(false, "the crown reel did not bow the head, buckle the knees and shake it off")
 			if k.state == HollowSoldier.STAGGER:
 				return _combat_done(false, "the crown reel never ended")
+			# (11-18) the shake-off throws the rendered helm back past level (HeadBow's world facing)
+			print("BOT crown:   rendered helm: daze down to %.0f deg, shake-off up to %.0f deg (gate >= %.0f)" % [rad_to_deg(k.crown_face_daze), rad_to_deg(k.crown_face_up), CROWN_FACE_GATE])
+			if rad_to_deg(k.crown_face_up) < CROWN_FACE_GATE:
+				return _combat_done(false, "the crown reel's shake-off never threw the helm back past level (%.0f deg)" % rad_to_deg(k.crown_face_up))
 			# (11-18) the glaive is knocked down with the head, not left at guard height through the hit-stop
 			print("BOT crown:   glaive droop shown in the hit-stop %.2f (gate >= %.2f; old linear 0.27)" % [k.crown_drop_at_impact, CROWN_DROP_GATE])
 			if OS.get_environment("CROWN_DROP_OLD") == "" and k.crown_drop_at_impact < CROWN_DROP_GATE:

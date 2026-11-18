@@ -356,6 +356,9 @@ const CROWN_STAGGER := 1.3       # s the giant reels after a plunge through its 
 const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already knocked down in the hit-stop
 ## The crown reel's glaive: the hands lose it and it droops, blade into the turf, leaned on.
 const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
+const CROWN_SHAKE_BACK := 0.62   # (11-18) rad the shake-off tosses the head back (was 0.24)
+const CROWN_BACK_U := [0.7, 0.97] # (11-18) reel u span of the toss (was 0.66-0.96)
+var CROWN_BACK_OLD := OS.get_environment("CROWN_BACK_OLD") == "1"
 const CROWN_DROP_JOLT := 0.6     # (11-18) share of the glaive's droop already in the impact frame
 const CROWN_DROP_END := 0.26     # u the glaive has finished drooping (blade at the turf)
 var crown_drop_at_impact := 0.0  # bots: the droop share shown through the hit-stop
@@ -371,6 +374,8 @@ func _reel_owned() -> bool:
 var crown_bow_peak := 0.0        # bots: deepest head bow of the last crown reel (rad)
 var crown_sink_peak := 0.0       # bots: deepest buckle of the knees in it
 var crown_lift_back := 0.0       # bots: how far the head was thrown back as it shook the blow off
+var crown_face_up := -2.0        # bots: (11-18) highest the rendered helm's face pointed in the shake-off (rad above level)
+var crown_face_daze := 2.0       # bots: lowest it pointed in the daze (rad, negative = down)
 var crown_hits_kept := 0         # bots: blows landed in the reel that did not cut it short
 ## (11-10 03:00) the crown reel's left hand: lets go of the haft and cups the left side of the
 ## helm through the daze, back on the haft before the glaive comes up to guard
@@ -681,6 +686,8 @@ func crowned(_point: Vector3) -> void:
 	crown_bow_peak = 0.0
 	crown_sink_peak = 0.0
 	crown_lift_back = 0.0
+	crown_face_up = -2.0
+	crown_face_daze = 2.0
 	clutch_peak = 0.0
 	clutch_gap = 9.0
 	clutch_flight_peak = 0.0
@@ -700,9 +707,17 @@ func _crown_tick(delta: float, snap := false) -> void:
 	var hold := smoothstep(0.0, CROWN_IMPACT_U, u) * (1.0 - smoothstep(0.42, 0.62, u))
 	var shake := smoothstep(0.5, 0.6, u) * (1.0 - smoothstep(0.78, 0.9, u))
 	var back := sin(PI * clampf((u - 0.66) / 0.3, 0.0, 1.0))
+	var back_amt := 0.24
+	if not CROWN_BACK_OLD:
+		# (11-18) front-lit frames and the rendered helm's facing: the old toss (0.24 rad, peaking while
+		# the daze bow still held 0.2) never brought the face above -6 deg: the knight nodded up to
+		# level, it did not shake the blow off. The toss now lands once the bow has let go and goes
+		# far enough for the face to point up past level, then settles back before the guard.
+		back = sin(PI * clampf((u - CROWN_BACK_U[0]) / (CROWN_BACK_U[1] - CROWN_BACK_U[0]), 0.0, 1.0))
+		back_amt = CROWN_SHAKE_BACK
 	# the blow drives the head lower than it rests in the daze: an overshoot at the impact
 	var hit := 1.0 - smoothstep(CROWN_IMPACT_U, 0.24, u)
-	var bow := 0.78 * down + 0.22 * hit - 0.24 * back
+	var bow := 0.78 * down + 0.22 * hit - back_amt * back
 	var roll := 0.2 * sin((u - CROWN_IMPACT_U) * TAU * 1.5) * hold * smoothstep(0.1, 0.22, u) \
 		+ 0.13 * sin(u * TAU * 7.5) * shake
 	# (11-10 04:00) the gauntlet landing on the helm's left side knocks the head a little to its
@@ -772,6 +787,14 @@ func _crown_tick(delta: float, snap := false) -> void:
 	crown_bow_peak = maxf(crown_bow_peak, _head_bow)
 	crown_sink_peak = maxf(crown_sink_peak, sink)
 	crown_lift_back = minf(crown_lift_back, _head_bow)
+	if head != null and head.head_fwd_world != Vector3.ZERO:
+		var fp := asin(clampf(head.head_fwd_world.normalized().y, -1.0, 1.0))
+		if u > 0.66 and u < 0.98:
+			crown_face_up = maxf(crown_face_up, fp)
+		if u > 0.2 and u < 0.45:
+			crown_face_daze = minf(crown_face_daze, fp)
+	if OS.has_environment("CROWN_FACE_DBG") and head != null:
+		print("CRF u %.3f bow %.3f face %.1f" % [u, _head_bow, rad_to_deg(asin(clampf(head.head_fwd_world.normalized().y, -1.0, 1.0)))])
 
 ## the crown reel's lean from the hips (rad, forward +) at reel time u
 func _crown_lean(u: float) -> float:
