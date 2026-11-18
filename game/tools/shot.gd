@@ -3322,8 +3322,18 @@ func _ready() -> void:
 		# whole node once every emitter is dead. FXSTEP_OLD=1: before.
 		var fxstep_old := OS.get_environment("FXSTEP_OLD") == "1"
 		var node_age := {}
+		# (10:00 11-18) the blast knocks the hero down inside these hand-stepped ticks, but only the
+		# knight was stepped: the hero's knock-down froze at the warm-up frames (~0.3 s in, legs
+		# kicked straight up) in EVERY st= frame, which read as a stiff body. Step the hero (and its
+		# robe and held staff) with the knight, as the `knocked` spot does. SURGE_HEROFREEZE_OLD=1 = before.
+		var step_hero := "hero" in args and not OS.has_environment("SURGE_HEROFREEZE_OLD")
 		for i in st:
 			rk._physics_process(sdt)
+			if step_hero:
+				player._physics_process(sdt)
+				if player.garb != null:
+					player.garb._physics_process(sdt)
+				player.combat._place_held()
 			if step_fx:
 				for ch in rk.get_parent().get_children():
 					if not fxstep_old and (ch is EmberBurst or ch is GritFall or ch is ImpactFX) and (ch as Node3D).visible:
@@ -3465,9 +3475,23 @@ func _ready() -> void:
 				var ld := to_lens.normalized()
 				var hp := kp + ld * hd + ld.cross(Vector3.UP) * 1.4
 				hp.y = terrain.height_at(hp.x, hp.z) + 0.05
+				var hxf0: Transform3D = player.body.global_transform
 				player.global_position = hp
 				var hf := kp - hp
 				player.body.rotation.y = atan2(hf.x, hf.z)
+				if step_hero and player.down_t >= 0.0:
+					# the knock-down's world-space plants (hand, feet, rise foot) move with the body
+					var hdx: Transform3D = player.body.global_transform * hxf0.affine_inverse()
+					if player._knock_hand.is_finite():
+						player._knock_hand = hdx * player._knock_hand
+					if player._knock_rise_at.is_finite():
+						player._knock_rise_at = hdx * player._knock_rise_at
+					for bi in player._break_at.size():
+						player._break_at[bi] = hdx * (player._break_at[bi] as Vector3)
+					for fi in player._knock_feet_at.size():
+						if (player._knock_feet_at[fi] as Vector3).is_finite():
+							player._knock_feet_at[fi] = hdx * (player._knock_feet_at[fi] as Vector3)
+					print("SHOT ring surge hero knocked down_t %.2f knockdowns %d" % [player.down_t, player.knockdowns])
 				# frame both: aim between the knight's chest and the hero so the hero's boots show
 				cam.look_at(kp.lerp(hp, 0.25) + Vector3.UP * 1.45 * rk.size_scale)
 				print("SHOT ring surge hero %.2f m from knight, knight size %.2f (hero 1.8 m)" % [hd, rk.size_scale])

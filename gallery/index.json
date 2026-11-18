@@ -886,5 +886,17 @@
   "time": "2026-11-18T09:00:00Z",
   "caption": "Reveal opening, close lens: the haft now leans out beside the helm with the fist low on it (was running up under the helm); the cape texture is blotchy and the boss lacks fine surface detail.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261118-1010-surge-hero-knockdown.jpg",
+  "time": "2026-11-18T10:10:00Z",
+  "caption": "The hero knocked down by the Ashen Knight's growth blast, now stepped through its real knock-down in the surge shots: lying flat (st=50), back in guard (st=70); the hero is still tiny in this lens and GL lighting is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1010-surge-hero-down-wide.jpg",
+  "time": "2026-11-18T10:10:00Z",
+  "caption": "Phase-2 surge wide: burning ring, knight heaving the glaive with the hero down in front; boss still only ~35% of frame height and backlit armour reads flat.",
+  "verdict": "fail"
  }
 ]

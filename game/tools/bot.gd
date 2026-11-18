@@ -6944,6 +6944,8 @@ func _knight_test() -> void:
 		if hp > 0.0:
 			r[2] += 1
 		hsw[key] = r
+		if OS.has_environment("SWEEP_HELM_DBG") and key.begins_with("sweep/") and hp > -0.05:
+			print("BOT   SHD %s t %.3f size %.2f haft-in-helm %.3f" % [key, k.t, k.size_scale, hp])
 		if OS.has_environment("INTRO_HELM_DBG") and key.begins_with("intro/"):
 			print("BOT   IHG it %.3f dorm %.2f haft-in-helm %.3f tip over turf %.3f" % [k._intro_it, k._intro_dorm, hp, (tip.y - _world.terrain.height_at(tip.x, tip.z)) / k.size_scale])
 	k.skel.skeleton_updated.connect(hsw_fn)
