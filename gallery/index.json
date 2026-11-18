@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261114-1200-knightstair-pelvis-up.jpg",
-  "time": "2026-11-14T12:00:00Z",
-  "caption": "Ashen Knight (x2.2) climbing the test stair, lens squared to its measured hip line (kpelvis): mid-stride on the treads, but at ~10 m the soles are tiny and the cape/pauldron mass still reads as a rear view; stair is a plain box.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1300-knightstair-zoom-down-high.jpg",
-  "time": "2026-11-14T13:00:00Z",
-  "caption": "Walk-down from a higher lens (kpup 1.8): rear boot planted on the top tread, front boot reaching past the nosing heel-up; tread edges read, the box stair and clog boots do not hold up.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1300-knightstair-zoom-down.jpg",
-  "time": "2026-11-14T13:00:00Z",
-  "caption": "Knight walking down, same zoom: rear boot rolling onto its ball at the tread edge, front boot touching the turf at the foot; motion reads, boots and stair still look unfinished.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1300-knightstair-zoom-up.jpg",
-  "time": "2026-11-14T13:00:00Z",
-  "caption": "Ashen Knight (x2.2) climbing, zoomed pelvis-squared lens: rear boot flat on the tread at the nosing, front boot lifting over the riser; clean contact, but the boots read as rounded clogs and the stair is a plain box.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1500-glide-front.jpg",
   "time": "2026-11-14T15:00:00Z",
   "caption": "Glide from the front three-quarter: face, fists on the bar and the patterned wing read; the legs hang one ahead of the other, but a black cloth mass juts out beside the right shoulder.",
@@ -120,15 +96,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261114-2200-skyshade-before-after.jpg",
-  "time": "2026-11-14T22:00:00Z",
-  "caption": "Backlit glide crop, before (left) and after (right) the figures' sky shade: mantle 1 -> 14 of 255, legs 24 -> 31, form kept, hood no longer sky-blue.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2200-glide-front-skyshade.jpg",
   "time": "2026-11-14T22:00:00Z",
   "caption": "Front 3/4 glide against the light: face, wraps, mantle and robe now read where it was a silhouette; the forearm wraps look greenish and the figure a little flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261114-2200-skyshade-before-after.jpg",
+  "time": "2026-11-14T22:00:00Z",
+  "caption": "Backlit glide crop, before (left) and after (right) the figures' sky shade: mantle 1 -> 14 of 255, legs 24 -> 31, form kept, hood no longer sky-blue.",
   "verdict": "fail"
  },
  {
@@ -156,15 +132,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-0100-breakfall-60.jpg",
-  "time": "2026-11-15T01:00:00Z",
-  "caption": "Winded after the sweep: the left arm lies out ~40 deg from the trunk, palm flat on the turf where it slapped as the back landed (it used to stay raised by the face); the scene is still dim and the figure small in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0100-breakfall-46.jpg",
   "time": "2026-11-15T01:00:00Z",
   "caption": "The instant after the slam: legs still up, the left hand already down on the turf beside the hat; the sweep's lens hides the arm's angle and the meadow is too dark to read.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0100-breakfall-60.jpg",
+  "time": "2026-11-15T01:00:00Z",
+  "caption": "Winded after the sweep: the left arm lies out ~40 deg from the trunk, palm flat on the turf where it slapped as the back landed (it used to stay raised by the face); the scene is still dim and the figure small in frame.",
   "verdict": "fail"
  },
  {
@@ -240,15 +216,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-0930-heroturn-headfirst.jpg",
-  "time": "2026-11-15T09:30:00Z",
-  "caption": "Hero 0.1 s into a turn on the spot (new ease-in): the back is still square to the lens and only the hat brim has begun to turn; GL render, harsh flat light on the yard.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0930-heroturn-before.jpg",
   "time": "2026-11-15T09:30:00Z",
   "caption": "Same moment before the change: shoulders and staff already swung ~35 deg in one piece with the head; GL render.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-0930-heroturn-headfirst.jpg",
+  "time": "2026-11-15T09:30:00Z",
+  "caption": "Hero 0.1 s into a turn on the spot (new ease-in): the back is still square to the lens and only the hat brim has begun to turn; GL render, harsh flat light on the yard.",
   "verdict": "fail"
  },
  {
@@ -270,15 +246,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-1228-soldier-turn.jpg",
-  "time": "2026-11-15T12:28:35Z",
-  "caption": "Hollow Soldier mid-turn on the spot, pivot boot planted from the first tick; the trampled-earth patch and flat noon light still look rough.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1228-soldier-turn-strip.jpg",
   "time": "2026-11-15T12:28:35Z",
   "caption": "Soldier turn frames (old f6, new f4/6/9/13): boots hold their spots as the turn starts, the step reads; the armour still reads dark and flat in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1228-soldier-turn.jpg",
+  "time": "2026-11-15T12:28:35Z",
+  "caption": "Hollow Soldier mid-turn on the spot, pivot boot planted from the first tick; the trampled-earth patch and flat noon light still look rough.",
   "verdict": "fail"
  },
  {
@@ -300,15 +276,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-1500-foeturn-lead.jpg",
-  "time": "2026-11-15T15:00:00Z",
-  "caption": "Hollow Soldier 0.1 s into a turn on the spot: the hood already looks round while torso and spear stay side-on; the figure still reads dark and flat against the bright meadow.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1500-foeturn-compare.jpg",
   "time": "2026-11-15T15:00:00Z",
   "caption": "Soldier turn frames: before (left) and after (middle) at the same tick, the head now leads further; right, the body has caught up 0.2 s in. The change is subtle at this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1500-foeturn-lead.jpg",
+  "time": "2026-11-15T15:00:00Z",
+  "caption": "Hollow Soldier 0.1 s into a turn on the spot: the hood already looks round while torso and spear stay side-on; the figure still reads dark and flat against the bright meadow.",
   "verdict": "fail"
  },
  {
@@ -318,27 +294,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-1704-soldier-turned.jpg",
-  "time": "2026-11-15T17:04:34Z",
-  "caption": "Hollow Soldier squared up after a turn on the spot, boots back on its guard stance (no wide boot); the ring's dirt still shows black speckle under the GL fallback renderer.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1704-soldier-guard.jpg",
   "time": "2026-11-15T17:04:34Z",
   "caption": "The same soldier side-on before the turn: the long spear guard stagger that read as a wide boot end-on; ground speckle and flat GL lighting still fall short of Wukong.",
   "verdict": "fail"
  },
  {
-  "file": "20261115-1846-pushoff.jpg",
-  "time": "2026-11-15T18:46:00Z",
-  "caption": "The hero's first push-off from standing, side-on: the rear boot now keeps its ball on the turf and lifts its heel instead of flicking its toes up; GL fallback lighting and ground speckle still fall short of Wukong.",
+  "file": "20261115-1704-soldier-turned.jpg",
+  "time": "2026-11-15T17:04:34Z",
+  "caption": "Hollow Soldier squared up after a turn on the spot, boots back on its guard stance (no wide boot); the ring's dirt still shows black speckle under the GL fallback renderer.",
   "verdict": "fail"
  },
  {
   "file": "20261115-1846-pushoff-cmp.jpg",
   "time": "2026-11-15T18:46:00Z",
   "caption": "Rear boot at the push-off, 3x crop, before (toes tipped up 0.35 rad, heel pressed down) and after (heel up, ball on the turf).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-1846-pushoff.jpg",
+  "time": "2026-11-15T18:46:00Z",
+  "caption": "The hero's first push-off from standing, side-on: the rear boot now keeps its ball on the turf and lifts its heel instead of flicking its toes up; GL fallback lighting and ground speckle still fall short of Wukong.",
   "verdict": "fail"
  },
  {
@@ -360,15 +336,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-2100-heroturn-gather.jpg",
-  "time": "2026-11-15T21:00:00Z",
-  "caption": "Hero turning on the spot, the forward boot mid-way through its longer 0.26 s gather step; lens still reads from behind, not side-on, and the hero looks small against dark grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-2100-gather-sheet.jpg",
   "time": "2026-11-15T21:00:00Z",
   "caption": "Gather step over ticks 0-20 (3-tick spacing): the boot now arrives at ticks 12-15 instead of snapping in by tick 9; rear lens, boots partly hidden by the robe.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261115-2100-heroturn-gather.jpg",
+  "time": "2026-11-15T21:00:00Z",
+  "caption": "Hero turning on the spot, the forward boot mid-way through its longer 0.26 s gather step; lens still reads from behind, not side-on, and the hero looks small against dark grass.",
   "verdict": "fail"
  },
  {
@@ -384,27 +360,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261115-2307-turngather-t9.jpg",
-  "time": "2026-11-15T23:07:18Z",
-  "caption": "Low side lens on the hero's left turn on the spot at tick 9: the forward boot is lifted mid-gather while the pivot boot stays planted; the bare turf (grass off for the lens) shows a harsh repeating dash texture.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-2307-turngather-boots.jpg",
   "time": "2026-11-15T23:07:18Z",
   "caption": "Boot crops at ticks 6, 9, 12, 15, 18 of the turn: the gather boot lifts, travels in and sets down beside the pivot boot with no pop or slide; the boots sit in shadow, too dark to judge sole contact by eye.",
   "verdict": "fail"
  },
  {
-  "file": "20261116-0050-climb-edge.jpg",
-  "time": "2026-11-16T00:50:00Z",
-  "caption": "Hero climbing the keep from behind at frame 18: the shot spot sits at a broken wall end, so the body hangs half past the face's edge with the left side in the air; the climb pose cannot be judged here.",
+  "file": "20261115-2307-turngather-t9.jpg",
+  "time": "2026-11-15T23:07:18Z",
+  "caption": "Low side lens on the hero's left turn on the spot at tick 9: the forward boot is lifted mid-gather while the pivot boot stays planted; the bare turf (grass off for the lens) shows a harsh repeating dash texture.",
   "verdict": "fail"
  },
  {
   "file": "20261116-0050-climb-corner.jpg",
   "time": "2026-11-16T00:50:00Z",
   "caption": "Close crop of the climb at frame 16 (old spot): the hero sits in a ruined corner, one hand low near the hip instead of up on a hold.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0050-climb-edge.jpg",
+  "time": "2026-11-16T00:50:00Z",
+  "caption": "Hero climbing the keep from behind at frame 18: the shot spot sits at a broken wall end, so the body hangs half past the face's edge with the left side in the air; the climb pose cannot be judged here.",
   "verdict": "fail"
  },
  {
@@ -432,15 +408,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-0447-climb-close-seq.jpg",
-  "time": "2026-11-16T04:47:22Z",
-  "caption": "Climbing frames f22/28/34: the body now hangs in close to the stones (shoulders 0.21 m off, was 0.37) with the stepping knee frogged out to the side; the hands still never rise above the shoulders.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0447-climb-before-after.jpg",
   "time": "2026-11-16T04:47:22Z",
   "caption": "Same climb frame before (left, hanging 0.37 m off the wall, knee jutting) and after (right, hugging the wall); the GL renderer is flat-lit and the arms are hidden under the capelet.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0447-climb-close-seq.jpg",
+  "time": "2026-11-16T04:47:22Z",
+  "caption": "Climbing frames f22/28/34: the body now hangs in close to the stones (shoulders 0.21 m off, was 0.37) with the stepping knee frogged out to the side; the hands still never rise above the shoulders.",
   "verdict": "fail"
  },
  {
@@ -456,15 +432,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-0620-climbsq.jpg",
-  "time": "2026-11-16T06:20:40Z",
-  "caption": "Climbing the keep from a rear three-quarter: hero hangs close to the stones with a knee turned out, but the hands only reach the hat brim, never fully overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0620-climbshrug.jpg",
   "time": "2026-11-16T06:20:40Z",
   "caption": "Climb with the new shoulder shrug: the left forearm now shows over the capelet beside the hat, but the reach still stops at head height and the figure is small in frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0620-climbsq.jpg",
+  "time": "2026-11-16T06:20:40Z",
+  "caption": "Climbing the keep from a rear three-quarter: hero hangs close to the stones with a knee turned out, but the hands only reach the hat brim, never fully overhead.",
   "verdict": "fail"
  },
  {
@@ -498,27 +474,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-0800-surge-roar.jpg",
-  "time": "2026-11-16T08:00:00Z",
-  "caption": "Boss growth surge, front-lit at s~1.9: the knight now still roars with the left fist up where the old regrip had both fists closed round the visor (a hunch); face still hidden behind the helm slit, scale unreadable without the hero in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0800-surge-regrip-seq.jpg",
   "time": "2026-11-16T08:00:00Z",
   "caption": "Surge frames st=46/52/56: roar, fist still raised as the settle starts, then both hands meet the haft at the chest as the glaive tips into guard; no hunched frame left, but fire columns still crowd the foreground.",
   "verdict": "fail"
  },
  {
-  "file": "20261116-0900-surge-slit.jpg",
-  "time": "2026-11-16T09:00:00Z",
-  "caption": "The boss settling after its growth roar (size 3.2): the helm's sight slit now burns with the ember instead of reading as a blank face; the ring-of-fire columns still fill a third of the frame and the hero is not in shot for scale.",
+  "file": "20261116-0800-surge-roar.jpg",
+  "time": "2026-11-16T08:00:00Z",
+  "caption": "Boss growth surge, front-lit at s~1.9: the knight now still roars with the left fist up where the old regrip had both fists closed round the visor (a hunch); face still hidden behind the helm slit, scale unreadable without the hero in frame.",
   "verdict": "fail"
  },
  {
   "file": "20261116-0900-slit-before-after.jpg",
   "time": "2026-11-16T09:00:00Z",
   "caption": "Helm crops during the surge: before (blank helm, mid-roar), after mid-roar (slit blazing across the eyes) and after at the settle; the slit reads as one bar, the two eye hot points barely separate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-0900-surge-slit.jpg",
+  "time": "2026-11-16T09:00:00Z",
+  "caption": "The boss settling after its growth roar (size 3.2): the helm's sight slit now burns with the ember instead of reading as a blank face; the ring-of-fire columns still fill a third of the frame and the hero is not in shot for scale.",
   "verdict": "fail"
  },
  {
@@ -564,15 +540,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-1400-ashfloor-p2.jpg",
-  "time": "2026-11-16T14:00:00Z",
-  "caption": "The boss ring's floor at the phase-2 settle now reads as grey wood-ash over black char instead of brown mud; still wrong: the cinder speckle is too even and the hero is half-hidden in the knight's boot dust.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1400-ashfloor-before-after.jpg",
   "time": "2026-11-16T14:00:00Z",
   "caption": "Ring floor crop, before (top: dark brown mud with pale flakes) and after (bottom: cool grey ash drifts with char patches and stubble).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1400-ashfloor-p2.jpg",
+  "time": "2026-11-16T14:00:00Z",
+  "caption": "The boss ring's floor at the phase-2 settle now reads as grey wood-ash over black char instead of brown mud; still wrong: the cinder speckle is too even and the hero is half-hidden in the knight's boot dust.",
   "verdict": "fail"
  },
  {
@@ -582,15 +558,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-1500-sparks-before-after.jpg",
-  "time": "2026-11-16T15:00:00Z",
-  "caption": "Same frame before (left: ~500 white ring-fire sparks hanging 8 m up like daytime stars, dust over the hero) and after (right: sparks cool and die low, sky clean).",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1500-p3-final.jpg",
   "time": "2026-11-16T15:00:00Z",
   "caption": "Phase-3 final size after the second surge, no spark field; still wrong: loose orange fire tongues float high in the sky and a pale seeding-grass sprig fills the left foreground.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1500-sparks-before-after.jpg",
+  "time": "2026-11-16T15:00:00Z",
+  "caption": "Same frame before (left: ~500 white ring-fire sparks hanging 8 m up like daytime stars, dust over the hero) and after (right: sparks cool and die low, sky clean).",
   "verdict": "fail"
  },
  {
@@ -618,12 +594,6 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-1800-surge-fx-aged.jpg",
-  "time": "2026-11-16T18:00:00Z",
-  "caption": "Phase-2 growth roar (st=56) with the seam embers now aged in the shot: cinders drift up round the helm instead of a frozen spit; the knight still shows its back to this lens and the ring floor speckle is too even.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1800-fx-before-after.jpg",
   "time": "2026-11-16T18:00:00Z",
   "caption": "Before (left, FX frozen at spawn) vs after (right, ember/grit/impact FX stepped with the boss): the boot dust has rolled on and embers have risen; the frozen version misrepresented the game.",
@@ -633,6 +603,12 @@
   "file": "20261116-1800-helm-slit-close.jpg",
   "time": "2026-11-16T18:00:00Z",
   "caption": "Helm close lens mid-roar: the burning sight slit reads as one bar, the two eye hot points do not separate, and a grey streak runs down the helm; background mountain texture is stripy.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-1800-surge-fx-aged.jpg",
+  "time": "2026-11-16T18:00:00Z",
+  "caption": "Phase-2 growth roar (st=56) with the seam embers now aged in the shot: cinders drift up round the helm instead of a frozen spit; the knight still shows its back to this lens and the ring floor speckle is too even.",
   "verdict": "fail"
  },
  {
@@ -660,15 +636,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-2100-ash-clusters.jpg",
-  "time": "2026-11-16T21:00:00Z",
-  "caption": "Phase-2 settle in the burnt ring: the ash floor is now smooth grey wood-ash with cinders and stumps clumped in patches instead of an even black pepper; bright green shoots still poke through the ash and the trees are blotchy in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-2100-ash-before-after.jpg",
   "time": "2026-11-16T21:00:00Z",
   "caption": "Ash floor foreground before (top: even dash speckle everywhere) and after (bottom: clean ash, cinders heaped in hollows and tussocks); the green stubble blades should be singed.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2100-ash-clusters.jpg",
+  "time": "2026-11-16T21:00:00Z",
+  "caption": "Phase-2 settle in the burnt ring: the ash floor is now smooth grey wood-ash with cinders and stumps clumped in patches instead of an even black pepper; bright green shoots still poke through the ash and the trees are blotchy in GL.",
   "verdict": "fail"
  },
  {
@@ -684,15 +660,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261116-2300-surge-settle-front.jpg",
-  "time": "2026-11-16T23:00:00Z",
-  "caption": "The boss settling out of its phase-3 growth, chest and glaive squared to the hero's side of the ring; still wrong: flat GL light, soft blotchy trees behind, hero lost behind its legs.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-2300-surge-pivot-onto-hero.jpg",
   "time": "2026-11-16T23:00:00Z",
   "caption": "The boss after pivoting about 80 deg on its planted boot during the growth roar, so it ends facing a hero who broke it from the flank; still wrong: the sun blows out the sky, the knight reads small at this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261116-2300-surge-settle-front.jpg",
+  "time": "2026-11-16T23:00:00Z",
+  "caption": "The boss settling out of its phase-3 growth, chest and glaive squared to the hero's side of the ring; still wrong: flat GL light, soft blotchy trees behind, hero lost behind its legs.",
   "verdict": "fail"
  },
  {
@@ -828,27 +804,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-0221-knight-crown-impact.jpg",
-  "time": "2026-11-18T02:21:26Z",
-  "caption": "Crown reel impact frame, front-lit for the first time: the glaive is now knocked down across the body with the bowed head instead of standing at guard height; the giant's scale still does not read without the hero in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-0221-knight-crown-daze.jpg",
   "time": "2026-11-18T02:21:26Z",
   "caption": "Crown reel daze, front-lit: left gauntlet cupping the bowed helm, glaive drooped blade-first to the turf, knees buckled; armour reads dark and flat in the GL fallback renderer.",
   "verdict": "fail"
  },
  {
-  "file": "20261118-0317-surge-roar-front.jpg",
-  "time": "2026-11-18T03:17:41Z",
-  "caption": "The Ashen Knight's growth roar, front-lit at hour 9: glaive heaved up, fist raised, helm now thrown back; still small in frame at this distance and the knocked-down hero's pose is stiff.",
+  "file": "20261118-0221-knight-crown-impact.jpg",
+  "time": "2026-11-18T02:21:26Z",
+  "caption": "Crown reel impact frame, front-lit for the first time: the glaive is now knocked down across the body with the bowed head instead of standing at guard height; the giant's scale still does not read without the hero in frame.",
   "verdict": "fail"
  },
  {
   "file": "20261118-0317-surge-kneel-flank.jpg",
   "time": "2026-11-18T03:17:41Z",
   "caption": "The surge's coil from the knight's flank: down on its knee, hunched over the glaive as the plate cracks glow; a fallen slab darkens the foreground, and from the front the kneel barely reads.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0317-surge-roar-front.jpg",
+  "time": "2026-11-18T03:17:41Z",
+  "caption": "The Ashen Knight's growth roar, front-lit at hour 9: glaive heaved up, fist raised, helm now thrown back; still small in frame at this distance and the knocked-down hero's pose is stiff.",
   "verdict": "fail"
  },
  {
@@ -864,15 +840,21 @@
   "verdict": "fail"
  },
  {
+  "file": "20261118-0504-crown-toss-sheet.jpg",
+  "time": "2026-11-18T05:04:14Z",
+  "caption": "Helm close-ups, crown-reel shake-off: old toss at 1.13 s (left, face level), new at 1.0 s (mid, still bowed) and 1.13 s (right, tossed back); low-res software render.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261118-0504-crown-toss.jpg",
   "time": "2026-11-18T05:04:14Z",
   "caption": "The Ashen Knight shaking off a plunge to the helm, front-lit: the helm now tosses back past level (+16 deg); the boss still reads small in this low lens.",
   "verdict": "fail"
  },
  {
-  "file": "20261118-0504-crown-toss-sheet.jpg",
-  "time": "2026-11-18T05:04:14Z",
-  "caption": "Helm close-ups, crown-reel shake-off: old toss at 1.13 s (left, face level), new at 1.0 s (mid, still bowed) and 1.13 s (right, tossed back); low-res software render.",
+  "file": "20261118-0613-knight-crown-slump-before.jpg",
+  "time": "2026-11-18T06:13:23Z",
+  "caption": "Before: the slumped haft ran straight up the chest into the bowed helm's chin skirt (0.15 m/size through it) and the blade hung over the turf.",
   "verdict": "fail"
  },
  {
@@ -882,9 +864,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-0613-knight-crown-slump-before.jpg",
-  "time": "2026-11-18T06:13:23Z",
-  "caption": "Before: the slumped haft ran straight up the chest into the bowed helm's chin skirt (0.15 m/size through it) and the blade hung over the turf.",
+  "file": "20261118-0810-crown-hitstop-compare.jpg",
+  "time": "2026-11-18T08:10:21Z",
+  "caption": "Crown hit-stop before (left: the glaive pointed at the lens at chest height, its blade edge-on across the throat) vs now (middle, rt 0.09; right, rt 0.14): blade already low and out to the side.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0810-crown-hitstop.jpg",
+  "time": "2026-11-18T08:10:21Z",
+  "caption": "Ashen Knight crown reel, hit-stop frame front-lit at hour 9: the glaive is now knocked down with the head, blade toward the turf; the boss is still small in the lens and the armour reads dark.",
   "verdict": "fail"
  },
  {

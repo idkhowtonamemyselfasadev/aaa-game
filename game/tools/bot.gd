@@ -7925,6 +7925,8 @@ const CLUTCH_REGRIP_MAX := 0.05  # m per size: the right fist as the left comes 
 const CROWN_FACE_GATE := 12.0   # (11-18) deg the helm's face must point up in the crown shake-off
 const CROWN_HELM_SLUMP_MAX := 0.0    # (11-18) m/size the slumped haft may sit inside the helm (old slump 0.146)
 const CROWN_HELM_IMPACT_MAX := 0.035 # (11-18) m/size in the hit-stop frame (head snapped down, glaive 60 % there; old 0.175)
+const CROWN_TIPDROP_MIN := 1.0      # (11-18 07:00) m/size the blade tip sits below the neck in the hit-stop frame (old 0.73-0.76, now 1.29-1.32)
+const CROWN_THROAT_MIN := 0.65      # (11-18 07:00) m/size the drooping blade keeps clear of the throat, front-on (old 0.59-0.61, now 0.735)
 const CROWN_TIP_MAX := 0.07          # (11-18) m/size the slumped blade tip may hang over the turf (old 0.24)
 const CROWN_DROP_GATE := 0.5    # (11-18) share of the glaive's droop already in the crown reel's hit-stop frame
 const CLUTCH_FIST_MAX := 0.06  # m per size: the fists on the glaive one-handed and after the regrip (11-10)
@@ -7983,7 +7985,7 @@ func _crown_test() -> void:
 		# (11-18) the knocked-down glaive against the helm: the front-lit impact frames showed the blade
 		# passing close by the helm's right side. Read inside the skeleton's update (the modified pose):
 		# [nearest haft to the neck-crown core m/size, its u, deepest haft into the helm mesh m/size, its u]
-		var hgap := [9.0, 0.0, -9.0, 0.0, -9.0, 9.0]   # + [4] deepest once slumped (u 0.15-0.5), [5] blade tip over the turf (u 0.25-0.45)
+		var hgap := [9.0, 0.0, -9.0, 0.0, -9.0, 9.0, 9.0, 0.0, -9.0]   # + [4] deepest once slumped (u 0.15-0.5), [5] blade tip over the turf (u 0.25-0.45), [6]/[7] blade nearest the throat in the droop (u 0.07-0.22) and its u
 		var hring := _helm_rings(k)
 		var on_skel := func() -> void:
 			if k.state != HollowSoldier.STAGGER or k.spear == null:
@@ -8013,6 +8015,23 @@ func _crown_test() -> void:
 					hgap[4] = maxf(float(hgap[4]), pen)
 			if hu > 0.25 and hu < 0.45:
 				hgap[5] = minf(float(hgap[5]), (tip.y - terrain.height_at(tip.x, tip.z)) / k.size_scale)
+			# (11-18 07:00) the blade (outer quarter of the glaive) against the throat (neck to head bone):
+			# the front-lit hit-stop frame read as a blade held across the throat under the chin
+			if hu >= AshenKnight.CROWN_IMPACT_U - 0.001 and hu < 0.22:
+				# as the front lens sees it: everything flattened onto the body's frontal plane
+				var fw: Vector3 = k.body.global_basis.z.normalized()
+				var flat := func(q: Vector3) -> Vector3: return q - fw * fw.dot(q - nk)
+				var bs: Vector3 = butt.lerp(tip, 0.75)
+				var tq: PackedVector3Array = Geometry3D.get_closest_points_between_segments(flat.call(bs), flat.call(tip), nk, flat.call(hd))
+				var tg: float = tq[0].distance_to(tq[1]) / k.size_scale
+				if tg < float(hgap[6]):
+					hgap[6] = tg
+					hgap[7] = hu
+				if hu < AshenKnight.CROWN_IMPACT_U + 0.01:
+					# the blade tip below the neck in the hit-stop frame (+ = below): pointed at the lens at chest height reads as held up
+					hgap[8] = maxf(float(hgap[8]), (nk.y - tip.y) / k.size_scale)
+				if OS.has_environment("CROWN_THROAT_DBG"):
+					print("    CTH u %.3f blade-throat %.3f" % [hu, tg])
 			if OS.has_environment("CROWN_HELM_DBG"):
 				print("    CHG u %.3f haft-core %.3f haft-in-helm %.3f" % [hu, g, _haft_in_helm(k, hring, butt, tip) / k.size_scale if hring.size() > 0 else -9.0])
 		k.skel.skeleton_updated.connect(on_skel)
@@ -8081,6 +8100,9 @@ func _crown_test() -> void:
 			print("BOT crown:   knocked-down glaive vs helm (u < 0.5): haft nearest the neck-crown core %.3f m/size at u %.2f, deepest into the helm mesh %.3f m/size at u %.2f (<= 0 = clear), slumped (u > 0.15) %.3f, blade tip over the turf %.3f m/size" % [hgap[0], hgap[1], hgap[2], hgap[3], hgap[4], hgap[5]])
 			if hring.size() > 0 and (float(hgap[4]) > CROWN_HELM_SLUMP_MAX or float(hgap[2]) > CROWN_HELM_IMPACT_MAX or float(hgap[5]) > CROWN_TIP_MAX):
 				return _combat_done(false, "the crown reel's slumped glaive runs through the helm (%.3f, hit-stop %.3f m/size) or its blade hangs over the turf (%.3f)" % [hgap[4], hgap[2], hgap[5]])
+			print("BOT crown:   blade nearest the throat in the droop (u %.2f-0.22): %.3f m/size at u %.2f (gate >= %.2f); blade tip below the neck in the hit-stop %.3f m/size (gate >= %.2f)" % [AshenKnight.CROWN_IMPACT_U, hgap[6], hgap[7], CROWN_THROAT_MIN, hgap[8], CROWN_TIPDROP_MIN])
+			if float(hgap[6]) < CROWN_THROAT_MIN or float(hgap[8]) < CROWN_TIPDROP_MIN:
+				return _combat_done(false, "the crown reel's drooping blade crosses the throat (%.3f m/size)" % float(hgap[6]))
 			print("BOT crown:   a blow in the reel at t %.2f kept it (%d), t after %.2f, stagger len %.2f" % [t_hit, k.crown_hits_kept - kept0, t_after, k._stagger_len])
 			if k.crown_hits_kept != kept0 + 1 or t_after < t_hit:
 				return _combat_done(false, "a blow in the crown reel restarted it as a plain flinch")

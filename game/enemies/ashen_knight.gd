@@ -394,7 +394,9 @@ static func _crown_slump() -> Array:
 const CROWN_SHAKE_BACK := 0.62   # (11-18) rad the shake-off tosses the head back (was 0.24)
 const CROWN_BACK_U := [0.7, 0.97] # (11-18) reel u span of the toss (was 0.66-0.96)
 var CROWN_BACK_OLD := OS.get_environment("CROWN_BACK_OLD") == "1"
-const CROWN_DROP_JOLT := 0.6     # (11-18) share of the glaive's droop already in the impact frame
+var CROWN_DROP_JOLT := float(OS.get_environment("CROWN_DROP_JOLT")) if OS.has_environment("CROWN_DROP_JOLT") else (0.6 if OS.get_environment("CROWN_DROOP_OLD") == "1" else 0.8)     # (11-18) share of the glaive's droop already in the impact frame
+var CROWN_DROOP_OLD := OS.get_environment("CROWN_DROOP_OLD") == "1"
+var CROWN_YAW_POW := float(OS.get_environment("CROWN_YAW_POW")) if OS.has_environment("CROWN_YAW_POW") else 0.3  # (11-18 07:00) yaw follows drop^this (> 1 lags the pitch, < 1 leads it)
 const CROWN_DROP_END := 0.26     # u the glaive has finished drooping (blade at the turf)
 var crown_drop_at_impact := 0.0  # bots: the droop share shown through the hit-stop
 var head: HeadBow                # bows the head onto the chest in the crown reel and the surge
@@ -803,6 +805,12 @@ func _crown_tick(delta: float, snap := false) -> void:
 	crown_drop_at_impact = drop if u <= CROWN_IMPACT_U + 0.001 else crown_drop_at_impact
 	var gp: Array = _lerp_pose(_from, CROWN_SLUMP, drop) if u < 0.5 \
 		else _lerp_pose(CROWN_SLUMP, guard_pose, smoothstep(0.58, 0.96, u))
+	if u < 0.5 and not CROWN_DROOP_OLD:
+		# (11-18 07:00) the front-lit hit-stop frame read as a blade held across the throat: the glaive
+		# pitched only ~-15 deg and pointed at the lens, its crescent edge-on under the chin. The yaw now
+		# leads the pitch (drop^0.3), which keeps the haft off the helm, so the impact frame can show
+		# more of the droop (CROWN_DROP_JOLT 0.8): the blade is already low, out by the side
+		gp[0] = lerpf(float(_from[0]), float(CROWN_SLUMP[0]), pow(clampf(drop, 0.0, 1.0), CROWN_YAW_POW))
 	if u >= 0.5 and OS.get_environment("CROWN_FIXEDGLAIVE") == "":
 		# (11-10 06:00) the model leans from the hips but the glaive lives in the Wield's (unleaned)
 		# space: as the knight straightened, the shoulders swept past the slumped grip and the right
