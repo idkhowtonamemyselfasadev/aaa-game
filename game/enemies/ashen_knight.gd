@@ -419,6 +419,12 @@ var surge_turned := 0.0          # bots: yaw the surge's rise turned the body on
 ## (SURGE_BLAST+0.05 .. the boot's release) it now heaves round on the ball of that boot (the
 ## body is swung about the boot's spot, so nothing skates), up to SURGE_TURN_MAX; STALK's own
 ## step-turn finishes the rest. SURGETURN_OLD=1: the before.
+const SURGE_HUNCH := 0.42        # rad the spine curls over the glaive in the coil (Crumple.spine)
+const SURGE_ROAR_ARCH := 0.12    # rad it arches back, chest out, in the roar
+const SURGE_COIL_BOW := 0.72     # rad the head bows in the coil (was 0.55)
+static var SURGE_HUNCH_OLD := OS.get_environment("SURGE_HUNCH_OLD") == "1"
+var surge_hunch_peak := 0.0      # bots: deepest spine curl in the surge's coil (rad)
+var surge_arch_back := 0.0       # bots: spine arched back in the roar (rad, negative)
 const SURGE_ROAR_BACK := 0.95    # rad the roar flings the head back (HeadBow; the clip's carriage eats ~0.4)
 const SURGE_TURN_RATE := 2.2     # rad/s at the middle of the rise (eased in and out)
 const SURGE_TURN_MAX := 1.4      # rad the rise may turn in all
@@ -866,7 +872,7 @@ func _physics_process(delta: float) -> void:
 		_set_tuck(0.0, 0.0)
 		if _wield != null:
 			_wield.position.y = 0.0
-	if _intro_arched and not (move_kind == INTRO_MOVE and state == WINDUP):
+	if _intro_arched and not (move_kind == INTRO_MOVE and state == WINDUP) and _surge < 0.0:
 		_intro_arch = move_toward(_intro_arch, 0.0, delta * 1.5)
 		_pose_arch(_intro_arch)
 	if _crown_reel and (state != STAGGER or _surge >= 0.0):
@@ -958,6 +964,17 @@ func _surge_body(delta: float) -> void:
 	_pose[1] += sin(s * 38.0) * 2.0 * roar + sin(s * 53.0) * 1.2 * shud
 	_place(_pose)
 	var lean := -0.12 * recoil * (1.0 - coil) + 0.36 * kneel - 0.24 * roar + 0.01 * sin(s * 47.0) * shud
+	# (05:00 11-18) the coil read as a mere crouch front-on (`ring surge side lensfix st=12/16`, hour 9):
+	# the whole-body lean tips the trunk but the back stayed straight. Now the spine curls down over
+	# the planted glaive in the coil (Crumple.spine, before the arm IK, so the hands keep the haft)
+	# and opens a little, chest out, in the roar. SURGE_HUNCH_OLD=1: the before.
+	if not SURGE_HUNCH_OLD:
+		var arch := SURGE_HUNCH * kneel * (1.0 - burst) - SURGE_ROAR_ARCH * roar \
+			+ 0.015 * sin(s * 41.0) * (shud + roar)
+		_intro_arch = lerpf(_intro_arch, arch, 1.0 - exp(-12.0 * delta))
+		_pose_arch(_intro_arch)
+		surge_hunch_peak = maxf(surge_hunch_peak, _intro_arch)
+		surge_arch_back = minf(surge_arch_back, _intro_arch)
 	# a weight settle as it straightens: the body overshoots a touch low, then stands
 	var sink := 0.42 * kneel + 0.05 * sin(PI * settle)
 	_lean(lean, sink)
@@ -987,7 +1004,7 @@ func _surge_body(delta: float) -> void:
 		# frames (`ring surge side lensfix helm st=40`, hour 9) read a level visor over a raised glaive,
 		# a salute, not a roar. Flung back further so the face points ~40 deg up. SURGE_ROARHEAD_OLD=1: before.
 		var back := 0.55 if OS.get_environment("SURGE_ROARHEAD_OLD") == "1" else SURGE_ROAR_BACK
-		var goal := 0.55 * coil * (1.0 - burst) - back * roar
+		var goal := (0.55 if SURGE_HUNCH_OLD else SURGE_COIL_BOW) * coil * (1.0 - burst) - back * roar
 		var rl := 0.06 * sin(s * 31.0) * roar
 		var k := 1.0 - exp(-14.0 * delta)
 		_head_bow = lerpf(_head_bow, goal, k)

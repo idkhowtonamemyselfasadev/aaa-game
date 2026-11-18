@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261114-0800-walkstop-backheel.jpg",
-  "time": "2026-11-14T08:00:00Z",
-  "caption": "Walk stop's settle step at 1.15 s: the stepping boot lifts with the heel up on its ball, the planted one flat and still; the lens still sits rear 3/4 and the boots read as rounded clogs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0900-knightstair-seq.jpg",
-  "time": "2026-11-14T09:00:00Z",
-  "caption": "Frames 45/70/95 of the boss walking up the stair: knee lifted onto each tread, then standing square on the top; still too far and too rear-on to judge sole contact, and the stair is a plain box.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-0900-knightstair-tread2.jpg",
-  "time": "2026-11-14T09:00:00Z",
-  "caption": "The Ashen Knight (phase-1 size) stepping up onto the second tread of a masonry stair from the new kside lens; reads as a climb, but the lens sits 14 m out and the tall grass hides its boots.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1000-knightstair-close.jpg",
   "time": "2026-11-14T10:50:00Z",
   "caption": "Ashen Knight (x2.2) climbing the test stair from a new close side lens on a mown strip: rear boot planted on the tread, front knee lifted onto the next; the stair is still a plain box and the figure reads rear 3/4.",
@@ -897,6 +879,18 @@
   "file": "20261118-0317-surge-kneel-flank.jpg",
   "time": "2026-11-18T03:17:41Z",
   "caption": "The surge's coil from the knight's flank: down on its knee, hunched over the glaive as the plate cracks glow; a fallen slab darkens the foreground, and from the front the kneel barely reads.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0500-surge-hunch-before-after.jpg",
+  "time": "2026-11-18T05:00:00Z",
+  "caption": "Ashen Knight growth coil, front-lit: before (straight back, helm up) / after (spine curled, helm sunk between the shoulders) / flank after; the knight is still small in the lens and GL fallback lighting is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0500-surge-hunch-flank.jpg",
+  "time": "2026-11-18T05:00:00Z",
+  "caption": "The kneeling coil from the flank: back curled over the planted glaive, plate cracks glowing; the frame is wide and the boss small, not yet a Wukong shot.",
   "verdict": "fail"
  }
 ]
