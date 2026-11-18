@@ -511,7 +511,7 @@ func _physics_process(delta: float) -> void:
 ## (11-17 21:00) the hero's idle stance snapshot (StrideWarp._stance, the spot every stop's and turn's
 ## settle steps aim at) must stay on the idle clip's feet: re-read off a moving pose (as the foes' was on a
 ## walk's first tick, ~2 units) the next settle aims off it and the release slides the boots back
-const STANCE_SPREAD_MAX := 0.5             # the hero reads 0.18-0.25 (its post-turn idle re-entry), the foe bug read 2.6
+const STANCE_SPREAD_MAX := 0.15            # (11-18 00:00) the hero reads 0.06 turn / 0.11 stop with its post-turn snapshot hold (STANCEHOLD_OLD 0.25); the foe bug read 2.6
 const FOE_STANCE_SPREAD_MAX := 0.3         # (11-17 23:00) knight/soldier read ~0.12 off a settled reference
 func _stance_spread_ok(p) -> bool:
 	if p.stride_warp == null:

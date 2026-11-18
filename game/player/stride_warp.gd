@@ -480,6 +480,16 @@ var _stance_last_f := -10
 const STANCE_REF_SETTLE := 45        # ticks of unbroken idle before the reference is taken (the spawn settle took ~30)
 static var STANCEREF_OLD := OS.has_environment("STANCEREF_OLD")
 static var SPREAD_DBG := OS.has_environment("SPREAD_DBG")
+# (11-18 00:00) (owner) idle ticks a fresh stance snapshot waits before it replaces the last one: right
+# after a turn on the spot lets its pivot go, the hero's clip boots still sit up to 0.25 units off the
+# settled idle for ~10 ticks (SPREAD_DBG=1 heroturn f85-95, not the move blend: that was already
+# faded), and a stop or turn started in that window aimed its settle step off them. The settled
+# snapshot from before the turn is kept meanwhile (skeleton space, so the new heading does not
+# matter). 0 = every idle tick (the foes; STANCEHOLD_OLD=1 = before for the hero too)
+var stance_hold_ticks := 0
+static var STANCEHOLD_OLD := OS.has_environment("STANCEHOLD_OLD")
+var _idle_run := 0
+var _idle_last_f := -10
 var settle_reach := 0.0          # (bots) skeleton units the settle step carries the boot
 const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts as down under this
 const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
@@ -739,7 +749,13 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 		_gather_off = Vector3.ZERO
 		_gather_t = 0.0
 		_pin_abs = false
+		var fr0 := Engine.get_physics_frames()
 		if stance_idle:
+			_idle_run = _idle_run + 1 if fr0 - _idle_last_f <= 1 else 1
+			_idle_last_f = fr0
+		if stance_idle and (_stance_ok and not STANCEHOLD_OLD and _idle_run <= stance_hold_ticks):
+			pass
+		elif stance_idle:
 			for i in 2:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
 				if fb >= 0:

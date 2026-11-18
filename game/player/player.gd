@@ -569,6 +569,7 @@ func _setup_crumple() -> void:
 	stride_warp = StrideWarp.new()
 	stride_warp.name = "StrideWarp"
 	skel.add_child(stride_warp)
+	stride_warp.stance_hold_ticks = 10          # (11-18 00:00) see StrideWarp.stance_hold_ticks
 	crumple.warp = stride_warp
 	# the modifiers run once per physics tick, right on the AnimationTree's pose (which is
 	# advanced on physics too): on idle frames they ran 0 or 2 times a tick, so the contact
