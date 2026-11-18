@@ -32,6 +32,8 @@ uniform float wrap_turns = 0.0;
 uniform float wrap_jitter = 0.0;   // > 0: the turns wound unevenly (wide and narrow strips), matching rags.gd _wrap_s()
 uniform float wrap_rub = 0.0;      // > 0 (leather straps): each turn's proud lip is rubbed through to a worn brown and takes a leather sheen
 uniform vec3 wrap_rub_col : source_color = vec3(0.30, 0.20, 0.13);
+uniform float wrap_spec = 0.45;   // the leather strap's specular (with wrap_rub)
+uniform float wrap_warm = 0.0;    // > 0: the strap's sheen takes the leather's own brown (a little metallic tint: a warm, not grey, glaze)
 uniform float edge_wear = 0.0;     // > 0: COLOR.g is a rubbed, sun-faded edge (the face cloth's outer turn)
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
@@ -546,8 +548,8 @@ void fragment() {
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
-	SPECULAR = mix(mix(0.3, 0.12, felt), 0.45, clamp(wrap_rub, 0.0, 1.0));
-	METALLIC = 0.0;
+	SPECULAR = mix(mix(0.3, 0.12, felt), wrap_spec, clamp(wrap_rub, 0.0, 1.0));
+	METALLIC = clamp(wrap_warm * wrap_rub, 0.0, 0.5);
 	// thread relief: the weave catches the light at grazing angles
 	NORMAL_MAP = normalize(vec3(-tx * 1.2, ty * 1.2, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = mix(0.8, 1.4, straw);

@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261114-2300-sweepfall-front.jpg",
-  "time": "2026-11-14T23:00:00Z",
-  "caption": "Front 3/4 of the swept fall at 0.22 s: boots kicked up, trunk thrown back, staff still in the fist; reads as a real sweep, but the face is lit flat and the hand pose is stiff.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0026-riseplant-1.62.jpg",
   "time": "2026-11-15T00:26:00Z",
   "caption": "Knock-down get-up at 1.62 s: right foot planted ahead on the turf, left knee down, the body starting forward over the foot; the lens is behind-left, not profile, and the figure still reads dark against the sun.",
@@ -891,6 +885,18 @@
   "file": "20261118-1833-foe-corner.jpg",
   "time": "2026-11-18T18:33:05Z",
   "caption": "A Hollow Soldier 0.6 s after its walk swung 90 deg toward the lens: body square to its new line, mid-stride on a planted boot (the pace now carries round the corner instead of the walk snapping sideways); still GL fallback lighting, ring floor reads as flat dark dirt.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1915-kstrapsheen.jpg",
+  "time": "2026-11-18T19:15:00Z",
+  "caption": "Ashen Knight's leg straps before (left) and after (right): the lit leather now has a warm brown sheen instead of a grey glaze; the shaded legs still read near-black (GL renderer).",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1915-kcorner.jpg",
+  "time": "2026-11-18T19:15:00Z",
+  "caption": "The x3.2 Ashen Knight mid-stride just after a 90 deg corner, on a planted boot with no skid; legs very dark in shade, GL renderer softness.",
   "verdict": "fail"
  }
 ]

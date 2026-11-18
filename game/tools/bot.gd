@@ -7028,6 +7028,10 @@ func _knight_test() -> void:
 	print("BOT knight: bindings rubbed %d of %d" % [k.wraps_rubbed, k.wraps_dark])
 	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KWRUB_OLD") != "1" and k.wraps_rubbed < k.wraps_dark:
 		return _combat_done(false, "the knight's bindings have no rubbed leather lip (they read as black blobs)")
+	# (19:00 11-18) the straps' sheen is warm leather, not a grey glaze
+	print("BOT knight: bindings warm-sheened %d of %d" % [k.wraps_warm, k.wraps_rubbed])
+	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KWRUB_OLD") != "1" and OS.get_environment("KSHEEN_OLD") != "1" and k.wraps_warm < k.wraps_rubbed:
+		return _combat_done(false, "the knight's strap sheen is still a grey glaze (no warm leather sheen)")
 	# (14:00 11-18) soot washed down the plate in vertical runs (the plate read too clean)
 	var ksoot: Variant = k.armour.mats[0].get_shader_parameter("soot_streaks")
 	print("BOT knight: soot_streaks %s" % [ksoot])
