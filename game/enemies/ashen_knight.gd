@@ -196,6 +196,20 @@ const INTRO_ROAR := [-10.0, 65.0, Vector3(-0.27, 2.12, 0.24), -20.0, 0.1, 0.66]
 ## glaive (found offline: fist-shoulder line . shaft ~0.01, left fist within reach until it lets
 ## go). Env SURGE_OLDROAR: the before.
 const SURGE_ROAR := [-20.0, 75.0, Vector3(-0.25, 2.05, 0.4), -20.0, 0.1, 0.66]
+const SURGE_ROAR_CLEAR := [-20.0, 75.0, Vector3(-0.30, 2.05, 0.58), -20.0, 0.1, 0.66]
+## (16:00 11-18) the roar's helm now stays over the collar (SURGE_LIFT_SHARE), where the near-upright
+## haft at the right fist ran through it (surgegrip roar +0.043 m/size). SURGE_ROAR_TRY="yaw,pitch,x,y,z"
+## replaces the first three (tuning); SURGE_LIFT_OLD=1 keeps SURGE_ROAR. The glaive fist is held a
+## little further out and forward (x -0.25 -> -0.30, z 0.40 -> 0.58): roar -0.025/-0.036 m/size clear,
+## both fists stay on the haft (a head tilt away from the haft was tried: it made it worse).
+func _surge_roar_pose() -> Array:
+	var e := OS.get_environment("SURGE_ROAR_TRY")
+	if e != "":
+		var v := e.split_floats(",")
+		return [v[0], v[1], Vector3(v[2], v[3], v[4]), SURGE_ROAR[3], SURGE_ROAR[4], SURGE_ROAR[5]]
+	if OS.get_environment("SURGE_LIFT_OLD") == "1":
+		return SURGE_ROAR
+	return SURGE_ROAR_CLEAR
 ## env INTRO_ROAR_TRY="yaw,pitch,x,y,z,chest" replaces the reveal's roar pose (tuning loops)
 func _intro_roar_pose() -> Array:
 	var e := OS.get_environment("INTRO_ROAR_TRY")
@@ -826,6 +840,7 @@ func _crown_tick(delta: float, snap := false) -> void:
 		_head_roll = lerpf(_head_roll, roll, k)
 	if head != null:
 		head.bow = _head_bow
+		head.lift_share = []
 		head.roll = _head_roll
 	var sink := 0.21 * down + 0.05 * hit
 	_set_tuck(0.62 * down + 0.1 * hit, 1.22 * down + 0.2 * hit)
@@ -1008,6 +1023,7 @@ func _physics_process(delta: float) -> void:
 		_head_bow = lerpf(_head_bow, 0.0, k)
 		_head_roll = lerpf(_head_roll, 0.0, k)
 		head.bow = _head_bow
+		head.lift_share = []
 		head.roll = _head_roll
 	if state == DEAD or _freeze > 0.0:
 		return
@@ -1078,7 +1094,7 @@ func _surge_body(delta: float) -> void:
 	# the coil shudders harder toward the burst; the roar shakes through the arms and head
 	var shud := smoothstep(0.4, SURGE_BLAST, s) * (1.0 - burst)
 	var p1 := _lerp_pose(_from, SURGE_LEAN, smoothstep(0.1, 0.7, s))
-	var roar_pose: Array = INTRO_ROAR if OS.get_environment("SURGE_OLDROAR") != "" else SURGE_ROAR
+	var roar_pose: Array = INTRO_ROAR if OS.get_environment("SURGE_OLDROAR") != "" else _surge_roar_pose()
 	var p2 := _lerp_pose(p1, roar_pose, burst)
 	# (11-18) the heave's detour: a straight blend swung the haft up through the bowed helm
 	# (s 1.0-1.12, 0.10 m/size inside it, bot `surgegrip`); it now swings out wide past the helm
@@ -1090,7 +1106,7 @@ func _surge_body(delta: float) -> void:
 	_pose = _lerp_pose(p2, guard_pose, settle)
 	_pose[1] += sin(s * 38.0) * 2.0 * roar + sin(s * 53.0) * 1.2 * shud
 	_place(_pose)
-	var lean := -0.12 * recoil * (1.0 - coil) + 0.36 * kneel - 0.24 * roar + 0.01 * sin(s * 47.0) * shud
+	var lean := -0.12 * recoil * (1.0 - coil) + 0.36 * kneel - _surge_roar_lean() * roar + 0.01 * sin(s * 47.0) * shud
 	# (05:00 11-18) the coil read as a mere crouch front-on (`ring surge side lensfix st=12/16`, hour 9):
 	# the whole-body lean tips the trunk but the back stayed straight. Now the spine curls down over
 	# the planted glaive in the coil (Crumple.spine, before the arm IK, so the hands keep the haft)
@@ -1138,17 +1154,52 @@ func _surge_body(delta: float) -> void:
 		_head_roll = lerpf(_head_roll, rl, k)
 		head.bow = _head_bow
 		head.roll = _head_roll
+		head.lift_share = _surge_lift_share()
 		surge_bow_peak = maxf(surge_bow_peak, _head_bow)
 		surge_lift_back = minf(surge_lift_back, _head_bow)
 		if head.head_fwd_world != Vector3.ZERO:
 			var fp := asin(clampf(head.head_fwd_world.normalized().y, -1.0, 1.0))
 			if roar > 0.8:
 				surge_face_up = maxf(surge_face_up, fp)
+				# how far the visor sits ahead of the upper chest, per size (< 0: swung back behind it)
+				if armour != null and head.chest_world.is_finite():
+					var bz := Vector3(body.global_basis.z.x, 0, body.global_basis.z.z).normalized()
+					var vfw: float = ((armour.seam_at(1)[0] as Vector3) - head.chest_world).dot(bz) / size_scale
+					surge_visor_fwd = minf(surge_visor_fwd, vfw)
 			if kneel > 0.8 and burst < 0.05:
 				surge_face_coil = minf(surge_face_coil, fp)
 	if not has_meta("surge_roar_%d" % surges) and s >= SURGE_BLAST + 0.03:
 		set_meta("surge_roar_%d" % surges, true)
 		surge_roared.emit(global_position + Vector3.UP * 1.6 * size_scale)
+
+## (16:00 11-18) The surge roar's head throw-back, per bone (Spine2, Neck, Head). HeadBow's default
+## shares (0.2, 0.45, 0.35) put most of the 0.95 rad at the neck and chest, which swung the skull back
+## and down behind the gorget and pauldrons: from the hero's low front view (`ring surge side hero
+## close st=40..60`) the roaring knight had no head at all. Most of it now turns at the head itself,
+## so the chin and visor tip up toward the sky while the skull stays over the collar.
+## Env SURGE_LIFT_OLD=1: the before; SURGE_LIFTSHARE="a,b,c" overrides (tuning).
+const SURGE_LIFT_SHARE := [-0.25, -0.1, 1.15]
+## the whole-body lean back in the roar (rad): 0.24 tipped the trunk so far back that the chest hid the
+## helm from the front too. Env SURGE_ROARLEAN=x overrides; SURGE_LIFT_OLD=1 restores 0.24
+const SURGE_ROAR_LEAN := 0.06
+func _surge_roar_lean() -> float:
+	if OS.get_environment("SURGE_LIFT_OLD") == "1":
+		return 0.24
+	var e := OS.get_environment("SURGE_ROARLEAN")
+	return float(e) if e != "" else SURGE_ROAR_LEAN
+var surge_lift_on := true        # bots: false with SURGE_LIFT_OLD=1
+var surge_visor_fwd := INF       # bots: least the visor sat ahead of the upper chest in a roar (m/size)
+func _surge_lift_share() -> Array:
+	if OS.get_environment("SURGE_LIFT_OLD") == "1":
+		surge_lift_on = false
+		return []
+	var e := OS.get_environment("SURGE_LIFTSHARE")
+	if e != "":
+		var out := []
+		for v in e.split(","):
+			out.append(float(v))
+		return out
+	return SURGE_LIFT_SHARE
 
 ## (03:00 11-17) The body swells about its planted left boot, not about its origin: the latch
 ## rides the body's frame, so the growth carried the boot out over the turf with it (0.06-0.07 m
@@ -1588,6 +1639,7 @@ func _intro_tick(delta: float, to: Vector3) -> Array:
 		_head_bow = lerpf(_head_bow, bow, kh)
 		_head_roll = lerpf(_head_roll, roll, kh)
 		head.bow = _head_bow
+		head.lift_share = []
 		head.roll = _head_roll
 	intro_bow_peak = maxf(intro_bow_peak, _head_bow)
 	intro_lift_back = minf(intro_lift_back, _head_bow)

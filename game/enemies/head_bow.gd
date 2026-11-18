@@ -18,8 +18,15 @@ var hand_l_world := Vector3.INF
 ## (04:00 11-18) the head's facing in world space as last posed (after the bow), for the bots: the
 ## surge's roar was measured by the bow it asked for, not by where the helm really pointed
 var head_fwd_world := Vector3.ZERO
+## (16:00 11-18) shares for a NEGATIVE bow (the head lifted back), per bone in BONES; empty = BOW_SHARE.
+## The knight's surge roar flung the head back 0.95 rad mostly at the neck, which swung the skull
+## back behind its collar: from the hero's low front view the roaring giant had no head
+var lift_share: Array = []
+## (16:00 11-18) the upper chest (Spine2) as last posed, for the bots: is the helm still over the collar?
+var chest_world := Vector3.INF
 var record_hand := true      # false: the owner reads the hand itself after the arm IK
 var _hb := -2
+var _cb := -2
 var _lh := -2
 
 func _process_modification_with_delta(_delta: float) -> void:
@@ -43,7 +50,8 @@ func _process_modification_with_delta(_delta: float) -> void:
 		var pinv := pb.inverse()
 		# rotating "up" about +X by +a tips it toward +Z: forward is +a; about +Z by +a it tips
 		# toward -X, so the head drops to the body's right with -a
-		var q := Quaternion((pinv * ax).normalized(), bow * float(BOW_SHARE[i])) \
+		var share: float = float(lift_share[i]) if bow < 0.0 and lift_share.size() == BONES.size() else float(BOW_SHARE[i])
+		var q := Quaternion((pinv * ax).normalized(), bow * share) \
 			* Quaternion((pinv * az).normalized(), -roll * float(ROLL_SHARE[i]))
 		skel.set_bone_pose_rotation(b, q * skel.get_bone_pose_rotation(b))
 
@@ -57,5 +65,9 @@ func _record(skel: Skeleton3D) -> void:
 		head_world = skel.global_transform * skel.get_bone_global_pose(_hb).origin
 		if side != null:
 			head_fwd_world = HeadGlare.head_forward(skel, side)
+	if _cb == -2:
+		_cb = skel.find_bone("mixamorig_Spine2")
+	if _cb >= 0:
+		chest_world = skel.global_transform * skel.get_bone_global_pose(_cb).origin
 	if _lh >= 0 and record_hand:
 		hand_l_world = skel.global_transform * skel.get_bone_global_pose(_lh).origin

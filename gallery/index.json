@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-2100-glide-rim-before-after.jpg",
-  "time": "2026-11-14T21:00:00Z",
-  "caption": "Backlit glide, before (left) and after (right) the rim light: the silhouette edges now catch the sun and sky (mantle 15 -> 22 of 255); the legs still read as a black cut-out.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-2200-glide-back-skyshade.jpg",
-  "time": "2026-11-14T22:00:00Z",
-  "caption": "Gliding into the light from behind: the new sky shade lets the hero's leg bindings and the mantle's folds read instead of a black cut-out; still a dark figure, the glider's own shadow flattens the shoulders.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-2200-glide-front-skyshade.jpg",
   "time": "2026-11-14T22:00:00Z",
   "caption": "Front 3/4 glide against the light: face, wraps, mantle and robe now read where it was a silhouette; the forearm wraps look greenish and the figure a little flat.",
@@ -891,6 +879,18 @@
   "file": "20261118-1500-knight-ring.jpg",
   "time": "2026-11-18T15:10:00Z",
   "caption": "The Ashen Knight in the ring at hour 9 with sooted plate and pauldrons; legs in shade still read very dark and the scene lacks GI under the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1639-surge-roar-helm.jpg",
+  "time": "2026-11-18T16:39:33Z",
+  "caption": "The Ashen Knight's growth roar from the hero's low front view: the helm now stays over the collar with the visor tipped up and the glaive clear of it. Still wrong: the helm reads only as a dark crown with an ember rim, and the plate stays dark in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1639-surge-roar-before.jpg",
+  "time": "2026-11-18T16:39:33Z",
+  "caption": "Before this session: the same roar frame, where the head was flung back behind the gorget, so the giant seemed to have no head from the front.",
   "verdict": "fail"
  }
 ]

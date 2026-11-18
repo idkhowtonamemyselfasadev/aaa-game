@@ -3464,6 +3464,9 @@ func _ready() -> void:
 				# `flip` the right): the kneel's depth and the glaive's lean read only side-on
 				sp = kp + (sp - kp).rotated(Vector3.UP, (-0.5 if "flip" in args else 0.5) * PI)
 			sp.y = terrain.height_at(sp.x, sp.z) + (0.55 if close_k else 0.9)
+			for a in args:
+				if a.begins_with("lensh="):   # (16:00 11-18) lens height over the turf, m
+					sp.y = terrain.height_at(sp.x, sp.z) + float(a.substr(6))
 			if close_k:
 				# wider than the play lens (65): at 65 the knocked-down hero fell off the bottom edge
 				# and the raised glaive off the top at the phase-3 size
@@ -3541,6 +3544,12 @@ func _ready() -> void:
 				# the hero (on the flank for `turn`) stood in this close lens's left third: hide it
 				player.visible = false
 				print("SHOT ring surge legs lens %.2f m out, size %.2f" % [1.5 * lsz, lsz])
+		# (16:00 11-18) is the lens on the helm's face side? The sight-slit seam's outward normal
+		# against the line to the lens: > 0 the visor faces the lens, < 0 the lens sees the back of
+		# the helm; and the normal's pitch (> 0: the visor turned up at the sky, as in the roar)
+		var vs: Array = rk.armour.seam_at(1)
+		var vtl: Vector3 = (cam.global_position - (vs[0] as Vector3)).normalized()
+		print("SHOT ring surge visor faces lens %.2f, visor pitch %.2f, body front to lens %.2f" % [(vs[1] as Vector3).dot(vtl), (vs[1] as Vector3).y, Vector3(rk.body.global_basis.z.x, 0, rk.body.global_basis.z.z).normalized().dot(Vector3(vtl.x, 0, vtl.z).normalized())])
 		print("SHOT ring surge st %d size %.2f embers %d grit %d" % [st, rk.size_scale, rk.growth.ember_bursts, rk.growth.grit_falls])
 		# the boss bar covers the knight's boots in a low lens: a surge frame is a cinematic beat
 		if not "hud" in args:

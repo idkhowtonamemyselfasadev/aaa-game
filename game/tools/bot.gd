@@ -7635,6 +7635,11 @@ func _knight_test() -> void:
 	# (04:00 11-18) the roar must throw the rendered helm well back, not just lift the bow (SURGE_ROARHEAD_OLD=1 FAILS: 18 deg)
 	if rad_to_deg(k.surge_face_up) < 32.0:
 		return _combat_done(false, "the surge's roar left the helm near level (%.0f deg up, gate >= 32): a salute, not a roar" % rad_to_deg(k.surge_face_up))
+	print("BOT knight: surge visor ahead of the upper chest in the roar: %.3f m/size (lift shares on %s)" % [k.surge_visor_fwd, k.surge_lift_on])
+	# (16:00 11-18) the roar's throw-back swung the skull back behind the gorget, so from the hero's low
+	# front view the roaring knight had no head (`ring surge side hero close st=50`). SURGE_LIFT_OLD=1 FAILS: -0.070
+	if k.surge_lift_on and k.surge_visor_fwd < 0.03:
+		return _combat_done(false, "the roar swung the helm back behind the chest (visor %.3f m/size ahead of it, gate >= 0.03): no head from the front" % k.surge_visor_fwd)
 	print("BOT knight: surge spine: coil hunch %.2f rad, roar arch %.2f rad" % [k.surge_hunch_peak, k.surge_arch_back])
 	# (05:00 11-18) the coil must curl the back over the glaive, not just tip a straight trunk (SURGE_HUNCH_OLD=1 FAILS: 0)
 	if k.surge_hunch_peak < 0.3:
