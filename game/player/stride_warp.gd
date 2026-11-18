@@ -471,10 +471,15 @@ var stance_idle := false         # (owner) standing still and square: the clip's
 var _stance := [Vector3.ZERO, Vector3.ZERO]  # each ankle as the idle clip stands it (skeleton space)
 var _stance_ok := false
 # (11-17 21:00, bots) how far (skeleton units) any idle stance snapshot has strayed from the first one
-# taken: the idle clip reads ~0.16-0.35 (its loop and the spawn settle), so ~0.5+ means a snapshot was read off a
-# moving pose (the foe's walk-first-tick bug read ~2). Bots gate it for the hero (heroturn, herostop)
+# taken once the idle has settled: the idle loop sways ~0.1, so ~0.3+ means a snapshot was read off a
+# moving pose (the foe's walk-first-tick bug read ~2). Bots gate it for the hero (heroturn, herostop) and the foes (foestop)
 var stance_spread := 0.0
 var _stance_ref = null
+var _stance_run := 0                 # unbroken idle snapshot ticks
+var _stance_last_f := -10
+const STANCE_REF_SETTLE := 45        # ticks of unbroken idle before the reference is taken (the spawn settle took ~30)
+static var STANCEREF_OLD := OS.has_environment("STANCEREF_OLD")
+static var SPREAD_DBG := OS.has_environment("SPREAD_DBG")
 var settle_reach := 0.0          # (bots) skeleton units the settle step carries the boot
 const STEP_DOWN_H := 0.15        # skeleton units: the turn step's boot counts as down under this
 const STEP_HOLD_MAX := 0.5       # s: the pivot is held for a step still in the air at most this long
@@ -739,12 +744,23 @@ func _pivot_leg(skel: Skeleton3D, delta: float = 1.0 / 60.0) -> void:
 				var fb := skel.find_bone("mixamorig_%sFoot" % ["Left", "Right"][i])
 				if fb >= 0:
 					_stance[i] = skel.get_bone_global_pose(fb).origin
+			# (11-17 23:00) the reference is the first snapshot after STANCE_REF_SETTLE ticks of unbroken idle:
+			# taken on the first idle tick (spawn, ~f8) it caught the body still settling, and every later
+			# snapshot read ~0.2-0.3 units off it (the soldier's 0.352, the knight's 0.247) although the idle
+			# loop itself only sways ~0.1 (`SPREAD_DBG=1` prints each snapshot; STANCEREF_OLD=1 = before)
+			var fr := Engine.get_physics_frames()
+			_stance_run = _stance_run + 1 if fr - _stance_last_f <= 1 else 1
+			_stance_last_f = fr
 			if _stance_ref == null:
-				_stance_ref = [_stance[0], _stance[1]]
+				if STANCEREF_OLD or _stance_run >= STANCE_REF_SETTLE:
+					_stance_ref = [_stance[0], _stance[1]]
 			else:
 				stance_spread = maxf(stance_spread, maxf(((_stance[0] as Vector3) - (_stance_ref[0] as Vector3)).length(),
 					((_stance[1] as Vector3) - (_stance_ref[1] as Vector3)).length()))
 			_stance_ok = true
+			if SPREAD_DBG and _stance_ref != null:
+				print("  spreaddbg i%d f%d sc %.2f dL %.3f dR %.3f" % [get_instance_id() % 100000, fr, ground_scale,
+					((_stance[0] as Vector3) - (_stance_ref[0] as Vector3)).length(), ((_stance[1] as Vector3) - (_stance_ref[1] as Vector3)).length()])
 			if STANCE_DBG and ground_scale > 3.0:
 				print("  stancesnap f%d L %s R %s" % [Engine.get_physics_frames(), str(_stance[0]), str(_stance[1])])
 			# (11-14 01:00) the idle ankle's height over the turf, world (a stop's pin is set at it)

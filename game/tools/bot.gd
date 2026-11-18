@@ -511,12 +511,13 @@ func _physics_process(delta: float) -> void:
 ## (11-17 21:00) the hero's idle stance snapshot (StrideWarp._stance, the spot every stop's and turn's
 ## settle steps aim at) must stay on the idle clip's feet: re-read off a moving pose (as the foes' was on a
 ## walk's first tick, ~2 units) the next settle aims off it and the release slides the boots back
-const STANCE_SPREAD_MAX := 0.5             # the hero reads 0.163 (idle loop), the foe bug read 2.6
+const STANCE_SPREAD_MAX := 0.5             # the hero reads 0.18-0.25 (its post-turn idle re-entry), the foe bug read 2.6
+const FOE_STANCE_SPREAD_MAX := 0.3         # (11-17 23:00) knight/soldier read ~0.12 off a settled reference
 func _stance_spread_ok(p) -> bool:
 	if p.stride_warp == null:
 		return true
 	var sp: float = p.stride_warp.stance_spread
-	print("BOT stance: idle stance snapshots stray %.3f skeleton units at most from the first (gate %.2f)" % [sp, STANCE_SPREAD_MAX])
+	print("BOT stance: idle stance snapshots stray %.3f skeleton units at most from the settled one (gate %.2f)" % [sp, STANCE_SPREAD_MAX])
 	if sp > STANCE_SPREAD_MAX:
 		_combat_done(false, "the hero's idle stance was re-read off a moving pose (%.3f units off the first)" % sp)
 		return false
@@ -5545,11 +5546,15 @@ func _foe_stop_test(attack := false, slope_preset := "") -> void:
 		await _ticks(10)
 	for o in [k, so]:
 		o.process_mode = Node.PROCESS_MODE_INHERIT
-	# (11-17 21:00) read-out, not gated: how far each foe's idle stance snapshots strayed (STANCESNAP_OLD
-	# shows the walk-first-tick re-read the 20:00 fix removed)
+	# (11-17 23:00) gated: how far each foe's idle stance snapshots stray from a settled reference (the
+	# reference now waits STANCE_REF_SETTLE idle ticks: off the spawn tick it read 0.25-0.35 for the idle
+	# loop alone). Knight and soldier read ~0.12; STANCESNAP_OLD (the 20:00 walk-first-tick bug) reads 2.6
 	for o in [k, so]:
 		if o.stride_warp != null:
-			print("BOT foestop stance: %s idle stance snapshots stray %.3f skeleton units at most" % [o.name, o.stride_warp.stance_spread])
+			var spr: float = o.stride_warp.stance_spread
+			print("BOT foestop stance: %s idle stance snapshots stray %.3f skeleton units at most (gate %.2f)" % [o.name, spr, FOE_STANCE_SPREAD_MAX])
+			if fail == "" and spr > FOE_STANCE_SPREAD_MAX:
+				fail = "%s: the idle stance was re-read off a moving pose (%.3f units off the settled one)" % [o.name, spr]
 	if fail != "":
 		return _combat_done(false, fail)
 	_combat_done(true, "a walking foe that winds up sets its boots into the guard instead of skating them" if attack else "a walking foe that stops sets its boots down where they are instead of skating them")
