@@ -3214,6 +3214,33 @@ func _ready() -> void:
 			cam.global_position = sc
 			cam.look_at(rr.centre + Vector3.UP * 0.8)
 			print("SHOT ring stride soldier at %.2f m/s" % sv)
+			if "side" in args:
+				# (11-18 22:00) side: the lens rides square off the soldier's flank (its body's x axis,
+				# the sun side) 3 m out at chest height, so a stop's forward/back sway of the trunk
+				# reads in profile instead of nearly front-on
+				# sidedeg=<deg>: swing the lens round the foe by deg (22:00 frames: the body's x axis saw
+				# the soldier's turned spear guard from behind three-quarter, not in profile)
+				var side_rot := 0.0
+				for a in args:
+					if a.begins_with("sidedeg="):
+						side_rot = deg_to_rad(float(a.substr(8)))
+				var sgn_side := [0.0]
+				var ride_side := func() -> void:
+					if not is_instance_valid(rk) or not is_instance_valid(cam):
+						return
+					var bx: Vector3 = rk.body.global_basis.x
+					bx.y = 0.0
+					bx = bx.normalized().rotated(Vector3.UP, side_rot)
+					if sgn_side[0] == 0.0:
+						var sl0: Vector3 = -world.sun.global_transform.basis.z
+						sgn_side[0] = 1.0 if bx.dot(Vector3(-sl0.x, 0, -sl0.z)) > 0.0 else -1.0
+					var fp: Vector3 = rk.global_position
+					var cp: Vector3 = fp + bx * sgn_side[0] * 3.0
+					cp.y = terrain.height_at(cp.x, cp.z) + 1.15
+					cam.global_position = cp
+					cam.look_at(fp + Vector3.UP * 1.0)
+				ride_side.call()
+				get_tree().process_frame.connect(ride_side)
 		else:
 			sc.y = terrain.height_at(sc.x, sc.z) + 0.25 * sz
 			cam.global_position = sc

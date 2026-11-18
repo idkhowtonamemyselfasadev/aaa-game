@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-0100-breakfall-60.jpg",
-  "time": "2026-11-15T01:00:00Z",
-  "caption": "Winded after the sweep: the left arm lies out ~40 deg from the trunk, palm flat on the turf where it slapped as the back landed (it used to stay raised by the face); the scene is still dim and the figure small in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0200-chintuck.jpg",
-  "time": "2026-11-15T02:00:00Z",
-  "caption": "The slam at 0.42 s: the hero's chin is tucked to the chest so the hat and head stay off the turf as the back lands; the lens is a feet-side three-quarter rather than a true profile and the meadow reads dim.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0200-palmpuff.jpg",
   "time": "2026-11-15T02:00:00Z",
   "caption": "Just after the break-fall slap: a small puff of dust and chaff kicks up off the sward round the hips and palm; the figure is still small and the light flat.",
@@ -897,6 +885,12 @@
   "file": "20261118-2100-soldier-stop-sway.jpg",
   "time": "2026-11-18T21:40:00Z",
   "caption": "Hollow Soldier 10 frames after a walk stops, before (left) vs with the new chest sway (right): boots set clean in both; from this near-front lens the forward pitch barely reads, a side lens is still needed to judge it.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-2302-foestop-side.jpg",
+  "time": "2026-11-18T23:02:26Z",
+  "caption": "The Hollow Soldier settling out of a walk, seen from the new side lens: its boots set down clean, but this angle lands rear three-quarter on its turned spear guard, so the chest sway barely reads, and the ground under it still looks flat and grey.",
   "verdict": "fail"
  }
 ]
