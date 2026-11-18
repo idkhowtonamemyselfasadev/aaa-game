@@ -173,7 +173,15 @@ signal stomped(at: Vector3)
 ## the reveal's dormant stance: the glaive's point driven a hand's depth into the turf ahead of
 ## the right boot, both hands low on the haft, leaned on (SURGE_LEAN is set for a kneeling
 ## body: standing, its point hovered ~0.15 m over the ground at the first size)
-const INTRO_REST := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
+const INTRO_REST_OLD := [20.0, -58.0, Vector3(0.12, 0.94, 0.46), 10.0, 0.1, 0.62]
+## (09:00 11-18) measured against the real helm mesh (bot `knight`, fight-wide haft-in-helm sweep):
+## the old rest ran the haft's upper end 0.17-0.19 m/size up through the head bowed on its chest for
+## the reveal's first ~1.2 s (the crane's opening look at the boss). Swung 50 deg the other way round
+## (yaw 20 -> -30) and the hold 4 cm to its right, the haft rises past the helm's side (-0.10 m/size
+## clear), point still in the turf, fists on (0.025). 26-point sweep `INTRO_REST_TRY=yaw,pitch,x,y,z,chest[,slide,reach]`:
+## +yaw (to 50) cleared it only with a fist 0.14-0.29 off the haft. env INTRO_REST_OLD=1 = the before.
+const INTRO_REST_NEW := [-30.0, -58.0, Vector3(0.16, 0.94, 0.46), 10.0, 0.1, 0.62]
+static var INTRO_REST: Array = _env_pose("INTRO_REST_TRY", INTRO_REST_OLD if OS.get_environment("INTRO_REST_OLD") == "1" else INTRO_REST_NEW)
 ## (05:00 11-07) was [-35, 68, (-0.42, 1.85, 0.3), -14]: the left fist sat right in front of the
 ## visor (y 1.61, arm at full reach across the chest) and the right one at the chest (1.22), so
 ## the roar read cramped, the hands hugging the helm. Re-solved offline against `_place` (both

@@ -6895,6 +6895,8 @@ func _soldier_test() -> void:
 ## (a heavy gets through) and can be parried; at 2/3 health it surges (ring of fire, can't be
 ## hurt) and rises with red, unblockable blows; at 1/3 it surges again and the ground under the
 ## hero erupts every few seconds (a roll on the smoulder passes through). Then it dies.
+const REVEAL_DORM_HELM_MAX := 0.0   # (11-18) m/size the dormant haft may sink into the helm (old 0.185)
+const REVEAL_DORM_FIST_MAX := 0.06  # (11-18) m/size a fist may sit off the leaned-on haft while dormant
 func _knight_test() -> void:
 	var p := _player
 	var k: AshenKnight = _world.knight
@@ -6917,6 +6919,34 @@ func _knight_test() -> void:
 		return _combat_done(false, "the knight is missing its armour or still wears the soldier's hood")
 	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:
 		return _combat_done(false, "knight should wait idle at full health in phase 1")
+	# (09:00 11-18) the haft against the real helm mesh through the WHOLE fight (reveal, leaps,
+	# stomps, staggers, surges): bucket -> [deepest m/size, ticks seen, ticks > 0]. KNIGHT_HELM_SWEEP=1 prints it.
+	var hsw_ring := _helm_rings(k)
+	var hsw := {}
+	var hsw_fist := [0.0]
+	var hsw_fn := func() -> void:
+		if hsw_ring.size() == 0 or k.spear == null or k.state == HollowSoldier.DEAD:
+			return
+		var mk := {0: "thrust", 1: "sweep", AshenKnight.LEAP_MOVE: "leap", AshenKnight.INTRO_MOVE: "intro", AshenKnight.STOMP_MOVE: "stomp"}
+		var sn := ["idle", "stalk", "windup", "strike", "recover", "stagger", "dead"]
+		var key: String = "surge" if k._surge >= 0.0 else ("%s/%s" % [mk.get(k.move_kind, str(k.move_kind)), sn[k.state]] if k.state in [HollowSoldier.WINDUP, HollowSoldier.STRIKE, HollowSoldier.RECOVER] else ("crown" if k._crown_reel and k.state == HollowSoldier.STAGGER else sn[k.state]))
+		var tip: Vector3 = k.spear.to_global(k.spear.tip_local())
+		var butt: Vector3 = k.spear.to_global(-k.spear.tip_local())
+		var hp: float = _haft_in_helm(k, hsw_ring, butt, tip) / k.size_scale
+		if key == "intro/windup" and k._intro_dorm > 0.5:
+			key = "intro/dormant"
+			hsw_fist[0] = maxf(hsw_fist[0], maxf(k.fist_gap[0], k.fist_gap[1] if k.free_l <= 0.02 else 0.0))
+		var r: Array = hsw.get(key, [-9.0, 0, 0, 0.0])
+		if hp > float(r[0]):
+			r[0] = hp
+			r[3] = k.t
+		r[1] += 1
+		if hp > 0.0:
+			r[2] += 1
+		hsw[key] = r
+		if OS.has_environment("INTRO_HELM_DBG") and key.begins_with("intro/"):
+			print("BOT   IHG it %.3f dorm %.2f haft-in-helm %.3f tip over turf %.3f" % [k._intro_it, k._intro_dorm, hp, (tip.y - _world.terrain.height_at(tip.x, tip.z)) / k.size_scale])
+	k.skel.skeleton_updated.connect(hsw_fn)
 	# its arena: a ring of standing stones round the post, the entrance gap toward the start
 	var ring: StoneRing = _world.stone_ring
 	var gate := Vector2(ring.centre.x, ring.centre.z) + ring.facing * StoneRing.RADIUS
@@ -7252,6 +7282,16 @@ func _knight_test() -> void:
 	print("BOT knight: dormant glaive tip %.2f .. %.2f m over the turf" % [tip_lo, tip_hi])
 	if tip_lo < -0.12 or tip_hi > 0.04:
 		return _combat_done(false, "the dormant knight's glaive is not planted in the turf (point %.2f .. %.2f m)" % [tip_lo, tip_hi])
+	# (09:00 11-18) the dormant lean (INTRO_REST, the surge's old lean) ran the haft 0.17-0.19 m/size
+	# up through the bowed helm for the reveal's first 1.2 s, the camera's opening look at the boss
+	var dorm_h: Array = hsw.get("intro/dormant", [-9.0, 0, 0, 0.0])
+	print("BOT knight: dormant haft-in-helm worst %.3f m/size (%d of %d ticks through), fists off the haft at most %.3f m/size" % [dorm_h[0], dorm_h[2], dorm_h[1], hsw_fist[0]])
+	if OS.has_environment("KNIGHT_INTRO_ONLY"):
+		return _combat_done(dorm_h[0] <= REVEAL_DORM_HELM_MAX, "intro only")
+	if dorm_h[1] == 0 or float(dorm_h[0]) > REVEAL_DORM_HELM_MAX:
+		return _combat_done(false, "the dormant knight's glaive runs through its bowed helm (%.3f m per size, gate %.2f)" % [dorm_h[0], REVEAL_DORM_HELM_MAX])
+	if hsw_fist[0] > REVEAL_DORM_FIST_MAX:
+		return _combat_done(false, "the dormant knight's fists ride off the planted glaive (%.3f m per size)" % hsw_fist[0])
 	print("BOT knight: reveal body: head bowed asleep %.2f rad, flung back %.2f rad, knees set %.2f m before the heave" % [k.intro_bow_peak, k.intro_lift_back, k.intro_gather_peak])
 	if k.intro_bow_peak < 0.4 or k.intro_lift_back > -0.35 or k.intro_gather_peak < 0.12:
 		return _combat_done(false, "the reveal's roar has no body beats (asleep bow, gather, head thrown back)")
@@ -7510,6 +7550,13 @@ func _knight_test() -> void:
 		t += get_physics_process_delta_time()
 	p.bot_input = Vector2.ZERO
 	p.bot_heavy = false
+	if k.skel.skeleton_updated.is_connected(hsw_fn):
+		k.skel.skeleton_updated.disconnect(hsw_fn)
+	var hsw_keys := hsw.keys()
+	hsw_keys.sort()
+	for hk in hsw_keys:
+		var r: Array = hsw[hk]
+		print("BOT knight: haft-in-helm %-16s worst %.3f m/size at t %.2f, %d of %d ticks through" % [hk, r[0], r[3], r[2], r[1]])
 	print("BOT knight: fight %.1f s, dead %s, phase %d, surges %d, blasts %d (last %s), guarded %d, staggers %d, parried %d, strikes %d, flames %d %s, leaps %d %s, stomps %d %s" % [t, k.is_dead(), k.phase, k.surges, k.blasts, k.blast_result, k.guarded, k.staggers, k.parried_count, k.strikes, k.flames_spawned, str(k.flame_results), k.leaps, str(k.leap_results), k.stomps, str(k.stomp_results)])
 	if k.surges < 2 or k.blasts < 2:
 		return _combat_done(false, "knight did not surge into both later phases")

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-1500-glide-front.jpg",
-  "time": "2026-11-14T15:00:00Z",
-  "caption": "Glide from the front three-quarter: face, fists on the bar and the patterned wing read; the legs hang one ahead of the other, but a black cloth mass juts out beside the right shoulder.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1500-glide-side.jpg",
-  "time": "2026-11-14T15:00:00Z",
-  "caption": "Hero under the open glider seen side-on from a new riding lens: the legs now hang loose and apart with pointed toes instead of a mirrored kneel; backlit, the legs read dark and the feet are cut by the frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1616-glide-mantle-back.jpg",
   "time": "2026-11-14T16:16:23Z",
   "caption": "Hero gliding seen from behind: the shoulder mantle now falls back down off the overhead arms instead of standing out level like a plate; one thin hem tongue still pokes out at the right shoulder and the legs read dark.",
@@ -885,6 +873,18 @@
   "file": "20261118-0811-surge-kneel-before-after.jpg",
   "time": "2026-11-18T08:11:15Z",
   "caption": "Surge kneel from the flank, 2x crop, before (left) vs after (right): the haft's butt no longer rises through the bowed helm and the blade stays in the ash; the boss is still small in this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0900-reveal-dormant-side.jpg",
+  "time": "2026-11-18T09:00:00Z",
+  "caption": "Reveal opening, side lens: the dormant Ashen Knight leans on its planted glaive, haft now rising past the bowed helm instead of through it; the armour and cape still read flat and blotchy in the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0900-reveal-dormant-close.jpg",
+  "time": "2026-11-18T09:00:00Z",
+  "caption": "Reveal opening, close lens: the haft now leans out beside the helm with the fist low on it (was running up under the helm); the cape texture is blotchy and the boss lacks fine surface detail.",
   "verdict": "fail"
  }
 ]
