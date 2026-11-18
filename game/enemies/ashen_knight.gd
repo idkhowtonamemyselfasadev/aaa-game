@@ -355,7 +355,21 @@ var crowned_count := 0           # bots: crown strikes that rocked it
 const CROWN_STAGGER := 1.3       # s the giant reels after a plunge through its helm
 const CROWN_IMPACT_U := 0.07     # the reel starts here: the head is already knocked down in the hit-stop
 ## The crown reel's glaive: the hands lose it and it droops, blade into the turf, leaned on.
-const CROWN_SLUMP := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
+## (11-18) measured against the helm mesh (bot `crown`): the old slump held the haft's upper third
+## 0.146 m/size up inside the bowed helm's chin skirt (front-right) through the whole daze, 0.175 in
+## the hit-stop frame, and its blade tip hung 0.24 m/size over the turf, not in it. The hands now
+## drop lower (y 0.94 -> 0.58) and further out (z 0.52 -> 0.58), the shaft points straighter ahead
+## (yaw 24 -> 6) a touch steeper: the haft runs 0.12-0.13 m/size clear of the helm, the blade bites
+## the turf (tip 0.03-0.04 m/size over it). `CROWN_SLUMP_OLD=1` = before; `CROWN_SLUMP_TRY=yaw,pitch,x,y,z,tw`.
+const CROWN_SLUMP_OLD := [24.0, -44.0, Vector3(0.14, 0.94, 0.52), 12.0]
+const CROWN_SLUMP_NEW := [6.0, -42.0, Vector3(0.14, 0.58, 0.58), 12.0]
+var CROWN_SLUMP: Array = _crown_slump()
+static func _crown_slump() -> Array:
+	var e := OS.get_environment("CROWN_SLUMP_TRY")
+	if e != "":
+		var f := e.split_floats(",")
+		return [f[0], f[1], Vector3(f[2], f[3], f[4]), f[5]]
+	return CROWN_SLUMP_OLD if OS.get_environment("CROWN_SLUMP_OLD") == "1" else CROWN_SLUMP_NEW
 const CROWN_SHAKE_BACK := 0.62   # (11-18) rad the shake-off tosses the head back (was 0.24)
 const CROWN_BACK_U := [0.7, 0.97] # (11-18) reel u span of the toss (was 0.66-0.96)
 var CROWN_BACK_OLD := OS.get_environment("CROWN_BACK_OLD") == "1"

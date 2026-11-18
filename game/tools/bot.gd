@@ -7895,6 +7895,9 @@ func _knightleap_test() -> void:
 const CLUTCH_GAP_MAX := 0.02    # m per size: the crown reel's left wrist on the helm's temple point (11-10; 0.044 before the bow moved ahead of the arm IK at 06:00, now 0.001-0.003)
 const CLUTCH_REGRIP_MAX := 0.05  # m per size: the right fist as the left comes back and the glaive rises (0.096 before the 11-10 06:00 lean-carried glaive, now 0.03)
 const CROWN_FACE_GATE := 12.0   # (11-18) deg the helm's face must point up in the crown shake-off
+const CROWN_HELM_SLUMP_MAX := 0.0    # (11-18) m/size the slumped haft may sit inside the helm (old slump 0.146)
+const CROWN_HELM_IMPACT_MAX := 0.035 # (11-18) m/size in the hit-stop frame (head snapped down, glaive 60 % there; old 0.175)
+const CROWN_TIP_MAX := 0.07          # (11-18) m/size the slumped blade tip may hang over the turf (old 0.24)
 const CROWN_DROP_GATE := 0.5    # (11-18) share of the glaive's droop already in the crown reel's hit-stop frame
 const CLUTCH_FIST_MAX := 0.06  # m per size: the fists on the glaive one-handed and after the regrip (11-10)
 func _crown_test() -> void:
@@ -7949,6 +7952,42 @@ func _crown_test() -> void:
 			p.bot_heavy = true
 			await _ticks(2)
 			p.bot_heavy = false
+		# (11-18) the knocked-down glaive against the helm: the front-lit impact frames showed the blade
+		# passing close by the helm's right side. Read inside the skeleton's update (the modified pose):
+		# [nearest haft to the neck-crown core m/size, its u, deepest haft into the helm mesh m/size, its u]
+		var hgap := [9.0, 0.0, -9.0, 0.0, -9.0, 9.0]   # + [4] deepest once slumped (u 0.15-0.5), [5] blade tip over the turf (u 0.25-0.45)
+		var hring := _helm_rings(k)
+		var on_skel := func() -> void:
+			if k.state != HollowSoldier.STAGGER or k.spear == null:
+				return
+			var hu: float = k.t / AshenKnight.CROWN_STAGGER
+			if hu > 0.5:
+				return
+			var gt := k.skel.global_transform
+			var hb := k.skel.find_bone("mixamorig_Head")
+			var nb := k.skel.find_bone("mixamorig_Neck")
+			var tip: Vector3 = k.spear.to_global(k.spear.tip_local())
+			var butt: Vector3 = k.spear.to_global(-k.spear.tip_local())
+			var hd: Vector3 = gt * k.skel.get_bone_global_pose(hb).origin
+			var nk: Vector3 = gt * k.skel.get_bone_global_pose(nb).origin
+			var cr: Vector3 = hd + (hd - nk).normalized() * 0.1 * k.size_scale
+			var cp: PackedVector3Array = Geometry3D.get_closest_points_between_segments(butt, tip, nk, cr)
+			var g: float = cp[0].distance_to(cp[1]) / k.size_scale
+			if g < float(hgap[0]):
+				hgap[0] = g
+				hgap[1] = hu
+			if hring.size() > 0:
+				var pen: float = _haft_in_helm(k, hring, butt, tip) / k.size_scale
+				if pen > float(hgap[2]):
+					hgap[2] = pen
+					hgap[3] = hu
+				if hu > 0.15:
+					hgap[4] = maxf(float(hgap[4]), pen)
+			if hu > 0.25 and hu < 0.45:
+				hgap[5] = minf(float(hgap[5]), (tip.y - terrain.height_at(tip.x, tip.z)) / k.size_scale)
+			if OS.has_environment("CROWN_HELM_DBG"):
+				print("    CHG u %.3f haft-core %.3f haft-in-helm %.3f" % [hu, g, _haft_in_helm(k, hring, butt, tip) / k.size_scale if hring.size() > 0 else -9.0])
+		k.skel.skeleton_updated.connect(on_skel)
 		var stag := false
 		var settled := false
 		var peak := -INF
@@ -7961,6 +8000,7 @@ func _crown_test() -> void:
 					and (kind == "drop" or c.plunges > pl0) and not c.is_plunging():
 				settled = true
 				break
+		k.skel.skeleton_updated.disconnect(on_skel)
 		var d := Vector2(p.global_position.x - k.global_position.x, p.global_position.z - k.global_position.z).length()
 		dmg[kind + str(ph)] = hp0 - k.health
 		print("BOT crown: %s at size %.2f (top %.1f m) -> plunges %d, crown %d, reeled %s (crowned %d), damage %.0f, vaults %d, slides %d, hero on turf %s at %.1f m, hero health %.0f/%.0f" % [kind, k.size_scale, top - k.global_position.y, c.plunges - pl0, c.crown_strikes - c0, stag, k.crowned_count - kc0, hp0 - k.health, p.vaults - v0, p.foe_slides - s0, settled, d, p.health, p.health_max])
@@ -8010,6 +8050,9 @@ func _crown_test() -> void:
 				await get_tree().physics_frame
 				if i == 20:
 					t_after = k.t
+			print("BOT crown:   knocked-down glaive vs helm (u < 0.5): haft nearest the neck-crown core %.3f m/size at u %.2f, deepest into the helm mesh %.3f m/size at u %.2f (<= 0 = clear), slumped (u > 0.15) %.3f, blade tip over the turf %.3f m/size" % [hgap[0], hgap[1], hgap[2], hgap[3], hgap[4], hgap[5]])
+			if hring.size() > 0 and (float(hgap[4]) > CROWN_HELM_SLUMP_MAX or float(hgap[2]) > CROWN_HELM_IMPACT_MAX or float(hgap[5]) > CROWN_TIP_MAX):
+				return _combat_done(false, "the crown reel's slumped glaive runs through the helm (%.3f, hit-stop %.3f m/size) or its blade hangs over the turf (%.3f)" % [hgap[4], hgap[2], hgap[5]])
 			print("BOT crown:   a blow in the reel at t %.2f kept it (%d), t after %.2f, stagger len %.2f" % [t_hit, k.crown_hits_kept - kept0, t_after, k._stagger_len])
 			if k.crown_hits_kept != kept0 + 1 or t_after < t_hit:
 				return _combat_done(false, "a blow in the crown reel restarted it as a plain flinch")

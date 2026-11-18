@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261114-1000-knightstair-top.jpg",
-  "time": "2026-11-14T10:50:00Z",
-  "caption": "The knight standing square on the top platform, both boots flat at the edge; lens too low (below the treads) so the stair reads as one block, and the bladed guard turns the torso away.",
-  "verdict": "fail"
- },
- {
-  "file": "20261114-1100-knightstair-down.jpg",
-  "time": "2026-11-14T11:00:00Z",
-  "caption": "The Ashen Knight (x2.2) walking DOWN the test stair side-on: rear boot holds the upper tread while the front boot reaches down toe-first; still reads rear 3/4 (bladed guard), lens low, stair a plain box.",
-  "verdict": "fail"
- },
- {
   "file": "20261114-1100-knightstair-dressed.jpg",
   "time": "2026-11-14T11:00:00Z",
   "caption": "Knight stepping off the stair onto the turf, front boot planted; the trial masonry dressing (kdress) renders as black crooked slabs with stones hanging under it, so it stays opt-in.",
@@ -897,6 +885,18 @@
   "file": "20261118-0504-crown-toss-sheet.jpg",
   "time": "2026-11-18T05:04:14Z",
   "caption": "Helm close-ups, crown-reel shake-off: old toss at 1.13 s (left, face level), new at 1.0 s (mid, still bowed) and 1.13 s (right, tossed back); low-res software render.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0613-knight-crown-slump.jpg",
+  "time": "2026-11-18T06:13:23Z",
+  "caption": "Ashen Knight's crown reel daze, front-lit: the glaive now angles out from the hip with its blade in the turf, clear of the bowed helm; the boss is still small in the lens and the helm's face never shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-0613-knight-crown-slump-before.jpg",
+  "time": "2026-11-18T06:13:23Z",
+  "caption": "Before: the slumped haft ran straight up the chest into the bowed helm's chin skirt (0.15 m/size through it) and the blade hung over the turf.",
   "verdict": "fail"
  }
 ]
