@@ -61,6 +61,10 @@ var arm_aim_lr := Vector2.ZERO # per arm (left, right) added to arm_aim (one arm
 # body's right. The clip and the spine twist yaw the chest off the body, so a big arm swing about
 # the body's right threw one arm out wide and the other in across the face (standing jump drive).
 var arm_chest := 0.0
+# (11-19 14:00) radians: both upper arms swung out sideways (abducted) before the swing about the
+# shoulder line, so a swing forward-and-down keeps the hands out wide of the face (standing jump's
+# downswing from overhead into the tuck passed one hand in front of the mouth)
+var arm_out := 0.0
 var arm_axis_yaw := 0.0            # read-out: how far the arms' swing axis turned off the body's right (rad)
 var ground := 0.0            # 0..1: after the leg bends, the hips are moved up or down so the lower
 							 # ankle sits at its rest height (a posed stance stays on the turf)
@@ -226,6 +230,8 @@ func _crumple_mod(_delta: float) -> void:
 		# a toss over the shoulder: the arm goes up past the ear, the forearm drops behind
 		if clasp != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
+		if arm_out != 0.0:
+			_bend(skel, "mixamorig_%sArm" % side, fwd, -arm_out * (1.0 if side == "Right" else -1.0))
 		if arm_sweep != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, up, arm_sweep)
 		_bend(skel, "mixamorig_%sArm" % side, xa, -lerpf(lerpf(arm + stride * sg + arm_lr[0 if side == "Left" else 1], -1.0, bh), toss_arm, ts))

@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-1846-pushoff.jpg",
-  "time": "2026-11-15T18:46:00Z",
-  "caption": "The hero's first push-off from standing, side-on: the rear boot now keeps its ball on the turf and lifts its heel instead of flicking its toes up; GL fallback lighting and ground speckle still fall short of Wukong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-1900-pushoff.jpg",
-  "time": "2026-11-15T19:30:00Z",
-  "caption": "Hero's first step from rest, side-on: the rear boot lifts its heel with the ball on the turf, no toe flick; boots still read as chunky clogs and the figure is flat-lit.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1900-walkstop.jpg",
   "time": "2026-11-15T19:30:00Z",
   "caption": "Hero settling after a walk stop: both boots flat and grounded; the face is still lost grey under the hood and the scene lacks Wukong-grade grading.",
@@ -885,6 +873,18 @@
   "file": "20261119-1324-standjump-strip-front.jpg",
   "time": "2026-11-19T13:24:08Z",
   "caption": "Standing jump front-lit: old drive (forearm across the face), new drive 0.10/0.13 s (hands overhead), and 0.20 s, where one hand still passes the mouth on the way into the tuck.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1400-jump-downswing-cmp.jpg",
+  "time": "2026-11-19T14:00:00Z",
+  "caption": "Standing jump, front-lit: old jt 0.20 (hand over the mouth) vs new 0.18 / 0.22 (arms come down from overhead in a wide arc, face clear); tuck arms still a little flat and wide.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1400-jump-downswing-020.jpg",
+  "time": "2026-11-19T14:00:00Z",
+  "caption": "Standing jump at jt 0.20 after the fix: face and mask clear, far fist passes by the collar; ground still flat and the hero dim against a bright sky.",
   "verdict": "fail"
  }
 ]

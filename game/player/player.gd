@@ -406,6 +406,13 @@ var CHESTARM_LEAP := OS.get_environment("CHESTARM_LEAP") == "1"
 const STAND_THROW_UP := 0.09        # s: the arms are overhead by here
 const STAND_THROW_HOLD := 0.11      # s: and start down into the tuck from here
 const STAND_THROW_END := 0.26       # s: in the tuck
+# (11-19 14:00) front-lit frames jt 0.18-0.22: coming down from overhead into the tuck, the arms
+# swung through shoulder height straight in front of the face and one hand crossed the mouth.
+# Through the downswing the arms are swung out sideways (crumple.arm_out), so the hands come down
+# in an arc outside the face line, and fold back in by the tuck. STANDOUT_OLD=1 = before.
+var STANDOUT_OLD := OS.get_environment("STANDOUT_OLD") == "1"
+var STAND_ARM_OUT := float(OS.get_environment("STAND_ARM_OUT")) if OS.get_environment("STAND_ARM_OUT") != "" else 0.45
+var _stand_out := 0.0                  # rad this tick, before the arms' hang weight
 var STAND_DRIVE_K := float(OS.get_environment("STAND_DRIVE_K")) if OS.get_environment("STAND_DRIVE_K") != "" else 60.0
 # (11-19 10:00) the leap's empty hands: HandRest's relaxed curl read as a splayed claw on the forward
 # hand reaching out ahead; they close part-way toward the grip's curl (a loose half-fist) with the
@@ -2413,6 +2420,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var leap_sp := 0.0
 	var leap_arm := 0.0
 	var k_arm := k
+	_stand_out = 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -2497,6 +2505,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			arm = lerpf(arm, s_arm, sw)
 			elbow = lerpf(elbow, s_el, sw)
 			leap_arm += sw
+			if not STANDOUT_OLD and not DRIVEARM_OLD:
+				_stand_out = STAND_ARM_OUT * sw * smoothstep(STAND_THROW_HOLD - 0.02, STAND_THROW_HOLD + 0.04, t_air) \
+					* (1.0 - 0.6 * smoothstep(STAND_THROW_END - 0.02, STAND_THROW_END + 0.1, t_air))
 			if not DRIVEARM_OLD and t_air < STAND_THROW_END:
 				k_arm = lerpf(k, 1.0 - exp(-STAND_DRIVE_K * delta), sw)
 	elif landing:
@@ -2650,6 +2661,11 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		# yaws the chest off the body: the right forearm crossed the face on the drive)
 		if not CHESTARM_OLD:
 			crumple.arm_chest = _leap_aim * (1.0 if CHESTARM_LEAP else 1.0 - _leap_s)
+		crumple.arm_out = lerpf(crumple.arm_out, _stand_out * _jp, k_arm)
+		if _stand_out == 0.0 and absf(crumple.arm_out) < 0.003:
+			crumple.arm_out = 0.0
+	elif crumple != null and crumple.arm_out != 0.0:
+		crumple.arm_out = 0.0
 	leap_split = absf(crumple.hip_lr.x - crumple.hip_lr.y) + 2.2 * absf(crumple.stride) if _jp > 0.0 else 0.0
 	if pel != 0.0 or _ja_pelvis != 0.0:
 		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)
@@ -2724,6 +2740,7 @@ func _clear_jump_pose() -> void:
 		if _leap_aim > 0.0:
 			crumple.arm_aim = 0.0
 		crumple.arm_chest = 0.0
+		crumple.arm_out = 0.0
 		crumple.elbow_lr = Vector2.ZERO
 	_leap_aim = 0.0
 	if _ja_neck != 0.0 and crumple != null:
