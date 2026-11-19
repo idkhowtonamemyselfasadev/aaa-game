@@ -886,5 +886,17 @@
   "time": "2026-11-19T21:10:00Z",
   "caption": "Running jump attack at jt 0.48: the chest folds over the blow with the staff driven down ahead; the trunk has yawed so the lens sees the hero from behind, and the front panel still juts out stiff.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261119-2238-runstrike.jpg",
+  "time": "2026-11-19T22:38:18Z",
+  "caption": "Running jump attack at jt 0.30: the front robe panel now folds at the knee and hangs plumb; still wrong: the back panel streams out behind as a rigid straight strip, the hero reads dim and is seen from behind mid-yaw.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-2238-runstrike-oldnew.jpg",
+  "time": "2026-11-19T22:38:18Z",
+  "caption": "Old (left) vs new (right) at the same tick: the front panel (left strip) no longer runs on straight past the knee; the back panel (right strip) is unchanged and next to fix.",
+  "verdict": "fail"
  }
 ]

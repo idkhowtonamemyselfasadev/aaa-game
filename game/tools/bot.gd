@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -137,6 +137,9 @@ func _ready() -> void:
 		return
 	if name == "airstrike":
 		_airstrike_test()
+		return
+	if name == "runstrike":
+		_runstrike_test()
 		return
 	if name == "sweep":
 		_sweep_test()
@@ -4789,6 +4792,114 @@ const PL_SWING_HAT_GATE := 0.0        # m: worst shaft-to-hat margin through the
 const PL_SWING_TURN_GATE := 54.0      # deg/tick: worst shaft turn through the swing down (plunge_t 0.14..0.25; old late dip 57.1)
 const PL_SNATCH_HAT_GATE := -0.04     # m: worst shaft-to-hat margin while the plunge snatches a slung staff (old -0.25)
 const PL_SNATCH_POSED_GATE := 0.0     # m: the same with the clearance re-run on the posed hat (11-09 16:00; old pre-pose hat -0.021)
+## (11-19 22:00) The RUNNING jump attack's front robe panel: run, jump, press light 0.12 s into the
+## jump (as the `jump ja` shot does) and per tick read where the panel's knee fold and hem sit
+## against the higher knee. Gates: the hem hangs below the knee's height and no point of the panel
+## (fold point or hem) is more than RS_AHEAD_GATE m ahead of the most forward knee.
+const RS_AHEAD_GATE := 0.20                # m, hem ahead of the forward knee's joint centre (the cloth over the thigh's front is ~0.1-0.15)
+const RS_LEAN_GATE := 0.05                 # m, the hem ahead of the knee fold point: below the knee the cloth hangs plumb
+const RS_HEM_GATE := 0.0
+func _stick_for(player: Player, dir: Vector3) -> Vector2:
+	var b: Basis = player.cam_pivot.global_transform.basis
+	var f := -b.z
+	f.y = 0.0
+	var r := b.x
+	r.y = 0.0
+	return Vector2(dir.dot(r.normalized()), -dir.dot(f.normalized()))
+
+func _runstrike_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	var terrain: Terrain = _world.get_node("Terrain")
+	Engine.time_scale = 1.0
+	await _ticks(20)
+	var at := p.global_position + Vector3(-7.0, 0, 0)
+	at.y = terrain.height_at(at.x, at.z) + 0.05
+	p.global_position = at
+	p.velocity = Vector3.ZERO
+	await _ticks(10)
+	p.bot_attack = true
+	await _ticks(2)
+	while c.is_attacking() or c.state == StaffCombat.DRAWING:
+		await get_tree().physics_frame
+	await _ticks(20)
+	# run toward world +X for 1 s
+	for i in 60:
+		p.bot_input = _stick_for(p, Vector3(1, 0, 0))
+		await get_tree().physics_frame
+	p.bot_jump = true
+	p.bot_jump_hold = true
+	var skl: Skeleton3D = c.skel
+	var legs := [[skl.find_bone("mixamorig_LeftUpLeg"), skl.find_bone("mixamorig_LeftLeg")], [skl.find_bone("mixamorig_RightUpLeg"), skl.find_bone("mixamorig_RightLeg")]]
+	var g: Node = p.garb
+	var t := 0.0
+	var pressed := false
+	var worst_ahead := -9.0
+	var worst_hem := -9.0
+	var worst_lean := -9.0
+	var ticks := 0
+	var left := false
+	for i in 120:
+		p.bot_input = _stick_for(p, Vector3(1, 0, 0))
+		await get_tree().physics_frame
+		t += 1.0 / 60.0
+		if not p.is_on_floor():
+			left = true
+		if not pressed and t >= 0.12:
+			p.bot_attack = true
+			pressed = true
+		if t > 0.3:
+			p.bot_jump_hold = false
+		await skl.skeleton_updated
+		if not c.is_air_attack():
+			if left and p.is_on_floor() and t > 0.3:
+				break
+			continue
+		var fw: Vector3 = p.body.global_basis.z.normalized()
+		var up: Vector3 = p.body.global_basis.y.normalized()
+		var kmax := -INF
+		var kh := -INF
+		for lg in legs:
+			var kn: Vector3 = skl.global_transform * skl.get_bone_global_pose(lg[1]).origin
+			var hp: Vector3 = skl.global_transform * skl.get_bone_global_pose(lg[0]).origin
+			if (kn - hp).dot(fw) > kmax:
+				kmax = (kn - hp).dot(fw)
+				kh = kn.dot(up)
+			kmax = maxf(kmax, (kn - hp).dot(fw))
+		var hips: Vector3 = skl.global_transform * skl.get_bone_global_pose(skl.find_bone("mixamorig_Hips")).origin
+		var kfw := hips.dot(fw) + kmax
+		var front: Node3D = g._front
+		var fr: Array = g._pivot_frame(front)
+		var sy: float = front.global_basis.y.length()
+		var fl: float = front.get_meta("len", 1.0)
+		var sw: float = g._swing_f
+		var d1: Vector3 = fr[0] * cos(sw) + fr[1] * sin(sw)
+		var fold_pt: Vector3 = front.global_position + d1 * minf(g.fold_front.x, fl) * sy
+		var hem: Vector3 = g.front_hem()
+		var ahead := hem.dot(fw) - kfw
+		worst_lean = maxf(worst_lean, (hem - fold_pt).dot(fw))
+		if OS.has_environment("RS_TRACE"): print("RS fold point ahead of the knee %+.3f" % (fold_pt.dot(fw) - kfw))
+		var hem_up := hem.dot(up) - kh
+		ticks += 1
+		worst_ahead = maxf(worst_ahead, ahead)
+		worst_hem = maxf(worst_hem, hem_up)
+		if OS.has_environment("RS_TRACE"):
+			var gg := -Vector3.UP
+			var plumb := atan2(gg.dot(fr[1]), gg.dot(fr[0]))
+			var th := -9.0
+			for lg in legs:
+				var dd: Vector3 = (skl.global_transform * skl.get_bone_global_pose(lg[1]).origin) - (skl.global_transform * skl.get_bone_global_pose(lg[0]).origin)
+				th = maxf(th, atan2(dd.dot(fr[1]), dd.dot(fr[0])))
+			print("RS plumb %+.2f thigh %+.2f fz.fw %+.2f" % [plumb, th, (fr[1] as Vector3).dot(fw)])
+			print("RS t %.2f u %.2f swing_f %.2f fold %.2f@%.2f lie %.2f hw %.2f aim %.2f posed %s knee_fold %s kmax %.2f ahead %+.3f hem_up %+.3f" % [t, c.air_attack_u(), sw, g.fold_front.y, g.fold_front.x, g.tuck_lie, g.hang_w, g.tuck_aim, g.posed_legs, g.knee_fold, kmax, ahead, hem_up])
+	p.bot_input = Vector2.ZERO
+	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
+	if ticks == 0 or worst_ahead > RS_AHEAD_GATE or worst_lean > RS_LEAN_GATE or worst_hem > RS_HEM_GATE:
+		print("BOT FAIL: runstrike front panel")
+	else:
+		print("BOT PASS: runstrike")
+	get_tree().quit()
+
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat

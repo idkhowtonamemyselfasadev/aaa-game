@@ -89,6 +89,13 @@ var fold_round := 0.0
 var tuck_shin := 9.0
 const TUCK_LIE0 := 0.62                  # thigh angle off the pelvis (rad) the panel starts to lie on it
 const TUCK_LIE1 := 0.95                  # ... and lies along it fully
+## (11-19 22:00) the hang fold: a front panel lying HANG_FOLD0..1 rad forward of plumb folds at the
+## knee by that much (fully past HANG_FOLD1), whatever the thigh's lie (env HANGFOLD_OLD=1 = before)
+const HANG_FOLD0 := 0.08
+const HANG_FOLD1 := 0.30
+var HANGFOLD_OLD := OS.get_environment("HANGFOLD_OLD") == "1"
+const HANG_FOLD_K := 0.6                  # per-tick follow of the hang fold (the thigh is a contact)
+var hang_w := 0.0                         # (bots) the hang fold's weight this tick
 const TUCK_PAD := 0.075                  # m, the cloth over the thigh's top (thigh radius + wool)
 const TUCK_SWING_MAX := 1.75             # rad, the most the front panel lies out along a thigh
 ## (11-15 05:00) The back panel through a fall onto the back (set by the wearer, 0..1): with
@@ -963,6 +970,8 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	var ff := fold_front
 	var fd := ff.x if ff.x < 100.0 else 0.0
 	var fa := INF          # the plumb line's angle in the pivot's frame (INF: no knee fold)
+	var hang_fd := 0.0     # the knee's distance down the panel (0: out of reach), for the hang fold
+	var hang_plumb := 0.0
 	var sy := _front.global_basis.y.length()
 	var fl: float = _front.get_meta("len", 1.0)
 	var up := _body.global_basis.y.normalized()
@@ -985,6 +994,17 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 				hp = h
 				kp = kn
 		lie = smoothstep(TUCK_LIE0, TUCK_LIE1, th)
+		if not HANGFOLD_OLD:
+			# (11-19 22:00) the knee's distance down the panel and the plumb line, whatever the lie:
+			# with the pelvis tipped back (a jump attack's arch) a thigh under TUCK_LIE0 still carries
+			# the panel well forward of plumb, and without a fold it ran on straight past the knee
+			var tn0 := (fz * cos(th) - down * sin(th)).normalized()
+			var r0 := kp + tn0 * TUCK_PAD - o
+			var kd0 := r0.length() / sy
+			if kd0 < fl - 0.05:
+				var g0 := -up
+				hang_fd = kd0
+				hang_plumb = atan2(g0.dot(fz), g0.dot(down))
 		if lie > 0.0:
 			# the knee's top: out from the joint along the thigh line's outward normal
 			var tn := (fz * cos(th) - down * sin(th)).normalized()
@@ -1150,8 +1170,18 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 		tuck_heel = minf(tuck_heel, hl[0] * sin(_swing_b - hl[1]))
 	# below the knee the cloth hangs plumb: the fold takes back what the panel lies out past it
 	var fy := maxf(_swing_f - fa, 0.0) * lie if fa < INF else 0.0
-	if lie > 0.0 or fold_front.y > 0.002:
-		fold_front = Vector2(fd if fd > 0.0 else fl, lerpf(fold_front.y if fold_front.x < 100.0 else 0.0, fy, maxf(k, lie)))
+	var hw := 0.0
+	if hang_fd > 0.0:
+		# a panel lying forward of plumb folds at the knee and hangs plumb below it
+		var over := _swing_f - hang_plumb
+		hw = smoothstep(HANG_FOLD0, HANG_FOLD1, over)
+		var fy2 := maxf(over, 0.0) * hw
+		if fy2 > fy:
+			fy = fy2
+			fd = hang_fd
+	hang_w = hw
+	if lie > 0.0 or hw > 0.0 or fold_front.y > 0.002:
+		fold_front = Vector2(fd if fd > 0.0 else fl, lerpf(fold_front.y if fold_front.x < 100.0 else 0.0, fy, maxf(maxf(k, lie), hw * HANG_FOLD_K)))
 	else:
 		fold_front = Vector2(1000.0, 0.0)
 	var round_to := 0.0 if OS.has_environment(KNEEROUND_OFF_ENV) else TUCK_ROUND
