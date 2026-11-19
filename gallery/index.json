@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261115-1228-soldier-turn.jpg",
-  "time": "2026-11-15T12:28:35Z",
-  "caption": "Hollow Soldier mid-turn on the spot, pivot boot planted from the first tick; the trampled-earth patch and flat noon light still look rough.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1300-hewer-raise.jpg",
   "time": "2026-11-15T13:30:00Z",
   "caption": "The axe hewer raising its chop at the hero beside the practice post (the hewer fight is bot-beatable again); the hewer's body still reads as a dark lump and the hero's hood face is grey.",
@@ -885,6 +879,18 @@
   "file": "20261119-0824-leapstrip.jpg",
   "time": "2026-11-19T08:24:27Z",
   "caption": "Running leap side-on at 0.12 / 0.30 / 0.50 s and 0.03 s into the landing: split stride, lead foot reaching, landing in stride. Still wrong: arms stiff, figure small and in shade.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0909-leaparms.jpg",
+  "time": "2026-11-19T09:09:14Z",
+  "caption": "Running leap side-on at 0.12/0.30/0.45 s: the arms now counter-swing (forward arm reaching ahead, back arm down past the hip) instead of a boxer's guard; the hero is still dim at this lens and the forward hand's fingers splay.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0909-leapside.jpg",
+  "time": "2026-11-19T09:09:14Z",
+  "caption": "Full frame of the running leap at its rise: the pose reads as a leap, but the backlit hero, flat dark ground and empty yard would not pass as a Wukong shot.",
   "verdict": "fail"
  }
 ]

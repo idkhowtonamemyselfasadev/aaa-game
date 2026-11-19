@@ -373,6 +373,17 @@ const LEAP_SPLIT_KNEE := 0.30          # rad: lead knee folded more, trail knee 
 const LEAP_TRAIL_POINT := 0.45         # rad: the trailing foot's toes pointed off the push
 const LEAP_LEAN := 0.16                # rad: the chest over the flight
 const LEAP_ARM := 0.55                 # rad: opposite arm forward / same-side arm back
+# (11-19 09:00) the leap's arms: before, the bends rode on the run clip's guard (elbows ~1.0 rad, fists
+# at the chin), so the counter-swing never read. Now the arms are hung straight first (arm_aim) and
+# posed outright: a low base, the opposite arm swung forward and up with the elbow open, the same-side
+# arm driven back past the hip nearly straight. JUMPARM_OLD=1 = before.
+var JUMPARM_OLD := OS.get_environment("JUMPARM_OLD") == "1"
+const LEAP_ARM_BASE := 0.30            # rad: both upper arms, before the counter-swing
+const LEAP_ARM_FWD := 0.80             # rad: the opposite arm forward on top of the base
+const LEAP_ARM_BACK := 0.78            # rad: the same-side arm back on top of the base
+const LEAP_ELBOW_FWD := 0.55           # rad: the forward arm's elbow, open
+const LEAP_ELBOW_BACK := 0.22          # rad: the back arm, nearly straight
+var _leap_aim := 0.0                   # 0..1: how far the arms are hung straight before the leap's bends
 var _leap_s := 0.0
 var _leap_lead := 1.0
 var leap_split := 0.0                  # (bots) this tick's thigh-to-thigh spread from the leap, rad
@@ -2371,6 +2382,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var nk := 0.0
 	var tl := 0.0
 	var leap_sp := 0.0
+	var leap_arm := 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -2404,6 +2416,13 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		arm = maxf(arm, 1.5 * line * (1.0 - crouch) + 0.2 * crouch)   # thrown up past the shoulders
 		elbow = lerpf(elbow, 0.75, line * (1.0 - crouch))   # elbows bent, not reaching like a sleepwalker
 		spine -= 0.06 * line * (1.0 - crouch)  # the chest opens up on the drive
+		if _jumped and _leap_s > 0.0 and not JUMPARM_OLD and _wj_t < 0.0:
+			# a running leap does not throw both arms up: they counter-swing the legs from the
+			# push on, low and open, and lift out for balance only as the legs reach down
+			leap_arm = _leap_s * (1.0 - crouch)
+			var rch := clampf(-velocity.y / 9.0, 0.0, 1.0)
+			arm = lerpf(arm, LEAP_ARM_BASE + 0.4 * rch, leap_arm)
+			elbow = lerpf(elbow, lerpf(LEAP_ELBOW_BACK, 0.5, rch), leap_arm)
 		if _wj_t >= 0.0 and _wj_t < 0.24:
 			# kicked off a face: the chest arches back away from the stones, the arms fling out
 			# off the holds and the legs stay driven straight out of the kick before they gather
@@ -2544,18 +2563,34 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		var kn := Vector2(kt, kl) if r else Vector2(kl, kt)
 		var an := Vector2(LEAP_TRAIL_POINT * leap_sp, 0.0) if r else Vector2(0.0, LEAP_TRAIL_POINT * leap_sp)
 		var am := Vector2(LEAP_ARM, -LEAP_ARM) * leap_sp * (1.0 if r else -1.0)
+		var em := Vector2.ZERO
+		if not JUMPARM_OLD:
+			# the opposite arm to the lead knee swings forward, elbow open; the same side drives back
+			var ls := minf(leap_sp / maxf(_leap_s, 0.01), 1.0) * _leap_aim
+			var fa := Vector2(LEAP_ARM_FWD, -LEAP_ARM_BACK) * ls
+			am = fa if r else Vector2(fa.y, fa.x)
+			var fe := Vector2(LEAP_ELBOW_FWD - LEAP_ELBOW_BACK, 0.0) * ls
+			em = fe if r else Vector2(fe.y, fe.x)
 		if armed:
 			am = Vector2.ZERO                  # the staff's IK owns the arms
+			em = Vector2.ZERO
 		crumple.hip_lr = crumple.hip_lr.lerp(th * _jp, k)
 		crumple.knee_lr = crumple.knee_lr.lerp(kn * _jp, k)
 		crumple.ankle_lr = crumple.ankle_lr.lerp(an * _jp, k)
 		crumple.arm_lr = crumple.arm_lr.lerp(am * _jp, k)
+		crumple.elbow_lr = crumple.elbow_lr.lerp(em * _jp, k)
 		_leap_posed = leap_sp > 0.0 or crumple.hip_lr.length() > 0.004
 		if not _leap_posed:
 			crumple.hip_lr = Vector2.ZERO
 			crumple.knee_lr = Vector2.ZERO
 			crumple.ankle_lr = Vector2.ZERO
 			crumple.arm_lr = Vector2.ZERO
+			crumple.elbow_lr = Vector2.ZERO
+	if leap_arm > 0.0 or _leap_aim > 0.0:
+		_leap_aim = lerpf(_leap_aim, 0.0 if armed else leap_arm * _jp, k)
+		if leap_arm == 0.0 and _leap_aim < 0.01:
+			_leap_aim = 0.0
+		crumple.arm_aim = _leap_aim
 	leap_split = absf(crumple.hip_lr.x - crumple.hip_lr.y) + 2.2 * absf(crumple.stride) if _jp > 0.0 else 0.0
 	if pel != 0.0 or _ja_pelvis != 0.0:
 		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)
@@ -2627,6 +2662,10 @@ func _clear_jump_pose() -> void:
 	_leap_s = 0.0
 	if crumple != null:
 		crumple.keep_hands = 0.0
+		if _leap_aim > 0.0:
+			crumple.arm_aim = 0.0
+		crumple.elbow_lr = Vector2.ZERO
+	_leap_aim = 0.0
 	if _ja_neck != 0.0 and crumple != null:
 		crumple.neck = 0.0
 	_ja_neck = 0.0

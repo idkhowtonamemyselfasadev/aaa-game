@@ -4448,6 +4448,20 @@ func _jump_test() -> void:
 	var leap_sp := [0.0, 0.0]
 	var trail_th := [9.0, 9.0]
 	var td_split := [0.0, 0.0]
+	# (11-19 09:00) the leap's arms: wrists fore/aft apart along the body (a counter-swing) and
+	# the nearer wrist's distance to the head (a boxer's guard holds both fists ~0.25 m off the chin)
+	var jskel: Skeleton3D = p.crumple.get_skeleton()
+	var jb := [jskel.find_bone("mixamorig_LeftHand"), jskel.find_bone("mixamorig_RightHand"), jskel.find_bone("mixamorig_Head")]
+	var arm_sep := [0.0, 0.0]
+	var arm_head := [0.0, 0.0]          # mean over the leap's flight of the nearer wrist to the head
+	var arm_n := [0, 0]
+	# read after the modifiers have posed the bones (a plain read between ticks sees the clip's pose)
+	var jw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+	var jread := func() -> void:
+		var g := jskel.global_transform
+		for bi in 3:
+			jw[bi] = g * jskel.get_bone_global_pose(jb[bi]).origin
+	jskel.skeleton_updated.connect(jread)
 	for spr in [false, true]:
 		await ground.call()
 		p.set_look(0.0, -0.2)
@@ -4468,6 +4482,17 @@ func _jump_test() -> void:
 				air_ticks += 1
 				leap_sp[0 if not spr else 1] = maxf(leap_sp[0 if not spr else 1], p.leap_split)
 				trail_th[0 if not spr else 1] = minf(trail_th[0 if not spr else 1], minf(p.crumple.hip + p.crumple.hip_lr.x, p.crumple.hip + p.crumple.hip_lr.y))
+				if air_ticks > 6 and not p.is_on_floor():
+					var wl: Vector3 = jw[0]
+					var wr: Vector3 = jw[1]
+					var hd: Vector3 = jw[2]
+					var fw := Vector3(p.model.global_basis.z.x, 0.0, p.model.global_basis.z.z).normalized()
+					var si := 0 if not spr else 1
+					arm_sep[si] = maxf(arm_sep[si], absf((wl - wr).dot(fw)))
+					arm_head[si] += minf(wl.distance_to(hd), wr.distance_to(hd))
+					arm_n[si] += 1
+					if OS.has_environment("JUMPARM_DBG"):
+						print("BOT armdbg %d aim %.2f lr %s elr %s arm %.2f el %.2f sep %.2f" % [air_ticks, p.crumple.arm_aim, str(p.crumple.arm_lr), str(p.crumple.elbow_lr), p.crumple.arm, p.crumple.elbow, (wl - wr).dot(fw)])
 			if p.jumps > j3 and p.is_on_floor() and air_ticks > 3:
 				td_split[0 if not spr else 1] = p.leap_split
 				break
@@ -4476,6 +4501,13 @@ func _jump_test() -> void:
 		p.bot_sprint = false
 		dist.append(Vector2(p.global_position.x - a.x, p.global_position.z - a.z).length())
 	print("BOT jump: run leap %.2f m, sprint leap %.2f m" % dist)
+	jskel.skeleton_updated.disconnect(jread)
+	for si in 2:
+		arm_head[si] /= maxf(arm_n[si], 1)
+	print("BOT jump: leap arms: wrists fore/aft apart run %.2f, sprint %.2f m; nearer wrist to head (flight mean) run %.2f, sprint %.2f m" % [arm_sep[0], arm_sep[1], arm_head[0], arm_head[1]])
+	if not p.JUMPARM_OLD and not p.JUMPSPLIT_OLD:
+		if arm_sep[0] < 0.4 or arm_sep[1] < 0.6 or minf(arm_head[0], arm_head[1]) < 0.5:
+			return _combat_done(false, "the leap's arms do not counter-swing (wrists fore/aft) or stay up in a guard by the chin")
 	print("BOT jump: leap split (thigh to thigh) standing %.2f, run %.2f, sprint %.2f rad; trailing thigh run %.2f, sprint %.2f rad (- = behind); split at touch-down run %.2f, sprint %.2f" % [stand_split, leap_sp[0], leap_sp[1], trail_th[0], trail_th[1], td_split[0], td_split[1]])
 	if not p.JUMPSPLIT_OLD:
 		if leap_sp[0] < 0.9 or leap_sp[1] < 1.1 or trail_th[0] > 0.0 or stand_split > 0.6:
