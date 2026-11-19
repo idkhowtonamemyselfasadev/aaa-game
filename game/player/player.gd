@@ -393,6 +393,15 @@ const STAND_ARM_TUCK := 0.85           # rising tuck: forward and down in front 
 const STAND_ELBOW_TUCK := 0.85
 const STAND_ARM_FALL := 0.6            # falling: out and low for balance
 const STAND_ELBOW_FALL := 0.45
+# (11-19 12:00) the throw was eased at the body's 18/s, so the arms only got to ~face height in the
+# 0.1 s drive and the near hand passed up the face instead of reaching overhead. Through the drive a
+# standing jump's arms (bends and the hang that strips the clip's bent-elbow guard) follow their
+# pose at this rate. DRIVEARM_OLD=1 = before.
+var DRIVEARM_OLD := OS.get_environment("DRIVEARM_OLD") == "1"
+const STAND_THROW_UP := 0.09        # s: the arms are overhead by here
+const STAND_THROW_HOLD := 0.11      # s: and start down into the tuck from here
+const STAND_THROW_END := 0.26       # s: in the tuck
+var STAND_DRIVE_K := float(OS.get_environment("STAND_DRIVE_K")) if OS.get_environment("STAND_DRIVE_K") != "" else 60.0
 # (11-19 10:00) the leap's empty hands: HandRest's relaxed curl read as a splayed claw on the forward
 # hand reaching out ahead; they close part-way toward the grip's curl (a loose half-fist) with the
 # arms' swing. LEAPHAND_OLD=1 = before.
@@ -2398,6 +2407,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var tl := 0.0
 	var leap_sp := 0.0
 	var leap_arm := 0.0
+	var k_arm := k
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -2469,6 +2479,12 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			var s_arm := lerpf(STAND_ARM_TUCK * maxf(tk, 0.5), STAND_ARM_FALL, reach)
 			var s_el := lerpf(STAND_ELBOW_TUCK, STAND_ELBOW_FALL, reach)
 			var lw := line * (1.0 - crouch)
+			if not DRIVEARM_OLD:
+				# (11-19 12:00) the legs' push line is over by 0.15 s, so the arms' throw peaked at
+				# 0.06 s and was back at shoulder height by 0.10 s: the hands swung up the face and
+				# straight down again. The arms get their own throw: up through the crouch's end,
+				# held overhead to ~0.11 s, then eased forward and down into the tuck by ~0.26 s.
+				lw = smoothstep(PUSH_CROUCH * 0.6, STAND_THROW_UP, t_air) * (1.0 - smoothstep(STAND_THROW_HOLD, STAND_THROW_END, t_air))
 			s_arm = lerpf(s_arm, STAND_ARM_THROW, lw)
 			s_el = lerpf(s_el, STAND_ELBOW_THROW, lw)
 			s_arm = lerpf(s_arm, STAND_ARM_BACK, crouch)
@@ -2476,6 +2492,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			arm = lerpf(arm, s_arm, sw)
 			elbow = lerpf(elbow, s_el, sw)
 			leap_arm += sw
+			if not DRIVEARM_OLD and t_air < STAND_THROW_END:
+				k_arm = lerpf(k, 1.0 - exp(-STAND_DRIVE_K * delta), sw)
 	elif landing:
 		var u := land_t / _land_dur
 		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
@@ -2579,8 +2597,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	crumple.hip = lerpf(crumple.hip, hip * _jp, k)
 	crumple.knee = lerpf(crumple.knee, knee * _jp, k)
 	crumple.spine = lerpf(crumple.spine, spine * _jp, k)
-	crumple.arm = lerpf(crumple.arm, arm * _jp, k)
-	crumple.elbow = lerpf(crumple.elbow, elbow * _jp, k)
+	crumple.arm = lerpf(crumple.arm, arm * _jp, k_arm)
+	crumple.elbow = lerpf(crumple.elbow, elbow * _jp, k_arm)
 	crumple.stride = lerpf(crumple.stride, stride * _jp, k)
 	crumple.ankle = lerpf(crumple.ankle, ankle * _jp, k)
 	crumple.sole_flat = lerpf(crumple.sole_flat, flat * _jp, k)
@@ -2619,7 +2637,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			crumple.arm_lr = Vector2.ZERO
 			crumple.elbow_lr = Vector2.ZERO
 	if leap_arm > 0.0 or _leap_aim > 0.0:
-		_leap_aim = lerpf(_leap_aim, 0.0 if armed else leap_arm * _jp, k)
+		_leap_aim = lerpf(_leap_aim, 0.0 if armed else leap_arm * _jp, k_arm)
 		if leap_arm == 0.0 and _leap_aim < 0.01:
 			_leap_aim = 0.0
 		crumple.arm_aim = _leap_aim

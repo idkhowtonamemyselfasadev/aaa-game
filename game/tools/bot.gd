@@ -4330,6 +4330,8 @@ const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 const JA_FIST_GATE := 0.02            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower; (11-08 14:00) 0.04 -> 0.02: the keep aims the fists onto the shaft
 const JA_LOOSE_GATE := 0
 const STAND_FORE_GATE := -0.1   # (11-19 11:00) see the standing jump arms read
+const STAND_DRIVE_GATE := 0.08  # (11-19 12:00) m the higher wrist must get over the head on the drive (old build 0.00)
+const STAND_DRIVE_BEND_GATE := 0.4  # (11-19 12:00) rad: mean elbow bend on the drive (old build 0.54, new 0.29)
 
 func _jump_test() -> void:
 	var p := _player
@@ -4362,15 +4364,18 @@ func _jump_test() -> void:
 	# over the head on the drive (arms thrown up)
 	var sskel: Skeleton3D = p.crumple.get_skeleton()
 	var sb := [sskel.find_bone("mixamorig_LeftHand"), sskel.find_bone("mixamorig_RightHand"), sskel.find_bone("mixamorig_Head"),
-		sskel.find_bone("mixamorig_LeftForeArm"), sskel.find_bone("mixamorig_RightForeArm")]
-	var sw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+		sskel.find_bone("mixamorig_LeftForeArm"), sskel.find_bone("mixamorig_RightForeArm"),
+		sskel.find_bone("mixamorig_LeftArm"), sskel.find_bone("mixamorig_RightArm")]
+	var sw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
 	var s_fore := 0.0                  # flight mean of the forearms' upward tilt (elbow -> wrist . up; a guard ~0.8)
 	var sread := func() -> void:
-		for bi in 5:
+		for bi in 7:
 			sw[bi] = sskel.global_transform * sskel.get_bone_global_pose(sb[bi]).origin
 	var s_head := 0.0
 	var s_n := 0
 	var s_up := -9.0
+	var s_dbend := 0.0
+	var s_dn := 0
 	sskel.skeleton_updated.connect(sread)
 	for hold in [false, true]:
 		await ground.call()
@@ -4421,6 +4426,13 @@ func _jump_test() -> void:
 		if p.jumps > j9:
 			if p._air_t > 0.05 and p._air_t < 0.16:
 				s_up = maxf(s_up, maxf(sw[0].y, sw[1].y) - sw[2].y)
+				# (11-19 12:00) how much the forearms bend up off the upper arm's line on the drive
+				# (the clip's guard elbow folded the near forearm vertical by the face)
+				for ai in 2:
+					var sh_el: Vector3 = sw[3 + ai] - sw[5 + ai]
+					var el_wr: Vector3 = sw[ai] - sw[3 + ai]
+					s_dbend += sh_el.angle_to(el_wr)
+				s_dn += 2
 			if p._air_t > 0.16 and not p.is_on_floor():
 				s_head += minf(sw[0].distance_to(sw[2]), sw[1].distance_to(sw[2]))
 				s_fore += ((sw[0] - sw[3]).normalized().y + (sw[1] - sw[4]).normalized().y) * 0.5
@@ -4432,9 +4444,13 @@ func _jump_test() -> void:
 	sskel.skeleton_updated.disconnect(sread)
 	s_head /= maxf(s_n, 1)
 	s_fore /= maxf(s_n, 1)
+	s_dbend /= maxf(s_dn, 1)
+	print("BOT jump: standing jump drive: elbow bend (mean, both arms, 0 = straight) %.2f rad" % s_dbend)
 	print("BOT jump: standing jump arms: nearer wrist to head (flight mean) %.2f m, forearm upward tilt (flight mean, 1 = straight up) %.2f, higher wrist over the head on the drive %.2f m" % [s_head, s_fore, s_up])
 	if not p.STANDARM_OLD and not p.JUMPARM_OLD and (s_head < 0.45 or s_fore > STAND_FORE_GATE):
 		return _combat_done(false, "a standing jump's arms stay up in the guard by the chin or are not thrown up on the drive")
+	if not p.STANDARM_OLD and not p.JUMPARM_OLD and not p.DRIVEARM_OLD and (s_up < STAND_DRIVE_GATE or s_dbend > STAND_DRIVE_BEND_GATE):
+		return _combat_done(false, "a standing jump's arms are not thrown up over the head on the drive (%.2f m, elbows %.2f rad)" % [s_up, s_dbend])
 	print("BOT jump: tap apex %.2f m, hold apex %.2f m, rising knee tuck %.2f rad, landing dip %.3f m" % [apex[0], apex[1], tuck, dip])
 	if apex[0] > 0.85 or apex[1] < 1.15 or apex[1] - apex[0] < 0.4:
 		return _combat_done(false, "jump height does not follow the hold (tap %.2f, hold %.2f)" % apex)
