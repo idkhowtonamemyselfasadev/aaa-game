@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261115-0500-backrobe-kneel.jpg",
-  "time": "2026-11-15T05:00:00Z",
-  "caption": "Getting up from the knock-down (1.45 s): the long back panel now folds where it meets the turf instead of running 25 cm into the ground; edge-on it still reads as a thin red strip.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0600-kneel-138.jpg",
-  "time": "2026-11-15T06:00:00Z",
-  "caption": "Rising from the knock-down (1.38 s, side-on, grass hidden): the back robe panel now folds flat onto the turf as the seat lifts instead of sinking 7 cm into it; the panel still reads as a thin red strip and the figure looks unsupported in the low-sun frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0600-kneel-150.jpg",
-  "time": "2026-11-15T06:00:00Z",
-  "caption": "Kneel of the get-up (1.50 s): the back panel's tail lies on the ground instead of in it, but the panel is edge-on and reads as a stiff red rod; it needs a cross-section bow over the legs.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0821-soldier-turn-look.jpg",
   "time": "2026-11-15T08:21:58Z",
   "caption": "Hollow Soldier turning on the spot, 4 frames in: the hooded head already looks round at the lens while the torso and spear are still side-on (new ease-in); still GL lighting and the ring floor's flat speckled ground.",
@@ -897,6 +879,18 @@
   "file": "20261119-0223-knight-ring-stride.jpg",
   "time": "2026-11-19T02:23:36Z",
   "caption": "x4.6 Ashen Knight striding in the ring with the knees bound; legs still read dark and flat from this backlit angle and the floor reads flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0300-climbtilt.jpg",
+  "time": "2026-11-19T03:40:00Z",
+  "caption": "Hero climbing the keep from behind mid-reach: the left fist rises beside the hat while the head tips away from it; still wrong: the right hand hides under the capelet, the hair reads as a grey blob and the fist peaks only just over the brim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0300-climbtilt-cmp.jpg",
+  "time": "2026-11-19T03:40:00Z",
+  "caption": "3x crop, before (left) vs after (right): the head now leans off the arm reaching overhead so the hat clears the fist; a subtle change, the reach itself still tops out at the brim.",
   "verdict": "fail"
  }
 ]

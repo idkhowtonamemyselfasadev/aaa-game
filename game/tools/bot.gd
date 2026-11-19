@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -197,6 +197,9 @@ func _ready() -> void:
 		return
 	if name == "climbedge":
 		_climb_edge_test()
+		return
+	if name == "climbhole":
+		_climb_hole_test()
 		return
 	if name == "jump":
 		_jump_test()
@@ -16377,6 +16380,127 @@ func _edge_grid(p: Player, right: Vector3) -> void:
 		print("EDGE grid %.2f %s" % [hi * 0.22, row])
 	print("EDGE stick x %+.0f (grid runs left -> right, digits = depth in dm)" % p.bot_input.x)
 
+## (11-19 03:00) the keep's high outer face where the `climb` shot hangs the hero (the same
+## spot pick: a 4-6 m stretch with real stones over the hands' band) has a robbed-out band of
+## stones at chest height a little way up; before 08:00 11-16 the three face rays missed it and
+## the climber let go and dropped. Hang the hero there and climb on up 3 m: it must never let go,
+## and it must actually have passed the hole (face_holes > 0), else the route no longer tests it.
+func _climb_hole_test() -> void:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var rs := ruins.site
+	var breach := atan2(-rs.z, -rs.x)
+	var best := -1.0
+	var pick := INF
+	for k in 180:
+		var a := TAU * k / 180.0
+		if absf(wrapf(a - breach, -PI, PI)) < 1.2:
+			continue
+		var g := terrain.height_at(rs.x + cos(a) * 5.2, rs.z + sin(a) * 5.2)
+		var h := ruins.wall_top(a, 4.3) - g
+		if h > 4.0 and absf(h - 5.0) < pick:
+			var ra := Vector3(cos(a), 0, sin(a))
+			var ta := Vector3(-ra.z, 0, ra.x)
+			var g5 := terrain.height_at(rs.x + ra.x * 5.0, rs.z + ra.z * 5.0)
+			var solid := true
+			for hy: float in [1.0, 1.6, 2.2, 2.8, 3.4]:
+				for lat: float in [-0.6, -0.3, 0.0, 0.3, 0.6]:
+					var o := rs + ra * 5.0 + ta * lat
+					o.y = g5 + hy
+					var hit := p._ray(o, o - ra * 1.1)
+					if hit.is_empty() or (o - (hit["position"] as Vector3)).dot(ra) > 0.7:
+						solid = false
+			if not solid:
+				continue
+			pick = absf(h - 5.0)
+			best = a
+	if best < 0.0:
+		return _combat_done(false, "climbhole: no solid 4-6 m stretch of the keep's outer face")
+	var rad := Vector3(cos(best), 0, sin(best))
+	var foot := rs + rad * 5.0
+	var g0 := terrain.height_at(foot.x, foot.z)
+	p.starts_enabled = false
+	p.global_position = Vector3(foot.x, g0 + 1.6, foot.z)
+	p.body.rotation.y = atan2(-rad.x, -rad.z)
+	await _ticks(2)
+	p._start_climb(rad)
+	p.climbed = 0.6
+	var y0 := p.global_position.y
+	var gos0 := p.let_gos
+	print("BOT climbhole: hanging at %.2f rad, crown %.2f m over the turf, start %.2f m up (y %.2f)" % [best, ruins.wall_top(best, 4.3) - g0, y0 - g0, y0])
+	var t := 0.0
+	var top := y0
+	while t < 12.0 and (p.climbing or p.mantle_t >= 0.0) and p.mantles == 0:
+		p.bot_input = Vector2(0, -1)
+		await _ticks(3)
+		t += 0.05
+		top = maxf(top, p.global_position.y)
+	p.bot_input = Vector2.ZERO
+	var gos := p.let_gos - gos0
+	print("BOT climbhole: up the face: climbed %.2f m in %.2f s, mantles %d, let-gos %d, y now %.2f m over the turf (y %.2f)" % [top - y0, t, p.mantles, gos, p.global_position.y - g0, p.global_position.y])
+	if gos > 0:
+		return _combat_done(false, "climbhole: the climber let go of the face %d times on the way up" % gos)
+	if p.mantles == 0:
+		return _combat_done(false, "climbhole: climbed %.2f m and never hauled over the crown" % (top - y0))
+	await _ticks(60)
+	# (b) find a hole on this face by rays: a body height where the three face rays (0.7/1.1/1.5 m)
+	# all miss but the course above the hands (1.9 m) and the knees (0.35 m) are stone, then hang
+	# the hero right there and climb on: it must hold on through it and reach the crown
+	var tn := Vector3(-rad.z, 0, rad.x)
+	var hole := Vector3.ZERO
+	for li in 31:
+		var lat := -1.5 + li * 0.1
+		for k in 100:
+			var bo := Vector3(foot.x, y0 - 0.5 + k * 0.05, foot.z) + tn * lat + rad * 0.38
+			var miss := true
+			for hh: float in [0.7, 1.1, 1.5]:
+				var oo := bo + Vector3.UP * hh
+				if not p._ray(oo, oo - rad * 1.1).is_empty():
+					miss = false
+			if not miss:
+				continue
+			var ok := true
+			for hh: float in [1.9, 0.35]:
+				var oo := bo + Vector3.UP * hh
+				if p._ray(oo, oo - rad * 1.1).is_empty():
+					ok = false
+			if ok:
+				hole = bo
+				break
+		if hole != Vector3.ZERO:
+			break
+	if hole == Vector3.ZERO:
+		return _combat_done(false, "climbhole: no hole in the face found by rays, the route no longer tests one")
+	print("BOT climbhole: a hole in the face at body y %.2f (%.2f m over the turf)" % [hole.y, hole.y - g0])
+	p.global_position = hole
+	p.velocity = Vector3.ZERO
+	p.body.rotation.y = atan2(-rad.x, -rad.z)
+	await _ticks(1)
+	p._start_climb(rad)
+	var gos1 := p.let_gos
+	var holes0 := p.face_holes
+	var m0 := p.mantles
+	var ys := hole.y
+	t = 0.0
+	top = ys
+	while t < 8.0 and (p.climbing or p.mantle_t >= 0.0) and p.mantles == m0:
+		p.bot_input = Vector2(0, -1)
+		await _ticks(3)
+		t += 0.05
+		top = maxf(top, p.global_position.y)
+	p.bot_input = Vector2.ZERO
+	var gos2 := p.let_gos - gos1
+	var holes := p.face_holes - holes0
+	print("BOT climbhole: from the hole: climbed %.2f m in %.2f s, mantles %d, let-gos %d, ticks held through the hole %d" % [top - ys, t, p.mantles - m0, gos2, holes])
+	if gos2 > 0:
+		return _combat_done(false, "climbhole: the climber let go at the hole in the face")
+	if holes == 0:
+		return _combat_done(false, "climbhole: hung in the hole but never held on by the course above/below (face_holes 0)")
+	if p.mantles == m0:
+		return _combat_done(false, "climbhole: from the hole the climber never reached the crown")
+	_combat_done(true, "climbhole: up the face and on through a hole in it to the crown without letting go")
+
 func _climb_test() -> void:
 	var p := _player
 	var ruins: Ruins = _world.get_node("Ruins")
@@ -16476,7 +16600,12 @@ func _climb_test() -> void:
 	p.climb_sway.clear()
 	p.climb_roll.clear()
 	p.climb_knee.clear()
-	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm"])
+	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_Head", "mixamorig_Neck", "mixamorig_LeftHand", "mixamorig_RightHand"])
+	# (11-19 03:00) the head gives a hand reaching overhead room: sideways gap along the face
+	# between the head bone and that hand's wrist, while the wrist is over its shoulder
+	var hgap_sum := 0.0
+	var hgap_n := 0
+	var tilt_max := 0.0
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
 		await _ticks(3)
@@ -16485,6 +16614,19 @@ func _climb_test() -> void:
 		if p.climbing and p._climb_t > 0.4 and p._wk_coil < 0.0:
 			# square to the face: the hips' and chest's forward (bone +Z, flattened) against into-the-face
 			var into := -Vector3(p.climb_normal.x, 0, p.climb_normal.z).normalized()
+			var rt := into.cross(Vector3.UP).normalized()
+			var hd0 := csk.global_transform * (p.crumple.probed.get("mixamorig_Head", Vector3.ZERO) as Vector3)
+			var nk := csk.global_transform * (p.crumple.probed.get("mixamorig_Neck", Vector3.ZERO) as Vector3)
+			var hd := hd0 + (hd0 - nk).normalized() * 0.22   # the hat's crown over the head joint
+			tilt_max = maxf(tilt_max, absf(p.crumple.head_tilt))
+			for i in 2:
+				var wb := "mixamorig_LeftHand" if i == 0 else "mixamorig_RightHand"
+				var sb := "mixamorig_LeftArm" if i == 0 else "mixamorig_RightArm"
+				var w := csk.global_transform * (p.crumple.probed.get(wb, Vector3.ZERO) as Vector3)
+				var sj := csk.global_transform * (p.crumple.probed.get(sb, Vector3.ZERO) as Vector3)
+				if p._hold_t[i] < 1.0 and w.y > sj.y + 0.15:
+					hgap_sum += absf((w - hd).dot(rt))
+					hgap_n += 1
 			sq_n += 1
 			for k: String in sq_bones:
 				# as Crumple posed them (outside the modifier the skeleton reads the clip's pose)
@@ -16572,6 +16714,10 @@ func _climb_test() -> void:
 	var top_mean := reach_top_sum / maxf(reach_top_n, 1)
 	var over_frac := float(reach_over_head) / maxf(reach_top_n, 1)
 	print("BOT climb: overhead reach: wrist over its shoulder %.3f..%.3f m (mean %.3f), higher hand mean %.3f m, a wrist over the head (> %.2f m) %.0f%% of the time (%d samples), arm %.3f m, shoulders %.3f m off their holds (mean)" % [reach_lo, reach_hi, reach_mean, top_mean, CLIMB_HEAD_OVER_SH, over_frac * 100.0, reach_top_n, p.crumple.arm_len, shoff_sum / maxf(p.climb_reach.size(), 1)])
+	var hgap := hgap_sum / maxf(hgap_n, 1)
+	print("BOT climb: head gives the overhead reach room: wrist %.3f m to the side of the hat crown (mean, %d samples of a reaching hand over its shoulder), head tilt up to %.3f rad" % [hgap, hgap_n, tilt_max])
+	if not OS.has_environment("CLIMB_TILT_OLD") and not OS.has_environment("CLIMB_TILT") and (hgap_n < 4 or tilt_max < 0.1):
+		return _combat_done(false, "climb: the head does not lean off the arm reaching overhead (tilt %.3f rad, %d samples)" % [tilt_max, hgap_n])
 	var dmin := Vector4(INF, INF, INF, INF)
 	var dsum := Vector4.ZERO
 	for cd: Vector4 in p.climb_depth:

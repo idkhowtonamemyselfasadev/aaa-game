@@ -125,6 +125,10 @@ const RESPAWN_FADE := 1.2             # seconds the black lifts over after wakin
 const CLIMB_SPEED := 1.35
 const CLIMB_LOOK_UP := Vector2(0.18, 0.22)   # neck lift on the face, + more while a hand reaches
 const CLIMB_LOOK_TURN := 0.32              # head turn toward the reaching hand (+ left)
+## (11-19 03:00) rad the head tips its crown AWAY from a hand reaching overhead (the arm goes up
+## past the ear, so the head gives it room; from behind the fist then clears the hat instead of
+## stopping at its brim). CLIMB_TILT=<rad> to tune, CLIMB_TILT_OLD=1 = none (before).
+static var CLIMB_LOOK_TILT := 0.0 if OS.has_environment("CLIMB_TILT_OLD") else (float(OS.get_environment("CLIMB_TILT")) if OS.has_environment("CLIMB_TILT") else 0.2)
 const CLIMB_SURGE := Vector2(1.4, 0.55)   # speed x while every limb holds / while one reaches (`_climb_rhythm`)
 const CLIMB_COST := 9.0               # stamina per second while moving on the face
 const CLIMB_HOLD_COST := 1.5          # per second hanging still
@@ -200,6 +204,7 @@ var climbing := false
 var climb_normal := Vector3.ZERO      # the face's outward normal under the hands
 var climbs := 0                       # faces caught (bots read this)
 var mantles := 0                      # ledges hauled up onto (bots read this)
+var let_gos := 0                      # (bots) climbs ended by letting go of the face (dodge, drop, knock-off), not a mantle or a wall jump
 var wall_jumps := 0                   # kicks off a face (bots read this)
 var _wj_t := -1.0                     # s since the kick off a face (-1: none)
 var _wk_coil := -1.0                  # s into the coil before a kick off a face (-1: none)
@@ -2849,6 +2854,7 @@ func _start_climb(n: Vector3) -> void:
 
 func _let_go(push: float, regrab: float) -> void:
 	if OS.has_environment("LETGO_DBG"): print("SHOT LETGO push %.2f regrab %.2f stamina %.1f floor %s t %.2f" % [push, regrab, stamina, is_on_floor(), _climb_t])
+	let_gos += 1
 	climbing = false
 	_wk_coil = -1.0
 	_regrab_t = regrab
@@ -2873,6 +2879,7 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 	if crumple != null:
 		crumple.neck = 0.0                     # the climb's look up at the holds is over
 		crumple.head_turn = 0.0
+		crumple.head_tilt = 0.0
 	stamina -= WALL_JUMP_COST
 	velocity = out + Vector3.UP * WALL_JUMP_UP
 	global_position += n * 0.1               # clear of the rough stones (a jutting lip would eat the rise)
@@ -2912,6 +2919,7 @@ func _kick_coil(delta: float, n: Vector3, gap: float, right: Vector3) -> void:
 		# the eyes come off the holds onto where the kick will fly
 		crumple.neck = lerpf(crumple.neck, 0.0, 1.0 - exp(-25.0 * delta))
 		crumple.head_turn = lerpf(crumple.head_turn, 0.0, 1.0 - exp(-25.0 * delta))
+		crumple.head_tilt = lerpf(crumple.head_tilt, 0.0, 1.0 - exp(-25.0 * delta))
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	# drawn in to a hand's breadth off the stones and a little down onto the bent legs
 	var v := -n * clampf((gap - (CLIMB_GAP - 0.1)) * 10.0, -1.2, 1.2) - up_dir * 0.9 * (1.0 - u)
@@ -3385,13 +3393,19 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 	# reaching, settling back as it takes the stone
 	var look := 0.0
 	var lift := 0.0
+	var tilt := 0.0
 	for i in 2:
 		var r := sin(PI * float(_hold_t[i])) if _hold_t[i] < 1.0 else 0.0
 		lift = maxf(lift, r)
 		look += (CLIMB_LOOK_TURN if i == 0 else -CLIMB_LOOK_TURN) * r
+		# the head leans off the reaching arm, more the higher its hold stands over the shoulder
+		if _hold_t[i] < 1.0 and crumple.shoulder[i] != Vector3.ZERO:
+			var over := smoothstep(0.0, 0.4, (_hold[i] as Vector3).y - (crumple.shoulder[i] as Vector3).y)
+			tilt += (-CLIMB_LOOK_TILT if i == 0 else CLIMB_LOOK_TILT) * smoothstep(0.0, 0.5, float(_hold_t[i]) + 0.15) * over
 	var kl := 1.0 - exp(-10.0 * delta)
 	crumple.neck = lerpf(crumple.neck, CLIMB_LOOK_UP.x + CLIMB_LOOK_UP.y * lift, kl)
 	crumple.head_turn = lerpf(crumple.head_turn, look, kl)
+	crumple.head_tilt = lerpf(crumple.head_tilt, tilt, kl)
 
 ## Where a foot wants to stand: on the face below its hip, found by a ray so the toes sit on
 ## a real stone. `lift` staggers the feet.
@@ -3526,6 +3540,7 @@ func _clear_climb_pose() -> void:
 	crumple.square = 0.0
 	crumple.neck = 0.0
 	crumple.head_turn = 0.0
+	crumple.head_tilt = 0.0
 	crumple.hip_shift = Vector3.ZERO
 	crumple.hip_roll = 0.0
 	crumple.knee_out = [0.0, 0.0]
