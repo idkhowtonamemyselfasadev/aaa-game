@@ -387,7 +387,7 @@ var _leap_aim := 0.0                   # 0..1: how far the arms are hung straigh
 # (11-19 11:00) the standing jump's arms, hung straight first like the leap's (rad, on the hung arm)
 var STANDARM_OLD := OS.get_environment("STANDARM_OLD") == "1"
 const STAND_ARM_BACK := -0.55          # crouch: swung back behind the hips
-const STAND_ARM_THROW := 2.1           # push line: thrown up past the head
+var STAND_ARM_THROW := float(OS.get_environment("STAND_ARM_THROW")) if OS.get_environment("STAND_ARM_THROW") != "" else 2.7   # push line: thrown up overhead (11-19 13:00: 2.1 left the hands at face height, a forearm over the face from a 3/4 lens)
 const STAND_ELBOW_THROW := 0.2
 const STAND_ARM_TUCK := 0.85           # rising tuck: forward and down in front of the knees
 const STAND_ELBOW_TUCK := 0.85
@@ -398,6 +398,11 @@ const STAND_ELBOW_FALL := 0.45
 # standing jump's arms (bends and the hang that strips the clip's bent-elbow guard) follow their
 # pose at this rate. DRIVEARM_OLD=1 = before.
 var DRIVEARM_OLD := OS.get_environment("DRIVEARM_OLD") == "1"
+# (11-19 13:00) the first front-lit frame of the drive: the right forearm swung up across the face.
+# The arms swung about the body's right while the clip yaws the chest; they now swing about the
+# chest's shoulder line (crumple.arm_chest). CHESTARM_OLD=1 = before; CHESTARM_LEAP=1 also in a leap.
+var CHESTARM_OLD := OS.get_environment("CHESTARM_OLD") == "1"
+var CHESTARM_LEAP := OS.get_environment("CHESTARM_LEAP") == "1"
 const STAND_THROW_UP := 0.09        # s: the arms are overhead by here
 const STAND_THROW_HOLD := 0.11      # s: and start down into the tuck from here
 const STAND_THROW_END := 0.26       # s: in the tuck
@@ -2641,6 +2646,10 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		if leap_arm == 0.0 and _leap_aim < 0.01:
 			_leap_aim = 0.0
 		crumple.arm_aim = _leap_aim
+		# (11-19 13:00) a standing jump's arms swing about the chest's shoulder line (the clip
+		# yaws the chest off the body: the right forearm crossed the face on the drive)
+		if not CHESTARM_OLD:
+			crumple.arm_chest = _leap_aim * (1.0 if CHESTARM_LEAP else 1.0 - _leap_s)
 	leap_split = absf(crumple.hip_lr.x - crumple.hip_lr.y) + 2.2 * absf(crumple.stride) if _jp > 0.0 else 0.0
 	if pel != 0.0 or _ja_pelvis != 0.0:
 		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)
@@ -2714,6 +2723,7 @@ func _clear_jump_pose() -> void:
 		crumple.keep_hands = 0.0
 		if _leap_aim > 0.0:
 			crumple.arm_aim = 0.0
+		crumple.arm_chest = 0.0
 		crumple.elbow_lr = Vector2.ZERO
 	_leap_aim = 0.0
 	if _ja_neck != 0.0 and crumple != null:

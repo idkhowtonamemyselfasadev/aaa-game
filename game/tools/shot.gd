@@ -2952,6 +2952,27 @@ func _ready() -> void:
 			jcam.global_position = jc
 			jcam.look_at(back + Vector3.UP * 0.95)
 			print("SHOT jlens cam %s hero %s side %s" % [jc, back, jside])
+		if "keylight" in args:
+			# (11-19 13:00) keylight: a run along +X is backlit or side-lit at every daylight hour
+			# (the sun's azimuth never stands ahead of it), so a front lens of a jump never sees
+			# the chest, hands and face in light. After the pose is frozen and the lens placed,
+			# swing the sun to stand behind the lens's shoulder: keyswing=<deg> (35) round from
+			# the lens bearing, keyelev=<deg> (32) up. Judging only: the world clock is untouched.
+			var kcam := get_viewport().get_camera_3d()
+			var ksw := 35.0
+			var kel := 32.0
+			for a in args:
+				if str(a).begins_with("keyswing="):
+					ksw = float(str(a).substr(9))
+				if str(a).begins_with("keyelev="):
+					kel = float(str(a).substr(8))
+			var kh := kcam.global_position - back
+			kh.y = 0.0
+			kh = kh.normalized().rotated(Vector3.UP, deg_to_rad(ksw))
+			var to_sun := (kh * cos(deg_to_rad(kel)) + Vector3.UP * sin(deg_to_rad(kel))).normalized()
+			var sn: DirectionalLight3D = world.sun
+			sn.look_at(sn.global_position - to_sun, Vector3.UP if absf(to_sun.y) < 0.99 else Vector3.FORWARD)
+			print("SHOT keylight to_sun %s (swing %.0f elev %.0f)" % [to_sun, ksw, kel])
 		if "fistpx" in args:
 			# fistpx: where each closed fist and the staff's ends land on screen, and the fist gap,
 			# so a frame can be checked for a hand that only looks off the shaft; runs after every
@@ -2967,6 +2988,12 @@ func _ready() -> void:
 						print("SHOT fistpx staff end %s" % _px(pcam2.unproject_position(st.global_position + st.global_basis.y.normalized() * e * 0.9)))
 				print("SHOT fistpx gap R %.3f L %.3f" % [fcm.fist_gap[0], fcm.fist_gap[1]])
 		print("SHOT jump ran %.2f m" % Vector2(jd.x, jd.z).length())
+		print("SHOT armchest %.2f axis yaw %.1f deg leap_s %.2f leap_aim %.2f facing %s" % [player.crumple.arm_chest, rad_to_deg(player.crumple.arm_axis_yaw), player._leap_s, player._leap_aim, player.body.global_basis.z])
+		var dsk: Skeleton3D = player.crumple.get_skeleton()
+		var dp := func(bn: String) -> Vector3: return dsk.global_transform * dsk.get_bone_global_pose(dsk.find_bone(bn)).origin
+		var dl: Vector3 = (dp.call("mixamorig_LeftArm") - dp.call("mixamorig_RightArm")).normalized()
+		var dh: Vector3 = dp.call("mixamorig_Head")
+		print("SHOT wrists out L %.3f R %.3f up L %.3f R %.3f" % [(dp.call("mixamorig_LeftHand") - dh).dot(dl), -(dp.call("mixamorig_RightHand") - dh).dot(dl), dp.call("mixamorig_LeftHand").y - dh.y, dp.call("mixamorig_RightHand").y - dh.y])
 		print("SHOT lean pitch %.3f roll %.3f blend %.2f" % [player.lean.x, player.lean.y, player._blend])
 		print("SHOT pivot t %.3f pivots %d yaw %.2f stride %.2f dip %.3f" % [player.pivot_t, player.pivots, player.body.rotation.y, player.crumple.stride, player._pose_dip])
 		print("SHOT stop t %.3f stops %d lead %+.0f hip_lr %s knee_lr %s dip %.3f" % [player.stop_t, player.stops, player.stop_lead, player.crumple.hip_lr, player.crumple.knee_lr, player._pose_dip])

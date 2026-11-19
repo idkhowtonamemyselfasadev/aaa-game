@@ -4330,7 +4330,9 @@ const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 const JA_FIST_GATE := 0.02            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower; (11-08 14:00) 0.04 -> 0.02: the keep aims the fists onto the shaft
 const JA_LOOSE_GATE := 0
 const STAND_FORE_GATE := -0.1   # (11-19 11:00) see the standing jump arms read
-const STAND_DRIVE_GATE := 0.08  # (11-19 12:00) m the higher wrist must get over the head on the drive (old build 0.00)
+const STAND_WRIST_OUT_GATE := 0.25  # (11-19 13:00) m each wrist must stay out off the head on the drive (old build R 0.12, L 0.50)
+const STAND_WRIST_LR_GATE := 0.08   # m most the two wrists' outward places may differ (old 0.38)
+const STAND_DRIVE_GATE := 0.22  # (11-19 12:00; 13:00 0.08 -> 0.22) m the higher wrist must get over the head on the drive (11-19 11:00 build 0.00, 12:00 0.16, 13:00 0.32)
 const STAND_DRIVE_BEND_GATE := 0.4  # (11-19 12:00) rad: mean elbow bend on the drive (old build 0.54, new 0.29)
 
 func _jump_test() -> void:
@@ -4376,6 +4378,8 @@ func _jump_test() -> void:
 	var s_up := -9.0
 	var s_dbend := 0.0
 	var s_dn := 0
+	var s_wout := [9.0, 9.0]           # each wrist's least outward place off the head on the drive (m)
+	var s_wface := [9.0, 9.0]          # the same, only while the wrist is up by the face (over the chin)
 	sskel.skeleton_updated.connect(sread)
 	for hold in [false, true]:
 		await ground.call()
@@ -4433,6 +4437,19 @@ func _jump_test() -> void:
 					var el_wr: Vector3 = sw[ai] - sw[3 + ai]
 					s_dbend += sh_el.angle_to(el_wr)
 				s_dn += 2
+				# (11-19 13:00) each wrist's place off the head across the body (+ = out on its own
+				# side): a front-lit frame showed the left forearm swung up across the face
+				var lft: Vector3 = (sw[5] - sw[6]).normalized()
+				for ai in 2:
+					var out: float = (sw[ai] - sw[2]).dot(lft) * (1.0 if ai == 0 else -1.0)
+					s_wout[ai] = minf(s_wout[ai], out)
+					if sw[ai].y > sw[2].y - 0.15:
+						s_wface[ai] = minf(s_wface[ai], out)
+				if OS.get_environment("DRIVE_DBG") == "1":
+					print("BOT drive t %.3f L out %.3f up %.3f  R out %.3f up %.3f" % [p._air_t,
+						(sw[0] - sw[2]).dot(lft), sw[0].y - sw[2].y, -(sw[1] - sw[2]).dot(lft), sw[1].y - sw[2].y])
+					print("BOT drive   shoulders out L %.3f R %.3f  elbows out L %.3f R %.3f  fwd wrist L %.3f R %.3f" % [(sw[5] - sw[2]).dot(lft), -(sw[6] - sw[2]).dot(lft),
+						(sw[3] - sw[2]).dot(lft), -(sw[4] - sw[2]).dot(lft), (sw[0] - sw[2]).dot(lft.cross(Vector3.UP).normalized()), (sw[1] - sw[2]).dot(lft.cross(Vector3.UP).normalized())])
 			if p._air_t > 0.16 and not p.is_on_floor():
 				s_head += minf(sw[0].distance_to(sw[2]), sw[1].distance_to(sw[2]))
 				s_fore += ((sw[0] - sw[3]).normalized().y + (sw[1] - sw[4]).normalized().y) * 0.5
@@ -4446,11 +4463,14 @@ func _jump_test() -> void:
 	s_fore /= maxf(s_n, 1)
 	s_dbend /= maxf(s_dn, 1)
 	print("BOT jump: standing jump drive: elbow bend (mean, both arms, 0 = straight) %.2f rad" % s_dbend)
+	print("BOT jump: standing jump drive: wrist out off the head (least, + = out on its own side) L %.3f R %.3f m; while up by the face L %.3f R %.3f m" % [s_wout[0], s_wout[1], s_wface[0], s_wface[1]])
 	print("BOT jump: standing jump arms: nearer wrist to head (flight mean) %.2f m, forearm upward tilt (flight mean, 1 = straight up) %.2f, higher wrist over the head on the drive %.2f m" % [s_head, s_fore, s_up])
 	if not p.STANDARM_OLD and not p.JUMPARM_OLD and (s_head < 0.45 or s_fore > STAND_FORE_GATE):
 		return _combat_done(false, "a standing jump's arms stay up in the guard by the chin or are not thrown up on the drive")
 	if not p.STANDARM_OLD and not p.JUMPARM_OLD and not p.DRIVEARM_OLD and (s_up < STAND_DRIVE_GATE or s_dbend > STAND_DRIVE_BEND_GATE):
 		return _combat_done(false, "a standing jump's arms are not thrown up over the head on the drive (%.2f m, elbows %.2f rad)" % [s_up, s_dbend])
+	if not p.STANDARM_OLD and not p.JUMPARM_OLD and not p.CHESTARM_OLD and (minf(s_wout[0], s_wout[1]) < STAND_WRIST_OUT_GATE or absf(s_wout[0] - s_wout[1]) > STAND_WRIST_LR_GATE):
+		return _combat_done(false, "a standing jump's arms swing up lopsided, a forearm across the face (wrists out L %.2f R %.2f m)" % [s_wout[0], s_wout[1]])
 	print("BOT jump: tap apex %.2f m, hold apex %.2f m, rising knee tuck %.2f rad, landing dip %.3f m" % [apex[0], apex[1], tuck, dip])
 	if apex[0] > 0.85 or apex[1] < 1.15 or apex[1] - apex[0] < 0.4:
 		return _combat_done(false, "jump height does not follow the hold (tap %.2f, hold %.2f)" % apex)

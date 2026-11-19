@@ -57,6 +57,11 @@ var ankle_lr := Vector2.ZERO # likewise on top of ankle, after sole_flat (- toes
 var arm_lr := Vector2.ZERO   # likewise on top of arm (a counter-swing)
 var elbow_lr := Vector2.ZERO # radians per forearm (left, right) on top of elbow
 var arm_aim_lr := Vector2.ZERO # per arm (left, right) added to arm_aim (one arm kept hanging while the other is posed)
+# (11-19 13:00) 0..1: hang and swing the arms about the chest's own shoulder line instead of the
+# body's right. The clip and the spine twist yaw the chest off the body, so a big arm swing about
+# the body's right threw one arm out wide and the other in across the face (standing jump drive).
+var arm_chest := 0.0
+var arm_axis_yaw := 0.0            # read-out: how far the arms' swing axis turned off the body's right (rad)
 var ground := 0.0            # 0..1: after the leg bends, the hips are moved up or down so the lower
 							 # ankle sits at its rest height (a posed stance stays on the turf)
 var settle := 0              # after `ground`: 1 the left leg, 2 the right one is bent down at the knee
@@ -191,6 +196,16 @@ func _crumple_mod(_delta: float) -> void:
 		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
 		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
 	_bend(skel, "mixamorig_Hips", x, pelvis)
+	var xa := x                        # the arms' swing axis
+	if arm_chest > 0.0:
+		var lsb := skel.find_bone("mixamorig_LeftArm")
+		var rsb := skel.find_bone("mixamorig_RightArm")
+		if lsb >= 0 and rsb >= 0:
+			var xc := skel.get_bone_global_pose(lsb).origin - skel.get_bone_global_pose(rsb).origin   # body +X is the left
+			xc -= up * xc.dot(up)
+			if xc.length() > 1e-4:
+				xa = x.slerp(xc.normalized(), clampf(arm_chest, 0.0, 1.0)).normalized()
+	arm_axis_yaw = x.signed_angle_to(xa, up)
 	for side in ["Left", "Right"]:
 		var sg := 1.0 if side == "Left" else -1.0
 		if leg_aim > 0.0:
@@ -204,7 +219,7 @@ func _crumple_mod(_delta: float) -> void:
 		var aa := minf(arm_aim + arm_aim_lr[li], 1.0)
 		if aa > 0.0:
 			_hang(skel, "mixamorig_%sArm" % side, "mixamorig_%sForeArm" % side, "mixamorig_%sHand" % side,
-				(-up + x * sg * 0.3).normalized(), aa)
+				(-up + xa * sg * 0.3).normalized(), aa)
 		var bh := back_hand if side == "Right" else 0.0
 		var ts := toss if side == "Right" else 0.0
 		# a hand to the back: the upper arm swings behind the hip, the forearm folds across;
@@ -213,8 +228,8 @@ func _crumple_mod(_delta: float) -> void:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, clasp * (1.0 if side == "Right" else -1.0))
 		if arm_sweep != 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, up, arm_sweep)
-		_bend(skel, "mixamorig_%sArm" % side, x, -lerpf(lerpf(arm + stride * sg + arm_lr[0 if side == "Left" else 1], -1.0, bh), toss_arm, ts))
-		_bend(skel, "mixamorig_%sForeArm" % side, x, -lerpf(lerpf(elbow + elbow_lr[0 if side == "Left" else 1], 1.7, bh), toss_elbow, ts))
+		_bend(skel, "mixamorig_%sArm" % side, xa, -lerpf(lerpf(arm + stride * sg + arm_lr[0 if side == "Left" else 1], -1.0, bh), toss_arm, ts))
+		_bend(skel, "mixamorig_%sForeArm" % side, xa, -lerpf(lerpf(elbow + elbow_lr[0 if side == "Left" else 1], 1.7, bh), toss_elbow, ts))
 		if ts > 0.0:
 			_bend(skel, "mixamorig_%sArm" % side, fwd, toss_in * ts)
 		if side == "Right" and flick > 0.0:
