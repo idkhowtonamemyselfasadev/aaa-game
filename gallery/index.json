@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-2200-turn-side-sheet.jpg",
-  "time": "2026-11-15T22:00:00Z",
-  "caption": "Turn on the spot side-on at ticks 0,4,8,12,16,20,30 with the harness fixed: the head reaches the lens first, the body follows, the gather boot sets down with no pop; the meadow is flat and dark at this scale and the robe hides the boots.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-2200-turn-side-tick8.jpg",
-  "time": "2026-11-15T22:00:00Z",
-  "caption": "Tick 8 of the turn: the head already turned to the lens while the chest is still side-on; the staff, hat and capelet read, but the lighting is flat and the scene empty, not a Wukong frame yet.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-2307-turngather-boots.jpg",
   "time": "2026-11-15T23:07:18Z",
   "caption": "Boot crops at ticks 6, 9, 12, 15, 18 of the turn: the gather boot lifts, travels in and sets down beside the pivot boot with no pop or slide; the boots sit in shadow, too dark to judge sole contact by eye.",
@@ -885,6 +873,18 @@
   "file": "20261119-1600-jumpfallstrip.jpg",
   "time": "2026-11-19T16:00:00Z",
   "caption": "Old fall 0.44 / new 0.44 / new 0.52 / landing 0.05: the arms used to stay forward at chest height through the fall, now they open out and ease into the landing; hands could still rise a little higher.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1700-leapside.jpg",
+  "time": "2026-11-19T17:00:00Z",
+  "caption": "Running leap mid-flight from the rear 3/4: the forward arm now drives with the elbow bent and the forearm level instead of punched out straight; the hero is still small and dim in frame and the capelet hides the back arm.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1700-leapfront.jpg",
+  "time": "2026-11-19T17:00:00Z",
+  "caption": "Running leap from the front 3/4 (key light behind the lens): the forward fist now rides up in front of the chest; the face under the hat still reads dark and the back hand is lost behind the hip.",
   "verdict": "fail"
  }
 ]

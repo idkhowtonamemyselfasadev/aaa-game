@@ -379,9 +379,12 @@ const LEAP_ARM := 0.55                 # rad: opposite arm forward / same-side a
 # arm driven back past the hip nearly straight. JUMPARM_OLD=1 = before.
 var JUMPARM_OLD := OS.get_environment("JUMPARM_OLD") == "1"
 const LEAP_ARM_BASE := 0.30            # rad: both upper arms, before the counter-swing
-const LEAP_ARM_FWD := 0.80             # rad: the opposite arm forward on top of the base
+var LEAP_ARM_FWD := float(OS.get_environment("LEAP_ARM_FWD")) if OS.get_environment("LEAP_ARM_FWD") != "" else (0.80 if OS.get_environment("LEAPDRIVE_OLD") == "1" else 0.60)   # rad: the opposite arm forward on top of the base
 const LEAP_ARM_BACK := 0.78            # rad: the same-side arm back on top of the base
-const LEAP_ELBOW_FWD := 0.55           # rad: the forward arm's elbow, open
+# (11-19 17:00) the forward arm drives like a sprinter's, elbow bent near square and the fist up by the
+# chin, instead of a near-straight arm punched out level ahead. LEAPDRIVE_OLD=1 = before (arm 0.80, elbow 0.55).
+var LEAPDRIVE_OLD := OS.get_environment("LEAPDRIVE_OLD") == "1"
+var LEAP_ELBOW_FWD := 0.55 if LEAPDRIVE_OLD else (float(OS.get_environment("LEAP_ELBOW_FWD")) if OS.get_environment("LEAP_ELBOW_FWD") != "" else 1.0)   # rad: the forward arm's elbow
 const LEAP_ELBOW_BACK := 0.22          # rad: the back arm, nearly straight
 var _leap_aim := 0.0                   # 0..1: how far the arms are hung straight before the leap's bends
 # (11-19 11:00) the standing jump's arms, hung straight first like the leap's (rad, on the hung arm)
