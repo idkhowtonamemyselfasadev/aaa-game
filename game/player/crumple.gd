@@ -770,6 +770,14 @@ func _shift_hips(skel: Skeleton3D, up: Vector3) -> void:
 	_bend(skel, "mixamorig_Spine", k, m * 0.6 * g)
 	_bend(skel, "mixamorig_Spine1", k, m * 0.6 * g)
 	_bend(skel, "mixamorig_Spine2", k, m * 0.5 * g)
+	# (11-19 06:00) a shear on top: the low spine bends further toward the middle and the chest
+	# bends back by the sum, so the shoulders' midpoint comes back over the holds while the shoulder
+	# line keeps its tilt (a stronger plain counter-bend tips the shoulders and costs the reach)
+	var sh := SHIFT_SPINE_SHEAR
+	if sh > 0.0:
+		_bend(skel, "mixamorig_Spine", k, m * sh)
+		_bend(skel, "mixamorig_Spine1", k, m * sh)
+		_bend(skel, "mixamorig_Spine2", k, -2.0 * m * sh)
 
 ## Rolls the pelvis about the facing by hip_roll so the stepping side's hip hikes up, and rolls
 ## the spine back the other way, mostly low down, so the chest and shoulders stay level over the
@@ -784,6 +792,7 @@ func _roll_hips(skel: Skeleton3D, fwd: Vector3) -> void:
 const ROLL_SIGN := 1.0
 # (11-19 05:00) CLIMB_SPINE_GAIN=<g> scales the counter-bend: the shoulders' midpoint follows the hips'
 # sway x1.5 at g=0, x1.1 at the default 1, x0.44 at 3; g >= 2 cut the overhead reach, kept at 1
+static var SHIFT_SPINE_SHEAR := float(OS.get_environment("CLIMB_SPINE_SHEAR")) if OS.has_environment("CLIMB_SPINE_SHEAR") else 0.0
 static var SHIFT_SPINE_GAIN := float(OS.get_environment("CLIMB_SPINE_GAIN")) if OS.has_environment("CLIMB_SPINE_GAIN") else 1.0
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.

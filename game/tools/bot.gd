@@ -16737,9 +16737,9 @@ func _climb_test() -> void:
 	print("BOT climb: head gives the overhead reach room: wrist %.3f m to the side of the hat crown (mean, %d samples of a reaching hand over its shoulder), head tilt up to %.3f rad" % [hgap, hgap_n, tilt_max])
 	var low_mean := low_sum / maxf(low_n, 1)
 	print("BOT climb: the low hand clears the mantle: planted wrist at/under its shoulder %.3f m out from the body's centre (mean, least %.3f, %d samples)" % [low_mean, low_min if low_n > 0 else 0.0, low_n])
-	if low_n >= 4 and low_mean < CLIMB_LOW_OUT_MIN:
+	if OS.has_environment("CLIMB_ONERUN_GATES") and low_n >= 4 and low_mean < CLIMB_LOW_OUT_MIN:
 		return _combat_done(false, "climb: the low hand hangs behind the mantle (%.3f m out from the body's centre, want >= %.2f, %d samples)" % [low_mean, CLIMB_LOW_OUT_MIN, low_n])
-	if not OS.has_environment("CLIMB_TILT_OLD") and not OS.has_environment("CLIMB_TILT") and (hgap_n < 4 or tilt_max < 0.1):
+	if OS.has_environment("CLIMB_ONERUN_GATES") and not OS.has_environment("CLIMB_TILT_OLD") and not OS.has_environment("CLIMB_TILT") and (hgap_n < 4 or tilt_max < 0.1):
 		return _combat_done(false, "climb: the head does not lean off the arm reaching overhead (tilt %.3f rad, %d samples)" % [tilt_max, hgap_n])
 	var dmin := Vector4(INF, INF, INF, INF)
 	var dsum := Vector4.ZERO
@@ -16753,7 +16753,7 @@ func _climb_test() -> void:
 	var late_new := not OS.has_environment("CLIMB_LATEHOLD_OLD")
 	var hi_min := CLIMB_REACH_HI_MIN_LATE if late_new else CLIMB_REACH_HI_MIN
 	var frac_min := CLIMB_OVER_FRAC_MIN_LATE if late_new else CLIMB_OVER_FRAC_MIN
-	if not OS.has_environment("CLIMB_REACH_OLD") and reach_top_n > 8 and (reach_hi < hi_min or over_frac < frac_min):
+	if not OS.has_environment("CLIMB_REACH_OLD") and reach_top_n > 8 and OS.has_environment("CLIMB_ONERUN_GATES") and (reach_hi < hi_min or over_frac < frac_min):
 		return _combat_done(false, "climb: the hands never reach overhead (highest wrist %.3f m over the shoulder, over the head %.0f%% of the time)" % [reach_hi, over_frac * 100.0])
 		return
 	print("BOT climb: hands moved hold to hold %d times, wrist off its target at most %.3f m, holds off the stone at most %.3f m (%d planted samples)" % [p.hand_moves - moves0, err_max, off_max, planted_n])
@@ -16986,7 +16986,137 @@ func _climb_test() -> void:
 		while settle < 4.0 and not p.is_on_floor():
 			await _ticks(6)
 			settle += 0.1
+	# (11-19 06:00) the arm reads, pooled: one climb is ~1 s on the face (~50 ticks, ~6 hand moves),
+	# so its overhead share and low-hand place swing 11-33 % / 0.27-0.32 m with a 0.05 nudge and no
+	# code change. Climb several stretches of the keep's face and gate the pooled reads instead.
+	var pool := await _climb_arm_pool(rs, breach)
+	print("BOT climb: pooled arm reads over %d climbs (%d ticks): a wrist over the head %.1f%% of the time, highest wrist %.3f m over its shoulder; low planted wrist %.3f m out from the body's centre (mean, least %.3f, %d samples); head tilt up to %.3f rad (%d reaching samples)" % [pool.runs, pool.ticks, pool.over * 100.0, pool.hi, pool.low, pool.low_min, pool.low_n, pool.tilt, pool.hgap_n])
+	if pool.runs < CLIMB_POOL_RUNS_MIN:
+		return _combat_done(false, "climb: only %d of the pooled stretches were climbed" % pool.runs)
+	if not OS.has_environment("CLIMB_REACH_OLD") and pool.hi < CLIMB_POOL_HI_MIN:
+		return _combat_done(false, "climb: pooled, the hands never reach overhead (highest wrist %.3f m over the shoulder, want >= %.2f)" % [pool.hi, CLIMB_POOL_HI_MIN])
+	if pool.over < CLIMB_POOL_OVER_MIN:
+		return _combat_done(false, "climb: pooled, a wrist stands over the head only %.1f%% of the time (want >= %.0f%%)" % [pool.over * 100.0, CLIMB_POOL_OVER_MIN * 100.0])
+	if pool.low < CLIMB_POOL_LOW_MIN:
+		return _combat_done(false, "climb: pooled, the low hand hangs behind the mantle (%.3f m out, want >= %.2f)" % [pool.low, CLIMB_POOL_LOW_MIN])
+	if not OS.has_environment("CLIMB_TILT_OLD") and not OS.has_environment("CLIMB_TILT") and (pool.hgap_n < 8 or pool.tilt < 0.1):
+		return _combat_done(false, "climb: pooled, the head does not lean off the arm reaching overhead (tilt %.3f rad, %d samples)" % [pool.tilt, pool.hgap_n])
 	_combat_done(true, "jumped at the keep, climbed the stones, hauled up onto the crown; the grip fails without stamina, a dodge lets go, a jump with the stick back kicks off the face, twisting round, and one aside leaps along it")
+
+const CLIMB_POOL_N := 8              # stretches of the keep's face climbed for the pooled arm reads
+const CLIMB_POOL_RUNS_MIN := 8
+const CLIMB_POOL_LATS: Array[float] = [0.0, -0.4, 0.4]   # m: each stretch climbed on and either side of its line
+const CLIMB_POOL_HI_MIN := 0.36      # m: pooled highest wrist over its shoulder (0.400-0.437 over the nudge; one run 0.36-0.49)
+const CLIMB_POOL_OVER_MIN := 0.12    # (11-19 06:00) pooled share of ticks with a wrist over the head (14.4-17.6 % over the 5-lead nudge; one run swings 11-33 %)
+const CLIMB_POOL_LOW_MIN := 0.22     # m: pooled low planted wrist out from the shoulders' midpoint (0.240-0.272 over the nudge)
+
+## Climbs CLIMB_POOL_N stretches of the keep's outer face (3-4.5 m high, spread round it) and pools
+## the arm reads the main climb takes once: share of ticks with a wrist over the head, the highest
+## wrist, the low planted wrist's place out from the body's centre, the head's lean off a reaching arm.
+func _climb_arm_pool(rs: Vector3, breach: float) -> Dictionary:
+	var p := _player
+	var ruins: Ruins = _world.get_node("Ruins")
+	var terrain: Terrain = _world.get_node("Terrain")
+	var cands: Array = []
+	for k in 180:
+		var a := TAU * k / 180.0
+		if absf(wrapf(a - breach, -PI, PI)) < 1.2:
+			continue
+		var ra := Vector3(cos(a), 0, sin(a))
+		var ta := Vector3(-ra.z, 0, ra.x)
+		var g5 := terrain.height_at(rs.x + ra.x * 5.0, rs.z + ra.z * 5.0)
+		var h := ruins.wall_top(a, 4.3) - g5
+		if h < 2.8:
+			continue
+		# a face of stone from the hands' start up (as `climbhole` checks it)
+		var solid := true
+		for hy: float in [1.0, 1.6, 2.2, 2.8]:
+			for lat: float in [-0.3, 0.0, 0.3]:
+				var o := rs + ra * 5.0 + ta * lat
+				o.y = g5 + hy
+				var hit := p._ray(o, o - ra * 1.1)
+				if hit.is_empty() or (o - (hit["position"] as Vector3)).dot(ra) > 0.7:
+					solid = false
+		if solid:
+			cands.append([-h, a])
+	cands.sort_custom(func(x, y): return x[0] < y[0])   # tallest faces first: longer climbs
+	var picks: Array[float] = []
+	for c in cands:
+		var ok := true
+		for q in picks:
+			if absf(wrapf(c[1] - q, -PI, PI)) < 0.07:
+				ok = false
+		if ok:
+			picks.append(c[1])
+		if picks.size() >= CLIMB_POOL_N:
+			break
+	var csk := p.find_child("Skeleton3D", true, false) as Skeleton3D
+	var r := {"runs": 0, "ticks": 0, "over": 0.0, "hi": -9.0, "low": 0.0, "low_min": INF, "low_n": 0, "tilt": 0.0, "hgap_n": 0}
+	var over_n := 0
+	var low_sum := 0.0
+	var tries: Array[Vector2] = []
+	for a: float in picks:
+		for lat: float in CLIMB_POOL_LATS:
+			tries.append(Vector2(a, lat))
+	for tr: Vector2 in tries:
+		var a := tr.x
+		var rad := Vector3(cos(a), 0, sin(a))
+		var foot := rs + rad * 5.0 + Vector3(-rad.z, 0, rad.x) * tr.y
+		var g0 := terrain.height_at(foot.x, foot.z)
+		p.velocity = Vector3.ZERO
+		p.stamina = Player.STAMINA_MAX
+		p.global_position = Vector3(foot.x, g0 + 1.2, foot.z)
+		p.body.rotation.y = atan2(-rad.x, -rad.z)
+		await _ticks(2)
+		p._start_climb(rad)
+		var t := 0.0
+		if OS.has_environment("CLIMB_POOL_DBG"):
+			print("POOL a %.2f face %.2f m, climbing %s" % [a, ruins.wall_top(a, 4.3) - g0, p.climbing])
+		if not p.climbing:
+			continue
+		p.climb_log = true
+		p.climb_reach.clear()
+		p.crumple.probe = PackedStringArray(["mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_Head", "mixamorig_Neck", "mixamorig_LeftHand", "mixamorig_RightHand"])
+		t = 0.0
+		while t < 15.0 and p.climbing:
+			p.bot_input = Vector2(0, -1)
+			await _ticks(3)
+			t += 0.05
+			if not (p._climb_t > 0.4 and p._wk_coil < 0.0):
+				continue
+			var into := -Vector3(p.climb_normal.x, 0, p.climb_normal.z).normalized()
+			var rt := into.cross(Vector3.UP).normalized()
+			r.tilt = maxf(r.tilt, absf(p.crumple.head_tilt))
+			var sl := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftArm", Vector3.ZERO) as Vector3)
+			var sr := csk.global_transform * (p.crumple.probed.get("mixamorig_RightArm", Vector3.ZERO) as Vector3)
+			for i in 2:
+				var w := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftHand" if i == 0 else "mixamorig_RightHand", Vector3.ZERO) as Vector3)
+				var sj := sl if i == 0 else sr
+				if p._hold_t[i] < 1.0 and w.y > sj.y + 0.15:
+					r.hgap_n += 1
+				if p._hold_t[i] >= 1.0 and w.y <= sj.y + 0.05:
+					var lo := absf((w - (sl + sr) * 0.5).dot(rt))
+					low_sum += lo
+					r.low_n += 1
+					r.low_min = minf(r.low_min, lo)
+		p.bot_input = Vector2.ZERO
+		if OS.has_environment("CLIMB_POOL_DBG"):
+			print("POOL a %.2f climbed for %.2f s, mantles %d, reach ticks %d, picks %d of %d cands" % [a, t, p.mantles, p.climb_reach.size(), picks.size(), cands.size()])
+		for cr: Vector3 in p.climb_reach:
+			var hi := maxf(cr.x, cr.y)
+			r.hi = maxf(r.hi, hi)
+			r.ticks += 1
+			if hi > CLIMB_HEAD_OVER_SH:
+				over_n += 1
+		p.climb_log = false
+		p.crumple.probe = PackedStringArray()
+		r.runs += 1
+		await _ticks(40)
+	r.over = float(over_n) / maxf(r.ticks, 1)
+	r.low = low_sum / maxf(r.low_n, 1)
+	if r.low_n == 0:
+		r.low_min = 0.0
+	return r
 
 ## m from the hero's chest to the face along the climb normal (INF when no face is there)
 func _face_gap(p: Player) -> float:
