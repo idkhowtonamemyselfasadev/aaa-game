@@ -4333,7 +4333,13 @@ const STAND_FORE_GATE := -0.1   # (11-19 11:00) see the standing jump arms read
 const STAND_WRIST_OUT_GATE := 0.25  # (11-19 13:00) m each wrist must stay out off the head on the drive (old build R 0.12, L 0.50)
 const STAND_WDOWN_GATE := 0.12      # (11-19 14:00) m each wrist stays off the face on screen (35 deg front-3/4 lens) while it passes the face's band on the downswing
 const STAND_FALL_OUT_GATE := 0.30  # (11-19 16:00) m: mean wrist out off the head in the fall (old build 0.19: arms kept forward from the tuck; new 0.36)
-const LEAP_DRIVE_TILT_GATE := -0.12  # (11-19 17:00) leap forward forearm tilt, flight mean: old build run -0.24 / sprint -0.18 (punched out, dipping), new -0.05 / 0.01
+const LEAP_CHIN_FWD := 0.08   # (11-19 18:00) chin point: forward of the head bone, m
+const LEAP_CHIN_DOWN := 0.04  # and under it, m
+const LEAP_GUARD_R := 0.25    # a fist this near the chin...
+const LEAP_GUARD_FWD := 0.15  # ...and not further ahead of its own shoulder than this reads as a tucked guard
+var LEAP_GUARD_GATE := float(OS.get_environment("LEAP_GUARD_GATE")) if OS.get_environment("LEAP_GUARD_GATE") != "" else 0.15   # max share of the flight in a guard
+var LEAP_GUARD_PROXY := OS.get_environment("LEAP_GUARD_PROXY") == "1"   # the old "nearer wrist to head >= 0.5" gate
+const LEAP_DRIVE_TILT_GATE := 0.0  # (11-19 17:00) leap forward forearm tilt, flight mean: old build run -0.24 / sprint -0.18 (punched out, dipping), 17:00 -0.05 / 0.01; (18:00) 0.45/1.3 run 0.06 / sprint 0.12
 const STAND_TUCK_OUT_GATE := 0.40  # (11-19 15:00) m: mean wrist out off the head in the rising tuck (old build 0.48: arms held out flat and wide, a T; new 0.32)
 const STAND_WRIST_LR_GATE := 0.08   # m most the two wrists' outward places may differ (old 0.38)
 const STAND_DRIVE_GATE := 0.22  # (11-19 12:00; 13:00 0.08 -> 0.22) m the higher wrist must get over the head on the drive (11-19 11:00 build 0.00, 12:00 0.16, 13:00 0.32)
@@ -4591,6 +4597,12 @@ func _jump_test() -> void:
 	var arm_sep := [0.0, 0.0]
 	var arm_head := [0.0, 0.0]          # mean over the leap's flight of the nearer wrist to the head
 	var arm_n := [0, 0]
+	# (11-19 18:00) a real guard test (replaces the "nearer wrist to head >= 0.5" proxy): the share
+	# of flight ticks a fist sits within GUARD_R of the chin AND not ahead of its own shoulder by more
+	# than GUARD_FWD (a boxer's tucked guard). A sprinter's drive brings the fist up toward chin height
+	# but out ahead of the shoulder, which the proxy wrongly failed.
+	var guard_frac := [0.0, 0.0]
+	var chin_min := [9.0, 9.0]          # nearest any fist gets to the chin over the flight
 	var curl_m := [0.0, 0.0]            # flight mean of both hands' middle-finger curl, rad
 	# read after the modifiers have posed the bones (a plain read between ticks sees the clip's pose)
 	var jw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
@@ -4599,10 +4611,13 @@ func _jump_test() -> void:
 	var jm := [jskel.find_bone("mixamorig_LeftHandMiddle1"), jskel.find_bone("mixamorig_RightHandMiddle1"),
 		jskel.find_bone("mixamorig_LeftHandMiddle3"), jskel.find_bone("mixamorig_RightHandMiddle3")]
 	var jcurl := [0.0, 0.0]
+	var jfist := [Vector3.ZERO, Vector3.ZERO]   # (11-19 18:00) the fists: middle knuckles, world
 	var jread := func() -> void:
 		var g := jskel.global_transform
 		for bi in 7:
 			jw[bi] = g * jskel.get_bone_global_pose(jb[bi]).origin
+		for fi in 2:
+			jfist[fi] = g * jskel.get_bone_global_pose(jm[fi]).origin
 		for si in 2:
 			var hd0 := jskel.get_bone_global_pose(jb[si]).origin
 			var d0 := jskel.get_bone_global_pose(jm[si]).origin - hd0
@@ -4637,6 +4652,17 @@ func _jump_test() -> void:
 					arm_sep[si] = maxf(arm_sep[si], absf((wl - wr).dot(fw)))
 					arm_head[si] += minf(wl.distance_to(hd), wr.distance_to(hd))
 					arm_n[si] += 1
+					# the chin: a little forward of and under the head bone (the body's forward is -model Z)
+					var chin := hd - fw * LEAP_CHIN_FWD + Vector3.DOWN * LEAP_CHIN_DOWN
+					var guarded := false
+					for gi in 2:
+						var gw: Vector3 = jfist[gi]
+						var gs: Vector3 = jw[3 + gi]
+						chin_min[si] = minf(chin_min[si], gw.distance_to(chin))
+						if gw.distance_to(chin) < LEAP_GUARD_R and (gw - gs).dot(-fw) < LEAP_GUARD_FWD:
+							guarded = true
+					if guarded:
+						guard_frac[si] += 1.0
 					curl_m[si] += (jcurl[0] + jcurl[1]) * 0.5
 					if air_ticks >= 10:
 						# the body's forward is -model Z (the model is turned PI about Y)
@@ -4652,6 +4678,7 @@ func _jump_test() -> void:
 						var shr: Vector3 = jw[4]
 						var ox := shl - shr
 						ox = (ox - Vector3.UP * ox.y).normalized()
+						print("BOT leapdbg %d chin: head over shoulders %.2f, fists to chin L %.2f R %.2f, fist over chin L %.2f R %.2f, fist ahead of chin L %.2f R %.2f" % [air_ticks, hd.y - (shl.y + shr.y) * 0.5, jfist[0].distance_to(chin), jfist[1].distance_to(chin), jfist[0].y - chin.y, jfist[1].y - chin.y, (jfist[0] - chin).dot(bf), (jfist[1] - chin).dot(bf)])
 						print("BOT leapdbg %d off own shoulder: L fwd %.2f out %.2f up %.2f | R fwd %.2f out %.2f up %.2f" % [air_ticks, (wl - shl).dot(bf), (wl - shl).dot(ox), wl.y - shl.y, (wr - shr).dot(bf), -(wr - shr).dot(ox), wr.y - shr.y])
 					if OS.has_environment("JUMPARM_DBG"):
 						print("BOT armdbg %d aim %.2f lr %s elr %s arm %.2f el %.2f sep %.2f" % [air_ticks, p.crumple.arm_aim, str(p.crumple.arm_lr), str(p.crumple.elbow_lr), p.crumple.arm, p.crumple.elbow, (wl - wr).dot(fw)])
@@ -4667,6 +4694,8 @@ func _jump_test() -> void:
 	for si in 2:
 		arm_head[si] /= maxf(arm_n[si], 1)
 		curl_m[si] /= maxf(arm_n[si], 1)
+		guard_frac[si] /= maxf(arm_n[si], 1)
+	print("BOT jump: leap guard: share of flight with a fist (knuckles) tucked by the chin (within %.2f m, not > %.2f m ahead of its shoulder) run %.2f, sprint %.2f (gate <= %.2f); nearest fist to chin run %.2f, sprint %.2f m" % [LEAP_GUARD_R, LEAP_GUARD_FWD, guard_frac[0], guard_frac[1], LEAP_GUARD_GATE, chin_min[0], chin_min[1]])
 	print("BOT jump: leap hands: middle-finger curl (flight mean, both hands) run %.2f, sprint %.2f rad" % [curl_m[0], curl_m[1]])
 	if not p.LEAPHAND_OLD and not p.JUMPARM_OLD and minf(curl_m[0], curl_m[1]) < 2.3:
 		return _combat_done(false, "the leap's empty hands stay open (the relaxed rest reads as a claw reaching ahead)")
@@ -4677,7 +4706,8 @@ func _jump_test() -> void:
 	if not p.JUMPARM_OLD and not p.LEAPDRIVE_OLD and minf(drive_tilt[0], drive_tilt[1]) < LEAP_DRIVE_TILT_GATE:
 		return _combat_done(false, "the leap's forward arm is punched out level ahead instead of driven up with the elbow bent")
 	if not p.JUMPARM_OLD and not p.JUMPSPLIT_OLD:
-		if arm_sep[0] < 0.4 or arm_sep[1] < 0.6 or minf(arm_head[0], arm_head[1]) < 0.5:
+		var head_bad := minf(arm_head[0], arm_head[1]) < 0.5 if LEAP_GUARD_PROXY else maxf(guard_frac[0], guard_frac[1]) > LEAP_GUARD_GATE
+		if arm_sep[0] < 0.4 or arm_sep[1] < 0.6 or head_bad:
 			return _combat_done(false, "the leap's arms do not counter-swing (wrists fore/aft) or stay up in a guard by the chin")
 	print("BOT jump: leap split (thigh to thigh) standing %.2f, run %.2f, sprint %.2f rad; trailing thigh run %.2f, sprint %.2f rad (- = behind); split at touch-down run %.2f, sprint %.2f" % [stand_split, leap_sp[0], leap_sp[1], trail_th[0], trail_th[1], td_split[0], td_split[1]])
 	if not p.JUMPSPLIT_OLD:
