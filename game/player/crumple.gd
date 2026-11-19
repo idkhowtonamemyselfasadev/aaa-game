@@ -766,9 +766,10 @@ func _shift_hips(skel: Skeleton3D, up: Vector3) -> void:
 		return
 	k = k.normalized()
 	# ~1.7 rad per metre of shift, spread up the spine: the top leans back toward the middle
-	_bend(skel, "mixamorig_Spine", k, m * 0.6)
-	_bend(skel, "mixamorig_Spine1", k, m * 0.6)
-	_bend(skel, "mixamorig_Spine2", k, m * 0.5)
+	var g := SHIFT_SPINE_GAIN
+	_bend(skel, "mixamorig_Spine", k, m * 0.6 * g)
+	_bend(skel, "mixamorig_Spine1", k, m * 0.6 * g)
+	_bend(skel, "mixamorig_Spine2", k, m * 0.5 * g)
 
 ## Rolls the pelvis about the facing by hip_roll so the stepping side's hip hikes up, and rolls
 ## the spine back the other way, mostly low down, so the chest and shoulders stay level over the
@@ -781,6 +782,9 @@ func _roll_hips(skel: Skeleton3D, fwd: Vector3) -> void:
 	_bend(skel, "mixamorig_Spine2", fwd, -a * 0.18)
 
 const ROLL_SIGN := 1.0
+# (11-19 05:00) CLIMB_SPINE_GAIN=<g> scales the counter-bend: the shoulders' midpoint follows the hips'
+# sway x1.5 at g=0, x1.1 at the default 1, x0.44 at 3; g >= 2 cut the overhead reach, kept at 1
+static var SHIFT_SPINE_GAIN := float(OS.get_environment("CLIMB_SPINE_GAIN")) if OS.has_environment("CLIMB_SPINE_GAIN") else 1.0
 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 ## Turns a bone about the body's up so the line from its right child joint to its left one

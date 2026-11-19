@@ -175,6 +175,9 @@ const HAND_MOVE := 0.18               # seconds for a hand to reach to its next 
 const HOLD_FEEL: Array[Vector2] = [Vector2.ZERO, Vector2(0.0, -0.08), Vector2(0.07, 0.0), Vector2(-0.07, 0.0),
 	Vector2(0.0, 0.08), Vector2(0.0, -0.16), Vector2(0.14, -0.04), Vector2(-0.14, -0.04), Vector2(0.12, -0.14),
 	Vector2(-0.12, -0.14), Vector2(0.0, -0.24), Vector2(0.2, -0.1), Vector2(-0.2, -0.1)]
+# (11-19 05:00) the unswayed aim is only taken at about full height (a stone proud or a joint deep there)
+const HOLD_FEEL_HIGH: Array[Vector2] = [Vector2.ZERO, Vector2(0.0, 0.08), Vector2(0.0, -0.04)]
+var hold_unswayed := 0                # (bots) holds taken at the unswayed aim
 const HOLD_REACH := 0.62              # m from the shoulder: a stone further off (a proud block, the crown) is no hold
 const HAND_STEP := 0.3                # a hold this far from where the hand wants to be is let go
 # (11-16 05:00) the overhead reach: with the shoulders now 0.21 m off the stones (was 0.37) a 0.47 m arm
@@ -190,6 +193,10 @@ static var SURGE := Vector2(float(OS.get_environment("CLIMB_SURGE_HI")) if OS.ha
 static var CLIMB_LATEHOLD_OLD := OS.has_environment("CLIMB_LATEHOLD_OLD")   # before 08:00 11-16: the body sped up again through the second half of each reach
 static var STRETCH_WAIT := Vector2(float(OS.get_environment("CLIMB_STRETCH_LO")) if OS.has_environment("CLIMB_STRETCH_LO") else 0.38,
 	float(OS.get_environment("CLIMB_STRETCH_HI")) if OS.has_environment("CLIMB_STRETCH_HI") else 0.45)   # shoulder-to-hold span (m) over which the body slows to wait for a low planted hand
+# (11-19 05:00, opt-in, OFF by default) CLIMB_PICK_UNSWAY=<k>: aim a hold off the shoulder with the hips' sway
+# taken out (k x hip_shift). Over the 5-nudge sweep (tools/climbsweep.sh) k=1.5 keeps the low wrist out
+# (least 0.14 -> 0.20 m) but cuts the overhead reach (wrist over the head 23 % -> 9 %), so it stays off.
+static var CLIMB_PICK_UNSWAY := float(OS.get_environment("CLIMB_PICK_UNSWAY")) if OS.has_environment("CLIMB_PICK_UNSWAY") else 0.0
 static var CLIMB_HOLE_OLD := OS.has_environment("CLIMB_HOLE_OLD")   # before 08:00 11-16: a hole in the face at chest height dropped the climber
 static var SURGE_EASE := float(OS.get_environment("CLIMB_SURGE_EASE")) if OS.has_environment("CLIMB_SURGE_EASE") else 30.0
 static var _reach_dbg := OS.has_environment("CLIMB_REACH_DBG")
@@ -3313,6 +3320,12 @@ func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 	var right := face.cross(Vector3.UP).normalized()
 	var sh: Vector3 = crumple.shoulder[i] if crumple != null and crumple.shoulder[i] != Vector3.ZERO else global_position + Vector3.UP * 1.42
 	var p := sh + Vector3.UP * (HOLD_UP + lift) + right * (0.07 if i == 1 else -0.07) + ahead
+	# (11-19 05:00) the hips' sway carries the shoulders sideways with it (~1.1x), so a hold picked off
+	# the swayed shoulder lands up to 0.2 m inside it once the body sways back. Opt-in (see
+	# CLIMB_PICK_UNSWAY): first try the aim with the sway taken out, at about full height only
+	var aims: Array[Vector3] = [p]
+	if CLIMB_PICK_UNSWAY > 0.0 and crumple != null and absf(crumple.hip_shift.dot(right)) > 0.01:
+		aims.push_front(p - right * crumple.hip_shift.dot(right) * CLIMB_PICK_UNSWAY)
 	# the shoulder where it will be once the hand gets there: the wrist (a hand's length under the
 	# grip, a palm off the stone) must be within the arm's length of it
 	var sh_then := sh + (Vector3.ZERO if _reach_old else ahead)
@@ -3320,15 +3333,19 @@ func _find_hold(i: int, lift: float, ahead := Vector3.ZERO) -> Vector3:
 	var up_dir := (Vector3.UP - n * n.y).normalized()
 	# rough masonry: a stone end can stand proud of the face or a joint run deep into it, so
 	# feel a few spots round the reach and take the first one that is a face
-	for off: Vector2 in HOLD_FEEL:
-		var o := p + right * off.x + Vector3.UP * off.y + n * 1.0
-		var hit := _ray(o, o - n * 1.8)
-		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
-				and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH \
-				and (_reach_old or ((hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07).distance_to(_shrugged(sh_then, (hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07, arm)) < arm - 0.01):
-			if _reach_dbg:
-				print("REACH pick hand %d off %s hold over sh %.3f over sh_then %.3f ahead %.3f depth %.3f" % [i, off, (hit["position"] as Vector3).y - sh.y, (hit["position"] as Vector3).y - sh_then.y, ahead.length(), (sh - (hit["position"] as Vector3)).dot(n)])
-			return hit["position"]
+	for ai in aims.size():
+		var aim: Vector3 = aims[ai]
+		for off: Vector2 in (HOLD_FEEL if ai == aims.size() - 1 else HOLD_FEEL_HIGH):
+			var o := aim + right * off.x + Vector3.UP * off.y + n * 1.0
+			var hit := _ray(o, o - n * 1.8)
+			if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < CLIMB_STEEP + 0.25 \
+					and (hit["position"] as Vector3).distance_to(sh) < HOLD_REACH \
+					and (_reach_old or ((hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07).distance_to(_shrugged(sh_then, (hit["position"] as Vector3) + n * 0.04 - up_dir * 0.07, arm)) < arm - 0.01):
+				if ai < aims.size() - 1:
+					hold_unswayed += 1
+				if _reach_dbg:
+					print("REACH pick hand %d off %s hold over sh %.3f over sh_then %.3f ahead %.3f depth %.3f" % [i, off, (hit["position"] as Vector3).y - sh.y, (hit["position"] as Vector3).y - sh_then.y, ahead.length(), (sh - (hit["position"] as Vector3)).dot(n)])
+				return hit["position"]
 	_hold_missed = true
 	# nothing in reach: a stone set back deeper (the arm goes in after it), nearest first
 	var deep := Vector3.ZERO

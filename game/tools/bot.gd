@@ -16636,6 +16636,8 @@ func _climb_test() -> void:
 				if OS.has_environment("CLIMB_ARMDBG"):
 					var eb := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftForeArm" if i == 0 else "mixamorig_RightForeArm", Vector3.ZERO) as Vector3)
 					var mid := (csk.global_transform * (p.crumple.probed.get("mixamorig_LeftArm", Vector3.ZERO) as Vector3) + csk.global_transform * (p.crumple.probed.get("mixamorig_RightArm", Vector3.ZERO) as Vector3)) * 0.5
+					var sg := 1.0 if i == 1 else -1.0
+					print("ARMX t %.2f hand %d hold_t %.2f | signed out from mid: hold %.3f wrist %.3f sh_bone %.3f sh_crumple %.3f | hip_shift %.3f roll %.3f sway %.3f mid_off %.3f" % [t, i, p._hold_t[i], sg * ((p._hold[i] as Vector3) - mid).dot(rt), sg * (w - mid).dot(rt), sg * (sj - mid).dot(rt), sg * ((p.crumple.shoulder[i] as Vector3) - mid).dot(rt), p.crumple.hip_shift.dot(rt), p.crumple.hip_roll, p._sway, (mid - p.global_position).dot(rt)])
 					print("ARM t %.2f hand %d hold_t %.2f wrist up %.3f out %.3f | elbow up %.3f out %.3f back %.3f | shoulder out %.3f" % [t, i, p._hold_t[i], w.y - sj.y, absf((w - mid).dot(rt)), eb.y - sj.y, absf((eb - mid).dot(rt)), (eb - sj).dot(-into), absf((sj - mid).dot(rt))])
 				if p._hold_t[i] >= 1.0 and w.y <= sj.y + 0.05:
 					var sl0 := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftArm", Vector3.ZERO) as Vector3)

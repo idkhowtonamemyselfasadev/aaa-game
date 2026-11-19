@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261115-0821-soldier-turn-square.jpg",
-  "time": "2026-11-15T08:21:58Z",
-  "caption": "Same turn 13 frames in: hips and spear guard have followed the head round; the far boot still reaches wide, GL render, speckled floor.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0930-heroturn-before.jpg",
   "time": "2026-11-15T09:30:00Z",
   "caption": "Same moment before the change: shoulders and staff already swung ~35 deg in one piece with the head; GL render.",
@@ -897,6 +891,12 @@
   "file": "20261119-0400-climb-nomantle.jpg",
   "time": "2026-11-19T04:00:00Z",
   "caption": "Same frame with the mantle hidden (debug): the left arm is still invisible, so the mantle is not what hides it; the low hand is tucked in front of the chest behind the bedroll.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0500-climb.jpg",
+  "time": "2026-11-19T05:15:00Z",
+  "caption": "The hero climbing the keep from behind: the right fist reads up on its stone, the low left hand is still hidden behind the torso and bedroll (traced to the shoulders following the hip sway; no fix shipped yet), and the stone shows speckle noise in the GL fallback.",
   "verdict": "fail"
  }
 ]
