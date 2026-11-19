@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-2100-gather-sheet.jpg",
-  "time": "2026-11-15T21:00:00Z",
-  "caption": "Gather step over ticks 0-20 (3-tick spacing): the boot now arrives at ticks 12-15 instead of snapping in by tick 9; rear lens, boots partly hidden by the robe.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-2100-heroturn-gather.jpg",
-  "time": "2026-11-15T21:00:00Z",
-  "caption": "Hero turning on the spot, the forward boot mid-way through its longer 0.26 s gather step; lens still reads from behind, not side-on, and the hero looks small against dark grass.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-2200-turn-side-sheet.jpg",
   "time": "2026-11-15T22:00:00Z",
   "caption": "Turn on the spot side-on at ticks 0,4,8,12,16,20,30 with the harness fixed: the head reaches the lens first, the body follows, the gather boot sets down with no pop; the meadow is flat and dark at this scale and the robe hides the boots.",
@@ -885,6 +873,18 @@
   "file": "20261119-1536-standjump-tuck-side.jpg",
   "time": "2026-11-19T15:36:30Z",
   "caption": "Same tuck from the side: knees up, both hands reaching forward ahead of the knees; still wrong: the hero is backlit and dim against a pitch-black cottage wall.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1600-jumpfall.jpg",
+  "time": "2026-11-19T16:00:00Z",
+  "caption": "Standing jump falling (jt 0.52, front-lit): both arms now open out to the sides at waist height for balance as the legs reach; the hero still reads dim and the yard is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1600-jumpfallstrip.jpg",
+  "time": "2026-11-19T16:00:00Z",
+  "caption": "Old fall 0.44 / new 0.44 / new 0.52 / landing 0.05: the arms used to stay forward at chest height through the fall, now they open out and ease into the landing; hands could still rise a little higher.",
   "verdict": "fail"
  }
 ]

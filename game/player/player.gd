@@ -421,6 +421,15 @@ var TUCKARM_OLD := OS.get_environment("TUCKARM_OLD") == "1"
 var STAND_ARM_TUCK2 := float(OS.get_environment("STAND_ARM_TUCK2")) if OS.get_environment("STAND_ARM_TUCK2") != "" else 0.9
 var STAND_TUCK_IN := float(OS.get_environment("STAND_TUCK_IN")) if OS.get_environment("STAND_TUCK_IN") != "" else 0.8   # rad: arms drawn in toward the knees in the tuck
 var STAND_ELBOW_TUCK2 := float(OS.get_environment("STAND_ELBOW_TUCK2")) if OS.get_environment("STAND_ELBOW_TUCK2") != "" else 0.4
+# (11-19 16:00) the fall (jt 0.40-0.50): the arms stayed forward at chest height from the tuck
+# (only 40 % of the abduction came back, upper arms 0.6 forward), so the body fell with nothing
+# out for balance. As the legs reach for the ground the arms now open out to the sides and a
+# little up, lower in front. FALLARM_OLD=1 = before.
+var FALLARM_OLD := OS.get_environment("FALLARM_OLD") == "1"
+var STAND_FALL_OUT := float(OS.get_environment("STAND_FALL_OUT")) if OS.get_environment("STAND_FALL_OUT") != "" else 0.9   # rad abduction at full reach
+var STAND_FALL_V0 := float(OS.get_environment("STAND_FALL_V0")) if OS.get_environment("STAND_FALL_V0") != "" else 0.5   # m/s falling: the arms start to open
+var STAND_FALL_V1 := float(OS.get_environment("STAND_FALL_V1")) if OS.get_environment("STAND_FALL_V1") != "" else 4.0   # and are fully open
+var STAND_ARM_FALL2 := float(OS.get_environment("STAND_ARM_FALL2")) if OS.get_environment("STAND_ARM_FALL2") != "" else 0.45
 var STAND_DRIVE_K := float(OS.get_environment("STAND_DRIVE_K")) if OS.get_environment("STAND_DRIVE_K") != "" else 60.0
 # (11-19 10:00) the leap's empty hands: HandRest's relaxed curl read as a splayed claw on the forward
 # hand reaching out ahead; they close part-way toward the grip's curl (a loose half-fist) with the
@@ -2499,8 +2508,11 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			var sw := 1.0 - _leap_s
 			var a_tk := STAND_ARM_TUCK if TUCKARM_OLD else STAND_ARM_TUCK2
 			var e_tk := STAND_ELBOW_TUCK if TUCKARM_OLD else STAND_ELBOW_TUCK2
-			var s_arm := lerpf(a_tk * maxf(tk, 0.5), STAND_ARM_FALL, reach)
-			var s_el := lerpf(e_tk, STAND_ELBOW_FALL, reach)
+			# (11-19 16:00) the arms open for balance off the fall speed over 0.5-4 m/s, ahead of the
+			# legs' reach (fall speed / 9): reach alone left the tuck's draw-in on until the last frames
+			var fo := reach if FALLARM_OLD else smoothstep(STAND_FALL_V0, STAND_FALL_V1, -velocity.y)
+			var s_arm := lerpf(a_tk * maxf(tk, 0.5), STAND_ARM_FALL if FALLARM_OLD else STAND_ARM_FALL2, fo)
+			var s_el := lerpf(e_tk, STAND_ELBOW_FALL, fo)
 			var lw := line * (1.0 - crouch)
 			if not DRIVEARM_OLD:
 				# (11-19 12:00) the legs' push line is over by 0.15 s, so the arms' throw peaked at
@@ -2518,9 +2530,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			if not STANDOUT_OLD and not DRIVEARM_OLD:
 				_stand_out = STAND_ARM_OUT * sw * smoothstep(STAND_THROW_HOLD - 0.02, STAND_THROW_HOLD + 0.04, t_air) \
 					* (1.0 - (0.6 * smoothstep(STAND_THROW_END - 0.02, STAND_THROW_END + 0.1, t_air) if TUCKARM_OLD \
-					else (1.0 - 0.4 * reach) * smoothstep(STAND_THROW_END - 0.01, STAND_THROW_END + 0.07, t_air)))
+					else (1.0 - (0.4 if FALLARM_OLD else STAND_FALL_OUT / maxf(STAND_ARM_OUT, 0.01)) * fo) * smoothstep(STAND_THROW_END - 0.01, STAND_THROW_END + 0.07, t_air)))
 				if not TUCKARM_OLD:
-					_stand_out -= STAND_TUCK_IN * sw * (1.0 - reach) * smoothstep(STAND_THROW_END, STAND_THROW_END + 0.07, t_air)
+					_stand_out -= STAND_TUCK_IN * sw * (1.0 - fo) * smoothstep(STAND_THROW_END, STAND_THROW_END + 0.07, t_air)
 			if not DRIVEARM_OLD and t_air < STAND_THROW_END:
 				k_arm = lerpf(k, 1.0 - exp(-STAND_DRIVE_K * delta), sw)
 	elif landing:
