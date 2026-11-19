@@ -197,6 +197,16 @@ static var STRETCH_WAIT := Vector2(float(OS.get_environment("CLIMB_STRETCH_LO"))
 # taken out (k x hip_shift). Over the 5-nudge sweep (tools/climbsweep.sh) k=1.5 keeps the low wrist out
 # (least 0.14 -> 0.20 m) but cuts the overhead reach (wrist over the head 23 % -> 9 %), so it stays off.
 static var CLIMB_PICK_UNSWAY := float(OS.get_environment("CLIMB_PICK_UNSWAY")) if OS.has_environment("CLIMB_PICK_UNSWAY") else 0.0
+# (11-19 07:00) a planted hand whose wrist hangs below its shoulder and has drifted in under the
+# chest (within CLIMB_INREACH_IN m of the shoulders' midpoint, across the face) for CLIMB_INREACH_T s
+# lets go and re-reaches while the other hand grips, as a climber moves a hand that ends up
+# tucked under the body. OPT-IN (CLIMB_INREACH_T=<s>, default 0 = off): judged by the `climb` pool it
+# fires ~21-25 times but leaves the low wrist at 0.269-0.272 m (baseline 0.272): a low hand only
+# hangs low ~0.07 s before its normal let-go, so the tuck is in the hold's place, not its dwell.
+static var CLIMB_INREACH_OLD := OS.has_environment("CLIMB_INREACH_OLD")
+static var _inreach_dbg := OS.has_environment("INREACH_DBG")
+static var CLIMB_INREACH_IN := float(OS.get_environment("CLIMB_INREACH_IN")) if OS.has_environment("CLIMB_INREACH_IN") else 0.2
+static var CLIMB_INREACH_T := float(OS.get_environment("CLIMB_INREACH_T")) if OS.has_environment("CLIMB_INREACH_T") else 0.0
 static var CLIMB_HOLE_OLD := OS.has_environment("CLIMB_HOLE_OLD")   # before 08:00 11-16: a hole in the face at chest height dropped the climber
 static var SURGE_EASE := float(OS.get_environment("CLIMB_SURGE_EASE")) if OS.has_environment("CLIMB_SURGE_EASE") else 30.0
 static var _reach_dbg := OS.has_environment("CLIMB_REACH_DBG")
@@ -257,6 +267,8 @@ var _hold := [Vector3.ZERO, Vector3.ZERO]       # world holds under the left and
 var _hold_from := [Vector3.ZERO, Vector3.ZERO]
 var _mantle_hands := false
 var _hold_t := [1.0, 1.0]             # 0..1 through a hand's move to its next hold, 1 = planted
+var _in_t := [0.0, 0.0]               # s a planted low wrist has hung in under the chest (CLIMB_INREACH)
+var hand_inreach := 0                  # (bots) re-reaches of a hand tucked in under the chest
 var foot_moves := 0                   # times a foot stepped from one hold to the next (bots read this)
 var _foot := [Vector3.ZERO, Vector3.ZERO]       # world toe holds under the left and right foot
 var _foot_from := [Vector3.ZERO, Vector3.ZERO]
@@ -3389,7 +3401,21 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 			var wr: Vector3 = (_hold[i] as Vector3) + n * 0.04 - up_dir * 0.07
 			var arm_l: float = crumple.arm_len if crumple.arm_len > 0.0 else 0.47
 			out_of_reach = _shrugged(sh, wr, arm_l).distance_to(wr) > arm_l - 0.005
-		if (far > HAND_LETGO and _hold_t[other] >= 1.0) or out_of_reach:
+		var tucked := false
+		if not CLIMB_INREACH_OLD and CLIMB_INREACH_T > 0.0 and sh != Vector3.ZERO and crumple.shoulder[other] != Vector3.ZERO \
+				and _hold_t[other] >= 1.0 and go.length() > 1e-4:
+			var rt := (-Vector3(n.x, 0.0, n.z).normalized()).cross(Vector3.UP).normalized()
+			var wr_i: Vector3 = (_hold[i] as Vector3) + n * 0.04 - up_dir * 0.07
+			var mid: Vector3 = (sh + (crumple.shoulder[other] as Vector3)) * 0.5
+			var out := (wr_i - mid).dot(rt) * (1.0 if i == 1 else -1.0)
+			if _inreach_dbg:
+				print("INREACH hand %d out %.3f below %.3f in_t %.2f other_t %.2f" % [i, out, sh.y + 0.05 - wr_i.y, _in_t[i], _hold_t[other]])
+			if wr_i.y <= sh.y + 0.05 and out < CLIMB_INREACH_IN:
+				_in_t[i] += delta
+			else:
+				_in_t[i] = 0.0
+			tucked = _in_t[i] > CLIMB_INREACH_T
+		if (far > HAND_LETGO and _hold_t[other] >= 1.0) or out_of_reach or tucked:
 			_hold_missed = false
 			var next := _find_hold(i, 0.0, ahead)
 			if _hold_missed and not out_of_reach:
@@ -3398,6 +3424,9 @@ func _place_hands(delta: float, moved: Vector3) -> void:
 			_hold[i] = next
 			_hold_t[i] = 0.0
 			hand_moves += 1
+			if tucked and not (far > HAND_LETGO) and not out_of_reach:
+				hand_inreach += 1
+			_in_t[i] = 0.0
 	crumple.plant = minf(crumple.plant + delta * 6.0, 1.0)
 	crumple.hand_wall = n
 	crumple.shrug = SHRUG

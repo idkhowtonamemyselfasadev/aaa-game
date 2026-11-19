@@ -16989,7 +16989,9 @@ func _climb_test() -> void:
 	# (11-19 06:00) the arm reads, pooled: one climb is ~1 s on the face (~50 ticks, ~6 hand moves),
 	# so its overhead share and low-hand place swing 11-33 % / 0.27-0.32 m with a 0.05 nudge and no
 	# code change. Climb several stretches of the keep's face and gate the pooled reads instead.
+	var inr0 := p.hand_inreach
 	var pool := await _climb_arm_pool(rs, breach)
+	print("BOT climb: pooled, a hand tucked in under the chest re-reached %d times" % (p.hand_inreach - inr0))
 	print("BOT climb: pooled arm reads over %d climbs (%d ticks): a wrist over the head %.1f%% of the time, highest wrist %.3f m over its shoulder; low planted wrist %.3f m out from the body's centre (mean, least %.3f, %d samples); head tilt up to %.3f rad (%d reaching samples)" % [pool.runs, pool.ticks, pool.over * 100.0, pool.hi, pool.low, pool.low_min, pool.low_n, pool.tilt, pool.hgap_n])
 	if pool.runs < CLIMB_POOL_RUNS_MIN:
 		return _combat_done(false, "climb: only %d of the pooled stretches were climbed" % pool.runs)

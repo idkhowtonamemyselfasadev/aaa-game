@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-0930-heroturn-before.jpg",
-  "time": "2026-11-15T09:30:00Z",
-  "caption": "Same moment before the change: shoulders and staff already swung ~35 deg in one piece with the head; GL render.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0930-heroturn-headfirst.jpg",
-  "time": "2026-11-15T09:30:00Z",
-  "caption": "Hero 0.1 s into a turn on the spot (new ease-in): the back is still square to the lens and only the hat brim has begun to turn; GL render, harsh flat light on the yard.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1011-heroturn-010.jpg",
   "time": "2026-11-15T10:11:35Z",
   "caption": "Hero 0.1 s into a turn on the spot: the hood and hat brim start round while back, mantle and staff stay square; the face under the hood still reads grey and the meadow is a GL-compatibility render.",
@@ -897,6 +885,18 @@
   "file": "20261119-0500-climb.jpg",
   "time": "2026-11-19T05:15:00Z",
   "caption": "The hero climbing the keep from behind: the right fist reads up on its stone, the low left hand is still hidden behind the torso and bedroll (traced to the shoulders following the hip sway; no fix shipped yet), and the stone shows speckle noise in the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0730-climb-sq.jpg",
+  "time": "2026-11-19T07:30:08Z",
+  "caption": "Hero climbing the keep's outer face, three-quarter from the left: hand-over-hand reads, but the hands hide under the hat brim and capelet and the bedroll fills the back.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0730-climb-side.jpg",
+  "time": "2026-11-19T07:30:08Z",
+  "caption": "Side-on lens of the same climb from above: the reach to the stones reads, the figure is small and the low hand is lost behind the torso.",
   "verdict": "fail"
  }
 ]
