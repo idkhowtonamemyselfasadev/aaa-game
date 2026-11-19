@@ -4363,6 +4363,19 @@ func _ready() -> void:
 			se.glow_enabled = false
 		for i in 3:
 			await get_tree().process_frame
+	# (11-19 21:00) SHOT_HIDE=a,b on any spot: hide hero meshes whose name contains any of these;
+	# SHOT_LIST=1 prints each hero mesh's AABB (the knocked branch has its own copy)
+	if (OS.has_environment("SHOT_HIDE") or OS.has_environment("SHOT_LIST")) and not "knocked" in args:
+		var hide_any: PackedStringArray = OS.get_environment("SHOT_HIDE").split(",", false)
+		for n in player.find_children("*", "GeometryInstance3D", true, false):
+			var gi := n as GeometryInstance3D
+			if OS.has_environment("SHOT_LIST") and gi.is_visible_in_tree():
+				var bb := gi.global_transform * gi.get_aabb()
+				print("SHOT mesh %s pos %s size %s" % [gi.name, bb.position, bb.size])
+			for h in hide_any:
+				if h in String(gi.name):
+					gi.visible = false
+					print("SHOT hid ", gi.name)
 	# debug: "hide=Flora,Horizon" hides those world nodes (by name) to find what paints a patch
 	for a in args:
 		if a.begins_with("hide="):

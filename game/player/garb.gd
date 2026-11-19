@@ -258,6 +258,7 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			(g.material_override as ShaderMaterial).set_shader_parameter("fold_ao", 1.0)
 			(g.material_override as ShaderMaterial).set_shader_parameter("gore", 1.0)
 			hips.add_child(g)
+			g.name = "RobeGore"
 			gores.append(g)
 	if smock:
 		# the smock's skirt below the sash in the same fulled, road-worn wool as its body: plain
