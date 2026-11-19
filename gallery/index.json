@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261116-0050-climb-edge.jpg",
-  "time": "2026-11-16T00:50:00Z",
-  "caption": "Hero climbing the keep from behind at frame 18: the shot spot sits at a broken wall end, so the body hangs half past the face's edge with the left side in the air; the climb pose cannot be judged here.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0116-climb-back.jpg",
   "time": "2026-11-16T01:16:32Z",
   "caption": "Hero climbing the keep's outer face from behind on the new raycast-picked spot (intact 7.6 m stretch, both hands on stone); the stone shows speckle noise under the GL fallback and the hero's head reads large.",
@@ -891,6 +885,18 @@
   "file": "20261119-1800-leapdrive-strip.jpg",
   "time": "2026-11-19T18:00:00Z",
   "caption": "Running leap frame strip (jt 0.12, 0.24, 0.36, landing): the forward arm arcs up from the hip to chin height and eases back down on landing with no pop; the back arm is still hidden behind the hip.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-2024-plungefold-hold.jpg",
+  "time": "2026-11-19T20:24:59Z",
+  "caption": "Plunge landing 0.15 s after impact, side-on: the chest now folds over the staff planted in the turf with the head lifted to look ahead under the brim; still wrong: the robe hides the knees' fold and the hero reads dim in the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-2024-plungefold-impact.jpg",
+  "time": "2026-11-19T20:24:59Z",
+  "caption": "Plunge landing 0.08 s, side-on: ferrule in the turf inside the earth burst as the chest starts to fold; still wrong: the burst's dust is flat-lit and the figure lacks rim light.",
   "verdict": "fail"
  }
 ]

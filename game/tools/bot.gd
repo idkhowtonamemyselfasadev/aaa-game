@@ -4763,6 +4763,8 @@ const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
+const PL_FOLD_GATE := 30.0         # deg: (11-19 19:00) the plunge crouch's chest lean at its deepest
+const PL_HEADUP_GATE := 5.0        # deg: the head segment may lean at most this much more than the chest (old: +33, the head hung)
 const PL_FERRULE_GATE := 0.12        # m: (11-19 18:00) the lowest staff end off the floor through the plunge impact hold
 const PL_IMPACT_GAP_GATE := 0.04     # m: fists to the shaft through it
 const PL_PULL_STEP_GATE := 0.05      # m/tick: the wield's sink through the pull-out and the rise
@@ -5289,6 +5291,7 @@ func _airstrike_test() -> void:
 	var floor_y := p.global_position.y
 	var imp_step := [0.0, -1.0]   # worst per-tick move of the staff's centre through the rise, last centre y
 	var imp_hold := [true]
+	var imp_fold := [0.0, 0.0]    # deepest chest lean off vertical (deg), the head segment's lean then
 	var imp_rec := func() -> void:
 		var e := _staff_ends(c)
 		var lo: Vector3 = e[0] if e[0].y < e[1].y else e[1]
@@ -5305,6 +5308,18 @@ func _airstrike_test() -> void:
 		imp_gap[0] = maxf(imp_gap[0], maxf(c.fist_gap[0], c.fist_gap[1]))
 		var front := p.global_position + p.body.global_basis.z * 0.55
 		imp_reach[0] = minf(imp_reach[0], Vector2(lo.x - front.x, lo.z - front.z).length())
+		# (11-19 19:00) the chest's fold over the planted staff: hips -> neck lean off vertical,
+		# and the head segment (neck -> head top) leaning less than the chest = the head lifted
+		var sk: Skeleton3D = c.skel
+		var bw := func(nm: String) -> Vector3:
+			return sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_" + nm)).origin
+		var hp: Vector3 = bw.call("Hips")
+		var nkp: Vector3 = bw.call("Neck")
+		var ht: Vector3 = bw.call("HeadTop_End") if sk.find_bone("mixamorig_HeadTop_End") >= 0 else bw.call("Head")
+		var chl := rad_to_deg((nkp - hp).angle_to(Vector3.UP))
+		if chl > imp_fold[0]:
+			imp_fold[0] = chl
+			imp_fold[1] = rad_to_deg((ht - nkp).angle_to(Vector3.UP))
 		if OS.get_environment("PL_TRACE") == "1":
 			print("PI land %.3f lo %.3f gap R %.3f L %.3f dip %.3f" % [p.land_t, h, c.fist_gap[0], c.fist_gap[1], p._pose_dip])
 	c.skel.skeleton_updated.connect(imp_rec)
@@ -5319,6 +5334,9 @@ func _airstrike_test() -> void:
 	if not c.PLUNGE_FERRULE_OLD and imp_step[0] > PL_PULL_STEP_GATE:
 		return _combat_done(false, "the plunge's staff jerks as it is pulled out of the turf")
 	print("BOT airstrike: plunge impact hold -> ferrule off the turf %.3f .. %.3f m (gate <= %.2f), off the burst point %.2f m, worst fist gap %.3f m (gate <= %.2f)" % [imp_lo[0], imp_lo[1], PL_FERRULE_GATE, imp_reach[0], imp_gap[0], PL_IMPACT_GAP_GATE])
+	print("BOT airstrike: plunge crouch fold -> chest leans %.1f deg off vertical at its deepest, head segment %.1f deg (gates: chest >= %.0f, head at most %.0f more than the chest; old 15.6 / 48.6)" % [imp_fold[0], imp_fold[1], PL_FOLD_GATE, PL_HEADUP_GATE])
+	if not p.PLUNGE_FOLD_OLD and (imp_fold[0] < PL_FOLD_GATE or imp_fold[1] - imp_fold[0] > PL_HEADUP_GATE):
+		return _combat_done(false, "the plunge's crouch stands upright over the planted staff (or the head hangs with the chest)")
 	if not c.PLUNGE_FERRULE_OLD and (imp_lo[1] > PL_FERRULE_GATE or imp_gap[0] > PL_IMPACT_GAP_GATE):
 		return _combat_done(false, "the plunge's staff hangs over the turf at the impact instead of striking it (or the fists leave it)")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")

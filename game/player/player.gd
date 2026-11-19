@@ -2379,6 +2379,12 @@ const PL_DIVE_KNEE := 1.55
 const PL_DIVE_PELVIS := 0.16
 const PL_DIVE_NECK := -0.32
 var PLUNGE_FLAT := OS.get_environment("PLUNGE_FLAT") == "1"
+## (11-19 19:00) PLUNGE_FOLD_OLD=1: the plunge's landing chest halved like any armed landing (upright)
+var PLUNGE_FOLD_OLD := OS.get_environment("PLUNGE_FOLD_OLD") == "1"
+var PL_LAND_SPINE := float(OS.get_environment("PL_LAND_SPINE")) if OS.has_environment("PL_LAND_SPINE") else 1.00
+var PL_LAND_PELVIS := float(OS.get_environment("PL_LAND_PELVIS")) if OS.has_environment("PL_LAND_PELVIS") else 0.10
+var PL_LAND_NECK := float(OS.get_environment("PL_LAND_NECK")) if OS.has_environment("PL_LAND_NECK") else 0.90
+var pl_fold := 0.0                      # the plunge landing's chest fold weight (bots read this)
 # (11-09 07:00) a plunge started from a plain fall (off a ledge, no jump) had the jump pose easing
 # in from standing (_jp at 14/s, pose at k 18), so the 0.08 s coil was over before it showed
 # (knee 0.38 of 1.25): the hero read as standing with the staff raised. The plunge now takes the
@@ -2578,6 +2584,18 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		elbow = 0.0
 		if not (landing and _land_strike):
 			spine *= 0.5
+		if landing and _land_plunge and not PLUNGE_FOLD_OLD:
+			# (11-19 19:00) the plunge's crouch over the planted staff: the armed halving left the
+			# chest at ~0.3 rad, upright over the ferrule (side frames). The chest now folds over
+			# the staff with the hips (spine PL_LAND_SPINE), the pelvis tips forward and the head
+			# lifts to look ahead; the chest comes up after the hips on the rise.
+			var lu := land_t / _land_dur
+			var hold := sin(PI * minf(lu / 0.22, 1.0) * 0.5) * (1.0 - smoothstep(0.30, 0.85, lu))
+			var chest := maxf(hold, (1.0 - smoothstep(0.45, 1.0, lu)) * 0.55)
+			pl_fold = chest
+			spine = PL_LAND_SPINE * chest
+			pel = PL_LAND_PELVIS * hold
+			nk = PL_LAND_NECK * chest
 		var au: float = combat.air_attack_u() if combat != null else -1.0
 		if air and au >= 0.0 and not JUMPATK_FLAT:
 			# (11-08) the jump attack is thrown with the whole body, not the arms alone: as the
