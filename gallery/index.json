@@ -892,5 +892,17 @@
   "time": "2026-11-18T23:40:00Z",
   "caption": "Ashen Knight x3.2 after a walk stops: before at f63 (left), with the chest sway at f63 (middle, helm carried forward) and f84 (right, rocked back); the sway reads but subtly, the bladed guard turns this lens 3/4-front, and the shaded leg plate is still near-black.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261119-0058-knight46-corner.jpg",
+  "time": "2026-11-19T00:58:29Z",
+  "caption": "The x4.6 Ashen Knight striding away after a corner: boots planted and pace carried; the shin bindings read brown, but a bare grey ash knee still shows between the bindings.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0058-knight46-stop.jpg",
+  "time": "2026-11-19T00:58:29Z",
+  "caption": "The x4.6 knight settled after a stop, side lens: upright with boots planted; still reads small in frame and the knee gap shows grey.",
+  "verdict": "fail"
  }
 ]

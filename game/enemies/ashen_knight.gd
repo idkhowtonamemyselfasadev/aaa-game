@@ -645,6 +645,10 @@ func _dress() -> void:
 	add_child(armour)
 	armour.build(skel, body)
 	armour.fit_glaive(spear, HollowSpear.LENGTH * 0.5 - HollowSpear.BLADE)
+	# (11-19) steel knee cops over the bare knee between the bindings: OPT-IN (env KKNEE=1) until they
+	# read in a render (they build and ride the shin, but GL frames still show the bare knee; see PROGRESS)
+	if OS.get_environment("KKNEE") == "1":
+		armour.build_knees()
 	_mats.append_array(armour.mats)
 	_set_skin("slit_on", 0.0 if OS.get_environment("SLIT_OLD") == "1" else 1.0)   # 11-16 09:00: the before
 	_set_skin("slit_eyes", 0.0 if OS.get_environment("SLITEYE_OLD") == "1" else 1.0)   # 11-16 19:00: the before

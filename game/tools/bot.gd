@@ -7019,6 +7019,18 @@ func _knight_test() -> void:
 				and not String(att.name).begins_with("Armour"):
 			hood_shown = true
 	print("BOT knight: armour pieces %d, hood hidden %s" % [k.armour.pieces, not hood_shown])
+	# (11-19) both knees carry a steel cop over the gap between the bindings
+	print("BOT knight: knee cops %d" % k.armour.knees)
+	if OS.get_environment("KKNEE_DBG") != "":
+		for att in k.skel.get_children():
+			if att is BoneAttachment3D and String(att.name).begins_with("ArmourLeftLeg"):
+				var mi: MeshInstance3D = att.get_child(0).get_child(0)
+				var gb := mi.global_transform * mi.get_aabb().get_center()
+				var kb: Vector3 = (k.skel.global_transform * k.skel.get_bone_global_pose(k.skel.find_bone("mixamorig_LeftLeg"))).origin
+				var bz: Vector3 = k.body.global_basis.z
+				print("KKNEE rt cop centre %s knee %s body fwd %s model fwd %s offset.fwd %.3f" % [gb, kb, bz, k.model.global_basis.z, (gb - kb).dot(bz)])
+	if OS.get_environment("KKNEE") == "1" and k.armour.knees < 2:
+		return _combat_done(false, "knight knee cops missing (%d of 2)" % k.armour.knees)
 	if k.armour.pieces < 5 or hood_shown:
 		return _combat_done(false, "the knight is missing its armour or still wears the soldier's hood")
 	if k.state != HollowSoldier.IDLE or k.phase != 1 or k.health != AshenKnight.KNIGHT_HP:

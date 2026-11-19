@@ -55,6 +55,91 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			seams.append([pa, arm + Vector3(sx * 0.15, 0.08, 0.06), Vector3(sx, 0.6, 0.3)])
 			seams.append([pa, arm + Vector3(sx * 0.19, -0.04, -0.05), Vector3(sx, -0.1, -0.4)])
 
+## (11-19) Knee cops: a domed steel poleyn over each knee with a lame above and below and a
+## fan on the outer side, hung on the shin so it rides every bend. Before them the knee showed
+## the bare ash skin in the gap between the thigh and shin bindings: a grey patch on a black
+## knight. The ash knee plate stands ~0.12 m off the joint: the cop sits just proud of it.
+var knees := 0
+func build_knees() -> void:
+	for side in ["Left", "Right"]:
+		var sx := 1.0 if side == "Left" else -1.0
+		var knee := _bone_pos("mixamorig_%sLeg" % side)
+		var foot := _bone_pos("mixamorig_%sFoot" % side)
+		if knee == Vector3.ZERO or foot == Vector3.ZERO:
+			continue
+		var off := _hang("mixamorig_%sLeg" % side, _poleyn(knee, (foot - knee).normalized(), sx))
+		if off != null:
+			knees += 1
+			if OS.get_environment("KKNEE_DBG") != "":
+				var mi: MeshInstance3D = off.get_child(0)
+				print("KKNEE %s knee %s foot %s hip %s aabb %s body scale %s" % [side, knee, foot,
+						_bone_pos("mixamorig_%sUpLeg" % side), mi.get_aabb(), _body.global_transform.basis.get_scale()])
+
+func _poleyn(knee: Vector3, d: Vector3, sx: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var fwd := (Vector3(0, 0, 1) - d * d.z).normalized()
+	# the bands' winding needs one fixed handedness (mirroring it per knee turned the right cop
+	# inside out, culled); the sweep is symmetric, only the fan picks the knee's outer side
+	var side := fwd.cross(d).normalized()          # body +X
+	var out := side * sx
+	var up := -d
+	# [centre offset along up, half height, front radius, side radius, sweep (rad either side of front)]
+	var bands := [
+		[0.088, 0.030, 0.122, 0.108, 1.45],    # upper lame, tucked under the thigh binding
+		[0.000, 0.064, 0.140, 0.116, 1.75],    # the cop itself, domed over the kneecap
+		[-0.086, 0.028, 0.126, 0.110, 1.45],   # lower lame over the top of the shin binding
+	]
+	var kr := float(OS.get_environment("KKNEE_R")) if OS.get_environment("KKNEE_R") != "" else 1.0
+	for b in bands:
+		var cy: float = b[0]
+		var hh: float = b[1]
+		var rf: float = b[2] * kr
+		var rs: float = b[3] * kr
+		var sweep: float = b[4]
+		var nu := 22
+		var nv := 8
+		var verts := []
+		for j in nv + 1:
+			for i in nu + 1:
+				var v := float(j) / nv
+				var u := float(i) / nu
+				var th := lerpf(-sweep, sweep, u)
+				var ph := lerpf(1.0, -1.0, v)               # +1 top edge, -1 bottom edge
+				# the cop domes (a sphere-ish band), the lames are near-cylindrical bands
+				var bulge := cos(ph * (1.15 if hh > 0.05 else 0.6))
+				var lip := 1.0 + 0.05 * smoothstep(0.8, 1.0, absf(ph))
+				var keel := exp(-pow(th / 0.12, 2.0)) * 0.012 * (1.0 if hh > 0.05 else 0.4)
+				var r_f := rf * bulge * lip + keel
+				var r_s := rs * bulge * lip
+				var pos := knee + up * (cy + ph * hh) + fwd * cos(th) * r_f + side * sin(th) * r_s
+				var e := maxf(smoothstep(0.75, 1.0, absf(ph)), smoothstep(sweep - 0.25, sweep, absf(th)))
+				e = maxf(e, exp(-pow(th / 0.06, 2.0)) * 0.8)
+				verts.append([pos, e])
+		for j in nv:
+			for i in nu:
+				var a := j * (nu + 1) + i
+				var q := [verts[a], verts[a + 1], verts[a + nu + 2], verts[a + nu + 1]]
+				_quad(st, q[0][0], q[1][0], q[2][0], q[3][0], (q[0][1] + q[2][1]) * 0.5)
+		# a rivet at each end of the band
+		for th in [-sweep + 0.18, sweep - 0.18]:
+			var n := (fwd * cos(th) + side * sin(th)).normalized()
+			_stud(st, knee + up * cy + fwd * cos(th) * rf * cos(0.0) + side * sin(th) * rs, n, 0.007)
+	# the fan: a shell-shaped wing standing off the outer side of the cop
+	var fc := knee + out * 0.112 + fwd * 0.03
+	var fn := 9
+	for k in fn:
+		var a0 := lerpf(-1.2, 1.2, float(k) / fn)
+		var a1 := lerpf(-1.2, 1.2, float(k + 1) / fn)
+		var r := 0.05
+		var p0 := fc + (up * cos(a0) - fwd * sin(a0)) * r * (1.0 + 0.08 * cos(a0 * 6.0)) + out * 0.012
+		var p1 := fc + (up * cos(a1) - fwd * sin(a1)) * r * (1.0 + 0.08 * cos(a1 * 6.0)) + out * 0.012
+		var e := 0.55 + 0.15 * float(k % 2)
+		_tri(st, fc, p0, p1, e)
+		_tri(st, fc, p1, p0, e)
+	st.generate_normals()
+	return st.commit()
+
 ## World position and outward direction of seam `i` as the body now stands.
 func seam_at(i: int) -> Array:
 	var sm: Array = seams[i % seams.size()]
