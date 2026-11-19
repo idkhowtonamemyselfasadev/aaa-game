@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-0400-robe-kside.jpg",
-  "time": "2026-11-15T04:00:00Z",
-  "caption": "Same fall in profile at 0.18 s: the shorter rod (front panel) is gone, the long red rod left is the back panel seen edge-on; small figure, flat light.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0500-backrobe-air.jpg",
-  "time": "2026-11-15T05:00:00Z",
-  "caption": "Swept fall 0.30 s, side-on: the back robe panel now lies along the backs of the thighs and bends down at the knee instead of hanging from the seat as a red rod; still a thin edge-on sheet, dim flat light, small figure.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0500-backrobe-kneel.jpg",
   "time": "2026-11-15T05:00:00Z",
   "caption": "Getting up from the knock-down (1.45 s): the long back panel now folds where it meets the turf instead of running 25 cm into the ground; edge-on it still reads as a thin red strip.",
@@ -897,6 +885,18 @@
   "file": "20261119-0109-knight-x46-stop.jpg",
   "time": "2026-11-19T01:09:38Z",
   "caption": "The x4.6 Ashen Knight stopping a walk, side lens: the helm carries forward over the front boot with the boots planted; the ring floor still reads flat and the legs dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0223-knight-knee-before-after.jpg",
+  "time": "2026-11-19T02:23:36Z",
+  "caption": "Ashen Knight's knee, before (left: bare grey ash knee between the straps) and after (right: two short leather bindings close it); a small grey wedge still shows behind the bent knee.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0223-knight-ring-stride.jpg",
+  "time": "2026-11-19T02:23:36Z",
+  "caption": "x4.6 Ashen Knight striding in the ring with the knees bound; legs still read dark and flat from this backlit angle and the floor reads flat.",
   "verdict": "fail"
  }
 ]

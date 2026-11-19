@@ -515,6 +515,7 @@ var wraps_rubbed := 0            # bots: bindings with the rubbed leather lip
 var wraps_warm := 0              # bots: bindings with the warmed leather sheen (19:00 11-18)
 var wraps_filled := 0            # bots: bindings whose shade fill sees the leather brown (20:00 11-18)
 var wraps_skyfilled := 0         # bots: bindings whose sun-facing faces take the sky shade too (11-19)
+var knee_wraps := 0              # bots: bindings bound over the bare knee between thigh and shin straps (02:00 11-19)
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
 var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
@@ -583,6 +584,19 @@ func _ready() -> void:
 ## bindings are blackened, oiled leather straps instead: near-black, a little sheen, rubbed brown at the
 ## turns, so the red stays on the surcoat alone and the legs read dark like the plate.
 ## env KWRAPS=old: the before (oxblood bindings); KWRAPS=hide: no bindings (the Vanguard legs bare).
+## (02:00 11-19) the thigh straps end 0.90 down the thigh and the shin straps start 0.14 down the
+## shin, so a bare grey ash knee showed between them on every stride. Two short bindings close
+## it: one on the thigh run on over the joint, one on the shin started just above it, so the
+## knee reads as bound leather when straight and the turns stay overlapped when it bends.
+## env KKNEEWRAP_OLD=1: the before (the bare knee); KKNEE=1 cops are separate and still opt-in.
+func _knee_bindings() -> void:
+	if OS.get_environment("KKNEEWRAP_OLD") == "1" or OS.get_environment("KWRAPS") == "old":
+		return
+	for side in ["Left", "Right"]:
+		rags._wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.84, 1.08, 0.016, 3.5, "mixamorig_%sLeg" % side)
+		rags._wrap("mixamorig_%sLeg" % side, "mixamorig_%sFoot" % side, -0.12, 0.17, 0.015, 3.5, "mixamorig_%sUpLeg" % side)
+		knee_wraps += 2
+
 func _dress_wraps() -> void:
 	var mode := OS.get_environment("KWRAPS")
 	if mode == "old":
@@ -646,6 +660,7 @@ func _dress() -> void:
 	rags.set_param("cloth_dark", Color(0.10, 0.025, 0.02))
 	rags.set_param("cloth_light", Color(0.27, 0.07, 0.045))
 	rags.set_param("soot_amt", 0.55)
+	_knee_bindings()
 	_dress_wraps()
 	# (01:00 11-17) the surcoat's front panel lies on the forward knee and falls plumb from it
 	rags.knee_drape = true

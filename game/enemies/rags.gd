@@ -389,8 +389,11 @@ func _reshape(bone: String, fn: Callable) -> int:
 
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its
 ## radius fitted per height and angle to the skinned armour underneath so nothing pokes through.
-func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float) -> void:
+## `also`: a second bone whose skinned verts are fitted too (a binding over a joint must clear the
+## armour on both sides of it: the knee plate is weighted mostly to the shin, 02:00 11-19).
+func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float, also := "") -> void:
 	var bi := _skel.find_bone(bone)
+	var bi2 := _skel.find_bone(also) if also != "" else -2
 	var a := _rest_in_body(bi).origin
 	var b := _rest_in_body(_skel.find_bone(tip)).origin
 	var axis := b - a
@@ -407,12 +410,15 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		if m.skin == null or m.mesh == null:
 			continue
 		var bind := -1
+		var bind2 := -1
 		for k in m.skin.get_bind_count():
 			var bb := m.skin.get_bind_bone(k)
 			if bb < 0:
 				bb = _skel.find_bone(m.skin.get_bind_name(k))
 			if bb == bi:
 				bind = k
+			elif bb == bi2:
+				bind2 = k
 		if bind < 0:
 			continue
 		var to_body := _rest_in_body(bi) * m.skin.get_bind_pose(bind)
@@ -427,7 +433,7 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 			for v in verts.size():
 				var w := 0.0
 				for k in per:
-					if bones[v * per + k] == bind:
+					if bones[v * per + k] == bind or (bind2 >= 0 and bones[v * per + k] == bind2):
 						w += wts[v * per + k]
 				if w < 0.25:
 					continue

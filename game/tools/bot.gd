@@ -7057,6 +7057,10 @@ func _knight_test() -> void:
 	print("BOT knight: bindings sky-filled %d of %d" % [k.wraps_skyfilled, k.wraps_filled])
 	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KWRUB_OLD") != "1" and OS.get_environment("KSHEEN_OLD") != "1" and OS.get_environment("KFILL_OLD") != "1" and OS.get_environment("KSKY_OLD") != "1" and k.wraps_skyfilled < k.wraps_filled:
 		return _combat_done(false, "the knight's sun-facing straps in the surcoat's shadow take no sky fill (black blobs)")
+	# (02:00 11-19) the bare grey knee between thigh and shin straps is bound over
+	print("BOT knight: knee bindings %d, wraps %d" % [k.knee_wraps, k.rags.wraps])
+	if OS.get_environment("KWRAPS") == "" and OS.get_environment("KKNEEWRAP_OLD") != "1" and (k.knee_wraps < 4 or k.rags.wraps < 12):
+		return _combat_done(false, "the knight's knees are bare between the thigh and shin bindings")
 	# (14:00 11-18) soot washed down the plate in vertical runs (the plate read too clean)
 	var ksoot: Variant = k.armour.mats[0].get_shader_parameter("soot_streaks")
 	print("BOT knight: soot_streaks %s" % [ksoot])
