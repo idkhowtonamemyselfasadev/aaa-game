@@ -4455,12 +4455,22 @@ func _jump_test() -> void:
 	var arm_sep := [0.0, 0.0]
 	var arm_head := [0.0, 0.0]          # mean over the leap's flight of the nearer wrist to the head
 	var arm_n := [0, 0]
+	var curl_m := [0.0, 0.0]            # flight mean of both hands' middle-finger curl, rad
 	# read after the modifiers have posed the bones (a plain read between ticks sees the clip's pose)
 	var jw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+	# (11-19 10:00) and the hands' finger curl: the hand's length (wrist to middle knuckle) against the
+	# middle finger's last bone, rad (a straight finger 0; the relaxed rest ~1.4; a loose half-fist ~2)
+	var jm := [jskel.find_bone("mixamorig_LeftHandMiddle1"), jskel.find_bone("mixamorig_RightHandMiddle1"),
+		jskel.find_bone("mixamorig_LeftHandMiddle3"), jskel.find_bone("mixamorig_RightHandMiddle3")]
+	var jcurl := [0.0, 0.0]
 	var jread := func() -> void:
 		var g := jskel.global_transform
 		for bi in 3:
 			jw[bi] = g * jskel.get_bone_global_pose(jb[bi]).origin
+		for si in 2:
+			var hd0 := jskel.get_bone_global_pose(jb[si]).origin
+			var d0 := jskel.get_bone_global_pose(jm[si]).origin - hd0
+			jcurl[si] = d0.angle_to(jskel.get_bone_global_pose(jm[si + 2]).basis.y)
 	jskel.skeleton_updated.connect(jread)
 	for spr in [false, true]:
 		await ground.call()
@@ -4491,6 +4501,7 @@ func _jump_test() -> void:
 					arm_sep[si] = maxf(arm_sep[si], absf((wl - wr).dot(fw)))
 					arm_head[si] += minf(wl.distance_to(hd), wr.distance_to(hd))
 					arm_n[si] += 1
+					curl_m[si] += (jcurl[0] + jcurl[1]) * 0.5
 					if OS.has_environment("JUMPARM_DBG"):
 						print("BOT armdbg %d aim %.2f lr %s elr %s arm %.2f el %.2f sep %.2f" % [air_ticks, p.crumple.arm_aim, str(p.crumple.arm_lr), str(p.crumple.elbow_lr), p.crumple.arm, p.crumple.elbow, (wl - wr).dot(fw)])
 			if p.jumps > j3 and p.is_on_floor() and air_ticks > 3:
@@ -4504,6 +4515,10 @@ func _jump_test() -> void:
 	jskel.skeleton_updated.disconnect(jread)
 	for si in 2:
 		arm_head[si] /= maxf(arm_n[si], 1)
+		curl_m[si] /= maxf(arm_n[si], 1)
+	print("BOT jump: leap hands: middle-finger curl (flight mean, both hands) run %.2f, sprint %.2f rad" % [curl_m[0], curl_m[1]])
+	if not p.LEAPHAND_OLD and not p.JUMPARM_OLD and minf(curl_m[0], curl_m[1]) < 2.3:
+		return _combat_done(false, "the leap's empty hands stay open (the relaxed rest reads as a claw reaching ahead)")
 	print("BOT jump: leap arms: wrists fore/aft apart run %.2f, sprint %.2f m; nearer wrist to head (flight mean) run %.2f, sprint %.2f m" % [arm_sep[0], arm_sep[1], arm_head[0], arm_head[1]])
 	if not p.JUMPARM_OLD and not p.JUMPSPLIT_OLD:
 		if arm_sep[0] < 0.4 or arm_sep[1] < 0.6 or minf(arm_head[0], arm_head[1]) < 0.5:

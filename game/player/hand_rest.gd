@@ -9,6 +9,10 @@ extends SkeletonModifier3D
 
 var weight := 1.0            # 0..1: how much of this pose is on (eased by Player)
 var hold := 0.0              # 0..1: the relaxed curl closed toward a grip on the staff
+## (11-19 10:00) 0..1: an empty hand closed part-way toward the grip's curl (a running leap's loose
+## half-fist); the fingers only, the thumb follows at half of it. Does not touch `hold`, which the
+## guard keep reads as "the staff is in the hands".
+var loose := 0.0
 var fan_k := 1.0             # (bots) scale on the fan; 0 leaves the spread as the rest pose has it
 ## 0..1 per side: the hand clenched into a closed fist with nothing in it (the knight's roar fist).
 ## A grip on a haft leaves a hollow; this closes it: the fingers folded right in, the tips on the
@@ -80,13 +84,15 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if skel == null or weight <= 0.001:
 		return
 	for side in ["Left", "Right"]:
-		_pose_hand(skel, side, weight, hold, clench_l if side == "Left" else clench_r)
+		_pose_hand(skel, side, weight, hold, clench_l if side == "Left" else clench_r, loose)
 
 func _y(skel: Skeleton3D, b: int) -> Vector3:
 	return skel.get_bone_global_pose(b).basis.y.normalized()
 
-func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) -> void:
+func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0, lo := 0.0) -> void:
 	c = clampf(c, 0.0, 1.0)
+	var hf := maxf(h, clampf(lo, 0.0, 1.0))      # the fingers' curl toward the grip
+	var ht := maxf(h, clampf(lo, 0.0, 1.0) * 0.5) # the thumb's, half as far for an empty hand
 	var pre := "mixamorig_%sHand" % side
 	var hb := skel.find_bone(pre)
 	var mid := skel.find_bone(pre + "Middle1")
@@ -124,7 +130,7 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) ->
 			var b := skel.find_bone("%s%s%d" % [pre, f, j + 1])
 			if b < 0:
 				break
-			var want := lerpf(lerpf(float(RELAX[f][j]), float(HOLD[f][j]), h), float(FIST[f][j]), c)
+			var want := lerpf(lerpf(float(RELAX[f][j]), float(HOLD[f][j]), hf), float(FIST[f][j]), c)
 			# (11-06) both bones projected onto the hinge's plane first: the fan sets the first bone
 			# off the hand's length ACROSS the hinge, and a plain signed angle then took that 0.1 rad
 			# as fold with a sign from rounding noise (the knight's index flipped 0.2 rad tick to tick)
@@ -137,7 +143,7 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) ->
 		# (11-07) the fist's thumb: the grip's swing eased out and the root rolled about the knuckle
 		# line instead, down across the front of the folded index and middle (swept on the knight's
 		# roar fist: tip 1.23 -> 0.67 index-lengths from their middle joints; mirrored for the right)
-		_turn(skel, t1, across.cross(palm).normalized(), lerpf(THUMB_SWING, THUMB_HOLD_SWING, h) * w * (1.0 - c))
+		_turn(skel, t1, across.cross(palm).normalized(), lerpf(THUMB_SWING, THUMB_HOLD_SWING, ht) * w * (1.0 - c))
 		_turn(skel, t1, across * (1.0 if side == "Left" else -1.0), THUMB_FIST_SWING * c * w)
 		var t2 := skel.find_bone(pre + "Thumb2")
 		var tl := _y(skel, t1)
@@ -145,7 +151,7 @@ func _pose_hand(skel: Skeleton3D, side: String, w: float, h: float, c := 0.0) ->
 		for j in 3:
 			var b := skel.find_bone("%sThumb%d" % [pre, j + 1])
 			if b >= 0:
-				_turn(skel, b, th, lerpf(lerpf(float(THUMB_CURL[j]), float(THUMB_HOLD_CURL[j]), h),
+				_turn(skel, b, th, lerpf(lerpf(float(THUMB_CURL[j]), float(THUMB_HOLD_CURL[j]), ht),
 					float(THUMB_FIST_CURL[j]), c) * w)
 		if t2 < 0:
 			return

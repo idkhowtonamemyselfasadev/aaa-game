@@ -384,6 +384,11 @@ const LEAP_ARM_BACK := 0.78            # rad: the same-side arm back on top of t
 const LEAP_ELBOW_FWD := 0.55           # rad: the forward arm's elbow, open
 const LEAP_ELBOW_BACK := 0.22          # rad: the back arm, nearly straight
 var _leap_aim := 0.0                   # 0..1: how far the arms are hung straight before the leap's bends
+# (11-19 10:00) the leap's empty hands: HandRest's relaxed curl read as a splayed claw on the forward
+# hand reaching out ahead; they close part-way toward the grip's curl (a loose half-fist) with the
+# arms' swing. LEAPHAND_OLD=1 = before.
+var LEAPHAND_OLD := OS.get_environment("LEAPHAND_OLD") == "1"
+const LEAP_FIST := 0.80                # 0..1 of HandRest's grip curl at a full leap
 var _leap_s := 0.0
 var _leap_lead := 1.0
 var leap_split := 0.0                  # (bots) this tick's thigh-to-thigh spread from the leap, rad
@@ -989,6 +994,7 @@ func _update_hand_rest(delta: float) -> void:
 	var k := 1.0 - exp(-HAND_RATE * delta)
 	hand_rest.weight = lerpf(hand_rest.weight, 0.0 if owned else 1.0, k)
 	hand_rest.hold = lerpf(hand_rest.hold, combat._blend if combat != null else 0.0, k)
+	hand_rest.loose = 0.0 if LEAPHAND_OLD else LEAP_FIST * _leap_aim
 	if combat != null and combat._air_draw_t >= 0.0 and combat.air_snatch_late():
 		# snatched off the back in the air: the fingers close with the staff's arrival
 		hand_rest.hold = maxf(hand_rest.hold, combat._blend)
