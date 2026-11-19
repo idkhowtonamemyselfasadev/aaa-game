@@ -4332,6 +4332,7 @@ const JA_LOOSE_GATE := 0
 const STAND_FORE_GATE := -0.1   # (11-19 11:00) see the standing jump arms read
 const STAND_WRIST_OUT_GATE := 0.25  # (11-19 13:00) m each wrist must stay out off the head on the drive (old build R 0.12, L 0.50)
 const STAND_WDOWN_GATE := 0.12      # (11-19 14:00) m each wrist stays off the face on screen (35 deg front-3/4 lens) while it passes the face's band on the downswing
+const STAND_TUCK_OUT_GATE := 0.40  # (11-19 15:00) m: mean wrist out off the head in the rising tuck (old build 0.48: arms held out flat and wide, a T; new 0.32)
 const STAND_WRIST_LR_GATE := 0.08   # m most the two wrists' outward places may differ (old 0.38)
 const STAND_DRIVE_GATE := 0.22  # (11-19 12:00; 13:00 0.08 -> 0.22) m the higher wrist must get over the head on the drive (11-19 11:00 build 0.00, 12:00 0.16, 13:00 0.32)
 const STAND_DRIVE_BEND_GATE := 0.4  # (11-19 12:00) rad: mean elbow bend on the drive (old build 0.54, new 0.29)
@@ -4383,6 +4384,9 @@ func _jump_test() -> void:
 	var s_wface := [9.0, 9.0]          # the same, only while the wrist is up by the face (over the chin)
 	var s_wproj := [9.0, 9.0]          # and its clearance off the face on screen from a 35 deg front-3/4 lens (m)
 	var s_wdown := [9.0, 9.0]          # (11-19 14:00) the same on the downswing into the tuck, wrist in the face's band
+	var s_tout := 0.0                  # (11-19 15:00) the rising tuck (air 0.28-0.36 s): mean wrist out off the head (m)
+	var s_tfwd := 0.0                  # and mean wrist forward of the head (m)
+	var s_tn := 0
 	sskel.skeleton_updated.connect(sread)
 	for hold in [false, true]:
 		await ground.call()
@@ -4466,6 +4470,12 @@ func _jump_test() -> void:
 						# seen from a front-3/4 lens 35 deg off the face on the far hand's side: a
 						# hand forward of the face swings across it on screen
 						s_wproj[ai] = minf(s_wproj[ai], o2 * cos(deg_to_rad(35.0)) - maxf(f2, 0.0) * sin(deg_to_rad(35.0)))
+			if p._air_t > 0.28 and p._air_t < 0.36 and not p.is_on_floor():
+				var lft3: Vector3 = (sw[5] - sw[6]).normalized()
+				for ai in 2:
+					s_tout += (sw[ai] - sw[2]).dot(lft3) * (1.0 if ai == 0 else -1.0)
+					s_tfwd += (sw[ai] - sw[2]).dot(lft3.cross(Vector3.UP).normalized())
+					s_tn += 1
 			if p._air_t > 0.16 and not p.is_on_floor():
 				s_head += minf(sw[0].distance_to(sw[2]), sw[1].distance_to(sw[2]))
 				s_fore += ((sw[0] - sw[3]).normalized().y + (sw[1] - sw[4]).normalized().y) * 0.5
@@ -4481,6 +4491,9 @@ func _jump_test() -> void:
 	print("BOT jump: standing jump drive: elbow bend (mean, both arms, 0 = straight) %.2f rad" % s_dbend)
 	print("BOT jump: standing jump drive: wrist out off the head (least, + = out on its own side) L %.3f R %.3f m; while up by the face L %.3f R %.3f m" % [s_wout[0], s_wout[1], s_wface[0], s_wface[1]])
 	print("BOT jump: standing jump downswing: wrist out off the head while in the face's band (least) L %.3f R %.3f m; on screen off the face from a 35 deg front-3/4 lens L %.3f R %.3f m" % [s_wdown[0], s_wdown[1], s_wproj[0], s_wproj[1]])
+	s_tout /= maxf(s_tn, 1)
+	s_tfwd /= maxf(s_tn, 1)
+	print("BOT jump: standing jump rising tuck: wrist out off the head (mean) %.3f m, forward of the head (mean) %.3f m" % [s_tout, s_tfwd])
 	print("BOT jump: standing jump arms: nearer wrist to head (flight mean) %.2f m, forearm upward tilt (flight mean, 1 = straight up) %.2f, higher wrist over the head on the drive %.2f m" % [s_head, s_fore, s_up])
 	if not p.STANDARM_OLD and not p.JUMPARM_OLD and (s_head < 0.45 or s_fore > STAND_FORE_GATE):
 		return _combat_done(false, "a standing jump's arms stay up in the guard by the chin or are not thrown up on the drive")
@@ -4490,6 +4503,8 @@ func _jump_test() -> void:
 		return _combat_done(false, "a standing jump's arms swing up lopsided, a forearm across the face (wrists out L %.2f R %.2f m)" % [s_wout[0], s_wout[1]])
 	if not p.STANDARM_OLD and not p.JUMPARM_OLD and not p.CHESTARM_OLD and not p.STANDOUT_OLD and minf(s_wproj[0], s_wproj[1]) < STAND_WDOWN_GATE:
 		return _combat_done(false, "a standing jump's hand comes down in front of the face into the tuck (on screen off the face L %.2f R %.2f m)" % [s_wproj[0], s_wproj[1]])
+	if not p.STANDARM_OLD and not p.JUMPARM_OLD and not p.CHESTARM_OLD and not p.STANDOUT_OLD and not p.TUCKARM_OLD and s_tout > STAND_TUCK_OUT_GATE:
+		return _combat_done(false, "a standing jump's arms are held out wide through the tuck instead of gathered forward (wrists out %.2f m)" % s_tout)
 	print("BOT jump: tap apex %.2f m, hold apex %.2f m, rising knee tuck %.2f rad, landing dip %.3f m" % [apex[0], apex[1], tuck, dip])
 	if apex[0] > 0.85 or apex[1] < 1.15 or apex[1] - apex[0] < 0.4:
 		return _combat_done(false, "jump height does not follow the hold (tap %.2f, hold %.2f)" % apex)
