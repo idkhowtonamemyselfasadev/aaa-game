@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261116-0447-climb-before-after.jpg",
-  "time": "2026-11-16T04:47:22Z",
-  "caption": "Same climb frame before (left, hanging 0.37 m off the wall, knee jutting) and after (right, hugging the wall); the GL renderer is flat-lit and the arms are hidden under the capelet.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0447-climb-close-seq.jpg",
-  "time": "2026-11-16T04:47:22Z",
-  "caption": "Climbing frames f22/28/34: the body now hangs in close to the stones (shoulders 0.21 m off, was 0.37) with the stepping knee frogged out to the side; the hands still never rise above the shoulders.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0530-climbreach-f27.jpg",
-  "time": "2026-11-16T05:30:00Z",
-  "caption": "Hero climbing the keep from behind after the overhead-reach change: the right arm now rises beside the head, but no hand clears the hat brim yet and the shaded side of the stones goes near-black under the GL fallback.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0530-climbreach-seq.jpg",
   "time": "2026-11-16T05:30:00Z",
   "caption": "Climb frames f24/f27/f30 cropped: the right upper arm lifts toward the hat by f30 (before: hidden under the capelet), but from behind the reach still does not read as overhead.",
@@ -897,6 +879,18 @@
   "file": "20261119-2238-runstrike-oldnew.jpg",
   "time": "2026-11-19T22:38:18Z",
   "caption": "Old (left) vs new (right) at the same tick: the front panel (left strip) no longer runs on straight past the knee; the back panel (right strip) is unchanged and next to fix.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-2300-runstrike-sag.jpg",
+  "time": "2026-11-19T23:00:00Z",
+  "caption": "Running jump attack at 0.30 s: the back robe panel streaming behind now curls down under its own weight past mid-length; seen edge-on it still reads as a thin strip and the scene is dim GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-2300-backpanel-oldnew.jpg",
+  "time": "2026-11-19T23:00:00Z",
+  "caption": "Old (left) vs new (right) back panel in the running jump: the new tail bends down partway along instead of running out as one straight board; still too stiff and edge-on.",
   "verdict": "fail"
  }
 ]

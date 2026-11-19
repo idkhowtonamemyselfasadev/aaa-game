@@ -1158,6 +1158,27 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 				f = f0 * smoothstep(0.0, BACK_PEEL, maxf(bl - fx, 0.0) * bsy)
 				floor_hit = true
 			bfold = Vector2(fx, f)
+	var sagging := false
+	sag_w = 0.0
+	if not STREAMSAG_OLD and bfold.x >= 100.0 and posed_legs and back_air <= 0.0 and back_ground <= 0.0:
+		# (11-19 23:00) the stream sag (see SAG0): the tail of a panel swung far back past plumb
+		# curls back down toward the plumb line under its own weight
+		var br := _pivot_frame(_back)
+		var g := -up
+		var bplumb := atan2(-g.dot(br[1]), g.dot(br[0]))
+		var over := _swing_b - bplumb
+		var w := smoothstep(SAG0, SAG1, over)
+		if w > 0.0:
+			_sag_t += _dt
+			var flut := 1.0 + SAG_FLUTTER / SAG_K * (sin(_sag_t * 11.0) * 0.6 + sin(_sag_t * 17.3 + 1.3) * 0.4) * clampf(stream + 0.4, 0.0, 1.0)
+			bfold = Vector2(_back.get_meta("len", 1.0) * SAG_AT, -over * SAG_K * w * flut)
+			# the tail drops toward the trailing legs: it curls only as far as keeps it SAG_HEEL
+			# off the heels (a heel is a contact the cloth rests on, not one it passes through)
+			bfold.y *= _sag_heel_scale(br, bfold)
+			sagging = true
+			sag_w = w
+	back_round = lerpf(back_round, SAG_ROUND if sagging else 0.0, maxf(k, 0.3))
+	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold_len", back_round if back_round > 0.002 else 0.0)
 	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
 	# behind the heels
 	if not gap_at.is_empty():
@@ -1206,7 +1227,11 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	if bfold.x < 100.0 or _back_folded:
 		if bfold.x < 100.0:
 			# (a fold against the turf is a contact: it follows quickly)
-			fold_back = bfold if floor_hit else Vector2(bfold.x, lerpf(fold_back.y if fold_back.x < 100.0 else 0.0, bfold.y, maxf(k, 0.85)))
+			var fk2 := SAG_FOLLOW if sagging else maxf(k, 0.85)
+			fold_back = bfold if floor_hit else Vector2(bfold.x, lerpf(fold_back.y if fold_back.x < 100.0 else 0.0, bfold.y, fk2))
+			if sagging and fold_back.y < bfold.y:
+				# (the heel clamp is a contact: the lagging tail does not curl on past it)
+				fold_back.y = bfold.y
 			_back_folded = true
 		else:
 			fold_back = Vector2(fold_back.x, lerpf(fold_back.y, 0.0, k))
@@ -1219,7 +1244,7 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	var bsw := _swing_b
 	var bdl: Vector3 = bpf[0] * cos(bsw) - bpf[1] * sin(bsw)
 	var bnl: Vector3 = bpf[1] * cos(bsw) + bpf[0] * sin(bsw)
-	var bq := fold_arc(_back.get_meta("len", 1.0), fold_back, 0.07)
+	var bq := fold_arc(_back.get_meta("len", 1.0), fold_back, maxf(back_round, 0.07))
 	back_hem = _back.global_position + (bdl * bq.x + bnl * bq.y) * _back.global_basis.y.length()
 
 const BACK_FLOOR_PAD := 0.02   # m the back panel's lying rest is held over the turf (under the grass tops)
@@ -1237,7 +1262,60 @@ func _floor_low(fx: float, f0: float, bl: float, bsy: float, dir: Vector3, nrm: 
 		lo = minf(lo, (dir * q.x + nrm * q.y).dot(up) * bsy)
 	return lo
 
+const SAG_HEEL := 0.07     # m, the curled tail's clearance off each heel's back
+
+## How much (0..1) of the stream sag fold `f` the back panel may take before its curled tail
+## (crease -> hem, sampled along the arc) comes within SAG_HEEL of a heel's back.
+func _sag_heel_scale(br: Array, f: Vector2) -> float:
+	var down: Vector3 = br[0]
+	var bz: Vector3 = br[1]
+	var bo := _back.global_position
+	var bsy := _back.global_basis.y.length()
+	var bl: float = _back.get_meta("len", 1.0)
+	var dl: Vector3 = down * cos(_swing_b) - bz * sin(_swing_b)
+	var nl: Vector3 = bz * cos(_swing_b) + down * sin(_swing_b)
+	var heels := []
+	for leg in _legs:
+		heels.append(_joint(leg[2]) - bz * 0.06)
+	var ok := func(sc: float) -> bool:
+		var ff := Vector2(f.x, f.y * sc)
+		for i in 7:
+			var d := f.x + (bl - f.x) * (i + 1) / 7.0
+			var q := fold_arc(d, ff, SAG_ROUND)
+			var w := bo + (dl * q.x + nl * q.y) * bsy
+			for hl in heels:
+				if (w - hl).length() < SAG_HEEL:
+					return false
+		return true
+	if ok.call(1.0):
+		return 1.0
+	var a := 0.0
+	var b := 1.0
+	for _it in 8:
+		var m := (a + b) * 0.5
+		if ok.call(m):
+			a = m
+		else:
+			b = m
+	return a
+
 const BACK_AIR_FOLD := 0.55   # of the turn to plumb the back panel makes past the knee in a fall
+## (11-19 23:00) the stream sag: in a running jump the back panel streams out behind the trailing
+## legs, but hinged at the belt as one straight 0.9 m board it read as a rigid red strip. Swung
+## SAG0..1 rad back past plumb, its lower part now curls back down under gravity round a SAG_ROUND
+## arc from SAG_AT of its length, by SAG_K of the excess (the airflow holds up the rest), with a
+## small flutter in the stream; the tail lags (SAG_FOLLOW per tick). STREAMSAG_OLD=1 = before.
+const SAG0 := 0.15
+const SAG1 := 0.45
+const SAG_AT := 0.42
+const SAG_K := 0.45
+const SAG_ROUND := 0.24
+const SAG_FOLLOW := 0.22
+const SAG_FLUTTER := 0.07
+var STREAMSAG_OLD := OS.get_environment("STREAMSAG_OLD") == "1"
+var sag_w := 0.0              # (bots) the stream sag's weight this tick
+var back_round := 0.0         # the back fold's arc length (m; 0 = the 7 cm crease)
+var _sag_t := 0.0
 
 ## The ground's height (along `up`) under a point: a ray down past the wearer's own body.
 func _ground_at(p: Vector3, up: Vector3) -> float:

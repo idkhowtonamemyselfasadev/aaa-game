@@ -4797,6 +4797,9 @@ const PL_SNATCH_POSED_GATE := 0.0     # m: the same with the clearance re-run on
 ## against the higher knee. Gates: the hem hangs below the knee's height and no point of the panel
 ## (fold point or hem) is more than RS_AHEAD_GATE m ahead of the most forward knee.
 const RS_AHEAD_GATE := 0.20                # m, hem ahead of the forward knee's joint centre (the cloth over the thigh's front is ~0.1-0.15)
+const RS_SAG_GATE := 0.06                  # m, the streaming back hem below where the straight board would put it
+const RS_HEEL_GATE := 0.05                 # m, the folded tail (crease -> hem) off either ankle
+const SAG_OVER_MIN := 0.30                 # rad, the back panel swung this far past plumb counts as streaming
 const RS_LEAN_GATE := 0.05                 # m, the hem ahead of the knee fold point: below the knee the cloth hangs plumb
 const RS_HEM_GATE := 0.0
 func _stick_for(player: Player, dir: Vector3) -> Vector2:
@@ -4837,6 +4840,9 @@ func _runstrike_test() -> void:
 	var worst_ahead := -9.0
 	var worst_hem := -9.0
 	var worst_lean := -9.0
+	var sag_ticks := 0
+	var best_sag := -9.0
+	var worst_heel := 9.0
 	var ticks := 0
 	var left := false
 	for i in 120:
@@ -4879,6 +4885,29 @@ func _runstrike_test() -> void:
 		var ahead := hem.dot(fw) - kfw
 		worst_lean = maxf(worst_lean, (hem - fold_pt).dot(fw))
 		if OS.has_environment("RS_TRACE"): print("RS fold point ahead of the knee %+.3f" % (fold_pt.dot(fw) - kfw))
+		# (11-19 23:00) the back panel streaming behind: how far its hem drops below the straight
+		# board's (the stream sag), and the folded tail's clearance off the heels
+		var bk: Node3D = g._back
+		var bfr: Array = g._pivot_frame(bk)
+		var bsy: float = bk.global_basis.y.length()
+		var bl: float = bk.get_meta("len", 1.0)
+		var bd1: Vector3 = (bfr[0] as Vector3) * cos(g._swing_b) - (bfr[1] as Vector3) * sin(g._swing_b)
+		var straight: Vector3 = bk.global_position + bd1 * bl * bsy
+		var bhem: Vector3 = g.back_hem
+		var bgp := -Vector3.UP
+		var bover: float = g._swing_b - atan2(-bgp.dot(bfr[1]), bgp.dot(bfr[0]))
+		if bover > SAG_OVER_MIN:
+			sag_ticks += 1
+			best_sag = maxf(best_sag, (straight - bhem).dot(up))
+			# the curled tail sampled along its arc (as rags.gd bends it) against each heel's back
+			var bn1: Vector3 = (bfr[1] as Vector3) * cos(g._swing_b) + (bfr[0] as Vector3) * sin(g._swing_b)
+			for fname in ["mixamorig_LeftFoot", "mixamorig_RightFoot"]:
+				var heel: Vector3 = skl.global_transform * skl.get_bone_global_pose(skl.find_bone(fname)).origin - (bfr[1] as Vector3) * 0.06
+				for j in 10:
+					var dd: float = g.fold_back.x + (bl - g.fold_back.x) * (j + 1) / 10.0 if g.fold_back.x < bl else bl
+					var q: Vector2 = g.fold_arc(dd, g.fold_back, maxf(g.back_round, 0.07))
+					worst_heel = minf(worst_heel, (bk.global_position + (bd1 * q.x + bn1 * q.y) * bsy - heel).length())
+			if OS.has_environment("RS_TRACE"): print("RS back over %.2f swing_b %.2f fold %.2f@%.2f round %.2f sag_w %.2f drop %+.3f" % [bover, g._swing_b, g.fold_back.y, g.fold_back.x, g.back_round, g.sag_w, (straight - bhem).dot(up)])
 		var hem_up := hem.dot(up) - kh
 		ticks += 1
 		worst_ahead = maxf(worst_ahead, ahead)
@@ -4894,7 +4923,10 @@ func _runstrike_test() -> void:
 			print("RS t %.2f u %.2f swing_f %.2f fold %.2f@%.2f lie %.2f hw %.2f aim %.2f posed %s knee_fold %s kmax %.2f ahead %+.3f hem_up %+.3f" % [t, c.air_attack_u(), sw, g.fold_front.y, g.fold_front.x, g.tuck_lie, g.hang_w, g.tuck_aim, g.posed_legs, g.knee_fold, kmax, ahead, hem_up])
 	p.bot_input = Vector2.ZERO
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
-	if ticks == 0 or worst_ahead > RS_AHEAD_GATE or worst_lean > RS_LEAN_GATE or worst_hem > RS_HEM_GATE:
+	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
+	if sag_ticks > 0 and (best_sag < RS_SAG_GATE or worst_heel < RS_HEEL_GATE):
+		print("BOT FAIL: runstrike back panel sag")
+	elif ticks == 0 or worst_ahead > RS_AHEAD_GATE or worst_lean > RS_LEAN_GATE or worst_hem > RS_HEM_GATE:
 		print("BOT FAIL: runstrike front panel")
 	else:
 		print("BOT PASS: runstrike")
