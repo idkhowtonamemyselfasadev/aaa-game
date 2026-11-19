@@ -4354,6 +4354,7 @@ func _jump_test() -> void:
 	var push_sole := 0.0
 	var point := 0.0
 	var land_sole := 0.0
+	var stand_split := 0.0
 	for hold in [false, true]:
 		await ground.call()
 		var j0 := p.jumps
@@ -4373,6 +4374,7 @@ func _jump_test() -> void:
 			await get_tree().physics_frame
 			if hold:
 				tuck = maxf(tuck, p.crumple.knee)
+				stand_split = maxf(stand_split, p.leap_split)
 				if p._air_t > 0.06 and p._air_t < 0.12:
 					point = maxf(point, p.crumple.ankle)
 			dip = maxf(dip, -p.model.transform.origin.y + p._model_rest.origin.y)
@@ -4441,7 +4443,11 @@ func _jump_test() -> void:
 	if fired_at < 0 or fired_at > 8:
 		return _combat_done(false, "the buffered press did not fire on touchdown")
 	# 4) run vs sprint leap distance (flat stretch toward the camera's forward)
+	# (11-19) and the leap's split stride: push thigh trailing behind, swing knee up ahead
 	var dist := []
+	var leap_sp := [0.0, 0.0]
+	var trail_th := [9.0, 9.0]
+	var td_split := [0.0, 0.0]
 	for spr in [false, true]:
 		await ground.call()
 		p.set_look(0.0, -0.2)
@@ -4460,13 +4466,20 @@ func _jump_test() -> void:
 			await get_tree().physics_frame
 			if p.jumps > j3:
 				air_ticks += 1
+				leap_sp[0 if not spr else 1] = maxf(leap_sp[0 if not spr else 1], p.leap_split)
+				trail_th[0 if not spr else 1] = minf(trail_th[0 if not spr else 1], minf(p.crumple.hip + p.crumple.hip_lr.x, p.crumple.hip + p.crumple.hip_lr.y))
 			if p.jumps > j3 and p.is_on_floor() and air_ticks > 3:
+				td_split[0 if not spr else 1] = p.leap_split
 				break
 		p.bot_jump_hold = false
 		p.bot_input = Vector2.ZERO
 		p.bot_sprint = false
 		dist.append(Vector2(p.global_position.x - a.x, p.global_position.z - a.z).length())
 	print("BOT jump: run leap %.2f m, sprint leap %.2f m" % dist)
+	print("BOT jump: leap split (thigh to thigh) standing %.2f, run %.2f, sprint %.2f rad; trailing thigh run %.2f, sprint %.2f rad (- = behind); split at touch-down run %.2f, sprint %.2f" % [stand_split, leap_sp[0], leap_sp[1], trail_th[0], trail_th[1], td_split[0], td_split[1]])
+	if not p.JUMPSPLIT_OLD:
+		if leap_sp[0] < 0.9 or leap_sp[1] < 1.1 or trail_th[0] > 0.0 or stand_split > 0.6:
+			return _combat_done(false, "a running leap does not split the legs (push thigh behind, swing knee up) or a standing jump does")
 	if dist[1] < dist[0] + 0.6 or dist[0] < 3.0:
 		return _combat_done(false, "a sprint leap does not carry further than a run leap")
 	# 5) a 4 m drop: hard landing, no harm; a 14 m drop hurts; from 30 m it kills

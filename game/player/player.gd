@@ -362,6 +362,21 @@ var _air_top := 0.0                     # highest y this time in the air
 var _air_last_y := 0.0
 var _prev_pos := Vector3.ZERO
 var _jump_from_sprint := false
+# (11-19 08:00) a running leap is not a standing hop with a lead knee: the swing leg drives its
+# knee up, the push leg trails extended behind on pointed toes, the other arm swings forward and
+# the chest leans into the flight; the split closes as the legs reach for the ground and the
+# lead foot lands first. _leap_s 0..1 from the take-off's ground speed (0 for a standing jump,
+# a wall kick or a vault); _leap_lead +1 = the right knee leads. JUMPSPLIT_OLD=1 = before.
+var JUMPSPLIT_OLD := OS.get_environment("JUMPSPLIT_OLD") == "1"
+const LEAP_SPLIT_HIP := 0.62           # rad: lead thigh up / trail thigh back, each, at a full split
+const LEAP_SPLIT_KNEE := 0.30          # rad: lead knee folded more, trail knee opened less
+const LEAP_TRAIL_POINT := 0.45         # rad: the trailing foot's toes pointed off the push
+const LEAP_LEAN := 0.16                # rad: the chest over the flight
+const LEAP_ARM := 0.55                 # rad: opposite arm forward / same-side arm back
+var _leap_s := 0.0
+var _leap_lead := 1.0
+var leap_split := 0.0                  # (bots) this tick's thigh-to-thigh spread from the leap, rad
+var _leap_posed := false
 var land_t := -1.0                      # s into a landing (-1 none)
 var _land_hard := false
 var _land_plunge := false             # the landing was a plunge: deepest crouch, chest over the knees
@@ -1231,6 +1246,12 @@ func _physics_process(delta: float) -> void:
 		_jump_y0 = global_position.y
 		land_t = -1.0
 		_jump_from_sprint = sprinting and wish.length() > 0.3
+		# the take-off's ground speed sets how much of a running leap's split stride shows; the
+		# foot ahead in the run clip is the one planted for the push, so the other knee leads
+		var hs0 := Vector2(velocity.x, velocity.z).length()
+		_leap_s = 0.0 if JUMPSPLIT_OLD else clampf((hs0 - 1.6) / 2.6, 0.0, 1.0)
+		if crumple != null:
+			_leap_lead = -1.0 if crumple.clip_ahead > 0.0 else 1.0
 		if wish.length() > 0.3:
 			# the take-off pushes off toward the stick: a standing jump at a wall reaches it
 			var hv0 := Vector2(velocity.x, velocity.z)
@@ -1320,6 +1341,7 @@ func _physics_process(delta: float) -> void:
 		_air_t = -1.0                          # off the foe next frame: a fresh flight, no touchdown now
 		jump_apex = 0.0
 		_jump_y0 = global_position.y
+		_leap_s = 0.0
 		if combat != null:
 			combat.end_plunge_rise()
 	var y_pre := global_position.y
@@ -2348,6 +2370,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	var pel := 0.0
 	var nk := 0.0
 	var tl := 0.0
+	var leap_sp := 0.0
 	if air:
 		# take-off: the jump leaves at once, but the body shows the push that made it: the
 		# first frames are drawn sunk into a crouch (feet still on the turf, hips low, chest
@@ -2369,6 +2392,13 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		stride = 0.22 * tk if _jumped else 0.0  # lead knee higher, the other arm forward
 		if _jump_from_sprint:
 			stride = 0.42 * tk                  # a running leap: a long split stride
+		if _jumped and _leap_s > 0.0:
+			# a running leap: from the push line on the push leg trails out behind and the
+			# swing knee drives up ahead, closing as the legs reach down for the ground
+			var sp := _leap_s * (1.0 - crouch) * (1.0 - 0.85 * reach)
+			leap_sp = sp
+			stride *= 1.0 - sp
+			spine += LEAP_LEAN * sp
 		# toes trail pointed through the rise, then come up level as the legs reach for the ground
 		ankle = 0.75 * line * (1.0 - crouch) + 0.25 * tk * (1.0 - reach) - 0.35 * (knee - hip) * reach
 		arm = maxf(arm, 1.5 * line * (1.0 - crouch) + 0.2 * crouch)   # thrown up past the shoulders
@@ -2400,6 +2430,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
 		var env := sin(PI * minf(u / 0.3, 1.0) * 0.5) * (1.0 - smoothstep(0.3, 1.0, u))
 		var depth := 0.3 if _land_hard else 0.1
+		if not _land_hard and not JUMPSPLIT_OLD:
+			# (11-19) a full jump's 1.3 m fall lands with the knees giving more than a hop's
+			depth = lerpf(0.1, 0.17, clampf((last_drop - 0.6) / 0.9, 0.0, 1.0))
 		if _land_plunge:
 			depth = 0.42                       # driven in: the knees fold deep over the ferrule
 		dip = depth * env
@@ -2500,6 +2533,30 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 	crumple.stride = lerpf(crumple.stride, stride * _jp, k)
 	crumple.ankle = lerpf(crumple.ankle, ankle * _jp, k)
 	crumple.sole_flat = lerpf(crumple.sole_flat, flat * _jp, k)
+	if leap_sp > 0.0 or _leap_posed:
+		# per leg / per arm: (left, right); the lead side's thigh up and its arm back
+		var lead := LEAP_SPLIT_HIP * 0.72 * leap_sp
+		var trail := -LEAP_SPLIT_HIP * 1.7 * leap_sp
+		var kl := LEAP_SPLIT_KNEE * 0.85 * leap_sp
+		var kt := -LEAP_SPLIT_KNEE * 0.5 * leap_sp
+		var r := _leap_lead > 0.0
+		var th := Vector2(trail, lead) if r else Vector2(lead, trail)
+		var kn := Vector2(kt, kl) if r else Vector2(kl, kt)
+		var an := Vector2(LEAP_TRAIL_POINT * leap_sp, 0.0) if r else Vector2(0.0, LEAP_TRAIL_POINT * leap_sp)
+		var am := Vector2(LEAP_ARM, -LEAP_ARM) * leap_sp * (1.0 if r else -1.0)
+		if armed:
+			am = Vector2.ZERO                  # the staff's IK owns the arms
+		crumple.hip_lr = crumple.hip_lr.lerp(th * _jp, k)
+		crumple.knee_lr = crumple.knee_lr.lerp(kn * _jp, k)
+		crumple.ankle_lr = crumple.ankle_lr.lerp(an * _jp, k)
+		crumple.arm_lr = crumple.arm_lr.lerp(am * _jp, k)
+		_leap_posed = leap_sp > 0.0 or crumple.hip_lr.length() > 0.004
+		if not _leap_posed:
+			crumple.hip_lr = Vector2.ZERO
+			crumple.knee_lr = Vector2.ZERO
+			crumple.ankle_lr = Vector2.ZERO
+			crumple.arm_lr = Vector2.ZERO
+	leap_split = absf(crumple.hip_lr.x - crumple.hip_lr.y) + 2.2 * absf(crumple.stride) if _jp > 0.0 else 0.0
 	if pel != 0.0 or _ja_pelvis != 0.0:
 		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)
 		if pel == 0.0 and absf(_ja_pelvis) < 0.002:
@@ -2566,6 +2623,8 @@ func _clear_jump_pose() -> void:
 	_jp = 0.0
 	_tuck = 0.0
 	_ja_pelvis = 0.0
+	_leap_posed = false
+	_leap_s = 0.0
 	if crumple != null:
 		crumple.keep_hands = 0.0
 	if _ja_neck != 0.0 and crumple != null:
@@ -2918,6 +2977,7 @@ func _wall_jump(dir2: Vector2, right: Vector3) -> void:
 	jump_apex = 0.0
 	_jump_y0 = global_position.y
 	_jump_from_sprint = false
+	_leap_s = 0.0
 	land_t = -1.0
 	_air_swung = false
 	# no turf to crouch on: the take-off is drawn from the push line, legs driving off the stones

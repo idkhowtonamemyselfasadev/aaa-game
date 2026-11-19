@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261115-1011-heroturn-010.jpg",
-  "time": "2026-11-15T10:11:35Z",
-  "caption": "Hero 0.1 s into a turn on the spot: the hood and hat brim start round while back, mantle and staff stay square; the face under the hood still reads grey and the meadow is a GL-compatibility render.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-1011-heroturn-020.jpg",
-  "time": "2026-11-15T10:11:35Z",
-  "caption": "0.2 s in: the head is now ~1 rad ahead and the face shows in profile while the shoulders have only started round (the eyes clearly lead); still a GL fallback render without Forward+ lighting.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-1120-turnplant.jpg",
-  "time": "2026-11-15T11:20:25Z",
-  "caption": "0.15 s into a turn on the spot from rest: the pivot boot is now planted from the first tick and the hood leads while the back is still square; the opengl3 fallback ground still reads flat and blotchy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-1228-soldier-turn-strip.jpg",
-  "time": "2026-11-15T12:28:35Z",
-  "caption": "Soldier turn frames (old f6, new f4/6/9/13): boots hold their spots as the turn starts, the step reads; the armour still reads dark and flat in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-1228-soldier-turn.jpg",
   "time": "2026-11-15T12:28:35Z",
   "caption": "Hollow Soldier mid-turn on the spot, pivot boot planted from the first tick; the trampled-earth patch and flat noon light still look rough.",
@@ -897,6 +873,18 @@
   "file": "20261119-0730-climb-side.jpg",
   "time": "2026-11-19T07:30:08Z",
   "caption": "Side-on lens of the same climb from above: the reach to the stones reads, the figure is small and the low hand is lost behind the torso.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0824-leapsplit.jpg",
+  "time": "2026-11-19T08:24:27Z",
+  "caption": "Running jump at 0.3 s, before (left: legs hanging together) and after (right: push leg trailing, lead knee driven up). Still wrong: both arms held up in a boxer's guard, the hero lit dimly.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0824-leapstrip.jpg",
+  "time": "2026-11-19T08:24:27Z",
+  "caption": "Running leap side-on at 0.12 / 0.30 / 0.50 s and 0.03 s into the landing: split stride, lead foot reaching, landing in stride. Still wrong: arms stiff, figure small and in shade.",
   "verdict": "fail"
  }
 ]
