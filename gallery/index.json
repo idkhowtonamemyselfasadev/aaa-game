@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261115-2307-turngather-boots.jpg",
-  "time": "2026-11-15T23:07:18Z",
-  "caption": "Boot crops at ticks 6, 9, 12, 15, 18 of the turn: the gather boot lifts, travels in and sets down beside the pivot boot with no pop or slide; the boots sit in shadow, too dark to judge sole contact by eye.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-2307-turngather-t9.jpg",
-  "time": "2026-11-15T23:07:18Z",
-  "caption": "Low side lens on the hero's left turn on the spot at tick 9: the forward boot is lifted mid-gather while the pivot boot stays planted; the bare turf (grass off for the lens) shows a harsh repeating dash texture.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0050-climb-corner.jpg",
   "time": "2026-11-16T00:50:00Z",
   "caption": "Close crop of the climb at frame 16 (old spot): the hero sits in a ruined corner, one hand low near the hip instead of up on a hold.",
@@ -885,6 +873,18 @@
   "file": "20261119-1700-leapfront.jpg",
   "time": "2026-11-19T17:00:00Z",
   "caption": "Running leap from the front 3/4 (key light behind the lens): the forward fist now rides up in front of the chest; the face under the hat still reads dark and the back hand is lost behind the hip.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1800-plunge-impact.jpg",
+  "time": "2026-11-19T18:00:00Z",
+  "caption": "Plunge impact frame, side-on: the staff's ferrule now drives into the turf inside the earth burst with the fists down at chest height (before, it hung ~0.33 m over the ground); the chest still stays rather upright and the hero reads dim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1800-plunge-crouch.jpg",
+  "time": "2026-11-19T18:00:00Z",
+  "caption": "Plunge landing crouch at 0.15 s: knees deep, ferrule planted in the dust; the robe hides the legs' fold and the torso could fold further over the staff.",
   "verdict": "fail"
  }
 ]

@@ -111,6 +111,8 @@ const PLUNGE_HANG_KEY := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.22), -14.0]
 const PLUNGE_HANG_KEY_FWD := [-12.0, 142.0, Vector3(-0.07, 2.12, 0.17), -14.0]
 var PLUNGE_HANGFWD := OS.get_environment("PLUNGE_HANGFWD") == "1"
 var PLUNGE_LOWHANG := OS.get_environment("PLUNGE_LOWHANG") == "1"
+## (11-19 18:00) PLUNGE_FERRULE_OLD=1: the impact hold at standing height (ferrule ~0.4 m over the turf)
+var PLUNGE_FERRULE_OLD := OS.get_environment("PLUNGE_FERRULE_OLD") == "1"
 var _pl_key_env: PackedFloat64Array = OS.get_environment("PL_KEY").split_floats(",") if OS.has_environment("PL_KEY") else PackedFloat64Array()
 const PLUNGE_MID_KEY := [0.0, 20.0, Vector3(-0.12, 1.65, 0.55), -25.0]   # tip forward, hands out in front of the brim
 const PLUNGE_MID_AT := 0.5
@@ -1234,6 +1236,11 @@ func plunge_land(drop: float) -> void:
 	_slammed = true
 	t = 0.0
 	state = ATTACKING
+	if not PLUNGE_FERRULE_OLD and _wield != null:
+		# (11-19 18:00) driven into the turf on the touch-down tick: the hit-stop that follows
+		# freezes the combat update, so the plant must be in place for the frozen frame
+		strike_sink = plunge_plant_sink()
+		_wield.position = ride + Vector3(0.0, -strike_sink, 0.0)
 
 var last_crown_frame := -1
 
@@ -1637,7 +1644,25 @@ func _ride_chest(delta: float) -> void:
 		sink_on = state in [ATTACKING, READY, CHARGING]
 	if sink_on and player.strike_landing_hold():
 		strike_sink = player._pose_dip * STRIKE_SINK_SHARE
+	if state == ATTACKING and _atk == PLUNGE_RISE and not PLUNGE_FERRULE_OLD:
+		strike_sink = maxf(strike_sink, plunge_plant_sink())
 	_wield.position = ride + Vector3(0.0, -strike_sink, 0.0)
+
+## (11-19 18:00) the plunge's impact: PLUNGE_DOWN stands the staff at standing height, so while
+## the body sank 0.42 m into the landing crouch the ferrule hung ~0.33 m over the turf beside the
+## boot and the earth burst out under it (side frames). Now the staff is driven down with the
+## blow: from the touch-down tick the ferrule bites PL_FERRULE_BITE into the turf and stays planted
+## through the held crouch (the fists come down the shaft's line with it, to chest height), then
+## the plant eases out over the rise and the staff rides the body's remaining dip, so nothing pops.
+var PL_FERRULE_BITE := float(OS.get_environment("PL_FERRULE_BITE")) if OS.has_environment("PL_FERRULE_BITE") else 0.06
+var PL_PLANT_OUT := OS.get_environment("PL_PLANT_OUT").split_floats(",") if OS.has_environment("PL_PLANT_OUT") else PackedFloat64Array([0.30, 0.70])
+func plunge_plant_sink() -> float:
+	var u := clampf(t / float(PLUNGE_RISE["dur"]), 0.0, 1.0)
+	# the ferrule's height off the floor in PLUNGE_DOWN (body space: the wield rides at the feet)
+	var d := dir_of(PLUNGE_DOWN[0], PLUNGE_DOWN[1])
+	var lo: float = (PLUNGE_DOWN[2] as Vector3).y - absf(d.y) * Staff.LENGTH * 0.5
+	var plant := (lo + PL_FERRULE_BITE) * (1.0 - smoothstep(PL_PLANT_OUT[0], PL_PLANT_OUT[1], u))
+	return maxf(plant, player._pose_dip)
 
 func _place_hands(pose: Array) -> Transform3D:
 	var r := _solve(pose)

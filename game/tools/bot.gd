@@ -4733,6 +4733,9 @@ const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
+const PL_FERRULE_GATE := 0.12        # m: (11-19 18:00) the lowest staff end off the floor through the plunge impact hold
+const PL_IMPACT_GAP_GATE := 0.04     # m: fists to the shaft through it
+const PL_PULL_STEP_GATE := 0.05      # m/tick: the wield's sink through the pull-out and the rise
 const CLIMB_LOW_OUT_MIN := 0.27      # m: (11-19 04:00) the low climbing wrist out from the body's centre (0.32 measured; the mantle's rest edge ~0.28)
 const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the hat crown at the plunge hang (old -0.33)
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
@@ -5247,6 +5250,47 @@ func _airstrike_test() -> void:
 		return _combat_done(false, "the plunge's snatch off the back whips the staff round in one tick")
 	if c.plunges != 4:
 		return _combat_done(false, "the slung-staff plunge never landed")
+	# (11-19 18:00) the impact hold: the ferrule must meet the turf where the burst throws up
+	# the earth (frames: it hung ~0.4 m over the ground beside the boot while the dust burst
+	# out under it). Lowest staff end off the floor and fist gaps through the first 0.30 s.
+	var imp_lo := [99.0, -99.0]   # [min, max] of the lowest end's height off the floor
+	var imp_gap := [0.0]
+	var imp_reach := [99.0]       # ferrule's horizontal distance from the burst point
+	var floor_y := p.global_position.y
+	var imp_step := [0.0, -1.0]   # worst per-tick move of the staff's centre through the rise, last centre y
+	var imp_hold := [true]
+	var imp_rec := func() -> void:
+		var e := _staff_ends(c)
+		var lo: Vector3 = e[0] if e[0].y < e[1].y else e[1]
+		var h := lo.y - floor_y
+		# the plant's own sink of the wield, tick to tick (the rise's keys swing the staff
+		# back to guard at up to 0.09 m/tick with or without the plant)
+		if imp_step[1] > -0.5:
+			imp_step[0] = maxf(imp_step[0], absf(c.strike_sink - imp_step[1]))
+		imp_step[1] = c.strike_sink
+		if not imp_hold[0]:
+			return
+		imp_lo[0] = minf(imp_lo[0], h)
+		imp_lo[1] = maxf(imp_lo[1], h)
+		imp_gap[0] = maxf(imp_gap[0], maxf(c.fist_gap[0], c.fist_gap[1]))
+		var front := p.global_position + p.body.global_basis.z * 0.55
+		imp_reach[0] = minf(imp_reach[0], Vector2(lo.x - front.x, lo.z - front.z).length())
+		if OS.get_environment("PL_TRACE") == "1":
+			print("PI land %.3f lo %.3f gap R %.3f L %.3f dip %.3f" % [p.land_t, h, c.fist_gap[0], c.fist_gap[1], p._pose_dip])
+	c.skel.skeleton_updated.connect(imp_rec)
+	for i in 18:
+		await get_tree().physics_frame
+	imp_hold[0] = false
+	# then the pull-out over the rise and the hand-over back to guard: no tick may jerk the staff
+	for i in 50:
+		await get_tree().physics_frame
+	c.skel.skeleton_updated.disconnect(imp_rec)
+	print("BOT airstrike: plunge pull-out -> worst change of the staff's sink %.3f m/tick from the touch-down through the rise into guard (gate <= %.2f)" % [imp_step[0], PL_PULL_STEP_GATE])
+	if not c.PLUNGE_FERRULE_OLD and imp_step[0] > PL_PULL_STEP_GATE:
+		return _combat_done(false, "the plunge's staff jerks as it is pulled out of the turf")
+	print("BOT airstrike: plunge impact hold -> ferrule off the turf %.3f .. %.3f m (gate <= %.2f), off the burst point %.2f m, worst fist gap %.3f m (gate <= %.2f)" % [imp_lo[0], imp_lo[1], PL_FERRULE_GATE, imp_reach[0], imp_gap[0], PL_IMPACT_GAP_GATE])
+	if not c.PLUNGE_FERRULE_OLD and (imp_lo[1] > PL_FERRULE_GATE or imp_gap[0] > PL_IMPACT_GAP_GATE):
+		return _combat_done(false, "the plunge's staff hangs over the turf at the impact instead of striking it (or the fists leave it)")
 	_combat_done(true, "jump attack once per jump, low and high plunges strike the post, the high one harder, half fall damage")
 
 ## Foot IK on slopes: standing on a ~20 deg hillside each sole sits on ITS ground (the uphill
