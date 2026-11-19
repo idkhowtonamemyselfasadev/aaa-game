@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261115-0821-soldier-turn-look.jpg",
-  "time": "2026-11-15T08:21:58Z",
-  "caption": "Hollow Soldier turning on the spot, 4 frames in: the hooded head already looks round at the lens while the torso and spear are still side-on (new ease-in); still GL lighting and the ring floor's flat speckled ground.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0821-soldier-turn-square.jpg",
   "time": "2026-11-15T08:21:58Z",
   "caption": "Same turn 13 frames in: hips and spear guard have followed the head round; the far boot still reaches wide, GL render, speckled floor.",
@@ -891,6 +885,18 @@
   "file": "20261119-0300-climbtilt-cmp.jpg",
   "time": "2026-11-19T03:40:00Z",
   "caption": "3x crop, before (left) vs after (right): the head now leans off the arm reaching overhead so the hat clears the fist; a subtle change, the reach itself still tops out at the brim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0400-climb-lowhand.jpg",
+  "time": "2026-11-19T04:00:00Z",
+  "caption": "Climb from behind: the reaching right arm reads, but the low left hand is lost behind the mantle and bedroll; the wall's dark masonry and the warm hero read well.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0400-climb-nomantle.jpg",
+  "time": "2026-11-19T04:00:00Z",
+  "caption": "Same frame with the mantle hidden (debug): the left arm is still invisible, so the mantle is not what hides it; the low hand is tucked in front of the chest behind the bedroll.",
   "verdict": "fail"
  }
 ]

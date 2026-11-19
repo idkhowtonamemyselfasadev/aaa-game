@@ -4517,6 +4517,7 @@ const TUCK_SHIN_GATE := 0.04
 const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
 
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
+const CLIMB_LOW_OUT_MIN := 0.27      # m: (11-19 04:00) the low climbing wrist out from the body's centre (0.32 measured; the mantle's rest edge ~0.28)
 const PL_HANG_FIST_GATE := -0.15      # m: (11-09 09:00) the higher fist vs the hat crown at the plunge hang (old -0.33)
 const PL_HANG_HAT_GATE := -0.04       # m: worst shaft-to-hat margin from the hang through the swing over (old -0.25)
 const PL_COLUMN_GATE := 1.2           # m the burst's earth column's fast cards rise over the turf (11-09 14:00; old none)
@@ -16600,12 +16601,17 @@ func _climb_test() -> void:
 	p.climb_sway.clear()
 	p.climb_roll.clear()
 	p.climb_knee.clear()
-	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_Head", "mixamorig_Neck", "mixamorig_LeftHand", "mixamorig_RightHand"])
+	p.crumple.probe = PackedStringArray(["mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", "mixamorig_LeftArm", "mixamorig_RightArm", "mixamorig_Head", "mixamorig_Neck", "mixamorig_LeftHand", "mixamorig_RightHand", "mixamorig_LeftForeArm", "mixamorig_RightForeArm"])
 	# (11-19 03:00) the head gives a hand reaching overhead room: sideways gap along the face
 	# between the head bone and that hand's wrist, while the wrist is over its shoulder
 	var hgap_sum := 0.0
 	var hgap_n := 0
 	var tilt_max := 0.0
+	# (11-19 04:00) the low hand clears the mantle: a planted wrist at or under its shoulder, how far
+	# out along the face from the shoulders' midpoint (the mantle hangs ~0.28 m either side of it)
+	var low_sum := 0.0
+	var low_n := 0
+	var low_min := INF
 	while t < 15.0 and (p.climbing or p.mantle_t >= 0.0 or p.mantles == 0):
 		p.bot_input = Vector2(0, -1)
 		await _ticks(3)
@@ -16627,6 +16633,17 @@ func _climb_test() -> void:
 				if p._hold_t[i] < 1.0 and w.y > sj.y + 0.15:
 					hgap_sum += absf((w - hd).dot(rt))
 					hgap_n += 1
+				if OS.has_environment("CLIMB_ARMDBG"):
+					var eb := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftForeArm" if i == 0 else "mixamorig_RightForeArm", Vector3.ZERO) as Vector3)
+					var mid := (csk.global_transform * (p.crumple.probed.get("mixamorig_LeftArm", Vector3.ZERO) as Vector3) + csk.global_transform * (p.crumple.probed.get("mixamorig_RightArm", Vector3.ZERO) as Vector3)) * 0.5
+					print("ARM t %.2f hand %d hold_t %.2f wrist up %.3f out %.3f | elbow up %.3f out %.3f back %.3f | shoulder out %.3f" % [t, i, p._hold_t[i], w.y - sj.y, absf((w - mid).dot(rt)), eb.y - sj.y, absf((eb - mid).dot(rt)), (eb - sj).dot(-into), absf((sj - mid).dot(rt))])
+				if p._hold_t[i] >= 1.0 and w.y <= sj.y + 0.05:
+					var sl0 := csk.global_transform * (p.crumple.probed.get("mixamorig_LeftArm", Vector3.ZERO) as Vector3)
+					var sr0 := csk.global_transform * (p.crumple.probed.get("mixamorig_RightArm", Vector3.ZERO) as Vector3)
+					var lo := absf((w - (sl0 + sr0) * 0.5).dot(rt))
+					low_sum += lo
+					low_n += 1
+					low_min = minf(low_min, lo)
 			sq_n += 1
 			for k: String in sq_bones:
 				# as Crumple posed them (outside the modifier the skeleton reads the clip's pose)
@@ -16716,6 +16733,10 @@ func _climb_test() -> void:
 	print("BOT climb: overhead reach: wrist over its shoulder %.3f..%.3f m (mean %.3f), higher hand mean %.3f m, a wrist over the head (> %.2f m) %.0f%% of the time (%d samples), arm %.3f m, shoulders %.3f m off their holds (mean)" % [reach_lo, reach_hi, reach_mean, top_mean, CLIMB_HEAD_OVER_SH, over_frac * 100.0, reach_top_n, p.crumple.arm_len, shoff_sum / maxf(p.climb_reach.size(), 1)])
 	var hgap := hgap_sum / maxf(hgap_n, 1)
 	print("BOT climb: head gives the overhead reach room: wrist %.3f m to the side of the hat crown (mean, %d samples of a reaching hand over its shoulder), head tilt up to %.3f rad" % [hgap, hgap_n, tilt_max])
+	var low_mean := low_sum / maxf(low_n, 1)
+	print("BOT climb: the low hand clears the mantle: planted wrist at/under its shoulder %.3f m out from the body's centre (mean, least %.3f, %d samples)" % [low_mean, low_min if low_n > 0 else 0.0, low_n])
+	if low_n >= 4 and low_mean < CLIMB_LOW_OUT_MIN:
+		return _combat_done(false, "climb: the low hand hangs behind the mantle (%.3f m out from the body's centre, want >= %.2f, %d samples)" % [low_mean, CLIMB_LOW_OUT_MIN, low_n])
 	if not OS.has_environment("CLIMB_TILT_OLD") and not OS.has_environment("CLIMB_TILT") and (hgap_n < 4 or tilt_max < 0.1):
 		return _combat_done(false, "climb: the head does not lean off the arm reaching overhead (tilt %.3f rad, %d samples)" % [tilt_max, hgap_n])
 	var dmin := Vector4(INF, INF, INF, INF)
