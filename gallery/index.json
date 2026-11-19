@@ -886,5 +886,17 @@
   "time": "2026-11-19T10:00:00Z",
   "caption": "Leap forward hand before (left, fingers splayed and hooked) and after (right, curled into a loose fist); lighting on the hero still too dark.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261119-1118-standjump-arms.jpg",
+  "time": "2026-11-19T11:18:39Z",
+  "caption": "Standing jump, before/after pairs (rise, apex): the near fist no longer sits up by the chin; arms reach forward and low with loose hands. Still backlit/dim at this lens and the drive frame passes a hand in front of the face.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1118-standjump-land.jpg",
+  "time": "2026-11-19T11:18:39Z",
+  "caption": "Standing jump landing 0.06 s in: knees give, arms low and forward, no pop as the arm pose eases out. Lighting flat and the village behind is plain.",
+  "verdict": "fail"
  }
 ]

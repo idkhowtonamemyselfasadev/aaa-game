@@ -4329,6 +4329,8 @@ const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 ## arch and fold carried them up to 0.38 m off it; the 10:00 cocked key's hands were then out of reach)
 const JA_FIST_GATE := 0.02            # (11-08 12:00) 0.06 -> 0.04: collarbone reach + the key 2 cm lower; (11-08 14:00) 0.04 -> 0.02: the keep aims the fists onto the shaft
 const JA_LOOSE_GATE := 0
+const STAND_FORE_GATE := -0.1   # (11-19 11:00) see the standing jump arms read
+
 func _jump_test() -> void:
 	var p := _player
 	Engine.time_scale = 1.0                    # the 0.12 s windows need real-time ticks
@@ -4355,6 +4357,21 @@ func _jump_test() -> void:
 	var point := 0.0
 	var land_sole := 0.0
 	var stand_split := 0.0
+	# (11-19 11:00) the standing jump's arms, read after the modifiers: the nearer wrist to the head
+	# over the flight (a guard holds a fist ~0.25 m off the chin) and how far the higher wrist gets
+	# over the head on the drive (arms thrown up)
+	var sskel: Skeleton3D = p.crumple.get_skeleton()
+	var sb := [sskel.find_bone("mixamorig_LeftHand"), sskel.find_bone("mixamorig_RightHand"), sskel.find_bone("mixamorig_Head"),
+		sskel.find_bone("mixamorig_LeftForeArm"), sskel.find_bone("mixamorig_RightForeArm")]
+	var sw := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+	var s_fore := 0.0                  # flight mean of the forearms' upward tilt (elbow -> wrist . up; a guard ~0.8)
+	var sread := func() -> void:
+		for bi in 5:
+			sw[bi] = sskel.global_transform * sskel.get_bone_global_pose(sb[bi]).origin
+	var s_head := 0.0
+	var s_n := 0
+	var s_up := -9.0
+	sskel.skeleton_updated.connect(sread)
 	for hold in [false, true]:
 		await ground.call()
 		var j0 := p.jumps
@@ -4391,6 +4408,33 @@ func _jump_test() -> void:
 		if p.jumps != j0 + 1:
 			return _combat_done(false, "the jump press did not jump (hold %s)" % hold)
 		apex.append(p.jump_apex)
+	# a full jump pressed from a standstill with the stick pushed (the run clip starts under it:
+	# its arms carry the bent-elbow guard the 11-19 frames showed by the chin)
+	await ground.call()
+	p.set_look(0.0, -0.2)
+	var j9 := p.jumps
+	p.bot_jump = true
+	p.bot_jump_hold = true
+	for i in 120:
+		p.bot_input = Vector2(0, -1)
+		await get_tree().physics_frame
+		if p.jumps > j9:
+			if p._air_t > 0.05 and p._air_t < 0.16:
+				s_up = maxf(s_up, maxf(sw[0].y, sw[1].y) - sw[2].y)
+			if p._air_t > 0.16 and not p.is_on_floor():
+				s_head += minf(sw[0].distance_to(sw[2]), sw[1].distance_to(sw[2]))
+				s_fore += ((sw[0] - sw[3]).normalized().y + (sw[1] - sw[4]).normalized().y) * 0.5
+				s_n += 1
+			if p.is_on_floor() and p._air_t < 0.0 and i > 5:
+				break
+	p.bot_jump_hold = false
+	p.bot_input = Vector2.ZERO
+	sskel.skeleton_updated.disconnect(sread)
+	s_head /= maxf(s_n, 1)
+	s_fore /= maxf(s_n, 1)
+	print("BOT jump: standing jump arms: nearer wrist to head (flight mean) %.2f m, forearm upward tilt (flight mean, 1 = straight up) %.2f, higher wrist over the head on the drive %.2f m" % [s_head, s_fore, s_up])
+	if not p.STANDARM_OLD and not p.JUMPARM_OLD and (s_head < 0.45 or s_fore > STAND_FORE_GATE):
+		return _combat_done(false, "a standing jump's arms stay up in the guard by the chin or are not thrown up on the drive")
 	print("BOT jump: tap apex %.2f m, hold apex %.2f m, rising knee tuck %.2f rad, landing dip %.3f m" % [apex[0], apex[1], tuck, dip])
 	if apex[0] > 0.85 or apex[1] < 1.15 or apex[1] - apex[0] < 0.4:
 		return _combat_done(false, "jump height does not follow the hold (tap %.2f, hold %.2f)" % apex)

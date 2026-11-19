@@ -384,6 +384,15 @@ const LEAP_ARM_BACK := 0.78            # rad: the same-side arm back on top of t
 const LEAP_ELBOW_FWD := 0.55           # rad: the forward arm's elbow, open
 const LEAP_ELBOW_BACK := 0.22          # rad: the back arm, nearly straight
 var _leap_aim := 0.0                   # 0..1: how far the arms are hung straight before the leap's bends
+# (11-19 11:00) the standing jump's arms, hung straight first like the leap's (rad, on the hung arm)
+var STANDARM_OLD := OS.get_environment("STANDARM_OLD") == "1"
+const STAND_ARM_BACK := -0.55          # crouch: swung back behind the hips
+const STAND_ARM_THROW := 2.1           # push line: thrown up past the head
+const STAND_ELBOW_THROW := 0.2
+const STAND_ARM_TUCK := 0.85           # rising tuck: forward and down in front of the knees
+const STAND_ELBOW_TUCK := 0.85
+const STAND_ARM_FALL := 0.6            # falling: out and low for balance
+const STAND_ELBOW_FALL := 0.45
 # (11-19 10:00) the leap's empty hands: HandRest's relaxed curl read as a splayed claw on the forward
 # hand reaching out ahead; they close part-way toward the grip's curl (a loose half-fist) with the
 # arms' swing. LEAPHAND_OLD=1 = before.
@@ -2450,6 +2459,23 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			arm = lerpf(arm, -0.45, crouch)     # arms swung back behind the hips, ready to throw
 			ankle *= 1.0 - crouch
 			flat = crouch
+		if _jumped and not JUMPARM_OLD and not STANDARM_OLD and _wj_t < 0.0 and _leap_s < 1.0:
+			# (11-19 11:00) a standing jump's arms were bent on top of the idle clip's raised guard,
+			# so through push, rise and apex the near fist stayed up by the chin. Hang them first
+			# (arm_aim, as the leap does) and pose them outright: swung back behind the hips in the
+			# crouch, thrown up overhead on the drive, brought forward and down into the tuck,
+			# and opened out low for balance as the legs reach for the ground. STANDARM_OLD=1 = before.
+			var sw := 1.0 - _leap_s
+			var s_arm := lerpf(STAND_ARM_TUCK * maxf(tk, 0.5), STAND_ARM_FALL, reach)
+			var s_el := lerpf(STAND_ELBOW_TUCK, STAND_ELBOW_FALL, reach)
+			var lw := line * (1.0 - crouch)
+			s_arm = lerpf(s_arm, STAND_ARM_THROW, lw)
+			s_el = lerpf(s_el, STAND_ELBOW_THROW, lw)
+			s_arm = lerpf(s_arm, STAND_ARM_BACK, crouch)
+			s_el = lerpf(s_el, 0.3, crouch)
+			arm = lerpf(arm, s_arm, sw)
+			elbow = lerpf(elbow, s_el, sw)
+			leap_arm += sw
 	elif landing:
 		var u := land_t / _land_dur
 		# the knees give fast and come back slowly: a quick sink, then the body rises out of it
