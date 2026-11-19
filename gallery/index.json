@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261115-0200-palmpuff.jpg",
-  "time": "2026-11-15T02:00:00Z",
-  "caption": "Just after the break-fall slap: a small puff of dust and chaff kicks up off the sward round the hips and palm; the figure is still small and the light flat.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0300-fling.jpg",
-  "time": "2026-11-15T03:00:00Z",
-  "caption": "Swept off their feet, the hero now throws the arms up by reflex in mid-air (0.15 s), framed by the corrected side-on lens; dim meadow, flat ground light and a small figure still hold it back.",
-  "verdict": "fail"
- },
- {
-  "file": "20261115-0400-robe-kfront.jpg",
-  "time": "2026-11-15T04:00:00Z",
-  "caption": "Swept off their feet at 0.22 s, low front lens, before (left) vs after: the madder front robe panel now lies over the raised thighs instead of hanging below them like a board; the back panel still hangs from the seat as a stiff flat sheet, dark meadow light.",
-  "verdict": "fail"
- },
- {
   "file": "20261115-0400-robe-kside.jpg",
   "time": "2026-11-15T04:00:00Z",
   "caption": "Same fall in profile at 0.18 s: the shorter rod (front panel) is gone, the long red rod left is the back panel seen edge-on; small figure, flat light.",
@@ -903,6 +885,18 @@
   "file": "20261119-0058-knight46-stop.jpg",
   "time": "2026-11-19T00:58:29Z",
   "caption": "The x4.6 knight settled after a stop, side lens: upright with boots planted; still reads small in frame and the knee gap shows grey.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0109-knight-straps-skyfill.jpg",
+  "time": "2026-11-19T01:09:38Z",
+  "caption": "Ashen Knight close-up at 9:00: the thigh straps in the surcoat's cast shadow now read as deep-brown leather turns instead of black blobs; the shins' ash body still reads flat grey and the plate is dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0109-knight-x46-stop.jpg",
+  "time": "2026-11-19T01:09:38Z",
+  "caption": "The x4.6 Ashen Knight stopping a walk, side lens: the helm carries forward over the front boot with the boots planted; the ring floor still reads flat and the legs dark.",
   "verdict": "fail"
  }
 ]

@@ -35,6 +35,7 @@ uniform vec3 wrap_rub_col : source_color = vec3(0.30, 0.20, 0.13);
 uniform float wrap_spec = 0.45;   // the leather strap's specular (with wrap_rub)
 uniform float wrap_warm = 0.0;    // > 0: the strap's sheen takes the leather's own brown (a little metallic tint: a warm, not grey, glaze)
 uniform float wrap_fill = 0.0;    // > 0 (11-18 20:00): the shade fill sees the leather's brown body (x this share of wrap_rub_col), not its near-black soot: shaded straps keep their form
+uniform float wrap_shadow_sky = 0.0;   // > 0 (11-19): sun-facing strap faces take this share of the sky shade too (they sit in the surcoat's cast shadow, which the fill cannot see)
 uniform float edge_wear = 0.0;     // > 0: COLOR.g is a rubbed, sun-faded edge (the face cloth's outer turn)
 uniform float fold_ao = 0.0;       // > 0: COLOR.r is a fold cavity term (dark in the valleys)
 uniform float straw = 0.0;         // > 0: a plaited straw hat: twill-plaited cane strips, sun-bleached and weathered
@@ -566,6 +567,9 @@ void fragment() {
 	// colour (a floor at wrap_fill x the rubbed colour), so the shaded legs keep their straps
 	vec3 fill_alb = max(alb, wrap_rub_col * wrap_fill * mix(0.45, 1.15, band) * (0.8 + 0.5 * wrap_lip));
 	vec3 fill = figure_fill(fill_alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
+	if (wrap_shadow_sky > 0.0) {
+		fill += figure_sky_shade_f(fill_alb, wet_n, wrap_shadow_sky) - figure_sky_shade(fill_alb, wet_n);
+	}
 	fill = mix(fill, vec3(dot(fill, vec3(0.3, 0.55, 0.15))), 0.7 * felt);
 	EMISSION = ember_col * glow * 3.0 + fill * fold_occ;
 	// wool fibres standing off the surface scatter a soft sheen at grazing angles

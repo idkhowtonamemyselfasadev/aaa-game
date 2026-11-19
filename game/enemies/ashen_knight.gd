@@ -510,9 +510,11 @@ const KWRAP_RUB_COL := Color(0.30, 0.19, 0.12)
 const KWRAP_SPEC := 0.30
 const KWRAP_WARM := 0.25
 const KWRAP_FILL := 0.6
+const KWRAP_SHADOW_SKY := 0.4   # 0.7 tried: lit the surcoat's cast shadow away entirely; 0.4 keeps it a deep brown
 var wraps_rubbed := 0            # bots: bindings with the rubbed leather lip
 var wraps_warm := 0              # bots: bindings with the warmed leather sheen (19:00 11-18)
 var wraps_filled := 0            # bots: bindings whose shade fill sees the leather brown (20:00 11-18)
+var wraps_skyfilled := 0         # bots: bindings whose sun-facing faces take the sky shade too (11-19)
 var stomp_results: Array[String] = []
 var last_wave: Shockwave         # bots
 var last_hazard: Scorch          # bots: the phase-3 stomp's burning ground
@@ -618,6 +620,13 @@ func _dress_wraps() -> void:
 				var kf := OS.get_environment("KFILL")
 				m.set_shader_parameter("wrap_fill", float(kf) if kf != "" else KWRAP_FILL)
 				wraps_filled += 1
+				# (11-19) the thigh straps under the surcoat face the sun but sit in its cast shadow:
+				# the sky shade (sun-turned-away faces only) never reached them and they stayed black
+				# blobs. env KSKY_OLD=1: the before; KSKY=<share> tunes
+				if OS.get_environment("KSKY_OLD") != "1":
+					var kk := OS.get_environment("KSKY")
+					m.set_shader_parameter("wrap_shadow_sky", float(kk) if kk != "" else KWRAP_SHADOW_SKY)
+					wraps_skyfilled += 1
 		wraps_dark += 1
 
 func _wrap_nodes(m: Material) -> Array:

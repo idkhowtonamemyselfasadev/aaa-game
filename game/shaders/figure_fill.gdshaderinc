@@ -28,9 +28,12 @@ global uniform bool figure_rim_off;  // RIM_OLD=1: the figures before the rim li
 // contrast), most on faces open to the sky, less on those turned down to the ground.
 global uniform float figure_shade;
 
-vec3 figure_sky_shade(vec3 alb, vec3 wn) {
+// (11-19) `lit_floor`: the share of the sky shade sun-facing faces take as well. The fragment cannot
+// see cast shadow, so a sun-facing face in another piece's shadow (the knight's thigh straps under
+// the surcoat) got none of it and read as a near-black blob; 0 = the sun-turned-away side only.
+vec3 figure_sky_shade_f(vec3 alb, vec3 wn, float lit_floor) {
 	vec3 l = normalize(rim_dir + vec3(0.0, 1e-4, 0.0));
-	float away = smoothstep(0.15, -0.35, dot(wn, l));
+	float away = max(smoothstep(0.15, -0.35, dot(wn, l)), lit_floor);
 	float open = clamp(0.6 + 0.4 * wn.y, 0.25, 1.0);
 	// dark wool's matte fibres keep a floor of their own (as in the rim's sheen); paler cloth,
 	// skin and the hood already read in the flat ambient and take half (at the full share the
@@ -42,6 +45,10 @@ vec3 figure_sky_shade(vec3 alb, vec3 wn) {
 	float sl = dot(rim_sky, vec3(0.3, 0.59, 0.11));
 	vec3 tint = mix(rim_sky, vec3(sl) * vec3(1.06, 1.0, 0.9), 0.6);
 	return a * tint * figure_shade * away * open;
+}
+
+vec3 figure_sky_shade(vec3 alb, vec3 wn) {
+	return figure_sky_shade_f(alb, wn, 0.0);
 }
 
 vec3 figure_rim(vec3 alb, vec3 wn, vec3 wp, vec3 cam) {
