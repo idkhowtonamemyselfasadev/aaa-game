@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261116-1100-surge-hero-scale.jpg",
-  "time": "2026-11-16T11:00:00Z",
-  "caption": "The boss settling after its growth roar (size 3.2) with the hero standing beside it for scale (about 3x the hero); the ring of fire has burned down to embers and its thinned smoke no longer hides the helm. Still: the ember tongues read as thin streaks and the hero is small at this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1100-surge-roar-hero.jpg",
-  "time": "2026-11-16T11:00:00Z",
-  "caption": "The growth roar (size 3.2) from the front with the hero in frame; the ring-of-fire columns now age correctly in the shot and are fading red tongues by the roar instead of full-height columns filling a third of the frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1200-boss-p1-hero.jpg",
-  "time": "2026-11-16T12:00:00Z",
-  "caption": "The boss at its phase-1 size (2.2) on its post with the hero 2.5 m in front for scale; it reads about twice the hero, but the turf is bare dark mud and the knight's face is in shadow.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1200-boss-p3-hero-sky.jpg",
-  "time": "2026-11-16T12:00:00Z",
-  "caption": "Phase-3 final size (4.6) beside the hero after the second growth surge, the cloudless polygon overhead now fixed; the hero is lost in dust at its boot and a flat pale low-poly sprig fills the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1200-ringfire-before-after.jpg",
   "time": "2026-11-16T12:00:00Z",
   "caption": "Ring of fire during the roar, before (left) and after (right): the ring's tongues now fade out early and shrink instead of standing as thin red streaks; smoke still reads muddy.",
@@ -897,6 +873,18 @@
   "file": "20261120-0613-footfin.jpg",
   "time": "2026-11-20T06:13:00Z",
   "caption": "Hero's near boot from the low rear heels lens, before (left) and with a tried tuck under the tapered binding (right): the dark crescent fin off the outer ankle is still there and the boot's vamp still covers the binding; the change was reverted.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0715-footwrap-before-after.jpg",
+  "time": "2026-11-20T07:15:00Z",
+  "caption": "Hero's feet from the front: left the old foot binding with a dark sheet off each boot's flank, right the binding removed so the boot shows bare; the boot leather is still too pale and soft-looking.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0715-heels-bare.jpg",
+  "time": "2026-11-20T07:15:00Z",
+  "caption": "Hero's heels from behind with no foot binding: buckle disc and heel show, shin wrap ends at the ankle; pale leather reads a little like a sneaker.",
   "verdict": "fail"
  }
 ]

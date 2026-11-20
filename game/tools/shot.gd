@@ -1106,6 +1106,9 @@ func _ready() -> void:
 		# does a flap stand off it); combine with keylight to light the heel side
 		var hp := player.global_position
 		var hb := -player.body.global_transform.basis.z
+		# (11-20 07:00) `hfront`: the same low lens from the front 3/4 (instep, vamp, shin cuff)
+		if "hfront" in args:
+			hb = -hb
 		SPOTS[spot] = [hp + hb.rotated(Vector3.UP, -0.6) * 1.3, hp]
 	if spot == "heroback" or spot == "staff":
 		# rear three-quarter of the idle player: the staff slung across the back

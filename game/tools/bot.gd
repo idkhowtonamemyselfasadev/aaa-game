@@ -4999,30 +4999,39 @@ func _runstrike_test() -> void:
 						for qb in rings[key]:
 							foot_span = maxf(foot_span, (qa - qb).length())
 	print("BOT runstrike: %d bandage wraps -> widest end ring %.2f of the mid tube's radius (gate <= %.2f)" % [wrap_n, worst_open, RS_WRAP_OPEN_GATE])
-	if wrap_n < 8 or worst_open > RS_WRAP_OPEN_GATE:
+	# (11-20 07:00) the hero no longer wears foot bindings (`FOOTWRAP_OLD=1` = before): 6 wraps, 8 with them
+	var foot_old := OS.has_environment("FOOTWRAP_OLD")
+	if wrap_n < (8 if foot_old else 6) or worst_open > RS_WRAP_OPEN_GATE:
 		print("BOT FAIL: runstrike wrap ends open")
 		get_tree().quit()
 		return
+	if not foot_old:
+		print("BOT runstrike: %d foot wraps on the hero (gate 0: the boot reads alone, the shin binding ends in its ankle cuff)" % foot_n)
+		if foot_n != 0:
+			print("BOT FAIL: runstrike hero still wears a foot binding")
+			get_tree().quit()
+			return
 	# (11-20 03:00) the foot bindings narrow at both ends, onto the ankle and over the instep
-	print("BOT runstrike: %d foot wraps -> widest ring just inside a cuff %.2f of the mid ring (gate <= %.2f)" % [foot_n, worst_foot, RS_FOOT_TAPER_GATE])
-	if foot_n < 2 or worst_foot > RS_FOOT_TAPER_GATE:
-		print("BOT FAIL: runstrike foot wraps not tapered")
-		get_tree().quit()
-		return
-	# (11-20 04:00) the foot binding's underside is held off the heel and sole: fitted to them the
-	# shell stood round the boot's heel as a wide open cup seen from behind
-	print("BOT runstrike: foot wraps -> widest ring across %.3f m (gate <= %.2f)" % [foot_span, RS_FOOT_SPAN_GATE])
-	if foot_span > RS_FOOT_SPAN_GATE:
-		print("BOT FAIL: runstrike foot wraps cup the heel")
-		get_tree().quit()
-		return
-	# (11-20 05:00) its flanks are held in (the boot's ankle buckle plate tucked under): fitted by the
-	# dilated grid they stood 3-4.5 cm off the boot, a dark sheet off the outer ankle seen from behind
-	print("BOT runstrike: foot wraps -> reach to either flank %.3f m (gate <= %.3f)" % [foot_side, RS_FOOT_SIDE_GATE])
-	if foot_side > RS_FOOT_SIDE_GATE:
-		print("BOT FAIL: runstrike foot wraps stand off the boot's flanks")
-		get_tree().quit()
-		return
+	if foot_old:
+		print("BOT runstrike: %d foot wraps -> widest ring just inside a cuff %.2f of the mid ring (gate <= %.2f)" % [foot_n, worst_foot, RS_FOOT_TAPER_GATE])
+		if foot_n < 2 or worst_foot > RS_FOOT_TAPER_GATE:
+			print("BOT FAIL: runstrike foot wraps not tapered")
+			get_tree().quit()
+			return
+		# (11-20 04:00) the foot binding's underside is held off the heel and sole: fitted to them the
+		# shell stood round the boot's heel as a wide open cup seen from behind
+		print("BOT runstrike: foot wraps -> widest ring across %.3f m (gate <= %.2f)" % [foot_span, RS_FOOT_SPAN_GATE])
+		if foot_span > RS_FOOT_SPAN_GATE:
+			print("BOT FAIL: runstrike foot wraps cup the heel")
+			get_tree().quit()
+			return
+		# (11-20 05:00) its flanks are held in (the boot's ankle buckle plate tucked under): fitted by the
+		# dilated grid they stood 3-4.5 cm off the boot, a dark sheet off the outer ankle seen from behind
+		print("BOT runstrike: foot wraps -> reach to either flank %.3f m (gate <= %.3f)" % [foot_side, RS_FOOT_SIDE_GATE])
+		if foot_side > RS_FOOT_SIDE_GATE:
+			print("BOT FAIL: runstrike foot wraps stand off the boot's flanks")
+			get_tree().quit()
+			return
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
 	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
 	print("BOT runstrike: back panel stream roll -> hem rolls %.2f rad (gate >= %.2f), rolled hem corners off the heels %.3f m (gate >= %.2f)" % [best_roll, RS_ROLL_GATE, worst_corner, RS_CORNER_GATE])

@@ -296,12 +296,18 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# to them it cupped the boot's heel as a wide pale shell seen from behind (`heels` lens)
 		# (11-20 05:00) and its outer side is held in too (FOOT_SIDE_CAP), the boot's round ankle
 		# buckle plate tucked under it: it stood off the plate as a pale flap (`FOOTSIDE_OLD=1` = before)
-		var ft := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER
-		var ft0 := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER0
-		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0,
-				0.92 if shin_slim >= 1.0 else HERO_FOOT_WRAP_END, 0.008, 4.0, "", ft, FOOT_TAPER_R,
-				ft0, FOOT_TAPER0_R, 0.0 if OS.has_environment("FOOTCAP_OLD") else FOOT_PLANTAR_CAP,
-				_foot_side_cap())
+		# (11-20 07:00) the hero wears no foot binding any more: after four sessions of capping and
+		# tucking, the only band of it still showing over the boot was a dark crescent off the outer
+		# ankle (the boot's vamp, skinned to ToeBase, stayed outside it); the leather boot with its
+		# round buckle reads cleanly alone and the shin binding ends in its rolled cuff at the ankle
+		# (`FOOTWRAP_OLD=1` = before). Villagers (shin_slim 1) keep theirs.
+		if shin_slim >= 1.0 or OS.has_environment("FOOTWRAP_OLD"):
+			var ft := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER
+			var ft0 := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER0
+			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0,
+					0.92 if shin_slim >= 1.0 else HERO_FOOT_WRAP_END, 0.008, 4.0, "", ft, FOOT_TAPER_R,
+					ft0, FOOT_TAPER0_R, 0.0 if OS.has_environment("FOOTCAP_OLD") else FOOT_PLANTAR_CAP,
+					_foot_side_cap())
 		# villagers' forearms in their sleeve wool and a mitt over the hand: in the pale shin-wrap
 		# grey the forearm wraps and the base body's gloves read as grey plate gauntlets
 		tint = palette.get("sleeves", _calm(palette.get("wraps", ARM_LINEN)))
