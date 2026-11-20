@@ -50,6 +50,8 @@ uniform float weathered = 0.0;     // > 0 (a hanging wool piece): faded top, dam
 uniform vec2 gore_swing = vec2(0.0); // a side gore: the front/back panel swings (rad) its ends follow
 uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meets the ground)
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
+uniform float twist = 0.0;         // (11-20) rad a streaming panel rolls about its long axis by the hem (0 at the seam), so it shows its face
+uniform float ripple = 0.0;        // (11-20) m of a lateral wave running down a streaming panel to the hem
 uniform float fold_len = 0.0;      // > 0: `fold` bends round a true arc this long (m, >= 0.07) instead of a 7 cm crease
 uniform float gore = 0.0;          // 1: this piece is a side gore
 uniform vec2 gore_fold_f = vec2(1000.0, 0.0);  // the front panel's folds, which the gore's front end follows
@@ -250,6 +252,16 @@ void settle_side(inout vec3 v, vec4 e, float a) {
 void vertex() {
 	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
+	// (11-20) a panel streaming in the air rolls about its own long axis (more toward the hem) and a
+	// lateral wave runs down it, before the folds bend it, so the bend carries the roll round
+	if (twist != 0.0 || ripple != 0.0) {
+		float ta = twist * UV.y * sqrt(UV.y);
+		float tc = cos(ta);
+		float ts = sin(ta);
+		VERTEX.xz = vec2(VERTEX.x * tc - VERTEX.z * ts, VERTEX.x * ts + VERTEX.z * tc);
+		NORMAL.xz = vec2(NORMAL.x * tc - NORMAL.z * ts, NORMAL.x * ts + NORMAL.z * tc);
+		VERTEX.x += ripple * UV.y * sin((TIME + time_offset) * 7.5 - UV.y * 8.0 + seed);
+	}
 	// a robe panel folding over the knees and onto the ground: below each fold the cloth turns
 	// about the panel's x axis, eased in over a few centimetres so the bend is soft; the far
 	// fold first, so the near one carries it round

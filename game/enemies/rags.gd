@@ -1178,6 +1178,15 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 			sagging = true
 			sag_w = w
 	back_round = lerpf(back_round, SAG_ROUND if sagging else 0.0, maxf(k, 0.3))
+	# (11-20) the stream roll: the streaming tail rolls about its own long axis and swims side
+	# to side, so from the side it shows its face instead of a thin straight edge
+	var tw_to := 0.0
+	if sagging and not STREAMROLL_OLD:
+		tw_to = sag_w * (ROLL_BASE + ROLL_SWAY * sin(_sag_t * 2.6 + 0.7))
+	back_twist = lerpf(back_twist, tw_to, ROLL_FOLLOW)
+	var bmat := (_back.get_child(0) as MeshInstance3D).material_override
+	bmat.set_shader_parameter("twist", back_twist if absf(back_twist) > 0.002 else 0.0)
+	bmat.set_shader_parameter("ripple", ROLL_RIPPLE * sag_w if sagging and not STREAMROLL_OLD else 0.0)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold_len", back_round if back_round > 0.002 else 0.0)
 	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
 	# behind the heels
@@ -1313,6 +1322,16 @@ const SAG_ROUND := 0.24
 const SAG_FOLLOW := 0.22
 const SAG_FLUTTER := 0.07
 var STREAMSAG_OLD := OS.get_environment("STREAMSAG_OLD") == "1"
+## (11-20) The stream roll: while the stream sag holds, the back panel rolls about its long axis
+## by ROLL_BASE +- ROLL_SWAY rad at the hem (a slow swim, x sag_w; rag.gdshader `twist`, 0 at the
+## seam), following at ROLL_FOLLOW/tick, with a ROLL_RIPPLE m lateral wave running down to the hem
+## (`ripple`). STREAMROLL_OLD=1 = before.
+const ROLL_BASE := 0.42
+const ROLL_SWAY := 0.16
+const ROLL_FOLLOW := 0.12
+const ROLL_RIPPLE := 0.025
+var STREAMROLL_OLD := OS.get_environment("STREAMROLL_OLD") == "1"
+var back_twist := 0.0         # rad the back panel's hem rolls about its long axis
 var sag_w := 0.0              # (bots) the stream sag's weight this tick
 var back_round := 0.0         # the back fold's arc length (m; 0 = the 7 cm crease)
 var _sag_t := 0.0

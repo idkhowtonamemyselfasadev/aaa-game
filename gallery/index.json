@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261116-0530-climbreach-seq.jpg",
-  "time": "2026-11-16T05:30:00Z",
-  "caption": "Climb frames f24/f27/f30 cropped: the right upper arm lifts toward the hat by f30 (before: hidden under the capelet), but from behind the reach still does not read as overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0620-climbshrug.jpg",
   "time": "2026-11-16T06:20:40Z",
   "caption": "Climb with the new shoulder shrug: the left forearm now shows over the capelet beside the hat, but the reach still stops at head height and the figure is small in frame.",
@@ -891,6 +885,18 @@
   "file": "20261119-2300-backpanel-oldnew.jpg",
   "time": "2026-11-19T23:00:00Z",
   "caption": "Old (left) vs new (right) back panel in the running jump: the new tail bends down partway along instead of running out as one straight board; still too stiff and edge-on.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0013-streamroll.jpg",
+  "time": "2026-11-20T00:13:23Z",
+  "caption": "Running jump attack at jt 0.38 from the lit side: the back robe panel streaming behind now rolls to show its face and ragged hem; still a small figure in flat meadow light, legs' wrap ring at the knee open.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0013-streamroll-cmp.jpg",
+  "time": "2026-11-20T00:13:23Z",
+  "caption": "Before (left, thin straight red strip) vs after (middle jt 0.38, right jt 0.32): the panel now twists open toward the hem; the hem tongues still read as straight spikes.",
   "verdict": "fail"
  }
 ]
