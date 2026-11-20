@@ -294,11 +294,14 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# stood off the slim ankle as a wide open collar seen from behind the shin
 		# (11-20 04:00) and its underside is held off the heel and sole (FOOT_PLANTAR_CAP): fitted
 		# to them it cupped the boot's heel as a wide pale shell seen from behind (`heels` lens)
+		# (11-20 05:00) and its outer side is held in too (FOOT_SIDE_CAP), the boot's round ankle
+		# buckle plate tucked under it: it stood off the plate as a pale flap (`FOOTSIDE_OLD=1` = before)
 		var ft := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER
 		var ft0 := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER0
 		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0,
 				0.92 if shin_slim >= 1.0 else HERO_FOOT_WRAP_END, 0.008, 4.0, "", ft, FOOT_TAPER_R,
-				ft0, FOOT_TAPER0_R, 0.0 if OS.has_environment("FOOTCAP_OLD") else FOOT_PLANTAR_CAP)
+				ft0, FOOT_TAPER0_R, 0.0 if OS.has_environment("FOOTCAP_OLD") else FOOT_PLANTAR_CAP,
+				_foot_side_cap())
 		# villagers' forearms in their sleeve wool and a mitt over the hand: in the pale shin-wrap
 		# grey the forearm wraps and the base body's gloves read as grey plate gauntlets
 		tint = palette.get("sleeves", _calm(palette.get("wraps", ARM_LINEN)))
@@ -1591,3 +1594,12 @@ func _mark_boots() -> int:
 			dst.surface_set_name(s, src.surface_get_name(s))
 		m.mesh = dst
 	return marked
+
+## The hero's foot binding's outer-side cap (m): FOOT_SIDE_CAP, `FOOT_SIDE_CAP=<m>` env to try
+## others, 0 with `FOOTSIDE_OLD=1` (before 11-20 05:00).
+func _foot_side_cap() -> float:
+	if OS.has_environment("FOOTSIDE_OLD"):
+		return 0.0
+	if OS.has_environment("FOOT_SIDE_CAP"):
+		return float(OS.get_environment("FOOT_SIDE_CAP"))
+	return FOOT_SIDE_CAP

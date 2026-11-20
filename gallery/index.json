@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-0800-surge-roar.jpg",
-  "time": "2026-11-16T08:00:00Z",
-  "caption": "Boss growth surge, front-lit at s~1.9: the knight now still roars with the left fist up where the old regrip had both fists closed round the visor (a hunch); face still hidden behind the helm slit, scale unreadable without the hero in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0900-slit-before-after.jpg",
-  "time": "2026-11-16T09:00:00Z",
-  "caption": "Helm crops during the surge: before (blank helm, mid-roar), after mid-roar (slit blazing across the eyes) and after at the settle; the slit reads as one bar, the two eye hot points barely separate.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0900-surge-slit.jpg",
   "time": "2026-11-16T09:00:00Z",
   "caption": "The boss settling after its growth roar (size 3.2): the helm's sight slit now burns with the ember instead of reading as a blank face; the ring-of-fire columns still fill a third of the frame and the hero is not in shot for scale.",
@@ -897,6 +885,18 @@
   "file": "20261120-0415-heels.jpg",
   "time": "2026-11-20T04:15:01Z",
   "caption": "Idle hero's boots lit from behind: snug bindings over the ankle with bare leather heels; scene is dark under the hero's own shadow and the right ankle flap remains.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0515-sidecap-before-after.jpg",
+  "time": "2026-11-20T05:15:00Z",
+  "caption": "Hero's right boot from behind, before (left) and after (right): the foot binding's outer-lower side no longer stands off the boot as a dark sheet from ankle to sole and the round buckle disc shows under it; a slim crescent still stands off at the ankle cuff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0515-heels.jpg",
+  "time": "2026-11-20T05:15:00Z",
+  "caption": "Low rear lens on the idle hero's heels after the side cap: bindings snug on the boot flanks, but the feet sit in the hero's own shadow and the ankle crescent remains.",
   "verdict": "fail"
  }
 ]

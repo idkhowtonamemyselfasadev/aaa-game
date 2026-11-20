@@ -27,6 +27,14 @@ const FOOT_TAPER0_R := 0.5 # its radius at the ankle end vs its fitted shell
 # seen from behind (low rear `heels` lens); held in, the binding hugs the ankle and instep and
 # the boot's heel counter comes out under it (`FOOTCAP_OLD=1` = before)
 const FOOT_PLANTAR_CAP := 0.092
+# (11-20 05:00) the hero's foot binding on the boot's flanks (side_cap): fitted by the dilated grid it
+# stood 3-4.5 cm off either side mid-foot, a dark sheet off the outer ankle seen from behind (`heels`
+# lens); anything of the boot past it (the round ankle buckle plate) is tucked under it
+const FOOT_SIDE_CAP := 0.07
+const SIDE_CAP_LO := 0.7  # -cos(angle) where the side cap starts fading out toward the sole (~134 deg)
+const TUCK_GAP := 0.003   # m the tucked armour sits inside the binding's shell
+var side_tucked := 0      # verts `_tuck_under` pulled in (bots)
+var side_tuck_max := 0.0  # deepest pull (m)
 var _body: Node3D
 var _hips_rest := Transform3D()
 var _front: Node3D
@@ -355,6 +363,44 @@ func _slim_ankle(leg: String, foot: String, k: float) -> int:
 		q.y = 0.0
 		return pb - q * (1.0 - f))
 
+## How much of `side_cap` applies at `ang` round a wrap (0 = body forward): full on both flanks
+## from ~37 deg to ~134 deg off forward, faded out by ~165 deg; none on the instep or the heel.
+static func side_cap_w(ang: float, lat: float) -> float:
+	# both flanks (the shell stood 3-4.5 cm off either side of the boot mid-foot); `lat` kept for
+	# a one-sided cap later. Faded out toward the sole so the heel keeps its own (plantar) cap.
+	# (the outer-lower quadrant, ankle to sole, was the sheet: run the cap on to ~160 deg)
+	var lo := float(OS.get_environment("SIDECAP_LO")) if OS.has_environment("SIDECAP_LO") else SIDE_CAP_LO
+	return smoothstep(0.3, 0.6, absf(sin(ang))) * (1.0 - smoothstep(lo, 0.97, -cos(ang))) * (1.0 if lat != 0.0 else 0.0)
+
+## Tucks the skinned armour carried by `bone` under a side-capped binding: every vert inside the
+## wrap's length (v 0..1 of t0..t1) whose radius off the axis passes the capped shell, where the cap
+## pulled the shell in, moves radially to just inside it (TUCK_GAP), faded by its weight on `bone`.
+## The heel and the toe keep their shape (only the side cap's share is tucked). Returns verts moved.
+func _tuck_under(bone: String, a: Vector3, d: Vector3, e1: Vector3, e2: Vector3, axis: Vector3,
+		t0: float, t1: float, shell: Callable) -> int:
+	var ln := axis.length()
+	return _reshape(bone, func(pb: Vector3, w: float) -> Vector3:
+		var p := pb - a
+		var t := p.dot(d) / ln
+		var v := (t - t0) / (t1 - t0)
+		if v < 0.0 or v > 1.0:
+			return pb
+		var q := p - d * p.dot(d)
+		var ql := q.length()
+		var ang := fposmod(atan2(q.dot(e2), q.dot(e1)), TAU)
+		var rc: float = shell.call(ang, v, true)
+		var ro: float = shell.call(ang, v, false)
+		if rc >= ro - 0.0005:
+			return pb
+		var target := maxf(rc - TUCK_GAP, 0.01)
+		if ql <= target:
+			return pb
+		# faded in over the wrap's first/last 8 % so the tuck has no hard edge at the cuffs
+		var k := smoothstep(0.2, 0.6, w) * smoothstep(0.0, 0.08, v) * smoothstep(1.0, 0.92, v)
+		var nl := lerpf(ql, target, k)
+		side_tuck_max = maxf(side_tuck_max, ql - nl)
+		return a + d * p.dot(d) + q * (nl / ql))
+
 ## Moves the base body's verts carried by `bone`: `fn(body_pos, weight) -> body_pos` per vert with
 ## any weight on that bone. Each mesh gets its own copy (custom-format + 8-weight flags kept).
 func _reshape(bone: String, fn: Callable) -> int:
@@ -421,8 +467,12 @@ func _reshape(bone: String, fn: Callable) -> int:
 ## `taper0`/`taper0_r` the same at the start (the foot binding's ankle collar).
 ## `plantar_cap` (m): the shell's radius on the side away from body forward (a foot's heel and
 ## sole) is held to this, blended in round the sides, so it does not cup the boot's heel.
+## `side_cap` (m): the same on both flanks of the limb, and the
+## skinned armour under it that stood past it is tucked in under the binding (`_tuck_under`), so
+## the binding lies snug over the boot's ankle buckle plate instead of standing off it (11-20 05:00).
 func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float, also := "",
-		taper := 0.0, taper_r := 1.0, taper0 := 0.0, taper0_r := 1.0, plantar_cap := 0.0) -> void:
+		taper := 0.0, taper_r := 1.0, taper0 := 0.0, taper0_r := 1.0, plantar_cap := 0.0,
+		side_cap := 0.0) -> void:
 	var bi := _skel.find_bone(bone)
 	var bi2 := _skel.find_bone(also) if also != "" else -2
 	var a := _rest_in_body(bi).origin
@@ -433,6 +483,8 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	var e2 := d.cross(e1)
 	const NA := 16
 	const NH := 10
+	var dbg_pts := OS.get_environment("WRAP_DBG") == "standoff" and bone.ends_with("Foot")
+	var fit_pts := PackedVector3Array()
 	var rad := PackedFloat32Array()
 	rad.resize(NA * NH)
 	rad.fill(0.0)
@@ -477,6 +529,15 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 				var ia := int(ang / TAU * NA) % NA
 				var ih := clampi(int((t - t0) / (t1 - t0) * NH), 0, NH - 1)
 				rad[ih * NA + ia] = maxf(rad[ih * NA + ia], q.length())
+				if dbg_pts:
+					fit_pts.append(p)
+	if OS.get_environment("WRAP_DBG") == "footraw" and bone.ends_with("Foot"):
+		print("WRAPR %s raw (ia 0 = body forward, 4 = d x fwd)" % bone)
+		for ih in NH:
+			var ln := "WRAPR t %.2f |" % lerpf(t0, t1, (ih + 0.5) / NH)
+			for ia in NA:
+				ln += " %.3f" % rad[ih * NA + ia]
+			print(ln)
 	# fill empty cells, then smooth so the wrap is a tight but soft shell over the armour
 	var floor_r := 0.035
 	for i in rad.size():
@@ -512,23 +573,62 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	# pointed foot, where the limb inside is thinner than the binding (`WRAPLIP_OLD=1` = before)
 	var lip := 0.0 if OS.has_environment("WRAPLIP_OLD") else WRAP_LIP
 	var hole := float(OS.get_environment("WRAP_HOLE")) if OS.has_environment("WRAP_HOLE") else WRAP_HOLE
-	var mesh := _grid(func(u: float, vg: float) -> Vector3:
-		var ang := u * TAU
-		var v := clampf((vg - lip) / (1.0 - 2.0 * lip), 0.0, 1.0)
-		var fa := u * NA - 0.5
+	# which way e2 (sin) points relative to the body's midline: +1 = e2 is the outer side
+	var lat := 1.0 if e2.x * a.x > 0.0 else -1.0
+	# the fitted shell's radius at (angle, v) with the caps, before the tapers and the lap step;
+	# `capped` false = without the side cap (what `_tuck_under` compares against)
+	var shell := func(ang: float, v: float, capped: bool) -> float:
+		var fa := ang / TAU * NA - 0.5
 		var fh := clampf(v * NH - 0.5, 0.0, NH - 1.0)
 		var ia0 := int(floor(fa))
 		var ih0 := int(floor(fh))
 		var ih1 := mini(ih0 + 1, NH - 1)
-		var r00 := rad[ih0 * NA + (ia0 + NA) % NA]
-		var r01 := rad[ih0 * NA + (ia0 + 1 + NA) % NA]
-		var r10 := rad[ih1 * NA + (ia0 + NA) % NA]
-		var r11 := rad[ih1 * NA + (ia0 + 1 + NA) % NA]
+		var r00 := rad[ih0 * NA + posmod(ia0, NA)]
+		var r01 := rad[ih0 * NA + posmod(ia0 + 1, NA)]
+		var r10 := rad[ih1 * NA + posmod(ia0, NA)]
+		var r11 := rad[ih1 * NA + posmod(ia0 + 1, NA)]
 		var fx: float = fa - floor(fa)
 		var fy: float = fh - floor(fh)
 		var r := maxf(lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) - wrap_inset, floor_r) + pad
 		if plantar_cap > 0.0:
 			r = lerpf(r, minf(r, plantar_cap), smoothstep(-0.3, 0.6, -cos(ang)))
+		if capped and side_cap > 0.0:
+			r = lerpf(r, minf(r, side_cap), HollowRags.side_cap_w(ang, lat))
+		return r
+	if side_cap > 0.0:
+		side_tucked += _tuck_under(bone, a, d, e1, e2, axis, t0, t1, shell)
+		if OS.get_environment("WRAP_DBG") != "":
+			print("WRAPT %s side cap %.3f tucked %d verts, deepest %.3f m" % [bone, side_cap, side_tucked, side_tuck_max])
+	if dbg_pts:
+		# per (v, angle) cell: how far the binding's shell stands off the nearest fitted armour vert
+		print("WRAPS %s standoff (cm), rows v, cols angle 0=e1(instep) .. lat=%+.0f" % [bone, lat])
+		for iv in 10:
+			var v := (iv + 0.5) / 10.0
+			var ln := "WRAPS v %.2f |" % v
+			for ia in 16:
+				var ang := (ia + 0.0) / 16.0 * TAU
+				var r: float = shell.call(ang, v, true)
+				if taper > 0.0:
+					r *= lerpf(1.0, taper_r, smoothstep(1.0 - taper, 1.0, v))
+				if taper0 > 0.0:
+					r *= lerpf(taper0_r, 1.0, smoothstep(0.0, taper0, v))
+				var sp := axis * lerpf(t0, t1, v) + (e1 * cos(ang) + e2 * sin(ang)) * r
+				var best := 9.0
+				for fp in fit_pts:
+					best = minf(best, fp.distance_to(sp))
+				ln += " %4.1f" % (best * 100.0)
+			print(ln)
+	var mesh := _grid(func(u: float, vg: float) -> Vector3:
+		var ang := u * TAU
+		var v := clampf((vg - lip) / (1.0 - 2.0 * lip), 0.0, 1.0)
+		var r: float = shell.call(ang, v, true)
+		if bone.ends_with("Foot") and OS.has_environment("WRAP_KEEP"):
+			# judging only: collapse every part of a foot wrap but one sector (find a stray sheet)
+			var kp := OS.get_environment("WRAP_KEEP")
+			var keep := (kp == "outer" and sin(ang) * lat > 0.0) or (kp == "inner" and sin(ang) * lat < 0.0) \
+					or (kp == "top" and cos(ang) > 0.0) or (kp == "bottom" and cos(ang) < 0.0)
+			if not keep:
+				r = 0.01
 		if taper > 0.0:
 			# narrows toward the tip: the boot's toe shows past the binding's last lap
 			r *= lerpf(1.0, taper_r, smoothstep(1.0 - taper, 1.0, v))
