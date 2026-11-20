@@ -31,6 +31,9 @@ const FOOT_PLANTAR_CAP := 0.092
 # stood 3-4.5 cm off either side mid-foot, a dark sheet off the outer ankle seen from behind (`heels`
 # lens); anything of the boot past it (the round ankle buckle plate) is tucked under it
 const FOOT_SIDE_CAP := 0.07
+# (11-20 11:00) the soldiers' foot binding underside cap (m): the sabaton's instep is deeper than
+# the hero's boot, so at the hero's 0.092 the ankle ring still spanned 0.198 m (`SOLDIER_PLANTAR=<m>`)
+const SOLDIER_PLANTAR_CAP := 0.08
 const SIDE_CAP_LO := 0.7  # -cos(angle) where the side cap starts fading out toward the sole (~134 deg)
 const TUCK_GAP := 0.003   # m the tucked armour sits inside the binding's shell
 var side_tucked := 0      # verts `_tuck_under` pulled in (bots)
@@ -223,10 +226,22 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# tube ended in a wide dark ring round a boot toe much slimmer than it (`FOOTTAPER_OLD=1`)
 		if OS.has_environment("FOOTTAPER_OLD"):
 			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
-		else:
+		elif OS.has_environment("SOLDIERCAP_OLD"):
 			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0, "",
 					FOOT_TAPER, FOOT_TAPER_R, FOOT_TAPER0, FOOT_TAPER0_R)
+		else:
+			# (11-20 11:00) and, like the hero's (11-20 04:00/05:00), held in off the heel and both
+			# flanks: fitted to the sabaton it stood 4-5 cm off the heel and flanks, a dark cup round
+			# the heel and a flap off the outer ankle seen from behind (`soldier guard sheels` lens);
+			# the sabaton's flanks are tucked under it (`SOLDIERCAP_OLD=1` = before)
+			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0, "",
+					FOOT_TAPER, FOOT_TAPER_R, FOOT_TAPER0, FOOT_TAPER0_R, _soldier_plantar(), FOOT_SIDE_CAP)
 	_last_pos = body.global_position
+
+func _soldier_plantar() -> float:
+	if OS.has_environment("SOLDIER_PLANTAR"):
+		return float(OS.get_environment("SOLDIER_PLANTAR"))
+	return SOLDIER_PLANTAR_CAP
 
 func _attach(bone: String) -> Node3D:
 	var att := BoneAttachment3D.new()

@@ -1399,6 +1399,15 @@ func _ready() -> void:
 			if "flinch" in args and "close" in args:
 				# (animation review) close on the hero, side-on to the blow's line
 				SPOTS[spot] = [pp + side * 2.7 - line * 0.5, pp - line * 0.25]
+			if "sheels" in args or "sfront" in args:
+				# (11-20 11:00) sheels: a low rear 3/4 lens 1.3 m off the foe's heels at shin height
+				# (the hero's `heels` lens for a foe: do its foot bindings stand off the boot);
+				# sfront: the same from its front 3/4. Use with `guard`.
+				var fb := foe.global_position - pp
+				fb = Vector3(fb.x, 0, fb.z).normalized()
+				if "sfront" in args:
+					fb = -fb
+				SPOTS[spot] = [fp + fb.rotated(Vector3.UP, -0.6) * 1.3 + Vector3.UP * 0.25, fp + Vector3.UP * 0.1]
 			if "fallen" in args:
 				# frame the body where it falls (forward along its facing, toward the soldier)
 				SPOTS[spot] = [pp + side * 3.0 + line * 0.2, pp + line * 0.8]
@@ -2472,7 +2481,7 @@ func _ready() -> void:
 		if spot == "devil":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 3.5
-		if spot == "heels":
+		if spot == "heels" or (spot == "soldier" and ("sheels" in args or "sfront" in args)):
 			pos.y = terrain.height_at(pos.x, pos.z) + 0.42
 			look.y = terrain.height_at(look.x, look.z) + 0.14
 		if spot == "herocu":
@@ -2523,7 +2532,7 @@ func _ready() -> void:
 		if world.keeper.pick_hold and spot.begins_with("keeper"):
 			# the low pick lens sits in the meadow: clip the blades within 0.9 m of it
 			free.near = 0.9
-		if spot == "heels":
+		if spot == "heels" or (spot == "soldier" and ("sheels" in args or "sfront" in args)):
 			free.fov = 34.0
 			free.near = 0.05
 			# sun behind the lens's shoulder so the heel side is lit (judging only)

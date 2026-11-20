@@ -7463,6 +7463,32 @@ func _dodge_test() -> void:
 		return _combat_done(false, "HUD bars not shown after taking damage")
 	_combat_done(true, "dash-step, swing cancel, perfect dodge slow-mo + refund, late dodge, hit")
 
+## [count, widest ring diameter, widest reach to either flank (body x)] of the foot binding
+## meshes under `who`, measured on the rings at v 0.12 and 0.5 (as the runstrike gate does)
+func _foot_wrap_reach(who: Node) -> Array:
+	var n := 0
+	var span := 0.0
+	var side := 0.0
+	for wm in who.find_children("Wrap*Foot*", "MeshInstance3D", true, false):
+		var arr: Array = (wm as MeshInstance3D).mesh.surface_get_arrays(0)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+		n += 1
+		for key in [0.12, 0.5]:
+			var ring: Array = []
+			for k in vs.size():
+				if absf(uvs[k].y - key) < 0.012:
+					ring.append(vs[k])
+			var cen := Vector3.ZERO
+			for q in ring:
+				cen += q
+			cen /= maxf(1.0, ring.size())
+			for q in ring:
+				side = maxf(side, absf((q - cen).x))
+				for q2 in ring:
+					span = maxf(span, (q - q2).length())
+	return [n, span, side]
+
 func _soldier_test() -> void:
 	var p := _player
 	var s: HollowSoldier = _world.soldier
@@ -7470,6 +7496,12 @@ func _soldier_test() -> void:
 	await _ticks(10)
 	var start_d := Vector2(s.global_position.x - p.global_position.x, s.global_position.z - p.global_position.z).length()
 	print("BOT soldier: %.1f m away, state %d" % [start_d, s.state])
+	# (11-20 11:00) the soldier's foot bindings are held in off the heel and both flanks like the
+	# hero's were (`SOLDIERCAP_OLD=1` = before): fitted to the sabaton they stood 4-5 cm off it
+	var fr := _foot_wrap_reach(s)
+	print("BOT soldier: %d foot wraps -> widest ring across %.3f m (gate <= %.2f), reach to either flank %.3f m (gate <= %.3f)" % [fr[0], fr[1], RS_FOOT_SPAN_GATE, fr[2], RS_FOOT_SIDE_GATE])
+	if not OS.has_environment("SOLDIERCAP_OLD") and (fr[0] < 2 or fr[1] > RS_FOOT_SPAN_GATE or fr[2] > RS_FOOT_SIDE_GATE):
+		return _combat_done(false, "soldier foot wraps stand off the sabaton")
 	if s.state != HollowSoldier.IDLE:
 		return _combat_done(false, "soldier should be idle while the hero is far away")
 	# 1) walk toward it until it notices and stalks in, then stand and take the first thrust
