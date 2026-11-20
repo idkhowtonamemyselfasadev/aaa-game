@@ -473,6 +473,89 @@ func _reshape(bone: String, fn: Callable) -> int:
 			moved += hit
 	return moved
 
+## (11-20 12:00) Marks the base body's sabatons for hollow.gdshader's `sabaton`: COLOR.a = 1 - (foot
+## weight), so the feet render as blackened iron, not the ash-stone skin (it read as pale cracked
+## ceramic in the `soldier sheels` lens). Any weight on a Foot/Toe bone counts, and so do shin-
+## skinned verts below `SABATON_TOP` above the ankle joint (the heel counter and the round ankle
+## buckle are mostly shin-skinned; at 0.055 a pale band showed between the binding and the sabaton
+## front-on, `sfront`). Each mesh gets its own copy; returns verts marked.
+const SABATON_TOP := 0.11
+var sabaton_verts := 0
+func mark_sabatons() -> int:
+	var marked := 0
+	for mi in _body.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.skin == null or not (m.mesh is ArrayMesh):
+			continue
+		var feet := {}
+		var shins := {}
+		var ref := -1
+		var ank_y := INF
+		for j in m.skin.get_bind_count():
+			var bb := m.skin.get_bind_bone(j)
+			if bb < 0:
+				bb = _skel.find_bone(m.skin.get_bind_name(j))
+			if bb < 0:
+				continue
+			var n := _skel.get_bone_name(bb)
+			if n.ends_with("Foot") or n.contains("Toe"):
+				feet[j] = true
+			if n.ends_with("Foot"):
+				ref = j
+				ank_y = minf(ank_y, _rest_in_body(bb).origin.y)
+			if n.ends_with("Leg") and not n.ends_with("UpLeg"):
+				shins[j] = true
+		if ref < 0:
+			continue
+		var rb := m.skin.get_bind_bone(ref)
+		if rb < 0:
+			rb = _skel.find_bone(m.skin.get_bind_name(ref))
+		var to_body := _rest_in_body(rb) * m.skin.get_bind_pose(ref)
+		var src := m.mesh as ArrayMesh
+		var dst := ArrayMesh.new()
+		dst.blend_shape_mode = src.blend_shape_mode
+		for bsi in src.get_blend_shape_count():
+			dst.add_blend_shape(src.get_blend_shape_name(bsi))
+		var hit := 0
+		for s in src.get_surface_count():
+			var arr := src.surface_get_arrays(s)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			var wts: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+			var col: PackedColorArray = arr[Mesh.ARRAY_COLOR] if arr[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+			if col.size() != verts.size():
+				col.resize(verts.size())
+				col.fill(Color(1, 1, 1, 1))
+			if not verts.is_empty() and not bones.is_empty():
+				var per := bones.size() / verts.size()
+				for v in verts.size():
+					var wf := 0.0
+					var ws := 0.0
+					for j in per:
+						var b := bones[v * per + j]
+						if feet.has(b):
+							wf += wts[v * per + j]
+						elif shins.has(b):
+							ws += wts[v * per + j]
+					var a := smoothstep(0.04, 0.3, wf)
+					if ws > 0.0:
+						var h := (to_body * verts[v]).y - ank_y
+						a = maxf(a, smoothstep(0.3, 0.6, wf + ws) * (1.0 - smoothstep(SABATON_TOP - 0.015, SABATON_TOP, h)))
+					col[v].a = 1.0 - a
+					if a > 0.0:
+						hit += 1
+			arr[Mesh.ARRAY_COLOR] = col
+			dst.add_surface_from_arrays(src.surface_get_primitive_type(s), arr,
+					src.surface_get_blend_shape_arrays(s), {},
+					src.surface_get_format(s) & _KEEP_FLAGS)
+			dst.surface_set_material(s, src.surface_get_material(s))
+			dst.surface_set_name(s, src.surface_get_name(s))
+		if hit > 0:
+			m.mesh = dst
+			marked += hit
+	sabaton_verts = marked
+	return marked
+
 ## A bandage tube wound round the bone from `bone` towards `tip` (t0..t1 of that segment), its
 ## radius fitted per height and angle to the skinned armour underneath so nothing pokes through.
 ## `also`: a second bone whose skinned verts are fitted too (a binding over a joint must clear the

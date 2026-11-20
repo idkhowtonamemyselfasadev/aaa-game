@@ -7502,6 +7502,11 @@ func _soldier_test() -> void:
 	print("BOT soldier: %d foot wraps -> widest ring across %.3f m (gate <= %.2f), reach to either flank %.3f m (gate <= %.3f)" % [fr[0], fr[1], RS_FOOT_SPAN_GATE, fr[2], RS_FOOT_SIDE_GATE])
 	if not OS.has_environment("SOLDIERCAP_OLD") and (fr[0] < 2 or fr[1] > RS_FOOT_SPAN_GATE or fr[2] > RS_FOOT_SIDE_GATE):
 		return _combat_done(false, "soldier foot wraps stand off the sabaton")
+	# (11-20 12:00) the sabatons are marked as iron (COLOR.a, hollow.gdshader `sabaton`; `SABATON_OLD=1` = before):
+	# both feet and the shin-skinned ankle buckle, not the shins (a few hundred verts, not thousands)
+	print("BOT soldier: %d sabaton verts marked iron (gate 150..3000)" % s.rags.sabaton_verts)
+	if not OS.has_environment("SABATON_OLD") and (s.rags.sabaton_verts < 150 or s.rags.sabaton_verts > 3000):
+		return _combat_done(false, "soldier sabatons not marked as iron")
 	if s.state != HollowSoldier.IDLE:
 		return _combat_done(false, "soldier should be idle while the hero is far away")
 	# 1) walk toward it until it notices and stalks in, then stand and take the first thrust

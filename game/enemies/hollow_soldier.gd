@@ -313,6 +313,10 @@ func _ready() -> void:
 	add_child(rags)
 	rags.build(skel, body)
 	rags.set_param("hemp", 1.0)  # coarse sacking: drape folds, slubs, darns (rag.gdshader)
+	# (11-20 12:00) the sabatons as blackened, rusted iron, not cracked ash-stone (SABATON_OLD=1: before)
+	if not OS.has_environment("SABATON_OLD"):
+		rags.mark_sabatons()
+		_set_skin("sabaton", 1.0)
 	_mats.append_array(rags.mats)
 	soak = Soak.new()          # the rain darkens the ash skin, rags and spear shaft
 	soak.name = "Soak"

@@ -28,8 +28,13 @@ uniform mat4 chest_unpose = mat4(1.0);
 // rigid with the chest, so skin far from it (nape, lower back) can swing into the band in a
 // deep crouch: only skin whose normal faces this way may glow as chest
 uniform vec3 chest_fwd = vec3(0.0);
+// (11-20 12:00) 1 = the feet (COLOR.a 0, marked by HollowRags.mark_sabatons) are the old armour's
+// iron sabatons: blackened, pitted iron with rust in the recesses and ash dust settled on top,
+// not the ash-stone skin with its drawn fissures (they read as pale cracked ceramic, `sheels`)
+uniform float sabaton = 0.0;
 
 varying vec3 wpos;
+varying float v_sab;
 
 float hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -86,6 +91,7 @@ float fissure(vec2 p) {
 
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	v_sab = sabaton * (1.0 - COLOR.a) * (1.0 - stone);
 }
 
 void fragment() {
@@ -104,6 +110,10 @@ void fragment() {
 	float run = smoothstep(0.3, 0.62, fbm(UV * 70.0 + 1.9));
 	float crack = (1.0 - smoothstep(0.004, 0.006 + 0.026 * run, e)) * run * mix(0.12, 1.0, patch);
 	float crack_big = (1.0 - smoothstep(0.01, 0.045, wide)) * smoothstep(0.45, 0.7, fbm(UV * 5.0 + 7.7));
+	// iron does not craze like the ash skin: only a faint trace of the fissures stays on the sabatons
+	float sab = clamp(v_sab, 0.0, 1.0);
+	crack *= 1.0 - 0.9 * sab;
+	crack_big *= 1.0 - 0.9 * sab;
 	// chest: a band at sternum height on the front of the torso
 	vec3 rel = (chest_unpose * vec4(wpos, 1.0)).xyz - root_pos;
 	float h = rel.y;
@@ -123,6 +133,26 @@ void fragment() {
 	float soot = max(crack_big * 0.55, chest * 0.5) + crack * 0.6;
 	alb = mix(alb, vec3(0.05, 0.045, 0.04), clamp(soot, 0.0, 0.85));
 	float fis = max(crack, crack_big * 0.85);
+	float sab_metal = 0.0;
+	float sab_rough = 0.0;
+	if (sab > 0.001) {
+		vec3 wn1 = mat3(INV_VIEW_MATRIX) * NORMAL;
+		float up1 = clamp(wn1.y, 0.0, 1.0);
+		// blackened iron, the plate's own relief from the source texture lifting the edges
+		float pit = fbm(UV * 140.0 + 6.1);
+		vec3 iron = mix(vec3(0.034, 0.032, 0.030), vec3(0.15, 0.142, 0.132),
+				clamp(lum * 1.3 * (0.55 + 0.8 * n), 0.0, 1.0));
+		iron *= 0.8 + 0.35 * pit;
+		// rust blooms in the recesses and low on the foot, where mud and wet sit longest
+		float rust = smoothstep(0.5, 0.78, fbm(UV * 15.0 + 2.9)) * (0.55 + 0.45 * (1.0 - lum));
+		iron = mix(iron, vec3(0.15, 0.068, 0.032) * (0.75 + 0.5 * pit), rust * 0.75);
+		// pale ash dust settled on the instep and toe cap, scuffed off the ridges
+		float dust = smoothstep(0.35, 0.75, grime) * (0.25 + 0.75 * up1) * (1.0 - smoothstep(0.55, 0.8, lum));
+		iron = mix(iron, ash_light * 0.6, dust * 0.45);
+		alb = mix(alb, iron, sab);
+		sab_metal = sab * (1.0 - rust) * (1.0 - dust * 0.8) * 0.6;
+		sab_rough = mix(0.5, 0.78, pit) + rust * 0.15 + dust * 0.2;
+	}
 	if (stone > 0.0) {
 		vec3 wn0 = mat3(INV_VIEW_MATRIX) * NORMAL;
 		float up = clamp(wn0.y, 0.0, 1.0);
@@ -162,13 +192,14 @@ void fragment() {
 		glow += (1.0 - smoothstep(0.0, 0.06, d - dissolve)) * 2.5;
 	}
 	float rough = mix(mix(0.82, 0.95, n) - crack * 0.1, mix(0.78, 0.93, n), stone);
+	rough = mix(rough, sab_rough, sab);
 	vec3 wet_n = mat3(INV_VIEW_MATRIX) * NORMAL;
 	vec3 wet_p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, grime), 1.0);
 	ALBEDO = alb * (1.0 - clamp(glow, 0.0, 1.0) * 0.6);
 	ROUGHNESS = rough;
-	METALLIC = 0.0;
-	SPECULAR = 0.35;
+	METALLIC = sab_metal;
+	SPECULAR = mix(0.35, 0.5, sab);
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = 1.4;
 	AO = 1.0 - fis * 0.5;

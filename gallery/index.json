@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-1500-p3-final.jpg",
-  "time": "2026-11-16T15:00:00Z",
-  "caption": "Phase-3 final size after the second surge, no spark field; still wrong: loose orange fire tongues float high in the sky and a pale seeding-grass sprig fills the left foreground.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1500-sparks-before-after.jpg",
-  "time": "2026-11-16T15:00:00Z",
-  "caption": "Same frame before (left: ~500 white ring-fire sparks hanging 8 m up like daytime stars, dust over the hero) and after (right: sparks cool and die low, sky clean).",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1600-p3-sky-clear.jpg",
   "time": "2026-11-16T16:00:00Z",
   "caption": "Phase-3 boss settle (4.6x) after the shot-harness fix: no stray fire tongues in the sky, only the ring's smoke; still wrong: the pale flat seeding-grass sprig fills the left foreground.",
@@ -885,6 +873,18 @@
   "file": "20261120-1100-soldier-feet-front.jpg",
   "time": "2026-11-20T11:33:22Z",
   "caption": "Soldier's feet from the front 3/4: slimmer foot bindings over the instep; the plated toes still read as cracked white ceramic, not worn iron.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1200-soldier-sabaton-before-after.jpg",
+  "time": "2026-11-20T12:00:00Z",
+  "caption": "Hollow soldier's feet from behind, before (left: pale grey sabatons with drawn-on cracks, like ceramic) and after (right: blackened worn iron with a dull sheen); the iron is still a fairly even blue-grey, rust barely shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1200-soldier-sabaton-front.jpg",
+  "time": "2026-11-20T12:00:00Z",
+  "caption": "Front 3/4 at shin height: both sabatons and the ankle buckle now read as dark iron under the bindings; the bindings' wood-grain-like banding and the flat grey iron still look less than Wukong-grade.",
   "verdict": "fail"
  }
 ]
