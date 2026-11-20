@@ -92,7 +92,12 @@ const STRING := [
 ## (11-20 19:00) the jump attack's canted pass over the right shoulder [yaw, pitch, P.x, u]
 ## (env JA_CANT="yaw,pitch,x,u[,z]"; JA_CANT_OLD=1 = the old straight-through-the-face downswing)
 var JA_CANT_OLD := OS.get_environment("JA_CANT_OLD") == "1"
-var JA_CANT: PackedFloat64Array = OS.get_environment("JA_CANT").split_floats(",") if OS.has_environment("JA_CANT") else PackedFloat64Array([-60.0, 62.0, -0.06, 0.42, 0.45])
+## (11-20 21:00) the 19:30 key (-60, 62, x -0.06, z 0.45, twist -17.5) still crossed vertical in the frontal
+## plane with the hands at the face's centre line; this one swings the hands out over the right shoulder
+## (x -0.28 asks past reach, the clamp holds them ~0.15 m right of centre) so the shaft goes vertical
+## beside the right cheek (offline sweep, then in-game: hat margin u 0.36-0.48 >= 0.085 m; z 0.30 cut the brim). JA_CANT_PREV=1 = 19:30 key.
+## Optional 6th value: shoulder twist (deg).
+var JA_CANT: PackedFloat64Array = OS.get_environment("JA_CANT").split_floats(",") if OS.has_environment("JA_CANT") else (PackedFloat64Array([-60.0, 62.0, -0.06, 0.42, 0.45, -17.5]) if OS.get_environment("JA_CANT_PREV") == "1" else PackedFloat64Array([-90.0, 55.0, -0.28, 0.42, 0.40, -30.0]))
 const AIR_COST := 10.0
 const AIR_POWER := 1.35
 const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0, "air": true, "keys": [
@@ -1069,7 +1074,7 @@ func _start_air() -> void:
 		# and the strike straightens onto the foe by the drive key, like a real overhead blow.
 		if _atk == AIR_LIGHT:
 			_atk = AIR_LIGHT.duplicate(true)
-		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), -17.5, -0.025])
+		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), JA_CANT[5] if JA_CANT.size() > 5 else -17.5, -0.025])
 	_recover = 0.0
 	air_hold_t = 0.0
 	_power = AIR_POWER

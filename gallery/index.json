@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261116-2100-ash-clusters.jpg",
-  "time": "2026-11-16T21:00:00Z",
-  "caption": "Phase-2 settle in the burnt ring: the ash floor is now smooth grey wood-ash with cinders and stumps clumped in patches instead of an even black pepper; bright green shoots still poke through the ash and the trees are blotchy in GL.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-2200-ring-singed-stubble.jpg",
-  "time": "2026-11-16T22:00:00Z",
-  "caption": "Boss ring at the phase-2 settle: the ash floor now carries only sparse char-black stubble with dead straw tips and no wildflowers; the trees still read soft and the knight faces away from the lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-2200-stubble-before-after.jpg",
-  "time": "2026-11-16T22:00:00Z",
-  "caption": "Foreground strip before (top: spring-green tufts and flower stems on the ash) and after (bottom: thinned, singed stubble only).",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-2300-surge-pivot-onto-hero.jpg",
-  "time": "2026-11-16T23:00:00Z",
-  "caption": "The boss after pivoting about 80 deg on its planted boot during the growth roar, so it ends facing a hero who broke it from the flank; still wrong: the sun blows out the sky, the knight reads small at this lens.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-2300-surge-settle-front.jpg",
   "time": "2026-11-16T23:00:00Z",
   "caption": "The boss settling out of its phase-3 growth, chest and glaive squared to the hero's side of the ring; still wrong: flat GL light, soft blotchy trees behind, hero lost behind its legs.",
@@ -897,6 +873,24 @@
   "file": "20261120-1930-jumpattack-front-jt053.jpg",
   "time": "2026-11-20T19:30:00Z",
   "caption": "Standing jump attack at jt 0.53 front-on with the new key: hands come down in front of the chest with the shaft clear of the face; hips square, robe centred.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2030-jumpattack-cant-jt053.jpg",
+  "time": "2026-11-20T20:30:00Z",
+  "caption": "Standing jump attack front-on at jt 0.53 with the new canted key: the shaft now comes down as a diagonal over the hero's right shoulder instead of a vertical line up the face; it still crosses the right eye and brim edge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2030-jumpattack-cant-jt055.jpg",
+  "time": "2026-11-20T20:30:00Z",
+  "caption": "Same move at jt 0.55: hands at chest height, shaft canted up to the hero's right; the hat brim still sits behind the shaft and the figure is dark in the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2030-jumpattack-cant-before-jt055.jpg",
+  "time": "2026-11-20T20:30:00Z",
+  "caption": "Before (19:30 key, JA_CANT_PREV=1) at jt 0.55 for comparison: the shaft stands vertical just off the nose.",
   "verdict": "fail"
  }
 ]
