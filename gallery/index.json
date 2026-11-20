@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-0620-climbshrug.jpg",
-  "time": "2026-11-16T06:20:40Z",
-  "caption": "Climb with the new shoulder shrug: the left forearm now shows over the capelet beside the hat, but the reach still stops at head height and the figure is small in frame.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0620-climbsq.jpg",
-  "time": "2026-11-16T06:20:40Z",
-  "caption": "Climbing the keep from a rear three-quarter: hero hangs close to the stones with a knee turned out, but the hands only reach the hat brim, never fully overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0700-surge-before.jpg",
   "time": "2026-11-16T07:00:00Z",
   "caption": "Boss growth surge roar at size 3.0, front lens, BEFORE: a column of its own ring of fire stands dead ahead and hides the chest and roar.",
@@ -897,6 +885,18 @@
   "file": "20261120-0013-streamroll-cmp.jpg",
   "time": "2026-11-20T00:13:23Z",
   "caption": "Before (left, thin straight red strip) vs after (middle jt 0.38, right jt 0.32): the panel now twists open toward the hem; the hem tongues still read as straight spikes.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0112-runjump-droop.jpg",
+  "time": "2026-11-20T01:12:40Z",
+  "caption": "Running jump attack at jt 0.32: the streaming back panel's torn hem tongues now hang down at their tips; still wrong: llvmpipe GL lighting, flat ground, tongues still read as thin strips.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0112-runjump-droop-cmp.jpg",
+  "time": "2026-11-20T01:12:40Z",
+  "caption": "Before (left) vs after (right) at jt 0.38, 2x crop: the tongue tips drop a few cm toward the ground; from this edge-on lens the change is subtle.",
   "verdict": "fail"
  }
 ]

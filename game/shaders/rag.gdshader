@@ -52,6 +52,7 @@ uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meet
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
 uniform float twist = 0.0;         // (11-20) rad a streaming panel rolls about its long axis by the hem (0 at the seam), so it shows its face
 uniform float ripple = 0.0;        // (11-20) m of a lateral wave running down a streaming panel to the hem
+uniform float droop = 0.0;         // (11-20 01:00) m the torn hem tongues of a streaming panel hang toward world down at their tips
 uniform float fold_len = 0.0;      // > 0: `fold` bends round a true arc this long (m, >= 0.07) instead of a 7 cm crease
 uniform float gore = 0.0;          // 1: this piece is a side gore
 uniform vec2 gore_fold_f = vec2(1000.0, 0.0);  // the front panel's folds, which the gore's front end follows
@@ -270,6 +271,17 @@ void vertex() {
 		fold_panel_arc(VERTEX, NORMAL, fold, max(fold_len, 0.07));
 	} else {
 		fold_panel(VERTEX, NORMAL, fold);
+	}
+	// (11-20 01:00) a streaming panel's torn hem: each tongue past the tear's root hangs toward world
+	// down under its own weight (the long tongues most, the tip most), with a little lag-flutter per
+	// tongue, instead of every tongue pointing straight on like a spike. Must match Rags.tongue_droop().
+	if (droop > 0.0 && tear > 0.0) {
+		float tg = clamp(fbm(vec2(UV.x * tongues + seed, seed * 3.0)) * 1.4 - 0.2, 0.0, 1.0);
+		float d = clamp((UV.y - (1.0 - tear)) / tear, 0.0, 1.0);
+		float lw = 0.4 + 0.6 * (1.0 - tg);
+		float wob = 1.0 + 0.3 * sin((TIME + time_offset) * 6.0 + floor(UV.x * tongues) * 2.1 + seed);
+		vec3 dn = normalize(inverse(mat3(MODEL_MATRIX)) * vec3(0.0, -1.0, 0.0));
+		VERTEX += dn * droop * d * d * lw * wob;
 	}
 	// a cape on a stooped or leaning chest: rigid to the bone its back flared out behind like a
 	// stiff flap; below the shoulders let it fall along world down instead, each point by its

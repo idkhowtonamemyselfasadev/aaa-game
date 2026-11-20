@@ -4801,6 +4801,7 @@ const RS_SAG_GATE := 0.06                  # m, the streaming back hem below whe
 const RS_HEEL_GATE := 0.05                 # m, the folded tail (crease -> hem) off either ankle
 const RS_ROLL_GATE := 0.25                 # rad, the streaming back panel's hem rolls at least this far (shows its face)
 const RS_CORNER_GATE := 0.03               # m, the rolled hem's corners off either heel
+const RS_DROOP_GATE := 0.035               # m, the streaming back panel's longest hem tongue hangs at least this far toward world down
 const SAG_OVER_MIN := 0.30                 # rad, the back panel swung this far past plumb counts as streaming
 const RS_LEAN_GATE := 0.05                 # m, the hem ahead of the knee fold point: below the knee the cloth hangs plumb
 const RS_HEM_GATE := 0.0
@@ -4846,6 +4847,7 @@ func _runstrike_test() -> void:
 	var best_sag := -9.0
 	var worst_heel := 9.0
 	var best_roll := 0.0
+	var best_droop := 0.0
 	var worst_corner := 9.0
 	var ticks := 0
 	var left := false
@@ -4913,6 +4915,7 @@ func _runstrike_test() -> void:
 					worst_heel = minf(worst_heel, (bk.global_position + (bd1 * q.x + bn1 * q.y) * bsy - heel).length())
 			# (11-20) the stream roll: the hem's twist and its rolled corners against the heels
 			best_roll = maxf(best_roll, absf(g.back_twist))
+			var btear: float = (bk.get_child(0) as MeshInstance3D).material_override.get_shader_parameter("tear")
 			var w1: float = bk.get_meta("w1", 0.4)
 			var bx: Vector3 = bk.global_basis.x.normalized()
 			var fa: float = 0.0
@@ -4927,6 +4930,10 @@ func _runstrike_test() -> void:
 				for fname in ["mixamorig_LeftFoot", "mixamorig_RightFoot"]:
 					var hl: Vector3 = skl.global_transform * skl.get_bone_global_pose(skl.find_bone(fname)).origin - (bfr[1] as Vector3) * 0.06
 					worst_corner = minf(worst_corner, (corner - hl).length())
+					# (11-20 01:00) the drooped tongue tips under each corner, against the heels too
+					var tip: Vector3 = corner + Vector3.DOWN * g.tongue_droop(1.0, btear, g.back_droop)
+					worst_corner = minf(worst_corner, (tip - hl).length())
+			best_droop = maxf(best_droop, g.tongue_droop(1.0, btear, g.back_droop))
 			if OS.has_environment("RS_TRACE"): print("RS back over %.2f swing_b %.2f fold %.2f@%.2f round %.2f sag_w %.2f drop %+.3f" % [bover, g._swing_b, g.fold_back.y, g.fold_back.x, g.back_round, g.sag_w, (straight - bhem).dot(up)])
 		var hem_up := hem.dot(up) - kh
 		ticks += 1
@@ -4945,10 +4952,13 @@ func _runstrike_test() -> void:
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
 	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
 	print("BOT runstrike: back panel stream roll -> hem rolls %.2f rad (gate >= %.2f), rolled hem corners off the heels %.3f m (gate >= %.2f)" % [best_roll, RS_ROLL_GATE, worst_corner, RS_CORNER_GATE])
+	print("BOT runstrike: back panel hem tongues droop %.3f m toward world down at the tip (gate >= %.3f)" % [best_droop, RS_DROOP_GATE])
 	if sag_ticks > 0 and (best_sag < RS_SAG_GATE or worst_heel < RS_HEEL_GATE):
 		print("BOT FAIL: runstrike back panel sag")
 	elif sag_ticks > 0 and (best_roll < RS_ROLL_GATE or worst_corner < RS_CORNER_GATE):
 		print("BOT FAIL: runstrike back panel roll")
+	elif sag_ticks > 0 and best_droop < RS_DROOP_GATE:
+		print("BOT FAIL: runstrike back panel tongue droop")
 	elif ticks == 0 or worst_ahead > RS_AHEAD_GATE or worst_lean > RS_LEAN_GATE or worst_hem > RS_HEM_GATE:
 		print("BOT FAIL: runstrike front panel")
 	else:

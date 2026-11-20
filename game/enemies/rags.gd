@@ -1187,6 +1187,10 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 	var bmat := (_back.get_child(0) as MeshInstance3D).material_override
 	bmat.set_shader_parameter("twist", back_twist if absf(back_twist) > 0.002 else 0.0)
 	bmat.set_shader_parameter("ripple", ROLL_RIPPLE * sag_w if sagging and not STREAMROLL_OLD else 0.0)
+	# (11-20 01:00) the hem tongues of the streaming tail droop toward world down at their tips
+	var dr_to := DROOP_M * sag_w if sagging and not STREAMDROOP_OLD else 0.0
+	back_droop = lerpf(back_droop, dr_to, DROOP_FOLLOW)
+	bmat.set_shader_parameter("droop", back_droop if back_droop > 0.002 else 0.0)
 	(_back.get_child(0) as MeshInstance3D).material_override.set_shader_parameter("fold_len", back_round if back_round > 0.002 else 0.0)
 	# the gaps the panel lines (at the swings they now have) leave over the knee's top and
 	# behind the heels
@@ -1332,6 +1336,21 @@ const ROLL_FOLLOW := 0.12
 const ROLL_RIPPLE := 0.025
 var STREAMROLL_OLD := OS.get_environment("STREAMROLL_OLD") == "1"
 var back_twist := 0.0         # rad the back panel's hem rolls about its long axis
+## (11-20 01:00) THE TONGUE DROOP: while the stream sag holds, each torn hem tongue of the back panel
+## hangs toward world down by up to DROOP_M (x sag_w, at the tip of the longest tongues; rag.gdshader
+## `droop`), following at DROOP_FOLLOW/tick. STREAMDROOP_OLD=1 = before.
+const DROOP_M := 0.06
+const DROOP_FOLLOW := 0.15
+var STREAMDROOP_OLD := OS.get_environment("STREAMDROOP_OLD") == "1"
+var back_droop := 0.0         # m the back panel's hem tongue tips hang toward world down
+
+## The world-down drop of a hem point `v` (UV, 0 seam .. 1 hem) on the longest tongue of a panel with
+## `tear` at droop `dm`, without the flutter. Matches rag.gdshader's droop (bots read it).
+static func tongue_droop(v: float, tear: float, dm: float) -> float:
+	if tear <= 0.0:
+		return 0.0
+	var d := clampf((v - (1.0 - tear)) / tear, 0.0, 1.0)
+	return dm * d * d
 var sag_w := 0.0              # (bots) the stream sag's weight this tick
 var back_round := 0.0         # the back fold's arc length (m; 0 = the 7 cm crease)
 var _sag_t := 0.0
