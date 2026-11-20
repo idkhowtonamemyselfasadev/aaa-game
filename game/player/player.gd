@@ -575,6 +575,8 @@ func _dress() -> void:
 					sm.set_shader_parameter("boot_leather", 1.0)
 					# scuffed matte toe caps, not glossy lacquer (BOOTGLOSS_OLD=1: before)
 					sm.set_shader_parameter("boot_scuff", 0.0 if OS.get_environment("BOOTGLOSS_OLD") != "" else 1.0)
+					# the boot proper dark worn leather, not a pale grey shoe (BOOTDARK_OLD=1: before)
+					sm.set_shader_parameter("boot_dark", 0.0 if OS.get_environment("BOOTDARK_OLD") != "" else 1.0)
 
 ## Out of combat the staff rides diagonally across the back (right shoulder to left hip),
 ## bound to the upper spine so it follows the torso's sway in every clip.

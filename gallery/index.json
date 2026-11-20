@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-1200-ringfire-before-after.jpg",
-  "time": "2026-11-16T12:00:00Z",
-  "caption": "Ring of fire during the roar, before (left) and after (right): the ring's tongues now fade out early and shrink instead of standing as thin red streaks; smoke still reads muddy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1300-seedhead-before-after.jpg",
-  "time": "2026-11-16T13:00:00Z",
-  "caption": "Seeding grass panicle close to the lens, before (left: flat pale 4-vertex diamonds) and after (right: folded husks with a keel, veins, pale margins and a dark base); the flowering stems are still wide flat ribbons up close.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1300-seedhead-meadow.jpg",
   "time": "2026-11-16T13:00:00Z",
   "caption": "Knee-height lens in the dry meadow with the new spikelet husks in the foreground; the grass reads as real seeding grass, but the near blades are still over-saturated straw-yellow.",
@@ -885,6 +873,18 @@
   "file": "20261120-0715-heels-bare.jpg",
   "time": "2026-11-20T07:15:00Z",
   "caption": "Hero's heels from behind with no foot binding: buckle disc and heel show, shin wrap ends at the ankle; pale leather reads a little like a sneaker.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0815-boots-before-after.jpg",
+  "time": "2026-11-20T08:15:00Z",
+  "caption": "Hero's boots before (left: pale grey leather with a red heel, like a sneaker) and after (right: dark worn brown leather, oxblood heel, no grazing sheen), from behind and front; a grey strap by the ankle buckle still shows.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0815-boots-leather.jpg",
+  "time": "2026-11-20T08:15:00Z",
+  "caption": "Front 3/4 at ankle height: the boots now read as worn oiled brown leather under the shin bindings; the boots still lack stitching/sole detail up close.",
   "verdict": "fail"
  }
 ]

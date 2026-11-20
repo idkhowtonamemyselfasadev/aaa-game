@@ -593,6 +593,10 @@ func _finish(ok: bool, why: String) -> void:
 		if ok and _route.size() > 0 and garb.boot_leather and garb.booted < 100:
 			ok = false
 			why = "the hero's boots were not marked for strap leather"
+		print("BOT garb: %d foot verts marked for dark boot leather" % garb.shoed)
+		if ok and _route.size() > 0 and garb.boot_leather and garb.shoed < 100:
+			ok = false
+			why = "the hero's feet were not marked for dark boot leather"
 		if ok and _route.size() > 0 and garb.shin_slim < 1.0 and OS.get_environment("ANKLESLIM_OLD") == "" \
 				and garb.ankle_slimmed < 10:
 			ok = false

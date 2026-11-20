@@ -51,7 +51,12 @@ uniform float boot_leather = 0.0;
 // 1 = the boots' lacquered toe caps and vamp plates are scuffed to worn oiled leather: at the
 // plates' satin 0.46 the toes caught the sky as a glossy white highlight (ankle lens, 11-12)
 uniform float boot_scuff = 0.0;
+// 1 = the boot proper (foot verts, COLOR.a 0 from HeroGarb._mark_boots) is dark, worn, oiled
+// brown leather with an oxblood heel: with only the fittings and plates restyled the rest of the
+// boot kept the texture's pale grey and read as a soft shoe or sneaker (`heels` lens, 11-20)
+uniform float boot_dark = 0.0;
 varying float v_boot;
+varying float v_shoe;
 
 float h_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -84,6 +89,7 @@ float tan_of(vec3 c) {
 void vertex() {
 	v_finger = bare_hands * (1.0 - COLOR.g);
 	v_boot = boot_leather * (1.0 - COLOR.b);
+	v_shoe = boot_dark * (1.0 - COLOR.a);
 	if (cloth_body > 0.0 && plate_inset + iron_inset > 0.0) {
 		float tan_v = 0.0;
 		float iron_v = 0.0;
@@ -223,6 +229,22 @@ void fragment() {
 		vec3 lea = mix(o * 0.8, hide * (0.3 + 0.12 * mott), 0.55) * (1.0 - 0.18 * rub);
 		o = mix(o, lea, scuff);
 		r_o = mix(r_o, 0.66 + 0.12 * mott + 0.08 * rub, scuff);
+		if (v_shoe > 0.001) {
+			// the texture's baked folds kept as creases in the leather, the rest one dark hide:
+			// a fine pebbled grain, lighter rubbed patches (toe, flanks) and the red heel band
+			// gone to a dark oxblood
+			float slum = clamp(lum / 0.3, 0.6, 1.2);
+			float grain = h_noise(UV * vec2(560.0, 560.0));
+			float worn = smoothstep(0.55, 0.85, h_noise(UV * 45.0 + 19.0));
+			vec3 sh = hide * (0.32 + 0.12 * mott) * mix(0.88, 1.08, grain) * slum;
+			sh = mix(sh, hide * 0.55 * slum, worn * 0.4);
+			sh = mix(sh, mix(hide * 0.36, cinnabar * 0.3, 0.55) * slum, red_m);
+			// a little grey from age and road dust: at full hide saturation it read orange clay
+			sh = mix(sh, vec3(dot(sh, vec3(0.3, 0.59, 0.11))), 0.28);
+			o = mix(o, sh, v_shoe);
+			r_o = mix(r_o, 0.74 + 0.1 * grain - 0.12 * worn, v_shoe);
+			metal *= 1.0 - v_shoe;
+		}
 		alb = mix(src, o, restyle);
 		rough = mix(roughness, r_o, restyle);
 	}
@@ -243,11 +265,14 @@ void fragment() {
 	ALBEDO = alb;
 	ROUGHNESS = rough;
 	METALLIC = metal;
-	SPECULAR = 0.5 - 0.1 * plate_spec;
+	// oiled leather has no glassy sheen: backlit at a grazing angle the boots' heels went pale
+	// grey with the default F0 and rim
+	float shoe = v_shoe * restyle;
+	SPECULAR = (0.5 - 0.1 * plate_spec) * (1.0 - 0.6 * shoe);
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth * mix(1.0, cloth_normal, cloth_body * restyle);
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light
 	EMISSION = figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
-	RIM = 0.15;
+	RIM = 0.15 * (1.0 - 0.8 * shoe);
 	RIM_TINT = 0.55;
 }

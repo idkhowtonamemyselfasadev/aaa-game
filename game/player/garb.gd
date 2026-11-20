@@ -86,6 +86,8 @@ var slimmed := 0   # base-body verts the shin bindings pulled in, for the bots
 ## fittings into strap leather; the owner sets the shader uniform (BOOTS_OLD=1: before).
 var boot_leather := false
 var booted := 0   # base-body verts marked as boot, for the bots
+const BOOT_TOP_ABOVE_ANKLE := 0.02   # of the body's height: the boot leather's top over the ankle bone
+var shoed := 0    # of them, foot verts (COLOR.a 0) for hero.gdshader's boot_dark, for the bots
 var ankle_slimmed := 0   # foot-skinned greave-lip verts pulled in above the ankle (ANKLESLIM_OLD=1: none)
 ## a darned kirtle, not a Hollow's rags: no moth holes or burnt edges in the panels and gores
 ## (their cut-outs showed the legs as pale grey patches ringed in soot)
@@ -1557,6 +1559,7 @@ func _mark_boots() -> int:
 		if m.skin == null or not (m.mesh is ArrayMesh):
 			continue
 		var feet := {}
+		var feet_only := {}
 		for j in m.skin.get_bind_count():
 			var bb := m.skin.get_bind_bone(j)
 			if bb < 0:
@@ -1565,9 +1568,24 @@ func _mark_boots() -> int:
 			# the shins too: under the binding, where the greave's grey peeked out above it
 			if n.ends_with("Foot") or n.contains("Toe") or (n.ends_with("Leg") and not n.ends_with("UpLeg")):
 				feet[j] = true
+			if n.ends_with("Foot") or n.contains("Toe"):
+				feet_only[j] = true
 		if feet.is_empty():
 			continue
 		var src := m.mesh as ArrayMesh
+		# the ankle's rest height in mesh space (the up axis: Y or Z, whichever is taller): the
+		# heel counter and ankle buckle are shin-skinned, so booted verts below it count as foot
+		# (not X: the T-posed arms span it)
+		var up := 2 if src.get_aabb().size.z > src.get_aabb().size.y else 1
+		var tall := src.get_aabb().size[up]
+		var ankle := -INF
+		for j in feet_only:
+			if String(m.skin.get_bind_name(j)).ends_with("Foot") or (m.skin.get_bind_bone(j) >= 0
+					and _skel.get_bone_name(m.skin.get_bind_bone(j)).ends_with("Foot")):
+				ankle = maxf(ankle, m.skin.get_bind_pose(j).affine_inverse().origin[up])
+		var shoe_top := ankle + BOOT_TOP_ABOVE_ANKLE * tall
+		if OS.has_environment("BOOTTOP_DBG"):
+			print("BOT boot top: up %d tall %.1f ankle %.2f top %.2f" % [up, tall, ankle, shoe_top])
 		var dst := ArrayMesh.new()
 		dst.blend_shape_mode = src.blend_shape_mode
 		for bsi in src.get_blend_shape_count():
@@ -1592,6 +1610,21 @@ func _mark_boots() -> int:
 					if b > 0.0:
 						marked += 1
 					col[v].b = 1.0 - b
+					# (11-20 08:00) the foot itself (Foot/Toe only, not the shin under the binding):
+					# COLOR.a 0 = the boot proper, which hero.gdshader's boot_dark turns into dark
+					# worn leather (it read as a pale grey soft shoe with a red heel, `heels` lens)
+					var wf := 0.0
+					for j in per:
+						if feet_only.has(bones[v * per + j]):
+							wf += wts[v * per + j]
+					# (any foot weight: the heel counter and ankle buckle are mostly shin-skinned and kept
+					# the pale grey at 0.3..0.7; the shin above is under the binding)
+					var sa := smoothstep(0.04, 0.3, wf)
+					if b > 0.0 and not OS.has_environment("BOOTTOP_OLD"):
+						sa = maxf(sa, b * (1.0 - smoothstep(shoe_top - 0.01 * tall, shoe_top, verts[v][up])))
+					col[v].a = 1.0 - sa
+					if col[v].a < 1.0:
+						shoed += 1
 			arr[Mesh.ARRAY_COLOR] = col
 			dst.add_surface_from_arrays(src.surface_get_primitive_type(s), arr,
 					src.surface_get_blend_shape_arrays(s), {},
