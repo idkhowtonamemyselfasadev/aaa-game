@@ -15,6 +15,9 @@ var _skel: Skeleton3D
 ## How far (m) the wraps sit in from the base body's widest point: a wearer whose plates sink
 ## in (hero.gdshader plate_inset) gets wraps that hug the slimmer limb, not the old armour
 var wrap_inset := 0.0
+const WRAP_LIP := 0.08     # share of a wrap's v at each end taken by the rolled, turned-in cuff
+const WRAP_ROLL := 0.008   # m, radius of the cuff's roll
+const WRAP_HOLE := 0.2     # the cuff turns in to this share of the rim radius (0.5 still showed a hole end-on)
 var _body: Node3D
 var _hips_rest := Transform3D()
 var _front: Node3D
@@ -475,8 +478,14 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 			var sd := rad[ih * NA + NA / 4]
 			line += " %.2f:%.3f/%.3f/%.3f" % [lerpf(t0, t1, (ih + 0.5) / NH), f, sd, bk]
 		print(line)
-	var mesh := _grid(func(u: float, v: float) -> Vector3:
+	# (11-20 02:00) each end of the tube rolls over into a cuff and turns in toward the limb
+	# (WRAP_LIP of v at each end): an open tube end read as a hollow pipe at a bent knee or a
+	# pointed foot, where the limb inside is thinner than the binding (`WRAPLIP_OLD=1` = before)
+	var lip := 0.0 if OS.has_environment("WRAPLIP_OLD") else WRAP_LIP
+	var hole := float(OS.get_environment("WRAP_HOLE")) if OS.has_environment("WRAP_HOLE") else WRAP_HOLE
+	var mesh := _grid(func(u: float, vg: float) -> Vector3:
 		var ang := u * TAU
+		var v := clampf((vg - lip) / (1.0 - 2.0 * lip), 0.0, 1.0)
 		var fa := u * NA - 0.5
 		var fh := clampf(v * NH - 0.5, 0.0, NH - 1.0)
 		var ia0 := int(floor(fa))
@@ -490,10 +499,28 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		var fy: float = fh - floor(fh)
 		var r := maxf(lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) - wrap_inset, floor_r) + pad
 		# each turn of the bandage overlaps the last: a slight step at the leading edge
-		r += 0.004 * fposmod(v * turns + u, 1.0)
+		r += 0.004 * fposmod(vg * turns + u, 1.0)
 		var t := lerpf(t0, t1, v)
-		return a + axis * t + (e1 * cos(ang) + e2 * sin(ang)) * r, 24, 28)
-	var piece := _piece(mesh, 0.0, 0.05, 5.0 + mats.size(), (t1 - t0) * axis.length() / 0.4)
+		var radial := e1 * cos(ang) + e2 * sin(ang)
+		var s := 0.0
+		if lip > 0.0:
+			s = maxf((lip - vg) / lip, (vg - 1.0 + lip) / lip)
+		if s <= 0.0:
+			return a + axis * t + radial * r
+		# the cuff: a half roll of radius WRAP_ROLL out past the tube's end and back, then a
+		# flat turned-in band to about half the rim radius (never inside the limb's floor)
+		var out := 1.0 if vg > 0.5 else -1.0
+		var ax := 0.0
+		var rr := r
+		if s < 0.5:
+			var phi := s / 0.5 * PI
+			ax = WRAP_ROLL * sin(phi)
+			rr = r - WRAP_ROLL * (1.0 - cos(phi))
+		else:
+			rr = lerpf(r - 2.0 * WRAP_ROLL, maxf(r * hole, floor_r), (s - 0.5) / 0.5)
+		return a + axis * t + d * ax * out + radial * rr, 24, 44)
+	var piece := _piece(mesh, 0.0, 0.0 if lip > 0.0 else 0.05, 5.0 + mats.size(), (t1 - t0) * axis.length() / 0.4)
+	piece.name = "Wrap" + bone.trim_prefix("mixamorig_")
 	var mat := piece.material_override as ShaderMaterial
 	mat.set_shader_parameter("wrap_turns", turns)
 	mat.set_shader_parameter("tongues", 10.0)

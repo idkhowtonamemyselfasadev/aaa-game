@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-0700-surge-before.jpg",
-  "time": "2026-11-16T07:00:00Z",
-  "caption": "Boss growth surge roar at size 3.0, front lens, BEFORE: a column of its own ring of fire stands dead ahead and hides the chest and roar.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0700-surge-gap.jpg",
-  "time": "2026-11-16T07:00:00Z",
-  "caption": "Boss growth surge roar at size 2.8 AFTER: the ring of fire leaves a gap on its front so the roar with the left fist flung up reads; still no face, and its size does not read without the hero in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0700-surge-settle.jpg",
   "time": "2026-11-16T07:00:00Z",
   "caption": "Boss settling to guard at size 3.2 at the end of the surge, framed between two flames; clear silhouette, but the giant's scale and face still fall short of Wukong.",
@@ -897,6 +885,18 @@
   "file": "20261120-0112-runjump-droop-cmp.jpg",
   "time": "2026-11-20T01:12:40Z",
   "caption": "Before (left) vs after (right) at jt 0.38, 2x crop: the tongue tips drop a few cm toward the ground; from this edge-on lens the change is subtle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0200-wrapcuff-before-after.jpg",
+  "time": "2026-11-20T02:00:00Z",
+  "caption": "Running jump attack, legs 4x: before (left) the foot binding ended in an open hollow pipe; after (right) every bandage wrap end rolls over and turns in to a small dimple. Still wrong: the foot wrap still reads as a tube over the boot, and the shin/thigh wraps are blunt cylinders at the knee.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0200-wrapcuff-jump.jpg",
+  "time": "2026-11-20T02:00:00Z",
+  "caption": "Hero mid running jump attack from the side with the closed wrap cuffs. Still wrong: llvmpipe lighting is flat, the back robe panel's tongues are thin strips, the leg bindings look bulky.",
   "verdict": "fail"
  }
 ]

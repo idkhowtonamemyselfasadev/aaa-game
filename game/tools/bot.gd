@@ -4802,6 +4802,7 @@ const RS_HEEL_GATE := 0.05                 # m, the folded tail (crease -> hem) 
 const RS_ROLL_GATE := 0.25                 # rad, the streaming back panel's hem rolls at least this far (shows its face)
 const RS_CORNER_GATE := 0.03               # m, the rolled hem's corners off either heel
 const RS_DROOP_GATE := 0.035               # m, the streaming back panel's longest hem tongue hangs at least this far toward world down
+const RS_WRAP_OPEN_GATE := 0.75  # a wrap end ring vs its mid ring (rolled, turned-in cuff)
 const SAG_OVER_MIN := 0.30                 # rad, the back panel swung this far past plumb counts as streaming
 const RS_LEAN_GATE := 0.05                 # m, the hem ahead of the knee fold point: below the knee the cloth hangs plumb
 const RS_HEM_GATE := 0.0
@@ -4949,6 +4950,37 @@ func _runstrike_test() -> void:
 			print("RS plumb %+.2f thigh %+.2f fz.fw %+.2f" % [plumb, th, (fr[1] as Vector3).dot(fw)])
 			print("RS t %.2f u %.2f swing_f %.2f fold %.2f@%.2f lie %.2f hw %.2f aim %.2f posed %s knee_fold %s kmax %.2f ahead %+.3f hem_up %+.3f" % [t, c.air_attack_u(), sw, g.fold_front.y, g.fold_front.x, g.tuck_lie, g.hang_w, g.tuck_aim, g.posed_legs, g.knee_fold, kmax, ahead, hem_up])
 	p.bot_input = Vector2.ZERO
+	# (11-20 02:00) the bandage wraps' ends roll over and turn in: each end ring's radius about its
+	# own centre against the tube's mid ring (an open tube end was a hollow pipe at a bent knee)
+	var wrap_n := 0
+	var worst_open := 0.0
+	for wm in p.find_children("Wrap*", "MeshInstance3D", true, false):
+		var arr: Array = (wm as MeshInstance3D).mesh.surface_get_arrays(0)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+		var rings := {0.0: [], 0.5: [], 1.0: []}
+		for k in vs.size():
+			for key in rings:
+				if absf(uvs[k].y - key) < 0.012:
+					rings[key].append(vs[k])
+		var rr := {}
+		for key in rings:
+			var cen := Vector3.ZERO
+			for q in rings[key]:
+				cen += q
+			cen /= maxf(1.0, rings[key].size())
+			var m := 0.0
+			for q in rings[key]:
+				m += (q - cen).length()
+			rr[key] = m / maxf(1.0, rings[key].size())
+		if rr[0.5] > 0.0:
+			wrap_n += 1
+			worst_open = maxf(worst_open, maxf(rr[0.0], rr[1.0]) / rr[0.5])
+	print("BOT runstrike: %d bandage wraps -> widest end ring %.2f of the mid tube's radius (gate <= %.2f)" % [wrap_n, worst_open, RS_WRAP_OPEN_GATE])
+	if wrap_n < 8 or worst_open > RS_WRAP_OPEN_GATE:
+		print("BOT FAIL: runstrike wrap ends open")
+		get_tree().quit()
+		return
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
 	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
 	print("BOT runstrike: back panel stream roll -> hem rolls %.2f rad (gate >= %.2f), rolled hem corners off the heels %.3f m (gate >= %.2f)" % [best_roll, RS_ROLL_GATE, worst_corner, RS_CORNER_GATE])
