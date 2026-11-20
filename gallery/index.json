@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-1800-helm-slit-close.jpg",
-  "time": "2026-11-16T18:00:00Z",
-  "caption": "Helm close lens mid-roar: the burning sight slit reads as one bar, the two eye hot points do not separate, and a grey streak runs down the helm; background mountain texture is stripy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1800-surge-fx-aged.jpg",
-  "time": "2026-11-16T18:00:00Z",
-  "caption": "Phase-2 growth roar (st=56) with the seam embers now aged in the shot: cinders drift up round the helm instead of a frozen spit; the knight still shows its back to this lens and the ring floor speckle is too even.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1900-helm-eyes.jpg",
   "time": "2026-11-16T19:00:00Z",
   "caption": "Boss helm close-up mid-roar (phase-2 surge): the sight slit is now a thin dark-red cut with two separate white-hot eye points; still wrong: the keel ridge down the face reads as a fuzzy grey smoke streak.",
@@ -891,6 +879,18 @@
   "file": "20261120-1500-runjumpattack-square-jt048-before-after.jpg",
   "time": "2026-11-20T15:00:00Z",
   "caption": "Running jump attack at the fold (jt 0.48), before | after: hips and belt square across the body instead of turned away; this lens still sees the hero from behind and the figure is too small to sell the blow.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1600-standing-jumpattack-hips-before-after.jpg",
+  "time": "2026-11-20T17:20:00Z",
+  "caption": "Standing jump attack at the cock, front 3/4 (left before, right now): the belt and sash now run square across the hips with the knees driving at the lens instead of the pelvis bladed off the blow; still a modest change, and the figure stays dark and small in the GL fallback renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1600-standing-jumpattack-front-jt055.jpg",
+  "time": "2026-11-20T17:20:00Z",
+  "caption": "Standing jump attack coming down toward the lens: hips square to the strike; the foreshortened staff reads as a vertical line over the face from this lens and the GL lighting is flat.",
   "verdict": "fail"
  }
 ]

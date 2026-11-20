@@ -3787,6 +3787,10 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 ## (11-20 15:00) share of the guard's pelvis turn undone through a jump attack (see _ease_square)
 var JA_HIP_SQUARE := float(OS.get_environment("JA_HIP_SQUARE")) if OS.has_environment("JA_HIP_SQUARE") else 0.75
 var JA_SQUARE_OLD := OS.get_environment("JA_SQUARE_OLD") == "1"
+## (11-20 16:00) the same out of a standing jump: a smaller share, so the tucked knees and the robe
+## fold posed on the guard's pelvis still hold (env JA_STAND_SQUARE=<0..1>; JA_STAND_OLD=1 = before, 0)
+var JA_STAND_SQUARE := float(OS.get_environment("JA_STAND_SQUARE")) if OS.has_environment("JA_STAND_SQUARE") else 0.3
+var JA_STAND_OLD := OS.get_environment("JA_STAND_OLD") == "1"
 var _ja_run := false             # the jump attack in progress was thrown out of a running leap
 
 ## knock-down drives `square` itself.)
@@ -3814,7 +3818,9 @@ func _ease_square(delta: float) -> void:
 		_ja_run = false
 	elif combat.is_air_attack() and combat.air_attack_u() < 0.1 and _leap_s > 0.5:
 		_ja_run = true
-	var hs := JA_HIP_SQUARE if (ja_on and _ja_run) else 0.0
+	var hs := 0.0
+	if ja_on:
+		hs = JA_HIP_SQUARE if _ja_run else (0.0 if JA_STAND_OLD else JA_STAND_SQUARE)
 	# (taken at once: the guard's blade blends in under the snatch at the same moment, so an eased
 	# square let the pelvis swing out and back, sweeping a heel into the back panel's line)
 	crumple.hip_square = hs if hs > crumple.hip_square else move_toward(crumple.hip_square, hs, delta * SQUARE_OUT)

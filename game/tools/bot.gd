@@ -5099,6 +5099,7 @@ func _runstrike_test() -> void:
 		print("BOT PASS: runstrike")
 	get_tree().quit()
 
+const AS_HIPS_YAW_GATE := 35.0   # (11-20 16:00) deg; JA_STAND_OLD=1 measured 43.7, the 0.3 share 30.6
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -5186,6 +5187,16 @@ func _airstrike_test() -> void:
 	var land_knee: Array[float] = []
 	var land_strike := false
 	var land_sink: Array[float] = []
+	# (11-20 16:00) standing jump attack: hips / chest heading off the body's facing from u 0.2,
+	# read after the Crumple pose (skeleton_updated)
+	var ja_yaw := [0.0, 0.0]
+	var yaw_probe := func() -> void:
+		if c.is_air_attack() and c.air_attack_u() > 0.2:
+			var yw := _trunk_yaws(p, skl)
+			ja_yaw[0] = maxf(ja_yaw[0], absf(yw[0]))
+			ja_yaw[1] = maxf(ja_yaw[1], absf(yw[1]))
+			if OS.has_environment("AS_YAW"): print("ASYAW u %.2f hips %+.1f chest %+.1f" % [c.air_attack_u(), yw[0], yw[1]])
+	skl.skeleton_updated.connect(yaw_probe)
 	for i in 90:
 		await get_tree().physics_frame
 		if td_i < 0 and p.is_on_floor() and p.land_t >= 0.0:
@@ -5252,6 +5263,10 @@ func _airstrike_test() -> void:
 			second = true
 		if p.is_on_floor() and not c.is_attacking():
 			break
+	skl.skeleton_updated.disconnect(yaw_probe)
+	print("BOT airstrike: standing jump attack from u 0.2 -> hips face %.1f deg off the facing (gate <= %.0f), chest %.1f deg" % [ja_yaw[0], AS_HIPS_YAW_GATE, ja_yaw[1]])
+	if not p.JA_STAND_OLD and not p.JA_SQUARE_OLD and not OS.has_environment("JA_STAND_SQUARE") and ja_yaw[0] > AS_HIPS_YAW_GATE:
+		return _combat_done(false, "the standing jump attack's hips stay bladed off the blow (guard pelvis)")
 	for i in 60:
 		if p.land_t < 0.0 or td_i < 0:
 			break
