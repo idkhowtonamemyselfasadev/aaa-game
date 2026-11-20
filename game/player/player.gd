@@ -2380,9 +2380,14 @@ var JUMPATK_NOTILT := OS.get_environment("JUMPATK_NOTILT") == "1"
 # eye (hat centre 0.10-0.15 m right of the head bone, the shaft 0-5 cm LEFT of it = over the face).
 # Bot sweep: 0.35 rad over u 0.26-0.36 in / 0.46-0.60 out puts the shaft 1-9 cm right of the hat
 # centre through u 0.39-0.48, hat margin there 0.085 -> 0.137 m, peak roll ~12 deg at the blow.
+# (11-20 22:30) 0.35 still let the shaft graze the right cheek front-on (face centre ~ head bone +
+# half the hat's offset: shaft 5.5 cm off it at u 0.39). 0.5 rad over u 0.24-0.35 in clears it by
+# 7.6 cm at worst (0.45: 7.1, 0.6: 7.8 but ~23 deg of roll; in from 0.22 cuts the hat at the cock);
+# cock 39.1 deg and hat margin 0.021 m unchanged, peak roll ~+0.3 rad at the blow.
+# JA_SWING_TILT=0.35 JA_SWT=0.26,0.36,0.46,0.60 = 21:30.
 # JA_SWING_TILT=0 = before (no roll on the swing); JA_SWT="in0,in1,out0,out1" tunes the window.
-var JA_SWING_TILT := float(OS.get_environment("JA_SWING_TILT")) if OS.has_environment("JA_SWING_TILT") else 0.35
-var JA_SWT: PackedFloat64Array = OS.get_environment("JA_SWT").split_floats(",") if OS.has_environment("JA_SWT") else PackedFloat64Array([0.26, 0.36, 0.46, 0.60])
+var JA_SWING_TILT := float(OS.get_environment("JA_SWING_TILT")) if OS.has_environment("JA_SWING_TILT") else 0.5
+var JA_SWT: PackedFloat64Array = OS.get_environment("JA_SWT").split_floats(",") if OS.has_environment("JA_SWT") else PackedFloat64Array([0.24, 0.35, 0.46, 0.60])
 ## (11-08) env JUMPATK_LOOSEHANDS=1: the old wrists, carried off the staff by the arch and fold
 var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0

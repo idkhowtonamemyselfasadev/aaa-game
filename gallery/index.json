@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261117-0100-panel-before-after.jpg",
-  "time": "2026-11-17T01:00:00Z",
-  "caption": "Boss growth rise, leg lens: before (left) the surcoat's front panel jutted off the hip as a stiff red slat pitched to the thigh; after (right) it lies over the knee and falls plumb. Still GL-only lighting, legs dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-0100-panel-draped.jpg",
   "time": "2026-11-17T01:00:00Z",
   "caption": "Phase-2 boss after the growth beside the hero, surcoat panel now draped over the knee instead of a diagonal strip; the hero reads small and crouched at the left, trees soft in GL.",
@@ -891,6 +885,18 @@
   "file": "20261120-2130-jumpattack-headroll-old-jt055.jpg",
   "time": "2026-11-20T21:30:00Z",
   "caption": "Before (JA_SWING_TILT=0), same frame: the shaft crosses straight over the right eye.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2230-jumpattack-roll05-cmp.jpg",
+  "time": "2026-11-20T22:30:00Z",
+  "caption": "Jump attack front-on, close-ups: 0.35 rad head roll at jt 0.53 (left), the new 0.5 rad roll at jt 0.53 (middle) and at jt 0.55 (right). The shaft moves a little further off the cheek, but at 0.53 it still touches the mask's edge.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2230-jumpattack-roll05-055.jpg",
+  "time": "2026-11-20T22:30:00Z",
+  "caption": "Standing jump attack at jt 0.55 with the stronger head roll: the face is clear of the canted shaft. The figure still reads dark under the GL fallback.",
   "verdict": "fail"
  }
 ]
