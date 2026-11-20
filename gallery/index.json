@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-0700-surge-settle.jpg",
-  "time": "2026-11-16T07:00:00Z",
-  "caption": "Boss settling to guard at size 3.2 at the end of the surge, framed between two flames; clear silhouette, but the giant's scale and face still fall short of Wukong.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0800-climbwait-f03.jpg",
-  "time": "2026-11-16T08:00:00Z",
-  "caption": "Climbing the keep from behind: the body now waits while a hand reaches, so the left fist is raised beside the hat; the climber also holds on through a hole in the face instead of dropping. Still wrong: the hand stops at the hat brim, never clearly overhead.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0800-climbwait-zoom.jpg",
   "time": "2026-11-16T08:00:00Z",
   "caption": "2x crop of the same frame: fist and forearm up at head height on the left; the right arm hidden by the capelet, stone shows GL-fallback speckle.",
@@ -897,6 +885,18 @@
   "file": "20261120-0200-wrapcuff-jump.jpg",
   "time": "2026-11-20T02:00:00Z",
   "caption": "Hero mid running jump attack from the side with the closed wrap cuffs. Still wrong: llvmpipe lighting is flat, the back robe panel's tongues are thin strips, the leg bindings look bulky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0300-footwrap-before-after.jpg",
+  "time": "2026-11-20T03:55:00Z",
+  "caption": "Foot bindings before (left) vs now: the wraps narrow onto the ankle and over the instep, so the front boot toe comes out of a snug binding instead of a flared cuff; the rear foot still shows its dark sole end-on inside the ankle collar.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0300-footwrap-jump.jpg",
+  "time": "2026-11-20T03:55:00Z",
+  "caption": "Running jump attack from the side with the tapered foot bindings; the legs still read as stacked cloth tubes and the GL fallback lighting is flat.",
   "verdict": "fail"
  }
 ]

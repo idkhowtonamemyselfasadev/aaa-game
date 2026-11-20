@@ -18,6 +18,10 @@ var wrap_inset := 0.0
 const WRAP_LIP := 0.08     # share of a wrap's v at each end taken by the rolled, turned-in cuff
 const WRAP_ROLL := 0.008   # m, radius of the cuff's roll
 const WRAP_HOLE := 0.2     # the cuff turns in to this share of the rim radius (0.5 still showed a hole end-on)
+const FOOT_TAPER := 0.5    # share of a foot wrap's length, at the toe end, over which it narrows
+const FOOT_TAPER_R := 0.6 # the foot wrap's radius at the toe end vs its fitted shell
+const FOOT_TAPER0 := 0.45  # share at the ankle end over which it narrows onto the ankle, under the shin wrap
+const FOOT_TAPER0_R := 0.5 # its radius at the ankle end vs its fitted shell
 var _body: Node3D
 var _hips_rest := Transform3D()
 var _front: Node3D
@@ -202,7 +206,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# thigh bindings hide the Vanguard's plated thighs; foot wraps bind the boots like
 		# old field puttees, ankle to the ball of the foot
 		_wrap("mixamorig_%sUpLeg" % side, "mixamorig_%sLeg" % side, 0.16, 0.90, 0.012, 9.0)
-		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
+		# (11-20 03:00) the foot binding narrows over its toe half: end-on the old full-width
+		# tube ended in a wide dark ring round a boot toe much slimmer than it (`FOOTTAPER_OLD=1`)
+		if OS.has_environment("FOOTTAPER_OLD"):
+			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0)
+		else:
+			_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0, 0.92, 0.008, 4.0, "",
+					FOOT_TAPER, FOOT_TAPER_R, FOOT_TAPER0, FOOT_TAPER0_R)
 	_last_pos = body.global_position
 
 func _attach(bone: String) -> Node3D:
@@ -401,7 +411,11 @@ func _reshape(bone: String, fn: Callable) -> int:
 ## radius fitted per height and angle to the skinned armour underneath so nothing pokes through.
 ## `also`: a second bone whose skinned verts are fitted too (a binding over a joint must clear the
 ## armour on both sides of it: the knee plate is weighted mostly to the shin, 02:00 11-19).
-func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float, also := "") -> void:
+## `taper`/`taper_r`: over the last `taper` share of v the shell narrows to `taper_r` x its fitted
+## radius, so a foot binding hugs the instep and sinks into the boot's toe (11-20 03:00);
+## `taper0`/`taper0_r` the same at the start (the foot binding's ankle collar).
+func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float, also := "",
+		taper := 0.0, taper_r := 1.0, taper0 := 0.0, taper0_r := 1.0) -> void:
 	var bi := _skel.find_bone(bone)
 	var bi2 := _skel.find_bone(also) if also != "" else -2
 	var a := _rest_in_body(bi).origin
@@ -498,6 +512,11 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		var fx: float = fa - floor(fa)
 		var fy: float = fh - floor(fh)
 		var r := maxf(lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) - wrap_inset, floor_r) + pad
+		if taper > 0.0:
+			# narrows toward the tip: the boot's toe shows past the binding's last lap
+			r *= lerpf(1.0, taper_r, smoothstep(1.0 - taper, 1.0, v))
+		if taper0 > 0.0:
+			r *= lerpf(taper0_r, 1.0, smoothstep(0.0, taper0, v))
 		# each turn of the bandage overlaps the last: a slight step at the leading edge
 		r += 0.004 * fposmod(vg * turns + u, 1.0)
 		var t := lerpf(t0, t1, v)
