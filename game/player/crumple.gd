@@ -40,6 +40,8 @@ var grip_turn := 1.0         # (bots) and its second bone . the hand's length (b
 var clasp := 0.0             # radians: both upper arms drawn in to the midline (two hands on a helve)
 var chest_twist := 0.0       # radians about the body's up, spread over the spine (+ turns the chest to the left)
 var arm_sweep := 0.0         # radians: both upper arms swung round the body's up (+ to the left), a fling across
+var hip_square := 0.0        # 0..1: turn only the hips square to the body (the chest rides on them, its
+							 # own twist kept): a jump attack's blow faces its flight, not the guard's blade
 var square := 0.0            # 0..1: turn the hips and chest square to the body (undo a guard stance's
 							 # twist), so a body tipped onto its back lies flat instead of rolled on one side
 var arm_aim := 0.0           # 0..1: likewise hang both arms straight at the sides before arm/elbow bend
@@ -196,6 +198,8 @@ func _crumple_mod(_delta: float) -> void:
 			_kept[i][0] += (o + ax * ax.dot(f - o) - f) * keep_shaft
 	if gap_staff != null:
 		gap_trace = _fist_gaps(skel)
+	if hip_square > 0.0 and square <= 0.0:
+		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up, hip_square)
 	if square > 0.0:
 		_square(skel, "mixamorig_Hips", "mixamorig_LeftUpLeg", "mixamorig_RightUpLeg", x, up)
 		_square(skel, "mixamorig_Spine2", "mixamorig_LeftArm", "mixamorig_RightArm", x, up)
@@ -819,7 +823,7 @@ static var SHIFT_SPINE_GAIN := float(OS.get_environment("CLIMB_SPINE_GAIN")) if 
 ## Rotates a bone about an axis given in skeleton space, pivoting at its own joint.
 ## Turns a bone about the body's up so the line from its right child joint to its left one
 ## lies along the body's right axis (by `square`).
-func _square(skel: Skeleton3D, bone_name: String, left: String, right: String, x: Vector3, up: Vector3) -> void:
+func _square(skel: Skeleton3D, bone_name: String, left: String, right: String, x: Vector3, up: Vector3, amount := -1.0) -> void:
 	var l := skel.find_bone(left)
 	var r := skel.find_bone(right)
 	if l < 0 or r < 0:
@@ -828,7 +832,7 @@ func _square(skel: Skeleton3D, bone_name: String, left: String, right: String, x
 	var flat := line - up * line.dot(up)
 	if flat.length() < 1e-4:
 		return
-	_bend(skel, bone_name, up, atan2(flat.cross(x).dot(up), flat.dot(x)) * square)
+	_bend(skel, bone_name, up, atan2(flat.cross(x).dot(up), flat.dot(x)) * (square if amount < 0.0 else amount))
 
 func _bend(skel: Skeleton3D, bone_name: String, axis_skel: Vector3, angle: float) -> void:
 	if absf(angle) < 1e-4:

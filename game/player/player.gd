@@ -460,6 +460,9 @@ var foe_slides := 0                     # (bots) times the hero was put off a fo
 var landings := 0                       # (bots) touchdowns, and the last one's fall
 var hard_landings := 0
 var last_drop := 0.0
+## (11-20 15:00) soft lock cone (rad, either side of the facing) for a swing opened with the stick held
+const MAGNET_STICK_CONE := 0.35
+var MAGNET_OLD := OS.get_environment("MAGNET_OLD") == "1"
 var _air_swung := false                 # a jump attack already thrown this time in the air
 var jump_apex := 0.0                    # (bots) height of the last jump's top above its take-off
 var _jump_y0 := 0.0
@@ -1367,8 +1370,13 @@ func _physics_process(delta: float) -> void:
 			var cw := (right * dir2.x + fwd * -dir2.y)
 			body.rotation.y = lerp_angle(body.rotation.y, atan2(cw.x, cw.z), 0.5)
 		elif combat.t < 0.12 and combat.spin_delta == 0.0:
-			# no stick: the swing's opening tracks the nearest target ahead (soft lock)
-			var tgt := combat.magnet_target(3.4, 1.3)
+			# no stick: the swing's opening tracks the nearest target ahead (soft lock).
+			# (11-20 15:00) with the stick held only a target already close to the stick's line
+			# (MAGNET_STICK_CONE) pulls: the wide cone turned a running jump attack 62 deg onto a
+			# training post off to the side, so the hero flew on sideways with the chest to the
+			# lens's far side. MAGNET_OLD=1 = the wide cone whatever the stick says.
+			var cone := 1.3 if (MAGNET_OLD or dir2.length() <= 0.1) else MAGNET_STICK_CONE
+			var tgt := combat.magnet_target(3.4, cone)
 			if tgt != Vector3.INF:
 				var to := tgt - global_position
 				body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.z), 1.0 - exp(-30.0 * delta))
@@ -3776,6 +3784,11 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 ## Hanging on the stones, hauling over a lip or swinging under the glider bar the body faces
 ## square into what it holds, so Crumple turns the hips and chest back to the facing; caught
 ## fast on the grab, let go slower as a kick-off or a landing hands back to the guard. (The
+## (11-20 15:00) share of the guard's pelvis turn undone through a jump attack (see _ease_square)
+var JA_HIP_SQUARE := float(OS.get_environment("JA_HIP_SQUARE")) if OS.has_environment("JA_HIP_SQUARE") else 0.75
+var JA_SQUARE_OLD := OS.get_environment("JA_SQUARE_OLD") == "1"
+var _ja_run := false             # the jump attack in progress was thrown out of a running leap
+
 ## knock-down drives `square` itself.)
 func _ease_square(delta: float) -> void:
 	if crumple == null or down_t >= 0.0 or dead_t >= 0.0:
@@ -3788,6 +3801,23 @@ func _ease_square(delta: float) -> void:
 	if _no_square:
 		want = 0.0                             # (env CLIMB_NOSQUARE=1: the guard-turned hang, for before/after)
 	crumple.square = move_toward(crumple.square, want, delta * (SQUARE_IN if want > crumple.square else SQUARE_OUT))
+	# (11-20 15:00) a jump attack's blow faces its flight: the guard clip's pelvis blade (~44 deg)
+	# came in under the snatch and, with the chest's own wind-up on top, the hero showed the lens
+	# its back through the fold (bot `runstrike`: hips -43, chest -30 deg off the facing).
+	# The hips turn most of the way back; the chest keeps its twist keys. JA_SQUARE_OLD=1 = before.
+	# Held down through the strike landing too (let go at touch-down, the turning hips swung
+	# the front panel shut on the dropping thigh in one tick: bot `airstrike` robe drop).
+	# Only out of a running leap (latched as the blow starts): a standing jump attack's tucked
+	# knees and robe fold are posed on the guard's pelvis and its cloth gates broke squared.
+	var ja_on: bool = not JA_SQUARE_OLD and combat != null and (combat.is_air_attack() or strike_landing_hold())
+	if not ja_on:
+		_ja_run = false
+	elif combat.is_air_attack() and combat.air_attack_u() < 0.1 and _leap_s > 0.5:
+		_ja_run = true
+	var hs := JA_HIP_SQUARE if (ja_on and _ja_run) else 0.0
+	# (taken at once: the guard's blade blends in under the snatch at the same moment, so an eased
+	# square let the pelvis swing out and back, sweeping a heel into the back panel's line)
+	crumple.hip_square = hs if hs > crumple.hip_square else move_toward(crumple.hip_square, hs, delta * SQUARE_OUT)
 
 func _hold_still_anim() -> void:
 	if anim_tree != null:

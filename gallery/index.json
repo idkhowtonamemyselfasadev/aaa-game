@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261116-1700-p3-ringlip-clear.jpg",
-  "time": "2026-11-16T17:00:00Z",
-  "caption": "Phase-3 boss settle (4.6x) beside the hero: the cream seeding sprig no longer stands on the ring's ash lip, the edge clumps are singed short; still wrong: the ash floor speckle is even and the boss's face slit is small at this range.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1700-ringlip-before-after.jpg",
-  "time": "2026-11-16T17:00:00Z",
-  "caption": "Ring lip close-up, after (top) vs before (bottom): full-height cream seed heads on the burnt edge are gone, the singed band is shorter and browner.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-1800-fx-before-after.jpg",
-  "time": "2026-11-16T18:00:00Z",
-  "caption": "Before (left, FX frozen at spawn) vs after (right, ember/grit/impact FX stepped with the boss): the boot dust has rolled on and embers have risen; the frozen version misrepresented the game.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1800-helm-slit-close.jpg",
   "time": "2026-11-16T18:00:00Z",
   "caption": "Helm close lens mid-roar: the burning sight slit reads as one bar, the two eye hot points do not separate, and a grey streak runs down the helm; background mountain texture is stripy.",
@@ -897,6 +879,18 @@
   "file": "20261120-1400-soldier-shinwrap-front.jpg",
   "time": "2026-11-20T14:00:00Z",
   "caption": "Low front lens on a Hollow soldier's legs: the shin bindings now read as dirty, unevenly wound hemp strips rather than wood; the sabatons below are still too smooth and the ground texture is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1500-runjumpattack-square-jt030-before-after.jpg",
+  "time": "2026-11-20T15:00:00Z",
+  "caption": "Running jump attack at the cock (jt 0.30), before | after: the pelvis and belt now point along the flight with the lead knee driving ahead, instead of bladed 43 deg off it; still a small, dark rear-3/4 GL frame.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1500-runjumpattack-square-jt048-before-after.jpg",
+  "time": "2026-11-20T15:00:00Z",
+  "caption": "Running jump attack at the fold (jt 0.48), before | after: hips and belt square across the body instead of turned away; this lens still sees the hero from behind and the figure is too small to sell the blow.",
   "verdict": "fail"
  }
 ]

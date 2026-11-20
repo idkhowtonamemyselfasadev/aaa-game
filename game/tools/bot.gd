@@ -4800,7 +4800,12 @@ const PL_SNATCH_POSED_GATE := 0.0     # m: the same with the clearance re-run on
 ## jump (as the `jump ja` shot does) and per tick read where the panel's knee fold and hem sit
 ## against the higher knee. Gates: the hem hangs below the knee's height and no point of the panel
 ## (fold point or hem) is more than RS_AHEAD_GATE m ahead of the most forward knee.
-const RS_AHEAD_GATE := 0.20                # m, hem ahead of the forward knee's joint centre (the cloth over the thigh's front is ~0.1-0.15)
+const RS_AHEAD_GATE := 0.22                # m, hem ahead of the forward knee's joint centre (the cloth over the thigh's front is ~0.1-0.15)
+										   # (11-20 15:00) 0.20 -> 0.22: with the hips squared to the flight the near-plumb panel (swing 0.17 rad)
+										   # faces fw full-on instead of 43 deg off, +0.046 m on the same drape (JA_SQUARE_OLD=1: 0.160)
+## (11-20 15:00) the jump attack faces its flight: hips and chest headings off the run line (deg)
+const RS_HIPS_YAW_GATE := 20.0
+const RS_CHEST_YAW_GATE := 25.0
 const RS_SAG_GATE := 0.06                  # m, the streaming back hem below where the straight board would put it
 const RS_HEEL_GATE := 0.05                 # m, the folded tail (crease -> hem) off either ankle
 const RS_ROLL_GATE := 0.25                 # rad, the streaming back panel's hem rolls at least this far (shows its face)
@@ -4820,6 +4825,28 @@ func _stick_for(player: Player, dir: Vector3) -> Vector2:
 	var r := b.x
 	r.y = 0.0
 	return Vector2(dir.dot(r.normalized()), -dir.dot(f.normalized()))
+
+## (11-20 15:00) headings (deg, + = toward the hero's left) relative to the Body's forward:
+## [hip line normal, shoulder line normal, Skeleton node +Z, horizontal velocity].
+func _trunk_yaws(p, skl: Skeleton3D) -> Array:
+	var fw: Vector3 = p.body.global_basis.z
+	fw.y = 0.0
+	fw = fw.normalized()
+	var res := []
+	for pair in [["mixamorig_RightUpLeg", "mixamorig_LeftUpLeg"], ["mixamorig_RightArm", "mixamorig_LeftArm"]]:
+		var r: Vector3 = skl.global_transform * skl.get_bone_global_pose(skl.find_bone(pair[0])).origin
+		var l: Vector3 = skl.global_transform * skl.get_bone_global_pose(skl.find_bone(pair[1])).origin
+		var d := l - r
+		d.y = 0.0
+		var n := d.cross(Vector3.UP).normalized()   # forward normal of the line
+		res.append(rad_to_deg(fw.signed_angle_to(n, Vector3.UP)))
+	var sz: Vector3 = skl.global_basis.z
+	sz.y = 0.0
+	res.append(rad_to_deg(fw.signed_angle_to(sz.normalized(), Vector3.UP)))
+	var v: Vector3 = p.velocity
+	v.y = 0.0
+	res.append(rad_to_deg(fw.signed_angle_to(v.normalized(), Vector3.UP)) if v.length() > 0.1 else 0.0)
+	return res
 
 func _runstrike_test() -> void:
 	var p := _player
@@ -4841,6 +4868,9 @@ func _runstrike_test() -> void:
 	for i in 60:
 		p.bot_input = _stick_for(p, Vector3(1, 0, 0))
 		await get_tree().physics_frame
+	if OS.has_environment("RS_YAW"):
+		var yr0 := _trunk_yaws(p, c.skel)
+		print("RSYAW run-up hips %+.1f chest %+.1f vel %+.1f body->X %+.1f" % [yr0[0], yr0[1], yr0[3], rad_to_deg(Vector3(1, 0, 0).signed_angle_to(Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z), Vector3.UP))])
 	p.bot_jump = true
 	p.bot_jump_hold = true
 	var skl: Skeleton3D = c.skel
@@ -4859,6 +4889,8 @@ func _runstrike_test() -> void:
 	var worst_corner := 9.0
 	var ticks := 0
 	var left := false
+	var worst_hips_yaw := 0.0
+	var worst_chest_yaw := 0.0
 	for i in 120:
 		p.bot_input = _stick_for(p, Vector3(1, 0, 0))
 		await get_tree().physics_frame
@@ -4871,12 +4903,24 @@ func _runstrike_test() -> void:
 		if t > 0.3:
 			p.bot_jump_hold = false
 		await skl.skeleton_updated
+		if OS.has_environment("RS_YAW") and not c.is_air_attack():
+			var yq := _trunk_yaws(p, skl)
+			print("RSYAW pre t %.3f hips %+.1f chest %+.1f vel %+.1f floor %s" % [t, yq[0], yq[1], yq[3], p.is_on_floor()])
 		if not c.is_air_attack():
 			if left and p.is_on_floor() and t > 0.3:
 				break
 			continue
 		var fw: Vector3 = p.body.global_basis.z.normalized()
 		var up: Vector3 = p.body.global_basis.y.normalized()
+		# (11-20 15:00) headings against the run line (world +X), so a body turned off it counts too
+		var yw := _trunk_yaws(p, skl)
+		var bodyx := rad_to_deg(Vector3(1, 0, 0).signed_angle_to(Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z), Vector3.UP))
+		if c.air_attack_u() > 0.2:
+			worst_hips_yaw = maxf(worst_hips_yaw, absf(yw[0] + bodyx))
+			worst_chest_yaw = maxf(worst_chest_yaw, absf(yw[1] + bodyx))
+		if OS.has_environment("RS_YAW"):
+			var yr := _trunk_yaws(p, skl)
+			print("RSYAW t %.3f u %.2f hips %+.1f chest %+.1f vel %+.1f twist %+.1f body->X %+.1f velw %s" % [t, c.air_attack_u(), yr[0], yr[1], yr[3], rad_to_deg(c._twist.twist), rad_to_deg(Vector3(1, 0, 0).signed_angle_to(Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z), Vector3.UP)), str(p.velocity)])
 		var kmax := -INF
 		var kh := -INF
 		for lg in legs:
@@ -5039,6 +5083,7 @@ func _runstrike_test() -> void:
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])
 	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
 	print("BOT runstrike: back panel stream roll -> hem rolls %.2f rad (gate >= %.2f), rolled hem corners off the heels %.3f m (gate >= %.2f)" % [best_roll, RS_ROLL_GATE, worst_corner, RS_CORNER_GATE])
+	print("BOT runstrike: jump attack from u 0.2 -> hips face %.1f deg off the run line (gate <= %.0f), chest %.1f deg (gate <= %.0f)" % [worst_hips_yaw, RS_HIPS_YAW_GATE, worst_chest_yaw, RS_CHEST_YAW_GATE])
 	print("BOT runstrike: back panel hem tongues droop %.3f m toward world down at the tip (gate >= %.3f)" % [best_droop, RS_DROOP_GATE])
 	if sag_ticks > 0 and (best_sag < RS_SAG_GATE or worst_heel < RS_HEEL_GATE):
 		print("BOT FAIL: runstrike back panel sag")
@@ -5048,6 +5093,8 @@ func _runstrike_test() -> void:
 		print("BOT FAIL: runstrike back panel tongue droop")
 	elif ticks == 0 or worst_ahead > RS_AHEAD_GATE or worst_lean > RS_LEAN_GATE or worst_hem > RS_HEM_GATE:
 		print("BOT FAIL: runstrike front panel")
+	elif worst_hips_yaw > RS_HIPS_YAW_GATE or worst_chest_yaw > RS_CHEST_YAW_GATE:
+		print("BOT FAIL: runstrike trunk turned off the flight")
 	else:
 		print("BOT PASS: runstrike")
 	get_tree().quit()
