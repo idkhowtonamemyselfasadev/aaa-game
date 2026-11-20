@@ -292,11 +292,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		# ends in a wide dark ring round a much slimmer boot (`FOOTTAPER_OLD=1` = before)
 		# and its ankle end narrows onto the ankle under the shin binding: sized to the heel it
 		# stood off the slim ankle as a wide open collar seen from behind the shin
+		# (11-20 04:00) and its underside is held off the heel and sole (FOOT_PLANTAR_CAP): fitted
+		# to them it cupped the boot's heel as a wide pale shell seen from behind (`heels` lens)
 		var ft := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER
 		var ft0 := 0.0 if OS.has_environment("FOOTTAPER_OLD") else FOOT_TAPER0
 		_wrap("mixamorig_%sFoot" % side, "mixamorig_%sToeBase" % side, 0.0,
 				0.92 if shin_slim >= 1.0 else HERO_FOOT_WRAP_END, 0.008, 4.0, "", ft, FOOT_TAPER_R,
-				ft0, FOOT_TAPER0_R)
+				ft0, FOOT_TAPER0_R, 0.0 if OS.has_environment("FOOTCAP_OLD") else FOOT_PLANTAR_CAP)
 		# villagers' forearms in their sleeve wool and a mitt over the hand: in the pale shin-wrap
 		# grey the forearm wraps and the base body's gloves read as grey plate gauntlets
 		tint = palette.get("sleeves", _calm(palette.get("wraps", ARM_LINEN)))

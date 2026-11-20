@@ -4803,6 +4803,7 @@ const RS_ROLL_GATE := 0.25                 # rad, the streaming back panel's hem
 const RS_CORNER_GATE := 0.03               # m, the rolled hem's corners off either heel
 const RS_DROOP_GATE := 0.035               # m, the streaming back panel's longest hem tongue hangs at least this far toward world down
 const RS_WRAP_OPEN_GATE := 0.75  # a wrap end ring vs its mid ring (rolled, turned-in cuff)
+const RS_FOOT_SPAN_GATE := 0.19  # m, a foot wrap's widest ring diameter (underside held off the heel; 11-20 04:00)
 const RS_FOOT_TAPER_GATE := 0.8  # a foot wrap's ring just inside either cuff vs its mid ring (tapered binding)
 const SAG_OVER_MIN := 0.30                 # rad, the back panel swung this far past plumb counts as streaming
 const RS_LEAN_GATE := 0.05                 # m, the hem ahead of the knee fold point: below the knee the cloth hangs plumb
@@ -4957,6 +4958,7 @@ func _runstrike_test() -> void:
 	var worst_open := 0.0
 	var foot_n := 0
 	var worst_foot := 0.0
+	var foot_span := 0.0
 	for wm in p.find_children("Wrap*", "MeshInstance3D", true, false):
 		var arr: Array = (wm as MeshInstance3D).mesh.surface_get_arrays(0)
 		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
@@ -4982,6 +4984,10 @@ func _runstrike_test() -> void:
 			if wm.name.begins_with("WrapLeftFoot") or wm.name.begins_with("WrapRightFoot"):
 				foot_n += 1
 				worst_foot = maxf(worst_foot, maxf(rr[0.12], rr[0.88]) / rr[0.5])
+				for key in [0.12, 0.5]:
+					for qa in rings[key]:
+						for qb in rings[key]:
+							foot_span = maxf(foot_span, (qa - qb).length())
 	print("BOT runstrike: %d bandage wraps -> widest end ring %.2f of the mid tube's radius (gate <= %.2f)" % [wrap_n, worst_open, RS_WRAP_OPEN_GATE])
 	if wrap_n < 8 or worst_open > RS_WRAP_OPEN_GATE:
 		print("BOT FAIL: runstrike wrap ends open")
@@ -4991,6 +4997,13 @@ func _runstrike_test() -> void:
 	print("BOT runstrike: %d foot wraps -> widest ring just inside a cuff %.2f of the mid ring (gate <= %.2f)" % [foot_n, worst_foot, RS_FOOT_TAPER_GATE])
 	if foot_n < 2 or worst_foot > RS_FOOT_TAPER_GATE:
 		print("BOT FAIL: runstrike foot wraps not tapered")
+		get_tree().quit()
+		return
+	# (11-20 04:00) the foot binding's underside is held off the heel and sole: fitted to them the
+	# shell stood round the boot's heel as a wide open cup seen from behind
+	print("BOT runstrike: foot wraps -> widest ring across %.3f m (gate <= %.2f)" % [foot_span, RS_FOOT_SPAN_GATE])
+	if foot_span > RS_FOOT_SPAN_GATE:
+		print("BOT FAIL: runstrike foot wraps cup the heel")
 		get_tree().quit()
 		return
 	print("BOT runstrike: running jump attack ticks %d -> front panel hem worst ahead of the forward knee %+.3f m (gate <= %.2f), below the knee leans ahead %+.3f m (gate <= %.2f), hem over the knee %+.3f m (gate <= %.2f)" % [ticks, worst_ahead, RS_AHEAD_GATE, worst_lean, RS_LEAN_GATE, worst_hem, RS_HEM_GATE])

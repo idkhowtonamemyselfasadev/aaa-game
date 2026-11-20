@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-0800-climbwait-zoom.jpg",
-  "time": "2026-11-16T08:00:00Z",
-  "caption": "2x crop of the same frame: fist and forearm up at head height on the left; the right arm hidden by the capelet, stone shows GL-fallback speckle.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-0800-surge-regrip-seq.jpg",
-  "time": "2026-11-16T08:00:00Z",
-  "caption": "Surge frames st=46/52/56: roar, fist still raised as the settle starts, then both hands meet the haft at the chest as the glaive tips into guard; no hunched frame left, but fire columns still crowd the foreground.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-0800-surge-roar.jpg",
   "time": "2026-11-16T08:00:00Z",
   "caption": "Boss growth surge, front-lit at s~1.9: the knight now still roars with the left fist up where the old regrip had both fists closed round the visor (a hunch); face still hidden behind the helm slit, scale unreadable without the hero in frame.",
@@ -897,6 +885,18 @@
   "file": "20261120-0300-footwrap-jump.jpg",
   "time": "2026-11-20T03:55:00Z",
   "caption": "Running jump attack from the side with the tapered foot bindings; the legs still read as stacked cloth tubes and the GL fallback lighting is flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0415-heelcap-before-after.jpg",
+  "time": "2026-11-20T04:15:01Z",
+  "caption": "Hero's heels from a low rear lens, before (top) and after (bottom): the foot binding no longer stands round the boot heel as a wide pale cup; a flap still stands off the right ankle's buckle plate.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0415-heels.jpg",
+  "time": "2026-11-20T04:15:01Z",
+  "caption": "Idle hero's boots lit from behind: snug bindings over the ankle with bare leather heels; scene is dark under the hero's own shadow and the right ankle flap remains.",
   "verdict": "fail"
  }
 ]

@@ -1100,6 +1100,13 @@ func _ready() -> void:
 		var pp := player.global_position
 		var fwd := player.body.global_transform.basis.z
 		SPOTS[spot] = [pp - fwd.rotated(Vector3.UP, 0.45) * 1.5, pp]
+	if spot == "heels":
+		# (11-20 04:00) heels: a low rear 3/4 lens 1.3 m off the idle hero's heels at shin height,
+		# so the ankle collar of the foot bindings reads from behind (does the heel poke through,
+		# does a flap stand off it); combine with keylight to light the heel side
+		var hp := player.global_position
+		var hb := -player.body.global_transform.basis.z
+		SPOTS[spot] = [hp + hb.rotated(Vector3.UP, -0.6) * 1.3, hp]
 	if spot == "heroback" or spot == "staff":
 		# rear three-quarter of the idle player: the staff slung across the back
 		var pp := player.global_position
@@ -2462,6 +2469,9 @@ func _ready() -> void:
 		if spot == "devil":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 3.5
+		if spot == "heels":
+			pos.y = terrain.height_at(pos.x, pos.z) + 0.42
+			look.y = terrain.height_at(look.x, look.z) + 0.14
 		if spot == "herocu":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.65
 			look.y = terrain.height_at(look.x, look.z) + 1.4
@@ -2510,6 +2520,17 @@ func _ready() -> void:
 		if world.keeper.pick_hold and spot.begins_with("keeper"):
 			# the low pick lens sits in the meadow: clip the blades within 0.9 m of it
 			free.near = 0.9
+		if spot == "heels":
+			free.fov = 34.0
+			free.near = 0.05
+			# sun behind the lens's shoulder so the heel side is lit (judging only)
+			var hk := pos - look
+			hk.y = 0.0
+			hk = hk.normalized().rotated(Vector3.UP, deg_to_rad(30.0))
+			var hts := (hk * cos(deg_to_rad(35.0)) + Vector3.UP * sin(deg_to_rad(35.0))).normalized()
+			var hsn: DirectionalLight3D = world.sun
+			hsn.look_at(hsn.global_position - hts, Vector3.UP)
+			print("SHOT heels lens %s look %s" % [pos, look])
 		if spot == "hare":
 			print("SHOT hare lens %s look %s" % [pos, look])
 		if spot == "flowers":

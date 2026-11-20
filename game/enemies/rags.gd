@@ -22,6 +22,11 @@ const FOOT_TAPER := 0.5    # share of a foot wrap's length, at the toe end, over
 const FOOT_TAPER_R := 0.6 # the foot wrap's radius at the toe end vs its fitted shell
 const FOOT_TAPER0 := 0.45  # share at the ankle end over which it narrows onto the ankle, under the shin wrap
 const FOOT_TAPER0_R := 0.5 # its radius at the ankle end vs its fitted shell
+# (11-20 04:00) m: a foot wrap's underside (heel and sole side of the ankle-to-toe axis) is held
+# to this radius: fitted to the heel and sole it stood round the boot's heel as a wide open cup
+# seen from behind (low rear `heels` lens); held in, the binding hugs the ankle and instep and
+# the boot's heel counter comes out under it (`FOOTCAP_OLD=1` = before)
+const FOOT_PLANTAR_CAP := 0.092
 var _body: Node3D
 var _hips_rest := Transform3D()
 var _front: Node3D
@@ -414,8 +419,10 @@ func _reshape(bone: String, fn: Callable) -> int:
 ## `taper`/`taper_r`: over the last `taper` share of v the shell narrows to `taper_r` x its fitted
 ## radius, so a foot binding hugs the instep and sinks into the boot's toe (11-20 03:00);
 ## `taper0`/`taper0_r` the same at the start (the foot binding's ankle collar).
+## `plantar_cap` (m): the shell's radius on the side away from body forward (a foot's heel and
+## sole) is held to this, blended in round the sides, so it does not cup the boot's heel.
 func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: float, also := "",
-		taper := 0.0, taper_r := 1.0, taper0 := 0.0, taper0_r := 1.0) -> void:
+		taper := 0.0, taper_r := 1.0, taper0 := 0.0, taper0_r := 1.0, plantar_cap := 0.0) -> void:
 	var bi := _skel.find_bone(bone)
 	var bi2 := _skel.find_bone(also) if also != "" else -2
 	var a := _rest_in_body(bi).origin
@@ -473,7 +480,8 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	# fill empty cells, then smooth so the wrap is a tight but soft shell over the armour
 	var floor_r := 0.035
 	for i in rad.size():
-		floor_r = maxf(floor_r, rad[i] * 0.42)
+		# a capped underside sizes the floor too (the heel set it at 0.064 m round a foot)
+		floor_r = maxf(floor_r, (minf(rad[i], plantar_cap) if plantar_cap > 0.0 else rad[i]) * 0.42)
 	for pass_i in 2:
 		var out := rad.duplicate()
 		for ih in NH:
@@ -492,6 +500,13 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 			var sd := rad[ih * NA + NA / 4]
 			line += " %.2f:%.3f/%.3f/%.3f" % [lerpf(t0, t1, (ih + 0.5) / NH), f, sd, bk]
 		print(line)
+	if OS.get_environment("WRAP_DBG") == "foot" and bone.ends_with("Foot"):
+		print("WRAPF %s len %.3f floor %.3f e1 %s d %s" % [bone, axis.length(), floor_r, e1, d])
+		for ih in NH:
+			var ln := "WRAPF t %.2f |" % lerpf(t0, t1, (ih + 0.5) / NH)
+			for ia in NA:
+				ln += " %.3f" % rad[ih * NA + ia]
+			print(ln)
 	# (11-20 02:00) each end of the tube rolls over into a cuff and turns in toward the limb
 	# (WRAP_LIP of v at each end): an open tube end read as a hollow pipe at a bent knee or a
 	# pointed foot, where the limb inside is thinner than the binding (`WRAPLIP_OLD=1` = before)
@@ -512,6 +527,8 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		var fx: float = fa - floor(fa)
 		var fy: float = fh - floor(fh)
 		var r := maxf(lerpf(lerpf(r00, r01, fx), lerpf(r10, r11, fx), fy) - wrap_inset, floor_r) + pad
+		if plantar_cap > 0.0:
+			r = lerpf(r, minf(r, plantar_cap), smoothstep(-0.3, 0.6, -cos(ang)))
 		if taper > 0.0:
 			# narrows toward the tip: the boot's toe shows past the binding's last lap
 			r *= lerpf(1.0, taper_r, smoothstep(1.0 - taper, 1.0, v))
