@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261116-0900-surge-slit.jpg",
-  "time": "2026-11-16T09:00:00Z",
-  "caption": "The boss settling after its growth roar (size 3.2): the helm's sight slit now burns with the ember instead of reading as a blank face; the ring-of-fire columns still fill a third of the frame and the hero is not in shot for scale.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1100-surge-hero-scale.jpg",
   "time": "2026-11-16T11:00:00Z",
   "caption": "The boss settling after its growth roar (size 3.2) with the hero standing beside it for scale (about 3x the hero); the ring of fire has burned down to embers and its thinned smoke no longer hides the helm. Still: the ember tongues read as thin streaks and the hero is small at this lens.",
@@ -897,6 +891,12 @@
   "file": "20261120-0515-heels.jpg",
   "time": "2026-11-20T05:15:00Z",
   "caption": "Low rear lens on the idle hero's heels after the side cap: bindings snug on the boot flanks, but the feet sit in the hero's own shadow and the ankle crescent remains.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0613-footfin.jpg",
+  "time": "2026-11-20T06:13:00Z",
+  "caption": "Hero's near boot from the low rear heels lens, before (left) and with a tried tuck under the tapered binding (right): the dark crescent fin off the outer ankle is still there and the boot's vamp still covers the binding; the change was reverted.",
   "verdict": "fail"
  }
 ]
