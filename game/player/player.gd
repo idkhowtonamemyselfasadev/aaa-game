@@ -2388,6 +2388,12 @@ var JUMPATK_NOTILT := OS.get_environment("JUMPATK_NOTILT") == "1"
 # JA_SWING_TILT=0 = before (no roll on the swing); JA_SWT="in0,in1,out0,out1" tunes the window.
 var JA_SWING_TILT := float(OS.get_environment("JA_SWING_TILT")) if OS.has_environment("JA_SWING_TILT") else 0.5
 var JA_SWT: PackedFloat64Array = OS.get_environment("JA_SWT").split_floats(",") if OS.has_environment("JA_SWT") else PackedFloat64Array([0.24, 0.35, 0.46, 0.60])
+# (11-21) the arch's head tilt gets its own fade-out window "off0,off1" (was the arch's own,
+# JA_ARCH_OFF0/1 0.30-0.40), so it can let go faster after the cock and stop pulling the hat
+# back under the shaft at jt ~0.53. Bot sweep (airstrike, worst crossing off the hat's centre):
+# arch's own window -0.080 m; 0.30-0.36 -0.102; 0.29-0.34 -0.114; 0.28-0.33 -0.122 (starts before
+# the cock's peak tick); cock 39.1 deg and hat 0.021 m unchanged for all. JA_TILT_OFF="" = before.
+var JA_TILT_OFF: PackedFloat64Array = OS.get_environment("JA_TILT_OFF").split_floats(",") if OS.has_environment("JA_TILT_OFF") else PackedFloat64Array([0.29, 0.34])
 ## (11-08) env JUMPATK_LOOSEHANDS=1: the old wrists, carried off the staff by the arch and fold
 var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0
@@ -2658,7 +2664,10 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			if not JUMPATK_NONECK:
 				nk = JA_ARCH_NECK * arch + JA_FOLD_NECK * fold
 			if not JUMPATK_NOTILT:
-				tl = JA_ARCH_TILT * arch
+				var tarch := arch
+				if JA_TILT_OFF.size() >= 2 and not JUMPATK_LATEFOLD:
+					tarch = smoothstep(0.04, JA_ARCH_PEAK, au) * (1.0 - smoothstep(JA_TILT_OFF[0], JA_TILT_OFF[1], au))
+				tl = JA_ARCH_TILT * tarch
 				if JA_SWING_TILT != 0.0 and not JUMPATK_LATEFOLD:
 					tl += JA_SWING_TILT * smoothstep(JA_SWT[0], JA_SWT[1], au) * (1.0 - smoothstep(JA_SWT[2], JA_SWT[3], au))
 		var pt: float = combat.plunge_t if combat != null and combat.is_plunging() else -1.0

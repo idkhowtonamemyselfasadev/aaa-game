@@ -4330,7 +4330,7 @@ func _scree_test() -> void:
 
 const JA_COCK_GATE := 38.0             # (11-08 10:00) 25 -> 36 with the head tipped clear; (11-08 14:00) 36 -> 38 with the deep key back (39.1)
 const JA_HAT_GATE := 0.02
-const JA_CROSS_GATE := -0.06    # (11-20 22:30) m, see ja_cross (before the swing roll +0.047, 0.35 roll -0.034, 0.5 roll -0.080)
+const JA_CROSS_GATE := -0.10    # (11-21) m, see ja_cross (before the swing roll +0.047, 0.35 roll -0.034, 0.5 roll -0.080, + tilt fade 0.29-0.34 -0.114)
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 ## (11-08) each fist's centre to the shaft's axis through the air attack (crumple.keep_hands: the
@@ -5373,7 +5373,7 @@ func _airstrike_test() -> void:
 	if not p.JUMPATK_LOOSEHANDS and not OS.has_environment("JUMPATK_HIGHKEY") and (maxf(ja_gap.x, ja_gap.y) > JA_FIST_GATE or ja_loose > JA_LOOSE_GATE):
 		return _combat_done(false, "the jump attack's arch and fold carry the fists off the staff")
 	print("BOT airstrike: swing over front-on -> shaft crosses face height at worst %+.3f m off the hat's centre (+ = toward the hero's left, over the face; gate <= %.3f; JA_SWING_TILT=0 +0.047, 0.35 -0.034)" % [ja_cross, JA_CROSS_GATE])
-	if not c.JA_CANT_OLD and not c.JUMPATK_NOCOCK and p.JA_SWING_TILT >= 0.5 and not OS.has_environment("JA_SWT") and ja_cross > JA_CROSS_GATE:
+	if not c.JA_CANT_OLD and not c.JUMPATK_NOCOCK and p.JA_SWING_TILT >= 0.5 and not OS.has_environment("JA_SWT") and not (OS.has_environment("JA_TILT_OFF") and OS.get_environment("JA_TILT_OFF") == "") and ja_cross > JA_CROSS_GATE:
 		return _combat_done(false, "the jump attack's downswing crosses over the face front-on (the head is not rolled out of the shaft's line)")
 	if not c.JUMPATK_NOCOCK and (ja_cock < (25.0 if p.JUMPATK_NOTILT else JA_COCK_GATE) or ja_hat < JA_HAT_GATE):
 		return _combat_done(false, "the jump attack's staff is not drawn back behind the head at the arch, or the shaft cuts the hat")
