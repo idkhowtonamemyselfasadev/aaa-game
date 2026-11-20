@@ -89,6 +89,10 @@ const STRING := [
 # Jump attack (light in the air, once per jump): the overhead arc of string hit 3 brought
 # down from the top of the jump. The rise of it holds the hero a beat at the apex so the
 # blow reads; the body keeps its momentum and the legs keep their tuck.
+## (11-20 19:00) the jump attack's canted pass over the right shoulder [yaw, pitch, P.x, u]
+## (env JA_CANT="yaw,pitch,x,u[,z]"; JA_CANT_OLD=1 = the old straight-through-the-face downswing)
+var JA_CANT_OLD := OS.get_environment("JA_CANT_OLD") == "1"
+var JA_CANT: PackedFloat64Array = OS.get_environment("JA_CANT").split_floats(",") if OS.has_environment("JA_CANT") else PackedFloat64Array([-60.0, 62.0, -0.06, 0.42, 0.45])
 const AIR_COST := 10.0
 const AIR_POWER := 1.35
 const AIR_LIGHT := { "dur": 0.56, "hit": [0.36, 0.66], "lunge": 0.0, "spin": 0.0, "air": true, "keys": [
@@ -1058,6 +1062,14 @@ func _start_air() -> void:
 		var f := OS.get_environment("JA_KEY").split_floats(",")
 		_atk = AIR_LIGHT.duplicate(true)
 		_atk["keys"][3] = [0.30, f[0], f[1], Vector3(f[2], f[3], f[4]), -14.0]
+	if not JA_CANT_OLD and not JUMPATK_NOCOCK and (_atk["keys"] as Array).size() == 6:
+		# (11-20 19:00) the downswing came over in the head's own plane: front-on the shaft stood
+		# as one vertical line up through the face (jt 0.55). A key past the top cants it over
+		# the right shoulder (tip leaning to the hero's right, hands a little right of the face)
+		# and the strike straightens onto the foe by the drive key, like a real overhead blow.
+		if _atk == AIR_LIGHT:
+			_atk = AIR_LIGHT.duplicate(true)
+		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), -17.5, -0.025])
 	_recover = 0.0
 	air_hold_t = 0.0
 	_power = AIR_POWER

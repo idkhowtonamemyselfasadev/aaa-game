@@ -5288,7 +5288,7 @@ func _airstrike_test() -> void:
 			var ax: Vector3 = (tip_e - but_e).normalized()
 			ja_cock = maxf(ja_cock, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))))
 			var hm := _hat_margin(p, ends[0], ends[1])
-			if OS.has_environment("JA_DBG"): print("JA u %.2f hat %.3f cock %.1f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y)))])
+			if OS.has_environment("JA_DBG"): print("JA u %.2f hat %.3f cock %.1f right %.1f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))), rad_to_deg(atan2(-ax.dot(p.body.global_basis.x), ax.dot(p.body.global_basis.y)))])
 			ja_hat = minf(ja_hat, hm)
 			ja_neck = Vector2(minf(ja_neck.x, p.crumple.neck), maxf(ja_neck.y, p.crumple.neck))
 		ja_swf = maxf(ja_swf, p.garb._swing_f)

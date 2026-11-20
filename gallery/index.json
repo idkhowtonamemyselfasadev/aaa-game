@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-2000-keel-before-after.jpg",
-  "time": "2026-11-16T20:00:00Z",
-  "caption": "Helm close-up before (left: the keel smeared into a fuzzy grey smoke streak) and after (right: a hard forged line); the plate still reads a little plasticky in GL.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-2100-ash-before-after.jpg",
-  "time": "2026-11-16T21:00:00Z",
-  "caption": "Ash floor foreground before (top: even dash speckle everywhere) and after (bottom: clean ash, cinders heaped in hollows and tussocks); the green stubble blades should be singed.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-2100-ash-clusters.jpg",
   "time": "2026-11-16T21:00:00Z",
   "caption": "Phase-2 settle in the burnt ring: the ash floor is now smooth grey wood-ash with cinders and stumps clumped in patches instead of an even black pepper; bright green shoots still poke through the ash and the trees are blotchy in GL.",
@@ -897,6 +885,18 @@
   "file": "20261120-1700-standing-jumpattack-front-jt055.jpg",
   "time": "2026-11-20T17:00:00Z",
   "caption": "Standing jump attack at jt 0.55 with the squarer hips: knees drive at the lens under a centred robe panel; the staff over the face still reads as a thin vertical line.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1930-jumpattack-front-old-vs-cant.jpg",
+  "time": "2026-11-20T19:30:00Z",
+  "caption": "Standing jump attack at jt 0.55 front-on, before (left) and after the canted pass: the shaft now runs beside the right cheek instead of over the nose, but from dead front it still reads as a near-vertical line.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1930-jumpattack-front-jt053.jpg",
+  "time": "2026-11-20T19:30:00Z",
+  "caption": "Standing jump attack at jt 0.53 front-on with the new key: hands come down in front of the chest with the shaft clear of the face; hips square, robe centred.",
   "verdict": "fail"
  }
 ]
