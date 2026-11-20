@@ -886,5 +886,17 @@
   "time": "2026-11-20T08:15:00Z",
   "caption": "Front 3/4 at ankle height: the boots now read as worn oiled brown leather under the shin bindings; the boots still lack stitching/sole detail up close.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261120-1015-bootstrap-before-after.jpg",
+  "time": "2026-11-20T10:15:00Z",
+  "caption": "Hero's near boot from behind, before (left) and after (right): the pale blue-grey strap under the ankle buckle was the leather's white sheen on a dark band; it now reads as dark brown leather. Still wrong: the boots have no stitching or sole detail up close.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1015-heels-strap.jpg",
+  "time": "2026-11-20T10:15:00Z",
+  "caption": "Low lens behind the idle hero: both boots read as worn brown leather with a dark strap and buckle disc; the scene around is still flat turf and the light is dim at the feet.",
+  "verdict": "fail"
  }
 ]

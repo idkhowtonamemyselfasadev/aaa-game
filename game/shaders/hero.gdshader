@@ -55,6 +55,14 @@ uniform float boot_scuff = 0.0;
 // brown leather with an oxblood heel: with only the fittings and plates restyled the rest of the
 // boot kept the texture's pale grey and read as a soft shoe or sneaker (`heels` lens, 11-20)
 uniform float boot_dark = 0.0;
+// judging only (BOOTMASK_DBG=1): v_shoe in red, v_boot in green, unlit; =2: the albedo unlit
+uniform float boot_dbg = 0.0;
+// 1 = the boot leather's sheen is cut further on its darkest texels (straps, creases, the
+// heel band) and what is left is tinted by the leather (a little metallic): with a neutral
+// white sheen over a dark albedo the strap below the ankle buckle read as a pale blue-grey
+// band from behind (`heels`, 11-20); SHEEN_OLD=1 = before
+uniform float boot_sheen = 0.0;
+uniform float boot_sheen_metal = 0.12;
 varying float v_boot;
 varying float v_shoe;
 
@@ -264,15 +272,29 @@ void fragment() {
 	wet_apply(alb, rough, wet_amount(wet_n, wet_p, patch_n), 0.85);
 	ALBEDO = alb;
 	ROUGHNESS = rough;
-	METALLIC = metal;
 	// oiled leather has no glassy sheen: backlit at a grazing angle the boots' heels went pale
 	// grey with the default F0 and rim
 	float shoe = v_shoe * restyle;
-	SPECULAR = (0.5 - 0.1 * plate_spec) * (1.0 - 0.6 * shoe);
+	float dark_k = 1.0 - smoothstep(0.02, 0.1, dot(alb, vec3(0.3, 0.59, 0.11)));
+	SPECULAR = (0.5 - 0.1 * plate_spec) * (1.0 - shoe * (0.6 + 0.3 * boot_sheen * dark_k));
+	METALLIC = mix(metal, boot_sheen_metal, shoe * boot_sheen);
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth * mix(1.0, cloth_normal, cloth_body * restyle);
 	// meadow bounce into the shaded side, and the sun wrapping the silhouette in back light
 	EMISSION = figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
 	RIM = 0.15 * (1.0 - 0.8 * shoe);
 	RIM_TINT = 0.55;
+	if (abs(boot_dbg - 3.0) < 0.1) {
+		NORMAL_MAP_DEPTH *= 1.0 - shoe;
+	} else if (abs(boot_dbg - 4.0) < 0.1) {
+		EMISSION *= 1.0 - shoe;
+	} else if (abs(boot_dbg - 5.0) < 0.1) {
+		SPECULAR *= 1.0 - shoe;
+	} else if (boot_dbg > 1.5) {
+		EMISSION = alb * 2.5;
+		ALBEDO = vec3(0.0);
+	} else if (boot_dbg > 0.0) {
+		ALBEDO = vec3(0.0);
+		EMISSION = vec3(v_shoe, v_boot, 0.05);
+	}
 }
