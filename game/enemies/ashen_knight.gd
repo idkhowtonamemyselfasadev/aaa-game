@@ -613,6 +613,8 @@ func _dress_wraps() -> void:
 		m.set_shader_parameter("cloth_light", KWRAP_LIGHT)
 		m.set_shader_parameter("soot_amt", 0.8)
 		m.set_shader_parameter("stain_amt", 0.3)
+		# leather straps keep their own tuned wear, not the hemp bindings' grime (11-20 14:00)
+		m.set_shader_parameter("wrap_age", 0.0)
 		# (13:00 11-18) the straps read as near-black blobs in shade: each turn's proud lip is
 		# rubbed through to worn brown leather with a dull oiled sheen. env KWRUB_OLD=1: the before
 		if OS.get_environment("KWRUB_OLD") != "1":

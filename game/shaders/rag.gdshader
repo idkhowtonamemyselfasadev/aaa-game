@@ -30,6 +30,7 @@ uniform float stain_amt = 1.0;     // rust stains and grime streaks (a kept kirt
 uniform float rigid = 0.0;         // 1: a stiff piece (a straw hat): no flutter or swing
 uniform float wrap_turns = 0.0;
 uniform float wrap_jitter = 0.0;   // > 0: the turns wound unevenly (wide and narrow strips), matching rags.gd _wrap_s()
+uniform float wrap_age = 0.0;     // > 0 (11-20 14:00, Hollow limb bindings): strips torn from different cloth (per-turn tone), grime blotches across the turns, short crinkles instead of long parallel streaks, ash/mud toward the lower end, no UV seam
 uniform float wrap_rub = 0.0;      // > 0 (leather straps): each turn's proud lip is rubbed through to a worn brown and takes a leather sheen
 uniform vec3 wrap_rub_col : source_color = vec3(0.30, 0.20, 0.13);
 uniform float wrap_spec = 0.45;   // the leather strap's specular (with wrap_rub)
@@ -85,6 +86,12 @@ float vnoise(vec2 p) {
 	f = f * f * (3.0 - 2.0 * f);
 	return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
 			   mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+}
+
+// value noise that tiles in x over k (p.x = UV.x * k): the wrap's UV.x runs once round the limb,
+// so plain noise left a hard vertical seam down the back of each binding. k 0: plain vnoise
+float tvn(vec2 p, float k, float ux) {
+	return mix(vnoise(p), vnoise(p - vec2(k, 0.0)), ux);
 }
 
 float fbm(vec2 p) {
@@ -361,7 +368,9 @@ void fragment() {
 	// weave: warp and weft threads, slightly irregular
 	vec2 wv = uv * weave_scale;
 	// the weave fades to its average where a thread gets smaller than a pixel
-	float fine = 1.0 - smoothstep(0.25, 0.6, length(fwidth(wv)));
+	// (11-20 14:00) a binding fades it sooner: at 0.25-0.6 threads per pixel the weave aliased
+	// into contour rings round the curved turns, a wood-grain look
+	float fine = 1.0 - smoothstep(mix(0.25, 0.1, clamp(wrap_age, 0.0, 1.0)), mix(0.6, 0.28, clamp(wrap_age, 0.0, 1.0)), length(fwidth(wv)));
 	float thread = mix(0.5, weave(wv), fine);
 	float tx = (weave(wv + vec2(0.15, 0.0)) - weave(wv)) * fine;
 	float ty = (weave(wv + vec2(0.0, 0.15)) - weave(wv)) * fine;
@@ -377,16 +386,29 @@ void fragment() {
 	// bandage: each turn's edge laps over the last, with a shadowed crease under the lap
 	float band = 1.0;
 	float wrap_lip = 0.0;
+	float wrap_tone = 1.0;
+	float wrap_warm_t = 0.0;
+	float wrap_crinkle = 0.0;
+	float wrap_grime = 0.0;
 	if (wrap_turns > 0.0) {
 		float s0 = UV.y * wrap_turns + UV.x;
 		// uneven winding: a monotone warp of the turn coordinate (same as rags.gd _wrap_s), so
 		// some strips run wide and some narrow, and each one wanders a little along its length
 		float sw = s0 + wrap_jitter * (0.2 * sin(s0 * 2.3 + seed) + 0.07 * sin(s0 * 5.1 + seed * 1.7));
-		float b = fract(sw + vnoise(vec2(UV.x * 5.0, UV.y * 3.0) + seed) * 0.08);
+		if (wrap_age > 0.0) {
+			// (11-20 14:00) warp only the height (u = turns down the limb), then add UV.x: the lap
+			// edges then meet across the UV seam for any monotone warp (warping s0 itself jogged
+			// every edge at the seam). Same as rags.gd _wrap()
+			float u0 = UV.y * wrap_turns;
+			sw = u0 + wrap_jitter * (0.2 * sin(u0 * 2.3 + seed) + 0.07 * sin(u0 * 5.1 + seed * 1.7)) + UV.x;
+		}
+		float sk = step(0.001, wrap_age);
+		float sb = sw + tvn(vec2(UV.x * 5.0, UV.y * 3.0) + seed, 5.0 * sk, UV.x) * 0.08;
+		float b = fract(sb);
 		if (wrap_jitter > 0.0) {
 			// a proud, frayed lip: loose threads stand off the edge and the crease under it is
 			// deep; the strip face is a touch paler where it is rubbed proud
-			float fray = vnoise(vec2(UV.x * 140.0, floor(sw) * 7.0 + seed)) * 0.07 * wrap_jitter;
+			float fray = tvn(vec2(UV.x * 140.0, floor(sw) * 7.0 + seed), 140.0 * sk, UV.x) * 0.07 * wrap_jitter;
 			b = fract(b + fray);
 			band = mix(0.55, 1.0, smoothstep(0.0, 0.13, b)) * (0.88 + 0.22 * smoothstep(0.7, 0.97, b));
 			ty += (smoothstep(0.88, 1.0, b) - smoothstep(0.0, 0.1, b)) * 1.1;
@@ -397,7 +419,37 @@ void fragment() {
 		// (11-18 13:00) the strap's proud lip (the band just before the next turn laps over it)
 		// and a thinner rub at the strap's own top edge, broken up along the turn
 		wrap_lip = (smoothstep(0.62, 0.9, b) * (1.0 - smoothstep(0.93, 0.985, b)) + 0.45 * smoothstep(0.06, 0.1, b) * (1.0 - smoothstep(0.1, 0.2, b)))
-				* smoothstep(0.25, 0.65, vnoise(vec2(UV.x * 18.0, floor(sw) * 3.1 + seed)));
+				* smoothstep(0.25, 0.65, tvn(vec2(UV.x * 18.0, floor(sw) * 3.1 + seed), 18.0 * sk, UV.x));
+		if (wrap_age > 0.0) {
+			// each turn a strip torn from a different old cloth: some paler, some darker, a few
+			// warmer, so the binding never reads as one even grain of parallel planks
+			// L runs continuously along the one long helical strip (floor(sw) steps by one at the
+			// UV seam, UV.x by minus one), so tone and crinkles flow round past the seam
+			float L = UV.x - floor(sb);
+			float h = vnoise(vec2(L * 1.6, seed + 3.1));
+			float h2 = vnoise(vec2(L * 1.1 + 11.0, seed + 9.4));
+			wrap_tone = mix(1.0, 0.66 + 0.62 * h, wrap_age);
+			wrap_warm_t = mix(0.0, h2 - 0.5, wrap_age);
+			// short crinkles where the strip was pulled tight and bunched: cells a few cm long
+			// along the strip, half a strip across (long streaks along it read as wood grain)
+			vec2 cp = vec2(L * 11.0, b * 1.7 + seed);
+			float c0 = vnoise(cp);
+			float c1 = vnoise(cp + vec2(0.06, 0.0));
+			float c2 = vnoise(cp + vec2(0.0, 0.06));
+			vec2 cq = vec2(L * 24.0, b * 3.1 + seed * 1.3 + 5.0);
+			float d0 = vnoise(cq);
+			float d1 = vnoise(cq + vec2(0.06, 0.0));
+			float d2 = vnoise(cq + vec2(0.0, 0.06));
+			tx += ((c1 - c0) * 9.0 + (d1 - d0) * 4.0) * wrap_age;
+			ty += ((c2 - c0) * 7.0 + (d2 - d0) * 3.0) * wrap_age;
+			wrap_crinkle = (smoothstep(0.42, 0.25, c0) * 0.6 + smoothstep(0.4, 0.2, d0) * 0.4) * wrap_age;
+			// grime and ash soaked in in broad blotches that cross the turns, and splashed up
+			// from the lower end (the ankle, the wrist)
+			vec2 gp = vec2(UV.x * 3.0, UV.y * aspect * 2.2) + seed * 1.9;
+			float g = 0.6 * tvn(gp, 3.0, UV.x) + 0.4 * tvn(gp * 2.3 + 4.0, 6.9, UV.x);
+			float low = smoothstep(0.55, 1.0, UV.y + 0.25 * (tvn(vec2(UV.x * 7.0, UV.y * 4.0) + seed, 7.0, UV.x) - 0.5));
+			wrap_grime = clamp(smoothstep(0.48, 0.72, g) * 0.75 + low * 0.55, 0.0, 1.0) * wrap_age;
+		}
 	}
 	// turned hem: a doubled band above the edge, a shadow line where the fold-over is sewn
 	// and a soft rounded lip at the very edge
@@ -488,10 +540,22 @@ void fragment() {
 	// (slub runs in bands across the hang: on fulled wool it read as wood-grain rings, so wool
 	// takes a blotchy, near-round mottle instead)
 	float mottle = fbm(uv * vec2(7.0, 6.0) + 17.0) - 0.5;
+	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
+	if (wrap_age > 0.0) {
+		// (11-20 14:00) a binding: slub's thin bands across the limb read as wood grain on the
+		// turns, so it takes the wool's blotchy mottle; and grime, mottle and stains tile round
+		// the limb (they left a hard step down the back seam)
+		vec2 gq = uv * vec2(3.0, 0.8) + 9.1;
+		grime = mix(grime, fbm(gq - vec2(3.0, 0.0)), UV.x);
+		vec2 mq = uv * vec2(7.0, 6.0) + 17.0;
+		mottle = mix(mottle, fbm(mq - vec2(7.0, 0.0)) - 0.5, UV.x);
+		vec2 sq = uv * 2.2 + 31.0;
+		stain = mix(stain, smoothstep(0.55, 0.75, fbm(sq - vec2(2.2, 0.0))), UV.x);
+		slub = mix(slub, 0.5 + mottle, clamp(wrap_age, 0.0, 1.0));
+	}
 	float tone = clamp(0.35 + 0.45 * mix(0.5, grime, stain_amt) + 0.2 * mix(slub, 0.5 + mottle, clamp(wool, 0.0, 1.0)), 0.0, 1.0);
 	vec3 alb = mix(cloth_dark, cloth_light, tone);
-	// old dye and rust stains in blotches
-	float stain = smoothstep(0.55, 0.75, fbm(uv * 2.2 + 31.0));
+	// old dye and rust stains in blotches (stain: above)
 	alb = mix(alb, alb * mix(vec3(0.78, 0.62, 0.5), vec3(0.72, 0.72, 0.71), felt), stain * 0.6 * stain_amt);
 	if (hm > 0.0) {
 		alb *= 1.0 - hemp_dark * hm;
@@ -550,6 +614,9 @@ void fragment() {
 		float grip = smoothstep(0.7, 0.95, UV.y) * (0.5 + 0.5 * fbm(vec2(UV.x * 7.0, 2.0) + seed));
 		alb *= 1.0 - 0.3 * grip * straw;
 	}
+	// (11-20 14:00) the aged binding: per-strip tone and warmth, crinkle shadows, grime blotches
+	alb *= wrap_tone * (1.0 + vec3(0.12, 0.03, -0.1) * wrap_warm_t) * (1.0 - 0.28 * wrap_crinkle);
+	alb = mix(alb, alb * vec3(0.5, 0.46, 0.42) + vec3(0.012, 0.011, 0.01), wrap_grime * 0.55);
 	alb *= mix(0.45, 1.0, band) * hem_shade * mix(1.0, mix(0.7, 0.55, clamp(wool, 0.0, 1.0)) + mix(0.3, 0.45, clamp(wool, 0.0, 1.0)) * COLOR.r, fold_ao);
 	// a rubbed edge: the nap worn flat and paler, dust caught in it (only where COLOR.g says so)
 	alb = mix(alb, alb * 1.55 + vec3(0.025, 0.022, 0.018), clamp(COLOR.g * edge_wear, 0.0, 1.0)

@@ -6,6 +6,7 @@ extends Node
 ## The tabards swing out of the way of the thighs; the hems trail the body's motion.
 ## Hemp bandages bind the thighs, shins, feet and forearms over the old armour.
 
+const WRAP_JIT := 0.6  # (11-20 14:00) how unevenly the limb bindings are wound (rag.gdshader wrap_jitter)
 const BONE_HEAD := "mixamorig_Head"
 const BONE_CHEST := "mixamorig_Spine2"
 const BONE_HIPS := "mixamorig_Hips"
@@ -716,6 +717,9 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 					best = minf(best, fp.distance_to(sp))
 				ln += " %4.1f" % (best * 100.0)
 			print(ln)
+	# the shader seed _piece() will give this piece (it reads mats.size() before appending)
+	var wseed := 5.0 + mats.size() + mats.size() * 3.7
+	var wjit := 0.0 if OS.has_environment("WRAPAGE_OLD") else WRAP_JIT
 	var mesh := _grid(func(u: float, vg: float) -> Vector3:
 		var ang := u * TAU
 		var v := clampf((vg - lip) / (1.0 - 2.0 * lip), 0.0, 1.0)
@@ -733,7 +737,9 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		if taper0 > 0.0:
 			r *= lerpf(taper0_r, 1.0, smoothstep(0.0, taper0, v))
 		# each turn of the bandage overlaps the last: a slight step at the leading edge
-		r += 0.004 * fposmod(vg * turns + u, 1.0)
+		# (11-20 14:00) wound unevenly (WRAP_JIT, as the shader's wrap_jitter, same seed): some
+		# strips wide, some narrow, each wandering a little, so the turns are not even planks
+		r += 0.004 * fposmod(_wrap_s(vg * turns, wjit, wseed) + u, 1.0)  # height warped only: seam-continuous
 		var t := lerpf(t0, t1, v)
 		var radial := e1 * cos(ang) + e2 * sin(ang)
 		var s := 0.0
@@ -758,6 +764,9 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	var mat := piece.material_override as ShaderMaterial
 	mat.set_shader_parameter("wrap_turns", turns)
 	mat.set_shader_parameter("tongues", 10.0)
+	# (11-20 14:00) aged, unevenly wound strips (WRAPAGE_OLD=1: the before, even grain-like turns)
+	mat.set_shader_parameter("wrap_jitter", wjit)
+	mat.set_shader_parameter("wrap_age", 0.0 if OS.has_environment("WRAPAGE_OLD") else 1.0)
 	_attach(bone).add_child(piece)
 	wraps += 1
 

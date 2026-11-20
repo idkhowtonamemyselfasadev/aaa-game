@@ -886,5 +886,17 @@
   "time": "2026-11-20T13:00:00Z",
   "caption": "Heel counter from behind, before (left) and after (right): darker iron with a browner lower edge and a kept metal sheen; the change is modest and the plate still looks too smooth.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261120-1400-soldier-shinwrap-before-after.jpg",
+  "time": "2026-11-20T14:00:00Z",
+  "caption": "Hollow soldier's shin binding front-on, before (left: even plank-like turns with fine grain lines and a seam down the middle) and after (right: uneven strips of different tone, grime blotches across the turns, no seam); the lap creases are still very regular.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1400-soldier-shinwrap-front.jpg",
+  "time": "2026-11-20T14:00:00Z",
+  "caption": "Low front lens on a Hollow soldier's legs: the shin bindings now read as dirty, unevenly wound hemp strips rather than wood; the sabatons below are still too smooth and the ground texture is flat.",
+  "verdict": "fail"
  }
 ]
