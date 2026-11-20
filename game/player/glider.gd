@@ -34,6 +34,7 @@ var fill := 1.0               # 0 slack .. 1 the air at gliding speed pressing t
 var _mesh: MeshInstance3D
 var _mat: ShaderMaterial
 var stowed: MeshInstance3D    # the furled roll on the back, shown while the wing is folded
+var _square: Node3D           # (11-20) on Spine2: where the roll would sit there; lends it its turn
 
 ## Furled, the wing rides across the small of the back on the sash: the battens and the
 ## folded spar rolled up in the canvas, bound with cord, tucked over the staff and under the
@@ -43,7 +44,13 @@ var stowed: MeshInstance3D    # the furled roll on the back, shown while the win
 const STOW_AT := Vector3(0.0, 1.115, -0.343)   # posed it lands ~5 cm higher, on the sash
 const STOW_LEN := 0.44
 const STOW_R := 0.058
-const STOW_BONE := "mixamorig_Spine2"   # with the staff: the hips and low spine turn ~40° in the idle
+# (11-20 16:00) on the LOW spine: the roll sits at the sash, ~0.3 m under Spine2, so on Spine2 a
+# chest folding over a jump attack's blow swung it ~0.33 m up and 0.15 m out off the small of the
+# back (it floated beside the shoulder in the front 3/4 frames). Spine rides with the pelvis like
+# a roll tied at the sash. `GLIDER_SPINE2=1` = before.
+const SQUARE_BONE := "mixamorig_Spine2"
+const STOW_SNUG := 0.055
+static var STOW_BONE: String = "mixamorig_Spine2" if OS.has_environment("GLIDER_SPINE2") else "mixamorig_Spine"
 
 func _ready() -> void:
 	_mesh = MeshInstance3D.new()
@@ -74,9 +81,34 @@ func stow_on(skel: Skeleton3D, body: Node3D) -> void:
 	att.add_child(stowed)
 	# slung a touch low on the left, where the staff's foot crosses under it
 	var b := Basis(Vector3.BACK, -0.06) * Basis(Vector3.RIGHT, 0.08)
-	var want := body.global_transform * Transform3D(b, STOW_AT)
+	# (11-20 16:00) snugged 5.5 cm in: posed, the roll hung ~6 cm of air off the sash's back (bot
+	# `runstrike` roll gap), unseen from behind but a floating bar from any side lens
+	var at := STOW_AT if STOW_BONE == SQUARE_BONE else STOW_AT + Vector3(0.0, 0.0, STOW_SNUG)
+	var want := body.global_transform * Transform3D(b, at)
 	var bone_rest := skel.global_transform * skel.get_bone_global_rest(bone)
 	stowed.transform = bone_rest.affine_inverse() * want
+	if STOW_BONE == SQUARE_BONE:
+		return
+	# (11-20 16:00) the roll's place comes from the low spine (above), its turn from Spine2: in the
+	# sheathed fall the pelvis and low spine sit ~38 deg round, which on its own skewed the roll's axis
+	# off the back's width (bot `glide`). A helper on Spine2 carries the old transform; after every
+	# skeleton update the roll takes its basis and keeps its own origin. Pitching about the roll's
+	# own axis (a chest folding over the blow) changes nothing seen, so only the yaw/tilt matter.
+	var sb := skel.find_bone(SQUARE_BONE)
+	var satt := BoneAttachment3D.new()
+	satt.name = "GliderSquare"
+	skel.add_child(satt)
+	satt.bone_name = SQUARE_BONE
+	_square = Node3D.new()
+	satt.add_child(_square)
+	_square.transform = (skel.global_transform * skel.get_bone_global_rest(sb)).affine_inverse() * want
+	skel.skeleton_updated.connect(_square_roll)
+
+func _square_roll() -> void:
+	if stowed == null or _square == null or not stowed.is_visible_in_tree():
+		return
+	var o := stowed.global_position
+	stowed.global_transform = Transform3D(_square.global_basis, o)
 
 ## Wrist targets on the crossbar (body space), left then right.
 static func grips() -> Array:

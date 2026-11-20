@@ -4805,6 +4805,10 @@ const RS_AHEAD_GATE := 0.22                # m, hem ahead of the forward knee's 
 										   # faces fw full-on instead of 43 deg off, +0.046 m on the same drape (JA_SQUARE_OLD=1: 0.160)
 ## (11-20 15:00) the jump attack faces its flight: hips and chest headings off the run line (deg)
 const RS_HIPS_YAW_GATE := 20.0
+# (11-20 16:00) the furled glider roll through a running jump attack: it rides the sash, so its front
+# stays within this of the sash's back (no air between, not sunk through) and it never climbs off it
+const RS_ROLL_GAP_GATE := 0.025
+const RS_ROLL_RISE_GATE := 0.12
 const RS_CHEST_YAW_GATE := 25.0
 const RS_SAG_GATE := 0.06                  # m, the streaming back hem below where the straight board would put it
 const RS_HEEL_GATE := 0.05                 # m, the folded tail (crease -> hem) off either ankle
@@ -4848,6 +4852,26 @@ func _trunk_yaws(p, skl: Skeleton3D) -> Array:
 	res.append(rad_to_deg(fw.signed_angle_to(v.normalized(), Vector3.UP)) if v.length() > 0.1 else 0.0)
 	return res
 
+## (11-20 16:00) the furled glider roll against the sash's back at the roll's own x, body space:
+## [air gap from the roll's front to the sash's back (m, - = sunk in), roll height over the sash]
+func _roll_sash_gap(p: Node) -> Vector2:
+	var gst: MeshInstance3D = p.glider.stowed
+	var sash: MeshInstance3D = p.find_child("Sash", true, false)
+	if gst == null or sash == null:
+		return Vector2(INF, INF)
+	var binv: Transform3D = p.body.global_transform.affine_inverse()
+	var rc: Vector3 = binv * gst.global_position
+	var sv: PackedVector3Array = (sash.mesh as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var bi: Transform3D = binv * sash.global_transform
+	var zmin := INF
+	var ys := 0.0
+	for v in sv:
+		var bv: Vector3 = bi * v
+		if absf(bv.x - rc.x) < 0.06 and bv.z < zmin:
+			zmin = bv.z
+			ys = bv.y
+	return Vector2(zmin - (rc.z + 0.058), rc.y - ys)
+
 func _runstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -4890,6 +4914,9 @@ func _runstrike_test() -> void:
 	var ticks := 0
 	var left := false
 	var worst_hips_yaw := 0.0
+	var roll_gap_hi := -INF
+	var roll_gap_lo := INF
+	var roll_rise := 0.0
 	var worst_chest_yaw := 0.0
 	for i in 120:
 		p.bot_input = _stick_for(p, Vector3(1, 0, 0))
@@ -4921,6 +4948,12 @@ func _runstrike_test() -> void:
 		if OS.has_environment("RS_YAW"):
 			var yr := _trunk_yaws(p, skl)
 			print("RSYAW t %.3f u %.2f hips %+.1f chest %+.1f vel %+.1f twist %+.1f body->X %+.1f velw %s" % [t, c.air_attack_u(), yr[0], yr[1], yr[3], rad_to_deg(c._twist.twist), rad_to_deg(Vector3(1, 0, 0).signed_angle_to(Vector3(p.body.global_basis.z.x, 0, p.body.global_basis.z.z), Vector3.UP)), str(p.velocity)])
+		if c.is_air_attack():
+			var rg := _roll_sash_gap(p)
+			roll_gap_hi = maxf(roll_gap_hi, rg.x)
+			roll_gap_lo = minf(roll_gap_lo, rg.x)
+			roll_rise = maxf(roll_rise, absf(rg.y))
+			if OS.has_environment("RS_ROLL"): print("RSROLL u %.2f gap %+.3f over the sash %+.3f" % [c.air_attack_u(), rg.x, rg.y])
 		var kmax := -INF
 		var kh := -INF
 		for lg in legs:
@@ -5084,6 +5117,11 @@ func _runstrike_test() -> void:
 	print("BOT runstrike: back panel streamed past plumb %d ticks -> hem sags below the straight board %+.3f m (gate >= %.2f), folded tail off the heels %.3f m (gate >= %.2f)" % [sag_ticks, best_sag, RS_SAG_GATE, worst_heel, RS_HEEL_GATE])
 	print("BOT runstrike: back panel stream roll -> hem rolls %.2f rad (gate >= %.2f), rolled hem corners off the heels %.3f m (gate >= %.2f)" % [best_roll, RS_ROLL_GATE, worst_corner, RS_CORNER_GATE])
 	print("BOT runstrike: jump attack from u 0.2 -> hips face %.1f deg off the run line (gate <= %.0f), chest %.1f deg (gate <= %.0f)" % [worst_hips_yaw, RS_HIPS_YAW_GATE, worst_chest_yaw, RS_CHEST_YAW_GATE])
+	print("BOT runstrike: furled glider roll through the jump attack -> front off the sash's back %+.3f .. %+.3f m (gate within +-%.3f), centre over the sash's edge at most %.3f m (gate <= %.2f)" % [roll_gap_lo, roll_gap_hi, RS_ROLL_GAP_GATE, roll_rise, RS_ROLL_RISE_GATE])
+	if not OS.has_environment("GLIDER_SPINE2") and (roll_gap_hi > RS_ROLL_GAP_GATE or roll_gap_lo < -RS_ROLL_GAP_GATE or roll_rise > RS_ROLL_RISE_GATE):
+		print("BOT FAIL: runstrike glider roll floats off the sash")
+		get_tree().quit()
+		return
 	print("BOT runstrike: back panel hem tongues droop %.3f m toward world down at the tip (gate >= %.3f)" % [best_droop, RS_DROOP_GATE])
 	if sag_ticks > 0 and (best_sag < RS_SAG_GATE or worst_heel < RS_HEEL_GATE):
 		print("BOT FAIL: runstrike back panel sag")
@@ -11528,7 +11566,7 @@ func _glide_test() -> void:
 	var rinv := p.body.global_transform.affine_inverse()
 	var rp := rinv * roll.global_position
 	var rx := (rinv.basis * roll.global_basis.x).normalized()
-	print("BOT glide: furled roll on the back at %s (body space), axis %s" % [rp, rx])
+	print("BOT glide: furled roll on the back at %s (body space), axis %s, front off the sash's back / over it %s" % [rp, rx, _roll_sash_gap(p)])
 	if rp.z > -0.22 or rp.y < 0.95 or rp.y > 1.35 or absf(rx.x) < 0.85:
 		return _combat_done(false, "the furled glider is not across the small of the back")
 	# kept inside the hips' width: a longer roll read from behind as a bar jutting out at the elbows

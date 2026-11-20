@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261116-1900-helm-eyes.jpg",
-  "time": "2026-11-16T19:00:00Z",
-  "caption": "Boss helm close-up mid-roar (phase-2 surge): the sight slit is now a thin dark-red cut with two separate white-hot eye points; still wrong: the keel ridge down the face reads as a fuzzy grey smoke streak.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-1900-slit-before-after.jpg",
   "time": "2026-11-16T19:00:00Z",
   "caption": "Before (left): the slit burned as one white-clipped bar; after (right): a thin cut pinched at the keel with two round hot eyes.",
@@ -276,27 +270,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-0900-reveal-dormant-side.jpg",
-  "time": "2026-11-18T09:00:00Z",
-  "caption": "Reveal opening, side lens: the dormant Ashen Knight leans on its planted glaive, haft now rising past the bowed helm instead of through it; the armour and cape still read flat and blotchy in the GL fallback.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-0900-reveal-dormant-close.jpg",
   "time": "2026-11-18T09:00:00Z",
   "caption": "Reveal opening, close lens: the haft now leans out beside the helm with the fist low on it (was running up under the helm); the cape texture is blotchy and the boss lacks fine surface detail.",
   "verdict": "fail"
  },
  {
-  "file": "20261118-1010-surge-hero-knockdown.jpg",
-  "time": "2026-11-18T10:10:00Z",
-  "caption": "The hero knocked down by the Ashen Knight's growth blast, now stepped through its real knock-down in the surge shots: lying flat (st=50), back in guard (st=70); the hero is still tiny in this lens and GL lighting is flat.",
+  "file": "20261118-0900-reveal-dormant-side.jpg",
+  "time": "2026-11-18T09:00:00Z",
+  "caption": "Reveal opening, side lens: the dormant Ashen Knight leans on its planted glaive, haft now rising past the bowed helm instead of through it; the armour and cape still read flat and blotchy in the GL fallback.",
   "verdict": "fail"
  },
  {
   "file": "20261118-1010-surge-hero-down-wide.jpg",
   "time": "2026-11-18T10:10:00Z",
   "caption": "Phase-2 surge wide: burning ring, knight heaving the glaive with the hero down in front; boss still only ~35% of frame height and backlit armour reads flat.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1010-surge-hero-knockdown.jpg",
+  "time": "2026-11-18T10:10:00Z",
+  "caption": "The hero knocked down by the Ashen Knight's growth blast, now stepped through its real knock-down in the surge shots: lying flat (st=50), back in guard (st=70); the hero is still tiny in this lens and GL lighting is flat.",
   "verdict": "fail"
  },
  {
@@ -330,15 +324,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-1302-knight-straps.jpg",
-  "time": "2026-11-18T13:02:28Z",
-  "caption": "Ashen Knight legs, before (left) vs now (right): the blackened leather straps' turns now read through rubbed brown lips with a dull sheen; the shaded leg is still very dark.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-1302-knight-body.jpg",
   "time": "2026-11-18T13:02:28Z",
   "caption": "Ashen Knight full body in the reveal at 9:00: dark steel plate, red surcoat, strapped legs now show some banding; GL fallback lighting is still flat and the plate a touch clean.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1302-knight-straps.jpg",
+  "time": "2026-11-18T13:02:28Z",
+  "caption": "Ashen Knight legs, before (left) vs now (right): the blackened leather straps' turns now read through rubbed brown lips with a dull sheen; the shaded leg is still very dark.",
   "verdict": "fail"
  },
  {
@@ -366,21 +360,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-1639-surge-roar-helm.jpg",
-  "time": "2026-11-18T16:39:33Z",
-  "caption": "The Ashen Knight's growth roar from the hero's low front view: the helm now stays over the collar with the visor tipped up and the glaive clear of it. Still wrong: the helm reads only as a dark crown with an ember rim, and the plate stays dark in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-1639-surge-roar-before.jpg",
   "time": "2026-11-18T16:39:33Z",
   "caption": "Before this session: the same roar frame, where the head was flung back behind the gorget, so the giant seemed to have no head from the front.",
   "verdict": "fail"
  },
  {
-  "file": "20261118-1702-roar-visor-glow.jpg",
-  "time": "2026-11-18T17:02:21Z",
-  "caption": "The Ashen Knight's growth roar from the knocked-down hero's view: the slit's fire now lights the tipped-up visor warm, so the helm reads as a face instead of a black crown; still wrong: GL renderer, the visor detail is soft at this range and the legs are very dark.",
+  "file": "20261118-1639-surge-roar-helm.jpg",
+  "time": "2026-11-18T16:39:33Z",
+  "caption": "The Ashen Knight's growth roar from the hero's low front view: the helm now stays over the collar with the visor tipped up and the glaive clear of it. Still wrong: the helm reads only as a dark crown with an ember rim, and the plate stays dark in GL.",
   "verdict": "fail"
  },
  {
@@ -390,21 +378,27 @@
   "verdict": "fail"
  },
  {
+  "file": "20261118-1702-roar-visor-glow.jpg",
+  "time": "2026-11-18T17:02:21Z",
+  "caption": "The Ashen Knight's growth roar from the knocked-down hero's view: the slit's fire now lights the tipped-up visor warm, so the helm reads as a face instead of a black crown; still wrong: GL renderer, the visor detail is soft at this range and the legs are very dark.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261118-1833-foe-corner.jpg",
   "time": "2026-11-18T18:33:05Z",
   "caption": "A Hollow Soldier 0.6 s after its walk swung 90 deg toward the lens: body square to its new line, mid-stride on a planted boot (the pace now carries round the corner instead of the walk snapping sideways); still GL fallback lighting, ring floor reads as flat dark dirt.",
   "verdict": "fail"
  },
  {
-  "file": "20261118-1915-kstrapsheen.jpg",
-  "time": "2026-11-18T19:15:00Z",
-  "caption": "Ashen Knight's leg straps before (left) and after (right): the lit leather now has a warm brown sheen instead of a grey glaze; the shaded legs still read near-black (GL renderer).",
-  "verdict": "fail"
- },
- {
   "file": "20261118-1915-kcorner.jpg",
   "time": "2026-11-18T19:15:00Z",
   "caption": "The x3.2 Ashen Knight mid-stride just after a 90 deg corner, on a planted boot with no skid; legs very dark in shade, GL renderer softness.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-1915-kstrapsheen.jpg",
+  "time": "2026-11-18T19:15:00Z",
+  "caption": "Ashen Knight's leg straps before (left) and after (right): the lit leather now has a warm brown sheen instead of a grey glaze; the shaded legs still read near-black (GL renderer).",
   "verdict": "fail"
  },
  {
@@ -426,15 +420,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261118-2318-soldier-stop-side.jpg",
-  "time": "2026-11-18T23:18:00Z",
-  "caption": "Hollow Soldier 6 frames after a walk stops, seen from the new side lens: the chest and hood carry on forward over the front boot, then rock back past upright by frame 72; the soldier still reads a little toy-like in hard sun and the bare ring floor is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-2318-knight-stop-sway.jpg",
   "time": "2026-11-18T23:40:00Z",
   "caption": "Ashen Knight x3.2 after a walk stops: before at f63 (left), with the chest sway at f63 (middle, helm carried forward) and f84 (right, rocked back); the sway reads but subtly, the bladed guard turns this lens 3/4-front, and the shaded leg plate is still near-black.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261118-2318-soldier-stop-side.jpg",
+  "time": "2026-11-18T23:18:00Z",
+  "caption": "Hollow Soldier 6 frames after a walk stops, seen from the new side lens: the chest and hood carry on forward over the front boot, then rock back past upright by frame 72; the soldier still reads a little toy-like in hard sun and the bare ring floor is flat.",
   "verdict": "fail"
  },
  {
@@ -474,15 +468,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261119-0300-climbtilt.jpg",
-  "time": "2026-11-19T03:40:00Z",
-  "caption": "Hero climbing the keep from behind mid-reach: the left fist rises beside the hat while the head tips away from it; still wrong: the right hand hides under the capelet, the hair reads as a grey blob and the fist peaks only just over the brim.",
-  "verdict": "fail"
- },
- {
   "file": "20261119-0300-climbtilt-cmp.jpg",
   "time": "2026-11-19T03:40:00Z",
   "caption": "3x crop, before (left) vs after (right): the head now leans off the arm reaching overhead so the hat clears the fist; a subtle change, the reach itself still tops out at the brim.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0300-climbtilt.jpg",
+  "time": "2026-11-19T03:40:00Z",
+  "caption": "Hero climbing the keep from behind mid-reach: the left fist rises beside the hat while the head tips away from it; still wrong: the right hand hides under the capelet, the hair reads as a grey blob and the fist peaks only just over the brim.",
   "verdict": "fail"
  },
  {
@@ -504,15 +498,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261119-0730-climb-sq.jpg",
-  "time": "2026-11-19T07:30:08Z",
-  "caption": "Hero climbing the keep's outer face, three-quarter from the left: hand-over-hand reads, but the hands hide under the hat brim and capelet and the bedroll fills the back.",
-  "verdict": "fail"
- },
- {
   "file": "20261119-0730-climb-side.jpg",
   "time": "2026-11-19T07:30:08Z",
   "caption": "Side-on lens of the same climb from above: the reach to the stones reads, the figure is small and the low hand is lost behind the torso.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-0730-climb-sq.jpg",
+  "time": "2026-11-19T07:30:08Z",
+  "caption": "Hero climbing the keep's outer face, three-quarter from the left: hand-over-hand reads, but the hands hide under the hat brim and capelet and the bedroll fills the back.",
   "verdict": "fail"
  },
  {
@@ -588,15 +582,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261119-1400-jump-downswing-cmp.jpg",
-  "time": "2026-11-19T14:00:00Z",
-  "caption": "Standing jump, front-lit: old jt 0.20 (hand over the mouth) vs new 0.18 / 0.22 (arms come down from overhead in a wide arc, face clear); tuck arms still a little flat and wide.",
-  "verdict": "fail"
- },
- {
   "file": "20261119-1400-jump-downswing-020.jpg",
   "time": "2026-11-19T14:00:00Z",
   "caption": "Standing jump at jt 0.20 after the fix: face and mask clear, far fist passes by the collar; ground still flat and the hero dim against a bright sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1400-jump-downswing-cmp.jpg",
+  "time": "2026-11-19T14:00:00Z",
+  "caption": "Standing jump, front-lit: old jt 0.20 (hand over the mouth) vs new 0.18 / 0.22 (arms come down from overhead in a wide arc, face clear); tuck arms still a little flat and wide.",
   "verdict": "fail"
  },
  {
@@ -624,27 +618,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261119-1700-leapside.jpg",
-  "time": "2026-11-19T17:00:00Z",
-  "caption": "Running leap mid-flight from the rear 3/4: the forward arm now drives with the elbow bent and the forearm level instead of punched out straight; the hero is still small and dim in frame and the capelet hides the back arm.",
-  "verdict": "fail"
- },
- {
   "file": "20261119-1700-leapfront.jpg",
   "time": "2026-11-19T17:00:00Z",
   "caption": "Running leap from the front 3/4 (key light behind the lens): the forward fist now rides up in front of the chest; the face under the hat still reads dark and the back hand is lost behind the hip.",
   "verdict": "fail"
  },
  {
-  "file": "20261119-1800-plunge-impact.jpg",
-  "time": "2026-11-19T18:00:00Z",
-  "caption": "Plunge impact frame, side-on: the staff's ferrule now drives into the turf inside the earth burst with the fists down at chest height (before, it hung ~0.33 m over the ground); the chest still stays rather upright and the hero reads dim.",
-  "verdict": "fail"
- },
- {
-  "file": "20261119-1800-plunge-crouch.jpg",
-  "time": "2026-11-19T18:00:00Z",
-  "caption": "Plunge landing crouch at 0.15 s: knees deep, ferrule planted in the dust; the robe hides the legs' fold and the torso could fold further over the staff.",
+  "file": "20261119-1700-leapside.jpg",
+  "time": "2026-11-19T17:00:00Z",
+  "caption": "Running leap mid-flight from the rear 3/4: the forward arm now drives with the elbow bent and the forearm level instead of punched out straight; the hero is still small and dim in frame and the capelet hides the back arm.",
   "verdict": "fail"
  },
  {
@@ -657,6 +639,18 @@
   "file": "20261119-1800-leapdrive-strip.jpg",
   "time": "2026-11-19T18:00:00Z",
   "caption": "Running leap frame strip (jt 0.12, 0.24, 0.36, landing): the forward arm arcs up from the hip to chin height and eases back down on landing with no pop; the back arm is still hidden behind the hip.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1800-plunge-crouch.jpg",
+  "time": "2026-11-19T18:00:00Z",
+  "caption": "Plunge landing crouch at 0.15 s: knees deep, ferrule planted in the dust; the robe hides the legs' fold and the torso could fold further over the staff.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261119-1800-plunge-impact.jpg",
+  "time": "2026-11-19T18:00:00Z",
+  "caption": "Plunge impact frame, side-on: the staff's ferrule now drives into the turf inside the earth burst with the fists down at chest height (before, it hung ~0.33 m over the ground); the chest still stays rather upright and the hero reads dim.",
   "verdict": "fail"
  },
  {
@@ -684,21 +678,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261119-2238-runstrike.jpg",
-  "time": "2026-11-19T22:38:18Z",
-  "caption": "Running jump attack at jt 0.30: the front robe panel now folds at the knee and hangs plumb; still wrong: the back panel streams out behind as a rigid straight strip, the hero reads dim and is seen from behind mid-yaw.",
-  "verdict": "fail"
- },
- {
   "file": "20261119-2238-runstrike-oldnew.jpg",
   "time": "2026-11-19T22:38:18Z",
   "caption": "Old (left) vs new (right) at the same tick: the front panel (left strip) no longer runs on straight past the knee; the back panel (right strip) is unchanged and next to fix.",
   "verdict": "fail"
  },
  {
-  "file": "20261119-2300-runstrike-sag.jpg",
-  "time": "2026-11-19T23:00:00Z",
-  "caption": "Running jump attack at 0.30 s: the back robe panel streaming behind now curls down under its own weight past mid-length; seen edge-on it still reads as a thin strip and the scene is dim GL.",
+  "file": "20261119-2238-runstrike.jpg",
+  "time": "2026-11-19T22:38:18Z",
+  "caption": "Running jump attack at jt 0.30: the front robe panel now folds at the knee and hangs plumb; still wrong: the back panel streams out behind as a rigid straight strip, the hero reads dim and is seen from behind mid-yaw.",
   "verdict": "fail"
  },
  {
@@ -708,9 +696,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-0013-streamroll.jpg",
-  "time": "2026-11-20T00:13:23Z",
-  "caption": "Running jump attack at jt 0.38 from the lit side: the back robe panel streaming behind now rolls to show its face and ragged hem; still a small figure in flat meadow light, legs' wrap ring at the knee open.",
+  "file": "20261119-2300-runstrike-sag.jpg",
+  "time": "2026-11-19T23:00:00Z",
+  "caption": "Running jump attack at 0.30 s: the back robe panel streaming behind now curls down under its own weight past mid-length; seen edge-on it still reads as a thin strip and the scene is dim GL.",
   "verdict": "fail"
  },
  {
@@ -720,15 +708,21 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-0112-runjump-droop.jpg",
-  "time": "2026-11-20T01:12:40Z",
-  "caption": "Running jump attack at jt 0.32: the streaming back panel's torn hem tongues now hang down at their tips; still wrong: llvmpipe GL lighting, flat ground, tongues still read as thin strips.",
+  "file": "20261120-0013-streamroll.jpg",
+  "time": "2026-11-20T00:13:23Z",
+  "caption": "Running jump attack at jt 0.38 from the lit side: the back robe panel streaming behind now rolls to show its face and ragged hem; still a small figure in flat meadow light, legs' wrap ring at the knee open.",
   "verdict": "fail"
  },
  {
   "file": "20261120-0112-runjump-droop-cmp.jpg",
   "time": "2026-11-20T01:12:40Z",
   "caption": "Before (left) vs after (right) at jt 0.38, 2x crop: the tongue tips drop a few cm toward the ground; from this edge-on lens the change is subtle.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0112-runjump-droop.jpg",
+  "time": "2026-11-20T01:12:40Z",
+  "caption": "Running jump attack at jt 0.32: the streaming back panel's torn hem tongues now hang down at their tips; still wrong: llvmpipe GL lighting, flat ground, tongues still read as thin strips.",
   "verdict": "fail"
  },
  {
@@ -768,15 +762,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-0515-sidecap-before-after.jpg",
-  "time": "2026-11-20T05:15:00Z",
-  "caption": "Hero's right boot from behind, before (left) and after (right): the foot binding's outer-lower side no longer stands off the boot as a dark sheet from ankle to sole and the round buckle disc shows under it; a slim crescent still stands off at the ankle cuff.",
-  "verdict": "fail"
- },
- {
   "file": "20261120-0515-heels.jpg",
   "time": "2026-11-20T05:15:00Z",
   "caption": "Low rear lens on the idle hero's heels after the side cap: bindings snug on the boot flanks, but the feet sit in the hero's own shadow and the ankle crescent remains.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-0515-sidecap-before-after.jpg",
+  "time": "2026-11-20T05:15:00Z",
+  "caption": "Hero's right boot from behind, before (left) and after (right): the foot binding's outer-lower side no longer stands off the boot as a dark sheet from ankle to sole and the round buckle disc shows under it; a slim crescent still stands off at the ankle cuff.",
   "verdict": "fail"
  },
  {
@@ -822,15 +816,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-1100-soldier-heels-before-after.jpg",
-  "time": "2026-11-20T11:33:22Z",
-  "caption": "Hollow soldier's feet from behind, before (left) and after (right): the foot binding no longer stands off the outer ankle as a dark flap and hugs the heel; the sabaton is still a too-clean pale grey.",
-  "verdict": "fail"
- },
- {
   "file": "20261120-1100-soldier-feet-front.jpg",
   "time": "2026-11-20T11:33:22Z",
   "caption": "Soldier's feet from the front 3/4: slimmer foot bindings over the instep; the plated toes still read as cracked white ceramic, not worn iron.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1100-soldier-heels-before-after.jpg",
+  "time": "2026-11-20T11:33:22Z",
+  "caption": "Hollow soldier's feet from behind, before (left) and after (right): the foot binding no longer stands off the outer ankle as a dark flap and hugs the heel; the sabaton is still a too-clean pale grey.",
   "verdict": "fail"
  },
  {
@@ -846,15 +840,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-1300-soldier-sabaton-wear-front.jpg",
-  "time": "2026-11-20T13:00:00Z",
-  "caption": "Hollow soldier's sabatons front-on after the wear pass: the iron now reads near-black with a sheen on the toe instead of pale grey; rust and mud at the sole still hardly show in this light, and the hemp bindings' banding still reads like wood grain.",
-  "verdict": "fail"
- },
- {
   "file": "20261120-1300-soldier-heel-before-after.jpg",
   "time": "2026-11-20T13:00:00Z",
   "caption": "Heel counter from behind, before (left) and after (right): darker iron with a browner lower edge and a kept metal sheen; the change is modest and the plate still looks too smooth.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1300-soldier-sabaton-wear-front.jpg",
+  "time": "2026-11-20T13:00:00Z",
+  "caption": "Hollow soldier's sabatons front-on after the wear pass: the iron now reads near-black with a sheen on the toe instead of pale grey; rust and mud at the sole still hardly show in this light, and the hemp bindings' banding still reads like wood grain.",
   "verdict": "fail"
  },
  {
@@ -882,15 +876,27 @@
   "verdict": "fail"
  },
  {
+  "file": "20261120-1600-standing-jumpattack-front-jt055.jpg",
+  "time": "2026-11-20T17:20:00Z",
+  "caption": "Standing jump attack coming down toward the lens: hips square to the strike; the foreshortened staff reads as a vertical line over the face from this lens and the GL lighting is flat.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261120-1600-standing-jumpattack-hips-before-after.jpg",
   "time": "2026-11-20T17:20:00Z",
   "caption": "Standing jump attack at the cock, front 3/4 (left before, right now): the belt and sash now run square across the hips with the knees driving at the lens instead of the pelvis bladed off the blow; still a modest change, and the figure stays dark and small in the GL fallback renderer.",
   "verdict": "fail"
  },
  {
-  "file": "20261120-1600-standing-jumpattack-front-jt055.jpg",
-  "time": "2026-11-20T17:20:00Z",
-  "caption": "Standing jump attack coming down toward the lens: hips square to the strike; the foreshortened staff reads as a vertical line over the face from this lens and the GL lighting is flat.",
+  "file": "20261120-1718-heroback-roll.jpg",
+  "time": "2026-11-20T17:18:24Z",
+  "caption": "Hero from behind at idle: the glider roll now sits snug across the sash with the staff tucked past it; grass and lighting hold up, the cottage behind is still flat and dark.",
+  "verdict": "pass"
+ },
+ {
+  "file": "20261120-1718-jumpattack-roll.jpg",
+  "time": "2026-11-20T17:18:24Z",
+  "caption": "Running jump attack at the blow from a front 3/4: the furled glider roll now stays on the sash against the back instead of floating beside the shoulder; the hero still reads small in the frame and the turf is flat and dark.",
   "verdict": "fail"
  }
 ]
