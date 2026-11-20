@@ -317,6 +317,8 @@ func _ready() -> void:
 	if not OS.has_environment("SABATON_OLD"):
 		rags.mark_sabatons()
 		_set_skin("sabaton", 1.0)
+		# (11-20 13:00) mud/rust from the sole, seam rust, bright scuffed ridges (SABWEAR_OLD=1: before)
+		_set_skin("sabaton_wear", 0.0 if OS.has_environment("SABWEAR_OLD") else 1.0)
 	_mats.append_array(rags.mats)
 	soak = Soak.new()          # the rain darkens the ash skin, rags and spear shaft
 	soak.name = "Soak"

@@ -32,6 +32,10 @@ uniform vec3 chest_fwd = vec3(0.0);
 // iron sabatons: blackened, pitted iron with rust in the recesses and ash dust settled on top,
 // not the ash-stone skin with its drawn fissures (they read as pale cracked ceramic, `sheels`)
 uniform float sabaton = 0.0;
+// (11-20 13:00) 1 = the sabatons' wear pass: mud and rust climb from the sole, rust fills the plate
+// seams, bare steel shows on scuffed ridges and broad warm oxide patches break the even blue-grey
+// iron (`soldier guard sfront`). 0 = the 12:00 look (SABWEAR_OLD=1)
+uniform float sabaton_wear = 1.0;
 
 varying vec3 wpos;
 varying float v_sab;
@@ -149,9 +153,42 @@ void fragment() {
 		// pale ash dust settled on the instep and toe cap, scuffed off the ridges
 		float dust = smoothstep(0.35, 0.75, grime) * (0.25 + 0.75 * up1) * (1.0 - smoothstep(0.55, 0.8, lum));
 		iron = mix(iron, ash_light * 0.6, dust * 0.45);
-		alb = mix(alb, iron, sab);
-		sab_metal = sab * (1.0 - rust) * (1.0 - dust * 0.8) * 0.6;
+		float metal_k = (1.0 - rust) * (1.0 - dust * 0.8) * 0.6;
 		sab_rough = mix(0.5, 0.78, pit) + rust * 0.15 + dust * 0.2;
+		if (sabaton_wear > 0.0) {
+			float hf = wpos.y - root_pos.y;                     // height above the soles
+			float edge_n = fbm(UV * 32.0 + 4.7);
+			// warm oxide film in broad patches: the iron is no longer one even blue-grey
+			float film = smoothstep(0.4, 0.7, fbm(UV * 4.5 + 1.7));
+			// blackened means black: at 0.15 the iron read as pale grey beside the hemp under the noon sun
+			iron *= mix(1.0, 0.42, sabaton_wear);
+			vec3 ox = iron * vec3(1.25, 0.95, 0.72);
+			iron = mix(iron, ox, film * sabaton_wear);
+			// rust in the seams and recesses (the source relief's dark lines) ...
+			float recess = 1.0 - smoothstep(0.12, 0.34, lum);
+			// ... and climbing from the sole with a ragged, noisy tide line
+			float low = 1.0 - smoothstep(0.02, 0.09, hf + (edge_n - 0.5) * 0.05);
+			float rust2 = clamp(max(recess * smoothstep(0.3, 0.6, n) * 0.9, low * smoothstep(0.42, 0.72, fbm(UV * 22.0 + 8.8))), 0.0, 1.0);
+			vec3 rust_c = mix(vec3(0.075, 0.036, 0.018), vec3(0.04, 0.022, 0.013), pit);
+			iron = mix(iron, rust_c, rust2 * 0.8 * sabaton_wear);
+			// the settled ash is thinner once the wear pass reads: the top no longer goes chalky
+			iron = mix(iron, iron * 0.55, dust * 0.5 * sabaton_wear);
+			// caked mud on the welt and toe, drying paler at its top edge
+			float mud = 1.0 - smoothstep(0.012, 0.05, hf + (edge_n - 0.5) * 0.035);
+			vec3 mud_c = mix(vec3(0.035, 0.03, 0.024), vec3(0.09, 0.078, 0.06), smoothstep(0.0, 0.04, hf) * grime);
+			iron = mix(iron, mud_c, mud * 0.9 * sabaton_wear);
+			// bare steel scuffed bright on the ridges: raised relief plus a screen-space curvature
+			// term that catches the toe-cap and plate rims
+			float curv = smoothstep(0.08, 0.25, length(fwidth(NORMAL)));
+			float ridge = max(smoothstep(0.5, 0.78, lum), curv * 0.8) * smoothstep(0.45, 0.7, fbm(UV * 60.0 + 3.3));
+			ridge *= (1.0 - mud) * (1.0 - rust2 * 0.8) * sabaton_wear;
+			iron = mix(iron, vec3(0.20, 0.195, 0.19) * (0.8 + 0.3 * pit), ridge * 0.75);
+			metal_k = mix(metal_k * (1.0 - rust2) * (1.0 - mud), 0.85, ridge);
+			metal_k *= mix(1.0, 0.7, film * sabaton_wear);
+			sab_rough = mix(sab_rough + rust2 * 0.12 + mud * 0.25, 0.32, ridge);
+		}
+		alb = mix(alb, iron, sab);
+		sab_metal = sab * metal_k;
 	}
 	if (stone > 0.0) {
 		vec3 wn0 = mat3(INV_VIEW_MATRIX) * NORMAL;
@@ -209,4 +246,6 @@ void fragment() {
 	// ash dust on the skin catches the sun round the silhouette
 	RIM = 0.15;
 	RIM_TINT = 0.5;
+	// (11-20 13:00) dark iron has no dust rim: the pale sheen on the sabatons' tops was this term
+	RIM = mix(0.15, 0.02, sab * sabaton_wear);
 }
