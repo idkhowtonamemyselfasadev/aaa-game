@@ -1074,7 +1074,7 @@ func _start_air() -> void:
 		# and the strike straightens onto the foe by the drive key, like a real overhead blow.
 		if _atk == AIR_LIGHT:
 			_atk = AIR_LIGHT.duplicate(true)
-		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), JA_CANT[5] if JA_CANT.size() > 5 else -17.5, -0.025])
+		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), JA_CANT[5] if JA_CANT.size() > 5 else -17.5, -0.025, JA_CANT[6] if JA_CANT.size() > 6 else REACH])
 	_recover = 0.0
 	air_hold_t = 0.0
 	_power = AIR_POWER
@@ -1738,7 +1738,7 @@ func _solve(pose: Array) -> Array:
 	# optional 5th element slides both grips along the shaft (negative = toward the butt,
 	# the long grip of an overhead strike; P stays the staff's centre)
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
-	var hr := _clamp_reach(p + d * (HAND_R + slide), sr)
+	var hr := _clamp_reach(p + d * (HAND_R + slide), sr, pose[5] if pose.size() > 5 else REACH)
 	var hl := _clamp_reach(p + d * (HAND_L + slide), sl)
 	var axis := hl - hr
 	if axis.length() < 0.12:
@@ -1805,7 +1805,13 @@ static func _pose_at_static(keys: Array, u: float) -> Array:
 	f = f * f * (3.0 - 2.0 * f)
 	var sa: float = a[5] if a.size() > 5 else 0.0
 	var sb: float = b[5] if b.size() > 5 else 0.0
-	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f)]
+	var ra: float = a[6] if a.size() > 6 else REACH
+	var rb: float = b[6] if b.size() > 6 else REACH
+	if ra == REACH and rb == REACH:
+		return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f)]
+	# (11-20 21:30) optional 7th key element: the right arm's grip reach (pose[5]); the arm is
+	# 0.47 m, REACH 0.43 keeps a bend in it, a key may straighten it for a moment
+	return [lerpf(a[1], b[1], f), lerpf(a[2], b[2], f), (a[3] as Vector3).lerp(b[3], f), lerpf(a[4], b[4], f), lerpf(sa, sb, f), lerpf(ra, rb, f)]
 
 ## The staff's clearance from the chest/head for one pose, body space, no dip (same model
 ## as tools/pose_check.py: chest ellipse 0.17 x 0.12 m for y 0.9-1.5, head ellipsoid above).
@@ -1816,7 +1822,7 @@ static func torso_clearance(pose: Array) -> float:
 	var slide: float = pose[4] if pose.size() > 4 else 0.0
 	var sl := SHOULDER.rotated(Vector3.UP, tw)
 	var sr := Vector3(-SHOULDER.x, SHOULDER.y, SHOULDER.z).rotated(Vector3.UP, tw)
-	var hr := _clamp_reach(p + d * (HAND_R + slide), sr)
+	var hr := _clamp_reach(p + d * (HAND_R + slide), sr, pose[5] if pose.size() > 5 else REACH)
 	var hl := _clamp_reach(p + d * (HAND_L + slide), sl)
 	var ax := hl - hr
 	var a := ax.normalized() if ax.length() > 1e-4 else d
@@ -1832,9 +1838,9 @@ static func torso_clearance(pose: Array) -> float:
 			best = minf(best, Vector3(x.x / 0.11, (x.z - 0.01) / 0.12, (x.y - 1.66) / 0.14).length())
 	return best
 
-static func _clamp_reach(h: Vector3, shoulder: Vector3) -> Vector3:
+static func _clamp_reach(h: Vector3, shoulder: Vector3, reach: float = REACH) -> Vector3:
 	var v := h - shoulder
-	return shoulder + v.limit_length(REACH)
+	return shoulder + v.limit_length(reach)
 
 ## Grip error in metres (hand bone origin to its IK target), for bots.
 func grip_error() -> float:

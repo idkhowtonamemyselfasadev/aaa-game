@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-2300-surge-settle-front.jpg",
-  "time": "2026-11-16T23:00:00Z",
-  "caption": "The boss settling out of its phase-3 growth, chest and glaive squared to the hero's side of the ring; still wrong: flat GL light, soft blotchy trees behind, hero lost behind its legs.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-0000-surge-knee-first.jpg",
-  "time": "2026-11-17T00:00:00Z",
-  "caption": "The boss mid-rise from its growth kneel, its right knee now off the ash before the hips heave round onto the hero (fixed-lens pivot sequence); still wrong: the lens sits too far to judge the boot twist, a ring flame blurs into the top-right corner, the sky is flat.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-0100-panel-before-after.jpg",
   "time": "2026-11-17T01:00:00Z",
   "caption": "Boss growth rise, leg lens: before (left) the surcoat's front panel jutted off the hip as a stiff red slat pitched to the thigh; after (right) it lies over the knee and falls plumb. Still GL-only lighting, legs dark.",
@@ -840,6 +828,18 @@
   "verdict": "fail"
  },
  {
+  "file": "20261120-1700-standing-jumpattack-front-jt055.jpg",
+  "time": "2026-11-20T17:00:00Z",
+  "caption": "Standing jump attack at jt 0.55 with the squarer hips: knees drive at the lens under a centred robe panel; the staff over the face still reads as a thin vertical line.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1700-standing-jumpattack-hips-03-vs-06.jpg",
+  "time": "2026-11-20T17:00:00Z",
+  "caption": "Standing jump attack front-on at jt 0.45/0.55: left the old 0.3 hip share, middle/right the new 0.6 share with the belt square across the body and the robe panel hanging centred between the knees; still wrong: the staff comes down as a foreshortened vertical line over the face from this lens.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261120-1718-heroback-roll.jpg",
   "time": "2026-11-20T17:18:24Z",
   "caption": "Hero from behind at idle: the glider roll now sits snug across the sash with the staff tucked past it; grass and lighting hold up, the cottage behind is still flat and dark.",
@@ -852,15 +852,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-1700-standing-jumpattack-hips-03-vs-06.jpg",
-  "time": "2026-11-20T17:00:00Z",
-  "caption": "Standing jump attack front-on at jt 0.45/0.55: left the old 0.3 hip share, middle/right the new 0.6 share with the belt square across the body and the robe panel hanging centred between the knees; still wrong: the staff comes down as a foreshortened vertical line over the face from this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261120-1700-standing-jumpattack-front-jt055.jpg",
-  "time": "2026-11-20T17:00:00Z",
-  "caption": "Standing jump attack at jt 0.55 with the squarer hips: knees drive at the lens under a centred robe panel; the staff over the face still reads as a thin vertical line.",
+  "file": "20261120-1930-jumpattack-front-jt053.jpg",
+  "time": "2026-11-20T19:30:00Z",
+  "caption": "Standing jump attack at jt 0.53 front-on with the new key: hands come down in front of the chest with the shaft clear of the face; hips square, robe centred.",
   "verdict": "fail"
  },
  {
@@ -870,9 +864,9 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-1930-jumpattack-front-jt053.jpg",
-  "time": "2026-11-20T19:30:00Z",
-  "caption": "Standing jump attack at jt 0.53 front-on with the new key: hands come down in front of the chest with the shaft clear of the face; hips square, robe centred.",
+  "file": "20261120-2030-jumpattack-cant-before-jt055.jpg",
+  "time": "2026-11-20T20:30:00Z",
+  "caption": "Before (19:30 key, JA_CANT_PREV=1) at jt 0.55 for comparison: the shaft stands vertical just off the nose.",
   "verdict": "fail"
  },
  {
@@ -888,9 +882,15 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-2030-jumpattack-cant-before-jt055.jpg",
-  "time": "2026-11-20T20:30:00Z",
-  "caption": "Before (19:30 key, JA_CANT_PREV=1) at jt 0.55 for comparison: the shaft stands vertical just off the nose.",
+  "file": "20261120-2130-jumpattack-headroll-new-jt055.jpg",
+  "time": "2026-11-20T21:30:00Z",
+  "caption": "Standing jump attack front-on at jt 0.55 with the new head roll: the head tips away from the canted shaft so the whole face reads beside it. The shaft still crosses the hat brim and the figure is dark in the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2130-jumpattack-headroll-old-jt055.jpg",
+  "time": "2026-11-20T21:30:00Z",
+  "caption": "Before (JA_SWING_TILT=0), same frame: the shaft crosses straight over the right eye.",
   "verdict": "fail"
  }
 ]

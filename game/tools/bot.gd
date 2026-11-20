@@ -4330,6 +4330,7 @@ func _scree_test() -> void:
 
 const JA_COCK_GATE := 38.0             # (11-08 10:00) 25 -> 36 with the head tipped clear; (11-08 14:00) 36 -> 38 with the deep key back (39.1)
 const JA_HAT_GATE := 0.02
+const JA_CROSS_GATE := -0.005   # (11-20 21:30) m, see ja_cross (before the swing roll +0.047)
 const JA_LEAN_GATE := 25.0     # deg the chest must swing from the arch to the fold in a jump attack
 const JA_GRIP_GATE := 0.05     # m: the hands stay on the staff through it
 ## (11-08) each fist's centre to the shaft's axis through the air attack (crumple.keep_hands: the
@@ -5217,6 +5218,7 @@ func _airstrike_test() -> void:
 	var ja_spine_max := -99.0
 	var ja_cock := -99.0                       # deg the tip leans back past vertical (+ behind the head)
 	var ja_hat := 9.0                          # m, the shaft's closest pass to the hat
+	var ja_cross := -9.0                       # m, (11-20 21:30) worst crossing of face height, + = left of the hat's centre (over the face)
 	var ja_neck := Vector2(9.0, -9.0)
 	var ja_gap := Vector2.ZERO                 # m, worst fist-centre-to-shaft gap (right, left)
 	var ja_loose := 0                          # air-attack ticks with a fist over 0.05 m off the shaft
@@ -5288,7 +5290,23 @@ func _airstrike_test() -> void:
 			var ax: Vector3 = (tip_e - but_e).normalized()
 			ja_cock = maxf(ja_cock, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))))
 			var hm := _hat_margin(p, ends[0], ends[1])
-			if OS.has_environment("JA_DBG"): print("JA u %.2f hat %.3f cock %.1f right %.1f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))), rad_to_deg(atan2(-ax.dot(p.body.global_basis.x), ax.dot(p.body.global_basis.y)))])
+			if c.air_attack_u() >= 0.39 and c.air_attack_u() <= 0.49:
+				# (11-20 21:30) front-on the shaft should cross face height right of the hat's centre
+				var hb2 := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Head")).origin
+				if (but_e.y - hb2.y) * (tip_e.y - hb2.y) < 0.0 and p.garb != null and p.garb.hat != null and p.garb.hat.mesh != null:
+					var xq := but_e.lerp(tip_e, (hb2.y - but_e.y) / (tip_e.y - but_e.y))
+					var hq: Vector3 = p.garb.hat.global_transform * p.garb.hat.mesh.get_aabb().get_center()
+					ja_cross = maxf(ja_cross, (xq - hq).dot(p.body.global_basis.x))
+			if OS.has_environment("JA_DBG"):
+				# (11-20 21:30) xface: where the shaft crosses the head bone's height, metres along the
+				# body's x from the head (negative = hero's right); 9 = the shaft does not span it
+				var hp := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("mixamorig_Head")).origin
+				var xf := 9.0
+				if (but_e.y - hp.y) * (tip_e.y - hp.y) < 0.0:
+					var xp := but_e.lerp(tip_e, (hp.y - but_e.y) / (tip_e.y - but_e.y))
+					xf = (xp - hp).dot(p.body.global_basis.x)
+				var hc: Vector3 = p.garb.hat.global_transform * p.garb.hat.mesh.get_aabb().get_center() if p.garb != null and p.garb.hat != null and p.garb.hat.mesh != null else hp
+				print("JA u %.2f hat %.3f cock %.1f right %.1f xface %+.3f hatx %+.3f tilt %+.2f" % [c.air_attack_u(), hm, rad_to_deg(atan2(-ax.dot(fw), ax.dot(p.body.global_basis.y))), rad_to_deg(atan2(-ax.dot(p.body.global_basis.x), ax.dot(p.body.global_basis.y))), xf, (hc - hp).dot(p.body.global_basis.x), p._ja_tilt])
 			ja_hat = minf(ja_hat, hm)
 			ja_neck = Vector2(minf(ja_neck.x, p.crumple.neck), maxf(ja_neck.y, p.crumple.neck))
 		ja_swf = maxf(ja_swf, p.garb._swing_f)
@@ -5354,6 +5372,9 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack fists -> worst gap to the shaft R %.3f L %.3f m (gate %.2f), ticks over 5 cm %d (gate %d)" % [ja_gap.x, ja_gap.y, JA_FIST_GATE, ja_loose, JA_LOOSE_GATE])
 	if not p.JUMPATK_LOOSEHANDS and not OS.has_environment("JUMPATK_HIGHKEY") and (maxf(ja_gap.x, ja_gap.y) > JA_FIST_GATE or ja_loose > JA_LOOSE_GATE):
 		return _combat_done(false, "the jump attack's arch and fold carry the fists off the staff")
+	print("BOT airstrike: swing over front-on -> shaft crosses face height at worst %+.3f m off the hat's centre (+ = toward the hero's left, over the face; gate <= %.3f; JA_SWING_TILT=0 +0.047)" % [ja_cross, JA_CROSS_GATE])
+	if not c.JA_CANT_OLD and not c.JUMPATK_NOCOCK and p.JA_SWING_TILT >= 0.3 and ja_cross > JA_CROSS_GATE:
+		return _combat_done(false, "the jump attack's downswing crosses over the face front-on (the head is not rolled out of the shaft's line)")
 	if not c.JUMPATK_NOCOCK and (ja_cock < (25.0 if p.JUMPATK_NOTILT else JA_COCK_GATE) or ja_hat < JA_HAT_GATE):
 		return _combat_done(false, "the jump attack's staff is not drawn back behind the head at the arch, or the shaft cuts the hat")
 	if not p.JUMPATK_FLAT and (ja_arch < 0.8 or ja_fold < 0.8 or ja_lean_max - ja_lean_min < JA_LEAN_GATE or ja_grip > JA_GRIP_GATE):

@@ -2374,6 +2374,15 @@ var _ja_neck := 0.0
 # head and the 09:00 cock (before). JA_TILT overrides the angle for tuning.
 var JA_ARCH_TILT := float(OS.get_environment("JA_TILT")) if OS.has_environment("JA_TILT") else -0.45
 var JUMPATK_NOTILT := OS.get_environment("JUMPATK_NOTILT") == "1"
+# (11-20 21:30) and on the swing over (the shaft canted over the right shoulder, u ~0.38-0.50) the
+# head rolls the other way, crown to the hero's left, out of the shaft's line: front-on the arch's
+# right tilt was still easing out as the shaft crossed face height, so it crossed over the right
+# eye (hat centre 0.10-0.15 m right of the head bone, the shaft 0-5 cm LEFT of it = over the face).
+# Bot sweep: 0.35 rad over u 0.26-0.36 in / 0.46-0.60 out puts the shaft 1-9 cm right of the hat
+# centre through u 0.39-0.48, hat margin there 0.085 -> 0.137 m, peak roll ~12 deg at the blow.
+# JA_SWING_TILT=0 = before (no roll on the swing); JA_SWT="in0,in1,out0,out1" tunes the window.
+var JA_SWING_TILT := float(OS.get_environment("JA_SWING_TILT")) if OS.has_environment("JA_SWING_TILT") else 0.35
+var JA_SWT: PackedFloat64Array = OS.get_environment("JA_SWT").split_floats(",") if OS.has_environment("JA_SWT") else PackedFloat64Array([0.26, 0.36, 0.46, 0.60])
 ## (11-08) env JUMPATK_LOOSEHANDS=1: the old wrists, carried off the staff by the arch and fold
 var JUMPATK_LOOSEHANDS := OS.get_environment("JUMPATK_LOOSEHANDS") == "1"
 var _ja_tilt := 0.0
@@ -2645,6 +2654,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 				nk = JA_ARCH_NECK * arch + JA_FOLD_NECK * fold
 			if not JUMPATK_NOTILT:
 				tl = JA_ARCH_TILT * arch
+				if JA_SWING_TILT != 0.0 and not JUMPATK_LATEFOLD:
+					tl += JA_SWING_TILT * smoothstep(JA_SWT[0], JA_SWT[1], au) * (1.0 - smoothstep(JA_SWT[2], JA_SWT[3], au))
 		var pt: float = combat.plunge_t if combat != null and combat.is_plunging() else -1.0
 		if air and pt >= 0.0 and not PLUNGE_FLAT:
 			# coiled at the hang as the staff goes up (0-0.08 s), let go as it starts down (0.11 s);
