@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261116-1900-slit-before-after.jpg",
-  "time": "2026-11-16T19:00:00Z",
-  "caption": "Before (left): the slit burned as one white-clipped bar; after (right): a thin cut pinched at the keel with two round hot eyes.",
-  "verdict": "fail"
- },
- {
-  "file": "20261116-2000-helm-keel.jpg",
-  "time": "2026-11-16T20:00:00Z",
-  "caption": "Boss growth roar, helm lens: the keel is now a crisp narrow rubbed-steel ridge with sooted flanks between the two ember eyes; the mountain backdrop is still a flat procedural cone and the ember spits are dotty.",
-  "verdict": "fail"
- },
- {
   "file": "20261116-2000-keel-before-after.jpg",
   "time": "2026-11-16T20:00:00Z",
   "caption": "Helm close-up before (left: the keel smeared into a fuzzy grey smoke streak) and after (right: a hard forged line); the plate still reads a little plasticky in GL.",
@@ -897,6 +885,18 @@
   "file": "20261120-1718-jumpattack-roll.jpg",
   "time": "2026-11-20T17:18:24Z",
   "caption": "Running jump attack at the blow from a front 3/4: the furled glider roll now stays on the sash against the back instead of floating beside the shoulder; the hero still reads small in the frame and the turf is flat and dark.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1700-standing-jumpattack-hips-03-vs-06.jpg",
+  "time": "2026-11-20T17:00:00Z",
+  "caption": "Standing jump attack front-on at jt 0.45/0.55: left the old 0.3 hip share, middle/right the new 0.6 share with the belt square across the body and the robe panel hanging centred between the knees; still wrong: the staff comes down as a foreshortened vertical line over the face from this lens.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-1700-standing-jumpattack-front-jt055.jpg",
+  "time": "2026-11-20T17:00:00Z",
+  "caption": "Standing jump attack at jt 0.55 with the squarer hips: knees drive at the lens under a centred robe panel; the staff over the face still reads as a thin vertical line.",
   "verdict": "fail"
  }
 ]

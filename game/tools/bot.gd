@@ -4767,7 +4767,7 @@ const STRIKE_KNEE_STEP := 0.12   # rad, the knee pose's largest change in one ti
 const SINK_STEP_GATE := 0.04    # (11-09 04:00) m, the staff's landing sink may change at most this much per tick
 const DROP_FIRST_GATE := 4.0
 const TUCK_SHIN_GATE := 0.04
-const TUCK_GAP_GATE := 0.03   # m the knee may press into the front panel in the jump attack's tuck
+const TUCK_GAP_GATE := 0.015   # m the knee may press into the front panel in the jump attack's tuck
 
 const PL_SNATCH_GATE := 0.03          # m: (11-09 08:00) each fist to the shaft by plunge_t 0.10 from a slung staff
 const PL_FOLD_GATE := 30.0         # deg: (11-19 19:00) the plunge crouch's chest lean at its deepest
@@ -5137,7 +5137,7 @@ func _runstrike_test() -> void:
 		print("BOT PASS: runstrike")
 	get_tree().quit()
 
-const AS_HIPS_YAW_GATE := 35.0   # (11-20 16:00) deg; JA_STAND_OLD=1 measured 43.7, the 0.3 share 30.6
+const AS_HIPS_YAW_GATE := 22.0   # (11-20 17:00) deg; JA_STAND_OLD=1 measured 43.7, the 0.3 share 30.6, the 0.6 share 17.5
 func _airstrike_test() -> void:
 	var p := _player
 	var c: StaffCombat = p.combat
@@ -5341,7 +5341,7 @@ func _airstrike_test() -> void:
 	print("BOT airstrike: jump attack at %.2f m up -> started %s, post hits %d -> %d (in the air %s), air attacks %d" % [y_press, started, h0, post.hits, hit_air, c.air_attacks])
 	print("BOT airstrike: jump attack body -> arch %.2f, fold %.2f, chest lean %.1f .. %.1f deg (back .. forward), worst grip error %.3f m, spine bend %.2f .. %.2f rad" % [ja_arch, ja_fold, ja_lean_min, ja_lean_max, ja_grip, ja_spine_min, ja_spine_max])
 	print("BOT airstrike: jump attack staff -> cocked %.1f deg past vertical behind (gate %.0f), shaft-to-hat %.3f m (gate %.2f), neck %.2f .. %.2f rad" % [ja_cock, JA_COCK_GATE, ja_hat, JA_HAT_GATE, ja_neck.x, ja_neck.y])
-	print("BOT airstrike: jump attack robe -> front panel lie %.2f, swing %.2f rad, knee fold %.2f rad, cloth over the knee %.3f m (gate > -%.2f), back hem behind the heels %.3f m" % [p.garb.tuck_lie_peak, ja_swf, ja_fold_a, p.garb.tuck_gap, TUCK_GAP_GATE, p.garb.tuck_heel])
+	print("BOT airstrike: jump attack robe -> front panel lie %.2f, swing %.2f rad, knee fold %.2f rad, cloth over the knee %.3f m (gate > -%.3f), back hem behind the heels %.3f m" % [p.garb.tuck_lie_peak, ja_swf, ja_fold_a, p.garb.tuck_gap, TUCK_GAP_GATE, p.garb.tuck_heel])
 	print("BOT airstrike: knee fold rolls round a %.2f m arc, bent cloth's worst gap off the shin %.3f m (gate > %.2f)" % [p.garb.TUCK_ROUND if not OS.has_environment("KNEEROUND_OFF") else 0.0, p.garb.tuck_shin, TUCK_SHIN_GATE])
 	# (11-09 00:00) the landing: the front panel falls off the dropping thigh like heavy cloth
 	print("BOT airstrike: robe drop at landing -> first-tick swing speed %.1f rad/s (gate < %.1f; the old ease ~10), fastest fall %.1f rad/s, past the hang %.2f rad, down in %.2f s" % [p.garb.drop_first_w, DROP_FIRST_GATE, p.garb.drop_peak_w, p.garb.drop_under, p.garb.drop_settle])

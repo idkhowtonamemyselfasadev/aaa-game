@@ -99,6 +99,7 @@ const DRAPE_PAD := 0.11
 var DRAPE_OLD := OS.get_environment("PANELDRAPE_OLD") == "1"
 var tuck_lie := 0.0
 var tuck_gap := 9.0
+var _TUCKGAP_DBG := OS.get_environment("TUCKGAP_DBG") == "1"
 var tuck_heel := 9.0
 var tuck_lie_peak := 0.0
 var tuck_aim := 0.0
@@ -1283,7 +1284,10 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 			var aim := minf(atan2(r.dot(fz), r.dot(down)), TUCK_SWING_MAX)
 			tuck_aim = aim
 			tf = lerpf(tf, maxf(tf, aim), lie)
-			push_f = lerpf(-0.5, aim, lie) if lie >= 0.5 else -INF
+			# (11-20 17:00) the knee is a contact: from lie 0.9 the cloth rests ON its top, not
+			# 0.1 rad inside it (the old lerp left the knee 4 cm through the panel the tick the lie
+			# crossed 0.9; TUCKPUSH_OLD=1 = before)
+			push_f = (lerpf(-0.5, aim, lie if TUCKPUSH_OLD else minf(lie / 0.9, 1.0))) if lie >= 0.5 else -INF
 			var kd := r.length() / sy
 			if kd < fl - 0.05:
 				fd = kd
@@ -1470,6 +1474,9 @@ func _tuck_panels(fwd: float, bwd: float, k: float) -> void:
 		var rr: Vector3 = gap_at[4]
 		if rr.dot(pd) > 0.0 and rr.dot(pd) < fl * sy:
 			tuck_gap = minf(tuck_gap, _pn_gap(gap_at[0], pn, gap_at[3]))
+			if _TUCKGAP_DBG:
+				var kr: Vector3 = gap_at[3] - gap_at[0]
+				print("TUCKGAP sw %.3f push %.3f aim %.3f gap %+.3f knee_side %+.3f lie %.2f drop %s" % [_swing_f, push_f, tuck_aim, _pn_gap(gap_at[0], pn, gap_at[3]), kr.dot(gap_at[1].cross(gap_at[2]).normalized()), lie, _drop[0]])
 	for hl in heels:
 		tuck_heel = minf(tuck_heel, hl[0] * sin(_swing_b - hl[1]))
 	# below the knee the cloth hangs plumb: the fold takes back what the panel lies out past it
@@ -1644,7 +1651,11 @@ func _ground_at(p: Vector3, up: Vector3) -> float:
 ## swings a little past its hang and settles, instead of easing shut like a damped lid (the old
 ## ease started at its fastest, 10 rad/s, the moment the thigh left it). A limb under it still
 ## catches it at once (`push`). Small swings (walking) keep the plain ease.
-const DROP_START := 0.35      # rad above its rest a panel must be left to fall freely
+## rad above its rest a panel must be left to fall freely. (11-20 17:00) 0.35 -> 0.25: a panel
+## left just under the old line was eased home at up to 0.35 x 14 = 4.9 rad/s on the landing
+## tick, a lid shutting (DROPSTART_OLD=1 = before)
+var DROP_START := 0.35 if OS.get_environment("DROPSTART_OLD") == "1" else 0.25
+var TUCKPUSH_OLD := OS.get_environment("TUCKPUSH_OLD") == "1"
 const DROP_ZETA := 0.35       # air drag on the wool (damping ratio)
 ## cloth is no rigid board: the part below the knee hangs off the fold already and the rest
 ## bends as it goes, so it falls like a board this fraction of the panel's length (~0.3 s down)

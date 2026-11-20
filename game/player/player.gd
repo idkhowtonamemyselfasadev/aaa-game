@@ -3788,8 +3788,9 @@ func _place_feet(delta: float, moved: Vector3) -> void:
 var JA_HIP_SQUARE := float(OS.get_environment("JA_HIP_SQUARE")) if OS.has_environment("JA_HIP_SQUARE") else 0.75
 var JA_SQUARE_OLD := OS.get_environment("JA_SQUARE_OLD") == "1"
 ## (11-20 16:00) the same out of a standing jump: a smaller share, so the tucked knees and the robe
-## fold posed on the guard's pelvis still hold (env JA_STAND_SQUARE=<0..1>; JA_STAND_OLD=1 = before, 0)
-var JA_STAND_SQUARE := float(OS.get_environment("JA_STAND_SQUARE")) if OS.has_environment("JA_STAND_SQUARE") else 0.3
+## fold posed on the guard's pelvis still hold (env JA_STAND_SQUARE=<0..1>; JA_STAND_OLD=1 = before, 0).
+## (11-20 17:00) 0.3 -> 0.6 once the thigh's push on the front panel stopped lagging the lie (rags.gd)
+var JA_STAND_SQUARE := float(OS.get_environment("JA_STAND_SQUARE")) if OS.has_environment("JA_STAND_SQUARE") else 0.6
 var JA_STAND_OLD := OS.get_environment("JA_STAND_OLD") == "1"
 var _ja_run := false             # the jump attack in progress was thrown out of a running leap
 
