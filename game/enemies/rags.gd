@@ -16,6 +16,8 @@ var _skel: Skeleton3D
 ## How far (m) the wraps sit in from the base body's widest point: a wearer whose plates sink
 ## in (hero.gdshader plate_inset) gets wraps that hug the slimmer limb, not the old armour
 var wrap_inset := 0.0
+var wrap_covered := 0      # (11-21 10:00) body verts the coverage pass lifted a binding's shell over (bots)
+var wrap_cover_max := 0.0  # and the largest lift, m
 const WRAP_LIP := 0.08     # share of a wrap's v at each end taken by the rolled, turned-in cuff
 const WRAP_ROLL := 0.008   # m, radius of the cuff's roll
 const WRAP_HOLE := 0.2     # the cuff turns in to this share of the rim radius (0.5 still showed a hole end-on)
@@ -23,6 +25,9 @@ const WRAP_HOLE := 0.2     # the cuff turns in to this share of the rim radius (
 ## the other leg bone (rag.gdshader `bend_xf`): rigid on one bone each, the two tubes' ends split
 ## open into a wedge at a bent knee. Half-and-half at the joint, like the skin under them.
 const KNEE_BLEND_M := 0.06
+## (11-21 10:00) m every body vert carried mostly (>= COVER_W) by a binding's bone stays inside its shell
+const WRAP_COVER_M := 0.004
+const WRAP_COVER_W := 0.5
 const FOOT_TAPER := 0.5    # share of a foot wrap's length, at the toe end, over which it narrows
 const FOOT_TAPER_R := 0.6 # the foot wrap's radius at the toe end vs its fitted shell
 const FOOT_TAPER0 := 0.45  # share at the ankle end over which it narrows onto the ankle, under the shin wrap
@@ -592,6 +597,7 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	const NH := 10
 	var dbg_pts := OS.get_environment("WRAP_DBG") == "standoff" and bone.ends_with("Foot")
 	var fit_pts := PackedVector3Array()
+	var cover_pts := PackedVector3Array()   # (angle, v, radius) of the verts the binding must cover
 	var rad := PackedFloat32Array()
 	rad.resize(NA * NH)
 	rad.fill(0.0)
@@ -636,6 +642,8 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 				var ia := int(ang / TAU * NA) % NA
 				var ih := clampi(int((t - t0) / (t1 - t0) * NH), 0, NH - 1)
 				rad[ih * NA + ia] = maxf(rad[ih * NA + ia], q.length())
+				if w >= WRAP_COVER_W and t >= t0 and t <= t1:
+					cover_pts.append(Vector3(ang, (t - t0) / (t1 - t0), q.length()))
 				if dbg_pts:
 					fit_pts.append(p)
 	if OS.get_environment("WRAP_DBG") == "footraw" and bone.ends_with("Foot"):
@@ -660,6 +668,31 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 					m = maxf(m, rad[clampi(ih + o, 0, NH - 1) * NA + ia] * 0.94)
 				out[ih * NA + ia] = maxf(m, floor_r)
 		rad = out
+	# (11-21 10:00) coverage: the shell is the cells' maxima interpolated between cell centres, so
+	# beside a sharp step in the armour (a thigh plate's raised edge) it dipped up to ~1.2 cm under
+	# verts carried by the bone itself, and in `jump ... jt=0.38` frames a pale speck of the base
+	# body showed through the near thigh binding (bot `wrappoke`). Any such vert the shell does not
+	# clear by WRAP_COVER_M raises the four cells it is interpolated from by the shortfall (bilinear
+	# weights sum to 1, so that is enough; raising only, so earlier verts stay covered). Not on
+	# capped (foot) bindings, whose caps tuck the armour under on purpose. `WRAPCOVER_OLD=1` = before.
+	if plantar_cap <= 0.0 and side_cap <= 0.0 and not OS.has_environment("WRAPCOVER_OLD"):
+		for cp in cover_pts:
+			var fa := cp.x / TAU * NA - 0.5
+			var fh := clampf(cp.y * NH - 0.5, 0.0, NH - 1.0)
+			var ia0 := int(floor(fa))
+			var ih0 := int(floor(fh))
+			var ih1 := mini(ih0 + 1, NH - 1)
+			var fx: float = fa - floor(fa)
+			var fy: float = fh - floor(fh)
+			var cells := [ih0 * NA + posmod(ia0, NA), ih0 * NA + posmod(ia0 + 1, NA),
+					ih1 * NA + posmod(ia0, NA), ih1 * NA + posmod(ia0 + 1, NA)]
+			var r: float = lerpf(lerpf(rad[cells[0]], rad[cells[1]], fx), lerpf(rad[cells[2]], rad[cells[3]], fx), fy)
+			var short := cp.z + WRAP_COVER_M - (maxf(r - wrap_inset, floor_r) + pad)
+			if short > 0.0:
+				wrap_covered += 1
+				wrap_cover_max = maxf(wrap_cover_max, short)
+				for ci in cells:
+					rad[ci] += short
 	if OS.get_environment("WRAP_DBG") != "" and bone.contains("Leg") and not bone.contains("Up"):
 		var line := "WRAP %s len %.3f floor %.3f |" % [bone, axis.length(), floor_r]
 		for ih in NH:
@@ -781,6 +814,8 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	# casts the binding's shadow, so the shell need not. WRAPACNE_OLD=1 = the before.
 	if not OS.has_environment("WRAPACNE_OLD"):
 		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# (11-21 10:00) the fitted shell for bots that test the body against the binding (`wrappoke`)
+	piece.set_meta("shell_fit", [a, d, e1, e2, axis.length(), t0, t1, shell, bi, _rest_in_body(bi)])
 	_attach(bone).add_child(piece)
 	wraps += 1
 	_knee_bend(bone, tip, t0, t1, lip, axis.length(), mat)

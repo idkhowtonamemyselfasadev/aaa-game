@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "softlock", "rollstaff", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "softlock", "rollstaff", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase", "wrappoke"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -212,6 +212,9 @@ func _ready() -> void:
 		return
 	if name == "jump":
 		_jump_test()
+		return
+	if name == "wrappoke":
+		_wrappoke_test()
 		return
 	if name == "lean":
 		_lean_test()
@@ -4363,6 +4366,204 @@ const STAND_TUCK_OUT_GATE := 0.40  # (11-19 15:00) m: mean wrist out off the hea
 const STAND_WRIST_LR_GATE := 0.08   # m most the two wrists' outward places may differ (old 0.38)
 const STAND_DRIVE_GATE := 0.22  # (11-19 12:00; 13:00 0.08 -> 0.22) m the higher wrist must get over the head on the drive (11-19 11:00 build 0.00, 12:00 0.16, 13:00 0.32)
 const STAND_DRIVE_BEND_GATE := 0.4  # (11-19 12:00) rad: mean elbow bend on the drive (old build 0.54, new 0.29)
+
+## (11-21 10:00) the base body pushing out through the hero's thigh bindings: a speck of the pale
+## body showed through the near thigh binding in `jump ... jt=0.38` frames. Every base-body vert
+## is skinned on the CPU into each thigh binding's local (body rest) space and its distance off the
+## binding's axis is compared with the binding's fitted shell there (`shell_fit` meta, rags.gd).
+## Over a standing tap, a standing full jump and a running jump: the deepest vert outside the
+## shell but within POKE_NEAR of it, over v 0.08..0.8 (clear of the rolled cuffs and the knee blend).
+const POKE_NEAR := 0.08
+const POKE_GATE := 0.004
+var POKE_OWN := float(OS.get_environment("POKE_OWN")) if OS.has_environment("POKE_OWN") else 0.5
+var POKE_COS := float(OS.get_environment("POKE_COS")) if OS.has_environment("POKE_COS") else -0.17
+var POKE_V0 := float(OS.get_environment("POKE_V0")) if OS.has_environment("POKE_V0") else 0.25
+var POKE_V1 := float(OS.get_environment("POKE_V1")) if OS.has_environment("POKE_V1") else 0.7
+var _poke_meshes := []
+var _poke_worst := 0.0
+var _poke_desc := ""
+var _poke_n := 0
+
+func _wrappoke_cache(p) -> void:
+	var g = p.garb
+	var skel: Skeleton3D = g._skel
+	for mi in g._body.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.skin == null or m.mesh == null or not m.is_visible_in_tree() or m.name.begins_with("Wrap"):
+			continue
+		var binds := PackedInt32Array()
+		var bposes := []
+		for k in m.skin.get_bind_count():
+			var bb := m.skin.get_bind_bone(k)
+			if bb < 0:
+				bb = skel.find_bone(m.skin.get_bind_name(k))
+			binds.append(bb)
+			bposes.append(m.skin.get_bind_pose(k))
+		for s in m.mesh.get_surface_count():
+			var arr := m.mesh.surface_get_arrays(s)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			if verts.is_empty() or bones.is_empty():
+				continue
+			_poke_meshes.append([m.name, s, verts, bones, arr[Mesh.ARRAY_WEIGHTS], bones.size() / verts.size(), binds, bposes])
+
+func _wrappoke_read(p) -> void:
+	var g = p.garb
+	var skel: Skeleton3D = g._skel
+	var fits := []
+	for nm in ["WrapLeftUpLeg", "WrapRightUpLeg", "WrapLeftLeg", "WrapRightLeg"]:
+		var wn := skel.find_child(nm, true, false)
+		if wn == null or not wn.has_meta("shell_fit"):
+			continue
+		var f: Array = wn.get_meta("shell_fit")
+		var bi: int = f[8]
+		var side := "Left" if nm.contains("Left") else "Right"
+		fits.append([nm, f, (f[9] as Transform3D) * skel.get_bone_global_pose(bi).affine_inverse(), bi, skel.find_bone("mixamorig_Hips"),
+				[skel.find_bone("mixamorig_LeftUpLeg"), skel.find_bone("mixamorig_LeftLeg"), skel.find_bone("mixamorig_LeftFoot"),
+				skel.find_bone("mixamorig_RightUpLeg"), skel.find_bone("mixamorig_RightLeg"), skel.find_bone("mixamorig_RightFoot"), skel.find_bone("mixamorig_Hips") if not OS.has_environment("POKE_HIPS") else -9, skel.find_bone("mixamorig_Spine") if not OS.has_environment("POKE_HIPS") else -9]])
+	_poke_n += 1
+	for md in _poke_meshes:
+		var binds: PackedInt32Array = md[6]
+		var mats := []
+		for k in binds.size():
+			mats.append(skel.get_bone_global_pose(binds[k]) * (md[7][k] as Transform3D) if binds[k] >= 0 else Transform3D())
+		var verts: PackedVector3Array = md[2]
+		var bones: PackedInt32Array = md[3]
+		var wts: PackedFloat32Array = md[4]
+		var per: int = md[5]
+		for v in verts.size():
+			var sp := Vector3.ZERO
+			for k in per:
+				var w := wts[v * per + k]
+				if w > 0.0:
+					sp += w * ((mats[bones[v * per + k]] as Transform3D) * verts[v])
+			for fd in fits:
+				# only verts the binding should cover: carried mostly by its own thigh (or the hips)
+				var own := 0.0
+				var fam := 0.0
+				for k in per:
+					var bb := binds[bones[v * per + k]]
+					if bb == fd[3]:
+						own += wts[v * per + k]
+					if bb in fd[5]:
+						fam += wts[v * per + k]
+				if fam < 0.05:
+					_poke_intrude(fd, sp, v, md, skel, binds, bones, wts, per)
+					continue
+				if own < POKE_OWN:
+					continue
+				var f: Array = fd[1]
+				if _poke_n == 1 and OS.has_environment("POKE_DBG") and own > 0.9 and v % 50 == 0:
+					var kk := -1
+					for k in per:
+						if binds[bones[v * per + k]] == fd[3]: kk = bones[v * per + k]
+					print("POKEV pr %s" % (g._rest_in_body(fd[3]) * (md[7][kk] as Transform3D) * verts[v]))
+					print("POKEV %s sp %s bone %s pl %s a %s d %s len %.3f t0 %.2f t1 %.2f" % [fd[0], sp, skel.get_bone_global_pose(fd[3]).origin, (fd[2] as Transform3D) * sp, f[0], f[1], f[4], f[5], f[6]])
+				var pl: Vector3 = (fd[2] as Transform3D) * sp - (f[0] as Vector3)
+				var d: Vector3 = f[1]
+				var t := pl.dot(d) / float(f[4])
+				var vv := (t - float(f[5])) / (float(f[6]) - float(f[5]))
+				if _poke_n == 1 and OS.has_environment("POKE_DBG") and own > 0.9:
+					print("POKEH %s %.2f" % [fd[0], vv])
+				if vv < POKE_V0 or vv > POKE_V1:
+					continue
+				var q := pl - d * pl.dot(d)
+				var ang := fposmod(atan2(q.dot(f[3]), q.dot(f[2])), TAU)
+				# the back of the thigh (the seat, under the robe's back panel) is not judged
+				if cos(ang) < POKE_COS:
+					continue
+				var out: float = q.length() - float((f[7] as Callable).call(ang, vv, true))
+				if _poke_n == 1 and OS.has_environment("POKE_DBG") and own > 0.9:
+					print("POKE %s v %.2f ang %.0f out %+.4f" % [fd[0], vv, rad_to_deg(ang), out])
+				if out > 0.0 and out < POKE_NEAR and out > _poke_worst:
+					_poke_worst = out
+					var wl := ""
+					for k in per:
+						if wts[v * per + k] > 0.01:
+							wl += " %s:%.2f" % [skel.get_bone_name(binds[bones[v * per + k]]).trim_prefix("mixamorig_"), wts[v * per + k]]
+					_poke_desc = "%s %s/%d vert %d v %.2f ang %.0f deg (0 = fwd, + toward e2) tick %d weights%s" % [fd[0], md[0], md[1], v, vv, rad_to_deg(ang), _poke_n, wl]
+
+## a vert of another limb (a hand, a forearm) inside a leg binding's shell: it pokes out through
+## the binding where its mesh crosses the shell (depth = how far inside, m)
+var _intr_worst := 0.0
+var _intr_desc := ""
+var _intr_stand := 0.0   # the deepest over the standing jumps (tap + hold), gated
+func _poke_intrude(fd: Array, sp: Vector3, v: int, md: Array, skel: Skeleton3D, binds: PackedInt32Array,
+		bones: PackedInt32Array, wts: PackedFloat32Array, per: int) -> void:
+	var f: Array = fd[1]
+	var pl: Vector3 = (fd[2] as Transform3D) * sp - (f[0] as Vector3)
+	var d: Vector3 = f[1]
+	var vv := (pl.dot(d) / float(f[4]) - float(f[5])) / (float(f[6]) - float(f[5]))
+	if vv < 0.0 or vv > 1.0:
+		return
+	var q := pl - d * pl.dot(d)
+	var ang := fposmod(atan2(q.dot(f[3]), q.dot(f[2])), TAU)
+	var depth: float = float((f[7] as Callable).call(ang, vv, true)) - q.length()
+	if depth > _intr_worst:
+		_intr_worst = depth
+		var wl := ""
+		for k in per:
+			if wts[v * per + k] > 0.01:
+				wl += " %s:%.2f" % [skel.get_bone_name(binds[bones[v * per + k]]).trim_prefix("mixamorig_"), wts[v * per + k]]
+		_intr_desc = "%s %s vert %d v %.2f ang %.0f tick %d air %.2f s weights%s" % [fd[0], md[0], v, vv, rad_to_deg(ang), _poke_n, _player._air_t, wl]
+	if OS.has_environment("POKE_TRACE") and depth > 0.003:
+		print("POKET air %.2f %s depth %.4f v %.2f ang %.0f %s" % [_player._air_t, fd[0], depth, vv, rad_to_deg(ang), skel.get_bone_name(binds[bones[v * per]])])
+
+func _wrappoke_test() -> void:
+	var p := _player
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	_wrappoke_cache(p)
+	var skel: Skeleton3D = p.garb._skel
+	var reading := [false]
+	var rd := func() -> void:
+		if reading[0]:
+			_wrappoke_read(p)
+	skel.skeleton_updated.connect(rd)
+	var base := p.global_position
+	for mode in ["tap", "hold", "press", "run"]:
+		p.global_position = base
+		p.velocity = Vector3.ZERO
+		p.stamina = p.stamina_max
+		for i in 120:
+			await get_tree().physics_frame
+			if p.is_on_floor() and p.land_t < 0.0:
+				break
+		await _ticks(4)
+		if mode == "run":
+			for i in 40:
+				p.bot_input = _stick_for(p, Vector3(1, 0, 0))
+				await get_tree().physics_frame
+		reading[0] = true
+		p.bot_jump = true
+		p.bot_jump_hold = mode != "tap"
+		await _ticks(1)
+		for i in 90:
+			if mode == "press" and i == 6:
+				p.bot_jump_hold = false   # the shots' press=0.12
+			if mode == "run":
+				p.bot_input = _stick_for(p, Vector3(1, 0, 0))
+			await get_tree().physics_frame
+			if i > 4 and p.is_on_floor():
+				break
+		await _ticks(10)
+		reading[0] = false
+		p.bot_jump = false
+		p.bot_jump_hold = false
+		p.bot_input = Vector2.ZERO
+		print("BOT wrappoke %s: worst body vert out through a leg binding so far %.4f m: %s" % [mode, _poke_worst, _poke_desc])
+		print("BOT wrappoke %s: deepest other-limb vert inside a leg binding so far %.4f m: %s" % [mode, _intr_worst, _intr_desc])
+		if mode != "run":
+			_intr_stand = _intr_worst
+	skel.skeleton_updated.disconnect(rd)
+	print("BOT wrappoke coverage: the hero's bindings lifted over %d body verts, largest lift %.4f m" % [p.garb.wrap_covered, p.garb.wrap_cover_max])
+	if _poke_worst > POKE_GATE:
+		print("BOT FAIL: wrappoke the base body shows %.4f m out through a leg binding (gate %.3f)" % [_poke_worst, POKE_GATE])
+	elif _intr_stand > POKE_GATE:
+		print("BOT FAIL: wrappoke a hand goes %.4f m into a leg binding in a standing jump (gate %.3f)" % [_intr_stand, POKE_GATE])
+	else:
+		print("BOT PASS: wrappoke")
+	get_tree().quit()
 
 func _jump_test() -> void:
 	var p := _player

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261117-2045-kstop45.jpg",
-  "time": "2026-11-17T20:45:00Z",
-  "caption": "Ashen knight at x3.2 half a second after stopping a walk: both boots planted wide on the turf; the lens sits behind its flank, the foreground is a dark shadow blob and the trees read blotchy.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-2046-kstop100.jpg",
-  "time": "2026-11-17T20:46:00Z",
-  "caption": "Same stop 1.8 s later, after the settle steps and the release: the boots have not moved (the creep is gone); framing and lighting still not Wukong-grade.",
-  "verdict": "fail"
- },
- {
-  "file": "20261118-0221-knight-crown-daze.jpg",
-  "time": "2026-11-18T02:21:26Z",
-  "caption": "Crown reel daze, front-lit: left gauntlet cupping the bowed helm, glaive drooped blade-first to the turf, knees buckled; armour reads dark and flat in the GL fallback renderer.",
-  "verdict": "fail"
- },
- {
-  "file": "20261118-0221-knight-crown-impact.jpg",
-  "time": "2026-11-18T02:21:26Z",
-  "caption": "Crown reel impact frame, front-lit for the first time: the glaive is now knocked down across the body with the bowed head instead of standing at guard height; the giant's scale still does not read without the hero in frame.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-0317-surge-kneel-flank.jpg",
   "time": "2026-11-18T03:17:41Z",
   "caption": "The surge's coil from the knight's flank: down on its knee, hunched over the glaive as the plate cracks glow; a fallen slab darkens the foreground, and from the front the kneel barely reads.",
@@ -897,6 +873,18 @@
   "file": "20261121-0930-kneebend-jump.jpg",
   "time": "2026-11-21T09:30:00Z",
   "caption": "The hero mid running jump with the knee-bent bindings; figure still dark under the GL software renderer and a sun-shaft streak in the sky.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-1130-speck-before-after.jpg",
+  "time": "2026-11-21T10:55:10Z",
+  "caption": "Standing jump at jt 0.38, near leg 4x: before (left) / after the smaller tuck draw-in (right). The pale speck on the leg binding is STILL there: it is base-body geometry (gone with the body hidden), but no body vertex goes into the binding in the CPU probe, so its cause is still open.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-1130-speck-jump.jpg",
+  "time": "2026-11-21T10:55:10Z",
+  "caption": "Standing jump side lens at jt 0.38 after the change: the arms in the tuck sit a little wider off the knees; the figure is still dark in GL and the binding speck remains.",
   "verdict": "fail"
  }
 ]

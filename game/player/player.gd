@@ -422,7 +422,10 @@ var _stand_out := 0.0                  # rad this tick, before the arms' hang we
 # knees, elbows bent; the abduction comes back out only as the legs reach for the ground. TUCKARM_OLD=1 = before.
 var TUCKARM_OLD := OS.get_environment("TUCKARM_OLD") == "1"
 var STAND_ARM_TUCK2 := float(OS.get_environment("STAND_ARM_TUCK2")) if OS.get_environment("STAND_ARM_TUCK2") != "" else 0.9
-var STAND_TUCK_IN := float(OS.get_environment("STAND_TUCK_IN")) if OS.get_environment("STAND_TUCK_IN") != "" else 0.8   # rad: arms drawn in toward the knees in the tuck
+# (11-21 10:00) 0.8 -> 0.6: at 0.8 the right hand came down into the right thigh binding at jt
+# 0.38-0.42 (2 cm deep at the pinky, bot `wrappoke`) and the pale gauntlet showed through the
+# binding as a grey speck by the knee. STAND_TUCK_IN=0.8 = before.
+var STAND_TUCK_IN := float(OS.get_environment("STAND_TUCK_IN")) if OS.get_environment("STAND_TUCK_IN") != "" else 0.6   # rad: arms drawn in toward the knees in the tuck
 var STAND_ELBOW_TUCK2 := float(OS.get_environment("STAND_ELBOW_TUCK2")) if OS.get_environment("STAND_ELBOW_TUCK2") != "" else 0.4
 # (11-19 16:00) the fall (jt 0.40-0.50): the arms stayed forward at chest height from the tuck
 # (only 40 % of the abduction came back, upper arms 0.6 forward), so the body fell with nothing
