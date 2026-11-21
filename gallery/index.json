@@ -886,5 +886,17 @@
   "time": "2026-11-21T08:30:00Z",
   "caption": "Hero and Hollow soldier squaring up in the meadow at 11:00 with the fixed bindings; figures still cast shadows, but the faces/hood and the house read flat and dark.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261121-0930-kneebend-before-after.jpg",
+  "time": "2026-11-21T09:30:00Z",
+  "caption": "Running jump tuck, legs at 4x: before (left) the thigh binding ends square over a dark notch under the bent knee; after (right) it bends down into the shin binding. Still a pale speck on the thigh binding.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0930-kneebend-jump.jpg",
+  "time": "2026-11-21T09:30:00Z",
+  "caption": "The hero mid running jump with the knee-bent bindings; figure still dark under the GL software renderer and a sun-shaft streak in the sky.",
+  "verdict": "fail"
  }
 ]

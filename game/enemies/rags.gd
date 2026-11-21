@@ -19,6 +19,10 @@ var wrap_inset := 0.0
 const WRAP_LIP := 0.08     # share of a wrap's v at each end taken by the rolled, turned-in cuff
 const WRAP_ROLL := 0.008   # m, radius of the cuff's roll
 const WRAP_HOLE := 0.2     # the cuff turns in to this share of the rim radius (0.5 still showed a hole end-on)
+## (11-21) m either side of the knee over which a thigh/shin binding blends from its own bone to
+## the other leg bone (rag.gdshader `bend_xf`): rigid on one bone each, the two tubes' ends split
+## open into a wedge at a bent knee. Half-and-half at the joint, like the skin under them.
+const KNEE_BLEND_M := 0.06
 const FOOT_TAPER := 0.5    # share of a foot wrap's length, at the toe end, over which it narrows
 const FOOT_TAPER_R := 0.6 # the foot wrap's radius at the toe end vs its fitted shell
 const FOOT_TAPER0 := 0.45  # share at the ankle end over which it narrows onto the ankle, under the shin wrap
@@ -48,6 +52,9 @@ var _hips := -1
 var _swing_f := 0.0
 var _swing_b := 0.0
 var wraps := 0          # bandage wraps on thighs, shins, feet and forearms, for the bots
+## (11-21) thigh/shin bindings bent through the knee: [material, own bone, other bone,
+## own rest-in-body, other rest-in-body]; `knee_bend_xf()` feeds rag.gdshader `bend_xf`
+var knee_bends: Array = []
 var peak_swing := 0.0   # largest tabard swing so far (rad), for the bots
 var _last_pos := Vector3.ZERO
 var _vel := Vector3.ZERO
@@ -776,6 +783,53 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_attach(bone).add_child(piece)
 	wraps += 1
+	_knee_bend(bone, tip, t0, t1, lip, axis.length(), mat)
+
+## (11-21) a binding that reaches the knee (thigh: UpLeg -> Leg, shin: Leg -> Foot) blends from
+## its own bone to the other leg bone over KNEE_BLEND_M either side of the joint, half and half
+## at the joint (the shader's `bend_xf`, updated after every skeleton pose). Rigid to one bone
+## each, the thigh's lower end and the shin's upper end split into a wedge at a bent knee and
+## the dark leg showed between them (`KNEEBEND_OLD=1` = before).
+func _knee_bend(bone: String, tip: String, t0: float, t1: float, lip: float, length: float,
+		mat: ShaderMaterial) -> void:
+	if OS.has_environment("KNEEBEND_OLD") or length <= 0.0:
+		return
+	var bi := _skel.find_bone(bone)
+	var other := -1
+	var centre := 0.0
+	var dir := 1.0
+	if bone.ends_with("UpLeg") and tip.ends_with("Leg") and t1 > 1.0 - 2.0 * KNEE_BLEND_M / length:
+		other = _skel.find_bone(tip)
+		centre = 1.0
+	elif bone.ends_with("Leg") and not bone.ends_with("UpLeg") and t0 < 2.0 * KNEE_BLEND_M / length:
+		other = _skel.get_bone_parent(bi)
+		dir = -1.0
+	if other < 0:
+		return
+	mat.set_shader_parameter("bend_t", Vector4(t0, t1, lip, dir))
+	mat.set_shader_parameter("bend_c", Vector2(centre, KNEE_BLEND_M / length))
+	mat.set_shader_parameter("bend_on", 1.0)
+	knee_bends.append([mat, bi, other, _rest_in_body(bi), _rest_in_body(other)])
+	if knee_bends.size() == 1 and not _skel.skeleton_updated.is_connected(_update_knee_bends):
+		_skel.skeleton_updated.connect(_update_knee_bends)
+
+## The other bone's rigid motion seen from a binding's own bone, in the piece's local space (its
+## body rest space): G_own^-1 * G_other with G = pose_global * rest_in_body^-1.
+func knee_bend_xf(kb: Array) -> Transform3D:
+	var po := _skel.get_bone_global_pose(kb[1])
+	var pt := _skel.get_bone_global_pose(kb[2])
+	return (kb[3] as Transform3D) * po.affine_inverse() * pt * (kb[4] as Transform3D).affine_inverse()
+
+## The weight toward the other bone the shader gives a binding vertex at grid v `vg` (bots).
+static func knee_bend_w(vg: float, bend_t: Vector4, bend_c: Vector2) -> float:
+	var v := clampf((vg - bend_t.z) / (1.0 - 2.0 * bend_t.z), 0.0, 1.0)
+	var t := lerpf(bend_t.x, bend_t.y, v)
+	var s := smoothstep(bend_c.x - bend_c.y, bend_c.x + bend_c.y, t)
+	return s if bend_t.w > 0.0 else 1.0 - s
+
+func _update_knee_bends() -> void:
+	for kb in knee_bends:
+		(kb[0] as ShaderMaterial).set_shader_parameter("bend_xf", knee_bend_xf(kb))
 
 ## The deep cowl: a dome over the crown that opens round the face and flares out over the
 ## shoulders. It hangs in gathered drape folds (`pleat_phase()` over `n` folds across the hood,

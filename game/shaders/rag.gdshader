@@ -53,6 +53,10 @@ uniform vec2 fold2 = vec2(1000.0, 0.0); // a second, further fold (where it meet
 uniform vec2 fold = vec2(1000.0, 0.0); // a panel: (distance down from the seam, angle) it bends at, over the knees
 uniform float twist = 0.0;         // (11-20) rad a streaming panel rolls about its long axis by the hem (0 at the seam), so it shows its face
 uniform float ripple = 0.0;        // (11-20) m of a lateral wave running down a streaming panel to the hem
+uniform float bend_on = 0.0;        // (11-21) 1: a thigh/shin binding bent through the knee (rags.gd _knee_bend)
+uniform mat4 bend_xf = mat4(1.0);    // the other leg bone's motion in this piece's space
+uniform vec4 bend_t = vec4(0.0, 1.0, 0.0, 1.0);  // (t0, t1, lip, dir): grid v -> t along the bone; dir +1 = weight rises with t
+uniform vec2 bend_c = vec2(1.0, 0.1);           // (joint t, half width in t)
 uniform float droop = 0.0;         // (11-20 01:00) m the torn hem tongues of a streaming panel hang toward world down at their tips
 uniform float fold_len = 0.0;      // > 0: `fold` bends round a true arc this long (m, >= 0.07) instead of a 7 cm crease
 uniform float gore = 0.0;          // 1: this piece is a side gore
@@ -258,6 +262,15 @@ void settle_side(inout vec3 v, vec4 e, float a) {
 }
 
 void vertex() {
+	// (11-21) a binding through the knee: blend toward the other leg bone near the joint (by hand
+	// linear blend skinning, half and half at the joint); must match HollowRags.knee_bend_w()
+	if (bend_on > 0.5) {
+		float bv = clamp((UV.y - bend_t.z) / (1.0 - 2.0 * bend_t.z), 0.0, 1.0);
+		float bs = smoothstep(bend_c.x - bend_c.y, bend_c.x + bend_c.y, mix(bend_t.x, bend_t.y, bv));
+		float bw = bend_t.w > 0.0 ? bs : 1.0 - bs;
+		VERTEX = mix(VERTEX, (bend_xf * vec4(VERTEX, 1.0)).xyz, bw);
+		NORMAL = normalize(mix(NORMAL, mat3(bend_xf) * NORMAL, bw));
+	}
 	float w = UV.y * UV.y * step(wrap_turns, 0.0) * (1.0 - rigid);
 	hem_w = w;
 	// (11-20) a panel streaming in the air rolls about its own long axis (more toward the hem) and a

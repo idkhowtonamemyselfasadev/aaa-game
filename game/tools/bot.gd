@@ -4828,6 +4828,64 @@ const RS_ROLL_GATE := 0.25                 # rad, the streaming back panel's hem
 const RS_CORNER_GATE := 0.03               # m, the rolled hem's corners off either heel
 const RS_DROOP_GATE := 0.035               # m, the streaming back panel's longest hem tongue hangs at least this far toward world down
 const RS_WRAP_OPEN_GATE := 0.75  # a wrap end ring vs its mid ring (rolled, turned-in cuff)
+const RS_KNEE_GAP_GATE := 0.075  # (11-21) m, thigh vs shin binding rims at the deepest knee bend
+const RS_KNEE_GAP_SHARE := 0.75  # ... and at most this share of the rigid (unbent) gap
+var knee_rigid := 0.0
+var knee_bent := 0.0
+var knee_deg := 0.0
+var knee_rigid_f := 0.0
+var knee_bent_f := 0.0
+
+## (11-21) per leg: the thigh binding's lower rim and the shin binding's upper rim, sampled round
+## the limb at matching u, in world space; the widest pair gap rigid (each on its own bone) and as
+## the shader draws them (HollowRags.knee_bend_w / knee_bend_xf), plus the knee bend in degrees.
+func _knee_wedge(p: Node) -> Array:
+	var g = p.garb
+	var skl: Skeleton3D = g._skel
+	var res := [0.0, 0.0, 0.0, 0.0, 0.0]   # rigid back, bent back, knee deg, rigid front, bent front
+	for side in ["Left", "Right"]:
+		var th := p.find_child("WrapLeftUpLeg".replace("Left", side), true, false) as MeshInstance3D
+		var sh := p.find_child("WrapLeftLeg".replace("Left", side), true, false) as MeshInstance3D
+		if th == null or sh == null:
+			continue
+		var a := skl.get_bone_global_pose(skl.find_bone("mixamorig_%sUpLeg" % side)).origin
+		var b := skl.get_bone_global_pose(skl.find_bone("mixamorig_%sLeg" % side)).origin
+		var c := skl.get_bone_global_pose(skl.find_bone("mixamorig_%sFoot" % side)).origin
+		res[2] = maxf(res[2], rad_to_deg((b - a).angle_to(c - b)))
+		var rims := []
+		for pair in [[th, HollowRags.WRAP_LIP, 0.92], [sh, HollowRags.WRAP_LIP, 0.08]]:
+			var wm: MeshInstance3D = pair[0]
+			var mat := wm.material_override as ShaderMaterial
+			var on: float = mat.get_shader_parameter("bend_on")
+			var xf := Transform3D.IDENTITY
+			var bt := Vector4(0, 1, 0, 1)
+			var bc := Vector2(1, 0.1)
+			if on > 0.5:
+				for kb in g.knee_bends:
+					if kb[0] == mat:
+						xf = g.knee_bend_xf(kb)
+				bt = mat.get_shader_parameter("bend_t")
+				bc = mat.get_shader_parameter("bend_c")
+			var arr: Array = wm.mesh.surface_get_arrays(0)
+			var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+			var rim := {}
+			for k in vs.size():
+				if absf(uvs[k].y - pair[2]) < 0.015:
+					var w := HollowRags.knee_bend_w(uvs[k].y, bt, bc) if on > 0.5 else 0.0
+					var key := roundi(uvs[k].x * 24.0) % 24
+					rim[key] = [wm.global_transform * vs[k], wm.global_transform * vs[k].lerp(xf * vs[k], w)]
+			rims.append(rim)
+		for key in rims[0]:
+			if rims[1].has(key):
+				# u 0 = body forward (the knee cap, which stretches over the bend like the skin
+				# and is covered by the leather knee guard); the back half is the hollow of the knee
+				var o := 3 if absi(key - 12) <= 6 else 0
+				if absi(key - 12) <= 6 or key <= 2 or key >= 22:
+					var oi := 0 if o == 3 else 3
+					res[oi] = maxf(res[oi], (rims[0][key][0] as Vector3).distance_to(rims[1][key][0]))
+					res[oi + 1] = maxf(res[oi + 1], (rims[0][key][1] as Vector3).distance_to(rims[1][key][1]))
+	return res
 const RS_FOOT_SPAN_GATE := 0.19  # m, a foot wrap's widest ring diameter (underside held off the heel; 11-20 04:00)
 const RS_FOOT_SIDE_GATE := 0.08  # m, a foot wrap's reach out to either flank off its ring centre (11-20 05:00)
 const RS_FOOT_TAPER_GATE := 0.8  # a foot wrap's ring just inside either cuff vs its mid ring (tapered binding)
@@ -5205,6 +5263,13 @@ func _runstrike_test() -> void:
 					worst_corner = minf(worst_corner, (tip - hl).length())
 			best_droop = maxf(best_droop, g.tongue_droop(1.0, btear, g.back_droop))
 			if OS.has_environment("RS_TRACE"): print("RS back over %.2f swing_b %.2f fold %.2f@%.2f round %.2f sag_w %.2f drop %+.3f" % [bover, g._swing_b, g.fold_back.y, g.fold_back.x, g.back_round, g.sag_w, (straight - bhem).dot(up)])
+		# (11-21) the thigh and shin bindings' facing rims at the knee, rigid vs bent through it
+		var kw := _knee_wedge(p)
+		knee_rigid = maxf(knee_rigid, kw[0])
+		knee_bent = maxf(knee_bent, kw[1])
+		knee_deg = maxf(knee_deg, kw[2])
+		knee_rigid_f = maxf(knee_rigid_f, kw[3])
+		knee_bent_f = maxf(knee_bent_f, kw[4])
 		var hem_up := hem.dot(up) - kh
 		ticks += 1
 		worst_ahead = maxf(worst_ahead, ahead)
@@ -5221,6 +5286,14 @@ func _runstrike_test() -> void:
 	p.bot_input = Vector2.ZERO
 	# (11-20 02:00) the bandage wraps' ends roll over and turn in: each end ring's radius about its
 	# own centre against the tube's mid ring (an open tube end was a hollow pipe at a bent knee)
+	# (11-21) the bindings bent through the knee (rags.gd _knee_bend): the widest gap between the
+	# thigh binding's lower rim and the shin binding's upper rim over the run, rigid vs as drawn
+	var kbn: int = p.garb.knee_bends.size()
+	print("BOT runstrike knee: deepest knee bend %.0f deg, thigh vs shin binding rims behind the knee: widest gap rigid %.3f m -> as drawn %.3f m (%d bent bindings; gate <= %.3f and <= %.2f x rigid); in front (over the knee guard) rigid %.3f -> %.3f" % [knee_deg, knee_rigid, knee_bent, kbn, RS_KNEE_GAP_GATE, RS_KNEE_GAP_SHARE, knee_rigid_f, knee_bent_f])
+	if knee_deg > 40.0 and (knee_bent > RS_KNEE_GAP_GATE or knee_bent > RS_KNEE_GAP_SHARE * knee_rigid):
+		print("BOT FAIL: runstrike knee bindings split at a bent knee")
+		get_tree().quit()
+		return
 	var wrap_n := 0
 	var worst_open := 0.0
 	var foot_n := 0
