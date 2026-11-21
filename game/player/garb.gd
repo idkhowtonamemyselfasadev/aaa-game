@@ -347,6 +347,23 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 			rm.set_shader_parameter("soot_amt", 0.35)
 	tint = []
 	_last_pos = body.global_position
+	if OS.has_environment("GARB_DBGCOL"):
+		# judging only: every garb/staff/glider mesh on the body gets a flat unshaded colour overlay
+		# (by index; the second dozen at half brightness) to tell in a frame which piece is which
+		# (the base body's own meshes are left as they are); the index -> name list is printed
+		var gcols := [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.CYAN, Color.MAGENTA,
+				Color.ORANGE, Color.WHITE, Color.PURPLE, Color.LIME, Color.PINK, Color.TEAL]
+		var gi := 0
+		for gm in _body.find_children("*", "MeshInstance3D", true, false):
+			if gm.name.begins_with("vanguard"):
+				continue
+			var um := StandardMaterial3D.new()
+			um.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			um.albedo_color = gcols[gi % gcols.size()] * (1.0 if gi < gcols.size() else 0.45)
+			um.cull_mode = BaseMaterial3D.CULL_DISABLED
+			(gm as MeshInstance3D).material_overlay = um
+			print("SHOT garbdbg %d %s / %s" % [gi, gm.get_parent().name, gm.name])
+			gi += 1
 
 ## A wrap's dark and light tones drawn toward their mean by wrap_calm: the full spread mottled
 ## the villagers' shin and forearm wraps into pale-grey and black blotches like plate greaves.
