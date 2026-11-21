@@ -886,5 +886,17 @@
   "time": "2026-11-21T04:54:05Z",
   "caption": "Running from the follow camera: the staff, now also tied at the hip, keeps its line down the left leg with no tail behind the hero; lighting dim, small in frame.",
   "verdict": "fail"
+ },
+ {
+  "file": "20261121-0530-robeholes-cmp.jpg",
+  "time": "2026-11-21T05:30:00Z",
+  "caption": "Hero's madder robe in the jump attack, before (left: moth holes read as black specks) and after (right: clean cloth, torn hem kept); the pale knee caps still read as grey plastic blocks.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0530-robeholes-front.jpg",
+  "time": "2026-11-21T05:30:00Z",
+  "caption": "Standing jump attack front-on at jt 0.585 with the hole-free robe; figure still dark in GL, pale knee caps and a sky sun-shaft streak remain.",
+  "verdict": "fail"
  }
 ]

@@ -327,6 +327,13 @@ func build(skel: Skeleton3D, body: Node3D) -> void:
 		booted = _mark_boots()
 	if basket:
 		_basket()
+	# (11-21) no moth holes in the hero's cloth either: the panels took the Hollow rags' 0.25,
+	# and at play range each hole (plus its soot rim) showed the dark legs through as black
+	# specks scattered over the madder robe, like dirt on the lens (`ja_front`). The torn hem
+	# and side bites stay. `ROBEHOLES_OLD=1` = before.
+	if not OS.has_environment("ROBEHOLES_OLD"):
+		for rm in mats:
+			rm.set_shader_parameter("holes", 0.0)
 	if mended:
 		for rm in mats:
 			rm.set_shader_parameter("holes", 0.0)
