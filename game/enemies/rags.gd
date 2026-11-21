@@ -768,6 +768,12 @@ func _wrap(bone: String, tip: String, t0: float, t1: float, pad: float, turns: f
 	# (11-20 14:00) aged, unevenly wound strips (WRAPAGE_OLD=1: the before, even grain-like turns)
 	mat.set_shader_parameter("wrap_jitter", wjit)
 	mat.set_shader_parameter("wrap_age", 0.0 if OS.has_environment("WRAPAGE_OLD") else 1.0)
+	# (11-21) the binding shell sits a centimetre off the limb and is double-sided
+	# (rag.gdshader cull_disabled), so in the sun's shadow map it shadowed ITSELF: in shade, from
+	# behind, wavy contour rings (shadow acne) ran across the turns. The limb under it still
+	# casts the binding's shadow, so the shell need not. WRAPACNE_OLD=1 = the before.
+	if not OS.has_environment("WRAPACNE_OLD"):
+		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_attach(bone).add_child(piece)
 	wraps += 1
 

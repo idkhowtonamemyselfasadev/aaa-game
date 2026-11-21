@@ -7827,6 +7827,18 @@ func _soldier_test() -> void:
 	print("BOT soldier: %d sabaton verts marked iron (gate 150..3000)" % s.rags.sabaton_verts)
 	if not OS.has_environment("SABATON_OLD") and (s.rags.sabaton_verts < 150 or s.rags.sabaton_verts > 3000):
 		return _combat_done(false, "soldier sabatons not marked as iron")
+	# (11-21) the limb bindings cast no shadow (the double-sided shell shadowed itself: contour
+	# rings in shade; `WRAPACNE_OLD=1` = before); the hero's garb bindings likewise
+	var wcast := 0
+	var wall := 0
+	for who in [s, p]:
+		for wm in who.find_children("Wrap*", "MeshInstance3D", true, false):
+			wall += 1
+			if (wm as MeshInstance3D).cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+				wcast += 1
+	print("BOT soldier: %d of %d soldier+hero bindings still cast a shadow (gate 0)" % [wcast, wall])
+	if not OS.has_environment("WRAPACNE_OLD") and (wall < 4 or wcast > 0):
+		return _combat_done(false, "limb bindings still cast (self-)shadows")
 	if s.state != HollowSoldier.IDLE:
 		return _combat_done(false, "soldier should be idle while the hero is far away")
 	# 1) walk toward it until it notices and stalks in, then stand and take the first thrust

@@ -1,29 +1,5 @@
 [
  {
-  "file": "20261117-1500-bossturn-sunside.jpg",
-  "time": "2026-11-17T15:00:00Z",
-  "caption": "The final-size boss turning on the spot, new sun-side boot lens at 11:30 (frames 56 and 68): the outside boot lifts heel-up then sets beside the planted one, sabatons now lit; the trampled ring turf under them is still dark and the boots stack from this side.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1600-bossturn-settle.jpg",
-  "time": "2026-11-17T16:00:00Z",
-  "caption": "Final-size boss's turn settle, frames 52 / 62: outer boot set flat, then the short settle step now lifted instead of shuffled; ring turf still dark and flat in GL.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1823-bossturn32.jpg",
-  "time": "2026-11-17T18:23:56Z",
-  "caption": "Final-size boss mid-turn on the spot from the low sun-side boot lens: the stepping boot comes round lifted; the lens still crops the body at the hips and stacks the boots.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1823-bossturn48.jpg",
-  "time": "2026-11-17T18:23:56Z",
-  "caption": "Same turn after the settle step: both boots planted on the turf where the squared body wants them, no slide; framing and the dark shadow blob in the foreground still need work.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-2045-kstop45.jpg",
   "time": "2026-11-17T20:45:00Z",
   "caption": "Ashen knight at x3.2 half a second after stopping a walk: both boots planted wide on the turf; the lens sits behind its flank, the foreground is a dark shadow blob and the trees read blotchy.",
@@ -804,27 +780,27 @@
   "verdict": "fail"
  },
  {
-  "file": "20261120-2230-jumpattack-roll05-cmp.jpg",
-  "time": "2026-11-20T22:30:00Z",
-  "caption": "Jump attack front-on, close-ups: 0.35 rad head roll at jt 0.53 (left), the new 0.5 rad roll at jt 0.53 (middle) and at jt 0.55 (right). The shaft moves a little further off the cheek, but at 0.53 it still touches the mask's edge.",
-  "verdict": "fail"
- },
- {
   "file": "20261120-2230-jumpattack-roll05-055.jpg",
   "time": "2026-11-20T22:30:00Z",
   "caption": "Standing jump attack at jt 0.55 with the stronger head roll: the face is clear of the canted shaft. The figure still reads dark under the GL fallback.",
   "verdict": "fail"
  },
  {
-  "file": "20261120-2312-jumpattack-tiltfade-cmp.jpg",
-  "time": "2026-11-20T23:12:00Z",
-  "caption": "Jump attack front-on close-ups: old tilt fade at jt 0.53 (left), the new earlier fade at jt 0.53 (middle), and the new fade at jt 0.51 (right). At 0.53 the shaft clears the cheek a little more; at 0.51 the vertical shaft still crosses the mask's edge.",
+  "file": "20261120-2230-jumpattack-roll05-cmp.jpg",
+  "time": "2026-11-20T22:30:00Z",
+  "caption": "Jump attack front-on, close-ups: 0.35 rad head roll at jt 0.53 (left), the new 0.5 rad roll at jt 0.53 (middle) and at jt 0.55 (right). The shaft moves a little further off the cheek, but at 0.53 it still touches the mask's edge.",
   "verdict": "fail"
  },
  {
   "file": "20261120-2312-jumpattack-tiltfade-055.jpg",
   "time": "2026-11-20T23:12:00Z",
   "caption": "Standing jump attack at jt 0.55 with the faster tilt fade: face clear of the canted shaft; the figure still reads dark under the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261120-2312-jumpattack-tiltfade-cmp.jpg",
+  "time": "2026-11-20T23:12:00Z",
+  "caption": "Jump attack front-on close-ups: old tilt fade at jt 0.53 (left), the new earlier fade at jt 0.53 (middle), and the new fade at jt 0.51 (right). At 0.53 the shaft clears the cheek a little more; at 0.51 the vertical shaft still crosses the mask's edge.",
   "verdict": "fail"
  },
  {
@@ -888,15 +864,27 @@
   "verdict": "fail"
  },
  {
+  "file": "20261121-0630-kneecaps-cmp.jpg",
+  "time": "2026-11-21T06:30:00Z",
+  "caption": "Knee caps before (left, pale grey plastic) and after (right, dark leather in line with the shin wraps), 2x crop of the same frame.",
+  "verdict": "fail"
+ },
+ {
   "file": "20261121-0630-kneecaps-front.jpg",
   "time": "2026-11-21T06:30:00Z",
   "caption": "Standing jump attack front-on: the knee caps are now dark worn leather guards instead of pale grey blocks; the figure is still dark in GL and the sky's sun-shaft streak remains.",
   "verdict": "fail"
  },
  {
-  "file": "20261121-0630-kneecaps-cmp.jpg",
-  "time": "2026-11-21T06:30:00Z",
-  "caption": "Knee caps before (left, pale grey plastic) and after (right, dark leather in line with the shin wraps), 2x crop of the same frame.",
+  "file": "20261121-0830-soldier-bindings-before-after.jpg",
+  "time": "2026-11-21T08:30:00Z",
+  "caption": "Soldier's leg bindings from behind in shade, before (left: wavy contour rings from shadow acne) and after (clean wound strips); the sabatons still read grey and the foreground stone reads as a soft block.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0830-soldier-wide.jpg",
+  "time": "2026-11-21T08:30:00Z",
+  "caption": "Hero and Hollow soldier squaring up in the meadow at 11:00 with the fixed bindings; figures still cast shadows, but the faces/hood and the house read flat and dark.",
   "verdict": "fail"
  }
 ]
