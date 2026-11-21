@@ -2840,6 +2840,9 @@ func _ready() -> void:
 		var jh := player.global_position.y - terrain.height_at(player.global_position.x, player.global_position.z)
 		var back := Vector3(jstart.x, 0, jstart.z) + Vector3(0, terrain.height_at(jstart.x, jstart.z) + jh, 0)
 		player.global_position = back
+		# (11-21) the swing trail is top_level in world space: carry it back with the hero, or
+		# it stays where the leap ended (nearer the lens) and reads as a huge light shaft
+		player.combat.shift_trail(back - jstart - jd)
 		if "pivotlens" in args or "stoplens" in args:
 			# pivotlens: a low front-3/4 lens on the frozen hero itself, on the sun side, so the
 			# skid, the planted leg and the shoulders winding round all face the camera in light

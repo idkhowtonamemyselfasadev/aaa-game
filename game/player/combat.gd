@@ -375,6 +375,15 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 	_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://shaders/swing_trail.gdshader")
+	# TRAIL_OLD=1: the trail before 11-21 (in stills it read as a ruled, striped light shaft)
+	if OS.has_environment("TRAIL_OLD"):
+		mat.set_shader_parameter("edge_fade", 0.0)
+		mat.set_shader_parameter("age_curve", 0.0)
+		mat.set_shader_parameter("streak", 0.6)
+		mat.set_shader_parameter("soft_tip", 0.0)
+		mat.set_shader_parameter("strength", 0.6)
+	if OS.has_environment("TRAIL_HIDE"):
+		_trail.visible = false
 	_trail.material_override = mat
 	player.add_child(_trail)
 
@@ -1894,6 +1903,17 @@ func _update_trail(delta: float) -> void:
 		var mid := staff.global_transform * Vector3(0, Staff.LENGTH * 0.12, 0)
 		_trail_pts.push_front([0.0, tip_position(), mid])
 	_age_trail(delta)
+
+## Moves the trail's world-space samples (shot tool: when it carries the frozen hero elsewhere).
+func shift_trail(offset: Vector3) -> void:
+	for p in _trail_pts:
+		p[1] += offset
+		p[2] += offset
+	if OS.has_environment("TRAIL_DBG"):
+		print("TRAIL off ", offset, " tip ", tip_position())
+		for p in _trail_pts:
+			print("TRAIL age %.3f tip %s mid %s" % [p[0], p[1], p[2]])
+	_age_trail(0.0)
 
 func _age_trail(delta: float) -> void:
 	for p in _trail_pts:
