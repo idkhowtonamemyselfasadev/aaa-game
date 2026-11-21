@@ -387,6 +387,16 @@ var LEAPDRIVE_OLD := OS.get_environment("LEAPDRIVE_OLD") == "1"
 var LEAP_ELBOW_FWD := 0.55 if LEAPDRIVE_OLD else (float(OS.get_environment("LEAP_ELBOW_FWD")) if OS.get_environment("LEAP_ELBOW_FWD") != "" else 1.3)   # rad: the forward arm's elbow (11-19 18:00: 0.60/1.0 -> 0.45/1.3, the forearm angles up, judged on lit front-3/4 frames)
 const LEAP_ELBOW_BACK := 0.22          # rad: the back arm, nearly straight
 var _leap_aim := 0.0                   # 0..1: how far the arms are hung straight before the leap's bends
+# (11-21 12:30) a running leap's arms lift out to the sides for balance as the legs reach down for
+# the ground, and stay a little out through the landing's sink: hung straight at the sides, the
+# same-side hand swung back over the thigh as the lead leg reached and as the hips flexed into the
+# landing, and the right thumb went 2.8 cm into the right thigh binding (wrappoke `run`). The
+# abduction now also eases back in over the landing instead of dropping to 0 the tick the arms
+# stop hanging. LEAPOUT_OLD=1 = before.
+var LEAPOUT_OLD := OS.get_environment("LEAPOUT_OLD") == "1"
+var LEAP_REACH_OUT := float(OS.get_environment("LEAP_REACH_OUT")) if OS.get_environment("LEAP_REACH_OUT") != "" else 0.30   # rad abduction at full reach
+var LEAP_PUSH_OUT := float(OS.get_environment("LEAP_PUSH_OUT")) if OS.get_environment("LEAP_PUSH_OUT") != "" else 0.18    # rad in the push's crouch
+var LEAP_LAND_OUT := float(OS.get_environment("LEAP_LAND_OUT")) if OS.get_environment("LEAP_LAND_OUT") != "" else 0.30    # rad at the landing's touchdown
 # (11-19 11:00) the standing jump's arms, hung straight first like the leap's (rad, on the hung arm)
 var STANDARM_OLD := OS.get_environment("STANDARM_OLD") == "1"
 const STAND_ARM_BACK := -0.55          # crouch: swung back behind the hips
@@ -2528,6 +2538,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			var rch := clampf(-velocity.y / 9.0, 0.0, 1.0)
 			arm = lerpf(arm, LEAP_ARM_BASE + 0.4 * rch, leap_arm)
 			elbow = lerpf(elbow, lerpf(LEAP_ELBOW_BACK, 0.5, rch), leap_arm)
+			if not LEAPOUT_OLD and not armed:
+				_stand_out = LEAP_REACH_OUT * leap_arm * smoothstep(0.0, 0.6, rch)
 		if _wj_t >= 0.0 and _wj_t < 0.24:
 			# kicked off a face: the chest arches back away from the stones, the arms fling out
 			# off the holds and the legs stay driven straight out of the kick before they gather
@@ -2547,6 +2559,9 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			knee = lerpf(knee, a0 * 2.0, crouch)
 			spine = lerpf(spine, 0.32, crouch)
 			arm = lerpf(arm, -0.45, crouch)     # arms swung back behind the hips, ready to throw
+			if not LEAPOUT_OLD and not armed and _jumped and _leap_s > 0.0 and _wj_t < 0.0:
+				# the running leap's push: the swung-back hand clears the thigh driving past it
+				_stand_out = maxf(_stand_out, LEAP_PUSH_OUT * _leap_s * crouch)
 			ankle *= 1.0 - crouch
 			flat = crouch
 		if _jumped and not JUMPARM_OLD and not STANDARM_OLD and _wj_t < 0.0 and _leap_s < 1.0:
@@ -2578,7 +2593,7 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 			elbow = lerpf(elbow, s_el, sw)
 			leap_arm += sw
 			if not STANDOUT_OLD and not DRIVEARM_OLD:
-				_stand_out = STAND_ARM_OUT * sw * smoothstep(STAND_THROW_HOLD - 0.02, STAND_THROW_HOLD + 0.04, t_air) \
+				_stand_out = (0.0 if LEAPOUT_OLD else _stand_out) + STAND_ARM_OUT * sw * smoothstep(STAND_THROW_HOLD - 0.02, STAND_THROW_HOLD + 0.04, t_air) \
 					* (1.0 - (0.6 * smoothstep(STAND_THROW_END - 0.02, STAND_THROW_END + 0.1, t_air) if TUCKARM_OLD \
 					else (1.0 - (0.4 if FALLARM_OLD else STAND_FALL_OUT / maxf(STAND_ARM_OUT, 0.01)) * fo) * smoothstep(STAND_THROW_END - 0.01, STAND_THROW_END + 0.07, t_air)))
 				if not TUCKARM_OLD:
@@ -2605,6 +2620,8 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		elbow = 0.5 * env
 		flat = 1.0                             # the soles stay flat on the turf as the knees give
 		_tuck = 0.0
+		if not LEAPOUT_OLD and not armed and _leap_s > 0.0 and not _land_strike:
+			_stand_out = LEAP_LAND_OUT * _leap_s * (1.0 - smoothstep(0.0, 0.7, u))
 		if _land_strike:
 			# the legs come down already tucked (the hips ~0.2 m over level feet), so the sink
 			# starts deep, gives a little more as the weight arrives (u 0.2), holds while the
@@ -2753,11 +2770,16 @@ func _jump_pose(delta: float, busy: bool, armed := false) -> void:
 		# yaws the chest off the body: the right forearm crossed the face on the drive)
 		if not CHESTARM_OLD:
 			crumple.arm_chest = _leap_aim * (1.0 if CHESTARM_LEAP else 1.0 - _leap_s)
+		if LEAPOUT_OLD:
+			crumple.arm_out = lerpf(crumple.arm_out, _stand_out * _jp, k_arm)
+			if _stand_out == 0.0 and absf(crumple.arm_out) < 0.003:
+				crumple.arm_out = 0.0
+	elif LEAPOUT_OLD and crumple != null and crumple.arm_out != 0.0:
+		crumple.arm_out = 0.0
+	if not LEAPOUT_OLD and crumple != null and (_stand_out != 0.0 or crumple.arm_out != 0.0):
 		crumple.arm_out = lerpf(crumple.arm_out, _stand_out * _jp, k_arm)
 		if _stand_out == 0.0 and absf(crumple.arm_out) < 0.003:
 			crumple.arm_out = 0.0
-	elif crumple != null and crumple.arm_out != 0.0:
-		crumple.arm_out = 0.0
 	leap_split = absf(crumple.hip_lr.x - crumple.hip_lr.y) + 2.2 * absf(crumple.stride) if _jp > 0.0 else 0.0
 	if pel != 0.0 or _ja_pelvis != 0.0:
 		_ja_pelvis = lerpf(_ja_pelvis, pel * _jp, k)

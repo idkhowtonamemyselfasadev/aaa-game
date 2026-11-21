@@ -4379,6 +4379,7 @@ var POKE_OWN := float(OS.get_environment("POKE_OWN")) if OS.has_environment("POK
 var POKE_COS := float(OS.get_environment("POKE_COS")) if OS.has_environment("POKE_COS") else -0.17
 var POKE_V0 := float(OS.get_environment("POKE_V0")) if OS.has_environment("POKE_V0") else 0.25
 var POKE_V1 := float(OS.get_environment("POKE_V1")) if OS.has_environment("POKE_V1") else 0.7
+var POKE_RUN_GATE := float(OS.get_environment("POKE_RUN_GATE")) if OS.has_environment("POKE_RUN_GATE") else 0.005
 var _poke_meshes := []
 var _poke_worst := 0.0
 var _poke_desc := ""
@@ -4507,7 +4508,7 @@ func _poke_intrude(fd: Array, sp: Vector3, v: int, md: Array, skel: Skeleton3D, 
 				wl += " %s:%.2f" % [skel.get_bone_name(binds[bones[v * per + k]]).trim_prefix("mixamorig_"), wts[v * per + k]]
 		_intr_desc = "%s %s vert %d v %.2f ang %.0f tick %d air %.2f s weights%s" % [fd[0], md[0], v, vv, rad_to_deg(ang), _poke_n, _player._air_t, wl]
 	if OS.has_environment("POKE_TRACE") and depth > 0.003:
-		print("POKET air %.2f %s depth %.4f v %.2f ang %.0f %s" % [_player._air_t, fd[0], depth, vv, rad_to_deg(ang), skel.get_bone_name(binds[bones[v * per]])])
+		print("POKET air %.2f land %.3f spd %.2f %s depth %.4f v %.2f ang %.0f %s" % [_player._air_t, _player.land_t, Vector2(_player.velocity.x, _player.velocity.z).length(), fd[0], depth, vv, rad_to_deg(ang), skel.get_bone_name(binds[bones[v * per]])])
 
 func _wrappoke_test() -> void:
 	var p := _player
@@ -4561,6 +4562,9 @@ func _wrappoke_test() -> void:
 		print("BOT FAIL: wrappoke the base body shows %.4f m out through a leg binding (gate %.3f)" % [_poke_worst, POKE_GATE])
 	elif _intr_stand > POKE_GATE:
 		print("BOT FAIL: wrappoke a hand goes %.4f m into a leg binding in a standing jump (gate %.3f)" % [_intr_stand, POKE_GATE])
+	elif _intr_worst > POKE_RUN_GATE:
+		# (11-21 12:30) the running leap's push, reach and landing: the arms lift out (LEAPOUT_OLD=1 = before, 0.0284 m)
+		print("BOT FAIL: wrappoke a hand goes %.4f m into a leg binding in a running jump (gate %.3f)" % [_intr_worst, POKE_RUN_GATE])
 	else:
 		print("BOT PASS: wrappoke")
 	get_tree().quit()

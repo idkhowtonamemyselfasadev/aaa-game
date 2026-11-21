@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261118-0317-surge-kneel-flank.jpg",
-  "time": "2026-11-18T03:17:41Z",
-  "caption": "The surge's coil from the knight's flank: down on its knee, hunched over the glaive as the plate cracks glow; a fallen slab darkens the foreground, and from the front the kneel barely reads.",
-  "verdict": "fail"
- },
- {
-  "file": "20261118-0317-surge-roar-front.jpg",
-  "time": "2026-11-18T03:17:41Z",
-  "caption": "The Ashen Knight's growth roar, front-lit at hour 9: glaive heaved up, fist raised, helm now thrown back; still small in frame at this distance and the knocked-down hero's pose is stiff.",
-  "verdict": "fail"
- },
- {
   "file": "20261118-0500-surge-hunch-before-after.jpg",
   "time": "2026-11-18T05:00:00Z",
   "caption": "Ashen Knight growth coil, front-lit: before (straight back, helm up) / after (spine curled, helm sunk between the shoulders) / flank after; the knight is still small in the lens and GL fallback lighting is flat.",
@@ -885,6 +873,18 @@
   "file": "20261121-1130-speck-jump.jpg",
   "time": "2026-11-21T10:55:10Z",
   "caption": "Standing jump side lens at jt 0.38 after the change: the arms in the tuck sit a little wider off the knees; the figure is still dark in GL and the binding speck remains.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-1230-leaparm-reach-before-after.jpg",
+  "time": "2026-11-21T11:15:00Z",
+  "caption": "Running leap late in the fall, front lens, 2x crop, old (left) vs new (right): the swung-back hand now hangs out from the hip for balance instead of tucked against the thigh; GL render, the figure still reads small and flatly lit.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-1230-leaparm-landing-before-after.jpg",
+  "time": "2026-11-21T11:15:00Z",
+  "caption": "Running leap landing (0.07 s in), old (left) vs new (right): the near hand is off the thigh guard; the other fist still lies across the belly like a guard, to fix next.",
   "verdict": "fail"
  }
 ]
