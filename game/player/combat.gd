@@ -330,6 +330,9 @@ func setup(p: Player, s: Staff, sk: Skeleton3D) -> void:
 	hold_on = OS.get_environment("KNOCK_FLOATSTAFF") == ""
 	skel.skeleton_updated.connect(_place_held)
 	skel.skeleton_updated.connect(_snatch_clear_posed)
+	# deferred: after the glider's own handler squares the furled roll (stow_on runs after setup)
+	if not OS.has_environment("STAFFROLL_OLD"):
+		_init_sling.call_deferred()
 	_target_r = _marker("GripR")
 	_target_l = _marker("GripL")
 	var pole_r := _marker("PoleR")
@@ -1895,6 +1898,115 @@ func _low_target_ahead() -> bool:
 		if to.length() < 3.4 and face.angle_to(to) < 1.3:
 			return true
 	return false
+
+## (11-21 03:30) the sheathed staff lies ON the furled glider roll where the two cross behind the
+## hero. The staff rides the chest (Spine2), the roll the pelvis (Spine, tied at the sash), and
+## at its back pose the shaft ran ~7 cm through the roll standing (bot `rollstaff`, clearance
+## -0.068 m) and dipped under it in a run (the chest leans over the pelvis). After every skeleton
+## update the shaft turns about a point near its top end (so nothing above moves toward the
+## head) until its surface rests on the roll's outer side, as a strapped staff over a bedroll
+## would. Eased in over ROLL_EASE after a sheathe so it settles rather than pops.
+## `STAFFROLL_OLD=1` = before.
+const ROLL_PIVOT := 0.85        # m along the shaft from its centre toward the top end
+const ROLL_REST := 0.003        # m of surface clearance kept
+const ROLL_STAFF_R := 0.0228    # the cloth grip's radius (the widest part that can cross)
+const ROLL_EASE := 0.2          # s
+var _roll_w := 0.0
+var _roll_t := -1.0
+## (11-21 04:30) a two-point sling: the shaft hung from the chest alone, so in a run (chest
+## leaning over the pelvis) its lower half sank ~7 cm into the hips and, pushed out over the
+## roll, trailed 0.4 m behind like a tail. Its lower end is now tied at the left hip too: a
+## helper on the low spine (Spine, where the roll rides) holds the shaft's point at SLING_LOW
+## (m from the centre, toward the butt), set SLING_OUT off the back on the first standing frame; each update the
+## shaft turns about its chest point SLING_HIGH so its axis runs through that hip point.
+## `SLING_OFF=1` = the roll rest alone (no hip tie). Envs SLING_LOW / SLING_OUT tune it.
+const SLING_HIGH := 0.55
+var SLING_LOW := float(OS.get_environment("SLING_LOW")) if OS.has_environment("SLING_LOW") else -0.45
+var SLING_OUT := float(OS.get_environment("SLING_OUT")) if OS.has_environment("SLING_OUT") else 0.10
+var _sling_low: Node3D
+var _sling_set := false
+
+func _init_sling() -> void:
+	if not OS.has_environment("SLING_OFF"):
+		var hb := skel.find_bone("mixamorig_Spine")
+		if hb >= 0:
+			var att := BoneAttachment3D.new()
+			att.name = "StaffSlingLow"
+			skel.add_child(att)
+			att.bone_name = "mixamorig_Spine"
+			_sling_low = Node3D.new()
+			att.add_child(_sling_low)
+			# placed on the first standing sheathed update (_rest_on_roll): the rest pose bends the
+			# chest over the pelvis unlike the idle, and a rest-solved hip point pulled the shaft
+			# ~7 cm into the body standing
+	skel.skeleton_updated.connect(_rest_on_roll)
+
+func _rest_on_roll() -> void:
+	var roll: Node3D = player.glider.stowed if player.glider != null else null
+	if state != SHEATHED or roll == null or not roll.is_visible_in_tree():
+		_roll_w = 0.0
+		_roll_t = -1.0
+		return
+	if _roll_t >= 0.0:
+		_roll_w = minf(_roll_w + get_process_delta_time() / ROLL_EASE, 1.0)
+	_roll_t = 0.0
+	staff.transform = _back_xform
+	if _sling_low != null and not _sling_set:
+		if player.velocity.length() > 0.2 or not player.is_on_floor():
+			return
+		var gc := staff.global_transform
+		_sling_low.global_transform = Transform3D(Basis(), gc * Vector3(0, SLING_LOW, 0) - player.body.global_basis.z.normalized() * SLING_OUT)
+		_sling_set = true
+	if _sling_low != null:
+		var g0 := staff.global_transform
+		var up := g0 * Vector3(0, SLING_HIGH, 0)
+		var lo0 := g0 * Vector3(0, SLING_LOW, 0)
+		var lo1 := _sling_low.global_position
+		var qs := Quaternion((lo0 - up).normalized(), (lo1 - up).normalized())
+		staff.global_transform = Transform3D(Basis(qs) * g0.basis, up + Basis(qs) * (g0.origin - up))
+	var out := player.body.global_basis.z.normalized() * -1.0   # off the back, away from the body
+	var rh := roll.global_basis.x.normalized() * Glider.STOW_LEN * 0.5
+	var want := Glider.STOW_R + ROLL_STAFF_R + ROLL_REST
+	for it in 4:
+		var ax := staff.global_basis.y.normalized()
+		var sc := staff.global_position
+		var pivot := sc + ax * ROLL_PIVOT
+		var cp := _closest_on_segments(sc - ax * Staff.LENGTH * 0.5, sc + ax * Staff.LENGTH * 0.5, roll.global_position - rh, roll.global_position + rh)
+		var sep: Vector3 = cp[0] - cp[1]
+		var along := sep.dot(out)
+		var lat := (sep - out * along).length()
+		if lat >= want:
+			return
+		var shift := (sqrt(want * want - lat * lat) - along) * _roll_w
+		var arm: Vector3 = cp[0] - pivot
+		if OS.has_environment("STAFFROLL_DBG"):
+			var bi := player.body.global_transform.affine_inverse()
+			print("STAFFROLL it %d along %+.3f lat %.3f shift %+.3f arm %.2f staffpt %s rollpt %s" % [it, along, lat, shift, arm.length(), bi * (cp[0] as Vector3), bi * (cp[1] as Vector3)])
+		if arm.length() < 0.2 or absf(shift) < 0.0005:
+			return
+		var q := Quaternion(arm.normalized(), (arm + out * shift).normalized())
+		var g := staff.global_transform
+		staff.global_transform = Transform3D(Basis(q) * g.basis, pivot + Basis(q) * (g.origin - pivot))
+
+static func _closest_on_segments(p1: Vector3, q1: Vector3, p2: Vector3, q2: Vector3) -> Array:
+	var d1 := q1 - p1
+	var d2 := q2 - p2
+	var r := p1 - p2
+	var a := d1.dot(d1)
+	var e := d2.dot(d2)
+	var f := d2.dot(r)
+	var c := d1.dot(r)
+	var b := d1.dot(d2)
+	var den := a * e - b * b
+	var s := clampf((b * f - c * e) / den, 0.0, 1.0) if den > 1e-9 else 0.0
+	var t := (b * s + f) / e
+	if t < 0.0:
+		t = 0.0
+		s = clampf(-c / a, 0.0, 1.0)
+	elif t > 1.0:
+		t = 1.0
+		s = clampf((b - c) / a, 0.0, 1.0)
+	return [p1 + d1 * s, p2 + d2 * t]
 
 func tip_position() -> Vector3:
 	return staff.global_transform * Vector3(0, Staff.LENGTH * 0.5, 0)

@@ -1,23 +1,5 @@
 [
  {
-  "file": "20261117-1100-bossturn-hill-f62.jpg",
-  "time": "2026-11-17T11:00:00Z",
-  "caption": "Same turn 22 frames in: the outside boot lifts on its ball and swings round with no pop; turf reads as flat mottled dirt at this lens.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1300-turnsettle-cmp.jpg",
-  "time": "2026-11-17T13:00:00Z",
-  "caption": "Hero's right turn on the spot, settle ticks 48-66: top the old order (boots stacked together until tick 66), bottom the new order (far boot stepped out by tick 54, open stance held); boots still in shadow, lens crops the body.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1300-turnsettle-left.jpg",
-  "time": "2026-11-17T13:00:00Z",
-  "caption": "Left turn settle ticks 30-72 with the new order: the right boot steps wide over ticks 42-54 then holds, no slide; boot-scale lens only, dark turf.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-1400-turn-lit-left.jpg",
   "time": "2026-11-17T14:00:00Z",
   "caption": "Hero's left turn on the spot, ticks 0-72 every 8, front-lit at 11:00: head leads at tick 8, chest by 16, square by 32, boots planted apart and still from 56 on; the hero stands on a dark trampled patch so sole contact reads only from the lit boot tops.",
@@ -891,6 +873,18 @@
   "file": "20261121-0230-jumpattack-rear.jpg",
   "time": "2026-11-21T02:30:00Z",
   "caption": "Standing jump attack from behind at jt 0.565/0.585/0.605: the canted downswing reads as a chop toward the foe; the front-on 'flat' bar is the forward strike's projection. Still dark, hands small.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0430-rollstaff-back.jpg",
+  "time": "2026-11-21T04:54:05Z",
+  "caption": "Rear 3/4 of the idle hero: the sheathed staff now lies over the furled glider roll at the sash instead of running through it; figure still dark in the GL renderer.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0430-rollstaff-run.jpg",
+  "time": "2026-11-21T04:54:05Z",
+  "caption": "Running from the follow camera: the staff, now also tied at the hip, keeps its line down the left leg with no tail behind the hero; lighting dim, small in frame.",
   "verdict": "fail"
  }
 ]

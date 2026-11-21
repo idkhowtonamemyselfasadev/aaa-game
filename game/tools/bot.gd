@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "softlock", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "softlock", "rollstaff", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -143,6 +143,9 @@ func _ready() -> void:
 		return
 	if name == "softlock":
 		_softlock_test()
+		return
+	if name == "rollstaff":
+		_rollstaff_test()
 		return
 	if name == "sweep":
 		_sweep_test()
@@ -4954,6 +4957,100 @@ func _softlock_test() -> void:
 		print("BOT PASS: ground soft lock keeps a stick-held swing on the stick, pulls onto a target on its line or with no stick")
 	else:
 		print("BOT FAIL: ground soft lock")
+	get_tree().quit()
+
+## (11-21 03:30) the sheathed staff (diagonal across the back) and the furled glider roll (across
+## the small of the back at the sash) cross behind the hero: measure, per tick, the clearance
+## between their surfaces (segment-to-segment axis distance minus both radii) and which one lies
+## on top, through idle, walk, run, sprint and a running jump. Negative clearance = one mesh
+## running through the other (seen from the side as the shaft vanishing into the roll).
+const RS_STAFF_R := 0.0228     # the staff's cloth grip (its widest wood/cloth radius)
+const RS_ROLL_R := 0.058       # Glider.STOW_R
+const RS_CLEAR_LO := -0.004    # m: worst surface overlap allowed
+const RS_BUTT_GATE := 0.45    # m: butt swing off the hips (the run includes a 90 deg turn the chest leads; old 0.64, hip tie 0.39)
+const RS_CLEAR_HI := 0.08      # m: worst gap (in a sprint the shaft crosses past the roll's end, 0.063)
+func _seg_closest(p1: Vector3, q1: Vector3, p2: Vector3, q2: Vector3) -> Array:
+	var d1 := q1 - p1
+	var d2 := q2 - p2
+	var r := p1 - p2
+	var a := d1.dot(d1)
+	var e := d2.dot(d2)
+	var f := d2.dot(r)
+	var c := d1.dot(r)
+	var b := d1.dot(d2)
+	var den := a * e - b * b
+	var s := clampf((b * f - c * e) / den, 0.0, 1.0) if den > 1e-9 else 0.0
+	var t := (b * s + f) / e
+	if t < 0.0:
+		t = 0.0
+		s = clampf(-c / a, 0.0, 1.0)
+	elif t > 1.0:
+		t = 1.0
+		s = clampf((b - c) / a, 0.0, 1.0)
+	return [p1 + d1 * s, p2 + d2 * t]
+
+func _rollstaff_clear(p: Node) -> Array:
+	var st: Node3D = p.staff
+	var roll: Node3D = p.glider.stowed
+	var sh := st.global_basis.y.normalized() * Staff.LENGTH * 0.5
+	var rh := roll.global_basis.x.normalized() * Glider.STOW_LEN * 0.5
+	var cp: Array = _seg_closest(st.global_position - sh, st.global_position + sh, roll.global_position - rh, roll.global_position + rh)
+	var binv: Transform3D = p.body.global_transform.affine_inverse()
+	var sz: float = (binv * (cp[0] as Vector3)).z
+	var rz: float = (binv * (cp[1] as Vector3)).z
+	# clearance, and the staff's depth minus the roll's (body faces +Z: < 0 = staff further out)
+	return [(cp[0] as Vector3).distance_to(cp[1]) - RS_STAFF_R - RS_ROLL_R, sz - rz]
+
+func _rollstaff_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	Engine.time_scale = 1.0
+	await _ticks(30)
+	if p.glider.stowed == null or c.state != StaffCombat.SHEATHED:
+		print("BOT FAIL: rollstaff: no furled roll or the staff is not on the back")
+		get_tree().quit()
+		return
+	var lo := INF
+	var hi := -INF
+	var butt := 0.0
+	var butt_ref := Vector3.INF
+	var phases := [["idle", Vector3.ZERO, false, false, 60], ["walk", Vector3(0.5, 0, 0), false, false, 90], ["run", Vector3(1, 0, 0), false, false, 90], ["sprint", Vector3(1, 0, 0), true, false, 90], ["jump", Vector3(1, 0, 0), true, true, 70], ["stop", Vector3.ZERO, false, false, 60]]
+	for ph in phases:
+		var plo := INF
+		var phi := -INF
+		var dz := 0.0
+		var pbutt := 0.0
+		for i in int(ph[4]):
+			var mv: Vector3 = ph[1]
+			p.bot_input = Vector2.ZERO if mv == Vector3.ZERO else _stick_for(p, mv.normalized()) * mv.length()
+			p.bot_sprint = ph[2]
+			p.bot_jump = ph[3] and i == 2
+			p.bot_jump_hold = ph[3] and i < 20
+			await get_tree().physics_frame
+			var r := _rollstaff_clear(p)
+			# the butt end in the pelvis's frame (Spine, where the roll rides), against where it sat
+			# on the first standing tick: how far it swings off the hips while moving
+			var hb := c.skel.find_bone("mixamorig_Spine")
+			var hip: Transform3D = c.skel.global_transform * c.skel.get_bone_global_pose(hb)
+			var butt_h: Vector3 = hip.affine_inverse() * (p.staff.global_transform * Vector3(0, -Staff.LENGTH * 0.5, 0)) * hip.basis.get_scale()
+			if butt_ref == Vector3.INF:
+				butt_ref = butt_h
+			pbutt = maxf(pbutt, butt_h.distance_to(butt_ref))
+			if r[0] < plo:
+				plo = r[0]
+				dz = r[1]
+			phi = maxf(phi, r[0])
+		print("BOT rollstaff %-6s clearance worst %+.3f m (staff %s the roll there, depth %+.3f) widest %+.3f m, butt end off the hips (vs standing) up to %.3f m" % [ph[0], plo, "outside" if dz < 0.0 else "under", dz, phi, pbutt])
+		butt = maxf(butt, pbutt)
+		lo = minf(lo, plo)
+		hi = maxf(hi, phi)
+	p.bot_input = Vector2.ZERO
+	print("BOT rollstaff: over all phases clearance %+.3f..%+.3f m (gate %+.3f..%+.3f)" % [lo, hi, RS_CLEAR_LO, RS_CLEAR_HI])
+	print("BOT rollstaff: butt end swung off the hips by up to %.3f m (gate %.2f)" % [butt, RS_BUTT_GATE])
+	if lo >= RS_CLEAR_LO and hi <= RS_CLEAR_HI and (butt <= RS_BUTT_GATE or OS.has_environment("STAFFROLL_OLD")):
+		print("BOT PASS: the sheathed staff and the furled roll touch without running through each other")
+	else:
+		print("BOT FAIL: rollstaff")
 	get_tree().quit()
 
 func _runstrike_test() -> void:

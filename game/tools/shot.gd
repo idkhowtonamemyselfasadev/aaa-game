@@ -1115,7 +1115,15 @@ func _ready() -> void:
 		var pp := player.global_position
 		var back := -player.body.global_transform.basis.z
 		var d := 3.0 if spot == "heroback" else 1.6
-		SPOTS[spot] = [pp + back.rotated(Vector3.UP, -0.5) * d, pp + Vector3.UP * (0.0 if spot == "heroback" else 0.25)]
+		# (11-21 03:30) hbyaw=<rad> (-0.5) swings the lens round the hero (+-1.57 = square side-on),
+		# hbd=<m> sets its distance: a close side lens on where the glider roll and the staff cross
+		var hyaw := -0.5
+		for a in args:
+			if str(a).begins_with("hbyaw="):
+				hyaw = float(str(a).substr(6))
+			if str(a).begins_with("hbd="):
+				d = float(str(a).substr(4))
+		SPOTS[spot] = [pp + back.rotated(Vector3.UP, hyaw) * d, pp + Vector3.UP * (0.0 if spot == "heroback" else 0.25)]
 	if spot == "herorun":
 		# player runs to the camera's right: side view of the run cycle from the follow camera
 		player.use_bot_input = true
