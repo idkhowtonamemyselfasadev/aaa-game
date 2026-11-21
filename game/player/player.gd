@@ -582,6 +582,8 @@ func _dress() -> void:
 					sm.set_shader_parameter("boot_dark", 0.0 if OS.get_environment("BOOTDARK_OLD") != "" else 1.0)
 					# a warm leather sheen, no grey band on the dark strap (SHEEN_OLD=1: before)
 					sm.set_shader_parameter("boot_sheen", 0.0 if OS.get_environment("SHEEN_OLD") != "" else 1.0)
+					# dark leather knee guards, not pale sky-lit iron caps (KNEECAP_OLD=1: before)
+					sm.set_shader_parameter("knee_dark", 0.0 if OS.has_environment("KNEECAP_OLD") else 1.0)
 					if OS.get_environment("SHEEN_METAL") != "":
 						sm.set_shader_parameter("boot_sheen_metal", float(OS.get_environment("SHEEN_METAL")))
 					if OS.get_environment("BOOTMASK_DBG") != "":

@@ -88,6 +88,10 @@ var boot_leather := false
 var booted := 0   # base-body verts marked as boot, for the bots
 const BOOT_TOP_ABOVE_ANKLE := 0.02   # of the body's height: the boot leather's top over the ankle bone
 var shoed := 0    # of them, foot verts (COLOR.a 0) for hero.gdshader's boot_dark, for the bots
+## (11-21) knee caps: verts within KNEE_CAP_R (of the body's height) of a knee joint carry COLOR.r 0,
+## which hero.gdshader's knee_dark turns from pale sky-lit iron into dark worn leather
+const KNEE_CAP_R := 0.07
+var kneed := 0    # verts in the knee mask, for the bots
 var ankle_slimmed := 0   # foot-skinned greave-lip verts pulled in above the ankle (ANKLESLIM_OLD=1: none)
 ## a darned kirtle, not a Hollow's rags: no moth holes or burnt edges in the panels and gores
 ## (their cut-outs showed the legs as pale grey patches ringed in soot)
@@ -1591,6 +1595,13 @@ func _mark_boots() -> int:
 					and _skel.get_bone_name(m.skin.get_bind_bone(j)).ends_with("Foot")):
 				ankle = maxf(ankle, m.skin.get_bind_pose(j).affine_inverse().origin[up])
 		var shoe_top := ankle + BOOT_TOP_ABOVE_ANKLE * tall
+		var knees: Array[Vector3] = []
+		for j in m.skin.get_bind_count():
+			var kb := m.skin.get_bind_bone(j)
+			var kn := String(m.skin.get_bind_name(j)) if kb < 0 else _skel.get_bone_name(kb)
+			if kn.ends_with("Leg") and not kn.ends_with("UpLeg"):
+				knees.append(m.skin.get_bind_pose(j).affine_inverse().origin)
+		var knee_r := KNEE_CAP_R * tall
 		if OS.has_environment("BOOTTOP_DBG"):
 			print("BOT boot top: up %d tall %.1f ankle %.2f top %.2f" % [up, tall, ankle, shoe_top])
 		var dst := ArrayMesh.new()
@@ -1630,6 +1641,13 @@ func _mark_boots() -> int:
 					if b > 0.0 and not OS.has_environment("BOOTTOP_OLD"):
 						sa = maxf(sa, b * (1.0 - smoothstep(shoe_top - 0.01 * tall, shoe_top, verts[v][up])))
 					col[v].a = 1.0 - sa
+					var kd := INF
+					for kp in knees:
+						kd = minf(kd, verts[v].distance_to(kp))
+					var kk := 1.0 - smoothstep(knee_r * 0.8, knee_r * 1.25, kd)
+					col[v].r = 1.0 - kk
+					if kk > 0.0:
+						kneed += 1
 					if col[v].a < 1.0:
 						shoed += 1
 			arr[Mesh.ARRAY_COLOR] = col

@@ -63,6 +63,11 @@ uniform float boot_dbg = 0.0;
 // band from behind (`heels`, 11-20); SHEEN_OLD=1 = before
 uniform float boot_sheen = 0.0;
 uniform float boot_sheen_metal = 0.12;
+// 1 = the knee caps (verts round each knee joint, COLOR.r 0 from HeroGarb._mark_boots) are a
+// dark boiled-leather knee guard: as blackened iron (metal 0.7) or raw grey they mirrored the sky
+// and read as pale grey plastic blocks front-on (`ja_front`, 11-21); KNEECAP_OLD=1 = before
+uniform float knee_dark = 0.0;
+varying float v_knee;
 varying float v_boot;
 varying float v_shoe;
 
@@ -98,6 +103,7 @@ void vertex() {
 	v_finger = bare_hands * (1.0 - COLOR.g);
 	v_boot = boot_leather * (1.0 - COLOR.b);
 	v_shoe = boot_dark * (1.0 - COLOR.a);
+	v_knee = knee_dark * (1.0 - COLOR.r);
 	if (cloth_body > 0.0 && plate_inset + iron_inset > 0.0) {
 		float tan_v = 0.0;
 		float iron_v = 0.0;
@@ -117,6 +123,7 @@ void fragment() {
 	float rough = roughness;
 	float metal = 0.0;
 	float plate_spec = 0.0;
+	float knee_fit = 0.0;
 	float patch_n = h_noise(UV * 22.0) * 0.6 + h_noise(UV * 61.0) * 0.4;
 	if (restyle > 0.0) {
 		vec3 src = alb;
@@ -237,6 +244,24 @@ void fragment() {
 		vec3 lea = mix(o * 0.8, hide * (0.3 + 0.12 * mott), 0.55) * (1.0 - 0.18 * rub);
 		o = mix(o, lea, scuff);
 		r_o = mix(r_o, 0.66 + 0.12 * mott + 0.08 * rub, scuff);
+		if (v_knee > 0.001) {
+			// boiled leather over the knee: the plate's baked shading kept as the cup's form, a
+			// rubbed, lighter crown where it flexes, darker in the creases; no metal, satin
+			float klum = clamp(lum / 0.25, 0.55, 1.15);
+			float kgrain = h_noise(UV * vec2(480.0, 480.0));
+			float kworn = smoothstep(0.5, 0.85, h_noise(UV * 38.0 + 41.0));
+			vec3 kl = hide * (0.30 + 0.10 * mott) * mix(0.9, 1.06, kgrain) * klum;
+			kl = mix(kl, hide * 0.5 * klum, kworn * 0.35);
+			kl = mix(kl, vec3(dot(kl, vec3(0.3, 0.59, 0.11))), 0.22);
+			// any texel lighter than the dark undersuit: the cap's pale field fits none of the
+			// plate/iron/grey classes (knee_fit debug, BOOTMASK_DBG=6), only its chips did
+			float kfit = max(clamp(max(max(iron_m, grey_m), region) + red_m, 0.0, 1.0),
+					smoothstep(0.03, 0.07, lum)) * v_knee;
+			o = mix(o, kl, kfit);
+			r_o = mix(r_o, 0.72 + 0.1 * kgrain - 0.1 * kworn, kfit);
+			metal *= 1.0 - kfit;
+			knee_fit = kfit;
+		}
 		if (v_shoe > 0.001) {
 			// the texture's baked folds kept as creases in the leather, the rest one dark hide:
 			// a fine pebbled grain, lighter rubbed patches (toe, flanks) and the red heel band
@@ -276,7 +301,7 @@ void fragment() {
 	// grey with the default F0 and rim
 	float shoe = v_shoe * restyle;
 	float dark_k = 1.0 - smoothstep(0.02, 0.1, dot(alb, vec3(0.3, 0.59, 0.11)));
-	SPECULAR = (0.5 - 0.1 * plate_spec) * (1.0 - shoe * (0.6 + 0.3 * boot_sheen * dark_k));
+	SPECULAR = (0.5 - 0.1 * plate_spec) * (1.0 - shoe * (0.6 + 0.3 * boot_sheen * dark_k)) * (1.0 - 0.5 * knee_fit * restyle);
 	METALLIC = mix(metal, boot_sheen_metal, shoe * boot_sheen);
 	NORMAL_MAP = texture(normal_tex, UV).rgb;
 	NORMAL_MAP_DEPTH = normal_depth * mix(1.0, cloth_normal, cloth_body * restyle);
@@ -284,7 +309,10 @@ void fragment() {
 	EMISSION = figure_fill(alb, wet_n, wet_p, CAMERA_POSITION_WORLD);
 	RIM = 0.15 * (1.0 - 0.8 * shoe);
 	RIM_TINT = 0.55;
-	if (abs(boot_dbg - 3.0) < 0.1) {
+	if (abs(boot_dbg - 6.0) < 0.1) {
+		ALBEDO = vec3(0.0);
+		EMISSION = vec3(knee_fit, v_knee, 0.0);
+	} else if (abs(boot_dbg - 3.0) < 0.1) {
 		NORMAL_MAP_DEPTH *= 1.0 - shoe;
 	} else if (abs(boot_dbg - 4.0) < 0.1) {
 		EMISSION *= 1.0 - shoe;
@@ -295,6 +323,6 @@ void fragment() {
 		ALBEDO = vec3(0.0);
 	} else if (boot_dbg > 0.0) {
 		ALBEDO = vec3(0.0);
-		EMISSION = vec3(v_shoe, v_boot, 0.05);
+		EMISSION = vec3(v_shoe, v_boot, v_knee);
 	}
 }

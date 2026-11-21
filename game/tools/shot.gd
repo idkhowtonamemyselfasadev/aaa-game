@@ -1109,7 +1109,8 @@ func _ready() -> void:
 		# (11-20 07:00) `hfront`: the same low lens from the front 3/4 (instep, vamp, shin cuff)
 		if "hfront" in args:
 			hb = -hb
-		SPOTS[spot] = [hp + hb.rotated(Vector3.UP, -0.6) * 1.3, hp]
+		# (11-21 06:30) `kneelens`: 1.5 m off at knee height (with hfront: the knee caps front-on)
+		SPOTS[spot] = [hp + hb.rotated(Vector3.UP, -0.6) * (1.5 if "kneelens" in args else 1.3), hp]
 	if spot == "heroback" or spot == "staff":
 		# rear three-quarter of the idle player: the staff slung across the back
 		var pp := player.global_position
@@ -2490,8 +2491,8 @@ func _ready() -> void:
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.7
 			look.y = terrain.height_at(look.x, look.z) + 3.5
 		if spot == "heels" or (spot == "soldier" and ("sheels" in args or "sfront" in args)):
-			pos.y = terrain.height_at(pos.x, pos.z) + 0.42
-			look.y = terrain.height_at(look.x, look.z) + 0.14
+			pos.y = terrain.height_at(pos.x, pos.z) + (0.62 if "kneelens" in args else 0.42)
+			look.y = terrain.height_at(look.x, look.z) + (0.5 if "kneelens" in args else 0.14)
 		if spot == "herocu":
 			pos.y = terrain.height_at(pos.x, pos.z) + 1.65
 			look.y = terrain.height_at(look.x, look.z) + 1.4

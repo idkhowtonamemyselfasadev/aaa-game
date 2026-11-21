@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261117-1400-turn-lit-left.jpg",
-  "time": "2026-11-17T14:00:00Z",
-  "caption": "Hero's left turn on the spot, ticks 0-72 every 8, front-lit at 11:00: head leads at tick 8, chest by 16, square by 32, boots planted apart and still from 56 on; the hero stands on a dark trampled patch so sole contact reads only from the lit boot tops.",
-  "verdict": "pass"
- },
- {
-  "file": "20261117-1400-turn-lit-right.jpg",
-  "time": "2026-11-17T14:00:00Z",
-  "caption": "Right turn on the spot at tick 40, sun-side wide lens: the settle steps wide and holds; grass and the hero are lit but the turf under the boots is dark and the trees read soft in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-1500-bossturn-sunside.jpg",
   "time": "2026-11-17T15:00:00Z",
   "caption": "The final-size boss turning on the spot, new sun-side boot lens at 11:30 (frames 56 and 68): the outside boot lifts heel-up then sets beside the planted one, sabatons now lit; the trampled ring turf under them is still dark and the boots stack from this side.",
@@ -897,6 +885,18 @@
   "file": "20261121-0530-robeholes-front.jpg",
   "time": "2026-11-21T05:30:00Z",
   "caption": "Standing jump attack front-on at jt 0.585 with the hole-free robe; figure still dark in GL, pale knee caps and a sky sun-shaft streak remain.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0630-kneecaps-front.jpg",
+  "time": "2026-11-21T06:30:00Z",
+  "caption": "Standing jump attack front-on: the knee caps are now dark worn leather guards instead of pale grey blocks; the figure is still dark in GL and the sky's sun-shaft streak remains.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0630-kneecaps-cmp.jpg",
+  "time": "2026-11-21T06:30:00Z",
+  "caption": "Knee caps before (left, pale grey plastic) and after (right, dark leather in line with the shin wraps), 2x crop of the same frame.",
   "verdict": "fail"
  }
 ]
