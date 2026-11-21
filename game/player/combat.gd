@@ -97,6 +97,10 @@ var JA_CANT_OLD := OS.get_environment("JA_CANT_OLD") == "1"
 ## (x -0.28 asks past reach, the clamp holds them ~0.15 m right of centre) so the shaft goes vertical
 ## beside the right cheek (offline sweep, then in-game: hat margin u 0.36-0.48 >= 0.085 m; z 0.30 cut the brim). JA_CANT_PREV=1 = 19:30 key.
 ## Optional 6th value: shoulder twist (deg).
+## (11-21 00:10) the pass key [u, P.x, P.y, dz] (see the insert); JA_PASS="" = before (no pass key).
+## Sweep (bot airstrike, JA_DBG xmouth): none -0.044 at u 0.48; (0.50,-0.15,1.40) and (0.50,-0.20,1.45) lag the
+## swing (right 79-87 deg at u 0.51, was 102); (0.48,-0.22,1.52,+0.03) keeps the mouth crossing 9-16 cm right.
+var JA_PASS: PackedFloat64Array = OS.get_environment("JA_PASS").split_floats(",") if OS.has_environment("JA_PASS") else PackedFloat64Array([0.48, -0.22, 1.52, 0.03])
 var JA_CANT: PackedFloat64Array = OS.get_environment("JA_CANT").split_floats(",") if OS.has_environment("JA_CANT") else (PackedFloat64Array([-60.0, 62.0, -0.06, 0.42, 0.45, -17.5]) if OS.get_environment("JA_CANT_PREV") == "1" else PackedFloat64Array([-90.0, 55.0, -0.28, 0.42, 0.40, -30.0]))
 const AIR_COST := 10.0
 const AIR_POWER := 1.35
@@ -1075,6 +1079,20 @@ func _start_air() -> void:
 		if _atk == AIR_LIGHT:
 			_atk = AIR_LIGHT.duplicate(true)
 		_atk["keys"].insert(4, [JA_CANT[3], JA_CANT[0], JA_CANT[1], Vector3(JA_CANT[2], 1.70, JA_CANT[4] if JA_CANT.size() > 4 else 0.37), JA_CANT[5] if JA_CANT.size() > 5 else -17.5, -0.025, JA_CANT[6] if JA_CANT.size() > 6 else REACH])
+		if JA_PASS.size() >= 4:
+			# (11-21 00:10) the pass key: between the cant (hands over the right shoulder) and the
+			# drive (hands out to the left at the sash) the fists crossed the face's line at mouth
+			# height (u ~0.48, 4 cm right of the hat's centre, the shaft standing over the mouth
+			# wrap front-on). This key keeps them on the right side while they drop below the chin,
+			# so they cross over to the strike under the face. Angles and twist are the straight
+			# blend of its neighbours at that u; only the hands' place is moved.
+			var ka: Array = _atk["keys"][4]
+			var kb: Array = _atk["keys"][5]
+			var w := (JA_PASS[0] - float(ka[0])) / (float(kb[0]) - float(ka[0]))
+			var pa: Vector3 = ka[3]
+			var pb: Vector3 = kb[3]
+			var pz := lerpf(pa.z, pb.z, w) + (JA_PASS[3] if JA_PASS.size() > 3 else 0.0)
+			_atk["keys"].insert(5, [JA_PASS[0], lerpf(ka[1], kb[1], w), lerpf(ka[2], kb[2], w), Vector3(JA_PASS[1], JA_PASS[2], pz), lerpf(ka[4], kb[4], w), lerpf(ka[5], kb[5], w)])
 	_recover = 0.0
 	air_hold_t = 0.0
 	_power = AIR_POWER

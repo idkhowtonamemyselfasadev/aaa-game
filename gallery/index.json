@@ -1,11 +1,5 @@
 [
  {
-  "file": "20261117-0300-base-wide-front.jpg",
-  "time": "2026-11-17T03:00:00Z",
-  "caption": "Front leg lens at the phase-2 settle with the wider base: the boss stands square on the ash with its glaive up; the lens aims at the pre-surge spot so the knight sits off-centre, and the stones/trees are soft in GL.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-0400-turn-ball-pivot.jpg",
   "time": "2026-11-17T04:30:00Z",
   "caption": "The phase-2 giant turning on the spot on the ring's slope, boots planted on the ash (its pivot ball no longer creeps); low lens crops the body and the armour reads very dark in GL.",
@@ -885,6 +879,18 @@
   "file": "20261120-2312-jumpattack-tiltfade-055.jpg",
   "time": "2026-11-20T23:12:00Z",
   "caption": "Standing jump attack at jt 0.55 with the faster tilt fade: face clear of the canted shaft; the figure still reads dark under the GL fallback.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0050-jumpattack-passkey-cmp.jpg",
+  "time": "2026-11-21T00:50:00Z",
+  "caption": "Jump attack front-on at jt 0.585 (u ~0.51), before (left) and with the new pass key (right): the fists now stay on the hero's right and the shaft sweeps under the chin instead of rising to the mask; the swing reads a touch flatter there.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0050-jumpattack-passkey-full.jpg",
+  "time": "2026-11-21T00:50:00Z",
+  "caption": "Standing jump attack mid-downswing with the pass key: face clear, staff diagonal across the chest; still wrong: a stray light shaft hangs in the air at left, the figure is dark in the GL fallback.",
   "verdict": "fail"
  }
 ]
