@@ -49,7 +49,7 @@ func _ready() -> void:
 	if args.size() > 1:
 		_max = float(args[1])
 	# scripted tests drive the hero themselves; only waypoint routes use the follower
-	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
+	_route = ROUTES.get(name, [] if name in ["combat", "dodge", "soldier", "lockon", "heavy", "sweep", "insects", "butterflies", "flinch", "death", "weather", "roost", "ruin", "understory", "trample", "herd", "bed", "shrine", "facelight", "sound", "foley", "mix", "gfx", "keeper", "talk", "hearth", "fox", "cottage", "stonehouse", "whitehouse", "leanto", "waterbutt", "drywall", "yardwall", "hens", "yardpath", "lantern", "villager", "chop", "feed", "eddatalk", "bat", "doorstones", "dog", "neighbour", "greet", "kite", "pedlar", "verge", "rutstones", "ringlip", "henfox", "climb", "climbhole", "climbedge", "scree", "jump", "glide", "thermal", "dust", "hare", "sward", "boulder", "deercross", "roadmeet", "hildnods", "breadquest", "flockbell", "wheatear", "music", "credits", "knight", "warden", "hounds", "hewer", "archer", "wisps", "sentinel", "knightleap", "knightstomp", "knightplant", "kindler", "harrier", "airstrike", "runstrike", "softlock", "crown", "lean", "pivot", "stop", "start", "stride", "foestride", "foecorner", "foeturn", "foeturnup", "foeturndown", "foeturncross", "heroturn", "heroturnl", "heroturnup", "heroturndown", "heroturncross", "footik", "stepup", "foestep", "foeflat", "foestop", "foestopup", "foestopdown", "foestopcross", "herostop", "herostopup", "herostopdown", "herostopcross", "foestart", "foestartup", "foestartdown", "foestartcross", "foewindup", "heroflat", "foeflinch", "hands", "foehands", "foegrip", "keepgap", "surgegrip", "surgeturn", "foeguard", "foereach", "foefold", "knightguard", "knightbase"] else ROUTES["walk"])
 	_world = load("res://scenes/world.tscn").instantiate()
 	add_child(_world)
 	_world.run_clock = false
@@ -140,6 +140,9 @@ func _ready() -> void:
 		return
 	if name == "runstrike":
 		_runstrike_test()
+		return
+	if name == "softlock":
+		_softlock_test()
 		return
 	if name == "sweep":
 		_sweep_test()
@@ -4873,6 +4876,85 @@ func _roll_sash_gap(p: Node) -> Vector2:
 			zmin = bv.z
 			ys = bv.y
 	return Vector2(zmin - (rc.z + 0.058), rc.y - ys)
+
+## (11-21 02:30) a stand-in target for the soft lock: in "hittable", a hurt capsule at chest height
+class SoftlockPost extends Node3D:
+	func hurt_capsule() -> Array:
+		return [global_position + Vector3(0, 0.5, 0), global_position + Vector3(0, 1.5, 0), 0.35]
+	func take_hit(_point: Vector3, _swing: Vector3, _power: float, _hitstop = null) -> void:
+		pass
+
+## (11-21 02:30) the ground swing's soft lock (Player.MAGNET_STICK_CONE): with the stick held, a
+## target far off the stick's line must not drag the swing round to it (the 11-20 jump-attack
+## fault on the ground); one close to the line still pulls; with no stick the wide cone pulls.
+const SL_HOLD_GATE := 10.0    # deg: stick held, target 60 deg off -> facing stays on the stick
+const SL_PULL_GATE := 6.0     # deg: target on the swing's line -> facing ends on it
+func _softlock_case(stick: bool, off_deg: float) -> Array:
+	var p := _player
+	var c: StaffCombat = p.combat
+	var terrain: Terrain = _world.get_node("Terrain")
+	var at := _softlock_at
+	at.y = terrain.height_at(at.x, at.z) + 0.05
+	p.global_position = at
+	p.velocity = Vector3.ZERO
+	p.body.rotation.y = atan2(1.0, 0.0)   # facing world +X
+	await _ticks(20)
+	p.body.rotation.y = atan2(1.0, 0.0)
+	var a := deg_to_rad(off_deg)
+	var post := SoftlockPost.new()
+	_world.add_child(post)
+	post.global_position = p.global_position + Vector3(cos(a), 0, -sin(a)) * 2.4
+	post.add_to_group("hittable")
+	p.bot_attack = true
+	var seen := false
+	for i in 40:
+		p.bot_input = _stick_for(p, Vector3(1, 0, 0)) if stick else Vector2.ZERO
+		await get_tree().physics_frame
+		if c.is_attacking():
+			seen = true
+		if seen and c.t >= 0.2:
+			break
+	p.bot_input = Vector2.ZERO
+	var fz: Vector3 = p.body.global_basis.z
+	var face := rad_to_deg(Vector3(1, 0, 0).signed_angle_to(Vector3(fz.x, 0, fz.z), Vector3.UP))
+	var to := post.global_position - p.global_position
+	var to_post := rad_to_deg(Vector3(fz.x, 0, fz.z).angle_to(Vector3(to.x, 0, to.z)))
+	post.remove_from_group("hittable")
+	post.queue_free()
+	while c.is_attacking():
+		await get_tree().physics_frame
+	await _ticks(30)
+	return [seen, face, to_post]
+
+var _softlock_at := Vector3.ZERO
+func _softlock_test() -> void:
+	var p := _player
+	var c: StaffCombat = p.combat
+	Engine.time_scale = 1.0
+	await _ticks(20)
+	_softlock_at = p.global_position + Vector3(-7.0, 0, 0)
+	p.global_position = _softlock_at
+	await _ticks(5)
+	# draw the staff first so every case is a plain swing
+	p.bot_attack = true
+	await _ticks(2)
+	while c.is_attacking() or c.state == StaffCombat.DRAWING:
+		await get_tree().physics_frame
+	await _ticks(20)
+	var stray := c.magnet_target(3.4, PI)
+	print("BOT softlock: other targets within 3.4 m of the spot: %s" % ("none" if stray == Vector3.INF else str(stray)))
+	var off: Array = await _softlock_case(true, 60.0)
+	var on: Array = await _softlock_case(true, 12.0)
+	var free: Array = await _softlock_case(false, 60.0)
+	print("BOT softlock: stick held, target 60 deg off -> swing seen %s, facing %+.1f deg off the stick (gate <= %.0f; MAGNET_OLD=1 turns onto it)" % [off[0], off[1], SL_HOLD_GATE])
+	print("BOT softlock: stick held, target 12 deg off -> swing seen %s, facing %.1f deg off the target (gate <= %.0f)" % [on[0], on[2], SL_PULL_GATE])
+	print("BOT softlock: no stick, target 60 deg off -> swing seen %s, facing %.1f deg off the target (gate <= %.0f)" % [free[0], free[2], SL_PULL_GATE])
+	var ok: bool = stray == Vector3.INF and off[0] and on[0] and free[0] and absf(off[1]) <= SL_HOLD_GATE and on[2] <= SL_PULL_GATE and free[2] <= SL_PULL_GATE
+	if ok:
+		print("BOT PASS: ground soft lock keeps a stick-held swing on the stick, pulls onto a target on its line or with no stick")
+	else:
+		print("BOT FAIL: ground soft lock")
+	get_tree().quit()
 
 func _runstrike_test() -> void:
 	var p := _player

@@ -98,6 +98,9 @@ var JA_CANT_OLD := OS.get_environment("JA_CANT_OLD") == "1"
 ## beside the right cheek (offline sweep, then in-game: hat margin u 0.36-0.48 >= 0.085 m; z 0.30 cut the brim). JA_CANT_PREV=1 = 19:30 key.
 ## Optional 6th value: shoulder twist (deg).
 ## (11-21 00:10) the pass key [u, P.x, P.y, dz] (see the insert); JA_PASS="" = before (no pass key).
+## (11-21 02:30) optional 5th/6th values override the pass key's yaw/pitch (default: the blend of its neighbours).
+## -40,40 with dz 0.06 cut the front-on sideways bar at u 0.48 (heading 34 -> 15 deg) but stood the shaft upright beside
+## the face at jt 0.565 and lagged the blow (shaft 71 -> 51 deg off vertical): read as a stall, not taken.
 ## Sweep (bot airstrike, JA_DBG xmouth): none -0.044 at u 0.48; (0.50,-0.15,1.40) and (0.50,-0.20,1.45) lag the
 ## swing (right 79-87 deg at u 0.51, was 102); (0.48,-0.22,1.52,+0.03) keeps the mouth crossing 9-16 cm right.
 var JA_PASS: PackedFloat64Array = OS.get_environment("JA_PASS").split_floats(",") if OS.has_environment("JA_PASS") else PackedFloat64Array([0.48, -0.22, 1.52, 0.03])
@@ -1101,7 +1104,7 @@ func _start_air() -> void:
 			var pa: Vector3 = ka[3]
 			var pb: Vector3 = kb[3]
 			var pz := lerpf(pa.z, pb.z, w) + (JA_PASS[3] if JA_PASS.size() > 3 else 0.0)
-			_atk["keys"].insert(5, [JA_PASS[0], lerpf(ka[1], kb[1], w), lerpf(ka[2], kb[2], w), Vector3(JA_PASS[1], JA_PASS[2], pz), lerpf(ka[4], kb[4], w), lerpf(ka[5], kb[5], w)])
+			_atk["keys"].insert(5, [JA_PASS[0], JA_PASS[4] if JA_PASS.size() > 4 else lerpf(ka[1], kb[1], w), JA_PASS[5] if JA_PASS.size() > 5 else lerpf(ka[2], kb[2], w), Vector3(JA_PASS[1], JA_PASS[2], pz), lerpf(ka[4], kb[4], w), lerpf(ka[5], kb[5], w)])
 	_recover = 0.0
 	air_hold_t = 0.0
 	_power = AIR_POWER

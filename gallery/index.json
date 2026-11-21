@@ -1,17 +1,5 @@
 [
  {
-  "file": "20261117-0700-runstop-settle.jpg",
-  "time": "2026-11-17T07:00:00Z",
-  "caption": "Run stop settling (frame 1.72 s): the hero squares up over planted boots with no skid; still a GL render from behind, flat ochre ground with sparse leaf decals.",
-  "verdict": "fail"
- },
- {
-  "file": "20261117-1100-bossturn-hill-f50.jpg",
-  "time": "2026-11-17T11:00:00Z",
-  "caption": "Final-size boss (x4.6) turning on the ring's slope, 10 frames in: pivot boot planted, the other set wide; boots sit in shadow and the low lens crops the body.",
-  "verdict": "fail"
- },
- {
   "file": "20261117-1100-bossturn-hill-f62.jpg",
   "time": "2026-11-17T11:00:00Z",
   "caption": "Same turn 22 frames in: the outside boot lifts on its ball and swings round with no pop; turf reads as flat mottled dirt at this lens.",
@@ -891,6 +879,18 @@
   "file": "20261121-0130-swingtrail-side.jpg",
   "time": "2026-11-21T01:30:00Z",
   "caption": "Jump attack from behind at jt 0.55: the trail off the staff tip is a soft pale smear instead of a hard band; still wrong: the hero reads dark and small against a flat midday field.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0230-jumpattack-chopkey.jpg",
+  "time": "2026-11-21T02:30:00Z",
+  "caption": "Standing jump attack front-on at jt 0.565: current pass key (left) vs a tried chop key (right) that stands the shaft upright beside the face; rejected as a stalled blow. Figure still dark in GL.",
+  "verdict": "fail"
+ },
+ {
+  "file": "20261121-0230-jumpattack-rear.jpg",
+  "time": "2026-11-21T02:30:00Z",
+  "caption": "Standing jump attack from behind at jt 0.565/0.585/0.605: the canted downswing reads as a chop toward the foe; the front-on 'flat' bar is the forward strike's projection. Still dark, hands small.",
   "verdict": "fail"
  }
 ]
